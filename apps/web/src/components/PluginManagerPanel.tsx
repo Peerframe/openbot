@@ -1,5 +1,5 @@
 import type { Bot } from "@openbot/domain";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, type MutableRefObject, useEffect, useRef, useState } from "react";
 import {
   listPlugins,
   type Plugin,
@@ -26,18 +26,40 @@ export interface PluginManagerProps {
 
 export function PluginManagerPanel(props: PluginManagerProps) {
   const [open, setOpen] = useState(false);
+  // Keep PluginManager mounted after the first open so grant Bot selection survives
+  // details toggle quirks / transient close during post-save reloads.
+  const [mounted, setMounted] = useState(false);
+  const grantBotSelectionRef = useRef(new Map<string, string>());
   return (
-    <details className="plugin-manager" onToggle={(event) => setOpen(event.currentTarget.open)}>
+    <details
+      className="plugin-manager"
+      onToggle={(event) => {
+        const next = event.currentTarget.open;
+        setOpen(next);
+        if (next) setMounted(true);
+      }}
+    >
       <summary>
         <strong>插件</strong>
         <span>连接 MCP 服务，为 Bot 分配工具、资源与界面</span>
       </summary>
-      {open ? <PluginManager {...props} /> : null}
+      {mounted ? (
+        <div hidden={!open}>
+          <PluginManager {...props} grantBotSelectionRef={grantBotSelectionRef} />
+        </div>
+      ) : null}
     </details>
   );
 }
 
-export function PluginManager({ bots, scope, onInsertMaterial }: PluginManagerProps) {
+export function PluginManager({
+  bots,
+  scope,
+  onInsertMaterial,
+  grantBotSelectionRef,
+}: PluginManagerProps & {
+  grantBotSelectionRef?: MutableRefObject<Map<string, string>>;
+}) {
   const [plugins, setPlugins] = useState<Plugin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
@@ -45,21 +67,34 @@ export function PluginManager({ bots, scope, onInsertMaterial }: PluginManagerPr
   const [attempt, setAttempt] = useState(0);
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState<string>();
-  // biome-ignore lint/correctness/useExhaustiveDependencies: attempt is an explicit refresh and post-mutation reload.
-  useEffect(() => {
-    const controller = new AbortController();
+  const localGrantBotSelectionRef = useRef(new Map<string, string>());
+  const botSelectionRef = grantBotSelectionRef ?? localGrantBotSelectionRef;
+  async function reloadPlugins(signal?: AbortSignal) {
     setLoading(true);
     setError(undefined);
-    void listPlugins(AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]))
-      .then((snapshot) => {
-        if (!controller.signal.aborted) setPlugins(snapshot.plugins);
-      })
-      .catch((cause: unknown) => {
-        if (!controller.signal.aborted) setError(pluginError(cause));
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
+    try {
+      const snapshot = await listPlugins(
+        AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(10_000)]),
+      );
+      if (signal?.aborted) return;
+      setPlugins(snapshot.plugins);
+      // Drop selection entries for plugins that disappeared (uninstall / empty snapshot).
+      const alive = new Set(snapshot.plugins.map((plugin) => plugin.id));
+      for (const pluginId of [...botSelectionRef.current.keys()]) {
+        if (!alive.has(pluginId)) botSelectionRef.current.delete(pluginId);
+      }
+    } catch (cause: unknown) {
+      if (signal?.aborted) return;
+      setError(pluginError(cause));
+      throw cause;
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
+  }
+  // biome-ignore lint/correctness/useExhaustiveDependencies: attempt is an explicit refresh trigger.
+  useEffect(() => {
+    const controller = new AbortController();
+    void reloadPlugins(controller.signal).catch(() => undefined);
     return () => controller.abort();
   }, [attempt]);
   async function mutate(path: string, method: string, input: unknown) {
@@ -68,7 +103,8 @@ export function PluginManager({ bots, scope, onInsertMaterial }: PluginManagerPr
     try {
       await pluginRequest(path, { method, body: JSON.stringify(input) });
       setRemoving(undefined);
-      setAttempt((value) => value + 1);
+      // Await the post-mutation GET so grant editors bind success to the authoritative snapshot.
+      await reloadPlugins();
     } catch (cause) {
       setError(pluginError(cause));
       throw cause;
@@ -180,6 +216,11 @@ export function PluginManager({ bots, scope, onInsertMaterial }: PluginManagerPr
             plugin={plugin}
             bots={bots}
             disabled={busy || loading}
+            selectedBotId={botSelectionRef.current.get(plugin.id)}
+            onSelectedBotIdChange={(botId) => {
+              if (botId) botSelectionRef.current.set(plugin.id, botId);
+              else botSelectionRef.current.delete(plugin.id);
+            }}
             onSave={(botId, tools, content) =>
               mutate(
                 `plugins/${encodeURIComponent(plugin.id)}/grants/${encodeURIComponent(botId)}`,
@@ -361,7 +402,10 @@ export function PluginToolList({ tools }: { tools: PluginTool[] }) {
   );
 }
 
-function grantsForBot(plugin: Plugin, botId: string): {
+function grantsForBot(
+  plugin: Plugin,
+  botId: string,
+): {
   tools: PluginGrant[];
   resources: string[];
   prompts: string[];
@@ -377,30 +421,80 @@ function grantsForBot(plugin: Plugin, botId: string): {
   };
 }
 
+function stableGrantSignature(input: {
+  tools: PluginGrant[];
+  resources: string[];
+  prompts: string[];
+}): string {
+  const tools = [...input.tools].map((grant) => `${grant.name}:${grant.mode}`).sort();
+  const resources = [...input.resources].sort();
+  const prompts = [...input.prompts].sort();
+  return JSON.stringify({ tools, resources, prompts });
+}
+
+/** Authoritative Bot + grant-authority identity for success-feedback binding. */
+export function pluginGrantAuthoritySnapshot(
+  plugin: Plugin,
+  botId: string,
+  bots: Bot[],
+): { botId: string; revision: string; available: boolean; authority: string } {
+  const available = Boolean(botId) && bots.some((bot) => bot.id === botId);
+  if (!botId || !available) {
+    return {
+      botId,
+      revision: plugin.revision,
+      available: false,
+      authority: `unavailable:${botId}`,
+    };
+  }
+  const granted = grantsForBot(plugin, botId);
+  return {
+    botId,
+    revision: plugin.revision,
+    available: true,
+    authority: `${plugin.revision}|${plugin.enabled ? "1" : "0"}|${stableGrantSignature(granted)}`,
+  };
+}
+
 export function PluginGrantEditor({
   plugin,
   bots,
   disabled,
   onSave,
+  selectedBotId,
+  onSelectedBotIdChange,
 }: {
   plugin: Plugin;
   bots: Bot[];
   disabled: boolean;
+  selectedBotId?: string | undefined;
+  onSelectedBotIdChange?(botId: string): void;
   onSave(
     botId: string,
     tools: PluginGrant[],
     content: { resources: string[]; prompts: string[] },
   ): Promise<void>;
 }) {
-  // Sticky selection: only the Owner dropdown may change botId. Do not fall back to
-  // bots[0] when the prior Bot disappears — that would show another Bot's empty grants.
-  const [botId, setBotId] = useState(bots[0]?.id ?? "");
+  // Sticky selection: only the Owner dropdown may change botId. Prefer parent-persisted
+  // selection so remounts (details keep-alive gaps) do not fall back to bots[0].
+  // selectedBotId is mount-initial only (from parent persistence map); user changes go
+  // through setBotId which writes the map for the next remount.
+  const [botId, setBotIdState] = useState(() => selectedBotId ?? bots[0]?.id ?? "");
+  function setBotId(next: string) {
+    setBotIdState(next);
+    onSelectedBotIdChange?.(next);
+  }
   const selectedBotAvailable = bots.some((bot) => bot.id === botId);
   const initial = grantsForBot(plugin, botId);
   const [grants, setGrants] = useState<PluginGrant[]>(initial.tools);
   const [resources, setResources] = useState<string[]>(initial.resources);
   const [prompts, setPrompts] = useState<string[]>(initial.prompts);
   const [saved, setSaved] = useState(false);
+  const pendingSaveRef = useRef<{
+    epoch: number;
+    botId: string;
+    signature: string;
+  } | null>(null);
   // Sync draft only when Bot selection or plugin grant revision changes — not on every
   // new plugin object identity (same-revision reloads must keep dirty drafts).
   const grantSyncKey =
@@ -412,18 +506,33 @@ export function PluginGrantEditor({
       setGrants([]);
       setResources([]);
       setPrompts([]);
+      pendingSaveRef.current = null;
+      if (saved) setSaved(false);
     } else {
       const next = grantsForBot(plugin, botId);
       setGrants(next.tools);
       setResources(next.resources);
       setPrompts(next.prompts);
+      const pending = pendingSaveRef.current;
+      const nextSignature = stableGrantSignature(next);
+      if (pending && pending.botId === botId && pending.signature === nextSignature) {
+        // Post-save authoritative snapshot confirmed our write — keep success feedback.
+        pendingSaveRef.current = null;
+        if (!saved) setSaved(true);
+      } else {
+        // External authorization sync (update apply, cleared grants, etc.).
+        pendingSaveRef.current = null;
+        if (saved) setSaved(false);
+      }
     }
   }
-  const selectionRef = useRef({ botId, revision: plugin.revision });
-  selectionRef.current = { botId, revision: plugin.revision };
+  const authority = pluginGrantAuthoritySnapshot(plugin, botId, bots);
+  const selectionRef = useRef(authority);
+  selectionRef.current = authority;
   const saveEpochRef = useRef(0);
   function noteDraftEdit() {
     saveEpochRef.current += 1;
+    pendingSaveRef.current = null;
     setSaved(false);
   }
   return (
@@ -434,20 +543,32 @@ export function PluginGrantEditor({
         event.preventDefault();
         if (!botId || !selectedBotAvailable || disabled) return;
         const submittedBotId = botId;
-        const submittedRevision = plugin.revision;
+        const submittedSignature = stableGrantSignature({
+          tools: grants,
+          resources,
+          prompts,
+        });
         const epoch = saveEpochRef.current;
+        pendingSaveRef.current = {
+          epoch,
+          botId: submittedBotId,
+          signature: submittedSignature,
+        };
         void onSave(botId, grants, { resources, prompts })
           .then(() => {
-            // Bind "已保存" to the submitted Bot/revision; ignore late async after switch/edit.
+            // Bind "已保存" to current Bot + availability (authoritative grant snapshot may
+            // already have advanced via parent GET). Ignore late async after switch / loss.
             if (
               saveEpochRef.current === epoch &&
               selectionRef.current.botId === submittedBotId &&
-              selectionRef.current.revision === submittedRevision
+              selectionRef.current.available
             ) {
               setSaved(true);
             }
           })
-          .catch(() => undefined);
+          .catch(() => {
+            if (pendingSaveRef.current?.epoch === epoch) pendingSaveRef.current = null;
+          });
       }}
     >
       <h4>分配给 Bot</h4>
@@ -458,7 +579,10 @@ export function PluginGrantEditor({
           value={botId}
           disabled={disabled}
           onChange={(event) => {
-            setBotId(event.target.value);
+            if (disabled) return;
+            const next = event.target.value;
+            if (next === botId) return;
+            setBotId(next);
             noteDraftEdit();
           }}
         >
@@ -537,7 +661,11 @@ export function PluginGrantEditor({
       <p>
         只读权限由你判断并授权，不采用插件自报标签。可能写入或产生外部影响的工具应选择每次确认。
       </p>
-      <button className="secondary-button" type="submit" disabled={disabled || !botId || !selectedBotAvailable}>
+      <button
+        className="secondary-button"
+        type="submit"
+        disabled={disabled || !botId || !selectedBotAvailable}
+      >
         保存 Bot 工具权限
       </button>
       {saved ? <span role="status">已保存</span> : null}
