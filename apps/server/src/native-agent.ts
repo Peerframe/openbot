@@ -434,7 +434,7 @@ export async function executeAgentRun(options: {
                         item.name === input.name,
                     )
                   )
-                    throw new NativeExecutionError("scope_revoked");
+                    throw new NativeExecutionError("invalid_target");
                   return readPluginContent(run, { ...input, kind: "resource" }, signal);
                 }),
             }),
@@ -538,7 +538,7 @@ export async function executeAgentRun(options: {
                 observe("read_skill", async () => {
                   const descriptor = catalog.skills.find((item) => item.id === skillId);
                   if (!descriptor || !store.readSkill)
-                    throw new NativeExecutionError("scope_revoked");
+                    throw new NativeExecutionError("invalid_target");
                   let pending = skillReads.get(skillId);
                   if (!pending) {
                     if (skillReads.size >= 2) throw new NativeExecutionError("task_limit");
@@ -557,7 +557,7 @@ export async function executeAgentRun(options: {
                     document.revision !== descriptor.revision ||
                     document.sha256 !== descriptor.sha256
                   )
-                    throw new NativeExecutionError("scope_revoked");
+                    throw new NativeExecutionError("skills_changed");
                   return document;
                 }),
             }),
@@ -1021,7 +1021,7 @@ export class NativeAgentRunner {
           : undefined;
       const waitForTask = async (runId: string) => {
         const child = childTasks.get(runId);
-        if (!child) throw new NativeExecutionError("scope_revoked");
+        if (!child) throw new NativeExecutionError("invalid_target");
         const result = await abortable(child.done, signal);
         consumedChildren.add(runId);
         return result;

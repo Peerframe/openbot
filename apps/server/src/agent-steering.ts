@@ -99,7 +99,7 @@ export async function assertSteeringApplied(tx: Transaction, run: Run, appliedId
     .from(runs)
     .where(and(eq(runs.id, run.id), eq(runs.status, "running")))
     .for("update");
-  if (!active) throw new NativeExecutionError("scope_revoked");
+  if (!active) throw new NativeExecutionError("conflict");
   const instructions = await readSteering(tx, run);
   if (instructions.some((instruction) => !appliedIds.includes(instruction.id)))
     throw new PendingSteeringError();

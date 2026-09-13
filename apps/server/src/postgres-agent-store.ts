@@ -185,7 +185,7 @@ export class PostgresAgentStore implements AgentRunStore {
       .from(bots)
       .where(eq(bots.id, run.botId))
       .limit(1);
-    if (!profile) throw new NativeExecutionError("scope_revoked");
+    if (!profile) throw new NativeExecutionError("invalid_target");
     return profile;
   }
   async skills(run: Run) {
@@ -198,7 +198,7 @@ export class PostgresAgentStore implements AgentRunStore {
   async readSkill(run: Run, reference: SkillReference) {
     return this.db.transaction(async (tx) => {
       const [active] = await tx.select({ id: runs.id }).from(runs).where(running(run)).for("share");
-      if (!active) throw new NativeExecutionError("scope_revoked");
+      if (!active) throw new NativeExecutionError("conflict");
       const document = await readSkillDocument(tx, run.botId, reference);
       await tx.insert(runEvents).values({
         id: randomUUID(),
@@ -215,7 +215,7 @@ export class PostgresAgentStore implements AgentRunStore {
     await this.assertScope(run);
     return this.db.transaction(async (tx) => {
       const [active] = await tx.select({ id: runs.id }).from(runs).where(running(run)).for("share");
-      if (!active) throw new NativeExecutionError("scope_revoked");
+      if (!active) throw new NativeExecutionError("conflict");
       const rows = await tx
         .select()
         .from(employeeMemories)
@@ -298,7 +298,7 @@ export class PostgresAgentStore implements AgentRunStore {
         (ref) => !rows.some((row) => row.id === ref.id && row.revision === ref.revision),
       )
     )
-      throw new NativeExecutionError("scope_revoked");
+      throw new NativeExecutionError("memory_changed");
   }
   async usage(run: Run, input: RunModelUsage): Promise<Run> {
     const usage = runModelUsageSchema.parse(input);
@@ -313,7 +313,7 @@ export class PostgresAgentStore implements AgentRunStore {
           ),
         )
         .returning();
-      if (!row) throw new NativeExecutionError("scope_revoked");
+      if (!row) throw new NativeExecutionError("conflict");
       await tx.insert(runEvents).values({
         id: randomUUID(),
         runId: run.id,
@@ -400,7 +400,7 @@ export class PostgresAgentStore implements AgentRunStore {
         ),
       )
       .limit(1);
-    if (!source) throw new NativeExecutionError("scope_revoked");
+    if (!source) throw new NativeExecutionError("invalid_target");
     const [rootSource] =
       source.rootRunId === null
         ? []
@@ -416,7 +416,7 @@ export class PostgresAgentStore implements AgentRunStore {
               ),
             )
             .limit(1);
-    if (source.rootRunId !== null && !rootSource) throw new NativeExecutionError("scope_revoked");
+    if (source.rootRunId !== null && !rootSource) throw new NativeExecutionError("invalid_target");
     const inputCutoff = rootSource?.createdAt ?? source.createdAt;
     const [started] = await this.db
       .select({ createdAt: runEvents.createdAt })
@@ -426,7 +426,7 @@ export class PostgresAgentStore implements AgentRunStore {
       .limit(1);
     // Freeze history at the persisted start, not at each model tool call. New human messages
     // remain separate queued tasks; only preceding task trees may contribute late Bot replies.
-    if (!started) throw new NativeExecutionError("scope_revoked");
+    if (!started) throw new NativeExecutionError("conflict");
     const cutoff = started.createdAt;
     const projection = {
       id: messages.id,
@@ -596,7 +596,7 @@ export class PostgresAgentStore implements AgentRunStore {
               !memories.some((memory) => memory.id === ref.id && memory.revision === ref.revision),
           )
         )
-          throw new NativeExecutionError("scope_revoked");
+          throw new NativeExecutionError("memory_changed");
       }
       const [message] = await tx
         .insert(messages)
