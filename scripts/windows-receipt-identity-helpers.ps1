@@ -93,21 +93,41 @@ function Format-ProcessIdentityEvidence {
 function Get-CanonicalProcessIdentity {
   param(
     [Parameter(Mandatory = $true)][int]$ProcessId,
-    [System.Diagnostics.Process]$HeldProcess = $null
+    [System.Diagnostics.Process]$HeldProcess = $null,
+    [ValidateRange(1, 10000)][int]$TimeoutMs = 5000
   )
   $proc = if ($null -ne $HeldProcess) { $HeldProcess } else { [Diagnostics.Process]::GetProcessById($ProcessId) }
+  $clock = [Diagnostics.Stopwatch]::StartNew()
   try {
-    $null = $proc.Handle
+    $heldHandle = $proc.Handle
     if ($proc.Id -ne $ProcessId) { throw 'Held process identity does not match the requested process.' }
-    if ($proc.HasExited) {
-      throw "Process $ProcessId exited before identity could be observed."
-    }
-    return [pscustomobject]@{
-      pid = [int]$proc.Id
-      startTimeUtc = $proc.StartTime.ToUniversalTime().ToString('o', [Globalization.CultureInfo]::InvariantCulture)
-      executablePath = [string]$proc.MainModule.FileName
+    $startTimeUtc = $proc.StartTime.ToUniversalTime().ToString('o', [Globalization.CultureInfo]::InvariantCulture)
+    while ($true) {
+      # MainModule may be null while the image is loading. Refresh clears metadata,
+      # not the held OS handle; never reacquire another process while waiting.
+      $proc.Refresh()
+      if ($proc.Handle -ne $heldHandle) { throw 'Held process handle changed during identity observation.' }
+      if ($proc.HasExited) { throw "Process $ProcessId exited before identity could be observed." }
+      $path = [string]$proc.MainModule.FileName
+      if ($proc.HasExited) { throw "Process $ProcessId exited before identity could be observed." }
+      if ($clock.ElapsedMilliseconds -ge $TimeoutMs) {
+        throw [TimeoutException]::new("Process $ProcessId module identity was not ready within $TimeoutMs milliseconds.")
+      }
+      if (-not [string]::IsNullOrWhiteSpace($path)) {
+        return [pscustomobject]@{
+          pid = [int]$proc.Id
+          startTimeUtc = $startTimeUtc
+          executablePath = $path
+        }
+      }
+      # Only missing module data retries. Property/permission exceptions propagate.
+      $waitMs = [int][Math]::Min(50, $TimeoutMs - $clock.ElapsedMilliseconds)
+      if ($waitMs -gt 0 -and $proc.WaitForExit($waitMs)) {
+        throw "Process $ProcessId exited before identity could be observed."
+      }
     }
   } finally {
+    $clock.Stop()
     if ($null -eq $HeldProcess) { $proc.Dispose() }
   }
 }

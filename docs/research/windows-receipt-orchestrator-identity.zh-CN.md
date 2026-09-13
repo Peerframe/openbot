@@ -66,3 +66,17 @@ NSIS _?= 使持有进程覆盖真正卸载，官方契约：https://nsis.sourcef
 - 回归：`scripts/check-windows-receipt-identity.ps1` 双 Node PATH 夹具（Linux/Windows 可跑）。
 
 集成回归覆盖带空格路径。Unix 测试目录链接到现有 Node，Windows 复制可执行文件以免要求符号链接权限。版本检查对持有进程的输出及退出均有等待上限；临时目录删除错误会让检查失败。本机沙箱内运行不能替代 Windows 原生证据。
+
+## 进程刚创建时主模块尚未就绪
+
+2026-09-13 先完成研究再实施。[Windows CI 34748988049](https://github.com/yxflc11/openbot/actions/runs/34748988049/job/103701932039)（PowerShell 7.6.5）已通过 bootstrap，但第一次冷启动失败：持有对象与回执的 PID、启动时间完全一致，立即读取的可执行路径为空。卸载、清理及测试目录删除均通过，不能据此放宽身份比对。
+
+- [Microsoft MainModule 契约](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.mainmodule?view=net-10.0) 明确允许主模块加载前返回 null。[Refresh 契约](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.refresh?view=net-10.0) 说明会清除缓存。
+- 已审 dotnet/runtime **v10.0.9**，Git ref `5eaa18a9f3398d54ba9b8c0974d88171663be892`：[Process.cs](https://github.com/dotnet/runtime/blob/v10.0.9/src/libraries/System.Diagnostics.Process/src/System/Diagnostics/Process.cs) 的 Refresh 与 [Process.Windows.cs](https://github.com/dotnet/runtime/blob/v10.0.9/src/libraries/System.Diagnostics.Process/src/System/Diagnostics/Process.Windows.cs) 的 RefreshCore 不释放或替换已持有句柄；Close 才释放。Windows 主模块 getter 本身不读取模块集合缓存，因此关键是等待模块就绪；Refresh 也会更新退出状态观察。
+- 已审 PowerShell **v7.6.5**，Git ref `8d7d14a86bf05f45ed163b1b1fbfde1ac4682bac`；[global.json](https://github.com/PowerShell/PowerShell/blob/v7.6.5/global.json) 固定 SDK 10.0.303。旧 CI 未输出实际加载的 .NET 补丁版本，新增回归直接输出框架标识，不从 PowerShell 版本推断。
+
+选用标准 Process API：在同一持有对象上最多等待5秒，以单调时钟计时，每次间隔不超过50毫秒。只重试 null/空模块路径；退出、权限错误及其他属性异常立即失败。刷新后句柄不得变化；只有 PID、完整 UTC 启动时间、非空模块路径及存活状态均成立才返回。超时仍失败，不按回执补路径、不在重试中按裸 PID 重取对象、不增加原生互操作、不放宽比对。
+
+回归反复创建真实 Node 子进程后立即调用共享 helper，比较子进程自行报告的 PID/可执行文件、确认刷新保留句柄，并在确认退出后拒绝同一对象；读取和清理均有时间上限。macOS/Linux 结果只能证明该主机上的流程，不能替代 Windows 原生或完整 Electron/NSIS 验收。无新增依赖，无复制或实质改编上游代码；MIT 运行库源码仅用于核对 API 行为。
+
+本机验证：完整前置脚本在 macOS PowerShell 7.5.4 / .NET 9.0.10 通过，涵盖10个真实子进程生命周期的30条断言，以及原有 JSON/多个 Node 路径检查。Windows Node/WinPS 预检明确跳过；本次运行不证明 Windows 瞬时 null 主模块已被实际触发，也不能替代仍待运行的原生安装门禁。

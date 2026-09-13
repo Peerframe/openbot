@@ -1,6 +1,6 @@
 # Independent Windows receipt↔orchestrator identity conformance checks.
 # Exercises the same helpers as the install gate (dot-sourced, not duplicated).
-# - On non-Windows: STJ-primary ISO round-trip + mismatch rejects (pwsh 7.4-safe).
+# - On every host: STJ-primary ISO round-trip, mismatch rejects, and real child startup/exit.
 # - On Windows: also runs bounded comparison with the actual Node/WinPS smoke observer.
 # Does not launch NSIS, smoke.mjs, or product code.
 [CmdletBinding()]
@@ -208,9 +208,75 @@ function Test-DualNodePathResolution {
   }
 }
 
-Write-Host "OpenBot Windows receipt identity checks (pwsh $($PSVersionTable.PSVersion); OS=$([System.Runtime.InteropServices.RuntimeInformation]::OSDescription))"
+function Test-StartedProcessIdentityLifecycle {
+  $nodePath = Get-NodeApplicationPath
+  for ($round = 1; $round -le 10; $round++) {
+    $child = $null
+    try {
+      $info = [Diagnostics.ProcessStartInfo]::new()
+      $info.FileName = $nodePath
+      $info.UseShellExecute = $false
+      $info.CreateNoWindow = $true
+      $info.RedirectStandardInput = $true
+      $info.RedirectStandardOutput = $true
+      $info.RedirectStandardError = $true
+      $info.ArgumentList.Add('-e')
+      $info.ArgumentList.Add('process.stdout.write(JSON.stringify({pid:process.pid,executablePath:process.execPath})+"\n");process.stdin.once("data",()=>process.exit(0));process.stdin.resume();')
+      $child = [Diagnostics.Process]::Start($info)
+      # Observe immediately, before waiting for the child's startup handshake.
+      $identity = Get-CanonicalProcessIdentity -ProcessId $child.Id -HeldProcess $child
+      $originalHandle = $child.Handle
+      $lineTask = $child.StandardOutput.ReadLineAsync()
+      $errorTask = $child.StandardError.ReadToEndAsync()
+      if (!$lineTask.Wait(5000) -or $null -eq $lineTask.Result -or $lineTask.Result.Length -gt 4096) {
+        throw 'Startup identity child did not return a bounded handshake.'
+      }
+      $reported = $lineTask.Result | ConvertFrom-Json
+      Write-CheckResult -Name "Startup $round/10: held identity matches real child PID and executable" -Passed (
+        $identity.pid -eq $reported.pid -and
+        -not [string]::IsNullOrWhiteSpace($identity.executablePath) -and
+        $identity.executablePath -ieq $reported.executablePath -and
+        $identity.startTimeUtc -match '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z$'
+      )
+      $child.Refresh()
+      $refreshed = Get-CanonicalProcessIdentity -ProcessId $child.Id -HeldProcess $child
+      Write-CheckResult -Name "Startup $round/10: refresh retains handle and complete identity" -Passed (
+        $child.Handle -eq $originalHandle -and
+        (Test-ReceiptIdentityEqualsSpawn -ReceiptIdentity $refreshed -SpawnIdentity $identity)
+      )
+
+      $child.StandardInput.WriteLine('exit')
+      $child.StandardInput.Close()
+      if (!$child.WaitForExit(5000)) { throw 'Startup identity child did not exit on request.' }
+      if (!$errorTask.Wait(2000) -or $errorTask.Result.Length -gt 4096 -or $child.ExitCode -ne 0) {
+        throw 'Startup identity child exited unsuccessfully or left its error stream open.'
+      }
+      $exitRejection = ''
+      try {
+        $null = Get-CanonicalProcessIdentity -ProcessId $child.Id -HeldProcess $child
+      } catch {
+        $exitRejection = $_.Exception.Message
+      }
+      Write-CheckResult -Name "Startup $round/10: exited held process cannot produce an identity" -Passed (
+        $exitRejection -match 'exited before identity could be observed'
+      )
+    } catch {
+      Write-CheckResult -Name "Real process startup/exit $round/10" -Passed $false -Detail $_.Exception.Message
+    } finally {
+      if ($null -ne $child) {
+        try {
+          if (!$child.HasExited) { $child.Kill($true) }
+          if (!$child.WaitForExit(5000)) { throw 'Startup identity child cleanup could not be verified.' }
+        } finally { $child.Dispose() }
+      }
+    }
+  }
+}
+
+Write-Host "OpenBot Windows receipt identity checks (pwsh $($PSVersionTable.PSVersion); framework=$([Runtime.InteropServices.RuntimeInformation]::FrameworkDescription); OS=$([System.Runtime.InteropServices.RuntimeInformation]::OSDescription))"
 Test-StjPrimaryIdentityRoundTrip
 Test-DualNodePathResolution
+Test-StartedProcessIdentityLifecycle
 
 $runningOnWindows = [OperatingSystem]::IsWindows()
 if (-not $runningOnWindows) {
