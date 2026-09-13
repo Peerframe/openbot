@@ -298,3 +298,7 @@ Windows 回执集成复用 PowerShell/.NET System.Text.Json 与现有有界 Node
 频道成员布局复用原生控件、CSS Flexbox Level 1（2025-10-14 CRD）与 React 19.2.8 的稳定身份。
 成员样式归到组件自身，在行容器变化后仍保留头像、有界身份文字、独立移除操作及键盘焦点。
 没有新增依赖或复制源码，见[研究](research/channel-member-layout.zh-CN.md)。
+
+原生任务错误分类参考 RFC 9457 的机器类型/人类说明分离原则及 Node.js v22.22.2（2645dc73）
+公开错误码约定，沿用现有 Error/Run 目录。无新 HTTP 错误格式、依赖或源码复制，见
+[分类复核](research/native-failure-classification.zh-CN.md)。
