@@ -1,0 +1,176 @@
+.channel-members-menu {
+  position: relative;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+.channel-members-menu > summary {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  color: #7d838b;
+  cursor: pointer;
+  list-style: none;
+  font-size: 23px;
+  line-height: 1;
+}
+.channel-members-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.channel-members-menu[open] > summary,
+.channel-members-menu > summary:hover {
+  background: #eceef0;
+  color: #333940;
+}
+.channel-members-popover {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 296px;
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
+  max-width: calc(100vw - 28px);
+  padding: 16px;
+  border: 1px solid #e5e7ea;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 36px #00000012;
+  color: #363d47;
+}
+.channel-members-popover h2 {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 620;
+}
+.app-shell .channel-members-menu .channel-members-popover h2 span {
+  color: #7e8791;
+  font-weight: 450;
+}
+.channel-members-list {
+  display: grid;
+  gap: 3px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.channel-member-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.app-shell .channel-members-menu .channel-member-profile {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 7px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #363d47;
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  cursor: pointer;
+}
+.app-shell .channel-members-menu .channel-member-profile:hover {
+  background: #f4f5f6;
+}
+.channel-member-profile > .robot-avatar.compact {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+}
+.channel-member-identity {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 3px;
+}
+.channel-member-name,
+.channel-member-role {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.channel-member-name {
+  font-size: 12px;
+  font-weight: 600;
+}
+.channel-member-role {
+  color: #818994;
+  font-size: 11px;
+  font-weight: 400;
+}
+.app-shell .channel-members-menu .channel-member-remove {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 5px 7px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #8e3c34;
+  font: inherit;
+  font-size: 11px;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.app-shell .channel-members-menu .channel-member-remove:hover:not(:disabled) {
+  background: #f9eeed;
+}
+.channel-members-menu button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.channel-members-menu :is(summary, button, select):focus-visible {
+  outline: 2px solid #557cbb;
+  outline-offset: -2px;
+}
+.channel-members-popover form {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #eceef0;
+}
+.channel-members-popover label {
+  font-size: 11px;
+  color: #777f8a;
+}
+.channel-members-popover form > div {
+  display: flex;
+  gap: 7px;
+  margin-top: 7px;
+}
+.channel-members-popover select {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid #e2e5e8;
+  border-radius: 6px;
+  background: #fafbfc;
+  padding: 7px;
+  font-size: 11px;
+}
+.app-shell .channel-members-menu .channel-members-popover form button {
+  flex-shrink: 0;
+  padding: 7px 11px;
+  border: 0;
+  border-radius: 6px;
+  background: #292e35;
+  color: #fff;
+  font-size: 11px;
+}
+@media (min-width: 761px) {
+  .desktop-workspace .channel-members-popover {
+    left: 0;
+    right: auto;
+  }
+}

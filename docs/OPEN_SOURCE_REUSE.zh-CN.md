@@ -294,3 +294,7 @@ Windows 回执集成复用 PowerShell/.NET System.Text.Json 与现有有界 Node
 并将匹配的 CSP 放到注入脚本之前。已验证真实 HTTP 并发/重验与 Chromium CSS/React HMR；
 生产和 Desktop 产物保留严格源码策略。保留 Grok PR #62 的初始 Vite API 复用，撤销固定 nonce
 结论。无新依赖、未复制上游源码，见[研究](research/web-dev-csp-nonce.zh-CN.md)。
+
+频道成员布局复用原生控件、CSS Flexbox Level 1（2025-10-14 CRD）与 React 19.2.8 的稳定身份。
+成员样式归到组件自身，在行容器变化后仍保留头像、有界身份文字、独立移除操作及键盘焦点。
+没有新增依赖或复制源码，见[研究](research/channel-member-layout.zh-CN.md)。
