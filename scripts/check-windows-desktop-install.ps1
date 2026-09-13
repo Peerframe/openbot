@@ -29,6 +29,10 @@ if (Test-Path -LiteralPath $target) { throw 'Test installation destination alrea
 $harness = Join-Path $env:RUNNER_TEMP ('OpenBotWindowsColdStart-' + [Guid]::NewGuid().ToString('N'))
 if (Test-Path -LiteralPath $harness) { throw 'Cold-start harness destination already exists.' }
 New-Item -ItemType Directory -Path $harness | Out-Null
+# Outside $target: NSIS silent uninstall must run from a copy with _?= so WaitForExit sees the real work
+# (https://nsis.sourceforge.io/When_I_use_ExecWait_uninstaller.exe_it_doesn%27t_wait_for_the_uninstaller%3F).
+$uninstallCopyDir = Join-Path $env:RUNNER_TEMP ('OpenBotWindowsUninstallCopy-' + [Guid]::NewGuid().ToString('N'))
+if (Test-Path -LiteralPath $uninstallCopyDir) { throw 'Uninstall copy destination already exists.' }
 $receipt = "$harness.final.result.json"
 $stdout = "$harness.stdout.log"
 $stderr = "$harness.stderr.log"
@@ -38,172 +42,12 @@ $failureSummary = $null
 # This-round Electron identity from the held Start-Process handle (not JSON alone).
 $script:currentRoundElectron = $null
 
+$script:windowsReceiptIdentityHelpers = Join-Path $PSScriptRoot 'windows-receipt-identity-helpers.ps1'
+. $script:windowsReceiptIdentityHelpers
+
 function Write-SafeSummary([string]$Message) {
   Write-Host $Message
   $script:failureSummary = $Message
-}
-
-# ConvertFrom-Json (pwsh 7.4 default) coerces ISO timestamps to DateTime.
-# Never use [string]$DateTime for identity — that yields a locale short string without
-# 7-digit fractional seconds. Always restore round-trip ISO via InvariantCulture 'o'.
-function ConvertTo-IsoStartTimeUtc {
-  param([AllowNull()][object]$Value)
-  if ($null -eq $Value) { return $null }
-  if ($Value -is [datetime]) {
-    return $Value.ToUniversalTime().ToString('o', [Globalization.CultureInfo]::InvariantCulture)
-  }
-  $text = [string]$Value
-  if ([string]::IsNullOrWhiteSpace($text)) { return $null }
-  return $text
-}
-
-function ConvertTo-ProcessIdentityRecord {
-  param([AllowNull()]$Raw)
-  if ($null -eq $Raw) { return $null }
-  $pidValue = $Raw.pid
-  if ($null -eq $pidValue) { return $null }
-  return [pscustomobject]@{
-    pid = [int]$pidValue
-    startTimeUtc = ConvertTo-IsoStartTimeUtc $Raw.startTimeUtc
-    executablePath = [string]$Raw.executablePath
-  }
-}
-
-function Format-ProcessIdentityEvidence {
-  param([AllowNull()]$Identity, [string]$Label)
-  $pidText = if ($null -eq $Identity -or $null -eq $Identity.pid) { '<missing>' } else { [string][int]$Identity.pid }
-  $startText = if ($null -eq $Identity -or [string]::IsNullOrWhiteSpace([string]$Identity.startTimeUtc)) {
-    '<missing>'
-  } else {
-    ConvertTo-IsoStartTimeUtc $Identity.startTimeUtc
-  }
-  $pathText = if ($null -eq $Identity -or [string]::IsNullOrWhiteSpace([string]$Identity.executablePath)) {
-    '<missing>'
-  } else {
-    [string]$Identity.executablePath
-  }
-  return ("${Label}={pid=$pidText; startTimeUtc=$startText; executablePath=$pathText}")
-}
-
-# Canonical observer matching smoke's WindowsPowerShell 5.1 contract:
-# GetProcessById → pin Handle → StartTime 'o'+InvariantCulture → MainModule.FileName.
-function Get-CanonicalProcessIdentity {
-  param(
-    [Parameter(Mandatory = $true)][int]$ProcessId,
-    [System.Diagnostics.Process]$HeldProcess = $null
-  )
-  if ($null -ne $HeldProcess) {
-    $null = $HeldProcess.Handle
-  }
-  $proc = [Diagnostics.Process]::GetProcessById($ProcessId)
-  try {
-    $null = $proc.Handle
-    if ($proc.HasExited) {
-      throw "Process $ProcessId exited before identity could be observed."
-    }
-    return [pscustomobject]@{
-      pid = [int]$proc.Id
-      startTimeUtc = $proc.StartTime.ToUniversalTime().ToString('o', [Globalization.CultureInfo]::InvariantCulture)
-      executablePath = [string]$proc.MainModule.FileName
-    }
-  } finally {
-    $proc.Dispose()
-  }
-}
-
-function Get-WindowsPowerShellObserverPath {
-  $systemRoot = $env:SystemRoot
-  if ([string]::IsNullOrWhiteSpace($systemRoot)) {
-    $systemRoot = $env:SYSTEMROOT
-  }
-  if ([string]::IsNullOrWhiteSpace($systemRoot) -or ($systemRoot -notmatch '^[A-Za-z]:\\')) {
-    throw 'Windows system directory is unavailable for the WinPS identity observer.'
-  }
-  $observer = Join-Path $systemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-  if (!(Test-Path -LiteralPath $observer)) {
-    throw "Windows PowerShell 5.1 observer missing at $observer."
-  }
-  return $observer
-}
-
-function Get-WinPSProcessIdentity {
-  param([Parameter(Mandatory = $true)][int]$ProcessId)
-  $observer = Get-WindowsPowerShellObserverPath
-  # Same observation script body smoke uses (EncodedCommand / no cmdlet autoload).
-  $script = @"
-`$ErrorActionPreference = 'Stop'
-`$p = [Diagnostics.Process]::GetProcessById($ProcessId)
-try {
-  `$null = `$p.Handle
-  [Console]::Out.WriteLine(`$p.Id)
-  [Console]::Out.WriteLine(`$p.StartTime.ToUniversalTime().ToString('o', [Globalization.CultureInfo]::InvariantCulture))
-  [Console]::Out.WriteLine([Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(`$p.MainModule.FileName)))
-} finally { `$p.Dispose() }
-"@
-  $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($script))
-  $raw = & $observer -NoLogo -NoProfile -NonInteractive -EncodedCommand $encoded 2>&1
-  if ($LASTEXITCODE -ne 0) {
-    throw "WinPS process observer failed for pid=$ProcessId (exit=$LASTEXITCODE): $raw"
-  }
-  $text = ($raw | Out-String).Trim()
-  $fields = $text -split '\r?\n'
-  if ($fields.Count -ne 3 -or [int]$fields[0] -ne $ProcessId -or [string]::IsNullOrWhiteSpace($fields[1]) -or [string]::IsNullOrWhiteSpace($fields[2])) {
-    throw "WinPS process observer returned incomplete identity fields for pid=$ProcessId."
-  }
-  return [pscustomobject]@{
-    pid = [int]$fields[0]
-    startTimeUtc = [string]$fields[1]
-    executablePath = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($fields[2]))
-  }
-}
-
-function Assert-CrossRuntimeProcessIdentityConsistency {
-  # Fast pre-flight: current host .NET observation must match WinPS 5.1 (smoke) for the same PID.
-  $probe = Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoProfile -NonInteractive -Command "Start-Sleep -Seconds 30"' -PassThru
-  try {
-    $null = $probe.Handle
-    $hostIdentity = Get-CanonicalProcessIdentity -ProcessId ([int]$probe.Id) -HeldProcess $probe
-    $winpsIdentity = Get-WinPSProcessIdentity -ProcessId ([int]$probe.Id)
-    if (
-      [int]$hostIdentity.pid -ne [int]$winpsIdentity.pid -or
-      $hostIdentity.startTimeUtc -ne $winpsIdentity.startTimeUtc -or
-      $hostIdentity.executablePath -ne $winpsIdentity.executablePath
-    ) {
-      $heldEvidence = Format-ProcessIdentityEvidence -Identity $hostIdentity -Label 'host'
-      $winpsEvidence = Format-ProcessIdentityEvidence -Identity $winpsIdentity -Label 'winps'
-      throw "Cross-runtime process identity preflight failed. $heldEvidence $winpsEvidence"
-    }
-    Write-Host "PASS: cross-runtime process identity preflight (pid=$($hostIdentity.pid))."
-  } finally {
-    if ($null -ne $probe) {
-      if (-not $probe.HasExited) {
-        try { $probe.Kill($true) } catch { }
-        $null = $probe.WaitForExit(10000)
-      }
-      $probe.Dispose()
-    }
-  }
-}
-
-function Test-ProcessIdentityMatch {
-  param(
-    [Parameter(Mandatory = $true)]$Recorded,
-    [Parameter(Mandatory = $true)]$Live
-  )
-  if ($null -eq $Recorded -or $null -eq $Live) { return $false }
-  $recordedStart = ConvertTo-IsoStartTimeUtc $Recorded.startTimeUtc
-  $recordedPath = [string]$Recorded.executablePath
-  if ([string]::IsNullOrWhiteSpace($recordedStart)) { return $false }
-  if ([string]::IsNullOrWhiteSpace($recordedPath)) { return $false }
-  if ([int]$Recorded.pid -ne [int]$Live.Id) { return $false }
-  # Match smoke / canonical observer: pin handle, InvariantCulture 'o', MainModule.FileName.
-  $null = $Live.Handle
-  $liveStart = $Live.StartTime.ToUniversalTime().ToString('o', [Globalization.CultureInfo]::InvariantCulture)
-  if ($liveStart -ne $recordedStart) { return $false }
-  $livePath = [string]$Live.MainModule.FileName
-  if ([string]::IsNullOrWhiteSpace($livePath)) { return $false }
-  if ($livePath.ToLowerInvariant() -ne $recordedPath.ToLowerInvariant()) { return $false }
-  return $true
 }
 
 function Stop-VerifiedHarnessIdentity {
@@ -237,38 +81,24 @@ function Stop-VerifiedHarnessIdentity {
   }
 }
 
-function Read-JsonObject([string]$Path) {
+function Read-ProcessIdentityFile([string]$Path) {
+  # STJ primary read of known identity fields only (preserves original ISO startTimeUtc).
   if (!(Test-Path -LiteralPath $Path)) { return $null }
   try {
-    return (Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json)
+    $rawText = Get-Content -LiteralPath $Path -Raw
+    if ([string]::IsNullOrWhiteSpace($rawText)) { return $null }
+    return Read-SmokeRoundIdentities $rawText
   } catch {
     return $null
   }
 }
 
-function Read-NormalizedProcessIdentityFile([string]$Path) {
-  $raw = Read-JsonObject $Path
-  if ($null -eq $raw) { return $null }
-  $normalized = [ordered]@{}
-  foreach ($name in @('server', 'postgres', 'electron')) {
-    if ($null -ne $raw.$name) {
-      $normalized[$name] = ConvertTo-ProcessIdentityRecord $raw.$name
-    }
-  }
-  # Preserve other properties if present (cold-start state may carry more fields).
-  foreach ($prop in $raw.PSObject.Properties) {
-    if ($normalized.Contains($prop.Name)) { continue }
-    $normalized[$prop.Name] = $prop.Value
-  }
-  return [pscustomobject]$normalized
-}
-
 function Stop-RecordedHarnessProcesses {
   # Prefer live-process file (this round, including failure-before-state) then durable state.
   $sources = @()
-  $live = Read-NormalizedProcessIdentityFile $liveProcessesPath
+  $live = Read-ProcessIdentityFile $liveProcessesPath
   if ($null -ne $live) { $sources += $live }
-  $state = Read-NormalizedProcessIdentityFile $statePath
+  $state = Read-ProcessIdentityFile $statePath
   if ($null -ne $state) { $sources += $state }
 
   foreach ($source in $sources) {
@@ -359,8 +189,11 @@ function Invoke-NativeSmoke([string]$Mode, [string]$RoundReceipt, [int]$TimeoutM
     }
     throw "Native smoke mode=$Mode did not complete its assertions (exit=$($smoke.ExitCode))."
   }
-  $roundResult = Get-Content -LiteralPath $RoundReceipt -Raw | ConvertFrom-Json
-  $receiptElectron = ConvertTo-ProcessIdentityRecord $roundResult.electron
+  $receiptRaw = Get-Content -LiteralPath $RoundReceipt -Raw
+  # Other scalars may still come from ConvertFrom-Json; identity fields must be STJ strings.
+  $roundResult = $receiptRaw | ConvertFrom-Json
+  $identities = Read-SmokeRoundIdentities $receiptRaw
+  $receiptElectron = $identities.electron
   if ($null -eq $receiptElectron -or
       [int]$receiptElectron.pid -ne [int]$spawnIdentity.pid -or
       $receiptElectron.startTimeUtc -ne $spawnIdentity.startTimeUtc -or
@@ -369,10 +202,10 @@ function Invoke-NativeSmoke([string]$Mode, [string]$RoundReceipt, [int]$TimeoutM
     $receiptEvidence = Format-ProcessIdentityEvidence -Identity $receiptElectron -Label 'receipt'
     throw "Round receipt does not match the Electron process held by the orchestrator. $heldEvidence $receiptEvidence"
   }
-  # Keep normalized ISO strings on the receipt object so later evidence projection stays exact.
-  $roundResult.electron = $receiptElectron
-  $roundResult.postgres = ConvertTo-ProcessIdentityRecord $roundResult.postgres
-  $roundResult.server = ConvertTo-ProcessIdentityRecord $roundResult.server
+  # Overlay STJ-preserved identity records onto the round object for Assert/Add-RoundEvidence.
+  $roundResult.electron = $identities.electron
+  $roundResult.postgres = $identities.postgres
+  $roundResult.server = $identities.server
   $smoke.Dispose()
   $script:currentRoundElectron = $null
   return $roundResult
@@ -461,7 +294,7 @@ function Test-HarnessProcessOwnership {
 
 try {
   $stage = 'process-identity-preflight'
-  Assert-CrossRuntimeProcessIdentityConsistency
+  Assert-CanonicalProcessIdentityConsistency
   $stage = 'process-identity-negative-checks'
   Test-HarnessProcessOwnership
   $ownershipTestsPassed = $true
@@ -524,25 +357,57 @@ try {
     if (!$script:cleanupVerified) { throw 'Harness process cleanup could not be verified.' }
     if ($passed) { $stage = 'uninstall' }
     $uninstaller = Join-Path $target 'Uninstall OpenBot.exe'
+    $uninstallProcessExitedOk = $false
     if (Test-Path -LiteralPath $uninstaller) {
-      $process = Start-Process -FilePath $uninstaller -ArgumentList '/S' -PassThru
+      # Copy once outside the install tree; invoke with /S _?=<dir> ( _? last, path unquoted ).
+      # Do not wait on the in-place uninstaller stub — it exits after spawning a temp copy.
+      New-Item -ItemType Directory -Path $uninstallCopyDir | Out-Null
+      $uninstallCopy = Join-Path $uninstallCopyDir 'Uninstall OpenBot.exe'
+      Copy-Item -LiteralPath $uninstaller -Destination $uninstallCopy -Force
+      $process = Start-Process -FilePath $uninstallCopy -ArgumentList "/S _?=$target" -PassThru
       try {
-        if (!$process.WaitForExit(60000)) { $process.Kill(); throw 'NSIS uninstall timed out.' }
-        if ($process.ExitCode -ne 0) { throw 'NSIS uninstall failed.' }
-      } finally { $process.Dispose() }
+        $null = $process.Handle
+        if (!$process.WaitForExit(60000)) {
+          try { $process.Kill($true) } catch { }
+          $null = $process.WaitForExit(15000)
+          throw 'NSIS uninstall timed out.'
+        }
+        if ($process.ExitCode -ne 0) { throw "NSIS uninstall failed (exit=$($process.ExitCode))." }
+        $uninstallProcessExitedOk = $true
+      } finally {
+        if ($null -ne $process) { $process.Dispose() }
+      }
+    } elseif (-not (Test-Path -LiteralPath (Join-Path $target 'openbot.exe'))) {
+      # Install never produced openbot.exe (or already gone) — no silent-uninstall wait needed.
+      $uninstallProcessExitedOk = $true
+    } else {
+      throw 'NSIS uninstaller missing while openbot.exe is still present under the install directory.'
     }
-    $deadline = [DateTime]::UtcNow.AddSeconds(30)
-    while ((Test-Path -LiteralPath (Join-Path $target 'openbot.exe')) -and [DateTime]::UtcNow -lt $deadline) {
-      Start-Sleep -Milliseconds 250
+    # Only after the held uninstall process completed: wait for openbot.exe to vanish.
+    if ($uninstallProcessExitedOk) {
+      $deadline = [DateTime]::UtcNow.AddSeconds(30)
+      while ((Test-Path -LiteralPath (Join-Path $target 'openbot.exe')) -and [DateTime]::UtcNow -lt $deadline) {
+        Start-Sleep -Milliseconds 250
+      }
+      if (Test-Path -LiteralPath (Join-Path $target 'openbot.exe')) {
+        throw 'Uninstall left the executable installed.'
+      }
+      $uninstalled = $true
     }
-    if (Test-Path -LiteralPath (Join-Path $target 'openbot.exe')) { throw 'Uninstall left the executable installed.' }
-    $uninstalled = $true
-    Remove-FixtureTreeResilient -Path $target
-    Remove-FixtureTreeResilient -Path $harness
-    foreach ($file in @($receipt, $stdout, $stderr)) {
-      if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file -Force }
+    if ($uninstalled) {
+      Remove-FixtureTreeResilient -Path $target
+      Remove-FixtureTreeResilient -Path $harness
+      Remove-FixtureTreeResilient -Path $uninstallCopyDir
+      foreach ($file in @($receipt, $stdout, $stderr)) {
+        if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file -Force }
+      }
+      $fixtureRemoved = $true
+    } else {
+      # Best-effort remove of the outside uninstall copy even when uninstall did not pass.
+      if (Test-Path -LiteralPath $uninstallCopyDir) {
+        try { Remove-FixtureTreeResilient -Path $uninstallCopyDir } catch { }
+      }
     }
-    $fixtureRemoved = $true
   } finally {
     if ($null -ne $script:currentRoundElectron) { $script:currentRoundElectron.Process.Dispose() }
     # This allowlist is the only uploaded evidence. No raw logs, profile, or fixture secrets.
