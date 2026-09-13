@@ -75,7 +75,8 @@ Database availability remains required for state changes and shutdown.
 
 Cancellation and audit commit before the active request is aborted; stopping a parent also cancels its active descendants. Late results cannot replace a
 cancelled Run. Credential rejection, rate limits, unavailable providers, changed settings, revoked
-scope, tool failures and execution limits have fixed actionable failure messages. No automatic retry
+scope, invalid tool targets, usage conflicts, changed skills or memory, tool failures and
+execution limits have fixed actionable failure messages. No automatic retry
 is performed. See [execution experience research](research/agent-execution-experience.md).
 
 The tools do not expose unshared memory, executable skills, shell, arbitrary local file paths, computer input or approval decisions. Explicit task attachments and per-Bot MCP grants provide the bounded extension paths described above; general private-network access is unavailable. Existing Worker-profile tasks keep their existing dispatcher and

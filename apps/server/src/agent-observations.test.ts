@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { addReportedUsage, runModelUsageSchema } from "./agent-observations.js";
+import {
+  addReportedUsage,
+  nativeFailureMessages,
+  runModelUsageSchema,
+} from "./agent-observations.js";
 import type { LanguageModelUsage } from "ai";
 const identity = { provider: "openai" as const, model: "fixture" };
 const step = (inputTokens: number | undefined, outputTokens: number | undefined) =>
@@ -27,5 +31,16 @@ describe("provider-reported usage", () => {
     expect(runModelUsageSchema.safeParse({ ...usage, provider: "private-host" }).success).toBe(
       false,
     );
+  });
+});
+
+describe("native failure catalogue", () => {
+  it("keeps permission loss separate from invalid targets and resource drift", () => {
+    expect(nativeFailureMessages.scope_revoked).toMatch(/channel/i);
+    expect(nativeFailureMessages.invalid_target).toMatch(/target/i);
+    expect(nativeFailureMessages.invalid_target).not.toMatch(/channel/i);
+    expect(nativeFailureMessages.conflict).toMatch(/state changed/i);
+    expect(nativeFailureMessages.skills_changed).toMatch(/skills changed/i);
+    expect(nativeFailureMessages.memory_changed).toMatch(/memory changed/i);
   });
 });

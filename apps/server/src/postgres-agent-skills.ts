@@ -75,7 +75,7 @@ export async function assertSkillReferences(
         ),
     )
   )
-    throw new NativeExecutionError("scope_revoked");
+    throw new NativeExecutionError("skills_changed");
 }
 
 export async function readSkillDocument(
@@ -85,14 +85,14 @@ export async function readSkillDocument(
 ) {
   await assertSkillReferences(db, botId, [reference]);
   const [row] = await db.select().from(skills).where(eq(skills.id, reference.id));
-  if (!row?.skillMarkdown) throw new NativeExecutionError("scope_revoked");
+  if (!row?.skillMarkdown) throw new NativeExecutionError("skills_changed");
   const parsed = parseSkillDocument(row.skillMarkdown);
   if (
     parsed.sha256 !== reference.sha256 ||
     parsed.name !== row.slug ||
     parsed.description !== row.description
   )
-    throw new NativeExecutionError("scope_revoked");
+    throw new NativeExecutionError("skills_changed");
   return {
     ...reference,
     name: row.slug,

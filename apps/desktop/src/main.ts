@@ -17,6 +17,7 @@ import {
   utilityProcess,
   type WebContents,
 } from "electron";
+import { originalAttachmentSaveDialog } from "./attachment-save-dialog.js";
 import { FileDesktopConnectionStore } from "./connection-config.js";
 import { DesktopConnectionController } from "./connection-controller.js";
 import { desktopWindowIconPath } from "./desktop-icon.js";
@@ -32,9 +33,9 @@ import {
   isDesktopAssetRequestMethod,
   resolveDesktopAssetPath,
 } from "./local-content.js";
-import { DesktopMicrophonePolicy } from "./microphone-policy.js";
 import { DesktopLocalWorkerController } from "./local-worker-controller.js";
 import { MacOSWorkerCompanion } from "./macos-worker-companion.js";
+import { DesktopMicrophonePolicy } from "./microphone-policy.js";
 import { NativeServerController } from "./native-server.js";
 import { DesktopNavigationMenuController } from "./navigation-menu.js";
 import { desktopProfileCompatibility } from "./profile-compatibility.js";
@@ -189,13 +190,7 @@ function registerDesktopIpc(
     chooseAttachmentPath: async (name) => {
       const window = mainWindow;
       if (!window || window.isDestroyed()) return undefined;
-      const result = await dialog.showSaveDialog(window, {
-        title: "Save original attachment",
-        buttonLabel: "Save",
-        defaultPath: name,
-        message: "Existing files will not be overwritten.",
-        showsTagField: false,
-      });
+      const result = await dialog.showSaveDialog(window, originalAttachmentSaveDialog(name));
       return result.canceled ? undefined : result.filePath;
     },
     choosePath: async (name) => {

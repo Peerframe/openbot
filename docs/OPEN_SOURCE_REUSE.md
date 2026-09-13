@@ -342,6 +342,17 @@ A narrow Server adapter rejects whitespace-only extraction before persisting suc
 legacy empty derived records before inference. No new PDF OCR or automatic binary fallback.
 No copied source; see [research](research/attachment-empty-extraction.md).
 
+### Chinese attachment extract-failure and original-save copy
+
+Reuse the existing exact-key presentation map (`nativeRunFailure`) and Electron 44.2.0
+`dialog.showSaveDialog` title/buttonLabel/message (`aa650d74597c652878629df0038a50485e156a09`,
+MIT). Map only the two Server empty-extract English sentences to Chinese; unknown, prefixed,
+or sibling failures stay unmapped so they cannot become the scanned-PDF reason. Translate the
+original-save dialog to match the Chinese report/image/employee dialogs. Reject i18next 26.4.2
+(`4dba50f20669c3678db0812255716eb7693ad2da`, MIT) for two strings. Server error semantics,
+original retention, cancel/retry, parser, OCR, and permissions are unchanged. No source copied;
+see [research](research/zh-attachment-copy.md).
+
 Windows receipt integration reuses PowerShell/.NET System.Text.Json and the existing bounded Node/WinPS process observer. Preserve literal timestamp precision and wait for the actual NSIS uninstall process; no new dependency or copied source. See [research](research/windows-receipt-orchestrator-identity.md).
 
 ### Web Vite serve CSP nonce
@@ -359,3 +370,7 @@ Channel member layout reuses native controls and CSS Flexbox Level 1 (2025-10-14
 React 19.2.8 stable identities. Component-owned styles preserve avatars, bounded identity text,
 independent removal actions and keyboard focus after the row wrapper changed. No dependency or
 copied source; see [research](research/channel-member-layout.md).
+
+Native Run failure classification follows RFC 9457's machine-type/human-detail separation and
+Node.js v22.22.2 (`2645dc73`) public error-code guidance inside the existing Error/Run catalogue.
+No new HTTP error format, dependency or copied source; see the [classification review](research/native-failure-classification.md).
