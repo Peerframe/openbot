@@ -284,6 +284,15 @@ Tesseract.js 7.0.0（`42eae669e4b3a66429d8516f078912cc747a89df`，Apache-2.0）�
 Server 在保存成功状态前拒绝仅含空白的提取结果，并在模型调用前拒绝历史空文本记录。
 未新增 PDF OCR，也不会自动改为发送原文件。没有复制上游源码，见[研究记录](research/attachment-empty-extraction.md)。
 
+### 附件空提取失败与保存原件的中文文案
+
+复用既有精确键展示映射（`nativeRunFailure`）与 Electron 44.2.0 `showSaveDialog` 的
+title/buttonLabel/message（`aa650d74597c652878629df0038a50485e156a09`，MIT）。
+仅把 Server 两条空提取英文句子映射为中文；未知、带前缀或相邻失败保持原文，避免被说成扫描件。
+原件保存对话框与报告/图片/员工对话框一致使用中文。拒绝为两句文案引入 i18next 26.4.2
+（`4dba50f20669c3678db0812255716eb7693ad2da`，MIT）。Server 错误语义、原文件保留、取消/重试、
+解析器、OCR 与权限不变。未复制源码，见[研究](research/zh-attachment-copy.zh-CN.md)。
+
 Windows 回执集成复用 PowerShell/.NET System.Text.Json 与现有有界 Node/WinPS 进程观察器，保留原始时间戳精度并等待真正的 NSIS 卸载进程；不新增依赖、不复制上游源码。见[研究](research/windows-receipt-orchestrator-identity.zh-CN.md)。
 
 ### Web Vite serve CSP nonce

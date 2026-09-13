@@ -1,9 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  getChannelAttachment,
+  EMPTY_DOCUMENT_EXTRACT_ERROR,
+  EMPTY_PDF_EXTRACT_ERROR,
   getAttachmentImage,
+  getChannelAttachment,
+  presentAttachmentProcessError,
   splitMessageAttachments,
+  updateAttachment,
 } from "./channel-attachment-client";
+
 const id = "00000000-0000-4000-8000-000000000001";
 const attachment = {
   id,
@@ -106,5 +111,73 @@ describe("channel attachment display boundary", () => {
       ),
     ).rejects.toThrow("不支持");
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("attachment process error presentation", () => {
+  it("maps only exact Server empty-extract copy and leaves unknown reasons unchanged", () => {
+    expect(presentAttachmentProcessError(EMPTY_PDF_EXTRACT_ERROR)).toBe(
+      "未找到可读的 PDF 文字。该 PDF 可能是扫描件或空白文档。请上传 PNG/JPEG 页面后选择图片文字识别，或使用带有可读文字层的 PDF。",
+    );
+    expect(presentAttachmentProcessError(EMPTY_DOCUMENT_EXTRACT_ERROR)).toBe(
+      "未找到可读文字。请检查原文件，并使用包含可读内容的附件重试。",
+    );
+    expect(presentAttachmentProcessError(EMPTY_DOCUMENT_EXTRACT_ERROR)).not.toContain("扫描件");
+    expect(presentAttachmentProcessError("No readable PDF text was found.")).toBe(
+      "No readable PDF text was found.",
+    );
+    expect(presentAttachmentProcessError(`${EMPTY_PDF_EXTRACT_ERROR} extra`)).toBe(
+      `${EMPTY_PDF_EXTRACT_ERROR} extra`,
+    );
+    expect(presentAttachmentProcessError("PDF password is missing or incorrect.")).toBe(
+      "PDF password is missing or incorrect.",
+    );
+    expect(presentAttachmentProcessError("Attachment processing timed out.")).toBe(
+      "Attachment processing timed out.",
+    );
+  });
+  it("localizes an exact empty-PDF process response without inventing success", async () => {
+    const pdf = {
+      ...attachment,
+      name: "scan.pdf",
+      mediaType: "application/pdf" as const,
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockImplementation(() =>
+          Promise.resolve(
+            new Response(JSON.stringify({ error: EMPTY_PDF_EXTRACT_ERROR }), { status: 415 }),
+          ),
+        ),
+    );
+    await expect(updateAttachment(pdf, "extract")).rejects.toThrow(
+      "未找到可读的 PDF 文字。该 PDF 可能是扫描件或空白文档。请上传 PNG/JPEG 页面后选择图片文字识别，或使用带有可读文字层的 PDF。",
+    );
+  });
+  it("does not map an unknown process failure onto the empty-PDF reason", async () => {
+    const pdf = {
+      ...attachment,
+      name: "scan.pdf",
+      mediaType: "application/pdf" as const,
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({ error: "Attachment parser exceeded resources or failed." }),
+            {
+              status: 413,
+            },
+          ),
+        ),
+      ),
+    );
+    await expect(updateAttachment(pdf, "extract")).rejects.toThrow(
+      "Attachment parser exceeded resources or failed.",
+    );
+    await expect(updateAttachment(pdf, "extract")).rejects.not.toThrow("扫描件");
   });
 });

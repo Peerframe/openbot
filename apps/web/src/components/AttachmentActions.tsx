@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { downloadAttachment, updateAttachment } from "../channel-attachment-client";
+import {
+  downloadAttachment,
+  presentAttachmentProcessError,
+  updateAttachment,
+} from "../channel-attachment-client";
 import type { UploadedComposerAttachment } from "../composer-context";
 
 export function AttachmentActions({
@@ -50,7 +54,9 @@ export function AttachmentActions({
       }
     } catch (cause) {
       if (!controller.signal.aborted)
-        setError(cause instanceof Error ? cause.message : "附件操作失败。");
+        setError(
+          cause instanceof Error ? presentAttachmentProcessError(cause.message) : "附件操作失败。",
+        );
     } finally {
       if (pending.current === controller) {
         pending.current = undefined;
