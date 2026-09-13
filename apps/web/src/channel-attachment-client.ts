@@ -2,6 +2,25 @@ import { ATTACHMENT_MEDIA_TYPES, type UploadedComposerAttachment } from "./compo
 
 const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/iu;
 
+/** Exact Server English extract-failure copy. Substring or prefix matches must not map. */
+export const EMPTY_PDF_EXTRACT_ERROR =
+  "No readable PDF text was found. The PDF may be scanned or blank. Upload PNG/JPEG pages and choose image OCR, or use a PDF with a text layer.";
+export const EMPTY_DOCUMENT_EXTRACT_ERROR =
+  "No readable text was found. Check the original attachment and retry with readable content.";
+
+const ATTACHMENT_PROCESS_ERROR_ZH = new Map<string, string>([
+  [
+    EMPTY_PDF_EXTRACT_ERROR,
+    "未找到可读的 PDF 文字。该 PDF 可能是扫描件或空白文档。请上传 PNG/JPEG 页面后选择图片文字识别，或使用带有可读文字层的 PDF。",
+  ],
+  [EMPTY_DOCUMENT_EXTRACT_ERROR, "未找到可读文字。请检查原文件，并使用包含可读内容的附件重试。"],
+]);
+
+/** Present known Server extract failures in Chinese. Unknown text is returned unchanged. */
+export function presentAttachmentProcessError(message: string): string {
+  return ATTACHMENT_PROCESS_ERROR_ZH.get(message) ?? message;
+}
+
 function attachmentPath(channelId: string, attachmentId: string): string {
   if (!UUID.test(attachmentId)) throw new Error("附件标识无效。");
   return `/api/v1/channels/${encodeURIComponent(channelId)}/attachments/${encodeURIComponent(attachmentId)}`;
@@ -139,7 +158,11 @@ export async function updateAttachment(
   );
   if (!response.ok) {
     const error = JSON.parse(data) as { error?: string };
-    throw new Error(typeof error.error === "string" ? error.error.slice(0, 300) : "附件操作失败。");
+    throw new Error(
+      typeof error.error === "string"
+        ? presentAttachmentProcessError(error.error.slice(0, 300))
+        : "附件操作失败。",
+    );
   }
   return getChannelAttachment(
     attachment.channelId,
