@@ -284,5 +284,13 @@ Tesseract.js 7.0.0（`42eae669e4b3a66429d8516f078912cc747a89df`，Apache-2.0）�
 Server 在保存成功状态前拒绝仅含空白的提取结果，并在模型调用前拒绝历史空文本记录。
 未新增 PDF OCR，也不会自动改为发送原文件。没有复制上游源码，见[研究记录](research/attachment-empty-extraction.md)。
 
-
 Windows 回执集成复用 PowerShell/.NET System.Text.Json 与现有有界 Node/WinPS 进程观察器，保留原始时间戳精度并等待真正的 NSIS 卸载进程；不新增依赖、不复制上游源码。见[研究](research/windows-receipt-orchestrator-identity.zh-CN.md)。
+
+### Web Vite serve CSP nonce
+
+复用 Vite **8.2.2** / `de1111ab0be00879b404e7ed3b2a80e264edddc1`（MIT）的 `html.cspNonce`，使本地
+`vite` serve 可为 script/style 与 `csp-nonce` meta 盖章，而无需 `'unsafe-inline'`。
+仅 serve 的薄适配等待完整 Vite HTML 流水线后，为每份主文档填入新的 192 位加密随机 nonce，
+并将匹配的 CSP 放到注入脚本之前。已验证真实 HTTP 并发/重验与 Chromium CSS/React HMR；
+生产和 Desktop 产物保留严格源码策略。保留 Grok PR #62 的初始 Vite API 复用，撤销固定 nonce
+结论。无新依赖、未复制上游源码，见[研究](research/web-dev-csp-nonce.zh-CN.md)。
