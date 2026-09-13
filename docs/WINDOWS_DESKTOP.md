@@ -20,8 +20,42 @@ Normal quit first asks the Server to stop through its private parent process cha
 
 ## Verification and current limits
 
-The Windows CI job builds and makes NSIS, installs it into a unique temporary directory, verifies the installed ASAR hash, exercises the **installed** native runtime with Electron DPAPI, real PostgreSQL, schema migration, Owner authentication, stop, persistent restart, and uninstall. The separate native ACL test checks actual NTFS ACLs. Read the actual CI run result for the source commit; adding a workflow is not evidence it passed.
+The Windows CI job builds and makes NSIS, installs it into a unique temporary directory, verifies the installed ASAR hash, exercises the **installed** native runtime with Electron DPAPI, real PostgreSQL, schema migration, Owner authentication, one same-process retained restart, **ten independent Electron process cold starts** (new process identity via start time + path, prior children ended, PG row + bootstrap ciphertext digest persistence, Owner login counts), and uninstall. The separate native ACL test checks actual NTFS ACLs. Read the actual CI run result for the source commit; adding a workflow is not evidence it passed.
 
-The development host for this change is macOS. Local portable tests and [hosted Windows execution](https://github.com/yxflc11/openbot/actions/runs/34497646235) passed, including positive completion evidence for DPAPI, migrations, Owner login, retained data, stop/restart and cleanup. The smoke harness uses the same controller and installed runtime but does not drive the installed application window. Manual Windows desktop/SmartScreen, code signing, accessibility and real computer-control conformance remain separate acceptance steps. Windows ARM64 is not a supported package target.
+### How to run the cold-start acceptance gate locally (Windows x64)
+
+Prerequisites: a built per-user NSIS installer, the matching packaged `OpenBot-win32-x64` directory, the pinned Electron development executable, and the smoke script from this repository. Use only disposable temp directories (the script creates its own under `%RUNNER_TEMP%` or fails closed).
+
+```powershell
+$version = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).version
+$electronPathFile = Join-Path $env:TEMP 'openbot-electron-path.txt'
+node -e "const r=require('node:module').createRequire(require('node:path').resolve('apps/desktop/package.json'));require('node:fs').writeFileSync(process.argv[1],r('electron'));" $electronPathFile
+$electron = Get-Content -LiteralPath $electronPathFile -Raw
+$env:RUNNER_TEMP = $env:TEMP
+./scripts/check-windows-desktop-install.ps1 `
+  -Installer "$PWD/apps/desktop/out/installers/win32-x64/openbot-desktop-$version-win32-x64.exe" `
+  -PackagedDirectory "$PWD/apps/desktop/out/OpenBot-win32-x64" `
+  -Electron $electron `
+  -SmokeScript "$PWD/apps/desktop/scripts/windows-native-smoke.mjs"
+```
+
+Pass criteria: the script prints `PASS: native smoke receipt verified (postgresql,migrations,dpapi,owner-login,retained-data,stop,restart,cleanup,cold-start-10)` and completes uninstall. Same-process controller stop/start loops alone are **not** cold-start evidence.
+
+The gate retains `summary.json` in the printed evidence directory (or the explicit
+`-EvidenceDirectory`). CI uploads it as `windows-desktop-cold-start-<source SHA>`,
+including on failure after the gate starts. It records bootstrap plus ten cold
+rounds, observed Electron/Server/PostgreSQL identities, successful login counts,
+the unchanged bootstrap ciphertext digest, process-ownership negative checks,
+and uninstall outcome. Only these projected fields are retained; fixture
+profiles, raw ciphertext, passwords, and diagnostic logs are not uploaded.
+
+
+Portable harness unit tests (Linux/macOS/Windows):
+
+```bash
+npm test --workspace @openbot/desktop -- scripts/windows-native-smoke-harness.test.mjs
+```
+
+The development host for earlier Windows Desktop work was macOS. Historical [hosted Windows execution](https://github.com/yxflc11/openbot/actions/runs/34497646235) passed the pre-cold-start receipt. **Ten-lifetime cold-start evidence for this branch remains pending Windows CI.** The smoke harness uses the same controller and installed runtime but does not drive the installed application window. Manual Windows desktop/SmartScreen, code signing, accessibility and real computer-control conformance remain separate acceptance steps. Windows ARM64 is not a supported package target.
 
 The Windows Worker Host service remains a separately reviewed component. Its SCM installer, identity and real-device acceptance cannot be inferred from Desktop installation. Windows PostgreSQL is built from the pinned official 17.11 source using Meson/MSVC with optional dependencies disabled and a static MSVC runtime. Packaging requires the source-build manifest and verifies every installed file; the former npm binary package is not accepted. Review the CI provenance, bundled licenses and code-signing result before advertising an attested production binary; see [research](research/windows-desktop-completion.md). No new macOS or Linux adaptation is included in this milestone.

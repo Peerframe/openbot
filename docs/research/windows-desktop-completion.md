@@ -70,3 +70,7 @@ The Windows-only synthetic harness also uses Electron 44.2.0's reviewed `utility
 ## Hosted acceptance result (2026-09-11)
 
 [CI 34497646235](https://github.com/yxflc11/openbot/actions/runs/34497646235), source `7d0b0cfd18ac80a91a75001ebc6d295abd604202`, completed all jobs. Windows job 102940089408 explicitly printed `PASS: native smoke receipt verified (postgresql,migrations,dpapi,owner-login,retained-data,stop,restart,cleanup)` and confirmed NSIS install, installed native runtime and uninstall checks. This validates the restricted-token launcher with the actual installed runtime; a successful main push CI is still independently required as the source for a published installer. No real-device, signing or arbitrary computer-control conformance is inferred.
+
+## Cold-start lifetimes (alpha.8)
+
+The historical smoke proved retained data inside **one** Electron process (controller stop/start). Alpha.8 acceptance requires ten **separate** Electron process lifetimes after bootstrap. Research and implementation notes live in [windows-cold-start-conformance.md](windows-cold-start-conformance.md). The install script orchestrates `bootstrap` then ten `cold-start` Electron invocations; the final receipt must include `cold-start-10` without dropping `postgresql,migrations,dpapi,owner-login,retained-data,stop,restart,cleanup`. Hosted Windows evidence for the extended receipt remains required before claiming the gate passed on a given commit.

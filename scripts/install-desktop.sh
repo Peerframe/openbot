@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Download only versioned assets from the OpenBot release repository. Never execute a response
 # as shell code, disable OS trust checks, elevate privileges, or replace an existing installation.
-version="${1:-0.1.0-alpha.7}"
+version="${1:-0.1.0-alpha.8}"
 if [[ "$version" == "--help" ]]; then
   echo 'Usage: bash install-desktop.sh [version]'
   echo 'Installs macOS arm64 to ~/Applications or Linux x64 to ~/.local/opt/openbot/<version>.'

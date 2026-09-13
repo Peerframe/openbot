@@ -1,5 +1,7 @@
+import { randomBytes } from "node:crypto";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
+import { rewriteIndexHtmlCspForDev, WEB_DEV_CSP_NONCE_PLACEHOLDER } from "./src/dev-csp-nonce";
 import { pluginProxyDocument } from "./src/plugin-app-sandbox";
 
 function pluginSandboxDocument(): Plugin {
@@ -23,8 +25,31 @@ function pluginSandboxDocument(): Plugin {
   };
 }
 
-export default defineConfig(({ mode }) => {
+/**
+ * Serve-only: align the meta CSP with Vite `html.cspNonce` so injected CSS/JS
+ * are allowed without `'unsafe-inline'`. Not registered for build or Desktop.
+ */
+function pluginDevCspNonce(): Plugin {
+  return {
+    name: "openbot-web-dev-csp-nonce",
+    apply: "serve",
+    configureServer(server) {
+      const transformIndexHtml = server.transformIndexHtml.bind(server);
+      // Vite stamps nonce attributes after every user HTML hook. Finalize the
+      // response only after that pipeline, without changing shared Vite config.
+      server.transformIndexHtml = async (url, html, originalUrl) => {
+        const transformed = await transformIndexHtml(url, html, originalUrl);
+        if (url !== "/index.html") return transformed;
+        return rewriteIndexHtmlCspForDev(transformed, randomBytes(24).toString("base64"));
+      };
+    },
+  };
+}
+
+export default defineConfig(({ command, mode }) => {
   const desktopRenderer = mode === "desktop";
+  // Only the standard web development document receives response-specific nonces.
+  const enableDevCspNonce = command === "serve" && !desktopRenderer;
 
   return {
     ...(desktopRenderer
@@ -36,7 +61,16 @@ export default defineConfig(({ mode }) => {
           },
         }
       : {}),
-    plugins: [react(), pluginSandboxDocument()],
+    ...(enableDevCspNonce
+      ? {
+          html: { cspNonce: WEB_DEV_CSP_NONCE_PLACEHOLDER },
+        }
+      : {}),
+    plugins: [
+      react(),
+      pluginSandboxDocument(),
+      ...(enableDevCspNonce ? [pluginDevCspNonce()] : []),
+    ],
     server: {
       host: "0.0.0.0",
       port: 5173,

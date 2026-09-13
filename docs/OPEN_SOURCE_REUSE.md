@@ -301,6 +301,8 @@ Native startup diagnostics reuse Node v22.22.2 `diagnostics_channel` (MIT) insid
 
 Windows database startup reuses PostgreSQL REL_17_11 `pg_ctl` restricted-token launch and its documented PID-file/status contracts. The thin adapter verifies cluster, port, PID and start identity before cleanup or stop; no token API implementation or upstream source copied. See [research](research/windows-desktop-completion.md).
 
+Windows Desktop cold-start conformance reuses Electron 44.2.0 `safeStorage` (DPAPI), `utilityProcess`, existing `NativeServerController`, Node `process.kill(pid, 0)` liveness, PostgreSQL `postmaster.pid`, and the inbox PowerShell/`Start-Process` install gate. After one bootstrap lifetime (including one same-process retained restart so historical assertions are not relaxed), the gate runs **ten independent Electron process** start→exit cycles against self-made temp harness directories only. No new dependency and no product runtime change; see [research](research/windows-cold-start-conformance.md).
+
 ## Product repair adapters (2026-09-11)
 
 - Async Desktop credential access and explicit release targets reuse Electron 44.2.0 and existing packaging adapters: [research](research/product-repair-startup.md).
@@ -339,3 +341,16 @@ and Tesseract.js 7.0.0 (`42eae669e4b3a66429d8516f078912cc747a89df`, Apache-2.0).
 A narrow Server adapter rejects whitespace-only extraction before persisting success and rejects
 legacy empty derived records before inference. No new PDF OCR or automatic binary fallback.
 No copied source; see [research](research/attachment-empty-extraction.md).
+
+Windows receipt integration reuses PowerShell/.NET System.Text.Json and the existing bounded Node/WinPS process observer. Preserve literal timestamp precision and wait for the actual NSIS uninstall process; no new dependency or copied source. See [research](research/windows-receipt-orchestrator-identity.md).
+
+### Web Vite serve CSP nonce
+
+Reuse Vite **8.2.2** / `de1111ab0be00879b404e7ed3b2a80e264edddc1` (MIT) `html.cspNonce` so local
+`vite` serve can stamp script/style tags and the `csp-nonce` meta without `'unsafe-inline'`.
+A thin serve-only adapter awaits the full Vite HTML pipeline, replaces its placeholder with a fresh
+192-bit cryptographic nonce for each main document, and places the matching CSP before injected
+scripts. Real HTTP concurrency/revalidation and Chromium CSS/React HMR are verified; production
+and Desktop outputs keep the strict source policy. Retains Grok PR #62’s initial Vite API reuse
+while rejecting its fixed nonce. No new dependency or copied upstream source; see
+[research](research/web-dev-csp-nonce.md).

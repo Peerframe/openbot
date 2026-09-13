@@ -86,6 +86,10 @@ jobs:
       - run: npm ci
       - name: Verify native Desktop bootstrap behavior
         run: node --test scripts/install-desktop.test.mjs
+      - name: Verify Windows receipt identity before native packaging
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/check-windows-receipt-identity.ps1
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build
@@ -150,7 +154,15 @@ jobs:
           node -e "const r=require('node:module').createRequire(require('node:path').resolve('apps/desktop/package.json'));require('node:fs').writeFileSync(process.argv[1],r('electron'));" $electronPathFile
           if ($LASTEXITCODE -ne 0) { throw 'Cannot prepare the pinned Electron test runtime.' }
           $electron = Get-Content -LiteralPath $electronPathFile -Raw
-          ./scripts/check-windows-desktop-install.ps1 -Installer "$env:GITHUB_WORKSPACE/apps/desktop/out/installers/win32-x64/openbot-desktop-$version-win32-x64.exe" -PackagedDirectory "$env:GITHUB_WORKSPACE/apps/desktop/out/OpenBot-win32-x64" -Electron $electron -SmokeScript "$env:GITHUB_WORKSPACE/apps/desktop/scripts/windows-native-smoke.mjs"
+          ./scripts/check-windows-desktop-install.ps1 -Installer "$env:GITHUB_WORKSPACE/apps/desktop/out/installers/win32-x64/openbot-desktop-$version-win32-x64.exe" -PackagedDirectory "$env:GITHUB_WORKSPACE/apps/desktop/out/OpenBot-win32-x64" -Electron $electron -SmokeScript "$env:GITHUB_WORKSPACE/apps/desktop/scripts/windows-native-smoke.mjs" -EvidenceDirectory "$env:RUNNER_TEMP/openbot-windows-native-evidence"
+      - name: Retain Windows cold-start evidence without fixture secrets
+        if: always() && runner.os == 'Windows'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-desktop-cold-start-${{ github.sha }}
+          path: ${{ runner.temp }}/openbot-windows-native-evidence/summary.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: Parse the Windows bootstrap with the native PowerShell parser
         if: runner.os == 'Windows'
         shell: pwsh

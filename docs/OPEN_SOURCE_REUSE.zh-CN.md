@@ -246,6 +246,8 @@ alpha.5 原生参考频道改造继续复用上述已锁定依赖与标准，没
 
 Windows 数据库启动复用 PostgreSQL REL_17_11 的 `pg_ctl` 受限令牌机制及 PID 文件/状态契约。薄适配层在清理或停止前核对集群、端口、PID 与启动身份，没有自行实现令牌 API 或复制上游代码，见 [研究](research/windows-desktop-completion.md)。
 
+Windows 桌面版冷启动符合性复用 Electron 44.2.0 `safeStorage`（DPAPI）、`utilityProcess`、既有 `NativeServerController`、Node `process.kill(pid, 0)` 存活探测、PostgreSQL `postmaster.pid`，以及收件箱 PowerShell/`Start-Process` 安装门禁。在一次 bootstrap 生命周期（含一次同进程保留重启，以免削弱历史断言）之后，门禁对自建临时 harness 目录再执行 **十次彼此独立的 Electron 进程** 启动→退出循环。无新依赖、无产品运行时改动；见[研究](research/windows-cold-start-conformance.zh-CN.md)。
+
 ## 产品修复适配（2026-09-11）
 
 - Desktop 异步凭据访问和显式发行平台选择复用 Electron 44.2.0 与现有打包适配器：[研究](research/product-repair-startup.md)。
@@ -281,3 +283,14 @@ H2 v1 补充选定 RFC 8785 JCS 与 `canonicalize@5.0.0` / `7d97c70c79c9f52070e6
 Tesseract.js 7.0.0（`42eae669e4b3a66429d8516f078912cc747a89df`，Apache-2.0）。
 Server 在保存成功状态前拒绝仅含空白的提取结果，并在模型调用前拒绝历史空文本记录。
 未新增 PDF OCR，也不会自动改为发送原文件。没有复制上游源码，见[研究记录](research/attachment-empty-extraction.md)。
+
+Windows 回执集成复用 PowerShell/.NET System.Text.Json 与现有有界 Node/WinPS 进程观察器，保留原始时间戳精度并等待真正的 NSIS 卸载进程；不新增依赖、不复制上游源码。见[研究](research/windows-receipt-orchestrator-identity.zh-CN.md)。
+
+### Web Vite serve CSP nonce
+
+复用 Vite **8.2.2** / `de1111ab0be00879b404e7ed3b2a80e264edddc1`（MIT）的 `html.cspNonce`，使本地
+`vite` serve 可为 script/style 与 `csp-nonce` meta 盖章，而无需 `'unsafe-inline'`。
+仅 serve 的薄适配等待完整 Vite HTML 流水线后，为每份主文档填入新的 192 位加密随机 nonce，
+并将匹配的 CSP 放到注入脚本之前。已验证真实 HTTP 并发/重验与 Chromium CSS/React HMR；
+生产和 Desktop 产物保留严格源码策略。保留 Grok PR #62 的初始 Vite API 复用，撤销固定 nonce
+结论。无新依赖、未复制上游源码，见[研究](research/web-dev-csp-nonce.zh-CN.md)。
