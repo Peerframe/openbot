@@ -34,19 +34,3 @@
   outline: 2px solid #557cbb;
   outline-offset: 2px;
 }
-.channel-member-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.channel-members-list .channel-member-row > button:first-child {
-  flex: 1;
-  min-width: 0;
-}
-.channel-members-list .channel-member-row > .channel-member-remove {
-  flex: 0 0 auto;
-  width: auto;
-  padding: 5px 7px;
-  font-size: 12px;
-  color: #8e3c34;
-}

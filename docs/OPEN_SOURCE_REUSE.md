@@ -354,3 +354,8 @@ scripts. Real HTTP concurrency/revalidation and Chromium CSS/React HMR are verif
 and Desktop outputs keep the strict source policy. Retains Grok PR #62’s initial Vite API reuse
 while rejecting its fixed nonce. No new dependency or copied upstream source; see
 [research](research/web-dev-csp-nonce.md).
+
+Channel member layout reuses native controls and CSS Flexbox Level 1 (2025-10-14 CRD), with
+React 19.2.8 stable identities. Component-owned styles preserve avatars, bounded identity text,
+independent removal actions and keyboard focus after the row wrapper changed. No dependency or
+copied source; see [research](research/channel-member-layout.md).

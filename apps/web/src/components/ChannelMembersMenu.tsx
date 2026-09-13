@@ -1,6 +1,6 @@
 import type { Bot, Channel } from "@openbot/domain";
 import { useEffect, useRef, useState } from "react";
-import "./MessageReactions.css";
+import "./ChannelMembersMenu.css";
 import { HashIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
 
@@ -75,22 +75,25 @@ export function ChannelMembersMenu({
             <div className="channel-member-row" key={bot.id}>
               <button
                 type="button"
+                className="channel-member-profile"
+                aria-label={`打开 ${bot.name} 的员工档案`}
+                title={`${bot.name}\n${bot.role}`}
                 onClick={() => {
                   if (disclosure.current) disclosure.current.open = false;
                   onOpenBot(bot.id);
                 }}
               >
                 <RobotAvatar bot={bot} compact />
-                <span>
-                  {bot.name}
-                  <small>{bot.role}</small>
+                <span className="channel-member-identity">
+                  <strong className="channel-member-name">{bot.name}</strong>
+                  <small className="channel-member-role">{bot.role}</small>
                 </span>
               </button>
               {onRemove && !channel.directBotId ? (
                 <button
                   type="button"
                   className="channel-member-remove"
-                  aria-label={`Remove ${bot.name} from channel`}
+                  aria-label={`将 ${bot.name} 移出频道`}
                   title="移出频道并停止该 Bot 的活动任务，保留历史消息"
                   disabled={Boolean(removing) || joining}
                   onClick={() => {
