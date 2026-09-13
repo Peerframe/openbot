@@ -43,45 +43,192 @@ function Write-SafeSummary([string]$Message) {
   $script:failureSummary = $Message
 }
 
+# ConvertFrom-Json (pwsh 7.4 default) coerces ISO timestamps to DateTime.
+# Never use [string]$DateTime for identity — that yields a locale short string without
+# 7-digit fractional seconds. Always restore round-trip ISO via InvariantCulture 'o'.
+function ConvertTo-IsoStartTimeUtc {
+  param([AllowNull()][object]$Value)
+  if ($null -eq $Value) { return $null }
+  if ($Value -is [datetime]) {
+    return $Value.ToUniversalTime().ToString('o', [Globalization.CultureInfo]::InvariantCulture)
+  }
+  $text = [string]$Value
+  if ([string]::IsNullOrWhiteSpace($text)) { return $null }
+  return $text
+}
+
+function ConvertTo-ProcessIdentityRecord {
+  param([AllowNull()]$Raw)
+  if ($null -eq $Raw) { return $null }
+  $pidValue = $Raw.pid
+  if ($null -eq $pidValue) { return $null }
+  return [pscustomobject]@{
+    pid = [int]$pidValue
+    startTimeUtc = ConvertTo-IsoStartTimeUtc $Raw.startTimeUtc
+    executablePath = [string]$Raw.executablePath
+  }
+}
+
+function Format-ProcessIdentityEvidence {
+  param([AllowNull()]$Identity, [string]$Label)
+  $pidText = if ($null -eq $Identity -or $null -eq $Identity.pid) { '<missing>' } else { [string][int]$Identity.pid }
+  $startText = if ($null -eq $Identity -or [string]::IsNullOrWhiteSpace([string]$Identity.startTimeUtc)) {
+    '<missing>'
+  } else {
+    ConvertTo-IsoStartTimeUtc $Identity.startTimeUtc
+  }
+  $pathText = if ($null -eq $Identity -or [string]::IsNullOrWhiteSpace([string]$Identity.executablePath)) {
+    '<missing>'
+  } else {
+    [string]$Identity.executablePath
+  }
+  return ("${Label}={pid=$pidText; startTimeUtc=$startText; executablePath=$pathText}")
+}
+
+# Canonical observer matching smoke's WindowsPowerShell 5.1 contract:
+# GetProcessById → pin Handle → StartTime 'o'+InvariantCulture → MainModule.FileName.
+function Get-CanonicalProcessIdentity {
+  param(
+    [Parameter(Mandatory = $true)][int]$ProcessId,
+    [System.Diagnostics.Process]$HeldProcess = $null
+  )
+  if ($null -ne $HeldProcess) {
+    $null = $HeldProcess.Handle
+  }
+  $proc = [Diagnostics.Process]::GetProcessById($ProcessId)
+  try {
+    $null = $proc.Handle
+    if ($proc.HasExited) {
+      throw "Process $ProcessId exited before identity could be observed."
+    }
+    return [pscustomobject]@{
+      pid = [int]$proc.Id
+      startTimeUtc = $proc.StartTime.ToUniversalTime().ToString('o', [Globalization.CultureInfo]::InvariantCulture)
+      executablePath = [string]$proc.MainModule.FileName
+    }
+  } finally {
+    $proc.Dispose()
+  }
+}
+
+function Get-WindowsPowerShellObserverPath {
+  $systemRoot = $env:SystemRoot
+  if ([string]::IsNullOrWhiteSpace($systemRoot)) {
+    $systemRoot = $env:SYSTEMROOT
+  }
+  if ([string]::IsNullOrWhiteSpace($systemRoot) -or ($systemRoot -notmatch '^[A-Za-z]:\\')) {
+    throw 'Windows system directory is unavailable for the WinPS identity observer.'
+  }
+  $observer = Join-Path $systemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+  if (!(Test-Path -LiteralPath $observer)) {
+    throw "Windows PowerShell 5.1 observer missing at $observer."
+  }
+  return $observer
+}
+
+function Get-WinPSProcessIdentity {
+  param([Parameter(Mandatory = $true)][int]$ProcessId)
+  $observer = Get-WindowsPowerShellObserverPath
+  # Same observation script body smoke uses (EncodedCommand / no cmdlet autoload).
+  $script = @"
+`$ErrorActionPreference = 'Stop'
+`$p = [Diagnostics.Process]::GetProcessById($ProcessId)
+try {
+  `$null = `$p.Handle
+  [Console]::Out.WriteLine(`$p.Id)
+  [Console]::Out.WriteLine(`$p.StartTime.ToUniversalTime().ToString('o', [Globalization.CultureInfo]::InvariantCulture))
+  [Console]::Out.WriteLine([Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(`$p.MainModule.FileName)))
+} finally { `$p.Dispose() }
+"@
+  $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($script))
+  $raw = & $observer -NoLogo -NoProfile -NonInteractive -EncodedCommand $encoded 2>&1
+  if ($LASTEXITCODE -ne 0) {
+    throw "WinPS process observer failed for pid=$ProcessId (exit=$LASTEXITCODE): $raw"
+  }
+  $text = ($raw | Out-String).Trim()
+  $fields = $text -split '\r?\n'
+  if ($fields.Count -ne 3 -or [int]$fields[0] -ne $ProcessId -or [string]::IsNullOrWhiteSpace($fields[1]) -or [string]::IsNullOrWhiteSpace($fields[2])) {
+    throw "WinPS process observer returned incomplete identity fields for pid=$ProcessId."
+  }
+  return [pscustomobject]@{
+    pid = [int]$fields[0]
+    startTimeUtc = [string]$fields[1]
+    executablePath = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($fields[2]))
+  }
+}
+
+function Assert-CrossRuntimeProcessIdentityConsistency {
+  # Fast pre-flight: current host .NET observation must match WinPS 5.1 (smoke) for the same PID.
+  $probe = Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoProfile -NonInteractive -Command "Start-Sleep -Seconds 30"' -PassThru
+  try {
+    $null = $probe.Handle
+    $hostIdentity = Get-CanonicalProcessIdentity -ProcessId ([int]$probe.Id) -HeldProcess $probe
+    $winpsIdentity = Get-WinPSProcessIdentity -ProcessId ([int]$probe.Id)
+    if (
+      [int]$hostIdentity.pid -ne [int]$winpsIdentity.pid -or
+      $hostIdentity.startTimeUtc -ne $winpsIdentity.startTimeUtc -or
+      $hostIdentity.executablePath -ne $winpsIdentity.executablePath
+    ) {
+      $heldEvidence = Format-ProcessIdentityEvidence -Identity $hostIdentity -Label 'host'
+      $winpsEvidence = Format-ProcessIdentityEvidence -Identity $winpsIdentity -Label 'winps'
+      throw "Cross-runtime process identity preflight failed. $heldEvidence $winpsEvidence"
+    }
+    Write-Host "PASS: cross-runtime process identity preflight (pid=$($hostIdentity.pid))."
+  } finally {
+    if ($null -ne $probe) {
+      if (-not $probe.HasExited) {
+        try { $probe.Kill($true) } catch { }
+        $null = $probe.WaitForExit(10000)
+      }
+      $probe.Dispose()
+    }
+  }
+}
+
 function Test-ProcessIdentityMatch {
   param(
     [Parameter(Mandatory = $true)]$Recorded,
     [Parameter(Mandatory = $true)]$Live
   )
   if ($null -eq $Recorded -or $null -eq $Live) { return $false }
-  if ([string]::IsNullOrWhiteSpace([string]$Recorded.startTimeUtc)) { return $false }
-  if ([string]::IsNullOrWhiteSpace([string]$Recorded.executablePath)) { return $false }
+  $recordedStart = ConvertTo-IsoStartTimeUtc $Recorded.startTimeUtc
+  $recordedPath = [string]$Recorded.executablePath
+  if ([string]::IsNullOrWhiteSpace($recordedStart)) { return $false }
+  if ([string]::IsNullOrWhiteSpace($recordedPath)) { return $false }
   if ([int]$Recorded.pid -ne [int]$Live.Id) { return $false }
-  $liveStart = $Live.StartTime.ToUniversalTime().ToString('o')
-  if ($liveStart -ne [string]$Recorded.startTimeUtc) { return $false }
-  $livePath = [string]$Live.Path
+  # Match smoke / canonical observer: pin handle, InvariantCulture 'o', MainModule.FileName.
+  $null = $Live.Handle
+  $liveStart = $Live.StartTime.ToUniversalTime().ToString('o', [Globalization.CultureInfo]::InvariantCulture)
+  if ($liveStart -ne $recordedStart) { return $false }
+  $livePath = [string]$Live.MainModule.FileName
   if ([string]::IsNullOrWhiteSpace($livePath)) { return $false }
-  if ($livePath.ToLowerInvariant() -ne ([string]$Recorded.executablePath).ToLowerInvariant()) { return $false }
+  if ($livePath.ToLowerInvariant() -ne $recordedPath.ToLowerInvariant()) { return $false }
   return $true
 }
 
 function Stop-VerifiedHarnessIdentity {
   param([Parameter(Mandatory = $true)]$Recorded, [string]$Label)
-  if ($null -eq $Recorded -or $null -eq $Recorded.pid) { return }
-  if ([string]::IsNullOrWhiteSpace([string]$Recorded.startTimeUtc) -or [string]::IsNullOrWhiteSpace([string]$Recorded.executablePath)) {
+  $identity = ConvertTo-ProcessIdentityRecord $Recorded
+  if ($null -eq $identity -or $null -eq $identity.pid) { return }
+  if ([string]::IsNullOrWhiteSpace([string]$identity.startTimeUtc) -or [string]::IsNullOrWhiteSpace([string]$identity.executablePath)) {
     $script:cleanupVerified = $false
-    Write-Host "Skipping stop for $Label pid=$($Recorded.pid): incomplete recorded identity (refusing PID-only kill)."
+    Write-Host "Skipping stop for $Label pid=$($identity.pid): incomplete recorded identity (refusing PID-only kill)."
     return
   }
   $proc = $null
   try {
-    $proc = Get-Process -Id ([int]$Recorded.pid) -ErrorAction SilentlyContinue
+    $proc = Get-Process -Id ([int]$identity.pid) -ErrorAction SilentlyContinue
     if ($null -eq $proc) { return }
     # Pin the OS process object before querying identity; retain it through Kill.
     $null = $proc.Handle
     if ($proc.HasExited) { return }
-    if (-not (Test-ProcessIdentityMatch -Recorded $Recorded -Live $proc)) {
-      Write-Host "Skipping stop for $Label pid=$($Recorded.pid): live identity does not match recorded harness process."
+    if (-not (Test-ProcessIdentityMatch -Recorded $identity -Live $proc)) {
+      Write-Host "Skipping stop for $Label pid=$($identity.pid): live identity does not match recorded harness process."
       return
     }
     $proc.Kill($true)
     if (!$proc.WaitForExit(10000)) { throw "Verified harness process did not exit." }
-    Write-Host "Stopped leftover harness process $Label pid=$($Recorded.pid) after identity verification."
+    Write-Host "Stopped leftover harness process $Label pid=$($identity.pid) after identity verification."
   } catch {
     $script:cleanupVerified = $false
     Write-Host "Unable to verify cleanup for $Label; no PID-only fallback is allowed."
@@ -99,12 +246,29 @@ function Read-JsonObject([string]$Path) {
   }
 }
 
+function Read-NormalizedProcessIdentityFile([string]$Path) {
+  $raw = Read-JsonObject $Path
+  if ($null -eq $raw) { return $null }
+  $normalized = [ordered]@{}
+  foreach ($name in @('server', 'postgres', 'electron')) {
+    if ($null -ne $raw.$name) {
+      $normalized[$name] = ConvertTo-ProcessIdentityRecord $raw.$name
+    }
+  }
+  # Preserve other properties if present (cold-start state may carry more fields).
+  foreach ($prop in $raw.PSObject.Properties) {
+    if ($normalized.Contains($prop.Name)) { continue }
+    $normalized[$prop.Name] = $prop.Value
+  }
+  return [pscustomobject]$normalized
+}
+
 function Stop-RecordedHarnessProcesses {
   # Prefer live-process file (this round, including failure-before-state) then durable state.
   $sources = @()
-  $live = Read-JsonObject $liveProcessesPath
+  $live = Read-NormalizedProcessIdentityFile $liveProcessesPath
   if ($null -ne $live) { $sources += $live }
-  $state = Read-JsonObject $statePath
+  $state = Read-NormalizedProcessIdentityFile $statePath
   if ($null -ne $state) { $sources += $state }
 
   foreach ($source in $sources) {
@@ -146,7 +310,7 @@ function Assert-SafeRoundReceipt($Round, [string]$ExpectedMode) {
     throw 'Smoke receipt ciphertextDigest must be a sha256 hex digest (no raw ciphertext).'
   }
   foreach ($name in @('electron', 'postgres', 'server')) {
-    $identity = $Round.$name
+    $identity = ConvertTo-ProcessIdentityRecord $Round.$name
     if ($null -eq $identity -or [long]$identity.pid -le 0 -or [long]$identity.pid -gt 2147483647 -or [string]::IsNullOrWhiteSpace([string]$identity.startTimeUtc) -or [string]::IsNullOrWhiteSpace([string]$identity.executablePath)) {
       throw "Smoke receipt missing verified process identity fields for $name."
     }
@@ -173,11 +337,8 @@ function Invoke-NativeSmoke([string]$Mode, [string]$RoundReceipt, [int]$TimeoutM
   # Keep the Start-Process object even if querying its identity fails.
   $script:currentRoundElectron = [pscustomobject]@{ Process = $smoke; Identity = $null }
   $null = $smoke.Handle
-  $spawnIdentity = [pscustomobject]@{
-    pid = [int]$smoke.Id
-    startTimeUtc = $smoke.StartTime.ToUniversalTime().ToString('o')
-    executablePath = [string]$smoke.Path
-  }
+  # Observe with the same .NET fields smoke uses (not Start-Process .Path / culture-default 'o').
+  $spawnIdentity = Get-CanonicalProcessIdentity -ProcessId ([int]$smoke.Id) -HeldProcess $smoke
   $script:currentRoundElectron.Identity = $spawnIdentity
   if (!$smoke.WaitForExit($TimeoutMs)) {
     try {
@@ -199,11 +360,19 @@ function Invoke-NativeSmoke([string]$Mode, [string]$RoundReceipt, [int]$TimeoutM
     throw "Native smoke mode=$Mode did not complete its assertions (exit=$($smoke.ExitCode))."
   }
   $roundResult = Get-Content -LiteralPath $RoundReceipt -Raw | ConvertFrom-Json
-  if ([int]$roundResult.electron.pid -ne $spawnIdentity.pid -or
-      $roundResult.electron.startTimeUtc -ne $spawnIdentity.startTimeUtc -or
-      $roundResult.electron.executablePath -ine $spawnIdentity.executablePath) {
-    throw 'Round receipt does not match the Electron process held by the orchestrator.'
+  $receiptElectron = ConvertTo-ProcessIdentityRecord $roundResult.electron
+  if ($null -eq $receiptElectron -or
+      [int]$receiptElectron.pid -ne [int]$spawnIdentity.pid -or
+      $receiptElectron.startTimeUtc -ne $spawnIdentity.startTimeUtc -or
+      $receiptElectron.executablePath -ine $spawnIdentity.executablePath) {
+    $heldEvidence = Format-ProcessIdentityEvidence -Identity $spawnIdentity -Label 'held'
+    $receiptEvidence = Format-ProcessIdentityEvidence -Identity $receiptElectron -Label 'receipt'
+    throw "Round receipt does not match the Electron process held by the orchestrator. $heldEvidence $receiptEvidence"
   }
+  # Keep normalized ISO strings on the receipt object so later evidence projection stays exact.
+  $roundResult.electron = $receiptElectron
+  $roundResult.postgres = ConvertTo-ProcessIdentityRecord $roundResult.postgres
+  $roundResult.server = ConvertTo-ProcessIdentityRecord $roundResult.server
   $smoke.Dispose()
   $script:currentRoundElectron = $null
   return $roundResult
@@ -218,13 +387,36 @@ function Add-RoundEvidence($Round, [int]$Index) {
     checks = @($Round.checks)
   }
   foreach ($name in @('electron', 'postgres', 'server')) {
+    $identity = ConvertTo-ProcessIdentityRecord $Round.$name
     $record[$name] = [ordered]@{
-      pid = [int]$Round.$name.pid
-      startTimeUtc = [string]$Round.$name.startTimeUtc
-      executablePath = [string]$Round.$name.executablePath
+      pid = [int]$identity.pid
+      startTimeUtc = [string]$identity.startTimeUtc
+      executablePath = [string]$identity.executablePath
     }
   }
   $script:roundEvidence += [pscustomobject]$record
+}
+
+function Remove-FixtureTreeResilient {
+  param([Parameter(Mandatory = $true)][string]$Path)
+  if (!(Test-Path -LiteralPath $Path)) { return }
+  $maxAttempts = 8
+  for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+    try {
+      Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
+    } catch {
+      $message = [string]$_.Exception.Message
+      $isVanished = $message -match 'Could not find file|ItemNotFound|Cannot find path|cannot find the file' -or
+        $_.FullyQualifiedErrorId -match 'PathNotFound|ItemNotFound' -or
+        ($null -ne $_.Exception.InnerException -and [string]$_.Exception.InnerException.Message -match 'Could not find file')
+      if (-not $isVanished) { throw }
+    }
+    if (!(Test-Path -LiteralPath $Path)) { return }
+    Start-Sleep -Milliseconds ([Math]::Min(2000, 100 * [Math]::Pow(2, $attempt - 1)))
+  }
+  if (Test-Path -LiteralPath $Path) {
+    throw "Fixture tree still present after resilient removal: $Path"
+  }
 }
 
 function Test-HarnessProcessOwnership {
@@ -232,11 +424,7 @@ function Test-HarnessProcessOwnership {
   $probe = Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoProfile -NonInteractive -Command "Start-Sleep -Seconds 60"' -PassThru
   try {
     $null = $probe.Handle
-    $identity = [pscustomobject]@{
-      pid = [int]$probe.Id
-      startTimeUtc = $probe.StartTime.ToUniversalTime().ToString('o')
-      executablePath = [string]$probe.Path
-    }
+    $identity = Get-CanonicalProcessIdentity -ProcessId ([int]$probe.Id) -HeldProcess $probe
     $wrongStart = [pscustomobject]@{
       pid = $identity.pid; startTimeUtc = '2000-01-01T00:00:00.0000000Z'; executablePath = $identity.executablePath
     }
@@ -272,6 +460,8 @@ function Test-HarnessProcessOwnership {
 }
 
 try {
+  $stage = 'process-identity-preflight'
+  Assert-CrossRuntimeProcessIdentityConsistency
   $stage = 'process-identity-negative-checks'
   Test-HarnessProcessOwnership
   $ownershipTestsPassed = $true
@@ -347,8 +537,8 @@ try {
     }
     if (Test-Path -LiteralPath (Join-Path $target 'openbot.exe')) { throw 'Uninstall left the executable installed.' }
     $uninstalled = $true
-    if (Test-Path -LiteralPath $target) { Remove-Item -LiteralPath $target -Recurse -Force }
-    if (Test-Path -LiteralPath $harness) { Remove-Item -LiteralPath $harness -Recurse -Force }
+    Remove-FixtureTreeResilient -Path $target
+    Remove-FixtureTreeResilient -Path $harness
     foreach ($file in @($receipt, $stdout, $stderr)) {
       if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file -Force }
     }
