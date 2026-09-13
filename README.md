@@ -24,14 +24,14 @@ A self-hosted workspace for Bots that remember their roles, work together in cha
 
 ## Download
 
-**Desktop 0.1.0-alpha.8**
+**Desktop 0.1.0-alpha.9**
 
 | Platform | Installer | Workspace |
 | --- | --- | --- |
-| macOS · Apple Silicon | [Download DMG](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.8/openbot-desktop-0.1.0-alpha.8-darwin-arm64.dmg) | Built-in Server and PostgreSQL, or connect to your Server |
-| Windows · x64 | [Download EXE](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.8/openbot-desktop-0.1.0-alpha.8-win32-x64.exe) | Built-in Server and PostgreSQL, or connect to your Server |
+| macOS · Apple Silicon | [Download DMG](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.9/openbot-desktop-0.1.0-alpha.9-darwin-arm64.dmg) | Built-in Server and PostgreSQL, or connect to your Server |
+| Windows · x64 | [Download EXE](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.9/openbot-desktop-0.1.0-alpha.9-win32-x64.exe) | Built-in Server and PostgreSQL, or connect to your Server |
 
-Preview installers are unsigned; macOS is not notarized. See [release notes and checksums](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.8) and the [installation guide](docs/DESKTOP_INSTALLATION.md) for system trust prompts, upgrades and other platform builds.
+Preview installers are unsigned; macOS is not notarized. See [release notes and checksums](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.9) and the [installation guide](docs/DESKTOP_INSTALLATION.md) for system trust prompts, upgrades and other platform builds.
 
 ## Start working
 
