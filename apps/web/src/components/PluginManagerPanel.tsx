@@ -1,5 +1,5 @@
 import type { Bot } from "@openbot/domain";
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import {
   listPlugins,
   type Plugin,
@@ -401,18 +401,31 @@ export function PluginGrantEditor({
   const [resources, setResources] = useState<string[]>(initial.resources);
   const [prompts, setPrompts] = useState<string[]>(initial.prompts);
   const [saved, setSaved] = useState(false);
-  useEffect(() => {
+  // Sync draft only when Bot selection or plugin grant revision changes — not on every
+  // new plugin object identity (same-revision reloads must keep dirty drafts).
+  const grantSyncKey =
+    !botId || !selectedBotAvailable ? `unavailable:${botId}` : `${botId}:${plugin.revision}`;
+  const [syncedGrantKey, setSyncedGrantKey] = useState(grantSyncKey);
+  if (grantSyncKey !== syncedGrantKey) {
+    setSyncedGrantKey(grantSyncKey);
     if (!botId || !selectedBotAvailable) {
       setGrants([]);
       setResources([]);
       setPrompts([]);
-      return;
+    } else {
+      const next = grantsForBot(plugin, botId);
+      setGrants(next.tools);
+      setResources(next.resources);
+      setPrompts(next.prompts);
     }
-    const next = grantsForBot(plugin, botId);
-    setGrants(next.tools);
-    setResources(next.resources);
-    setPrompts(next.prompts);
-  }, [plugin, botId, selectedBotAvailable]);
+  }
+  const selectionRef = useRef({ botId, revision: plugin.revision });
+  selectionRef.current = { botId, revision: plugin.revision };
+  const saveEpochRef = useRef(0);
+  function noteDraftEdit() {
+    saveEpochRef.current += 1;
+    setSaved(false);
+  }
   return (
     <form
       className="plugin-grant-editor"
@@ -420,8 +433,20 @@ export function PluginGrantEditor({
       onSubmit={(event) => {
         event.preventDefault();
         if (!botId || !selectedBotAvailable || disabled) return;
+        const submittedBotId = botId;
+        const submittedRevision = plugin.revision;
+        const epoch = saveEpochRef.current;
         void onSave(botId, grants, { resources, prompts })
-          .then(() => setSaved(true))
+          .then(() => {
+            // Bind "已保存" to the submitted Bot/revision; ignore late async after switch/edit.
+            if (
+              saveEpochRef.current === epoch &&
+              selectionRef.current.botId === submittedBotId &&
+              selectionRef.current.revision === submittedRevision
+            ) {
+              setSaved(true);
+            }
+          })
           .catch(() => undefined);
       }}
     >
@@ -433,13 +458,8 @@ export function PluginGrantEditor({
           value={botId}
           disabled={disabled}
           onChange={(event) => {
-            const id = event.target.value;
-            setBotId(id);
-            const next = grantsForBot(plugin, id);
-            setGrants(next.tools);
-            setResources(next.resources);
-            setPrompts(next.prompts);
-            setSaved(false);
+            setBotId(event.target.value);
+            noteDraftEdit();
           }}
         >
           {botId && !selectedBotAvailable ? (
@@ -469,7 +489,7 @@ export function PluginGrantEditor({
                   ? [{ name: tool.name, mode } satisfies PluginGrant]
                   : []),
               ]);
-              setSaved(false);
+              noteDraftEdit();
             }}
           >
             <option value="none">不授权</option>
@@ -490,7 +510,7 @@ export function PluginGrantEditor({
                   ? [...current, resource.uri]
                   : current.filter((uri) => uri !== resource.uri),
               );
-              setSaved(false);
+              noteDraftEdit();
             }}
           />
           {resource.mimeType === "text/html;profile=mcp-app" ? "界面" : "资源"}：{resource.name}
@@ -508,7 +528,7 @@ export function PluginGrantEditor({
                   ? [...current, prompt.name]
                   : current.filter((name) => name !== prompt.name),
               );
-              setSaved(false);
+              noteDraftEdit();
             }}
           />
           提示词：{prompt.name}

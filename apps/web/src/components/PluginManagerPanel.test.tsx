@@ -5,7 +5,12 @@ import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Plugin, PluginManifest } from "../plugin-api";
 import { interact, renderComponent, setInputValue } from "../test/render-component";
-import { PluginGrantEditor, PluginInstallForm, PluginToolList } from "./PluginManagerPanel";
+import {
+  PluginGrantEditor,
+  PluginInstallForm,
+  PluginManager,
+  PluginToolList,
+} from "./PluginManagerPanel";
 
 const manifest: PluginManifest = {
   name: "Example",
@@ -375,6 +380,324 @@ describe("plugin grant Bot selection", () => {
         resources: ["notes://current"],
         prompts: ["review"],
       });
+    } finally {
+      await view.unmount();
+    }
+  });
+
+
+  it("keeps same-revision dirty drafts when the plugin object identity changes", async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    const base: Plugin = {
+      ...plugin,
+      tools: [
+        { name: "write", description: "Write", inputSchema: { type: "object" } },
+        { name: "read", description: "Read", inputSchema: { type: "object" } },
+      ],
+      grants: [
+        {
+          botId: source.id,
+          tools: [{ name: "write", mode: "confirm" }],
+          resources: [],
+          prompts: [],
+        },
+      ],
+    };
+    const view = await renderGrantEditor(
+      <PluginGrantEditor plugin={base} bots={[received, source]} disabled={false} onSave={save} />,
+    );
+    try {
+      const botSelect = view.container.querySelector<HTMLSelectElement>(
+        '[aria-label="Example 接收 Bot"]',
+      );
+      if (!botSelect) throw new Error("Bot select missing");
+      await interact(() => {
+        botSelect.value = source.id;
+        botSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      const permission = view.container.querySelector<HTMLSelectElement>(
+        '[aria-label="write 调用权限"]',
+      );
+      if (!permission) throw new Error("Permission select missing");
+      expect(permission.value).toBe("confirm");
+      await interact(() => {
+        permission.value = "read";
+        permission.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      expect(permission.value).toBe("read");
+      // Same revision, new object identity (e.g. unrelated parent re-render) must not wipe draft.
+      await view.rerender(
+        <PluginGrantEditor
+          plugin={{ ...base }}
+          bots={[received, source]}
+          disabled={false}
+          onSave={save}
+        />,
+      );
+      expect(botSelect.value).toBe(source.id);
+      expect(
+        view.container.querySelector<HTMLSelectElement>('[aria-label="write 调用权限"]')?.value,
+      ).toBe("read");
+    } finally {
+      await view.unmount();
+    }
+  });
+
+  it("binds 已保存 to the submitted Bot and revision across late async completion", async () => {
+    let resolveSave: (() => void) | undefined;
+    const save = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    const base: Plugin = {
+      ...plugin,
+      tools: [{ name: "write", description: "Write", inputSchema: { type: "object" } }],
+      grants: [],
+    };
+    const view = await renderGrantEditor(
+      <PluginGrantEditor plugin={base} bots={[received, source]} disabled={false} onSave={save} />,
+    );
+    try {
+      const botSelect = view.container.querySelector<HTMLSelectElement>(
+        '[aria-label="Example 接收 Bot"]',
+      );
+      if (!botSelect) throw new Error("Bot select missing");
+      await interact(() => {
+        botSelect.value = source.id;
+        botSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      const permission = view.container.querySelector<HTMLSelectElement>(
+        '[aria-label="write 调用权限"]',
+      );
+      if (!permission) throw new Error("Permission select missing");
+      await interact(() => {
+        permission.value = "confirm";
+        permission.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      await interact(() =>
+        view.container
+          .querySelector("form")
+          ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
+      );
+      expect(save).toHaveBeenCalledOnce();
+      expect(view.container.textContent).not.toContain("已保存");
+      // Switch Bot before the slow save resolves — late success must not mark the new Bot saved.
+      await interact(() => {
+        botSelect.value = received.id;
+        botSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      await act(async () => {
+        resolveSave?.();
+      });
+      expect(view.container.textContent).not.toContain("已保存");
+      expect(botSelect.value).toBe(received.id);
+    } finally {
+      await view.unmount();
+    }
+  });
+});
+
+describe("PluginManager grant save regression", () => {
+  const received: Bot = {
+    id: "received",
+    name: "Received",
+    role: "research",
+    status: "idle",
+    computerProfile: "none",
+    createdAt: plugin.createdAt,
+  };
+  const source: Bot = {
+    id: "source",
+    name: "Source",
+    role: "research",
+    status: "idle",
+    computerProfile: "none",
+    createdAt: plugin.createdAt,
+  };
+
+  function apiPath(input: RequestInfo | URL): string {
+    return String(input).replace(/^.*\/api\/v1\//, "");
+  }
+
+  it("keeps the second Bot after GET → delayed PUT → revision GET, and covers fail/uninstall", async () => {
+    const installed: Plugin = {
+      ...plugin,
+      id: "plugin-1",
+      name: "Example",
+      revision: "rev-1",
+      enabled: false,
+      tools: [
+        { name: "write", description: "Write", inputSchema: { type: "object" } },
+        { name: "read", description: "Read", inputSchema: { type: "object" } },
+      ],
+      grants: [],
+    };
+    let current: Plugin = installed;
+    let putDeferred: { resolve: (value: Response) => void; reject: (error: unknown) => void };
+    const putBarrier = new Promise<Response>((resolve, reject) => {
+      putDeferred = { resolve, reject };
+    });
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = apiPath(input);
+      const method = (init?.method ?? "GET").toUpperCase();
+      if (path === "plugins" && method === "GET") {
+        return {
+          ok: true,
+          json: async () => ({ plugins: current.id ? [current] : [], pendingCalls: [] }),
+        };
+      }
+      if (
+        path === `plugins/${encodeURIComponent(installed.id)}/grants/${encodeURIComponent(source.id)}` &&
+        method === "PUT"
+      ) {
+        return putBarrier;
+      }
+      if (path === `plugins/${encodeURIComponent(installed.id)}` && method === "DELETE") {
+        current = { ...current, id: "" } as Plugin;
+        return { ok: true, json: async () => ({}) };
+      }
+      throw new Error(`Unexpected ${method} ${path}`);
+    });
+    vi.stubGlobal("fetch", fetcher);
+
+    const view = await renderComponent(<PluginManager bots={[received, source]} />);
+    try {
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(view.container.textContent).toContain("Example");
+      const botSelect = view.container.querySelector<HTMLSelectElement>(
+        '[aria-label="Example 接收 Bot"]',
+      );
+      if (!botSelect) throw new Error("Bot select missing");
+      expect(botSelect.value).toBe(received.id);
+      await interact(() => {
+        botSelect.value = source.id;
+        botSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      const permission = view.container.querySelector<HTMLSelectElement>(
+        '[aria-label="write 调用权限"]',
+      );
+      if (!permission) throw new Error("Permission select missing");
+      await interact(() => {
+        permission.value = "confirm";
+        permission.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      await interact(() =>
+        view.container
+          .querySelector(".plugin-grant-editor")
+          ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
+      );
+      // Pending: controls disabled while PUT is in flight.
+      expect(
+        view.container.querySelector<HTMLButtonElement>(
+          '.plugin-grant-editor button[type="submit"]',
+        )?.disabled,
+      ).toBe(true);
+      const putCall = fetcher.mock.calls.find(
+        (call) =>
+          apiPath(call[0] as RequestInfo).includes("/grants/") &&
+          String(call[1]?.method ?? "").toUpperCase() === "PUT",
+      );
+      expect(putCall).toBeTruthy();
+      expect(apiPath(putCall![0] as RequestInfo)).toBe(
+        `plugins/${encodeURIComponent(installed.id)}/grants/${encodeURIComponent(source.id)}`,
+      );
+      expect(JSON.parse(String(putCall![1]?.body))).toEqual({
+        revision: "rev-1",
+        tools: [{ name: "write", mode: "confirm" }],
+        resources: [],
+        prompts: [],
+      });
+      current = {
+        ...installed,
+        revision: "rev-2",
+        grants: [
+          {
+            botId: source.id,
+            tools: [{ name: "write", mode: "confirm" }],
+            resources: [],
+            prompts: [],
+          },
+        ],
+      };
+      await act(async () => {
+        putDeferred.resolve({ ok: true, json: async () => ({}) } as Response);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(botSelect.value).toBe(source.id);
+      expect(
+        view.container.querySelector<HTMLSelectElement>('[aria-label="write 调用权限"]')?.value,
+      ).toBe("confirm");
+      expect(view.container.textContent).toContain("已保存");
+
+      // Fail path: a later save that rejects must keep the same Bot and surface an error.
+      fetcher.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = apiPath(input);
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (path === "plugins" && method === "GET") {
+          return {
+            ok: true,
+            json: async () => ({ plugins: [current], pendingCalls: [] }),
+          };
+        }
+        if (path.includes("/grants/") && method === "PUT") {
+          return { ok: false, status: 500, json: async () => ({}) };
+        }
+        throw new Error(`Unexpected ${method} ${path}`);
+      });
+      await interact(() => {
+        permission.value = "read";
+        permission.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      await interact(() =>
+        view.container
+          .querySelector(".plugin-grant-editor")
+          ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
+      );
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(botSelect.value).toBe(source.id);
+      expect(view.container.textContent).toContain("操作未确认成功");
+
+      // Uninstall: confirm remove and ensure grant editor unmounts with the plugin.
+      await interact(() => {
+        const remove = [...view.container.querySelectorAll("button")].find(
+          (button) => button.textContent === "移除",
+        );
+        remove?.click();
+      });
+      fetcher.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = apiPath(input);
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (path === `plugins/${encodeURIComponent(installed.id)}` && method === "DELETE") {
+          return { ok: true, json: async () => ({}) };
+        }
+        if (path === "plugins" && method === "GET") {
+          return { ok: true, json: async () => ({ plugins: [], pendingCalls: [] }) };
+        }
+        throw new Error(`Unexpected ${method} ${path}`);
+      });
+      await interact(() => {
+        const confirm = [...view.container.querySelectorAll("button")].find(
+          (button) => button.textContent === "确认移除",
+        );
+        confirm?.click();
+      });
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(view.container.querySelector('[aria-label="Example 接收 Bot"]')).toBeNull();
+      expect(view.container.textContent).toContain("还没有工具插件");
     } finally {
       await view.unmount();
     }

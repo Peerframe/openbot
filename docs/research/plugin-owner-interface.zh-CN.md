@@ -12,9 +12,11 @@
 
 界面标准和已有 React 19.2.8 依据[频道协作研究](channel-collaboration-presentation.zh-CN.md)。核对已有技能广场、原生表单与弹窗复用条目。工具插件与 SKILL.md、Employee 模板包分开管理。
 
+Bot 选择在保存后被重置（F05，2026-09-13）的补充检索：官方 React 文档[保留并重置 state](https://react.dev/learn/preserving-and-resetting-state)与[你可能不需要 Effect](https://react.dev/learn/you-might-not-need-an-effect)；GitHub 固定 `react` **19.2.8**，提交 `1dd4ecbdabf826f527fc9a58c05ea70375b7d170`（MIT）。不需要新的 UI 依赖。须如实记录：该授权 Bot 选择修复的**首个 PR 修订**遗漏了本条研究扩展与 PR 的开源研究字段，已在后续修订补齐后再送审。
+
 | 候选 | 固定版本 | 许可、维护与验证 | 适配与决定 |
 | --- | --- | --- | --- |
-| 原生表单、展开控件与已有 React | React 19.2.8；WAI-ARIA 1.2，2023-06-06 | MIT、W3C 条款；已有组件测试和浏览器基础 | 首个可行标准，转义说明/JSON，显式复选框和逐工具权限选择 |
+| 原生表单、展开控件与已有 React | React **19.2.8** / 提交 `1dd4ecbdabf826f527fc9a58c05ea70375b7d170`；WAI-ARIA 1.2，2023-06-06 | MIT、W3C 条款；已有组件测试；已核对保留 state 与避免多余 Effect 的官方说明 | 首个可行标准；`key={plugin.id}` 在授权 revision 递增后仍保留 Bot 选择；仅在 Bot 或 grant revision 真正变化时同步草稿 |
 | 插件自身渲染的嵌入界面 | 不采用 | 本次不需要 | 会扩大渲染执行和信任边界，不引入 |
 
 ## 实现决定
@@ -25,13 +27,17 @@
 
 错误文案不回显密钥或不可信服务载荷。令牌和调用参数不写入 URL 或 localStorage。权限和审计始终由 Server 判定，前端的能力展示不授予权限。
 
+授权编辑器（F05）：不要用 `plugin.revision` 作为 `PluginGrantEditor` 的 `key`。授权 PUT 导致 revision 变化后，应按[保留并重置 state](https://react.dev/learn/preserving-and-resetting-state)用稳定的 `plugin.id` 保持同一位置上的 sticky Bot。仅在所选 Bot 或插件 grant revision 真正变化时同步草稿；同一 revision 下父组件重渲染必须保留未保存草稿。按[你可能不需要 Effect](https://react.dev/learn/you-might-not-need-an-effect)，避免在每次新的 `plugin` 对象引用上都用 Effect 重置。将「已保存」绑定到提交时的 Bot 与 revision，避免迟到的异步成功误标到已切换的 Bot。本切片不改变权限模型、后端语义或发布版本号。
+
 ## 代码与许可
 
-没有复制或实质改写上游源码。复用现有 React 和样式约定，没有新增前端依赖。
+没有复制或实质改写上游源码。复用现有 React 和样式约定，没有新增前端依赖。React 仍精确固定为 **19.2.8**（`1dd4ecbdabf826f527fc9a58c05ea70375b7d170`，MIT）；仅引用官方学习文档中的 key/state 指引，不复制 React 源码。
 
 ## 验证与限制
 
 覆盖编辑导致预览失效、准确摘要提交、注解不会自动授权、确认/拒绝绑定具体调用、过期/不可用状态禁用、同频道过滤和恶意说明/参数的文本转义。
+
+授权 Bot 选择：覆盖 revision 递增后 sticky Bot、缺失 Bot 不可用态、消失的授权目标被丢弃、同一 revision 下脏草稿保留、迟到异步的「已保存」绑定，以及 PluginManager GET→延迟 PUT→revision GET 回归（第二 Bot、路径/载荷、pending 禁用、保存后同一 Bot；失败与卸载）。分支上运行 `npm run check`；无新依赖。
 
 使用合成数据做桌面与窄屏真实浏览器预览；不据此声称完整第三方服务或所有平台均通过验收。插件公开市场、OAuth 和插件渲染资源不在本次范围。英中文操作说明与后端交付共同维护。
 

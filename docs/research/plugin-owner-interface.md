@@ -12,12 +12,14 @@
 - Reused the release, GitHub source, tests, issues and security review in [third-party plugin research](third-party-mcp-plugins.md): official SDK 1.30.0 at `2d889f2b329e46680ec9bdd565de4616c497825a`, MCP 2025-11-25 compatibility line.
 - UI standards and existing React 19.2.8 review: [collaboration presentation research](channel-collaboration-presentation.md). Native form/select/details controls are the first viable implementation; no additional UI package is needed.
 - Existing workspace skill-gallery and native modal/form reuse entries were checked. Tools are deliberately a separate panel from SKILL.md and employee packages.
+- Search date for Bot-selection preservation (F05, 2026-09-13): official React docs [Preserving and Resetting State](https://react.dev/learn/preserving-and-resetting-state) and [You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect); GitHub pin `facebook/react` / `react` **19.2.8** at commit `1dd4ecbdabf826f527fc9a58c05ea70375b7d170` (MIT). No new UI dependency candidate was required.
+- Honesty note: the first pull-request revision for the grant Bot-selection fix omitted this research extension and the Open-source research PR fields; this record and the PR body were completed in the follow-up revision before re-review.
 
 ## Candidate comparison
 
 | Candidate | Exact release or commit | License | Maintenance and tests | Platform/API/security fit | Decision |
 | --- | --- | --- | --- | --- | --- |
-| Native form/disclosure and existing React | React 19.2.8; WAI-ARIA 1.2, 2023-06-06 | MIT; W3C document terms | Existing repository component tests and browser support | Escaped descriptions/JSON, explicit checkboxes and per-tool permission selects | Select standard and existing renderer |
+| Native form/disclosure and existing React | React **19.2.8** / commit `1dd4ecbdabf826f527fc9a58c05ea70375b7d170`; WAI-ARIA 1.2, 2023-06-06 | MIT; W3C document terms | Existing repository component tests and browser support; official preserving-state and effect guidance reviewed for grant editor identity | Escaped descriptions/JSON, explicit checkboxes and per-tool permission selects; stable `key={plugin.id}` preserves Bot selection across grant revision bumps | Select standard and existing renderer |
 | Plugin-rendered embedded UI | Not adopted | Not applicable | Not required for this task | Would widen renderer execution and trust boundaries | Exclude |
 
 ## Reuse decision
@@ -28,10 +30,13 @@
 - Approval views show Bot, endpoint, tool, full JSON arguments and expiration. Missing endpoint, expired record or failed refresh disables decisions. A visible channel polls every two seconds without overlapping reads; hidden/closed views stop or pause.
 - User-facing error text does not echo secret or untrusted server payloads. API credentials and pending arguments are not put in URLs or localStorage.
 - Unknown completion is surfaced, never automatically retried as a write.
+- Grant editor Bot selection (F05): do **not** key `PluginGrantEditor` on `plugin.revision`. A revision bump after grant PUT must preserve the Owner's sticky Bot and draft per [preserving and resetting state](https://react.dev/learn/preserving-and-resetting-state) (same component position / stable plugin id key). Sync the grant draft only when the selected Bot or the plugin grant revision actually changes; same-revision parent re-renders must keep dirty drafts. Prefer adjusting that draft during render (or a narrowly keyed sync) rather than an Effect that resets on every new `plugin` object identity, per [you might not need an Effect](https://react.dev/learn/you-might-not-need-an-effect). Bind the visible “已保存” status to the submitted Bot and revision so a late async success cannot mark a different Bot after the Owner switched.
+- No permission-model, backend grant semantics, or release version changes in this slice.
 
 ## Source incorporation
 
 - No upstream source copied or substantially adapted. Existing React and stylesheet conventions reused; no new frontend dependency.
+- React remains the exact-pinned runtime **19.2.8** (`1dd4ecbdabf826f527fc9a58c05ea70375b7d170`, MIT). Official learn docs were cited for key/state guidance only; no React source was copied.
 
 ## Verification plan
 
@@ -39,6 +44,8 @@
 - Reject/approve payload binding; expired and unavailable calls disabled; own-channel filtering; escaped hostile descriptions/arguments.
 - Desktop and narrow viewport synthetic preview; no claim of full third-party service or all-platform certification.
 - English/Chinese operational documentation coordinated with backend plugin delivery.
+- Grant Bot selection: unit coverage for sticky Bot after revision bump, missing-Bot unavailable state, dropped grant targets, same-revision dirty-draft retention, and late-async “已保存” binding; PluginManager GET → delayed PUT → revision GET regression (second Bot, path/payload, pending disabled, same Bot after save; fail and uninstall).
+- `npm run check` on the fix branch; no new dependencies.
 
 ## Unresolved questions
 
