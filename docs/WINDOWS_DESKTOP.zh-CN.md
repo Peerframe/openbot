@@ -58,7 +58,7 @@ npm test --workspace @openbot/desktop -- scripts/windows-native-smoke-harness.te
 
 ### 发行源码冷启动证据
 
-[主线 CI 34755182161](https://github.com/yxflc11/openbot/actions/runs/34755182161)已通过，源码为 `9894a265221e17889fc1fc39903d5df72c3a3cb8`。独立核对的 Windows Server 2025 x64 回执确认：首次启动加十次冷启动，共十一次独立 Electron 进程生命周期；十二次 Owner 登录、DPAPI 解密、数据库记录与引导密文摘要保留、前次子进程退出、当前用户 NSIS 卸载、测试数据移除及清理验证均通过。进程身份负向检查与跨运行时身份检查也通过。这些证据属于托管原生运行时检查，不等于安装后应用 GUI 或 Windows 10/11 真机验收。
+[主线 CI 34768475942](https://github.com/yxflc11/openbot/actions/runs/34768475942)已通过，源码为 `64569ece36141fa112266cdf93e2694bc88a632b`。独立核对的 Windows Server 2025 x64 回执确认：首次启动加十次冷启动，共十一次独立 Electron 进程生命周期；十二次 Owner 登录、DPAPI 解密、数据库记录与引导密文摘要保留、前次子进程退出、当前用户 NSIS 卸载、测试数据移除及清理验证均通过。进程身份负向检查与跨运行时身份检查也通过。这些证据属于托管原生运行时检查，不等于安装后应用 GUI 或 Windows 10/11 真机验收。
 
 验证脚本使用固定的开发版 Electron 可执行文件、经 ASAR 校验的已安装原生运行时和相同控制器，检查首次启动加十次独立冷启动、Owner 登录、DPAPI 解密、数据库记录与密文摘要保留、前次子进程退出、卸载及测试数据清理。它没有操作安装后应用的窗口。Windows 桌面界面、SmartScreen、代码签名、无障碍与真实电脑控制仍需分别验收。当前安装包只针对 Windows x64，不支持 Windows ARM64。
 
