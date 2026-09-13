@@ -36,6 +36,13 @@
 - ConvertFrom-Json docs:
   https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/convertfrom-json?view=powershell-7.5
   (`-DateKind` exists on newer releases; **not** on pwsh 7.4.6 used in this box experiment).
+- NSIS silent uninstall wait (official FAQ):
+  https://nsis.sourceforge.io/When_I_use_ExecWait_uninstaller.exe_it_doesn%27t_wait_for_the_uninstaller%3F
+  Ordinary `/S` copies the uninstaller to `%TEMP%`, starts the copy, and the **original** process
+  exits immediately — so `WaitForExit`/`ExitCode` on the first process only observe the stub.
+  Fix: copy the uninstaller **once** outside the install directory and invoke
+  `Uninstall OpenBot.exe /S _?=<install-dir>` with `_?` last and the path unquoted; hold that
+  process for a bounded wait. `openbot.exe` vanishing alone does not prove uninstall finished.
 - Empirically verified on this box with pwsh **7.4.6** (`/tmp/json-date-roundtrip.ps1`):
 
   | Step | Result |
@@ -53,21 +60,27 @@
 | --- | --- | --- |
 | Loosen equality (drop start/path, truncate fractional seconds, PID-only) | Would green the gate without proving identity | Reject |
 | Rely on `-DateKind String` only | Missing on pwsh 7.4.6; CI may not be 7.5+ | Reject as sole path |
-| Align orchestrator observer to smoke (.NET GetProcessById + Handle + InvariantCulture `o` + MainModule.FileName) **and** normalize JSON DateTime identity fields back to ISO-7 via InvariantCulture `o` (7.4-safe); optional STJ GetString | Matches smoke; keeps strict equality; summary stays ISO | Select |
+| Align orchestrator observer to smoke (.NET GetProcessById + Handle + InvariantCulture `o` + MainModule.FileName) **and** read receipt/state/live identity fields via **System.Text.Json** `GetString`/`GetInt32` (preserve original ISO-7); `ConvertTo-IsoStartTimeUtc` only if a value is already `DateTime` | Matches smoke; keeps strict equality; summary stays original ISO without DateTime mutation | Select |
+| Normalize-after-`ConvertFrom-Json` as the primary receipt path | Works on 7.4 but re-derives ISO from DateTime instead of preserving the wire string | Reject as primary (keep as DateTime fallback only) |
+| Json.NET `DateParseHandling.None` (or Newtonsoft) to keep string dates | Same intent as STJ preserve; not needed — install gate already on Core / STJ | Reject (STJ is the in-box equivalent) |
 | Change smoke.mjs / harness to match orchestrator Path/`ToString('o')` | Product/test helper churn; still leaves JSON `[string]` cast bug in evidence | Reject (out of allowed file set; incomplete) |
 
 ## Reuse decision
 
 - Selected option: local gap in the install-gate PowerShell only — canonical process observer +
-  ISO startTimeUtc normalization after `ConvertFrom-Json`, plus resilient fixture removal and an
-  independent Linux-runnable identity test.
+  **STJ-preserve** primary reads of known identity fields (`pid` / `startTimeUtc` / `executablePath`)
+  from receipt and live/state JSON, with `ConvertTo-IsoStartTimeUtc` only as a DateTime fallback;
+  shared helpers under `scripts/windows-receipt-identity-helpers.ps1`; resilient fixture removal;
+  independent Linux-runnable identity test that exercises those same helpers.
 - Why first viable: both mismatch vectors are code-backed (Process field/API drift vs smoke;
-  ConvertFrom-Json DateTime coercion → `[string]` locale short form). Fixing only Path/MainModule
-  is insufficient because receipt loads and `Add-RoundEvidence` still mutate timestamps.
+  ConvertFrom-Json DateTime coercion → `[string]` locale short form). STJ `GetString` avoids the
+  coercion entirely for identity fields; normalize-DateTime remains only when a value is already
+  `DateTime`. Json.NET `DateParseHandling.None` is the same idea on Newtonsoft — unnecessary here.
 - Exact OpenBot-specific gap: orchestrator must observe Electron the same way smoke does, and
   must never project `[string]$DateTime` for `startTimeUtc`.
 - Failure behavior: mismatch throws with held vs receipt projection of the three identity fields
-  only; preflight fails closed if host≠WinPS observations differ; fixture delete retries /
+  only; preflight is a **bounded held-handle double canonical read** (no unbounded WinPS `&`
+  child — smoke's WinPS path stays 15s/`maxBuffer` in the Node harness); fixture delete retries /
   treats vanished paths as success while still failing if the install tree remains.
 
 ## Source incorporation
@@ -77,9 +90,10 @@
 
 ## Verification plan
 
-- Automated: `scripts/check-windows-receipt-identity.ps1` on Linux pwsh asserts JSON→normalize→
-  summary round-trip keeps the original 7-fraction-digit UTC ISO; on Windows also runs canonical
-  observer vs WinPS 5.1 preflight.
+- Automated: `scripts/check-windows-receipt-identity.ps1` on Linux pwsh asserts STJ-primary
+  JSON→compare→summary round-trip keeps the original 7-fraction-digit UTC ISO, and rejects
+  last-digit / wrong-PID / wrong-path mismatches; on Windows also runs bounded canonical
+  held-handle preflight (shared helpers, not a duplicated copy).
 - Hosted Windows CI continues to run NSIS install → smoke → uninstall via
   `scripts/check-windows-desktop-install.ps1` (strict receipt↔held check retained).
 - Do not edit smoke.mjs, harness, product code, workflows, or package.json for this fix.

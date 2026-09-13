@@ -25,13 +25,19 @@
 
 ## 复用决定
 
-- 选中：仅改安装门禁脚本 — 规范进程观察器 + JSON DateTime→ISO-7 归一化（7.4 安全路径）+
-  弹性目录删除 + 可在 Linux pwsh 运行的独立测试。
+- 选中：仅改安装门禁脚本 — 规范进程观察器 + **STJ 保留原文**为主路径读取已知身份字段
+  （`ConvertTo-IsoStartTimeUtc` 仅作已是 DateTime 时的回退）+ 共享 helpers +
+  弹性目录删除 + 可在 Linux pwsh 运行的独立测试（直接点源生产 helpers，不复制函数）。
+- 归一化 DateTime 不作主路径；Json.NET `DateParseHandling.None` 同思路但此处用 STJ 即可。
+- 预检改为对持有句柄的两次 canonical 读取（有界），不再 `&` 无超时 WinPS 子进程。
 - 不可只改 Path→MainModule：receipt / summary 的 `[string]$DateTime` 仍会永久写入错误时间戳。
 - 不放宽相等性；不改 smoke/harness/产品代码。
 
 ## 验证计划
 
-- `scripts/check-windows-receipt-identity.ps1`：Linux 上断言 JSON 往返保留 ISO-7；Windows 上再跑
-  宿主与 WinPS 5.1 交叉预检。
+- `scripts/check-windows-receipt-identity.ps1`：Linux 上断言 STJ 主路径往返保留 ISO-7，并拒绝
+  末位小数/错误 PID/错误路径；Windows 上再跑有界 held-handle 预检。
 - 托管 Windows CI 重跑安装门禁确认 bootstrap receipt 与 held Electron 一致。
+- NSIS 静默卸载：官方 FAQ（ExecWait uninstaller）说明普通 `/S` 只等 stub；门禁将
+  `Uninstall OpenBot.exe` 复制到安装目录外并以 `/S _?=<install-dir>`（`_?` 最后、路径不加引号）
+  有界等待后再置 `uninstallPassed` / 删目录。
