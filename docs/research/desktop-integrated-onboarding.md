@@ -163,3 +163,32 @@ Final `npm run check` passed, including documentation, research policy, release/
 lint, type checking, all workspace tests and production builds. Three pre-existing lint warnings
 remain in the Node release workflow tests. Browser-plugin tooling was unavailable; renderer QA
 used the available Playwright Electron runtime instead.
+
+## Onboarding documentation reconciliation (2026-09-13)
+
+Reviewed OpenBot `9c39395fae4fc5caa05adce6ff9676cf5c7dae0f` before correcting the bilingual
+onboarding page. GitHub queries covered this repository's releases and Electron `v44.2.0`
+`safe-storage.md`; the GitHub release API confirms that
+[desktop-v0.1.0-alpha.7](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.7)
+is a published prerelease with macOS arm64 DMG, Windows x64 EXE, manifest and checksums, without
+Linux installers. No later release is implied.
+
+The existing [Windows review](windows-desktop-completion.md), Desktop installation documents,
+`native-server.ts` and `main.ts` establish local loopback Server support on macOS/Windows,
+platform-specific window-close behavior and retained data. The native runtime staging script
+and Desktop manifest retain Darwin package `17.10.0-beta.17` / upstream
+`c23ad8a026c711c8666c3c2596d0fde643cf378a`; Windows uses the pinned official PostgreSQL 17.11
+source build documented in that review. Rechecked the official
+[17.11 release notes](https://www.postgresql.org/docs/release/17.11/) and
+[Electron 44.2.0 safeStorage platform boundaries](https://github.com/electron/electron/blob/v44.2.0/docs/api/safe-storage.md).
+Hosted Windows installation/runtime evidence does not establish manual GUI, SmartScreen or
+real-device acceptance; unsigned/unnotarized distribution boundaries remain.
+
+`channel-attachments.ts` and the existing [attachment proxy review](desktop-attachment-proxy.md)
+confirm that bounded PDF, image, Office/OpenDocument and media uploads supersede the old text-only
+statement. `SkillLibraryScreen.tsx` renders `PluginManagerPanel` above the Skills/Bots tabs; the
+panel exposes **Add tool plugin** and Server-owned MCP review/grants. This retains the existing
+[MCP review](third-party-mcp-plugins.md), SDK 1.30.0 / `2d889f2b329e46680ec9bdd565de4616c497825a`
+and [2025-11-25 transport](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports).
+No new implementation, dependency, copied source or license notice is introduced. Verify the
+focused bilingual diff, documentation links and `npm run check`; no new platform acceptance is claimed.

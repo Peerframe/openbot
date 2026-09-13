@@ -146,6 +146,11 @@ a public marketplace or an installer for arbitrary executable plugin bundles. Se
 [destination research](research/workspace-destinations.md) and
 [UI refresh research](research/desktop-ui-refresh.md).
 
+Above the Skills/Bots tabs, expand the **Plugins** panel and choose **Add tool plugin** to
+preview and install an MCP Server connection. Review its declarations, grant selected tools or
+content to a Bot, and enable the plugin. Installation alone grants no access; calls remain subject
+to Server authorization and the selected approval mode. See [MCP plugins](PLUGINS.md).
+
 Automatic tasks are available from **Owner → Settings → Automatic tasks**.
 
 An authenticated Owner can create an automatic task for a Bot already in a channel, then pause,
@@ -171,24 +176,29 @@ See [recurring-task research](research/server-automations.md).
 
 ## Current boundaries
 
-This is the **0.1.0-alpha.3 development UI**, not a signed/notarized public-release claim. The
-installer pipeline targets macOS arm64, Windows x64 and Linux x64; Windows/Linux remain remote
-clients. Build configuration alone does not establish native Windows/Linux installation or
-runtime verification for this revision. macOS Intel is outside the installer matrix. See
-[installation](DESKTOP_INSTALLATION.md) for versioned artifacts and distribution boundaries.
+The current public preview is **0.1.0-alpha.7**, with a macOS arm64 DMG and Windows x64 EXE.
+Both platforms support a bundled local Server/PostgreSQL or an existing Server connection.
+Linux x64 remains a remote-client build target; alpha.7 publishes no Linux installers. These are
+unsigned development builds; production signing and macOS notarization remain outstanding.
+Windows installation and retained-runtime checks ran on a hosted runner; manual Windows desktop
+and SmartScreen acceptance remain outstanding. macOS Intel is outside the installer matrix. See
+[installation](DESKTOP_INSTALLATION.md) and [Windows verification](WINDOWS_DESKTOP.md) for
+versioned artifacts and distribution boundaries.
 
 The [native Agent](NATIVE_AGENT.md) adds model-generated replies after Owner opt-in. The composer
-supports the bounded text attachments described above, through the authenticated text-task API.
-Binary/PDF/image inputs and automatic retries remain outside this change. Existing native-task
-stop and explicit resubmission controls retain their Server-owned lifecycle; resubmission creates
-a new task and does not promise safe replay of prior side effects.
+supports the bounded text/code, image, PDF, Office/OpenDocument and audio/video attachments
+described above through authenticated channel attachment routes. Uploading an original does not
+automatically extract, OCR or transcribe it. Task submissions are not automatically retried.
+Existing native-task stop and explicit resubmission controls retain their Server-owned lifecycle;
+resubmission creates a new task and does not promise safe replay of prior side effects.
 
-The bundled Server currently listens **only on this Mac**. Sharing this native installation with
-another computer requires a future authenticated HTTPS provisioning flow. Do not enter its
-loopback address on another computer. For remote use today, connect to an existing HTTPS deployment
-using the advanced instructions below. Closing the macOS window keeps Desktop running; quitting
-Desktop stops its own Server and database. Reopening restarts the same data. This is not a login
-service, backup, database-upgrade or unattended-recovery implementation.
+On macOS and Windows, the bundled Server listens **only on this computer**. Sharing this native
+installation with another computer requires a future authenticated HTTPS provisioning flow. Do
+not enter its loopback address on another computer. For remote use today, connect to an existing
+HTTPS deployment using the advanced instructions below. Closing the macOS window keeps Desktop
+running; closing the Windows window quits Desktop. Quitting stops its own Server and database.
+Reopening restarts the same data. This is not a login service, backup, database-upgrade or
+unattended-recovery implementation.
 
 In builds with the macOS database supervisor, an abrupt Desktop main-process exit closes a private
 control pipe. The supervisor shuts down only its own PostgreSQL child; reopening allows up to
@@ -197,12 +207,13 @@ databases or stop processes identified by a PID file. Force-killing the supervis
 covered. This lifecycle change does not establish Windows crash recovery.
 
 
-Data lives under Desktop's user-data directory in `openbot/local-server`. Secrets are sealed with
-Electron safeStorage on macOS; database access uses private random credentials and SCRAM. Model
-keys are encrypted by the Server with AES-256-GCM. No secret is returned by the model summary API.
-Missing resources, inaccessible Keychain, unsafe data paths or incompatible existing database
-state fail visibly; retry does not delete an existing cluster. Switching to remote-client mode
-stops local services and retains their data. Switching back reuses that data.
+Data lives under Desktop's user-data directory in `openbot/local-server`. Bootstrap secrets are
+sealed with Electron safeStorage using macOS Keychain or Windows DPAPI; database access uses
+private random credentials and SCRAM. Model keys are encrypted by the Server with AES-256-GCM.
+No secret is returned by the model summary API. Missing resources, unavailable system credential
+storage, unsafe data paths or incompatible existing database state fail visibly; retry does not
+delete an existing cluster. Switching to remote-client mode stops local services and retains
+their data. Switching back reuses that data.
 
 ## Model access
 
@@ -224,7 +235,7 @@ Remote clients cannot configure older Servers that do not implement the endpoint
 ## Build and advanced self-deployment
 
 From the repository root, install locked dependencies, run `npm run check`, then run
-`npm run package --workspace @openbot/desktop` on the target OS. macOS packaging stages the compiled Server,
+`npm run package --workspace @openbot/desktop` on the target OS. macOS and Windows packaging stage the compiled Server,
 production dependency closure, PostgreSQL binaries and notices in `native-runtime` before
 assembling the application. The generated runtime is ignored by Git. A local development launch
 also needs `npm run prepare:native --workspace @openbot/desktop` before `npm start --workspace
@@ -262,9 +273,11 @@ Extract with `tar -xzf <archive>` to preserve executable modes and internal link
 are temporary development artifacts, not signed installers, automatic updates or desktop-control
 certification. See [handoff research](research/desktop-cross-platform-handoff.md).
 
-The native PostgreSQL package is pinned to `17.10.0-beta.17`. Its prerelease packaging, upstream
-binary provenance, distribution notices, signing and notarization must be reviewed before a
-public release; local functional tests alone are not a distribution-support claim.
+macOS uses PostgreSQL 17.10 from the pinned `17.10.0-beta.17` native package. Windows uses the
+pinned official PostgreSQL 17.11 source build; the former Windows npm binary package is not
+accepted. See [Windows build provenance](research/windows-desktop-completion.md). Production
+distribution still requires review of native dependency provenance, redistribution terms,
+signing and notarization. Local functionality tests do not substitute for release-support evidence.
 
 Visual checks use isolated fixtures, never seeded data in a real profile. The office scene remains
 deferred; this workspace uses channel conversations.
