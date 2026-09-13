@@ -86,3 +86,13 @@ NSIS _?= 使持有进程覆盖真正卸载，官方契约：https://nsis.sourcef
 回归反复创建真实 Node 子进程后立即调用共享 helper，比较子进程自行报告的 PID/可执行文件、确认刷新保留句柄，并在确认退出后拒绝同一对象；读取和清理均有时间上限。macOS/Linux 结果只能证明该主机上的流程，不能替代 Windows 原生或完整 Electron/NSIS 验收。无新增依赖，无复制或实质改编上游代码；MIT 运行库源码仅用于核对 API 行为。
 
 旧版空模块重试曾在 macOS PowerShell 7.5.4 / .NET 9.0.10 通过，但不能预测 Windows 模块枚举行为。新版绑定需验证编译及拒绝无效/已关闭句柄；保留的10次真实生命周期和详细诊断必须在原生 Windows 通过，再执行完整安装门禁。非 Windows 测试明确不证明 Windows API 的成功调用。
+
+## 确认退出后的双 Node 夹具清理
+
+2026-09-13 实现前研究：[main CI 34766658986](https://github.com/yxflc11/openbot/actions/runs/34766658986/job/103748719956)，源码 `546127e1b70bf39bac9b87a522834233be0e1b93`，已通过 JSON、双 PATH 断言及真实 `node --version` 子进程检查。等待退出并释放进程对象后，删除复制的 `first node/node.exe` 时仍因其他进程占用失败；日志不能确定持有者，不能归因于杀毒软件。
+
+已核对复用清单与现有 `Remove-FixtureTreeResilient`：后者处理安装测试中路径消失，不处理本独立预检的共享冲突。[Microsoft DeleteFile](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-deletefilea) 规定不兼容的已打开句柄会阻止删除。GitHub 检索 `PowerShell Remove-Item file in use retry`，包括[文档问题6625](https://github.com/MicrosoftDocs/PowerShell-Docs/issues/6625)。检查受维护的 **PowerShell v7.6.5**，提交 `8d7d14a86bf05f45ed163b1b1fbfde1ac4682bac`，MIT；[FileSystemProvider.RemoveFileSystemItem](https://github.com/PowerShell/PowerShell/blob/8d7d14a86bf05f45ed163b1b1fbfde1ac4682bac/src/System.Management.Automation/namespaces/FileSystemProvider.cs) 在错误记录中保留原 `IOException`。已有原生 Windows CI 预检会先验证子进程退出。
+
+选择标准 `Remove-Item -LiteralPath` 加有限重试：仅重试 `IOException` 共享/锁冲突（Win32 32/33），最多8次删除，7次退避等待共7.1秒；永久错误和最后一次失败仍抛出。只清理由本次检查创建且子进程已停止并释放的夹具。拒绝吞掉错误或减弱身份断言；无需新增通用清理依赖或改变无关安装脚本。无复制或实质改编上游源码，无新依赖，无产品运行时或权限变更。
+
+验证现有真实子进程预检；对提取出的清理块注入临时占用、持续占用及其他错误，检查恢复与失败上限；发行前要求原生 Windows 身份及安装生命周期门禁通过。注入测试只证明分支和上限，不等于 Windows 原生锁验收。

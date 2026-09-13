@@ -203,7 +203,18 @@ function Test-DualNodePathResolution {
   } finally {
     $env:PATH = $oldPath
     if (Test-Path -LiteralPath $tmpRoot) {
-      Remove-Item -LiteralPath $tmpRoot -Recurse -Force -ErrorAction Stop
+      # The owned child has exited; other handles may still briefly lock its copied image.
+      # Retry only sharing/lock violations, and keep persistent cleanup failures fatal.
+      for ($cleanupAttempt = 1; $cleanupAttempt -le 8; $cleanupAttempt++) {
+        try {
+          Remove-Item -LiteralPath $tmpRoot -Recurse -Force -ErrorAction Stop
+          break
+        } catch [System.IO.IOException] {
+          $nativeError = $_.Exception.HResult -band 0xffff
+          if ($nativeError -notin @(32, 33) -or $cleanupAttempt -eq 8) { throw }
+          Start-Sleep -Milliseconds ([Math]::Min(2000, 100 * [Math]::Pow(2, $cleanupAttempt - 1)))
+        }
+      }
     }
   }
 }
