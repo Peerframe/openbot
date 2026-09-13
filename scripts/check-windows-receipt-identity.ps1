@@ -237,13 +237,13 @@ function Test-StartedProcessIdentityLifecycle {
         -not [string]::IsNullOrWhiteSpace($identity.executablePath) -and
         $identity.executablePath -ieq $reported.executablePath -and
         $identity.startTimeUtc -match '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z$'
-      )
+      ) -Detail ("held={$(Format-ProcessIdentityEvidence $identity)}; child={pid=$($reported.pid); executablePath=$($reported.executablePath)}")
       $child.Refresh()
       $refreshed = Get-CanonicalProcessIdentity -ProcessId $child.Id -HeldProcess $child
       Write-CheckResult -Name "Startup $round/10: refresh retains handle and complete identity" -Passed (
         $child.Handle -eq $originalHandle -and
         (Test-ReceiptIdentityEqualsSpawn -ReceiptIdentity $refreshed -SpawnIdentity $identity)
-      )
+      ) -Detail ("before={$(Format-ProcessIdentityEvidence $identity)}; after={$(Format-ProcessIdentityEvidence $refreshed)}; handleBefore=$originalHandle; handleAfter=$($child.Handle)")
 
       $child.StandardInput.WriteLine('exit')
       $child.StandardInput.Close()
