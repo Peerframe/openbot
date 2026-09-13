@@ -123,8 +123,86 @@ function Test-StjPrimaryIdentityRoundTrip {
   )
 }
 
+function Test-DualNodePathResolution {
+  $tmpRoot = Join-Path ([IO.Path]::GetTempPath()) ("openbot-dual-node-" + [guid]::NewGuid().ToString('N'))
+  $firstDir = Join-Path $tmpRoot 'first'
+  $secondDir = Join-Path $tmpRoot 'second'
+  $oldPath = $env:PATH
+  $sep = [IO.Path]::PathSeparator
+  try {
+    New-Item -ItemType Directory -Path $firstDir | Out-Null
+    New-Item -ItemType Directory -Path $secondDir | Out-Null
+
+    $realNode = Get-NodeApplicationPath
+    $stubName = if ([OperatingSystem]::IsWindows()) { 'node.exe' } else { 'node' }
+    $firstStub = Join-Path $firstDir $stubName
+    $secondStub = Join-Path $secondDir $stubName
+    Copy-Item -LiteralPath $realNode -Destination $firstStub
+    Copy-Item -LiteralPath $realNode -Destination $secondStub
+    if (-not [OperatingSystem]::IsWindows()) {
+      # Ensure shims are executable on Unix.
+      & chmod +x $firstStub
+      & chmod +x $secondStub
+    }
+
+    # First PATH entry wins; arrange so Get-Command without TotalCount sees at least two.
+    $env:PATH = ($firstDir + $sep + $secondDir + $sep + $oldPath)
+
+    $multi = @(Get-Command -Name node -CommandType Application -ErrorAction Stop)
+    Write-CheckResult -Name 'Dual-node PATH: Get-Command Application returns multiple matches' -Passed (
+      $multi.Count -gt 1
+    ) -Detail "count=$($multi.Count)"
+
+    $oldSource = (Get-Command node -CommandType Application -ErrorAction Stop).Source
+    $oldIsSingleCleanPath = (
+      $oldSource -is [string] -and
+      -not [string]::IsNullOrWhiteSpace($oldSource) -and
+      (Test-Path -LiteralPath $oldSource -PathType Leaf)
+    )
+    Write-CheckResult -Name 'Dual-node PATH: old-style .Source is NOT a single clean path' -Passed (
+      -not $oldIsSingleCleanPath
+    ) -Detail ("type=$($oldSource.GetType().FullName); joined=[$([string]$oldSource)]")
+
+    $resolved = Get-NodeApplicationPath
+    $firstExpected = [IO.Path]::GetFullPath($firstStub)
+    Write-CheckResult -Name 'Dual-node PATH: Get-NodeApplicationPath returns first PATH entry' -Passed (
+      $resolved -eq $firstExpected -and (Test-Path -LiteralPath $resolved -PathType Leaf)
+    ) -Detail "got=[$resolved] expected=[$firstExpected]"
+
+    $verInfo = [Diagnostics.ProcessStartInfo]::new()
+    $verInfo.FileName = $resolved
+    $verInfo.UseShellExecute = $false
+    $verInfo.CreateNoWindow = $true
+    $verInfo.RedirectStandardOutput = $true
+    $verInfo.RedirectStandardError = $true
+    $verInfo.ArgumentList.Add('--version')
+    $verProc = [Diagnostics.Process]::Start($verInfo)
+    try {
+      $null = $verProc.Handle
+      if (-not $verProc.WaitForExit(10000)) { throw 'node --version exceeded 10 seconds.' }
+      $stdout = $verProc.StandardOutput.ReadToEnd()
+      Write-CheckResult -Name 'Dual-node PATH: ProcessStartInfo.FileName from helper launches node' -Passed (
+        $verProc.ExitCode -eq 0 -and $stdout -match 'v?\d+\.\d+'
+      ) -Detail ("exit=$($verProc.ExitCode); out=$($stdout.Trim())")
+    } finally {
+      if ($null -ne $verProc) {
+        if (-not $verProc.HasExited) { $verProc.Kill($true); $null = $verProc.WaitForExit(5000) }
+        $verProc.Dispose()
+      }
+    }
+  } catch {
+    Write-CheckResult -Name 'Dual-node PATH regression' -Passed $false -Detail ([string]$_.Exception.Message)
+  } finally {
+    $env:PATH = $oldPath
+    if (Test-Path -LiteralPath $tmpRoot) {
+      Remove-Item -LiteralPath $tmpRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+  }
+}
+
 Write-Host "OpenBot Windows receipt identity checks (pwsh $($PSVersionTable.PSVersion); OS=$([System.Runtime.InteropServices.RuntimeInformation]::OSDescription))"
 Test-StjPrimaryIdentityRoundTrip
+Test-DualNodePathResolution
 
 $runningOnWindows = [OperatingSystem]::IsWindows()
 if (-not $runningOnWindows) {

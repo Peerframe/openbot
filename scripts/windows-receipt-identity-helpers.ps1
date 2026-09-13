@@ -152,6 +152,32 @@ function Test-ReceiptIdentityEqualsSpawn {
   )
 }
 
+# Resolve a single node Application path: first PATH hit only (TotalCount 1).
+# Without TotalCount, Get-Command -CommandType Application can return multiple
+# matches and (.Source) becomes a space-joined Object[] unfit for ProcessStartInfo.FileName.
+# Docs: https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/get-command?view=powershell-7.5
+function Get-NodeApplicationPath {
+  $cmd = Get-Command -Name node -CommandType Application -TotalCount 1 -ErrorAction Stop
+  if ($null -eq $cmd) {
+    throw 'Get-NodeApplicationPath: no node Application found on PATH.'
+  }
+  # TotalCount 1 must yield one CommandInfo; .Source must be one path string (not Object[]).
+  $source = $cmd.Source
+  if ($null -eq $source -or $source -is [System.Array] -or $source -isnot [string]) {
+    $typeName = if ($null -eq $source) { 'null' } else { $source.GetType().FullName }
+    throw "Get-NodeApplicationPath: expected a single string Source, got $typeName."
+  }
+  $path = $source.Trim()
+  if ([string]::IsNullOrWhiteSpace($path)) {
+    throw 'Get-NodeApplicationPath: node Application Source is empty.'
+  }
+  # Fail closed on space-joined multi-path (old bug): LiteralPath exists only for one real file.
+  if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+    throw "Get-NodeApplicationPath: Source is not a single existing path: [$path]"
+  }
+  return $path
+}
+
 # Compare the held host with the actual Node → WinPS smoke observer, not a second .NET read.
 function Assert-CrossRuntimeProcessIdentityConsistency {
   $hostProcess = [Diagnostics.Process]::GetCurrentProcess()
@@ -159,7 +185,7 @@ function Assert-CrossRuntimeProcessIdentityConsistency {
   try {
     $hostIdentity = Get-CanonicalProcessIdentity -ProcessId $hostProcess.Id -HeldProcess $hostProcess
     $info = [Diagnostics.ProcessStartInfo]::new()
-    $info.FileName = (Get-Command node -CommandType Application -ErrorAction Stop).Source
+    $info.FileName = Get-NodeApplicationPath
     $info.UseShellExecute = $false
     $info.CreateNoWindow = $true
     $info.RedirectStandardInput = $true
