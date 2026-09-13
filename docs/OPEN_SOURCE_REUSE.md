@@ -344,6 +344,9 @@ No copied source; see [research](research/attachment-empty-extraction.md).
 
 Reuse Vite **8.2.2** / `de1111ab0be00879b404e7ed3b2a80e264edddc1` (MIT) `html.cspNonce` so local
 `vite` serve can stamp script/style tags and the `csp-nonce` meta without `'unsafe-inline'`.
-A thin serve-only transform adds the matching `'nonce-…'` tokens to the app meta CSP; production
-and Desktop HTML keep the strict `index.html` policy. No new dependency or copied source; see
+A thin serve-only adapter awaits the full Vite HTML pipeline, replaces its placeholder with a fresh
+192-bit cryptographic nonce for each main document, and places the matching CSP before injected
+scripts. Real HTTP concurrency/revalidation and Chromium CSS/React HMR are verified; production
+and Desktop outputs keep the strict source policy. Retains Grok PR #62’s initial Vite API reuse
+while rejecting its fixed nonce. No new dependency or copied upstream source; see
 [research](research/web-dev-csp-nonce.md).

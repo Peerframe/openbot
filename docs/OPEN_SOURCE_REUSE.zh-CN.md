@@ -286,5 +286,7 @@ Server 在保存成功状态前拒绝仅含空白的提取结果，并在模型�
 
 复用 Vite **8.2.2** / `de1111ab0be00879b404e7ed3b2a80e264edddc1`（MIT）的 `html.cspNonce`，使本地
 `vite` serve 可为 script/style 与 `csp-nonce` meta 盖章，而无需 `'unsafe-inline'`。
-仅 serve 的薄适配在应用 meta CSP 中写入相同 `'nonce-…'`；生产与 Desktop 仍使用严格的
-`index.html` 策略。无新依赖、未复制源码，见[研究](research/web-dev-csp-nonce.zh-CN.md)。
+仅 serve 的薄适配等待完整 Vite HTML 流水线后，为每份主文档填入新的 192 位加密随机 nonce，
+并将匹配的 CSP 放到注入脚本之前。已验证真实 HTTP 并发/重验与 Chromium CSS/React HMR；
+生产和 Desktop 产物保留严格源码策略。保留 Grok PR #62 的初始 Vite API 复用，撤销固定 nonce
+结论。无新依赖、未复制上游源码，见[研究](research/web-dev-csp-nonce.zh-CN.md)。
