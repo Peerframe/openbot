@@ -48,3 +48,19 @@
 Codex 在 macOS PowerShell 7.5.4 独立复现 JSON 日期比对失败；进程字段差异本身尚未被证明是本次故障原因。同一 .NET 运行时读两次不能证明与实际 smoke 观察器一致。集成复用已固定版本的 Node 22.22.2 observeProcessIdentity（WinPS 15秒/输出上限），观察持有句柄的 PowerShell 主进程，通过 .NET ProcessStartInfo.ArgumentList 传参并增加20秒外层进程时限、关闭标准输入和响应大小校验。官方契约：https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.processstartinfo.argumentlist 。不增加依赖、不复制上游源码。共享回归入口在 Windows 原生打包前运行，完整安装门禁仍执行实际观察器验证。
 
 NSIS _?= 使持有进程覆盖真正卸载，官方契约：https://nsis.sourceforge.io/Docs/Chapter3.html#uninstallerusage 。卸载超时后如不能确认进程已退出，摘要必须标记 cleanupVerified=false。
+
+## Get-Command Application 多匹配（Node FileName）
+
+- CI 证据（身份比对前即失败）：
+  https://github.com/yxflc11/openbot/actions/runs/34748591201/job/103701010236
+  - `Start process 'C:\hostedtoolcache\windows\node\22.22.2\x64\node.exe C:\Program Files\nodejs\node.exe'`
+  - 原因：存在多个 Application 匹配时，`(Get-Command node -CommandType Application).Source`
+    变成 `Object[]`，字符串化后空格拼接成多路径，不能作为 `ProcessStartInfo.FileName`。
+- 官方语义：
+  https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/get-command?view=powershell-7.5
+  - `-CommandType Application` 在 `$Env:PATH` 中搜索可执行文件。
+  - `-TotalCount <int>` 限制返回条数。
+  - 使用 `-TotalCount 1` 取 PATH 上第一个命中（实际会运行的命令 / 优先级首位）作为唯一
+    `.Source` 字符串 — 由 `scripts/windows-receipt-identity-helpers.ps1` 中的
+    `Get-NodeApplicationPath` 实现。
+- 回归：`scripts/check-windows-receipt-identity.ps1` 双 Node PATH 夹具（Linux/Windows 可跑）。

@@ -106,3 +106,20 @@
 The integration also reproduces the JSON comparison failure on macOS PowerShell 7.5.4. Process field differences alone were not proven to cause the failure. Two reads in one .NET runtime do not establish agreement with the actual smoke observer. Reuse the existing Node 22.22.2 observeProcessIdentity helper, including its 15-second WinPS limit and bounded output, to inspect the held PowerShell host. Launch this trusted helper through .NET ProcessStartInfo.ArgumentList with a 20-second outer process limit, closed stdin and bounded response validation. The Microsoft contract is https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.processstartinfo.argumentlist . The Node/Electron helper is already pinned; no dependency or source is copied. Run the shared regression entry before native packaging in CI, and repeat the identity preflight inside the full installed-runtime gate.
 
 NSIS _?= binds the held process to the real uninstall (https://nsis.sourceforge.io/Docs/Chapter3.html#uninstallerusage). If timeout cleanup cannot confirm that process exited, the summary must set cleanupVerified=false.
+
+## Get-Command Application multi-match (Node FileName)
+
+- CI evidence (job failed early before identity compare):
+  https://github.com/yxflc11/openbot/actions/runs/34748591201/job/103701010236
+  - `Start process 'C:\hostedtoolcache\windows\node\22.22.2\x64\node.exe C:\Program Files\nodejs\node.exe'`
+  - Cause: `(Get-Command node -CommandType Application).Source` when multiple Application
+    matches exist — `.Source` becomes an `Object[]` that stringifies to a space-joined multi-path,
+    unfit for `ProcessStartInfo.FileName`.
+- Official semantics:
+  https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/get-command?view=powershell-7.5
+  - `-CommandType Application` searches `$Env:PATH` for executables.
+  - `-TotalCount <int>` limits how many commands are returned.
+  - Use `-TotalCount 1` so the first PATH entry (the command that runs / precedence first) is the
+    sole `.Source` string — implemented as `Get-NodeApplicationPath` in
+    `scripts/windows-receipt-identity-helpers.ps1`.
+- Regression: `scripts/check-windows-receipt-identity.ps1` dual-node PATH fixture (Linux/Windows).
