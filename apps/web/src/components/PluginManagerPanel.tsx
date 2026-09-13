@@ -176,7 +176,7 @@ export function PluginManager({ bots, scope, onInsertMaterial }: PluginManagerPr
           />
           <PluginContentPanel plugin={plugin} scope={scope} onInsertMaterial={onInsertMaterial} />
           <PluginGrantEditor
-            key={`${plugin.id}:${plugin.revision}`}
+            key={plugin.id}
             plugin={plugin}
             bots={bots}
             disabled={busy || loading}
@@ -361,6 +361,22 @@ export function PluginToolList({ tools }: { tools: PluginTool[] }) {
   );
 }
 
+function grantsForBot(plugin: Plugin, botId: string): {
+  tools: PluginGrant[];
+  resources: string[];
+  prompts: string[];
+} {
+  const grant = plugin.grants.find((item) => item.botId === botId);
+  const toolNames = new Set(plugin.tools.map((tool) => tool.name));
+  const resourceUris = new Set((plugin.resources ?? []).map((resource) => resource.uri));
+  const promptNames = new Set((plugin.prompts ?? []).map((prompt) => prompt.name));
+  return {
+    tools: (grant?.tools ?? []).filter((item) => toolNames.has(item.name)),
+    resources: (grant?.resources ?? []).filter((uri) => resourceUris.has(uri)),
+    prompts: (grant?.prompts ?? []).filter((name) => promptNames.has(name)),
+  };
+}
+
 export function PluginGrantEditor({
   plugin,
   bots,
@@ -376,24 +392,34 @@ export function PluginGrantEditor({
     content: { resources: string[]; prompts: string[] },
   ): Promise<void>;
 }) {
+  // Sticky selection: only the Owner dropdown may change botId. Do not fall back to
+  // bots[0] when the prior Bot disappears — that would show another Bot's empty grants.
   const [botId, setBotId] = useState(bots[0]?.id ?? "");
-  const [grants, setGrants] = useState<PluginGrant[]>(
-    plugin.grants.find((grant) => grant.botId === botId)?.tools ?? [],
-  );
-  const [resources, setResources] = useState<string[]>(
-    plugin.grants.find((grant) => grant.botId === botId)?.resources ?? [],
-  );
-  const [prompts, setPrompts] = useState<string[]>(
-    plugin.grants.find((grant) => grant.botId === botId)?.prompts ?? [],
-  );
+  const selectedBotAvailable = bots.some((bot) => bot.id === botId);
+  const initial = grantsForBot(plugin, botId);
+  const [grants, setGrants] = useState<PluginGrant[]>(initial.tools);
+  const [resources, setResources] = useState<string[]>(initial.resources);
+  const [prompts, setPrompts] = useState<string[]>(initial.prompts);
   const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    if (!botId || !selectedBotAvailable) {
+      setGrants([]);
+      setResources([]);
+      setPrompts([]);
+      return;
+    }
+    const next = grantsForBot(plugin, botId);
+    setGrants(next.tools);
+    setResources(next.resources);
+    setPrompts(next.prompts);
+  }, [plugin, botId, selectedBotAvailable]);
   return (
     <form
       className="plugin-grant-editor"
       aria-label={`分配 ${plugin.name} 工具`}
       onSubmit={(event) => {
         event.preventDefault();
-        if (!botId || disabled) return;
+        if (!botId || !selectedBotAvailable || disabled) return;
         void onSave(botId, grants, { resources, prompts })
           .then(() => setSaved(true))
           .catch(() => undefined);
@@ -409,12 +435,18 @@ export function PluginGrantEditor({
           onChange={(event) => {
             const id = event.target.value;
             setBotId(id);
-            setGrants(plugin.grants.find((grant) => grant.botId === id)?.tools ?? []);
-            setResources(plugin.grants.find((grant) => grant.botId === id)?.resources ?? []);
-            setPrompts(plugin.grants.find((grant) => grant.botId === id)?.prompts ?? []);
+            const next = grantsForBot(plugin, id);
+            setGrants(next.tools);
+            setResources(next.resources);
+            setPrompts(next.prompts);
             setSaved(false);
           }}
         >
+          {botId && !selectedBotAvailable ? (
+            <option value={botId} disabled>
+              （Bot 已不存在）
+            </option>
+          ) : null}
           {bots.map((bot) => (
             <option value={bot.id} key={bot.id}>
               {bot.name}
@@ -427,7 +459,7 @@ export function PluginGrantEditor({
           <span>{tool.name}</span>
           <select
             aria-label={`${tool.name} 调用权限`}
-            disabled={disabled || !botId}
+            disabled={disabled || !botId || !selectedBotAvailable}
             value={grants.find((grant) => grant.name === tool.name)?.mode ?? "none"}
             onChange={(event) => {
               const mode = event.target.value;
@@ -450,7 +482,7 @@ export function PluginGrantEditor({
         <label className="plugin-review-check" key={resource.uri}>
           <input
             type="checkbox"
-            disabled={disabled || !botId}
+            disabled={disabled || !botId || !selectedBotAvailable}
             checked={resources.includes(resource.uri)}
             onChange={(event) => {
               setResources((current) =>
@@ -468,7 +500,7 @@ export function PluginGrantEditor({
         <label className="plugin-review-check" key={prompt.name}>
           <input
             type="checkbox"
-            disabled={disabled || !botId}
+            disabled={disabled || !botId || !selectedBotAvailable}
             checked={prompts.includes(prompt.name)}
             onChange={(event) => {
               setPrompts((current) =>
@@ -485,7 +517,7 @@ export function PluginGrantEditor({
       <p>
         只读权限由你判断并授权，不采用插件自报标签。可能写入或产生外部影响的工具应选择每次确认。
       </p>
-      <button className="secondary-button" type="submit" disabled={disabled || !botId}>
+      <button className="secondary-button" type="submit" disabled={disabled || !botId || !selectedBotAvailable}>
         保存 Bot 工具权限
       </button>
       {saved ? <span role="status">已保存</span> : null}
