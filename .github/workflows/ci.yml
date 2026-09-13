@@ -86,6 +86,10 @@ jobs:
       - run: npm ci
       - name: Verify native Desktop bootstrap behavior
         run: node --test scripts/install-desktop.test.mjs
+      - name: Verify Windows receipt identity before native packaging
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/check-windows-receipt-identity.ps1
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build

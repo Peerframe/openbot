@@ -24,19 +24,16 @@ function Read-ProcessIdentityFromJsonElement {
   if (-not $Element.TryGetProperty('startTimeUtc', [ref]$startEl)) { return $null }
   if (-not $Element.TryGetProperty('executablePath', [ref]$pathEl)) { return $null }
   if ($pidEl.ValueKind -ne [System.Text.Json.JsonValueKind]::Number) { return $null }
-  $startTimeUtc = $null
-  if ($startEl.ValueKind -eq [System.Text.Json.JsonValueKind]::String) {
-    $startTimeUtc = $startEl.GetString()
-  } else {
-    # Unexpected non-string token; fall back only if somehow already DateTime-like.
-    $startTimeUtc = ConvertTo-IsoStartTimeUtc $startEl.ToString()
-  }
-  if ([string]::IsNullOrWhiteSpace($startTimeUtc)) { return $null }
+  if ($startEl.ValueKind -ne [System.Text.Json.JsonValueKind]::String) { return $null }
+  $startTimeUtc = $startEl.GetString()
+  if ($startTimeUtc -notmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z$') { return $null }
   if ($pathEl.ValueKind -ne [System.Text.Json.JsonValueKind]::String) { return $null }
   $executablePath = $pathEl.GetString()
   if ([string]::IsNullOrWhiteSpace($executablePath)) { return $null }
+  $processId = $pidEl.GetInt32()
+  if ($processId -le 0) { return $null }
   return [pscustomobject]@{
-    pid = $pidEl.GetInt32()
+    pid = $processId
     startTimeUtc = $startTimeUtc
     executablePath = $executablePath
   }
@@ -98,12 +95,10 @@ function Get-CanonicalProcessIdentity {
     [Parameter(Mandatory = $true)][int]$ProcessId,
     [System.Diagnostics.Process]$HeldProcess = $null
   )
-  if ($null -ne $HeldProcess) {
-    $null = $HeldProcess.Handle
-  }
-  $proc = [Diagnostics.Process]::GetProcessById($ProcessId)
+  $proc = if ($null -ne $HeldProcess) { $HeldProcess } else { [Diagnostics.Process]::GetProcessById($ProcessId) }
   try {
     $null = $proc.Handle
+    if ($proc.Id -ne $ProcessId) { throw 'Held process identity does not match the requested process.' }
     if ($proc.HasExited) {
       throw "Process $ProcessId exited before identity could be observed."
     }
@@ -113,7 +108,7 @@ function Get-CanonicalProcessIdentity {
       executablePath = [string]$proc.MainModule.FileName
     }
   } finally {
-    $proc.Dispose()
+    if ($null -eq $HeldProcess) { $proc.Dispose() }
   }
 }
 
@@ -143,7 +138,12 @@ function Test-ReceiptIdentityEqualsSpawn {
     [AllowNull()]$ReceiptIdentity,
     [Parameter(Mandatory = $true)]$SpawnIdentity
   )
-  if ($null -eq $ReceiptIdentity) { return $false }
+  if ($null -eq $ReceiptIdentity -or $null -eq $SpawnIdentity) { return $false }
+  foreach ($identity in @($ReceiptIdentity, $SpawnIdentity)) {
+    if ($null -eq $identity.pid -or [long]$identity.pid -le 0 -or [long]$identity.pid -gt 2147483647 -or
+        $identity.startTimeUtc -isnot [string] -or $identity.startTimeUtc -notmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z$' -or
+        $identity.executablePath -isnot [string] -or [string]::IsNullOrWhiteSpace($identity.executablePath)) { return $false }
+  }
   # Path uses case-insensitive equality (-ieq), matching install-gate -ine failure checks.
   return (
     [int]$ReceiptIdentity.pid -eq [int]$SpawnIdentity.pid -and
@@ -152,46 +152,53 @@ function Test-ReceiptIdentityEqualsSpawn {
   )
 }
 
-# Bounded preflight: two canonical reads on the same held process (no WinPS child / no unbounded &).
-function Assert-CanonicalProcessIdentityConsistency {
-  $probeCmd = if (Get-Command powershell.exe -ErrorAction SilentlyContinue) {
-    'powershell.exe'
-  } elseif (Get-Command pwsh -ErrorAction SilentlyContinue) {
-    (Get-Command pwsh).Source
-  } else {
-    (Get-Process -Id $PID).Path
-  }
-  $probe = Start-Process -FilePath $probeCmd -ArgumentList '-NoProfile -NonInteractive -Command "Start-Sleep -Seconds 30"' -PassThru
+# Compare the held host with the actual Node → WinPS smoke observer, not a second .NET read.
+function Assert-CrossRuntimeProcessIdentityConsistency {
+  $hostProcess = [Diagnostics.Process]::GetCurrentProcess()
+  $observer = $null
   try {
-    if ($null -eq $probe) { throw 'Canonical identity preflight failed to start probe process.' }
-    $null = $probe.Handle
-    $first = Get-CanonicalProcessIdentity -ProcessId ([int]$probe.Id) -HeldProcess $probe
-    $second = Get-CanonicalProcessIdentity -ProcessId ([int]$probe.Id) -HeldProcess $probe
-    if (
-      [int]$first.pid -ne [int]$second.pid -or
-      $first.startTimeUtc -ne $second.startTimeUtc -or
-      $first.executablePath -ne $second.executablePath
-    ) {
-      $firstEvidence = Format-ProcessIdentityEvidence -Identity $first -Label 'first'
-      $secondEvidence = Format-ProcessIdentityEvidence -Identity $second -Label 'second'
-      throw "Canonical process identity preflight failed. $firstEvidence $secondEvidence"
+    $hostIdentity = Get-CanonicalProcessIdentity -ProcessId $hostProcess.Id -HeldProcess $hostProcess
+    $info = [Diagnostics.ProcessStartInfo]::new()
+    $info.FileName = (Get-Command node -CommandType Application -ErrorAction Stop).Source
+    $info.UseShellExecute = $false
+    $info.CreateNoWindow = $true
+    $info.RedirectStandardInput = $true
+    $info.RedirectStandardOutput = $true
+    $info.RedirectStandardError = $true
+    $helper = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../apps/desktop/scripts/windows-native-smoke-harness.mjs'))
+    $code = 'import {pathToFileURL} from "node:url"; const {observeProcessIdentity}=await import(pathToFileURL(process.argv[1]).href); console.log(JSON.stringify({electron:observeProcessIdentity(Number(process.argv[2]))}));'
+    foreach ($argument in @('--input-type=module', '-e', $code, $helper, [string]$hostProcess.Id)) {
+      $info.ArgumentList.Add($argument)
     }
-    if (
-      [int]$first.pid -ne [int]$probe.Id -or
-      [string]::IsNullOrWhiteSpace($first.startTimeUtc) -or
-      [string]::IsNullOrWhiteSpace($first.executablePath)
-    ) {
-      throw 'Canonical process identity preflight returned incomplete fields.'
+    $observer = [Diagnostics.Process]::Start($info)
+    $null = $observer.Handle
+    $observer.StandardInput.Close()
+    $outputTask = $observer.StandardOutput.ReadToEndAsync()
+    $errorTask = $observer.StandardError.ReadToEndAsync()
+    if (!$observer.WaitForExit(20000)) { throw 'Node smoke identity observer exceeded 20 seconds.' }
+    if (!$outputTask.Wait(2000) -or !$errorTask.Wait(2000)) { throw 'Node smoke identity streams did not close.' }
+    if ($observer.ExitCode -ne 0 -or $outputTask.Result.Length -gt 8192 -or $errorTask.Result.Length -gt 4096) {
+      throw 'Node smoke identity observer failed or exceeded its response bound.'
     }
-    Write-Host "PASS: canonical process identity preflight (pid=$($first.pid))."
-    return $first
+    $smokeIdentity = (Read-SmokeRoundIdentities $outputTask.Result).electron
+    if (!(Test-ReceiptIdentityEqualsSpawn -ReceiptIdentity $smokeIdentity -SpawnIdentity $hostIdentity)) {
+      $hostEvidence = Format-ProcessIdentityEvidence -Identity $hostIdentity -Label 'host'
+      $smokeEvidence = Format-ProcessIdentityEvidence -Identity $smokeIdentity -Label 'smoke'
+      throw "Cross-runtime identity mismatch. $hostEvidence $smokeEvidence"
+    }
+    Write-Host "PASS: pwsh identity matches the actual Node/WinPS smoke observer (pid=$($hostIdentity.pid))."
   } finally {
-    if ($null -ne $probe) {
-      if (-not $probe.HasExited) {
-        try { $probe.Kill($true) } catch { }
-        $null = $probe.WaitForExit(10000)
+    try {
+      if ($null -ne $observer) {
+        if (!$observer.HasExited) { $observer.Kill($true) }
+        if (!$observer.WaitForExit(10000)) { throw 'Node smoke identity observer cleanup failed.' }
       }
-      $probe.Dispose()
+    } catch {
+      $script:cleanupVerified = $false
+      throw
+    } finally {
+      if ($null -ne $observer) { $observer.Dispose() }
+      $hostProcess.Dispose()
     }
   }
 }

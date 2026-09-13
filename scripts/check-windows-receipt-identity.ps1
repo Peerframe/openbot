@@ -1,7 +1,7 @@
 # Independent Windows receipt↔orchestrator identity conformance checks.
 # Exercises the same helpers as the install gate (dot-sourced, not duplicated).
 # - On non-Windows: STJ-primary ISO round-trip + mismatch rejects (pwsh 7.4-safe).
-# - On Windows: also runs bounded canonical held-handle preflight (no WinPS child).
+# - On Windows: also runs bounded comparison with the actual Node/WinPS smoke observer.
 # Does not launch NSIS, smoke.mjs, or product code.
 [CmdletBinding()]
 param(
@@ -111,6 +111,16 @@ function Test-StjPrimaryIdentityRoundTrip {
   Write-CheckResult -Name 'Reject wrong path' -Passed (
     -not (Test-ReceiptIdentityEqualsSpawn -ReceiptIdentity $wrongPath -SpawnIdentity $spawnIdentity)
   ) -Detail "path=$($wrongPath.executablePath)"
+
+  foreach ($invalidTime in @('null', '123', '{}', '"2026-09-13T08:25:04Z"')) {
+    $invalidJson = $receiptJson.Replace(('"' + $iso + '"'), $invalidTime)
+    $invalidIdentity = (Read-SmokeRoundIdentities $invalidJson).electron
+    Write-CheckResult -Name "Reject incomplete timestamp token $invalidTime" -Passed ($null -eq $invalidIdentity)
+  }
+  $missing = [pscustomobject]@{ pid = 5060; startTimeUtc = $null; executablePath = $exePath }
+  Write-CheckResult -Name 'Missing timestamps cannot match one another' -Passed (
+    -not (Test-ReceiptIdentityEqualsSpawn -ReceiptIdentity $missing -SpawnIdentity $missing)
+  )
 }
 
 Write-Host "OpenBot Windows receipt identity checks (pwsh $($PSVersionTable.PSVersion); OS=$([System.Runtime.InteropServices.RuntimeInformation]::OSDescription))"
@@ -118,15 +128,15 @@ Test-StjPrimaryIdentityRoundTrip
 
 $runningOnWindows = [OperatingSystem]::IsWindows()
 if (-not $runningOnWindows) {
-  Write-Host 'SKIP: Windows canonical held-handle preflight (non-Windows host).'
+  Write-Host 'SKIP: Windows Node/WinPS identity preflight (non-Windows host).'
 } elseif ($SkipWindowsProcessChecks) {
-  Write-Host 'SKIP: Windows canonical held-handle preflight (-SkipWindowsProcessChecks).'
+  Write-Host 'SKIP: Windows Node/WinPS identity preflight (-SkipWindowsProcessChecks).'
 } else {
   try {
-    $null = Assert-CanonicalProcessIdentityConsistency
-    Write-CheckResult -Name 'Bounded canonical held-handle preflight' -Passed $true
+    $null = Assert-CrossRuntimeProcessIdentityConsistency
+    Write-CheckResult -Name 'Actual Node/WinPS cross-runtime identity preflight' -Passed $true
   } catch {
-    Write-CheckResult -Name 'Bounded canonical held-handle preflight' -Passed $false -Detail ([string]$_.Exception.Message)
+    Write-CheckResult -Name 'Actual Node/WinPS cross-runtime identity preflight' -Passed $false -Detail ([string]$_.Exception.Message)
   }
 }
 

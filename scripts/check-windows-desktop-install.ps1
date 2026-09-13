@@ -22,6 +22,7 @@ $passed = $false
 $uninstalled = $false
 $fixtureRemoved = $false
 $ownershipTestsPassed = $false
+$crossRuntimeIdentityPassed = $false
 $ColdStartRounds = 10
 $expectedFinalChecks = 'postgresql,migrations,dpapi,owner-login,retained-data,stop,restart,cleanup,cold-start-10'
 $target = Join-Path $env:RUNNER_TEMP ('OpenBotWindowsInstall-' + [Guid]::NewGuid().ToString('N'))
@@ -194,10 +195,7 @@ function Invoke-NativeSmoke([string]$Mode, [string]$RoundReceipt, [int]$TimeoutM
   $roundResult = $receiptRaw | ConvertFrom-Json
   $identities = Read-SmokeRoundIdentities $receiptRaw
   $receiptElectron = $identities.electron
-  if ($null -eq $receiptElectron -or
-      [int]$receiptElectron.pid -ne [int]$spawnIdentity.pid -or
-      $receiptElectron.startTimeUtc -ne $spawnIdentity.startTimeUtc -or
-      $receiptElectron.executablePath -ine $spawnIdentity.executablePath) {
+  if (!(Test-ReceiptIdentityEqualsSpawn -ReceiptIdentity $receiptElectron -SpawnIdentity $spawnIdentity)) {
     $heldEvidence = Format-ProcessIdentityEvidence -Identity $spawnIdentity -Label 'held'
     $receiptEvidence = Format-ProcessIdentityEvidence -Identity $receiptElectron -Label 'receipt'
     throw "Round receipt does not match the Electron process held by the orchestrator. $heldEvidence $receiptEvidence"
@@ -294,7 +292,8 @@ function Test-HarnessProcessOwnership {
 
 try {
   $stage = 'process-identity-preflight'
-  Assert-CanonicalProcessIdentityConsistency
+  Assert-CrossRuntimeProcessIdentityConsistency
+  $crossRuntimeIdentityPassed = $true
   $stage = 'process-identity-negative-checks'
   Test-HarnessProcessOwnership
   $ownershipTestsPassed = $true
@@ -368,8 +367,10 @@ try {
       try {
         $null = $process.Handle
         if (!$process.WaitForExit(60000)) {
-          try { $process.Kill($true) } catch { }
-          $null = $process.WaitForExit(15000)
+          try {
+            $process.Kill($true)
+            if (!$process.WaitForExit(15000)) { $script:cleanupVerified = $false }
+          } catch { $script:cleanupVerified = $false }
           throw 'NSIS uninstall timed out.'
         }
         if ($process.ExitCode -ne 0) { throw "NSIS uninstall failed (exit=$($process.ExitCode))." }
@@ -416,12 +417,13 @@ try {
       sourceCommit = $env:GITHUB_SHA
       platform = 'win32'
       arch = 'x64'
-      passed = ($passed -and $uninstalled -and $script:cleanupVerified -and $fixtureRemoved -and $ownershipTestsPassed)
+      passed = ($passed -and $uninstalled -and $script:cleanupVerified -and $fixtureRemoved -and $ownershipTestsPassed -and $crossRuntimeIdentityPassed)
       lastStage = $stage
       uninstallPassed = $uninstalled
       fixtureRemoved = $fixtureRemoved
       cleanupVerified = $script:cleanupVerified
       processIdentityNegativeTestsPassed = $ownershipTestsPassed
+      crossRuntimeIdentityPassed = $crossRuntimeIdentityPassed
       coldStartsCompleted = [Math]::Max(0, $script:roundEvidence.Count - 1)
       rounds = @($script:roundEvidence)
     }

@@ -41,3 +41,10 @@
 - NSIS 静默卸载：官方 FAQ（ExecWait uninstaller）说明普通 `/S` 只等 stub；门禁将
   `Uninstall OpenBot.exe` 复制到安装目录外并以 `/S _?=<install-dir>`（`_?` 最后、路径不加引号）
   有界等待后再置 `uninstallPassed` / 删目录。
+
+
+## 集成验证
+
+Codex 在 macOS PowerShell 7.5.4 独立复现 JSON 日期比对失败；进程字段差异本身尚未被证明是本次故障原因。同一 .NET 运行时读两次不能证明与实际 smoke 观察器一致。集成复用已固定版本的 Node 22.22.2 observeProcessIdentity（WinPS 15秒/输出上限），观察持有句柄的 PowerShell 主进程，通过 .NET ProcessStartInfo.ArgumentList 传参并增加20秒外层进程时限、关闭标准输入和响应大小校验。官方契约：https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.processstartinfo.argumentlist 。不增加依赖、不复制上游源码。共享回归入口在 Windows 原生打包前运行，完整安装门禁仍执行实际观察器验证。
+
+NSIS _?= 使持有进程覆盖真正卸载，官方契约：https://nsis.sourceforge.io/Docs/Chapter3.html#uninstallerusage 。卸载超时后如不能确认进程已退出，摘要必须标记 cleanupVerified=false。

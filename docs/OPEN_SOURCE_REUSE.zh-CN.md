@@ -283,3 +283,6 @@ H2 v1 补充选定 RFC 8785 JCS 与 `canonicalize@5.0.0` / `7d97c70c79c9f52070e6
 Tesseract.js 7.0.0（`42eae669e4b3a66429d8516f078912cc747a89df`，Apache-2.0）。
 Server 在保存成功状态前拒绝仅含空白的提取结果，并在模型调用前拒绝历史空文本记录。
 未新增 PDF OCR，也不会自动改为发送原文件。没有复制上游源码，见[研究记录](research/attachment-empty-extraction.md)。
+
+
+Windows 回执集成复用 PowerShell/.NET System.Text.Json 与现有有界 Node/WinPS 进程观察器，保留原始时间戳精度并等待真正的 NSIS 卸载进程；不新增依赖、不复制上游源码。见[研究](research/windows-receipt-orchestrator-identity.zh-CN.md)。

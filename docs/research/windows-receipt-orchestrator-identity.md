@@ -72,15 +72,13 @@
   from receipt and live/state JSON, with `ConvertTo-IsoStartTimeUtc` only as a DateTime fallback;
   shared helpers under `scripts/windows-receipt-identity-helpers.ps1`; resilient fixture removal;
   independent Linux-runnable identity test that exercises those same helpers.
-- Why first viable: both mismatch vectors are code-backed (Process field/API drift vs smoke;
-  ConvertFrom-Json DateTime coercion → `[string]` locale short form). STJ `GetString` avoids the
+- Why first viable: the JSON DateTime comparison/projection failure is independently reproduced. Aligning process observation keeps both sides on the same API; field/API differences alone are not an established failure cause. STJ `GetString` avoids the
   coercion entirely for identity fields; normalize-DateTime remains only when a value is already
   `DateTime`. Json.NET `DateParseHandling.None` is the same idea on Newtonsoft — unnecessary here.
 - Exact OpenBot-specific gap: orchestrator must observe Electron the same way smoke does, and
   must never project `[string]$DateTime` for `startTimeUtc`.
 - Failure behavior: mismatch throws with held vs receipt projection of the three identity fields
-  only; preflight is a **bounded held-handle double canonical read** (no unbounded WinPS `&`
-  child — smoke's WinPS path stays 15s/`maxBuffer` in the Node harness); fixture delete retries /
+  only; preflight compares the held PowerShell host with the **actual Node/WinPS smoke observer** (20-second outer limit, existing 15-second WinPS/`maxBuffer` limit); fixture delete retries /
   treats vanished paths as success while still failing if the install tree remains.
 
 ## Source incorporation
@@ -92,13 +90,19 @@
 
 - Automated: `scripts/check-windows-receipt-identity.ps1` on Linux pwsh asserts STJ-primary
   JSON→compare→summary round-trip keeps the original 7-fraction-digit UTC ISO, and rejects
-  last-digit / wrong-PID / wrong-path mismatches; on Windows also runs bounded canonical
-  held-handle preflight (shared helpers, not a duplicated copy).
+  last-digit / wrong-PID / wrong-path mismatches; on Windows also compares the held host against the actual Node/WinPS observer (shared helpers, not a duplicated copy).
 - Hosted Windows CI continues to run NSIS install → smoke → uninstall via
   `scripts/check-windows-desktop-install.ps1` (strict receipt↔held check retained).
-- Do not edit smoke.mjs, harness, product code, workflows, or package.json for this fix.
+- The integration adds the shared preflight entry before native packaging in CI; smoke.mjs, its Node observer, product code and package.json remain unchanged by this repair.
 
 ## Unresolved questions
 
 - Hosted Windows CI must re-run the install gate on branch `grok/windows-receipt-conformance`
   to confirm bootstrap receipt matches held Electron after this alignment.
+
+
+## Integration verification
+
+The integration also reproduces the JSON comparison failure on macOS PowerShell 7.5.4. Process field differences alone were not proven to cause the failure. Two reads in one .NET runtime do not establish agreement with the actual smoke observer. Reuse the existing Node 22.22.2 observeProcessIdentity helper, including its 15-second WinPS limit and bounded output, to inspect the held PowerShell host. Launch this trusted helper through .NET ProcessStartInfo.ArgumentList with a 20-second outer process limit, closed stdin and bounded response validation. The Microsoft contract is https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.processstartinfo.argumentlist . The Node/Electron helper is already pinned; no dependency or source is copied. Run the shared regression entry before native packaging in CI, and repeat the identity preflight inside the full installed-runtime gate.
+
+NSIS _?= binds the held process to the real uninstall (https://nsis.sourceforge.io/Docs/Chapter3.html#uninstallerusage). If timeout cleanup cannot confirm that process exited, the summary must set cleanupVerified=false.

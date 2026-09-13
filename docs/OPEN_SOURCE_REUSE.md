@@ -341,3 +341,6 @@ and Tesseract.js 7.0.0 (`42eae669e4b3a66429d8516f078912cc747a89df`, Apache-2.0).
 A narrow Server adapter rejects whitespace-only extraction before persisting success and rejects
 legacy empty derived records before inference. No new PDF OCR or automatic binary fallback.
 No copied source; see [research](research/attachment-empty-extraction.md).
+
+
+Windows receipt integration reuses PowerShell/.NET System.Text.Json and the existing bounded Node/WinPS process observer. Preserve literal timestamp precision and wait for the actual NSIS uninstall process; no new dependency or copied source. See [research](research/windows-receipt-orchestrator-identity.md).
