@@ -445,22 +445,31 @@ export function pluginGrantAuthoritySnapshot(
   plugin: Plugin,
   botId: string,
   bots: Bot[],
-): { botId: string; revision: string; available: boolean; authority: string } {
+): {
+  botId: string;
+  revision: string;
+  available: boolean;
+  grantSignature: string;
+  authority: string;
+} {
   const available = Boolean(botId) && bots.some((bot) => bot.id === botId);
   if (!botId || !available) {
     return {
       botId,
       revision: plugin.revision,
       available: false,
+      grantSignature: "",
       authority: `unavailable:${botId}`,
     };
   }
   const granted = grantsForBot(plugin, botId);
+  const grantSignature = stableGrantSignature(granted);
   return {
     botId,
     revision: plugin.revision,
     available: true,
-    authority: `${plugin.revision}|${plugin.enabled ? "1" : "0"}|${stableGrantSignature(granted)}`,
+    grantSignature,
+    authority: `${plugin.revision}|${plugin.enabled ? "1" : "0"}|${grantSignature}`,
   };
 }
 
@@ -551,6 +560,7 @@ export function PluginGrantEditor({
         event.preventDefault();
         if (!botId || !selectedBotAvailable || disabled) return;
         const submittedBotId = botId;
+        const submittedRevision = plugin.revision;
         const submittedSignature = stableGrantSignature({
           tools: grants,
           resources,
@@ -564,15 +574,30 @@ export function PluginGrantEditor({
         };
         void onSave(botId, grants, { resources, prompts })
           .then(() => {
-            // Bind "已保存" to current Bot + availability (authoritative grant snapshot may
-            // already have advanced via parent GET). Ignore late async after switch / loss.
-            if (
-              saveEpochRef.current === epoch &&
-              selectionRef.current.botId === submittedBotId &&
-              selectionRef.current.available
-            ) {
-              setSaved(true);
+            // Bind "已保存" to Bot + availability + grant-authority identity. A divergent
+            // sync clears pendingSaveRef; do not resurrect success after cleared grants.
+            if (saveEpochRef.current !== epoch) return;
+            if (selectionRef.current.botId !== submittedBotId || !selectionRef.current.available) {
+              return;
             }
+            const pending = pendingSaveRef.current;
+            if (
+              !pending ||
+              pending.epoch !== epoch ||
+              pending.botId !== submittedBotId ||
+              pending.signature !== submittedSignature
+            ) {
+              return;
+            }
+            // If the authoritative snapshot already advanced, it must confirm our write.
+            if (
+              selectionRef.current.revision !== submittedRevision &&
+              selectionRef.current.grantSignature !== submittedSignature
+            ) {
+              pendingSaveRef.current = null;
+              return;
+            }
+            setSaved(true);
           })
           .catch(() => {
             if (pendingSaveRef.current?.epoch === epoch) pendingSaveRef.current = null;

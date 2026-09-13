@@ -644,6 +644,74 @@ describe("plugin grant Bot selection", () => {
     }
   });
 
+  it("D: pending save does not show 已保存 after cleared authority snapshot then resolve", async () => {
+    let resolveSave: (() => void) | undefined;
+    const save = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    const base: Plugin = {
+      ...plugin,
+      revision: "r1",
+      enabled: true,
+      tools: [{ name: "write", description: "Write", inputSchema: { type: "object" } }],
+      grants: [],
+    };
+    const view = await renderGrantEditor(
+      <PluginGrantEditor plugin={base} bots={[received, source]} disabled={false} onSave={save} />,
+    );
+    try {
+      const botSelect = view.container.querySelector<HTMLSelectElement>(
+        '[aria-label="Example 接收 Bot"]',
+      );
+      if (!botSelect) throw new Error("Bot select missing");
+      await interact(() => {
+        botSelect.value = source.id;
+        botSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      const permission = view.container.querySelector<HTMLSelectElement>(
+        '[aria-label="write 调用权限"]',
+      );
+      if (!permission) throw new Error("Permission select missing");
+      await interact(() => {
+        permission.value = "read";
+        permission.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      await interact(() =>
+        view.container
+          .querySelector("form")
+          ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
+      );
+      expect(save).toHaveBeenCalledOnce();
+      expect(view.container.textContent).not.toContain("已保存");
+      // Authoritative snapshot arrives while save is still pending: new revision, disabled, grants cleared.
+      const cleared: Plugin = {
+        ...base,
+        revision: "r2",
+        enabled: false,
+        grants: [],
+      };
+      await view.rerender(
+        <PluginGrantEditor
+          plugin={cleared}
+          bots={[received, source]}
+          disabled={false}
+          onSave={save}
+        />,
+      );
+      expect(botSelect.value).toBe(source.id);
+      expect(view.container.textContent).not.toContain("已保存");
+      await act(async () => {
+        resolveSave?.();
+      });
+      expect(view.container.textContent).not.toContain("已保存");
+    } finally {
+      await view.unmount();
+    }
+  });
+
   it("keeps 已保存 after normal save reload with new revision and matching grants", async () => {
     const save = vi.fn().mockResolvedValue(undefined);
     const base: Plugin = {
