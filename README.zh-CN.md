@@ -24,14 +24,14 @@
 
 ## 下载
 
-**Desktop 0.1.0-alpha.7**
+**Desktop 0.1.0-alpha.8**
 
 | 平台 | 安装包 | 工作区 |
 | --- | --- | --- |
-| macOS · Apple Silicon | [下载 DMG](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.7/openbot-desktop-0.1.0-alpha.7-darwin-arm64.dmg) | 内置 Server 与 PostgreSQL，也可连接已有服务 |
-| Windows · x64 | [下载 EXE](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.7/openbot-desktop-0.1.0-alpha.7-win32-x64.exe) | 内置 Server 与 PostgreSQL，也可连接已有服务 |
+| macOS · Apple Silicon | [下载 DMG](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.8/openbot-desktop-0.1.0-alpha.8-darwin-arm64.dmg) | 内置 Server 与 PostgreSQL，也可连接已有服务 |
+| Windows · x64 | [下载 EXE](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.8/openbot-desktop-0.1.0-alpha.8-win32-x64.exe) | 内置 Server 与 PostgreSQL，也可连接已有服务 |
 
-预览安装包尚未签名，macOS 包尚未公证。系统信任提示、升级方法及其他平台构建见[发行说明与校验值](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.7)和[安装指南](docs/DESKTOP_INSTALLATION.zh-CN.md)。
+预览安装包尚未签名，macOS 包尚未公证。系统信任提示、升级方法及其他平台构建见[发行说明与校验值](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.8)和[安装指南](docs/DESKTOP_INSTALLATION.zh-CN.md)。
 
 ## 开始使用
 

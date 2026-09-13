@@ -2,9 +2,11 @@
 
 [English](DESKTOP_INSTALLATION.md) · [简体中文](DESKTOP_INSTALLATION.zh-CN.md)
 
-**当前预览版：[Desktop 0.1.0-alpha.7](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.7)**，提供 macOS Apple Silicon DMG 与 Windows x64 EXE，随附合并清单和 SHA256SUMS。两者来自同一已通过完整 CI 的源码提交。下表也列出流水线支持的 Linux 构建目标；alpha.7 未发布 Linux 安装器。
+**当前预览版：[Desktop 0.1.0-alpha.8](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.8)**，提供 macOS Apple Silicon DMG 与 Windows x64 EXE，随附合并清单和 SHA256SUMS。两者来自同一已通过完整 CI 的源码提交。下表也列出流水线支持的 Linux 构建目标；alpha.8 未发布 Linux 安装器。
 
-alpha.7 修复了原生消息表情、附件文件名与较大附件转发，以及包含已审核技能正文的 Bot 导出。下载来自同一源码提交 `62440c1a09fdac624fe2078c130ff55d6ea4e24c`，见[完整 CI](https://github.com/yxflc11/openbot/actions/runs/34664940360)。Windows 安装及数据保留证据来自托管 runner；正式签名、公证和用户 Windows 真机界面验收仍未完成。
+alpha.8 改善 macOS 主进程异常退出后重新打开的恢复行为；PDF 未提取到可读文字时会明确提示，并保留原文件。Windows 验收新增十次独立 Electron 进程冷启动。对于源码开发用户，标准 Web 开发页面也恢复了内容安全策略下的样式显示和热更新。
+
+[固定版本发行页](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.8)记录源码提交和已通过的 main CI；随附的 [desktop-manifest.json](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.8/desktop-manifest.json)记录准确源码、所含平台和安装器摘要。请使用 [SHA256SUMS](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.8/SHA256SUMS)核对下载文件。Windows 安装与数据保留证据来自托管运行器，见[发行源码冷启动证据](WINDOWS_DESKTOP.zh-CN.md#发行源码冷启动证据)。正式签名、公证和用户 Windows 真机界面验收仍未完成。
 
 | 平台 | Release 中的文件 | 安装方法 | 实际组合能力 |
 | --- | --- | --- | --- |
@@ -29,7 +31,7 @@ macOS arm64（Linux 请改用包含 AppImage 的已发布版本）：
 curl --proto '=https' --proto-redir '=https' --tlsv1.2 -fsSL \
   https://raw.githubusercontent.com/yxflc11/openbot/main/scripts/install-desktop.sh \
   -o /tmp/openbot-install-desktop.sh
-bash /tmp/openbot-install-desktop.sh 0.1.0-alpha.7
+bash /tmp/openbot-install-desktop.sh 0.1.0-alpha.8
 ```
 
 macOS 安装到 `~/Applications/OpenBot.app`，拒绝覆盖已有应用；需要升级时使用 DMG 审查操作。
@@ -40,7 +42,7 @@ Windows x64，在 PowerShell 中执行：
 
 ```powershell
 Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/yxflc11/openbot/main/scripts/install-desktop.ps1 -OutFile "$env:TEMP\openbot-install-desktop.ps1"
-& "$env:TEMP\openbot-install-desktop.ps1" -Version 0.1.0-alpha.7
+& "$env:TEMP\openbot-install-desktop.ps1" -Version 0.1.0-alpha.8
 ```
 
 PowerShell 脚本打开当前用户安装器并等待结果。如果系统执行策略禁止脚本，直接下载并打开 EXE；
@@ -57,7 +59,7 @@ PowerShell 脚本打开当前用户安装器并等待结果。如果系统执行
 4. 退出后重新打开 Desktop，确认工作区与模型摘要仍存在。退出 Desktop 会停止 macOS/Windows 本地服务；
    无人值守定时任务需要持续运行的 Server。
 
-alpha.6 候选版增加受限频道协作、更丰富附件、经审核 MCP 资料与应用、语音草稿和恢复启动。分享导出可复用 Bot 档案/已验证技能并下载成果，不发布私人记忆或聊天记录。Windows 本地服务证据见 [Windows 桌面版](WINDOWS_DESKTOP.zh-CN.md)。alpha.6 同时提供 Windows x64 和 macOS arm64；macOS 随包 PostgreSQL 为 17.10，Windows 为 17.11。
+Desktop 支持受限频道协作、更丰富附件、经审核 MCP 资料与应用、语音草稿和恢复启动。分享导出可复用 Bot 档案/已验证技能并下载成果，不发布私人记忆或聊天记录。Windows 本地服务证据见 [Windows 桌面版](WINDOWS_DESKTOP.zh-CN.md)。macOS 随包 PostgreSQL 为 17.10，Windows 为 17.11。
 
 完整能力边界见 [Desktop 引导](DESKTOP_ONBOARDING.zh-CN.md)、[原生 Agent](NATIVE_AGENT.zh-CN.md)
 和 [Server 容器](SERVER_CONTAINER.zh-CN.md)。
@@ -76,7 +78,8 @@ companion，再生成三端安装器。输出目录包含 `manifest.json` 与 `S
 `sourceCommit: null`，不能进入 CI 发布门槛。
 
 **Prepare Desktop release** 工作流接收成功的 main push CI 运行编号与对应 Desktop 版本，验证
-仓库/运行身份、三个目标及所有校验值，然后创建含四个安装文件、合并清单与校验值的草稿预发行。
+仓库/运行身份、选定目标及所有校验值，然后创建包含相应安装文件、合并清单与校验值的草稿预发行。
+工作流默认选择 macOS arm64 和 Windows x64，也可选择仅 Windows 或全部三个平台。
 它不会公开草稿，也不会覆盖已有 Release。公开前仍需完成原生依赖声明/源码对应核对与签名分发
 审查。草稿仅仓库维护者可见，不是公开下载渠道。
 

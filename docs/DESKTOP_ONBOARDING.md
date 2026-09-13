@@ -176,9 +176,9 @@ See [recurring-task research](research/server-automations.md).
 
 ## Current boundaries
 
-The current public preview is **0.1.0-alpha.7**, with a macOS arm64 DMG and Windows x64 EXE.
+The current public preview is **0.1.0-alpha.8**, with a macOS arm64 DMG and Windows x64 EXE.
 Both platforms support a bundled local Server/PostgreSQL or an existing Server connection.
-Linux x64 remains a remote-client build target; alpha.7 publishes no Linux installers. These are
+Linux x64 remains a remote-client build target; alpha.8 publishes no Linux installers. These are
 unsigned development builds; production signing and macOS notarization remain outstanding.
 Windows installation and retained-runtime checks ran on a hosted runner; manual Windows desktop
 and SmartScreen acceptance remain outstanding. macOS Intel is outside the installer matrix. See
