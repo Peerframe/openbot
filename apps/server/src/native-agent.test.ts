@@ -1329,19 +1329,79 @@ describe("reviewed skill tool integration", () => {
     ).rejects.toThrow();
     expect(f.store.readSkill).not.toHaveBeenCalled();
   });
-  it("rejects revocation after a model response without returning staged output", async () => {
+  it("rejects skill assignment changes after a model response without returning staged output", async () => {
     const f = skillFixture();
-    let revoked = false;
+    let changed = false;
     f.store.assertSkills = async (_run, refs) => {
-      if (revoked && refs.length) throw new NativeExecutionError("scope_revoked");
+      if (changed && refs.length) throw new NativeExecutionError("skills_changed");
     };
     const generate = vi
       .fn()
       .mockResolvedValueOnce(calls("read_skill", JSON.stringify({ skillId: descriptor.id })))
       .mockImplementationOnce(async () => {
-        revoked = true;
+        changed = true;
         return answer();
       });
+    await expect(
+      executeAgentRun({ ...f, model: new MockLanguageModelV4({ doGenerate: generate }) }),
+    ).rejects.toMatchObject({ code: "skills_changed" });
+  });
+  it("classifies an unlisted skill as invalid_target, not channel scope revocation", async () => {
+    const f = skillFixture();
+    const generate = vi
+      .fn()
+      .mockResolvedValue(
+        calls("read_skill", JSON.stringify({ skillId: "6b8c8307-530f-4f1e-9ae6-ef9a00b64d53" })),
+      );
+    await expect(
+      executeAgentRun({ ...f, model: new MockLanguageModelV4({ doGenerate: generate }) }),
+    ).rejects.toMatchObject({ code: "invalid_target" });
+    expect(f.store.readSkill).not.toHaveBeenCalled();
+  });
+  it("classifies usage persistence conflicts separately from scope_revoked", async () => {
+    const f = skillFixture();
+    vi.mocked(f.store.usage).mockRejectedValue(new NativeExecutionError("conflict"));
+    const generate = vi.fn().mockResolvedValue(answer());
+    await expect(
+      executeAgentRun({ ...f, model: new MockLanguageModelV4({ doGenerate: generate }) }),
+    ).rejects.toMatchObject({ code: "conflict" });
+  });
+});
+
+
+describe("wait_for_task target classification", () => {
+  it("fails unknown child run IDs as invalid_target instead of scope_revoked", async () => {
+    const f = fixture();
+    const unknownId = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+    const knownId = "bbbbbbbb-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+    const generate = vi
+      .fn()
+      .mockResolvedValue(calls("wait_for_task", JSON.stringify({ runId: unknownId })));
+    await expect(
+      executeAgentRun({
+        ...f,
+        model: new MockLanguageModelV4({ doGenerate: generate }),
+        startTask: async () => ({
+          runId: knownId,
+          botId: "cccccccc-cccc-4ccc-8ddd-eeeeeeeeeeee",
+          status: "running" as const,
+        }),
+        waitForTask: async (runId) => {
+          if (runId !== knownId) throw new NativeExecutionError("invalid_target");
+          return {
+            runId,
+            botId: "cccccccc-cccc-4ccc-8ddd-eeeeeeeeeeee",
+            status: "completed" as const,
+            result: "done",
+          };
+        },
+      }),
+    ).rejects.toMatchObject({ code: "invalid_target" });
+  });
+  it("keeps true channel membership loss as scope_revoked", async () => {
+    const f = fixture();
+    vi.mocked(f.store.assertScope).mockRejectedValue(new NativeExecutionError("scope_revoked"));
+    const generate = vi.fn().mockResolvedValue(answer());
     await expect(
       executeAgentRun({ ...f, model: new MockLanguageModelV4({ doGenerate: generate }) }),
     ).rejects.toMatchObject({ code: "scope_revoked" });

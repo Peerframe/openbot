@@ -198,7 +198,7 @@ export class PostgresAgentStore implements AgentRunStore {
   async readSkill(run: Run, reference: SkillReference) {
     return this.db.transaction(async (tx) => {
       const [active] = await tx.select({ id: runs.id }).from(runs).where(running(run)).for("share");
-      if (!active) throw new NativeExecutionError("scope_revoked");
+      if (!active) throw new NativeExecutionError("conflict");
       const document = await readSkillDocument(tx, run.botId, reference);
       await tx.insert(runEvents).values({
         id: randomUUID(),
@@ -215,7 +215,7 @@ export class PostgresAgentStore implements AgentRunStore {
     await this.assertScope(run);
     return this.db.transaction(async (tx) => {
       const [active] = await tx.select({ id: runs.id }).from(runs).where(running(run)).for("share");
-      if (!active) throw new NativeExecutionError("scope_revoked");
+      if (!active) throw new NativeExecutionError("conflict");
       const rows = await tx
         .select()
         .from(employeeMemories)
@@ -298,7 +298,7 @@ export class PostgresAgentStore implements AgentRunStore {
         (ref) => !rows.some((row) => row.id === ref.id && row.revision === ref.revision),
       )
     )
-      throw new NativeExecutionError("scope_revoked");
+      throw new NativeExecutionError("memory_changed");
   }
   async usage(run: Run, input: RunModelUsage): Promise<Run> {
     const usage = runModelUsageSchema.parse(input);
@@ -313,7 +313,7 @@ export class PostgresAgentStore implements AgentRunStore {
           ),
         )
         .returning();
-      if (!row) throw new NativeExecutionError("scope_revoked");
+      if (!row) throw new NativeExecutionError("conflict");
       await tx.insert(runEvents).values({
         id: randomUUID(),
         runId: run.id,
@@ -596,7 +596,7 @@ export class PostgresAgentStore implements AgentRunStore {
               !memories.some((memory) => memory.id === ref.id && memory.revision === ref.revision),
           )
         )
-          throw new NativeExecutionError("scope_revoked");
+          throw new NativeExecutionError("memory_changed");
       }
       const [message] = await tx
         .insert(messages)

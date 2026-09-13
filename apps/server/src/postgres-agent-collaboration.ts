@@ -102,7 +102,7 @@ export async function createDelegatedRun(db: Database, parent: Run, raw: Delegat
     if (!root || !source) throw new NativeExecutionError("scope_revoked");
     const allowedAttachments = taskAttachmentIds(source.instruction);
     if (taskAttachmentIds(input.task).some((id) => !allowedAttachments.includes(id)))
-      throw new NativeExecutionError("scope_revoked");
+      throw new NativeExecutionError("invalid_target");
     if (chain.length >= 3 || chain.some((run) => run.botId === input.botId))
       throw new NativeExecutionError("task_limit");
     const descendants = await tx
@@ -123,7 +123,7 @@ export async function createDelegatedRun(db: Database, parent: Run, raw: Delegat
         ),
       )
       .for("share");
-    if (!target) throw new NativeExecutionError("scope_revoked");
+    if (!target) throw new NativeExecutionError("invalid_target");
     const sourceId = randomUUID(),
       runId = randomUUID(),
       now = new Date();

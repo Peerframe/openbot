@@ -922,7 +922,7 @@ describe.skipIf(!databaseUrl)("PostgreSQL automation transaction", () => {
     });
     await expect(
       next.native.complete(next.active, "Late result", [], lesson, snapshot.memories),
-    ).rejects.toMatchObject({ code: "scope_revoked" });
+    ).rejects.toMatchObject({ code: "memory_changed" });
     expect(
       await database.client`select id from messages where run_id=${next.active.id} and author_type='bot'`,
     ).toHaveLength(0);
