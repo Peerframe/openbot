@@ -11,6 +11,7 @@ import {
   PluginManager,
   PluginManagerPanel,
   PluginToolList,
+  resetGrantBotSelectionForTests,
 } from "./PluginManagerPanel";
 
 const manifest: PluginManifest = {
@@ -42,7 +43,10 @@ const bot: Bot = {
   computerProfile: "none",
   createdAt: plugin.createdAt,
 };
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  resetGrantBotSelectionForTests();
+});
 
 describe("plugin Owner management", () => {
   it("requires reviewed declarations and invalidates review when the endpoint changes", async () => {
@@ -1042,8 +1046,34 @@ describe("PluginManagerPanel grant Bot persistence", () => {
       expect(
         view.container.querySelector<HTMLSelectElement>('[aria-label="write 调用权限"]')?.value,
       ).toBe("confirm");
-    } finally {
+
+      // Full remount (leave Skills / re-enter) still restores from SPA-session selection map.
       await view.unmount();
+      const remounted = await renderComponent(<PluginManagerPanel bots={[received, source]} />);
+      try {
+        const details2 = remounted.container.querySelector("details.plugin-manager");
+        if (!details2) throw new Error("details missing after remount");
+        await interact(() => {
+          details2.setAttribute("open", "");
+          details2.dispatchEvent(new Event("toggle", { bubbles: true }));
+        });
+        await act(async () => {
+          await Promise.resolve();
+          await Promise.resolve();
+        });
+        expect(
+          remounted.container.querySelector<HTMLSelectElement>('[aria-label="Example 接收 Bot"]')
+            ?.value,
+        ).toBe(source.id);
+        expect(
+          remounted.container.querySelector<HTMLSelectElement>('[aria-label="write 调用权限"]')
+            ?.value,
+        ).toBe("confirm");
+      } finally {
+        await remounted.unmount();
+      }
+    } finally {
+      // outer view may already be unmounted
     }
   });
 });

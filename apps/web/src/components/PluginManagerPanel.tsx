@@ -18,6 +18,14 @@ import {
   PluginUpdatePanel,
 } from "./PluginPlatformPanels";
 
+/** SPA-session sticky Bot selection per plugin (survives Skills remount / details keep-alive). */
+const grantBotSelectionByPlugin = new Map<string, string>();
+
+/** Test-only: clear sticky Bot selection between cases. */
+export function resetGrantBotSelectionForTests(): void {
+  grantBotSelectionByPlugin.clear();
+}
+
 export interface PluginManagerProps {
   bots: Bot[];
   scope?: PluginContentScope | undefined;
@@ -29,7 +37,7 @@ export function PluginManagerPanel(props: PluginManagerProps) {
   // Keep PluginManager mounted after the first open so grant Bot selection survives
   // details toggle quirks / transient close during post-save reloads.
   const [mounted, setMounted] = useState(false);
-  const grantBotSelectionRef = useRef(new Map<string, string>());
+  const grantBotSelectionRef = useRef(grantBotSelectionByPlugin);
   return (
     <details
       className="plugin-manager"
@@ -67,7 +75,7 @@ export function PluginManager({
   const [attempt, setAttempt] = useState(0);
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState<string>();
-  const localGrantBotSelectionRef = useRef(new Map<string, string>());
+  const localGrantBotSelectionRef = useRef(grantBotSelectionByPlugin);
   const botSelectionRef = grantBotSelectionRef ?? localGrantBotSelectionRef;
   async function reloadPlugins(signal?: AbortSignal) {
     setLoading(true);

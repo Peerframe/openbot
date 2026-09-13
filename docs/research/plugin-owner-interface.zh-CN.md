@@ -27,7 +27,7 @@ Bot 选择在保存后被重置（F05，2026-09-13）的补充检索：官方 Re
 
 错误文案不回显密钥或不可信服务载荷。令牌和调用参数不写入 URL 或 localStorage。权限和审计始终由 Server 判定，前端的能力展示不授予权限。
 
-授权编辑器（F05）：不要用 `plugin.revision` 作为 `PluginGrantEditor` 的 `key`。授权 PUT 导致 revision 变化后，应按[保留并重置 state](https://react.dev/learn/preserving-and-resetting-state)用稳定的 `plugin.id` 保持同一位置上的 sticky Bot。`<details>` 首次展开后保持 `PluginManager` 挂载（折叠仅隐藏），并按 `plugin.id` 持久化 Owner 所选 Bot，避免回落到 `bots[0]`。仅在所选 Bot 或插件 grant revision 真正变化时同步草稿；同一 revision 下父组件重渲染必须保留未保存草稿。按[你可能不需要 Effect](https://react.dev/learn/you-might-not-need-an-effect)，避免在每次新的 `plugin` 对象引用上都用 Effect 重置。将「已保存」绑定到当前 Bot **以及**权威授权快照（可用性 + enabled/grants 身份），而非仅 `botId`+`revision`：用待确认写入与 mutation 后 GET 快照对照，使正常保存成功反馈保留，而清权/Bot 不可用会清除「已保存」（用例 A/B/C）。父级 mutate 在 resolve `onSave` 前等待插件 GET。本切片不改变权限模型、后端语义或发布版本号。
+授权编辑器（F05）：不要用 `plugin.revision` 作为 `PluginGrantEditor` 的 `key`。授权 PUT 导致 revision 变化后，应按[保留并重置 state](https://react.dev/learn/preserving-and-resetting-state)用稳定的 `plugin.id` 保持同一位置上的 sticky Bot。`<details>` 首次展开后保持 `PluginManager` 挂载（折叠仅隐藏），并按 `plugin.id` 在 SPA 会话级 Map 中持久化 Owner 所选 Bot（离开技能页再进入仍保留），避免回落到 `bots[0]`。仅在所选 Bot 或插件 grant revision 真正变化时同步草稿；同一 revision 下父组件重渲染必须保留未保存草稿。按[你可能不需要 Effect](https://react.dev/learn/you-might-not-need-an-effect)，避免在每次新的 `plugin` 对象引用上都用 Effect 重置。将「已保存」绑定到当前 Bot **以及**权威授权快照（可用性 + enabled/grants 身份），而非仅 `botId`+`revision`：用待确认写入与 mutation 后 GET 快照对照，使正常保存成功反馈保留，而清权/Bot 不可用会清除「已保存」（用例 A/B/C）。父级 mutate 在 resolve `onSave` 前等待插件 GET。本切片不改变权限模型、后端语义或发布版本号。
 
 ## 代码与许可
 
