@@ -112,6 +112,10 @@ Bot 模板审核导入流程。档案读取失败明确显示不可用，不视�
 任意可执行插件包安装器。见[入口调研](research/workspace-destinations.md)及
 [界面优化调研](research/desktop-ui-refresh.zh-CN.md)。
 
+在“技能”与“Bots”页签上方展开“插件”面板，选择“添加工具插件”，即可预览并安装 MCP Server 连接。
+审核声明后，为 Bot 授予选定工具或内容的权限，再启用插件。仅安装不会授予访问权限；调用仍受 Server
+授权和所选审批模式约束。见 [MCP 插件说明](PLUGINS.zh-CN.md)。
+
 自动任务通过“**Owner → 设置 → 自动任务**”进入。
 
 已登录的 Owner 可以为频道中的 Bot 新建自动任务，再暂停、恢复或删除计划。界面提供每 1 小时、
@@ -132,18 +136,22 @@ Bot 模板审核导入流程。档案读取失败明确显示不可用，不视�
 
 ## 当前边界
 
-本次是 **0.1.0-alpha.3 开发版界面**，不表示已签名、公证或公开发布。安装流水线面向 macOS arm64、
-Windows x64 和 Linux x64；Windows/Linux 仍为远程客户端。构建配置不能证明本次修订已经完成
-Windows/Linux 原生安装或运行验证；macOS Intel 不在安装器矩阵内。版本产物和发行边界见
-[安装说明](DESKTOP_INSTALLATION.zh-CN.md)。
+当前公开预览版为 **0.1.0-alpha.7**，提供 macOS arm64 DMG 和 Windows x64 EXE。
+两端均支持内置本地 Server/PostgreSQL，也可连接已有 Server。Linux x64 仍为远程客户端构建目标；
+alpha.7 未发布 Linux 安装器。这些是未签名开发构建，正式代码签名和 macOS 公证仍未完成。
+Windows 安装与保留数据的运行检查已在托管运行器执行；Windows 真机桌面和 SmartScreen 验收仍未完成。
+macOS Intel 不在安装器矩阵内。版本产物和发行边界见
+[安装说明](DESKTOP_INSTALLATION.zh-CN.md)与 [Windows 验证说明](WINDOWS_DESKTOP.zh-CN.md)。
 
-[原生 Agent](NATIVE_AGENT.zh-CN.md) 在 Owner 启用后提供模型回复。输入框通过已有认证文字任务接口
-支持上述有界文本附件。二进制、PDF、图片输入及自动重试不属于本次变更。已有原生任务停止与明确重新提交
-继续由 Server 管理；重新提交会创建新任务，不保证安全重放此前的副作用。
+[原生 Agent](NATIVE_AGENT.zh-CN.md) 在 Owner 启用后提供模型回复。输入框通过认证的频道附件接口
+支持上述有界文本/代码、图片、PDF、Office/OpenDocument 和音视频附件。上传原件不会自动提取文字、OCR
+或转写。任务提交不会自动重试。已有原生任务停止与明确重新提交继续由 Server 管理；
+重新提交会创建新任务，不保证安全重放此前的副作用。
 
-内置 Server **目前仅供这台 Mac 使用**。让另一台电脑访问这个原生安装实例，仍需实现经过认证的
+macOS 和 Windows 的内置 Server **仅供这台电脑使用**。让另一台电脑访问这个原生安装实例，仍需实现经过认证的
 HTTPS 接入配置。不能把本机回环地址填到另一台电脑。当前远程使用应连接已有的 HTTPS 部署，
-高级部署见下文。关闭 macOS 窗口会保留后台 Desktop；退出应用会停止它自己的 Server 和数据库。
+高级部署见下文。关闭 macOS 窗口会保留后台 Desktop；关闭 Windows 窗口会退出 Desktop。
+退出应用会停止它自己的 Server 和数据库。
 重新打开会使用原有数据。这不等同于登录启动服务、备份、数据库升级或无人值守恢复。
 
 包含 macOS 数据库监督进程的构建会在 Desktop 主进程异常退出、私有通信管道关闭后，
@@ -152,9 +160,10 @@ HTTPS 接入配置。不能把本机回环地址填到另一台电脑。当前�
 的情况不在本项恢复范围内。本项改动不代表 Windows 异常退出恢复已经通过验证。
 
 
-数据保存在 Desktop 用户数据目录的 `openbot/local-server`。macOS safeStorage 加密引导秘密，
+数据保存在 Desktop 用户数据目录的 `openbot/local-server`。Electron safeStorage 通过 macOS
+钥匙串或 Windows DPAPI 加密引导秘密，
 数据库使用随机私有凭据和 SCRAM；模型密钥由 Server 使用 AES-256-GCM 加密。模型摘要接口不返回密钥。
-资源缺失、钥匙串不可用、数据路径不安全或数据库版本不兼容时会明确失败；重试不会删除已有数据库。
+资源缺失、系统凭据存储不可用、数据路径不安全或数据库版本不兼容时会明确失败；重试不会删除已有数据库。
 切换为远程客户端会停止本机服务并保留数据，切回后复用数据。
 
 ## 模型接口
@@ -172,7 +181,7 @@ Server 保存唯一默认提供方/模型配置，由原生 Agent 任务共用�
 ## 构建与高级自部署
 
 在仓库根目录安装锁定依赖并运行 `npm run check`，然后在目标操作系统执行
-`npm run package --workspace @openbot/desktop`。打包会将编译后的 Server、生产依赖、PostgreSQL
+`npm run package --workspace @openbot/desktop`。macOS 和 Windows 打包会将编译后的 Server、生产依赖、PostgreSQL
 和许可通知放入 `native-runtime`，再组装应用。生成目录不会进入 Git。
 本地开发启动前也需先运行 `npm run prepare:native --workspace @openbot/desktop`，再执行
 `npm start --workspace @openbot/desktop`。首次启动不下载可执行代码。
@@ -204,7 +213,9 @@ CI 打包 Linux x64、Windows x64 和 macOS arm64，各端验证成功后保留�
 这些是临时开发产物，不是签名安装器、自动更新或桌面控制认证。
 见[交付调研](research/desktop-cross-platform-handoff.md)。
 
-原生 PostgreSQL 包固定为 `17.10.0-beta.17`。公开发行前仍需审查预发布打包依赖、上游二进制来源、
+macOS 使用固定原生包 `17.10.0-beta.17` 提供的 PostgreSQL 17.10。Windows 从固定的官方
+PostgreSQL 17.11 源码构建，不再接受原 Windows npm 二进制包。见
+[Windows 构建来源](research/windows-desktop-completion.md)。生产发行仍需审查原生依赖来源、
 分发许可、签名和公证；本机功能测试不能替代发行支持证据。
 
 视觉测试只在隔离环境使用测试数据，不向实际用户资料写入示例对话。
