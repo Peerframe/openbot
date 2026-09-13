@@ -230,7 +230,7 @@ describe.skipIf(!databaseUrl)("PostgreSQL automation transaction", () => {
         inputTokens: 999,
         outputTokens: 999,
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: "conflict" });
     await native.complete(claimed, "Done");
     await expect(
       native.usage(claimed, {
@@ -240,7 +240,7 @@ describe.skipIf(!databaseUrl)("PostgreSQL automation transaction", () => {
         inputTokens: 999,
         outputTokens: 999,
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: "conflict" });
     const [counts] =
       await database.client`select count(*)::integer as count from run_events where type='MODEL_USAGE_RECORDED'`;
     expect(counts?.count).toBe(2);
@@ -523,6 +523,27 @@ describe.skipIf(!databaseUrl)("PostgreSQL automation transaction", () => {
       code: "scope_revoked",
     });
     expect((await native.fail(active))?.status).toBe("failed");
+  });
+  it("distinguishes inactive task context from real membership removal without publishing", async () => {
+    if (!database) return;
+    const control = new PostgresControlPlaneStore(database.db);
+    const native = new PostgresAgentStore(database.db);
+    const task = await control.submitTask("test-channel", { content: "Review", botId: "test-bot" });
+    const active = await native.claim(task.run, "2000-01-01T00:00:00Z");
+    if (!active) throw new Error("Fixture did not claim.");
+    await expect(native.context({ ...active, id: randomUUID() })).rejects.toMatchObject({
+      code: "invalid_target",
+    });
+    await database.client`delete from run_events where run_id=${active.id} and type='RUN_STARTED'`;
+    await expect(native.context(active)).rejects.toMatchObject({ code: "conflict" });
+    await native.cancel(active.id);
+    await expect(native.tasks(active)).rejects.toMatchObject({ code: "conflict" });
+    await expect(native.complete(active, "Must not publish")).rejects.toMatchObject({
+      code: "conflict",
+    });
+    const [row] =
+      await database.client`select count(*)::int as count from messages where author_type='bot'`;
+    expect(row?.count).toBe(0);
   });
   it("commits a source-based report with its reply, artifact and audit, with no duplicate publication", async () => {
     if (!database) return;

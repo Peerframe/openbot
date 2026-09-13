@@ -64,7 +64,7 @@ export const nativeFailureMessages = {
     "Model settings changed during this task. Review the current configuration and submit a new task.",
   scope_revoked: "This Bot no longer has access to the task channel. Check its membership.",
   invalid_target:
-    "This task referenced an unknown or ineligible target. Use only IDs returned by this task's tools.",
+    "This task referenced an unknown or ineligible target. Review its task details and available collaborators or resources.",
   conflict:
     "The task state changed before this update could be saved. Check the latest Run status before submitting a new task.",
   skills_changed:

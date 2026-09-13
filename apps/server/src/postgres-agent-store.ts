@@ -185,7 +185,7 @@ export class PostgresAgentStore implements AgentRunStore {
       .from(bots)
       .where(eq(bots.id, run.botId))
       .limit(1);
-    if (!profile) throw new NativeExecutionError("scope_revoked");
+    if (!profile) throw new NativeExecutionError("invalid_target");
     return profile;
   }
   async skills(run: Run) {
@@ -400,7 +400,7 @@ export class PostgresAgentStore implements AgentRunStore {
         ),
       )
       .limit(1);
-    if (!source) throw new NativeExecutionError("scope_revoked");
+    if (!source) throw new NativeExecutionError("invalid_target");
     const [rootSource] =
       source.rootRunId === null
         ? []
@@ -416,7 +416,7 @@ export class PostgresAgentStore implements AgentRunStore {
               ),
             )
             .limit(1);
-    if (source.rootRunId !== null && !rootSource) throw new NativeExecutionError("scope_revoked");
+    if (source.rootRunId !== null && !rootSource) throw new NativeExecutionError("invalid_target");
     const inputCutoff = rootSource?.createdAt ?? source.createdAt;
     const [started] = await this.db
       .select({ createdAt: runEvents.createdAt })
@@ -426,7 +426,7 @@ export class PostgresAgentStore implements AgentRunStore {
       .limit(1);
     // Freeze history at the persisted start, not at each model tool call. New human messages
     // remain separate queued tasks; only preceding task trees may contribute late Bot replies.
-    if (!started) throw new NativeExecutionError("scope_revoked");
+    if (!started) throw new NativeExecutionError("conflict");
     const cutoff = started.createdAt;
     const projection = {
       id: messages.id,

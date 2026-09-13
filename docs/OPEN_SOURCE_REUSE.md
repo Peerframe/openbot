@@ -359,3 +359,7 @@ Channel member layout reuses native controls and CSS Flexbox Level 1 (2025-10-14
 React 19.2.8 stable identities. Component-owned styles preserve avatars, bounded identity text,
 independent removal actions and keyboard focus after the row wrapper changed. No dependency or
 copied source; see [research](research/channel-member-layout.md).
+
+Native Run failure classification follows RFC 9457's machine-type/human-detail separation and
+Node.js v22.22.2 (`2645dc73`) public error-code guidance inside the existing Error/Run catalogue.
+No new HTTP error format, dependency or copied source; see the [classification review](research/native-failure-classification.md).

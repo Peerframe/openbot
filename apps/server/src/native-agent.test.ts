@@ -1368,35 +1368,49 @@ describe("reviewed skill tool integration", () => {
   });
 });
 
-
 describe("wait_for_task target classification", () => {
   it("fails unknown child run IDs as invalid_target instead of scope_revoked", async () => {
     const f = fixture();
     const unknownId = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
-    const knownId = "bbbbbbbb-bbbb-4ccc-8ddd-eeeeeeeeeeee";
-    const generate = vi
-      .fn()
-      .mockResolvedValue(calls("wait_for_task", JSON.stringify({ runId: unknownId })));
-    await expect(
-      executeAgentRun({
-        ...f,
-        model: new MockLanguageModelV4({ doGenerate: generate }),
-        startTask: async () => ({
-          runId: knownId,
-          botId: "cccccccc-cccc-4ccc-8ddd-eeeeeeeeeeee",
-          status: "running" as const,
-        }),
-        waitForTask: async (runId) => {
-          if (runId !== knownId) throw new NativeExecutionError("invalid_target");
-          return {
-            runId,
-            botId: "cccccccc-cccc-4ccc-8ddd-eeeeeeeeeeee",
-            status: "completed" as const,
-            result: "done",
-          };
-        },
+    vi.mocked(f.store.queued).mockResolvedValueOnce([run]).mockResolvedValue([]);
+    f.store.colleagues = vi.fn(async () => ({ bots: [], truncated: false }));
+    f.store.delegate = vi.fn(async () => {
+      throw new Error("No delegation should be created for an unknown wait target.");
+    });
+    const settings = {
+      agentSettings: async () => ({
+        provider: "openai",
+        model: "fixture",
+        apiKey: "fixture",
+        revision: "1",
+        agentEnabled: true,
+        agentEnabledAt: run.createdAt,
       }),
-    ).rejects.toMatchObject({ code: "invalid_target" });
+      onChange: () => () => {},
+    } as unknown as ModelSettingsService;
+    const model = new MockLanguageModelV4({
+      doGenerate: calls("wait_for_task", JSON.stringify({ runId: unknownId })),
+    });
+    const runner = new NativeAgentRunner(
+      f.store,
+      settings,
+      new ChannelRealtimeHub(),
+      vi.fn(),
+      () => model,
+    );
+    try {
+      runner.start();
+      await vi.waitFor(() =>
+        expect(f.store.fail).toHaveBeenCalledWith(
+          expect.objectContaining({ id: run.id }),
+          "invalid_target",
+        ),
+      );
+      expect(f.store.delegate).not.toHaveBeenCalled();
+      expect(f.store.complete).not.toHaveBeenCalled();
+    } finally {
+      await runner.stop();
+    }
   });
   it("keeps true channel membership loss as scope_revoked", async () => {
     const f = fixture();

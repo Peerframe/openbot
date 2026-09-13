@@ -1,10 +1,10 @@
-import { taskAttachmentIds } from "./channel-attachments.js";
 import { randomUUID } from "node:crypto";
 import { bots, channelBots, messages, runEvents, runs } from "@openbot/db";
 import type { Run } from "@openbot/domain";
 import { and, asc, eq, ne, sql } from "drizzle-orm";
-import { delegateTaskSchema, type DelegateTaskInput } from "./agent-collaboration.js";
+import { type DelegateTaskInput, delegateTaskSchema } from "./agent-collaboration.js";
 import { NativeExecutionError } from "./agent-observations.js";
+import { taskAttachmentIds } from "./channel-attachments.js";
 import { toMessage, toRun } from "./postgres-store.js";
 
 type Database = ReturnType<typeof import("@openbot/db")["createDatabase"]>["db"];
@@ -25,11 +25,11 @@ export async function activeCollaborationChain(
     if (
       !row ||
       row.channelId !== run.channelId ||
-      row.status !== "running" ||
       row.executionProfile !== "none" ||
       row.nodeId !== null
     )
-      throw new NativeExecutionError("scope_revoked");
+      throw new NativeExecutionError("invalid_target");
+    if (row.status !== "running") throw new NativeExecutionError("conflict");
     const memberQuery = db
       .select()
       .from(channelBots)
@@ -40,7 +40,7 @@ export async function activeCollaborationChain(
     id = row.parentRunId ?? undefined;
   }
   if (id || chain.length > 3 || chain[0]?.botId !== run.botId)
-    throw new NativeExecutionError("scope_revoked");
+    throw new NativeExecutionError("invalid_target");
   if (lock) {
     // Acquire root-to-leaf to match cancellation; lock upgrades must never invert the tree.
     for (const ancestor of [...(lock === "ancestors" ? chain.slice(1) : chain)].reverse()) {
@@ -56,7 +56,8 @@ export async function activeCollaborationChain(
           and(eq(channelBots.channelId, ancestor.channelId), eq(channelBots.botId, ancestor.botId)),
         )
         .for("share");
-      if (!active || !member) throw new NativeExecutionError("scope_revoked");
+      if (!active) throw new NativeExecutionError("conflict");
+      if (!member) throw new NativeExecutionError("scope_revoked");
     }
   }
   return chain;
@@ -99,7 +100,7 @@ export async function createDelegatedRun(db: Database, parent: Run, raw: Delegat
     const chain = await activeCollaborationChain(tx, parent, true);
     const root = chain.at(-1);
     const source = chain[0];
-    if (!root || !source) throw new NativeExecutionError("scope_revoked");
+    if (!root || !source) throw new NativeExecutionError("invalid_target");
     const allowedAttachments = taskAttachmentIds(source.instruction);
     if (taskAttachmentIds(input.task).some((id) => !allowedAttachments.includes(id)))
       throw new NativeExecutionError("invalid_target");

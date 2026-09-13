@@ -5,6 +5,7 @@ import { cancelNativeRun, createMessage } from "../api";
 import { deferred, interact, renderComponent } from "../test/render-component";
 import { NativeRunControls, nativeRunFailure } from "./NativeRunControls";
 import { RunInspector } from "./RunInspector";
+
 vi.mock("../api", () => ({
   cancelNativeRun: vi.fn(),
   createMessage: vi.fn(),
@@ -120,11 +121,19 @@ describe("native task execution controls", () => {
 describe("native failure classification messages", () => {
   it("distinguishes invalid targets and changed resources from lost channel permission", () => {
     const base = { ...run, status: "failed" as const };
-    expect(nativeRunFailure({ ...base, errorCode: "scope_revoked" })).toContain("失去当前频道访问权限");
-    expect(nativeRunFailure({ ...base, errorCode: "invalid_target" })).toContain("未知或不适用的目标");
-    expect(nativeRunFailure({ ...base, errorCode: "invalid_target" })).not.toContain("失去当前频道访问权限");
+    expect(nativeRunFailure({ ...base, errorCode: "scope_revoked" })).toContain(
+      "失去当前频道访问权限",
+    );
+    expect(nativeRunFailure({ ...base, errorCode: "invalid_target" })).toContain(
+      "协作对象或资料无效",
+    );
+    expect(nativeRunFailure({ ...base, errorCode: "invalid_target" })).not.toContain(
+      "失去当前频道访问权限",
+    );
     expect(nativeRunFailure({ ...base, errorCode: "conflict" })).toContain("任务状态已变化");
-    expect(nativeRunFailure({ ...base, errorCode: "conflict" })).not.toContain("失去当前频道访问权限");
+    expect(nativeRunFailure({ ...base, errorCode: "conflict" })).not.toContain(
+      "失去当前频道访问权限",
+    );
     expect(nativeRunFailure({ ...base, errorCode: "skills_changed" })).toContain("技能发生变化");
     expect(nativeRunFailure({ ...base, errorCode: "memory_changed" })).toContain("记忆发生变化");
   });
