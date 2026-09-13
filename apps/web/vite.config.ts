@@ -1,5 +1,9 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
+import {
+  rewriteIndexHtmlCspForDev,
+  WEB_DEV_CSP_NONCE,
+} from "./src/dev-csp-nonce";
 import { pluginProxyDocument } from "./src/plugin-app-sandbox";
 
 function pluginSandboxDocument(): Plugin {
@@ -23,8 +27,24 @@ function pluginSandboxDocument(): Plugin {
   };
 }
 
-export default defineConfig(({ mode }) => {
+/**
+ * Serve-only: align the meta CSP with Vite `html.cspNonce` so injected CSS/JS
+ * are allowed without `'unsafe-inline'`. Not registered for build or Desktop.
+ */
+function pluginDevCspNonce(nonce: string): Plugin {
+  return {
+    name: "openbot-web-dev-csp-nonce",
+    apply: "serve",
+    transformIndexHtml(html) {
+      return rewriteIndexHtmlCspForDev(html, nonce);
+    },
+  };
+}
+
+export default defineConfig(({ command, mode }) => {
   const desktopRenderer = mode === "desktop";
+  // Fixed nonce is documented as local-dev-only; production/Desktop keep index.html CSP.
+  const enableDevCspNonce = command === "serve" && !desktopRenderer;
 
   return {
     ...(desktopRenderer
@@ -36,7 +56,16 @@ export default defineConfig(({ mode }) => {
           },
         }
       : {}),
-    plugins: [react(), pluginSandboxDocument()],
+    ...(enableDevCspNonce
+      ? {
+          html: { cspNonce: WEB_DEV_CSP_NONCE },
+        }
+      : {}),
+    plugins: [
+      react(),
+      pluginSandboxDocument(),
+      ...(enableDevCspNonce ? [pluginDevCspNonce(WEB_DEV_CSP_NONCE)] : []),
+    ],
     server: {
       host: "0.0.0.0",
       port: 5173,

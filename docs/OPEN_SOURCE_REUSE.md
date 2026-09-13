@@ -339,3 +339,11 @@ and Tesseract.js 7.0.0 (`42eae669e4b3a66429d8516f078912cc747a89df`, Apache-2.0).
 A narrow Server adapter rejects whitespace-only extraction before persisting success and rejects
 legacy empty derived records before inference. No new PDF OCR or automatic binary fallback.
 No copied source; see [research](research/attachment-empty-extraction.md).
+
+### Web Vite serve CSP nonce
+
+Reuse Vite **8.2.2** / `de1111ab0be00879b404e7ed3b2a80e264edddc1` (MIT) `html.cspNonce` so local
+`vite` serve can stamp script/style tags and the `csp-nonce` meta without `'unsafe-inline'`.
+A thin serve-only transform adds the matching `'nonce-…'` tokens to the app meta CSP; production
+and Desktop HTML keep the strict `index.html` policy. No new dependency or copied source; see
+[research](research/web-dev-csp-nonce.md).

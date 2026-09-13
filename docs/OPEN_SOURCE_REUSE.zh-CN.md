@@ -281,3 +281,10 @@ H2 v1 补充选定 RFC 8785 JCS 与 `canonicalize@5.0.0` / `7d97c70c79c9f52070e6
 Tesseract.js 7.0.0（`42eae669e4b3a66429d8516f078912cc747a89df`，Apache-2.0）。
 Server 在保存成功状态前拒绝仅含空白的提取结果，并在模型调用前拒绝历史空文本记录。
 未新增 PDF OCR，也不会自动改为发送原文件。没有复制上游源码，见[研究记录](research/attachment-empty-extraction.md)。
+
+### Web Vite serve CSP nonce
+
+复用 Vite **8.2.2** / `de1111ab0be00879b404e7ed3b2a80e264edddc1`（MIT）的 `html.cspNonce`，使本地
+`vite` serve 可为 script/style 与 `csp-nonce` meta 盖章，而无需 `'unsafe-inline'`。
+仅 serve 的薄适配在应用 meta CSP 中写入相同 `'nonce-…'`；生产与 Desktop 仍使用严格的
+`index.html` 策略。无新依赖、未复制源码，见[研究](research/web-dev-csp-nonce.zh-CN.md)。
