@@ -273,9 +273,37 @@ function Test-StartedProcessIdentityLifecycle {
   }
 }
 
+function Test-WindowsProcessImageBindingGuards {
+  # Compile the actual shared binding on every host; invalid handles must never enter Win32.
+  Initialize-WindowsProcessImageQuery
+  $invalid = [Microsoft.Win32.SafeHandles.SafeProcessHandle]::new([IntPtr]::Zero, $false)
+  $self = [Diagnostics.Process]::GetCurrentProcess()
+  # Close only a non-owning wrapper around our real handle, not the live process's handle.
+  $closed = [Microsoft.Win32.SafeHandles.SafeProcessHandle]::new($self.Handle, $false)
+  $closed.Dispose()
+  try {
+    foreach ($state in @('invalid', 'closed')) {
+      $handle = if ($state -eq 'closed') { $closed } else { $invalid }
+      $message = ''
+      try { $null = [OpenBot.WindowsProcessImage]::Read($handle) } catch { $message = $_.Exception.Message }
+      Write-CheckResult -Name "Image query rejects $state handles before calling Win32" -Passed (
+        $message -match 'A valid open process handle is required'
+      )
+    }
+  } finally {
+    $invalid.Dispose()
+    $closed.Dispose()
+    $self.Dispose()
+  }
+  if (-not [OperatingSystem]::IsWindows()) {
+    Write-Host 'SKIP: successful Windows image API invocation (non-Windows host); only binding compilation/guards checked.'
+  }
+}
+
 Write-Host "OpenBot Windows receipt identity checks (pwsh $($PSVersionTable.PSVersion); framework=$([Runtime.InteropServices.RuntimeInformation]::FrameworkDescription); OS=$([System.Runtime.InteropServices.RuntimeInformation]::OSDescription))"
 Test-StjPrimaryIdentityRoundTrip
 Test-DualNodePathResolution
+Test-WindowsProcessImageBindingGuards
 Test-StartedProcessIdentityLifecycle
 
 $runningOnWindows = [OperatingSystem]::IsWindows()

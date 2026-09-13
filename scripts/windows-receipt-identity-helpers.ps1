@@ -88,47 +88,80 @@ function Format-ProcessIdentityEvidence {
   return ("${Label}={pid=$pidText; startTimeUtc=$startText; executablePath=$pathText}")
 }
 
-# Canonical observer matching smoke's WindowsPowerShell 5.1 contract:
-# GetProcessById → pin Handle → StartTime 'o'+InvariantCulture → MainModule.FileName.
+function Initialize-WindowsProcessImageQuery {
+  if ('OpenBot.WindowsProcessImage' -as [type]) { return }
+  Add-Type -ErrorAction Stop -TypeDefinition @'
+using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Text;
+using Microsoft.Win32.SafeHandles;
+
+namespace OpenBot {
+  public static class WindowsProcessImage {
+    private const int BufferCharacters = 32768;
+
+    [DllImport("kernel32.dll", EntryPoint = "QueryFullProcessImageNameW",
+      CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool QueryFullProcessImageName(
+      SafeProcessHandle process, uint flags, [Out] StringBuilder image, ref uint size);
+
+    public static string Read(SafeProcessHandle process) {
+      if (process == null || process.IsClosed || process.IsInvalid) {
+        throw new ArgumentException("A valid open process handle is required.", nameof(process));
+      }
+      if (!OperatingSystem.IsWindows()) {
+        throw new PlatformNotSupportedException("Windows process image queries require Windows.");
+      }
+      var image = new StringBuilder(BufferCharacters, BufferCharacters);
+      uint size = BufferCharacters;
+      // SafeHandle marshaling retains the caller-owned handle only for this call.
+      // Do not reopen by PID or dispose the borrowed handle.
+      if (!QueryFullProcessImageName(process, 0, image, ref size)) {
+        throw new Win32Exception(Marshal.GetLastWin32Error(), "Cannot query the held process image.");
+      }
+      if (size == 0 || size >= BufferCharacters || image.Length != size) {
+        throw new InvalidOperationException("The process image path is empty or truncated.");
+      }
+      string path = image.ToString();
+      if (String.IsNullOrWhiteSpace(path)) {
+        throw new InvalidOperationException("The process image path is empty.");
+      }
+      return path;
+    }
+  }
+}
+'@
+}
+
+# Compile before any child starts so binding initialization cannot mask a startup race.
+if ([OperatingSystem]::IsWindows()) { Initialize-WindowsProcessImageQuery }
+
+# Observe the executable image, not the first module in a changing Windows loader list.
+# PID/start time/path remain exact; this function borrows the caller's held process.
 function Get-CanonicalProcessIdentity {
   param(
     [Parameter(Mandatory = $true)][int]$ProcessId,
-    [System.Diagnostics.Process]$HeldProcess = $null,
-    [ValidateRange(1, 10000)][int]$TimeoutMs = 5000
+    [Parameter(Mandatory = $true)][System.Diagnostics.Process]$HeldProcess
   )
-  $proc = if ($null -ne $HeldProcess) { $HeldProcess } else { [Diagnostics.Process]::GetProcessById($ProcessId) }
-  $clock = [Diagnostics.Stopwatch]::StartNew()
-  try {
-    $heldHandle = $proc.Handle
-    if ($proc.Id -ne $ProcessId) { throw 'Held process identity does not match the requested process.' }
-    $startTimeUtc = $proc.StartTime.ToUniversalTime().ToString('o', [Globalization.CultureInfo]::InvariantCulture)
-    while ($true) {
-      # MainModule may be null while the image is loading. Refresh clears metadata,
-      # not the held OS handle; never reacquire another process while waiting.
-      $proc.Refresh()
-      if ($proc.Handle -ne $heldHandle) { throw 'Held process handle changed during identity observation.' }
-      if ($proc.HasExited) { throw "Process $ProcessId exited before identity could be observed." }
-      $path = [string]$proc.MainModule.FileName
-      if ($proc.HasExited) { throw "Process $ProcessId exited before identity could be observed." }
-      if ($clock.ElapsedMilliseconds -ge $TimeoutMs) {
-        throw [TimeoutException]::new("Process $ProcessId module identity was not ready within $TimeoutMs milliseconds.")
-      }
-      if (-not [string]::IsNullOrWhiteSpace($path)) {
-        return [pscustomobject]@{
-          pid = [int]$proc.Id
-          startTimeUtc = $startTimeUtc
-          executablePath = $path
-        }
-      }
-      # Only missing module data retries. Property/permission exceptions propagate.
-      $waitMs = [int][Math]::Min(50, $TimeoutMs - $clock.ElapsedMilliseconds)
-      if ($waitMs -gt 0 -and $proc.WaitForExit($waitMs)) {
-        throw "Process $ProcessId exited before identity could be observed."
-      }
-    }
-  } finally {
-    $clock.Stop()
-    if ($null -eq $HeldProcess) { $proc.Dispose() }
+  $heldHandle = $HeldProcess.Handle
+  $HeldProcess.Refresh()
+  if ($HeldProcess.Id -ne $ProcessId) { throw 'Held process identity does not match the requested process.' }
+  if ($HeldProcess.HasExited) { throw "Process $ProcessId exited before identity could be observed." }
+  $startTimeUtc = $HeldProcess.StartTime.ToUniversalTime().ToString('o', [Globalization.CultureInfo]::InvariantCulture)
+  $path = if ([OperatingSystem]::IsWindows()) {
+    [OpenBot.WindowsProcessImage]::Read($HeldProcess.SafeHandle)
+  } else {
+    [string]$HeldProcess.MainModule.FileName
+  }
+  if ($HeldProcess.HasExited) { throw "Process $ProcessId exited before identity could be observed." }
+  if ($HeldProcess.Handle -ne $heldHandle) { throw 'Held process handle changed during identity observation.' }
+  if ([string]::IsNullOrWhiteSpace($path)) { throw 'The held process executable path is unavailable.' }
+  return [pscustomobject]@{
+    pid = [int]$HeldProcess.Id
+    startTimeUtc = $startTimeUtc
+    executablePath = $path
   }
 }
 
@@ -143,11 +176,9 @@ function Test-ProcessIdentityMatch {
   if ([string]::IsNullOrWhiteSpace($recordedStart)) { return $false }
   if ([string]::IsNullOrWhiteSpace($recordedPath)) { return $false }
   if ([int]$Recorded.pid -ne [int]$Live.Id) { return $false }
-  # Match smoke / canonical observer: pin handle, InvariantCulture 'o', MainModule.FileName.
-  $null = $Live.Handle
-  $liveStart = $Live.StartTime.ToUniversalTime().ToString('o', [Globalization.CultureInfo]::InvariantCulture)
-  if ($liveStart -ne $recordedStart) { return $false }
-  $livePath = [string]$Live.MainModule.FileName
+  $identity = Get-CanonicalProcessIdentity -ProcessId ([int]$Live.Id) -HeldProcess $Live
+  if ($identity.startTimeUtc -ne $recordedStart) { return $false }
+  $livePath = $identity.executablePath
   if ([string]::IsNullOrWhiteSpace($livePath)) { return $false }
   if ($livePath.ToLowerInvariant() -ne $recordedPath.ToLowerInvariant()) { return $false }
   return $true

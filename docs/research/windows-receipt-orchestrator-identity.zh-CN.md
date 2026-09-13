@@ -67,16 +67,22 @@ NSIS _?= 使持有进程覆盖真正卸载，官方契约：https://nsis.sourcef
 
 集成回归覆盖带空格路径。Unix 测试目录链接到现有 Node，Windows 复制可执行文件以免要求符号链接权限。版本检查对持有进程的输出及退出均有等待上限；临时目录删除错误会让检查失败。本机沙箱内运行不能替代 Windows 原生证据。
 
-## 进程刚创建时主模块尚未就绪
+## 启动期间的进程映像身份
 
 2026-09-13 先完成研究再实施。[Windows CI 34748988049](https://github.com/yxflc11/openbot/actions/runs/34748988049/job/103701932039)（PowerShell 7.6.5）已通过 bootstrap，但第一次冷启动失败：持有对象与回执的 PID、启动时间完全一致，立即读取的可执行路径为空。卸载、清理及测试目录删除均通过，不能据此放宽身份比对。
 
 - [Microsoft MainModule 契约](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.mainmodule?view=net-10.0) 明确允许主模块加载前返回 null。[Refresh 契约](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.refresh?view=net-10.0) 说明会清除缓存。
-- 已审 dotnet/runtime **v10.0.9**，Git ref `5eaa18a9f3398d54ba9b8c0974d88171663be892`：[Process.cs](https://github.com/dotnet/runtime/blob/v10.0.9/src/libraries/System.Diagnostics.Process/src/System/Diagnostics/Process.cs) 的 Refresh 与 [Process.Windows.cs](https://github.com/dotnet/runtime/blob/v10.0.9/src/libraries/System.Diagnostics.Process/src/System/Diagnostics/Process.Windows.cs) 的 RefreshCore 不释放或替换已持有句柄；Close 才释放。Windows 主模块 getter 本身不读取模块集合缓存，因此关键是等待模块就绪；Refresh 也会更新退出状态观察。
+- 已审 dotnet/runtime **v10.0.9**，Git ref `5eaa18a9f3398d54ba9b8c0974d88171663be892`：Refresh 与 Windows RefreshCore 不释放或替换已持有句柄；Close 才释放。这仅证明句柄保留，不证明第一个非空主模块就是可执行文件。
 - 已审 PowerShell **v7.6.5**，Git ref `8d7d14a86bf05f45ed163b1b1fbfde1ac4682bac`；[global.json](https://github.com/PowerShell/PowerShell/blob/v7.6.5/global.json) 固定 SDK 10.0.303。旧 CI 未输出实际加载的 .NET 补丁版本，新增回归直接输出框架标识，不从 PowerShell 版本推断。
 
-选用标准 Process API：在同一持有对象上最多等待5秒，以单调时钟计时，每次间隔不超过50毫秒。只重试 null/空模块路径；退出、权限错误及其他属性异常立即失败。刷新后句柄不得变化；只有 PID、完整 UTC 启动时间、非空模块路径及存活状态均成立才返回。超时仍失败，不按回执补路径、不在重试中按裸 PID 重取对象、不增加原生互操作、不放宽比对。
+初版采用5秒空模块重试、不增加原生互操作；**该决定已被新原生证据修订**。[CI 34750084879](https://github.com/yxflc11/openbot/actions/runs/34750084879) 在 PowerShell 7.6.5 / .NET 10.0.11 上，第9次启动先读到 `ntdll.dll`、刷新后读到 `node.exe`；PID 6716、UTC 时间 `2026-09-13T09:44:03.3549414Z` 和句柄2216完全未变。[上游 #14652](https://github.com/dotnet/runtime/issues/14652) 有同类故障；[Microsoft 模块枚举文档](https://learn.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-enumprocessmodulesex) 明确允许初始化期间返回错误信息，非空不能作为就绪条件。
+
+已审实际框架 **dotnet/runtime v10.0.11**，提交 `79d0c463f1b55624c874a11585f7e47731e8d675`：[Process.Windows.cs](https://github.com/dotnet/runtime/blob/79d0c463f1b55624c874a11585f7e47731e8d675/src/libraries/System.Diagnostics.Process/src/System/Diagnostics/Process.Windows.cs) 仍选首个枚举模块；[Interop.GetProcessName.cs](https://github.com/dotnet/runtime/blob/79d0c463f1b55624c874a11585f7e47731e8d675/src/libraries/Common/src/Interop/Windows/Kernel32/Interop.GetProcessName.cs) 内部使用 QueryFullProcessImageNameW，但公开 Process API 不提供完整映像查询。[Microsoft 推荐该 API 查询其他进程的可执行文件](https://learn.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-getmodulefilenameexw)。
+
+改为标准 [QueryFullProcessImageNameW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-queryfullprocessimagenamew) 薄绑定，直接传入现有 Process.SafeHandle，flags=0 返回 Win32 路径；marshaller 在调用期间保留借用句柄，适配层不按 PID 打开、不关闭该句柄。固定32768字符 Unicode 缓冲区，结果必须非空、未截断且返回长度一致；原生错误立即失败。前后检查同一持有对象存活，保留 PID/启动时间/路径严格比较；清理复用同一观察方法。不叠加等待、不筛 DLL 名、不按回执补路径。
+
+复用清单已链接本研究。仓库未找到可复用的 QueryFullProcessImageName/Win32 绑定；沿用 `scripts/install-desktop-download.test.ps1` 的 Add-Type 编译惯例，单个标准 API 绑定比引入通用互操作依赖或按 PID 调 WMI 更窄。运行库源码只作核对，未复制或实质改编，无新增依赖或许可证声明。
 
 回归反复创建真实 Node 子进程后立即调用共享 helper，比较子进程自行报告的 PID/可执行文件、确认刷新保留句柄，并在确认退出后拒绝同一对象；读取和清理均有时间上限。macOS/Linux 结果只能证明该主机上的流程，不能替代 Windows 原生或完整 Electron/NSIS 验收。无新增依赖，无复制或实质改编上游代码；MIT 运行库源码仅用于核对 API 行为。
 
-本机验证：完整前置脚本在 macOS PowerShell 7.5.4 / .NET 9.0.10 通过，涵盖10个真实子进程生命周期的30条断言，以及原有 JSON/多个 Node 路径检查。Windows Node/WinPS 预检明确跳过；本次运行不证明 Windows 瞬时 null 主模块已被实际触发，也不能替代仍待运行的原生安装门禁。
+旧版空模块重试曾在 macOS PowerShell 7.5.4 / .NET 9.0.10 通过，但不能预测 Windows 模块枚举行为。新版绑定需验证编译及拒绝无效/已关闭句柄；保留的10次真实生命周期和详细诊断必须在原生 Windows 通过，再执行完整安装门禁。非 Windows 测试明确不证明 Windows API 的成功调用。
