@@ -2,9 +2,11 @@
 
 [English](DESKTOP_INSTALLATION.md) · [简体中文](DESKTOP_INSTALLATION.zh-CN.md)
 
-**Current preview: [Desktop 0.1.0-alpha.7](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.7)** provides a macOS Apple Silicon DMG and Windows x64 EXE, with a combined manifest and SHA256SUMS. Both come from the same source commit that passed full CI. The table also lists Linux build targets; alpha.7 does not publish Linux installers.
+**Current preview: [Desktop 0.1.0-alpha.8](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.8)** provides a macOS Apple Silicon DMG and Windows x64 EXE, with a combined manifest and SHA256SUMS. Both come from the same source commit that passed full CI. The table also lists Linux build targets; alpha.8 does not publish Linux installers.
 
-alpha.7 fixes native message reactions, attachment filename and larger-upload forwarding, and Bot export with reviewed skill content. Both downloads come from source commit `62440c1a09fdac624fe2078c130ff55d6ea4e24c`; see the [complete CI run](https://github.com/yxflc11/openbot/actions/runs/34664940360). Windows installation and retained-data evidence comes from a hosted runner. Production signing, notarization and manual Windows desktop acceptance remain outstanding.
+alpha.8 improves reopening after a macOS main-process crash and gives clear feedback when PDF extraction finds no readable text, while preserving the original file. Windows acceptance now includes ten independent Electron cold starts. For source users, the standard Web development page also restores styles and hot updates under its content security policy.
+
+The [versioned release page](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.8) records the source commit and successful main CI. Its [desktop-manifest.json](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.8/desktop-manifest.json) records the exact source, included targets and installer digests; verify downloads against [SHA256SUMS](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.8/SHA256SUMS). Windows installation and retained-data evidence comes from a hosted runner; see the [release-source cold-start evidence](WINDOWS_DESKTOP.md#release-source-cold-start-evidence). Production signing, notarization and manual Windows desktop acceptance remain outstanding.
 
 | Platform | File in the release | Installation | Available composition |
 | --- | --- | --- | --- |
@@ -35,7 +37,7 @@ macOS arm64 (for Linux, choose a published version that includes an AppImage):
 curl --proto '=https' --proto-redir '=https' --tlsv1.2 -fsSL \
   https://raw.githubusercontent.com/yxflc11/openbot/main/scripts/install-desktop.sh \
   -o /tmp/openbot-install-desktop.sh
-bash /tmp/openbot-install-desktop.sh 0.1.0-alpha.7
+bash /tmp/openbot-install-desktop.sh 0.1.0-alpha.8
 ```
 
 The macOS bootstrap installs to `~/Applications/OpenBot.app`; it refuses to replace an existing
@@ -43,11 +45,11 @@ app. Use the DMG for a reviewed upgrade. Linux installs to
 `~/.local/opt/openbot/<version>/openbot.AppImage`; it keeps existing versions. Delete the downloaded
 script when finished. Neither path requests root privileges or starts Server/Worker services.
 
-Windows x64, after the matching alpha.6 EXE and checksums appear on the release page, from PowerShell:
+Windows x64, from PowerShell:
 
 ```powershell
 Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/yxflc11/openbot/main/scripts/install-desktop.ps1 -OutFile "$env:TEMP\openbot-install-desktop.ps1"
-& "$env:TEMP\openbot-install-desktop.ps1" -Version 0.1.0-alpha.7
+& "$env:TEMP\openbot-install-desktop.ps1" -Version 0.1.0-alpha.8
 ```
 
 The PowerShell script opens the per-user installer and waits for its result. If your execution
@@ -66,7 +68,7 @@ part of this procedure.
 4. Quit and reopen Desktop. Verify the workspace and model summary remain available. Local macOS/Windows
    services stop when Desktop quits; unattended schedules require a continuously running Server.
 
-The alpha.6 candidate adds bounded channel collaboration, richer files, reviewed MCP content/apps, voice drafts and retained startup. Sharing exports reusable Bot profiles/verified skills and downloads deliverables; it does not publish private memory or transcripts. Windows local-runtime evidence is recorded in [Windows Desktop](WINDOWS_DESKTOP.md). alpha.6 provides Windows x64 and macOS arm64 installers. macOS bundles PostgreSQL 17.10; Windows bundles 17.11.
+Desktop supports bounded channel collaboration, richer files, reviewed MCP content/apps, voice drafts and retained startup. Sharing exports reusable Bot profiles/verified skills and downloads deliverables; it does not publish private memory or transcripts. Windows local-runtime evidence is recorded in [Windows Desktop](WINDOWS_DESKTOP.md). macOS bundles PostgreSQL 17.10; Windows bundles 17.11.
 
 See [Desktop onboarding](DESKTOP_ONBOARDING.md), [native Agent](NATIVE_AGENT.md) and
 [Server container](SERVER_CONTAINER.md) for the exact supported boundaries.
@@ -85,8 +87,10 @@ macOS Worker companion and builds every target. The output directory includes `m
 `SHA256SUMS`; locally built manifests have `sourceCommit: null` and cannot enter the CI release gate.
 
 The **Prepare Desktop release** workflow takes a successful main push CI run and the matching
-Desktop version. It validates repository/run identity, all three targets and every checksum, then
-creates a draft prerelease with four installer assets, a combined manifest and checksum list.
+Desktop version. It validates repository/run identity, the selected targets and every checksum,
+then creates a draft prerelease with those installers, a combined manifest and checksum list.
+The workflow defaults to macOS arm64 and Windows x64; its target selection also supports
+Windows alone or all three platforms.
 It does not publish the draft or overwrite an existing release. Complete the retained native
 dependency notice/source review and signing/distribution review before publishing. Draft status is
 visible only to repository maintainers and is not a public download channel.

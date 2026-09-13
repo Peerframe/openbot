@@ -136,9 +136,9 @@ Bot 模板审核导入流程。档案读取失败明确显示不可用，不视�
 
 ## 当前边界
 
-当前公开预览版为 **0.1.0-alpha.7**，提供 macOS arm64 DMG 和 Windows x64 EXE。
+当前公开预览版为 **0.1.0-alpha.8**，提供 macOS arm64 DMG 和 Windows x64 EXE。
 两端均支持内置本地 Server/PostgreSQL，也可连接已有 Server。Linux x64 仍为远程客户端构建目标；
-alpha.7 未发布 Linux 安装器。这些是未签名开发构建，正式代码签名和 macOS 公证仍未完成。
+alpha.8 未发布 Linux 安装器。这些是未签名开发构建，正式代码签名和 macOS 公证仍未完成。
 Windows 安装与保留数据的运行检查已在托管运行器执行；Windows 真机桌面和 SmartScreen 验收仍未完成。
 macOS Intel 不在安装器矩阵内。版本产物和发行边界见
 [安装说明](DESKTOP_INSTALLATION.zh-CN.md)与 [Windows 验证说明](WINDOWS_DESKTOP.zh-CN.md)。
