@@ -123,3 +123,5 @@ NSIS _?= binds the held process to the real uninstall (https://nsis.sourceforge.
     sole `.Source` string — implemented as `Get-NodeApplicationPath` in
     `scripts/windows-receipt-identity-helpers.ps1`.
 - Regression: `scripts/check-windows-receipt-identity.ps1` dual-node PATH fixture (Linux/Windows).
+
+Integration exercises paths containing spaces. Unix fixtures link to the installed Node, while Windows copies the executable without requiring symlink privileges. The held version-check process has bounded stream/exit waits; fixture deletion errors fail the check. Local sandbox-restricted execution is not native Windows evidence.

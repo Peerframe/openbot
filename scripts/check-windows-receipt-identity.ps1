@@ -125,8 +125,8 @@ function Test-StjPrimaryIdentityRoundTrip {
 
 function Test-DualNodePathResolution {
   $tmpRoot = Join-Path ([IO.Path]::GetTempPath()) ("openbot-dual-node-" + [guid]::NewGuid().ToString('N'))
-  $firstDir = Join-Path $tmpRoot 'first'
-  $secondDir = Join-Path $tmpRoot 'second'
+  $firstDir = Join-Path $tmpRoot 'first node'
+  $secondDir = Join-Path $tmpRoot 'second node'
   $oldPath = $env:PATH
   $sep = [IO.Path]::PathSeparator
   try {
@@ -137,12 +137,13 @@ function Test-DualNodePathResolution {
     $stubName = if ([OperatingSystem]::IsWindows()) { 'node.exe' } else { 'node' }
     $firstStub = Join-Path $firstDir $stubName
     $secondStub = Join-Path $secondDir $stubName
-    Copy-Item -LiteralPath $realNode -Destination $firstStub
-    Copy-Item -LiteralPath $realNode -Destination $secondStub
-    if (-not [OperatingSystem]::IsWindows()) {
-      # Ensure shims are executable on Unix.
-      & chmod +x $firstStub
-      & chmod +x $secondStub
+    if ([OperatingSystem]::IsWindows()) {
+      Copy-Item -LiteralPath $realNode -Destination $firstStub
+      Copy-Item -LiteralPath $realNode -Destination $secondStub
+    } else {
+      # Unix supports unprivileged links; Windows uses copies without symlink privileges.
+      $null = New-Item -ItemType SymbolicLink -Path $firstStub -Target $realNode
+      $null = New-Item -ItemType SymbolicLink -Path $secondStub -Target $realNode
     }
 
     # First PATH entry wins; arrange so Get-Command without TotalCount sees at least two.
@@ -173,21 +174,28 @@ function Test-DualNodePathResolution {
     $verInfo.FileName = $resolved
     $verInfo.UseShellExecute = $false
     $verInfo.CreateNoWindow = $true
+    $verInfo.RedirectStandardInput = $true
     $verInfo.RedirectStandardOutput = $true
     $verInfo.RedirectStandardError = $true
     $verInfo.ArgumentList.Add('--version')
     $verProc = [Diagnostics.Process]::Start($verInfo)
     try {
       $null = $verProc.Handle
+      $verProc.StandardInput.Close()
+      $outputTask = $verProc.StandardOutput.ReadToEndAsync()
+      $errorTask = $verProc.StandardError.ReadToEndAsync()
       if (-not $verProc.WaitForExit(10000)) { throw 'node --version exceeded 10 seconds.' }
-      $stdout = $verProc.StandardOutput.ReadToEnd()
+      if (!$outputTask.Wait(2000) -or !$errorTask.Wait(2000)) { throw 'Node version streams did not close.' }
+      $stdout = $outputTask.Result
       Write-CheckResult -Name 'Dual-node PATH: ProcessStartInfo.FileName from helper launches node' -Passed (
         $verProc.ExitCode -eq 0 -and $stdout -match 'v?\d+\.\d+'
       ) -Detail ("exit=$($verProc.ExitCode); out=$($stdout.Trim())")
     } finally {
       if ($null -ne $verProc) {
-        if (-not $verProc.HasExited) { $verProc.Kill($true); $null = $verProc.WaitForExit(5000) }
-        $verProc.Dispose()
+        try {
+          if (-not $verProc.HasExited) { $verProc.Kill($true) }
+          if (-not $verProc.WaitForExit(5000)) { throw 'Node version observer cleanup failed.' }
+        } finally { $verProc.Dispose() }
       }
     }
   } catch {
@@ -195,7 +203,7 @@ function Test-DualNodePathResolution {
   } finally {
     $env:PATH = $oldPath
     if (Test-Path -LiteralPath $tmpRoot) {
-      Remove-Item -LiteralPath $tmpRoot -Recurse -Force -ErrorAction SilentlyContinue
+      Remove-Item -LiteralPath $tmpRoot -Recurse -Force -ErrorAction Stop
     }
   }
 }

@@ -64,3 +64,5 @@ NSIS _?= 使持有进程覆盖真正卸载，官方契约：https://nsis.sourcef
     `.Source` 字符串 — 由 `scripts/windows-receipt-identity-helpers.ps1` 中的
     `Get-NodeApplicationPath` 实现。
 - 回归：`scripts/check-windows-receipt-identity.ps1` 双 Node PATH 夹具（Linux/Windows 可跑）。
+
+集成回归覆盖带空格路径。Unix 测试目录链接到现有 Node，Windows 复制可执行文件以免要求符号链接权限。版本检查对持有进程的输出及退出均有等待上限；临时目录删除错误会让检查失败。本机沙箱内运行不能替代 Windows 原生证据。
