@@ -6,6 +6,49 @@ These packages turn roadmap items into independently reviewable contributions. O
 the matching form before implementation, link the pinned upstream review, and keep every support
 claim at the lowest level proven by tests.
 
+## Next: fresh-checkout contributor smoke
+
+Status: proposed, not delivered. Prioritize a contributor being able to work without maintainer-private setup.
+
+- **Outcome:** one documented CI/local path proves a clean checkout can start Server/Web, sign in,
+  enroll an optional development Node and restart it with the retained identity.
+- **Start in:** `CONTRIBUTING.md`, `scripts`, `.github/workflows/ci.yml`, existing auth/Node fixtures.
+- **Research first:** reuse the current pinned Node/npm/PostgreSQL toolchain and lifecycle tests;
+  compare existing CI service/readiness patterns before introducing a runner.
+- **Acceptance:** fresh private fixture paths, synthetic credentials, no paid model or user profile;
+  readiness failures explain the missing service; processes and fixture data are cleaned up.
+- **Out of scope:** installer publication, new Providers or an owner-only setup service.
+
+## Next: retained-data migration regression
+
+Status: proposed. Local upgrade evidence exists; CI does not yet retain the complete old-data fixture.
+
+- **Outcome:** contributors can prove that the reviewed old migration prefix upgrades with retained
+  appearance, Employee templates, import receipts and automation rows unchanged.
+- **Start in:** `packages/db`, `scripts/verify-database.mjs`, the existing CI database job, and
+  [manual migration guidance](DATABASE.md).
+- **Research first:** reuse the reviewed Drizzle/Postgres.js runner and PostgreSQL transaction
+  semantics from [workflow research](research/developer-workflow-refactor.md).
+- **Acceptance:** a repository-owned synthetic fixture, explicit suite/environment/database mapping,
+  concurrent and repeated migration, old-row equality, retained constraints, and application rollback
+  that keeps applied migrations. A missing requested fixture must fail clearly rather than skip.
+- **Out of scope:** rewriting migration history or claiming full cross-machine backup restoration.
+
+## Next: consistent workspace snapshot contract
+
+Status: investigation proposed. Current Web ordering tests pass; a global ordering contract is not implemented.
+
+- **Outcome:** define snapshot revision and count semantics that another client can implement without
+  reproducing the Web client's event heuristics.
+- **Start in:** Server workspace queries/events, `packages/domain`, `packages/protocol`, and
+  `apps/web/src/use-workspace-state.ts`; see [workspace research](research/workspace-state-refactor.md).
+- **Research first:** compare maintained revisioned snapshot/event APIs and PostgreSQL snapshot
+  isolation; record an ADR before changing the wire format.
+- **Acceptance:** a deterministic reproduction covers counts queried at different times, active Runs
+  outside the recent-Run page, duplicate events and reconnect. Define compatible behavior before
+  implementation; the existing Web currently does not consume `counts.activeRuns`.
+- **Out of scope:** a new global client cache framework or moving Server authority into the browser.
+
 ## Starter: accessibility regression runner
 
 - **Outcome:** a repeatable report catches keyboard, name/role/state, and high-confidence WCAG

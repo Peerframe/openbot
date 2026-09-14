@@ -40,6 +40,17 @@ or marked partial, complete that review before expanding it.
 - The office visualization is a deferred optional plugin. Do not expand it unless the requested
   milestone explicitly includes it.
 
+## Contributor experience
+
+OpenBot must be practical for independent developers to contribute to; delivery must not depend
+on the project owner being the only person who understands, tests, or submits changes.
+Follow the [contributor experience principles](CONTRIBUTING.md#contributor-experience): keep setup,
+contracts, focused validation and PR handoff reproducible from a fresh checkout. Do not require
+maintainer-private paths, credentials, paid model accounts, or verbal context for routine
+contributions. Keep essential regressions in repository tests and wire environment-dependent
+checks into CI with explicit disposable fixtures. Prefer a small documented extension point over
+another overlapping local implementation or additional review ceremony.
+
 ## Engineering and repository hygiene
 
 - English is canonical for source, comments, ADRs, and primary documentation. Maintain the Chinese

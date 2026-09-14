@@ -9,6 +9,25 @@ documentation. Translations are welcome and should remain faithful to the Englis
 
 [简体中文贡献指南](CONTRIBUTING.zh-CN.md)
 
+## Contributor experience
+
+OpenBot is built for multiple independent contributors, not a workflow that only the project
+owner can operate. A new developer should be able to locate a module, start the relevant local
+services, reproduce a problem, run focused checks and prepare a reviewable PR without private
+knowledge or a maintainer's machine.
+
+- Keep setup and validation commands runnable from a fresh checkout. Routine checks use synthetic
+  data and deterministic model fixtures; optional live-service checks state their requirements.
+- Put API guarantees, supported schema subsets and failure behavior next to the shared contracts
+  and contributor docs. Prefer existing extension points over parallel implementations.
+- Keep regression tests in the repository. If a test needs PostgreSQL or another fixture, document
+  its command and include an isolated CI entry; a skipped test or a maintainer-only report is not
+  continuing coverage.
+- Keep work packages small, with an observable outcome and a reproducible validation path. Reuse
+  the existing PR template and checks rather than adding an owner-only approval step.
+- Distinguish implemented, verified, merged and released status. Link the PR and final checks at
+  handoff so contributors can see where their change actually landed.
+
 ## Contribution priorities
 
 OpenBot currently reviews contributions in this order:
@@ -181,8 +200,9 @@ through the private process in [SECURITY.md](SECURITY.md), not a public issue.
 
 1. Fork the repository and create a focused branch such as `fix/dialog-focus` or
    `feat/windows-provider`.
-2. Keep one pull request focused on one acceptance journey and link the issue it closes or relates
-   to.
+2. Keep one pull request focused on one acceptance journey. Link an existing issue when available;
+   a small reproducible bug fix or documentation correction can start directly as a PR. Use an issue
+   to agree scope before a large feature.
 3. Add tests at the lowest useful boundary and an integration test for cross-component behavior.
 4. Run `npm run check`; record any real-device, browser, or assistive-technology evidence.
 5. Update docs and existing translations when user-visible behavior or project claims change.
