@@ -2,10 +2,13 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { Run } from "@openbot/domain";
+import { MockLanguageModelV4 } from "ai/test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { prepareAttachmentContext } from "./agent-attachments.js";
 import { AttachmentProcessingService, parseInWorker } from "./attachment-processing.js";
 import { FileChannelAttachmentStorage } from "./channel-attachments.js";
+import { type AgentRunStore, executeAgentRun } from "./native-agent.js";
 
 const channel = "00000000-0000-4000-8000-000000000001";
 const dirs: string[] = [];
@@ -87,6 +90,79 @@ describe("bounded document processing", () => {
       text: expect.stringContaining("OpenBot document evidence"),
       untrusted: true,
     });
+    const run: Run = {
+      id: "fixture",
+      channelId: channel,
+      botId: "fixture",
+      executionProfile: "none",
+      instruction: `[OpenBot attachment: ${attachment.id}]`,
+      title: "Read document",
+      status: "running",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const store: AgentRunStore = {
+      queued: async () => [],
+      claim: async () => run,
+      assertScope: async () => {},
+      profile: async () => ({
+        name: "Fixture",
+        role: "Reader",
+        description: "Read evidence",
+        revision: 1,
+      }),
+      context: async () => [],
+      tasks: async () => [],
+      usage: async () => run,
+      progress: async (_run, stage, message) => ({
+        id: "progress",
+        channelId: channel,
+        runId: run.id,
+        stage,
+        message,
+        createdAt: run.createdAt,
+      }),
+      complete: vi.fn(),
+      fail: async () => ({ ...run, status: "failed" }),
+    };
+    const usage = {
+      inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+      outputTokens: { total: 1, text: 1, reasoning: 0 },
+    };
+    const model = new MockLanguageModelV4({
+      doGenerate: [
+        {
+          content: [
+            {
+              type: "tool-call",
+              toolCallId: "read",
+              toolName: "read_attachment",
+              input: JSON.stringify({ attachmentId: attachment.id }),
+            },
+          ],
+          finishReason: { unified: "tool-calls", raw: "tool_calls" },
+          usage,
+          warnings: [],
+        },
+        {
+          content: [{ type: "text", text: "Read the document." }],
+          finishReason: { unified: "stop", raw: "stop" },
+          usage,
+          warnings: [],
+        },
+      ],
+    });
+    await executeAgentRun({
+      run,
+      store,
+      model,
+      attachments: storage,
+      modelIdentity: { provider: "moonshot", model: "fixture" },
+      signal: new AbortController().signal,
+      checkSettings: async () => {},
+      publish: () => {},
+    });
+    expect(JSON.stringify(model.doGenerateCalls[1]?.prompt)).toContain("OpenBot document evidence");
   }, 30000);
   it.each(["xlsx", "pptx", "odt"])(
     "extracts an actual %s container",

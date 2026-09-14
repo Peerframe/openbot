@@ -1,67 +1,40 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readdir, readFile, rm, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import {
+  type AttachmentOperation,
+  attachmentOperations,
+  type ChannelAttachment,
+  MAX_ATTACHMENT_BYTES,
+  MAX_IMAGE_ATTACHMENT_BYTES,
+  MAX_TASK_ATTACHMENT_BYTES,
+  MAX_TASK_ATTACHMENTS,
+  MAX_TEXT_ATTACHMENT_BYTES,
+  attachmentMetadataSchema as metadataSchema,
+  TEXT_ATTACHMENT_EXTENSIONS,
+} from "@openbot/protocol";
 import writeFileAtomic from "write-file-atomic";
 import { z } from "zod";
 
-export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
-export const MAX_TASK_ATTACHMENT_BYTES = 20 * 1024 * 1024;
-export const MAX_TASK_ATTACHMENTS = 8;
+export {
+  attachmentMediaTypes,
+  type ChannelAttachment,
+  MAX_ATTACHMENT_BYTES,
+  MAX_TASK_ATTACHMENT_BYTES,
+  MAX_TASK_ATTACHMENTS,
+} from "@openbot/protocol";
+
 const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/iu;
-const TEXT_EXTENSIONS = new Set(
-  "txt md markdown csv tsv json jsonl yaml yml xml html css js jsx ts tsx mjs cjs py go rs java c cpp cxx h hpp swift kt kts sh bash zsh sql toml ini conf log r rb php vue svelte diff patch tex rst ipynb srt".split(
-    " ",
-  ),
-);
-export const attachmentMediaTypes = [
-  "text/plain",
-  "image/png",
-  "image/jpeg",
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  "application/vnd.oasis.opendocument.text",
-  "application/vnd.oasis.opendocument.spreadsheet",
-  "application/vnd.oasis.opendocument.presentation",
-  "audio/mpeg",
-  "audio/wav",
-  "audio/mp4",
-  "audio/webm",
-  "video/mp4",
-  "video/webm",
-] as const;
-const metadataSchema = z
-  .object({
-    id: z.string().uuid(),
-    channelId: z.string().uuid(),
-    name: z.string().min(1).max(160),
-    mediaType: z.enum(attachmentMediaTypes),
-    sizeBytes: z.number().int().positive().max(MAX_ATTACHMENT_BYTES),
-    sha256: z.string().regex(/^[a-f0-9]{64}$/u),
-    createdAt: z.iso.datetime(),
-    deletedAt: z.iso.datetime().optional(),
-    processing: z
-      .object({
-        operation: z.enum(["extract", "ocr", "transcribe"]),
-        characters: z.number().int().min(0).max(262144),
-        truncated: z.boolean(),
-        processedAt: z.iso.datetime(),
-      })
-      .strict()
-      .optional(),
-  })
-  .strict();
+const TEXT_EXTENSIONS = new Set(TEXT_ATTACHMENT_EXTENSIONS);
 const derivedSchema = z
   .object({
     sha256: z.string().regex(/^[a-f0-9]{64}$/u),
     text: z.string().max(262144),
-    operation: z.enum(["extract", "ocr", "transcribe"]),
+    operation: z.enum(attachmentOperations),
     truncated: z.boolean(),
     processedAt: z.iso.datetime(),
   })
   .strict();
-export type ChannelAttachment = z.infer<typeof metadataSchema>;
 export class AttachmentError extends Error {
   constructor(
     message: string,
@@ -73,11 +46,15 @@ export class AttachmentError extends Error {
 export interface DerivedAttachmentText {
   sha256: string;
   text: string;
-  operation: "extract" | "ocr" | "transcribe";
+  operation: AttachmentOperation;
   truncated: boolean;
   processedAt: string;
 }
+export type ValidateAttachmentReferences = (channelId: string, ids: string[]) => Promise<void>;
 export interface ChannelAttachmentStorage {
+  withReferenceLock?<T>(
+    persist: (validate: ValidateAttachmentReferences) => Promise<T>,
+  ): Promise<T>;
   withActiveReferences?<T>(channelId: string, ids: string[], persist: () => Promise<T>): Promise<T>;
   list?(channelId: string): Promise<ChannelAttachment[]>;
   setDeleted?(channelId: string, id: string, deleted: boolean): Promise<ChannelAttachment>;
@@ -182,29 +159,49 @@ export class FileChannelAttachmentStorage implements ChannelAttachmentStorage {
     }
   }
   withActiveReferences<T>(channelId: string, ids: string[], persist: () => Promise<T>): Promise<T> {
+    return this.withReferenceLock(async (validate) => {
+      await validate(channelId, ids);
+      return persist();
+    });
+  }
+  /** Acquire before a DB transaction; the supplied validator only reads and never reacquires. */
+  withReferenceLock<T>(
+    persist: (validate: ValidateAttachmentReferences) => Promise<T>,
+  ): Promise<T> {
+    return this.#mutate(() =>
+      persist((channelId, ids) => this.#validateActiveReferences(channelId, ids)),
+    );
+  }
+  async #validateActiveReferences(channelId: string, ids: string[]): Promise<void> {
     if (
       ids.length > MAX_TASK_ATTACHMENTS ||
       new Set(ids).size !== ids.length ||
       ids.some((id) => !UUID.test(id))
     )
-      return Promise.reject(new AttachmentError("Invalid attachment reference set."));
-    // Creation and cleanup share this lock. The callback persists only Server-owned DB records;
-    // it must not re-enter storage mutations. Existing runs retain read access after soft deletion.
-    return this.#mutate(async () => {
-      let bytes = 0;
-      for (const id of ids) {
-        const attachment = await this.metadata(channelId, id);
-        if (attachment.deletedAt)
+      throw new AttachmentError("Invalid attachment reference set.");
+    let bytes = 0;
+    for (const id of ids) {
+      const attachment = await this.metadata(channelId, id);
+      if (attachment.deletedAt)
+        throw new AttachmentError(
+          "A deleted attachment cannot be added to a new task. Restore it first.",
+        );
+      bytes += attachment.sizeBytes;
+      if (bytes > MAX_TASK_ATTACHMENT_BYTES)
+        throw new AttachmentError("Task attachments exceed 20 MiB.", 413);
+      await this.read(channelId, id);
+      if (attachment.processing) {
+        try {
+          const derived = await this.derived(channelId, id);
+          if (!derived?.text.trim()) throw new Error("Empty processed text.");
+        } catch {
           throw new AttachmentError(
-            "A deleted attachment cannot be added to a new task. Restore it first.",
+            "Processed attachment text is unavailable. Reprocess the original file.",
+            404,
           );
-        bytes += attachment.sizeBytes;
-        if (bytes > MAX_TASK_ATTACHMENT_BYTES)
-          throw new AttachmentError("Task attachments exceed 20 MiB.", 413);
-        await this.read(channelId, id);
+        }
       }
-      return persist();
-    });
+    }
   }
   async list(channelId: string): Promise<ChannelAttachment[]> {
     if (!UUID.test(channelId)) throw new AttachmentError("Invalid channel identity.");
@@ -312,7 +309,7 @@ export function validateAttachment(
   if (bytes.byteLength === 0) throw new AttachmentError("Empty files cannot be attached.");
   const buffer = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (TEXT_EXTENSIONS.has(extension)) {
-    if (bytes.byteLength > 256 * 1024)
+    if (bytes.byteLength > MAX_TEXT_ATTACHMENT_BYTES)
       throw new AttachmentError("Text attachment exceeds 256 KiB.", 413);
     try {
       const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
@@ -323,7 +320,7 @@ export function validateAttachment(
     return "text/plain";
   }
   if (extension === "png" || extension === "jpg" || extension === "jpeg") {
-    if (bytes.byteLength > 5 * 1024 * 1024)
+    if (bytes.byteLength > MAX_IMAGE_ATTACHMENT_BYTES)
       throw new AttachmentError("Image attachment exceeds 5 MiB.", 413);
     if (
       extension === "png" &&

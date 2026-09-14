@@ -1,28 +1,7 @@
+import type { Automation, CreateAutomationInput } from "@openbot/protocol";
 import { ApiError } from "./api";
 
-export interface Automation {
-  id: string;
-  name: string;
-  channelId: string;
-  botId: string;
-  prompt: string;
-  intervalMinutes: number;
-  enabled: boolean;
-  nextRunAt: string;
-  lastRunAt: string | null;
-  lastRunId: string | null;
-  lastOutcome: "submitted" | "skipped_active" | "target_unavailable" | null;
-  createdAt: string;
-}
-
-export interface CreateAutomationInput {
-  name: string;
-  channelId: string;
-  botId: string;
-  prompt: string;
-  intervalMinutes: number;
-  firstRunAt: string;
-}
+export type { Automation, CreateAutomationInput } from "@openbot/protocol";
 
 export async function listAutomations(signal?: AbortSignal): Promise<Automation[]> {
   const result = await automationRequest<{ automations: Automation[] }>(

@@ -1,38 +1,15 @@
-export const ATTACHMENT_MEDIA_TYPES = [
-  "text/plain",
-  "image/png",
-  "image/jpeg",
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  "application/vnd.oasis.opendocument.text",
-  "application/vnd.oasis.opendocument.spreadsheet",
-  "application/vnd.oasis.opendocument.presentation",
-  "audio/mpeg",
-  "audio/wav",
-  "audio/mp4",
-  "audio/webm",
-  "video/mp4",
-  "video/webm",
-] as const;
-export interface UploadedComposerAttachment {
-  id: string;
-  channelId: string;
-  name: string;
-  mediaType: (typeof ATTACHMENT_MEDIA_TYPES)[number];
-  deletedAt?: string;
-  processing?: {
-    operation: "extract" | "ocr" | "transcribe";
-    characters: number;
-    truncated: boolean;
-    processedAt: string;
-  };
-  sizeBytes: number;
-  sha256: string;
-  createdAt: string;
-  text?: undefined;
-}
+import {
+  ATTACHMENT_ACCEPT,
+  ATTACHMENT_EXTENSIONS,
+  attachmentExtensionByteLimit,
+  attachmentMetadataSchema,
+  type ChannelAttachment,
+  MAX_TASK_ATTACHMENT_BYTES,
+  MAX_TASK_ATTACHMENTS,
+} from "@openbot/protocol";
+
+export { attachmentMediaTypes as ATTACHMENT_MEDIA_TYPES } from "@openbot/protocol";
+export type UploadedComposerAttachment = ChannelAttachment & { text?: undefined };
 export type ComposerAttachment =
   | UploadedComposerAttachment
   | {
@@ -79,37 +56,19 @@ export async function readComposerAttachment(file: File): Promise<ComposerAttach
   };
 }
 
-export const COMPOSER_ATTACHMENT_ACCEPT =
-  ".txt,.md,.markdown,.csv,.tsv,.json,.jsonl,.yaml,.yml,.xml,.html,.css,.js,.jsx,.ts,.tsx,.mjs,.cjs,.py,.go,.rs,.java,.c,.cpp,.cxx,.h,.hpp,.swift,.kt,.kts,.sh,.bash,.zsh,.sql,.toml,.ini,.conf,.log,.r,.rb,.php,.vue,.svelte,.diff,.patch,.tex,.rst,.ipynb,.srt,.png,.jpg,.jpeg,.pdf,.docx,.xlsx,.pptx,.odt,.ods,.odp,.mp3,.wav,.m4a,.mp4,.webm";
-export const MAX_COMPOSER_ATTACHMENTS = 8;
-export const MAX_COMPOSER_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+export const COMPOSER_ATTACHMENT_ACCEPT = ATTACHMENT_ACCEPT;
+export const MAX_COMPOSER_ATTACHMENTS = MAX_TASK_ATTACHMENTS;
+export const MAX_COMPOSER_ATTACHMENT_BYTES = MAX_TASK_ATTACHMENT_BYTES;
 
 export function validateComposerFile(file: File): void {
-  const extension = `.${file.name.split(".").at(-1)?.toLowerCase() ?? ""}`;
-  if (!COMPOSER_ATTACHMENT_ACCEPT.split(",").includes(extension))
+  const extension = file.name.split(".").at(-1)?.toLowerCase() ?? "";
+  if (!ATTACHMENT_EXTENSIONS.includes(extension))
     throw new Error(
       "暂不支持此文件格式，请选择文本、代码、图片、PDF、Office 文档或 MP3、WAV、M4A、MP4、WebM。",
     );
   if (!/^[\p{L}\p{N}][\p{L}\p{N} ._()-]{0,159}$/u.test(file.name))
     throw new Error("附件名称须为 160 字符以内的普通文件名。");
-  const max = [
-    ".pdf",
-    ".docx",
-    ".xlsx",
-    ".pptx",
-    ".odt",
-    ".ods",
-    ".odp",
-    ".mp3",
-    ".wav",
-    ".m4a",
-    ".mp4",
-    ".webm",
-  ].includes(extension)
-    ? 10 * 1024 * 1024
-    : [".png", ".jpg", ".jpeg"].includes(extension)
-      ? 5 * 1024 * 1024
-      : 256 * 1024;
+  const max = attachmentExtensionByteLimit(extension);
   if (file.size === 0 || file.size > max)
     throw new Error("附件大小超限：文本/代码 256 KB，图片 5 MB，文档/媒体 10 MB；不能上传空文件。");
 }
@@ -185,15 +144,15 @@ export async function uploadComposerAttachment(
         ? result.error.slice(0, 500)
         : "附件上传失败，请检查连接后重试。",
     );
-  const attachment = result.attachment;
+  const parsed = attachmentMetadataSchema.safeParse(result.attachment);
+  const attachment = parsed.success ? parsed.data : undefined;
   if (
     !attachment ||
     !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/iu.test(attachment.id) ||
     attachment.channelId !== channelId ||
     attachment.name !== file.name ||
     attachment.sizeBytes !== file.size ||
-    !/^[a-f0-9]{64}$/u.test(attachment.sha256) ||
-    !ATTACHMENT_MEDIA_TYPES.includes(attachment.mediaType)
+    !/^[a-f0-9]{64}$/u.test(attachment.sha256)
   )
     throw new Error("附件上传响应与当前文件不匹配。");
   return attachment;

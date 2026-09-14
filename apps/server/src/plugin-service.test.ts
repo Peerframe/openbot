@@ -8,7 +8,11 @@ import { startExamplePlugin } from "./plugin-example.js";
 import { createPluginRoutes } from "./plugin-routes.js";
 import { PluginService } from "./plugin-service.js";
 import { FilePluginStore } from "./plugin-store.js";
-import { normalizePluginEndpoint, type PluginConnection } from "./plugin-transport.js";
+import {
+  abortPluginOperation,
+  normalizePluginEndpoint,
+  type PluginConnection,
+} from "./plugin-transport.js";
 import { checkPluginSchema, type InstalledPlugin, type PluginTool } from "./plugin-types.js";
 
 const run = {
@@ -60,9 +64,10 @@ async function fixture(approvalTimeoutMs = 60_000) {
     close: vi.fn(async () => {}),
   };
   const assertScope = vi.fn(async () => {});
+  const connector = vi.fn(async () => connection);
   const service = new PluginService({
     store,
-    connector: async () => connection,
+    connector,
     assertScope,
     botExists: async (id) => id === run.botId,
     approvalTimeoutMs,
@@ -78,7 +83,18 @@ async function fixture(approvalTimeoutMs = 60_000) {
     { ...input, reviewedDigest: preview.digest },
     AbortSignal.timeout(2000),
   );
-  return { service, store, call, connection, assertScope, plugin, input, preview, directory };
+  return {
+    service,
+    store,
+    call,
+    connector,
+    connection,
+    assertScope,
+    plugin,
+    input,
+    preview,
+    directory,
+  };
 }
 async function authorize(
   service: PluginService,
@@ -113,6 +129,99 @@ describe(
   "Server-owned MCP plugin lifecycle",
   process.platform === "win32" ? { timeout: 60_000 } : {},
   () => {
+    it.each([
+      { $async: true },
+      { $schema: "https://json-schema.org/draft/2020-12/schema" },
+      { dependentRequired: { text: ["reviewed"] } },
+      { unevaluatedProperties: false },
+      { properties: { text: { type: "array", prefixItems: [{ const: "reviewed" }] } } },
+    ])(
+      "rejects an unsupported persisted schema before opening a connection: %j",
+      async (schema) => {
+        const { service, plugin, store, connector, call } = await fixture();
+        const enabled = await authorize(service, plugin, "read");
+        await store.transaction((state) => {
+          const descriptor = state.plugins.find((item) => item.id === enabled.id)?.tools[0];
+          if (!descriptor) throw new Error("Missing persisted fixture tool");
+          descriptor.inputSchema = { type: "object", ...schema };
+        });
+        connector.mockClear();
+        await expect(
+          service.call(run, callInput(enabled), AbortSignal.timeout(1000)),
+        ).rejects.toMatchObject({ code: "invalid" });
+        expect(connector).not.toHaveBeenCalled();
+        expect(call).not.toHaveBeenCalled();
+        expect((await service.snapshot()).pendingCalls).toEqual([]);
+        expect((await store.read()).audit.some((entry) => entry.phase === "dispatching")).toBe(
+          false,
+        );
+      },
+    );
+
+    it("retains concurrency admission until session cleanup finishes", {
+      timeout: 30_000,
+    }, async () => {
+      const { service, plugin, connection, call } = await fixture();
+      const enabled = await authorize(service, plugin, "read");
+      let release!: () => void, allEntered!: () => void;
+      const closing = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const allClosing = new Promise<void>((resolve) => {
+        allEntered = resolve;
+      });
+      let entered = 0;
+      const close = vi.fn(() => {
+        if (++entered === 16) allEntered();
+        return closing;
+      });
+      connection.close = close;
+      const abort = new AbortController();
+      const deadline = AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]);
+      const calls = Array.from({ length: 16 }, () =>
+        service.call(run, callInput(enabled), deadline),
+      );
+      // Observe rejection immediately, including failures before a call reaches cleanup.
+      const settled = Promise.allSettled(calls);
+      const pending = [...calls];
+      try {
+        await abortPluginOperation(
+          Promise.race([
+            allClosing,
+            Promise.race(calls).then(() => {
+              throw new Error("A call settled before cleanup was released.");
+            }),
+          ]),
+          deadline,
+        );
+        expect(close).toHaveBeenCalledTimes(16);
+        expect(call).toHaveBeenCalledTimes(16);
+        const excess = service.call(run, callInput(enabled), deadline);
+        pending.push(excess);
+        // A harness timeout must fail the test, not impersonate the expected capacity rejection.
+        const result = await abortPluginOperation(Promise.allSettled([excess]), deadline);
+        expect(result).toEqual([
+          { status: "rejected", reason: expect.objectContaining({ code: "unavailable" }) },
+        ]);
+        expect(call).toHaveBeenCalledTimes(16);
+      } finally {
+        release();
+        abort.abort();
+        await abortPluginOperation(Promise.allSettled(pending), AbortSignal.timeout(10_000));
+      }
+      expect(await settled).toEqual(
+        Array.from({ length: 16 }, () => ({
+          status: "fulfilled",
+          value: expect.objectContaining({ untrusted: true }),
+        })),
+      );
+      await expect(
+        service.call(run, callInput(enabled), AbortSignal.timeout(5000)),
+      ).resolves.toMatchObject({ untrusted: true });
+      expect(call).toHaveBeenCalledTimes(17);
+      expect(close).toHaveBeenCalledTimes(17);
+    });
+
     it("installs reviewed declarations disabled without authority and keeps credentials encrypted", async () => {
       const { service, store, plugin, directory, call } = await fixture();
       expect(plugin.enabled).toBe(false);

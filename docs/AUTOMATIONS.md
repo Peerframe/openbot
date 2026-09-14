@@ -34,7 +34,7 @@ All routes require an authenticated Owner session. Mutations also require a trus
 
 `firstRunAt` is an ISO 8601 UTC timestamp in the next 366 days. Names contain 1–80 characters; prompts 1–8,000 characters; intervals are integers from 15–10,080 minutes. Unknown fields are rejected. Creation bodies are limited to 32 KiB and update bodies to 1 KiB, including requests without Content-Length. A Server that has no automation store returns 503.
 
-`Automation` contains the input fields except `firstRunAt`, plus `id`, `enabled`, `nextRunAt`, `lastRunAt`, `lastRunId`, `lastOutcome`, and `createdAt`. The last three run fields are nullable before an attempt; `lastOutcome` is `submitted`, `skipped_active`, or `target_unavailable`. `lastRunAt` is the most recent scheduling attempt, which may have skipped submission. `lastRunId` remains the last actual submitted Run.
+`Automation` contains the input fields except `firstRunAt`, plus `id`, `enabled`, `nextRunAt`, `lastRunAt`, `lastRunId`, `lastOutcome`, and `createdAt`. The last three run fields are nullable before an attempt; `lastOutcome` is `submitted`, `skipped_active`, `target_unavailable`, or `attachment_unavailable`. `lastRunAt` is the most recent scheduling attempt, which may have skipped submission. `lastRunId` remains the last actual submitted Run.
 
 POST has no idempotency key in this version. After a network failure, refresh the list before manually retrying creation.
 
@@ -51,3 +51,20 @@ npx vitest run apps/server/src/postgres-automation-store.integration.test.ts
 The suite migrates and clears that database. It rejects other hostnames and database names. It is skipped when the dedicated variable is absent. This test is not a multi-Server dispatch certification: OpenBot's dispatcher and realtime infrastructure still have a single-Server boundary.
 
 See [research](research/server-automations.md) for the reuse decision.
+
+## Attachment references
+
+Existing attachment markers in a prompt use the same channel, integrity and size validation as an
+interactive task. Creation and resume reject invalid references. All saved schedules, including
+paused schedules, retain files marked for deletion until the schedule is deleted; submitted
+messages/Runs independently retain their historical references. Cleanup never deletes an active file.
+
+Before submitting each occurrence, the Server checks originals and any processed text again. A
+missing, deleted or corrupt reference pauses the schedule with `attachment_unavailable`, creates no
+Run and records a content-free reason. Restore/reprocess the original and explicitly resume, or
+delete and recreate the schedule. This does not cancel a previously submitted Run.
+
+The file-reference lock is acquired before the database transaction. The additional isolated suite
+uses `OPENBOT_ATTACHMENT_TEST_DATABASE_URL`, accepting only a loopback `openbot_attachment_test_*`
+database; run `npx vitest run apps/server/src/task-attachment-references.integration.test.ts`.
+See [flow research](research/task-flow-refactor.md).

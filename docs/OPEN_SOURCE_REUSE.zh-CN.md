@@ -35,9 +35,13 @@ MIT/Apache 代码时，必须在 `THIRD_PARTY_NOTICES.md` 或对应 vendor 目�
 
 | OpenBot 范围 | 调研来源 | 许可证 | 决定与现状 |
 | --- | --- | --- | --- |
+| 统一任务、附件与定时流程 | PostgreSQL 17；ai 7.0.93 / 6359fd58；现有 Zod 4.5.4 | PostgreSQL；Apache-2.0；MIT | 复用既有事务和文件锁、共享协议定义和单份工具表；暂停任务保留附件引用，追加结果约束迁移，失效时停用。未复制源码或增加依赖；见[研究](research/task-flow-refactor.zh-CN.md)。 |
+| 工作区状态顺序与旧资源清理 | React 19.2.8；既有浏览器 AbortController / fetch | MIT；WHATWG 条款 | 单个活动快照请求配合有序实体投影，操作响应立即显示；删除无引用像素资源和选择器，保留组合外观兼容。未增加状态框架或复制源码；见[研究](research/workspace-state-refactor.zh-CN.md)。 |
+| MCP 生命周期与共享插件契约 | MCP SDK 1.30.0；JSON Schema；Zod 4.5.4 | MIT；规范条款 | 按位置检查 schema、同端点限时终止会话并共享数据契约，权限与并发仍由 Server 控制；Provider 声明复用线协议。未复制源码；见[研究](research/plugin-flow-refactor.zh-CN.md)。 |
+| 迁移编写、首次登记与保留声明 | Drizzle Kit 0.31.10；Node 26；PDF.js 6.3.289 | MIT；Apache-2.0 及包内各项声明 | 停用不适合手写历史的自动生成，提供只读模板计划、首次登记步骤与完整备份/声明清单；不新增自动备份或复制源码。见[研究](research/developer-workflow-refactor.zh-CN.md)。 |
 | 官方网站与双语手册 | [Astro 7.2.10 / `2fdf7314`](https://github.com/withastro/astro/tree/2fdf731428aa738d5dcf3041b4e78eb9d036968c)、[Starlight 0.42.0 / `88ad3c26`](https://github.com/withastro/starlight/tree/88ad3c2630487ba227a7b4ccbffc01a2bdf623a5)、Vite 8.2.2；比较 VitePress 1.6.4 | MIT | 复用已发布的静态构建、Markdown 手册、语言导航、Pagefind 搜索与 sitemap。公开演示复用真实 OpenBot React 部件并标识合成数据，不持有 Owner 会话或执行权限。官网已迁到独立的 [openbot-website 仓库](https://github.com/yxflc11/openbot-website)，固定演示引用的产品提交；官网依赖不再进入 Server 打包。未复制框架源码，见[研究](research/official-site.md)。本地构建与 GitHub Pages 发布分别验收。 |
 | 频道 Bot 协作与扩展附件 | ai 7.0.93 / 6359fd58；Hono 4.13.7；write-file-atomic 8.0.0；已评估 A2A v0.3.0 | Apache-2.0；MIT | 复用 SDK 子 Agent 工具、多模态消息、HTTP 与不可变存储。Server 建立同频道、有界、独立 Bot 身份的任务树；附件支持每任务 8 件/20 MiB、分页文本及 PNG/JPEG/PDF。未复制源码；见[协作研究](research/channel-bot-collaboration.md)、[附件研究](research/channel-attachments.zh-CN.md)和[升级说明](CORE_UPGRADE.zh-CN.md)。 |
-| 获批的 Desktop 界面优化 | React 19.2.8 / 1dd4ecb；Electron 44.2.0 / tag 对象 369b0d9d3afdd5b8c0bdb0ad42391443947a7424；WAI APG；既有 OpenBot e8fa933 | MIT；W3C 文档条款 | 复用 HTML 控件与既有 renderer，实现统一创建入口、全窗口竖向设置/插件、结构化成员提及和可移除文本附件/已验证技能请求标签。最多 3 个附件、每个 6,000 字节，完整任务不超过 8,000 字符；最多 2 个技能请求不授予权限。分享明确预览并复制近期消息，不托管发布。未复制源码或新增依赖，见[调研](research/desktop-ui-refresh.zh-CN.md)。 |
+| 获批的 Desktop 界面优化 | React 19.2.8 / 1dd4ecb；Electron 44.2.0 / tag 对象 369b0d9d3afdd5b8c0bdb0ad42391443947a7424；WAI APG；既有 OpenBot e8fa933 | MIT；W3C 文档条款 | 复用 HTML 控件与既有 renderer，实现统一创建入口、全窗口竖向设置/插件、结构化成员提及和可移除文本附件/已验证技能请求标签。原先 3 个附件、每个 6,000 字节的设计已被共享的 8 个/20 MiB 附件契约替代；完整任务不超过 8,000 字符；最多 2 个技能请求不授予权限。分享明确预览并复制近期消息，不托管发布。未复制源码或新增依赖，见[调研](research/desktop-ui-refresh.zh-CN.md)。 |
 | Server 管理的 Bot 单独对话 | PostgreSQL 17 / ec3f6a6a7dd82a8ce455a0710ef75172f9f318d1；Drizzle 0.45.2 / e7dfa14519f363229ccc3ead7b1b2f2051937efb；Postgres.js 3.4.9 | PostgreSQL License；Apache-2.0；Unlicense | 复用数据库行锁、外键和唯一约束，为每个 Bot 创建唯一固定成员频道。仅 Owner 可幂等打开，精确标识路由与消息/Run 审计仍归 Server 管理。临时 PostgreSQL 实例已验证并发创建；未复制源码或增加依赖，见[调研](research/desktop-direct-conversations.zh-CN.md)。 |
 | Desktop 安装分发与模型配置初始化 | electron-builder 26.16.0 / f4610970f78b6ce223b1f4cee2b5e8f5caa14a48；现有 Packager 20.3.0、Fuses 2.1.3；Node 24.20.0 文件/加密与 Compose 卷 | MIT；BSD-2-Clause；Node.js 许可；规范条款 | 只在已验证应用包外复用 builder，生成 DMG/NSIS/AppImage/DEB；完整核对源提交与产物后创建草稿 Release。Server 私有模型目录保留密钥，损坏时关闭失败。未复制上游源码，见[调研](research/desktop-installable-delivery.md)和[安装](DESKTOP_INSTALLATION.zh-CN.md)。 |
 | Server 原生 Agent 循环 | ai 7.0.93、@ai-sdk/openai 4.0.60、@ai-sdk/anthropic 4.0.49；比较 OpenAI Agents JS v0.17.0 和已固定的 Hermes 运行时 | Apache-2.0；MIT | 复用已发布 ToolLoopAgent、严格的频道只读工具、有界迭代和官方模型 HTTP。Owner 启用、数据库领取/回复/审计与配置撤销仍由 OpenBot 管理。未复制源码，见[调研](research/native-agent-loop.md)与[运行说明](NATIVE_AGENT.zh-CN.md)。 |
@@ -196,7 +200,7 @@ MIT/Apache 代码时，必须在 `THIRD_PARTY_NOTICES.md` 或对应 vendor 目�
 - 记忆检索、定时保留、自主写入提案、提示注入防护、版本恢复和选择性导出都必须先单独审查。
 - 技能归档必须检查路径穿越、符号链接、解压大小、可执行内容、许可证、来源、签名和静态风险。
 - 官方 `skills-ref` 需要 Python 3.11+，应在隔离检查 Worker 中运行，而不是放进权威 Server 进程。
-- Provider 仍需独立场景 runner、隔离执行测试和可重复真实设备 CI，平台才可标记为
+- Provider 独立场景 runner 已实现；具体适配仍需专属隔离场景和可重复真实设备 CI，平台才可标记为
   Supported 或 Certified。
 - `npm audit --omit=dev` 当前为零个生产依赖漏洞；完整审计在仅开发使用的
   Drizzle Studio，也不会采用 npm 建议的破坏性强制降级；只有兼容的上游修复版本通过审查后才升级。

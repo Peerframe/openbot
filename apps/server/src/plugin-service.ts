@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { AjvJsonSchemaValidator } from "@modelcontextprotocol/sdk/validation/ajv";
 import type { Run } from "@openbot/domain";
+import type { PluginContentCatalog, PluginContentItem, PluginSnapshot } from "@openbot/protocol";
 import type { z } from "zod";
 import {
   type FilePluginStore,
@@ -19,6 +20,7 @@ import {
   applyPluginUpdateSchema,
   boundedJson,
   callPluginSchema,
+  checkPluginSchema,
   grantPluginSchema,
   type InstalledPlugin,
   installPluginSchema,
@@ -66,7 +68,7 @@ export class PluginService {
     this.#approvalTimeout = Math.min(60_000, Math.max(1, options.approvalTimeoutMs ?? 60_000));
   }
 
-  async snapshot(): Promise<{ plugins: InstalledPlugin[]; pendingCalls: PendingPluginCall[] }> {
+  async snapshot(): Promise<PluginSnapshot> {
     return {
       plugins: (await this.options.store.read()).plugins.map(publicPlugin),
       pendingCalls: [...this.#pending.values()]
@@ -152,17 +154,8 @@ export class PluginService {
     if (!this.options.assertOwnerContentScope) throw new PluginError("forbidden");
     await this.options.assertOwnerContentScope(scope);
   }
-  async #contentCatalog(botId: string) {
-    const items: Array<{
-      pluginId: string;
-      revision: string;
-      pluginName: string;
-      kind: "resource" | "prompt";
-      name: string;
-      description: string;
-      mimeType?: string;
-      arguments?: NonNullable<PluginManifest["prompts"]>[number]["arguments"];
-    }> = [];
+  async #contentCatalog(botId: string): Promise<PluginContentCatalog> {
+    const items: PluginContentItem[] = [];
     let truncated = false;
     for (const plugin of (await this.options.store.read()).plugins.filter((item) => item.enabled)) {
       const grant = plugin.grants.find((item) => item.botId === botId);
@@ -318,8 +311,8 @@ export class PluginService {
     } catch (error) {
       throw error instanceof PluginError ? error : new PluginError("unavailable");
     } finally {
-      this.#active.delete(id);
       await client?.close().catch(() => {});
+      this.#active.delete(id);
     }
   }
 
@@ -453,6 +446,8 @@ export class PluginService {
     const plugin = this.#authorized(snapshot, run, input.pluginId, input.revision, input.toolName);
     const descriptor = plugin.tools.find((tool) => tool.name === input.toolName);
     if (!descriptor) throw new PluginError("forbidden");
+    // Persisted catalogs may predate the current policy; reject them before compile or connection.
+    checkPluginSchema(descriptor.inputSchema);
     const validate = new AjvJsonSchemaValidator().getValidator(descriptor.inputSchema);
     if (!validate(input.arguments).valid) throw new PluginError("invalid");
     if (this.#active.size >= 16) throw new PluginError("unavailable", "插件并发已达上限。");
@@ -525,8 +520,8 @@ export class PluginService {
       throw error instanceof PluginError ? error : new PluginError("unavailable");
     } finally {
       this.#pending.delete(id);
-      this.#active.delete(id);
       await client?.close().catch(() => {});
+      this.#active.delete(id);
     }
   }
 

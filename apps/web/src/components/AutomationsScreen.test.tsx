@@ -67,6 +67,23 @@ async function setTextArea(textarea: HTMLTextAreaElement, value: string) {
 }
 
 describe("AutomationsScreen", () => {
+  it("explains a stopped attachment task without exposing server paths", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          automations: [{ ...automation, enabled: false, lastOutcome: "attachment_unavailable" }],
+        }),
+      ),
+    );
+    const rendered = await renderComponent(<AutomationsScreen bots={bots} channels={channels} />);
+    try {
+      expect(rendered.container.textContent).toContain("附件已删除、损坏或不可用，自动任务已暂停");
+      expect(rendered.container.textContent).toContain("恢复原附件后重新启用");
+    } finally {
+      await rendered.unmount();
+    }
+  });
   it("creates a Server schedule with local time converted to UTC and an assigned Bot", async () => {
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
       init?.method === "POST" ? Response.json({ automation }) : Response.json({ automations: [] }),

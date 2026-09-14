@@ -83,7 +83,7 @@ See the [research](research/third-party-mcp-plugins.md).
 | Authentication | Optional dedicated bearer token encrypted on the Server. OAuth and dynamic credential discovery are not implemented. |
 | Discovery | One complete page per capability, up to 32 tools, 32 resources and 32 prompts; at least one declaration, catalog ≤64 KiB. No pagination or URI templates. |
 | Names/description | Names: 1–64 ASCII letters, digits, dot, underscore or hyphen. Descriptions ≤2,000 characters; Agent sees bounded excerpts. |
-| Input schema | Object-root JSON Schema ≤12 KiB and bounded depth. Simple objects, arrays, scalars, bounds, required and enums work. References, `$id`, regex patterns, formats and header-mirroring extensions are rejected. |
+| Input schema | Synchronous draft-07 subset; object root, ≤12 KiB, depth ≤12 and ≤1,000 JSON nodes. Objects, arrays, scalars, bounds, required, enums and draft-07 applicators work. References, `$id`, regex patterns, formats and header-mirroring extensions are rejected. See the dialect contract below. |
 | Arguments/results | Arguments ≤8 KiB and validated. Results: text blocks plus optional structured JSON ≤12 KiB; no images/audio/resources/renderer code. `isError` fails the call. |
 | Time | HTTP ≤30 seconds; approval ≤60 seconds; invocation ≤120 seconds and within the parent Run deadline. |
 | Capacity | 16 installations; 32 tools and 128 Bot grant entries per plugin; 16 concurrent calls. Agent catalog ≤16 tools and 12 KiB, with truncation flagged. |
@@ -93,6 +93,31 @@ This adapter does not expose sampling, elicitation, roots, stdio, task extension
 write tools, validate arguments and authorization in your backend, and describe actual effects.
 Annotations assist human review but do not prove behavior. Put dedicated service authentication
 in connection configuration rather than asking the model for account passwords.
+
+### Schema dialect contract
+
+OpenBot's pinned SDK validates with draft-07. Omit `$schema`, or set it to
+`http://json-schema.org/draft-07/schema#` (the same identifier without `#` also works).
+Other declared dialects are rejected, including 2019-09 and 2020-12; the Server does not silently
+reinterpret them. This policy also applies to a tool's optional `outputSchema`.
+
+Supported constraints include `properties`, `additionalProperties`, `required`, `dependencies`,
+scalar/array bounds, `enum`, `const`, `allOf`/`anyOf`/`oneOf`, `not`, `if`/`then`/`else`,
+`contains`, and draft-07 `items`/`additionalItems`. For example, a tuple uses
+`"items": [{"const": "read"}], "additionalItems": false`; field dependencies use
+`"dependencies": {"source": ["revision"]}`. Keep both examples within an object-root schema.
+
+The newer keywords `prefixItems`, `dependentRequired`, `dependentSchemas`, `minContains`,
+`maxContains`, `unevaluatedProperties` and `unevaluatedItems` are rejected. So are `$vocabulary`,
+`$anchor`/`$dynamicAnchor`/`$recursiveAnchor`, `contentSchema`, OpenAPI `discriminator`, and Ajv
+`$async`. Errors identify the unsupported keyword or dialect. Ordinary property names and
+`enum`/`const`/`default` values with these spellings remain usable; annotations do not enforce
+additional validation or grant authority.
+
+If an installed plugin used an unsupported schema, calls now stop before connecting. Export the
+supported subset from your schema library, preview the changed declarations, apply the update,
+then review and restore grants. Do not remove a required constraint merely to pass discovery;
+preserve its meaning using supported constructs and validate it again in the plugin backend.
 
 ## Owner API
 
@@ -147,3 +172,5 @@ The example also exposes `notes://current`, user-selected `review_note(note)`, a
 An update refreshes declarations from the existing exact endpoint; it does not download a program or automatically update the external server. Preview shows the replacement manifest and whether its digest changed. Apply requires that exact fresh digest and the installed revision. Success clears all Bot grants and disables the connection, including when the declared version is unchanged; review and regrant capabilities before enabling it. Concurrent changes or catalog changes between preview and apply return `409`, preserving the prior installation. Credentials are retained but never returned.
 
 The current view host uses official MCP Apps 1.7.5 AppBridge, two isolated iframe layers, local interaction and individually granted resource reads. It does not advertise tool calls, message sending, model-context mutation or external network/device access.
+
+MCP session cleanup uses the SDK termination request on the same validated endpoint, with a five-second bound and support for HTTP 405. The connection keeps its concurrency slot until cleanup finishes. A cleanup failure does not replay a business call or prove remote deletion. Schema keyword restrictions apply to schema positions; ordinary property names such as `format` are allowed. Public data contracts are shared with the renderer; grants and authority remain Server-owned. See [research](research/plugin-flow-refactor.md).

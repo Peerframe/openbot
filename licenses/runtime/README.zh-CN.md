@@ -7,7 +7,7 @@
 `native-server/runtime-notices`。MCP Apps 虽不被 Server 引用，已进入浏览器构建，也必须附带声明。
 
 - officeparser 7.8.0：MIT。
-- PDF.js / pdfjs-dist 6.2.108：Apache-2.0，同时包含独立许可的字体、CMap、ICC 和图像/WASM 解码器；
+- PDF.js / pdfjs-dist 6.3.289：Apache-2.0，同时包含独立许可的字体、CMap、ICC 和图像/WASM 解码器；
   保留包内全部许可文件，不能只带根目录 LICENSE。
 - Tesseract.js 7.0.0、tesseract.js-core 7.0.0：保留 Apache-2.0 包许可。
 - 英文、简体中文训练数据 1.0.0：npm 包没有许可文件，元数据写 MIT；实际数据源仓库标明 Apache-2.0。

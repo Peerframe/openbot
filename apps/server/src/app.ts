@@ -1,28 +1,14 @@
-import type { AttachmentProcessingService } from "./attachment-processing.js";
-import type { ChannelInteractionStore } from "./channel-interactions-store.js";
-import { createChannelInteractionRoutes } from "./channel-interactions-routes.js";
-import type { Channel } from "@openbot/domain";
-import type { PluginService } from "./plugin-service.js";
-import { createPluginRoutes } from "./plugin-routes.js";
-import {
-  taskAttachmentIds,
-  AttachmentError,
-  type ChannelAttachmentStorage,
-} from "./channel-attachments.js";
-import type { RunOutput } from "@openbot/domain";
-import { steerNativeRunInputSchema } from "@openbot/protocol";
-import type { SteeringInstruction } from "./agent-steering.js";
-import { registerChannelAttachmentRoutes } from "./channel-attachment-routes.js";
-import { importSkillSchema, parseSkillDocument } from "./agent-skills.js";
 import { createHash, randomUUID } from "node:crypto";
 import type {
   ApprovalResolution,
   BootstrapSummary,
+  Channel,
   ChannelRealtimeEvent,
   EmployeeProfileSection,
   ExecutionNode,
   NodeIdentitySummary,
   Run,
+  RunOutput,
   WorkspaceRealtimeEvent,
   WorkspaceSnapshot,
 } from "@openbot/domain";
@@ -44,6 +30,7 @@ import {
   exchangeNodeEnrollmentInputSchema,
   joinChannelBotInputSchema,
   loginInputSchema,
+  steerNativeRunInputSchema,
   unsignedEmployeeTemplatePackageSchema,
   updateEmployeeMemoryInputSchema,
   updateEmployeeProfileDetailsInputSchema,
@@ -57,12 +44,23 @@ import { secureHeaders } from "hono/secure-headers";
 import { streamSSE } from "hono/streaming";
 import { type ZodType, z } from "zod";
 import { reviewKnowledgeProposalSchema } from "./agent-knowledge.js";
+import { importSkillSchema, parseSkillDocument } from "./agent-skills.js";
+import type { SteeringInstruction } from "./agent-steering.js";
 import type { ArtifactStorage } from "./artifact-storage.js";
+import type { AttachmentProcessingService } from "./attachment-processing.js";
 import {
   type AutomationStore,
   createAutomationInputSchema,
   updateAutomationInputSchema,
 } from "./automations.js";
+import { registerChannelAttachmentRoutes } from "./channel-attachment-routes.js";
+import {
+  AttachmentError,
+  type ChannelAttachmentStorage,
+  taskAttachmentIds,
+} from "./channel-attachments.js";
+import { createChannelInteractionRoutes } from "./channel-interactions-routes.js";
+import type { ChannelInteractionStore } from "./channel-interactions-store.js";
 import { ChannelRealtimeHub } from "./channel-realtime-hub.js";
 import { ClientIdentityError, resolveClientIdentity } from "./client-identity.js";
 import {
@@ -79,8 +77,8 @@ import {
 } from "./employee-package.js";
 import {
   ModelSettingsError,
-  modelDiscoveryInputSchema,
   type ModelSettingsService,
+  modelDiscoveryInputSchema,
   modelSettingsInputSchema,
 } from "./model-settings.js";
 import {
@@ -93,10 +91,13 @@ import {
   LoginRateLimitedError,
   type OwnerAuthService,
 } from "./owner-auth.js";
+import { createPluginRoutes } from "./plugin-routes.js";
+import type { PluginService } from "./plugin-service.js";
 import type { PostgresKnowledgeStore } from "./postgres-knowledge-store.js";
 import { RealtimeEventBuffer } from "./realtime-event-buffer.js";
 import type { RequestThrottle } from "./request-throttle.js";
 import type { RunFrameStore } from "./run-frame-store.js";
+import { TaskAttachmentReferences } from "./task-attachment-references.js";
 import { WorkspaceRealtimeHub } from "./workspace-realtime-hub.js";
 
 export interface AppDependencies {
@@ -142,6 +143,7 @@ export const secureOwnerSessionCookie = "__Host-openbot_session";
 const maximumPendingRealtimeEvents = 128;
 
 export function createApp(dependencies: AppDependencies) {
+  const taskReferences = new TaskAttachmentReferences(dependencies.attachments);
   const app = new Hono<{
     Variables: { requestId: string; requestStartedAt: number };
   }>();
@@ -675,21 +677,9 @@ export function createApp(dependencies: AppDependencies) {
   app.post("/api/v1/channels/:channelId/messages", async (context) => {
     const input = await parseRequest(context.req.raw, createMessageInputSchema);
     const channelId = context.req.param("channelId");
-    const ids = taskAttachmentIds(input.content);
-    const persist = () => dependencies.store.submitTask(channelId, input);
-    if (ids.length && !dependencies.attachments?.withActiveReferences)
-      return context.json({ error: "Attachment reference validation is unavailable." }, 503);
-    let result: Awaited<ReturnType<typeof persist>>;
-    try {
-      result =
-        ids.length && dependencies.attachments?.withActiveReferences
-          ? await dependencies.attachments.withActiveReferences(channelId, ids, persist)
-          : await persist();
-    } catch (error) {
-      if (error instanceof AttachmentError)
-        return context.json({ error: error.message }, error.status);
-      throw error;
-    }
+    const result = await taskReferences.withActive(channelId, input.content, () =>
+      dependencies.store.submitTask(channelId, input),
+    );
     realtime.publish({
       type: "message.created",
       channelId: result.message.channelId,

@@ -1,4 +1,9 @@
-import { ATTACHMENT_MEDIA_TYPES, type UploadedComposerAttachment } from "./composer-context";
+import {
+  type AttachmentOperation,
+  attachmentByteLimit,
+  attachmentMetadataSchema,
+} from "@openbot/protocol";
+import type { UploadedComposerAttachment } from "./composer-context";
 
 const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/iu;
 
@@ -63,9 +68,11 @@ export async function getChannelAttachment(
     redirect: "error",
     signal: AbortSignal.any([signal, AbortSignal.timeout(15000)]),
   });
-  const { attachment: value } = JSON.parse(
+  const { attachment: candidate } = JSON.parse(
     new TextDecoder().decode(await readBounded(response, 16384)),
   ) as { attachment?: UploadedComposerAttachment };
+  const parsed = attachmentMetadataSchema.safeParse(candidate);
+  const value = parsed.success ? parsed.data : undefined;
   if (
     !value ||
     value.id !== id ||
@@ -75,13 +82,7 @@ export async function getChannelAttachment(
     !Number.isSafeInteger(value.sizeBytes) ||
     value.sizeBytes <= 0 ||
     !/^[a-f0-9]{64}$/u.test(value.sha256) ||
-    !ATTACHMENT_MEDIA_TYPES.includes(value.mediaType) ||
-    value.sizeBytes >
-      (!value.mediaType.startsWith("image/") && value.mediaType !== "text/plain"
-        ? 10 * 1024 * 1024
-        : value.mediaType === "text/plain"
-          ? 256 * 1024
-          : 5 * 1024 * 1024)
+    value.sizeBytes > attachmentByteLimit(value.mediaType)
   )
     throw new Error("附件信息与当前频道不匹配。");
   return value;
@@ -133,7 +134,7 @@ export function splitMessageAttachments(content: string): { text: string; ids: s
 
 export async function updateAttachment(
   attachment: UploadedComposerAttachment,
-  operation: "extract" | "ocr" | "transcribe" | "delete" | "restore",
+  operation: AttachmentOperation | "delete" | "restore",
   password?: string,
   signal?: AbortSignal,
 ): Promise<UploadedComposerAttachment> {

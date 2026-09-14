@@ -12,7 +12,7 @@ import type { Channel, MessageReaction, ReactionEmoji, Run } from "@openbot/doma
 import { reactionEmojiSchema, setMessageReactionSchema } from "@openbot/protocol";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { StoreConflictError, StoreNotFoundError } from "./control-plane-store.js";
-import { toRun } from "./postgres-store.js";
+import { toRun } from "./postgres-task-records.js";
 
 type Database = ReturnType<typeof import("@openbot/db")["createDatabase"]>["db"];
 export interface ChannelInteractionStore {

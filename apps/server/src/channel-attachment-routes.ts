@@ -1,3 +1,4 @@
+import { attachmentOperations } from "@openbot/protocol";
 import type { Env, Hono } from "hono";
 import { z } from "zod";
 import type { AttachmentProcessingService } from "./attachment-processing.js";
@@ -63,7 +64,7 @@ export function registerChannelAttachmentRoutes<E extends Env>(
         throw new AttachmentError("Attachment processing unavailable.", 503);
       const input = z
         .object({
-          operation: z.enum(["extract", "ocr", "transcribe"]),
+          operation: z.enum(attachmentOperations),
           password: z.string().max(256).optional(),
         })
         .strict()

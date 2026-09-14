@@ -9,6 +9,25 @@ documentation. Translations are welcome and should remain faithful to the Englis
 
 [简体中文贡献指南](CONTRIBUTING.zh-CN.md)
 
+## Contributor experience
+
+OpenBot is built for multiple independent contributors, not a workflow that only the project
+owner can operate. A new developer should be able to locate a module, start the relevant local
+services, reproduce a problem, run focused checks and prepare a reviewable PR without private
+knowledge or a maintainer's machine.
+
+- Keep setup and validation commands runnable from a fresh checkout. Routine checks use synthetic
+  data and deterministic model fixtures; optional live-service checks state their requirements.
+- Put API guarantees, supported schema subsets and failure behavior next to the shared contracts
+  and contributor docs. Prefer existing extension points over parallel implementations.
+- Keep regression tests in the repository. If a test needs PostgreSQL or another fixture, document
+  its command and include an isolated CI entry; a skipped test or a maintainer-only report is not
+  continuing coverage.
+- Keep work packages small, with an observable outcome and a reproducible validation path. Reuse
+  the existing PR template and checks rather than adding an owner-only approval step.
+- Distinguish implemented, verified, merged and released status. Link the PR and final checks at
+  handoff so contributors can see where their change actually landed.
+
 ## Contribution priorities
 
 OpenBot currently reviews contributions in this order:
@@ -63,12 +82,51 @@ Replace `OPENBOT_OWNER_PASSWORD` in `.env`, then run:
 ```bash
 npm ci
 npm run db:up
-npm run dev
+npm exec -- turbo run dev --filter=@openbot/server --filter=@openbot/web
 ```
 
-The Server listens on port `3001` and the Web app on port `5173` by default. The Node connects to
-the Server over WebSocket. It advertises no execution capability unless a compatible provider is
-configured.
+Keep this terminal open. Turbo builds the required shared packages before starting Server/Web.
+Open `http://localhost:5173` and sign in with the Owner password from `.env`; Server uses port
+`3001`. This is sufficient for frontend/control-plane development. The native Agent remains off
+until explicitly enabled in model settings. Keep an existing checkout's `.env` and data directories.
+
+For a small UI change, locate its component through the [repository map](docs/REPOSITORY_MAP.md),
+edit it while this dev command runs, and inspect the real page. For example, the channel member menu
+is `apps/web/src/components/ChannelMembersMenu.tsx`; run its focused test from another terminal:
+
+```bash
+npm exec --workspace @openbot/web -- vitest run src/components/ChannelMembersMenu.test.tsx
+```
+
+### Start an optional development Node
+
+A fresh Node must enroll before connecting. Keep Server/Web running, then use another terminal at
+the repository root:
+
+```bash
+npm run node:enrollment-token -- local-development-node
+```
+
+This authenticates as the configured Owner and prints a short-lived
+`OPENBOT_NODE_ENROLLMENT_TOKEN=...` line. Add that line to the private `.env`, ensure
+`OPENBOT_NODE_ID=local-development-node`, then start the Node with its shared builds:
+
+```bash
+npm exec -- turbo run dev --filter=@openbot/node
+```
+
+After enrollment succeeds, remove only the one-time token line from `.env`. Keep the stored
+identity: with the example configuration it is `apps/node/data/node/identity.json`, because the
+Node dev command runs in `apps/node`. Use absolute paths if changing working directories. A
+restart uses this credential without a new token. An expired/rejected token needs a new Owner-issued
+token; never bypass enrollment with arbitrary bearer credentials. An unconfigured Node advertises
+no execution capability; see [Provider conformance](docs/PROVIDER_CONFORMANCE.md) for adapters.
+The root `npm run dev` starts every dev workspace and assumes any required Node identity is ready;
+it is not the fresh-checkout entry point.
+
+For schema changes, start with the read-only
+`npm run migration:plan --workspace @openbot/db -- --name describe_change` and the
+[manual migration contract](docs/DATABASE.md#author-a-migration). Automatic `generate` is disabled.
 
 Before opening a pull request:
 
@@ -142,8 +200,9 @@ through the private process in [SECURITY.md](SECURITY.md), not a public issue.
 
 1. Fork the repository and create a focused branch such as `fix/dialog-focus` or
    `feat/windows-provider`.
-2. Keep one pull request focused on one acceptance journey and link the issue it closes or relates
-   to.
+2. Keep one pull request focused on one acceptance journey. Link an existing issue when available;
+   a small reproducible bug fix or documentation correction can start directly as a PR. Use an issue
+   to agree scope before a large feature.
 3. Add tests at the lowest useful boundary and an integration test for cross-component behavior.
 4. Run `npm run check`; record any real-device, browser, or assistive-technology evidence.
 5. Update docs and existing translations when user-visible behavior or project claims change.

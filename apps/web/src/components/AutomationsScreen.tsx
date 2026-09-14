@@ -519,6 +519,8 @@ function intervalLabel(minutes: number): string {
   return `每 ${minutes} 分钟`;
 }
 function outcomeLabel(outcome: NonNullable<Automation["lastOutcome"]>): string {
+  if (outcome === "attachment_unavailable")
+    return "附件已删除、损坏或不可用，自动任务已暂停。请恢复原附件后重新启用，或删除任务并重新创建。";
   if (outcome === "submitted") return "已提交到频道，执行结果请查看对话。";
   if (outcome === "skipped_active") return "上次任务仍在进行，已跳过本次。";
   return "频道或 Bot 暂不可用，本次未提交。";

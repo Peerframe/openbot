@@ -34,7 +34,7 @@ Server 必须保持运行。本机作为服务电脑时，需要保持 OpenBot �
 
 `firstRunAt` 为未来 366 天以内的 ISO 8601 UTC 时间。名称为 1–80 字符，提示词为 1–8,000 字符，间隔为 15–10,080 的整数分钟。额外字段会被拒绝。创建请求最多 32 KiB，更新最多 1 KiB，没有 Content-Length 的请求也执行限制。未配置自动任务存储的 Server 返回 503。
 
-`Automation` 包含除 `firstRunAt` 外的请求字段，以及 `id`、`enabled`、`nextRunAt`、`lastRunAt`、`lastRunId`、`lastOutcome` 和 `createdAt`。首次尝试前，三个上次运行字段为空。`lastOutcome` 可为 `submitted`、`skipped_active` 或 `target_unavailable`。`lastRunAt` 是最近一次调度尝试时间，可能对应跳过提交；`lastRunId` 保留最后一次实际提交的 Run。
+`Automation` 包含除 `firstRunAt` 外的请求字段，以及 `id`、`enabled`、`nextRunAt`、`lastRunAt`、`lastRunId`、`lastOutcome` 和 `createdAt`。首次尝试前，三个上次运行字段为空。`lastOutcome` 可为 `submitted`、`skipped_active`、`target_unavailable` 或 `attachment_unavailable`。`lastRunAt` 是最近一次调度尝试时间，可能对应跳过提交；`lastRunId` 保留最后一次实际提交的 Run。
 
 首版 POST 没有幂等键。网络失败后，应先刷新列表，再决定是否重新创建。
 
@@ -51,3 +51,18 @@ npx vitest run apps/server/src/postgres-automation-store.integration.test.ts
 测试会迁移并清理该数据库，会拒绝其他主机和数据库名称。未设置专用变量时跳过。这不代表支持多 Server 调度部署；OpenBot 的 dispatcher 和实时事件机制仍以单 Server 为边界。
 
 复用依据见[调研记录](research/server-automations.md)。
+
+## 附件引用
+
+提示词中已有的附件标记与交互任务共用频道、完整性和大小校验；创建或恢复任务时拒绝无效
+引用。所有已保存任务（包括暂停任务）保留已标记删除的文件，删除任务后才释放；已提交消息
+和 Run 独立保留历史引用。清理不会删除未标记删除的文件。
+
+每次提交前再次检查原文件及已处理文字。缺失、软删或损坏会暂停任务，结果为
+`attachment_unavailable`，不创建 Run，并只记录不含文件内容的原因。恢复或重新处理原文件
+后手动启用，或删除并重建任务；不会因此取消已提交的 Run。
+
+实现先取得文件引用锁，再进入数据库事务。新增隔离测试使用
+`OPENBOT_ATTACHMENT_TEST_DATABASE_URL`，仅允许本机 `openbot_attachment_test_*` 数据库；执行
+`npx vitest run apps/server/src/task-attachment-references.integration.test.ts`。
+见[流程研究](research/task-flow-refactor.zh-CN.md)。

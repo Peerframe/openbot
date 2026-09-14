@@ -1735,20 +1735,6 @@ select:focus-visible {
   background: #fff;
   box-shadow: 0 18px 48px rgba(28, 35, 44, 0.08);
 }
-.login-robot {
-  display: grid;
-  width: 96px;
-  height: 96px;
-  place-items: center;
-  margin: 0 auto 18px;
-  overflow: hidden;
-}
-.login-robot img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
 .login-eyebrow {
   margin: 0 0 8px;
   color: var(--blue);
@@ -3135,7 +3121,6 @@ select:focus-visible {
   font-size: 10px;
   line-height: 1.6;
 }
-.member-stack button,
 .message-avatar button {
   display: inline-grid;
   padding: 0;
@@ -3143,9 +3128,6 @@ select:focus-visible {
   border-radius: 50%;
   background: transparent;
   cursor: pointer;
-}
-.member-stack button + button {
-  margin-left: -7px;
 }
 .mobile-nav,
 .mobile-sheet {
@@ -3668,8 +3650,7 @@ select:focus-visible {
   background: rgba(255, 255, 255, 0.96);
 }
 .channel-identity,
-.channel-team-summary,
-.member-stack {
+.channel-team-summary {
   display: flex;
   align-items: center;
 }
@@ -3702,24 +3683,6 @@ select:focus-visible {
 .channel-team-summary {
   flex: 0 0 auto;
   gap: 14px;
-}
-.member-stack > span {
-  margin-left: 6px;
-  color: #7d848d;
-  font-size: 10px;
-}
-.compact-join-control {
-  align-items: center;
-  gap: 5px;
-}
-.compact-join-control select {
-  min-width: 96px;
-  min-height: 34px;
-  padding-left: 9px;
-}
-.compact-join-control .icon-button {
-  width: 34px;
-  height: 34px;
 }
 .channel-conversation {
   display: flex;
@@ -4103,18 +4066,6 @@ select:focus-visible {
 .robot-avatar.employee-skill-avatar {
   width: 54px;
   height: 54px;
-}
-.member-stack .robot-avatar {
-  margin-left: -7px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  background: #f1f3f5;
-}
-.member-stack .robot-avatar:first-child {
-  margin-left: 0;
-}
-.member-stack button .robot-avatar {
-  margin-left: 0;
 }
 .modular-robot {
   display: block;
@@ -5020,7 +4971,6 @@ select:focus-visible {
     padding: 11px 16px;
   }
   .channel-identity .channel-title-icon,
-  .compact-join-control,
   .channel-team-summary .realtime-state {
     display: none;
   }
@@ -5467,4 +5417,70 @@ select:focus-visible {
 }
 .employee-skill-document small {
   overflow-wrap: anywhere;
+}
+
+/* A failed workspace refresh reserves a row below the native-aligned toolbar. */
+.app-shell.desktop-workspace.workspace-refresh-failed {
+  grid-template-rows: var(--workspace-toolbar-height) auto minmax(0, 1fr);
+}
+.workspace-refresh-error {
+  position: relative;
+  z-index: 1;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  grid-area: 2 / 1 / 3 / -1;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 18px;
+  border-bottom: 1px solid #e8d8b5;
+  background: #fff8e9;
+  color: #705323;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.workspace-refresh-error > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.workspace-refresh-error > button {
+  flex-shrink: 0;
+  min-height: 30px;
+  padding: 4px 9px;
+  border: 1px solid #d8c39a;
+  border-radius: 6px;
+  background: #fffdf7;
+  color: inherit;
+  cursor: pointer;
+}
+.app-shell.desktop-workspace.workspace-refresh-failed
+  > :is(.workspace-sidebar, .workspace-main, .workspace-destination, .workspace-details) {
+  grid-row: 3;
+  height: 100%;
+}
+.app-shell.desktop-workspace.workspace-refresh-failed.full-page-destination {
+  display: flex;
+  flex-direction: column;
+}
+.app-shell.desktop-workspace.workspace-refresh-failed.full-page-destination
+  > .workspace-destination {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+@media (max-width: 760px) {
+  .app-shell.desktop-workspace.workspace-refresh-failed:not(.full-page-destination) {
+    padding-bottom: 68px;
+  }
+  .workspace-refresh-error {
+    gap: 8px;
+    padding: 8px 14px;
+  }
+}
+:root[data-desktop="darwin"]
+  .app-shell.desktop-workspace.workspace-refresh-failed.full-page-destination
+  > .workspace-refresh-error {
+  padding-left: 104px;
 }

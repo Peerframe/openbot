@@ -1,15 +1,10 @@
 import type {
-  Approval,
   ApprovalDecision,
-  Artifact,
   AuthSessionSnapshot,
-  Channel,
   CreateBotInput,
   CreateChannelInput,
   EmployeeProfile,
-  Run,
   RunFrame,
-  RunProgress,
   WorkspaceSnapshot,
 } from "@openbot/domain";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
@@ -73,16 +68,9 @@ import {
   getOpenBotDesktopBridge,
 } from "./desktop-runtime";
 import { shortcutLabel } from "./desktop-shortcuts";
-import {
-  isActiveRun,
-  mergeArtifacts,
-  mergeNodes,
-  mergeProgress,
-  mergeRuns,
-  projectRunOnNodes,
-} from "./run-state";
 import { useDesktopNavigation } from "./use-desktop-navigation";
 import { useWorkspaceAppearance } from "./use-workspace-appearance";
+import { useWorkspaceState } from "./use-workspace-state";
 import { useWorkspaceNavigation } from "./workspace-navigation";
 import { updatePreferences, useWorkspacePreferences } from "./workspace-preferences";
 
@@ -581,20 +569,21 @@ export function AuthenticatedWorkspace({
       });
     };
   }, [conversationSession]);
-  const [workspace, setWorkspace] = useState<WorkspaceSnapshot>();
-  const projectChannel = useCallback((channel: Channel) => {
-    setWorkspace((current) =>
-      current
-        ? {
-            ...current,
-            channels: current.channels.map((item) => (item.id === channel.id ? channel : item)),
-          }
-        : current,
-    );
-  }, []);
   const [dialog, setDialog] = useState<Dialog>();
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>();
   const [error, setError] = useState<string>();
+  const {
+    workspace,
+    refresh,
+    projectChannel,
+    projectBot,
+    projectRun,
+    projectProgress,
+    projectNodes,
+    projectNode,
+    removeNode,
+    projectApproval,
+  } = useWorkspaceState(setError);
   const [notice, setNotice] = useState<string>();
   const [sharing, setSharing] = useState(false);
   const [sharedBotId, setSharedBotId] = useState<string>();
@@ -618,35 +607,6 @@ export function AuthenticatedWorkspace({
     useState<RealtimeConnectionState>("connecting");
   const closeInspector = useCallback(() => setSelectedRunId(undefined), []);
 
-  const projectRun = useCallback((run: Run, artifacts: Artifact[] = []) => {
-    setWorkspace((current) => {
-      if (current === undefined) return current;
-      const previous = current.runs.find((item) => item.id === run.id);
-      const runs = mergeRuns(current.runs, [run]);
-      const projected = runs.find((item) => item.id === run.id) ?? run;
-      const activeRunDelta =
-        Number(isActiveRun(projected)) - Number(previous !== undefined && isActiveRun(previous));
-      return {
-        ...current,
-        nodes: projectRunOnNodes(current.nodes, previous, projected),
-        runs,
-        artifacts: mergeArtifacts(current.artifacts, artifacts),
-        counts: {
-          ...current.counts,
-          activeRuns: Math.max(0, current.counts.activeRuns + activeRunDelta),
-        },
-      };
-    });
-  }, []);
-
-  const projectProgress = useCallback((progress: RunProgress) => {
-    setWorkspace((current) =>
-      current === undefined
-        ? current
-        : { ...current, progress: mergeProgress(current.progress, [progress]) },
-    );
-  }, []);
-
   const projectFrame = useCallback((frame: RunFrame) => {
     setFramesByRun((current) => {
       const previous = current.get(frame.runId);
@@ -661,40 +621,6 @@ export function AuthenticatedWorkspace({
       return next;
     });
   }, []);
-
-  const refresh = useCallback(async (signal?: AbortSignal) => {
-    setError(undefined);
-    try {
-      const snapshot = await getWorkspace(signal);
-      setWorkspace((current) => {
-        if (current === undefined) return snapshot;
-        const runs = mergeRuns(snapshot.runs, current.runs);
-        return {
-          ...snapshot,
-          nodes: current.nodes,
-          runs,
-          artifacts: mergeArtifacts(snapshot.artifacts, current.artifacts),
-          progress: mergeProgress(snapshot.progress, current.progress),
-          counts: {
-            ...snapshot.counts,
-            connectedNodes: current.nodes.length,
-            activeRuns: runs.filter(isActiveRun).length,
-          },
-        };
-      });
-    } catch (cause) {
-      if (cause instanceof DOMException && cause.name === "AbortError") return;
-      setError(
-        cause instanceof Error ? cause.message : "无法连接 OpenBot Server。请确认服务已启动。",
-      );
-    }
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void refresh(controller.signal);
-    return () => controller.abort();
-  }, [refresh]);
 
   const loadEmployeeProfile = useCallback(async (botId: string, signal?: AbortSignal) => {
     setEmployeeProfileLoading(true);
@@ -790,15 +716,7 @@ export function AuthenticatedWorkspace({
     if (!workspaceReady) return;
     return subscribeToWorkspaceEvents({
       onReady(nodes) {
-        setWorkspace((current) =>
-          current === undefined
-            ? current
-            : {
-                ...current,
-                nodes,
-                counts: { ...current.counts, connectedNodes: nodes.length },
-              },
-        );
+        projectNodes(nodes);
         // Reconcile any events missed while the browser was disconnected.
         void refresh();
         const selectedEmployee = selectedEmployeeIdRef.current;
@@ -808,47 +726,26 @@ export function AuthenticatedWorkspace({
         if (sections.includes("identity")) void refresh();
         if (selectedEmployeeIdRef.current === botId) void loadEmployeeProfile(botId);
       },
-      onNode(node) {
-        setWorkspace((current) => {
-          if (current === undefined) return current;
-          const nodes = mergeNodes(current.nodes, [node]);
-          return {
-            ...current,
-            nodes,
-            counts: { ...current.counts, connectedNodes: nodes.length },
-          };
-        });
-      },
-      onNodeRemoved(nodeId) {
-        setWorkspace((current) => {
-          if (current === undefined) return current;
-          const nodes = current.nodes.filter((node) => node.id !== nodeId);
-          if (nodes.length === current.nodes.length) return current;
-          return {
-            ...current,
-            nodes,
-            counts: { ...current.counts, connectedNodes: nodes.length },
-          };
-        });
-      },
-      onApproval(approval, run) {
-        setWorkspace((current) =>
-          current === undefined
-            ? current
-            : {
-                ...current,
-                approvals: mergeApprovals(current.approvals, [approval]),
-                runs: mergeRuns(current.runs, [run]),
-              },
-        );
-      },
+      onNode: projectNode,
+      onNodeRemoved: removeNode,
+      onApproval: projectApproval,
       onRun: projectRun,
       onState: setWorkspaceRealtimeState,
     });
-  }, [loadEmployeeProfile, projectRun, refresh, workspaceReady]);
+  }, [
+    loadEmployeeProfile,
+    projectRun,
+    projectNodes,
+    projectNode,
+    removeNode,
+    projectApproval,
+    refresh,
+    workspaceReady,
+  ]);
 
   async function handleCreateBot(input: CreateBotInput) {
     const bot = await createBot(input);
+    projectBot(bot);
     await refresh();
     setDialog(undefined);
     showNotice(`${bot.name} 已创建。`);
@@ -856,6 +753,7 @@ export function AuthenticatedWorkspace({
 
   async function handleCreateChannel(input: CreateChannelInput) {
     const channel = await createChannel(input);
+    projectChannel(channel);
     await refresh();
     selectChannel(channel.id);
     setFocusRequest((value) => value + 1);
@@ -866,7 +764,8 @@ export function AuthenticatedWorkspace({
 
   async function handleJoinBot(botId: string) {
     if (selectedChannelId === undefined) return;
-    await joinBotToChannel(selectedChannelId, botId);
+    const channel = await joinBotToChannel(selectedChannelId, botId);
+    projectChannel(channel);
     await refresh();
     showNotice("Bot 已加入频道。");
   }
@@ -874,6 +773,7 @@ export function AuthenticatedWorkspace({
   async function handleRemoveBot(botId: string) {
     if (!selectedChannelId) return;
     const result = await removeChannelMember(selectedChannelId, botId);
+    projectChannel(result.channel);
     for (const run of result.cancelledRuns) projectRun(run);
     await refresh();
     showNotice("Bot 已移出频道，相关活动任务已停止，历史记录已保留。");
@@ -881,15 +781,7 @@ export function AuthenticatedWorkspace({
 
   async function handleDecideApproval(approvalId: string, decision: ApprovalDecision) {
     const resolution = await decideApproval(approvalId, decision);
-    setWorkspace((current) =>
-      current === undefined
-        ? current
-        : {
-            ...current,
-            approvals: mergeApprovals(current.approvals, [resolution.approval]),
-            runs: mergeRuns(current.runs, [resolution.run]),
-          },
-    );
+    projectApproval(resolution.approval, resolution.run);
     showNotice(decision === "approve" ? "已批准一次。" : "已拒绝该动作。");
   }
 
@@ -921,14 +813,7 @@ export function AuthenticatedWorkspace({
     try {
       const channel = await openBotConversation(botId);
       if (request !== directRequest.current) return;
-      setWorkspace((current) =>
-        current
-          ? {
-              ...current,
-              channels: [...current.channels.filter((item) => item.id !== channel.id), channel],
-            }
-          : current,
-      );
+      projectChannel(channel);
       selectChannel(channel.id);
     } catch (cause) {
       if (request === directRequest.current)
@@ -979,7 +864,7 @@ export function AuthenticatedWorkspace({
 
   return (
     <div
-      className={`app-shell desktop-workspace ${destination === "chat" && selectedChannel ? "channel-view" : ""} ${fullPage ? "full-page-destination" : ""} ${showDetails ? "" : "without-context"} ${preferences.leftPanelOpen ? "" : "without-sidebar"}`}
+      className={`app-shell desktop-workspace ${error ? "workspace-refresh-failed" : ""} ${destination === "chat" && selectedChannel ? "channel-view" : ""} ${fullPage ? "full-page-destination" : ""} ${showDetails ? "" : "without-context"} ${preferences.leftPanelOpen ? "" : "without-sidebar"}`}
     >
       <header className="workspace-toolbar">
         <nav className="toolbar-navigation" aria-label="页面与侧栏导航">
@@ -1075,6 +960,14 @@ export function AuthenticatedWorkspace({
           {panelToggle}
         </div>
       </header>
+      {error ? (
+        <div className="workspace-refresh-error" role="alert">
+          <span>{error}</span>
+          <button type="button" onClick={() => void refresh()}>
+            重新连接
+          </button>
+        </div>
+      ) : null}
       <div id="workspace-sidebar" className="workspace-sidebar" hidden={!preferences.leftPanelOpen}>
         <Sidebar
           onHome={() => navigation.navigate({ kind: "home" })}
@@ -1295,7 +1188,7 @@ export function AuthenticatedWorkspace({
           }}
         />
       ) : null}
-      {notice ? (
+      {!error && notice ? (
         <div className="toast" role="status">
           {notice}
         </div>
@@ -1346,12 +1239,4 @@ function ChannelEmptyState({
       </section>
     </main>
   );
-}
-
-function mergeApprovals(primary: Approval[], secondary: Approval[]): Approval[] {
-  const byId = new Map<string, Approval>();
-  for (const approval of [...primary, ...secondary]) byId.set(approval.id, approval);
-  return Array.from(byId.values())
-    .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
-    .slice(0, 100);
 }
