@@ -997,5 +997,8 @@ function isBoundedJsonValue(root: unknown): boolean {
   return true;
 }
 
+export * from "./attachments.js";
+export * from "./automations.js";
 export * from "./channel-interactions.js";
+export * from "./plugins.js";
 export * from "./provider-conformance.js";

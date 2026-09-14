@@ -16,6 +16,7 @@
     "@modelcontextprotocol/ext-apps": "1.7.5",
     "@modelcontextprotocol/sdk": "1.30.0",
     "@openbot/domain": "0.0.0",
+    "@openbot/protocol": "0.0.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zod": "4.5.4"
