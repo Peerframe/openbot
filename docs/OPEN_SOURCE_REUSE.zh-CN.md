@@ -35,6 +35,7 @@ MIT/Apache 代码时，必须在 `THIRD_PARTY_NOTICES.md` 或对应 vendor 目�
 
 | OpenBot 范围 | 调研来源 | 许可证 | 决定与现状 |
 | --- | --- | --- | --- |
+| 流式 JSON 请求大小限制 | WHATWG Streams `b9ba9f49`；已审查 Hono 4.13.7 / `eebdf7be` | WHATWG 条款；Node.js 许可；MIT | 复用原生读取器和流式 UTF-8 解码，按实际字节计数、超限取消，保留各入口上限与错误格式。已审查的 Hono 中间件信任声明长度，直接使用不能满足清理要求。未复制源码或增加依赖；见[研究](research/2026-09-15-request-body-limits.zh-CN.md)。 |
 | 统一任务、附件与定时流程 | PostgreSQL 17；ai 7.0.93 / 6359fd58；现有 Zod 4.5.4 | PostgreSQL；Apache-2.0；MIT | 复用既有事务和文件锁、共享协议定义和单份工具表；暂停任务保留附件引用，追加结果约束迁移，失效时停用。未复制源码或增加依赖；见[研究](research/task-flow-refactor.zh-CN.md)。 |
 | 工作区状态顺序与旧资源清理 | React 19.2.8；既有浏览器 AbortController / fetch | MIT；WHATWG 条款 | 单个活动快照请求配合有序实体投影，操作响应立即显示；删除无引用像素资源和选择器，保留组合外观兼容。未增加状态框架或复制源码；见[研究](research/workspace-state-refactor.zh-CN.md)。 |
 | MCP 生命周期与共享插件契约 | MCP SDK 1.30.0；JSON Schema；Zod 4.5.4 | MIT；规范条款 | 按位置检查 schema、同端点限时终止会话并共享数据契约，权限与并发仍由 Server 控制；Provider 声明复用线协议。未复制源码；见[研究](research/plugin-flow-refactor.zh-CN.md)。 |

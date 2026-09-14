@@ -295,6 +295,138 @@ describe("server app", () => {
     expect(crossSite.status).toBe(403);
   });
 
+  it.each([undefined, "1", "65536"])(
+    "stops oversized login streams even with Content-Length %s",
+    async (contentLength) => {
+      const { app, loginAttempt } = createObservedLoginApp();
+      const fixture = requestBodyChunks(32, 8192);
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Origin: testOrigin,
+      };
+      if (contentLength !== undefined) headers["Content-Length"] = contentLength;
+      const request = streamedRequest("/api/v1/auth/login", fixture.body, headers);
+      const response = await app.request(request);
+
+      expect(response.status).toBe(422);
+      expect(await response.json()).toEqual({
+        error: "Request body must not exceed 65536 bytes.",
+        fields: {},
+      });
+      expect(fixture.pulls).toHaveBeenCalledTimes(9);
+      expect(fixture.cancel).toHaveBeenCalledOnce();
+      expect(request.body?.locked).toBe(false);
+      expect(loginAttempt).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["pending", "rejected"])(
+    "rejects oversized declared bodies without waiting for %s cancellation",
+    async (cancellation) => {
+      const { app, loginAttempt } = createObservedLoginApp();
+      const fixture = requestBodyChunks(32, 8192);
+      fixture.cancel.mockImplementation(() =>
+        cancellation === "pending"
+          ? new Promise<void>(() => undefined)
+          : Promise.reject(new Error("source cancellation failed")),
+      );
+      const request = streamedRequest("/api/v1/auth/login", fixture.body, {
+        "Content-Length": "65537",
+        Origin: testOrigin,
+      });
+      const response = await app.request(request);
+
+      expect(response.status).toBe(422);
+      expect(fixture.pulls).not.toHaveBeenCalled();
+      expect(fixture.cancel).toHaveBeenCalledOnce();
+      expect(request.body?.locked).toBe(false);
+      expect(loginAttempt).not.toHaveBeenCalled();
+    },
+  );
+
+  it("counts UTF-8 bytes and preserves a split BOM and multibyte login at the exact limit", async () => {
+    const password = "测试-owner-password";
+    const { app, loginAttempt } = createObservedLoginApp(password);
+    const json = `\uFEFF${JSON.stringify({ password })}`;
+    const encoded = new TextEncoder().encode(json);
+    const remaining = 65536 - encoded.byteLength;
+    const chunks = [encoded.subarray(0, 1), encoded.subarray(1, 17), encoded.subarray(17)];
+    chunks.push(new Uint8Array(remaining).fill(32));
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        const chunk = chunks.shift();
+        if (chunk === undefined) controller.close();
+        else controller.enqueue(chunk);
+      },
+    });
+    const request = streamedRequest("/api/v1/auth/login", body, { Origin: testOrigin });
+
+    const response = await app.request(request);
+
+    expect(response.status).toBe(200);
+    expect(loginAttempt).toHaveBeenCalledWith(password, expect.any(String));
+    expect(request.body?.locked).toBe(false);
+
+    const oversized = await app.request("/api/v1/auth/login", {
+      method: "POST",
+      headers: { Origin: testOrigin },
+      body: json + " ".repeat(remaining + 1),
+    });
+    expect(oversized.status).toBe(422);
+    expect(await oversized.json()).toMatchObject({
+      error: "Request body must not exceed 65536 bytes.",
+    });
+    expect(loginAttempt).toHaveBeenCalledOnce();
+  });
+
+  it.each(["empty", "malformed", "read failure"])(
+    "keeps login validation fail-closed for %s bodies",
+    async (failure) => {
+      const { app, loginAttempt } = createObservedLoginApp();
+      const body = new ReadableStream<Uint8Array>({
+        pull(controller) {
+          if (failure === "read failure") controller.error(new Error("private source error"));
+          else {
+            if (failure === "malformed") controller.enqueue(new TextEncoder().encode("{"));
+            controller.close();
+          }
+        },
+      });
+      const request = streamedRequest("/api/v1/auth/login", body, { Origin: testOrigin });
+      const response = await app.request(request);
+
+      expect(response.status).toBe(422);
+      expect(await response.json()).toEqual({
+        error: "Request body must be valid JSON.",
+        fields: {},
+      });
+      expect(request.body?.locked).toBe(false);
+      expect(loginAttempt).not.toHaveBeenCalled();
+    },
+  );
+
+  it("enforces a smaller per-route JSON limit while streaming", async () => {
+    const cancelNativeRun = vi.fn();
+    const app = createTestApp({ cancelNativeRun, store: createTestStore() });
+    const cookie = await login(app);
+    const fixture = requestBodyChunks(8, 64);
+    const response = await app.request(
+      streamedRequest(
+        "/api/v1/runs/00000000-0000-4000-8000-000000000001/cancel",
+        fixture.body,
+        authenticatedHeaders(cookie),
+      ),
+    );
+
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({
+      error: "Request body must not exceed 128 bytes.",
+    });
+    expect(fixture.pulls).toHaveBeenCalledTimes(3);
+    expect(fixture.cancel).toHaveBeenCalledOnce();
+    expect(cancelNativeRun).not.toHaveBeenCalled();
+  });
+
   it("protects model settings with Owner authentication and mutation origin checks", async () => {
     const app = createTestApp({ store: createTestStore() });
     expect((await app.request("/api/v1/settings/model")).status).toBe(401);
@@ -1476,6 +1608,27 @@ describe("server app", () => {
     });
   });
 
+  it("stops an oversized Employee stream at its separate 2 MiB limit", async () => {
+    const app = createTestApp({ store: createTestStore() });
+    const cookie = await login(app);
+    const fixture = requestBodyChunks(64, 65536);
+    const request = streamedRequest(
+      "/api/v1/employees/import/preview",
+      fixture.body,
+      authenticatedHeaders(cookie),
+    );
+    const response = await app.request(request);
+
+    expect(response.status).toBe(422);
+    expect(await response.json()).toEqual({
+      error: "Employee package must not exceed 2 MiB.",
+      fields: {},
+    });
+    expect(fixture.pulls).toHaveBeenCalledTimes(33);
+    expect(fixture.cancel).toHaveBeenCalledOnce();
+    expect(request.body?.locked).toBe(false);
+  });
+
   it("activates an Owner-reviewed package once with a fresh identity and safe replay", async () => {
     const store = createTestStore();
     const source = await store.createBot({
@@ -1493,7 +1646,7 @@ describe("server app", () => {
     const previewed = await app.request("/api/v1/employees/import/preview", {
       method: "POST",
       headers: authenticatedHeaders(cookie),
-      body: JSON.stringify(employeePackage),
+      body: JSON.stringify(employeePackage).padEnd(128 * 1024, " "),
     });
     const previewBody = (await previewed.json()) as {
       preview: {
@@ -1532,7 +1685,7 @@ describe("server app", () => {
     const activated = await app.request("/api/v1/employees/import/activate", {
       method: "POST",
       headers: authenticatedHeaders(cookie),
-      body: JSON.stringify(activationBody),
+      body: JSON.stringify(activationBody).padEnd(128 * 1024, " "),
     });
     expect(activated.status).toBe(201);
     const activation = (await activated.json()) as EmployeeImportActivationResult;
@@ -2217,6 +2370,7 @@ function createCompatibleBrowserNode(): ExecutionNode {
 }
 
 function createTestApp({
+  auth: configuredAuth,
   knowledge,
   cancelNativeRun,
   automations,
@@ -2236,6 +2390,7 @@ function createTestApp({
   remoteAddress = "127.0.0.1",
   trustedProxyAddress,
 }: {
+  auth?: OwnerAuthService;
   knowledge?: Parameters<typeof createApp>[0]["knowledge"];
   cancelNativeRun?: Parameters<typeof createApp>[0]["cancelNativeRun"];
   automations?: Parameters<typeof createApp>[0]["automations"];
@@ -2256,15 +2411,17 @@ function createTestApp({
   trustedProxyAddress?: string | undefined;
 }) {
   const requestThrottle = new RequestThrottle(createMemoryThrottleStore());
-  const auth = new OwnerAuthService(
-    createMemorySessionStore(),
-    {
-      ownerName: "Test Owner",
-      ownerPassword: "correct-owner-password",
-      sessionTtlMs: 60_000,
-    },
-    requestThrottle,
-  );
+  const auth =
+    configuredAuth ??
+    new OwnerAuthService(
+      createMemorySessionStore(),
+      {
+        ownerName: "Test Owner",
+        ownerPassword: "correct-owner-password",
+        sessionTtlMs: 60_000,
+      },
+      requestThrottle,
+    );
   return createApp({
     ...(knowledge === undefined ? {} : { knowledge }),
     ...(cancelNativeRun === undefined ? {} : { cancelNativeRun }),
@@ -2415,6 +2572,46 @@ function authenticatedHeaders(cookie: string): Record<string, string> {
     "Content-Type": "application/json",
     Cookie: cookie,
     Origin: testOrigin,
+  };
+}
+
+function createObservedLoginApp(password = "correct-owner-password") {
+  const auth = new OwnerAuthService(
+    createMemorySessionStore(),
+    { ownerName: "Test Owner", ownerPassword: password, sessionTtlMs: 60_000 },
+    new RequestThrottle(createMemoryThrottleStore()),
+  );
+  return {
+    app: createTestApp({ auth, store: createTestStore() }),
+    loginAttempt: vi.spyOn(auth, "login"),
+  };
+}
+
+function streamedRequest(
+  path: string,
+  body: ReadableStream<Uint8Array>,
+  headers: Record<string, string>,
+): Request {
+  const init: RequestInit & { duplex: "half" } = {
+    method: "POST",
+    headers,
+    body,
+    duplex: "half",
+  };
+  return new Request(`http://localhost${path}`, init);
+}
+
+function requestBodyChunks(count: number, chunkBytes: number) {
+  let offered = 0;
+  const cancel = vi.fn<() => void | Promise<void>>();
+  const pulls = vi.fn((controller: ReadableStreamDefaultController<Uint8Array>) => {
+    if (offered++ === count) controller.close();
+    else controller.enqueue(new Uint8Array(chunkBytes).fill(32));
+  });
+  return {
+    body: new ReadableStream<Uint8Array>({ pull: pulls, cancel }, { highWaterMark: 0 }),
+    pulls,
+    cancel,
   };
 }
 
