@@ -262,6 +262,13 @@ jobs:
           node-version: 22.22.2
           cache: npm
       - run: npm ci
+      - name: Verify contributor startup before shared packages have been built
+        run: |
+          node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_dev_smoke"); } finally { await sql.end(); }'
+          npm run dev:smoke
+        env:
+          OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
+          OPENBOT_DEV_SMOKE_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_dev_smoke
       - run: npm run db:verify
         env:
           OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test

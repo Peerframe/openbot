@@ -64,12 +64,12 @@ npm ci
 cp .env.example .env
 # 将 .env 中的 OPENBOT_OWNER_PASSWORD 设置为至少 15 个字符的随机密码。
 npm run db:up
-npm run dev:server
-# 另开终端：
-npm run dev:web
+npm run dev
 ```
 
-打开 [localhost:5173](http://localhost:5173)，在设置中连接模型，然后创建第一位 Bot。部署独立服务见 [Server 容器](docs/SERVER_CONTAINER.zh-CN.md)；构建原生桌面包见 [Desktop 安装指南](docs/DESKTOP_INSTALLATION.zh-CN.md#构建与准备发布)。
+此命令先构建共享包，再启动 Server 与 Web。需要分开终端时使用 `npm run dev:server` 和 `npm run dev:web`，它们也会先构建各自依赖。可选 Worker 需先完成 [Node 登记](docs/NODE_ENROLLMENT.zh-CN.md)，再运行 `npm run dev:node`。
+
+打开 [localhost:5173](http://localhost:5173)，用刚设置的密码登录。启动应用、修改界面和运行普通测试不需要模型账号；需要执行模型任务时，再到设置中连接模型并创建第一位 Bot。部署独立服务见 [Server 容器](docs/SERVER_CONTAINER.zh-CN.md)；构建原生桌面包见 [Desktop 安装指南](docs/DESKTOP_INSTALLATION.zh-CN.md#构建与准备发布)。
 
 提交修改前，在仓库根目录运行 `npm run check`。
 

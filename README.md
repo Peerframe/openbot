@@ -64,12 +64,12 @@ npm ci
 cp .env.example .env
 # Set OPENBOT_OWNER_PASSWORD in .env to a random password of at least 15 characters.
 npm run db:up
-npm run dev:server
-# In a second terminal:
-npm run dev:web
+npm run dev
 ```
 
-Open [localhost:5173](http://localhost:5173). Configure your model in Settings, then create your first Bot. For a hosted Server, follow [container deployment](docs/SERVER_CONTAINER.md); for native Desktop builds, follow [Desktop installation](docs/DESKTOP_INSTALLATION.md#build-and-prepare-a-release).
+This command builds shared packages first, then starts Server and Web. For separate terminals, use `npm run dev:server` and `npm run dev:web`; these also build their dependencies. Start an optional Worker with `npm run dev:node` only after [Node enrollment](docs/NODE_ENROLLMENT.md).
+
+Open [localhost:5173](http://localhost:5173) and sign in with the password you configured. A model account is needed for model tasks, but not to start the app or work on its interface and ordinary tests. Configure your model in Settings when needed, then create your first Bot. For a hosted Server, follow [container deployment](docs/SERVER_CONTAINER.md); for native Desktop builds, follow [Desktop installation](docs/DESKTOP_INSTALLATION.md#build-and-prepare-a-release).
 
 Before submitting a change, run `npm run check` from the repository root.
 
