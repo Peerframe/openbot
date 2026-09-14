@@ -41,6 +41,54 @@ const capabilityManifest = [
 ];
 
 describe("node run offers", () => {
+  it("explains missing enrollment without networking or saving credentials", async () => {
+    const logger = createSilentLogger();
+    const errorLog = vi.spyOn(logger, "error");
+    const fetcher = vi.spyOn(globalThis, "fetch");
+    const save = vi.fn();
+    const client = new OpenBotNodeClient(
+      nodeEnvSchema.parse({ OPENBOT_NODE_ID: "unenrolled-node" }),
+      [],
+      { load: async () => undefined, save },
+      logger,
+    );
+    try {
+      await expect(client.start()).rejects.toThrow("npm run node:enrollment-token");
+      expect(errorLog).toHaveBeenCalledWith(
+        "node.identity_setup_failed",
+        expect.stringContaining("CONTRIBUTING.md"),
+        expect.objectContaining({ code: "node_enrollment_required" }),
+      );
+      expect(fetcher).not.toHaveBeenCalled();
+      expect(save).not.toHaveBeenCalled();
+    } finally {
+      fetcher.mockRestore();
+      await client.stop();
+    }
+  });
+  it("keeps unknown identity storage failures content-free", async () => {
+    const logger = createSilentLogger();
+    const errorLog = vi.spyOn(logger, "error");
+    const privateDetail = "fixture-private-path-and-secret";
+    const client = new OpenBotNodeClient(
+      nodeEnvSchema.parse({ OPENBOT_NODE_ID: "broken-store-node" }),
+      [],
+      {
+        load: async () => {
+          throw new Error(privateDetail);
+        },
+        save: vi.fn(),
+      },
+      logger,
+    );
+    try {
+      await expect(client.start()).rejects.toThrow("Node identity setup failed.");
+      expect(JSON.stringify(errorLog.mock.calls)).not.toContain(privateDetail);
+      expect(JSON.stringify(errorLog.mock.calls)).not.toContain("node_enrollment_required");
+    } finally {
+      await client.stop();
+    }
+  });
   it("refuses programmatic environment overrides before touching storage or connecting", async () => {
     const load = vi.fn();
     const save = vi.fn();

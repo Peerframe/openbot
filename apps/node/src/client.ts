@@ -36,6 +36,15 @@ const heartbeatIntervalMs = 10_000;
 const reconnectDelayMs = 2_000;
 const maxServerMessageBytes = 1024 * 1024;
 
+class NodeEnrollmentRequiredError extends Error {
+  constructor() {
+    super(
+      "Node is not enrolled. Start the Server, run npm run node:enrollment-token -- <node-id>, " +
+        "set OPENBOT_NODE_ENROLLMENT_TOKEN once in .env, then restart the Node. See CONTRIBUTING.md.",
+    );
+  }
+}
+
 export class OpenBotNodeClient {
   readonly #env: NodeEnv;
   readonly #providers: ComputerProvider[];
@@ -88,12 +97,19 @@ export class OpenBotNodeClient {
       })
       .catch((error: unknown) => {
         if (this.#stopped) return;
-        this.#logger.error("node.identity_setup_failed", "Node identity setup failed.", {
+        const message =
+          error instanceof NodeEnrollmentRequiredError
+            ? error.message
+            : "Node identity setup failed.";
+        this.#logger.error("node.identity_setup_failed", message, {
           nodeId: this.#env.OPENBOT_NODE_ID,
           phase: "identity",
+          ...(error instanceof NodeEnrollmentRequiredError
+            ? { code: "node_enrollment_required" }
+            : {}),
           ...diagnosticFields(error),
         });
-        throw new Error("Node identity setup failed.", { cause: error });
+        throw new Error(message, { cause: error });
       });
     return this.#startPromise;
   }
@@ -292,9 +308,7 @@ export class OpenBotNodeClient {
 
     const token = this.#env.OPENBOT_NODE_ENROLLMENT_TOKEN;
     if (token === undefined) {
-      throw new Error(
-        "Node is not enrolled. Set OPENBOT_NODE_ENROLLMENT_TOKEN once or provide a credential.",
-      );
+      throw new NodeEnrollmentRequiredError();
     }
     const response = await fetch(nodeEnrollmentUrl(this.#env.OPENBOT_NODE_SERVER_URL), {
       method: "POST",

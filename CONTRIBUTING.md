@@ -63,12 +63,51 @@ Replace `OPENBOT_OWNER_PASSWORD` in `.env`, then run:
 ```bash
 npm ci
 npm run db:up
-npm run dev
+npm exec -- turbo run dev --filter=@openbot/server --filter=@openbot/web
 ```
 
-The Server listens on port `3001` and the Web app on port `5173` by default. The Node connects to
-the Server over WebSocket. It advertises no execution capability unless a compatible provider is
-configured.
+Keep this terminal open. Turbo builds the required shared packages before starting Server/Web.
+Open `http://localhost:5173` and sign in with the Owner password from `.env`; Server uses port
+`3001`. This is sufficient for frontend/control-plane development. The native Agent remains off
+until explicitly enabled in model settings. Keep an existing checkout's `.env` and data directories.
+
+For a small UI change, locate its component through the [repository map](docs/REPOSITORY_MAP.md),
+edit it while this dev command runs, and inspect the real page. For example, the channel member menu
+is `apps/web/src/components/ChannelMembersMenu.tsx`; run its focused test from another terminal:
+
+```bash
+npm exec --workspace @openbot/web -- vitest run src/components/ChannelMembersMenu.test.tsx
+```
+
+### Start an optional development Node
+
+A fresh Node must enroll before connecting. Keep Server/Web running, then use another terminal at
+the repository root:
+
+```bash
+npm run node:enrollment-token -- local-development-node
+```
+
+This authenticates as the configured Owner and prints a short-lived
+`OPENBOT_NODE_ENROLLMENT_TOKEN=...` line. Add that line to the private `.env`, ensure
+`OPENBOT_NODE_ID=local-development-node`, then start the Node with its shared builds:
+
+```bash
+npm exec -- turbo run dev --filter=@openbot/node
+```
+
+After enrollment succeeds, remove only the one-time token line from `.env`. Keep the stored
+identity: with the example configuration it is `apps/node/data/node/identity.json`, because the
+Node dev command runs in `apps/node`. Use absolute paths if changing working directories. A
+restart uses this credential without a new token. An expired/rejected token needs a new Owner-issued
+token; never bypass enrollment with arbitrary bearer credentials. An unconfigured Node advertises
+no execution capability; see [Provider conformance](docs/PROVIDER_CONFORMANCE.md) for adapters.
+The root `npm run dev` starts every dev workspace and assumes any required Node identity is ready;
+it is not the fresh-checkout entry point.
+
+For schema changes, start with the read-only
+`npm run migration:plan --workspace @openbot/db -- --name describe_change` and the
+[manual migration contract](docs/DATABASE.md#author-a-migration). Automatic `generate` is disabled.
 
 Before opening a pull request:
 

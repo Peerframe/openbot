@@ -9,7 +9,7 @@ SHA-256 of every retained file. Desktop staging copies this complete directory t
 though the Server does not import it.
 
 - officeparser 7.8.0: MIT.
-- PDF.js / pdfjs-dist 6.2.108: Apache-2.0 plus independently licensed fonts, CMaps, ICC profiles and
+- PDF.js / pdfjs-dist 6.3.289: Apache-2.0 plus independently licensed fonts, CMaps, ICC profiles and
   image/WASM decoders. All packaged license files are retained, not just the root license.
 - Tesseract.js 7.0.0 and tesseract.js-core 7.0.0: Apache-2.0 package notices.
 - English and Simplified Chinese trained data 1.0.0: the npm tarballs omit a license and label
