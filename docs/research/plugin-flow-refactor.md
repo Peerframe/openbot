@@ -102,3 +102,35 @@ assertions, nested positions, existing installations, normal draft-07 constraint
   five persisted-catalog cases reject before connection, approval or dispatch. Server TypeScript,
   scoped Biome and the 302-file documentation check passed. Full repository verification remains
   owned by the coordinating maintainer.
+
+## Windows CI follow-up: observe cleanup events directly
+
+PR #71's first Windows run failed only the cleanup-admission fixture: `vi.waitFor` observed
+14 of 16 `close()` calls before its default one-second deadline; the fixture's final drain then
+completed. Its Windows ACL implementation is already a no-op fixture, so this is not evidence of
+a PowerShell ACL failure. Real encrypted-file reads, atomic audit writes and asynchronous
+scheduling still occur. A one-second polling deadline incorrectly made their throughput part of
+the concurrency contract.
+
+Before changing the test, reviewed the reuse ledger's root Vitest entry, **Vitest 5.0.0 /
+f441c6fab25e579c5b7dd3dd50538416f415fbae** (MIT), installed `waitFor` source (50 ms polling,
+1,000 ms timeout), official [vi.waitFor](https://vitest.dev/api/vi.html#vi-waitfor) and
+[async test/timeouts](https://vitest.dev/api/test.html#timeout), and OpenBot's explicit Promise
+latches in `task-attachment-references.integration.test.ts` plus the existing bounded
+`abortPluginOperation` helper. The pinned upstream source is
+[Vitest integrations](https://github.com/vitest-dev/vitest/tree/f441c6fab25e579c5b7dd3dd50538416f415fbae/packages/vitest/src/integrations);
+individual source URLs were unavailable through the web reader, so the installed exact version
+was used to verify defaults. No dependency or production change is needed.
+
+Use a fixture-owned event when all 16 calls enter held cleanup. Race that event with unexpected
+early call settlement and a ten-second abort deadline; attach all-settled handlers immediately.
+Always release the hold and abort/drain outstanding work with its own ten-second bound, inside a
+30-second test budget. Assert 16 successful business calls, refusal of the seventeenth while held,
+and successful new admission after release. These are test-only deadlines, not changes to the
+production 16-slot limit or permissions. No retry, sleep-based synchronization or upstream source
+copy is introduced. Windows success remains pending its actual CI rerun.
+
+Local verification after the repair: the targeted fixture passed, then the complete
+`plugin-service.test.ts` passed 18/18 tests. Server typecheck, scoped Biome and documentation
+checks passed. A separate read-only review verified the event/failure races, bounded final drain,
+capacity rejection and restored admission. These local results do not replace the Windows CI run.

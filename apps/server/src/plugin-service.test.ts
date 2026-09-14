@@ -8,7 +8,11 @@ import { startExamplePlugin } from "./plugin-example.js";
 import { createPluginRoutes } from "./plugin-routes.js";
 import { PluginService } from "./plugin-service.js";
 import { FilePluginStore } from "./plugin-store.js";
-import { normalizePluginEndpoint, type PluginConnection } from "./plugin-transport.js";
+import {
+  abortPluginOperation,
+  normalizePluginEndpoint,
+  type PluginConnection,
+} from "./plugin-transport.js";
 import { checkPluginSchema, type InstalledPlugin, type PluginTool } from "./plugin-types.js";
 
 const run = {
@@ -154,27 +158,68 @@ describe(
       },
     );
 
-    it("retains concurrency admission until session cleanup finishes", async () => {
-      const { service, plugin, connection } = await fixture();
+    it("retains concurrency admission until session cleanup finishes", {
+      timeout: 30_000,
+    }, async () => {
+      const { service, plugin, connection, call } = await fixture();
       const enabled = await authorize(service, plugin, "read");
-      let release!: () => void;
+      let release!: () => void, allEntered!: () => void;
       const closing = new Promise<void>((resolve) => {
         release = resolve;
       });
-      const close = vi.fn(() => closing);
+      const allClosing = new Promise<void>((resolve) => {
+        allEntered = resolve;
+      });
+      let entered = 0;
+      const close = vi.fn(() => {
+        if (++entered === 16) allEntered();
+        return closing;
+      });
       connection.close = close;
+      const abort = new AbortController();
+      const deadline = AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]);
       const calls = Array.from({ length: 16 }, () =>
-        service.call(run, callInput(enabled), AbortSignal.timeout(5000)),
+        service.call(run, callInput(enabled), deadline),
       );
+      // Observe rejection immediately, including failures before a call reaches cleanup.
+      const settled = Promise.allSettled(calls);
+      const pending = [...calls];
       try {
-        await vi.waitFor(() => expect(close).toHaveBeenCalledTimes(16));
-        await expect(
-          service.call(run, callInput(enabled), AbortSignal.timeout(5000)),
-        ).rejects.toMatchObject({ code: "unavailable" });
+        await abortPluginOperation(
+          Promise.race([
+            allClosing,
+            Promise.race(calls).then(() => {
+              throw new Error("A call settled before cleanup was released.");
+            }),
+          ]),
+          deadline,
+        );
+        expect(close).toHaveBeenCalledTimes(16);
+        expect(call).toHaveBeenCalledTimes(16);
+        const excess = service.call(run, callInput(enabled), deadline);
+        pending.push(excess);
+        // A harness timeout must fail the test, not impersonate the expected capacity rejection.
+        const result = await abortPluginOperation(Promise.allSettled([excess]), deadline);
+        expect(result).toEqual([
+          { status: "rejected", reason: expect.objectContaining({ code: "unavailable" }) },
+        ]);
+        expect(call).toHaveBeenCalledTimes(16);
       } finally {
         release();
-        await Promise.all(calls);
+        abort.abort();
+        await abortPluginOperation(Promise.allSettled(pending), AbortSignal.timeout(10_000));
       }
+      expect(await settled).toEqual(
+        Array.from({ length: 16 }, () => ({
+          status: "fulfilled",
+          value: expect.objectContaining({ untrusted: true }),
+        })),
+      );
+      await expect(
+        service.call(run, callInput(enabled), AbortSignal.timeout(5000)),
+      ).resolves.toMatchObject({ untrusted: true });
+      expect(call).toHaveBeenCalledTimes(17);
+      expect(close).toHaveBeenCalledTimes(17);
     });
 
     it("installs reviewed declarations disabled without authority and keeps credentials encrypted", async () => {

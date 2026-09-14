@@ -63,3 +63,28 @@ draft-07 applicator，不新增验证器、不升级依赖、不复制上游源�
 补充方言/异步边界修复后，plugin policy、service 和真实 MCP transport 三套共 57 项通过；
 7 项展示固定 SDK 原本会忽略的约束，5 项旧目录反例在连接、审批和 dispatch 前拒绝。
 Server 类型检查、限定文件 Biome 和 302 份文档检查通过，完整仓库验证仍由协调维护者执行。
+
+## Windows CI 补充：直接等待 cleanup 事件
+
+PR #71 首轮 Windows 仅 cleanup 并发测试失败：`vi.waitFor` 在默认 1 秒内只看到 16 次 `close()`
+中的 14 次，之后 finally 的全部调用收尾完成。该测试的 Windows ACL 已使用 no-op 夹具，不能归因于
+PowerShell ACL 失败；它仍执行真实加密文件读取、原子审计写入及异步调度。原测试把这些操作的
+1 秒吞吐量误当成并发契约。
+
+修改前核对复用总表的固定 **Vitest 5.0.0 / f441c6fab25e579c5b7dd3dd50538416f415fbae**（MIT）、
+安装包 `waitFor` 源码的 50 ms 轮询/1,000 ms 默认时限，以及官方
+[vi.waitFor](https://vitest.dev/api/vi.html#vi-waitfor)、
+[异步测试与时限](https://vitest.dev/api/test.html#timeout)。也查看现有
+`task-attachment-references.integration.test.ts` 的 Promise 事件屏障和有界 `abortPluginOperation`。
+固定[上游目录](https://github.com/vitest-dev/vitest/tree/f441c6fab25e579c5b7dd3dd50538416f415fbae/packages/vitest/src/integrations)
+中单文件网页未能由读取器取回，默认值以已安装精确版本源码复核。
+
+使用夹具拥有的事件表示全部 16 个调用进入被阻塞的 cleanup，并与提前结束的调用、10 秒取消时限竞争；
+启动后立即注册 allSettled，避免未处理拒绝。finally 始终解除屏障、取消未完调用，并在独立 10 秒内
+完成收尾；单测试预算 30 秒。仍断言 16 次业务成功、屏障未释放时第 17 次被拒绝、释放后新调用恢复。
+只调整测试同步与测试时限，不改变生产并发上限或权限，不添加重试、sleep 同步、依赖或复制上游源码。
+Windows 是否成功仍以实际下一轮 CI 为准。
+
+修复后本机目标用例通过，随后整个 `plugin-service.test.ts` 18/18 通过；Server 类型、限定文件 Biome
+和文档检查通过。另一名 Agent 只读复核了事件/失败竞争、有界收尾、容量拒绝和恢复接纳断言。
+本机结果不替代真实 Windows CI。
