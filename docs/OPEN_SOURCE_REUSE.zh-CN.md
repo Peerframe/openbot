@@ -35,6 +35,7 @@ MIT/Apache 代码时，必须在 `THIRD_PARTY_NOTICES.md` 或对应 vendor 目�
 
 | OpenBot 范围 | 调研来源 | 许可证 | 决定与现状 |
 | --- | --- | --- | --- |
+| 文档研究豁免 | Git 2.55.0 / `e9019fca`；checkout 7.0.1 / `3d3c42e5` | GPL-2.0；MIT | 复用已提交的 Git 差异和 blob 标识，验证普通 Markdown 正文的简短豁免。源码、政策和受保护技术内容仍使用研究表；主张是否不变仍由审查判断。未增加依赖或复制源码；见[研究](research/2026-09-15-research-exemptions.zh-CN.md)。 |
 | 贡献者首次启动与全新检出验证 | Turborepo 2.10.12 / `53752d45`；既有 Node API 和 Postgres.js 3.4.9 | MIT；Node.js 许可；Unlicense | 复用任务依赖图和筛选后的持久任务，启动 Server/Web/可选 Node。在构建前使用空回环数据库验证真实根目录入口，限定 POSIX 进程组并清理。未增加依赖或复制源码；见[研究](research/2026-09-15-contributor-startup.zh-CN.md)。 |
 | 流式 JSON 请求大小限制 | WHATWG Streams `b9ba9f49`；已审查 Hono 4.13.7 / `eebdf7be` | WHATWG 条款；Node.js 许可；MIT | 复用原生读取器和流式 UTF-8 解码，按实际字节计数、超限取消，保留各入口上限与错误格式。已审查的 Hono 中间件信任声明长度，直接使用不能满足清理要求。未复制源码或增加依赖；见[研究](research/2026-09-15-request-body-limits.zh-CN.md)。 |
 | 统一任务、附件与定时流程 | PostgreSQL 17；ai 7.0.93 / 6359fd58；现有 Zod 4.5.4 | PostgreSQL；Apache-2.0；MIT | 复用既有事务和文件锁、共享协议定义和单份工具表；暂停任务保留附件引用，追加结果约束迁移，失效时停用。未复制源码或增加依赖；见[研究](research/task-flow-refactor.zh-CN.md)。 |

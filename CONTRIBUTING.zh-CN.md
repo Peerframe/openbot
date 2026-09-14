@@ -64,12 +64,13 @@ cp .env.example .env
 ```bash
 npm ci
 npm run db:up
-npm exec -- turbo run dev --filter=@openbot/server --filter=@openbot/web
+npm run dev
 ```
 
 保持终端运行。Turbo 会先构建所需共享包，再启动 Server/Web。打开 `http://localhost:5173`，
 使用 `.env` 中的 Owner 密码登录；Server 使用端口 `3001`。这已足够进行前端和控制平面开发。
 原生 Agent 需要在模型设置里明确启用。已有 checkout 应保留原 `.env` 和数据目录。
+使用临时数据库复现 CI 的全新启动流程，见 [Server 启动冒烟说明](apps/server/README.zh-CN.md)。
 
 做一次小型 UI 修改时，先通过[仓库地图](docs/REPOSITORY_MAP.zh-CN.md)定位组件，在开发命令
 运行期间修改并检查真实页面。例如频道成员菜单位于
@@ -92,15 +93,15 @@ npm run node:enrollment-token -- local-development-node
 并启动 Node：
 
 ```bash
-npm exec -- turbo run dev --filter=@openbot/node
+npm run dev:node
 ```
 
 登记成功后只删除 `.env` 中的一次性 token 行，保留已保存的身份凭据。示例配置下文件是
 `apps/node/data/node/identity.json`，因为 Node 开发命令的工作目录为 `apps/node`；切换工作目录
 时应使用绝对路径。重启会复用凭据，无需重新签发 token。token 过期或被拒绝时由 Owner 重新
 签发，不得用任意 bearer 凭据绕过登记。未配置兼容 Provider 的 Node 不上报执行能力，适配器
-说明见 [Provider 符合性](docs/PROVIDER_CONFORMANCE.zh-CN.md)。根目录 `npm run dev` 会启动
-所有开发 workspace，前提是所需 Node 身份已就绪；它不作为全新克隆的第一步。
+说明见 [Provider 符合性](docs/PROVIDER_CONFORMANCE.zh-CN.md)。根目录 `npm run dev` 只启动
+Server/Web；Node 完成登记后按需另启。前端和控制平面开发不要求启动 Node。
 
 修改 schema 前运行只读命令
 `npm run migration:plan --workspace @openbot/db -- --name describe_change`，并遵循
@@ -132,6 +133,28 @@ npm audit
 
 根目录的 [AGENTS.md](AGENTS.md) 同时约束人工和自动化贡献者。扩展旧代码前，先在
 [追溯复用账本](docs/OPEN_SOURCE_REUSE.zh-CN.md)找到对应条目；缺失或标记不完整时先补审查。
+
+### 研究依据与文档豁免
+
+行为、依赖、协议和非简单功能变化，填写 PR 模板的七项研究字段，链接实现前创建的记录。
+已有模块研究覆盖当前修改时可以复用。
+
+普通 Markdown 的纯拼写修正、忠实翻译或段落排版，且行为和主张均未改变时，可以将
+`## Open-source research` 下的全部七项字段替换为两行：
+
+```markdown
+- Research exemption: spelling
+- Exemption reason: Correct the README introduction's spelling; instructions and product claims are unchanged.
+```
+
+类别选择 `spelling`、`translation` 或 `mechanical-formatting`。CI 读取实际提交差异，不信任
+自行填写的文件清单。自动范围包括根目录 README、`docs/` 内 Markdown 和 workspace README；
+不包括规则文档、ADR/研究记录、源码、配置、依赖、可执行位，以及代码块、行内命令、链接目标、标记或元数据
+变化。翻译命令和链接周围的文字时，保留其中技术内容即可。不要混用豁免与不完整的研究字段。
+
+自动检查不能证明翻译忠实或文字主张不变，这仍由原有 PR 审查判断。无害修改超出自动范围时，
+用七项字段引用模块已有研究并说明行为不变；AGENTS 对纯源码排版免做新研究的规则保持不变，
+无需新增审批。只编辑 PR 正文不会自动触发 CI；新提交会按原有流程执行检查。
 
 ## 提交 Pull Request
 
