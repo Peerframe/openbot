@@ -52,9 +52,53 @@ No upstream implementation or documentation is copied or substantially adapted. 
 
 A remote server may reject cleanup or become unreachable. OpenBot cannot guarantee remote resource deletion in that case; it must stop locally within the cleanup bound and never replay business operations.
 
+## Pre-merge review: explicit schema dialect and synchronous validation
+
+An independent review on 2026-09-14 reproduced a pre-existing mismatch: the SDK's
+`AjvJsonSchemaValidator` uses the draft-07 default Ajv class with `strict:false` and
+`validateSchema:false`. `prefixItems`, `dependentSchemas`, and `unevaluatedProperties` were
+accepted by OpenBot's policy but ignored by that compiler. Three invalid inputs passed the SDK
+validator and failed the existing Ajv2020 export. A separate local probe found that `$async:true`
+makes Ajv return a Promise; the SDK's synchronous adapter treats it as success and leaves a
+validation rejection unhandled. Neither probe accessed a network service or user data.
+
+Evidence reviewed before the repair:
+
+- SDK **1.30.0 / 2d889f2b329e46680ec9bdd565de4616c497825a** (MIT):
+  [exact adapter source](https://raw.githubusercontent.com/modelcontextprotocol/typescript-sdk/2d889f2b329e46680ec9bdd565de4616c497825a/src/validation/ajv-provider.ts),
+  compared with installed `dist/esm/validation/ajv-provider.js`.
+- Ajv **8.20.0** (MIT), the existing locked dependency:
+  [release](https://github.com/ajv-validator/ajv/releases/tag/v8.20.0),
+  [default class](https://github.com/ajv-validator/ajv/blob/v8.20.0/lib/ajv.ts),
+  and installed draft7/core/applicator/validation vocabularies. The default export loads draft-07;
+  the newer engines are separate exports. See the official
+  [dialect and keyword reference](https://ajv.js.org/json-schema.html) and
+  [async validation contract](https://ajv.js.org/guide/async-validation.html).
+- [JSON Schema draft-07](https://json-schema.org/draft-07) and
+  [2020-12](https://json-schema.org/draft/2020-12) define different dialects. GitHub search
+  `repo:modelcontextprotocol/typescript-sdk AjvJsonSchemaValidator async` also found the
+  [upstream v2 migration](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/migration/upgrade-to-v2.md)
+  documenting the v1 draft-07 behavior and breaking switch to newer dialects. That unpinned v2
+  branch is context only, not an implementation candidate for this repair.
+
+Decision: retain the pinned SDK/compiler and add a narrow fail-closed policy before compilation.
+An omitted dialect uses the documented synchronous draft-07 subset; an explicit dialect must use
+the draft-07 identifier. Reject newer assertion keywords, unsupported vocabulary/anchor/content
+schema declarations and `$async` only in schema positions; property names and enum/const/default
+data with the same spelling remain valid. Existing installed input schemas must pass the same
+policy before argument compilation or any connection. The SDK output-schema hook already uses
+that policy. Keep current bounds and supported draft-07 applicators; no dependency upgrade, new
+validator, copied source or claim of complete 2020-12 support. Tests cover previously ignored
+assertions, nested positions, existing installations, normal draft-07 constraints and data names.
+
 ## Verification results (2026-09-14)
 
 - Four new targeted test files passed 25 tests, including the actual SDK stateful HTTP fixture: three independent sessions released, keyword-like arguments discovered and called, one effect on cancellation, known-session cleanup after failed initialization, 405, redirect denial, and bounded hanging cleanup.
 - Eight existing plugin/Provider/UI suites passed 58 tests. After retaining the active concurrency slot until cleanup ends, the service/content suites passed 22 tests including the new 16-slot cleanup-admission regression (84 distinct tests across the executed files).
 - Server, Web and Provider SDK TypeScript checks passed. Scoped Biome checks and diff whitespace validation passed; public DTO definitions now exist only in the protocol file.
 - The first loopback test invocation was denied by the sandbox with EPERM; the same local-fixture tests passed after automatic execution approval. No external service or model was called. Full repository check is owned by the coordinating maintainer.
+- After the independent dialect/async repair, plugin policy, service and real MCP transport suites
+  passed 57 tests. Seven cases demonstrate assertions the pinned SDK would otherwise ignore;
+  five persisted-catalog cases reject before connection, approval or dispatch. Server TypeScript,
+  scoped Biome and the 302-file documentation check passed. Full repository verification remains
+  owned by the coordinating maintainer.

@@ -81,7 +81,7 @@ OpenBot 固定官方 SDK **1.30.0**，提交 `2d889f2b329e46680ec9bdd565de4616c4
 | 认证 | 可选独立 bearer token，在 Server 加密保存；未实现 OAuth 和动态凭据发现。 |
 | 工具目录 | 每种能力一页完整目录，最多各 32 个工具、资源和提示词，至少一项，合计最多 64 KiB；不接分页或 URI 模板。 |
 | 名称与说明 | 名称 1–64 个英文字母、数字、点、下划线或连字符；说明最多 2,000 字符，模型目录使用有界摘要。 |
-| 参数结构 | 根 object 的 JSON Schema，最多 12 KiB 且有限深度；支持对象、数组、标量、范围、必填、枚举；拒绝引用、`$id`、正则、format、请求头镜像扩展。 |
+| 参数结构 | 同步 draft-07 子集；根 object，最多 12 KiB、12 层和 1,000 个 JSON 节点；支持对象、数组、标量、范围、必填、枚举及 draft-07 applicator；拒绝引用、`$id`、正则、format、请求头镜像扩展。见下方方言契约。 |
 | 参数与结果 | 参数最多 8 KiB 并校验结构；结果为文本块，可附结构化 JSON，合计最多 12 KiB；不接图片、音频、资源或界面代码，`isError` 会使调用失败。 |
 | 时间 | HTTP 最多 30 秒，审批 60 秒，调用 120 秒，同时受父任务截止时间约束。 |
 | 数量 | 最多 16 插件；每插件 32 工具、128 个员工授权项；16 并发调用；Agent 目录最多 16 工具和 12 KiB，并标记截断。 |
@@ -89,6 +89,29 @@ OpenBot 固定官方 SDK **1.30.0**，提交 `2d889f2b329e46680ec9bdd565de4616c4
 
 本适配器不提供 sampling、elicitation、roots、stdio、任务扩展、资源订阅、二进制资源或自动执行安装包。建议读写拆成不同工具，在后端再次验证参数与授权，说明真实副作用。
 Annotations 帮助审阅但不保证行为。不要把原始账户密码放入模型工具参数，使用 Owner 单独配置的服务 token。
+
+### Schema 方言契约
+
+OpenBot 固定的 SDK 按 draft-07 校验。可省略 `$schema`，或设置为
+`http://json-schema.org/draft-07/schema#`（末尾不带 `#` 的同一标识也可）。
+其他显式方言包括 2019-09、2020-12 会被拒绝，Server 不会静默换一种规则解释。
+工具可选的 `outputSchema` 也遵循这一策略。
+
+支持的约束包括 `properties`、`additionalProperties`、`required`、`dependencies`、标量/数组范围、
+`enum`、`const`、`allOf`/`anyOf`/`oneOf`、`not`、`if`/`then`/`else`、`contains` 和
+draft-07 `items`/`additionalItems`。例如 tuple 使用
+`"items": [{"const": "read"}], "additionalItems": false`，字段依赖使用
+`"dependencies": {"source": ["revision"]}`；这些结构仍需置于根 object Schema 内。
+
+较新关键字 `prefixItems`、`dependentRequired`、`dependentSchemas`、`minContains`、`maxContains`、
+`unevaluatedProperties`、`unevaluatedItems` 不受支持；`$vocabulary`、
+`$anchor`/`$dynamicAnchor`/`$recursiveAnchor`、`contentSchema`、OpenAPI `discriminator` 和
+Ajv `$async` 也会被拒绝。错误会指出具体关键字或不支持的方言。同名普通属性及
+`enum`/`const`/`default` 数据仍可使用；annotation 不会增加校验规则或权限。
+
+已经安装的插件若使用了上述结构，调用会在连接前停止。请让所用 Schema 库导出受支持子集，
+预览变化、应用更新，再审核并恢复授权。不要仅为通过发现而删去必要约束；应使用受支持结构
+保留原意，并在插件后端再次验证。
 
 ## Owner API
 

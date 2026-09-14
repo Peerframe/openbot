@@ -34,6 +34,32 @@
 
 ## 验证结果（2026-09-14）
 
+合并前独立审查又复现了既有方言不一致：SDK **1.30.0 / 2d889f2b329e46680ec9bdd565de4616c497825a** 的
+同步 `AjvJsonSchemaValidator` 采用 Ajv draft-07 默认类，配置 `strict:false / validateSchema:false`。
+`prefixItems`、`dependentSchemas`、`unevaluatedProperties` 的三组非法输入会被该适配器放行，
+而现有 Ajv2020 导出均拒绝。`$async:true` 还会让编译结果返回 Promise，被同步适配器误判为成功，
+随后产生未处理的校验异常。探针仅使用合成数据，未调用外部服务。
+
+修复前已对照[固定 SDK 源码](https://raw.githubusercontent.com/modelcontextprotocol/typescript-sdk/2d889f2b329e46680ec9bdd565de4616c497825a/src/validation/ajv-provider.ts)、
+现有锁定 Ajv **8.20.0** 的[发布](https://github.com/ajv-validator/ajv/releases/tag/v8.20.0)、
+[默认类源码](https://github.com/ajv-validator/ajv/blob/v8.20.0/lib/ajv.ts)与安装包的 draft7/core/applicator/validation 词汇表；
+两项依赖均为 MIT。官方[方言/关键字说明](https://ajv.js.org/json-schema.html)、
+[异步校验说明](https://ajv.js.org/guide/async-validation.html)以及
+[draft-07](https://json-schema.org/draft-07)、[2020-12](https://json-schema.org/draft/2020-12)支持上述判断。
+GitHub 检索 `repo:modelcontextprotocol/typescript-sdk AjvJsonSchemaValidator async` 还找到上游 v2
+迁移说明中的方言变化；未固定的 v2 分支只用于理解背景，不作为本次实现来源。
+
+决定继续使用现有 SDK/编译器，在编译前明确限制为同步 draft-07 子集：省略方言时使用已公布子集，
+显式声明仅接受 draft-07；在真正 Schema 位置拒绝较新约束、未支持的词汇/anchor/content schema 声明和
+`$async`，保留同名业务字段以及 enum/const/default 普通数据。已安装插件的旧参数 Schema 也必须在
+编译参数、连接服务前通过同一策略；现有 SDK output-schema 钩子已使用这套策略。保持既有预算和
+draft-07 applicator，不新增验证器、不升级依赖、不复制上游源码、不声称完整支持 2020-12。
+反例覆盖忽略约束、嵌套位置、旧安装，兼容测试覆盖原有约束及普通字段名。
+
 四个新增测试文件共 25 项通过，真实 SDK 有状态本机夹具覆盖三次会话清理归零、普通关键字同名参数发现/调用、取消后不重放、初始化失败后的已知会话清理、405、重定向拒绝及挂起清理上限。八个既有插件/Provider/UI 测试文件共 58 项通过；增加“清理期间仍占用并发名额”的回归后，service/content 两套 22 项通过，合计执行文件含 84 个不同测试。Server、Web、Provider SDK 类型检查、限定文件 Biome 与 diff 空白检查通过；公共 DTO 只在协议文件定义。
 
 首次本机端口测试受到沙箱 EPERM 限制，经自动执行审批放行后同一夹具成功；没有访问外部服务或模型。全仓库 check 由协调维护者执行。
+
+补充方言/异步边界修复后，plugin policy、service 和真实 MCP transport 三套共 57 项通过；
+7 项展示固定 SDK 原本会忽略的约束，5 项旧目录反例在连接、审批和 dispatch 前拒绝。
+Server 类型检查、限定文件 Biome 和 302 份文档检查通过，完整仓库验证仍由协调维护者执行。

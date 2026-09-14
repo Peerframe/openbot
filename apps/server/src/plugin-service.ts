@@ -20,6 +20,7 @@ import {
   applyPluginUpdateSchema,
   boundedJson,
   callPluginSchema,
+  checkPluginSchema,
   grantPluginSchema,
   type InstalledPlugin,
   installPluginSchema,
@@ -445,6 +446,8 @@ export class PluginService {
     const plugin = this.#authorized(snapshot, run, input.pluginId, input.revision, input.toolName);
     const descriptor = plugin.tools.find((tool) => tool.name === input.toolName);
     if (!descriptor) throw new PluginError("forbidden");
+    // Persisted catalogs may predate the current policy; reject them before compile or connection.
+    checkPluginSchema(descriptor.inputSchema);
     const validate = new AjvJsonSchemaValidator().getValidator(descriptor.inputSchema);
     if (!validate(input.arguments).valid) throw new PluginError("invalid");
     if (this.#active.size >= 16) throw new PluginError("unavailable", "插件并发已达上限。");

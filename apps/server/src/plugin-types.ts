@@ -127,8 +127,26 @@ export function checkPluginSchema(schema: Record<string, unknown>): void {
     "format",
     "x-mcp-header",
   ]);
-  const maps = new Set(["properties", "$defs", "definitions", "dependentSchemas"]);
-  const arrays = new Set(["allOf", "anyOf", "oneOf", "prefixItems"]);
+  // SDK 1.30 uses synchronous draft-07 Ajv. Ignored newer constraints must not look validated;
+  // $async would return a Promise that the SDK's synchronous adapter mistakes for success.
+  const unsupported = new Set([
+    "$async",
+    "$anchor",
+    "$dynamicAnchor",
+    "$recursiveAnchor",
+    "$vocabulary",
+    "dependentRequired",
+    "dependentSchemas",
+    "prefixItems",
+    "minContains",
+    "maxContains",
+    "unevaluatedProperties",
+    "unevaluatedItems",
+    "contentSchema",
+    "discriminator",
+  ]);
+  const maps = new Set(["properties", "$defs", "definitions"]);
+  const arrays = new Set(["allOf", "anyOf", "oneOf"]);
   const singles = new Set([
     "additionalProperties",
     "additionalItems",
@@ -138,8 +156,6 @@ export function checkPluginSchema(schema: Record<string, unknown>): void {
     "then",
     "else",
     "propertyNames",
-    "unevaluatedProperties",
-    "unevaluatedItems",
   ]);
   let nodes = 0;
   const walk = (value: unknown, depth: number, position: Position): void => {
@@ -155,6 +171,20 @@ export function checkPluginSchema(schema: Record<string, unknown>): void {
       if (position === "schema") {
         if (forbidden.has(key))
           throw new PluginError("invalid", "插件参数结构含当前不支持的引用、正则或请求头扩展。");
+        if (unsupported.has(key))
+          throw new PluginError(
+            "invalid",
+            `Unsupported plugin schema keyword ${key}; use OpenBot's synchronous draft-07 subset.`,
+          );
+        if (
+          key === "$schema" &&
+          child !== "http://json-schema.org/draft-07/schema#" &&
+          child !== "http://json-schema.org/draft-07/schema"
+        )
+          throw new PluginError(
+            "invalid",
+            "Unsupported plugin schema dialect; omit $schema or use http://json-schema.org/draft-07/schema#.",
+          );
         if (maps.has(key)) next = "schema-map";
         else if (arrays.has(key)) next = "schema-array";
         else if (key === "dependencies") next = "dependencies";

@@ -13,6 +13,135 @@ const forbidden = [
   "x-mcp-header",
 ];
 describe("plugin schema policy positions", () => {
+  it.each([
+    "$async",
+    "$anchor",
+    "$dynamicAnchor",
+    "$recursiveAnchor",
+    "$vocabulary",
+    "dependentRequired",
+    "dependentSchemas",
+    "prefixItems",
+    "minContains",
+    "maxContains",
+    "unevaluatedProperties",
+    "unevaluatedItems",
+    "contentSchema",
+    "discriminator",
+  ])("rejects unsupported %s only in schema positions", (keyword) => {
+    for (const schema of [
+      { type: "object", [keyword]: true },
+      { type: "object", properties: { value: { [keyword]: true } } },
+      { type: "object", allOf: [{ [keyword]: true }] },
+      { type: "object", definitions: { value: { [keyword]: true } } },
+    ])
+      expect(() => checkPluginSchema(schema)).toThrow(
+        `Unsupported plugin schema keyword ${keyword}`,
+      );
+    const schema = {
+      type: "object",
+      properties: { [keyword]: { type: "string" } },
+      default: { [keyword]: true },
+      examples: [{ [keyword]: true }],
+      allOf: [
+        { enum: [{ [keyword]: "business data" }] },
+        { const: { [keyword]: "business data" } },
+      ],
+    };
+    expect(() => checkPluginSchema(schema)).not.toThrow();
+    expect(
+      new AjvJsonSchemaValidator().getValidator(schema)({ [keyword]: "business data" }).valid,
+    ).toBe(true);
+  });
+
+  it.each([
+    {
+      keyword: "prefixItems",
+      schema: { properties: { values: { type: "array", prefixItems: [{ const: "read" }] } } },
+      input: { values: ["delete"] },
+    },
+    {
+      keyword: "dependentRequired",
+      schema: { dependentRequired: { present: ["required"] } },
+      input: { present: true },
+    },
+    {
+      keyword: "dependentSchemas",
+      schema: { dependentSchemas: { present: { required: ["required"] } } },
+      input: { present: true },
+    },
+    {
+      keyword: "unevaluatedProperties",
+      schema: { unevaluatedProperties: false },
+      input: { unlisted: true },
+    },
+    {
+      keyword: "unevaluatedItems",
+      schema: {
+        properties: {
+          values: { type: "array", items: [{ const: "read" }], unevaluatedItems: false },
+        },
+      },
+      input: { values: ["read", "delete"] },
+    },
+    {
+      keyword: "minContains",
+      schema: {
+        properties: { values: { type: "array", contains: { const: "read" }, minContains: 2 } },
+      },
+      input: { values: ["read"] },
+    },
+    {
+      keyword: "maxContains",
+      schema: {
+        properties: { values: { type: "array", contains: { const: "read" }, maxContains: 1 } },
+      },
+      input: { values: ["read", "read"] },
+    },
+  ])("fails closed when the pinned SDK would ignore $keyword", ({ keyword, schema, input }) => {
+    const candidate = { type: "object", ...schema };
+    expect(new AjvJsonSchemaValidator().getValidator(candidate)(input).valid).toBe(true);
+    expect(() => checkPluginSchema(candidate)).toThrow(
+      `Unsupported plugin schema keyword ${keyword}`,
+    );
+  });
+
+  it("accepts only the documented explicit draft-07 dialect and preserves synchronous constraints", () => {
+    const schema = {
+      type: "object",
+      properties: {
+        $schema: { type: "string" },
+        values: { type: "array", items: [{ const: "read" }], additionalItems: false },
+      },
+      dependencies: { values: ["$schema"] },
+      additionalProperties: false,
+    };
+    for (const dialect of [
+      undefined,
+      "http://json-schema.org/draft-07/schema",
+      "http://json-schema.org/draft-07/schema#",
+    ]) {
+      const candidate = { ...schema, ...(dialect === undefined ? {} : { $schema: dialect }) };
+      expect(() => checkPluginSchema(candidate)).not.toThrow();
+      const validate = new AjvJsonSchemaValidator().getValidator(candidate);
+      expect(validate({ $schema: "business data", values: ["read"] }).valid).toBe(true);
+      expect(validate({ $schema: "business data", values: ["read", "delete"] }).valid).toBe(false);
+      expect(validate({ values: ["read"] }).valid).toBe(false);
+    }
+    for (const dialect of [
+      "https://json-schema.org/draft/2020-12/schema",
+      "https://json-schema.org/draft/2019-09/schema",
+      "http://json-schema.org/draft-04/schema#",
+      "https://example.com/custom",
+      true,
+    ])
+      for (const candidate of [
+        { type: "object", $schema: dialect },
+        { type: "object", properties: { value: { $schema: dialect } } },
+      ])
+        expect(() => checkPluginSchema(candidate)).toThrow("Unsupported plugin schema dialect");
+  });
+
   it("allows keyword-like business names and ordinary enum/const/default data", () => {
     const schema = {
       type: "object",

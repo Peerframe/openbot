@@ -60,9 +60,10 @@ async function fixture(approvalTimeoutMs = 60_000) {
     close: vi.fn(async () => {}),
   };
   const assertScope = vi.fn(async () => {});
+  const connector = vi.fn(async () => connection);
   const service = new PluginService({
     store,
-    connector: async () => connection,
+    connector,
     assertScope,
     botExists: async (id) => id === run.botId,
     approvalTimeoutMs,
@@ -78,7 +79,18 @@ async function fixture(approvalTimeoutMs = 60_000) {
     { ...input, reviewedDigest: preview.digest },
     AbortSignal.timeout(2000),
   );
-  return { service, store, call, connection, assertScope, plugin, input, preview, directory };
+  return {
+    service,
+    store,
+    call,
+    connector,
+    connection,
+    assertScope,
+    plugin,
+    input,
+    preview,
+    directory,
+  };
 }
 async function authorize(
   service: PluginService,
@@ -113,6 +125,35 @@ describe(
   "Server-owned MCP plugin lifecycle",
   process.platform === "win32" ? { timeout: 60_000 } : {},
   () => {
+    it.each([
+      { $async: true },
+      { $schema: "https://json-schema.org/draft/2020-12/schema" },
+      { dependentRequired: { text: ["reviewed"] } },
+      { unevaluatedProperties: false },
+      { properties: { text: { type: "array", prefixItems: [{ const: "reviewed" }] } } },
+    ])(
+      "rejects an unsupported persisted schema before opening a connection: %j",
+      async (schema) => {
+        const { service, plugin, store, connector, call } = await fixture();
+        const enabled = await authorize(service, plugin, "read");
+        await store.transaction((state) => {
+          const descriptor = state.plugins.find((item) => item.id === enabled.id)?.tools[0];
+          if (!descriptor) throw new Error("Missing persisted fixture tool");
+          descriptor.inputSchema = { type: "object", ...schema };
+        });
+        connector.mockClear();
+        await expect(
+          service.call(run, callInput(enabled), AbortSignal.timeout(1000)),
+        ).rejects.toMatchObject({ code: "invalid" });
+        expect(connector).not.toHaveBeenCalled();
+        expect(call).not.toHaveBeenCalled();
+        expect((await service.snapshot()).pendingCalls).toEqual([]);
+        expect((await store.read()).audit.some((entry) => entry.phase === "dispatching")).toBe(
+          false,
+        );
+      },
+    );
+
     it("retains concurrency admission until session cleanup finishes", async () => {
       const { service, plugin, connection } = await fixture();
       const enabled = await authorize(service, plugin, "read");
