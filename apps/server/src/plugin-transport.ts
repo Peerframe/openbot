@@ -75,16 +75,23 @@ export function pluginFetch(
     if (String(input) !== endpointUrl.href) throw new PluginError("forbidden");
     // Server push streams are unnecessary for this bounded request/response client.
     if (init?.method === "GET") return new Response(null, { status: 405 });
-    if (
+    const terminating = init?.method === "DELETE";
+    const sourceHeaders = new Headers(init?.headers);
+    const sessionId = sourceHeaders.get("mcp-session-id");
+    if (terminating) {
+      if (init.body != null || !sessionId || !/^[\x21-\x7e]{1,512}$/u.test(sessionId))
+        throw new PluginError("invalid");
+    } else if (
       init?.method !== "POST" ||
       typeof init.body !== "string" ||
       Buffer.byteLength(init.body) > 24 * 1024
     )
       throw new PluginError("invalid");
+    const maximumBytes = terminating ? 8 * 1024 : 256 * 1024;
     const deadline = AbortSignal.any([
       signal,
       ...(init.signal ? [init.signal] : []),
-      AbortSignal.timeout(30_000),
+      AbortSignal.timeout(terminating ? 5000 : 30_000),
     ]);
     const hostname = endpointUrl.hostname.replace(/^\[|\]$/gu, "");
     const addresses = isIP(hostname)
@@ -110,7 +117,6 @@ export function pluginFetch(
       "Content-Type": "application/json",
       "Accept-Encoding": "identity",
     };
-    const sourceHeaders = new Headers(init.headers);
     for (const name of ["mcp-session-id", "mcp-protocol-version"]) {
       const value = sourceHeaders.get(name);
       if (value && value.length <= 512) headers[name] = value;
@@ -121,7 +127,7 @@ export function pluginFetch(
       const req = request(
         endpointUrl,
         {
-          method: "POST",
+          method: terminating ? "DELETE" : "POST",
           hostname: address.address,
           family: address.family,
           servername: isIP(hostname) ? "" : hostname,
@@ -138,7 +144,7 @@ export function pluginFetch(
           if (
             (status >= 300 && status < 400) ||
             (encoding && encoding !== "identity") ||
-            Number(response.headers["content-length"] ?? 0) > 256 * 1024
+            Number(response.headers["content-length"] ?? 0) > maximumBytes
           ) {
             response.destroy();
             reject(new PluginError("unavailable"));
@@ -148,7 +154,7 @@ export function pluginFetch(
           let size = 0;
           response.on("data", (chunk: Buffer) => {
             size += chunk.byteLength;
-            if (size > 256 * 1024) response.destroy(new PluginError("unavailable"));
+            if (size > maximumBytes) response.destroy(new PluginError("unavailable"));
             else chunks.push(chunk);
           });
           response.on("error", () => reject(new PluginError("unavailable")));
@@ -159,6 +165,7 @@ export function pluginFetch(
             if (typeof session === "string" && session.length <= 512)
               resultHeaders.set("mcp-session-id", session);
             if (
+              !terminating &&
               ![202, 204].includes(status) &&
               !/^(?:application\/json|text\/event-stream)(?:\s*;|$)/iu.test(contentType)
             ) {
@@ -166,16 +173,19 @@ export function pluginFetch(
               return;
             }
             resolve(
-              new Response([202, 204].includes(status) ? null : Buffer.concat(chunks), {
-                status,
-                headers: resultHeaders,
-              }),
+              new Response(
+                terminating || [202, 204].includes(status) ? null : Buffer.concat(chunks),
+                {
+                  status,
+                  headers: resultHeaders,
+                },
+              ),
             );
           });
         },
       );
       req.on("error", () => reject(new PluginError("unavailable")));
-      req.end(init.body);
+      req.end(terminating ? undefined : init?.body);
     });
   };
 }
@@ -197,6 +207,11 @@ export type PluginConnector = (
 
 export function mcpPluginConnector(localEndpoints: readonly string[] = []): PluginConnector {
   return async (endpoint, token, signal) => {
+    signal.throwIfAborted();
+    const operation = new AbortController();
+    const operationSignal = AbortSignal.any([signal, operation.signal]);
+    const request = pluginFetch(endpoint, token, operationSignal, localEndpoints);
+    let cleanup: { sessionId: string; signal: AbortSignal } | undefined;
     const client = new Client(
       { name: "openbot", version: "0.1.0" },
       {
@@ -212,7 +227,21 @@ export function mcpPluginConnector(localEndpoints: readonly string[] = []): Plug
     const transport = new StreamableHTTPClientTransport(
       normalizePluginEndpoint(endpoint, localEndpoints),
       {
-        fetch: pluginFetch(endpoint, token, signal, localEndpoints),
+        fetch: async (input, init) => {
+          if (init?.method !== "DELETE") return request(input, init);
+          if (!cleanup || new Headers(init.headers).get("mcp-session-id") !== cleanup.sessionId)
+            throw new PluginError("forbidden");
+          // Cleanup may outlive cancellation, but only for this session at the reviewed endpoint.
+          return pluginFetch(
+            endpoint,
+            token,
+            cleanup.signal,
+            localEndpoints,
+          )(input, {
+            ...init,
+            signal: cleanup.signal,
+          });
+        },
         reconnectionOptions: {
           maxRetries: 0,
           initialReconnectionDelay: 1000,
@@ -221,8 +250,28 @@ export function mcpPluginConnector(localEndpoints: readonly string[] = []): Plug
         },
       },
     );
+    let closing: Promise<void> | undefined;
+    const close = (): Promise<void> => {
+      if (closing) return closing;
+      signal.removeEventListener("abort", abort);
+      operation.abort();
+      closing = (async () => {
+        try {
+          if (transport.sessionId) {
+            cleanup = { sessionId: transport.sessionId, signal: AbortSignal.timeout(5000) };
+            await abortPluginOperation(transport.terminateSession(), cleanup.signal).catch(
+              () => {},
+            );
+          }
+        } finally {
+          cleanup = undefined;
+          await client.close().catch(() => {});
+        }
+      })();
+      return closing;
+    };
     const abort = () => {
-      void client.close().catch(() => {});
+      void close();
     };
     signal.addEventListener("abort", abort, { once: true });
     // SDK 1.30's optional sessionId getter conflicts with exactOptionalPropertyTypes;
@@ -233,8 +282,7 @@ export function mcpPluginConnector(localEndpoints: readonly string[] = []): Plug
         signal,
       );
     } catch {
-      signal.removeEventListener("abort", abort);
-      await client.close().catch(() => {});
+      await close();
       throw new PluginError("unavailable");
     }
     return {
@@ -317,10 +365,7 @@ export function mcpPluginConnector(localEndpoints: readonly string[] = []): Plug
         boundedJson(output, 12 * 1024);
         return output;
       },
-      async close() {
-        signal.removeEventListener("abort", abort);
-        await client.close();
-      },
+      close,
     };
   };
 }

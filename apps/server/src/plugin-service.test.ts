@@ -113,6 +113,29 @@ describe(
   "Server-owned MCP plugin lifecycle",
   process.platform === "win32" ? { timeout: 60_000 } : {},
   () => {
+    it("retains concurrency admission until session cleanup finishes", async () => {
+      const { service, plugin, connection } = await fixture();
+      const enabled = await authorize(service, plugin, "read");
+      let release!: () => void;
+      const closing = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const close = vi.fn(() => closing);
+      connection.close = close;
+      const calls = Array.from({ length: 16 }, () =>
+        service.call(run, callInput(enabled), AbortSignal.timeout(5000)),
+      );
+      try {
+        await vi.waitFor(() => expect(close).toHaveBeenCalledTimes(16));
+        await expect(
+          service.call(run, callInput(enabled), AbortSignal.timeout(5000)),
+        ).rejects.toMatchObject({ code: "unavailable" });
+      } finally {
+        release();
+        await Promise.all(calls);
+      }
+    });
+
     it("installs reviewed declarations disabled without authority and keeps credentials encrypted", async () => {
       const { service, store, plugin, directory, call } = await fixture();
       expect(plugin.enabled).toBe(false);

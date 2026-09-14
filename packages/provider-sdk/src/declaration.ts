@@ -1,3 +1,8 @@
+import {
+  nodeCapabilityDescriptorSchema,
+  nodeCapabilitySchema,
+  nodePlatformSchema,
+} from "@openbot/protocol";
 import type { ComputerProvider } from "./provider.js";
 
 export type ProviderConformanceIssueCode =
@@ -6,6 +11,9 @@ export type ProviderConformanceIssueCode =
   | "platforms-empty"
   | "platform-duplicate"
   | "platform-unknown"
+  | "platform-invalid"
+  | "legacy-capability-invalid"
+  | "capability-invalid"
   | "legacy-capability-duplicate"
   | "capability-manifest-empty"
   | "capability-provider-mismatch"
@@ -29,6 +37,37 @@ export interface ProviderDeclarationReport {
  */
 export function inspectProviderDeclaration(provider: ComputerProvider): ProviderDeclarationReport {
   const issues: ProviderConformanceIssue[] = [];
+  // Reuse the Server's wire constraints before a declaration can pass local startup checks.
+  if (!nodePlatformSchema.array().safeParse(provider.platforms).success)
+    issues.push({
+      code: "platform-invalid",
+      message: "Platforms must match the shared wire schema.",
+    });
+  if (
+    !nodeCapabilitySchema
+      .array()
+      .max(nodeCapabilitySchema.options.length)
+      .safeParse(provider.capabilities).success
+  )
+    issues.push({
+      code: "legacy-capability-invalid",
+      message: "Legacy capabilities must match the shared wire schema.",
+    });
+  if (
+    !nodeCapabilityDescriptorSchema.array().max(32).safeParse(provider.capabilityManifest).success
+  )
+    issues.push({
+      code: "capability-invalid",
+      message: "Capability descriptors must match the shared wire schema.",
+    });
+
+  if (issues.length)
+    return {
+      providerId: provider.id,
+      conformant: false,
+      executionStatus: provider.execute === undefined ? "declaration-only" : "executable",
+      issues,
+    };
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(provider.id)) {
     issues.push({
       code: "provider-id-invalid",
