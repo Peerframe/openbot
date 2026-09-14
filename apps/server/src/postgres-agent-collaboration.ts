@@ -5,7 +5,7 @@ import { and, asc, eq, ne, sql } from "drizzle-orm";
 import { type DelegateTaskInput, delegateTaskSchema } from "./agent-collaboration.js";
 import { NativeExecutionError } from "./agent-observations.js";
 import { taskAttachmentIds } from "./channel-attachments.js";
-import { toMessage, toRun } from "./postgres-store.js";
+import { toMessage, toRun } from "./postgres-task-records.js";
 
 type Database = ReturnType<typeof import("@openbot/db")["createDatabase"]>["db"];
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];

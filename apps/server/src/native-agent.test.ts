@@ -1,9 +1,14 @@
+import { randomUUID } from "node:crypto";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { Run } from "@openbot/domain";
 import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it, vi } from "vitest";
 import { NativeExecutionError } from "./agent-observations.js";
+import { FileChannelAttachmentStorage } from "./channel-attachments.js";
 import { ChannelRealtimeHub } from "./channel-realtime-hub.js";
 import type { ModelSettingsService } from "./model-settings.js";
 import {
@@ -83,6 +88,58 @@ function fixture() {
   };
 }
 describe("native Agent loop", () => {
+  it.each([
+    ["processed.pdf", Buffer.from("%PDF-1.7\n%%EOF"), "extract"],
+    ["processed.docx", Buffer.from([80, 75, 3, 4]), "extract"],
+    ["processed.png", Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), "ocr"],
+    ["processed.mp3", Buffer.from("ID3fixture"), "transcribe"],
+  ] as const)(
+    "reads a lone %s through the actual registered and audited tool",
+    async (name, bytes, operation) => {
+      const root = await mkdtemp(join(tmpdir(), "openbot-agent-attachment-"));
+      try {
+        const f = fixture();
+        f.run = { ...f.run, channelId: randomUUID() };
+        const storage = new FileChannelAttachmentStorage(root);
+        const attachment = await storage.persist(f.run.channelId, name, bytes);
+        await storage.saveDerived(f.run.channelId, attachment.id, {
+          sha256: attachment.sha256,
+          text: `Derived evidence for ${name}`,
+          operation,
+          processedAt: new Date().toISOString(),
+          truncated: false,
+        });
+        f.run = { ...f.run, instruction: `[OpenBot attachment: ${attachment.id}]` };
+        const model = new MockLanguageModelV4({
+          doGenerate: [
+            calls("read_attachment", JSON.stringify({ attachmentId: attachment.id })),
+            answer(),
+          ],
+        });
+        await executeAgentRun({ ...f, model, attachments: storage });
+        expect(model.doGenerateCalls).toHaveLength(2);
+        expect(
+          model.doGenerateCalls[0]?.tools?.some((tool) => tool.name === "read_attachment"),
+        ).toBe(true);
+        expect(
+          model.doGenerateCalls[0]?.prompt.some(
+            (message) =>
+              message.role === "user" && message.content.some((part) => part.type === "file"),
+          ),
+        ).toBe(false);
+        expect(JSON.stringify(model.doGenerateCalls[1]?.prompt)).toContain(
+          `Derived evidence for ${name}`,
+        );
+        expect(f.store.progress).toHaveBeenCalledWith(
+          f.run,
+          "observation",
+          "Completed read_attachment.",
+        );
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    },
+  );
   it("includes start-time history and explicit reply content before the current task", async () => {
     const f = fixture();
     f.store.initialContext = vi.fn(async () => [

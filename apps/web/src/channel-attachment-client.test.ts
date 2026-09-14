@@ -10,9 +10,10 @@ import {
 } from "./channel-attachment-client";
 
 const id = "00000000-0000-4000-8000-000000000001";
+const channel = "00000000-0000-4000-8000-000000000002";
 const attachment = {
   id,
-  channelId: "channel",
+  channelId: channel,
   name: "image.png",
   mediaType: "image/png" as const,
   sizeBytes: 8,
@@ -49,11 +50,11 @@ describe("channel attachment display boundary", () => {
   it("fetches only scoped authenticated metadata and rejects scope/type/size mismatch", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ attachment })));
     vi.stubGlobal("fetch", fetchMock);
-    await expect(
-      getChannelAttachment("channel", id, new AbortController().signal),
-    ).resolves.toEqual(attachment);
+    await expect(getChannelAttachment(channel, id, new AbortController().signal)).resolves.toEqual(
+      attachment,
+    );
     expect(fetchMock).toHaveBeenCalledWith(
-      `/api/v1/channels/channel/attachments/${id}`,
+      `/api/v1/channels/${channel}/attachments/${id}`,
       expect.objectContaining({ credentials: "include", redirect: "error" }),
     );
     for (const patch of [
@@ -66,7 +67,7 @@ describe("channel attachment display boundary", () => {
         new Response(JSON.stringify({ attachment: { ...attachment, ...patch } })),
       );
       await expect(
-        getChannelAttachment("channel", id, new AbortController().signal),
+        getChannelAttachment(channel, id, new AbortController().signal),
       ).rejects.toThrow();
     }
   });
@@ -76,14 +77,14 @@ describe("channel attachment display boundary", () => {
       .mockResolvedValueOnce(new Response("denied", { status: 403 }))
       .mockResolvedValueOnce(new Response(" ".repeat(16385)));
     vi.stubGlobal("fetch", fetchMock);
-    await expect(getChannelAttachment("channel", id, new AbortController().signal)).rejects.toThrow(
+    await expect(getChannelAttachment(channel, id, new AbortController().signal)).rejects.toThrow(
       "无权访问",
     );
-    await expect(getChannelAttachment("channel", id, new AbortController().signal)).rejects.toThrow(
+    await expect(getChannelAttachment(channel, id, new AbortController().signal)).rejects.toThrow(
       "大小",
     );
     await expect(
-      getChannelAttachment("channel", "https://evil.test/image", new AbortController().signal),
+      getChannelAttachment(channel, "https://evil.test/image", new AbortController().signal),
     ).rejects.toThrow("标识");
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });

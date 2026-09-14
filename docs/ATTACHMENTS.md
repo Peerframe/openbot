@@ -43,3 +43,5 @@ of its content; successful extraction is not a guarantee of complete page covera
 If an older version saved an empty extraction, task preparation asks you to re-upload the original
 and extract readable text or explicitly attach supported image/PDF content. It does not silently
 send the original binary to a model in place of that empty text.
+
+Processed documents, OCR and transcripts register the same audited `read_attachment` tool as plain text, including when supplied alone. Attachment descriptors, media/extension limits and operations live in the shared protocol package. Automatic tasks follow the [same reference lifecycle](AUTOMATIONS.md#attachment-references).

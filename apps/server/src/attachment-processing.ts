@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { Worker } from "node:worker_threads";
 import { modelProviderBaseUrl } from "@openbot/domain";
+import type { AttachmentOperation } from "@openbot/protocol";
 import {
   AttachmentError,
   type ChannelAttachmentStorage,
@@ -9,7 +10,7 @@ import {
 import type { AgentModelSettings } from "./model-settings.js";
 
 export type AttachmentProcessInput = {
-  operation: "extract" | "ocr" | "transcribe";
+  operation: AttachmentOperation;
   password?: string | undefined;
 };
 const MAX_TEXT = 262144;

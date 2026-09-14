@@ -10,8 +10,10 @@ import {
   createAutomationInputSchema,
   nextIntervalOccurrence,
 } from "./automations.js";
+import { AttachmentError } from "./channel-attachments.js";
 import { StoreNotFoundError, StoreValidationError } from "./control-plane-store.js";
-import { submitTaskInTransaction } from "./postgres-store.js";
+import { submitTaskInTransaction } from "./postgres-task-submission.js";
+import { TaskAttachmentReferences } from "./task-attachment-references.js";
 
 type Database = ReturnType<typeof import("@openbot/db")["createDatabase"]>["db"];
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -19,7 +21,10 @@ type AutomationRow = typeof automations.$inferSelect;
 const activeStatuses = new Set(["queued", "assigned", "running", "waiting_approval", "blocked"]);
 
 export class PostgresAutomationStore implements AutomationStore {
-  constructor(readonly database: Database) {}
+  constructor(
+    readonly database: Database,
+    private readonly taskReferences = new TaskAttachmentReferences(),
+  ) {}
 
   async list(): Promise<Automation[]> {
     return (
@@ -31,71 +36,77 @@ export class PostgresAutomationStore implements AutomationStore {
     const parsed = createAutomationInputSchema.safeParse(input);
     if (!parsed.success) throw new StoreValidationError("Invalid automatic task settings.");
     const command = parsed.data;
-    return this.database.transaction(async (transaction) => {
-      await boundedTransaction(transaction);
-      // One global creation lock bounds the record count even under competing Owner requests.
-      await transaction.execute(sql`select pg_advisory_xact_lock(1330660686, 1096111153)`);
-      const now = await databaseTime(transaction);
-      const firstRunAt = new Date(command.firstRunAt);
-      if (firstRunAt <= now || firstRunAt.getTime() > now.getTime() + 366 * 86400000) {
-        throw new StoreValidationError("Choose a first run in the next 366 days.");
-      }
-      const [total] = await transaction.select({ total: count() }).from(automations);
-      if ((total?.total ?? 0) >= 50)
-        throw new StoreValidationError("At most 50 automatic tasks are supported.");
-      await assertMembership(transaction, command.channelId, command.botId);
-      const [created] = await transaction
-        .insert(automations)
-        .values({
-          id: randomUUID(),
-          name: command.name,
-          channelId: command.channelId,
-          botId: command.botId,
-          prompt: command.prompt,
-          intervalMinutes: command.intervalMinutes,
-          nextRunAt: firstRunAt,
-        })
-        .returning();
-      if (!created) throw new Error("Automatic task was not stored.");
-      await audit(transaction, created, "AUTOMATION_CREATED", {
-        intervalMinutes: created.intervalMinutes,
-        nextRunAt: firstRunAt.toISOString(),
-        actor: "owner",
-      });
-      return toAutomation(created);
-    });
+    return this.taskReferences.withLock((validate) =>
+      this.database.transaction(async (transaction) => {
+        await boundedTransaction(transaction);
+        await validate(command.channelId, command.prompt);
+        // One global creation lock bounds the record count even under competing Owner requests.
+        await transaction.execute(sql`select pg_advisory_xact_lock(1330660686, 1096111153)`);
+        const now = await databaseTime(transaction);
+        const firstRunAt = new Date(command.firstRunAt);
+        if (firstRunAt <= now || firstRunAt.getTime() > now.getTime() + 366 * 86400000) {
+          throw new StoreValidationError("Choose a first run in the next 366 days.");
+        }
+        const [total] = await transaction.select({ total: count() }).from(automations);
+        if ((total?.total ?? 0) >= 50)
+          throw new StoreValidationError("At most 50 automatic tasks are supported.");
+        await assertMembership(transaction, command.channelId, command.botId);
+        const [created] = await transaction
+          .insert(automations)
+          .values({
+            id: randomUUID(),
+            name: command.name,
+            channelId: command.channelId,
+            botId: command.botId,
+            prompt: command.prompt,
+            intervalMinutes: command.intervalMinutes,
+            nextRunAt: firstRunAt,
+          })
+          .returning();
+        if (!created) throw new Error("Automatic task was not stored.");
+        await audit(transaction, created, "AUTOMATION_CREATED", {
+          intervalMinutes: created.intervalMinutes,
+          nextRunAt: firstRunAt.toISOString(),
+          actor: "owner",
+        });
+        return toAutomation(created);
+      }),
+    );
   }
 
   async setEnabled(id: string, enabled: boolean): Promise<Automation> {
-    return this.database.transaction(async (transaction) => {
-      await boundedTransaction(transaction);
-      const [current] = await transaction
-        .select()
-        .from(automations)
-        .where(eq(automations.id, id))
-        .for("update")
-        .limit(1);
-      if (!current) throw new StoreNotFoundError("Automatic task not found.");
-      if (current.enabled === enabled) return toAutomation(current);
-      const now = await databaseTime(transaction);
-      if (enabled) await assertMembership(transaction, current.channelId, current.botId);
-      const [updated] = await transaction
-        .update(automations)
-        .set({
-          enabled,
-          nextRunAt: enabled
-            ? nextIntervalOccurrence(current.nextRunAt, current.intervalMinutes, now)
-            : current.nextRunAt,
-          updatedAt: now,
-        })
-        .where(eq(automations.id, id))
-        .returning();
-      if (!updated) throw new StoreNotFoundError("Automatic task not found.");
-      await audit(transaction, updated, enabled ? "AUTOMATION_RESUMED" : "AUTOMATION_PAUSED", {
-        actor: "owner",
-      });
-      return toAutomation(updated);
-    });
+    return this.taskReferences.withLock((validate) =>
+      this.database.transaction(async (transaction) => {
+        await boundedTransaction(transaction);
+        const [current] = await transaction
+          .select()
+          .from(automations)
+          .where(eq(automations.id, id))
+          .for("update")
+          .limit(1);
+        if (!current) throw new StoreNotFoundError("Automatic task not found.");
+        if (enabled) await validate(current.channelId, current.prompt);
+        if (current.enabled === enabled) return toAutomation(current);
+        const now = await databaseTime(transaction);
+        if (enabled) await assertMembership(transaction, current.channelId, current.botId);
+        const [updated] = await transaction
+          .update(automations)
+          .set({
+            enabled,
+            nextRunAt: enabled
+              ? nextIntervalOccurrence(current.nextRunAt, current.intervalMinutes, now)
+              : current.nextRunAt,
+            updatedAt: now,
+          })
+          .where(eq(automations.id, id))
+          .returning();
+        if (!updated) throw new StoreNotFoundError("Automatic task not found.");
+        await audit(transaction, updated, enabled ? "AUTOMATION_RESUMED" : "AUTOMATION_PAUSED", {
+          actor: "owner",
+        });
+        return toAutomation(updated);
+      }),
+    );
   }
 
   async delete(id: string): Promise<void> {
@@ -112,75 +123,83 @@ export class PostgresAutomationStore implements AutomationStore {
   }
 
   async submitDue(): Promise<SubmitTaskResult[]> {
-    return this.database.transaction(async (transaction) => {
-      await boundedTransaction(transaction);
-      const now = await databaseTime(transaction);
-      const due = await transaction
-        .select()
-        .from(automations)
-        .where(and(eq(automations.enabled, true), lte(automations.nextRunAt, now)))
-        .orderBy(asc(automations.nextRunAt), asc(automations.id))
-        .limit(10)
-        .for("update", { skipLocked: true });
-      const submitted: SubmitTaskResult[] = [];
-      for (const schedule of due) {
-        let outcome: AutomationOutcome = "submitted";
-        let result: SubmitTaskResult | undefined;
-        const [previous] =
-          schedule.lastRunId === null
-            ? []
-            : await transaction
-                .select({ status: runs.status })
-                .from(runs)
-                .where(eq(runs.id, schedule.lastRunId))
-                .limit(1);
-        if (previous && activeStatuses.has(previous.status)) {
-          outcome = "skipped_active";
-        } else {
+    return this.taskReferences.withLock((validate) =>
+      this.database.transaction(async (transaction) => {
+        await boundedTransaction(transaction);
+        const now = await databaseTime(transaction);
+        const due = await transaction
+          .select()
+          .from(automations)
+          .where(and(eq(automations.enabled, true), lte(automations.nextRunAt, now)))
+          .orderBy(asc(automations.nextRunAt), asc(automations.id))
+          .limit(10)
+          .for("update", { skipLocked: true });
+        const submitted: SubmitTaskResult[] = [];
+        for (const schedule of due) {
+          let outcome: AutomationOutcome = "submitted";
+          let result: SubmitTaskResult | undefined;
+          const [previous] =
+            schedule.lastRunId === null
+              ? []
+              : await transaction
+                  .select({ status: runs.status })
+                  .from(runs)
+                  .where(eq(runs.id, schedule.lastRunId))
+                  .limit(1);
           try {
-            result = await submitTaskInTransaction(
-              transaction,
-              schedule.channelId,
-              {
-                content: schedule.prompt,
-                botId: schedule.botId,
-              },
-              schedule.id,
-            );
+            await validate(schedule.channelId, schedule.prompt);
+            if (previous && activeStatuses.has(previous.status)) {
+              outcome = "skipped_active";
+            } else {
+              result = await submitTaskInTransaction(
+                transaction,
+                schedule.channelId,
+                {
+                  content: schedule.prompt,
+                  botId: schedule.botId,
+                },
+                schedule.id,
+              );
+            }
           } catch (error) {
-            if (!(error instanceof StoreValidationError || error instanceof StoreNotFoundError))
-              throw error;
-            outcome = "target_unavailable";
+            if (error instanceof AttachmentError) outcome = "attachment_unavailable";
+            else if (error instanceof StoreValidationError || error instanceof StoreNotFoundError)
+              outcome = "target_unavailable";
+            else throw error;
           }
+          const nextRunAt = nextIntervalOccurrence(
+            schedule.nextRunAt,
+            schedule.intervalMinutes,
+            now,
+          );
+          await transaction
+            .update(automations)
+            .set({
+              nextRunAt,
+              lastRunAt: now,
+              lastRunId: result?.run.id ?? schedule.lastRunId,
+              lastOutcome: outcome,
+              enabled: outcome !== "target_unavailable" && outcome !== "attachment_unavailable",
+              updatedAt: now,
+            })
+            .where(eq(automations.id, schedule.id));
+          await audit(
+            transaction,
+            schedule,
+            "AUTOMATION_OCCURRENCE",
+            {
+              scheduledFor: schedule.nextRunAt.toISOString(),
+              outcome,
+              nextRunAt: nextRunAt.toISOString(),
+              actor: "schedule",
+            },
+            result?.run.id,
+          );
+          if (result) submitted.push(result);
         }
-        const nextRunAt = nextIntervalOccurrence(schedule.nextRunAt, schedule.intervalMinutes, now);
-        await transaction
-          .update(automations)
-          .set({
-            nextRunAt,
-            lastRunAt: now,
-            lastRunId: result?.run.id ?? schedule.lastRunId,
-            lastOutcome: outcome,
-            enabled: outcome !== "target_unavailable",
-            updatedAt: now,
-          })
-          .where(eq(automations.id, schedule.id));
-        await audit(
-          transaction,
-          schedule,
-          "AUTOMATION_OCCURRENCE",
-          {
-            scheduledFor: schedule.nextRunAt.toISOString(),
-            outcome,
-            nextRunAt: nextRunAt.toISOString(),
-            actor: "schedule",
-          },
-          result?.run.id,
-        );
-        if (result) submitted.push(result);
-      }
-      return submitted;
-    });
+        return submitted;
+      }),
+    );
   }
 }
 

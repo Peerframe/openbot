@@ -1,3 +1,4 @@
+import type { AttachmentOperation } from "@openbot/protocol";
 import { useEffect, useRef, useState } from "react";
 import {
   downloadAttachment,
@@ -33,7 +34,7 @@ export function AttachmentActions({
   const media =
     attachment.mediaType.startsWith("audio/") || attachment.mediaType.startsWith("video/");
   const operation = media ? "transcribe" : image ? "ocr" : "extract";
-  async function run(action: "extract" | "ocr" | "transcribe" | "delete" | "restore" | "download") {
+  async function run(action: AttachmentOperation | "delete" | "restore" | "download") {
     if (pending.current) return;
     const controller = new AbortController();
     pending.current = controller;

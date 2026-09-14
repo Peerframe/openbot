@@ -35,7 +35,7 @@ import {
   createDelegatedRun,
 } from "./postgres-agent-collaboration.js";
 import { assertSkillReferences, readSkillDocument, skillCatalog } from "./postgres-agent-skills.js";
-import { toMessage, toRun } from "./postgres-store.js";
+import { toMessage, toRun } from "./postgres-task-records.js";
 import { scanSensitiveText } from "./sensitive-content.js";
 
 type Database = ReturnType<typeof import("@openbot/db")["createDatabase"]>["db"];

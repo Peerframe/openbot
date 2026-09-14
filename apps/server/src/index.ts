@@ -1,13 +1,5 @@
-import { AttachmentProcessingService } from "./attachment-processing.js";
-import { PostgresChannelInteractions } from "./channel-interactions-store.js";
-import { PluginError } from "./plugin-types.js";
-import { messages, runs } from "@openbot/db";
-import { and, eq, ilike } from "drizzle-orm";
-import { FilePluginStore } from "./plugin-store.js";
-import { PluginService } from "./plugin-service.js";
-import { join } from "node:path";
-import { FileChannelAttachmentStorage } from "./channel-attachments.js";
 import type { Server as HttpServer } from "node:http";
+import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { getConnInfo } from "@hono/node-server/conninfo";
 import { serverEnvSchema } from "@openbot/config";
@@ -15,7 +7,10 @@ import { createDatabase } from "@openbot/db";
 import { createLogger, diagnosticFields } from "@openbot/logging";
 import { createApp } from "./app.js";
 import { FileArtifactStorage } from "./artifact-storage.js";
+import { AttachmentProcessingService } from "./attachment-processing.js";
 import { AutomationScheduler } from "./automations.js";
+import { FileChannelAttachmentStorage } from "./channel-attachments.js";
+import { PostgresChannelInteractions } from "./channel-interactions-store.js";
 import { ChannelRealtimeHub } from "./channel-realtime-hub.js";
 import { EmployeePublisherKeyring } from "./employee-publisher-keyring.js";
 import { closeHttpServer } from "./http-shutdown.js";
@@ -25,7 +20,11 @@ import { createNativeWebSearch } from "./native-web-tools.js";
 import { NodeIdentityService } from "./node-identity.js";
 import { NodeRegistry } from "./node-registry.js";
 import { OwnerAuthService } from "./owner-auth.js";
+import { PluginService } from "./plugin-service.js";
+import { FilePluginStore } from "./plugin-store.js";
+import { PluginError } from "./plugin-types.js";
 import { PostgresAgentStore } from "./postgres-agent-store.js";
+import { attachmentIsReferenced } from "./postgres-attachment-references.js";
 import { PostgresAutomationStore } from "./postgres-automation-store.js";
 import { PostgresKnowledgeStore } from "./postgres-knowledge-store.js";
 import { PostgresNodeIdentityStore } from "./postgres-node-identity-store.js";
@@ -35,6 +34,7 @@ import { PostgresControlPlaneStore } from "./postgres-store.js";
 import { RequestThrottle } from "./request-throttle.js";
 import { RunDispatcher } from "./run-dispatcher.js";
 import { RunFrameStore } from "./run-frame-store.js";
+import { TaskAttachmentReferences } from "./task-attachment-references.js";
 import { WorkspaceRealtimeHub } from "./workspace-realtime-hub.js";
 
 const env = serverEnvSchema.parse(process.env);
@@ -129,7 +129,10 @@ const auth = new OwnerAuthService(
   },
   requestThrottle,
 );
-const automations = new PostgresAutomationStore(database.db);
+const automations = new PostgresAutomationStore(
+  database.db,
+  new TaskAttachmentReferences(attachments),
+);
 const automationScheduler = new AutomationScheduler(
   automations,
   (result) => {
@@ -154,22 +157,7 @@ const app = createApp({
     storage: attachments,
     ...(modelSettings ? { settings: () => modelSettings.agentSettings() } : {}),
   }),
-  attachmentReferenced: async (channelId, id) => {
-    // Read the complete persisted corpus, not the bounded UI history projection.
-    const [messageRows, runRows] = await Promise.all([
-      database.db
-        .select({ id: messages.id })
-        .from(messages)
-        .where(and(eq(messages.channelId, channelId), ilike(messages.content, `%${id}%`)))
-        .limit(1),
-      database.db
-        .select({ id: runs.id })
-        .from(runs)
-        .where(and(eq(runs.channelId, channelId), ilike(runs.instruction, `%${id}%`)))
-        .limit(1),
-    ]);
-    return messageRows.length > 0 || runRows.length > 0;
-  },
+  attachmentReferenced: (channelId, id) => attachmentIsReferenced(database.db, channelId, id),
   channelInteractions: new PostgresChannelInteractions(database.db),
   onChannelMemberRemoved: ({ cancelledRuns }) => {
     for (const run of cancelledRuns) {
