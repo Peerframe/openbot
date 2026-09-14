@@ -19,6 +19,24 @@ AI SDK ToolLoopAgent 的工具声明、pg-boss 事务队列；实际读取固定
 替代 OpenBot 的文件引用、成员关系和 Message/Run 同事务约束，故不增加队列依赖。
 AI SDK issue 14170 涉及动态工具列表和缓存；本次每个 Run 保持固定工具表，权限另行复核。
 
+### 持续 PostgreSQL 验收
+
+合并前复核 `11ac702ca1fb3dd389adf8d97f9a8b09fe1e9714` 发现：新增附件集成测试要求
+`OPENBOT_ATTACHMENT_TEST_DATABASE_URL`，但 CI 没有设置，因此普通测试命令会跳过该验收。
+2026-09-14 查阅 GitHub 的 [PostgreSQL 服务容器指南](https://docs.github.com/en/actions/tutorials/use-containerized-services/create-postgresql-service-containers)
+（GitHub 检索：`repo:github/docs creating PostgreSQL service containers`）及 PostgreSQL 17 的
+[`CREATE DATABASE` 约定](https://www.postgresql.org/docs/17/sql-createdatabase.html)。运行器通过已发布的
+回环端口访问服务；建库沿用现有测试连接，在事务外执行。
+
+复用现有 `database` job、通过健康检查的 `postgres:17.11-bookworm`、Postgres.js 3.4.9
+（Unlicense）、Vitest 5.0.0（MIT）和 Node 22.22.2。保持现有 MIT Actions 固定版本：
+[`actions/checkout` v7.0.1](https://github.com/actions/checkout/tree/3d3c42e5aac5ba805825da76410c181273ba90b1) 和
+[`actions/setup-node` v7.0.0](https://github.com/actions/setup-node/tree/820762786026740c76f36085b0efc47a31fe5020)。
+现有适配已经满足需求，不增加运行器、容器框架或依赖。仅新增专用的
+`openbot_attachment_test_ci` 数据库及显式附件测试命令，保留全部旧集成测试命令。
+固定库名符合测试的破坏性清理保护；服务随 CI job 销毁，不涉及应用数据、生产凭据或部署。
+不复制或实质改写上游源码。
+
 ## 实施与兼容
 
 - 从综合 store 提取现有任务 SQL 和纯数据映射，不改变任务路由、审批或取消。
@@ -36,6 +54,8 @@ AI SDK issue 14170 涉及动态工具列表和缓存；本次每个 Run 保持�
 不复制或实质改写上游实现，仅移动现有 OpenBot 代码并添加其特定接入逻辑，保留原声明。
 真实 Agent 配确定性模型验证 PDF、Office、OCR、转写及普通附件；临时 PostgreSQL 配真实
 文件存储验证引用保留、删除释放、损坏、并发提交/清理、成员撤销和事务回滚。
+CI 的 PostgreSQL job 必须用专用回环测试库设置 `OPENBOT_ATTACHMENT_TEST_DATABASE_URL`，
+显式执行 `task-attachment-references.integration.test.ts`；不带环境变量的普通测试不能作为该套件的通过证据。
 执行共享契约、现有接口、Web/桌面界面检查及 `npm run check`，不使用付费模型或用户数据。
 
 本批无未决问题。跨进程共享文件锁、日历调度、新 Provider 和头像重设计不在本轮范围。

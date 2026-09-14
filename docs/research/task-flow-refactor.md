@@ -31,6 +31,28 @@ between steps and prompt caching; this change keeps a fixed map per Run and does
 activeTools as an authority check. pg-boss open proposals 890/899/901 concern transactional workers
 and controllable clocks; they do not replace the existing Server transaction or file lifecycle.
 
+### Continuous PostgreSQL acceptance
+
+The pre-merge review of `11ac702ca1fb3dd389adf8d97f9a8b09fe1e9714` found that the new attachment
+integration suite required `OPENBOT_ATTACHMENT_TEST_DATABASE_URL`, but no CI step supplied it.
+The ordinary test command therefore skipped this PostgreSQL acceptance journey. On 2026-09-14,
+reviewed GitHub's [PostgreSQL service-container guide](https://docs.github.com/en/actions/tutorials/use-containerized-services/create-postgresql-service-containers)
+(GitHub search: `repo:github/docs creating PostgreSQL service containers`) and PostgreSQL 17's
+[`CREATE DATABASE` contract](https://www.postgresql.org/docs/17/sql-createdatabase.html).
+Runner-hosted jobs reach the service through its published loopback port; database creation uses
+the existing privileged fixture connection outside a transaction.
+
+Reuse the existing `database` job, its healthy `postgres:17.11-bookworm` service, Postgres.js 3.4.9
+(Unlicense), Vitest 5.0.0 (MIT), and Node 22.22.2. Keep the existing pinned
+[`actions/checkout` v7.0.1](https://github.com/actions/checkout/tree/3d3c42e5aac5ba805825da76410c181273ba90b1)
+and [`actions/setup-node` v7.0.0](https://github.com/actions/setup-node/tree/820762786026740c76f36085b0efc47a31fe5020)
+(MIT) unchanged. This is the first viable existing adapter; a new runner, container framework or
+dependency adds no missing capability. Add only a dedicated `openbot_attachment_test_ci` database
+and the explicit attachment-suite command, preserving every existing integration-suite command.
+The fixed database name satisfies the suite's destructive-fixture guard. The job owns its
+disposable service; no application data, production credentials or deployment is involved.
+No upstream source is copied or substantially adapted.
+
 ## Implementation and compatibility
 
 - Extract the existing Message/Run SQL submission and pure row mappers from the broad store;
@@ -61,6 +83,9 @@ must preserve Server authority, fixed budgets and file-before-database lock orde
 - Temporary PostgreSQL + real file storage: creation/resume validation, retention before first
   run and while paused, deletion release, soft deletion/corruption, competing due claimers,
   cleanup/creation races, membership removal and transaction rollback.
+- CI's PostgreSQL job explicitly runs `task-attachment-references.integration.test.ts` with
+  `OPENBOT_ATTACHMENT_TEST_DATABASE_URL` set to its dedicated loopback fixture; the ordinary
+  environment-free test run is not evidence for that suite.
 - Shared Web/Server descriptor and file limit tests; existing attachment API suites; actual Web
   and Desktop renderer checks; full npm run check. No paid models or real user data.
 
