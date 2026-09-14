@@ -183,6 +183,13 @@
       "when": 1789968000007,
       "tag": "0025_channel_reactions",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1789968000008,
+      "tag": "0026_automation_attachment_outcome",
+      "breakpoints": true
     }
   ]
 }

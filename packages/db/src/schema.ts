@@ -609,7 +609,7 @@ export const automations = pgTable(
     check("automations_interval_valid", sql`${table.intervalMinutes} BETWEEN 15 AND 10080`),
     check(
       "automations_outcome_valid",
-      sql`${table.lastOutcome} IN ('submitted', 'skipped_active', 'target_unavailable')`,
+      sql`${table.lastOutcome} IN ('submitted', 'skipped_active', 'target_unavailable', 'attachment_unavailable')`,
     ),
   ],
 );
