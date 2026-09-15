@@ -1,4 +1,3 @@
-import { macosSigningOptions, verifyNotarizedDesktop } from "./macos-signing.mjs";
 import { access, cp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,6 +5,8 @@ import { listPackage } from "@electron/asar";
 import { FuseState, FuseV1Options, flipFuses, getCurrentFuseWire } from "@electron/fuses";
 import { packager } from "@electron/packager";
 import { validateMacOSWorkerHostApplication } from "../../../scripts/macos-worker-host-release.mjs";
+import { createElectronDownloader } from "./electron-download.mjs";
+import { macosSigningOptions, verifyNotarizedDesktop } from "./macos-signing.mjs";
 import {
   createDesktopFuseConfig,
   DESKTOP_ICON_RESOURCE_NAME,
@@ -97,7 +98,7 @@ const packagePaths = await packager({
   arch: process.arch,
   asar: true,
   dir: appRoot,
-  ...(previewDownload ? { download: previewDownload } : {}),
+  download: { ...previewDownload, downloader: createElectronDownloader() },
   electronVersion: "44.2.0",
   extraResource: [desktopIconPng],
   afterCopyExtraResources: [
