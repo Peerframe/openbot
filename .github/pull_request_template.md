@@ -8,6 +8,15 @@ Closes #
 
 ## Open-source research
 
+<!-- Choose one path. For ordinary Markdown spelling, faithful translation, or prose formatting
+     with unchanged behavior/claims and unchanged commands, code, links and markup, replace ALL
+     seven fields below with:
+     - Research exemption: spelling / translation / mechanical-formatting (choose one)
+     - Exemption reason: describe the correction and why behavior and claims are unchanged
+     CI verifies the committed changes. Policy/source/configuration changes use the research form;
+     pure source formatting may reference existing module research without a new study.
+     See CONTRIBUTING.md#research-evidence-and-documentation-exemptions. -->
+
 - Research artifact: <!-- Issue, ADR, or docs/research record; required even when no candidate fit -->
 - Selected upstream/standard: <!-- Or: No suitable upstream found — see the linked research artifact -->
 - Version or commit:

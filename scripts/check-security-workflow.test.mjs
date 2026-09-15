@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { validateSecurityWorkflow } from "./check-security-workflow.mjs";
@@ -203,4 +204,48 @@ test("rejects removal or network broadening of the macOS Desktop companion gate"
       ),
     /missing required fragment|build the pinned macOS companion/,
   );
+});
+
+test("requires every CI job in the final gate even after a skipped or failed dependency", () => {
+  for (const changed of [
+    workflow.replace("    if: always()\n    needs:", "    needs:"),
+    workflow.replace("needs: [security, validate, portable,", "needs: [security, validate,"),
+    `${workflow}\n  additional-platform:\n    runs-on: ubuntu-latest\n`,
+    workflow.replace("  check:\n", "  check:\n    continue-on-error: true\n"),
+    workflow.replace("needs.database.result", "needs.validate.result"),
+  ]) {
+    assert.throws(() => validateSecurityWorkflow(changed), /CI check must/);
+  }
+});
+
+test("the actual merge gate accepts only success from every required job", () => {
+  const gate = workflow.slice(workflow.indexOf("\n  check:\n"));
+  const variables = [
+    ...gate.matchAll(/^ {10}([A-Z_]+): \$\{\{ needs\.[a-z-]+\.result \}\}$/gm),
+  ].map((match) => match[1]);
+  assert.equal(variables.length, 6);
+  const source = gate
+    .split("        run: |\n")[1]
+    .split("\n")
+    .map((line) => (line.startsWith("          ") ? line.slice(10) : line))
+    .join("\n");
+  const successful = Object.fromEntries(variables.map((name) => [name, "success"]));
+  const execute = (results) =>
+    spawnSync("bash", ["--noprofile", "--norc", "-euo", "pipefail", "-c", source], {
+      encoding: "utf8",
+      env: { PATH: process.env.PATH, ...results },
+    });
+  assert.equal(execute(successful).status, 0);
+  for (const variable of variables) {
+    for (const result of ["failure", "cancelled", "skipped", "", "unknown"]) {
+      assert.equal(
+        execute({ ...successful, [variable]: result }).status,
+        1,
+        `${variable}=${result}`,
+      );
+    }
+    const missing = { ...successful };
+    delete missing[variable];
+    assert.notEqual(execute(missing).status, 0, `${variable} missing`);
+  }
 });

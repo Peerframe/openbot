@@ -16,6 +16,7 @@ if (!$EvidenceDirectory) {
 if (Test-Path -LiteralPath $EvidenceDirectory) { throw 'Evidence destination must be fresh.' }
 New-Item -ItemType Directory -Path $EvidenceDirectory | Out-Null
 $script:roundEvidence = @()
+$script:installerEvidence = @()
 $script:cleanupVerified = $true
 $stage = 'install'
 $passed = $false
@@ -45,6 +46,7 @@ $script:currentRoundElectron = $null
 
 $script:windowsReceiptIdentityHelpers = Join-Path $PSScriptRoot 'windows-receipt-identity-helpers.ps1'
 . $script:windowsReceiptIdentityHelpers
+. (Join-Path $PSScriptRoot 'windows-installer-progress.ps1')
 
 function Write-SafeSummary([string]$Message) {
   Write-Host $Message
@@ -301,9 +303,24 @@ try {
   # NSIS /D is deliberately last and unquoted, per its documented command-line contract.
   $process = Start-Process -FilePath $Installer -ArgumentList "/S /D=$target" -PassThru
   try {
-    if (!$process.WaitForExit(120000)) { $process.Kill(); throw 'NSIS installation timed out.' }
+    $installation = Wait-WindowsInstaller -Process $process -InstallationDirectory $target -OnProgress {
+      param($Snapshot)
+      $script:installerEvidence += $Snapshot
+      Write-Host ("NSIS progress: " + ($Snapshot | ConvertTo-Json -Compress))
+    }
+    if ($installation.outcome -ne 'completed') {
+      throw "NSIS installation stopped: $($installation.outcome) after $($installation.elapsedMs) ms."
+    }
     if ($process.ExitCode -ne 0) { throw 'NSIS installation failed.' }
-  } finally { $process.Dispose() }
+  } finally {
+    try {
+      if (!$process.HasExited) {
+        $process.Kill($true)
+        if (!$process.WaitForExit(15000)) { $script:cleanupVerified = $false }
+      }
+    } catch { $script:cleanupVerified = $false }
+    $process.Dispose()
+  }
   $installedAsar = Join-Path $target 'resources/app.asar'
   $packagedAsar = Join-Path $PackagedDirectory 'resources/app.asar'
   if ((Get-FileHash -LiteralPath $installedAsar -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $packagedAsar -Algorithm SHA256).Hash) {
@@ -425,6 +442,7 @@ try {
       processIdentityNegativeTestsPassed = $ownershipTestsPassed
       crossRuntimeIdentityPassed = $crossRuntimeIdentityPassed
       coldStartsCompleted = [Math]::Max(0, $script:roundEvidence.Count - 1)
+      installer = @($script:installerEvidence)
       rounds = @($script:roundEvidence)
     }
     $summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'summary.json') -Encoding utf8

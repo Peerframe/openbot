@@ -1256,17 +1256,13 @@ async function parseRequest<T>(
   schema: ZodType<T>,
   maximumBytes = maximumApiRequestBytes,
 ): Promise<T> {
-  const declaredSize = Number(request.headers.get("content-length"));
-  if (Number.isFinite(declaredSize) && declaredSize > maximumBytes) {
-    throw new RequestValidationError(`Request body must not exceed ${maximumBytes} bytes.`, {});
-  }
-
   let body: unknown;
   try {
-    const source = await request.text();
-    if (new TextEncoder().encode(source).byteLength > maximumBytes) {
-      throw new RequestValidationError(`Request body must not exceed ${maximumBytes} bytes.`, {});
-    }
+    const source = await readRequestText(
+      request,
+      maximumBytes,
+      `Request body must not exceed ${maximumBytes} bytes.`,
+    );
     body = JSON.parse(source);
   } catch (error) {
     if (error instanceof RequestValidationError) throw error;
@@ -1283,6 +1279,43 @@ async function parseRequest<T>(
   return parsed.data;
 }
 
+async function readRequestText(
+  request: Request,
+  maximumBytes: number,
+  oversizedMessage: string,
+): Promise<string> {
+  const reader = request.body?.getReader();
+  let complete = false;
+  try {
+    const declaredSize = Number(request.headers.get("content-length"));
+    if (Number.isFinite(declaredSize) && declaredSize > maximumBytes) {
+      throw new RequestValidationError(oversizedMessage, {});
+    }
+    if (reader === undefined) return "";
+
+    const decoder = new TextDecoder();
+    let size = 0;
+    let text = "";
+    while (true) {
+      const part = await reader.read();
+      if (part.done) {
+        complete = true;
+        return text + decoder.decode();
+      }
+      // Client length headers are only an early rejection hint, never a byte allowance.
+      size += part.value.byteLength;
+      if (size > maximumBytes) throw new RequestValidationError(oversizedMessage, {});
+      text += decoder.decode(part.value, { stream: true });
+    }
+  } finally {
+    if (reader !== undefined) {
+      // Stop consumption immediately; an underlying source must not delay rejection with cancel().
+      if (!complete) void reader.cancel().catch(() => undefined);
+      reader.releaseLock();
+    }
+  }
+}
+
 function requireNodeIdentity(
   identity: AppDependencies["nodeIdentity"],
 ): NonNullable<AppDependencies["nodeIdentity"]> {
@@ -1297,15 +1330,11 @@ async function parseEmployeePackageRequest(
   request: Request,
   publisher: AppDependencies["employeePublisher"],
 ): Promise<{ document: EmployeeTemplatePackage; trustedKeyId?: string }> {
-  const declaredSize = Number(request.headers.get("content-length"));
-  if (Number.isFinite(declaredSize) && declaredSize > maxEmployeePackageBytes) {
-    throw new RequestValidationError("Employee package must not exceed 2 MiB.", {});
-  }
-
-  const body = await request.text();
-  if (new TextEncoder().encode(body).byteLength > maxEmployeePackageBytes) {
-    throw new RequestValidationError("Employee package must not exceed 2 MiB.", {});
-  }
+  const body = await readRequestText(
+    request,
+    maxEmployeePackageBytes,
+    "Employee package must not exceed 2 MiB.",
+  );
 
   let value: unknown;
   try {

@@ -82,13 +82,15 @@ Replace `OPENBOT_OWNER_PASSWORD` in `.env`, then run:
 ```bash
 npm ci
 npm run db:up
-npm exec -- turbo run dev --filter=@openbot/server --filter=@openbot/web
+npm run dev
 ```
 
 Keep this terminal open. Turbo builds the required shared packages before starting Server/Web.
 Open `http://localhost:5173` and sign in with the Owner password from `.env`; Server uses port
 `3001`. This is sufficient for frontend/control-plane development. The native Agent remains off
 until explicitly enabled in model settings. Keep an existing checkout's `.env` and data directories.
+To reproduce the clean-start CI journey with a disposable database, see
+[the Server startup smoke instructions](apps/server/README.md).
 
 For a small UI change, locate its component through the [repository map](docs/REPOSITORY_MAP.md),
 edit it while this dev command runs, and inspect the real page. For example, the channel member menu
@@ -112,7 +114,7 @@ This authenticates as the configured Owner and prints a short-lived
 `OPENBOT_NODE_ID=local-development-node`, then start the Node with its shared builds:
 
 ```bash
-npm exec -- turbo run dev --filter=@openbot/node
+npm run dev:node
 ```
 
 After enrollment succeeds, remove only the one-time token line from `.env`. Keep the stored
@@ -121,8 +123,8 @@ Node dev command runs in `apps/node`. Use absolute paths if changing working dir
 restart uses this credential without a new token. An expired/rejected token needs a new Owner-issued
 token; never bypass enrollment with arbitrary bearer credentials. An unconfigured Node advertises
 no execution capability; see [Provider conformance](docs/PROVIDER_CONFORMANCE.md) for adapters.
-The root `npm run dev` starts every dev workspace and assumes any required Node identity is ready;
-it is not the fresh-checkout entry point.
+The root `npm run dev` starts Server/Web. A Node starts separately after enrollment; it is not
+required for frontend or control-plane development.
 
 For schema changes, start with the read-only
 `npm run migration:plan --workspace @openbot/db -- --name describe_change` and the
@@ -158,6 +160,43 @@ The root [repository instructions](AGENTS.md) apply equally to human and automat
 When expanding old code, locate its entry in the
 [retroactive reuse ledger](docs/OPEN_SOURCE_REUSE.md) first; an absent or partial entry must be
 reviewed before expansion.
+
+### Required CI completion
+
+The protected `check` status is the final CI gate. It waits for security scanning, repository
+validation, every portable platform, the Windows Worker Host build, database journeys, and both
+Server container architectures. A failed, cancelled, or skipped required job prevents success.
+Wait for this gate on the latest PR commit before merging; local `npm run check` covers only the
+repository checks and cannot substitute for hosted platform results.
+
+### Research evidence and documentation exemptions
+
+Behavior, dependency, protocol and non-trivial feature changes use the seven research fields in the
+PR template. Link the durable record created before implementation; existing module research can
+be reused when it covers the change.
+
+For an ordinary Markdown spelling correction, faithful translation, or mechanical prose formatting
+change that changes neither behavior nor claims, replace all seven fields under `## Open-source
+research` with these two lines:
+
+```markdown
+- Research exemption: spelling
+- Exemption reason: Correct the README introduction's spelling; instructions and product claims are unchanged.
+```
+
+Choose `spelling`, `translation`, or `mechanical-formatting`. CI checks the actual committed PR
+diff, rather than a self-reported file list. The automatic path covers root READMEs, Markdown under
+`docs/`, and workspace READMEs. It excludes policy documents, ADR/research records, source, configuration, dependencies,
+executable modes and changes to code blocks, inline commands, link destinations, markup or metadata.
+Unchanged commands and links can remain inside translated prose. Do not mix exemption fields with
+partial research answers.
+
+The check cannot prove that a translation is faithful or a prose claim is unchanged; that remains
+part of the existing PR review. If a harmless change falls outside the automatic scope, use the
+seven fields to reference existing module research and explain the unchanged behavior. Pure source
+formatting still needs no new research under `AGENTS.md`. This limitation does not add an approval
+step. An edited PR body alone does not automatically trigger CI; a new commit follows the usual
+pull-request checks.
 
 ## Code and comments
 
