@@ -169,6 +169,23 @@ Server container architectures. A failed, cancelled, or skipped required job pre
 Wait for this gate on the latest PR commit before merging; local `npm run check` covers only the
 repository checks and cannot substitute for hosted platform results.
 
+### Dependency update intake
+
+Ordinary Dependabot version proposals are paused for npm, GitHub Actions and Docker with
+`open-pull-requests-limit: 0`. Security updates are exempt from that limit and remain eligible;
+they still require research and the complete protected CI check. Repository security-update
+controls are managed separately from this file.
+
+For an ordinary update, select a bounded batch, review the exact upstream versions and existing
+reuse records, write the research evidence, then update manifests and lockfiles together. Fill
+the seven PR research fields before triggering CI, run a clean install and `npm run check`, and
+wait for the latest hosted `check` before merging. A generated Dependabot release summary is a
+proposal, not completed research. See the [intake decision](docs/research/dependency-update-intake.md).
+
+Resume automatic ordinary proposals only when their research intake can be maintained. Editing
+Dependabot configuration triggers an immediate scan; its PR limit counts concurrently open
+proposals, not proposals per week. Preserve security updates and existing major-version limits.
+
 ### Research evidence and documentation exemptions
 
 Behavior, dependency, protocol and non-trivial feature changes use the seven research fields in the

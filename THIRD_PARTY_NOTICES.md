@@ -1,5 +1,7 @@
 # Third-Party Notices
 
+[English](THIRD_PARTY_NOTICES.md) · [简体中文](THIRD_PARTY_NOTICES.zh-CN.md)
+
 OpenBot's Server, Worker Hosts and Desktop build reference the following components. Exact resolved
 versions are recorded in checked-in lockfiles; release artifacts must also carry generated SBOMs
 and notices.
@@ -7,7 +9,7 @@ and notices.
 - Microsoft .NET runtime and `Microsoft.Extensions.*` / `System.*` libraries — Copyright .NET
   Foundation and contributors; MIT License.
 - `Meziantou.Framework.Win32.Jobs` 4.0.0 — Copyright Gérald Barré; MIT License.
-- Electron 44.2.0 — Copyright Electron contributors and GitHub Inc.; MIT License. Electron
+- Electron 44.3.0 — Copyright Electron contributors and GitHub Inc.; MIT License. Electron
   development packages retain the upstream `LICENSE`, and packaged artifacts retain Electron's
   generated `LICENSE` and `LICENSES.chromium.html` files.
 - `@electron/fuses` 2.1.3 — Copyright 2020 Electron Maintainers; MIT License. This build tool is not
@@ -26,8 +28,8 @@ and notices.
   Its LICENSE remains in production dependencies; the MIT terms are reproduced below.
   See [plugin research](docs/research/third-party-mcp-plugins.md).
 
-- Vercel AI SDK `ai` 7.0.93, `@ai-sdk/openai` 4.0.60, `@ai-sdk/anthropic` 4.0.49, `@ai-sdk/moonshotai` 3.0.45,
-  `@ai-sdk/provider` 4.0.10, `@ai-sdk/provider-utils` 5.0.36 and the SDK's transitive
+- Vercel AI SDK `ai` 7.0.93, `@ai-sdk/openai` 4.0.66, `@ai-sdk/anthropic` 4.0.53, `@ai-sdk/moonshotai` 3.0.49,
+  `@ai-sdk/provider` 4.0.10 / 4.0.14, `@ai-sdk/provider-utils` 5.0.36 / 5.0.40 and the SDK's transitive
   `@ai-sdk/gateway` 4.0.75 — Copyright 2023 Vercel, Inc.; Apache License 2.0.
   The Server uses explicit OpenAI/Anthropic/OpenRouter/Moonshot adapters, not the AI SDK gateway. Package LICENSE files
   remain in the packaged production dependency tree. No upstream implementation was copied.

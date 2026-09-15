@@ -4,7 +4,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    # Ordinary version bumps require the reviewed intake in CONTRIBUTING.md.
+    # GitHub security updates are exempt from this limit.
+    open-pull-requests-limit: 0
     groups:
       react:
         # React requires the client and DOM renderer runtime versions to match.
@@ -17,17 +19,17 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    open-pull-requests-limit: 0
   - package-ecosystem: docker
     directory: /deploy/server
     schedule:
       interval: monthly
-    # Cap concurrent Docker version-update PRs. Security updates are exempt from
-    # this limit per GitHub Dependabot docs (open-pull-requests-limit).
-    open-pull-requests-limit: 5
+    # Ordinary updates use the same reviewed intake; security updates are exempt.
+    open-pull-requests-limit: 0
     # Official ignore mechanism for SemVer majors:
     # https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#ignore
-    # Keep automatic Docker Node majors off the default lane. Patch/minor Node
-    # image updates (and security updates) remain eligible. A Node major
+    # Keep automatic Docker Node majors off the default lane. Reviewed batches
+    # may advance patch/minor versions; security proposals retain these rules. A Node major
     # (for example 24 → 26) requires human review against
     # docs/research/server-node24-production-container.md before any Dockerfile
     # pin change; do not treat Dependabot PR #3 (26.x) as the upgrade path.

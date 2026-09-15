@@ -329,3 +329,18 @@ React 与 React DOM 共同采用官方 19.3.0 / `1d34f91dfde6bba84d08b683aaba164
 继续复用 Vite 8.3.0 / `434e8e9495436a60789f2b588a04a6a24a3d1661`（MIT），让 Web 配置
 与 React 插件解析同一版本。保留严格类型与既有 CSP 检查；未复制源码或增加依赖。
 详见[研究](research/vite-8.3-lock-coherence.zh-CN.md)。
+
+## 依赖审查流程与 9 月 15 日运行时更新
+
+采用官方 Dependabot v2 的零上限配置暂停普通自动版本提议，安全更新仍可提出并须遵守相同
+研究和 CI 要求。见[流程决定](research/dependency-update-intake.zh-CN.md)，不增加本地更新服务或机器人豁免。
+
+Electron 44.3.0 / `07e460719c75b2ec5ee4893f7d2192ef31c7b8c2`（MIT）保留既有 Desktop 边界
+与打包适配器，见[研究](research/electron-44.3-ci-review.zh-CN.md)。Anthropic 4.0.53 与 Moonshot
+3.0.49 / `9ed46d2da5df1394079c66d422bc553fd0c34376`（Apache-2.0）保留受控原生 Provider
+适配器，见[SDK 研究](research/ai-sdk-patches-september15.zh-CN.md)。未复制上游源码或新增权限。
+较早版本条目保留历史审查上下文，当前选择以锁文件和本次补充记录为准。
+
+React DOM 类型 19.3.0 / DefinitelyTyped `de5e8f01d01a14ae4ae502283d3d09f042f1ad89`
+及 Zod 4.6.2 / `e359f7378fe56d695134701cda1e9055a08892dc`（均为 MIT）保留已有渲染和校验契约。
+未复制源码，见[研究](research/dependency-types-zod-september15.zh-CN.md)。
