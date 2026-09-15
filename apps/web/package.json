@@ -18,7 +18,7 @@
     "@openbot/domain": "0.0.0",
     "@openbot/protocol": "0.0.0",
     "react": "19.3.0",
-    "react-dom": "19.2.8",
+    "react-dom": "19.3.0",
     "zod": "4.5.4"
   },
   "devDependencies": {

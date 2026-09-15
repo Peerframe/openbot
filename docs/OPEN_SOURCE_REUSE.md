@@ -382,3 +382,7 @@ copied source; see [research](research/channel-member-layout.md).
 Native Run failure classification follows RFC 9457's machine-type/human-detail separation and
 Node.js v22.22.2 (`2645dc73`) public error-code guidance inside the existing Error/Run catalogue.
 No new HTTP error format, dependency or copied source; see the [classification review](research/native-failure-classification.md).
+
+## React runtime version coherence (2026-09-15)
+
+React and React DOM now reuse the matching official 19.3.0 release / `1d34f91dfde6bba84d08b683aaba164c7194dacb` (MIT), with `@types/react` 19.3.0 and compatible existing `@types/react-dom` 19.2.7. The prior 19.2.8 entries above describe their original reviews. A narrow official Dependabot group keeps runtime and declaration update proposals together; the upstream exact-version guard, existing interaction tests and production audit remain gates. No upstream source copied or local renderer introduced. See [research](research/react-19.3-version-coherence.md).
