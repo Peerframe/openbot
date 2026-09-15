@@ -8,7 +8,7 @@
   <a href="https://yxflc11.github.io/openbot-website/demo/index.html"><img src="https://img.shields.io/badge/DEMO-%E4%BD%93%E9%AA%8C%E6%BC%94%E7%A4%BA-5865F2?style=for-the-badge&amp;labelColor=555555" alt="体验交互演示" height="28"></a>
   <a href="#下载"><img src="https://img.shields.io/badge/DESKTOP-macOS%20%C2%B7%20Windows-168AAD?style=for-the-badge&amp;labelColor=555555" alt="下载 macOS 与 Windows 版" height="28"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/LICENSE-MIT-69A807?style=for-the-badge&amp;labelColor=555555" alt="MIT license" height="28"></a>
-  <a href="https://github.com/yxflc11/openbot/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yxflc11/openbot/ci.yml?branch=main&amp;style=for-the-badge&amp;label=CI&amp;labelColor=555555" alt="CI status" height="28"></a>
+  <a href="https://github.com/Peerframe/openbot/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Peerframe/openbot/ci.yml?branch=main&amp;style=for-the-badge&amp;label=CI&amp;labelColor=555555" alt="CI status" height="28"></a>
   <br>
   <a href="README.md"><img src="https://img.shields.io/badge/LANG-English-3478C5?style=for-the-badge&amp;labelColor=555555" alt="Read in English" height="28"></a>
   <a href="README.zh-CN.md"><img src="https://img.shields.io/badge/LANG-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-D94848?style=for-the-badge&amp;labelColor=555555" alt="阅读简体中文版" height="28"></a>
@@ -28,10 +28,10 @@
 
 | 平台 | 安装包 | 工作区 |
 | --- | --- | --- |
-| macOS · Apple Silicon | [下载 DMG](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.9/openbot-desktop-0.1.0-alpha.9-darwin-arm64.dmg) | 内置 Server 与 PostgreSQL，也可连接已有服务 |
-| Windows · x64 | [下载 EXE](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.9/openbot-desktop-0.1.0-alpha.9-win32-x64.exe) | 内置 Server 与 PostgreSQL，也可连接已有服务 |
+| macOS · Apple Silicon | [下载 DMG](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/openbot-desktop-0.1.0-alpha.9-darwin-arm64.dmg) | 内置 Server 与 PostgreSQL，也可连接已有服务 |
+| Windows · x64 | [下载 EXE](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/openbot-desktop-0.1.0-alpha.9-win32-x64.exe) | 内置 Server 与 PostgreSQL，也可连接已有服务 |
 
-预览安装包尚未签名，macOS 包尚未公证。系统信任提示、升级方法及其他平台构建见[发行说明与校验值](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.9)和[安装指南](docs/DESKTOP_INSTALLATION.zh-CN.md)。
+预览安装包尚未签名，macOS 包尚未公证。系统信任提示、升级方法及其他平台构建见[发行说明与校验值](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9)和[安装指南](docs/DESKTOP_INSTALLATION.zh-CN.md)。
 
 ## 开始使用
 
@@ -58,7 +58,7 @@
 使用 **Node.js 22.22.2**、**npm 10.9.9**，并安装 Docker 运行本地 PostgreSQL。
 
 ```sh
-git clone https://github.com/yxflc11/openbot.git
+git clone https://github.com/Peerframe/openbot.git
 cd openbot
 npm ci
 cp .env.example .env
@@ -92,7 +92,7 @@ Desktop 和 Web 共用 React 界面。Server 统一管理 Bot 身份、路由、
 
 **开发插件：** 实现标准 MCP Streamable HTTP 接口，提供工具、资源、提示词或 Apps。依照[插件契约](docs/PLUGINS.zh-CN.md)，从[示例](apps/server/src/plugin-example.ts)开始，提交扩展供审核。无需 OpenBot 专属 SDK；安装插件和为 Bot 授权分开进行。
 
-**参与核心开发：** 先阅读[贡献指南](CONTRIBUTING.zh-CN.md)、[开源复用规则](docs/OPEN_SOURCE_REUSE.zh-CN.md)和[文档索引](docs/README.zh-CN.md)。通过 [Issues](https://github.com/yxflc11/openbot/issues) 反馈问题与提案，通过 [Pull requests](https://github.com/yxflc11/openbot/pulls) 提交修改。安全问题请遵循[安全政策](SECURITY.md)。
+**参与核心开发：** 先阅读[贡献指南](CONTRIBUTING.zh-CN.md)、[开源复用规则](docs/OPEN_SOURCE_REUSE.zh-CN.md)和[文档索引](docs/README.zh-CN.md)。通过 [Issues](https://github.com/Peerframe/openbot/issues) 反馈问题与提案，通过 [Pull requests](https://github.com/Peerframe/openbot/pulls) 提交修改。安全问题请遵循[安全政策](SECURITY.md)。
 
 ## 许可与致谢
 

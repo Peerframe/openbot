@@ -8,7 +8,7 @@
   <a href="https://yxflc11.github.io/openbot-website/demo/index.html"><img src="https://img.shields.io/badge/DEMO-Try%20it-5865F2?style=for-the-badge&amp;labelColor=555555" alt="Try the interactive demo" height="28"></a>
   <a href="#download"><img src="https://img.shields.io/badge/DESKTOP-macOS%20%C2%B7%20Windows-168AAD?style=for-the-badge&amp;labelColor=555555" alt="Download for macOS and Windows" height="28"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/LICENSE-MIT-69A807?style=for-the-badge&amp;labelColor=555555" alt="MIT license" height="28"></a>
-  <a href="https://github.com/yxflc11/openbot/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/yxflc11/openbot/ci.yml?branch=main&amp;style=for-the-badge&amp;label=CI&amp;labelColor=555555" alt="CI status" height="28"></a>
+  <a href="https://github.com/Peerframe/openbot/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Peerframe/openbot/ci.yml?branch=main&amp;style=for-the-badge&amp;label=CI&amp;labelColor=555555" alt="CI status" height="28"></a>
   <br>
   <a href="README.md"><img src="https://img.shields.io/badge/LANG-English-3478C5?style=for-the-badge&amp;labelColor=555555" alt="Read in English" height="28"></a>
   <a href="README.zh-CN.md"><img src="https://img.shields.io/badge/LANG-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-D94848?style=for-the-badge&amp;labelColor=555555" alt="阅读简体中文版" height="28"></a>
@@ -28,10 +28,10 @@ A self-hosted workspace for Bots that remember their roles, work together in cha
 
 | Platform | Installer | Workspace |
 | --- | --- | --- |
-| macOS · Apple Silicon | [Download DMG](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.9/openbot-desktop-0.1.0-alpha.9-darwin-arm64.dmg) | Built-in Server and PostgreSQL, or connect to your Server |
-| Windows · x64 | [Download EXE](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.9/openbot-desktop-0.1.0-alpha.9-win32-x64.exe) | Built-in Server and PostgreSQL, or connect to your Server |
+| macOS · Apple Silicon | [Download DMG](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/openbot-desktop-0.1.0-alpha.9-darwin-arm64.dmg) | Built-in Server and PostgreSQL, or connect to your Server |
+| Windows · x64 | [Download EXE](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/openbot-desktop-0.1.0-alpha.9-win32-x64.exe) | Built-in Server and PostgreSQL, or connect to your Server |
 
-Preview installers are unsigned; macOS is not notarized. See [release notes and checksums](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.9) and the [installation guide](docs/DESKTOP_INSTALLATION.md) for system trust prompts, upgrades and other platform builds.
+Preview installers are unsigned; macOS is not notarized. See [release notes and checksums](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9) and the [installation guide](docs/DESKTOP_INSTALLATION.md) for system trust prompts, upgrades and other platform builds.
 
 ## Start working
 
@@ -58,7 +58,7 @@ OpenBot currently serves one workspace Owner. Delegation is bounded, and compute
 Use **Node.js 22.22.2**, **npm 10.9.9** and Docker for the local PostgreSQL service.
 
 ```sh
-git clone https://github.com/yxflc11/openbot.git
+git clone https://github.com/Peerframe/openbot.git
 cd openbot
 npm ci
 cp .env.example .env
@@ -92,7 +92,7 @@ See the [repository map](docs/REPOSITORY_MAP.md), [architecture](docs/ARCHITECTU
 
 **Plugins:** implement a standard MCP Streamable HTTP endpoint for tools, resources, prompts or Apps. Follow the [plugin contract](docs/PLUGINS.md), start from an [example](apps/server/src/plugin-example.ts), and submit your extension for review. No OpenBot-specific SDK is required; installation and per-Bot permission are separate steps.
 
-**Core:** read [Contributing](CONTRIBUTING.md), [open-source reuse](docs/OPEN_SOURCE_REUSE.md) and the [documentation index](docs/README.md). Use [Issues](https://github.com/yxflc11/openbot/issues) for bugs and proposals, and [pull requests](https://github.com/yxflc11/openbot/pulls) for changes. Report vulnerabilities through [Security](SECURITY.md).
+**Core:** read [Contributing](CONTRIBUTING.md), [open-source reuse](docs/OPEN_SOURCE_REUSE.md) and the [documentation index](docs/README.md). Use [Issues](https://github.com/Peerframe/openbot/issues) for bugs and proposals, and [pull requests](https://github.com/Peerframe/openbot/pulls) for changes. Report vulnerabilities through [Security](SECURITY.md).
 
 ## License and acknowledgments
 

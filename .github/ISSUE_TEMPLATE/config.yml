@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report a security vulnerability privately
-    url: https://github.com/yxflc11/openbot/security/advisories/new
+    url: https://github.com/Peerframe/openbot/security/advisories/new
     about: Do not publish credentials, private data, or exploitable computer-control details in an issue.

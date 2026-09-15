@@ -2,11 +2,11 @@
 
 [English](DESKTOP_INSTALLATION.md) · [简体中文](DESKTOP_INSTALLATION.zh-CN.md)
 
-**当前预览版：[Desktop 0.1.0-alpha.9](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.9)**，提供 macOS Apple Silicon DMG 与 Windows x64 EXE，随附合并清单和 SHA256SUMS。两者来自同一已通过完整 CI 的源码提交。下表也列出流水线支持的 Linux 构建目标；alpha.9 未发布 Linux 安装器。
+**当前预览版：[Desktop 0.1.0-alpha.9](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9)**，提供 macOS Apple Silicon DMG 与 Windows x64 EXE，随附合并清单和 SHA256SUMS。两者来自同一已通过完整 CI 的源码提交。下表也列出流水线支持的 Linux 构建目标；alpha.9 未发布 Linux 安装器。
 
 alpha.9 恢复频道成员菜单的姓名、头像与操作，保证插件权限编辑始终对应所选 Bot，并将任务状态或资源变化与真实频道权限丢失分开提示。中文界面的空白 PDF 提取失败和原始附件保存对话框也改为中文。升级流程保留已有工作区数据和模型配置。
 
-[固定版本发行页](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.9)记录源码提交和已通过的 main CI；随附的 [desktop-manifest.json](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.9/desktop-manifest.json)记录准确源码、所含平台和安装器摘要。请使用 [SHA256SUMS](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.9/SHA256SUMS)核对下载文件。Windows 安装与数据保留证据来自托管运行器，见[发行源码冷启动证据](WINDOWS_DESKTOP.zh-CN.md#发行源码冷启动证据)。正式签名、公证和用户 Windows 真机界面验收仍未完成。
+[固定版本发行页](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9)记录源码提交和已通过的 main CI；随附的 [desktop-manifest.json](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/desktop-manifest.json)记录准确源码、所含平台和安装器摘要。请使用 [SHA256SUMS](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/SHA256SUMS)核对下载文件。Windows 安装与数据保留证据来自托管运行器，见[发行源码冷启动证据](WINDOWS_DESKTOP.zh-CN.md#发行源码冷启动证据)。正式签名、公证和用户 Windows 真机界面验收仍未完成。
 
 | 平台 | Release 中的文件 | 安装方法 | 实际组合能力 |
 | --- | --- | --- | --- |
@@ -29,7 +29,7 @@ macOS arm64（Linux 请改用包含 AppImage 的已发布版本）：
 
 ```bash
 curl --proto '=https' --proto-redir '=https' --tlsv1.2 -fsSL \
-  https://raw.githubusercontent.com/yxflc11/openbot/main/scripts/install-desktop.sh \
+  https://raw.githubusercontent.com/Peerframe/openbot/main/scripts/install-desktop.sh \
   -o /tmp/openbot-install-desktop.sh
 bash /tmp/openbot-install-desktop.sh 0.1.0-alpha.9
 ```
@@ -41,7 +41,7 @@ Linux 安装到 `~/.local/opt/openbot/<version>/openbot.AppImage`，保留已有
 Windows x64，在 PowerShell 中执行：
 
 ```powershell
-Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/yxflc11/openbot/main/scripts/install-desktop.ps1 -OutFile "$env:TEMP\openbot-install-desktop.ps1"
+Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/Peerframe/openbot/main/scripts/install-desktop.ps1 -OutFile "$env:TEMP\openbot-install-desktop.ps1"
 & "$env:TEMP\openbot-install-desktop.ps1" -Version 0.1.0-alpha.9
 ```
 

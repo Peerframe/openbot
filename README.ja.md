@@ -8,7 +8,7 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Português (Brasil)](README.pt-BR.md)
 
-[![CI](https://github.com/yxflc11/openbot/actions/workflows/ci.yml/badge.svg)](https://github.com/yxflc11/openbot/actions/workflows/ci.yml)
+[![CI](https://github.com/Peerframe/openbot/actions/workflows/ci.yml/badge.svg)](https://github.com/Peerframe/openbot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](LICENSE)
 
 OpenBot は、自分で管理するコンピューター上で名前付きの AI 社員を運用するためのプラットフォームです。
@@ -43,11 +43,11 @@ Windows と Linux の初回起動はリモート接続を案内します。
 **[Desktop のダウンロードとインストール手順（英語）](docs/DESKTOP_INSTALLATION.md)** に、
 ファイル名、コマンドによるインストール、初回モデル設定をまとめています。DMG（macOS arm64）、
 ユーザー単位 EXE（Windows x64）、AppImage/DEB（Linux x64）はネイティブ CI で作成します。
-[Releases](https://github.com/yxflc11/openbot/releases) に `desktop-v...` の添付ファイルが公開
+[Releases](https://github.com/Peerframe/openbot/releases) に `desktop-v...` の添付ファイルが公開
 されるまでは、成功した CI のインストーラー成果物を使用してください（GitHub ログインが必要、
 保存期間 14 日）。公開はまだ保留中です。
 
-[GitHub Actions](https://github.com/yxflc11/openbot/actions/workflows/ci.yml) で対象コミットの成功した実行を開き、
+[GitHub Actions](https://github.com/Peerframe/openbot/actions/workflows/ci.yml) で対象コミットの成功した実行を開き、
 `openbot-desktop-<platform>-<arch>-<commit>.tar.gz` をダウンロードしてください。
 GitHub へのログインが必要で、保存期間は 7 日です。`tar -xzf <archive>` で実行権限とシンボリックリンクを保持して展開します。
 macOS は `OpenBot.app`、Windows は `openbot.exe`、Linux は `openbot` を開きます。
@@ -62,7 +62,7 @@ macOS は `OpenBot.app`、Windows は `openbot.exe`、Linux は `openbot` を開
 [宣言された範囲](package.json) 内の Node.js 24 LTS と npm を使い、対象 OS 上で実行します。
 
 ```bash
-git clone https://github.com/yxflc11/openbot.git
+git clone https://github.com/Peerframe/openbot.git
 cd openbot
 npm ci
 npm run check
