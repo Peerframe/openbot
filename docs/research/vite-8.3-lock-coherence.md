@@ -37,4 +37,3 @@ No source copied or substantially adapted. Preserve Vite's MIT license and exist
 - [Vite release](https://github.com/vitejs/vite/releases/tag/v8.3.0)
 - [Pinned plugin types](https://github.com/vitejs/vite/blob/434e8e9495436a60789f2b588a04a6a24a3d1661/packages/vite/src/node/plugin.ts)
 - [npm 10.9.9 dedupe contract](https://github.com/npm/cli/blob/v10.9.9/docs/lib/content/commands/npm-dedupe.md)
-

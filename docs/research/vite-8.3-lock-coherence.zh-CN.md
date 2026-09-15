@@ -22,4 +22,3 @@ npm 10.9.9 的 update/dedupe 在处理 Vitest 可选 peer 时出现 Arborist nul
 验证两处实际解析路径、干净安装、typecheck、完整 npm run check，以及已有真实开发服务 nonce/并发和生产/Desktop 构建测试。当前提交须通过 Linux、macOS、Windows CI，不增加支持声明。
 
 没有复制或实质改写上游源码，保留 Vite MIT 与既有依赖许可。官方来源及版本比较见英文页。
-

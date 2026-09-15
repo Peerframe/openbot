@@ -30,4 +30,3 @@ Run the actual PR-event research validator and documentation check locally. The 
 ## Source incorporation
 
 No upstream source copied or substantially adapted. Published dependency license files and existing notices remain intact. This is an evidence update for an existing package, not a new runtime capability.
-
