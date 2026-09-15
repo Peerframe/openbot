@@ -2,11 +2,11 @@
 
 [English](DESKTOP_INSTALLATION.md) · [简体中文](DESKTOP_INSTALLATION.zh-CN.md)
 
-**Current preview: [Desktop 0.1.0-alpha.9](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.9)** provides a macOS Apple Silicon DMG and Windows x64 EXE, with a combined manifest and SHA256SUMS. Both come from the same source commit that passed full CI. The table also lists Linux build targets; alpha.9 does not publish Linux installers.
+**Current preview: [Desktop 0.1.0-alpha.9](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9)** provides a macOS Apple Silicon DMG and Windows x64 EXE, with a combined manifest and SHA256SUMS. Both come from the same source commit that passed full CI. The table also lists Linux build targets; alpha.9 does not publish Linux installers.
 
 alpha.9 restores channel member names, avatars and controls, keeps plugin permission editing tied to the selected Bot, and distinguishes task-state or resource changes from actual channel permission loss. Empty-PDF extraction failures and the original-attachment save dialog now use Chinese copy in the Chinese interface. Existing workspace data and model settings are retained by the upgrade path.
 
-The [versioned release page](https://github.com/yxflc11/openbot/releases/tag/desktop-v0.1.0-alpha.9) records the source commit and successful main CI. Its [desktop-manifest.json](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.9/desktop-manifest.json) records the exact source, included targets and installer digests; verify downloads against [SHA256SUMS](https://github.com/yxflc11/openbot/releases/download/desktop-v0.1.0-alpha.9/SHA256SUMS). Windows installation and retained-data evidence comes from a hosted runner; see the [release-source cold-start evidence](WINDOWS_DESKTOP.md#release-source-cold-start-evidence). Production signing, notarization and manual Windows desktop acceptance remain outstanding.
+The [versioned release page](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9) records the source commit and successful main CI. Its [desktop-manifest.json](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/desktop-manifest.json) records the exact source, included targets and installer digests; verify downloads against [SHA256SUMS](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/SHA256SUMS). Windows installation and retained-data evidence comes from a hosted runner; see the [release-source cold-start evidence](WINDOWS_DESKTOP.md#release-source-cold-start-evidence). Production signing, notarization and manual Windows desktop acceptance remain outstanding.
 
 | Platform | File in the release | Installation | Available composition |
 | --- | --- | --- | --- |
@@ -35,7 +35,7 @@ macOS arm64 (for Linux, choose a published version that includes an AppImage):
 
 ```bash
 curl --proto '=https' --proto-redir '=https' --tlsv1.2 -fsSL \
-  https://raw.githubusercontent.com/yxflc11/openbot/main/scripts/install-desktop.sh \
+  https://raw.githubusercontent.com/Peerframe/openbot/main/scripts/install-desktop.sh \
   -o /tmp/openbot-install-desktop.sh
 bash /tmp/openbot-install-desktop.sh 0.1.0-alpha.9
 ```
@@ -48,7 +48,7 @@ script when finished. Neither path requests root privileges or starts Server/Wor
 Windows x64, from PowerShell:
 
 ```powershell
-Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/yxflc11/openbot/main/scripts/install-desktop.ps1 -OutFile "$env:TEMP\openbot-install-desktop.ps1"
+Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/Peerframe/openbot/main/scripts/install-desktop.ps1 -OutFile "$env:TEMP\openbot-install-desktop.ps1"
 & "$env:TEMP\openbot-install-desktop.ps1" -Version 0.1.0-alpha.9
 ```
 

@@ -8,7 +8,7 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Português (Brasil)](README.pt-BR.md)
 
-[![CI](https://github.com/yxflc11/openbot/actions/workflows/ci.yml/badge.svg)](https://github.com/yxflc11/openbot/actions/workflows/ci.yml)
+[![CI](https://github.com/Peerframe/openbot/actions/workflows/ci.yml/badge.svg)](https://github.com/Peerframe/openbot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](LICENSE)
 
 O OpenBot organiza funcionários de IA nos computadores que você controla. Canais, conversas,
@@ -45,12 +45,12 @@ A inicialização dos serviços locais tem evidência em macOS arm64; Windows e 
 **[Downloads e instalação do Desktop (em inglês)](docs/DESKTOP_INSTALLATION.md)** reúne os nomes
 dos arquivos, comandos de instalação e a primeira configuração do modelo. O CI nativo gera DMG
 (macOS arm64), EXE por usuário (Windows x64) e AppImage/DEB (Linux x64). Até que uma versão
-`desktop-v...` com anexos seja publicada em [Releases](https://github.com/yxflc11/openbot/releases),
+`desktop-v...` com anexos seja publicada em [Releases](https://github.com/Peerframe/openbot/releases),
 use os artefatos de instaladores de um CI bem-sucedido: exigem login e são retidos por 14 dias.
 A publicação ainda está pendente.
 
 Abra uma execução bem-sucedida do commit desejado em
-[GitHub Actions](https://github.com/yxflc11/openbot/actions/workflows/ci.yml) e baixe
+[GitHub Actions](https://github.com/Peerframe/openbot/actions/workflows/ci.yml) e baixe
 `openbot-desktop-<platform>-<arch>-<commit>.tar.gz`. É necessário entrar no GitHub; os artefatos
 expiram em sete dias. Extraia com `tar -xzf <archive>` para preservar permissões e links simbólicos.
 Abra `OpenBot.app` no macOS, `openbot.exe` no Windows ou `openbot` no Linux.
@@ -66,7 +66,7 @@ A Release antiga `v0.1.0-alpha.1` continua sendo um snapshot da fundação conte
 Use Node.js 24 LTS dentro do [intervalo declarado](package.json) e npm no sistema de destino:
 
 ```bash
-git clone https://github.com/yxflc11/openbot.git
+git clone https://github.com/Peerframe/openbot.git
 cd openbot
 npm ci
 npm run check

@@ -72,7 +72,7 @@ expected behavior, milestone, and permission boundary are recorded before implem
 Requirements: Node.js 22.22.2 (the CI baseline), npm 10.9.9, and Docker with Docker Compose. Other Node.js releases must satisfy the exact engine range in `package.json`. Use `npm ci` to reproduce the committed lockfile.
 
 ```bash
-git clone https://github.com/yxflc11/openbot.git
+git clone https://github.com/Peerframe/openbot.git
 cd openbot
 cp .env.example .env
 ```

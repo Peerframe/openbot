@@ -54,7 +54,7 @@ OpenBot 必须方便多位独立开发者参与，不能形成只有项目负责
 需要 Node.js 22.22.2（CI 基线）、npm 10.9.9、Docker 和 Docker Compose。其他 Node.js 版本必须满足 `package.json` 的精确 engines 范围。使用 `npm ci` 复现已提交的锁文件。模块职责、扩展入口和定向检查见[仓库地图](docs/REPOSITORY_MAP.zh-CN.md)。
 
 ```bash
-git clone https://github.com/yxflc11/openbot.git
+git clone https://github.com/Peerframe/openbot.git
 cd openbot
 cp .env.example .env
 ```

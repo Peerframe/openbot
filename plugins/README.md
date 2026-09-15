@@ -8,7 +8,7 @@ metadata, not executable uploads. Installation and Bot grants always require a s
 - [Protocol and limits](../docs/PLUGINS.md)
 - [Runnable example](../apps/server/src/plugin-example.ts)
 - [Catalog](catalog.json) and [schema](catalog.schema.json)
-- [Submit an integration](https://github.com/yxflc11/openbot/issues/new?template=plugin-submission.yml)
+- [Submit an integration](https://github.com/Peerframe/openbot/issues/new?template=plugin-submission.yml)
 
 A submission includes its source, exact revision, license, configuration, authentication, effects,
 platform scope, success/failure tests and maintainer contact. A maintainer reviews these before a
