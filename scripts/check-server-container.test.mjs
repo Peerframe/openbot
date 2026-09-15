@@ -229,7 +229,10 @@ test("rejects emulated-only, optional, or publishing container CI", () => {
     () =>
       validateServerContainer({
         ...valid,
-        workflow: `${workflow}\n      - run: docker push example\n`,
+        workflow: workflow.replace(
+          "bash scripts/smoke-server-container.sh",
+          "bash scripts/smoke-server-container.sh\n      - run: docker push example",
+        ),
       }),
     /non-publishing/,
   );
@@ -304,5 +307,21 @@ test("health probe aborts a stalled request", async () => {
         }),
     }),
     /abort|timeout/i,
+  );
+});
+
+test("isolates the container policy from a following peer job", () => {
+  const peer = "\n  independent_job:\n    runs-on: ubuntu-latest\n    continue-on-error: true\n";
+  assert.doesNotThrow(() => validateServerContainer({ ...valid, workflow: workflow + peer }));
+  assert.throws(
+    () =>
+      validateServerContainer({
+        ...valid,
+        workflow:
+          workflow.replace("bash scripts/smoke-server-container.sh", "echo missing smoke") +
+          peer +
+          "    steps:\n      - run: bash scripts/smoke-server-container.sh\n",
+      }),
+    /Server container CI job is missing required fragment/,
   );
 });

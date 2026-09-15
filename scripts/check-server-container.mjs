@@ -137,7 +137,9 @@ export function validateServerContainer({
 
   const jobStart = workflow.indexOf("\n  server-container:\n");
   if (jobStart === -1) throw new Error("CI is missing the native Server container job.");
-  const job = workflow.slice(jobStart);
+  const jobSource = workflow.slice(jobStart + 1);
+  const nextJob = jobSource.slice(1).search(/^ {2}[A-Za-z_][A-Za-z0-9_-]*:\s*$/m);
+  const job = nextJob === -1 ? jobSource : jobSource.slice(0, nextJob + 1);
   const requiredWorkflowFragments = [
     "name: Server container ($" + "{{ matrix.name }})",
     "runs-on: $" + "{{ matrix.runner }}",

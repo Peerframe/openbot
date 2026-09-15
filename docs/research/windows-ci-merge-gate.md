@@ -40,3 +40,5 @@ No upstream source copied or substantially adapted; no new dependency or distrib
 - Run existing security workflow tests and the full repository check.
 - Observe all current jobs and the final `check` at the exact PR head before merging; local tests alone do not prove hosted scheduling or Windows installation.
 - Update English and Chinese contributor guidance. This change grants no new platform support level.
+
+The existing Server container validator assumed its job was the last YAML job. Adding the final gate exposes that boundary error: the next job's `ubuntu-latest` is misread as a container runner. Bound extraction at the next peer job and test that peer content neither violates nor supplies the container contract; preserve all container restrictions.
