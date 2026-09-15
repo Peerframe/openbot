@@ -32,6 +32,8 @@ The reviewed intake is documented in CONTRIBUTING: select a bounded update batch
 
 Repository API inspection found vulnerability alerts and automated security fixes disabled. Enable those repository controls independently of the zero ordinary-update limit, and verify their state. Do not change secret-scanning settings or introduce a new workflow with write privileges. A security PR still needs evidence and CI; this change does not promise it will auto-merge or arrive pre-reviewed.
 
+Both controls were subsequently enabled and the automated-security-fixes API returned `enabled: true`, `paused: false`. The initial alert inventory contains one existing development-only esbuild advisory, `GHSA-67mh-4wv8-2f99` (medium), already present in the previous dependency baseline. This intake change does not claim to resolve that advisory; production audit and the existing development-tool restrictions remain separate checks.
+
 ## Source incorporation and validation
 
 No upstream source copied or substantially adapted; only official hosted-service options are reused. GitHub documentation terms apply. Verify all three zero limits, existing ignore/group semantics, enabled security controls, research-body validation and full `npm run check`. Require hosted checks on the integrated PR and merged main commit. No new platform or product authority is introduced.

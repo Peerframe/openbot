@@ -28,8 +28,8 @@ updates:
     open-pull-requests-limit: 0
     # Official ignore mechanism for SemVer majors:
     # https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#ignore
-    # Keep automatic Docker Node majors off the default lane. Patch/minor Node
-    # image updates (and security updates) remain eligible. A Node major
+    # Keep automatic Docker Node majors off the default lane. Reviewed batches
+    # may advance patch/minor versions; security proposals retain these rules. A Node major
     # (for example 24 → 26) requires human review against
     # docs/research/server-node24-production-container.md before any Dockerfile
     # pin change; do not treat Dependabot PR #3 (26.x) as the upgrade path.

@@ -392,3 +392,20 @@ React and React DOM now reuse the matching official 19.3.0 release / `1d34f91dfd
 Reuse Vite 8.3.0 / `434e8e9495436a60789f2b588a04a6a24a3d1661` (MIT) with one shared
 resolution for the Web configuration and React plugin. Preserve strict types and existing CSP
 checks; no copied source or new dependency. See [review](research/vite-8.3-lock-coherence.md).
+
+## Reviewed dependency intake and September 15 runtime updates
+
+Ordinary automated version proposals are paused using the official Dependabot v2 zero-limit
+contract; security updates remain eligible and require the same research and CI. See the
+[intake decision](research/dependency-update-intake.md). No custom update service or bot exemption.
+
+Electron 44.3.0 / `07e460719c75b2ec5ee4893f7d2192ef31c7b8c2` (MIT) retains the existing
+Desktop boundary and packaging adapters; see its [review](research/electron-44.3-ci-review.md).
+Anthropic 4.0.53 and Moonshot 3.0.49 / `9ed46d2da5df1394079c66d422bc553fd0c34376`
+(Apache-2.0) retain the guarded native provider adapters; see the [SDK review](research/ai-sdk-patches-september15.md).
+No upstream source copied or new capability granted. Earlier version entries retain their
+historical review context; the lockfile and this follow-up identify the current selection.
+
+React DOM types 19.3.0 / DefinitelyTyped `de5e8f01d01a14ae4ae502283d3d09f042f1ad89`
+and Zod 4.6.2 / `e359f7378fe56d695134701cda1e9055a08892dc` (both MIT) preserve the
+existing renderer and validation contracts. No copied source; see the [review](research/dependency-types-zod-september15.md).
