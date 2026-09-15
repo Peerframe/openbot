@@ -319,3 +319,9 @@ Windows 回执集成复用 PowerShell/.NET System.Text.Json 与现有有界 Node
 原生任务错误分类参考 RFC 9457 的机器类型/人类说明分离原则及 Node.js v22.22.2（2645dc73）
 公开错误码约定，沿用现有 Error/Run 目录。无新 HTTP 错误格式、依赖或源码复制，见
 [分类复核](research/native-failure-classification.zh-CN.md)。
+
+### Vite 8.3 依赖一致性
+
+继续复用 Vite 8.3.0 / `434e8e9495436a60789f2b588a04a6a24a3d1661`（MIT），让 Web 配置
+与 React 插件解析同一版本。保留严格类型与既有 CSP 检查；未复制源码或增加依赖。
+详见[研究](research/vite-8.3-lock-coherence.zh-CN.md)。

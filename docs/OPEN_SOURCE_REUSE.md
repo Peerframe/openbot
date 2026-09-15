@@ -382,3 +382,9 @@ copied source; see [research](research/channel-member-layout.md).
 Native Run failure classification follows RFC 9457's machine-type/human-detail separation and
 Node.js v22.22.2 (`2645dc73`) public error-code guidance inside the existing Error/Run catalogue.
 No new HTTP error format, dependency or copied source; see the [classification review](research/native-failure-classification.md).
+
+### Vite 8.3 dependency coherence
+
+Reuse Vite 8.3.0 / `434e8e9495436a60789f2b588a04a6a24a3d1661` (MIT) with one shared
+resolution for the Web configuration and React plugin. Preserve strict types and existing CSP
+checks; no copied source or new dependency. See [review](research/vite-8.3-lock-coherence.md).
