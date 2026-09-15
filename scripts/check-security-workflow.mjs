@@ -26,9 +26,9 @@ export function validateSecurityWorkflow(workflow) {
   }
 
   const securityJobStart = workflow.indexOf("\n  security:\n");
-  const checkJobStart = workflow.indexOf("\n  check:\n");
+  const checkJobStart = workflow.indexOf("\n  validate:\n");
   if (securityJobStart === -1 || checkJobStart <= securityJobStart) {
-    throw new Error("CI must define the security job before the check job.");
+    throw new Error("CI must define the security job before the validate job.");
   }
   const securityJob = workflow.slice(securityJobStart, checkJobStart);
   const requiredSecurityFragments = [
@@ -161,6 +161,41 @@ export function validateSecurityWorkflow(workflow) {
 
   if (/continue-on-error:|(?:ubuntu|windows|macos)-latest/.test(portableJob)) {
     throw new Error("CI portable matrix members must be required and use explicit runner labels.");
+  }
+  const gate = workflow.match(
+    /^ {2}check:\n([\s\S]*?)(?=^ {2}[A-Za-z_][A-Za-z0-9_-]*:\n|$(?![\s\S]))/m,
+  )?.[1];
+  const jobIds = [
+    ...workflow
+      .slice(workflow.indexOf("\njobs:\n"))
+      .matchAll(/^ {2}([A-Za-z_][A-Za-z0-9_-]*):\s*$/gm),
+  ]
+    .map((match) => match[1])
+    .filter((id) => id !== "check");
+  const requiredJobs = gate
+    ?.match(/^ {4}needs: \[([^\]]+)\]$/m)?.[1]
+    .split(",")
+    .map((id) => id.trim());
+  if (
+    !gate ||
+    !gate.includes("    if: always()\n") ||
+    !requiredJobs ||
+    new Set(requiredJobs).size !== jobIds.length ||
+    jobIds.some((id) => !requiredJobs.includes(id)) ||
+    /continue-on-error:/.test(workflow)
+  ) {
+    throw new Error("CI check must always require every job without failure exemptions.");
+  }
+  const resultJobs = [...gate.matchAll(/needs\.([a-z][a-z0-9-]*)\.result/g)].map(
+    (match) => match[1],
+  );
+  if (
+    resultJobs.length !== requiredJobs.length ||
+    requiredJobs.some((id) => !resultJobs.includes(id)) ||
+    !gate.includes('if [[ "$result" != "success" ]]; then') ||
+    !gate.includes("              exit 1\n")
+  ) {
+    throw new Error("CI check must inspect every prerequisite and accept only success.");
   }
 }
 

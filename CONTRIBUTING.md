@@ -161,6 +161,14 @@ When expanding old code, locate its entry in the
 [retroactive reuse ledger](docs/OPEN_SOURCE_REUSE.md) first; an absent or partial entry must be
 reviewed before expansion.
 
+### Required CI completion
+
+The protected `check` status is the final CI gate. It waits for security scanning, repository
+validation, every portable platform, the Windows Worker Host build, database journeys, and both
+Server container architectures. A failed, cancelled, or skipped required job prevents success.
+Wait for this gate on the latest PR commit before merging; local `npm run check` covers only the
+repository checks and cannot substitute for hosted platform results.
+
 ### Research evidence and documentation exemptions
 
 Behavior, dependency, protocol and non-trivial feature changes use the seven research fields in the

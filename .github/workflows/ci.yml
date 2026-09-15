@@ -43,7 +43,7 @@ jobs:
           set -e
           node scripts/check-credential-findings.mjs "${RUNNER_TEMP}/trufflehog-results.jsonl" "$status"
 
-  check:
+  validate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -91,6 +91,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: ./scripts/check-windows-receipt-identity.ps1
+      - name: Verify installer progress and timeout bounds
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/check-windows-installer-progress.ps1
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build
@@ -349,3 +353,27 @@ jobs:
         env:
           OPENBOT_TEST_IMAGE: openbot-server:smoke
           OPENBOT_TEST_PLATFORM: ${{ matrix.arch }}
+
+  # Keep this protected context pending until every platform and integration job finishes.
+  check:
+    if: always()
+    needs: [security, validate, portable, windows-worker-host, database, server-container]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every CI job to succeed
+        shell: bash
+        env:
+          SECURITY_RESULT: ${{ needs.security.result }}
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+          PORTABLE_RESULT: ${{ needs.portable.result }}
+          WINDOWS_WORKER_HOST_RESULT: ${{ needs.windows-worker-host.result }}
+          DATABASE_RESULT: ${{ needs.database.result }}
+          SERVER_CONTAINER_RESULT: ${{ needs.server-container.result }}
+        run: |
+          for result in "$SECURITY_RESULT" "$VALIDATE_RESULT" "$PORTABLE_RESULT" "$WINDOWS_WORKER_HOST_RESULT" "$DATABASE_RESULT" "$SERVER_CONTAINER_RESULT"; do
+            if [[ "$result" != "success" ]]; then
+              printf 'Every required CI job must succeed; observed result: %s\n' "$result" >&2
+              exit 1
+            fi
+          done
