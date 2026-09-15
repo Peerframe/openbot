@@ -319,3 +319,7 @@ Windows 回执集成复用 PowerShell/.NET System.Text.Json 与现有有界 Node
 原生任务错误分类参考 RFC 9457 的机器类型/人类说明分离原则及 Node.js v22.22.2（2645dc73）
 公开错误码约定，沿用现有 Error/Run 目录。无新 HTTP 错误格式、依赖或源码复制，见
 [分类复核](research/native-failure-classification.zh-CN.md)。
+
+## React 运行时版本一致性（2026-09-15）
+
+React 与 React DOM 共同采用官方 19.3.0 / `1d34f91dfde6bba84d08b683aaba164c7194dacb`（MIT），类型声明为 `@types/react` 19.3.0 与兼容的现有 `@types/react-dom` 19.2.7。上文 19.2.8 条目保留原始审查背景。通过官方 Dependabot 窄范围组共同提出运行时和声明更新；上游精确版本保护、现有交互测试和生产审计继续有效。未复制上游源码或引入本地渲染器。参见[研究记录](research/react-19.3-version-coherence.zh-CN.md)。
