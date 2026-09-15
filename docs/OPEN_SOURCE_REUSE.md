@@ -386,3 +386,9 @@ No new HTTP error format, dependency or copied source; see the [classification r
 ## React runtime version coherence (2026-09-15)
 
 React and React DOM now reuse the matching official 19.3.0 release / `1d34f91dfde6bba84d08b683aaba164c7194dacb` (MIT), with `@types/react` 19.3.0 and compatible existing `@types/react-dom` 19.2.7. The prior 19.2.8 entries above describe their original reviews. A narrow official Dependabot group keeps runtime and declaration update proposals together; the upstream exact-version guard, existing interaction tests and production audit remain gates. No upstream source copied or local renderer introduced. See [research](research/react-19.3-version-coherence.md).
+
+## Vite 8.3 dependency coherence
+
+Reuse Vite 8.3.0 / `434e8e9495436a60789f2b588a04a6a24a3d1661` (MIT) with one shared
+resolution for the Web configuration and React plugin. Preserve strict types and existing CSP
+checks; no copied source or new dependency. See [review](research/vite-8.3-lock-coherence.md).
