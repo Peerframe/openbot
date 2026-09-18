@@ -3,9 +3,9 @@
 # OpenBot
 
 <p align="center">
-  <a href="https://yxflc11.github.io/openbot-website/zh-cn/"><img src="https://img.shields.io/badge/WEB-OpenBot-57A639?style=for-the-badge&amp;labelColor=555555" alt="OpenBot 官网" height="28"></a>
-  <a href="https://yxflc11.github.io/openbot-website/zh-cn/manual/installation/"><img src="https://img.shields.io/badge/DOCS-%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8C-E7B416?style=for-the-badge&amp;labelColor=555555" alt="使用手册" height="28"></a>
-  <a href="https://yxflc11.github.io/openbot-website/demo/index.html"><img src="https://img.shields.io/badge/DEMO-%E4%BD%93%E9%AA%8C%E6%BC%94%E7%A4%BA-5865F2?style=for-the-badge&amp;labelColor=555555" alt="体验交互演示" height="28"></a>
+  <a href="https://peerframe.github.io/openbot-website/zh-cn/"><img src="https://img.shields.io/badge/WEB-OpenBot-57A639?style=for-the-badge&amp;labelColor=555555" alt="OpenBot 官网" height="28"></a>
+  <a href="https://peerframe.github.io/openbot-website/zh-cn/manual/installation/"><img src="https://img.shields.io/badge/DOCS-%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8C-E7B416?style=for-the-badge&amp;labelColor=555555" alt="使用手册" height="28"></a>
+  <a href="https://peerframe.github.io/openbot-website/demo/index.html"><img src="https://img.shields.io/badge/DEMO-%E4%BD%93%E9%AA%8C%E6%BC%94%E7%A4%BA-5865F2?style=for-the-badge&amp;labelColor=555555" alt="体验交互演示" height="28"></a>
   <a href="#下载"><img src="https://img.shields.io/badge/DESKTOP-macOS%20%C2%B7%20Windows-168AAD?style=for-the-badge&amp;labelColor=555555" alt="下载 macOS 与 Windows 版" height="28"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/LICENSE-MIT-69A807?style=for-the-badge&amp;labelColor=555555" alt="MIT license" height="28"></a>
   <a href="https://github.com/Peerframe/openbot/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Peerframe/openbot/ci.yml?branch=main&amp;style=for-the-badge&amp;label=CI&amp;labelColor=555555" alt="CI status" height="28"></a>
@@ -18,7 +18,7 @@
 
 一个可以自托管的 Bot 工作区。为 Bot 定义职责，让它们在频道中交流、分工，并交付可用的文件。
 
-[![OpenBot 频道工作区，使用示例数据](docs/design/openbot-channel-demo.png)](https://yxflc11.github.io/openbot-website/demo/index.html)
+[![OpenBot 频道工作区，使用示例数据](docs/design/openbot-channel-demo.png)](https://peerframe.github.io/openbot-website/demo/index.html)
 
 *实际频道组件截图，使用示例数据。点击可体验交互演示，演示不连接模型。*
 
@@ -51,7 +51,7 @@
 - **接入工具。** 审核 MCP 工具、资源、提示词和隔离的交互式 Apps，按 Bot 授予所需访问权限。
 - **安排重复工作。** 创建固定间隔任务，暂停或恢复，查看最近一次执行结果。
 
-当前工作区面向单一 Owner。Bot 分工有层级与并发限制；电脑控制需要另行登记 Worker 并连接兼容 Provider。具体用法与边界见[使用手册](https://yxflc11.github.io/openbot-website/zh-cn/manual/channels/)。
+当前工作区面向单一 Owner。Bot 分工有层级与并发限制；电脑控制需要另行登记 Worker 并连接兼容 Provider。具体用法与边界见[使用手册](https://peerframe.github.io/openbot-website/zh-cn/manual/channels/)。
 
 ## 从源码运行
 
@@ -84,7 +84,7 @@ Desktop 和 Web 共用 React 界面。Server 统一管理 Bot 身份、路由、
 | [apps/server](apps/server) | API、模型执行、协作调度与权限 |
 | [apps/node](apps/node) · [Worker Hosts](docs/NODE_ENROLLMENT.zh-CN.md) | 已登记的执行节点与原生生命周期 |
 | [packages](packages) · [providers](providers) | 共享契约与执行适配器 |
-| [openbot-website](https://github.com/yxflc11/openbot-website) | 独立官网、手册与交互演示 |
+| [openbot-website](https://github.com/Peerframe/openbot-website) | 独立官网、手册与交互演示 |
 
 模块职责与接入边界详见[仓库地图](docs/REPOSITORY_MAP.zh-CN.md)、[架构](docs/ARCHITECTURE.zh-CN.md)和[安全模型](docs/SECURITY.md)。
 
