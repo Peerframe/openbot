@@ -3,9 +3,9 @@
 # OpenBot
 
 <p align="center">
-  <a href="https://yxflc11.github.io/openbot-website/"><img src="https://img.shields.io/badge/WEB-OpenBot-57A639?style=for-the-badge&amp;labelColor=555555" alt="OpenBot website" height="28"></a>
-  <a href="https://yxflc11.github.io/openbot-website/manual/installation/"><img src="https://img.shields.io/badge/DOCS-Manual-E7B416?style=for-the-badge&amp;labelColor=555555" alt="User manual" height="28"></a>
-  <a href="https://yxflc11.github.io/openbot-website/demo/index.html"><img src="https://img.shields.io/badge/DEMO-Try%20it-5865F2?style=for-the-badge&amp;labelColor=555555" alt="Try the interactive demo" height="28"></a>
+  <a href="https://peerframe.github.io/openbot-website/"><img src="https://img.shields.io/badge/WEB-OpenBot-57A639?style=for-the-badge&amp;labelColor=555555" alt="OpenBot website" height="28"></a>
+  <a href="https://peerframe.github.io/openbot-website/manual/installation/"><img src="https://img.shields.io/badge/DOCS-Manual-E7B416?style=for-the-badge&amp;labelColor=555555" alt="User manual" height="28"></a>
+  <a href="https://peerframe.github.io/openbot-website/demo/index.html"><img src="https://img.shields.io/badge/DEMO-Try%20it-5865F2?style=for-the-badge&amp;labelColor=555555" alt="Try the interactive demo" height="28"></a>
   <a href="#download"><img src="https://img.shields.io/badge/DESKTOP-macOS%20%C2%B7%20Windows-168AAD?style=for-the-badge&amp;labelColor=555555" alt="Download for macOS and Windows" height="28"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/LICENSE-MIT-69A807?style=for-the-badge&amp;labelColor=555555" alt="MIT license" height="28"></a>
   <a href="https://github.com/Peerframe/openbot/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Peerframe/openbot/ci.yml?branch=main&amp;style=for-the-badge&amp;label=CI&amp;labelColor=555555" alt="CI status" height="28"></a>
@@ -18,7 +18,7 @@
 
 A self-hosted workspace for Bots that remember their roles, work together in channels, and deliver files you can use.
 
-[![OpenBot channel workspace with sample data](docs/design/openbot-channel-demo.png)](https://yxflc11.github.io/openbot-website/demo/index.html)
+[![OpenBot channel workspace with sample data](docs/design/openbot-channel-demo.png)](https://peerframe.github.io/openbot-website/demo/index.html)
 
 *The real channel components, shown with sample data. The interactive demo does not connect to a model.*
 
@@ -51,7 +51,7 @@ Saved settings, encrypted credentials and workspace data are reused when you reo
 - **Connect more tools.** Review MCP tools, resources, prompts and isolated interactive Apps; grant access to the Bots that need them.
 - **Set recurring work.** Schedule fixed-interval tasks, pause or resume them, and review the last outcome.
 
-OpenBot currently serves one workspace Owner. Delegation is bounded, and computer control requires a separately enrolled Worker and compatible Provider. Read the [manual](https://yxflc11.github.io/openbot-website/manual/channels/) for workflows and limits.
+OpenBot currently serves one workspace Owner. Delegation is bounded, and computer control requires a separately enrolled Worker and compatible Provider. Read the [manual](https://peerframe.github.io/openbot-website/manual/channels/) for workflows and limits.
 
 ## Run from source
 
@@ -84,7 +84,7 @@ Desktop and Web share a React interface. The Server owns Bot identities, routing
 | [apps/server](apps/server) | API, model execution, collaboration and authorization |
 | [apps/node](apps/node) · [Worker Hosts](docs/NODE_ENROLLMENT.md) | Enrolled execution and native lifecycle |
 | [packages](packages) · [providers](providers) | Shared contracts and execution adapters |
-| [openbot-website](https://github.com/yxflc11/openbot-website) | Independent website, manuals and demo |
+| [openbot-website](https://github.com/Peerframe/openbot-website) | Independent website, manuals and demo |
 
 See the [repository map](docs/REPOSITORY_MAP.md), [architecture](docs/ARCHITECTURE.md) and [security model](docs/SECURITY.md) for ownership and integration boundaries.
 
