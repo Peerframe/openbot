@@ -41,6 +41,21 @@ PostgreSQL 17.11 dump/restore and existing production readers. It covers a synth
 directory profile; operational backup, other key profiles and PITR remain partial. No upstream
 source is copied or substantially adapted by these additions.
 
+[Official snapshot subscriptions](research/official-workspace-snapshot-stream.md) reuse native
+EventSource, React 19.3.0 and Electron 44.3.0 / `07e460719c75b2ec5ee4893f7d2192ef31c7b8c2`
+(MIT), with explicit subscription ownership rather than an inferred global revision.
+[Worker cancellation](research/worker-run-cancellation.md) reuses PostgreSQL 17.11 row locks,
+existing Drizzle/Postgres.js transactions, ws 8.21.3 (MIT) and cooperative Node abort. No lease or
+remote rollback guarantee is added. [Attachment input evidence](research/attachment-report-evidence.md)
+uses existing AI SDK 7.0.93 (Apache-2.0), immutable attachment storage and Node SHA-256; the Server
+records supplied bytes/text ranges without treating them as verified conclusions.
+[Starter slices](research/contributor-starter-slices.md) reuse the existing DOM test harness.
+[OAuth lifecycle research](research/mcp-oauth-account-lifecycle.md) proposes SDK 1.30.0 plus
+oauth4webapi 3.8.8 / `916b97952dbf431d8b72f369840de54f5a286e4d` (MIT) primitives, but adds no
+dependency or OAuth capability yet. These additions copy no upstream source.
+[Context cutoff precision](research/r3-preceding-answer-timestamptz.md) reuses the pinned
+PostgreSQL/Drizzle stack and compares original timestamps in SQL, avoiding JS Date truncation.
+
 OpenBot researches established open-source implementations before designing a non-trivial feature.
 The goal is to reuse maintained standards, libraries, protocols, and narrow services instead of
 building another incompatible subsystem.

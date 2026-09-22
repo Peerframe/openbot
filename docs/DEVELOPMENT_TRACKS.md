@@ -26,6 +26,13 @@ shared wire/storage/security changes before parallel clients depend on them. The
 owns shared manifests, the reuse ledger, full checks and cross-track regressions. Maintainer review
 and publication responsibility is not assigned to fictional module owners.
 
+For new implementation packages, use the existing Grok Bot collaborators; Codex owns bounded
+review, integration and acceptance. Do not duplicate the same implementation with Codex agents.
+Grok Bots share a machine: give every package a distinct Git worktree and test database, use an
+explicit working directory and push a verified commit to a named branch. A branch name alone
+does not isolate a checkout. Deliver a commit/patch, actual checks and remaining limits; retain
+Draft PRs until integration review. Token savings have not been measured.
+
 ## First-wave completion ledger
 
 | Package | State | Evidence entry |
@@ -58,15 +65,15 @@ requires an explicitly supplied empty loopback database. These are separate acce
 
 ## Next packages and dependencies
 
-The third wave below is integrated. C4 and B1b are now in separate implementation worktrees;
-P2 is in standards/adapter research while the first real provider remains unselected.
+The third wave below is integrated. C4, B1b, F1a and Grok's D3 are integrated locally; their
+combined checks passed. Grok's R3 revision is also integrated; D4 remains in implementation.
+P2 has a reviewed research handoff; no OAuth feature or real provider is enabled.
 
 | Package | Next concrete outcome | Dependency / boundary |
 | --- | --- | --- |
-| C4 — Official snapshot-stream lifecycle | Adopt the optional stream with explicit mutation/reconnect ordering | C3 has corrected authoritative GET counts; first add Desktop replacement/cleanup slots and preserve profile notifications. |
+| D4 — Starter DOM regressions | Implement the four focused dialog/tab regression cards | Grok Builder; depends on D3 [Draft PR #85](https://github.com/Peerframe/openbot/pull/85), own worktree; jsdom is not real-browser accessibility evidence. |
 | P2 — Account lifecycle | One reviewed OAuth connector supports login, expiry, refresh and revocation with bounded diagnostics | MCP authorization research and explicit provider test account; no credential passthrough or silent scope expansion |
-| B1b — Owner Worker-task cancellation | Owner can cancel a Worker Run, pending approvals become unusable and Node cleanup retains occupancy | B1a provides the real Server/Node/Provider acceptance baseline. Fix approval/cancel/complete and reconnect races; cancellation cannot promise rollback of an external action. Full capability leases remain a separate package. |
-| F1 — Files and code | Synthetic input → verified report or tested patch with attributable artifacts | R1 and reviewed file boundaries; reuse existing attachment and artifact mechanisms |
+| F1b — Tested code delivery | Synthetic input produces a tested patch with attributable artifacts | F1a records report inputs, not verified findings or tested code. Define the code execution boundary and reuse existing file/Worker mechanisms before implementation. |
 | S1b — Reviewed reconciliation and retention | Owner can record reviewed external evidence and manage receipt capacity | S1a preserves unknown outcomes; a received response or task cancellation does not prove external completion or rollback. Never replay an uncertain write. |
 | L1 — Verifiable learning | A reviewed correction produces a versioned method with evidence and rollback | R1 keeps learning optional; preserve Hermes attribution and separate checkpoints, memory, traces and skills |
 | M1 — Useful collaboration | Evidence-bearing delegation with one accountable parent, shared budget and resource exclusion | Stable task/action contracts; parallel Bot names do not imply credential isolation |
@@ -84,9 +91,9 @@ deliverables; they remain visible in the product roadmap rather than being impli
 S1a now has a separate bounded receipt ledger; its 500-entry audit and ephemeral approval
 arguments are not recovery checkpoints. Unknown receipts are protected from history eviction,
 and 256 protected records refuse new calls. B1a exercises the existing reviewed browser click
-through the official runner. Neither completes its parent track. The next browser package B1b
-must add real Owner Worker cancellation and terminate approval waits on disconnect, with shared
-Run-before-approval lock ordering, late-result rejection and retained Node cleanup occupancy.
+through the official runner. Neither completes its parent track. B1b adds real Owner Worker
+cancellation, interrupted approval invalidation, Run-before-approval lock ordering, late-result
+rejection and retained Node cleanup occupancy. It still does not acknowledge remote rollback.
 The capability-lease ADR remains proposed and does not establish cross-process exclusivity.
 
 A ready package states the observable result, non-goals, module entry, prerequisites, focused
@@ -163,3 +170,32 @@ first wave. No release was published. Follow-up packages above remain open.
 - CI adds required restore and Docker conformance commands to the existing database job and
   retains the conformance report. Hosted execution has not been observed. No release, real paid
   model run, external OAuth account or additional native installation is claimed.
+
+## Fourth-wave integration and Grok handoff — 2026-09-23
+
+| Package | Result | Evidence and limits |
+| --- | --- | --- |
+| C4 | Integrated locally | Official Web/Desktop consumes snapshots with mutation/GET barriers, old-frame rejection and independent Desktop stream slots. Seven actual browser fixtures passed, including 390px layout. Sustained legacy events can still trigger one coalesced GET per second. |
+| B1b | Integrated locally | Owner Worker cancellation invalidates pending approvals and rejects late results. A real member-removal/approval deadlock was fixed using compatible channel row locks. The package passed 13 PostgreSQL transaction tests and 18 conformance checks; cancellation is not remote rollback. |
+| F1a | Integrated locally | Report appendix and artifact metadata record original/text SHA-256, cumulative UTF-16 read ranges and extraction truncation. Six focused evidence tests and a real Owner upload → corrected continuation → downloaded report journey pass. This does not verify conclusions or deliver tested patches. |
+| D3 | Grok delivery integrated locally | [Draft PR #85](https://github.com/Peerframe/openbot/pull/85), source `7b9b930`: four small DOM regression cards and reclassified larger tooling tasks. Listed implementation work remains open until D4 passes. |
+| R3 | Grok revision integrated locally | [Draft PR #86](https://github.com/Peerframe/openbot/pull/86), sources `2ceb806` / `6815464`: SQL retains PostgreSQL microseconds. Fixed timeline reproduces old-code failure; preceding answers are included while later human/task-tree/after-start input remains excluded. |
+| P2 research | Integrated; implementation open | [OAuth lifecycle](research/mcp-oauth-account-lifecycle.md) defines strict discovery, refresh/disconnect races, no replay and a synthetic acceptance journey. No new dependency or external account. |
+
+Combined `npm run check` passed at `6ff3f48`: Server 574 tests (89 environment-dependent skips),
+Web 421, Desktop 365 (one existing skip), Node 52 (three existing skips), 31 test tasks and
+18 build tasks. This ordinary gate does not execute the skipped database suites. F1a's separate
+runtime run passed its seven headless scenarios but failed the existing preceding-answer context
+case (112 passed, one failed). After integrating R3, `npm run test:runtime` passed all 113 tests
+on a new PostgreSQL fixture, and the final `npm run check` passed. The integrated Worker suite
+also passed 13 database transaction tests and 18 required conformance checks with zero failures
+or skips; owned resources were removed. D4 and the remaining parent tracks are still open.
+
+Review of Grok's first R3 patch found a fixed reply/start timestamp mixed with clock-dependent
+source timestamps. The revision fixes the full timeline and demonstrates old-code failure/new-code
+success. Integration places the independent-tree negative reply before start so that only its
+input boundary, not the start cutoff, excludes it.
+Grok's shared checkout also allowed one Bot's branch switch to affect another Bot's push; an
+empty D4 remote branch was mistakenly pushed and removed. No `main` merge occurred. Subsequent
+Grok work requires separate worktrees and explicit commit-to-branch pushes. Codex does not
+duplicate D4 or R3 implementation; it reviews and runs integration checks.

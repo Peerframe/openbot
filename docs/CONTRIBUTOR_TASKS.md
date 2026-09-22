@@ -38,7 +38,7 @@ Status: implemented locally and wired into the database CI job. `npm run test:up
 
 ## Next: consistent workspace snapshot contract
 
-Status: coherent snapshot and independent subscription baseline implemented; a durable global ordering contract is not implemented. See [snapshot contract](WORKSPACE_SYNC.md) and `npm run test:workspace`. The existing Web optimistic projections remain a separate migration.
+Status: coherent snapshots, authoritative counts and official Web/Desktop subscriptions are implemented; a durable global ordering contract is not implemented. See [snapshot contract](WORKSPACE_SYNC.md) and `npm run test:workspace`. Connection sequence is local to each stream; mutation barriers retain existing immediate projections.
 
 - **Outcome:** define snapshot revision and count semantics that another client can implement without
   reproducing the Web client's event heuristics.
@@ -48,7 +48,7 @@ Status: coherent snapshot and independent subscription baseline implemented; a d
   isolation; record an ADR before changing the wire format.
 - **Acceptance:** a deterministic reproduction covers counts queried at different times, active Runs
   outside the recent-Run page, duplicate events and reconnect. Define compatible behavior before
-  implementation; the existing Web currently does not consume `counts.activeRuns`.
+  implementation; the existing Web now displays Server-authoritative `counts.activeRuns`.
 - **Out of scope:** a new global client cache framework or moving Server authority into the browser.
 
 ## Starter: Create Bot dialog modal lifecycle regression

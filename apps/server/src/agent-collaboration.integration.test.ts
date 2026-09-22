@@ -279,7 +279,7 @@ describe.skipIf(!url)("PostgreSQL channel Bot collaboration", () => {
         timestamptz '2026-01-15 12:00:00.123950+00'
       )
     `;
-    // Independent later task-tree Bot reply after next's input boundary — must stay excluded.
+    // This reply precedes start, so only the later task-tree boundary can exclude it.
     await required(database).client`
       insert into messages (id, channel_id, author_type, author_id, run_id, content, created_at)
       values (
@@ -289,7 +289,7 @@ describe.skipIf(!url)("PostgreSQL channel Bot collaboration", () => {
         ${f.root.botId},
         ${later.run.id},
         'FOREIGN_TREE_REPLY_AFTER_INPUT',
-        timestamptz '2026-01-15 12:00:00.200000+00'
+        timestamptz '2026-01-15 12:00:00.123500+00'
       )
     `;
     const context = JSON.stringify(await f.native.initialContext(active));

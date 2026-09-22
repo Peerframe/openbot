@@ -36,14 +36,14 @@
 
 ## 后续研究：一致的工作区快照契约
 
-状态：一致快照和独立订阅基础已实现；持久全局顺序契约尚未实现。详见 [快照契约](WORKSPACE_SYNC.zh-CN.md) 与 `npm run test:workspace`。现有 Web 乐观投影仍待单独迁移。
+状态：一致快照、权威计数和正式 Web/Desktop 订阅已实现；持久全局顺序契约尚未实现。详见 [快照契约](WORKSPACE_SYNC.zh-CN.md) 与 `npm run test:workspace`。序号只属于各自连接，操作顺序屏障保留即时投影。
 
 - **结果：**明确快照版本与计数语义，使其他客户端不必重新猜测 Web 的事件合并规则。
 - **路径：**Server 工作区查询/事件、`packages/domain`、`packages/protocol` 和
   `apps/web/src/use-workspace-state.ts`；见[工作区调研](research/workspace-state-refactor.zh-CN.md)。
 - **先调研：**比较维护中的带版本快照/事件 API 和 PostgreSQL 快照隔离；修改接口前写 ADR。
 - **验收：**确定性复现分别读取计数、近期列表以外的活动 Run、重复事件和重连；实现前说明
-  兼容行为。当前 Web 没有使用 `counts.activeRuns` 字段。
+  兼容行为。当前 Web 已显示 Server 权威的 `counts.activeRuns` 字段。
 - **不包含：**新增全局客户端缓存框架，或把 Server 权限移到浏览器。
 
 ## 入门：创建 Bot 对话框模态生命周期回归

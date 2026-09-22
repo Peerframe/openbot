@@ -35,6 +35,19 @@ schema，不引入状态框架或服务商权限。[Docker 浏览器验收](rese
 和生产读取器，覆盖合成 POSIX Server 模型目录配置；运维备份、其他密钥配置和 PITR 仍未完成。
 这些新增部分没有复制或实质改编上游源码。
 
+[正式快照订阅](research/official-workspace-snapshot-stream.md) 复用原生 EventSource、React
+19.3.0 与 Electron 44.3.0 / `07e460719c75b2ec5ee4893f7d2192ef31c7b8c2`（MIT），明确订阅
+归属，不虚构全局版本。[Worker 取消](research/worker-run-cancellation.md) 复用 PostgreSQL
+17.11 行锁、Drizzle/Postgres.js 事务、ws 8.21.3（MIT）及 Node 协作式中断，不增加能力租约或
+远端回滚保证。[附件输入证据](research/attachment-report-evidence.md) 复用 AI SDK 7.0.93
+（Apache-2.0）、不可变附件存储和 Node SHA-256；Server 记录提供过的字节或文本范围，不视为
+结论已经验证。[入门切片](research/contributor-starter-slices.md) 复用现有 DOM 测试基础。
+[OAuth 生命周期研究](research/mcp-oauth-account-lifecycle.zh-CN.md) 提议使用 SDK 1.30.0 与
+oauth4webapi 3.8.8 / `916b97952dbf431d8b72f369840de54f5a286e4d`（MIT）的公开接口，尚未
+引入依赖或启用 OAuth 功能。以上没有复制上游源码。
+[上下文时间精度](research/r3-preceding-answer-timestamptz.zh-CN.md) 复用固定的 PostgreSQL/
+Drizzle，在 SQL 中比较原始时间戳，避免 JS Date 丢失微秒。
+
 OpenBot 在设计任何非简单功能前，必须先调研成熟的开源实现。目标是优先复用持续维护的标准、
 依赖、协议和窄服务，避免再造一套不兼容系统。
 
