@@ -3,13 +3,18 @@ import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { isIP } from "node:net";
 import { checkServerIdentity } from "node:tls";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import type { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { AjvJsonSchemaValidator } from "@modelcontextprotocol/sdk/validation/ajv";
 import { isPublicSourceAddress } from "./agent-sources.js";
 import {
+  checkPluginHttpResponse,
+  checkPluginToolResult,
+  createPluginMcpClient,
+  listCompatiblePluginTools,
+  pluginFailure,
+} from "./plugin-compatibility.js";
+import {
   boundedJson,
-  checkPluginSchema,
   PluginError,
   type PluginPrompt,
   type PluginResource,
@@ -54,7 +59,7 @@ export async function abortPluginOperation<T>(
     return await Promise.race([
       operation,
       new Promise<never>((_resolve, reject) => {
-        abort = () => reject(new PluginError("unavailable"));
+        abort = () => reject(pluginFailure(signal.reason, signal));
         signal.addEventListener("abort", abort, { once: true });
       }),
     ]);
@@ -141,6 +146,15 @@ export function pluginFetch(
           const status = response.statusCode ?? 500;
           const contentType = response.headers["content-type"] ?? "";
           const encoding = response.headers["content-encoding"];
+          if (!terminating) {
+            try {
+              checkPluginHttpResponse(status, contentType);
+            } catch (error) {
+              response.destroy();
+              reject(error);
+              return;
+            }
+          }
           if (
             (status >= 300 && status < 400) ||
             (encoding && encoding !== "identity") ||
@@ -157,21 +171,13 @@ export function pluginFetch(
             if (size > maximumBytes) response.destroy(new PluginError("unavailable"));
             else chunks.push(chunk);
           });
-          response.on("error", () => reject(new PluginError("unavailable")));
+          response.on("error", (error) => reject(pluginFailure(error, deadline)));
           response.on("end", () => {
             const resultHeaders = new Headers();
             if (contentType) resultHeaders.set("content-type", contentType);
             const session = response.headers["mcp-session-id"];
             if (typeof session === "string" && session.length <= 512)
               resultHeaders.set("mcp-session-id", session);
-            if (
-              !terminating &&
-              ![202, 204].includes(status) &&
-              !/^(?:application\/json|text\/event-stream)(?:\s*;|$)/iu.test(contentType)
-            ) {
-              reject(new PluginError("unavailable"));
-              return;
-            }
             resolve(
               new Response(
                 terminating || [202, 204].includes(status) ? null : Buffer.concat(chunks),
@@ -184,7 +190,7 @@ export function pluginFetch(
           });
         },
       );
-      req.on("error", () => reject(new PluginError("unavailable")));
+      req.on("error", (error) => reject(pluginFailure(error, deadline)));
       req.end(terminating ? undefined : init?.body);
     });
   };
@@ -212,18 +218,7 @@ export function mcpPluginConnector(localEndpoints: readonly string[] = []): Plug
     const operationSignal = AbortSignal.any([signal, operation.signal]);
     const request = pluginFetch(endpoint, token, operationSignal, localEndpoints);
     let cleanup: { sessionId: string; signal: AbortSignal } | undefined;
-    const client = new Client(
-      { name: "openbot", version: "0.1.0" },
-      {
-        capabilities: {},
-        jsonSchemaValidator: {
-          getValidator(schema) {
-            checkPluginSchema(schema as Record<string, unknown>);
-            return new AjvJsonSchemaValidator().getValidator(schema);
-          },
-        },
-      },
-    );
+    const client = createPluginMcpClient();
     const transport = new StreamableHTTPClientTransport(
       normalizePluginEndpoint(endpoint, localEndpoints),
       {
@@ -281,17 +276,15 @@ export function mcpPluginConnector(localEndpoints: readonly string[] = []): Plug
         client.connect(transport as Parameters<Client["connect"]>[0], { timeout: 30_000 }),
         signal,
       );
-    } catch {
+    } catch (error) {
+      const failure = pluginFailure(error, signal);
       await close();
-      throw new PluginError("unavailable");
+      throw failure;
     }
     return {
       async tools(callSignal) {
-        if (!client.getServerCapabilities()?.tools) return [];
-        const result = await client.listTools({}, { signal: callSignal, timeout: 30_000 });
-        if (result.nextCursor || result.tools.length > 32)
-          throw new PluginError("invalid", "插件工具目录过大，当前最多支持完整的32项工具。");
-        return result.tools.map((tool) => {
+        const tools = await listCompatiblePluginTools(client, callSignal);
+        return tools.map((tool) => {
           const checked = pluginToolSchema.parse({
             name: tool.name,
             description: tool.description ?? "",
@@ -303,8 +296,6 @@ export function mcpPluginConnector(localEndpoints: readonly string[] = []): Plug
               ? { resourceUri: tool._meta.ui.resourceUri }
               : {}),
           });
-          checkPluginSchema(checked.inputSchema);
-          new AjvJsonSchemaValidator().getValidator(checked.inputSchema);
           return checked;
         });
       },
@@ -351,19 +342,7 @@ export function mcpPluginConnector(localEndpoints: readonly string[] = []): Plug
           signal: callSignal,
           timeout: 30_000,
         });
-        if (result.isError) throw new PluginError("unavailable");
-        const content = result.content;
-        if (
-          !Array.isArray(content) ||
-          content.some((item) => item.type !== "text" || typeof item.text !== "string")
-        )
-          throw new PluginError("unavailable", "插件返回了当前不支持的非文本结果。");
-        const output = {
-          content: content.map((item) => ({ type: "text", text: item.text })),
-          ...(result.structuredContent ? { structuredContent: result.structuredContent } : {}),
-        };
-        boundedJson(output, 12 * 1024);
-        return output;
+        return checkPluginToolResult(result);
       },
       close,
     };

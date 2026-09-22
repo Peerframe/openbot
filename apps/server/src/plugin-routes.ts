@@ -33,7 +33,14 @@ export function createPluginRoutes(service: PluginService) {
         rejected: 409,
         expired: 409,
       } as const;
-      return context.json({ error: error.message, code: error.code }, status[error.code]);
+      return context.json(
+        {
+          error: error.message,
+          code: error.code,
+          ...(error.compatibility ? { compatibility: error.compatibility } : {}),
+        },
+        status[error.code],
+      );
     }
     return context.json({ error: "插件操作未完成，请检查服务后重试。", code: "unavailable" }, 503);
   });

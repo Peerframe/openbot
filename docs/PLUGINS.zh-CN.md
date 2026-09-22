@@ -10,10 +10,50 @@ SKILL.md 提供工作指令，MCP 插件提供工具、资源、提示词和隔�
 
 在 OpenBot 源码目录执行 `npm run plugin:create -- ../my-openbot-plugin`，目标必须是尚不存在的目录。
 生成器复制已有测试覆盖的 MCP 示例与 MIT 许可，写入固定版本依赖和独立 README，不覆盖原有文件。
-进入新目录运行 `npm install`，保留生成的锁文件，再运行 `npm start`。运行时不依赖 OpenBot 工作区导入。
+进入新目录运行 `npm install`，保留生成的锁文件，再运行 `npm test` 和 `npm start`。运行时不依赖 OpenBot 工作区导入。
 按照下文在 Server 配置精确本机地址白名单，再通过插件管理预览、安装、授权和启用。
 示例包含工具、资源、提示词和隔离 App。更新预览会列出新增、删除和改变的声明；应用更新仍会停用插件
 并清空授权。示例笔记只保存在进程内存中。
+
+## 连接 OpenBot 前检查兼容性
+
+生成的独立项目包含 `npm test`，使用真实本地 SDK 示例与具名失败场景，覆盖输入/输出 schema、
+必需 task 执行、bearer 认证、传输、协议版本、超时、分页和结果大小边界。
+测试不需要 OpenBot Server、数据库、模型或付费账号；每个场景使用临时回环端口，结束后关闭。
+
+示例启动后，在独立项目的另一个终端执行：
+
+```sh
+npm run preflight -- http://127.0.0.1:4318/mcp
+```
+
+预检只初始化连接和读取工具声明，不调用工具。成功时输出 JSON，包含协商后的协议版本、工具名称、
+零工具调用和明确未检查的范围；失败时退出码为 1。作者命令只接受字面量回环 HTTP(S) 地址，
+拒绝 URL 凭据、查询、片段和跳转。本地服务需要专用测试 bearer token 时，通过环境变量
+`OPENBOT_PLUGIN_TEST_TOKEN` 提供；不会启动 OAuth 流程。
+
+作者预检与 Server 共用工具/schema/结果校验模块。预检不验证资源/提示词兼容性、实际工具结果和效果、
+Server 地址授权、安装或员工授权，这些仍通过使用流程验证。声明检查成功不能证明远端工具行为。
+生成文件是当前规则的版本快照；需要采用新版本规则时，生成到新目录比较合入。
+
+Server 预览/安装/更新与作者预检在已知兼容性失败时返回固定的机器可读 `compatibility` 原因。
+原有 API `code` 与 HTTP 状态仍然保留。错误消息不包含远端响应正文、认证挑战地址或 token。
+
+| `compatibility` | 含义与处理 |
+| --- | --- |
+| `authentication_required` | HTTP 401；提供有效的专用 bearer token。仅支持 OAuth 的连接需要后续认证集成。 |
+| `access_denied` | HTTP 403；检查 token 权限或服务访问策略。 |
+| `transport_unsupported` | 路径/HTTP 方法、跳转或响应媒体类型不兼容；使用直接的 Streamable HTTP 地址。 |
+| `protocol_unsupported` | 固定版本 SDK 拒绝了协商版本；使用受支持的 MCP 修订版。 |
+| `schema_unsupported` | 输入/输出 schema 含不支持的语法、编译失败或超限；遵循下文的 draft-07 子集。 |
+| `execution_unsupported` | 工具要求 task 执行模式；向此客户端提供直接调用方式。 |
+| `catalog_unsupported` | 工具名称、数量、重复项或分页不兼容；返回有界的完整单页目录。 |
+| `result_unsupported` | 已调用工具返回不支持的内容或超限；返回有界文本和可选结构化 JSON。 |
+| `timeout` / `cancelled` | 到达截止时间或调用方取消；不会自动重试。 |
+
+已知不兼容会在安装/更新时阻止接入，不会产生新授权。已有安装也在调用前重新检查声明；
+工具变成必需 task 执行时，不发送 `tools/call`。实际结果只能在明确授权调用后检查，
+返回结果不能批准额外工作。
 
 ## 使用流程
 
@@ -85,6 +125,7 @@ OpenBot 固定官方 SDK **1.30.0**，提交 `2d889f2b329e46680ec9bdd565de4616c4
 | 参数与结果 | 参数最多 8 KiB 并校验结构；结果为文本块，可附结构化 JSON，合计最多 12 KiB；不接图片、音频、资源或界面代码，`isError` 会使调用失败。 |
 | 时间 | HTTP 最多 30 秒，审批 60 秒，调用 120 秒，同时受父任务截止时间约束。 |
 | 数量 | 最多 16 插件；每插件 32 工具、128 个员工授权项；16 并发调用；Agent 目录最多 16 工具和 12 KiB，并标记截断。 |
+| 执行方式 | 仅直接工具调用；`execution.taskSupport: "required"` 在发现阶段拒绝，`optional` 可使用直接调用路径。 |
 | 权限 | `call_plugin` 共享原生 Agent 工具次数，不获得额外执行、递归或后台权限。 |
 
 本适配器不提供 sampling、elicitation、roots、stdio、任务扩展、资源订阅、二进制资源或自动执行安装包。建议读写拆成不同工具，在后端再次验证参数与授权，说明真实副作用。
