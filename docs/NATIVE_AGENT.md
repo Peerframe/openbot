@@ -250,9 +250,10 @@ unique correction IDs observed through the bound storage port. The Server runner
 completion and publishes artifacts. The adapter must implement the existing per-step authority,
 audit, usage and tool policy contract; these final checks cannot replace those gates.
 
-This is an internal trusted-code extension point, not a per-task request field or worker protocol. Do not serialize model/tool ports or credentials to an external worker. Python
-is not enabled by this seam, and an abort race does not itself kill a subprocess. Any process
-adapter requires its own lifecycle and integration tests. See the
+This is an internal trusted-code extension point, not a per-task request field or worker protocol.
+Do not serialize model/tool ports or credentials to an external worker. Runtime selection and
+subprocess termination belong to the composition and process adapter described below; the seam
+alone does not implement those lifecycle behaviors. See the
 [executor seam research](research/runtime-executor-seam.md).
 
 ### Server gates for an external loop
@@ -276,8 +277,8 @@ reach host completion checks. Transport/lifecycle tests use adversarial Node chi
 cover flooding, malformed traffic, concurrent/repeated requests, crash, cancellation and stubborn
 descendants. The host also streams bounded public text directly from the Server while the child
 awaits a complete model response; reasoning stays private and failed streams are not retried.
-These fixtures do not establish real Python integration or Linux product support. Those remain
-gates before activation. See the [wire profile](AGENT_RUNTIME_PROTOCOL.md)
+These Node fixtures alone do not establish Python integration or Linux product support; the
+paired acceptance below runs the actual Python child. See the [wire profile](AGENT_RUNTIME_PROTOCOL.md)
 and [transport research](research/python-runtime-transport.md).
 
 ### Paired runtime acceptance
@@ -292,9 +293,11 @@ The paired journeys cover report download, cancellation, persisted scope revocat
 audit/usage failure, the eight-step budget, per-step Owner corrections, approve/reject/cancel
 during plugin approval, provisional public streaming, and retained reports across continuation.
 They use deterministic SDK model responses and a synthetic plugin connector; they send no paid
-model request or external plugin effect. The default TypeScript lane currently passes 219 cases
-across nine files, including 15 Owner API/database journeys. The Python lane is pending its CLI
-delivery; adding this command is not evidence that the Python path has passed.
+model request or external plugin effect. On macOS, both selected runtime lanes passed 222 cases
+across nine files, including 15 Owner API/database journeys. The Python lane first passed its
+367 package tests. The report journey preserves a Chinese filename through artifact download;
+delegation exercises provider IDs reused by a later model step. These are deterministic integration
+results, not paid-provider reliability measurements.
 
 ### Explicit source-install selection
 
@@ -308,8 +311,8 @@ Startup checks the fixed package worker, interpreter, imports and dependency loc
 temporary directory with a minimal environment. An absent or incompatible package fails before
 database migration or interrupted-Run recovery. There is no automatic install, command/script
 configuration, or fallback. Existing PostgreSQL data and migrations are unchanged. The current
-Server container does not yet bundle Python; source-install wiring does not establish container
-or Linux integration support. See [activation research](research/python-runtime-activation.md).
+production Server container does not yet bundle Python. The separate Linux reference result below
+covers the acceptance image, not a production container rollout. See [activation research](research/python-runtime-activation.md).
 
 ### Linux reference acceptance fixture
 
@@ -322,6 +325,8 @@ are excluded. The command removes its uniquely named containers and tagged image
 may retain normal build-cache layers. It never selects or resets an existing database.
 
 This is a Linux/amd64 acceptance fixture, distinct from the production Server image. Running it on
-an ARM Mac uses emulation and does not prove native hosted CI or desktop support. Its first full
-run stopped at five Python CLI test failures (340 passed); Server/database integration remains
-pending. Passing the image build alone is insufficient.
+an ARM Mac uses emulation and does not prove native hosted CI or desktop support. The final
+reference run passed 369 Python tests and all 222 Server/PostgreSQL tests across nine files, with
+no external network. Earlier fixture failures and their corrections are recorded in the research.
+The `python-runtime` CI job runs this same command and is required by `check`; hosted execution
+has not been triggered from this local task.

@@ -217,3 +217,40 @@ def test_unusable_deadlines_are_refused(deadline: float) -> None:
 def test_a_usable_deadline_is_returned_as_a_float() -> None:
     assert validate_deadline(30) == 30.0
     assert validate_deadline(None) is None
+
+
+@pytest.mark.parametrize("filename,valid", [
+    ("报告.md", True), ("Résumé.md", True), ("report.md", True),
+    ("../report.md", False), ("report.exe", False), ("😀.md", False),
+])
+def test_server_unicode_report_pattern(filename, valid) -> None:
+    catalog = _catalog(descriptor("write_report", schema={
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {"name": {"type": "string", "pattern": r"^[\p{L}\p{N}][\p{L}\p{N} ._-]{0,100}\.md$"}},
+        "required": ["name"], "additionalProperties": False,
+    }))
+    if valid:
+        assert catalog.validate_arguments("write_report", {"name": filename}) == {"name": filename}
+    else:
+        with pytest.raises(RuntimeFailure) as caught:
+            catalog.validate_arguments("write_report", {"name": filename})
+        assert caught.value.reason is FailureReason.INVALID_ARGUMENTS
+
+
+@pytest.mark.parametrize("keyword", ["additionalProperties", "unevaluatedProperties"])
+def test_unicode_pattern_properties_preserve_other_property_constraints(keyword) -> None:
+    catalog = _catalog(descriptor("read", schema={
+        "type": "object", "patternProperties": {r"^\p{L}+$": {"type": "integer"}}, keyword: False,
+    }))
+    assert catalog.validate_arguments("read", {"中文": 1}) == {"中文": 1}
+    for invalid in [{"中文": "wrong type"}, {"!": 1}]:
+        with pytest.raises(RuntimeFailure) as caught:
+            catalog.validate_arguments("read", invalid)
+        assert caught.value.reason is FailureReason.INVALID_ARGUMENTS
+
+
+def test_invalid_regex_is_rejected_during_catalog_admission() -> None:
+    with pytest.raises(RuntimeFailure) as caught:
+        _catalog(descriptor("read", schema={"type": "object", "properties": {"x": {"pattern": "["}}}))
+    assert caught.value.reason is FailureReason.CATALOG_INVALID

@@ -16,11 +16,8 @@ import re
 from collections.abc import Mapping, Sequence
 from typing import Any, Final
 
-from jsonschema import Draft202012Validator
-from jsonschema.exceptions import SchemaError
+from jsonschema_rs import Draft202012Validator, FancyRegexOptions
 from pydantic_ai.tools import ToolDefinition
-from referencing import Registry
-from referencing.exceptions import NoSuchResource
 
 from .bounds import json_utf8_size, utf8_size
 from .contracts import (
@@ -35,28 +32,11 @@ _MAX_REPORTED_VIOLATIONS: Final = 3
 _MAX_VIOLATION_CHARS: Final = 160
 
 
-def _refuse_external_schema(uri: str) -> Any:
-    """Refuse every URI retrieval an argument schema could otherwise trigger.
-
-    Tool input schemas are Server-declared data and must be self-contained. A
-    ``$ref``/``$dynamicRef`` that does not resolve inside the schema itself is a
-    request to fetch a URI, and resolving it is what would let an untrusted
-    description reach the network or the filesystem during argument admission. This
-    function is installed as the registry's *only* retrieval path, so no default
-    retriever remains to fall back on: an external reference is unresolvable by
-    construction rather than by luck.
-    """
-    raise NoSuchResource(ref=uri)
-
-
-SCHEMA_REGISTRY: Final = Registry(retrieve=_refuse_external_schema)
-"""Referencing registry with no retrieval path.
-
-Internal ``#/...`` references still resolve against the schema itself; external
-ones raise ``Unresolvable`` (surfaced through jsonschema as a wrapped referencing
-error) instead of being fetched. Verified against the pinned ``referencing`` and
-``jsonschema`` builds in RESEARCH.md §3.6.
-"""
+# Unicode character classes need the released engine's normal compiled-size allowance.
+# Offline mode disables all external reference retrieval, including file URIs.
+_PATTERN_OPTIONS: Final = FancyRegexOptions(
+    backtrack_limit=10_000, size_limit=10 * 1024 * 1024, dfa_size_limit=2 * 1024 * 1024
+)
 
 
 class ToolCatalog:
@@ -89,7 +69,15 @@ class ToolCatalog:
                     FailureReason.CATALOG_INVALID, f"duplicate tool name {name!r} in catalog"
                 )
             schema = _validate_schema(name, descriptor)
-            validators[name] = Draft202012Validator(schema, registry=SCHEMA_REGISTRY)
+            try:
+                validators[name] = Draft202012Validator(
+                    schema, offline=True, validate_formats=False, pattern_options=_PATTERN_OPTIONS
+                )
+            except ValueError as exc:
+                raise RuntimeFailure(
+                    FailureReason.CATALOG_INVALID,
+                    f"tool {name!r} declares an unsupported or invalid JSON Schema",
+                ) from exc
             validated.append(
                 ToolDescriptor(
                     name=name, description=descriptor.description, input_schema=schema
@@ -173,14 +161,12 @@ class ToolCatalog:
 
         try:
             violations = [
-                f"{'/'.join(str(part) for part in error.absolute_path) or '<root>'}: {error.message}"
+                f"{'/'.join(str(part) for part in error.instance_path) or '<root>'}: {error.message}"
                 for error in validator.iter_errors(parsed)
             ]
         except Exception as exc:
-            # ``iter_errors`` is lazy, so an unresolvable reference only surfaces while
-            # the violations are collected. That is a refusal (the arguments cannot be
-            # checked against the declaration), not a crash, and it is never a reason to
-            # fetch the URI.
+            # A validator failure (including a regex limit) seals the run; no fallback
+            # or retrieval path can broaden the admitted arguments.
             raise RuntimeFailure(
                 FailureReason.INVALID_ARGUMENTS,
                 f"arguments for {name!r} cannot be checked against its input schema: "
@@ -240,14 +226,7 @@ def _validate_schema(name: str, descriptor: ToolDescriptor) -> dict[str, Any]:
         )
     schema = dict(schema)
     schema.setdefault("type", "object")
-    try:
-        Draft202012Validator.check_schema(schema)
-    except SchemaError as exc:
-        raise RuntimeFailure(
-            FailureReason.CATALOG_INVALID,
-            f"tool {name!r} declares an invalid JSON Schema: {exc.message[:120]}",
-        ) from exc
     return schema
 
 
-__all__ = ["SCHEMA_REGISTRY", "ToolCatalog"]
+__all__ = ["ToolCatalog"]

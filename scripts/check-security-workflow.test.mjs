@@ -223,7 +223,7 @@ test("the actual merge gate accepts only success from every required job", () =>
   const variables = [
     ...gate.matchAll(/^ {10}([A-Z_]+): \$\{\{ needs\.[a-z-]+\.result \}\}$/gm),
   ].map((match) => match[1]);
-  assert.equal(variables.length, 6);
+  assert.equal(variables.length, 7);
   const source = gate
     .split("        run: |\n")[1]
     .split("\n")

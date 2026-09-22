@@ -45,6 +45,10 @@ credentials, database handles or any Server write.
   self-contained: external `$ref`/`$dynamicRef` resolution is impossible, so argument
   validation can never fetch a URI.
 
+Tool schemas are compiled with the reviewed `jsonschema-rs` dependency and `offline=True`.
+External references fail during catalog admission, before any model/tool work; internal references
+still work. Unicode ECMA patterns are retained with explicit backtracking and compilation bounds.
+
 ## Refusal semantics
 
 * There is no permissive fallback. Authority, model and tool ports are mandatory.
@@ -64,8 +68,9 @@ credentials, database handles or any Server write.
   to the authority port (which takes no arguments at all), so a well-formed or
   freshly chosen identifier grants nothing and cannot restore withdrawn authority.
   The `duplicate_tool_call` refusal catches only a literal repeat of one identifier
-  inside one run; it is **not** replay protection, and identical name-plus-arguments
-  under a fresh identifier is admitted twice. Exactly-once effect safety is the
+  inside one model response; it is **not** replay protection, and identical name-plus-arguments
+  under a fresh identifier is admitted twice. A later model step may also reuse a
+  consumed ID for a newly proposed intent. Exactly-once effect safety is the
   Server's, at authorisation or at the effect itself.
 * Cancelling the caller's task re-raises `CancelledError`; it never becomes a result.
 * The unit writes nothing to stdout on its own: the SDK's first-run banner is
@@ -139,11 +144,11 @@ CPython >= 3.12 (`asyncio.timeout`); the pinned SDK itself only needs 3.10.
 
 ## Known limits
 
-* Unit-level evidence only. These tests do **not** establish Server/DB authority,
-  OS-level process containment, crash recovery, Linux support or live provider quality —
-  those are integration gates owned elsewhere.
+* Package tests use synthetic ports/parents. The separate real Server/PostgreSQL lane
+  passed 222 cases on macOS with this child; see the [runtime guide](../../docs/NATIVE_AGENT.md).
+  OS isolation, crash recovery and live provider quality are not established by those tests.
 * `format` keywords in declared tool input schemas are annotations, not assertions:
-  the JSON Schema `format` extension is not installed.
+  `validate_formats=False` is explicit.
 * `ToolDescriptor` names are restricted to `[A-Za-z0-9][A-Za-z0-9._:-]{0,63}` and
   input schemas must describe an object.
 * The unit provides **no idempotency or replay protection** for tool effects, and does
@@ -152,9 +157,10 @@ CPython >= 3.12 (`asyncio.timeout`); the pinned SDK itself only needs 3.10.
   effect itself.
 * The process profile is implemented and covered by subprocess tests, but those tests use a
   *synthetic* parent. End-to-end behaviour against the Server's own process adapter is a Server-owned
-  integration gate and is **not** claimed here.
-* Cross-platform support is **not** claimed. The checks were run on macOS; the profile's POSIX and
-  `-I`-isolation assumptions have not been certified on Linux in this repository.
+  integration gate; its evidence is recorded in the runtime guide.
+* The Linux/amd64 reference container passed 369 package and 222 Server/PostgreSQL tests.
+  It ran under emulation on an ARM Mac; native hosted CI, Windows and production packaging are
+  not established by that result. The existing TypeScript runtime remains the default.
 * The adapter reads no environment variable and loads no provider client — asserted by tests — but
   `-I` does not hide `os.environ`, so this is a property of this code, not of the interpreter switch.
 * No streaming: the child emits exactly one terminal frame and exits. Progressive output is not part of

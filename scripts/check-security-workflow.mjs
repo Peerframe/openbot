@@ -131,10 +131,10 @@ export function validateSecurityWorkflow(workflow) {
 
   const setupNodeReferences = workflow.match(/actions\/setup-node@[^\s]+/g) ?? [];
   if (
-    setupNodeReferences.length !== 4 ||
+    setupNodeReferences.length !== 5 ||
     setupNodeReferences.some((reference) => reference !== SETUP_NODE_PIN)
   ) {
-    throw new Error("CI must use the exact reviewed setup-node pin in all four jobs.");
+    throw new Error("CI must use the exact reviewed setup-node pin in all five jobs.");
   }
 
   const companionBuild = portableJob.indexOf("name: Build the pinned macOS Worker companion");

@@ -15,7 +15,6 @@ from typing import Any
 import pytest
 from pydantic_ai.exceptions import ApprovalRequired, CallDeferred, ModelRetry, ToolFailed
 from pydantic_ai.messages import ModelResponse, ToolCallPart
-from referencing.exceptions import NoSuchResource
 
 from openbot_agent_runtime import (
     FailureReason,
@@ -24,7 +23,6 @@ from openbot_agent_runtime import (
     ToolCatalog,
     execute_runtime,
 )
-from openbot_agent_runtime.catalog import SCHEMA_REGISTRY
 from openbot_agent_runtime.errors import RuntimeFailure
 
 from support import (
@@ -234,40 +232,22 @@ _EXTERNAL_REFERENCES = [
 def test_an_external_schema_reference_is_refused_and_never_resolved(
     reference: dict[str, Any],
 ) -> None:
-    """Every scheme goes through the refusing registry, including ``$dynamicRef``.
-
-    The refusal must be the runtime's own ``invalid_arguments``, not a raw library
-    error escaping from argument validation.
-    """
-    catalog = _catalog_with(
-        {
+    """Offline compilation refuses references before any model or tool work."""
+    with pytest.raises(RuntimeFailure) as caught:
+        _catalog_with({
             "type": "object",
             "properties": {"x": reference},
             "additionalProperties": False,
-        }
-    )
+        })
+    assert caught.value.reason is FailureReason.CATALOG_INVALID
 
+
+def test_an_existing_local_schema_file_is_not_loaded(tmp_path) -> None:
+    schema_file = tmp_path / "external.json"
+    schema_file.write_text('{"type":"string"}')
     with pytest.raises(RuntimeFailure) as caught:
-        catalog.validate_arguments("search", {"x": 1})
-
-    assert caught.value.reason is FailureReason.INVALID_ARGUMENTS
-
-
-def test_the_schema_registry_refuses_every_uri() -> None:
-    """The only retrieval path this runtime installs refuses unconditionally.
-
-    There is no other reader: network and filesystem resolution cannot happen because
-    no implementation that could perform it is reachable.
-    """
-    for uri in (
-        "https://example.invalid/schema.json",
-        "http://example.invalid/schema.json",
-        "file:///etc/hosts",
-        "urn:example:schema",
-        "another-schema.json",
-    ):
-        with pytest.raises(NoSuchResource):
-            SCHEMA_REGISTRY.get_or_retrieve(uri)
+        _catalog_with({"type": "object", "properties": {"x": {"$ref": schema_file.as_uri()}}})
+    assert caught.value.reason is FailureReason.CATALOG_INVALID
 
 
 def test_an_internal_schema_reference_still_resolves() -> None:

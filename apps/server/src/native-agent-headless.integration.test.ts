@@ -262,7 +262,7 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
       new MockLanguageModelV4({
         doGenerate: [
           call("write_report", {
-            name: "result.md",
+            name: "报告.md",
             markdown: "# Fixture result\nVerified local task.",
           }),
           answer(),

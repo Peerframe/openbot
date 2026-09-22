@@ -224,6 +224,31 @@ def test_a_refused_child_request_is_terminal(cut_at: str, expected: str) -> None
     assert [name for _, name, _ in driver.requests].count(cut_at) == 1
 
 
+def test_a_refused_authority_check_is_never_followed_by_a_model_request() -> None:
+    """Withdrawal before the model step must stop the step, observably.
+
+    The in-process defect was that a revocation landing after an awaited boundary
+    still produced a model call. Over the frozen profile the same invariant is
+    visible as an *absent* ``model.generate``: once the parent refuses an
+    ``authority.check``, no model request may follow it. Asserting on the frames
+    rather than on the driver's bookkeeping keeps this true regardless of how the
+    parent reads them.
+    """
+    with cli.Worker() as worker:
+        worker.send(cli.execute_request(tools=[cli.tool()]))
+        driver = cli.Driver(worker)
+        request_id, method, _ = driver.next()
+        assert method == "authority.check"
+        worker.reply_error(request_id, "scope_revoked")
+        code, frames, _, reason = _failed_run(worker)
+
+    assert code == EXIT_APPLICATION_ERROR
+    assert reason == "authority_revoked"
+    assert driver.methods() == ["authority.check"]
+    observed = [frame["method"] for frame in frames if isinstance(frame, dict) and "method" in frame]
+    assert observed == ["authority.check"], f"a request followed the refused authority check: {observed}"
+
+
 def test_a_refused_call_is_not_converted_into_a_retry() -> None:
     """The SDK turns ``ToolFailed``/``ModelRetry`` into observations; this must not."""
     with cli.Worker() as worker:
@@ -280,6 +305,24 @@ def test_a_model_payload_the_child_cannot_honour_refuses_the_run(
         code, frames, _, reason = _failed_run(worker)
     assert code == EXIT_APPLICATION_ERROR
     assert reason == expected
+
+
+def test_a_whitespace_only_answer_is_refused_by_the_run_not_the_codec() -> None:
+    """Two different layers refuse two different blanks, and both must fire.
+
+    An *empty* string is refused by the profile's own payload check
+    (``model_response_invalid``, pinned above). A *whitespace-only* string is a
+    perfectly valid wire value, so it travels all the way to the run's blank-output
+    guard and is refused there as ``output_invalid``. Collapsing the two would let a
+    payload-shaped refusal hide the run-level one, so the distinction is pinned here.
+    """
+    with cli.Worker() as worker:
+        worker.send(cli.execute_request(tools=[cli.tool()]))
+        _reply_at_model(worker, cli.model_result(text="   \n\t ", tools=[]))
+        code, frames, _, reason = _failed_run(worker)
+
+    assert code == EXIT_APPLICATION_ERROR
+    assert reason == "output_invalid"
 
 
 def test_an_authority_reply_that_is_not_empty_refuses_the_run() -> None:
@@ -364,8 +407,8 @@ def test_an_external_schema_reference_is_refused_without_being_fetched() -> None
         server = cli.ScriptedServer(worker, cli.deterministic_script())
         server.serve_until()
         code, frames, _, reason = _failed_run(worker)
-    assert reason == "invalid_arguments"
-    assert [name for _, name, _ in server.requests].count("model.generate") == 1
+    assert reason == "catalog_invalid"
+    assert [name for _, name, _ in server.requests].count("model.generate") == 0
 
 
 def test_a_self_contained_schema_reference_still_resolves() -> None:

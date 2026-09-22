@@ -354,10 +354,24 @@ jobs:
           OPENBOT_TEST_IMAGE: openbot-server:smoke
           OPENBOT_TEST_PLATFORM: ${{ matrix.arch }}
 
+  python-runtime:
+    name: Python runtime (Linux amd64)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Verify Python and Server journeys in the isolated Linux fixture
+        run: node scripts/test-runtime-linux.mjs
+
   # Keep this protected context pending until every platform and integration job finishes.
   check:
     if: always()
-    needs: [security, validate, portable, windows-worker-host, database, server-container]
+    needs: [security, validate, portable, windows-worker-host, database, server-container, python-runtime]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -370,8 +384,9 @@ jobs:
           WINDOWS_WORKER_HOST_RESULT: ${{ needs.windows-worker-host.result }}
           DATABASE_RESULT: ${{ needs.database.result }}
           SERVER_CONTAINER_RESULT: ${{ needs.server-container.result }}
+          PYTHON_RUNTIME_RESULT: ${{ needs.python-runtime.result }}
         run: |
-          for result in "$SECURITY_RESULT" "$VALIDATE_RESULT" "$PORTABLE_RESULT" "$WINDOWS_WORKER_HOST_RESULT" "$DATABASE_RESULT" "$SERVER_CONTAINER_RESULT"; do
+          for result in "$SECURITY_RESULT" "$VALIDATE_RESULT" "$PORTABLE_RESULT" "$WINDOWS_WORKER_HOST_RESULT" "$DATABASE_RESULT" "$SERVER_CONTAINER_RESULT" "$PYTHON_RUNTIME_RESULT"; do
             if [[ "$result" != "success" ]]; then
               printf 'Every required CI job must succeed; observed result: %s\n' "$result" >&2
               exit 1

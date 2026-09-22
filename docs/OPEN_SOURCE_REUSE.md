@@ -429,3 +429,13 @@ Explicit Server startup selection reuses Node child-process APIs, Python isolate
 contracts and the package lock verifier. It validates the fixed installed package before durable
 initialization, with no automatic installation or fallback. No source copied or dependency added;
 see [activation research](research/python-runtime-activation.md).
+
+
+## Python tool-schema compatibility (2026-09-23)
+
+Select jsonschema-rs 0.57.1 / 5f2f3f341f20a9460caef88f017d10ce2dc91227 (MIT) for the Python
+unit's offline JSON Schema admission. Actual Server tool schemas contain Unicode property escapes;
+the previous Python-regex validator refused them before model execution. The released complete
+validator is preferred over a partial regex monkeypatch. Offline compilation, format annotations,
+bounded regex options and unchanged Server authority are required. No source copied; full evidence
+and pending integration gates: [schema review](research/python-schema-compatibility.md).

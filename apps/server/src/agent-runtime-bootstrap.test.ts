@@ -70,7 +70,10 @@ describe.skipIf(process.platform === "win32")("Python startup selection", () => 
     // The fixture shell may create PWD/SHLVL; the real interpreter gets the explicit locales.
     expect(
       Object.keys(seen.env).filter(
-        (key) => !["LANG", "LC_ALL", "PWD", "SHLVL", "__CF_USER_TEXT_ENCODING"].includes(key),
+        (key) =>
+          !["LANG", "LC_ALL", "PWD", "SHLVL", "__CF_USER_TEXT_ENCODING"].includes(key) &&
+          // The Node test interpreter adds this under Linux/amd64 emulation, even with env -i.
+          !(process.platform === "linux" && key === "UV_USE_IO_URING" && seen.env[key] === "0"),
       ),
     ).toEqual([]);
     expect(seen.files).toEqual([]);

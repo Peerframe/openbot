@@ -204,7 +204,7 @@ These were discovered by running the code, and they changed the implementation.
       refused as `tool_call_unidentified`; filling it in would hide a malformed call
       behind generated correlation data.
 
-## 4. Second direct dependency: `jsonschema`
+## 4. Historical validator choice: `jsonschema` (superseded by section 9)
 
 Because the Server hands the unit *tool descriptors with JSON input schemas* and the SDK passes
 arguments through unvalidated (§3.5), accepting the wrong arguments would mean forwarding junk to the
@@ -225,7 +225,7 @@ so the unit uses the reference implementation of the standard instead of a hand-
 Validation uses `Draft202012Validator`. Catalog construction rejects any descriptor whose schema is
 not an object schema, so the validator is only ever applied to object-shaped argument dictionaries.
 
-### 4a. Third direct dependency: `referencing`
+### 4a. Historical retrieval boundary: `referencing` (superseded by section 9)
 
 `referencing` was already present as a `jsonschema` transitive dependency; it is promoted to an
 explicit pin because the unit now imports it directly to own its `$ref` policy (§3a.14).
@@ -398,3 +398,29 @@ requires; upgrading it floated to whatever PyPI served last. The locked closure 
 bundled pip, and no new dependency was added for bootstrap.
 
 
+
+
+## 9. Real Server catalog and tool correlation integration
+
+The Server integration found two incompatibilities that synthetic-parent tests did not expose.
+The original validator refused write_report's Unicode property escapes, and the unit rejected a
+provider tool ID reused by a later model step. The current implementation supersedes sections 4/4a
+with jsonschema-rs 0.57.1 / 5f2f3f341f20a9460caef88f017d10ce2dc91227 (MIT), offline compilation,
+unchanged format annotations and bounded regex options. No source copied. Full comparison, source,
+release, license, platform and probe evidence was recorded before implementation in
+[the integration research](../../docs/research/python-schema-compatibility.md).
+
+External schema references now fail at catalog admission, before any model/tool work; internal
+references work. The now-unused jsonschema/referencing closure was removed (27 to 23 pinned
+distributions). pip check and the strict environment verifier passed after the replacement.
+
+Tool IDs are correlation for one response, as required by the frozen Server profile. Duplicate IDs
+within that response are refused before any SDK tool scheduling; consumed IDs may recur in a later
+model step only as fresh proposals. This does not reset tool budgets or authority. Wire request IDs
+remain unique and monotonic across the invocation. Tests cover both scopes independently.
+
+The prior macOS delivery passed 357 tests independently. After the corrections and two late CLI
+regressions, the Linux/amd64 reference run passed 369 package and 222 Server/PostgreSQL tests.
+Codex also reran the final 31-case CLI lifecycle file on macOS; WorkBuddy independently checked
+369 macOS tests with an explicit temporary directory. Full npm run check passed. The Linux
+fixture was emulated on an ARM Mac; native hosted CI and production packaging remain unclaimed.

@@ -88,3 +88,54 @@ expectations (deadline/broken pipe, authority refusal and unserviced post-model 
 They remain review items, not accepted platform support. The subsequent headless harness now
 returns on the first failing Python test to keep iteration short while retaining the full green
 suite requirement. The Linux fixture containers and its unique image are removed on exit.
+
+
+## Required Linux CI lane
+
+Reuse the already-reviewed CI checkout/setup-node pins and the Docker fixture above, rather than
+introducing another Python installer. The host Node 22.22.2 runs only the fixture orchestrator;
+the pinned image owns Node 24.21.0/Python 3.12.13 and both lockfiles. Use ubuntu-24.04 amd64,
+read-only repository permissions, checkout without persistent credentials, no publication and a
+25-minute job limit. Add its result to the existing protected check gate. No new action,
+dependency or copied source. Local Linux results and native hosted execution must be distinguished;
+adding the workflow does not claim it has run remotely. Existing workflow validation tests enforce
+that every job is included in the protected success check.
+
+
+## Linux fixture environment observation
+
+The first complete Linux rerun passed 367 Python tests and all actual Owner/delegation journeys,
+but two Node-based interpreter fixtures rejected UV_USE_IO_URING=0 (220/222 Server tests passed).
+Independently reproduced using the pinned official Node image, network disabled, and
+`env -i LANG=C.UTF-8 LC_ALL=C.UTF-8 /usr/local/bin/node -p 'JSON.stringify(process.env)'`:
+only the two supplied locales plus UV_USE_IO_URING=0 are visible. `env -i /usr/bin/env` is empty.
+Thus the extra value is not inherited from the Server's environment. The precise Node/emulation
+injection mechanism is not established: reviewed v24.21.0 src/node.cc, node_main.cc,
+node_process_methods.cc and bundled libuv linux.c; the latter documents the variable as an io_uring
+switch but does not establish its setter. Do not generalize this observation to every platform.
+
+Correct only the two Node test-double assertions: on Linux accept that exact key with value 0,
+while refusing any other value/extra key and retaining private-variable absence checks. Production
+spawn/preflight still pass only LANG and LC_ALL. No dependency, protocol or authority change.
+Rerun the Linux lane and full checks; previous failed attempt remains historical evidence.
+
+
+## Standalone source-install startup verification
+
+The built apps/server/dist/index.js was launched from an empty temporary working directory with
+OPENBOT_AGENT_RUNTIME=python, minimal synthetic configuration, temporary object/model directories
+and an owned fresh PostgreSQL instance. Actual interpreter preflight, database migrations, HTTP
+health, Owner login/session cookie and authenticated channels API all passed. No model setting
+or provider call was enabled. The process group, temporary directories and fixture database were
+removed afterward. This is source-install startup evidence, not a Python production-container claim.
+
+
+## Final reference acceptance (2026-09-23)
+
+The Linux/amd64 fixture exited zero: 369 Python tests (137.20s) and 222 Server/PostgreSQL tests
+across nine files (73.26s). This includes the two late WorkBuddy CLI regressions for post-revocation
+silence and whitespace refusal, which Codex reviewed and also reran in the 31-case macOS lifecycle
+file. The TypeScript lane passed 222 tests with the same Unicode report. Full npm run check passed,
+as did standalone built-Server health, Owner login and workspace API with Python selected.
+The required CI lane is wired but has not executed remotely. All owned fixture containers and
+unique acceptance tags were cleaned. No live provider request, publication or deployment occurred.

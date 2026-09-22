@@ -157,6 +157,7 @@ class RunGuard:
                 f"refusing model step {self.steps + 1}; the limit is {self._steps_limit}",
             )
         self.steps += 1
+        self._call_ids.clear()
         return self.steps
 
     def note_tool_call(self, name: str, call_id: str) -> int:
@@ -165,7 +166,8 @@ class RunGuard:
         This is deliberately **not** replay protection and must not be cited as such.
         The identifier is model-invocation data (see ``ToolCallRequest.call_id``), so
         the same name and arguments under a *fresh* identifier are admitted like any
-        other call — identical content is not deduplicated here. Exactly-once effect
+        other call. A later model step may reuse a consumed identifier for a new
+        intent; duplicates within the current step remain refused. Exactly-once effect
         safety belongs to the Server, at authorisation or at the effect itself, and
         cannot be provided by this counter.
 
@@ -183,7 +185,7 @@ class RunGuard:
         if call_id in self._call_ids:
             raise self.fail(
                 FailureReason.DUPLICATE_TOOL_CALL,
-                f"tool call identifier {call_id!r} was already executed in this run",
+                f"tool call identifier {call_id!r} was already executed in this model step",
             )
         self._call_ids.add(call_id)
         self.tool_calls += 1

@@ -6,8 +6,7 @@ requires-python = ">=3.12"
 license = "MIT"
 dependencies = [
   "pydantic-ai-slim==2.47.0",
-  "jsonschema==4.26.0",
-  "referencing==0.37.0",
+  "jsonschema-rs==0.57.1",
 ]
 
 [project.optional-dependencies]

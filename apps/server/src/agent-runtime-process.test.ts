@@ -149,7 +149,10 @@ describe.skipIf(process.platform === "win32")("owned runtime subprocess lifecycl
     expect(child.env.OPENBOT_TEST_PRIVATE_CANARY).toBeUndefined();
     expect(
       Object.keys(child.env).filter(
-        (name) => !["LANG", "LC_ALL", "__CF_USER_TEXT_ENCODING"].includes(name),
+        (name) =>
+          !["LANG", "LC_ALL", "__CF_USER_TEXT_ENCODING"].includes(name) &&
+          // The Node fixture in Linux/amd64 emulation adds this even under env -i.
+          !(process.platform === "linux" && name === "UV_USE_IO_URING" && child.env[name] === "0"),
       ),
     ).toEqual([]);
     expect(alive(child.pid)).toBe(false);

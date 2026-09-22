@@ -18,7 +18,7 @@ from __future__ import annotations
 from typing import Any, Final
 
 import pydantic_ai
-from pydantic_ai.messages import ModelMessage, ModelMessagesTypeAdapter, ModelResponse
+from pydantic_ai.messages import ModelMessage, ModelMessagesTypeAdapter, ModelResponse, ToolCallPart
 from pydantic_ai.models import Model, ModelRequestParameters
 from pydantic_ai.settings import ModelSettings
 from pydantic_ai.toolsets import AbstractToolset
@@ -112,6 +112,16 @@ class PortModel(Model):
                 FailureReason.MODEL_RESPONSE_INVALID,
                 f"model port returned {type(response).__name__}, not a ModelResponse",
             )
+        # Reject ambiguous correlation before the SDK can schedule any tool from this response.
+        ids: set[str] = set()
+        for part in response.parts:
+            if isinstance(part, ToolCallPart):
+                if part.tool_call_id in ids:
+                    raise guard.fail(
+                        FailureReason.DUPLICATE_TOOL_CALL,
+                        "model response contains duplicate tool call identifiers",
+                    )
+                ids.add(part.tool_call_id)
         return response
 
     def _offered_tools(

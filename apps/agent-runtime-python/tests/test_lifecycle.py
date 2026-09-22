@@ -88,29 +88,29 @@ async def test_the_tool_call_ceiling_stops_the_run() -> None:
     assert len(tools.calls) == 1
 
 
-async def test_a_repeated_call_identifier_is_refused_as_a_correlation_check() -> None:
-    """A repeated SDK identifier is refused, but this is *not* replay protection.
-
-    The identifier is model-invocation data, so this only catches a literal repeat of
-    one identifier inside one run. It says nothing about the same name and arguments
-    under *different* identifiers, which are admitted separately — see the honest-limit
-    disclosure in ``tests/test_review_002.py``. The authority port here grants every
-    check, so the refusal is a correlation decision and not an authority one.
-    """
-    model = ScriptedModelPort(
-        [
-            call("search", {"query": "a"}, call_id="same-id"),
-            call("search", {"query": "b"}, call_id="same-id"),
-            text("never"),
-        ]
-    )
+async def test_a_repeated_call_identifier_is_refused_within_one_response() -> None:
+    model = ScriptedModelPort([[
+        call("search", {"query": "a"}, call_id="same-id"),
+        call("search", {"query": "b"}, call_id="same-id"),
+    ]])
     tools = RecordingToolPort()
-
     with pytest.raises(RuntimeFailure) as caught:
         await execute_runtime(request(tools=[descriptor()]), _ports(model, tools))
-
     assert caught.value.reason is FailureReason.DUPLICATE_TOOL_CALL
-    assert len(tools.calls) == 1
+    assert not tools.calls
+
+
+async def test_a_later_model_step_may_reuse_a_consumed_identifier() -> None:
+    model = ScriptedModelPort([
+        call("search", {"query": "a"}, call_id="same-id"),
+        call("search", {"query": "b"}, call_id="same-id"),
+        text("done"),
+    ])
+    tools = RecordingToolPort()
+    result = await execute_runtime(request(tools=[descriptor()]), _ports(model, tools))
+    assert result.text == "done"
+    assert [entry.arguments for entry in tools.calls] == [{"query": "a"}, {"query": "b"}]
+    assert [entry.call_id for entry in tools.calls] == ["same-id", "same-id"]
 
 
 async def test_a_deadline_during_a_model_step_fails_the_run() -> None:
