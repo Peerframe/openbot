@@ -275,6 +275,14 @@ test("real pinned Turbo reports reverse dependencies, handles rename and never r
     analyzeImpact({ cwd: f.cwd, base, turboPath: resolve(f.cwd, "missing-turbo") }).scope,
     "full",
   );
+  f.write("README.md", "# Contract claims\n");
+  f.commit();
+  const rootOnly = analyzeImpact({ cwd: f.cwd, base: "HEAD~1", turboPath });
+  assert.equal(rootOnly.scope, "full");
+  assert.equal(rootOnly.changedFileCount, 1);
+  assert.equal(rootOnly.packages.length, 4);
+  assert.match(rootOnly.reasons.join(), /Documentation changes/);
+  assert.doesNotMatch(rootOnly.reasons.join(), /unavailable/);
   f.write("apps/web/src/uncommitted.ts", "export {};\n");
   assert.match(analyzeImpact({ cwd: f.cwd, base, turboPath }).reasons.join(), /uncommitted/);
 });

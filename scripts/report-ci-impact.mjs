@@ -142,14 +142,22 @@ export function classifyImpact({ paths, allPackages, affectedPackages }) {
   const known = new Map(allPackages.map((item) => [item.name, item.directory]));
   if (
     affectedPackages.some((item) => known.get(item.name) !== item.directory) ||
-    paths.some((path) => !allPackages.some((item) => path.startsWith(`${item.directory}/`)))
+    paths.some(
+      (path) =>
+        classifyPath(path) === null &&
+        !allPackages.some((item) => path.startsWith(`${item.directory}/`)),
+    )
   ) {
     reasons.add("unknown");
   }
   if (paths.length === 0 && affectedPackages.length !== 0) reasons.add("failure");
   // A changed leaf omitted by Turbo cannot justify a narrow recommendation.
   if (
-    paths.some((path) => !affectedPackages.some((item) => path.startsWith(`${item.directory}/`)))
+    paths.some(
+      (path) =>
+        classifyPath(path) === null &&
+        !affectedPackages.some((item) => path.startsWith(`${item.directory}/`)),
+    )
   ) {
     reasons.add("failure");
   }
@@ -243,7 +251,6 @@ export function analyzeImpact({
             ...TASKS,
             "--dry=json",
             "--cache=local:r",
-            "--no-daemon",
             ...(affected ? ["--affected"] : []),
           ],
           env,
@@ -251,6 +258,15 @@ export function analyzeImpact({
         expectedVersion,
       );
     const allPackages = dryRun(false);
+    // Root-only changes can appear as Turbo's virtual "//" package with no tasks.
+    // OpenBot already requires full checks for these paths; retain useful reasons and identities.
+    if (paths.some((path) => classifyPath(path) !== null)) {
+      return {
+        ...classifyImpact({ paths, allPackages, affectedPackages: allPackages }),
+        ...details,
+        mergeBase,
+      };
+    }
     const affectedPackages = dryRun(true);
     return { ...classifyImpact({ paths, allPackages, affectedPackages }), ...details, mergeBase };
   } catch {
