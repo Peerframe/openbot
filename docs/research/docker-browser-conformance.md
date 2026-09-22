@@ -79,3 +79,42 @@ not Owner Worker-run cancellation. Disconnect handling only fails `running` Runs
 closed. This suite must describe and test those available entry points accurately, not fabricate
 an Owner cancellation path. Durable waiting-approval disconnect recovery and Owner Worker-run
 cancellation remain B1b work. Capability leases and cross-process computer locks remain separate.
+
+## Validation evidence (2026-09-23 local time)
+
+The dedicated driver passed on the host reported as `macos`, `arm64`, `osVersion: 27.0.0`, using
+Node `v26.0.0`. The final generic-runner artifact records **15 success, 0 failure, 0 skipped**:
+eleven required browser scenarios plus four required declaration/target checks, no expected failures,
+`summary.conformant: true`, `evidenceLevel: hermetic`. Seven focused fixture regressions also passed.
+The synthetic PNG payloads have valid chunk CRCs; no real screenshots were collected.
+
+The exact frozen click assertion compares the computer's recorded attempt to the **persisted
+approval** before-state, not to the computer's mutable current state. Every synthetic snapshot
+advances its generation, so an extra observation cannot silently authorize a replacement snapshot.
+A first development run correctly returned nonzero with required setup failures when fixture Bot
+names collided; random names fixed that fixture isolation bug without any production change.
+
+`npm run check` passed, including documentation/research/configuration/release checks, lint,
+typecheck, repository tests and builds. Existing opt-in PostgreSQL/native-platform tests in that
+ordinary gate retain their documented skips; the dedicated Docker browser suite has **no skips**
+and uses actual PostgreSQL for every scenario.
+
+A separate real interruption test sent SIGTERM to the task-owned driver after the enrolled Node
+entered `browser.approve-once: run`. It returned exit 1, created no report, reaped its child, and
+returned the labeled Docker container inventory and private fixture directory inventory to their
+initial values. Successful suite cleanup also removed its container and private files; computer
+socket closure and zero active Provider executions are asserted inside fixture cleanup.
+
+The root integration separately fixes the shared database readiness probe to use TCP
+`pg_isready -h 127.0.0.1`: the official image's initialization-only Unix-socket server must not count
+as final readiness. That shared helper change is intentionally owned by the integration track.
+No real-browser or additional native platform evidence is claimed by these results.
+
+Independent review reproduced a driver deadline defect: `execFile({timeout})` only sent SIGTERM;
+an ignoring child kept its Promise pending, so a force-kill inside `catch` was unreachable. The
+pinned [Node child-process contract](https://github.com/nodejs/node/blob/2645dc73720b1b4f27c49f395d3c66025ce126cc/doc/api/child_process.md)
+distinguishes a timeout signal from an `AbortSignal` callback error. The dedicated helper now uses
+an independent `AbortSignal.timeout`, combines it with external cancellation, then escalates only
+its exact child to SIGKILL after a short grace and awaits `close`. Both non-cooperative-child
+regressions passed (deadline and external abort), as part of seven fixture/driver tests. No generic
+process supervisor or new dependency is introduced; no source is copied.

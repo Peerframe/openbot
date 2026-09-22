@@ -40,3 +40,33 @@ reader 取消完成，验证同 Bot 锁直到清理完成才释放；不替换 S
 B1b 保留缺口：当前 Owner cancel 仅支持 native Run。Node stop 不能冒充 Owner Worker-run
 cancel；断线目前只结束 running，waiting_approval 可能仍待定，离线批准才明确失败。
 后续修复这两个产品入口时复用本 suite。Capability lease 和跨进程资源锁另行实现。
+
+## 验证证据（本地日期 2026-09-23）
+
+实际主机报告 `macos`、`arm64`、`osVersion: 27.0.0`，运行 Node `v26.0.0`。
+最终报告为 **15 success、0 failure、0 skipped**：11 个必需浏览器场景和 4 个声明/目标检查，
+无预期失败，`summary.conformant: true`，证据级别严格为 `hermetic`。7 个 focused fixture
+回归通过。合成 PNG 的 chunk CRC 有效，没有采集真实用户截图。
+
+点击断言对照**已持久化批准**的 before-state，不依赖可变的当前电脑状态。每次合成 snapshot
+都会递增世代，额外观察不能悄悄替代 Owner 批准的 snapshot。首次开发运行中的 fixture Bot
+重名使必需 setup 检查正确失败、驱动非零退出；改为随机名称后通过，没有改生产逻辑。
+
+`npm run check` 已通过文档、研究、配置、发布、lint、typecheck、测试和构建。普通门禁原有的
+可选 PostgreSQL/原生平台测试仍按配置跳过；本 Docker suite 的每个场景都使用真实 PostgreSQL，
+**没有跳过**。
+
+另一次真实中断测试在 Node 已登记、进入 `browser.approve-once: run` 后向自有驱动发送 SIGTERM：
+退出码 1，没有生成报告，子进程已回收，带标签 Docker 容器和私有 fixture 目录清单回到运行前。
+成功运行也已清理容器和私有文件；fixture 清理还断言电脑 socket 已关闭、Provider 执行数为零。
+
+根集成主线另行把共享数据库 readiness 改为 TCP `pg_isready -h 127.0.0.1`，避免官方镜像初始化
+阶段的临时 Unix-socket PostgreSQL 被误判为最终可用。本主线没有重复修改共享 helper。
+上述结果不增加真实浏览器或其他原生平台支持声明。
+
+独立审查实际复现了驱动期限缺陷：`execFile({timeout})` 只发送 SIGTERM，子进程忽略后 Promise
+不结束，`catch` 内的强杀无法到达。已核对固定 Node 提交的 [child-process 文档](https://github.com/nodejs/node/blob/2645dc73720b1b4f27c49f395d3c66025ce126cc/doc/api/child_process.md)：
+timeout 发信号与 AbortSignal 回调错误是不同语义。专用 helper 改为独立 `AbortSignal.timeout`
+合并外部取消，再仅对自己的确切 child 在短暂宽限后发 SIGKILL，并等待 `close`。
+忽略 SIGTERM 的 deadline 和外部 abort 两条回归均通过，包含于 7 个 fixture/driver 测试。
+没有新增通用进程管理框架、依赖或复制源码。
