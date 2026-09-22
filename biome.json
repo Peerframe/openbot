@@ -9,6 +9,7 @@
       "!apps/desktop/native-runtime",
       "!**/coverage",
       "!**/node_modules",
+      "!**/.venv",
       "!package-lock.json",
       "!apps/web/dist-demo"
     ]

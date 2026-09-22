@@ -237,3 +237,21 @@ budgets and public streaming. The headless command above additionally verifies t
 the real Server and PostgreSQL. This internal module does not establish a separately published
 runtime package, process-crash checkpoints or multi-Server execution support. See the
 [port extraction research](research/runtime-execution-ports.md).
+
+### Replacing the execution adapter
+
+Server code can pass `NativeAgentOptions.executeRuntime` (an `AgentRuntimeExecutor`) to compose
+another reviewed execution adapter. `executeAgentRun` accepts the same option for focused tests;
+omitting it retains `executeAgentRuntime`. Roots, delegated tasks and continuations use the same
+selected adapter, with each Run's existing Server-owned budget and staged report state.
+
+`runAgentRuntime` guards entry and return, races cancellation, checks final text and accepts only
+unique correction IDs observed through the bound storage port. The Server runner still commits
+completion and publishes artifacts. The adapter must implement the existing per-step authority,
+audit, usage and tool policy contract; these final checks cannot replace those gates.
+
+This is an internal trusted-code extension point, not user-selectable runtime configuration or a
+worker protocol. Do not serialize model/tool ports or credentials to an external worker. Python
+is not enabled by this seam, and an abort race does not itself kill a subprocess. Any process
+adapter requires its own lifecycle and integration tests. See the
+[executor seam research](research/runtime-executor-seam.md).

@@ -42,6 +42,7 @@
     "security:config-check": "node --test scripts/check-credential-findings.test.mjs scripts/check-security-workflow.test.mjs scripts/check-node-release-workflow.test.mjs scripts/check-windows-worker-host-workflow.test.mjs && node scripts/check-security-workflow.mjs && node scripts/check-node-release-workflow.mjs && node scripts/check-windows-worker-host-workflow.mjs",
     "server:container:check": "node --test scripts/check-server-container.test.mjs && node scripts/check-server-container.mjs",
     "test": "turbo run test --concurrency=2",
+    "test:runtime": "node scripts/test-runtime-headless.mjs",
     "typecheck": "turbo run typecheck",
     "worker-host:macos:check": "node --test scripts/check-macos-worker-host.test.mjs scripts/macos-worker-host-release.test.mjs && node scripts/check-macos-worker-host.mjs",
     "worker-host:macos:native-check": "swift build --package-path apps/worker-host-macos && swift test --package-path apps/worker-host-macos",

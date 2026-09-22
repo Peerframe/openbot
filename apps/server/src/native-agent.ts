@@ -26,7 +26,12 @@ import {
   validateKnowledgeProposal,
 } from "./agent-knowledge.js";
 import { NativeExecutionError, type NativeFailureCode } from "./agent-observations.js";
-import { type AgentRuntimeBudget, executeAgentRuntime } from "./agent-runtime.js";
+import { runAgentRuntime } from "./agent-runtime-executor.js";
+import {
+  type AgentRuntimeBudget,
+  type AgentRuntimeExecutor,
+  executeAgentRuntime,
+} from "./agent-runtime.js";
 import type { AgentSkillCatalog, AgentSkillDocument, SkillReference } from "./agent-skills.js";
 import {
   normalizeSourceUrl,
@@ -109,6 +114,8 @@ type AgentPlugins = Pick<PluginService, "catalog" | "call"> &
   Partial<Pick<PluginService, "contentCatalog" | "readContent">>;
 
 export interface NativeAgentOptions {
+  /** A reviewed Server adapter; no user/model/skill-controlled runtime selection. */
+  executeRuntime?: AgentRuntimeExecutor | undefined;
   streamOutput?: boolean;
   plugins?: AgentPlugins | undefined;
   attachments?: ChannelAttachmentStorage | undefined;
@@ -267,6 +274,7 @@ export async function executeAgentRun(options: {
   continuation?: string;
   executionState?: AgentExecutionState;
   executionBudget?: AgentRuntimeBudget;
+  executeRuntime?: AgentRuntimeExecutor | undefined;
   startTask?:
     | ((input: {
         botId: string;
@@ -614,7 +622,8 @@ export async function executeAgentRun(options: {
         ]
       : []),
   ];
-  const result = await executeAgentRuntime(
+  const result = await runAgentRuntime(
+    options.executeRuntime ?? executeAgentRuntime,
     {
       model: { languageModel: options.model, identity: options.modelIdentity },
       authority: { assertActive: check },
@@ -883,6 +892,7 @@ export class NativeAgentRunner {
           run,
           executionBudget,
           executionState,
+          executeRuntime: this.options.executeRuntime,
           ...(continuation ? { continuation } : {}),
           attachments: this.options.attachments,
           plugins: this.options.plugins,

@@ -63,8 +63,22 @@ export interface AgentRuntimeInput {
   budget: AgentRuntimeBudget;
 }
 
+export interface AgentRuntimeResult {
+  text: string;
+  appliedCorrectionIds: string[];
+}
+
+/** Trusted Server composition, never selected by model or worker input. */
+export type AgentRuntimeExecutor = (
+  ports: AgentRuntimePorts,
+  input: AgentRuntimeInput,
+) => Promise<AgentRuntimeResult>;
+
 /** SDK execution only: no scheduler, credentials, grant decisions or terminal-state writes. */
-export async function executeAgentRuntime(ports: AgentRuntimePorts, input: AgentRuntimeInput) {
+export async function executeAgentRuntime(
+  ports: AgentRuntimePorts,
+  input: AgentRuntimeInput,
+): Promise<AgentRuntimeResult> {
   const { signal, budget } = input;
   let toolFailed = false;
   let stepFailure: NativeExecutionError | undefined;

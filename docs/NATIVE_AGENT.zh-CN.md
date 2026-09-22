@@ -204,3 +204,18 @@ ID，仍属于待提交的执行结果。只有 Server 可以把回复、报告�
 迟到回答、追加指令、共享预算及公开流式输出。前文无界面命令还通过真实 Server 和 PostgreSQL
 验证同一单元。这个内部模块不代表已发布独立运行时包、实现崩溃检查点或支持多 Server 执行。
 参见[接口抽取研究记录](research/runtime-execution-ports.md)。
+
+### 替换执行适配器
+
+Server 代码可以通过 `NativeAgentOptions.executeRuntime`（`AgentRuntimeExecutor` 类型）组合
+另一项经过审查的执行适配器。`executeAgentRun` 提供相同选项供局部测试；省略时继续使用
+`executeAgentRuntime`。根任务、委派任务及继续推理均使用选定的适配器，每个 Run 保留既有的
+Server 预算和待交付报告状态。
+
+`runAgentRuntime` 在进入与返回时检查权限，响应取消，验证最终文本，并且只接受通过绑定存储
+接口实际读取、未重复的追加指令 ID。完成提交和产物发布仍由 Server Runner 负责。适配器仍须
+落实每一步的权限、审计、用量及工具策略；最终检查不能代替这些执行门槛。
+
+这是可信 Server 代码的内部扩展点，不是用户可选择的运行配置或 Worker 协议。不得把模型、
+工具接口或密钥整体传给外部 Worker。这项接口尚未启用 Python，取消等待也不等于终止子进程；
+进程适配器需要另外验证生命周期和集成路径。参见[研究记录](research/runtime-executor-seam.md)。

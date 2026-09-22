@@ -8,6 +8,7 @@ import type { Run } from "@openbot/domain";
 import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it, vi } from "vitest";
 import { NativeExecutionError } from "./agent-observations.js";
+import { type AgentRuntimeExecutor, executeAgentRuntime } from "./agent-runtime.js";
 import { PendingSteeringError } from "./agent-steering.js";
 import { FileChannelAttachmentStorage } from "./channel-attachments.js";
 import { ChannelRealtimeHub } from "./channel-realtime-hub.js";
@@ -188,6 +189,62 @@ describe("Run-scoped continuation integrity", () => {
   );
 });
 describe("native Agent loop", () => {
+  it("composes a selected executor through the real runner while Server commits delivery", async () => {
+    const f = fixture();
+    vi.mocked(f.store.queued).mockResolvedValueOnce([run]).mockResolvedValue([]);
+    vi.mocked(f.store.complete).mockResolvedValue({
+      run: { ...run, status: "completed" },
+      message: {
+        id: "reply",
+        channelId: run.channelId,
+        authorType: "bot",
+        authorId: run.botId,
+        content: "Delivered.",
+        createdAt: run.createdAt,
+      },
+    });
+    const settings = {
+      agentSettings: async () => ({
+        provider: "openai" as const,
+        model: "fixture",
+        apiKey: "test",
+        revision: "1",
+        agentEnabled: true,
+        agentEnabledAt: run.createdAt,
+      }),
+      onChange: () => () => {},
+    };
+    const executeRuntime = vi.fn<AgentRuntimeExecutor>(executeAgentRuntime);
+    const model = new MockLanguageModelV4({ doGenerate: [calls(), answer("Delivered.")] });
+    const runner = new NativeAgentRunner(
+      f.store,
+      settings,
+      new ChannelRealtimeHub(),
+      vi.fn(),
+      () => model,
+      { executeRuntime },
+    );
+    try {
+      runner.start();
+      await vi.waitFor(() => expect(f.store.complete).toHaveBeenCalledOnce());
+      expect(executeRuntime).toHaveBeenCalledOnce();
+      expect(Object.keys(executeRuntime.mock.calls[0]?.[0] ?? {})).not.toContain("complete");
+      expect(JSON.stringify(executeRuntime.mock.calls[0]?.[1].messages)).toContain(run.instruction);
+      expect(f.store.context).toHaveBeenCalledWith(run);
+      expect(f.store.complete).toHaveBeenCalledWith(
+        run,
+        "Delivered.",
+        [],
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
+      expect(f.store.fail).not.toHaveBeenCalled();
+    } finally {
+      await runner.stop();
+    }
+  });
   it.each([
     ["processed.pdf", Buffer.from("%PDF-1.7\n%%EOF"), "extract"],
     ["processed.docx", Buffer.from([80, 75, 3, 4]), "extract"],
