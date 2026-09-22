@@ -13,7 +13,7 @@ claim the entire product roadmap is complete or renumber its historical mileston
 
 ## Track ownership and integration
 
-| Track | Module entry | Current work package | Acceptance |
+| Track | Module entry | Foundation package | Acceptance |
 | --- | --- | --- | --- |
 | R — Runtime and headless delivery | Server native-agent, PostgresAgentStore | R1: deterministic Server journey and continuation/optional-learning regressions | Authenticated task completes with retrievable report; failures/cancel/late response/client disconnect are verified without Web, Electron or paid inference |
 | C — Client and state contracts | ControlPlaneStore, workspace API, domain, reference reader | C1: coherent snapshots and explicit resynchronization | One DB snapshot for persisted fields/counts; independent read-only client handles duplicate/older frames and reconnect; page limits are explicit |
@@ -58,16 +58,19 @@ requires an explicitly supplied empty loopback database. These are separate acce
 
 ## Next packages and dependencies
 
+The third wave below is integrated. C4 and B1b are now in separate implementation worktrees;
+P2 is in standards/adapter research while the first real provider remains unselected.
+
 | Package | Next concrete outcome | Dependency / boundary |
 | --- | --- | --- |
-| C3 — Authoritative active-task counts | Correct global counts when events refer to Runs outside the recent page | Preserve entity projections; coalesce bounded authoritative GET refreshes, test duplicates/read races/failure/unmount. Snapshot-stream adoption separately needs Desktop lifecycle handling. |
+| C4 — Official snapshot-stream lifecycle | Adopt the optional stream with explicit mutation/reconnect ordering | C3 has corrected authoritative GET counts; first add Desktop replacement/cleanup slots and preserve profile notifications. |
 | P2 — Account lifecycle | One reviewed OAuth connector supports login, expiry, refresh and revocation with bounded diagnostics | MCP authorization research and explicit provider test account; no credential passthrough or silent scope expansion |
-| B1 — Controlled browser | One complete observe/prepare/approve/commit/receipt/stop journey | Existing capability-lease decision, resource exclusivity and one reference Provider; unrelated markets or native platforms are not prerequisites |
+| B1b — Owner Worker-task cancellation | Owner can cancel a Worker Run, pending approvals become unusable and Node cleanup retains occupancy | B1a provides the real Server/Node/Provider acceptance baseline. Fix approval/cancel/complete and reconnect races; cancellation cannot promise rollback of an external action. Full capability leases remain a separate package. |
 | F1 — Files and code | Synthetic input → verified report or tested patch with attributable artifacts | R1 and reviewed file boundaries; reuse existing attachment and artifact mechanisms |
-| S1 — Durable work | Restart/recovery/approval receipt and unknown-write failure injection | Server-owned state; unknown external effects require reconciliation, never blind replay |
+| S1b — Reviewed reconciliation and retention | Owner can record reviewed external evidence and manage receipt capacity | S1a preserves unknown outcomes; a received response or task cancellation does not prove external completion or rollback. Never replay an uncertain write. |
 | L1 — Verifiable learning | A reviewed correction produces a versioned method with evidence and rollback | R1 keeps learning optional; preserve Hermes attribution and separate checkpoints, memory, traces and skills |
 | M1 — Useful collaboration | Evidence-bearing delegation with one accountable parent, shared budget and resource exclusion | Stable task/action contracts; parallel Bot names do not imply credential isolation |
-| O1 — Remaining operations and compatibility | Paired database/files/keys restore and explicit release responsibility | O1a verifies retained database rows only; it does not restore file bytes or encryption keys |
+| O1 — Remaining operations and compatibility | Operational backup adapters, remaining recovery profiles and explicit release responsibility | O1a covers retained upgrades; O1b covers a synthetic POSIX Server directory-mode paired restore. Publisher, legacy and Desktop secret profiles, archive encryption, off-host retention and PITR remain open. |
 
 These are remaining work, not delivered features. Start each package with a bounded acceptance
 journey and its existing reuse-ledger entry. Inspect source/releases/tests/issues/license before
@@ -78,13 +81,13 @@ deliverables; they remain visible in the product roadmap rather than being impli
 
 ## Contributor handoff
 
-The next bounded product/reliability slices identified by source review are S1a (durable MCP call
-receipts and `outcome_unknown` after lost response/restart) and B1a (a Docker Provider conformance
-suite through the existing runner). They require focused research before implementation. Existing
-MCP audits are capped at 500 and pending approvals are in memory; they are not a durable call
-ledger. Existing reviewed browser clicks and per-Bot instance locks are useful foundations, but
-the capability-lease ADR remains proposed and does not establish cross-process exclusivity.
-Neither slice alone completes its whole parent track.
+S1a now has a separate bounded receipt ledger; its 500-entry audit and ephemeral approval
+arguments are not recovery checkpoints. Unknown receipts are protected from history eviction,
+and 256 protected records refuse new calls. B1a exercises the existing reviewed browser click
+through the official runner. Neither completes its parent track. The next browser package B1b
+must add real Owner Worker cancellation and terminate approval waits on disconnect, with shared
+Run-before-approval lock ordering, late-result rejection and retained Node cleanup occupancy.
+The capability-lease ADR remains proposed and does not establish cross-process exclusivity.
 
 A ready package states the observable result, non-goals, module entry, prerequisites, focused
 command, failing scenario and review routing. An open architecture question is not a starter task.
@@ -133,3 +136,30 @@ first wave. No release was published. Follow-up packages above remain open.
   failed cleanup. Ten helper regressions passed. A newly exported integrated checkout then passed
   the full login/enrollment/restart journey; no owned processes, ports, containers or private fixture
   directories remained. This supersedes the failed cold-run attempt.
+
+## Third-wave completion and integration evidence — 2026-09-23
+
+| Package | Result | Acceptance and limits |
+| --- | --- | --- |
+| C3 — Authoritative counts | Complete; integrated locally | Global active counts are refreshed from the Server, independent of the recent 50-Run list. Duplicate/off-page events and concurrent streams cannot accumulate false increments. Focused hook/App regressions cover bounded coalescing, errors and cleanup. |
+| S1a — Durable call receipts | Complete; integrated locally | A separate encrypted 256-record ledger retains approval/dispatch/response facts. Real process-kill tests verify pre-dispatch zero calls and lost-response one-call uncertainty across two restarts, with no replay. Owner task details expose these facts with bounded reads. Unknown outcomes remain protected; reconciliation and capacity management are S1b. |
+| B1a — Docker browser lifecycle | Complete; integrated locally | `npm run test:provider:docker -- --output <new-report.json>` passes 15 required checks with zero failures or skips. Uses production Server/Node/Provider and actual PostgreSQL with a synthetic computer HTTP surface. This is hermetic evidence, not real-browser or native platform certification. |
+| O1b — Paired restore | Complete for the synthetic POSIX Server directory profile | `npm run test:restore` passes: 25 tables, eight files, 27 migrations; actual Owner downloads, decryption, retained unknown receipt, missing/wrong keys, altered files and transactional rollback on a truncated dump. Other recovery profiles and operational backups remain open. |
+
+- Final integrated `npm run check` passed: Server 562 tests (75 environment-dependent skips),
+  Web 394, Desktop 359 (one existing skip), Node 51 (three existing skips), 31 test tasks and
+  18 build tasks. The separate real PostgreSQL headless journey passed all 112 tests.
+- The browser driver passes 12 focused fixture/process regressions. Review found that stopping
+  only the immediate child could leave a live grandchild. The driver now shares the existing
+  POSIX process-group cleanup with contributor smoke; deadline, abort, parent-first exit,
+  inherited pipes and unrelated-process preservation are covered.
+- A fresh export of integrated `173e95f`, after only `npm ci --ignore-scripts`, passed the complete
+  Owner login, one-time Node enrollment and retained Server/Node restart journey. It had no prior
+  build output or private configuration. Owned containers/processes/files and the export were
+  removed after acceptance. The original `9cc73c9` checkout and its untracked files remain intact.
+- The seventh client fixture, `plugin-receipts`, passes actual desktop/narrow browser checks;
+  old six scenarios remain usable. Integrated build/preview renders the unknown-result warning
+  before new-task submission, with settled receipts collapsed. Production bundles exclude fixtures.
+- CI adds required restore and Docker conformance commands to the existing database job and
+  retains the conformance report. Hosted execution has not been observed. No release, real paid
+  model run, external OAuth account or additional native installation is claimed.
