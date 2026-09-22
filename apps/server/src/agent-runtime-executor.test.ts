@@ -163,4 +163,31 @@ describe("Server-selected runtime executor", () => {
       ),
     ).rejects.toMatchObject({ code: "conflict" });
   });
+  it.each(["usage", "audit", "corrections"] as const)(
+    "rejects completion even when an adapter catches a failed %s port",
+    async (kind) => {
+      const f = fixture();
+      const failure = new NativeExecutionError("conflict");
+      if (kind === "usage") vi.mocked(f.ports.storage.saveUsage).mockRejectedValue(failure);
+      if (kind === "audit") vi.mocked(f.ports.audit.progress).mockRejectedValue(failure);
+      if (kind === "corrections") vi.mocked(f.ports.storage.corrections).mockRejectedValue(failure);
+      await expect(
+        runAgentRuntime(
+          async (ports) => {
+            try {
+              if (kind === "usage")
+                await ports.storage.saveUsage({ provider: "openai", model: "test", steps: 1 });
+              if (kind === "audit") await ports.audit.progress("planning", "step");
+              if (kind === "corrections") await ports.storage.corrections();
+            } catch {
+              // Simulate callback-error isolation by an alternative SDK.
+            }
+            return { text: "SDK reported success", appliedCorrectionIds: [] };
+          },
+          f.ports,
+          f.input,
+        ),
+      ).rejects.toBe(failure);
+    },
+  );
 });

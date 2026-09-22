@@ -307,10 +307,10 @@ jobs:
           OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
           OPENBOT_IMPORT_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_import_test_ci
 
-      - name: Verify asynchronous Bot collaboration in a disposable PostgreSQL database
+      - name: Verify headless runtime and Bot collaboration in a disposable PostgreSQL database
         run: |
           node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_collab_test_ci"); } finally { await sql.end(); }'
-          npm exec --workspace @openbot/server -- vitest run src/agent-collaboration.integration.test.ts
+          npm exec --workspace @openbot/server -- vitest run src/agent-collaboration.integration.test.ts src/native-agent-headless.integration.test.ts --maxWorkers=1 --no-file-parallelism
         env:
           OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
           OPENBOT_COLLAB_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_collab_test_ci

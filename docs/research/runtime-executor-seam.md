@@ -38,7 +38,8 @@ call inside executeAgentRun. Add an optional Server-owned executor function, ret
 implementation by default. Pass it from NativeAgentRunner for roots, continuations and children.
 The runner continues to own durable completion, errors, artifacts and publication.
 
-Validate the result at the Server boundary even for replacement adapters: bounded nonempty text,
+Retain a durable-port failure even when an SDK catches a usage/audit/correction callback error,
+so such a result cannot be committed. Validate the result at the Server boundary even for replacement adapters: bounded nonempty text,
 unique bounded correction IDs previously read from the bound storage port, and active authority
 before entry and after return. Race the executor against cancellation so an adapter that ignores
 its signal cannot keep runner shutdown or final success pending indefinitely. This does not
@@ -74,12 +75,25 @@ docs and the full check with that same virtualenv present.
 
 ## Verification results (2026-09-23)
 
-- Focused Server executor/SDK/native checks: 101 passed, including 13 adapter-boundary cases.
-- `npm run test:runtime`: 126 passed against an invocation-owned PostgreSQL 17.11 fixture;
+- Focused Server executor/SDK/native checks: 104 passed, including 16 adapter-boundary cases.
+- `npm run test:runtime`: 129 passed against an invocation-owned PostgreSQL 17.11 fixture;
   fixture cleanup succeeded. This includes the real Owner API, delivery, cancellation, continuation
   and collaboration tests; no paid model or personal database was used.
-- Full `npm run check` passed with Node 26.0.0 and npm 10.9.9. Server: 538 passed / 75 skipped;
+- Full `npm run check` passed with Node 26.0.0 and npm 10.9.9. Server: 541 passed / 75 skipped;
   Web: 329 passed; Desktop: 359 passed / 1 skipped; Node: 51 passed / 3 skipped. The explicit
   headless command runs the relevant database suites that the default full check skips.
 - Local evidence is a macOS host plus the Linux PostgreSQL fixture. Python execution, production
   subprocess isolation and Linux application compatibility are not established by this slice.
+
+## Integration follow-up
+
+Reuse the existing digest-pinned PostgreSQL CI service, disposable collaboration database and
+required `database` job (existing [CI gate review](windows-ci-merge-gate.md)); add the headless
+suite to its invocation with one worker and no file parallelism, because both suites reset that
+fixture. No new action, credential or service is required. Hosted execution is not yet verified.
+The first report-download acceptance now explicitly selects the replacement executor seam.
+
+One concurrent local rerun passed 128 cases but hit Vitest's default five-second test timeout in
+the saturation case, which seeds fifty complete Run/proposal transactions before testing delivery.
+Give that individual fixture-heavy test a bounded 30-second total allowance; retain the four-second
+terminal-state assertion. This changes the setup allowance, not product deadlines or assertions.

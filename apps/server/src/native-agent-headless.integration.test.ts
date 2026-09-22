@@ -6,6 +6,7 @@ import { createDatabase } from "@openbot/db";
 import type { Artifact, Bot, Channel, Run } from "@openbot/domain";
 import { MockLanguageModelV4 } from "ai/test";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { type AgentRuntimeExecutor, executeAgentRuntime } from "./agent-runtime.js";
 import { createApp } from "./app.js";
 import { FileArtifactStorage } from "./artifact-storage.js";
 import { ChannelRealtimeHub } from "./channel-realtime-hub.js";
@@ -76,7 +77,7 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
   });
   afterAll(async () => database?.close());
 
-  async function fixture(model: MockLanguageModelV4) {
+  async function fixture(model: MockLanguageModelV4, executeRuntime?: AgentRuntimeExecutor) {
     if (!database) throw new Error("Missing disposable database.");
     const directory = await mkdtemp(join(tmpdir(), "openbot-headless-"));
     cleanups.push(() => rm(directory, { recursive: true, force: true }));
@@ -108,6 +109,7 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
     const errors = vi.fn();
     const runner = new NativeAgentRunner(native, settings, realtime, errors, () => model, {
       artifacts,
+      executeRuntime,
     });
     cleanups.push(() => runner.stop());
     const origin = "http://localhost:5173";
@@ -176,6 +178,7 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
   }
 
   it("submits through the Owner API and downloads the committed report without a client UI", async () => {
+    const selectedExecutor = vi.fn<AgentRuntimeExecutor>(executeAgentRuntime);
     const f = await fixture(
       new MockLanguageModelV4({
         doGenerate: [
@@ -186,9 +189,11 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
           answer(),
         ],
       }),
+      selectedExecutor,
     );
     const run = await f.submit();
     await f.terminal(run, "completed");
+    expect(selectedExecutor).toHaveBeenCalledOnce();
     const artifacts = await f.store.listArtifacts(run.id);
     expect(artifacts).toHaveLength(1);
     const download = await f.request(`/api/v1/artifacts/${artifacts[0]?.id}/content`);
@@ -341,5 +346,5 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
       await database.client`select type, payload from run_events where run_id = ${run.id} and type = 'KNOWLEDGE_PROPOSAL_SKIPPED'`;
     expect(events).toHaveLength(1);
     expect(events[0]?.payload).toEqual({ executor: "native-agent", reason: "pending_limit" });
-  });
+  }, 30_000);
 });
