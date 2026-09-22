@@ -96,6 +96,18 @@ export interface AgentRunResult {
   knowledgeReferences?: KnowledgeReference[] | undefined;
   skillReferences?: SkillReference[] | undefined;
 }
+/** Bounded tool state belongs to the Run, including final-answer continuations. */
+class AgentExecutionState {
+  readonly sources = new Map<number, PublicSource>();
+  readonly sourceReads = new Map<number, Promise<PublicSource>>();
+  readonly webSources = new Map<string, PublicSource>();
+  readonly reports: NativeReportArtifact[] = [];
+  readonly skillReferences: SkillReference[] = [];
+  readonly skillReads = new Map<string, Promise<AgentSkillDocument>>();
+  knowledgeReferences: KnowledgeReference[] = [];
+  knowledgeSnapshot: AgentKnowledge | undefined;
+  proposal: KnowledgeProposalDraft | undefined;
+}
 type AgentPlugins = Pick<PluginService, "catalog" | "call"> &
   Partial<Pick<PluginService, "contentCatalog" | "readContent">>;
 
@@ -256,6 +268,7 @@ export async function executeAgentRun(options: {
   publishRun?(run: Run): void;
   publishOutput?(text: string, reset: boolean): void;
   continuation?: string;
+  executionState?: AgentExecutionState;
   executionBudget?: { steps: number; tools: number; web: number; usage?: RunModelUsage };
   startTask?:
     | ((input: {
@@ -273,20 +286,13 @@ export async function executeAgentRun(options: {
   let observedUsage: RunModelUsage | undefined = budget.usage;
   let appliedSteering: SteeringInstruction[] = [];
   const sourceUrls = taskSourceUrls(run.instruction);
-  const sources = new Map<number, PublicSource>();
-  const sourceReads = new Map<number, Promise<PublicSource>>();
-  const webSources = new Map<string, PublicSource>();
-  const reports: NativeReportArtifact[] = [];
-  let proposal: KnowledgeProposalDraft | undefined;
-  const skillReferences: SkillReference[] = [];
-  const skillReads = new Map<string, Promise<AgentSkillDocument>>();
-  let knowledgeReferences: KnowledgeReference[] = [];
-  let knowledgeSnapshot: AgentKnowledge | undefined;
+  const state = options.executionState ?? new AgentExecutionState();
+  const { sources, sourceReads, webSources, reports, skillReferences, skillReads } = state;
   const check = async () => {
     signal.throwIfAborted();
     await options.checkSettings();
     await store.assertScope(run);
-    await store.assertKnowledge?.(run, knowledgeReferences);
+    await store.assertKnowledge?.(run, state.knowledgeReferences);
     await store.assertSkills?.(run, skillReferences);
     signal.throwIfAborted();
   };
@@ -541,9 +547,9 @@ export async function executeAgentRun(options: {
             execute: () =>
               observe("read_employee_memory", async () => {
                 if (!store.knowledge) throw new NativeExecutionError("tool_unavailable");
-                const knowledge = knowledgeSnapshot ?? (await store.knowledge(run));
-                knowledgeSnapshot = knowledge;
-                knowledgeReferences = knowledge.memories.map(({ id, revision }) => ({
+                const knowledge = state.knowledgeSnapshot ?? (await store.knowledge(run));
+                state.knowledgeSnapshot = knowledge;
+                state.knowledgeReferences = knowledge.memories.map(({ id, revision }) => ({
                   id,
                   revision,
                 }));
@@ -556,8 +562,8 @@ export async function executeAgentRun(options: {
             inputSchema: knowledgeProposalSchema,
             execute: (input) =>
               observe("propose_memory", async () => {
-                if (proposal) throw new NativeExecutionError("task_limit");
-                proposal = validateKnowledgeProposal(input);
+                if (state.proposal) throw new NativeExecutionError("task_limit");
+                state.proposal = validateKnowledgeProposal(input);
                 return {
                   status: "prepared",
                   requiresOwnerReview: true,
@@ -800,7 +806,9 @@ export async function executeAgentRun(options: {
     fetchedAt,
     truncated,
   }));
-  for (const report of reports) {
+  // Keep authored text untouched: repeated continuations must not duplicate provenance.
+  const finalizedReports = reports.map((prepared) => {
+    const report = { ...prepared };
     if (sourceMetadata.length) {
       report.text +=
         "\n\n---\n\n## Sources read by OpenBot\n\n" +
@@ -814,15 +822,16 @@ export async function executeAgentRun(options: {
     }
     report.metadata = { executor: "native-agent", sources: sourceMetadata };
     decodeReport(report);
-  }
+    return report;
+  });
   return {
     text: result.text.trim(),
     ...(appliedSteering.length
       ? { appliedSteeringIds: appliedSteering.map((item) => item.id) }
       : {}),
-    reports,
-    ...(proposal ? { proposal } : {}),
-    ...(knowledgeReferences.length ? { knowledgeReferences } : {}),
+    reports: finalizedReports,
+    ...(state.proposal ? { proposal: state.proposal } : {}),
+    ...(state.knowledgeReferences.length ? { knowledgeReferences: state.knowledgeReferences } : {}),
     ...(skillReferences.length ? { skillReferences } : {}),
   };
 }
@@ -844,8 +853,8 @@ export class NativeAgentRunner {
   #stopped = true;
   constructor(
     readonly store: AgentRunStore,
-    readonly settings: ModelSettingsService,
-    readonly realtime: ChannelRealtimeHub,
+    readonly settings: Pick<ModelSettingsService, "agentSettings" | "onChange">,
+    readonly realtime: Pick<ChannelRealtimeHub, "publish">,
     readonly onError: () => void,
     readonly makeModel: (config: AgentModelSettings) => LanguageModel = agentModel,
     readonly options: NativeAgentOptions = {},
@@ -1001,10 +1010,12 @@ export class NativeAgentRunner {
         return result;
       };
       let continuation: string | undefined;
+      const executionState = new AgentExecutionState();
       while (true) {
         const output = await executeAgentRun({
           run,
           executionBudget,
+          executionState,
           ...(continuation ? { continuation } : {}),
           attachments: this.options.attachments,
           plugins: this.options.plugins,
