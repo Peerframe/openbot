@@ -1,3 +1,4 @@
+import { pluginCallReceiptListSchema } from "@openbot/protocol";
 import { afterEach, describe, expect, it } from "vitest";
 import { demoArtifact, demoChannel, demoReport } from "../demo/fixtures";
 import { ClientFixtureAdapter, clientScenarios, fixtureRunId } from "./adapter";
@@ -14,6 +15,25 @@ afterEach(() => {
 const prefix = `/api/v1/channels/${demoChannel.id}`;
 
 describe("isolated shared-client scenarios", () => {
+  it("exposes only schema-valid synthetic receipt reads and resets failure without replay", async () => {
+    const adapter = create("plugin-receipts");
+    const path = `/api/v1/runs/${fixtureRunId}/plugin-calls`;
+    const result = pluginCallReceiptListSchema.parse(await (await adapter.fetch(path)).json());
+    expect(result.calls.map((call) => call.state)).toEqual([
+      "outcome_unknown",
+      "response_received",
+    ]);
+    expect(adapter.getSnapshot().runs[0]?.status).toBe("cancelled");
+    expect((await adapter.fetch(path, { method: "POST" })).status).toBe(403);
+    adapter.toggleReceiptReadFailure();
+    expect((await adapter.fetch(path)).status).toBe(503);
+    adapter.toggleReceiptReadFailure();
+    expect(await (await adapter.fetch(path)).json()).toEqual(result);
+    for (const { id } of clientScenarios.filter(({ id }) => id !== "plugin-receipts")) {
+      adapter.load(id);
+      expect(await (await adapter.fetch(path)).json()).toEqual({ calls: [] });
+    }
+  });
   it("retains fail-closed transport for foreign URLs, credentials and unknown capabilities", async () => {
     const adapter = create();
     for (const path of [

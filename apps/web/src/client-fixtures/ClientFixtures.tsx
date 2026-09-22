@@ -109,6 +109,11 @@ export function ClientFixtures({ adapter }: { adapter: ClientFixtureAdapter }) {
             </button>
           </>
         ) : null}
+        {state.scenario === "plugin-receipts" ? (
+          <button type="button" onClick={adapter.toggleReceiptReadFailure}>
+            {state.receiptReadFails ? "恢复回执读取" : "模拟回执读取失败"}
+          </button>
+        ) : null}
         <button type="button" onClick={() => setInspection(fixtureRunId)}>
           任务详情
         </button>

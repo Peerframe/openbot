@@ -38,6 +38,25 @@ function button(text: string) {
 }
 
 describe("actual shared client fault flows", () => {
+  it("reads receipts through the actual API and retains unknown outcomes across read failure", async () => {
+    vi.useFakeTimers();
+    const { adapter, view } = await mount("plugin-receipts");
+    await interact(() => button("任务详情").click());
+    const panel = view.container.querySelector('[aria-label="工具调用回执"]');
+    expect(panel?.textContent).toContain("结果待核对");
+    expect(panel?.textContent).toContain("工具答复已收到");
+    expect(panel?.querySelector("details")?.open).toBe(false);
+    await interact(adapter.toggleReceiptReadFailure);
+    await act(async () => vi.advanceTimersByTimeAsync(5000));
+    expect(panel?.textContent).toContain("结果待核对");
+    expect(panel?.querySelector('[role="alert"]')?.textContent).toContain("暂时无法读取最新回执");
+    expect(panel?.textContent).not.toContain("Synthetic receipt read failure");
+    await interact(adapter.toggleReceiptReadFailure);
+    await interact(() => button("刷新回执").click());
+    expect(panel?.querySelector('[role="alert"]')).toBeNull();
+    expect(panel?.textContent).toContain("结果待核对");
+    expect(adapter.getSnapshot().runs[0]?.status).toBe("cancelled");
+  });
   it("uses the official approval card and removes it after an actual API decision", async () => {
     const { adapter, view } = await mount("approval");
     expect(view.container.querySelector(".approval-card")).not.toBeNull();

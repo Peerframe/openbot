@@ -1,4 +1,5 @@
 import type { PluginContentScope, PluginSnapshot } from "@openbot/protocol";
+import { type PluginCallReceipt, pluginCallReceiptListSchema } from "@openbot/protocol";
 import { ApiError } from "./api";
 
 export type {
@@ -66,6 +67,28 @@ export async function pluginRequest<T>(path: string, init: RequestInit = {}): Pr
 }
 export function listPlugins(signal?: AbortSignal): Promise<PluginSnapshot> {
   return pluginRequest("plugins", signal ? { signal } : {});
+}
+export async function listPluginCallReceipts(
+  runId: string,
+  signal?: AbortSignal,
+): Promise<PluginCallReceipt[]> {
+  const deadline = AbortSignal.timeout(10_000);
+  const combined = signal ? AbortSignal.any([signal, deadline]) : deadline;
+  combined.throwIfAborted();
+  const result = pluginCallReceiptListSchema.safeParse(
+    await pluginRequest<unknown>(`runs/${encodeURIComponent(runId)}/plugin-calls`, {
+      signal: combined,
+      cache: "no-store",
+    }),
+  );
+  combined.throwIfAborted();
+  if (
+    !result.success ||
+    result.data.calls.some((call) => call.runId !== runId) ||
+    new Set(result.data.calls.map((call) => call.id)).size !== result.data.calls.length
+  )
+    throw new Error("工具调用回执无效。");
+  return result.data.calls;
 }
 export function pluginError(cause: unknown): string {
   if (cause instanceof PluginCompatibilityError) return compatibilityMessages[cause.compatibility];

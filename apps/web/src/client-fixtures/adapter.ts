@@ -5,6 +5,7 @@ import type {
   RunProgress,
   WorkspaceSnapshot,
 } from "@openbot/domain";
+import type { PluginCallReceipt } from "@openbot/protocol";
 import { DemoAdapter, type DemoSnapshot } from "../demo/adapter";
 import {
   demoArtifact,
@@ -46,6 +47,12 @@ export const clientScenarios = [
     label: "断线重连",
     instruction: "断开 → 离线期间完成 → 恢复；正式客户端应自动补读遗漏的消息。",
   },
+  {
+    id: "plugin-receipts",
+    label: "外部调用回执",
+    instruction:
+      "打开任务详情，核对未知结果与已收答复；可模拟读取失败。回执仅为合成样本，无真实调用或持久账本。",
+  },
 ] as const;
 export type ClientScenario = (typeof clientScenarios)[number]["id"];
 export const fixtureRunId = "fixture-run";
@@ -60,6 +67,7 @@ export interface ClientFixtureSnapshot extends DemoSnapshot {
   step: number;
   approvals: Approval[];
   progress: RunProgress[];
+  receiptReadFails: boolean;
 }
 
 /** No Server authority: this subclass is imported exclusively by the isolated fixture entry. */
@@ -84,6 +92,7 @@ export class ClientFixtureAdapter extends DemoAdapter {
       requestId,
     );
     if (scenario === "approval") run.status = "waiting_approval";
+    if (scenario === "plugin-receipts") run.status = "cancelled";
     const progress: RunProgress = {
       id: "fixture-progress",
       runId: run.id,
@@ -96,6 +105,7 @@ export class ClientFixtureAdapter extends DemoAdapter {
       scenario,
       online: true,
       step: 0,
+      receiptReadFails: false,
       messages: [
         demoMessage(requestId, `请验证「${selected.label}」场景。${selected.instruction}`),
       ],
@@ -209,6 +219,10 @@ export class ClientFixtureAdapter extends DemoAdapter {
     if (!this.getSnapshot().online) this.complete();
   };
   reconnect = () => this.patch({ online: true });
+  toggleReceiptReadFailure = () => {
+    if (this.getSnapshot().scenario === "plugin-receipts")
+      this.patch({ receiptReadFails: !this.getSnapshot().receiptReadFails });
+  };
   protected override event(event: ChannelRealtimeEvent) {
     if (this.getSnapshot().online) super.event(event);
   }
@@ -231,6 +245,15 @@ export class ClientFixtureAdapter extends DemoAdapter {
   ) {
     if (!this.getSnapshot().online)
       return Response.json({ error: "Synthetic fixture connection is offline" }, { status: 503 });
+    if (
+      method === "GET" &&
+      path === `/api/v1/runs/${fixtureRunId}/plugin-calls` &&
+      this.getSnapshot().scenario === "plugin-receipts"
+    ) {
+      if (this.getSnapshot().receiptReadFails)
+        return Response.json({ error: "Synthetic receipt read failure" }, { status: 503 });
+      return Response.json({ calls: fixtureReceipts() });
+    }
     if (method === "POST" && path === "/api/v1/approvals/fixture-approval/decision") {
       const approval = this.getSnapshot().approvals[0];
       const run = this.snapshot.runs[0];
@@ -282,4 +305,39 @@ export class ClientFixtureAdapter extends DemoAdapter {
       },
     };
   }
+}
+
+function fixtureReceipts(): PluginCallReceipt[] {
+  const unknown: PluginCallReceipt = {
+    id: "10000000-0000-4000-8000-000000000001",
+    runId: fixtureRunId,
+    channelId: demoChannel.id,
+    botId: "demo-editor",
+    pluginId: "10000000-0000-4000-8000-000000000002",
+    pluginRevision: "10000000-0000-4000-8000-000000000003",
+    pluginName: "合成文档服务",
+    toolName: "write_report",
+    mode: "confirm",
+    state: "outcome_unknown",
+    approvalDecision: "approved",
+    createdAt: demoTime,
+    updatedAt: "2026-09-10T01:30:30.000Z",
+    approvalRequestedAt: "2026-09-10T01:30:10.000Z",
+    approvalDecidedAt: "2026-09-10T01:30:20.000Z",
+    dispatchedAt: "2026-09-10T01:30:25.000Z",
+  };
+  return [
+    unknown,
+    {
+      ...unknown,
+      id: "10000000-0000-4000-8000-000000000004",
+      toolName: "read_report",
+      mode: "read",
+      state: "response_received",
+      approvalDecision: null,
+      approvalRequestedAt: undefined,
+      approvalDecidedAt: undefined,
+      responseReceivedAt: "2026-09-10T01:30:30.000Z",
+    },
+  ];
 }

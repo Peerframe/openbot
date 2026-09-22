@@ -314,9 +314,12 @@ export class DemoAdapter {
       for (const bot of demoBots)
         if (path === `/api/v1/bots/${bot.id}/profile`)
           return json({ profile: { employee: bot, skills: [] } });
-      for (const run of this.snapshot.runs)
+      for (const run of this.snapshot.runs) {
+        // Demo/fixture Runs have no durable Server call ledger; only this read is allowlisted.
+        if (path === `/api/v1/runs/${run.id}/plugin-calls`) return json({ calls: [] });
         if (path === `/api/v1/runs/${run.id}/output`)
           return json({ output: this.outputs.get(run.id) ?? null });
+      }
     }
     if (method === "PUT" && path.startsWith(`${prefix}/messages/`) && path.endsWith("/reactions")) {
       const id = path.slice(`${prefix}/messages/`.length, -"/reactions".length);

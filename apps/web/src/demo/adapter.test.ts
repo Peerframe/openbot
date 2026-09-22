@@ -17,6 +17,15 @@ afterEach(() => {
 });
 
 describe("isolated product demo transport", () => {
+  it("returns empty receipts only for known synthetic Runs without exposing call mutations", async () => {
+    const adapter = create();
+    adapter.finish();
+    const run = adapter.getSnapshot().runs[0];
+    const path = `/api/v1/runs/${run?.id}/plugin-calls`;
+    expect(await (await adapter.fetch(path)).json()).toEqual({ calls: [] });
+    expect((await adapter.fetch(path, { method: "POST" })).status).toBe(403);
+    expect((await adapter.fetch("/api/v1/runs/private/plugin-calls")).status).toBe(403);
+  });
   it("has no fallback for foreign origins, unknown routes, media, plugins or real channels", async () => {
     const adapter = create();
     for (const url of [

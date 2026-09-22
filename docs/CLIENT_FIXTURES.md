@@ -28,6 +28,7 @@ This command builds and previews the isolated entry. After editing shared compon
 | `partial-output` | **下一段（含重复和旧事件）**, then **完成回复** | Duplicate/older output does not undo the longer text. Completion replaces the partial output with the final message. |
 | `artifacts` | Click the report in the final message | The actual artifact link downloads a fixed, public synthetic Markdown report using a local Blob. |
 | `reconnect` | **断开事件流** → **离线期间完成** → **恢复连接** | The actual channel connection badge enters retrying. The final message stays absent while offline, then appears after the existing 2-second retry and API reread. |
+| `plugin-receipts` | **任务详情**, then expand **已终结回执** and **时间与插件版本** | A cancelled Run still shows an unknown external outcome before the task controls, plus a received-response sample. Both expose call identity, approval facts and timestamps, without a call retry. Close the inspector, choose **模拟回执读取失败**, reopen to see fixed error guidance; **恢复回执读取** and **刷新回执** perform only a read. |
 
 At narrow widths use **频道**, **审批与状态** and **侧栏** to reach the same components. The fixture only simulates approvals and cancellation writes; composer submissions, resubmission, account/settings/model/plugin operations are unavailable. Their requests never fall through to a real Server.
 
@@ -47,5 +48,10 @@ The adapter extends the existing isolated website demo after its origin, method 
 ## Evidence and limits
 
 The fixture verifies client state and interaction against known synthetic projections, including events missed during disconnect. It does not test live Server authorization, real tools/models, Electron IPC/packaging, native permissions or actual internet failure. The ContextRail receives synthetic workspace state; the channel's connection badge and reconnect/refetch path use the actual API subscriber. Approval expiry labels use the local display clock; all scenario advancement is explicit.
+
+The receipt scenario is a read-only in-memory sample, not a durable ledger or independent proof of
+external effects. Its unknown record never becomes a successful write. The existing six scenarios
+and public demo return empty receipts for their known synthetic Runs. See the
+[receipt UI review](research/plugin-call-receipts-ui.md) for polling bounds and failure checks.
 
 See [research and validation](research/shared-client-fixtures.md) for dependency pins, isolation decisions and recorded browser/test evidence. No new package is required.

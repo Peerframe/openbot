@@ -1,0 +1,77 @@
+.plugin-call-receipts {
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.plugin-call-receipts > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.plugin-call-receipts > header h3 {
+  margin: 0;
+}
+.plugin-call-receipts > header button {
+  flex-shrink: 0;
+  padding: 5px 9px;
+  font-size: 11px;
+}
+.receipt-explanation {
+  color: #696f77;
+}
+.receipt-warning {
+  padding: 10px 12px;
+  border: 1px solid #ead4a6;
+  border-radius: 8px;
+  color: #80520f;
+  background: #fff8e9;
+}
+.receipt-list {
+  max-height: 360px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: 12px 0 0;
+  padding: 0 4px 0 0;
+  list-style: none;
+}
+.receipt-list > li {
+  padding: 12px;
+  border: 1px solid var(--line, #dce1e7);
+  border-radius: 8px;
+}
+.receipt-list > li + li {
+  margin-top: 8px;
+}
+.receipt-list p {
+  margin: 6px 0;
+}
+.receipt-tool {
+  font-weight: 600;
+}
+.receipt-state.outcome_unknown {
+  color: #80520f;
+}
+.receipt-call-id,
+.receipt-list dl {
+  font-size: 11px;
+  color: #696f77;
+}
+.receipt-list dt {
+  margin-top: 7px;
+}
+.receipt-list dd {
+  margin: 0;
+  color: #30353b;
+}
+.receipt-settled {
+  margin-top: 12px;
+}
+.plugin-call-receipts summary {
+  cursor: pointer;
+}
+.plugin-call-receipts summary:focus-visible,
+.receipt-list:focus-visible {
+  outline: 2px solid var(--green, #287961);
+  outline-offset: 2px;
+}
