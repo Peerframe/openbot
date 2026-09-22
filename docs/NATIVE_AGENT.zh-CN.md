@@ -229,6 +229,12 @@ Server 预算和待交付报告状态。
 已完成的模型回答一致。
 
 无界面报告流程已通过真实 Server 与临时 PostgreSQL 验证此模块；单元测试覆盖拒绝、取消、存储
-失败、并发调用与被修改的工具意图。集成测试的驱动器是固定的两步测试夹具。Python 进程通信、
-进程清理、实时流式输出一致性及 Linux 执行仍待完成；生产默认仍使用原有 TypeScript SDK 循环。
+失败、并发调用与被修改的工具意图。集成测试的驱动器是固定的两步测试夹具。生产默认仍使用原有 TypeScript SDK 循环。
 参见[研究记录](research/python-runtime-host.md)。
+
+`createPythonAgentExecutor` 已把执行门槛与固定 Python 程序/入口、最小环境、有界换行通信和
+本次 POSIX 进程组清理组合起来。子进程失败也会取消正在执行的 Server 操作；只有最终响应后
+确认子进程正常退出，才能进入完成校验。通信与生命周期测试使用 Node 子进程故障夹具，覆盖
+洪泛、非法消息、并发/重放、崩溃、取消和忽略退出信号的后代进程。这些夹具尚不能证明真实
+Python 集成、Linux 产品支持或流式输出一致性；启用前仍须完成这些验证。见
+[协议](AGENT_RUNTIME_PROTOCOL.zh-CN.md)和[通信研究](research/python-runtime-transport.md)。

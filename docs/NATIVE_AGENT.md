@@ -267,6 +267,14 @@ Final text must match the latest completed model response before the runner may 
 
 The headless report journey exercises this host with the real Server and disposable PostgreSQL;
 unit tests cover denial, cancellation, failed persistence, concurrent calls and altered tool intents.
-The driver in that integration test is a deterministic two-step fixture. Python process transport,
-process cleanup, live streaming parity and Linux execution are still pending. The production
-default remains the existing TypeScript SDK loop. See [host research](research/python-runtime-host.md).
+The driver in that integration test is a deterministic two-step fixture. The production default
+remains the existing TypeScript SDK loop. See [host research](research/python-runtime-host.md).
+
+`createPythonAgentExecutor` now composes the host with a fixed Python executable/entry point,
+a minimal environment, bounded newline transport and owned POSIX process-group cleanup. A child
+failure aborts in-flight Server operations; only a final response followed by clean child exit can
+reach host completion checks. Transport/lifecycle tests use adversarial Node child fixtures and
+cover flooding, malformed traffic, concurrent/repeated requests, crash, cancellation and stubborn
+descendants. These fixtures do not establish real Python integration, Linux support or streaming
+parity. Those remain gates before activation. See the [wire profile](AGENT_RUNTIME_PROTOCOL.md)
+and [transport research](research/python-runtime-transport.md).

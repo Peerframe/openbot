@@ -59,3 +59,15 @@ unknown and overlapping requests; stdout/stderr flooding; EOF/cancel/crash/late 
 usage/audit, revoked scope and budgets; clean child exit before publication; original media and
 per-step corrections retained by Server; real API/PostgreSQL report delivery. Synthetic tests
 must identify themselves. Linux reference execution and live streaming remain explicit open gates.
+
+## Server supervisor evidence (2026-09-23)
+
+The Server implementation reuses the released codec and adds exact application schemas, UTF-8,
+frame/depth/lifetime bounds, fixed context restoration and private POSIX process supervision.
+No upstream source copied. `npm run check` passed (Server 611 passed / 75 skipped; unchanged
+workspace results reused). The expanded headless command passed 199 cases across eight files.
+Nineteen framing and nineteen real Node child lifecycle tests cover the profile, including process
+group termination and cancellation. The Node fixture is intentionally not evidence of the Python
+SDK CLI or Linux runtime integration. An initial test needed a held callback to deterministically
+exercise overlap; macOS can add `__CF_USER_TEXT_ENCODING` to an otherwise explicit environment.
+No parent HOME/PATH or synthetic private canary appeared in the child.
