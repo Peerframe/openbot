@@ -77,7 +77,7 @@ are quiesced for this drill; no cross-store live snapshot protocol is introduced
 The real drill passed on the pinned image: 25 tables, eight paired files and 27 migrations.
 Independent review caught the historical upgrade fixture's metadata-only artifact; this drill now
 replaces that stub before capture and downloads every fixture artifact through Owner routes.
-Four offline boundary tests and ten shared fixture/lifecycle tests passed. Real SIGTERM injection
+Five offline boundary tests and ten shared fixture/lifecycle tests passed. Real SIGTERM injection
 after ciphertext creation and during a `pg_sleep(120)` SQL wait both exited nonzero with no owned
 container or private tree remaining. On abort, one shared cleanup promise stops only the owned
 container (including the migration adapter's separate connection) and closes fixture pools.

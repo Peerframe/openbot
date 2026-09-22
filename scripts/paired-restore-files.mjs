@@ -12,13 +12,15 @@ export const digest = (bytes) => createHash("sha256").update(bytes).digest("hex"
 async function inventory(root, visit = async () => {}) {
   const files = [];
   let total = 0;
+  let entries = 0;
   async function walk(relative = "") {
     const directory = join(root, relative);
     const info = await lstat(directory);
     assert(info.isDirectory() && !info.isSymbolicLink(), "Fixture directory must not be a link.");
     assert(relative.split("/").length <= 8, "Fixture tree exceeds the depth bound.");
     const names = (await readdir(directory)).sort();
-    assert(names.length <= maxFiles, "Fixture directory exceeds the entry bound.");
+    entries += names.length;
+    assert(entries <= 256, "Fixture tree exceeds the entry bound.");
     for (const name of names) {
       assert(/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name), "Unexpected fixture filename.");
       const path = relative ? `${relative}/${name}` : name;

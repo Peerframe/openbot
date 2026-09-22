@@ -70,3 +70,13 @@ test("oversized files and excessive directory depth are refused", async (t) => {
   await mkdir(join(source, ...Array(9).fill("deep")), { recursive: true });
   await assert.rejects(captureFixtureFiles(source, backup), /depth bound/);
 });
+
+test("empty directories also consume the total inventory bound", async (t) => {
+  const { source, backup } = await fixture(t);
+  for (const parent of ["first", "second", "third"]) {
+    for (let index = 0; index < 100; index++) {
+      await mkdir(join(source, parent, `empty-${index}`), { recursive: true });
+    }
+  }
+  await assert.rejects(captureFixtureFiles(source, backup), /entry bound/);
+});
