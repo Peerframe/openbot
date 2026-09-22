@@ -211,6 +211,8 @@ export class SmokeDatabase {
   #label = randomBytes(16).toString("hex");
   #attempted = false;
   #env;
+  #url;
+  #restoreTargets = new Set();
   constructor() {
     this.#env = Object.fromEntries(
       ["PATH", "HOME", "DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_CONFIG"]
@@ -268,15 +270,105 @@ export class SmokeDatabase {
       signal.throwIfAborted();
       try {
         await this.#docker(
-          ["exec", this.#name, "pg_isready", "-U", "openbot_smoke", "-d", "openbot_dev_smoke"],
+          // The image's temporary initialization server accepts Unix sockets before final startup.
+          [
+            "exec",
+            this.#name,
+            "pg_isready",
+            "-h",
+            "127.0.0.1",
+            "-U",
+            "openbot_smoke",
+            "-d",
+            "openbot_dev_smoke",
+          ],
           { signal, timeout: 5000 },
         );
-        return `postgres://openbot_smoke:${password}@${binding}/openbot_dev_smoke`;
+        this.#url = `postgres://openbot_smoke:${password}@${binding}/openbot_dev_smoke`;
+        return this.#url;
       } catch {
         await delay(250, undefined, { signal });
       }
     }
     throw new Error("Disposable PostgreSQL did not become ready within ten seconds.");
+  }
+  /** Native tools only address this journey's owned container, never a supplied connection URL. */
+  async dump({ signal } = {}) {
+    assert(this.#url, "Start the owned database before exporting it.");
+    const { stdout, stderr } = await exec(
+      "docker",
+      [
+        "exec",
+        this.#name,
+        "pg_dump",
+        "-U",
+        "openbot_smoke",
+        "--format=custom",
+        "--no-owner",
+        "--no-privileges",
+        "openbot_dev_smoke",
+      ],
+      { env: this.#env, timeout: 30_000, maxBuffer: 16 * 1024 * 1024, encoding: "buffer", signal },
+    );
+    assert.equal(
+      stderr.length,
+      0,
+      "Native dump emitted diagnostics; review the fixture before continuing.",
+    );
+    return stdout;
+  }
+  async createRestoreTarget(name, { signal } = {}) {
+    assert(
+      this.#url && /^openbot_restore_test_[a-z]+$/.test(name),
+      "Invalid owned restore target.",
+    );
+    await this.#docker(
+      ["exec", this.#name, "createdb", "-U", "openbot_smoke", "--template=template0", name],
+      { signal },
+    );
+    this.#restoreTargets.add(name);
+    const url = new URL(this.#url);
+    url.pathname = `/${name}`;
+    return url.href;
+  }
+  async restore(name, archive, { signal } = {}) {
+    assert(
+      this.#restoreTargets.delete(name),
+      "Restore requires a newly created unused fixture target.",
+    );
+    assert(
+      Buffer.isBuffer(archive) && archive.length <= 16 * 1024 * 1024,
+      "Restore archive exceeds the fixture bound.",
+    );
+    const operation = exec(
+      "docker",
+      [
+        "exec",
+        "-i",
+        this.#name,
+        "pg_restore",
+        "-U",
+        "openbot_smoke",
+        "--dbname",
+        name,
+        "--single-transaction",
+        "--exit-on-error",
+        "--no-owner",
+        "--no-privileges",
+      ],
+      { env: this.#env, timeout: 30_000, maxBuffer: 128 * 1024, signal },
+    );
+    // Early pg_restore rejection can close stdin before all bytes are sent.
+    operation.child.stdin.on("error", () => {});
+    operation.child.stdin.end(archive);
+    try {
+      const { stderr } = await operation;
+      assert.equal(stderr.length, 0, "Native restore emitted diagnostics.");
+    } catch {
+      throw new Error(
+        "Native fixture restore failed; no success is inferred from archive readability.",
+      );
+    }
   }
   async stop() {
     if (!this.#attempted) return;

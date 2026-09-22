@@ -288,6 +288,8 @@ jobs:
         env:
           OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
           OPENBOT_UPGRADE_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_upgrade_test_ci
+      - name: Verify paired database, objects and encryption keys restore
+        run: npm run test:restore
       - name: Verify recurring-task transactions in a disposable PostgreSQL database
         run: |
           node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_automation_test_ci"); } finally { await sql.end(); }'
