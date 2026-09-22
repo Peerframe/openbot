@@ -35,7 +35,6 @@ export interface RuntimeToolDescriptor {
 export class AgentRuntimeHost {
   readonly #schemas = new Map<string, Schema>();
   readonly #pending = new Map<string, RuntimeToolIntent>();
-  readonly #seen = new Set<string>();
   readonly #modelTools: ToolSet = {};
   #catalog: RuntimeToolDescriptor[] | undefined;
   #last: AgentRuntimeResult | undefined;
@@ -212,6 +211,7 @@ export class AgentRuntimeHost {
         result.toolCalls.length > 16 - budget.tools
       )
         throw new NativeExecutionError("task_limit");
+      // IDs correlate one response; pending intents are consumed before another step can start.
       const intents: RuntimeToolIntent[] = [];
       for (const call of result.toolCalls) {
         if (
@@ -219,7 +219,7 @@ export class AgentRuntimeHost {
           !Object.hasOwn(this.#modelTools, call.toolName) ||
           !call.toolCallId ||
           call.toolCallId.length > 256 ||
-          this.#seen.has(call.toolCallId)
+          this.#pending.has(call.toolCallId)
         )
           throw new NativeExecutionError("invalid_target");
         const intent = {
@@ -227,7 +227,6 @@ export class AgentRuntimeHost {
           name: call.toolName,
           arguments: structuredClone(call.input),
         };
-        this.#seen.add(intent.id);
         this.#pending.set(intent.id, intent);
         intents.push(structuredClone(intent));
       }

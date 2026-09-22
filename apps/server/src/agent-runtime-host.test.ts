@@ -125,6 +125,62 @@ describe("Server-owned Python runtime gates", () => {
     await expect(f.host.generate(f.input.messages)).rejects.toMatchObject({ code: "conflict" });
   });
 
+  it("admits a reused provider ID only when a later model step proposes new work", async () => {
+    const f = fixture(
+      new MockLanguageModelV4({
+        doGenerate: [call(), call("c1", "read_evidence", '{"query":"new facts"}'), answer()],
+      }),
+    );
+    const first = await proposed(f);
+    const history = feedback(f.input, first, await f.host.executeTool(first));
+    const next = (await f.host.generate(history)).tools[0] as RuntimeToolIntent;
+    expect(next.id).toBe(first.id);
+    expect(next.arguments).toEqual({ query: "new facts" });
+    const observation = await f.host.executeTool(next);
+    const final = await f.host.generate(
+      feedback({ ...f.input, messages: history }, next, observation),
+    );
+    expect((await f.host.finish(final.text)).text).toBe("Delivered.");
+    expect(f.effect.mock.calls.map(([args]) => args)).toEqual([
+      { query: "facts" },
+      { query: "new facts" },
+    ]);
+    expect(f.input.budget).toMatchObject({ steps: 3, tools: 2, web: 2 });
+  });
+
+  it("rejects duplicate IDs within one model response before any effects", async () => {
+    const f = fixture(
+      new MockLanguageModelV4({
+        doGenerate: {
+          ...call(),
+          content: [...call().content, ...call("c1", "read_evidence", '{"query":"other"}').content],
+        },
+      }),
+    );
+    await f.host.catalog();
+    await expect(f.host.generate(f.input.messages)).rejects.toMatchObject({
+      code: "invalid_target",
+    });
+    await expect(
+      f.host.executeTool({ id: "c1", name: "read_evidence", arguments: { query: "facts" } }),
+    ).rejects.toMatchObject({ code: "invalid_target" });
+    expect(f.effect).not.toHaveBeenCalled();
+  });
+
+  it("rejects stale arguments even when a later model step reuses the provider ID", async () => {
+    const f = fixture(
+      new MockLanguageModelV4({
+        doGenerate: [call(), call("c1", "read_evidence", '{"query":"new facts"}')],
+      }),
+    );
+    const first = await proposed(f);
+    const history = feedback(f.input, first, await f.host.executeTool(first));
+    const next = (await f.host.generate(history)).tools[0] as RuntimeToolIntent;
+    await expect(f.host.executeTool(first)).rejects.toMatchObject({ code: "invalid_target" });
+    await expect(f.host.executeTool(next)).rejects.toMatchObject({ code: "invalid_target" });
+    expect(f.effect).toHaveBeenCalledOnce();
+  });
+
   it("rereads current corrections before every model request", async () => {
     const f = fixture();
     const intent = await proposed(f);

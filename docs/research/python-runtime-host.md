@@ -97,3 +97,36 @@ command passed 213 cases across eight files (15 real API/database journeys). `np
 exited zero: Server 616 passed / 84 database-dependent skips; the separate headless run executed
 its database cases. No Python integration claim: these journeys currently use the TypeScript
 lane, and the Python selector requires a real CLI without fallback.
+
+## Tool correlation scope follow-up (2026-09-23)
+
+The real Python/Server/PostgreSQL delegation journey exposed a host-only incompatibility: the
+existing deterministic provider reuses `delegate` for distinct model steps, while the host kept
+an invocation-wide seen-ID set. The TypeScript loop permits the journey. The frozen profile
+already defines tool IDs as correlation for current model-issued intents, not replay credentials.
+
+Searches: `site.ai-sdk.dev toolCallId tool results` and
+`site.github.com/vercel/ai tool call duplicate id steps`. Rechecked ai 7.0.93 at the exact commit
+above, including installed `parse-tool-call.ts`, `to-response-messages.ts` and tool-call types.
+The response converter's ID ordering map is local to one response. Official
+[tool calling documentation](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling) pairs
+calls with results; [JSON-RPC 2.0](https://www.jsonrpc.org/specification) defines request/response
+correlation, not external-effect idempotency. The separate wire request IDs remain monotonic.
+Reviewed [issue 7883](https://github.com/vercel/ai/issues/7883) (closed): provider response-item
+identity can impose additional history constraints; it does not define OpenBot authorization.
+No claim is made that every live provider accepts reused IDs.
+
+Selected option: correct the thin adapter on the reviewed dependency. Check duplicate tool IDs
+against the current pending-intent map. A new model step remains impossible until every previous
+intent was consumed; repeated IDs within a response, changed names/arguments, repeated execution,
+concurrent operations and failed operations remain refused. An independently generated later
+intent is new work and must pass the same authority, schema and shared-budget checks. Do not
+rewrite provider IDs, alter the collaboration fixture or retry ambiguous effects. No dependency
+or copied source. Verification: same-ID consecutive steps, same-response duplicates, stale
+arguments after a reused ID, existing replay tests, actual Python delegation and full checks.
+
+Follow-up verification: 40 host regressions passed. The default headless lane passed 222 cases
+across nine files; full `npm run check` exited zero (Server 625 passed / 84 default DB skips,
+Web 329, Desktop 359 / 1 skip, Node 51 / 3 skips). The real Python delegation now reaches its
+second response but the Python unit still rejects it with `duplicate_tool_call`; parity is pending
+the matching Python guard correction. No completed Python delegation claim.

@@ -51,7 +51,10 @@ Never install dependencies, select a provider or implement a replacement handwri
 
 `ToolIntent` is `{id: string, name: string, arguments: object}`. The model provider supplied the ID;
 it is untrusted correlation, not permission or proof of exactly-once execution. The Server checks
-exact intent membership and consumes it before dispatch. The child must preserve IDs and values.
+exact current intent membership and consumes it before dispatch. IDs must be distinct within one
+model response; a later model step may reuse a consumed ID only as a newly proposed intent. Pending
+intents block the next model step. Wire request IDs still cannot be reused. The child must preserve
+IDs and values.
 
 Wire messages admit only these shapes:
 
