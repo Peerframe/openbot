@@ -290,6 +290,15 @@ jobs:
           OPENBOT_UPGRADE_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_upgrade_test_ci
       - name: Verify paired database, objects and encryption keys restore
         run: npm run test:restore
+      - name: Verify controlled Docker browser scenarios
+        run: npm run test:provider:docker -- --output "${RUNNER_TEMP}/openbot-docker-conformance.json"
+      - name: Retain Docker browser conformance evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: docker-browser-conformance
+          path: ${{ runner.temp }}/openbot-docker-conformance.json
+          if-no-files-found: warn
       - name: Verify recurring-task transactions in a disposable PostgreSQL database
         run: |
           node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_automation_test_ci"); } finally { await sql.end(); }'

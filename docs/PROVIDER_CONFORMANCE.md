@@ -189,11 +189,11 @@ certification. Browser-side egress and general untrusted-site operation remain u
 On a Linux or macOS host, from a checkout with `npm ci --ignore-scripts`, Node and a running Docker daemon:
 
 ```bash
-node scripts/test-browser-conformance.mjs --output /tmp/openbot-docker-conformance.json
+npm run test:provider:docker -- --output /tmp/openbot-docker-conformance.json
 ```
 
 Choose a **new** output path for each run; the report writer refuses replacement. The driver builds
-production components, runs seven fixture regressions, starts its own pinned PostgreSQL container,
+production components, runs twelve fixture regressions, starts its own pinned PostgreSQL container,
 and invokes the existing runner with
 [the Docker suite](../providers/docker/conformance/suite.mjs). It needs no private `.env`, model
 credentials, pre-existing database or browser profile. Docker may need to pull the pinned image.
@@ -203,6 +203,8 @@ name and ownership label can be removed. Server, Node, computer sockets, private
 artifacts are closed or deleted on completion. A missing prerequisite or cleanup failure is a
 failure, never a skip. A process-wide interruption has a finite child deadline and still removes
 the driver's own database and temporary directory.
+CI runs this same required command in the existing database job and retains the redacted JSON
+report when available. Existing required gates are unchanged.
 
 The suite composes the **production** Server application, PostgreSQL stores, dispatcher, Node
 client and Docker Provider in one isolated test process. Owner login and enrollment use actual

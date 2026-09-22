@@ -26,6 +26,21 @@ restart; there is no new runtime dependency or copied upstream implementation.
 transport, actual React components, jsdom and Vite. Their independent build/preview keeps network
 connections disabled and stays outside normal Web/Desktop bundles; no dependency is added.
 
+The next integration wave keeps the same dependency set. [Authoritative run counts](research/workspace-authoritative-counts.md)
+reuse React 19.3.0 / `1d34f91dfde6bba84d08b683aaba164c7194dacb` (MIT) and the existing
+Server snapshot contract; bounded invalidation replaces arithmetic over a truncated Run list.
+[Durable plugin receipts](research/durable-plugin-call-receipts.md) reuse MCP SDK 1.30.0
+(MIT), the existing encrypted file store and write-file-atomic 8.0.0 (ISC). A separate bounded
+metadata ledger preserves ambiguous dispatches without replay. [Receipt inspection](research/plugin-call-receipts-ui.md)
+uses the existing React components, native fetch cancellation and shared schema; it adds no
+state framework or provider authority. [Docker browser conformance](research/docker-browser-conformance.md)
+reuses the official runner, authenticated Server/Node adapters and CopilotKit/OpenBot's reviewed
+computer contract at `257c1280d684089be9adb0b35cce262efc7064bf` (MIT); only the loopback computer
+is synthetic. [Paired restore acceptance](research/paired-restore-acceptance.md) reuses native
+PostgreSQL 17.11 dump/restore and existing production readers. It covers a synthetic POSIX Server
+directory profile; operational backup, other key profiles and PITR remain partial. No upstream
+source is copied or substantially adapted by these additions.
+
 OpenBot researches established open-source implementations before designing a non-trivial feature.
 The goal is to reuse maintained standards, libraries, protocols, and narrow services instead of
 building another incompatible subsystem.

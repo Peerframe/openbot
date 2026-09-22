@@ -22,6 +22,19 @@ Server 权限、审计及存储适配器。[贡献者冷启动](research/2026-09
 [共享客户端夹具](research/shared-client-fixtures.zh-CN.md) 复用隔离 demo 的传输层、真实 React 组件、
 jsdom 与 Vite；独立构建/预览保持禁止网络连接，且不进入普通 Web/Desktop 产物，不新增依赖。
 
+下一批集成保持相同依赖集合。[权威任务计数](research/workspace-authoritative-counts.md)
+复用 React 19.3.0 / `1d34f91dfde6bba84d08b683aaba164c7194dacb`（MIT）和现有 Server
+快照契约，用有界补读替代截断任务列表上的计数加减。
+[持久插件回执](research/durable-plugin-call-receipts.md) 复用 MCP SDK 1.30.0（MIT）、现有
+加密文件存储和 write-file-atomic 8.0.0（ISC）；独立有界元数据账本保留不确定派发，不重放调用。
+[回执查看](research/plugin-call-receipts-ui.zh-CN.md) 复用 React 组件、原生 fetch 取消和共享
+schema，不引入状态框架或服务商权限。[Docker 浏览器验收](research/docker-browser-conformance.md)
+复用官方 runner、鉴权 Server/Node 适配器和 CopilotKit/OpenBot 的电脑接口固定提交
+`257c1280d684089be9adb0b35cce262efc7064bf`（MIT）；仅本机 computer 为合成实现。
+[配套恢复验收](research/paired-restore-acceptance.md) 复用 PostgreSQL 17.11 原生导出/恢复工具
+和生产读取器，覆盖合成 POSIX Server 模型目录配置；运维备份、其他密钥配置和 PITR 仍未完成。
+这些新增部分没有复制或实质改编上游源码。
+
 OpenBot 在设计任何非简单功能前，必须先调研成熟的开源实现。目标是优先复用持续维护的标准、
 依赖、协议和窄服务，避免再造一套不兼容系统。
 

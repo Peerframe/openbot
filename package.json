@@ -52,6 +52,7 @@
     "test:runtime:unit": "turbo run build --filter=@openbot/domain... && vitest run apps/server/src/agent-runtime.test.ts",
     "test:upgrade": "turbo run build --filter=@openbot/db && node scripts/verify-retained-upgrade.mjs",
     "test:restore": "turbo run build --filter=@openbot/server && node --test scripts/paired-restore-files.test.mjs && node scripts/verify-paired-restore.mjs",
+    "test:provider:docker": "node scripts/test-browser-conformance.mjs",
     "test:workspace": "turbo run build --filter=@openbot/server && vitest run apps/server/src/workspace-snapshots.test.ts apps/server/src/workspace-snapshot-reader.test.ts apps/server/src/app.test.ts && node --test examples/workspace-reader/reader.test.mjs"
   },
   "devDependencies": {

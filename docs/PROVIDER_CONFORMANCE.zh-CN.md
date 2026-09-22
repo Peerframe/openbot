@@ -171,15 +171,16 @@ Web 界面通过 1280x900 和 390x844 验收；测试上游的监听地址补丁
 在 Linux 或 macOS 主机、执行过 `npm ci --ignore-scripts` 的 checkout 中，准备 Node 和运行中的 Docker：
 
 ```bash
-node scripts/test-browser-conformance.mjs --output /tmp/openbot-docker-conformance.json
+npm run test:provider:docker -- --output /tmp/openbot-docker-conformance.json
 ```
 
-每次选择**新的**输出路径，报告写入器拒绝覆盖。驱动构建生产组件，运行 7 个 fixture 回归，
+每次选择**新的**输出路径，报告写入器拒绝覆盖。驱动构建生产组件，运行 12 个 fixture 回归，
 创建固定版本 PostgreSQL 容器，再通过已有 runner 执行 [Docker suite](../providers/docker/conformance/suite.mjs)。
 不需要私人 `.env`、模型凭据、既有数据库或浏览器资料；Docker 可能需要下载固定镜像。
 驱动需要 POSIX 子进程信号，尚未验证 Windows 驱动执行。容器使用随机 loopback 端口和临时存储，只有名称和随机标签都证实属于本次才会删除。
 完成后关闭 Server、Node、电脑连接并删除临时凭据和产物。缺少前置条件或清理失败都必须失败，
 不能跳过。进程中断仍受子进程总期限约束，并清理驱动自己的数据库和临时目录。
+CI 在现有数据库 job 执行相同必需命令，并保留可用的脱敏 JSON 报告。既有必需检查保持不变。
 
 suite 在一个隔离测试进程中组合**生产** Server 应用、PostgreSQL store、dispatcher、Node
 client 和 Docker Provider。Owner 登录、enrollment 使用真实 HTTP；路由、进度、帧和批准消息
