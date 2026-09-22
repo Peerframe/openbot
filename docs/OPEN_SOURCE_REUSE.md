@@ -417,3 +417,9 @@ Reuse ai 7.0.93 / `6359fd58fe68eaade096b5d923bac26de84ca3bd` (Apache-2.0)
 bound tool execution, authority, budgets, durable usage/audit and final commit ownership.
 No copied source or added dependency. This is not yet a Python transport or production runtime
 switch; see [research](research/python-runtime-host.md) and [runtime](NATIVE_AGENT.md).
+
+The process adapter profile additionally reuses `@modelcontextprotocol/sdk` 1.30.0 /
+`2d889f2b329e46680ec9bdd565de4616c497825a` (MIT) newline codec helpers and Node's POSIX
+child-process APIs. A narrow supervisor supplies the missing environment, group cleanup and
+Server-bound operation policy; the full MCP client is not used as a runtime authority protocol.
+Implementation and integration are pending; see [transport review](research/python-runtime-transport.md).

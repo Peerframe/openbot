@@ -351,3 +351,8 @@ React DOM 类型 19.3.0 / DefinitelyTyped `de5e8f01d01a14ae4ae502283d3d09f042f1a
 `generateText`、Schema 校验与单步执行。通过窄范围 Server 适配器保留已绑定工具的执行、权限、
 预算、持久用量与审计以及最终提交责任。未复制源码或新增依赖。这尚未实现 Python 通信或切换
 生产运行时；见[研究](research/python-runtime-host.md)与[运行时说明](NATIVE_AGENT.zh-CN.md)。
+
+进程适配协议另复用 `@modelcontextprotocol/sdk` 1.30.0 /
+`2d889f2b329e46680ec9bdd565de4616c497825a`（MIT）的换行编解码工具及 Node POSIX
+子进程接口。窄范围监督器补齐环境、进程组清理与 Server 操作策略，不把完整 MCP 客户端
+当作运行时授权协议。实现与集成仍待完成；见[通信研究](research/python-runtime-transport.md)。
