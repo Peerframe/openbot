@@ -1,14 +1,16 @@
 # Contributor work packages
 
+Current independent lanes, dependencies and acceptance: [Development tracks](DEVELOPMENT_TRACKS.md).
+
 [English](CONTRIBUTOR_TASKS.md) · [简体中文](CONTRIBUTOR_TASKS.zh-CN.md)
 
 These packages turn roadmap items into independently reviewable contributions. Open an issue from
 the matching form before implementation, link the pinned upstream review, and keep every support
 claim at the lowest level proven by tests.
 
-## Next: fresh-checkout contributor smoke
+## Delivered: fresh-checkout contributor smoke
 
-Status: proposed, not delivered. Prioritize a contributor being able to work without maintainer-private setup.
+Status: implemented and locally verified. [Fresh contributor journey](CONTRIBUTOR_JOURNEY.md) runs real Server/Web login, optional Node enrollment and retained identity restart using synthetic configuration. CI runs the same command before builds; hosted execution remains unverified.
 
 - **Outcome:** one documented CI/local path proves a clean checkout can start Server/Web, sign in,
   enroll an optional development Node and restart it with the retained identity.
@@ -19,9 +21,9 @@ Status: proposed, not delivered. Prioritize a contributor being able to work wit
   readiness failures explain the missing service; processes and fixture data are cleaned up.
 - **Out of scope:** installer publication, new Providers or an owner-only setup service.
 
-## Next: retained-data migration regression
+## Delivered: retained-data migration regression
 
-Status: proposed. Local upgrade evidence exists; CI does not yet retain the complete old-data fixture.
+Status: implemented locally and wired into the database CI job. `npm run test:upgrade` verifies the pinned `0018_automations` fixture across 15 populated tables; hosted CI execution remains unverified. See [database guide](DATABASE.md#retained-data-upgrade-regression).
 
 - **Outcome:** contributors can prove that the reviewed old migration prefix upgrades with retained
   appearance, Employee templates, import receipts and automation rows unchanged.
@@ -36,7 +38,7 @@ Status: proposed. Local upgrade evidence exists; CI does not yet retain the comp
 
 ## Next: consistent workspace snapshot contract
 
-Status: investigation proposed. Current Web ordering tests pass; a global ordering contract is not implemented.
+Status: coherent snapshots, authoritative counts and official Web/Desktop subscriptions are implemented; a durable global ordering contract is not implemented. See [snapshot contract](WORKSPACE_SYNC.md) and `npm run test:workspace`. Connection sequence is local to each stream; mutation barriers retain existing immediate projections.
 
 - **Outcome:** define snapshot revision and count semantics that another client can implement without
   reproducing the Web client's event heuristics.
@@ -46,27 +48,134 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
   isolation; record an ADR before changing the wire format.
 - **Acceptance:** a deterministic reproduction covers counts queried at different times, active Runs
   outside the recent-Run page, duplicate events and reconnect. Define compatible behavior before
-  implementation; the existing Web currently does not consume `counts.activeRuns`.
+  implementation; the existing Web now displays Server-authoritative `counts.activeRuns`.
 - **Out of scope:** a new global client cache framework or moving Server authority into the browser.
 
-## Starter: accessibility regression runner
+## Starter: Create Bot dialog modal lifecycle regression
+
+- **Goal:** prove the existing Create Bot native modal matches the accessibility baseline already
+  claimed for Owner create dialogs.
+- **Existing behavior:** `CreateBotDialog` opens through `useModalDialog`, labels the dialog with
+  `aria-labelledby`, exposes an icon close control named `关闭`, surfaces create failures with
+  `role="alert"`, and restores the opener when the dialog closes.
+- **Regression / docs gap:** there is no `CreateBotDialog.test.tsx`; only
+  `AttachmentsManager.test.tsx` covers the shared Escape / opener-restore pattern.
+  `docs/ACCESSIBILITY.md` manual checklist still omits Create Bot.
+- **Entry files:** `apps/web/src/components/CreateBotDialog.tsx`,
+  `apps/web/src/components/useModalDialog.ts`, `apps/web/src/test/render-component.tsx`,
+  `docs/ACCESSIBILITY.md` (+ `.zh-CN.md` if the checklist text changes).
+- **Prerequisites:** Node engine from root `package.json`; `npm ci`; no PostgreSQL, paid model, or
+  Desktop app required.
+- **Commands:**
+  ```bash
+  npm exec --workspace @openbot/web -- vitest run src/components/CreateBotDialog.test.tsx
+  npm --workspace @openbot/web run typecheck
+  npm run docs:check
+  ```
+- **Acceptance counter-examples:** Escape / `cancel` leaves the dialog mounted; opener does not
+  regain focus after close; missing `aria-label` on the icon close; failed `onCreate` rejection is
+  rendered without `role="alert"`.
+- **Non-goals:** axe/Playwright CI gates; Create Channel or export/import dialogs; WCAG claims.
+- **Dependencies:** none beyond the existing Web Vitest/jsdom harness. Research note:
+  [contributor-starter-slices](research/contributor-starter-slices.md).
+
+## Starter: Employee profile tab keyboard DOM regression
+
+- **Goal:** prove horizontal profile tabs move **focus and selection together** under the keys
+  already documented in `docs/ACCESSIBILITY.md`.
+- **Existing behavior:** `EmployeeProfileView` exposes one `tablist`, seven tabs, and
+  `profileTabForNavigationKey` for ArrowLeft/ArrowRight/Home/End with wrapping.
+- **Regression / docs gap:** `EmployeeProfileView.test.tsx` only checks static markup and the pure
+  navigation helper; it does not dispatch keydown on a focused tab and assert `aria-selected` plus
+  `document.activeElement` update together.
+- **Entry files:** `apps/web/src/components/EmployeeProfileView.tsx`,
+  `apps/web/src/components/EmployeeProfileView.test.tsx`, `apps/web/src/test/render-component.tsx`,
+  `docs/ACCESSIBILITY.md` (link the new regression from “Reproduce the checks” if needed).
+- **Prerequisites:** `npm ci`; jsdom Vitest only.
+- **Commands:**
+  ```bash
+  npm exec --workspace @openbot/web -- vitest run src/components/EmployeeProfileView.test.tsx
+  npm --workspace @openbot/web run typecheck
+  ```
+- **Acceptance counter-examples:** ArrowRight changes `aria-selected` but leaves focus/tabIndex on
+  the previous tab; Home/End ignore wrapping ends; ArrowDown activates a tab (must remain a no-op).
+- **Non-goals:** screen-reader matrices; forced-colors / reflow evidence; new profile tabs or
+  editors.
+- **Dependencies:** none. Research:
+  [contributor-starter-slices](research/contributor-starter-slices.md).
+
+## Starter: RunInspector Escape and focus-restore regression
+
+- **Goal:** lock the Escape-close and opener focus restoration that `RunInspector` already
+  implements for its custom overlay.
+- **Existing behavior:** on mount, `RunInspector` focuses the labelled close control, listens for
+  Escape to call `onClose`, and restores the previous focus on unmount (`role="dialog"`,
+  `aria-modal="true"`).
+- **Regression / docs gap:** `RunInspector.integration.test.tsx` covers collaboration child-run
+  wiring only; Escape/focus restore is untested. `docs/ACCESSIBILITY.md` still lists this overlay as
+  needing a fuller native-dialog review (that migration stays Intermediate).
+- **Entry files:** `apps/web/src/components/RunInspector.tsx`,
+  `apps/web/src/components/RunInspector.integration.test.tsx` (or a sibling focused test),
+  `docs/ACCESSIBILITY.md`.
+- **Prerequisites:** `npm ci`; no Server process required for the jsdom regression.
+- **Commands:**
+  ```bash
+  npm exec --workspace @openbot/web -- vitest run src/components/RunInspector.integration.test.tsx
+  npm --workspace @openbot/web run typecheck
+  ```
+- **Acceptance counter-examples:** Escape does not invoke `onClose`; unmount leaves focus on an
+  unrelated node; close control lacks an accessible name.
+- **Non-goals:** migrating the overlay to native `<dialog>`; Tab focus-trap redesign; axe CI;
+  claiming WCAG conformance.
+- **Dependencies:** none. Research:
+  [contributor-starter-slices](research/contributor-starter-slices.md).
+
+## Starter: Node manager dialog modal lifecycle regression
+
+- **Goal:** prove the Node manager Owner dialog uses the same native modal lifecycle as other
+  create/manage dialogs.
+- **Existing behavior:** `NodeManagerDialog` mounts a `<dialog>` through `useModalDialog` and
+  presents revoke confirmation copy in `NodeIdentityList`.
+- **Regression / docs gap:** `NodeManagerDialog.test.tsx` only exercises static identity list markup
+  and display-state helpers; it never opens the dialog, fires `cancel`, or asserts opener focus
+  restore.
+- **Entry files:** `apps/web/src/components/NodeManagerDialog.tsx`,
+  `apps/web/src/components/NodeManagerDialog.test.tsx`,
+  `apps/web/src/components/useModalDialog.ts`, `apps/web/src/test/render-component.tsx`.
+- **Prerequisites:** `npm ci`; synthetic Node identity fixtures already used by the existing test.
+- **Commands:**
+  ```bash
+  npm exec --workspace @openbot/web -- vitest run src/components/NodeManagerDialog.test.tsx
+  npm --workspace @openbot/web run typecheck
+  ```
+- **Acceptance counter-examples:** `showModal` never runs; Escape leaves the dialog in the tree;
+  opener is not focused after close; revoke confirmation UI disappears from the mounted dialog
+  regression (keep the existing destructive-copy assertions).
+- **Non-goals:** proof-of-possession Node identity; enrollment token UX; Windows/macOS Keychain
+  changes.
+- **Dependencies:** none. Research:
+  [contributor-starter-slices](research/contributor-starter-slices.md).
+
+## Intermediate: accessibility regression runner
 
 - **Outcome:** a repeatable report catches keyboard, name/role/state, and high-confidence WCAG
-  regressions in the built Web app.
+  regressions in the built Web app across CI.
 - **Start in:** `apps/web`, `.github/workflows`, `docs/ACCESSIBILITY.md`.
 - **Research first:** compare `axe-core`, Playwright accessibility tooling, and maintained Vitest
-  integrations; pin versions and licenses.
+  integrations; pin versions and licenses. Prefer landing the Starter dialog/tab regressions above
+  before selecting a repo-wide runner.
 - **Acceptance:** deterministic local command; CI artifact; no live network; documented false
   positives; one fixture that proves a violation fails the gate.
-- **Out of scope:** claiming screen-reader or WCAG conformance from automation alone.
+- **Out of scope:** claiming screen-reader or WCAG conformance from automation alone; replacing the
+  focused Starter regressions.
 
-## Starter: translation consistency checker
+## Intermediate: translation consistency checker
 
 - **Outcome:** English source docs and maintained locale files cannot silently lose required safety
   warnings, commands, or configuration names.
 - **Start in:** `scripts/check-docs.mjs`, `README*.md`, `docs/*.md`.
 - **Research first:** evaluate documentation-lint and localization consistency tools before adding
-  local rules.
+  local rules. Reuse existing local-link checks; do not weaken `docs:check`.
 - **Acceptance:** catches a deliberately missing warning/link in a fixture; does not require machine
   translation; prints the exact file and missing contract.
 - **Out of scope:** judging prose quality or modifying translations automatically.

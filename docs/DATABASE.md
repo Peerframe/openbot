@@ -63,6 +63,32 @@ arguments (or with `--help`) it prints usage.
 Manifest checks validate numbering/file correspondence and monotonic time, not SQL correctness.
 The Server still verifies hashes and exact applied prefixes before and after migration.
 
+## Retained-data upgrade regression
+
+After `npm ci`, create an empty loopback database named `openbot_upgrade_test_*` using a disposable
+PostgreSQL 17 instance. Set `OPENBOT_UPGRADE_TEST_DATABASE_URL` to that database, then run:
+
+```bash
+npm run test:upgrade
+```
+
+This required suite fails if the variable or [repository fixture](../scripts/fixtures/retained-upgrade/README.md)
+is missing, the target is remote, or the database already contains objects. It does not read `.env`
+or clear existing data. It leaves its synthetic database for inspection; dispose of that dedicated
+database afterward. CI creates `openbot_upgrade_test_ci` separately from every other database suite.
+
+The pinned `0018_automations` prefix is populated across 15 tables before the current guarded
+migrator runs concurrently and repeatedly. Every old column is compared, including Employee
+appearance/configuration, fields used by templates, imported skill links/receipts, memory, timestamps and all
+old automation outcomes. Constraint probes and safe new defaults are verified. Deliberate history
+drift must stop startup without data changes. An older-prefix build refuses the upgraded history;
+application behavior rollback must keep all applied migrations. `npm run migrations:check` checks
+fixture identity and failure cases without a database. See [research](research/retained-data-upgrade.md).
+
+This proves the named synthetic database upgrade, not an arbitrary previous binary, native installer
+upgrade or complete database/files/keys restoration. Add new historical fixtures when the supported
+release range changes; never rewrite old SQL hashes to conceal migration drift.
+
 ## Backup boundary
 
 Quiesce Server writes before capturing a complete recovery set. PostgreSQL `pg_dump` gives a
@@ -122,6 +148,35 @@ environment: restored settings and schedules may be enabled. A restore check req
 
 For production recovery, restore into a new empty database and persistent-file directories, verify it, then
 switch the deployment. Do not restore over a running OpenBot database.
+
+## Repeatable paired restore acceptance
+
+Run `npm run test:restore` after `npm ci`. Docker must be available; the command owns a pinned
+PostgreSQL 17.11 container, random loopback port and private temporary files. It accepts no database
+URL, archive or directory arguments and does not read `.env`. Missing prerequisites fail instead
+of skipping. CI runs the same required command in the database job.
+
+The synthetic directory-mode Server profile contains retained business rows and migration history,
+a Markdown report, attachment bytes/metadata/derived text, encrypted model settings and their key,
+and encrypted plugin state (including an uncertain call receipt) and its separate `state.json.key`.
+After closing all fixture writers,
+the drill uses real native `pg_dump` and `pg_restore`, copies the paired files into new private
+paths, compares every retained table and re-runs the production migration guard. Fresh production
+readers verify restored Owner-session authentication, report/attachment downloads and both settings
+stores. No task runner, scheduler, Worker or plugin connector is started; model metadata is mocked
+only while seeding, and subsequent external fetches are denied.
+
+Negative acceptance covers missing/wrong encryption keys, missing or same-length corrupted bytes,
+missing/extra manifest files, links, size bounds, existing destination refusal and truncated archive
+rollback. Normal exit, failures and handled interrupts clean only the owned container and temporary
+tree. The private manifest records Git revision/dirty state, PostgreSQL image, migration count,
+relative paths, sizes and checksums; it contains no credentials and is removed after the test.
+
+This establishes the named synthetic POSIX profile, not a production backup product or recovery
+time objective. Optional publisher keyrings, legacy external-key configuration, full service
+configuration and Desktop OS-bound bootstrap secrets need separate drills. The existing production
+runbook above still requires those assets when configured. Scheduling, archive encryption, off-host
+storage, retention and PITR remain open. See [focused research](research/paired-restore-acceptance.md).
 
 ## Reverting application changes
 

@@ -107,11 +107,12 @@ export class PostgresChannelInteractions implements ChannelInteractionStore {
     return this.db.transaction(async (tx) => {
       // Match native claim/delegation/completion order; cancel authority before releasing membership.
       await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${channelId},731))`);
+      // Audit inserts on locked Runs need a compatible channel foreign-key KEY SHARE lock.
       const [channel] = await tx
         .select()
         .from(channels)
         .where(eq(channels.id, channelId))
-        .for("update");
+        .for("no key update");
       if (!channel) throw new StoreNotFoundError("Channel not found.");
       if (channel.directBotId)
         throw new StoreConflictError("Direct conversation membership cannot be changed.");

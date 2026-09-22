@@ -10,10 +10,50 @@ SKILL.md 提供工作指令，MCP 插件提供工具、资源、提示词和隔�
 
 在 OpenBot 源码目录执行 `npm run plugin:create -- ../my-openbot-plugin`，目标必须是尚不存在的目录。
 生成器复制已有测试覆盖的 MCP 示例与 MIT 许可，写入固定版本依赖和独立 README，不覆盖原有文件。
-进入新目录运行 `npm install`，保留生成的锁文件，再运行 `npm start`。运行时不依赖 OpenBot 工作区导入。
+进入新目录运行 `npm install`，保留生成的锁文件，再运行 `npm test` 和 `npm start`。运行时不依赖 OpenBot 工作区导入。
 按照下文在 Server 配置精确本机地址白名单，再通过插件管理预览、安装、授权和启用。
 示例包含工具、资源、提示词和隔离 App。更新预览会列出新增、删除和改变的声明；应用更新仍会停用插件
 并清空授权。示例笔记只保存在进程内存中。
+
+## 连接 OpenBot 前检查兼容性
+
+生成的独立项目包含 `npm test`，使用真实本地 SDK 示例与具名失败场景，覆盖输入/输出 schema、
+必需 task 执行、bearer 认证、传输、协议版本、超时、分页和结果大小边界。
+测试不需要 OpenBot Server、数据库、模型或付费账号；每个场景使用临时回环端口，结束后关闭。
+
+示例启动后，在独立项目的另一个终端执行：
+
+```sh
+npm run preflight -- http://127.0.0.1:4318/mcp
+```
+
+预检只初始化连接和读取工具声明，不调用工具。成功时输出 JSON，包含协商后的协议版本、工具名称、
+零工具调用和明确未检查的范围；失败时退出码为 1。作者命令只接受字面量回环 HTTP(S) 地址，
+拒绝 URL 凭据、查询、片段和跳转。本地服务需要专用测试 bearer token 时，通过环境变量
+`OPENBOT_PLUGIN_TEST_TOKEN` 提供；不会启动 OAuth 流程。
+
+作者预检与 Server 共用工具/schema/结果校验模块。预检不验证资源/提示词兼容性、实际工具结果和效果、
+Server 地址授权、安装或员工授权，这些仍通过使用流程验证。声明检查成功不能证明远端工具行为。
+生成文件是当前规则的版本快照；需要采用新版本规则时，生成到新目录比较合入。
+
+Server 预览/安装/更新与作者预检在已知兼容性失败时返回固定的机器可读 `compatibility` 原因。
+原有 API `code` 与 HTTP 状态仍然保留。错误消息不包含远端响应正文、认证挑战地址或 token。
+
+| `compatibility` | 含义与处理 |
+| --- | --- |
+| `authentication_required` | HTTP 401；提供有效的专用 bearer token。仅支持 OAuth 的连接需要后续认证集成。 |
+| `access_denied` | HTTP 403；检查 token 权限或服务访问策略。 |
+| `transport_unsupported` | 路径/HTTP 方法、跳转或响应媒体类型不兼容；使用直接的 Streamable HTTP 地址。 |
+| `protocol_unsupported` | 固定版本 SDK 拒绝了协商版本；使用受支持的 MCP 修订版。 |
+| `schema_unsupported` | 输入/输出 schema 含不支持的语法、编译失败或超限；遵循下文的 draft-07 子集。 |
+| `execution_unsupported` | 工具要求 task 执行模式；向此客户端提供直接调用方式。 |
+| `catalog_unsupported` | 工具名称、数量、重复项或分页不兼容；返回有界的完整单页目录。 |
+| `result_unsupported` | 已调用工具返回不支持的内容或超限；返回有界文本和可选结构化 JSON。 |
+| `timeout` / `cancelled` | 到达截止时间或调用方取消；不会自动重试。 |
+
+已知不兼容会在安装/更新时阻止接入，不会产生新授权。已有安装也在调用前重新检查声明；
+工具变成必需 task 执行时，不发送 `tools/call`。实际结果只能在明确授权调用后检查，
+返回结果不能批准额外工作。
 
 ## 使用流程
 
@@ -85,6 +125,7 @@ OpenBot 固定官方 SDK **1.30.0**，提交 `2d889f2b329e46680ec9bdd565de4616c4
 | 参数与结果 | 参数最多 8 KiB 并校验结构；结果为文本块，可附结构化 JSON，合计最多 12 KiB；不接图片、音频、资源或界面代码，`isError` 会使调用失败。 |
 | 时间 | HTTP 最多 30 秒，审批 60 秒，调用 120 秒，同时受父任务截止时间约束。 |
 | 数量 | 最多 16 插件；每插件 32 工具、128 个员工授权项；16 并发调用；Agent 目录最多 16 工具和 12 KiB，并标记截断。 |
+| 执行方式 | 仅直接工具调用；`execution.taskSupport: "required"` 在发现阶段拒绝，`optional` 可使用直接调用路径。 |
 | 权限 | `call_plugin` 共享原生 Agent 工具次数，不获得额外执行、递归或后台权限。 |
 
 本适配器不提供 sampling、elicitation、roots、stdio、任务扩展、资源订阅、二进制资源或自动执行安装包。建议读写拆成不同工具，在后端再次验证参数与授权，说明真实副作用。
@@ -129,21 +170,66 @@ Ajv `$async` 也会被拒绝。错误会指出具体关键字或不支持的方�
 | `GET /channels/:channelId/bots/:botId/plugin-content` | 已有频道成员和该 Bot 的内容授权 → `{ items, truncated }`，无需先启动任务 |
 | `POST /channels/:channelId/bots/:botId/plugin-content` | `{ pluginId, revision, kind: "resource" 或 "prompt", name, arguments? }` → 不可信文本/界面资料 |
 | `DELETE /plugins/:id` | `{ revision }` → `{ deleted: true }` |
+| `GET /runs/:runId/plugin-calls` | `{ calls: PluginCallReceipt[] }`；未知 Run 返回 `404`，已有 Run 无保留回执时返回 `{ calls: [] }` |
+| `GET /plugin-calls/:id` | `{ call: PluginCallReceipt }`；未知或已淘汰 ID 返回 `404`，无效 ID 返回 `400` |
 | `POST /plugin-calls/:id/decision` | `{ decision: "approve" 或 "reject" }` → `{ decided: true }` |
 
-配置/授权旧 revision 返回 `409`。审批 ID 只在原任务等待时有效，重启不重放审批。
-审批接口成功仅表示决定被接收，外部操作是否完成仍需查看任务结果。
+配置/授权旧 revision 返回 `409`。只能在原 Run 等待期间提交决定；消费后或重启后重复提交，
+不能再次派发调用。若审批响应丢失，应按同一个 call ID 查询保留的决定，不应重复业务操作来探测结果。
+读取接口需要 Owner 会话，返回 `Cache-Control: no-store`；回执存储不可用时返回 `503`。
+
+## 持久调用回执
+
+每次获准进入执行流程的 `tools/call` 都有 Server 生成的 call ID。回执只包含 Run/频道/Bot/插件 ID、
+审核过的插件 revision、插件及工具名称、模式、时间、`state`，以及独立的 `approvalDecision`
+（`null`、`approved`、`rejected`、`expired` 或 `interrupted`）。不保存参数、响应正文、端点、token
+或原始错误。此账本覆盖工具调用；资源与提示词读取继续使用原有审计路径。
+
+| 状态 | 证据及重启后的处理 |
+| --- | --- |
+| `preparing` | 连接前已接纳调用；重启后变为 `not_dispatched`。 |
+| `awaiting_approval` | 已请求审批；决定提交后、重新核对目录期间可能短暂保持此状态。重启后变为 `not_dispatched`。 |
+| `dispatching` | 发工具请求前已持久化派发意图；重启后变为 `outcome_unknown`，包括意图已落盘但请求尚未发出的窗口。 |
+| `response_received` | 有界响应通过当前权限检查，且回执已落盘。这是本地传输证据，不是第三方外部状态的独立证明。 |
+| `not_dispatched` | 本次调用在提交派发意图前结束。已批准决定仍保留 `approved`；未决定的审批被重启打断时记为 `interrupted`。 |
+| `outcome_unknown` | 有派发意图，但没有已接受并落盘的响应。超时、取消、响应丢失或完成记录写入失败，都不能证明外部动作是否发生。 |
+
+恢复不会重放调用、恢复待审参数或自动续跑 Run。取消后的晚到响应不能把未知结果改成成功。
+若错误回执本身也写入失败，已提交意图继续保留；进程内调用结束后，下次可读写的查询或重启会保守地
+转换状态，存储仍不可用则拒绝查询。删除插件或 500 条审计滚动淘汰都不会删除这些回执。
+
+账本对全部 Run 合计最多保留 **256 次调用**。活跃调用和 `outcome_unknown` 不得淘汰；接纳新调用时
+只能淘汰最早的已结束记录。256 条全部受保护时，在连接或派发之前返回 `503`。当前版本没有自动删除
+未知结果或解决未知结果的接口。保留期间可以重查批准决定，但这不是无限永久历史。
+按 Run 查询返回该 Run 的全部保留回执：未知结果在前，其他活跃状态其次，已结束状态最后；组内按创建时间
+降序、call ID 升序稳定排序。不存在把未知结果藏在已完成历史分页之后的情况。
 
 ## 数据与验证
 
-加密配置及最近 500 条无内容审计保存在 `<OPENBOT_OBJECT_STORE_PATH>/plugins/state.json`，
+加密配置、有界调用回执及最近 500 条无内容审计保存在 `<OPENBOT_OBJECT_STORE_PATH>/plugins/state.json`，
 独立密钥为 `state.json.key`，备份时同时保留。已有数据缺失或不匹配密钥会拒绝读取。
 原子写入及 revision 比较通过单 Server 队列串行处理，不支持多进程共享。审计不保存参数、结果或 token；
-待审参数仅在等待期间存于内存，供 Owner 检查。
+待审参数仅在等待期间存于内存，供 Owner 检查。没有回执账本的旧加密文件仍可读取；旧审计不足以证明
+历史调用结果，不会被转成虚构的回执。原子文件替换和这些测试覆盖进程崩溃，不承诺机器断电恢复。
 
 `plugin-service.test.ts` 使用真实本机 HTTP MCP 服务和官方 SDK 验证发现、精确审核、安装、员工授权、计算、
 批准前不写入、批准只消费一次、停用。反例覆盖错误员工、版本/目录变化、参数、超时、取消、撤销、加密存储和
 不影响邻接 API 的请求大小限制。这是本机协议闭环，不代表所有第三方服务和模型账号已经实测。
+
+`plugin-call-receipts.test.ts` 注入派发/完成写入失败、错误记录失败、拒绝/过期/中断审批、取消后晚到响应、
+容量耗尽及审计滚动。`plugin-call-receipts-crash.test.ts` 启动使用真实 MCP 传输与加密存储的子进程，
+分别在批准后派发前、本地 MCP 计数器已增加但响应被扣留时强制终止，再用全新进程恢复两次。
+计数器分别保持 0 和 1；再次批准不能重放。`app.test.ts` 验证读取必须有 Owner 会话。
+以下命令不需要模型密钥：
+
+```sh
+npm ci --ignore-scripts
+npx turbo run build --filter=@openbot/server^...
+npx vitest run apps/server/src/plugin-call-receipts.test.ts apps/server/src/plugin-call-receipts-crash.test.ts apps/server/src/plugin-service.test.ts apps/server/src/app.test.ts
+```
+
+夹具只使用临时合成状态和本机回环端口。Windows ACL 另有原生测试；此生命周期夹具不构成 Windows ACL
+或真实第三方服务兼容证据。见[固定版本研究与恢复边界](research/durable-plugin-call-receipts.md)。
 
 
 ## 资源、提示词与隔离界面

@@ -574,6 +574,8 @@ export function AuthenticatedWorkspace({
   const [error, setError] = useState<string>();
   const {
     workspace,
+    snapshotState,
+    snapshotError,
     refresh,
     projectChannel,
     projectBot,
@@ -584,6 +586,7 @@ export function AuthenticatedWorkspace({
     removeNode,
     projectApproval,
   } = useWorkspaceState(setError);
+  const workspaceError = error ?? snapshotError;
   const [notice, setNotice] = useState<string>();
   const [sharing, setSharing] = useState(false);
   const [sharedBotId, setSharedBotId] = useState<string>();
@@ -864,7 +867,7 @@ export function AuthenticatedWorkspace({
 
   return (
     <div
-      className={`app-shell desktop-workspace ${error ? "workspace-refresh-failed" : ""} ${destination === "chat" && selectedChannel ? "channel-view" : ""} ${fullPage ? "full-page-destination" : ""} ${showDetails ? "" : "without-context"} ${preferences.leftPanelOpen ? "" : "without-sidebar"}`}
+      className={`app-shell desktop-workspace ${workspaceError ? "workspace-refresh-failed" : ""} ${destination === "chat" && selectedChannel ? "channel-view" : ""} ${fullPage ? "full-page-destination" : ""} ${showDetails ? "" : "without-context"} ${preferences.leftPanelOpen ? "" : "without-sidebar"}`}
     >
       <header className="workspace-toolbar">
         <nav className="toolbar-navigation" aria-label="页面与侧栏导航">
@@ -960,9 +963,9 @@ export function AuthenticatedWorkspace({
           {panelToggle}
         </div>
       </header>
-      {error ? (
+      {workspaceError ? (
         <div className="workspace-refresh-error" role="alert">
-          <span>{error}</span>
+          <span>{workspaceError}</span>
           <button type="button" onClick={() => void refresh()}>
             重新连接
           </button>
@@ -1062,7 +1065,13 @@ export function AuthenticatedWorkspace({
           ) : (
             <ContextRail
               selectedChannelId={destination === "chat" ? selectedChannel?.id : undefined}
-              realtimeState={workspaceRealtimeState}
+              realtimeState={
+                workspaceRealtimeState === "retrying" || snapshotState === "retrying"
+                  ? "retrying"
+                  : workspaceRealtimeState === "live" && snapshotState === "live"
+                    ? "live"
+                    : "connecting"
+              }
               workspace={workspace}
               onDecideApproval={handleDecideApproval}
               onInspectRun={setSelectedRunId}

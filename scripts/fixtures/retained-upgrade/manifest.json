@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "sourceCommit": "2cc32d0",
+  "through": "0018_automations",
+  "seedSha256": "11d8ab65fd50b3397afe21dc47e106287db0523da50312763bce660a593f5d0d",
+  "migrations": [
+    {
+      "tag": "0000_foundation",
+      "when": 1788412800000,
+      "sha256": "bd68f2e8aeaf7970a75f730cb9ef0d203e3cc9391c543f502f8e840539ed6e79"
+    },
+    {
+      "tag": "0001_m0_control_plane",
+      "when": 1788499200000,
+      "sha256": "ee2287f0659fea6683add77f20a7e79a041a004ccc936c7f09bfbfa42eb685c1"
+    },
+    {
+      "tag": "0002_message_constraints",
+      "when": 1788585600000,
+      "sha256": "2bc90973d7f6d21c3bd1422e94899ded3e6795630cfe872b7e5447ec5aa23ab5"
+    },
+    {
+      "tag": "0003_local_owner_sessions",
+      "when": 1788672000000,
+      "sha256": "713eb2e9ad1d322257a9ea31e10fadfbc9c5e57e05477f933de7b09404775cea"
+    },
+    {
+      "tag": "0004_channel_task_runs",
+      "when": 1788758400000,
+      "sha256": "b25429bad805f9ed20da79e2dc8d1b61dfee1b9c32b6a782bb8c39d49ab3d483"
+    },
+    {
+      "tag": "0005_global_runs_index",
+      "when": 1788844800000,
+      "sha256": "c0728e0d23ff4cf57245e8a4a8272f520cdd27f7759e80ca20268f5f2bded1ac"
+    },
+    {
+      "tag": "0006_run_assignment",
+      "when": 1788931200000,
+      "sha256": "209cbd1b80e0d125eecffefbcc64899c8a5a1be7dbf68df47e8ae107f0cc8989"
+    },
+    {
+      "tag": "0007_run_execution",
+      "when": 1789017600000,
+      "sha256": "272cb3d44caec185508733ef1f2bc163e5b27e48e530364338fdf8c12ed5797b"
+    },
+    {
+      "tag": "0008_owner_approvals",
+      "when": 1789104000000,
+      "sha256": "e74c38878f0095f88a60cd32470a25dc562c9ae5662e16d44389d7782ffcd964"
+    },
+    {
+      "tag": "0009_channel_conversations",
+      "when": 1789190400000,
+      "sha256": "4d466d76bea86dfa8027a76d91fc3beaa18e2c9261aaad906ff1d7e6221bb41b"
+    },
+    {
+      "tag": "0010_cross_platform_nodes",
+      "when": 1789276800000,
+      "sha256": "abd1ef4548fad1a1fe0db2dbeee8d97e984198b52c499d43ef1c172a7ebf6860"
+    },
+    {
+      "tag": "0011_employee_profiles",
+      "when": 1789363200000,
+      "sha256": "ad818e2475c857adb71904381c0294e6bb2bcdb7f81742227c238c7667bd4623"
+    },
+    {
+      "tag": "0012_backfill_employee_creation",
+      "when": 1789449600000,
+      "sha256": "61df006f2781a9115f889f6b1088dd1319d50554c7243aafcec07fb1593c4f3c"
+    },
+    {
+      "tag": "0013_node_identity",
+      "when": 1789536000000,
+      "sha256": "8a060ee8fa4dc3c534b111b99820fbe580094f29e568a4cd809b4098848491b0"
+    },
+    {
+      "tag": "0014_employee_import_receipts",
+      "when": 1789622400000,
+      "sha256": "8e35b25387df5a4ab661c003ecf10b8986d819b061931b708113bd0bbe0c7c4d"
+    },
+    {
+      "tag": "0015_employee_memory_lifecycle",
+      "when": 1789708800000,
+      "sha256": "4548e244ca7fa630e64d483238547cf47941b2194debfa0a4ba4b94fc88d123b"
+    },
+    {
+      "tag": "0016_employee_profile_details",
+      "when": 1789795200000,
+      "sha256": "6c625292533e6b9fb0c3f16e5918c20f16bc484329a53765b1751618d675e437"
+    },
+    {
+      "tag": "0017_request_throttle_buckets",
+      "when": 1789881600000,
+      "sha256": "a119af2e5477b688f757fac382ddc86c497c9f4c30872faff677625e67fe5a19"
+    },
+    {
+      "tag": "0018_automations",
+      "when": 1789968000000,
+      "sha256": "78468021e2f32ca1e137e2640e59f2cdcbc90a12787ac0cf25583430b8c776c6"
+    }
+  ]
+}

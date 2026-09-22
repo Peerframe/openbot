@@ -1,6 +1,7 @@
 import type { Run } from "@openbot/domain";
 import { type ModelMessage, tool, type UserContent } from "ai";
 import { z } from "zod";
+import type { AttachmentInputEvidenceCollector } from "./attachment-input-evidence.js";
 import {
   AttachmentError,
   type ChannelAttachment,
@@ -26,6 +27,7 @@ export interface PrepareAttachmentContextInput {
   run: Pick<Run, "channelId" | "instruction">;
   storage?: ChannelAttachmentStorage | undefined;
   provider: string;
+  evidence?: AttachmentInputEvidenceCollector;
   assertScope(): Promise<void>;
 }
 
@@ -64,7 +66,9 @@ export async function prepareAttachmentContext(input: PrepareAttachmentContextIn
         "Image/PDF attachments require a compatible OpenAI or Anthropic model; this provider has not been enabled for binary input.",
         415,
       );
-    const { bytes } = await input.storage.read(input.run.channelId, id);
+    const { attachment: readAttachment, bytes } = await input.storage.read(input.run.channelId, id);
+    if (readAttachment.sha256 !== attachment.sha256)
+      throw new AttachmentError("Attachment changed after task preparation.", 404);
     await input.assertScope();
     content.push({
       type: "text",
@@ -78,6 +82,7 @@ export async function prepareAttachmentContext(input: PrepareAttachmentContextIn
         filename: attachment.name,
       });
     else content.push({ type: "image", image: bytes, mediaType: attachment.mediaType });
+    input.evidence?.binary(attachment);
   }
   let calls = 0;
   let returnedCharacters = 0;
@@ -123,6 +128,8 @@ export async function prepareAttachmentContext(input: PrepareAttachmentContextIn
     }
     returnedCharacters += excerpt.length;
     const nextOffset = request.offset + excerpt.length;
+    await input.assertScope();
+    input.evidence?.text(listed, text, request.offset, nextOffset, derived);
     return {
       attachmentId: listed.id,
       name: listed.name,

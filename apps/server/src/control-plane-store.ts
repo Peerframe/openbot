@@ -26,6 +26,7 @@ import type {
   UpdateEmployeeMemoryInput,
   UpdateEmployeeProfileDetailsInput,
   UpdateEmployeeSkillStateInput,
+  WorkspaceSnapshot,
 } from "@openbot/domain";
 import type { EmployeeTemplatePackage, RunFailureCode } from "@openbot/protocol";
 
@@ -44,6 +45,11 @@ export interface ArtifactRecord extends Artifact {
   metadata: Record<string, unknown>;
 }
 
+export interface RunCancellation {
+  run: Run;
+  approvals: Approval[];
+}
+
 export interface RunCompletion {
   run: Run;
   artifacts: Artifact[];
@@ -55,6 +61,10 @@ export interface PersistedCounts {
   bots: number;
   activeRuns: number;
 }
+
+export type PersistedWorkspaceSnapshot = Omit<WorkspaceSnapshot, "nodes" | "counts"> & {
+  counts: PersistedCounts;
+};
 
 export interface DispatchFailureInput {
   runId: string;
@@ -74,6 +84,8 @@ export interface ActivateEmployeeImportCommand {
 }
 
 export interface ControlPlaneStore {
+  /** Persisted projections and global counts from one database snapshot. */
+  readWorkspaceSnapshot(): Promise<PersistedWorkspaceSnapshot>;
   channelExists(channelId: string): Promise<boolean>;
   listChannels(): Promise<Channel[]>;
   listBots(): Promise<Bot[]>;
@@ -128,6 +140,8 @@ export interface ControlPlaneStore {
     nodeId: string,
     input: RequestApprovalInput,
   ): Promise<ApprovalResolution | undefined>;
+  getApprovalRunId(approvalId: string): Promise<string | undefined>;
+  cancelWorkerRun(runId: string): Promise<RunCancellation>;
   decideApproval(
     approvalId: string,
     decision: ApprovalDecision,

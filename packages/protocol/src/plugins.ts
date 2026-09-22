@@ -159,6 +159,41 @@ export interface PendingPluginCall {
   arguments: Record<string, unknown>;
   expiresAt: string;
 }
+/** Transport/approval evidence only; it never certifies a third party's external state. */
+export const pluginCallReceiptSchema = z
+  .object({
+    id: z.string().uuid(),
+    runId: z.string().min(1).max(128),
+    channelId: z.string().min(1).max(128),
+    botId: z.string().min(1).max(128),
+    pluginId: z.string().uuid(),
+    pluginName: z.string().min(1).max(80),
+    pluginRevision: z.string().uuid(),
+    toolName,
+    mode: z.enum(["read", "confirm"]),
+    state: z.enum([
+      "preparing",
+      "awaiting_approval",
+      "dispatching",
+      "response_received",
+      "not_dispatched",
+      "outcome_unknown",
+    ]),
+    approvalDecision: z.enum(["approved", "rejected", "expired", "interrupted"]).nullable(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
+    approvalRequestedAt: z.iso.datetime().optional(),
+    approvalDecidedAt: z.iso.datetime().optional(),
+    dispatchedAt: z.iso.datetime().optional(),
+    responseReceivedAt: z.iso.datetime().optional(),
+  })
+  .strict();
+export type PluginCallReceipt = z.infer<typeof pluginCallReceiptSchema>;
+export const pluginCallReceiptListSchema = z
+  .object({
+    calls: z.array(pluginCallReceiptSchema).max(256),
+  })
+  .strict();
 export interface PluginCatalogItem {
   pluginId: string;
   revision: string;

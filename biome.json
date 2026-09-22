@@ -10,7 +10,8 @@
       "!**/coverage",
       "!**/node_modules",
       "!package-lock.json",
-      "!apps/web/dist-demo"
+      "!apps/web/dist-demo",
+      "!apps/web/dist-client-fixtures"
     ]
   },
   "formatter": {

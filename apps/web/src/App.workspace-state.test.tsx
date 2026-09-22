@@ -180,6 +180,119 @@ async function identityChanged() {
   );
 }
 describe("Authenticated workspace snapshot and realtime ordering", () => {
+  it("orders the actual full and legacy streams and keeps channel/profile subscriptions independent", async () => {
+    await mount();
+    const legacy = stream();
+    const channelStream = stream("/api/v1/channels/channel-a/events");
+    const full = stream("/api/v1/workspace/snapshots");
+    const send = (source: TestEventSource, value: WorkspaceSnapshot, sequence = 1) =>
+      source.dispatchEvent(
+        new MessageEvent("workspace.snapshot", {
+          data: JSON.stringify({
+            type: "workspace.snapshot",
+            version: 1,
+            streamId: "one",
+            sequence,
+            snapshot: value,
+          }),
+        }),
+      );
+    await interact(() => send(full, snapshot(["alpha", "beta"])));
+    expect(memberCount()).toBe("频道成员 2");
+    await interact(() =>
+      channelStream.emit("channel.updated", {
+        type: "channel.updated",
+        channelId: channel.id,
+        channel,
+      }),
+    );
+    expect(full.closed).toBe(true);
+    expect(legacy.closed).toBe(false);
+    expect(channelStream.closed).toBe(false);
+    await interact(() => send(full, snapshot(["alpha", "beta"]), 2));
+    expect(memberCount()).toBe("频道成员 1");
+    await interact(() => vi.advanceTimersByTime(1000));
+    await interact(() => reads[1]?.resolve(Response.json(snapshot())));
+    const replacement = stream("/api/v1/workspace/snapshots");
+    expect(replacement).not.toBe(full);
+    await interact(() => send(replacement, snapshot(["alpha", "beta"])));
+    expect(memberCount()).toBe("频道成员 2");
+    expect(reads).toHaveLength(2);
+    await identityChanged();
+    expect(replacement.closed).toBe(true);
+    expect(reads).toHaveLength(3);
+    expect(stream()).toBe(legacy);
+  });
+  it("a delayed mutation response closes the then-current snapshot before its authoritative read", async () => {
+    const container = await mount();
+    await interact(() =>
+      container
+        .querySelector(".channel-members-popover form")
+        ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
+    );
+    expect(mutations).toHaveLength(1);
+    await identityChanged();
+    await interact(() => reads[1]?.resolve(Response.json(snapshot())));
+    const full = stream("/api/v1/workspace/snapshots");
+    await interact(() =>
+      mutations[0]?.resolve(Response.json({ channel: { ...channel, botIds: ["alpha", "beta"] } })),
+    );
+    expect(full.closed).toBe(true);
+    expect(memberCount()).toBe("频道成员 2");
+    await interact(() =>
+      full.dispatchEvent(
+        new MessageEvent("workspace.snapshot", {
+          data: JSON.stringify({
+            type: "workspace.snapshot",
+            version: 1,
+            streamId: "late",
+            sequence: 1,
+            snapshot: snapshot(),
+          }),
+        }),
+      ),
+    );
+    expect(memberCount()).toBe("频道成员 2");
+    await interact(() => reads[2]?.reject(new Error("Mutation reconciliation unavailable")));
+    await interact(() => vi.advanceTimersByTime(10_000));
+    expect(container.textContent).toContain("Mutation reconciliation unavailable");
+    expect(reads).toHaveLength(3);
+    expect(
+      TestEventSource.instances.filter((item) => item.url.endsWith("/snapshots") && !item.closed),
+    ).toHaveLength(0);
+  });
+  it("a live legacy stream cannot hide a disconnected or incompatible snapshot stream", async () => {
+    const container = await mount();
+    const full = stream("/api/v1/workspace/snapshots");
+    const send = (source: TestEventSource, version = 1) =>
+      source.emit("workspace.snapshot", {
+        type: "workspace.snapshot",
+        version,
+        sequence: 1,
+        streamId: "fixture",
+        snapshot: snapshot(),
+      });
+    await interact(() => {
+      stream().onopen?.();
+      send(full);
+    });
+    expect(container.querySelector(".usage-rail-connection.live")).not.toBeNull();
+    await interact(() => {
+      full.onerror?.();
+      stream().emit("heartbeat", {});
+    });
+    expect(container.querySelector(".usage-rail-connection.retrying")).not.toBeNull();
+    await interact(() => vi.advanceTimersByTime(2000));
+    const next = stream("/api/v1/workspace/snapshots");
+    await interact(() => send(next));
+    expect(container.querySelector(".usage-rail-connection.live")).not.toBeNull();
+    expect(reads).toHaveLength(1);
+    await interact(() => send(next, 2));
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      "工作区快照格式不兼容",
+    );
+    expect(container.querySelector(".usage-rail-connection.retrying")).not.toBeNull();
+  });
   it("does not replace the newer refresh with an older successful response", async () => {
     await mount();
     await ready();
@@ -317,6 +430,38 @@ describe("Authenticated workspace snapshot and realtime ordering", () => {
     );
     expect(rendered?.container.querySelector(".usage-rail-run-status.completed")).not.toBeNull();
     expect(rendered?.container.textContent).not.toContain(pendingApproval.summary);
+    expect(reads).toHaveLength(2);
+  });
+  it("reconciles duplicate real workspace/channel events once and reports a failed count read without hiding the run", async () => {
+    await mount();
+    const completed: Run = {
+      ...queuedRun,
+      status: "completed",
+      resultSummary: "已完成合成任务",
+      updatedAt: "2026-09-14T00:00:03Z",
+    };
+    await interact(() => {
+      for (let index = 0; index < 20; index++) {
+        stream().emit("run.updated", { type: "run.updated", run: completed });
+        stream("/api/v1/channels/channel-a/events").emit("run.updated", {
+          type: "run.updated",
+          channelId: channel.id,
+          run: completed,
+        });
+      }
+    });
+    expect(rendered?.container.querySelector(".usage-rail-run-status.completed")).not.toBeNull();
+    expect(reads).toHaveLength(1);
+    await interact(() => vi.advanceTimersByTime(1000));
+    expect(reads).toHaveLength(2);
+    await interact(() =>
+      reads[1]?.reject(new Error("Synthetic global count reconciliation failed")),
+    );
+    expect(rendered?.container.textContent).toContain(
+      "Synthetic global count reconciliation failed",
+    );
+    expect(rendered?.container.querySelector(".usage-rail-run-status.completed")).not.toBeNull();
+    await interact(() => vi.advanceTimersByTime(5000));
     expect(reads).toHaveLength(2);
   });
   it("ignores an old request failure after the current refresh succeeded", async () => {

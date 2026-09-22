@@ -33,7 +33,14 @@ export function createPluginRoutes(service: PluginService) {
         rejected: 409,
         expired: 409,
       } as const;
-      return context.json({ error: error.message, code: error.code }, status[error.code]);
+      return context.json(
+        {
+          error: error.message,
+          code: error.code,
+          ...(error.compatibility ? { compatibility: error.compatibility } : {}),
+        },
+        status[error.code],
+      );
     }
     return context.json({ error: "插件操作未完成，请检查服务后重试。", code: "unavailable" }, 503);
   });
@@ -61,6 +68,14 @@ export function createPluginRoutes(service: PluginService) {
     );
   });
   routes.get("/plugins", async (context) => context.json(await service.snapshot()));
+  routes.get("/runs/:runId/plugin-calls", async (context) => {
+    const runId = z.string().min(1).max(128).parse(context.req.param("runId"));
+    return context.json({ calls: await service.receiptsForRun(runId) });
+  });
+  routes.get("/plugin-calls/:id", async (context) => {
+    const id = z.string().uuid().parse(context.req.param("id"));
+    return context.json({ call: await service.receipt(id) });
+  });
   routes.post("/plugins/preview", async (context) =>
     context.json(
       await service.preview(

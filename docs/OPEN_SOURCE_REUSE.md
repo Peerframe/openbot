@@ -4,6 +4,58 @@
 
 ## Policy
 
+The 2026-09-22 independent-development work reuses the existing runtime and MCP pins; no new
+runtime dependency is introduced. [Headless acceptance](research/headless-runtime-acceptance.md)
+preserves ToolLoopAgent continuation state and makes optional learning saturation non-fatal.
+[MCP compatibility preflight](research/mcp-compatibility-preflight.md) shares the Server profile
+with the independent SDK 1.30.0 author sample. [Workspace snapshots](research/workspace-snapshot-stream.md)
+reuse Drizzle 0.45.2 / `273c78071d4841b497f5144734b38294df7ec64b` (Apache-2.0), Postgres.js 3.4.9
+(Unlicense), PostgreSQL repeatable read and Hono 4.13.7 (MIT) through a bounded local adapter.
+[CI impact shadow analysis](research/2026-09-22-ci-impact-shadow.md) reuses Turbo 2.10.12 /
+`53752d45` (MIT) with conservative classification; all existing gates remain. No upstream source
+was copied or substantially adapted by these additions. Existing notices are retained.
+[Retained-data upgrades](research/retained-data-upgrade.md) reuse the same Drizzle/Postgres.js
+versions and real PostgreSQL 17.11. A synthetic pinned historical prefix and failure probes cover
+OpenBot's application-specific gap without another migration engine or production schema changes.
+Paired database/files/keys restoration remains partial.
+[Runtime execution ports](research/runtime-execution-ports.md) retain the released AI SDK loop
+and require explicit Server authority/audit/storage adapters. [Contributor cold start](research/2026-09-22-contributor-journey.md)
+extends the existing Node/Turbo/PostgreSQL fixture with real login, enrollment and retained identity
+restart; there is no new runtime dependency or copied upstream implementation.
+[Shared client fixtures](research/shared-client-fixtures.md) reuse the existing isolated demo
+transport, actual React components, jsdom and Vite. Their independent build/preview keeps network
+connections disabled and stays outside normal Web/Desktop bundles; no dependency is added.
+
+The next integration wave keeps the same dependency set. [Authoritative run counts](research/workspace-authoritative-counts.md)
+reuse React 19.3.0 / `1d34f91dfde6bba84d08b683aaba164c7194dacb` (MIT) and the existing
+Server snapshot contract; bounded invalidation replaces arithmetic over a truncated Run list.
+[Durable plugin receipts](research/durable-plugin-call-receipts.md) reuse MCP SDK 1.30.0
+(MIT), the existing encrypted file store and write-file-atomic 8.0.0 (ISC). A separate bounded
+metadata ledger preserves ambiguous dispatches without replay. [Receipt inspection](research/plugin-call-receipts-ui.md)
+uses the existing React components, native fetch cancellation and shared schema; it adds no
+state framework or provider authority. [Docker browser conformance](research/docker-browser-conformance.md)
+reuses the official runner, authenticated Server/Node adapters and CopilotKit/OpenBot's reviewed
+computer contract at `257c1280d684089be9adb0b35cce262efc7064bf` (MIT); only the loopback computer
+is synthetic. [Paired restore acceptance](research/paired-restore-acceptance.md) reuses native
+PostgreSQL 17.11 dump/restore and existing production readers. It covers a synthetic POSIX Server
+directory profile; operational backup, other key profiles and PITR remain partial. No upstream
+source is copied or substantially adapted by these additions.
+
+[Official snapshot subscriptions](research/official-workspace-snapshot-stream.md) reuse native
+EventSource, React 19.3.0 and Electron 44.3.0 / `07e460719c75b2ec5ee4893f7d2192ef31c7b8c2`
+(MIT), with explicit subscription ownership rather than an inferred global revision.
+[Worker cancellation](research/worker-run-cancellation.md) reuses PostgreSQL 17.11 row locks,
+existing Drizzle/Postgres.js transactions, ws 8.21.3 (MIT) and cooperative Node abort. No lease or
+remote rollback guarantee is added. [Attachment input evidence](research/attachment-report-evidence.md)
+uses existing AI SDK 7.0.93 (Apache-2.0), immutable attachment storage and Node SHA-256; the Server
+records supplied bytes/text ranges without treating them as verified conclusions.
+[Starter slices](research/contributor-starter-slices.md) reuse the existing DOM test harness.
+[OAuth lifecycle research](research/mcp-oauth-account-lifecycle.md) proposes SDK 1.30.0 plus
+oauth4webapi 3.8.8 / `916b97952dbf431d8b72f369840de54f5a286e4d` (MIT) primitives, but adds no
+dependency or OAuth capability yet. These additions copy no upstream source.
+[Context cutoff precision](research/r3-preceding-answer-timestamptz.md) reuses the pinned
+PostgreSQL/Drizzle stack and compares original timestamps in SQL, avoiding JS Date truncation.
+
 OpenBot researches established open-source implementations before designing a non-trivial feature.
 The goal is to reuse maintained standards, libraries, protocols, and narrow services instead of
 building another incompatible subsystem.
@@ -163,7 +215,7 @@ named boundary until the missing review is completed.
 | Provider SDK and current Docker browser adapter | Reviewed | CopilotKit/OpenBot `agent-computer`, Cua, MCP conformance, OCI evidence, and platform claim levels are recorded. Native Provider claims remain limited to their evidence. |
 | GitHub contribution and CI surface | Reviewed | Issue forms and RFC/KEP evidence are adapted locally. Existing checkout/setup actions are pinned to reviewed commits with credentials persistence disabled. |
 | PostgreSQL store and migration lifecycle | Reviewed | Drizzle/Postgres.js/PostgreSQL behavior is pinned. The journal and database history fail closed on drift; a real PostgreSQL CI job covers concurrent first migration and repeat startup. |
-| PostgreSQL and artifact backup/restore | Partial | Native `pg_dump`/`pg_restore` and a paired artifact snapshot are the selected boundary and a bilingual runbook exists. Scheduling, encryption, retention, off-host adapters, and a repeatable full restore harness remain blocked on focused upstream review. |
+| PostgreSQL and artifact backup/restore | Reviewed for the synthetic directory-mode drill; operational features partial | PostgreSQL 17.11 / `083ac033419f690758508e08c1736089384bbee8` native custom dump and transactional restore are reused; pgBackRest 2.59.1 / `8c8f3ee63e310f0b3ea10b55ed3b96b4cc9296da` was reviewed for physical/WAL recovery. A required owned-container drill pairs rows, report/attachment bytes, encrypted model/plugin state and both keys, verifies production readers, and rejects corruption/key loss. No upstream source copied. [Focused research](research/paired-restore-acceptance.md). Scheduling, archive encryption, retention, off-host adapters, publisher/legacy/Desktop profiles and PITR remain open. |
 | Multi-Server scheduling and event distribution | Partial | [Recurring submission research](research/server-automations.md) completes the bounded single-Server interval-schedule slice, including transactional claims and normal Run submission. Shared dispatch and event distribution remain unreviewed for multiple Server replicas; the single-process boundary remains. |
 | Office visualization plugin | Deferred | Only public product imagery was supplied; no reusable code license was identified, and this release does not expand the plugin. |
 

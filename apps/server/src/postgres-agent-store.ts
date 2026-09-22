@@ -387,7 +387,6 @@ export class PostgresAgentStore implements AgentRunStore {
       .select({
         id: messages.id,
         rootRunId: runs.rootRunId,
-        createdAt: messages.createdAt,
         replyToMessageId: messages.replyToMessageId,
       })
       .from(runs)
@@ -401,25 +400,25 @@ export class PostgresAgentStore implements AgentRunStore {
       )
       .limit(1);
     if (!source) throw new NativeExecutionError("invalid_target");
-    const [rootSource] =
-      source.rootRunId === null
-        ? []
-        : await this.db
-            .select({ createdAt: messages.createdAt })
-            .from(runs)
-            .innerJoin(messages, eq(messages.id, runs.sourceMessageId))
-            .where(
-              and(
-                eq(runs.id, source.rootRunId),
-                eq(runs.channelId, run.channelId),
-                eq(messages.channelId, run.channelId),
-              ),
-            )
-            .limit(1);
-    if (source.rootRunId !== null && !rootSource) throw new NativeExecutionError("invalid_target");
-    const inputCutoff = rootSource?.createdAt ?? source.createdAt;
+    // Delegated runs freeze against the root source message. Confirm that root still exists
+    // without loading its timestamp through JS Date (which drops PostgreSQL microseconds).
+    if (source.rootRunId !== null) {
+      const [rootSource] = await this.db
+        .select({ id: messages.id })
+        .from(runs)
+        .innerJoin(messages, eq(messages.id, runs.sourceMessageId))
+        .where(
+          and(
+            eq(runs.id, source.rootRunId),
+            eq(runs.channelId, run.channelId),
+            eq(messages.channelId, run.channelId),
+          ),
+        )
+        .limit(1);
+      if (!rootSource) throw new NativeExecutionError("invalid_target");
+    }
     const [started] = await this.db
-      .select({ createdAt: runEvents.createdAt })
+      .select({ id: runEvents.id })
       .from(runEvents)
       .where(and(eq(runEvents.runId, run.id), eq(runEvents.type, "RUN_STARTED")))
       .orderBy(asc(runEvents.createdAt))
@@ -427,7 +426,26 @@ export class PostgresAgentStore implements AgentRunStore {
     // Freeze history at the persisted start, not at each model tool call. New human messages
     // remain separate queued tasks; only preceding task trees may contribute late Bot replies.
     if (!started) throw new NativeExecutionError("conflict");
-    const cutoff = started.createdAt;
+    // Compare timestamptz in SQL so same-millisecond, earlier-microsecond Bot replies before
+    // RUN_STARTED stay included. JS Date / toISOString() would truncate to milliseconds.
+    const boundaryRunId = source.rootRunId ?? run.id;
+    const inputBoundary = sql`(
+      select sm.created_at
+      from runs boundary_run
+      join messages sm on sm.id = boundary_run.source_message_id
+      where boundary_run.id = ${boundaryRunId}
+        and boundary_run.channel_id = ${run.channelId}
+        and sm.channel_id = ${run.channelId}
+      limit 1
+    )`;
+    const startCutoff = sql`(
+      select re.created_at
+      from run_events re
+      where re.run_id = ${run.id}
+        and re.type = 'RUN_STARTED'
+      order by re.created_at asc
+      limit 1
+    )`;
     const projection = {
       id: messages.id,
       author: messages.authorType,
@@ -442,10 +460,10 @@ export class PostgresAgentStore implements AgentRunStore {
           eq(messages.channelId, run.channelId),
           or(
             eq(messages.id, source.id),
-            lte(messages.createdAt, inputCutoff),
+            sql`${messages.createdAt} <= ${inputBoundary}`,
             and(
               eq(messages.authorType, "bot"),
-              lte(messages.createdAt, cutoff),
+              sql`${messages.createdAt} <= ${startCutoff}`,
               sql`exists (
             select 1 from runs reply_run
             join runs root_run on root_run.id = coalesce(reply_run.root_run_id, reply_run.id)
@@ -453,7 +471,7 @@ export class PostgresAgentStore implements AgentRunStore {
             where reply_run.id = ${messages.runId}
               and reply_run.channel_id = ${run.channelId} and root_run.channel_id = ${run.channelId}
               and root_source.channel_id = ${run.channelId}
-              and root_source.created_at <= ${inputCutoff.toISOString()}::timestamptz
+              and root_source.created_at <= ${inputBoundary}
           )`,
             ),
           ),
@@ -622,23 +640,34 @@ export class PostgresAgentStore implements AgentRunStore {
             and(eq(knowledgeProposals.botId, run.botId), eq(knowledgeProposals.status, "pending")),
           )
           .limit(50);
-        if (pending.length >= 50) throw new NativeExecutionError("task_limit");
-        const proposalId = randomUUID();
-        await tx.insert(knowledgeProposals).values({
-          id: proposalId,
-          botId: run.botId,
-          sourceRunId: run.id,
-          ...proposal,
-          createdAt: now,
-        });
-        await tx.insert(runEvents).values({
-          id: randomUUID(),
-          runId: run.id,
-          botId: run.botId,
-          channelId: run.channelId,
-          type: "KNOWLEDGE_PROPOSED",
-          payload: { executor: "native-agent", proposalId },
-        });
+        if (pending.length >= 50) {
+          // Optional learning saturation cannot roll back an otherwise valid task delivery.
+          await tx.insert(runEvents).values({
+            id: randomUUID(),
+            runId: run.id,
+            botId: run.botId,
+            channelId: run.channelId,
+            type: "KNOWLEDGE_PROPOSAL_SKIPPED",
+            payload: { executor: "native-agent", reason: "pending_limit" },
+          });
+        } else {
+          const proposalId = randomUUID();
+          await tx.insert(knowledgeProposals).values({
+            id: proposalId,
+            botId: run.botId,
+            sourceRunId: run.id,
+            ...proposal,
+            createdAt: now,
+          });
+          await tx.insert(runEvents).values({
+            id: randomUUID(),
+            runId: run.id,
+            botId: run.botId,
+            channelId: run.channelId,
+            type: "KNOWLEDGE_PROPOSED",
+            payload: { executor: "native-agent", proposalId },
+          });
+        }
       }
       if (artifacts.length) {
         await tx.insert(artifactsTable).values(

@@ -9,9 +9,8 @@ import type {
   WorkspaceSnapshot,
 } from "@openbot/domain";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getWorkspace } from "./api";
+import { getWorkspace, type RealtimeConnectionState, subscribeToWorkspaceSnapshots } from "./api";
 import {
-  isActiveRun,
   mergeArtifacts,
   mergeNodes,
   mergeProgress,
@@ -38,59 +37,137 @@ type PendingRead = {
 
 export function useWorkspaceState(onError: (message: string | undefined) => void) {
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>();
+  const [snapshotState, setSnapshotState] = useState<RealtimeConnectionState>("connecting");
+  const [snapshotError, setSnapshotError] = useState<string>();
+  const streamEpoch = useRef(0);
+  const unsubscribe = useRef<(() => void) | undefined>(undefined);
   const generation = useRef(0);
   const pending = useRef<PendingRead | undefined>(undefined);
   const mounted = useRef(false);
+  const reconcileNeeded = useRef(false);
+  const reconcileTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const lastReadStartedAt = useRef(Number.NEGATIVE_INFINITY);
 
-  const project = useCallback((projection: Projection) => {
-    if (!mounted.current) return;
-    const journal = pending.current?.projections;
-    if (journal) recordProjection(journal, projection);
-    setWorkspace((current) =>
-      current === undefined ? current : applyProjection(current, projection),
-    );
+  const scheduleReconciliation = useCallback((read: () => Promise<void>) => {
+    if (!mounted.current || pending.current || reconcileTimer.current !== undefined) return;
+    // One dirty bit and timer coalesce both streams without cancelling a useful in-flight read.
+    const delay = Math.max(0, 1000 - (Date.now() - lastReadStartedAt.current));
+    reconcileTimer.current = setTimeout(() => {
+      reconcileTimer.current = undefined;
+      if (mounted.current && reconcileNeeded.current && !pending.current) void read();
+    }, delay);
   }, []);
 
-  const refresh = useCallback(async () => {
-    if (!mounted.current) return;
-    pending.current?.controller.abort();
-    pending.current?.projections.clear();
-    const request: PendingRead = {
-      generation: ++generation.current,
-      controller: new AbortController(),
-      projections: new Map(),
-    };
-    pending.current = request;
-    onError(undefined);
-    try {
-      const snapshot = await getWorkspace(request.controller.signal);
-      if (request.generation !== generation.current || request.controller.signal.aborted) return;
-      // Events invalidate only their entities. Replaying them also retains unrelated
-      // entities recovered by this GET after a disconnect, without a refresh loop.
-      const reconciled = Array.from(request.projections.values()).reduce(applyProjection, snapshot);
-      setWorkspace(reconciled);
-    } catch (cause) {
-      if (request.generation !== generation.current || request.controller.signal.aborted) return;
-      onError(
-        cause instanceof Error ? cause.message : "无法连接 OpenBot Server。请确认服务已启动。",
-      );
-    } finally {
-      request.projections.clear();
-      if (pending.current === request) pending.current = undefined;
-    }
-  }, [onError]);
+  const stopSnapshots = useCallback(() => {
+    streamEpoch.current += 1;
+    unsubscribe.current?.();
+    unsubscribe.current = undefined;
+  }, []);
+
+  const startSnapshots = useCallback(() => {
+    stopSnapshots();
+    const epoch = streamEpoch.current;
+    const ownsEpoch = () => mounted.current && streamEpoch.current === epoch;
+    setSnapshotError(undefined);
+    unsubscribe.current = subscribeToWorkspaceSnapshots({
+      onSnapshot: (snapshot) => {
+        if (ownsEpoch()) setWorkspace(snapshot);
+      },
+      onState: (state) => {
+        if (ownsEpoch()) setSnapshotState(state);
+      },
+      // Stream recovery must not clear a separate mutation/GET error in the caller.
+      onError: (message) => {
+        if (ownsEpoch()) setSnapshotError(message);
+      },
+    });
+  }, [stopSnapshots]);
+
+  const refresh = useCallback(
+    async function readWorkspace() {
+      if (!mounted.current) return;
+      stopSnapshots();
+      setSnapshotState("connecting");
+      if (reconcileTimer.current !== undefined) clearTimeout(reconcileTimer.current);
+      reconcileTimer.current = undefined;
+      reconcileNeeded.current = false;
+      lastReadStartedAt.current = Date.now();
+      pending.current?.controller.abort();
+      pending.current?.projections.clear();
+      const request: PendingRead = {
+        generation: ++generation.current,
+        controller: new AbortController(),
+        projections: new Map(),
+      };
+      pending.current = request;
+      let succeeded = false;
+      onError(undefined);
+      try {
+        const snapshot = await getWorkspace(request.controller.signal);
+        if (request.generation !== generation.current || request.controller.signal.aborted) return;
+        // Entity events retain their immediate projections. The global active count comes from GET:
+        // a recent Run page cannot establish whether an event was included in that count already.
+        const reconciled = Array.from(request.projections.values()).reduce(
+          applyProjection,
+          snapshot,
+        );
+        setWorkspace(reconciled);
+        succeeded = true;
+      } catch (cause) {
+        if (request.generation !== generation.current || request.controller.signal.aborted) return;
+        setSnapshotState("retrying");
+        onError(
+          cause instanceof Error ? cause.message : "无法连接 OpenBot Server。请确认服务已启动。",
+        );
+      } finally {
+        request.projections.clear();
+        if (pending.current === request) {
+          pending.current = undefined;
+          // An event during this GET may be newer than its database snapshot. Read once more;
+          // replay itself never invalidates. Failure waits for a later event or explicit retry.
+          if (succeeded && reconcileNeeded.current) scheduleReconciliation(readWorkspace);
+          else {
+            reconcileNeeded.current = false;
+            if (succeeded) startSnapshots();
+          }
+        }
+      }
+    },
+    [onError, scheduleReconciliation, startSnapshots, stopSnapshots],
+  );
 
   useEffect(() => {
     mounted.current = true;
     void refresh();
     return () => {
       mounted.current = false;
+      stopSnapshots();
+      reconcileNeeded.current = false;
+      if (reconcileTimer.current !== undefined) clearTimeout(reconcileTimer.current);
+      reconcileTimer.current = undefined;
       generation.current += 1;
       pending.current?.controller.abort();
       pending.current?.projections.clear();
       pending.current = undefined;
     };
-  }, [refresh]);
+  }, [refresh, stopSnapshots]);
+
+  const project = useCallback(
+    (projection: Projection) => {
+      if (!mounted.current) return;
+      // No cross-transport revision exists. A late mutation result is a new barrier too.
+      stopSnapshots();
+      setSnapshotState("connecting");
+      const journal = pending.current?.projections;
+      if (journal) recordProjection(journal, projection);
+      setWorkspace((current) =>
+        current === undefined ? current : applyProjection(current, projection),
+      );
+      reconcileNeeded.current = true;
+      scheduleReconciliation(refresh);
+    },
+    [refresh, scheduleReconciliation, stopSnapshots],
+  );
 
   const projectChannel = useCallback(
     (channel: Channel) => project({ type: "channel", channel }),
@@ -108,6 +185,7 @@ export function useWorkspaceState(onError: (message: string | undefined) => void
   const removeNode = useCallback((id: string) => project({ type: "node-removed", id }), [project]);
   const projectRun = useCallback(
     (run: Run, artifacts: Artifact[] = []) => {
+      if (!mounted.current) return;
       project({ type: "run", run });
       for (const artifact of artifacts) project({ type: "artifact", artifact });
     },
@@ -127,6 +205,8 @@ export function useWorkspaceState(onError: (message: string | undefined) => void
 
   return {
     workspace,
+    snapshotState,
+    snapshotError,
     refresh,
     projectChannel,
     projectBot,
@@ -208,11 +288,8 @@ function applyProjection(current: WorkspaceSnapshot, projection: Projection): Wo
       return { ...current, nodes, counts: { ...current.counts, connectedNodes: nodes.length } };
     }
     case "run": {
-      const previous = current.runs.find((run) => run.id === projection.run.id);
       const runs = mergeRuns(current.runs, [projection.run]);
       const run = runs.find((item) => item.id === projection.run.id) ?? projection.run;
-      const delta =
-        Number(isActiveRun(run)) - Number(previous !== undefined && isActiveRun(previous));
       // Replaying a coalesced run can skip its intermediate assignment. Its final
       // server projection owns occupancy, even if the snapshot has no prior run.
       const nodes = current.nodes.map((node) =>
@@ -224,7 +301,6 @@ function applyProjection(current: WorkspaceSnapshot, projection: Projection): Wo
         ...current,
         runs,
         nodes: projectRunOnNodes(nodes, undefined, run),
-        counts: { ...current.counts, activeRuns: Math.max(0, current.counts.activeRuns + delta) },
       };
     }
     case "artifact":

@@ -1,5 +1,7 @@
 # 目标模式执行计划
 
+当前开发主线与验收状态见 [独立开发主线](DEVELOPMENT_TRACKS.zh-CN.md)。以下保留历史阶段记录。
+
 [English](EXECUTION_PLAN.md) · [简体中文](EXECUTION_PLAN.zh-CN.md)
 
 ## 目标

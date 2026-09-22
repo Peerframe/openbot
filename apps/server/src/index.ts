@@ -88,6 +88,7 @@ const nativeStore = new PostgresAgentStore(database.db);
 const plugins = new PluginService({
   store: new FilePluginStore(join(env.OPENBOT_OBJECT_STORE_PATH, "plugins", "state.json")),
   assertScope: (run) => nativeStore.assertScope(run),
+  runExists: async (runId) => (await nativeStore.lookup(runId)) !== undefined,
   assertOwnerContentScope: async ({ channelId, botId }) => {
     const channel = (await store.listChannels()).find((item) => item.id === channelId);
     if (!channel?.botIds.includes(botId))
@@ -96,6 +97,7 @@ const plugins = new PluginService({
   botExists: async (botId) => (await store.listBots()).some((bot) => bot.id === botId),
   localEndpoints: env.OPENBOT_PLUGIN_LOCAL_ENDPOINTS,
 });
+await plugins.recover();
 const nativeAgent = modelSettings
   ? new NativeAgentRunner(
       nativeStore,
@@ -177,7 +179,10 @@ const app = createApp({
     return nativeAgent?.output(runId);
   },
   knowledge: new PostgresKnowledgeStore(database.db),
-  cancelNativeRun: async (runId) => {
+  decideWorkerApproval: (id, decision) => dispatcher.decideApproval(id, decision),
+  cancelRun: async (runId) => {
+    const current = await nativeStore.lookup(runId);
+    if (current && current.executionProfile !== "none") return dispatcher.cancelWorkerRun(runId);
     const { run, descendants } = await nativeStore.cancelWithDescendants(runId);
     nativeAgent?.cancel(runId);
     for (const child of descendants) {

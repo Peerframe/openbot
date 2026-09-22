@@ -40,10 +40,31 @@ Without the origin opt-in, the Worker does not advertise `browser.input@1`.
    then approve or reject within two minutes.
 3. On approval, the Worker checks browser control and an unchanged screenshot/URL, then sends the
    original element reference and snapshot generation exactly once. Rejection, expiry, cancellation,
-   ambiguous elements, changed evidence or human takeover prevent the click.
+   ambiguous elements, changed evidence or human takeover prevent a click that has not been dispatched.
 4. The result includes the post-click frame and a PNG artifact. The response must confirm the same
    reference and URL. An uncertain response fails without retry; inspect the browser before deciding
    whether to submit another task, because the first click may already have happened.
+
+## Stop a Worker task
+
+The task details offer **Stop task** for queued, assigned, running and waiting-for-approval Worker
+Runs. The existing Owner-only `POST /api/v1/runs/:runId/cancel` accepts exactly `{}` with a trusted
+mutation Origin. Success returns `{ run }` only after its cancellation audit and any pending
+approval invalidation commit. Repeating a cancelled request returns the same terminal Run without
+another cancellation event. A missing Run returns 404; completed, failed or blocked Runs return 409
+and keep their result/artifacts. Native task cancellation retains its existing descendant behavior.
+
+A pending approval becomes `expired` with a fixed audit reason; an already approved decision stays
+approved as historical fact. Old approval decisions return 409 and cannot restart the Run. When a
+Node disconnects, or the Server recovers interrupted work at startup, running and waiting Runs fail
+and pending approvals expire together. This single-Server recovery does not retry or resume work.
+
+Cancellation revokes acceptance of later progress, completion and artifacts, then requests Node
+abort. Provider cleanup continues to occupy local Node capacity; its completion wakes queued work.
+If an external action was already sent, it may already have happened or still finish. The audit
+records `externalOutcome: unknown` for running/waiting cancellation. A cancel response proves the
+Server decision, not remote rollback or a cancellation acknowledgement. Inspect the external system
+before creating another task. No Worker retry button or automatic redispatch is added.
 
 ## Boundary and evidence
 

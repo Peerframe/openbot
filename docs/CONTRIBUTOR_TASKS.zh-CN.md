@@ -1,13 +1,15 @@
 # 贡献者任务包
 
+当前独立主线、依赖与验收入口见 [开发主线](DEVELOPMENT_TRACKS.zh-CN.md)；一致快照及独立订阅基础已实现，见 [快照契约](WORKSPACE_SYNC.zh-CN.md)。持久全局版本与现有 Web 乐观投影迁移仍待完成。
+
 [English](CONTRIBUTOR_TASKS.md) · [简体中文](CONTRIBUTOR_TASKS.zh-CN.md)
 
 这些任务把路线图拆成可以独立审查的贡献。实现前请使用对应表单创建 Issue，链接固定版本的上游
 调研，并把支持声明限制在测试真正证明的最低等级。
 
-## 优先共建：全新克隆的开发流程验收
+## 已交付：全新克隆的开发流程验收
 
-状态：建议开展，尚未交付。优先让贡献者不依赖维护者的私人环境就能开始工作。
+状态：已实现并本地验证。[贡献者冷启动](CONTRIBUTOR_JOURNEY.zh-CN.md) 使用合成配置，运行真实 Server/Web 登录、可选 Node 登记及保留身份重启。CI 在构建前运行同一命令；尚未验证远端托管执行。
 
 - **结果：**同一条本地/CI 路径证明全新克隆能启动 Server/Web、登录、按需登记开发 Node，
   并使用保留身份重启。
@@ -18,9 +20,9 @@
   结束清理进程与测试数据。
 - **不包含：**发布安装包、新 Provider 或只有负责人才能使用的搭建服务。
 
-## 优先共建：保留旧数据的迁移回归
+## 已交付：保留旧数据的迁移回归
 
-状态：建议开展。已有本地升级证据，完整旧数据样本尚未持续运行于 CI。
+状态：已在本地实现并接入 database CI job。`npm run test:upgrade` 验证固定到 `0018_automations` 的 15 张表历史样本；尚未验证远端托管 CI 执行。见[数据库指南](DATABASE.zh-CN.md#保留旧数据的升级回归)。
 
 - **结果：**贡献者可以验证既定旧迁移升级后，已有外观、员工模板、导入凭证与自动任务记录
   完整保留。
@@ -34,30 +36,120 @@
 
 ## 后续研究：一致的工作区快照契约
 
-状态：建议研究。当前 Web 排序测试已通过，服务端全局顺序契约尚未实现。
+状态：一致快照、权威计数和正式 Web/Desktop 订阅已实现；持久全局顺序契约尚未实现。详见 [快照契约](WORKSPACE_SYNC.zh-CN.md) 与 `npm run test:workspace`。序号只属于各自连接，操作顺序屏障保留即时投影。
 
 - **结果：**明确快照版本与计数语义，使其他客户端不必重新猜测 Web 的事件合并规则。
 - **路径：**Server 工作区查询/事件、`packages/domain`、`packages/protocol` 和
   `apps/web/src/use-workspace-state.ts`；见[工作区调研](research/workspace-state-refactor.zh-CN.md)。
 - **先调研：**比较维护中的带版本快照/事件 API 和 PostgreSQL 快照隔离；修改接口前写 ADR。
 - **验收：**确定性复现分别读取计数、近期列表以外的活动 Run、重复事件和重连；实现前说明
-  兼容行为。当前 Web 没有使用 `counts.activeRuns` 字段。
+  兼容行为。当前 Web 已显示 Server 权威的 `counts.activeRuns` 字段。
 - **不包含：**新增全局客户端缓存框架，或把 Server 权限移到浏览器。
 
-## 入门：无障碍回归检查器
+## 入门：创建 Bot 对话框模态生命周期回归
 
-- **结果：**构建后的 Web 应用可以重复检查键盘、名称/角色/状态和高置信 WCAG 回归。
+- **目标：**证明现有「创建 Bot」原生模态符合无障碍基线中对 Owner 创建对话框的声明。
+- **已有行为：**`CreateBotDialog` 通过 `useModalDialog` 打开，使用 `aria-labelledby` 标注对话框，
+  图标关闭按钮名为 `关闭`，创建失败以 `role="alert"` 提示，关闭后恢复 opener 焦点。
+- **回归/文档缺口：**没有 `CreateBotDialog.test.tsx`；目前只有
+  `AttachmentsManager.test.tsx` 覆盖 Escape / opener 焦点恢复。`docs/ACCESSIBILITY.zh-CN.md`
+  手工检查清单仍未写明创建 Bot。
+- **入口文件：**`apps/web/src/components/CreateBotDialog.tsx`、
+  `apps/web/src/components/useModalDialog.ts`、`apps/web/src/test/render-component.tsx`、
+  `docs/ACCESSIBILITY.md`（若改检查清单则同步 `.zh-CN.md`）。
+- **前置条件：**根目录 `package.json` 的 Node 引擎；`npm ci`；不需要 PostgreSQL、付费模型或
+  Desktop。
+- **命令：**
+  ```bash
+  npm exec --workspace @openbot/web -- vitest run src/components/CreateBotDialog.test.tsx
+  npm --workspace @openbot/web run typecheck
+  npm run docs:check
+  ```
+- **验收反例：**Escape / `cancel` 后对话框仍挂载；关闭后焦点未回到 opener；图标关闭缺少
+  `aria-label`；`onCreate` 失败未以 `role="alert"` 呈现。
+- **不包含：**axe/Playwright CI 门禁；创建频道或导入/导出对话框；WCAG 合规声明。
+- **依赖：**仅现有 Web Vitest/jsdom。调研：
+  [contributor-starter-slices](research/contributor-starter-slices.zh-CN.md)。
+
+## 入门：员工主页 Tab 键盘 DOM 回归
+
+- **目标：**证明主页水平 Tab 在 `docs/ACCESSIBILITY.zh-CN.md` 已记录的按键下，**焦点与选中态
+  一起移动**。
+- **已有行为：**`EmployeeProfileView` 提供一个 `tablist`、七个 tab，以及带环绕的
+  `profileTabForNavigationKey`（ArrowLeft/ArrowRight/Home/End）。
+- **回归/文档缺口：**`EmployeeProfileView.test.tsx` 只覆盖静态 markup 与纯导航函数，没有在
+  聚焦的 tab 上派发 keydown 并同时断言 `aria-selected` 与 `document.activeElement`。
+- **入口文件：**`apps/web/src/components/EmployeeProfileView.tsx`、
+  `apps/web/src/components/EmployeeProfileView.test.tsx`、
+  `apps/web/src/test/render-component.tsx`、`docs/ACCESSIBILITY.md`。
+- **前置条件：**`npm ci`；仅 jsdom Vitest。
+- **命令：**
+  ```bash
+  npm exec --workspace @openbot/web -- vitest run src/components/EmployeeProfileView.test.tsx
+  npm --workspace @openbot/web run typecheck
+  ```
+- **验收反例：**ArrowRight 改变了 `aria-selected` 但焦点/tabIndex 仍留在旧 tab；Home/End 在两端
+  不环绕；ArrowDown 激活了某个 tab（必须保持无操作）。
+- **不包含：**屏幕阅读器矩阵；强制色/重排证据；新的主页 Tab 或编辑器。
+- **依赖：**无。调研：[contributor-starter-slices](research/contributor-starter-slices.zh-CN.md)。
+
+## 入门：RunInspector Escape 与焦点恢复回归
+
+- **目标：**锁住 `RunInspector` 自定义浮层已经实现的 Escape 关闭与 opener 焦点恢复。
+- **已有行为：**挂载时聚焦带标签的关闭按钮，监听 Escape 调用 `onClose`，卸载时恢复先前焦点
+  （`role="dialog"`、`aria-modal="true"`）。
+- **回归/文档缺口：**`RunInspector.integration.test.tsx` 只测协作子 Run 接线；Escape/焦点未测。
+  `docs/ACCESSIBILITY.zh-CN.md` 仍把该浮层列为需完整原生 dialog 审查的已知缺口（迁移仍属中级）。
+- **入口文件：**`apps/web/src/components/RunInspector.tsx`、
+  `apps/web/src/components/RunInspector.integration.test.tsx`（或同级聚焦测试）、
+  `docs/ACCESSIBILITY.md`。
+- **前置条件：**`npm ci`；jsdom 回归不需要 Server 进程。
+- **命令：**
+  ```bash
+  npm exec --workspace @openbot/web -- vitest run src/components/RunInspector.integration.test.tsx
+  npm --workspace @openbot/web run typecheck
+  ```
+- **验收反例：**Escape 未调用 `onClose`；卸载后焦点落在无关节点；关闭按钮没有可访问名称。
+- **不包含：**迁到原生 `<dialog>`；Tab 焦点陷阱重设计；axe CI；WCAG 合规声明。
+- **依赖：**无。调研：[contributor-starter-slices](research/contributor-starter-slices.zh-CN.md)。
+
+## 入门：Node 管理对话框模态生命周期回归
+
+- **目标：**证明 Node 管理 Owner 对话框与其他创建/管理对话框使用同一套原生模态生命周期。
+- **已有行为：**`NodeManagerDialog` 通过 `useModalDialog` 挂载 `<dialog>`，并在
+  `NodeIdentityList` 中展示吊销确认文案。
+- **回归/文档缺口：**`NodeManagerDialog.test.tsx` 只测身份列表静态 markup 与展示状态辅助函数；
+  从未打开对话框、触发 `cancel` 或断言 opener 焦点恢复。
+- **入口文件：**`apps/web/src/components/NodeManagerDialog.tsx`、
+  `apps/web/src/components/NodeManagerDialog.test.tsx`、
+  `apps/web/src/components/useModalDialog.ts`、`apps/web/src/test/render-component.tsx`。
+- **前置条件：**`npm ci`；沿用现有测试中的合成 Node 身份 fixture。
+- **命令：**
+  ```bash
+  npm exec --workspace @openbot/web -- vitest run src/components/NodeManagerDialog.test.tsx
+  npm --workspace @openbot/web run typecheck
+  ```
+- **验收反例：**从未调用 `showModal`；Escape 后对话框仍在树中；关闭后焦点未回到 opener；挂载
+  回归中丢失现有吊销确认文案断言。
+- **不包含：**持有证明 Node 身份；登记令牌 UX；Windows/macOS Keychain 改动。
+- **依赖：**无。调研：[contributor-starter-slices](research/contributor-starter-slices.zh-CN.md)。
+
+## 中级：无障碍回归检查器
+
+- **结果：**构建后的 Web 应用可在 CI 中重复检查键盘、名称/角色/状态和高置信 WCAG 回归。
 - **路径：**`apps/web`、`.github/workflows`、`docs/ACCESSIBILITY.md`。
 - **先调研：**比较 `axe-core`、Playwright 无障碍工具和维护中的 Vitest 集成，固定版本与许可证。
+  优先完成上方入门对话框/Tab 回归，再选择仓库级 runner。
 - **验收：**确定性本地命令、CI Artifact、无实时网络、记录误报，并用一个故意违规 fixture 证明
   门禁会失败。
-- **不包含：**只凭自动化就宣称屏幕阅读器或 WCAG 合规。
+- **不包含：**只凭自动化就宣称屏幕阅读器或 WCAG 合规；取代上方聚焦入门回归。
 
-## 入门：翻译一致性检查
+## 中级：翻译一致性检查
 
 - **结果：**英文原文与维护中的语言文件不会静默丢失安全警告、命令或配置名。
 - **路径：**`scripts/check-docs.mjs`、`README*.md`、`docs/*.md`。
-- **先调研：**增加本地规则前先比较文档 lint 与本地化一致性工具。
+- **先调研：**增加本地规则前先比较文档 lint 与本地化一致性工具；复用现有本地链接检查，不得削弱
+  `docs:check`。
 - **验收：**fixture 缺少警告/链接时必定失败，输出具体文件与缺少契约，不调用机器翻译。
 - **不包含：**判断译文文采或自动改写翻译。
 

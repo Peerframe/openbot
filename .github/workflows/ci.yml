@@ -56,7 +56,11 @@ jobs:
           node-version: 22.22.2
           cache: npm
       - run: npm ci
+      - name: Report advisory CI impact without changing required checks
+        run: node scripts/report-ci-impact.mjs
       - run: npm run check
+      - name: Build isolated shared-client fault fixtures
+        run: npm run build:fixtures --workspace @openbot/web
       - name: Verify real public HTTPS reading on the hosted network
         env:
           OPENBOT_LIVE_SOURCE_TEST: "1"
@@ -270,13 +274,31 @@ jobs:
       - name: Verify contributor startup before shared packages have been built
         run: |
           node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_dev_smoke"); } finally { await sql.end(); }'
-          npm run dev:smoke
+          npm run dev:smoke -- --with-node
         env:
           OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
           OPENBOT_DEV_SMOKE_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_dev_smoke
       - run: npm run db:verify
         env:
           OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
+      - name: Verify retained historical data with concurrent and repeated upgrade
+        run: |
+          node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_upgrade_test_ci"); } finally { await sql.end(); }'
+          npm run test:upgrade
+        env:
+          OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
+          OPENBOT_UPGRADE_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_upgrade_test_ci
+      - name: Verify paired database, objects and encryption keys restore
+        run: npm run test:restore
+      - name: Verify controlled Docker browser scenarios
+        run: npm run test:provider:docker -- --output "${RUNNER_TEMP}/openbot-docker-conformance.json"
+      - name: Retain Docker browser conformance evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: docker-browser-conformance
+          path: ${{ runner.temp }}/openbot-docker-conformance.json
+          if-no-files-found: warn
       - name: Verify recurring-task transactions in a disposable PostgreSQL database
         run: |
           node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_automation_test_ci"); } finally { await sql.end(); }'
@@ -307,10 +329,10 @@ jobs:
           OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
           OPENBOT_IMPORT_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_import_test_ci
 
-      - name: Verify asynchronous Bot collaboration in a disposable PostgreSQL database
+      - name: Verify headless delivery and Bot collaboration in a disposable PostgreSQL database
         run: |
           node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_collab_test_ci"); } finally { await sql.end(); }'
-          npm exec --workspace @openbot/server -- vitest run src/agent-collaboration.integration.test.ts
+          npm run test:runtime
         env:
           OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
           OPENBOT_COLLAB_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_collab_test_ci

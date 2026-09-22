@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { runStatusLabel } from "../run-state";
 import { CloseIcon, NodeIcon } from "./Icons";
 import { NativeRunControls } from "./NativeRunControls";
+import { PluginCallReceipts } from "./PluginCallReceipts";
 import { RobotAvatar } from "./RobotAvatar";
 import type { CollaborationRun } from "./RunCollaboration";
 import { RunProgressPanel } from "./RunProgressPanel";
@@ -101,6 +102,7 @@ export function RunInspector({
             </div>
           </section>
 
+          <PluginCallReceipts key={`receipts-${run.id}`} runId={run.id} />
           <NativeRunControls key={run.id} run={run} onRun={onRun} />
           {run.modelUsage ? (
             <section className="inspector-section" aria-label="任务模型用量">

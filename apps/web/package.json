@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "test": "vitest run src --passWithNoTests --maxWorkers=2",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "build:demo": "tsc --noEmit -p tsconfig.json && vite build --config vite.demo.config.ts"
+    "build:demo": "tsc --noEmit -p tsconfig.json && vite build --config vite.demo.config.ts",
+    "dev:fixtures": "npm run build:fixtures && vite preview --config vite.fixtures.config.ts",
+    "build:fixtures": "tsc --noEmit -p tsconfig.json && vite build --config vite.fixtures.config.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "1.7.5",

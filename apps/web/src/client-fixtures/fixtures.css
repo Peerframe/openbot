@@ -1,0 +1,175 @@
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+.client-fixtures-root {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  background: #f7f8fa;
+}
+.client-fixtures-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  background: white;
+  border-bottom: 1px solid #e0e4e9;
+  color: #354151;
+  font-size: 12px;
+}
+.client-fixtures-toolbar > div {
+  display: grid;
+  gap: 4px;
+  margin-right: auto;
+}
+.client-fixtures-toolbar strong {
+  font-size: 14px;
+}
+.client-fixtures-toolbar span {
+  color: #667281;
+}
+.client-fixtures-toolbar button,
+.client-fixtures-toolbar select,
+.client-fixtures-controls button,
+.client-fixtures-panels button,
+.client-fixtures-notice button {
+  padding: 6px 10px;
+  border: 1px solid #ccd3dc;
+  border-radius: 6px;
+  background: white;
+  color: #354151;
+  font: inherit;
+  cursor: pointer;
+}
+.client-fixtures-root button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.client-fixtures-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  font-size: 12px;
+  border-bottom: 1px solid #e0e4e9;
+}
+.client-fixtures-controls p {
+  flex: 1 1 320px;
+  margin: 3px 0;
+  line-height: 1.5;
+  color: #596779;
+}
+.client-fixtures-root .app-shell.desktop-workspace.client-fixtures-workspace {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-columns: 210px minmax(0, 1fr) 300px;
+}
+.client-fixtures-root .app-shell.desktop-workspace.client-fixtures-workspace > .sidebar {
+  grid-area: 1 / 1;
+  min-height: 0;
+}
+.client-fixtures-root .app-shell.desktop-workspace.client-fixtures-workspace > .workspace-main {
+  grid-area: 1 / 2;
+  min-height: 0;
+  height: 100%;
+}
+.client-fixtures-root .app-shell.desktop-workspace.client-fixtures-workspace > .context-rail {
+  grid-area: 1 / 3;
+  min-height: 0;
+  height: 100%;
+}
+.client-fixtures-panels {
+  display: none;
+}
+.client-fixtures-notice {
+  margin: 0;
+  padding: 8px 18px;
+  font-size: 12px;
+  background: #eef5ee;
+}
+.client-fixtures-notice button {
+  margin-left: 10px;
+}
+@media (max-width: 1000px) {
+  .client-fixtures-root .app-shell.desktop-workspace.client-fixtures-workspace {
+    grid-template-columns: minmax(0, 1fr) 290px;
+  }
+  .client-fixtures-root .app-shell.desktop-workspace.client-fixtures-workspace > .sidebar {
+    display: none;
+  }
+  .client-fixtures-root .app-shell.desktop-workspace.client-fixtures-workspace > .workspace-main {
+    grid-area: 1 / 1;
+  }
+  .client-fixtures-root .app-shell.desktop-workspace.client-fixtures-workspace > .context-rail {
+    grid-area: 1 / 2;
+  }
+}
+@media (max-width: 700px) {
+  .client-fixtures-toolbar {
+    padding: 10px;
+    gap: 8px;
+  }
+  .client-fixtures-toolbar > div {
+    width: 100%;
+  }
+  .client-fixtures-controls {
+    padding: 8px 10px;
+  }
+  .client-fixtures-panels {
+    display: flex;
+    gap: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .client-fixtures-panels [aria-pressed="true"] {
+    background: #e7efea;
+    border-color: #759982;
+  }
+  .client-fixtures-root .app-shell.desktop-workspace.client-fixtures-workspace {
+    display: flex;
+    flex-direction: column;
+  }
+  .client-fixtures-root .app-shell.desktop-workspace.client-fixtures-workspace > .sidebar,
+  .client-fixtures-root .app-shell.desktop-workspace.client-fixtures-workspace > .workspace-main,
+  .client-fixtures-root .app-shell.desktop-workspace.client-fixtures-workspace > .context-rail {
+    display: none;
+    width: 100%;
+    min-height: 0;
+    flex: 1;
+  }
+  .client-fixtures-root
+    .app-shell.desktop-workspace.client-fixtures-workspace.fixture-panel-conversation
+    > .workspace-main,
+  .client-fixtures-root
+    .app-shell.desktop-workspace.client-fixtures-workspace.fixture-panel-details
+    > .context-rail,
+  .client-fixtures-root
+    .app-shell.desktop-workspace.client-fixtures-workspace.fixture-panel-channels
+    > .sidebar {
+    display: flex;
+  }
+  .client-fixtures-root
+    .app-shell.desktop-workspace.client-fixtures-workspace.fixture-panel-details
+    > .context-rail,
+  .client-fixtures-root
+    .app-shell.desktop-workspace.client-fixtures-workspace.fixture-panel-channels
+    > .sidebar {
+    overflow-y: auto;
+    flex-direction: column;
+  }
+  .fixture-panel-channels > .sidebar .sidebar-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+}

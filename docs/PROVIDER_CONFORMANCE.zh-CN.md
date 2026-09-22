@@ -154,9 +154,8 @@ npm run check
    `providerConformanceReportSchema` 校验结果，并把确定性 JSON 作为 CI 证据发布。
 7. 记录可选组件许可、特权依赖和预期失败。预期失败只能是可见债务，不能伪装成功。
 
-schema、构建器和独立 runner 已经实现，并有密闭负向 fixture。下一步是编写 Provider 专属场景
-模块，并在受控的真实 Windows、macOS、Linux 设备上执行。观察并审核这些报告前，不存在任何
-真实设备支持声明。
+schema、构建器、独立 runner 和 Docker/browser 专属场景已经实现。其他 Provider 仍需自己的
+模块。真实 Windows、macOS、Linux 设备报告经过观察与审核前，不存在真实设备支持声明。
 
 ## 审核浏览器点击的证据
 
@@ -165,3 +164,67 @@ schema、构建器和独立 runner 已经实现，并有密闭负向 fixture。�
 拒绝时页面不变；批准时指定按钮点击一次并返回 PNG。重复导航覆盖带帧前缀的元素引用。
 Web 界面通过 1280x900 和 390x844 验收；测试上游的监听地址补丁已在[研究记录](research/controlled-browser-click.md)披露。
 这是实验集成证据，不等于原生桌面输入或 Windows/Linux 浏览器认证。浏览器出口限制和通用不可信站点操作仍未实现。
+
+
+## Docker 浏览器集成 suite（B1a）
+
+在 Linux 或 macOS 主机、执行过 `npm ci --ignore-scripts` 的 checkout 中，准备 Node 和运行中的 Docker：
+
+```bash
+npm run test:provider:docker -- --output /tmp/openbot-docker-conformance.json
+```
+
+每次选择**新的**输出路径，报告写入器拒绝覆盖。驱动构建生产组件，运行 12 个 fixture 回归，
+创建固定版本 PostgreSQL 容器，再通过已有 runner 执行 [Docker suite](../providers/docker/conformance/suite.mjs)。
+不需要私人 `.env`、模型凭据、既有数据库或浏览器资料；Docker 可能需要下载固定镜像。
+驱动需要 POSIX 子进程信号，尚未验证 Windows 驱动执行。容器使用随机 loopback 端口和临时存储，只有名称和随机标签都证实属于本次才会删除。
+完成后关闭 Server、Node、电脑连接并删除临时凭据和产物。缺少前置条件或清理失败都必须失败，
+不能跳过。进程中断仍受子进程总期限约束，并清理驱动自己的数据库和临时目录。
+CI 在现有数据库 job 执行相同必需命令，并保留可用的脱敏 JSON 报告。既有必需检查保持不变。
+
+suite 在一个隔离测试进程中组合**生产** Server 应用、PostgreSQL store、dispatcher、Node
+client 和 Docker Provider。Owner 登录、enrollment 使用真实 HTTP；路由、进度、帧和批准消息
+经过认证 WebSocket。电脑 HTTP 服务按已审查上游接口合成，无真实浏览器。
+报告记录本机 OS/架构且只能是 `evidenceLevel: hermetic`，不能用于原生输入或三平台浏览器
+认证。上文既有 Chromium 实证是另一项测试。
+
+14 个场景全部 required，不配置预期失败基线：
+
+| 稳定 id | 必须验证的行为 |
+| --- | --- |
+| `browser.approve-once` | 冻结含帧前缀的精确 ref、snapshot id、名称、URL 和截图摘要；未认证批准失败；Owner 批准仅点击一次并保存审计/PNG、更新帧；重复决定失败 |
+| `browser.reject` | Owner 拒绝后零 commit、无结果产物 |
+| `browser.expire` | 过期决定零 commit；fixture 仅提前本数据库批准截止时间，再走真实决定接口 |
+| `browser.node-stop` | 实际 Node stop 中止待批准 Provider；Server 立即终结等待任务并使待定审批过期，无需另一次 Owner 决定 |
+| `browser.disconnect` | Owner 撤销凭据断开 Node 并终结等待任务，之后批准返回 409 |
+| `browser.owner-cancel` | Owner 取消持久化且幂等，待定审批过期，零点击/产物；已完成任务拒绝取消 |
+| `browser.cancel-after-dispatch` | 真实 HTTP 点击已记录但响应挂起时取消；保留批准决定与一次点击，审计外部结果未知，不发布完成或产物 |
+| `browser.cancel-cleanup-capacity` | 取消后的 Provider 清理仍占用单容量 Node；清理完成释放容量后，排队任务自动开始 |
+| `browser.changed-evidence` | 观察后截图变化阻止已批准点击 |
+| `browser.human-control` | 批准前人工接管阻止点击 |
+| `browser.transport-timeout` | 生产 15 秒 HTTP 期限结束无响应的 control 检查，点击不发生 |
+| `browser.lost-receipt` | 电脑记录一次精确点击后销毁响应连接；Run 失败，无自动重试或成功产物 |
+| `browser.bot-approval-exclusion` | 待批准期间，同 Bot 第二个 Run 不能导航；释放后可以执行 |
+| `browser.bot-cleanup-exclusion` | 在 fetch 边界延迟真实 HTTP reader 取消；清理完成前维持同 Bot 互斥，之后可以执行 |
+
+报告只包含稳定结果，不含凭据、原始错误、任务文本或图片。日志标明 setup/run/cleanup 阶段。
+此 suite 的退出码 `0` 要求所有必需检查通过，非零必须阻断其门禁；完整 `npm run check`
+仍单独执行并保持不变。固定来源和研究见 [B1a 研究](research/docker-browser-conformance.zh-CN.md)。
+
+### Worker 取消与恢复边界
+
+同一驱动先在自建 PostgreSQL 17.11 中运行 `worker-cancellation.integration.test.ts`，再执行
+Server/Node/Provider suite。事务回归覆盖取消与批准、分配、完成、申请审批的竞态、幂等取消、
+审计写失败回滚、断线/启动恢复使待定审批失效，以及频道成员移除时的锁兼容性。
+普通 `npm run check` 默认跳过此数据库套件，只有 `OPENBOT_WORKER_TEST_DATABASE_URL` 指向明确
+可丢弃的 loopback `openbot_worker_test_*` 数据库时运行。驱动只传入自建的
+`openbot_dev_smoke` 数据库，禁止提供留存数据的数据库。
+
+Owner Worker 取消和 Node stop 分别验证。前者撤销 Server 的任务权威并发送协作式 `run.cancel`，
+同一事务内使待定审批过期。断线或重启中断的 running/waiting 任务直接失败，不重新派发；
+已完成任务及其产物保留。已经派发的点击仍可能发生；取消响应成功和 Node abort 都不能证明
+远端回滚或收到取消确认。参见 [停止电脑任务](CONTROLLED_BROWSER.zh-CN.md#停止电脑任务)
+与 [B1b 研究](research/worker-run-cancellation.md)。
+
+这些仍是合成电脑证据，不证明 capability lease、跨进程电脑资源锁、浏览器出口隔离，
+或通用不可信站点操作安全。

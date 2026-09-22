@@ -4,6 +4,50 @@
 
 ## 规则
 
+2026-09-22 独立开发主线复用现有 Runtime 与 MCP 固定版本，不新增运行时依赖。
+[无界面验收](research/headless-runtime-acceptance.md) 保留 ToolLoopAgent 续跑状态，并让可选学习
+队列满额不再导致任务交付回滚。[MCP 兼容预检](research/mcp-compatibility-preflight.zh-CN.md)
+将 Server 校验规则共享给 SDK 1.30.0 独立作者示例。
+[工作区快照](research/workspace-snapshot-stream.md) 通过有界适配复用 Drizzle 0.45.2 /
+`273c78071d4841b497f5144734b38294df7ec64b`（Apache-2.0）、Postgres.js 3.4.9（Unlicense）、
+PostgreSQL 可重复读及 Hono 4.13.7（MIT）。
+[CI 影子分析](research/2026-09-22-ci-impact-shadow.md) 复用 Turbo 2.10.12 / `53752d45`（MIT），
+采用保守分类，保留全部原有门槛。以上新增部分没有复制或实质改编上游源码，现有许可声明保持不变。
+[保留旧数据的升级](research/retained-data-upgrade.md) 复用相同 Drizzle/Postgres.js 固定版本与真实
+PostgreSQL 17.11，以合成历史前缀和失败探针覆盖 OpenBot 特有的数据约束，不引入另一套迁移引擎，
+不改变生产 schema。数据库、文件、密钥的配套恢复仍未完成。
+[Runtime 执行接口](research/runtime-execution-ports.md) 保留已发布 AI SDK 循环，要求显式注入
+Server 权限、审计及存储适配器。[贡献者冷启动](research/2026-09-22-contributor-journey.zh-CN.md)
+扩展现有 Node/Turbo/PostgreSQL 夹具，验证真实登录、登记和身份重启；不新增运行时依赖或复制上游实现。
+[共享客户端夹具](research/shared-client-fixtures.zh-CN.md) 复用隔离 demo 的传输层、真实 React 组件、
+jsdom 与 Vite；独立构建/预览保持禁止网络连接，且不进入普通 Web/Desktop 产物，不新增依赖。
+
+下一批集成保持相同依赖集合。[权威任务计数](research/workspace-authoritative-counts.md)
+复用 React 19.3.0 / `1d34f91dfde6bba84d08b683aaba164c7194dacb`（MIT）和现有 Server
+快照契约，用有界补读替代截断任务列表上的计数加减。
+[持久插件回执](research/durable-plugin-call-receipts.md) 复用 MCP SDK 1.30.0（MIT）、现有
+加密文件存储和 write-file-atomic 8.0.0（ISC）；独立有界元数据账本保留不确定派发，不重放调用。
+[回执查看](research/plugin-call-receipts-ui.zh-CN.md) 复用 React 组件、原生 fetch 取消和共享
+schema，不引入状态框架或服务商权限。[Docker 浏览器验收](research/docker-browser-conformance.md)
+复用官方 runner、鉴权 Server/Node 适配器和 CopilotKit/OpenBot 的电脑接口固定提交
+`257c1280d684089be9adb0b35cce262efc7064bf`（MIT）；仅本机 computer 为合成实现。
+[配套恢复验收](research/paired-restore-acceptance.md) 复用 PostgreSQL 17.11 原生导出/恢复工具
+和生产读取器，覆盖合成 POSIX Server 模型目录配置；运维备份、其他密钥配置和 PITR 仍未完成。
+这些新增部分没有复制或实质改编上游源码。
+
+[正式快照订阅](research/official-workspace-snapshot-stream.md) 复用原生 EventSource、React
+19.3.0 与 Electron 44.3.0 / `07e460719c75b2ec5ee4893f7d2192ef31c7b8c2`（MIT），明确订阅
+归属，不虚构全局版本。[Worker 取消](research/worker-run-cancellation.md) 复用 PostgreSQL
+17.11 行锁、Drizzle/Postgres.js 事务、ws 8.21.3（MIT）及 Node 协作式中断，不增加能力租约或
+远端回滚保证。[附件输入证据](research/attachment-report-evidence.md) 复用 AI SDK 7.0.93
+（Apache-2.0）、不可变附件存储和 Node SHA-256；Server 记录提供过的字节或文本范围，不视为
+结论已经验证。[入门切片](research/contributor-starter-slices.md) 复用现有 DOM 测试基础。
+[OAuth 生命周期研究](research/mcp-oauth-account-lifecycle.zh-CN.md) 提议使用 SDK 1.30.0 与
+oauth4webapi 3.8.8 / `916b97952dbf431d8b72f369840de54f5a286e4d`（MIT）的公开接口，尚未
+引入依赖或启用 OAuth 功能。以上没有复制上游源码。
+[上下文时间精度](research/r3-preceding-answer-timestamptz.zh-CN.md) 复用固定的 PostgreSQL/
+Drizzle，在 SQL 中比较原始时间戳，避免 JS Date 丢失微秒。
+
 OpenBot 在设计任何非简单功能前，必须先调研成熟的开源实现。目标是优先复用持续维护的标准、
 依赖、协议和窄服务，避免再造一套不兼容系统。
 

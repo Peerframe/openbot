@@ -52,6 +52,7 @@ export class OpenBotNodeClient {
   readonly #logger: OpenBotLogger;
   #credential?: string;
   #socket?: WebSocket;
+  #authenticatedSocket: WebSocket | undefined;
   #heartbeat?: NodeJS.Timeout;
   #reconnect?: NodeJS.Timeout;
   readonly #assignedRunIds = new Set<string>();
@@ -185,17 +186,8 @@ export class OpenBotNodeClient {
         }
         if (!authenticated) {
           authenticated = true;
-          this.#heartbeat = setInterval(() => {
-            if (socket.readyState !== WebSocket.OPEN) return;
-            const heartbeat: NodeMessage = {
-              type: "node.heartbeat",
-              protocolVersion,
-              nodeId: this.#env.OPENBOT_NODE_ID,
-              activeRunIds: Array.from(this.#assignedRunIds),
-              sentAt: new Date().toISOString(),
-            };
-            socket.send(JSON.stringify(heartbeat));
-          }, heartbeatIntervalMs);
+          this.#authenticatedSocket = socket;
+          this.#heartbeat = setInterval(() => this.#sendHeartbeat(), heartbeatIntervalMs);
         }
         return;
       }
@@ -207,7 +199,7 @@ export class OpenBotNodeClient {
           message,
           capabilities,
           capabilityManifest,
-          this.#assignedRunIds.size,
+          new Set([...this.#assignedRunIds, ...this.#executionTasks.keys()]).size,
           this.#env.OPENBOT_NODE_MAX_CONCURRENT_RUNS,
         );
         const response: NodeMessage = rejection
@@ -269,6 +261,7 @@ export class OpenBotNodeClient {
     });
 
     socket.on("close", () => {
+      if (this.#authenticatedSocket === socket) this.#authenticatedSocket = undefined;
       clearInterval(this.#heartbeat);
       this.#abortExecutions();
       this.#assignedRunIds.clear();
@@ -354,6 +347,7 @@ export class OpenBotNodeClient {
           executionProfile: offer.executionProfile,
         },
         (progress) => {
+          if (controller.signal.aborted) return;
           this.#send({
             type: "run.progress",
             protocolVersion,
@@ -365,6 +359,7 @@ export class OpenBotNodeClient {
           });
         },
         (frame) => {
+          if (controller.signal.aborted) return;
           const message = runFrameSchema.safeParse({
             type: "run.frame",
             protocolVersion,
@@ -429,8 +424,21 @@ export class OpenBotNodeClient {
     this.#executionTasks.set(runId, task);
     const remove = () => {
       if (this.#executionTasks.get(runId) === task) this.#executionTasks.delete(runId);
+      // Cancellation releases Server authority before cleanup; wake its queue only after capacity returns.
+      if (!this.#assignedRunIds.has(runId)) this.#sendHeartbeat();
     };
     void task.then(remove, remove);
+  }
+
+  #sendHeartbeat(): void {
+    if (!this.#socket || this.#socket !== this.#authenticatedSocket || this.#stopped) return;
+    this.#send({
+      type: "node.heartbeat",
+      protocolVersion,
+      nodeId: this.#env.OPENBOT_NODE_ID,
+      activeRunIds: Array.from(this.#assignedRunIds),
+      sentAt: new Date().toISOString(),
+    });
   }
 
   #sendFailure(runId: string, code: RunFailureCode): void {
@@ -456,6 +464,7 @@ export class OpenBotNodeClient {
     action: PreparedAction,
     signal: AbortSignal,
   ): Promise<ApprovalOutcome> {
+    signal.throwIfAborted();
     if (action.risk === "read") {
       throw new Error("Read-only actions must not request an approval lease.");
     }

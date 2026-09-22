@@ -1,5 +1,7 @@
 # Goal-mode execution plan
 
+Current development and acceptance are tracked in [Independent development tracks](DEVELOPMENT_TRACKS.md). Historical milestones below remain as recorded.
+
 [English](EXECUTION_PLAN.md) · [简体中文](EXECUTION_PLAN.zh-CN.md)
 
 ## Objective

@@ -23,7 +23,7 @@ const exposedResponseHeaders = new Set([
 ]);
 const forbiddenCredentialHeaders = ["authorization", "cookie", "proxy-authorization"];
 
-/** The single Desktop window owns at most one workspace and one channel event stream. */
+/** The single Desktop window owns independent legacy workspace, snapshot and channel streams. */
 export class DesktopEventStreamLifecycle {
   readonly #streams = new Map<string, AbortController>();
 
@@ -37,9 +37,11 @@ export class DesktopEventStreamLifecycle {
       request.method === "GET" && request.headers.get("accept")?.includes("text/event-stream")
         ? path === "/api/v1/workspace/events"
           ? "workspace"
-          : /^\/api\/v1\/channels\/[^/]+\/events$/u.test(path ?? "")
-            ? "channel"
-            : undefined
+          : path === "/api/v1/workspace/snapshots"
+            ? "snapshots"
+            : /^\/api\/v1\/channels\/[^/]+\/events$/u.test(path ?? "")
+              ? "channel"
+              : undefined
         : undefined;
     if (!slot) return proxyDesktopServerRequest(request, connection, fetcher);
     this.#streams.get(slot)?.abort();
@@ -62,6 +64,35 @@ export class DesktopEventStreamLifecycle {
     for (const controller of this.#streams.values()) controller.abort();
     this.#streams.clear();
   }
+}
+
+type StreamWindow = {
+  once(event: "closed", listener: () => void): unknown;
+  webContents: {
+    on(
+      event: "did-start-navigation",
+      listener: (details: { isMainFrame: boolean }) => void,
+    ): unknown;
+    on(event: "render-process-gone", listener: () => void): unknown;
+  };
+};
+
+/** Bind real window events without waiting for an upstream fetch/body to settle. */
+export function bindDesktopEventStreamWindow(
+  window: StreamWindow,
+  streams: DesktopEventStreamLifecycle,
+): void {
+  let closed = false;
+  window.webContents.on("did-start-navigation", (details) => {
+    if (!closed && details.isMainFrame) streams.clear();
+  });
+  window.webContents.on("render-process-gone", () => {
+    if (!closed) streams.clear();
+  });
+  window.once("closed", () => {
+    closed = true;
+    streams.clear();
+  });
 }
 
 export async function proxyDesktopServerRequest(

@@ -1,7 +1,7 @@
 import { once } from "node:events";
 import { createServer } from "node:http";
 import { protocolVersion, type ServerMessage, serverMessageSchema } from "@openbot/protocol";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import WebSocket from "ws";
 import { NodeRegistry, type NodeRunMessage } from "./node-registry.js";
 
@@ -301,6 +301,51 @@ describe("node enrollment", () => {
       await waitFor(() => registry.list().length === 0);
     } finally {
       client.terminate();
+      registry.close();
+      server.close();
+      await once(server, "close");
+    }
+  });
+
+  it("identifies socket generations even when reconnections share a timestamp", async () => {
+    const clock = vi
+      .spyOn(Date.prototype, "toISOString")
+      .mockReturnValue("2026-09-23T00:00:00.000Z");
+    const server = createServer();
+    const registry = new NodeRegistry(nodeIdentity());
+    registry.attach(server);
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Missing test port.");
+    const clients: WebSocket[] = [];
+    try {
+      const connect = async () => {
+        const client = new WebSocket(`ws://127.0.0.1:${address.port}/ws/nodes`);
+        clients.push(client);
+        await once(client, "open");
+        const acknowledged = once(client, "message");
+        client.send(JSON.stringify(nodeHello("linux-node")));
+        await acknowledged;
+        const node = registry.list()[0];
+        if (!node) throw new Error("Missing enrolled Node.");
+        return node;
+      };
+      const old = await connect();
+      expect(registry.connectionState(old)).toBe("current");
+      const replacement = await connect();
+      expect(replacement.connectedAt).toBe(old.connectedAt);
+      expect(registry.connectionState(old)).toBe("replaced");
+      expect(registry.connectionState(replacement)).toBe("current");
+      expect(JSON.stringify(replacement)).not.toContain("socket");
+      clients[0]?.terminate();
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(registry.connectionState(replacement)).toBe("current");
+      registry.disconnect(replacement.id);
+      expect(registry.connectionState(replacement)).toBe("offline");
+    } finally {
+      clock.mockRestore();
+      for (const client of clients) client.terminate();
       registry.close();
       server.close();
       await once(server, "close");

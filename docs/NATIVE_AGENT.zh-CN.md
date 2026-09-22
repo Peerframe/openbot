@@ -29,6 +29,13 @@ Kimi 复用已保存模型密钥调用官方搜索；其他聊天模型可以使
 例如“阅读 https://example.com，生成带引用的 report.md”。任务成功后，频道和 Run 检查器会显示
 可下载的文件。网页属于不可信资料；下载内容是模型编写的文本，不作为 HTML 执行。
 
+任务附带文件时，交付报告还会包含 Server 记录的输入证据：原文件摘要、实际返回给
+`read_attachment` 的文本摘要及 UTF-16 字符范围，或明确的“二进制模型输入”标记。
+未读取的文本文件不会出现在记录中。完整读取返回文本不代表截断提取覆盖了整个原文档；
+提供图片/PDF 输入也不能证明模型理解正确。最终答复被纠正后，证据仍累计保留且附录不会重复，
+不同文本版本的范围不能拼成一次完整阅读。附录只证明输入提供情况，不验证模型结论；
+它计入既有的最终报告 32 KiB 上限。见[证据边界](research/attachment-report-evidence.md)。
+
 Desktop 使用系统“保存报告”对话框，请选择新的 `.md` 文件名；已有文件不会被覆盖。
 原生桌面壳继续禁止通用浏览器下载。
 
@@ -91,6 +98,8 @@ Hermes/Pi/OpenClaw 委派、浏览器观察/操作工具及任意桌面控制仍
 “允许模型使用”默认不勾选：批准只保存一条内部、不可迁移的 Owner 记忆。明确勾选后，此员工
 后续任务才可以发送给所配置的模型。已有记忆也可在编辑器单独启用。迁移后的旧记忆默认关闭，
 机密、受限和密钥引用禁止启用。每个员工最多保留 50 条待审经验；满额后须先审阅队列。
+满额时只跳过本次可选候选经验，记录原因 `pending_limit` 的 `KNOWLEDGE_PROPOSAL_SKIPPED`
+审计；有效回复和报告仍正常提交。非法候选、已撤销记忆和数据库错误仍拒绝完成任务。
 
 `read_employee_memory` 读取至多 8 条最近允许使用的记忆，正文每条 2,000 UTF-8 字节、总投影
 10 KiB，并标明截断、ID、修订和已审核经验的来源任务。任务采用首次读取的快照；后续模型步骤
@@ -121,3 +130,84 @@ Server 通过固定版本 @openrouter/ai-sdk-provider 3.0.0 调用固定聊天�
 ## 异步协作、追加指令与增量输出
 
 [频道异步协作](ASYNC_COLLABORATION.zh-CN.md)说明非阻塞委派回执、结果汇总、Owner 安全追加指令和真实流式文本。所有继续推理都计入同一个 Run 预算。重启仍将中断任务标为失败，外部副作用不会自动重放。
+
+继续推理会保留已准备的报告、来源、冻结的记忆快照、已读取记忆/技能的修订以及单条候选经验。
+原有任务级上限继续生效，追加指令或等待同事结果不能重置上限，也不能绕过已使用授权的撤销。
+报告准备发布时只附加一次来源信息。
+
+## 无需界面或模型账户的开发入口
+
+在全新 checkout 中，使用仓库指定的 Node 版本、npm 和已启动且支持 Linux 容器的 Docker：
+
+```sh
+npm ci --ignore-scripts
+node scripts/test-runtime-headless.mjs
+```
+
+命令只构建 Server 的共享依赖，在随机回环端口启动按 digest 固定的 PostgreSQL 17.11 测试库，
+串行运行独立执行单元、原生 Agent 与协作测试，结束后删除自行创建的容器和临时报告文件。首次运行可能下载
+镜像；无需构建 Web/Electron、配置 `.env`、初始化 Owner 或填写模型密钥，不发送付费请求。
+缺少前置条件会明确失败，不会把跳过数据库验收当作成功。
+
+也可通过 `OPENBOT_COLLAB_TEST_DATABASE_URL` 指定已有的一次性 PostgreSQL 服务：必须是回环
+地址，库名以 `openbot_collab_test_` 开头且仅含小写字母、数字、下划线。该库中的测试表会被
+重置；命令不会使用 `OPENBOT_DATABASE_URL`，也不会删除外部提供的数据库。共用同一测试库的
+集成测试必须串行运行。
+
+| 修改入口 | 职责与验证 |
+| --- | --- |
+| `apps/server/src/agent-runtime.ts` | `executeAgentRuntime` 通过明确的模型、工具、权限、存储与审计接口组合真实 SDK；`agent-runtime.test.ts` 无需 Server 应用或数据库。 |
+| `apps/server/src/native-agent.ts` | `executeAgentRun` 将 Server 管理的上下文、身份、工具及 `AgentRunStore` 适配到这些接口；`NativeAgentRunner` 管理调度、预算、取消及继续推理。适配与权限回归见 `native-agent.test.ts`。 |
+| `apps/server/src/postgres-agent-store.ts` | 持久化领取、权限、取消、回复/报告发布及审计。运行无界面与协作集成测试；内存替身不能证明事务行为。 |
+| `apps/server/src/app.ts` | Owner 鉴权后的任务提交、停止、实时观察和产物下载。执行生命周期由 Server 管理。 |
+| `apps/server/src/native-agent-headless.integration.test.ts` | 可直接运行的组合示例：真实 Server 路由、Owner 鉴权、PostgreSQL 存储、文件产物和 SDK 确定性模型。 |
+
+无界面套件验证任务提交到报告下载、工具失败后不发布局部结果、取消先持久化且迟到结果不能
+覆盖、SSE 响应断开不停止任务、追加指令后报告保留，以及可选学习满额仍交付任务。已有原生与
+协作套件验证已使用引用的撤销和有界同事协作。
+请求使用 Hono 进程内 HTTP 接口和真实 PostgreSQL 驱动；这不是部署后的套接字/代理测试、付费
+模型评估、进程崩溃恢复测试或桌面认证。测试模型与设置适配器只存在于测试中，生产环境没有
+通过环境变量开启它的入口。
+
+共享依赖构建后，可快速运行：
+
+```sh
+node node_modules/vitest/vitest.mjs run apps/server/src/native-agent.test.ts
+npm run typecheck --workspace=@openbot/server
+```
+
+交接前运行 `npm run check`，任务生命周期或发布行为变化后再次运行无界面验收命令。
+参见[验收研究记录](research/headless-runtime-acceptance.md)。
+
+## 独立执行单元接口
+
+修改迭代策略时，可以直接验证生产代码中的 `executeAgentRuntime`。全新 checkout 只需 Node
+和 npm，无需 Docker、Server 进程或模型账户：
+
+```sh
+npm ci --ignore-scripts
+npx turbo run build --filter='@openbot/domain...'
+node node_modules/vitest/vitest.mjs run apps/server/src/agent-runtime.test.ts
+```
+
+执行单元接收已准备的指令、有界消息、中止信号及同一个 Run 共用的预算。除公开输出外，所有
+接口均必须提供；测试使用明确的确定性实现，生产适配器只由 Server 组装：
+
+| 接口 | 必须满足的行为 |
+| --- | --- |
+| `model` | 已解析的 SDK 模型适配器及提供方/模型标识。凭据、端点、HTTP 限制和模型选择归 Server；拒绝会隐式选择 SDK gateway 的字符串 ID。 |
+| `authority.assertActive` | 复核已领取的准确 Run、模型配置、权限及已使用的引用。单元在模型调用前、工具前后检查，等待追加指令读取后也再检查；没有默认放行实现。 |
+| `tools` | 已绑定 Server 身份、目标限制与审批策略的本地 SDK 工具，每个工具明确的结果字节/联网预算策略，以及固定错误分类。每个工具返回一个完整 JSON 值；拒绝生成器、由模型提供方直接执行的工具、缺少或无界的策略。 |
+| `storage` | 只读取本 Run 有权使用的追加指令；下一轮模型调用或成功返回前，持久化提供方报告的累计用量。 |
+| `audit.progress` | 仅在有界进度持久化后完成；联网开始审计必须先于请求成功提交，结果审计失败不能返回执行成功。 |
+| `output`（可选） | 接收公开文本增量与重置事件，不含提供方内部推理，也不拥有完成任务的权限。 |
+
+模型与工具迭代继续由 SDK 完成。执行单元落实既有上限，只返回验证后的文本和已应用追加指令
+ID，仍属于待提交的执行结果。只有 Server 可以把回复、报告元数据、可选候选经验、Run 最终状态
+和审计一起提交。授权、插件审批、产物存储、继续推理的状态、任务树调度及取消也仍由 Server
+管理。这些接口是可信 Server 适配器，不接受模型、插件或界面请求提供的能力实现。
+
+独立测试覆盖真实 SDK 工具反馈、权限撤销、审计/用量存储失败、非法调用、有界结果、取消后的
+迟到回答、追加指令、共享预算及公开流式输出。前文无界面命令还通过真实 Server 和 PostgreSQL
+验证同一单元。这个内部模块不代表已发布独立运行时包、实现崩溃检查点或支持多 Server 执行。
+参见[接口抽取研究记录](research/runtime-execution-ports.md)。

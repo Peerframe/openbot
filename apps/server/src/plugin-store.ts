@@ -1,6 +1,7 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { lstat, readFile, stat, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
+import { type PluginCallReceipt, pluginCallReceiptSchema } from "@openbot/protocol";
 import {
   createWindowsSecretAcl,
   ensureProtectedSecretDirectory,
@@ -35,9 +36,11 @@ export interface PluginAudit {
 export interface PluginState {
   plugins: PluginRecord[];
   audit: PluginAudit[];
+  callReceipts?: PluginCallReceipt[] | undefined;
 }
 const stateSchema = z
   .object({
+    callReceipts: z.array(pluginCallReceiptSchema).max(256).optional(),
     plugins: z
       .array(
         z

@@ -24,7 +24,10 @@ export function nativeRunFailure(run: Run): string {
 
 export function runStatusSummary(run: Run, progressMessage?: string): string | undefined {
   // Durable status outranks progress emitted before approval, blocking, or completion.
-  if (run.status === "cancelled") return "Owner 已停止此任务。";
+  if (run.status === "cancelled")
+    return run.executionProfile === "none"
+      ? "Owner 已停止此任务。"
+      : "Owner 已停止此任务。外部操作可能已经发生，停止不会撤销已有结果。";
   if (run.status === "waiting_approval") return "敏感动作正在等待你的批准。";
   if (run.status === "failed") return nativeRunFailure(run);
   if (run.status === "blocked") return "任务遇到阻塞，需要人工处理。";
@@ -43,14 +46,17 @@ export function NativeRunControls({
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
-  if (run.executionProfile !== "none" || run.nodeId !== undefined) return null;
-  const canStop = run.status === "queued" || run.status === "running";
-  const canResubmit = run.status === "failed" || run.status === "cancelled";
+  const native = run.executionProfile === "none" && run.nodeId === undefined;
+  const canStop =
+    run.status === "queued" ||
+    run.status === "running" ||
+    (!native && (run.status === "assigned" || run.status === "waiting_approval"));
+  const canResubmit = native && (run.status === "failed" || run.status === "cancelled");
   if (!canStop && !canResubmit) return null;
   return (
     <section
       className={`native-run-controls${compact ? " compact" : ""}`}
-      aria-label="原生任务操作"
+      aria-label={native ? "原生任务操作" : "电脑任务操作"}
     >
       <button
         type="button"
@@ -82,7 +88,9 @@ export function NativeRunControls({
       {!compact && (
         <p>
           {canStop
-            ? "停止后不会继续发布此任务的回复或报告。"
+            ? native
+              ? "停止后不会继续发布此任务的回复或报告。"
+              : "停止后不再接受任务结果。外部操作可能已经发生，停止不会撤销已有结果。"
             : "将从头创建一个新任务，原任务记录会保留。"}
         </p>
       )}

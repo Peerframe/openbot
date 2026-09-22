@@ -723,6 +723,7 @@ describe("run dispatcher", () => {
       },
       {
         list: () => [],
+        connectionState: () => "current",
         onAvailable: () => () => undefined,
         onUnavailable: () => () => undefined,
         onRunMessage: (handler) => {
@@ -829,6 +830,7 @@ function createApprovalHarness(
     },
     {
       list: () => [],
+      connectionState: () => "current",
       onAvailable: () => () => undefined,
       onUnavailable: () => () => undefined,
       onRunMessage: (handler) => {
@@ -902,7 +904,7 @@ function createMessageFailureHarness(options: MessageFailureHarnessOptions) {
       return [];
     },
     async getRunningRunForNode() {
-      return undefined;
+      return { ...queuedRun(), status: "running" as const, nodeId: linuxNode.id };
     },
     appendRunProgress: options.appendRunProgress ?? (async () => undefined),
     async completeRun() {
@@ -931,6 +933,7 @@ function createMessageFailureHarness(options: MessageFailureHarnessOptions) {
     store,
     {
       list: () => [],
+      connectionState: () => "current",
       onAvailable: () => () => undefined,
       onUnavailable: () => () => undefined,
       onRunMessage: (handler) => {

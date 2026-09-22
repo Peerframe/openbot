@@ -169,10 +169,9 @@ npm run check
 7. Document optional licenses, privileged dependencies, and expected failures. An expected failure
    is visible debt, never silent success.
 
-The schema, builder, and standalone runner exist today and have hermetic negative fixtures. The next
-gap is to author Provider-specific scenario modules and execute them on controlled real Windows,
-macOS, and Linux devices. No real-device support claim exists until those reports are observed and
-reviewed.
+The schema, builder, standalone runner and Docker/browser scenario module exist today. Other
+Providers still need their own modules. Controlled real Windows, macOS and Linux device reports
+remain necessary before any real-device support claim.
 
 ## Reviewed browser-click evidence
 
@@ -183,3 +182,80 @@ Repeated navigation covers frame-qualified references. Web UI passed at 1280x900
 The QA upstream bind-address patch is disclosed in [research](research/controlled-browser-click.md).
 This is experimental integration evidence, not native desktop input or Windows/Linux browser
 certification. Browser-side egress and general untrusted-site operation remain unimplemented.
+
+
+## Docker browser integration suite (B1a)
+
+On a Linux or macOS host, from a checkout with `npm ci --ignore-scripts`, Node and a running Docker daemon:
+
+```bash
+npm run test:provider:docker -- --output /tmp/openbot-docker-conformance.json
+```
+
+Choose a **new** output path for each run; the report writer refuses replacement. The driver builds
+production components, runs twelve fixture regressions, starts its own pinned PostgreSQL container,
+and invokes the existing runner with
+[the Docker suite](../providers/docker/conformance/suite.mjs). It needs no private `.env`, model
+credentials, pre-existing database or browser profile. Docker may need to pull the pinned image.
+The driver requires POSIX child-process signals; Windows driver execution is not validated.
+The container binds a random loopback port and uses ephemeral storage; only its verified random
+name and ownership label can be removed. Server, Node, computer sockets, private credentials and
+artifacts are closed or deleted on completion. A missing prerequisite or cleanup failure is a
+failure, never a skip. A process-wide interruption has a finite child deadline and still removes
+the driver's own database and temporary directory.
+CI runs this same required command in the existing database job and retains the redacted JSON
+report when available. Existing required gates are unchanged.
+
+The suite composes the **production** Server application, PostgreSQL stores, dispatcher, Node
+client and Docker Provider in one isolated test process. Owner login and enrollment use actual
+HTTP; routing, progress, frames and approval messages use an authenticated WebSocket. The computer
+HTTP service is synthetic, implements the reviewed upstream surface, and has no actual browser.
+The report records the host OS/architecture and `evidenceLevel: hermetic`; this is neither native
+input evidence nor Windows/Linux/macOS real-browser certification. Existing Chromium evidence
+above remains a separate test.
+
+All fourteen scenarios are required, with no expected-failure baseline:
+
+| Stable id | Required behavior |
+| --- | --- |
+| `browser.approve-once` | Freeze exact frame-qualified ref, snapshot id, name, URL and screenshot digest; unauthenticated approval fails; Owner approval clicks once, persists audit/PNG and updates frame; repeated decision fails |
+| `browser.reject` | Owner rejection leaves zero commits and no result artifact |
+| `browser.expire` | Expired decision leaves zero commits; the fixture advances only its own database deadline before the real decision route |
+| `browser.node-stop` | Actual Node stop aborts its pending Provider; Server fails the waiting Run and expires pending approval immediately, without another Owner decision |
+| `browser.disconnect` | Owner credential revocation disconnects the Node and terminates its waiting Run; a later approval returns 409 |
+| `browser.owner-cancel` | Authenticated Owner cancellation is durable/idempotent, expires pending approval and leaves zero clicks/artifacts; a later completed Run rejects cancellation |
+| `browser.cancel-after-dispatch` | A real HTTP click is recorded while its response is held; cancellation keeps the approved decision and one click, records external outcome unknown, and publishes no completion/artifact |
+| `browser.cancel-cleanup-capacity` | Cancelled Provider cleanup still occupies a one-slot Node; queued work starts automatically only after cleanup returns capacity |
+| `browser.changed-evidence` | Changed screenshot after observation blocks the approved click |
+| `browser.human-control` | Human takeover before approval blocks the approved click |
+| `browser.transport-timeout` | The production 15-second HTTP deadline bounds an unresponsive control check and prevents a click |
+| `browser.lost-receipt` | Computer records one exact click then destroys the response socket; Run fails without an automatic retry or successful artifact |
+| `browser.bot-approval-exclusion` | Another Run for the same Bot cannot navigate during pending approval; execution is possible after release |
+| `browser.bot-cleanup-exclusion` | A real HTTP reader's cancellation is held at the fetch boundary; same-Bot exclusion lasts until cleanup finishes, then execution is possible |
+
+The report contains stable outcomes only, excluding credentials, raw errors, task text and PNG
+contents. Stage logs identify setup/run/cleanup. Driver exit `0` here requires every required check
+to pass; nonzero status must block this suite's gate. Full `npm run check` remains separate and
+unchanged. Research and exact source pins are recorded in
+[the B1a research](research/docker-browser-conformance.md).
+
+### Worker cancellation and recovery boundary
+
+The same driver first runs `worker-cancellation.integration.test.ts` against its owned PostgreSQL
+17.11 database, then runs the Server/Node/Provider suite. The transaction regressions cover
+cancel versus approve, assign, complete and approval request; idempotency; audit-write rollback;
+disconnect/startup pending-approval invalidation; and membership-removal lock compatibility.
+Ordinary `npm run check` skips this database suite unless `OPENBOT_WORKER_TEST_DATABASE_URL` points
+to an explicitly disposable loopback `openbot_worker_test_*` database. The driver passes its own
+`openbot_dev_smoke` URL; never supply a retained database.
+
+Owner Worker cancellation is implemented independently of Node stop. It revokes Server Run
+authority and sends cooperative `run.cancel`; pending approvals expire in the same transaction.
+Disconnected or restarted running/waiting Runs fail without replay. Completed Runs and their
+artifacts are preserved. A click already dispatched can still happen: neither a successful
+cancel response nor Node abort proves rollback or remote acknowledgement. See
+[controlled browser cancellation](CONTROLLED_BROWSER.md#stop-a-worker-task) and
+[B1b research](research/worker-run-cancellation.md).
+
+These tests remain synthetic-computer evidence. They do not establish capability leases,
+cross-process computer locks, browser egress isolation or safe general untrusted-site operation.
