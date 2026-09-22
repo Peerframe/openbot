@@ -44,6 +44,7 @@
     "test": "turbo run test --concurrency=2",
     "test:runtime": "node scripts/test-runtime-headless.mjs",
     "test:runtime:python": "node scripts/test-runtime-headless.mjs --python",
+    "test:runtime:linux": "node scripts/test-runtime-linux.mjs",
     "typecheck": "turbo run typecheck",
     "worker-host:macos:check": "node --test scripts/check-macos-worker-host.test.mjs scripts/macos-worker-host-release.test.mjs && node scripts/check-macos-worker-host.mjs",
     "worker-host:macos:native-check": "swift build --package-path apps/worker-host-macos && swift test --package-path apps/worker-host-macos",

@@ -285,7 +285,8 @@ and [transport research](research/python-runtime-transport.md).
 `npm run test:runtime:python` selects the real Python process for the Owner API/PostgreSQL journeys.
 It requires the package-local virtual environment and `scripts/run-worker.py`, runs the Python
 package checks first, and fails if either prerequisite is absent; it never falls back to TypeScript.
-The other focused runtime and collaboration tests retain their own explicitly selected adapters.
+The collaboration Runner cases use the same selection, including child cancellation and joined
+results; the focused unit tests retain their explicitly selected adapters.
 
 The paired journeys cover report download, cancellation, persisted scope revocation, durable
 audit/usage failure, the eight-step budget, per-step Owner corrections, approve/reject/cancel
@@ -309,3 +310,18 @@ database migration or interrupted-Run recovery. There is no automatic install, c
 configuration, or fallback. Existing PostgreSQL data and migrations are unchanged. The current
 Server container does not yet bundle Python; source-install wiring does not establish container
 or Linux integration support. See [activation research](research/python-runtime-activation.md).
+
+### Linux reference acceptance fixture
+
+`npm run test:runtime:linux` builds the dedicated `deploy/runtime-acceptance/Dockerfile` test image
+with pinned Node 24.21.0, Python 3.12.13 and the existing lockfiles, then runs the paired acceptance
+command against an owned PostgreSQL container. Only Docker and Node are needed on the host; the
+first build downloads public dependencies. The test containers share an isolated loopback namespace
+with no external network or published host ports. Model credentials and local collaboration files
+are excluded. The command removes its uniquely named containers and tagged image on exit; Docker
+may retain normal build-cache layers. It never selects or resets an existing database.
+
+This is a Linux/amd64 acceptance fixture, distinct from the production Server image. Running it on
+an ARM Mac uses emulation and does not prove native hosted CI or desktop support. Its first full
+run stopped at five Python CLI test failures (340 passed); Server/database integration remains
+pending. Passing the image build alone is insufficient.

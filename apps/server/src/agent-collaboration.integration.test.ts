@@ -1,6 +1,7 @@
 import { createDatabase } from "@openbot/db";
 import { MockLanguageModelV4 } from "ai/test";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { bootstrapAgentRuntime } from "./agent-runtime-bootstrap.js";
 import { ChannelRealtimeHub } from "./channel-realtime-hub.js";
 import type { ModelSettingsService } from "./model-settings.js";
 import { NativeAgentRunner } from "./native-agent.js";
@@ -13,6 +14,10 @@ function required<T>(value: T | undefined): T {
 }
 
 const url = process.env.OPENBOT_COLLAB_TEST_DATABASE_URL;
+const pythonExecutor =
+  process.env.OPENBOT_RUNTIME_TEST_PYTHON === "1"
+    ? await bootstrapAgentRuntime({ OPENBOT_AGENT_RUNTIME: "python" })
+    : undefined;
 if (url) {
   const target = new URL(url);
   if (
@@ -140,74 +145,82 @@ describe.skipIf(!url)("PostgreSQL channel Bot collaboration", () => {
     expect(await f.native.steering(f.root)).toHaveLength(8);
     await expect(f.native.steer(f.root.id, " ")).rejects.toThrow();
   });
-  it("starts a colleague without blocking parent work and joins its persisted result before final synthesis", async () => {
-    const f = await fixture();
-    await required(database).client`update runs set status = 'queued' where id = ${f.root.id}`;
-    let release!: () => void;
-    const childBarrier = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    const childModel = new MockLanguageModelV4({
-      doGenerate: async () => {
-        await childBarrier;
-        return answer("Independent colleague result");
-      },
-    });
-    let step = 0;
-    const parentModel = new MockLanguageModelV4({
-      doGenerate: async () => {
-        step++;
-        if (step === 1)
-          return call("start_task", {
-            botId: required(f.members[1]).id,
-            task: "Research asynchronously",
-          });
-        if (step === 2) {
-          await vi.waitFor(() => expect(childModel.doGenerateCalls).toHaveLength(1));
-          release();
-          return call("read_task_status", {});
-        }
-        if (step === 3) return answer("Draft before join");
-        return answer("Synthesis with colleague result");
-      },
-    });
-    const settings = {
-      agentSettings: async () => ({
-        provider: "openai",
-        model: "fixture",
-        apiKey: "fixture",
-        revision: "1",
-        agentEnabledAt: f.since,
-      }),
-      onChange: () => () => {},
-    } as unknown as ModelSettingsService;
-    let modelCount = 0;
-    const runner = new NativeAgentRunner(
-      f.native,
-      settings,
-      new ChannelRealtimeHub(),
-      vi.fn(),
-      () => (modelCount++ === 0 || modelCount > 2 ? parentModel : childModel),
-      { webSearch: () => undefined },
-    );
-    try {
-      runner.start();
-      await vi.waitFor(
-        async () => expect((await f.native.lookup(f.root.id))?.status).toBe("completed"),
-        { timeout: 10000 },
+  it(
+    "starts a colleague without blocking parent work and joins its persisted result before final synthesis",
+    async () => {
+      const f = await fixture();
+      await required(database).client`update runs set status = 'queued' where id = ${f.root.id}`;
+      let release!: () => void;
+      const childBarrier = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const childModel = new MockLanguageModelV4({
+        doGenerate: async () => {
+          await childBarrier;
+          return answer("Independent colleague result");
+        },
+      });
+      let step = 0;
+      const parentModel = new MockLanguageModelV4({
+        doGenerate: async () => {
+          step++;
+          if (step === 1)
+            return call("start_task", {
+              botId: required(f.members[1]).id,
+              task: "Research asynchronously",
+            });
+          if (step === 2) {
+            await vi.waitFor(() => expect(childModel.doGenerateCalls).toHaveLength(1), {
+              timeout: 10_000,
+            });
+            release();
+            return call("read_task_status", {});
+          }
+          if (step === 3) return answer("Draft before join");
+          return answer("Synthesis with colleague result");
+        },
+      });
+      const settings = {
+        agentSettings: async () => ({
+          provider: "openai",
+          model: "fixture",
+          apiKey: "fixture",
+          revision: "1",
+          agentEnabledAt: f.since,
+        }),
+        onChange: () => () => {},
+      } as unknown as ModelSettingsService;
+      let modelCount = 0;
+      const runner = new NativeAgentRunner(
+        f.native,
+        settings,
+        new ChannelRealtimeHub(),
+        vi.fn(),
+        () => (modelCount++ === 0 || modelCount > 2 ? parentModel : childModel),
+        { webSearch: () => undefined, executeRuntime: pythonExecutor },
       );
-      const texts = (await f.control.listMessages(f.channel.id)).map((message) => message.content);
-      expect(texts).toContain("Independent colleague result");
-      expect(texts).toContain("Synthesis with colleague result");
-      expect(texts).not.toContain("Draft before join");
-      expect(JSON.stringify(parentModel.doGenerateCalls.at(-1)?.prompt)).toContain(
-        "Independent colleague result",
-      );
-    } finally {
-      release();
-      await runner.stop();
-    }
-  });
+      try {
+        runner.start();
+        await vi.waitFor(
+          async () => expect((await f.native.lookup(f.root.id))?.status).toBe("completed"),
+          { timeout: 10000 },
+        );
+        const texts = (await f.control.listMessages(f.channel.id)).map(
+          (message) => message.content,
+        );
+        expect(texts).toContain("Independent colleague result");
+        expect(texts).toContain("Synthesis with colleague result");
+        expect(texts).not.toContain("Draft before join");
+        expect(JSON.stringify(parentModel.doGenerateCalls.at(-1)?.prompt)).toContain(
+          "Independent colleague result",
+        );
+      } finally {
+        release();
+        await runner.stop();
+      }
+    },
+    pythonExecutor ? 30_000 : 5_000,
+  );
   it("atomically creates exact recipients and preserves direct-channel authority", async () => {
     const f = await fixture();
     const selected = f.members.slice(1, 3).map((bot) => bot.id);
@@ -420,64 +433,68 @@ describe.skipIf(!url)("PostgreSQL channel Bot collaboration", () => {
       ),
     ).toBe(false);
   });
-  it("runs a recipient with its own profile and returns its result to the parent model", async () => {
-    const f = await fixture();
-    // Runner owns claims, so return this fixture's root to the queue before starting it.
-    await required(database).client`update runs set status = 'queued' where id = ${f.root.id}`;
-    const parentModel = new MockLanguageModelV4({
-      doGenerate: [
-        call("list_channel_bots", {}),
-        call("delegate_task", { botId: required(f.members[1]).id, task: "Find release facts" }),
-        answer("Coordinator synthesis"),
-      ],
-    });
-    const childModel = new MockLanguageModelV4({ doGenerate: answer("Researcher evidence") });
-    const settings = {
-      agentSettings: async () => ({
-        provider: "openai",
-        model: "fixture",
-        apiKey: "fixture",
-        revision: "1",
-        agentEnabledAt: f.since,
-      }),
-      onChange: () => () => {},
-    } as unknown as ModelSettingsService;
-    const errors = vi.fn();
-    let models = 0;
-    const runner = new NativeAgentRunner(
-      f.native,
-      settings,
-      new ChannelRealtimeHub(),
-      errors,
-      () => (models++ === 0 ? parentModel : childModel),
-      { webSearch: () => undefined },
-    );
-    runner.start();
-    try {
-      await vi.waitFor(
-        async () => {
-          expect(
-            (await f.control.listRuns(f.channel.id)).find((run) => run.id === f.root.id)?.status,
-          ).toBe("completed");
-        },
-        { timeout: 10_000 },
+  it(
+    "runs a recipient with its own profile and returns its result to the parent model",
+    async () => {
+      const f = await fixture();
+      // Runner owns claims, so return this fixture's root to the queue before starting it.
+      await required(database).client`update runs set status = 'queued' where id = ${f.root.id}`;
+      const parentModel = new MockLanguageModelV4({
+        doGenerate: [
+          call("list_channel_bots", {}),
+          call("delegate_task", { botId: required(f.members[1]).id, task: "Find release facts" }),
+          answer("Coordinator synthesis"),
+        ],
+      });
+      const childModel = new MockLanguageModelV4({ doGenerate: answer("Researcher evidence") });
+      const settings = {
+        agentSettings: async () => ({
+          provider: "openai",
+          model: "fixture",
+          apiKey: "fixture",
+          revision: "1",
+          agentEnabledAt: f.since,
+        }),
+        onChange: () => () => {},
+      } as unknown as ModelSettingsService;
+      const errors = vi.fn();
+      let models = 0;
+      const runner = new NativeAgentRunner(
+        f.native,
+        settings,
+        new ChannelRealtimeHub(),
+        errors,
+        () => (models++ === 0 ? parentModel : childModel),
+        { webSearch: () => undefined, executeRuntime: pythonExecutor },
       );
-      const messages = await f.control.listMessages(f.channel.id);
-      expect(messages.find((message) => message.content === "Researcher evidence")?.authorId).toBe(
-        required(f.members[1]).id,
-      );
-      expect(
-        messages.find((message) => message.content === "Coordinator synthesis")?.authorId,
-      ).toBe(f.root.botId);
-      expect(JSON.stringify(childModel.doGenerateCalls[0]?.prompt)).toContain("Researcher");
-      expect(JSON.stringify(parentModel.doGenerateCalls.at(-1)?.prompt)).toContain(
-        "Researcher evidence",
-      );
-      expect(errors).not.toHaveBeenCalled();
-    } finally {
-      await runner.stop();
-    }
-  });
+      runner.start();
+      try {
+        await vi.waitFor(
+          async () => {
+            expect(
+              (await f.control.listRuns(f.channel.id)).find((run) => run.id === f.root.id)?.status,
+            ).toBe("completed");
+          },
+          { timeout: 10_000 },
+        );
+        const messages = await f.control.listMessages(f.channel.id);
+        expect(
+          messages.find((message) => message.content === "Researcher evidence")?.authorId,
+        ).toBe(required(f.members[1]).id);
+        expect(
+          messages.find((message) => message.content === "Coordinator synthesis")?.authorId,
+        ).toBe(f.root.botId);
+        expect(JSON.stringify(childModel.doGenerateCalls[0]?.prompt)).toContain("Researcher");
+        expect(JSON.stringify(parentModel.doGenerateCalls.at(-1)?.prompt)).toContain(
+          "Researcher evidence",
+        );
+        expect(errors).not.toHaveBeenCalled();
+      } finally {
+        await runner.stop();
+      }
+    },
+    pythonExecutor ? 30_000 : 5_000,
+  );
   it("does not complete a parent while delegated work is still running", async () => {
     const f = await fixture();
     await f.native.delegate(f.root, { botId: required(f.members[1]).id, task: "Still working" });
@@ -536,54 +553,58 @@ describe.skipIf(!url)("PostgreSQL channel Bot collaboration", () => {
       }),
     ).rejects.toThrow();
   });
-  it("terminates a newly created child when delegation progress fails before its model starts", async () => {
-    const f = await fixture();
-    await required(database).client`update runs set status = 'queued' where id = ${f.root.id}`;
-    const progress = f.native.progress.bind(f.native);
-    vi.spyOn(f.native, "progress").mockImplementation(async (run, stage, message) => {
-      if (stage === "delegation") throw new Error("Fixture progress write failure");
-      return progress(run, stage, message);
-    });
-    const model = new MockLanguageModelV4({
-      doGenerate: [
-        call("delegate_task", { botId: required(f.members[1]).id, task: "Research" }),
-        answer("Unused answer"),
-      ],
-    });
-    const settings = {
-      agentSettings: async () => ({
-        provider: "openai",
-        model: "fixture",
-        apiKey: "fixture",
-        revision: "1",
-        agentEnabledAt: f.since,
-      }),
-      onChange: () => () => {},
-    } as unknown as ModelSettingsService;
-    const runner = new NativeAgentRunner(
-      f.native,
-      settings,
-      new ChannelRealtimeHub(),
-      vi.fn(),
-      () => model,
-      { webSearch: () => undefined },
-    );
-    runner.start();
-    try {
-      await vi.waitFor(
-        async () =>
-          expect(
-            (await f.control.listRuns(f.channel.id)).find((run) => run.id === f.root.id)?.status,
-          ).toBe("failed"),
-        { timeout: 10000 },
+  it(
+    "terminates a newly created child when delegation progress fails before its model starts",
+    async () => {
+      const f = await fixture();
+      await required(database).client`update runs set status = 'queued' where id = ${f.root.id}`;
+      const progress = f.native.progress.bind(f.native);
+      vi.spyOn(f.native, "progress").mockImplementation(async (run, stage, message) => {
+        if (stage === "delegation") throw new Error("Fixture progress write failure");
+        return progress(run, stage, message);
+      });
+      const model = new MockLanguageModelV4({
+        doGenerate: [
+          call("delegate_task", { botId: required(f.members[1]).id, task: "Research" }),
+          answer("Unused answer"),
+        ],
+      });
+      const settings = {
+        agentSettings: async () => ({
+          provider: "openai",
+          model: "fixture",
+          apiKey: "fixture",
+          revision: "1",
+          agentEnabledAt: f.since,
+        }),
+        onChange: () => () => {},
+      } as unknown as ModelSettingsService;
+      const runner = new NativeAgentRunner(
+        f.native,
+        settings,
+        new ChannelRealtimeHub(),
+        vi.fn(),
+        () => model,
+        { webSearch: () => undefined, executeRuntime: pythonExecutor },
       );
-      const allRuns = await f.control.listRuns(f.channel.id);
-      expect(allRuns).toHaveLength(2);
-      expect(allRuns.every((run) => run.status !== "running")).toBe(true);
-    } finally {
-      await runner.stop();
-    }
-  });
+      runner.start();
+      try {
+        await vi.waitFor(
+          async () =>
+            expect(
+              (await f.control.listRuns(f.channel.id)).find((run) => run.id === f.root.id)?.status,
+            ).toBe("failed"),
+          { timeout: 10000 },
+        );
+        const allRuns = await f.control.listRuns(f.channel.id);
+        expect(allRuns).toHaveLength(2);
+        expect(allRuns.every((run) => run.status !== "running")).toBe(true);
+      } finally {
+        await runner.stop();
+      }
+    },
+    pythonExecutor ? 30_000 : 5_000,
+  );
 
   it("checks persisted ancestry even when the caller strips optional delegation fields", async () => {
     const f = await fixture();
@@ -602,77 +623,82 @@ describe.skipIf(!url)("PostgreSQL channel Bot collaboration", () => {
     await expect(f.native.assertScope(stripped)).rejects.toThrow();
     await expect(f.native.complete(stripped, "Late result")).rejects.toThrow();
   });
-  it("propagates parent abort into a running child and publishes its durable cancelled state", async () => {
-    const f = await fixture();
-    await required(database).client`update runs set status = 'queued' where id = ${f.root.id}`;
-    let childStarted = false;
-    let childAborted = false;
-    const parentModel = new MockLanguageModelV4({
-      doGenerate: [
-        call("delegate_task", { botId: required(f.members[1]).id, task: "Wait for research" }),
-        answer("Unused"),
-      ],
-    });
-    const childModel = new MockLanguageModelV4({
-      doGenerate: async ({ abortSignal }) => {
-        childStarted = true;
-        return new Promise((_resolve, reject) => {
-          const abort = () => {
-            childAborted = true;
-            reject(abortSignal?.reason ?? new Error("aborted"));
-          };
-          if (abortSignal?.aborted) abort();
-          else abortSignal?.addEventListener("abort", abort, { once: true });
-        });
-      },
-    });
-    const settings = {
-      agentSettings: async () => ({
-        provider: "openai",
-        model: "fixture",
-        apiKey: "fixture",
-        revision: "1",
-        agentEnabledAt: f.since,
-      }),
-      onChange: () => () => {},
-    } as unknown as ModelSettingsService;
-    const events: Array<{ id: string; status: string }> = [];
-    const realtime = new ChannelRealtimeHub();
-    const unsubscribe = realtime.subscribe(f.channel.id, (event) => {
-      if (event.type === "run.updated") events.push({ id: event.run.id, status: event.run.status });
-    });
-    let models = 0;
-    const runner = new NativeAgentRunner(
-      f.native,
-      settings,
-      realtime,
-      vi.fn(),
-      () => (models++ === 0 ? parentModel : childModel),
-      { webSearch: () => undefined },
-    );
-    runner.start();
-    try {
-      await vi.waitFor(() => expect(childStarted).toBe(true), { timeout: 10000 });
-      const { descendants } = await f.native.cancelWithDescendants(f.root.id);
-      expect(descendants).toHaveLength(1);
-      runner.cancel(f.root.id);
-      await vi.waitFor(
-        () => {
-          expect(childAborted).toBe(true);
-          expect(
-            events.some(
-              (event) => event.id === required(descendants[0]).id && event.status === "cancelled",
-            ),
-          ).toBe(true);
+  it(
+    "propagates parent abort into a running child and publishes its durable cancelled state",
+    async () => {
+      const f = await fixture();
+      await required(database).client`update runs set status = 'queued' where id = ${f.root.id}`;
+      let childStarted = false;
+      let childAborted = false;
+      const parentModel = new MockLanguageModelV4({
+        doGenerate: [
+          call("delegate_task", { botId: required(f.members[1]).id, task: "Wait for research" }),
+          answer("Unused"),
+        ],
+      });
+      const childModel = new MockLanguageModelV4({
+        doGenerate: async ({ abortSignal }) => {
+          childStarted = true;
+          return new Promise((_resolve, reject) => {
+            const abort = () => {
+              childAborted = true;
+              reject(abortSignal?.reason ?? new Error("aborted"));
+            };
+            if (abortSignal?.aborted) abort();
+            else abortSignal?.addEventListener("abort", abort, { once: true });
+          });
         },
-        { timeout: 10000 },
+      });
+      const settings = {
+        agentSettings: async () => ({
+          provider: "openai",
+          model: "fixture",
+          apiKey: "fixture",
+          revision: "1",
+          agentEnabledAt: f.since,
+        }),
+        onChange: () => () => {},
+      } as unknown as ModelSettingsService;
+      const events: Array<{ id: string; status: string }> = [];
+      const realtime = new ChannelRealtimeHub();
+      const unsubscribe = realtime.subscribe(f.channel.id, (event) => {
+        if (event.type === "run.updated")
+          events.push({ id: event.run.id, status: event.run.status });
+      });
+      let models = 0;
+      const runner = new NativeAgentRunner(
+        f.native,
+        settings,
+        realtime,
+        vi.fn(),
+        () => (models++ === 0 ? parentModel : childModel),
+        { webSearch: () => undefined, executeRuntime: pythonExecutor },
       );
-      expect(
-        (await f.control.listRuns(f.channel.id)).every((run) => run.status === "cancelled"),
-      ).toBe(true);
-    } finally {
-      await runner.stop();
-      unsubscribe();
-    }
-  });
+      runner.start();
+      try {
+        await vi.waitFor(() => expect(childStarted).toBe(true), { timeout: 10000 });
+        const { descendants } = await f.native.cancelWithDescendants(f.root.id);
+        expect(descendants).toHaveLength(1);
+        runner.cancel(f.root.id);
+        await vi.waitFor(
+          () => {
+            expect(childAborted).toBe(true);
+            expect(
+              events.some(
+                (event) => event.id === required(descendants[0]).id && event.status === "cancelled",
+              ),
+            ).toBe(true);
+          },
+          { timeout: 10000 },
+        );
+        expect(
+          (await f.control.listRuns(f.channel.id)).every((run) => run.status === "cancelled"),
+        ).toBe(true);
+      } finally {
+        await runner.stop();
+        unsubscribe();
+      }
+    },
+    pythonExecutor ? 30_000 : 5_000,
+  );
 });

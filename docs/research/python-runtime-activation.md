@@ -56,3 +56,35 @@ The Python lane was attempted while TASK-003 remained in progress and stopped at
 unit failures before creating a database; this is diagnostic feedback, not an accepted handoff.
 The original Node container contract still passes. Local collaboration data, virtualenvs and
 Python caches are now excluded from Docker context, reusing the existing container review.
+
+## Linux acceptance environment
+
+Select a disposable multi-stage Docker test fixture instead of depending on a hosted Python
+interpreter's library search environment. Reuse the existing reviewed Node 24.21.0 Bookworm image
+(index `sha256:2fe369e969550cde8e867afc3fe370b260140cab4a23d467074295b42163d553`) and official
+Python 3.12.13 slim-bookworm amd64 manifest
+`sha256:6e13e65c55e33adf203d77ee371cf8bf5d81bd4902ef07565721f46bf44917af`.
+Read the official Python Dockerfile at docker-library/python commit
+`3362634339580d3232e65a66dd5a36c47ae7ff14`: it verifies the Python tarball SHA/signature, builds shared
+Python with origin-relative libpython rpath, retains discovered runtime libraries and runs version
+checks. Its #784 reference explains the rpath decision. Image source is MIT, Python PSF-licensed,
+with the bundled Debian component licenses. No source is copied; reuse the built images.
+
+Copy the fixed Node binary/npm into the compatible Python Bookworm fixture, select npm 10.9.9,
+install existing locked Node/Python dependencies, then execute as UID/GID 1000. The preliminary
+build succeeded with Node 24.21.0, Python 3.12.13 and the package lock. This is a development/test
+image, not the production container or an OS sandbox for untrusted programs.
+
+The repeatable runner owns a no-network PostgreSQL container, joins only that container's loopback
+namespace for testing, publishes no host ports, supplies no model credentials and cleans both
+containers on exit. First build requires public registry access; execution has no external network.
+Reuse the existing paired acceptance command inside it. Local amd64 execution on this Mac is
+emulated; native hosted CI evidence, when available, must be recorded separately.
+
+First Linux snapshot: fixture built successfully and ran as UID/GID 1000 with no external network.
+Python reported 340 passed / 5 failures in 165.83s while TASK-003 was still being edited; the runner
+correctly refused to continue into Server/database integration. Failures concern CLI lifecycle
+expectations (deadline/broken pipe, authority refusal and unserviced post-model authority checks).
+They remain review items, not accepted platform support. The subsequent headless harness now
+returns on the first failing Python test to keep iteration short while retaining the full green
+suite requirement. The Linux fixture containers and its unique image are removed on exit.

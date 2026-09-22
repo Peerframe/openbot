@@ -99,7 +99,9 @@ try {
       existsSync(join(root, "apps/agent-runtime-python/.venv/bin/python")),
       "Bootstrap the package-local Python environment first.",
     );
-    run("sh", [join(root, "apps/agent-runtime-python/scripts/check.sh")]);
+    run("sh", [join(root, "apps/agent-runtime-python/scripts/check.sh"), "--maxfail=1"], {
+      timeout: 300_000,
+    });
   }
   if (!databaseUrl) {
     run("docker", ["info", "--format", "{{.ServerVersion}}"], { capture: true, timeout: 15_000 });
@@ -190,6 +192,7 @@ try {
       "--no-file-parallelism",
     ],
     {
+      timeout: usePython ? 300_000 : 120_000,
       env: {
         ...environment,
         OPENBOT_COLLAB_TEST_DATABASE_URL: databaseUrl,

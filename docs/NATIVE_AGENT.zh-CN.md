@@ -244,7 +244,7 @@ Server 可直接发送有界的公开文本增量；不发送内部推理，也�
 
 `npm run test:runtime:python` 为 Owner API/PostgreSQL 流程选择真实 Python 进程。命令要求包内
 虚拟环境及 `scripts/run-worker.py` 已存在，并先执行 Python 包检查；缺少前置条件会失败，
-不会退回 TypeScript。其他执行单元与协作测试仍使用各自明确选择的适配器。
+不会退回 TypeScript。协作 Runner 流程也使用相同选择，覆盖子任务取消和结果汇总；独立单元测试仍使用各自明确选择的适配器。
 
 配套流程覆盖报告下载、取消、持久权限撤销、审计/用量存储失败、八步预算、每步读取 Owner
 追加指令、插件等待审批时的批准/拒绝/取消、公开流式草稿和继续推理时保留报告。模型响应是
@@ -263,3 +263,14 @@ TypeScript 路径通过九个文件共 219 项测试，其中 15 项为 Owner AP
 数据库迁移和中断任务恢复之前失败；不自动安装、不接受任意命令或脚本配置、不自动回退。
 现有 PostgreSQL 数据与迁移历史不变。当前 Server 容器尚未包含 Python；源码入口接通不等于
 容器或 Linux 集成已验收。见[启用研究](research/python-runtime-activation.md)。
+
+### Linux 参考验收环境
+
+`npm run test:runtime:linux` 使用专用 `deploy/runtime-acceptance/Dockerfile` 构建固定 Node
+24.21.0、Python 3.12.13 和现有依赖锁的测试镜像，再对自行创建的 PostgreSQL 容器运行配套验收。
+宿主只需 Docker 和 Node；首次构建会下载公开依赖。两个测试容器共用隔离的回环网络，无外网、
+无宿主端口公开，不传入模型凭据或本地协作文件。命令退出时清理本次唯一命名的容器与镜像标签；
+Docker 可保留正常构建缓存。命令不会选择或重置已有数据库。
+
+这是 Linux/amd64 验收夹具，独立于生产 Server 镜像。ARM Mac 运行会使用模拟执行，不代表原生
+托管 CI 或桌面支持已验证。首轮完整验收停在五项 Python CLI 测试失败（340 项通过），Server/数据库联调仍待完成；仅镜像构建成功不足以通过验收。
