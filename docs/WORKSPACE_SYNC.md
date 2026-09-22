@@ -63,8 +63,10 @@ queries accumulate. Callers arriving after a read starts wait for the next fresh
 a generic 503 on read unavailability; subscription failures close the stream for resynchronization.
 
 This is a single-Server contract. Legacy GET and event consumers remain compatible. Existing Web
-optimistic projections and the Desktop allowlisted proxy are unchanged; this route is not yet
-exposed by that native proxy. Large-workspace pagination, a durable revision log and multi-Server
+optimistic projections are unchanged. Desktop's generic `/api/v1/*` proxy can forward this route,
+but its event-stream lifecycle manager has no snapshot replacement/cleanup slot yet, and the
+official renderer does not subscribe to it. Add and verify that lifecycle before integrating the
+stream into Desktop. Large-workspace pagination, a durable revision log and multi-Server
 distribution require separate contracts. Do not interpret a stream sequence as any of those.
 
 ## Run and verify the reference client

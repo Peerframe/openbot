@@ -60,6 +60,7 @@ requires an explicitly supplied empty loopback database. These are separate acce
 
 | Package | Next concrete outcome | Dependency / boundary |
 | --- | --- | --- |
+| C3 — Authoritative active-task counts | Correct global counts when events refer to Runs outside the recent page | Preserve entity projections; coalesce bounded authoritative GET refreshes, test duplicates/read races/failure/unmount. Snapshot-stream adoption separately needs Desktop lifecycle handling. |
 | P2 — Account lifecycle | One reviewed OAuth connector supports login, expiry, refresh and revocation with bounded diagnostics | MCP authorization research and explicit provider test account; no credential passthrough or silent scope expansion |
 | B1 — Controlled browser | One complete observe/prepare/approve/commit/receipt/stop journey | Existing capability-lease decision, resource exclusivity and one reference Provider; unrelated markets or native platforms are not prerequisites |
 | F1 — Files and code | Synthetic input → verified report or tested patch with attributable artifacts | R1 and reviewed file boundaries; reuse existing attachment and artifact mechanisms |

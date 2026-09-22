@@ -42,5 +42,6 @@ including when `Last-Event-ID` is supplied. A connection-local sequence is not a
 Independent clients can ignore transient token and entity events. Periodic reconciliation covers
 the existing hubs' incomplete mutation coverage. Full snapshots cost more bandwidth and queries
 than deltas, so streams, rate, bytes, query time and write duration are bounded. Existing clients
-and Desktop proxies continue to use their current routes; native Desktop exposure of the optional
-snapshot route requires a separately reviewed proxy addition. Multi-Server ordering is not claimed.
+and Desktop consumers continue to use their current routes. The generic Desktop proxy already
+forwards `/api/v1/*`, including snapshots; its lifecycle manager still needs reviewed replacement
+and cleanup handling before the official renderer adopts this stream. Multi-Server ordering is not claimed.
