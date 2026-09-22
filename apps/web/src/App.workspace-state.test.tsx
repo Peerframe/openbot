@@ -319,6 +319,38 @@ describe("Authenticated workspace snapshot and realtime ordering", () => {
     expect(rendered?.container.textContent).not.toContain(pendingApproval.summary);
     expect(reads).toHaveLength(2);
   });
+  it("reconciles duplicate real workspace/channel events once and reports a failed count read without hiding the run", async () => {
+    await mount();
+    const completed: Run = {
+      ...queuedRun,
+      status: "completed",
+      resultSummary: "已完成合成任务",
+      updatedAt: "2026-09-14T00:00:03Z",
+    };
+    await interact(() => {
+      for (let index = 0; index < 20; index++) {
+        stream().emit("run.updated", { type: "run.updated", run: completed });
+        stream("/api/v1/channels/channel-a/events").emit("run.updated", {
+          type: "run.updated",
+          channelId: channel.id,
+          run: completed,
+        });
+      }
+    });
+    expect(rendered?.container.querySelector(".usage-rail-run-status.completed")).not.toBeNull();
+    expect(reads).toHaveLength(1);
+    await interact(() => vi.advanceTimersByTime(1000));
+    expect(reads).toHaveLength(2);
+    await interact(() =>
+      reads[1]?.reject(new Error("Synthetic global count reconciliation failed")),
+    );
+    expect(rendered?.container.textContent).toContain(
+      "Synthetic global count reconciliation failed",
+    );
+    expect(rendered?.container.querySelector(".usage-rail-run-status.completed")).not.toBeNull();
+    await interact(() => vi.advanceTimersByTime(5000));
+    expect(reads).toHaveLength(2);
+  });
   it("ignores an old request failure after the current refresh succeeded", async () => {
     await mount();
     await ready();

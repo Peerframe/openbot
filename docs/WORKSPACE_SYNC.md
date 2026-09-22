@@ -26,6 +26,29 @@ and persisted task state are not one atomic distributed observation.
 Never calculate global active counts by counting the recent Run page or adding event deltas to a
 possibly incomplete page. A completed Run outside that page still changes the global count.
 
+## Official Web/Desktop client reconciliation
+
+The shared `useWorkspaceState` hook keeps `counts.activeRuns` from the most recent successful
+workspace GET. Legacy Run events and successful task/approval responses still project entities
+immediately, but never add or subtract from that global count. Recent records cannot establish an
+off-page Run's prior membership, and the GET may already include the received event.
+
+Run projections request a coalesced authoritative reread. Event-driven reads start at most once
+per second, with one current request and one pending invalidation. Events arriving during a
+successful read cause a subsequent fresh read; replaying the entity journal does not schedule one.
+A finite burst therefore settles without polling or an automatic refresh loop. Explicit refresh
+and reconnect retain their abort-and-replace behavior and consume any pending invalidation.
+
+If a read fails, the prior snapshot and immediate entity projections remain visible, and the
+existing error UI reports the failure. No automatic retry follows that failure; a later event,
+explicit refresh or reconnect can retry. Unmount clears the timer and invalidates/aborts the read.
+The global count can briefly lag entity updates until reconciliation completes. Current ContextRail
+metrics explicitly describe the loaded recent records and keep that scope; this change does not
+relabel them as global totals. The official client continues using GET and legacy event streams.
+
+Deterministic tests use the real shared hook and authenticated workspace, without credentials or
+paid models. See [implementation research](research/workspace-authoritative-counts.md).
+
 ## Subscription and recovery
 
 Each `workspace.snapshot` SSE event contains `{type, version: 1, streamId, sequence, snapshot}`.
@@ -63,7 +86,8 @@ queries accumulate. Callers arriving after a read starts wait for the next fresh
 a generic 503 on read unavailability; subscription failures close the stream for resynchronization.
 
 This is a single-Server contract. Legacy GET and event consumers remain compatible. Existing Web
-optimistic projections are unchanged. Desktop's generic `/api/v1/*` proxy can forward this route,
+entity projections remain immediate; global active-count reconciliation is described above.
+Desktop's generic `/api/v1/*` proxy can forward this route,
 but its event-stream lifecycle manager has no snapshot replacement/cleanup slot yet, and the
 official renderer does not subscribe to it. Add and verify that lifecycle before integrating the
 stream into Desktop. Large-workspace pagination, a durable revision log and multi-Server
