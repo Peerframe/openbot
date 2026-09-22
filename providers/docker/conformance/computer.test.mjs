@@ -108,7 +108,7 @@ test("production Bot lock is held while real HTTP reader cleanup is gated", {
 
 test("suite has only required scenarios and runner fails when a scenario or its cleanup fails", async () => {
   const suite = createBrowserSuite("postgres://fixture:fixture@127.0.0.1:1/openbot_dev_smoke");
-  assert.equal(suite.scenarios.length, 11);
+  assert.equal(suite.scenarios.length, 14);
   assert(suite.scenarios.every((scenario) => scenario.severity === "required"));
   assert.equal(suite.target.evidenceLevel, "hermetic");
   for (const phase of ["setup", "run", "cleanup"]) {

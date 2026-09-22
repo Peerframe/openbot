@@ -58,7 +58,7 @@ export class BrowserFixture {
   #signal;
   #closed = false;
 
-  async start(databaseUrl, signal, { gateCleanup = false } = {}) {
+  async start(databaseUrl, signal, { gateCleanup = false, maxConcurrentRuns = 2 } = {}) {
     this.#signal = signal;
     this.#directory = await mkdtemp(join(tmpdir(), "openbot-browser-conformance-"));
     this.database = createDatabase(databaseUrl);
@@ -126,7 +126,8 @@ export class BrowserFixture {
       nodeIdentity,
       realtime,
       requestThrottle: throttle,
-      resolveApproval: (resolution) => this.dispatcher.resolveApproval(resolution),
+      cancelRun: (runId) => this.dispatcher.cancelWorkerRun(runId),
+      decideWorkerApproval: (id, decision) => this.dispatcher.decideApproval(id, decision),
       runFrames: this.frames,
       secureCookies: false,
       store,
@@ -178,7 +179,7 @@ export class BrowserFixture {
       OPENBOT_NODE_ENROLLMENT_TOKEN: enrollment.token,
       OPENBOT_NODE_CREDENTIAL_PATH: join(this.#directory, "identity.json"),
       OPENBOT_NODE_WORK_DIRECTORY: join(this.#directory, "node"),
-      OPENBOT_NODE_MAX_CONCURRENT_RUNS: 2,
+      OPENBOT_NODE_MAX_CONCURRENT_RUNS: maxConcurrentRuns,
       OPENBOT_LOG_LEVEL: "error",
     });
     this.node = new OpenBotNodeClient(env, [provider], undefined, logger);
@@ -251,6 +252,9 @@ export class BrowserFixture {
       this.#signal,
       "Provider cleanup did not complete.",
     );
+  }
+  async cancel(run, status = 200) {
+    return this.json(`/api/v1/runs/${run.id}/cancel`, {}, status);
   }
   async decide(approval, decision, status = 200) {
     return this.json(`/api/v1/approvals/${approval.id}/decision`, { decision }, status);

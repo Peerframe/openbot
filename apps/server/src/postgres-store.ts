@@ -64,6 +64,7 @@ import type {
   PersistedCounts,
   PersistedWorkspaceSnapshot,
   RequestApprovalInput,
+  RunCancellation,
   RunCompletion,
 } from "./control-plane-store.js";
 import {
@@ -78,6 +79,51 @@ import { scanSensitiveText } from "./sensitive-content.js";
 
 type Database = ReturnType<typeof import("@openbot/db")["createDatabase"]>["db"];
 type StoreDatabase = Pick<Database, "select" | "insert" | "update" | "delete" | "transaction">;
+
+type StoreTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+async function invalidateRunApprovals(
+  tx: StoreTransaction,
+  affected: (typeof runs.$inferSelect)[],
+  reason: "owner_cancelled" | "node_unavailable" | "server_recovery",
+  actor: "owner" | "system",
+  now: Date,
+): Promise<Approval[]> {
+  if (!affected.length) return [];
+  const invalidated = await tx
+    .update(approvalsTable)
+    .set({ status: "expired", decidedAt: now, decidedBy: actor })
+    .where(
+      and(
+        inArray(
+          approvalsTable.runId,
+          affected.map((run) => run.id),
+        ),
+        eq(approvalsTable.status, "pending"),
+      ),
+    )
+    .returning();
+  const result: Approval[] = [];
+  for (const approval of invalidated) {
+    const run = affected.find((item) => item.id === approval.runId);
+    if (!run) throw new Error("Approval lost its interrupted Run.");
+    await tx.insert(runEvents).values({
+      id: randomUUID(),
+      runId: run.id,
+      channelId: run.channelId,
+      botId: run.botId,
+      nodeId: run.nodeId,
+      type: "APPROVAL_EXPIRED",
+      payload: {
+        approvalId: approval.id,
+        reason,
+        actor,
+        targetFingerprint: approval.targetFingerprint,
+      },
+    });
+    result.push(toApproval(approval, run.channelId, run.botId));
+  }
+  return result;
+}
 
 const activeRunStatuses = ["queued", "assigned", "running", "waiting_approval", "blocked"];
 
@@ -1452,21 +1498,86 @@ export class PostgresControlPlaneStore implements ControlPlaneStore {
     }
   }
 
+  async getApprovalRunId(approvalId: string): Promise<string | undefined> {
+    const [row] = await this.#db
+      .select({ runId: approvalsTable.runId })
+      .from(approvalsTable)
+      .where(eq(approvalsTable.id, approvalId))
+      .limit(1);
+    return row?.runId;
+  }
+
+  async cancelWorkerRun(runId: string): Promise<RunCancellation> {
+    return this.#db.transaction(async (tx) => {
+      const [row] = await tx.select().from(runs).where(eq(runs.id, runId)).for("update");
+      if (!row) throw new StoreNotFoundError("Task not found.");
+      if (row.executionProfile === "none") throw new StoreConflictError("This is a native task.");
+      if (row.status === "cancelled") return { run: toRun(row), approvals: [] };
+      if (!["queued", "assigned", "running", "waiting_approval"].includes(row.status))
+        throw new StoreConflictError("This task has already ended.");
+      const now = new Date();
+      const [updated] = await tx
+        .update(runs)
+        .set({
+          status: "cancelled",
+          updatedAt: now,
+          errorMessage:
+            "Owner stopped this task. An external action may already have occurred; cancellation does not undo it.",
+        })
+        .where(eq(runs.id, row.id))
+        .returning();
+      if (!updated) throw new Error("Cancellation was not persisted.");
+      const invalidated = await invalidateRunApprovals(
+        tx,
+        [updated],
+        "owner_cancelled",
+        "owner",
+        now,
+      );
+      await tx.insert(runEvents).values({
+        id: randomUUID(),
+        runId,
+        channelId: row.channelId,
+        botId: row.botId,
+        nodeId: row.nodeId,
+        type: "RUN_CANCELLED",
+        payload: {
+          actor: "owner",
+          reason: "owner_cancelled",
+          previousStatus: row.status,
+          externalOutcome: ["queued", "assigned"].includes(row.status) ? "not_started" : "unknown",
+        },
+      });
+      return { run: toRun(updated), approvals: invalidated };
+    });
+  }
+
   async decideApproval(
     approvalId: string,
     decision: ApprovalDecision,
     decidedBy: string,
   ): Promise<ApprovalResolution> {
-    const now = new Date();
-    // Conditional updates make a decision single-use even when two Owner clients race.
+    // Match cancellation/member-removal lock order: Run first, then its approval.
     return this.#db.transaction(async (transaction) => {
-      const [current] = await transaction
-        .select({ approval: approvalsTable, run: runs })
+      const [identity] = await transaction
+        .select({ runId: approvalsTable.runId })
         .from(approvalsTable)
-        .innerJoin(runs, eq(approvalsTable.runId, runs.id))
         .where(eq(approvalsTable.id, approvalId))
         .limit(1);
-      if (current === undefined) throw new StoreNotFoundError("Approval not found.");
+      if (!identity) throw new StoreNotFoundError("Approval not found.");
+      const [run] = await transaction
+        .select()
+        .from(runs)
+        .where(eq(runs.id, identity.runId))
+        .for("update");
+      const [approval] = await transaction
+        .select()
+        .from(approvalsTable)
+        .where(eq(approvalsTable.id, approvalId))
+        .for("update");
+      if (!run || !approval) throw new StoreNotFoundError("Approval not found.");
+      const current = { run, approval };
+      const now = new Date();
       if (current.approval.status !== "pending") {
         throw new StoreConflictError("Approval has already been resolved.");
       }
@@ -1666,8 +1777,15 @@ export class PostgresControlPlaneStore implements ControlPlaneStore {
     return this.#db.transaction(async (transaction) => {
       const condition =
         nodeId === undefined
-          ? eq(runs.status, "running")
-          : and(eq(runs.status, "running"), eq(runs.nodeId, nodeId));
+          ? inArray(runs.status, ["running", "waiting_approval"])
+          : and(inArray(runs.status, ["running", "waiting_approval"]), eq(runs.nodeId, nodeId));
+      const interrupted = await transaction
+        .select()
+        .from(runs)
+        .where(condition)
+        .orderBy(asc(runs.createdAt), asc(runs.id))
+        .for("update");
+      if (!interrupted.length) return [];
       const updated = await transaction
         .update(runs)
         .set({
@@ -1675,9 +1793,20 @@ export class PostgresControlPlaneStore implements ControlPlaneStore {
           errorMessage: "Execution was interrupted before the Server received a result.",
           updatedAt: now,
         })
-        .where(condition)
+        .where(
+          inArray(
+            runs.id,
+            interrupted.map((run) => run.id),
+          ),
+        )
         .returning();
-      if (updated.length === 0) return [];
+      await invalidateRunApprovals(
+        transaction,
+        updated,
+        nodeId === undefined ? "server_recovery" : "node_unavailable",
+        "system",
+        now,
+      );
       await transaction.insert(runEvents).values(
         updated.map((run) => ({
           id: randomUUID(),
@@ -1688,6 +1817,7 @@ export class PostgresControlPlaneStore implements ControlPlaneStore {
           type: "RUN_FAILED",
           payload: {
             code: "execution_interrupted",
+            externalOutcome: "unknown",
             reason: nodeId === undefined ? "server-recovery" : "node-unavailable",
           },
         })),

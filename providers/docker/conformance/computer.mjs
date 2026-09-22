@@ -126,6 +126,7 @@ export class SyntheticComputer {
         assert.deepEqual(body, { ref: this.ref, snapshotId: this.snapshotId });
         assert.equal(this.holder, "bot");
         this.changed = true;
+        if (this.mode === "hold-receipt") return;
         if (this.mode === "drop-receipt") {
           response.destroy();
           return;

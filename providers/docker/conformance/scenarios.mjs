@@ -110,9 +110,8 @@ const cases = [
         "Stopped Node remains registered.",
       );
       await f.assertNoResult(run);
-      // Current B1b gap: pending approvals need a later decision to become terminal after disconnect.
-      await f.decide(approval, "approve");
       await f.waitRun(run, "failed");
+      await f.decide(approval, "approve", 409);
       await f.assertNoResult(run);
     },
   ],
@@ -129,10 +128,107 @@ const cases = [
         "Revoked Node remains registered.",
       );
       await f.assertNoResult(run);
-      await f.decide(approval, "approve");
       await f.waitRun(run, "failed");
+      await f.decide(approval, "approve", 409);
       await f.assertNoResult(run);
     },
+  ],
+  [
+    "browser.owner-cancel",
+    "Owner cancellation revokes pending approval exactly once",
+    async (f) => {
+      const { run, approval } = await begin(f);
+      const unauthorized = await f.request(`/api/v1/runs/${run.id}/cancel`, {}, 401, false);
+      await unauthorized.body.cancel();
+      assert.equal(
+        (await f.workspace()).approvals.find((a) => a.id === approval.id).status,
+        "pending",
+      );
+      await f.cancel(run);
+      await f.cancel(run);
+      await f.waitRun(run, "cancelled");
+      await f.decide(approval, "approve", 409);
+      assert.equal(
+        (await f.workspace()).approvals.find((a) => a.id === approval.id).status,
+        "expired",
+      );
+      await f.assertNoResult(run);
+      const events = await f.database.client`select type from run_events where run_id = ${run.id}`;
+      assert.equal(events.filter((event) => event.type === "RUN_CANCELLED").length, 1);
+      assert.equal(events.filter((event) => event.type === "APPROVAL_EXPIRED").length, 1);
+      const next = await begin(f);
+      await f.decide(next.approval, "approve");
+      await completed(f, next.run);
+      await f.cancel(next.run, 409);
+      await f.waitRun(next.run, "completed");
+    },
+  ],
+  [
+    "browser.cancel-after-dispatch",
+    "Owner cancellation does not claim to undo an already dispatched click",
+    async (f, signal) => {
+      const { run, approval } = await begin(f);
+      f.computer.mode = "hold-receipt";
+      await f.decide(approval, "approve");
+      await eventually(
+        () => f.computer.commits.length,
+        (count) => count === 1,
+        signal,
+        "Click was not dispatched.",
+      );
+      await f.cancel(run);
+      await f.waitRun(run, "cancelled");
+      await f.waitSettled(run);
+      assert.equal(f.computer.commits.length, 1);
+      assert.equal(f.computer.changed, true);
+      assert.equal(
+        (await f.workspace()).approvals.find((a) => a.id === approval.id).status,
+        "approved",
+      );
+      assert.deepEqual(
+        (await f.workspace()).artifacts.filter((a) => a.runId === run.id),
+        [],
+      );
+      const events = await f.database
+        .client`select type, payload from run_events where run_id = ${run.id}`;
+      assert.equal(
+        events.find((event) => event.type === "RUN_CANCELLED").payload.externalOutcome,
+        "unknown",
+      );
+      assert.equal(
+        events.some((event) => event.type === "RUN_COMPLETED"),
+        false,
+      );
+      await f.decide(approval, "approve", 409);
+      assert.deepEqual(f.computer.errors, []);
+    },
+  ],
+  [
+    "browser.cancel-cleanup-capacity",
+    "Cancelled execution occupies Node capacity until Provider cleanup",
+    async (f, signal) => {
+      const first = await f.submit();
+      await eventually(() => f.cleanupGate.entered, Boolean, signal, "Cleanup did not start.");
+      await f.cancel(first);
+      await f.waitRun(first, "cancelled");
+      assert.equal(f.settled.has(first.id), false);
+      const second = await f.submit();
+      await f.waitRun(second, "queued");
+      // Multiple dispatch attempts still use production Node admission against draining executions.
+      for (let attempt = 0; attempt < 3; attempt++) await f.dispatcher.dispatchQueued();
+      await f.waitRun(second, "queued");
+      assert.equal(f.active.size, 1);
+      assert.equal(f.computer.requests.filter((request) => request.path === "/navigate").length, 1);
+      f.cleanupGate.release();
+      f.computer.mode = "normal";
+      await f.waitSettled(first);
+      // Production Node heartbeat wakes the queued task after cleanup; no fixture dispatch call.
+      const approval = await f.waitApproval(second);
+      await f.decide(approval, "approve");
+      await completed(f, second);
+      await f.waitRun(first, "cancelled");
+    },
+    { gateCleanup: true, maxConcurrentRuns: 1 },
   ],
   [
     "browser.changed-evidence",

@@ -169,11 +169,11 @@ describe("server app", () => {
     expect((await post({ decision: "reject", ownerReviewed: true })).status).toBe(404);
   });
 
-  it("authenticates a strict native task cancel command and maps conflicts without leaking errors", async () => {
+  it("authenticates a strict task cancel command and maps conflicts without leaking errors", async () => {
     const cancelNativeRun = vi.fn(
       async (_id: string) => ({ id: "run-1", channelId: "channel-1", status: "cancelled" }) as Run,
     );
-    const app = createTestApp({ store: createTestStore(), cancelNativeRun });
+    const app = createTestApp({ store: createTestStore(), cancelRun: cancelNativeRun });
     const post = (cookie?: string, body: unknown = {}, origin = testOrigin) =>
       app.request("/api/v1/runs/run-1/cancel", {
         method: "POST",
@@ -2466,6 +2466,7 @@ function createTestApp({
   plugins,
   knowledge,
   cancelNativeRun,
+  cancelRun,
   automations,
   store,
   dispatchRun,
@@ -2486,6 +2487,7 @@ function createTestApp({
   auth?: OwnerAuthService;
   plugins?: PluginService;
   knowledge?: Parameters<typeof createApp>[0]["knowledge"];
+  cancelRun?: Parameters<typeof createApp>[0]["cancelRun"];
   cancelNativeRun?: Parameters<typeof createApp>[0]["cancelNativeRun"];
   automations?: Parameters<typeof createApp>[0]["automations"];
   store: ControlPlaneStore;
@@ -2519,6 +2521,7 @@ function createTestApp({
   return createApp({
     ...(plugins === undefined ? {} : { plugins }),
     ...(knowledge === undefined ? {} : { knowledge }),
+    ...(cancelRun === undefined ? {} : { cancelRun }),
     ...(cancelNativeRun === undefined ? {} : { cancelNativeRun }),
     ...(automations === undefined ? {} : { automations }),
     allowedOrigins: [testOrigin],

@@ -179,7 +179,10 @@ const app = createApp({
     return nativeAgent?.output(runId);
   },
   knowledge: new PostgresKnowledgeStore(database.db),
-  cancelNativeRun: async (runId) => {
+  decideWorkerApproval: (id, decision) => dispatcher.decideApproval(id, decision),
+  cancelRun: async (runId) => {
+    const current = await nativeStore.lookup(runId);
+    if (current && current.executionProfile !== "none") return dispatcher.cancelWorkerRun(runId);
     const { run, descendants } = await nativeStore.cancelWithDescendants(runId);
     nativeAgent?.cancel(runId);
     for (const child of descendants) {

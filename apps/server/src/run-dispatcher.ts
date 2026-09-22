@@ -1,5 +1,5 @@
-import { browserClickApprovalMatches } from "@openbot/protocol";
 import type {
+  ApprovalDecision,
   ApprovalResolution,
   ExecutionNode,
   Run,
@@ -8,10 +8,16 @@ import type {
 import { createSilentLogger, diagnosticFields, type OpenBotLogger } from "@openbot/logging";
 import { evaluatePolicy, type PolicyRule } from "@openbot/policy";
 import type { CompletedArtifact } from "@openbot/protocol";
+import { browserClickApprovalMatches } from "@openbot/protocol";
 import { approvalPolicyRules, isRiskDowngrade } from "./approval-policy.js";
 import type { ArtifactStorage } from "./artifact-storage.js";
 import type { ChannelRealtimeHub } from "./channel-realtime-hub.js";
-import type { ArtifactRecord, ControlPlaneStore } from "./control-plane-store.js";
+import {
+  type ArtifactRecord,
+  type ControlPlaneStore,
+  StoreConflictError,
+  StoreNotFoundError,
+} from "./control-plane-store.js";
 import { selectExecutionNode } from "./execution-routing.js";
 import type {
   NodeRegistry,
@@ -36,10 +42,21 @@ type DispatchStore = Pick<
   | "startRun"
   | "upsertNode"
 > &
-  Partial<Pick<ControlPlaneStore, "recordDispatchFailure" | "requestApproval">>;
+  Partial<
+    Pick<
+      ControlPlaneStore,
+      | "recordDispatchFailure"
+      | "requestApproval"
+      | "cancelWorkerRun"
+      | "getApprovalRunId"
+      | "decideApproval"
+    >
+  >;
 
 export interface NodeGateway {
   list(): ExecutionNode[];
+  connectionState?(node: ExecutionNode): "current" | "replaced" | "offline";
+  onUpdated?(handler: (node: ExecutionNode) => void): () => void;
   onAvailable(handler: (node: ExecutionNode) => void): () => void;
   onUnavailable(handler: (node: ExecutionNode) => void): () => void;
   onRunMessage(handler: (node: ExecutionNode, message: NodeRunMessage) => void): () => void;
@@ -77,10 +94,13 @@ export class RunDispatcher {
   readonly #runMessageTails = new Map<string, Promise<void>>();
   // Node lifecycle listeners are not part of a Run tail but still write authoritative state.
   readonly #listenerTasks = new Set<Promise<void>>();
+  readonly #nodeLifecycleTails = new Map<string, Promise<void>>();
+  readonly #reconcilingNodes = new Set<string>();
   #dispatchPromise: Promise<void> | undefined;
   #drainAgain = false;
   #stopped = true;
   #stopPromise: Promise<void> | undefined;
+  #unsubscribeUpdated: (() => void) | undefined;
   #unsubscribeAvailable: (() => void) | undefined;
   #unsubscribeUnavailable: (() => void) | undefined;
   #unsubscribeRunMessage: (() => void) | undefined;
@@ -110,11 +130,16 @@ export class RunDispatcher {
       throw new Error("RunDispatcher instances cannot be restarted.");
     }
     this.#stopped = false;
+    this.#unsubscribeUpdated = this.#nodes.onUpdated?.(() => {
+      void this.dispatchQueued().catch((error) =>
+        this.#reportDispatchError(error, { phase: "node-capacity", runId: "node-lifecycle" }),
+      );
+    });
     this.#unsubscribeAvailable = this.#nodes.onAvailable((node) => {
-      this.#trackListener(this.#handleNodeAvailable(node), "node-available", node.id);
+      this.#queueNodeLifecycle(node, "node-available", () => this.#handleNodeAvailable(node));
     });
     this.#unsubscribeUnavailable = this.#nodes.onUnavailable((node) => {
-      this.#trackListener(this.#handleNodeUnavailable(node), "node-unavailable", node.id);
+      this.#queueNodeLifecycle(node, "node-unavailable", () => this.#handleNodeUnavailable(node));
     });
     this.#unsubscribeRunMessage = this.#nodes.onRunMessage((node, message) => {
       this.#enqueueRunMessage(node, message);
@@ -131,6 +156,8 @@ export class RunDispatcher {
   stop(): Promise<void> {
     if (this.#stopPromise !== undefined) return this.#stopPromise;
     this.#stopped = true;
+    this.#unsubscribeUpdated?.();
+    this.#unsubscribeUpdated = undefined;
     this.#unsubscribeAvailable?.();
     this.#unsubscribeUnavailable?.();
     this.#unsubscribeRunMessage?.();
@@ -148,10 +175,64 @@ export class RunDispatcher {
     );
   }
 
+  async cancelWorkerRun(runId: string): Promise<Run> {
+    if (!this.#store.cancelWorkerRun)
+      throw new StoreConflictError("Worker cancellation is unavailable.");
+    const cancel = this.#store.cancelWorkerRun.bind(this.#store);
+    const run = await this.#withRunCommand(runId, async () => {
+      const result = await cancel(runId);
+      if (result.run.nodeId)
+        this.#nodes.cancelRun(
+          result.run.nodeId,
+          runId,
+          "Owner stopped this task; external effects may already have occurred.",
+        );
+      this.#publishUpdates([result.run]);
+      for (const approval of result.approvals)
+        this.#workspace?.publish({ type: "approval.updated", approval, run: result.run });
+      return result.run;
+    });
+    await this.dispatchQueued();
+    return run;
+  }
+
+  async decideApproval(
+    approvalId: string,
+    decision: ApprovalDecision,
+  ): Promise<ApprovalResolution> {
+    if (!this.#store.getApprovalRunId || !this.#store.decideApproval)
+      throw new StoreConflictError("Worker approval is unavailable.");
+    const runId = await this.#store.getApprovalRunId(approvalId);
+    if (!runId) throw new StoreNotFoundError("Approval not found.");
+    const decide = this.#store.decideApproval.bind(this.#store);
+    return this.#withRunCommand(runId, async () => {
+      const resolution = await decide(approvalId, decision, "owner");
+      this.#publishUpdates([resolution.run]);
+      this.#workspace?.publish({ type: "approval.updated", ...resolution });
+      await this.#deliverApproval(resolution);
+      return resolution;
+    });
+  }
+
   async resolveApproval(resolution: ApprovalResolution): Promise<void> {
+    return this.#withRunCommand(resolution.run.id, () => this.#deliverApproval(resolution));
+  }
+
+  async #deliverApproval(resolution: ApprovalResolution): Promise<void> {
     const { approval, run } = resolution;
     const decision = approval.status;
     if (decision === "pending") return;
+    if (
+      decision === "approved" &&
+      !(await this.#store.getRunningRunForNode(run.id, approval.nodeId))
+    ) {
+      this.#nodes.cancelRun(
+        approval.nodeId,
+        run.id,
+        "Approval no longer belongs to a running task.",
+      );
+      return;
+    }
     const delivered =
       this.#nodes.resolveApproval?.(approval.nodeId, run.id, approval.id, decision) ?? false;
 
@@ -210,7 +291,10 @@ export class RunDispatcher {
   }
 
   async #offer(run: Run): Promise<void> {
-    const route = selectExecutionNode(run, this.#nodes.list());
+    const route = selectExecutionNode(
+      run,
+      this.#nodes.list().filter((node) => !this.#reconcilingNodes.has(node.id)),
+    );
     if (route === undefined) return;
     const { node, requirements } = route;
     const result = await this.#nodes.offerRun(node.id, {
@@ -224,22 +308,38 @@ export class RunDispatcher {
       requiredCapabilityManifest: requirements.capabilityManifest,
     });
     if (result.status !== "accepted") return;
+    await this.#withRunCommand(run.id, async () => {
+      if (this.#reconcilingNodes.has(node.id) || this.#connectionState(node) !== "current") {
+        this.#nodes.cancelRun(node.id, run.id, "Node connection changed before assignment.");
+        return;
+      }
+      // An offer reserves local capacity; the database transition remains the global claim.
+      const assigned = await this.#store.assignRun(run.id, node.id);
+      if (assigned === undefined) {
+        this.#nodes.cancelRun(node.id, run.id, "Run was claimed or cancelled before assignment.");
+        return;
+      }
+      if (
+        this.#reconcilingNodes.has(node.id) ||
+        this.#connectionState(node) !== "current" ||
+        !this.#nodes.confirmRun(node.id, run.id)
+      ) {
+        const requeued = await this.#store.requeueAssignedRuns(node.id);
+        this.#publishUpdates(requeued);
+        return;
+      }
+      this.#publishUpdates([assigned]);
+    });
+  }
 
-    // A Node offer reserves local capacity; the database transition remains the global claim.
-    const assigned = await this.#store.assignRun(run.id, node.id);
-    if (assigned === undefined) {
-      this.#nodes.cancelRun(node.id, run.id, "Run was claimed by another dispatcher.");
-      return;
-    }
-    if (!this.#nodes.confirmRun(node.id, run.id)) {
-      const requeued = await this.#store.requeueAssignedRuns(node.id);
-      this.#publishUpdates(requeued);
-      return;
-    }
-    this.#publishUpdates([assigned]);
+  #connectionState(node: ExecutionNode): "current" | "replaced" | "offline" {
+    if (this.#nodes.connectionState) return this.#nodes.connectionState(node);
+    const current = this.#nodes.list().find((candidate) => candidate.id === node.id);
+    return !current ? "offline" : current.connectedAt === node.connectedAt ? "current" : "replaced";
   }
 
   async #handleNodeAvailable(node: ExecutionNode): Promise<void> {
+    if (this.#connectionState(node) !== "current") return;
     await this.#store.upsertNode(node);
     const [requeued, failed] = await Promise.all([
       this.#store.requeueAssignedRuns(node.id),
@@ -250,6 +350,7 @@ export class RunDispatcher {
   }
 
   async #handleNodeUnavailable(node: ExecutionNode): Promise<void> {
+    if (this.#connectionState(node) === "replaced") return;
     await this.#store.markNodeOffline(node.id);
     const [requeued, failed] = await Promise.all([
       this.#store.requeueAssignedRuns(node.id),
@@ -259,24 +360,61 @@ export class RunDispatcher {
     await this.dispatchQueued();
   }
 
+  #withRunCommand<T>(runId: string, operation: () => Promise<T>): Promise<T> {
+    const previous = this.#runMessageTails.get(runId) ?? Promise.resolve();
+    const result = previous.then(operation);
+    const tail = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    this.#runMessageTails.set(runId, tail);
+    void tail.then(() => {
+      if (this.#runMessageTails.get(runId) === tail) this.#runMessageTails.delete(runId);
+    });
+    return result;
+  }
+
   #enqueueRunMessage(node: ExecutionNode, message: NodeRunMessage): void {
     if (this.#stopped) return;
-    const previous = this.#runMessageTails.get(message.runId) ?? Promise.resolve();
-    const next = previous
-      .then(() => this.#handleRunMessage(node, message))
-      .catch((error) =>
+    void this.#withRunCommand(message.runId, () => this.#handleRunMessage(node, message)).catch(
+      (error) =>
         this.#reportDispatchError(error, {
           phase: "node-message",
           runId: message.runId,
           nodeId: node.id,
         }),
-      );
-    this.#runMessageTails.set(message.runId, next);
-    void next.finally(() => {
-      if (this.#runMessageTails.get(message.runId) === next) {
-        this.#runMessageTails.delete(message.runId);
-      }
-    });
+    );
+  }
+
+  #queueNodeLifecycle(node: ExecutionNode, phase: string, operation: () => Promise<void>): void {
+    this.#reconcilingNodes.add(node.id);
+    const previous = this.#nodeLifecycleTails.get(node.id) ?? Promise.resolve();
+    const work = previous.then(operation);
+    const tail = work.then(
+      () => undefined,
+      () => undefined,
+    );
+    this.#nodeLifecycleTails.set(node.id, tail);
+    this.#trackListener(work, phase, node.id);
+    void work.then(
+      () => {
+        if (this.#nodeLifecycleTails.get(node.id) !== tail) return;
+        this.#nodeLifecycleTails.delete(node.id);
+        this.#reconcilingNodes.delete(node.id);
+        void this.dispatchQueued().catch((error) =>
+          this.#reportDispatchError(error, {
+            phase: "node-ready",
+            runId: "node-lifecycle",
+            nodeId: node.id,
+          }),
+        );
+      },
+      () => {
+        // Keep this Node excluded until a later successful reconciliation repairs authority.
+        if (this.#nodeLifecycleTails.get(node.id) === tail)
+          this.#nodeLifecycleTails.delete(node.id);
+      },
+    );
   }
 
   #trackListener(work: Promise<void>, phase: string, nodeId: string): void {
@@ -298,6 +436,8 @@ export class RunDispatcher {
   }
 
   async #handleRunMessage(node: ExecutionNode, message: NodeRunMessage): Promise<void> {
+    // A queued callback from an old authenticated socket cannot affect its replacement's work.
+    if (this.#connectionState(node) !== "current") return;
     switch (message.type) {
       case "run.start_request": {
         const started = await this.#store.startRun(message.runId, node.id);
@@ -305,7 +445,10 @@ export class RunDispatcher {
           this.#nodes.cancelRun(node.id, message.runId, "Run is no longer assignable.");
           return;
         }
-        if (!this.#nodes.startRun(node.id, message.runId)) {
+        if (
+          this.#connectionState(node) !== "current" ||
+          !this.#nodes.startRun(node.id, message.runId)
+        ) {
           const failure = publicRunFailure("node_disconnected");
           const failed = await this.#store.failRun(
             message.runId,
@@ -442,6 +585,12 @@ export class RunDispatcher {
     summary: string,
     inputs: CompletedArtifact[],
   ): Promise<void> {
+    // Known terminal/foreign results must not reach file storage. The transaction below still
+    // rejects authority revoked while an in-flight artifact write is completing.
+    if (!(await this.#store.getRunningRunForNode(runId, nodeId))) {
+      this.#nodes.cancelRun(nodeId, runId, "Run is no longer running on this Node.");
+      return;
+    }
     let persisted: ArtifactRecord[] = [];
     try {
       persisted = (await this.#artifacts.persist(runId, inputs)).map((record) => ({

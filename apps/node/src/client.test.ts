@@ -475,6 +475,138 @@ describe("node run offers", () => {
     }
   });
 
+  it("suppresses late Provider progress, approvals and results after Owner cancellation", async () => {
+    const server = createServer();
+    const gateway = new WebSocketServer({ server });
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const address = server.address();
+    if (address === null || typeof address === "string") throw new Error("Missing test port.");
+
+    let resolveExecutionStarted: (() => void) | undefined;
+    const executionStarted = new Promise<void>((resolve) => {
+      resolveExecutionStarted = resolve;
+    });
+    let resolveCleanup: (() => void) | undefined;
+    const cleanupReleased = new Promise<void>((resolve) => {
+      resolveCleanup = resolve;
+    });
+    let executionSignal: AbortSignal | undefined;
+    let connected: WebSocket | undefined;
+    const received: string[] = [];
+    let lateApprovalRejected = false;
+    const provider: ComputerProvider = {
+      id: "docker",
+      displayName: "Draining test computer",
+      platforms: ["linux"],
+      capabilities: ["browser", "screenshot"],
+      capabilityManifest,
+      async execute(context, _input, progress, frame, requestApproval) {
+        executionSignal = context.signal;
+        resolveExecutionStarted?.();
+        await cleanupReleased;
+        progress({ stage: "late", message: "Late progress" });
+        frame?.({
+          mediaType: "image/png",
+          base64: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]).toString(
+            "base64",
+          ),
+          capturedAt: new Date().toISOString(),
+        });
+        try {
+          await requestApproval?.({
+            actionId: "late",
+            action: "browser.click",
+            target: "https://example.test",
+            summary: "Late",
+            risk: "privileged",
+          });
+        } catch {
+          lateApprovalRejected = true;
+        }
+        return { ok: true, summary: "Late result", artifacts: [] };
+      },
+    };
+    const client = new OpenBotNodeClient(
+      nodeEnvSchema.parse({
+        OPENBOT_NODE_ID: "test-node",
+        OPENBOT_NODE_SERVER_URL: `ws://127.0.0.1:${address.port}`,
+        OPENBOT_NODE_CREDENTIAL: nodeCredential,
+        OPENBOT_NODE_ALLOW_ENV_CREDENTIAL: "true",
+      }),
+      [provider],
+      undefined,
+      createSilentLogger(),
+    );
+
+    gateway.on("connection", (socket) => {
+      connected = socket;
+      socket.on("message", (raw) => {
+        const message = nodeMessageSchema.parse(JSON.parse(raw.toString()));
+        received.push(message.type);
+        if (message.type === "node.hello") {
+          send(socket, {
+            type: "server.ack",
+            protocolVersion,
+            accepted: true,
+            receivedAt: new Date().toISOString(),
+          });
+          send(socket, offer);
+        }
+        if (message.type === "run.accept") {
+          send(socket, {
+            type: "run.assigned",
+            protocolVersion,
+            runId: message.runId,
+            nodeId: message.nodeId,
+            assignedAt: new Date().toISOString(),
+          });
+        }
+        if (message.type === "run.start_request") {
+          send(socket, {
+            type: "run.start",
+            protocolVersion,
+            runId: message.runId,
+            nodeId: message.nodeId,
+            startedAt: new Date().toISOString(),
+          });
+        }
+      });
+    });
+
+    try {
+      void client.start();
+      await withTimeout(executionStarted);
+
+      if (!connected) throw new Error("Node did not connect.");
+      send(connected, {
+        type: "run.cancel",
+        protocolVersion,
+        runId: offer.runId,
+        reason: "Owner stopped",
+        cancelledAt: new Date().toISOString(),
+      });
+      await vi.waitFor(() => expect(executionSignal?.aborted).toBe(true));
+      resolveCleanup?.();
+      await vi.waitFor(() => expect(received).toContain("node.heartbeat"));
+      expect(lateApprovalRejected).toBe(true);
+      expect(
+        received.filter((type) =>
+          ["run.progress", "run.frame", "approval.request", "run.completed", "run.failed"].includes(
+            type,
+          ),
+        ),
+      ).toEqual([]);
+    } finally {
+      resolveCleanup?.();
+      await client.stop();
+      for (const socket of gateway.clients) socket.terminate();
+      await new Promise<void>((resolve) => gateway.close(() => resolve()));
+      server.close();
+      await once(server, "close");
+    }
+  });
+
   it("waits for in-flight identity loading without connecting after stop", async () => {
     let resolveLoad: (() => void) | undefined;
     const loadReleased = new Promise<void>((resolve) => {

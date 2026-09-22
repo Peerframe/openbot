@@ -55,6 +55,16 @@ try {
   const url = await database.start(controller.signal, randomBytes(24).toString("hex"));
   await node(
     [
+      "node_modules/vitest/vitest.mjs",
+      "run",
+      "apps/server/src/worker-cancellation.integration.test.ts",
+      "--maxWorkers=1",
+    ],
+    60_000,
+    { OPENBOT_WORKER_TEST_DATABASE_URL: url },
+  );
+  await node(
+    [
       "packages/provider-conformance-runner/dist/cli.js",
       "--module",
       "providers/docker/conformance/suite.mjs",

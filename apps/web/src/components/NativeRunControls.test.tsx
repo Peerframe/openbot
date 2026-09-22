@@ -74,16 +74,49 @@ describe("native task execution controls", () => {
       await view.unmount();
     }
   });
-  it("does not expose native cancellation for Worker tasks", async () => {
-    const view = await renderComponent(
-      <NativeRunControls run={{ ...run, executionProfile: "docker-linux" }} onRun={vi.fn()} />,
-    );
-    try {
-      expect(view.container.querySelector("button")).toBeNull();
-    } finally {
-      await view.unmount();
-    }
-  });
+  it.each(["queued", "assigned", "running", "waiting_approval"] as const)(
+    "cancels a %s Worker task through the Owner route",
+    async (status) => {
+      const onRun = vi.fn();
+      const stopped = {
+        ...run,
+        executionProfile: "docker-linux" as const,
+        status: "cancelled" as const,
+      };
+      vi.mocked(cancelNativeRun).mockResolvedValue(stopped);
+      const view = await renderComponent(
+        <NativeRunControls
+          run={{ ...run, executionProfile: "docker-linux", status }}
+          onRun={onRun}
+        />,
+      );
+      try {
+        expect(view.container.textContent).toContain("不会撤销已有结果");
+        await interact(() => view.container.querySelector("button")?.click());
+        expect(cancelNativeRun).toHaveBeenCalledExactlyOnceWith(run.id);
+        expect(onRun).toHaveBeenCalledWith(stopped);
+        expect(createMessage).not.toHaveBeenCalled();
+      } finally {
+        await view.unmount();
+      }
+    },
+  );
+  it.each(["cancelled", "failed", "completed"] as const)(
+    "does not offer Worker retry or stop for %s",
+    async (status) => {
+      const view = await renderComponent(
+        <NativeRunControls
+          run={{ ...run, executionProfile: "docker-linux", status }}
+          onRun={vi.fn()}
+        />,
+      );
+      try {
+        expect(view.container.querySelector("button")).toBeNull();
+      } finally {
+        await view.unmount();
+      }
+    },
+  );
   it("explains Server execution, stopped state and real or missing token counts", async () => {
     const view = await renderComponent(
       <RunInspector

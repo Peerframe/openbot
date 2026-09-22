@@ -86,6 +86,7 @@ export class NodeRegistry {
   readonly #unavailableHandlers = new Set<NodeHandler>();
   readonly #runHandlers = new Set<NodeRunHandler>();
   readonly #pendingOffers = new Map<string, PendingOffer>();
+  readonly #snapshotSockets = new WeakMap<ExecutionNode, WebSocket>();
   readonly #socketLiveness = new WeakMap<WebSocket, boolean>();
   #gateway: WebSocketServer | undefined;
   #livenessTimer: NodeJS.Timeout | undefined;
@@ -99,7 +100,20 @@ export class NodeRegistry {
   }
 
   list(): ExecutionNode[] {
-    return Array.from(this.#nodes.values(), ({ socket: _socket, ...node }) => node);
+    return Array.from(this.#nodes.values(), (node) => this.#snapshot(node));
+  }
+
+  connectionState(node: ExecutionNode): "current" | "replaced" | "offline" {
+    const current = this.#nodes.get(node.id);
+    if (!current) return "offline";
+    return current.socket === this.#snapshotSockets.get(node) ? "current" : "replaced";
+  }
+
+  #snapshot(node: ConnectedNode): ExecutionNode {
+    const { socket, ...snapshot } = node;
+    // Socket identity stays private; timestamps cannot distinguish two fast reconnections.
+    this.#snapshotSockets.set(snapshot, socket);
+    return snapshot;
   }
 
   onAvailable(handler: NodeHandler): () => void {
@@ -510,12 +524,12 @@ export class NodeRegistry {
   }
 
   #emit(handlers: Set<NodeHandler>, node: ConnectedNode): void {
-    const { socket: _socket, ...snapshot } = node;
+    const snapshot = this.#snapshot(node);
     for (const handler of handlers) handler(snapshot);
   }
 
   #emitRun(node: ConnectedNode, message: NodeRunMessage): void {
-    const { socket: _socket, ...snapshot } = node;
+    const snapshot = this.#snapshot(node);
     for (const handler of this.#runHandlers) handler(snapshot, message);
   }
 }
