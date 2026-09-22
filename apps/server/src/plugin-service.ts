@@ -4,6 +4,13 @@ import type { Run } from "@openbot/domain";
 import type { PluginContentCatalog, PluginContentItem, PluginSnapshot } from "@openbot/protocol";
 import type { z } from "zod";
 import {
+  callReceipt,
+  insertCallReceipt,
+  receiptNeedsRetention,
+  recoverCallReceipts,
+  sortedCallReceipts,
+} from "./plugin-call-receipts.js";
+import {
   type FilePluginStore,
   type PluginRecord,
   type PluginState,
@@ -52,6 +59,7 @@ export interface PluginServiceOptions {
   store: FilePluginStore;
   assertScope(run: Run): Promise<void>;
   botExists(botId: string): Promise<boolean>;
+  runExists?(runId: string): Promise<boolean>;
   assertOwnerContentScope?(scope: OwnerContentScope): Promise<void>;
   localEndpoints?: readonly string[];
   connector?: PluginConnector;
@@ -63,9 +71,42 @@ export class PluginService {
   readonly #pending = new Map<string, WaitingCall>();
   readonly #active = new Map<string, { pluginId: string; abort: AbortController }>();
   readonly #approvalTimeout: number;
+  #recovery: Promise<void> | undefined;
   constructor(readonly options: PluginServiceOptions) {
     this.#connector = options.connector ?? mcpPluginConnector(options.localEndpoints);
     this.#approvalTimeout = Math.min(60_000, Math.max(1, options.approvalTimeoutMs ?? 60_000));
+  }
+
+  /** One invocation per Server lifetime, before accepting new calls. Never resume an old call. */
+  recover(): Promise<void> {
+    this.#recovery ??= this.options.store.transaction(recoverCallReceipts);
+    return this.#recovery;
+  }
+
+  async receipt(id: string) {
+    return callReceipt(await this.#receiptState(), id);
+  }
+
+  async receiptsForRun(runId: string) {
+    if (!this.options.runExists) throw new PluginError("unavailable");
+    if (!(await this.options.runExists(runId))) throw new PluginError("not_found");
+    return sortedCallReceipts(
+      (await this.#receiptState()).callReceipts?.filter((call) => call.runId === runId) ?? [],
+    );
+  }
+
+  async #receiptState(): Promise<PluginState> {
+    await this.recover();
+    const state = await this.options.store.read();
+    const abandoned = (call: NonNullable<PluginState["callReceipts"]>[number]) =>
+      call.state !== "outcome_unknown" && receiptNeedsRetention(call) && !this.#active.has(call.id);
+    if (!state.callReceipts?.some(abandoned)) return state;
+    // An error-recording write can fail while the process survives. Once storage recovers,
+    // report that ended call conservatively instead of displaying an eternal in-flight intent.
+    return this.options.store.transaction((current) => {
+      recoverCallReceipts(current, abandoned);
+      return current;
+    });
   }
 
   async snapshot(): Promise<PluginSnapshot> {
@@ -438,6 +479,7 @@ export class PluginService {
     value: z.infer<typeof callPluginSchema>,
     signal: AbortSignal,
   ): Promise<unknown> {
+    await this.recover();
     // Detach nested values so the reviewed arguments and the eventual wire call are identical.
     const input = callPluginSchema.parse(JSON.parse(boundedJson(value, 16 * 1024)));
     boundedJson(input.arguments, 8 * 1024);
@@ -457,14 +499,34 @@ export class PluginService {
     this.#active.set(id, { pluginId: plugin.id, abort });
     let client: Awaited<ReturnType<PluginConnector>> | undefined;
     try {
-      client = await this.#connector(plugin.endpoint, plugin.token, deadline);
-      const current = await this.#manifest(plugin.name, plugin.endpoint, client, deadline);
-      if (current.digest !== plugin.digest) throw new PluginError("conflict");
-      await this.#check(run, plugin.id, plugin.revision, input.toolName, deadline);
       const mode = plugin.grants
         .find((grant) => grant.botId === run.botId)
         ?.tools.find((grant) => grant.name === input.toolName)?.mode;
       if (mode !== "read" && mode !== "confirm") throw new PluginError("forbidden");
+      await this.options.store.transaction((state) => {
+        deadline.throwIfAborted();
+        this.#authorized(state, run, plugin.id, plugin.revision, input.toolName);
+        const now = new Date().toISOString();
+        insertCallReceipt(state, {
+          id,
+          runId: run.id,
+          channelId: run.channelId,
+          botId: run.botId,
+          pluginId: plugin.id,
+          pluginName: plugin.name,
+          pluginRevision: plugin.revision,
+          toolName: input.toolName,
+          mode,
+          state: "preparing",
+          approvalDecision: null,
+          createdAt: now,
+          updatedAt: now,
+        });
+      });
+      client = await this.#connector(plugin.endpoint, plugin.token, deadline);
+      const current = await this.#manifest(plugin.name, plugin.endpoint, client, deadline);
+      if (current.digest !== plugin.digest) throw new PluginError("conflict");
+      await this.#check(run, plugin.id, plugin.revision, input.toolName, deadline);
       if (mode === "confirm") {
         await this.#waitApproval(run, plugin, id, input.toolName, input.arguments, deadline);
         const refreshed = await this.#manifest(plugin.name, plugin.endpoint, client, deadline);
@@ -475,6 +537,9 @@ export class PluginService {
       await this.options.store.transaction((state) => {
         deadline.throwIfAborted();
         this.#authorized(state, run, plugin.id, plugin.revision, input.toolName);
+        const receipt = callReceipt(state, id);
+        receipt.state = "dispatching";
+        receipt.dispatchedAt = receipt.updatedAt = new Date().toISOString();
         recordPluginAudit(state, {
           phase: "dispatching",
           pluginId: plugin.id,
@@ -494,6 +559,9 @@ export class PluginService {
       await this.options.store.transaction((state) => {
         deadline.throwIfAborted();
         this.#authorized(state, run, plugin.id, plugin.revision, input.toolName);
+        const receipt = callReceipt(state, id);
+        receipt.state = "response_received";
+        receipt.responseReceivedAt = receipt.updatedAt = new Date().toISOString();
         recordPluginAudit(state, {
           phase: "completed",
           pluginId: plugin.id,
@@ -506,7 +574,19 @@ export class PluginService {
       return { plugin: plugin.name, tool: input.toolName, result, untrusted: true };
     } catch (error) {
       await this.options.store
-        .transaction((state) =>
+        .transaction((state) => {
+          const receipt = state.callReceipts?.find((call) => call.id === id);
+          if (receipt && receipt.state !== "response_received") {
+            receipt.state = receipt.dispatchedAt ? "outcome_unknown" : "not_dispatched";
+            receipt.updatedAt = new Date().toISOString();
+            if (receipt.approvalRequestedAt && receipt.approvalDecision === null) {
+              receipt.approvalDecision =
+                error instanceof PluginError && error.code === "expired"
+                  ? "expired"
+                  : "interrupted";
+              receipt.approvalDecidedAt = receipt.updatedAt;
+            }
+          }
           recordPluginAudit(state, {
             phase: "failed",
             pluginId: plugin.id,
@@ -514,8 +594,8 @@ export class PluginService {
             runId: run.id,
             callId: id,
             toolName: input.toolName,
-          }),
-        )
+          });
+        })
         .catch(() => {});
       throw error instanceof PluginError ? error : new PluginError("unavailable");
     } finally {
@@ -533,6 +613,11 @@ export class PluginService {
       if (this.#pending.get(id) !== call || call.signal.aborted) throw new PluginError("conflict");
       if (Date.parse(call.view.expiresAt) <= Date.now()) throw new PluginError("expired");
       this.#authorized(state, call.run, call.view.pluginId, call.revision, call.view.toolName);
+      const receipt = callReceipt(state, id);
+      // Concurrent decisions can await the same file queue while the first request is settling.
+      if (receipt.approvalDecision !== null) throw new PluginError("conflict");
+      receipt.approvalDecision = decision === "approve" ? "approved" : "rejected";
+      receipt.approvalDecidedAt = receipt.updatedAt = new Date().toISOString();
       recordPluginAudit(state, {
         phase: decision === "approve" ? "approved" : "rejected",
         pluginId: call.view.pluginId,
@@ -601,6 +686,9 @@ export class PluginService {
     await this.options.store.transaction((state) => {
       signal.throwIfAborted();
       this.#authorized(state, run, plugin.id, plugin.revision, toolName);
+      const receipt = callReceipt(state, id);
+      receipt.state = "awaiting_approval";
+      receipt.approvalRequestedAt = receipt.updatedAt = new Date().toISOString();
       recordPluginAudit(state, {
         phase: "approval_requested",
         pluginId: plugin.id,

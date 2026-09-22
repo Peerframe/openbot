@@ -88,6 +88,7 @@ const nativeStore = new PostgresAgentStore(database.db);
 const plugins = new PluginService({
   store: new FilePluginStore(join(env.OPENBOT_OBJECT_STORE_PATH, "plugins", "state.json")),
   assertScope: (run) => nativeStore.assertScope(run),
+  runExists: async (runId) => (await nativeStore.lookup(runId)) !== undefined,
   assertOwnerContentScope: async ({ channelId, botId }) => {
     const channel = (await store.listChannels()).find((item) => item.id === channelId);
     if (!channel?.botIds.includes(botId))
@@ -96,6 +97,7 @@ const plugins = new PluginService({
   botExists: async (botId) => (await store.listBots()).some((bot) => bot.id === botId),
   localEndpoints: env.OPENBOT_PLUGIN_LOCAL_ENDPOINTS,
 });
+await plugins.recover();
 const nativeAgent = modelSettings
   ? new NativeAgentRunner(
       nativeStore,

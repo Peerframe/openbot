@@ -50,6 +50,7 @@ import {
 } from "./employee-package.js";
 import { NodeIdentityService, type NodeIdentityStore } from "./node-identity.js";
 import { OwnerAuthService } from "./owner-auth.js";
+import type { PluginService } from "./plugin-service.js";
 import { RequestThrottle, type RequestThrottleStore } from "./request-throttle.js";
 import { RunFrameStore } from "./run-frame-store.js";
 import type {
@@ -63,6 +64,37 @@ import { WorkspaceRealtimeHub } from "./workspace-realtime-hub.js";
 const testOrigin = "http://localhost:5173";
 
 describe("server app", () => {
+  it("requires Owner authentication for durable plugin receipt lookups", async () => {
+    const plugins = {
+      receiptsForRun: vi.fn(async () => []),
+      receipt: vi.fn(async () => ({ id: "11111111-1111-4111-8111-111111111111" })),
+    };
+    const app = createTestApp({
+      store: createTestStore(),
+      plugins: plugins as unknown as PluginService,
+    });
+    const paths = [
+      "/api/v1/runs/receipt-run/plugin-calls",
+      "/api/v1/plugin-calls/11111111-1111-4111-8111-111111111111",
+    ];
+    for (const path of paths) expect((await app.request(path)).status).toBe(401);
+    expect(plugins.receiptsForRun).not.toHaveBeenCalled();
+    expect(plugins.receipt).not.toHaveBeenCalled();
+    const login = await app.request("/api/v1/auth/login", {
+      method: "POST",
+      headers: { Origin: testOrigin, "Content-Type": "application/json" },
+      body: JSON.stringify({ password: "correct-owner-password" }),
+    });
+    const cookie = login.headers.get("set-cookie")?.split(";")[0] ?? "";
+    for (const path of paths) {
+      const response = await app.request(path, { headers: { Cookie: cookie } });
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Cache-Control")).toBe("no-store");
+    }
+    expect(plugins.receiptsForRun).toHaveBeenCalledExactlyOnceWith("receipt-run");
+    expect(plugins.receipt).toHaveBeenCalledExactlyOnceWith("11111111-1111-4111-8111-111111111111");
+  });
+
   it("authenticates bounded single-file skill import and rejects malformed or extra content", async () => {
     const store = createTestStore();
     const imported = vi.spyOn(store, "createEmployeeSkill");
@@ -2431,6 +2463,7 @@ function createCompatibleBrowserNode(): ExecutionNode {
 
 function createTestApp({
   auth: configuredAuth,
+  plugins,
   knowledge,
   cancelNativeRun,
   automations,
@@ -2451,6 +2484,7 @@ function createTestApp({
   trustedProxyAddress,
 }: {
   auth?: OwnerAuthService;
+  plugins?: PluginService;
   knowledge?: Parameters<typeof createApp>[0]["knowledge"];
   cancelNativeRun?: Parameters<typeof createApp>[0]["cancelNativeRun"];
   automations?: Parameters<typeof createApp>[0]["automations"];
@@ -2483,6 +2517,7 @@ function createTestApp({
       requestThrottle,
     );
   return createApp({
+    ...(plugins === undefined ? {} : { plugins }),
     ...(knowledge === undefined ? {} : { knowledge }),
     ...(cancelNativeRun === undefined ? {} : { cancelNativeRun }),
     ...(automations === undefined ? {} : { automations }),
