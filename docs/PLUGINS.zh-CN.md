@@ -170,21 +170,66 @@ Ajv `$async` 也会被拒绝。错误会指出具体关键字或不支持的方�
 | `GET /channels/:channelId/bots/:botId/plugin-content` | 已有频道成员和该 Bot 的内容授权 → `{ items, truncated }`，无需先启动任务 |
 | `POST /channels/:channelId/bots/:botId/plugin-content` | `{ pluginId, revision, kind: "resource" 或 "prompt", name, arguments? }` → 不可信文本/界面资料 |
 | `DELETE /plugins/:id` | `{ revision }` → `{ deleted: true }` |
+| `GET /runs/:runId/plugin-calls` | `{ calls: PluginCallReceipt[] }`；未知 Run 返回 `404`，已有 Run 无保留回执时返回 `{ calls: [] }` |
+| `GET /plugin-calls/:id` | `{ call: PluginCallReceipt }`；未知或已淘汰 ID 返回 `404`，无效 ID 返回 `400` |
 | `POST /plugin-calls/:id/decision` | `{ decision: "approve" 或 "reject" }` → `{ decided: true }` |
 
-配置/授权旧 revision 返回 `409`。审批 ID 只在原任务等待时有效，重启不重放审批。
-审批接口成功仅表示决定被接收，外部操作是否完成仍需查看任务结果。
+配置/授权旧 revision 返回 `409`。只能在原 Run 等待期间提交决定；消费后或重启后重复提交，
+不能再次派发调用。若审批响应丢失，应按同一个 call ID 查询保留的决定，不应重复业务操作来探测结果。
+读取接口需要 Owner 会话，返回 `Cache-Control: no-store`；回执存储不可用时返回 `503`。
+
+## 持久调用回执
+
+每次获准进入执行流程的 `tools/call` 都有 Server 生成的 call ID。回执只包含 Run/频道/Bot/插件 ID、
+审核过的插件 revision、插件及工具名称、模式、时间、`state`，以及独立的 `approvalDecision`
+（`null`、`approved`、`rejected`、`expired` 或 `interrupted`）。不保存参数、响应正文、端点、token
+或原始错误。此账本覆盖工具调用；资源与提示词读取继续使用原有审计路径。
+
+| 状态 | 证据及重启后的处理 |
+| --- | --- |
+| `preparing` | 连接前已接纳调用；重启后变为 `not_dispatched`。 |
+| `awaiting_approval` | 已请求审批；决定提交后、重新核对目录期间可能短暂保持此状态。重启后变为 `not_dispatched`。 |
+| `dispatching` | 发工具请求前已持久化派发意图；重启后变为 `outcome_unknown`，包括意图已落盘但请求尚未发出的窗口。 |
+| `response_received` | 有界响应通过当前权限检查，且回执已落盘。这是本地传输证据，不是第三方外部状态的独立证明。 |
+| `not_dispatched` | 本次调用在提交派发意图前结束。已批准决定仍保留 `approved`；未决定的审批被重启打断时记为 `interrupted`。 |
+| `outcome_unknown` | 有派发意图，但没有已接受并落盘的响应。超时、取消、响应丢失或完成记录写入失败，都不能证明外部动作是否发生。 |
+
+恢复不会重放调用、恢复待审参数或自动续跑 Run。取消后的晚到响应不能把未知结果改成成功。
+若错误回执本身也写入失败，已提交意图继续保留；进程内调用结束后，下次可读写的查询或重启会保守地
+转换状态，存储仍不可用则拒绝查询。删除插件或 500 条审计滚动淘汰都不会删除这些回执。
+
+账本对全部 Run 合计最多保留 **256 次调用**。活跃调用和 `outcome_unknown` 不得淘汰；接纳新调用时
+只能淘汰最早的已结束记录。256 条全部受保护时，在连接或派发之前返回 `503`。当前版本没有自动删除
+未知结果或解决未知结果的接口。保留期间可以重查批准决定，但这不是无限永久历史。
+按 Run 查询返回该 Run 的全部保留回执：未知结果在前，其他活跃状态其次，已结束状态最后；组内按创建时间
+降序、call ID 升序稳定排序。不存在把未知结果藏在已完成历史分页之后的情况。
 
 ## 数据与验证
 
-加密配置及最近 500 条无内容审计保存在 `<OPENBOT_OBJECT_STORE_PATH>/plugins/state.json`，
+加密配置、有界调用回执及最近 500 条无内容审计保存在 `<OPENBOT_OBJECT_STORE_PATH>/plugins/state.json`，
 独立密钥为 `state.json.key`，备份时同时保留。已有数据缺失或不匹配密钥会拒绝读取。
 原子写入及 revision 比较通过单 Server 队列串行处理，不支持多进程共享。审计不保存参数、结果或 token；
-待审参数仅在等待期间存于内存，供 Owner 检查。
+待审参数仅在等待期间存于内存，供 Owner 检查。没有回执账本的旧加密文件仍可读取；旧审计不足以证明
+历史调用结果，不会被转成虚构的回执。原子文件替换和这些测试覆盖进程崩溃，不承诺机器断电恢复。
 
 `plugin-service.test.ts` 使用真实本机 HTTP MCP 服务和官方 SDK 验证发现、精确审核、安装、员工授权、计算、
 批准前不写入、批准只消费一次、停用。反例覆盖错误员工、版本/目录变化、参数、超时、取消、撤销、加密存储和
 不影响邻接 API 的请求大小限制。这是本机协议闭环，不代表所有第三方服务和模型账号已经实测。
+
+`plugin-call-receipts.test.ts` 注入派发/完成写入失败、错误记录失败、拒绝/过期/中断审批、取消后晚到响应、
+容量耗尽及审计滚动。`plugin-call-receipts-crash.test.ts` 启动使用真实 MCP 传输与加密存储的子进程，
+分别在批准后派发前、本地 MCP 计数器已增加但响应被扣留时强制终止，再用全新进程恢复两次。
+计数器分别保持 0 和 1；再次批准不能重放。`app.test.ts` 验证读取必须有 Owner 会话。
+以下命令不需要模型密钥：
+
+```sh
+npm ci --ignore-scripts
+npx turbo run build --filter=@openbot/server^...
+npx vitest run apps/server/src/plugin-call-receipts.test.ts apps/server/src/plugin-call-receipts-crash.test.ts apps/server/src/plugin-service.test.ts apps/server/src/app.test.ts
+```
+
+夹具只使用临时合成状态和本机回环端口。Windows ACL 另有原生测试；此生命周期夹具不构成 Windows ACL
+或真实第三方服务兼容证据。见[固定版本研究与恢复边界](research/durable-plugin-call-receipts.md)。
 
 
 ## 资源、提示词与隔离界面

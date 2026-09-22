@@ -1,7 +1,7 @@
 # Research: durable MCP call receipts and uncertain external outcomes
 
-- Status: Accepted for implementation
-- Date: 2026-09-23
+- Status: Implemented and verified
+- Date: 2026-09-22
 - Owner: OpenBot maintainers
 - Related issue: S1a durable work
 - Acceptance journey: an Owner can inspect an exact approved call after a Server process crash;
@@ -12,7 +12,7 @@
 
 ## Search evidence
 
-- Search dates: 2026-09-22–23. GitHub queries: `modelcontextprotocol/typescript-sdk StreamableHTTP
+- Search date: 2026-09-22. GitHub queries: `modelcontextprotocol/typescript-sdk StreamableHTTP
   reconnect tools call timeout side effects retry`; `npm/write-file-atomic rename fsync directory`.
 - Read MCP 2025-11-25 [cancellation](https://modelcontextprotocol.io/specification/2025-11-25/basic/utilities/cancellation),
   [transports](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports) and
@@ -85,6 +85,29 @@
   Chinese. Fixtures use only synthetic data and local endpoints, no personal configuration or fees.
 - Evidence permits one Server process restart on the tested platform; not exactly-once external
   effects, power-loss recovery, remote reconciliation, distributed ownership or device control.
+
+## Verification results
+
+- macOS local validation, 2026-09-22: `npm run typecheck --workspace=@openbot/server` passed.
+- `npx vitest run apps/server/src/plugin-call-receipts.test.ts apps/server/src/app.test.ts`:
+  69 tests passed (12 receipt tests and 57 application tests).
+- `npx vitest run apps/server/src/plugin-call-receipts-crash.test.ts --reporter=verbose`:
+  two real child-process tests passed. SIGKILL after durable approval and before dispatch yielded
+  `approved` + `not_dispatched`, counter 0. SIGKILL after the remote counter incremented but before
+  its withheld response yielded `approved` + `outcome_unknown`, counter 1. Both recovered twice
+  in new Node processes; repeat approval was rejected and no further tool write occurred.
+- Combined receipt/crash/plugin-service/plugin-content run: 41 tests passed. After the final
+  lookup-repair change, the receipt/application/crash tests and full repository check passed again.
+- `npm run check` passed, including docs/research/container/migration/security/release checks,
+  lint, workspace typechecks, tests and build. Server: 562 passed, 75 conditionally skipped.
+  Skipped database/native Windows tests are not claimed as exercised by this work. Existing lint,
+  browser-test `<search>` and frontend bundle-size warnings remain non-failing.
+- The process-survival write-failure test proves that when both terminal and error recording fail,
+  committed dispatch intent remains, then a later writable lookup conservatively records unknown;
+  restart preserves it. This does not resend the network request.
+- Tests used temporary synthetic encrypted stores and loopback MCP servers. No model credentials,
+  third-party account, UI session or production data were required. The counter is independent test
+  evidence of the fixture's effect; production `response_received` remains transport evidence only.
 
 ## Unresolved questions
 
