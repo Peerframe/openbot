@@ -196,8 +196,9 @@ export async function verifyRetainedUpgrade(value, directory = fixtureFolder) {
   let stage = "empty database check";
   try {
     const existing =
-      await connection`select nspname from pg_namespace where nspname not in ('public', 'information_schema') and nspname not like 'pg_%'
-      union all select schemaname from pg_tables where schemaname = 'public'
+      await connection`select nspname from pg_namespace where nspname not in ('public', 'information_schema') and nspname !~ '^pg_'
+      union all select n.nspname from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public'
+      union all select n.nspname from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public'
       union all select n.nspname from pg_type t join pg_namespace n on n.oid = t.typnamespace where n.nspname = 'public'`;
     assert.equal(
       existing.length,
