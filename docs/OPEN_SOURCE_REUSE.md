@@ -18,6 +18,13 @@ was copied or substantially adapted by these additions. Existing notices are ret
 versions and real PostgreSQL 17.11. A synthetic pinned historical prefix and failure probes cover
 OpenBot's application-specific gap without another migration engine or production schema changes.
 Paired database/files/keys restoration remains partial.
+[Runtime execution ports](research/runtime-execution-ports.md) retain the released AI SDK loop
+and require explicit Server authority/audit/storage adapters. [Contributor cold start](research/2026-09-22-contributor-journey.md)
+extends the existing Node/Turbo/PostgreSQL fixture with real login, enrollment and retained identity
+restart; there is no new runtime dependency or copied upstream implementation.
+[Shared client fixtures](research/shared-client-fixtures.md) reuse the existing isolated demo
+transport, actual React components, jsdom and Vite. Their independent build/preview keeps network
+connections disabled and stays outside normal Web/Desktop bundles; no dependency is added.
 
 OpenBot researches established open-source implementations before designing a non-trivial feature.
 The goal is to reuse maintained standards, libraries, protocols, and narrow services instead of

@@ -9,6 +9,13 @@ workspace imports. [CI impact reports](docs/CI_IMPACT.md) suggest local scope in
 complete merge checks remain required. See [workspace setup](docs/WORKSPACE_SYNC.md) and
 [plugin authoring](docs/PLUGINS.md) for prerequisites and limits.
 
+On a fresh checkout, run `npm run dev:smoke -- --with-node` **before** the first build/check to
+verify login, enrollment and retained identity restart; see the [contributor journey](docs/CONTRIBUTOR_JOURNEY.md).
+Runtime-only work can use `npm run test:runtime:unit` without a database. Database changes use
+`npm run test:upgrade` with its dedicated empty test database; see [retained upgrade](docs/DATABASE.md#retained-data-upgrade-regression).
+`npm run dev:client-fixtures` builds and opens the isolated official-component scenarios without a
+Server or account; see [client fixtures](docs/CLIENT_FIXTURES.md). Rebuild and reload after editing.
+
 Thank you for helping build OpenBot. The project is in pre-alpha, so small changes with explicit
 acceptance criteria are more valuable than broad rewrites. Before starting a large feature, open an
 issue that identifies the milestone, user outcome, and security boundary it advances.

@@ -8,6 +8,13 @@
 仅在影子模式建议本地验证范围，完整合并检查仍然必需。前置条件与限制见
 [快照入口](docs/WORKSPACE_SYNC.zh-CN.md) 和 [插件作者文档](docs/PLUGINS.zh-CN.md)。
 
+全新克隆应在首次 build/check **之前**执行 `npm run dev:smoke -- --with-node`，验证登录、登记和
+保留身份重启，见[贡献者冷启动](docs/CONTRIBUTOR_JOURNEY.zh-CN.md)。只改执行单元可用
+`npm run test:runtime:unit`，无需数据库。数据库改动通过 `npm run test:upgrade` 使用独立空白
+测试库验收，见[保留旧数据的升级](docs/DATABASE.zh-CN.md#保留旧数据的升级回归)。
+`npm run dev:client-fixtures` 构建并打开正式组件的隔离场景，不需 Server 或账户；见
+[客户端夹具](docs/CLIENT_FIXTURES.zh-CN.md)。修改组件后重新构建并刷新。
+
 [English source](CONTRIBUTING.md) · [简体中文](CONTRIBUTING.zh-CN.md)
 
 感谢你帮助建设 OpenBot。项目仍处于 pre-alpha，小而边界清楚、带验收证据的修改比大规模重写

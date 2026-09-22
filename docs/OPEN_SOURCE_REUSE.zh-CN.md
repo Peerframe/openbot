@@ -16,6 +16,11 @@ PostgreSQL 可重复读及 Hono 4.13.7（MIT）。
 [保留旧数据的升级](research/retained-data-upgrade.md) 复用相同 Drizzle/Postgres.js 固定版本与真实
 PostgreSQL 17.11，以合成历史前缀和失败探针覆盖 OpenBot 特有的数据约束，不引入另一套迁移引擎，
 不改变生产 schema。数据库、文件、密钥的配套恢复仍未完成。
+[Runtime 执行接口](research/runtime-execution-ports.md) 保留已发布 AI SDK 循环，要求显式注入
+Server 权限、审计及存储适配器。[贡献者冷启动](research/2026-09-22-contributor-journey.zh-CN.md)
+扩展现有 Node/Turbo/PostgreSQL 夹具，验证真实登录、登记和身份重启；不新增运行时依赖或复制上游实现。
+[共享客户端夹具](research/shared-client-fixtures.zh-CN.md) 复用隔离 demo 的传输层、真实 React 组件、
+jsdom 与 Vite；独立构建/预览保持禁止网络连接，且不进入普通 Web/Desktop 产物，不新增依赖。
 
 OpenBot 在设计任何非简单功能前，必须先调研成熟的开源实现。目标是优先复用持续维护的标准、
 依赖、协议和窄服务，避免再造一套不兼容系统。

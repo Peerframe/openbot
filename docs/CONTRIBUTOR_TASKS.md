@@ -8,9 +8,9 @@ These packages turn roadmap items into independently reviewable contributions. O
 the matching form before implementation, link the pinned upstream review, and keep every support
 claim at the lowest level proven by tests.
 
-## Next: fresh-checkout contributor smoke
+## Delivered: fresh-checkout contributor smoke
 
-Status: proposed, not delivered. Prioritize a contributor being able to work without maintainer-private setup.
+Status: implemented and locally verified. [Fresh contributor journey](CONTRIBUTOR_JOURNEY.md) runs real Server/Web login, optional Node enrollment and retained identity restart using synthetic configuration. CI runs the same command before builds; hosted execution remains unverified.
 
 - **Outcome:** one documented CI/local path proves a clean checkout can start Server/Web, sign in,
   enroll an optional development Node and restart it with the retained identity.
@@ -21,7 +21,7 @@ Status: proposed, not delivered. Prioritize a contributor being able to work wit
   readiness failures explain the missing service; processes and fixture data are cleaned up.
 - **Out of scope:** installer publication, new Providers or an owner-only setup service.
 
-## Next: retained-data migration regression
+## Delivered: retained-data migration regression
 
 Status: implemented locally and wired into the database CI job. `npm run test:upgrade` verifies the pinned `0018_automations` fixture across 15 populated tables; hosted CI execution remains unverified. See [database guide](DATABASE.md#retained-data-upgrade-regression).
 

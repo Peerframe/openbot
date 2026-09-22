@@ -40,20 +40,33 @@ database verification. Simulated model tests establish orchestration behavior, n
 quality. Local evidence does not establish hosted CI or native-platform support. Change the ledger
 only after the named gate succeeds.
 
+## Second-wave implementation and focused evidence
+
+These packages use independent branches based on `2cc32d0`. The shared integration branch is
+`codex/collaborative-development`; the original checkout remains untouched.
+
+| Package | Branch | State and acceptance entry |
+| --- | --- | --- |
+| R2 — Runtime ports | `codex/track-runtime-ports` | Complete; integrated and full checks passed locally. `npm run test:runtime:unit`: 22 direct execution-unit tests; `npm run test:runtime`: 112 tests. Server-local explicit authority/model/tool/storage/audit ports; no public runtime package or crash checkpoint claim. |
+| C2 — Shared client fixtures | `codex/track-client-fixtures` | Complete; integrated and full checks passed locally. Six official-component scenarios, actual browser at 1440px/390px, synthetic Blob delivery and reconnect refetch. [Client fixtures](CLIENT_FIXTURES.md). |
+| D2 — Fresh contributor journey | `codex/track-contributor-journey` | Complete; integrated and full checks passed locally. Real Owner login, Node enrollment, consumed-token refusal, retained session/identity restart and interruption cleanup. [Contributor journey](CONTRIBUTOR_JOURNEY.md). |
+| O1a — Retained-data upgrade | `codex/track-retained-upgrade` | Complete; integrated and full checks passed locally. `npm run test:upgrade`: pinned old prefix, 15 populated tables, concurrent/repeated production migration, old-column equality, constraint/default/drift checks. [Database guide](DATABASE.md#retained-data-upgrade-regression). |
+
+Run cold-start smoke before other commands create build output. Client fixtures and runtime-unit
+checks need no database; headless acceptance owns a disposable container; upgrade acceptance
+requires an explicitly supplied empty loopback database. These are separate acceptance journeys.
+
 ## Next packages and dependencies
 
 | Package | Next concrete outcome | Dependency / boundary |
 | --- | --- | --- |
-| R2 — Runtime ports | One execution unit with explicit model/tool/storage/audit ports and an isolated test entry | R1 preserves behavior first; do not move scheduler, credentials or approvals into a permissive runtime package |
-| C2 — Shared client fixtures | Approval wait, tool fault, cancellation, partial output, artifacts and reconnect in the official Web/Desktop view | C1; preserve accepted UI; read-only snapshot route needs explicit Desktop proxy review before exposure |
-| D2 — Fresh contributor journey | Extend existing startup smoke with login, optional Node enrollment and retained identity restart | Reuse current smoke and synthetic fixtures; no private `.env` or personal accounts |
 | P2 — Account lifecycle | One reviewed OAuth connector supports login, expiry, refresh and revocation with bounded diagnostics | MCP authorization research and explicit provider test account; no credential passthrough or silent scope expansion |
 | B1 — Controlled browser | One complete observe/prepare/approve/commit/receipt/stop journey | Existing capability-lease decision, resource exclusivity and one reference Provider; unrelated markets or native platforms are not prerequisites |
 | F1 — Files and code | Synthetic input → verified report or tested patch with attributable artifacts | R1 and reviewed file boundaries; reuse existing attachment and artifact mechanisms |
 | S1 — Durable work | Restart/recovery/approval receipt and unknown-write failure injection | Server-owned state; unknown external effects require reconciliation, never blind replay |
 | L1 — Verifiable learning | A reviewed correction produces a versioned method with evidence and rollback | R1 keeps learning optional; preserve Hermes attribution and separate checkpoints, memory, traces and skills |
 | M1 — Useful collaboration | Evidence-bearing delegation with one accountable parent, shared budget and resource exclusion | Stable task/action contracts; parallel Bot names do not imply credential isolation |
-| O1 — Operations and compatibility | Retained-data migration, paired database/files/keys restore and explicit release responsibility | Existing migration/backup research; test controlled fixtures before claiming upgrade or restoration support |
+| O1 — Remaining operations and compatibility | Paired database/files/keys restore and explicit release responsibility | O1a verifies retained database rows only; it does not restore file bytes or encryption keys |
 
 These are remaining work, not delivered features. Start each package with a bounded acceptance
 journey and its existing reuse-ledger entry. Inspect source/releases/tests/issues/license before
@@ -63,6 +76,14 @@ computer control, extension commerce, ownership transfer and the office plugin a
 deliverables; they remain visible in the product roadmap rather than being implicitly promised.
 
 ## Contributor handoff
+
+The next bounded product/reliability slices identified by source review are S1a (durable MCP call
+receipts and `outcome_unknown` after lost response/restart) and B1a (a Docker Provider conformance
+suite through the existing runner). They require focused research before implementation. Existing
+MCP audits are capped at 500 and pending approvals are in memory; they are not a durable call
+ledger. Existing reviewed browser clicks and per-Bot instance locks are useful foundations, but
+the capability-lease ADR remains proposed and does not establish cross-process exclusivity.
+Neither slice alone completes its whole parent track.
 
 A ready package states the observable result, non-goals, module entry, prerequisites, focused
 command, failing scenario and review routing. An open architecture question is not a starter task.
@@ -91,3 +112,18 @@ CI now runs the same headless journey in its existing disposable database job an
 verification in `db:verify`; impact reporting keeps the full gate unchanged. Remote hosted CI, native
 installation, real paid model quality and external OAuth accounts have not been verified by this
 first wave. No release was published. Follow-up packages above remain open.
+
+## Second-wave integration evidence
+
+- Full `npm run check` passed after merging R2, C2, D2 and O1a. The isolated client build is also
+  included in CI; normal production Web/Desktop entry points exclude the fixture bundle.
+- The integrated `npm run test:runtime` passed all 112 deterministic and real PostgreSQL tests.
+- Old-data upgrade passed on PostgreSQL 17.11: 15 populated tables and 27 applied migrations.
+  Nonempty databases, function-only databases and non-system schemas are rejected without
+  applying migrations. Missing requested fixtures fail before connection.
+- Independent review found no blocking Runtime authorization/cancellation regression or retained-
+  upgrade lifecycle issue. Actual client browser evidence covers six scenarios at desktop/narrow
+  sizes, no real API traffic and no console/page errors. The preview uses build + reload, not HMR.
+- CI wiring adds the Node restart journey to the existing pre-build smoke and a separate retained-
+  upgrade database. Existing required checks remain in place. Hosted CI/native installation and
+  real paid-model behavior have not been established by these local checks.

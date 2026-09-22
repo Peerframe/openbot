@@ -59,6 +59,8 @@ jobs:
       - name: Report advisory CI impact without changing required checks
         run: node scripts/report-ci-impact.mjs
       - run: npm run check
+      - name: Build isolated shared-client fault fixtures
+        run: npm run build:fixtures --workspace @openbot/web
       - name: Verify real public HTTPS reading on the hosted network
         env:
           OPENBOT_LIVE_SOURCE_TEST: "1"
@@ -272,7 +274,7 @@ jobs:
       - name: Verify contributor startup before shared packages have been built
         run: |
           node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_dev_smoke"); } finally { await sql.end(); }'
-          npm run dev:smoke
+          npm run dev:smoke -- --with-node
         env:
           OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
           OPENBOT_DEV_SMOKE_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_dev_smoke
