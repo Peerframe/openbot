@@ -1,5 +1,9 @@
+import { EventEmitter } from "node:events";
 import { describe, expect, it, vi } from "vitest";
+import { DESKTOP_CONNECTION_CONFIG_FORMAT } from "./connection-config.js";
+import { DesktopConnectionController } from "./connection-controller.js";
 import {
+  bindDesktopEventStreamWindow,
   DesktopEventStreamLifecycle,
   MAXIMUM_DESKTOP_ATTACHMENT_PROXY_REQUEST_BYTES,
   MAXIMUM_DESKTOP_PROXY_REQUEST_BYTES,
@@ -276,6 +280,105 @@ describe("single-window event-stream lifecycle", () => {
     expect(currentSignal?.aborted).toBe(false);
     lifecycle.clear();
     expect(currentSignal?.aborted).toBe(true);
+  });
+  it("owns three independent slots and a replaced snapshot cannot cancel its successor", async () => {
+    const lifecycle = new DesktopEventStreamLifecycle();
+    const signals: AbortSignal[] = [];
+    const fetcher = async (_input: string, init?: RequestInit) => {
+      signals.push(init?.signal as AbortSignal);
+      return new Response(new ReadableStream(), {
+        headers: { "content-type": "text/event-stream" },
+      });
+    };
+    await lifecycle.forward(request("workspace/events"), configured, fetcher);
+    await lifecycle.forward(request("channels/one/events"), configured, fetcher);
+    await lifecycle.forward(request("workspace/snapshots"), configured, fetcher);
+    await lifecycle.forward(request("workspace/snapshots"), configured, fetcher);
+    expect(signals.map((signal) => signal.aborted)).toEqual([false, false, true, false]);
+    lifecycle.clear();
+    expect(signals.every((signal) => signal.aborted)).toBe(true);
+  });
+
+  it.each(["closed", "render-process-gone", "did-start-navigation"])(
+    "aborts all upstreams synchronously on window %s even with stalled headers",
+    async (event) => {
+      const lifecycle = new DesktopEventStreamLifecycle();
+      const window = Object.assign(new EventEmitter(), { webContents: new EventEmitter() });
+      bindDesktopEventStreamWindow(window, lifecycle);
+      const signals: AbortSignal[] = [];
+      const completions: Array<(response: Response) => void> = [];
+      const fetcher = (_input: string, init?: RequestInit) => {
+        signals.push(init?.signal as AbortSignal);
+        return new Promise<Response>((resolve) => completions.push(resolve));
+      };
+      const pending = ["workspace/events", "workspace/snapshots", "channels/one/events"].map(
+        (path) => lifecycle.forward(request(path), configured, fetcher),
+      );
+      // forward first validates the bounded request before entering the upstream fetch.
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(signals).toHaveLength(3);
+      window.webContents.emit("did-start-navigation", { isMainFrame: false });
+      expect(signals.every((signal) => !signal.aborted)).toBe(true);
+      if (event === "closed") window.emit("closed");
+      else window.webContents.emit(event, { isMainFrame: true });
+      expect(signals.every((signal) => signal.aborted)).toBe(true);
+      for (const resolve of completions) resolve(new Response(null, { status: 503 }));
+      await Promise.all(pending);
+    },
+  );
+
+  it("queued events from a closed window cannot clear a newly opened window's streams", async () => {
+    const streams = new DesktopEventStreamLifecycle();
+    const oldWindow = Object.assign(new EventEmitter(), { webContents: new EventEmitter() });
+    bindDesktopEventStreamWindow(oldWindow, streams);
+    oldWindow.emit("closed");
+    let signal: AbortSignal | undefined;
+    await streams.forward(request("workspace/snapshots"), configured, async (_input, init) => {
+      signal = init?.signal ?? undefined;
+      return new Response(new ReadableStream(), {
+        headers: { "content-type": "text/event-stream" },
+      });
+    });
+    oldWindow.webContents.emit("did-start-navigation", { isMainFrame: true });
+    oldWindow.webContents.emit("render-process-gone");
+    expect(signal?.aborted).toBe(false);
+    streams.clear();
+    expect(signal?.aborted).toBe(true);
+  });
+
+  it("the actual connection controller clears all stream slots before persisting a new Server", async () => {
+    const lifecycle = new DesktopEventStreamLifecycle();
+    const signals: AbortSignal[] = [];
+    for (const path of ["workspace/events", "workspace/snapshots", "channels/one/events"])
+      await lifecycle.forward(request(path), configured, async (_input, init) => {
+        signals.push(init?.signal as AbortSignal);
+        return new Response(new ReadableStream(), {
+          headers: { "content-type": "text/event-stream" },
+        });
+      });
+    const controller = new DesktopConnectionController({
+      clearSessionData: async () => {
+        lifecycle.clear();
+      },
+      confirmServer: async () => true,
+      fetch: async () => Response.json({ ok: true, service: "openbot-server" }),
+      store: {
+        load: async () => ({
+          format: DESKTOP_CONNECTION_CONFIG_FORMAT,
+          serverUrl: configured.serverUrl,
+        }),
+        save: async () => {
+          expect(signals.every((signal) => signal.aborted)).toBe(true);
+        },
+      },
+    });
+    await controller.initialize();
+    expect(await controller.configure("https://replacement.example")).toEqual({
+      status: "configured",
+      serverUrl: "https://replacement.example",
+    });
+    expect(signals.every((signal) => signal.aborted)).toBe(true);
   });
 });
 

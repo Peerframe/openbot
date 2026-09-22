@@ -9,7 +9,7 @@ import type {
   WorkspaceSnapshot,
 } from "@openbot/domain";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getWorkspace } from "./api";
+import { getWorkspace, type RealtimeConnectionState, subscribeToWorkspaceSnapshots } from "./api";
 import {
   mergeArtifacts,
   mergeNodes,
@@ -37,6 +37,10 @@ type PendingRead = {
 
 export function useWorkspaceState(onError: (message: string | undefined) => void) {
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>();
+  const [snapshotState, setSnapshotState] = useState<RealtimeConnectionState>("connecting");
+  const [snapshotError, setSnapshotError] = useState<string>();
+  const streamEpoch = useRef(0);
+  const unsubscribe = useRef<(() => void) | undefined>(undefined);
   const generation = useRef(0);
   const pending = useRef<PendingRead | undefined>(undefined);
   const mounted = useRef(false);
@@ -54,18 +58,36 @@ export function useWorkspaceState(onError: (message: string | undefined) => void
     }, delay);
   }, []);
 
-  const project = useCallback((projection: Projection) => {
-    if (!mounted.current) return;
-    const journal = pending.current?.projections;
-    if (journal) recordProjection(journal, projection);
-    setWorkspace((current) =>
-      current === undefined ? current : applyProjection(current, projection),
-    );
+  const stopSnapshots = useCallback(() => {
+    streamEpoch.current += 1;
+    unsubscribe.current?.();
+    unsubscribe.current = undefined;
   }, []);
+
+  const startSnapshots = useCallback(() => {
+    stopSnapshots();
+    const epoch = streamEpoch.current;
+    const ownsEpoch = () => mounted.current && streamEpoch.current === epoch;
+    setSnapshotError(undefined);
+    unsubscribe.current = subscribeToWorkspaceSnapshots({
+      onSnapshot: (snapshot) => {
+        if (ownsEpoch()) setWorkspace(snapshot);
+      },
+      onState: (state) => {
+        if (ownsEpoch()) setSnapshotState(state);
+      },
+      // Stream recovery must not clear a separate mutation/GET error in the caller.
+      onError: (message) => {
+        if (ownsEpoch()) setSnapshotError(message);
+      },
+    });
+  }, [stopSnapshots]);
 
   const refresh = useCallback(
     async function readWorkspace() {
       if (!mounted.current) return;
+      stopSnapshots();
+      setSnapshotState("connecting");
       if (reconcileTimer.current !== undefined) clearTimeout(reconcileTimer.current);
       reconcileTimer.current = undefined;
       reconcileNeeded.current = false;
@@ -93,6 +115,7 @@ export function useWorkspaceState(onError: (message: string | undefined) => void
         succeeded = true;
       } catch (cause) {
         if (request.generation !== generation.current || request.controller.signal.aborted) return;
+        setSnapshotState("retrying");
         onError(
           cause instanceof Error ? cause.message : "无法连接 OpenBot Server。请确认服务已启动。",
         );
@@ -103,11 +126,14 @@ export function useWorkspaceState(onError: (message: string | undefined) => void
           // An event during this GET may be newer than its database snapshot. Read once more;
           // replay itself never invalidates. Failure waits for a later event or explicit retry.
           if (succeeded && reconcileNeeded.current) scheduleReconciliation(readWorkspace);
-          else reconcileNeeded.current = false;
+          else {
+            reconcileNeeded.current = false;
+            if (succeeded) startSnapshots();
+          }
         }
       }
     },
-    [onError, scheduleReconciliation],
+    [onError, scheduleReconciliation, startSnapshots, stopSnapshots],
   );
 
   useEffect(() => {
@@ -115,6 +141,7 @@ export function useWorkspaceState(onError: (message: string | undefined) => void
     void refresh();
     return () => {
       mounted.current = false;
+      stopSnapshots();
       reconcileNeeded.current = false;
       if (reconcileTimer.current !== undefined) clearTimeout(reconcileTimer.current);
       reconcileTimer.current = undefined;
@@ -123,7 +150,24 @@ export function useWorkspaceState(onError: (message: string | undefined) => void
       pending.current?.projections.clear();
       pending.current = undefined;
     };
-  }, [refresh]);
+  }, [refresh, stopSnapshots]);
+
+  const project = useCallback(
+    (projection: Projection) => {
+      if (!mounted.current) return;
+      // No cross-transport revision exists. A late mutation result is a new barrier too.
+      stopSnapshots();
+      setSnapshotState("connecting");
+      const journal = pending.current?.projections;
+      if (journal) recordProjection(journal, projection);
+      setWorkspace((current) =>
+        current === undefined ? current : applyProjection(current, projection),
+      );
+      reconcileNeeded.current = true;
+      scheduleReconciliation(refresh);
+    },
+    [refresh, scheduleReconciliation, stopSnapshots],
+  );
 
   const projectChannel = useCallback(
     (channel: Channel) => project({ type: "channel", channel }),
@@ -144,10 +188,8 @@ export function useWorkspaceState(onError: (message: string | undefined) => void
       if (!mounted.current) return;
       project({ type: "run", run });
       for (const artifact of artifacts) project({ type: "artifact", artifact });
-      reconcileNeeded.current = true;
-      scheduleReconciliation(refresh);
     },
-    [project, refresh, scheduleReconciliation],
+    [project],
   );
   const projectProgress = useCallback(
     (progress: RunProgress) => project({ type: "progress", progress }),
@@ -163,6 +205,8 @@ export function useWorkspaceState(onError: (message: string | undefined) => void
 
   return {
     workspace,
+    snapshotState,
+    snapshotError,
     refresh,
     projectChannel,
     projectBot,

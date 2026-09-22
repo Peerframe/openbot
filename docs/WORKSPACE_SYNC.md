@@ -28,26 +28,45 @@ possibly incomplete page. A completed Run outside that page still changes the gl
 
 ## Official Web/Desktop client reconciliation
 
-The shared `useWorkspaceState` hook keeps `counts.activeRuns` from the most recent successful
-workspace GET. Legacy Run events and successful task/approval responses still project entities
-immediately, but never add or subtract from that global count. Recent records cannot establish an
-off-page Run's prior membership, and the GET may already include the received event.
+The shared `useWorkspaceState` hook now consumes the version-1 full snapshot stream after a
+successful workspace GET. `counts.activeRuns` always comes from an authoritative GET or complete
+frame. Legacy Run events and successful task/approval responses still project entities immediately,
+but never add or subtract from that global count. Recent records cannot establish an off-page
+Run's prior membership, and the authoritative read may already include the received event.
 
-Run projections request a coalesced authoritative reread. Event-driven reads start at most once
-per second, with one current request and one pending invalidation. Events arriving during a
-successful read cause a subsequent fresh read; replaying the entity journal does not schedule one.
-A finite burst therefore settles without polling or an automatic refresh loop. Explicit refresh
-and reconnect retain their abort-and-replace behavior and consume any pending invalidation.
+There is no revision comparable across GET, full frames and legacy/mutation responses. The official
+client therefore closes and invalidates its snapshot subscription **before every immediate entity
+projection and every GET start**. It journals projections arriving during that GET and applies them
+over its response. Any intervening projection requires one subsequent fresh read; no snapshot
+subscription opens while that follow-up is pending. Only a successful read without pending
+invalidation opens a fresh snapshot epoch. Late frames from any closed epoch, old GET completions,
+and old legacy connection callbacks cannot replace the current state. A mutation promise settling
+late establishes a new projection barrier too.
 
-If a read fails, the prior snapshot and immediate entity projections remain visible, and the
-existing error UI reports the failure. No automatic retry follows that failure; a later event,
-explicit refresh or reconnect can retry. Unmount clears the timer and invalidates/aborts the read.
-The global count can briefly lag entity updates until reconciliation completes. Current ContextRail
-metrics explicitly describe the loaded recent records and keep that scope; this change does not
-relabel them as global totals. The official client continues using GET and legacy event streams.
+All immediate entity projections request a coalesced authoritative reread. Event-driven reads start
+at most once per second, with one current request and one pending invalidation. Journal replay does
+not itself invalidate. Explicit refresh and workspace reconnect can abort and replace the current
+GET. A finite burst settles, but **sustained legacy traffic can keep the snapshot stream closed and
+continue one coalesced GET per second**. This migration does not claim fewer GET requests.
 
-Deterministic tests use the real shared hook and authenticated workspace, without credentials or
-paid models. See [implementation research](research/workspace-authoritative-counts.md).
+If a GET fails, the prior data and immediate projections remain visible with the existing error UI.
+No automatic GET retry or stream reopening follows; a later entity event, explicit refresh or legacy
+workspace reconnect can retry. A snapshot-only disconnect instead keeps data and uses one two-second
+reconnect timer. Opening headers is insufficient for “synced”: a valid complete frame must arrive.
+Thirty-five seconds without a newer valid frame closes and replaces the connection. Incompatible
+version/envelope/collection shape, oversized frames or a stream identity change stop that
+subscription with a fixed error; explicit refresh can retry. A live stream never clears a separate
+mutation/GET error. The workspace connection indicator reflects both full and legacy workspace
+streams; the channel retains its own independent connection state and token/progress delivery.
+
+Unmount clears timers, closes the subscription, invalidates epochs and aborts GET without waiting
+for a stalled read. Owner/Server changes remount the authenticated workspace. Profile notifications
+remain on the legacy stream. Current ContextRail metrics still describe the loaded recent records;
+they are not relabeled as global totals. Counts may lag immediate projections until reconciliation.
+
+Deterministic tests use the actual shared hook, authenticated workspace and controlled EventSource
+transport without credentials or paid models. See [ordering and lifecycle research](research/official-workspace-snapshot-stream.md)
+and the earlier [global-count research](research/workspace-authoritative-counts.md).
 
 ## Subscription and recovery
 
@@ -87,11 +106,16 @@ a generic 503 on read unavailability; subscription failures close the stream for
 
 This is a single-Server contract. Legacy GET and event consumers remain compatible. Existing Web
 entity projections remain immediate; global active-count reconciliation is described above.
-Desktop's generic `/api/v1/*` proxy can forward this route,
-but its event-stream lifecycle manager has no snapshot replacement/cleanup slot yet, and the
-official renderer does not subscribe to it. Add and verify that lifecycle before integrating the
-stream into Desktop. Large-workspace pagination, a durable revision log and multi-Server
-distribution require separate contracts. Do not interpret a stream sequence as any of those.
+Desktop's existing `/api/v1/*` proxy now owns three independent upstream stream slots: legacy
+workspace, workspace snapshots and the selected channel. Replacing one aborts only that slot;
+main-frame navigation, renderer termination, window close, Server/profile clear and application quit
+abort all three synchronously. Node tests exercise the installed window bindings and connection
+controller using real AbortSignals, including upstream headers that have not settled. These are
+bridge fixtures, not installed Electron or remote-Server certification. Renderer EventSource close
+alone is not relied upon to propagate cancellation through Electron's reconstructed proxy response;
+the main-process registry bounds and disposes upstream connections. Large-workspace pagination,
+a durable revision log and multi-Server distribution require separate contracts. Do not interpret
+a stream sequence as any of those.
 
 ## Run and verify the reference client
 

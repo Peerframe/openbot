@@ -1,6 +1,5 @@
-import { reactionEmojis } from "@openbot/domain";
-import { getOpenBotDesktopBridge } from "./desktop-runtime";
-import type { ModelProviderId } from "@openbot/domain";
+export { subscribeToWorkspaceSnapshots } from "./workspace-snapshot-stream";
+
 import type {
   Approval,
   ApprovalDecision,
@@ -28,14 +27,15 @@ import type {
   KnowledgeProposal,
   Message,
   MessageReaction,
-  ReactionEmoji,
+  ModelProviderId,
   NodeEnrollmentToken,
   NodeIdentitySummary,
+  ReactionEmoji,
   ReviewKnowledgeProposalInput,
   Run,
   RunFrame,
-  RunProgress,
   RunOutput,
+  RunProgress,
   SubmitTaskResult,
   UpdateEmployeeMemoryInput,
   UpdateEmployeeProfileDetailsInput,
@@ -43,6 +43,8 @@ import type {
   WorkspaceRealtimeEvent,
   WorkspaceSnapshot,
 } from "@openbot/domain";
+import { reactionEmojis } from "@openbot/domain";
+import { getOpenBotDesktopBridge } from "./desktop-runtime";
 
 interface ErrorPayload {
   error?: string;
@@ -610,20 +612,23 @@ export function subscribeToChannelEvents(
     const nextSource = new EventSource(`/api/v1/channels/${channelId}/events`);
     source = nextSource;
     lastActivityAt = Date.now();
-    nextSource.onopen = markLive;
+    const guard = (listener: (event: Event) => void) => (event: Event) => {
+      if (!closed && source === nextSource) listener(event);
+    };
+    nextSource.onopen = guard(markLive);
     nextSource.onerror = () => {
       if (source === nextSource) scheduleReconnect();
     };
-    nextSource.addEventListener("channel.ready", onReady);
-    nextSource.addEventListener("heartbeat", markLive);
-    nextSource.addEventListener("message.created", onMessage);
-    nextSource.addEventListener("run.created", onRun);
-    nextSource.addEventListener("run.updated", onRun);
-    nextSource.addEventListener("run.progress", onProgress);
-    nextSource.addEventListener("run.frame", onFrame);
-    nextSource.addEventListener("run.output", onOutput);
-    nextSource.addEventListener("message.reactions", onReactions);
-    nextSource.addEventListener("channel.updated", onChannel);
+    nextSource.addEventListener("channel.ready", guard(onReady));
+    nextSource.addEventListener("heartbeat", guard(markLive));
+    nextSource.addEventListener("message.created", guard(onMessage));
+    nextSource.addEventListener("run.created", guard(onRun));
+    nextSource.addEventListener("run.updated", guard(onRun));
+    nextSource.addEventListener("run.progress", guard(onProgress));
+    nextSource.addEventListener("run.frame", guard(onFrame));
+    nextSource.addEventListener("run.output", guard(onOutput));
+    nextSource.addEventListener("message.reactions", guard(onReactions));
+    nextSource.addEventListener("channel.updated", guard(onChannel));
   };
 
   handlers.onState("connecting");
@@ -728,17 +733,20 @@ export function subscribeToWorkspaceEvents(handlers: {
     const nextSource = new EventSource("/api/v1/workspace/events");
     source = nextSource;
     lastActivityAt = Date.now();
-    nextSource.onopen = markLive;
+    const guard = (listener: (event: Event) => void) => (event: Event) => {
+      if (!closed && source === nextSource) listener(event);
+    };
+    nextSource.onopen = guard(markLive);
     nextSource.onerror = () => {
       if (source === nextSource) scheduleReconnect();
     };
-    nextSource.addEventListener("workspace.ready", onReady);
-    nextSource.addEventListener("heartbeat", markLive);
-    nextSource.addEventListener("node.upserted", onNode);
-    nextSource.addEventListener("node.removed", onNodeRemoved);
-    nextSource.addEventListener("approval.updated", onApproval);
-    nextSource.addEventListener("employee.profile.changed", onEmployeeProfileChanged);
-    nextSource.addEventListener("run.updated", onRun);
+    nextSource.addEventListener("workspace.ready", guard(onReady));
+    nextSource.addEventListener("heartbeat", guard(markLive));
+    nextSource.addEventListener("node.upserted", guard(onNode));
+    nextSource.addEventListener("node.removed", guard(onNodeRemoved));
+    nextSource.addEventListener("approval.updated", guard(onApproval));
+    nextSource.addEventListener("employee.profile.changed", guard(onEmployeeProfileChanged));
+    nextSource.addEventListener("run.updated", guard(onRun));
   };
 
   handlers.onState("connecting");

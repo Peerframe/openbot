@@ -2,6 +2,7 @@
 import type { Run, WorkspaceSnapshot } from "@openbot/domain";
 import { act, StrictMode, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TestEventSource } from "./test/event-source";
 import {
   deferred,
   interact,
@@ -42,10 +43,12 @@ function snapshot(activeRuns = 7): WorkspaceSnapshot {
 type Read = ReturnType<typeof deferred<Response>> & { signal: AbortSignal | undefined };
 let reads: Read[];
 let rendered: RenderedComponent | undefined;
+let setCallerError: (message: string | undefined) => void;
 let controls: ReturnType<typeof useWorkspaceState>;
 function WorkspaceConsumer() {
   const [error, setError] = useState<string>();
   controls = useWorkspaceState(setError);
+  setCallerError = setError;
   return (
     <>
       <output aria-label="global active runs">{controls.workspace?.counts.activeRuns}</output>
@@ -59,6 +62,8 @@ function WorkspaceConsumer() {
 beforeEach(() => {
   vi.useFakeTimers();
   reads = [];
+  TestEventSource.instances = [];
+  vi.stubGlobal("EventSource", TestEventSource);
   vi.stubGlobal(
     "fetch",
     vi.fn((_url: string, init?: RequestInit) => {
@@ -271,4 +276,110 @@ describe("authoritative workspace global counts", () => {
       expect(document.body.textContent).toBe("");
     },
   );
+});
+
+function snapshotStream() {
+  const source = TestEventSource.instances.findLast((item) => !item.closed);
+  if (!source) throw new Error("Missing current snapshot stream");
+  return source;
+}
+function emitSnapshot(source: TestEventSource, value: WorkspaceSnapshot, sequence = 1) {
+  source.emit("workspace.snapshot", {
+    type: "workspace.snapshot",
+    version: 1,
+    streamId: "fixture",
+    sequence,
+    snapshot: value,
+  });
+}
+describe("GET, projection and snapshot epochs", () => {
+  it("starts after GET, uses full Server counts, and closes before a projected mutation and its follow-up GET", async () => {
+    rendered = await renderComponent(<WorkspaceConsumer />);
+    expect(TestEventSource.instances).toHaveLength(0);
+    await resolve(0, snapshot());
+    const first = snapshotStream();
+    await interact(() => emitSnapshot(first, snapshot(8)));
+    expect(count()).toBe("8");
+    const channel = {
+      id: "new-channel",
+      name: "Just created",
+      description: "",
+      botIds: [],
+      createdAt,
+    };
+    await interact(() => controls.projectChannel(channel));
+    expect(first.closed).toBe(true);
+    await interact(() => emitSnapshot(first, snapshot(1), 2));
+    expect(count()).toBe("8");
+    expect(controls.workspace?.channels).toEqual([channel]);
+    await advance(1000);
+    expect(reads).toHaveLength(2);
+    expect(TestEventSource.instances).toHaveLength(1);
+    const committed = { ...snapshot(9), channels: [channel] };
+    await resolve(1, committed);
+    expect(TestEventSource.instances).toHaveLength(2);
+    expect(count()).toBe("9");
+  });
+  it("does not open a snapshot while the GET journal awaits a fresh read, including late mutation completion", async () => {
+    await mount();
+    const old = snapshotStream();
+    await interact(() => {
+      void controls.refresh();
+    });
+    expect(old.closed).toBe(true);
+    await interact(() =>
+      controls.projectRun({ ...oldRun, createdAt: "2026-09-23T00:00:00Z", status: "completed" }),
+    );
+    await resolve(1, snapshot(6));
+    expect(TestEventSource.instances).toHaveLength(1);
+    expect(controls.workspace?.runs.find((run) => run.id === oldRun.id)?.status).toBe("completed");
+    await advance(1000);
+    await resolve(2, snapshot(6));
+    const current = snapshotStream();
+    expect(current).not.toBe(old);
+    // Models a promise settling after an intervening authoritative refresh/stream.
+    await interact(() => emitSnapshot(current, snapshot(5)));
+    await interact(() => controls.projectRun({ ...oldRun, status: "cancelled" }));
+    expect(current.closed).toBe(true);
+    await interact(() => emitSnapshot(current, snapshot(1), 2));
+    expect(count()).toBe("5");
+    await advance(1000);
+    expect(reads).toHaveLength(4);
+    await resolve(3, snapshot(4));
+    expect(TestEventSource.instances.filter((source) => !source.closed)).toHaveLength(1);
+  });
+  it("retains a failed explicit GET and never reopens or retries automatically", async () => {
+    await mount();
+    const old = snapshotStream();
+    await interact(() => {
+      void controls.refresh();
+    });
+    await interact(() => reads[1]?.reject(new Error("Explicit read unavailable")));
+    await interact(() => emitSnapshot(old, snapshot(1)));
+    await advance(120_000);
+    expect(count()).toBe("7");
+    expect(rendered?.container.textContent).toContain("Explicit read unavailable");
+    expect(controls.snapshotState).toBe("retrying");
+    expect(reads).toHaveLength(2);
+    expect(TestEventSource.instances).toHaveLength(1);
+  });
+  it("snapshot-only reconnect replaces data without clearing a caller mutation error", async () => {
+    await mount();
+    const old = snapshotStream();
+    await interact(() => setCallerError("Mutation unavailable"));
+    await interact(() => old.fail());
+    expect(count()).toBe("7");
+    expect(controls.snapshotState).toBe("retrying");
+    await advance(2000);
+    await interact(() => emitSnapshot(snapshotStream(), snapshot(6)));
+    expect(count()).toBe("6");
+    expect(reads).toHaveLength(1);
+    expect(controls.snapshotState).toBe("live");
+    expect(rendered?.container.textContent).toContain("Mutation unavailable");
+    await rendered?.unmount();
+    rendered = undefined;
+    expect(TestEventSource.instances.every((source) => source.closed)).toBe(true);
+    await advance(120_000);
+    expect(TestEventSource.instances).toHaveLength(2);
+  });
 });

@@ -55,7 +55,7 @@ import {
   DESKTOP_SIDEBAR_MATERIAL_STATE_CHANNEL,
 } from "./runtime-contract.js";
 import { createDesktopWebPreferences, DESKTOP_WINDOW_OPEN_DECISION } from "./security-policy.js";
-import { DesktopEventStreamLifecycle } from "./server-proxy.js";
+import { bindDesktopEventStreamWindow, DesktopEventStreamLifecycle } from "./server-proxy.js";
 import { FileDesktopSetupPlanStore } from "./setup-plan.js";
 import { DesktopSetupPlanController } from "./setup-plan-controller.js";
 import { SidebarMaterialController } from "./sidebar-material.js";
@@ -344,20 +344,19 @@ async function createMainWindow(activeSession: Session): Promise<void> {
   });
 
   mainWindow = window;
+  bindDesktopEventStreamWindow(window, eventStreams);
   navigationMenu?.reset();
   window.on("focus", () => navigationMenu?.refresh());
   window.on("blur", () => navigationMenu?.refresh());
   window.webContents.on("did-start-navigation", (details) => {
     if (details.isMainFrame) {
       microphonePolicy.revoke();
-      eventStreams.clear();
       navigationMenu?.reset();
     }
   });
   window.webContents.on("did-finish-load", () => navigationMenu?.refresh());
   window.webContents.on("render-process-gone", () => {
     microphonePolicy.revoke();
-    eventStreams.clear();
     navigationMenu?.reset();
   });
   const material = new SidebarMaterialController({
@@ -380,7 +379,6 @@ async function createMainWindow(activeSession: Session): Promise<void> {
   window.once("ready-to-show", () => window.show());
   window.once("closed", () => {
     microphonePolicy.revoke();
-    eventStreams.clear();
     nativeTheme.removeListener("updated", refreshMaterial);
     if (sidebarMaterial === material) sidebarMaterial = undefined;
     if (mainWindow === window) mainWindow = undefined;

@@ -18,6 +18,7 @@ vi.mock("./api", async (importOriginal) => {
     listMessages: vi.fn(),
     listRuns: vi.fn(),
     createChannel: vi.fn(),
+    subscribeToWorkspaceSnapshots: vi.fn(() => vi.fn()),
     subscribeToWorkspaceEvents: vi.fn(() => vi.fn()),
     subscribeToChannelEvents: vi.fn(() => vi.fn()),
   };
