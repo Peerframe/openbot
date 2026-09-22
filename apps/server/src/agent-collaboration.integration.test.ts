@@ -246,6 +246,18 @@ describe.skipIf(!url)("PostgreSQL channel Bot collaboration", () => {
     const later = await f.control.submitTask(f.channel.id, { content: "LATER_INDEPENDENT_TASK" });
     const answer = await f.native.complete(f.root, "PRECEDING_ANSWER_AFTER_QUEUE");
     const active = required(await f.native.claim(next.run, f.since));
+    // Same millisecond, reply micros earlier than RUN_STARTED. JS Date truncation would exclude
+    // the reply; SQL timestamptz comparison must keep it. No sleep / +1ms widening.
+    await required(database).client`
+      update messages
+      set created_at = timestamptz '2026-09-23 00:00:00.123100+00'
+      where id = ${answer.message.id}
+    `;
+    await required(database).client`
+      update run_events
+      set created_at = timestamptz '2026-09-23 00:00:00.123900+00'
+      where run_id = ${active.id} and type = 'RUN_STARTED'
+    `;
     const context = JSON.stringify(await f.native.initialContext(active));
     expect(context).toContain("PRECEDING_ANSWER_AFTER_QUEUE");
     expect(context).toContain(next.message.content);
