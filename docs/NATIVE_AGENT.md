@@ -114,7 +114,10 @@ records only retrieved IDs/revisions in audit; source Run IDs accompany reviewed
 model steps and final publication recheck those revisions and permissions. Disabling, deleting or
 editing a used record stops further use of the stale snapshot; content already sent upstream cannot
 be recalled. Pending proposals never enter retrieval. Each Bot can have at most 50 pending lessons;
-review the queue before creating more. Acceptance/rejection is serialized and cannot duplicate memory.
+review the queue before creating more. A full queue skips the optional candidate and records
+`KNOWLEDGE_PROPOSAL_SKIPPED` with reason `pending_limit`; the valid reply and reports still commit.
+Invalid proposals, revoked knowledge and database failures still fail closed.
+Acceptance/rejection is serialized and cannot duplicate memory.
 Rejected text is removed; accepted text lives in the Owner memory, not the proposal audit.
 
 This is an experimental reviewed-memory loop inspired by Hermes Agent, not autonomous skill learning.
@@ -143,3 +146,55 @@ Desktop Settings → Model & API includes Kimi (Moonshot CN), default model `kim
 ## Asynchronous coordination, corrections and output
 
 [Asynchronous collaboration](ASYNC_COLLABORATION.md) documents nonblocking assignment receipts, result joins, safe Owner corrections and real streamed text. The shared Run budget includes all continuations. Interrupted trees still fail on restart; external side effects are never automatically replayed.
+
+Continuations retain staged reports, source provenance, the frozen memory snapshot, consumed
+memory/skill revisions and the single candidate lesson. Their original per-Run limits still apply;
+an Owner correction or colleague join cannot reset those limits or bypass a consumed grant's
+revocation. Reports receive one source footer when prepared for publication.
+
+## Contribute without a UI or model account
+
+From a fresh checkout, use the repository's Node version, npm and a running Docker daemon with
+Linux container support:
+
+```sh
+npm ci --ignore-scripts
+node scripts/test-runtime-headless.mjs
+```
+
+The command builds only the Server's shared dependencies, starts a digest-pinned PostgreSQL 17.11
+fixture on a random loopback port, runs the native and collaboration tests serially, and removes
+its own container and temporary report files. The first run may download the image. No Web or
+Electron build, `.env`, Owner setup, model API key or paid request is required. Missing prerequisites
+fail the command; the acceptance suite does not silently skip its database checks.
+
+If an existing disposable PostgreSQL service is preferred, set
+`OPENBOT_COLLAB_TEST_DATABASE_URL` to a loopback URL whose database name starts with
+`openbot_collab_test_` (letters, digits and underscores only). Fixture tables in that database are
+reset. The command never uses `OPENBOT_DATABASE_URL`; it does not remove externally supplied
+databases. Integration suites sharing the same fixture database must run serially.
+
+| Change location | Responsibility and verification |
+| --- | --- |
+| `apps/server/src/native-agent.ts` | `executeAgentRun` uses the real SDK with the `AgentRunStore` port; `NativeAgentRunner` owns scheduling, budgets, cancellation and continuation. Use `native-agent.test.ts` for deterministic loop and authority regressions. |
+| `apps/server/src/postgres-agent-store.ts` | Durable claims, scope, cancellation, reply/report publication and audit. Use the headless and collaboration integration suites; an in-memory mock cannot establish transaction behavior. |
+| `apps/server/src/app.ts` | Owner-authenticated submission, stop, realtime observation and artifact download; UI clients do not own execution. |
+| `apps/server/src/native-agent-headless.integration.test.ts` | Runnable examples combining real Server routes, Owner authentication, PostgreSQL stores, file artifacts and the SDK's deterministic model. |
+
+The headless suite verifies authenticated task-to-download delivery, tool failure without partial
+publication, durable cancellation before a late result, SSE response disconnection without task
+abort, correction-time report retention, and optional learning saturation. Existing native and
+collaboration suites verify consumed reference revocation and bounded colleague joins.
+Requests use Hono's in-process HTTP interface and the real PostgreSQL driver; this is not a deployed
+socket/proxy test, paid-provider evaluation, process-crash recovery test or desktop certification.
+The fixture settings/model adapter is test-only and is never enabled by a production environment flag.
+
+For fast edits after dependencies are built:
+
+```sh
+node node_modules/vitest/vitest.mjs run apps/server/src/native-agent.test.ts
+npm run typecheck --workspace=@openbot/server
+```
+
+Run `npm run check` before handoff and the headless command after changing task lifecycle or
+publication behavior. See the [acceptance research](research/headless-runtime-acceptance.md).

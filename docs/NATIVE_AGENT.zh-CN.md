@@ -91,6 +91,8 @@ Hermes/Pi/OpenClaw 委派、浏览器观察/操作工具及任意桌面控制仍
 “允许模型使用”默认不勾选：批准只保存一条内部、不可迁移的 Owner 记忆。明确勾选后，此员工
 后续任务才可以发送给所配置的模型。已有记忆也可在编辑器单独启用。迁移后的旧记忆默认关闭，
 机密、受限和密钥引用禁止启用。每个员工最多保留 50 条待审经验；满额后须先审阅队列。
+满额时只跳过本次可选候选经验，记录原因 `pending_limit` 的 `KNOWLEDGE_PROPOSAL_SKIPPED`
+审计；有效回复和报告仍正常提交。非法候选、已撤销记忆和数据库错误仍拒绝完成任务。
 
 `read_employee_memory` 读取至多 8 条最近允许使用的记忆，正文每条 2,000 UTF-8 字节、总投影
 10 KiB，并标明截断、ID、修订和已审核经验的来源任务。任务采用首次读取的快照；后续模型步骤
@@ -121,3 +123,50 @@ Server 通过固定版本 @openrouter/ai-sdk-provider 3.0.0 调用固定聊天�
 ## 异步协作、追加指令与增量输出
 
 [频道异步协作](ASYNC_COLLABORATION.zh-CN.md)说明非阻塞委派回执、结果汇总、Owner 安全追加指令和真实流式文本。所有继续推理都计入同一个 Run 预算。重启仍将中断任务标为失败，外部副作用不会自动重放。
+
+继续推理会保留已准备的报告、来源、冻结的记忆快照、已读取记忆/技能的修订以及单条候选经验。
+原有任务级上限继续生效，追加指令或等待同事结果不能重置上限，也不能绕过已使用授权的撤销。
+报告准备发布时只附加一次来源信息。
+
+## 无需界面或模型账户的开发入口
+
+在全新 checkout 中，使用仓库指定的 Node 版本、npm 和已启动且支持 Linux 容器的 Docker：
+
+```sh
+npm ci --ignore-scripts
+node scripts/test-runtime-headless.mjs
+```
+
+命令只构建 Server 的共享依赖，在随机回环端口启动按 digest 固定的 PostgreSQL 17.11 测试库，
+串行运行原生 Agent 与协作测试，结束后删除自行创建的容器和临时报告文件。首次运行可能下载
+镜像；无需构建 Web/Electron、配置 `.env`、初始化 Owner 或填写模型密钥，不发送付费请求。
+缺少前置条件会明确失败，不会把跳过数据库验收当作成功。
+
+也可通过 `OPENBOT_COLLAB_TEST_DATABASE_URL` 指定已有的一次性 PostgreSQL 服务：必须是回环
+地址，库名以 `openbot_collab_test_` 开头且仅含小写字母、数字、下划线。该库中的测试表会被
+重置；命令不会使用 `OPENBOT_DATABASE_URL`，也不会删除外部提供的数据库。共用同一测试库的
+集成测试必须串行运行。
+
+| 修改入口 | 职责与验证 |
+| --- | --- |
+| `apps/server/src/native-agent.ts` | `executeAgentRun` 通过 `AgentRunStore` 接口使用真实 SDK；`NativeAgentRunner` 管理调度、预算、取消及继续推理。确定性循环和权限回归见 `native-agent.test.ts`。 |
+| `apps/server/src/postgres-agent-store.ts` | 持久化领取、权限、取消、回复/报告发布及审计。运行无界面与协作集成测试；内存替身不能证明事务行为。 |
+| `apps/server/src/app.ts` | Owner 鉴权后的任务提交、停止、实时观察和产物下载。执行生命周期由 Server 管理。 |
+| `apps/server/src/native-agent-headless.integration.test.ts` | 可直接运行的组合示例：真实 Server 路由、Owner 鉴权、PostgreSQL 存储、文件产物和 SDK 确定性模型。 |
+
+无界面套件验证任务提交到报告下载、工具失败后不发布局部结果、取消先持久化且迟到结果不能
+覆盖、SSE 响应断开不停止任务、追加指令后报告保留，以及可选学习满额仍交付任务。已有原生与
+协作套件验证已使用引用的撤销和有界同事协作。
+请求使用 Hono 进程内 HTTP 接口和真实 PostgreSQL 驱动；这不是部署后的套接字/代理测试、付费
+模型评估、进程崩溃恢复测试或桌面认证。测试模型与设置适配器只存在于测试中，生产环境没有
+通过环境变量开启它的入口。
+
+共享依赖构建后，可快速运行：
+
+```sh
+node node_modules/vitest/vitest.mjs run apps/server/src/native-agent.test.ts
+npm run typecheck --workspace=@openbot/server
+```
+
+交接前运行 `npm run check`，任务生命周期或发布行为变化后再次运行无界面验收命令。
+参见[验收研究记录](research/headless-runtime-acceptance.md)。

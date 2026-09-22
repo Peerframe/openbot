@@ -622,23 +622,34 @@ export class PostgresAgentStore implements AgentRunStore {
             and(eq(knowledgeProposals.botId, run.botId), eq(knowledgeProposals.status, "pending")),
           )
           .limit(50);
-        if (pending.length >= 50) throw new NativeExecutionError("task_limit");
-        const proposalId = randomUUID();
-        await tx.insert(knowledgeProposals).values({
-          id: proposalId,
-          botId: run.botId,
-          sourceRunId: run.id,
-          ...proposal,
-          createdAt: now,
-        });
-        await tx.insert(runEvents).values({
-          id: randomUUID(),
-          runId: run.id,
-          botId: run.botId,
-          channelId: run.channelId,
-          type: "KNOWLEDGE_PROPOSED",
-          payload: { executor: "native-agent", proposalId },
-        });
+        if (pending.length >= 50) {
+          // Optional learning saturation cannot roll back an otherwise valid task delivery.
+          await tx.insert(runEvents).values({
+            id: randomUUID(),
+            runId: run.id,
+            botId: run.botId,
+            channelId: run.channelId,
+            type: "KNOWLEDGE_PROPOSAL_SKIPPED",
+            payload: { executor: "native-agent", reason: "pending_limit" },
+          });
+        } else {
+          const proposalId = randomUUID();
+          await tx.insert(knowledgeProposals).values({
+            id: proposalId,
+            botId: run.botId,
+            sourceRunId: run.id,
+            ...proposal,
+            createdAt: now,
+          });
+          await tx.insert(runEvents).values({
+            id: randomUUID(),
+            runId: run.id,
+            botId: run.botId,
+            channelId: run.channelId,
+            type: "KNOWLEDGE_PROPOSED",
+            payload: { executor: "native-agent", proposalId },
+          });
+        }
       }
       if (artifacts.length) {
         await tx.insert(artifactsTable).values(
