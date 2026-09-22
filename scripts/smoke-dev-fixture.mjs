@@ -227,6 +227,7 @@ export class SmokeDatabase {
           env: this.#env,
           timeout: 20_000,
           maxBuffer: 128 * 1024,
+          killSignal: "SIGKILL",
           ...options,
         })
       ).stdout.trim();
@@ -308,7 +309,14 @@ export class SmokeDatabase {
         "--no-privileges",
         "openbot_dev_smoke",
       ],
-      { env: this.#env, timeout: 30_000, maxBuffer: 16 * 1024 * 1024, encoding: "buffer", signal },
+      {
+        env: this.#env,
+        timeout: 30_000,
+        maxBuffer: 16 * 1024 * 1024,
+        encoding: "buffer",
+        signal,
+        killSignal: "SIGKILL",
+      },
     );
     assert.equal(
       stderr.length,
@@ -356,7 +364,7 @@ export class SmokeDatabase {
         "--no-owner",
         "--no-privileges",
       ],
-      { env: this.#env, timeout: 30_000, maxBuffer: 128 * 1024, signal },
+      { env: this.#env, timeout: 30_000, maxBuffer: 128 * 1024, signal, killSignal: "SIGKILL" },
     );
     // Early pg_restore rejection can close stdin before all bytes are sent.
     operation.child.stdin.on("error", () => {});
@@ -378,7 +386,7 @@ export class SmokeDatabase {
         await exec(
           "docker",
           ["inspect", "--format", '{{index .Config.Labels "openbot.dev-smoke"}}', this.#name],
-          { env: this.#env, timeout: 10_000 },
+          { env: this.#env, timeout: 10_000, killSignal: "SIGKILL" },
         )
       ).stdout.trim();
     } catch (error) {

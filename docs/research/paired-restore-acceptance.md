@@ -94,3 +94,8 @@ than the moving discovery link, is the reviewed implementation. No entrypoint co
 The manifest is private test evidence, not a signed recovery format. The interrupt tests do not
 establish cleanup after SIGKILL, host failure or an unavailable Docker daemon; those conditions
 cannot run the driver's cleanup handler. No production data or external provider was used.
+
+After S1a integration the fixture also retains an approved `outcome_unknown` MCP receipt and
+compares the complete decrypted plugin state after restore. Shared native Docker tool invocations
+use `SIGKILL` for their command deadline/abort, so an unresponsive local CLI cannot ignore a graceful
+timeout indefinitely; fixture ownership checks and final cleanup still govern the remote container.

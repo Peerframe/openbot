@@ -166,6 +166,25 @@ async function seed(database, files) {
       botId: bot.id,
       runId: run.id,
     });
+    state.callReceipts = [
+      {
+        id: randomUUID(),
+        runId: run.id,
+        channelId: channel.id,
+        botId: bot.id,
+        pluginId: state.plugins[0].id,
+        pluginName: state.plugins[0].name,
+        pluginRevision: state.plugins[0].revision,
+        toolName: "fixture.write",
+        mode: "confirm",
+        state: "outcome_unknown",
+        approvalDecision: "approved",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        approvalDecidedAt: new Date().toISOString(),
+        dispatchedAt: new Date().toISOString(),
+      },
+    ];
   });
   const pluginState = await plugins.read();
   const login = await current.app.request("/api/v1/auth/login", {

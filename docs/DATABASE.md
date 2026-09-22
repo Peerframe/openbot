@@ -158,7 +158,8 @@ of skipping. CI runs the same required command in the database job.
 
 The synthetic directory-mode Server profile contains retained business rows and migration history,
 a Markdown report, attachment bytes/metadata/derived text, encrypted model settings and their key,
-and encrypted plugin state and its separate `state.json.key`. After closing all fixture writers,
+and encrypted plugin state (including an uncertain call receipt) and its separate `state.json.key`.
+After closing all fixture writers,
 the drill uses real native `pg_dump` and `pg_restore`, copies the paired files into new private
 paths, compares every retained table and re-runs the production migration guard. Fresh production
 readers verify restored Owner-session authentication, report/attachment downloads and both settings
