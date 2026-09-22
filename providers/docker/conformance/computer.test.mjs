@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
+import { execFileSync, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { runProviderConformanceSuite } from "../../../packages/provider-conformance-runner/dist/runner.js";
+import { createOwnedProcessGroup } from "../../../scripts/owned-process-group.mjs";
 import { createDockerProvider } from "../dist/index.js";
 import { runConformanceChild } from "./child-process.mjs";
 import { createCleanupGate, SyntheticComputer } from "./computer.mjs";
@@ -168,3 +170,109 @@ for (const mode of ["deadline", "external-abort"]) {
     assert.throws(() => process.kill(child.pid, 0), { code: "ESRCH" });
   });
 }
+
+function assertNoLiveProcess(pid) {
+  try {
+    const state = execFileSync("/bin/ps", ["-p", String(pid), "-o", "stat="], {
+      encoding: "utf8",
+    }).trim();
+    // An orphan may await init's reap, but a zombie cannot execute or keep sockets open.
+    assert.match(state, /^Z/);
+  } catch (error) {
+    if (error.status !== 1 || error.stdout?.trim()) throw error;
+  }
+}
+
+for (const mode of ["leader-success", "leader-failure", "deadline", "external-abort"]) {
+  test(`driver drains inherited-pipe descendants after ${mode} and preserves unrelated processes`, {
+    timeout: 8000,
+  }, async (t) => {
+    const controller = new AbortController();
+    const unrelated = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], {
+      stdio: "ignore",
+    });
+    const unrelatedExited = new Promise((resolve) => unrelated.once("exit", resolve));
+    t.after(async () => {
+      unrelated.kill("SIGKILL");
+      await unrelatedExited;
+    });
+    const grandchild =
+      'process.on("SIGTERM", () => {}); console.log("grandchild:"+process.pid); process.send("ready"); setInterval(() => {}, 1000);';
+    const parent = `
+      const {spawn}=require("node:child_process");
+      const grandchild=spawn(process.execPath,["-e",${JSON.stringify(grandchild)}],{stdio:["ignore","inherit","inherit","ipc"]});
+      grandchild.once("message",()=>{
+        if (${JSON.stringify(mode)} === "leader-success") process.exit(0);
+        if (${JSON.stringify(mode)} === "leader-failure") process.exit(17);
+      });
+    `;
+    let child;
+    let descendant;
+    let output = "";
+    const started = Date.now();
+    const operation = runConformanceChild(["-e", parent], {
+      cwd: process.cwd(),
+      env: { PATH: process.env.PATH ?? "" },
+      signal: controller.signal,
+      timeoutMs: mode === "deadline" ? 500 : 3000,
+      graceMs: 100,
+      stdout(chunk) {
+        output += chunk.toString();
+        const match = output.match(/grandchild:(\d+)/);
+        if (match) {
+          descendant = Number(match[1]);
+          if (mode === "external-abort") controller.abort();
+        }
+      },
+      stderr() {},
+      onSpawn(value) {
+        child = value;
+        const fallback = createOwnedProcessGroup(child, "Descendant regression");
+        t.after(() => fallback.stop({ graceMs: 100 }));
+      },
+    });
+    if (mode === "leader-success") await operation;
+    else
+      await assert.rejects(
+        operation,
+        mode === "leader-failure"
+          ? /Conformance child failed \(17\)/
+          : /Conformance child failed \(ABORT_ERR\)/,
+      );
+    assert(Number.isSafeInteger(descendant) && descendant > 1, "Grandchild did not become ready.");
+    assert(Date.now() - started < 2500, "An inherited pipe or descendant extended the deadline.");
+    assert.throws(() => process.kill(child.pid, 0), { code: "ESRCH" });
+    assertNoLiveProcess(descendant);
+    assert.doesNotThrow(() => process.kill(unrelated.pid, 0));
+    if (mode.startsWith("leader-"))
+      assert.equal(child.exitCode, mode === "leader-success" ? 0 : 17);
+  });
+}
+
+test("driver retains its output bound when spawning an owned group", {
+  timeout: 5000,
+}, async (t) => {
+  let child;
+  let written = 0;
+  const operation = runConformanceChild(
+    ["-e", 'process.stdout.write("x".repeat(2 * 1024 * 1024));'],
+    {
+      cwd: process.cwd(),
+      env: { PATH: process.env.PATH ?? "" },
+      signal: new AbortController().signal,
+      timeoutMs: 3000,
+      graceMs: 100,
+      stdout(chunk) {
+        written += chunk.length;
+      },
+      stderr() {},
+      onSpawn(value) {
+        child = value;
+        t.after(() => child.kill("SIGKILL"));
+      },
+    },
+  );
+  await assert.rejects(operation, /Conformance child failed \(OUTPUT_LIMIT\)/);
+  assert(written <= 1024 * 1024);
+  assert.throws(() => process.kill(child.pid, 0), { code: "ESRCH" });
+});

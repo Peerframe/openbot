@@ -1,9 +1,7 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { spawn } from "node:child_process";
+import { createOwnedProcessGroup } from "../../../scripts/owned-process-group.mjs";
 
-const exec = promisify(execFile);
-
-/** Run one owned Node process and reap it before fixture files or its database are removed. */
+/** Drain the owned POSIX group, including descendants, before deleting fixture resources. */
 export async function runConformanceChild(
   args,
   {
@@ -17,31 +15,85 @@ export async function runConformanceChild(
     onSpawn = () => {},
   },
 ) {
-  // execFile's timeout alone sends SIGTERM but may never reject if a child ignores it. An
-  // independent abort deadline rejects immediately and reaches the bounded forced-reap path.
-  const execution = exec(process.execPath, args, {
+  signal.throwIfAborted();
+  // execFile does not forward detached to spawn. Own a fresh group explicitly so Turbo's
+  // descendants remain in the cleanup scope even after their immediate parent exits.
+  const child = spawn(process.execPath, args, {
     cwd,
     env,
-    signal: AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]),
-    maxBuffer: 1024 * 1024,
+    detached: true,
+    stdio: ["ignore", "pipe", "pipe"],
   });
-  const child = execution.child;
+  const group = createOwnedProcessGroup(child, "Browser conformance");
   const closed = new Promise((resolve) => child.once("close", resolve));
-  child.stdout.on("data", stdout);
-  child.stderr.on("data", stderr);
-  onSpawn(child);
-  try {
-    await execution;
-  } catch (error) {
-    // execFile can reject on abort before the child closes. Never delete its resources first.
-    const force = setTimeout(() => child.kill("SIGKILL"), graceMs);
-    try {
-      await closed;
-    } finally {
-      clearTimeout(force);
-    }
-    throw new Error(
-      `Conformance child failed (${error.code ?? "aborted"}); inspect the named stage and report.`,
-    );
+  let finish;
+  const outcome = new Promise((resolve) => {
+    finish = resolve;
+  });
+  child.once("exit", (code, exitSignal) => finish({ code: code ?? exitSignal }));
+  child.once("error", (error) => finish({ code: error.code ?? "SPAWN_ERROR" }));
+  const abort = () => finish({ code: "ABORT_ERR" });
+  signal.addEventListener("abort", abort, { once: true });
+  // A deadline must wake the driver independently of child exit or inherited-pipe closure.
+  const deadline = setTimeout(abort, timeoutMs);
+  let outputBytes = 0;
+  let outputFailure;
+  for (const [stream, write] of [
+    [child.stdout, stdout],
+    [child.stderr, stderr],
+  ]) {
+    stream.on("data", (chunk) => {
+      outputBytes += chunk.length;
+      if (outputBytes > 1024 * 1024) {
+        outputFailure = "OUTPUT_LIMIT";
+        finish({ code: outputFailure });
+        return;
+      }
+      try {
+        write(chunk);
+      } catch {
+        outputFailure = "OUTPUT_FAILED";
+        finish({ code: outputFailure });
+      }
+    });
   }
+  let result;
+  let operationError;
+  try {
+    onSpawn(child);
+    result = await outcome;
+  } catch (error) {
+    operationError = error;
+  } finally {
+    clearTimeout(deadline);
+    signal.removeEventListener("abort", abort);
+  }
+  // The shared D2 lifecycle checks the complete known PGID and reaps the direct child. A
+  // successful parent may also leave descendants; no exit path bypasses group cleanup.
+  try {
+    await group.stop({ graceMs });
+  } catch (error) {
+    child.stdout.destroy();
+    child.stderr.destroy();
+    throw error;
+  }
+  // Drain buffered stage output after group exit. An escaped session retaining a pipe cannot
+  // extend cleanup indefinitely or produce a successful result; it is outside the group scope.
+  let forcedPipeClose = false;
+  const pipeDeadline = setTimeout(() => {
+    forcedPipeClose = true;
+    child.stdout.destroy();
+    child.stderr.destroy();
+  }, 1000);
+  try {
+    await closed;
+  } finally {
+    clearTimeout(pipeDeadline);
+  }
+  if (forcedPipeClose)
+    throw new Error("Conformance child pipes did not close after group cleanup.");
+  if (operationError) throw operationError;
+  const code = outputFailure ?? result.code;
+  if (code !== 0)
+    throw new Error(`Conformance child failed (${code}); inspect the named stage and report.`);
 }

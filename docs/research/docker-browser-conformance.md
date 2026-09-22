@@ -85,7 +85,7 @@ cancellation remain B1b work. Capability leases and cross-process computer locks
 The dedicated driver passed on the host reported as `macos`, `arm64`, `osVersion: 27.0.0`, using
 Node `v26.0.0`. The final generic-runner artifact records **15 success, 0 failure, 0 skipped**:
 eleven required browser scenarios plus four required declaration/target checks, no expected failures,
-`summary.conformant: true`, `evidenceLevel: hermetic`. Seven focused fixture regressions also passed.
+`summary.conformant: true`, `evidenceLevel: hermetic`. Twelve focused fixture/driver regressions also passed.
 The synthetic PNG payloads have valid chunk CRCs; no real screenshots were collected.
 
 The exact frozen click assertion compares the computer's recorded attempt to the **persisted
@@ -113,8 +113,46 @@ No real-browser or additional native platform evidence is claimed by these resul
 Independent review reproduced a driver deadline defect: `execFile({timeout})` only sent SIGTERM;
 an ignoring child kept its Promise pending, so a force-kill inside `catch` was unreachable. The
 pinned [Node child-process contract](https://github.com/nodejs/node/blob/2645dc73720b1b4f27c49f395d3c66025ce126cc/doc/api/child_process.md)
-distinguishes a timeout signal from an `AbortSignal` callback error. The dedicated helper now uses
-an independent `AbortSignal.timeout`, combines it with external cancellation, then escalates only
-its exact child to SIGKILL after a short grace and awaits `close`. Both non-cooperative-child
-regressions passed (deadline and external abort), as part of seven fixture/driver tests. No generic
-process supervisor or new dependency is introduced; no source is copied.
+distinguishes a timeout signal from an `AbortSignal` callback error. The final helper uses
+`spawn({detached:true})` and an independent deadline/external-abort outcome, then drains the known
+owned PGID through the shared D2 TERM/KILL and state-verification helper before awaiting pipe closure.
+Direct-child, exited-leader/live-grandchild, unrelated-process preservation and output-bound
+regressions pass as part of twelve fixture/driver tests. No new generic process supervisor or
+dependency is introduced; no upstream source is copied. The process-group follow-up below records
+why the earlier direct-child fix was insufficient.
+
+## Follow-up: owned process-group cleanup (2026-09-23)
+
+Root integration reproduced a separate lifecycle gap after the direct-child deadline fix: a parent
+Node spawned a grandchild with inherited stdout/stderr; the grandchild ignored SIGTERM and remained
+alive after the parent exited and `runConformanceChild` rejected. Turbo builds have descendants,
+so waiting for the direct child is insufficient evidence of cleanup.
+
+Re-read pinned [Node child_process implementation](https://github.com/nodejs/node/blob/2645dc73720b1b4f27c49f395d3c66025ce126cc/lib/child_process.js)
+and [detached-process documentation](https://github.com/nodejs/node/blob/2645dc73720b1b4f27c49f395d3c66025ce126cc/doc/api/child_process.md#optionsdetached).
+On POSIX, `spawn({detached:true})` creates a new session/process-group leader. `execFile` forwards an
+explicit subset of options to `spawn` and does not forward `detached`; adding that option to
+`execFile` cannot close this gap. A direct child can exit while inherited pipes or other descendants
+remain alive. The existing Node release pin/license remains unchanged; no new dependency is needed.
+
+First viable reuse: extract the already-reviewed D2 group lifecycle from
+`scripts/smoke-dev-fixture.mjs` (introduced in `d52a9112d80d76fa16fdc1abad8cd80f15684733`) into one shared
+helper. Preserve its exact known-PGID signal scope, TERM/KILL grace periods, Darwin EPERM numeric
+state verification, live-member failure, own-child reap, concurrent-stop joining and retry behavior.
+Both D2 `startProcess` and B1 use that implementation. No database behavior changes are part of
+this extraction. See the [D2 Darwin review](2026-09-22-contributor-journey.md#shutdown-correction-darwin-exited-process-groups-2026-09-22)
+for the fixed XNU source, official API evidence, licenses and existing regressions.
+
+B1 switches to `spawn({detached:true})` with bounded output and an independent abort deadline. Child
+exit, failure, deadline and external cancellation all finish by draining the owned group before
+returning. A successful exited leader also cannot leave an in-group descendant behind. Explicitly
+retest a parent that exits before its SIGTERM-resistant grandchild, inherited pipes, failure,
+deadline, external abort, and an unrelated process that must remain alive. A deliberately escaped
+new session is outside this POSIX process-group contract; this harness is not an OS sandbox.
+
+Follow-up validation: **12 focused checks passed**, including all four descendant cases and the
+retained output bound. The production Server/Node/Docker Provider required suite passed again:
+**15 success, 0 failure, 0 skipped**. It removed its owned database and private directory. The
+extracted numeric inspection and signal/stop implementation were also compared byte-for-byte to
+D2 before extraction; database code was untouched. Focused Biome and documentation checks passed.
+The root integration owns shared D2 regression execution and the final full repository gate.

@@ -45,7 +45,7 @@ cancel；断线目前只结束 running，waiting_approval 可能仍待定，离�
 
 实际主机报告 `macos`、`arm64`、`osVersion: 27.0.0`，运行 Node `v26.0.0`。
 最终报告为 **15 success、0 failure、0 skipped**：11 个必需浏览器场景和 4 个声明/目标检查，
-无预期失败，`summary.conformant: true`，证据级别严格为 `hermetic`。7 个 focused fixture
+无预期失败，`summary.conformant: true`，证据级别严格为 `hermetic`。12 个 focused fixture/driver
 回归通过。合成 PNG 的 chunk CRC 有效，没有采集真实用户截图。
 
 点击断言对照**已持久化批准**的 before-state，不依赖可变的当前电脑状态。每次合成 snapshot
@@ -66,7 +66,33 @@ cancel；断线目前只结束 running，waiting_approval 可能仍待定，离�
 
 独立审查实际复现了驱动期限缺陷：`execFile({timeout})` 只发送 SIGTERM，子进程忽略后 Promise
 不结束，`catch` 内的强杀无法到达。已核对固定 Node 提交的 [child-process 文档](https://github.com/nodejs/node/blob/2645dc73720b1b4f27c49f395d3c66025ce126cc/doc/api/child_process.md)：
-timeout 发信号与 AbortSignal 回调错误是不同语义。专用 helper 改为独立 `AbortSignal.timeout`
-合并外部取消，再仅对自己的确切 child 在短暂宽限后发 SIGKILL，并等待 `close`。
-忽略 SIGTERM 的 deadline 和外部 abort 两条回归均通过，包含于 7 个 fixture/driver 测试。
-没有新增通用进程管理框架、依赖或复制源码。
+timeout 发信号与 AbortSignal 回调错误是不同语义。最终 helper 使用 `spawn({detached:true})`
+和独立期限/外部取消结果，再由共享 D2 TERM/KILL 与状态核验 helper 清理已知自有 PGID，最后
+等待管道关闭。直接 child、父进程先退后的活孙进程、无关进程保留和输出上限均包含于通过的
+12 个 fixture/driver 测试。没有新增通用进程管理框架、依赖或复制上游源码；下节说明先前仅清理
+直接 child 的修复为何不足。
+
+## 后续修正：自有进程组清理（2026-09-23）
+
+根集成复现了另一个生命周期缺口：父 Node 创建继承 stdout/stderr 的孙进程，孙进程忽略
+SIGTERM，父进程退出且 helper 拒绝后，孙进程仍存活。Turbo 构建确有下游进程，直接 child
+退出不能作为整组清理证据。
+
+已重新查阅固定 Node `2645dc73720b1b4f27c49f395d3c66025ce126cc` 的 `lib/child_process.js`
+和 detached 官方文档。POSIX `spawn({detached:true})` 创建新的 session/进程组；`execFile`
+只转发部分参数，并不转发 detached，不能只增加该选项。版本、许可证不变，无需新依赖。
+
+优先复用 D2 已审的 `d52a9112d80d76fa16fdc1abad8cd80f15684733` 进程组实现：从
+`scripts/smoke-dev-fixture.mjs` 抽成共享 helper，两条主线共用。保持已知自有 PGID、TERM/KILL
+期限、Darwin EPERM 数字状态核验、活成员错误、直接 child 回收、并发 stop 合并和失败重试语义，
+不改数据库逻辑。固定 XNU 来源与许可继续引用[既有 D2 研究](2026-09-22-contributor-journey.zh-CN.md)。
+
+B1 使用 detached spawn、输出上限及独立取消期限。直接 child 退出、失败、期限和外部取消都须
+完成自有进程组清理再返回；父进程成功退出也不能留下同组孙进程。回归覆盖父进程先退、忽略
+SIGTERM 的孙进程、继承管道、失败、期限、外部取消和无关进程保留。故意创建新 session 逃离
+进程组的代码不在这一 POSIX 进程组合同内，harness 不是系统级沙箱。
+
+后续验证：**12 项 focused 检查通过**，包括四种孙进程情形与保留的输出上限。真实
+Server/Node/Docker Provider required suite 再次 **15 成功、0 失败、0 跳过**，自有数据库和
+私有目录已删除。抽出的数字进程检查及 signal/stop 实现与 D2 原文逐字节核对一致，未改数据库
+代码。定向 Biome、文档检查通过；共享 D2 回归与最终整仓门禁由根集成执行。
