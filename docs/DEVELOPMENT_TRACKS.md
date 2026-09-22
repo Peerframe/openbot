@@ -128,3 +128,8 @@ first wave. No release was published. Follow-up packages above remain open.
 - CI wiring adds the Node restart journey to the existing pre-build smoke and a separate retained-
   upgrade database. Existing required checks remain in place. Hosted CI/native installation and
   real paid-model behavior have not been established by these local checks.
+- Final cold-checkout acceptance exposed a Darwin zombie process-group `EPERM` race. The corrected
+  helper verifies bounded process identity/state, preserves real permission failures and retries
+  failed cleanup. Ten helper regressions passed. A newly exported integrated checkout then passed
+  the full login/enrollment/restart journey; no owned processes, ports, containers or private fixture
+  directories remained. This supersedes the failed cold-run attempt.
