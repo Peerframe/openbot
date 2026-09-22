@@ -1,5 +1,13 @@
 # 参与 OpenBot 共建
 
+[独立开发主线与定向验证入口](docs/DEVELOPMENT_TRACKS.zh-CN.md)
+
+定向开发可用 `npm run test:runtime` 在临时 PostgreSQL 夹具上运行确定性无界面 Server 验收，
+用 `npm run test:workspace` 验证快照契约与独立客户端。MCP 作者可以在生成项目中运行测试和
+`npm run preflight`，无需导入 OpenBot workspace。[CI 影响报告](docs/CI_IMPACT.zh-CN.md)
+仅在影子模式建议本地验证范围，完整合并检查仍然必需。前置条件与限制见
+[快照入口](docs/WORKSPACE_SYNC.zh-CN.md) 和 [插件作者文档](docs/PLUGINS.zh-CN.md)。
+
 [English source](CONTRIBUTING.md) · [简体中文](CONTRIBUTING.zh-CN.md)
 
 感谢你帮助建设 OpenBot。项目仍处于 pre-alpha，小而边界清楚、带验收证据的修改比大规模重写

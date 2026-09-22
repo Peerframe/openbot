@@ -4,6 +4,17 @@
 
 ## Policy
 
+The 2026-09-22 independent-development work reuses the existing runtime and MCP pins; no new
+runtime dependency is introduced. [Headless acceptance](research/headless-runtime-acceptance.md)
+preserves ToolLoopAgent continuation state and makes optional learning saturation non-fatal.
+[MCP compatibility preflight](research/mcp-compatibility-preflight.md) shares the Server profile
+with the independent SDK 1.30.0 author sample. [Workspace snapshots](research/workspace-snapshot-stream.md)
+reuse Drizzle 0.45.2 / `273c78071d4841b497f5144734b38294df7ec64b` (Apache-2.0), Postgres.js 3.4.9
+(Unlicense), PostgreSQL repeatable read and Hono 4.13.7 (MIT) through a bounded local adapter.
+[CI impact shadow analysis](research/2026-09-22-ci-impact-shadow.md) reuses Turbo 2.10.12 /
+`53752d45` (MIT) with conservative classification; all existing gates remain. No upstream source
+was copied or substantially adapted by these additions. Existing notices are retained.
+
 OpenBot researches established open-source implementations before designing a non-trivial feature.
 The goal is to reuse maintained standards, libraries, protocols, and narrow services instead of
 building another incompatible subsystem.

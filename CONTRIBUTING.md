@@ -1,5 +1,14 @@
 # Contributing to OpenBot
 
+[Independent development tracks and focused entry points](docs/DEVELOPMENT_TRACKS.md)
+
+For focused work, `npm run test:runtime` runs deterministic headless Server acceptance with a
+disposable PostgreSQL fixture; `npm run test:workspace` verifies the snapshot contract and independent
+reader. MCP authors can run the generated project's tests and `npm run preflight` without OpenBot
+workspace imports. [CI impact reports](docs/CI_IMPACT.md) suggest local scope in shadow mode; the
+complete merge checks remain required. See [workspace setup](docs/WORKSPACE_SYNC.md) and
+[plugin authoring](docs/PLUGINS.md) for prerequisites and limits.
+
 Thank you for helping build OpenBot. The project is in pre-alpha, so small changes with explicit
 acceptance criteria are more valuable than broad rewrites. Before starting a large feature, open an
 issue that identifies the milestone, user outcome, and security boundary it advances.

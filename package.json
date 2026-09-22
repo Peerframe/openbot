@@ -19,7 +19,7 @@
     "check": "npm run docs:check && npm run research:check && npm run server:container:check && npm run migrations:check && npm run security:config-check && npm run worker-host:macos:check && npm run release:check && npm run lint && npm run typecheck && npm run test && npm run build",
     "db:up": "docker compose --env-file .env -f deploy/server/compose.yaml up -d postgres",
     "db:stop": "docker compose --env-file .env -f deploy/server/compose.yaml stop postgres",
-    "db:verify": "turbo run build --filter=@openbot/server && node scripts/verify-database.mjs",
+    "db:verify": "turbo run build --filter=@openbot/server && node scripts/verify-database.mjs && node scripts/verify-workspace-snapshot.mjs",
     "dev": "turbo run dev --filter=@openbot/server --filter=@openbot/web",
     "dev:server": "turbo run dev --filter=@openbot/server",
     "dev:web": "turbo run dev --filter=@openbot/web",
@@ -39,13 +39,16 @@
     "release:node-linux:archive": "node scripts/pack-node-linux-candidate.mjs",
     "release:node-linux:candidate": "npm run build && node scripts/build-node-linux-candidate.mjs",
     "release:node-linux:smoke": "node scripts/smoke-node-linux-candidate.mjs",
-    "security:config-check": "node --test scripts/check-credential-findings.test.mjs scripts/check-security-workflow.test.mjs scripts/check-node-release-workflow.test.mjs scripts/check-windows-worker-host-workflow.test.mjs && node scripts/check-security-workflow.mjs && node scripts/check-node-release-workflow.mjs && node scripts/check-windows-worker-host-workflow.mjs",
+    "security:config-check": "node --test scripts/report-ci-impact.test.mjs scripts/check-credential-findings.test.mjs scripts/check-security-workflow.test.mjs scripts/check-node-release-workflow.test.mjs scripts/check-windows-worker-host-workflow.test.mjs && node scripts/check-security-workflow.mjs && node scripts/check-node-release-workflow.mjs && node scripts/check-windows-worker-host-workflow.mjs",
     "server:container:check": "node --test scripts/check-server-container.test.mjs && node scripts/check-server-container.mjs",
-    "test": "turbo run test --concurrency=2",
+    "test": "node --test examples/workspace-reader/reader.test.mjs && turbo run test --concurrency=2",
     "typecheck": "turbo run typecheck",
     "worker-host:macos:check": "node --test scripts/check-macos-worker-host.test.mjs scripts/macos-worker-host-release.test.mjs && node scripts/check-macos-worker-host.mjs",
     "worker-host:macos:native-check": "swift build --package-path apps/worker-host-macos && swift test --package-path apps/worker-host-macos",
-    "plugin:create": "node scripts/create-mcp-plugin.mjs"
+    "plugin:create": "node scripts/create-mcp-plugin.mjs",
+    "dev:reader": "vite --config examples/workspace-reader/vite.config.mjs",
+    "test:runtime": "node scripts/test-runtime-headless.mjs",
+    "test:workspace": "turbo run build --filter=@openbot/server && vitest run apps/server/src/workspace-snapshots.test.ts apps/server/src/workspace-snapshot-reader.test.ts apps/server/src/app.test.ts && node --test examples/workspace-reader/reader.test.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",

@@ -4,6 +4,16 @@
 
 ## 规则
 
+2026-09-22 独立开发主线复用现有 Runtime 与 MCP 固定版本，不新增运行时依赖。
+[无界面验收](research/headless-runtime-acceptance.md) 保留 ToolLoopAgent 续跑状态，并让可选学习
+队列满额不再导致任务交付回滚。[MCP 兼容预检](research/mcp-compatibility-preflight.zh-CN.md)
+将 Server 校验规则共享给 SDK 1.30.0 独立作者示例。
+[工作区快照](research/workspace-snapshot-stream.md) 通过有界适配复用 Drizzle 0.45.2 /
+`273c78071d4841b497f5144734b38294df7ec64b`（Apache-2.0）、Postgres.js 3.4.9（Unlicense）、
+PostgreSQL 可重复读及 Hono 4.13.7（MIT）。
+[CI 影子分析](research/2026-09-22-ci-impact-shadow.md) 复用 Turbo 2.10.12 / `53752d45`（MIT），
+采用保守分类，保留全部原有门槛。以上新增部分没有复制或实质改编上游源码，现有许可声明保持不变。
+
 OpenBot 在设计任何非简单功能前，必须先调研成熟的开源实现。目标是优先复用持续维护的标准、
 依赖、协议和窄服务，避免再造一套不兼容系统。
 

@@ -1,5 +1,7 @@
 # 贡献者任务包
 
+当前独立主线、依赖与验收入口见 [开发主线](DEVELOPMENT_TRACKS.zh-CN.md)；一致快照及独立订阅基础已实现，见 [快照契约](WORKSPACE_SYNC.zh-CN.md)。持久全局版本与现有 Web 乐观投影迁移仍待完成。
+
 [English](CONTRIBUTOR_TASKS.md) · [简体中文](CONTRIBUTOR_TASKS.zh-CN.md)
 
 这些任务把路线图拆成可以独立审查的贡献。实现前请使用对应表单创建 Issue，链接固定版本的上游
@@ -34,7 +36,7 @@
 
 ## 后续研究：一致的工作区快照契约
 
-状态：建议研究。当前 Web 排序测试已通过，服务端全局顺序契约尚未实现。
+状态：一致快照和独立订阅基础已实现；持久全局顺序契约尚未实现。详见 [快照契约](WORKSPACE_SYNC.zh-CN.md) 与 `npm run test:workspace`。现有 Web 乐观投影仍待单独迁移。
 
 - **结果：**明确快照版本与计数语义，使其他客户端不必重新猜测 Web 的事件合并规则。
 - **路径：**Server 工作区查询/事件、`packages/domain`、`packages/protocol` 和

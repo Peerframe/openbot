@@ -1,5 +1,7 @@
 # Contributor work packages
 
+Current independent lanes, dependencies and acceptance: [Development tracks](DEVELOPMENT_TRACKS.md).
+
 [English](CONTRIBUTOR_TASKS.md) · [简体中文](CONTRIBUTOR_TASKS.zh-CN.md)
 
 These packages turn roadmap items into independently reviewable contributions. Open an issue from
@@ -36,7 +38,7 @@ Status: proposed. Local upgrade evidence exists; CI does not yet retain the comp
 
 ## Next: consistent workspace snapshot contract
 
-Status: investigation proposed. Current Web ordering tests pass; a global ordering contract is not implemented.
+Status: coherent snapshot and independent subscription baseline implemented; a durable global ordering contract is not implemented. See [snapshot contract](WORKSPACE_SYNC.md) and `npm run test:workspace`. The existing Web optimistic projections remain a separate migration.
 
 - **Outcome:** define snapshot revision and count semantics that another client can implement without
   reproducing the Web client's event heuristics.
