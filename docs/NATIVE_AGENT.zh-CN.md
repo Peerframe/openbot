@@ -138,7 +138,7 @@ node scripts/test-runtime-headless.mjs
 ```
 
 命令只构建 Server 的共享依赖，在随机回环端口启动按 digest 固定的 PostgreSQL 17.11 测试库，
-串行运行原生 Agent 与协作测试，结束后删除自行创建的容器和临时报告文件。首次运行可能下载
+串行运行独立执行单元、原生 Agent 与协作测试，结束后删除自行创建的容器和临时报告文件。首次运行可能下载
 镜像；无需构建 Web/Electron、配置 `.env`、初始化 Owner 或填写模型密钥，不发送付费请求。
 缺少前置条件会明确失败，不会把跳过数据库验收当作成功。
 
@@ -149,7 +149,8 @@ node scripts/test-runtime-headless.mjs
 
 | 修改入口 | 职责与验证 |
 | --- | --- |
-| `apps/server/src/native-agent.ts` | `executeAgentRun` 通过 `AgentRunStore` 接口使用真实 SDK；`NativeAgentRunner` 管理调度、预算、取消及继续推理。确定性循环和权限回归见 `native-agent.test.ts`。 |
+| `apps/server/src/agent-runtime.ts` | `executeAgentRuntime` 通过明确的模型、工具、权限、存储与审计接口组合真实 SDK；`agent-runtime.test.ts` 无需 Server 应用或数据库。 |
+| `apps/server/src/native-agent.ts` | `executeAgentRun` 将 Server 管理的上下文、身份、工具及 `AgentRunStore` 适配到这些接口；`NativeAgentRunner` 管理调度、预算、取消及继续推理。适配与权限回归见 `native-agent.test.ts`。 |
 | `apps/server/src/postgres-agent-store.ts` | 持久化领取、权限、取消、回复/报告发布及审计。运行无界面与协作集成测试；内存替身不能证明事务行为。 |
 | `apps/server/src/app.ts` | Owner 鉴权后的任务提交、停止、实时观察和产物下载。执行生命周期由 Server 管理。 |
 | `apps/server/src/native-agent-headless.integration.test.ts` | 可直接运行的组合示例：真实 Server 路由、Owner 鉴权、PostgreSQL 存储、文件产物和 SDK 确定性模型。 |
@@ -170,3 +171,36 @@ npm run typecheck --workspace=@openbot/server
 
 交接前运行 `npm run check`，任务生命周期或发布行为变化后再次运行无界面验收命令。
 参见[验收研究记录](research/headless-runtime-acceptance.md)。
+
+## 独立执行单元接口
+
+修改迭代策略时，可以直接验证生产代码中的 `executeAgentRuntime`。全新 checkout 只需 Node
+和 npm，无需 Docker、Server 进程或模型账户：
+
+```sh
+npm ci --ignore-scripts
+npx turbo run build --filter='@openbot/domain...'
+node node_modules/vitest/vitest.mjs run apps/server/src/agent-runtime.test.ts
+```
+
+执行单元接收已准备的指令、有界消息、中止信号及同一个 Run 共用的预算。除公开输出外，所有
+接口均必须提供；测试使用明确的确定性实现，生产适配器只由 Server 组装：
+
+| 接口 | 必须满足的行为 |
+| --- | --- |
+| `model` | 已解析的 SDK 模型适配器及提供方/模型标识。凭据、端点、HTTP 限制和模型选择归 Server；拒绝会隐式选择 SDK gateway 的字符串 ID。 |
+| `authority.assertActive` | 复核已领取的准确 Run、模型配置、权限及已使用的引用。单元在模型调用前、工具前后检查，等待追加指令读取后也再检查；没有默认放行实现。 |
+| `tools` | 已绑定 Server 身份、目标限制与审批策略的本地 SDK 工具，每个工具明确的结果字节/联网预算策略，以及固定错误分类。每个工具返回一个完整 JSON 值；拒绝生成器、由模型提供方直接执行的工具、缺少或无界的策略。 |
+| `storage` | 只读取本 Run 有权使用的追加指令；下一轮模型调用或成功返回前，持久化提供方报告的累计用量。 |
+| `audit.progress` | 仅在有界进度持久化后完成；联网开始审计必须先于请求成功提交，结果审计失败不能返回执行成功。 |
+| `output`（可选） | 接收公开文本增量与重置事件，不含提供方内部推理，也不拥有完成任务的权限。 |
+
+模型与工具迭代继续由 SDK 完成。执行单元落实既有上限，只返回验证后的文本和已应用追加指令
+ID，仍属于待提交的执行结果。只有 Server 可以把回复、报告元数据、可选候选经验、Run 最终状态
+和审计一起提交。授权、插件审批、产物存储、继续推理的状态、任务树调度及取消也仍由 Server
+管理。这些接口是可信 Server 适配器，不接受模型、插件或界面请求提供的能力实现。
+
+独立测试覆盖真实 SDK 工具反馈、权限撤销、审计/用量存储失败、非法调用、有界结果、取消后的
+迟到回答、追加指令、共享预算及公开流式输出。前文无界面命令还通过真实 Server 和 PostgreSQL
+验证同一单元。这个内部模块不代表已发布独立运行时包、实现崩溃检查点或支持多 Server 执行。
+参见[接口抽取研究记录](research/runtime-execution-ports.md)。
