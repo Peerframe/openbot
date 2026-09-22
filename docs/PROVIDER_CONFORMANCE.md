@@ -214,15 +214,18 @@ The report records the host OS/architecture and `evidenceLevel: hermetic`; this 
 input evidence nor Windows/Linux/macOS real-browser certification. Existing Chromium evidence
 above remains a separate test.
 
-All eleven scenarios are required, with no expected-failure baseline:
+All fourteen scenarios are required, with no expected-failure baseline:
 
 | Stable id | Required behavior |
 | --- | --- |
 | `browser.approve-once` | Freeze exact frame-qualified ref, snapshot id, name, URL and screenshot digest; unauthenticated approval fails; Owner approval clicks once, persists audit/PNG and updates frame; repeated decision fails |
 | `browser.reject` | Owner rejection leaves zero commits and no result artifact |
 | `browser.expire` | Expired decision leaves zero commits; the fixture advances only its own database deadline before the real decision route |
-| `browser.node-stop` | Actual Node stop aborts its pending Provider; approving after disconnect fails the Run without committing |
-| `browser.disconnect` | Owner credential revocation disconnects the Node; a later approval cannot commit |
+| `browser.node-stop` | Actual Node stop aborts its pending Provider; Server fails the waiting Run and expires pending approval immediately, without another Owner decision |
+| `browser.disconnect` | Owner credential revocation disconnects the Node and terminates its waiting Run; a later approval returns 409 |
+| `browser.owner-cancel` | Authenticated Owner cancellation is durable/idempotent, expires pending approval and leaves zero clicks/artifacts; a later completed Run rejects cancellation |
+| `browser.cancel-after-dispatch` | A real HTTP click is recorded while its response is held; cancellation keeps the approved decision and one click, records external outcome unknown, and publishes no completion/artifact |
+| `browser.cancel-cleanup-capacity` | Cancelled Provider cleanup still occupies a one-slot Node; queued work starts automatically only after cleanup returns capacity |
 | `browser.changed-evidence` | Changed screenshot after observation blocks the approved click |
 | `browser.human-control` | Human takeover before approval blocks the approved click |
 | `browser.transport-timeout` | The production 15-second HTTP deadline bounds an unresponsive control check and prevents a click |
@@ -236,11 +239,23 @@ to pass; nonzero status must block this suite's gate. Full `npm run check` remai
 unchanged. Research and exact source pins are recorded in
 [the B1a research](research/docker-browser-conformance.md).
 
-### Remaining B1b product gaps
+### Worker cancellation and recovery boundary
 
-Node stop is **not** the Owner Worker-run cancel API. The current Owner cancel route supports only
-native Runs. Disconnect handling can leave a `waiting_approval` Run pending; the current suite
-asserts Provider cancellation and the available later offline-decision failure, not automatic
-terminal reconciliation. Implement and test those two product behaviors in B1b. This suite also
-does not establish capability leases, cross-process computer locks, browser egress isolation or
-safe general untrusted-site operation.
+The same driver first runs `worker-cancellation.integration.test.ts` against its owned PostgreSQL
+17.11 database, then runs the Server/Node/Provider suite. The transaction regressions cover
+cancel versus approve, assign, complete and approval request; idempotency; audit-write rollback;
+disconnect/startup pending-approval invalidation; and membership-removal lock compatibility.
+Ordinary `npm run check` skips this database suite unless `OPENBOT_WORKER_TEST_DATABASE_URL` points
+to an explicitly disposable loopback `openbot_worker_test_*` database. The driver passes its own
+`openbot_dev_smoke` URL; never supply a retained database.
+
+Owner Worker cancellation is implemented independently of Node stop. It revokes Server Run
+authority and sends cooperative `run.cancel`; pending approvals expire in the same transaction.
+Disconnected or restarted running/waiting Runs fail without replay. Completed Runs and their
+artifacts are preserved. A click already dispatched can still happen: neither a successful
+cancel response nor Node abort proves rollback or remote acknowledgement. See
+[controlled browser cancellation](CONTROLLED_BROWSER.md#stop-a-worker-task) and
+[B1b research](research/worker-run-cancellation.md).
+
+These tests remain synthetic-computer evidence. They do not establish capability leases,
+cross-process computer locks, browser egress isolation or safe general untrusted-site operation.

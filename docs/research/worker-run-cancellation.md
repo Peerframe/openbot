@@ -1,6 +1,6 @@
 # Research: Worker cancellation and interrupted approvals
 
-- Status: Accepted for implementation
+- Status: Implemented; independently review before integration
 - Date: 2026-09-23
 - Owner: OpenBot maintainers
 - Related issue: B1b
@@ -85,3 +85,51 @@ No upstream source copied or substantially adapted. Existing dependency notices 
 
 - No remote cancellation acknowledgement or proof of external rollback exists. Multi-Server command
   ownership and capability lease implementation remain separate; no stronger support claim.
+
+## Implementation finding: channel foreign-key deadlock
+
+The real PG 17.11 race test (2026-09-23) reproduced SQLSTATE `40P01` after correcting
+Run-before-approval order: membership removal held `channels FOR UPDATE` while waiting for a
+Run; the Worker decision held that Run and its audit insert needed the channel's FK `KEY SHARE`.
+[PostgreSQL 17 row-lock compatibility](https://www.postgresql.org/docs/17/explicit-locking.html#LOCKING-ROWS)
+permits `KEY SHARE` alongside `NO KEY UPDATE`. Membership removal never changes the channel key,
+so use `FOR NO KEY UPDATE` for that channel row while retaining the channel advisory lock and all
+Run locks. This also keeps concurrent channel mutations serialized. Do not add transaction retries
+that hide a deterministic lock cycle. Recovery's multi-Run lock order matches membership removal's
+`createdAt, id`. Add actual concurrent membership/approval and audit-failure rollback regressions.
+
+Cancelled cleanup can outlive the original dispatch wakeup. Reuse authenticated Node heartbeat
+as a capacity wakeup after its execution promise settles; Server still ignores heartbeat-reported
+Run authority and checks its own assignments. Subscribe the dispatcher to that existing update
+signal so queued work progresses without a new Owner action. No cancellation acknowledgement or
+new authority-bearing protocol field is introduced.
+
+
+## Validation evidence (2026-09-23)
+
+- `node scripts/test-browser-conformance.mjs --output <new-report.json>`: 13 actual PostgreSQL
+  transaction tests passed, then 14 required Server/Node/DockerProvider scenarios plus four
+  metadata checks passed (18 success, zero failure/warning/skipped). The synthetic computer
+  observed zero clicks for pending Owner cancellation and exactly one click for cancellation
+  after dispatch with a withheld HTTP response. Cleanup removed the owned database/private files.
+- The capacity scenario uses a one-slot real Node and gated real HTTP reader cleanup. The next
+  Run remains queued while the cancelled Provider is draining, then starts from the production
+  cleanup heartbeat without a fixture-triggered dispatch.
+- Real WebSocket regression: a Provider that ignores abort cannot emit late progress, frames,
+  approval requests or completion. Registry tests distinguish replacement sockets even with
+  identical timestamps. Dispatcher tests gate lifecycle reconciliation and suppress late artifacts.
+- Real PG injected `RUN_CANCELLED` audit failure rolled back both Run cancellation and approval
+  expiry. Cancel/approve, cancel/assign, cancel/complete, cancel/approval-request and
+  membership-removal/approve ran concurrently on independent database clients.
+- The first membership race reproduced `40P01`; changing the non-key channel lock resolved it.
+  An owned-process-group deadline fixture once failed readiness while full `npm run check` ran
+  concurrently. The final complete conformance invocation ran alone and passed all helper tests;
+  no production timeout or conformance expectation was relaxed.
+- Evidence remains local Linux-container PostgreSQL + macOS Node/Server, using a synthetic HTTP
+  computer. No real-device browser/platform, remote undo, process-crash recovery or capability
+  lease certification is inferred. Startup recovery is verified at the actual persistence boundary.
+- Final `npm run check` passed after the terminal-artifact precheck: Server 568 passed / 88
+  environment-gated skips; Node 52 passed / 3 platform-gated skips; Web 400 passed; Desktop
+  359 passed / 1 platform-gated skip. The 13 Worker database tests are among ordinary skips and
+  were separately executed by the owned-PG conformance driver above. Typecheck, required policy
+  checks and production builds passed. Existing React `<search>` and bundle-size notices remain.

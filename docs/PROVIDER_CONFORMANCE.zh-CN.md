@@ -188,15 +188,18 @@ client 和 Docker Provider。Owner 登录、enrollment 使用真实 HTTP；路�
 报告记录本机 OS/架构且只能是 `evidenceLevel: hermetic`，不能用于原生输入或三平台浏览器
 认证。上文既有 Chromium 实证是另一项测试。
 
-11 个场景全部 required，不配置预期失败基线：
+14 个场景全部 required，不配置预期失败基线：
 
 | 稳定 id | 必须验证的行为 |
 | --- | --- |
 | `browser.approve-once` | 冻结含帧前缀的精确 ref、snapshot id、名称、URL 和截图摘要；未认证批准失败；Owner 批准仅点击一次并保存审计/PNG、更新帧；重复决定失败 |
 | `browser.reject` | Owner 拒绝后零 commit、无结果产物 |
 | `browser.expire` | 过期决定零 commit；fixture 仅提前本数据库批准截止时间，再走真实决定接口 |
-| `browser.node-stop` | 实际 Node stop 取消待批准 Provider；断线后批准使 Run 失败且零 commit |
-| `browser.disconnect` | Owner 撤销凭据断开 Node，之后批准也不能 commit |
+| `browser.node-stop` | 实际 Node stop 中止待批准 Provider；Server 立即终结等待任务并使待定审批过期，无需另一次 Owner 决定 |
+| `browser.disconnect` | Owner 撤销凭据断开 Node 并终结等待任务，之后批准返回 409 |
+| `browser.owner-cancel` | Owner 取消持久化且幂等，待定审批过期，零点击/产物；已完成任务拒绝取消 |
+| `browser.cancel-after-dispatch` | 真实 HTTP 点击已记录但响应挂起时取消；保留批准决定与一次点击，审计外部结果未知，不发布完成或产物 |
+| `browser.cancel-cleanup-capacity` | 取消后的 Provider 清理仍占用单容量 Node；清理完成释放容量后，排队任务自动开始 |
 | `browser.changed-evidence` | 观察后截图变化阻止已批准点击 |
 | `browser.human-control` | 批准前人工接管阻止点击 |
 | `browser.transport-timeout` | 生产 15 秒 HTTP 期限结束无响应的 control 检查，点击不发生 |
@@ -208,9 +211,20 @@ client 和 Docker Provider。Owner 登录、enrollment 使用真实 HTTP；路�
 此 suite 的退出码 `0` 要求所有必需检查通过，非零必须阻断其门禁；完整 `npm run check`
 仍单独执行并保持不变。固定来源和研究见 [B1a 研究](research/docker-browser-conformance.zh-CN.md)。
 
-### B1b 保留的产品缺口
+### Worker 取消与恢复边界
 
-Node stop **不等于** Owner Worker-run cancel API；目前 Owner 取消接口仅覆盖 native Run。
-断线可能让 `waiting_approval` 继续待定，本 suite 断言 Provider 已取消及后续离线决定失败，
-不宣称自动完成终态协调。B1b 需要实现并测试这两个产品行为。本 suite 也不证明 capability
-lease、跨进程电脑资源锁、浏览器出口隔离或通用不可信站点操作安全。
+同一驱动先在自建 PostgreSQL 17.11 中运行 `worker-cancellation.integration.test.ts`，再执行
+Server/Node/Provider suite。事务回归覆盖取消与批准、分配、完成、申请审批的竞态、幂等取消、
+审计写失败回滚、断线/启动恢复使待定审批失效，以及频道成员移除时的锁兼容性。
+普通 `npm run check` 默认跳过此数据库套件，只有 `OPENBOT_WORKER_TEST_DATABASE_URL` 指向明确
+可丢弃的 loopback `openbot_worker_test_*` 数据库时运行。驱动只传入自建的
+`openbot_dev_smoke` 数据库，禁止提供留存数据的数据库。
+
+Owner Worker 取消和 Node stop 分别验证。前者撤销 Server 的任务权威并发送协作式 `run.cancel`，
+同一事务内使待定审批过期。断线或重启中断的 running/waiting 任务直接失败，不重新派发；
+已完成任务及其产物保留。已经派发的点击仍可能发生；取消响应成功和 Node abort 都不能证明
+远端回滚或收到取消确认。参见 [停止电脑任务](CONTROLLED_BROWSER.zh-CN.md#停止电脑任务)
+与 [B1b 研究](research/worker-run-cancellation.md)。
+
+这些仍是合成电脑证据，不证明 capability lease、跨进程电脑资源锁、浏览器出口隔离，
+或通用不可信站点操作安全。
