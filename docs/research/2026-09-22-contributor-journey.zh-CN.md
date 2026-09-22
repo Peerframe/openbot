@@ -55,3 +55,27 @@ Postgres.js 仍为 `3.4.9`，许可 Unlicense；阅读已安装版本的连接�
 ## 未决事项
 
 本次范围没有未决问题；Windows 原生验收独立处理。
+
+## Darwin 已退出进程组的关闭修复（2026-09-22）
+
+最终集成 `88fbce0` 的干净副本在 Node 断开阶段出现 `kill EPERM`，当时 Turbo 已停止任务。
+之前的成功没有覆盖这一竞态。独立 macOS 探针创建一个自有 detached 子进程，确认 `ps` 状态为
+`Z` 时 signal zero 返回 `EPERM`，对同一子进程执行 `waitpid` 回收后返回 `ESRCH`。
+
+核对 Apple [kill(2) 官方文档](https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/kill.2.html)
+和固定 [XNU `kern_sig.c` 提交 `f6217f891ac0bb64f3d375211650a4c1ff8ca1ea`](https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/kern/kern_sig.c)：
+`killpg1` 排除 `SZOMB` 成员，没有可接收信号的成员时 POSIX 路径返回 `EPERM`；不存在的组返回
+`ESRCH`。这与本机复现一致，不声称该公开提交就是本机内核版本。上游采用 Apple Public Source
+License 2.0，没有复制实现；继续使用 Node 的直接子进程退出通知确认回收，无需新增进程树依赖。
+
+只向已知自有 detached 子进程的 PGID 发信号。遇到 `EPERM`，有界读取仅含 PID、PGID、UID 和状态
+的 OS 快照，不读取命令或环境。仅没有成员或全部成员为 zombie 才能证明没有执行仍在进行；存在
+活进程或无法检查仍明确失败，并等待直接子进程退出通知。并发 stop 共享一次清理，成功后才标记
+stopped；失败后允许 finally 重试。验证真实 zombie 竞态、存活后代、权限拒绝后重试、并发 stop，
+以及最终集成版本的冷启动完整旅程。
+
+验证结果：10 项定向测试全部通过，包括真实 macOS `Z`/`EPERM` 竞态，以及需要 SIGKILL 的存活孤儿
+后代。全新导出的 `88fbce0` 副本仅替换修复后的 helper 和测试，经 `npm ci --ignore-scripts` 后运行
+完整 `npm run dev:smoke -- --with-node`，退出码为 0；随后检查该副本工作目录的进程、端口、标记容器
+和私有目录，均无残留。原始失败日志、独立内核探针、成功 smoke 日志及清理证据保留供集成审阅，
+没有向无关进程发送信号或删除无关容器。

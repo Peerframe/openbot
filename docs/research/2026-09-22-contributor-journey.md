@@ -53,3 +53,34 @@ Upgrade/exit: preserve the fixed image, existing npm/Turbo pins and credential c
 ## Unresolved questions
 
 - None for this bounded journey. Native Windows execution remains a separate acceptance lane.
+
+## Shutdown correction: Darwin exited process groups (2026-09-22)
+
+The final integrated cold checkout at `88fbce0` reached Node disconnect, then failed with
+`kill EPERM` after Turbo had stopped its tasks. The previous passing run did not cover this race.
+An independent local macOS probe created one owned detached child, observed `ps` state `Z`, and
+received `EPERM` from signal zero; after `waitpid` reaped that same child, the result was `ESRCH`.
+
+Inspected Apple's [kill(2) documentation](https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/kill.2.html)
+and exact [XNU `kern_sig.c` at `f6217f891ac0bb64f3d375211650a4c1ff8ca1ea`](https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/kern/kern_sig.c).
+`killpg1` excludes `SZOMB` group members and returns POSIX `EPERM` when no eligible member remains;
+an absent group returns `ESRCH`. This explains the reproduced OS behavior; the public source is
+not asserted to be the exact installed kernel revision. XNU is Apple Public Source License 2.0;
+no implementation is copied. Node's existing child-process exit notification remains the owned
+leader's reap evidence. No process-tree dependency is required.
+
+Keep signaling only the detached child's known PGID. On `EPERM`, obtain a bounded OS snapshot
+containing PID, PGID, UID and state only (no commands or environment). Only no members or exclusively
+zombie members establish that execution has ended; a live member or failed inspection remains an
+explicit cleanup failure. Wait for the direct child's exit notification as well. Share concurrent
+stop calls, mark stopped only after successful verification, and allow a failed stop to be retried
+by the driver's final cleanup. Verify the actual zombie race, live-descendant cleanup, real
+permission denial with retry, concurrent stop and the final integrated cold journey.
+
+Validation: ten focused fixture tests passed, including the real macOS `Z`/`EPERM` case and a
+SIGTERM-resistant orphan descendant requiring SIGKILL. A new `88fbce0` archive with only this helper
+correction and its tests replaced passed `npm ci --ignore-scripts` and the full
+`npm run dev:smoke -- --with-node` (exit zero). Subsequent cwd-process, port, labelled-container and
+private-directory inspection found no remaining fixture resources. The original failure log,
+independent kernel probe, successful smoke log and cleanup evidence were retained for integration
+review; no unrelated process or container was signaled or removed.

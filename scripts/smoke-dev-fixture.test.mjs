@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -148,4 +148,97 @@ test("process cleanup removes its group and preserves an unrelated process", {
   assert.throws(() => process.kill(child.pid, 0), { code: "ESRCH" });
   assert.doesNotThrow(() => process.kill(unrelated.pid, 0));
   await child.stop();
+});
+
+test("cleanup verifies an exited but unreaped Darwin process group", {
+  skip: process.platform !== "darwin",
+}, async (t) => {
+  const child = startProcess({
+    args: ["-e", "process.exit(0)"],
+    cwd: await temporary(t),
+    env: { PATH: process.env.PATH },
+    label: "unreaped fixture",
+  });
+  t.after(() => child.stop());
+  // Keep this event loop blocked until the OS child exits, before libuv can reap it.
+  const deadline = Date.now() + 3000;
+  let state = "";
+  while (!state.startsWith("Z") && Date.now() < deadline) {
+    state = execFileSync("/bin/ps", ["-p", String(child.pid), "-o", "stat="], {
+      encoding: "utf8",
+    }).trim();
+    if (!state.startsWith("Z")) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+  }
+  assert.match(state, /^Z/);
+  assert.throws(() => process.kill(-child.pid, 0), { code: "EPERM" });
+  await child.stop({ graceMs: 500 });
+  assert.throws(() => process.kill(child.pid, 0), { code: "ESRCH" });
+});
+
+test("live process permission denial stays failed and concurrent cleanup can retry", {
+  skip: process.platform === "win32",
+}, async (t) => {
+  const child = startProcess({
+    args: ["-e", "console.log('ready');setInterval(() => {}, 1000)"],
+    cwd: await temporary(t),
+    env: { PATH: process.env.PATH },
+    label: "permission fixture",
+  });
+  t.after(() => child.stop());
+  for (let i = 0; i < 50 && !child.output().includes("ready"); i++) await delay(20);
+  child.assertRunning();
+  const kill = process.kill;
+  const denied = t.mock.method(process, "kill", (pid, signal) => {
+    if (pid === -child.pid) throw Object.assign(new Error("kill EPERM"), { code: "EPERM" });
+    return kill.call(process, pid, signal);
+  });
+  try {
+    const first = child.stop({ graceMs: 500 });
+    assert.equal(child.stop(), first);
+    await assert.rejects(first, { code: "EPERM" });
+    child.assertRunning();
+  } finally {
+    denied.mock.restore();
+  }
+  const retried = child.stop({ graceMs: 500 });
+  assert.equal(child.stop(), retried);
+  await retried;
+  assert.throws(() => process.kill(child.pid, 0), { code: "ESRCH" });
+});
+
+test("an exited leader cannot hide a live descendant from bounded cleanup", {
+  skip: process.platform === "win32",
+}, async (t) => {
+  const descendant =
+    "process.on('SIGTERM',()=>{});console.log(process.pid);setInterval(()=>{},1000)";
+  const child = startProcess({
+    args: [
+      "-e",
+      `
+      const {spawn}=require('node:child_process');
+      const child=spawn(process.execPath,['-e',${JSON.stringify(descendant)}],{stdio:['ignore','pipe','ignore']});
+      child.stdout.once('data',data=>{process.stdout.write(data,()=>process.exit(0));});
+    `,
+    ],
+    cwd: await temporary(t),
+    env: { PATH: process.env.PATH },
+    label: "descendant fixture",
+  });
+  t.after(() => child.stop());
+  for (let i = 0; i < 100 && !/^\d+\s*$/.test(child.output()); i++) await delay(20);
+  const pid = Number(child.output().trim());
+  assert(Number.isSafeInteger(pid) && pid > 1);
+  await delay(50);
+  assert.throws(() => child.assertRunning(), /exited before readiness/);
+  assert.doesNotThrow(() => process.kill(pid, 0));
+  await child.stop({ graceMs: 100 });
+  // An orphan may briefly await init's reap; a zombie cannot continue executing.
+  try {
+    const state = execFileSync("/bin/ps", ["-p", String(pid), "-o", "stat="], {
+      encoding: "utf8",
+    }).trim();
+    assert.match(state, /^Z/);
+  } catch (error) {
+    if (error.status !== 1 || error.stdout?.trim()) throw error;
+  }
 });

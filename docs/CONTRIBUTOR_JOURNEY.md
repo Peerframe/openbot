@@ -51,6 +51,11 @@ The smoke verifies HTTP behavior, not rendered-browser or native-platform behavi
 6. The driver terminates only its process groups, removes its private temporary directory and removes
    its labelled database container. Interruption and failure take the same cleanup path.
 
+On macOS an exited, unreaped process group can report `EPERM`. The driver checks only numeric
+PID/PGID/UID/state records before accepting that no live member remains, and waits for its direct
+child's exit notification. A live member or failed inspection still fails cleanup. Concurrent stop
+calls share the same attempt; a failed attempt can be retried by final cleanup.
+
 No task is submitted and no Provider capability is exercised. Enrollment/reconnect evidence does
 not establish native Worker Host installation, keyring protection or computer-control support.
 
@@ -83,6 +88,15 @@ The fixture tests cover target validation, fresh-checkout refusal, isolated chil
 redaction, identity-file constraints, port ownership and process cleanup. They do not replace the
 real smoke. The process-group driver is explicitly Linux/macOS-only; Windows needs separate native
 process-tree acceptance before this command can claim support.
+
+The shutdown regressions additionally cover an actual macOS unreaped zombie group, live permission
+denial with a successful later retry, concurrent stop calls, and a live descendant after its parent
+has exited. The first case is macOS-only; Linux runs the remaining cases.
+
+The final integrated cold run exposed that macOS shutdown race. After the correction, all ten
+fixture checks passed, and a newly exported `88fbce0` checkout with the corrected helper passed the
+complete `--with-node` journey. Independent inspection found no process using that checkout, no
+3001/5173 listener, no labelled fixture container and no private smoke directory after completion.
 
 See the [fixed-version research and verification scope](research/2026-09-22-contributor-journey.md).
 
