@@ -1,0 +1,17 @@
+# Package-local toolchain state. Never committed, never shared across machines.
+.venv/
+
+# Python bytecode and caches.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Build artifacts (this package is consumed from src/ via pythonpath, but keep
+# the excludes so an accidental local build never enters version control).
+build/
+dist/
+*.egg-info/

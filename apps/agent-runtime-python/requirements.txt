@@ -1,0 +1,11 @@
+# Direct runtime dependencies for the OpenBot Python execution unit.
+#
+# Both are pinned exactly and reviewed in RESEARCH.md. Transitive resolution is
+# frozen in requirements.lock. Install with the package-local virtualenv only:
+#
+#   python -m venv .venv
+#   ./.venv/bin/pip install -r requirements-dev.txt
+#
+pydantic-ai-slim==2.47.0
+jsonschema==4.26.0
+referencing==0.37.0

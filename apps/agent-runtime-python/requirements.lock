@@ -1,0 +1,30 @@
+# Frozen transitive resolution for requirements-dev.txt.
+# Regenerate with: ./.venv/bin/pip freeze
+# Python 3.12, macOS arm64 (cp312 wheels).
+annotated-types==0.8.0
+anyio==4.15.1
+attrs==26.1.0
+genai-prices==0.1.7
+griffelib==2.3.0
+h11==0.16.0
+httpcore2==2.13.0
+httpx2==2.13.0
+idna==3.20
+iniconfig==2.3.0
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+logfire-api==5.1.0
+opentelemetry-api==1.44.0
+packaging==26.3
+pluggy==1.6.0
+pydantic==2.13.5
+pydantic-ai-slim==2.47.0
+pydantic-graph==2.47.0
+pydantic_core==2.46.5
+Pygments==2.21.0
+pytest==8.4.2
+referencing==0.37.0
+rpds-py==2026.6.3
+truststore==0.10.4
+typing-inspection==0.4.4
+typing_extensions==4.16.0
