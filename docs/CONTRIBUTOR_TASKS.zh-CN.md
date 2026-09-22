@@ -46,6 +46,8 @@
 
 ## 入门：创建 Bot 对话框模态生命周期回归
 
+- **状态：**已交付（D4）。`CreateBotDialog.test.tsx` 覆盖 showModal、标注、cancel/关闭卸载与创建失败 `role="alert"`。autofocus 后 opener 焦点恢复仍为已知产品后续项；见 `docs/research/starter-dom-regressions.zh-CN.md`。
+
 - **目标：**证明现有「创建 Bot」原生模态符合无障碍基线中对 Owner 创建对话框的声明。
 - **已有行为：**`CreateBotDialog` 通过 `useModalDialog` 打开，使用 `aria-labelledby` 标注对话框，
   图标关闭按钮名为 `关闭`，创建失败以 `role="alert"` 提示，关闭后恢复 opener 焦点。
@@ -71,6 +73,8 @@
 
 ## 入门：员工主页 Tab 键盘 DOM 回归
 
+- **状态：**已交付（D4）。`EmployeeProfileView.test.tsx` 的交互 jsdom 用例断言方向键/Home/End 同步移动 `aria-selected` 与焦点；ArrowDown 保持无操作。
+
 - **目标：**证明主页水平 Tab 在 `docs/ACCESSIBILITY.zh-CN.md` 已记录的按键下，**焦点与选中态
   一起移动**。
 - **已有行为：**`EmployeeProfileView` 提供一个 `tablist`、七个 tab，以及带环绕的
@@ -93,6 +97,8 @@
 
 ## 入门：RunInspector Escape 与焦点恢复回归
 
+- **状态：**已交付（D4）。`RunInspector.integration.test.tsx` 锁定 Escape→`onClose`、带名称的关闭按钮，以及卸载时恢复先前焦点。
+
 - **目标：**锁住 `RunInspector` 自定义浮层已经实现的 Escape 关闭与 opener 焦点恢复。
 - **已有行为：**挂载时聚焦带标签的关闭按钮，监听 Escape 调用 `onClose`，卸载时恢复先前焦点
   （`role="dialog"`、`aria-modal="true"`）。
@@ -112,6 +118,8 @@
 - **依赖：**无。调研：[contributor-starter-slices](research/contributor-starter-slices.zh-CN.md)。
 
 ## 入门：Node 管理对话框模态生命周期回归
+
+- **状态：**已交付（D4）。`NodeManagerDialog.test.tsx` 打开对话框、断言 showModal/标注、保留吊销确认文案，并在 cancel 时卸载。opener 焦点恢复与上述 autofocus 后续项相同。
 
 - **目标：**证明 Node 管理 Owner 对话框与其他创建/管理对话框使用同一套原生模态生命周期。
 - **已有行为：**`NodeManagerDialog` 通过 `useModalDialog` 挂载 `<dialog>`，并在

@@ -51,6 +51,8 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
 
 ## Starter: Create Bot dialog modal lifecycle regression
 
+- **Status:** Delivered (D4). Regression coverage in `CreateBotDialog.test.tsx` (showModal, labelling, cancel/close unmount, create `role="alert"`). Opener focus restore after autofocus remains a known product follow-up; see `docs/research/starter-dom-regressions.md`.
+
 - **Goal:** prove the existing Create Bot native modal matches the accessibility baseline already
   claimed for Owner create dialogs.
 - **Existing behavior:** `CreateBotDialog` opens through `useModalDialog`, labels the dialog with
@@ -79,6 +81,8 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
 
 ## Starter: Employee profile tab keyboard DOM regression
 
+- **Status:** Delivered (D4). Interactive jsdom coverage in `EmployeeProfileView.test.tsx` asserts Arrow/Home/End move `aria-selected` and focus together; ArrowDown stays a no-op.
+
 - **Goal:** prove horizontal profile tabs move **focus and selection together** under the keys
   already documented in `docs/ACCESSIBILITY.md`.
 - **Existing behavior:** `EmployeeProfileView` exposes one `tablist`, seven tabs, and
@@ -103,6 +107,8 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
   [contributor-starter-slices](research/contributor-starter-slices.md).
 
 ## Starter: RunInspector Escape and focus-restore regression
+
+- **Status:** Delivered (D4). `RunInspector.integration.test.tsx` now locks Escape→`onClose`, labelled close control, and prior-focus restore on unmount.
 
 - **Goal:** lock the Escape-close and opener focus restoration that `RunInspector` already
   implements for its custom overlay.
@@ -129,6 +135,8 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
   [contributor-starter-slices](research/contributor-starter-slices.md).
 
 ## Starter: Node manager dialog modal lifecycle regression
+
+- **Status:** Delivered (D4). `NodeManagerDialog.test.tsx` opens the dialog, asserts `showModal`/labelling, keeps revoke confirmation copy, and unmounts on cancel. Opener focus restore shares the autofocus follow-up noted above.
 
 - **Goal:** prove the Node manager Owner dialog uses the same native modal lifecycle as other
   create/manage dialogs.

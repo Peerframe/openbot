@@ -1,6 +1,8 @@
+// @vitest-environment jsdom
 import type { EmployeeProfile } from "@openbot/domain";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { interact, renderComponent, type RenderedComponent } from "../test/render-component";
 import {
   EmployeeMemoryPanel,
   EmployeeProfileDetailsEditor,
@@ -81,5 +83,79 @@ describe("EmployeeProfileView", () => {
     expect(html).toContain("Build and verify changes within the assigned repository.");
     expect(html).toContain("不会授予技能或电脑权限");
     expect(html).not.toContain('name="computerProfile"');
+  });
+});
+
+
+const interactiveViews: RenderedComponent[] = [];
+
+afterEach(async () => {
+  for (const view of interactiveViews.splice(0)) await view.unmount();
+});
+
+async function renderProfile() {
+  const view = await renderComponent(
+    <EmployeeProfileView
+      profile={profile}
+      loading={false}
+      error={undefined}
+      onRetry={() => undefined}
+      onAssign={() => undefined}
+      onExport={() => undefined}
+      onProfileChanged={async () => undefined}
+    />,
+  );
+  interactiveViews.push(view);
+  const tabs = [...view.container.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+  if (tabs.length !== 7) throw new Error(`Expected 7 tabs, found ${tabs.length}`);
+  return { view, tabs };
+}
+
+describe("EmployeeProfileView keyboard DOM regression", () => {
+  it("moves aria-selected and focus together for ArrowRight, Home, and End", async () => {
+    const { tabs } = await renderProfile();
+    const [overview, evolution, , , , , configuration] = tabs;
+    await interact(() => overview.focus());
+    expect(document.activeElement).toBe(overview);
+    expect(overview.getAttribute("aria-selected")).toBe("true");
+
+    await interact(() =>
+      overview.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })),
+    );
+    expect(evolution.getAttribute("aria-selected")).toBe("true");
+    expect(overview.getAttribute("aria-selected")).toBe("false");
+    expect(document.activeElement).toBe(evolution);
+    expect(evolution.tabIndex).toBe(0);
+    expect(overview.tabIndex).toBe(-1);
+
+    await interact(() =>
+      evolution.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true })),
+    );
+    expect(configuration.getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(configuration);
+
+    await interact(() =>
+      configuration.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true })),
+    );
+    expect(overview.getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(overview);
+  });
+
+  it("wraps ArrowLeft from overview and ignores ArrowDown", async () => {
+    const { tabs } = await renderProfile();
+    const [overview, , , , , , configuration] = tabs;
+    await interact(() => overview.focus());
+
+    await interact(() =>
+      overview.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true })),
+    );
+    expect(configuration.getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(configuration);
+
+    await interact(() =>
+      configuration.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true })),
+    );
+    expect(configuration.getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(configuration);
   });
 });
