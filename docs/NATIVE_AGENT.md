@@ -35,6 +35,15 @@ The older indexed source tool still accepts up to three explicit HTTPS URLs. For
 The resulting file appears in the channel and Run inspector after successful completion. Pages are
 untrusted source material; downloads contain model-written text, not executable HTML.
 
+When a task supplies attachments, delivered reports also include Server-recorded input evidence:
+the original file digest, the text digest and UTF-16 ranges actually returned by `read_attachment`,
+or an explicit binary-model-input label. Unread text files are omitted. Complete returned-text
+coverage does not mean a truncated extraction covers its original document, and supplying a
+binary input does not establish model understanding. These records survive final-answer
+corrections without duplicate appendices; changed text versions cannot be joined into one reading.
+The appendix is input provenance, not verification of the model's conclusions. The existing final
+32 KiB report limit includes it. See [the evidence boundary](research/attachment-report-evidence.md).
+
 Desktop uses a native **Save report** dialog for Markdown files; choose a new `.md` filename.
 Existing files are not overwritten. General browser downloads remain disabled in the native shell.
 

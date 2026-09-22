@@ -8,6 +8,7 @@ import { MockLanguageModelV4 } from "ai/test";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "./app.js";
 import { FileArtifactStorage } from "./artifact-storage.js";
+import { type ChannelAttachment, FileChannelAttachmentStorage } from "./channel-attachments.js";
 import { ChannelRealtimeHub } from "./channel-realtime-hub.js";
 import type { ModelSettingsService } from "./model-settings.js";
 import { NativeAgentRunner } from "./native-agent.js";
@@ -83,6 +84,7 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
     const store = new PostgresControlPlaneStore(database.db);
     const native = new PostgresAgentStore(database.db);
     const artifacts = new FileArtifactStorage(directory);
+    const attachments = new FileChannelAttachmentStorage(join(directory, "attachments"));
     const realtime = new ChannelRealtimeHub();
     const requestThrottle = new RequestThrottle(new PostgresRequestThrottleStore(database.db));
     const auth = new OwnerAuthService(
@@ -108,6 +110,7 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
     const errors = vi.fn();
     const runner = new NativeAgentRunner(native, settings, realtime, errors, () => model, {
       artifacts,
+      attachments,
     });
     cleanups.push(() => runner.stop());
     const origin = "http://localhost:5173";
@@ -117,6 +120,7 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
       requestThrottle,
       realtime,
       artifactStorage: artifacts,
+      attachments,
       allowedOrigins: [origin],
       secureCookies: false,
       getRemoteAddress: () => "127.0.0.1",
@@ -171,8 +175,34 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
       });
       expect(errors).not.toHaveBeenCalled();
     };
+    const upload = async (name: string, text: string) => {
+      const response = await app.request(`/api/v1/channels/${channel.id}/attachments`, {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+          Origin: origin,
+          "Content-Type": "application/octet-stream",
+          "x-openbot-filename": encodeURIComponent(name),
+        },
+        body: text,
+      });
+      expect(response.status).toBe(201);
+      return ((await response.json()) as { attachment: ChannelAttachment }).attachment;
+    };
     runner.start();
-    return { store, native, runner, request, bot, channel, submit, terminal, artifacts, realtime };
+    return {
+      store,
+      native,
+      runner,
+      request,
+      bot,
+      channel,
+      submit,
+      terminal,
+      artifacts,
+      realtime,
+      upload,
+    };
   }
 
   it("submits through the Owner API and downloads the committed report without a client UI", async () => {
@@ -197,6 +227,59 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
     expect(
       (await f.store.listMessages(f.channel.id)).filter((message) => message.authorType === "bot"),
     ).toHaveLength(1);
+  });
+
+  it("retains uploaded input identity and cumulative reads in one appendix after a correction", async () => {
+    const responses: Array<ReturnType<typeof call> | ReturnType<typeof answer>> = [];
+    const model = new MockLanguageModelV4({ doGenerate: async () => responses.shift()! });
+    const f = await fixture(model);
+    const text = "销量😀=12\n成本=7";
+    const read = await f.upload("sales.txt", text);
+    const unread = await f.upload("unread.txt", "Never returned to the model");
+    responses.push(
+      call("read_attachment", { attachmentId: read.id, limit: 5 }),
+      call("write_report", { name: "sales.md", markdown: "# Sales fixture\nSynthetic findings." }),
+      answer("Initial summary"),
+      call("read_attachment", { attachmentId: read.id, offset: 5 }),
+      answer("Completed after correction"),
+    );
+    const complete = f.native.complete.bind(f.native);
+    let corrected = false;
+    vi.spyOn(f.native, "complete").mockImplementation(async (...args) => {
+      if (!corrected) {
+        corrected = true;
+        await f.native.steer(args[0].id, "Read the remaining attachment text before finishing.");
+      }
+      return complete(...args);
+    });
+    const run = await f.submit(
+      `Prepare a report. [OpenBot attachment: ${read.id}] [OpenBot attachment: ${unread.id}]`,
+    );
+    await f.terminal(run, "completed");
+    const artifacts = await f.store.listArtifacts(run.id);
+    expect(artifacts).toHaveLength(1);
+    const response = await f.request(`/api/v1/artifacts/${artifacts[0]?.id}/content`);
+    expect(response.status).toBe(200);
+    const report = await response.text();
+    expect(report.match(/Attachment inputs recorded by OpenBot/g)).toHaveLength(1);
+    expect(report).toContain(read.sha256);
+    expect(report).toContain(`UTF-16 ranges [0, ${text.length})`);
+    expect(report).not.toContain(unread.id);
+    expect(report).toContain("returned-text coverage complete");
+    if (!database) throw new Error("Missing database.");
+    const [row] = await database.client`select metadata from artifacts where run_id = ${run.id}`;
+    expect(row?.metadata.attachments).toMatchObject([
+      {
+        attachmentId: read.id,
+        sha256: read.sha256,
+        delivery: "text_tool_result",
+        totalCharacters: text.length,
+        ranges: [{ start: 0, end: text.length }],
+        returnedTextComplete: true,
+      },
+    ]);
+    expect(row?.metadata.attachments).toHaveLength(1);
+    expect((await f.native.current(run))?.modelUsage?.steps).toBe(5);
   });
 
   it("records a tool failure and never publishes its staged report or a success reply", async () => {

@@ -42,6 +42,10 @@ import {
   type NativeReportArtifact,
   type PersistedArtifact,
 } from "./artifact-storage.js";
+import {
+  AttachmentInputEvidenceCollector,
+  attachmentEvidenceAppendix,
+} from "./attachment-input-evidence.js";
 import { AttachmentError, type ChannelAttachmentStorage } from "./channel-attachments.js";
 import type { ChannelRealtimeHub } from "./channel-realtime-hub.js";
 import type { AgentModelSettings, ModelSettingsService } from "./model-settings.js";
@@ -95,6 +99,7 @@ export interface AgentRunResult {
 }
 /** Bounded tool state belongs to the Run, including final-answer continuations. */
 class AgentExecutionState {
+  readonly attachmentEvidence = new AttachmentInputEvidenceCollector();
   readonly sources = new Map<number, PublicSource>();
   readonly sourceReads = new Map<number, Promise<PublicSource>>();
   readonly webSources = new Map<string, PublicSource>();
@@ -294,6 +299,7 @@ export async function executeAgentRun(options: {
     run,
     storage: options.attachments,
     provider: options.modelIdentity.provider,
+    evidence: state.attachmentEvidence,
     assertScope: check,
   });
   const initialContext = await store.initialContext?.(run);
@@ -674,6 +680,7 @@ export async function executeAgentRun(options: {
     truncated,
   }));
   // Keep authored text untouched: repeated continuations must not duplicate provenance.
+  const attachmentEvidence = state.attachmentEvidence.snapshot();
   const finalizedReports = reports.map((prepared) => {
     const report = { ...prepared };
     if (sourceMetadata.length) {
@@ -687,7 +694,12 @@ export async function executeAgentRun(options: {
           .join("\n") +
         "\n";
     }
-    report.metadata = { executor: "native-agent", sources: sourceMetadata };
+    report.text += attachmentEvidenceAppendix(attachmentEvidence);
+    report.metadata = {
+      executor: "native-agent",
+      sources: sourceMetadata,
+      ...(attachmentEvidence.length ? { attachments: attachmentEvidence } : {}),
+    };
     decodeReport(report);
     return report;
   });
