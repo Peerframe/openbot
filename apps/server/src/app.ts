@@ -98,6 +98,11 @@ import { RealtimeEventBuffer } from "./realtime-event-buffer.js";
 import type { RequestThrottle } from "./request-throttle.js";
 import type { RunFrameStore } from "./run-frame-store.js";
 import { TaskAttachmentReferences } from "./task-attachment-references.js";
+import {
+  maximumWorkspaceSnapshotStreams,
+  streamWorkspaceSnapshots,
+} from "./workspace-snapshots.js";
+import { WorkspaceSnapshotReader } from "./workspace-snapshot-reader.js";
 import { WorkspaceRealtimeHub } from "./workspace-realtime-hub.js";
 
 export interface AppDependencies {
@@ -149,6 +154,7 @@ export function createApp(dependencies: AppDependencies) {
   }>();
   const realtime = dependencies.realtime ?? new ChannelRealtimeHub();
   const workspaceRealtime = dependencies.workspaceRealtime ?? new WorkspaceRealtimeHub();
+  let snapshotStreams = 0;
   const sessionCookie = dependencies.secureCookies ? secureOwnerSessionCookie : ownerSessionCookie;
   const applicationLogger = dependencies.logger ?? createSilentLogger();
 
@@ -368,32 +374,61 @@ export function createApp(dependencies: AppDependencies) {
     }
   });
 
-  app.get("/api/v1/workspace", async (context) => {
+  async function readWorkspace(): Promise<WorkspaceSnapshot> {
+    const persisted = await dependencies.store.readWorkspaceSnapshot();
+    // Presence is not database state. Its count and array are one synchronous sample.
     const nodes = dependencies.listNodes();
-    const [channels, bots, runs, approvals, artifacts, progress, persistedCounts] =
-      await Promise.all([
-        dependencies.store.listChannels(),
-        dependencies.store.listBots(),
-        dependencies.store.listRuns(),
-        dependencies.store.listApprovals(),
-        dependencies.store.listArtifacts(),
-        dependencies.store.listRunProgress(),
-        dependencies.store.getCounts(),
-      ]);
-    const workspace: WorkspaceSnapshot = {
-      channels,
-      bots,
-      nodes,
-      runs,
-      approvals,
-      artifacts,
-      progress,
-      counts: {
-        ...persistedCounts,
-        connectedNodes: nodes.length,
-      },
-    };
-    return context.json(workspace);
+    return { ...persisted, nodes, counts: { ...persisted.counts, connectedNodes: nodes.length } };
+  }
+
+  const snapshotReader = new WorkspaceSnapshotReader(readWorkspace);
+  app.get("/api/v1/workspace", async (context) => {
+    try {
+      const workspace = await snapshotReader.read(context.req.raw.signal);
+      return context.json(workspace);
+    } catch {
+      return context.json({ error: "workspace_snapshot_unavailable" }, 503);
+    }
+  });
+
+  app.get("/api/v1/workspace/snapshots", (context) => {
+    if (snapshotStreams >= maximumWorkspaceSnapshotStreams) {
+      context.header("Retry-After", "5");
+      return context.json({ error: "workspace_snapshot_capacity" }, 429);
+    }
+    snapshotStreams += 1;
+    return streamSSE(context, async (stream) => {
+      const controller = new AbortController();
+      stream.onAbort(() => controller.abort());
+      try {
+        await streamWorkspaceSnapshots({
+          read: (signal) => snapshotReader.read(signal),
+          subscribe(invalidate) {
+            const workspace = workspaceRealtime.subscribe(invalidate);
+            const channel = realtime.observe(invalidate);
+            return () => {
+              workspace();
+              channel();
+            };
+          },
+          async write(frame) {
+            await stream.writeSSE({
+              event: frame.type,
+              id: `${frame.streamId}:${frame.sequence}`,
+              retry: 2000,
+              data: JSON.stringify(frame),
+            });
+          },
+          abort: () => stream.abort(),
+          signal: controller.signal,
+        });
+      } catch {
+        // Database errors may contain SQL or private fields. Reconnection starts a fresh read.
+        stream.abort();
+      } finally {
+        snapshotStreams -= 1;
+      }
+    });
   });
 
   app.get("/api/v1/workspace/events", (context) =>

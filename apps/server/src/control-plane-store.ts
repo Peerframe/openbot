@@ -26,6 +26,7 @@ import type {
   UpdateEmployeeMemoryInput,
   UpdateEmployeeProfileDetailsInput,
   UpdateEmployeeSkillStateInput,
+  WorkspaceSnapshot,
 } from "@openbot/domain";
 import type { EmployeeTemplatePackage, RunFailureCode } from "@openbot/protocol";
 
@@ -56,6 +57,10 @@ export interface PersistedCounts {
   activeRuns: number;
 }
 
+export type PersistedWorkspaceSnapshot = Omit<WorkspaceSnapshot, "nodes" | "counts"> & {
+  counts: PersistedCounts;
+};
+
 export interface DispatchFailureInput {
   runId: string;
   nodeId?: string | undefined;
@@ -74,6 +79,8 @@ export interface ActivateEmployeeImportCommand {
 }
 
 export interface ControlPlaneStore {
+  /** Persisted projections and global counts from one database snapshot. */
+  readWorkspaceSnapshot(): Promise<PersistedWorkspaceSnapshot>;
   channelExists(channelId: string): Promise<boolean>;
   listChannels(): Promise<Channel[]>;
   listBots(): Promise<Bot[]>;

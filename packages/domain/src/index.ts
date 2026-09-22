@@ -698,6 +698,15 @@ export interface WorkspaceSnapshot {
   counts: BootstrapSummary["counts"];
 }
 
+/** Full replacement, ordered only within one subscription; never a durable replay cursor. */
+export interface WorkspaceSnapshotFrame {
+  type: "workspace.snapshot";
+  version: 1;
+  streamId: string;
+  sequence: number;
+  snapshot: WorkspaceSnapshot;
+}
+
 export interface CreateBotInput {
   name: string;
   role: string;

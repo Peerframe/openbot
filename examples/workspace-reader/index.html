@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenBot workspace reader</title>
+  <body>
+    <main>
+      <h1>Workspace reader</h1>
+      <p>A read-only view from the local OpenBot Server.</p>
+      <form id="login">
+        <label>Owner password <input name="password" type="password" autocomplete="current-password" required></label>
+        <button type="submit">Sign in</button>
+      </form>
+      <p id="status" role="status">Sign in to connect.</p>
+      <dl id="counts"></dl>
+      <h2>Recent tasks</h2><ul id="runs"></ul>
+    </main>
+    <script type="module" src="/main.mjs"></script>
+  </body>
+</html>

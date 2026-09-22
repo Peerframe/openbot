@@ -62,6 +62,7 @@ import type {
   ControlPlaneStore,
   DispatchFailureInput,
   PersistedCounts,
+  PersistedWorkspaceSnapshot,
   RequestApprovalInput,
   RunCompletion,
 } from "./control-plane-store.js";
@@ -76,14 +77,37 @@ import { submitTaskInTransaction } from "./postgres-task-submission.js";
 import { scanSensitiveText } from "./sensitive-content.js";
 
 type Database = ReturnType<typeof import("@openbot/db")["createDatabase"]>["db"];
+type StoreDatabase = Pick<Database, "select" | "insert" | "update" | "delete" | "transaction">;
 
 const activeRunStatuses = ["queued", "assigned", "running", "waiting_approval", "blocked"];
 
 export class PostgresControlPlaneStore implements ControlPlaneStore {
-  readonly #db: Database;
+  readonly #db: StoreDatabase;
 
-  constructor(database: Database) {
+  constructor(database: StoreDatabase) {
     this.#db = database;
+  }
+
+  async readWorkspaceSnapshot(): Promise<PersistedWorkspaceSnapshot> {
+    return this.#db.transaction(
+      async (transaction) => {
+        // Pool-level reads can observe different commits. Every projection below must
+        // use this same read-only transaction, including the global active count.
+        await transaction.execute(sql`set local statement_timeout = '5s'`);
+        const view = new PostgresControlPlaneStore(transaction);
+        const [channels, bots, runs, approvals, artifacts, progress, counts] = await Promise.all([
+          view.listChannels(),
+          view.listBots(),
+          view.listRuns(),
+          view.listApprovals(),
+          view.listArtifacts(),
+          view.listRunProgress(),
+          view.getCounts(),
+        ]);
+        return { channels, bots, runs, approvals, artifacts, progress, counts };
+      },
+      { isolationLevel: "repeatable read", accessMode: "read only" },
+    );
   }
 
   async channelExists(channelId: string): Promise<boolean> {

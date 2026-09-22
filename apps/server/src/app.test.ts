@@ -758,6 +758,66 @@ describe("server app", () => {
     });
   });
 
+  it("uses the coherent store read instead of independently sampled workspace fields", async () => {
+    const store = createTestStore();
+    const read = vi.spyOn(store, "readWorkspaceSnapshot");
+    const legacy = vi.spyOn(store, "getCounts").mockRejectedValue(new Error("incoherent read"));
+    const app = createTestApp({ store });
+    const cookie = await login(app);
+    const response = await app.request("/api/v1/workspace", { headers: { Cookie: cookie } });
+    expect(response.status).toBe(200);
+    expect(read).toHaveBeenCalledOnce();
+    expect(legacy).not.toHaveBeenCalled();
+  });
+
+  it("authenticates snapshot streams and reconnects with full replacement despite Last-Event-ID", async () => {
+    const app = createTestApp({ store: createTestStore() });
+    const path = "/api/v1/workspace/snapshots";
+    expect((await app.request(path)).status).toBe(401);
+    const cookie = await login(app);
+    const connect = () =>
+      app.request(path, { headers: { Cookie: cookie, "Last-Event-ID": "old:99" } });
+    const first = await connect();
+    const reader = first.body!.getReader();
+    const text = new TextDecoder().decode((await reader.read()).value);
+    expect(text).toContain("event: workspace.snapshot");
+    expect(text).toContain('"version":1');
+    expect(text).toContain('"sequence":1');
+    expect(text).not.toContain("old:99");
+    await reader.cancel();
+    const second = await connect();
+    const secondReader = second.body!.getReader();
+    const next = new TextDecoder().decode((await secondReader.read()).value);
+    expect(next).toContain('"sequence":1');
+    expect(next).not.toBe(text);
+    await secondReader.cancel();
+  });
+
+  it("bounds snapshot subscriptions and recovers capacity after cancellation", async () => {
+    const app = createTestApp({ store: createTestStore() });
+    const cookie = await login(app);
+    const connect = () =>
+      app.request("/api/v1/workspace/snapshots", { headers: { Cookie: cookie } });
+    const readers = [];
+    for (let i = 0; i < 16; i++) {
+      const response = await connect();
+      expect(response.status).toBe(200);
+      const reader = response.body!.getReader();
+      await reader.read();
+      readers.push(reader);
+    }
+    const rejected = await connect();
+    expect(rejected.status).toBe(429);
+    expect(rejected.headers.get("retry-after")).toBe("5");
+    await Promise.all(readers.map((reader) => reader.cancel()));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const recovered = await connect();
+    expect(recovered.status).toBe(200);
+    const reader = recovered.body!.getReader();
+    await reader.read();
+    await reader.cancel();
+  });
+
   it("streams the authoritative Node snapshot and later workspace changes", async () => {
     const node: ExecutionNode = {
       id: "node-1",
@@ -2699,6 +2759,23 @@ function createTestStore(): ControlPlaneStore {
   const id = () => `00000000-0000-4000-8000-${String(++nextId).padStart(12, "0")}`;
 
   return {
+    async readWorkspaceSnapshot() {
+      return structuredClone({
+        channels,
+        bots,
+        runs,
+        approvals,
+        artifacts: [],
+        progress,
+        counts: {
+          channels: channels.length,
+          bots: bots.length,
+          activeRuns: runs.filter((run) =>
+            ["queued", "assigned", "running", "waiting_approval", "blocked"].includes(run.status),
+          ).length,
+        },
+      });
+    },
     async channelExists(channelId: string) {
       return channels.some((channel) => channel.id === channelId);
     },
