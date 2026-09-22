@@ -1,6 +1,6 @@
 import type { DemoAdapter } from "./adapter";
 
-/** Called only by demo.html, before importing any product UI module. */
+/** Called only by isolated demo/fixture entries before importing product UI modules. */
 export function installDemoTransport(adapter: DemoAdapter) {
   window.fetch = adapter.fetch;
   class DemoEventSource extends EventTarget {
@@ -19,6 +19,14 @@ export function installDemoTransport(adapter: DemoAdapter) {
     constructor(readonly url: string) {
       super();
       this.disconnect = adapter.connect(this, url);
+    }
+    override dispatchEvent(event: Event) {
+      const result = super.dispatchEvent(event);
+      const source = this as unknown as EventSource;
+      if (event.type === "open") this.onopen?.call(source, event);
+      if (event.type === "error") this.onerror?.call(source, event);
+      if (event.type === "message") this.onmessage?.call(source, event as MessageEvent);
+      return result;
     }
     close() {
       this.readyState = 2;

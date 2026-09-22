@@ -39,13 +39,13 @@ const finalText =
 /** An entry-local transport. It has no reference to the original fetch and cannot fall through. */
 export class DemoAdapter {
   private listeners = new Set<() => void>();
-  private sources = new Set<EventTarget>();
+  protected sources = new Set<EventTarget>();
   private timer: ReturnType<typeof setInterval> | undefined;
   private replies: Array<{ runId: string; text: string; part: number; replyTo: string }> = [];
   private reactions: MessageReaction[] = [];
-  private outputs = new Map<string, RunOutput>();
+  protected outputs = new Map<string, RunOutput>();
   private nextId = 0;
-  private snapshot: DemoSnapshot = {
+  protected snapshot: DemoSnapshot = {
     revision: 0,
     playing: false,
     stage: 0,
@@ -54,7 +54,7 @@ export class DemoAdapter {
     runs: [],
     artifacts: [],
   };
-  constructor(private readonly origin: string) {}
+  constructor(protected readonly origin: string) {}
   getSnapshot = () => this.snapshot;
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
@@ -62,11 +62,11 @@ export class DemoAdapter {
       this.listeners.delete(listener);
     };
   };
-  private publish(update: Partial<DemoSnapshot> = {}) {
+  protected publish(update: Partial<DemoSnapshot> = {}) {
     this.snapshot = { ...this.snapshot, ...update, revision: this.snapshot.revision + 1 };
     for (const listener of this.listeners) listener();
   }
-  private event(event: ChannelRealtimeEvent) {
+  protected event(event: ChannelRealtimeEvent) {
     for (const source of this.sources)
       source.dispatchEvent(new MessageEvent(event.type, { data: JSON.stringify(event) }));
   }
@@ -155,7 +155,7 @@ export class DemoAdapter {
     });
     this.event({ type: "run.updated", channelId: demoChannel.id, run, artifacts });
   }
-  private output(id: string, text: string) {
+  protected output(id: string, text: string) {
     const run = this.snapshot.runs.find((item) => item.id === id);
     if (run?.status !== "running") return;
     const output = {
@@ -273,6 +273,14 @@ export class DemoAdapter {
     this.replies = this.replies.filter((reply) => reply.part < 7);
     if (tick === 32 && !this.replies.length) this.pause();
   };
+  /** Opt-in fixture subclasses receive only already bounded, same-origin parsed requests. */
+  protected handleFixtureRequest(
+    _method: string,
+    _path: string,
+    _body: Record<string, unknown>,
+  ): Response | undefined {
+    return undefined;
+  }
   fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const request = input instanceof Request ? input : undefined;
     const url = new URL(request?.url ?? String(input), this.origin);
@@ -295,6 +303,8 @@ export class DemoAdapter {
         return json({ error: "无效的演示请求。" }, 400);
       }
     }
+    const fixtureResponse = this.handleFixtureRequest(method, path, body);
+    if (fixtureResponse) return fixtureResponse;
     if (method === "GET") {
       if (path === `${prefix}/messages`) return json({ messages: this.snapshot.messages });
       if (path === `${prefix}/runs`) return json({ runs: this.snapshot.runs });
