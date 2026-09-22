@@ -162,6 +162,7 @@ try {
       "run",
       "apps/server/src/native-agent-headless.integration.test.ts",
       "apps/server/src/native-agent.test.ts",
+      "apps/server/src/agent-runtime.test.ts",
       "apps/server/src/agent-collaboration.integration.test.ts",
       "--maxWorkers=1",
       "--no-file-parallelism",

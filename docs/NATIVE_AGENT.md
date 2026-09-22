@@ -163,7 +163,7 @@ node scripts/test-runtime-headless.mjs
 ```
 
 The command builds only the Server's shared dependencies, starts a digest-pinned PostgreSQL 17.11
-fixture on a random loopback port, runs the native and collaboration tests serially, and removes
+fixture on a random loopback port, runs the isolated execution, native and collaboration tests serially, and removes
 its own container and temporary report files. The first run may download the image. No Web or
 Electron build, `.env`, Owner setup, model API key or paid request is required. Missing prerequisites
 fail the command; the acceptance suite does not silently skip its database checks.
@@ -176,7 +176,8 @@ databases. Integration suites sharing the same fixture database must run seriall
 
 | Change location | Responsibility and verification |
 | --- | --- |
-| `apps/server/src/native-agent.ts` | `executeAgentRun` uses the real SDK with the `AgentRunStore` port; `NativeAgentRunner` owns scheduling, budgets, cancellation and continuation. Use `native-agent.test.ts` for deterministic loop and authority regressions. |
+| `apps/server/src/agent-runtime.ts` | `executeAgentRuntime` composes the real SDK through explicit model, tool, authority, storage and audit ports. Use `agent-runtime.test.ts` without the Server app or database. |
+| `apps/server/src/native-agent.ts` | `executeAgentRun` binds Server-owned context, identities, tools and the `AgentRunStore` adapter to those ports; `NativeAgentRunner` owns scheduling, budgets, cancellation and continuation. Use `native-agent.test.ts` for adapter and authority regressions. |
 | `apps/server/src/postgres-agent-store.ts` | Durable claims, scope, cancellation, reply/report publication and audit. Use the headless and collaboration integration suites; an in-memory mock cannot establish transaction behavior. |
 | `apps/server/src/app.ts` | Owner-authenticated submission, stop, realtime observation and artifact download; UI clients do not own execution. |
 | `apps/server/src/native-agent-headless.integration.test.ts` | Runnable examples combining real Server routes, Owner authentication, PostgreSQL stores, file artifacts and the SDK's deterministic model. |
@@ -198,3 +199,41 @@ npm run typecheck --workspace=@openbot/server
 
 Run `npm run check` before handoff and the headless command after changing task lifecycle or
 publication behavior. See the [acceptance research](research/headless-runtime-acceptance.md).
+
+## Isolated execution ports
+
+For changes to iteration policy, use the production `executeAgentRuntime` unit directly. From a
+fresh checkout, this entry needs Node and npm but no Docker, Server process or model account:
+
+```sh
+npm ci --ignore-scripts
+npx turbo run build --filter='@openbot/domain...'
+node node_modules/vitest/vitest.mjs run apps/server/src/agent-runtime.test.ts
+```
+
+The unit accepts a prepared instruction, bounded messages, an abort signal and the shared Run
+budget. All ports except public output are required; fixtures supply explicit deterministic
+implementations. Production adapters are constructed only by the Server:
+
+| Port | Required contract |
+| --- | --- |
+| `model` | A resolved SDK model adapter plus its provider/model identity. Credentials, endpoints, HTTP bounds and model selection stay in the Server. String IDs that implicitly select the SDK gateway are rejected. |
+| `authority.assertActive` | Revalidate the exact claimed Run, settings, scope and consumed references. The unit checks before model calls and before/after tools, including after awaited correction reads. No permissive default is provided. |
+| `tools` | Local SDK definitions already bound to Server identities and target/approval policy, an explicit result-byte/web-budget policy for every tool, and fixed error classification. Each tool returns one completed JSON value; generators, provider-executed tools and missing/unbounded policies are rejected. |
+| `storage` | Read only this Run's authorized corrections and persist cumulative provider-reported usage before a subsequent model call or successful return. |
+| `audit.progress` | Resolve only after durable bounded progress commits. Web start audit must succeed before dispatch; failed result audit cannot become a successful execution. |
+| `output` (optional) | Observe public text deltas/reset events. It conveys no completion authority and excludes provider reasoning. |
+
+The SDK still owns model/tool iteration. The unit enforces the existing execution limits and
+returns validated text and applied correction IDs. This is a provisional execution result: only
+the Server can commit the reply, report metadata, optional candidate lesson, terminal Run state and
+audit together. The Server also retains grants, plugin approval, artifact storage, continuation
+state, task-tree scheduling and cancellation. Ports are trusted Server adapters, never capabilities
+accepted from a model, plugin or UI request.
+
+The isolated tests cover actual SDK tool feedback, scope revocation, durable audit/usage failure,
+invalid calls, bounded results, cancellation with a late answer, correction propagation, shared
+budgets and public streaming. The headless command above additionally verifies the same unit through
+the real Server and PostgreSQL. This internal module does not establish a separately published
+runtime package, process-crash checkpoints or multi-Server execution support. See the
+[port extraction research](research/runtime-execution-ports.md).
