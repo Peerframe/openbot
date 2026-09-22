@@ -344,3 +344,10 @@ Electron 44.3.0 / `07e460719c75b2ec5ee4893f7d2192ef31c7b8c2`（MIT）保留既�
 React DOM 类型 19.3.0 / DefinitelyTyped `de5e8f01d01a14ae4ae502283d3d09f042f1ad89`
 及 Zod 4.6.2 / `e359f7378fe56d695134701cda1e9055a08892dc`（均为 MIT）保留已有渲染和校验契约。
 未复制源码，见[研究](research/dependency-types-zod-september15.zh-CN.md)。
+
+## Python 驱动循环的 Server 执行门槛（2026-09-23）
+
+复用 ai 7.0.93 / `6359fd58fe68eaade096b5d923bac26de84ca3bd`（Apache-2.0）的
+`generateText`、Schema 校验与单步执行。通过窄范围 Server 适配器保留已绑定工具的执行、权限、
+预算、持久用量与审计以及最终提交责任。未复制源码或新增依赖。这尚未实现 Python 通信或切换
+生产运行时；见[研究](research/python-runtime-host.md)与[运行时说明](NATIVE_AGENT.zh-CN.md)。

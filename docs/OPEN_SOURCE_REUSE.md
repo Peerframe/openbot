@@ -409,3 +409,11 @@ historical review context; the lockfile and this follow-up identify the current 
 React DOM types 19.3.0 / DefinitelyTyped `de5e8f01d01a14ae4ae502283d3d09f042f1ad89`
 and Zod 4.6.2 / `e359f7378fe56d695134701cda1e9055a08892dc` (both MIT) preserve the
 existing renderer and validation contracts. No copied source; see the [review](research/dependency-types-zod-september15.md).
+
+## Server gates for a Python-driven loop (2026-09-23)
+
+Reuse ai 7.0.93 / `6359fd58fe68eaade096b5d923bac26de84ca3bd` (Apache-2.0)
+`generateText`, schema validation and single-step execution. A narrow Server adapter retains
+bound tool execution, authority, budgets, durable usage/audit and final commit ownership.
+No copied source or added dependency. This is not yet a Python transport or production runtime
+switch; see [research](research/python-runtime-host.md) and [runtime](NATIVE_AGENT.md).

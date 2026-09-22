@@ -255,3 +255,18 @@ worker protocol. Do not serialize model/tool ports or credentials to an external
 is not enabled by this seam, and an abort race does not itself kill a subprocess. Any process
 adapter requires its own lifecycle and integration tests. See the
 [executor seam research](research/runtime-executor-seam.md).
+
+### Server gates for an external loop
+
+`AgentRuntimeHost` prepares declarative tool schemas, executes one model step at a time and admits
+only matching, unused model-issued tool intents. Credentials, executable tools, approval policy,
+shared budgets and durable usage stay in the Server. It rereads corrections on each step, checks
+authority across asynchronous boundaries, bounds history/results and refuses new media references.
+A pending tool call blocks another step or completion; any operation failure seals the invocation.
+Final text must match the latest completed model response before the runner may commit it.
+
+The headless report journey exercises this host with the real Server and disposable PostgreSQL;
+unit tests cover denial, cancellation, failed persistence, concurrent calls and altered tool intents.
+The driver in that integration test is a deterministic two-step fixture. Python process transport,
+process cleanup, live streaming parity and Linux execution are still pending. The production
+default remains the existing TypeScript SDK loop. See [host research](research/python-runtime-host.md).

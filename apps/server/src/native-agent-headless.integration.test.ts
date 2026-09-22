@@ -6,7 +6,8 @@ import { createDatabase } from "@openbot/db";
 import type { Artifact, Bot, Channel, Run } from "@openbot/domain";
 import { MockLanguageModelV4 } from "ai/test";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { type AgentRuntimeExecutor, executeAgentRuntime } from "./agent-runtime.js";
+import { AgentRuntimeHost } from "./agent-runtime-host.js";
+import type { AgentRuntimeExecutor } from "./agent-runtime.js";
 import { createApp } from "./app.js";
 import { FileArtifactStorage } from "./artifact-storage.js";
 import { ChannelRealtimeHub } from "./channel-realtime-hub.js";
@@ -178,7 +179,41 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
   }
 
   it("submits through the Owner API and downloads the committed report without a client UI", async () => {
-    const selectedExecutor = vi.fn<AgentRuntimeExecutor>(executeAgentRuntime);
+    // A two-step driver exercises the host boundary; it is not the Python process integration.
+    const selectedExecutor = vi.fn<AgentRuntimeExecutor>(async (ports, input) => {
+      const host = new AgentRuntimeHost(ports, input);
+      await host.catalog();
+      const first = await host.generate(input.messages);
+      const intent = first.tools[0];
+      if (!intent || first.tools.length !== 1) throw new Error("Expected one report intent.");
+      const observation = await host.executeTool(intent);
+      const second = await host.generate([
+        ...input.messages,
+        {
+          role: "assistant",
+          content: [
+            {
+              type: "tool-call",
+              toolCallId: intent.id,
+              toolName: intent.name,
+              input: intent.arguments,
+            },
+          ],
+        },
+        {
+          role: "tool",
+          content: [
+            {
+              type: "tool-result",
+              toolCallId: intent.id,
+              toolName: intent.name,
+              output: { type: "json", value: observation },
+            },
+          ],
+        },
+      ]);
+      return host.finish(second.text);
+    });
     const f = await fixture(
       new MockLanguageModelV4({
         doGenerate: [
