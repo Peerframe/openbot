@@ -250,8 +250,7 @@ unique correction IDs observed through the bound storage port. The Server runner
 completion and publishes artifacts. The adapter must implement the existing per-step authority,
 audit, usage and tool policy contract; these final checks cannot replace those gates.
 
-This is an internal trusted-code extension point, not user-selectable runtime configuration or a
-worker protocol. Do not serialize model/tool ports or credentials to an external worker. Python
+This is an internal trusted-code extension point, not a per-task request field or worker protocol. Do not serialize model/tool ports or credentials to an external worker. Python
 is not enabled by this seam, and an abort race does not itself kill a subprocess. Any process
 adapter requires its own lifecycle and integration tests. See the
 [executor seam research](research/runtime-executor-seam.md).
@@ -292,6 +291,21 @@ The paired journeys cover report download, cancellation, persisted scope revocat
 audit/usage failure, the eight-step budget, per-step Owner corrections, approve/reject/cancel
 during plugin approval, provisional public streaming, and retained reports across continuation.
 They use deterministic SDK model responses and a synthetic plugin connector; they send no paid
-model request or external plugin effect. The default TypeScript lane currently passes 213 cases
-across eight files, including 15 Owner API/database journeys. The Python lane is pending its CLI
+model request or external plugin effect. The default TypeScript lane currently passes 219 cases
+across nine files, including 15 Owner API/database journeys. The Python lane is pending its CLI
 delivery; adding this command is not evidence that the Python path has passed.
+
+### Explicit source-install selection
+
+The standalone Server accepts `OPENBOT_AGENT_RUNTIME=typescript|python`, defaulting to TypeScript.
+For the experimental Python path, bootstrap the package-local environment, run
+`npm run test:runtime:python`, then start the Server with `OPENBOT_AGENT_RUNTIME=python`.
+The normal Model Settings opt-in is still required; this selector grants no additional tool or
+model access. Root tasks, delegated tasks and continuation use the same selected adapter.
+
+Startup checks the fixed package worker, interpreter, imports and dependency lock from an empty
+temporary directory with a minimal environment. An absent or incompatible package fails before
+database migration or interrupted-Run recovery. There is no automatic install, command/script
+configuration, or fallback. Existing PostgreSQL data and migrations are unchanged. The current
+Server container does not yet bundle Python; source-install wiring does not establish container
+or Linux integration support. See [activation research](research/python-runtime-activation.md).

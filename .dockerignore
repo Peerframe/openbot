@@ -16,3 +16,10 @@ node_modules
 CODE_OF_CONDUCT.md
 CONTRIBUTING*.md
 README*.md
+
+# Local collaboration state and interpreter environments are not build inputs.
+.workbuddy-handoff
+.workbuddy
+**/.venv
+**/__pycache__
+**/.pytest_cache

@@ -5,6 +5,7 @@ import { getConnInfo } from "@hono/node-server/conninfo";
 import { serverEnvSchema } from "@openbot/config";
 import { createDatabase } from "@openbot/db";
 import { createLogger, diagnosticFields } from "@openbot/logging";
+import { bootstrapAgentRuntime } from "./agent-runtime-bootstrap.js";
 import { createApp } from "./app.js";
 import { FileArtifactStorage } from "./artifact-storage.js";
 import { AttachmentProcessingService } from "./attachment-processing.js";
@@ -40,6 +41,7 @@ import { WorkspaceRealtimeHub } from "./workspace-realtime-hub.js";
 const env = serverEnvSchema.parse(process.env);
 const logger = createLogger({ level: env.OPENBOT_LOG_LEVEL });
 // Validate retained key material before database migration or Run recovery changes durable state.
+const executeRuntime = await bootstrapAgentRuntime(env);
 const modelSettings = await bootstrapModelSettings(env);
 const HTTP_SHUTDOWN_GRACE_MS = 10_000;
 const database = createDatabase(env.OPENBOT_DATABASE_URL);
@@ -109,6 +111,7 @@ const nativeAgent = modelSettings
       undefined,
       {
         streamOutput: true,
+        executeRuntime,
         artifacts: artifactStorage,
         attachments,
         plugins,

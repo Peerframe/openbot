@@ -184,6 +184,7 @@ try {
       "apps/server/src/agent-runtime-host.test.ts",
       "apps/server/src/agent-runtime-wire.test.ts",
       "apps/server/src/agent-runtime-process.test.ts",
+      "apps/server/src/agent-runtime-bootstrap.test.ts",
       "apps/server/src/agent-collaboration.integration.test.ts",
       "--maxWorkers=1",
       "--no-file-parallelism",

@@ -2,24 +2,23 @@ import { randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { createDatabase } from "@openbot/db";
 import type { Artifact, Bot, Channel, Run } from "@openbot/domain";
 import { MockLanguageModelV4 } from "ai/test";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { NativeExecutionError } from "./agent-observations.js";
-import { createPythonAgentExecutor } from "./agent-runtime-process.js";
-import { PluginService } from "./plugin-service.js";
-import { FilePluginStore } from "./plugin-store.js";
-import type { PluginConnector } from "./plugin-transport.js";
-import { AgentRuntimeHost } from "./agent-runtime-host.js";
 import type { AgentRuntimeExecutor } from "./agent-runtime.js";
+import { bootstrapAgentRuntime } from "./agent-runtime-bootstrap.js";
+import { AgentRuntimeHost } from "./agent-runtime-host.js";
 import { createApp } from "./app.js";
 import { FileArtifactStorage } from "./artifact-storage.js";
 import { ChannelRealtimeHub } from "./channel-realtime-hub.js";
 import type { ModelSettingsService } from "./model-settings.js";
 import { NativeAgentRunner } from "./native-agent.js";
 import { OwnerAuthService } from "./owner-auth.js";
+import { PluginService } from "./plugin-service.js";
+import { FilePluginStore } from "./plugin-store.js";
+import type { PluginConnector } from "./plugin-transport.js";
 import { PostgresAgentStore } from "./postgres-agent-store.js";
 import { PostgresRequestThrottleStore } from "./postgres-request-throttle-store.js";
 import { PostgresOwnerSessionStore } from "./postgres-session-store.js";
@@ -43,14 +42,7 @@ if (url) {
 }
 const pythonExecutor =
   process.env.OPENBOT_RUNTIME_TEST_PYTHON === "1"
-    ? createPythonAgentExecutor({
-        pythonExecutable: fileURLToPath(
-          new URL("../../agent-runtime-python/.venv/bin/python", import.meta.url),
-        ),
-        workerEntrypoint: fileURLToPath(
-          new URL("../../agent-runtime-python/scripts/run-worker.py", import.meta.url),
-        ),
-      })
+    ? await bootstrapAgentRuntime({ OPENBOT_AGENT_RUNTIME: "python" })
     : undefined;
 const usage = {
   inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 },

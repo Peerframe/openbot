@@ -422,4 +422,10 @@ The process adapter profile additionally reuses `@modelcontextprotocol/sdk` 1.30
 `2d889f2b329e46680ec9bdd565de4616c497825a` (MIT) newline codec helpers and Node's POSIX
 child-process APIs. A narrow supervisor supplies the missing environment, group cleanup and
 Server-bound operation policy; the full MCP client is not used as a runtime authority protocol.
-Implementation and integration are pending; see [transport review](research/python-runtime-transport.md).
+The supervisor is implemented and verified with real Node child fault fixtures; Python integration
+is pending. See [transport review](research/python-runtime-transport.md).
+
+Explicit Server startup selection reuses Node child-process APIs, Python isolated-mode/venv
+contracts and the package lock verifier. It validates the fixed installed package before durable
+initialization, with no automatic installation or fallback. No source copied or dependency added;
+see [activation research](research/python-runtime-activation.md).

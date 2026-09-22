@@ -216,7 +216,7 @@ Server 预算和待交付报告状态。
 接口实际读取、未重复的追加指令 ID。完成提交和产物发布仍由 Server Runner 负责。适配器仍须
 落实每一步的权限、审计、用量及工具策略；最终检查不能代替这些执行门槛。
 
-这是可信 Server 代码的内部扩展点，不是用户可选择的运行配置或 Worker 协议。不得把模型、
+这是可信 Server 代码的内部扩展点，不是单项任务的请求字段或 Worker 协议。不得把模型、
 工具接口或密钥整体传给外部 Worker。这项接口尚未启用 Python，取消等待也不等于终止子进程；
 进程适配器需要另外验证生命周期和集成路径。参见[研究记录](research/runtime-executor-seam.md)。
 
@@ -249,5 +249,17 @@ Server 可直接发送有界的公开文本增量；不发送内部推理，也�
 配套流程覆盖报告下载、取消、持久权限撤销、审计/用量存储失败、八步预算、每步读取 Owner
 追加指令、插件等待审批时的批准/拒绝/取消、公开流式草稿和继续推理时保留报告。模型响应是
 确定性 SDK 夹具，插件连接器是测试替身，不发送付费模型请求或外部插件动作。目前默认
-TypeScript 路径通过八个文件共 213 项测试，其中 15 项为 Owner API/数据库流程。Python 路径
+TypeScript 路径通过九个文件共 219 项测试，其中 15 项为 Owner API/数据库流程。Python 路径
 仍待 CLI 交付后运行；新增命令本身不代表已通过 Python 验收。
+
+### 显式选择源码安装的运行路径
+
+独立 Server 接受 `OPENBOT_AGENT_RUNTIME=typescript|python`，默认 TypeScript。使用实验性 Python
+路径时，先建立包内虚拟环境、运行 `npm run test:runtime:python`，再设置
+`OPENBOT_AGENT_RUNTIME=python` 启动 Server。仍须在模型设置中明确启用推理；选择运行路径
+不会增加模型或工具权限。根任务、委派任务和继续推理使用同一适配器。
+
+启动时从空临时目录、最小环境检查固定 Worker、解释器、模块导入及依赖锁。缺失或不兼容会在
+数据库迁移和中断任务恢复之前失败；不自动安装、不接受任意命令或脚本配置、不自动回退。
+现有 PostgreSQL 数据与迁移历史不变。当前 Server 容器尚未包含 Python；源码入口接通不等于
+容器或 Linux 集成已验收。见[启用研究](research/python-runtime-activation.md)。
