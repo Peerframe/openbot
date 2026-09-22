@@ -13,6 +13,9 @@
 PostgreSQL 可重复读及 Hono 4.13.7（MIT）。
 [CI 影子分析](research/2026-09-22-ci-impact-shadow.md) 复用 Turbo 2.10.12 / `53752d45`（MIT），
 采用保守分类，保留全部原有门槛。以上新增部分没有复制或实质改编上游源码，现有许可声明保持不变。
+[保留旧数据的升级](research/retained-data-upgrade.md) 复用相同 Drizzle/Postgres.js 固定版本与真实
+PostgreSQL 17.11，以合成历史前缀和失败探针覆盖 OpenBot 特有的数据约束，不引入另一套迁移引擎，
+不改变生产 schema。数据库、文件、密钥的配套恢复仍未完成。
 
 OpenBot 在设计任何非简单功能前，必须先调研成熟的开源实现。目标是优先复用持续维护的标准、
 依赖、协议和窄服务，避免再造一套不兼容系统。

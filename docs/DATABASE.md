@@ -63,6 +63,32 @@ arguments (or with `--help`) it prints usage.
 Manifest checks validate numbering/file correspondence and monotonic time, not SQL correctness.
 The Server still verifies hashes and exact applied prefixes before and after migration.
 
+## Retained-data upgrade regression
+
+After `npm ci`, create an empty loopback database named `openbot_upgrade_test_*` using a disposable
+PostgreSQL 17 instance. Set `OPENBOT_UPGRADE_TEST_DATABASE_URL` to that database, then run:
+
+```bash
+npm run test:upgrade
+```
+
+This required suite fails if the variable or [repository fixture](../scripts/fixtures/retained-upgrade/README.md)
+is missing, the target is remote, or the database already contains objects. It does not read `.env`
+or clear existing data. It leaves its synthetic database for inspection; dispose of that dedicated
+database afterward. CI creates `openbot_upgrade_test_ci` separately from every other database suite.
+
+The pinned `0018_automations` prefix is populated across 15 tables before the current guarded
+migrator runs concurrently and repeatedly. Every old column is compared, including Employee
+appearance/configuration, fields used by templates, imported skill links/receipts, memory, timestamps and all
+old automation outcomes. Constraint probes and safe new defaults are verified. Deliberate history
+drift must stop startup without data changes. An older-prefix build refuses the upgraded history;
+application behavior rollback must keep all applied migrations. `npm run migrations:check` checks
+fixture identity and failure cases without a database. See [research](research/retained-data-upgrade.md).
+
+This proves the named synthetic database upgrade, not an arbitrary previous binary, native installer
+upgrade or complete database/files/keys restoration. Add new historical fixtures when the supported
+release range changes; never rewrite old SQL hashes to conceal migration drift.
+
 ## Backup boundary
 
 Quiesce Server writes before capturing a complete recovery set. PostgreSQL `pg_dump` gives a

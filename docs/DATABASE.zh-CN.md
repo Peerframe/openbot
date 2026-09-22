@@ -55,6 +55,28 @@ npm run migration:plan --workspace @openbot/db -- --name describe_change
 Manifest 检查只验证编号、文件对应与单调时间，不证明 SQL 正确。Server 仍在迁移前后检查哈希、
 精确已应用前缀和完整历史。
 
+## 保留旧数据的升级回归
+
+执行 `npm ci` 后，在一次性 PostgreSQL 17 实例创建名为 `openbot_upgrade_test_*` 的空白本机数据库。
+将 `OPENBOT_UPGRADE_TEST_DATABASE_URL` 指向该库，再运行：
+
+```bash
+npm run test:upgrade
+```
+
+缺少变量或[仓库样本](../scripts/fixtures/retained-upgrade/README.md)、目标不是回环地址、库内已有对象时，
+命令明确失败。不读取 `.env`，不清空已有数据。合成数据库保留供检查，完成后可自行销毁该专用测试库。
+CI 独立创建 `openbot_upgrade_test_ci`，不与其他测试混用。
+
+测试先运行固定到 `0018_automations` 的历史迁移，在 15 张表写入合成数据，再通过生产受保护迁移入口
+并发、重复升级。逐列比较已有外观与配置、模板使用的员工字段、技能关联和导入回执、记忆、时间戳及全部旧自动任务结果。
+同时验证旧约束、新字段的安全默认值，以及历史漂移必须阻止启动且不改变业务数据。旧前缀构建会拒绝
+超前数据库；应用行为回退必须保留全部已应用迁移。`npm run migrations:check` 无需数据库即可验证样本
+身份和失败路径。依据见[调研记录](research/retained-data-upgrade.md)。
+
+此验收只证明指定合成数据库的升级，不代表任意旧版本二进制、原生安装器升级或数据库、文件、密钥的
+完整恢复。支持版本范围变化时增加历史样本，不得改写旧 SQL 哈希来隐藏漂移。
+
 ## 备份边界
 
 捕获完整恢复集前必须停止 Server 写入。PostgreSQL `pg_dump` 能提供一致数据库快照，但无法与

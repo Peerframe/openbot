@@ -23,7 +23,7 @@ Status: proposed, not delivered. Prioritize a contributor being able to work wit
 
 ## Next: retained-data migration regression
 
-Status: proposed. Local upgrade evidence exists; CI does not yet retain the complete old-data fixture.
+Status: implemented locally and wired into the database CI job. `npm run test:upgrade` verifies the pinned `0018_automations` fixture across 15 populated tables; hosted CI execution remains unverified. See [database guide](DATABASE.md#retained-data-upgrade-regression).
 
 - **Outcome:** contributors can prove that the reviewed old migration prefix upgrades with retained
   appearance, Employee templates, import receipts and automation rows unchanged.

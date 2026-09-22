@@ -279,6 +279,13 @@ jobs:
       - run: npm run db:verify
         env:
           OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
+      - name: Verify retained historical data with concurrent and repeated upgrade
+        run: |
+          node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_upgrade_test_ci"); } finally { await sql.end(); }'
+          npm run test:upgrade
+        env:
+          OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
+          OPENBOT_UPGRADE_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_upgrade_test_ci
       - name: Verify recurring-task transactions in a disposable PostgreSQL database
         run: |
           node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_automation_test_ci"); } finally { await sql.end(); }'

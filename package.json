@@ -30,7 +30,7 @@
     "format": "biome format --write .",
     "format:check": "biome format .",
     "lint": "biome lint .",
-    "migrations:check": "node --test scripts/check-migrations.test.mjs && node scripts/check-migrations.mjs",
+    "migrations:check": "node --test scripts/check-migrations.test.mjs scripts/verify-retained-upgrade.test.mjs && node scripts/check-migrations.mjs",
     "node:enrollment-token": "node --env-file-if-exists=.env scripts/issue-node-enrollment.mjs",
     "research:check": "node --test scripts/check-pr-research.test.mjs && node scripts/check-pr-research.mjs",
     "release:check": "node --test scripts/node-linux-release.test.mjs scripts/node-linux-install-lease.test.mjs scripts/node-linux-archive-import.test.mjs scripts/node-linux-privileged-layout.test.mjs scripts/node-linux-bootstrap.test.mjs scripts/node-linux-bootstrap-command.test.mjs scripts/node-linux-install-transaction.test.mjs scripts/node-linux-provenance.test.mjs scripts/node-linux-extract.test.mjs scripts/node-linux-systemd.test.mjs scripts/macos-worker-host-release.test.mjs scripts/prepare-desktop-release.test.mjs scripts/install-desktop.test.mjs scripts/create-mcp-plugin.test.mjs",
@@ -48,6 +48,7 @@
     "plugin:create": "node scripts/create-mcp-plugin.mjs",
     "dev:reader": "vite --config examples/workspace-reader/vite.config.mjs",
     "test:runtime": "node scripts/test-runtime-headless.mjs",
+    "test:upgrade": "turbo run build --filter=@openbot/db && node scripts/verify-retained-upgrade.mjs",
     "test:workspace": "turbo run build --filter=@openbot/server && vitest run apps/server/src/workspace-snapshots.test.ts apps/server/src/workspace-snapshot-reader.test.ts apps/server/src/app.test.ts && node --test examples/workspace-reader/reader.test.mjs"
   },
   "devDependencies": {

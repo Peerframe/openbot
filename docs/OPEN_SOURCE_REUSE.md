@@ -14,6 +14,10 @@ reuse Drizzle 0.45.2 / `273c78071d4841b497f5144734b38294df7ec64b` (Apache-2.0), 
 [CI impact shadow analysis](research/2026-09-22-ci-impact-shadow.md) reuses Turbo 2.10.12 /
 `53752d45` (MIT) with conservative classification; all existing gates remain. No upstream source
 was copied or substantially adapted by these additions. Existing notices are retained.
+[Retained-data upgrades](research/retained-data-upgrade.md) reuse the same Drizzle/Postgres.js
+versions and real PostgreSQL 17.11. A synthetic pinned historical prefix and failure probes cover
+OpenBot's application-specific gap without another migration engine or production schema changes.
+Paired database/files/keys restoration remains partial.
 
 OpenBot researches established open-source implementations before designing a non-trivial feature.
 The goal is to reuse maintained standards, libraries, protocols, and narrow services instead of
