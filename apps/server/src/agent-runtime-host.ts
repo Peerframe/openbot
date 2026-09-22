@@ -6,6 +6,7 @@ import {
   type ModelMessage,
   modelMessageSchema,
   type Schema,
+  streamText,
   type Tool,
   type ToolSet,
 } from "ai";
@@ -145,7 +146,7 @@ export class AgentRuntimeHost {
         });
       await this.#check();
       this.ports.output?.("", true);
-      const result = await generateText({
+      const settings = {
         model: this.ports.model.languageModel,
         instructions: this.input.instructions,
         messages,
@@ -162,7 +163,45 @@ export class AgentRuntimeHost {
             ? { moonshotai: { reasoningEffort: "low" } }
             : {}),
         },
-      });
+      };
+      let result: Pick<
+        Awaited<ReturnType<typeof generateText>>,
+        "text" | "usage" | "finishReason" | "toolCalls"
+      >;
+      if (this.ports.output) {
+        const stepController = new AbortController();
+        try {
+          const stream = streamText({
+            ...settings,
+            abortSignal: AbortSignal.any([signal, stepController.signal]),
+            // A public observer, not a retry policy. Raw provider errors never leave this boundary.
+            onError: () => undefined,
+          });
+          const iterator = stream.fullStream[Symbol.asyncIterator]();
+          let draft = "";
+          while (true) {
+            const part = await abortable(iterator.next(), signal);
+            if (this.#failed) throw this.#failure;
+            signal.throwIfAborted();
+            if (part.done) break;
+            if (part.value.type === "text-delta") {
+              draft += part.value.text;
+              if (draft.length > 8000) throw new NativeExecutionError("task_limit");
+              this.ports.output(draft, false);
+            }
+            if (part.value.type === "error" || part.value.type === "abort")
+              throw new NativeExecutionError("model_unavailable");
+          }
+          result = {
+            text: await abortable(stream.text, signal),
+            usage: await abortable(stream.usage, signal),
+            finishReason: await abortable(stream.finishReason, signal),
+            toolCalls: await abortable(stream.toolCalls, signal),
+          };
+        } finally {
+          stepController.abort();
+        }
+      } else result = await generateText(settings);
       await this.#check();
       budget.usage = addReportedUsage(budget.usage, result.usage, this.ports.model.identity);
       await this.ports.storage.saveUsage(budget.usage);

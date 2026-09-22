@@ -2,10 +2,16 @@ import { randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createDatabase } from "@openbot/db";
 import type { Artifact, Bot, Channel, Run } from "@openbot/domain";
 import { MockLanguageModelV4 } from "ai/test";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { NativeExecutionError } from "./agent-observations.js";
+import { createPythonAgentExecutor } from "./agent-runtime-process.js";
+import { PluginService } from "./plugin-service.js";
+import { FilePluginStore } from "./plugin-store.js";
+import type { PluginConnector } from "./plugin-transport.js";
 import { AgentRuntimeHost } from "./agent-runtime-host.js";
 import type { AgentRuntimeExecutor } from "./agent-runtime.js";
 import { createApp } from "./app.js";
@@ -35,6 +41,17 @@ if (url) {
       "Headless acceptance requires a disposable loopback openbot_collab_test_* database.",
     );
 }
+const pythonExecutor =
+  process.env.OPENBOT_RUNTIME_TEST_PYTHON === "1"
+    ? createPythonAgentExecutor({
+        pythonExecutable: fileURLToPath(
+          new URL("../../agent-runtime-python/.venv/bin/python", import.meta.url),
+        ),
+        workerEntrypoint: fileURLToPath(
+          new URL("../../agent-runtime-python/scripts/run-worker.py", import.meta.url),
+        ),
+      })
+    : undefined;
 const usage = {
   inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 },
   outputTokens: { total: 10, text: 10, reasoning: 0 },
@@ -78,13 +95,26 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
   });
   afterAll(async () => database?.close());
 
-  async function fixture(model: MockLanguageModelV4, executeRuntime?: AgentRuntimeExecutor) {
+  async function fixture(
+    model: MockLanguageModelV4,
+    executeRuntime: AgentRuntimeExecutor | undefined = pythonExecutor,
+    connector?: PluginConnector,
+  ) {
     if (!database) throw new Error("Missing disposable database.");
     const directory = await mkdtemp(join(tmpdir(), "openbot-headless-"));
     cleanups.push(() => rm(directory, { recursive: true, force: true }));
     const store = new PostgresControlPlaneStore(database.db);
     const native = new PostgresAgentStore(database.db);
     const artifacts = new FileArtifactStorage(directory);
+    const plugins = connector
+      ? new PluginService({
+          store: new FilePluginStore(join(directory, "plugins", "state.json")),
+          connector,
+          assertScope: (run) => native.assertScope(run),
+          botExists: async (id) => (await store.listBots()).some((bot) => bot.id === id),
+        })
+      : undefined;
+    if (plugins) cleanups.push(async () => plugins.close());
     const realtime = new ChannelRealtimeHub();
     const requestThrottle = new RequestThrottle(new PostgresRequestThrottleStore(database.db));
     const auth = new OwnerAuthService(
@@ -111,6 +141,7 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
     const runner = new NativeAgentRunner(native, settings, realtime, errors, () => model, {
       artifacts,
       executeRuntime,
+      plugins,
     });
     cleanups.push(() => runner.stop());
     const origin = "http://localhost:5173";
@@ -120,6 +151,14 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
       requestThrottle,
       realtime,
       artifactStorage: artifacts,
+      plugins,
+      steerNativeRun: (id, instruction) => native.steer(id, instruction),
+      nativeRunOutput: async (id) => {
+        const run = await native.lookup(id);
+        if (!run || !["queued", "running"].includes(run.status)) return undefined;
+        await native.assertScope(run);
+        return runner.output(id);
+      },
       allowedOrigins: [origin],
       secureCookies: false,
       getRemoteAddress: () => "127.0.0.1",
@@ -175,12 +214,24 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
       expect(errors).not.toHaveBeenCalled();
     };
     runner.start();
-    return { store, native, runner, request, bot, channel, submit, terminal, artifacts, realtime };
+    return {
+      store,
+      native,
+      runner,
+      request,
+      bot,
+      channel,
+      submit,
+      terminal,
+      artifacts,
+      realtime,
+      plugins,
+    };
   }
 
   it("submits through the Owner API and downloads the committed report without a client UI", async () => {
-    // A two-step driver exercises the host boundary; it is not the Python process integration.
-    const selectedExecutor = vi.fn<AgentRuntimeExecutor>(async (ports, input) => {
+    // Default lane uses a two-step host fixture; --python selects the actual Python SDK process.
+    const hostExecutor: AgentRuntimeExecutor = async (ports, input) => {
       const host = new AgentRuntimeHost(ports, input);
       await host.catalog();
       const first = await host.generate(input.messages);
@@ -213,7 +264,8 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
         },
       ]);
       return host.finish(second.text);
-    });
+    };
+    const selectedExecutor = vi.fn<AgentRuntimeExecutor>(pythonExecutor ?? hostExecutor);
     const f = await fixture(
       new MockLanguageModelV4({
         doGenerate: [
@@ -264,7 +316,7 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
     const model = new MockLanguageModelV4({ doGenerate: () => pending.promise });
     const f = await fixture(model);
     const run = await f.submit();
-    await vi.waitFor(() => expect(model.doGenerateCalls).toHaveLength(1));
+    await vi.waitFor(() => expect(model.doGenerateCalls).toHaveLength(1), { timeout: 4000 });
     const cancelled = await f.request(`/api/v1/runs/${run.id}/cancel`, {});
     expect(cancelled.status).toBe(200);
     expect((await f.native.current(run))?.status).toBe("cancelled");
@@ -287,7 +339,7 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
     expect(reader).toBeDefined();
     expect(new TextDecoder().decode((await reader?.read())?.value)).toContain("channel.ready");
     const run = await f.submit();
-    await vi.waitFor(() => expect(model.doGenerateCalls).toHaveLength(1));
+    await vi.waitFor(() => expect(model.doGenerateCalls).toHaveLength(1), { timeout: 4000 });
     await reader?.cancel();
     expect(model.doGenerateCalls[0]?.abortSignal?.aborted).toBe(false);
     pending.resolve(answer("Completed after disconnect."));
@@ -382,4 +434,243 @@ describe.skipIf(!url)("headless Server runtime acceptance", () => {
     expect(events).toHaveLength(1);
     expect(events[0]?.payload).toEqual({ executor: "native-agent", reason: "pending_limit" });
   }, 30_000);
+  it.each(["usage", "audit"])(
+    "fails closed when durable %s rejects the next action",
+    async (kind) => {
+      const model = new MockLanguageModelV4({
+        doGenerate: [
+          call("write_report", { name: "blocked.md", markdown: "Must not publish" }),
+          answer(),
+        ],
+      });
+      const f = await fixture(model);
+      if (kind === "usage")
+        vi.spyOn(f.native, "usage").mockRejectedValue(new NativeExecutionError("conflict"));
+      else {
+        const progress = f.native.progress.bind(f.native);
+        vi.spyOn(f.native, "progress").mockImplementation(async (...args) => {
+          if (args[1] === "planning") throw new NativeExecutionError("conflict");
+          return progress(...args);
+        });
+      }
+      const run = await f.submit();
+      await f.terminal(run, "failed");
+      expect((await f.native.current(run))?.errorCode).toBe("conflict");
+      expect(model.doGenerateCalls).toHaveLength(kind === "usage" ? 1 : 0);
+      expect(await f.store.listArtifacts(run.id)).toEqual([]);
+      expect(
+        (await f.store.listMessages(f.channel.id)).filter(
+          (message) => message.authorType === "bot",
+        ),
+      ).toEqual([]);
+    },
+  );
+
+  it("rechecks persisted membership after a model response before executing its proposed effect", async () => {
+    const pending = Promise.withResolvers<ReturnType<typeof call>>();
+    const model = new MockLanguageModelV4({ doGenerate: () => pending.promise });
+    const f = await fixture(model);
+    const run = await f.submit();
+    await vi.waitFor(() => expect(model.doGenerateCalls).toHaveLength(1), { timeout: 4000 });
+    if (!database) throw new Error("Missing database");
+    // Revoke only this disposable fixture's membership while the provider request is in flight.
+    await database.client`delete from channel_bots where channel_id = ${f.channel.id} and bot_id = ${f.bot.id}`;
+    pending.resolve(call("write_report", { name: "revoked.md", markdown: "Must not publish" }));
+    await f.terminal(run, "failed");
+    expect((await f.native.current(run))?.errorCode).toBe("scope_revoked");
+    expect(await f.store.listArtifacts(run.id)).toEqual([]);
+    expect(model.doGenerateCalls).toHaveLength(1);
+  });
+
+  it("enforces the Server's eight-step budget through the complete tool feedback loop", async () => {
+    const model = new MockLanguageModelV4({ doGenerate: async () => call("read_task_status", {}) });
+    const f = await fixture(model);
+    const run = await f.submit();
+    await f.terminal(run, "failed");
+    expect(model.doGenerateCalls).toHaveLength(8);
+    expect((await f.native.current(run))?.errorCode).toBe("task_limit");
+    expect((await f.native.current(run))?.modelUsage?.steps).toBe(8);
+    expect(
+      (await f.store.listMessages(f.channel.id)).filter((message) => message.authorType === "bot"),
+    ).toEqual([]);
+  });
+
+  it("applies an Owner instruction arriving between model steps without losing the task context", async () => {
+    const pending = Promise.withResolvers<ReturnType<typeof call>>();
+    let steps = 0;
+    const model = new MockLanguageModelV4({
+      doGenerate: () =>
+        ++steps === 1 ? pending.promise : Promise.resolve(answer("Dates checked.")),
+    });
+    const f = await fixture(model);
+    const run = await f.submit("Report the current task facts.");
+    await vi.waitFor(() => expect(model.doGenerateCalls).toHaveLength(1), { timeout: 4000 });
+    expect(
+      (
+        await f.request(`/api/v1/runs/${run.id}/steer`, {
+          instruction: "Check source dates before answering.",
+        })
+      ).status,
+    ).toBe(202);
+    pending.resolve(call("read_task_status", {}));
+    await f.terminal(run, "completed");
+    expect(model.doGenerateCalls).toHaveLength(2);
+    expect(JSON.stringify(model.doGenerateCalls[1]?.prompt)).toContain(
+      "Check source dates before answering.",
+    );
+    expect(JSON.stringify(model.doGenerateCalls[1]?.prompt)).toContain(
+      "Report the current task facts.",
+    );
+    expect((await f.native.current(run))?.modelUsage?.steps).toBe(2);
+  });
+
+  it.each(["approve", "reject", "cancel"])(
+    "keeps a plugin effect pending until the Owner chooses %s",
+    async (decision) => {
+      const effect = vi.fn(async () => ({
+        content: [{ type: "text", text: "Fixture effect completed" }],
+      }));
+      let pluginInput:
+        | { pluginId: string; revision: number; toolName: string; arguments: { text: string } }
+        | undefined;
+      let steps = 0;
+      const model = new MockLanguageModelV4({
+        doGenerate: async () => {
+          if (!pluginInput) throw new Error("Fixture plugin was not configured");
+          return ++steps === 1
+            ? call("call_plugin", pluginInput)
+            : answer("Approved action completed.");
+        },
+      });
+      const f = await fixture(model, pythonExecutor, async () => ({
+        tools: async () => [
+          {
+            name: "record_note",
+            description: "Record a fixture note",
+            inputSchema: {
+              type: "object",
+              properties: { text: { type: "string", maxLength: 100 } },
+              required: ["text"],
+              additionalProperties: false,
+            },
+          },
+        ],
+        call: effect,
+        close: async () => {},
+      }));
+      if (!f.plugins) throw new Error("Missing fixture plugin service");
+      const descriptor = { name: "Fixture notes", endpoint: "https://plugins.example.com/mcp" };
+      const preview = await f.plugins.preview(descriptor, AbortSignal.timeout(2000));
+      let plugin = await f.plugins.install(
+        { ...descriptor, reviewedDigest: preview.digest },
+        AbortSignal.timeout(2000),
+      );
+      plugin = await f.plugins.grant(plugin.id, f.bot.id, {
+        revision: plugin.revision,
+        tools: [{ name: "record_note", mode: "confirm" }],
+      });
+      plugin = await f.plugins.setEnabled(plugin.id, { revision: plugin.revision, enabled: true });
+      pluginInput = {
+        pluginId: plugin.id,
+        revision: plugin.revision,
+        toolName: "record_note",
+        arguments: { text: "Only with Owner approval." },
+      };
+      const run = await f.submit("Record the approved fixture note.");
+      let callId = "";
+      await vi.waitFor(
+        async () => {
+          const response = await f.request("/api/v1/plugins");
+          expect(response.status).toBe(200);
+          const snapshot = (await response.json()) as {
+            pendingCalls: { id: string; arguments: unknown }[];
+          };
+          expect(snapshot.pendingCalls).toHaveLength(1);
+          expect(snapshot.pendingCalls[0]?.arguments).toEqual(pluginInput?.arguments);
+          callId = snapshot.pendingCalls[0]?.id ?? "";
+        },
+        { timeout: 4000 },
+      );
+      expect((await f.native.current(run))?.status).toBe("running");
+      expect(effect).not.toHaveBeenCalled();
+      expect(model.doGenerateCalls).toHaveLength(1);
+      if (decision === "cancel") {
+        expect((await f.request(`/api/v1/runs/${run.id}/cancel`, {})).status).toBe(200);
+        await f.runner.stop();
+        expect((await f.native.current(run))?.status).toBe("cancelled");
+      } else {
+        expect(
+          (await f.request(`/api/v1/plugin-calls/${callId}/decision`, { decision })).status,
+        ).toBe(200);
+        await f.terminal(run, decision === "approve" ? "completed" : "failed");
+      }
+      expect(effect).toHaveBeenCalledTimes(decision === "approve" ? 1 : 0);
+      expect(model.doGenerateCalls).toHaveLength(decision === "approve" ? 2 : 1);
+      expect((await f.plugins.snapshot()).pendingCalls).toEqual([]);
+      if (decision !== "approve")
+        expect(
+          (await f.store.listMessages(f.channel.id)).filter(
+            (message) => message.authorType === "bot",
+          ),
+        ).toEqual([]);
+    },
+  );
+  it("serves incremental public output before completion without exposing provider reasoning", async () => {
+    const finish = Promise.withResolvers<void>();
+    const model = new MockLanguageModelV4({
+      doStream: {
+        stream: new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: "stream-start", warnings: [] });
+            controller.enqueue({ type: "reasoning-start", id: "private" });
+            controller.enqueue({
+              type: "reasoning-delta",
+              id: "private",
+              delta: "PRIVATE REASONING",
+            });
+            controller.enqueue({ type: "reasoning-end", id: "private" });
+            controller.enqueue({ type: "text-start", id: "answer" });
+            controller.enqueue({ type: "text-delta", id: "answer", delta: "Draft" });
+            void finish.promise.then(() => {
+              controller.enqueue({ type: "text-delta", id: "answer", delta: " complete." });
+              controller.enqueue({ type: "text-end", id: "answer" });
+              controller.enqueue({
+                type: "finish",
+                finishReason: { unified: "stop", raw: "stop" },
+                usage,
+              });
+              controller.close();
+            });
+          },
+        }),
+      },
+    });
+    const f = await fixture(model);
+    f.runner.options.streamOutput = true;
+    const run = await f.submit();
+    await vi.waitFor(
+      async () => {
+        const response = await f.request(`/api/v1/runs/${run.id}/output`);
+        expect(response.status).toBe(200);
+        const body = await response.text();
+        expect(body).toContain('"text":"Draft"');
+        expect(body).not.toContain("PRIVATE REASONING");
+      },
+      { timeout: 4000 },
+    );
+    expect((await f.native.current(run))?.status).toBe("running");
+    expect(
+      (await f.store.listMessages(f.channel.id)).filter((message) => message.authorType === "bot"),
+    ).toEqual([]);
+    finish.resolve();
+    await f.terminal(run, "completed");
+    const replies = (await f.store.listMessages(f.channel.id)).filter(
+      (message) => message.authorType === "bot",
+    );
+    expect(replies).toHaveLength(1);
+    expect(replies[0]?.content).toBe("Draft complete.");
+    expect((await f.native.current(run))?.modelUsage?.steps).toBe(1);
+    expect(model.doStreamCalls).toHaveLength(1);
+    expect(model.doGenerateCalls).toHaveLength(0);
+  });
 });

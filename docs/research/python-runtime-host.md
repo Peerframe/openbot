@@ -73,3 +73,27 @@ isolation, streaming parity or Linux application support.
   the host's 32 regression tests, repository checks, typecheck, tests and builds. Turbo reused
   unchanged workspace results. The disposable database fixture was cleaned up.
 - Python process integration and streaming remain unverified by these checks.
+
+## Streaming follow-up (2026-09-23)
+
+Reuse the same pinned ai release's `streamText`, `fullStream` and final aggregate promises. Read
+`packages/ai/src/generate-text/stream-text.ts` and its upstream tests through official GitHub
+contents API after the raw URL fetch failed. Reviewed the error/onError tests (2400–4035), usage
+promise tests (6915), tool-call promises (8434), and abort cases, alongside the existing OpenBot
+public-stream regression. Omitting `streamRetries` disables stream recovery; keep zero request
+retries and a non-retrying onError observer. Never release SDK reasoning or raw provider errors.
+
+An external loop still gets one complete model response over RPC; the Server can independently
+publish bounded public text as it arrives. The Server persists usage before releasing tool intents
+or final response. A per-step AbortController closes the model stream on every exit, including
+local size/format refusal. Stream previews remain provisional and do not commit Run completion.
+No protocol change, dependency or upstream source copy. Required tests cover incremental output,
+reasoning exclusion, stream error without retry, cancellation/late events and size limits, plus a
+real Owner output API journey using the selected runtime.
+
+
+Streaming verification: 37 host tests passed, including five streaming regressions. The headless
+command passed 213 cases across eight files (15 real API/database journeys). `npm run check`
+exited zero: Server 616 passed / 84 database-dependent skips; the separate headless run executed
+its database cases. No Python integration claim: these journeys currently use the TypeScript
+lane, and the Python selector requires a real CLI without fallback.

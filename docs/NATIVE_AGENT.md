@@ -275,6 +275,23 @@ a minimal environment, bounded newline transport and owned POSIX process-group c
 failure aborts in-flight Server operations; only a final response followed by clean child exit can
 reach host completion checks. Transport/lifecycle tests use adversarial Node child fixtures and
 cover flooding, malformed traffic, concurrent/repeated requests, crash, cancellation and stubborn
-descendants. These fixtures do not establish real Python integration, Linux support or streaming
-parity. Those remain gates before activation. See the [wire profile](AGENT_RUNTIME_PROTOCOL.md)
+descendants. The host also streams bounded public text directly from the Server while the child
+awaits a complete model response; reasoning stays private and failed streams are not retried.
+These fixtures do not establish real Python integration or Linux product support. Those remain
+gates before activation. See the [wire profile](AGENT_RUNTIME_PROTOCOL.md)
 and [transport research](research/python-runtime-transport.md).
+
+### Paired runtime acceptance
+
+`npm run test:runtime:python` selects the real Python process for the Owner API/PostgreSQL journeys.
+It requires the package-local virtual environment and `scripts/run-worker.py`, runs the Python
+package checks first, and fails if either prerequisite is absent; it never falls back to TypeScript.
+The other focused runtime and collaboration tests retain their own explicitly selected adapters.
+
+The paired journeys cover report download, cancellation, persisted scope revocation, durable
+audit/usage failure, the eight-step budget, per-step Owner corrections, approve/reject/cancel
+during plugin approval, provisional public streaming, and retained reports across continuation.
+They use deterministic SDK model responses and a synthetic plugin connector; they send no paid
+model request or external plugin effect. The default TypeScript lane currently passes 213 cases
+across eight files, including 15 Owner API/database journeys. The Python lane is pending its CLI
+delivery; adding this command is not evidence that the Python path has passed.

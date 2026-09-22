@@ -352,4 +352,155 @@ describe("Server-owned Python runtime gates", () => {
       await expect(f.host.generate(f.input.messages)).rejects.toThrow();
     },
   );
+  it("streams public text before model completion while excluding private reasoning", async () => {
+    const finish = Promise.withResolvers<void>();
+    const f = fixture(
+      new MockLanguageModelV4({
+        doStream: {
+          stream: new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: "stream-start", warnings: [] });
+              controller.enqueue({ type: "reasoning-start", id: "private" });
+              controller.enqueue({
+                type: "reasoning-delta",
+                id: "private",
+                delta: "PRIVATE REASONING",
+              });
+              controller.enqueue({ type: "reasoning-end", id: "private" });
+              controller.enqueue({ type: "text-start", id: "text" });
+              controller.enqueue({ type: "text-delta", id: "text", delta: "First" });
+              void finish.promise.then(() => {
+                controller.enqueue({ type: "text-delta", id: "text", delta: " result" });
+                controller.enqueue({ type: "text-end", id: "text" });
+                controller.enqueue({
+                  type: "finish",
+                  finishReason: { unified: "stop", raw: "stop" },
+                  usage,
+                });
+                controller.close();
+              });
+            },
+          }),
+        },
+      }),
+    );
+    const output = vi.fn();
+    f.ports.output = output;
+    await f.host.catalog();
+    const done = f.host.generate(f.input.messages);
+    await vi.waitFor(() => expect(output).toHaveBeenCalledWith("First", false));
+    expect(f.ports.storage.saveUsage).not.toHaveBeenCalled();
+    finish.resolve();
+    const result = await done;
+    expect((await f.host.finish(result.text)).text).toBe("First result");
+    expect(JSON.stringify(output.mock.calls)).not.toContain("PRIVATE REASONING");
+    expect(f.ports.storage.saveUsage).toHaveBeenCalledOnce();
+    expect(f.model.doStreamCalls).toHaveLength(1);
+    expect(f.model.doGenerateCalls).toHaveLength(0);
+  });
+
+  it.each(["provider-error", "oversize"])(
+    "seals a %s stream without retry or releasing usage",
+    async (kind) => {
+      const f = fixture(
+        new MockLanguageModelV4({
+          doStream: {
+            stream: new ReadableStream({
+              start(controller) {
+                controller.enqueue({ type: "stream-start", warnings: [] });
+                controller.enqueue({ type: "text-start", id: "text" });
+                if (kind === "provider-error")
+                  controller.enqueue({ type: "error", error: new Error("PRIVATE PROVIDER ERROR") });
+                else
+                  controller.enqueue({ type: "text-delta", id: "text", delta: "x".repeat(8001) });
+                controller.close();
+              },
+            }),
+          },
+        }),
+      );
+      f.ports.output = vi.fn();
+      await f.host.catalog();
+      await expect(f.host.generate(f.input.messages)).rejects.toMatchObject({
+        code: kind === "provider-error" ? "model_unavailable" : "task_limit",
+      });
+      expect(f.model.doStreamCalls).toHaveLength(1);
+      expect(f.model.doStreamCalls[0]?.abortSignal?.aborted).toBe(true);
+      expect(f.ports.storage.saveUsage).not.toHaveBeenCalled();
+      expect(JSON.stringify(vi.mocked(f.ports.output).mock.calls)).not.toContain(
+        "PRIVATE PROVIDER ERROR",
+      );
+      await expect(f.host.finish("pretend success")).rejects.toThrow();
+    },
+  );
+
+  it("aborts a hanging stream and refuses late output", async () => {
+    let late = () => {};
+    const f = fixture(
+      new MockLanguageModelV4({
+        doStream: {
+          stream: new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: "stream-start", warnings: [] });
+              controller.enqueue({ type: "text-start", id: "text" });
+              controller.enqueue({ type: "text-delta", id: "text", delta: "First" });
+              late = () => {
+                controller.enqueue({ type: "text-delta", id: "text", delta: " LATE" });
+                controller.close();
+              };
+            },
+          }),
+        },
+      }),
+    );
+    const output = vi.fn();
+    f.ports.output = output;
+    await f.host.catalog();
+    const done = f.host.generate(f.input.messages);
+    const denied = expect(done).rejects.toMatchObject({ code: "server_interrupted" });
+    await vi.waitFor(() => expect(output).toHaveBeenCalledWith("First", false));
+    f.controller.abort(new NativeExecutionError("server_interrupted"));
+    await denied;
+    late();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    expect(f.model.doStreamCalls[0]?.abortSignal?.aborted).toBe(true);
+    expect(JSON.stringify(output.mock.calls)).not.toContain("LATE");
+    expect(f.ports.storage.saveUsage).not.toHaveBeenCalled();
+  });
+
+  it("streams a tool proposal without executing it until the Server gate is requested", async () => {
+    const f = fixture(
+      new MockLanguageModelV4({
+        doStream: {
+          stream: new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: "stream-start", warnings: [] });
+              controller.enqueue({
+                type: "tool-call",
+                toolCallId: "stream-c1",
+                toolName: "read_evidence",
+                input: '{"query":"facts"}',
+              });
+              controller.enqueue({
+                type: "finish",
+                finishReason: { unified: "tool-calls", raw: "tool_calls" },
+                usage,
+              });
+              controller.close();
+            },
+          }),
+        },
+      }),
+    );
+    f.ports.output = vi.fn();
+    const intent = await proposed(f);
+    expect(f.effect).not.toHaveBeenCalled();
+    expect(intent).toEqual({
+      id: "stream-c1",
+      name: "read_evidence",
+      arguments: { query: "facts" },
+    });
+    expect(await f.host.executeTool(intent)).toEqual({ evidence: "facts" });
+    expect(f.effect).toHaveBeenCalledOnce();
+  });
 });

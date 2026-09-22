@@ -6,6 +6,11 @@ import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
+assert(
+  process.argv.slice(2).every((argument) => argument === "--python"),
+  "Only --python is supported.",
+);
+const usePython = process.argv.includes("--python");
 const root = fileURLToPath(new URL("../", import.meta.url));
 const image =
   "postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0";
@@ -84,6 +89,18 @@ try {
     existsSync(join(root, "node_modules/vitest/vitest.mjs")),
     "Install the lockfile first: npm ci --ignore-scripts.",
   );
+  if (usePython) {
+    assert(process.platform !== "win32", "Python process acceptance currently requires POSIX.");
+    assert(
+      existsSync(join(root, "apps/agent-runtime-python/scripts/run-worker.py")),
+      "Python worker entry point is required; never fall back to the TypeScript loop.",
+    );
+    assert(
+      existsSync(join(root, "apps/agent-runtime-python/.venv/bin/python")),
+      "Bootstrap the package-local Python environment first.",
+    );
+    run("sh", [join(root, "apps/agent-runtime-python/scripts/check.sh")]);
+  }
   if (!databaseUrl) {
     run("docker", ["info", "--format", "{{.ServerVersion}}"], { capture: true, timeout: 15_000 });
     console.log(
@@ -172,9 +189,17 @@ try {
       "--no-file-parallelism",
     ],
     {
-      env: { ...environment, OPENBOT_COLLAB_TEST_DATABASE_URL: databaseUrl },
+      env: {
+        ...environment,
+        OPENBOT_COLLAB_TEST_DATABASE_URL: databaseUrl,
+        ...(usePython ? { OPENBOT_RUNTIME_TEST_PYTHON: "1" } : {}),
+      },
     },
   );
+  if (usePython)
+    console.log(
+      "Python SDK child process exercised through the real Server API and PostgreSQL fixture.",
+    );
   console.log(
     "Headless runtime acceptance passed: real Server API, durable task/artifact delivery, failure, cancellation, disconnect and continuation regressions. No paid model call.",
   );
