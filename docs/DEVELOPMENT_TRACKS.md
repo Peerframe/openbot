@@ -81,7 +81,8 @@ maintainer time. Do not claim savings from unmeasured timings or a shadow report
 - `npm run db:verify` passed against the task's separate synthetic database, including migration
   validation and forced concurrent mutation between workspace collection and count reads.
 - Actual browser verification used the standalone Vite entry, a synthetic Owner and the built
-  Server: sign-in and full counts rendered; a stopped upstream became visibly stale.
+  Server: sign-in and full counts rendered; a stopped upstream became visibly stale, then
+  recovered automatically after Server restart without another login.
 - Independent review covered Runtime changes, MCP production packaging boundaries and snapshot
   cancellation/freshness. The final cancellation regression does not need to resolve a stalled
   read before the subscriber can exit.
