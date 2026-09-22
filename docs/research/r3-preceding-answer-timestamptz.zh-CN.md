@@ -11,5 +11,6 @@
 
 ## 复用结论
 
-- 选定：在现有 Drizzle + PostgreSQL 上以 SQL 子查询比较 `timestamptz`，避免 JS `Date`/`toISOString` 截断微秒。
+- 选定：在已入账的 Drizzle ORM 0.45.2（`e7dfa145`）、Postgres.js 3.4.9、PostgreSQL 17（源码 `ec3f6a6a` / 运行时 17.11）上以 SQL 子查询比较 `timestamptz`，避免 JS `Date`/`toISOString` 截断微秒；不新增依赖。
+- 回归钉死整条时间轴：`root source < next input < later human < prior-tree Bot answer < RUN_STARTED`，并断言同毫秒 start 后答复与 input 后独立任务树答复排除。
 - 禁止：`+1ms`、sleep、扩大边界；本切片不做全库 `mode: 'string'` 迁移。
