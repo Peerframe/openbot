@@ -23,6 +23,16 @@ node scripts/test-python-control.mjs
 以及使用独立 SQLite 保存 CSV 与回执的假外部服务。使用随机测试凭据与专用目录，不读取 dotenv 或真实账号；
 正常退出和失败均清理自建子进程与容器。`--only-handoff` 仅运行三项引擎身份冲突用例。
 
+## 发行版 Server 与 PostgreSQL
+
+将 `--temporal-cli` 替换为 `--engine postgres`，在[固定镜像配置](../../deploy/temporal/README.zh-CN.md)
+上运行同样八项场景。另检查 schema/运行账户权限、等待批准时引擎和数据库 SIGKILL，并在业务库已经
+保存未知写入后，把较旧引擎备份恢复到新卷。namespace 与当前公开 Task 状态保持；成功仍为五次 POST、
+一次写入、11 假定用量。26 项参考与维护单元检查通过，PG 流程已接入现有 Linux Python CI。
+
+这是本地 Docker 的真实 PostgreSQL 持久化证据，不是生产选型、完整产品备份或原生 Linux 隔离验收。
+CLI/SQLite 路径仍保留为回归基线；维护限制和其余升级/安全门槛见配置说明。
+
 ## 验收范围
 
 | 场景 | 检查结果 |
@@ -46,6 +56,6 @@ node scripts/test-python-control.mjs
 ## 仍待完成
 
 本地证据只覆盖固定 CSV 流程的真实进程恢复与产品状态持久化。真实模型质量、任意工具、Linux 隔离、
-Temporal 生产 PostgreSQL、TLS/权限、历史保留、备份恢复、升级、扩展、资源费用和真实网络分区尚未验收。
+Temporal 生产部署安全、TLS/权限、历史保留、完整产品备份恢复、版本升级、扩展、资源费用和真实网络分区尚未验收。
 本次客户端是认证 HTTP 重连，浏览器/SSE 和共享客户端仍待实现。引擎重试耗尽不等于业务成功或预算退款；
 生产需要明确的未决任务核对/恢复入口。文件配额、回收及存储耐久性仍未完成。

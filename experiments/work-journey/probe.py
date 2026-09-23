@@ -203,6 +203,15 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
             first.kill()
             assert counts(task_id) == {'attempts': 3, 'writes': 0, 'lookups': 0}
             assert snap['usage'] == {'tokenLimit': 20, 'reservedTokens': 0, 'spentTokens': 6}
+            engine_snapshot = None
+            if scenario == 'recover' and hasattr(server, 'backup'):
+                engine_snapshot = server.backup(tmp / 'engine-backup')
+                client = await server.connect()
+                handle = client.get_workflow_handle('openbot-work-v1-' + run_id)
+            if scenario == 'cancel-before-write' and hasattr(server, 'crash_restart'):
+                server.crash_restart()
+                client = await server.connect()
+                handle = client.get_workflow_handle('openbot-work-v1-' + run_id)
             if scenario == 'recover':
                 api.close(); api.start()
                 assert api.snapshot(task_id) == snap
@@ -244,6 +253,13 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
                     assert cancelled['status'] == 'open' and cancelled['attention'] == 'reconciliation'
                 if scenario == 'corrupt-receipt':
                     effects.corrupt_receipt(task_id)
+                if engine_snapshot is not None:
+                    # Restore older engine history only. The newer product unknown-write fact
+                    # and independent external receipt must prevent a second POST.
+                    server.restore(engine_snapshot)
+                    client = await server.connect()
+                    handle = client.get_workflow_handle('openbot-work-v1-' + run_id)
+                    assert api.snapshot(task_id) == unknown
                 if scenario == 'recover':
                     effects.close(); effects = EffectService(tmp / 'effects')
                     assert counts(task_id)['writes'] == 1
@@ -333,26 +349,37 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--temporal-cli', type=Path, required=True)
+    parser.add_argument('--temporal-cli', type=Path)
+    parser.add_argument('--engine', choices=('development', 'postgres'), default='development')
     parser.add_argument('--only-handoff', action='store_true', help='Run only engine-identity rejection regressions')
     args = parser.parse_args()
     assert sys.platform != 'win32', 'POSIX process signals required'
     assert importlib.metadata.version('temporalio') == '1.33.0'
     assert importlib.metadata.version('pydantic-ai-slim') == '2.47.0'
-    binary = args.temporal_cli.resolve(strict=True)
-    version = subprocess.run([str(binary), '--version'], env=CLEAN_ENV, check=True,
-        capture_output=True, text=True, timeout=10).stdout.strip()
-    assert version == 'temporal version 1.9.1 (Server 1.32.0, UI 2.54.1)', version
+    binary = None
+    if args.engine == 'development':
+        if args.temporal_cli is None:
+            parser.error('--temporal-cli is required for development')
+        binary = args.temporal_cli.resolve(strict=True)
+        version = subprocess.run([str(binary), '--version'], env=CLEAN_ENV, check=True,
+            capture_output=True, text=True, timeout=10).stdout.strip()
+        assert version == 'temporal version 1.9.1 (Server 1.32.0, UI 2.54.1)', version
     def interrupted(_signal, _frame):
         raise KeyboardInterrupt
     signal.signal(signal.SIGTERM, interrupted)
     with TemporaryDirectory(prefix='openbot-work-journey-') as directory, database() as dsn:
         tmp = Path(directory)
-        server = Server(binary, tmp)
+        if args.engine == 'postgres':
+            from postgres_server import PostgresServer
+            server = PostgresServer(tmp)
+        else:
+            server = Server(binary, tmp)
         try:
             server.start()
             records = asyncio.run(qualify(tmp, dsn, server, only_handoff=args.only_handoff))
-            print(json.dumps({'passed': len(records), 'scope': 'public HTTP + PG + SDK + dev Temporal + fake effects'}))
+            if hasattr(server, 'finish_checks'):
+                server.finish_checks()
+            print(json.dumps({'passed': len(records), 'scope': 'public HTTP + PG + SDK + fake effects', 'engine': args.engine}))
         finally:
             server.close()
 

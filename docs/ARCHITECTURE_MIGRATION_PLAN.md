@@ -55,9 +55,11 @@ Eight official SDK composition cases and eight integrated public-work cases now 
 uses TemporalDurability with a trusted workflow-side strategy, control-owned admission/approval/budget,
 independent effect receipts and verified Artifact publication. Handoff acceptance is durable and
 idempotent; an experiment-only dispatcher closes the commit/enqueue gap. There is no production
-dispatcher or automatic connection to the existing stdin/stdout Runtime. Production persistence,
-upgrade/restore, unresolved-work operations and Linux execution isolation remain engine-selection gates.
-Next qualify these boundaries before expanding the client/API and real-tool surface. Preserve one
+dispatcher or automatic connection to the existing stdin/stdout Runtime. The released Server/PostgreSQL profile now passes the same eight journeys, including older-engine
+backup restore against newer product facts and engine/database SIGKILL. This is single-host persistence
+evidence, not production acceptance. Auth/TLS, release upgrades/history replay, unresolved-work
+operations and Linux execution isolation remain engine-selection gates. Qualify these boundaries
+before expanding the client/API and real-tool surface. Preserve one
 recovery owner; do not turn the reference fixture into another product recovery framework.
 Unsent TASK_015 model settings work is superseded as the next task. Its existing uncommitted
 research/dependency changes remain preserved and are not accepted or activated by this decision.
@@ -80,8 +82,8 @@ research/dependency changes remain preserved and are not accepted or activated b
 | --- | --- | --- | --- |
 | S1 — Reconcile and freeze preservation scope | Source-backed capability/retirement matrix, both migration histories, data compatibility risks, target API/event ownership, reversible source checkpoints | Every target capability mapped to current evidence and an owning stage; divergent SQL histories detected; no private data copied | Complete (source scope; no data cutover) |
 | S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a identity/authentication slice accepted locally; S2b queued submission/read and control host/process seam accepted locally; persisted lifecycle and integrated public-work reference accepted locally; production dispatcher and client parity open |
-| S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | In progress: eight integrated public-work recovery cases; production engine selection and isolation gates open |
-| S4 — Persistent execution and deliverables | Linux browser sessions, human takeover, reviewed autonomous browse/form/upload/download, persistent workspace, restricted commands, isolated code changes and document tools | Real local fixture site with separate Bot profiles; approved write, takeover, cancel and restart; exported files open/render; isolated repository produces a tested patch | Pending |
+| S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | In progress: eight public-work cases on development and released PostgreSQL engines; cold engine restore and SIGKILL accepted locally; production selection/upgrade/isolation gates open |
+| S4 — Persistent execution and deliverables | Linux browser sessions, human takeover, reviewed autonomous browse/form/upload/download, persistent workspace, restricted commands, isolated code changes and document tools | Real local fixture site with separate Bot profiles; approved write, takeover, cancel and restart; exported files open/render; isolated repository produces a tested patch | Design reviewed; Linux deployment and execution pending |
 | S5 — Memory, skills and learning evaluation | Scoped relevant retrieval, candidate lessons/skills from correction and supported teaching, version/review/test/disable/rollback; separate evaluation tooling | A correction becomes a reviewed skill, improves a held-out task, and can be revoked; provenance/scope/deletion preserved; no authority increase. Preserve Hermes attribution | Pending |
 | S6 — Collaboration and extensibility | Existing delegation preserved through durable execution, shared resource/budget constraints; MCP authentication lifecycle and compatibility; preservation/migration of per-Bot model configuration and reviewed local endpoints | Delegated browser/file work with independent grants; conflict/cancel tests; connector refresh/revoke/failure cases; model switch keeps identity/data; independent module contribution fixture | Pending |
 | S7 — Consolidate, migrate and qualify | Synthetic old-data upgrades and full backup/restore; thin Desktop/Web/mobile-browser supervision; reversible retirement packages, default-selection and release preparation | Full product journey, fresh-checkout checks, target CI and explicit live-provider evaluation. Final production/publication actions remain separately visible; no unsupported platform claims | Pending |
@@ -133,6 +135,19 @@ S1 freezes ownership, not a speculative new event protocol. Exact snapshot revis
 cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnect fixtures.
 
 ## Acceptance record
+
+- Released Temporal/PostgreSQL: the same eight public-work journeys pass with Server1.32.0 and
+  PostgreSQL17.11, history1.19/visibility1.14. A cold backup restored to a new volume retains the
+  namespace; newer business unknown-write facts force receipt lookup rather than replay (five POSTs,
+  one write, 11 fixture units). Server and database SIGKILL preserve approval/cancellation. Missing
+  or too-old schemas fail startup; operator rejects existing initialization/newer versions; runtime
+  cannot DDL or mutate schema metadata.26 reference unit cases pass; Linux CI includes the PG probe.
+  Same-version maintenance is not a version-upgrade test. Auth/TLS, history replay, full product
+  restore and workload measurements remain open. See [profile](../deploy/temporal/README.md).
+- Linux boundary design reviews pinned Docker/runsc, command-only isolation and a separate browser
+  profile. Neither is deployed or qualified. H2 lease mapping to Python work/helper authority,
+  write-time storage limits and real Linux adversarial probes are explicit gaps, not existing
+  capabilities. See [source-backed design](research/linux-execution-boundary.md).
 
 - Public work recovery: five integrated scenarios plus three engine-identity collision cases pass.
   Actual HTTP/PG Task submission, durable handoff, approval while Worker absent, API reconnect,

@@ -584,3 +584,16 @@ A thin acceptance adapter records engine facts under the existing Task lock; CPy
 (PSF) backs only the independent fake HTTP receipts. No new product dependency, recovery scheduler,
 public trusted-write route or upstream source copy. See [integration review](research/work-temporal-journey.md)
 and [executable reference](../experiments/work-journey/README.md).
+
+
+## Temporal persistence and Linux boundary review (2026-09-23)
+
+The [PostgreSQL profile](research/temporal-postgres-operations.md) uses Temporal Server/admin1.32.0
+`d94e34a1ebba5410a2e7d07119a76896909591aa` (MIT), existing PostgreSQL17.11 and official SQL/backup
+tools. Compose topology is adapted from samples-server `f811a033a5e79402cab9f792cea132f50344bd17`;
+its full MIT notice is retained in deploy/temporal/THIRD_PARTY_NOTICES.md. No engine source copy,
+custom migrator or product dependency change. The [Linux design](research/linux-execution-boundary.md)
+reviews OCI1.3, Docker29.8.1, runsc release-20260914.0 (Apache-2.0), Squid7.7 (GPL-2.0 separate
+process), Firecracker1.17 and OpenSandbox1.1 candidates, with exact commits and limits there.
+Linux components are not installed or qualified; no source copied. Browser mechanics retain the
+existing MIT attribution. Command and browser authority/resource/egress gates remain explicit.

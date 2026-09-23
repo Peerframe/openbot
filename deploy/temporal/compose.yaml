@@ -1,0 +1,83 @@
+# Single-host persistence qualification. See README.md before using this profile.
+# Adapted from the pinned Temporal MIT sample; full notice in THIRD_PARTY_NOTICES.md.
+services:
+  postgresql:
+    image: postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+    environment:
+      POSTGRES_USER: temporal_schema
+      POSTGRES_PASSWORD: ${OPENBOT_TEMPORAL_SCHEMA_PASSWORD:?Set a private schema password}
+      POSTGRES_DB: postgres
+      OPENBOT_TEMPORAL_RUNTIME_PASSWORD: ${OPENBOT_TEMPORAL_RUNTIME_PASSWORD:?Set a different private runtime password}
+    volumes:
+      - history:/var/lib/postgresql/data
+      - ./initialize.sql:/docker-entrypoint-initdb.d/10-temporal.sql:ro
+    networks: [control]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "temporal_schema", "-d", "postgres"]
+      interval: 1s
+      timeout: 3s
+      retries: 40
+    security_opt: ["no-new-privileges:true"]
+
+  schema:
+    profiles: [maintenance]
+    image: temporalio/admin-tools:1.32.0@sha256:a9f84fb9a374b2374fe2e67c8efc0468ff3f1c66c8a0b14597ec86e349e62bca
+    environment:
+      SQL_PLUGIN: postgres12
+      SQL_HOST: postgresql
+      SQL_PORT: "5432"
+      SQL_USER: temporal_schema
+      SQL_PASSWORD: ${OPENBOT_TEMPORAL_SCHEMA_PASSWORD:?Set a private schema password}
+    depends_on:
+      postgresql: {condition: service_healthy}
+    volumes: ["./schema.sh:/openbot/schema.sh:ro"]
+    entrypoint: ["/bin/sh", "/openbot/schema.sh"]
+    command: ["upgrade"]
+    networks: [control]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+  temporal:
+    image: temporalio/server:1.32.0@sha256:c3e752127759616bb1615e0f9ba0e21635aeb5fdeb922de4f371c350955f46ae
+    depends_on:
+      postgresql: {condition: service_healthy}
+    environment:
+      DB: postgres12
+      DB_PORT: "5432"
+      POSTGRES_SEEDS: postgresql
+      POSTGRES_USER: temporal_runtime
+      POSTGRES_PWD: ${OPENBOT_TEMPORAL_RUNTIME_PASSWORD:?Set a private runtime password}
+      DBNAME: temporal
+      VISIBILITY_DBNAME: temporal_visibility
+      ENABLE_ES: "false"
+      BIND_ON_IP: "0.0.0.0"
+      # All four engine services share this container; membership stays local.
+      TEMPORAL_BROADCAST_ADDRESS: "127.0.0.1"
+      NUM_HISTORY_SHARDS: "4"
+      SQL_MAX_CONNS: "10"
+      SQL_MAX_IDLE_CONNS: "10"
+      SQL_VIS_MAX_CONNS: "5"
+      SQL_VIS_MAX_IDLE_CONNS: "5"
+      LOG_LEVEL: warn
+      DYNAMIC_CONFIG_FILE_PATH: /openbot/dynamicconfig.yaml
+      # This explicit exception is limited to a trusted host/private control network.
+      # It is not an authenticated public/multi-user deployment; execution sandboxes must not join.
+      TEMPORAL_ALLOW_NO_AUTH: "true"
+    volumes: ["./dynamicconfig.yaml:/openbot/dynamicconfig.yaml:ro", "./start.sh:/openbot/start.sh:ro"]
+    entrypoint: ["/bin/sh", "/openbot/start.sh"]
+    ports: ["127.0.0.1:${OPENBOT_TEMPORAL_PORT:-7233}:7233"]
+    networks: [control, frontend]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    stop_grace_period: 30s
+
+networks:
+  control:
+    internal: true
+  frontend: {}
+volumes:
+  history:

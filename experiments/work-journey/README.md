@@ -31,6 +31,20 @@ roots; it does not load dotenv or use real accounts. Children and containers are
 completion/failure. No screenshots, transcripts or runtime databases are repository artifacts.
 `--only-handoff` runs just the three identity collision cases.
 
+## Released Server with PostgreSQL
+
+Use `--engine postgres` instead of `--temporal-cli` to run the same eight cases against the
+[digest-pinned deployment profile](../../deploy/temporal/README.md). This path adds explicit schema
+and SQL-role checks, engine/database SIGKILL at approval, and a cold history/visibility backup
+restored to a new volume after a write becomes unknown in the newer product database. The same
+success counters remain five POST attempts, one write and 11 fixture units. Both namespace identity
+and current public Task state are preserved.26 unit checks cover the reference and maintenance
+preflight; the PostgreSQL journey is wired into the existing Linux Python CI job.
+
+This is actual PostgreSQL persistence evidence on the local Docker reference, not production
+selection, full-product backup or native Linux isolation. The CLI/SQLite path remains a separate
+regression baseline. See the profile for maintenance constraints and remaining upgrade/security gates.
+
 ## What is exercised
 
 | Case | Observed requirement |
@@ -62,8 +76,8 @@ engine history/namespace rules preserve the ID.
 
 This demonstrates integrated process recovery and real product-state persistence for the fixed CSV
 journey. It does not qualify real model quality, arbitrary tools, Linux isolation, production Temporal
-PostgreSQL persistence, TLS/ACLs, retention, backup/restore, upgrades, scaling, resource cost or a real
-network partition. The only client exercised here is authenticated HTTP reconnect; browser/SSE
+deployment security, TLS/ACLs, retention, full-product backup/restore, version upgrades, scaling,
+resource cost or a real network partition. The only client exercised here is authenticated HTTP reconnect; browser/SSE
 reconnect and shared client projections remain separate work. Bounded engine retry exhaustion is
 not a business success or a refund. An unresolved Task needs an explicit reconciliation/recovery
 operator path before production. File quotas/GC/storage durability remain open.

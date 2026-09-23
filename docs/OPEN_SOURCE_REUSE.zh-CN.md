@@ -420,3 +420,16 @@ Temporal 开发实验另固定 CLI 1.9.1 / `1de87a9f26991bf4f5c0a5ff96f2cea8d7a3
 及 Temporal Python1.33.0 公共适配器（MIT），未复制或修改上游源码；独立环境组合既有锁定依赖。
 下一次完整工作参考流程采用 Temporal，尚未选定生产引擎；DBOS/deferred JSON 仍可比较。
 产品依赖、默认派发与私人数据不变。
+
+
+## 公开工作恢复与持久化配置（2026-09-23）
+
+公开任务参考复用已固定的 Temporal/Pydantic AI 和 PG 控制存储，CPython sqlite3 仅保存独立假服务回执；
+没有新增产品依赖、恢复调度器或复制上游实现。见[集成研究](research/work-temporal-journey.md)。
+[PostgreSQL 配置](research/temporal-postgres-operations.md)固定 Temporal Server/admin1.32.0
+`d94e34a1ebba5410a2e7d07119a76896909591aa`（MIT），复用 PostgreSQL17.11 和官方 SQL/备份工具。
+Compose 结构改编自 samples-server `f811a033a5e79402cab9f792cea132f50344bd17`，完整 MIT 声明保存在
+`deploy/temporal/THIRD_PARTY_NOTICES.md`。不复制引擎源码或新增迁移器。
+[Linux 设计](research/linux-execution-boundary.md)审查 OCI1.3、Docker29.8.1、runsc release-20260914.0、
+Squid7.7 及 Firecracker1.17/OpenSandbox1.1 候选，固定源码版本与许可证详见研究。
+尚未安装或验收 Linux 组件，未复制源码；浏览器保留已有 MIT 归因，命令与浏览器权限/容量/网络门槛分别验证。
