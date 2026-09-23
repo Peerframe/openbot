@@ -17,13 +17,13 @@ class TemporalEnginePort:
         self.client = client
         self.namespace = client.namespace
 
-    async def start_workflow(self, workflow_id, workflow_type, queue, identity, execution_timeout):
+    async def start_workflow(self, workflow_id, workflow_type, queue, start_input, execution_timeout):
         from temporalio.common import WorkflowIDReusePolicy
         from temporalio.exceptions import WorkflowAlreadyStartedError
 
         try:
             await self.client.start_workflow(
-                workflow_type, identity, id=workflow_id, task_queue=queue,
+                workflow_type, start_input, id=workflow_id, task_queue=queue,
                 execution_timeout=timedelta(seconds=execution_timeout),
                 id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
             )

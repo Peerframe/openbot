@@ -13,6 +13,7 @@ ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'apps/server-python/src'))
 from openbot_server.work_store import PostgresWorkStore
 from openbot_server.work_files import LocalWorkFiles
+from openbot_server.work_handoff import valid_attempt_id
 from openbot_server.work_values import canonical,WorkConflict
 
 
@@ -55,11 +56,29 @@ def bound_repair(identity):
 
 
 
+async def reserved_start_attempt(task_id,run_id):
+    """Read the immutable reservation, not an authority grant, before reference effects."""
+    s=store()
+    async with s._transaction(trusted=True) as db:
+        task=await s._task(db,task_id,read=True)
+        s._active(task)
+        row=await (await db.execute(
+            'SELECT a.submission_reference,a.submission_attempt_id FROM work_runs r '
+            'JOIN work_admissions a ON a.run_id=r.id WHERE r.task_id=%s AND r.id=%s',
+            (task_id,run_id))).fetchone()
+        if row is None or row['submission_reference']!='temporal:default:'+reference(run_id):
+            return None
+        return row['submission_attempt_id']
+
+
 async def bind_identity(identity):
     # Dispatch and consumption are separate trust boundaries: a colliding accepted workflow
     # must not use this worker's control configuration before its start input is checked.
     task_id,run_id=bound_ids()
-    if identity!={'taskId':task_id,'runId':run_id}:
+    if (type(identity) is not dict or set(identity)!={'taskId','runId','attemptId'}
+            or identity['taskId']!=task_id or identity['runId']!=run_id
+            or not valid_attempt_id(identity['attemptId'])
+            or identity['attemptId']!=await reserved_start_attempt(task_id,run_id)):
         raise ReceiptMismatch('Workflow start identity does not match this configured worker')
 
 

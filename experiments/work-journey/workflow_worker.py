@@ -128,6 +128,8 @@ class WorkJourney:
     def waiting_query(self)->bool:return self.waiting
     @workflow.run
     async def run(self,identity:dict)->dict:
+        # The first control activity checks the full immutable start input against the
+        # durable reservation before this reference workflow calls model or tool ports.
         self.identity=identity
         await workflow.execute_activity(bind_identity,identity,**CONFIG)
         first=await agent.run('Correct row 7',usage_limits=UsageLimits(request_limit=4))

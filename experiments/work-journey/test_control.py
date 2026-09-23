@@ -62,13 +62,18 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
         self.barrier = self.patch_port('fault_barrier', new=AsyncMock())
 
     async def test_workflow_start_identity_is_checked_before_any_product_action(self):
-        await control.bind_identity({'taskId': TASK_ID, 'runId': RUN_ID})
+        attempt='a'*32
+        expected=self.patch_port('reserved_start_attempt',new=AsyncMock(return_value=attempt))
+        await control.bind_identity({'taskId': TASK_ID, 'runId': RUN_ID, 'attemptId': attempt})
         for identity in ({'taskId': 'other', 'runId': RUN_ID},
                          {'taskId': TASK_ID, 'runId': 'other'},
                          {'taskId': TASK_ID, 'runId': RUN_ID, 'extra': True}, None):
             with self.subTest(identity=identity):
                 with self.assertRaisesRegex(control.ReceiptMismatch, 'Workflow start identity'):
                     await control.bind_identity(identity)
+        expected.return_value='b'*32
+        with self.assertRaisesRegex(control.ReceiptMismatch,'Workflow start identity'):
+            await control.bind_identity({'taskId': TASK_ID, 'runId': RUN_ID, 'attemptId': attempt})
         self.claim.assert_not_awaited()
         self.propose.assert_not_awaited()
         self.service.admit.assert_not_awaited()

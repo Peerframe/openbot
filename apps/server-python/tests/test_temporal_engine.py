@@ -73,10 +73,10 @@ def started_event(*, workflow_id='workflow-1', first_run_id='engine-first-run-1'
 def test_start_uses_reject_duplicate_with_exact_identity_and_timeout():
     client = Client()
     port = TemporalEnginePort(client)
-    identity = {'taskId': 'task-1', 'runId': 'run-1'}
-    asyncio.run(port.start_workflow('workflow-1', 'WorkJourney', 'work-queue', identity, 240))
+    start_input = {'taskId': 'task-1', 'runId': 'run-1', 'attemptId': '1' * 32}
+    asyncio.run(port.start_workflow('workflow-1', 'WorkJourney', 'work-queue', start_input, 240))
     assert port.namespace == 'openbot-namespace'
-    assert client.starts == [('WorkJourney', identity, {
+    assert client.starts == [('WorkJourney', start_input, {
         'id': 'workflow-1', 'task_queue': 'work-queue',
         'execution_timeout': timedelta(seconds=240),
         'id_reuse_policy': WorkflowIDReusePolicy.REJECT_DUPLICATE,
@@ -92,10 +92,10 @@ def test_duplicate_start_is_only_a_collision_not_an_acceptance():
 
 
 def test_history_decodes_only_immutable_start_event():
-    identity = {'taskId': 'task-1', 'runId': 'run-1'}
-    client = Client(history=History([started_event()]), decoded=[identity])
+    start_input = {'taskId': 'task-1', 'runId': 'run-1', 'attemptId': '1' * 32}
+    client = Client(history=History([started_event()]), decoded=[start_input])
     assert asyncio.run(TemporalEnginePort(client).inspect_start('workflow-1')) == StartEvent(
-        'WorkJourney', 'work-queue', identity, 'engine-first-run-1')
+        'WorkJourney', 'work-queue', start_input, 'engine-first-run-1')
 
 
 @pytest.mark.parametrize('event', [

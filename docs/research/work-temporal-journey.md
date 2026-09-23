@@ -275,3 +275,25 @@ real Temporal start-history inspection. In particular a later same-ID history wi
 Task/Run/type/queue but a different attempt must stay unacknowledged with no model/tool action.
 Historical admission rows without an attempt identifier remain fail-closed; no migration or
 default-dispatch switch may silently grant them a fresh start.
+
+### Implemented and checked in the next S3 candidate
+
+The additive `0032_work_submission_attempt_id` migration preserves historical NULL rows. Control
+now generates `secrets.token_hex(16)` inside the winning reservation transaction and returns a
+typed result with the persisted ID. A losing caller can inspect that original ID but cannot
+start. The trusted Temporal adapter sends it in the exact start input; the dispatcher compares
+the immutable start event before acknowledgement, and the handoff store compares it again under
+the Task/Run row locks. An old NULL attempt stays unresolved and cannot be backfilled. Neither
+the attempt ID nor any authority grant appears in the public audit event.
+
+The initial dsh candidate could not run tests in its nested sandbox. Independent Codex review
+found that the fixed reference Worker discarded the attempt ID before its first control activity,
+and an existing offline test double still returned the old boolean type. Codex corrected both and
+added a real wrong-attempt Worker collision case. On the integrated candidate, 48 focused
+dispatcher/Temporal tests and 14 offline reference tests passed; the owned PostgreSQL/HTTP control
+fixture passed 258 checks. A disposable real Temporal development-server probe passed five
+handoff cases, including a same-Task/Run/type/queue but wrong-attempt collision with zero
+model/tool attempts. Its recovery case completed with one synthetic external write and one
+authoritative lookup. `npm run check` passed: 29/31 Turbo lint/typecheck/test tasks and all 18
+build tasks hit cache, while repository prerequisites ran. No production Worker, multi-Run
+recovery, untrusted Linux isolation or default dispatch was qualified by these checks.

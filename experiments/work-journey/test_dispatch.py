@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import AsyncMock, Mock, patch
 
 import dispatch
+from openbot_server.work_handoff import SubmissionReservation
 
 
 TASK_ID = 'task-reference'
@@ -55,7 +56,7 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_losing_the_reservation_race_never_starts_a_second_workflow(self):
         self.handoff.pending.return_value = [IDENTITY]
-        self.handoff.reserve_submission.return_value = False
+        self.handoff.reserve_submission.return_value = SubmissionReservation(False, None)
 
         async def no_history(*, page_size):
             if False:

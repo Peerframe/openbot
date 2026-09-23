@@ -56,8 +56,11 @@ def recorded(fixture, task):
 async def acknowledge(fixture, store, task, accepted):
     handoffs = HandoffStore(store)
     task_id, run_id = task['id'], task['runs'][0]['id']
-    assert await handoffs.reserve_submission(task_id, run_id, accepted) is True
-    assert await handoffs.acknowledge(task_id, run_id, accepted, FIRST_RUN_ID) is True
+    reservation = await handoffs.reserve_submission(task_id, run_id, accepted)
+    assert reservation.should_start is True
+    assert await handoffs.acknowledge(task_id, run_id, accepted,
+                                      reservation.attempt_id, FIRST_RUN_ID) is True
+    return reservation.attempt_id
 
 
 def test_only_acknowledged_admission_admits_the_running_activity(fixture):
@@ -76,13 +79,15 @@ def test_only_acknowledged_admission_admits_the_running_activity(fixture):
         assert recorded(fixture, task) == ('pending', None, None, 1)
 
         # Reserved but not yet acknowledged: a start attempt alone is not acceptance.
-        assert await handoffs.reserve_submission(task_id, run_id, accepted) is True
+        reservation = await handoffs.reserve_submission(task_id, run_id, accepted)
+        assert reservation.should_start is True
         with pytest.raises(WorkConflict, match='handoff_not_acknowledged'):
             await assert_accepted_workflow(store, identity, activity, **settings())
         assert recorded(fixture, task) == ('pending', None, accepted, 2)
 
         # Only the acknowledged engine reference admits; the gate adds no event or revision.
-        assert await handoffs.acknowledge(task_id, run_id, accepted, FIRST_RUN_ID) is True
+        assert await handoffs.acknowledge(task_id, run_id, accepted,
+                                          reservation.attempt_id, FIRST_RUN_ID) is True
         assert await assert_accepted_workflow(store, identity, activity, **settings()) == \
             AcceptedWorkflow(task_id=task_id, run_id=run_id, namespace=NAMESPACE, queue=QUEUE,
                              workflow_id='openbot-work-v1-' + run_id, workflow_type=WORKFLOW_TYPE,
@@ -103,7 +108,7 @@ def test_legacy_acknowledgement_without_verified_chain_stays_closed(fixture):
         task = await new(fixture, store)
         task_id, run_id = task['id'], task['runs'][0]['id']
         accepted = reference(run_id)
-        await acknowledge(fixture, store, task, accepted)
+        attempt = await acknowledge(fixture, store, task, accepted)
         with psycopg.connect(fixture['dsn']) as db:
             db.execute('UPDATE work_admissions SET engine_first_run_id=NULL WHERE run_id=%s',
                        (run_id,))
@@ -114,8 +119,27 @@ def test_legacy_acknowledgement_without_verified_chain_stays_closed(fixture):
         # Same-ID history after retention might belong to a different chain.
         # Neither the gate nor ordinary redelivery may backfill a missing first Run ID.
         with pytest.raises(WorkConflict, match='handoff_engine_run_unbound'):
-            await HandoffStore(store).acknowledge(task_id, run_id, accepted, FIRST_RUN_ID)
+            await HandoffStore(store).acknowledge(task_id, run_id, accepted, attempt, FIRST_RUN_ID)
         assert recorded(fixture, task) == ('acknowledged', accepted, accepted, 3)
+    asyncio.run(check())
+
+
+def test_legacy_acknowledgement_without_attempt_provenance_stays_closed(fixture):
+    async def check():
+        store = PostgresWorkStore(fixture['dsn'])
+        task = await new(fixture, store)
+        task_id, run_id = task['id'], task['runs'][0]['id']
+        accepted = reference(run_id)
+        await acknowledge(fixture, store, task, accepted)
+        with psycopg.connect(fixture['dsn']) as db:
+            db.execute('UPDATE work_admissions SET submission_attempt_id=NULL WHERE run_id=%s',
+                       (run_id,))
+        before = recorded(fixture, task)
+        # An acknowledgement without attempt provenance cannot prove which start it accepted.
+        with pytest.raises(WorkConflict, match='handoff_attempt_unbound'):
+            await assert_accepted_workflow(store, {'taskId': task_id, 'runId': run_id},
+                                           facts(run_id), **settings())
+        assert recorded(fixture, task) == before
     asyncio.run(check())
 
 
@@ -138,10 +162,11 @@ def test_each_run_requires_its_own_acknowledged_start(fixture):
         with pytest.raises(WorkConflict, match='handoff_not_acknowledged'):
             await assert_accepted_workflow(
                 store, {'taskId': task_id, 'runId': second_run}, facts(second_run), **settings())
-        assert await HandoffStore(store).reserve_submission(
-            task_id, second_run, reference(second_run)) is True
+        second = await HandoffStore(store).reserve_submission(
+            task_id, second_run, reference(second_run))
+        assert second.should_start is True
         assert await HandoffStore(store).acknowledge(
-            task_id, second_run, reference(second_run), FIRST_RUN_ID) is True
+            task_id, second_run, reference(second_run), second.attempt_id, FIRST_RUN_ID) is True
         assert (await assert_accepted_workflow(
             store, {'taskId': task_id, 'runId': second_run}, facts(second_run),
             **settings())).run_id == second_run
@@ -273,7 +298,7 @@ def test_cancellation_and_revocation_close_an_acknowledged_activity(fixture):
         task_id, run_id = task['id'], task['runs'][0]['id']
         accepted = reference(run_id)
         handoffs = HandoffStore(store)
-        await acknowledge(fixture, store, task, accepted)
+        attempt = await acknowledge(fixture, store, task, accepted)
         identity = {'taskId': task_id, 'runId': run_id}
         assert (await assert_accepted_workflow(store, identity, facts(run_id), **settings())).run_id \
             == run_id
@@ -286,7 +311,7 @@ def test_cancellation_and_revocation_close_an_acknowledged_activity(fixture):
         with pytest.raises(WorkConflict, match='admission_closed'):
             await assert_accepted_workflow(store, identity, facts(run_id), **settings())
         # The historical acceptance stays recorded and never reopens the closed Run.
-        assert await handoffs.acknowledge(task_id, run_id, accepted, FIRST_RUN_ID) is False
+        assert await handoffs.acknowledge(task_id, run_id, accepted, attempt, FIRST_RUN_ID) is False
         with pytest.raises(WorkConflict, match='admission_closed'):
             await assert_accepted_workflow(store, identity, facts(run_id), **settings())
         assert recorded(fixture, task) == ('acknowledged', accepted, accepted, 5)

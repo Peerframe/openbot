@@ -8,6 +8,12 @@ One reservation permits one high-level start invocation. The pinned Temporal SDK
 same request ID at the RPC layer. The adapter must not create a new start request after an unknown
 response; a later delivery only inspects the original workflow. A duplicate ID is not proof.
 
+The durable reservation persists a fresh 128-bit attempt identifier with the submission
+reference. That identifier is the immutable start input's provenance: inspection must match the
+exact stored value before acknowledgement, even on a lost response, a duplicate-ID collision or a
+later same-ID chain after history retention. A legacy reservation without an identifier stays
+unresolved and never authorizes a start.
+
 It mirrors the already-reviewed reference in ``experiments/work-journey/dispatch.py`` while
 keeping ``temporalio`` out of the control package: the trusted adapter is injected as
 :class:`EnginePort`.
@@ -15,6 +21,7 @@ keeping ``temporalio`` out of the control package: the trusted adapter is inject
 from dataclasses import dataclass
 from typing import Protocol
 
+from .work_handoff import SubmissionReservation, valid_attempt_id
 from .work_values import InvalidWork, WorkConflict, text
 
 # The reviewed deterministic identity; the namespace is bound into the durable reference.
@@ -60,7 +67,7 @@ class EnginePort(Protocol):
 
     namespace: str
 
-    async def start_workflow(self, workflow_id, workflow_type, queue, identity, execution_timeout):
+    async def start_workflow(self, workflow_id, workflow_type, queue, start_input, execution_timeout):
         """Start once with reject-duplicate semantics or raise :class:`EngineAlreadyStarted`.
 
         A duplicate ID or lost response carries no second high-level start invocation.
@@ -68,6 +75,18 @@ class EnginePort(Protocol):
 
     async def inspect_start(self, workflow_id):
         """Return decoded :class:`StartEvent` facts, or ``None`` when history is unavailable."""
+
+
+def _reservation(value):
+    """Normalize a handoff port result; a bare boolean cannot carry provenance and fails closed."""
+    if isinstance(value, SubmissionReservation):
+        return value
+    return SubmissionReservation(False, None)
+
+
+def _start_input(task_id, run_id, attempt_id):
+    # Exact shape, never a superset: an unexpected key could smuggle a different start intent.
+    return {'taskId': task_id, 'runId': run_id, 'attemptId': attempt_id}
 
 
 async def dispatch_one(task_id, run_id, namespace, queue, workflow_type,
@@ -92,35 +111,39 @@ async def dispatch_one(task_id, run_id, namespace, queue, workflow_type,
 
     workflow_id = WORKFLOW_ID_PREFIX + run_id
     reference = REFERENCE_PREFIX + namespace + ':' + workflow_id
-    identity = {'taskId': task_id, 'runId': run_id}
 
     prior = await handoff.unconfirmed_for(task_id, run_id)
     if prior is not None:
         # A prior attempt is an inspection obligation, never permission to start again.
         if prior.get('engineReference') != reference:
             raise WorkConflict('handoff_reference_changed')
-        return await _confirm(task_id, run_id, reference, workflow_id,
-                              workflow_type, queue, identity, handoff, engine,
-                              start_requested=False)
+        return await _confirm(task_id, run_id, reference, workflow_id, workflow_type, queue,
+                              prior.get('attemptId'), handoff, engine, start_requested=False)
 
     # The exact durable reservation, taken before any engine contact, is the sole start authority.
-    if not await handoff.reserve_submission(task_id, run_id, reference):
-        # Another writer owns the one attempt (or it already exists): inspect only.
-        return await _confirm(task_id, run_id, reference, workflow_id,
-                              workflow_type, queue, identity, handoff, engine,
-                              start_requested=False)
+    reservation = _reservation(await handoff.reserve_submission(task_id, run_id, reference))
+    if not reservation.should_start:
+        # Another writer owns the one attempt (or a legacy attempt has no provenance): inspect.
+        return await _confirm(task_id, run_id, reference, workflow_id, workflow_type, queue,
+                              reservation.attempt_id, handoff, engine, start_requested=False)
+
+    if not valid_attempt_id(reservation.attempt_id):
+        # A start grant without persisted provenance can never be sent.
+        return DispatchResult(False, False, 'unconfirmed_attempt_unbound')
 
     try:
-        await engine.start_workflow(workflow_id, workflow_type, queue, identity, execution_timeout)
+        await engine.start_workflow(workflow_id, workflow_type, queue,
+                                    _start_input(task_id, run_id, reservation.attempt_id),
+                                    execution_timeout)
     except EngineAlreadyStarted:
         # A colliding identifier alone does not prove the engine accepted this Task/Run.
         pass
-    return await _confirm(task_id, run_id, reference, workflow_id,
-                          workflow_type, queue, identity, handoff, engine, start_requested=True)
+    return await _confirm(task_id, run_id, reference, workflow_id, workflow_type, queue,
+                          reservation.attempt_id, handoff, engine, start_requested=True)
 
 
 async def _confirm(task_id, run_id, reference, workflow_id, workflow_type, queue,
-                   identity, handoff, engine, start_requested):
+                   attempt_id, handoff, engine, start_requested):
     """Inspect the immutable start event and acknowledge only a fully matching acceptance."""
     event = await engine.inspect_start(workflow_id)
     if event is None:
@@ -130,9 +153,14 @@ async def _confirm(task_id, run_id, reference, workflow_id, workflow_type, queue
         text(getattr(event, 'first_run_id', None), 128)
     except InvalidWork:
         return DispatchResult(False, start_requested, 'unconfirmed_start_event_mismatch')
+    if not valid_attempt_id(attempt_id):
+        # A reservation without persisted provenance can never be acknowledged against
+        # whatever same-ID history exists now.
+        return DispatchResult(False, start_requested, 'unconfirmed_attempt_unbound')
     if (getattr(event, 'workflow_type', None) != workflow_type
             or getattr(event, 'task_queue', None) != queue
-            or getattr(event, 'input', None) != identity):
+            or getattr(event, 'input', None) != _start_input(task_id, run_id, attempt_id)):
         return DispatchResult(False, start_requested, 'unconfirmed_start_event_mismatch')
-    recorded = await handoff.acknowledge(task_id, run_id, reference, event.first_run_id)
+    recorded = await handoff.acknowledge(task_id, run_id, reference, attempt_id,
+                                         event.first_run_id)
     return DispatchResult(True, start_requested, 'acknowledged' if recorded else 'already_acknowledged')

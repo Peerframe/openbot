@@ -79,9 +79,11 @@ async def assert_accepted_workflow(store: PostgresWorkStore, identity, facts, *,
     Inside the existing trusted transaction, under the Task read lock, the exact Task/Run
     admission must be active and authorized, the Run must be queued/running, and
     ``work_admissions.state`` must be ``acknowledged`` with both submission and engine references
-    equal to ``temporal:<namespace>:<workflowId>`` and the same first engine Run ID. An older
-    acknowledgement without that verified chain identity is refused. A reserved-but-unacknowledged attempt,
-    mismatched scope/type/ID, wrong Task/Run, cancellation/revocation and closed Runs are refused.
+    equal to ``temporal:<namespace>:<workflowId>`` and the same first engine Run ID. The
+    acknowledgement must also carry the persisted 128-bit submission attempt identifier: an
+    older acknowledgement without that provenance cannot prove which start it accepted. A
+    reserved-but-unacknowledged attempt, mismatched scope/type/ID, wrong Task/Run,
+    cancellation/revocation and closed Runs are refused.
 
     The return value is correlation only, never authority. The read lock keeps a concurrent
     cancellation/revocation from changing this decision mid-check, and accepting a past
@@ -121,7 +123,7 @@ async def assert_accepted_workflow(store: PostgresWorkStore, identity, facts, *,
         task = await store._task(connection, task_id, read=True)
         cursor = await connection.execute(
             'SELECT r.status AS run_status,a.state,a.engine_reference,a.submission_reference,'
-            'a.engine_first_run_id '
+            'a.submission_attempt_id,a.engine_first_run_id '
             'FROM work_runs r JOIN work_admissions a ON a.run_id=r.id '
             'WHERE r.task_id=%s AND r.id=%s', (task_id, run_id))
         admission = await cursor.fetchone()
@@ -135,6 +137,10 @@ async def assert_accepted_workflow(store: PostgresWorkStore, identity, facts, *,
         if (admission['submission_reference'] != reference
                 or admission['engine_reference'] != reference):
             raise WorkConflict('handoff_reference_changed')
+        if admission['submission_attempt_id'] is None:
+            # An acknowledgement without attempt provenance cannot prove which start it
+            # accepted; a later same-ID chain could be mistaken for the original.
+            raise WorkConflict('handoff_attempt_unbound')
         if admission['engine_first_run_id'] is None:
             raise WorkConflict('handoff_engine_run_unbound')
         if admission['engine_first_run_id'] != facts.first_run_id:

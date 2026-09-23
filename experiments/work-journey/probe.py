@@ -586,13 +586,13 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
             record = {'case': 'handoff-unconfirmed-history-missing', 'status': 'unknown', 'attempts': 0}
             records.append(record)
             print(json.dumps(record), flush=True)
-        for mismatch in ('scope', 'type', 'queue'):
+        for mismatch in ('scope', 'type', 'queue', 'attempt'):
             created = api.call('/api/v1/tasks', {'botId': bot['id'], 'objective': 'Reject a colliding workflow',
                 'tokenLimit': 20, 'requestKey': secrets.token_hex(12)}, expected=202)
             task_id, run_id = created['id'], created['runs'][0]['id']
             cfg = {'dsn': dsn, 'artifact_root': str(artifact_root), 'task_id': task_id, 'run_id': run_id,
                 'temporal_address': server.address, 'queue': 'work-' + run_id}
-            identity = {'taskId': task_id, 'runId': run_id}
+            identity = {'taskId': task_id, 'runId': run_id, 'attemptId': secrets.token_hex(16)}
             handle = await client.start_workflow('UnrelatedWorkflow' if mismatch == 'type' else 'WorkJourney',
                 {**identity, 'taskId': 'unrelated'} if mismatch == 'scope' else identity,
                 id='openbot-work-v1-' + run_id, task_queue='unrelated' if mismatch == 'queue' else cfg['queue'],
@@ -601,7 +601,7 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
                 dispatcher = launch('dispatch.py', cfg)
                 assert dispatcher.process.wait(timeout=30) != 0
                 assert 'Engine acceptance' in dispatcher.diagnostic()
-                if mismatch == 'scope':
+                if mismatch in ('scope', 'attempt'):
                     # A worker may consume an ID before or after dispatcher rejection. Its
                     # own start-input check must prevent any claim/model/tool action.
                     worker = launch('workflow_worker.py', cfg)
@@ -614,6 +614,11 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
                     worker.kill()
                 assert handoff(task_id) == ('pending', None)
                 assert admitted_first_run(task_id) is None
+                with psycopg.connect(dsn) as db:
+                    reserved_attempt = db.execute(
+                        'SELECT submission_attempt_id FROM work_admissions WHERE run_id=%s',
+                        (run_id,)).fetchone()[0]
+                assert reserved_attempt is not None and reserved_attempt != identity['attemptId']
                 observed = api.snapshot(task_id)
                 assert observed['revision'] == created['revision'] + 1
                 assert observed['events'][-1]['kind'] == 'handoff.submission_attempted'
