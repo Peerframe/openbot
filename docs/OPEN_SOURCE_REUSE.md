@@ -575,3 +575,12 @@ Pydantic AI2.47.0, DBOS3.0.0 and Temporal Python1.33.0 public adapters (MIT); no
 copied or changed. Its separate environment composes the existing lock files. Temporal is the next
 public-work reference candidate, not a production engine selection; DBOS/deferred JSON remains
 viable. Product dependencies, default dispatch and private data remain unchanged.
+
+
+## Public work recovery journey (2026-09-23)
+
+Reuse the pinned official Temporal/Pydantic AI adapters and existing PostgreSQL control stores.
+A thin acceptance adapter records engine facts under the existing Task lock; CPython3.12 sqlite3
+(PSF) backs only the independent fake HTTP receipts. No new product dependency, recovery scheduler,
+public trusted-write route or upstream source copy. See [integration review](research/work-temporal-journey.md)
+and [executable reference](../experiments/work-journey/README.md).

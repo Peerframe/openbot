@@ -51,12 +51,14 @@ is allowed when justified by the target behavior; old user data and migration hi
 protected. Language changes require new evidence, not competitor fashion or sunk-cost reasoning.
 
 The assisted Temporal worker and independent Codex fault runner have completed local qualification.
-The work-domain admission slice now persists independent Tasks, exact Action approvals, shared
-reservations, unresolved outcomes and verified artifacts; it has no dispatcher. Eight official SDK
-adapter cases now pass. Next use TemporalDurability with a trusted workflow-side strategy to connect
-the public Task/approval/effect/reconciliation/artifact reference journey, retaining control-owned
-ports and one recovery owner. This is not a production engine selection or an automatic connection
-to the existing stdin/stdout Runtime. Production persistence and execution isolation remain engine-selection gates.
+Eight official SDK composition cases and eight integrated public-work cases now pass. The latter
+uses TemporalDurability with a trusted workflow-side strategy, control-owned admission/approval/budget,
+independent effect receipts and verified Artifact publication. Handoff acceptance is durable and
+idempotent; an experiment-only dispatcher closes the commit/enqueue gap. There is no production
+dispatcher or automatic connection to the existing stdin/stdout Runtime. Production persistence,
+upgrade/restore, unresolved-work operations and Linux execution isolation remain engine-selection gates.
+Next qualify these boundaries before expanding the client/API and real-tool surface. Preserve one
+recovery owner; do not turn the reference fixture into another product recovery framework.
 Unsent TASK_015 model settings work is superseded as the next task. Its existing uncommitted
 research/dependency changes remain preserved and are not accepted or activated by this decision.
 
@@ -77,8 +79,8 @@ research/dependency changes remain preserved and are not accepted or activated b
 | Stage | Deliverable | Exit evidence | State |
 | --- | --- | --- | --- |
 | S1 — Reconcile and freeze preservation scope | Source-backed capability/retirement matrix, both migration histories, data compatibility risks, target API/event ownership, reversible source checkpoints | Every target capability mapped to current evidence and an owning stage; divergent SQL histories detected; no private data copied | Complete (source scope; no data cutover) |
-| S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a identity/authentication slice accepted locally; S2b queued submission/read and control host/process seam accepted locally; persisted lifecycle accepted locally; next: recovery/domain decision before dispatcher expansion |
-| S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | In progress: fault probes, fenced work authority and verified artifact publication; no engine selected yet |
+| S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a identity/authentication slice accepted locally; S2b queued submission/read and control host/process seam accepted locally; persisted lifecycle and integrated public-work reference accepted locally; production dispatcher and client parity open |
+| S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | In progress: eight integrated public-work recovery cases; production engine selection and isolation gates open |
 | S4 — Persistent execution and deliverables | Linux browser sessions, human takeover, reviewed autonomous browse/form/upload/download, persistent workspace, restricted commands, isolated code changes and document tools | Real local fixture site with separate Bot profiles; approved write, takeover, cancel and restart; exported files open/render; isolated repository produces a tested patch | Pending |
 | S5 — Memory, skills and learning evaluation | Scoped relevant retrieval, candidate lessons/skills from correction and supported teaching, version/review/test/disable/rollback; separate evaluation tooling | A correction becomes a reviewed skill, improves a held-out task, and can be revoked; provenance/scope/deletion preserved; no authority increase. Preserve Hermes attribution | Pending |
 | S6 — Collaboration and extensibility | Existing delegation preserved through durable execution, shared resource/budget constraints; MCP authentication lifecycle and compatibility; preservation/migration of per-Bot model configuration and reviewed local endpoints | Delegated browser/file work with independent grants; conflict/cancel tests; connector refresh/revoke/failure cases; model switch keeps identity/data; independent module contribution fixture | Pending |
@@ -132,12 +134,22 @@ cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnec
 
 ## Acceptance record
 
+- Public work recovery: five integrated scenarios plus three engine-identity collision cases pass.
+  Actual HTTP/PG Task submission, durable handoff, approval while Worker absent, API reconnect,
+  lost-write-response reconciliation and byte-verified artifact delivery share one journey. A write
+  is issued once; unknown cancellation records the past effect without another model or artifact;
+  corrupted receipts remain unresolved; lost publication acknowledgement adds no completion.
+  The control-only handoff adapter adds 22 real PG tests (141 total PG/HTTP checks). Separate
+  reference tests cover canonical receipts and recovery races. Scripted model/HTTP effects and
+  development Temporal SQLite do not qualify production or Linux isolation. See the
+  [executable evidence and remaining gates](../experiments/work-journey/README.md).
+
 - Official SDK durability: eight real worker-crash cases pass. DBOS ordinary function replay
   duplicates the read; explicit steps and Temporal activities retain it. Deferred messages resume
   across worker absence, current fixture revocation blocks a write, and completed IDs add no effects.
   Interrupted model attempts exceed the SDK completed-request counter. DBOS portable workflow
-  configuration does not change native SDK model-step history. Next reference uses Temporal;
-  production selection and the integrated product journey remain open. See
+  configuration does not change native SDK model-step history. The subsequent integrated reference
+  uses Temporal; production selection remains open. See
   [source, results and decision](research/sdk-durability-integration.md).
 
 - Work publication extends the admission slice with migration `0028`, monotonic attempt claims,

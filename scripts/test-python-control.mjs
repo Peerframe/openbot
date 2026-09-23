@@ -267,6 +267,7 @@ try {
       "tests/test_execution_postgres.py",
       "tests/test_work_postgres.py",
       "tests/test_work_publication_postgres.py",
+      "tests/test_work_handoff_postgres.py",
       "tests/test_execution_sdk_postgres.py",
       "-q",
     ],
