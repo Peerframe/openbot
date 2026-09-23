@@ -1,10 +1,11 @@
 # Architecture migration handoff — 2026-09-24
 
-Current branch: `codex/architecture-migration`; handoff baseline `8d5aa41` (pushed). Start with this note and the files below; reopen older logs only for a specific failure.
+Current branch: `codex/architecture-migration`; verified S3 code baseline `9ccaff5`. Start with this note and the files below; reopen older logs only for a specific failure.
 
 ## Completed in this stage
 
 - ADR 0046 selects Temporal as the **target** recovery owner. The production switch is not active. The existing closed-history, lookup-only repair reference is at `6e7cffd`.
+- `9ccaff5` records a submission attempt before the first Temporal start request. Repeated notification inspects the original history and never grants a second start. An unconfirmed Task/Run is queried directly, even with a backlog; missing history remains unresolved. The affected control suite (189), reference suite (61), and four public HTTP/PostgreSQL/development-Temporal handoff cases passed. The PostgreSQL/mTLS handoff and recovery cases passed before the final exact-lookup change; they were not rerun for that local read change. `npm run check` passed with Turbo cache hits.
 - TASK028's bounded-output candidate is in the local, untracked `experiments/linux-execution/`. Independent review corrected incomplete CLI-pipe capture and uncertain image inspection. `python3 -m unittest test_sandbox` actually ran in that directory: 133 passed. `sandbox.py` SHA-256 `0815cb3fb4329e04522eaf9f054d973fbfe38b5335dd37bb1c1cf3a7ede8b5c5`; `test_sandbox.py` SHA-256 `a840a2153e90dadf534fcba808c0035241811d5d261f6536681c6937fea9a314`.
 
 ## Open
