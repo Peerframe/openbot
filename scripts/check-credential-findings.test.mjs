@@ -33,16 +33,33 @@ function fixture(index = 0) {
       file: "apps/server/src/plugin-service.test.ts",
       line: 385,
     },
+    {
+      url: "postgres://example.com:5432",
+      username: "fixture",
+      password: "synthetic",
+      commit: "d854e2afa62c90455570fae502f9a1616d320794",
+      file: "scripts/smoke-dev-fixture.test.mjs",
+      line: 31,
+    },
+    {
+      url: "postgres://db.example.com:5432",
+      username: "private",
+      password: "secret",
+      commit: "716c2867beac3467be5eebe6b134e343b0523296",
+      file: "scripts/verify-retained-upgrade.test.mjs",
+      line: 20,
+    },
   ];
   const definition = definitions[index];
   const url = new URL(definition.url);
-  url.username = "user";
+  const postgres = url.protocol === "postgres:";
+  url.username = definition.username ?? "user";
   url.password = definition.password;
   const rawV2 = index === 0 ? url.href.slice(0, -1) : url.href;
   url.pathname = "/";
   return {
-    DetectorType: 17,
-    DetectorName: "URI",
+    DetectorType: postgres ? 968 : 17,
+    DetectorName: postgres ? "Postgres" : "URI",
     Verified: false,
     Raw: url.href.slice(0, -1),
     RawV2: rawV2,
@@ -52,12 +69,12 @@ function fixture(index = 0) {
   };
 }
 
-test("accepts clean scans and only the four exact reviewed historical fixtures", () => {
+test("accepts clean scans and only the six exact reviewed historical fixtures", () => {
   assert.deepEqual(checkCredentialFindings("", 0), { reviewedFixtures: 0 });
-  const findings = [0, 1, 2, 3].map((index) => JSON.stringify(fixture(index)));
+  const findings = [0, 1, 2, 3, 4, 5].map((index) => JSON.stringify(fixture(index)));
   for (const finding of findings)
     assert.deepEqual(checkCredentialFindings(finding, 183), { reviewedFixtures: 1 });
-  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 4 });
+  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 6 });
 });
 
 test("does not exempt another value, detector, verified result, or source location", () => {
@@ -75,6 +92,11 @@ test("does not exempt another value, detector, verified result, or source locati
       value.DetectorName = "Other";
     },
     (value) => {
+      const postgres = value.DetectorType === 968;
+      value.DetectorType = postgres ? 17 : 968;
+      value.DetectorName = postgres ? "URI" : "Postgres";
+    },
+    (value) => {
       value.Verified = true;
     },
     (value) => {
@@ -90,7 +112,7 @@ test("does not exempt another value, detector, verified result, or source locati
       value.SourceMetadata.Data.Git.line += 1;
     },
   ];
-  for (const index of [0, 1, 2, 3])
+  for (const index of [0, 1, 2, 3, 4, 5])
     for (const mutate of mutations) {
       const value = fixture(index);
       mutate(value);

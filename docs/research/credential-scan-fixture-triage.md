@@ -91,3 +91,54 @@ commit was never pushed. Hosted CI on the final combined commit remains the rele
 ## Plugin admission fixture (2026-09-10)
 
 PR #29 failed because full history adds one URI match from commit `cb057607a100ccc10dd4cec6eece6c9cfc4a5158`, `apps/server/src/plugin-service.test.ts:385`. The exact pinned scanner replayed offline over a disposable clone reports four matches total, zero verified secrets. Source inspection confirms the extra literal is a synthetic `example.com` userinfo URL in a negative `normalizePluginEndpoint` test, with no request sent. Raw SHA-256: `1231625e7e70c4e56347672932d37a1c35eff89051483b37cbd09f7b9c58337e`; RawV2: `64af6524d4fcec9a8688550461aea8ddd09ec210db19f00be93ddc558b2b5ebb`. Extend the same immutable commit/path/line/detector/hash tuple, with mutation tests, and construct the current fixture through URL setters to avoid new historical matches. No detector/path exclusion, verification, upload or scanner change.
+
+## Contributor PostgreSQL rejection fixtures (2026-09-23)
+
+PR #85 CI run `35812975675`, security job `107028356527`, passed the production dependency
+audit with zero vulnerabilities and then failed the exact-finding adapter. Before implementation,
+replayed the unchanged digest-pinned TruffleHog image against a disposable clone of all remote
+branches, checked out at `97745c13412972b2440a5914c20e8fd44f99e7df`. The read-only, offline scan
+(`--network none`, verification and updates disabled) completed with exit 183 and six unverified
+findings: the four reviewed URI fixtures and two PostgreSQL rejection fixtures in the published
+`codex/collaborative-development` branch. This branch is scanned even though it is not merged.
+Raw candidates and scanner diagnostics remain in permission-restricted temporary files.
+
+Search terms: `repo:trufflesecurity/trufflehog exact false positive URI git history allowlist`.
+Rechecked the fixed release [v3.97.1](https://github.com/trufflesecurity/trufflehog/releases/tag/v3.97.1),
+its [PostgreSQL detector](https://github.com/trufflesecurity/trufflehog/blob/20652fbbdefffcdaa493a5bf57ab2ac6b1db715b/pkg/detectors/postgres/postgres.go),
+[detector tests](https://github.com/trufflesecurity/trufflehog/tree/20652fbbdefffcdaa493a5bf57ab2ac6b1db715b/pkg/detectors/postgres),
+[CLI](https://github.com/trufflesecurity/trufflehog/blob/20652fbbdefffcdaa493a5bf57ab2ac6b1db715b/main.go),
+and [path exclusion issue #420](https://github.com/trufflesecurity/trufflehog/issues/420).
+The PostgreSQL detector normalizes both raw fields to the connection authority with an explicit
+default port, while preserving the original source match for line metadata. Hashes must therefore
+come from the actual pinned scanner output, not the input URL text. The existing exact adapter
+remains the first viable option: detector/path exclusions are broader, editing a current test does
+not remove published history, and replacing the scanner changes detection coverage unnecessarily.
+The existing AGPL-3.0 external-tool license boundary and pinned image remain unchanged.
+
+| Commit | File and line | Detector | SHA-256 of both Raw and RawV2 | Review |
+| --- | --- | --- | --- | --- |
+| `d854e2afa62c90455570fae502f9a1616d320794` | `scripts/smoke-dev-fixture.test.mjs:31` | `968` / `Postgres` | `a0010550bccff9bf7c0aa79e783a4e21558de033364bf51b00eea5d850faa23f` | Synthetic `example.com` target in the loopback-only URL rejection test; `validateDatabaseUrl` parses and rejects before any database operation |
+| `716c2867beac3467be5eebe6b134e343b0523296` | `scripts/verify-retained-upgrade.test.mjs:20` | `968` / `Postgres` | `23f48618df08767413e1310aa3a841b4384d4c687087792223e06e4141cb516a` | Synthetic `db.example.com` target in a loopback-only rejection test; `validateUpgradeTarget` only parses/asserts, and the test also checks that failure text omits the password |
+
+Decision: extend only the exact immutable tuple list by these two findings. Bind detector ID and
+name to each tuple, so the four URI exceptions remain URI-only and the new two remain PostgreSQL-only.
+Keep `Verified === false`, commit, path, line, and both raw hashes mandatory. No dependency,
+upstream source copying, changed scanning scope, credential verification, or upload is introduced.
+Do not add generic exceptions for test files, example domains, PostgreSQL findings, or unverified
+results. Replace the adapter only if a maintained upstream mechanism can enforce the same exact
+historical boundary.
+
+Verification plan: replay all six real findings against the adapter, test every tuple mutation
+including substitution with the other allowed detector, and retain scanner-error/malformed/mixed
+output rejection. Construct regression values through URL setters without new literal credential
+URLs. Run the focused security/workflow contract tests and rescan a temporary candidate commit with
+the same pinned offline scanner. The complete repository check and final hosted CI remain required.
+
+Validation completed: all 15 credential/workflow contract tests, focused Biome checks, and
+`docs:check` passed. The real six-finding output passed the strict adapter. A second full-history
+scan included the four candidate files in a local-only temporary commit and again returned exit
+183 with exactly the same six reviewed findings; the adapter passed, with no new candidate finding.
+The integration worktree was not committed or pushed during this review. The parent integration
+check also completed `npm run check` successfully; hosted CI on the final published commit is the
+remaining merge gate.
