@@ -177,3 +177,19 @@ units, replay verified). The cancel-unknown case passed on the immediately prece
 (four attempts, one historical write, one lookup, no final completion); it was not rerun for the
 namespace-only check. These are synthetic services and a fixed reference strategy. They do not
 establish production concurrency, real Runtime composition, Linux isolation or default activation.
+
+## Product Temporal transport reused by the reference (2026-09-24)
+
+The one-Run `TemporalEnginePort` now lives in `apps/server-python` and the real-engine reference
+imports it instead of keeping a duplicate class. This is a thin adapter of the pinned Temporal
+Python SDK 1.33.0 client; no upstream source was copied. It binds the client's actual namespace,
+starts with `REJECT_DUPLICATE`, reads the first immutable start event, and leaves all admission
+decisions to `dispatch_one`. Only a `NOT_FOUND` error from history fetching is treated as missing
+history; transport errors and decoding failures propagate. The optional SDK is still installed
+by the isolated reference requirements, not the default Python control environment. Production
+worker installation, lifecycle, authentication and Runtime composition are still open.
+
+On the final adapter candidate, 34 focused control/transport tests and two offline dispatcher
+tests actually ran. The real public HTTP + temporary PostgreSQL + Temporal development-server
+probe passed four handoff cases and one full recovery case before the final error-scope tightening;
+that last change was exercised by the focused decoder-failure test, not another full probe.
