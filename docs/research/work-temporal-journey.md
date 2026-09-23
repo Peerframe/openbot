@@ -319,3 +319,23 @@ wrong start input or mismatched chain fails closed. These facts are correlation 
 each model/tool effect still needs its own current authority, budget, claim and reconciliation
 policy. The narrow local gap is this adapter and its verification, not a second scheduler or
 new protocol. No upstream code is copied.
+
+### Activity adapter evidence (2026-09-24)
+
+The next candidate adds `work_temporal_activity.bind_current_activity`: inside a trusted
+Temporal activity it reads `activity.info()`, opens the **exact current Run** history and
+validates the immutable start type, queue and `{taskId,runId,attemptId}` before applying the
+read-only PostgreSQL acceptance gate. The activity queue and start queue remain separate facts;
+both must match trusted composition. The accepted result is correlation only, never effect
+authority. `TemporalEnginePort.inspect_start(..., run_id=...)` adds exact-run lookup without
+changing the dispatcher's existing latest-run inspection on redelivery.
+
+Independent checks on the integrated candidate: the owned PostgreSQL/HTTP control fixture ran
+274 checks with one optional-SDK test file skipped by the default interpreter; the **same owned
+fixture** then ran all 32 adapter tests through the separately pinned Temporal SDK interpreter.
+A disposable real Temporal development-server probe ran the adapter from an actual activity,
+verified the SDK's current Run ID resolved to that Run's immutable start event and matched its
+first Run ID. Earlier probe-only workflow sandbox import errors were corrected in the disposable
+harness; they did not change product code. The SDK unit suite in isolation ran 43 checks and
+skipped its fixture-dependent case. Logs are under `/private/tmp/openbot-s3-activity-*20260924*.log`.
+This does not qualify a production Worker, multi-Run continuation or effect recovery.

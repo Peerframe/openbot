@@ -269,6 +269,7 @@ try {
       "tests/test_work_publication_postgres.py",
       "tests/test_work_handoff_postgres.py",
       "tests/test_work_engine_binding_postgres.py",
+      "tests/test_work_temporal_activity.py",
       "tests/test_work_reconciliation_postgres.py",
       "tests/test_execution_sdk_postgres.py",
       "-q",
@@ -288,6 +289,28 @@ try {
     .replaceAll(ownerPassword, "[fixture password]");
   console.log(output.trim());
   assert.equal(result.status, 0, "Python/PostgreSQL compatibility checks failed.");
+  // The Temporal SDK is optional in the default control venv. When a separately pinned SDK
+  // interpreter is supplied, exercise the activity adapter against this same owned fixture.
+  if (process.env.OPENBOT_TEMPORAL_TEST_PYTHON) {
+    const temporal = spawnSync(
+      process.env.OPENBOT_TEMPORAL_TEST_PYTHON,
+      ["-m", "pytest", "tests/test_work_temporal_activity.py", "-q"],
+      {
+        cwd: join(root, "apps/server-python"),
+        env: { ...environment, OPENBOT_CONTROL_TEST_FIXTURE: fixture },
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        timeout: 120_000,
+      },
+    );
+    const temporalOutput = `${temporal.stdout ?? ""}${temporal.stderr ?? ""}`
+      .replaceAll(password, "[fixture password]")
+      .replaceAll(token, "[fixture token]")
+      .replaceAll(tsRevocableToken, "[fixture token]")
+      .replaceAll(ownerPassword, "[fixture password]");
+    console.log(temporalOutput.trim());
+    assert.equal(temporal.status, 0, "Temporal activity/PostgreSQL checks failed.");
+  }
   const identityResult = JSON.parse(
     await readFile(join(fixtureDirectory, "identity-result.json"), "utf8"),
   );

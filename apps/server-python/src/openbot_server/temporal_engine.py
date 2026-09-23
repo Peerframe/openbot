@@ -31,10 +31,19 @@ class TemporalEnginePort:
             # A duplicate identifier is not proof that this Run owns the history.
             raise EngineAlreadyStarted() from error
 
-    async def inspect_start(self, workflow_id):
+    async def inspect_start(self, workflow_id, run_id=None):
+        """Return the immutable start facts for ``workflow_id``, optionally one exact ``run_id``.
+
+        ``run_id=None`` preserves the dispatcher's existing latest-Run lookup. An explicit Run
+        ID binds the handle to that exact Run; the activity adapter requires it so a missing
+        current Run ID can never silently fall back to whatever latest history exists.
+        """
         from temporalio.service import RPCError, RPCStatusCode
 
-        handle = self.client.get_workflow_handle(workflow_id)
+        if run_id is None:
+            handle = self.client.get_workflow_handle(workflow_id)
+        else:
+            handle = self.client.get_workflow_handle(workflow_id, run_id=run_id)
         try:
             async for event in handle.fetch_history_events(page_size=1):
                 break

@@ -1,7 +1,8 @@
 """Read-only activity binding against the owned PostgreSQL fixture; no engine, no authority.
 
 The gate is exercised at the exact accepted/reserved/unreserved boundary and against mismatched
-activity facts. Every refusal is checked to leave the Task revision and admission untouched.
+activity facts, including same-ID/same-first-Run history that carries a different immutable
+attempt ID. Every refusal is checked to leave the Task revision and admission untouched.
 """
 import asyncio
 from uuid import uuid4
@@ -19,6 +20,8 @@ NAMESPACE = 'fixture-namespace'
 QUEUE = 'fixture-queue'
 WORKFLOW_TYPE = 'OpenBotWork'
 FIRST_RUN_ID = 'engine-first-run-1'
+# A syntactically valid attempt identifier that no reservation produced.
+OTHER_ATTEMPT_ID = 'f' * 32
 
 
 async def new(fixture, store):
@@ -32,10 +35,11 @@ def settings():
                 expected_workflow_type=WORKFLOW_TYPE)
 
 
-def facts(run_id, **overrides):
-    values = dict(namespace=NAMESPACE, queue=QUEUE, workflow_id='openbot-work-v1-' + run_id,
-                  workflow_type=WORKFLOW_TYPE, engine_run_id='engine-run-' + run_id,
-                  first_run_id=FIRST_RUN_ID)
+def facts(task_id, run_id, attempt_id, **overrides):
+    values = dict(namespace=NAMESPACE, queue=QUEUE, start_queue=QUEUE,
+                  workflow_id='openbot-work-v1-' + run_id, workflow_type=WORKFLOW_TYPE,
+                  engine_run_id='engine-run-' + run_id, first_run_id=FIRST_RUN_ID,
+                  start_input={'taskId': task_id, 'runId': run_id, 'attemptId': attempt_id})
     values.update(overrides)
     return EngineActivityFacts(**values)
 
@@ -70,24 +74,26 @@ def test_only_acknowledged_admission_admits_the_running_activity(fixture):
         task_id, run_id = task['id'], task['runs'][0]['id']
         handoffs = HandoffStore(store)
         identity = {'taskId': task_id, 'runId': run_id}
-        activity = facts(run_id)
         accepted = reference(run_id)
 
         # No reservation: the durable row exists, but nothing was submitted to the engine.
         with pytest.raises(WorkConflict, match='handoff_not_acknowledged'):
-            await assert_accepted_workflow(store, identity, activity, **settings())
+            await assert_accepted_workflow(store, identity, facts(task_id, run_id, OTHER_ATTEMPT_ID),
+                                           **settings())
         assert recorded(fixture, task) == ('pending', None, None, 1)
 
         # Reserved but not yet acknowledged: a start attempt alone is not acceptance.
         reservation = await handoffs.reserve_submission(task_id, run_id, accepted)
         assert reservation.should_start is True
         with pytest.raises(WorkConflict, match='handoff_not_acknowledged'):
-            await assert_accepted_workflow(store, identity, activity, **settings())
+            await assert_accepted_workflow(
+                store, identity, facts(task_id, run_id, reservation.attempt_id), **settings())
         assert recorded(fixture, task) == ('pending', None, accepted, 2)
 
         # Only the acknowledged engine reference admits; the gate adds no event or revision.
         assert await handoffs.acknowledge(task_id, run_id, accepted,
                                           reservation.attempt_id, FIRST_RUN_ID) is True
+        activity = facts(task_id, run_id, reservation.attempt_id)
         assert await assert_accepted_workflow(store, identity, activity, **settings()) == \
             AcceptedWorkflow(task_id=task_id, run_id=run_id, namespace=NAMESPACE, queue=QUEUE,
                              workflow_id='openbot-work-v1-' + run_id, workflow_type=WORKFLOW_TYPE,
@@ -114,7 +120,8 @@ def test_legacy_acknowledgement_without_verified_chain_stays_closed(fixture):
                        (run_id,))
         identity = {'taskId': task_id, 'runId': run_id}
         with pytest.raises(WorkConflict, match='handoff_engine_run_unbound'):
-            await assert_accepted_workflow(store, identity, facts(run_id), **settings())
+            await assert_accepted_workflow(store, identity, facts(task_id, run_id, attempt),
+                                           **settings())
         assert recorded(fixture, task) == ('acknowledged', accepted, accepted, 3)
         # Same-ID history after retention might belong to a different chain.
         # Neither the gate nor ordinary redelivery may backfill a missing first Run ID.
@@ -138,9 +145,65 @@ def test_legacy_acknowledgement_without_attempt_provenance_stays_closed(fixture)
         # An acknowledgement without attempt provenance cannot prove which start it accepted.
         with pytest.raises(WorkConflict, match='handoff_attempt_unbound'):
             await assert_accepted_workflow(store, {'taskId': task_id, 'runId': run_id},
-                                           facts(run_id), **settings())
+                                           facts(task_id, run_id, OTHER_ATTEMPT_ID), **settings())
         assert recorded(fixture, task) == before
     asyncio.run(check())
+
+
+def test_same_id_history_with_a_different_immutable_attempt_is_refused(fixture):
+    """Acknowledged same-ID/same-first-Run fixture from a different submission stays closed."""
+    async def check():
+        store = PostgresWorkStore(fixture['dsn'])
+        task = await new(fixture, store)
+        task_id, run_id = task['id'], task['runs'][0]['id']
+        accepted = reference(run_id)
+        await acknowledge(fixture, store, task, accepted)
+        before = recorded(fixture, task)
+        # Same Task, same Run, same acknowledged first engine Run, but the immutable start input
+        # carries another attempt ID: this is not the accepted submission.
+        with pytest.raises(WorkConflict, match='handoff_attempt_changed'):
+            await assert_accepted_workflow(
+                store, {'taskId': task_id, 'runId': run_id},
+                facts(task_id, run_id, OTHER_ATTEMPT_ID), **settings())
+        assert recorded(fixture, task) == before
+    asyncio.run(check())
+
+
+def test_start_input_must_match_the_accepted_task_run(fixture):
+    async def check():
+        store = PostgresWorkStore(fixture['dsn'])
+        task = await new(fixture, store)
+        task_id, run_id = task['id'], task['runs'][0]['id']
+        accepted = reference(run_id)
+        attempt = await acknowledge(fixture, store, task, accepted)
+        before = recorded(fixture, task)
+        wrong = {'taskId': str(uuid4()), 'runId': run_id, 'attemptId': attempt}
+        with pytest.raises(WorkConflict, match='handoff_start_input_changed'):
+            await assert_accepted_workflow(
+                store, {'taskId': task_id, 'runId': run_id},
+                facts(task_id, run_id, attempt, start_input=wrong), **settings())
+        assert recorded(fixture, task) == before
+    asyncio.run(check())
+
+
+@pytest.mark.parametrize('start_input', [
+    None, [], 'input', {},
+    {'taskId': 'a', 'runId': 'b'},
+    {'taskId': 'a', 'runId': 'b', 'attemptId': 'c', 'extra': 'd'},
+    {'taskId': 'a', 'runId': 'b', 'attemptId': ''},
+    {'taskId': 'a', 'runId': 'b', 'attemptId': 'A' * 32},
+    {'taskId': 'a', 'runId': 'b', 'attemptId': 'a' * 31},
+    {'taskId': '', 'runId': 'b', 'attemptId': 'a' * 32},
+    {'taskId': 'a', 'runId': ' ', 'attemptId': 'a' * 32},
+    {'taskId': 1, 'runId': 'b', 'attemptId': 'a' * 32},
+    {'taskId': 'a\0b', 'runId': 'b', 'attemptId': 'a' * 32},
+])
+def test_malformed_start_input_is_refused(fixture, start_input):
+    run_id = str(uuid4())
+    with pytest.raises(InvalidWork):
+        asyncio.run(assert_accepted_workflow(
+            PostgresWorkStore(fixture['dsn']), {'taskId': str(uuid4()), 'runId': run_id},
+            facts(str(uuid4()), run_id, '0' * 32, start_input=start_input), **settings()))
 
 
 def test_each_run_requires_its_own_acknowledged_start(fixture):
@@ -153,29 +216,31 @@ def test_each_run_requires_its_own_acknowledged_start(fixture):
             db.execute('INSERT INTO work_runs(id,task_id,ordinal) VALUES (%s,%s,2)',
                        (second_run, task_id))
             db.execute('INSERT INTO work_admissions(run_id) VALUES (%s)', (second_run,))
-        await acknowledge(fixture, store, task, reference(first_run))
+        first_attempt = await acknowledge(fixture, store, task, reference(first_run))
 
         assert (await assert_accepted_workflow(
-            store, {'taskId': task_id, 'runId': first_run}, facts(first_run),
-            **settings())).run_id == first_run
+            store, {'taskId': task_id, 'runId': first_run},
+            facts(task_id, first_run, first_attempt), **settings())).run_id == first_run
         # A sibling Run of the same Task is not admitted by the first Run's acceptance.
         with pytest.raises(WorkConflict, match='handoff_not_acknowledged'):
             await assert_accepted_workflow(
-                store, {'taskId': task_id, 'runId': second_run}, facts(second_run), **settings())
+                store, {'taskId': task_id, 'runId': second_run},
+                facts(task_id, second_run, OTHER_ATTEMPT_ID), **settings())
         second = await HandoffStore(store).reserve_submission(
             task_id, second_run, reference(second_run))
         assert second.should_start is True
         assert await HandoffStore(store).acknowledge(
             task_id, second_run, reference(second_run), second.attempt_id, FIRST_RUN_ID) is True
         assert (await assert_accepted_workflow(
-            store, {'taskId': task_id, 'runId': second_run}, facts(second_run),
-            **settings())).run_id == second_run
+            store, {'taskId': task_id, 'runId': second_run},
+            facts(task_id, second_run, second.attempt_id), **settings())).run_id == second_run
     asyncio.run(check())
 
 
 @pytest.mark.parametrize('overrides,error', [
     ({'namespace': 'other-namespace'}, 'engine_namespace_mismatch'),
     ({'queue': 'other-queue'}, 'engine_queue_mismatch'),
+    ({'start_queue': 'other-queue'}, 'engine_start_queue_mismatch'),
     ({'workflow_type': 'other-workflow'}, 'engine_workflow_type_mismatch'),
     ({'workflow_id': 'openbot-work-v1-00000000-0000-0000-0000-000000000000'},
      'engine_workflow_id_mismatch'),
@@ -187,11 +252,12 @@ def test_mismatched_activity_facts_are_refused_without_mutation(fixture, overrid
         task = await new(fixture, store)
         task_id, run_id = task['id'], task['runs'][0]['id']
         accepted = reference(run_id)
-        await acknowledge(fixture, store, task, accepted)
+        attempt = await acknowledge(fixture, store, task, accepted)
         before = recorded(fixture, task)
         with pytest.raises(WorkConflict, match=error):
             await assert_accepted_workflow(store, {'taskId': task_id, 'runId': run_id},
-                                           facts(run_id, **overrides), **settings())
+                                           facts(task_id, run_id, attempt, **overrides),
+                                           **settings())
         assert recorded(fixture, task) == before
     asyncio.run(check())
 
@@ -203,7 +269,7 @@ def test_engine_run_id_must_be_nonempty_bounded_utf8(fixture, engine_run_id):
         with pytest.raises(InvalidWork):
             await assert_accepted_workflow(
                 PostgresWorkStore(fixture['dsn']), {'taskId': str(uuid4()), 'runId': run_id},
-                facts(run_id, engine_run_id=engine_run_id), **settings())
+                facts(str(uuid4()), run_id, '0' * 32, engine_run_id=engine_run_id), **settings())
     asyncio.run(check())
 
 
@@ -213,7 +279,7 @@ def test_first_run_id_must_be_nonempty_bounded_utf8(fixture, first_run_id):
     with pytest.raises(InvalidWork):
         asyncio.run(assert_accepted_workflow(
             PostgresWorkStore(fixture['dsn']), {'taskId': str(uuid4()), 'runId': run_id},
-            facts(run_id, first_run_id=first_run_id), **settings()))
+            facts(str(uuid4()), run_id, '0' * 32, first_run_id=first_run_id), **settings()))
 
 
 @pytest.mark.parametrize('identity', [
@@ -228,7 +294,8 @@ def test_identity_must_be_exactly_bounded_task_run(fixture, identity):
     run_id = str(uuid4())
     with pytest.raises(InvalidWork):
         asyncio.run(assert_accepted_workflow(
-            PostgresWorkStore(fixture['dsn']), identity, facts(run_id), **settings()))
+            PostgresWorkStore(fixture['dsn']), identity,
+            facts(str(uuid4()), run_id, '0' * 32), **settings()))
 
 
 @pytest.mark.parametrize('override', [
@@ -243,7 +310,7 @@ def test_trusted_settings_must_be_nonempty_bounded(fixture, override):
     with pytest.raises(InvalidWork):
         asyncio.run(assert_accepted_workflow(
             PostgresWorkStore(fixture['dsn']), {'taskId': str(uuid4()), 'runId': run_id},
-            facts(run_id), **values))
+            facts(str(uuid4()), run_id, '0' * 32), **values))
 
 
 def test_facts_must_be_the_trusted_activity_dataclass(fixture):
@@ -269,7 +336,7 @@ def test_exact_task_run_relation_is_required(fixture):
         ]:
             with pytest.raises(WorkNotFound):
                 await assert_accepted_workflow(store, {'taskId': task_id, 'runId': run_id},
-                                               facts(run_id), **settings())
+                                               facts(task_id, run_id, '0' * 32), **settings())
         assert recorded(fixture, first) == ('pending', None, None, 1)
         assert recorded(fixture, second) == ('pending', None, None, 1)
     asyncio.run(check())
@@ -281,12 +348,12 @@ def test_closed_run_is_refused_even_when_admission_acknowledged(fixture):
         task = await new(fixture, store)
         task_id, run_id = task['id'], task['runs'][0]['id']
         accepted = reference(run_id)
-        await acknowledge(fixture, store, task, accepted)
+        attempt = await acknowledge(fixture, store, task, accepted)
         with psycopg.connect(fixture['dsn']) as db:
             db.execute("UPDATE work_runs SET status='completed' WHERE id=%s", (run_id,))
         with pytest.raises(WorkConflict, match='run_closed'):
             await assert_accepted_workflow(store, {'taskId': task_id, 'runId': run_id},
-                                           facts(run_id), **settings())
+                                           facts(task_id, run_id, attempt), **settings())
         assert recorded(fixture, task) == ('acknowledged', accepted, accepted, 3)
     asyncio.run(check())
 
@@ -300,19 +367,20 @@ def test_cancellation_and_revocation_close_an_acknowledged_activity(fixture):
         handoffs = HandoffStore(store)
         attempt = await acknowledge(fixture, store, task, accepted)
         identity = {'taskId': task_id, 'runId': run_id}
-        assert (await assert_accepted_workflow(store, identity, facts(run_id), **settings())).run_id \
+        activity = facts(task_id, run_id, attempt)
+        assert (await assert_accepted_workflow(store, identity, activity, **settings())).run_id \
             == run_id
 
         await store.revoke(fixture['token'], task_id)
         with pytest.raises(WorkConflict, match='admission_closed'):
-            await assert_accepted_workflow(store, identity, facts(run_id), **settings())
+            await assert_accepted_workflow(store, identity, activity, **settings())
 
         await store.cancel(fixture['token'], task_id)
         with pytest.raises(WorkConflict, match='admission_closed'):
-            await assert_accepted_workflow(store, identity, facts(run_id), **settings())
+            await assert_accepted_workflow(store, identity, activity, **settings())
         # The historical acceptance stays recorded and never reopens the closed Run.
         assert await handoffs.acknowledge(task_id, run_id, accepted, attempt, FIRST_RUN_ID) is False
         with pytest.raises(WorkConflict, match='admission_closed'):
-            await assert_accepted_workflow(store, identity, facts(run_id), **settings())
+            await assert_accepted_workflow(store, identity, activity, **settings())
         assert recorded(fixture, task) == ('acknowledged', accepted, accepted, 5)
     asyncio.run(check())

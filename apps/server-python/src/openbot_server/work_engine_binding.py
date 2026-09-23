@@ -9,11 +9,14 @@ work-store transactions.
 
 Nothing here writes, claims, schedules, retries or audits, and the module never imports
 ``temporalio``. The trusted caller decodes :class:`EngineActivityFacts` from
-``temporalio.activity.info()``; facts are never accepted from model, HTTP or Worker input.
+``temporalio.activity.info()`` and that exact Run's immutable start event (see
+:mod:`openbot_server.work_temporal_activity`); facts are never accepted from model, HTTP or
+Worker input.
 """
 from dataclasses import dataclass
 
 from .work_dispatcher import REFERENCE_PREFIX, WORKFLOW_ID_PREFIX
+from .work_handoff import valid_attempt_id
 from .work_store import PostgresWorkStore
 from .work_values import InvalidWork, WorkConflict, WorkNotFound, text
 
@@ -30,16 +33,25 @@ class EngineActivityFacts:
     """Actual activity facts decoded by trusted control code, never by a model.
 
     A trusted caller reads namespace, queue, Workflow ID/type and the current Run ID from
-    ``temporalio.activity.info()``. Trusted workflow code supplies ``first_run_id`` from
-    ``workflow.info().first_execution_run_id``. It identifies the accepted chain across
-    Continue-As-New; a new same-ID chain after retention has a different first Run ID.
+    ``temporalio.activity.info()``, then inspects that exact Run's first immutable
+    ``WorkflowExecutionStarted`` event for ``first_run_id``, workflow type, start queue and the
+    exact ``{taskId, runId, attemptId}`` start input. ``first_run_id`` identifies the accepted
+    chain across Continue-As-New; a new same-ID chain after retention has a different first Run
+    ID. Nothing here is accepted from HTTP, model or workflow input.
+
+    ``queue`` is the actual activity task queue and ``start_queue`` the workflow's start task
+    queue. They are represented separately because they are different engine facts; under this
+    control deployment both must equal the trusted expected queue, and a mismatch is refused
+    rather than mistaken for proof of the accepted workflow.
     """
     namespace: str
     queue: str
+    start_queue: str
     workflow_id: str
     workflow_type: str
     engine_run_id: str
     first_run_id: str
+    start_input: dict
 
 
 @dataclass(frozen=True)
@@ -67,21 +79,42 @@ def _identity(value):
     return text(value['taskId'], MAX_IDENTITY), text(value['runId'], MAX_IDENTITY)
 
 
+def engine_start_input(value):
+    """Validate the exact bounded ``{taskId,runId,attemptId}`` start input.
+
+    This is the immutable start intent decoded from the engine's start event. It is compared
+    with the durable submission attempt so same-ID history from another submission is never
+    mistaken for the accepted one. The 128-bit attempt identifier keeps that comparison exact;
+    ``work_handoff`` owns its canonical shape.
+    """
+    if type(value) is not dict or set(value) != {'taskId', 'runId', 'attemptId'}:
+        raise InvalidWork('invalid_engine_start_input')
+    task_id = text(value['taskId'], MAX_IDENTITY)
+    run_id = text(value['runId'], MAX_IDENTITY)
+    attempt_id = text(value['attemptId'], 32)
+    if not valid_attempt_id(attempt_id):
+        raise InvalidWork('invalid_engine_start_input')
+    return {'taskId': task_id, 'runId': run_id, 'attemptId': attempt_id}
+
+
 async def assert_accepted_workflow(store: PostgresWorkStore, identity, facts, *,
                                    expected_namespace, expected_queue, expected_workflow_type):
     """Fail closed unless this activity matches one acknowledged Task/Run engine start.
 
     ``expected_*`` are trusted settings from control composition; ``identity`` must be exactly
     ``{'taskId', 'runId'}``; ``facts`` must be an :class:`EngineActivityFacts` decoded by trusted
-    control code. The actual namespace/queue/type/workflow ID must match those settings and the
-    deterministic ``openbot-work-v1-<runId>`` ID.
+    control code. The actual namespace/type/workflow ID must match those settings and the
+    deterministic ``openbot-work-v1-<runId>`` ID. The activity task queue and the workflow start
+    queue are separate facts and both must equal the trusted expected queue.
 
     Inside the existing trusted transaction, under the Task read lock, the exact Task/Run
     admission must be active and authorized, the Run must be queued/running, and
     ``work_admissions.state`` must be ``acknowledged`` with both submission and engine references
-    equal to ``temporal:<namespace>:<workflowId>`` and the same first engine Run ID. The
-    acknowledgement must also carry the persisted 128-bit submission attempt identifier: an
-    older acknowledgement without that provenance cannot prove which start it accepted. A
+    equal to ``temporal:<namespace>:<workflowId>``, the persisted 128-bit submission attempt
+    identifier and the same first engine Run ID. The immutable start input's exact
+    ``{taskId, runId, attemptId}`` must equal the Task/Run and that persisted attempt: a
+    same-ID/same-chain start from a different submission can never prove this one. An older
+    acknowledgement without attempt provenance cannot prove which start it accepted. A
     reserved-but-unacknowledged attempt, mismatched scope/type/ID, wrong Task/Run,
     cancellation/revocation and closed Runs are refused.
 
@@ -97,21 +130,27 @@ async def assert_accepted_workflow(store: PostgresWorkStore, identity, facts, *,
     text(expected_workflow_type, MAX_WORKFLOW_TYPE)
     text(facts.namespace, MAX_NAMESPACE)
     text(facts.queue, MAX_QUEUE)
+    text(facts.start_queue, MAX_QUEUE)
     text(facts.workflow_id, MAX_WORKFLOW_ID)
     text(facts.workflow_type, MAX_WORKFLOW_TYPE)
     text(facts.engine_run_id, MAX_ENGINE_RUN_ID)
     text(facts.first_run_id, MAX_ENGINE_RUN_ID)
+    start_input = engine_start_input(facts.start_input)
 
     workflow_id = WORKFLOW_ID_PREFIX + run_id
     reference = REFERENCE_PREFIX + expected_namespace + ':' + workflow_id
 
     # Actual engine facts must agree with trusted settings before any durable state is trusted.
     # A well-formed fact that disagrees is a conflict with trusted composition, not malformed
-    # input, so it is refused fail-closed as WorkConflict rather than InvalidWork.
+    # input, so it is refused fail-closed as WorkConflict rather than InvalidWork. The activity
+    # task queue and the workflow start queue are different engine facts; this deployment
+    # requires both to be the trusted queue, and a mismatch is never evidence of acceptance.
     if facts.namespace != expected_namespace:
         raise WorkConflict('engine_namespace_mismatch')
     if facts.queue != expected_queue:
         raise WorkConflict('engine_queue_mismatch')
+    if facts.start_queue != expected_queue:
+        raise WorkConflict('engine_start_queue_mismatch')
     if facts.workflow_type != expected_workflow_type:
         raise WorkConflict('engine_workflow_type_mismatch')
     if facts.workflow_id != workflow_id:
@@ -141,6 +180,15 @@ async def assert_accepted_workflow(store: PostgresWorkStore, identity, facts, *,
             # An acknowledgement without attempt provenance cannot prove which start it
             # accepted; a later same-ID chain could be mistaken for the original.
             raise WorkConflict('handoff_attempt_unbound')
+        if start_input['attemptId'] != admission['submission_attempt_id']:
+            # The immutable start input must carry the exact persisted attempt identifier. A
+            # different one is a different submission that merely reused the Workflow ID.
+            raise WorkConflict('handoff_attempt_changed')
+        if start_input != {'taskId': task_id, 'runId': run_id,
+                           'attemptId': admission['submission_attempt_id']}:
+            # The Workflow ID is derived from the Task/Run, but the immutable start input is
+            # the actual start intent; a mismatch means this history is not this submission.
+            raise WorkConflict('handoff_start_input_changed')
         if admission['engine_first_run_id'] is None:
             raise WorkConflict('handoff_engine_run_unbound')
         if admission['engine_first_run_id'] != facts.first_run_id:

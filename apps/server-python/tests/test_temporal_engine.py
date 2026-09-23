@@ -45,9 +45,11 @@ class Client:
         self.data_converter = Converter(decoded)
         self.start_error = start_error
         self.starts = []
+        self.handles = []
 
-    def get_workflow_handle(self, workflow_id):
+    def get_workflow_handle(self, workflow_id, run_id=None):
         assert workflow_id == 'workflow-1'
+        self.handles.append(run_id)
         return self.history
 
     async def start_workflow(self, workflow_type, identity, **kwargs):
@@ -96,6 +98,17 @@ def test_history_decodes_only_immutable_start_event():
     client = Client(history=History([started_event()]), decoded=[start_input])
     assert asyncio.run(TemporalEnginePort(client).inspect_start('workflow-1')) == StartEvent(
         'WorkJourney', 'work-queue', start_input, 'engine-first-run-1')
+    # Without an explicit Run ID the dispatcher's existing latest-Run lookup is preserved.
+    assert client.handles == [None]
+
+
+def test_exact_run_id_binds_history_to_that_run():
+    start_input = {'taskId': 'task-1', 'runId': 'run-1', 'attemptId': '1' * 32}
+    client = Client(history=History([started_event()]), decoded=[start_input])
+    assert asyncio.run(TemporalEnginePort(client).inspect_start(
+        'workflow-1', run_id='engine-current-run')) == StartEvent(
+        'WorkJourney', 'work-queue', start_input, 'engine-first-run-1')
+    assert client.handles == ['engine-current-run']
 
 
 @pytest.mark.parametrize('event', [
