@@ -2,8 +2,9 @@
 
 [English](ARCHITECTURE_MIGRATION_PLAN.md) · [简体中文](ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)
 
-Status: active, 2026-09-23. This plan governs the remaining migration, not only the
-accepted Python execution slice. A completed stage does not complete the overall goal.
+Status: active after renewed user approval, 2026-09-23. This is the single delivery plan.
+The latest approved direction prioritizes long-term product quality over migration effort.
+A completed stage does not complete the overall goal.
 
 ## Product and final architecture
 
@@ -19,14 +20,50 @@ During migration the existing Server is authoritative; each migrated responsibil
 one selected writer. Credentials, approvals and terminal task publication never become model authority.
 The old TypeScript business backend is transitional, not a second permanent product backend.
 
+See the [work execution target contract](WORK_EXECUTION_CONTRACT.md) for identity, recovery,
+action outcomes, budget and the next complete acceptance journey.
+
+## Approved design constraints and immediate order
+
+The target is a work-centered product, not a line-by-line translation of the old Server.
+Bot is persistent identity; Task is the user's objective; Run is an execution attempt;
+Action is an individually authorized effect; Artifact is an independently accessible result.
+Chat and channels are interaction surfaces, not the authority for work lifetime. These are
+responsibility definitions, not an approved SQL schema or a requirement for more services.
+
+The Python backend stays modular. Runtime proposes decisions; the control layer owns policy,
+budgets, approvals and durable outcomes. A mature workflow engine owns recovery orchestration;
+an action receipt and reconciliation policy handle the gap between external effects and local
+commits. Neither engine replay nor a tool-call ID proves an external write happened exactly once.
+A process, virtual environment or container alone does not establish the required isolation.
+
+The next sequence is **S3 recovery selection and S4 isolation design → S2/S3 task vertical
+slice → remaining S2 client/API coverage → S4 real work → S5/S6/S7 qualification**. Stage IDs
+remain stable for prior evidence. Do not finish translating CRUD before making these decisions.
+Compare pinned DBOS and Temporal releases against process-crash, approval-wait, cancellation,
+authority-revocation, duplicate-dispatch and uncertain-effect cases. Select one recovery owner;
+do not stack independent retry engines. Keep the first experiment separate from production.
+
+Existing work is classified as product invariants, candidate implementations, or transitional
+facilities. Preserve useful tests and fixes; candidate code must earn acceptance. Session
+interoperability and partial backend modes need an eventual exit. Source/schema/API redesign
+is allowed when justified by the target behavior; old user data and migration history remain
+protected. Language changes require new evidence, not competitor fashion or sunk-cost reasoning.
+
+Immediate assisted task: WorkBuddy reviews Temporal durability evidence in an isolated task;
+Codex reviews DBOS, implements crash/recovery experiments and owns the domain/authority design.
+Unsent TASK_015 model settings work is superseded as the next task. Its existing uncommitted
+research/dependency changes remain preserved and are not accepted or activated by this decision.
+
 ## Baselines and completed foundation
 
 - Migration source: `codex/architecture-migration`, `c33e03f1a14de739196113769c59fdaace9029e7`.
 - Separate feature source: `feat/cross-platform-employees`, `9cc73c9e78451e572f57d142d6b9caf62ccb78e2`.
 - Accepted foundation: bounded Python SDK loop, supervised process adapter, real Server/PostgreSQL
   deterministic journeys, opt-in startup selection, optional Python container and locked dependencies.
-- TypeScript is still the default. Python owns neither the business database nor actual provider
-  credentials. These checks do not prove live model quality, crash continuation or a full Python backend.
+- TypeScript is still the default. Python control has explicitly selected database writes and local lifecycle tests through
+  `5beed49`; the public execution dispatcher and production provider/tool composition are incomplete.
+  These checks do not prove live model quality, crash continuation or a complete Python product.
 - The feature source includes human-operated employee browser sessions and model connections which
   must be reconciled explicitly. Do not add the capabilities of two checkouts and call them one release.
 
@@ -35,15 +72,16 @@ The old TypeScript business backend is transitional, not a second permanent prod
 | Stage | Deliverable | Exit evidence | State |
 | --- | --- | --- | --- |
 | S1 — Reconcile and freeze preservation scope | Source-backed capability/retirement matrix, both migration histories, data compatibility risks, target API/event ownership, reversible source checkpoints | Every target capability mapped to current evidence and an owning stage; divergent SQL histories detected; no private data copied | Complete (source scope; no data cutover) |
-| S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a identity/authentication slice accepted locally; S2b queued submission/read and control host/process seam accepted locally; persisted lifecycle accepted locally; tool/approval and dispatcher integration next |
-| S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | Pending |
+| S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a identity/authentication slice accepted locally; S2b queued submission/read and control host/process seam accepted locally; persisted lifecycle accepted locally; next: recovery/domain decision before dispatcher expansion |
+| S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | In progress: candidate review and fault experiment; no engine selected yet |
 | S4 — Persistent execution and deliverables | Linux browser sessions, human takeover, reviewed autonomous browse/form/upload/download, persistent workspace, restricted commands, isolated code changes and document tools | Real local fixture site with separate Bot profiles; approved write, takeover, cancel and restart; exported files open/render; isolated repository produces a tested patch | Pending |
 | S5 — Memory, skills and learning evaluation | Scoped relevant retrieval, candidate lessons/skills from correction and supported teaching, version/review/test/disable/rollback; separate evaluation tooling | A correction becomes a reviewed skill, improves a held-out task, and can be revoked; provenance/scope/deletion preserved; no authority increase. Preserve Hermes attribution | Pending |
 | S6 — Collaboration and extensibility | Existing delegation preserved through durable execution, shared resource/budget constraints; MCP authentication lifecycle and compatibility; preservation/migration of per-Bot model configuration and reviewed local endpoints | Delegated browser/file work with independent grants; conflict/cancel tests; connector refresh/revoke/failure cases; model switch keeps identity/data; independent module contribution fixture | Pending |
 | S7 — Consolidate, migrate and qualify | Synthetic old-data upgrades and full backup/restore; thin Desktop/Web/mobile-browser supervision; reversible retirement packages, default-selection and release preparation | Full product journey, fresh-checkout checks, target CI and explicit live-provider evaluation. Final production/publication actions remain separately visible; no unsupported platform claims | Pending |
 
-S2 has three separately accepted slices; never merge all business state at once. S3 informs S4's
-execution receipts and retry policy. S5 can proceed independently after stable S2 task/artifact
+S2 retains three separately accepted slices. S3 selection and the S4 execution boundary now
+precede further S2 expansion; this order implements the renewed long-term product decision. S3
+informs S4's execution receipts and retry policy. S5 can proceed independently after stable S2 task/artifact
 contracts. S6 depends on those contracts, not on every optional file processor. Reassess order only
 when new source or experiment evidence changes a dependency; record the reason here.
 
@@ -88,6 +126,18 @@ S1 freezes ownership, not a speculative new event protocol. Exact snapshot revis
 cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnect fixtures.
 
 ## Acceptance record
+
+- Renewed-direction experiment: [ten local DBOS fault cases](../experiments/durable-execution/README.md)
+  pass with actual killed/restarted Python processes, disposable PostgreSQL and independent fake HTTP
+  effect counts. The negative control repeats an unsafe write; the intent guard stops with an unknown
+  outcome. Approval persists across worker absence; current revocation prevents dispatch; cancellation
+  preserves already-applied effects. This is candidate evidence, not S3 completion or production selection.
+  The controlled stale-worker case requires effect-boundary fencing. The current Task/Run/Action
+  boundaries still require an integrated domain and client journey.
+- WorkBuddy's pinned [Temporal source review](research/temporal-durability-review.md) was independently
+  checked and corrected for business/engine identity and cancellation boundaries. No Temporal
+  runtime experiment or engine selection is claimed.
+
 
 - S1 source reconciliation: 17 identical SQL migrations followed by two timestamp/hash conflicts;
   the committed-source preflight rejects both divergent histories and unsafe inputs. Existing
@@ -141,8 +191,9 @@ cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnec
   40-case TS comparator; Root implemented SQL/integration and hardened nested metadata validation.
   Final acceptance: 766 package cases, 95 separately executed fixture cases, all paired contracts
   and full npm check pass. Public task dispatch and real tool/model/approval composition remain unfinished.
-- The S2a identity/authentication journey is locally accepted. Next is S2b tool/model/approval
-  authority and dispatcher integration, following the [dependency review](research/python-task-authority.md).
+- The S2a identity/authentication journey is locally accepted. Further S2b tool/model/approval
+  and dispatcher work now follows the recovery/domain decision above; previous next-task wording
+  is superseded. Preserve the [authority review](research/python-task-authority.md).
   The aggregate profile read includes task, approval, artifact, skill and memory projections and
   moves with S2c client parity; do not publish empty substitutes. Task submission is atomic in S2b-1; member removal remains with S2b cancellation: the
   existing source atomically creates runs with messages and cancels runs/approvals when removing

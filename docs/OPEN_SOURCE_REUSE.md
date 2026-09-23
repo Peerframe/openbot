@@ -534,3 +534,12 @@ descendant settlement and steering audits. Reuse Pydantic 2.13.5 and the accepte
 adapter; actual Zod 4.6.2 schemas are the compatibility oracle. No dependency, migration, upstream
 source copy or dispatcher change. The original OpenBot MIT application semantics are ported;
 see [frozen lifecycle design and acceptance](research/python-task-authority.md).
+
+
+## Durable execution candidate qualification (2026-09-23)
+
+The isolated fault experiment reviews DBOS Python 3.0.0 /
+`dd8a5f315a54c02a750f80dd15127958243ed339` (MIT), with Temporal Python 1.33.0
+as the comparison candidate. This is an experiment-only released dependency, not a new
+production dispatcher or an accepted recovery engine. No upstream source copied. See
+[the evidence and remaining gates](research/durable-execution-qualification.md).
