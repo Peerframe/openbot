@@ -88,3 +88,50 @@ describe("RunInspector production collaboration wiring", () => {
     }
   });
 });
+
+
+describe("RunInspector Escape and focus restore", () => {
+  it("focuses the labelled close control on mount, closes on Escape, and restores prior focus on unmount", async () => {
+    const opener = document.createElement("button");
+    opener.type = "button";
+    opener.textContent = "打开任务";
+    document.body.append(opener);
+    opener.focus();
+    expect(document.activeElement).toBe(opener);
+
+    const onClose = vi.fn();
+    const view = await renderComponent(
+      <RunInspector
+        artifacts={[]}
+        bot={chief}
+        botsById={new Map([[chief.id, chief]])}
+        childRuns={[]}
+        liveFrame={undefined}
+        node={undefined}
+        progress={[]}
+        run={parent}
+        onClose={onClose}
+        onInspectRun={vi.fn()}
+        onRun={vi.fn()}
+      />,
+    );
+    try {
+      const close = view.container.querySelector<HTMLButtonElement>('[aria-label="关闭任务详情"]');
+      expect(close).not.toBeNull();
+      expect(document.activeElement).toBe(close);
+      expect(view.container.querySelector('[role="dialog"]')?.getAttribute("aria-modal")).toBe(
+        "true",
+      );
+
+      await interact(() =>
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
+      );
+      expect(onClose).toHaveBeenCalledOnce();
+    } finally {
+      await view.unmount();
+      expect(document.activeElement).toBe(opener);
+      opener.remove();
+    }
+  });
+});
+

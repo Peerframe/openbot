@@ -57,6 +57,21 @@ Then verify the browser behavior:
 5. Repeat the profile and export flow at a 390-pixel phone viewport and confirm there is no
    document-level horizontal scroll.
 
+
+
+Deterministic Starter DOM regressions (jsdom; not real-browser AT evidence):
+
+```bash
+npm exec --workspace @openbot/web -- vitest run src/components/CreateBotDialog.test.tsx
+npm exec --workspace @openbot/web -- vitest run src/components/EmployeeProfileView.test.tsx
+npm exec --workspace @openbot/web -- vitest run src/components/RunInspector.integration.test.tsx
+npm exec --workspace @openbot/web -- vitest run src/components/NodeManagerDialog.test.tsx
+```
+
+These cover Create Bot dialog labelling / cancel unmount / create `role="alert"`, profile tab
+keyboard focus+`aria-selected` coupling, RunInspector Escape/focus restore, and Node manager dialog
+`showModal` / cancel unmount (including revoke confirmation copy).
+
 ## Known gaps
 
 - VoiceOver/Safari, NVDA/Firefox or Chrome, and Orca/Firefox manual screen-reader matrices have not
