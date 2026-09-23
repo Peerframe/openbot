@@ -451,3 +451,10 @@ skip. These are actual fixture executions on an uncommitted candidate, not proof
 Worker, real external service, multi-Run recovery, schema migration or default activation. An
 adapter that verifies a negative outcome must prove external finality, not merely an empty read at
 one instant; this generic seam does not supply that provider-specific proof.
+
+Independent follow-up: the control seam now refuses a lookup value that cannot be represented as
+bounded canonical JSON before the trusted verifier sees it; transport adapters must still limit
+their own network reads. An owned PostgreSQL/HTTP counterexample supplies an oversized external
+record to an otherwise permissive verifier and proves it remains `unknown` with the reservation
+retained. The final control entry passed 299 checks with one optional-SDK skip; `npm run check`
+passed, with its Turbo lint/typecheck/test/build task output served from cache.

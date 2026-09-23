@@ -225,6 +225,32 @@ def test_absent_lookup_is_unknown_and_never_refunded(fixture):
     asyncio.run(check())
 
 
+def test_oversized_external_receipt_never_reaches_verifier(fixture):
+    class OversizedLookup(OwnedEffectService):
+        async def lookup(self, action_id):
+            self.lookups.append(action_id)
+            return {'raw': 'x' * 20_000}
+
+    class PermissiveVerifier:
+        calls = 0
+
+        async def verify(self, *, action_id, task_id, run_id, intent_digest, intent, lookup):
+            self.calls += 1
+            return VerifiedOutcome(action_id, task_id, run_id, intent_digest, True, 3,
+                                   evidence(action_id))
+
+    async def check():
+        service, task, fence = await claimed(fixture)
+        external = OversizedLookup()
+        verifier = PermissiveVerifier()
+        result = await effect_call(service, task, fence, external, verifier)
+        assert result.status == 'unknown' and result.verified is False
+        assert len(external.applies) == 1 and verifier.calls == 0
+        snap = await snapshot(service, fixture, task)
+        assert snap['usage'] == {'tokenLimit': 10, 'reservedTokens': 6, 'spentTokens': 0}
+    asyncio.run(check())
+
+
 def test_untrusted_report_is_never_resolved(fixture):
     async def check():
         service, task, fence = await claimed(fixture)

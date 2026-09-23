@@ -46,6 +46,8 @@ class EffectAdapter(Protocol):
     untrusted and ignored: proof comes only from ``lookup`` plus the trusted verifier.
     ``lookup`` reads the authoritative external record for the exact Action, and may return
     ``None`` or raise when no trustworthy record is available; both leave the Action unknown.
+    The adapter must bound transport reads; this seam additionally refuses a returned value
+    that cannot fit the control store's bounded canonical JSON receipt shape.
     """
 
     async def apply(self, action_id, intent):
@@ -136,12 +138,19 @@ async def _uncertain(store, action_id):
 
 async def _lookup(adapter, action_id):
     try:
-        return await adapter.lookup(action_id)
+        value = await adapter.lookup(action_id)
     except asyncio.CancelledError:
         raise
     except Exception:
         # A lookup failure or an absent record is not proof that the effect did not happen.
         return None
+    if value is not None:
+        try:
+            canonical(value)
+        except InvalidWork:
+            # An adapter must extract a bounded receipt, not forward a whole external document.
+            return None
+    return value
 
 
 async def _verify(verifier, *, action_id, task_id, run_id, intent_digest, intent, lookup):
