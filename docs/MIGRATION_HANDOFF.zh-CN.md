@@ -1,27 +1,22 @@
 # 架构迁移交接 — 2026-09-24
 
-当前分支：`codex/architecture-migration`；最新已验证的 S3 传输代码为 `5449787`，S2 外壳代码为 `b2de930`。后续先读本交接；只有出现具体失败时再查旧日志。
+分支：`codex/architecture-migration`。当前 S3 执行链代码：`69b5faf`；此前 S3 传输：`153f714`；S2 外壳边界：`b2de930`。先读本文件与当前代码，遇到具体失败才查旧日志。
 
-## 本阶段已完成
+## 已完成
 
-- ADR 0046 选定 Temporal 作为**目标**恢复调度者，生产切换尚未开启。已关闭工作流的仅查询修复参考实现位于 `6e7cffd`。
-- `9ccaff5` 在首次请求 Temporal 启动前持久记录派发尝试；重复通知只查原工作流历史，不允许二次启动。未确认 Task/Run 可精确查询，不会被待处理列表遮住；历史缺失仍保持未解决。受影响控制层 189 项、参考测试 61 项、公开 HTTP/PostgreSQL/开发版 Temporal 的四项交接场景实际通过。PostgreSQL/mTLS 的交接及恢复场景在最后一次精确查询小改动前通过，此读路径改动后未重跑。`npm run check` 通过，其中 Turbo 有缓存命中。
-- `877b439` 把员工模板保存方式移入 Web/Desktop 外壳适配器；共享 API 只获取和校验文件，不再依赖 Desktop bridge 或操作 DOM 保存。受影响的 28 项测试、Web 类型检查及 `npm run check` 通过；这不等于 S2 客户端全面对齐。
-- `b2de930` 把产物保存从 `ArtifactCard` 移入 Web/Desktop 外壳适配器。dsh 在隔离副本交付四个限定文件，Codex 审查并集成。定向 15 项测试与 Web 类型检查在隔离副本和集成分支都实际运行通过；集成后的 `npm run check` 通过（18 个 Turbo 任务中 17 个命中缓存）。浏览器下载、PNG 预览、Desktop 保存及状态提示仍有覆盖；S2 全面对齐尚未完成。
-- `b0db90d` 拒绝在 Temporal 工作流中直接使用 OpenBot 工具端口。真实本地 Temporal 探针显示：直接挂载 `PortToolset` 虽返回工具结果，但没有工具活动；构造时注册的 `DynamicToolset` 则记录 `call_tool` 活动和一次可信端口调用。加入保护后，直接路径以零次可信调用拒绝，动态路径仍通过。Python Runtime 相关测试实际运行 419 项通过，`npm run check` 通过但 Turbo 有缓存命中。这是安全边界，不是生产 Runtime 集成。
-- `15c5a98` 将单个 Run 的引擎交接决策放入 Python 控制层，并让现有真实 Temporal 参考流程调用。dsh 交付限定的控制模块；Codex 修正测试预期、保留引擎检查异常、绑定实际引擎命名空间并独立验收。最终候选的 25 项控制测试、2 项离线派发检查、4 项公开 HTTP／PostgreSQL／开发版 Temporal 交接场景及完整恢复流程通过（一次外部写入、一次核验查询）。取消且结果未知的流程在添加命名空间检查前通过，之后未重跑。Python 控制层检查为 836 项通过，189 项 PostgreSQL 测试因未启用专用夹具而跳过；`npm run check` 通过但 Turbo 命中缓存。生产 Temporal Worker、真实 Python Runtime 组合与默认派发仍缺失。
-- `5449787` 把 `TemporalEnginePort` 从真实引擎参考流程移入 Python 控制包，参考流程直接复用。它仍需单独安装已固定版本的 Temporal SDK，并非生产 Worker。最后一次收窄解码错误分类后，34 项定向测试与 2 项离线派发测试通过。四项公开 HTTP／PostgreSQL／开发版 Temporal 交接场景及一次完整恢复流程在该局部改动前通过；新增的解码失败情形由定向测试覆盖。第一次真实探针因 Docker socket 权限而在进入产品流程前失败，取得相应权限后重跑通过。Python 控制层检查为 836 项通过、190 项跳过（包括该环境未安装可选 Temporal SDK 而跳过的适配器测试）；`npm run check` 通过，其中 Turbo 的 lint、类型检查、测试与构建全部命中缓存，前置仓库检查实际运行。
-- TASK028 的有界输出候选位于本地未跟踪的 `experiments/linux-execution/`。独立审查修正了 CLI 输出管道未关闭仍报成功、镜像检查结果未知却报不存在的问题。在该目录实际运行 `python3 -m unittest test_sandbox`：133 项通过。`sandbox.py` SHA-256 为 `0815cb3fb4329e04522eaf9f054d973fbfe38b5335dd37bb1c1cf3a7ede8b5c5`；`test_sandbox.py` 为 `a840a2153e90dadf534fcba808c0035241811d5d261f6536681c6937fea9a314`。
+- ADR 0046 选定 Temporal 作为目标恢复调度者，尚未切换生产。派发前持久记录尝试；重新通知只检查原启动历史，不再次启动。
+- `69b5faf` 把 Temporal 首次 Run ID 与已确认交接一同保存。只读入口核对精确 Task/Run、控制层有效状态、可信引擎事实、已确认引用及首次 Run ID；它不授予操作权限，也未接入生产 Worker。
+- 对应代码的临时 PostgreSQL/HTTP 控制测试 244 项、定向派发/Temporal 测试 40 项、离线派发测试 2 项、真实 Temporal 交接 4 个场景和恢复 1 个场景通过。恢复探针观察到一次模拟外部写入、一次核验查询。常规 Python 检查 840 项通过、245 项因未启用专用夹具而跳过。`npm run check` 通过；Turbo 的 lint/类型检查/测试任务 31 项中 29 项及构建 18 项全部命中缓存，仓库前置检查实际运行。细节见 `docs/research/work-temporal-journey.md` 和 issue #91。
+- S2 已把模板与产物保存移至 Web/Desktop 外壳适配器（`877b439`、`b2de930`），全面对齐仍未完成。工作流内直接调用工具端口会拒绝（`b0db90d`）。
 
-## 未完成
+## 未完成与约束
 
-- S3：生产 Temporal 派发、真实 Python Runtime 的细粒度检查点、批准与核验操作、恢复验收。`experiments/work-journey/` 的固定 CSV 流程只是参考实现。
-- S4/TASK020：真实 Docker 日志行为、Linux/runsc 隔离及其余审查问题。模拟测试通过不代表 TASK020 验收或真实执行授权。
-- S2 客户端/API 对齐及 S5–S7 仍未完成。保留无关的模型依赖未提交文件和 TASK020 未跟踪候选，不将其作为已验收产品代码合入 main。
-- S3 的 Runtime 组合仍需按 Run 序列化的依赖、构造时注册的动态工具集，以及由控制层持有的授权、用量、动作事实与外部结果核验。不能把单次 `BoundedExecutor` 整体包成可重试活动，因为一次运行可能包含外部副作用。临时探针未验证多 Run 隔离、崩溃恢复或产品派发。
+- **S3 启用阻断：**首次派发结果未知、Temporal 历史在确认前过期时，尚无不可变的尝试来源证明。生产 Worker 启用前须把持久的单次尝试随机标识绑定到 Temporal 启动事实，或提供等效证明。首次 Run ID 只保护已确认后的执行链。
+- 生产 Worker/Runtime 组合、细粒度检查点、批准、外部结果核验、多 Run 继续与崩溃恢复尚未验收。`experiments/work-journey/` 只是参考实现。
+- S2 全面对齐、S4/TASK020 的真实 Linux/runsc 与其余审查问题、S5–S7 仍未完成。未跟踪的 `experiments/linux-execution/` 是候选，不是已验收产品代码。
+- Python 控制层持有身份、授权、任务/动作事实、批准、预算与产物；Temporal 持有持久继续；Runtime 和 Worker 不产生授权。未知外部写入须通过权威查询核实，否则保持未知；取消或撤权不能重新授权。通过验收前不切换生产、不发布。
+- 保留无关的模型服务依赖修改、`docs/OPEN_SOURCE_REUSE.md`、`docs/research/python-model-services.md` 和未跟踪 TASK020 候选。
 
-## 有效约束与下一步输入
+## 下一阶段输入
 
-Python 控制层拥有身份、授权、任务/动作事实、批准、预算及产物；Temporal 独自负责持久继续；Runtime 和 Worker 不产生授权。未知外部写入只能凭权威查询核实，否则保持未知。验收前不盲目重试、不设第二写入者、不切生产、不发布。
-
-下一步 S3 先读 `docs/research/work-temporal-journey.md` 最后三节、`apps/server-python/src/openbot_server/{work_dispatcher.py,work_handoff.py,temporal_engine.py}`、`apps/agent-runtime-python/src/openbot_agent_runtime/{executor.py,sdk_ports.py}` 和 `experiments/work-journey/workflow_worker.py`。继续实现按 Run 隔离的生产 Worker／Runtime 组合与控制层活动，不把固定参考策略当成产品。保留无关的模型服务未提交文件与 TASK020 未跟踪候选。
+读 `docs/research/work-temporal-journey.md` 最后一节、`apps/server-python/src/openbot_server/{work_dispatcher.py,work_handoff.py,temporal_engine.py,work_engine_binding.py}` 与 `experiments/work-journey/workflow_worker.py`。先证明确认前的启动尝试来源，再组合按 Run 隔离的生产 Worker、控制层授权及独立核验的外部操作。不要把含外部副作用的整个 Run 包成可重试活动。
