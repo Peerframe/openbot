@@ -91,3 +91,40 @@ Validation order: real application middleware/request entry, actual PostgreSQL i
 public route, then frozen-candidate engine journeys. Include timeout before receipt inspection,
 malformed JSON, accepted-signal redelivery, resolution/request races and cancelled historical
 resolution. No new scheduler, production backend switch or Linux prerequisite is introduced.
+
+## Closed-history lookup candidate (2026-09-24)
+
+An Owner command can remain pending after its original workflow closes. The existing signal
+adapter correctly refuses that history, but leaving the command permanently undeliverable is
+not sufficient for operational recovery. Reuse the same Temporal service for a separate,
+command-scoped lookup workflow. Its only effect activity reads the immutable command and existing
+Action, GETs the original receipt, and records independently verified historical facts. It must
+never invoke the original workflow, POST the effect, propose/admit a new Action, or publish a Task.
+
+The existing pinned Temporal Python 1.33.0 / Server 1.32.0 API and REJECT_DUPLICATE policy are
+reused. [Temporal's workflow identity documentation](https://github.com/temporalio/documentation/blob/main/docs/encyclopedia/workflow/workflow-execution/workflowid-runid.mdx)
+limits closed-ID deduplication to retained history. The PostgreSQL command ID, immutable intent,
+Action state and idempotent finish transaction therefore remain the lasting authority, including
+after engine history retention. [Signal With Start](https://github.com/temporalio/documentation/blob/main/docs/design-patterns/signal-with-start.mdx)
+is unsuitable here because this is a finite, one-command operation rather than a long-lived signal
+recipient. A new workflow is not a second recovery scheduler: Temporal still owns its one bounded
+execution; the command is only a durable product obligation.
+
+First qualify this in the existing public API + PostgreSQL + disposable Temporal reference. The
+closed history and its start input/type/queue must be verified before scheduling the lookup; a
+colliding repair workflow must also have exact identity. Delivery acknowledgement is distinct from
+resolution. Missing or malformed receipts leave unknown and budget reserved; cancellation and
+revocation cannot confer any new authority. This is not production dispatcher acceptance or
+permission to resume the original Agent after a failed workflow.
+
+The targeted public API/PostgreSQL/Temporal reference case passed on both the disposable
+development engine and the PostgreSQL/mTLS engine with the same candidate: terminate the original
+workflow, kill delivery after engine acceptance but before SQL acknowledgement, resend the command,
+reject one malformed historical receipt, then issue a new Owner command after receipt repair.
+Both runs retained exactly one external write and four total POST attempts; the first command
+finished unresolved, the second verified historical spend without an Artifact or Agent restart.
+The earlier open-workflow cancellation/repair case also passed on the development engine. Full
+reference-matrix and production-dispatch qualification remain open. Local logs:
+`/private/tmp/openbot-closed-repair-probe-20260924-02.log`,
+`/private/tmp/openbot-closed-repair-pg-mtls-20260924-02.log`, and
+`/private/tmp/openbot-open-repair-regression-20260924-01.log`.

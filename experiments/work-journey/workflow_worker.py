@@ -72,6 +72,10 @@ async def repair_state()->dict:return await control.repair_state()
 async def reconcile_write(command_id:str)->str:return await control.reconcile_write(command_id)
 @activity.defn
 async def finish_failed_repair(command_id:str)->None:await control.finish_failed_repair(command_id)
+@activity.defn
+async def reconcile_closed(identity:dict)->str:return await control.reconcile_closed(identity)
+@activity.defn
+async def finish_closed_repair(identity:dict)->None:await control.finish_closed_repair(identity)
 
 
 def repairable(error):
@@ -156,10 +160,24 @@ class WorkJourney:
         return await workflow.execute_activity(publish,final.output,**CONFIG)
 
 
+@workflow.defn
+class ClosedRepair:
+    """One command-scoped historical lookup; never resumes the ended Agent workflow."""
+    @workflow.run
+    async def run(self,identity:dict)->dict:
+        try:
+            outcome=await workflow.execute_activity(reconcile_closed,identity,**CONFIG)
+        except ActivityError as error:
+            if not repairable(error):raise
+            await workflow.execute_activity(finish_closed_repair,identity,**CONFIG)
+            return {'commandId':identity['commandId'],'outcome':'unresolved'}
+        return {'commandId':identity['commandId'],'outcome':outcome}
+
+
 async def main():
     cfg=control.settings()
     client=await connect_engine(cfg['temporal_address'],cfg.get('engine_tls'),plugins=[PydanticAIPlugin()])
-    async with Worker(client,task_queue=cfg['queue'],workflows=[WorkJourney],activities=[bind_identity,prepare,decision,execute_write,publish,current,repair_state,reconcile_write,finish_failed_repair]):
+    async with Worker(client,task_queue=cfg['queue'],workflows=[WorkJourney,ClosedRepair],activities=[bind_identity,prepare,decision,execute_write,publish,current,repair_state,reconcile_write,finish_failed_repair,reconcile_closed,finish_closed_repair]):
         Path(cfg['directory'],'ready').touch()
         await asyncio.Event().wait()
 

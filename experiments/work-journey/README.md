@@ -78,7 +78,7 @@ This is a stopped 1.31.3-to-1.32.0 upgrade, not a general update service.
 | Repair timeout | Repeated bounded engine activity timeouts leave unknown pending; a later verified lookup finishes without a second write |
 | Automatic/manual race | Automatic verification and Owner lookup settle the same Action/command without double completion or write replay |
 | Repair after cancellation | A lookup records historical applied facts and spend but never restores authority or publishes a cancelled Task |
-| Closed engine | A stored command cannot restart a closed workflow; the Action remains unknown until an explicit separate recovery |
+| Closed engine | A stored Owner command starts a separate command-scoped, lookup-only Temporal workflow after the original workflow closes. A bad receipt leaves the Action unknown; a new command after receipt repair verifies the original write without a second POST or resuming the ended Agent |
 | Publication acknowledgement | Kill after real publication commits but before activity acknowledgement; retry verifies identical completion without reopening execution; no duplicate artifact/event or external request |
 | Handoff scope/type/queue collision (three cases) | An existing engine ID with unrelated inputs/type/queue is not acknowledged; the scope case also starts a live worker and proves no product action |
 
@@ -106,9 +106,9 @@ deployment authorization/PKI, retention, full-product backup/restore, version up
 resource cost or a real network partition. The only client exercised here is authenticated HTTP reconnect; browser/SSE
 reconnect and shared client projections remain separate work. Bounded engine retry exhaustion is
 not a business success or a refund. An unresolved Task needs an explicit reconciliation/recovery
-operator path before production. The explicit Owner reconciliation route now covers an open reference workflow, but closed-history operational recovery remains separate. File quotas/GC/storage durability remain open.
+operator path before production. The explicit Owner reconciliation route can also start a command-scoped lookup after a closed reference workflow. It settles historical Action facts only; it does not resume the original Agent, complete the Task, or qualify a production dispatcher. File quotas/GC/storage durability remain open.
 
-The current fixed-workflow candidate passed 15 case records through both the development engine and the PostgreSQL/mTLS engine, including a cold engine backup/restore with accepted-but-unfinished command redelivery. These are fake external effects, not real Linux/runsc isolation.
+The earlier fixed-workflow candidate passed 15 case records through both the development engine and the PostgreSQL/mTLS engine, including a cold engine backup/restore with accepted-but-unfinished command redelivery. The new closed-history case passed a targeted public API/PostgreSQL/Temporal run on both engines, including lost delivery acknowledgement and two explicit lookup cycles. The full matrix has not been rerun against this change. These are fake external effects, not real Linux/runsc isolation.
 
 The earlier explicit adjacent-release path passed twelve case records, 57 reference unit checks and eleven
 offline histories on arm64. It covers the fixed stopped 1.31.3 -> 1.32.0 upgrade with identical PG

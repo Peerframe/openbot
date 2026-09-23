@@ -123,7 +123,7 @@ class API:
             self.child.kill()
 
 
-async def qualify(tmp, dsn, server, *, only_handoff=False):
+async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
     client = await server.connect()
     if hasattr(server, 'qualify_transport'):
         await server.qualify_transport()
@@ -245,7 +245,7 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
                     assert held_state['status'] == 'completed'
                 held_upgrades.append({'stage': stage, 'cfg': held_cfg, 'state': held_state,
                     'effects': counts(held_task), 'engineRunId': (await held_handle.describe()).run_id})
-        scenarios = () if only_handoff else ('recover', 'cancel-before-write', 'cancel-unknown', 'corrupt-receipt', 'malformed-json', 'repair-timeout', 'automatic-repair-race', 'repair-cancelled', 'repair-engine-closed', 'publication-ack')
+        scenarios = () if only_handoff else (only_case,) if only_case else ('recover', 'cancel-before-write', 'cancel-unknown', 'corrupt-receipt', 'malformed-json', 'repair-timeout', 'automatic-repair-race', 'repair-cancelled', 'repair-engine-closed', 'publication-ack')
         for scenario in scenarios:
             request = {'botId': bot['id'], 'objective': 'Correct row 7 in the owned CSV',
                 'tokenLimit': 20, 'requestKey': secrets.token_hex(12)}
@@ -412,11 +412,36 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
                     repair_cfg = {**cfg, 'action_id': row['id'], 'command_id': command['id']}
                     if scenario == 'repair-engine-closed':
                         await handle.terminate('Owned test of explicit closed-engine repair refusal')
-                        rejected = launch('deliver_repair.py', repair_cfg)
-                        assert rejected.process.wait(timeout=30) != 0
-                        assert 'explicit recovery is needed' in rejected.diagnostic()
-                        final = api.snapshot(task_id)
-                        assert final == pending and counts(task_id)['attempts'] == 4
+                        sender=launch('deliver_repair.py',repair_cfg,'after-repair-delivery')
+                        sender.wait('after-repair-delivery');sender.kill()
+                        assert api.snapshot(task_id)==pending
+                        launch('deliver_repair.py', repair_cfg).done()
+                        repair_handle=client.get_workflow_handle('openbot-repair-v1-'+command['id'])
+                        repair_worker=launch('workflow_worker.py',cfg)
+                        first_repair=await asyncio.wait_for(repair_handle.result(),35)
+                        assert first_repair=={'commandId':command['id'],'outcome':'unresolved'}
+                        failed=api.snapshot(task_id)
+                        latest=next(a for a in failed['actions'] if a['id']==row['id'])['reconciliation']
+                        assert latest['outcome']=='unresolved' and failed['attention']=='reconciliation'
+                        assert failed['usage']==unknown['usage'] and not failed['artifacts']
+                        assert counts(task_id)['attempts']==4 and counts(task_id)['writes']==1
+                        repair_worker.kill()
+                        effects.repair_receipt(task_id)
+                        body={**body,'requestKey':secrets.token_hex(12),'expectedSequence':1}
+                        command=api.call(path,body,expected=202)
+                        repair_cfg={**repair_cfg,'command_id':command['id']}
+                        launch('deliver_repair.py',repair_cfg).done()
+                        repair_handle=client.get_workflow_handle('openbot-repair-v1-'+command['id'])
+                        repair_worker=launch('workflow_worker.py',cfg)
+                        second_repair=await asyncio.wait_for(repair_handle.result(),35)
+                        assert second_repair=={'commandId':command['id'],'outcome':'applied'}
+                        final=api.snapshot(task_id)
+                        latest=next(a for a in final['actions'] if a['id']==row['id'])['reconciliation']
+                        assert latest['outcome']=='resolved' and final['status']=='open'
+                        assert final['usage']=={'tokenLimit':20,'reservedTokens':0,'spentTokens':8}
+                        assert not final['artifacts'] and counts(task_id)['attempts']==4
+                        assert counts(task_id)['writes']==1
+                        repair_worker.kill()
                     else:
                         # Crash after engine acceptance but before the product delivery receipt.
                         sender = launch('deliver_repair.py', repair_cfg, 'after-repair-delivery')
@@ -521,6 +546,8 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
             record = {'case': scenario, 'status': final['status'], 'usage': final['usage'], **counts(task_id)}
             records.append(record)
             print(json.dumps(record), flush=True)
+        if only_case:
+            return records
         for mismatch in ('scope', 'type', 'queue'):
             created = api.call('/api/v1/tasks', {'botId': bot['id'], 'objective': 'Reject a colliding workflow',
                 'tokenLimit': 20, 'requestKey': secrets.token_hex(12)}, expected=202)
@@ -573,12 +600,15 @@ def main():
     parser.add_argument('--engine', choices=('development', 'postgres', 'postgres-mtls'), default='development')
     parser.add_argument('--upgrade-archive', type=Path, help='Verified official 1.31.3 archive; requires postgres-mtls')
     parser.add_argument('--only-handoff', action='store_true', help='Run only engine-identity rejection regressions')
+    parser.add_argument('--only-case', choices=('recover','cancel-before-write','cancel-unknown','corrupt-receipt','malformed-json','repair-timeout','automatic-repair-race','repair-cancelled','repair-engine-closed','publication-ack'), help='Run one public-work scenario')
     args = parser.parse_args()
     assert sys.platform != 'win32', 'POSIX process signals required'
     assert importlib.metadata.version('temporalio') == '1.33.0'
     assert importlib.metadata.version('pydantic-ai-slim') == '2.47.0'
     if args.upgrade_archive and (args.engine != 'postgres-mtls' or args.only_handoff):
         parser.error('--upgrade-archive requires the full postgres-mtls journey')
+    if args.only_case and (args.only_handoff or args.upgrade_archive):
+        parser.error('--only-case cannot be combined with --only-handoff or --upgrade-archive')
     binary = None
     if args.engine == 'development':
         if args.temporal_cli is None:
@@ -605,7 +635,7 @@ def main():
             async def run_qualification():
                 if hasattr(server, 'before_qualification'):
                     await server.before_qualification()
-                return await qualify(tmp, dsn, server, only_handoff=args.only_handoff)
+                return await qualify(tmp, dsn, server, only_handoff=args.only_handoff, only_case=args.only_case)
             records = asyncio.run(run_qualification())
             if hasattr(server, 'finish_checks'):
                 server.finish_checks()

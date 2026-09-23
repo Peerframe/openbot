@@ -31,12 +31,27 @@ def store():
 def reference(run_id):return 'openbot-work-v1-'+run_id
 
 
+def repair_reference(command_id):return 'openbot-repair-v1-'+command_id
+
+
 def bound_ids():
     from temporalio import activity
     cfg=settings();info=activity.info()
     if info.workflow_id!=reference(cfg['run_id']) or info.workflow_type!='WorkJourney':
         raise WorkConflict('wrong_workflow_scope')
     return cfg['task_id'],cfg['run_id']
+
+
+def bound_repair(identity):
+    from temporalio import activity
+    cfg=settings();info=activity.info()
+    if (type(identity) is not dict or set(identity)!={'taskId','runId','actionId','commandId'}
+            or any(type(identity[key]) is not str or not 1<=len(identity[key])<=128 for key in identity)
+            or (identity['taskId'],identity['runId'])!=(cfg['task_id'],cfg['run_id'])
+            or info.workflow_id!=repair_reference(identity['commandId'])
+            or info.workflow_type!='ClosedRepair'):
+        raise WorkConflict('wrong_repair_scope')
+    return dict(task_id=identity['taskId'],run_id=identity['runId'],action_id=identity['actionId'])
 
 
 
@@ -243,6 +258,27 @@ async def reconcile_write(command_id):
     repairs = ReconciliationStore(store())
     scope = dict(task_id=task_id, run_id=run_id, action_id=row['id'])
     command = await repairs.read(command_id, **scope)
+    return await reconcile_existing(command_id, command, row, repairs, scope)
+
+
+async def reconcile_closed(identity):
+    """An ended workflow may only verify the original receipt through a separate engine run."""
+    from openbot_server.work_reconciliation import ReconciliationStore
+    scope=bound_repair(identity)
+    command_id=identity['commandId']
+    repairs=ReconciliationStore(store())
+    command=await repairs.read(command_id, **scope)
+    s=store()
+    async with s._transaction(trusted=True) as db:
+        _,row=await s._action(db,scope['action_id'])
+    expected={'kind':'write','row':7,'value':'fixed'}
+    if row['action_key']!='tool:write' or row['intent_digest']!=canonical(expected)[1]:
+        raise ReceiptMismatch('No matching existing write to reconcile')
+    return await reconcile_existing(command_id, command, row, repairs, scope)
+
+
+async def reconcile_existing(command_id, command, row, repairs, scope):
+    """Shared lookup-only settlement; neither caller can create an external operation."""
     if command['outcome'] == 'unresolved':
         raise WorkConflict('reconciliation_cycle_finished')
     if row['status'] in ('applied', 'not_applied'):
@@ -269,8 +305,21 @@ async def finish_failed_repair(command_id):
     row = await existing('tool:write')
     if row is None:
         raise ReceiptMismatch('No write receipt scope')
-    repairs = ReconciliationStore(store())
     scope = dict(task_id=task_id, run_id=run_id, action_id=row['id'])
+    await finish_unresolved(command_id, scope, row)
+
+
+async def finish_closed_repair(identity):
+    scope=bound_repair(identity)
+    s=store()
+    async with s._transaction(trusted=True) as db:
+        _,row=await s._action(db,scope['action_id'])
+    await finish_unresolved(identity['commandId'],scope,row)
+
+
+async def finish_unresolved(command_id, scope, row):
+    from openbot_server.work_reconciliation import ReconciliationStore
+    repairs = ReconciliationStore(store())
     outcome = 'resolved' if row['status'] in ('applied', 'not_applied') else 'unresolved'
     try:
         await repairs.finish(command_id, **scope, outcome=outcome)
@@ -281,7 +330,9 @@ async def finish_failed_repair(command_id):
         if current['outcome'] is not None:
             # Another trusted observer already closed this immutable cycle.
             return
-        row = await existing('tool:write')
-        if row is None or row['status'] not in ('applied', 'not_applied'):
+        s=store()
+        async with s._transaction(trusted=True) as db:
+            _,row=await s._action(db,scope['action_id'])
+        if row['status'] not in ('applied', 'not_applied'):
             raise
         await repairs.finish(command_id, **scope, outcome='resolved')
