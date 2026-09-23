@@ -205,6 +205,12 @@ def test_explicit_task_process_commits_and_lists_over_real_http(fixture):
             assert result["run"]["status"] == "queued"
         with urlopen(Request(base+f"/api/v1/channels/{channel.id}/runs",headers=headers),timeout=5) as response:
             assert json.load(response) == {"runs":[result["run"]]}
+        request = Request(base+f"/api/v1/runs/{result['run']['id']}/steer", data=json.dumps({"instruction":"verify before delivery"}).encode(), headers=headers, method="POST")
+        with urlopen(request,timeout=5) as response:
+            assert response.status == 202 and json.load(response)["steering"]["instruction"] == "verify before delivery"
+        request = Request(base+f"/api/v1/runs/{result['run']['id']}/cancel", data=b"{}", headers=headers, method="POST")
+        with urlopen(request,timeout=5) as response:
+            assert response.status == 200 and json.load(response)["run"]["status"] == "cancelled"
         child.terminate()
         assert child.wait(timeout=10) == -signal.SIGTERM
     finally:

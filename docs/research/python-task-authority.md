@@ -163,3 +163,64 @@ SDK host result through the control store with deterministic model/tool ports. C
 records with the existing TypeScript readers. A database commit and terminal message must occur
 once; test that a losing operation creates neither a reply nor a success audit. Restart recovery,
 external provider success and production switching remain separate gates.
+
+
+## Owner lifecycle commands — frozen adapter design (2026-09-23)
+
+The next user-facing increment reuses the reviewed OwnerTransactions and existing PostgreSQL
+lifecycle above: POST cancel (strict empty JSON, 128-byte body) and POST steer (strict instruction,
+18,000-byte body). Use actual Zod 4.6.2 against Python before accepting the pure adapters. No new
+library, schema, worker protocol or upstream source. Current OpenBot TS source at4cbdc63 remains
+the local porting reference; its original MIT license is retained.
+
+Cancellation locks the persisted target row, permits only native queued/running tasks, preserves
+idempotent cancelled responses and records one Owner audit for the target and each affected active
+native descendant in the same channel. Preserve the existing parent/root selection and do not
+invent SQL-approval expiration in this command: member removal and plugin callbacks own those.
+Bound descendant rows and fetched text before public projection; an exceeded bound rolls back,
+never returns success for partial cancellation. A cancellation racing a task claim/completion
+must serialize on the Run row; no model/external call is made while holding the transaction.
+
+Steering locks the same Run row used by completion, holds membership SHARE, and reads at most nine
+existing scoped steering events (at most eight accepted). It stores exact Owner audit identity
+and trimmed valid Unicode, rejects additional attachment markers at HTTP and store boundaries,
+and returns 202 only after final Owner/session expiry recheck and commit. Cancellation against
+steering is tested with real row-lock contenders; rejected or rolled-back commands add no audit.
+No execution callback is exposed in the current queued-only reference. When the dispatcher is
+integrated, process/plugin interruption and realtime publication must follow the committed result;
+the persisted cancel result is not evidence that an external effect was undone. Whole S2b remains
+open until execution/tool/approval/complete integration is accepted.
+
+
+A real two-writer race exposed an acceptance-test assumption: existing cancellation audit timestamps
+use PostgreSQL now() (transaction start), so timestamp order may differ from commit order after
+lock waits. Preserve that existing schema behavior in this slice. The corrected fixture proves
+serialization via observed row contention and both committed payloads, without treating timestamps
+or random UUIDs as an event cursor. Durable ordered events remain the explicit S2c contract task.
+
+
+## Owner commands local acceptance
+
+Root independently verified 71 combined PostgreSQL/HTTP cases (26 new command cases), actual TS
+readback of cancelled roots/descendants and Owner corrections, and 38 focused command/task/entry
+checks. The final locked Python package passed 728 cases; its 71 fixture-only cases were verified
+separately as above. Full npm run check passed. A first package run had two pre-existing process
+timing failures (TERM-grace elapsed-time assertion and a real-SDK process refusal). Both passed
+alone, then the complete suite passed without any process implementation/test/timeout change.
+The observed host load was high, but no causal claim is made. Both run logs are retained locally.
+
+The new database races observe real row-lock contention: only one repeated cancellation produces
+an audit, at most eight competing corrections commit, a correction that wins remains recorded,
+a cancelled target rejects later correction, and Owner expiry during a Run wait rolls back all
+changes. Audit failure rolls back both parent and descendants. Existing node/profile boundaries,
+1000-descendant and 4 MiB transfer/JSON bounds fail closed. Real loopback HTTP in tasks mode now
+submits, steers and cancels a task. No model execution, plugin interruption, realtime publisher,
+completion transaction, restart recovery or production selection is established by these checks.
+
+
+Assisted contribution: WorkBuddy DeepSeek supplied the pure input/projection module and its tests.
+Root stopped the worker, reviewed its files, corrected a non-behavioral false claim about Python
+lone surrogates, and wrote the final comparator. All 34 actual installed Zod/Python command cases
+agree, including strict unknown-key refusal, ECMAScript trim, astral/combining boundaries and
+lone-surrogate value parity. The trusted store independently rejects non-UTF-8 text. The comparator
+is wired into the existing combined control gate. No upstream source was copied or dependency added.

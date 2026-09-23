@@ -525,3 +525,12 @@ any asynchronous pipe attachment, so cancellation cannot lose an early process g
 source, tests, license, cancellation corrections and qualification evidence are recorded in
 [the supervision review](research/python-control-runtime-supervision.md). The control host/process
 seam is locally verified; persisted execution and production selection remain pending.
+
+
+## Python Owner run commands (2026-09-23)
+
+Reuse the reviewed PostgreSQL 17.11 row locks/transactions and Psycopg 3.3.6 for atomic cancellation,
+descendant settlement and steering audits. Reuse Pydantic 2.13.5 and the accepted ECMAScript text
+adapter; actual Zod 4.6.2 schemas are the compatibility oracle. No dependency, migration, upstream
+source copy or dispatcher change. The original OpenBot MIT application semantics are ported;
+see [frozen lifecycle design and acceptance](research/python-task-authority.md).

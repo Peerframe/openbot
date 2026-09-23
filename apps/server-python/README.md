@@ -36,13 +36,13 @@ channels. Legacy membership order is unspecified, so only member IDs are compare
 returns them sorted. Other fixture fields match exactly. Both implementations recognize sessions
 issued by the other, and revocation takes effect across implementations.
 
-Forty-five database/HTTP checks cover reads, expiry/revocation, enforced read-only transactions, exact
+Seventy-one database/HTTP checks cover reads, expiry/revocation, enforced read-only transactions, exact
 schema history, invalid stored Bot status, concurrent persistent throttling, transactional auth
 failure without a success cookie, and real loopback processes with bounded SIGTERM shutdown.
 Identity checks also exercise exact audit/evolution payloads, missing members, concurrent name
 conflicts, rollback on audit failure, revocation during a row-lock wait, expiry during audit waiting,
-and real HTTP creation. Task cases cover multi-recipient atomicity, reply/member scope, concurrent source timestamps, audit rollback and bounded Run reads. An additional 60-case differential executes the actual TS and Python routing/Run projections. A separate 129-case input differential compares installed Zod against Python. Without the explicit fixture,
-package checks skip the forty-five integration cases; skips are not acceptance. Two upstream test-client
+and real HTTP creation. Task cases cover multi-recipient atomicity, reply/member scope, concurrent source timestamps, audit rollback and bounded Run reads. An additional 60-case differential executes the actual TS and Python routing/Run projections. A separate 129-case input differential compares installed Zod against Python; 34 additional cases compare Owner run commands. Command database cases cover descendant cancellation, corrections, actual lock contention and rollback. Without the explicit fixture,
+package checks skip the seventy-one integration cases; skips are not acceptance. Two upstream test-client
 deprecation warnings remain at the reviewed pins. The Linux CI job includes these checks; a hosted
 run is separate evidence and has not yet run for this local change.
 
@@ -148,6 +148,28 @@ token counts. Usage is reported evidence, not permission or billing. Titles reta
 80 UTF-16-unit bound; the 77-unit prefix plus ellipsis never splits a Unicode scalar. This fixes
 the narrow legacy invalid-surrogate case. See [task research](../../docs/research/python-task-authority.md).
 
+## Owner task commands
+
+The explicit `tasks` mode also exposes POST `/api/v1/runs/{run_id}/cancel` with a strict empty
+JSON object (128-byte limit) and POST `/api/v1/runs/{run_id}/steer` with a strict `instruction`
+field (18,000-byte limit). Both require a current Owner session and allowed origin. Steering
+requires a UUID task ID, trims 1–4000 Unicode code points, refuses attachment markers and accepts
+at most eight instructions for a native queued/running task whose Bot remains a channel member.
+It returns 202 with `steering` only after the audit transaction commits. This records an instruction;
+it does not yet execute it. Runtime completion must later check all committed steering IDs.
+
+Cancellation returns the committed `run`, stops its active native descendants in the same channel,
+and records exact Owner/ancestor audits atomically. Repeating cancellation adds no duplicate audit.
+Other terminal or Worker states return 409; missing tasks return 404 after authentication. The
+transaction bounds descendants to 1000 and projected text/JSON to 4 MiB, with complete rollback
+when exceeded. A failed audit or expired Owner session rolls back both target and descendants.
+The current reference still has no dispatcher: process/plugin interruption and realtime publication
+must be connected after commit before claiming cancellation of executing external work.
+
+Local command acceptance: 71 combined PostgreSQL/HTTP cases, actual TS cancellation/steering
+readback, 728 Python package cases, and full repository checks passed. Database tests skip only
+in the ordinary package run; use the owned `npm run test:control:python` fixture to run them.
+
 ## Control-owned runtime adapter (S2b-2 internal seam)
 
 The separate `runtime_host`, `runtime_ports` and `runtime_executor` modules retain authority,
@@ -162,8 +184,8 @@ rejects replay, invented tool observations and success after a latched failure o
 Effect adapters must enforce their own atomic authority/approval at dispatch and cooperate with
 cancellation; host checks cannot undo external effects. Returned final text is provisional until
 the SQL service separately commits completion. The process adapter owns its PID before connecting
-pipes and completes group cleanup before propagating cancellation. Local package validation has
-651 passing cases, with the 45 database cases verified separately; 83 process/actual-SDK cases and
+pipes and completes group cleanup before propagating cancellation. At the supervision checkpoint,
+651 package cases passed, with its 45 database cases verified separately; 83 process/actual-SDK cases and
 48 actual TS/Python profile comparisons pass. These do not establish persisted task execution; see
 [supervision research](../../docs/research/python-control-runtime-supervision.md).
 

@@ -127,6 +127,13 @@ cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnec
   the integrator implemented the host and corrected cancellation/early-PID ownership with independent
   regressions. No runtime credential or default backend change. Linux qualification is recorded in
   [the supervision evidence](research/python-control-runtime-supervision.md).
+- S2b Owner run commands: cancel/steer are available in the explicit task reference. Cancellation
+  atomically settles the native target and eligible active descendants; steering retains at most
+  eight Owner corrections under the same Run lock. 71 combined real PostgreSQL/HTTP cases pass,
+  including actual concurrent writers, audit rollback, expiry during row contention, node/profile
+  refusal, bounds and TS cancellation/steering readback. Final Python package: 728 passed, 71
+  fixture-only skips independently verified; 34 actual Zod command comparisons and full npm check passed. This is persisted command authority;
+  process/plugin notifications, execution dispatch, completion and realtime remain unfinished.
 - The S2a identity/authentication journey is locally accepted. Next is S2b-2 persisted execution
   (claim, usage, correction, final publication, failure/cancellation) and S2b-3 tool/approval authority, following the [dependency review](research/python-task-authority.md).
   The aggregate profile read includes task, approval, artifact, skill and memory projections and

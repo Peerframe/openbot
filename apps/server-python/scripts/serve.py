@@ -43,6 +43,7 @@ def main():
     conversations = None
     profiles = None
     tasks = None
+    run_commands = None
     if authority in ("identity", "tasks"):
         from openbot_server.conversations import PostgresConversationStore
         from openbot_server.profile_details import PostgresProfileStore
@@ -51,9 +52,11 @@ def main():
     if authority == "tasks":
         from openbot_server.task_store import PostgresTaskStore
         tasks = PostgresTaskStore(dsn)
+        from openbot_server.run_command_store import PostgresRunCommandStore
+        run_commands = PostgresRunCommandStore(dsn)
     app = create_app(PostgresReadStore(dsn), owner_name=owner_name,
                      secure_cookies=cookie_mode == "secure", allowed_origins=origins, auth=auth,
-                     identity=PostgresIdentityStore(dsn) if authority in ("identity", "tasks") else None, conversations=conversations, profiles=profiles, tasks=tasks)
+                     identity=PostgresIdentityStore(dsn) if authority in ("identity", "tasks") else None, conversations=conversations, profiles=profiles, tasks=tasks, run_commands=run_commands)
     uvicorn.run(app, host="127.0.0.1", port=int(port_text), proxy_headers=False, access_log=False,
                 log_level="warning", loop="asyncio", http="h11", timeout_graceful_shutdown=8)
 

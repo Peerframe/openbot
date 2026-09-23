@@ -7,8 +7,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { readSteering } from "../apps/server/dist/agent-steering.js";
 import { createApp } from "../apps/server/dist/app.js";
 import { OwnerAuthService } from "../apps/server/dist/owner-auth.js";
+import { PostgresAgentStore } from "../apps/server/dist/postgres-agent-store.js";
 import { PostgresRequestThrottleStore } from "../apps/server/dist/postgres-request-throttle-store.js";
 import { PostgresOwnerSessionStore } from "../apps/server/dist/postgres-session-store.js";
 import { PostgresControlPlaneStore } from "../apps/server/dist/postgres-store.js";
@@ -236,6 +238,7 @@ try {
       conversationResult: join(fixtureDirectory, "conversation-result.json"),
       profileResult: join(fixtureDirectory, "profile-result.json"),
       taskResult: join(fixtureDirectory, "task-result.json"),
+      runCommandResult: join(fixtureDirectory, "run-command-result.json"),
     }),
     {
       mode: 0o600,
@@ -253,6 +256,7 @@ try {
       "tests/test_message_postgres.py",
       "tests/test_profile_postgres.py",
       "tests/test_task_postgres.py",
+      "tests/test_run_command_postgres.py",
       "-q",
     ],
     {
@@ -334,6 +338,23 @@ try {
       "TS must read all committed Python message/run records identically.",
     );
   }
+  const runCommandResult = JSON.parse(
+    await readFile(join(fixtureDirectory, "run-command-result.json"), "utf8"),
+  );
+  const native = new PostgresAgentStore(database.db);
+  for (const expectedRun of [runCommandResult.run, ...runCommandResult.descendants]) {
+    assert.deepEqual(
+      await native.lookup(expectedRun.id),
+      expectedRun,
+      "TS must project Python cancellation and nullable usage identically.",
+    );
+  }
+  const steeredRun = await native.lookup(runCommandResult.steering.runId);
+  assert.deepEqual(
+    await readSteering(database.db, steeredRun),
+    [runCommandResult.steering],
+    "TS must read a committed Python Owner instruction identically.",
+  );
   const authResult = JSON.parse(await readFile(join(fixtureDirectory, "auth-result.json"), "utf8"));
   assert.match(authResult.pythonToken, /^[A-Za-z0-9_-]{43}$/);
   const pythonSession = await app.request("/api/v1/auth/session", {
