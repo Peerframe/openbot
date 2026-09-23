@@ -54,6 +54,16 @@ a deliberately incompatible first command must fail with NondeterminismError. Sn
 HTTP counters must not change. Histories stay in memory, and no activities are registered for replay.
 This verifies these histories, not arbitrary future workflow/SDK upgrades.
 
+## Adjacent engine releases
+
+Add `--upgrade-archive /absolute/path/to/temporal_1.31.3_linux_<architecture>.tar.gz` to the full
+`postgres-mtls` command. It rejects the handoff-only mode. The [profile](../../deploy/temporal/README.md#adjacent-release-qualification)
+documents exact provenance, the mandatory 600-second old-server health observation, unchanged
+schema contents and separate original-volume/older-snapshot checks. Two extra tasks cover pending
+approval and committed publication across both stages (four additional case records). The ordinary
+eight scenarios remain in the same run. Histories replay at each boundary without extra effects.
+This is a stopped 1.31.3-to-1.32.0 upgrade, not a general update service.
+
 ## What is exercised
 
 | Case | Observed requirement |
@@ -90,3 +100,7 @@ resource cost or a real network partition. The only client exercised here is aut
 reconnect and shared client projections remain separate work. Bounded engine retry exhaustion is
 not a business success or a refund. An unresolved Task needs an explicit reconciliation/recovery
 operator path before production. File quotas/GC/storage durability remain open.
+
+The explicit adjacent-release path passes twelve case records, 57 reference unit checks and eleven
+offline histories on arm64. It covers the fixed stopped 1.31.3 -> 1.32.0 upgrade with identical PG
+schemas; amd64 CI and broader release/worker-code compatibility remain unverified.

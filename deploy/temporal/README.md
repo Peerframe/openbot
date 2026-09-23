@@ -60,6 +60,35 @@ an older engine snapshot into another new volume, and removes only its owned res
 It never opens an existing user database. Abrupt host/power loss may require cleaning the exact
 `openbot-temporal-qualification-*` project reported by Docker; never use a global prune.
 
+## Adjacent-release qualification
+
+Supply the official **1.31.3 Linux archive matching the Docker daemon architecture**, using the
+[reviewed URLs and hashes](../../docs/research/temporal-release-upgrade.md). There is no automatic
+download, unverified extraction or fallback version:
+
+```sh
+/tmp/openbot-work-reference/bin/python -B experiments/work-journey/probe.py --engine postgres-mtls --upgrade-archive /absolute/path/to/temporal_1.31.3_linux_arm64.tar.gz
+```
+
+The archive and both exact regular binary members must match their pinned sizes/SHA-256. Only
+the server and SQL-tool binaries are mounted over the existing pinned 1.32.0 base images; this is
+an **official-binary substitution fixture, not an official 1.31.3 container image**. Schema files
+are byte-identical in these releases (history1.19, visibility1.14), so this tests a service upgrade,
+not a schema-DDL change. Original binaries receive 600 seconds of successful health observations
+before task creation; this wait cannot be disabled. The upgrade stops the engine, checks all four
+shards and unchanged schema history, runs official target maintenance and verifies runtime1.32.0.
+
+Approval-waiting and published-but-unacknowledged tasks first resume on the upgraded original
+volume. Only then is an older engine snapshot restored into a new volume against newer business
+facts, including the main unknown-write task. Original engine run IDs, complete product snapshots,
+exact POST counts, budget and verified downloads are checked. Restoring an old approval history
+for an already-completed Task must stop at its now-revoked authority; it must not repeat work.
+The engine result and the authoritative completed Task are deliberately distinct.
+
+This longer test uses bounded 1200-second workflow timeouts and runs in the existing Linux CI job.
+It does not prove rolling/HA upgrades, downgrade, arbitrary future worker changes, genuine DDL
+migration or full-product rollback. The shorter same-version reference remains available.
+
 ## Manual schema inspection
 
 A trusted operator can retain a private reference instance. From repository root, create a **new**
@@ -98,8 +127,9 @@ docker compose --env-file /tmp/openbot-temporal-reference.env --project-name ope
 python3 deploy/temporal/maintain.py upgrade --env-file /tmp/openbot-temporal-reference.env --project openbot-temporal-reference
 ```
 
-This release verifies a same-version maintenance run and rejection boundaries. It does **not** yet
-qualify a release-to-release upgrade, worker-code change or rollback. Follow Temporal's supported
+The base profile verifies same-version maintenance and rejection boundaries. The explicit adjacent
+release fixture above adds a separate service-upgrade check. It does not qualify arbitrary versions,
+changed worker code or rollback. Follow Temporal's supported
 adjacent-release policy, review/pin the new images and schema first, and run history replay plus
 restored-work journeys before changing the reference. The Server itself accepts some newer schemas;
 our operator rejects newer versions rather than claiming universal binary/schema mismatch rejection.
@@ -121,3 +151,8 @@ Production API authorization/PKI, supported version upgrades and representative 
 failure, workload/idle cost, credential recovery and full product restore remain separate gates.
 A full product rollback can resurrect old grants and requires an execution hold and reconciliation.
 No native Linux isolation or real-provider quality claim follows from this profile.
+
+Local qualification: all twelve upgrade/public-work records and 57 unit checks pass on arm64;
+eleven actual histories replay without side effects and reject an incompatible first command.
+Original-volume continuation precedes older-snapshot restore. See the
+[measured scope](../../docs/research/temporal-release-upgrade.md#measured-qualification--2026-09-23).

@@ -136,12 +136,12 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
     assert result.returncode == 0, result.stderr.replace(dsn, '[owned database]')
     api = API(tmp, dsn, artifact_root)
     effects = EffectService(tmp / 'effects')
-    children, records = [], []
+    children, records, held_upgrades = [], [], []
 
     def launch(script, cfg, barrier=''):
         directory = tmp / f'child-{len(children)}'
         directory.mkdir()
-        cfg = {**cfg, 'engine_tls': getattr(server, 'client_settings', None), 'barrier': barrier, 'directory': str(directory), 'effect_url': effects.url}
+        cfg = {**cfg, 'execution_timeout_seconds': 1200 if hasattr(server, 'upgrade') else 240, 'engine_tls': getattr(server, 'client_settings', None), 'barrier': barrier, 'directory': str(directory), 'effect_url': effects.url}
         config = directory / 'config.json'
         config.write_text(json.dumps(cfg)); config.chmod(0o600)
         process = Process([sys.executable, '-u', str(HERE / script)], directory,
@@ -184,10 +184,67 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
         api.call(path, {'intentDigest': '0' * 64, 'approved': True}, expected=409)
         return api.call(path, {'intentDigest': action['intentDigest'], 'approved': True})
 
+    async def resume_upgrade_tasks(engine_client, phase):
+        for held in held_upgrades:
+            task_id = held['cfg']['task_id']
+            handle = engine_client.get_workflow_handle('openbot-work-v1-' + held['cfg']['run_id'])
+            description = await handle.describe()
+            assert description.run_id == held['engineRunId']
+            assert description.status == WorkflowExecutionStatus.RUNNING
+            assert api.snapshot(task_id) == held['state']
+            assert counts(task_id) == held['effects']
+            await replay_without_effects(handle, task_id, phase + '-' + held['stage'] + '-before')
+            if held['state']['status'] != 'completed':
+                approve(held['state'])
+            worker = launch('workflow_worker.py', held['cfg'])
+            result = await asyncio.wait_for(handle.result(), 35)
+            worker.kill()
+            completed = api.snapshot(task_id)
+            assert completed['status'] == 'completed'
+            if phase == 'restored' and held['stage'] == 'approval':
+                # Business completion revoked authority. Old engine history must stop at the
+                # fresh control check, not re-admit work to imitate its already-published result.
+                assert result['outcome'] == 'stopped'
+            else:
+                assert result['status'] == 'completed'
+            if held['state']['status'] == 'completed':
+                assert completed == held['state']
+            assert completed['usage'] == {'tokenLimit': 20, 'reservedTokens': 0, 'spentTokens': 11}
+            assert counts(task_id) == {'attempts': 5, 'writes': 1, 'lookups': 0}
+            assert len(completed['artifacts']) == 1
+            assert api.call(completed['artifacts'][0]['downloadUrl'], raw=True) == b'row,value\n7,fixed\n'
+            assert len([e for e in completed['events'] if e['kind'] == 'task.completed']) == 1
+            await replay_without_effects(handle, task_id, phase + '-' + held['stage'] + '-after')
+            record = {'case': 'upgrade-' + phase + '-' + held['stage'],
+                'engineRunIdentityRetained': True, 'status': completed['status'], **counts(task_id)}
+            records.append(record); print(json.dumps(record), flush=True)
+            held['state'], held['effects'] = completed, counts(task_id)
+
     try:
         api.start()
         api.call('/api/v1/auth/login', {'password': api.password})
         bot = api.call('/api/v1/bots', {'name': 'Reference', 'role': 'Correct the fixture CSV'}, expected=201)['bot']
+        if hasattr(server, 'upgrade'):
+            for stage in ('approval', 'publication-ack'):
+                created = api.call('/api/v1/tasks', {'botId': bot['id'],
+                    'objective': 'Preserve the pre-upgrade ' + stage, 'tokenLimit': 20,
+                    'requestKey': secrets.token_hex(12)}, expected=202)
+                held_task, held_run = created['id'], created['runs'][0]['id']
+                held_cfg = {'dsn': dsn, 'artifact_root': str(artifact_root), 'task_id': held_task,
+                    'run_id': held_run, 'temporal_address': server.address, 'queue': 'work-' + held_run}
+                launch('dispatch.py', held_cfg).done()
+                held_handle = client.get_workflow_handle('openbot-work-v1-' + held_run)
+                worker = launch('workflow_worker.py', held_cfg)
+                held_state = await waiting(held_handle, held_task)
+                worker.kill()
+                if stage == 'publication-ack':
+                    approve(held_state)
+                    worker = launch('workflow_worker.py', held_cfg, 'after-publication')
+                    worker.wait('after-publication'); worker.kill()
+                    held_state = api.snapshot(held_task)
+                    assert held_state['status'] == 'completed'
+                held_upgrades.append({'stage': stage, 'cfg': held_cfg, 'state': held_state,
+                    'effects': counts(held_task), 'engineRunId': (await held_handle.describe()).run_id})
         scenarios = () if only_handoff else ('recover', 'cancel-before-write', 'cancel-unknown', 'corrupt-receipt', 'publication-ack')
         for scenario in scenarios:
             request = {'botId': bot['id'], 'objective': 'Correct row 7 in the owned CSV',
@@ -267,6 +324,20 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
                     assert cancelled['status'] == 'open' and cancelled['attention'] == 'reconciliation'
                 if scenario == 'corrupt-receipt':
                     effects.corrupt_receipt(task_id)
+                if scenario == 'recover' and hasattr(server, 'upgrade'):
+                    engine_run_id = (await handle.describe()).run_id
+                    await server.upgrade()
+                    client = await server.connect()
+                    handle = client.get_workflow_handle('openbot-work-v1-' + run_id)
+                    assert (await handle.describe()).run_id == engine_run_id
+                    assert api.snapshot(task_id) == unknown
+                    await replay_without_effects(handle, task_id, 'unknown-after-server-upgrade')
+                    for held in held_upgrades:
+                        held_handle = client.get_workflow_handle('openbot-work-v1-' + held['cfg']['run_id'])
+                        assert (await held_handle.describe()).run_id == held['engineRunId']
+                        assert api.snapshot(held['cfg']['task_id']) == held['state']
+                        assert counts(held['cfg']['task_id']) == held['effects']
+                    await resume_upgrade_tasks(client, 'original-volume')
                 if engine_snapshot is not None:
                     # Restore older engine history only. The newer product unknown-write fact
                     # and independent external receipt must prevent a second POST.
@@ -274,6 +345,13 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
                     client = await server.connect()
                     handle = client.get_workflow_handle('openbot-work-v1-' + run_id)
                     assert api.snapshot(task_id) == unknown
+                    if hasattr(server, 'upgrade'):
+                        description = await handle.describe()
+                        assert description.run_id == engine_run_id
+                        assert description.status == WorkflowExecutionStatus.RUNNING
+                if scenario == 'recover' and held_upgrades:
+                    await resume_upgrade_tasks(client, 'restored')
+                    held_upgrades.clear()
                 if scenario == 'recover':
                     effects.close(); effects = EffectService(tmp / 'effects')
                     assert counts(task_id)['writes'] == 1
@@ -367,11 +445,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--temporal-cli', type=Path)
     parser.add_argument('--engine', choices=('development', 'postgres', 'postgres-mtls'), default='development')
+    parser.add_argument('--upgrade-archive', type=Path, help='Verified official 1.31.3 archive; requires postgres-mtls')
     parser.add_argument('--only-handoff', action='store_true', help='Run only engine-identity rejection regressions')
     args = parser.parse_args()
     assert sys.platform != 'win32', 'POSIX process signals required'
     assert importlib.metadata.version('temporalio') == '1.33.0'
     assert importlib.metadata.version('pydantic-ai-slim') == '2.47.0'
+    if args.upgrade_archive and (args.engine != 'postgres-mtls' or args.only_handoff):
+        parser.error('--upgrade-archive requires the full postgres-mtls journey')
     binary = None
     if args.engine == 'development':
         if args.temporal_cli is None:
@@ -385,14 +466,21 @@ def main():
     signal.signal(signal.SIGTERM, interrupted)
     with TemporaryDirectory(prefix='openbot-work-journey-') as directory, database() as dsn:
         tmp = Path(directory)
-        if args.engine in ('postgres', 'postgres-mtls'):
+        if args.upgrade_archive:
+            from upgrade_server import UpgradeServer
+            server = UpgradeServer(tmp, args.upgrade_archive)
+        elif args.engine in ('postgres', 'postgres-mtls'):
             from postgres_server import PostgresServer
             server = PostgresServer(tmp, mtls=args.engine == 'postgres-mtls')
         else:
             server = Server(binary, tmp)
         try:
             server.start()
-            records = asyncio.run(qualify(tmp, dsn, server, only_handoff=args.only_handoff))
+            async def run_qualification():
+                if hasattr(server, 'before_qualification'):
+                    await server.before_qualification()
+                return await qualify(tmp, dsn, server, only_handoff=args.only_handoff)
+            records = asyncio.run(run_qualification())
             if hasattr(server, 'finish_checks'):
                 server.finish_checks()
             print(json.dumps({'passed': len(records), 'scope': 'public HTTP + PG + SDK + fake effects', 'engine': args.engine}))

@@ -442,3 +442,12 @@ Pydantic AI2.47.0 插件（均 MIT；源码提交详见研究）。OpenSSL CLI �
 生产 CA、自研加密或依赖；Compose 沿用已有归因。未复制引擎/SDK 实现或修改产品默认值。
 见[传输](research/temporal-transport-security.md)与[重放](research/temporal-history-replay.md)。
 mTLS 只认证受信控制组，不是 API 分权；同版本重放不证明未来工作流/SDK 兼容。
+
+
+## Temporal 相邻服务版本升级（2026-09-23）
+
+复用官方 MIT Temporal 1.31.3 二进制（`8c78934b67fbac43d2ea7f8ada448c539780584d`）和已固定
+1.32.0 镜像/工具。核查时官方 1.31.3 容器标签不可用，因此仅在测试中以只读绑定替换经过校验的旧版
+server/sql-tool。CPython 标准库执行有界的精确成员提取，不新增通用更新器、依赖或自研 schema 迁移，
+未复制上游源码或切换产品默认值。两个版本的 PG schema 树完全相同。
+见[版本固定与实际验收](research/temporal-release-upgrade.md)。

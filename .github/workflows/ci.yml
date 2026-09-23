@@ -370,7 +370,8 @@ jobs:
   python-runtime:
     name: Python runtime and control reference (Linux amd64)
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    # The adjacent-release gate includes the documented ten-minute History Shard warm-up.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -394,13 +395,19 @@ jobs:
         run: apps/server-python/scripts/check.sh -q
       - name: Compare Python and TypeScript against owned PostgreSQL
         run: npm run test:control:python
-      - name: Qualify public work recovery with PostgreSQL, mutual TLS and history replay
+      - name: Qualify adjacent Temporal release recovery with PostgreSQL and mutual TLS
         shell: bash
         run: |
           python3.12 -m venv "$RUNNER_TEMP/openbot-work-reference"
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install -r experiments/work-journey/requirements.txt
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py --engine postgres-mtls
+          curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
+            --max-time 180 --max-filesize 93822307 \
+            --output "$RUNNER_TEMP/temporal_1.31.3_linux_amd64.tar.gz" \
+            https://github.com/temporalio/temporal/releases/download/v1.31.3/temporal_1.31.3_linux_amd64.tar.gz
+          # The runner verifies pinned archive/member sizes and hashes before executing either binary.
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
+            --engine postgres-mtls --upgrade-archive "$RUNNER_TEMP/temporal_1.31.3_linux_amd64.tar.gz"
 
   # Keep this protected context pending until every platform and integration job finishes.
   check:

@@ -56,6 +56,8 @@ class PostgresServer:
         files = ['--file', str(PROFILE)]
         if self.certificates is not None:
             files += ['--file', str(PROFILE.with_name('compose.mtls.yaml'))]
+        if getattr(self, 'release_overlay', None) is not None:
+            files += ['--file', str(self.release_overlay)]
         result = subprocess.run(['docker', 'compose', '--env-file', str(self.env_file),
             '--project-name', self.project, *files, *args], env=ENV,
             input=input, capture_output=True, timeout=timeout)

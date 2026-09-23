@@ -59,8 +59,9 @@ dispatcher or automatic connection to the existing stdin/stdout Runtime. The rel
 backup restore against newer product facts and engine/database SIGKILL. This is single-host persistence
 evidence, not production acceptance. The optional mTLS profile now passes trusted-client rejection,
 stopped CA rotation and the same eight journeys. Actual waiting/completed histories replay without
-side effects and an incompatible command is detected. Production API authorization/PKI, release
-upgrades and future-code compatibility, unresolved-work operations and Linux execution isolation
+side effects and an incompatible command is detected. A stopped 1.31.3-to-1.32.0 upgrade now passes twelve case records, including original-volume
+continuation before a separate older-snapshot restore. Production API authorization/PKI, broader
+upgrade and future-code compatibility, unresolved-work operations and Linux execution isolation
 remain engine-selection gates. Qualify these boundaries
 before expanding the client/API and real-tool surface. Preserve one
 recovery owner; do not turn the reference fixture into another product recovery framework.
@@ -85,7 +86,7 @@ research/dependency changes remain preserved and are not accepted or activated b
 | --- | --- | --- | --- |
 | S1 — Reconcile and freeze preservation scope | Source-backed capability/retirement matrix, both migration histories, data compatibility risks, target API/event ownership, reversible source checkpoints | Every target capability mapped to current evidence and an owning stage; divergent SQL histories detected; no private data copied | Complete (source scope; no data cutover) |
 | S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a identity/authentication slice accepted locally; S2b queued submission/read and control host/process seam accepted locally; persisted lifecycle and integrated public-work reference accepted locally; production dispatcher and client parity open |
-| S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | In progress: eight public-work cases on development and released PostgreSQL engines; cold engine restore and SIGKILL accepted locally; production selection/upgrade/isolation gates open |
+| S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | In progress: eight public-work cases on development and released PostgreSQL engines; cold engine restore and SIGKILL accepted locally; adjacent stopped upgrade accepted locally; production selection/recovery operations/isolation gates open |
 | S4 — Persistent execution and deliverables | Linux browser sessions, human takeover, reviewed autonomous browse/form/upload/download, persistent workspace, restricted commands, isolated code changes and document tools | Real local fixture site with separate Bot profiles; approved write, takeover, cancel and restart; exported files open/render; isolated repository produces a tested patch | Design reviewed; Linux deployment and execution pending |
 | S5 — Memory, skills and learning evaluation | Scoped relevant retrieval, candidate lessons/skills from correction and supported teaching, version/review/test/disable/rollback; separate evaluation tooling | A correction becomes a reviewed skill, improves a held-out task, and can be revoked; provenance/scope/deletion preserved; no authority increase. Preserve Hermes attribution | Pending |
 | S6 — Collaboration and extensibility | Existing delegation preserved through durable execution, shared resource/budget constraints; MCP authentication lifecycle and compatibility; preservation/migration of per-Bot model configuration and reviewed local endpoints | Delegated browser/file work with independent grants; conflict/cancel tests; connector refresh/revoke/failure cases; model switch keeps identity/data; independent module contribution fixture | Pending |
@@ -138,6 +139,17 @@ S1 freezes ownership, not a speculative new event protocol. Exact snapshot revis
 cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnect fixtures.
 
 ## Acceptance record
+
+- Adjacent Temporal release upgrade: 12 public-work records and 57 reference unit checks pass.
+  Verified official 1.31.3 binaries over the pinned 1.32 image warmed for 601 seconds, then upgraded
+  to actual 1.32.0 with unchanged schema history, namespace and four shards. Waiting approval and
+  committed publication first resume on the upgraded original volume, then retain newer completed
+  business facts after older engine-snapshot restore. No duplicate write/artifact/completion or
+  revived authority; unknown writes still require receipt lookup. Eleven histories pass offline
+  replay with incompatible-command rejection. Full repository checks pass; Linux CI is configured
+  but not run remotely. This is a stopped arm64 service upgrade with identical PostgreSQL schemas,
+  not DDL migration, rolling/HA, general rollback or Linux isolation. See
+  [upgrade evidence](research/temporal-release-upgrade.md).
 
 - Trusted engine transport and offline replay: 38 reference unit checks and eight mTLS/PG public
   journeys pass locally. Plaintext, absent certificate, unknown/retired client CA and wrong server

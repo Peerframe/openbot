@@ -15,6 +15,9 @@ from openbot_server.work_handoff import HandoffStore
 
 async def main():
     cfg = control.settings()
+    timeout_seconds = cfg.get('execution_timeout_seconds', 240)
+    if type(timeout_seconds) is not int or timeout_seconds not in (240, 1200):
+        raise ValueError('Unsupported bounded fixture execution timeout')
     identity = {'taskId': cfg['task_id'], 'runId': cfg['run_id']}
     handoff = HandoffStore(control.store())
     if identity not in await handoff.pending():
@@ -24,7 +27,7 @@ async def main():
     await control.fault_barrier('before-enqueue')
     try:
         handle = await client.start_workflow('WorkJourney', identity, id=workflow_id,
-            task_queue=cfg['queue'], execution_timeout=timedelta(seconds=240),
+            task_queue=cfg['queue'], execution_timeout=timedelta(seconds=timeout_seconds),
             id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE)
     except WorkflowAlreadyStartedError:
         handle = client.get_workflow_handle(workflow_id)

@@ -608,3 +608,13 @@ the already-attributed upstream topology. No copied engine/SDK implementation, n
 product default change. See [transport](research/temporal-transport-security.md) and
 [replay](research/temporal-history-replay.md). mTLS authenticates one trusted control group, not
 API RBAC; same-version replay does not establish future workflow/SDK compatibility.
+
+
+## Adjacent Temporal service upgrade (2026-09-23)
+
+Reuse official MIT Temporal 1.31.3 release binaries (`8c78934b67fbac43d2ea7f8ada448c539780584d`)
+and the existing pinned 1.32.0 images/tools. A thin test-only bind overlay substitutes the verified
+older server/sql-tool because official 1.31.3 container tags were unavailable when checked.
+CPython stdlib tarfile/gzip/hashlib performs bounded exact-member extraction, not a general updater.
+No upstream source copied, new dependency, custom schema migration or production default change.
+The two releases share the entire PostgreSQL schema tree. See [pins and actual qualification](research/temporal-release-upgrade.md).
