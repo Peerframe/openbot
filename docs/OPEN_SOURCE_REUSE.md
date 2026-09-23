@@ -560,3 +560,10 @@ The separate [continuation probe](research/runtime-continuation.md) uses existin
 `77d5fce751ab8ab04bd5db4ed6acc1131a4baed6` (MIT) public deferred-result/history APIs with scripted
 models. Official granular durable adapters remain candidates; the probe does not establish a
 production checkpoint protocol or select an orchestration engine.
+
+## Fenced work publication (2026-09-23)
+
+Reuse CPython3.12.13 POSIX descriptor/file APIs (PSF), PostgreSQL17.11 transactions and existing
+psycopg3.3.6, the reviewed OCI size/digest invariant and RFC6266 attachment disposition. No new
+dependency or copied upstream code. Application epochs fence writes but do not schedule retries;
+files stay in a private control-owned root. See [publication research](research/work-artifact-publication.md).

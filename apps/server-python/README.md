@@ -237,7 +237,7 @@ must retain required notices and applicable license rights.
 ## Independent work-domain admission (S3 foundation)
 
 Opt in with `OPENBOT_CONTROL_AUTHORITY=work` against an explicitly prepared reference database
-including migration `0027`; startup verifies history and never applies migrations. This mode
+including migrations `0027` and `0028`; startup verifies history and never applies migrations. This mode
 retains the prior reference routes. It does not enable an execution dispatcher or select an engine.
 `/health` reports `s3-work-admission-reference`; the default mode/backend is unchanged.
 
@@ -260,6 +260,44 @@ one hour; these are reference limits, not a complete pricing or resource budget 
 
 Ten new owned-PostgreSQL cases pass within the 105-case control integration gate. The new public
 routes use ASGI TestClient against real PostgreSQL; closing/reopening that client preserves state.
-This does not prove live TCP/browser reconnection, engine crash recovery, actual effect verification,
-artifact publication or task completion. Those remain the next integrated acceptance journey.
+At the admission checkpoint this did not prove live TCP/browser reconnection, engine crash recovery,
+actual effect verification or artifact publication. The publication slice below adds real HTTP/file
+evidence; the complete engine/executor journey remains open.
 See [research](../../docs/research/work-domain-admission.md).
+
+### Attempt ownership and artifact publication
+
+Control-owned engine adapters must obtain a `WorkFence` with `claim` before proposing/admitting
+Actions or completing work. A new claim ID advances the Run epoch; replaying an old ID never
+renews its lease or regains ownership. Claims last 1–300 seconds, maximum 10,000 per Run in this
+reference. This is database write fencing, not a scheduler or a guarantee against stale external
+HTTP requests. Admission still checks current Task authority, exact approvals and shared budget.
+The engine integration must arrange bounded attempts; there is no lease-renewal loop in the store.
+
+Set `OPENBOT_CONTROL_ARTIFACT_ROOT` in explicit `work` mode to an existing absolute, private
+control-owned POSIX directory (0700). A configured invalid directory fails startup; an unset root
+leaves submission/approval available but cannot publish/download files. Never mount this directory
+into an untrusted execution environment. Publication uses immutable content keys, file/directory
+flushes and actual readback. The first reference bounds eight files per completion, 8 MiB each;
+format processing and semantic result verification belong to trusted task-specific adapters.
+
+The trusted `complete` port rechecks the current epoch, claim expiry, Task revision and authority,
+requires all proposed Actions to be confirmed applied and no unfinished sibling Run, verifies the
+actual bytes, then commits Artifact metadata, summary, terminal state and event together. A same-
+content retry returns the already-published projection; different content conflicts. This slice
+has no partial/waived-action transition. A Runtime final answer or fabricated receipt is insufficient;
+there is no public complete/resolve API. `resolve` remains a separate trusted reconciliation port
+and can record an already-admitted effect after revocation without permitting new execution.
+
+`GET /api/v1/artifacts/{artifact_id}` authenticates the Owner, reads the database descriptor and
+rechecks the file's exact size and SHA-256 before serving an attachment with encoded filename and
+no-sniff headers. Missing/corrupt/nonregular/symlink files fail closed with no bytes served. A failed
+SQL publication may leave an unreferenced blob, which is not exposed by this API; it is retained
+rather than risking deletion of content referenced elsewhere. Quotas, orphan collection, full
+backup/restore, power-loss/storage durability and Linux deployment qualification remain open.
+
+New evidence includes real HTTP startup/restart, persisted approval, publication and authenticated
+file download, plus transaction failures, superseded/expired attempts and concurrent claims. The
+workflow in that test is a trusted deterministic fixture; no durable engine, real model or external
+effect executor is integrated yet. The owned PostgreSQL/HTTP gate passes 119 cases; package checks
+pass 810 cases, with those 119 database cases run separately. `npm run check` also passes. See [publication research](../../docs/research/work-artifact-publication.md).

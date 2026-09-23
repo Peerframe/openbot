@@ -57,7 +57,9 @@ def main():
     work = None
     if authority == "work":
         from openbot_server.work_store import PostgresWorkStore
-        work = PostgresWorkStore(dsn)
+        from openbot_server.work_files import LocalWorkFiles
+        artifact_root = os.environ.get("OPENBOT_CONTROL_ARTIFACT_ROOT")
+        work = PostgresWorkStore(dsn,files=LocalWorkFiles(artifact_root) if artifact_root else None)
     app = create_app(PostgresReadStore(dsn), owner_name=owner_name,
                      secure_cookies=cookie_mode == "secure", allowed_origins=origins, auth=auth,
                      identity=PostgresIdentityStore(dsn) if authority in ("identity", "tasks", "work") else None, conversations=conversations, profiles=profiles, tasks=tasks, run_commands=run_commands, work=work)

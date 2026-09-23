@@ -248,6 +248,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
             schema["paths"][path]["post"]["security"] = [{"OwnerSession": []}]
     if work is not None:
         for path, method in (("/api/v1/tasks", "post"), ("/api/v1/tasks/{task_id}", "get"),
-                             ("/api/v1/tasks/{task_id}/cancel", "post"), ("/api/v1/actions/{action_id}/decision", "post")):
+                             ("/api/v1/tasks/{task_id}/cancel", "post"), ("/api/v1/actions/{action_id}/decision", "post"),
+                             ("/api/v1/artifacts/{artifact_id}", "get")):
             schema["paths"][path][method]["security"] = [{"OwnerSession": []}]
     return app

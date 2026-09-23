@@ -1,4 +1,5 @@
 """Work-domain transactions. This module neither schedules nor executes external actions."""
+import asyncio
 from contextlib import asynccontextmanager
 from uuid import uuid4
 
@@ -7,17 +8,21 @@ from psycopg.types.json import Jsonb
 
 from .authority import OwnerTransactions, PostgresTransactions
 from .database import StoreUnavailable
+from .work_claims import check_fence
 from .models import iso_timestamp
 from .work_values import InvalidWork, WorkConflict, WorkNotFound, canonical, receipt, text, tokens
 
 
 class PostgresWorkStore:
-    def __init__(self, dsn):
+    def __init__(self, dsn, *, files=None):
+        self.files = files
         self._owner = OwnerTransactions(dsn, application_name='openbot-work-owner')
         self._control = PostgresTransactions(dsn, application_name='openbot-work-control')
 
     async def verify_schema(self):
         await self._owner.verify_schema()
+        if self.files is not None:
+            await asyncio.to_thread(self.files.verify)
 
     @asynccontextmanager
     async def _transaction(self, token=None, *, trusted=False):
@@ -86,6 +91,9 @@ class PostgresWorkStore:
         cursor = await connection.execute('SELECT revision,kind,payload FROM work_events WHERE task_id=%s '
                                           'ORDER BY revision DESC LIMIT 100', (task_id,))
         events = list(reversed(await cursor.fetchall()))
+        cursor = await connection.execute('SELECT id,run_id,name,media_type,sha256,size_bytes FROM work_artifacts WHERE task_id=%s ORDER BY id', (task_id,))
+        artifacts = [dict(id=a['id'],runId=a['run_id'],name=a['name'],mediaType=a['media_type'],
+                          sha256=a['sha256'],sizeBytes=a['size_bytes'],downloadUrl='/api/v1/artifacts/'+a['id']) for a in await cursor.fetchall()]
         usage = await cls._usage(connection, task_id)
         uncertain = any(a['status'] == 'unknown' or task['cancel_requested'] and a['status'] == 'admitted' for a in actions)
         attention = ('reconciliation' if uncertain else 'budget' if usage['spentTokens'] > task['token_limit'] else
@@ -94,6 +102,7 @@ class PostgresWorkStore:
         return dict(id=task['id'], botId=task['bot_id'], objective=task['objective'], status=task['status'],
                     revision=task['revision'], authorityActive=task['authority_active'],
                     cancelRequested=task['cancel_requested'], attention=attention,
+                    resultSummary=task['result_summary'],artifacts=artifacts,
                     usage={'tokenLimit': task['token_limit'], **usage}, runs=runs, actions=actions, events=events, eventsTruncated=bool(events and events[0]['revision'] > 1))
 
     async def create(self, token, *, bot_id, objective, token_limit, request_key):
@@ -127,7 +136,7 @@ class PostgresWorkStore:
             await self._task(connection, task_id, read=True)
             return await self._view(connection, task_id)
 
-    async def propose(self, task_id, run_id, *, action_key, intent, reserved_tokens,
+    async def propose(self, task_id, run_id, *, fence, action_key, intent, reserved_tokens,
                       requires_approval=True, expires_seconds=300):
         """Trusted policy composition only. No Runtime/client can select approval requirements."""
         text(run_id, 128); text(action_key, 128); tokens(reserved_tokens)
@@ -141,8 +150,9 @@ class PostgresWorkStore:
             run = await cursor.fetchone()
             if run is None:
                 raise WorkNotFound()
-            if run['status'] not in ('queued', 'running'):
+            if run['status'] != 'running':
                 raise WorkConflict('run_closed')
+            await check_fence(connection,run_id,fence)
             cursor = await connection.execute('SELECT * FROM work_actions WHERE run_id=%s AND action_key=%s', (run_id, action_key))
             existing = await cursor.fetchone()
             if existing is not None:
@@ -160,6 +170,7 @@ class PostgresWorkStore:
             await connection.execute("UPDATE work_tasks SET status='open' WHERE id=%s", (task_id,))
             await connection.execute("UPDATE work_runs SET status='running' WHERE id=%s", (run_id,))
             await self._event(connection, task_id, 'action.proposed', {'actionId': action_id, 'intentDigest': digest})
+            await check_fence(connection,run_id,fence)
             return action_id
 
     async def decide(self, token, action_id, *, intent_digest, approved):
@@ -182,11 +193,12 @@ class PostgresWorkStore:
             await self._event(connection, task['id'], 'action.decided', {'actionId': action_id, 'decision': decision, 'intentDigest': intent_digest})
             return await self._view(connection, task['id'])
 
-    async def admit(self, action_id):
+    async def admit(self, action_id, *, fence):
         """True is one new admission; False requires inspecting/reconciling the existing outcome."""
         async with self._transaction(trusted=True) as connection:
             task, action = await self._action(connection, action_id)
             self._active(task)
+            await check_fence(connection,action['run_id'],fence)
             if action['status'] != 'proposed':
                 return False
             if not action['unexpired'] or action['authority_generation'] != task['authority_generation'] or action['decision'] not in ('approved', 'not_required'):
@@ -196,6 +208,7 @@ class PostgresWorkStore:
                 raise WorkConflict('token_budget_exhausted')
             await connection.execute("UPDATE work_actions SET status='admitted' WHERE id=%s", (action_id,))
             await self._event(connection, task['id'], 'action.admitted', {'actionId': action_id, 'reservedTokens': action['reserved_tokens']})
+            await check_fence(connection,action['run_id'],fence)
             return True
 
     async def uncertain(self, action_id):
@@ -264,3 +277,24 @@ class PostgresWorkStore:
                                          'authority_generation=authority_generation+1 WHERE id=%s', (task_id,))
                 await self._event(connection, task_id, 'task.authority_revoked', {})
             return await self._view(connection, task_id)
+
+    async def claim(self, task_id, run_id, claim_id, *, expires_seconds=60):
+        from .work_claims import claim
+        return await claim(self,task_id,run_id,claim_id,expires_seconds=expires_seconds)
+
+    async def complete(self, task_id, run_id, **values):
+        from .work_completion import complete
+        return await complete(self,task_id,run_id,**values)
+
+    async def download(self, token, artifact_id):
+        text(artifact_id,128)
+        async with self._transaction(token) as connection:
+            cursor = await connection.execute('SELECT * FROM work_artifacts WHERE id=%s', (artifact_id,))
+            artifact = await cursor.fetchone()
+            if artifact is None:
+                raise WorkNotFound()
+            await self._task(connection,artifact['task_id'],read=True)
+            if self.files is None:
+                raise StoreUnavailable('work_files_unconfigured')
+            data = await asyncio.to_thread(self.files.read,artifact['sha256'],artifact['size_bytes'])
+            return artifact, data

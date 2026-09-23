@@ -16,7 +16,9 @@ from openbot_server.work_values import InvalidWork, WorkConflict
 
 
 def store(fixture):
-    return PostgresWorkStore(fixture['dsn'])
+    service = PostgresWorkStore(fixture['dsn'])
+    service._test_fences = {}
+    return service
 
 
 def submission(fixture, **overrides):
@@ -32,9 +34,16 @@ async def new(fixture, service, limit=10):
 
 
 async def action(service, task, key='write', amount=6, approval=False):
-    return await service.propose(task['id'], task['runs'][0]['id'], action_key=key,
+    fence = await service.claim(task['id'],task['runs'][0]['id'],'fixture-execution')
+    identity = await service.propose(task['id'], task['runs'][0]['id'], fence=fence, action_key=key,
         intent={'operation': 'fixture.record.update', 'record': 'row-1', 'value': key},
         reserved_tokens=amount, requires_approval=approval)
+    service._test_fences[identity] = fence
+    return identity
+
+
+async def admit(service, identity):
+    return await service.admit(identity,fence=service._test_fences[identity])
 
 
 def evidence(label='fixture-receipt'):
@@ -83,7 +92,7 @@ def test_exact_approval_is_idempotent_and_conflicting_decisions_cannot_both_comm
         identity = await action(service, task, approval=True)
         snap = await service.snapshot(fixture['token'], task['id']); digest = snap['actions'][0]['intentDigest']
         with pytest.raises(WorkConflict):
-            await service.admit(identity)
+            await admit(service, identity)
         with pytest.raises(WorkConflict, match='approval_stale'):
             await service.decide(fixture['token'], identity, intent_digest='0'*64, approved=True)
         decisions = await asyncio.gather(*(service.decide(fixture['token'], identity, intent_digest=digest, approved=v)
@@ -94,7 +103,7 @@ def test_exact_approval_is_idempotent_and_conflicting_decisions_cannot_both_comm
         approved = snap['actions'][0]['decision'] == 'approved'
         assert await service.decide(fixture['token'], identity, intent_digest=digest, approved=approved) == snap
         with pytest.raises(WorkConflict, match='action_content_changed'):
-            await service.propose(task['id'], task['runs'][0]['id'], action_key='write', intent={'different':True}, reserved_tokens=6)
+            await service.propose(task['id'], task['runs'][0]['id'], fence=service._test_fences[identity], action_key='write', intent={'different':True}, reserved_tokens=6)
     asyncio.run(check())
 
 
@@ -111,7 +120,7 @@ def test_expired_or_revoked_approval_cannot_admit(fixture):
             else:
                 await service.revoke(fixture['token'], task['id'])
             with pytest.raises(WorkConflict):
-                await service.admit(identity)
+                await admit(service, identity)
             assert (await service.snapshot(fixture['token'], task['id']))['usage']['reservedTokens'] == 0
     asyncio.run(check())
 
@@ -124,20 +133,22 @@ def test_sibling_runs_share_reservations_and_unknown_billing_does_not_refund(fix
         run_id = str(uuid4())
         with psycopg.connect(fixture['dsn']) as db:
             db.execute('INSERT INTO work_runs(id,task_id,ordinal) VALUES (%s,%s,2)', (run_id, task['id']))
-        second = await service.propose(task['id'], run_id, action_key='sibling', intent={'record':'row-2'},
+        fence = await service.claim(task['id'],run_id,'sibling-execution')
+        second = await service.propose(task['id'], run_id, fence=fence, action_key='sibling', intent={'record':'row-2'},
                                        reserved_tokens=6, requires_approval=False)
-        outcomes = await asyncio.gather(service.admit(first), service.admit(second), return_exceptions=True)
+        service._test_fences[second] = fence
+        outcomes = await asyncio.gather(admit(service, first), admit(service, second), return_exceptions=True)
         assert outcomes.count(True) == 1
         assert sum(isinstance(v, WorkConflict) for v in outcomes) == 1
         admitted, waiting = (first, second) if outcomes[0] is True else (second, first)
-        assert await service.admit(admitted) is False
+        assert await admit(service, admitted) is False
         await service.uncertain(admitted)
         snap = await service.snapshot(fixture['token'], task['id'])
         assert snap['attention'] == 'reconciliation' and snap['usage']['reservedTokens'] == 6
         with pytest.raises(WorkConflict, match='token_budget_exhausted'):
-            await service.admit(waiting)
+            await admit(service, waiting)
         await service.resolve(admitted, applied=False, actual_tokens=2, evidence=evidence())
-        assert await service.admit(waiting) is True
+        assert await admit(service, waiting) is True
         snap = await service.snapshot(fixture['token'], task['id'])
         assert snap['usage'] == {'tokenLimit':10, 'reservedTokens':6, 'spentTokens':2}
     asyncio.run(check())
@@ -146,13 +157,13 @@ def test_sibling_runs_share_reservations_and_unknown_billing_does_not_refund(fix
 def test_cancel_retains_unknown_outcome_until_reconciliation_without_regranting(fixture):
     async def check():
         service = store(fixture); task = await new(fixture, service); identity = await action(service, task)
-        assert await service.admit(identity)
+        assert await admit(service, identity)
         snap = await service.cancel(fixture['token'], task['id'])
         assert snap['cancelRequested'] and not snap['authorityActive']
         assert snap['status'] == 'open' and snap['attention'] == 'reconciliation'
         assert snap['usage']['reservedTokens'] == 6
         with pytest.raises(WorkConflict, match='admission_closed'):
-            await service.admit(identity)
+            await admit(service, identity)
         await service.uncertain(identity)
         resolved = await service.resolve(identity, applied=True, actual_tokens=4, evidence=evidence())
         assert resolved['status'] == 'cancelled' and resolved['actions'][0]['status'] == 'applied'
@@ -166,12 +177,12 @@ def test_cancel_retains_unknown_outcome_until_reconciliation_without_regranting(
 def test_usage_overrun_is_recorded_as_truth_and_blocks_fresh_admission(fixture):
     async def check():
         service = store(fixture); task = await new(fixture, service); identity = await action(service, task)
-        await service.admit(identity)
+        await admit(service, identity)
         snap = await service.resolve(identity, applied=True, actual_tokens=11, evidence=evidence())
         assert snap['usage']['spentTokens'] == 11 and snap['attention'] == 'budget'
         later = await action(service, task, 'later', amount=0)
         with pytest.raises(WorkConflict, match='token_budget_exhausted'):
-            await service.admit(later)
+            await admit(service, later)
     asyncio.run(check())
 
 
@@ -180,7 +191,7 @@ def test_audit_failure_cannot_leave_a_partial_reservation_or_resolution(fixture,
     async def setup():
         service = store(fixture); task = await new(fixture, service); identity = await action(service, task)
         if kind == 'action.resolved':
-            await service.admit(identity); await service.uncertain(identity)
+            await admit(service, identity); await service.uncertain(identity)
         return service, task, identity
     service, task, identity = asyncio.run(setup())
     with psycopg.connect(fixture['dsn']) as db:
@@ -191,7 +202,7 @@ def test_audit_failure_cannot_leave_a_partial_reservation_or_resolution(fixture,
                    "EXECUTE FUNCTION work_test_reject_event('"+kind+"')")
     try:
         with pytest.raises(StoreUnavailable):
-            asyncio.run(service.admit(identity) if kind == 'action.admitted' else
+            asyncio.run(admit(service, identity) if kind == 'action.admitted' else
                         service.resolve(identity, applied=True, actual_tokens=4, evidence=evidence()))
         snap = asyncio.run(service.snapshot(fixture['token'], task['id']))
         assert snap['actions'][0]['status'] == ('proposed' if kind == 'action.admitted' else 'unknown')

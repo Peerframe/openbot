@@ -54,12 +54,24 @@ class WorkEvent(StrictModel):
     payload: dict[str, JsonValue]
 
 
+class WorkArtifact(StrictModel):
+    id: str
+    runId: str
+    name: str
+    mediaType: str
+    sha256: str
+    sizeBytes: int
+    downloadUrl: str
+
+
 class WorkSnapshot(StrictModel):
     id: str
     botId: str
     objective: str
     status: Literal['queued', 'open', 'completed', 'cancelled', 'failed']
     revision: int
+    resultSummary: str | None
+    artifacts: list[WorkArtifact]
     authorityActive: bool
     cancelRequested: bool
     attention: Literal['approval', 'reconciliation', 'budget'] | None

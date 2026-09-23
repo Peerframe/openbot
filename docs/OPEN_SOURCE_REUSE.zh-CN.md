@@ -409,3 +409,7 @@ Temporal 开发实验另固定 CLI 1.9.1 / `1de87a9f26991bf4f5c0a5ff96f2cea8d7a3
 
 复用 PostgreSQL 17.11 行锁/约束（PostgreSQL License）、psycopg 3.3.6 事务（LGPL-3.0-only）、已有 Owner 事务边界及 Pydantic 模型。新增 Task/Action 业务事实与引擎恢复历史配合，不替代引擎；无新依赖、自研重试调度器或上游实现复制。见[提交研究](research/work-domain-admission.md)。
 独立的[延续实验](research/runtime-continuation.md)复用 Pydantic AI 2.47.0 / `77d5fce751ab8ab04bd5db4ed6acc1131a4baed6`（MIT）的公开延迟结果与历史接口，使用确定性模型。官方细粒度耐久适配器仍是候选；实验不等于生产检查点协议或编排引擎选型。
+
+## 执行版本校验与成果发布（2026-09-23）
+
+复用 CPython3.12.13 POSIX 文件/描述符接口（PSF）、PostgreSQL17.11 事务及已有 psycopg3.3.6，沿用已审查的 OCI 大小/摘要校验与 RFC6266 下载附件规则。无新依赖或上游源码复制。执行版本校验只约束写入，不调度重试；文件保存在控制层私有目录。见[发布研究](research/work-artifact-publication.md)。

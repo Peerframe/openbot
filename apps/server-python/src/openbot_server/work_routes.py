@@ -1,5 +1,7 @@
 """One Owner-facing work API for headless, Web and Desktop clients."""
+from urllib.parse import quote
 from fastapi import FastAPI, HTTPException, Path, Request
+from fastapi.responses import Response
 from pydantic import ValidationError
 
 from .auth_routes import validate_origins
@@ -58,3 +60,10 @@ def register_work_routes(app: FastAPI, writer, read_store, *, secure_cookies, al
     async def decide(request: Request, action_id: str = Path(min_length=1, max_length=128)):
         token, body = await write_input(request, DecideAction, 512)
         return await result(writer.decide(token, action_id, intent_digest=body.intentDigest, approved=body.approved))
+
+    @app.get('/api/v1/artifacts/{artifact_id}', operation_id='downloadWorkArtifact', response_class=Response)
+    async def download(request: Request, artifact_id: str = Path(min_length=1, max_length=128)):
+        artifact, data = await result(writer.download(request.cookies.get(cookie_name),artifact_id))
+        return Response(data,media_type=artifact['media_type'],headers={
+            'Content-Disposition': "attachment; filename*=UTF-8''"+quote(artifact['name'],safe=''),
+            'X-Content-Type-Options':'nosniff', 'Content-Security-Policy':"default-src 'none'; sandbox"})

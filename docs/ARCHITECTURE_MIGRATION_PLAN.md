@@ -76,7 +76,7 @@ research/dependency changes remain preserved and are not accepted or activated b
 | --- | --- | --- | --- |
 | S1 — Reconcile and freeze preservation scope | Source-backed capability/retirement matrix, both migration histories, data compatibility risks, target API/event ownership, reversible source checkpoints | Every target capability mapped to current evidence and an owning stage; divergent SQL histories detected; no private data copied | Complete (source scope; no data cutover) |
 | S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a identity/authentication slice accepted locally; S2b queued submission/read and control host/process seam accepted locally; persisted lifecycle accepted locally; next: recovery/domain decision before dispatcher expansion |
-| S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | In progress: candidate review and fault experiment; no engine selected yet |
+| S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | In progress: fault probes, fenced work authority and verified artifact publication; no engine selected yet |
 | S4 — Persistent execution and deliverables | Linux browser sessions, human takeover, reviewed autonomous browse/form/upload/download, persistent workspace, restricted commands, isolated code changes and document tools | Real local fixture site with separate Bot profiles; approved write, takeover, cancel and restart; exported files open/render; isolated repository produces a tested patch | Pending |
 | S5 — Memory, skills and learning evaluation | Scoped relevant retrieval, candidate lessons/skills from correction and supported teaching, version/review/test/disable/rollback; separate evaluation tooling | A correction becomes a reviewed skill, improves a held-out task, and can be revoked; provenance/scope/deletion preserved; no authority increase. Preserve Hermes attribution | Pending |
 | S6 — Collaboration and extensibility | Existing delegation preserved through durable execution, shared resource/budget constraints; MCP authentication lifecycle and compatibility; preservation/migration of per-Bot model configuration and reviewed local endpoints | Delegated browser/file work with independent grants; conflict/cancel tests; connector refresh/revoke/failure cases; model switch keeps identity/data; independent module contribution fixture | Pending |
@@ -130,6 +130,15 @@ cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnec
 
 ## Acceptance record
 
+- Work publication extends the admission slice with migration `0028`, monotonic attempt claims,
+  guarded final publication and authenticated byte-verified Artifact downloads. Real HTTP process
+  restart preserves pending approval and committed Task state. File/audit failure, cancellation
+  during staging, supersession and claim expiry cannot publish success. This is a control/file
+  reference; the deterministic workflow fixture does not yet integrate an engine or external tools.
+  The owned PostgreSQL/HTTP gate passes 119 cases; Python package checks pass 810 cases with the
+  119 database cases run separately, and `npm run check` passes. Local POSIX evidence does not
+  qualify production storage or Linux isolation. See [publication research](research/work-artifact-publication.md).
+
 - Runtime continuation: 14 pinned-SDK cases independently pass with fresh interpreter processes.
   One already-completed read executes once; resume adds one model call and carries request counts
   from 2 to 3. Invalid continuations are checked before extra model/tool work. A tampered but
@@ -143,8 +152,8 @@ cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnec
   control gate), including concurrent submission/reservation, conflicting approvals, revoke,
   cancellation with unknown effects, overrun accounting and transaction rollback. ASGI clients
   can close and reopen against the same committed snapshot; this is not browser/SSE reconnect
-  or real-worker recovery. There is no engine bridge, public resolution endpoint or artifact
-  completion path yet. See [scope and research](research/work-domain-admission.md).
+  or real-worker recovery. At that checkpoint there was no engine bridge, public resolution
+  endpoint or artifact completion path; the publication slice above adds the last of these only. See [scope and research](research/work-domain-admission.md).
 
 - Renewed-direction experiment: [ten local DBOS fault cases](../experiments/durable-execution/README.md)
   pass with actual killed/restarted Python processes, disposable PostgreSQL and independent fake HTTP
