@@ -20,17 +20,30 @@ async def main():
         raise ValueError('Unsupported bounded fixture execution timeout')
     identity = {'taskId': cfg['task_id'], 'runId': cfg['run_id']}
     handoff = HandoffStore(control.store())
-    if identity not in await handoff.pending():
+    pending = identity in await handoff.pending()
+    unconfirmed = await handoff.unconfirmed_for(identity['taskId'], identity['runId'])
+    if not pending and unconfirmed is None:
         return
     client = await connect_engine(cfg['temporal_address'], cfg.get('engine_tls'), plugins=[PydanticAIPlugin()])
     workflow_id = control.reference(identity['runId'])
-    await control.fault_barrier('before-enqueue')
-    try:
-        handle = await client.start_workflow('WorkJourney', identity, id=workflow_id,
-            task_queue=cfg['queue'], execution_timeout=timedelta(seconds=timeout_seconds),
-            id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE)
-    except WorkflowAlreadyStartedError:
+    reference = 'temporal:default:' + workflow_id
+    if unconfirmed is not None:
+        if unconfirmed['engineReference'] != reference:
+            raise ValueError('Stored engine submission identity changed')
+        # A prior start may have been accepted. A missing history is unknown, not permission to
+        # submit a replacement workflow after retention or loss of the first response.
         handle = client.get_workflow_handle(workflow_id)
+    else:
+        await control.fault_barrier('before-enqueue')
+        if not await handoff.reserve_submission(identity['taskId'], identity['runId'], reference):
+            return
+        await control.fault_barrier('after-reservation')
+        try:
+            handle = await client.start_workflow('WorkJourney', identity, id=workflow_id,
+                task_queue=cfg['queue'], execution_timeout=timedelta(seconds=timeout_seconds),
+                id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE)
+        except WorkflowAlreadyStartedError:
+            handle = client.get_workflow_handle(workflow_id)
     # Verify the immutable start event, even when the worker is absent. A colliding ID alone
     # does not establish that the engine accepted this Task/Run and reviewed workflow type.
     start = None
@@ -45,8 +58,7 @@ async def main():
     if start.task_queue.name != cfg['queue']:
         raise ValueError('Engine acceptance queue mismatch')
     await control.fault_barrier('after-enqueue')
-    changed = await handoff.acknowledge(identity['taskId'], identity['runId'],
-                                      'temporal:default:' + workflow_id)
+    changed = await handoff.acknowledge(identity['taskId'], identity['runId'], reference)
     Path(cfg['directory'], 'dispatched.json').write_text(json.dumps({'acknowledged': changed}))
 
 

@@ -90,4 +90,37 @@ This reference has one configured Task per worker queue and a bounded, one-shot 
 It is not a production dispatcher. Reconciliation failure leaves an explicit unresolved business Task;
 operator recovery, retention limits and production history/authority consistency still require design.
 HTTP reconnect is tested, not browser/SSE reconnect. Real provider quality and Linux effect isolation
-remain open. The final engine decision still requires production persistence/upgrade/restore evidence.
+remain open. Production activation still requires persistence, upgrade and restore qualification.
+
+## Product handoff attempt before external submission (2026-09-24)
+
+The reference `dispatch.py` uses Temporal Python 1.33.0 `start_workflow` with
+`WorkflowIDReusePolicy.REJECT_DUPLICATE` and verifies the immutable start event before recording
+acceptance. The [official workflow identity contract](https://github.com/temporalio/documentation/blob/main/docs/encyclopedia/workflow/workflow-execution/workflowid-runid.mdx)
+limits ID uniqueness to retained histories. A committed `work_admissions` row currently stays
+`pending` until acceptance is acknowledged. If the enqueue response and acknowledgement are lost,
+that row cannot distinguish “never submitted” from “submitted but not observed”; blindly starting
+it again after history expiry could execute a second workflow.
+
+Extend the existing admission row with a durable submission-attempt reference and timestamp under
+the Task lock **before** the external request. `pending()` may return only never-attempted rows;
+an attempted, unacknowledged row is an inspection obligation, including after cancellation. The
+reference dispatcher queries its configured Task/Run directly so a bounded backlog cannot hide
+that obligation. An identical repeat of the reservation never permits another `start_workflow`;
+conflicting references
+fail closed. A verified start event may be acknowledged later without restoring Task authority.
+This uses the already-reviewed PostgreSQL 17 row locks/transactions and Temporal 1.33.0 protocol;
+it adds no engine or retry scheduler and copies no upstream source. If a crash happens before the
+request reaches Temporal, the conservative row remains unresolved until an explicit operator
+resolution path proves it safe to continue. This is a necessary ingress safety step, not S3
+production-dispatch acceptance or a claim of automatic recovery in every failure window.
+
+The additive migration and control handoff ran in the real temporary PostgreSQL/HTTP fixture:
+189 checks passed. The final reference unit suite passed 61 cases, including two focused dispatcher
+cases proving that missing history and a lost reservation race do not call `start_workflow`.
+The public API/Temporal recovery case and four handoff cases passed on both the development
+engine and the PostgreSQL/mTLS engine. In the new crash-after-reservation-before-enqueue case,
+redelivery left the Task queued and unconfirmed, found no engine history and made zero external
+requests; it did not create a replacement workflow. The recovery case still made one actual
+external write. These are synthetic effects, not a production dispatcher or real Linux isolation.
+The full historical scenario matrix was not rerun after this change.

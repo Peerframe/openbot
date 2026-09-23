@@ -91,6 +91,88 @@ def test_pending_is_bounded_stable_and_contains_only_active_obligations(fixture)
 def test_pending_rejects_invalid_bounds(fixture, limit):
     with pytest.raises(InvalidWork, match='invalid_handoff_limit'):
         asyncio.run(HandoffStore(PostgresWorkStore(fixture['dsn'])).pending(limit))
+    with pytest.raises(InvalidWork, match='invalid_handoff_limit'):
+        asyncio.run(HandoffStore(PostgresWorkStore(fixture['dsn'])).unconfirmed(limit))
+
+
+def test_submission_attempt_is_durable_and_never_returns_as_unsent(fixture):
+    async def check():
+        store = PostgresWorkStore(fixture['dsn']); task = await new(fixture, store)
+        task_id, run_id = task['id'], task['runs'][0]['id']
+        handoffs = HandoffStore(store)
+        assert {'taskId': task_id, 'runId': run_id} in await handoffs.pending(128)
+        with pytest.raises(WorkConflict, match='handoff_not_reserved'):
+            await handoffs.acknowledge(task_id, run_id, 'same-workflow')
+        assert await handoffs.reserve_submission(task_id, run_id, 'same-workflow') is True
+        restarted = HandoffStore(PostgresWorkStore(fixture['dsn']))
+        assert await restarted.reserve_submission(task_id, run_id, 'same-workflow') is False
+        with pytest.raises(WorkConflict, match='handoff_reference_changed'):
+            await restarted.reserve_submission(task_id, run_id, 'replacement-workflow')
+        assert {'taskId': task_id, 'runId': run_id} not in await restarted.pending(128)
+        assert {'taskId': task_id, 'runId': run_id, 'engineReference': 'same-workflow'} \
+            in await restarted.unconfirmed(128)
+        assert await restarted.unconfirmed_for(task_id, run_id) == {
+            'taskId': task_id, 'runId': run_id, 'engineReference': 'same-workflow'}
+        assert await restarted.unconfirmed_for(task_id, 'another-run') is None
+        assert recorded(fixture, task) == ('pending', None, 2)
+        with psycopg.connect(fixture['dsn']) as db:
+            row = db.execute('SELECT submission_reference,submission_attempted_at '
+                             'FROM work_admissions WHERE run_id=%s', (run_id,)).fetchone()
+            assert row[0] == 'same-workflow' and row[1] is not None
+            assert db.execute('SELECT count(*) FROM work_events WHERE task_id=%s '
+                              "AND kind='handoff.submission_attempted'", (task_id,)).fetchone() == (1,)
+    asyncio.run(check())
+
+
+def test_concurrent_submission_reservations_grant_one_send(fixture):
+    async def check():
+        store = PostgresWorkStore(fixture['dsn']); task = await new(fixture, store)
+        task_id, run_id = task['id'], task['runs'][0]['id']
+        results = await asyncio.gather(*(
+            HandoffStore(PostgresWorkStore(fixture['dsn'])).reserve_submission(
+                task_id, run_id, 'one-workflow') for _ in range(2)))
+        assert sorted(results) == [False, True]
+        assert recorded(fixture, task) == ('pending', None, 2)
+    asyncio.run(check())
+
+
+def test_cancellation_before_submission_cannot_grant_a_send(fixture):
+    async def check():
+        store = PostgresWorkStore(fixture['dsn']); task = await new(fixture, store)
+        task_id, run_id = task['id'], task['runs'][0]['id']
+        await store.cancel(fixture['token'], task_id)
+        handoffs = HandoffStore(store)
+        with pytest.raises(WorkConflict, match='admission_closed'):
+            await handoffs.reserve_submission(task_id, run_id, 'too-late')
+        assert not any(row['runId'] == run_id for row in await handoffs.unconfirmed(128))
+        with psycopg.connect(fixture['dsn']) as db:
+            assert db.execute('SELECT submission_reference FROM work_admissions WHERE run_id=%s',
+                              (run_id,)).fetchone() == (None,)
+    asyncio.run(check())
+
+
+def test_failed_submission_audit_rolls_back_the_send_slot(fixture):
+    async def check():
+        store = PostgresWorkStore(fixture['dsn']); task = await new(fixture, store)
+        handoffs = HandoffStore(store); task_id, run_id = task['id'], task['runs'][0]['id']
+        with psycopg.connect(fixture['dsn']) as db:
+            db.execute("CREATE FUNCTION work_reject_submission() RETURNS trigger LANGUAGE plpgsql AS $$ "
+                       "BEGIN IF NEW.kind='handoff.submission_attempted' THEN RAISE EXCEPTION 'private'; END IF; "
+                       'RETURN NEW; END $$')
+            db.execute('CREATE TRIGGER work_reject_submission BEFORE INSERT ON work_events '
+                       'FOR EACH ROW EXECUTE FUNCTION work_reject_submission()')
+        try:
+            with pytest.raises(StoreUnavailable, match='work_storage_unavailable'):
+                await handoffs.reserve_submission(task_id, run_id, 'one-workflow')
+            assert recorded(fixture, task) == ('pending', None, 1)
+            assert {'taskId': task_id, 'runId': run_id} in await handoffs.pending(128)
+            assert not any(row['runId'] == run_id for row in await handoffs.unconfirmed(128))
+        finally:
+            with psycopg.connect(fixture['dsn']) as db:
+                db.execute('DROP TRIGGER work_reject_submission ON work_events')
+                db.execute('DROP FUNCTION work_reject_submission()')
+        assert await handoffs.reserve_submission(task_id, run_id, 'one-workflow') is True
+    asyncio.run(check())
 
 
 def test_acknowledgement_is_durable_idempotent_and_does_not_start_execution(fixture):
@@ -98,12 +180,13 @@ def test_acknowledgement_is_durable_idempotent_and_does_not_start_execution(fixt
         store = PostgresWorkStore(fixture['dsn']); task = await new(fixture, store)
         task_id, run_id = task['id'], task['runs'][0]['id']
         reference = 'é' * 128
+        assert await HandoffStore(store).reserve_submission(task_id, run_id, reference) is True
         assert await HandoffStore(store).acknowledge(task_id, run_id, reference) is True
         restarted = HandoffStore(PostgresWorkStore(fixture['dsn']))
         assert await restarted.acknowledge(task_id, run_id, reference) is False
         with pytest.raises(WorkConflict, match='handoff_reference_changed'):
             await restarted.acknowledge(task_id, run_id, 'different-engine-execution')
-        assert recorded(fixture, task) == ('acknowledged', reference, 2)
+        assert recorded(fixture, task) == ('acknowledged', reference, 3)
         assert acknowledgements(fixture, task_id) == [({'runId': run_id, 'engineReference': reference},)]
         snap = await store.snapshot(fixture['token'], task_id)
         assert snap['status'] == 'queued' and snap['runs'][0]['status'] == 'queued'
@@ -125,8 +208,11 @@ def test_acknowledgement_after_cancellation_records_truth_without_restoring_auth
     async def check():
         store = PostgresWorkStore(fixture['dsn']); task = await new(fixture, store)
         task_id, run_id = task['id'], task['runs'][0]['id']
+        assert await HandoffStore(store).reserve_submission(task_id, run_id, 'accepted-before-cancel') is True
         fence = await store.claim(task_id, run_id, 'accepted-before-cancel')
         cancelled = await store.cancel(fixture['token'], task_id)
+        assert {'taskId': task_id, 'runId': run_id, 'engineReference': 'accepted-before-cancel'} \
+            in await HandoffStore(store).unconfirmed()
         assert await HandoffStore(store).acknowledge(task_id, run_id, 'accepted-before-cancel') is True
         snap = await store.snapshot(fixture['token'], task_id)
         assert snap['status'] == 'cancelled' and snap['runs'][0]['status'] == 'cancelled'
@@ -169,6 +255,7 @@ def test_failed_audit_rolls_back_acceptance_and_revision(fixture):
     async def check():
         store = PostgresWorkStore(fixture['dsn']); task = await new(fixture, store)
         handoffs = HandoffStore(store); task_id, run_id = task['id'], task['runs'][0]['id']
+        assert await handoffs.reserve_submission(task_id, run_id, 'fixture-receipt') is True
         with psycopg.connect(fixture['dsn']) as db:
             db.execute("CREATE FUNCTION work_reject_acknowledgement() RETURNS trigger LANGUAGE plpgsql AS $$ "
                        "BEGIN IF NEW.kind='handoff.acknowledged' THEN RAISE EXCEPTION 'private'; END IF; "
@@ -178,14 +265,14 @@ def test_failed_audit_rolls_back_acceptance_and_revision(fixture):
         try:
             with pytest.raises(StoreUnavailable, match='work_storage_unavailable'):
                 await handoffs.acknowledge(task_id, run_id, 'fixture-receipt')
-            assert recorded(fixture, task) == ('pending', None, 1)
+            assert recorded(fixture, task) == ('pending', None, 2)
             assert acknowledgements(fixture, task_id) == []
         finally:
             with psycopg.connect(fixture['dsn']) as db:
                 db.execute('DROP TRIGGER work_reject_acknowledgement ON work_events')
                 db.execute('DROP FUNCTION work_reject_acknowledgement()')
         assert await handoffs.acknowledge(task_id, run_id, 'fixture-receipt') is True
-        assert recorded(fixture, task) == ('acknowledged', 'fixture-receipt', 2)
+        assert recorded(fixture, task) == ('acknowledged', 'fixture-receipt', 3)
     asyncio.run(check())
 
 
@@ -194,6 +281,7 @@ def test_concurrent_acknowledgements_commit_one_fact(fixture, same_reference):
     async def check():
         store = PostgresWorkStore(fixture['dsn']); task = await new(fixture, store)
         task_id, run_id = task['id'], task['runs'][0]['id']
+        assert await HandoffStore(store).reserve_submission(task_id, run_id, 'engine-one') is True
         references = ['engine-one', 'engine-one' if same_reference else 'engine-two']
         outcomes = await asyncio.gather(*(
             HandoffStore(PostgresWorkStore(fixture['dsn'])).acknowledge(task_id, run_id, reference)
@@ -205,6 +293,6 @@ def test_concurrent_acknowledgements_commit_one_fact(fixture, same_reference):
             assert sum(isinstance(value, WorkConflict) for value in outcomes) == 1
             assert str(next(value for value in outcomes if isinstance(value, WorkConflict))) == 'handoff_reference_changed'
         winner = references[next(index for index, value in enumerate(outcomes) if value is True)]
-        assert recorded(fixture, task) == ('acknowledged', winner, 2)
+        assert recorded(fixture, task) == ('acknowledged', winner, 3)
         assert acknowledgements(fixture, task_id) == [({'runId': run_id, 'engineReference': winner},)]
     asyncio.run(check())

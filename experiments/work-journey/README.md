@@ -29,7 +29,7 @@ Server1.32.0 with disposable SQLite, the real control HTTP server and an indepen
 HTTP effect fixture. It uses random test-only credentials, explicit config and owned temporary
 roots; it does not load dotenv or use real accounts. Children and containers are removed on normal
 completion/failure. No screenshots, transcripts or runtime databases are repository artifacts.
-`--only-handoff` runs just the three identity collision cases.
+`--only-handoff` runs the unconfirmed-history case and three identity collision cases.
 
 ## Released Server with PostgreSQL
 
@@ -89,14 +89,22 @@ cancel-unknown counts four attempts / one write / eight units. Corrupt-receipt r
 and two reserved units. Attempts are counted independently, so provider-side deduplication cannot
 hide a repeated POST.
 
-`HandoffStore` is a control-only product adapter for existing pending admissions: bounded reads,
-Task-row-locked acceptance and one audit event, same receipt idempotent, different receipt rejected.
-Its 22 new PostgreSQL tests run in `test-python-control.mjs` (141 actual PG/HTTP checks in this
-checkpoint). The experiment dispatcher handles only its explicitly configured Task from a bounded
-batch. It is not the production dispatcher, a general work pool, or another recovery scheduler.
-The dispatcher verifies the engine start event without needing a live worker. The workflow separately
+`HandoffStore` is a control-only product adapter for committed admissions. It records one durable
+submission attempt under the Task lock before contacting Temporal, returns never-attempted and
+unconfirmed rows separately, and acknowledges only a matching verified engine reference. A lost
+response leads to history lookup, never a second start request; a missing history remains unresolved.
+The affected PostgreSQL/HTTP control suite ran 189 checks at this checkpoint. The experiment
+dispatcher handles only its explicitly configured Task, using an exact lookup for a prior
+submission. It is not the production dispatcher, a general work pool, or another recovery
+scheduler. The dispatcher verifies
+the engine start event without needing a live worker. The workflow separately
 checks its start identity in a trusted activity before any model/tool or control mutation; uniqueness lasts only while
 engine history/namespace rules preserve the ID.
+
+A targeted crash after reservation but before enqueue leaves the Task unconfirmed; redelivery
+finds no history and creates no replacement workflow. This and three start-identity collisions
+passed with both the development and PostgreSQL/mTLS engines. The recovery case passed on both
+engines with one external write. The full historical matrix was not rerun for this change.
 
 ## Limits and next gates
 

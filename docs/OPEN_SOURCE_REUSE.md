@@ -585,6 +585,12 @@ A thin acceptance adapter records engine facts under the existing Task lock; CPy
 public trusted-write route or upstream source copy. See [integration review](research/work-temporal-journey.md)
 and [executable reference](../experiments/work-journey/README.md).
 
+The product handoff extension reuses the same PostgreSQL 17 Task-row lock and Temporal Python
+1.33.0 start/history contract. A durable submission-attempt fact is recorded before any engine
+request, so an unacknowledged attempt is inspected rather than blindly submitted again after
+workflow history expiry. No new product dependency, scheduler or upstream source copy is involved;
+see [the bounded ingress review](research/work-temporal-journey.md#product-handoff-attempt-before-external-submission-2026-09-24).
+
 
 ## Temporal persistence and Linux boundary review (2026-09-23)
 

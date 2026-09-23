@@ -22,6 +22,7 @@ from urllib.request import HTTPCookieProcessor, Request, build_opener, urlopen
 
 import psycopg
 from temporalio.client import WorkflowExecutionStatus, WorkflowFailureError
+from temporalio.service import RPCError, RPCStatusCode
 from effect_service import EffectService
 
 HERE = Path(__file__).resolve().parent
@@ -548,6 +549,36 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
             print(json.dumps(record), flush=True)
         if only_case:
             return records
+        if only_handoff:
+            created = api.call('/api/v1/tasks', {'botId': bot['id'],
+                'objective': 'Keep an unconfirmed submission unknown', 'tokenLimit': 20,
+                'requestKey': secrets.token_hex(12)}, expected=202)
+            task_id, run_id = created['id'], created['runs'][0]['id']
+            cfg = {'dsn': dsn, 'artifact_root': str(artifact_root), 'task_id': task_id,
+                'run_id': run_id, 'temporal_address': server.address, 'queue': 'work-' + run_id}
+            workflow_id = 'openbot-work-v1-' + run_id
+            held = launch('dispatch.py', cfg, 'after-reservation')
+            held.wait('after-reservation'); held.kill()
+            assert handoff(task_id) == ('pending', None)
+            with psycopg.connect(dsn) as db:
+                submission = db.execute('SELECT submission_reference,submission_attempted_at '
+                    'FROM work_admissions WHERE run_id=%s', (run_id,)).fetchone()
+            assert submission[0] == 'temporal:default:' + workflow_id and submission[1] is not None
+            retry = launch('dispatch.py', cfg)
+            assert retry.process.wait(timeout=30) != 0
+            try:
+                await client.get_workflow_handle(workflow_id).describe()
+            except RPCError as error:
+                assert error.status == RPCStatusCode.NOT_FOUND
+            else:
+                raise AssertionError('Unconfirmed submission started a replacement workflow')
+            observed = api.snapshot(task_id)
+            assert observed['status'] == 'queued' and observed['actions'] == []
+            assert observed['usage'] == created['usage'] and observed['artifacts'] == []
+            assert counts(task_id)['attempts'] == 0
+            record = {'case': 'handoff-unconfirmed-history-missing', 'status': 'unknown', 'attempts': 0}
+            records.append(record)
+            print(json.dumps(record), flush=True)
         for mismatch in ('scope', 'type', 'queue'):
             created = api.call('/api/v1/tasks', {'botId': bot['id'], 'objective': 'Reject a colliding workflow',
                 'tokenLimit': 20, 'requestKey': secrets.token_hex(12)}, expected=202)
@@ -575,7 +606,14 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
                         raise AssertionError('Wrong start identity consumed product authority')
                     worker.kill()
                 assert handoff(task_id) == ('pending', None)
-                assert api.snapshot(task_id) == created
+                observed = api.snapshot(task_id)
+                assert observed['revision'] == created['revision'] + 1
+                assert observed['events'][-1]['kind'] == 'handoff.submission_attempted'
+                assert observed['events'][-1]['payload'] == {
+                    'runId': run_id, 'engineReference': 'temporal:default:openbot-work-v1-' + run_id}
+                for field in ('status', 'authorityActive', 'cancelRequested', 'runs', 'actions',
+                              'artifacts', 'usage', 'resultSummary'):
+                    assert observed[field] == created[field], field
                 assert counts(task_id)['attempts'] == 0
                 record = {'case': 'handoff-reject-' + mismatch, 'status': 'pending', 'attempts': 0}
                 records.append(record)
