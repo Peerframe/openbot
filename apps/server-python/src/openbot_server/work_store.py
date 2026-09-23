@@ -83,10 +83,14 @@ class PostgresWorkStore:
         task = await cursor.fetchone()
         cursor = await connection.execute('SELECT id,status,ordinal FROM work_runs WHERE task_id=%s ORDER BY ordinal', (task_id,))
         runs = await cursor.fetchall()
+        from .work_reconciliation import projection
+        cursor = await connection.execute('SELECT DISTINCT ON(c.action_id) c.* FROM work_reconciliation_commands c '
+            'JOIN work_actions a ON a.id=c.action_id WHERE a.task_id=%s ORDER BY c.action_id,c.sequence DESC', (task_id,))
+        repairs = {c['action_id']: projection(c) for c in await cursor.fetchall()}
         cursor = await connection.execute('SELECT * FROM work_actions WHERE task_id=%s ORDER BY created_at,id', (task_id,))
         actions = [dict(id=a['id'], runId=a['run_id'], intent=a['intent'], intentDigest=a['intent_digest'],
                         decision=a['decision'], status=a['status'], expiresAt=iso_timestamp(a['expires_at']),
-                        reservedTokens=a['reserved_tokens'], actualTokens=a['actual_tokens'], evidence=a['evidence'])
+                        reservedTokens=a['reserved_tokens'], actualTokens=a['actual_tokens'], evidence=a['evidence'], reconciliation=repairs.get(a['id']))
                    for a in await cursor.fetchall()]
         cursor = await connection.execute('SELECT revision,kind,payload FROM work_events WHERE task_id=%s '
                                           'ORDER BY revision DESC LIMIT 100', (task_id,))
@@ -243,6 +247,14 @@ class PostgresWorkStore:
                                      (outcome, actual_tokens, Jsonb(evidence), action_id))
             await self._event(connection, task['id'], 'action.resolved', {'actionId': action_id, 'outcome': outcome,
                                                                         'actualTokens': actual_tokens, 'evidence': evidence})
+            # Automatic lookup can settle before the workflow consumes an Owner command.
+            # Close that obligation atomically with the verified outcome; no new authority.
+            cursor = await connection.execute("UPDATE work_reconciliation_commands SET outcome='resolved',"
+                'finished_at=clock_timestamp() WHERE action_id=%s AND finished_at IS NULL RETURNING id',
+                (action_id,))
+            for command in await cursor.fetchall():
+                await self._event(connection, task['id'], 'reconciliation.finished',
+                    {'commandId': command['id'], 'actionId': action_id, 'outcome': 'resolved'})
             await self._finish_cancel(connection, task)
             return await self._view(connection, task['id'])
 
@@ -298,3 +310,7 @@ class PostgresWorkStore:
                 raise StoreUnavailable('work_files_unconfigured')
             data = await asyncio.to_thread(self.files.read,artifact['sha256'],artifact['size_bytes'])
             return artifact, data
+
+    async def request_reconciliation(self, token, action_id, **values):
+        from .work_reconciliation import ReconciliationStore
+        return await ReconciliationStore(self).request(token, action_id, **values)

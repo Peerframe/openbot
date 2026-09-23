@@ -91,7 +91,10 @@ def http(path,body=None,*,raw=False):
     with urlopen(req,timeout=3) as response:
         result=response.read(32769)
         if len(result)>32768:raise ReceiptMismatch('Oversize receipt')
-        return result if raw else json.loads(result)
+        if raw:return result
+        try:return json.loads(result)
+        except (ValueError, UnicodeError, RecursionError):
+            raise ReceiptMismatch('Receipt is not valid JSON') from None
 
 
 def verify(row,record):
@@ -139,6 +142,7 @@ async def perform(key,intent):
                 await s.uncertain(identity)
                 await fault_barrier('unknown')
                 raise UnresolvedEffect('Query the committed receipt on retry') from None
+            if intent['kind']=='write':await fault_barrier('after-effect-response')
             try:evidence=verify(row,record)
             except ReceiptMismatch:
                 await s.uncertain(identity)
@@ -199,3 +203,85 @@ async def publish(summary):
         raise
     await fault_barrier('after-publication')
     return {'taskId':result['id'],'status':result['status'],'artifactId':result['artifacts'][0]['id']}
+
+
+async def repair_state():
+    """An exhausted fixed write becomes uncertain; this does not grant a new admission."""
+    task_id, run_id = bound_ids()
+    s = store()
+    expected = {'kind':'write', 'row':7, 'value':'fixed'}
+    row = await existing('tool:write')
+    if row is None or row['intent_digest'] != canonical(expected)[1]:
+        raise ReceiptMismatch('No matching existing write to reconcile')
+    if row['status'] == 'admitted':
+        # Do not hold a Task SHARE lock while the trusted writer takes the exclusive lock.
+        # Concurrent verified resolution must never be overwritten by uncertainty.
+        try:await s.uncertain(row['id'])
+        except WorkConflict as error:
+            if str(error) != 'action_not_admitted':raise
+    async with s._transaction(trusted=True) as db:
+        await s._task(db, task_id, read=True)
+        cursor = await db.execute("SELECT id,status,intent_digest FROM work_actions WHERE task_id=%s AND run_id=%s "
+                                  "AND action_key='tool:write'", (task_id, run_id))
+        row = await cursor.fetchone()
+        if row is None or row['intent_digest'] != canonical(expected)[1]:
+            raise ReceiptMismatch('No matching existing write to reconcile')
+        cursor = await db.execute('SELECT id FROM work_reconciliation_commands WHERE action_id=%s '
+                                  'AND finished_at IS NULL ORDER BY sequence LIMIT 1', (row['id'],))
+        command = await cursor.fetchone()
+        return {'actionId': row['id'], 'status': row['status'],
+                'commandId': command['id'] if command else None}
+
+
+async def reconcile_write(command_id):
+    """A repair cycle may only GET a historical receipt. It cannot propose, admit or POST."""
+    from openbot_server.work_reconciliation import ReconciliationStore
+    task_id, run_id = bound_ids()
+    row = await existing('tool:write')
+    if row is None:
+        raise ReceiptMismatch('No write receipt scope')
+    repairs = ReconciliationStore(store())
+    scope = dict(task_id=task_id, run_id=run_id, action_id=row['id'])
+    command = await repairs.read(command_id, **scope)
+    if command['outcome'] == 'unresolved':
+        raise WorkConflict('reconciliation_cycle_finished')
+    if row['status'] in ('applied', 'not_applied'):
+        await repairs.finish(command_id, **scope, outcome='resolved')
+        return row['status']
+    if row['status'] != 'unknown':
+        raise WorkConflict('reconciliation_unavailable')
+    try:
+        record = await asyncio.to_thread(http, '/operations/' + row['id'])
+    except HTTPError as error:
+        if error.code == 404:
+            raise UnresolvedEffect('Receipt absent; do not replay') from None
+        raise
+    evidence = verify(row, record)
+    await store().resolve(row['id'], applied=True, actual_tokens=record['actualTokens'], evidence=evidence)
+    await fault_barrier('after-repair-resolution')
+    await repairs.finish(command_id, **scope, outcome='resolved')
+    return record['result']
+
+
+async def finish_failed_repair(command_id):
+    from openbot_server.work_reconciliation import ReconciliationStore
+    task_id, run_id = bound_ids()
+    row = await existing('tool:write')
+    if row is None:
+        raise ReceiptMismatch('No write receipt scope')
+    repairs = ReconciliationStore(store())
+    scope = dict(task_id=task_id, run_id=run_id, action_id=row['id'])
+    outcome = 'resolved' if row['status'] in ('applied', 'not_applied') else 'unresolved'
+    try:
+        await repairs.finish(command_id, **scope, outcome=outcome)
+    except WorkConflict as error:
+        if str(error) not in ('reconciliation_outcome_unverified', 'reconciliation_outcome_changed'):
+            raise
+        current = await repairs.read(command_id, **scope)
+        if current['outcome'] is not None:
+            # Another trusted observer already closed this immutable cycle.
+            return
+        row = await existing('tool:write')
+        if row is None or row['status'] not in ('applied', 'not_applied'):
+            raise
+        await repairs.finish(command_id, **scope, outcome='resolved')

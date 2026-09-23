@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from .auth_routes import validate_origins
 from .authority import AuthenticationRequired
 from .http_input import authorize_owner, read_json
-from .work_models import CreateTask, DecideAction, EmptyCommand, WorkSnapshot
+from .work_models import CreateTask, DecideAction, EmptyCommand, WorkSnapshot, RequestReconciliation, WorkReconciliation
 from .work_values import InvalidWork, WorkConflict, WorkNotFound
 
 
@@ -60,6 +60,13 @@ def register_work_routes(app: FastAPI, writer, read_store, *, secure_cookies, al
     async def decide(request: Request, action_id: str = Path(min_length=1, max_length=128)):
         token, body = await write_input(request, DecideAction, 512)
         return await result(writer.decide(token, action_id, intent_digest=body.intentDigest, approved=body.approved))
+
+    @app.post('/api/v1/actions/{action_id}/reconcile', response_model=WorkReconciliation, status_code=202,
+              operation_id='requestWorkReconciliation', openapi_extra=schema(RequestReconciliation))
+    async def reconcile(request: Request, action_id: str = Path(min_length=1, max_length=128)):
+        token, body = await write_input(request, RequestReconciliation, 4096)
+        return await result(writer.request_reconciliation(token, action_id, intent_digest=body.intentDigest,
+            request_key=body.requestKey, expected_sequence=body.expectedSequence, reason=body.reason))
 
     @app.get('/api/v1/artifacts/{artifact_id}', operation_id='downloadWorkArtifact', response_class=Response)
     async def download(request: Request, artifact_id: str = Path(min_length=1, max_length=128)):

@@ -247,6 +247,7 @@ retains the prior reference routes. It does not enable an execution dispatcher o
 | `GET /api/v1/tasks/{task_id}` | Owner-only consistent snapshot: revision, Runs, Actions, usage, attention and last 100 events; `eventsTruncated` exposes truncation. No live event stream yet. |
 | `POST /api/v1/actions/{action_id}/decision` | `{intentDigest, approved}` binds to the exact stored Action, current authority generation and DB expiration; conflicting/stale decisions return 409. |
 | `POST /api/v1/tasks/{task_id}/cancel` | `{}` closes new admissions; unresolved admitted Actions retain reservations. Terminal cancellation waits for trusted reconciliation. It never claims an external effect was undone. |
+| `POST /api/v1/actions/{action_id}/reconcile` | `{intentDigest, requestKey, expectedSequence, reason}` records an Owner request to look up an existing unknown Action. It returns 202 with a durable command; delivery and verified completion are separate facts. Repeating the key returns the same command. It never repeats the external write. |
 
 Writes require the current Owner session and exact allowed Origin. Control-only methods propose,
 reserve and record independently verified outcomes; no client/Runtime/Worker resolution endpoint
@@ -264,6 +265,8 @@ At the admission checkpoint this did not prove live TCP/browser reconnection, en
 actual effect verification or artifact publication. The publication slice below adds real HTTP/file
 evidence; the complete engine/executor journey remains open.
 See [research](../../docs/research/work-domain-admission.md).
+
+Migration `0029` adds bounded reconciliation commands and idempotent request keys to the explicit `work` mode. A pending command remains discoverable after delivery so an older engine snapshot can receive it again; a second notification only requests a receipt lookup. A missing, malformed or mismatched receipt keeps the Action unknown and its reservation intact. Only a trusted adapter can record independently verified facts, including after cancellation or revocation, without restoring execution authority. See [reconciliation research](../../docs/research/work-reconciliation-commands.md).
 
 ### Attempt ownership and artifact publication
 

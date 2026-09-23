@@ -19,6 +19,24 @@ class DecideAction(StrictModel):
     approved: bool
 
 
+class RequestReconciliation(StrictModel):
+    intentDigest: str = Field(pattern='^[0-9a-f]{64}$')
+    requestKey: str = Field(min_length=1, max_length=128)
+    expectedSequence: int = Field(ge=0, le=64)
+    reason: str = Field(min_length=1, max_length=512)
+
+
+class WorkReconciliation(StrictModel):
+    id: str
+    actionId: str
+    sequence: int
+    requestedBy: Literal['owner']
+    reason: str
+    createdAt: str
+    delivered: bool
+    outcome: Literal['resolved', 'unresolved'] | None
+
+
 class EmptyCommand(StrictModel):
     pass
 
@@ -46,6 +64,7 @@ class WorkAction(StrictModel):
     reservedTokens: int
     actualTokens: int | None
     evidence: dict[str, str] | None
+    reconciliation: WorkReconciliation | None = None
 
 
 class WorkEvent(StrictModel):

@@ -139,13 +139,20 @@ class EffectService:
                 raise ValueError("the first write already happened")
             db.execute("UPDATE tasks SET drop_response = 1 WHERE task_id = ?", (task_id,))
 
-    def corrupt_receipt(self, task_id: str) -> None:
+    def corrupt_receipt(self, task_id: str, *, malformed_json: bool = False) -> None:
         """Corrupt only subsequent HTTP receipt projections, never stored facts."""
         if not _valid_id(task_id):
             raise ValueError("invalid task ID")
         with self._transaction() as db:
             self._ensure_task(db, task_id)
-            db.execute("UPDATE tasks SET corrupt_receipt = 1 WHERE task_id = ?", (task_id,))
+            db.execute("UPDATE tasks SET corrupt_receipt = ? WHERE task_id = ?", (2 if malformed_json else 1, task_id))
+
+    def repair_receipt(self, task_id: str) -> None:
+        """Repair the fake connector projection; never edit its independent recorded effect."""
+        if not _valid_id(task_id):
+            raise ValueError("invalid task ID")
+        with self._transaction() as db:
+            db.execute("UPDATE tasks SET corrupt_receipt = 0 WHERE task_id = ?", (task_id,))
 
     def _post(self, payload: object) -> tuple[int, dict, bool]:
         if not isinstance(payload, dict) or not _valid_id(payload.get("taskId")):
@@ -204,6 +211,8 @@ class EffectService:
                     "SELECT corrupt_receipt FROM tasks WHERE task_id = ?", (row["task_id"],)
                 ).fetchone()[0]
                 record = json.loads(row["record"])
+                if corrupt == 2:
+                    return 200, b'{invalid-json'
                 if corrupt:
                     record["intent"]["corrupted"] = True
                 return 200, record

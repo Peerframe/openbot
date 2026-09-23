@@ -188,12 +188,15 @@ POST `/api/v1/runs/{run_id}/steer` 只接受 `instruction` 字段，最大 18,00
 | `GET /api/v1/tasks/{task_id}` | Owner 专用一致快照，含版本、Run、Action、用量、待处理事项和最近 100 条事件；`eventsTruncated` 明示截断，尚无实时事件流。 |
 | `POST /api/v1/actions/{action_id}/decision` | `{intentDigest, approved}` 绑定准确 Action 内容、当前授权版本和数据库期限；冲突或过期返回 409。 |
 | `POST /api/v1/tasks/{task_id}/cancel` | `{}` 关闭新动作准入；已准入且结果未明的动作保留预算，核对后才终结取消，不宣称撤销外部操作。 |
+| `POST /api/v1/actions/{action_id}/reconcile` | `{intentDigest, requestKey, expectedSequence, reason}` 记录 Owner 对既有未知 Action 的核对请求，返回 202 和持久命令。命令送达与核验完成分别记录；同键重试返回同一命令，绝不重做外部写入。 |
 
 写入要求当前 Owner 会话和准确 Origin。提议、预留、记录已核实结果的方法仅供受信控制层使用；客户端、Runtime、Worker 没有自行提交核对结果的端点。工具调用 ID 不是去重保证，摘要和回执格式校验也不能证明外部事实；`resolve` 只能接收受信适配器独立核对后的证据。
 
 Task 行锁使不同 Run 共享预留，并原子提交事件、用量和结果。未知结果不退款；核实的超额用量如实记录并阻止新支出。当前参考限制为每 Task 256 个 Action、规范 JSON 意图 16 KiB、审批期限最多一小时，不等于完整费用或资源预算。
 
 `0027` 基础检查当时新增 10 项真实 PostgreSQL 测试，控制层集成共 105 项。新增公开接口使用 ASGI TestClient 与真实数据库，客户端关闭重开仍取得已提交状态；该基础检查尚未证明 TCP/浏览器重连、引擎故障恢复、真实副作用核对或产物发布；后续发布检查见下节，完整引擎/执行器流程仍待验收。见[研究](../../docs/research/work-domain-admission.md)。
+
+迁移 `0029` 为显式 `work` 模式增加有界核对命令和幂等请求键。命令送达后仍可被发现，以便旧引擎快照恢复后重新通知；重新通知只触发回执查询。回执缺失、格式错误或内容不符时，Action 仍为 unknown，预算预留不退。只有受信适配器能记录独立核实的事实；取消或撤权后的补记不会恢复执行授权。见[核对研究](../../docs/research/work-reconciliation-commands.md)。
 
 ### 执行归属与产物发布
 

@@ -245,7 +245,7 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
                     assert held_state['status'] == 'completed'
                 held_upgrades.append({'stage': stage, 'cfg': held_cfg, 'state': held_state,
                     'effects': counts(held_task), 'engineRunId': (await held_handle.describe()).run_id})
-        scenarios = () if only_handoff else ('recover', 'cancel-before-write', 'cancel-unknown', 'corrupt-receipt', 'publication-ack')
+        scenarios = () if only_handoff else ('recover', 'cancel-before-write', 'cancel-unknown', 'corrupt-receipt', 'malformed-json', 'repair-timeout', 'automatic-repair-race', 'repair-cancelled', 'repair-engine-closed', 'publication-ack')
         for scenario in scenarios:
             request = {'botId': bot['id'], 'objective': 'Correct row 7 in the owned CSV',
                 'tokenLimit': 20, 'requestKey': secrets.token_hex(12)}
@@ -310,20 +310,35 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
                 assert counts(task_id)['attempts'] == 5 and counts(task_id)['writes'] == 1
                 third.kill()
             else:
-                effects.drop_write_response(task_id)
+                timeout_case = scenario == 'repair-timeout'
+                if not timeout_case:
+                    effects.drop_write_response(task_id)
                 approve(snap)
-                second = launch('workflow_worker.py', cfg, 'unknown')
-                second.wait('unknown')
+                barrier = 'after-effect-response' if timeout_case else 'unknown'
+                second = launch('workflow_worker.py', cfg, barrier)
+                second.wait(barrier)
                 unknown = api.snapshot(task_id)
-                assert unknown['attention'] == 'reconciliation'
+                if not timeout_case:
+                    assert unknown['attention'] == 'reconciliation'
                 assert unknown['usage'] == {'tokenLimit': 20, 'reservedTokens': 2, 'spentTokens': 6}
                 assert counts(task_id) == {'attempts': 4, 'writes': 1, 'lookups': 0}
                 second.kill()
+                if timeout_case:
+                    # Four real start-to-close expiries, with only the first attempt
+                    # admitted. The other retries die before inspecting/POSTing.
+                    for _ in range(3):
+                        retry = launch('workflow_worker.py', cfg, 'before-write-inspection')
+                        retry.wait('before-write-inspection'); retry.kill()
+                if scenario == 'automatic-repair-race':
+                    row = next(a for a in unknown['actions'] if a['status']=='unknown')
+                    command = api.call('/api/v1/actions/'+row['id']+'/reconcile', {
+                        'intentDigest':row['intentDigest'], 'requestKey':secrets.token_hex(12),
+                        'expectedSequence':0, 'reason':'Owner request racing the automatic receipt lookup'}, expected=202)
                 if scenario == 'cancel-unknown':
                     cancelled = api.cancel(task_id)
                     assert cancelled['status'] == 'open' and cancelled['attention'] == 'reconciliation'
-                if scenario == 'corrupt-receipt':
-                    effects.corrupt_receipt(task_id)
+                if scenario in ('corrupt-receipt', 'malformed-json', 'repair-cancelled', 'repair-engine-closed'):
+                    effects.corrupt_receipt(task_id, malformed_json=scenario=='malformed-json')
                 if scenario == 'recover' and hasattr(server, 'upgrade'):
                     engine_run_id = (await handle.describe()).run_id
                     await server.upgrade()
@@ -356,20 +371,131 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
                     effects.close(); effects = EffectService(tmp / 'effects')
                     assert counts(task_id)['writes'] == 1
                 third = launch('workflow_worker.py', cfg)
-                if scenario == 'corrupt-receipt':
-                    try:
-                        await asyncio.wait_for(handle.result(), 35)
-                    except WorkflowFailureError:
-                        assert (await handle.describe()).status == WorkflowExecutionStatus.FAILED
-                    else:
-                        raise AssertionError('Corrupt receipt unexpectedly completed')
-                    final = api.snapshot(task_id)
-                    assert final['attention'] == 'reconciliation' and final['status'] == 'open'
-                    assert final['usage'] == unknown['usage'] and not final['artifacts']
+                if scenario in ('corrupt-receipt', 'malformed-json', 'repair-timeout', 'repair-cancelled', 'repair-engine-closed'):
+                    deadline = time.monotonic() + 35
+                    while True:
+                        try:
+                            waiting_repair = await asyncio.wait_for(handle.query('reconciliation_query'), 5)
+                        except asyncio.TimeoutError:
+                            # A query can wait behind the activity retry. Keep the bounded
+                            # acceptance deadline and report product/engine facts on expiry.
+                            waiting_repair = False
+                        visible = api.snapshot(task_id)
+                        if waiting_repair and any(a['status']=='unknown' for a in visible['actions']):break
+                        if time.monotonic() >= deadline:
+                            description = await asyncio.wait_for(handle.describe(), 5)
+                            raise AssertionError(f'Repair wait not observed: engine={description.status}, '
+                                                 f'product={visible["attention"]}, '
+                                                 f'actions={[a["status"] for a in visible["actions"]]}')
+                        await asyncio.sleep(.05)
+                    assert (await handle.describe()).status == WorkflowExecutionStatus.RUNNING
+                    unresolved = api.snapshot(task_id)
+                    assert unresolved['attention'] == 'reconciliation' and unresolved['status'] == 'open'
+                    assert unresolved['usage'] == unknown['usage'] and not unresolved['artifacts']
                     assert counts(task_id)['attempts'] == 4
+                    await replay_without_effects(handle, task_id, 'reconciliation-wait')
+                    third.kill()
+                    row = next(a for a in unresolved['actions'] if a['status'] == 'unknown')
+                    path = '/api/v1/actions/' + row['id'] + '/reconcile'
+                    body = {'intentDigest': row['intentDigest'], 'requestKey': secrets.token_hex(12),
+                            'expectedSequence': 0, 'reason': 'Repair the synthetic connector and verify its original receipt'}
+                    api.call(path, {**body, 'applied': False, 'actualTokens': 0}, expected=422)
+                    assert api.snapshot(task_id) == unresolved
+                    command = api.call(path, body, expected=202)
+                    assert api.call(path, body, expected=202) == command
+                    alias = {**body, 'requestKey': secrets.token_hex(12)}
+                    assert api.call(path, alias, expected=202) == command
+                    pending = api.snapshot(task_id)
+                    assert pending['usage'] == unknown['usage'] and counts(task_id)['attempts'] == 4
+                    api.close(); api.start()
+                    assert api.snapshot(task_id) == pending
+                    repair_cfg = {**cfg, 'action_id': row['id'], 'command_id': command['id']}
+                    if scenario == 'repair-engine-closed':
+                        await handle.terminate('Owned test of explicit closed-engine repair refusal')
+                        rejected = launch('deliver_repair.py', repair_cfg)
+                        assert rejected.process.wait(timeout=30) != 0
+                        assert 'explicit recovery is needed' in rejected.diagnostic()
+                        final = api.snapshot(task_id)
+                        assert final == pending and counts(task_id)['attempts'] == 4
+                    else:
+                        # Crash after engine acceptance but before the product delivery receipt.
+                        sender = launch('deliver_repair.py', repair_cfg, 'after-repair-delivery')
+                        sender.wait('after-repair-delivery'); sender.kill()
+                        assert api.snapshot(task_id) == pending
+                        launch('deliver_repair.py', repair_cfg).done()
+                        # A stored delivery acknowledgement is not a workflow checkpoint.
+                        # Resending an unfinished command must signal again.
+                        launch('deliver_repair.py', repair_cfg).done()
+                        if scenario in ('corrupt-receipt', 'malformed-json'):
+                            # First Owner-triggered cycle still sees bad data. It must finish
+                            # unresolved and await a NEW explicit cycle, without replaying POST.
+                            third = launch('workflow_worker.py', cfg)
+                            deadline = time.monotonic() + 35
+                            while True:
+                                still = api.snapshot(task_id)
+                                latest = next(a for a in still['actions'] if a['id'] == row['id'])['reconciliation']
+                                if latest['outcome'] == 'unresolved':break
+                                assert time.monotonic() < deadline
+                                await asyncio.sleep(.05)
+                            assert still['usage'] == unknown['usage'] and counts(task_id)['attempts'] == 4
+                            assert (await handle.describe()).status == WorkflowExecutionStatus.RUNNING
+                            assert api.call(path, body, expected=202) == latest
+                            api.call(path, {**body, 'requestKey': secrets.token_hex(12)}, expected=409)
+                            third.kill()
+                            record = {'case':scenario,'status':still['status'],'usage':still['usage'],**counts(task_id)}
+                            records.append(record);print(json.dumps(record),flush=True)
+                            body = {**body, 'requestKey': secrets.token_hex(12), 'expectedSequence': 1}
+                            command = api.call(path, body, expected=202)
+                            repair_cfg = {**repair_cfg, 'command_id': command['id']}
+                            effects.repair_receipt(task_id)
+                            repair_snapshot = server.backup(tmp / ('repair-backup-'+scenario)) if hasattr(server,'backup') else None
+                            if repair_snapshot is not None:
+                                client = await server.connect()
+                                handle = client.get_workflow_handle('openbot-work-v1-'+run_id)
+                            launch('deliver_repair.py', repair_cfg).done()
+                            if repair_snapshot is not None:
+                                delivered = api.snapshot(task_id)
+                                assert next(a for a in delivered['actions'] if a['id']==row['id'])['reconciliation']['delivered']
+                                server.restore(repair_snapshot)
+                                client = await server.connect()
+                                handle = client.get_workflow_handle('openbot-work-v1-'+run_id)
+                                assert api.snapshot(task_id)==delivered
+                                launch('deliver_repair.py', repair_cfg).done()
+                            third = launch('workflow_worker.py', cfg, 'after-repair-resolution')
+                            third.wait('after-repair-resolution');third.kill()
+                            settled = api.snapshot(task_id)
+                            assert settled['usage'] == {'tokenLimit':20,'reservedTokens':0,'spentTokens':8}
+                            assert counts(task_id)['attempts'] == 4
+                        elif scenario == 'repair-cancelled':
+                            api.cancel(task_id)
+                            effects.repair_receipt(task_id)
+                        third = launch('workflow_worker.py', cfg)
+                        result = await asyncio.wait_for(handle.result(), 35)
+                        final = api.snapshot(task_id)
+                        latest = next(a for a in final['actions'] if a['id'] == row['id'])['reconciliation']
+                        assert latest['outcome'] == 'resolved'
+                        assert api.call(path, body, expected=202) == latest
+                        assert counts(task_id)['writes'] == 1
+                        assert len([e for e in final['events'] if e['kind']=='action.resolved' and e['payload']['actionId']==row['id']]) == 1
+                        if scenario == 'repair-cancelled':
+                            assert final['status']=='cancelled' and not final['authorityActive'] and not final['artifacts']
+                            assert final['usage']=={'tokenLimit':20,'reservedTokens':0,'spentTokens':8}
+                            assert counts(task_id)['attempts']==4 and result['outcome']=='stopped'
+                        else:
+                            assert final['status']=='completed' and result['status']=='completed'
+                            assert final['usage']=={'tokenLimit':20,'reservedTokens':0,'spentTokens':11}
+                            assert counts(task_id)['attempts']==5 and len(final['artifacts'])==1
+                            assert api.call(final['artifacts'][0]['downloadUrl'],raw=True)==b'row,value\n7,fixed\n'
+                            assert len([e for e in final['events'] if e['kind']=='task.completed'])==1
+                            scenario=scenario+'-repaired'
+                        await replay_without_effects(handle,task_id,scenario+'-finished')
                 else:
                     result = await asyncio.wait_for(handle.result(), 35)
                     final = api.snapshot(task_id)
+                    if scenario == 'automatic-repair-race':
+                        settled = next(a for a in final['actions'] if a['id']==row['id'])['reconciliation']
+                        assert settled['id']==command['id'] and settled['outcome']=='resolved' and not settled['delivered']
+                        assert len([e for e in final['events'] if e['kind']=='reconciliation.finished'])==1
                     if scenario == 'cancel-unknown':
                         assert final['status'] == 'cancelled' and not final['artifacts']
                         assert final['usage'] == {'tokenLimit': 20, 'reservedTokens': 0, 'spentTokens': 8}

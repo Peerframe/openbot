@@ -33,7 +33,7 @@ completion/failure. No screenshots, transcripts or runtime databases are reposit
 
 ## Released Server with PostgreSQL
 
-Use `--engine postgres-mtls` (requires OpenSSL on PATH) instead of `--temporal-cli` to run the same eight cases against the
+Use `--engine postgres-mtls` (requires OpenSSL on PATH) instead of `--temporal-cli` to run the same 15 current cases against the
 [digest-pinned deployment profile](../../deploy/temporal/README.md). This path adds explicit schema
 and SQL-role checks, engine/database SIGKILL at approval, and a cold history/visibility backup
 restored to a new volume after a write becomes unknown in the newer product database. The same
@@ -60,8 +60,9 @@ Add `--upgrade-archive /absolute/path/to/temporal_1.31.3_linux_<architecture>.ta
 `postgres-mtls` command. It rejects the handoff-only mode. The [profile](../../deploy/temporal/README.md#adjacent-release-qualification)
 documents exact provenance, the mandatory 600-second old-server health observation, unchanged
 schema contents and separate original-volume/older-snapshot checks. Two extra tasks cover pending
-approval and committed publication across both stages (four additional case records). The ordinary
-eight scenarios remain in the same run. Histories replay at each boundary without extra effects.
+approval and committed publication across both stages (four additional case records). The then-current
+eight scenarios were exercised in that earlier qualification; the new reconciliation cases have not
+been qualified across adjacent engine releases. Histories replay at each boundary without extra effects.
 This is a stopped 1.31.3-to-1.32.0 upgrade, not a general update service.
 
 ## What is exercised
@@ -72,6 +73,12 @@ This is a stopped 1.31.3-to-1.32.0 upgrade, not a general update service.
 | Cancel before write | Public cancellation during durable approval wait; worker restart issues no write/final model request or artifact |
 | Cancel unknown | Already-applied write remains recorded after public cancellation; reconciliation settles actual spend, then cancellation; no final model request or artifact |
 | Corrupt receipt | Mismatched immutable intent fails the engine activity; business Task stays open/unknown with reservation, no artifact and no repeated POST |
+| Explicit repair of corrupt receipt | Owner records a lookup-only command through the public route; a first unresolved cycle retains unknown and the reservation, then a second independently verified receipt finishes the same Action with one write |
+| Malformed JSON and repair | A response too malformed or deeply nested to parse is not a success; the Task remains open with its reservation until a later receipt lookup verifies the existing write |
+| Repair timeout | Repeated bounded engine activity timeouts leave unknown pending; a later verified lookup finishes without a second write |
+| Automatic/manual race | Automatic verification and Owner lookup settle the same Action/command without double completion or write replay |
+| Repair after cancellation | A lookup records historical applied facts and spend but never restores authority or publishes a cancelled Task |
+| Closed engine | A stored command cannot restart a closed workflow; the Action remains unknown until an explicit separate recovery |
 | Publication acknowledgement | Kill after real publication commits but before activity acknowledgement; retry verifies identical completion without reopening execution; no duplicate artifact/event or external request |
 | Handoff scope/type/queue collision (three cases) | An existing engine ID with unrelated inputs/type/queue is not acknowledged; the scope case also starts a live worker and proves no product action |
 
@@ -99,8 +106,10 @@ deployment authorization/PKI, retention, full-product backup/restore, version up
 resource cost or a real network partition. The only client exercised here is authenticated HTTP reconnect; browser/SSE
 reconnect and shared client projections remain separate work. Bounded engine retry exhaustion is
 not a business success or a refund. An unresolved Task needs an explicit reconciliation/recovery
-operator path before production. File quotas/GC/storage durability remain open.
+operator path before production. The explicit Owner reconciliation route now covers an open reference workflow, but closed-history operational recovery remains separate. File quotas/GC/storage durability remain open.
 
-The explicit adjacent-release path passes twelve case records, 57 reference unit checks and eleven
+The current fixed-workflow candidate passed 15 case records through both the development engine and the PostgreSQL/mTLS engine, including a cold engine backup/restore with accepted-but-unfinished command redelivery. These are fake external effects, not real Linux/runsc isolation.
+
+The earlier explicit adjacent-release path passed twelve case records, 57 reference unit checks and eleven
 offline histories on arm64. It covers the fixed stopped 1.31.3 -> 1.32.0 upgrade with identical PG
 schemas; amd64 CI and broader release/worker-code compatibility remain unverified.

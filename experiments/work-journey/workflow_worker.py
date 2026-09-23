@@ -5,6 +5,7 @@ from pathlib import Path
 from temporalio import activity,workflow
 from engine_client import connect as connect_engine
 from temporalio.common import RetryPolicy
+from temporalio.exceptions import ActivityError, ApplicationError, TimeoutError as ActivityTimeout
 from temporalio.worker import Worker
 from pydantic_ai import Agent,DeferredToolRequests,DeferredToolResults
 from pydantic_ai.durable_exec.temporal import TemporalDurability,PydanticAIPlugin
@@ -55,7 +56,9 @@ async def prepare(call:dict)->str:return await control.prepare_write(call)
 @activity.defn
 async def decision(identity:str)->str:return await control.decision(identity)
 @activity.defn
-async def execute_write()->str:return await control.perform('tool:write',{'kind':'write','row':7,'value':'fixed'})
+async def execute_write()->str:
+    await control.fault_barrier('before-write-inspection')
+    return await control.perform('tool:write',{'kind':'write','row':7,'value':'fixed'})
 @activity.defn
 async def publish(summary:str)->dict:return await control.publish(summary)
 @activity.defn
@@ -63,10 +66,58 @@ async def current()->dict:
     snap=await control.inspect();return {'status':snap['status'],'active':snap['authorityActive'],'cancelRequested':snap['cancelRequested']}
 
 
+@activity.defn
+async def repair_state()->dict:return await control.repair_state()
+@activity.defn
+async def reconcile_write(command_id:str)->str:return await control.reconcile_write(command_id)
+@activity.defn
+async def finish_failed_repair(command_id:str)->None:await control.finish_failed_repair(command_id)
+
+
+def repairable(error):
+    cause = error.cause
+    return isinstance(cause, ActivityTimeout) or isinstance(cause, ApplicationError) and cause.type in (
+        'ReceiptMismatch', 'UnresolvedEffect', 'HTTPError', 'URLError', 'TimeoutError', 'ConnectionError')
+
+
 @workflow.defn
 class WorkJourney:
     __pydantic_ai_agents__=[agent]
-    def __init__(self):self.identity=None;self.waiting=False
+    def __init__(self):
+        self.identity=None;self.waiting=False
+        self.repair_waiting=False
+        self.repair_generation=0
+    @workflow.signal
+    def repair_requested(self,command_id:str)->None:
+        # A signal is only a hint. Durable control records decide whether a lookup is owed.
+        if type(command_id) is str and 1 <= len(command_id) <= 128:
+            self.repair_generation += 1
+    @workflow.query
+    def reconciliation_query(self)->bool:return self.repair_waiting
+
+    async def wait_for_repair(self)->str:
+        self.repair_waiting=True
+        while True:
+            observed=self.repair_generation
+            state=await workflow.execute_activity(repair_state,**CONFIG)
+            if state['status'] in ('applied','not_applied'):
+                self.repair_waiting=False
+                return state['status']
+            if state['status']!='unknown':
+                raise ApplicationError('Repair requires a previously unknown Action',non_retryable=True)
+            if state['commandId'] is not None:
+                try:
+                    outcome=await workflow.execute_activity(reconcile_write,state['commandId'],**CONFIG)
+                except ActivityError as error:
+                    if not repairable(error):raise
+                    await workflow.execute_activity(finish_failed_repair,state['commandId'],**CONFIG)
+                    continue
+                self.repair_waiting=False
+                return outcome
+            # Check the durable obligation before sleeping. A signal arriving during either
+            # activity or before this wait changes the generation and cannot be cleared/lost.
+            await workflow.wait_condition(lambda:self.repair_generation!=observed)
+
     @workflow.query
     def identity_query(self)->dict:return self.identity
     @workflow.query
@@ -89,7 +140,15 @@ class WorkJourney:
             await workflow.sleep(1)
         self.waiting=False
         if answer!='approved':return {'taskId':identity['taskId'],'outcome':answer}
-        outcome=await workflow.execute_activity(execute_write,**CONFIG)
+        try:
+            outcome=await workflow.execute_activity(execute_write,**CONFIG)
+        except ActivityError as error:
+            if not repairable(error) or not workflow.patched('owner-repair-wait-v1'):
+                raise
+            outcome=await self.wait_for_repair()
+        if outcome!='applied':
+            return {'taskId':identity['taskId'],'outcome':outcome}
+
         state=await workflow.execute_activity(current,**CONFIG)
         if not state['active']:return {'taskId':identity['taskId'],'outcome':'stopped','status':state['status']}
         final=await agent.run(message_history=first.all_messages(),usage=first.usage,
@@ -100,7 +159,7 @@ class WorkJourney:
 async def main():
     cfg=control.settings()
     client=await connect_engine(cfg['temporal_address'],cfg.get('engine_tls'),plugins=[PydanticAIPlugin()])
-    async with Worker(client,task_queue=cfg['queue'],workflows=[WorkJourney],activities=[bind_identity,prepare,decision,execute_write,publish,current]):
+    async with Worker(client,task_queue=cfg['queue'],workflows=[WorkJourney],activities=[bind_identity,prepare,decision,execute_write,publish,current,repair_state,reconcile_write,finish_failed_repair]):
         Path(cfg['directory'],'ready').touch()
         await asyncio.Event().wait()
 

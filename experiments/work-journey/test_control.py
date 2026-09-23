@@ -166,6 +166,32 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
         self.service.admit.assert_not_awaited()
         self.service.resolve.assert_not_awaited()
 
+    async def test_failed_lookup_finishing_after_concurrent_resolution_keeps_verified_outcome(self):
+        self.existing.return_value = action('unknown')
+        repairs = SimpleNamespace(finish=AsyncMock(side_effect=control.WorkConflict('reconciliation_outcome_changed')),
+                                  read=AsyncMock(return_value={'outcome':'resolved'}))
+        with patch('openbot_server.work_reconciliation.ReconciliationStore', return_value=repairs):
+            await control.finish_failed_repair('command')
+        repairs.read.assert_awaited_once_with('command',task_id=TASK_ID,run_id=RUN_ID,action_id=ACTION_ID)
+        self.service.resolve.assert_not_awaited()
+        self.service.admit.assert_not_awaited()
+
+    async def test_invalid_json_lookup_is_a_receipt_failure_without_mutating_facts(self):
+        self.existing.return_value = action('unknown')
+        self.patch_port('settings', return_value={'effect_url':'http://127.0.0.1:1'})
+        response = Mock()
+        opened = Mock()
+        opened.__enter__ = Mock(return_value=response)
+        opened.__exit__ = Mock(return_value=False)
+        self.patch_port('urlopen', return_value=opened)
+        for payload in (b'{broken-json', b'['*15000+b'0'+b']'*15000):
+            response.read.return_value = payload
+            with self.assertRaisesRegex(control.ReceiptMismatch,'not valid JSON'):
+                await control.perform('tool:write',dict(INTENT))
+        self.service.uncertain.assert_not_awaited()
+        self.service.resolve.assert_not_awaited()
+        self.service.admit.assert_not_awaited()
+
     def use_completed_store(self, *, changed_digest=False):
         descriptor = {'key': 'verified-csv', 'name': 'corrected.csv', 'mediaType': 'text/csv',
                       'sha256': hashlib.sha256(CSV).hexdigest(), 'sizeBytes': len(CSV)}
