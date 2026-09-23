@@ -370,3 +370,29 @@ PostgreSQL/HTTP suite passed 274 checks with one optional-SDK skip, then the sam
 pinned Temporal interpreter passed 44 adapter checks. The real Temporal SDK identity probe from
 the preceding section covers SDK facts, but these new claim tests use scripted engine history;
 no production Worker or real multi-Run recovery is qualified by them.
+
+## Refine claim identity to one Temporal activity (2026-09-24)
+
+The prior `13fb278` claim ID keyed only namespace/Workflow ID/current engine Run ID. That is too
+coarse for a long-running Workflow: all model/tool/control activities in one Run share one
+60-second control claim, so a later independent activity cannot advance after that claim expires.
+The pinned Temporal Python SDK 1.33.0
+[`activity.Info`](https://github.com/temporalio/sdk-python/blob/ab52fdde33ee8ed193402625bfdba25d240a762d/temporalio/activity.py)
+exposes `activity_id` separately from `attempt` and Workflow Run ID. The official
+[Activity Execution lifecycle](https://docs.temporal.io/activity-execution#activity-id) defines
+the ID for an Activity Execution and notes that an ID can be reused after an earlier activity
+closes; the [Python error-handling guidance](https://docs.temporal.io/develop/python/best-practices/error-handling)
+recommends Workflow Run ID plus Activity ID for activity idempotency. A disposable real Temporal
+1.32.0 / SDK 1.33.0 probe observed the same activity ID on attempts 1 and 2, then a distinct
+ID for the next activity in the same Workflow Run. The probe used generated IDs; reused custom
+IDs must fail closed rather than silently mint a second claim. The exact log is
+`/private/tmp/openbot-activity-id-probe-20260924.log`.
+
+Decision: derive a new versioned control claim ID from the accepted namespace, Workflow ID,
+current engine Run ID **and actual SDK Activity ID**, never the retry attempt or workflow/model
+input. A retry of the same live activity addresses its existing fence; the next activity can
+advance the epoch and stale prior work, even in the same Workflow Run. A repeated Activity ID
+after closure may conservatively collide and refuse; production Worker composition must use
+unique generated activity IDs. This still does not authorize effect replay: an unknown action
+must be reconciled before a later activity executes an effect. No dependency or scheduler is
+added, and the existing claim transaction remains the only fence issuer.
