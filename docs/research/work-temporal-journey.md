@@ -248,3 +248,30 @@ The required `npm run check` passed after an initial sandbox-denied Turbo cache-
 rerun with the required filesystem access; 29 of 31 Turbo lint/typecheck/test tasks and all 18
 build tasks hit cache. Documentation, research, migration, security and other prerequisite checks
 actually ran. No production data, external service or default dispatch was changed.
+
+## Prove the one reserved start before initial acknowledgement (2026-09-24)
+
+The remaining collision window is narrower than the acknowledged-chain problem: if the first
+start response is unknown and its history expires before acknowledgement, a later same-ID chain
+can match Task/Run, type and queue. A first Run ID read only from that later history does not
+prove it was the reserved attempt. The [Temporal Python client documentation](https://github.com/temporalio/documentation/blob/main/docs/develop/python/client/temporal-client.mdx)
+states that a start creates `WorkflowExecutionStarted` in history; the reviewed Python SDK
+1.33.0 at commit `ab52fdde33ee8ed193402625bfdba25d240a762d` uses
+[`Client.start_workflow`](https://github.com/temporalio/sdk-python/blob/ab52fdde33ee8ed193402625bfdba25d240a762d/README.md)
+passes a workflow argument. Our pinned adapter already decodes that start-event input. Reuse
+those released primitives rather than adding a broker, scheduler or custom engine protocol.
+
+Before the only start request, control should persist a fresh 128-bit random attempt identifier
+with the submission reference in the same transaction. The trusted adapter must include it in
+the immutable start input. Inspection must compare the exact stored attempt identifier, even
+on an initially lost response, a duplicate-ID collision or redelivery after retention. A prior
+reservation without that identifier must remain unknown and never be resent or backfilled from
+current history. The identifier is correlation evidence, never authorization, and must not be
+placed in public audit payloads. The existing first Run ID still binds the acknowledged chain.
+The gap is OpenBot's SQL-to-Temporal handoff provenance; no upstream source is copied.
+
+Verify with an owned PostgreSQL fixture, fake engine collision and lost-response cases, then
+real Temporal start-history inspection. In particular a later same-ID history with matching
+Task/Run/type/queue but a different attempt must stay unacknowledged with no model/tool action.
+Historical admission rows without an attempt identifier remain fail-closed; no migration or
+default-dispatch switch may silently grant them a fresh start.
