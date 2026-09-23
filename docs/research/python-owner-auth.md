@@ -70,3 +70,12 @@ session INSERT failure, no cookie on that failure, both directions of TS/Python 
 and explicit owner-auth startup/login/read/logout over HTTP. Uvicorn 0.53.0 deliberately re-raises
 SIGTERM after graceful shutdown, so the fixture verifies closed service/process exit by SIGTERM.
 This is local evidence, not hosted Linux CI or proxy/production qualification.
+
+## Unicode correction from the S2a-3 differential review
+
+Installed Zod 4.6.2 counts Unicode code points, confirmed in checks.js and the actual login/config
+schemas: 14 emoji fail configuration, 15 pass; login accepts 1,024 emoji but rejects 1,025. The
+initial UTF-16 assumption was wrong and is corrected to Python len with regression coverage. The
+reference additionally rejects configured secrets beyond the login limit (legacy configuration had
+no maximum), because that configuration cannot be used to log in. JSON containing lone surrogates
+is rejected before UTF-8 credential hashing; no plaintext is exposed in errors.

@@ -1,4 +1,4 @@
-"""Authenticated compatibility reads with explicitly selected Owner-auth writes."""
+"""Compatible control reads with explicitly selected Owner authentication and identity writes."""
 
 from contextlib import asynccontextmanager
 import json
@@ -13,6 +13,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from .auth import OwnerAuthentication
 from .auth_routes import register_auth_routes
+from .identity_routes import IdentityStore, register_identity_routes
 from .database import ReadResult, StoreUnavailable
 from .models import (
     AuthSession, BotsResponse, ChannelsResponse, iso_timestamp, project_bot, project_channels,
@@ -25,7 +26,8 @@ class ReadStore(Protocol):
 
 
 def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True,
-               allowed_origins: tuple[str, ...] = (), auth: OwnerAuthentication | None = None) -> FastAPI:
+               allowed_origins: tuple[str, ...] = (), auth: OwnerAuthentication | None = None,
+               identity: IdentityStore | None = None) -> FastAPI:
     if not owner_name or any(origin == "*" or origin == "null" for origin in allowed_origins):
         raise ValueError("An Owner name and explicit origins are required.")
     if auth is not None and auth.owner_name != owner_name:
@@ -38,19 +40,23 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         await store.verify_schema()
         if auth is not None:
             await auth.verify_schema()
+        if identity is not None:
+            await identity.verify_schema()
         yield
 
     app = FastAPI(title="OpenBot control-plane reference", version="0.0.0",
                   docs_url=None, redoc_url=None, lifespan=lifespan)
     app.add_middleware(CORSMiddleware, allow_origins=list(allowed_origins),
-                       allow_credentials=True, allow_methods=["GET", "POST"] if auth else ["GET"],
-                       allow_headers=["Content-Type"] if auth else [])
+                       allow_credentials=True, allow_methods=["GET", "POST"] if auth or identity else ["GET"],
+                       allow_headers=["Content-Type"] if auth or identity else [])
 
     @app.middleware("http")
     async def private_response(request: Request, call_next):
         auth_write = auth is not None and request.method == "POST" and request.url.path in (
             "/api/v1/auth/login", "/api/v1/auth/logout")
-        if request.method not in ("GET", "HEAD", "OPTIONS") and not auth_write:
+        identity_write = identity is not None and request.method == "POST" and request.url.path in (
+            "/api/v1/bots", "/api/v1/channels")
+        if request.method not in ("GET", "HEAD", "OPTIONS") and not (auth_write or identity_write):
             response = JSONResponse({"error": "Operation is unavailable in this reference."}, status_code=405)
         else:
             response = await call_next(request)
@@ -86,7 +92,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
 
     @app.get("/health", operation_id="getHealth")
     async def health():
-        return {"ok": True, "service": "openbot-server", "phase": "s2a-auth-reference" if auth else "s2a-read-reference",
+        return {"ok": True, "service": "openbot-server", "phase": "s2a-identity-reference" if identity else "s2a-auth-reference" if auth else "s2a-read-reference",
                 "time": iso_timestamp(datetime.now(timezone.utc))}
 
     @app.get("/api/v1/auth/session", response_model=AuthSession,
@@ -119,9 +125,18 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     if auth is not None:
         register_auth_routes(app, auth, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
 
+    input_definitions = register_identity_routes(
+        app, identity, store, secure_cookies=secure_cookies, allowed_origins=allowed_origins,
+    ) if identity is not None else {}
+
     # Cookie parsing is invoked inside the adapter to keep the store request-scoped. Declare
     # that exact scheme in generated OpenAPI too; a schema is never an authorization check.
     schema = app.openapi()
+    components = schema.setdefault("components", {}).setdefault("schemas", {})
+    for name, definition in input_definitions.items():
+        if name in components and components[name] != definition:
+            raise ValueError("Conflicting OpenAPI input definitions.")
+        components[name] = definition
     schema.setdefault("components", {}).setdefault("securitySchemes", {})["OwnerSession"] = {
         "type": "apiKey", "in": "cookie", "name": cookie_name,
     }
@@ -131,4 +146,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     if auth is not None:
         schema["paths"]["/api/v1/auth/logout"]["post"]["security"] = [{"OwnerSession": []}]
         schema["paths"]["/api/v1/auth/login"]["post"]["security"] = []
+    if identity is not None:
+        for path in ("/api/v1/bots", "/api/v1/channels"):
+            schema["paths"][path]["post"]["security"] = [{"OwnerSession": []}]
     return app

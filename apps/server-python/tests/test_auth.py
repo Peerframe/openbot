@@ -77,8 +77,17 @@ def test_invalid_ttl_is_not_coerced(ttl):
         OwnerAuthentication(AsyncMock(), owner_name="Owner", password=PASSWORD, ttl_hours=ttl)
 
 
-def test_astral_passwords_use_retained_typescript_unit_bound():
-    auth, persistence = service(AttemptResult("issued", EXPIRES))
+@pytest.mark.parametrize("count", [15, 513, 1024])
+def test_astral_passwords_use_retained_zod_codepoint_bound(count):
+    persistence = AsyncMock()
+    persistence.attempt.return_value = AttemptResult("issued", EXPIRES)
+    password = "🙂" * count
+    auth = OwnerAuthentication(persistence, owner_name="Owner", password=password)
+    assert asyncio.run(auth.login(password, "127.0.0.1")).session.authenticated is True
+    assert persistence.attempt.call_args.kwargs["valid_password"] is True
+
+
+@pytest.mark.parametrize("count", [8, 14, 1025])
+def test_astral_password_configuration_rejects_short_or_unusable_values(count):
     with pytest.raises(ValueError):
-        asyncio.run(auth.login("🙂" * 513, "127.0.0.1"))
-    persistence.attempt.assert_not_called()
+        OwnerAuthentication(AsyncMock(), owner_name="Owner", password="🙂" * count)

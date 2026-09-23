@@ -2,11 +2,12 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-S2a-1/2 of the [migration plan](../../docs/ARCHITECTURE_MIGRATION_PLAN.md): Python/FastAPI reads
+S2a-1/2/3 of the [migration plan](../../docs/ARCHITECTURE_MIGRATION_PLAN.md): Python/FastAPI reads
 existing Owner sessions, Bots and channels and can explicitly enable Owner login/logout against the
 current PostgreSQL schema. This trusted control layer is separate from the untrusted Agent Runtime.
-**The TypeScript Server remains the default. Business mutations, task dispatch, approvals, files,
-schedules and events have not moved.** Python starts read-only; auth writes require explicit selection.
+**The TypeScript Server remains the default.** Python starts read-only; explicit `owner-auth` mode
+enables authentication, and `identity` mode adds Bot/channel creation. Task dispatch, approvals,
+files, schedules and realtime events have not moved.
 
 ## Develop and verify
 
@@ -35,11 +36,13 @@ channels. Legacy membership order is unspecified, so only member IDs are compare
 returns them sorted. Other fixture fields match exactly. Both implementations recognize sessions
 issued by the other, and revocation takes effect across implementations.
 
-Nine database/HTTP checks cover reads, expiry/revocation, enforced read-only transactions, exact
+Nineteen database/HTTP checks cover reads, expiry/revocation, enforced read-only transactions, exact
 schema history, invalid stored Bot status, concurrent persistent throttling, transactional auth
 failure without a success cookie, and real loopback processes with bounded SIGTERM shutdown.
-The local package has 198 additional passing cases at this slice. Without the explicit fixture,
-package checks skip the nine integration cases; skips are not acceptance. Two upstream test-client
+Identity checks also exercise exact audit/evolution payloads, missing members, concurrent name
+conflicts, rollback on audit failure, revocation during a row-lock wait, expiry during audit waiting,
+and real HTTP creation. A separate 81-case input differential compares installed Zod against Python. Without the explicit fixture,
+package checks skip the nineteen integration cases; skips are not acceptance. Two upstream test-client
 deprecation warnings remain at the reviewed pins. The Linux CI job includes these checks; a hosted
 run is separate evidence and has not yet run for this local change.
 
@@ -55,8 +58,8 @@ It never runs migrations or reads dotenv. This is not a production cutover instr
 
 | Setting | Meaning |
 | --- | --- |
-| `OPENBOT_CONTROL_AUTHORITY` | `read-only` by default; `owner-auth` explicitly enables only login/logout writes |
-| `OPENBOT_CONTROL_OWNER_PASSWORD` | Required only for `owner-auth`; 15–1024 UTF-16 units, non-example value. The old Server password variable is not inherited |
+| `OPENBOT_CONTROL_AUTHORITY` | `read-only` by default; `owner-auth` enables login/logout; `identity` additionally enables only Bot/channel creation |
+| `OPENBOT_CONTROL_OWNER_PASSWORD` | Required for `owner-auth` and `identity`; 15–1024 Unicode characters, non-example value. The old Server password variable is not inherited |
 | `OPENBOT_CONTROL_SESSION_TTL_HOURS` | Integer 1–168; default 12 |
 | `OPENBOT_CONTROL_ALLOWED_ORIGINS` | Exact comma-separated HTTP(S) origins; defaults to localhost/127.0.0.1 at the configured port in auth mode. No wildcard or Host-header inference |
 | `OPENBOT_CONTROL_COOKIE_MODE` | `secure` by default uses `__Host-openbot_session`; explicit `loopback` uses plain `openbot_session` for local fixtures. No cross-mode fallback |
@@ -83,13 +86,27 @@ The database NOT NULL constraint prevents the old null timestamp fallback case.
 
 Routes: `/health`, `/api/v1/auth/session`, `/api/v1/bots`, `/api/v1/channels`, plus
 `/api/v1/auth/login` and `/api/v1/auth/logout` only in auth mode. `/openapi.json` describes the
-selected routes; interactive docs are disabled. Complete client parity, revisioned workspace
-snapshots and durable event cursors remain later S2 work.
+selected routes; interactive docs are disabled. `identity` also enables POST `/api/v1/bots` and POST `/api/v1/channels` (201 with the existing
+envelopes). Input defaults, trimming, Unicode code-point length, UUID spelling and pre-deduplication
+member bounds match the installed Zod oracle. Explicit null is rejected where only omission is
+allowed. The request body limit still applies before normalization.
+
+Creation authenticates before input errors and rechecks the session under a PostgreSQL SHARE lock
+in the write transaction. Identity, membership and durable audit/evolution rows commit together;
+a later logout waits for that transaction, and a prior revocation or expiry rejects it. Name
+conflicts return 409, missing members 422, uncertain storage 503 without automatic retry. Ordinary
+channel names use the existing partial unique index, independently of direct-conversation names.
+Selecting a computer profile does not grant any tool permission. No transient profile notification
+or other identity edit/delete/dispatch endpoint is implemented in this slice. Complete client parity,
+revisioned workspace snapshots and durable event cursors remain later S2 work.
 
 ## Reuse and licenses
 
 See [read research](../../docs/research/python-control-read-slice.md) and
-[auth research](../../docs/research/python-owner-auth.md). FastAPI/Pydantic are MIT;
+[auth research](../../docs/research/python-owner-auth.md),
+[input research](../../docs/research/python-identity-inputs.md), and
+[identity transactions](../../docs/research/python-identity-transactions.md). FastAPI/Pydantic are MIT;
 Starlette/Uvicorn/HTTPX are BSD-3-Clause; Psycopg and its binary distribution are LGPL-3.0-only;
-CPython is PSF-licensed. Installed notices remain intact. No upstream source is vendored or patched.
-Redistribution must retain required notices and applicable license rights.
+CPython is PSF-licensed. Installed notices remain intact. The UUID pattern is adapted from Zod; its full MIT notice is bundled in
+[third-party notices](THIRD_PARTY_NOTICES.md). No installed dependency is patched. Redistribution
+must retain required notices and applicable license rights.

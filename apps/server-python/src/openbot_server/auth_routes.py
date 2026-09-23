@@ -1,16 +1,14 @@
 """HTTP adaptation for explicitly enabled Owner-auth writes; all other writes stay unavailable."""
-import asyncio
 from datetime import datetime, timezone
-import json
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError
-from starlette.requests import ClientDisconnect
 
 from .auth import InvalidClientIdentity, InvalidCredentials, OwnerAuthentication, RateLimited, password_length
 from .models import AuthenticatedSession
+from .http_input import read_json
 
 
 class LoginInput(BaseModel):
@@ -41,26 +39,14 @@ def validate_origins(origins: tuple[str, ...]) -> None:
 
 
 async def login_payload(request: Request) -> str:
-    if request.headers.get("content-type", "").split(";", 1)[0].strip().lower() != "application/json":
-        raise HTTPException(422, "Login requires a JSON object.")
-    length = request.headers.get("content-length")
-    if length is not None and (not length.isascii() or not length.isdigit() or len(length) > 4 or int(length) > 8192):
-        raise HTTPException(413, "Login request is too large.")
-    body = bytearray()
     try:
-        async with asyncio.timeout(5):
-            async for chunk in request.stream():
-                if len(body) + len(chunk) > 8192:
-                    raise HTTPException(413, "Login request is too large.")
-                body.extend(chunk)
-        payload = LoginInput.model_validate(json.loads(body.decode("utf-8")))
+        payload = LoginInput.model_validate(await read_json(request))
         password = payload.password.get_secret_value()
+        password.encode("utf-8")  # Reject lone surrogates before credential comparison.
         if not 1 <= password_length(password) <= 1024:
             raise ValueError("Invalid length")
         return password
-    except TimeoutError:
-        raise HTTPException(408, "Login request timed out.") from None
-    except (ValidationError, ValueError, RecursionError, ClientDisconnect):
+    except (ValidationError, ValueError):
         # Pydantic errors may contain submitted values, so never forward their details.
         raise HTTPException(422, "Invalid login input.") from None
 

@@ -134,3 +134,12 @@ def test_owner_auth_requires_explicit_literal_origins(origins):
     auth = OwnerAuthentication(AsyncMock(), owner_name="Owner", password=PASSWORD)
     with pytest.raises(ValueError):
         create_app(AsyncMock(), owner_name="Owner", allowed_origins=origins, auth=auth)
+
+
+def test_invalid_unicode_password_is_rejected_without_echoing_it(api):
+    client, persistence = api
+    response = client.post("/api/v1/auth/login", content='{"password":"\\ud800"}',
+                           headers={"Origin": "https://control.test", "Content-Type": "application/json"})
+    assert response.status_code == 422
+    assert "ud800" not in response.text
+    persistence.attempt.assert_not_called()

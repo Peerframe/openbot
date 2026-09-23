@@ -61,15 +61,15 @@ def client_digest(address: str | None) -> str:
 
 
 def password_length(value: str) -> int:
-    # The retained TypeScript protocol bounds UTF-16 units, including astral characters.
-    return len(value.encode("utf-16-le")) // 2
+    # Zod 4.6.2 measures Unicode code points, including astral characters.
+    return len(value)
 
 
 class OwnerAuthentication:
     def __init__(self, store: AuthPersistence, *, owner_name: str, password: str, ttl_hours: int = 12):
         if (not isinstance(password, str) or not 15 <= password_length(password) <= 1024
                 or password == "replace-with-a-long-random-owner-password"):
-            raise ValueError("Set a non-example Owner password of 15 to 1024 UTF-16 units.")
+            raise ValueError("Set a non-example Owner password of 15 to 1024 Unicode characters.")
         if type(ttl_hours) is not int or not 1 <= ttl_hours <= 168:
             raise ValueError("Owner session TTL must be 1 to 168 hours.")
         if not isinstance(owner_name, str) or not owner_name.strip() or len(owner_name) > 80:

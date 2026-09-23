@@ -10,6 +10,7 @@ from openbot_server.app import create_app
 from openbot_server.database import PostgresReadStore
 from openbot_server.auth import OwnerAuthentication
 from openbot_server.auth_store import PostgresAuthStore
+from openbot_server.identity_store import PostgresIdentityStore
 
 
 def main():
@@ -23,12 +24,12 @@ def main():
     if not port_text.isascii() or not port_text.isdigit() or not 1 <= int(port_text) <= 65535:
         raise SystemExit("Control-plane port must be between 1 and 65535.")
     authority = os.environ.get("OPENBOT_CONTROL_AUTHORITY", "read-only")
-    if authority not in ("read-only", "owner-auth"):
+    if authority not in ("read-only", "owner-auth", "identity"):
         raise SystemExit("Unknown control-plane authority mode.")
     owner_name = os.environ.get("OPENBOT_OWNER_NAME", "Owner")
     auth = None
     origins = ()
-    if authority == "owner-auth":
+    if authority in ("owner-auth", "identity"):
         password = os.environ.get("OPENBOT_CONTROL_OWNER_PASSWORD")
         if password is None:
             raise SystemExit("Owner-auth requires its explicit control-plane Owner password.")
@@ -40,7 +41,8 @@ def main():
         default_origins = f"http://127.0.0.1:{int(port_text)},http://localhost:{int(port_text)}"
         origins = tuple(item.strip() for item in os.environ.get("OPENBOT_CONTROL_ALLOWED_ORIGINS", default_origins).split(",") if item.strip())
     app = create_app(PostgresReadStore(dsn), owner_name=owner_name,
-                     secure_cookies=cookie_mode == "secure", allowed_origins=origins, auth=auth)
+                     secure_cookies=cookie_mode == "secure", allowed_origins=origins, auth=auth,
+                     identity=PostgresIdentityStore(dsn) if authority == "identity" else None)
     uvicorn.run(app, host="127.0.0.1", port=int(port_text), proxy_headers=False, access_log=False,
                 log_level="warning", loop="asyncio", http="h11", timeout_graceful_shutdown=8)
 

@@ -476,3 +476,11 @@ Reuse CPython 3.12.13 secrets/hmac/hashlib/ipaddress (PSF), Starlette 1.6.0 cook
 invalid attempts commit reservations, successful auth commits before cookie issuance. Default
 reference remains read-only; explicit auth mode adds no business writer or model authority. No
 new dependency or copied upstream source. See [review](research/python-owner-auth.md).
+
+## Python identity creation reference (2026-09-23)
+
+Reuse the same PostgreSQL 17.11 constraints/row locks and Psycopg 3.3.6 Jsonb/transactions for
+Owner-authorized Bot/channel creation and atomic audit rows. Existing Zod 4.6.2 is the input
+compatibility oracle; Pydantic 2.13.5 validates the Python representation. No new dependency,
+migration engine, task authority or default switch. See [input review](research/python-identity-inputs.md)
+and [transaction review](research/python-identity-transactions.md) for source incorporation and gates.

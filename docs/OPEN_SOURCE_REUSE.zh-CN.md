@@ -388,3 +388,9 @@ PostgreSQL 17.11 事务/咨询锁（PostgreSQL License）及 Psycopg 3.3.6（LGP
 保持原会话摘要、过期/撤权和限流表语义；失败尝试提交计数，认证成功提交后才签发 Cookie。
 参考入口默认只读，显式认证模式不迁移业务写入或增加模型权限。无新依赖、无复制上游源码。
 参见[研究](research/python-owner-auth.md)。
+
+## Python 身份创建参考实现（2026-09-23）
+
+复用 PostgreSQL 17.11 约束/行锁与 Psycopg 3.3.6 Jsonb/事务，实现 Owner 授权的 Bot/频道创建和原子审计。
+现有 Zod 4.6.2 是输入兼容对照，Pydantic 2.13.5 验证 Python 表示。不增加依赖、迁移引擎、任务权限或改变默认后端。
+源码复用与验收边界见[输入研究](research/python-identity-inputs.md)和[事务研究](research/python-identity-transactions.md)。

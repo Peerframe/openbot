@@ -1,19 +1,19 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { rmSync } from "node:fs";
 import { randomBytes } from "node:crypto";
+import { rmSync } from "node:fs";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
-import { createDatabase } from "../packages/db/dist/index.js";
 import { createApp } from "../apps/server/dist/app.js";
 import { OwnerAuthService } from "../apps/server/dist/owner-auth.js";
+import { PostgresRequestThrottleStore } from "../apps/server/dist/postgres-request-throttle-store.js";
 import { PostgresOwnerSessionStore } from "../apps/server/dist/postgres-session-store.js";
 import { PostgresControlPlaneStore } from "../apps/server/dist/postgres-store.js";
 import { RequestThrottle } from "../apps/server/dist/request-throttle.js";
-import { PostgresRequestThrottleStore } from "../apps/server/dist/postgres-request-throttle-store.js";
+import { createDatabase } from "../packages/db/dist/index.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const image =
@@ -193,6 +193,7 @@ try {
       ownerName: "验收 Owner",
       expected,
       authResult: join(fixtureDirectory, "auth-result.json"),
+      identityResult: join(fixtureDirectory, "identity-result.json"),
     }),
     {
       mode: 0o600,
@@ -200,7 +201,14 @@ try {
   );
   const result = spawnSync(
     join(root, "apps/server-python/.venv/bin/python"),
-    ["-m", "pytest", "tests/test_postgres_integration.py", "tests/test_auth_postgres.py", "-q"],
+    [
+      "-m",
+      "pytest",
+      "tests/test_postgres_integration.py",
+      "tests/test_auth_postgres.py",
+      "tests/test_identity_postgres.py",
+      "-q",
+    ],
     {
       cwd: join(root, "apps/server-python"),
       env: { ...environment, OPENBOT_CONTROL_TEST_FIXTURE: fixture },
@@ -216,6 +224,30 @@ try {
     .replaceAll(ownerPassword, "[fixture password]");
   console.log(output.trim());
   assert.equal(result.status, 0, "Python/PostgreSQL compatibility checks failed.");
+  const identityResult = JSON.parse(
+    await readFile(join(fixtureDirectory, "identity-result.json"), "utf8"),
+  );
+  for (const [key, collection] of [
+    ["bot", "bots"],
+    ["channel", "channels"],
+  ]) {
+    const response = await app.request(`/api/v1/${collection}`, {
+      headers: { Cookie: `openbot_session=${token}` },
+    });
+    assert.equal(response.status, 200);
+    const actual = (await response.json())[collection].find(
+      (value) => value.id === identityResult[key].id,
+    );
+    if (key === "channel") {
+      actual.botIds.sort();
+      identityResult[key].botIds.sort();
+    }
+    assert.deepEqual(
+      actual,
+      identityResult[key],
+      "TS must project the committed Python identity identically.",
+    );
+  }
   const authResult = JSON.parse(await readFile(join(fixtureDirectory, "auth-result.json"), "utf8"));
   assert.match(authResult.pythonToken, /^[A-Za-z0-9_-]{43}$/);
   const pythonSession = await app.request("/api/v1/auth/session", {
