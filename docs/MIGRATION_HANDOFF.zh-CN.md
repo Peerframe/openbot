@@ -1,12 +1,13 @@
 # 架构迁移交接 — 2026-09-24
 
-当前分支：`codex/architecture-migration`；最新已验证的 S3 代码为 `b0db90d`。后续先读本交接和下列文件；只有出现具体失败时再查旧日志。
+当前分支：`codex/architecture-migration`；最新已验证的 S3 代码为 `b0db90d`，S2 外壳代码为 `b2de930`。后续先读本交接和下列文件；只有出现具体失败时再查旧日志。
 
 ## 本阶段已完成
 
 - ADR 0046 选定 Temporal 作为**目标**恢复调度者，生产切换尚未开启。已关闭工作流的仅查询修复参考实现位于 `6e7cffd`。
 - `9ccaff5` 在首次请求 Temporal 启动前持久记录派发尝试；重复通知只查原工作流历史，不允许二次启动。未确认 Task/Run 可精确查询，不会被待处理列表遮住；历史缺失仍保持未解决。受影响控制层 189 项、参考测试 61 项、公开 HTTP/PostgreSQL/开发版 Temporal 的四项交接场景实际通过。PostgreSQL/mTLS 的交接及恢复场景在最后一次精确查询小改动前通过，此读路径改动后未重跑。`npm run check` 通过，其中 Turbo 有缓存命中。
 - `877b439` 把员工模板保存方式移入 Web/Desktop 外壳适配器；共享 API 只获取和校验文件，不再依赖 Desktop bridge 或操作 DOM 保存。受影响的 28 项测试、Web 类型检查及 `npm run check` 通过；这不等于 S2 客户端全面对齐。
+- `b2de930` 把产物保存从 `ArtifactCard` 移入 Web/Desktop 外壳适配器。dsh 在隔离副本交付四个限定文件，Codex 审查并集成。定向 15 项测试与 Web 类型检查在隔离副本和集成分支都实际运行通过；集成后的 `npm run check` 通过（18 个 Turbo 任务中 17 个命中缓存）。浏览器下载、PNG 预览、Desktop 保存及状态提示仍有覆盖；S2 全面对齐尚未完成。
 - `b0db90d` 拒绝在 Temporal 工作流中直接使用 OpenBot 工具端口。真实本地 Temporal 探针显示：直接挂载 `PortToolset` 虽返回工具结果，但没有工具活动；构造时注册的 `DynamicToolset` 则记录 `call_tool` 活动和一次可信端口调用。加入保护后，直接路径以零次可信调用拒绝，动态路径仍通过。Python Runtime 相关测试实际运行 419 项通过，`npm run check` 通过但 Turbo 有缓存命中。这是安全边界，不是生产 Runtime 集成。
 - TASK028 的有界输出候选位于本地未跟踪的 `experiments/linux-execution/`。独立审查修正了 CLI 输出管道未关闭仍报成功、镜像检查结果未知却报不存在的问题。在该目录实际运行 `python3 -m unittest test_sandbox`：133 项通过。`sandbox.py` SHA-256 为 `0815cb3fb4329e04522eaf9f054d973fbfe38b5335dd37bb1c1cf3a7ede8b5c5`；`test_sandbox.py` 为 `a840a2153e90dadf534fcba808c0035241811d5d261f6536681c6937fea9a314`。
 
