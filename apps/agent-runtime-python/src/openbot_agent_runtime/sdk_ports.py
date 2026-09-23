@@ -18,6 +18,7 @@ from __future__ import annotations
 from typing import Any, Final
 
 import pydantic_ai
+from pydantic_ai.exceptions import UserError
 from pydantic_ai.messages import ModelMessage, ModelMessagesTypeAdapter, ModelResponse, ToolCallPart
 from pydantic_ai.models import Model, ModelRequestParameters
 from pydantic_ai.settings import ModelSettings
@@ -30,6 +31,19 @@ from .catalog import ToolCatalog
 from .contracts import ModelStepRequest, RuntimeLimits, ToolCallRequest, ToolDescriptor
 from .errors import FailureReason, RuntimeFailure
 from .guard import RunGuard
+
+try:
+    from temporalio import workflow as _temporal_workflow
+except ImportError:
+    # The standalone supervised Runtime deliberately has no Temporal dependency.
+    _temporal_workflow = None
+
+
+def _refuse_inline_temporal_tool() -> None:
+    # TemporalDurability 2.47.0 does not wrap arbitrary AbstractToolset leaves. Without a
+    # constructor-time DynamicToolset, this port would execute in replayable workflow code.
+    if _temporal_workflow is not None and _temporal_workflow.in_workflow():
+        raise UserError("OpenBot tool ports require a registered Temporal tool activity")
 
 PASSTHROUGH_ARGS_VALIDATOR: Final = SchemaValidator(schema=core_schema.any_schema())
 """Accepts any argument shape so the SDK never rejects what this unit must judge."""
@@ -156,6 +170,7 @@ class PortToolset(AbstractToolset[object]):
         return "openbot-ports"
 
     async def get_tools(self, ctx: Any) -> dict[str, ToolsetTool[object]]:
+        _refuse_inline_temporal_tool()
         self._guard.check_sync("tool catalog")
         return {
             name: ToolsetTool(
@@ -170,6 +185,7 @@ class PortToolset(AbstractToolset[object]):
     async def call_tool(
         self, name: str, tool_args: dict[str, Any], ctx: Any, tool: ToolsetTool[object]
     ) -> Any:
+        _refuse_inline_temporal_tool()
         guard = self._guard
         guard.check_sync("tool call")
         call_id = ctx.tool_call_id

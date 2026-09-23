@@ -124,3 +124,29 @@ redelivery left the Task queued and unconfirmed, found no engine history and mad
 requests; it did not create a replacement workflow. The recovery case still made one actual
 external write. These are synthetic effects, not a production dispatcher or real Linux isolation.
 The full historical scenario matrix was not rerun after this change.
+
+## Runtime tool port under TemporalDurability (2026-09-24)
+
+The target uses pinned Pydantic AI 2.47.0 (`77d5fce751ab8ab04bd5db4ed6acc1131a4baed6`)
+and Temporal Python 1.33.0. The [official Temporal integration guide](https://github.com/pydantic/pydantic-ai/blob/main/docs/durable_execution/temporal.md#toolsets-at-runtime)
+requires executing toolsets to be attached when the agent is constructed, with a stable ID for
+dynamic toolsets. Review of the installed 2.47.0 source showed that its durable leaf wrapping
+recognizes `FunctionToolset`, `DynamicToolset` and `MCPToolset`; OpenBot's custom `PortToolset`
+is an `AbstractToolset` and is not one of those wrapped kinds. The separate Runtime package can
+run without `temporalio`, so the current subprocess path remains useful outside workflows.
+
+A disposable real Temporal development-server probe used the existing OpenBot `PortModel`,
+`PortToolset` and `RunGuard` with a scripted two-model-step, one-tool journey. Directly attaching
+`PortToolset` returned the tool observation to the model and a final answer, yet history contained
+only two `model_request` activities: **no tool activity**. The original trusted tool port recorded
+zero calls, consistent with execution in the workflow sandbox copy. A successful answer was thus
+not evidence of durable tool execution. Wrapping the same `PortToolset` in a constructor-time
+`DynamicToolset(id='openbot-ports')` produced `get_tools`, `model_request`, `call_tool`, `get_tools`,
+`model_request` activities; the trusted tool port recorded one call and the guard counted one.
+The test used no provider, product database, real tool or external write.
+
+Decision for the next integration: reject direct `PortToolset` use inside a Temporal workflow;
+the durable worker must register the dynamic wrapper before starting and carry bounded Task/Run
+identity in serializable dependencies. A global fake guard in this probe does not establish
+multi-Run isolation, crash recovery, authorization, budget persistence or idempotency. Those
+remain product acceptance gates; do not promote the probe's agent to the production dispatcher.

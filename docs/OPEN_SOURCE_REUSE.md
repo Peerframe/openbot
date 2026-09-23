@@ -592,6 +592,14 @@ workflow history expiry. No new product dependency, scheduler or upstream source
 see [the bounded ingress review](research/work-temporal-journey.md#product-handoff-attempt-before-external-submission-2026-09-24).
 
 
+## Runtime port durability boundary (2026-09-24)
+
+The runtime-port compatibility review reuses pinned Pydantic AI 2.47.0 and Temporal Python
+1.33.0 public `DynamicToolset`/activity APIs. Direct custom `AbstractToolset` execution is not
+durable under the pinned integration; OpenBot adds only a fail-closed local check and keeps
+control-owned effects. No new dependency or copied upstream code. See
+[the measured port boundary](research/work-temporal-journey.md#runtime-tool-port-under-temporaldurability-2026-09-24).
+
 ## Temporal persistence and Linux boundary review (2026-09-23)
 
 The [PostgreSQL profile](research/temporal-postgres-operations.md) uses Temporal Server/admin1.32.0

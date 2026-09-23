@@ -10,11 +10,12 @@ scenario, which is the property the rest of the suite relies on.
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 from pydantic_ai import Agent
-from pydantic_ai.exceptions import ToolFailed
+from pydantic_ai.exceptions import ToolFailed, UserError
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
 from pydantic_ai.models import Model, ModelRequestParameters
 from pydantic_ai.settings import ModelSettings
@@ -25,6 +26,7 @@ from pydantic_core import SchemaValidator, core_schema
 
 from openbot_agent_runtime import FailureReason, RuntimePorts, execute_runtime
 from openbot_agent_runtime.errors import RuntimeFailure
+from openbot_agent_runtime import sdk_ports
 
 from support import Authority, RecordingToolPort, ScriptedModelPort, call, descriptor, request, text
 
@@ -123,3 +125,25 @@ async def test_the_runtime_refuses_the_same_scenario() -> None:
 
     assert caught.value.reason is FailureReason.TOOL_PORT_ERROR
     assert len(model.requests) == 1, "the model was asked again after the tool failed"
+
+
+async def test_direct_toolset_refuses_a_temporal_workflow_before_any_tool_effect(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unwrapped custom toolset cannot silently run a tool during workflow replay."""
+    monkeypatch.setattr(
+        sdk_ports, "_temporal_workflow", SimpleNamespace(in_workflow=lambda: True)
+    )
+    model = ScriptedModelPort([call("search", {"query": "a"}, call_id="c1")])
+    tools = RecordingToolPort()
+
+    with pytest.raises(RuntimeFailure) as caught:
+        await execute_runtime(
+            request(tools=[descriptor()]),
+            RuntimePorts(model=model, tool=tools, authority=Authority()),
+        )
+
+    assert caught.value.reason is FailureReason.UNEXPECTED
+    assert isinstance(caught.value.__cause__, UserError)
+    assert model.requests == []
+    assert tools.calls == []
