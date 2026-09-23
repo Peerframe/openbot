@@ -85,18 +85,19 @@ class HandoffStore:
                                      {'runId': run_id, 'engineReference': engine_reference})
             return True
 
-    async def acknowledge(self, task_id, run_id, engine_reference):
+    async def acknowledge(self, task_id, run_id, engine_reference, engine_first_run_id):
         """Record verified acceptance: True once, False for an identical replay.
 
         Only trusted control code may supply this receipt. Acceptance may precede cancellation;
         recording that past fact must never reopen a Task/Run or grant new execution authority.
         """
-        text(run_id, 128); text(engine_reference, 256)
+        text(run_id, 128); text(engine_reference, 256); text(engine_first_run_id, 128)
         async with self._store._transaction(trusted=True) as connection:
             # All work writers take the Task lock first, including cancellation and audit writes.
             await self._store._task(connection, task_id)
             cursor = await connection.execute(
-                'SELECT a.state,a.engine_reference,a.submission_reference FROM work_runs r '
+                'SELECT a.state,a.engine_reference,a.submission_reference,a.engine_first_run_id '
+                'FROM work_runs r '
                 'JOIN work_admissions a ON a.run_id=r.id '
                 'WHERE r.task_id=%s AND r.id=%s FOR UPDATE OF r,a', (task_id, run_id))
             handoff = await cursor.fetchone()
@@ -105,14 +106,26 @@ class HandoffStore:
             if handoff['state'] == 'acknowledged':
                 if handoff['engine_reference'] != engine_reference:
                     raise WorkConflict('handoff_reference_changed')
+                if handoff['submission_reference'] != engine_reference:
+                    # A legacy acceptance with no recorded submission cannot become a
+                    # worker grant simply by attaching a current same-ID engine run.
+                    raise WorkConflict('handoff_not_reserved')
+                if handoff['engine_first_run_id'] is None:
+                    # The old chain identity was never recorded. Current same-ID
+                    # history could be a new chain after retention; no auto-backfill.
+                    raise WorkConflict('handoff_engine_run_unbound')
+                if handoff['engine_first_run_id'] != engine_first_run_id:
+                    raise WorkConflict('handoff_engine_run_changed')
                 return False
             if handoff['state'] != 'pending' or handoff['submission_reference'] is None:
                 raise WorkConflict('handoff_not_reserved')
             if handoff['submission_reference'] != engine_reference:
                 raise WorkConflict('handoff_reference_changed')
             await connection.execute(
-                "UPDATE work_admissions SET state='acknowledged',engine_reference=%s WHERE run_id=%s",
-                (engine_reference, run_id))
+                "UPDATE work_admissions SET state='acknowledged',engine_reference=%s,"
+                'engine_first_run_id=%s WHERE run_id=%s',
+                (engine_reference, engine_first_run_id, run_id))
             await self._store._event(connection, task_id, 'handoff.acknowledged',
-                                     {'runId': run_id, 'engineReference': engine_reference})
+                                     {'runId': run_id, 'engineReference': engine_reference,
+                                      'engineFirstRunId': engine_first_run_id})
             return True

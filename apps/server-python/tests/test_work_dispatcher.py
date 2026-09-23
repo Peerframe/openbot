@@ -19,6 +19,7 @@ TIMEOUT = 240
 WORKFLOW_ID = 'openbot-work-v1-run-0001'
 REFERENCE = 'temporal:default:openbot-work-v1-run-0001'
 IDENTITY = {'taskId': TASK, 'runId': RUN}
+FIRST_RUN_ID = 'engine-first-run-0001'
 
 
 class FakeEngine:
@@ -68,8 +69,8 @@ class FakeHandoff:
             raise self.reservation
         return self.reservation
 
-    async def acknowledge(self, task_id, run_id, reference):
-        self.calls.append(('acknowledge', reference))
+    async def acknowledge(self, task_id, run_id, reference, first_run_id):
+        self.calls.append(('acknowledge', reference, first_run_id))
         if isinstance(self.acknowledged, Exception):
             raise self.acknowledged
         return self.acknowledged
@@ -87,9 +88,11 @@ def calls(handoff):
     return [call[0] for call in handoff.calls]
 
 
-def start_event(workflow_type=WORKFLOW_TYPE, queue=QUEUE, identity=None):
+def start_event(workflow_type=WORKFLOW_TYPE, queue=QUEUE, identity=None,
+                first_run_id=FIRST_RUN_ID):
     return StartEvent(workflow_type=workflow_type, task_queue=queue,
-                      input=dict(IDENTITY if identity is None else identity))
+                      input=dict(IDENTITY if identity is None else identity),
+                      first_run_id=first_run_id)
 
 
 def test_fresh_handoff_reserves_before_start_verifies_and_acknowledges():
@@ -103,6 +106,7 @@ def test_fresh_handoff_reserves_before_start_verifies_and_acknowledges():
     assert engine.inspected == [WORKFLOW_ID]
     assert calls(handoff) == ['unconfirmed_for', 'reserve_submission', 'acknowledge']
     assert handoff.calls[1][1] == REFERENCE and handoff.calls[2][1] == REFERENCE
+    assert handoff.calls[2][2] == FIRST_RUN_ID
 
 
 def test_prior_recorded_attempt_is_inspected_without_starting():
@@ -161,6 +165,16 @@ def test_unrelated_collision_is_inspected_and_not_acknowledged(history):
     result = run(handoff, engine)
     assert result == DispatchResult(False, start_requested=True, reason='unconfirmed_start_event_mismatch')
     assert len(engine.starts) == 1
+    assert 'acknowledge' not in calls(handoff)
+
+
+@pytest.mark.parametrize('first_run_id', ['', None, 42, 'x' * 129])
+def test_start_event_without_a_bounded_engine_chain_is_not_acknowledged(first_run_id):
+    handoff = FakeHandoff()
+    engine = FakeEngine(history=start_event(first_run_id=first_run_id))
+    result = run(handoff, engine)
+    assert result == DispatchResult(False, start_requested=True,
+                                    reason='unconfirmed_start_event_mismatch')
     assert 'acknowledge' not in calls(handoff)
 
 

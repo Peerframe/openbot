@@ -56,11 +56,13 @@ class Client:
             raise self.start_error
 
 
-def started_event():
+def started_event(*, workflow_id='workflow-1', first_run_id='engine-first-run-1'):
     attributes = SimpleNamespace(
         workflow_type=SimpleNamespace(name='WorkJourney'),
         task_queue=SimpleNamespace(name='work-queue'),
         input=SimpleNamespace(payloads=['payload']),
+        workflow_id=workflow_id,
+        first_execution_run_id=first_run_id,
     )
     return SimpleNamespace(
         HasField=lambda field: field == 'workflow_execution_started_event_attributes',
@@ -93,7 +95,17 @@ def test_history_decodes_only_immutable_start_event():
     identity = {'taskId': 'task-1', 'runId': 'run-1'}
     client = Client(history=History([started_event()]), decoded=[identity])
     assert asyncio.run(TemporalEnginePort(client).inspect_start('workflow-1')) == StartEvent(
-        'WorkJourney', 'work-queue', identity)
+        'WorkJourney', 'work-queue', identity, 'engine-first-run-1')
+
+
+@pytest.mark.parametrize('event', [
+    started_event(workflow_id='other-workflow'),
+    started_event(first_run_id=''),
+])
+def test_wrong_start_identity_is_not_decoded_or_accepted(event):
+    client = Client(history=History([event]), decoded=[{'taskId': 'task-1'}])
+    with pytest.raises(ValueError, match='Invalid engine start identity'):
+        asyncio.run(TemporalEnginePort(client).inspect_start('workflow-1'))
 
 
 @pytest.mark.parametrize('history,decoded', [

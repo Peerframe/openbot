@@ -28,9 +28,9 @@ class BarrierHandoff:
             await control.fault_barrier('after-reservation')
         return reserved
 
-    async def acknowledge(self, task_id, run_id, reference):
+    async def acknowledge(self, task_id, run_id, reference, first_run_id):
         await control.fault_barrier('after-enqueue')
-        return await self.handoff.acknowledge(task_id, run_id, reference)
+        return await self.handoff.acknowledge(task_id, run_id, reference, first_run_id)
 
 
 async def main():

@@ -170,6 +170,11 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
             return db.execute('SELECT a.state,a.engine_reference FROM work_admissions a '
                 'JOIN work_runs r ON r.id=a.run_id WHERE r.task_id=%s', (task_id,)).fetchone()
 
+    def admitted_first_run(task_id):
+        with psycopg.connect(dsn) as db:
+            return db.execute('SELECT a.engine_first_run_id FROM work_admissions a '
+                'JOIN work_runs r ON r.id=a.run_id WHERE r.task_id=%s', (task_id,)).fetchone()[0]
+
     async def waiting(handle, task_id):
         deadline = time.monotonic() + 30
         while time.monotonic() < deadline:
@@ -267,6 +272,7 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
                 # Duplicate acceptance is verified from history without a live worker.
             dispatch = launch('dispatch.py', cfg); dispatch.done()
             assert handoff(task_id) == ('acknowledged', 'temporal:default:openbot-work-v1-' + run_id)
+            assert admitted_first_run(task_id) == (await handle.describe()).run_id
             first = launch('workflow_worker.py', cfg)
             snap = await waiting(handle, task_id)
             first.kill()
@@ -560,6 +566,7 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
             held = launch('dispatch.py', cfg, 'after-reservation')
             held.wait('after-reservation'); held.kill()
             assert handoff(task_id) == ('pending', None)
+            assert admitted_first_run(task_id) is None
             with psycopg.connect(dsn) as db:
                 submission = db.execute('SELECT submission_reference,submission_attempted_at '
                     'FROM work_admissions WHERE run_id=%s', (run_id,)).fetchone()
@@ -606,6 +613,7 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
                         raise AssertionError('Wrong start identity consumed product authority')
                     worker.kill()
                 assert handoff(task_id) == ('pending', None)
+                assert admitted_first_run(task_id) is None
                 observed = api.snapshot(task_id)
                 assert observed['revision'] == created['revision'] + 1
                 assert observed['events'][-1]['kind'] == 'handoff.submission_attempted'

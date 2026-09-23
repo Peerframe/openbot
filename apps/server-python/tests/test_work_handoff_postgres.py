@@ -10,6 +10,8 @@ from openbot_server.work_handoff import HandoffStore
 from openbot_server.work_store import PostgresWorkStore
 from openbot_server.work_values import InvalidWork, WorkConflict, WorkNotFound
 
+FIRST_RUN_ID = 'engine-first-run-1'
+
 
 async def new(fixture, store):
     return await store.create(
@@ -102,7 +104,7 @@ def test_submission_attempt_is_durable_and_never_returns_as_unsent(fixture):
         handoffs = HandoffStore(store)
         assert {'taskId': task_id, 'runId': run_id} in await handoffs.pending(128)
         with pytest.raises(WorkConflict, match='handoff_not_reserved'):
-            await handoffs.acknowledge(task_id, run_id, 'same-workflow')
+            await handoffs.acknowledge(task_id, run_id, 'same-workflow', FIRST_RUN_ID)
         assert await handoffs.reserve_submission(task_id, run_id, 'same-workflow') is True
         restarted = HandoffStore(PostgresWorkStore(fixture['dsn']))
         assert await restarted.reserve_submission(task_id, run_id, 'same-workflow') is False
@@ -181,13 +183,19 @@ def test_acknowledgement_is_durable_idempotent_and_does_not_start_execution(fixt
         task_id, run_id = task['id'], task['runs'][0]['id']
         reference = 'é' * 128
         assert await HandoffStore(store).reserve_submission(task_id, run_id, reference) is True
-        assert await HandoffStore(store).acknowledge(task_id, run_id, reference) is True
+        assert await HandoffStore(store).acknowledge(task_id, run_id, reference, FIRST_RUN_ID) is True
         restarted = HandoffStore(PostgresWorkStore(fixture['dsn']))
-        assert await restarted.acknowledge(task_id, run_id, reference) is False
+        assert await restarted.acknowledge(task_id, run_id, reference, FIRST_RUN_ID) is False
         with pytest.raises(WorkConflict, match='handoff_reference_changed'):
-            await restarted.acknowledge(task_id, run_id, 'different-engine-execution')
+            await restarted.acknowledge(task_id, run_id, 'different-engine-execution', FIRST_RUN_ID)
+        with pytest.raises(WorkConflict, match='handoff_engine_run_changed'):
+            await restarted.acknowledge(task_id, run_id, reference, 'another-first-run')
         assert recorded(fixture, task) == ('acknowledged', reference, 3)
-        assert acknowledgements(fixture, task_id) == [({'runId': run_id, 'engineReference': reference},)]
+        assert acknowledgements(fixture, task_id) == [({'runId': run_id, 'engineReference': reference,
+                                                        'engineFirstRunId': FIRST_RUN_ID},)]
+        with psycopg.connect(fixture['dsn']) as db:
+            assert db.execute('SELECT engine_first_run_id FROM work_admissions WHERE run_id=%s',
+                              (run_id,)).fetchone() == (FIRST_RUN_ID,)
         snap = await store.snapshot(fixture['token'], task_id)
         assert snap['status'] == 'queued' and snap['runs'][0]['status'] == 'queued'
         assert snap['authorityActive'] and not snap['cancelRequested'] and snap['actions'] == []
@@ -197,11 +205,62 @@ def test_acknowledgement_is_durable_idempotent_and_does_not_start_execution(fixt
     asyncio.run(check())
 
 
+def test_legacy_unbound_chain_after_cancel_cannot_be_attached_to_new_history(fixture):
+    async def check():
+        store = PostgresWorkStore(fixture['dsn']); task = await new(fixture, store)
+        task_id, run_id = task['id'], task['runs'][0]['id']
+        reference = 'temporal:fixture:openbot-work-v1-' + run_id
+        handoff = HandoffStore(store)
+        assert await handoff.reserve_submission(task_id, run_id, reference) is True
+        assert await handoff.acknowledge(task_id, run_id, reference, FIRST_RUN_ID) is True
+        with psycopg.connect(fixture['dsn']) as db:
+            db.execute('UPDATE work_admissions SET engine_first_run_id=NULL WHERE run_id=%s',
+                       (run_id,))
+        await store.cancel(fixture['token'], task_id)
+        before = await store.snapshot(fixture['token'], task_id)
+        with pytest.raises(WorkConflict, match='handoff_engine_run_unbound'):
+            await handoff.acknowledge(task_id, run_id, reference, FIRST_RUN_ID)
+        after = await store.snapshot(fixture['token'], task_id)
+        assert after['revision'] == before['revision']
+        assert after['status'] == before['status'] == 'cancelled'
+        assert not after['authorityActive'] and after['cancelRequested']
+        assert after['usage'] == before['usage']
+        with psycopg.connect(fixture['dsn']) as db:
+            assert db.execute('SELECT engine_first_run_id FROM work_admissions WHERE run_id=%s',
+                              (run_id,)).fetchone() == (None,)
+    asyncio.run(check())
+
+
+def test_legacy_ack_without_submission_fact_cannot_gain_a_chain_identity(fixture):
+    async def check():
+        store = PostgresWorkStore(fixture['dsn']); task = await new(fixture, store)
+        task_id, run_id = task['id'], task['runs'][0]['id']
+        reference = 'temporal:fixture:openbot-work-v1-' + run_id
+        with psycopg.connect(fixture['dsn']) as db:
+            db.execute("UPDATE work_admissions SET state='acknowledged',engine_reference=%s "
+                       'WHERE run_id=%s', (reference, run_id))
+        before = recorded(fixture, task)
+        with pytest.raises(WorkConflict, match='handoff_not_reserved'):
+            await HandoffStore(store).acknowledge(task_id, run_id, reference, FIRST_RUN_ID)
+        assert recorded(fixture, task) == before
+        with psycopg.connect(fixture['dsn']) as db:
+            assert db.execute('SELECT engine_first_run_id FROM work_admissions WHERE run_id=%s',
+                              (run_id,)).fetchone() == (None,)
+    asyncio.run(check())
+
+
 @pytest.mark.parametrize('reference', ['', ' ', None, 42, 'a\0b', 'a' * 257, 'é' * 129, '\ud800'])
 def test_engine_reference_is_nonempty_bounded_utf8(fixture, reference):
     with pytest.raises(InvalidWork):
         asyncio.run(HandoffStore(PostgresWorkStore(fixture['dsn'])).acknowledge(
-            str(uuid4()), str(uuid4()), reference))
+            str(uuid4()), str(uuid4()), reference, FIRST_RUN_ID))
+
+
+@pytest.mark.parametrize('first_run_id', ['', ' ', None, 42, 'a\0b', 'a' * 129, '\ud800'])
+def test_engine_first_run_id_is_nonempty_bounded_utf8(fixture, first_run_id):
+    with pytest.raises(InvalidWork):
+        asyncio.run(HandoffStore(PostgresWorkStore(fixture['dsn'])).acknowledge(
+            str(uuid4()), str(uuid4()), 'temporal:fixture:work', first_run_id))
 
 
 def test_acknowledgement_after_cancellation_records_truth_without_restoring_authority(fixture):
@@ -213,7 +272,7 @@ def test_acknowledgement_after_cancellation_records_truth_without_restoring_auth
         cancelled = await store.cancel(fixture['token'], task_id)
         assert {'taskId': task_id, 'runId': run_id, 'engineReference': 'accepted-before-cancel'} \
             in await HandoffStore(store).unconfirmed()
-        assert await HandoffStore(store).acknowledge(task_id, run_id, 'accepted-before-cancel') is True
+        assert await HandoffStore(store).acknowledge(task_id, run_id, 'accepted-before-cancel', FIRST_RUN_ID) is True
         snap = await store.snapshot(fixture['token'], task_id)
         assert snap['status'] == 'cancelled' and snap['runs'][0]['status'] == 'cancelled'
         assert not snap['authorityActive'] and snap['cancelRequested'] and snap['actions'] == []
@@ -224,7 +283,7 @@ def test_acknowledgement_after_cancellation_records_truth_without_restoring_auth
         with pytest.raises(WorkConflict, match='admission_closed'):
             await store.propose(task_id, run_id, fence=fence, action_key='late', intent={'late': True},
                                 reserved_tokens=0, requires_approval=False)
-        assert await HandoffStore(store).acknowledge(task_id, run_id, 'accepted-before-cancel') is False
+        assert await HandoffStore(store).acknowledge(task_id, run_id, 'accepted-before-cancel', FIRST_RUN_ID) is False
         assert len(acknowledgements(fixture, task_id)) == 1
     asyncio.run(check())
 
@@ -244,7 +303,7 @@ def test_acknowledgement_rejects_cross_task_runs_and_missing_obligations(fixture
             (str(uuid4()), second['runs'][0]['id']),
         ]:
             with pytest.raises(WorkNotFound):
-                await handoffs.acknowledge(task_id, run_id, 'must-not-attach')
+                await handoffs.acknowledge(task_id, run_id, 'must-not-attach', FIRST_RUN_ID)
         assert recorded(fixture, first) == ('pending', None, 1)
         assert recorded(fixture, second) == ('pending', None, 1)
         assert acknowledgements(fixture, first['id']) == acknowledgements(fixture, second['id']) == []
@@ -264,14 +323,14 @@ def test_failed_audit_rolls_back_acceptance_and_revision(fixture):
                        'FOR EACH ROW EXECUTE FUNCTION work_reject_acknowledgement()')
         try:
             with pytest.raises(StoreUnavailable, match='work_storage_unavailable'):
-                await handoffs.acknowledge(task_id, run_id, 'fixture-receipt')
+                await handoffs.acknowledge(task_id, run_id, 'fixture-receipt', FIRST_RUN_ID)
             assert recorded(fixture, task) == ('pending', None, 2)
             assert acknowledgements(fixture, task_id) == []
         finally:
             with psycopg.connect(fixture['dsn']) as db:
                 db.execute('DROP TRIGGER work_reject_acknowledgement ON work_events')
                 db.execute('DROP FUNCTION work_reject_acknowledgement()')
-        assert await handoffs.acknowledge(task_id, run_id, 'fixture-receipt') is True
+        assert await handoffs.acknowledge(task_id, run_id, 'fixture-receipt', FIRST_RUN_ID) is True
         assert recorded(fixture, task) == ('acknowledged', 'fixture-receipt', 3)
     asyncio.run(check())
 
@@ -284,7 +343,8 @@ def test_concurrent_acknowledgements_commit_one_fact(fixture, same_reference):
         assert await HandoffStore(store).reserve_submission(task_id, run_id, 'engine-one') is True
         references = ['engine-one', 'engine-one' if same_reference else 'engine-two']
         outcomes = await asyncio.gather(*(
-            HandoffStore(PostgresWorkStore(fixture['dsn'])).acknowledge(task_id, run_id, reference)
+            HandoffStore(PostgresWorkStore(fixture['dsn'])).acknowledge(
+                task_id, run_id, reference, FIRST_RUN_ID)
             for reference in references), return_exceptions=True)
         assert sum(value is True for value in outcomes) == 1
         if same_reference:
@@ -294,5 +354,6 @@ def test_concurrent_acknowledgements_commit_one_fact(fixture, same_reference):
             assert str(next(value for value in outcomes if isinstance(value, WorkConflict))) == 'handoff_reference_changed'
         winner = references[next(index for index, value in enumerate(outcomes) if value is True)]
         assert recorded(fixture, task) == ('acknowledged', winner, 3)
-        assert acknowledgements(fixture, task_id) == [({'runId': run_id, 'engineReference': winner},)]
+        assert acknowledgements(fixture, task_id) == [({'runId': run_id, 'engineReference': winner,
+                                                        'engineFirstRunId': FIRST_RUN_ID},)]
     asyncio.run(check())

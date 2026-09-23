@@ -49,7 +49,10 @@ class TemporalEnginePort:
         if not event.HasField('workflow_execution_started_event_attributes'):
             return None
         start = event.workflow_execution_started_event_attributes
+        if start.workflow_id != workflow_id or not start.first_execution_run_id:
+            raise ValueError('Invalid engine start identity')
         decoded = await self.client.data_converter.decode(start.input.payloads, [dict])
         if len(decoded) != 1 or type(decoded[0]) is not dict:
             raise ValueError('Invalid engine start input')
-        return StartEvent(start.workflow_type.name, start.task_queue.name, decoded[0])
+        return StartEvent(start.workflow_type.name, start.task_queue.name, decoded[0],
+                          start.first_execution_run_id)

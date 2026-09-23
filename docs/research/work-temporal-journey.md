@@ -193,3 +193,58 @@ On the final adapter candidate, 34 focused control/transport tests and two offli
 tests actually ran. The real public HTTP + temporary PostgreSQL + Temporal development-server
 probe passed four handoff cases and one full recovery case before the final error-scope tightening;
 that last change was exercised by the focused decoder-failure test, not another full probe.
+
+## Bind the accepted engine run chain before worker execution (2026-09-24)
+
+The product admission currently records a Temporal Workflow ID but no engine Run ID. The
+[official identity contract](https://docs.temporal.io/workflow-execution/workflowid-runid)
+distinguishes a Workflow ID from the Run ID of each execution and identifies a Continue-As-New
+chain by its `first_execution_run_id`; Workflow ID rejection is limited by retained history.
+The [official event reference](https://docs.temporal.io/references/events) records that first
+Run ID on `WorkflowExecutionStarted`. In the pinned Temporal Python SDK 1.33.0, the start-event
+protobuf and `workflow.info().first_execution_run_id` expose this field. A disposable local
+Temporal Server 1.32.0 probe confirmed a first start event carried a nonempty
+`first_execution_run_id` equal to `original_execution_run_id`, while the SDK's returned handle
+had no bound Run ID. No upstream source is copied.
+
+Decision: the dispatcher must persist the verified **first execution Run ID** together with the
+acknowledged Workflow ID. A trusted worker activity must compare the same first Run ID supplied
+by trusted workflow code from `workflow.info()` with the admission, and independently read its
+current workflow Run ID from `activity.info()`. Once the chain is acknowledged, this admits its
+Continue-As-New runs and rejects a later same-ID chain after retention. It does not yet prove an
+initially unknown submission when its history expires before acknowledgement: a different
+same-ID chain could be mistaken for the original. Before production Worker activation, bind a
+durable submission-attempt nonce to immutable Temporal start facts and verify it on inspection,
+or establish equivalent provenance. An old acknowledged row
+without this new fact remains unusable for worker execution; ordinary inspection of current
+same-ID history cannot prove it belongs to the original chain after retention, so automatic
+redelivery cannot backfill it. A separately reviewed operator recovery path would need independent
+historical proof. A Reset changes the chain's first Run ID
+and therefore fails closed pending a separately reviewed recovery policy. The current Run ID is
+correlation only; neither ID grants Task authority, a claim, or permission for model/tool effects.
+
+The additive `0031_work_engine_chain` migration keeps older acknowledgements nullable but
+constrains new values. Product `dispatch_one` now accepts only a matching start event with a
+nonempty bounded first Run ID; `HandoffStore.acknowledge` writes the Workflow reference and first
+Run ID atomically. Repeated identical acknowledgement is read-only. An older acknowledgement
+with a missing first Run ID or missing submission fact cannot be automatically attached to
+today's same-ID history. The new read-only `work_engine_binding` gate also requires an active
+Task, an open Run, the exact acknowledged reference and the accepted first Run ID. This gate is
+not yet wired into a production Worker and its returned record is not an authority token.
+
+The dsh-produced initial binding candidate passed 226 owned PostgreSQL/HTTP control checks only
+after Codex independently ran them. Codex then identified the Workflow ID retention gap, added
+the chain fact and hardened the gate. The final owned PostgreSQL/HTTP control fixture passed 244
+checks, including the added legacy-row regression. The normal Python control check separately
+passed 840 checks with 245 PostgreSQL/optional-SDK checks skipped outside their owned fixture.
+Focused dispatcher/Temporal-adapter tests passed 40 checks and the two offline dispatcher tests
+passed. Four public HTTP/PostgreSQL/development-Temporal handoff cases and one recovery case
+passed after the migration; the later probe revision independently verified that rejected
+handoffs have no first Run ID and a successful acknowledgement stores the same Run ID as Temporal's
+workflow description. The recovery case still performed one synthetic external write and one
+lookup. No real product Worker, multi-Run continuation, untrusted Linux execution or default
+switch was qualified by these tests.
+The required `npm run check` passed after an initial sandbox-denied Turbo cache-log replay was
+rerun with the required filesystem access; 29 of 31 Turbo lint/typecheck/test tasks and all 18
+build tasks hit cache. Documentation, research, migration, security and other prerequisite checks
+actually ran. No production data, external service or default dispatch was changed.

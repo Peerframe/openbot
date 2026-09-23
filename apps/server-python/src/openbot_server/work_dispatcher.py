@@ -33,6 +33,7 @@ class StartEvent:
     workflow_type: str
     task_queue: str
     input: dict
+    first_run_id: str
 
 
 @dataclass(frozen=True)
@@ -125,9 +126,13 @@ async def _confirm(task_id, run_id, reference, workflow_id, workflow_type, queue
     if event is None:
         # Retention or a lost first response leaves the durable reservation unresolved.
         return DispatchResult(False, start_requested, 'unconfirmed_missing_history')
+    try:
+        text(getattr(event, 'first_run_id', None), 128)
+    except InvalidWork:
+        return DispatchResult(False, start_requested, 'unconfirmed_start_event_mismatch')
     if (getattr(event, 'workflow_type', None) != workflow_type
             or getattr(event, 'task_queue', None) != queue
             or getattr(event, 'input', None) != identity):
         return DispatchResult(False, start_requested, 'unconfirmed_start_event_mismatch')
-    recorded = await handoff.acknowledge(task_id, run_id, reference)
+    recorded = await handoff.acknowledge(task_id, run_id, reference, event.first_run_id)
     return DispatchResult(True, start_requested, 'acknowledged' if recorded else 'already_acknowledged')
