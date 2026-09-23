@@ -25,9 +25,11 @@ invented second wire protocol or a dependency addition.
 - postgres-task-records.ts and agent-observations.ts define Run/usage projection. Channel run reads
   return the latest 50, with full IDs and optional fields. Stored unknown status/profile values
   must not acquire execution authority. Model usage is reported evidence, not billing or a grant.
-- native run cancellation, delegation, completion and channel member removal share PostgreSQL
-  advisory namespace 731; cancellation includes active descendant runs and pending approvals.
-  Their lock order, status predicates and callback timing must be reviewed together before porting.
+- Native delegation, completion, root claims and channel member removal coordinate through
+  PostgreSQL advisory namespace 731. The existing cancelWithDescendants instead locks the target
+  Run row, then updates active descendants; it does not acquire the channel advisory lock itself.
+  Member removal expires pending SQL approvals, while native plugin cancellation has separate
+  service callbacks. Preserve these distinctions when reviewing lock order and commit timing.
 - The current HTTP submission publishes committed events and invokes dispatch after persistence.
   Python must select one dispatcher per run and never schedule before commit. A successful queued
   write alone cannot establish that a task executed or survived a restart.
@@ -99,3 +101,65 @@ file-reference authority are rejected. Valid nullable usage survives HTTP serial
 upstream source was copied. Only existing OpenBot code was ported; prior Zod notices are retained.
 Full `npm run check` also passes. This proves local queued-state compatibility, not execution,
 recovery, live models or hosted CI.
+
+
+Projection review correction: the current schema already includes runs_status_valid and
+runs_execution_profile_valid CHECK constraints. Strict Python projection tests defend malformed
+read-port values; they do not establish that those values can be inserted into the accepted
+PostgreSQL schema. A prior assisted source comment claiming these columns had no CHECK was wrong
+and has been corrected without changing behavior.
+
+
+## S2b persisted execution authority review (2026-09-23)
+
+This is the next implementation boundary after process supervision, using the same pinned
+PostgreSQL 17.11/Psycopg 3.3.6 APIs reviewed above; no new dependency or SQL migration. The source
+reference is `postgres-agent-store.ts`, `postgres-agent-collaboration.ts`, `agent-steering.ts` and
+`channel-interactions-store.ts` at 1057104. Only existing OpenBot application semantics are ported;
+no upstream source is copied. The intended unit is the persisted lifecycle with actual database
+race tests, not a second runtime loop or an in-memory task engine.
+
+### Authority and lock boundaries
+
+- Background execution is authorized by persisted Run identity, native profile, current membership,
+  persisted ancestry and the selected settings/skill/memory revisions. It must not depend on a
+  browser cookie surviving: logout is not task cancellation. Owner commands still require the
+  existing locked session transaction and final expiry check. Share bounded connection mechanics
+  if needed, but never inherit or silently bypass Owner authorization in public command services.
+- Queued root claims serialize against the six-root global advisory lock `(731, 6)`, then the
+  channel hash advisory lock; current membership is held under SHARE, and the exact queued
+  identity/profile/node/time predicate is updated once with RUN_STARTED in the same transaction.
+  A model cannot choose an executor or acquire a Worker computer profile.
+- Ancestry comes from stored rows, not optional caller provenance. Re-read at most three levels,
+  same channel, current native running state and each Bot membership. Acquire required ancestor
+  row locks root-to-leaf; recheck state after obtaining locks. Completion shares the channel lease
+  with delegation so a child cannot appear after the unfinished-child check.
+- Model usage advances by compare-and-set on the previous step count and commits its audit before
+  the model result can expose a tool intent. Unknown token counts remain null. Progress and usage
+  cannot revive terminal rows; competing claims/usage/completion must have at most one winner.
+- Owner corrections lock the target Run, accept only active native tasks, bound the history to
+  eight trimmed 1..4000-character instructions and retain existing event names/identities. Final
+  completion locks that same row and refuses if any committed correction is missing from the
+  host's applied IDs. A newer correction must not vanish between model return and SQL commit.
+- Cancellation/failure must settle active descendants and report committed records before process
+  callbacks run. SQL approval expiry and plugin-service pending calls remain different owners.
+  Do not report a cancelled external side effect as undone. Scope checks after awaited ports
+  block late results; uncertain effects must not be retried by a cleanup path.
+
+### Completion and retained assets
+
+The final publication transaction must include the Bot reply, Run terminal state, content-bound
+audits, accepted artifacts and reviewed memory/skill reference checks. Preserve knowledge
+proposal validation/caps and revision conflicts. A text-only internal test is not evidence that
+artifact/learning completion has migrated, and cannot select Python as the default dispatcher.
+No synthetic empty replacement for those retained features may be exposed to the client.
+
+### Required actual-fixture evidence
+
+Use the existing owned PostgreSQL schema/HTTP fixture: concurrent claims and channel exclusion,
+audit-failure rollback, revision/Owner revocation, cancellation against usage/final publication,
+correction against completion, ancestor cancellation and membership removal. Persist the real
+SDK host result through the control store with deterministic model/tool ports. Compare projected
+records with the existing TypeScript readers. A database commit and terminal message must occur
+once; test that a losing operation creates neither a reply nor a success audit. Restart recovery,
+external provider success and production switching remain separate gates.

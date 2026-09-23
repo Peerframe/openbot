@@ -145,6 +145,7 @@ try {
       "create",
       "--name",
       runnerName,
+      "--init",
       "--platform",
       "linux/amd64",
       "--network",

@@ -519,8 +519,9 @@ See [design and acceptance](research/python-task-authority.md).
 
 ## Python control runtime supervision (2026-09-23)
 
-Design selection: CPython 3.12.13 stdlib asyncio/subprocess/json and a thin adapter for the accepted
-internal runtime profile; no new dependency or copied upstream source. Exact source, tests, license,
-known cancellation/teardown issues and bounded POSIX acceptance gates are recorded in
-[the supervision review](research/python-control-runtime-supervision.md). Implementation and
-qualification are pending; this entry does not claim a production runtime switch.
+Reuse CPython 3.12.13 stdlib Popen, asyncio pipe transports/flow control and json behind the accepted
+internal runtime profile; no new dependency or copied upstream source. The PID is owned before
+any asynchronous pipe attachment, so cancellation cannot lose an early process group. Exact
+source, tests, license, cancellation corrections and qualification evidence are recorded in
+[the supervision review](research/python-control-runtime-supervision.md). The control host/process
+seam is locally verified; persisted execution and production selection remain pending.

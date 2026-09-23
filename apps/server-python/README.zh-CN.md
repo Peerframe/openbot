@@ -111,6 +111,27 @@ Bot 行锁保证并发只创建一个私聊，重复加入不重复写审计。�
 用量仅是报告的证据，不代表权限或账单。标题保留原 80 个 UTF-16 单位上限和 77 单位前缀加省略号，截断不切开 Unicode 字符，修复旧实现的孤立代理项边界。
 详见[任务研究](../../docs/research/python-task-authority.md)。
 
+## 控制层执行适配器（S2b-2 内部边界）
+
+独立的 `runtime_host`、`runtime_ports`、`runtime_executor` 模块把权限、模型选择、工具执行器、预算、用量和最终结果校验保留在控制层。
+SDK Worker 只接收既有进程协议。这些模块尚未接入任务 HTTP 派发：队列执行、数据库终态和审批集成仍未完成。
+确定性模型端口用于测试，不代表真实模型服务已迁移。
+
+控制层在异步边界复查权限，执行前消费准确匹配的工具意图，并将返回的历史与真实模型/工具记录对照。
+重放、伪造工具观察、失败或取消后的成功都会被拒绝。最终文本仍需 SQL 服务单独提交完成状态。
+进程适配器在连接管道前即持有 PID，取消会先完成进程组清理再返回。
+本地包测试 651 项通过，另在独立数据库夹具中通过 45 项；83 项进程/真实 SDK 测试和 48 项实际 TS/Python 协议对照通过。
+这不代表数据库任务执行已接通，详见[监督层研究](../../docs/research/python-control-runtime-supervision.md)。
+
+真实 Worker 测试需要先在 `apps/agent-runtime-python` 中建立独立虚拟环境。
+缺少该环境或在 Windows 上时，`tests/test_runtime_sdk_integration.py` 会跳过；跳过不代表互操作已验证。
+既有 `npm run test:runtime:linux` 夹具会在固定 Linux 镜像中安装两套隔离的锁定环境，并要求真实 Worker 存在。
+控制层测试不继承 TS 测试阶段使用的合成数据库凭据。
+本地 Linux/amd64 夹具通过 306 项控制层测试，以及既有 418 项 SDK 和 222 项 TS/PG 测试；使用 Docker init 回收孤立后代进程。
+托管 CI 已接线，但这次未推送修改尚无托管运行结果。
+
+副作用适配器仍须在派发时完成自己的原子权限/审批检查，并配合取消；宿主的前后检查不能撤销已经发生的外部操作。
+
 ## 复用与许可证
 
 参见[读取研究](../../docs/research/python-control-read-slice.md)、[认证研究](../../docs/research/python-owner-auth.md)、

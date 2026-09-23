@@ -148,6 +148,33 @@ token counts. Usage is reported evidence, not permission or billing. Titles reta
 80 UTF-16-unit bound; the 77-unit prefix plus ellipsis never splits a Unicode scalar. This fixes
 the narrow legacy invalid-surrogate case. See [task research](../../docs/research/python-task-authority.md).
 
+## Control-owned runtime adapter (S2b-2 internal seam)
+
+The separate `runtime_host`, `runtime_ports` and `runtime_executor` modules retain authority,
+model resolution, tool executors, budgets, usage and final-result checks in control. The installed
+SDK worker receives only the existing process profile. These modules are not wired to the task
+HTTP dispatcher yet: queued task execution, SQL terminal state and approval integration remain
+unfinished. A deterministic model port is test evidence, not live-provider support.
+
+The host rechecks authority around asynchronous boundaries, consumes exact admitted tool intents
+before side effects, and compares returned history with the actual model/tool transcript. It
+rejects replay, invented tool observations and success after a latched failure or cancellation.
+Effect adapters must enforce their own atomic authority/approval at dispatch and cooperate with
+cancellation; host checks cannot undo external effects. Returned final text is provisional until
+the SQL service separately commits completion. The process adapter owns its PID before connecting
+pipes and completes group cleanup before propagating cancellation. Local package validation has
+651 passing cases, with the 45 database cases verified separately; 83 process/actual-SDK cases and
+48 actual TS/Python profile comparisons pass. These do not establish persisted task execution; see
+[supervision research](../../docs/research/python-control-runtime-supervision.md).
+
+For the real-worker control tests, first bootstrap `apps/agent-runtime-python` in its own venv.
+`tests/test_runtime_sdk_integration.py` skips when that environment is absent or on Windows; a
+skip does not establish interoperability. The existing `npm run test:runtime:linux` fixture
+installs both isolated locked environments in the pinned Linux image and requires the real worker.
+The control tests do not inherit the synthetic database credential used by the TS test phase.
+The local Linux/amd64 fixture passed 306 control cases, plus the existing 418 SDK and 222 TS/PG
+cases. It uses Docker init to reap orphan descendants. Hosted CI is wired but not yet run for this change.
+
 ## Reuse and licenses
 
 See [read research](../../docs/research/python-control-read-slice.md) and

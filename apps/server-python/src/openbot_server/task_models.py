@@ -3,9 +3,9 @@
 Ported from ``postgres-task-records.ts`` (``toRun``) and ``agent-observations.ts``
 (``runModelUsageSchema``). Three behaviours are deliberate rather than accidental:
 
-* Stored ``status``/``execution_profile`` are validated, not cast. The TypeScript store writes
-  ``row.status as Run["status"]``; both columns are plain ``text`` with no CHECK, so a legacy row
-  could otherwise hand a reader a state no executor knows. Stored unknown state fails closed.
+* ``status``/``execution_profile`` are validated, not cast. Current PostgreSQL CHECK constraints
+  already restrict both columns. This adapter additionally rejects malformed in-memory/read-port
+  values; the TypeScript projection uses casts. No corrupt-current-database parity is claimed.
 * Optional fields reproduce ``toRun`` exactly, including the difference between its ``?.`` and
   truthiness spreads: ``error_code`` is dropped when empty, ``source_message_id`` is kept.
 * ``model_usage`` is reported evidence, never a grant or a bill. An unreadable value is omitted
