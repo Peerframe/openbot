@@ -388,6 +388,8 @@ jobs:
         run: apps/server-python/scripts/bootstrap.sh
         env:
           OPENBOT_CONTROL_PYTHON: python3.12
+      - name: Bootstrap the separate SDK for persisted control integration
+        run: apps/agent-runtime-python/scripts/bootstrap.sh
       - name: Verify Python control models and HTTP boundaries
         run: apps/server-python/scripts/check.sh -q
       - name: Compare Python and TypeScript against owned PostgreSQL

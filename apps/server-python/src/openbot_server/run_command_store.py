@@ -1,6 +1,5 @@
 """Owner task commands: state and audit commit together before any process notification."""
 from dataclasses import dataclass
-import json
 from uuid import uuid4
 
 import psycopg
@@ -9,8 +8,8 @@ from psycopg.types.json import Jsonb
 from .authority import OwnerTransactions
 from .database import StoreUnavailable
 from .run_commands import SteeringInstruction, parse_steering, project_steering
-from .run_query import _BYTE_SIZE, _COLUMNS, _TEXT_COLUMNS
-from .task_models import Run, project_run
+from .run_query import read_run_records
+from .task_models import Run
 from .task_store import TooManyAttachments, attachment_ids
 
 
@@ -34,18 +33,6 @@ class SteeringAttachmentRefused(Exception):
 class CancelledRuns:
     run: Run
     descendants: tuple[Run, ...]
-
-
-# Use the same raw-text budget as the read projection, before any stored text crosses the wire.
-_BOUNDED_COLUMNS = ','.join(
-    f'CASE WHEN s.byte_count<=4194304 THEN s.{name} ELSE NULL END AS {name}'
-    for name in _TEXT_COLUMNS)
-_CANCELLED_QUERY = (
-    f'WITH selected AS MATERIALIZED (SELECT {_COLUMNS} FROM runs WHERE id=ANY(%s)), '
-    f'sized AS (SELECT selected.*,sum({_BYTE_SIZE}+coalesce(octet_length(model_usage::text)::bigint,0)) '
-    'OVER () AS byte_count FROM selected) '
-    f'SELECT {_BOUNDED_COLUMNS},s.created_at,s.updated_at,s.byte_count>4194304 AS oversized, '
-    'CASE WHEN s.byte_count<=4194304 THEN s.model_usage ELSE NULL END AS model_usage FROM sized s')
 
 
 async def read_steering(connection, run) -> list[SteeringInstruction]:
@@ -112,15 +99,7 @@ class PostgresRunCommandStore:
                             "INSERT INTO run_events(id,run_id,channel_id,bot_id,type,payload) "
                             "VALUES (%s,%s,%s,%s,'RUN_CANCELLED',%s)",
                             (str(uuid4()), item['id'], item['channel_id'], item['bot_id'], Jsonb(payload)))
-                cursor = await connection.execute(_CANCELLED_QUERY, ([run_id, *(item['id'] for item in changed)],))
-                projected = await cursor.fetchall()
-                if any(item['oversized'] for item in projected):
-                    raise StoreUnavailable('cancellation_projection_limit')
-                records = {item['id']: project_run(item) for item in projected}
-                # Escaping and JSON key overhead are bounded too; rollback all state if exceeded.
-                if len(json.dumps([r.model_dump(mode='json', exclude_none=True) for r in records.values()],
-                                  ensure_ascii=False).encode('utf-8')) > 4194304:
-                    raise StoreUnavailable('cancellation_projection_limit')
+                records = await read_run_records(connection, [run_id, *(item['id'] for item in changed)])
                 return CancelledRuns(records[run_id], tuple(records[item['id']] for item in changed))
         except (psycopg.Error, TimeoutError, ValueError, KeyError, TypeError):
             raise StoreUnavailable('run_command_storage_unavailable') from None

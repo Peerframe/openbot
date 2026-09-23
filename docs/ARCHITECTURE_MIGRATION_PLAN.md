@@ -35,7 +35,7 @@ The old TypeScript business backend is transitional, not a second permanent prod
 | Stage | Deliverable | Exit evidence | State |
 | --- | --- | --- | --- |
 | S1 — Reconcile and freeze preservation scope | Source-backed capability/retirement matrix, both migration histories, data compatibility risks, target API/event ownership, reversible source checkpoints | Every target capability mapped to current evidence and an owning stage; divergent SQL histories detected; no private data copied | Complete (source scope; no data cutover) |
-| S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a identity/authentication slice accepted locally; S2b queued submission/read and control host/process seam accepted locally; persisted execution and approvals next |
+| S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a identity/authentication slice accepted locally; S2b queued submission/read and control host/process seam accepted locally; persisted lifecycle accepted locally; tool/approval and dispatcher integration next |
 | S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | Pending |
 | S4 — Persistent execution and deliverables | Linux browser sessions, human takeover, reviewed autonomous browse/form/upload/download, persistent workspace, restricted commands, isolated code changes and document tools | Real local fixture site with separate Bot profiles; approved write, takeover, cancel and restart; exported files open/render; isolated repository produces a tested patch | Pending |
 | S5 — Memory, skills and learning evaluation | Scoped relevant retrieval, candidate lessons/skills from correction and supported teaching, version/review/test/disable/rollback; separate evaluation tooling | A correction becomes a reviewed skill, improves a held-out task, and can be revoked; provenance/scope/deletion preserved; no authority increase. Preserve Hermes attribution | Pending |
@@ -134,8 +134,15 @@ cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnec
   refusal, bounds and TS cancellation/steering readback. Final Python package: 728 passed, 71
   fixture-only skips independently verified; 34 actual Zod command comparisons and full npm check passed. This is persisted command authority;
   process/plugin notifications, execution dispatch, completion and realtime remain unfinished.
-- The S2a identity/authentication journey is locally accepted. Next is S2b-2 persisted execution
-  (claim, usage, correction, final publication, failure/cancellation) and S2b-3 tool/approval authority, following the [dependency review](research/python-task-authority.md).
+- S2b persisted lifecycle: 95 combined PostgreSQL/HTTP/SDK cases pass, including 24 new claim,
+  context, usage, failure, completion and real-worker cases. Completion retains files, revision-bound
+  memory/skills, pending proposals and Owner corrections. Actual TS reads the result/context and
+  owned file digests match committed metadata. DeepSeek supplied pure values/tests and the actual
+  40-case TS comparator; Root implemented SQL/integration and hardened nested metadata validation.
+  Final acceptance: 766 package cases, 95 separately executed fixture cases, all paired contracts
+  and full npm check pass. Public task dispatch and real tool/model/approval composition remain unfinished.
+- The S2a identity/authentication journey is locally accepted. Next is S2b tool/model/approval
+  authority and dispatcher integration, following the [dependency review](research/python-task-authority.md).
   The aggregate profile read includes task, approval, artifact, skill and memory projections and
   moves with S2c client parity; do not publish empty substitutes. Task submission is atomic in S2b-1; member removal remains with S2b cancellation: the
   existing source atomically creates runs with messages and cancels runs/approvals when removing

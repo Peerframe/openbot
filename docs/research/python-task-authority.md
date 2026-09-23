@@ -224,3 +224,71 @@ lone surrogates, and wrote the final comparator. All 34 actual installed Zod/Pyt
 agree, including strict unknown-key refusal, ECMAScript trim, astral/combining boundaries and
 lone-surrogate value parity. The trusted store independently rejects non-UTF-8 text. The comparator
 is wired into the existing combined control gate. No upstream source was copied or dependency added.
+
+
+## Persisted runtime lifecycle implementation boundary — 2026-09-23
+
+Baseline e942321; this implements the full existing native Run-store lifecycle, including final
+publication with retained artifact metadata, skill/memory revision checks and optional knowledge
+proposal audits. Reuse the same pinned Psycopg/PostgreSQL/Pydantic and original OpenBot MIT source
+reviewed above. No dependency or SQL migration. Share only bounded SQL connection mechanics with
+OwnerTransactions: background Run authority never inherits an Owner cookie requirement, while
+HTTP writers must retain locked session authorization and final expiry recheck.
+
+Port persisted claim/scope/usage/progress/correction/failure/complete, and freeze the same channel
+history cutoff used by the TS executor. All invocation identity is bound by trusted composition;
+a worker receives neither DSN nor storage handle. Claims are root-only and respect the six-root
+lease, per-Bot channel exclusion, membership and startup cutoff. Mutations recheck persisted
+ancestry root-to-leaf; lock ancestors SHARE, target UPDATE, and current membership SHARE before
+writing so cancellation/revocation wins atomically. Failed/revoked tasks can still be settled by
+failure without resurrecting state or requiring membership to remain. Never retry uncertain writes.
+
+Completion validates final UTF16/text bounds, at most two trusted persisted Markdown artifacts,
+up to eight memory references and two distinct skill references, all submitted correction IDs,
+and the existing pending knowledge proposal cap50. Completion includes all retained asset options;
+it is not a text-only replacement. Optional proposal saturation produces a SKIPPED audit and cannot
+roll back otherwise valid delivery. Reject unsupported/unreviewed skill dependencies/capabilities,
+stale revisions or unfinished children under the existing channel creation lease. Store metadata
+validation does not establish that bytes exist: actual file content/digest comes from a trusted
+storage port and must be exercised using owned fixture files before claiming delivery.
+
+The maintained standard APIs already reviewed supply transaction/locking/JSON behavior. The local
+adapter ports only existing OpenBot policies. Sensitive-text patterns remain a heuristic, not a
+universal secret detector. Pure values and exact failure text will be compared with actual compiled
+TypeScript before SQL acceptance. Use real database races and the separately installed SDK worker;
+no private models, production switching or synthetic empty aggregate response is introduced.
+
+
+The Python adapter additionally validates persisted root/delegator consistency and fixes the
+provider/model identity across usage steps. These are explicit fail-closed corrupt-state checks;
+the legacy TS store validates step monotonicity without that additional identity predicate. Normal
+existing runs retain the same contract. Claim never starts a delegated row as a new root.
+The combined PostgreSQL gate now requires the separately bootstrapped SDK interpreter rather
+than allowing that integration to silently skip; the existing Linux CI lane bootstraps both.
+
+
+## Persisted lifecycle local acceptance
+
+The final locked control package passed 766 tests; its 95 fixture-only skips were independently
+executed in the owned PostgreSQL/HTTP/real-SDK gate and all passed. The final combined gate also
+passed 129 identity inputs, 60 task contracts, 48 wire cases, 34 Owner commands and 40 execution
+value comparisons against actual TypeScript/Zod, plus all 20 public failure messages. Full npm
+check passed. No new dependencies, schema migrations or default backend selection were added.
+
+The 24 new fixture cases prove concurrent claim/usage/completion exclusivity, six-root and channel
+limits, persisted ancestry, logout independence, membership/revision/cancellation races, failure
+cascade, new correction refusal, final audit rollback, proposal saturation and context cutoffs.
+Four include a real separately installed SDK subprocess and database ports: one retains actual
+report bytes, reviewed references, a pending proposal and corrections; others refuse late model
+results after revocation/cancellation or a new correction after the worker returns. Model responses
+are deterministic fixture data, not live-provider evidence. TS reads completion/context and the
+owned file digest matches committed metadata. SQL rollback deliberately does not claim cleanup of
+pre-existing bytes; the production file adapter still owns that responsibility.
+
+WorkBuddy DeepSeek supplied the value module, focused cases and compiled-TS comparator. Root
+stopped additional mutation experiments outside the bounded task, inspected the draft, and fixed
+recursive metadata validation before JSON encoding, strict nested types and revalidation of
+already-created mutable models. It also corrected inaccurate comments about pending proposals
+and escaped lone-surrogate JSON. Root owns all SQL/runtime integration, real fixtures and acceptance.
+The worker is stopped and the stale unsent review draft was cleared in the UI. This delivers the
+persisted lifecycle, not production dispatch/tool/approval integration or the entire migration.

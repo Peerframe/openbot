@@ -26,6 +26,7 @@ installs dependencies on startup.
 From the repository root, run the owned disposable database journey:
 
 ```sh
+apps/agent-runtime-python/scripts/bootstrap.sh
 npm run test:control:python
 ```
 
@@ -36,13 +37,13 @@ channels. Legacy membership order is unspecified, so only member IDs are compare
 returns them sorted. Other fixture fields match exactly. Both implementations recognize sessions
 issued by the other, and revocation takes effect across implementations.
 
-Seventy-one database/HTTP checks cover reads, expiry/revocation, enforced read-only transactions, exact
+Ninety-five database/HTTP/SDK checks cover reads, expiry/revocation, enforced read-only transactions, exact
 schema history, invalid stored Bot status, concurrent persistent throttling, transactional auth
 failure without a success cookie, and real loopback processes with bounded SIGTERM shutdown.
 Identity checks also exercise exact audit/evolution payloads, missing members, concurrent name
 conflicts, rollback on audit failure, revocation during a row-lock wait, expiry during audit waiting,
 and real HTTP creation. Task cases cover multi-recipient atomicity, reply/member scope, concurrent source timestamps, audit rollback and bounded Run reads. An additional 60-case differential executes the actual TS and Python routing/Run projections. A separate 129-case input differential compares installed Zod against Python; 34 additional cases compare Owner run commands. Command database cases cover descendant cancellation, corrections, actual lock contention and rollback. Without the explicit fixture,
-package checks skip the seventy-one integration cases; skips are not acceptance. Two upstream test-client
+package checks skip the ninety-five integration cases; skips are not acceptance. Two upstream test-client
 deprecation warnings remain at the reviewed pins. The Linux CI job includes these checks; a hosted
 run is separate evidence and has not yet run for this local change.
 
@@ -155,8 +156,7 @@ JSON object (128-byte limit) and POST `/api/v1/runs/{run_id}/steer` with a stric
 field (18,000-byte limit). Both require a current Owner session and allowed origin. Steering
 requires a UUID task ID, trims 1–4000 Unicode code points, refuses attachment markers and accepts
 at most eight instructions for a native queued/running task whose Bot remains a channel member.
-It returns 202 with `steering` only after the audit transaction commits. This records an instruction;
-it does not yet execute it. Runtime completion must later check all committed steering IDs.
+It returns 202 with `steering` only after the audit transaction commits. This endpoint records an instruction; the HTTP reference still has no dispatcher. The persisted completion adapter checks all committed steering IDs before publication.
 
 Cancellation returns the committed `run`, stops its active native descendants in the same channel,
 and records exact Owner/ancestor audits atomically. Repeating cancellation adds no duplicate audit.
@@ -196,6 +196,31 @@ installs both isolated locked environments in the pinned Linux image and require
 The control tests do not inherit the synthetic database credential used by the TS test phase.
 The local Linux/amd64 fixture passed 306 control cases, plus the existing 418 SDK and 222 TS/PG
 cases. It uses Docker init to reap orphan descendants. Hosted CI is wired but not yet run for this change.
+
+## Persisted execution lifecycle
+
+`PostgresExecutionStore` owns background claim, current-state checks, frozen channel context,
+usage, progress, correction reads, failure and atomic completion. It uses bounded PostgreSQL
+transactions without an Owner cookie; every successful mutation rechecks persisted Run identity,
+ancestry and channel membership. HTTP commands retain their separate locked Owner authorization.
+Claims preserve the six-root and per-Bot/channel limits. Usage advances by one step and retains
+unknown token counts. Failure cannot overwrite cancellation and settles eligible descendants.
+
+Completion retains up to two Markdown artifacts, eight memory references and two reviewed skill
+references. It verifies current revisions/digests and all Owner corrections before committing the
+Bot reply, artifact metadata, terminal state and audits together. A lesson is stored only as a
+pending proposal; reaching the existing 50-pending cap does not undo delivery. The trusted file
+port owns bytes and orphan cleanup; SQL metadata alone cannot prove a physical file exists.
+
+The owned acceptance gate now includes 24 new lifecycle/SDK checks (95 total): real contention,
+revocation/cancel versus completion, exact-once publication, audit rollback, context cutoff and
+actual TS readback. Four cases run the separately installed SDK subprocess against real database
+ports and deterministic model responses, including a real report file and late-result refusals.
+The value comparator adds 40 actual TS cases and verifies all 20 failure messages.
+The CI lane bootstraps both interpreters; the combined gate refuses a missing SDK environment.
+
+This is an internal control adapter. Public task dispatch, production tool/model/approval ports,
+realtime events and restart recovery remain unfinished. The default backend is unchanged.
 
 ## Reuse and licenses
 

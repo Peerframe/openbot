@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { randomBytes } from "node:crypto";
-import { rmSync } from "node:fs";
+import { createHash, randomBytes } from "node:crypto";
+import { existsSync, rmSync } from "node:fs";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -60,6 +60,10 @@ for (const signal of ["SIGINT", "SIGTERM"])
     process.exit(signal === "SIGINT" ? 130 : 143);
   });
 try {
+  assert(
+    existsSync(join(root, "apps/agent-runtime-python/.venv/bin/python")),
+    "Bootstrap apps/agent-runtime-python before the persisted SDK/control acceptance gate.",
+  );
   run("docker", ["info", "--format", "{{.ServerVersion}}"]);
   run("docker", [
     "create",
@@ -239,6 +243,9 @@ try {
       profileResult: join(fixtureDirectory, "profile-result.json"),
       taskResult: join(fixtureDirectory, "task-result.json"),
       runCommandResult: join(fixtureDirectory, "run-command-result.json"),
+      contextResult: join(fixtureDirectory, "context-result.json"),
+      executionResult: join(fixtureDirectory, "execution-result.json"),
+      artifactDirectory: join(fixtureDirectory, "artifacts"),
     }),
     {
       mode: 0o600,
@@ -257,6 +264,8 @@ try {
       "tests/test_profile_postgres.py",
       "tests/test_task_postgres.py",
       "tests/test_run_command_postgres.py",
+      "tests/test_execution_postgres.py",
+      "tests/test_execution_sdk_postgres.py",
       "-q",
     ],
     {
@@ -355,6 +364,41 @@ try {
     [runCommandResult.steering],
     "TS must read a committed Python Owner instruction identically.",
   );
+  const contextResult = JSON.parse(
+    await readFile(join(fixtureDirectory, "context-result.json"), "utf8"),
+  );
+  assert.deepEqual(
+    await native.context(contextResult.run),
+    contextResult.context,
+    "Actual TS context must use the same cutoff, reference priority and UTF-8 budget.",
+  );
+  assert.deepEqual(await native.tasks(contextResult.run), contextResult.tasks);
+  const executionResult = JSON.parse(
+    await readFile(join(fixtureDirectory, "execution-result.json"), "utf8"),
+  );
+  assert.deepEqual(
+    await native.lookup(executionResult.run.id),
+    executionResult.run,
+    "TS must read the full Python completion identically.",
+  );
+  const delivery = await app.request(`/api/v1/channels/${executionResult.run.channelId}/messages`, {
+    headers: { Cookie: `openbot_session=${token}` },
+  });
+  assert.equal(delivery.status, 200);
+  assert.deepEqual(
+    (await delivery.json()).messages.find((value) => value.id === executionResult.message.id),
+    executionResult.message,
+    "TS must read the Python Bot reply identically.",
+  );
+  const storedArtifacts =
+    await database.client`SELECT id,run_id,storage_key,sha256,metadata FROM artifacts WHERE run_id=${executionResult.run.id}`;
+  assert.equal(storedArtifacts.length, 1);
+  assert.equal(storedArtifacts[0].storage_key, executionResult.storageKey);
+  const bytes = await readFile(join(fixtureDirectory, "artifacts", executionResult.storageKey));
+  assert.equal(bytes.length, executionResult.artifacts[0].sizeBytes);
+  assert.equal(createHash("sha256").update(bytes).digest("hex"), storedArtifacts[0].sha256);
+  assert.equal(storedArtifacts[0].sha256, executionResult.artifacts[0].sha256);
+  assert.equal(storedArtifacts[0].metadata.sizeBytes, bytes.length);
   const authResult = JSON.parse(await readFile(join(fixtureDirectory, "auth-result.json"), "utf8"));
   assert.match(authResult.pythonToken, /^[A-Za-z0-9_-]{43}$/);
   const pythonSession = await app.request("/api/v1/auth/session", {

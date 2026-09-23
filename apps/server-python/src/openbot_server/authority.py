@@ -1,4 +1,4 @@
-"""Shared Owner authorization and transaction lifetime for control-plane business writes."""
+"""Bounded database transactions and explicit Owner authorization for HTTP writers."""
 import asyncio
 from contextlib import asynccontextmanager
 import hashlib
@@ -14,8 +14,8 @@ class AuthenticationRequired(Exception):
     pass
 
 
-class OwnerTransactions:
-    def __init__(self, dsn: str, *, application_name: str = "openbot-control-identity"):
+class PostgresTransactions:
+    def __init__(self, dsn: str, *, application_name: str = "openbot-control-execution"):
         if not dsn:
             raise ValueError("Explicit control-plane database configuration is required.")
         self._dsn = dsn
@@ -38,6 +38,21 @@ class OwnerTransactions:
         except BaseException:
             await connection.close()
             raise
+
+    @asynccontextmanager
+    async def transaction(self):
+        # Connection lifetime is shared; this primitive grants no business authority.
+        try:
+            async with asyncio.timeout(6), self._capacity:
+                async with await self._connect() as connection:
+                    yield connection
+        except TimeoutError:
+            raise StoreUnavailable("authority_transaction_unavailable") from None
+
+
+class OwnerTransactions(PostgresTransactions):
+    def __init__(self, dsn: str, *, application_name: str = "openbot-control-identity"):
+        super().__init__(dsn, application_name=application_name)
 
     @staticmethod
     async def _authorize(connection, digest: str, *, lock: bool = False):

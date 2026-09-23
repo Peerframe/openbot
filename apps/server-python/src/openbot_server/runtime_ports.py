@@ -3,16 +3,13 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
+from .execution_values import FAILURE_MESSAGES
 from .task_models import ModelProviderId, RunUsage
 
 
 class RuntimeDenied(Exception):
     """Closed control-layer refusal; raw provider/tool exceptions never become public messages."""
-    CODES = frozenset({"invalid_target", "conflict", "scope_revoked", "settings_changed",
-        "skills_changed", "memory_changed", "task_limit", "tool_unavailable", "model_unavailable",
-        "model_credentials", "model_rate_limit", "task_timeout", "server_interrupted",
-        "execution_failed", "plugin_rejected", "plugin_approval_expired", "plugin_changed",
-        "plugin_unavailable", "attachment_unavailable", "attachment_model_unsupported"})
+    CODES = frozenset(FAILURE_MESSAGES)
 
     def __init__(self, code: str):
         if code not in self.CODES:
