@@ -13,12 +13,15 @@ gate. :func:`bind_current_activity` never starts a workflow, claims work, publis
 retries an effect or authorizes an operation; its returned record is correlation evidence only.
 
 :func:`claim_current_activity` is the single trusted boundary that may turn an accepted binding
-into a control-owned :class:`openbot_server.work_claims.WorkFence`. It runs only after that gate
-and derives the claim identifier from the accepted namespace, Workflow ID and actual current
-engine Run ID; the existing :func:`openbot_server.work_claims.claim` transaction remains the only
-thing that grants the fence. Identity, claim ID, authority and Run ID are never accepted from
-workflow, model or HTTP input, and no Workflow or external effect is started or retried. Missing,
-unavailable or malformed history and every disagreement with trusted settings fail closed.
+into a control-owned :class:`openbot_server.work_claims.WorkFence`. It reads exactly one SDK
+``temporalio.activity.info()`` snapshot, uses that one snapshot for both the read-only binding and
+the claim identity, and never accepts the snapshot from a caller. The claim identifier derives
+from the accepted namespace, Workflow ID, actual current engine Run ID and actual SDK Activity ID;
+the existing :func:`openbot_server.work_claims.claim` transaction remains the only thing that
+grants the fence. The retry ``attempt``, and identity, claim ID, authority and Run ID supplied by
+workflow, model or HTTP input, are never part of that identity, and no Workflow or external effect
+is started or retried. Missing, unavailable or malformed Activity ID or history and every
+disagreement with trusted settings fail closed before any claim can be minted.
 
 The activity task queue and the workflow start task queue are different engine facts and are
 represented separately. Under this control deployment both must equal the trusted expected
@@ -35,9 +38,12 @@ from .work_values import InvalidWork, WorkConflict, text
 
 # Domain separation keeps this digest from ever colliding with another control digest computed
 # over similar facts. The claim identifier is a control-owned derivation, never caller input.
-CLAIM_ID_DOMAIN = b'openbot.work.claim.current-activity.v1'
-CLAIM_ID_PREFIX = 'work-claim-v1-'
+CLAIM_ID_DOMAIN = b'openbot.work.claim.activity.v2'
+CLAIM_ID_PREFIX = 'work-claim-v2-'
 MAX_CLAIM_ID = 128
+# The SDK Activity ID is an engine fact like the Run ID; bound it so a malformed or hostile
+# context cannot smuggle unbounded material into the claim digest.
+MAX_ACTIVITY_ID = 256
 
 
 def activity_info():
@@ -48,6 +54,20 @@ def activity_info():
     """
     from temporalio import activity
     return activity.info()
+
+
+def current_activity_id(info):
+    """Validate and return the actual SDK Activity ID from one trusted info snapshot.
+
+    ``temporalio.activity.info().activity_id`` is the engine's identifier for this exact Activity
+    Execution. It is stable across retry attempts of the same activity. Generated IDs differed for successive
+    activities in the pinned real-engine probe; a custom ID may be reused after closure, in which
+    case an expired prior claim conservatively refuses it. It is
+    read only from the same SDK snapshot that supplied the binding facts, never from the retry
+    ``attempt`` or any workflow/model/HTTP value. A missing, empty or malformed value is refused
+    here, before any history lookup, so no binding and no claim can be derived from it.
+    """
+    return text(getattr(info, 'activity_id', None), MAX_ACTIVITY_ID)
 
 
 async def inspect_activity_start(client, info, *, expected_namespace, expected_queue,
@@ -72,6 +92,9 @@ async def inspect_activity_start(client, info, *, expected_namespace, expected_q
     workflow_id = text(getattr(info, 'workflow_id', None), MAX_WORKFLOW_ID)
     workflow_type = text(getattr(info, 'workflow_type', None), MAX_WORKFLOW_TYPE)
     current_run_id = text(getattr(info, 'workflow_run_id', None), MAX_ENGINE_RUN_ID)
+    # The Activity ID is part of the activity identity; refuse a missing or malformed one before
+    # any history lookup so no binding and no claim can be derived from it.
+    current_activity_id(info)
 
     # The connected client must be the same namespace the activity reports; otherwise the
     # inspected history belongs to a different cluster and can never prove this activity.
@@ -112,63 +135,78 @@ async def inspect_activity_start(client, info, *, expected_namespace, expected_q
         first_run_id=first_run_id, start_input=start_input)
 
 
-async def bind_current_activity(store, client, *, expected_namespace, expected_queue,
-                                expected_workflow_type):
-    """Correlate the running activity with exactly one acknowledged Task/Run engine start.
-
-    Reads the SDK activity context, derives the exact facts from the current Run's immutable
-    start event, then applies the read-only
-    :func:`openbot_server.work_engine_binding.assert_accepted_workflow` gate. The returned
-    ``AcceptedWorkflow`` is correlation evidence only; it grants no claim, budget, fence or tool
-    authority, and a later effect still has to acquire its own control-owned authority.
-    """
-    info = activity_info()
+async def _bind_from_sdk_info(store, client, info, *, expected_namespace, expected_queue,
+                              expected_workflow_type):
+    """Use one trusted SDK snapshot for correlation; never expose it as a public override."""
     facts = await inspect_activity_start(
         client, info, expected_namespace=expected_namespace, expected_queue=expected_queue,
         expected_workflow_type=expected_workflow_type)
-    # The identity is derived from the immutable start input, never from caller/model input.
     identity = {'taskId': facts.start_input['taskId'], 'runId': facts.start_input['runId']}
     return await assert_accepted_workflow(
         store, identity, facts, expected_namespace=expected_namespace,
         expected_queue=expected_queue, expected_workflow_type=expected_workflow_type)
 
 
-def derive_claim_id(namespace, workflow_id, engine_run_id):
-    """Derive the stable bounded claim ID for one accepted engine Run.
+async def bind_current_activity(store, client, *, expected_namespace, expected_queue,
+                                expected_workflow_type):
+    """Correlate this running activity with its acknowledged Task/Run engine start.
 
-    The identifier is a domain-separated SHA-256 digest over exactly the trusted namespace,
-    deterministic Workflow ID and the actual current engine Run ID. It is deterministic so a
-    redelivery of the same live Run addresses the same claim row, and Run-specific so a later
-    Run in the same accepted first-Run chain addresses a new row. Callers never supply it.
+    The SDK context is read here, never supplied by a caller. This read-only result grants
+    no claim, budget, fence or tool authority; a later effect needs control-owned authority.
+    """
+    return await _bind_from_sdk_info(
+        store, client, activity_info(), expected_namespace=expected_namespace,
+        expected_queue=expected_queue, expected_workflow_type=expected_workflow_type)
+
+
+def derive_claim_id(namespace, workflow_id, engine_run_id, activity_id):
+    """Derive the stable bounded claim ID for one accepted engine activity.
+
+    The identifier is a domain-separated SHA-256 digest over exactly the trusted namespace, the
+    deterministic Workflow ID, the actual current engine Run ID and the actual SDK Activity ID.
+    It is deterministic so a redelivery or retry of the same live activity addresses the same
+    claim row, and activity-specific so the next distinct activity in the same accepted Run
+    addresses a new row that stales the previous fence. The engine retry ``attempt`` and any
+    workflow, model or HTTP value are never inputs to the authority-bearing caller, which reads
+    the SDK facts from one trusted snapshot before using this pure derivation.
     """
     text(namespace, MAX_NAMESPACE)
     text(workflow_id, MAX_WORKFLOW_ID)
     text(engine_run_id, MAX_ENGINE_RUN_ID)
+    text(activity_id, MAX_ACTIVITY_ID)
     # NUL separators are unambiguous because ``text`` already refused NUL in every component.
     material = (CLAIM_ID_DOMAIN + b'\0' + namespace.encode('utf-8') + b'\0'
-                + workflow_id.encode('utf-8') + b'\0' + engine_run_id.encode('utf-8'))
+                + workflow_id.encode('utf-8') + b'\0' + engine_run_id.encode('utf-8')
+                + b'\0' + activity_id.encode('utf-8'))
     claim_id = CLAIM_ID_PREFIX + hashlib.sha256(material).hexdigest()
     return text(claim_id, MAX_CLAIM_ID)
 
 
 async def claim_current_activity(store, client, *, expected_namespace, expected_queue,
                                  expected_workflow_type, expires_seconds=60) -> WorkFence:
-    """Claim the accepted current engine Run and return its control-owned fence.
+    """Claim the accepted current engine activity and return its control-owned fence.
 
-    The real-SDK :func:`bind_current_activity` gate runs first and is the sole source of the
-    Task/Run identity, Workflow ID and actual current engine Run ID. Only after acceptance is the
-    claim ID derived from those accepted facts and handed to the existing control-owned
+    Exactly one SDK ``temporalio.activity.info()`` snapshot is read here and reused for both the
+    read-only binding gate and the claim identity; this authority-bearing
+    API never accepts that snapshot from a caller. The binding is the sole source of the Task/Run
+    identity, Workflow ID, actual current engine Run ID and actual SDK Activity ID. Only after
+    acceptance is the claim ID derived from those facts and handed to the existing control-owned
     :func:`openbot_server.work_claims.claim` transaction, which alone grants the
-    :class:`openbot_server.work_claims.WorkFence`. A live redelivery of the same Run returns its
-    original fence without advancing the epoch; a different current Run in the same accepted
-    chain gets a new fence that stales the old one; wrong attempt/chain, absent acknowledgment,
-    cancellation, revocation, closed Run and an expired same-Run claim fail closed without
-    minting a claim. Nothing here starts or retries a Workflow or an external effect.
+    :class:`openbot_server.work_claims.WorkFence`. A live retry of the same Activity ID returns
+    its original fence without advancing the epoch; the next distinct Activity ID in the same
+    Workflow Run gets a new fence that stales the old one; wrong attempt/chain, absent
+    acknowledgment, cancellation, revocation, closed Run and an expired claim for a reused
+    Activity ID fail closed without minting a claim. Nothing here starts or retries a Workflow or
+    an external effect.
     """
-    accepted = await bind_current_activity(
-        store, client, expected_namespace=expected_namespace, expected_queue=expected_queue,
+    # One SDK snapshot supplies both the binding and the activity-scoped claim identity.
+    info = activity_info()
+    activity_id = current_activity_id(info)
+    accepted = await _bind_from_sdk_info(
+        store, client, info, expected_namespace=expected_namespace, expected_queue=expected_queue,
         expected_workflow_type=expected_workflow_type)
     claim_id = derive_claim_id(
-        accepted.namespace, accepted.workflow_id, accepted.engine_run_id)
+        accepted.namespace, accepted.workflow_id, accepted.engine_run_id,
+        activity_id)
     return await claim_work(
         store, accepted.task_id, accepted.run_id, claim_id, expires_seconds=expires_seconds)

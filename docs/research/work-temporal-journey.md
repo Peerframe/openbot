@@ -396,3 +396,20 @@ after closure may conservatively collide and refuse; production Worker compositi
 unique generated activity IDs. This still does not authorize effect replay: an unknown action
 must be reconciled before a later activity executes an effect. No dependency or scheduler is
 added, and the existing claim transaction remains the only fence issuer.
+
+### Per-activity claim correction and acceptance
+
+The integrated candidate changes the domain and prefix to `work-claim-v2-` because the hash
+material changed. The public read-only `bind_current_activity` still reads its own SDK context;
+only a private helper shares one immutable SDK info snapshot with `claim_current_activity`.
+The claim uses the actual Activity ID as well as namespace, Workflow ID and current engine Run
+ID. It deliberately excludes `attempt`. A next generated Activity ID in the same engine Run
+advances the control epoch and makes the prior fence stale; an expired retry/reused ID stays
+closed. The caller cannot pass an SDK info snapshot to the authority-bearing entry point.
+
+On the integrated code, the owned PostgreSQL/HTTP fixture passed 274 checks with one optional
+SDK-file skip, then the same fixture with the pinned SDK interpreter passed 63 activity/claim
+checks, including the cancellation/revocation race. The disposable real Temporal probe above
+verified stable ID across one retry and a distinct next generated ID. These checks do not prove
+that an effectful production Worker uses unique generated IDs, persists per-effect outcomes or
+resumes multi-Run tasks after a crash; those remain activation gates.

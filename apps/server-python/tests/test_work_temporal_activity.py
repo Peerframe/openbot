@@ -1,8 +1,10 @@
 """Activity binding unit tests: only the pinned SDK context supplies the current Run facts.
 
 Every fact here comes from a fake SDK activity context and a fake pinned client. The adapter
-must fail closed on a missing current Run ID, absent or malformed history and every mismatch
-with trusted settings, and must never fall back to a latest-Run handle.
+must fail closed on a missing current Run ID or Activity ID, absent or malformed history and
+every mismatch with trusted settings, and must never fall back to a latest-Run handle. The claim
+identity is activity-scoped: the same SDK Activity ID redelivers to its original fence, while the
+next distinct Activity ID in the same Workflow Run advances the epoch and stales the old fence.
 """
 import asyncio
 import re
@@ -28,6 +30,7 @@ WORKFLOW_TYPE = 'WorkJourney'
 WORKFLOW_ID = 'openbot-work-v1-run-1'
 CURRENT_RUN_ID = 'engine-run-current'
 FIRST_RUN_ID = 'engine-run-first'
+ACTIVITY_ID = 'activity-1'
 TASK_ID = 'task-1'
 RUN_ID = 'run-1'
 ATTEMPT_ID = '1' * 32
@@ -36,7 +39,8 @@ START_INPUT = {'taskId': TASK_ID, 'runId': RUN_ID, 'attemptId': ATTEMPT_ID}
 
 def info(**overrides):
     values = dict(namespace=NAMESPACE, task_queue=QUEUE, workflow_id=WORKFLOW_ID,
-                  workflow_type=WORKFLOW_TYPE, workflow_run_id=CURRENT_RUN_ID)
+                  workflow_type=WORKFLOW_TYPE, workflow_run_id=CURRENT_RUN_ID,
+                  activity_id=ACTIVITY_ID)
     values.update(overrides)
     return SimpleNamespace(**values)
 
@@ -125,6 +129,25 @@ def test_missing_or_invalid_current_run_id_fails_closed_without_a_handle(run_id)
     with pytest.raises(InvalidWork):
         asyncio.run(inspect_activity_start(client, info(workflow_run_id=run_id), **settings()))
     # No current Run ID means no history lookup at all: there is no latest-Run fallback.
+    assert client.handles == []
+
+
+@pytest.mark.parametrize('activity_id', ['', '   ', None, 42, 'a\0b', 'a' * 257, '\ud800'])
+def test_missing_or_invalid_activity_id_fails_closed_without_a_handle(activity_id):
+    client = Client(history=History([started_event()]), decoded=[START_INPUT])
+    with pytest.raises(InvalidWork):
+        asyncio.run(inspect_activity_start(
+            client, info(activity_id=activity_id), **settings()))
+    # The Activity ID is part of the activity identity: without it there is no history lookup.
+    assert client.handles == []
+
+
+def test_absent_activity_id_attribute_fails_closed_without_a_handle():
+    context = SimpleNamespace(namespace=NAMESPACE, task_queue=QUEUE, workflow_id=WORKFLOW_ID,
+                              workflow_type=WORKFLOW_TYPE, workflow_run_id=CURRENT_RUN_ID)
+    client = Client(history=History([started_event()]), decoded=[START_INPUT])
+    with pytest.raises(InvalidWork):
+        asyncio.run(inspect_activity_start(client, context, **settings()))
     assert client.handles == []
 
 
@@ -253,10 +276,11 @@ def claim_rows(fixture, run_id):
                           'WHERE run_id=%s ORDER BY epoch', (run_id,)).fetchall()
 
 
-def current(monkeypatch, workflow_id, engine_run_id=CURRENT_RUN_ID):
-    """Pin the actual SDK activity context to one exact current engine Run."""
+def current(monkeypatch, workflow_id, engine_run_id=CURRENT_RUN_ID, activity_id=ACTIVITY_ID):
+    """Pin the actual SDK activity context to one exact current engine Run and Activity."""
     monkeypatch.setattr(work_temporal_activity, 'activity_info',
-                        lambda: info(workflow_id=workflow_id, workflow_run_id=engine_run_id))
+                        lambda: info(workflow_id=workflow_id, workflow_run_id=engine_run_id,
+                                     activity_id=activity_id))
 
 
 async def acknowledged(fixture, store):
@@ -279,16 +303,21 @@ async def acknowledged(fixture, store):
 
 
 def test_claim_id_is_stable_bounded_and_domain_separated():
-    first = derive_claim_id(NAMESPACE, WORKFLOW_ID, CURRENT_RUN_ID)
-    assert first == derive_claim_id(NAMESPACE, WORKFLOW_ID, CURRENT_RUN_ID)
-    assert re.fullmatch(r'work-claim-v1-[0-9a-f]{64}', first)
+    first = derive_claim_id(NAMESPACE, WORKFLOW_ID, CURRENT_RUN_ID, ACTIVITY_ID)
+    assert first == derive_claim_id(NAMESPACE, WORKFLOW_ID, CURRENT_RUN_ID, ACTIVITY_ID)
+    assert re.fullmatch(r'work-claim-v2-[0-9a-f]{64}', first)
     assert len(first.encode('utf-8')) <= 128
-    assert first != derive_claim_id('other-namespace', WORKFLOW_ID, CURRENT_RUN_ID)
-    assert first != derive_claim_id(NAMESPACE, 'openbot-work-v1-run-2', CURRENT_RUN_ID)
-    assert first != derive_claim_id(NAMESPACE, WORKFLOW_ID, 'engine-run-next')
+    assert first != derive_claim_id('other-namespace', WORKFLOW_ID, CURRENT_RUN_ID, ACTIVITY_ID)
+    assert first != derive_claim_id(NAMESPACE, 'openbot-work-v1-run-2', CURRENT_RUN_ID, ACTIVITY_ID)
+    assert first != derive_claim_id(NAMESPACE, WORKFLOW_ID, 'engine-run-next', ACTIVITY_ID)
+    # A distinct Activity ID in the same Run is a distinct identity; the retry attempt is not.
+    assert first != derive_claim_id(NAMESPACE, WORKFLOW_ID, CURRENT_RUN_ID, 'activity-2')
     for bad in ['', '   ', None, 42, 'a\0b', 'a' * 257, '\ud800']:
         with pytest.raises(InvalidWork):
-            derive_claim_id(NAMESPACE, WORKFLOW_ID, bad)
+            derive_claim_id(NAMESPACE, WORKFLOW_ID, CURRENT_RUN_ID, bad)
+    for bad in ['', '   ', None, 42, 'a\0b', 'a' * 257, '\ud800']:
+        with pytest.raises(InvalidWork):
+            derive_claim_id(NAMESPACE, WORKFLOW_ID, bad, ACTIVITY_ID)
 
 
 def test_claim_current_activity_grants_the_control_fence_for_the_accepted_run(fixture, monkeypatch):
@@ -298,7 +327,7 @@ def test_claim_current_activity_grants_the_control_fence_for_the_accepted_run(fi
         current(monkeypatch, workflow_id)
         fence = await claim_current_activity(store, client, **settings())
         assert fence == work_claims.WorkFence(
-            run_id, derive_claim_id(NAMESPACE, workflow_id, CURRENT_RUN_ID), 1)
+            run_id, derive_claim_id(NAMESPACE, workflow_id, CURRENT_RUN_ID, ACTIVITY_ID), 1)
         assert run_state(fixture, run_id) == (1, 'running')
         assert claim_rows(fixture, run_id) == [(fence.claim_id, 1, True)]
         # The returned value is the existing control-owned fence type, not a new authority.
@@ -306,7 +335,27 @@ def test_claim_current_activity_grants_the_control_fence_for_the_accepted_run(fi
     asyncio.run(check())
 
 
-def test_same_live_engine_run_redelivery_returns_the_original_fence(fixture, monkeypatch):
+def test_claim_uses_exactly_one_sdk_info_snapshot(fixture, monkeypatch):
+    async def check():
+        store = PostgresWorkStore(fixture['dsn'])
+        task_id, run_id, workflow_id, client = await acknowledged(fixture, store)
+        snapshot = info(workflow_id=workflow_id)
+        calls = []
+
+        def counted():
+            calls.append(1)
+            return snapshot
+
+        monkeypatch.setattr(work_temporal_activity, 'activity_info', counted)
+        fence = await claim_current_activity(store, client, **settings())
+        # The same one snapshot must supply both the binding and the claim identity.
+        assert calls == [1]
+        assert fence.claim_id == derive_claim_id(
+            NAMESPACE, workflow_id, CURRENT_RUN_ID, ACTIVITY_ID)
+    asyncio.run(check())
+
+
+def test_same_live_activity_redelivery_returns_the_original_fence(fixture, monkeypatch):
     async def check():
         store = PostgresWorkStore(fixture['dsn'])
         task_id, run_id, workflow_id, client = await acknowledged(fixture, store)
@@ -318,6 +367,48 @@ def test_same_live_engine_run_redelivery_returns_the_original_fence(fixture, mon
         # Redelivery never advances the epoch and never mints a second claim row.
         assert run_state(fixture, run_id) == (1, 'running')
         assert claim_rows(fixture, run_id) == [(first.claim_id, 1, True)]
+    asyncio.run(check())
+
+
+def test_same_activity_id_retry_while_live_reuses_the_original_fence(fixture, monkeypatch):
+    async def check():
+        store = PostgresWorkStore(fixture['dsn'])
+        task_id, run_id, workflow_id, client = await acknowledged(fixture, store)
+        current(monkeypatch, workflow_id, activity_id=ACTIVITY_ID)
+        first = await claim_current_activity(store, client, **settings())
+        # A retry attempt of one live Activity Execution reports the same SDK Activity ID; the
+        # engine retry attempt number is not part of the identity.
+        monkeypatch.setattr(work_temporal_activity, 'activity_info',
+                            lambda: info(workflow_id=workflow_id, activity_id=ACTIVITY_ID,
+                                         attempt=2))
+        retry = await claim_current_activity(store, client, **settings())
+        assert retry == first
+        assert retry.claim_id == derive_claim_id(
+            NAMESPACE, workflow_id, CURRENT_RUN_ID, ACTIVITY_ID)
+        assert run_state(fixture, run_id) == (1, 'running')
+        assert claim_rows(fixture, run_id) == [(first.claim_id, 1, True)]
+    asyncio.run(check())
+
+
+def test_next_activity_id_in_the_same_workflow_run_advances_and_stales_the_old_fence(
+        fixture, monkeypatch):
+    async def check():
+        store = PostgresWorkStore(fixture['dsn'])
+        task_id, run_id, workflow_id, client = await acknowledged(fixture, store)
+        current(monkeypatch, workflow_id, activity_id=ACTIVITY_ID)
+        first = await claim_current_activity(store, client, **settings())
+        # Same Workflow Run and same immutable start, but the next Activity Execution has a new
+        # SDK Activity ID: it must advance the epoch and stale the previous activity's fence.
+        current(monkeypatch, workflow_id, activity_id='activity-2')
+        second = await claim_current_activity(store, client, **settings())
+        assert second.run_id == first.run_id
+        assert second.claim_id != first.claim_id
+        assert second.epoch == first.epoch + 1
+        assert run_state(fixture, run_id) == (2, 'running')
+        assert sorted(row[0] for row in claim_rows(fixture, run_id)) == sorted(
+            [first.claim_id, second.claim_id])
+        with pytest.raises(WorkConflict, match='execution_claim_stale'):
+            await work_claims.claim(store, task_id, run_id, first.claim_id)
     asyncio.run(check())
 
 
@@ -340,6 +431,21 @@ def test_new_current_run_in_the_accepted_chain_advances_and_stales_the_old_fence
         # The older fence is stale once the newer current Run advanced the epoch.
         with pytest.raises(WorkConflict, match='execution_claim_stale'):
             await work_claims.claim(store, task_id, run_id, first.claim_id)
+    asyncio.run(check())
+
+
+@pytest.mark.parametrize('activity_id', [None, '', '   ', 42, 'a\0b', 'a' * 257, '\ud800'])
+def test_missing_or_malformed_activity_id_mints_no_claim(fixture, monkeypatch, activity_id):
+    async def check():
+        store = PostgresWorkStore(fixture['dsn'])
+        task_id, run_id, workflow_id, client = await acknowledged(fixture, store)
+        current(monkeypatch, workflow_id, activity_id=activity_id)
+        with pytest.raises(InvalidWork):
+            await claim_current_activity(store, client, **settings())
+        # The Activity ID is refused before any history lookup and no fence is minted.
+        assert client.handles == []
+        assert run_state(fixture, run_id)[0] == 0
+        assert claim_rows(fixture, run_id) == []
     asyncio.run(check())
 
 
@@ -437,6 +543,25 @@ def test_expired_same_run_claim_is_not_renewed(fixture, monkeypatch):
     asyncio.run(check())
 
 
+def test_expired_reused_activity_id_cannot_renew(fixture, monkeypatch):
+    async def check():
+        store = PostgresWorkStore(fixture['dsn'])
+        task_id, run_id, workflow_id, client = await acknowledged(fixture, store)
+        current(monkeypatch, workflow_id, activity_id=ACTIVITY_ID)
+        fence = await claim_current_activity(store, client, **settings())
+        with psycopg.connect(fixture['dsn']) as db:
+            db.execute("UPDATE work_claims SET expires_at=clock_timestamp()-interval '1 second' "
+                       'WHERE run_id=%s', (run_id,))
+        # The official lifecycle permits a custom Activity ID to be reused after the earlier
+        # activity closes. Reuse must conservatively refuse an expired claim rather than renew it.
+        current(monkeypatch, workflow_id, activity_id=ACTIVITY_ID)
+        with pytest.raises(WorkConflict, match='execution_claim_stale'):
+            await claim_current_activity(store, client, **settings())
+        assert run_state(fixture, run_id)[0] == fence.epoch
+        assert claim_rows(fixture, run_id) == [(fence.claim_id, fence.epoch, False)]
+    asyncio.run(check())
+
+
 @pytest.mark.parametrize('close', ['cancel', 'revoke'])
 def test_control_closure_between_binding_and_claim_mints_no_fence(fixture, monkeypatch, close):
     """The claim transaction must recheck authority after the read-only binding releases its lock."""
@@ -444,14 +569,14 @@ def test_control_closure_between_binding_and_claim_mints_no_fence(fixture, monke
         store = PostgresWorkStore(fixture['dsn'])
         task_id, run_id, workflow_id, client = await acknowledged(fixture, store)
         current(monkeypatch, workflow_id)
-        original = work_temporal_activity.bind_current_activity
+        original = work_temporal_activity._bind_from_sdk_info
 
         async def close_after_binding(*args, **kwargs):
             accepted = await original(*args, **kwargs)
             await getattr(store, close)(fixture['token'], task_id)
             return accepted
 
-        monkeypatch.setattr(work_temporal_activity, 'bind_current_activity', close_after_binding)
+        monkeypatch.setattr(work_temporal_activity, '_bind_from_sdk_info', close_after_binding)
         with pytest.raises(WorkConflict, match='admission_closed'):
             await claim_current_activity(store, client, **settings())
         assert run_state(fixture, run_id)[0] == 0
