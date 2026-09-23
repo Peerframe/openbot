@@ -24,6 +24,7 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
             acknowledge=AsyncMock(),
         )
         self.client = Mock()
+        self.client.namespace = 'default'
         self.client.start_workflow = AsyncMock()
         self.patchers = [
             patch.object(dispatch.control, 'settings', return_value=SETTINGS),
@@ -55,8 +56,16 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
     async def test_losing_the_reservation_race_never_starts_a_second_workflow(self):
         self.handoff.pending.return_value = [IDENTITY]
         self.handoff.reserve_submission.return_value = False
-        await dispatch.main()
+
+        async def no_history(*, page_size):
+            if False:
+                yield  # A real empty async history, not a mock object.
+
+        self.client.get_workflow_handle.return_value.fetch_history_events = no_history
+        with self.assertRaisesRegex(ValueError, 'unconfirmed_missing_history'):
+            await dispatch.main()
         self.handoff.reserve_submission.assert_awaited_once_with(TASK_ID, RUN_ID, REFERENCE)
+        self.client.get_workflow_handle.assert_called_once_with(WORKFLOW_ID)
         self.client.start_workflow.assert_not_awaited()
         self.handoff.acknowledge.assert_not_awaited()
 

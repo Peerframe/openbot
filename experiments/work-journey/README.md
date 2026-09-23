@@ -101,6 +101,11 @@ the engine start event without needing a live worker. The workflow separately
 checks its start identity in a trusted activity before any model/tool or control mutation; uniqueness lasts only while
 engine history/namespace rules preserve the ID.
 
+The reference dispatcher now calls the product `work_dispatcher.dispatch_one` for its one-Run
+handoff decision. Its injected Temporal adapter verifies the start event and actual namespace;
+the reference retains crash barriers for testing. This does not install a production dispatcher
+or connect the fixed strategy to the real Python Runtime.
+
 A targeted crash after reservation but before enqueue leaves the Task unconfirmed; redelivery
 finds no history and creates no replacement workflow. This and three start-identity collisions
 passed with both the development and PostgreSQL/mTLS engines. The recovery case passed on both

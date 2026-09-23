@@ -150,3 +150,30 @@ the durable worker must register the dynamic wrapper before starting and carry b
 identity in serializable dependencies. A global fake guard in this probe does not establish
 multi-Run isolation, crash recovery, authorization, budget persistence or idempotency. Those
 remain product acceptance gates; do not promote the probe's agent to the production dispatcher.
+
+## Product control ingress reused by the real-engine reference (2026-09-24)
+
+`apps/server-python/src/openbot_server/work_dispatcher.py` now owns one exact Task/Run handoff
+decision using the existing `HandoffStore`. It reserves before the first engine start invocation,
+inspects only after any prior attempt, and acknowledges only a start event with matching workflow
+type, queue and exact Task/Run input. Its injected engine port must expose the actual namespace;
+a mismatch is refused before any handoff or engine call. The reference dispatcher now supplies a
+thin Temporal Python 1.33.0 adapter and retains its crash barriers around those control facts.
+This is an integration of the already-reviewed local reference, not an additional scheduler or
+an upstream source copy. The production Temporal Worker and default dispatcher remain absent.
+
+The pinned SDK builds one `StartWorkflowExecutionRequest` with a generated `request_id` before
+calling its service client with `retry=True` (`temporalio/client/_impl.py`, SDK 1.33.0). Therefore
+the control guarantee is **one high-level start invocation per reserved Run**, not one network
+attempt. A later dispatcher delivery never constructs another start request for an unknown prior
+attempt. Workflow-ID rejection and the SDK's same-request retry operate only within engine history
+and retention; missing history remains unresolved rather than authorizing a replacement.
+
+After namespace binding, the control decision passed 25 focused cases; the reference dispatcher
+passed two offline regressions. The existing public HTTP + temporary PostgreSQL + real Temporal
+development-server probe passed four handoff cases (history missing and scope/type/queue
+collisions) and a full recovery case (five attempts, one external write, one lookup, 11 fixture
+units, replay verified). The cancel-unknown case passed on the immediately preceding candidate
+(four attempts, one historical write, one lookup, no final completion); it was not rerun for the
+namespace-only check. These are synthetic services and a fixed reference strategy. They do not
+establish production concurrency, real Runtime composition, Linux isolation or default activation.
