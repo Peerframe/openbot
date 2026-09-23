@@ -41,7 +41,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
                allowed_origins: tuple[str, ...] = (), auth: OwnerAuthentication | None = None,
                identity: IdentityStore | None = None, conversations: ConversationStore | None = None,
                profiles: ProfileStore | None = None, tasks: TaskStore | None = None,
-               run_commands: RunCommandStore | None = None) -> FastAPI:
+               run_commands: RunCommandStore | None = None, work=None) -> FastAPI:
     if not owner_name or any(origin == "*" or origin == "null" for origin in allowed_origins):
         raise ValueError("An Owner name and explicit origins are required.")
     if auth is not None and auth.owner_name != owner_name:
@@ -64,14 +64,16 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
             await tasks.verify_schema()
         if run_commands is not None:
             await run_commands.verify_schema()
+        if work is not None:
+            await work.verify_schema()
         yield
 
     app = FastAPI(title="OpenBot control-plane reference", version="0.0.0",
                   docs_url=None, redoc_url=None, lifespan=lifespan)
     app.add_middleware(CORSMiddleware, allow_origins=list(allowed_origins),
                        allow_credentials=True, allow_methods=(["GET", "POST", "PATCH"] if profiles else
-                                      ["GET", "POST"] if auth or identity or conversations or tasks or run_commands else ["GET"]),
-                       allow_headers=["Content-Type"] if auth or identity or conversations or profiles or tasks or run_commands else [])
+                                      ["GET", "POST"] if auth or identity or conversations or tasks or run_commands or work else ["GET"]),
+                       allow_headers=["Content-Type"] if auth or identity or conversations or profiles or tasks or run_commands or work else [])
 
     @app.middleware("http")
     async def private_response(request: Request, call_next):
@@ -85,7 +87,10 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         profile_write = profiles is not None and request.method == "PATCH" and re.fullmatch(r"/api/v1/bots/[^/]+/profile", request.url.path) is not None
         task_write = tasks is not None and request.method == "POST" and re.fullmatch(r"/api/v1/channels/[^/]+/messages", request.url.path) is not None
         run_command_write = run_commands is not None and request.method == "POST" and re.fullmatch(r"/api/v1/runs/[^/]+/(cancel|steer)", request.url.path) is not None
-        if request.method not in ("GET", "HEAD", "OPTIONS") and not (auth_write or identity_write or conversation_write or profile_write or task_write or run_command_write):
+        work_write = work is not None and request.method == "POST" and (
+            request.url.path == "/api/v1/tasks" or re.fullmatch(r"/api/v1/tasks/[^/]+/cancel", request.url.path)
+            or re.fullmatch(r"/api/v1/actions/[^/]+/decision", request.url.path))
+        if request.method not in ("GET", "HEAD", "OPTIONS") and not (auth_write or identity_write or conversation_write or profile_write or task_write or run_command_write or work_write):
             response = JSONResponse({"error": "Operation is unavailable in this reference."}, status_code=405)
         else:
             response = await call_next(request)
@@ -125,7 +130,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
 
     @app.get("/health", operation_id="getHealth")
     async def health():
-        return {"ok": True, "service": "openbot-server", "phase": "s2b-task-reference" if tasks or run_commands else "s2a-identity-reference" if identity or conversations or profiles else "s2a-auth-reference" if auth else "s2a-read-reference",
+        return {"ok": True, "service": "openbot-server", "phase": "s3-work-admission-reference" if work else "s2b-task-reference" if tasks or run_commands else "s2a-identity-reference" if identity or conversations or profiles else "s2a-auth-reference" if auth else "s2a-read-reference",
                 "time": iso_timestamp(datetime.now(timezone.utc))}
 
     @app.get("/api/v1/auth/session", response_model=AuthSession,
@@ -207,6 +212,10 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         register_run_command_routes(app, run_commands, store, secure_cookies=secure_cookies,
                                     allowed_origins=allowed_origins)
 
+    if work is not None:
+        from .work_routes import register_work_routes
+        register_work_routes(app, work, store, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
+
     # Cookie parsing is invoked inside the adapter to keep the store request-scoped. Declare
     # that exact scheme in generated OpenAPI too; a schema is never an authorization check.
     schema = app.openapi()
@@ -237,4 +246,8 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     if run_commands is not None:
         for path in ("/api/v1/runs/{run_id}/cancel", "/api/v1/runs/{run_id}/steer"):
             schema["paths"][path]["post"]["security"] = [{"OwnerSession": []}]
+    if work is not None:
+        for path, method in (("/api/v1/tasks", "post"), ("/api/v1/tasks/{task_id}", "get"),
+                             ("/api/v1/tasks/{task_id}/cancel", "post"), ("/api/v1/actions/{action_id}/decision", "post")):
+            schema["paths"][path][method]["security"] = [{"OwnerSession": []}]
     return app

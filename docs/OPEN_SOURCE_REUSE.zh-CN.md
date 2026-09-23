@@ -404,3 +404,8 @@ Temporal 开发实验另固定 CLI 1.9.1 / `1de87a9f26991bf4f5c0a5ff96f2cea8d7a3
 这些依赖仅用于候选实验，不改变产品默认引擎，也不代表生产部署已验收；未复制上游实现代码。
 参见 [DBOS 证据](research/durable-execution-qualification.md)与
 [Temporal 证据](research/temporal-durability-review.md)。
+
+## 工作领域提交与 Runtime 延续（2026-09-23）
+
+复用 PostgreSQL 17.11 行锁/约束（PostgreSQL License）、psycopg 3.3.6 事务（LGPL-3.0-only）、已有 Owner 事务边界及 Pydantic 模型。新增 Task/Action 业务事实与引擎恢复历史配合，不替代引擎；无新依赖、自研重试调度器或上游实现复制。见[提交研究](research/work-domain-admission.md)。
+独立的[延续实验](research/runtime-continuation.md)复用 Pydantic AI 2.47.0 / `77d5fce751ab8ab04bd5db4ed6acc1131a4baed6`（MIT）的公开延迟结果与历史接口，使用确定性模型。官方细粒度耐久适配器仍是候选；实验不等于生产检查点协议或编排引擎选型。

@@ -18,7 +18,7 @@ acceptance remains valuable but is not durability qualification.
 | Candidate | Exact version | License | Evidence and fit | Decision |
 | --- | --- | --- | --- | --- |
 | DBOS Python | [3.0.0 / dd8a5f315a54c02a750f80dd15127958243ed339](https://github.com/dbos-inc/dbos-transact-py/tree/dd8a5f315a54c02a750f80dd15127958243ed339) | MIT | Released 2026-09-16; Python >=3.10; PG-backed embedded orchestration. Inspected `_recovery.py`, `_core.py`, `_dbos.py`, `_client.py`, `_serialization.py`, `test_dbos.py` and `test_workflow_management.py`. | First executable candidate; not yet the production selection. |
-| Temporal Python | [1.33.0](https://github.com/temporalio/sdk-python/releases/tag/1.33.0) | MIT | Maintained workflow/activity SDK with a separate Temporal service. See the [integrated Temporal review](temporal-durability-review.md); Codex verified key identity/cancel/retry claims. | Comparator; no claim of equivalent experiment evidence yet. |
+| Temporal Python | [1.33.0](https://github.com/temporalio/sdk-python/releases/tag/1.33.0) | MIT | Maintained workflow/activity SDK with a separate Temporal service. See the [integrated Temporal review](temporal-durability-review.md); Codex verified key identity/cancel/retry claims. | Comparator; the independent 12-case local probe now passes with development SQLite. Production persistence and the integrated domain journey remain unqualified. |
 | OpenBot-specific recovery engine | Existing single-process Run lifecycle | Project license | Lacks durable approval continuation and uncertain-effect policy. | Do not grow a parallel orchestration engine before evaluating released components. |
 
 Primary documentation: [workflows](https://docs.dbos.dev/python/tutorials/workflow-tutorial),

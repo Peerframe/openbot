@@ -51,8 +51,10 @@ is allowed when justified by the target behavior; old user data and migration hi
 protected. Language changes require new evidence, not competitor fashion or sunk-cost reasoning.
 
 The assisted Temporal worker and independent Codex fault runner have completed local qualification.
-Next: the public Task/approval/effect/reconciliation/artifact journey, production persistence
-qualification and execution-isolation design. Engine selection still depends on these gates.
+The work-domain admission slice now persists independent Tasks, exact Action approvals, shared
+reservations and unresolved outcomes; it has no dispatcher. Next: qualify the official SDK durable
+adapters alongside deferred continuation, then connect the public Task/approval/effect/reconciliation/
+artifact journey. Production persistence and execution isolation remain engine-selection gates.
 Unsent TASK_015 model settings work is superseded as the next task. Its existing uncommitted
 research/dependency changes remain preserved and are not accepted or activated by this decision.
 
@@ -127,6 +129,22 @@ S1 freezes ownership, not a speculative new event protocol. Exact snapshot revis
 cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnect fixtures.
 
 ## Acceptance record
+
+- Runtime continuation: 14 pinned-SDK cases independently pass with fresh interpreter processes.
+  One already-completed read executes once; resume adds one model call and carries request counts
+  from 2 to 3. Invalid continuations are checked before extra model/tool work. A tampered but
+  structurally valid history is accepted by SDK validation, so control-owned provenance remains
+  required. Official granular durable adapters remain candidates; SDK IDs are not business Run IDs.
+  Full Python package checks pass (788, with 105 DB cases run separately); repository checks pass.
+
+- Work-domain admission: additive migration `0027` introduces independent Task/Run identities,
+  an atomic pending handoff, immutable Actions, exact expiring approvals, Task-scoped budget
+  reservations and revisioned events. Ten new owned-PostgreSQL cases pass (105 in the combined
+  control gate), including concurrent submission/reservation, conflicting approvals, revoke,
+  cancellation with unknown effects, overrun accounting and transaction rollback. ASGI clients
+  can close and reopen against the same committed snapshot; this is not browser/SSE reconnect
+  or real-worker recovery. There is no engine bridge, public resolution endpoint or artifact
+  completion path yet. See [scope and research](research/work-domain-admission.md).
 
 - Renewed-direction experiment: [ten local DBOS fault cases](../experiments/durable-execution/README.md)
   pass with actual killed/restarted Python processes, disposable PostgreSQL and independent fake HTTP

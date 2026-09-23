@@ -549,3 +549,14 @@ Temporal's executable candidate profile additionally pins CLI 1.9.1 /
 SQLite persistence. The SDK/CLI are experiment-only; this does not qualify production deployment.
 Source/tests and the official archive checksum were reviewed before running the fixture. See
 [the Temporal profile](research/temporal-durability-review.md#executable-probe-profile-2026-09-23).
+
+## Work-domain admission and Runtime continuation (2026-09-23)
+
+Reuse PostgreSQL 17.11 row locks/constraints (PostgreSQL License), psycopg 3.3.6 transactions
+(LGPL-3.0-only), the existing Owner transaction boundary and Pydantic models. Additive application
+Task/Action facts complement, rather than replace, the engine's recovery history. No new library,
+custom retry scheduler or copied upstream implementation. See [admission research](research/work-domain-admission.md).
+The separate [continuation probe](research/runtime-continuation.md) uses existing Pydantic AI 2.47.0 /
+`77d5fce751ab8ab04bd5db4ed6acc1131a4baed6` (MIT) public deferred-result/history APIs with scripted
+models. Official granular durable adapters remain candidates; the probe does not establish a
+production checkpoint protocol or select an orchestration engine.

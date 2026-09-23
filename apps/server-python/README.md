@@ -59,8 +59,8 @@ It never runs migrations or reads dotenv. This is not a production cutover instr
 
 | Setting | Meaning |
 | --- | --- |
-| `OPENBOT_CONTROL_AUTHORITY` | `read-only` by default; `owner-auth` enables login/logout; `identity` additionally enables Bot/channel creation, direct conversations, member joins and profile details; `tasks` adds queued submission |
-| `OPENBOT_CONTROL_OWNER_PASSWORD` | Required for `owner-auth`, `identity` and `tasks`; 15–1024 Unicode characters, non-example value. The old Server password variable is not inherited |
+| `OPENBOT_CONTROL_AUTHORITY` | `read-only` by default; `owner-auth` enables login/logout; `identity` additionally enables Bot/channel creation, direct conversations, member joins and profile details; `tasks` adds legacy queued submission; `work` additionally exposes the independent work-domain admission API |
+| `OPENBOT_CONTROL_OWNER_PASSWORD` | Required for `owner-auth`, `identity`, `tasks` and `work`; 15–1024 Unicode characters, non-example value. The old Server password variable is not inherited |
 | `OPENBOT_CONTROL_SESSION_TTL_HOURS` | Integer 1–168; default 12 |
 | `OPENBOT_CONTROL_ALLOWED_ORIGINS` | Exact comma-separated HTTP(S) origins; defaults to localhost/127.0.0.1 at the configured port in auth mode. No wildcard or Host-header inference |
 | `OPENBOT_CONTROL_COOKIE_MODE` | `secure` by default uses `__Host-openbot_session`; explicit `loopback` uses plain `openbot_session` for local fixtures. No cross-mode fallback |
@@ -233,3 +233,33 @@ Starlette/Uvicorn/HTTPX are BSD-3-Clause; Psycopg and its binary distribution ar
 CPython is PSF-licensed. Installed notices remain intact. The UUID pattern is adapted from Zod; its full MIT notice is bundled in
 [third-party notices](THIRD_PARTY_NOTICES.md). No installed dependency is patched. Redistribution
 must retain required notices and applicable license rights.
+
+## Independent work-domain admission (S3 foundation)
+
+Opt in with `OPENBOT_CONTROL_AUTHORITY=work` against an explicitly prepared reference database
+including migration `0027`; startup verifies history and never applies migrations. This mode
+retains the prior reference routes. It does not enable an execution dispatcher or select an engine.
+`/health` reports `s3-work-admission-reference`; the default mode/backend is unchanged.
+
+| Command | Committed behavior |
+| --- | --- |
+| `POST /api/v1/tasks` | `{botId, objective, tokenLimit, requestKey}` creates one Task, first Run, pending engine handoff and event atomically; returns 202/queued. Same key/content reads existing state, changed content returns 409. No Channel required. |
+| `GET /api/v1/tasks/{task_id}` | Owner-only consistent snapshot: revision, Runs, Actions, usage, attention and last 100 events; `eventsTruncated` exposes truncation. No live event stream yet. |
+| `POST /api/v1/actions/{action_id}/decision` | `{intentDigest, approved}` binds to the exact stored Action, current authority generation and DB expiration; conflicting/stale decisions return 409. |
+| `POST /api/v1/tasks/{task_id}/cancel` | `{}` closes new admissions; unresolved admitted Actions retain reservations. Terminal cancellation waits for trusted reconciliation. It never claims an external effect was undone. |
+
+Writes require the current Owner session and exact allowed Origin. Control-only methods propose,
+reserve and record independently verified outcomes; no client/Runtime/Worker resolution endpoint
+exists. A model/tool call ID is not a deduplication guarantee. Digest/receipt shape validation does
+not verify an external fact. Only trusted adapter verification may feed `resolve`.
+
+Task-row locking serializes reservations across Runs and makes events/usage/outcome atomic. Unknown
+outcomes retain their reservation. Verified actual overuse remains recorded and blocks new spend.
+The current slice bounds Actions to 256, canonical intent JSON to 16 KiB and approval lifetime to
+one hour; these are reference limits, not a complete pricing or resource budget implementation.
+
+Ten new owned-PostgreSQL cases pass within the 105-case control integration gate. The new public
+routes use ASGI TestClient against real PostgreSQL; closing/reopening that client preserves state.
+This does not prove live TCP/browser reconnection, engine crash recovery, actual effect verification,
+artifact publication or task completion. Those remain the next integrated acceptance journey.
+See [research](../../docs/research/work-domain-admission.md).

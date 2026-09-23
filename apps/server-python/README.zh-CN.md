@@ -48,8 +48,8 @@ Linux CI 已接入这些检查，但本地改动尚未运行托管 CI，二者�
 
 | 设置 | 含义 |
 | --- | --- |
-| `OPENBOT_CONTROL_AUTHORITY` | 默认 `read-only`；`owner-auth` 启用登录/退出；`identity` 额外启用 Bot/频道创建、私聊、加入成员与带版本检查的资料编辑；`tasks` 再增加任务入队 |
-| `OPENBOT_CONTROL_OWNER_PASSWORD` | `owner-auth`、`identity`、`tasks` 模式必填；15–1024 个 Unicode 字符，不能用示例密码。不继承旧 Server 密码变量 |
+| `OPENBOT_CONTROL_AUTHORITY` | 默认 `read-only`；`owner-auth` 启用登录/退出；`identity` 额外启用 Bot/频道创建、私聊、加入成员与带版本检查的资料编辑；`tasks` 再增加旧任务入队；`work` 额外开放独立工作领域提交接口 |
+| `OPENBOT_CONTROL_OWNER_PASSWORD` | `owner-auth`、`identity`、`tasks`、`work` 模式必填；15–1024 个 Unicode 字符，不能用示例密码。不继承旧 Server 密码变量 |
 | `OPENBOT_CONTROL_SESSION_TTL_HOURS` | 整数 1–168，默认 12 |
 | `OPENBOT_CONTROL_ALLOWED_ORIGINS` | 逗号分隔的精确 HTTP(S) 来源；认证模式默认 localhost/127.0.0.1 与配置端口。不接受通配符、不根据 Host 推断 |
 | `OPENBOT_CONTROL_COOKIE_MODE` | 默认 `secure` 使用 `__Host-openbot_session`；本地夹具显式 `loopback` 使用 `openbot_session`，不互相回退 |
@@ -177,3 +177,20 @@ POST `/api/v1/runs/{run_id}/steer` 只接受 `instruction` 字段，最大 18,00
 
 本阶段已通过 71 项组合 PostgreSQL/HTTP 验收（含 TS 读回）、728 项 Python 包测试和全仓检查。
 普通包运行会跳过数据库测试；使用现有 `npm run test:control:python` 一次性夹具执行它们。
+
+## 独立工作领域提交（S3 基础）
+
+对明确准备且含 `0027` 迁移的参考数据库，显式设置 `OPENBOT_CONTROL_AUTHORITY=work`。启动只校验历史，不自动迁移；保留此前参考接口。此模式没有启用派发器或选定引擎，健康状态为 `s3-work-admission-reference`，默认模式和后端不变。
+
+| 命令 | 提交后的行为 |
+| --- | --- |
+| `POST /api/v1/tasks` | `{botId, objective, tokenLimit, requestKey}` 原子创建 Task、首个 Run、待引擎接收记录及事件；返回 202/queued，不要求 Channel。同键同内容读现有状态，改变内容返回 409。 |
+| `GET /api/v1/tasks/{task_id}` | Owner 专用一致快照，含版本、Run、Action、用量、待处理事项和最近 100 条事件；`eventsTruncated` 明示截断，尚无实时事件流。 |
+| `POST /api/v1/actions/{action_id}/decision` | `{intentDigest, approved}` 绑定准确 Action 内容、当前授权版本和数据库期限；冲突或过期返回 409。 |
+| `POST /api/v1/tasks/{task_id}/cancel` | `{}` 关闭新动作准入；已准入且结果未明的动作保留预算，核对后才终结取消，不宣称撤销外部操作。 |
+
+写入要求当前 Owner 会话和准确 Origin。提议、预留、记录已核实结果的方法仅供受信控制层使用；客户端、Runtime、Worker 没有自行提交核对结果的端点。工具调用 ID 不是去重保证，摘要和回执格式校验也不能证明外部事实；`resolve` 只能接收受信适配器独立核对后的证据。
+
+Task 行锁使不同 Run 共享预留，并原子提交事件、用量和结果。未知结果不退款；核实的超额用量如实记录并阻止新支出。当前参考限制为每 Task 256 个 Action、规范 JSON 意图 16 KiB、审批期限最多一小时，不等于完整费用或资源预算。
+
+新增 10 项真实 PostgreSQL 测试通过，控制层集成共 105 项。新增公开接口使用 ASGI TestClient 与真实数据库，客户端关闭重开仍取得已提交状态；尚未证明 TCP/浏览器重连、引擎故障恢复、真实副作用核对、产物发布或 Task 完成。这些继续作为完整流程验收。见[研究](../../docs/research/work-domain-admission.md)。

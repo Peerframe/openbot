@@ -24,12 +24,12 @@ def main():
     if not port_text.isascii() or not port_text.isdigit() or not 1 <= int(port_text) <= 65535:
         raise SystemExit("Control-plane port must be between 1 and 65535.")
     authority = os.environ.get("OPENBOT_CONTROL_AUTHORITY", "read-only")
-    if authority not in ("read-only", "owner-auth", "identity", "tasks"):
+    if authority not in ("read-only", "owner-auth", "identity", "tasks", "work"):
         raise SystemExit("Unknown control-plane authority mode.")
     owner_name = os.environ.get("OPENBOT_OWNER_NAME", "Owner")
     auth = None
     origins = ()
-    if authority in ("owner-auth", "identity", "tasks"):
+    if authority in ("owner-auth", "identity", "tasks", "work"):
         password = os.environ.get("OPENBOT_CONTROL_OWNER_PASSWORD")
         if password is None:
             raise SystemExit("Owner-auth requires its explicit control-plane Owner password.")
@@ -44,19 +44,23 @@ def main():
     profiles = None
     tasks = None
     run_commands = None
-    if authority in ("identity", "tasks"):
+    if authority in ("identity", "tasks", "work"):
         from openbot_server.conversations import PostgresConversationStore
         from openbot_server.profile_details import PostgresProfileStore
         conversations = PostgresConversationStore(dsn)
         profiles = PostgresProfileStore(dsn)
-    if authority == "tasks":
+    if authority in ("tasks", "work"):
         from openbot_server.task_store import PostgresTaskStore
         tasks = PostgresTaskStore(dsn)
         from openbot_server.run_command_store import PostgresRunCommandStore
         run_commands = PostgresRunCommandStore(dsn)
+    work = None
+    if authority == "work":
+        from openbot_server.work_store import PostgresWorkStore
+        work = PostgresWorkStore(dsn)
     app = create_app(PostgresReadStore(dsn), owner_name=owner_name,
                      secure_cookies=cookie_mode == "secure", allowed_origins=origins, auth=auth,
-                     identity=PostgresIdentityStore(dsn) if authority in ("identity", "tasks") else None, conversations=conversations, profiles=profiles, tasks=tasks, run_commands=run_commands)
+                     identity=PostgresIdentityStore(dsn) if authority in ("identity", "tasks", "work") else None, conversations=conversations, profiles=profiles, tasks=tasks, run_commands=run_commands, work=work)
     uvicorn.run(app, host="127.0.0.1", port=int(port_text), proxy_headers=False, access_log=False,
                 log_level="warning", loop="asyncio", http="h11", timeout_graceful_shutdown=8)
 
