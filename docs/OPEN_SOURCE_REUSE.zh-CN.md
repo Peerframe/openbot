@@ -365,3 +365,9 @@ React DOM 类型 19.3.0 / DefinitelyTyped `de5e8f01d01a14ae4ae502283d3d09f042f1a
 以及现有 Node 24.21.0、Docker 多阶段目标和 Python venv/metadata 契约。
 可选镜像仅保留既有固定版本的运行依赖，在数据库启动前检查完整安装配置。
 不增加依赖、不复制源码、不改变权限。见[打包研究](research/python-server-container.zh-CN.md)。
+
+## 源码迁移历史预检（2026-09-23）
+
+复用已安装 Git 2.54.0 的树/对象读取、Node SHA-256 和 c33e03f 的迁移清单验证器，比较已提交源码，
+不读取数据库或工作区文件。保留 Drizzle 0.45.2 的 SQL 原文哈希和现有启动历史校验。无新依赖或上游源码复制；
+见[研究记录](research/migration-lineage-audit.md)。这是源码历史兼容检查，不是数据迁移证明或修复程序。

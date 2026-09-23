@@ -30,7 +30,7 @@
     "format": "biome format --write .",
     "format:check": "biome format .",
     "lint": "biome lint .",
-    "migrations:check": "node --test scripts/check-migrations.test.mjs && node scripts/check-migrations.mjs",
+    "migrations:check": "node --test scripts/check-migrations.test.mjs scripts/compare-migration-lineage.test.mjs && node scripts/check-migrations.mjs",
     "node:enrollment-token": "node --env-file-if-exists=.env scripts/issue-node-enrollment.mjs",
     "research:check": "node --test scripts/check-pr-research.test.mjs && node scripts/check-pr-research.mjs",
     "release:check": "node --test scripts/node-linux-release.test.mjs scripts/node-linux-install-lease.test.mjs scripts/node-linux-archive-import.test.mjs scripts/node-linux-privileged-layout.test.mjs scripts/node-linux-bootstrap.test.mjs scripts/node-linux-bootstrap-command.test.mjs scripts/node-linux-install-transaction.test.mjs scripts/node-linux-provenance.test.mjs scripts/node-linux-extract.test.mjs scripts/node-linux-systemd.test.mjs scripts/macos-worker-host-release.test.mjs scripts/prepare-desktop-release.test.mjs scripts/install-desktop.test.mjs scripts/create-mcp-plugin.test.mjs",
@@ -48,7 +48,8 @@
     "typecheck": "turbo run typecheck",
     "worker-host:macos:check": "node --test scripts/check-macos-worker-host.test.mjs scripts/macos-worker-host-release.test.mjs && node scripts/check-macos-worker-host.mjs",
     "worker-host:macos:native-check": "swift build --package-path apps/worker-host-macos && swift test --package-path apps/worker-host-macos",
-    "plugin:create": "node scripts/create-mcp-plugin.mjs"
+    "plugin:create": "node scripts/create-mcp-plugin.mjs",
+    "migration:compare": "node scripts/compare-migration-lineage.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",

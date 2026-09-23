@@ -449,3 +449,11 @@ Node 24.21.0 base with Docker multi-stage targets and Python venv/metadata contr
 The opt-in target keeps only the runtime dependency closure at existing pins and checks the
 installed profile before database startup. No new dependency, copied source or authority change.
 See [packaging research](research/python-server-container.md).
+
+## Source migration lineage preflight (2026-09-23)
+
+Reuse installed Git 2.54.0 tree/blob plumbing, Node SHA-256 and the existing migration manifest
+validator at c33e03f. Compare committed source histories without database or working-tree reads.
+Preserve Drizzle 0.45.2 raw-SQL hashing and the existing runtime history guard. No new dependency
+or copied upstream source; see [research](research/migration-lineage-audit.md). This is a source
+compatibility gate, not proof of data migration or a repair tool.

@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "classification": "diverged",
+  "sourceHistoryIsTargetPrefix": false,
+  "commonPrefixLength": 17,
+  "source": {
+    "commit": "9cc73c9e78451e572f57d142d6b9caf62ccb78e2",
+    "count": 19
+  },
+  "target": {
+    "commit": "c33e03f1a14de739196113769c59fdaace9029e7",
+    "count": 27
+  },
+  "firstDifference": {
+    "index": 17,
+    "source": {
+      "index": 17,
+      "tag": "0017_model_chat",
+      "timestamp": 1789881600000,
+      "sha256": "5fa891adf20c324cff15b080f81ff8924b2a78a7331ed395b029664986c901b9"
+    },
+    "target": {
+      "index": 17,
+      "tag": "0017_request_throttle_buckets",
+      "timestamp": 1789881600000,
+      "sha256": "a119af2e5477b688f757fac382ddc86c497c9f4c30872faff677625e67fe5a19"
+    }
+  },
+  "sourceSuffix": [
+    {
+      "index": 17,
+      "tag": "0017_model_chat",
+      "timestamp": 1789881600000,
+      "sha256": "5fa891adf20c324cff15b080f81ff8924b2a78a7331ed395b029664986c901b9"
+    },
+    {
+      "index": 18,
+      "tag": "0018_model_services",
+      "timestamp": 1789968000000,
+      "sha256": "d85d1c09c0b0c7e76da029814bff0a2a68287da4d0373b16e6c4432b09b4e01b"
+    }
+  ],
+  "targetSuffix": [
+    {
+      "index": 17,
+      "tag": "0017_request_throttle_buckets",
+      "timestamp": 1789881600000,
+      "sha256": "a119af2e5477b688f757fac382ddc86c497c9f4c30872faff677625e67fe5a19"
+    },
+    {
+      "index": 18,
+      "tag": "0018_automations",
+      "timestamp": 1789968000000,
+      "sha256": "78468021e2f32ca1e137e2640e59f2cdcbc90a12787ac0cf25583430b8c776c6"
+    },
+    {
+      "index": 19,
+      "tag": "0019_native_run_observations",
+      "timestamp": 1789968000001,
+      "sha256": "d7c44b2d712483013f9d641b93222dec1eb4f6b0eb33f3837de1fb9a73303889"
+    },
+    {
+      "index": 20,
+      "tag": "0020_reviewed_knowledge",
+      "timestamp": 1789968000002,
+      "sha256": "4de04e21256430126ecbde0b8fc3ca15effba3f9052cf70515873a153cc8520d"
+    },
+    {
+      "index": 21,
+      "tag": "0021_reviewed_skill_content",
+      "timestamp": 1789968000003,
+      "sha256": "fbdf7191d3ee3a8d786413f1d16f6291a356f27a0687b6f3c81bdc546ba470c5"
+    },
+    {
+      "index": 22,
+      "tag": "0022_direct_bot_conversations",
+      "timestamp": 1789968000004,
+      "sha256": "c649f6dcc0745dd2e04610c1a202ead49701324ce0eafb6e7b642c92054a5cc1"
+    },
+    {
+      "index": 23,
+      "tag": "0023_channel_bot_collaboration",
+      "timestamp": 1789968000005,
+      "sha256": "09fbc12fb1c576bd2f3625924f4324ffa7ac3283b2e4190d762818114fc57ab9"
+    },
+    {
+      "index": 24,
+      "tag": "0024_multi_bot_message_recipients",
+      "timestamp": 1789968000006,
+      "sha256": "1444e435b61b7b6b160c718b31194972ddf40fed4a7fad6b2bd6df6454093dbc"
+    },
+    {
+      "index": 25,
+      "tag": "0025_channel_reactions",
+      "timestamp": 1789968000007,
+      "sha256": "36d69d7c052987946cb8a552964d2567e0e15cdf766cf121f745466502934b35"
+    },
+    {
+      "index": 26,
+      "tag": "0026_automation_attachment_outcome",
+      "timestamp": 1789968000008,
+      "sha256": "3d13a114383ab4fd8b8fb50096f8442836702c8a93913b1512df413412f94486"
+    }
+  ],
+  "limitation": "Committed source history only; no database, assets, credentials or upgrade executed or certified."
+}
