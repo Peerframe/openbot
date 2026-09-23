@@ -339,3 +339,18 @@ first Run ID. Earlier probe-only workflow sandbox import errors were corrected i
 harness; they did not change product code. The SDK unit suite in isolation ran 43 checks and
 skipped its fixture-dependent case. Logs are under `/private/tmp/openbot-s3-activity-*20260924*.log`.
 This does not qualify a production Worker, multi-Run continuation or effect recovery.
+
+## Bind a control claim to the current engine activity (2026-09-24)
+
+The pinned Temporal SDK activity identity and exact-run history contract above have already
+been reviewed and verified against a real development server. The existing control-owned
+`work_claims.claim` transaction refuses closed/revoked Tasks, advances a per-Run execution epoch
+and returns a fence. The next narrow integration can call it only **after**
+`bind_current_activity` verifies the acknowledged Task/Run, immutable submission attempt and
+first engine Run ID. Derive a stable, bounded claim identifier from the trusted namespace,
+Workflow ID and actual current engine Run ID with a domain-separated SHA-256 digest; do not
+accept a claim ID or identity from workflow, model or HTTP input. A redelivery of the same live
+engine Run may retrieve its existing fence; expiry, cancellation and revocation must remain
+closed rather than minting a new claim. The claim is control-owned authority; the prior binding
+record alone remains correlation evidence. No upstream code is copied, no new dependency is
+needed, and this does not by itself authorize or retry any external effect.
