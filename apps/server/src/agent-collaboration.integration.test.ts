@@ -246,10 +246,58 @@ describe.skipIf(!url)("PostgreSQL channel Bot collaboration", () => {
     const later = await f.control.submitTask(f.channel.id, { content: "LATER_INDEPENDENT_TASK" });
     const answer = await f.native.complete(f.root, "PRECEDING_ANSWER_AFTER_QUEUE");
     const active = required(await f.native.claim(next.run, f.since));
+    // Fixed timeline (not wall clock): root source < next input < later human < prior-tree Bot
+    // answer < RUN_STARTED. Answer and start share a millisecond with answer micros earlier so
+    // JS Date truncation excludes the answer; SQL timestamptz must keep it. No sleep / +1ms.
+    const rootSourceId = required(f.root.sourceMessageId);
+    await required(database).client`
+      update messages as m
+      set created_at = v.ts
+      from (values
+        (${rootSourceId}, timestamptz '2026-01-15 12:00:00.000000+00'),
+        (${next.message.id}, timestamptz '2026-01-15 12:00:00.010000+00'),
+        (${later.message.id}, timestamptz '2026-01-15 12:00:00.020000+00'),
+        (${answer.message.id}, timestamptz '2026-01-15 12:00:00.123100+00')
+      ) as v(id, ts)
+      where m.id = v.id
+    `;
+    await required(database).client`
+      update run_events
+      set created_at = timestamptz '2026-01-15 12:00:00.123900+00'
+      where run_id = ${active.id} and type = 'RUN_STARTED'
+    `;
+    // Same millisecond as start, micros after RUN_STARTED — must stay excluded.
+    await required(database).client`
+      insert into messages (id, channel_id, author_type, author_id, run_id, content, created_at)
+      values (
+        'after-start-same-ms',
+        ${f.channel.id},
+        'bot',
+        ${f.root.botId},
+        ${f.root.id},
+        'AFTER_START_SAME_MS_REPLY',
+        timestamptz '2026-01-15 12:00:00.123950+00'
+      )
+    `;
+    // Independent later task-tree Bot reply after next's input boundary — must stay excluded.
+    await required(database).client`
+      insert into messages (id, channel_id, author_type, author_id, run_id, content, created_at)
+      values (
+        'foreign-tree-after-input',
+        ${f.channel.id},
+        'bot',
+        ${f.root.botId},
+        ${later.run.id},
+        'FOREIGN_TREE_REPLY_AFTER_INPUT',
+        timestamptz '2026-01-15 12:00:00.200000+00'
+      )
+    `;
     const context = JSON.stringify(await f.native.initialContext(active));
     expect(context).toContain("PRECEDING_ANSWER_AFTER_QUEUE");
     expect(context).toContain(next.message.content);
     expect(context).not.toContain(later.message.content);
+    expect(context).not.toContain("AFTER_START_SAME_MS_REPLY");
+    expect(context).not.toContain("FOREIGN_TREE_REPLY_AFTER_INPUT");
     expect(await f.control.listRuns(f.channel.id)).toEqual(
       expect.arrayContaining([expect.objectContaining({ id: later.run.id, status: "queued" })]),
     );
