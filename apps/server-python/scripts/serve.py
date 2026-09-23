@@ -40,9 +40,13 @@ def main():
                                    ttl_hours=int(ttl_text))
         default_origins = f"http://127.0.0.1:{int(port_text)},http://localhost:{int(port_text)}"
         origins = tuple(item.strip() for item in os.environ.get("OPENBOT_CONTROL_ALLOWED_ORIGINS", default_origins).split(",") if item.strip())
+    conversations = None
+    if authority == "identity":
+        from openbot_server.conversations import PostgresConversationStore
+        conversations = PostgresConversationStore(dsn)
     app = create_app(PostgresReadStore(dsn), owner_name=owner_name,
                      secure_cookies=cookie_mode == "secure", allowed_origins=origins, auth=auth,
-                     identity=PostgresIdentityStore(dsn) if authority == "identity" else None)
+                     identity=PostgresIdentityStore(dsn) if authority == "identity" else None, conversations=conversations)
     uvicorn.run(app, host="127.0.0.1", port=int(port_text), proxy_headers=False, access_log=False,
                 log_level="warning", loop="asyncio", http="h11", timeout_graceful_shutdown=8)
 

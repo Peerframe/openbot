@@ -194,6 +194,7 @@ try {
       expected,
       authResult: join(fixtureDirectory, "auth-result.json"),
       identityResult: join(fixtureDirectory, "identity-result.json"),
+      conversationResult: join(fixtureDirectory, "conversation-result.json"),
     }),
     {
       mode: 0o600,
@@ -207,6 +208,7 @@ try {
       "tests/test_postgres_integration.py",
       "tests/test_auth_postgres.py",
       "tests/test_identity_postgres.py",
+      "tests/test_conversation_postgres.py",
       "-q",
     ],
     {
@@ -248,6 +250,18 @@ try {
       "TS must project the committed Python identity identically.",
     );
   }
+  const conversationResult = JSON.parse(
+    await readFile(join(fixtureDirectory, "conversation-result.json"), "utf8"),
+  );
+  const channels = await app.request("/api/v1/channels", {
+    headers: { Cookie: `openbot_session=${token}` },
+  });
+  assert.equal(channels.status, 200);
+  assert.deepEqual(
+    (await channels.json()).channels.find((value) => value.id === conversationResult.channel.id),
+    conversationResult.channel,
+    "TS must project the Python-created direct conversation identically.",
+  );
   const authResult = JSON.parse(await readFile(join(fixtureDirectory, "auth-result.json"), "utf8"));
   assert.match(authResult.pythonToken, /^[A-Za-z0-9_-]{43}$/);
   const pythonSession = await app.request("/api/v1/auth/session", {

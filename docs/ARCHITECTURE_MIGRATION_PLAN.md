@@ -35,7 +35,7 @@ The old TypeScript business backend is transitional, not a second permanent prod
 | Stage | Deliverable | Exit evidence | State |
 | --- | --- | --- | --- |
 | S1 — Reconcile and freeze preservation scope | Source-backed capability/retirement matrix, both migration histories, data compatibility risks, target API/event ownership, reversible source checkpoints | Every target capability mapped to current evidence and an owning stage; divergent SQL histories detected; no private data copied | Complete (source scope; no data cutover) |
-| S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a reads, auth and identity creation accepted locally |
+| S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a reads, auth, identity creation and conversations accepted locally |
 | S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | Pending |
 | S4 — Persistent execution and deliverables | Linux browser sessions, human takeover, reviewed autonomous browse/form/upload/download, persistent workspace, restricted commands, isolated code changes and document tools | Real local fixture site with separate Bot profiles; approved write, takeover, cancel and restart; exported files open/render; isolated repository produces a tested patch | Pending |
 | S5 — Memory, skills and learning evaluation | Scoped relevant retrieval, candidate lessons/skills from correction and supported teaching, version/review/test/disable/rollback; separate evaluation tooling | A correction becomes a reviewed skill, improves a held-out task, and can be revoked; provenance/scope/deletion preserved; no authority increase. Preserve Hermes attribution | Pending |
@@ -103,7 +103,11 @@ cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnec
   81 real Zod/Python differential cases pass; nineteen fixture-only cases also passed against
   PostgreSQL/HTTP. Source notices are bundled with the Python package. Earlier auth Unicode bounds were
   corrected to installed Zod's code-point semantics.
-- Next S2a work: direct conversations, joining members, message reads and remaining
+- S2a-4: direct-conversation singleton creation and idempotent ordinary-channel joins are accepted.
+  Owner transactions are shared with identity creation. 275 package checks and 24 combined real
+  PostgreSQL/HTTP checks pass, with TS readback and all 81 input differential cases retained.
+  Concurrent creation/joins, exact audits, rollback and malformed-member refusal are exercised.
+- Next S2a work: message reads and remaining
   identity/profile routes. Message submission and member removal move with S2b task authority: the
   existing source atomically creates runs with messages and cancels runs/approvals when removing
   a member. Splitting those writes into an earlier chat-only slice would break current authority. Realtime/client parity is still unfinished.

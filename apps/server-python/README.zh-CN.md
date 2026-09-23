@@ -2,9 +2,9 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-这是[迁移计划](../../docs/ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)的 S2a-1/2/3：Python/FastAPI 读取现有 Owner 会话、Bot、频道，
+这是[迁移计划](../../docs/ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)的 S2a-1/2/3/4：Python/FastAPI 读取现有 Owner 会话、Bot、频道，
 并可显式启用基于现有 PostgreSQL 的登录/退出。可信控制层与不受信任的 Agent Runtime 分开。
-**默认后端仍是 TypeScript。** Python 默认只读；显式 `owner-auth` 启用认证，`identity` 额外启用 Bot/频道创建。
+**默认后端仍是 TypeScript。** Python 默认只读；显式 `owner-auth` 启用认证，`identity` 额外启用 Bot/频道创建、私聊与加入成员。
 任务派发、审批、文件、日程和实时事件尚未迁移。
 
 ## 开发与验证
@@ -29,10 +29,10 @@ npm run test:control:python
 与真实 TypeScript API 对照，覆盖 Unicode、多成员频道和私聊。旧接口未规定成员顺序，只有成员 ID 按集合比较，Python 按 ID 排序；
 其余夹具字段逐项相同。两边可识别对方签发的会话，并共同识别撤权。
 
-19 项数据库/HTTP 检查覆盖读取、过期/撤权、只读事务拒绝写入、精确模式历史、非法旧 Bot 状态、并发持久限流、
+24 项数据库/HTTP 检查覆盖读取、过期/撤权、只读事务拒绝写入、精确模式历史、非法旧 Bot 状态、并发持久限流、
 认证事务失败不签发成功 Cookie，以及真实回环进程和限时 SIGTERM 停止。身份检查还覆盖精确审计/成长事件、缺失成员、并发重名、审计失败回滚、等锁时撤权、等审计时过期、真实 HTTP 创建。
 另有 81 项输入差分，以已安装 Zod 与 Python 的真实结果对照。
-没有显式夹具时普通包测试跳过 19 项集成，跳过不算验收。固定版本仍有两项上游测试客户端弃用提示。
+没有显式夹具时普通包测试跳过 24 项集成，跳过不算验收。固定版本仍有两项上游测试客户端弃用提示。
 Linux CI 已接入这些检查，但本地改动尚未运行托管 CI，二者不能混称。
 
 不读取 `OPENBOT_DATABASE_URL`、dotenv、模型凭据或用户数据库，只清理自有资源。本段不证明外部模型、浏览器或生产表现。
@@ -45,7 +45,7 @@ Linux CI 已接入这些检查，但本地改动尚未运行托管 CI，二者�
 
 | 设置 | 含义 |
 | --- | --- |
-| `OPENBOT_CONTROL_AUTHORITY` | 默认 `read-only`；`owner-auth` 启用登录/退出；`identity` 额外启用 Bot/频道创建 |
+| `OPENBOT_CONTROL_AUTHORITY` | 默认 `read-only`；`owner-auth` 启用登录/退出；`identity` 额外启用 Bot/频道创建、私聊与加入成员 |
 | `OPENBOT_CONTROL_OWNER_PASSWORD` | 认证与身份模式必填；15–1024 个 Unicode 字符，不能用示例密码。不继承旧 Server 密码变量 |
 | `OPENBOT_CONTROL_SESSION_TTL_HOURS` | 整数 1–168，默认 12 |
 | `OPENBOT_CONTROL_ALLOWED_ORIGINS` | 逗号分隔的精确 HTTP(S) 来源；认证模式默认 localhost/127.0.0.1 与配置端口。不接受通配符、不根据 Host 推断 |
@@ -75,6 +75,13 @@ Linux CI 已接入这些检查，但本地改动尚未运行托管 CI，二者�
 后来的退出等待事务完成，已撤权或过期则拒绝创建。重名返回 409，成员缺失 422，存储结果不确定返回 503 且不自动重试。
 普通频道使用原部分唯一索引，与私聊名称分别处理。选择电脑档位不等于获得工具权限。
 本段尚无实时个人资料通知、其他身份修改/删除或任务派发接口；完整客户端兼容、工作区版本快照和持久事件游标仍是后续 S2 工作。
+
+私聊使用 POST `/api/v1/bots/{bot_id}/conversation`；普通频道加入成员使用
+POST `/api/v1/channels/{channel_id}/bots`，提交 `{ "botId": "..." }`。两者都返回原有频道结构和 200。
+Bot 行锁保证并发只创建一个私聊，重复加入不重复写审计。身份不存在返回 404，修改私聊成员返回 422；
+已有私聊成员异常返回 503，不擅自修复。与身份创建共用 Owner 事务边界。新增五项真实数据库检查覆盖并发、幂等、
+拒绝与回滚；显式启动进程也通过真实 HTTP 验证两个入口。移除成员、提交消息与 S2b 一起迁移，因为它们还会取消或创建任务及审批。
+复用依据见[私聊研究](../../docs/research/python-conversations.md)。
 
 ## 复用与许可证
 

@@ -186,7 +186,18 @@ def test_explicit_identity_entry_creates_over_real_http(fixture):
             bot = json.load(response)["bot"]
         request = Request(base + "/api/v1/channels", data=json.dumps({"name": "Python HTTP channel", "botIds": [bot["id"]]}).encode(), headers=headers, method="POST")
         with urlopen(request, timeout=5) as response:
-            assert response.status == 201 and json.load(response)["channel"]["botIds"] == [bot["id"]]
+            assert response.status == 201
+            channel = json.load(response)["channel"]
+            assert channel["botIds"] == [bot["id"]]
+        request = Request(base + f"/api/v1/bots/{bot['id']}/conversation", data=b"", headers=headers, method="POST")
+        with urlopen(request, timeout=5) as response:
+            assert response.status == 200
+            direct = json.load(response)["channel"]
+            assert direct["botIds"] == [bot["id"]] and direct["directBotId"] == bot["id"]
+        request = Request(base + f"/api/v1/channels/{channel['id']}/bots",
+                          data=json.dumps({"botId": bot["id"]}).encode(), headers=headers, method="POST")
+        with urlopen(request, timeout=5) as response:
+            assert response.status == 200 and json.load(response)["channel"] == channel
         child.terminate()
         assert child.wait(timeout=10) == -signal.SIGTERM
     finally:

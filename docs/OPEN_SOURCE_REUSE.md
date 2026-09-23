@@ -484,3 +484,10 @@ Owner-authorized Bot/channel creation and atomic audit rows. Existing Zod 4.6.2 
 compatibility oracle; Pydantic 2.13.5 validates the Python representation. No new dependency,
 migration engine, task authority or default switch. See [input review](research/python-identity-inputs.md)
 and [transaction review](research/python-identity-transactions.md) for source incorporation and gates.
+
+## Python conversation reference (2026-09-23)
+
+Reuse the reviewed PostgreSQL 17.11 row locks, unique indexes and Psycopg 3.3.6 transactions for
+single private conversations and idempotent member joins. Extract existing Owner transaction
+logic once; preserve audit atomicity, revocation locking and final expiry checks. No new dependency,
+schema or upstream source. See [research and acceptance](research/python-conversations.md).
