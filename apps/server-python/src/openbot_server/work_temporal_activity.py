@@ -9,21 +9,35 @@ input. A missing current Run ID never falls back to a latest-Run handle.
 
 The derived facts are then handed to
 :func:`openbot_server.work_engine_binding.assert_accepted_workflow`, the read-only correlation
-gate. This module never starts a workflow, claims work, publishes a Task, retries an effect or
-authorizes an operation; the returned record is correlation evidence only and every later
-model/tool action still needs its own current control-owned authority, budget, claim and
-reconciliation policy. Missing, unavailable or malformed history and every disagreement with
-trusted settings fail closed.
+gate. :func:`bind_current_activity` never starts a workflow, claims work, publishes a Task,
+retries an effect or authorizes an operation; its returned record is correlation evidence only.
+
+:func:`claim_current_activity` is the single trusted boundary that may turn an accepted binding
+into a control-owned :class:`openbot_server.work_claims.WorkFence`. It runs only after that gate
+and derives the claim identifier from the accepted namespace, Workflow ID and actual current
+engine Run ID; the existing :func:`openbot_server.work_claims.claim` transaction remains the only
+thing that grants the fence. Identity, claim ID, authority and Run ID are never accepted from
+workflow, model or HTTP input, and no Workflow or external effect is started or retried. Missing,
+unavailable or malformed history and every disagreement with trusted settings fail closed.
 
 The activity task queue and the workflow start task queue are different engine facts and are
 represented separately. Under this control deployment both must equal the trusted expected
 queue, and a mismatch is refused rather than mistaken for proof of the accepted workflow.
 """
+import hashlib
+
+from .work_claims import WorkFence, claim as claim_work
 from .work_dispatcher import WORKFLOW_ID_PREFIX
 from .work_engine_binding import (MAX_ENGINE_RUN_ID, MAX_NAMESPACE, MAX_QUEUE, MAX_WORKFLOW_ID,
                                   MAX_WORKFLOW_TYPE, EngineActivityFacts,
                                   assert_accepted_workflow, engine_start_input)
 from .work_values import InvalidWork, WorkConflict, text
+
+# Domain separation keeps this digest from ever colliding with another control digest computed
+# over similar facts. The claim identifier is a control-owned derivation, never caller input.
+CLAIM_ID_DOMAIN = b'openbot.work.claim.current-activity.v1'
+CLAIM_ID_PREFIX = 'work-claim-v1-'
+MAX_CLAIM_ID = 128
 
 
 def activity_info():
@@ -117,3 +131,44 @@ async def bind_current_activity(store, client, *, expected_namespace, expected_q
     return await assert_accepted_workflow(
         store, identity, facts, expected_namespace=expected_namespace,
         expected_queue=expected_queue, expected_workflow_type=expected_workflow_type)
+
+
+def derive_claim_id(namespace, workflow_id, engine_run_id):
+    """Derive the stable bounded claim ID for one accepted engine Run.
+
+    The identifier is a domain-separated SHA-256 digest over exactly the trusted namespace,
+    deterministic Workflow ID and the actual current engine Run ID. It is deterministic so a
+    redelivery of the same live Run addresses the same claim row, and Run-specific so a later
+    Run in the same accepted first-Run chain addresses a new row. Callers never supply it.
+    """
+    text(namespace, MAX_NAMESPACE)
+    text(workflow_id, MAX_WORKFLOW_ID)
+    text(engine_run_id, MAX_ENGINE_RUN_ID)
+    # NUL separators are unambiguous because ``text`` already refused NUL in every component.
+    material = (CLAIM_ID_DOMAIN + b'\0' + namespace.encode('utf-8') + b'\0'
+                + workflow_id.encode('utf-8') + b'\0' + engine_run_id.encode('utf-8'))
+    claim_id = CLAIM_ID_PREFIX + hashlib.sha256(material).hexdigest()
+    return text(claim_id, MAX_CLAIM_ID)
+
+
+async def claim_current_activity(store, client, *, expected_namespace, expected_queue,
+                                 expected_workflow_type, expires_seconds=60) -> WorkFence:
+    """Claim the accepted current engine Run and return its control-owned fence.
+
+    The real-SDK :func:`bind_current_activity` gate runs first and is the sole source of the
+    Task/Run identity, Workflow ID and actual current engine Run ID. Only after acceptance is the
+    claim ID derived from those accepted facts and handed to the existing control-owned
+    :func:`openbot_server.work_claims.claim` transaction, which alone grants the
+    :class:`openbot_server.work_claims.WorkFence`. A live redelivery of the same Run returns its
+    original fence without advancing the epoch; a different current Run in the same accepted
+    chain gets a new fence that stales the old one; wrong attempt/chain, absent acknowledgment,
+    cancellation, revocation, closed Run and an expired same-Run claim fail closed without
+    minting a claim. Nothing here starts or retries a Workflow or an external effect.
+    """
+    accepted = await bind_current_activity(
+        store, client, expected_namespace=expected_namespace, expected_queue=expected_queue,
+        expected_workflow_type=expected_workflow_type)
+    claim_id = derive_claim_id(
+        accepted.namespace, accepted.workflow_id, accepted.engine_run_id)
+    return await claim_work(
+        store, accepted.task_id, accepted.run_id, claim_id, expires_seconds=expires_seconds)

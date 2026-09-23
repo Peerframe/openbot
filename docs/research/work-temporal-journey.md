@@ -354,3 +354,19 @@ engine Run may retrieve its existing fence; expiry, cancellation and revocation 
 closed rather than minting a new claim. The claim is control-owned authority; the prior binding
 record alone remains correlation evidence. No upstream code is copied, no new dependency is
 needed, and this does not by itself authorize or retry any external effect.
+
+### Claim-boundary candidate and verification
+
+`claim_current_activity` now uses the actual activity binding above, derives a domain-separated
+claim ID from the accepted namespace/Workflow ID/current engine Run ID and calls the existing
+control-owned `work_claims.claim` transaction. The same live Run receives the same fence; a
+new Run in the accepted chain advances the epoch and stales the old fence. No claim is created
+for a wrong attempt, an unacknowledged start, a closed Run, cancellation, revocation or an
+expired same-Run claim. A separate cancellation/revocation race test closes the gap between
+read-only binding and claim: the claim transaction rechecks authority after the binding lock is
+released. The dsh implementation ran no tests because its nested command sandbox failed; Codex
+independently inspected and tested the integrated code. On the final candidate, the owned
+PostgreSQL/HTTP suite passed 274 checks with one optional-SDK skip, then the same fixture and
+pinned Temporal interpreter passed 44 adapter checks. The real Temporal SDK identity probe from
+the preceding section covers SDK facts, but these new claim tests use scripted engine history;
+no production Worker or real multi-Run recovery is qualified by them.
