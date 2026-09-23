@@ -22,6 +22,7 @@ const repositoryRoot = new URL("../../../", import.meta.url);
 const compiledSchemas = new URL("packages/protocol/dist/index.js", repositoryRoot);
 const fixturePath = new URL("tests/fixtures/identity-inputs.json", packageDirectory);
 const profileFixturePath = new URL("tests/fixtures/profile-inputs.json", packageDirectory);
+const taskFixturePath = new URL("tests/fixtures/task-inputs.json", packageDirectory);
 const pythonPath = new URL(".venv/bin/python", packageDirectory);
 const sourcePath = new URL("src", packageDirectory);
 
@@ -45,15 +46,20 @@ if (!existsSync(pythonPath)) {
   );
 }
 
-const { createBotInputSchema, createChannelInputSchema, updateEmployeeProfileDetailsInputSchema } =
-  await import(compiledSchemas.href);
+const {
+  createBotInputSchema,
+  createChannelInputSchema,
+  updateEmployeeProfileDetailsInputSchema,
+  createMessageInputSchema,
+} = await import(compiledSchemas.href);
 const schemas = {
   bot: createBotInputSchema,
   channel: createChannelInputSchema,
   profile: updateEmployeeProfileDetailsInputSchema,
+  task: createMessageInputSchema,
 };
 const fixture = {
-  cases: [fixturePath, profileFixturePath].flatMap(
+  cases: [fixturePath, profileFixturePath, taskFixturePath].flatMap(
     (path) => JSON.parse(readFileSync(path, "utf8")).cases,
   ),
 };
@@ -67,8 +73,9 @@ sys.path.insert(0, sys.argv[1])
 from pydantic import ValidationError
 from openbot_server.identity_inputs import parse_bot_create, parse_channel_create
 from openbot_server.profile_details import parse_profile_details
+from openbot_server.task_inputs import parse_message
 
-parsers = {"bot": parse_bot_create, "channel": parse_channel_create, "profile": parse_profile_details}
+parsers = {"bot": parse_bot_create, "channel": parse_channel_create, "profile": parse_profile_details, "task": parse_message}
 fixture = {"cases": []}
 for path in sys.argv[2:]:
     with open(path, encoding="utf-8") as handle:
@@ -97,6 +104,7 @@ function runPython() {
       fileURLToPath(sourcePath),
       fileURLToPath(fixturePath),
       fileURLToPath(profileFixturePath),
+      fileURLToPath(taskFixturePath),
     ],
     {
       cwd: scriptsDirectory,

@@ -24,12 +24,12 @@ def main():
     if not port_text.isascii() or not port_text.isdigit() or not 1 <= int(port_text) <= 65535:
         raise SystemExit("Control-plane port must be between 1 and 65535.")
     authority = os.environ.get("OPENBOT_CONTROL_AUTHORITY", "read-only")
-    if authority not in ("read-only", "owner-auth", "identity"):
+    if authority not in ("read-only", "owner-auth", "identity", "tasks"):
         raise SystemExit("Unknown control-plane authority mode.")
     owner_name = os.environ.get("OPENBOT_OWNER_NAME", "Owner")
     auth = None
     origins = ()
-    if authority in ("owner-auth", "identity"):
+    if authority in ("owner-auth", "identity", "tasks"):
         password = os.environ.get("OPENBOT_CONTROL_OWNER_PASSWORD")
         if password is None:
             raise SystemExit("Owner-auth requires its explicit control-plane Owner password.")
@@ -42,14 +42,18 @@ def main():
         origins = tuple(item.strip() for item in os.environ.get("OPENBOT_CONTROL_ALLOWED_ORIGINS", default_origins).split(",") if item.strip())
     conversations = None
     profiles = None
-    if authority == "identity":
+    tasks = None
+    if authority in ("identity", "tasks"):
         from openbot_server.conversations import PostgresConversationStore
         from openbot_server.profile_details import PostgresProfileStore
         conversations = PostgresConversationStore(dsn)
         profiles = PostgresProfileStore(dsn)
+    if authority == "tasks":
+        from openbot_server.task_store import PostgresTaskStore
+        tasks = PostgresTaskStore(dsn)
     app = create_app(PostgresReadStore(dsn), owner_name=owner_name,
                      secure_cookies=cookie_mode == "secure", allowed_origins=origins, auth=auth,
-                     identity=PostgresIdentityStore(dsn) if authority == "identity" else None, conversations=conversations, profiles=profiles)
+                     identity=PostgresIdentityStore(dsn) if authority in ("identity", "tasks") else None, conversations=conversations, profiles=profiles, tasks=tasks)
     uvicorn.run(app, host="127.0.0.1", port=int(port_text), proxy_headers=False, access_log=False,
                 log_level="warning", loop="asyncio", http="h11", timeout_graceful_shutdown=8)
 

@@ -35,7 +35,7 @@ The old TypeScript business backend is transitional, not a second permanent prod
 | Stage | Deliverable | Exit evidence | State |
 | --- | --- | --- | --- |
 | S1 — Reconcile and freeze preservation scope | Source-backed capability/retirement matrix, both migration histories, data compatibility risks, target API/event ownership, reversible source checkpoints | Every target capability mapped to current evidence and an owning stage; divergent SQL histories detected; no private data copied | Complete (source scope; no data cutover) |
-| S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a identity/authentication slice accepted locally; S2b task authority next |
+| S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a identity/authentication slice accepted locally; S2b-1 queued submission/read accepted locally; execution and approvals next |
 | S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | Pending |
 | S4 — Persistent execution and deliverables | Linux browser sessions, human takeover, reviewed autonomous browse/form/upload/download, persistent workspace, restricted commands, isolated code changes and document tools | Real local fixture site with separate Bot profiles; approved write, takeover, cancel and restart; exported files open/render; isolated repository produces a tested patch | Pending |
 | S5 — Memory, skills and learning evaluation | Scoped relevant retrieval, candidate lessons/skills from correction and supported teaching, version/review/test/disable/rollback; separate evaluation tooling | A correction becomes a reviewed skill, improves a held-out task, and can be revoked; provenance/scope/deletion preserved; no authority increase. Preserve Hermes attribution | Pending |
@@ -115,10 +115,16 @@ cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnec
   316 final package cases, 35 combined real PostgreSQL/HTTP cases and 105 actual Zod/Python input comparisons pass,
   including concurrent edits, rollback, revoked/expired sessions and TS profile readback. Shared
   HTTP authorization preflight retains the locked database recheck.
-- The S2a identity/authentication journey is locally accepted. Next is S2b task submission, execution
-  and approval authority, following the [dependency review](research/python-task-authority.md).
+- S2b-1: explicit atomic queued task submission and latest-50 Run reads are locally accepted.
+  345 package cases, 45 combined PostgreSQL/HTTP cases, 129 real input comparisons and 60 actual
+  TS/Python routing/Run projection comparisons pass. Exact audits, complete multi-recipient rollback,
+  same-channel replies, direct scope, concurrent timestamps and TS readback are covered.
+  WorkBuddy DeepSeek supplied inputs/routing/projections; the integrator owns SQL/HTTP and independent
+  acceptance. Actual file references fail closed pending S2c; no task executor is attached yet.
+- The S2a identity/authentication journey is locally accepted. Next is S2b-2 execution supervision
+  and S2b-3 tool/approval authority, following the [dependency review](research/python-task-authority.md).
   The aggregate profile read includes task, approval, artifact, skill and memory projections and
-  moves with S2c client parity; do not publish empty substitutes. Message submission and member removal move with S2b: the
+  moves with S2c client parity; do not publish empty substitutes. Task submission is atomic in S2b-1; member removal remains with S2b cancellation: the
   existing source atomically creates runs with messages and cancels runs/approvals when removing
   a member. Splitting those writes into an earlier chat-only slice would break current authority. Realtime/client parity is still unfinished.
 - Hosted Linux checks are wired into the existing Python CI job; they have not run for this local

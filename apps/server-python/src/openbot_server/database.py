@@ -15,8 +15,9 @@ import psycopg
 from psycopg.rows import dict_row
 
 from .message_query import MESSAGE_QUERY
+from .run_query import RUN_QUERY
 
-Projection = Literal["session", "bots", "channels", "messages"]
+Projection = Literal["session", "bots", "channels", "messages", "runs"]
 MIGRATIONS = Path(__file__).resolve().parents[4] / "packages/db/migrations"
 
 
@@ -114,9 +115,9 @@ class PostgresReadStore:
             raise StoreUnavailable("storage_unavailable") from None
 
     async def read(self, token: str | None, projection: Projection, *, channel_id: str | None = None) -> ReadResult:
-        if projection not in ("session", "bots", "channels", "messages"):
+        if projection not in ("session", "bots", "channels", "messages", "runs"):
             raise ValueError("Unknown read projection.")
-        if projection == "messages" and (not isinstance(channel_id, str) or not 1 <= len(channel_id) <= 128):
+        if projection in ("messages", "runs") and (not isinstance(channel_id, str) or not 1 <= len(channel_id) <= 128):
             raise ValueError("A bounded channel identity is required.")
         if not isinstance(token, str) or re.fullmatch(r"[A-Za-z0-9_-]{43}", token) is None:
             return ReadResult(None)
@@ -139,8 +140,9 @@ class PostgresReadStore:
                             "FROM channels c LEFT JOIN channel_bots cb ON cb.channel_id=c.id "
                             "ORDER BY c.created_at DESC, c.id, cb.bot_id LIMIT 10001"
                         )
-                    elif projection == "messages":
-                        cursor = await connection.execute(MESSAGE_QUERY, (channel_id, channel_id))
+                    elif projection in ("messages", "runs"):
+                        cursor = await connection.execute(MESSAGE_QUERY if projection == "messages" else RUN_QUERY,
+                                                          (channel_id, channel_id))
                     else:
                         cursor = None
                     rows = tuple(await cursor.fetchall()) if cursor is not None else ()
@@ -149,13 +151,13 @@ class PostgresReadStore:
                     expires = await self._session(connection, digest)
                     if expires is None:
                         return ReadResult(None)
-                    found = bool(rows) if projection == "messages" else True
-                    if projection == "messages":
+                    found = bool(rows) if projection in ("messages", "runs") else True
+                    if projection in ("messages", "runs"):
                         if any(row["oversized"] for row in rows):
                             raise StoreUnavailable("projection_limit")
                         # The LEFT JOIN sentinel distinguishes an empty channel from a missing one.
                         rows = tuple(row for row in rows if row["id"] is not None)
-                    ceiling = 100 if projection == "messages" else 1000 if projection == "bots" else 10000
+                    ceiling = {"messages": 100, "runs": 50, "bots": 1000}.get(projection, 10000)
                     if len(rows) > ceiling:
                         raise StoreUnavailable("projection_limit")
                     return ReadResult(expires, rows, found)

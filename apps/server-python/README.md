@@ -2,11 +2,11 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-S2a-1/2/3/4/5/6 of the [migration plan](../../docs/ARCHITECTURE_MIGRATION_PLAN.md): Python/FastAPI reads
+S2a and S2b-1 of the [migration plan](../../docs/ARCHITECTURE_MIGRATION_PLAN.md): Python/FastAPI reads
 existing Owner sessions, Bots, channels and recent messages and can explicitly enable Owner login/logout against the
 current PostgreSQL schema. This trusted control layer is separate from the untrusted Agent Runtime.
 **The TypeScript Server remains the default.** Python starts read-only; explicit `owner-auth` mode
-enables authentication, and `identity` mode adds Bot/channel creation, direct conversations, member joins and revision-checked profile edits. Task dispatch, approvals,
+enables authentication, and `identity` mode adds Bot/channel creation, direct conversations, member joins and revision-checked profile edits. `tasks` adds atomic queued task submission. Task dispatch, approvals,
 files, schedules and realtime events have not moved.
 
 ## Develop and verify
@@ -36,13 +36,13 @@ channels. Legacy membership order is unspecified, so only member IDs are compare
 returns them sorted. Other fixture fields match exactly. Both implementations recognize sessions
 issued by the other, and revocation takes effect across implementations.
 
-Thirty-five database/HTTP checks cover reads, expiry/revocation, enforced read-only transactions, exact
+Forty-five database/HTTP checks cover reads, expiry/revocation, enforced read-only transactions, exact
 schema history, invalid stored Bot status, concurrent persistent throttling, transactional auth
 failure without a success cookie, and real loopback processes with bounded SIGTERM shutdown.
 Identity checks also exercise exact audit/evolution payloads, missing members, concurrent name
 conflicts, rollback on audit failure, revocation during a row-lock wait, expiry during audit waiting,
-and real HTTP creation. A separate 105-case input differential compares installed Zod against Python. Without the explicit fixture,
-package checks skip the thirty-five integration cases; skips are not acceptance. Two upstream test-client
+and real HTTP creation. Task cases cover multi-recipient atomicity, reply/member scope, concurrent source timestamps, audit rollback and bounded Run reads. An additional 60-case differential executes the actual TS and Python routing/Run projections. A separate 129-case input differential compares installed Zod against Python. Without the explicit fixture,
+package checks skip the forty-five integration cases; skips are not acceptance. Two upstream test-client
 deprecation warnings remain at the reviewed pins. The Linux CI job includes these checks; a hosted
 run is separate evidence and has not yet run for this local change.
 
@@ -58,8 +58,8 @@ It never runs migrations or reads dotenv. This is not a production cutover instr
 
 | Setting | Meaning |
 | --- | --- |
-| `OPENBOT_CONTROL_AUTHORITY` | `read-only` by default; `owner-auth` enables login/logout; `identity` additionally enables Bot/channel creation, direct conversations, member joins and profile details |
-| `OPENBOT_CONTROL_OWNER_PASSWORD` | Required for `owner-auth` and `identity`; 15–1024 Unicode characters, non-example value. The old Server password variable is not inherited |
+| `OPENBOT_CONTROL_AUTHORITY` | `read-only` by default; `owner-auth` enables login/logout; `identity` additionally enables Bot/channel creation, direct conversations, member joins and profile details; `tasks` adds queued submission |
+| `OPENBOT_CONTROL_OWNER_PASSWORD` | Required for `owner-auth`, `identity` and `tasks`; 15–1024 Unicode characters, non-example value. The old Server password variable is not inherited |
 | `OPENBOT_CONTROL_SESSION_TTL_HOURS` | Integer 1–168; default 12 |
 | `OPENBOT_CONTROL_ALLOWED_ORIGINS` | Exact comma-separated HTTP(S) origins; defaults to localhost/127.0.0.1 at the configured port in auth mode. No wildcard or Host-header inference |
 | `OPENBOT_CONTROL_COOKIE_MODE` | `secure` by default uses `__Host-openbot_session`; explicit `loopback` uses plain `openbot_session` for local fixtures. No cross-mode fallback |
@@ -106,8 +106,7 @@ channel envelope. A Bot lock serializes private-channel creation; repeated joins
 audit event. Missing identities return 404; direct membership changes return 422. Malformed existing
 direct membership returns 503 without repair. These writers share the same Owner transaction
 boundary. Five additional real-database cases cover concurrency, idempotence, rejection and rollback;
-the explicit-entry process also exercises both routes over real HTTP. Membership removal and message
-submission remain in S2b because they also cancel or create tasks and approvals.
+the explicit-entry process also exercises both routes over real HTTP. Membership removal remains with S2b cancellation and approvals; task submission is available in the separate `tasks` mode below.
 
 Authenticated GET `/api/v1/channels/{channel_id}/messages` returns the newest 100 messages in
 chronological order, preserving Unicode and optional IDs. Timestamp ties use a stable ID order;
@@ -126,6 +125,28 @@ uses the same locked transaction. Six real database cases cover conflicts, rollb
 expiry, error mapping and TS profile readback; the explicit process also serves PATCH over HTTP.
 The full aggregate profile GET and realtime invalidation remain in S2c; no empty replacement is
 advertised. See [profile review](../../docs/research/python-profile-details.md).
+
+## Queued task reference
+
+In explicit `tasks` mode, POST `/api/v1/channels/{channel_id}/messages` accepts 1–8000 normalized
+Unicode code points, optional `botId` or one-to-six unique `botIds`, and an optional in-channel
+`replyToMessageId`. The body ceiling is 128 KiB/five seconds. Unknown keys are stripped; explicit
+null optional fields are rejected. Direct conversations can only address their Bot; ordinary
+channels default to the chief/first ordered member. Names never grant authority.
+
+The locked Owner transaction commits one human source message, all queued runs and the existing
+MESSAGE_CREATED/RUN_CREATED audits together. Concurrent source messages get distinct increasing
+millisecond timestamps. No partial recipient set is persisted. The response includes `message`
+and `run`, plus `runs` only for explicit `botIds`. No dispatcher is attached yet: `queued` is an
+accurate intermediate state, not a claim that work is executing. Actual attachment markers return
+503 until the file authority is migrated; more than eight unique references returns 413.
+
+Authenticated GET `/api/v1/channels/{channel_id}/runs` returns the latest 50 runs, newest first,
+with stable ID ordering for timestamp ties and 4 MiB text-transfer/JSON ceilings. Invalid required
+state fails closed; malformed model usage is omitted, while valid usage preserves explicit null
+token counts. Usage is reported evidence, not permission or billing. Titles retain the legacy
+80 UTF-16-unit bound; the 77-unit prefix plus ellipsis never splits a Unicode scalar. This fixes
+the narrow legacy invalid-surrogate case. See [task research](../../docs/research/python-task-authority.md).
 
 ## Reuse and licenses
 

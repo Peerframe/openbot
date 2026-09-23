@@ -50,7 +50,7 @@
     "worker-host:macos:native-check": "swift build --package-path apps/worker-host-macos && swift test --package-path apps/worker-host-macos",
     "plugin:create": "node scripts/create-mcp-plugin.mjs",
     "migration:compare": "node scripts/compare-migration-lineage.mjs",
-    "test:control:python": "turbo run build --filter=@openbot/server && node apps/server-python/scripts/compare-identity-inputs.mjs && node scripts/test-python-control.mjs"
+    "test:control:python": "turbo run build --filter=@openbot/server && node apps/server-python/scripts/compare-identity-inputs.mjs && node apps/server-python/scripts/compare-task-contracts.mjs && node scripts/test-python-control.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",

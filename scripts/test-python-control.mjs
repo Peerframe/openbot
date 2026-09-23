@@ -163,6 +163,21 @@ try {
               ${`记录 ${index}: 中文 🧪\n<example> & quoted "text"`},
               ${new Date(Date.UTC(2026, 0, 1) + index * 1000).toISOString()})`;
   }
+  const runChannel = await store.createChannel({
+    name: "TS task reference",
+    description: "",
+    botIds: [bot.id],
+  });
+  const seedTask = await store.submitTask(runChannel.id, { content: "TS 原生任务参考" });
+  await database.client`UPDATE runs SET status='completed', result_summary='已核查',
+    model_usage=${JSON.stringify({ provider: "deepseek", model: "fixture", steps: 1, inputTokens: null, outputTokens: 2 })}::jsonb WHERE id=${seedTask.run.id}`;
+  await store.joinBotToChannel(runChannel.id, colleague.id);
+  await database.client`INSERT INTO runs(id,parent_run_id,root_run_id,delegated_by_bot_id,channel_id,bot_id,
+    execution_profile,instruction,title,status,error_message,error_code,model_usage,created_at,updated_at)
+    VALUES ('fixture-child-run',${seedTask.run.id},${seedTask.run.id},${bot.id},${runChannel.id},${colleague.id},
+      'none','子任务','子任务','failed','权限已撤销','scope_revoked','{"unknown":"must not leak"}'::jsonb,
+      now()+interval '1 second',now()+interval '1 second')`;
+
   await store.getOrCreateDirectConversation(bot.id);
   const app = createApp({
     store,
@@ -198,6 +213,8 @@ try {
     "/api/v1/channels",
     `/api/v1/channels/${messageChannel.id}/messages`,
     `/api/v1/channels/${emptyChannel.id}/messages`,
+    `/api/v1/channels/${runChannel.id}/runs`,
+    `/api/v1/channels/${emptyChannel.id}/runs`,
   ]) {
     const response = await app.request(path, { headers: { Cookie: `openbot_session=${token}` } });
     assert.equal(response.status, 200);
@@ -218,6 +235,7 @@ try {
       identityResult: join(fixtureDirectory, "identity-result.json"),
       conversationResult: join(fixtureDirectory, "conversation-result.json"),
       profileResult: join(fixtureDirectory, "profile-result.json"),
+      taskResult: join(fixtureDirectory, "task-result.json"),
     }),
     {
       mode: 0o600,
@@ -234,6 +252,7 @@ try {
       "tests/test_conversation_postgres.py",
       "tests/test_message_postgres.py",
       "tests/test_profile_postgres.py",
+      "tests/test_task_postgres.py",
       "-q",
     ],
     {
@@ -301,6 +320,20 @@ try {
     profile.evolution.find((event) => event.id === profileResult.evolution.id),
     profileResult.evolution,
   );
+  const taskResult = JSON.parse(await readFile(join(fixtureDirectory, "task-result.json"), "utf8"));
+  for (const key of ["messages", "runs"]) {
+    const response = await app.request(`/api/v1/channels/${taskResult.message.channelId}/${key}`, {
+      headers: { Cookie: `openbot_session=${token}` },
+    });
+    assert.equal(response.status, 200);
+    const actual = (await response.json())[key];
+    const expectedTaskRows = key === "messages" ? [taskResult.message] : taskResult.runs;
+    assert.deepEqual(
+      actual.sort((a, b) => a.id.localeCompare(b.id)),
+      expectedTaskRows.sort((a, b) => a.id.localeCompare(b.id)),
+      "TS must read all committed Python message/run records identically.",
+    );
+  }
   const authResult = JSON.parse(await readFile(join(fixtureDirectory, "auth-result.json"), "utf8"));
   assert.match(authResult.pythonToken, /^[A-Za-z0-9_-]{43}$/);
   const pythonSession = await app.request("/api/v1/auth/session", {

@@ -1,7 +1,7 @@
 # Research: Python task authority migration sequence
 
 - Date: 2026-09-23
-- Status: design in progress; no task writer or execution switch accepted yet.
+- Status: S2b-1 queued submission/read accepted locally; execution/approval migration in progress.
 - Source baseline: 035bc95 and unchanged TypeScript task services.
 
 Reuse the exact PostgreSQL 17.11, Psycopg 3.3.6, Pydantic 2.13.5 and Zod 4.6.2 pins reviewed for
@@ -49,5 +49,53 @@ invented second wire protocol or a dependency addition.
 The public aggregate profile, snapshots/reconnect events, settings/files and schedules remain S2c.
 Use larger independent implementation bundles now that the shared authority/input foundations are
 stable; Root owns integrated behavior and independent real fixtures. Do not repeatedly re-implement
-or re-review those settled foundations for each endpoint. Exact submission/runtime interfaces and
-any intentional Unicode-title difference still need to be frozen before implementation begins.
+or re-review those settled foundations for each endpoint. The frozen submission design is below; execution supervision must retain the accepted runtime wire contract.
+
+## S2b-1 frozen submission design (2026-09-23)
+
+This slice is now approved for implementation against baseline 9726ddd. Root owns persistence,
+HTTP and real acceptance; the assisted worker owns pure input/routing/Run projections. Preserve
+createMessageInputSchema semantics: normalized 1..8000 code points, one optional Bot or 1..6 unique
+Bots, optional in-channel reply, omitted-only optional fields, and unknown-key stripping. Reuse the
+accepted UUID/text adapters rather than a second normalization implementation. Model usage keeps
+explicit null token counts; optional Run fields still omit null. Invalid usage is omitted just as
+in toRun; invalid required state fails closed.
+
+OwnerTransactions encloses all business writes. Lock the channel, check replies and ordered member
+candidates under SHARE, then commit one human message, one-to-six queued runs and their exact audits.
+Use database millisecond time or the latest human/system message time +1 ms, whichever is later.
+The message points to the first run, and every run points back to that source message. Include the
+optional `runs` envelope only when the caller supplied botIds. No dispatch before commit. Existing
+unique source-message/Bot index and foreign keys remain unchanged; no second migration history.
+
+For titles, retain the 80 UTF-16-unit threshold and 77-unit prefix plus ellipsis, but never split a
+Unicode scalar: when the boundary bisects a surrogate pair, omit that partial scalar instead of
+returning an invalid surrogate. This is an intentional narrow correction to the old title helper;
+normal BMP titles and non-bisected prefixes are unchanged. Validate all input is representable in
+UTF-8 before a write. Exact differential cases will identify that documented invalid-surrogate
+exception rather than pretending full equality with malformed legacy output.
+
+An explicit `tasks` reference authority adds identity operations and submission. Until execution
+supervision is attached in S2b-2, the API reports committed `queued` state only; no claim of execution
+is made. Missing file-reference authority returns 503 on actual OpenBot attachment markers before
+persistence. It must later be replaced by S2c's locked file validator, not removed. Root writes the
+bounded marker extraction using the existing pattern/8-reference limit and tests case/duplicate
+semantics. Public task content has a 128 KiB body ceiling/five-second input deadline, covering
+8000 astral characters even in escaped JSON; raw bytes remain independently bounded.
+
+Channel run reads reuse the authorized read-only transaction, latest-50 bound, stable tie ordering,
+pre-transfer text-byte and final 4 MiB JSON checks. This intermediate reference never makes Python
+and TypeScript active dispatchers of the same run. Production selection remains unchanged.
+
+
+## S2b-1 acceptance
+
+The integrator independently ran 345 package cases, 45 owned PostgreSQL/real-HTTP cases, 129
+installed Zod/Python input cases and 60 actual TS/Python routing/Run projections. Existing TS reads
+Python-created multi-run messages and runs exactly. Audit-trigger failure rolls back all message,
+run and audit inserts; concurrent submissions preserve increasing millisecond source boundaries.
+Revoked/expired Owner, missing members, direct scope, foreign replies, oversized data and absent
+file-reference authority are rejected. Valid nullable usage survives HTTP serialization. No new
+upstream source was copied. Only existing OpenBot code was ported; prior Zod notices are retained.
+Full `npm run check` also passes. This proves local queued-state compatibility, not execution,
+recovery, live models or hosted CI.

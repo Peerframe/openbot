@@ -19,6 +19,7 @@ from .auth_routes import register_auth_routes
 from .identity_routes import IdentityStore, register_identity_routes
 from .database import ReadResult, StoreUnavailable
 from .message_models import MessagesResponse, project_messages
+from .task_models import RunsResponse, project_runs
 from .models import (
     AuthSession, BotsResponse, ChannelsResponse, iso_timestamp, project_bot, project_channels,
 )
@@ -27,6 +28,7 @@ from .models import (
 if TYPE_CHECKING:
     from .conversation_routes import ConversationStore
     from .profile_routes import ProfileStore
+    from .task_routes import TaskStore
 
 
 class ReadStore(Protocol):
@@ -37,7 +39,7 @@ class ReadStore(Protocol):
 def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True,
                allowed_origins: tuple[str, ...] = (), auth: OwnerAuthentication | None = None,
                identity: IdentityStore | None = None, conversations: ConversationStore | None = None,
-               profiles: ProfileStore | None = None) -> FastAPI:
+               profiles: ProfileStore | None = None, tasks: TaskStore | None = None) -> FastAPI:
     if not owner_name or any(origin == "*" or origin == "null" for origin in allowed_origins):
         raise ValueError("An Owner name and explicit origins are required.")
     if auth is not None and auth.owner_name != owner_name:
@@ -56,14 +58,16 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
             await conversations.verify_schema()
         if profiles is not None:
             await profiles.verify_schema()
+        if tasks is not None:
+            await tasks.verify_schema()
         yield
 
     app = FastAPI(title="OpenBot control-plane reference", version="0.0.0",
                   docs_url=None, redoc_url=None, lifespan=lifespan)
     app.add_middleware(CORSMiddleware, allow_origins=list(allowed_origins),
                        allow_credentials=True, allow_methods=(["GET", "POST", "PATCH"] if profiles else
-                                      ["GET", "POST"] if auth or identity or conversations else ["GET"]),
-                       allow_headers=["Content-Type"] if auth or identity or conversations or profiles else [])
+                                      ["GET", "POST"] if auth or identity or conversations or tasks else ["GET"]),
+                       allow_headers=["Content-Type"] if auth or identity or conversations or profiles or tasks else [])
 
     @app.middleware("http")
     async def private_response(request: Request, call_next):
@@ -75,7 +79,8 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
             re.fullmatch(r"/api/v1/bots/[^/]+/conversation", request.url.path) is not None
             or re.fullmatch(r"/api/v1/channels/[^/]+/bots", request.url.path) is not None)
         profile_write = profiles is not None and request.method == "PATCH" and re.fullmatch(r"/api/v1/bots/[^/]+/profile", request.url.path) is not None
-        if request.method not in ("GET", "HEAD", "OPTIONS") and not (auth_write or identity_write or conversation_write or profile_write):
+        task_write = tasks is not None and request.method == "POST" and re.fullmatch(r"/api/v1/channels/[^/]+/messages", request.url.path) is not None
+        if request.method not in ("GET", "HEAD", "OPTIONS") and not (auth_write or identity_write or conversation_write or profile_write or task_write):
             response = JSONResponse({"error": "Operation is unavailable in this reference."}, status_code=405)
         else:
             response = await call_next(request)
@@ -115,7 +120,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
 
     @app.get("/health", operation_id="getHealth")
     async def health():
-        return {"ok": True, "service": "openbot-server", "phase": "s2a-identity-reference" if identity or conversations or profiles else "s2a-auth-reference" if auth else "s2a-read-reference",
+        return {"ok": True, "service": "openbot-server", "phase": "s2b-task-reference" if tasks else "s2a-identity-reference" if identity or conversations or profiles else "s2a-auth-reference" if auth else "s2a-read-reference",
                 "time": iso_timestamp(datetime.now(timezone.utc))}
 
     @app.get("/api/v1/auth/session", response_model=AuthSession,
@@ -158,6 +163,19 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         except (ValueError, TypeError, KeyError):
             raise StoreUnavailable("invalid_projection") from None
 
+    @app.get("/api/v1/channels/{channel_id}/runs", response_model=RunsResponse,
+             response_model_exclude_none=True, operation_id="listRuns")
+    async def runs(request: Request, channel_id: str = Path(min_length=1, max_length=128)):
+        result = await store.read(await cookie(request), "runs", channel_id=channel_id)
+        if result.expires_at is None:
+            raise HTTPException(401, "Authentication required.")
+        if not result.found:
+            raise HTTPException(404, "Channel not found.")
+        try:
+            return bounded_response(RunsResponse(runs=project_runs(result.rows)))
+        except (ValueError, TypeError, KeyError):
+            raise StoreUnavailable("invalid_projection") from None
+
     if auth is not None:
         register_auth_routes(app, auth, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
 
@@ -175,6 +193,10 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         register_profile_routes(app, profiles, store, secure_cookies=secure_cookies,
                                 allowed_origins=allowed_origins)
 
+    if tasks is not None:
+        from .task_routes import register_task_routes
+        register_task_routes(app, tasks, store, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
+
     # Cookie parsing is invoked inside the adapter to keep the store request-scoped. Declare
     # that exact scheme in generated OpenAPI too; a schema is never an authorization check.
     schema = app.openapi()
@@ -186,7 +208,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     schema.setdefault("components", {}).setdefault("securitySchemes", {})["OwnerSession"] = {
         "type": "apiKey", "in": "cookie", "name": cookie_name,
     }
-    for path in ("/api/v1/bots", "/api/v1/channels", "/api/v1/channels/{channel_id}/messages"):
+    for path in ("/api/v1/bots", "/api/v1/channels", "/api/v1/channels/{channel_id}/messages", "/api/v1/channels/{channel_id}/runs"):
         schema["paths"][path]["get"]["security"] = [{"OwnerSession": []}]
     schema["paths"]["/api/v1/auth/session"]["get"]["security"] = [{}, {"OwnerSession": []}]
     if auth is not None:
@@ -200,4 +222,6 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
             schema["paths"][path]["post"]["security"] = [{"OwnerSession": []}]
     if profiles is not None:
         schema["paths"]["/api/v1/bots/{bot_id}/profile"]["patch"]["security"] = [{"OwnerSession": []}]
+    if tasks is not None:
+        schema["paths"]["/api/v1/channels/{channel_id}/messages"]["post"]["security"] = [{"OwnerSession": []}]
     return app

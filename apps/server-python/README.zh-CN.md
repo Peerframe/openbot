@@ -2,10 +2,10 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-这是[迁移计划](../../docs/ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)的 S2a-1/2/3/4/5/6：Python/FastAPI 读取现有 Owner 会话、Bot、频道和近期消息，
+这是[迁移计划](../../docs/ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)的 S2a 与 S2b-1：Python/FastAPI 读取现有 Owner 会话、Bot、频道和近期消息，
 并可显式启用基于现有 PostgreSQL 的登录/退出。可信控制层与不受信任的 Agent Runtime 分开。
 **默认后端仍是 TypeScript。** Python 默认只读；显式 `owner-auth` 启用认证，`identity` 额外启用 Bot/频道创建、私聊、加入成员与带版本检查的资料编辑。
-任务派发、审批、文件、日程和实时事件尚未迁移。
+`tasks` 额外启用原子任务入队。任务派发、审批、文件、日程和实时事件尚未迁移。
 
 ## 开发与验证
 
@@ -29,10 +29,11 @@ npm run test:control:python
 与真实 TypeScript API 对照，覆盖 Unicode、多成员频道和私聊。旧接口未规定成员顺序，只有成员 ID 按集合比较，Python 按 ID 排序；
 其余夹具字段逐项相同。两边可识别对方签发的会话，并共同识别撤权。
 
-35 项数据库/HTTP 检查覆盖读取、过期/撤权、只读事务拒绝写入、精确模式历史、非法旧 Bot 状态、并发持久限流、
+45 项数据库/HTTP 检查覆盖读取、过期/撤权、只读事务拒绝写入、精确模式历史、非法旧 Bot 状态、并发持久限流、
 认证事务失败不签发成功 Cookie，以及真实回环进程和限时 SIGTERM 停止。身份检查还覆盖精确审计/成长事件、缺失成员、并发重名、审计失败回滚、等锁时撤权、等审计时过期、真实 HTTP 创建。
-另有 105 项输入差分，以已安装 Zod 与 Python 的真实结果对照。
-没有显式夹具时普通包测试跳过 35 项集成，跳过不算验收。固定版本仍有两项上游测试客户端弃用提示。
+另有 129 项输入差分，以已安装 Zod 与 Python 的真实结果对照。
+没有显式夹具时普通包测试跳过 45 项集成，跳过不算验收。固定版本仍有两项上游测试客户端弃用提示。
+新增任务检查覆盖多接收者原子提交、回复/成员范围、并发源消息时间、审计失败回滚和有界任务读取；另有 60 项真实 TS/Python 路由和 Run 投影差分。
 Linux CI 已接入这些检查，但本地改动尚未运行托管 CI，二者不能混称。
 
 不读取 `OPENBOT_DATABASE_URL`、dotenv、模型凭据或用户数据库，只清理自有资源。本段不证明外部模型、浏览器或生产表现。
@@ -45,8 +46,8 @@ Linux CI 已接入这些检查，但本地改动尚未运行托管 CI，二者�
 
 | 设置 | 含义 |
 | --- | --- |
-| `OPENBOT_CONTROL_AUTHORITY` | 默认 `read-only`；`owner-auth` 启用登录/退出；`identity` 额外启用 Bot/频道创建、私聊、加入成员与带版本检查的资料编辑 |
-| `OPENBOT_CONTROL_OWNER_PASSWORD` | 认证与身份模式必填；15–1024 个 Unicode 字符，不能用示例密码。不继承旧 Server 密码变量 |
+| `OPENBOT_CONTROL_AUTHORITY` | 默认 `read-only`；`owner-auth` 启用登录/退出；`identity` 额外启用 Bot/频道创建、私聊、加入成员与带版本检查的资料编辑；`tasks` 再增加任务入队 |
+| `OPENBOT_CONTROL_OWNER_PASSWORD` | `owner-auth`、`identity`、`tasks` 模式必填；15–1024 个 Unicode 字符，不能用示例密码。不继承旧 Server 密码变量 |
 | `OPENBOT_CONTROL_SESSION_TTL_HOURS` | 整数 1–168，默认 12 |
 | `OPENBOT_CONTROL_ALLOWED_ORIGINS` | 逗号分隔的精确 HTTP(S) 来源；认证模式默认 localhost/127.0.0.1 与配置端口。不接受通配符、不根据 Host 推断 |
 | `OPENBOT_CONTROL_COOKIE_MODE` | 默认 `secure` 使用 `__Host-openbot_session`；本地夹具显式 `loopback` 使用 `openbot_session`，不互相回退 |
@@ -80,7 +81,7 @@ Linux CI 已接入这些检查，但本地改动尚未运行托管 CI，二者�
 POST `/api/v1/channels/{channel_id}/bots`，提交 `{ "botId": "..." }`。两者都返回原有频道结构和 200。
 Bot 行锁保证并发只创建一个私聊，重复加入不重复写审计。身份不存在返回 404，修改私聊成员返回 422；
 已有私聊成员异常返回 503，不擅自修复。与身份创建共用 Owner 事务边界。新增五项真实数据库检查覆盖并发、幂等、
-拒绝与回滚；显式启动进程也通过真实 HTTP 验证两个入口。移除成员、提交消息与 S2b 一起迁移，因为它们还会取消或创建任务及审批。
+拒绝与回滚；显式启动进程也通过真实 HTTP 验证两个入口。移除成员随 S2b 的取消与审批迁移；任务提交已加入下述独立 `tasks` 模式。
 复用依据见[私聊研究](../../docs/research/python-conversations.md)。
 
 认证后的 GET `/api/v1/channels/{channel_id}/messages` 按时间顺序返回最新 100 条消息，保留 Unicode 和可选 ID。
@@ -94,6 +95,21 @@ Bot 行锁保证并发只创建一个私聊，重复加入不重复写审计。�
 资料版本、成长事件和审计一起提交，共用带会话锁的 Owner 事务。六项真实数据库检查覆盖竞争、回滚、撤权、过期、错误映射和 TS 回读，
 显式启动的进程也已通过真实 HTTP PATCH 验证。完整资料 GET 与实时失效通知仍在 S2c，不提供空数据替代品。
 详见[资料编辑研究](../../docs/research/python-profile-details.md)。
+
+## 任务入队参考实现
+
+显式 `tasks` 模式包含身份模式已有入口和登录配置，并启用 POST `/api/v1/channels/{channel_id}/messages`。
+接受去空白后的 1–8000 个 Unicode 字符、可选 `botId` 或 1–6 个唯一 `botIds`，以及同频道 `replyToMessageId`。
+正文上限 128 KiB/5 秒，多余字段丢弃，可省略字段不接受 null。私聊只能分配给对应 Bot，普通频道默认选择负责人或有序首位成员；名称不授予权限。
+
+带 Owner 会话锁的事务同时提交人类源消息、全部排队任务及原有 MESSAGE_CREATED/RUN_CREATED 审计。
+并发源消息保持不同且递增的毫秒时间，不保存部分接收者。返回 `message` 与 `run`，只有显式 `botIds` 才额外返回 `runs`。
+当前尚未接入执行器，`queued` 只表示成功入队。实际附件标记在文件权限迁移前返回 503，超过八个唯一引用返回 413。
+
+认证后的 GET `/api/v1/channels/{channel_id}/runs` 返回最新 50 项任务，由新到旧；同时间按 ID 稳定排序。
+文本传输和最终 JSON 均限制 4 MiB。必需状态非法时拒绝，无法解析的用量丢弃；合法用量中的 null 计数保留。
+用量仅是报告的证据，不代表权限或账单。标题保留原 80 个 UTF-16 单位上限和 77 单位前缀加省略号，截断不切开 Unicode 字符，修复旧实现的孤立代理项边界。
+详见[任务研究](../../docs/research/python-task-authority.md)。
 
 ## 复用与许可证
 

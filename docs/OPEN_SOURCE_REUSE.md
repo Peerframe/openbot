@@ -505,3 +505,13 @@ Reuse PostgreSQL 17.11 row locks/revision predicates, Psycopg 3.3.6 and the acce
 input adapters for optimistic descriptive profile updates. Owner authorization, revision, evolution
 and audit remain one transaction. No new dependency, migration or copied upstream source; existing
 Zod license notices continue to cover reused input helpers. See [research](research/python-profile-details.md).
+
+
+## Python queued task reference (2026-09-23)
+
+Reuse the already-reviewed PostgreSQL 17.11/Psycopg 3.3.6 transaction and locking APIs, Pydantic
+2.13.5 adapters, and Zod 4.6.2 as the installed input oracle. Preserve existing OpenBot recipient
+selection, Run projections and message/run/audit atomicity; no new schema, dependency or upstream
+source is introduced. Exact Zod notices remain bundled. The bounded SQL reader uses the accepted
+materialized-window pattern. Execution and file authority are not implied by queue persistence.
+See [design and acceptance](research/python-task-authority.md).
