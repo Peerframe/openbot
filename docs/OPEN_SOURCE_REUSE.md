@@ -491,3 +491,10 @@ Reuse the reviewed PostgreSQL 17.11 row locks, unique indexes and Psycopg 3.3.6 
 single private conversations and idempotent member joins. Extract existing Owner transaction
 logic once; preserve audit atomicity, revocation locking and final expiry checks. No new dependency,
 schema or upstream source. See [research and acceptance](research/python-conversations.md).
+
+## Python message read reference (2026-09-23)
+
+Reuse the same released PostgreSQL/Psycopg/Pydantic stack for a parameterized, read-only latest-100
+message window. Standard SQL ordering, a materialized bounded window and byte sums prevent
+unbounded text transfer. The existing Owner session is rechecked before returning data. No new
+library, migration, dispatch or copied upstream source. See [research](research/python-message-reads.md).

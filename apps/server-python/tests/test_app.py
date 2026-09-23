@@ -115,7 +115,8 @@ def test_openapi_declares_cookie_and_read_only_contract(api):
     schema = client.get("/openapi.json").json()
     assert schema["components"]["securitySchemes"]["OwnerSession"]["name"] == "__Host-openbot_session"
     assert schema["paths"]["/api/v1/bots"]["get"]["security"] == [{"OwnerSession": []}]
-    assert set(schema["paths"]) == {"/health", "/api/v1/auth/session", "/api/v1/bots", "/api/v1/channels"}
+    assert set(schema["paths"]) == {"/health", "/api/v1/auth/session", "/api/v1/bots", "/api/v1/channels",
+                                    "/api/v1/channels/{channel_id}/messages"}
     assert client.get("/docs").status_code == 404
 
 

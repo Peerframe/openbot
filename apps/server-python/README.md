@@ -2,8 +2,8 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-S2a-1/2/3/4 of the [migration plan](../../docs/ARCHITECTURE_MIGRATION_PLAN.md): Python/FastAPI reads
-existing Owner sessions, Bots and channels and can explicitly enable Owner login/logout against the
+S2a-1/2/3/4/5 of the [migration plan](../../docs/ARCHITECTURE_MIGRATION_PLAN.md): Python/FastAPI reads
+existing Owner sessions, Bots, channels and recent messages and can explicitly enable Owner login/logout against the
 current PostgreSQL schema. This trusted control layer is separate from the untrusted Agent Runtime.
 **The TypeScript Server remains the default.** Python starts read-only; explicit `owner-auth` mode
 enables authentication, and `identity` mode adds Bot/channel creation, direct conversations and member joins. Task dispatch, approvals,
@@ -36,13 +36,13 @@ channels. Legacy membership order is unspecified, so only member IDs are compare
 returns them sorted. Other fixture fields match exactly. Both implementations recognize sessions
 issued by the other, and revocation takes effect across implementations.
 
-Twenty-four database/HTTP checks cover reads, expiry/revocation, enforced read-only transactions, exact
+Twenty-nine database/HTTP checks cover reads, expiry/revocation, enforced read-only transactions, exact
 schema history, invalid stored Bot status, concurrent persistent throttling, transactional auth
 failure without a success cookie, and real loopback processes with bounded SIGTERM shutdown.
 Identity checks also exercise exact audit/evolution payloads, missing members, concurrent name
 conflicts, rollback on audit failure, revocation during a row-lock wait, expiry during audit waiting,
 and real HTTP creation. A separate 81-case input differential compares installed Zod against Python. Without the explicit fixture,
-package checks skip the twenty-four integration cases; skips are not acceptance. Two upstream test-client
+package checks skip the twenty-nine integration cases; skips are not acceptance. Two upstream test-client
 deprecation warnings remain at the reviewed pins. The Linux CI job includes these checks; a hosted
 run is separate evidence and has not yet run for this local change.
 
@@ -108,6 +108,15 @@ direct membership returns 503 without repair. These writers share the same Owner
 boundary. Five additional real-database cases cover concurrency, idempotence, rejection and rollback;
 the explicit-entry process also exercises both routes over real HTTP. Membership removal and message
 submission remain in S2b because they also cancel or create tasks and approvals.
+
+Authenticated GET `/api/v1/channels/{channel_id}/messages` returns the newest 100 messages in
+chronological order, preserving Unicode and optional IDs. Timestamp ties use a stable ID order;
+legacy TS does not specify those ties. Missing channels return 404 only after authorization; an
+empty channel returns an empty list. Both selected text bytes before driver transfer and public
+JSON have a 4 MiB ceiling; overflow returns 503 without shortening or repairing content. The final
+session recheck discards rows if revoked. The paired fixture compares 105 stored messages and an
+empty channel against real TS and loopback HTTP; additional cases cover tied timestamps, oversized
+content/identifiers and revocation during a read. See [message review](../../docs/research/python-message-reads.md).
 
 ## Reuse and licenses
 

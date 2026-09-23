@@ -141,12 +141,28 @@ try {
     role: "复核",
     computerProfile: "none",
   });
-  await store.createChannel({
+  const messageChannel = await store.createChannel({
     name: "迁移验收",
     description: "中文附件核对",
     botIds: [bot.id, colleague.id],
   });
-  await store.createChannel({ name: "空频道", description: "没有成员", botIds: [] });
+  const emptyChannel = await store.createChannel({
+    name: "空频道",
+    description: "没有成员",
+    botIds: [],
+  });
+  for (let index = 0; index < 105; index += 1) {
+    const authorType = ["human", "bot", "system"][index % 3];
+    await database.client`
+      INSERT INTO messages (id, channel_id, author_type, author_id, reply_to_message_id,
+                            run_id, content, created_at)
+      VALUES (${`fixture-message-${index}`}, ${messageChannel.id}, ${authorType},
+              ${authorType === "human" ? "owner" : authorType === "bot" ? bot.id : null},
+              ${index > 0 ? `fixture-message-${index - 1}` : null},
+              ${authorType === "bot" ? "fixture-run-reference" : null},
+              ${`记录 ${index}: 中文 🧪\n<example> & quoted "text"`},
+              ${new Date(Date.UTC(2026, 0, 1) + index * 1000).toISOString()})`;
+  }
   await store.getOrCreateDirectConversation(bot.id);
   const app = createApp({
     store,
@@ -176,7 +192,13 @@ try {
     ?.match(/^openbot_session=([^;]+)/)?.[1];
   assert(tsRevocableToken);
   const expected = {};
-  for (const path of ["/api/v1/auth/session", "/api/v1/bots", "/api/v1/channels"]) {
+  for (const path of [
+    "/api/v1/auth/session",
+    "/api/v1/bots",
+    "/api/v1/channels",
+    `/api/v1/channels/${messageChannel.id}/messages`,
+    `/api/v1/channels/${emptyChannel.id}/messages`,
+  ]) {
     const response = await app.request(path, { headers: { Cookie: `openbot_session=${token}` } });
     assert.equal(response.status, 200);
     expected[path] = await response.json();
@@ -209,6 +231,7 @@ try {
       "tests/test_auth_postgres.py",
       "tests/test_identity_postgres.py",
       "tests/test_conversation_postgres.py",
+      "tests/test_message_postgres.py",
       "-q",
     ],
     {

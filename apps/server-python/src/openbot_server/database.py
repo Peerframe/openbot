@@ -14,7 +14,9 @@ from typing import Literal
 import psycopg
 from psycopg.rows import dict_row
 
-Projection = Literal["session", "bots", "channels"]
+from .message_query import MESSAGE_QUERY
+
+Projection = Literal["session", "bots", "channels", "messages"]
 MIGRATIONS = Path(__file__).resolve().parents[4] / "packages/db/migrations"
 
 
@@ -26,6 +28,7 @@ class StoreUnavailable(Exception):
 class ReadResult:
     expires_at: datetime | None
     rows: tuple[dict, ...] = ()
+    found: bool = True
 
 
 def expected_history() -> tuple[tuple[int, str], ...]:
@@ -110,9 +113,11 @@ class PostgresReadStore:
         except (psycopg.Error, TimeoutError, ValueError, KeyError):
             raise StoreUnavailable("storage_unavailable") from None
 
-    async def read(self, token: str | None, projection: Projection) -> ReadResult:
-        if projection not in ("session", "bots", "channels"):
+    async def read(self, token: str | None, projection: Projection, *, channel_id: str | None = None) -> ReadResult:
+        if projection not in ("session", "bots", "channels", "messages"):
             raise ValueError("Unknown read projection.")
+        if projection == "messages" and (not isinstance(channel_id, str) or not 1 <= len(channel_id) <= 128):
+            raise ValueError("A bounded channel identity is required.")
         if not isinstance(token, str) or re.fullmatch(r"[A-Za-z0-9_-]{43}", token) is None:
             return ReadResult(None)
         digest = hashlib.sha256(token.encode("ascii")).hexdigest()
@@ -134,16 +139,26 @@ class PostgresReadStore:
                             "FROM channels c LEFT JOIN channel_bots cb ON cb.channel_id=c.id "
                             "ORDER BY c.created_at DESC, c.id, cb.bot_id LIMIT 10001"
                         )
+                    elif projection == "messages":
+                        cursor = await connection.execute(MESSAGE_QUERY, (channel_id, channel_id))
                     else:
                         cursor = None
                     rows = tuple(await cursor.fetchall()) if cursor is not None else ()
-                    ceiling = 1000 if projection == "bots" else 10000
+                    # READ COMMITTED rechecks the current session before exposing data or a
+                    # projection-specific error; a logout cannot hide behind the first snapshot.
+                    expires = await self._session(connection, digest)
+                    if expires is None:
+                        return ReadResult(None)
+                    found = bool(rows) if projection == "messages" else True
+                    if projection == "messages":
+                        if any(row["oversized"] for row in rows):
+                            raise StoreUnavailable("projection_limit")
+                        # The LEFT JOIN sentinel distinguishes an empty channel from a missing one.
+                        rows = tuple(row for row in rows if row["id"] is not None)
+                    ceiling = 100 if projection == "messages" else 1000 if projection == "bots" else 10000
                     if len(rows) > ceiling:
                         raise StoreUnavailable("projection_limit")
-                    # READ COMMITTED obtains a fresh snapshot; a concurrent logout cannot be
-                    # hidden by the first lookup's snapshot while projection work was awaited.
-                    expires = await self._session(connection, digest)
-                    return ReadResult(expires, rows if expires is not None else ())
+                    return ReadResult(expires, rows, found)
         except (psycopg.Error, TimeoutError, ValueError, KeyError):
             raise StoreUnavailable("storage_unavailable") from None
 

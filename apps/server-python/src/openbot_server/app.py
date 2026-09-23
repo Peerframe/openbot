@@ -8,7 +8,7 @@ import re
 from datetime import datetime, timezone
 from typing import Protocol, TYPE_CHECKING
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Path, Request
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyCookie
@@ -18,6 +18,7 @@ from .auth import OwnerAuthentication
 from .auth_routes import register_auth_routes
 from .identity_routes import IdentityStore, register_identity_routes
 from .database import ReadResult, StoreUnavailable
+from .message_models import MessagesResponse, project_messages
 from .models import (
     AuthSession, BotsResponse, ChannelsResponse, iso_timestamp, project_bot, project_channels,
 )
@@ -29,7 +30,7 @@ if TYPE_CHECKING:
 
 class ReadStore(Protocol):
     async def verify_schema(self) -> None: ...
-    async def read(self, token: str | None, projection: str) -> ReadResult: ...
+    async def read(self, token: str | None, projection: str, *, channel_id: str | None = None) -> ReadResult: ...
 
 
 def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True,
@@ -138,6 +139,19 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         except (ValueError, TypeError, KeyError):
             raise StoreUnavailable("invalid_projection") from None
 
+    @app.get("/api/v1/channels/{channel_id}/messages", response_model=MessagesResponse,
+             response_model_exclude_none=True, operation_id="listMessages")
+    async def messages(request: Request, channel_id: str = Path(min_length=1, max_length=128)):
+        result = await store.read(await cookie(request), "messages", channel_id=channel_id)
+        if result.expires_at is None:
+            raise HTTPException(401, "Authentication required.")
+        if not result.found:
+            raise HTTPException(404, "Channel not found.")
+        try:
+            return bounded_response(MessagesResponse(messages=project_messages(result.rows)))
+        except (ValueError, TypeError, KeyError):
+            raise StoreUnavailable("invalid_projection") from None
+
     if auth is not None:
         register_auth_routes(app, auth, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
 
@@ -161,7 +175,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     schema.setdefault("components", {}).setdefault("securitySchemes", {})["OwnerSession"] = {
         "type": "apiKey", "in": "cookie", "name": cookie_name,
     }
-    for path in ("/api/v1/bots", "/api/v1/channels"):
+    for path in ("/api/v1/bots", "/api/v1/channels", "/api/v1/channels/{channel_id}/messages"):
         schema["paths"][path]["get"]["security"] = [{"OwnerSession": []}]
     schema["paths"]["/api/v1/auth/session"]["get"]["security"] = [{}, {"OwnerSession": []}]
     if auth is not None:
