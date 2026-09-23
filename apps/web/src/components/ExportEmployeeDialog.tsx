@@ -1,6 +1,7 @@
 import type { Bot, EmployeeExportExclusion, EmployeeExportPreview } from "@openbot/domain";
 import { useEffect, useState } from "react";
-import { type ApiError, downloadEmployeeTemplate, getEmployeeExportPreview } from "../api";
+import { type ApiError, getEmployeeExportPreview } from "../api";
+import { downloadEmployeeTemplate } from "../employee-template-delivery";
 import { CloseIcon } from "./Icons";
 import { PortableProfileSummaryCard, PortableSkillList } from "./PortableEmployeeReview";
 import { RobotAvatar } from "./RobotAvatar";
