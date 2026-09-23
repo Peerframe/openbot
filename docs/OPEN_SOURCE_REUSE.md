@@ -439,3 +439,13 @@ the previous Python-regex validator refused them before model execution. The rel
 validator is preferred over a partial regex monkeypatch. Offline compilation, format annotations,
 bounded regex options and unchanged Server authority are required. No source copied; full evidence
 and pending integration gates: [schema review](research/python-schema-compatibility.md).
+
+## Optional Python Server packaging (2026-09-23)
+
+Reuse official Python 3.12.13 slim-bookworm / docker-library/python
+3362634339580d3232e65a66dd5a36c47ae7ff14 (MIT image source; PSF interpreter; Debian licenses),
+index sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2, and the existing
+Node 24.21.0 base with Docker multi-stage targets and Python venv/metadata contracts.
+The opt-in target keeps only the runtime dependency closure at existing pins and checks the
+installed profile before database startup. No new dependency, copied source or authority change.
+See [packaging research](research/python-server-container.md).

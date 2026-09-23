@@ -2,6 +2,11 @@
 set -euo pipefail
 
 image="${OPENBOT_TEST_IMAGE:-openbot-server:smoke}"
+agent_runtime="${OPENBOT_TEST_AGENT_RUNTIME:-typescript}"
+case "$agent_runtime" in
+  typescript | python) ;;
+  *) echo "Unsupported Agent runtime smoke selection." >&2; exit 1 ;;
+esac
 case "${OPENBOT_TEST_PLATFORM:-$(uname -m)}" in
   amd64 | x86_64) expected_arch="amd64" ;;
   arm64 | aarch64) expected_arch="arm64" ;;
@@ -16,6 +21,7 @@ network="openbot-server-smoke-${suffix}"
 postgres_container="openbot-postgres-smoke-${suffix}"
 server_container="openbot-server-smoke-${suffix}"
 invalid_server_container="openbot-server-invalid-smoke-${suffix}"
+invalid_python_container="openbot-python-invalid-smoke-${suffix}"
 object_volume="openbot-server-objects-${suffix}"
 model_volume="openbot-server-model-${suffix}"
 database_password="openbot-container-ci-only"
@@ -24,6 +30,7 @@ cleanup() {
   set +e
   docker rm --force "$server_container" >/dev/null 2>&1
   docker rm --force "$invalid_server_container" >/dev/null 2>&1
+  docker rm --force "$invalid_python_container" >/dev/null 2>&1
   docker rm --force "$postgres_container" >/dev/null 2>&1
   docker volume rm --force "$object_volume" >/dev/null 2>&1
   docker volume rm --force "$model_volume" >/dev/null 2>&1
@@ -197,7 +204,7 @@ expected_migration_count="$(docker run --rm --entrypoint node "$image" --input-t
   console.log(journal.entries.length);
 ')"
 
-docker network create "$network" >/dev/null
+docker network create --internal "$network" >/dev/null
 docker volume create "$object_volume" >/dev/null
 docker volume create "$model_volume" >/dev/null
 docker run --detach \
@@ -214,6 +221,33 @@ docker run --detach \
 wait_for_health "$postgres_container"
 
 database_url="postgres://openbot:${database_password}@${postgres_container}:5432/openbot"
+
+if [[ "$agent_runtime" == "python" ]]; then
+  # A missing installed interpreter must stop startup before any durable initialization.
+  docker run --detach --name "$invalid_python_container" --network "$network" \
+    --read-only --tmpfs /tmp:rw,noexec,nosuid,nodev,size=16m,uid=1000,gid=1000,mode=0700 \
+    --tmpfs /workspace/apps/agent-runtime-python/.venv:ro,noexec,nosuid,nodev,size=1m \
+    --env "OPENBOT_DATABASE_URL=$database_url" \
+    --env OPENBOT_OWNER_PASSWORD=openbot-container-owner-password \
+    --env OPENBOT_AGENT_RUNTIME=python "$image" >/dev/null
+  for _ in $(seq 1 15); do
+    [[ "$(docker inspect --format '{{.State.Status}}' "$invalid_python_container")" != "running" ]] && break
+    sleep 1
+  done
+  if [[ "$(docker inspect --format '{{.State.Status}}' "$invalid_python_container")" == "running" ]] ||
+     [[ "$(docker inspect --format '{{.State.ExitCode}}' "$invalid_python_container")" == "0" ]]; then
+    echo "Broken Python installation did not stop startup." >&2
+    exit 1
+  fi
+  if ! docker logs "$invalid_python_container" 2>&1 | grep --quiet 'Python Agent runtime preflight failed'; then
+    echo "Broken Python installation did not fail at the fixed preflight." >&2
+    exit 1
+  fi
+  if [[ "$(docker exec "$postgres_container" psql -U openbot -d openbot -Atc "select count(*) from pg_namespace where nspname='drizzle'")" != "0" ]]; then
+    echo "Python preflight failure changed the fresh database." >&2
+    exit 1
+  fi
+fi
 docker run --detach \
   --name "$invalid_server_container" \
   --network "$network" \
@@ -238,12 +272,12 @@ fi
 docker run --detach \
   --name "$server_container" \
   --network "$network" \
-  --publish 127.0.0.1::3001 \
   --read-only \
   --tmpfs /tmp:rw,noexec,nosuid,nodev,size=16m,uid=1000,gid=1000,mode=0700 \
   --mount "type=volume,src=${object_volume},dst=/var/lib/openbot/objects" \
   --mount "type=volume,src=${model_volume},dst=/var/lib/openbot/model" \
   --env OPENBOT_MODEL_DIRECTORY=/var/lib/openbot/model \
+  --env "OPENBOT_AGENT_RUNTIME=$agent_runtime" \
   --env OPENBOT_HOST=0.0.0.0 \
   --env OPENBOT_PORT=3001 \
   --env "OPENBOT_DATABASE_URL=$database_url" \
@@ -253,8 +287,37 @@ docker run --detach \
   "$image" >/dev/null
 wait_for_health "$server_container"
 
-host_address="$(docker port "$server_container" 3001/tcp | sed -n '1p')"
-health_body="$(curl --fail --silent --show-error "http://${host_address}/health")"
+if [[ "$agent_runtime" == "python" ]]; then
+  docker exec "$server_container" /workspace/apps/agent-runtime-python/.venv/bin/python -I \
+    /workspace/apps/agent-runtime-python/scripts/verify_environment.py --profile runtime
+  docker exec "$server_container" /workspace/apps/agent-runtime-python/.venv/bin/python -I -c '
+import importlib.util
+from pathlib import Path
+assert importlib.util.find_spec("pytest") is None
+assert not Path("/workspace/apps/agent-runtime-python/tests").exists()
+'
+  # Resolve the piped module imports against /workspace/scripts, without installing a test runner.
+  docker exec -i --workdir /workspace/scripts "$server_container" node --input-type=module \
+    < scripts/smoke-python-runtime.mjs
+fi
+
+docker exec "$server_container" node --input-type=module --eval '
+  const response = await fetch("http://127.0.0.1:3001/api/v1/auth/login", {
+    method: "POST", headers: { "Content-Type": "application/json", Origin: "http://localhost:5173" },
+    body: JSON.stringify({ password: "openbot-container-owner-password" }),
+  });
+  if (!response.ok) throw new Error(`Owner login failed: ${response.status}`);
+  const cookie = response.headers.get("set-cookie")?.split(";")[0];
+  if (!cookie) throw new Error("Owner session missing");
+  const channels = await fetch("http://127.0.0.1:3001/api/v1/channels", { headers: { Cookie: cookie } });
+  if (!channels.ok) throw new Error(`Authenticated channels failed: ${channels.status}`);
+'
+
+health_body="$(docker exec "$server_container" node --input-type=module --eval '
+  const response = await fetch("http://127.0.0.1:3001/health", { signal: AbortSignal.timeout(5000) });
+  if (!response.ok) process.exit(1);
+  console.log(await response.text());
+')"
 if ! grep --quiet '"ok":true' <<<"$health_body" ||
   ! grep --quiet '"service":"openbot-server"' <<<"$health_body"; then
   echo "Server container returned an unexpected health identity." >&2
@@ -315,4 +378,4 @@ if grep --quiet 'server.shutdown_failed' <<<"$server_logs"; then
   exit 1
 fi
 
-echo "Server container smoke passed for linux/${expected_arch} with ${migration_count_after} migrations."
+echo "Server container smoke passed for linux/${expected_arch} (${agent_runtime}) with ${migration_count_after} migrations."

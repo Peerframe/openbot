@@ -356,3 +356,12 @@ React DOM 类型 19.3.0 / DefinitelyTyped `de5e8f01d01a14ae4ae502283d3d09f042f1a
 `2d889f2b329e46680ec9bdd565de4616c497825a`（MIT）的换行编解码工具及 Node POSIX
 子进程接口。窄范围监督器补齐环境、进程组清理与 Server 操作策略，不把完整 MCP 客户端
 当作运行时授权协议。实现与集成仍待完成；见[通信研究](research/python-runtime-transport.md)。
+
+## 可选 Python Server 打包（2026-09-23）
+
+复用官方 Python 3.12.13 slim-bookworm，源提交
+3362634339580d3232e65a66dd5a36c47ae7ff14（镜像源码 MIT、解释器 PSF、Debian 组件各自许可），
+镜像索引 sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2，
+以及现有 Node 24.21.0、Docker 多阶段目标和 Python venv/metadata 契约。
+可选镜像仅保留既有固定版本的运行依赖，在数据库启动前检查完整安装配置。
+不增加依赖、不复制源码、不改变权限。见[打包研究](research/python-server-container.zh-CN.md)。

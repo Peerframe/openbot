@@ -102,19 +102,48 @@ src/openbot_agent_runtime/
   wire.py        进程 profile 的分帧与 JSON 编解码（换行帧、严格边界）
   profile.py     wire <-> SDK 映射：请求解析、消息形状、原因词表
   worker.py      一次性会话：三个 RPC 端口、生命周期与退出码
+requirements.lock          冻结的开发依赖闭包（23 项固定版本依赖）
+requirements-runtime.lock  冻结的纯运行时闭包（18 项固定版本依赖，不含测试工具链）
 scripts/
-  bootstrap.sh   唯一联网步骤：从 requirements.lock 创建 ./.venv
-  check.sh       校验环境与锁一致，然后运行测试
-  run-worker.py  受信任的进程入口（加入自身 src 目录后服务 stdin）
+  bootstrap.sh            唯一联网步骤：从 requirements.lock 创建 ./.venv
+  check.sh                校验 dev profile，然后运行测试
+  run-worker.py           受信任的进程入口（加入自身 src 目录后服务 stdin）
+  verify_environment.py   感知 profile 的环境校验器（dev | runtime | auto）
 tests/           仅确定性假件：无付费 API、无凭据、无数据库
 RESEARCH.md      所依赖的每个 SDK 行为对应的固定上游证据
 ```
+
+## 依赖 profile（`scripts/verify_environment.py`）
+
+已批准两套锁定环境。**开发** profile（`requirements.lock`，23 项固定版本依赖）是默认值，含测试运行器；
+**运行时** profile（`requirements-runtime.lock`，18 项固定版本依赖）保留相同版本的运行依赖，移除测试
+工具链，所选镜像不包含 pytest。该划分是**从已安装的发行版元数据推导**出来的，不是
+猜测：`pytest` 是唯一会拉入 `iniconfig`、`packaging`、`pluggy` 与 `Pygments` 的发行版，而运行时
+闭包中没有任何东西可达它们（见 [RESEARCH.md](RESEARCH.md) §10）。
+
+```sh
+./.venv/bin/python scripts/verify_environment.py                   # dev（默认）
+./.venv/bin/python scripts/verify_environment.py --profile dev
+./.venv/bin/python scripts/verify_environment.py --profile runtime
+./.venv/bin/python scripts/verify_environment.py --profile auto
+```
+
+* `dev` 与 `runtime` 各自校验一份确切的锁：每项依赖都以完全相同的版本安装，除
+  `pip`/`setuptools`/`wheel` 外没有其他发行版，且该 profile 的每项直接依赖都以相同版本出现在锁中。
+* `auto` 先拿已安装发行版去整体匹配一份锁，再套用该 profile 的检查。只有**完全匹配**才算通过，
+  因为部分安装的开发环境、缺失的运行依赖、版本漂移与多余包是同一类问题：这不是本包批准过的
+  环境。Server 的启动预检用的就是这个模式。
+* 锁文件只接受 `name==version` 格式。非版本固定行、pip 选项、重复条目（即使版本相同）
+  均会报错，不会静默跳过。
+* 校验器只读取发行版元数据。它从不安装、不使用网络，也不接受调用方给出的锁路径：锁是包旁边的
+  固定文件，因此在任意工作目录下、以及在 `python -I` 下解析结果都一致。
+* 退出码：匹配为 `0`，锁或漂移问题为 `1`，`--profile` 取值非法为 `2`。
 
 ## 运行检查
 
 ```sh
 ./scripts/bootstrap.sh   # 唯一联网步骤：从 requirements.lock 创建 ./.venv
-./scripts/check.sh       # 校验环境与锁一致，然后运行测试
+./scripts/check.sh       # 校验 dev profile，然后运行测试
 ```
 
 `check.sh` 从不安装任何东西：环境缺失即失败。需要 CPython >= 3.12（`asyncio.timeout`）；
@@ -135,6 +164,11 @@ RESEARCH.md      所依赖的每个 SDK 行为对应的固定上游证据
   端到端验收由 Server 负责，证据记录在运行时说明中。
 * Linux/amd64 参考容器通过 369 项包内测试与 222 项 Server/PostgreSQL 测试，运行于 ARM Mac
   模拟环境。这不证明原生云端 CI、Windows 或生产打包已通过。现有 TypeScript 路径仍是默认值。
+* 依赖配置测试使用真实锁文件、合成安装集，并复现 Server 的预检调用。
+  可选 Server 镜像另行验证实际安装的运行依赖和 SDK 工具循环，见[容器验收](../../docs/SERVER_CONTAINER.zh-CN.md)。
+  这些检查不证明独立系统隔离或真实模型服务的行为。
+* 在开发检出中运行 `--profile runtime` **预期会失败**：它会把那 5 个测试专用发行版报为多余。这是
+  检查在正常工作，不是漂移。
 * 适配器不读取任何环境变量、不加载任何 Provider 客户端——有测试断言——但 `-I` 并不隐藏
   `os.environ`，所以这是本代码的性质，而非解释器开关的性质。
 * 无流式输出：子进程只发出一个终止帧然后退出。渐进式输出不属于本 profile。

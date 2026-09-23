@@ -61,6 +61,7 @@ describe.skipIf(process.platform === "win32")("Python startup selection", () => 
     const seen = JSON.parse(await readFile(files.recordPath, "utf8"));
     expect(seen.args.slice(0, 3)).toEqual(["-I", "-u", "-c"]);
     expect(seen.args[3]).toContain("import openbot_agent_runtime");
+    expect(seen.args[3]).toContain('sys.argv = [sys.argv[2], "--profile", "auto"]');
     expect(seen.args.slice(4)).toEqual([
       join(files.root, "src"),
       join(files.root, "scripts", "verify_environment.py"),

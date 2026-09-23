@@ -424,3 +424,90 @@ regressions, the Linux/amd64 reference run passed 369 package and 222 Server/Pos
 Codex also reran the final 31-case CLI lifecycle file on macOS; WorkBuddy independently checked
 369 macOS tests with an explicit temporary directory. Full npm run check passed. The Linux
 fixture was emulated on an ARM Mac; native hosted CI and production packaging remain unclaimed.
+
+## 10. Production dependency profile (TASK-004)
+
+`TASK_004_RUNTIME_PACKAGING.md` asked for a strict runtime-only locked environment alongside the
+existing development lock, *derived* from installed distribution metadata rather than assumed. Per
+AGENTS.md this section is recorded **before** the implementation. No source was copied, no new
+dependency or version was added, and no packaging framework was introduced. The runtime pins below
+are the already-reviewed ones from §1/§9, unchanged.
+
+### 10a. Primary sources reviewed
+
+| Source | Version observed | What it settles here |
+| --- | --- | --- |
+| CPython `importlib.metadata` (<https://docs.python.org/3.12/library/importlib.metadata.html>) | 3.12.14 docs | the metadata API in use: `distributions()`, `distribution()`, `version()`, `requires()`, `metadata`, and `PackageNotFoundError`. `requires()` is documented as returning "the declared dependency specifiers"; the example shows PEP 508 strings with `; extra == 'test'` markers |
+| CPython `argparse` (<https://docs.python.org/3.12/library/argparse.html>) | 3.12 docs | `choices=` restricts a value to a sequence, and "when you pass an invalid argument list to the `parse_args()` method … it will print a *message* to `sys.stderr` and exit with a status code of 2"; `default=` applies when the option is absent |
+| pip requirements file format (<https://pip.pypa.io/en/stable/reference/requirements-file-format/>) | v26.2.1 | one requirement per line, `#` begins a comment, `-r` pulls in another requirements file. The page warns the format "is closely tied to a number of internal details of pip" and is "only intended for consumption by pip" — so a local parser must accept only the narrow subset this package actually writes |
+| pip requirement specifiers (<https://pip.pypa.io/en/stable/reference/requirement-specifiers/>) | v26.2.1 | a name-based specifier is `name` + optional extras + optional version constraints + optional environment markers; PEP 508 is cited as the full format specification |
+| Python Packaging — version specifiers (<https://packaging.python.org/en/latest/specifications/version-specifiers/>) | latest | `==` is *version matching*: "the specified version must be exactly the same as the requested version", the only substitution being zero padding of the release segment. OpenBot deliberately accepts only the exact textual release pins in its committed locks; this verifier does not implement general PEP 440 matching |
+| Python Packaging — core metadata (<https://packaging.python.org/en/latest/specifications/core-metadata/>) | latest | `Requires-Dist` names a required project and may carry "an environment marker after a semicolon. This means that the requirement is only needed in the specified conditions"; `Requires-Dist: reportlab; extra == 'pdf'` is the documented way to make a dependency conditional on an optional feature |
+| PEP 508 (<https://peps.python.org/pep-0508/>) | final | the normative marker grammar. `extra` is listed as `# ONLY when defined by a containing layer`, and "outside of a context where this special handling is taking place, the `extra` variable should result in an error". Extras "union in the dependencies they define … **when** the extra is used in a dependency specification" |
+
+Tooling check (AGENTS.md step 4, "choose the first viable option"): maintained tools that already do
+this job exist — `pip-compile` from pip-tools 7.6.1 and `uv export --no-dev`. Both are **external
+dependencies**, which the frozen boundary forbids here ("No new packaging framework or dependency
+update"). The standard library already exposes the needed primitive, `importlib.metadata.requires()`,
+so no tool is added. pip-tools' own documented example output independently corroborates the
+attribution below, annotating `iniconfig`, `packaging`, `pluggy` and `tomli` as "via pytest".
+Search terms recorded: "python runtime dependency closure from installed metadata",
+"importlib.metadata requires_dist transitive closure", "pip-tools compile --no-dev",
+"uv export --no-dev runtime only".
+
+### 10b. Method
+
+The closure was derived by walking `importlib.metadata.requires()` breadth-first from the direct
+runtime pins in `requirements.txt` (`pydantic-ai-slim`, `jsonschema-rs`) and, at every step, skipping
+any requirement whose environment marker mentions `extra` — an extra-guarded dependency is installed
+only when that extra is requested (PEP 508 above), and `requirements.txt` requests no extras. The
+walk was executed against the installed `.venv` on CPython 3.12.13, and the resulting set was then
+compared to the 23-pin lock. Result: **18 runtime pins + 5 dev-only pins = 23**, the entire lock.
+
+### 10c. Derived split
+
+Runtime transitive closure — 18 pins, all at the same versions as `requirements.lock`:
+
+`annotated-types`, `anyio`, `genai-prices`, `griffelib`, `h11`, `httpcore2`, `httpx2`, `idna`,
+`jsonschema-rs`, `logfire-api`, `opentelemetry-api`, `pydantic`, `pydantic-core`, `pydantic-ai-slim`,
+`pydantic-graph`, `truststore`, `typing-extensions`, `typing-inspection`
+
+Dev-only — 5 pins, reached from `pytest` and from nothing in the runtime closure:
+
+| Pin | Reached from | Evidence |
+| --- | --- | --- |
+| `pytest==8.4.2` | `requirements-dev.txt` | declared test runner |
+| `iniconfig==2.3.0` | `pytest` | `pytest 8.4.2` → `iniconfig>=1` |
+| `packaging==26.3` | `pytest` | `pytest 8.4.2` → `packaging>=20` |
+| `pluggy==1.6.0` | `pytest` | `pytest 8.4.2` → `pluggy<2,>=1.5` |
+| `Pygments==2.21.0` | `pytest` | `pytest 8.4.2` → `pygments>=2.7.2` |
+
+This answers the card's explicit question — **whether `packaging` is dev-only is derived, not
+guessed**: its only inbound edge is `pytest`, so it is absent from the runtime closure. No runtime
+module imports it (checked by parsing every import in `src/`: only `jsonschema_rs`, `pydantic_ai` and
+`pydantic_core` are third-party, and all three are inside the derived set).
+
+### 10d. Marker-inactive entries are correctly absent
+
+Four requirement strings in the graph are conditional on the *environment* rather than an extra. They
+were deliberately **not** added to either lock, because their markers are false on the supported
+interpreter and platform, and a marker-guarded dependency is not installed when its marker is false:
+
+- `exceptiongroup>=1.0.2 ; python_version < "3.11"` (from `anyio`, `pydantic-ai-slim`; also from
+  `pytest`) — false on the pinned 3.12 interpreter;
+- `httpx2-jsfetch ; sys_platform == 'emscripten' and python_version >= '3.12'` (from `httpx2`) —
+  false on macOS and Linux;
+- `colorama>=0.4 ; sys_platform == "win32"` and `tomli>=1 ; python_version < "3.11"` (from `pytest`)
+  — false here.
+
+None of these is installed in the `.venv`, which is the expected and observed state.
+
+### 10e. Consequence for verification
+
+Because the runtime profile must be verifiable in an environment that has *no* test tooling, the
+verifier cannot depend on `packaging` to evaluate markers — and does not need to. Marker evaluation
+was only required to *derive* the split, which happened once above. Verification is a set comparison:
+each pin in the chosen lock must be installed at exactly that version, and no distribution outside
+the chosen lock (apart from the documented `pip`/`setuptools`/`wheel` exemptions) may be present.
+Both locks are static lists, so the verifier stays standard-library-only and never installs, never
+touches the network, and never accepts a caller-supplied lock path.

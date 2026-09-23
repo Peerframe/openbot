@@ -262,8 +262,8 @@ Server 可直接发送有界的公开文本增量；不发送内部推理，也�
 
 启动时从空临时目录、最小环境检查固定 Worker、解释器、模块导入及依赖锁。缺失或不兼容会在
 数据库迁移和中断任务恢复之前失败；不自动安装、不接受任意命令或脚本配置、不自动回退。
-现有 PostgreSQL 数据与迁移历史不变。生产 Server 容器尚未包含 Python；下方 Linux 参考结果
-覆盖专用验收镜像，不代表已经部署生产容器。见[启用研究](research/python-runtime-activation.md)。
+现有 PostgreSQL 数据与迁移历史不变。[可选 Python Server 容器](SERVER_CONTAINER.zh-CN.md)
+已包含固定解释器和运行依赖。下方 Linux 参考结果覆盖专用验收镜像；正式镜像另有启动及生命周期验收。见[启用研究](research/python-runtime-activation.md)。
 
 ### Linux 参考验收环境
 

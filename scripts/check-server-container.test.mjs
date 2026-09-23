@@ -8,6 +8,7 @@ const repositoryRoot = new URL("../", import.meta.url);
 const paths = [
   "deploy/server/Dockerfile",
   "deploy/server/compose.yaml",
+  "deploy/server/compose.python.yaml",
   ".dockerignore",
   ".github/workflows/ci.yml",
   "scripts/smoke-server-container.sh",
@@ -18,6 +19,7 @@ const paths = [
 const [
   dockerfile,
   compose,
+  pythonCompose,
   dockerignore,
   workflow,
   smoke,
@@ -28,6 +30,7 @@ const [
 const valid = {
   dockerfile,
   compose,
+  pythonCompose,
   dockerignore,
   workflow,
   smoke,
@@ -323,5 +326,45 @@ test("isolates the container policy from a following peer job", () => {
           "    steps:\n      - run: bash scripts/smoke-server-container.sh\n",
       }),
     /Server container CI job is missing required fragment/,
+  );
+});
+
+test("rejects Python dependency and overlay bypasses", () => {
+  for (const fragment of [
+    "--only-binary=:all:",
+    "--profile runtime",
+    "-r requirements-runtime.lock",
+  ]) {
+    assert.throws(
+      () => validateServerContainer({ ...valid, dockerfile: dockerfile.replace(fragment, "") }),
+      /Python dependency/,
+    );
+  }
+  assert.throws(
+    () =>
+      validateServerContainer({
+        ...valid,
+        pythonCompose: pythonCompose.replace("runtime-python", "runtime"),
+      }),
+    /Python Compose/,
+  );
+  assert.throws(
+    () =>
+      validateServerContainer({
+        ...valid,
+        pythonCompose: `${pythonCompose}    privileged: true\n`,
+      }),
+    /Python Compose/,
+  );
+  assert.throws(
+    () =>
+      validateServerContainer({
+        ...valid,
+        dockerfile: dockerfile.replace(
+          "FROM python-base AS runtime-python",
+          "FROM python-base AS runtime-python\nRUN pip install pytest",
+        ),
+      }),
+    /Python runtime/,
   );
 });

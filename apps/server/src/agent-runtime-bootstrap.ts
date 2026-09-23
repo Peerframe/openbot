@@ -16,7 +16,8 @@ const preflight = [
   "assert sys.version_info >= (3, 12)",
   "sys.path.insert(0, sys.argv[1])",
   "import openbot_agent_runtime",
-  'runpy.run_path(sys.argv[2], run_name="__main__")',
+  'sys.argv = [sys.argv[2], "--profile", "auto"]',
+  'runpy.run_path(sys.argv[0], run_name="__main__")',
 ].join("; ");
 
 // The optional path is for trusted composition/tests only, never request or environment input.

@@ -56,7 +56,7 @@ OPENBOT_TEST_IMAGE=openbot-server:smoke OPENBOT_TEST_PLATFORM=arm64 bash scripts
 ```
 
 amd64 目标请将变量改为 `amd64`。冒烟只创建和清理自身的临时测试容器、网络与对象卷，验证运行
-架构、非 root 身份、依赖清单、缺少密码时拒绝启动、当前全部 18 条 migration、健康身份、对象
+架构、非 root 身份、依赖清单、缺少密码时拒绝启动、完整迁移日志、健康身份、对象
 持久化、migration 幂等和 SIGTERM 零退出码，不发布产物。
 
 详细证据与残余风险见[上游调研](research/server-node24-production-container.md)。
@@ -78,3 +78,35 @@ Server 用户所有权，目录权限 `0700`、文件权限 `0600`。已有配�
 `OPENBOT_MODEL_ENCRYPTION_KEY` 初始化配置，不要与 `OPENBOT_MODEL_DIRECTORY` 同时设置。
 独立部署也可保留原来的显式密钥方案；目前没有自动密钥迁移或轮换。明文密钥只允许 Server 用户
 读取，渲染进程与 Worker 不持有，设置 API 从不返回密钥。
+
+## 可选 Python 执行镜像
+
+架构迁移新增 `runtime-python` 构建目标：包含相同 Server 产物、Node 24.21.0、Python 3.12.13
+和严格锁定的运行依赖，不包含 Python 测试或 pytest。默认构建和原有 Compose 命令仍选择 TypeScript。
+使用同一 `.env` 和 Compose 项目，通过覆盖文件显式选择实验性 Python 执行层：
+
+```bash
+docker compose --env-file .env -f deploy/server/compose.yaml -f deploy/server/compose.python.yaml config --quiet
+docker compose --env-file .env -f deploy/server/compose.yaml -f deploy/server/compose.python.yaml up --build -d
+```
+
+覆盖文件沿用数据库、对象文件和模型设置卷、回环端口、只读文件系统。
+Server 在迁移和中断任务恢复前检查固定解释器与完整依赖配置，缺失或漂移时拒绝启动。
+身份、凭据、审批、预算、审计和结果发布仍归 Server；容器内 Python 子进程拥有同一系统用户的访问权，
+不构成独立沙箱。
+
+切回默认执行层时，先停止交办新任务，让现有任务完成或取消，再使用不带 Python 覆盖文件的原命令，
+执行 `up --build -d --force-recreate`。保持相同项目名称、`.env` 和持久卷，不使用 `down --volumes`。
+切换镜像不表示迁移检查点或重放已中断的外部操作。
+
+新增镜像沿用必需的双架构容器 CI。对应架构可这样复验（amd64 环境替换下列 `arm64`）：
+
+```bash
+docker build --platform linux/arm64 --target runtime-python --tag openbot-server:python-smoke --file deploy/server/Dockerfile .
+OPENBOT_TEST_IMAGE=openbot-server:python-smoke OPENBOT_TEST_PLATFORM=arm64 OPENBOT_TEST_AGENT_RUNTIME=python bash scripts/smoke-server-container.sh
+```
+
+验收仅使用临时数据和内部测试网络，覆盖真实 Python SDK 工具循环、Unicode 参数、取消、运行依赖清单、
+异常依赖在数据库变更前拒绝启动、真实 Server 登录/API、迁移、持久化、重启和 SIGTERM。
+工具与模型端口是合成替身，不调用真实模型。
+本地结果和平台限制见[打包研究](research/python-server-container.zh-CN.md)；配置 CI 不等于托管验收已通过。

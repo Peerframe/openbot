@@ -310,9 +310,10 @@ model access. Root tasks, delegated tasks and continuation use the same selected
 Startup checks the fixed package worker, interpreter, imports and dependency lock from an empty
 temporary directory with a minimal environment. An absent or incompatible package fails before
 database migration or interrupted-Run recovery. There is no automatic install, command/script
-configuration, or fallback. Existing PostgreSQL data and migrations are unchanged. The current
-production Server container does not yet bundle Python. The separate Linux reference result below
-covers the acceptance image, not a production container rollout. See [activation research](research/python-runtime-activation.md).
+configuration, or fallback. Existing PostgreSQL data and migrations are unchanged. The optional
+[Python Server container](SERVER_CONTAINER.md#optional-python-execution-image) bundles the fixed
+interpreter and runtime dependency closure. The separate Linux reference result below covers
+the acceptance image; container packaging has its own startup and lifecycle smoke. See [activation research](research/python-runtime-activation.md).
 
 ### Linux reference acceptance fixture
 

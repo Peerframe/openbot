@@ -63,8 +63,8 @@ OPENBOT_TEST_IMAGE=openbot-server:smoke OPENBOT_TEST_PLATFORM=arm64 bash scripts
 ```
 
 Use `amd64` for the corresponding target. The smoke creates and removes only its temporary test
-containers, network, and object volume. It checks runtime architecture, non-root identity,
-dependency inventory, missing-password rejection, all 18 current migrations, health identity,
+containers, internal network, and object/model volumes. It checks runtime architecture, non-root identity,
+dependency inventory, missing-password rejection, the complete migration journal, health identity,
 object persistence, migration idempotence, and zero-exit SIGTERM. It does not publish artifacts.
 
 See [upstream research and remaining risks](research/server-node24-production-container.md).
@@ -89,3 +89,40 @@ Existing Desktop-managed services retain their explicit `OPENBOT_MODEL_SETTINGS_
 `OPENBOT_MODEL_DIRECTORY`. Separate deployments may keep their existing explicit-key setup; there
 is no automatic key migration or rotation. The plain key is readable only by the Server account,
 not a renderer or Worker, and the settings API never returns it.
+
+## Optional Python execution image
+
+The migration also provides a `runtime-python` target: the same built Server and Node 24.21.0
+with Python 3.12.13 and a strict runtime-only dependency lock. It excludes Python tests and pytest.
+The unqualified Docker build and existing Compose command continue to select TypeScript.
+To select the experimental Python loop explicitly, reuse the same `.env` and Compose project:
+
+```bash
+docker compose --env-file .env -f deploy/server/compose.yaml -f deploy/server/compose.python.yaml config --quiet
+docker compose --env-file .env -f deploy/server/compose.yaml -f deploy/server/compose.python.yaml up --build -d
+```
+
+This overlay keeps the existing database, object and model volumes, loopback ports and read-only
+filesystem. Server startup verifies the fixed interpreter and the complete installed dependency
+profile before migrations or interrupted-task recovery; missing/drifted dependencies are fatal.
+The Server still owns identity, credentials, approvals, budgets, audit and result publication.
+An in-container Python subprocess has the Server OS user's access and is not an independent sandbox.
+
+To return to the default executor, stop new work, let active tasks finish or cancel them, and rerun
+the original Compose command with `up --build -d --force-recreate` and no Python overlay. Keep the
+same project name, `.env` and volumes; do not use `down --volumes`. Switching images is not a
+checkpoint migration or replay of interrupted external actions.
+
+The optional image is verified by the same required native container CI matrix. Reproduce on the
+corresponding architecture (replace `arm64` with `amd64` as needed):
+
+```bash
+docker build --platform linux/arm64 --target runtime-python --tag openbot-server:python-smoke --file deploy/server/Dockerfile .
+OPENBOT_TEST_IMAGE=openbot-server:python-smoke OPENBOT_TEST_PLATFORM=arm64 OPENBOT_TEST_AGENT_RUNTIME=python bash scripts/smoke-server-container.sh
+```
+
+The smoke uses disposable data and an internal test network. It verifies a real Python SDK/tool
+loop with Unicode arguments and synthetic Server ports, cancellation, runtime dependency inventory,
+failed preflight before database changes, actual Server login/API, migrations, persistent storage,
+restart and SIGTERM. It makes no real model calls. See [packaging evidence](research/python-server-container.md)
+for actual local results and remaining platform limits; wiring CI does not mean a hosted run has passed.

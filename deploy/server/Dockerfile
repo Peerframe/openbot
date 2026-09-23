@@ -27,7 +27,7 @@ COPY --from=pruner /pruned/json/ ./
 RUN npm ci --omit=dev --ignore-scripts --audit=false \
   && mkdir -p apps/server/node_modules
 
-FROM base AS runtime
+FROM base AS runtime-node
 ENV NODE_ENV=production
 ENV OPENBOT_OBJECT_STORE_PATH=/var/lib/openbot/objects
 WORKDIR /workspace
@@ -65,3 +65,40 @@ STOPSIGNAL SIGTERM
 HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=6 \
   CMD ["node", "deploy/server/healthcheck.mjs"]
 CMD ["node", "apps/server/dist/index.js"]
+
+# Opt-in Python runtime. Both stages use the same interpreter and absolute venv path.
+FROM python:3.12.13-slim-bookworm@sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2 AS python-base
+FROM python-base AS python-dependencies
+WORKDIR /workspace/apps/agent-runtime-python
+COPY apps/agent-runtime-python/requirements-runtime.lock ./requirements-runtime.lock
+RUN python -m venv .venv \
+  && .venv/bin/python -m pip --isolated install --only-binary=:all: --no-cache-dir \
+       --disable-pip-version-check --index-url https://pypi.org/simple -r requirements-runtime.lock \
+  && .venv/bin/python -m pip check
+COPY apps/agent-runtime-python/requirements*.txt apps/agent-runtime-python/requirements.lock ./
+COPY apps/agent-runtime-python/scripts/verify_environment.py ./scripts/verify_environment.py
+RUN .venv/bin/python -I scripts/verify_environment.py --profile runtime
+
+FROM python-base AS runtime-python
+ENV NODE_ENV=production
+ENV OPENBOT_AGENT_RUNTIME=python
+ENV OPENBOT_OBJECT_STORE_PATH=/var/lib/openbot/objects
+WORKDIR /workspace/scripts
+WORKDIR /workspace
+RUN groupadd --gid 1000 node \
+  && useradd --uid 1000 --gid node --create-home --shell /bin/sh node \
+  && install -d --owner=node --group=node --mode=0700 /var/lib/openbot/objects /var/lib/openbot/model
+COPY --from=base /usr/local/bin/node /usr/local/bin/node
+COPY --from=runtime-node /workspace/ ./
+COPY --from=python-dependencies /workspace/apps/agent-runtime-python/ ./apps/agent-runtime-python/
+COPY apps/agent-runtime-python/src/ ./apps/agent-runtime-python/src/
+COPY apps/agent-runtime-python/scripts/run-worker.py ./apps/agent-runtime-python/scripts/run-worker.py
+USER node
+EXPOSE 3001
+STOPSIGNAL SIGTERM
+HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=6 \
+  CMD ["node", "deploy/server/healthcheck.mjs"]
+CMD ["node", "apps/server/dist/index.js"]
+
+# Keep the unqualified build and existing Compose file on the established default.
+FROM runtime-node AS runtime

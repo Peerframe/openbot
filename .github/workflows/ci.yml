@@ -354,6 +354,19 @@ jobs:
           OPENBOT_TEST_IMAGE: openbot-server:smoke
           OPENBOT_TEST_PLATFORM: ${{ matrix.arch }}
 
+      - name: Validate the Python Compose overlay
+        run: docker compose --file deploy/server/compose.yaml --file deploy/server/compose.python.yaml config --quiet
+        env:
+          OPENBOT_OWNER_PASSWORD: openbot-compose-ci-validation-only
+      - name: Build the optional Python Server image without publication
+        run: docker build --platform "linux/${{ matrix.arch }}" --target runtime-python --tag openbot-server:python-smoke --file deploy/server/Dockerfile .
+      - name: Exercise packaged Python loop, cancellation and Server lifecycle
+        run: bash scripts/smoke-server-container.sh
+        env:
+          OPENBOT_TEST_IMAGE: openbot-server:python-smoke
+          OPENBOT_TEST_PLATFORM: ${{ matrix.arch }}
+          OPENBOT_TEST_AGENT_RUNTIME: python
+
   python-runtime:
     name: Python runtime (Linux amd64)
     runs-on: ubuntu-24.04

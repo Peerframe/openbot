@@ -124,19 +124,53 @@ src/openbot_agent_runtime/
   wire.py        the process profile's framing and JSON codec (newline frames, strict bounds)
   profile.py     wire <-> SDK mapping: request parsing, message shapes, reason vocabulary
   worker.py      the one-invocation session: the three RPC ports, lifecycle and exit codes
+requirements.lock          the frozen development closure (23 pins)
+requirements-runtime.lock  the frozen runtime-only closure (18 pins, no test tooling)
 scripts/
-  bootstrap.sh   the only networked step: creates ./.venv from requirements.lock
-  check.sh       verifies the environment matches the lock, then runs the tests
-  run-worker.py  the trusted process entry point (adds its own src dir, then serves stdin)
+  bootstrap.sh            the only networked step: creates ./.venv from requirements.lock
+  check.sh                verifies the dev profile, then runs the tests
+  run-worker.py           the trusted process entry point (adds its own src dir, then serves stdin)
+  verify_environment.py   profile-aware environment verifier (dev | runtime | auto)
 tests/           deterministic fakes only: no paid API, no credentials, no database
 RESEARCH.md      pinned upstream evidence for every SDK behaviour relied on
 ```
+
+## Dependency profiles (`scripts/verify_environment.py`)
+
+Two locked environments are approved. The **development** profile (`requirements.lock`, 23 pins) is the
+default and includes the test runner. The **runtime** profile (`requirements-runtime.lock`, 18 pins) is
+the same closure at the same pins with the test tooling removed, so a production image never ships
+pytest. The split is derived from installed distribution metadata rather than guessed: `pytest` is the
+only distribution that reaches `iniconfig`, `packaging`, `pluggy` and `Pygments`, and nothing in the
+runtime closure reaches them (see [RESEARCH.md](RESEARCH.md) §10).
+
+```sh
+./.venv/bin/python scripts/verify_environment.py                   # dev (the default)
+./.venv/bin/python scripts/verify_environment.py --profile dev
+./.venv/bin/python scripts/verify_environment.py --profile runtime
+./.venv/bin/python scripts/verify_environment.py --profile auto
+```
+
+* `dev` and `runtime` each check one exact lock: every pin installed at exactly that version, nothing
+  else installed except `pip`/`setuptools`/`wheel`, and every direct pin of that profile present in the
+  lock at the same version.
+* `auto` matches the installed distributions against a *whole* lock and then applies that profile's
+  checks. It succeeds only on an exact match, because a partial development install, a missing runtime
+  pin, a version drift and an extra package are one and the same problem: the environment is not one
+  this package approved. This is the mode the Server's startup preflight runs.
+* Lock files accept only bare `name==version` pins. Non-pin lines, pip options and duplicate entries
+  (even at the same version) are errors; none is silently skipped.
+* The verifier reads distribution metadata only. It never installs, never uses the network, and takes no
+  lock path from the caller: the lock is a fixed file beside the package, so it resolves identically
+  from any working directory and under `python -I`.
+* Exit status is `0` on a match, `1` for a lock or drift problem, and `2` for an invalid `--profile`
+  value.
 
 ## Running the checks
 
 ```sh
 ./scripts/bootstrap.sh   # the only networked step: creates ./.venv from requirements.lock
-./scripts/check.sh       # verifies the environment matches the lock, then runs the tests
+./scripts/check.sh       # verifies the dev profile, then runs the tests
 ```
 
 `check.sh` never installs anything: a missing environment is a failure. Requires
@@ -161,6 +195,12 @@ CPython >= 3.12 (`asyncio.timeout`); the pinned SDK itself only needs 3.10.
 * The Linux/amd64 reference container passed 369 package and 222 Server/PostgreSQL tests.
   It ran under emulation on an ARM Mac; native hosted CI, Windows and production packaging are
   not established by that result. The existing TypeScript runtime remains the default.
+* Profile tests use real locks, synthetic installed sets and the exact Server preflight invocation.
+  The opt-in Server image separately verifies the installed runtime closure and actual SDK/tool loop;
+  see [container verification](../../docs/SERVER_CONTAINER.md#optional-python-execution-image).
+  These checks do not establish OS isolation or live-provider behavior.
+* Running `--profile runtime` in a development checkout is *expected* to fail: it reports the five
+  test-only distributions as unexpected. That is the check working, not drift.
 * The adapter reads no environment variable and loads no provider client — asserted by tests — but
   `-I` does not hide `os.environ`, so this is a property of this code, not of the interpreter switch.
 * No streaming: the child emits exactly one terminal frame and exits. Progressive output is not part of
