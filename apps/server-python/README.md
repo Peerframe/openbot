@@ -2,11 +2,11 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-S2a-1/2/3/4/5 of the [migration plan](../../docs/ARCHITECTURE_MIGRATION_PLAN.md): Python/FastAPI reads
+S2a-1/2/3/4/5/6 of the [migration plan](../../docs/ARCHITECTURE_MIGRATION_PLAN.md): Python/FastAPI reads
 existing Owner sessions, Bots, channels and recent messages and can explicitly enable Owner login/logout against the
 current PostgreSQL schema. This trusted control layer is separate from the untrusted Agent Runtime.
 **The TypeScript Server remains the default.** Python starts read-only; explicit `owner-auth` mode
-enables authentication, and `identity` mode adds Bot/channel creation, direct conversations and member joins. Task dispatch, approvals,
+enables authentication, and `identity` mode adds Bot/channel creation, direct conversations, member joins and revision-checked profile edits. Task dispatch, approvals,
 files, schedules and realtime events have not moved.
 
 ## Develop and verify
@@ -36,13 +36,13 @@ channels. Legacy membership order is unspecified, so only member IDs are compare
 returns them sorted. Other fixture fields match exactly. Both implementations recognize sessions
 issued by the other, and revocation takes effect across implementations.
 
-Twenty-nine database/HTTP checks cover reads, expiry/revocation, enforced read-only transactions, exact
+Thirty-five database/HTTP checks cover reads, expiry/revocation, enforced read-only transactions, exact
 schema history, invalid stored Bot status, concurrent persistent throttling, transactional auth
 failure without a success cookie, and real loopback processes with bounded SIGTERM shutdown.
 Identity checks also exercise exact audit/evolution payloads, missing members, concurrent name
 conflicts, rollback on audit failure, revocation during a row-lock wait, expiry during audit waiting,
-and real HTTP creation. A separate 81-case input differential compares installed Zod against Python. Without the explicit fixture,
-package checks skip the twenty-nine integration cases; skips are not acceptance. Two upstream test-client
+and real HTTP creation. A separate 105-case input differential compares installed Zod against Python. Without the explicit fixture,
+package checks skip the thirty-five integration cases; skips are not acceptance. Two upstream test-client
 deprecation warnings remain at the reviewed pins. The Linux CI job includes these checks; a hosted
 run is separate evidence and has not yet run for this local change.
 
@@ -58,7 +58,7 @@ It never runs migrations or reads dotenv. This is not a production cutover instr
 
 | Setting | Meaning |
 | --- | --- |
-| `OPENBOT_CONTROL_AUTHORITY` | `read-only` by default; `owner-auth` enables login/logout; `identity` additionally enables Bot/channel creation, direct conversations and member joins |
+| `OPENBOT_CONTROL_AUTHORITY` | `read-only` by default; `owner-auth` enables login/logout; `identity` additionally enables Bot/channel creation, direct conversations, member joins and profile details |
 | `OPENBOT_CONTROL_OWNER_PASSWORD` | Required for `owner-auth` and `identity`; 15–1024 Unicode characters, non-example value. The old Server password variable is not inherited |
 | `OPENBOT_CONTROL_SESSION_TTL_HOURS` | Integer 1–168; default 12 |
 | `OPENBOT_CONTROL_ALLOWED_ORIGINS` | Exact comma-separated HTTP(S) origins; defaults to localhost/127.0.0.1 at the configured port in auth mode. No wildcard or Host-header inference |
@@ -97,7 +97,7 @@ a later logout waits for that transaction, and a prior revocation or expiry reje
 conflicts return 409, missing members 422, uncertain storage 503 without automatic retry. Ordinary
 channel names use the existing partial unique index, independently of direct-conversation names.
 Selecting a computer profile does not grant any tool permission. No transient profile notification
-or other identity edit/delete/dispatch endpoint is implemented in this slice. Complete client parity,
+or identity delete/dispatch endpoint is implemented in this slice. Complete client parity,
 revisioned workspace snapshots and durable event cursors remain later S2 work.
 
 Direct conversations use POST `/api/v1/bots/{bot_id}/conversation`; ordinary-channel joins use
@@ -117,6 +117,15 @@ JSON have a 4 MiB ceiling; overflow returns 503 without shortening or repairing 
 session recheck discards rows if revoked. The paired fixture compares 105 stored messages and an
 empty channel against real TS and loopback HTTP; additional cases cover tied timestamps, oversized
 content/identifiers and revocation during a read. See [message review](../../docs/research/python-message-reads.md).
+
+In `identity` mode, PATCH `/api/v1/bots/{bot_id}/profile` requires `role`, `description` and
+`expectedRevision`; it rejects unknown fields. The 32 KiB/five-second body limit accommodates the
+maximum Unicode fields. Only descriptive fields change; stale revision returns 409, unchanged
+fields 422, missing Bot 404. Profile revision, evolution and audit commit atomically. Owner authority
+uses the same locked transaction. Six real database cases cover conflicts, rollback, revocation,
+expiry, error mapping and TS profile readback; the explicit process also serves PATCH over HTTP.
+The full aggregate profile GET and realtime invalidation remain in S2c; no empty replacement is
+advertised. See [profile review](../../docs/research/python-profile-details.md).
 
 ## Reuse and licenses
 

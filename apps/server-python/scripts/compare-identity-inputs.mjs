@@ -1,4 +1,4 @@
-// Differential check: the installed compiled Zod creation schemas versus the Python input module.
+// Differential check: the installed compiled Zod identity schemas versus the Python input module.
 //
 //   node apps/server-python/scripts/compare-identity-inputs.mjs
 //
@@ -21,6 +21,7 @@ const repositoryRoot = new URL("../../../", import.meta.url);
 
 const compiledSchemas = new URL("packages/protocol/dist/index.js", repositoryRoot);
 const fixturePath = new URL("tests/fixtures/identity-inputs.json", packageDirectory);
+const profileFixturePath = new URL("tests/fixtures/profile-inputs.json", packageDirectory);
 const pythonPath = new URL(".venv/bin/python", packageDirectory);
 const sourcePath = new URL("src", packageDirectory);
 
@@ -44,9 +45,18 @@ if (!existsSync(pythonPath)) {
   );
 }
 
-const { createBotInputSchema, createChannelInputSchema } = await import(compiledSchemas.href);
-const schemas = { bot: createBotInputSchema, channel: createChannelInputSchema };
-const fixture = JSON.parse(readFileSync(fixturePath, "utf8"));
+const { createBotInputSchema, createChannelInputSchema, updateEmployeeProfileDetailsInputSchema } =
+  await import(compiledSchemas.href);
+const schemas = {
+  bot: createBotInputSchema,
+  channel: createChannelInputSchema,
+  profile: updateEmployeeProfileDetailsInputSchema,
+};
+const fixture = {
+  cases: [fixturePath, profileFixturePath].flatMap(
+    (path) => JSON.parse(readFileSync(path, "utf8")).cases,
+  ),
+};
 
 // One fixed, self-contained program: insert the pinned source path, validate every fixture case.
 const bootstrap = `
@@ -56,10 +66,13 @@ import sys
 sys.path.insert(0, sys.argv[1])
 from pydantic import ValidationError
 from openbot_server.identity_inputs import parse_bot_create, parse_channel_create
+from openbot_server.profile_details import parse_profile_details
 
-parsers = {"bot": parse_bot_create, "channel": parse_channel_create}
-with open(sys.argv[2], encoding="utf-8") as handle:
-    fixture = json.load(handle)
+parsers = {"bot": parse_bot_create, "channel": parse_channel_create, "profile": parse_profile_details}
+fixture = {"cases": []}
+for path in sys.argv[2:]:
+    with open(path, encoding="utf-8") as handle:
+        fixture["cases"].extend(json.load(handle)["cases"])
 
 results = []
 for case in fixture["cases"]:
@@ -76,7 +89,15 @@ json.dump({"results": results}, sys.stdout, ensure_ascii=True)
 function runPython() {
   const result = spawnSync(
     fileURLToPath(pythonPath),
-    ["-I", "-u", "-c", bootstrap, fileURLToPath(sourcePath), fileURLToPath(fixturePath)],
+    [
+      "-I",
+      "-u",
+      "-c",
+      bootstrap,
+      fileURLToPath(sourcePath),
+      fileURLToPath(fixturePath),
+      fileURLToPath(profileFixturePath),
+    ],
     {
       cwd: scriptsDirectory,
       env: { PATH: "/usr/bin:/bin" },

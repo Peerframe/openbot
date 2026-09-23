@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from .authority import AuthenticationRequired
 from .auth_routes import validate_origins
 from .conversations import ConversationNotFound, DirectMembershipLocked, JoinChannelInput, parse_join
-from .http_input import read_json
+from .http_input import authorize_owner, read_json
 from .identity_routes import ChannelResponse
 from .models import Channel
 
@@ -24,12 +24,7 @@ def register_conversation_routes(app: FastAPI, writer: ConversationStore, read_s
     cookie_name = "__Host-openbot_session" if secure_cookies else "openbot_session"
 
     async def authorize(request: Request):
-        if request.headers.get("origin") not in allowed_origins:
-            raise HTTPException(403, "Request origin is not allowed.")
-        token = request.cookies.get(cookie_name)
-        if (await read_store.read(token, "session")).expires_at is None:
-            raise HTTPException(401, "Authentication required.")
-        return token
+        return await authorize_owner(request, read_store, cookie_name=cookie_name, allowed_origins=allowed_origins)
 
     async def invoke(operation):
         try:

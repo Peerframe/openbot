@@ -498,3 +498,10 @@ Reuse the same released PostgreSQL/Psycopg/Pydantic stack for a parameterized, r
 message window. Standard SQL ordering, a materialized bounded window and byte sums prevent
 unbounded text transfer. The existing Owner session is rechecked before returning data. No new
 library, migration, dispatch or copied upstream source. See [research](research/python-message-reads.md).
+
+## Python profile editing reference (2026-09-23)
+
+Reuse PostgreSQL 17.11 row locks/revision predicates, Psycopg 3.3.6 and the accepted Pydantic/ECMAScript
+input adapters for optimistic descriptive profile updates. Owner authorization, revision, evolution
+and audit remain one transaction. No new dependency, migration or copied upstream source; existing
+Zod license notices continue to cover reused input helpers. See [research](research/python-profile-details.md).

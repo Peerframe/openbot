@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException, Request
 from pydantic import ValidationError
 
 from .auth_routes import validate_origins
-from .http_input import read_json
+from .http_input import authorize_owner, read_json
 from .identity_inputs import CreateBotInput, CreateChannelInput, parse_bot_create, parse_channel_create
 from .identity_store import AuthenticationRequired, IdentityConflict, UnknownMembers
 from .models import Bot, Channel, PublicModel
@@ -44,11 +44,7 @@ def register_identity_routes(app: FastAPI, writer: IdentityStore, read_store, *,
         return schema
 
     async def create(request: Request, parse, operation):
-        if request.headers.get("origin") not in allowed_origins:
-            raise HTTPException(403, "Request origin is not allowed.")
-        token = request.cookies.get(cookie_name)
-        if (await read_store.read(token, "session")).expires_at is None:
-            raise HTTPException(401, "Authentication required.")
+        token = await authorize_owner(request, read_store, cookie_name=cookie_name, allowed_origins=allowed_origins)
         value = await creation_payload(request, parse)
         try:
             # A preliminary read is not a grant: the transaction rechecks and locks authority.
