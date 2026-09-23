@@ -43,6 +43,8 @@ remain stable for prior evidence. Do not finish translating CRUD before making t
 Compare pinned DBOS and Temporal releases against process-crash, approval-wait, cancellation,
 authority-revocation, duplicate-dispatch and uncertain-effect cases. Select one recovery owner;
 do not stack independent retry engines. Keep the first experiment separate from production.
+That comparison selected [Temporal as the sole target recovery owner](decisions/0046-temporal-as-recovery-owner.md)
+on 2026-09-24. The choice permits product integration; it does not activate a production default.
 
 Existing work is classified as product invariants, candidate implementations, or transitional
 facilities. Preserve useful tests and fixes; candidate code must earn acceptance. Session
@@ -62,7 +64,8 @@ stopped CA rotation and the same eight journeys. Actual waiting/completed histor
 side effects and an incompatible command is detected. A stopped 1.31.3-to-1.32.0 upgrade now passes twelve case records, including original-volume
 continuation before a separate older-snapshot restore. Production API authorization/PKI, broader
 upgrade and future-code compatibility, unresolved-work operations and Linux execution isolation
-remain engine-selection gates. Qualify these boundaries
+remain production-activation gates. A targeted command-scoped historical lookup now handles a
+closed reference workflow, but cannot resume the Agent or complete the Task. Qualify these boundaries
 before expanding the client/API and real-tool surface. Preserve one
 recovery owner; do not turn the reference fixture into another product recovery framework.
 Unsent TASK_015 model settings work is superseded as the next task. Its existing uncommitted
@@ -86,7 +89,7 @@ research/dependency changes remain preserved and are not accepted or activated b
 | --- | --- | --- | --- |
 | S1 — Reconcile and freeze preservation scope | Source-backed capability/retirement matrix, both migration histories, data compatibility risks, target API/event ownership, reversible source checkpoints | Every target capability mapped to current evidence and an owning stage; divergent SQL histories detected; no private data copied | Complete (source scope; no data cutover) |
 | S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a identity/authentication slice accepted locally; S2b queued submission/read and control host/process seam accepted locally; persisted lifecycle and integrated public-work reference accepted locally; production dispatcher and client parity open |
-| S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | In progress: eight public-work cases on development and released PostgreSQL engines; cold engine restore and SIGKILL accepted locally; adjacent stopped upgrade accepted locally; production selection/recovery operations/isolation gates open |
+| S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | In progress: Temporal selected as target recovery owner; reference public-work, cold restore, SIGKILL, adjacent stopped upgrade and targeted closed-history lookup accepted locally; production dispatcher, real Runtime composition, recovery operations and activation gates open |
 | S4 — Persistent execution and deliverables | Linux browser sessions, human takeover, reviewed autonomous browse/form/upload/download, persistent workspace, restricted commands, isolated code changes and document tools | Real local fixture site with separate Bot profiles; approved write, takeover, cancel and restart; exported files open/render; isolated repository produces a tested patch | Design reviewed; Linux deployment and execution pending |
 | S5 — Memory, skills and learning evaluation | Scoped relevant retrieval, candidate lessons/skills from correction and supported teaching, version/review/test/disable/rollback; separate evaluation tooling | A correction becomes a reviewed skill, improves a held-out task, and can be revoked; provenance/scope/deletion preserved; no authority increase. Preserve Hermes attribution | Pending |
 | S6 — Collaboration and extensibility | Existing delegation preserved through durable execution, shared resource/budget constraints; MCP authentication lifecycle and compatibility; preservation/migration of per-Bot model configuration and reviewed local endpoints | Delegated browser/file work with independent grants; conflict/cancel tests; connector refresh/revoke/failure cases; model switch keeps identity/data; independent module contribution fixture | Pending |

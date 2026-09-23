@@ -1,6 +1,7 @@
 # Research: Temporal PostgreSQL persistence and operations
 
-- Status: implementation qualification; no production/default selection
+- Status: implementation qualification; selected target recovery owner under
+  [ADR-0046](../decisions/0046-temporal-as-recovery-owner.md), no production/default activation
 - Date: 2026-09-23
 - Owner: OpenBot integrator
 - Acceptance: run the existing public work journey against the released Server with PostgreSQL;

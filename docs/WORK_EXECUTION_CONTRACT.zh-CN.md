@@ -2,7 +2,7 @@
 
 [English](WORK_EXECUTION_CONTRACT.md) · [简体中文](WORK_EXECUTION_CONTRACT.zh-CN.md)
 
-状态：2026-09-23 设计契约，尚不是已实现 API 或数据库结构。这是[现行计划](ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)的细化，不另设路线图。[持久执行实验](../experiments/durable-execution/README.zh-CN.md)仅证明其覆盖行为；生产引擎及集成仍待验收。
+状态：2026-09-23 设计契约，尚不是已实现 API 或数据库结构。这是[现行计划](ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)的细化，不另设路线图。[持久执行实验](../experiments/durable-execution/README.zh-CN.md)仅证明其覆盖行为；[Temporal 已选为目标恢复负责人](decisions/0046-temporal-as-recovery-owner.md)，产品接线和生产启用仍待验收。
 
 ## 身份与归属
 

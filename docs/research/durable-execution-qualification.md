@@ -1,6 +1,7 @@
 # Research: durable execution candidate qualification
 
-- Status: experiment approved; production engine selection pending
+- Status: experiment completed; Temporal selected for target integration in
+  [ADR-0046](../decisions/0046-temporal-as-recovery-owner.md); production activation pending
 - Date: 2026-09-23
 - Owner: OpenBot integrator
 - Acceptance journey: kill an actual Python worker before/after an external write and during approval wait; recover with a new process and inspect independently observed effects.
@@ -69,6 +70,9 @@ original OpenBot code. No production support or performance claim follows from t
 6. Reusing a completed workflow ID returns recorded output without another external effect.
 
 ## Unresolved selection gates
+
+These became production-integration and activation gates after ADR-0046 selected one recovery
+owner. The original DBOS experiment below remains comparative evidence, not an active fallback.
 
 Real Runtime segment/checkpoint mapping; approval process eviction; safe workflow-code upgrades;
 lease/fencing and stale worker commits; transactional enqueue with domain writes; budget authority
