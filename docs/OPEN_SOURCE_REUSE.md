@@ -567,3 +567,11 @@ Reuse CPython3.12.13 POSIX descriptor/file APIs (PSF), PostgreSQL17.11 transacti
 psycopg3.3.6, the reviewed OCI size/digest invariant and RFC6266 attachment disposition. No new
 dependency or copied upstream code. Application epochs fence writes but do not schedule retries;
 files stay in a private control-owned root. See [publication research](research/work-artifact-publication.md).
+
+## Official SDK durability composition (2026-09-23)
+
+The [eight-case integration probe](research/sdk-durability-integration.md) uses existing pinned
+Pydantic AI2.47.0, DBOS3.0.0 and Temporal Python1.33.0 public adapters (MIT); no upstream source
+copied or changed. Its separate environment composes the existing lock files. Temporal is the next
+public-work reference candidate, not a production engine selection; DBOS/deferred JSON remains
+viable. Product dependencies, default dispatch and private data remain unchanged.

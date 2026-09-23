@@ -413,3 +413,10 @@ Temporal 开发实验另固定 CLI 1.9.1 / `1de87a9f26991bf4f5c0a5ff96f2cea8d7a3
 ## 执行版本校验与成果发布（2026-09-23）
 
 复用 CPython3.12.13 POSIX 文件/描述符接口（PSF）、PostgreSQL17.11 事务及已有 psycopg3.3.6，沿用已审查的 OCI 大小/摘要校验与 RFC6266 下载附件规则。无新依赖或上游源码复制。执行版本校验只约束写入，不调度重试；文件保存在控制层私有目录。见[发布研究](research/work-artifact-publication.md)。
+
+## 官方 SDK 持久执行组合（2026-09-23）
+
+[八项组合实验](research/sdk-durability-integration.md)复用已固定的 Pydantic AI2.47.0、DBOS3.0.0
+及 Temporal Python1.33.0 公共适配器（MIT），未复制或修改上游源码；独立环境组合既有锁定依赖。
+下一次完整工作参考流程采用 Temporal，尚未选定生产引擎；DBOS/deferred JSON 仍可比较。
+产品依赖、默认派发与私人数据不变。

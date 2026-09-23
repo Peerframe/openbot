@@ -1,0 +1,3 @@
+# Isolated experiment only; product environments stay unchanged.
+-r ../durable-execution/requirements-temporal.txt
+-r ../../apps/agent-runtime-python/requirements.lock

@@ -52,9 +52,11 @@ protected. Language changes require new evidence, not competitor fashion or sunk
 
 The assisted Temporal worker and independent Codex fault runner have completed local qualification.
 The work-domain admission slice now persists independent Tasks, exact Action approvals, shared
-reservations and unresolved outcomes; it has no dispatcher. Next: qualify the official SDK durable
-adapters alongside deferred continuation, then connect the public Task/approval/effect/reconciliation/
-artifact journey. Production persistence and execution isolation remain engine-selection gates.
+reservations, unresolved outcomes and verified artifacts; it has no dispatcher. Eight official SDK
+adapter cases now pass. Next use TemporalDurability with a trusted workflow-side strategy to connect
+the public Task/approval/effect/reconciliation/artifact reference journey, retaining control-owned
+ports and one recovery owner. This is not a production engine selection or an automatic connection
+to the existing stdin/stdout Runtime. Production persistence and execution isolation remain engine-selection gates.
 Unsent TASK_015 model settings work is superseded as the next task. Its existing uncommitted
 research/dependency changes remain preserved and are not accepted or activated by this decision.
 
@@ -129,6 +131,14 @@ S1 freezes ownership, not a speculative new event protocol. Exact snapshot revis
 cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnect fixtures.
 
 ## Acceptance record
+
+- Official SDK durability: eight real worker-crash cases pass. DBOS ordinary function replay
+  duplicates the read; explicit steps and Temporal activities retain it. Deferred messages resume
+  across worker absence, current fixture revocation blocks a write, and completed IDs add no effects.
+  Interrupted model attempts exceed the SDK completed-request counter. DBOS portable workflow
+  configuration does not change native SDK model-step history. Next reference uses Temporal;
+  production selection and the integrated product journey remain open. See
+  [source, results and decision](research/sdk-durability-integration.md).
 
 - Work publication extends the admission slice with migration `0028`, monotonic attempt claims,
   guarded final publication and authenticated byte-verified Artifact downloads. Real HTTP process
