@@ -413,3 +413,41 @@ checks, including the cancellation/revocation race. The disposable real Temporal
 verified stable ID across one retry and a distinct next generated ID. These checks do not prove
 that an effectful production Worker uses unique generated IDs, persists per-effect outcomes or
 resumes multi-Run tasks after a crash; those remain activation gates.
+
+## Control-side effect execution and readback seam (2026-09-24)
+
+The work store already owns the immutable Action intent/approval/budget transactions
+(`propose`, `admit`, `uncertain`, `resolve`) and the reconciliation path owns owner lookups, but
+no control-side seam sequenced one external write after a **new** admission and then recovered an
+uncertain write without replaying it. That narrow gap is filled in
+`apps/server-python/src/openbot_server/work_effects.py`; it adds no scheduler, broker, migration
+or dependency and reuses the pinned PostgreSQL 17 row-lock semantics plus the already-reviewed
+`WorkFence`/`PostgresWorkStore` transactions. No upstream source is copied.
+
+`execute_action` accepts only trusted composition inputs (Task/Run, existing control fence,
+immutable key/intent/policy, adapter, verifier). It calls the existing `propose` then `admit`, and
+invokes the adapter's `apply` only when `admit` reports a new admission. Because
+`work_actions.status` never returns to `proposed`, a crash between admit and apply, a lost
+response, a verifier failure or a restarted attempt can only reach an authoritative `lookup`; a
+second `apply` is impossible for that Action. An absent, empty, malformed or untrusted receipt
+leaves the Action `unknown` through `uncertain` — never refunded or replaced. `resolve` receives
+bounded `actual_tokens` and receipt evidence only from a `VerifiedOutcome` re-checked against the
+exact actionId, Task/Run and intent digest, so a Worker/model report is never forwarded there.
+`recover_action` is the separate effect-free readback for an existing admitted/unknown Action and
+stays valid after cancellation or revocation; it never calls `apply`, `propose`, `admit` or mints
+a fence. `CancelledError` always propagates, and a pending-approval Action is refused by `admit`
+before any effect.
+
+`apps/server-python/tests/test_work_effects_postgres.py` pins the failing counterexample first: a
+logical write commits while its response is lost, a retry must settle the Action from lookup with
+exactly one `apply`, an absent lookup stays unknown without a refund, a changed intent under the
+same key is rejected, a pending approval never executes, and a post-cancel/revoke readback records
+truth without a new admission or fence. The bounded dsh implementer could not execute shell
+commands in its sandbox. Codex independently added the test to the owned fixture runner, corrected
+a concurrent-resolution return value that could falsely report `unknown`, and added the actual
+admit-before-apply crash counterexample. The first PostgreSQL/HTTP control run passed 296 checks
+with one optional Temporal-SDK skip; after review, the same entry passed 298 checks with one SDK
+skip. These are actual fixture executions on an uncommitted candidate, not proof of a production
+Worker, real external service, multi-Run recovery, schema migration or default activation. An
+adapter that verifies a negative outcome must prove external finality, not merely an empty read at
+one instant; this generic seam does not supply that provider-specific proof.

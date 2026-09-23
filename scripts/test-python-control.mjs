@@ -266,6 +266,7 @@ try {
       "tests/test_run_command_postgres.py",
       "tests/test_execution_postgres.py",
       "tests/test_work_postgres.py",
+      "tests/test_work_effects_postgres.py",
       "tests/test_work_publication_postgres.py",
       "tests/test_work_handoff_postgres.py",
       "tests/test_work_engine_binding_postgres.py",
