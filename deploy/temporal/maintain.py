@@ -24,7 +24,7 @@ def read_environment(path: Path) -> dict[str, str]:
         if not line or line.startswith('#'):
             continue
         key, separator, value = line.partition('=')
-        if not separator or key in values or key not in (*PASSWORD_KEYS, 'OPENBOT_TEMPORAL_PORT'):
+        if not separator or key in values or key not in (*PASSWORD_KEYS, 'OPENBOT_TEMPORAL_PORT', 'OPENBOT_TEMPORAL_TLS_DIRECTORY'):
             raise ValueError('Unknown, duplicate or malformed profile environment setting.')
         values[key] = value
     for key in PASSWORD_KEYS:
@@ -35,6 +35,10 @@ def read_environment(path: Path) -> dict[str, str]:
     port = values.setdefault('OPENBOT_TEMPORAL_PORT', '7233')
     if not re.fullmatch(r'[0-9]{1,5}', port) or not 1024 <= int(port) <= 65535:
         raise ValueError('Use an unprivileged loopback port.')
+    if 'OPENBOT_TEMPORAL_TLS_DIRECTORY' in values:
+        directory = Path(values['OPENBOT_TEMPORAL_TLS_DIRECTORY'])
+        if not directory.is_absolute() or not directory.is_dir() or directory.is_symlink():
+            raise ValueError('Use an explicit existing TLS material directory.')
     return values
 
 
@@ -74,19 +78,23 @@ def seal_metadata(sql):
 
 
 class Profile:
-    def __init__(self, env_file: Path, project: str):
+    def __init__(self, env_file: Path, project: str, *, mtls=False):
         if not re.fullmatch(r'[a-z0-9][a-z0-9_-]{0,62}', project):
             raise ValueError('Invalid Compose project name.')
         self.values = read_environment(env_file)
         self.env_file, self.project = env_file.resolve(), project
+        self.mtls = mtls
         # Reject ambient Compose/file selection and variable overrides, without reading dotenv.
         self.environment = {key: os.environ[key] for key in
             ('PATH', 'HOME', 'TMPDIR', 'DOCKER_HOST', 'DOCKER_CONTEXT', 'DOCKER_CONFIG') if key in os.environ}
         self.environment.update(self.values)
 
     def command(self, *args, input=None):
+        files = ['--file', str(PROFILE)]
+        if self.mtls:
+            files += ['--file', str(PROFILE.with_name('compose.mtls.yaml'))]
         result = subprocess.run(['docker', 'compose', '--env-file', str(self.env_file),
-            '--project-name', self.project, '--file', str(PROFILE), *args], env=self.environment,
+            '--project-name', self.project, *files, *args], env=self.environment,
             input=input, capture_output=True, timeout=120)
         if result.returncode:
             diagnostic = (result.stdout + result.stderr).decode(errors='replace')[-3000:]
@@ -107,9 +115,10 @@ def main():
     parser.add_argument('mode', choices=('initialize', 'upgrade'))
     parser.add_argument('--env-file', required=True, type=Path)
     parser.add_argument('--project', required=True)
+    parser.add_argument('--mtls', action='store_true', help='Use the same mTLS overlay as the engine')
     args = parser.parse_args()
     try:
-        profile = Profile(args.env_file, args.project)
+        profile = Profile(args.env_file, args.project, mtls=args.mtls)
         maintain(args.mode, profile.command, profile.sql)
     except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired) as error:
         parser.exit(1, str(error) + '\n')

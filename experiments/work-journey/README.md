@@ -33,17 +33,26 @@ completion/failure. No screenshots, transcripts or runtime databases are reposit
 
 ## Released Server with PostgreSQL
 
-Use `--engine postgres` instead of `--temporal-cli` to run the same eight cases against the
+Use `--engine postgres-mtls` (requires OpenSSL on PATH) instead of `--temporal-cli` to run the same eight cases against the
 [digest-pinned deployment profile](../../deploy/temporal/README.md). This path adds explicit schema
 and SQL-role checks, engine/database SIGKILL at approval, and a cold history/visibility backup
 restored to a new volume after a write becomes unknown in the newer product database. The same
 success counters remain five POST attempts, one write and 11 fixture units. Both namespace identity
-and current public Task state are preserved.26 unit checks cover the reference and maintenance
-preflight; the PostgreSQL journey is wired into the existing Linux Python CI job.
+and current public Task state are preserved.38 unit checks cover the reference, replay and transport
+preflight; the mTLS PostgreSQL journey is wired into the existing Linux Python CI job.
 
 This is actual PostgreSQL persistence evidence on the local Docker reference, not production
 selection, full-product backup or native Linux isolation. The CLI/SQLite path remains a separate
 regression baseline. See the profile for maintenance constraints and remaining upgrade/security gates.
+
+The mTLS profile rejects untrusted/no-certificate/plaintext connections and wrong hostnames, then
+rotates the client CA while a task waits for approval. New credentials resume the same workflow;
+retired credentials fail. It authenticates trusted control peers only, not per-API privileges.
+`--engine postgres` is the explicit plaintext alternative. The recovery case fetches actual
+waiting/completed histories and runs the official offline Replayer with the current SDK plugin;
+a deliberately incompatible first command must fail with NondeterminismError. Snapshots and fake
+HTTP counters must not change. Histories stay in memory, and no activities are registered for replay.
+This verifies these histories, not arbitrary future workflow/SDK upgrades.
 
 ## What is exercised
 
@@ -76,7 +85,7 @@ engine history/namespace rules preserve the ID.
 
 This demonstrates integrated process recovery and real product-state persistence for the fixed CSV
 journey. It does not qualify real model quality, arbitrary tools, Linux isolation, production Temporal
-deployment security, TLS/ACLs, retention, full-product backup/restore, version upgrades, scaling,
+deployment authorization/PKI, retention, full-product backup/restore, version upgrades, scaling,
 resource cost or a real network partition. The only client exercised here is authenticated HTTP reconnect; browser/SSE
 reconnect and shared client projections remain separate work. Bounded engine retry exhaustion is
 not a business success or a refund. An unresolved Task needs an explicit reconciliation/recovery

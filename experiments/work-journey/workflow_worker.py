@@ -3,7 +3,7 @@ import asyncio
 from datetime import timedelta
 from pathlib import Path
 from temporalio import activity,workflow
-from temporalio.client import Client
+from engine_client import connect as connect_engine
 from temporalio.common import RetryPolicy
 from temporalio.worker import Worker
 from pydantic_ai import Agent,DeferredToolRequests,DeferredToolResults
@@ -99,7 +99,7 @@ class WorkJourney:
 
 async def main():
     cfg=control.settings()
-    client=await Client.connect(cfg['temporal_address'],plugins=[PydanticAIPlugin()])
+    client=await connect_engine(cfg['temporal_address'],cfg.get('engine_tls'),plugins=[PydanticAIPlugin()])
     async with Worker(client,task_queue=cfg['queue'],workflows=[WorkJourney],activities=[bind_identity,prepare,decision,execute_write,publish,current]):
         Path(cfg['directory'],'ready').touch()
         await asyncio.Event().wait()

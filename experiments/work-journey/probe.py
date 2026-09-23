@@ -125,6 +125,8 @@ class API:
 
 async def qualify(tmp, dsn, server, *, only_handoff=False):
     client = await server.connect()
+    if hasattr(server, 'qualify_transport'):
+        await server.qualify_transport()
     artifact_root = tmp / 'artifacts'
     artifact_root.mkdir(mode=0o700)
     migration = tmp / 'migration.json'
@@ -139,7 +141,7 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
     def launch(script, cfg, barrier=''):
         directory = tmp / f'child-{len(children)}'
         directory.mkdir()
-        cfg = {**cfg, 'barrier': barrier, 'directory': str(directory), 'effect_url': effects.url}
+        cfg = {**cfg, 'engine_tls': getattr(server, 'client_settings', None), 'barrier': barrier, 'directory': str(directory), 'effect_url': effects.url}
         config = directory / 'config.json'
         config.write_text(json.dumps(cfg)); config.chmod(0o600)
         process = Process([sys.executable, '-u', str(HERE / script)], directory,
@@ -152,6 +154,15 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
     def counts(task_id):
         with urlopen(effects.url + '/stats/' + task_id, timeout=3) as response:
             return json.load(response)
+
+    async def replay_without_effects(handle, task_id, stage):
+        from replay import verify_history_replay
+        before_state, before_effects = api.snapshot(task_id), counts(task_id)
+        evidence = await verify_history_replay(await handle.fetch_history())
+        assert api.snapshot(task_id) == before_state, 'Offline replay changed product state'
+        assert counts(task_id) == before_effects, 'Offline replay repeated an external operation'
+        print(json.dumps({'case': 'offline-replay-' + stage, **evidence,
+                          'productAndEffectsUnchanged': True}), flush=True)
 
     def handoff(task_id):
         with psycopg.connect(dsn) as db:
@@ -203,8 +214,11 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
             first.kill()
             assert counts(task_id) == {'attempts': 3, 'writes': 0, 'lookups': 0}
             assert snap['usage'] == {'tokenLimit': 20, 'reservedTokens': 0, 'spentTokens': 6}
+            if scenario == 'recover':
+                await replay_without_effects(handle, task_id, 'approval')
             engine_snapshot = None
             if scenario == 'recover' and hasattr(server, 'backup'):
+                await server.rotate_transport()
                 engine_snapshot = server.backup(tmp / 'engine-backup')
                 client = await server.connect()
                 handle = client.get_workflow_handle('openbot-work-v1-' + run_id)
@@ -298,6 +312,8 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
                         assert counts(task_id)['attempts'] == 5
                 assert counts(task_id)['writes'] == 1 and counts(task_id)['lookups'] >= 1
                 third.kill()
+            if scenario == 'recover':
+                await replay_without_effects(handle, task_id, 'completed')
             record = {'case': scenario, 'status': final['status'], 'usage': final['usage'], **counts(task_id)}
             records.append(record)
             print(json.dumps(record), flush=True)
@@ -350,7 +366,7 @@ async def qualify(tmp, dsn, server, *, only_handoff=False):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--temporal-cli', type=Path)
-    parser.add_argument('--engine', choices=('development', 'postgres'), default='development')
+    parser.add_argument('--engine', choices=('development', 'postgres', 'postgres-mtls'), default='development')
     parser.add_argument('--only-handoff', action='store_true', help='Run only engine-identity rejection regressions')
     args = parser.parse_args()
     assert sys.platform != 'win32', 'POSIX process signals required'
@@ -369,9 +385,9 @@ def main():
     signal.signal(signal.SIGTERM, interrupted)
     with TemporaryDirectory(prefix='openbot-work-journey-') as directory, database() as dsn:
         tmp = Path(directory)
-        if args.engine == 'postgres':
+        if args.engine in ('postgres', 'postgres-mtls'):
             from postgres_server import PostgresServer
-            server = PostgresServer(tmp)
+            server = PostgresServer(tmp, mtls=args.engine == 'postgres-mtls')
         else:
             server = Server(binary, tmp)
         try:

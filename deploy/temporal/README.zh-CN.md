@@ -12,16 +12,33 @@
 运行账户只有数据权限，不能创建 schema 对象或修改 schema 版本记录；管理账户负责显式迁移。
 服务启动不会自动初始化或升级数据库，迁移使用匹配版本的官方 SQL 工具。
 
-只向宿主 IPv4 回环发布 gRPC 端口，不发布数据库或内部服务端口。此配置**没有前端认证或 TLS**，
+只向宿主 IPv4 回环发布 gRPC 端口，不发布数据库或内部服务端口。基础 Compose 配置**没有前端认证或 TLS**，
 信任能访问宿主端口及 Docker 的人员。不能公开暴露，也不能让不可信工具、执行沙箱或无关客户端
 接入该网络。Docker 管理员可以读取容器凭据；这不是生产安全配置。
+
+可选 `compose.mtls.yaml` 使用原生双向 TLS，校验服务端名称并要求客户端证书，内部通信也启用。
+它只认证一组受信控制服务，**不是 API/namespace 分级授权**；持证客户端仍能调用全部引擎操作。
+不能把证书发给不可信 Runtime、工具或公开客户端。数据库私有网桥流量未加密，宿主/Docker 管理员
+仍是受信角色。见[传输研究](../../docs/research/temporal-transport-security.md)。
 
 按任务流程 README 准备独立 Python 环境、Docker Compose 和仓库构建后，运行：
 
 ```sh
 /tmp/openbot-work-reference/bin/python -B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v
-/tmp/openbot-work-reference/bin/python -B experiments/work-journey/probe.py --engine postgres
+/tmp/openbot-work-reference/bin/python -B experiments/work-journey/probe.py --engine postgres-mtls
 ```
+
+mTLS 路径需要 PATH 中的 OpenSSL。夹具生成临时证书，检查明文、缺少证书、未知客户端 CA、错误
+服务端名称都被拒绝，并在每项前后证明合法连接正常。等待批准时停止引擎、更换客户端 CA、拒绝旧证书，
+再用新证书恢复同一任务。这不等于即时撤销已有连接、生产 PKI 或无停机轮换。等待与完成历史在内存中
+重放，不产生新动作；故意不兼容的工作流必须被拒绝。`--engine postgres` 保留明确的明文对照入口。
+
+手动使用 mTLS 时，在私有环境文件设置绝对 `OPENBOT_TEMPORAL_TLS_DIRECTORY`，只放入
+`server.pem`、`server.key`、`server-ca.pem`、`client-ca.pem`。服务端叶证书包含 server/client auth
+及 SAN `temporal.openbot.internal`；控制客户端由独立 CA 签发。CA 私钥和客户端私钥不能挂入引擎。
+父目录限制宿主访问，四个单独的只读挂载须允许引擎 UID 读取。每条 Compose 命令追加
+`--file deploy/temporal/compose.mtls.yaml`，维护命令追加 `--mtls`；缺少配置或证书时拒绝启动。
+下方手动维护链接中的命令仅演示明文基础配置。
 
 夹具只创建随机项目、临时凭据和新卷；检查权限拒绝、运行公开任务、恢复旧引擎快照，然后在
 `finally` 清理自己创建的资源，不打开用户已有数据库。宿主掉电可能留下测试资源，应按 Docker
@@ -55,6 +72,6 @@
 等待批准的引擎快照。恢复必须读取回执、遵循当前权限和预算、交付验证后的文件，不能再次写入。
 这不是完整产品的原子备份或灾难恢复方案。
 
-生产认证/TLS、版本升级和历史重放、保留与归档、HA、存储故障、资源成本、凭据恢复、完整产品恢复
+生产 API 授权/PKI、版本升级和未来代码的代表性历史重放、保留与归档、HA、存储故障、资源成本、凭据恢复、完整产品恢复
 仍需单独验收。完整业务回滚可能恢复旧授权，需要暂停执行并核对事实。此配置不证明 Linux 隔离或
 真实模型任务质量。

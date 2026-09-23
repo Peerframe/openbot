@@ -15,10 +15,17 @@ is an administrator. Runtime cannot create schema objects or write schema versio
 Upstream SQL tools own migrations. Startup never initializes or upgrades the schema.
 
 Only the gRPC frontend is published, on host IPv4 loopback. Database and internal service ports
-are not published. This profile deliberately has **no frontend authentication/TLS**: it trusts all
+are not published. The base Compose file deliberately has **no frontend authentication/TLS**: it trusts all
 host users and Docker administrators with access to that endpoint/network. Keep untrusted tools,
 execution sandboxes and unrelated clients away. Do not expose it publicly or use it as the target
 production security configuration. Docker socket administrators can inspect container credentials.
+
+The opt-in `compose.mtls.yaml` overlay enables native mutual TLS for one trusted control group.
+It verifies the server name and requires client certificates, including internal engine traffic.
+This is **not API/namespace RBAC**: every authenticated client is trusted for engine operations.
+Never give these credentials to untrusted Runtime code, tools or public clients. Docker/host
+administrators remain trusted, and PostgreSQL traffic on the private bridge is not encrypted.
+[Transport review](../../docs/research/temporal-transport-security.md).
 
 ## Reproduce the acceptance
 
@@ -27,8 +34,25 @@ and already-built repository dependencies:
 
 ```sh
 /tmp/openbot-work-reference/bin/python -B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v
-/tmp/openbot-work-reference/bin/python -B experiments/work-journey/probe.py --engine postgres
+/tmp/openbot-work-reference/bin/python -B experiments/work-journey/probe.py --engine postgres-mtls
 ```
+
+The mTLS path also needs an OpenSSL CLI on PATH. It creates disposable test CAs/certificates,
+rejects plaintext, missing certificates, unknown client roots and the wrong server name; it proves
+valid access before and after each rejection. At approval it stops the engine, changes the client
+CA, rejects the old credential and resumes the same task with a new one. This is stopped-service
+rotation, not immediate revocation of established connections or a production PKI. Histories at
+approval and completion replay in memory without effects; a deliberately incompatible definition
+must fail. `--engine postgres` retains the explicit plaintext comparison mode.
+
+For an operator-owned mTLS instance, set `OPENBOT_TEMPORAL_TLS_DIRECTORY` in the private env file
+to an absolute directory with `server.pem`, `server.key`, `server-ca.pem`, `client-ca.pem`. The
+engine leaf needs server/client auth and SAN `temporal.openbot.internal`; the separate control
+client issuer signs trusted client leaves. Keep CA signing keys and client private keys outside
+this mounted directory. Parent permissions must restrict host access while the four individual
+read-only mounts remain readable by the engine UID. Add `--file deploy/temporal/compose.mtls.yaml`
+to **every** Compose command and `--mtls` to `maintain.py`. Missing TLS fields/files fail startup.
+The manual commands below intentionally demonstrate the plaintext base profile only.
 
 The runner creates random project names, private temporary credentials and new named volumes. It
 initializes matching schemas, verifies SQL permission failures, runs the public journeys, restores
@@ -93,7 +117,7 @@ unknown in the newer product state. Recovery must query the receipt, keep curren
 budget, and publish verified bytes without another write. This is engine-only restore qualification,
 not an atomic full-product backup or disaster-recovery service.
 
-Production auth/TLS, supported version upgrades and history replay, retention/archival, HA, storage
+Production API authorization/PKI, supported version upgrades and representative future-code replay, retention/archival, HA, storage
 failure, workload/idle cost, credential recovery and full product restore remain separate gates.
 A full product rollback can resurrect old grants and requires an execution hold and reconciliation.
 No native Linux isolation or real-provider quality claim follows from this profile.

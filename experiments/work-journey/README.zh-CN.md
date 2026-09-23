@@ -25,13 +25,19 @@ node scripts/test-python-control.mjs
 
 ## 发行版 Server 与 PostgreSQL
 
-将 `--temporal-cli` 替换为 `--engine postgres`，在[固定镜像配置](../../deploy/temporal/README.zh-CN.md)
+将 `--temporal-cli` 替换为 `--engine postgres-mtls`（PATH 需有 OpenSSL），在[固定镜像配置](../../deploy/temporal/README.zh-CN.md)
 上运行同样八项场景。另检查 schema/运行账户权限、等待批准时引擎和数据库 SIGKILL，并在业务库已经
 保存未知写入后，把较旧引擎备份恢复到新卷。namespace 与当前公开 Task 状态保持；成功仍为五次 POST、
-一次写入、11 假定用量。26 项参考与维护单元检查通过，PG 流程已接入现有 Linux Python CI。
+一次写入、11 假定用量。38 项参考、维护、重放与传输单元检查通过，mTLS PG 流程已接入现有 Linux Python CI。
 
 这是本地 Docker 的真实 PostgreSQL 持久化证据，不是生产选型、完整产品备份或原生 Linux 隔离验收。
 CLI/SQLite 路径仍保留为回归基线；维护限制和其余升级/安全门槛见配置说明。
+
+mTLS 配置拒绝明文、无证书、未知 CA 和错误服务端名称；在等待批准时停止服务并更换客户端 CA，
+新证书恢复原工作流，旧证书被拒绝。这只认证受信控制客户端，不是按 API 分权。
+`--engine postgres` 保留为明文对照。恢复用例通过官方 Replayer 和同版 SDK 插件，在内存中重放真实
+等待/完成历史；故意改变首个命令必须产生 NondeterminismError。业务快照和假 HTTP 计数必须不变；
+不注册活动、不导出历史。这不证明任意未来工作流或 SDK 升级兼容。
 
 ## 验收范围
 
@@ -56,6 +62,6 @@ CLI/SQLite 路径仍保留为回归基线；维护限制和其余升级/安全�
 ## 仍待完成
 
 本地证据只覆盖固定 CSV 流程的真实进程恢复与产品状态持久化。真实模型质量、任意工具、Linux 隔离、
-Temporal 生产部署安全、TLS/权限、历史保留、完整产品备份恢复、版本升级、扩展、资源费用和真实网络分区尚未验收。
+Temporal 生产部署授权/PKI、历史保留、完整产品备份恢复、版本升级、扩展、资源费用和真实网络分区尚未验收。
 本次客户端是认证 HTTP 重连，浏览器/SSE 和共享客户端仍待实现。引擎重试耗尽不等于业务成功或预算退款；
 生产需要明确的未决任务核对/恢复入口。文件配额、回收及存储耐久性仍未完成。

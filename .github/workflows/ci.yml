@@ -394,13 +394,13 @@ jobs:
         run: apps/server-python/scripts/check.sh -q
       - name: Compare Python and TypeScript against owned PostgreSQL
         run: npm run test:control:python
-      - name: Qualify public work recovery on released Temporal and PostgreSQL
+      - name: Qualify public work recovery with PostgreSQL, mutual TLS and history replay
         shell: bash
         run: |
           python3.12 -m venv "$RUNNER_TEMP/openbot-work-reference"
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install -r experiments/work-journey/requirements.txt
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py --engine postgres
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py --engine postgres-mtls
 
   # Keep this protected context pending until every platform and integration job finishes.
   check:

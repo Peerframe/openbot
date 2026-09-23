@@ -433,3 +433,12 @@ Compose 结构改编自 samples-server `f811a033a5e79402cab9f792cea132f50344bd17
 [Linux 设计](research/linux-execution-boundary.md)审查 OCI1.3、Docker29.8.1、runsc release-20260914.0、
 Squid7.7 及 Firecracker1.17/OpenSandbox1.1 候选，固定源码版本与许可证详见研究。
 尚未安装或验收 Linux 组件，未复制源码；浏览器保留已有 MIT 归因，命令与浏览器权限/容量/网络门槛分别验证。
+
+
+## 受信引擎传输与历史重放（2026-09-23）
+
+复用 Temporal Server1.32.0 原生 mTLS、Temporal Python1.33.0 TLSConfig/Replayer 和已有
+Pydantic AI2.47.0 插件（均 MIT；源码提交详见研究）。OpenSSL CLI 只签发一次性测试证书，不新增
+生产 CA、自研加密或依赖；Compose 沿用已有归因。未复制引擎/SDK 实现或修改产品默认值。
+见[传输](research/temporal-transport-security.md)与[重放](research/temporal-history-replay.md)。
+mTLS 只认证受信控制组，不是 API 分权；同版本重放不证明未来工作流/SDK 兼容。

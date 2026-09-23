@@ -13,7 +13,8 @@ import time
 from google.protobuf.duration_pb2 import Duration
 from temporalio.api.workflowservice.v1 import DescribeNamespaceRequest, RegisterNamespaceRequest
 from temporalio.client import Client
-from temporalio.service import RPCError, RPCStatusCode
+from temporalio.service import RPCError, RPCStatusCode, TLSConfig
+from engine_client import connect as connect_engine, tls_config
 
 ROOT = Path(__file__).resolve().parents[2]
 PROFILE = ROOT / 'deploy/temporal/compose.yaml'
@@ -25,7 +26,7 @@ _spec.loader.exec_module(maintenance)
 
 
 class PostgresServer:
-    def __init__(self, directory):
+    def __init__(self, directory, *, mtls=False):
         self.directory = Path(directory)
         self.base = 'openbot-temporal-qualification-' + secrets.token_hex(6)
         self.project = self.base
@@ -38,14 +39,25 @@ class PostgresServer:
         self.env_file.write_text(f'OPENBOT_TEMPORAL_SCHEMA_PASSWORD={self.schema_password}\n'
             f'OPENBOT_TEMPORAL_RUNTIME_PASSWORD={self.runtime_password}\nOPENBOT_TEMPORAL_PORT={self.port}\n')
         self.env_file.chmod(0o600)
+        self.certificates = None
+        self.client_settings = None
+        if mtls:
+            from tls_fixture import CertificateFixture
+            self.certificates = CertificateFixture(self.directory / 'pki')
+            self.client_settings = self.certificates.settings()
+            with self.env_file.open('a') as stream:
+                stream.write('OPENBOT_TEMPORAL_TLS_DIRECTORY=' + str(self.certificates.engine) + '\n')
         maintenance.read_environment(self.env_file)
         self.namespace_id = None
         self.evidence = []
 
     def command(self, *args, input=None, check=True, timeout=60):
         assert self.project in self.projects and self.project.startswith('openbot-temporal-qualification-')
+        files = ['--file', str(PROFILE)]
+        if self.certificates is not None:
+            files += ['--file', str(PROFILE.with_name('compose.mtls.yaml'))]
         result = subprocess.run(['docker', 'compose', '--env-file', str(self.env_file),
-            '--project-name', self.project, '--file', str(PROFILE), *args], env=ENV,
+            '--project-name', self.project, *files, *args], env=ENV,
             input=input, capture_output=True, timeout=timeout)
         if check and result.returncode:
             diagnostic = (result.stdout + result.stderr).decode(errors='replace')[-4500:]
@@ -113,7 +125,7 @@ class PostgresServer:
         last = None
         while time.monotonic() < deadline:
             try:
-                client = await asyncio.wait_for(Client.connect(self.address), 2)
+                client = await asyncio.wait_for(connect_engine(self.address, self.client_settings), 2)
                 if not await asyncio.wait_for(client.service_client.check_health(), 2):
                     continue
                 try:
@@ -135,6 +147,44 @@ class PostgresServer:
                 await asyncio.sleep(.1)
         logs = self.command('logs', '--no-color', '--tail', '40', 'temporal', check=False).stdout.decode(errors='replace')
         raise AssertionError(f'PostgreSQL Temporal not healthy ({last}): {logs[-3500:]}')
+
+    async def rejected_client(self, name, tls):
+        good = await connect_engine(self.address, self.client_settings)
+        assert await asyncio.wait_for(good.service_client.check_health(), 3)
+        try:
+            bad = await asyncio.wait_for(Client.connect(self.address, tls=tls), 5)
+            assert await asyncio.wait_for(bad.service_client.check_health(), 3)
+        except (RuntimeError, RPCError) as error:
+            # Healthy authenticated access on both sides excludes a server outage as evidence.
+            assert await asyncio.wait_for(good.service_client.check_health(), 3)
+            self.evidence.append({'case': 'mtls-reject-' + name, 'failure': type(error).__name__})
+        else:
+            raise AssertionError('Unauthorized transport reached the engine: ' + name)
+
+    async def qualify_transport(self):
+        if self.certificates is None:
+            return
+        valid = tls_config(self.client_settings)
+        await self.rejected_client('plaintext', False)
+        await self.rejected_client('missing-certificate', TLSConfig(
+            server_root_ca_cert=valid.server_root_ca_cert, domain=valid.domain))
+        await self.rejected_client('unknown-client-ca', tls_config(self.certificates.settings('unknown-client')))
+        await self.rejected_client('wrong-server-name', TLSConfig(server_root_ca_cert=valid.server_root_ca_cert,
+            client_cert=valid.client_cert, client_private_key=valid.client_private_key, domain='wrong.invalid'))
+        self.evidence.append({'case': 'mtls-valid-client', 'issuerTool': self.certificates.version,
+            'serverNameVerified': True, 'namespaceIdentity': 'retained'})
+
+    async def rotate_transport(self):
+        if self.certificates is None:
+            return
+        previous = tls_config(self.client_settings)
+        self.command('stop', 'temporal')
+        self.certificates.rotate_client_ca()
+        self.client_settings = self.certificates.settings('replacement-client')
+        self.command('up', '-d', 'temporal')
+        await self.connect()
+        await self.rejected_client('retired-client-ca', previous)
+        self.evidence.append({'case': 'mtls-stop-rotate-reconnect', 'namespacePreserved': True})
 
     def backup(self, destination):
         """Cold engine-only snapshot; the caller has already stopped its owned workers."""

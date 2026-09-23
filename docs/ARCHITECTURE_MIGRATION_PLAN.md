@@ -57,8 +57,11 @@ independent effect receipts and verified Artifact publication. Handoff acceptanc
 idempotent; an experiment-only dispatcher closes the commit/enqueue gap. There is no production
 dispatcher or automatic connection to the existing stdin/stdout Runtime. The released Server/PostgreSQL profile now passes the same eight journeys, including older-engine
 backup restore against newer product facts and engine/database SIGKILL. This is single-host persistence
-evidence, not production acceptance. Auth/TLS, release upgrades/history replay, unresolved-work
-operations and Linux execution isolation remain engine-selection gates. Qualify these boundaries
+evidence, not production acceptance. The optional mTLS profile now passes trusted-client rejection,
+stopped CA rotation and the same eight journeys. Actual waiting/completed histories replay without
+side effects and an incompatible command is detected. Production API authorization/PKI, release
+upgrades and future-code compatibility, unresolved-work operations and Linux execution isolation
+remain engine-selection gates. Qualify these boundaries
 before expanding the client/API and real-tool surface. Preserve one
 recovery owner; do not turn the reference fixture into another product recovery framework.
 Unsent TASK_015 model settings work is superseded as the next task. Its existing uncommitted
@@ -136,14 +139,24 @@ cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnec
 
 ## Acceptance record
 
+- Trusted engine transport and offline replay: 38 reference unit checks and eight mTLS/PG public
+  journeys pass locally. Plaintext, absent certificate, unknown/retired client CA and wrong server
+  name are rejected with healthy valid access before/after. Stopped CA rotation preserves the
+  waiting task and namespace. Waiting/completed real histories replay with no state/effect changes;
+  changing the first command is rejected. Startup rejects missing TLS paths/configuration before
+  upstream could start a plaintext listener. CI now uses the mTLS path; remote CI has not run.
+  These checks cover one trusted control group, not per-API RBAC, full PKI, cross-version upgrades
+  or untrusted Runtime isolation. See [transport](research/temporal-transport-security.md) and
+  [replay](research/temporal-history-replay.md). The entire migration remains in progress.
+
 - Released Temporal/PostgreSQL: the same eight public-work journeys pass with Server1.32.0 and
   PostgreSQL17.11, history1.19/visibility1.14. A cold backup restored to a new volume retains the
   namespace; newer business unknown-write facts force receipt lookup rather than replay (five POSTs,
   one write, 11 fixture units). Server and database SIGKILL preserve approval/cancellation. Missing
   or too-old schemas fail startup; operator rejects existing initialization/newer versions; runtime
   cannot DDL or mutate schema metadata.26 reference unit cases pass; Linux CI includes the PG probe.
-  Same-version maintenance is not a version-upgrade test. Auth/TLS, history replay, full product
-  restore and workload measurements remain open. See [profile](../deploy/temporal/README.md).
+  Same-version maintenance is not a version-upgrade test. The transport/replay checkpoint above
+  supplements this evidence; full product restore and workload measurements remain open. See [profile](../deploy/temporal/README.md).
 - Linux boundary design reviews pinned Docker/runsc, command-only isolation and a separate browser
   profile. Neither is deployed or qualified. H2 lease mapping to Python work/helper authority,
   write-time storage limits and real Linux adversarial probes are explicit gaps, not existing

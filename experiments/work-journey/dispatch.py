@@ -4,7 +4,7 @@ from datetime import timedelta
 from pathlib import Path
 import json
 
-from temporalio.client import Client
+from engine_client import connect as connect_engine
 from temporalio.common import WorkflowIDReusePolicy
 from temporalio.exceptions import WorkflowAlreadyStartedError
 from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
@@ -19,7 +19,7 @@ async def main():
     handoff = HandoffStore(control.store())
     if identity not in await handoff.pending():
         return
-    client = await Client.connect(cfg['temporal_address'], plugins=[PydanticAIPlugin()])
+    client = await connect_engine(cfg['temporal_address'], cfg.get('engine_tls'), plugins=[PydanticAIPlugin()])
     workflow_id = control.reference(identity['runId'])
     await control.fault_barrier('before-enqueue')
     try:

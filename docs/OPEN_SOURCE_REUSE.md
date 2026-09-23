@@ -597,3 +597,14 @@ reviews OCI1.3, Docker29.8.1, runsc release-20260914.0 (Apache-2.0), Squid7.7 (G
 process), Firecracker1.17 and OpenSandbox1.1 candidates, with exact commits and limits there.
 Linux components are not installed or qualified; no source copied. Browser mechanics retain the
 existing MIT attribution. Command and browser authority/resource/egress gates remain explicit.
+
+
+## Trusted engine transport and history replay (2026-09-23)
+
+Reuse Temporal Server1.32.0 native mTLS and Temporal Python1.33.0 TLSConfig/Replayer with the
+existing Pydantic AI2.47.0 plugin (all MIT; exact commits in the research). Disposable PKI uses
+OpenSSL CLI only as a test issuer, not a shipped CA or custom crypto. The Compose overlay follows
+the already-attributed upstream topology. No copied engine/SDK implementation, new dependency or
+product default change. See [transport](research/temporal-transport-security.md) and
+[replay](research/temporal-history-replay.md). mTLS authenticates one trusted control group, not
+API RBAC; same-version replay does not establish future workflow/SDK compatibility.
