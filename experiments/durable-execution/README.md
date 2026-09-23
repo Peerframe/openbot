@@ -52,3 +52,54 @@ it does not test failure detection. The fake endpoint checks an in-memory epoch,
 credential/ticket. An initial attempt with both queue pollers running timed out; it supplied no
 valid takeover evidence and was replaced with this controlled suspension case. Waiting approval is exercised
 across process death, not automatic eviction of idle workflows. Those remain selection gates.
+
+## Temporal comparison
+
+Use a separate environment with `requirements-temporal.txt` and an official Temporal CLI **1.9.1**
+(the executable must report Server **1.32.0**, UI **2.54.1**). Verify its published archive checksum
+before executing it. The reviewed [release/profile](../../docs/research/temporal-durability-review.md)
+records the macOS arm64 archive hash and source pins. No automatic binary download occurs in the probe.
+
+```sh
+python3 -m venv /tmp/openbot-temporal-venv
+/tmp/openbot-temporal-venv/bin/python -m pip install -r experiments/durable-execution/requirements-temporal.txt
+/tmp/openbot-temporal-venv/bin/python -B experiments/durable-execution/probe_temporal.py --temporal-cli /path/to/verified/temporal
+```
+
+The parent owns a headless, loopback-only development Server with a temporary SQLite history file,
+disables CLI user config/environment loading, and retains the same disposable PostgreSQL domain
+fixture and fake HTTP effects. DBOS is installed only because existing fixture helpers live in its
+probe module; the Temporal experiment does not start DBOS. No production environment is read.
+The parent destroys owned Server/worker processes and fixture state on completion. Uncatchable
+parent death can leave owned processes, temporary history and a fixture container; never use real data.
+
+This development profile deliberately is not a production Temporal persistence, authentication,
+backup/restore, availability, resource-use or deployment-cost comparison. Engine success/failure
+must not be equated with a business Task outcome. The worker is trusted fixture code, not a
+sandboxed Agent Runtime. Product engine choice remains open pending the integrated acceptance gates.
+
+### Temporal observations
+
+On 2026-09-23, the corrected full probe passed **12 cases** on macOS/Python 3.12.13:
+
+| Case | Independently observed result |
+| --- | --- |
+| Checkpoint recovery | Prepare/write/finish once |
+| Rejected completed-ID restart | Existing result available; no second write |
+| Unsafe post-write crash | Two writes |
+| Guarded post-write crash | One write, needs reconciliation, no finish |
+| Guarded pre-write crash | No write, needs reconciliation, no finish |
+| Approval while worker absent | One write after recovery; identical decision redelivered |
+| Revocation before recovery | No write or finish |
+| Approval then development Server killed/restarted | One write after replay from SQLite history |
+| Shielded stale action after successor finishes | Old action still writes, no finish |
+| Same shielded action with epoch checked at effect boundary | Old write rejected, no finish |
+| Single-attempt activity dies after write | Activity timeout and FAILED engine state; write remains |
+| Cancellation during action | CANCELED engine state; existing write remains, no finish |
+
+The first run failed the stale-action assertion because the SDK injected cancellation during HTTP
+sending. The corrected pair deliberately uses the public `shield_thread_cancel_exception()` for
+that non-cooperative section only; it is not evidence that an ordinary Temporal thread always
+ignores cancellation. Normal cancellation retains the SDK default. The original failure and
+change are documented in the source review. SIGSTOP is not a real network partition. Same-decision
+redelivery is not a complete expiry/idempotency/Continue-As-New approval qualification.

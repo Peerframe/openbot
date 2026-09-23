@@ -543,3 +543,9 @@ The isolated fault experiment reviews DBOS Python 3.0.0 /
 as the comparison candidate. This is an experiment-only released dependency, not a new
 production dispatcher or an accepted recovery engine. No upstream source copied. See
 [the evidence and remaining gates](research/durable-execution-qualification.md).
+
+Temporal's executable candidate profile additionally pins CLI 1.9.1 /
+`1de87a9f26991bf4f5c0a5ff96f2cea8d7a3cbde` (MIT), embedding Server 1.32.0 with disposable
+SQLite persistence. The SDK/CLI are experiment-only; this does not qualify production deployment.
+Source/tests and the official archive checksum were reviewed before running the fixture. See
+[the Temporal profile](research/temporal-durability-review.md#executable-probe-profile-2026-09-23).

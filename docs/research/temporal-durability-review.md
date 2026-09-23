@@ -1,6 +1,6 @@
 # Research: Temporal durability candidate
 
-- Status: source review; no production selection or runtime qualification
+- Status: source review and local development-profile fault qualification; no production selection
 - Date: 2026-09-23
 - Owner: WorkBuddy supplied the source investigation; Codex reviewed and integrated it
 - Acceptance journey: the same approval, crash, stale-worker and unknown-effect journey as DBOS
@@ -12,8 +12,9 @@
 WorkBuddy inspected official SDK release metadata, pinned source, tests, issues and self-hosted
 Temporal documentation. Codex independently verified the tag commit, license, Python requirement,
 `Info`, `RetryPolicy`, client cancellation/termination methods and the listed issue states.
-Neither contributor started Temporal Server or ran a Temporal workflow in this task. The review
-must not be presented as equivalent to the executed DBOS experiment.
+The initial source-review task did not start Temporal Server or run a workflow. The subsequent
+executable profile and independently run fault results are recorded below; their deployment
+limitations remain distinct from the DBOS PostgreSQL engine profile.
 
 Reviewed existing OpenBot research: Python task authority, runtime supervision, runtime ports,
 executor seam and capability leases. Existing process supervision is not durable orchestration.
@@ -125,3 +126,69 @@ source findings. If installed, retain the package's MIT notice and record exact 
    the same target environment. These are measurements, not inferred maturity rankings.
 7. Run the public-API task journey before selecting the engine. No runtime, availability, performance,
    platform or security support is established by this source review alone.
+
+## Executable probe profile (2026-09-23)
+
+This added profile qualifies local worker behavior only; production Server/storage selection is
+still open. Root reviewed CLI startup source and tests before implementing the harness.
+
+- CLI [1.9.1](https://github.com/temporalio/cli/releases/tag/v1.9.1), commit
+  `1de87a9f26991bf4f5c0a5ff96f2cea8d7a3cbde`, MIT, released 2026-09-14.
+- Its pinned `go.mod` and executable version report Server **1.32.0**; SQLite driver dependency
+  `modernc.org/sqlite v1.51.0`. Development persistence uses a private temporary SQLite file.
+- Downloaded official macOS arm64 archive SHA-256:
+  `41e0425378fcb4fb5766340b97435e20fe47bbff2d7bf644ec2d51f7662b7c56` (verified).
+- Reviewed [startup/configuration source](https://github.com/temporalio/cli/blob/1de87a9f26991bf4f5c0a5ff96f2cea8d7a3cbde/internal/devserver/server.go)
+  and [CLI tests](https://github.com/temporalio/cli/blob/1de87a9f26991bf4f5c0a5ff96f2cea8d7a3cbde/internal/temporalcli/commands.server_test.go):
+  file-backed SQLite initialization, loopback binding, simple startup and persistence banner cases.
+  These upstream tests were inspected, not run locally.
+- The CLI explicitly says its development server is unsuitable for production and omits some HTTP
+  security checks. Use headless, loopback-only binding and disabled config/environment loading;
+  never connect this experiment to a user database, namespace or credentials.
+- SDK 1.33.0 uses normal remote Activities with explicit retry/timeout policy. PG 17.11 and the
+  existing fake effect service supply the same domain-intent fixture as the DBOS probe. The
+  Temporal engine's own store is SQLite here, so this is not a production PG deployment comparison.
+- No upstream implementation copied. WorkBuddy implements the bounded worker; Root owns the
+  runner, actual failure injection, result assertions and independent review. Product dependencies,
+  default engine and schema remain unchanged. Do not infer performance/availability selection
+  from this development profile.
+
+### First fault run and corrected stale-worker fixture
+
+The first actual run passed eight cases through persisted approval across Server restart, then
+failed the expected stale-write assertion. A resumed synchronous activity received SDK-injected
+`CancelledError` during HTTP sending, leaving a truncated fixture request. This is evidence of
+SDK cancellation behavior, not evidence of guaranteed fencing or a passed stale-worker case.
+
+The pinned SDK's public `activity.shield_thread_cancel_exception()` defers a synchronous thread's
+injected cancellation until its context exits (`temporalio/activity.py`, lines 351–378). The
+corrected stale-worker negative/positive pair deliberately shields only the experimental
+non-cooperative action section. Normal action/cancellation cases retain SDK cancellation behavior.
+This models a section that does not stop when the engine times out; it must be described explicitly,
+not presented as default Temporal behavior. The intended counterexample remains: an engine's
+closed execution does not itself revoke external authority. No product cancellation is disabled.
+
+### Independently executed result
+
+The corrected full run passed **12 cases** on 2026-09-23: checkpoint recovery, rejection of duplicate
+completed IDs, unsafe duplicate write, guarded unknown write, guarded pre-write uncertainty,
+approval while the worker is absent, current revocation, approval across development Server death,
+shielded stale action without/with boundary fencing, single-attempt timeout and cancellation.
+The single-attempt case checks a real Activity timeout: the engine is FAILED while the external
+write exists. The normal cancellation case is CANCELED, retains the existing write and never
+executes the finish activity. These states are not production Task completion decisions.
+
+The two stale-worker cases use the explicit cancellation shield described above and controlled
+SIGSTOP/SIGCONT. They do not establish default-worker cancellation races, network-partition
+detection, production leases or external provider fencing. The first failed assertion remains
+part of the evidence; it was not counted as a passed stale-worker case.
+
+CLI issue query `repo:temporalio/cli is:issue is:open sqlite` returned
+[#312](https://github.com/temporalio/cli/issues/312) (development archival settings) and
+[#847](https://github.com/temporalio/cli/issues/847) (integration deadline) on the review date.
+These reports were identified but not reproduced and are not claims of production defects.
+
+Source review plus these probes does not select Temporal or DBOS. The public Task/Action journey,
+actual unknown-outcome reconciliation, current-authority races, shared usage reservation, Linux
+execution isolation, target production persistence, upgrades/restores and operating measurements
+remain mandatory gates. No mock result is labeled as a real model/browser/product acceptance.

@@ -16,7 +16,7 @@ Python 后端保持模块边界。Runtime 提议决策；控制层拥有权限�
 
 已有成果区分为产品不变量、候选实现、过渡设施。保留有效测试和修复；候选代码按行为验收；会话互认与局部后端模式需安排退出。允许为目标行为重新设计内部模型、数据库和 API，但保护原始数据和历史迁移。语言方向仅根据新的实际证据调整，不受沉没成本或竞品选型左右。
 
-当前分工：WorkBuddy 独立审查 Temporal 的持久执行证据；Codex 审查 DBOS、编写故障恢复实验并负责领域/权限设计。未发出的 TASK_015 模型设置工作不再作为下一任务；此前未提交的研究与依赖改动保留，不因本决定被视作已验收或已启用。
+WorkBuddy 的 Temporal 实验 Worker 与 Codex 独立故障程序已完成本地验收。下一步验证公开 Task/审批/副作用/核对/产物完整流程、生产持久化及执行隔离；引擎选择仍受这些门槛约束。未发出的 TASK_015 模型设置工作不再作为下一任务；此前未提交的研究与依赖改动保留，不因本决定被视作已验收或已启用。
 
 ## 产品与最终架构
 
@@ -169,4 +169,4 @@ DeepSeek 提供输入/投影模块及聚焦测试，Codex 实现事务、接口�
 
 本次最终验收：766 项包测试通过；95 项夹具专用测试在真实 PostgreSQL/SDK 环境中单独通过；全仓 `npm run check` 通过。
 
-WorkBuddy 的[Temporal 源码审查](research/temporal-durability-review.md)已独立核验并纠正业务/引擎身份和取消边界；尚未运行 Temporal 对等实验，未选定引擎。新增旧进程暂停/恢复实验确认执行端必须落实隔离代次。
+WorkBuddy 的[Temporal 源码审查](research/temporal-durability-review.md)已独立核验并纠正业务/引擎身份和取消边界；随后在固定 SDK/CLI/Server 与开发 SQLite 历史配置下通过 [12 项本地故障用例](../experiments/durable-execution/README.zh-CN.md#temporal-实测结果)。显式屏蔽线程取消的动作场景与首轮失败均已记录；这不代表生产部署已验收，仍未选定引擎。

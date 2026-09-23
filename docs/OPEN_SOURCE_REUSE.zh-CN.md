@@ -394,3 +394,13 @@ PostgreSQL 17.11 事务/咨询锁（PostgreSQL License）及 Psycopg 3.3.6（LGP
 复用 PostgreSQL 17.11 约束/行锁与 Psycopg 3.3.6 Jsonb/事务，实现 Owner 授权的 Bot/频道创建和原子审计。
 现有 Zod 4.6.2 是输入兼容对照，Pydantic 2.13.5 验证 Python 表示。不增加依赖、迁移引擎、任务权限或改变默认后端。
 源码复用与验收边界见[输入研究](research/python-identity-inputs.md)和[事务研究](research/python-identity-transactions.md)。
+
+## 持久执行候选实验（2026-09-23）
+
+DBOS Python 3.0.0 / `dd8a5f315a54c02a750f80dd15127958243ed339`（MIT）已用于隔离故障实验；
+Temporal Python 1.33.0 / `ab52fdde33ee8ed193402625bfdba25d240a762d`（MIT）为对照候选。
+Temporal 开发实验另固定 CLI 1.9.1 / `1de87a9f26991bf4f5c0a5ff96f2cea8d7a3cbde`（MIT），
+内含 Server 1.32.0，使用临时 SQLite 历史存储。实现前已核查源码、测试及官方发行包摘要。
+这些依赖仅用于候选实验，不改变产品默认引擎，也不代表生产部署已验收；未复制上游实现代码。
+参见 [DBOS 证据](research/durable-execution-qualification.md)与
+[Temporal 证据](research/temporal-durability-review.md)。

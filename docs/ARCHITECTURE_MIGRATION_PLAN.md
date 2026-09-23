@@ -50,8 +50,9 @@ interoperability and partial backend modes need an eventual exit. Source/schema/
 is allowed when justified by the target behavior; old user data and migration history remain
 protected. Language changes require new evidence, not competitor fashion or sunk-cost reasoning.
 
-Immediate assisted task: WorkBuddy reviews Temporal durability evidence in an isolated task;
-Codex reviews DBOS, implements crash/recovery experiments and owns the domain/authority design.
+The assisted Temporal worker and independent Codex fault runner have completed local qualification.
+Next: the public Task/approval/effect/reconciliation/artifact journey, production persistence
+qualification and execution-isolation design. Engine selection still depends on these gates.
 Unsent TASK_015 model settings work is superseded as the next task. Its existing uncommitted
 research/dependency changes remain preserved and are not accepted or activated by this decision.
 
@@ -135,8 +136,10 @@ cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnec
   The controlled stale-worker case requires effect-boundary fencing. The current Task/Run/Action
   boundaries still require an integrated domain and client journey.
 - WorkBuddy's pinned [Temporal source review](research/temporal-durability-review.md) was independently
-  checked and corrected for business/engine identity and cancellation boundaries. No Temporal
-  runtime experiment or engine selection is claimed.
+  checked and corrected for business/engine identity and cancellation boundaries. The subsequent
+  [12-case local Temporal probe](../experiments/durable-execution/README.md#temporal-observations)
+  passes with pinned SDK/CLI/Server and development SQLite history. Its explicit shielded-action
+  cases and first failed assertion are documented; this is not production deployment or selection.
 
 
 - S1 source reconciliation: 17 identical SQL migrations followed by two timestamp/hash conflicts;
