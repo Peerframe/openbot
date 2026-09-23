@@ -1,11 +1,11 @@
 # Architecture migration handoff — 2026-09-24
 
-## Current short handoff (`b9b5988`)
+## Current short handoff (`81bd82c`)
 
-- Completed: the control-side effect seam now admits an immutable Action once, then uses authoritative lookup and trusted receipt verification on replay. A separate readback records an existing effect after cancel/revoke without a new grant. Codex corrected a concurrent-resolution status race after the dsh draft. The owned PostgreSQL/HTTP entry passed 298 cases with one optional Temporal-SDK skip on `b9b5988`'s candidate; `npm run check` passed, with all 31 Turbo lint/typecheck/test and 18 build tasks served from cache.
+- Completed: the control-side effect seam now admits an immutable Action once, then uses authoritative lookup and trusted receipt verification on replay. A separate readback records an existing effect after cancel/revoke without a new grant. Codex corrected a concurrent-resolution status race after the dsh draft. `81bd82c` also bounds raw lookup JSON before verification. The owned PostgreSQL/HTTP entry passed 299 cases with one optional Temporal-SDK skip; `npm run check` passed, with Turbo lint/typecheck/test and build tasks served from cache.
 - Open: this helper is not wired into a production Temporal Worker or a real provider. S3 still needs per-Run Runtime/Worker composition, granular model/tool activities, approval waits, external-result finality, multi-Run continuation and crash recovery. S2 parity, S4/TASK020 real Linux/runsc and S5–S7 remain open.
 - Invariants: Python control owns identity, authorization, Task/Action facts, approvals, budget and artifacts; Temporal owns continuation; Runtime/Worker gain no authority. Unknown writes require authoritative lookup or remain unknown. A negative receipt must prove external finality, not merely an empty read. No production cutover or release yet.
-- Next input: `b9b5988`, `apps/server-python/src/openbot_server/{work_effects.py,work_temporal_activity.py}`, `apps/agent-runtime-python/src/openbot_agent_runtime/{executor.py,sdk_ports.py}`, and the last section of `docs/research/work-temporal-journey.md`. Preserve unrelated dirty model-service files, `docs/OPEN_SOURCE_REUSE.md` and `experiments/linux-execution/`. Use the older stage notes below only for a specific failure.
+- Next input: `81bd82c`, `apps/server-python/src/openbot_server/{work_effects.py,work_temporal_activity.py}`, `apps/agent-runtime-python/src/openbot_agent_runtime/{executor.py,sdk_ports.py}`, and the last section of `docs/research/work-temporal-journey.md`. Preserve unrelated dirty model-service files, `docs/OPEN_SOURCE_REUSE.md` and `experiments/linux-execution/`. Use the older stage notes below only for a specific failure.
 
 ## Earlier stage evidence (retained)
 

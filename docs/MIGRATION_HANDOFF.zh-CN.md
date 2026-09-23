@@ -1,11 +1,11 @@
 # 架构迁移交接 — 2026-09-24
 
-## 当前简短交接（`b9b5988`）
+## 当前简短交接（`81bd82c`）
 
-- 已完成：控制层外部操作边界对同一不可变 Action 只准入一次；重试仅做权威查询和可信回执核验。独立补记路径能在取消或撤权后记录既有操作事实，不产生新授权。Codex 对 dsh 交稿修正了并发核验的状态误报。`b9b5988` 候选的临时 PostgreSQL/HTTP 入口实际通过 298 项、可选 Temporal SDK 跳过 1 项；`npm run check` 通过，但 Turbo 的 31 项 lint/类型检查/测试和 18 项构建均命中缓存。
+- 已完成：控制层外部操作边界对同一不可变 Action 只准入一次；重试仅做权威查询和可信回执核验。独立补记路径能在取消或撤权后记录既有操作事实，不产生新授权。Codex 对 dsh 交稿修正了并发核验的状态误报；`81bd82c` 又限制了进入核验器前的原始回执 JSON 大小。临时 PostgreSQL/HTTP 入口实际通过 299 项、可选 Temporal SDK 跳过 1 项；`npm run check` 通过，Turbo 的 lint/类型检查/测试与构建任务均命中缓存。
 - 未完成：此模块尚未接入生产 Temporal Worker 或真实服务。S3 仍需按 Run 隔离的 Runtime/Worker、细粒度模型/工具活动、批准等待、外部结果最终性、多 Run 继续及崩溃恢复。S2 全面对齐、S4/TASK020 真实 Linux/runsc、S5–S7 仍开放。
 - 约束：Python 控制层持有身份、授权、任务/动作事实、批准、预算与产物；Temporal 持有持久继续；Runtime/Worker 不产生授权。未知写入须经权威核验，否则保持未知。否定性回执须证明外部结果已最终确定，不能只凭一时查无记录。尚不切换生产或发布。
-- 下一阶段只读：`b9b5988`、`apps/server-python/src/openbot_server/{work_effects.py,work_temporal_activity.py}`、`apps/agent-runtime-python/src/openbot_agent_runtime/{executor.py,sdk_ports.py}` 和 `docs/research/work-temporal-journey.md` 最后一节。保留无关的模型服务改动、`docs/OPEN_SOURCE_REUSE.md` 与 `experiments/linux-execution/`；仅遇具体失败才读下方旧阶段记录。
+- 下一阶段只读：`81bd82c`、`apps/server-python/src/openbot_server/{work_effects.py,work_temporal_activity.py}`、`apps/agent-runtime-python/src/openbot_agent_runtime/{executor.py,sdk_ports.py}` 和 `docs/research/work-temporal-journey.md` 最后一节。保留无关的模型服务改动、`docs/OPEN_SOURCE_REUSE.md` 与 `experiments/linux-execution/`；仅遇具体失败才读下方旧阶段记录。
 
 ## 旧阶段证据（保留）
 
