@@ -297,3 +297,25 @@ model/tool attempts. Its recovery case completed with one synthetic external wri
 authoritative lookup. `npm run check` passed: 29/31 Turbo lint/typecheck/test tasks and all 18
 build tasks hit cache, while repository prerequisites ran. No production Worker, multi-Run
 recovery, untrusted Linux isolation or default dispatch was qualified by these checks.
+
+## Derive activity binding from the current engine run (2026-09-24)
+
+The next Worker boundary must not accept a first Run ID supplied as workflow input. In the pinned
+Temporal Python SDK 1.33.0 (`ab52fdde33ee8ed193402625bfdba25d240a762d`),
+[`activity.Info`](https://github.com/temporalio/sdk-python/blob/ab52fdde33ee8ed193402625bfdba25d240a762d/temporalio/activity.py)
+contains the actual namespace, task queue, Workflow ID/type and current Workflow Run ID, but not
+the first execution Run ID. The pinned client's
+[`get_workflow_handle(workflow_id, run_id=...)`](https://github.com/temporalio/sdk-python/blob/ab52fdde33ee8ed193402625bfdba25d240a762d/temporalio/client/_client.py)
+binds calls to that specific Run. Its first `WorkflowExecutionStarted` history event contains
+`first_execution_run_id` and start input; the official
+[Workflow identity contract](https://docs.temporal.io/workflow-execution/workflowid-runid)
+defines the former as the chain identity across Continue-As-New and distinguishes a Reset.
+
+Decision: a trusted control activity should obtain current-run identity from `activity.info()`,
+inspect the start event of that **exact** Run through the released SDK, and then compare the
+result with the durable Task/Run, attempt ID, accepted Workflow reference and first Run ID under
+the existing read-only control gate. A missing run ID, unavailable history, malformed event,
+wrong start input or mismatched chain fails closed. These facts are correlation evidence only;
+each model/tool effect still needs its own current authority, budget, claim and reconciliation
+policy. The narrow local gap is this adapter and its verification, not a second scheduler or
+new protocol. No upstream code is copied.
