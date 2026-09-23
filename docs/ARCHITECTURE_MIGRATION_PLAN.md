@@ -35,7 +35,7 @@ The old TypeScript business backend is transitional, not a second permanent prod
 | Stage | Deliverable | Exit evidence | State |
 | --- | --- | --- | --- |
 | S1 — Reconcile and freeze preservation scope | Source-backed capability/retirement matrix, both migration histories, data compatibility risks, target API/event ownership, reversible source checkpoints | Every target capability mapped to current evidence and an owning stage; divergent SQL histories detected; no private data copied | Complete (source scope; no data cutover) |
-| S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | Pending |
+| S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a-1/2 reads and Owner auth accepted locally |
 | S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | Pending |
 | S4 — Persistent execution and deliverables | Linux browser sessions, human takeover, reviewed autonomous browse/form/upload/download, persistent workspace, restricted commands, isolated code changes and document tools | Real local fixture site with separate Bot profiles; approved write, takeover, cancel and restart; exported files open/render; isolated repository produces a tested patch | Pending |
 | S5 — Memory, skills and learning evaluation | Scoped relevant retrieval, candidate lessons/skills from correction and supported teaching, version/review/test/disable/rollback; separate evaluation tooling | A correction becomes a reviewed skill, improves a held-out task, and can be revoked; provenance/scope/deletion preserved; no authority increase. Preserve Hermes attribution | Pending |
@@ -92,8 +92,15 @@ cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnec
 - S1 source reconciliation: 17 identical SQL migrations followed by two timestamp/hash conflicts;
   the committed-source preflight rejects both divergent histories and unsafe inputs. Existing
   runtime migration guards remain unchanged. No existing database was inspected or changed.
-- Real Git preflight fixtures and the required full `npm run check` pass. S2 implementation
-  acceptance is recorded separately.
+- S2a-1/2: separate Python reads and explicitly selected Owner login/logout, OpenAPI, exact-history
+  guard and persistent auth throttling are implemented. 198 local package cases and nine owned
+  PostgreSQL/real-HTTP cases pass, including both directions of TS/Python session revocation and
+  failure rollback. DeepSeek's 128 projection cases were independently reviewed; stricter invalid
+  legacy-state behavior is documented and exercised against PostgreSQL. No default/backend switch.
+- Next S2a slice: compatible Bot/channel creation inputs and atomic identity/audit writes; input
+  implementation is delegated to one bounded worker while Codex owns SQL, auth and integration.
+- Hosted Linux checks are wired into the existing Python CI job; they have not run for this local
+  unpushed change. Full checks and commit references are recorded at integration.
 
 ## Work allocation and review
 

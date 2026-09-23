@@ -1,0 +1,6 @@
+# Direct dependencies for the S2a-1 authenticated read reference.
+fastapi==0.141.1
+starlette==1.6.0
+pydantic==2.13.5
+psycopg[binary]==3.3.6
+uvicorn==0.53.0

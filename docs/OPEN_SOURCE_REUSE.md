@@ -457,3 +457,22 @@ validator at c33e03f. Compare committed source histories without database or wor
 Preserve Drizzle 0.45.2 raw-SQL hashing and the existing runtime history guard. No new dependency
 or copied upstream source; see [research](research/migration-lineage-audit.md). This is a source
 compatibility gate, not proof of data migration or a repair tool.
+
+## Python control-plane read reference (2026-09-23)
+
+Reuse OpenAPI 3.1, FastAPI 0.141.1 and Pydantic 2.13.5 (MIT), Starlette 1.6.0 and Uvicorn 0.53.0
+(BSD-3-Clause), and Psycopg/binary 3.3.6 (LGPL-3.0-only). A narrow adapter projects existing
+PostgreSQL rows and validates existing Owner sessions; the default TypeScript Server retains business
+writes; explicit Owner-auth selection is reviewed below. The fixed SQL history, read-only transactions, bounded requests and revocation checks
+remain explicit. No upstream source copied, second migration engine or model authority added.
+Installed dependency notices remain intact. See [research](research/python-control-read-slice.md)
+and [development/paired fixture](../apps/server-python/README.md).
+
+## Python Owner-auth reference (2026-09-23)
+
+Reuse CPython 3.12.13 secrets/hmac/hashlib/ipaddress (PSF), Starlette 1.6.0 cookie serialization
+(BSD-3-Clause), PostgreSQL 17.11 transactions/advisory locks (PostgreSQL License), and Psycopg
+3.3.6 (LGPL-3.0-only). Preserve the existing session-digest, expiry/revocation and throttle schema;
+invalid attempts commit reservations, successful auth commits before cookie issuance. Default
+reference remains read-only; explicit auth mode adds no business writer or model authority. No
+new dependency or copied upstream source. See [review](research/python-owner-auth.md).

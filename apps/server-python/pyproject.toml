@@ -1,0 +1,20 @@
+[project]
+name = "openbot-server"
+version = "0.0.0"
+description = "Experimental Python OpenBot control-plane reference"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = [
+  "fastapi==0.141.1",
+  "starlette==1.6.0",
+  "pydantic==2.13.5",
+  "psycopg[binary]==3.3.6",
+  "uvicorn==0.53.0",
+]
+
+[project.optional-dependencies]
+test = ["httpx==0.28.1", "pytest==8.4.2"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

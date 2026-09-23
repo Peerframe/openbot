@@ -368,7 +368,7 @@ jobs:
           OPENBOT_TEST_AGENT_RUNTIME: python
 
   python-runtime:
-    name: Python runtime (Linux amd64)
+    name: Python runtime and control reference (Linux amd64)
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -380,6 +380,18 @@ jobs:
           node-version: 22.22.2
       - name: Verify Python and Server journeys in the isolated Linux fixture
         run: node scripts/test-runtime-linux.mjs
+      - name: Select the reviewed npm version for control-plane parity
+        run: npm install --global --ignore-scripts npm@10.9.9
+      - name: Install existing TypeScript reference dependencies
+        run: npm ci --ignore-scripts --audit=false
+      - name: Bootstrap the isolated Python control reference
+        run: apps/server-python/scripts/bootstrap.sh
+        env:
+          OPENBOT_CONTROL_PYTHON: python3.12
+      - name: Verify Python control models and HTTP boundaries
+        run: apps/server-python/scripts/check.sh -q
+      - name: Compare Python and TypeScript against owned PostgreSQL
+        run: npm run test:control:python
 
   # Keep this protected context pending until every platform and integration job finishes.
   check:

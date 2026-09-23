@@ -371,3 +371,20 @@ React DOM 类型 19.3.0 / DefinitelyTyped `de5e8f01d01a14ae4ae502283d3d09f042f1a
 复用已安装 Git 2.54.0 的树/对象读取、Node SHA-256 和 c33e03f 的迁移清单验证器，比较已提交源码，
 不读取数据库或工作区文件。保留 Drizzle 0.45.2 的 SQL 原文哈希和现有启动历史校验。无新依赖或上游源码复制；
 见[研究记录](research/migration-lineage-audit.md)。这是源码历史兼容检查，不是数据迁移证明或修复程序。
+
+## Python 控制层只读参考实现（2026-09-23）
+
+复用 OpenAPI 3.1、FastAPI 0.141.1 和 Pydantic 2.13.5（MIT）、Starlette 1.6.0 与
+Uvicorn 0.53.0（BSD-3-Clause）、Psycopg/binary 3.3.6（LGPL-3.0-only）。薄适配器投影现有
+PostgreSQL 记录并校验已有 Owner 会话，默认 TypeScript Server 保留业务写入；显式认证模式见下文。固定 SQL 历史、
+只读事务、请求上限和撤权检查均为明确约束。没有复制上游源码、增加第二套迁移引擎或赋予模型
+权限；保留安装包许可证声明。见[研究](research/python-control-read-slice.md)及
+[开发与真实对照夹具](../apps/server-python/README.zh-CN.md)。
+
+## Python Owner 认证参考实现（2026-09-23）
+
+复用 CPython 3.12.13 的 secrets/hmac/hashlib/ipaddress（PSF）、Starlette 1.6.0 Cookie 序列化（BSD-3-Clause）、
+PostgreSQL 17.11 事务/咨询锁（PostgreSQL License）及 Psycopg 3.3.6（LGPL-3.0-only）。
+保持原会话摘要、过期/撤权和限流表语义；失败尝试提交计数，认证成功提交后才签发 Cookie。
+参考入口默认只读，显式认证模式不迁移业务写入或增加模型权限。无新依赖、无复制上游源码。
+参见[研究](research/python-owner-auth.md)。
