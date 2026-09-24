@@ -92,3 +92,22 @@ environment-dependent skips remain; no new PostgreSQL, provider, native platform
 qualification was performed. The [committed report](../../experiments/s5-memory-skills/evidence/local-result.json)
 contains full synthetic failure/pass outputs and limits. S5 remains pending product integration
 and real-model evaluation.
+
+
+## Independent integration acceptance (2026-09-24)
+
+Codex reviewed `5d838b5` and ran the unchanged candidate independently with
+Python 3.12.13. All 16 unit checks passed, and the actual CLI exported and reopened
+synthetic evidence in `/private/tmp/openbot-s5-independent-evidence-20260924`.
+Logs: `/private/tmp/openbot-s5-independent-tests-20260924.log` and
+`/private/tmp/openbot-s5-independent-probe-20260924.log`. Results were
+baseline/pending/suspended/revoked 0/3 and reviewed/resumed 3/3; old references
+were refused and the grant set was unchanged. These scores describe the fixed
+arithmetic interpreter only, not general learning or live-model performance.
+
+The original task's handoff message had failed, but its clean committed worktree
+was available and directly inspected; no implementation was repeated. The fixture
+is integrated as offline S5 preparation. Its synthetic scope fields, in-memory
+state machine and structured review envelope are not approved product contracts
+or a second control authority. Product integration still depends on correction
+provenance, access/deletion policy and serialized reference rechecks in S2/S3.
