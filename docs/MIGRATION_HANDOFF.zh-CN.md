@@ -1,11 +1,11 @@
 # 架构迁移交接 — 2026-09-24
 
-## 当前简短交接（`81bd82c`）
+## 当前简短交接（`7e276d5`）
 
-- 已完成：控制层外部操作边界对同一不可变 Action 只准入一次；重试仅做权威查询和可信回执核验。独立补记路径能在取消或撤权后记录既有操作事实，不产生新授权。Codex 对 dsh 交稿修正了并发核验的状态误报；`81bd82c` 又限制了进入核验器前的原始回执 JSON 大小。临时 PostgreSQL/HTTP 入口实际通过 299 项、可选 Temporal SDK 跳过 1 项；`npm run check` 通过，Turbo 的 lint/类型检查/测试与构建任务均命中缓存。
-- 未完成：此模块尚未接入生产 Temporal Worker 或真实服务。S3 仍需按 Run 隔离的 Runtime/Worker、细粒度模型/工具活动、批准等待、外部结果最终性、多 Run 继续及崩溃恢复。S2 全面对齐、S4/TASK020 真实 Linux/runsc、S5–S7 仍开放。
-- 约束：Python 控制层持有身份、授权、任务/动作事实、批准、预算与产物；Temporal 持有持久继续；Runtime/Worker 不产生授权。未知写入须经权威核验，否则保持未知。否定性回执须证明外部结果已最终确定，不能只凭一时查无记录。尚不切换生产或发布。
-- 下一阶段只读：`81bd82c`、`apps/server-python/src/openbot_server/{work_effects.py,work_temporal_activity.py}`、`apps/agent-runtime-python/src/openbot_agent_runtime/{executor.py,sdk_ports.py}` 和 `docs/research/work-temporal-journey.md` 最后一节。保留无关的模型服务改动、`docs/OPEN_SOURCE_REUSE.md` 与 `experiments/linux-execution/`；仅遇具体失败才读下方旧阶段记录。
+- 已完成：S3 多 Run 参考探针在 Worker 启动前只构造一个 Agent，按序列化的 Run 依赖选择各模型/工具 Activity，并拒绝串 Run 的观察。Codex 用固定版本 SDK 和自建临时 Temporal 实际运行：两条真实历史均有两次已完成模型请求和一次已完成工具调用，工具执行区间实际重叠。证据见 `experiments/work-journey/multirun_port_probe.py`、`docs/research/work-temporal-journey.md` 末节及 `/private/tmp/openbot-s3-multirun-probe-overlap-20260924.log`。`npm run check` 退出码为 0；18 项构建均命中缓存。
+- 未完成：探针不是生产 Worker；此处未证明整个 Run 的预算可持久化，也未测试崩溃重放、批准等待、外部结果最终性或真实服务。S3 的 Worker/Runtime 组合与继续执行、S2 全面对齐、S4/TASK020 真实 Linux/runsc、S5–S7 均开放。总体交付粗估仍约 25%，当前处于 S3。
+- 约束：Python 控制层持有身份、授权、任务/动作事实、批准、预算与产物；Temporal 持有继续执行；Runtime/Worker 不产生授权。未知外部写入须经权威核验，否则保持未知。取消/撤权不重新授权。尚不切换生产或发布。
+- 下一阶段输入：`7e276d5`、`apps/server-python/src/openbot_server/{work_effects.py,work_temporal_activity.py}`、`apps/agent-runtime-python/src/openbot_agent_runtime/{executor.py,sdk_ports.py}` 和上述研究文档末节。保留无关的模型服务改动、`docs/OPEN_SOURCE_REUSE.md` 与 `experiments/linux-execution/`；仅遇具体失败才读下方旧记录。
 
 ## 旧阶段证据（保留）
 
