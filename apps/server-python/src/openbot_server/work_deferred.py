@@ -1,7 +1,7 @@
 """Control-owned deferred proposals. Approval never enables an SDK executor or replanning."""
 import asyncio
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import inspect
 
@@ -70,6 +70,8 @@ class DeferredActivities:
 
     async def _services(self, context, row):
         # Assembly only. The adapter receives the entire original immutable intent, not a new plan.
+        if row.get('correction_context_id') is not None:
+            context = replace(context, correction_token=row['correction_context_id'])
         services = await call(self.load_effect, context, deepcopy(row['intent']))
         if (type(services) is not EffectServices or not callable(getattr(services.adapter, 'apply', None))
                 or not callable(getattr(services.adapter, 'lookup', None))
@@ -79,20 +81,28 @@ class DeferredActivities:
 
     @activity.defn(name='openbot.prepare_tool.v1')
     async def prepare(self, proposal: dict) -> str:
+        return await self.prepare_request(proposal)
+
+    async def prepare_request(self, proposal, correction_context=None):
         request = parse_proposal(proposal)
         accepted, activity_id = await _bind_activity_identity(self.store, self.client, **self.scope)
         key = operation_key(accepted, activity_id)
         context = await self._context()
+        if correction_context is not None:
+            from .work_corrections import CorrectionStore
+            await CorrectionStore(self.store).read(context.task_id, context.run_id, correction_context)
+            context = replace(context, correction_token=correction_context)
         async with self.store._transaction(trusted=True) as db:
             row = await (await db.execute('SELECT id FROM work_actions WHERE run_id=%s AND action_key=%s',
                                          (context.run_id, key))).fetchone()
         if row is not None:
             original = await self._read(context, row['id'])
-            if (original['intent']['tool'] != request['tool']
+            if (original.get('correction_context_id') != correction_context
+                    or original['intent']['tool'] != request['tool']
                     or canonical(original['intent']['arguments'])[1] != canonical(request['arguments'])[1]):
                 raise WorkConflict('action_content_changed')
             return row['id']
-        catalog = await self.host.ports.deferred_catalog(WorkRuntimeDeps(context.task_id, context.run_id))
+        catalog = await self.host.ports.deferred_catalog(WorkRuntimeDeps(context.task_id, context.run_id, correction_context))
         arguments = catalog.validate_arguments(request['tool'], request['arguments'])
         plan = await call(self.plan_effect, context, ToolRequest(request['tool'], deepcopy(arguments), canonical(arguments)[1]))
         if (type(plan) is not DeferredPlan or type(plan.intent) is not dict
@@ -105,7 +115,8 @@ class DeferredActivities:
         fence = await _claim_bound_activity(self.store, accepted, activity_id)
         return await self.store.propose(context.task_id, context.run_id, fence=fence, action_key=key,
             intent=intent, reserved_tokens=plan.reserved_tokens, requires_approval=plan.requires_approval,
-            expires_seconds=plan.expires_seconds)
+            expires_seconds=plan.expires_seconds,
+            **({"correction_context": correction_context} if correction_context is not None else {}))
 
     @activity.defn(name='openbot.tool_state.v1')
     async def state(self, action_id: str) -> dict:
@@ -123,7 +134,7 @@ class DeferredActivities:
     async def execute(self, action_id: str) -> dict:
         context = await self._context()
         row = await self._read(context, action_id)
-        if row['status'] in ('applied', 'not_applied'):
+        if row['status'] in ('applied', 'not_applied', 'superseded'):
             return dict(actionId=action_id, status=row['status'])
         if row['status'] == 'proposed' and (not row['unexpired'] or row['decision'] not in ('approved','not_required')):
             raise WorkConflict('action_not_authorized')
@@ -137,7 +148,8 @@ class DeferredActivities:
             outcome = await execute_action(self.store, task_id=context.task_id, run_id=context.run_id,
                 fence=fence, action_key=row['action_key'], intent=row['intent'],
                 reserved_tokens=row['reserved_tokens'], requires_approval=row['requires_approval'],
-                adapter=services.adapter, verifier=services.verifier)
+                adapter=services.adapter, verifier=services.verifier,
+                correction_context=row.get("correction_context_id"))
         return dict(actionId=action_id, status=outcome.status)
 
     @activity.defn(name='openbot.reconcile_tool.v1')

@@ -141,36 +141,46 @@ class PostgresWorkStore:
             return await self._view(connection, task_id)
 
     async def propose(self, task_id, run_id, *, fence, action_key, intent, reserved_tokens,
-                      requires_approval=True, expires_seconds=300):
+                      requires_approval=True, expires_seconds=300, correction_context=None):
         """Trusted policy composition only. No Runtime/client can select approval requirements."""
         text(run_id, 128); text(action_key, 128); tokens(reserved_tokens)
         if type(intent) is not dict or type(requires_approval) is not bool or type(expires_seconds) is not int or not 1 <= expires_seconds <= 3600:
             raise InvalidWork('invalid_action')
         _, digest = canonical(intent)
+        from .work_corrections import check_context
         async with self._transaction(trusted=True) as connection:
             task = await self._task(connection, task_id)
-            self._active(task)
             cursor = await connection.execute('SELECT * FROM work_runs WHERE task_id=%s AND id=%s FOR UPDATE', (task_id, run_id))
             run = await cursor.fetchone()
             if run is None:
                 raise WorkNotFound()
-            if run['status'] != 'running':
-                raise WorkConflict('run_closed')
-            await check_fence(connection,run_id,fence)
             cursor = await connection.execute('SELECT * FROM work_actions WHERE run_id=%s AND action_key=%s', (run_id, action_key))
             existing = await cursor.fetchone()
             if existing is not None:
                 if (existing['intent_digest'], existing['reserved_tokens'], existing['requires_approval']) != (digest, reserved_tokens, requires_approval):
                     raise WorkConflict('action_content_changed')
+                if existing['correction_context_id'] != correction_context:
+                    raise WorkConflict('action_context_changed')
+                # A correction never rewrites an already admitted operation's identity/outcome.
+                # This historical read is not a fresh admission, and cannot refresh its generation.
+                if correction_context is not None and existing['status'] in ('admitted', 'unknown', 'applied', 'not_applied'):
+                    await check_context(connection, task, run_id, correction_context, current=False)
+                    return existing['id']
+            self._active(task)
+            if run['status'] != 'running':
+                raise WorkConflict('run_closed')
+            await check_fence(connection,run_id,fence)
+            await check_context(connection, task, run_id, correction_context)
+            if existing is not None:
                 return existing['id']
             cursor = await connection.execute('SELECT count(*) AS n FROM work_actions WHERE task_id=%s', (task_id,))
             if (await cursor.fetchone())['n'] >= 256:
                 raise WorkConflict('action_limit')
             action_id = str(uuid4())
             await connection.execute('INSERT INTO work_actions(id,task_id,run_id,action_key,intent,intent_digest,authority_generation,'
-                'requires_approval,decision,expires_at,reserved_tokens) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,clock_timestamp()+%s*interval \'1 second\',%s)',
+                'requires_approval,decision,expires_at,reserved_tokens,correction_context_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,clock_timestamp()+%s*interval \'1 second\',%s,%s)',
                 (action_id, task_id, run_id, action_key, Jsonb(intent), digest, task['authority_generation'], requires_approval,
-                 'pending' if requires_approval else 'not_required', expires_seconds, reserved_tokens))
+                 'pending' if requires_approval else 'not_required', expires_seconds, reserved_tokens, correction_context))
             await connection.execute("UPDATE work_tasks SET status='open' WHERE id=%s", (task_id,))
             await connection.execute("UPDATE work_runs SET status='running' WHERE id=%s", (run_id,))
             await self._event(connection, task_id, 'action.proposed', {'actionId': action_id, 'intentDigest': digest})
@@ -199,10 +209,13 @@ class PostgresWorkStore:
 
     async def admit(self, action_id, *, fence):
         """True is one new admission; False requires inspecting/reconciling the existing outcome."""
+        from .work_corrections import check_context
         async with self._transaction(trusted=True) as connection:
             task, action = await self._action(connection, action_id)
             self._active(task)
             await check_fence(connection,action['run_id'],fence)
+            if action['status'] in ('proposed', 'superseded'):
+                await check_context(connection, task, action['run_id'], action['correction_context_id'])
             if action['status'] != 'proposed':
                 return False
             if not action['unexpired'] or action['authority_generation'] != task['authority_generation'] or action['decision'] not in ('approved', 'not_required'):

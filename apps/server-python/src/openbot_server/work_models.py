@@ -1,6 +1,8 @@
 """Shared public work projections; SDK history and engine internals are not client authority."""
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field, JsonValue
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
+
+from .work_values import text
 
 
 class StrictModel(BaseModel):
@@ -24,6 +26,34 @@ class RequestReconciliation(StrictModel):
     requestKey: str = Field(min_length=1, max_length=128)
     expectedSequence: int = Field(ge=0, le=64)
     reason: str = Field(min_length=1, max_length=512)
+
+
+class RequestCorrection(StrictModel):
+    runId: str = Field(min_length=1, max_length=128)
+    instruction: str = Field(min_length=1, max_length=4096)
+    requestKey: str = Field(min_length=1, max_length=128)
+    expectedSequence: int = Field(ge=0, le=8)
+
+    @field_validator('runId', 'requestKey', 'instruction')
+    @classmethod
+    def bounded_text(cls, value, info):
+        return text(value, 4096 if info.field_name == 'instruction' else 128)
+
+
+class WorkCorrection(StrictModel):
+    id: str
+    taskId: str
+    runId: str
+    sequence: int = Field(ge=1, le=8)
+    requestedBy: Literal['owner']
+    instruction: str = Field(min_length=1, max_length=4096)
+    generation: int = Field(ge=1)
+    createdAt: str
+
+    @field_validator('instruction')
+    @classmethod
+    def bounded_instruction(cls, value):
+        return text(value, 4096)
 
 
 class WorkReconciliation(StrictModel):
@@ -59,7 +89,7 @@ class WorkAction(StrictModel):
     intent: dict[str, JsonValue]
     intentDigest: str
     decision: Literal['not_required', 'pending', 'approved', 'denied']
-    status: Literal['proposed', 'admitted', 'unknown', 'applied', 'not_applied']
+    status: Literal['proposed', 'admitted', 'unknown', 'applied', 'not_applied', 'superseded']
     expiresAt: str
     reservedTokens: int
     actualTokens: int | None

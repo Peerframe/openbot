@@ -670,3 +670,10 @@ Reuse Temporal Python1.33.0 exact-history and REJECT_DUPLICATE APIs, the accepte
 reference and existing Action/reconciliation transactions. Historical binding proves origin only;
 lookup cannot resume execution. No new schema/dependency or upstream code copied. See
 [scope and independent review](research/work-closed-repair.md).
+
+## Product Owner corrections (2026-09-24)
+
+Reuse pinned Pydantic AI2.47.0 history/DeferredToolResults, Temporal1.33.0 Activities and
+PostgreSQL Task locks. Small additive domain records bind immutable instruction contexts to
+existing proposal/admission/publication gates. No SDK fork or source copy; see
+[review and acceptance boundary](research/work-owner-corrections.md).

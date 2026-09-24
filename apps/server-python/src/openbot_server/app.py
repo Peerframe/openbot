@@ -88,7 +88,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         task_write = tasks is not None and request.method == "POST" and re.fullmatch(r"/api/v1/channels/[^/]+/messages", request.url.path) is not None
         run_command_write = run_commands is not None and request.method == "POST" and re.fullmatch(r"/api/v1/runs/[^/]+/(cancel|steer)", request.url.path) is not None
         work_write = work is not None and request.method == "POST" and (
-            request.url.path == "/api/v1/tasks" or re.fullmatch(r"/api/v1/tasks/[^/]+/cancel", request.url.path)
+            request.url.path == "/api/v1/tasks" or re.fullmatch(r"/api/v1/tasks/[^/]+/(cancel|corrections)", request.url.path)
             or re.fullmatch(r"/api/v1/actions/[^/]+/(decision|reconcile)", request.url.path))
         if request.method not in ("GET", "HEAD", "OPTIONS") and not (auth_write or identity_write or conversation_write or profile_write or task_write or run_command_write or work_write):
             response = JSONResponse({"error": "Operation is unavailable in this reference."}, status_code=405)
@@ -248,7 +248,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
             schema["paths"][path]["post"]["security"] = [{"OwnerSession": []}]
     if work is not None:
         for path, method in (("/api/v1/tasks", "post"), ("/api/v1/tasks/{task_id}", "get"),
-                             ("/api/v1/tasks/{task_id}/cancel", "post"), ("/api/v1/actions/{action_id}/decision", "post"),
+                             ("/api/v1/tasks/{task_id}/cancel", "post"), ("/api/v1/tasks/{task_id}/corrections", "post"), ("/api/v1/actions/{action_id}/decision", "post"),
                              ("/api/v1/actions/{action_id}/reconcile", "post"),
                              ("/api/v1/artifacts/{artifact_id}", "get")):
             schema["paths"][path][method]["security"] = [{"OwnerSession": []}]

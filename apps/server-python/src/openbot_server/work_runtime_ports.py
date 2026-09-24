@@ -40,7 +40,7 @@ from __future__ import annotations
 import inspect
 from collections.abc import Sequence
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from openbot_agent_runtime.catalog import ToolCatalog
@@ -80,6 +80,7 @@ class WorkRuntimeDeps:
     """
     task_id: str
     run_id: str
+    correction_token: str | None = None
 
 
 @dataclass(frozen=True)
@@ -184,6 +185,10 @@ class WorkRuntimePortFactory:
         guard.check_sync('context load')
         await self._assert_scope(deps)
         guard.check_sync('binding before services')
+        if deps.correction_token is not None:
+            from .work_corrections import CorrectionStore
+            await CorrectionStore(self._store).read(context.task_id, context.run_id, deps.correction_token)
+            context = replace(context, correction_token=deps.correction_token)
         outcome = self._load_services(context)
         services = await outcome if inspect.isawaitable(outcome) else outcome
         services = _validated_services(services)
@@ -192,6 +197,10 @@ class WorkRuntimePortFactory:
         await self._assert_scope(deps)
         guard.check_sync('binding after services')
         model_catalog, inline_catalog = _detached_catalogs(services, self._limits)
+        # The correction profile may discard a stale, unfinished model segment. It must never
+        # contain inline effects, including after a Worker/configuration change.
+        if deps.correction_token is not None and inline_catalog.descriptors:
+            raise WorkConflict('correction_inline_tools_unsupported')
         return guard, services, model_catalog, inline_catalog
 
     async def _assert_scope(self, deps: WorkRuntimeDeps) -> None:
@@ -221,6 +230,7 @@ def _validated_deps(deps: WorkRuntimeDeps) -> WorkRuntimeDeps:
     try:
         text(deps.task_id, 128)
         text(deps.run_id, 128)
+        if deps.correction_token is not None: text(deps.correction_token, 128)
     except InvalidWork as error:
         raise RuntimeFailure(FailureReason.INVALID_REQUEST, 'Invalid Task/Run correlation ID') from error
     return deps

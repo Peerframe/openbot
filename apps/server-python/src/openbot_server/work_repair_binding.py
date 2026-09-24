@@ -22,6 +22,7 @@ class HistoricalEffectContext:
     task_id: str
     run_id: str
     bot_id: str
+    correction_token: str | None = None
 
 
 def identity(value):
@@ -91,4 +92,4 @@ async def bind_repair_activity(store, client, value, *, namespace, queue, workfl
                 or set(intent) != {'kind', 'tool', 'arguments', 'effect'}
                 or intent['kind'] != 'deferred_tool' or canonical(intent)[1] != row['intent_digest']):
             raise WorkConflict('deferred_record_invalid')
-        return HistoricalEffectContext(value['taskId'], value['runId'], text(task['bot_id'], 128)), row
+        return HistoricalEffectContext(value['taskId'], value['runId'], text(task['bot_id'], 128), row.get('correction_context_id')), row

@@ -173,3 +173,12 @@ PostgreSQL 和合成模型／效果服务。unknown 任务取消且原 Workflow 
 也不证明真实服务或 Linux 隔离。运维 `--repair-closed` 模式要求同一产品 Worker 配置
 `load_lookup`；送达、结束和等待原流程分开，退出码 0 不表示外部动作成功。
 见[候选证据](../../docs/research/work-closed-repair.md)。
+
+### 执行中纠正恢复
+
+`--engine postgres-mtls --only-case product-owner-corrections` 使用真实公开 API、PostgreSQL、
+Temporal 与脚本模型验证显式启用的纠正配置。三个并发任务分别覆盖提案准备中纠正、unknown 动作
+等待中纠正，以及模型准入前、模型收据落盘后、发布核验中的纠正。自有测试 Worker 的故障注入要求
+保留原模型收据、作废提案、完整工具调用配对、只读核对命令和准确的发布回执；历史重放不能产生副作用。
+命令落盘不代表语义质量保证，仍保留完整历史大小限制；不涉及真实账号或 Linux 隔离。
+范围和证据见[研究记录](../../docs/research/work-owner-corrections.md)。

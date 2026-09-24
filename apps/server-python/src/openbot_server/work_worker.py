@@ -6,7 +6,7 @@ experiment import, credentials in Workflow inputs, per-Run cache or alternate re
 """
 import asyncio
 from contextlib import asynccontextmanager
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, replace
 from datetime import timedelta
 from copy import deepcopy
 import inspect
@@ -24,6 +24,9 @@ with workflow.unsafe.imports_passed_through():
     from openbot_agent_runtime.temporal_agent import build_temporal_agent
     from openbot_agent_runtime.catalog import ToolCatalog
     from openbot_agent_runtime.contracts import ToolDescriptor
+    from .work_corrected_workflow import run_corrected
+    from .work_correction_activities import CorrectionActivities
+    from .work_corrections import CorrectionStore, check_context
     from .work_deferred import DeferredActivities
     from .work_closed_repair import ClosedRepair, ClosedRepairActivities
     from .work_deferred_values import parse_proposal
@@ -37,7 +40,7 @@ TYPE = 'OpenBotWorkV1'
 CONFIG = {'start_to_close_timeout': timedelta(seconds=75),
           'schedule_to_close_timeout': timedelta(seconds=180),
           'retry_policy': RetryPolicy(initial_interval=timedelta(seconds=1), maximum_attempts=3,
-            non_retryable_error_types=['WorkConflict', 'InvalidWork', 'RuntimeFailure'])}
+            non_retryable_error_types=['WorkConflict', 'CorrectionsChanged', 'InvalidWork', 'RuntimeFailure'])}
 START_CONFIG = {**CONFIG, 'retry_policy': RetryPolicy(initial_interval=timedelta(seconds=1),
     maximum_interval=timedelta(seconds=5), non_retryable_error_types=['WorkConflict', 'InvalidWork', 'WorkNotFound', 'RuntimeFailure'])}
 # One deployment composition per process, no identity map. Never used during Workflow replay.
@@ -72,7 +75,7 @@ class VerifiedTaskResult:
 
 class WorkActivities:
     def __init__(self, store, client, *, namespace, queue, load_services, verify_result,
-                 plan_effect=None, load_effect=None):
+                 plan_effect=None, load_effect=None, enable_corrections=False):
         text(namespace, 64); text(queue, 256)
         if getattr(client, 'namespace', None) != namespace:
             raise WorkConflict('engine_namespace_mismatch')
@@ -84,6 +87,8 @@ class WorkActivities:
         self.scope = dict(expected_namespace=namespace, expected_queue=queue, expected_workflow_type=TYPE)
         self.ports = WorkRuntimePortFactory(store, client, **self.scope,
                                            load_services=load_services, deadline_seconds=60)
+        if type(enable_corrections) is not bool: raise InvalidWork("invalid_correction_profile")
+        self.enable_corrections = enable_corrections
         self.deferred = None
         if plan_effect is not None or load_effect is not None:
             self.deferred = DeferredActivities(self, plan_effect, load_effect)
@@ -98,9 +103,14 @@ class WorkActivities:
         if self.deferred is not None:
             catalog = await self.ports.deferred_catalog(WorkRuntimeDeps(context.task_id, context.run_id))
             result['deferredTools'] = [asdict(tool) for tool in catalog.descriptors]
+        if self.enable_corrections:
+            _, _, _, inline = await self.ports._prepare(WorkRuntimeDeps(context.task_id, context.run_id))
+            if inline.descriptors: raise WorkConflict('correction_inline_tools_unsupported')
+            await CorrectionStore(self.store).enable(context.task_id, context.run_id)
+            result['correctionProtocol'] = 1
         return result
 
-    async def completed_result(self, summary):
+    async def completed_result(self, summary, correction_context=None):
         try:
             accepted = await bind_completed_activity(self.store, self.client, **self.scope)
         except WorkConflict as error:
@@ -109,6 +119,7 @@ class WorkActivities:
             raise
         async with self.store._transaction(trusted=True) as db:
             task = await self.store._task(db, accepted.task_id, read=True)
+            await check_context(db, task, accepted.run_id, correction_context, current=False)
             if task['result_summary'] != summary:
                 raise WorkConflict('completion_content_changed')
             rows = await (await db.execute('SELECT * FROM work_artifacts '
@@ -120,14 +131,16 @@ class WorkActivities:
             event = events[0]['payload']
             by_id = {row['id']: row for row in rows}
             ids = event.get('artifactIds')
-            if (event.get('runId') != accepted.run_id or type(ids) is not list
+            if (event.get('correctionContext') != correction_context
+                    or event.get('runId') != accepted.run_id or type(ids) is not list
                     or len(ids) != len(by_id) or set(ids) != set(by_id)):
                 raise WorkConflict('completion_record_invalid')
             rows = [by_id[key] for key in ids]
             descriptors = [dict(key=r['artifact_key'], name=r['name'], mediaType=r['media_type'],
                                 sha256=r['sha256'], sizeBytes=r['size_bytes']) for r in rows]
             _, digest = canonical(dict(taskId=accepted.task_id, runId=accepted.run_id, summary=summary,
-                artifacts=descriptors, verification=event.get('verification')))
+                artifacts=descriptors, verification=event.get('verification'),
+                **({'correctionContext': correction_context} if correction_context is not None else {})))
             if task['completion_digest'] != digest or event.get('completionDigest') != digest:
                 raise WorkConflict('completion_record_invalid')
         if self.store.files is None:
@@ -138,22 +151,29 @@ class WorkActivities:
 
     @activity.defn(name='openbot.publish_task.v1')
     async def publish_task(self, summary: str) -> dict:
+        return await self.publish_result(summary)
+
+    async def publish_result(self, summary, correction_context=None):
         text(summary, 16384)
-        completed = await self.completed_result(summary)
+        completed = await self.completed_result(summary, correction_context)
         if completed is not None:
             return completed
         try:
-            return await self._publish_active(summary)
+            return await self._publish_active(summary, **({"correction_context": correction_context}
+                if correction_context is not None else {}))
         except WorkConflict:
             # Another admitted attempt may have completed while this one awaited verification.
             # Only the same independently recorded result can turn this conflict into readback.
-            completed = await self.completed_result(summary)
+            completed = await self.completed_result(summary, correction_context)
             if completed is not None:
                 return completed
             raise
 
-    async def _publish_active(self, summary):
+    async def _publish_active(self, summary, correction_context=None):
         context = await load_current_activity_task(self.store, self.client, **self.scope)
+        if correction_context is not None:
+            await CorrectionStore(self.store).read(context.task_id, context.run_id, correction_context)
+            context = replace(context, correction_token=correction_context)
         fence = await claim_current_activity(self.store, self.client, **self.scope)
         async with self.store._transaction(trusted=True) as db:
             task = await self.store._task(db, context.task_id, read=True)
@@ -171,7 +191,8 @@ class WorkActivities:
         # store.complete rechecks authority, the captured revision and the original fence before
         # and after blob I/O. Verification is evidence, never permission to renew a stale claim.
         completed = await self.store.complete(context.task_id, context.run_id, fence=fence,
-            expected_revision=revision, summary=summary, artifacts=artifacts, verification=verification)
+            expected_revision=revision, summary=summary, artifacts=artifacts, verification=verification,
+            **({"correction_context": correction_context} if correction_context is not None else {}))
         return {'taskId': completed['id'], 'status': completed['status'],
                 'artifactIds': [a['id'] for a in completed['artifacts']]}
 
@@ -183,6 +204,8 @@ class OpenBotWork:
     @workflow.run
     async def run(self, identity: dict) -> dict:
         context = await workflow.execute_activity('openbot.load_task.v1', identity, **START_CONFIG)
+        if context.get('correctionProtocol') == 1:
+            return await run_corrected(context, identity, agent, CONFIG)
         deps = WorkRuntimeDeps(context['taskId'], context['runId'])
         options = {}
         if context.get('deferredTools'):
@@ -235,7 +258,7 @@ class OpenBotWork:
 
 @asynccontextmanager
 async def product_worker(client, store, *, namespace, queue, load_services, verify_result,
-                         plan_effect=None, load_effect=None, load_lookup=None):
+                         plan_effect=None, load_effect=None, load_lookup=None, enable_corrections=False):
     """Serve one operator-selected queue. The connected client needs PydanticAIPlugin.
 
     Callbacks are required Python composition, not import paths or defaults. Shutdown drains the
@@ -246,10 +269,12 @@ async def product_worker(client, store, *, namespace, queue, load_services, veri
         raise WorkConflict('worker_already_configured')
     host = WorkActivities(store, client, namespace=namespace, queue=queue,
                           load_services=load_services, verify_result=verify_result,
-                          plan_effect=plan_effect, load_effect=load_effect)
+                          plan_effect=plan_effect, load_effect=load_effect, enable_corrections=enable_corrections)
     activities = [host.load_task, host.publish_task]
     if host.deferred is not None:
         activities += [host.deferred.prepare, host.deferred.state, host.deferred.execute, host.deferred.reconcile, host.deferred.stop]
+    correction_activities = CorrectionActivities(host)
+    activities += [correction_activities.freeze, correction_activities.prepare, correction_activities.publish]
     workflows = [OpenBotWork]
     if load_lookup is not None:
         repair = ClosedRepairActivities(store, client, namespace=namespace, queue=queue,

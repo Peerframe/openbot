@@ -50,6 +50,7 @@ class WorkRuntimeContext:
     bot_id: str
     objective: str
     token_limit: int
+    correction_token: str | None = None
 
 
 class WorkStartPending(Exception):

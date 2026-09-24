@@ -236,3 +236,14 @@ This is historical fact recovery, not resumed Agent execution or real provider/i
 The operator's `--repair-closed` mode requires `load_lookup` registration on the same product
 Worker; delivered/finished/waiting-original rows are distinct, and exit0 is not effect success.
 See [candidate evidence](../../docs/research/work-closed-repair.md).
+
+### Owner correction recovery
+
+`--engine postgres-mtls --only-case product-owner-corrections` exercises the opt-in product
+profile through the real public API, PostgreSQL and Temporal with scripted providers. Three
+concurrent Tasks distinguish correction during preparation, during unknown-effect waiting, and
+before model admission/after model receipt/while verifying publication. Owned Worker crashes
+must preserve the original model receipt, superseded proposals, complete deferred-call pairing,
+lookup-only Owner commands and exact publication acknowledgement. Histories replay without effects.
+A stored command is not a semantic-quality claim. Existing full-history limits remain in force;
+no real account or Linux isolation is exercised. See [scope and evidence](../../docs/research/work-owner-corrections.md).

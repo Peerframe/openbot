@@ -8,6 +8,8 @@ from .auth_routes import validate_origins
 from .authority import AuthenticationRequired
 from .http_input import authorize_owner, read_json
 from .work_models import CreateTask, DecideAction, EmptyCommand, WorkSnapshot, RequestReconciliation, WorkReconciliation
+from .work_corrections import CorrectionStore
+from .work_models import RequestCorrection, WorkCorrection
 from .work_values import InvalidWork, WorkConflict, WorkNotFound
 
 
@@ -54,6 +56,13 @@ def register_work_routes(app: FastAPI, writer, read_store, *, secure_cookies, al
     async def cancel(request: Request, task_id: str = Path(min_length=1, max_length=128)):
         token, _ = await write_input(request, EmptyCommand, 128)
         return await result(writer.cancel(token, task_id))
+
+    @app.post('/api/v1/tasks/{task_id}/corrections', response_model=WorkCorrection, status_code=202,
+              operation_id='correctWorkTask', openapi_extra=schema(RequestCorrection))
+    async def correct(request: Request, task_id: str = Path(min_length=1, max_length=128)):
+        token, body = await write_input(request, RequestCorrection, 32768)
+        return await result(CorrectionStore(writer).request(token, task_id, run_id=body.runId,
+            instruction=body.instruction, request_key=body.requestKey, expected_sequence=body.expectedSequence))
 
     @app.post('/api/v1/actions/{action_id}/decision', response_model=WorkSnapshot,
               operation_id='decideWorkAction', openapi_extra=schema(DecideAction))

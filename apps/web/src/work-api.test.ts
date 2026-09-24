@@ -69,3 +69,28 @@ it.each([{ status: "success" }, { cancelRequested: "false" }, { revision: -1 }, 
     await expect(getWorkTask("task-one", new AbortController().signal)).rejects.toThrow();
   },
 );
+
+it("retains a superseded proposal without treating it as applied", async () => {
+  const action = {
+    id: "action-one",
+    runId: "run-one",
+    intent: { kind: "write" },
+    intentDigest: "a".repeat(64),
+    decision: "approved",
+    status: "superseded",
+    expiresAt: "2026-09-24T00:00:00Z",
+    reservedTokens: 2,
+    actualTokens: null,
+    evidence: null,
+  };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => Response.json(workFixture({ actions: [action] }))),
+  );
+  const result = await getWorkTask("task-one", new AbortController().signal);
+  expect(result.actions[0]).toMatchObject({
+    status: "superseded",
+    actualTokens: null,
+    decision: "approved",
+  });
+});

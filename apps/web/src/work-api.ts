@@ -41,7 +41,7 @@ export const workSnapshotSchema = z.object({
       intent: z.record(z.string(), z.json()),
       intentDigest: z.string().regex(/^[0-9a-f]{64}$/),
       decision: z.enum(["not_required", "pending", "approved", "denied"]),
-      status: z.enum(["proposed", "admitted", "unknown", "applied", "not_applied"]),
+      status: z.enum(["proposed", "admitted", "unknown", "applied", "not_applied", "superseded"]),
       expiresAt: z.string(),
       reservedTokens: z.number().nonnegative(),
       actualTokens: z.number().nonnegative().nullable(),

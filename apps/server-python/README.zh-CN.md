@@ -257,3 +257,22 @@ None 返回。错误身份、权限关闭和 Task／Run 缺失直接拒绝，模
 改写结果；核验已提交但回执丢失后的重试直接读回，不重新查询。取消、撤权后只补记历史事实。
 本可选路径仅处理已保存的延期工具 Action；可信服务配置、产品纠正及 Linux 隔离仍需另行完成。
 见[验证记录](../../docs/research/work-closed-repair.md)。
+
+### Owner 执行中纠正（显式启用）
+
+受信组合使用 `product_worker(..., enable_corrections=True)`，Run 加载后可通过
+`POST /api/v1/tasks/{taskId}/corrections` 接受纠正。请求须有 Owner 会话、允许的 Origin，
+正文为 `{runId, requestKey, expectedSequence, instruction}`。序号从0开始，每个 Run 最多8条，
+每条正文最多4096个 UTF-8 字节；包含 JSON 转义后的 HTTP 请求最多32KiB。
+同一 Task 重送相同 key 只能读回相同命令。旧的不支持纠正的 Run 拒绝请求，默认配置不变。
+
+202只表示命令已存储，不表示模型已遵循或任务已完成。控制层冻结每段上下文，仅将从未准入的
+提案标为 `superseded`；旧批准不能用于执行已作废提案。已准入或 unknown 的动作保留原身份和
+预留，用原收据核对，不能重新写入。新提案与最终发布必须匹配本段已消费的上下文。
+取消、撤权仍阻止新动作；历史事实读回不会恢复授权。
+
+此配置在每次服务加载时都拒绝 inline 执行器，包括重启后的配置变化。工具走 deferred 审批边界，
+模型适配器向 `execute_model_activity` 传入 `correction_context=context.correction_token`；
+受信结果核验器也收到同一冻结 token。SDK 继续执行保留完整历史及累计用量，仍受原有256KiB消息
+和请求数量限制。命令接受不会豁免限额，也不保证模型理解正确。本增量没有切换默认后端、增加
+纠正界面或启用真实服务配置。

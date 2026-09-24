@@ -273,6 +273,7 @@ try {
       "tests/test_work_temporal_activity.py",
       "tests/test_work_temporal_effect.py",
       "tests/test_work_reconciliation_postgres.py",
+      "tests/test_work_corrections_postgres.py",
       "tests/test_execution_sdk_postgres.py",
       "-q",
     ],
@@ -296,7 +297,19 @@ try {
   if (process.env.OPENBOT_TEMPORAL_TEST_PYTHON) {
     const temporal = spawnSync(
       process.env.OPENBOT_TEMPORAL_TEST_PYTHON,
-      ["-m", "pytest", "tests/test_work_temporal_activity.py", "tests/test_work_temporal_effect.py", "tests/test_work_model_receipts_postgres.py", "tests/test_work_worker_postgres.py", "tests/test_work_deferred_postgres.py", "tests/test_work_closed_repair_postgres.py", "tests/test_work_repair_dispatch.py", "tests/test_work_dispatch_entry.py", "-q"],
+      [
+        "-m",
+        "pytest",
+        "tests/test_work_temporal_activity.py",
+        "tests/test_work_temporal_effect.py",
+        "tests/test_work_model_receipts_postgres.py",
+        "tests/test_work_worker_postgres.py",
+        "tests/test_work_deferred_postgres.py",
+        "tests/test_work_closed_repair_postgres.py",
+        "tests/test_work_repair_dispatch.py",
+        "tests/test_work_dispatch_entry.py",
+        "-q",
+      ],
       {
         cwd: join(root, "apps/server-python"),
         env: { ...environment, OPENBOT_CONTROL_TEST_FIXTURE: fixture },

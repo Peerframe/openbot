@@ -364,3 +364,26 @@ committed resolution reads the original result without another lookup. Cancellat
 allows historical settlement only. This opt-in path handles stored deferred-tool Actions; trusted
 service configuration, product corrections and Linux isolation remain separate delivery gates.
 See [validation](../../docs/research/work-closed-repair.md).
+
+### Owner corrections (opt-in)
+
+A trusted `product_worker(..., enable_corrections=True)` composition can accept
+`POST /api/v1/tasks/{taskId}/corrections` after its Run has loaded. Send the Owner session,
+allowed Origin, and `{runId, requestKey, expectedSequence, instruction}`. Sequence starts at0;
+there are at most8 commands per Run, each instruction at most4096 UTF-8 bytes. The HTTP body
+is bounded to32KiB, including JSON escaping. Reusing a key within the same Task returns only
+the identical command. Unsupported existing Runs refuse commands; the default profile stays off.
+
+202 means the command is stored, not that the model obeyed it or completed the Task. The
+control layer freezes each segment's context and supersedes only proposals that were never
+admitted. Prior approval is not permission to execute a superseded proposal. Admitted/unknown
+operations retain their original identity and reservation; recovery may inspect their receipts
+but cannot repeat a write. New proposals and final publication must match the consumed context.
+Cancellation and revocation still close admission; historical readback does not restore authority.
+
+This profile rejects inline executors on every service-factory invocation, including after restart.
+Use the deferred-tool control boundary, and pass `context.correction_token` as `correction_context`
+to `execute_model_activity`. The trusted result verifier receives the same frozen token. SDK
+continuations keep full history and shared usage within the existing256KiB message/request bounds;
+correction acceptance does not waive those limits or guarantee semantic compliance. There is no
+new backend default, correction UI or live service configuration in this increment.

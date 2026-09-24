@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from .database import StoreUnavailable
 from .work_claims import check_fence
+from .work_corrections import check_context
 from .work_files import MAX_BYTES, artifact_media_type, artifact_name
 from .work_values import InvalidWork, WorkConflict, canonical, receipt, text
 
@@ -26,24 +27,30 @@ def normalize(artifacts):
     return entries
 
 
-async def complete(store, task_id, run_id, *, fence, expected_revision, summary, artifacts, verification):
+async def complete(store, task_id, run_id, *, fence, expected_revision, summary, artifacts, verification,
+                   correction_context=None):
     """The trusted verifier provides evidence of task quality; this store checks publication facts."""
     text(run_id,128); text(summary,16384); receipt(verification)
     if type(expected_revision) is not int or expected_revision < 1:
         raise InvalidWork('invalid_revision')
     descriptors = normalize(artifacts)
-    _, digest = canonical({'taskId':task_id,'runId':run_id,'summary':summary,
-                           'artifacts':descriptors,'verification':verification})
+    completion = {'taskId':task_id,'runId':run_id,'summary':summary,
+                  'artifacts':descriptors,'verification':verification}
+    if correction_context is not None:
+        completion['correctionContext'] = correction_context
+    _, digest = canonical(completion)
     if store.files is None:
         raise StoreUnavailable('work_files_unconfigured')
 
     async def ready(connection):
         task = await store._task(connection,task_id)
         if task['status'] == 'completed':
+            await check_context(connection, task, run_id, correction_context, current=False)
             if task['completion_digest'] != digest:
                 raise WorkConflict('completion_content_changed')
             return False
         store._active(task)
+        await check_context(connection, task, run_id, correction_context)
         if task['revision'] != expected_revision:
             raise WorkConflict('task_revision_changed')
         cursor = await connection.execute('SELECT status FROM work_runs WHERE task_id=%s AND id=%s', (task_id,run_id))
@@ -51,7 +58,16 @@ async def complete(store, task_id, run_id, *, fence, expected_revision, summary,
         if row is None or row['status'] != 'running':
             raise WorkConflict('run_not_executing')
         await check_fence(connection,run_id,fence)
-        cursor = await connection.execute("SELECT 1 FROM work_actions WHERE task_id=%s AND status<>'applied' LIMIT 1", (task_id,))
+        # Superseding is only proof that this proposal never crossed admission. It is neither
+        # an applied receipt nor a not-applied outcome; admitted/unknown still block publication.
+        cursor = await connection.execute("SELECT 1 FROM work_actions a WHERE a.task_id=%s AND a.status<>'applied' "
+            "AND NOT (a.status='superseded' AND a.decision<>'denied' AND a.actual_tokens IS NULL AND a.evidence IS NULL "
+            'AND EXISTS (SELECT 1 FROM work_corrections c WHERE c.id=a.superseded_by AND c.task_id=a.task_id '
+            'AND c.generation>a.authority_generation '
+            "AND EXISTS (SELECT 1 FROM work_events ce WHERE ce.task_id=a.task_id AND ce.kind='correction.requested' "
+            "AND ce.payload->>'correctionId'=c.id AND ce.payload->'supersededActionIds' ? a.id)) "
+            "AND NOT EXISTS (SELECT 1 FROM work_events e WHERE e.task_id=a.task_id AND e.kind='action.admitted' "
+            "AND e.payload->>'actionId'=a.id)) LIMIT 1", (task_id,))
         if await cursor.fetchone():
             raise WorkConflict('actions_unresolved')
         cursor = await connection.execute("SELECT 1 FROM work_runs WHERE task_id=%s AND id<>%s AND status IN ('queued','running') LIMIT 1", (task_id,run_id))
@@ -85,8 +101,10 @@ async def complete(store, task_id, run_id, *, fence, expected_revision, summary,
         await connection.execute("UPDATE work_tasks SET status='completed',authority_active=false,"
             'authority_generation=authority_generation+1,result_summary=%s,completion_digest=%s,completed_at=clock_timestamp() WHERE id=%s',
             (summary,digest,task_id))
-        await store._event(connection,task_id,'task.completed',{'runId':run_id,'artifactIds':artifact_ids,
-                            'completionDigest':digest,'verification':verification})
+        event = {'runId':run_id,'artifactIds':artifact_ids,'completionDigest':digest,'verification':verification}
+        if correction_context is not None:
+            event['correctionContext'] = correction_context
+        await store._event(connection,task_id,'task.completed',event)
         result = await store._view(connection,task_id)
         # Disk reads and audit writes may take time; expiration must still pass at publication.
         await check_fence(connection,run_id,fence)

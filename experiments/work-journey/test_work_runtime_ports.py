@@ -101,6 +101,19 @@ class FactoryTestCase(unittest.IsolatedAsyncioTestCase):
             expected_workflow_type=WORKFLOW_TYPE, load_services=self.loader, limits=limits,
             deadline_seconds=deadline_seconds)
 
+    async def test_correction_profile_refuses_inline_tools_after_configuration_drift(self):
+        from openbot_server.work_temporal_start import WorkRuntimeContext
+        from openbot_server.work_corrections import CorrectionStore
+        factory=self.make_factory(context_value=WorkRuntimeContext(TASK_ID,RUN_ID,'bot','goal',100))
+        self.loader.return_value=services(inline_tools=())
+        deps=WorkRuntimeDeps(TASK_ID,RUN_ID,'frozen')
+        with patch.object(CorrectionStore,'read',new=AsyncMock(return_value={'id':'frozen'})):
+            await factory.model_factory(deps)
+            self.loader.return_value=services()
+            with self.assertRaisesRegex(WorkConflict,'correction_inline_tools_unsupported'):
+                await factory.model_factory(deps)
+        self.assertEqual(self.loader.await_count,2)
+
     async def test_wrong_typed_deps_are_refused_before_any_loader(self):
         factory = self.make_factory()
         for method in (factory.model_factory, factory.toolset_factory):

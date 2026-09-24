@@ -88,7 +88,7 @@ class ModelReceiptVerifier:
 
 async def execute_model_activity(store, client, *, expected_namespace, expected_queue,
                                   expected_workflow_type, receipts, provider, request,
-                                  provider_id, model_id, max_output_tokens, reserved_tokens):
+                                  provider_id, model_id, max_output_tokens, reserved_tokens, correction_context=None):
     """Call a model once after admission, or recover a previously admitted observation.
 
     The provider and its configuration are trusted composition, never Workflow/model input.
@@ -101,6 +101,10 @@ async def execute_model_activity(store, client, *, expected_namespace, expected_
     accepted, activity_id = await _bind_activity_identity(store, client,
         expected_namespace=expected_namespace, expected_queue=expected_queue,
         expected_workflow_type=expected_workflow_type)
+    if correction_context is not None:
+        from .work_corrections import CorrectionStore
+        await CorrectionStore(store).read(accepted.task_id, accepted.run_id, correction_context)
+        intent['correctionContext'] = correction_context
     key = operation_key(accepted, activity_id)
     digest = canonical(intent)[1]
     adapter = ModelReceiptAdapter(receipts, provider, detached, task_id=accepted.task_id,
@@ -120,7 +124,8 @@ async def execute_model_activity(store, client, *, expected_namespace, expected_
         fence = await _claim_bound_activity(store, accepted, activity_id)
         outcome = await execute_action(store, task_id=accepted.task_id, run_id=accepted.run_id,
             fence=fence, action_key=key, intent=intent, reserved_tokens=reserved_tokens,
-            requires_approval=False, expires_seconds=300, adapter=adapter, verifier=verifier)
+            requires_approval=False, expires_seconds=300, adapter=adapter, verifier=verifier,
+            correction_context=correction_context)
     if outcome.status != 'applied':
         raise WorkConflict('model_observation_unknown')
     # Applied Actions skip adapter lookup in the common seam. Always read back the immutable

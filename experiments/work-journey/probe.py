@@ -149,7 +149,7 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
         process = Process([sys.executable, '-u', str(HERE / script)], directory,
             {**CLEAN_ENV, 'PYTHONDONTWRITEBYTECODE': '1', 'OPENBOT_WORK_JOURNEY_CONFIG': str(config)})
         children.append(process)
-        if script in ('workflow_worker.py', 'multitask_worker.py', 'product_worker_fixture.py','product_approval_worker.py'):
+        if script in ('workflow_worker.py', 'multitask_worker.py', 'product_worker_fixture.py','product_approval_worker.py','product_corrections_worker.py'):
             process.wait('ready')
         return process
 
@@ -244,6 +244,9 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
         api.start()
         api.call('/api/v1/auth/login', {'password': api.password})
         bot = api.call('/api/v1/bots', {'name': 'Reference', 'role': 'Correct the fixture CSV'}, expected=201)['bot']
+        if only_case == 'product-owner-corrections':
+            from product_corrections_probe import qualify_corrections
+            return await qualify_corrections(client, api, bot, dsn, artifact_root, server, launch, counts)
         if only_case == 'product-closed-repair':
             from product_closed_probe import qualify_closed
             return await qualify_closed(client, api, bot, dsn, artifact_root, server, launch, counts, effects)
@@ -723,14 +726,14 @@ def main():
     parser.add_argument('--engine', choices=('development', 'postgres', 'postgres-mtls'), default='development')
     parser.add_argument('--upgrade-archive', type=Path, help='Verified official 1.31.3 archive; requires postgres-mtls')
     parser.add_argument('--only-handoff', action='store_true', help='Run only engine-identity rejection regressions')
-    parser.add_argument('--only-case', choices=('recover','cancel-before-write','cancel-unknown','corrupt-receipt','malformed-json','repair-timeout','automatic-repair-race','repair-cancelled','repair-engine-closed','publication-ack','worker-before-ack','cancel-before-ack','concurrent-runs','model-receipt-recovery','product-model-recovery','product-publication-recovery','product-concurrent-runs','product-deferred-approval','product-closed-repair'), help='Run one public-work scenario')
+    parser.add_argument('--only-case', choices=('recover','cancel-before-write','cancel-unknown','corrupt-receipt','malformed-json','repair-timeout','automatic-repair-race','repair-cancelled','repair-engine-closed','publication-ack','worker-before-ack','cancel-before-ack','concurrent-runs','model-receipt-recovery','product-model-recovery','product-publication-recovery','product-concurrent-runs','product-deferred-approval','product-closed-repair','product-owner-corrections'), help='Run one public-work scenario')
     args = parser.parse_args()
     assert sys.platform != 'win32', 'POSIX process signals required'
     assert importlib.metadata.version('temporalio') == '1.33.0'
     assert importlib.metadata.version('pydantic-ai-slim') == '2.47.0'
     if args.upgrade_archive and (args.engine != 'postgres-mtls' or args.only_handoff):
         parser.error('--upgrade-archive requires the full postgres-mtls journey')
-    if args.only_case in ('product-publication-recovery','product-closed-repair') and args.engine != 'postgres-mtls':
+    if args.only_case in ('product-publication-recovery','product-closed-repair','product-owner-corrections') and args.engine != 'postgres-mtls':
         parser.error('product-publication-recovery requires postgres-mtls for the product CLI')
     if args.only_case and (args.only_handoff or args.upgrade_archive):
         parser.error('--only-case cannot be combined with --only-handoff or --upgrade-archive')
