@@ -283,8 +283,11 @@ are gone but the audit rows and the Bot's browser profile remain.
   `wait_for_task` / `delegate_task` tools in [native-agent.ts](../apps/server/src/native-agent.ts),
   and `agent-collaboration.integration.test.ts`.
 - What "independent grant" means in code: a delegated child Bot runs with **its own** profile, skills,
-  memories and plugin grants, which are not inherited from the caller; the shared thing is the root
-  budget ([ASYNC_COLLABORATION.md](ASYNC_COLLABORATION.md)).
+  memories and plugin grants, which are not inherited from the caller. Step, tool and web-call
+  budgets are per Run; the root deadline is shared
+  ([ASYNC_COLLABORATION.md](ASYNC_COLLABORATION.md)). Shared Task budget admission remains a
+  target requirement, not an existing guarantee; see the independently checked
+  [S6 baseline](research/s6-compatibility.md).
 - Bounded by construction: depth ≤ 2, ≤ 4 descendants, no self/ancestor/cross-channel delegation, and
   a channel lease taken with a PostgreSQL advisory lock.
 - Preserve the limit as loudly as the capability: this is *delegation*, and there is **no general

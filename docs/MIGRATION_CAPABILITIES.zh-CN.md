@@ -243,7 +243,9 @@ main 独有提交数          338
   [native-agent.ts](../apps/server/src/native-agent.ts) 中的 `start_task` / `wait_for_task` / `delegate_task`，
   以及 `agent-collaboration.integration.test.ts`。
 - 代码中"独立授权"的含义：被委派的子 Bot 使用**自己的** profile、技能、记忆与插件授权，
-  不继承调用方；共享的是根预算（[ASYNC_COLLABORATION.zh-CN.md](ASYNC_COLLABORATION.zh-CN.md)）。
+  不继承调用方。模型步骤、工具和网页调用预算按 Run 分别计算；共享的是根任务期限
+  （[ASYNC_COLLABORATION.zh-CN.md](ASYNC_COLLABORATION.zh-CN.md)）。共享 Task 预算准入仍是目标要求，
+  不是已有保证，见独立核验的 [S6 基线](research/s6-compatibility.md)。
 - 构造上即有界：深度 ≤ 2、后代 ≤ 4、禁止自我/祖先/跨频道委派，频道租约由 PostgreSQL 咨询锁取得。
 - 必须像对待能力一样大声地保留这个界限：这是*委派*，两棵树中都**没有通用持久团队抽象**。
   S6 的"保留现有委派并接入持久任务"不得被读成"团队功能已经存在"。

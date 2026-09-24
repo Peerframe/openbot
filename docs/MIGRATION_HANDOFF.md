@@ -7,6 +7,8 @@
 - Invariants: Python control owns identity, authorization, Task/Action facts, approvals, budget and artifacts; Temporal owns continuation; Runtime/Worker gain no authority. Unknown writes require authoritative lookup or remain unknown. Cancel/revoke cannot reauthorize effects. No production cutover or release.
 - Next input: `apps/server-python/src/openbot_server/{work_temporal_activity.py,work_temporal_effect.py,work_effects.py}`, `apps/agent-runtime-python/src/openbot_agent_runtime/{executor.py,sdk_ports.py}`, this commit's `experiments/work-journey/` changes, and the final research section. Preserve unrelated dirty model-service files, `docs/OPEN_SOURCE_REUSE.md` and unaccepted `experiments/linux-execution/`. S4–S7 have separate worktree tasks; their preparation is not product acceptance. Read older notes only for a specific failure.
 
+S6 baseline `1fd8b0d` was independently accepted: synthetic PostgreSQL/MCP grant, cancellation, 401, serialization and per-Run budget checks; see `docs/research/s6-compatibility.md`. C11 was corrected to distinguish the shared deadline from per-Run budgets. Product S6 remains pending.
+
 ## Earlier stage evidence (retained)
 
 Branch: `codex/architecture-migration`. Current S3 activity-scoped claim: `3ece362`; prior claim boundary: `13fb278`; activity binding: `8df7c89`; attempt provenance: `4160f26`; chain binding: `69b5faf`; S2 shell boundary: `b2de930`. Start with this handoff and current code; read older logs only for a specific failure.

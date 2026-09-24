@@ -181,3 +181,28 @@ branch's model migration, switch, cipher or live-provider tests.
 
 S6 is not complete and no default is activated. The standalone fixture plus model field map is the
 first deliverable; the table above defines the next integration dependencies.
+
+
+## Independent integration acceptance (2026-09-24)
+
+Codex reviewed candidate `1fd8b0d14a0e6782e10a83be8c8a5f49c017cc99`, then
+independently ran `node experiments/s6-compat/run.mjs` on that clean worktree.
+Node 26.0.0 executed all six probes successfully against the owned PostgreSQL
+fixture and synthetic MCP endpoint; seven prerequisite builds were cached, and
+the dedicated TypeScript check executed. Log:
+`/private/tmp/openbot-s6-independent-20260924.log`. The runner exited 0 after
+owned-container cleanup. No test assertions were weakened.
+
+The mainline changes since the candidate's `e176e90` parent affect only the S3
+reference and documentation; the exercised Server, database and plugin code is
+unchanged. The six fixture files were integrated unchanged; this research record gained
+acceptance evidence. C11's English
+and Chinese inventory now says per-Run budgets with a shared root deadline,
+consistent with `NativeAgentRunner.#execute` and the independently run probe.
+The earlier mismatch above is retained as the finding that prompted correction.
+Acceptance covers this compatibility baseline only; S6 product integration and
+shared Task budgeting remain pending.
+
+Integrated `npm run check` exited 0. Repository prerequisite checks and root lint
+ran; unchanged workspace typecheck/test/build lanes used Turbo cache. Log:
+`/private/tmp/openbot-s6-integration-check-20260924.log`.
