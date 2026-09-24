@@ -77,6 +77,22 @@ still work. Unicode ECMA patterns are retained with explicit backtracking and co
   disabled, and a fresh-interpreter test asserts a completed run prints only what the
   caller asked for.
 
+## Optional Temporal composition
+
+`openbot_agent_runtime.temporal_agent.build_temporal_agent` composes one Agent before Worker
+startup in the separately pinned Pydantic AI 2.47.0 / Temporal 1.33.0 environment. Typed per-Run
+deps reach trusted sync/async factories only inside activities. Workflow preparation and replay
+receive inert model metadata that cannot issue a request. Factories must create fresh ports and
+bind deps to the accepted engine identity; control still owns authorization and durable budgets.
+
+This builder does not replace `BoundedExecutor.execute`, apply corrections, validate final output
+or publish completion. No default Runtime dependency or process profile changes. The real
+[two-Run probe](../../experiments/work-journey/multirun_port_probe.py) checks overlapping isolated
+calls and history replay without host work; it does not prove Worker crash recovery or S3 completion.
+In the [pinned experiment environment](../../experiments/work-journey/README.md), run
+`python -B experiments/work-journey/multirun_port_probe.py --address <owned-disposable-Temporal-address>`.
+Never point the probe at a production namespace.
+
 ## Process adapter (`scripts/run-worker.py`)
 
 The reviewed profile `openbot-agent-runtime/1` (fixed in `docs/AGENT_RUNTIME_PROTOCOL.md`) is a

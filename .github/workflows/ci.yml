@@ -400,6 +400,7 @@ jobs:
         run: |
           python3.12 -m venv "$RUNNER_TEMP/openbot-work-reference"
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install -r experiments/work-journey/requirements.txt
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q apps/agent-runtime-python/tests/test_temporal_agent.py
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v
           curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
             --max-time 180 --max-filesize 93822307 \

@@ -20,7 +20,7 @@ evidence, both removed here:
 
 Revised composition:
 
-* exactly one Agent is built at import with ``TemporalDurability``, a constructor-time
+* the product Runtime builder creates exactly one Agent at import with ``TemporalDurability``, a constructor-time
   ``DynamicToolset(id='openbot-ports')`` and the pinned public ``ResolveModelId`` capability;
 * each model activity resolves its ``PortModel`` from the serialized ``RunDeps.label`` through
   ``ResolveModelId(ctx, model_id)``; the resolver reads only ``ctx.deps`` and the construction-time
@@ -39,7 +39,8 @@ Known limits: whole-Run guard counters are **not** proven durable here, because 
 fresh guard. A production budget must be control-owned and durable; this probe cannot supply that.
 The bounded dsh sandbox could not execute nested shell commands, so the integrator ran this probe
 against pinned pydantic-ai 2.47.0 and Temporal 1.33.0 in an owned disposable Temporal environment.
-That run passed and measured overlapping tool intervals; it did not exercise restart or replay.
+The product-builder run measures overlapping sync/async tool intervals and replays both histories
+without host factory or port execution. Worker restart remains outside this probe.
 See ``docs/research/work-temporal-journey.md``.
 """
 
@@ -48,6 +49,8 @@ from __future__ import annotations
 import argparse
 import asyncio
 from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 from datetime import timedelta
 from importlib.metadata import PackageNotFoundError, version
 import json
@@ -59,24 +62,14 @@ import sys
 import time
 
 from pydantic_ai import Agent
-from pydantic_ai.durable_exec.temporal import PydanticAIPlugin, TemporalDurability
+from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart, ToolReturnPart
 from pydantic_ai.models import Model
 from pydantic_ai.usage import RequestUsage, UsageLimits
 from temporalio import activity, workflow
 from temporalio.client import Client
 from temporalio.common import RetryPolicy, WorkflowIDReusePolicy
-from temporalio.worker import Worker
-
-try:  # Public location on the reviewed release; fallback keeps the failure diagnostic readable.
-    from pydantic_ai.capabilities import ResolveModelId
-except ImportError:  # pragma: no cover - only reached if the pinned layout moved the class
-    from pydantic_ai.capabilities.resolve_model_id import ResolveModelId
-
-try:  # Public location on the reviewed release; fallback keeps the failure diagnostic readable.
-    from pydantic_ai.toolsets import DynamicToolset
-except ImportError:  # pragma: no cover - only reached if the pinned layout moved the class
-    from pydantic_ai.toolsets._dynamic import DynamicToolset
+from temporalio.worker import Replayer, Worker
 
 # Repository paths without pathlib.Path.resolve(): the Temporal workflow sandbox refuses
 # `Path.resolve` while validating this module (observed failure evidence in REVIEW-01.md).
@@ -90,6 +83,7 @@ with workflow.unsafe.imports_passed_through():
     # extensions (jsonschema_rs) and is non-deterministic by construction, so the sandbox must not
     # re-execute it; this mirrors the reviewed `workflow_worker.py` composition.
     from openbot_agent_runtime.catalog import ToolCatalog
+    from openbot_agent_runtime.temporal_agent import build_temporal_agent
     from openbot_agent_runtime.contracts import (
         ModelStepRequest,
         RuntimeLimits,
@@ -217,9 +211,8 @@ def _new_guard() -> RunGuard:
     )
 
 
-def _deps_label(ctx: object) -> str:
-    """Read the Run label from serialized Run deps, never from process-local state."""
-    deps = getattr(ctx, 'deps', None)
+def _deps_label(deps: object) -> str:
+    """Read the Run label from typed serialized deps, never from process-local state."""
     label = getattr(deps, 'label', None)
     if not isinstance(label, str) or not RUN_LABEL_PATTERN.match(label):
         raise RuntimeFailure(
@@ -314,6 +307,7 @@ def _make_tool_port(label: str, guard: RunGuard):
 
 def _build_port_model(label: str) -> PortModel:
     """Build the real OpenBot PortModel for one model activity, with its own fresh guard."""
+    assert activity.in_activity(), 'Model factory reached Workflow replay or ordinary execution'
     guard = _new_guard()
     return PortModel(
         step_port=_make_step_port(label, guard),
@@ -325,6 +319,7 @@ def _build_port_model(label: str) -> PortModel:
 
 def _build_toolset(label: str) -> PortToolset:
     """Build the real OpenBot PortToolset for one tool activity, with its own fresh guard."""
+    assert activity.in_activity(), 'Tool factory reached Workflow replay or ordinary execution'
     guard = _new_guard()
     return PortToolset(
         catalog=_new_catalog(),
@@ -334,49 +329,26 @@ def _build_toolset(label: str) -> PortToolset:
     )
 
 
-def _resolve_port_model(ctx: object, model_id: str | None) -> Model | None:
-    """Resolve the single Agent's model for one model activity.
-
-    The pinned public resolver signature is ``(ModelResolutionContext, model_id) -> Model | None``.
-    The only inputs used are the construction-time model id (or ``None`` when the durable hook
-    leaves it unset) and the serialized ``ctx.deps`` Run label; no prompt text, ``model_settings``
-    value or global registry is consulted. Any other id is declined with ``None`` so the SDK's own
-    fallback decides, rather than this probe silently serving a model it was not asked for.
-    """
-    if model_id not in (PROBE_MODEL_ID, None):
-        return None
-    return _build_port_model(_deps_label(ctx))
-
-
-def _dynamic_toolset(ctx: object) -> PortToolset:
-    """Constructor-time DynamicToolset factory, keyed by the activity's own Run deps."""
-    return _build_toolset(_deps_label(ctx))
-
-
 def build_single_agent() -> Agent[RunDeps]:
-    """Build the one Agent before any Worker exists.
+    """Exercise the Runtime's constructor-time composition with fresh scripted host ports."""
+    async def async_model(deps):
+        return _build_port_model(_deps_label(deps))
 
-    ``build_sdk_agent`` in the runtime composes an Agent per request; this probe deliberately does
-    not use it, because the question is whether one constructor-time Agent is sufficient.
-    """
-    agent: Agent[RunDeps] = Agent(
-        PROBE_MODEL_ID,
-        deps_type=RunDeps,
+    async def async_toolset(deps):
+        return _build_toolset(_deps_label(deps))
+
+    # Both supported factory forms share one Agent: run-a is sync, run-b async.
+    return build_temporal_agent(
         name=PROBE_ID,
-        toolsets=[DynamicToolset(_dynamic_toolset, id='openbot-ports')],
-        output_type=str,
+        deps_type=RunDeps,
+        model_factory=lambda deps: (_build_port_model(_deps_label(deps))
+                                    if deps.label == 'run-a' else async_model(deps)),
+        toolset_factory=lambda deps: (_build_toolset(_deps_label(deps))
+                                      if deps.label == 'run-a' else async_toolset(deps)),
         instructions='Return the verified run-scoped observation.',
-        retries=0,
-        capabilities=[
-            TemporalDurability(
-                activity_config=ACTIVITY_CONFIG,
-                model_activity_config=MODEL_ACTIVITY_CONFIG,
-            ),
-            ResolveModelId(_resolve_port_model),
-        ],
+        activity_config=ACTIVITY_CONFIG,
+        model_activity_config=MODEL_ACTIVITY_CONFIG,
     )
-    agent.instrument = False
-    return agent
 
 
 SINGLE_AGENT = build_single_agent()
@@ -480,14 +452,24 @@ async def _run(args: argparse.Namespace) -> dict:
                 id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
             )
         evidence: dict[str, dict] = {}
+        histories = {}
         for label in PROBE_LABELS:
             # Both starts have already been issued, so the two Runs execute concurrently; the
             # tool activity's short hold makes their overlap observable in the two histories.
             result = await asyncio.wait_for(handles[label].result(), timeout=args.timeout)
+            histories[label] = await handles[label].fetch_history()
             evidence[label] = {
                 'result': result,
-                'activities': _activity_counts(await handles[label].fetch_history()),
+                'activities': _activity_counts(histories[label]),
             }
+        observations_before_replay = deepcopy(_OBSERVATIONS)
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            replayer = Replayer(workflows=[MultirunPortProbeWorkflow],
+                                plugins=[PydanticAIPlugin()], workflow_task_executor=executor)
+            for label in PROBE_LABELS:
+                await replayer.replay_workflow(histories[label])
+                assert _OBSERVATIONS == observations_before_replay, 'Replay called a host port'
+                evidence[label]['replay'] = 'passed-without-host-work'
         return evidence
 
 
@@ -574,6 +556,7 @@ def _compact(evidence: dict) -> dict:
             'output': record.get('result', {}).get('output'),
             'observations': record.get('result', {}).get('runLog', {}).get('entries'),
             'history': record.get('activities'),
+            'replay': record.get('replay'),
         }
         for label, record in evidence.items()
     }

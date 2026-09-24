@@ -1,6 +1,12 @@
 # Architecture migration handoff — 2026-09-24
 
-## Current short handoff (real-engine candidate, parent `e176e90`)
+## Current short handoff — Runtime composition (parent `e07e858`)
+
+- Integrated: the Runtime now owns the opt-in constructor-time Temporal Agent builder. Two concurrent Runs use sync/async factories inside activities; Workflow bootstrap uses inert metadata. Nested retry options are detached from caller mutation. Independent review accepted this boundary; 71 focused checks and actual two-Run histories/replay passed. Integrated `npm run check` passed (repository prerequisites ran, Turbo results cached). Source hashes and failure/final logs: `docs/research/work-temporal-journey.md`, final section.
+- Still open: product Worker port loading tied to accepted identity and control-owned Action/budget, corrections/final publication, restart/continuation. S4 real Linux/runsc remains unaccepted; S5–S7 integrated preparations do not complete those stages. Overall remains roughly 25%, S3 in progress. No default switch or release.
+- Next: `apps/agent-runtime-python/src/openbot_agent_runtime/temporal_agent.py`, `experiments/work-journey/multirun_port_probe.py`, control `work_temporal_activity.py` / `work_temporal_effect.py`, and ADR0046. Keep Server authority and unknown-effect reconciliation unchanged; no new external write on retry. Preserve unrelated dirty files and the unaccepted TASK020 candidate. Read older evidence only for a specific failure.
+
+## Previous fixed-reference handoff (parent `e176e90`)
 
 - Completed: the fixed reference now exercises the product Activity-to-Action seam in a real Temporal engine. Unknown writes are looked up without another POST; cancellation permits only historical settlement. Repair delivery verifies the persisted attempt and original engine chain. Independent final runs passed 21 focused unit checks and the complete 16-case development-engine journey, including real-history replay. Integrated `npm run check` exited 0; Turbo lanes were cached and repository prerequisites executed. Exact candidate hashes, commands, failures and logs are in the final section of `docs/research/work-temporal-journey.md`.
 - Open: product Worker/Runtime composition, stable per-operation Action identity, whole-Run budget and general continuation remain S3 work. This candidate has not run on the PostgreSQL/mTLS engine or adjacent-release lane; the latter's held-publication lookup expectation needs review. Real Linux/runsc and S2 parity remain open. Overall delivery remains roughly 25%, S3 in progress; this reference does not complete the stage.

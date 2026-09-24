@@ -627,3 +627,88 @@ Integrated-tree `npm run check` exited 0; repository prerequisite checks execute
 while both 31-task Turbo lanes and all 18 build tasks were cache hits. Log:
 `/private/tmp/openbot-s3-real-effect-check-resume-20260924.log`. The unchanged
 real-engine candidate evidence above was reused rather than rerun.
+
+
+## Runtime-owned Temporal Agent composition (2026-09-24, implementation gate)
+
+Continue the pinned 2.47.0/1.33.0 constructor-time composition reviewed and actually
+exercised above. Move the shared Agent construction into an opt-in Runtime module;
+the existing two-Run probe will call that same product builder. Trusted factories
+receive only typed serializable deps, run only in real activities, create fresh
+PortModel/PortToolset instances and refuse alternate model IDs. No registry,
+prompt routing, new engine or new protocol. Default standalone dependencies stay
+unchanged; this module requires the separately pinned Worker environment.
+
+This builder does not replace BoundedExecutor: control/Workflow composition must
+still supply accepted identity binding, durable admission/budgets, corrections,
+final validation and publication. Runtime never grants any of those. Review uses
+the existing OPEN_SOURCE_REUSE runtime-port entry and exact upstream pins above;
+no source copying or additional dependency. dsh owns only temporal_agent.py and
+its optional-SDK unit file in an isolated e07e858 worktree. Codex owns the probe
+call-site change and independent real-engine/negative validation.
+
+Independent acceptance caught two composition defects before integration. The real
+engine failed during `_prepare_run`: the 2.47.0 resolver is also called in Workflow
+bootstrap, not only inside the activity. The [official resolver guide](https://pydantic.dev/docs/ai/capabilities/resolve-model-id/)
+and installed `durable_exec/_base.py` / `agent/__init__.py` confirm the two-pass
+contract at pinned commit `77d5fce751ab8ab04bd5db4ed6acc1131a4baed6` (the GitHub
+file fetch was unavailable). The narrow adapter correction is an inert Model for
+Workflow metadata; its request always refuses and it holds no ports/deps. Only
+activity-side resolution may call the trusted port factory. Do not relax the host
+factory gate or introduce provider fallback. Also, dict-only config copies retain
+mutable RetryPolicy objects; clone nested configuration before SDK construction.
+No upstream source is copied. New entrypoint and nested-mutation counterexamples
+are required before accepting the correction.
+
+
+### Accepted Runtime composition candidate (parent e07e858)
+
+The final candidate was reviewed independently by `review_runtime_composition`:
+no blocking finding within composition, replay, async or cross-Run boundaries.
+dsh's two-file implementation completed with exit 0; its one forbidden nested
+shell attempt failed and tests were explicitly NOT RUN. Codex owned the actual
+entrypoint integration, counterexamples, correction and acceptance. No concurrent
+implementer remained during those edits.
+
+Candidate files were copied byte-for-byte into the integration tree after the
+existing uncommitted probe was saved and both diffs reviewed. Code SHA-256:
+
+- `apps/agent-runtime-python/src/openbot_agent_runtime/temporal_agent.py`: `0dc778548ca9f0cc0a885a5a5a7c8ba4b827ea03399f2c4c140b68db10a3927c`
+- `apps/agent-runtime-python/tests/test_temporal_agent.py`: `dfbb73ad06ea6b64aa7894b3e4477be9507123e311ac505d6e06a77a41cd332f`
+- `experiments/work-journey/multirun_port_probe.py`: `7a37118a242bc9ca3bedff7600361fd3831f7b955e6c0ed0dc60f443a6a3236a`
+
+Actual execution evidence (Python3.12.13, Pydantic AI2.47.0, Temporal SDK1.33.0;
+CLI1.9.1 / development Server1.32.0 for the engine):
+
+- Pinned Python `-B -m pytest -q -p no:cacheprovider` on Runtime tests
+  `test_temporal_agent.py`, `test_authority.py`, `test_lifecycle.py`,
+  `test_sdk_hazard.py`, `test_journey.py`: 71 actual passes. Log:
+  `/private/tmp/openbot-s3-compose-regression-final-20260924.log`.
+- Pinned Python `-B experiments/work-journey/multirun_port_probe.py --address
+  <owned-loopback-address> --namespace default --task-queue <unique-queue>`:
+  both concurrent Runs passed, each with two model activities and one tool call;
+  measured tool intervals overlap, outputs stay scoped. One uses sync factories,
+  the other async. Actual histories replayed without factory/port work. Log:
+  `/private/tmp/openbot-s3-compose-engine-final-20260924.log`; owned server log:
+  `/private/tmp/openbot-s3-compose-engine-6510f9cd8753/server.log`. Service stopped.
+- Default Runtime optional-only collection returned 5 (no runnable tests, Temporal
+  absent), not a pass. The pinned optional checks above are explicitly added to
+  the existing CI environment. Hosted CI is NOT RUN in this acceptance.
+
+Failures retained: `openbot-s3-compose-engine-initial-20260924.log` (Workflow
+bootstrap rejection, then bounded timeout), `openbot-s3-compose-negative-before-20260924.log`
+(bootstrap and nested RetryPolicy mutation counterexamples), both under
+`/private/tmp`. Corrected-only interim logs are not substituted for final results.
+The first 34 supplied unit checks had passed despite the real-entrypoint defect.
+
+These are real engine / synthetic host-port results, not real provider or Linux
+isolation evidence. No whole-Run budget, Worker restart, general stable Action key,
+correction/final validation or production publication qualification is implied.
+The unchanged fixed-reference development-engine evidence at 6b9250a is reused;
+PostgreSQL/mTLS and adjacent-release qualification remain open as recorded above.
+
+Integrated-tree `npm run check` exited 0. Repository prerequisites actually ran;
+Turbo lint/typecheck/test/build results were cached (see exact lane totals in
+`/private/tmp/openbot-s3-compose-integration-check-20260924.log`). The accepted
+three code files match the tested candidate byte-for-byte; unrelated dirty files
+are preserved and excluded from this delivery.

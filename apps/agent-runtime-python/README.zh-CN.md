@@ -8,6 +8,20 @@ OpenBot Agent 行为的参考实现；身份、任务、路由、授权、审批
 沙箱，本包也不声称是。下面的一次性进程适配器是一份*分帧与生命周期*契约，不是安全边界：它不
 约束解释器，进程仍须由 Server 监督。
 
+## 可选 Temporal 组合入口
+
+`openbot_agent_runtime.temporal_agent.build_temporal_agent` 在 Worker 启动前组合一个 Agent，
+使用单独固定的 Pydantic AI 2.47.0 / Temporal 1.33.0 环境。各 Run 的类型化 deps 只在 Activity
+内交给可信的同步或异步工厂；Workflow 准备与历史回放只获得不能执行请求的模型元数据。
+工厂必须创建独立端口，并把 deps 绑定到已接纳的引擎身份；授权与持久预算仍由控制层负责。
+
+它不替代 `BoundedExecutor.execute`，也不负责纠正、最终输出校验或完成发布。默认 Runtime
+依赖与进程协议不变。[真实双 Run 探针](../../experiments/work-journey/multirun_port_probe.py)
+验证调用实际重叠、结果隔离，以及回放不执行主机工作；不等于 Worker 崩溃恢复或 S3 已完成。
+在[固定的实验环境](../../experiments/work-journey/README.zh-CN.md)中执行
+`python -B experiments/work-journey/multirun_port_probe.py --address <自有临时-Temporal-地址>`，
+不可指向生产命名空间。
+
 ## 它做什么
 
 一次调用通过四个端口驱动一次受边界约束的运行，端口由受信任的宿主适配器提供（可进程内调用，

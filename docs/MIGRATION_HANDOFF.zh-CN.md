@@ -1,6 +1,12 @@
 # 架构迁移交接 — 2026-09-24
 
-## 当前简短交接（真实引擎候选，父提交 `e176e90`）
+## 当前简短交接 — Runtime 组合（父提交 `e07e858`）
+
+- 已整合：Runtime 现在拥有可选的 Temporal Agent 构造入口。两个并发 Run 在 Activity 内使用同步/异步工厂，Workflow 准备只使用不能执行请求的元数据；嵌套重试配置不受调用方后续修改影响。独立复核通过；71 项定向检查、真实双 Run 历史与回放通过。集成 `npm run check` 通过，仓库前置检查实际执行，Turbo 结果命中缓存。源码摘要、失败与最终日志见 `docs/research/work-temporal-journey.md` 末节。
+- 未完成：产品 Worker 的端口加载仍需绑定已接纳身份与控制层 Action/预算，纠正、最终发布、重启与继续执行仍开放。S4 的真实 Linux/runsc 未验收，已整合的 S5–S7 准备成果不代表阶段完成。总体仍粗估约 25%，当前 S3；未切换默认实现、未发布。
+- 下一步只读：`apps/agent-runtime-python/src/openbot_agent_runtime/temporal_agent.py`、`experiments/work-journey/multirun_port_probe.py`、控制层 `work_temporal_activity.py` / `work_temporal_effect.py` 与 ADR0046。Server 权限边界和 unknown 核验规则不变，重试不能产生新外部写入。保留其他脏文件与未验收 TASK020；仅遇具体失败才查旧证据。
+
+## 上一固定参考交接（父提交 `e176e90`）
 
 - 已完成：固定参考流程已在真实 Temporal 引擎中执行产品 Activity→Action 接线。未知写入仅查回执、不重复 POST；取消后只补记历史事实。修复命令核对持久化尝试标识与原始引擎链。最终候选独立通过 21 项局部单元检查和完整 16 项开发引擎流程，包含真实历史重放。集成目录 `npm run check` 退出码为 0，Turbo 项命中缓存，仓库前置检查实际执行。文件摘要、命令、失败与日志见 `docs/research/work-temporal-journey.md` 末节。
 - 未完成：产品 Worker/Runtime 组合、稳定的逐操作 Action 身份、整个 Run 的预算和通用继续执行仍属 S3 工作。本候选未运行 PostgreSQL/mTLS 引擎或相邻版本升级；后者需先复核等待发布场景的查询计数预期。真实 Linux/runsc 和 S2 全面对齐仍开放。总体仍粗估约 25%，当前 S3；参考流程通过不等于阶段完成。
