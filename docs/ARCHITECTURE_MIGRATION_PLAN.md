@@ -92,17 +92,17 @@ research/dependency changes remain preserved and are not accepted or activated b
 | Stage | Deliverable | Exit evidence | State |
 | --- | --- | --- | --- |
 | S1 — Reconcile and freeze preservation scope | Source-backed capability/retirement matrix, both migration histories, data compatibility risks, target API/event ownership, reversible source checkpoints | Every target capability mapped to current evidence and an owning stage; divergent SQL histories detected; no private data copied | Complete (source scope; no data cutover) |
-| S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a identity/authentication slice accepted locally; S2b queued submission/read and control host/process seam accepted locally; persisted lifecycle and integrated public-work reference accepted locally; production dispatcher and client parity open |
-| S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | In progress: Temporal selected as target recovery owner; reference public-work, cold restore, SIGKILL, adjacent stopped upgrade and targeted closed-history lookup accepted locally; production dispatcher, real Runtime composition, recovery operations and activation gates open |
-| S4 — Persistent execution and deliverables | Linux browser sessions, human takeover, reviewed autonomous browse/form/upload/download, persistent workspace, restricted commands, isolated code changes and document tools | Real local fixture site with separate Bot profiles; approved write, takeover, cancel and restart; exported files open/render; isolated repository produces a tested patch | Design reviewed; Linux deployment and execution pending |
-| S5 — Memory, skills and learning evaluation | Scoped relevant retrieval, candidate lessons/skills from correction and supported teaching, version/review/test/disable/rollback; separate evaluation tooling | A correction becomes a reviewed skill, improves a held-out task, and can be revoked; provenance/scope/deletion preserved; no authority increase. Preserve Hermes attribution | Pending |
+| S2 — Python control layer and compatible clients | Research-backed FastAPI/Pydantic reference; identity/auth, Bot/channel/message APIs, task/approval/usage/audit/artifact/schedule services, generated client and defined snapshot/event behavior | S2a authenticated read/identity journey; S2b task/tools/approval single-writer journey; S2c settings/files/schedules and client parity. Same fixtures against selected implementations; no double dispatch or production shadow writes | In progress: S2a identity/authentication slice accepted locally; S2b queued submission/read and control host/process seam accepted locally; persisted lifecycle and integrated public-work reference accepted locally; optional product dispatch accepted; Web create/read/cancel supervision accepted; approval/repair/download client parity open |
+| S3 — Durable tasks and recovery | Durable transitions/checkpoints, approval wait/resume, cancellation, reconciliation of unknown effects, explicit per-effect retry policy and shared budgets | Kill/restart before and after dispatch/commit/approval; completed work retained; unknown external writes not blindly repeated; client disconnect independent of execution | In progress: Temporal selected as target recovery owner; reference public-work, cold restore, SIGKILL, adjacent stopped upgrade and targeted closed-history lookup accepted locally; optional product Worker/Runtime, dispatch, approval continuation and closed-workflow lookup accepted; product corrections, trusted service activation and remaining recovery gates open |
+| S4 — Persistent execution and deliverables | Linux browser sessions, human takeover, reviewed autonomous browse/form/upload/download, persistent workspace, restricted commands, isolated code changes and document tools | Real local fixture site with separate Bot profiles; approved write, takeover, cancel and restart; exported files open/render; isolated repository produces a tested patch | Output-mount refusal candidate independently reviewed; real Linux/runsc positive execution, browser and takeover pending |
+| S5 — Memory, skills and learning evaluation | Scoped relevant retrieval, candidate lessons/skills from correction and supported teaching, version/review/test/disable/rollback; separate evaluation tooling | A correction becomes a reviewed skill, improves a held-out task, and can be revoked; provenance/scope/deletion preserved; no authority increase. Preserve Hermes attribution | Offline selection/revalidation port accepted; authoritative product integration and real-model evaluation pending |
 | S6 — Collaboration and extensibility | Existing delegation preserved through durable execution, shared resource/budget constraints; MCP authentication lifecycle and compatibility; preservation/migration of per-Bot model configuration and reviewed local endpoints | Delegated browser/file work with independent grants; conflict/cancel tests; connector refresh/revoke/failure cases; model switch keeps identity/data; independent module contribution fixture | Pending |
 | S7 — Consolidate, migrate and qualify | Synthetic old-data upgrades and full backup/restore; thin Desktop/Web/mobile-browser supervision; reversible retirement packages, default-selection and release preparation | Full product journey, fresh-checkout checks, target CI and explicit live-provider evaluation. Final production/publication actions remain separately visible; no unsupported platform claims | Pending |
 
-S2 retains three separately accepted slices. S3 selection and the S4 execution boundary now
-precede further S2 expansion; this order implements the renewed long-term product decision. S3
-informs S4's execution receipts and retry policy. S5 can proceed independently after stable S2 task/artifact
-contracts. S6 depends on those contracts, not on every optional file processor. Reassess order only
+S2 retains three separately accepted slices. Renewed user approval on 2026-09-24 permits bounded
+client work against the existing task contract alongside S3 and the existing S4/S5 tasks. S3
+informs S4's execution receipts and retry policy. S5 may develop independent selection adapters
+against stable S2 task/artifact contracts; product integration still requires authoritative readers. S6 depends on those contracts, not on every optional file processor. Reassess order only
 when new source or experiment evidence changes a dependency; record the reason here.
 
 ## Coverage of the twelve target capabilities
@@ -146,6 +146,25 @@ S1 freezes ownership, not a speculative new event protocol. Exact snapshot revis
 cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnect fixtures.
 
 ## Acceptance record
+
+- S2 client `0a9fc21` + `dfa40d4`, integrated as `ef1e254` + `a61153e`: actual `#/tasks`
+  create/read/cancel entry and stale snapshot supervision. Independent review found and then
+  verified fixes for late reads after offline and explicit 413 rejection. Thirty-two existing
+  checks and four independent in-memory counterexamples passed. Actual HTTP/PG and browser
+  evidence remains scoped to this slice; no native installed-Desktop or full S2 claim. See
+  [English](research/s2-work-supervision.md) / [Chinese](research/s2-work-supervision.zh-CN.md).
+
+- S3 closed-workflow repair `76667ea`: bounded CLI delivery and original-Run-bound lookup pass
+  public HTTP/PG/mTLS cancel/unknown recovery and replay; bad evidence retains unknown, old
+  command outcomes remain immutable, and commit-before-ack recovery makes no new lookup.
+  Original approval recovery remains valid. See [evidence](research/work-closed-repair.md).
+- S5 port `df1c24d`, integrated as `ace87c8`: independently accepted scoped, versioned read-only
+  selection/revalidation with stale/revoked/deleted/corrupt-source counterexamples. The adapter
+  remains an offline fixture; product readers and serialized use/publication checks are open.
+- S4 `bb37d57` remains in its independent worktree. Review accepts rejection of unverified
+  output mounts only. Real ext4 provisioning/write-full/restart, final Docker mount consistency,
+  Linux/runsc, authenticated admission and browser integration are not accepted. No overwrite
+  of the retained untracked TASK020 candidate.
 
 - S3 deferred approval (parent `965a643`): accepted product proposal/approval continuation after
   lost acknowledgement, original-Action unknown reconciliation, cancelled-write refusal and

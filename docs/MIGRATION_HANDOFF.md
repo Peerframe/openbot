@@ -2,14 +2,23 @@
 
 ## Resumed parallel work — baseline `6f69be9`
 
-Latest user approval resumes execution. Codex owns S3 closed-workflow repair, corrections and service wiring. S2 `S2 Web/Desktop 任务监督接入` confirmed execution in `/Users/yxflc/.codex/worktrees/810f/openbot` on `codex/s2-work-supervision` (thread `01a0d28c-f457-7823-ba6f-f144adf3c3ff`); existing S4 and S5 threads are running in their own worktrees. S6/S7 receive no new assignments. Preserve dirty model-service files and TASK020. Closed-repair boundary/review: `docs/research/work-closed-repair.md`. Prior pause paragraphs below are historical, not current dispatch instructions. No default switch or release.
+Latest user approval resumes S3 and bounded S2/S4/S5 parallel work; S6/S7 receive no new assignments. S2 thread `01a0d28c-f457-7823-ba6f-f144adf3c3ff` delivered and returned ownership. Existing S4/S5 also delivered; S4 remains separate, S5 is integrated. No default switch or release. The older pause paragraphs below are historical.
 
 
-## Current short handoff — closed-workflow lookup (parent `6f69be9`)
+## Current short handoff — accepted parallel increments (code `a61153e`)
+
+- Completed: S3 `76667ea` closes original-Workflow unknown reconciliation without renewed writes or authority. S2 `ef1e254` + `a61153e` adds the real `#/tasks` create/read/cancel client and closes both independent offline/413 counterexamples. S5 `ace87c8` integrates only the reviewed offline selection/revalidation port.
+- Evidence: S3 actual HTTP/PG/mTLS recovery and affected approval replay passed on frozen source; S2 original32 plus independent4 counterexamples and author real browser/PG evidence passed. Integrated S2 files matched `dfa40d4`; S5 files matched `df1c24d` and its15 new tests passed in the mainline. Final combined entry/check results are recorded in S2 research.
+- Open: S3 execution-time corrections and trusted service activation; S2 approval/repair/download and installed Desktop; S4 real positive Linux/runsc, browser/takeover and safe output provisioning; S5 authoritative product readers/use gates. S6/S7 preparation does not close those stages.
+- S4 `bb37d57`: independent155 checks accept refusing unverified mounts only. The candidate stays in `/Users/yxflc/.codex/worktrees/ae53/openbot`; do not overwrite or accept the retained untracked mainline TASK020 directory.
+- Next input: this handoff, `work_worker.py`, `work_closed_repair.py`, S2 `WorkTasksScreen.tsx`, S5 `SELECTION_PORT.md`, and their focused research records. Preserve model-service dirty files, `docs/OPEN_SOURCE_REUSE.md`'s earlier entry and TASK020. One implementer per scope; Server owns authority, Temporal owns continuation, unknown permits lookup only. No push, cutover or release.
+
+
+## Previous short handoff — closed-workflow lookup (parent `6f69be9`)
 
 - Completed: explicit `--repair-closed` delivery and same-Worker lookup-only repair of a stored deferred Action after its original Workflow closes. Bad evidence stays unknown/reserved; later cycles do not rewrite an old unresolved command. Commit-before-ack retries do not call lookup again.
 - Evidence: independent review, frozen-source public HTTP/PG/mTLS closed-repair journey and affected deferred-approval recovery passed; entry, owned database and repository checks passed. Executed/cache/skip details and hashes: `docs/research/work-closed-repair.md`.
-- Open: S3 product corrections and trusted deployment/service activation remain. S2 handed in `0a9fc21`, pending independent acceptance; S5 `df1c24d` independently accepted offline-only, pending integration. S4 `bb37d57` accepted only for refusing unverified output mounts; keep the candidate separate, with no runsc/real lifecycle acceptance or TASK020 closure.
+- Open: S3 product corrections and trusted deployment/service activation remain. S2 `0a9fc21` requires two independently reproduced fixes (late response after offline; explicit 413 rejection); the original implementer owns the correction. S5 `df1c24d` independently accepted offline-only and integrated as `ace87c8` (identical bytes; focused tests rerun). S4 `bb37d57` accepted only for refusing unverified output mounts; keep the candidate separate, with no runsc/real lifecycle acceptance or TASK020 closure.
 - Next input: this handoff, `work_closed_repair.py`, `work_repair_binding.py`, `work_repair_dispatch.py`, `work_worker.py` and the research above. Preserve unrelated model-service edits and TASK020. Original authority and unknown-effect rules remain; no default switch or release.
 
 

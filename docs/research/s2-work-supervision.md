@@ -136,3 +136,34 @@ Correction verification (supersedes the earlier candidate for these two boundari
 - Actual Chrome at the new fixture's `http://127.0.0.1:58453/#/tasks`: submitted 7,000 Chinese characters, saw the explicit content-too-large rejection, edited the same textarea to `S2 返工：413 后缩短正文再次提交。`, and submitted successfully. Server returned Task `efc5f740-3020-4b37-b440-84ab3b62972e`, revision 1 / queued. Native accessibility editing and final screenshot confirm the user could recover without reload. A browser locator helper initially reported `isEnabled: false` and then timed out; a fresh native accessibility tree showed the textarea settable, and actual edit/submission succeeded. No product workaround was needed for that tool result.
 - The browser loaded `index-9HCSInIO.js` (SHA-256 `0aa247677df8c23284e9bc2eae42450b7ed7ba59a2f565f81321c99166e6fc80`); `WorkTasksScreen.tsx` SHA-256 `25397d5a212391741101899b89dc0d0474e929a53aec0b565e53829b3d1d7fcb`. Final browser console error/warning sample was empty. Browser race ordering is deterministic simulated component evidence, not a newly claimed real network fault injection. The disposable service/container were cleaned after the actual 413 entry check.
 - Remaining S2 scope and native Desktop limitations above are unchanged. This correction is a new candidate for independent acceptance, not acceptance of the initial candidate.
+
+## Independent acceptance and mainline integration
+
+Codex's independent reviewer accepted `dfa40d40ed6377576c18f62df1c6ef615031c56b` after
+reproducing both failures on `0a9fc21`. Existing32 tests passed; the reviewer additionally ran
+four in-memory counterexamples covering the original late-read/413 failures and in-flight
+create/cancel during offline. All four passed, with no changes to the submitted worktree.
+The first candidate was not integrated while those issues remained open.
+
+Integrated as `ef1e254` + `a61153e1145926a3aaf9af13c72624799db32871` on
+`codex/architecture-migration`, alongside S3 `76667ea` and offline S5 `ace87c8`. Before adding
+this evidence, all14 S2 files matched the reviewed candidate byte-for-byte and had no mainline
+path overlap. The14 frozen S3 code/test inputs also retained their verified SHA-256 values.
+
+On combined code `a61153e`, `npm run check` actually ran and exited0: typecheck 28/31 cached, test 29/31 cached, build 17/18 cached. Web375 tests executed;
+cached platform test text does not prove fresh execution of those tests. Environment-dependent
+skips in the cached Server/native lanes remain skips. Log:
+`/private/tmp/openbot-parallel-integrated-check-20260924-01.log`.
+
+`apps/server-python/.venv/bin/python -B apps/web/src/test/work-http-probe.py` then exited0
+against a new disposable PG/HTTP fixture, including login/Bot/create/read/cancel, exact retry,
+401/403/409/413/422, OpenAPI and logout. Log:
+`/private/tmp/openbot-parallel-integrated-http-20260924-01.log`. The oversized request created
+no task. Cleanup ran; no production data, account or default backend changed. Existing frozen
+S3 long recovery evidence was reused because its relevant inputs were unchanged.
+
+Integrated S5's15 new tests also executed successfully at `ace87c8`, with all8 imported files
+matching `df1c24d` before documentation updates; log `/private/tmp/openbot-integrated-s5-20260924-01.log`.
+Its acceptance remains offline-only. No S4 code was imported; its separate mount-refusal candidate
+was reviewed without claiming positive Linux/runsc isolation. These are incremental deliveries,
+not S2/S3/S4/S5 completion or a release.

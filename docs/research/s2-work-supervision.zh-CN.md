@@ -75,3 +75,24 @@ npm run check
 - 实际 Chrome 在 `http://127.0.0.1:58453/#/tasks` 提交 7000 个中文字符后看到“请求内容过大”；在同一 textarea 改为 `S2 返工：413 后缩短正文再次提交。` 后成功创建 `efc5f740-3020-4b37-b440-84ab3b62972e`，revision 1 / queued，无需刷新。一个浏览器 locator 辅助查询先返回 `isEnabled: false`、随后超时；重新读取原生可访问性树显示可编辑，实际编辑/提交及截图确认恢复成功，不需要产品改动来绕过工具结果。
 - 被测构建 `index-9HCSInIO.js`，SHA-256 `0aa247677df8c23284e9bc2eae42450b7ed7ba59a2f565f81321c99166e6fc80`；`WorkTasksScreen.tsx` SHA-256 `25397d5a212391741101899b89dc0d0474e929a53aec0b565e53829b3d1d7fcb`。最终控制台错误/警告样本为空。offline 竞态顺序由组件模拟回归确定验证，不假称新增真实网络故障注入。临时服务及容器已清理。
 - 原剩余范围与原生 Desktop 限制不变；这是待独立验收的新候选。
+
+## 独立验收与主线整合
+
+独立审查先在 `0a9fc21` 复现两项失败，再接受 `dfa40d40`：原32项通过，另以内存方式追加
+迟到读取、413 以及离线时在途创建／取消的4项反例，全部通过，未改交稿工作树。失败未关闭前
+没有整合初稿。最终整合为 `ef1e254`＋`a61153e`，与 S3 `76667ea`、离线 S5 `ace87c8` 并存；
+补写本证据前，S2 全14文件与被审候选字节一致且无主线路径重叠；S3 冻结的14份代码／测试
+哈希保持不变。
+
+组合代码 `a61153e` 的 `npm run check` 实际退出0，缓存情况：typecheck 28/31 cached, test 29/31 cached, build 17/18 cached。
+Web375项为实际执行；缓存的其他平台测试输出不算新执行，原环境跳过仍是跳过。日志：
+`/private/tmp/openbot-parallel-integrated-check-20260924-01.log`。
+
+随后主线实际执行 `apps/server-python/.venv/bin/python -B apps/web/src/test/work-http-probe.py`，
+新建临时 PG/HTTP，登录／Bot／创建／读取／取消／精确重试／401/403/409/413/422／OpenAPI／退出
+通过且退出0。超大请求未创建任务，夹具已清理。日志：
+`/private/tmp/openbot-parallel-integrated-http-20260924-01.log`。相关输入未变，复用 S3 长恢复证据。
+
+S5 整合8文件与 `df1c24d` 一致，主线15项新增测试实际通过，记录位于
+`/private/tmp/openbot-integrated-s5-20260924-01.log`，仍仅接受离线范围。没有导入 S4 代码，
+其单独候选仅验证挂载拒绝，不证明 Linux/runsc 隔离。本轮是局部交付，不表示各阶段完成或发布。
