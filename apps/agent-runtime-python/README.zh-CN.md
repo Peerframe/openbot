@@ -15,6 +15,11 @@ OpenBot Agent 行为的参考实现；身份、任务、路由、授权、审批
 内交给可信的同步或异步工厂；Workflow 准备与历史回放只获得不能执行请求的模型元数据。
 工厂必须创建独立端口，并把 deps 绑定到已接纳的引擎身份；授权与持久预算仍由控制层负责。
 
+可选参数 `deferred_tools` 接受有界的 `ToolDescriptor` 声明。SDK 返回 `DeferredToolRequests`，
+不会执行这些工具。控制层必须重新校验参数、取得批准、核验精确 Action 的结果，再提供
+`DeferredToolResults`。模型目录包含内联与延迟工具，执行目录仅包含内联工具；声明会深拷贝，
+不受调用方后续修改影响。公开任务参考流程现通过此入口执行模型和读取步骤，写入与发布仍由控制层负责。
+
 它不替代 `BoundedExecutor.execute`，也不负责纠正、最终输出校验或完成发布。默认 Runtime
 依赖与进程协议不变。[真实双 Run 探针](../../experiments/work-journey/multirun_port_probe.py)
 验证调用实际重叠、结果隔离，以及回放不执行主机工作；不等于 Worker 崩溃恢复或 S3 已完成。

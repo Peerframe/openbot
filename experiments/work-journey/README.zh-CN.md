@@ -2,8 +2,12 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-将真实 Python 控制层 API/存储与 Pydantic AI 官方 Temporal 适配器接通。受信工作流策略调用控制层活动；
-没有选定生产引擎、启用默认派发，也未自动连接现有 stdin/stdout Runtime。见[研究](../../docs/research/work-temporal-journey.md)。
+真实 Python 控制层 API/存储现已接通 Runtime 的可选 Temporal 组合入口。PortModel/PortToolset
+执行脚本化模型和读取步骤；延迟写入提案回到既有控制层审批、效果核验和产物发布流程。
+加载端口前及每次授权检查时，类型化 Run 参数均与实际已接纳的引擎身份核对；逐 Activity
+守卫不替代控制层持久预算。Temporal 已由 ADR0046 选定为目标恢复引擎，但未启用生产默认，
+原 stdin/stdout 进程协议保持独立。这仍是固定脚本任务，不是通用产品 Worker 或真实模型接入。
+见[研究](../../docs/research/work-temporal-journey.md)。
 
 ## 运行
 

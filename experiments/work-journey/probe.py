@@ -216,7 +216,8 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
             if held['state']['status'] == 'completed':
                 assert completed == held['state']
             assert completed['usage'] == {'tokenLimit': 20, 'reservedTokens': 0, 'spentTokens': 11}
-            assert counts(task_id) == {'attempts': 5, 'writes': 1, 'lookups': 0}
+            # The product effect seam verifies the first POST through one authoritative lookup.
+            assert counts(task_id) == {'attempts': 5, 'writes': 1, 'lookups': 1}
             assert len(completed['artifacts']) == 1
             assert api.call(completed['artifacts'][0]['downloadUrl'], raw=True) == b'row,value\n7,fixed\n'
             assert len([e for e in completed['events'] if e['kind'] == 'task.completed']) == 1

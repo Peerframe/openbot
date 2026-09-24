@@ -2,10 +2,15 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-This is a reference integration of the real Python control API/store with Pydantic AI's released
-Temporal adapter. It does not select the production engine or enable default dispatch. A trusted
-workflow-side strategy calls control-owned activities. The existing stdin/stdout Runtime is not
-implicitly connected. See [research](../../docs/research/work-temporal-journey.md).
+This reference connects the real Python control API/store to the Runtime's opt-in Temporal
+composition. Runtime PortModel/PortToolset execute scripted model/read steps; deferred write
+proposals return to the existing control-owned approval, effect verification and Artifact
+publication path. Typed Run deps are rechecked against the actual accepted engine identity before
+ports are loaded and at authority checkpoints. Per-activity guards do not replace the durable
+control budget. Temporal is the selected target recovery owner (ADR0046); no production default
+is activated and the standalone stdin/stdout profile remains separate. This is still a fixed
+scripted task, not a general product Worker or real provider integration. See
+[research](../../docs/research/work-temporal-journey.md).
 
 ## Run
 

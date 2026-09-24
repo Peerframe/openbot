@@ -712,3 +712,112 @@ Turbo lint/typecheck/test/build results were cached (see exact lane totals in
 `/private/tmp/openbot-s3-compose-integration-check-20260924.log`). The accepted
 three code files match the tested candidate byte-for-byte; unrelated dirty files
 are preserved and excluded from this delivery.
+
+## Runtime-backed public task journey (2026-09-24, implementation gate)
+
+Connect the accepted Runtime builder to the existing public Task/approval/effect/
+Artifact journey rather than maintaining another Agent construction. Reuse the
+already-reviewed pinned SDK `ExternalToolset`, `DeferredToolRequests` and
+`DeferredToolResults`; see [official deferred-tool documentation](https://pydantic.dev/docs/ai/tools-toolsets/deferred-tools/)
+and [toolsets](https://pydantic.dev/docs/ai/tools-toolsets/toolsets/), checked against
+installed 2.47.0 `toolsets/external.py` and the existing reference Worker. No new
+package or copied source. ExternalToolset never executes its calls and its JSON
+argument validator is permissive: proposals are untrusted and control must validate
+again before approval/admission. Runtime descriptors use the existing bounded,
+offline ToolCatalog; this does not turn proposals into authorization.
+
+The narrow builder extension accepts optional deferred descriptors, adding only
+the released external-tool wrapper/output type. Real model ports carry both inline
+and deferred descriptors; inline PortToolset exposes only inline tools. Workflow
+bootstrap remains inert. The reference's activity factories check typed Task/Run
+identity against the product's accepted current engine binding before creating
+ports. All model usage, effects, decisions, unknown-result reconciliation and final
+publication continue through the existing control transactions. No new scheduler,
+provider service, Task schema or default switch. Require the real public journey,
+not only direct factory unit checks. This is a fixed scripted reference migration,
+not proof that generic product Worker or real-model integration is complete.
+
+
+### Runtime-backed journey candidate and preflight
+
+Parent d6ee990. dsh S3-RUNTIME-DEFERRED completed in its isolated worktree with
+exit 0; only temporal_agent.py and its unit file were changed. It reported two
+unsuccessful nested shell attempts despite the task's known-tool warning; no test
+execution is credited to that delivery. No worker remains writing those files.
+Codex reproduced nested schema aliasing with a counterexample, then deep-copied
+validated SDK declarations and clarified that call IDs are correlation only.
+
+Independent preflight review (`review_runtime_composition`) accepted the final
+extension and Worker/lookup-expectation changes before the expensive engine run.
+Local results:
+
+- Final optional Runtime suite: 48 actual passes, log
+  `/private/tmp/openbot-s3-deferred-unit-final-20260924.log`. The failed mutation
+  counterexample is retained at `/private/tmp/openbot-s3-deferred-nested-before-20260924.log`.
+- Pinned Python `-B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v`:
+  75 actual passes, including new wrong-Run and before/after-call revocation checks.
+  Log `/private/tmp/openbot-s3-runtime-journey-unit-initial-20260924.log`.
+- Pinned Python `-B experiments/work-journey/probe.py --temporal-cli <CLI1.9.1>
+  --only-case publication-ack`: actual public HTTP/PostgreSQL/Temporal case passed;
+  three model charges plus the approved write total 11, no reservation remains,
+  one write and one authoritative lookup; recovery after publication creates no
+  second artifact. Log `/private/tmp/openbot-s3-runtime-public-entry-20260924.log`.
+- `npm run check` exited 0. Repository prerequisites executed; both 31-task Turbo
+  lanes and the 18-task build lane used cache. Log
+  `/private/tmp/openbot-s3-runtime-journey-check-20260924.log`.
+
+Frozen code hashes for the subsequent PostgreSQL/mTLS adjacent-release run are in
+`/private/tmp/openbot-s3-runtime-journey-candidate-20260924.sha256`. Its result is
+recorded separately below; preflight alone does not qualify upgrade or recovery.
+The suite uses official 1.31.3 binaries over pinned fixture images and preserves
+the prescribed 600-second healthy period before upgrading to 1.32.0. No production
+namespace, live model credential or private runtime dataset is involved.
+
+
+### Runtime-backed journey final engine acceptance
+
+The frozen candidate passed the full PostgreSQL/mTLS adjacent-release run, exit 0:
+
+```sh
+/private/tmp/openbot-temporal-review/venv/bin/python -u -B experiments/work-journey/probe.py \
+  --engine postgres-mtls \
+  --upgrade-archive /private/tmp/openbot-temporal-postgres-review/upgrade-1.31.3/temporal_1.31.3_linux_arm64.tar.gz
+```
+
+Actual log: `/private/tmp/openbot-s3-runtime-upgrade-final-20260924.log`.
+It reports 20 public journey cases, in addition to engine/schema/mTLS assertions.
+The 600-second old-release health gate completed on all four shards. Upgrade from
+1.31.3 to 1.32.0 preserved namespace and schema history. Approval and publication
+waits continued on both the original and restored engine volumes with their exact
+engine Run identities; each completed with five charged attempts, one external
+write and one authoritative lookup. The restored older history did not repeat
+already-recorded product effects or artifact publication.
+
+Unknown/corrupt/invalid-JSON results retained reservations until authoritative
+repair; command timeout/redelivery and automatic-versus-manual repair races passed.
+Cancellation and closed-engine repair did not start new writes. Replayed current
+histories passed without changing product/effect state; deliberately incompatible
+histories were rejected with NondeterminismError. Those expected negative replay
+warnings are not operational test failures. Wrong scope/type/queue/attempt
+handoffs made zero charged model/tool attempts. Engine assertions also covered
+runtime schema permissions, invalid TLS peers, CA rotation, cold backup/restore,
+server/database termination and incompatible schema rejection. All resources
+were disposable fixtures; this is not production data migration or live-provider
+acceptance, and it provides no Linux/runsc isolation evidence.
+
+The following SHA-256 values were checked again after process exit and all matched:
+
+| File | SHA-256 |
+| --- | --- |
+| `apps/agent-runtime-python/src/openbot_agent_runtime/temporal_agent.py` | `2d37eaf2985cdb34d9a0eb37218fe3d39ccbaf9092b535104fa972dad72f27e7` |
+| `apps/agent-runtime-python/tests/test_temporal_agent.py` | `1955bb456ea0bb4795a6d40fc82a9dbb7d7f034752ba6cf0022728d2ef18a45f` |
+| `experiments/work-journey/workflow_worker.py` | `a3387b052f00c9f2d13ae1c90ceb117d6df465e9f81181eb852b90ffd69f3a7f` |
+| `experiments/work-journey/test_runtime_worker.py` | `382bf315cabbf2aa884440f210be666209be4f0f5f7a542bccd70df10ed5dca5` |
+| `experiments/work-journey/probe.py` | `7eb7330647115b6a587f9b011711cf71bf568a962053993443cadd8947a2d589` |
+
+The integrated reference is accepted at this scope. The reusable Runtime builder
+is product code, but this scripted Worker still is not a generic production
+Worker. It starts only after dispatch acknowledgement; a production Worker must
+handle the acknowledgement race explicitly. General operation identities,
+whole-Run continuation/corrections and production model/tool port assembly remain
+open. No default backend switch, release or acceptance of TASK020 is implied.

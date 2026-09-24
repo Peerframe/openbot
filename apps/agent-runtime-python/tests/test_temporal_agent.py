@@ -14,7 +14,10 @@ Every assertion is about the reviewed boundary:
   type is refused;
 * every invocation builds fresh ports and the builder itself never calls a host factory;
 * the Agent is composed once, with the constructor-time ``DynamicToolset(id='openbot-ports')``,
-  ``TemporalDurability`` and ``ResolveModelId`` capabilities, and copies its config mappings.
+  ``TemporalDurability`` and ``ResolveModelId`` capabilities, and copies its config mappings;
+* optional ``deferred_tools`` are validated/detached through the catalog, attached once as a
+  non-executing ``ExternalToolset(id='openbot-deferred')`` with a ``DeferredToolRequests`` output,
+  and never reach the executing host toolset.
 """
 
 from __future__ import annotations
@@ -36,7 +39,12 @@ from temporalio.common import RetryPolicy
 
 from openbot_agent_runtime import FailureReason, temporal_agent
 from openbot_agent_runtime.catalog import ToolCatalog
-from openbot_agent_runtime.contracts import ModelStepRequest, RuntimeLimits, ToolCallRequest
+from openbot_agent_runtime.contracts import (
+    ModelStepRequest,
+    RuntimeLimits,
+    ToolCallRequest,
+    ToolDescriptor,
+)
 from openbot_agent_runtime.errors import RuntimeFailure
 from openbot_agent_runtime.guard import RunGuard
 from openbot_agent_runtime.sdk_ports import PORT_MODEL_NAME, PortModel, PortToolset
@@ -139,11 +147,17 @@ def _composition_kwargs(**overrides: Any) -> dict[str, Any]:
 
 
 def _spy_temporal_hooks(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[Any]]:
-    """Wrap the three constructor-time pieces and return what ``build_temporal_agent`` passed."""
-    recorded: dict[str, list[Any]] = {"durability": [], "resolvers": [], "toolsets": []}
+    """Wrap the four constructor-time pieces and return what ``build_temporal_agent`` passed."""
+    recorded: dict[str, list[Any]] = {
+        "durability": [],
+        "resolvers": [],
+        "toolsets": [],
+        "externals": [],
+    }
     real_durability = temporal_agent.TemporalDurability
     real_resolve = temporal_agent.ResolveModelId
     real_dynamic = temporal_agent.DynamicToolset
+    real_external = temporal_agent.ExternalToolset
 
     def durability_spy(**kwargs: Any) -> Any:
         recorded["durability"].append(kwargs)
@@ -157,9 +171,15 @@ def _spy_temporal_hooks(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[Any]]
         recorded["toolsets"].append((toolset_func, id))
         return real_dynamic(toolset_func, id=id)
 
+    def external_spy(tool_defs: Any, *, id: str | None = None) -> Any:
+        toolset = real_external(tool_defs, id=id)
+        recorded["externals"].append((tool_defs, id, toolset))
+        return toolset
+
     monkeypatch.setattr(temporal_agent, "TemporalDurability", durability_spy)
     monkeypatch.setattr(temporal_agent, "ResolveModelId", resolve_spy)
     monkeypatch.setattr(temporal_agent, "DynamicToolset", dynamic_spy)
+    monkeypatch.setattr(temporal_agent, "ExternalToolset", external_spy)
     return recorded
 
 
@@ -664,3 +684,155 @@ def test_nested_retry_policy_is_detached_from_caller_mutation(monkeypatch) -> No
         copied = recorded['durability'][0][config]['retry_policy']
         assert copied.maximum_attempts == 2
         assert copied.non_retryable_error_types == ['Denied']
+
+
+# -- optional deferred proposals ------------------------------------------------
+
+
+DEFERRED_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {"recipient": {"type": "string"}, "body": {"type": "string"}},
+    "required": ["recipient"],
+    "additionalProperties": False,
+}
+INLINE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {"query": {"type": "string"}},
+    "required": ["query"],
+    "additionalProperties": False,
+}
+
+
+def _deferred(
+    name: str = "send_message",
+    *,
+    description: str = "Propose a message for control to approve.",
+    schema: dict[str, Any] | None = None,
+) -> ToolDescriptor:
+    return ToolDescriptor(
+        name=name,
+        description=description,
+        input_schema=dict(DEFERRED_SCHEMA) if schema is None else schema,
+    )
+
+
+def _inline_port_toolset() -> PortToolset:
+    catalog = ToolCatalog(
+        [ToolDescriptor(name="inline_tool", description="Inline.", input_schema=dict(INLINE_SCHEMA))],
+        max_tools=8,
+        max_bytes=8192,
+    )
+    return PortToolset(
+        catalog=catalog, tool_port=_tool_port, guard=_guard(), limits=RuntimeLimits()
+    )
+
+
+def test_deferred_tools_are_off_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An absent declaration keeps the exact prior composition: one dynamic leaf and ``str``."""
+    monkeypatch.setattr(temporal_agent, "_in_real_activity", lambda: True)
+    recorded = _spy_temporal_hooks(monkeypatch)
+
+    agent = temporal_agent.build_temporal_agent(**_composition_kwargs())
+
+    assert recorded["externals"] == []
+    assert len(recorded["toolsets"]) == 1
+    assert agent.output_type is str
+
+
+async def test_deferred_tools_attach_one_non_executing_external_toolset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(temporal_agent, "_in_real_activity", lambda: True)
+    recorded = _spy_temporal_hooks(monkeypatch)
+    tool_calls = _Recorder(lambda deps: _inline_port_toolset())
+
+    agent = temporal_agent.build_temporal_agent(
+        **_composition_kwargs(
+            toolset_factory=tool_calls,
+            deferred_tools=[_deferred("send_message"), _deferred("open_ticket")],
+        )
+    )
+
+    assert tool_calls.calls == [], "declaring proposals must not build the host toolset"
+    assert len(recorded["externals"]) == 1
+    tool_defs, toolset_id, external = recorded["externals"][0]
+    assert toolset_id == temporal_agent.DEFERRED_TOOLSET_ID == "openbot-deferred"
+    assert sorted(definition.name for definition in tool_defs) == ["open_ticket", "send_message"]
+    assert agent.output_type == [str, temporal_agent.DeferredToolRequests]
+
+    tools = await external.get_tools(None)
+    assert set(tools) == {"open_ticket", "send_message"}
+    for tool in tools.values():
+        assert tool.tool_def.kind == "external"
+        assert tool.max_retries == 0
+    with pytest.raises(NotImplementedError):
+        await external.call_tool("send_message", {"recipient": "ops"}, None, tools["send_message"])
+    assert tool_calls.calls == [], "a deferred proposal must never reach the host toolset"
+
+    # The executing port contract: an inline-only catalog cannot resolve a deferred name.
+    inline_tools = await _inline_port_toolset().get_tools(None)
+    assert set(inline_tools) == {"inline_tool"}
+
+
+async def test_deferred_declarations_are_detached_from_caller_mutation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(temporal_agent, "_in_real_activity", lambda: True)
+    recorded = _spy_temporal_hooks(monkeypatch)
+    from copy import deepcopy
+    schema = deepcopy(DEFERRED_SCHEMA)
+    declarations = [_deferred("send_message", schema=schema)]
+
+    temporal_agent.build_temporal_agent(**_composition_kwargs(deferred_tools=declarations))
+
+    tool_defs, _, _ = recorded["externals"][0]
+    stored = tool_defs[0]
+    assert stored.name == "send_message"
+    assert stored.parameters_json_schema is not schema
+    schema["properties"]["recipient"]["type"] = "integer"
+    assert stored.parameters_json_schema["properties"]["recipient"]["type"] == "string"
+    schema["type"] = "array"
+    schema["properties"] = {}
+    assert stored.parameters_json_schema["type"] == "object"
+    assert stored.parameters_json_schema["properties"], "the detached schema must survive"
+
+
+_INVALID_DEFERRED = [
+    pytest.param("send_message", FailureReason.CATALOG_INVALID, id="not-a-sequence"),
+    pytest.param([object()], FailureReason.CATALOG_INVALID, id="not-a-descriptor"),
+    pytest.param(
+        [_deferred("dup"), _deferred("dup")], FailureReason.CATALOG_INVALID, id="duplicate-name"
+    ),
+    pytest.param([_deferred("bad name")], FailureReason.CATALOG_INVALID, id="malformed-name"),
+    pytest.param(
+        [_deferred(schema={"type": "array"})], FailureReason.CATALOG_INVALID, id="non-object-schema"
+    ),
+    pytest.param([_deferred(description="")], FailureReason.CATALOG_INVALID, id="empty-description"),
+    pytest.param(
+        [
+            _deferred(
+                schema={
+                    "type": "object",
+                    "properties": {"x": {"$ref": "https://example.invalid/schema.json"}},
+                }
+            )
+        ],
+        FailureReason.CATALOG_INVALID,
+        id="external-reference",
+    ),
+    pytest.param(
+        [_deferred(f"tool-{index}") for index in range(33)],
+        FailureReason.CATALOG_LIMIT,
+        id="above-catalog-tools",
+    ),
+]
+
+
+@pytest.mark.parametrize(("deferred_tools", "reason"), _INVALID_DEFERRED)
+def test_invalid_deferred_descriptors_are_refused_through_the_catalog(
+    deferred_tools: Any, reason: FailureReason
+) -> None:
+    with pytest.raises(RuntimeFailure) as caught:
+        temporal_agent.build_temporal_agent(**_composition_kwargs(deferred_tools=deferred_tools))
+
+    assert caught.value.reason is reason

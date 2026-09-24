@@ -52,7 +52,7 @@ from __future__ import annotations
 import functools
 import inspect
 from copy import deepcopy
-from collections.abc import Awaitable, Callable, Mapping
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from typing import Any, Final, TypeAlias
 
 from pydantic_ai import Agent
@@ -66,10 +66,19 @@ except ImportError:  # pragma: no cover - only reached if the pinned layout move
     from pydantic_ai.capabilities.resolve_model_id import ResolveModelId
 
 try:  # Public location on the reviewed 2.47.0 release; fallback keeps the diagnostic readable.
-    from pydantic_ai.toolsets import DynamicToolset
+    from pydantic_ai.toolsets import AbstractToolset, DynamicToolset, ExternalToolset
 except ImportError:  # pragma: no cover - only reached if the pinned layout moved the class
     from pydantic_ai.toolsets._dynamic import DynamicToolset
+    from pydantic_ai.toolsets.abstract import AbstractToolset
+    from pydantic_ai.toolsets.external import ExternalToolset
 
+try:  # Public location on the reviewed 2.47.0 release; fallback keeps the diagnostic readable.
+    from pydantic_ai.tools import DeferredToolRequests
+except ImportError:  # pragma: no cover - only reached if the pinned layout moved the class
+    from pydantic_ai._deferred import DeferredToolRequests
+
+from .catalog import ToolCatalog
+from .contracts import RuntimeLimits, ToolDescriptor
 from .errors import FailureReason, RuntimeFailure
 from .sdk_ports import PORT_MODEL_NAME, PortModel, PortToolset, silence_sdk_startup_banner
 
@@ -77,6 +86,14 @@ TOOLSET_ID: Final = "openbot-ports"
 """Stable constructor-time id for the dynamic wrapper around ``PortToolset``.
 
 It matches ``PortToolset.id`` so the durable leaf and the port agree on one identity.
+"""
+
+DEFERRED_TOOLSET_ID: Final = "openbot-deferred"
+"""Stable constructor-time id for the optional non-executing deferred-proposal toolset.
+
+Unlike :data:`TOOLSET_ID` this leaf runs no host work. It only declares tools the model may propose as
+a :class:`~pydantic_ai.tools.DeferredToolRequests` output; the pinned SDK classifies it as
+non-executing, so Temporal leaves it unwrapped and it can be attached at construction.
 """
 
 ModelFactory: TypeAlias = Callable[[Any], PortModel | Awaitable[PortModel]]
@@ -214,6 +231,32 @@ def _resolve_port_toolset(
     return _checked_port_toolset(outcome)
 
 
+def _deferred_external_toolset(
+    deferred_tools: Sequence[ToolDescriptor],
+) -> ExternalToolset[Any] | None:
+    """Validate and detach deferred descriptors, or return ``None`` when none are declared.
+
+    Validation and detachment are the existing :class:`~openbot_agent_runtime.catalog.ToolCatalog`:
+    it refuses non-descriptors, duplicate or malformed names, empty/non-object schemas, any external
+    ``$ref``/``$dynamicRef`` (offline compilation never fetches) and the default catalog tool/byte
+    ceilings, and it rebuilds every declaration so a caller cannot mutate the composed Agent
+    afterwards. ``catalog.sdk_definitions()`` then reuses the reviewed mapping onto the SDK
+    ``ToolDefinition`` shape. These are declarations only: the pinned ``ExternalToolset`` never
+    executes a tool (its ``call_tool`` refuses), so this adds no executor, approval handler, effect,
+    provider, engine or dependency.
+    """
+    limits = RuntimeLimits()
+    catalog = ToolCatalog(
+        deferred_tools,
+        max_tools=limits.catalog_tools,
+        max_bytes=limits.catalog_bytes,
+    )
+    definitions = deepcopy(list(catalog.sdk_definitions().values()))
+    if not definitions:
+        return None
+    return ExternalToolset(definitions, id=DEFERRED_TOOLSET_ID)
+
+
 def _validate_composition(
     *,
     name: str,
@@ -255,12 +298,30 @@ def build_temporal_agent(
     instructions: str,
     activity_config: Mapping[str, Any],
     model_activity_config: Mapping[str, Any],
+    deferred_tools: Sequence[ToolDescriptor] = (),
 ) -> Agent[Any]:
     """Compose one constructor-time durable ``Agent`` for the pinned Temporal worker.
 
     The two config mappings are deeply copied, so a caller that later mutates its own dictionaries cannot
     change this Agent's activity options. The Agent carries no model, toolset, guard or Run state of
     its own: the capabilities call the trusted factories per activity, with ``ctx.deps`` only.
+
+    ``deferred_tools`` is opt-in and empty by default. A nonempty sequence is validated and detached
+    through the existing :class:`~openbot_agent_runtime.catalog.ToolCatalog` (default catalog
+    tool/byte limits), attached at construction as the pinned non-executing
+    ``ExternalToolset(id='openbot-deferred')``, and the Agent output becomes
+    ``[str, DeferredToolRequests]``. An empty sequence keeps ``output_type=str`` and the exact prior
+    composition. The deferred tools produce **proposals only**: the SDK validates their arguments
+    permissively and never executes them, so control must validate each proposal's arguments against
+    the authoritative schema, bind the approval/receipt to the exact control Action and intent, and authorize
+    before applying any effect. The model call id is correlation only, never authority. This builder adds no executor, automatic approval, handler, effect,
+    provider, engine or dependency.
+
+    The caller's trusted factories carry the catalogs. The model factory's catalog must contain both
+    the inline and the deferred descriptors, because ``PortModel`` resolves every SDK-offered
+    function tool through it, including the deferred proposals. The toolset factory's catalog must
+    expose the inline descriptors only, so the executing ``PortToolset`` can never reach a deferred
+    proposal.
     """
     silence_sdk_startup_banner()
     _validate_composition(
@@ -272,18 +333,24 @@ def build_temporal_agent(
         activity_config=activity_config,
         model_activity_config=model_activity_config,
     )
+    deferred_toolset = _deferred_external_toolset(deferred_tools)
     resolve_model = functools.partial(
         _resolve_port_model, deps_type=deps_type, model_factory=model_factory
     )
     build_toolset = functools.partial(
         _resolve_port_toolset, deps_type=deps_type, toolset_factory=toolset_factory
     )
+    toolsets: list[AbstractToolset[Any]] = [DynamicToolset(build_toolset, id=TOOLSET_ID)]
+    output_type: Any = str
+    if deferred_toolset is not None:
+        toolsets.append(deferred_toolset)
+        output_type = [str, DeferredToolRequests]
     agent: Agent[Any] = Agent(
         PORT_MODEL_NAME,
         deps_type=deps_type,
         name=name,
-        toolsets=[DynamicToolset(build_toolset, id=TOOLSET_ID)],
-        output_type=str,
+        toolsets=toolsets,
+        output_type=output_type,
         instructions=instructions or None,
         retries=0,
         capabilities=[
@@ -301,6 +368,7 @@ def build_temporal_agent(
 
 
 __all__ = [
+    "DEFERRED_TOOLSET_ID",
     "ModelFactory",
     "TOOLSET_ID",
     "ToolsetFactory",

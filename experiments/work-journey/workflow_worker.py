@@ -1,21 +1,28 @@
 """A trusted strategy with control-side activities; effect execution remains outside the SDK."""
 import asyncio
 from datetime import timedelta
+from dataclasses import dataclass
+import sys
 from pathlib import Path
 from temporalio import activity,workflow
 from engine_client import connect as connect_engine
 from temporalio.common import RetryPolicy
 from temporalio.exceptions import ActivityError, ApplicationError, TimeoutError as ActivityTimeout
 from temporalio.worker import Worker
-from pydantic_ai import Agent,DeferredToolRequests,DeferredToolResults
-from pydantic_ai.durable_exec.temporal import TemporalDurability,PydanticAIPlugin
+from pydantic_ai import DeferredToolRequests,DeferredToolResults
+from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
 from pydantic_ai.messages import ModelResponse,TextPart,ToolCallPart,ToolReturnPart
-from pydantic_ai.models import Model
-from pydantic_ai.tools import ToolDefinition
-from pydantic_ai.toolsets.external import ExternalToolset
 from pydantic_ai.usage import RequestUsage,UsageLimits
 with workflow.unsafe.imports_passed_through():
     import control
+    # Pure path assembly; resolving paths during Workflow module replay is forbidden.
+    sys.path.insert(0,str(Path(__file__).parents[2]/'apps/agent-runtime-python/src'))
+    from openbot_agent_runtime.catalog import ToolCatalog
+    from openbot_agent_runtime.contracts import RuntimeLimits, ToolDescriptor
+    from openbot_agent_runtime.guard import RunGuard
+    from openbot_agent_runtime.sdk_ports import PortModel, PortToolset
+    from openbot_agent_runtime.temporal_agent import build_temporal_agent
+    from openbot_server.work_temporal_activity import bind_current_activity
 
 CONFIG={'start_to_close_timeout':timedelta(seconds=10),'retry_policy':RetryPolicy(maximum_attempts=4,
     initial_interval=timedelta(seconds=1),non_retryable_error_types=['ReceiptMismatch','WorkConflict','InvalidWork'])}
@@ -24,32 +31,74 @@ CONFIG={'start_to_close_timeout':timedelta(seconds=10),'retry_policy':RetryPolic
 _ENGINE=None
 
 
-class ControlledScript(Model):
-    @property
-    def model_name(self):return 'control-owned-reference'
-    @property
-    def system(self):return 'openbot-reference'
-    async def request(self,messages,model_settings,model_request_parameters):
-        returned={p.tool_name:p.content for m in messages for p in m.parts if isinstance(p,ToolReturnPart)}
-        stage='plan' if 'read_row' not in returned else 'final' if 'write_row' in returned else 'decide'
-        output=await control.perform('model:'+stage,{'kind':'model','stage':stage})
-        if stage=='plan':parts=[ToolCallPart('read_row',{},tool_call_id='read-reference')]
-        elif stage=='decide':parts=[ToolCallPart('write_row',{'row':7,'value':'fixed'},tool_call_id='write-reference')]
-        else:
-            if returned['write_row']!='applied':raise control.ReceiptMismatch('Unverified effect provided to SDK')
-            parts=[TextPart(output)]
-        return ModelResponse(parts,usage=RequestUsage(input_tokens=2,output_tokens=1),model_name=self.model_name)
+@dataclass(frozen=True)
+class WorkDeps:
+    task_id: str
+    run_id: str
 
 
-async def read_row():
-    """Read the permitted reference CSV through control-owned admission."""
+READ=ToolDescriptor(name='read_row',description='Read the permitted reference CSV.',
+    input_schema={'type':'object','properties':{},'additionalProperties':False})
+WRITE=ToolDescriptor(name='write_row',description='Propose the reviewed CSV correction.',
+    input_schema={'type':'object','properties':{'row':{'type':'integer'},'value':{'type':'string'}},
+                  'required':['row','value'],'additionalProperties':False})
+
+
+async def assert_runtime_scope(deps):
+    # Typed deps are a routing hint, not authority. Check the SDK's actual engine
+    # Run and immutable start against the control admission on every guard await.
+    cfg=control.settings()
+    accepted=await bind_current_activity(control.store(),_ENGINE,
+        expected_namespace='default',expected_queue=cfg['queue'],expected_workflow_type='WorkJourney')
+    if (accepted.task_id,accepted.run_id)!=(deps.task_id,deps.run_id):
+        raise control.WorkConflict('runtime_deps_scope_mismatch')
+
+
+def runtime_parts(deps,descriptors):
+    limits=RuntimeLimits()
+    guard=RunGuard(authority=lambda:assert_runtime_scope(deps),progress=None,
+        steps_limit=limits.steps,tool_calls_limit=limits.tool_calls,
+        progress_events_limit=limits.progress_events,deadline_seconds=10)
+    catalog=ToolCatalog(descriptors,max_tools=limits.catalog_tools,max_bytes=limits.catalog_bytes)
+    return limits,guard,catalog
+
+
+async def model_port(request):
+    # Scripted response only. Billing/admission still use durable control Actions;
+    # fresh per-activity Runtime guards never stand in for that shared budget.
+    returned={p.tool_name:p.content for m in request.messages for p in m.parts if isinstance(p,ToolReturnPart)}
+    stage='plan' if 'read_row' not in returned else 'final' if 'write_row' in returned else 'decide'
+    output=await control.perform('model:'+stage,{'kind':'model','stage':stage})
+    if stage=='plan':parts=[ToolCallPart('read_row',{},tool_call_id='read-reference')]
+    elif stage=='decide':parts=[ToolCallPart('write_row',{'row':7,'value':'fixed'},tool_call_id='write-reference')]
+    else:
+        if returned['write_row']!='applied':raise control.ReceiptMismatch('Unverified effect provided to SDK')
+        parts=[TextPart(output)]
+    return ModelResponse(parts,usage=RequestUsage(input_tokens=2,output_tokens=1),model_name='openbot-port')
+
+
+async def inline_tool_port(request):
+    if request.name!='read_row' or request.arguments!={}:
+        raise control.ReceiptMismatch('Only the admitted read is an inline Runtime tool')
     return await control.perform('tool:read',{'kind':'read'})
 
 
-agent=Agent(ControlledScript(),name='openbot-work-reference',output_type=[str,DeferredToolRequests],
-    tools=[read_row],toolsets=[ExternalToolset([ToolDefinition(name='write_row',parameters_json_schema={
-        'type':'object','properties':{'row':{'type':'integer'},'value':{'type':'string'}},'required':['row','value'],'additionalProperties':False})])],
-    capabilities=[TemporalDurability(activity_config=CONFIG,model_activity_config={'heartbeat_timeout':timedelta(seconds=4)})],retries=0)
+async def model_factory(deps):
+    await assert_runtime_scope(deps)
+    limits,guard,catalog=runtime_parts(deps,(READ,WRITE))
+    return PortModel(step_port=model_port,catalog=catalog,guard=guard,limits=limits)
+
+
+async def toolset_factory(deps):
+    await assert_runtime_scope(deps)
+    limits,guard,catalog=runtime_parts(deps,(READ,))
+    return PortToolset(catalog=catalog,tool_port=inline_tool_port,guard=guard,limits=limits)
+
+
+agent=build_temporal_agent(name='openbot-work-reference',deps_type=WorkDeps,
+    model_factory=model_factory,toolset_factory=toolset_factory,instructions='',
+    activity_config=CONFIG,model_activity_config={'heartbeat_timeout':timedelta(seconds=4)},
+    deferred_tools=(WRITE,))
 
 
 @activity.defn
@@ -140,7 +189,8 @@ class WorkJourney:
         # durable reservation before this reference workflow calls model or tool ports.
         self.identity=identity
         await workflow.execute_activity(bind_identity,identity,**CONFIG)
-        first=await agent.run('Correct row 7',usage_limits=UsageLimits(request_limit=4))
+        deps=WorkDeps(identity['taskId'],identity['runId'])
+        first=await agent.run('Correct row 7',deps=deps,usage_limits=UsageLimits(request_limit=4))
         if not isinstance(first.output,DeferredToolRequests) or len(first.output.calls)!=1:
             raise ValueError('Expected one external write proposal')
         call=first.output.calls[0]
@@ -165,7 +215,7 @@ class WorkJourney:
 
         state=await workflow.execute_activity(current,**CONFIG)
         if not state['active']:return {'taskId':identity['taskId'],'outcome':'stopped','status':state['status']}
-        final=await agent.run(message_history=first.all_messages(),usage=first.usage,
+        final=await agent.run(message_history=first.all_messages(),usage=first.usage,deps=deps,
             deferred_tool_results=DeferredToolResults(calls={call.tool_call_id:outcome}),usage_limits=UsageLimits(request_limit=4))
         return await workflow.execute_activity(publish,final.output,**CONFIG)
 

@@ -85,6 +85,13 @@ deps reach trusted sync/async factories only inside activities. Workflow prepara
 receive inert model metadata that cannot issue a request. Factories must create fresh ports and
 bind deps to the accepted engine identity; control still owns authorization and durable budgets.
 
+Optional `deferred_tools` accepts bounded `ToolDescriptor` declarations. The SDK returns
+`DeferredToolRequests` instead of executing them. Control must validate the proposed arguments,
+obtain approval and verify the exact Action outcome before supplying `DeferredToolResults`.
+The model catalog includes inline and deferred tools; the executing catalog includes inline
+ones only. Declarations are deeply detached from caller changes. The public work reference now
+uses this entrypoint for model/read steps, with writes and publication still owned by control.
+
 This builder does not replace `BoundedExecutor.execute`, apply corrections, validate final output
 or publish completion. No default Runtime dependency or process profile changes. The real
 [two-Run probe](../../experiments/work-journey/multirun_port_probe.py) checks overlapping isolated
