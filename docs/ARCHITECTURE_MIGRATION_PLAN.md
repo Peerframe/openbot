@@ -143,6 +143,12 @@ cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnec
 
 ## Acceptance record
 
+- S3 product composition (parent `d0f7c1a`): optional product Workflow/Agent, explicit-mTLS finite
+  dispatch and independently verified publication now pass actual public HTTP/PG/mTLS model and
+  publication recovery, concurrent cancellation, Artifact readback and unchanged replay. No
+  experiment import in product code; synthetic service callbacks only. General continuation and
+  product service configuration remain open. See [evidence](research/work-product-worker.md).
+
 - S3 model receipts (`d2b3372`): optional real SDK port, bounded text/function history, and immutable
   reply/usage persistence under admitted Actions. Actual public HTTP/PG/mTLS Worker crash after
   receipt, same Activity recovery after claim expiry, single settlement, Artifact download and

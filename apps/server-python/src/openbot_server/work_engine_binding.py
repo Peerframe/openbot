@@ -99,6 +99,19 @@ def engine_start_input(value):
 
 async def assert_accepted_workflow(store: PostgresWorkStore, identity, facts, *,
                                    expected_namespace, expected_queue, expected_workflow_type):
+    return await _assert_workflow(store, identity, facts, expected_namespace=expected_namespace,
+        expected_queue=expected_queue, expected_workflow_type=expected_workflow_type, completed=False)
+
+
+async def assert_completed_workflow(store: PostgresWorkStore, identity, facts, *,
+                                    expected_namespace, expected_queue, expected_workflow_type):
+    """Correlate a completed result for readback only. Never supplies fresh authority or a fence."""
+    return await _assert_workflow(store, identity, facts, expected_namespace=expected_namespace,
+        expected_queue=expected_queue, expected_workflow_type=expected_workflow_type, completed=True)
+
+
+async def _assert_workflow(store, identity, facts, *, expected_namespace, expected_queue,
+                           expected_workflow_type, completed):
     """Fail closed unless this activity matches one acknowledged Task/Run engine start.
 
     ``expected_*`` are trusted settings from control composition; ``identity`` must be exactly
@@ -168,9 +181,13 @@ async def assert_accepted_workflow(store: PostgresWorkStore, identity, facts, *,
         admission = await cursor.fetchone()
         if admission is None:
             raise WorkNotFound()
-        store._active(task)
-        if admission['run_status'] not in ('queued', 'running'):
-            raise WorkConflict('run_closed')
+        if completed:
+            if task['status'] != 'completed' or admission['run_status'] != 'completed':
+                raise WorkConflict('completion_not_recorded')
+        else:
+            store._active(task)
+            if admission['run_status'] not in ('queued', 'running'):
+                raise WorkConflict('run_closed')
         if admission['state'] != 'acknowledged':
             raise WorkConflict('handoff_not_acknowledged')
         if (admission['submission_reference'] != reference

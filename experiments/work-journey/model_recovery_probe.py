@@ -13,14 +13,18 @@ from multitask_probe import HandoffStore, PostgresWorkStore, LocalWorkFiles, Tem
 from openbot_server.work_temporal_activity import derive_claim_id
 
 
-async def qualify_model_recovery(client, api, bot, dsn, artifact_root, server, launch, counts):
-    from multitask_worker import MultitaskWork, TYPE
+async def qualify_model_recovery(client, api, bot, dsn, artifact_root, server, launch, counts, *, product=False):
+    if product:
+        from openbot_server.work_worker import OpenBotWork as MultitaskWork, TYPE
+    else:
+        from multitask_worker import MultitaskWork, TYPE
+    worker_script = 'product_worker_fixture.py' if product else 'multitask_worker.py'
     receipt_root = artifact_root.parent / 'model-receipts'
     receipt_root.mkdir(mode=0o700)
     queue = 'sdk-model-' + secrets.token_hex(8)
     cfg = {'dsn': dsn, 'artifact_root': str(artifact_root), 'model_receipt_root': str(receipt_root),
            'model_mode': 'sdk-fixture', 'temporal_address': server.address, 'queue': queue}
-    worker = launch('multitask_worker.py', cfg)
+    worker = launch(worker_script, cfg)
     task = api.call('/api/v1/tasks', {'botId': bot['id'], 'objective': 'Recovered SDK observation',
         'tokenLimit': 20, 'requestKey': secrets.token_hex(12)}, expected=202)
     task_id, run_id = task['id'], task['runs'][0]['id']
@@ -53,7 +57,7 @@ async def qualify_model_recovery(client, api, bot, dsn, artifact_root, server, l
         assert updated.rowcount == 1
         assert db.execute('SELECT expires_at < clock_timestamp() FROM work_claims WHERE run_id=%s AND claim_id=%s',
                           (run_id, claim_id)).fetchone() == (True,)
-    worker = launch('multitask_worker.py', cfg)
+    worker = launch(worker_script, cfg)
     await asyncio.to_thread(worker.wait, 'read-' + task_id)
     recovered = api.snapshot(task_id)
     assert recovered['actions'][0]['id'] == action_id and recovered['actions'][0]['status'] == 'applied'
@@ -84,7 +88,7 @@ async def qualify_model_recovery(client, api, bot, dsn, artifact_root, server, l
         await Replayer(workflows=[MultitaskWork], plugins=[PydanticAIPlugin()],
                        workflow_task_executor=executor).replay_workflow(await handle.fetch_history())
     assert before == (api.snapshot(task_id), counts(task_id))
-    record = {'case': 'model-receipt-recovery', 'modelRequests': 2, 'modelRequestsRepeatedAfterCrash': 0,
+    record = {'case': 'product-model-recovery' if product else 'model-receipt-recovery', 'modelRequests': 2, 'modelRequestsRepeatedAfterCrash': 0,
               'expiredClaimRecovered': True, 'spentTokens': 6, 'downloadVerified': True,
               'offlineReplay': 'passed', 'scope': 'public HTTP + PG + Temporal + real SDK, synthetic provider HTTP'}
     print(json.dumps(record), flush=True)

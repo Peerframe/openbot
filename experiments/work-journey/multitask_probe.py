@@ -19,12 +19,15 @@ from openbot_server.work_dispatcher import dispatch_one
 from openbot_server.temporal_engine import TemporalEnginePort
 
 
-async def qualify_shared(client, api, bot, dsn, artifact_root, server, launch, counts):
-    from multitask_worker import MultitaskWork, TYPE
+async def qualify_shared(client, api, bot, dsn, artifact_root, server, launch, counts, *, product=False):
+    if product:
+        from openbot_server.work_worker import OpenBotWork as MultitaskWork, TYPE
+    else:
+        from multitask_worker import MultitaskWork, TYPE
     queue = 'shared-' + secrets.token_hex(8)
     cfg = {'dsn': dsn, 'artifact_root': str(artifact_root),
            'temporal_address': server.address, 'queue': queue}
-    worker = launch('multitask_worker.py', cfg)
+    worker = launch('product_worker_fixture.py' if product else 'multitask_worker.py', cfg)
     tasks = [api.call('/api/v1/tasks', {'botId': bot['id'], 'objective': objective,
         'tokenLimit': limit, 'requestKey': secrets.token_hex(12)}, expected=202)
         for objective, limit in [('Cancelled alpha observation', 3), ('Independent beta observation', 6)]]
@@ -79,9 +82,9 @@ async def qualify_shared(client, api, bot, dsn, artifact_root, server, launch, c
         for handle in handles:
             await replayer.replay_workflow(await handle.fetch_history())
     assert before == [(api.snapshot(t['id']), counts(t['id'])) for t in tasks]
-    record = {'case': 'concurrent-runs', 'oneWorkerQueueAgent': True,
+    record = {'case': 'product-concurrent-runs' if product else 'concurrent-runs', 'oneWorkerQueueAgent': True,
               'overlappingToolActivities': True, 'isolatedCancellationAccountingArtifacts': True,
               'cancelledSpent': 3, 'completedSpent': 6, 'offlineReplay': 'passed',
-              'scope': 'public HTTP + PostgreSQL + Temporal; scripted ports, no live provider'}
+              'scope': ('product Worker; ' if product else '') + 'public HTTP + PostgreSQL + Temporal; scripted ports, no live provider'}
     print(json.dumps(record), flush=True)
     return [record]

@@ -643,3 +643,13 @@ to resend. Activity recovery and historical settlement grant no new authority. T
 supports text/functions only and refuses hosted/media inputs. See [research and qualification](research/work-model-ports.md)
 for pins, licenses, independent review, actual SDK/PostgreSQL/mTLS restart proof and limits.
 No source copied; no live-provider acceptance, default activation or Linux isolation claim.
+
+### Product Worker and finite operator dispatch
+
+Reuse the pinned Temporal1.33.0/Pydantic AI2.47.0 Worker and Agent integration, existing admitted
+Action ports and control completion/digest contracts. Product composition owns one importable
+workflow and fresh per-Run services; the trusted verifier remains separate from model output.
+The operator CLI requires explicit mTLS/private configuration and makes one bounded dispatch
+pass over existing reservations. Recovery reads the original immutable completion/artifacts;
+it cannot grant authority, rerun verification or repeat effects. No upstream source copied or
+new scheduler/dependency introduced. See [qualification and limits](research/work-product-worker.md).

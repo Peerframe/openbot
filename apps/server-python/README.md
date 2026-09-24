@@ -322,3 +322,14 @@ initial activity's identity and None result. Wrong start identity, closed author
 Task/Run are terminal; model/tool retry policies do not change. See the [runnable reference](../../experiments/work-journey/README.md)
 for Worker-before-acknowledgement and pending-cancellation checks. This opt-in boundary does not
 activate a general product Worker, provider or default backend.
+
+## Optional durable Worker composition
+
+Install `requirements-worker.txt` in a separate Python3.12 environment when composing the
+opt-in Temporal Worker. `openbot_server.work_worker.product_worker` requires a connected
+`PydanticAIPlugin` client, the authoritative store, a trusted per-Run service loader and an
+independent result verifier; it never imports test fixtures or enables a default Worker.
+The bounded operator command is `python -I scripts/dispatch-work.py --config /absolute/operator.json`.
+Use `--check` for local-only configuration validation. Explicit mTLS and private configuration
+are required; there is no database migration, background polling or implicit account configuration.
+See the [configuration and reproducible recovery cases](../../experiments/work-journey/README.md#product-worker-recovery-cases).

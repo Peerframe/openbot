@@ -121,3 +121,30 @@ Temporal 生产部署授权/PKI、历史保留、完整产品备份恢复、版�
 `apps/server-python/tests/test_work_model_receipts_postgres.py`；向已有控制层数据库 runner 提供
 `OPENBOT_TEMPORAL_TEST_PYTHON` 指向独立 SDK 环境。见[审查边界](../../docs/research/work-model-ports.md)。
 新引擎 Run 链、产品配置及真实模型效果仍需分别验收。
+
+## 产品 Worker 恢复用例
+
+可选 `openbot_server.work_worker.product_worker` 使用一个产品 Workflow/Agent，要求显式提供
+可信服务加载器与独立结果核验器。产品代码不依赖实验目录；此处回调仍为合成夹具。
+`product-model-recovery` 在模型结果落盘后、引擎确认前终止 Worker。
+`product-publication-recovery` 从实际产品 CLI 派发，在核验后的产物提交成功、发布确认前终止 Worker；
+恢复时任何服务加载或重新核验都会使测试失败，必须回读原结果。110 秒等待覆盖真实的 75 秒 Activity 超时。
+两个用例均用 `--engine postgres-mtls --only-case <用例名>`；完整安装与执行命令见英文页。
+
+产品依赖入口是 `apps/server-python/requirements-worker.txt`，实验环境另需夹具依赖。
+运维命令为 `python -I apps/server-python/scripts/dispatch-work.py --config /绝对路径/operator.json`；
+`--check` 仅检查本地结构与文件权限，不验证 TLS 连通性。
+私有 JSON 必须包含 `database_url`、`temporal_address`（host:port）、`namespace`、`queue`，
+以及 `tls` 的 `ca`、`certificate`、`key` 绝对路径和 `server_name`。
+可选 `limit` 为 1–64（默认16），`execution_timeout_seconds` 为 1–86400（默认3600），
+`item_timeout_seconds` 为 1–30（默认10）。配置与密钥须归当前用户且不向其他用户开放；
+所有 TLS 文件须为当前用户拥有的普通文件，并拒绝其他用户写入。
+CLI 不迁移数据库、不启动 Worker；可信部署代码必须显式组合回调。
+退出0表示本轮全部交接已确认（包含无待交接项），退出2表示仍有未确认/错误项，退出1表示调用拒绝或失败。
+这些状态不代表任务已完成；重复命令沿用既有交接历史核对契约。
+
+本验收不代表已切换默认后端、已验证任意任务结果、已配置生产服务、已完成通用批准/纠正续跑，
+也不是 Linux/runsc 隔离证据。
+
+`product-concurrent-runs` 在产品 Worker 上复用原有双任务取消契约，采用脚本化端口，
+保留预算、动作计数及产物的既有断言。

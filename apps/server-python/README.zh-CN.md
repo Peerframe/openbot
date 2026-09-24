@@ -223,3 +223,12 @@ Task／Run，再持有 Task SHARE 锁读取 Bot、目标和 token 上限，并�
 None 返回。错误身份、权限关闭和 Task／Run 缺失直接拒绝，模型和工具重试策略不变。
 [可运行参考](../../experiments/work-journey/README.zh-CN.md) 包含 Worker 早于确认启动及等待期间取消的检查。
 该可选入口不启用通用产品 Worker、模型服务或默认后端。
+
+## 可选持久 Worker 组合
+
+在独立 Python3.12 环境安装 `requirements-worker.txt`，可使用 Temporal Worker 组合入口。
+`openbot_server.work_worker.product_worker` 要求已连接且启用 `PydanticAIPlugin` 的客户端、
+权威存储、逐 Run 可信服务加载器和独立结果核验器；不导入测试夹具，也不启用默认 Worker。
+有限派发命令为 `python -I scripts/dispatch-work.py --config /绝对路径/operator.json`，
+`--check` 仅作本地配置检查。必须显式提供 mTLS 与私有配置；不迁移数据库、不后台轮询、不隐式加载账户。
+详见[配置与可复现恢复用例](../../experiments/work-journey/README.zh-CN.md#产品-worker-恢复用例)。

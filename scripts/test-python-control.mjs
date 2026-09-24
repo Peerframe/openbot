@@ -296,7 +296,7 @@ try {
   if (process.env.OPENBOT_TEMPORAL_TEST_PYTHON) {
     const temporal = spawnSync(
       process.env.OPENBOT_TEMPORAL_TEST_PYTHON,
-      ["-m", "pytest", "tests/test_work_temporal_activity.py", "tests/test_work_temporal_effect.py", "tests/test_work_model_receipts_postgres.py", "-q"],
+      ["-m", "pytest", "tests/test_work_temporal_activity.py", "tests/test_work_temporal_effect.py", "tests/test_work_model_receipts_postgres.py", "tests/test_work_worker_postgres.py", "tests/test_work_dispatch_entry.py", "-q"],
       {
         cwd: join(root, "apps/server-python"),
         env: { ...environment, OPENBOT_CONTROL_TEST_FIXTURE: fixture },

@@ -23,7 +23,7 @@ MODEL = 'gpt-4o-mini'
 class PausedReceipts(ModelReceipts):
     async def save(self, action_id, **kwargs):
         metadata = await super().save(action_id, **kwargs)
-        if any(isinstance(p, ToolCallPart) for p in kwargs['response'].parts):
+        if control.settings().get('pause_model', True) and any(isinstance(p, ToolCallPart) for p in kwargs['response'].parts):
             directory = Path(control.settings()['directory'])
             (directory / ('model-receipt-' + kwargs['task_id'])).touch()
             async with asyncio.timeout(45):

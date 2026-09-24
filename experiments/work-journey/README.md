@@ -168,3 +168,40 @@ counterexamples live in `apps/server-python/tests/test_work_model_receipts_postg
 isolated SDK interpreter as `OPENBOT_TEMPORAL_TEST_PYTHON` to the existing control database runner.
 See [the reviewed boundary](../../docs/research/work-model-ports.md). New engine Run chains,
 production service configuration and live provider quality remain separate gates.
+
+## Product Worker recovery cases
+
+The optional `openbot_server.work_worker.product_worker` composition registers one product
+Workflow/Agent with required trusted service and independent result-verifier callbacks. These
+cases use synthetic callback implementations; no test fixture is required by product source.
+`product-model-recovery` kills the Worker after storing a model response and before engine
+acknowledgement. `product-publication-recovery` dispatches through the actual product CLI,
+commits a verified Artifact, then kills the Worker before publication acknowledgement. On retry,
+all service/verifier callbacks deliberately fail if called; the original result must be read back.
+The 110-second result wait covers the actual 75-second Activity timeout before engine retry.
+
+```sh
+/tmp/openbot-work-reference/bin/python -m pip install -r experiments/work-journey/requirements-model.txt -r apps/server-python/requirements-worker.txt
+/tmp/openbot-work-reference/bin/python -B experiments/work-journey/probe.py --engine postgres-mtls --only-case product-model-recovery
+/tmp/openbot-work-reference/bin/python -B experiments/work-journey/probe.py --engine postgres-mtls --only-case product-publication-recovery
+```
+
+Product-only dependencies are `apps/server-python/requirements-worker.txt`; the experiment
+profile additionally supplies fixture dependencies. Operator invocation is
+`python -I apps/server-python/scripts/dispatch-work.py --config /absolute/operator.json`;
+add `--check` for local-only structural/file-permission validation (not TLS connectivity).
+The private JSON requires `database_url`, `temporal_address` (host:port), `namespace`, `queue`,
+and `tls` with absolute `ca`, `certificate`, `key` files and `server_name`.
+Optional bounds are `limit` (1–64, default16), `execution_timeout_seconds` (1–86400, default3600),
+`item_timeout_seconds` (1–30, default10). Config/key files must be owned/private; all TLS files
+must be regular, owned and not writable by other users. The CLI does not migrate databases or
+start a Worker; callbacks must be explicitly composed by trusted deployment code.
+Exit0 means every reported dispatch was acknowledged (including an empty pass); exit2 retains
+unconfirmed/error deliveries; exit1 is a refused or failed invocation. No result implies Task
+completion. Repeating the command retains the existing handoff history policy.
+
+This is opt-in S3 integration evidence, not default activation, arbitrary-task verification,
+production service configuration, general approval/correction continuation or Linux/runsc proof.
+
+`product-concurrent-runs` reuses the existing two-Task cancellation contract on the product Worker,
+with scripted ports and unchanged budget/effect/Artifact assertions.

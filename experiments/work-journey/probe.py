@@ -27,6 +27,7 @@ from effect_service import EffectService
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
+sys.path[:0] = [str(REPO / 'apps/server-python/src'), str(REPO / 'apps/agent-runtime-python/src')]
 # These reused helpers create only owned loopback services and disposable databases.
 sys.path.insert(0, str(REPO / 'experiments/durable-execution'))
 from probe_temporal import Server
@@ -62,8 +63,8 @@ class Process:
             return False
         wait_for(observed, marker)
 
-    def done(self):
-        code = self.process.wait(timeout=30)
+    def done(self, timeout=30):
+        code = self.process.wait(timeout=timeout)
         assert code == 0, self.diagnostic()
 
     def kill(self):
@@ -148,7 +149,7 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
         process = Process([sys.executable, '-u', str(HERE / script)], directory,
             {**CLEAN_ENV, 'PYTHONDONTWRITEBYTECODE': '1', 'OPENBOT_WORK_JOURNEY_CONFIG': str(config)})
         children.append(process)
-        if script in ('workflow_worker.py', 'multitask_worker.py'):
+        if script in ('workflow_worker.py', 'multitask_worker.py', 'product_worker_fixture.py'):
             process.wait('ready')
         return process
 
@@ -243,9 +244,18 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
         api.start()
         api.call('/api/v1/auth/login', {'password': api.password})
         bot = api.call('/api/v1/bots', {'name': 'Reference', 'role': 'Correct the fixture CSV'}, expected=201)['bot']
+        if only_case == 'product-model-recovery':
+            from model_recovery_probe import qualify_model_recovery
+            return await qualify_model_recovery(client, api, bot, dsn, artifact_root, server, launch, counts, product=True)
+        if only_case == 'product-publication-recovery':
+            from product_worker_probe import qualify_publication
+            return await qualify_publication(client, api, bot, dsn, artifact_root, server, launch, counts)
         if only_case == 'model-receipt-recovery':
             from model_recovery_probe import qualify_model_recovery
             return await qualify_model_recovery(client, api, bot, dsn, artifact_root, server, launch, counts)
+        if only_case == 'product-concurrent-runs':
+            from multitask_probe import qualify_shared
+            return await qualify_shared(client, api, bot, dsn, artifact_root, server, launch, counts, product=True)
         if only_case == 'concurrent-runs':
             from multitask_probe import qualify_shared
             return await qualify_shared(client, api, bot, dsn, artifact_root, server, launch, counts)
@@ -707,13 +717,15 @@ def main():
     parser.add_argument('--engine', choices=('development', 'postgres', 'postgres-mtls'), default='development')
     parser.add_argument('--upgrade-archive', type=Path, help='Verified official 1.31.3 archive; requires postgres-mtls')
     parser.add_argument('--only-handoff', action='store_true', help='Run only engine-identity rejection regressions')
-    parser.add_argument('--only-case', choices=('recover','cancel-before-write','cancel-unknown','corrupt-receipt','malformed-json','repair-timeout','automatic-repair-race','repair-cancelled','repair-engine-closed','publication-ack','worker-before-ack','cancel-before-ack','concurrent-runs','model-receipt-recovery'), help='Run one public-work scenario')
+    parser.add_argument('--only-case', choices=('recover','cancel-before-write','cancel-unknown','corrupt-receipt','malformed-json','repair-timeout','automatic-repair-race','repair-cancelled','repair-engine-closed','publication-ack','worker-before-ack','cancel-before-ack','concurrent-runs','model-receipt-recovery','product-model-recovery','product-publication-recovery','product-concurrent-runs'), help='Run one public-work scenario')
     args = parser.parse_args()
     assert sys.platform != 'win32', 'POSIX process signals required'
     assert importlib.metadata.version('temporalio') == '1.33.0'
     assert importlib.metadata.version('pydantic-ai-slim') == '2.47.0'
     if args.upgrade_archive and (args.engine != 'postgres-mtls' or args.only_handoff):
         parser.error('--upgrade-archive requires the full postgres-mtls journey')
+    if args.only_case == 'product-publication-recovery' and args.engine != 'postgres-mtls':
+        parser.error('product-publication-recovery requires postgres-mtls for the product CLI')
     if args.only_case and (args.only_handoff or args.upgrade_archive):
         parser.error('--only-case cannot be combined with --only-handoff or --upgrade-archive')
     binary = None

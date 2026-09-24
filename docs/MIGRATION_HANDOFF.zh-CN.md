@@ -1,6 +1,13 @@
 # 架构迁移交接 — 2026-09-24
 
-## 当前短交接——模型观察持久化（`d2b3372`）
+## 当前短交接——产品 Worker／派发（父提交 `d0f7c1a`）
+
+- 已完成：可选的产品 Workflow/Agent、逐 Run 可信服务接口及独立发布核验；有限单次 CLI 派发强制显式 mTLS。发布确认丢失后回读准确的已提交结果，不新增 claim、不调用核验器、不重复动作。
+- 证据：真实公开 HTTP/PG/mTLS 的模型回执恢复、实际 CLI 发布恢复，以及同一 Worker 中两个并发任务的取消隔离均通过，包含文件下载和无副作用重放。干净可选依赖安装、权限／派发反例、数据库损坏／竞态及仓库检查通过。代码哈希、失败、命令与缓存边界见 `docs/research/work-product-worker.md`。
+- 未完成：S3 产品服务配置和通用批准／纠正／继续；可选 Worker 不等于 S3 完成。S4 真实 Linux/runsc、浏览器／接管和集成仍未验收。总体粗估仍约25%，处于 S3；准备工作不算阶段完成。
+- 下一步：`work_worker.py`、`work_runtime_ports.py`、`work_dispatch_batch.py`、`scripts/dispatch-work.py` 及 `experiments/work-journey/` 产品用例。保持 Server 授权、Temporal 单一恢复职责、unknown 仅核对契约；保留无关脏修改及 TASK020。不切默认、不发布，通过至 S4 的整合验收后停止。
+
+## 上一份短交接——模型观察持久化（`d2b3372`）
 
 - 已完成：接入可选的真实 OpenAI/Pydantic SDK 模型端口，由控制层保存与已准入 Action 绑定的原回复。Activity 确认丢失、旧 claim 过期后仍可恢复原结果与用量。unknown／缺失回执不重发、不退款；已结算回复必须匹配原证据。仅支持文本／函数，拒绝隐式媒体下载和托管工具。
 - 证据：真实公开 HTTP/PostgreSQL/mTLS Temporal 的保存后崩溃、唯一结算、下载及无副作用回放通过，并发任务隔离回归通过。数据库取消／损坏／未知反例和 SDK 边界检查通过；仓库检查通过且区分缓存。SQL0033 已用两条保留的合成旧历史重新验收，未改写源历史。详见 `docs/research/work-model-ports.md` 与 S7 证据。SDK 连接合成 HTTP，并非真实模型账户。

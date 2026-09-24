@@ -1,6 +1,13 @@
 # Architecture migration handoff — 2026-09-24
 
-## Current short handoff — durable model observations (`d2b3372`)
+## Current short handoff — product Worker/dispatch (parent `d0f7c1a`)
+
+- Completed: optional product-owned Workflow/Agent with trusted per-Run services and independent publication verification; finite operator CLI with explicit mTLS. A lost publication acknowledgement reads the exact committed result without new claims, callbacks or effects.
+- Evidence: actual public HTTP/PG/mTLS model-receipt recovery, publication recovery through the real CLI, and two concurrent Tasks with isolated cancellation all passed, including file download and unchanged replay. Clean optional dependency install, permission/batch counterexamples, PG corruption/race checks and repository check passed. Exact candidate hashes, failures, commands and cache limits: `docs/research/work-product-worker.md`.
+- Open: S3 product service configuration and general approval/correction/continuation; opt-in Worker is not complete S3. S4 actual Linux/runsc, browser/takeover and integration remain unaccepted. Overall remains roughly25%, S3; preparation is not phase completion.
+- Next: `work_worker.py`, `work_runtime_ports.py`, `work_dispatch_batch.py`, `scripts/dispatch-work.py`, and product cases in `experiments/work-journey/`. Keep Server authority, one Temporal recovery owner and unknown lookup-only rules. Preserve unrelated dirty model-service files and TASK020. No default switch or release; stop after through-S4 integration is accepted.
+
+## Previous short handoff — durable model observations (`d2b3372`)
 
 - Completed: optional real OpenAI/Pydantic model port and control-private replies tied to admitted Actions. A lost Activity acknowledgement reuses the original response and usage, including after claim expiry. Unknown/missing results are never resent or refunded. Settled replies must match original evidence. Text/functions only; no implicit media downloads or hosted tools.
 - Evidence: actual public HTTP/PostgreSQL/mTLS Temporal crash-after-receipt journey, unique settlement, file download and unchanged replay passed; concurrent Task isolation retained. PG corruption/cancel/unknown counterexamples and bounded SDK checks passed. Repository check passed with cache status recorded. Additive SQL0033 requalified against both retained synthetic histories; source histories unchanged. See `docs/research/work-model-ports.md` and S7 evidence. Real SDK uses synthetic HTTP, not a live model account.

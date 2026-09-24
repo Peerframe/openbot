@@ -240,3 +240,15 @@ async def claim_current_activity(store, client, *, expected_namespace, expected_
         store, client, expected_namespace=expected_namespace, expected_queue=expected_queue,
         expected_workflow_type=expected_workflow_type)
     return await _claim_bound_activity(store, accepted, activity_id, expires_seconds=expires_seconds)
+
+
+async def bind_completed_activity(store, client, *, expected_namespace, expected_queue,
+                                    expected_workflow_type):
+    """Read-only completed-result recovery, with the same original engine/attempt proof."""
+    from .work_engine_binding import assert_completed_workflow
+    facts = await inspect_activity_start(client, activity_info(), expected_namespace=expected_namespace,
+        expected_queue=expected_queue, expected_workflow_type=expected_workflow_type)
+    return await assert_completed_workflow(store,
+        {'taskId': facts.start_input['taskId'], 'runId': facts.start_input['runId']}, facts,
+        expected_namespace=expected_namespace, expected_queue=expected_queue,
+        expected_workflow_type=expected_workflow_type)
