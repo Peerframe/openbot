@@ -9,7 +9,11 @@ preparation for S7, not a production migration utility or evidence that S7 is co
 | --- | --- | --- |
 | Architecture, 27 migrations | `c33e03f1a14de739196113769c59fdaace9029e7` | Restore old data, then apply current migrations with the existing production startup guard. |
 | Feature, 19 migrations | `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` | Direct upgrade fails at index 17. A separate fixture-only transfer copies a bounded compatible record set into a freshly migrated target. |
-| Qualified target, 34 migrations | `d2b3372dc4b5071276ba83a04c55136e58365c5a` | SQL bytes and journal must match `target-history.json`; changes require an explicit requalification. |
+| Qualified target, 35 migrations | `aa84c5ff97270d050a4110ff5ac17b311dcfac10` | SQL bytes and journal entries must match `target-history.json`; changes require an explicit requalification. |
+
+The target was tested as a frozen working tree on parent `135df6d`, then pinned to the commit
+above after comparing its SQL and journal hashes. `qualificationInput` preserves the actual test
+input provenance. Only this metadata binding changed; the qualified database bytes did not.
 
 The two old histories share migrations 0000–0016. `histories/common` contains those original bytes;
 `histories/feature` and `histories/architecture` contain their different suffixes. The history JSON
@@ -101,5 +105,11 @@ secret storage, all platforms, live providers or a complete product journey. Tho
 integration gates. See the [research and decision record](../../docs/research/s7-migration-qualification.md)
 and the broader [database recovery inventory](../../docs/DATABASE.md).
 
-The additive model-receipt target was requalified on2026-09-24. See
+The additive model-receipt target was requalified on 2026-09-24. See
 [evidence](evidence/model-receipts-result.json); historical SQL/source fixtures remain unchanged.
+
+The finalized `0034_work_corrections` working-tree target was separately requalified on
+2026-09-24: all 40 existing synthetic migration/restore cases passed against the two sealed
+histories. SQL and journal hashes were unchanged across the run. The exact local report and
+parent-only provenance are recorded in the [research record](../../docs/research/s7-migration-qualification.md).
+This requalification does not test correction behavior or complete S7.

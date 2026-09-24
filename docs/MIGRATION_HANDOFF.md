@@ -1,11 +1,21 @@
 # Architecture migration handoff — 2026-09-24
 
+## Current short handoff — durable Owner corrections (code `aa84c5f`)
+
+- Completed: opt-in same-origin Owner correction API; immutable per-segment contexts, superseded never-admitted proposals, original admitted/unknown receipts, full deferred-call pairing and publication gates. Old workflows retain their original branch. Default service activation and client correction UI are not included.
+- Acceptance: independent reader accepted the slice. Actual HTTP/PostgreSQL/mTLS correction/restart and affected old approval journeys passed with unchanged offline replay. Entry, correction races, maximum escaped input, shared client parser and `npm run check` passed. Executed/cache/skip and all failed setup attempts are separated in `docs/research/work-owner-corrections.md`.
+- Required schema follow-up: additive0034 requalified against both sealed histories;35 target migrations passed the existing synthetic migration/backup/restore checks. The pin points to `aa84c5f` with identical tested SQL/journal. This limited prerequisite does not reopen the S7 product rollout.
+- Open: S3 trusted real service activation; S2 approval/repair/download/correction UI and installed Desktop; S4 real positive Linux/runsc, browser/takeover and safe output provisioning; S5 authoritative product readers/use gates, then S6/S7 product gates. Overall remains approximately30% by accepted scope, still S3; preparation is not completed product delivery.
+- Constraints: Server owns authorization and facts; Temporal owns continuation; unknown permits lookup only. Corrections grant no extra tools/budget. Inline executors are rejected in this profile; the existing256KiB total history cap remains. No push, default switch or release.
+- Next input: this paragraph, `work_worker.py`, `work_runtime_ports.py`, `work_model_activity.py`, `work_corrected_workflow.py` and the short research record above. Start only the existing S3 trusted-service composition task. Preserve unrelated model-service dependency/research edits, the older reuse-ledger entry, and unaccepted TASK020. Do not repeat the now-accepted correction implementation or its unaffected checks.
+
+
 ## Resumed parallel work — baseline `6f69be9`
 
 Latest user approval resumes S3 and bounded S2/S4/S5 parallel work; S6/S7 receive no new assignments. S2 thread `01a0d28c-f457-7823-ba6f-f144adf3c3ff` delivered and returned ownership. Existing S4/S5 also delivered; S4 remains separate, S5 is integrated. No default switch or release. The older pause paragraphs below are historical.
 
 
-## Current short handoff — accepted parallel increments (code `a61153e`)
+## Previous short handoff — accepted parallel increments (code `a61153e`)
 
 - Completed: S3 `76667ea` closes original-Workflow unknown reconciliation without renewed writes or authority. S2 `ef1e254` + `a61153e` adds the real `#/tasks` create/read/cancel client and closes both independent offline/413 counterexamples. S5 `ace87c8` integrates only the reviewed offline selection/revalidation port.
 - Evidence: S3 actual HTTP/PG/mTLS recovery and affected approval replay passed on frozen source; S2 original32 plus independent4 counterexamples and author real browser/PG evidence passed. Integrated S2 files matched `dfa40d4`; S5 files matched `df1c24d` and its15 new tests passed in the mainline. Final combined entry/check results are recorded in S2 research.

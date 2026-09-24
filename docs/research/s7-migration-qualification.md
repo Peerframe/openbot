@@ -141,3 +141,75 @@ now runs the cleanup tests before the database qualification. Hosted CI has not
 run. Acceptance is only for these synthetic histories and the bounded transfer;
 it does not qualify full product migration, legacy-Run conversion, active work,
 credentials, model configuration, Temporal pairing, default switching or release.
+
+
+## Uncommitted correction-target requalification (2026-09-24)
+
+The existing bounded qualification was rerun against the finalized working-tree target with
+35 migrations, including additive `0034_work_corrections`. The parent is
+`135df6d4a67ed7903673f3aa23b9e5c6ab75da26`; the new SQL and journal entry were **uncommitted**
+at qualification time. Neither `target-history.json.commit` nor the existing runner's
+`histories.target.commit` means that these target bytes are committed at the parent. The manifest
+adds `commitRole`, `parentCommit` and `workingTree` provenance, and the local report wrapper
+explicitly preserves this distinction without changing the runner.
+
+| Qualified input | SHA-256 |
+| --- | --- |
+| `packages/db/migrations/0034_work_corrections.sql` | `74418c22fdbd0dd8e0e28ef5ceacfb64fbd47c34f85816bafe1b39eba0aece63` |
+| Raw `packages/db/migrations/meta/_journal.json` | `a75feb5339e5b06bd96fa543e39d964d20922a2f13de5c9853b861cb14fff10c` |
+| Ordered target migration digest from the existing runner | `3e6366aee8e8a8f0625b6adb996dce31018db07265d5e7f33f21d89aacda5d29` |
+| `experiments/s7-migration/target-history.json` | `7235a8fe83d54bfffd7ca4fe9c882bf40ff7d837bc3df3cc6317593f5310fad2` |
+
+The first 34 target migration entries retain their previously pinned SQL hashes. Both sealed
+source histories, their manifests, the baseline and fixture bytes remain unchanged. The final
+0034 SQL has a 262144-byte bound on the serialized correction-context JSON. Correction behavior
+requires separate implementation tests; this S7 fixture supplies no such acceptance claim.
+
+The final run completed at `2026-09-24T12:01:00.504Z`: **40 actual passes**, no skipped cases,
+process exit 0, on Node v26.0.0 / macOS arm64 with the existing digest-pinned PostgreSQL 17.11
+image and `pg_dump (PostgreSQL) 17.11 (Debian 17.11-1.pgdg12+2)`. It used only its own labeled,
+temporary PostgreSQL container and synthetic databases/files. Normal final cleanup completed;
+no existing or production database was used.
+
+- Architecture: guarded 27-to-35 upgrade retained the bounded legacy rows, IDs, references and
+  artifact bytes; original and target database/file recovery and repeat startup passed.
+- Feature: direct upgrade still failed at index 17 without source mutation. The existing bounded
+  six-table transfer to a fresh 35-migration target retained synthetic identity/content/files.
+- All existing negative cases passed, including history drift, unsupported records, transfer
+  rollback, damaged backups, nonempty restore targets, artifact corruption and native restore
+  DDL rollback. Legacy data was not reclassified into the new work domain.
+- `sources.mjs` passed before and after the final run; all 35 actual SQL hashes and the raw journal
+  hash were also compared with the pin after completion. The migration-manifest check passed.
+- Repository documentation checks, target JSON formatting and the scoped `git diff --check` passed.
+- The unchanged cleanup boundary's eight passing cases and successful Server/DB build from the
+  earlier run in this same task are reused. DB and Server compiled afresh; six unchanged build
+  dependencies came from Turbo cache. No broad product check is claimed by this scoped run.
+
+Final local evidence directory:
+`/private/tmp/openbot-s7-corrections-final-20260924-umt7sngc`. It contains
+`qualification.json` (result plus explicit uncommitted-target provenance),
+`qualification.raw.json` (unchanged runner output), `qualification.log`, the exact
+`target-history.snapshot.json`, and before/after source and migration-check logs. The raw report
+SHA-256 is `6ab0bf2b3a419a4ffe85157fc5de0ce7cbba58ac9e1ee16d6db5b5596f71a1f5`.
+
+A prior run before the JSON-bound correction also passed the same 40 migration cases. It is kept
+separately in `/private/tmp/openbot-s7-corrections-20260924-i8ougvlc`, with explicit pre-fix
+provenance in `qualification.pre-fix.json`; its SQL hash begins `ed845517`. That earlier result
+is superseded for the current target and does not establish correction-content capacity. The
+same directory retains `cleanup.log` and `build.log` used above.
+
+Only the target pin, bilingual S7 runbook and this qualification record were updated here. The
+qualification code, sealed histories, fixtures, SQL/journal and application/runtime sources were
+not edited by this scoped task. This is still local synthetic qualification, not hosted CI,
+correction behavior acceptance, a general divergent-history migration, active-work recovery,
+model/key/plugin/attachment/Temporal recovery, a production migration, default switch, release
+or overall S7 completion. No commit was created.
+
+
+### Committed target binding
+
+After the scoped handback, Codex committed the accepted correction slice as `aa84c5ff97270d050a4110ff5ac17b311dcfac10`.
+The final target pin now names that commit; `qualificationInput` retains the earlier dirty-input
+provenance. SQL0034 and raw journal hashes were compared against `git show` and are identical
+to the final qualified snapshot above. Source manifests are rechecked without rerunning the
+unchanged database qualification. This pin update is not a new product migration or S7 completion.

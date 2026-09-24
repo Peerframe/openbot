@@ -1,5 +1,7 @@
 {
-  "commit": "d2b3372dc4b5071276ba83a04c55136e58365c5a",
+  "commit": "aa84c5ff97270d050a4110ff5ac17b311dcfac10",
+  "commitRole": "qualified-target",
+  "parentCommit": "135df6d4a67ed7903673f3aa23b9e5c6ab75da26",
   "migrations": [
     {
       "index": 0,
@@ -204,6 +206,25 @@
       "tag": "0033_work_model_receipts",
       "timestamp": 1790208000003,
       "sha256": "2333c4ebe595364526458e111c131653be3c2cd7492bcfc417e9fc8308e65d63"
+    },
+    {
+      "index": 34,
+      "tag": "0034_work_corrections",
+      "timestamp": 1790208000004,
+      "sha256": "74418c22fdbd0dd8e0e28ef5ceacfb64fbd47c34f85816bafe1b39eba0aece63"
     }
-  ]
+  ],
+  "qualificationInput": {
+    "state": "uncommitted-when-tested-now-pinned-identical",
+    "journal": {
+      "path": "packages/db/migrations/meta/_journal.json",
+      "sha256": "a75feb5339e5b06bd96fa543e39d964d20922a2f13de5c9853b861cb14fff10c"
+    },
+    "changedSql": [
+      {
+        "path": "packages/db/migrations/0034_work_corrections.sql",
+        "sha256": "74418c22fdbd0dd8e0e28ef5ceacfb64fbd47c34f85816bafe1b39eba0aece63"
+      }
+    ]
+  }
 }
