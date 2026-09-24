@@ -532,3 +532,35 @@ separated serializable Run deps, per-activity state and port logs, and that tool
 activities rather than inline workflow code. It does not establish crash/replay recovery, durable
 authorization or budget persistence, multi-Run continuation, Continue-As-New, effect idempotency,
 or production Worker composition.
+
+## Activity-to-Action effect seam (2026-09-24)
+
+`apps/server-python/src/openbot_server/work_temporal_effect.py` is the narrow composition a future
+Worker activity calls. It reads exactly one `temporalio.activity.info()` snapshot through the
+existing `_bind_activity_identity` helper, refuses a wrong or missing queue/type/attempt/chain,
+Activity ID or history and a canceled/revoked Task before the policy, then asks an injected trusted
+`ControlPolicy` to turn a bounded, detached `ToolRequest` copy into one exact `ActionPlan`. Only a
+valid plan reaches `_claim_bound_activity`, which derives the same activity-scoped claim ID and calls
+the existing control claim transaction; the plan then goes to `work_effects.execute_action`, whose
+`propose`/`admit` transactions still decide and a pending approval still yields no external apply.
+The model/tool `call_id` is bounded transport metadata only: the policy never sees it, it is never
+the Action key, and a plan that equals it is refused. A same-Activity-ID retry reuses its fence, a new Activity ID
+advances the epoch, a lost response is settled by the existing lookup/verify path without a second
+apply, and a cancellation or revocation during the policy still mints no fence. The refactor keeps
+`claim_current_activity` behavior by delegating to the same one-snapshot helpers.
+
+Explicit limits: this is not a Worker service, not a durable whole-Run budget and not an OS sandbox;
+it keeps no process-global Run registry or credentials. The bounded dsh implementer could not run
+shell commands because its nested sandbox backend failed. Codex then removed the model-supplied
+`call_id` from the trusted policy input, kept the two-step bind/claim helpers private, and wired
+the new cases into the existing owned PostgreSQL fixture runner. On the integrated candidate,
+`node scripts/test-python-control.mjs` exited 0: the default control interpreter recorded
+299 passed and two optional-SDK skips; the separately pinned Temporal SDK 1.33.0 interpreter,
+with the same server dependencies, recorded 95 passed including 32 new seam cases. The retained
+log is `/private/tmp/openbot-s3-bound-effect-owned-20260924.log`. These checks use the real
+control PostgreSQL store and a fake SDK context/history for this seam; prior probes establish the
+real SDK activity context separately, but this change has not yet run inside a real product Worker.
+The replay guarantee remains scoped to a stable Action key. A future production policy must
+derive that key from a durable control/workflow operation fact and demonstrate the same key after
+a distinct Activity or Worker restart; these fixture tests use a fixed trusted policy and do not
+prove that future binding. No upstream source is copied and no dependency was added.

@@ -147,6 +147,42 @@ async def _bind_from_sdk_info(store, client, info, *, expected_namespace, expect
         expected_queue=expected_queue, expected_workflow_type=expected_workflow_type)
 
 
+async def _bind_activity_identity(store, client, *, expected_namespace, expected_queue,
+                                  expected_workflow_type):
+    """Bind this activity from exactly one trusted SDK snapshot and keep its claim identity.
+
+    Trusted composition only. The snapshot is read here and never accepted from a caller; the same
+    validated snapshot supplies both the read-only binding and the Activity ID that the later
+    activity-scoped claim is derived from. Returning the pair lets a trusted step (for example a
+    policy decision) happen between binding and claiming without a second SDK read. The returned
+    ``(accepted, activity_id)`` is correlation evidence: :func:`_claim_bound_activity` still needs
+    the control-owned claim transaction, and neither value authorizes an effect by itself.
+    """
+    info = activity_info()
+    activity_id = current_activity_id(info)
+    accepted = await _bind_from_sdk_info(
+        store, client, info, expected_namespace=expected_namespace,
+        expected_queue=expected_queue, expected_workflow_type=expected_workflow_type)
+    return accepted, activity_id
+
+
+async def _claim_bound_activity(store, accepted, activity_id, *, expires_seconds=60) -> WorkFence:
+    """Claim one already-bound accepted activity from the same SDK snapshot.
+
+    Trusted composition only. ``accepted`` and ``activity_id`` must come from one
+    :func:`_bind_activity_identity` call so the deterministic claim identity is derived from the
+    exact facts that passed the binding gate; no identity is re-read from a caller. Deferring the
+    claim to this separate step is deliberate: the claim transaction re-checks Task/Run authority,
+    so cancellation or revocation between binding and claim still refuses to mint a fence, and the
+    existing :func:`openbot_server.work_claims.claim` transaction remains the only fence issuer.
+    """
+    return await claim_work(
+        store, accepted.task_id, accepted.run_id,
+        derive_claim_id(accepted.namespace, accepted.workflow_id, accepted.engine_run_id,
+                        activity_id),
+        expires_seconds=expires_seconds)
+
+
 async def bind_current_activity(store, client, *, expected_namespace, expected_queue,
                                 expected_workflow_type):
     """Correlate this running activity with its acknowledged Task/Run engine start.
@@ -200,13 +236,7 @@ async def claim_current_activity(store, client, *, expected_namespace, expected_
     an external effect.
     """
     # One SDK snapshot supplies both the binding and the activity-scoped claim identity.
-    info = activity_info()
-    activity_id = current_activity_id(info)
-    accepted = await _bind_from_sdk_info(
-        store, client, info, expected_namespace=expected_namespace, expected_queue=expected_queue,
+    accepted, activity_id = await _bind_activity_identity(
+        store, client, expected_namespace=expected_namespace, expected_queue=expected_queue,
         expected_workflow_type=expected_workflow_type)
-    claim_id = derive_claim_id(
-        accepted.namespace, accepted.workflow_id, accepted.engine_run_id,
-        activity_id)
-    return await claim_work(
-        store, accepted.task_id, accepted.run_id, claim_id, expires_seconds=expires_seconds)
+    return await _claim_bound_activity(store, accepted, activity_id, expires_seconds=expires_seconds)

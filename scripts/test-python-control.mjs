@@ -271,6 +271,7 @@ try {
       "tests/test_work_handoff_postgres.py",
       "tests/test_work_engine_binding_postgres.py",
       "tests/test_work_temporal_activity.py",
+      "tests/test_work_temporal_effect.py",
       "tests/test_work_reconciliation_postgres.py",
       "tests/test_execution_sdk_postgres.py",
       "-q",
@@ -291,11 +292,11 @@ try {
   console.log(output.trim());
   assert.equal(result.status, 0, "Python/PostgreSQL compatibility checks failed.");
   // The Temporal SDK is optional in the default control venv. When a separately pinned SDK
-  // interpreter is supplied, exercise the activity adapter against this same owned fixture.
+  // interpreter is supplied, exercise the activity adapter and effect seam against this fixture.
   if (process.env.OPENBOT_TEMPORAL_TEST_PYTHON) {
     const temporal = spawnSync(
       process.env.OPENBOT_TEMPORAL_TEST_PYTHON,
-      ["-m", "pytest", "tests/test_work_temporal_activity.py", "-q"],
+      ["-m", "pytest", "tests/test_work_temporal_activity.py", "tests/test_work_temporal_effect.py", "-q"],
       {
         cwd: join(root, "apps/server-python"),
         env: { ...environment, OPENBOT_CONTROL_TEST_FIXTURE: fixture },
