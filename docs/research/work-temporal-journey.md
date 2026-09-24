@@ -458,3 +458,77 @@ their own network reads. An owned PostgreSQL/HTTP counterexample supplies an ove
 record to an otherwise permissive verifier and proves it remains `unknown` with the reservation
 retained. The final control entry passed 299 checks with one optional-SDK skip; `npm run check`
 passed, with its Turbo lint/typecheck/test/build task output served from cache.
+
+## One constructor-time Agent across two concurrent Runs (2026-09-24, revision 2)
+
+The [disposable probe](../../experiments/work-journey/multirun_port_probe.py) asks whether one
+Agent built once **before** Worker startup can serve two concurrent Workflows with separate Run
+inputs. It requires a disposable Temporal frontend address via `--address` and pins the SDK
+versions at startup. Reviewed pins are unchanged:
+pydantic-ai-slim 2.47.0 (`77d5fce751ab8ab04bd5db4ed6acc1131a4baed6`) and Temporal Python 1.33.0
+(`ab52fdde33ee8ed193402625bfdba25d240a762d`), against the disposable Temporal CLI 1.9.1 / Server
+1.32.0 profile. Reviewed public surface: `Agent(model, deps_type, toolsets, capabilities,
+output_type, instructions, retries)` and `Agent.run(user_prompt, *, deps, message_history,
+usage_limits, ...)` (`apps/agent-runtime-python/RESEARCH.md` §2); `Model.request`;
+`AbstractToolset.get_tools`/`call_tool`; `DynamicToolset(id=...)`;
+`TemporalDurability(activity_config, model_activity_config)`; `PydanticAIPlugin`; and the workflow
+registration `__pydantic_ai_agents__` already exercised in
+`experiments/work-journey/workflow_worker.py`. The upstream
+[`ResolveModelId` capability](https://github.com/pydantic/pydantic-ai/blob/main/pydantic_ai_slim/pydantic_ai/capabilities/resolve_model_id.py)
+was reviewed as the per-Run model-selection mechanism; its public resolver signature is
+`(ModelResolutionContext, model_id) -> Model | None`. The
+[official Temporal integration guide](https://github.com/pydantic/pydantic-ai/blob/main/docs/durable_execution/temporal.md#toolsets-at-runtime)
+still requires executing toolsets to be attached at Agent construction with a stable dynamic-toolset
+ID.
+
+The first probe revision failed before any Workflow started: the Worker's workflow validation raised
+`RuntimeError: Failed validating workflow MultirunPortProbeWorkflow`, and the sandbox reported
+`__call__ on pathlib.Path.resolve restricted`. That revision computed its repository root with
+`pathlib.Path(__file__).resolve()` at import. Revision 2 computes the same location with pure
+`Path.parents` and imports the OpenBot runtime inside `workflow.unsafe.imports_passed_through()`,
+the reviewed composition already used by `workflow_worker.py`; the workflow sandbox is not disabled.
+
+The more serious rejection was design, not syntax. Revision 1 kept a `_RUNS` dictionary of mutable
+`RunGuard`/`PortModel`/`PortToolset` state and selected a Run from a prompt marker or a bounded
+`model_settings` value. That is global Run state: it would not survive a Worker restart or a second
+process, so it could not be presented as a production-feasible per-Run boundary. It is removed.
+Revision 2 builds exactly one Agent at import with the constructor-time
+`DynamicToolset(id='openbot-ports')` and the public `ResolveModelId` capability. Each model activity
+resolves its `PortModel` from the serialized `RunDeps.label` through
+`ResolveModelId(ctx, model_id)`; each tool activity builds its `PortToolset` from `RunContext.deps`.
+Every activity builds a fresh `RunGuard`/`ToolCatalog`/`RuntimeLimits`, so no guard or port is
+shared between Runs or between activities. The scripted model derives its behavior from the message
+history it receives, so an activity retry re-derives the same step instead of reading a
+process-local counter.
+
+A bounded, label-keyed observation log records what each scripted port saw, so a separate trusted
+activity can read it back independently of the Workflow result. It is measurement-only: it never
+selects a model/toolset and never authorizes an effect, and the authority port returns success
+regardless of it. Both Workflows are started before either result is awaited. The parent asserts
+that the measured tool-activity intervals actually overlap, plus label-scoped outputs,
+per-label observation entries with no crossed
+label, per-activity guard evidence (each model activity one fresh guard step, each tool activity one
+call), and each real history's completed `model_request`/`call_tool`/`get_tools` activities;
+`call_tool` must be exactly one, so a model-visible answer without a durable tool activity cannot
+pass. No provider, PostgreSQL, credential, real tool or external effect is used, and the script
+neither starts nor installs a server.
+
+Known limitation and exact review bound: whole-Run guard counters are **not** proven durable by this
+probe, because each activity owns a fresh guard; a control-owned, durable budget must supply those
+counters before production use. The bounded dsh sandbox could not run nested shell commands. Codex
+then ran the revised candidate in an owned disposable Temporal environment with
+`pydantic-ai-slim==2.47.0`, `temporalio==1.33.0`, Temporal CLI 1.9.1 and Server 1.32.0. The
+independent run exited 0 and reported `PASS`; the retained log is
+`/private/tmp/openbot-s3-multirun-probe-overlap-20260924.log`. Each Run's real history contained two
+completed `get_tools`, two `model_request`, and one `call_tool` activities. The measured tool
+intervals overlapped: Run A entered at `1012867.185719666` and exited at `1012867.78686975`;
+Run B entered at `1012867.186391333` and exited at `1012867.787048791` (monotonic seconds in
+the same Worker process). This is evidence from the actual pinned SDK path, not an inferred API
+shape. The only stderr was a Temporal warning that `annotated_types` imported after initial
+workflow load; no workflow or activity failed.
+
+This pass establishes that one constructor-time Agent can serve two concurrent Workflows with
+separated serializable Run deps, per-activity state and port logs, and that tool I/O runs as durable
+activities rather than inline workflow code. It does not establish crash/replay recovery, durable
+authorization or budget persistence, multi-Run continuation, Continue-As-New, effect idempotency,
+or production Worker composition.
