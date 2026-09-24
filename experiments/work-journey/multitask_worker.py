@@ -115,6 +115,9 @@ def load_services(context):
         await perform(context, 'read')
         return context.objective + ': observed'
 
+    if control.settings().get('model_mode') == 'sdk-fixture':
+        from model_reference_services import model_port
+        model = model_port(context, _STORE, _CLIENT, _SCOPE)
     return WorkRuntimeServices(model_step=model, tool_call=tool, model_tools=(READ,), inline_tools=(READ,))
 
 

@@ -451,3 +451,13 @@ mTLS 只认证受信控制组，不是 API 分权；同版本重放不证明未�
 server/sql-tool。CPython 标准库执行有界的精确成员提取，不新增通用更新器、依赖或自研 schema 迁移，
 未复制上游源码或切换产品默认值。两个版本的 PG schema 树完全相同。
 见[版本固定与实际验收](research/temporal-release-upgrade.md)。
+
+
+## 模型观察持久化与可选 OpenAI 端口（2026-09-24）
+
+复用 Pydantic AI2.47.0、OpenAI3.17.0 和已有 Action 权限／私有不可变文件存储。
+模型回复在引擎确认之前保存；丢失回执继续保持 unknown，不允许重发。重试恢复与
+取消后的事实补记不能授予权限。初始端口仅支持文本和函数调用，拒绝媒体及托管工具，
+限制传输并关闭 SDK 自动重试。版本、许可证、独立审查及实际 SDK/PostgreSQL/mTLS
+重启证据见[研究记录](research/work-model-ports.md)。未复制上游源码，未启用默认后端，
+不代表真实提供方或 Linux 隔离已验收。

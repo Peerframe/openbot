@@ -393,17 +393,25 @@ jobs:
         run: apps/agent-runtime-python/scripts/bootstrap.sh
       - name: Verify Python control models and HTTP boundaries
         run: apps/server-python/scripts/check.sh -q
-      - name: Compare Python and TypeScript against owned PostgreSQL
-        run: npm run test:control:python
-      - name: Qualify adjacent Temporal release recovery with PostgreSQL and mutual TLS
+      - name: Bootstrap optional model and durable Worker qualification
         shell: bash
         run: |
           python3.12 -m venv "$RUNNER_TEMP/openbot-work-reference"
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install -r experiments/work-journey/requirements.txt
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install \
+            -r experiments/work-journey/requirements-model.txt -r apps/server-python/requirements.lock
+      - name: Compare Python and TypeScript against owned PostgreSQL
+        run: npm run test:control:python
+        env:
+          OPENBOT_TEMPORAL_TEST_PYTHON: ${{ runner.temp }}/openbot-work-reference/bin/python
+      - name: Qualify adjacent Temporal release recovery with PostgreSQL and mutual TLS
+        shell: bash
+        run: |
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q apps/agent-runtime-python/tests/test_temporal_agent.py
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
             --engine postgres-mtls --only-case concurrent-runs
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
+            --engine postgres-mtls --only-case model-receipt-recovery
           curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
             --max-time 180 --max-filesize 93822307 \
             --output "$RUNNER_TEMP/temporal_1.31.3_linux_amd64.tar.gz" \

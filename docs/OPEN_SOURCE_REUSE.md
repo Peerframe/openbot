@@ -632,3 +632,14 @@ older server/sql-tool because official 1.31.3 container tags were unavailable wh
 CPython stdlib tarfile/gzip/hashlib performs bounded exact-member extraction, not a general updater.
 No upstream source copied, new dependency, custom schema migration or production default change.
 The two releases share the entire PostgreSQL schema tree. See [pins and actual qualification](research/temporal-release-upgrade.md).
+
+
+## Durable model observations and optional OpenAI port (2026-09-24)
+
+Reuse Pydantic AI2.47.0 and OpenAI3.17.0 with explicit control-owned configuration, bounded
+transport and SDK retries disabled. Existing Action authority and immutable LocalWorkFiles retain
+model replies before engine acknowledgement. Missing receipts remain unknown, never permission
+to resend. Activity recovery and historical settlement grant no new authority. The initial port
+supports text/functions only and refuses hosted/media inputs. See [research and qualification](research/work-model-ports.md)
+for pins, licenses, independent review, actual SDK/PostgreSQL/mTLS restart proof and limits.
+No source copied; no live-provider acceptance, default activation or Linux isolation claim.
