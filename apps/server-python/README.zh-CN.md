@@ -208,4 +208,18 @@ Task 行锁使不同 Run 共享预留，并原子提交事件、用量和结果�
 
 `GET /api/v1/artifacts/{artifact_id}` 校验 Owner 后读取数据库描述符，再核对文件大小和 SHA-256，以编码文件名及禁止嗅探的附件形式下载。缺失、损坏、非普通文件或符号链接一律拒绝，不返回内容。SQL 发布失败可能保留未引用内容，接口不会将其暴露；不会因单次回滚误删其他产物共用的文件。存储配额、孤立文件回收、完整备份恢复、掉电持久性和 Linux 部署仍待验收。
 
-本轮证据包括真实 HTTP 服务启动/重启、持久审批、完成及认证下载，以及事务故障、旧执行者/过期执行者和并发认领。测试中的执行流程是受信确定性夹具，尚未接入持久引擎、真实模型或外部副作用执行器。真实数据库/HTTP 检查共 119 项通过，Python 包检查通过 810 项（119 项数据库用例另行运行），`npm run check` 通过。见[发布研究](../../docs/research/work-artifact-publication.md)。
+本轮证据包括真实 HTTP 服务启动/重启、持久审批、完成及认证下载，以及事务故障、旧执行者/过期执行者和并发认领。该早期产物发布检查使用受信确定性夹具，119 项数据库检查与 810 项包检查分别通过；这些是历史结果，当前 Temporal 接线及边界见下文。见[发布研究](../../docs/research/work-artifact-publication.md)。
+
+
+### 已接纳的 Worker 启动上下文
+
+`work_temporal_start.load_current_activity_task` 通过既有绑定入口核对当前 Temporal 活动所属的
+Task／Run，再持有 Task SHARE 锁读取 Bot、目标和 token 上限，并复查取消、撤权与精确 Run 状态。
+返回值是独立输入数据，不是执行凭证、预算预留或工具授权；每个效果仍须控制层准入。
+调用方只提供受信 namespace／queue／workflow 配置，不能替换 Task ID 或 SDK 活动上下文。
+
+`WorkStartPending` 仅表示交接尚未证实，不返回任务数据，也不证明已存在有效预留；有界重试
+由 Temporal 负责。公开参考流程为启动单独设置每次 10 秒、累计 120 秒上限，保留首个活动身份与
+None 返回。错误身份、权限关闭和 Task／Run 缺失直接拒绝，模型和工具重试策略不变。
+[可运行参考](../../experiments/work-journey/README.zh-CN.md) 包含 Worker 早于确认启动及等待期间取消的检查。
+该可选入口不启用通用产品 Worker、模型服务或默认后端。

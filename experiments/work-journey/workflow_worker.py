@@ -23,9 +23,17 @@ with workflow.unsafe.imports_passed_through():
     from openbot_agent_runtime.sdk_ports import PortModel, PortToolset
     from openbot_agent_runtime.temporal_agent import build_temporal_agent
     from openbot_server.work_temporal_activity import bind_current_activity
+    from openbot_server.work_temporal_start import load_current_activity_task
 
 CONFIG={'start_to_close_timeout':timedelta(seconds=10),'retry_policy':RetryPolicy(maximum_attempts=4,
     initial_interval=timedelta(seconds=1),non_retryable_error_types=['ReceiptMismatch','WorkConflict','InvalidWork'])}
+# A running Worker can consume before the dispatcher records acknowledgement. Only this
+# read-only startup activity has a longer bounded wait; effects keep their existing policy.
+START_CONFIG={'start_to_close_timeout':timedelta(seconds=10),
+    'schedule_to_close_timeout':timedelta(seconds=120),
+    'retry_policy':RetryPolicy(initial_interval=timedelta(seconds=1),
+        maximum_interval=timedelta(seconds=5),
+        non_retryable_error_types=['ReceiptMismatch','WorkConflict','InvalidWork','WorkNotFound'])}
 # Set once in ``main``; the registered activity reads it at call time so the product seam binds
 # the real connected engine client.
 _ENGINE=None
@@ -102,7 +110,15 @@ agent=build_temporal_agent(name='openbot-work-reference',deps_type=WorkDeps,
 
 
 @activity.defn
-async def bind_identity(identity:dict)->None:await control.bind_identity(identity)
+async def bind_identity(identity:dict)->None:
+    # Preserve the activity name/input/None result for recorded histories. The original
+    # attempt check also rejects a collision before waiting for acknowledgement.
+    await control.bind_identity(identity)
+    cfg=control.settings()
+    context=await load_current_activity_task(control.store(),_ENGINE,
+        expected_namespace='default',expected_queue=cfg['queue'],expected_workflow_type='WorkJourney')
+    if (context.task_id,context.run_id)!=(identity['taskId'],identity['runId']):
+        raise control.WorkConflict('runtime_deps_scope_mismatch')
 @activity.defn
 async def prepare(call:dict)->str:return await control.prepare_write(call)
 @activity.defn
@@ -188,7 +204,7 @@ class WorkJourney:
         # The first control activity checks the full immutable start input against the
         # durable reservation before this reference workflow calls model or tool ports.
         self.identity=identity
-        await workflow.execute_activity(bind_identity,identity,**CONFIG)
+        await workflow.execute_activity(bind_identity,identity,**START_CONFIG)
         deps=WorkDeps(identity['taskId'],identity['runId'])
         first=await agent.run('Correct row 7',deps=deps,usage_limits=UsageLimits(request_limit=4))
         if not isinstance(first.output,DeferredToolRequests) or len(first.output.calls)!=1:

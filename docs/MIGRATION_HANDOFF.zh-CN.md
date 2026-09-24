@@ -1,11 +1,11 @@
 # 架构迁移交接 — 2026-09-24
 
-## 当前简短交接 — Runtime 公开流程接线（父提交 `d6ee990`）
+## 当前简短交接 — Worker 启动（父提交 `1f5f98e`）
 
-- 已整合候选：公开 Task／批准／外部操作／产物参考流程现使用产品 Runtime 构造入口。Activity 工厂先核对已接纳的 Task／Run／引擎身份，再加载端口；模型和工具等待前后复核撤权。延迟写入请求不自行执行，仍须通过现有控制层批准与回执核验。已修复嵌套 schema 被调用方修改的问题；dsh 交付窄范围构造入口扩展，Codex 负责集成及独立验收。
-- 证据：48 项 Runtime 定向检查、75 项流程单元检查和真实公开入口的发布／重启场景通过。`npm run check` 通过，仓库前置检查实际执行、Turbo 项命中缓存。固定候选的完整 PostgreSQL/mTLS 流程也已通过 20 个场景，包括规定的旧版稳定运行、1.31.3→1.32.0 升级及新卷恢复后继续执行；退出码 0，结束后五份代码摘要均未变化。摘要、失败与最终日志见 `docs/research/work-temporal-journey.md` 末节。
-- 未完成：这仍是固定脚本参考流程，通用产品 Worker、逐操作身份、整个 Run 的继续／纠正和生产端口接入仍属 S3。参考流程在派发确认后启动 Worker；生产 Worker 还须处理确认前的竞争窗口。S4 真实 Linux/runsc 未验收；S5–S7 仅整合准备成果。总体仍粗估约 25%，当前 S3；未切换默认实现、未发布。
-- 下一步输入：`experiments/work-journey/{workflow_worker.py,test_runtime_worker.py,probe.py}`、Runtime `temporal_agent.py`、控制层 `work_temporal_activity.py` / `work_temporal_effect.py` 与 ADR0046。Server 持有授权、持久预算和发布权；Runtime 提案不授予权限。未知写入只允许核验，取消／撤权不能恢复授权。保留其他脏文件与未验收 TASK020；仅遇具体失败才查旧证据。
+- 已完成：控制层提供只读、基于已接纳 Activity 的 Task／Run 上下文加载器。参考 Worker 可先于派发确认启动，由引擎在独立的 120 秒上限内重试启动检查，确认前不调用模型或工具。等待期间重启、随后确认能完成一次；确认前取消在重启后仍保持关闭。首个活动名称／输入／None 返回和效果策略不变。dsh 实现加载器与单元候选；Codex 接线、补真实数据库与公开入口反例并独立验收。
+- 证据：31 项加载器单元检查、79 项参考单元检查通过；真实 PostgreSQL／HTTP 检查 302 项通过、2 个可选文件跳过。真实公开入口的提前启动、等待期间取消、五个交接拒绝场景及恢复／历史回放通过。研究记录含精确命令、源码摘要和日志。`npm run check` 通过，仓库前置检查实际执行、Turbo 项命中缓存。保留此前 `1f5f98e` 的 PostgreSQL/mTLS 相邻版本验收，未重跑未变化的部署验证，也不把旧结果冒充本候选完整验收。
+- 未完成：通用产品 Worker／模型／工具组合、稳定逐操作身份及整个 Run 的继续／纠正；参考仍使用固定脚本。S4 真实 Linux/runsc 未验收；S5–S7 仅整合准备成果。总体仍粗估约 25%，当前 S3；未切换默认实现、未发布。
+- 下一步：`work_temporal_start.py`、`work_temporal_activity.py`、`work_temporal_effect.py`、Runtime `temporal_agent.py` 与 `experiments/work-journey/workflow_worker.py`。把固定逐 Task 的 Worker 配置替换为已接纳逐 Run 工厂和持久控制层 Action。上下文不是授权；未知写入只核验，取消／撤权不恢复权限。保留其他脏文件与 TASK020，仅遇具体失败才查旧证据。
 
 ## 上一 Runtime 组合交接（父提交 `e07e858`）
 

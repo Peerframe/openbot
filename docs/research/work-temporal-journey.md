@@ -821,3 +821,97 @@ Worker. It starts only after dispatch acknowledgement; a production Worker must
 handle the acknowledgement race explicitly. General operation identities,
 whole-Run continuation/corrections and production model/tool port assembly remain
 open. No default backend switch, release or acceptance of TASK020 is implied.
+
+
+## Worker-before-acknowledgement startup (2026-09-24, implementation gate)
+
+Parent `1f5f98e`. The accepted reference only started Workers after dispatcher
+acknowledgement; a continuously running product Worker can arrive earlier. Reuse
+the existing read-only `bind_current_activity` gate and PostgreSQL Task SHARE lock
+to load bounded Task/Run input. Convert only `handoff_not_acknowledged` to an
+explicit pending condition; do not relax acceptance or grant effects. Recheck
+active Task and Run while loading the persisted objective. No caller-supplied
+routing identity, environment reads, claims, budget writes or new scheduler.
+
+Retry remains a bounded normal Temporal Activity RetryPolicy. Reviewed the
+[official Python error handling documentation](https://docs.temporal.io/develop/python/best-practices/error-handling)
+and [SDK release 1.33.0 / ab52fdd](https://github.com/temporalio/sdk-python/releases/tag/1.33.0),
+including ApplicationError retry classification and schedule-to-close bounds.
+Existing reuse entries are Public work recovery journey and Runtime port durability
+boundary in `docs/OPEN_SOURCE_REUSE.md`; pinned SDK remains 1.33.0 (MIT), no new
+package or copied source. Search reviewed upstream issues #1203 (activity info
+retry metadata) and #1350 (ProcessPool retry serialization); this async activity
+neither reads info.retry_policy nor uses ProcessPoolExecutor. Local-activity replay
+issue #1881 is outside this path: startup uses a normal remote Activity. Keep the
+existing initial activity name/order and return contract for old-history replay.
+
+Acceptance: cheap local refusals, public HTTP task with Worker running before
+handoff acknowledgement, zero model/tool/effect calls while pending, restart during
+pending then acknowledge and finish exactly once, cancel/revoke before acknowledgement,
+and existing public entry/regressions. Runtime and effect contracts are unchanged;
+do not repeat the expensive engine-upgrade lane unless input changes affect its
+scope or new evidence requires it. Generic model/tool composition is still open.
+
+
+### Startup integration acceptance
+
+dsh task S3-WORK-START delivered two new files at baseline `1f5f98e` and exited 0;
+its own tests were explicitly not run. Codex added the actual startup integration,
+real PostgreSQL cancellation/revocation counterexamples, and reference entry cases.
+Independent preflight review accepted the final scope before engine runs. Pending
+means unproven: even a missing/wrong reservation may have that classification until
+acknowledgement. It yields no context or authority, and full binding must succeed
+later. The reference retains its earlier immutable-attempt check before the loader.
+
+Actual verification, in order (all commands exit 0):
+
+- Pinned experiment Python `-B -m pytest -q -p no:cacheprovider
+  apps/server-python/tests/test_work_temporal_start.py`: 31 passes, log
+  `/private/tmp/openbot-s3-work-start-unit-20260924.log`.
+- Pinned Python `-B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v`:
+  79 passes, `/private/tmp/openbot-s3-work-start-journey-unit-20260924.log`.
+- Pinned Python `-u -B experiments/work-journey/probe.py --temporal-cli <CLI1.9.1>
+  --only-case worker-before-ack`: actual engine pending activity reports
+  WorkStartPending (attempt 2), with zero effect/model/tool attempts; restart then
+  acknowledgement completes with one write, one lookup and durable cost 11.
+  `/private/tmp/openbot-s3-work-start-public-entry-20260924.log`.
+- `node scripts/test-python-control.mjs`: 302 actual passes, 2 optional files skipped;
+  all new database counterexamples executed. Existing Starlette deprecation warning,
+  no new failure. `/private/tmp/openbot-s3-work-start-postgres-20260924.log`.
+- Same public probe `--only-case cancel-before-ack`: observes actual pending failure,
+  cancels through the public API, records late acknowledgement, restarts Worker;
+  product stays cancelled, engine fails startup, no Action/artifact/budget change
+  or effect call. `/private/tmp/openbot-s3-work-start-cancel-entry-20260924.log`.
+- Same public probe `--only-handoff`: five real-engine rejection cases pass; missing
+  original history remains unknown, scope/type/queue/attempt mismatches perform zero
+  operations. `/private/tmp/openbot-s3-work-start-handoff-regression-20260924.log`.
+- Same public probe `--only-case recover`: approval/restart, unknown write recovery,
+  current-history replay and incompatible-history rejection pass; one write and
+  one lookup, no repeated publication. `/private/tmp/openbot-s3-work-start-recovery-regression-20260924.log`.
+  Expected incompatible replay warnings remain in the log. The SDK also emitted an
+  annotated_types late-import warning; this run's current replay succeeded.
+
+Each command tested this stable six-file candidate (no edits during verification):
+
+```text
+3dd66e81bfc5fe37d7e2a4234f66646a509329713210f04a0ac5ccfbc44e19de  apps/server-python/src/openbot_server/work_temporal_start.py
+f3c26b3ffd1886e5bb868ca884a53aa5c0a08cc2c86145a027d5ee8ef8251c0b  apps/server-python/tests/test_work_temporal_start.py
+04cd411c1e5d7c42cf2ebf2c9b9f040e4f677f306464ea3e2ec1a2691d0270fa  apps/server-python/tests/test_work_engine_binding_postgres.py
+dff1911baa7166eecbd74b2ca5c1648392eed73159f327d5042141eca7e08e3b  experiments/work-journey/workflow_worker.py
+9ae3db4009ec7301502230d43d984f2d3fc1441f4405d749479a8b8f981ca7a9  experiments/work-journey/probe.py
+db243517fa6b27feca8b30b401f26f0fad94120aa8a91cafde6f2598e4b25620  experiments/work-journey/test_runtime_worker.py
+```
+
+No rerun of unchanged engine deployment/mTLS/adjacent-version qualification: that
+accepted evidence still belongs to `1f5f98e`, not this candidate. The targeted
+current-tree runs above exercise its changed startup and downstream recovery.
+No live provider, production dataset, Linux/runsc or default-backend activation.
+
+
+Integrated `npm run check` exited 0, log
+`/private/tmp/openbot-s3-work-start-check-20260924.log`. Repository prerequisites
+executed; both 31-task Turbo lanes and the 18-task build lane were cache hits,
+not fresh execution of those cached checks. New Python and public-entry evidence
+is the separately executed verification above. The six code hashes were verified
+unchanged before this integrated check. Unrelated model-service dependencies and
+the unaccepted Linux/TASK020 candidate remain outside this commit.

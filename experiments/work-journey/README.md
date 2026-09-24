@@ -12,6 +12,12 @@ is activated and the standalone stdin/stdout profile remains separate. This is s
 scripted task, not a general product Worker or real provider integration. See
 [research](../../docs/research/work-temporal-journey.md).
 
+The initial read-only activity now waits for an acknowledged handoff even when the Worker is
+already running. It uses the product startup loader, an independent 120-second total retry bound,
+and terminal identity/authority refusals. `--only-case worker-before-ack` observes a real pending
+failure with zero port calls, restarts the Worker and completes after acknowledgement;
+`--only-case cancel-before-ack` confirms that a late acknowledgement cannot reopen cancellation.
+
 ## Run
 
 Use POSIX, Node22+, Docker and Python3.12. Install the existing repository npm dependencies,

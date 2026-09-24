@@ -9,6 +9,10 @@
 原 stdin/stdout 进程协议保持独立。这仍是固定脚本任务，不是通用产品 Worker 或真实模型接入。
 见[研究](../../docs/research/work-temporal-journey.md)。
 
+首个只读活动现通过产品启动加载器等待交接确认，支持 Worker 已先运行；独立重试累计上限
+为 120 秒，身份或权限拒绝不会重试。`--only-case worker-before-ack` 要求观察真实 pending
+失败和零端口调用，重启后确认并完成；`--only-case cancel-before-ack` 验证迟到确认不能撤销取消。
+
 ## 运行
 
 需要 POSIX、Node22+、Docker、Python3.12。安装仓库 npm 依赖，按照 Python 控制层 README 准备其环境，

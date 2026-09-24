@@ -300,7 +300,25 @@ rather than risking deletion of content referenced elsewhere. Quotas, orphan col
 backup/restore, power-loss/storage durability and Linux deployment qualification remain open.
 
 New evidence includes real HTTP startup/restart, persisted approval, publication and authenticated
-file download, plus transaction failures, superseded/expired attempts and concurrent claims. The
-workflow in that test is a trusted deterministic fixture; no durable engine, real model or external
-effect executor is integrated yet. The owned PostgreSQL/HTTP gate passes 119 cases; package checks
-pass 810 cases, with those 119 database cases run separately. `npm run check` also passes. See [publication research](../../docs/research/work-artifact-publication.md).
+file download, plus transaction failures, superseded/expired attempts and concurrent claims. That
+earlier publication-only gate used a trusted deterministic fixture and passed 119 owned database
+cases separately from 810 package checks. These are historical results; current Temporal
+integration and its limits are documented below. See [publication research](../../docs/research/work-artifact-publication.md).
+
+
+### Accepted Worker startup context
+
+`work_temporal_start.load_current_activity_task` reads the current Temporal activity's accepted
+Task/Run through the existing binding gate, then reloads its Bot, objective and token limit under
+the Task SHARE lock. It rechecks cancellation/revocation and exact Run state. The detached context
+is input data, not a fence, budget reservation or tool grant; each effect still needs control
+admission. Callers supply trusted namespace/queue/workflow settings, never a replacement Task ID
+or SDK activity context.
+
+`WorkStartPending` means the handoff remains unproven and returns no Task data; it does not prove
+that a valid reservation exists. Temporal owns any bounded retry. The public journey reference
+uses a separate startup policy (10-second attempts, 120-second total bound), preserving the
+initial activity's identity and None result. Wrong start identity, closed authority and missing
+Task/Run are terminal; model/tool retry policies do not change. See the [runnable reference](../../experiments/work-journey/README.md)
+for Worker-before-acknowledgement and pending-cancellation checks. This opt-in boundary does not
+activate a general product Worker, provider or default backend.

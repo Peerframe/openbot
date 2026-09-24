@@ -65,5 +65,41 @@ class RuntimeWorkerBindingTests(unittest.IsolatedAsyncioTestCase):
         self.perform.assert_not_awaited()
 
 
+class RuntimeStartupTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.identity = {'taskId': 'task-owned', 'runId': 'run-owned', 'attemptId': 'a' * 32}
+        self.original = self.enterContext(patch.object(worker.control, 'bind_identity', new=AsyncMock()))
+        self.context = SimpleNamespace(task_id='task-owned', run_id='run-owned')
+        self.load = self.enterContext(patch.object(worker, 'load_current_activity_task',
+                                                  new=AsyncMock(return_value=self.context)))
+        self.enterContext(patch.object(worker.control, 'settings', return_value={'queue': 'owned-queue'}))
+        self.store = object()
+        self.enterContext(patch.object(worker.control, 'store', return_value=self.store))
+
+    async def test_startup_retains_original_check_and_none_history_result(self):
+        self.assertIsNone(await worker.bind_identity(self.identity))
+        self.original.assert_awaited_once_with(self.identity)
+        self.load.assert_awaited_once_with(self.store, worker._ENGINE,
+            expected_namespace='default', expected_queue='owned-queue', expected_workflow_type='WorkJourney')
+
+    async def test_wrong_initial_attempt_never_loads_task_context(self):
+        self.original.side_effect = worker.control.ReceiptMismatch('Wrong immutable attempt')
+        with self.assertRaises(worker.control.ReceiptMismatch):
+            await worker.bind_identity(self.identity)
+        self.load.assert_not_awaited()
+
+    async def test_pending_is_exposed_to_engine_without_in_activity_retry(self):
+        from openbot_server.work_temporal_start import WorkStartPending
+        self.load.side_effect = WorkStartPending()
+        with self.assertRaises(WorkStartPending):
+            await worker.bind_identity(self.identity)
+        self.load.assert_awaited_once()
+
+    async def test_loaded_context_cannot_be_substituted_for_another_run(self):
+        self.load.return_value = SimpleNamespace(task_id='task-owned', run_id='other-run')
+        with self.assertRaisesRegex(worker.control.WorkConflict, 'runtime_deps_scope_mismatch'):
+            await worker.bind_identity(self.identity)
+
+
 if __name__ == '__main__':
     unittest.main()

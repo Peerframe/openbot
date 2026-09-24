@@ -384,3 +384,53 @@ def test_cancellation_and_revocation_close_an_acknowledged_activity(fixture):
             await assert_accepted_workflow(store, identity, activity, **settings())
         assert recorded(fixture, task) == ('acknowledged', accepted, accepted, 5)
     asyncio.run(check())
+
+
+@pytest.mark.parametrize('closing', ['cancel', 'revoke'])
+def test_start_context_rechecks_actual_task_after_binding(fixture, monkeypatch, closing):
+    from openbot_server import work_temporal_start as startup
+    async def check():
+        store = PostgresWorkStore(fixture['dsn'])
+        task = await new(fixture, store)
+        task_id, run_id = task['id'], task['runs'][0]['id']
+        attempt = await acknowledge(fixture, store, task, reference(run_id))
+        async def bound(_store, _client, **routing):
+            accepted = await assert_accepted_workflow(store,
+                {'taskId': task_id, 'runId': run_id}, facts(task_id, run_id, attempt), **routing)
+            await getattr(store, closing)(fixture['token'], task_id)
+            return accepted
+        monkeypatch.setattr(startup, 'bind_current_activity', bound)
+        with pytest.raises(WorkConflict, match='admission_closed'):
+            await startup.load_current_activity_task(store, object(), **settings())
+        final = await store.snapshot(fixture['token'], task_id)
+        assert final['actions'] == [] and final['artifacts'] == []
+        assert final['usage'] == task['usage']
+    asyncio.run(check())
+
+
+def test_start_context_pending_is_unproven_then_requires_full_binding(fixture, monkeypatch):
+    from openbot_server import work_temporal_start as startup
+    async def check():
+        store = PostgresWorkStore(fixture['dsn'])
+        task = await new(fixture, store)
+        task_id, run_id = task['id'], task['runs'][0]['id']
+        evidence = facts(task_id, run_id, OTHER_ATTEMPT_ID)
+        async def bound(_store, _client, **routing):
+            return await assert_accepted_workflow(store,
+                {'taskId': task_id, 'runId': run_id}, evidence, **routing)
+        monkeypatch.setattr(startup, 'bind_current_activity', bound)
+        # No reservation and a wrong attempt can still be pending: no context/grant escapes.
+        before = recorded(fixture, task)
+        with pytest.raises(startup.WorkStartPending):
+            await startup.load_current_activity_task(store, object(), **settings())
+        assert recorded(fixture, task) == before
+        attempt = await acknowledge(fixture, store, task, reference(run_id))
+        with pytest.raises(WorkConflict, match='handoff_attempt_changed'):
+            await startup.load_current_activity_task(store, object(), **settings())
+        evidence = facts(task_id, run_id, attempt)
+        before = await store.snapshot(fixture['token'], task_id)
+        context = await startup.load_current_activity_task(store, object(), **settings())
+        assert (context.task_id, context.run_id, context.bot_id, context.objective, context.token_limit) == (
+            task_id, run_id, task['botId'], task['objective'], task['usage']['tokenLimit'])
+        assert await store.snapshot(fixture['token'], task_id) == before
+    asyncio.run(check())

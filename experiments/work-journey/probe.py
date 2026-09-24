@@ -184,6 +184,18 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
             await asyncio.sleep(.05)
         raise AssertionError('Public approval and committed workflow wait not observed')
 
+    async def pending_start(handle):
+        # A scheduled activity alone could be an idle Worker. Require the SDK's actual
+        # retry failure, proving that startup reached the control gate and was refused.
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline:
+            description = await handle.describe()
+            for item in description.raw_description.pending_activities:
+                if item.last_failure.application_failure_info.type == 'WorkStartPending':
+                    return item.attempt
+            await asyncio.sleep(.1)
+        raise AssertionError('Worker did not report the unacknowledged startup refusal')
+
     def approve(snap):
         action = next(a for a in snap['actions'] if a['decision'] == 'pending')
         path = '/api/v1/actions/' + action['id'] + '/decision'
@@ -252,7 +264,7 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
                     assert held_state['status'] == 'completed'
                 held_upgrades.append({'stage': stage, 'cfg': held_cfg, 'state': held_state,
                     'effects': counts(held_task), 'engineRunId': (await held_handle.describe()).run_id})
-        scenarios = () if only_handoff else (only_case,) if only_case else ('recover', 'cancel-before-write', 'cancel-unknown', 'corrupt-receipt', 'malformed-json', 'repair-timeout', 'automatic-repair-race', 'repair-cancelled', 'repair-engine-closed', 'publication-ack')
+        scenarios = () if only_handoff else (only_case,) if only_case else ('recover', 'cancel-before-write', 'cancel-unknown', 'corrupt-receipt', 'malformed-json', 'repair-timeout', 'automatic-repair-race', 'repair-cancelled', 'repair-engine-closed', 'publication-ack', 'worker-before-ack', 'cancel-before-ack')
         for scenario in scenarios:
             request = {'botId': bot['id'], 'objective': 'Correct row 7 in the owned CSV',
                 'tokenLimit': 20, 'requestKey': secrets.token_hex(12)}
@@ -261,6 +273,43 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
             cfg = {'dsn': dsn, 'artifact_root': str(artifact_root), 'task_id': task_id, 'run_id': run_id,
                 'temporal_address': server.address, 'queue': 'work-' + run_id}
             handle = client.get_workflow_handle('openbot-work-v1-' + run_id)
+            early_worker = None
+            if scenario in ('worker-before-ack', 'cancel-before-ack'):
+                early_worker = launch('workflow_worker.py', cfg)
+                held = launch('dispatch.py', cfg, 'after-enqueue')
+                held.wait('after-enqueue')
+                pending_attempt = await pending_start(handle)
+                assert handoff(task_id) == ('pending', None)
+                observed = api.snapshot(task_id)
+                assert observed['actions'] == [] and observed['artifacts'] == []
+                assert observed['usage'] == initial['usage']
+                assert counts(task_id) == {'attempts': 0, 'writes': 0, 'lookups': 0}
+                early_worker.kill()
+                if scenario == 'cancel-before-ack':
+                    api.cancel(task_id)
+                (held.directory / 'release').touch()
+                held.done()
+                early_worker = launch('workflow_worker.py', cfg)
+                print(json.dumps({'case': scenario + '-pending-gate',
+                    'pendingFailure': 'WorkStartPending', 'activityAttempt': pending_attempt,
+                    'effectAttemptsBeforeAck': 0, 'workerRestarted': True}), flush=True)
+                if scenario == 'cancel-before-ack':
+                    try:
+                        await asyncio.wait_for(handle.result(), 30)
+                    except WorkflowFailureError:
+                        assert (await handle.describe()).status == WorkflowExecutionStatus.FAILED
+                    else:
+                        raise AssertionError('Cancelled pending task entered Runtime')
+                    final = api.snapshot(task_id)
+                    assert final['status'] == 'cancelled' and not final['authorityActive']
+                    assert final['actions'] == [] and final['artifacts'] == []
+                    assert final['usage'] == initial['usage']
+                    assert counts(task_id) == {'attempts': 0, 'writes': 0, 'lookups': 0}
+                    early_worker.kill()
+                    record = {'case': scenario, 'status': 'cancelled', 'attempts': 0,
+                              'engineStatus': 'FAILED', 'acknowledgementGrantedNoAuthority': True}
+                    records.append(record); print(json.dumps(record), flush=True)
+                    continue
             if scenario == 'recover':
                 before = launch('dispatch.py', cfg, 'before-enqueue')
                 before.wait('before-enqueue'); before.kill()
@@ -274,7 +323,7 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
             dispatch = launch('dispatch.py', cfg); dispatch.done()
             assert handoff(task_id) == ('acknowledged', 'temporal:default:openbot-work-v1-' + run_id)
             assert admitted_first_run(task_id) == (await handle.describe()).run_id
-            first = launch('workflow_worker.py', cfg)
+            first = early_worker or launch('workflow_worker.py', cfg)
             snap = await waiting(handle, task_id)
             first.kill()
             assert counts(task_id) == {'attempts': 3, 'writes': 0, 'lookups': 0}
@@ -652,7 +701,7 @@ def main():
     parser.add_argument('--engine', choices=('development', 'postgres', 'postgres-mtls'), default='development')
     parser.add_argument('--upgrade-archive', type=Path, help='Verified official 1.31.3 archive; requires postgres-mtls')
     parser.add_argument('--only-handoff', action='store_true', help='Run only engine-identity rejection regressions')
-    parser.add_argument('--only-case', choices=('recover','cancel-before-write','cancel-unknown','corrupt-receipt','malformed-json','repair-timeout','automatic-repair-race','repair-cancelled','repair-engine-closed','publication-ack'), help='Run one public-work scenario')
+    parser.add_argument('--only-case', choices=('recover','cancel-before-write','cancel-unknown','corrupt-receipt','malformed-json','repair-timeout','automatic-repair-race','repair-cancelled','repair-engine-closed','publication-ack','worker-before-ack','cancel-before-ack'), help='Run one public-work scenario')
     args = parser.parse_args()
     assert sys.platform != 'win32', 'POSIX process signals required'
     assert importlib.metadata.version('temporalio') == '1.33.0'
