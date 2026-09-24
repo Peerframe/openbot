@@ -110,3 +110,29 @@ npm run check
 - No task-list route: returning after page reload requires a saved Task ID. An ambiguous create retains its exact request/body only for the lifetime of the mounted screen (including shared-sidebar navigation); do not close/reload it before using the explicit same-request retry. No objectives or credentials are added to browser persistent storage.
 - Desktop proof is the shared renderer's simulated bridge tests and successful Desktop build. A native installed Desktop window against Python was not exercised; no native parity/support claim is made.
 - The narrow schema adapter is handwritten against the pinned public models because this baseline has no client generator. Future contract changes must update it and rerun real HTTP/entry checks. Server missing `/workspace`, task listing and cancel delivery receipt were reported to the coordinator; this patch adds none of them.
+
+## Independent review corrections (parent `0a9fc21`, 2026-09-24)
+
+The coordinator independently reproduced two contract failures in the initial candidate. Retained
+component regressions reproduce both before the fix (`/private/tmp/s2-rework-red.log`, 2 failures):
+a pre-offline GET could return later and mark the old observation fresh, and a 7,000-character
+Chinese objective exceeded the HTTP byte limit but a definite 413 kept the creation form locked.
+
+Before the correction, rechecked `http_input.read_json` and `work_routes.create` at `0a9fc21`:
+the 20,000-byte 413 occurs before calling the writer. Review reuses the pinned React Effect/abort
+candidate above (no dependency, source copy or changed Server contract), the [HTML browser state
+contract](https://html.spec.whatwg.org/multipage/system-state.html#browser-state), and
+[RFC 9110 section 15.5.14](https://www.rfc-editor.org/rfc/rfc9110.html#name-413-content-too-large).
+The correction invalidates observations on offline and requires a later successful online read
+before restoring freshness. An explicit 413 clears the rejected creation attempt and lets the
+Owner shorten the input; network errors/timeouts still retain the original key/body for explicit
+retry. No generic rule treats every 4xx as safe to resubmit.
+
+Correction verification (supersedes the earlier candidate for these two boundaries):
+
+- Retained focused command: `npx vitest run apps/web/src/work-api.test.ts apps/web/src/components/WorkTasksScreen.test.tsx apps/web/src/App.navigation.test.tsx --maxWorkers=2`; 32 passed. The offline case resolves an old GET after offline, checks unchanged revision/stale/disabled cancellation, blocks offline focus/poll reads, then waits for a new online response before freshness. The 413 case checks >20,000 encoded bytes with <16,384 characters, editable input and a different key on corrected submission. Network failure, `TimeoutError`, HTTP 408 and 503 all preserve the exact original body/key.
+- `npm run check` exit 0; Web 63 files / 375 tests. Turbo typecheck 31/31 (28 cached), test 31/31 (29 cached), build 18/18 (17 cached). Log: `/private/tmp/s2-rework-check.log`. Focused log: `/private/tmp/s2-rework-focused.log`. No historical Worker/Temporal acceptance rerun.
+- Updated owned HTTP fixture passed using UTF-8 JSON with 7,000 Chinese characters: HTTP 413, then direct fixture-database assertion of zero matching `work_tasks`. Server byte limit and production code unchanged. Run the same probe command above; output now includes 413.
+- Actual Chrome at the new fixture's `http://127.0.0.1:58453/#/tasks`: submitted 7,000 Chinese characters, saw the explicit content-too-large rejection, edited the same textarea to `S2 返工：413 后缩短正文再次提交。`, and submitted successfully. Server returned Task `efc5f740-3020-4b37-b440-84ab3b62972e`, revision 1 / queued. Native accessibility editing and final screenshot confirm the user could recover without reload. A browser locator helper initially reported `isEnabled: false` and then timed out; a fresh native accessibility tree showed the textarea settable, and actual edit/submission succeeded. No product workaround was needed for that tool result.
+- The browser loaded `index-9HCSInIO.js` (SHA-256 `0aa247677df8c23284e9bc2eae42450b7ed7ba59a2f565f81321c99166e6fc80`); `WorkTasksScreen.tsx` SHA-256 `25397d5a212391741101899b89dc0d0474e929a53aec0b565e53829b3d1d7fcb`. Final browser console error/warning sample was empty. Browser race ordering is deterministic simulated component evidence, not a newly claimed real network fault injection. The disposable service/container were cleaned after the actual 413 entry check.
+- Remaining S2 scope and native Desktop limitations above are unchanged. This correction is a new candidate for independent acceptance, not acceptance of the initial candidate.

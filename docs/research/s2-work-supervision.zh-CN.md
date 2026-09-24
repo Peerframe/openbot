@@ -58,3 +58,20 @@ npm run check
 - 没有任务列表接口，刷新后需用保留的 Task ID 读取。创建响应不明确时，原请求及请求体仅在屏幕挂载期间保留（包含共用侧栏往返），应先显式重试确认，再关闭或刷新页面。不把任务目标或凭证写入持久浏览器存储。
 - Desktop 证据为模拟 bridge 的共用渲染器测试和 Desktop 构建；未用已安装原生 Desktop 连接 Python 验证，不作原生功能对等或平台支持声明。
 - 客户端 schema 手工对应固定 Python 模型；接口变动需同步并重跑真实入口。缺少 `/workspace`、任务列表和取消送达回执已报告主控，本次不新增这些接口。
+
+## 独立验收返工（父提交 `0a9fc21`，2026-09-24）
+
+主控独立复现两个契约问题。先加入保留回归，修复前 2/2 失败（`/private/tmp/s2-rework-red.log`）：offline 前的在途 GET 晚到后会恢复 fresh；7000 个中文字符虽未达字符上限，却超过 HTTP 字节上限，收到明确 413 后表单仍锁住。
+
+修复前复查该提交的 `http_input.read_json` 与 `work_routes.create`：20,000 字节上限的 413 在 writer 之前返回。复用上述固定 React/AbortController 方案，并核对 [HTML 在线状态规范](https://html.spec.whatwg.org/multipage/system-state.html#browser-state) 和 [RFC 9110 的 413 语义](https://www.rfc-editor.org/rfc/rfc9110.html#name-413-content-too-large)。无新增依赖、源码复制或 Server 契约变更。
+
+修复使 offline 中止在途 HTTP 请求、保留旧快照并禁止离线轮询/操作。中止传输不撤销服务端已提交的写入；重连事件仅启动新读取，最新请求成功后才恢复同步。明确 413 清除被拒绝的创建尝试，允许缩短后用新键提交；网络失败、超时等仍保留原请求体和键，不笼统把所有 4xx 都当成可改键重提。
+
+验证结果（这两个边界以本段为准，前文为上一候选的证据）：
+
+- 相同 focused 命令 32 项通过，覆盖 offline→旧 GET 晚到→保持旧版本/stale/取消禁用→离线 focus/轮询不读取→新 online 读取成功后恢复；413 的多字节正文可修改且改用新键；网络错误、TimeoutError、HTTP 408/503 仍保留原请求体和键。
+- `npm run check` 退出 0；Web 63 文件、375 测试通过。Turbo 类型检查 31/31（28 缓存），测试 31/31（29 缓存），构建 18/18（17 缓存）。日志 `/private/tmp/s2-rework-check.log`、`/private/tmp/s2-rework-focused.log`；没有重跑历史 Worker/Temporal 长流程。
+- 更新后的独立 HTTP/PG 夹具用 UTF-8 JSON 提交 7000 个中文字符，实际返回 413，并直接验证夹具数据库中对应任务为零；未改 Server 字节限制。沿用前文 probe 命令即可复验，结果包含 413。
+- 实际 Chrome 在 `http://127.0.0.1:58453/#/tasks` 提交 7000 个中文字符后看到“请求内容过大”；在同一 textarea 改为 `S2 返工：413 后缩短正文再次提交。` 后成功创建 `efc5f740-3020-4b37-b440-84ab3b62972e`，revision 1 / queued，无需刷新。一个浏览器 locator 辅助查询先返回 `isEnabled: false`、随后超时；重新读取原生可访问性树显示可编辑，实际编辑/提交及截图确认恢复成功，不需要产品改动来绕过工具结果。
+- 被测构建 `index-9HCSInIO.js`，SHA-256 `0aa247677df8c23284e9bc2eae42450b7ed7ba59a2f565f81321c99166e6fc80`；`WorkTasksScreen.tsx` SHA-256 `25397d5a212391741101899b89dc0d0474e929a53aec0b565e53829b3d1d7fcb`。最终控制台错误/警告样本为空。offline 竞态顺序由组件模拟回归确定验证，不假称新增真实网络故障注入。临时服务及容器已清理。
+- 原剩余范围与原生 Desktop 限制不变；这是待独立验收的新候选。

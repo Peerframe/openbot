@@ -43,12 +43,12 @@ async function open(id = "task-one") {
       .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
   );
 }
-async function create() {
+async function create(objective = "Review the document") {
   await interact(() => {
     const textarea = ui.container.querySelector("textarea")!;
     Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(
       textarea,
-      "Review the document",
+      objective,
     );
     textarea.dispatchEvent(new Event("input", { bubbles: true }));
   });
@@ -101,18 +101,26 @@ it("creates, observes and cancels using the returned task identity without optim
   expect(ui.container.textContent).toContain("运行中 (running)");
   expect(ui.container.textContent).toContain("未提供独立送达回执");
 });
-it("retries an ambiguous creation only on click with exactly the original body", async () => {
-  vi.mocked(api.createWorkTask).mockRejectedValueOnce(new TypeError("offline"));
-  await mount();
-  await create();
-  const first = vi.mocked(api.createWorkTask).mock.calls[0]![0];
-  await interact(() => window.dispatchEvent(new Event("online")));
-  expect(api.createWorkTask).toHaveBeenCalledTimes(1);
-  expect(ui.container.querySelector("fieldset")?.disabled).toBe(true);
-  await interact(() => button("重试同一创建请求").click());
-  expect(vi.mocked(api.createWorkTask).mock.calls[1]![0]).toEqual(first);
-  expect(ui.container.textContent).toContain("Server 已持久化任务");
-});
+it.each([
+  new TypeError("offline"),
+  new DOMException("deadline", "TimeoutError"),
+  new ApiError("request timed out", 408),
+  new ApiError("unavailable", 503),
+])(
+  "retries an ambiguous creation only on click with exactly the original body: %s",
+  async (cause) => {
+    vi.mocked(api.createWorkTask).mockRejectedValueOnce(cause);
+    await mount();
+    await create();
+    const first = vi.mocked(api.createWorkTask).mock.calls[0]![0];
+    await interact(() => window.dispatchEvent(new Event("online")));
+    expect(api.createWorkTask).toHaveBeenCalledTimes(1);
+    expect(ui.container.querySelector("fieldset")?.disabled).toBe(true);
+    await interact(() => button("重试同一创建请求").click());
+    expect(vi.mocked(api.createWorkTask).mock.calls[1]![0]).toEqual(first);
+    expect(ui.container.textContent).toContain("Server 已持久化任务");
+  },
+);
 it("allows correcting an explicitly rejected creation", async () => {
   vi.mocked(api.createWorkTask).mockRejectedValueOnce(new ApiError("invalid", 422));
   await mount();
@@ -250,4 +258,52 @@ it("lets a slow read finish instead of aborting it on every poll tick", async ()
   expect(vi.mocked(api.getWorkTask).mock.calls[0]![1].aborted).toBe(false);
   await interact(() => pending.resolve(workFixture()));
   expect(ui.container.textContent).toContain("排队中 (queued)");
+});
+
+it("invalidates a pending read on offline and waits for a new online response", async () => {
+  vi.useFakeTimers();
+  await mount();
+  await open();
+  const old = deferred<api.WorkSnapshot>();
+  vi.mocked(api.getWorkTask).mockReturnValueOnce(old.promise);
+  await interact(() => window.dispatchEvent(new Event("focus")));
+  const oldSignal = vi.mocked(api.getWorkTask).mock.calls.at(-1)![1];
+  await interact(() => window.dispatchEvent(new Event("offline")));
+  await interact(() => old.resolve(workFixture({ revision: 2 })));
+  expect(ui.container.textContent).toContain("状态待同步");
+  expect(ui.container.textContent).toContain("快照版本 1");
+  expect(button("取消任务").disabled).toBe(true);
+  expect(oldSignal.aborted).toBe(true);
+  const calls = vi.mocked(api.getWorkTask).mock.calls.length;
+  await interact(() => {
+    window.dispatchEvent(new Event("focus"));
+    vi.advanceTimersByTime(5000);
+  });
+  expect(api.getWorkTask).toHaveBeenCalledTimes(calls);
+  const latest = deferred<api.WorkSnapshot>();
+  vi.mocked(api.getWorkTask).mockReturnValueOnce(latest.promise);
+  await interact(() => window.dispatchEvent(new Event("online")));
+  expect(ui.container.textContent).toContain("状态待同步");
+  expect(button("取消任务").disabled).toBe(true);
+  await interact(() => latest.resolve(workFixture({ revision: 3 })));
+  expect(ui.container.textContent).toContain("已同步 Server 快照");
+  expect(ui.container.textContent).toContain("快照版本 3");
+  expect(button("取消任务").disabled).toBe(false);
+  expect(api.cancelWorkTask).not.toHaveBeenCalled();
+});
+
+it("allows correcting a multibyte request rejected with 413 using a new request key", async () => {
+  vi.mocked(api.createWorkTask).mockRejectedValueOnce(new ApiError("too large", 413));
+  await mount();
+  await create("中".repeat(7000));
+  const rejected = vi.mocked(api.createWorkTask).mock.calls[0]![0];
+  expect(rejected.objective.length).toBeLessThan(16384);
+  expect(new Blob([JSON.stringify(rejected)]).size).toBeGreaterThan(20000);
+  expect(ui.container.querySelector("fieldset")?.disabled).toBe(false);
+  expect(ui.container.textContent).not.toContain("创建是否已持久化尚未确认");
+  await create("缩短后的任务");
+  const corrected = vi.mocked(api.createWorkTask).mock.calls[1]![0];
+  expect(corrected.objective).toBe("缩短后的任务");
+  expect(corrected.requestKey).not.toBe(rejected.requestKey);
+  expect(ui.container.textContent).toContain("Server 已持久化任务");
 });

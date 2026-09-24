@@ -25,6 +25,8 @@ function failure(cause: unknown) {
     if (cause.status === 403) return "Server 拒绝了此请求，请检查权限与连接来源。";
     if ([404, 405].includes(cause.status)) return "未找到任务或当前 Server 未启用任务接口。";
     if (cause.status === 409) return "请求与 Server 当前状态冲突，请刷新任务。";
+    if (cause.status === 413)
+      return "请求内容过大，Server 未接受此请求。请缩短任务目标后重新提交。";
     if (cause.status === 422) return "Server 未接受请求参数，请检查输入。";
   }
   return "未能确认请求结果，请检查连接后刷新。";
@@ -50,6 +52,7 @@ export function WorkTasksScreen({
   const [attempt, setAttempt] = useState<CreateWorkInput>();
   const [created, setCreated] = useState(false);
   const request = useRef<AbortController | null>(null);
+  const online = useRef(navigator.onLine);
   const mutating = useRef(false);
   const current = useRef<WorkSnapshot | undefined>(undefined);
 
@@ -63,7 +66,8 @@ export function WorkTasksScreen({
 
   const refresh = useCallback(
     async (replacePending = true) => {
-      if (!taskId || mutating.current || (!replacePending && request.current)) return;
+      if (!online.current || !taskId || mutating.current || (!replacePending && request.current))
+        return;
       request.current?.abort();
       const controller = new AbortController();
       request.current = controller;
@@ -89,13 +93,27 @@ export function WorkTasksScreen({
 
   useEffect(() => {
     if (!active) return;
+    online.current = navigator.onLine;
+    if (!online.current) setFresh(false);
     void refresh();
-    const reconnect = () => {
+    const onFocus = () => {
       if (!document.hidden) void refresh();
     };
-    const disconnected = () => setFresh(false);
+    const reconnect = () => {
+      online.current = true;
+      onFocus();
+    };
+    const disconnected = () => {
+      online.current = false;
+      // Invalidate responses already in flight. Aborting transport does not undo a Server
+      // mutation; an ambiguous creation retains its original body/key for explicit retry.
+      request.current?.abort();
+      request.current = null;
+      setBusy(false);
+      setFresh(false);
+    };
     window.addEventListener("online", reconnect);
-    window.addEventListener("focus", reconnect);
+    window.addEventListener("focus", onFocus);
     window.addEventListener("offline", disconnected);
     const timer = window.setInterval(() => {
       if (!document.hidden) void refresh(false);
@@ -103,7 +121,7 @@ export function WorkTasksScreen({
     return () => {
       window.clearInterval(timer);
       window.removeEventListener("online", reconnect);
-      window.removeEventListener("focus", reconnect);
+      window.removeEventListener("focus", onFocus);
       window.removeEventListener("offline", disconnected);
       // Stopping observation never sends a cancellation command.
       if (!mutating.current) {
@@ -116,6 +134,10 @@ export function WorkTasksScreen({
   useEffect(() => () => request.current?.abort(), []);
 
   function begin() {
+    if (!online.current) {
+      setError("网络已断开，请恢复连接后重试。");
+      return;
+    }
     if (mutating.current) return;
     mutating.current = true;
     request.current?.abort();
@@ -163,7 +185,7 @@ export function WorkTasksScreen({
       setNotice("Server 已持久化任务；执行状态以快照为准。");
     } catch (cause) {
       if (!controller.signal.aborted) {
-        if (cause instanceof ApiError && [401, 403, 404, 405, 422].includes(cause.status)) {
+        if (cause instanceof ApiError && [401, 403, 404, 405, 413, 422].includes(cause.status)) {
           setAttempt(undefined);
           setError(failure(cause));
         } else {

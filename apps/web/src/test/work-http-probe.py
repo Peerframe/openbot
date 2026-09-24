@@ -79,7 +79,7 @@ uvicorn.run(app, host='127.0.0.1', port={port}, proxy_headers=False, access_log=
             def request(path, body=None, *, trusted=True, authenticated=True):
                 headers = {'Origin': origin if trusted else 'https://untrusted.example'}
                 if body is not None: headers['Content-Type'] = 'application/json'
-                req = urllib.request.Request(origin + path, data=json.dumps(body).encode() if body is not None else None, headers=headers)
+                req = urllib.request.Request(origin + path, data=json.dumps(body, ensure_ascii=False).encode() if body is not None else None, headers=headers)
                 try:
                     with (client.open(req, timeout=10) if authenticated else urllib.request.urlopen(req, timeout=10)) as response:
                         return response.status, json.load(response) if response.status != 204 else None
@@ -101,6 +101,13 @@ uvicorn.run(app, host='127.0.0.1', port={port}, proxy_headers=False, access_log=
                 body = {'botId': bot['bot']['id'], 'objective': 'S2 real HTTP acceptance', 'tokenLimit': 1000, 'requestKey': 's2-exact-retry'}
                 assert request('/api/v1/tasks', body, trusted=False)[0] == 403
                 assert request('/api/v1/tasks', {**body, 'authorityActive': True})[0] == 422
+                oversized = {**body, 'objective': '中' * 7000, 'requestKey': 's2-oversized'}
+                assert len(oversized['objective']) < 16384
+                assert len(json.dumps(oversized, ensure_ascii=False).encode()) > 20000
+                assert request('/api/v1/tasks', oversized)[0] == 413
+                with psycopg.connect(dsn) as db:
+                    assert db.execute('SELECT count(*) FROM work_tasks WHERE request_key=%s',
+                                      (oversized['requestKey'],)).fetchone()[0] == 0
                 status, task = request('/api/v1/tasks', body)
                 assert status == 202 and task['status'] == 'queued' and task['revision'] == 1
                 assert request('/api/v1/tasks', body) == (202, task)
@@ -118,7 +125,7 @@ uvicorn.run(app, host='127.0.0.1', port={port}, proxy_headers=False, access_log=
                 assert schema['paths']['/api/v1/tasks/{task_id}']['get']['security'] == [{'OwnerSession': []}]
                 assert request('/api/v1/auth/logout', {})[0] == 204
                 assert request(path)[0] == 401
-                print('PASS: real HTTP/PG login, Bot, create/read/cancel, exact retry, 401/403/409/422, OpenAPI, logout', flush=True)
+                print('PASS: real HTTP/PG login, Bot, create/read/cancel, exact retry, 401/403/409/413/422, OpenAPI, logout', flush=True)
                 if args.serve:
                     print(f'Browser: {origin}/#/tasks\nDisposable Owner password: {owner_password}', flush=True)
                     print('Ctrl+C removes this fixture and all of its synthetic data.', flush=True)
