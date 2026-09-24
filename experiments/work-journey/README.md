@@ -155,3 +155,16 @@ accounting isolation with scripted ports. It does not test low-budget rejection,
 generic operation identities, restart at publication or Linux/runsc. Fixed reference keys and
 publication in `multitask_worker.py` are fixture policy, not a production Worker activation.
 Run with the pinned development CLI above, or `--engine postgres-mtls`; CI includes the latter.
+
+
+## Durable model reply qualification
+
+Install `requirements-model.txt` instead of `requirements.txt` for the optional SDK profile, then run
+`python -B experiments/work-journey/probe.py --engine postgres-mtls --only-case model-receipt-recovery`.
+This uses the released model SDK with synthetic HTTP and no live credentials. The public Task
+survives Worker death after immutable reply persistence, reuses it after claim expiry without a
+second provider call, settles once and delivers its file. Missing/corrupt reply and cancelled-task
+counterexamples live in `apps/server-python/tests/test_work_model_receipts_postgres.py`; pass the
+isolated SDK interpreter as `OPENBOT_TEMPORAL_TEST_PYTHON` to the existing control database runner.
+See [the reviewed boundary](../../docs/research/work-model-ports.md). New engine Run chains,
+production service configuration and live provider quality remain separate gates.

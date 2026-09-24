@@ -110,3 +110,14 @@ Temporal 生产部署授权/PKI、历史保留、完整产品备份恢复、版�
 没有验证低额度拒绝、真实模型、通用操作标识、发布时重启或 Linux/runsc。
 `multitask_worker.py` 中固定操作键和发布流程属于测试夹具，没有激活生产 Worker。
 使用上文固定版本开发 CLI，或 `--engine postgres-mtls`；CI 已包含后者。
+
+
+## 模型回复持久化验收
+
+可选 SDK 配置安装 `requirements-model.txt`，然后执行
+`python -B experiments/work-journey/probe.py --engine postgres-mtls --only-case model-receipt-recovery`。
+使用已发布 SDK 与合成 HTTP，不使用真实凭据。公开 Task 在回复保存后经历 Worker 中断，旧 claim
+过期后仍复用原回复、不重复请求，结算一次并交付文件。缺失／损坏回执与取消反例位于
+`apps/server-python/tests/test_work_model_receipts_postgres.py`；向已有控制层数据库 runner 提供
+`OPENBOT_TEMPORAL_TEST_PYTHON` 指向独立 SDK 环境。见[审查边界](../../docs/research/work-model-ports.md)。
+新引擎 Run 链、产品配置及真实模型效果仍需分别验收。

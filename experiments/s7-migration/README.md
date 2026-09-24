@@ -9,7 +9,7 @@ preparation for S7, not a production migration utility or evidence that S7 is co
 | --- | --- | --- |
 | Architecture, 27 migrations | `c33e03f1a14de739196113769c59fdaace9029e7` | Restore old data, then apply current migrations with the existing production startup guard. |
 | Feature, 19 migrations | `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` | Direct upgrade fails at index 17. A separate fixture-only transfer copies a bounded compatible record set into a freshly migrated target. |
-| Qualified target, 33 migrations | `e176e90a9de3854f0bf745773b7996e7bd572c83` | SQL bytes and journal must match `target-history.json`; changes require an explicit requalification. |
+| Qualified target, 34 migrations | `d2b3372dc4b5071276ba83a04c55136e58365c5a` | SQL bytes and journal must match `target-history.json`; changes require an explicit requalification. |
 
 The two old histories share migrations 0000–0016. `histories/common` contains those original bytes;
 `histories/feature` and `histories/architecture` contain their different suffixes. The history JSON
@@ -100,3 +100,6 @@ publisher keys, auth/audit recovery, active-task recovery, Temporal backup pairi
 secret storage, all platforms, live providers or a complete product journey. Those remain S7
 integration gates. See the [research and decision record](../../docs/research/s7-migration-qualification.md)
 and the broader [database recovery inventory](../../docs/DATABASE.md).
+
+The additive model-receipt target was requalified on2026-09-24. See
+[evidence](evidence/model-receipts-result.json); historical SQL/source fixtures remain unchanged.

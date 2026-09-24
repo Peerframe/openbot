@@ -1,6 +1,13 @@
 # Architecture migration handoff — 2026-09-24
 
-## Current short handoff — shared Worker ports (parent `06f6762`)
+## Current short handoff — durable model observations (`d2b3372`)
+
+- Completed: optional real OpenAI/Pydantic model port and control-private replies tied to admitted Actions. A lost Activity acknowledgement reuses the original response and usage, including after claim expiry. Unknown/missing results are never resent or refunded. Settled replies must match original evidence. Text/functions only; no implicit media downloads or hosted tools.
+- Evidence: actual public HTTP/PostgreSQL/mTLS Temporal crash-after-receipt journey, unique settlement, file download and unchanged replay passed; concurrent Task isolation retained. PG corruption/cancel/unknown counterexamples and bounded SDK checks passed. Repository check passed with cache status recorded. Additive SQL0033 requalified against both retained synthetic histories; source histories unchanged. See `docs/research/work-model-ports.md` and S7 evidence. Real SDK uses synthetic HTTP, not a live model account.
+- Open: S3 product service configuration/dispatch, general continuation/corrections and publication remain. This port is optional, not a fully activated Worker or S3 completion. S4 still lacks accepted real Linux/runsc, browser/takeover and execution integration. Overall rough estimate remains25%, S3; S5–S7 preparations do not complete their stages.
+- Next: `work_model_activity.py`, `work_model_receipts.py`, `work_openai_model.py`, `work_runtime_ports.py`, and `experiments/work-journey/model_recovery_probe.py`. Wire trusted product service selection under the same authority and receipt contract. Preserve one recovery owner, historical facts without new grants, unrelated dirty model-service files and unaccepted TASK020. No default switch/release; stop after through-S4 integration is actually accepted.
+
+## Previous short handoff — shared Worker ports (parent `06f6762`)
 
 - Completed: optional control-owned `WorkRuntimePortFactory` supplies fresh per-activity model/tool ports from accepted Task/Run identity, detached schemas and bounded runtime contracts. Loading services cannot execute effects. Codex fixed independently reproduced revocation/deadline gaps in dsh's handed-back candidate; no Task/Run process cache is introduced.
 - Evidence: actual public HTTP/PostgreSQL journeys on development and PostgreSQL/mTLS Temporal use one Worker/Agent/queue for two overlapping Tasks. Cancelling one prevents further effects; the other independently settles usage and downloads its own artifact. Both histories replay without mutations. Focused counterexamples and repository check pass; exact hashes, failures and commands are in the final research section. Cached Turbo checks are distinguished from executed Python/probe checks.

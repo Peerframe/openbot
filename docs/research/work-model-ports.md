@@ -144,3 +144,11 @@ individual SDK mock (`/private/tmp/openbot-model-no-sdk-entry-20260924.log`). `n
 passed; prerequisites executed, Turbo build17/18 cached with the Server rebuilt. Per-lane cache
 counts remain in `/private/tmp/openbot-model-repository-check-20260924-01.log`; they are not fresh
 Python or live-provider evidence. S7 target pin must be advanced and requalified for additive SQL0033.
+
+The implementation is committed as `d2b3372dc4b5071276ba83a04c55136e58365c5a`. S7's target
+pin was then advanced from33 to34 migrations without changing historical SQL/source fixtures.
+`node experiments/s7-migration/qualify.mjs` passed against this committed target, with both
+retained histories, direct divergent-history rejection, bounded transfer, rollback and paired
+synthetic backup restore. Evidence: `experiments/s7-migration/evidence/model-receipts-result.json`;
+raw log `/private/tmp/openbot-model-s7-20260924-01.log`. This does not qualify active model receipt/
+Temporal backup pairing or complete S7. Final source hashes: `/private/tmp/openbot-model-candidate-final-20260924.json`.

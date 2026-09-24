@@ -1,5 +1,5 @@
 {
-  "commit": "e176e90a9de3854f0bf745773b7996e7bd572c83",
+  "commit": "d2b3372dc4b5071276ba83a04c55136e58365c5a",
   "migrations": [
     {
       "index": 0,
@@ -198,6 +198,12 @@
       "tag": "0032_work_submission_attempt_id",
       "timestamp": 1790208000002,
       "sha256": "bfba9179371c49badc2a08c1e0b5da2ff10ede2d4c44b68a10f0b503f7e13dec"
+    },
+    {
+      "index": 33,
+      "tag": "0033_work_model_receipts",
+      "timestamp": 1790208000003,
+      "sha256": "2333c4ebe595364526458e111c131653be3c2cd7492bcfc417e9fc8308e65d63"
     }
   ]
 }

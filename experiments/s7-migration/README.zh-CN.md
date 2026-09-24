@@ -9,7 +9,7 @@
 | --- | --- | --- |
 | 架构历史，27 条迁移 | `c33e03f1a14de739196113769c59fdaace9029e7` | 恢复旧数据，再通过现有生产启动守卫执行增量迁移。 |
 | 功能历史，19 条迁移 | `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` | 直接升级必须在索引 17 失败；专用实验随后将有限兼容记录转入新建目标库。 |
-| 本次目标，33 条迁移 | `e176e90a9de3854f0bf745773b7996e7bd572c83` | SQL 和 journal 必须匹配 `target-history.json`；变化后需重新验证并更新固定记录。 |
+| 本次目标，34 条迁移 | `d2b3372dc4b5071276ba83a04c55136e58365c5a` | SQL 和 journal 必须匹配 `target-history.json`；变化后需重新验证并更新固定记录。 |
 
 两条旧历史共享 0000–0016。`histories/common` 保存公共 SQL 原始字节，两个分支目录保存各自后缀。
 history JSON 记录每份 SQL 的哈希、时间戳和来源提交。`sources.mjs` 校验这些快照、复现已有
@@ -83,3 +83,6 @@ npm run check
 活动任务恢复、Temporal 配对恢复、Desktop 系统密钥存储、全部平台、真实 Provider 或完整产品
 旅程。这些仍是 S7 的集成条件。参见[研究记录](../../docs/research/s7-migration-qualification.md)
 及[数据库恢复清单](../../docs/DATABASE.zh-CN.md)。
+
+2026-09-24 已重新验证新增模型回执后的目标，见[证据](evidence/model-receipts-result.json)。
+既有 SQL 和两条源历史夹具均未改写。

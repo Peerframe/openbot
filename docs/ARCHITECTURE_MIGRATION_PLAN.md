@@ -143,6 +143,14 @@ cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnec
 
 ## Acceptance record
 
+- S3 model receipts (`d2b3372`): optional real SDK port, bounded text/function history, and immutable
+  reply/usage persistence under admitted Actions. Actual public HTTP/PG/mTLS Worker crash after
+  receipt, same Activity recovery after claim expiry, single settlement, Artifact download and
+  unchanged replay passed. Missing/corrupt replies do not repeat calls or refund unknown usage.
+  Synthetic provider transport only; product configuration/continuation and S4 remain open.
+  SQL0033 preserves old history and passes the existing S7 synthetic migration/restore gate.
+  See [evidence and limits](research/work-model-ports.md).
+
 - Adjacent Temporal release upgrade: 12 public-work records and 57 reference unit checks pass.
   Verified official 1.31.3 binaries over the pinned 1.32 image warmed for 601 seconds, then upgraded
   to actual 1.32.0 with unchanged schema history, namespace and four shards. Waiting approval and

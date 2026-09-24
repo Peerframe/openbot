@@ -1,6 +1,13 @@
 # 架构迁移交接 — 2026-09-24
 
-## 当前短交接——共享 Worker 端口（父提交 `06f6762`）
+## 当前短交接——模型观察持久化（`d2b3372`）
+
+- 已完成：接入可选的真实 OpenAI/Pydantic SDK 模型端口，由控制层保存与已准入 Action 绑定的原回复。Activity 确认丢失、旧 claim 过期后仍可恢复原结果与用量。unknown／缺失回执不重发、不退款；已结算回复必须匹配原证据。仅支持文本／函数，拒绝隐式媒体下载和托管工具。
+- 证据：真实公开 HTTP/PostgreSQL/mTLS Temporal 的保存后崩溃、唯一结算、下载及无副作用回放通过，并发任务隔离回归通过。数据库取消／损坏／未知反例和 SDK 边界检查通过；仓库检查通过且区分缓存。SQL0033 已用两条保留的合成旧历史重新验收，未改写源历史。详见 `docs/research/work-model-ports.md` 与 S7 证据。SDK 连接合成 HTTP，并非真实模型账户。
+- 未完成：S3 产品服务配置／派发、通用继续／纠正与发布；本端口仍可选，不代表通用 Worker 或 S3 已完成。S4 仍缺真实 Linux/runsc、浏览器／接管和执行集成验收。总体粗估仍约25%，处于 S3；S5–S7 准备不算阶段完成。
+- 下一步：`work_model_activity.py`、`work_model_receipts.py`、`work_openai_model.py`、`work_runtime_ports.py` 与 `experiments/work-journey/model_recovery_probe.py`。在既有权限／回执契约下接产品服务配置。保留单一恢复引擎、事实补记不授权、其他脏文件和未验收 TASK020。不切默认、不发布；通过 S4 整合验收后停止。
+
+## 上一短交接——共享 Worker 端口（父提交 `06f6762`）
 
 - 已完成：可选的控制层 `WorkRuntimePortFactory` 从已确认的 Task/Run 身份装配每次 Activity 独立的模型/工具端口，隔离嵌套 schema、复用限额和权限检查。服务加载不能执行副作用。dsh 交稿结束后，Codex 独立复现并修复了加载期间撤权及截止时间缺口；没有增加进程内任务缓存。
 - 证据：开发引擎及 PostgreSQL/mTLS Temporal 的真实 HTTP/数据库流程均通过；同一 Worker/Agent/队列执行两个重叠任务，取消其中一个阻止后续操作，另一个独立记账并下载自己的文件。两段历史重放无状态改动。反例和仓库检查通过，具体哈希、失败、命令位于研究记录末尾；缓存命中与实际执行的 Python/完整流程分开记录。
