@@ -23,7 +23,6 @@ const temporary = await mkdtemp(join(tmpdir(), "openbot-s7-"));
 const container = `openbot-s7-${randomUUID()}`;
 const clients = [];
 const cases = [];
-let started = false;
 let port;
 let databaseIndex = 0;
 
@@ -38,6 +37,41 @@ function docker(args, input) {
 
 function pgTool(command, args, input) {
   return docker(["exec", "-i", container, command, ...args], input);
+}
+
+function removeOwnedContainer() {
+  // A failed run response does not prove the daemon failed to create the container. Discover
+  // ownership even after an unknown outcome, then remove by ID so a reused name cannot redirect it.
+  const ids = docker([
+    "container",
+    "ls",
+    "--all",
+    "--no-trunc",
+    "--filter",
+    `name=${container}`,
+    "--filter",
+    "label=openbot.fixture=s7",
+    "--format",
+    "{{.ID}}",
+  ])
+    .toString()
+    .trim()
+    .split("\n")
+    .filter(Boolean);
+  if (ids.length === 0) return;
+  assert.equal(ids.length, 1, "Refusing ambiguous S7 container cleanup");
+  const [id] = ids;
+  assert.match(id, /^[a-f0-9]{64}$/, "Refusing invalid S7 container ID");
+  const inspected = JSON.parse(docker(["container", "inspect", id]).toString());
+  assert.equal(inspected.length, 1, "Refusing ambiguous S7 container inspection");
+  assert.equal(inspected[0].Id, id, "Refusing changed S7 container identity");
+  assert.equal(inspected[0].Name, `/${container}`, "Refusing unowned S7 container name");
+  assert.equal(
+    inspected[0].Config?.Labels?.["openbot.fixture"],
+    "s7",
+    "Refusing unowned S7 container label",
+  );
+  docker(["container", "rm", "--force", id]);
 }
 
 async function check(name, action) {
@@ -329,7 +363,6 @@ try {
     "127.0.0.1::5432",
     image,
   ]);
-  started = true;
   const inspection = JSON.parse(docker(["inspect", container]).toString())[0];
   port = inspection.NetworkSettings.Ports["5432/tcp"][0].HostPort;
   let ready = false;
@@ -645,7 +678,7 @@ try {
 } finally {
   await Promise.allSettled(clients.map((sql) => sql.end({ timeout: 2 })));
   try {
-    if (started) docker(["rm", "--force", container]);
+    removeOwnedContainer();
   } finally {
     await rm(temporary, { recursive: true, force: true });
   }
