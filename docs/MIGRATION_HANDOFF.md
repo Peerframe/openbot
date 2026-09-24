@@ -1,6 +1,19 @@
 # Architecture migration handoff — 2026-09-24
 
-## Current short handoff — deferred approval (parent `965a643`)
+## Resumed parallel work — baseline `6f69be9`
+
+Latest user approval resumes execution. Codex owns S3 closed-workflow repair, corrections and service wiring. S2 `S2 Web/Desktop 任务监督接入` confirmed execution in `/Users/yxflc/.codex/worktrees/810f/openbot` on `codex/s2-work-supervision` (thread `01a0d28c-f457-7823-ba6f-f144adf3c3ff`); existing S4 and S5 threads are running in their own worktrees. S6/S7 receive no new assignments. Preserve dirty model-service files and TASK020. Closed-repair boundary/review: `docs/research/work-closed-repair.md`. Prior pause paragraphs below are historical, not current dispatch instructions. No default switch or release.
+
+
+## Current short handoff — closed-workflow lookup (parent `6f69be9`)
+
+- Completed: explicit `--repair-closed` delivery and same-Worker lookup-only repair of a stored deferred Action after its original Workflow closes. Bad evidence stays unknown/reserved; later cycles do not rewrite an old unresolved command. Commit-before-ack retries do not call lookup again.
+- Evidence: independent review, frozen-source public HTTP/PG/mTLS closed-repair journey and affected deferred-approval recovery passed; entry, owned database and repository checks passed. Executed/cache/skip details and hashes: `docs/research/work-closed-repair.md`.
+- Open: S3 product corrections and trusted deployment/service activation remain. S2 handed in `0a9fc21`, pending independent acceptance; S5 `df1c24d` independently accepted offline-only, pending integration. S4 `bb37d57` accepted only for refusing unverified output mounts; keep the candidate separate, with no runsc/real lifecycle acceptance or TASK020 closure.
+- Next input: this handoff, `work_closed_repair.py`, `work_repair_binding.py`, `work_repair_dispatch.py`, `work_worker.py` and the research above. Preserve unrelated model-service edits and TASK020. Original authority and unknown-effect rules remain; no default switch or release.
+
+
+## Previous short handoff — deferred approval (parent `965a643`)
 
 - Completed: product deferred proposal/approval uses the original durable Action after restart; unknown outcomes permit lookup-only Owner commands, then full-history/cumulative-usage continuation. Denial closes the Task and recovers a lost acknowledgement without new authority.
 - Evidence: actual public HTTP/PG/mTLS prepare/deny acknowledgement loss, approval while absent, cancellation, unknown repair, download and unchanged replay passed. Independent review preceded the long test; exact candidate hashes, failure logs and executed/cached/skipped checks are in `docs/research/work-deferred-approval.md`.

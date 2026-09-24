@@ -1,12 +1,12 @@
 # Architecture migration delivery plan
 
-> Execution boundary updated 2026-09-24: the user requested completion of the current deferred
-> approval/unknown-continuation slice, then a pause. Do not start more S3 or S4 work. This pause
-> does not mean S3 or the migration is complete. See the current short handoff.
+> Execution boundary updated 2026-09-24: renewed user approval resumes S3 with independent
+> S2 client, existing S4 executor and existing S5 selection work. S6/S7 have no new assignment.
+> Integrate only independently accepted changes; no default switch, production migration or release.
 
 [English](ARCHITECTURE_MIGRATION_PLAN.md) · [简体中文](ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)
 
-Status: active after renewed user approval, 2026-09-23. This is the single delivery plan.
+Status: active after renewed user approval, 2026-09-24. This is the single delivery plan.
 The latest approved direction prioritizes long-term product quality over migration effort.
 A completed stage does not complete the overall goal.
 
@@ -150,8 +150,8 @@ cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnec
 - S3 deferred approval (parent `965a643`): accepted product proposal/approval continuation after
   lost acknowledgement, original-Action unknown reconciliation, cancelled-write refusal and
   denial terminal readback. Actual HTTP/PG/mTLS recovery, download and replay passed; no-deferred
-  concurrent regression retained. This slice does not finish S3; execution is paused per the
-  latest user request. See [evidence](research/work-deferred-approval.md).
+  concurrent regression retained. This slice does not finish S3; the pause at its delivery was superseded by
+  renewed user approval. See [evidence](research/work-deferred-approval.md).
 
 
 - S3 product composition (parent `d0f7c1a`): optional product Workflow/Agent, explicit-mTLS finite

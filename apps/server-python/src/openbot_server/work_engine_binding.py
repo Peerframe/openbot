@@ -116,8 +116,15 @@ async def assert_failed_workflow(store, identity, facts, *, expected_namespace, 
         expected_queue=expected_queue, expected_workflow_type=expected_workflow_type, completed=False, failed=True)
 
 
+async def assert_historical_workflow(store, identity, facts, *, expected_namespace, expected_queue, expected_workflow_type):
+    """Original admission provenance only, including after closure; never grants a claim."""
+    return await _assert_workflow(store, identity, facts, expected_namespace=expected_namespace,
+        expected_queue=expected_queue, expected_workflow_type=expected_workflow_type,
+        completed=False, historical=True)
+
+
 async def _assert_workflow(store, identity, facts, *, expected_namespace, expected_queue,
-                           expected_workflow_type, completed, failed=False):
+                           expected_workflow_type, completed, failed=False, historical=False):
     """Fail closed unless this activity matches one acknowledged Task/Run engine start.
 
     ``expected_*`` are trusted settings from control composition; ``identity`` must be exactly
@@ -191,7 +198,7 @@ async def _assert_workflow(store, identity, facts, *, expected_namespace, expect
             status = 'failed' if failed else 'completed'
             if task['status'] != status or admission['run_status'] != status:
                 raise WorkConflict('failure_not_recorded' if failed else 'completion_not_recorded')
-        else:
+        elif not historical:
             store._active(task)
             if admission['run_status'] not in ('queued', 'running'):
                 raise WorkConflict('run_closed')

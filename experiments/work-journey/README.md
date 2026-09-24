@@ -222,3 +222,17 @@ Run focused workflow checks with `python -B -m pytest -q experiments/work-journe
 runner includes the optional deferred tests when `OPENBOT_TEMPORAL_TEST_PYTHON` selects the
 pinned Worker environment. Real provider accounts and Linux/runsc isolation are not exercised.
 See [candidate evidence and failures](../../docs/research/work-deferred-approval.md).
+
+### Closed-workflow lookup recovery
+
+`--engine postgres-mtls --only-case product-closed-repair` uses the actual operator CLI,
+public HTTP and PostgreSQL with synthetic model/effect services. It cancels an unknown-effect
+Task, waits for the original Workflow to close, and keeps the first bad-receipt command unresolved
+without releasing its reservation. A new Owner command verifies the original write. The Worker
+is killed after settlement but before acknowledgement; the replacement has lookup disabled.
+The exact Activity must complete on retry without scheduling the fallback finish Activity or
+invoking another lookup. Both repair histories and the original history replay without effects.
+This is historical fact recovery, not resumed Agent execution or real provider/isolation evidence.
+The operator's `--repair-closed` mode requires `load_lookup` registration on the same product
+Worker; delivered/finished/waiting-original rows are distinct, and exit0 is not effect success.
+See [candidate evidence](../../docs/research/work-closed-repair.md).

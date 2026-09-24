@@ -243,3 +243,17 @@ None 返回。错误身份、权限关闭和 Task／Run 缺失直接拒绝，模
 确认 `applied` 后，同一 Workflow 使用完整 SDK 历史和累计模型用量继续。拒绝、过期或已核验未生效
 会将任务关闭为失败，不发布产物；取消和撤权不能产生新执行授权。人工修复命令仍区分已持久化、
 已送达与已核验完成。此可选路径不提供真实 Linux 执行环境，也不切换默认后端。
+
+### 工作流关闭后的核对
+
+提供可信 `load_lookup(historical_context, stored_intent)`，返回
+`LookupServices(lookup, verifier)`，可在同一 Worker 注册按命令隔离的修复 Workflow。
+既有运维 CLI 增加 `--repair-closed`，只执行一轮有限派发；核对原 PG 记录的 engine Run
+及修复启动身份后才查询，不重启原 Workflow，也不调用模型、准入、写入或发布服务。
+原流程仍运行时返回 `waiting_original`；缺少历史保持送达未确认。退出码 0 仅表示各行属于
+已送达、已结束或等待原流程（也包括空批次），不代表外部动作成功。
+
+错误、缺失或超时证据保留 unknown 和预算预留。已结束的 unresolved 命令不会被后续修复
+改写结果；核验已提交但回执丢失后的重试直接读回，不重新查询。取消、撤权后只补记历史事实。
+本可选路径仅处理已保存的延期工具 Action；可信服务配置、产品纠正及 Linux 隔离仍需另行完成。
+见[验证记录](../../docs/research/work-closed-repair.md)。

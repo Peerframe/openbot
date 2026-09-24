@@ -347,3 +347,20 @@ The same Workflow resumes with full SDK history and cumulative model usage only 
 publishing an artifact. Cancellation/revocation cannot grant new execution. Owner reconciliation
 commands retain separate persisted, delivered and verified-finished states. This optional path
 does not provide a real Linux executor or switch the default backend.
+
+### Closed-workflow reconciliation
+
+Provide a trusted `load_lookup(historical_context, stored_intent)` returning
+`LookupServices(lookup, verifier)` to register the command-scoped repair Workflow on the same
+Worker. Run the existing operator CLI with `--repair-closed` for one bounded delivery pass.
+It proves the original PG-recorded engine Run and repair start identities before lookup; it never
+restarts the original Workflow or calls model, admission, apply or publication services. An active
+original reports `waiting_original`; missing history remains unconfirmed. Exit0 covers delivered,
+finished and waiting-original rows, including an empty pass, and does not mean effects succeeded.
+
+Bad, missing or timed-out evidence leaves the Action unknown and reserved. A completed unresolved
+command retains that outcome even if a later Owner command resolves the Action. A retry after a
+committed resolution reads the original result without another lookup. Cancellation/revocation
+allows historical settlement only. This opt-in path handles stored deferred-tool Actions; trusted
+service configuration, product corrections and Linux isolation remain separate delivery gates.
+See [validation](../../docs/research/work-closed-repair.md).

@@ -244,6 +244,9 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
         api.start()
         api.call('/api/v1/auth/login', {'password': api.password})
         bot = api.call('/api/v1/bots', {'name': 'Reference', 'role': 'Correct the fixture CSV'}, expected=201)['bot']
+        if only_case == 'product-closed-repair':
+            from product_closed_probe import qualify_closed
+            return await qualify_closed(client, api, bot, dsn, artifact_root, server, launch, counts, effects)
         if only_case == 'product-deferred-approval':
             from product_approval_probe import qualify_approval
             return await qualify_approval(client, api, bot, dsn, artifact_root, server, launch, counts, effects)
@@ -720,14 +723,14 @@ def main():
     parser.add_argument('--engine', choices=('development', 'postgres', 'postgres-mtls'), default='development')
     parser.add_argument('--upgrade-archive', type=Path, help='Verified official 1.31.3 archive; requires postgres-mtls')
     parser.add_argument('--only-handoff', action='store_true', help='Run only engine-identity rejection regressions')
-    parser.add_argument('--only-case', choices=('recover','cancel-before-write','cancel-unknown','corrupt-receipt','malformed-json','repair-timeout','automatic-repair-race','repair-cancelled','repair-engine-closed','publication-ack','worker-before-ack','cancel-before-ack','concurrent-runs','model-receipt-recovery','product-model-recovery','product-publication-recovery','product-concurrent-runs','product-deferred-approval'), help='Run one public-work scenario')
+    parser.add_argument('--only-case', choices=('recover','cancel-before-write','cancel-unknown','corrupt-receipt','malformed-json','repair-timeout','automatic-repair-race','repair-cancelled','repair-engine-closed','publication-ack','worker-before-ack','cancel-before-ack','concurrent-runs','model-receipt-recovery','product-model-recovery','product-publication-recovery','product-concurrent-runs','product-deferred-approval','product-closed-repair'), help='Run one public-work scenario')
     args = parser.parse_args()
     assert sys.platform != 'win32', 'POSIX process signals required'
     assert importlib.metadata.version('temporalio') == '1.33.0'
     assert importlib.metadata.version('pydantic-ai-slim') == '2.47.0'
     if args.upgrade_archive and (args.engine != 'postgres-mtls' or args.only_handoff):
         parser.error('--upgrade-archive requires the full postgres-mtls journey')
-    if args.only_case == 'product-publication-recovery' and args.engine != 'postgres-mtls':
+    if args.only_case in ('product-publication-recovery','product-closed-repair') and args.engine != 'postgres-mtls':
         parser.error('product-publication-recovery requires postgres-mtls for the product CLI')
     if args.only_case and (args.only_handoff or args.upgrade_archive):
         parser.error('--only-case cannot be combined with --only-handoff or --upgrade-archive')

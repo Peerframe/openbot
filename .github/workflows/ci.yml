@@ -420,6 +420,8 @@ jobs:
             --engine postgres-mtls --only-case product-concurrent-runs
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
             --engine postgres-mtls --only-case product-deferred-approval
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
+            --engine postgres-mtls --only-case product-closed-repair
           curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
             --max-time 180 --max-filesize 93822307 \
             --output "$RUNNER_TEMP/temporal_1.31.3_linux_amd64.tar.gz" \

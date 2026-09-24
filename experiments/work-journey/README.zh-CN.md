@@ -162,3 +162,14 @@ CLI 不迁移数据库、不启动 Worker；可信部署代码必须显式组合
 局部 Workflow 检查命令：`python -B -m pytest -q experiments/work-journey/test_product_deferred_workflow.py`。
 现有临时 PostgreSQL 验证器在 `OPENBOT_TEMPORAL_TEST_PYTHON` 指定固定版本 Worker 环境时包含延期测试。
 这里不验证真实模型账户或 Linux/runsc 隔离。候选与失败见[研究记录](../../docs/research/work-deferred-approval.md)。
+
+### 关闭工作流的核对恢复
+
+`--engine postgres-mtls --only-case product-closed-repair` 使用真实运维 CLI、公开 HTTP、
+PostgreSQL 和合成模型／效果服务。unknown 任务取消且原 Workflow 关闭后，首个错误回执命令
+结束为 unresolved，预算继续保留；新的人工命令核实原写入。核验提交但确认未返回时终止 Worker，
+替代 Worker 禁用 lookup；原 Activity 重试须完成，且不能调度兜底 finish Activity 或再次核对。
+原流程和两个修复流程历史均作无副作用回放。本流程只恢复历史事实，不恢复 Agent 执行，
+也不证明真实服务或 Linux 隔离。运维 `--repair-closed` 模式要求同一产品 Worker 配置
+`load_lookup`；送达、结束和等待原流程分开，退出码 0 不表示外部动作成功。
+见[候选证据](../../docs/research/work-closed-repair.md)。

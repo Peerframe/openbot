@@ -662,3 +662,11 @@ Activity/timer APIs, with the existing control Action, approval and reconciliati
 Control retains immutable proposals and performs authorization; SDK declarations do not grant
 execution. No upstream code copied, dependency or schema added. See
 [review, contracts and qualification](research/work-deferred-approval.md).
+
+
+## Product closed-workflow lookup (2026-09-24)
+
+Reuse Temporal Python1.33.0 exact-history and REJECT_DUPLICATE APIs, the accepted closed-history
+reference and existing Action/reconciliation transactions. Historical binding proves origin only;
+lookup cannot resume execution. No new schema/dependency or upstream code copied. See
+[scope and independent review](research/work-closed-repair.md).

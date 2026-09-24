@@ -57,3 +57,11 @@ def test_tls_files_refuse_symlink_and_overlimit(tmp_path):
     for address in ['127.0.0.1:0','host:70000','user@host:7233','host:7233/path','host:7233?x=1']:
         with pytest.raises(ValueError):validate_address(address)
     with pytest.raises(ValueError):tls_config(None)
+
+
+def test_actual_closed_repair_preflight_uses_same_private_configuration(tmp_path):
+    path=tmp_path/'operator.json';path.write_text(json.dumps(config(tmp_path)));path.chmod(0o600)
+    result=subprocess.run([sys.executable,'-I',str(SCRIPT),'--config',str(path),'--repair-closed','--check'],
+                          capture_output=True,text=True,timeout=15)
+    assert result.returncode==0 and json.loads(result.stdout)==dict(status='validated',networkCalls=0)
+    assert result.stderr=='' and 'synthetic-secret' not in result.stdout

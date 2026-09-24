@@ -15,6 +15,7 @@ from openbot_server.work_runtime_ports import WorkRuntimeServices
 from openbot_server.work_deferred import DeferredPlan, EffectServices, DeferredActivities
 from openbot_server.work_effects import VerifiedOutcome
 from openbot_server.work_values import canonical
+from openbot_server.work_closed_repair import LookupServices, ClosedRepairActivities
 
 WRITE=ToolDescriptor('write_row','Propose a reviewed CSV correction',{'type':'object',
     'properties':{'row':{'type':'integer'},'value':{'type':'string'}},'required':['row','value'],
@@ -75,6 +76,23 @@ async def main():
         return VerifiedTaskResult((dict(key='csv',name='corrected.csv',mediaType='text/csv',data=data),),
             dict(source='independent-csv-readback',reference=context.task_id,sha256=hashlib.sha256(data).hexdigest()))
 
+    def load_lookup(context,intent):
+        Path(cfg['directory'],'lookup-invoked-'+context.task_id).touch()
+        if cfg.get('fail_lookup'):raise AssertionError('Finished command loaded lookup services')
+        services=load_effect(context,intent)
+        return LookupServices(services.adapter.lookup,services.verifier)
+
+    original_reconcile=ClosedRepairActivities.reconcile
+    @activity.defn(name='openbot.closed_repair.v1')
+    async def reconcile_then_pause(self,value: dict) -> dict:
+        result=await original_reconcile(self,value)
+        if cfg.get('pause_repair') and result['outcome']=='resolved':
+            Path(cfg['directory'],'reconciled-'+value['taskId']).touch()
+            async with asyncio.timeout(35):
+                while True:await asyncio.sleep(.1)
+        return result
+    ClosedRepairActivities.reconcile=reconcile_then_pause
+
     original_propose=store.propose
     async def prepare_then_pause(task_id,*args,**kwargs):
         result=await original_propose(task_id,*args,**kwargs)
@@ -97,7 +115,8 @@ async def main():
     DeferredActivities.stop=stop_then_pause
 
     async with product_worker(client,store,namespace='default',queue=cfg['queue'],load_services=load_services,
-            verify_result=verify_result,plan_effect=plan,load_effect=load_effect):
+            verify_result=verify_result,plan_effect=plan,load_effect=load_effect,
+            load_lookup=load_lookup if cfg.get('enable_repair') else None):
         Path(cfg['directory'],'ready').touch()
         await asyncio.Event().wait()
 

@@ -25,6 +25,7 @@ with workflow.unsafe.imports_passed_through():
     from openbot_agent_runtime.catalog import ToolCatalog
     from openbot_agent_runtime.contracts import ToolDescriptor
     from .work_deferred import DeferredActivities
+    from .work_closed_repair import ClosedRepair, ClosedRepairActivities
     from .work_deferred_values import parse_proposal
     from .work_runtime_ports import WorkRuntimeDeps, WorkRuntimePortFactory
     from .work_temporal_start import load_current_activity_task
@@ -234,7 +235,7 @@ class OpenBotWork:
 
 @asynccontextmanager
 async def product_worker(client, store, *, namespace, queue, load_services, verify_result,
-                         plan_effect=None, load_effect=None):
+                         plan_effect=None, load_effect=None, load_lookup=None):
     """Serve one operator-selected queue. The connected client needs PydanticAIPlugin.
 
     Callbacks are required Python composition, not import paths or defaults. Shutdown drains the
@@ -246,12 +247,18 @@ async def product_worker(client, store, *, namespace, queue, load_services, veri
     host = WorkActivities(store, client, namespace=namespace, queue=queue,
                           load_services=load_services, verify_result=verify_result,
                           plan_effect=plan_effect, load_effect=load_effect)
-    _HOST = host
     activities = [host.load_task, host.publish_task]
     if host.deferred is not None:
         activities += [host.deferred.prepare, host.deferred.state, host.deferred.execute, host.deferred.reconcile, host.deferred.stop]
+    workflows = [OpenBotWork]
+    if load_lookup is not None:
+        repair = ClosedRepairActivities(store, client, namespace=namespace, queue=queue,
+                                        workflow_type=TYPE, load_lookup=load_lookup)
+        activities += [repair.reconcile, repair.finish]
+        workflows.append(ClosedRepair)
+    _HOST = host
     try:
-        async with Worker(client, task_queue=queue, workflows=[OpenBotWork],
+        async with Worker(client, task_queue=queue, workflows=workflows,
                           activities=activities,
                           graceful_shutdown_timeout=timedelta(seconds=8)) as worker:
             yield worker

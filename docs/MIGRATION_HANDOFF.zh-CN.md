@@ -1,6 +1,19 @@
 # 架构迁移交接 — 2026-09-24
 
-## 当前简短交接——延期审批（父提交 `965a643`）
+## 恢复并行执行——基线 `6f69be9`
+
+用户最新批准恢复。Codex 负责 S3 关闭后核对、纠正与服务接线；S2「S2 Web/Desktop 任务监督接入」已确认在独立工作树 `810f/openbot` 的 `codex/s2-work-supervision` 执行（任务 `01a0d28c-f457-7823-ba6f-f144adf3c3ff`）；现有 S4/S5 任务也已确认执行。S6/S7 不新增派发。保留未提交模型服务文件与 TASK020。关闭后核对边界和审查见 `docs/research/work-closed-repair.md`。下方暂停说明保留为历史，不再是当前派发指令；不切默认或发布。
+
+
+## 当前简短交接——关闭后核对（父提交 `6f69be9`）
+
+- 已完成：显式 `--repair-closed` 派发与同 Worker 内的仅查询修复，处理原流程关闭后的持久延期 Action；错误证据保留 unknown／预留，后续周期不改写旧 unresolved 命令。提交后确认丢失的重试不再查询。
+- 证据：独立审查、冻结输入的真实 HTTP/PG/mTLS 关闭修复及受影响的延期审批恢复通过；入口、真实数据库、仓库检查通过。实际执行／缓存／跳过及哈希见 `docs/research/work-closed-repair.md`。
+- 未完成：S3 产品纠正和可信部署／服务启用仍待完成。S2 `0a9fc21` 已交稿待独立验收；S5 `df1c24d` 离线范围已独立验收待整合。S4 `bb37d57` 仅接受拒绝未验证输出挂载，继续单独保留；没有 runsc／真实生命周期验收，TASK020 未结案。
+- 下一步：本交接、`work_closed_repair.py`、`work_repair_binding.py`、`work_repair_dispatch.py`、`work_worker.py` 及上述研究。保留其他模型服务修改及 TASK020，维持原权限与 unknown 契约，不切默认、不发布。
+
+
+## 历史简短交接——延期审批（父提交 `965a643`）
 
 - 已完成：产品延期提案/审批在重启后复用原持久 Action；unknown 通过人工命令仅核对原动作，确认后使用完整历史与累计用量继续。拒绝关闭任务，关闭回执丢失后的读回不产生新授权。
 - 证据：真实公开 HTTP/PG/mTLS 的准备与拒绝回执丢失、离线批准、取消、unknown 修复、下载和无副作用回放通过。长流程前完成独立审查；候选哈希、失败日志及实际执行/缓存/跳过记录见 `docs/research/work-deferred-approval.md`。
