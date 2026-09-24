@@ -29,6 +29,7 @@ Bot 私聊频道引用。所有内容均为合成数据，没有真实凭据、�
 npm ci
 node experiments/s7-migration/sources.mjs
 npm exec -- turbo run build --filter=@openbot/server
+node --test experiments/s7-migration/cleanup.test.mjs
 node experiments/s7-migration/qualify.mjs --report /tmp/s7-migration-summary.json
 npm run check
 ```

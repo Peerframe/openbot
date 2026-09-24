@@ -33,6 +33,7 @@ needed. Missing prerequisites fail the command; the database checks never silent
 npm ci
 node experiments/s7-migration/sources.mjs
 npm exec -- turbo run build --filter=@openbot/server
+node --test experiments/s7-migration/cleanup.test.mjs
 node experiments/s7-migration/qualify.mjs --report /tmp/s7-migration-summary.json
 npm run check
 ```

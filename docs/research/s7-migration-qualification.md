@@ -108,3 +108,36 @@ policy, legacy Task identity mapping,
 full asset inventory, product journey, target CI execution and live-provider evaluation remain
 integration dependencies. No real user-data migration, retirement, publication or default switch
 is authorized by this experiment.
+
+
+## Independent integration acceptance (2026-09-24)
+
+Codex checked all three manifests against their immutable Git commits, including
+SQL bytes, journal order and timestamps. The migration clone lacks the feature
+commit's tree, so the failed lookup there was resolved by reading the original
+shared repository object store. All 27 architecture, 19 feature and 33 target
+entries match. Current mainline has no SQL changes beyond the pinned target.
+
+Review of `ea75b92` found that a lost `docker run` response could leave an owned
+container behind because cleanup required a successful CLI return. The original
+implementer fixed only that boundary in `36ddc5d`: discovery uses this invocation's
+UUID name and fixture label, inspection rechecks name/label/full immutable ID, and
+removal uses that ID. Ambiguous or failed inspection refuses deletion; there is
+no second create/run. Eight real-entrypoint tests use a simulated Docker CLI,
+not a real daemon timeout. The final candidate was independently exercised:
+
+- `node --test experiments/s7-migration/cleanup.test.mjs`: eight actual passes,
+  no skips. Log: `/private/tmp/openbot-s7-cleanup-independent-20260924.log`.
+- `node experiments/s7-migration/qualify.mjs --report
+  /private/tmp/openbot-s7-independent-result-20260924.json`: 40 actual passes on
+  Node 26.0.0 / macOS arm64 with digest-pinned PostgreSQL 17.11, including real
+  `pg_dump`/`pg_restore` and paired file reads. Log:
+  `/private/tmp/openbot-s7-independent-20260924.log`. Owned resources were cleaned
+  and the process exited 0.
+
+The candidate code was integrated unchanged; the independent evidence above is
+reused because only documentation and CI wiring then changed. The dedicated CI
+now runs the cleanup tests before the database qualification. Hosted CI has not
+run. Acceptance is only for these synthetic histories and the bounded transfer;
+it does not qualify full product migration, legacy-Run conversion, active work,
+credentials, model configuration, Temporal pairing, default switching or release.

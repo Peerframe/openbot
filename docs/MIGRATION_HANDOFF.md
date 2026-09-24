@@ -9,6 +9,8 @@
 
 S6 baseline `1fd8b0d` was independently accepted: synthetic PostgreSQL/MCP grant, cancellation, 401, serialization and per-Run budget checks; see `docs/research/s6-compatibility.md`. C11 was corrected to distinguish the shared deadline from per-Run budgets. Product S6 remains pending.
 
+S7 prerequisite `ea75b92` + cleanup fix `36ddc5d` was independently accepted: sealed source histories, bounded synthetic transfer and real PostgreSQL/file backup restoration. Target SQL remains the 33-entry `e176e90` pin. Dedicated CI is prepared, not yet run; legacy work conversion, full product data and Temporal pairing remain open. See `docs/research/s7-migration-qualification.md`.
+
 ## Earlier stage evidence (retained)
 
 Branch: `codex/architecture-migration`. Current S3 activity-scoped claim: `3ece362`; prior claim boundary: `13fb278`; activity binding: `8df7c89`; attempt provenance: `4160f26`; chain binding: `69b5faf`; S2 shell boundary: `b2de930`. Start with this handoff and current code; read older logs only for a specific failure.

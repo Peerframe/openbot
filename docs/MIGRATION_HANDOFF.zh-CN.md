@@ -9,6 +9,8 @@
 
 S6 基线 `1fd8b0d` 已独立验收：合成 PostgreSQL/MCP 授权、取消、401、串行领取和 per-Run 预算检查，见 `docs/research/s6-compatibility.md`。C11 已区分共享期限与逐 Run 预算；S6 产品接入仍待完成。
 
+S7 前置验证 `ea75b92` + 清理修复 `36ddc5d` 已独立验收：固定来源历史、有界合成数据转移与真实 PostgreSQL/文件备份恢复。目标 SQL 仍固定为 `e176e90` 的 33 条；专属 CI 已准备但未运行，旧任务转换、完整产品数据与 Temporal 配对恢复仍开放。见 `docs/research/s7-migration-qualification.md`。
+
 ## 旧阶段证据（保留）
 
 分支：`codex/architecture-migration`。当前 S3 按活动领取：`3ece362`；此前领取边界：`13fb278`；活动绑定：`8df7c89`；尝试来源代码：`4160f26`；执行链绑定：`69b5faf`；S2 外壳边界：`b2de930`。先读本文件与当前代码，遇到具体失败才查旧日志。

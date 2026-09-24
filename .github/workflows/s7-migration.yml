@@ -25,6 +25,8 @@ jobs:
         run: node experiments/s7-migration/sources.mjs
       - name: Build the existing migration guard and artifact reader
         run: npm exec -- turbo run build --filter=@openbot/server
+      - name: Check cleanup after unknown container startup
+        run: node --test experiments/s7-migration/cleanup.test.mjs
       - name: Qualify both synthetic histories and paired restores
         run: node experiments/s7-migration/qualify.mjs --report "$RUNNER_TEMP/s7-migration-summary.json"
       - name: Retain content-free qualification evidence
