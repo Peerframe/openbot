@@ -5,7 +5,7 @@ export type WorkspaceLocation =
   | Readonly<{ kind: "home" }>
   | Readonly<{ kind: "channel"; id: string }>
   | Readonly<{ kind: "employee"; id: string; tab: ProfileTab }>
-  | Readonly<{ kind: "automations" | "skills" }>;
+  | Readonly<{ kind: "automations" | "skills" | "work" }>;
 export interface NavigationHistory {
   entries: readonly WorkspaceLocation[];
   index: number;

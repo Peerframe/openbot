@@ -5,7 +5,8 @@ import { BotIcon, HashIcon, PlusIcon, SearchIcon, SettingsIcon, SkillIcon } from
 import { RobotAvatar } from "./RobotAvatar";
 
 interface SidebarProps {
-  destination?: "chat" | "automations" | "skills";
+  destination?: "chat" | "automations" | "skills" | "work";
+  onWork?: (() => void) | undefined;
   onAutomations?: (() => void) | undefined;
   onSkills?: (() => void) | undefined;
   bots: Bot[];
@@ -26,6 +27,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({
+  onWork,
   onSkills,
   bots,
   channels,
@@ -220,6 +222,12 @@ export function Sidebar({
         </section>
       </div>
       <footer className="sidebar-footer">
+        {onWork && (
+          <button className="sidebar-plugin" type="button" onClick={onWork}>
+            <HashIcon />
+            <span>任务监督</span>
+          </button>
+        )}
         {onSkills && (
           <button className="sidebar-plugin" type="button" onClick={onSkills}>
             <SkillIcon />

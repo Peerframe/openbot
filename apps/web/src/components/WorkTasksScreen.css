@@ -1,0 +1,102 @@
+.work-tasks[hidden] {
+  display: none;
+}
+.work-entry {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.work-entry > nav {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  padding: 12px 24px;
+}
+.work-entry > p {
+  padding: 0 24px;
+}
+.work-entry > .work-tasks {
+  flex: 1;
+}
+.work-tasks .destination-scroll {
+  max-width: 960px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.work-tasks h2 {
+  font-size: 18px;
+}
+.work-tasks h3 {
+  font-size: 15px;
+}
+.work-form,
+.work-snapshot {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--destination-line);
+}
+.work-form fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 16px;
+  display: grid;
+  gap: 12px;
+}
+.work-form fieldset[hidden] {
+  display: none;
+}
+.work-tasks label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.work-tasks input,
+.work-tasks textarea,
+.work-tasks select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px;
+  color: inherit;
+  background: var(--destination-bg);
+  border: 1px solid var(--destination-line);
+  border-radius: 6px;
+  font: inherit;
+}
+.work-tasks textarea {
+  resize: vertical;
+}
+.work-form small {
+  display: block;
+  margin-top: 12px;
+}
+.work-lookup,
+.work-controls {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.work-lookup label {
+  flex: 1;
+  min-width: 160px;
+}
+.work-tasks code,
+.work-snapshot h2,
+.work-result,
+.work-snapshot li {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.work-snapshot dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 20px;
+  font-size: 13px;
+}
+.work-snapshot dd {
+  margin: 0;
+}
+.work-snapshot li {
+  margin: 10px 0;
+}

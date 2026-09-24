@@ -26,6 +26,8 @@ import {
   subscribeToWorkspaceEvents,
 } from "./api";
 import { resolveAuthSession } from "./auth-session-recovery";
+import { WorkTasksEntry } from "./components/WorkTasksEntry";
+import { WorkTasksScreen } from "./components/WorkTasksScreen";
 import { AutomationsScreen } from "./components/AutomationsScreen";
 import { ChannelMembersMenu } from "./components/ChannelMembersMenu";
 import { ChannelWorkspace } from "./components/ChannelWorkspace";
@@ -77,6 +79,12 @@ import { updatePreferences, useWorkspacePreferences } from "./workspace-preferen
 type Dialog = "bot" | "channel" | "node" | undefined;
 
 export function App() {
+  const [workEntry, setWorkEntry] = useState(() => window.location.hash === "#/tasks");
+  useEffect(() => {
+    const update = () => setWorkEntry(window.location.hash === "#/tasks");
+    window.addEventListener("hashchange", update);
+    return () => window.removeEventListener("hashchange", update);
+  }, []);
   const material = useWorkspaceAppearance();
   const desktopBridge = getOpenBotDesktopBridge();
   const [desktopConnection, setDesktopConnection] = useState<
@@ -411,6 +419,24 @@ export function App() {
     return <LoginScreen onLogin={async (password) => setSession(await login(password))} />;
   }
 
+  if (workEntry)
+    return (
+      <WorkTasksEntry
+        key={`${session.owner.id}:${desktopConnection?.status === "configured" ? desktopConnection.serverUrl : "web"}`}
+        onLogout={async () => {
+          explicitlyLoggedOut.current = true;
+          ++authRequest.current;
+          try {
+            await logout();
+          } catch (error) {
+            explicitlyLoggedOut.current = false;
+            throw error;
+          }
+          setSession({ authenticated: false });
+        }}
+      />
+    );
+
   if (nativeReady && !modelChecked)
     return (
       <main className="loading-screen">
@@ -554,7 +580,9 @@ export function AuthenticatedWorkspace({
   const navigation = useWorkspaceNavigation();
   const location = navigation.location;
   const destination =
-    location.kind === "automations" || location.kind === "skills" ? location.kind : "chat";
+    location.kind === "automations" || location.kind === "skills" || location.kind === "work"
+      ? location.kind
+      : "chat";
   const selectedChannelId = location.kind === "channel" ? location.id : undefined;
   const selectedEmployeeId = location.kind === "employee" ? location.id : undefined;
   const employeeInitialTab = location.kind === "employee" ? location.tab : "overview";
@@ -841,12 +869,13 @@ export function AuthenticatedWorkspace({
             重新连接
           </button>
         ) : null}
+        <a href="#/tasks">打开任务监督</a>
       </main>
     );
   }
 
   const selectedChannel = workspace.channels.find((channel) => channel.id === selectedChannelId);
-  const fullPage = destination === "skills" || destination === "automations";
+  const fullPage = destination !== "chat";
   const selectedRun = workspace.runs.find((run) => run.id === selectedRunId);
   const panelToggle = (
     <button
@@ -916,22 +945,26 @@ export function AuthenticatedWorkspace({
               <HashIcon />
               <h1
                 title={
-                  destination === "automations"
+                  destination === "work"
+                    ? "任务监督"
+                    : destination === "automations"
+                      ? "自动任务"
+                      : destination === "skills"
+                        ? "技能广场"
+                        : selectedEmployeeId
+                          ? (employeeProfile?.employee.name ?? "Bot 档案")
+                          : "频道聊天"
+                }
+              >
+                {destination === "work"
+                  ? "任务监督"
+                  : destination === "automations"
                     ? "自动任务"
                     : destination === "skills"
                       ? "技能广场"
                       : selectedEmployeeId
                         ? (employeeProfile?.employee.name ?? "Bot 档案")
-                        : "频道聊天"
-                }
-              >
-                {destination === "automations"
-                  ? "自动任务"
-                  : destination === "skills"
-                    ? "技能广场"
-                    : selectedEmployeeId
-                      ? (employeeProfile?.employee.name ?? "Bot 档案")
-                      : "频道聊天"}
+                        : "频道聊天"}
               </h1>
             </div>
           )}
@@ -979,6 +1012,7 @@ export function AuthenticatedWorkspace({
           onAutomations={() =>
             onSettings ? onSettings("automations") : navigation.navigate({ kind: "automations" })
           }
+          onWork={() => navigation.navigate({ kind: "work" })}
           onSkills={() => navigation.navigate({ kind: "skills" })}
           selectedChannelId={destination === "chat" ? selectedChannel?.id : undefined}
           selectedBotId={
@@ -997,7 +1031,8 @@ export function AuthenticatedWorkspace({
         />
       </div>
 
-      {destination === "automations" ? (
+      <WorkTasksScreen bots={workspace.bots} active={destination === "work" && active} />
+      {destination === "work" ? null : destination === "automations" ? (
         <AutomationsScreen bots={workspace.bots} channels={workspace.channels} />
       ) : destination === "skills" ? (
         <SkillLibraryScreen

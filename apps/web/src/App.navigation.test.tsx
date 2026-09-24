@@ -7,6 +7,12 @@ import * as api from "./api";
 import type { OpenBotDesktopBridge } from "./desktop-runtime";
 import { interact, renderComponent, setInputValue } from "./test/render-component";
 import { defaultPreferences, updatePreferences } from "./workspace-preferences";
+import * as workApi from "./work-api";
+
+vi.mock("./work-api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./work-api")>()),
+  listWorkBots: vi.fn(async () => [{ id: "bot-one", name: "Navigator" }]),
+}));
 
 vi.mock("./api", async (importOriginal) => {
   const original = await importOriginal<typeof import("./api")>();
@@ -398,3 +404,41 @@ function restoreProperty(target: object, key: string, descriptor: PropertyDescri
   if (descriptor) Object.defineProperty(target, key, descriptor);
   else Reflect.deleteProperty(target, key);
 }
+
+it.each(["web", "desktop"])(
+  "opens the direct work entry on %s without the unavailable workspace aggregate",
+  async (shell) => {
+    if (shell === "web") delete window.openbotDesktop;
+    window.history.replaceState(null, "", "#/tasks");
+    const rendered = await renderComponent(<App />);
+    try {
+      await settleEffects();
+      expect(api.getWorkspace).not.toHaveBeenCalled();
+      expect(workApi.listWorkBots).toHaveBeenCalled();
+      expect(rendered.container.textContent).toContain("任务监督");
+      expect(rendered.container.querySelector("select")?.textContent).toContain("Navigator");
+    } finally {
+      await rendered.unmount();
+      window.history.replaceState(null, "", "/");
+    }
+  },
+);
+
+it("preserves the work draft when navigating away through the shared sidebar", async () => {
+  const rendered = await renderComponent(<App />);
+  try {
+    await settleEffects();
+    await interact(() => buttonByText(rendered.container, "任务监督").click());
+    await enterDraft(
+      rendered.container.querySelector(".work-form textarea")!,
+      "Pending work objective",
+    );
+    await interact(() => channelButton(rendered.container, "产品讨论").click());
+    await interact(() => buttonByText(rendered.container, "任务监督").click());
+    expect(
+      rendered.container.querySelector<HTMLTextAreaElement>(".work-form textarea")?.value,
+    ).toBe("Pending work objective");
+  } finally {
+    await rendered.unmount();
+  }
+});
