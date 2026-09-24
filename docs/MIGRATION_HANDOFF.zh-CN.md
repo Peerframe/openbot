@@ -1,11 +1,11 @@
 # 架构迁移交接 — 2026-09-24
 
-## 当前简短交接（`7e276d5`）
+## 当前简短交接（`62f94c7`）
 
-- 已完成：S3 多 Run 参考探针在 Worker 启动前只构造一个 Agent，按序列化的 Run 依赖选择各模型/工具 Activity，并拒绝串 Run 的观察。Codex 用固定版本 SDK 和自建临时 Temporal 实际运行：两条真实历史均有两次已完成模型请求和一次已完成工具调用，工具执行区间实际重叠。证据见 `experiments/work-journey/multirun_port_probe.py`、`docs/research/work-temporal-journey.md` 末节及 `/private/tmp/openbot-s3-multirun-probe-overlap-20260924.log`。`npm run check` 退出码为 0；18 项构建均命中缓存。
-- 未完成：探针不是生产 Worker；此处未证明整个 Run 的预算可持久化，也未测试崩溃重放、批准等待、外部结果最终性或真实服务。S3 的 Worker/Runtime 组合与继续执行、S2 全面对齐、S4/TASK020 真实 Linux/runsc、S5–S7 均开放。总体交付粗估仍约 25%，当前处于 S3。
-- 约束：Python 控制层持有身份、授权、任务/动作事实、批准、预算与产物；Temporal 持有继续执行；Runtime/Worker 不产生授权。未知外部写入须经权威核验，否则保持未知。取消/撤权不重新授权。尚不切换生产或发布。
-- 下一阶段输入：`7e276d5`、`apps/server-python/src/openbot_server/{work_effects.py,work_temporal_activity.py}`、`apps/agent-runtime-python/src/openbot_agent_runtime/{executor.py,sdk_ports.py}` 和上述研究文档末节。保留无关的模型服务改动、`docs/OPEN_SOURCE_REUSE.md` 与 `experiments/linux-execution/`；仅遇具体失败才读下方旧记录。
+- 已完成：产品侧 Temporal Activity→Action 接线从一份真实 SDK 上下文绑定已接收的引擎 Run，限定不可信工具请求、向可信策略隐藏模型的 call ID，先校验稳定的策略计划再领取 fence，并把外部操作准入和核验交给既有控制层 Action 边界。临时 PostgreSQL/HTTP 入口通过 299 项、可选 SDK 跳过 2 项；固定版本 Temporal SDK 环境通过 95 项活动/操作检查，其中 32 项是用模拟 SDK 历史验证的新接线反例。`npm run check` 退出码为 0（Turbo 的 31 项 lint/类型/测试和 18 项构建均命中缓存）；最终文档检查实际运行。代码和证据见 `62f94c7` 与研究文档末节。
+- 未完成：这不是已注册的生产 Worker，也未在真实引擎中运行该接线。可信策略须从持久控制/工作流操作事实得出同一 Action key，跨不同 Activity 和重启保持一致；当前测试只使用固定策略。S3 的 Worker/Runtime 组合、整个 Run 的预算、审批后继续、外部结果最终性及崩溃恢复仍开放。S2 全面对齐、S4/TASK020 真实 Linux/runsc、S5–S7 亦开放。总体仍粗估约 25%，当前 S3。独立 S4 任务在 `/Users/yxflc/.codex/worktrees/ae53/openbot` 进行，不拥有 S3 文件。
+- 约束：Python 控制层持有身份、授权、任务/动作事实、批准、预算与产物；Temporal 持有继续执行；Runtime/Worker 不产生授权。未知写入须经权威核验，否则保持未知；取消/撤权不重新授权。尚不切换生产或发布。
+- 下一阶段输入：`62f94c7`、`apps/server-python/src/openbot_server/{work_temporal_activity.py,work_temporal_effect.py,work_effects.py}`、`apps/agent-runtime-python/src/openbot_agent_runtime/{executor.py,sdk_ports.py}` 和研究文档末节。保留无关的模型服务改动、`docs/OPEN_SOURCE_REUSE.md` 与 `experiments/linux-execution/`；仅遇具体失败才读旧记录。
 
 ## 旧阶段证据（保留）
 
