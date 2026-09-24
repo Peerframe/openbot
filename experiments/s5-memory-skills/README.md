@@ -8,6 +8,9 @@ first offline S5 evidence, not S5 completion. The learning and provenance direct
 [Hermes Agent](https://github.com/NousResearch/hermes-agent/tree/63279301bcbdc185c1b07b98a9312eb0c862f26d).
 See the [research and S2 interface review](../../docs/research/s5-memory-skills.md).
 
+The follow-up [Python control selection port](SELECTION_PORT.md) adds Task-bound immutable
+context and fresh version/provenance checks while reusing this accepted fixture.
+
 ## Reproduce
 
 Run from the repository root with Python 3.12+. No install, credentials, network, model, database,

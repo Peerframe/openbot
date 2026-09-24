@@ -8,6 +8,9 @@
 [Hermes Agent](https://github.com/NousResearch/hermes-agent/tree/63279301bcbdc185c1b07b98a9312eb0c862f26d)
 启发。详见[研究与 S2 接口记录](../../docs/research/s5-memory-skills.md)。
 
+后续[Python 控制层选择接口](SELECTION_PORT.zh-CN.md)复用本夹具，
+补充绑定 Task 的不可变上下文和当前版本/来源重新校验。
+
 ## 复现
 
 在仓库根目录使用 Python 3.12+。无需安装依赖、凭证、网络、模型、数据库、产品配置或服务：
