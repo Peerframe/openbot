@@ -137,3 +137,21 @@ The earlier fixed-workflow candidate passed 15 case records through both the dev
 The earlier explicit adjacent-release path passed twelve case records, 57 reference unit checks and eleven
 offline histories on arm64. It covers the fixed stopped 1.31.3 -> 1.32.0 upgrade with identical PG
 schemas; amd64 CI and broader release/worker-code compatibility remain unverified.
+
+## Shared Worker acceptance
+
+`--only-case concurrent-runs` uses one Worker, Agent and queue without a configured Task/Run ID.
+The Worker-only `work_runtime_ports` factory reloads accepted Task context and trusted services
+for each activity; rechecks authority after awaited configuration; detaches nested schemas;
+and keeps model and inline tool catalogs separate. Service assembly cannot execute effects.
+The callback still uses durable control Action admission and settlement; activity guards are not
+whole-Run budgets. Ordinary HTTP startup does not import this optional composition.
+
+The public API starts two Tasks with different objectives and limits. Both tool activities must
+be running simultaneously on their first attempt before one Task is cancelled. Its next effect
+is refused; the other Task completes, settles its own usage and downloads its own artifact.
+Both histories replay without state changes or effects. This proves cancellation, routing and
+accounting isolation with scripted ports. It does not test low-budget rejection, live providers,
+generic operation identities, restart at publication or Linux/runsc. Fixed reference keys and
+publication in `multitask_worker.py` are fixture policy, not a production Worker activation.
+Run with the pinned development CLI above, or `--engine postgres-mtls`; CI includes the latter.

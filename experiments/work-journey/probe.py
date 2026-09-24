@@ -148,7 +148,7 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
         process = Process([sys.executable, '-u', str(HERE / script)], directory,
             {**CLEAN_ENV, 'PYTHONDONTWRITEBYTECODE': '1', 'OPENBOT_WORK_JOURNEY_CONFIG': str(config)})
         children.append(process)
-        if script == 'workflow_worker.py':
+        if script in ('workflow_worker.py', 'multitask_worker.py'):
             process.wait('ready')
         return process
 
@@ -243,6 +243,9 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
         api.start()
         api.call('/api/v1/auth/login', {'password': api.password})
         bot = api.call('/api/v1/bots', {'name': 'Reference', 'role': 'Correct the fixture CSV'}, expected=201)['bot']
+        if only_case == 'concurrent-runs':
+            from multitask_probe import qualify_shared
+            return await qualify_shared(client, api, bot, dsn, artifact_root, server, launch, counts)
         if hasattr(server, 'upgrade'):
             for stage in ('approval', 'publication-ack'):
                 created = api.call('/api/v1/tasks', {'botId': bot['id'],
@@ -701,7 +704,7 @@ def main():
     parser.add_argument('--engine', choices=('development', 'postgres', 'postgres-mtls'), default='development')
     parser.add_argument('--upgrade-archive', type=Path, help='Verified official 1.31.3 archive; requires postgres-mtls')
     parser.add_argument('--only-handoff', action='store_true', help='Run only engine-identity rejection regressions')
-    parser.add_argument('--only-case', choices=('recover','cancel-before-write','cancel-unknown','corrupt-receipt','malformed-json','repair-timeout','automatic-repair-race','repair-cancelled','repair-engine-closed','publication-ack','worker-before-ack','cancel-before-ack'), help='Run one public-work scenario')
+    parser.add_argument('--only-case', choices=('recover','cancel-before-write','cancel-unknown','corrupt-receipt','malformed-json','repair-timeout','automatic-repair-race','repair-cancelled','repair-engine-closed','publication-ack','worker-before-ack','cancel-before-ack','concurrent-runs'), help='Run one public-work scenario')
     args = parser.parse_args()
     assert sys.platform != 'win32', 'POSIX process signals required'
     assert importlib.metadata.version('temporalio') == '1.33.0'

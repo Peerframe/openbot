@@ -915,3 +915,98 @@ not fresh execution of those cached checks. New Python and public-entry evidence
 is the separately executed verification above. The six code hashes were verified
 unchanged before this integrated check. Unrelated model-service dependencies and
 the unaccepted Linux/TASK020 candidate remain outside this commit.
+
+
+## Per-Run product Runtime port assembly (2026-09-24, implementation gate)
+
+Parent `06f6762`. Reuse the accepted constructor-time Runtime builder hooks,
+`load_current_activity_task`, `bind_current_activity`, Runtime guards, limits and
+ToolCatalog. Existing pinned Pydantic AI2.47.0/Temporal1.33.0 factory-hook research
+and OPEN_SOURCE_REUSE entries cover these exact APIs; no new dependency or SDK
+feature is selected. The gap is OpenBot's accepted Task/Run-to-service configuration
+mapping, so a thin control-owned factory is required rather than another Agent,
+workflow engine or external protocol. No upstream source is copied.
+
+The optional Worker-only module loads fresh services from control-owned Task
+context on every model/tool activity. Typed Workflow deps are correlation only and
+must match actual accepted engine identity before service loading. Service loaders
+only assemble configuration/callbacks; they may not call a billed model, execute
+a tool, publish or grant authority. Callbacks retain durable Action admission and
+settlement. Fresh per-activity Runtime counters are never Task/Run budgets.
+
+Independent design review requires nested descriptor detachment (ToolCatalog's
+schema copy is shallow), existing limits/deadline validation, consistent inline
+catalog membership, a fresh binding check after loader await, and a guard spanning
+port awaits. No process-global Run map or cached credentials. Normal HTTP startup
+must not import this optional Runtime/Temporal composition.
+
+Acceptance: wrong deps before loader, revoke during loader/port await, independent
+callbacks/catalogs/guards across Runs, and nested schema mutation. A real public
+Task + PostgreSQL + Temporal fixture must use one queue, one Worker and one Agent
+for overlapping Tasks, persist separate budgets and deliverables, and cancel one
+without suppressing the other. Scripted services are fixture evidence, not live
+provider qualification; generic provider integration remains explicitly open.
+
+### Per-Run factory acceptance
+
+The dsh implementation task `S3-RUN-PORTS` ended with exit0 in isolated parent
+`06f6762`; it supplied only the new factory and focused tests, and ran no tests.
+Codex independently reproduced the missing post-service-loader authority check:
+the original 23 checks passed, but the added model/tool loader-revocation
+counterexamples both failed. Codex fixed the binding order and checked deadlines
+after both binding awaits, bounded correlation IDs, and retained those counterexamples.
+Independent review also required the shared fixture's separate startup retry bound,
+mandatory builder settings, and simultaneous STARTED/attempt1/no-failure evidence
+before cancellation. No second implementer modified dsh's files while it ran.
+
+Stable candidate: parent `06f6762` plus these five source hashes, unchanged throughout
+final verification (the new files were untracked until integration):
+
+```text
+d422302b01cc497c7f2fcba04cfb8b5e009b41a603ecbdfedc6b95cd685e0063  apps/server-python/src/openbot_server/work_runtime_ports.py
+c66169d9d26eea58d06697a618129995a08500d80aa61f8e0bca963acba12491  experiments/work-journey/test_work_runtime_ports.py
+3b454a276d760982d77bcfe9ea63f096d57dbf02f4b638d50b7b4d59fc88dfda  experiments/work-journey/multitask_worker.py
+243adf31d902a9c41541c740d6be885394396f9f7722ac946c9c5706433509a2  experiments/work-journey/multitask_probe.py
+6e07bae58a2be16d6b2570d17237d312d37a24883448967e49778400d8cebdaa  experiments/work-journey/probe.py
+```
+
+Actual verification, each with a distinct retained log under `/private/tmp/`:
+
+- Pinned `/private/tmp/openbot-temporal-review/venv/bin/python -B -m unittest
+  discover -s experiments/work-journey -p test_work_runtime_ports.py -v`:
+  raw dsh candidate 23 passed (`openbot-s3-run-ports-unit-raw-20260924.log`);
+  added independent counterexample failed twice
+  (`openbot-s3-run-ports-counterexample-20260924.log`); fixed candidate 26 passed
+  (`openbot-s3-run-ports-unit-fixed-20260924.log`).
+- Actual entry: `apps/server-python/.venv/bin/python -B -m pytest -q
+  apps/server-python/tests/test_entry.py -p no:cacheprovider`, 9 passed
+  (`openbot-s3-run-ports-entry-20260924.log`).
+- Pinned unittest discovery `-p 'test_*.py'`: 96 passed and 9 loopback-listener
+  errors from sandbox `PermissionError`, not assertion failures
+  (`openbot-s3-run-ports-local-20260924.log`). Only the affected
+  `test_effect_service.py` was rerun with listener permission: 9 passed
+  (`openbot-s3-run-ports-local-listener-20260924.log`).
+- Pinned Python `-u -B experiments/work-journey/probe.py --only-case concurrent-runs`
+  with `--temporal-cli /private/tmp/openbot-temporal-review/temporal`: actual public
+  API/PostgreSQL/development Temporal passed
+  (`openbot-s3-run-ports-public-20260924-01.log`). The same stable input with
+  `--engine postgres-mtls` passed, including the existing role/schema/mTLS checks
+  (`openbot-s3-run-ports-public-pgmtls-20260924.log`). In both: one Worker/Agent/queue,
+  both tool activities overlapping before cancellation; A spent3 and made no further
+  operation; B spent6 and delivered its own authenticated download; both histories
+  replayed with product/effect state unchanged. The SDK emitted its existing
+  `annotated_types` late-import warning; current-history replay succeeded.
+- `npm run check` exited0 (`openbot-s3-run-ports-check-20260924.log`). Repository
+  prerequisites executed; Turbo lint/test/build lanes were cache hits. New Python
+  and public-work evidence above executed separately. CI now includes this shared
+  case; remote CI has not been claimed as executed.
+
+This proves Task routing, cancellation and accounting isolation with scripted
+callbacks, not low-budget refusal, live model support, generic operation identities,
+publication acknowledgement recovery for the new shared fixture, or S3 completion.
+The earlier unchanged full reference recovery/adjacent-release evidence remains
+attached to its original version; those expensive matrices were not rerun here.
+S4's owner reconfirmed `f9ebb1a` has no accepted Linux/runsc run: the current host is
+macOS arm64, with no supplied target Linux x86-64 VM. Its remaining output quota,
+host watchdog, authenticated admission/revocation, browser and takeover gates remain
+open. TASK020 stays unaccepted and outside this integration; no default cutover/release.
