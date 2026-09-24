@@ -41,6 +41,35 @@ class ReceiptTests(unittest.TestCase):
             control.verify(row, record)
 
 
+class RepairStartTests(unittest.IsolatedAsyncioTestCase):
+    async def test_historical_repair_requires_the_accepted_original_start(self):
+        attempt='a'*32
+        reference='temporal:default:'+control.reference(RUN_ID)
+        row={'state':'acknowledged','submission_reference':reference,
+             'engine_reference':reference,'submission_attempt_id':attempt,
+             'engine_first_run_id':'engine-first-run'}
+        cursor=SimpleNamespace(fetchone=AsyncMock(return_value=row))
+        db=SimpleNamespace(execute=AsyncMock(return_value=cursor))
+
+        @asynccontextmanager
+        async def transaction(*,trusted):
+            self.assertTrue(trusted)
+            yield db
+
+        service=SimpleNamespace(_transaction=transaction,_task=AsyncMock())
+        with patch.object(control,'store',return_value=service):
+            self.assertEqual(await control.accepted_start_for_repair(TASK_ID,RUN_ID),
+                ({'taskId':TASK_ID,'runId':RUN_ID,'attemptId':attempt},'engine-first-run'))
+            service._task.assert_awaited_with(db,TASK_ID,read=True)
+            for changed in ({'submission_attempt_id':None},
+                            {'submission_attempt_id':'b'*32,'state':'pending'},
+                            {'engine_reference':'temporal:default:other'},
+                            {'engine_first_run_id':None}):
+                cursor.fetchone.return_value={**row,**changed}
+                with self.assertRaisesRegex(control.ReceiptMismatch,'not accepted'):
+                    await control.accepted_start_for_repair(TASK_ID,RUN_ID)
+
+
 class ControlTests(unittest.IsolatedAsyncioTestCase):
     def patch_port(self, name, **kwargs):
         replacement = patch.object(control, name, **kwargs)
@@ -250,6 +279,130 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
         self.service.files.read.assert_not_called()
         self.service.files.put.assert_not_called()
         self.barrier.assert_not_awaited()
+
+
+class ActivityWriteCompositionTests(unittest.IsolatedAsyncioTestCase):
+    """The reference write activity uses the product Activity->Action seam unchanged."""
+
+    def patch_port(self, name, **kwargs):
+        replacement = patch.object(control, name, **kwargs)
+        result = replacement.start()
+        self.addCleanup(replacement.stop)
+        return result
+
+    def setUp(self):
+        self.service = SimpleNamespace(uncertain=AsyncMock())
+        self.patch_port('bound_ids', return_value=(TASK_ID, RUN_ID))
+        self.patch_port('store', return_value=self.service)
+        self.barrier = self.patch_port('fault_barrier', new=AsyncMock())
+
+    async def test_composition_supplies_the_reviewed_plan_and_trusted_settings(self):
+        captured = {}
+
+        async def seam(*args, **changes):
+            captured['args'] = args
+            captured.update(changes)
+            return SimpleNamespace(status='applied')
+
+        self.patch_port('settings', return_value={'queue': 'work-' + RUN_ID})
+        self.patch_port('execute_activity_action', new=seam)
+        outcome = await control.execute_activity_write('engine-client')
+        self.assertEqual(outcome.status, 'applied')
+        self.assertEqual(captured['args'], (self.service, 'engine-client'))
+        self.assertEqual(captured['expected_namespace'], 'default')
+        self.assertEqual(captured['expected_queue'], 'work-' + RUN_ID)
+        self.assertEqual(captured['expected_workflow_type'], 'WorkJourney')
+        self.assertEqual(captured['request'],
+                         {'call_id': 'reference-write', 'tool': 'write_row',
+                          'arguments': {'row': 7, 'value': 'fixed'}})
+        self.assertIsInstance(captured['policy'], control.WritePolicy)
+        self.assertIsInstance(captured['adapter'], control.WriteAdapter)
+        self.assertIsInstance(captured['verifier'], control.WriteVerifier)
+
+    async def test_closed_task_only_recovers_an_existing_matching_action(self):
+        self.patch_port('settings', return_value={'queue': 'work-' + RUN_ID})
+        self.patch_port('execute_activity_action', new=AsyncMock(
+            side_effect=control.WorkConflict('admission_closed')))
+        row = {'id': ACTION_ID, 'intent_digest': control.canonical(INTENT)[1],
+               'status': 'unknown'}
+        self.patch_port('existing', new=AsyncMock(return_value=row))
+        historical = SimpleNamespace(status='applied', invoked_apply=False)
+        recover = self.patch_port('recover_action', new=AsyncMock(return_value=historical))
+        self.assertIs(await control.execute_activity_write('engine-client'), historical)
+        recover.assert_awaited_once()
+        self.assertEqual(recover.await_args.kwargs['task_id'], TASK_ID)
+        self.assertEqual(recover.await_args.kwargs['run_id'], RUN_ID)
+        self.assertEqual(recover.await_args.kwargs['action_id'], ACTION_ID)
+        self.assertIsInstance(recover.await_args.kwargs['adapter'], control.WriteAdapter)
+
+    async def test_closed_task_never_recovers_a_missing_unadmitted_or_changed_action(self):
+        self.patch_port('settings', return_value={'queue': 'work-' + RUN_ID})
+        self.patch_port('execute_activity_action', new=AsyncMock(
+            side_effect=control.WorkConflict('admission_closed')))
+        existing = self.patch_port('existing', new=AsyncMock())
+        recover = self.patch_port('recover_action', new=AsyncMock())
+        for row in (None,
+                    {'id': ACTION_ID, 'intent_digest': control.canonical(INTENT)[1],
+                     'status': 'proposed'},
+                    {'id': ACTION_ID, 'intent_digest': control.canonical({'kind':'write','row':8,'value':'fixed'})[1],
+                     'status': 'unknown'}):
+            existing.return_value = row
+            with self.assertRaisesRegex(control.WorkConflict, 'admission_closed'):
+                await control.execute_activity_write('engine-client')
+        recover.assert_not_awaited()
+
+    async def test_policy_returns_only_the_reviewed_exact_plan(self):
+        plan = await control.WritePolicy().plan(control.ToolRequest(
+            tool='write_row', arguments={'row': 7, 'value': 'fixed'}, digest='0' * 64))
+        self.assertEqual(plan, control.ActionPlan(action_key='tool:write',
+            intent={'kind': 'write', 'row': 7, 'value': 'fixed'}, reserved_tokens=2,
+            requires_approval=True, expires_seconds=300))
+        with self.assertRaises(control.ReceiptMismatch):
+            await control.WritePolicy().plan(control.ToolRequest(
+                tool='write_row', arguments={'row': 8, 'value': 'fixed'}, digest='0' * 64))
+        with self.assertRaises(control.ReceiptMismatch):
+            await control.WritePolicy().plan(control.ToolRequest(
+                tool='write_row', arguments={'row': 7.0, 'value': 'fixed'}, digest='0' * 64))
+
+    async def test_verifier_binds_only_the_exact_receipt(self):
+        record = {'actionId': ACTION_ID, 'taskId': TASK_ID, 'intent': dict(INTENT),
+                  'result': 'applied', 'actualTokens': 2}
+        digest = control.canonical(INTENT)[1]
+        outcome = await control.WriteVerifier().verify(action_id=ACTION_ID, task_id=TASK_ID,
+            run_id=RUN_ID, intent_digest=digest, intent=dict(INTENT), lookup=record)
+        self.assertIsInstance(outcome, control.VerifiedOutcome)
+        self.assertEqual((outcome.action_id, outcome.applied, outcome.actual_tokens),
+                         (ACTION_ID, True, 2))
+        self.assertEqual(outcome.evidence['sha256'], control.canonical(record)[1])
+        for changed in ({**record, 'result': 'other'}, {**record, 'actualTokens': 3},
+                        {**record, 'taskId': 'other'},
+                        {**record, 'intent': {**INTENT, 'row': 8}}):
+            self.assertIsNone(await control.WriteVerifier().verify(action_id=ACTION_ID,
+                task_id=TASK_ID, run_id=RUN_ID, intent_digest=digest, intent=dict(INTENT),
+                lookup=changed))
+
+    async def test_lost_post_response_marks_unknown_and_stops_before_lookup(self):
+        self.patch_port('http', side_effect=OSError('lost response'))
+        with self.assertRaises(control.UnresolvedEffect):
+            await control.WriteAdapter().apply(ACTION_ID, dict(INTENT))
+        self.service.uncertain.assert_awaited_once_with(ACTION_ID)
+        self.barrier.assert_awaited_once_with('unknown')
+
+    async def test_committed_post_response_stops_at_the_reference_barrier(self):
+        http = self.patch_port('http', return_value=receipt())
+        await control.WriteAdapter().apply(ACTION_ID, dict(INTENT))
+        http.assert_called_once_with('/operations',
+            {'actionId': ACTION_ID, 'taskId': TASK_ID, 'intent': dict(INTENT)})
+        self.barrier.assert_awaited_once_with('after-effect-response')
+        self.service.uncertain.assert_not_awaited()
+
+    async def test_lookup_returns_none_only_for_a_missing_receipt(self):
+        http = self.patch_port('http', side_effect=control.HTTPError(
+            ACTION_ID, 404, 'absent', {}, None))
+        self.assertIsNone(await control.WriteAdapter().lookup(ACTION_ID))
+        http.side_effect = control.HTTPError(ACTION_ID, 503, 'unavailable', {}, None)
+        with self.assertRaises(control.HTTPError):
+            await control.WriteAdapter().lookup(ACTION_ID)
 
 
 if __name__ == '__main__':

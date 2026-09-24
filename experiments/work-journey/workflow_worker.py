@@ -19,6 +19,9 @@ with workflow.unsafe.imports_passed_through():
 
 CONFIG={'start_to_close_timeout':timedelta(seconds=10),'retry_policy':RetryPolicy(maximum_attempts=4,
     initial_interval=timedelta(seconds=1),non_retryable_error_types=['ReceiptMismatch','WorkConflict','InvalidWork'])}
+# Set once in ``main``; the registered activity reads it at call time so the product seam binds
+# the real connected engine client.
+_ENGINE=None
 
 
 class ControlledScript(Model):
@@ -57,8 +60,13 @@ async def prepare(call:dict)->str:return await control.prepare_write(call)
 async def decision(identity:str)->str:return await control.decision(identity)
 @activity.defn
 async def execute_write()->str:
+    # The reference fault barrier stays outside the product seam so a retry can be held before
+    # any inspection or POST, exactly as the existing probe requires.
     await control.fault_barrier('before-write-inspection')
-    return await control.perform('tool:write',{'kind':'write','row':7,'value':'fixed'})
+    outcome=await control.execute_activity_write(_ENGINE)
+    if outcome.status!='applied':
+        raise control.UnresolvedEffect('Query the committed receipt on retry')
+    return outcome.status
 @activity.defn
 async def publish(summary:str)->dict:return await control.publish(summary)
 @activity.defn
@@ -177,8 +185,10 @@ class ClosedRepair:
 
 
 async def main():
+    global _ENGINE
     cfg=control.settings()
     client=await connect_engine(cfg['temporal_address'],cfg.get('engine_tls'),plugins=[PydanticAIPlugin()])
+    _ENGINE=client
     async with Worker(client,task_queue=cfg['queue'],workflows=[WorkJourney,ClosedRepair],activities=[bind_identity,prepare,decision,execute_write,publish,current,repair_state,reconcile_write,finish_failed_repair,reconcile_closed,finish_closed_repair]):
         Path(cfg['directory'],'ready').touch()
         await asyncio.Event().wait()

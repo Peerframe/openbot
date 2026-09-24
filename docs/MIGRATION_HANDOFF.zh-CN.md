@@ -1,11 +1,11 @@
 # 架构迁移交接 — 2026-09-24
 
-## 当前简短交接（`62f94c7`）
+## 当前简短交接（真实引擎候选，父提交 `e176e90`）
 
-- 已完成：产品侧 Temporal Activity→Action 接线从一份真实 SDK 上下文绑定已接收的引擎 Run，限定不可信工具请求、向可信策略隐藏模型的 call ID，先校验稳定的策略计划再领取 fence，并把外部操作准入和核验交给既有控制层 Action 边界。临时 PostgreSQL/HTTP 入口通过 299 项、可选 SDK 跳过 2 项；固定版本 Temporal SDK 环境通过 95 项活动/操作检查，其中 32 项是用模拟 SDK 历史验证的新接线反例。`npm run check` 退出码为 0（Turbo 的 31 项 lint/类型/测试和 18 项构建均命中缓存）；最终文档检查实际运行。代码和证据见 `62f94c7` 与研究文档末节。
-- 未完成：这不是已注册的生产 Worker，也未在真实引擎中运行该接线。可信策略须从持久控制/工作流操作事实得出同一 Action key，跨不同 Activity 和重启保持一致；当前测试只使用固定策略。S3 的 Worker/Runtime 组合、整个 Run 的预算、审批后继续、外部结果最终性及崩溃恢复仍开放。S2 全面对齐、S4/TASK020 真实 Linux/runsc、S5–S7 亦开放。总体仍粗估约 25%，当前 S3。独立 S4 任务在 `/Users/yxflc/.codex/worktrees/ae53/openbot` 进行，不拥有 S3 文件。
-- 约束：Python 控制层持有身份、授权、任务/动作事实、批准、预算与产物；Temporal 持有继续执行；Runtime/Worker 不产生授权。未知写入须经权威核验，否则保持未知；取消/撤权不重新授权。尚不切换生产或发布。
-- 下一阶段输入：`62f94c7`、`apps/server-python/src/openbot_server/{work_temporal_activity.py,work_temporal_effect.py,work_effects.py}`、`apps/agent-runtime-python/src/openbot_agent_runtime/{executor.py,sdk_ports.py}` 和研究文档末节。保留无关的模型服务改动、`docs/OPEN_SOURCE_REUSE.md` 与 `experiments/linux-execution/`；仅遇具体失败才读旧记录。
+- 已完成：固定参考流程已在真实 Temporal 引擎中执行产品 Activity→Action 接线。未知写入仅查回执、不重复 POST；取消后只补记历史事实。修复命令核对持久化尝试标识与原始引擎链。最终候选独立通过 21 项局部单元检查和完整 16 项开发引擎流程，包含真实历史重放。集成目录 `npm run check` 退出码为 0，Turbo 项命中缓存，仓库前置检查实际执行。文件摘要、命令、失败与日志见 `docs/research/work-temporal-journey.md` 末节。
+- 未完成：产品 Worker/Runtime 组合、稳定的逐操作 Action 身份、整个 Run 的预算和通用继续执行仍属 S3 工作。本候选未运行 PostgreSQL/mTLS 引擎或相邻版本升级；后者需先复核等待发布场景的查询计数预期。真实 Linux/runsc 和 S2 全面对齐仍开放。总体仍粗估约 25%，当前 S3；参考流程通过不等于阶段完成。
+- 约束：Python 控制层拥有身份、授权、Task/Action、审批、预算和产物；Temporal 独占继续执行；Runtime/Worker 不产生授权。未知写入只能权威核对或保留 unknown。取消、撤权不能恢复副作用授权。未切换生产、未发布。
+- 下一阶段输入：`apps/server-python/src/openbot_server/{work_temporal_activity.py,work_temporal_effect.py,work_effects.py}`、`apps/agent-runtime-python/src/openbot_agent_runtime/{executor.py,sdk_ports.py}`、本提交的 `experiments/work-journey/` 改动与研究末节。保留无关模型服务修改、`docs/OPEN_SOURCE_REUSE.md` 和未验收 `experiments/linux-execution/`。S4–S7 已有独立工作树任务，准备工作不算产品验收；仅遇具体失败才读旧记录。
 
 ## 旧阶段证据（保留）
 

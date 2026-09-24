@@ -33,7 +33,7 @@ completion/failure. No screenshots, transcripts or runtime databases are reposit
 
 ## Released Server with PostgreSQL
 
-Use `--engine postgres-mtls` (requires OpenSSL on PATH) instead of `--temporal-cli` to run the same 15 current cases against the
+Use `--engine postgres-mtls` (requires OpenSSL on PATH) instead of `--temporal-cli` to run the current case matrix against the
 [digest-pinned deployment profile](../../deploy/temporal/README.md). This path adds explicit schema
 and SQL-role checks, engine/database SIGKILL at approval, and a cold history/visibility backup
 restored to a new volume after a write becomes unknown in the newer product database. The same
@@ -121,7 +121,7 @@ reconnect and shared client projections remain separate work. Bounded engine ret
 not a business success or a refund. An unresolved Task needs an explicit reconciliation/recovery
 operator path before production. The explicit Owner reconciliation route can also start a command-scoped lookup after a closed reference workflow. It settles historical Action facts only; it does not resume the original Agent, complete the Task, or qualify a production dispatcher. File quotas/GC/storage durability remain open.
 
-The earlier fixed-workflow candidate passed 15 case records through both the development engine and the PostgreSQL/mTLS engine, including a cold engine backup/restore with accepted-but-unfinished command redelivery. The new closed-history case passed a targeted public API/PostgreSQL/Temporal run on both engines, including lost delivery acknowledgement and two explicit lookup cycles. The full matrix has not been rerun against this change. These are fake external effects, not real Linux/runsc isolation.
+The earlier fixed-workflow candidate passed 15 case records through both the development engine and the PostgreSQL/mTLS engine, including a cold engine backup/restore with accepted-but-unfinished command redelivery. The new closed-history case passed a targeted public API/PostgreSQL/Temporal run on both engines, including lost delivery acknowledgement and two explicit lookup cycles. After the Activity-to-Action seam was connected, the full 16-case development-engine matrix passed on the candidate identified in the final research section. The PostgreSQL/mTLS matrix and adjacent-release lane have not been rerun on that candidate. These are fake external effects, not real Linux/runsc isolation.
 
 The earlier explicit adjacent-release path passed twelve case records, 57 reference unit checks and eleven
 offline histories on arm64. It covers the fixed stopped 1.31.3 -> 1.32.0 upgrade with identical PG

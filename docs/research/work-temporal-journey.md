@@ -564,3 +564,66 @@ The replay guarantee remains scoped to a stable Action key. A future production 
 derive that key from a durable control/workflow operation fact and demonstrate the same key after
 a distinct Activity or Worker restart; these fixture tests use a fixed trusted policy and do not
 prove that future binding. No upstream source is copied and no dependency was added.
+
+
+## Real-engine Activity-to-Action reference (2026-09-24)
+
+Candidate: parent `e176e90`, the four `experiments/work-journey/` files in this
+commit. dsh implemented in `/private/tmp/openbot-dsh-s3-real-effect-20260924`;
+Codex reviewed and corrected the candidate before independent acceptance. The
+integrated files match the tested copy byte for byte (SHA-256):
+
+| File | SHA-256 |
+| --- | --- |
+| `control.py` | `48f68d06de50cc878f92f2d7538540404fecfc47a0c4dcd8face893460e2e3d3` |
+| `deliver_repair.py` | `d385b87008e10511a7d2ce089b8b640fd20df055f8610325d0748a23485a6231` |
+| `test_control.py` | `4c4434a11c6cee9e02bd29526e3d7b9357f222135ccf5b28330aa33d23b76ef5` |
+| `workflow_worker.py` | `3aab8c85a493722e0f06045a290bc080e4c9b938ad4f4ed59ad34581b1a467ea` |
+
+The fixed reference now runs its reviewed write through the product
+`execute_activity_action` seam using actual SDK activity/history identity. The
+trusted policy owns the stable Action key; the adapter performs a POST only after
+fresh admission, then requires authoritative lookup. Its old receipt verifier is
+reused. Cancelled Tasks cannot claim again: a separate `recover_action` path can
+only inspect an already admitted, exact-intent Action from the reference's trusted
+Task/Run configuration. This is historical settlement, never a new grant.
+
+The first real cancellation run failed with `admission_closed`; adding that
+lookup-only path fixed it. The subsequent full run caught stale repair input
+verification that omitted the persisted start attempt. Delivery now checks the
+full accepted input and original engine Run chain, including after Task closure.
+Neither fix relaxes unknown-result, cancellation, reservation or receipt checks.
+
+Final actual runs in the isolated candidate:
+
+- `/private/tmp/openbot-temporal-review/venv/bin/python -B -m unittest discover
+  -s experiments/work-journey -p test_control.py -v`: 21 passed. Log:
+  `/private/tmp/openbot-s3-real-effect-unit-final-20260924.log`.
+- The same interpreter, `-B experiments/work-journey/probe.py --temporal-cli
+  /private/tmp/openbot-temporal-review/temporal`: 16 case records passed, real
+  public HTTP/PostgreSQL/Temporal with synthetic external effects. It checks
+  unknown results, malformed receipts, timeout, repair delivery, automatic/manual
+  races, cancellation, closed-history repair, publication and rejected handoffs.
+  Actual-history replay passed; deliberately incompatible replay was rejected.
+  Log: `/private/tmp/openbot-s3-real-effect-full-dev-final-20260924.log`.
+- Runtime versions: Temporal SDK 1.33.0, Pydantic AI 2.47.0, CLI 1.9.1,
+  development Server 1.32.0. No live model or external account was used.
+
+Failed runs remain in `/private/tmp/openbot-s3-real-effect-cancel-unknown-20260924.log`
+and `/private/tmp/openbot-s3-real-effect-full-dev-20260924.log`. A broader 69-test
+reference unit run passed on an earlier candidate; it is not substituted for the
+final candidate's checks. dsh could not run local shell tests in its nested sandbox;
+its delivery was accepted only after Codex's independent runs.
+
+Not run on this candidate: PostgreSQL/mTLS engine, adjacent-release upgrade,
+real Linux/runsc, or production Worker/Runtime composition. The adjacent-release
+probe's held-publication lookup-count expectation also needs review before that
+lane runs: the new product seam always verifies the POST via lookup. Earlier
+engine-upgrade passes do not qualify this candidate. This is a fixed reference,
+not the per-Run production Worker or a proof of general stable Action derivation.
+No new dependency or copied upstream source; reuse decisions above remain valid.
+
+Integrated-tree `npm run check` exited 0; repository prerequisite checks executed,
+while both 31-task Turbo lanes and all 18 build tasks were cache hits. Log:
+`/private/tmp/openbot-s3-real-effect-check-resume-20260924.log`. The unchanged
+real-engine candidate evidence above was reused rather than rerun.

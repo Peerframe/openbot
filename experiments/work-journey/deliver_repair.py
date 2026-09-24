@@ -13,7 +13,7 @@ import control
 from openbot_server.work_reconciliation import ReconciliationStore
 
 
-async def verify_start(client, handle, *, workflow_type, queue, identity):
+async def verify_start(client, handle, *, workflow_type, queue, identity, first_run_id=None):
     event = None
     async for event in handle.fetch_history_events(page_size=1):
         break
@@ -22,6 +22,8 @@ async def verify_start(client, handle, *, workflow_type, queue, identity):
     start = event.workflow_execution_started_event_attributes
     if start.workflow_type.name != workflow_type or start.task_queue.name != queue:
         raise ValueError('Repair engine type/queue mismatch')
+    if first_run_id is not None and start.first_execution_run_id != first_run_id:
+        raise ValueError('Repair engine chain mismatch')
     if await client.data_converter.decode(start.input.payloads, [dict]) != [identity]:
         raise ValueError('Repair engine scope mismatch')
 
@@ -39,8 +41,9 @@ async def main():
     description = await client.get_workflow_handle(workflow_id).describe()
     # Bind the run we verified. An unbound handle would signal a possibly different latest run.
     handle = client.get_workflow_handle(workflow_id, run_id=description.run_id)
+    original_input,first_run_id=await control.accepted_start_for_repair(task_id,run_id)
     await verify_start(client, handle, workflow_type='WorkJourney', queue=cfg['queue'],
-                       identity={'taskId':task_id,'runId':run_id})
+                       identity=original_input,first_run_id=first_run_id)
     await control.fault_barrier('before-repair-delivery')
     if description.status == WorkflowExecutionStatus.RUNNING:
         await handle.signal('repair_requested', command_id)

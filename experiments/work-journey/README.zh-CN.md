@@ -26,7 +26,7 @@ node scripts/test-python-control.mjs
 ## 发行版 Server 与 PostgreSQL
 
 将 `--temporal-cli` 替换为 `--engine postgres-mtls`（PATH 需有 OpenSSL），在[固定镜像配置](../../deploy/temporal/README.zh-CN.md)
-上运行当前 15 项场景。另检查 schema/运行账户权限、等待批准时引擎和数据库 SIGKILL，并在业务库已经
+上运行当前场景矩阵。另检查 schema/运行账户权限、等待批准时引擎和数据库 SIGKILL，并在业务库已经
 保存未知写入后，把较旧引擎备份恢复到新卷。namespace 与当前公开 Task 状态保持；成功仍为五次 POST、
 一次写入、11 假定用量。38 项参考、维护、重放与传输单元检查通过，mTLS PG 流程已接入现有 Linux Python CI。
 
@@ -83,7 +83,7 @@ Temporal 生产部署授权/PKI、历史保留、完整产品备份恢复、版�
 本次客户端是认证 HTTP 重连，浏览器/SSE 和共享客户端仍待实现。引擎重试耗尽不等于业务成功或预算退款；
 公开 Owner 核对入口也可为已关闭的参考工作流启动单条命令的历史核查；这只补记 Action 事实，不恢复原 Agent、不自动完成 Task，也不构成生产派发器验收。文件配额、回收及存储耐久性仍未完成。
 
-此前固定流程候选在开发引擎与 PostgreSQL/mTLS 引擎各通过 15 项场景，包括旧引擎冷备份恢复后重新通知已送达、未完成的命令。新增的已关闭历史核查在两种引擎上各通过一次定向公开 API/PostgreSQL/Temporal 流程，包含送达确认丢失与两轮显式查询；改动后的完整场景矩阵尚未重跑。外部服务为受控假件，不是 Linux/runsc 隔离验收。
+此前固定流程候选在开发引擎与 PostgreSQL/mTLS 引擎各通过 15 项场景，包括旧引擎冷备份恢复后重新通知已送达、未完成的命令。新增的已关闭历史核查在两种引擎上各通过一次定向公开 API/PostgreSQL/Temporal 流程，包含送达确认丢失与两轮显式查询；接入 Activity→Action 后，研究末节标识的候选已通过完整 16 项开发引擎场景；该候选尚未重跑 PostgreSQL/mTLS 矩阵和相邻版本升级。外部服务为受控假件，不是 Linux/runsc 隔离验收。
 
 此前显式相邻版本路径已在 arm64 通过 12 项流程记录、57 项参考单元检查和 11 份历史重放。
 范围是 PG schema 相同的 1.31.3 -> 1.32.0 停机升级；amd64 CI 和更广版本/工作流代码兼容仍待验证。
