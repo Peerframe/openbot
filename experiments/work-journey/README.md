@@ -205,3 +205,20 @@ production service configuration, general approval/correction continuation or Li
 
 `product-concurrent-runs` reuses the existing two-Task cancellation contract on the product Worker,
 with scripted ports and unchanged budget/effect/Artifact assertions.
+
+
+### Deferred approval recovery
+
+`--engine postgres-mtls --only-case product-deferred-approval` exercises the product Worker
+with synthetic model/effect services and actual public HTTP, PostgreSQL and Temporal. It kills
+preparation after the Action commits and approves while the Worker is absent. The replacement
+planner is disabled: retry must reuse the original Action. A malformed receipt keeps the effect
+unknown and reserved; a persisted Owner command later performs lookup-only reconciliation.
+Another Task is cancelled after approval without a write. Denial closes a Task, then a kill before
+stop acknowledgement verifies terminal readback. The test verifies engine Activity attempts,
+public file download, budget settlement and replay without additional effects.
+
+Run focused workflow checks with `python -B -m pytest -q experiments/work-journey/test_product_deferred_workflow.py`. The owned PostgreSQL
+runner includes the optional deferred tests when `OPENBOT_TEMPORAL_TEST_PYTHON` selects the
+pinned Worker environment. Real provider accounts and Linux/runsc isolation are not exercised.
+See [candidate evidence and failures](../../docs/research/work-deferred-approval.md).

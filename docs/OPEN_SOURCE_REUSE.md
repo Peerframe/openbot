@@ -653,3 +653,12 @@ The operator CLI requires explicit mTLS/private configuration and makes one boun
 pass over existing reservations. Recovery reads the original immutable completion/artifacts;
 it cannot grant authority, rerun verification or repeat effects. No upstream source copied or
 new scheduler/dependency introduced. See [qualification and limits](research/work-product-worker.md).
+
+
+## Product deferred approval (2026-09-24)
+
+Reuse the same Pydantic AI2.47.0 ExternalToolset/DeferredToolResults and Temporal1.33.0
+Activity/timer APIs, with the existing control Action, approval and reconciliation stores.
+Control retains immutable proposals and performs authorization; SDK declarations do not grant
+execution. No upstream code copied, dependency or schema added. See
+[review, contracts and qualification](research/work-deferred-approval.md).

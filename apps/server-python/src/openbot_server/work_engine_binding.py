@@ -110,8 +110,14 @@ async def assert_completed_workflow(store: PostgresWorkStore, identity, facts, *
         expected_queue=expected_queue, expected_workflow_type=expected_workflow_type, completed=True)
 
 
+async def assert_failed_workflow(store, identity, facts, *, expected_namespace, expected_queue, expected_workflow_type):
+    """Readback of an already recorded terminal refusal; never authorizes execution."""
+    return await _assert_workflow(store, identity, facts, expected_namespace=expected_namespace,
+        expected_queue=expected_queue, expected_workflow_type=expected_workflow_type, completed=False, failed=True)
+
+
 async def _assert_workflow(store, identity, facts, *, expected_namespace, expected_queue,
-                           expected_workflow_type, completed):
+                           expected_workflow_type, completed, failed=False):
     """Fail closed unless this activity matches one acknowledged Task/Run engine start.
 
     ``expected_*`` are trusted settings from control composition; ``identity`` must be exactly
@@ -181,9 +187,10 @@ async def _assert_workflow(store, identity, facts, *, expected_namespace, expect
         admission = await cursor.fetchone()
         if admission is None:
             raise WorkNotFound()
-        if completed:
-            if task['status'] != 'completed' or admission['run_status'] != 'completed':
-                raise WorkConflict('completion_not_recorded')
+        if completed or failed:
+            status = 'failed' if failed else 'completed'
+            if task['status'] != status or admission['run_status'] != status:
+                raise WorkConflict('failure_not_recorded' if failed else 'completion_not_recorded')
         else:
             store._active(task)
             if admission['run_status'] not in ('queued', 'running'):

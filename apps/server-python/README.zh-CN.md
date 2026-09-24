@@ -232,3 +232,14 @@ None 返回。错误身份、权限关闭和 Task／Run 缺失直接拒绝，模
 有限派发命令为 `python -I scripts/dispatch-work.py --config /绝对路径/operator.json`，
 `--check` 仅作本地配置检查。必须显式提供 mTLS 与私有配置；不迁移数据库、不后台轮询、不隐式加载账户。
 详见[配置与可复现恢复用例](../../experiments/work-journey/README.zh-CN.md#产品-worker-恢复用例)。
+
+
+延期工具须同时提供可信 `plan_effect(context, request)` 与
+`load_effect(context, stored_intent)` 回调，分别返回 `DeferredPlan` 和原始动作的
+`EffectServices`。回调不授予权限。控制层验证工具目录与参数 schema，保存完整提案后才接受
+公开审批；准备阶段重试读取原 Action，不重新规划。人工等待结束后的执行使用新 Activity claim；
+已准入或 unknown 的 Action 只能核对原动作。
+
+确认 `applied` 后，同一 Workflow 使用完整 SDK 历史和累计模型用量继续。拒绝、过期或已核验未生效
+会将任务关闭为失败，不发布产物；取消和撤权不能产生新执行授权。人工修复命令仍区分已持久化、
+已送达与已核验完成。此可选路径不提供真实 Linux 执行环境，也不切换默认后端。

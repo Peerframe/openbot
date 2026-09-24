@@ -148,3 +148,17 @@ CLI 不迁移数据库、不启动 Worker；可信部署代码必须显式组合
 
 `product-concurrent-runs` 在产品 Worker 上复用原有双任务取消契约，采用脚本化端口，
 保留预算、动作计数及产物的既有断言。
+
+
+### 延期审批恢复
+
+`--engine postgres-mtls --only-case product-deferred-approval` 使用合成模型/效果服务和真实
+公开 HTTP、PostgreSQL、Temporal 验证产品 Worker。Action 提交后、准备回执返回前终止 Worker，
+在 Worker 离线时批准，再禁用规划器重启：只能复用原 Action。异常收据保持 unknown 与预算预留；
+已持久化的人工命令随后仅查询原动作。另一任务在批准后取消，不能写入。拒绝会关闭任务，并在
+关闭事务提交但回执未返回时再次重启，验证终态读回。检查包含实际 Activity 重试、公开文件下载、
+预算结算及无额外副作用的历史回放。
+
+局部 Workflow 检查命令：`python -B -m pytest -q experiments/work-journey/test_product_deferred_workflow.py`。
+现有临时 PostgreSQL 验证器在 `OPENBOT_TEMPORAL_TEST_PYTHON` 指定固定版本 Worker 环境时包含延期测试。
+这里不验证真实模型账户或 Linux/runsc 隔离。候选与失败见[研究记录](../../docs/research/work-deferred-approval.md)。

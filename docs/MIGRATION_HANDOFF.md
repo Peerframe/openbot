@@ -1,5 +1,13 @@
 # Architecture migration handoff — 2026-09-24
 
+## Current short handoff — deferred approval (parent `965a643`)
+
+- Completed: product deferred proposal/approval uses the original durable Action after restart; unknown outcomes permit lookup-only Owner commands, then full-history/cumulative-usage continuation. Denial closes the Task and recovers a lost acknowledgement without new authority.
+- Evidence: actual public HTTP/PG/mTLS prepare/deny acknowledgement loss, approval while absent, cancellation, unknown repair, download and unchanged replay passed. Independent review preceded the long test; exact candidate hashes, failure logs and executed/cached/skipped checks are in `docs/research/work-deferred-approval.md`.
+- Open: this slice does not complete S3. Product corrections, general service activation and closed-Workflow repair integration remain; S4 Linux/runsc and TASK020 are unaccepted. No default change or release.
+- Stop: the latest user instruction supersedes the earlier through-S4 stop point. Finish this slice's local delivery, then pause; do not start another S3/S4 task. Future input, only after authorization: this handoff, the local delivery commit, `work_deferred.py`, `work_worker.py` and the new research file. Preserve unrelated model-service edits and TASK020.
+
+
 ## Current short handoff — product Worker/dispatch (parent `d0f7c1a`)
 
 - Completed: optional product-owned Workflow/Agent with trusted per-Run services and independent publication verification; finite operator CLI with explicit mTLS. A lost publication acknowledgement reads the exact committed result without new claims, callbacks or effects.

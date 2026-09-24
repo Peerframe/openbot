@@ -252,3 +252,15 @@ async def bind_completed_activity(store, client, *, expected_namespace, expected
         {'taskId': facts.start_input['taskId'], 'runId': facts.start_input['runId']}, facts,
         expected_namespace=expected_namespace, expected_queue=expected_queue,
         expected_workflow_type=expected_workflow_type)
+
+
+async def bind_failed_activity(store, client, *, expected_namespace, expected_queue,
+                                    expected_workflow_type):
+    """Read-only terminal-refusal recovery, with the same original engine/attempt proof."""
+    from .work_engine_binding import assert_failed_workflow
+    facts = await inspect_activity_start(client, activity_info(), expected_namespace=expected_namespace,
+        expected_queue=expected_queue, expected_workflow_type=expected_workflow_type)
+    return await assert_failed_workflow(store,
+        {'taskId': facts.start_input['taskId'], 'runId': facts.start_input['runId']}, facts,
+        expected_namespace=expected_namespace, expected_queue=expected_queue,
+        expected_workflow_type=expected_workflow_type)

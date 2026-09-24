@@ -139,6 +139,13 @@ class WorkRuntimePortFactory:
         return PortModel(step_port=services.model_step, catalog=model_catalog, guard=guard,
                          limits=self._limits)
 
+    async def deferred_catalog(self, deps: WorkRuntimeDeps) -> ToolCatalog:
+        """Detached non-executing declarations from this accepted activity's trusted catalog."""
+        _, _, model, inline = await self._prepare(deps)
+        names = {tool.name for tool in inline.descriptors}
+        return ToolCatalog(tuple(tool for tool in model.descriptors if tool.name not in names),
+            max_tools=self._limits.catalog_tools, max_bytes=self._limits.catalog_bytes)
+
     async def toolset_factory(self, deps: WorkRuntimeDeps) -> PortToolset:
         """Return a fresh ``PortToolset`` for one Activity, or refuse before any tool work.
 

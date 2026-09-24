@@ -406,7 +406,7 @@ jobs:
       - name: Qualify adjacent Temporal release recovery with PostgreSQL and mutual TLS
         shell: bash
         run: |
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q apps/agent-runtime-python/tests/test_temporal_agent.py
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q apps/agent-runtime-python/tests/test_temporal_agent.py experiments/work-journey/test_product_deferred_workflow.py
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
             --engine postgres-mtls --only-case concurrent-runs
@@ -418,6 +418,8 @@ jobs:
             --engine postgres-mtls --only-case product-publication-recovery
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
             --engine postgres-mtls --only-case product-concurrent-runs
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
+            --engine postgres-mtls --only-case product-deferred-approval
           curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
             --max-time 180 --max-filesize 93822307 \
             --output "$RUNNER_TEMP/temporal_1.31.3_linux_amd64.tar.gz" \

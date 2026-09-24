@@ -6,7 +6,7 @@ experiment import, credentials in Workflow inputs, per-Run cache or alternate re
 """
 import asyncio
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from datetime import timedelta
 from copy import deepcopy
 import inspect
@@ -14,11 +14,18 @@ import inspect
 from temporalio import activity, workflow
 from temporalio.common import RetryPolicy
 from temporalio.worker import Worker
-from pydantic_ai.usage import UsageLimits
+from pydantic_ai import DeferredToolRequests, DeferredToolResults
+from pydantic_ai.toolsets import ExternalToolset
+from pydantic_ai.usage import UsageLimits, RunUsage
+from temporalio.exceptions import ApplicationError
 from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
 
 with workflow.unsafe.imports_passed_through():
     from openbot_agent_runtime.temporal_agent import build_temporal_agent
+    from openbot_agent_runtime.catalog import ToolCatalog
+    from openbot_agent_runtime.contracts import ToolDescriptor
+    from .work_deferred import DeferredActivities
+    from .work_deferred_values import parse_proposal
     from .work_runtime_ports import WorkRuntimeDeps, WorkRuntimePortFactory
     from .work_temporal_start import load_current_activity_task
     from .work_temporal_activity import bind_completed_activity, claim_current_activity
@@ -31,7 +38,7 @@ CONFIG = {'start_to_close_timeout': timedelta(seconds=75),
           'retry_policy': RetryPolicy(initial_interval=timedelta(seconds=1), maximum_attempts=3,
             non_retryable_error_types=['WorkConflict', 'InvalidWork', 'RuntimeFailure'])}
 START_CONFIG = {**CONFIG, 'retry_policy': RetryPolicy(initial_interval=timedelta(seconds=1),
-    maximum_interval=timedelta(seconds=5), non_retryable_error_types=['WorkConflict', 'InvalidWork', 'WorkNotFound'])}
+    maximum_interval=timedelta(seconds=5), non_retryable_error_types=['WorkConflict', 'InvalidWork', 'WorkNotFound', 'RuntimeFailure'])}
 # One deployment composition per process, no identity map. Never used during Workflow replay.
 _HOST = None
 
@@ -63,7 +70,8 @@ class VerifiedTaskResult:
 
 
 class WorkActivities:
-    def __init__(self, store, client, *, namespace, queue, load_services, verify_result):
+    def __init__(self, store, client, *, namespace, queue, load_services, verify_result,
+                 plan_effect=None, load_effect=None):
         text(namespace, 64); text(queue, 256)
         if getattr(client, 'namespace', None) != namespace:
             raise WorkConflict('engine_namespace_mismatch')
@@ -75,13 +83,21 @@ class WorkActivities:
         self.scope = dict(expected_namespace=namespace, expected_queue=queue, expected_workflow_type=TYPE)
         self.ports = WorkRuntimePortFactory(store, client, **self.scope,
                                            load_services=load_services, deadline_seconds=60)
+        self.deferred = None
+        if plan_effect is not None or load_effect is not None:
+            self.deferred = DeferredActivities(self, plan_effect, load_effect)
+
 
     @activity.defn(name='openbot.load_task.v1')
     async def load_task(self, identity: dict) -> dict:
         context = await load_current_activity_task(self.store, self.client, **self.scope)
         if (context.task_id, context.run_id) != (identity.get('taskId'), identity.get('runId')):
             raise WorkConflict('runtime_deps_scope_mismatch')
-        return {'taskId': context.task_id, 'runId': context.run_id, 'objective': context.objective}
+        result = {'taskId': context.task_id, 'runId': context.run_id, 'objective': context.objective}
+        if self.deferred is not None:
+            catalog = await self.ports.deferred_catalog(WorkRuntimeDeps(context.task_id, context.run_id))
+            result['deferredTools'] = [asdict(tool) for tool in catalog.descriptors]
+        return result
 
     async def completed_result(self, summary):
         try:
@@ -166,14 +182,59 @@ class OpenBotWork:
     @workflow.run
     async def run(self, identity: dict) -> dict:
         context = await workflow.execute_activity('openbot.load_task.v1', identity, **START_CONFIG)
-        result = await agent.run(context['objective'],
-            deps=WorkRuntimeDeps(context['taskId'], context['runId']),
-            usage_limits=UsageLimits(request_limit=32))
+        deps = WorkRuntimeDeps(context['taskId'], context['runId'])
+        options = {}
+        if context.get('deferredTools'):
+            catalog = ToolCatalog(tuple(ToolDescriptor(**tool) for tool in context['deferredTools']),
+                                  max_tools=64, max_bytes=65536)
+            options = dict(output_type=[str, DeferredToolRequests],
+                toolsets=[ExternalToolset(list(catalog.sdk_definitions().values()), id='openbot-deferred')])
+        usage = RunUsage()
+        result = await agent.run(context['objective'], deps=deps, usage=usage,
+                                 usage_limits=UsageLimits(request_limit=32), **options)
+        pauses = 0
+        while isinstance(result.output, DeferredToolRequests):
+            calls = result.output.calls
+            pauses += 1
+            if pauses > 16 or result.output.approvals or not 1 <= len(calls) <= 8:
+                raise ApplicationError('invalid_deferred_batch', non_retryable=True)
+            try:
+                proposals = [parse_proposal(dict(call_id=c.tool_call_id, tool=c.tool_name, arguments=c.args)) for c in calls]
+                if len({p['call_id'] for p in proposals}) != len(proposals):
+                    raise InvalidWork('duplicate_correlation')
+            except InvalidWork:
+                raise ApplicationError('invalid_deferred_proposal', non_retryable=True) from None
+            prepared = []
+            for proposal in proposals:
+                action_id = await workflow.execute_activity('openbot.prepare_tool.v1', proposal, **CONFIG)
+                prepared.append((proposal['call_id'], action_id))
+            outcomes = {}
+            for call_id, action_id in prepared:
+                while True:
+                    state = await workflow.execute_activity('openbot.tool_state.v1', action_id, **CONFIG)
+                    if state['status'] in ('approved','not_required','admitted'):
+                        state = await workflow.execute_activity('openbot.execute_tool.v1', action_id, **CONFIG)
+                    if state['status'] == 'unknown' and state.get('commandId'):
+                        state = await workflow.execute_activity('openbot.reconcile_tool.v1',
+                            dict(actionId=action_id, commandId=state['commandId']), **CONFIG)
+                    if state['status'] in ('not_applied','denied','expired'):
+                        return await workflow.execute_activity('openbot.stop_tool.v1', action_id, **CONFIG)
+                    if state['status'] == 'applied':
+                        outcomes[call_id] = dict(actionId=action_id, status=state['status'])
+                        break
+                    if state['status'] not in ('pending','unknown'):
+                        raise ApplicationError('invalid_deferred_state', non_retryable=True)
+                    # The database owns the decision; this durable timer creates no grant or lookup.
+                    await workflow.sleep(2)
+            result = await agent.run(message_history=result.all_messages(), deps=deps, usage=usage,
+                deferred_tool_results=DeferredToolResults(calls=outcomes),
+                usage_limits=UsageLimits(request_limit=32), **options)
         return await workflow.execute_activity('openbot.publish_task.v1', result.output, **CONFIG)
 
 
 @asynccontextmanager
-async def product_worker(client, store, *, namespace, queue, load_services, verify_result):
+async def product_worker(client, store, *, namespace, queue, load_services, verify_result,
+                         plan_effect=None, load_effect=None):
     """Serve one operator-selected queue. The connected client needs PydanticAIPlugin.
 
     Callbacks are required Python composition, not import paths or defaults. Shutdown drains the
@@ -183,11 +244,15 @@ async def product_worker(client, store, *, namespace, queue, load_services, veri
     if _HOST is not None:
         raise WorkConflict('worker_already_configured')
     host = WorkActivities(store, client, namespace=namespace, queue=queue,
-                          load_services=load_services, verify_result=verify_result)
+                          load_services=load_services, verify_result=verify_result,
+                          plan_effect=plan_effect, load_effect=load_effect)
     _HOST = host
+    activities = [host.load_task, host.publish_task]
+    if host.deferred is not None:
+        activities += [host.deferred.prepare, host.deferred.state, host.deferred.execute, host.deferred.reconcile, host.deferred.stop]
     try:
         async with Worker(client, task_queue=queue, workflows=[OpenBotWork],
-                          activities=[host.load_task, host.publish_task],
+                          activities=activities,
                           graceful_shutdown_timeout=timedelta(seconds=8)) as worker:
             yield worker
     finally:

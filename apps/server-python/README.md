@@ -333,3 +333,17 @@ The bounded operator command is `python -I scripts/dispatch-work.py --config /ab
 Use `--check` for local-only configuration validation. Explicit mTLS and private configuration
 are required; there is no database migration, background polling or implicit account configuration.
 See the [configuration and reproducible recovery cases](../../experiments/work-journey/README.md#product-worker-recovery-cases).
+
+
+For deferred tools, provide both trusted `plan_effect(context, request)` and
+`load_effect(context, stored_intent)` callbacks. The planner returns `DeferredPlan`; the loader
+returns `EffectServices` for the original stored operation. Neither callback grants authority.
+The control layer validates the catalog/schema and persists the complete proposal before public
+approval. A preparation retry reads the original Action without replanning; execution after a
+human wait uses a fresh Activity claim. Admitted or unknown Actions permit lookup only.
+
+The same Workflow resumes with full SDK history and cumulative model usage only after verified
+`applied` facts. Denial, expiry or verified non-application closes the Task as failed without
+publishing an artifact. Cancellation/revocation cannot grant new execution. Owner reconciliation
+commands retain separate persisted, delivered and verified-finished states. This optional path
+does not provide a real Linux executor or switch the default backend.

@@ -1,5 +1,9 @@
 # Architecture migration delivery plan
 
+> Execution boundary updated 2026-09-24: the user requested completion of the current deferred
+> approval/unknown-continuation slice, then a pause. Do not start more S3 or S4 work. This pause
+> does not mean S3 or the migration is complete. See the current short handoff.
+
 [English](ARCHITECTURE_MIGRATION_PLAN.md) · [简体中文](ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)
 
 Status: active after renewed user approval, 2026-09-23. This is the single delivery plan.
@@ -142,6 +146,13 @@ S1 freezes ownership, not a speculative new event protocol. Exact snapshot revis
 cursor behavior are S2 deliverables validated by duplicate/out-of-order/reconnect fixtures.
 
 ## Acceptance record
+
+- S3 deferred approval (parent `965a643`): accepted product proposal/approval continuation after
+  lost acknowledgement, original-Action unknown reconciliation, cancelled-write refusal and
+  denial terminal readback. Actual HTTP/PG/mTLS recovery, download and replay passed; no-deferred
+  concurrent regression retained. This slice does not finish S3; execution is paused per the
+  latest user request. See [evidence](research/work-deferred-approval.md).
+
 
 - S3 product composition (parent `d0f7c1a`): optional product Workflow/Agent, explicit-mTLS finite
   dispatch and independently verified publication now pass actual public HTTP/PG/mTLS model and
