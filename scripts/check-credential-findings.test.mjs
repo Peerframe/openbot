@@ -3,6 +3,7 @@ import test from "node:test";
 import { checkCredentialFindings } from "./check-credential-findings.mjs";
 
 function fixture(index = 0) {
+  if (index >= 6) return migrationFixture(index - 6);
   // Construct intentionally invalid inputs without creating fresh literal scanner matches.
   const definitions = [
     {
@@ -69,12 +70,169 @@ function fixture(index = 0) {
   };
 }
 
-test("accepts clean scans and only the six exact reviewed historical fixtures", () => {
+function syntheticUrl(base, username, password) {
+  const url = new URL(base);
+  url.username = username;
+  url.password = password;
+  return url.href.endsWith("/") ? url.href.slice(0, -1) : url.href;
+}
+function migrationFixture(index) {
+  return [
+    {
+      DetectorType: 968,
+      DetectorName: "Postgres",
+      Verified: false,
+      Raw: syntheticUrl("postgres://example.com:5432", "user", "secret"),
+      RawV2: syntheticUrl("postgres://example.com:5432", "user", "secret"),
+      SourceMetadata: {
+        Data: {
+          Git: {
+            commit: "778236bdb01014f62aa590e22389263a4c5ec4ee",
+            file: "apps/desktop/src/python-server.test.ts",
+            line: 87,
+          },
+        },
+      },
+    },
+    {
+      DetectorType: 17,
+      DetectorName: "URI",
+      Verified: false,
+      Raw: syntheticUrl("https://localhost", "user", "pass"),
+      RawV2: syntheticUrl("https://localhost", "user", "pass"),
+      SourceMetadata: {
+        Data: {
+          Git: {
+            commit: "778236bdb01014f62aa590e22389263a4c5ec4ee",
+            file: "apps/server-python/tests/test_model_connections.py",
+            line: 95,
+          },
+        },
+      },
+    },
+    {
+      DetectorType: 17,
+      DetectorName: "URI",
+      Verified: false,
+      Raw: syntheticUrl("https://example.com", "user", "pass"),
+      RawV2: syntheticUrl("https://example.com", "user", "pass"),
+      SourceMetadata: {
+        Data: {
+          Git: {
+            commit: "778236bdb01014f62aa590e22389263a4c5ec4ee",
+            file: "apps/server-python/tests/test_public_source.py",
+            line: 76,
+          },
+        },
+      },
+    },
+    {
+      DetectorType: 17,
+      DetectorName: "URI",
+      Verified: false,
+      Raw: syntheticUrl("https://example.com", "user", "pass"),
+      RawV2: syntheticUrl("https://example.com", "user", "pass"),
+      SourceMetadata: {
+        Data: {
+          Git: {
+            commit: "778236bdb01014f62aa590e22389263a4c5ec4ee",
+            file: "apps/server-python/tests/test_public_source.py",
+            line: 81,
+          },
+        },
+      },
+    },
+    {
+      DetectorType: 17,
+      DetectorName: "URI",
+      Verified: false,
+      Raw: syntheticUrl("https://api.example", "name", "secret"),
+      RawV2: syntheticUrl("https://api.example/v1", "name", "secret"),
+      SourceMetadata: {
+        Data: {
+          Git: {
+            commit: "778236bdb01014f62aa590e22389263a4c5ec4ee",
+            file: "apps/server-python/tests/test_work_model_receipts_postgres.py",
+            line: 44,
+          },
+        },
+      },
+    },
+    {
+      DetectorType: 87,
+      DetectorName: "SentryToken",
+      Verified: false,
+      Raw: "aff3ed7dfac54b04aab14de2dde53e02" + "1402f0ba238bc7ece3ac7d4b6604b055",
+      RawV2: "",
+      SourceMetadata: {
+        Data: {
+          Git: {
+            commit: "778236bdb01014f62aa590e22389263a4c5ec4ee",
+            file: "experiments/linux-execution/REAL_HOST_DEADLINE.json",
+            line: 9,
+          },
+        },
+      },
+    },
+    {
+      DetectorType: 87,
+      DetectorName: "SentryToken",
+      Verified: false,
+      Raw: "3315d7ad7c2d3751d349e4976fa02da1" + "da6fd7e41746c35622304e5fabe4fce0",
+      RawV2: "",
+      SourceMetadata: {
+        Data: {
+          Git: {
+            commit: "778236bdb01014f62aa590e22389263a4c5ec4ee",
+            file: "experiments/linux-execution/protected_native.py",
+            line: 24,
+          },
+        },
+      },
+    },
+    {
+      DetectorType: 17,
+      DetectorName: "URI",
+      Verified: false,
+      Raw: syntheticUrl("https://example.test", "user", "pass"),
+      RawV2: syntheticUrl("https://example.test", "user", "pass"),
+      SourceMetadata: {
+        Data: {
+          Git: {
+            commit: "778236bdb01014f62aa590e22389263a4c5ec4ee",
+            file: "packages/protocol/src/model-services.test.ts",
+            line: 46,
+          },
+        },
+      },
+    },
+    {
+      DetectorType: 87,
+      DetectorName: "SentryToken",
+      Verified: false,
+      Raw: "305c2893b58033c1d25cc2ae7f75ef94" + "c8684c86c9523d319d7b99924fc2f8c8",
+      RawV2: "",
+      SourceMetadata: {
+        Data: {
+          Git: {
+            commit: "ef1e2545101766284a2104647015a4c5a5638dfc",
+            file: "docs/research/s2-work-supervision.md",
+            line: 73,
+          },
+        },
+      },
+    },
+  ][index];
+}
+
+test("accepts clean scans and only the fifteen exact reviewed historical findings", () => {
   assert.deepEqual(checkCredentialFindings("", 0), { reviewedFixtures: 0 });
-  const findings = [0, 1, 2, 3, 4, 5].map((index) => JSON.stringify(fixture(index)));
+  const findings = Array.from({ length: 15 }, (_, index) => index).map((index) =>
+    JSON.stringify(fixture(index)),
+  );
   for (const finding of findings)
     assert.deepEqual(checkCredentialFindings(finding, 183), { reviewedFixtures: 1 });
-  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 6 });
+  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 15 });
 });
 
 test("does not exempt another value, detector, verified result, or source location", () => {
@@ -112,7 +270,7 @@ test("does not exempt another value, detector, verified result, or source locati
       value.SourceMetadata.Data.Git.line += 1;
     },
   ];
-  for (const index of [0, 1, 2, 3, 4, 5])
+  for (const index of Array.from({ length: 15 }, (_, index) => index))
     for (const mutate of mutations) {
       const value = fixture(index);
       mutate(value);
