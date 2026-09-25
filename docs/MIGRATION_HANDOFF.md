@@ -1,52 +1,80 @@
 # Architecture migration handoff — 2026-09-25
 
-## Current short handoff — native capabilities integrated; real Linux qualification in progress
+## Current checkpoint — draft published; browser component and product container qualified
 
-- Scope: the Owner authorized testing on the supplied VPS, completion of remaining migration and dsh assistance. Preserve existing VPS services, production data and installed apps. Prior no-host/pause notes are superseded. The Owner approved GitHub draft publication first, followed by both fresh VPS packets and the local container listen-setting/acceptance checkpoint. No production/default cutover has occurred.
-- Version: detached parent `482bdc5bea56c5b1a996492701b6dbb012d5691e`, actual workspace `<migration-worktree>`. Original and candidate changes remain uncommitted. Root alone writes the repository; agents deliver frozen temporary packets. Preserve unrelated original changes.
-- Integrated product: Python Owner APIs and retained React clients cover identity/workspace/model connections/profiles/knowledge/conversations/schedules/files/processors/plugins/MCP/Worker Host. Native Tasks now have explicit immutable Owner attachment/knowledge/plugin/web/collaborator scope. Children receive a narrowing subset and real Work identities; no legacy channel/Run is invented. Native knowledge proposals link to their real Task and require Owner review before memory activation. Both Web entry points expose the new choices, default off.
-- Native validation:49 actual PostgreSQL/SDK focused cases and91 React/API cases passed. Chrome/Owner API verified upload, frozen scope, cancellation,390px layout and create-another reset. The full native parent/child HTTP/PG/mTLS journey passed: narrowing grants, source observations, pending knowledge review, report download, commit/SIGKILL/ACK-loss recovery without provider resend, Owner memory acceptance and two offline histories replayed. Reproducible source/evidence is in `experiments/work-journey/native-capabilities/`. Provider responses in that journey are synthetic.
-- Recovery: previous synthetic HTTP/PG/mTLS model/media/correction/collaboration/deadline journeys remain scoped evidence. New real TERMINATED,35-second TIMED_OUT and SQL commit/SIGKILL/restart cases passed; four histories replay without new provider calls. Unknown effects/reservations remain unchanged until Owner lookup. Terminal source/fixture details: `docs/research/work-terminal-recovery.md`.
-- Data: canonical schema is43 entries through0042. S7's unchanged40 real dual-lineage/restore cases and8 cleanup cases passed on43. Active paired cold restoration re-ran on43:46 Control tables/110 rows,40 history+3 visibility tables,13 paired files,36 TLS files, six key negatives, original Task/Run/Action retention and offline replay passed. Source/target execution never overlap. This is stopped synthetic restoration, not online atomic backup or production conversion.
-- Linux: real CSV, isolation/resource bounds,64MiB ext4 ENOSPC,100GiB sparse rejection, lost-start-ACK/no-resend and guest nproc passed. Four fresh per-Action systemd lifetime cases also passed (baseline/controller death/paused private Docker/queued start); original trees stopped0.12–0.31s after nominal60s under a5s observation bound. No hard-real-time or business-result claim.198 helper regressions passed. Work command codec integrated with105 mandatory Python/TS checks; Same-transaction authority/input/single-consume components are integrated with81 real PG checks; actual Node/enforcer/receipt and browser remain open. Browser handover queue repair is integrated with34 focused checks. See `experiments/linux-execution/REAL_HOST_DEADLINE.json`.
-- VPS limitation/history: early test Docker autodetected shared containerd before any successful workload; offline image entered shared cache. Exact test objects were removed and private containerd fixed; do not remove shared cache blindly. Final comparison confirmed10 production containers unchanged and semantic IPv4/IPv6 firewall rules unchanged. All four Action trees/mounts/loops and failed preflight backing files were reconciled; private negative receipts remain.
-- Desktop: the earlier canonical41/61-package arm64 Preview passed actual system encryption/decryption after process restart, Owner-ready GUI, synthetic channel creation and retention after menu quit/restart, and final API/PG shutdown. GUI inspection used `--force-renderer-accessibility=complete` after ordinary native content was not exposed to automation; the bundle was not modified. Native evidence: `experiments/work-journey/evidence/desktop-native-keychain.json`. Current canonical43/63-package Preview is rebuilt; staged and packaged API/restart/cleanup and actual bundled mTLS Worker lifecycle passed. All160 Python source files and packaged controller bytes match the checkout; native GUI/Keychain evidence remains for the earlier artifact. No installed app, signing or production cutover is implied.
-- Live Kimi: one actual moonshot/kimi-k3 attachment-only Task passed on canonical42 with four ModelReceipts and8,854 actual tokens (65,536 cap): exact synthetic CSV read, producer answer, separate accepted content review,231-byte report download/hash and one offline SDK history replay. No provider resend. Its owned mTLS engine closed and the original model profile was unchanged. Evidence: `experiments/work-journey/evidence/kimi-live-native.json`. Earlier attempts failed before Task creation; the last setup defect was a missing private artifact directory in the disposable harness, corrected before this actual Task.
-- Resources: owned PG `openbot-migration-c8b2-30b7e37a` retains terminal/native_scope canonical41 and completed Kimi canonical42 databases at51899; never resubmit the live Kimi fixture. UI API33551/Vite33552 are synthetic. Native GUI and its PG/Python children are stopped. Root is the only repository writer. VPS test windows are serialized; current command and browser test units are cleaned and the10 existing containers/firewall rules match their original baselines.
-- Remaining delivery items: (1) full real Linux Work authority/Node/protected Host/result chain, (2) real Chromium/browser/handover, (3) final affected-regression handoff and retirement of the replaced TypeScript business Server. The latest Desktop rebuild is complete. Command source capture, Node Unix factory, authenticated registry and product deferred approval/output adapter are integrated but default-off. Explicitly authorized native case2 passed one actual Linux execution with a verified signed receipt, exact CSV and original50-second expiry/cleanup (stop observed155ms later); Control authority in that component fixture was synthetic. Browser b2 removed the prior chroot fatal but its first Chrome process exceeded the probe25-second deadline; browser acceptance remains open. Both authorized test identities are consumed and must not be rerun.
-- Latest incremental validation: Node92 (+3 existing platform skips), generic transport53, real WebSocket registry31, command source145 (33 new), original command authority/actions/control128 passed. Product/deferred/runtime/result112 passed; the completed-control slot fix passed75 local and43 PG checks; explicit installation70 passed. Native mount/Host checks passed102 locally. Synthetic Native/SDK history does not qualify Linux. The latest complete Python gate passed826 base cases (+2 optional skips) and1298 Worker cases; the latest npm run check passed (31 test tasks,18 reused from cache;18 build tasks,13 cached). Dsh developed the public-spec transport in two passes. Parser dependencies are separated from the old TS Server with34 focused checks. The actual Owner Docker model-selection gap is fixed and the local product chain passed with the explicit synthetic Native boundary.
-
-- Product command checkpoint: the actual Owner/serve.py/PostgreSQL/mTLS/Node/WebSocket/Unix/Host-crypto journey now passes on canonical43. Original approval precedes all Host work; exactly one execution produces the complete CSV, separate content review accepts it, both artifacts download byte-for-byte and offline history replay causes no repeat. Local Native/peer identity and model HTTP are synthetic, so this does not close the real Linux gate. Public evidence: `experiments/work-journey/evidence/product-command-local.json`. Docker model selection and the fixed120-second trusted command claim are integrated; generic claims remain60 seconds. Affected product tests112 and installation70 pass. Owner/API/profile78 and React/schema49 passed; the14 new API cases also passed twice with all46 table count/hash values unchanged after every case. Desktop396 passed (+1 existing platform skip). The latest full repository check, complete Python control gate, canonical43 active restoration and final Desktop rebuild/packaged connection passed. The current Node bundle also passed a fresh local product run (bundle SHA25649ff5bd0…). Local jobs and owned test resources closed. Remote-controller, browser CDP candidate and old-Server retirement development continue in separate temporary directories; root is the sole repository writer. The exact4-file product package (1,273,186 bytes) was explicitly authorized and uploaded with all hashes verified. The product1 attempt stopped before remote run/Action reservation or Node startup; original stderr was lost by the collector, so root cause remains unclassified. Read-only checks found no fixture processes/listener/socket. Its unused ephemeral Enforcer key and public bundle were removed after exact local public-pin/route checks;10 production containers and dual-stack firewall remain unchanged. Preserve the stage tombstone and do not repeat product1. Local collector repair, browser CDP candidate and test-only TS oracle retirement continue.
-
-- Retirement integration checkpoint: Python control comparisons and S7 artifact readback now use `tests/oracles/legacy-server`, a fixed59-file source/asset snapshot with no product export or startup entry. Existing business Server/default paths remain until their replacements are accepted. Pinned npm10.9.9 clean install passed (591 packages, unchanged lock content), oracle compilation and boundary checks passed, and the new npm run check exited0 (31 test tasks cached;18 build tasks cached). The complete Python gate exited0:826 base cases (+2 optional skips) and1409 Worker cases passed against disposable PostgreSQL. Remote private capture and pre-run key cleanup are integrated with111 local checks. Temporary agents are preparing explicit fresh fixture names, repository browser qualification integration, and retained publisher/MCP tooling.
-
-- Next finite checkpoint: explicit fixture naming and bounded pre-run diagnostics are integrated;
-  155 local controller/Host tests pass. The fresh product2 four-file packet is prepared at
-  `/private/tmp/openbot-product2-upload-20260925` (archive SHA256
-  `dc98a24d8c7860fafcfefda8098b52d50ebb7e70afdff377aa3d654c869e2549`), explicitly authorized for execution after the draft, not uploaded.
-  Browser CDP code, pins, notices and 40 boundary tests are integrated in
-  `experiments/browser-execution`; its new 14-file packet is frozen under
-  `/private/tmp/openbot-browser-cdp-integration-20260925/remote-packet`, explicitly authorized after product2 cleanup, not uploaded.
-  Retained publisher/MCP tooling is now integrated in its dedicated packages; the old CLI and
-  example source entries were removed. Pinned npm10.9.9 clean install passed (594 packages,
-  unchanged lock content). The integrated npm check passed:33 test tasks (30 cached) and20
-  build tasks (17 cached); browser boundary checks and affected tooling/legacy consumers executed.
-  The real Node/Python signature interoperability fixture is retained as a repository test and
-  passed after integration; the Worker gate includes it. Twelve stale compiled outputs for the
-  three removed legacy entries were removed and the affected build cache refreshed successfully.
-  A direct Python product container remains in a separate temporary overlay, replacing the old
-  TS-plus-Python-child packaging path. Automatic approval review previously rejected the proposed optional
-  `OPENBOT_CONTROL_HOST` listen setting; the Owner has now explicitly approved that scope.
-  The write remains unapplied and follows draft publication with local container acceptance. No default, existing application or production
-  service has been switched.
-- All agents and owned local validation processes have stopped. Browser execution preparation is
-  frozen at `/private/tmp/openbot-browser-cdp-execution-20260925` with7 offline preparation checks;
-  it has no authorization/window/reservation record. The direct Python container's15-file partial
-  patch is `/private/tmp/openbot-python-product-container-20260925/container-checkpoint.patch`,
-  SHA256 `9b5f7a8ee33f7356f8c4ed6deecf0faba24ec3bfe61f4c6faab00a820cb76c30`.
-  Its7 Node and14 Python checks and patch application check pass, but it is not applied to the
-  repository and no image was built. Resume from RESULT.md after draft publication;
-  do not copy its test-only support symlinks. Existing retained PG evidence remains untouched.
+- Delivery: [draft PR #96](https://github.com/Peerframe/openbot/pull/96), branch
+  `codex/python-migration-draft-20260925`, initial published head `4beb58b1adac1a68b6c098c84fa116b21a8d9f77`.
+  The migration history and integrated product are on GitHub. Follow-up code is committed through
+  `9ff01468e193842ed5eafa67d8551f18de03a484`; this handoff records its final local qualification and CI repairs. No merge, default-backend change, installed-app
+  replacement or production deployment is authorized by this checkpoint.
+- Architecture: the Owner confirmed the 2026-09-24 OpenBot design review v2. Module ownership and
+  factual documentation corrections are integrated. Server remains authoritative; Temporal owns
+  durable continuation. DSH assisted transport development. Whole-repository package rearrangement,
+  visual-system work and marketplaces remain follow-ups, not prerequisites for this draft.
+- Product: Python Owner APIs and retained React clients cover identity, workspace, model profiles,
+  knowledge, conversations, schedules, files, processors, plugins/MCP and Worker Host. Native Tasks
+  retain immutable Owner-selected attachment/knowledge/plugin/web/collaborator scope; children only
+  narrow it. Real HTTP/PostgreSQL/mTLS synthetic parent/child, approval, correction, cancellation,
+  terminal/commit-loss recovery, publication and offline replay journeys passed. Their synthetic
+  providers or Native peers remain explicitly scoped; they do not establish remote Linux completion.
+- Data and real model evidence: canonical schema is43 entries through0042. Paired stopped synthetic
+  restore passed for46 Control tables/110 rows,40 history plus3 visibility tables,13 paired files,
+  36 TLS files and six wrong-key negatives; original identities and offline replay survived.
+  The one completed Kimi Task used four receipts and8,854 tokens and downloaded a231-byte report.
+  Do not resubmit it. Live migration/atomic backup and production conversion are not established.
+- Real Linux command: native case2 already passed exact CSV output, signed receipt and original
+  50-second lifetime/cleanup, with synthetic Control authority. Product1 stopped before reservation
+  with unclassified original stderr loss. The authorized product2 attempt also stopped before any
+  run/Action reservation: `product_host_fixture.py` supplied a1024-byte parser class unsupported by
+  the fixed codec. It is corrected to the existing512-byte class; six real-stdin cases and161 focused
+  controller/Host tests pass. Product2 keys, public bundle, processes/socket/listener and test units
+  are reconciled; the10 existing containers and firewall semantics are unchanged. See
+  [bounded failure evidence](../experiments/work-journey/evidence/product-command-remote-product2-attempt.json).
+  Both identities are consumed. A new four-file product3 packet is prepared; its exact upload and
+  one150-second test authorization is pending. Never silently rerun product1 or product2.
+- Browser component: the authorized fixed-image CDP case passed on real Linux x86-64/runsc.
+  Two actual Chromium launches rendered synthetic DOM/PNG and retained the intended profile;
+  namespace/PID/network/seccomp and actual runtime arguments were checked. The original180-second
+  unit lifetime was observed stopping54ms after expiry; all owned resources were removed and the
+ 10 existing containers/firewall semantics were unchanged. Early transient observation errors remain
+  in the evidence. This establishes the bounded component, not product authority/profile ownership,
+  egress or human takeover. See [REAL_CDP_RESULT.json](../experiments/browser-execution/REAL_CDP_RESULT.json).
+- Product container: a separate Python-first image and opt-in Compose are integrated. The approved
+  `OPENBOT_CONTROL_HOST` accepts only127.0.0.1(default) or0.0.0.0; invalid values fail before DB/key
+  initialization. Local Linux arm64 image smoke passed real Owner/Web,43 migrations, DOCX/PDF/blank
+  OCR, original files/keys/schema across SIGTERM/restart, four invalid-startup cases and owned cleanup.
+  No TS business Server/oracle is shipped. Native Linux CI, configured Temporal and deployment have
+  separate boundaries. See [container result](../deploy/server/PRODUCT_CONTAINER_RESULT.json).
+- Desktop: the canonical43/63-package unsigned arm64 Preview passed staged/packaged API, restart,
+  cleanup and bundled mTLS Worker lifecycle before the new optional listen seam. Its frozen160-source
+  comparison belongs to that build; a final package must be rebuilt after source changes. Native
+  GUI/Keychain evidence remains scoped to the earlier canonical41 artifact. Nothing is installed.
+- CI and tests: the initial draft passed security, metadata validation, synthetic migration, Linux
+  and macOS portable checks, both old Server container architectures and Windows Host build. Windows
+  MCP-test startup and the database saturation assertion failed; local fixes passed the real SDK
+  loopback tests and all26 PostgreSQL integration cases. Python CI exposed base-profile collection
+  of Worker-only imports. One shared list now preserves every existing Worker file and adds two
+  omitted Temporal files; three stale base assertions now match current public/source contracts.
+  Final actual base entry:1304 passed,453 fixture-dependent skips. The full owned PostgreSQL gate:
+  826 base passed (+2 optional skips) and1489 Worker passed (+1 missing-history fixture skip).
+  `npm run check` passed33 test tasks and20 build tasks with unchanged tasks cached. Both old and
+  new Python product-container smoke are wired into native amd64/arm64 CI. Hosted rerun on the
+  follow-up commit is pending; local evidence does not imply it has passed.
+- Retirement: publisher/MCP tooling and parser/runtime dependencies are separated. Differential
+  tests use the immutable59-file `tests/oracles/legacy-server` snapshot with no product entry.
+  The replaced TS business Server leaves main build/CI/release only after the remaining command,
+  browser product/handover and final candidate checks. Keep the recovery commit and TS Node/Provider
+  drivers; do not enable an unqualified path to declare retirement complete.
+- Resources and ownership: root is the only repository writer; agents return frozen bounded CI
+  patches; all bounded agents and new local validation processes have stopped. Retained PG `openbot-migration-c8b2-30b7e37a` at51899 holds prior terminal/native/Kimi
+  evidence and must remain. UI API33551/Vite33552 contain synthetic data. No VPS test window is
+  active. Do not purge shared Docker cache: an early fixture image entered it before private
+  containerd was corrected. Current remote tests and local container smoke have cleaned owned
+  resources. Original source/data/configuration and consumed stage tombstones remain preserved.
+- Next bounded checkpoint: publish these results and CI fixes into the same draft, execute product3
+  only after its exact authorization, then finish product browser/handover integration and the
+  final package/retirement gate. Reuse accepted evidence; do not repeat successful live-model,
+  native case2 or CDP runs merely because the task resumes.
 
 The stage notes below are historical evidence, not the current work order.
 

@@ -28,4 +28,10 @@ admission path for existing8000-codepoint Run instructions. Public native Task a
 was stale. Reuse the task-authority/source review and `work_store.create_in_transaction` contract;
 test exact32768 acceptance and32769 refusal for ASCII, Chinese and emoji, plus legitimate16385
 readback. No production, authority, dependency, schema or frozen oracle is changed. All175 tests
-in these two files passed in the exact base environment. Full base execution is repeated by root.
+in these two files passed in the exact base environment. Root repeated the real base entry successfully:1304 passed,453 fixture-dependent skips.
+The independent owned PostgreSQL base profile also passed826 cases with2 optional skips.
+
+Final integrated owned PostgreSQL execution passed826 base cases (+2 optional skips) and1489
+Worker cases (+1 missing-history fixture skip), with real HTTP, session issuance/revocation and
+read parity. The full `npm run check` also passed. These are actual local executions; the next
+hosted run separately validates the clean Linux CI bootstrap and native container matrix.

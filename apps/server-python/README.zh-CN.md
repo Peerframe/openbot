@@ -25,6 +25,11 @@ Python/FastAPI 实现[迁移计划](../../docs/ARCHITECTURE_MIGRATION_PLAN.zh-CN
 `OPENBOT_CONTROL_PYTHON` 可选择可信的启动解释器。已验收的 Agent Runtime 虚拟环境保持独立。
 锁文件记录精确的开发依赖闭包，拒绝缺失、多余或版本漂移。环境包含测试工具，不是生产镜像；启动不会自动安装依赖。
 
+`check.sh`执行基础环境，并将`worker-tests.txt`中的用例明确交给独立Worker环境。
+完整验收需在独立Python3.12环境安装`requirements-worker.txt`，再把`OPENBOT_TEMPORAL_TEST_PYTHON`
+设为该解释器的绝对路径，运行`npm run test:control:python`。CI要求两套环境；未设置该变量时，
+本地数据库门禁会明确报告Worker未运行，基础通过不代表Worker已验收。
+
 仓库根目录运行一次性数据库流程：
 
 ```sh

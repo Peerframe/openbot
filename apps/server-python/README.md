@@ -32,6 +32,12 @@ is separate. The lock records the exact development dependency closure; verifica
 drifted distributions. This environment includes test tools, is not a production image, and never
 installs dependencies on startup.
 
+`check.sh` runs the base profile and explicitly delegates the files in `worker-tests.txt` to the
+separate Worker profile. For full acceptance, install `requirements-worker.txt` in its own
+Python3.12 environment and set `OPENBOT_TEMPORAL_TEST_PYTHON` to that interpreter's absolute path
+when running `npm run test:control:python`. CI requires both profiles. Without this variable the
+local database gate reports Worker checks as not run; base success is not full Worker acceptance.
+
 From the repository root, run the owned disposable database journey:
 
 ```sh

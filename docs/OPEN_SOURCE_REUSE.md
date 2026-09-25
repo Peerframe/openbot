@@ -861,8 +861,10 @@ Node24.18.1 built-in streams/zlib. Existing runsc release-20260914.0 and native 
 without copies or new permissions. The experimental clone3/chroot seccomp derivative remains
 explicitly separate from the official profile; Apache notices and modification attribution are
 preserved in `experiments/browser-execution`. Forty offline tests are reproducible from a fresh
-checkout and wired to existing Python/Linux CI. Linux rendering, profile persistence and inner
-sandbox acceptance remain open; this experiment enables no product capability.
+checkout and wired to existing Python/Linux CI. The actual fixed Linux/runsc CDP component now
+passes rendering, profile persistence, inner sandbox readback and original-lifetime cleanup;
+[bounded evidence](../experiments/browser-execution/REAL_CDP_RESULT.json) preserves the exact scope.
+Product authority/profile mapping, egress and human takeover remain open; no capability is enabled.
 
 The [retained offline developer tools](research/retained-developer-tools.md) move the existing
 MIT publisher CLI and MCP example into dedicated workspaces. They reuse the reviewed Node
@@ -875,3 +877,19 @@ Zod4.6.2. Neither tool depends on the legacy business Server or test oracle.
 工作区，沿用已审核的 Node 密钥 API、Sigstore、原子文件写入与 MCP SDK 固定版本。源码许可与
 初始哈希保留，CLI 保持历史相对路径语义，生成器对齐现有 Zod4.6.2；不新增密码学实现或依赖
 版本，两项工具均不依赖旧业务 Server 或测试 oracle。
+
+## Python product container (2026-09-25)
+
+The [direct product candidate](research/python-product-container.md) reuses the reviewed official
+Python3.12.13 and Node24.21.0 Bookworm image digests, unchanged63-distribution Worker lock,
+retained43-entry Node parser/DB dependency closure and existing npm10.9.9 projection resolver.
+The separate build projection adds only existing pinned Web/TypeScript roots; the final image
+ships no TS business Server, oracle or build tools. Original component notices are retained,
+no upstream source is copied and no dependency version is added. The explicitly approved listen
+setting preserves127.0.0.1 by default. Actual local Linux arm64 image and disposable Owner/Web/PG/
+parser/restart checks passed; native matrix CI reuses the same smoke without publishing an image.
+
+[Python产品容器](research/python-product-container.md)复用已审核官方镜像摘要、63项Worker锁、
+43项Node parser／DB闭包和原npm投影，不新增依赖或复制上游实现，最终镜像不含TS业务Server／oracle／
+构建工具。默认仍监听127.0.0.1。真实本地Linux arm64镜像及独占临时Owner／Web／PG／解析／重启验收
+已通过，原生双架构CI复用同一smoke；不发布镜像、不切默认、不部署生产。

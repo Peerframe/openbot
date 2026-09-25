@@ -2,9 +2,9 @@
 
 > Update 2026-09-25: the Owner supplied a VPS and authorized testing, completion of remaining migration and dsh assistance. The prior no-Linux-host constraint is superseded. Follow the current handoff for native Tasks, active restore, terminal reconciliation and isolated Linux qualification; preserve existing VPS services.
 
-> Delivery update, 2026-09-25: publish the integrated candidate as a GitHub draft first, then
-> execute the approved product2 and browser CDP qualification packets and the local Python
-> container checkpoint. Production/default cutover and merging remain outside this authorization.
+> Delivery update, 2026-09-25: [draft PR #96](https://github.com/Peerframe/openbot/pull/96) is published.
+> The actual Chromium CDP component and local Linux arm64 Python product container passed.
+> Product2 failed before execution; its corrected product3 packet awaits its specific authorization. Production/default cutover and merging remain outside this authorization.
 > Kimi remains an existing connection used for model verification, not a new report product.
 
 ## Design-review alignment — 2026-09-25
@@ -46,11 +46,11 @@ drafts are preserved outside the product tree. Local Python product wiring and t
 arm64 package are integrated: one configured Temporal Worker handles native model Tasks and
 channel work, durable corrections, media, scoped tools, collaboration and final publication.
 Actual synthetic HTTP/PostgreSQL/mTLS journeys and packaged connection/lifecycle checks are
-recorded in the current handoff. Canonical43 legacy migration/restore and canonical42 active paired
+recorded in the current handoff. Canonical43 legacy migration/restore and canonical43 active paired
 SQL/file restore are qualified within their documented fixture scope. Actual native Keychain/GUI
 restart and one real Kimi Task also passed. Command v2 authority/frames/default-off relay are already
 integrated in this worktree. The remaining delivery checkpoints are the full Linux command chain,
-actual Chromium/browser takeover, and a rebuilt latest candidate with affected regressions.
+product browser authority/takeover, and a rebuilt latest candidate with affected regressions.
 Only after those checkpoints may the replaced TS business Server leave the main build/CI/release;
 retain the recovery commit and the TS Node/Provider drivers required by the new architecture.
 Signed/installed distribution, production data conversion and default-backend activation remain
