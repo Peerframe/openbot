@@ -11,3 +11,21 @@ Reuse `docs/research/python-control-read-slice.md` (separate base environment, p
 Use one checked-in plain-text Worker file list, relative to `apps/server-python`, shared by base `check.sh` exclusions and the existing owned PostgreSQL Worker invocation. Preserve every original Worker file and order, including root's just-added `deploy/server/test_product_container.py`; add the two omitted Temporal files. Both readers reject missing entries; Node rejects duplicate entries. Base prints the delegated file count and required separate gate. CI already bootstraps the Worker closure and sets `OPENBOT_TEMPORAL_TEST_PYTHON` on `test:control:python`; preserve that workflow and fixture isolation. Without that variable, the existing optional local gate will explicitly report Worker execution was not performed, rather than silently implying full acceptance.
 
 Validate with exact-lock base and Worker interpreters, no fixture variables, collection-only for the complete respective selections, explicit file/node-id accounting, and focused non-database tests. PostgreSQL acceptance remains the existing CI gate and is not claimed from collection. The replay module's pre-existing history-input skip remains visible and is not newly bypassed.
+
+## Full base execution: three stale contract assertions
+
+The actual base entry subsequently executed1289 cases successfully and exposed three assertions
+left behind by commit `778236bdb01014f62aa590e22389263a4c5ec4ee`. Current domain/protocol includes
+the `model` computer profile and optional `{connectionId,modelId}` Bot selection. Original fields
+retain legacy projection behavior; the frozen old `toBot` does not project this new selection and
+is not modified or presented as its oracle. Reuse the Python model-services/task-profile reviews.
+Tests now pin the current public selection, omission when absent and refusal of malformed/private
+fields without allowing configuration, keys or system prompts into the public DTO.
+
+The persisted context loader intentionally accepts32768 UTF-8 bytes, matching the trusted source
+admission path for existing8000-codepoint Run instructions. Public native Task admission retains
+16384 bytes and has no caller-selectable `source` flag. The old16385-byte rejection expectation
+was stale. Reuse the task-authority/source review and `work_store.create_in_transaction` contract;
+test exact32768 acceptance and32769 refusal for ASCII, Chinese and emoji, plus legitimate16385
+readback. No production, authority, dependency, schema or frozen oracle is changed. All175 tests
+in these two files passed in the exact base environment. Full base execution is repeated by root.

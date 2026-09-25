@@ -250,8 +250,27 @@ def test_two_distinct_tasks_load_independently(monkeypatch):
     assert second.statements[0][1] == ('task-2', 'run-2')
 
 
+@pytest.mark.parametrize('objective', [
+    'x' * 16385,
+    'x' * 32768,
+    '中' * 10922 + 'xx',
+    '😀' * 8192,
+])
+def test_persisted_source_objective_accepts_the_utf8_byte_limit(monkeypatch, objective):
+    # Source Runs retain up to 8000 Unicode code points; their persisted loader has a
+    # 32768-byte bound. This does not enlarge the separate native Task admission limit.
+    assert len(objective.encode('utf-8')) in (16385, 32768)
+    store = Store(task=task_row(objective=objective))
+    install_binding(monkeypatch, result=accepted())
+    assert load(store).objective == objective
+    assert store.active_checks == 1
+    assert store.task_reads == [(TASK_ID, True)]
+
+
 @pytest.mark.parametrize('task', [
-    task_row(objective='x' * 16385),
+    task_row(objective='x' * 32769),
+    task_row(objective='中' * 10922 + 'xxx'),
+    task_row(objective='😀' * 8192 + 'x'),
     task_row(objective='   '),
     task_row(bot_id='b' * 129),
     task_row(bot_id=None),

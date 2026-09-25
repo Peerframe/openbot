@@ -1,9 +1,10 @@
 """Independent regression tests for the public read projections in ``openbot_server.models``.
 
-These tests pin the public JSON produced by the frozen projection API against the behaviour of the
-existing TypeScript projections they mirror: ``Bot`` / ``Channel`` / ``BotAppearance`` /
-``AuthSessionSnapshot`` in ``packages/domain/src/index.ts`` and ``toBot``, ``toBotAppearance`` and
-``listChannels`` in ``apps/server/src/postgres-store.ts``.
+These tests pin public JSON to the current ``Bot`` / ``Channel`` / ``BotAppearance`` /
+``AuthSessionSnapshot`` contracts in ``packages/domain/src/index.ts``. Original fields retain the
+``toBot``, ``toBotAppearance`` and ``listChannels`` projection behaviour in the legacy Server; the
+optional model selection follows the current domain and ``packages/protocol/src/model-services.ts``
+contract, rather than claiming it exists in the frozen legacy projection.
 
 Every assertion is made on the serialized public payload (``model_dump(mode="json",
 exclude_none=True)``), never merely on the fact that a model instantiates. The tests claim nothing
@@ -32,15 +33,15 @@ BOT_STATUSES = [
     "completed",
     "failed",
 ]
-COMPUTER_PROFILES = ["none", "docker-linux", "macos-cua", "lume-vm", "coder"]
+COMPUTER_PROFILES = ["none", "model", "docker-linux", "macos-cua", "lume-vm", "coder"]
 HEAD_SHAPES = ["round", "square", "cat"]
 BODY_SHAPES = ["classic", "tall", "cape", "armor", "storage", "quadruped"]
 MOBILITIES = ["feet", "single-wheel", "dual-wheel", "hover", "four-legs"]
 ACCESSORIES = ["none", "headphones", "backpack", "trench", "arm", "toolbox"]
 ACCENTS = ["green", "yellow", "red", "blue"]
 
-BOT_PUBLIC_FIELDS = {"id", "name", "role", "status", "computerProfile", "appearance", "createdAt"}
-BOT_REQUIRED_FIELDS = BOT_PUBLIC_FIELDS - {"appearance"}
+BOT_PUBLIC_FIELDS = {"id", "name", "role", "status", "computerProfile", "model", "appearance", "createdAt"}
+BOT_REQUIRED_FIELDS = BOT_PUBLIC_FIELDS - {"appearance", "model"}
 CHANNEL_PUBLIC_FIELDS = {"id", "name", "description", "botIds", "directBotId", "createdAt"}
 CHANNEL_REQUIRED_FIELDS = CHANNEL_PUBLIC_FIELDS - {"directBotId"}
 
@@ -207,12 +208,41 @@ def test_project_bot_emits_exactly_the_public_field_names():
     assert "profile_revision" not in projected
 
 
-def test_project_bot_omits_absent_optional_fields_instead_of_serializing_null():
-    projected = public_json(models.project_bot(bot_row()))
+@pytest.mark.parametrize("configuration", [{}, {"model": None}])
+def test_project_bot_omits_absent_optional_fields_instead_of_serializing_null(configuration):
+    projected = public_json(models.project_bot(bot_row(configuration=configuration)))
     assert "appearance" not in projected
+    assert "model" not in projected
     assert "null" not in json.dumps(projected)
     # exclude_none is what removes the key; the raw dump still carries a null placeholder.
-    assert models.project_bot(bot_row()).model_dump(mode="json")["appearance"] is None
+    raw = models.project_bot(bot_row(configuration=configuration)).model_dump(mode="json")
+    assert raw["appearance"] is None
+    assert raw["model"] is None
+
+
+def test_project_bot_publishes_only_the_selected_model_reference():
+    selection = {"connectionId": "synthetic-connection", "modelId": "provider/model-v1"}
+    row = bot_row(computer_profile="model", configuration={
+        "model": selection, "apiKey": "synthetic-private-key", "systemPrompt": "private context",
+    })
+    original = copy.deepcopy(row)
+    projected = public_json(models.project_bot(row))
+    assert projected == {
+        "id": "bot-1", "name": "巡检机器人", "role": "维护员", "status": "idle",
+        "computerProfile": "model", "model": selection, "createdAt": "2026-01-02T03:04:05.123Z",
+    }
+    assert row == original
+
+
+@pytest.mark.parametrize("selection", [
+    {"connectionId": "synthetic-connection"},
+    {"connectionId": "synthetic-connection", "modelId": 7},
+    {"connectionId": "synthetic-connection", "modelId": "fixture", "apiKey": "private"},
+    "synthetic-connection",
+])
+def test_project_bot_refuses_malformed_or_private_model_selection(selection):
+    with pytest.raises(models.ValidationError):
+        models.project_bot(bot_row(computer_profile="model", configuration={"model": selection}))
 
 
 @pytest.mark.parametrize(
@@ -586,11 +616,11 @@ def test_model_enum_literals_match_the_typescript_unions_exactly():
     assert list(get_args(models.BotAppearance.model_fields["mobility"].annotation)) == MOBILITIES
     assert list(get_args(models.BotAppearance.model_fields["accessory"].annotation)) == ACCESSORIES
     assert list(get_args(models.BotAppearance.model_fields["accent"].annotation)) == ACCENTS
-    assert len(BOT_STATUSES) == 8 and len(COMPUTER_PROFILES) == 5
+    assert len(BOT_STATUSES) == 8 and len(COMPUTER_PROFILES) == 6
 
 
 def test_public_models_declare_exactly_the_public_fields():
-    """The frozen contracts must not grow description, configuration or revision fields."""
+    """Current public contracts still exclude description, configuration and revision fields."""
     assert set(models.Bot.model_fields) == BOT_PUBLIC_FIELDS
     assert set(models.Channel.model_fields) == CHANNEL_PUBLIC_FIELDS
     assert set(models.BotAppearance.model_fields) == {
