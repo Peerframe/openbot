@@ -124,24 +124,30 @@ it("rejects symlink and malformed selection resources", async () => {
   await expect(selectsPythonProduct(directory)).rejects.toThrow("reviewed platform");
 });
 
-it("keeps API-only startup without the fixed private Temporal file", async () => {
+// The candidate requires POSIX ownership; Windows must refuse it, not emulate mode bits.
+const posixIt = it.runIf(process.platform !== "win32");
+
+posixIt("keeps API-only startup without the fixed private Temporal file", async () => {
   const directory = await temporary();
   const env = pythonProductEnvironment(directory, input(directory));
   await expect(pythonProductTemporalEnvironment(env)).resolves.toEqual({});
 });
 
-it("maps only the fixed private Temporal file, leaving content and mTLS validation to Python", async () => {
-  const directory = await temporary();
-  const path = join(directory, "temporal.json");
-  await writeFile(path, '{"synthetic":"not yet a valid engine configuration"}', { mode: 0o600 });
-  const env = pythonProductEnvironment(directory, input(directory));
-  expect(await pythonProductTemporalEnvironment(env)).toEqual({
-    OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH: path,
-  });
-  expect(env.OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH).toBeUndefined();
-});
+posixIt(
+  "maps only the fixed private Temporal file, leaving content and mTLS validation to Python",
+  async () => {
+    const directory = await temporary();
+    const path = join(directory, "temporal.json");
+    await writeFile(path, '{"synthetic":"not yet a valid engine configuration"}', { mode: 0o600 });
+    const env = pythonProductEnvironment(directory, input(directory));
+    expect(await pythonProductTemporalEnvironment(env)).toEqual({
+      OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH: path,
+    });
+    expect(env.OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH).toBeUndefined();
+  },
+);
 
-it.each(["symlink", "dangling", "directory", "empty", "oversized", "public"])(
+posixIt.each(["symlink", "dangling", "directory", "empty", "oversized", "public"])(
   "refuses an unsafe present Temporal entry: %s",
   async (kind) => {
     const directory = await temporary();
@@ -167,7 +173,7 @@ it.each(["symlink", "dangling", "directory", "empty", "oversized", "public"])(
   },
 );
 
-it("rejects another file owner even when permissions are private", async () => {
+posixIt("rejects another file owner even when permissions are private", async () => {
   const directory = await temporary();
   await writeFile(join(directory, "temporal.json"), "{}", { mode: 0o600 });
   const owner = process.getuid?.();
@@ -179,23 +185,26 @@ it("rejects another file owner even when permissions are private", async () => {
   await expect(pythonProductTemporalEnvironment(env)).rejects.toThrow("private owned file");
 });
 
-it("rejects a public or noncanonical app-data directory instead of selecting another path", async () => {
-  const directory = await temporary();
-  const data = join(directory, "data");
-  await mkdir(data, { mode: 0o700 });
-  await writeFile(join(data, "temporal.json"), "{}", { mode: 0o600 });
-  const alias = join(directory, "alias");
-  await symlink(data, alias);
-  await expect(
-    pythonProductTemporalEnvironment(pythonProductEnvironment(directory, input(alias))),
-  ).rejects.toThrow("directory must be private");
-  await chmod(data, 0o755);
-  await expect(
-    pythonProductTemporalEnvironment(pythonProductEnvironment(directory, input(data))),
-  ).rejects.toThrow("directory must be private");
-});
+posixIt(
+  "rejects a public or noncanonical app-data directory instead of selecting another path",
+  async () => {
+    const directory = await temporary();
+    const data = join(directory, "data");
+    await mkdir(data, { mode: 0o700 });
+    await writeFile(join(data, "temporal.json"), "{}", { mode: 0o600 });
+    const alias = join(directory, "alias");
+    await symlink(data, alias);
+    await expect(
+      pythonProductTemporalEnvironment(pythonProductEnvironment(directory, input(alias))),
+    ).rejects.toThrow("directory must be private");
+    await chmod(data, 0o755);
+    await expect(
+      pythonProductTemporalEnvironment(pythonProductEnvironment(directory, input(data))),
+    ).rejects.toThrow("directory must be private");
+  },
+);
 
-it("does not cache prior Temporal file admission", async () => {
+posixIt("does not cache prior Temporal file admission", async () => {
   const directory = await temporary();
   const env = pythonProductEnvironment(directory, input(directory));
   const path = join(directory, "temporal.json");
@@ -209,3 +218,15 @@ it("does not cache prior Temporal file admission", async () => {
   await rm(path);
   await expect(pythonProductTemporalEnvironment(env)).resolves.toEqual({});
 });
+
+it.runIf(process.platform === "win32").each([false, true])(
+  "refuses the POSIX-only Temporal candidate on Windows (config present: %s)",
+  async (present) => {
+    const directory = await temporary();
+    if (present) await writeFile(join(directory, "temporal.json"), "{}", { mode: 0o600 });
+    const env = pythonProductEnvironment(directory, input(directory));
+    await expect(pythonProductTemporalEnvironment(env)).rejects.toThrow(
+      "directory must be private",
+    );
+  },
+);

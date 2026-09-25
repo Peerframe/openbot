@@ -157,3 +157,29 @@ and desktop-packaged-temporal.json. The parent commit is 482bdc5, not a commit o
 uncommitted candidate. No installed application, real Keychain or real account was changed.
 Packaged inference, replay, signing and Linux/Windows support remain unclaimed; composed
 product inference uses separate synthetic transports and actual SDK history replay.
+
+
+## Hosted Windows test boundaries — 2026-09-26
+
+Hosted4a523b9 passed all53 Node bounded-IPC tests, including the real Windows named pipe.
+The next Desktop suite exposed three independent assumptions: Git converted the pinned notice
+collection to CRLF; a child killing itself on Windows exits with code1 rather than a POSIX signal;
+and POSIX-only Temporal file tests expected Windows uid/mode checks to succeed.
+
+Reviewed the exact [Node22.22.2 process API](https://github.com/nodejs/node/blob/v22.22.2/doc/api/process.md),
+its bundled [libuv Windows process implementation](https://github.com/nodejs/node/blob/v22.22.2/deps/uv/src/win/process.c),
+and [Git attributes](https://git-scm.com/docs/gitattributes). `getuid` is absent on Windows;
+libuv uses `TerminateProcess(...,1)` and records a signal only on the parent handle that sent it.
+The existing production candidate remains macOS arm64 and must refuse the unqualified Windows
+ownership path. Keep real POSIX permission tests on POSIX and add explicit Windows refusal cases;
+keep the real termination and timeout tests on every platform with exact OS results.
+
+The committed LF notice hashes to718f8e697b001e56246ac6d43a79d2a72cfdb1d95a769fb6d89aa9e871c23fd7;
+CRLF conversion reproduces the hosted3a77657bdeb0be32193bf805aee390c53ba11c821c91eca828852453071ae086
+failure exactly. Set `-text` only on this verbatim file so checkout preserves reviewed bytes.
+Do not normalize bytes in the integrity test or change the accepted hash. No product guard,
+upstream source, dependency or support claim changes; existing notices and pins remain intact.
+
+Local affected Desktop execution passed37 tests; the two Windows-only refusal cases are explicitly
+platform-gated on macOS. Git's actual checkout filter with `core.autocrlf=true` preserves the
+original pinned notice SHA256 with this attribute. Native Windows execution remains required.

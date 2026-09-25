@@ -187,7 +187,7 @@ it("reports the specific stage and nonzero exit without echoing arguments", asyn
   expect(error.elapsedMs).toBeGreaterThanOrEqual(0);
 });
 
-it("distinguishes an external signal from a stage timeout", async () => {
+it("distinguishes child self-termination from a stage timeout", async () => {
   await expect(
     runPythonBuildStage(
       "synthetic signal",
@@ -196,9 +196,10 @@ it("distinguishes an external signal from a stage timeout", async () => {
       tmpdir(),
     ),
   ).rejects.toMatchObject({
+    // Windows self-termination cannot set the parent process handle's signal field.
     stage: "synthetic signal",
-    exitCode: null,
-    signal: "SIGTERM",
+    exitCode: process.platform === "win32" ? 1 : null,
+    signal: process.platform === "win32" ? null : "SIGTERM",
     timedOut: false,
   });
 });

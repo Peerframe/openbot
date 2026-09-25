@@ -5,7 +5,7 @@
 - Delivery: [draft PR #96](https://github.com/Peerframe/openbot/pull/96), branch
   `codex/python-migration-draft-20260925`, initial published head `4beb58b1adac1a68b6c098c84fa116b21a8d9f77`.
   The migration history and integrated product are on GitHub. Follow-up code is committed through
-  `817d46c7aad73b51e6af12702665c3f1e26c956d`; this handoff records its final local qualification and CI repairs. No merge, default-backend change, installed-app
+  `4a523b9178363307eacc571d0ff861a692bb0a0f`; this handoff records its hosted readback and subsequent fixture repairs. No merge, default-backend change, installed-app
   replacement or production deployment is authorized by this checkpoint.
 - Architecture: the Owner confirmed the 2026-09-24 OpenBot design review v2. Module ownership and
   factual documentation corrections are integrated. Server remains authoritative; Temporal owns
@@ -60,6 +60,14 @@
   Hosted Windows/Linux validation of these repairs remains pending. Retained earlier local evidence:
   base entry1304 passed with453 fixture-dependent skips; full owned PostgreSQL base826 passed
   (+2 optional skips), Worker1489 passed (+1 missing-history skip). None substitutes for hosted CI.
+- Follow-up CI:4a523b9 passed the actual53-case Windows IPC suite and the Linux Worker bootstrap,
+  reaching the owned PostgreSQL gate. Windows then exposed Desktop test assumptions: CRLF notice
+  conversion, POSIX-only permissions and signal reporting. Preserve the original notice bytes with
+  a narrow Git attribute; test the real per-OS termination result and explicit Windows refusal of
+  the unqualified POSIX candidate. Local Desktop checks passed37 cases; two Windows-only negatives
+  await Windows. Five stale Work-journey fixtures now match historical correction-context and
+  current failure-finalization contracts. Actual fresh-lock checks passed172 journey,153 adjacent
+  pytest and198 Linux execution cases. The next hosted run remains required; overall CI is open.
 - Retirement: publisher/MCP tooling and parser/runtime dependencies are separated. Differential
   tests use the immutable59-file `tests/oracles/legacy-server` snapshot with no product entry.
   The replaced TS business Server leaves main build/CI/release only after the remaining command,

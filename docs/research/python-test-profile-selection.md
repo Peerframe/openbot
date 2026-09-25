@@ -55,3 +55,22 @@ Python3.12 [venv](https://docs.python.org/3.12/library/venv.html) documents isol
 Install only the existing `requirements-worker.lock` in the fresh CI reference venv, then run pip check and the unchanged exact Worker verifier. Keep the actual PostgreSQL gate and every adjacent qualification command. Check the real `work-journey/probe.py --help` before the expensive fixture stage; it must import in an environment with no DBOS. The CI probe help command guards the optional-engine import boundary; four local packet checks also cover the same-interpreter product CLI entry without Docker, DB, a Temporal server or a model request. Existing DBOS experiment requirements remain independent and unmodified.
 
 Actual validation used a fresh install of the existing63-package lock: pip check and the exact Worker verifier passed. Four bootstrap/entry tests passed against the integrated checkout (1.942 seconds), including real probe/dispatch help, child imports and refusal to run the uninstalled DBOS engine. Mixed-directory protected Host and Temporal pytest collection succeeded; Work-journey discovery collected172 cases. Collection is not execution. This is bootstrap/import/unit evidence on macOS; native Linux PG/mTLS qualification remains a hosted CI gate.
+
+
+### Downstream fixture execution
+
+Actual172-case Work-journey execution in the fresh lock exposed five stale unit fixtures after
+bootstrap was repaired: two completed-publication cases omitted the Task id and historical Run
+correction-policy query now required by `work_completion.complete`; three deferred-Workflow
+cases did not supply the Temporal patch marker or failure-finalization Activity introduced in
+[terminal recovery](work-terminal-recovery.md). Nine additional local socket failures were the
+sandbox refusing owned loopback listeners, not product failures. Repair only the old fixtures:
+keep the real completion/context validation with an explicit scoped database port, and exercise
+the current Workflow patch branch with a terminal Activity assertion proving malformed batches
+never prepare a tool. Product code, authority checks, dependency pins and test selection stay
+unchanged. Run the affected suite with its owned loopback permitted before the next CI push.
+
+Actual follow-up execution passed all172 Work-journey unittest cases,153 protected Host/native,
+Temporal and deferred-workflow pytest cases, and198 Linux execution unittest cases. The repository
+`npm run check` passed again with unchanged Turbo tasks cached. These executions use the fresh
+canonical Worker environment; the hosted Linux database/engine sequence remains separate.

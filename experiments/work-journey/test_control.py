@@ -233,8 +233,14 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
                         'sha256': descriptor['sha256']}
         digest = control.canonical({'taskId': TASK_ID, 'runId': RUN_ID, 'summary': SUMMARY,
                                     'artifacts': [descriptor], 'verification': verification})[1]
-        task = {'status': 'completed', 'completion_digest': '0' * 64 if changed_digest else digest}
-        connection = object()
+        task = {'id': TASK_ID, 'status': 'completed',
+                'completion_digest': '0' * 64 if changed_digest else digest}
+        # Historical publication still loads its original Run's correction policy.
+        async def query(sql, params):
+            self.assertEqual(sql, 'SELECT * FROM work_runs WHERE task_id=%s AND id=%s')
+            self.assertEqual(params, (TASK_ID, RUN_ID))
+            return SimpleNamespace(fetchone=AsyncMock(return_value={'corrections_enabled': False}))
+        connection = SimpleNamespace(execute=AsyncMock(side_effect=query))
 
         @asynccontextmanager
         async def transaction(*, trusted):

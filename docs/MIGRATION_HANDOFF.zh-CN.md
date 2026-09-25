@@ -4,7 +4,7 @@
 
 - 交付：[草稿 PR #96](https://github.com/Peerframe/openbot/pull/96)，分支
   `codex/python-migration-draft-20260925`，首个已发布检查点为
-  `4beb58b1adac1a68b6c098c84fa116b21a8d9f77`，后续代码已提交至`817d46c7aad73b51e6af12702665c3f1e26c956d`。
+  `4beb58b1adac1a68b6c098c84fa116b21a8d9f77`，后续代码已提交至`4a523b9178363307eacc571d0ff861a692bb0a0f`。
   迁移历史和整合产品已在 GitHub；本交接记录增量的最终本地验收与 CI 修复。本检查点不授权合并、默认后端切换、替换已安装应用或部署生产。
 - 架构：用户确认《2026-09-24 OpenBot 设计研究 v2》。模块归属和文档事实修正已整合；Server 管权限，
   Temporal 管持久恢复，DSH 协助传输开发。全仓包／目录重排、视觉系统和市场仍是后续工作，不阻塞本草稿。
@@ -38,6 +38,11 @@
   的冲突依赖，本次仅安装既有63项锁，并延迟DBOS专属导入；新建环境的精确依赖、4项实际入口检查通过。
   `npm run check`通过33项test及20项build，未变任务复用缓存；新增修复仍需托管Windows／Linux验证。保留此前实际基础入口1304通过、453项夹具依赖跳过，以及完整独占PG
   base826通过（2项可选跳过）、Worker1489通过（1项缺少历史夹具跳过）；这些结果不代替本次托管CI。
+- 后续CI：4a523b9已实际通过Windows的53项IPC测试和Linux Worker依赖启动，进入独占PostgreSQL门禁。
+  Windows随后暴露Desktop测试的换行、POSIX权限与信号假设，本次保留许可证原始字节，断言各系统真实终止结果，
+  并在Windows明确验证拒绝尚未支持的POSIX候选。本地Desktop37项通过，2项Windows专属反例待原生执行。
+  五个旧Work流程夹具已对齐历史纠正上下文及当前失败收尾契约；新锁环境实际通过172项流程、153项相邻pytest
+  和198项Linux执行检查。仍须新托管CI通过，不能据此宣称整体验收完成。
 - 退役：publisher／MCP工具、解析器与运行依赖已解耦。差异测试使用固定59文件`tests/oracles/legacy-server`，
   没有产品入口。剩余命令链路、浏览器产品／接管及最终候选检查通过后，才将已替代TS业务Server退出主构建／CI／
   发布，保留恢复提交及TS Node／Provider驱动，不启用未验收路径来宣称完成。

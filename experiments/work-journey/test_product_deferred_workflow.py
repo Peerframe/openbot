@@ -13,16 +13,25 @@ from openbot_server import work_worker as worker
 
 
 class ProductDeferredTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        # These unit cases run without a Temporal loop and exercise the current patch branch.
+        marker = patch.object(worker.workflow, 'patched', return_value=True)
+        self.marker = marker.start()
+        self.addCleanup(marker.stop)
+
     async def test_mixed_batch_refused_before_first_prepare(self):
         for bad in [ToolCallPart('write','[]',tool_call_id='bad'),
                     ToolCallPart('write',{},tool_call_id=['unhashable']),
                     ToolCallPart('write',{},tool_call_id='good')]:
             result=SimpleNamespace(output=DeferredToolRequests(calls=[ToolCallPart('write',{},tool_call_id='good'),bad]))
-            execute=AsyncMock(return_value=dict(taskId='t',runId='r',objective='task'))
+            execute=AsyncMock(side_effect=[dict(taskId='t',runId='r',objective='task'),dict(completion=None)])
             with patch.object(worker.workflow,'execute_activity',execute),patch.object(worker,'agent',SimpleNamespace(run=AsyncMock(return_value=result))):
                 with self.assertRaises(ApplicationError) as error:await worker.OpenBotWork().run({})
             self.assertTrue(error.exception.non_retryable)
-            self.assertEqual(execute.await_count,1)
+            self.assertEqual(error.exception.type, 'OpenBotTaskFailed')
+            self.assertEqual([item.args[0] for item in execute.await_args_list],
+                ['openbot.load_task.v1', 'openbot.finalize_task_failure.v1'])
+            self.assertEqual(execute.await_args.args[1],dict(version=1,code='execution_failed'))
 
     async def test_resume_keeps_history_and_one_usage_object(self):
         first=SimpleNamespace(output=DeferredToolRequests(calls=[ToolCallPart('write',{},tool_call_id='call')]),
