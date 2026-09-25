@@ -164,7 +164,7 @@ class ProductWorkReads:
             'FROM work_sources WHERE task_id=%s', (context.task_id,))).fetchone()
         from .work_task_profiles import resolve_product_source
         profile=await resolve_product_source(db,task,context.bot_id,
-            command_profiles=self.store.command_profiles)
+            command_profiles=self.store.command_profiles,browser_profiles=self.store.browser_profiles)
         if not mapping:
             from .work_native_scope import provenance
             native=profile
@@ -199,7 +199,10 @@ class ProductWorkReads:
             runCutoff=origin['created_at'].isoformat(), replyTo=message['reply_to_message_id'],
             instructionSha256=hashlib.sha256(context.objective.encode()).hexdigest())
         if profile['execution_profile']=='docker-linux':
-            source['commandProfileSha256']=profile['command_profile_digest']
+            if 'browser_profile_digest' in profile:
+                source['browserProfileSha256']=profile['browser_profile_digest']
+            else:
+                source['commandProfileSha256']=profile['command_profile_digest']
         ancestry = task.get('_collaboration')
         if ancestry and ancestry['links']:
             # Colleague assignments retain their own message/reply while general context

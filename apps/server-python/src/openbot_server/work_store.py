@@ -18,11 +18,16 @@ from .work_values import InvalidWork, WorkConflict, WorkNotFound, canonical, rec
 
 
 class PostgresWorkStore:
-    def __init__(self, dsn, *, files=None, task_profiles=None, command_profiles=None):
+    def __init__(self, dsn, *, files=None, task_profiles=None, command_profiles=None, browser_profiles=None):
         if task_profiles is not None and not callable(getattr(task_profiles,'capture_in_transaction',None)):
             raise InvalidWork('invalid_task_profile_composition')
         self.files = files
         self.task_profiles = task_profiles
+        if browser_profiles is not None:
+            from .work_browser_profiles import BrowserProfiles
+            if type(browser_profiles) is not BrowserProfiles:
+                raise InvalidWork('invalid_browser_profile_composition')
+        self.browser_profiles = browser_profiles
         if command_profiles is not None:
             from .work_command_profiles import CommandProfiles
             if type(command_profiles) is not CommandProfiles:

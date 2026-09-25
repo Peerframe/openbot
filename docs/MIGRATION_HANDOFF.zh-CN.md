@@ -1,59 +1,44 @@
 # 架构迁移交接 — 2026-09-26
 
-## 当前检查点——草稿已发布，浏览器组件和产品容器通过验收
+## 当前检查点——产品截图任务；CI 独立负责
 
-- 交付：[草稿 PR #96](https://github.com/Peerframe/openbot/pull/96)，分支
-  `codex/python-migration-draft-20260925`，首个已发布检查点为
-  `4beb58b1adac1a68b6c098c84fa116b21a8d9f77`，后续代码已提交至`4a523b9178363307eacc571d0ff861a692bb0a0f`。
-  迁移历史和整合产品已在 GitHub；本交接记录增量的最终本地验收与 CI 修复。本检查点不授权合并、默认后端切换、替换已安装应用或部署生产。
-- 架构：用户确认《2026-09-24 OpenBot 设计研究 v2》。模块归属和文档事实修正已整合；Server 管权限，
-  Temporal 管持久恢复，DSH 协助传输开发。全仓包／目录重排、视觉系统和市场仍是后续工作，不阻塞本草稿。
-- 产品：Python Owner API 与保留的 React 客户端覆盖身份、工作区、模型档案、知识、会话、计划、文件、
-  处理器、插件／MCP 和 Worker Host。原生 Task 保留不可变的 Owner 附件／知识／插件／网页／协作者范围，
-  子任务只能缩小。真实 HTTP／PG／mTLS 下合成父子任务、审批、纠正、取消、终态／提交后丢失恢复、发布及
-  离线重放已通过；模型或 Native peer 模拟边界仍保留，不能据此宣称远端 Linux 产品链路通过。
-- 数据和真实模型：canonical schema 为43条至0042。停止写入的合成成套恢复通过：46张控制表／110行、
-  40张历史表加3张可见性表、13个配套文件、36个TLS文件及6个错误密钥反例，保留原身份和离线重放。
-  唯一已完成 Kimi 任务使用4份回执、8,854 tokens，下载231字节报告；不得重发。不代表在线原子备份或生产转换。
-- Linux 命令：native case2 已通过准确CSV、签名回执、原50秒期限及清理，Control权限仍为合成。
-  product1在预留前失败且原stderr丢失，根因未分类。已授权的product2同样在run／Action预留前停止：
-  Host夹具向固定codec传了不支持的1024字节上限，现改用已有512字节类别；6项真实stdin反例及共161项
-  控制器／Host检查通过。product2密钥、公开bundle、进程／socket／监听和测试unit均已清理，10个既有容器与
-  防火墙语义保持不变。见[脱敏失败证据](../experiments/work-journey/evidence/product-command-remote-product2-attempt.json)。
-  两个身份已消耗；新product3四文件包已准备，具体上传与单次150秒测试授权待回复，不得直接重跑旧身份。
-- 浏览器组件：授权的固定镜像CDP场景已在真实Linux x86-64／runsc通过。两次Chromium实际启动完成合成DOM／
-  PNG渲染和预定profile保留，核实namespace／PID／network／seccomp及真实运行参数。原180秒unit到期后54ms
-  观测停止，自有资源清理，10个容器／防火墙语义不变。早期观测瞬态错误原样保留。该证据只覆盖组件，尚不覆盖
-  产品权限／profile归属、出网和人工接管。见[REAL_CDP_RESULT.json](../experiments/browser-execution/REAL_CDP_RESULT.json)。
-- 产品容器：独立Python主入口镜像与可选Compose已整合。已批准的`OPENBOT_CONTROL_HOST`只允许127.0.0.1
-  （默认）或0.0.0.0，非法值先于DB／密钥初始化拒绝。本地Linux arm64实际镜像通过Owner／Web、43条迁移、
-  DOCX／PDF／空白OCR、SIGTERM重启后原文件／密钥／schema持久化、四项非法启动及自有资源清理，不含TS业务
-  Server／oracle。该镜像在817d46c的原生Linux amd64和arm64 CI均已实际构建并通过smoke；配置Temporal与部署分别验收。见[容器结果](../deploy/server/PRODUCT_CONTAINER_RESULT.json)。
-- Desktop：canonical43／63依赖unsigned arm64 Preview此前通过暂存／包内API、重启、清理和实际mTLS Worker；
-  160源码一致性属于当时冻结构建。新增可选监听配置后最终包须重新构建。原生GUI／Keychain证据仍属于此前
-  canonical41产物，未安装任何候选。
-- CI和检查：817d46c的托管CI有9项独立检查成功，Windows portable与Python runtime失败，汇总check失败，整体尚未通过。
-  已成功项包含新Python产品容器的原生amd64／arm64构建与实际smoke。Windows失败是IPC夹具误用Unix路径，
-  本次改为Windows命名管道，仍保留真实传输断言；本地Unix执行53项通过。Python失败是混装旧DBOS与产品Worker
-  的冲突依赖，本次仅安装既有63项锁，并延迟DBOS专属导入；新建环境的精确依赖、4项实际入口检查通过。
-  `npm run check`通过33项test及20项build，未变任务复用缓存；新增修复仍需托管Windows／Linux验证。保留此前实际基础入口1304通过、453项夹具依赖跳过，以及完整独占PG
-  base826通过（2项可选跳过）、Worker1489通过（1项缺少历史夹具跳过）；这些结果不代替本次托管CI。
-- 后续CI：4a523b9已实际通过Windows的53项IPC测试和Linux Worker依赖启动，进入独占PostgreSQL门禁。
-  Windows随后暴露Desktop测试的换行、POSIX权限与信号假设，本次保留许可证原始字节，断言各系统真实终止结果，
-  并在Windows明确验证拒绝尚未支持的POSIX候选。本地Desktop37项通过，2项Windows专属反例待原生执行。
-  五个旧Work流程夹具已对齐历史纠正上下文及当前失败收尾契约；新锁环境实际通过172项流程、153项相邻pytest
-  和198项Linux执行检查。仍须新托管CI通过，不能据此宣称整体验收完成。
-- 退役：publisher／MCP工具、解析器与运行依赖已解耦。差异测试使用固定59文件`tests/oracles/legacy-server`，
-  没有产品入口。剩余命令链路、浏览器产品／接管及最终候选检查通过后，才将已替代TS业务Server退出主构建／CI／
-  发布，保留恢复提交及TS Node／Provider驱动，不启用未验收路径来宣称完成。
-- 资源与归属：root独占仓库写入，代理只交冻结CI补丁；所有有界代理和新增本地验收进程均已停止。PG `openbot-migration-c8b2-30b7e37a`在51899保留
-  terminal／native／Kimi证据，必须保留；UI API33551／Vite33552为合成数据。当前没有VPS测试窗口，远端测试及
-  本地容器smoke资源均已清理。早期夹具曾把镜像放入共享Docker缓存，之后已改私有containerd，不可盲删共享缓存。
-  原数据／配置及已消耗stage记录保留。
-- 下一个有界检查点：将结果及CI修复补到同一草稿；仅在product3具体授权后执行；然后完成浏览器产品／人工接管
-  及最终候选包／退役门槛。复用既有证据，不因继续任务而重跑成功的真实模型、native case2或CDP测试。
+- 交付：迁移草稿为 [PR #96](https://github.com/Peerframe/openbot/pull/96)。产品开发在
+  `codex/browser-product-integration-20260926`，接续浏览器身份提交
+  `364d3082f7934605b6f70600704b60bc00a69f82`。独立 CI 任务在托管检查期间拥有
+  `codex/python-migration-draft-20260925`；待其检查点结束后整合产品分支，不覆盖或重启活动 CI
+  版本。本检查点不授权合并、部署、默认后端切换或替换已安装应用。
+- 新产品路径：通过显式私有员工→Node 配置，为新频道任务冻结浏览器快照。经 Work 审批后在
+  原 Worker 连接截图，结果审核与完成事务之后才能下载私有 PNG。模型只看到文件信息。
+  人工接管后归还会使旧提案失效；连接重建、身份替换、取消、来源或执行租约变化均拒绝发送。
+  每任务最多尝试四次，纠正不重置额度；回执恢复只读原记录，缺失则保持未解决。默认关闭。
+  详见[配置](CONTROLLED_BROWSER.zh-CN.md)和[研究与验证](research/work-browser-capture.md)。
+- DeepSeek 开发：DSH 根据公开 MIT OpenBot 命令档案模式实现浏览器快照模块。主控修正 SQL
+  事件列／排序及区分大小写的精确 ID 语义，整合传输、私有 PNG、结果审核、启动配置与测试。
+- 验证：17 项截图 Work 测试、187 项相邻 PG／HTTP／WS 测试、30 项 Node／配置测试和
+  `npm run check` 通过。新增用例实际运行 Node 进程和 Docker Provider，连接明确标注的本机
+  合成电脑。审批、恢复、模型回执、结果审核和 PNG 下载使用真实 SQL／API；SDK 历史和模型
+  回复仍是合成夹具。精确范围及可复用命令见研究记录。
+- 数据：规范迁移现为 44 条至 `0043_work_browser_profiles`，已在独占新数据库验证。此前成套
+  停写恢复证据仍固定为 43 条：46 张 Control 表／110 行、40 张历史表加 3 张可见性表、13 个
+  配套文件、36 个 TLS 文件及六个错误密钥反例，不能改称 44 条已验收。最终 Desktop 包与产品
+  容器也须基于新源码和迁移重新验收。
+- 保留证据：唯一真实 Kimi 任务使用四份回执／8,854 tokens，下载 231 字节报告，不得重发。
+  Linux 命令 native case2 已通过 CSV、签名回执、原 50 秒期限和清理，Control 权限仍为合成。
+  固定 CDP 组件已在真实 Linux x86-64／runsc 通过合成 DOM／PNG、资料连续性、隔离探针和原
+  180 秒期限。恢复任务时不重复已通过的案例。
+- Linux 产品命令仍未完成：product1、product2 身份已消费。product2 夹具已改为受支持的 512
+  字节解析等级，见[失败记录](../experiments/work-journey/evidence/product-command-remote-product2-attempt.json)。
+  已准备 product3 四文件包及一次 150 秒测试，仍需针对该清单的准确授权。当前无远端测试窗口。
+- 剩余产品验收：浏览器页面解释／输入／出口与完整接管；远端 Work→Node→隔离宿主命令；更新
+  成套恢复、最终安装包与替代验收。截图任务不代表通用浏览代理完成。通过这些门槛后再退役被
+  替代的 TS 业务 Server，保留不可变 59 文件测试 oracle 和 TS Node／Provider／发布／MCP 工具。
+- 归属：主控只写产品分支，独立 CI 任务只修复及验证草稿 CI。原目录可能仍保留六份旧 CI／Preview
+  未提交恢复副本，不混入产品提交。保留用户数据、配置、原迁移 PG 夹具及已验收证据；验证结束
+  只清理本次截图夹具，不清空共享 Docker 缓存。
+- 架构：继续采用 Owner 确认的 2026-09-24 设计研究 v2。Server 管身份与权限，Temporal 管恢复。
+  全仓包目录重排、视觉系统和市场仍为后续工作；产品主控不得成为第二个 CI 修复任务。
 
-以下阶段说明仅作为历史证据，不是当前工作顺序。
+下方阶段记录只作历史证据，不是当前工作顺序。
 
 ## 当前简短交接——已验收并行增量（代码 `a61153e`）
 

@@ -61,6 +61,17 @@ describe("configured Node providers", () => {
     expect(availableCapabilityManifest(declarations)).toEqual([]);
   });
 
+  it("enables browser sessions only with an explicit configured computer opt-in", () => {
+    expect(nodeEnvSchema.safeParse({ ...baseEnv, OPENBOT_DOCKER_BROWSER_SESSIONS: "true" }).success).toBe(false);
+    const providers = configuredProviders(nodeEnvSchema.parse({
+      ...baseEnv,
+      OPENBOT_DOCKER_COMPUTER_URL: "http://127.0.0.1:8080",
+      OPENBOT_DOCKER_COMPUTER_TOKEN: "0123456789abcdef",
+      OPENBOT_DOCKER_BROWSER_SESSIONS: "true",
+    }));
+    expect(availableCapabilityManifest(providers).map((item) => item.id)).toContain("browser.session");
+  });
+
   it("keeps unfinished built-in Provider packages conformant but declaration-only", () => {
     for (const provider of [cuaProvider, lumeProvider, coderProvider]) {
       expect(inspectProviderDeclaration(provider)).toMatchObject({

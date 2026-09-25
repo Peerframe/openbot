@@ -106,7 +106,7 @@ class ProductWorkModel:
                 or run['status'] not in ('queued','running')):
             raise WorkConflict('product_model_source_changed')
         row = await resolve_product_source(db,task,context.bot_id,
-            command_profiles=self.store.command_profiles)
+            command_profiles=self.store.command_profiles,browser_profiles=self.store.browser_profiles)
         await check_context(db,task,context.run_id,context.correction_token,current=not historical)
         return row,run
 

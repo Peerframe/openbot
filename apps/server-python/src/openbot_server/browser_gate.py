@@ -5,6 +5,8 @@ from contextlib import asynccontextmanager
 from .authority import PostgresTransactions
 from .control_errors import ControlError
 
+_UNBOUND = object()
+
 
 class BrowserPauseGate:
     def __init__(self, dsn):
@@ -17,6 +19,13 @@ class BrowserPauseGate:
             "SELECT payload FROM run_events WHERE bot_id=%s AND type='BROWSER_CONTROL_STATE' "
             "ORDER BY created_at DESC,id DESC LIMIT 1", (bot_id,))).fetchone()
         return row["payload"] if row else {"paused": False}
+
+    @staticmethod
+    async def revision(db, bot_id):
+        row = await (await db.execute(
+            "SELECT id FROM run_events WHERE bot_id=%s AND type='BROWSER_CONTROL_STATE' "
+            "ORDER BY created_at DESC,id DESC LIMIT 1", (bot_id,))).fetchone()
+        return row["id"] if row else None
 
     @asynccontextmanager
     async def human(self, bot_id):
@@ -38,7 +47,7 @@ class BrowserPauseGate:
             self._active -= 1
 
     @asynccontextmanager
-    async def agent(self, bot_id):
+    async def agent(self, bot_id, *, expected_revision=_UNBOUND):
         """Hold around the COMPLETE browser effect, including result validation/uncertainty.
 
         This supplies serialization only. The caller still owns Action/Owner authorization.
@@ -47,4 +56,8 @@ class BrowserPauseGate:
         async with self.human(bot_id) as db:
             if (await self.state(db, bot_id)).get("paused") is not False:
                 raise ControlError(409, "browser_paused_for_human")
-            yield
+            revision = await self.revision(db, bot_id)
+            # Returning control cannot revive a proposal made before human interaction.
+            if expected_revision is not _UNBOUND and revision != expected_revision:
+                raise ControlError(409, "browser_control_changed")
+            yield revision

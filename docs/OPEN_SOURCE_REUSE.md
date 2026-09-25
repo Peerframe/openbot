@@ -761,7 +761,13 @@ PostgreSQL authority locks, with an append-only audit binding. See the
 [identity review](research/browser-host-binding.md). A same-id enrollment cannot inherit the old
 profile; expired authority clears client frames/input. DeepSeek implemented the thin registry
 binding against verified public OpenBot source. No new dependency or upstream implementation copy;
-profile rebind, egress and full Work browser integration remain separate gates.
+profile rebind and egress remain separate gates. The opt-in Work capture-only adapter now reuses
+Work deferred Actions, approval, immutable ToolResults/LocalWorkFiles, the pause gate and the retained
+`browser.command` observe operation; see [capture review](research/work-browser-capture.md).
+DeepSeek implemented the initial immutable profile adapter against the public MIT OpenBot command
+profile reference; integration corrected its schema query and preserved exact case-sensitive IDs.
+No dependency, driver, authority framework or third-party source copy was added. The model sees
+metadata only; capture does not qualify page interpretation, input or general browser automation.
 
 The reviewed-click [handover repair](research/browser-approval-handover.md) retains pinned
 agent-computer `257c1280d684089be9adb0b35cce262efc7064bf` (MIT) and the existing Server approval

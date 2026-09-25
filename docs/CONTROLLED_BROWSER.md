@@ -72,3 +72,47 @@ real PostgreSQL and HTTP/WebSocket tests with synthetic frames; they do not esta
 profile persistence or browser egress isolation. Human takeover remains disabled in default Python
 composition until the complete Work browser effect path is integrated. See the
 [identity binding review](research/browser-host-binding.md).
+
+
+## Python candidate: approved Work screenshot
+
+The Python product candidate can create a channel Task that captures the current screen of its
+original browser. The Owner approves each capture in the existing Task Action view. The Task
+publishes the exact PNG only after result review and completion. Models receive file metadata,
+not screenshot contents; this profile cannot interpret a page or perform browser input.
+
+This is an explicit deployment opt-in, disabled by default. Use the pinned Worker environment,
+canonical database migrations through `0043_work_browser_profiles`, private object/artifact roots
+and the existing Temporal product configuration. Configure the Node with its private computer URL
+and token plus `OPENBOT_DOCKER_BROWSER_SESSIONS=true`. This declares session transport capability;
+it grants no Work authority. Follow the existing host/network restrictions above.
+
+Set `OPENBOT_CONTROL_BROWSER_CONFIG_PATH` to an absolute, non-symlink, owner-private JSON file
+(mode `0600`). The file selects 1–32 exact Bot ids and their enrolled original Node ids:
+
+```json
+{
+  "version": 1,
+  "routes": {
+    "00000000-0000-4000-8000-000000000001": "your-enrolled-node-id"
+  }
+}
+```
+
+Replace both example identities with your configured identities. The Bot must use `docker-linux`
+and have a configured model connection. Open that Bot's browser view as Owner once before creating
+the channel Task; this establishes its original host binding. Then request, for example:
+“Capture the current browser as a PNG file without interpreting the page.” Browser routes select
+capture-only Tasks instead of command Tasks for those Bots; existing Tasks are never converted.
+Native Tasks and other Bots retain their existing capabilities.
+
+Each proposal freezes the current connection and human-control revision. A reconnect, identity
+replacement, cancelled Task, revoked scope, expired claim or human takeover/release prevents that
+proposal from dispatching. At most four attempts are allowed per Task, across corrections. A lost
+acknowledgement reads the original stored observation; missing evidence stays unresolved and does
+not trigger a replacement screenshot. Already received PNGs retain their original contents.
+
+The PNG header/dimensions, size and digest are verified; models and result review see metadata only.
+Do not treat capture success as proof of page meaning or an external action. Public egress, page
+interaction, host profile relocation and default human takeover remain outside this candidate.
+See the [implementation and validation record](research/work-browser-capture.md).
