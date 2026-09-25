@@ -5,6 +5,15 @@ import { pathToFileURL } from "node:url";
 const MAX_BYTES = 16 * 1024 * 1024;
 const REVIEWED_FIXTURES = Object.freeze([
   {
+    detectorType: 968,
+    detectorName: "Postgres",
+    commit: "ed33238f866b52508bcce939e1f62fe2ad2faed4",
+    file: "deploy/server/smoke-product.py",
+    line: 58,
+    raw: "e58bc479a694bb81fb43e7765c5d9171bfdb60acd80d816b1a3f69a8fee5f4e8",
+    rawV2: "e58bc479a694bb81fb43e7765c5d9171bfdb60acd80d816b1a3f69a8fee5f4e8",
+  },
+  {
     detectorType: 87,
     detectorName: "SentryToken",
     commit: "778236bdb01014f62aa590e22389263a4c5ec4ee",

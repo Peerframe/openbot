@@ -198,3 +198,18 @@ binary-map line and detector. The resulting17-entry regression set covers both p
 | --- | --- | --- | --- | --- |
 | `778236bdb01014f62aa590e22389263a4c5ec4ee` | `experiments/linux-execution/REAL_HOST_DEADLINE.json:8` | `87` (content digest) | `3488860627e07cf82ec8321f043b8f12578e7b01106da1d0cd0528ba73cc3af6` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
 | `778236bdb01014f62aa590e22389263a4c5ec4ee` | `experiments/linux-execution/protected_native.py:24` | `87` (content digest) | `15ff853549b0957c0de5f3e8db4edc74d4fbdc10fda10276d0bedf1b31c0d75f` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+
+## Product-container synthetic PostgreSQL fixture (2026-09-25)
+
+The unchanged offline scanner reports one new Postgres968 finding in commit
+`ed33238f866b52508bcce939e1f62fe2ad2faed4`, `deploy/server/smoke-product.py:58`. Inspecting the
+source and bounded finding confirms the explicitly synthetic password used only for the smoke's
+new random-name PostgreSQL container on its private internal network. That fixture publishes no
+PG port, selects no existing service, and removes its owned container before completion. The
+scanner's constructed candidate has no real host. It is not an account secret.
+
+Retain the prior reviewed detector and exact-tuple mechanism. Add only detector968/Postgres, this
+commit/path/line, unverified state and both exact Raw/RawV2 SHA256 values
+`e58bc479a694bb81fb43e7765c5d9171bfdb60acd80d816b1a3f69a8fee5f4e8`.
+No network verification, scanner exclusion, history rewrite or result upload is introduced. Extend
+all-field mutation tests to this eighteenth tuple and replay the actual private offline result.

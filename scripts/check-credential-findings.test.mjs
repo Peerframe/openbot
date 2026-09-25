@@ -3,6 +3,26 @@ import test from "node:test";
 import { checkCredentialFindings } from "./check-credential-findings.mjs";
 
 function fixture(index = 0) {
+  if (index === 17) {
+    const raw =
+      "postgres://" + "openbot:" + "synthetic-product-db@" + String.fromCharCode(92) + ":5432";
+    return {
+      DetectorType: 968,
+      DetectorName: "Postgres",
+      Verified: false,
+      Raw: raw,
+      RawV2: raw,
+      SourceMetadata: {
+        Data: {
+          Git: {
+            commit: "ed33238f866b52508bcce939e1f62fe2ad2faed4",
+            file: "deploy/server/smoke-product.py",
+            line: 58,
+          },
+        },
+      },
+    };
+  }
   if (index >= 6) return migrationFixture(index - 6);
   // Construct intentionally invalid inputs without creating fresh literal scanner matches.
   const definitions = [
@@ -260,14 +280,14 @@ function migrationFixture(index) {
   ][index];
 }
 
-test("accepts clean scans and only the seventeen exact reviewed historical findings", () => {
+test("accepts clean scans and only the eighteen exact reviewed historical findings", () => {
   assert.deepEqual(checkCredentialFindings("", 0), { reviewedFixtures: 0 });
-  const findings = Array.from({ length: 17 }, (_, index) => index).map((index) =>
+  const findings = Array.from({ length: 18 }, (_, index) => index).map((index) =>
     JSON.stringify(fixture(index)),
   );
   for (const finding of findings)
     assert.deepEqual(checkCredentialFindings(finding, 183), { reviewedFixtures: 1 });
-  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 17 });
+  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 18 });
 });
 
 test("does not exempt another value, detector, verified result, or source location", () => {
@@ -305,7 +325,7 @@ test("does not exempt another value, detector, verified result, or source locati
       value.SourceMetadata.Data.Git.line += 1;
     },
   ];
-  for (const index of Array.from({ length: 17 }, (_, index) => index))
+  for (const index of Array.from({ length: 18 }, (_, index) => index))
     for (const mutate of mutations) {
       const value = fixture(index);
       mutate(value);
