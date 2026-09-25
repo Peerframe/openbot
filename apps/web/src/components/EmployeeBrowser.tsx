@@ -6,6 +6,18 @@ import { CloseIcon } from "./Icons";
 import { useModalDialog } from "./useModalDialog";
 import "./EmployeeBrowser.css";
 
+const endedHostErrors: Record<string, string> = {
+  browser_host_identity_changed: "设备身份已变化，无法继续使用原浏览器。登录状态不会自动迁移。",
+  browser_host_connection_changed: "浏览器连接已变化，请重新连接。",
+  browser_original_host_identity_unverified: "无法确认原浏览器与当前设备的关联，已停止连接。",
+};
+
+function browserError(cause: unknown, fallback: string) {
+  if (cause instanceof ApiError && endedHostErrors[cause.message])
+    return endedHostErrors[cause.message];
+  return cause instanceof Error ? cause.message : fallback;
+}
+
 export function EmployeeBrowser({ bot, onClose }: { bot: Bot; onClose(): void }) {
   const { dialogRef, closeDialog } = useModalDialog(onClose);
   const [session, setSession] = useState<BrowserSessionView>();
@@ -58,10 +70,15 @@ export function EmployeeBrowser({ bot, onClose }: { bot: Bot; onClose(): void })
         if (action.kind === "navigate") setAddress(next.frame?.url ?? "");
       } catch (cause) {
         if (!alive.current) return;
-        setError(cause instanceof Error ? cause.message : "浏览器暂时不可用。");
-        if (cause instanceof ApiError && cause.status === 404) {
+        setError(browserError(cause, "浏览器暂时不可用。"));
+        if (
+          cause instanceof ApiError &&
+          ([401, 403, 404].includes(cause.status) || endedHostErrors[cause.message])
+        ) {
           sessionRef.current = undefined;
           setSession(undefined);
+          setText("");
+          setAddress("");
         }
       } finally {
         inFlight.current = false;
@@ -96,7 +113,7 @@ export function EmployeeBrowser({ bot, onClose }: { bot: Bot; onClose(): void })
         await send({ kind: "observe" });
       })
       .catch((cause: unknown) => {
-        if (!disposed) setError(cause instanceof Error ? cause.message : "无法打开浏览器。");
+        if (!disposed) setError(browserError(cause, "无法打开浏览器。"));
       })
       .finally(() => {
         if (!disposed) setOpening(false);

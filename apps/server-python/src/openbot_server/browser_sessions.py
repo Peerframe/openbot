@@ -14,6 +14,7 @@ from .browser_gate import BrowserPauseGate
 from .browser_protocol import Action, Id, validate_frame
 from .control_errors import ControlError
 from .models import iso_timestamp
+from .worker_host_registry import BrowserHostBinding
 
 
 def now():
@@ -33,6 +34,7 @@ class _Session:
     node_name: str
     owner: str
     expires_at: datetime
+    binding: BrowserHostBinding
 
 
 class BrowserSessionsService:
@@ -75,6 +77,18 @@ class BrowserSessionsService:
             "SELECT expires_at,clock_timestamp() AS now FROM auth_sessions WHERE token_digest=%s",
             (hashlib.sha256(token.encode("ascii")).hexdigest(),))).fetchone()
         return row["now"], row["expires_at"]
+
+    async def _host_identity(self, db, binding):
+        # A same-id enrollment is a new authority, not proof that login/profile data moved.
+        # The row lock also fences revocation by another Server while this short phase commits.
+        row = await (await db.execute(
+            "SELECT credential_digest,revoked_at FROM node_credentials WHERE node_id=%s FOR SHARE",
+            (binding.node_id,))).fetchone()
+        if (row is None or row["revoked_at"] is not None
+                or row["credential_digest"] != binding.credential_digest):
+            raise ControlError(409, "browser_host_identity_changed")
+        if self.registry.browser_binding(binding.node_id) != binding:
+            raise ControlError(409, "browser_host_connection_changed")
 
     @staticmethod
     async def _event(db, session, request_id, action, phase):
@@ -126,8 +140,13 @@ class BrowserSessionsService:
                 async with self.owner.transaction(token) as db:
                     await self._authority(db, token, bot_id)
                     row = await (await db.execute(
-                        "SELECT node_id FROM run_events WHERE bot_id=%s AND type='BROWSER_OPENED' "
+                        "SELECT node_id,payload FROM run_events WHERE bot_id=%s AND type='BROWSER_HOST_BOUND' "
                         "ORDER BY created_at DESC,id DESC LIMIT 1", (bot_id,))).fetchone()
+                    bound = row
+                    if row is None:
+                        row = await (await db.execute(
+                            "SELECT node_id FROM run_events WHERE bot_id=%s AND type='BROWSER_OPENED' "
+                            "ORDER BY created_at DESC,id DESC LIMIT 1", (bot_id,))).fetchone()
                     if row is None:
                         row = await (await db.execute("SELECT node_id FROM runs WHERE bot_id=%s AND node_id IS NOT NULL "
                                                      "ORDER BY created_at DESC LIMIT 1", (bot_id,))).fetchone()
@@ -136,16 +155,30 @@ class BrowserSessionsService:
                     node = next((node for node in candidates if not previous or node["id"] == previous), None)
                     if node is None:
                         raise ControlError(503, "browser_original_host_unavailable" if previous else "browser_host_unavailable")
+                    binding = self.registry.browser_binding(node["id"])
+                    await self._host_identity(db, binding)
+                    if bound is not None:
+                        if bound["payload"] != {"credentialDigest": binding.credential_digest}:
+                            raise ControlError(409, "browser_host_identity_changed")
+                    elif previous is not None:
+                        # Retained events identify a name, but cannot attest to its old credential.
+                        raise ControlError(409, "browser_original_host_identity_unverified")
                     await db.execute("INSERT INTO nodes(id,name,platform,capabilities,capability_manifest,status) "
                         "VALUES(%s,%s,%s,%s,%s,'online') ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,"
                         "platform=EXCLUDED.platform,capabilities=EXCLUDED.capabilities,capability_manifest=EXCLUDED.capability_manifest",
                         (node["id"], node["name"], node["platform"], Jsonb(node["capabilities"]), Jsonb(node["capabilityManifest"])))
                     session = _Session(str(uuid4()), bot_id, node["id"], node["name"],
-                                       hashlib.sha256(token.encode("ascii")).hexdigest(), now() + timedelta(minutes=10))
+                                       hashlib.sha256(token.encode("ascii")).hexdigest(),
+                                       now() + timedelta(minutes=10), binding)
+                    if bound is None:
+                        await db.execute("INSERT INTO run_events(id,bot_id,node_id,type,payload,created_at) "
+                            "VALUES(%s,%s,%s,'BROWSER_HOST_BOUND',%s,clock_timestamp())",
+                            (str(uuid4()), bot_id, binding.node_id,
+                             Jsonb({"credentialDigest": binding.credential_digest})))
                     await self._event(db, session, str(uuid4()), "open", "completed")
                     state = await self.gate.state(db, bot_id)
                 # No view exists before the final Owner check and audit commit succeed.
-                if not any(node["id"] == session.node_id and compatible(node) for node in self.registry.list()):
+                if self._closed or self.registry.browser_binding(session.node_id) != binding:
                     raise ControlError(503, "browser_host_unavailable")
                 self._sessions[session.id] = session
                 return self._view(session, state)
@@ -163,6 +196,7 @@ class BrowserSessionsService:
             self._session(identity, token)
             async with self.owner.transaction(token) as db:
                 stamp, owner_expiry = await self._authority(db, token, session.bot_id)
+                await self._host_identity(db, session.binding)
                 state = await self.gate.state(db, session.bot_id)
                 active = self._active(state, stamp)
                 if kind == "take":
@@ -191,6 +225,7 @@ class BrowserSessionsService:
                 async with self.owner.transaction(token) as db:
                     current, expiry = await self._authority(db, token, session.bot_id)
                     self._session(identity, token)
+                    await self._host_identity(db, session.binding)
                     message["expiresAt"] = iso_timestamp(min(current + timedelta(seconds=25), expiry,
                                                                datetime.fromisoformat(message["expiresAt"])))
                     if "controlExpiresAt" in message:
@@ -198,13 +233,15 @@ class BrowserSessionsService:
                     yield
 
             try:
-                result = await self.registry.browser_command(frame, dispatch_guard=dispatch_guard)
+                result = await self.registry.browser_command(frame, binding=session.binding,
+                                                             dispatch_guard=dispatch_guard)
                 if not result.get("ok") or not result.get("frame"):
                     raise ValueError("Browser operation was not confirmed.")
                 observed = validate_frame(result["frame"])
                 async with self.owner.transaction(token) as db:
                     await self._authority(db, token, session.bot_id)
                     self._session(identity, token)
+                    await self._host_identity(db, session.binding)
                     if kind != "observe": await self._event(db, session, request_id, kind, "completed")
                     if kind == "release":
                         state = {"paused": False}

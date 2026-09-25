@@ -756,6 +756,13 @@ existing authenticated Worker channel; no new dependency or SQL. See the
 Provider capability stay disabled until every real browser effect shares the gate; local synthetic
 HTTP/WebSocket tests do not qualify Chromium, Linux/runsc or real login-state preservation.
 
+Browser profile host binding reuses the same Worker connection id, credential digest and existing
+PostgreSQL authority locks, with an append-only audit binding. See the
+[identity review](research/browser-host-binding.md). A same-id enrollment cannot inherit the old
+profile; expired authority clears client frames/input. DeepSeek implemented the thin registry
+binding against verified public OpenBot source. No new dependency or upstream implementation copy;
+profile rebind, egress and full Work browser integration remain separate gates.
+
 The reviewed-click [handover repair](research/browser-approval-handover.md) retains pinned
 agent-computer `257c1280d684089be9adb0b35cce262efc7064bf` (MIT) and the existing Server approval
 contract. Only the local adapter changes: approval waiting releases the Bot queue, human take

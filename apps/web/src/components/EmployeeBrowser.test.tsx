@@ -122,3 +122,39 @@ it("disables input for another controller and exposes reconnect after grant loss
   await interact(() => button("刷新画面").click());
   expect(button("重新连接")).toBeDefined();
 });
+
+it.each([
+  [409, "browser_host_identity_changed"],
+  [409, "browser_host_connection_changed"],
+  [401, "Authentication required."],
+  [403, "browser_employee_profile_changed"],
+])("clears the old frame and unsent text on authority loss (%s/%s)", async (status, code) => {
+  vi.mocked(browserCommand).mockResolvedValueOnce({
+    ...available,
+    control: "mine",
+    controlExpiresAt: new Date(Date.now() + 30000).toISOString(),
+    frame: {
+      base64: "c3ludGhldGlj",
+      width: 1,
+      height: 1,
+      capturedAt: new Date().toISOString(),
+      url: "https://synthetic.invalid/private",
+    },
+  });
+  view = await renderComponent(<EmployeeBrowser bot={bot} onClose={vi.fn()} />);
+  const input = view.container.querySelector<HTMLInputElement>("#browser-text-input")!;
+  await setInputValue(input, "unsent synthetic login");
+  expect(view.container.querySelector(".browser-screen")).not.toBeNull();
+  vi.mocked(browserCommand).mockRejectedValueOnce(new ApiError(code, status));
+  await interact(() => button("刷新画面").click());
+  expect(view.container.querySelector(".browser-screen")).toBeNull();
+  expect(input.value).toBe("");
+  expect(input.disabled).toBe(true);
+  expect(view.container.textContent).not.toContain("交还员工");
+  expect(button("重新连接")).toBeDefined();
+  if (code === "browser_host_identity_changed") {
+    expect(view.container.textContent).toContain("设备身份已变化");
+    expect(view.container.textContent).not.toContain(code);
+  }
+  expect(browserCommand).toHaveBeenCalledTimes(2);
+});

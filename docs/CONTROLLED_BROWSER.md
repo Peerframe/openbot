@@ -56,3 +56,19 @@ action; it cannot grant Server authority. Per-Bot serialization applies within o
 
 See [research](research/controlled-browser-click.md) and [Provider conformance](PROVIDER_CONFORMANCE.md)
 for pinned dependencies, actual validation and the remaining platform gates.
+
+## Python migration candidate: browser session identity
+
+The separate Python candidate binds each browser view to its original enrolled Worker identity
+and current connection. It retains that host identity across Server restart. Reconnecting the same
+Worker permits a fresh view; re-enrolling a device with the same Node id does not transfer the old
+browser or its login state. Legacy browser history without a verified identity binding is refused.
+Profile rebinding and login-data migration are not available in this candidate.
+
+Identity revocation or replacement is checked before input, at dispatch and before showing a result.
+Unconfirmed input is never retried, and a failed return of control leaves the durable pause in place.
+The client removes the old frame and unsent input after losing session authority. These checks use
+real PostgreSQL and HTTP/WebSocket tests with synthetic frames; they do not establish physical
+profile persistence or browser egress isolation. Human takeover remains disabled in default Python
+composition until the complete Work browser effect path is integrated. See the
+[identity binding review](research/browser-host-binding.md).

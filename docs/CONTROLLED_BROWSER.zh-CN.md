@@ -49,3 +49,14 @@ OPENBOT_DOCKER_INPUT_ORIGINS=http://127.0.0.1:4197
 
 固定依赖、实际验证与后续平台门槛见 [研究记录](research/controlled-browser-click.md)
 和 [Provider 验证](PROVIDER_CONFORMANCE.zh-CN.md)。
+
+## Python 迁移候选：浏览器会话身份
+
+独立的 Python 候选将每个浏览器视图绑定到原 Worker 注册身份和当前连接，并在 Server 重启后保留宿主身份。
+同一 Worker 重连后可以新建视图；设备重新注册，即使沿用相同 Node ID，也不会自动获得原浏览器或登录状态。
+缺少已验证身份绑定的旧浏览器记录会被拒绝。本候选尚不提供浏览器重新绑定或登录数据迁移。
+
+输入前、实际发送时及展示结果前，都会核对身份是否撤销或替换。不确定的输入不会重试；交还控制失败时，
+持久化暂停状态继续保留。会话权限失效后，客户端会清除旧画面和未发送文本。这些检查使用真实 PostgreSQL、
+HTTP/WebSocket 和合成画面，不证明实体浏览器资料持久化或网络出口隔离。完整 Work 浏览器执行链路接入前，
+Python 默认配置仍关闭人工接管。详见[身份绑定研究](research/browser-host-binding.md)。
