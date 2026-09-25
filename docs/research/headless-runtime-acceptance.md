@@ -102,3 +102,14 @@ tmpfs and is removed using its unique invocation-owned name. This is test infras
   fixture, build or test operation.
 - Local evidence is macOS host + Linux PostgreSQL container. Windows execution of this driver and
   hosted CI remain unverified until their own jobs run.
+
+## PR96 database regression alignment — 2026-09-25
+
+The automation PostgreSQL test still expected full optional-lesson queues to discard completion,
+contradicting the reviewed contract above and implementation commit
+`e0dc4e4d5a53fd994c429671296214988e491312`. Correct only that stale assertion: the51st Run
+completes with one reply, exactly50 pending proposals remain, no overflow proposal exists, and
+one content-free `KNOWLEDGE_PROPOSAL_SKIPPED` event records `pending_limit`. Count SQL rows directly
+because the public list itself caps at50. No production, schema, authority or oracle code changes.
+All26 cases in the affected integration file passed against a new disposable PostgreSQL fixture
+on canonical43; its owned resources were removed. Hosted CI must still validate the new commit.

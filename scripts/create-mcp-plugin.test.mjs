@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -34,7 +34,8 @@ test("creates a standalone pinned plugin and refuses to overwrite an existing pr
 test("generated standalone project uses the real MCP SDK over owned loopback", {
   timeout: 20000,
 }, async (t) => {
-  const root = await mkdtemp(join(tmpdir(), "openbot-plugin-transport-"));
+  // Canonical paths keep the regression visible on hosts with aliased temp directories.
+  const root = await realpath(await mkdtemp(join(tmpdir(), "openbot-plugin-transport-")));
   t.after(() => rm(root, { recursive: true, force: true }));
   const directory = await createMcpPlugin(join(root, "plugin"));
   await symlink(
@@ -47,7 +48,7 @@ import assert from 'node:assert/strict';
 import {pathToFileURL} from 'node:url';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-const {startExamplePlugin}=await import(pathToFileURL(process.argv[1]).href);
+const {startExamplePlugin}=await import(pathToFileURL(process.argv[2]).href);
 const server=await startExamplePlugin(0);
 const client=new Client({name:'synthetic-generator-check',version:'1.0.0'});
 try {
@@ -64,9 +65,15 @@ try {
  assert.equal((await fetch(server.endpoint,{method:'POST',headers:{Origin:'https://refused.invalid'},body:'{}'})).status,403);
  assert.equal((await fetch(server.endpoint,{method:'POST',body:'x'.repeat(24*1024+1)})).status,413);
  assert.equal((await fetch(server.endpoint)).status,405);
- console.log('MCP tool/resource/prompt/view, origin, size and method checks passed.');
-} finally { await client.close(); await server.close(); }
+} finally {
+ try { await client.close(); } finally { await server.close(); }
+}
+console.log('MCP tool/resource/prompt/view, origin, size and method checks passed; client and server closed.');
 `;
+  // Give the driver its own entry identity. Under node -e, argv[1] was the imported
+  // example, activating its standalone CLI listener in addition to the owned port0 server.
+  const driver = join(directory, "verify-example.mjs");
+  await writeFile(driver, program);
   const env = Object.fromEntries(
     ["PATH", "SystemRoot", "COMSPEC", "PATHEXT", "TEMP", "TMP", "TMPDIR"]
       .filter((name) => process.env[name] !== undefined)
@@ -74,9 +81,18 @@ try {
   );
   const result = spawnSync(
     process.execPath,
-    ["--import", "tsx", "--input-type=module", "-e", program, join(directory, "plugin-example.ts")],
+    ["--import", "tsx", driver, join(directory, "plugin-example.ts")],
     { cwd: directory, env, encoding: "utf8", timeout: 15000 },
   );
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /MCP tool\/resource\/prompt\/view/);
+  const diagnostic = JSON.stringify({
+    error: result.error?.code ?? null,
+    signal: result.signal,
+    stdout: result.stdout,
+    stderr: result.stderr,
+  });
+  // A POSIX SIGTERM handler can exit0 after spawnSync's deadline: status alone misses that leak.
+  assert.equal(result.error, undefined, diagnostic);
+  assert.equal(result.status, 0, diagnostic);
+  assert.match(result.stdout, /checks passed; client and server closed\./);
+  assert.doesNotMatch(result.stdout, /Example MCP endpoint:/);
 });

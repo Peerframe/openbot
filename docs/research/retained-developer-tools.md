@@ -77,3 +77,17 @@ successfully with cache bypass, preserving the current build cache without those
 signature/key-lifecycle check in the repository and the existing Worker gate. It passed independently
 after integration. It uses the retained source through the existing tsx loader and the already built
 shared contracts, with explicit temporary paths and no ambient credentials, database or network.
+
+## Standalone MCP test entry — 2026-09-25
+
+PR96 Windows CI exposed a child-process timeout in the real scaffold test. On a canonical
+temporary path the `node -e` driver placed the imported example at `argv[1]`, activating the
+example's direct-entry guard and its default4318 listener in addition to the owned port0 server.
+An actual canonical-path reproduction completed all SDK assertions but reached the15-second
+timeout. Its POSIX SIGTERM handler exited0, so the previous status-only check missed the leak.
+
+Reuse Node's normal file-entry argv contract: write a separate temporary driver, pass the example
+as `argv[2]`, and canonicalize the temporary root. Keep the same15/20-second bounds and all MCP
+assertions. Require no spawn error, natural exit0, a marker after client/server closure and no
+standalone-entry output. No SDK, sample source, lifecycle, dependency or privilege change is needed.
+The two real-loopback cases passed locally after this repair; actual Windows CI remains required.
