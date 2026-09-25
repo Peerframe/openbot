@@ -367,6 +367,33 @@ jobs:
           OPENBOT_TEST_PLATFORM: ${{ matrix.arch }}
           OPENBOT_TEST_AGENT_RUNTIME: python
 
+      - name: Validate the Python product Compose and Dockerfile contracts
+        timeout-minutes: 2
+        run: |
+          docker compose --file deploy/server/compose.product.yaml config --quiet
+          docker build --check --file deploy/server/Dockerfile.product .
+        env:
+          OPENBOT_POSTGRES_PASSWORD: openbot-product-compose-ci-only
+          OPENBOT_OWNER_PASSWORD: openbot-product-compose-owner-ci-only
+      - name: Build the native Python product image without publication
+        timeout-minutes: 12
+        run: docker build --platform "linux/${{ matrix.arch }}" --target runtime-product --tag openbot-server:product-smoke --file deploy/server/Dockerfile.product .
+      - name: Exercise Python product Owner HTTP, parsers, migrations and lifecycle
+        timeout-minutes: 6
+        shell: bash
+        run: |
+          umask 077
+          python3 deploy/server/smoke-product.py --image openbot-server:product-smoke > "$RUNNER_TEMP/python-product-smoke.json"
+          cat "$RUNNER_TEMP/python-product-smoke.json"
+      - name: Retain the synthetic Python product smoke summary
+        timeout-minutes: 1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-product-smoke-${{ matrix.arch }}-${{ github.sha }}
+          path: ${{ runner.temp }}/python-product-smoke.json
+          if-no-files-found: error
+          retention-days: 7
+
   python-runtime:
     name: Python runtime and control reference (Linux amd64)
     runs-on: ubuntu-24.04

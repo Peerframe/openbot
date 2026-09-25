@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "check": "npm run oracle:check && npm run test:browser:boundary && npm run docs:check && npm run research:check && npm run server:container:check && npm run migrations:check && npm run security:config-check && npm run worker-host:macos:check && npm run release:check && npm run lint && npm run typecheck && npm run test && npm run build",
+    "check": "npm run oracle:check && npm run test:browser:boundary && npm run docs:check && npm run research:check && npm run server:container:check && npm run server:product-container:check && npm run migrations:check && npm run security:config-check && npm run worker-host:macos:check && npm run release:check && npm run lint && npm run typecheck && npm run test && npm run build",
     "db:up": "docker compose --env-file .env -f deploy/server/compose.yaml up -d postgres",
     "db:stop": "docker compose --env-file .env -f deploy/server/compose.yaml stop postgres",
     "db:verify": "npm run oracle:build && node scripts/verify-database.mjs",
@@ -54,7 +54,8 @@
     "test:control:python": "npm run oracle:build && node apps/server-python/scripts/compare-identity-inputs.mjs && node apps/server-python/scripts/compare-task-contracts.mjs && node apps/server-python/scripts/compare-runtime-wire.mjs && node apps/server-python/scripts/compare-run-commands.mjs && node apps/server-python/scripts/compare-execution-values.mjs && node scripts/test-python-control.mjs",
     "oracle:check": "node --test scripts/check-server-oracle.test.mjs && node scripts/check-server-oracle.mjs",
     "oracle:build": "npm run oracle:check && turbo run build --filter=@openbot/legacy-server-oracle^... && npm run build:oracle --workspace @openbot/legacy-server-oracle",
-    "test:browser:boundary": "node --test experiments/browser-execution/probe.test.mjs && python3 -B -m unittest discover -s experiments/browser-execution -p \"test_*.py\" -v"
+    "test:browser:boundary": "node --test experiments/browser-execution/probe.test.mjs && python3 -B -m unittest discover -s experiments/browser-execution -p \"test_*.py\" -v",
+    "server:product-container:check": "node --test deploy/server/product-container.test.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",

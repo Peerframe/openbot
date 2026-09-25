@@ -50,11 +50,14 @@ Linux CI 已接入这些检查，但本地改动尚未运行托管 CI，二者�
 ## 显式本地入口与权限范围
 
 为已准备的兼容参考数据库设置 `OPENBOT_CONTROL_DATABASE_URL`，运行 `.venv/bin/python -I scripts/serve.py`。
-仅监听 `127.0.0.1`，默认端口 3101，可用 `OPENBOT_CONTROL_PORT`（1–65535）改变；禁用转发头信任与访问日志。
+默认监听 `127.0.0.1`，默认端口 3101，可用 `OPENBOT_CONTROL_PORT`（1–65535）改变；禁用转发头信任与访问日志。
+`OPENBOT_CONTROL_HOST`只接受`127.0.0.1`或`0.0.0.0`，空值或非法值在初始化前拒绝。
+可选[产品容器](../../deploy/server/README.product.zh-CN.md)在容器内显式选择`0.0.0.0`，主机端口仍仅发布到回环。
 不运行迁移、不读取 dotenv。这不是生产切换指引。
 
 | 设置 | 含义 |
 | --- | --- |
+| `OPENBOT_CONTROL_HOST` | 默认`127.0.0.1`；另只接受显式`0.0.0.0`。不改变origin、cookie和转发头策略 |
 | `OPENBOT_CONTROL_AUTHORITY` | 默认 `read-only`；`owner-auth` 启用登录/退出；`identity` 额外启用 Bot/频道创建、私聊、加入成员与带版本检查的资料编辑；`tasks` 再增加旧任务入队；`work` 额外开放独立工作领域提交接口 |
 | `OPENBOT_CONTROL_OWNER_PASSWORD` | `owner-auth`、`identity`、`tasks`、`work` 模式必填；15–1024 个 Unicode 字符，不能用示例密码。不继承旧 Server 密码变量 |
 | `OPENBOT_CONTROL_SESSION_TTL_HOURS` | 整数 1–168，默认 12 |

@@ -1,4 +1,4 @@
-"""Loopback-only reference with explicit authority; no dotenv or schema migration."""
+"""Loopback-default reference with explicit authority/listen host; no dotenv or schema migration."""
 from pathlib import Path
 import asyncio
 import importlib.util
@@ -18,6 +18,9 @@ from openbot_server.identity_store import PostgresIdentityStore
 
 
 def main():
+    host = os.environ.get("OPENBOT_CONTROL_HOST", "127.0.0.1")
+    if host not in ("127.0.0.1", "0.0.0.0"):
+        raise SystemExit("Control-plane host must be 127.0.0.1 or 0.0.0.0.")
     dsn = os.environ.get("OPENBOT_CONTROL_DATABASE_URL")
     if not dsn:
         raise SystemExit("Set an explicit OPENBOT_CONTROL_DATABASE_URL for the read reference.")
@@ -173,7 +176,7 @@ def main():
             raise SystemExit("An absolute built Web directory is required.")
         app.mount("/", StaticFiles(directory=web_path, html=True), name="web")
     from openbot_server.worker_host_registry import worker_host_uvicorn_options
-    uvicorn.run(app, host="127.0.0.1", port=int(port_text), **worker_host_uvicorn_options(), access_log=False,
+    uvicorn.run(app, host=host, port=int(port_text), **worker_host_uvicorn_options(), access_log=False,
                 log_level="warning", loop="asyncio", http="h11", timeout_graceful_shutdown=8)
 
 

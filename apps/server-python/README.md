@@ -63,12 +63,16 @@ removes only owned resources. These checks do not prove live-provider, browser o
 ## Explicit local entry and authority
 
 For a prepared compatible reference database, supply `OPENBOT_CONTROL_DATABASE_URL` and run
-`.venv/bin/python -I scripts/serve.py`. It binds only `127.0.0.1`, uses port 3101 unless
+`.venv/bin/python -I scripts/serve.py`. It defaults to `127.0.0.1`, uses port 3101 unless
 `OPENBOT_CONTROL_PORT` (1–65535) is explicit, and disables forwarded-header trust/access logs.
+`OPENBOT_CONTROL_HOST` accepts only `127.0.0.1` or `0.0.0.0`; invalid/empty values fail before
+initialization. The opt-in [product container](../../deploy/server/README.product.md) selects
+`0.0.0.0` inside the container and publishes its host port only on loopback.
 It never runs migrations or reads dotenv. This is not a production cutover instruction.
 
 | Setting | Meaning |
 | --- | --- |
+| `OPENBOT_CONTROL_HOST` | Default `127.0.0.1`; only explicit `0.0.0.0` is also accepted. This does not change origin, cookie or forwarded-header policy |
 | `OPENBOT_CONTROL_AUTHORITY` | `read-only` by default; `owner-auth` enables login/logout; `identity` additionally enables Bot/channel creation, direct conversations, member joins and profile details; `tasks` adds legacy queued submission; `work` additionally exposes the independent work-domain admission API |
 | `OPENBOT_CONTROL_OWNER_PASSWORD` | Required for `owner-auth`, `identity`, `tasks` and `work`; 15–1024 Unicode characters, non-example value. The old Server password variable is not inherited |
 | `OPENBOT_CONTROL_SESSION_TTL_HOURS` | Integer 1–168; default 12 |
