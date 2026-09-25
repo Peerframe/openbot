@@ -18,6 +18,14 @@ import { PostgresControlPlaneStore } from "../tests/oracles/legacy-server/dist/p
 import { RequestThrottle } from "../tests/oracles/legacy-server/dist/request-throttle.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
+// The base check excludes exactly these files; this invocation executes them with the Worker closure.
+const workerTests = (await readFile(join(root, "apps/server-python/worker-tests.txt"), "utf8"))
+  .trim()
+  .split("\n");
+assert(workerTests.length > 0 && workerTests.every((path) => path.length > 0));
+assert.equal(new Set(workerTests).size, workerTests.length, "Duplicate Worker test path.");
+for (const path of workerTests)
+  assert(existsSync(join(root, "apps/server-python", path)), `Missing Worker test: ${path}`);
 const image =
   "postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0";
 const name = `openbot-control-${randomBytes(6).toString("hex")}`;
@@ -429,60 +437,7 @@ try {
     }
     const temporal = spawnSync(
       process.env.OPENBOT_TEMPORAL_TEST_PYTHON,
-      [
-        "-m",
-        "pytest",
-        "tests/test_employee_publisher_retained.py",
-        "tests/test_work_temporal_activity.py",
-        "tests/test_work_temporal_effect.py",
-        "tests/test_work_model_receipts_postgres.py",
-        "tests/test_work_worker_postgres.py",
-        "tests/test_work_deferred_postgres.py",
-        "tests/test_work_closed_repair_postgres.py",
-        "tests/test_work_repair_dispatch.py",
-        "tests/test_work_dispatch_entry.py",
-        "tests/test_product_model.py",
-        "tests/test_work_tool_results.py",
-        "tests/test_work_product_model.py",
-        "tests/test_work_product_service.py",
-        "tests/test_work_product_artifacts.py",
-        "tests/test_work_product_knowledge.py",
-        "tests/test_work_product_plugins.py",
-        "tests/test_work_plugin_large.py",
-        "tests/test_work_product_reads.py",
-        "tests/test_work_product_result.py",
-        "tests/test_work_product_runtime.py",
-        "tests/test_work_task_profiles.py",
-        "tests/test_work_collaboration_flow.py",
-        "tests/test_work_collaboration.py",
-        "tests/test_work_collaboration_checkpoint.py",
-        "tests/test_work_collaboration_deadline.py",
-        "tests/test_work_collaboration_deadline_flow.py",
-        "tests/test_work_failure.py",
-        "tests/test_work_terminal_proof.py",
-        "tests/test_work_terminal_postgres.py",
-        "tests/test_work_terminal_service.py",
-        "tests/test_work_native_scope.py",
-        "tests/test_work_native_capabilities.py",
-        "tests/test_work_native_collaboration.py",
-        "tests/test_work_command_store.py",
-        "tests/test_work_command_control.py",
-        "tests/test_work_command_actions.py",
-        "tests/test_work_command_source.py",
-        "tests/test_work_command_channel.py",
-        "tests/test_work_command_installation.py",
-        "tests/test_command_owner_profile.py",
-        "tests/test_work_product_commands.py",
-        "tests/test_worker_command_channel.py",
-        "tests/test_model_media.py",
-        "tests/test_work_product_media.py",
-        "tests/test_public_source.py",
-        "tests/test_work_product_web.py",
-        "tests/test_model_connections.py",
-        join(root, "experiments/work-journey/test_product_command_remote.py"),
-        join(root, "experiments/work-journey/test_product_host_fixture.py"),
-        "-q",
-      ],
+      ["-m", "pytest", ...workerTests, "-q"],
       {
         cwd: join(root, "apps/server-python"),
         env: {
@@ -512,6 +467,10 @@ try {
       .replaceAll(ownerPassword, "[fixture password]");
     console.log(temporalOutput.trim());
     assert.equal(temporal.status, 0, "Worker/model-connection PostgreSQL checks failed.");
+  } else {
+    console.log(
+      "Worker checks NOT RUN: set OPENBOT_TEMPORAL_TEST_PYTHON to the reviewed Worker interpreter for full acceptance.",
+    );
   }
   const identityResult = JSON.parse(
     await readFile(join(fixtureDirectory, "identity-result.json"), "utf8"),
