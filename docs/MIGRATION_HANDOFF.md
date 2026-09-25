@@ -5,7 +5,7 @@
 - Delivery: [draft PR #96](https://github.com/Peerframe/openbot/pull/96), branch
   `codex/python-migration-draft-20260925`, initial published head `4beb58b1adac1a68b6c098c84fa116b21a8d9f77`.
   The migration history and integrated product are on GitHub. Follow-up code is committed through
-  `4a523b9178363307eacc571d0ff861a692bb0a0f`; this handoff records its hosted readback and subsequent fixture repairs. No merge, default-backend change, installed-app
+  `1978bcb4d46160ecd75a0c862328495876a71e53`; this handoff records its hosted readback and subsequent fixture repairs. No merge, default-backend change, installed-app
   replacement or production deployment is authorized by this checkpoint.
 - Architecture: the Owner confirmed the 2026-09-24 OpenBot design review v2. Module ownership and
   factual documentation corrections are integrated. Server remains authoritative; Temporal owns
@@ -45,43 +45,40 @@
   OCR, original files/keys/schema across SIGTERM/restart, four invalid-startup cases and owned cleanup.
   No TS business Server/oracle is shipped. Both native Linux amd64 and arm64 CI built and smoke-tested the product image on817d46c.
   Configured Temporal and deployment have separate boundaries. See [container result](../deploy/server/PRODUCT_CONTAINER_RESULT.json).
-- Desktop: the canonical43/63-package unsigned arm64 Preview passed staged/packaged API, restart,
-  cleanup and bundled mTLS Worker lifecycle before the new optional listen seam. Its frozen160-source
-  comparison belongs to that build; a final package must be rebuilt after source changes. Native
-  GUI/Keychain evidence remains scoped to the earlier canonical41 artifact. Nothing is installed.
-- CI and tests: hosted817d46c has nine successful individual checks, failed Windows portable and
-  Python runtime jobs, and a failed aggregate check. Overall CI has not passed. Both native product
-  container architectures built and completed their actual smoke. Windows IPC used a Unix path;
-  this repair selects a native Windows named pipe while retaining real transport assertions.
-  The local Unix execution passed53 tests. Python bootstrap mixed incompatible DBOS experiment
-  and product dependencies; this repair installs the existing63-package Worker lock and defers the
-  DBOS-only import. A fresh environment passed exact-lock verification and four actual entry tests.
-  `npm run check` passed (33 test tasks,20 build tasks; unchanged tasks reused cache).
-  Hosted Windows/Linux validation of these repairs remains pending. Retained earlier local evidence:
-  base entry1304 passed with453 fixture-dependent skips; full owned PostgreSQL base826 passed
-  (+2 optional skips), Worker1489 passed (+1 missing-history skip). None substitutes for hosted CI.
-- Follow-up CI:4a523b9 passed the actual53-case Windows IPC suite and the Linux Worker bootstrap,
-  reaching the owned PostgreSQL gate. Windows then exposed Desktop test assumptions: CRLF notice
-  conversion, POSIX-only permissions and signal reporting. Preserve the original notice bytes with
-  a narrow Git attribute; test the real per-OS termination result and explicit Windows refusal of
-  the unqualified POSIX candidate. Local Desktop checks passed37 cases; two Windows-only negatives
-  await Windows. Five stale Work-journey fixtures now match historical correction-context and
-  current failure-finalization contracts. Actual fresh-lock checks passed172 journey,153 adjacent
-  pytest and198 Linux execution cases. The next hosted run remains required; overall CI is open.
+- Desktop: the refreshed canonical43/63-package unsigned arm64 Preview at1978bcb passed
+  staged/packaged API startup, parent-EOF shutdown, unsafe-directory refusal, restart and cleanup.
+  All159 Python source modules and lifecycle scripts/lock match that commit; ASAR/controller hashes
+  match the preceding candidate. See [refresh evidence](../experiments/work-journey/evidence/desktop-preview-refresh.json).
+  No new mTLS Worker, GUI, Keychain, signing or installation evidence is claimed.
+- CI and tests: [run36160191190](https://github.com/Peerframe/openbot/actions/runs/36160191190)
+  at1978bcb passed all three Portable jobs, Windows Host build, validation, database, security and
+  both native Server-container jobs. Windows completed actual installation and native Server lifecycle.
+  Synthetic migration also passed. Python passed its exact Worker bootstrap and owned PostgreSQL
+  base826 cases (+2 optional skips) and Worker1489 cases (+1 missing-history skip), then failed two
+  real Unix-socket fixtures using macOS-only `/private/tmp`. The aggregate therefore failed.
+- Current CI repair: retain short canonical `/tmp` socket paths on Linux/macOS. Integrate DSH's
+  test-only `SubprocessCommander(binary=sys.executable)` implementation so environment-filtering
+  assertions do not require a Docker CLI; missing-executable refusal remains covered and unchanged.
+  A separate disposable Linux fixture's `/tmp` was verified `noexec`; enable `exec` only for that
+  fixture's synthetic shell execution, without changing product code or security assertions.
+  The actual Linux follow-up passed198 execution,153 pytest and172 journey cases; `npm run check`
+  passed with unchanged Turbo tasks cached. New-head hosted qualification remains required; local
+  passes are not overall CI acceptance.
 - Retirement: publisher/MCP tooling and parser/runtime dependencies are separated. Differential
   tests use the immutable59-file `tests/oracles/legacy-server` snapshot with no product entry.
   The replaced TS business Server leaves main build/CI/release only after the remaining command,
   browser product/handover and final candidate checks. Keep the recovery commit and TS Node/Provider
   drivers; do not enable an unqualified path to declare retirement complete.
-- Resources and ownership: root is the only repository writer; agents return frozen bounded CI
-  patches; all bounded agents and new local validation processes have stopped. Retained PG `openbot-migration-c8b2-30b7e37a` at51899 holds prior terminal/native/Kimi
+- Resources and ownership: the CI task owns follow-up fixes in its independent worktree; the original
+  migration worktree and handed-off patch remain preserved. DSH receives only bounded public/synthetic
+  materials. No other task writes the CI-owned files. Retained PG `openbot-migration-c8b2-30b7e37a` at51899 holds prior terminal/native/Kimi
   evidence and must remain. UI API33551/Vite33552 contain synthetic data. No VPS test window is
   active. Do not purge shared Docker cache: an early fixture image entered it before private
   containerd was corrected. Current remote tests and local container smoke have cleaned owned
   resources. Original source/data/configuration and consumed stage tombstones remain preserved.
-- Next bounded checkpoint: publish these results and CI fixes into the same draft, execute product3
-  only after its exact authorization, then finish product browser/handover integration and the
-  final package/retirement gate. Reuse accepted evidence; do not repeat successful live-model,
+- Next bounded checkpoint: finish all hosted checks, including the aggregate, on the same draft.
+  Product3 still requires its exact authorization; product browser/handover and package/retirement
+  acceptance remain separate migration work. Reuse accepted evidence; do not repeat successful live-model,
   native case2 or CDP runs merely because the task resumes.
 
 The stage notes below are historical evidence, not the current work order.

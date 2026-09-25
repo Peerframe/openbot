@@ -230,7 +230,8 @@ def actual_local_peer(sock):
     return uid.value
 
 def test_real_local_unix_exchange_and_disconnect(h,tmp_path):
-    short=tempfile.TemporaryDirectory(prefix='obh-',dir='/private/tmp');listener=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);path=Path(short.name)/'s';listener.bind(str(path));listener.listen(1);errors=[]
+    # Keep the canonical path below the Unix socket limit on both Linux and macOS.
+    short=tempfile.TemporaryDirectory(prefix='obh-',dir=str(Path('/tmp').resolve()));listener=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);path=Path(short.name)/'s';listener.bind(str(path));listener.listen(1);errors=[]
     def worker():
         try:
             conn,_=listener.accept()
@@ -289,7 +290,7 @@ def test_sixty_four_live_slots_no_eviction(h):
 
 
 def test_real_unix_entire_signed_flow(h):
-    short=tempfile.TemporaryDirectory(prefix='obh-',dir='/private/tmp');path=Path(short.name)/'s';listener=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
+    short=tempfile.TemporaryDirectory(prefix='obh-',dir=str(Path('/tmp').resolve()));path=Path(short.name)/'s';listener=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
     listener.bind(str(path));listener.listen(1);errors=[];real=h.host
     def worker():
         try:

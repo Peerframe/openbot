@@ -74,3 +74,35 @@ Actual follow-up execution passed all172 Work-journey unittest cases,153 protect
 Temporal and deferred-workflow pytest cases, and198 Linux execution unittest cases. The repository
 `npm run check` passed again with unchanged Turbo tasks cached. These executions use the fresh
 canonical Worker environment; the hosted Linux database/engine sequence remains separate.
+
+
+### Native Linux short-socket fixture correction
+
+Hosted4a523b9 passed the exact Worker bootstrap,826 base PostgreSQL cases (+2 optional skips)
+and1489 Worker cases (+1 missing-history skip), then failed two real Unix-stream fixture setups:
+`/private/tmp` exists on macOS but not the Linux runner. Use canonical `/tmp` on both systems;
+retain the short random directory, actual peer credentials, signed flow, assertions and cleanup.
+The system default macOS temporary path can exceed the Unix socket length limit, so simply
+removing the short-directory selection would reintroduce a separate known platform failure.
+This changes test location only, with no product fallback or bypass.
+
+### CLI-independent environment assertions and disposable Linux fixture
+
+Reuse the existing `SubprocessCommander(binary=sys.executable)` synthetic-child pattern and
+Python3.12's documented `sys.executable`; DSH implemented the one-line test constructor change
+in an isolated public/synthetic packet. All environment-filtering assertions and the independent
+missing-CLI refusal test remain unchanged. No production fallback, dependency or upstream source
+copy is introduced. The actual Linux image has no Docker CLI, exposing the old implicit dependency.
+
+The follow-up disposable container's `/proc/mounts` confirmed `rw,nosuid,nodev,noexec` for `/tmp`.
+The172-case journey suite intentionally executes a synthetic upstream shell script there, so its
+exit126 was a local runner constraint. The official [Docker tmpfs options](https://docs.docker.com/engine/storage/tmpfs/)
+define explicit `exec`/`noexec`; DSH implemented a temporary runner using `rw,exec,nosuid,nodev`
+with the same pinned image, read-only source, no network/socket, dropped capabilities and resource
+limits. This runner is validation machinery only; repository/product mount policy is unchanged.
+
+Actual execution of the reviewed DSH runner on the pinned Linux arm64 image passed198 execution
+unittests,153 Host/native/Temporal/deferred pytest cases and172 journey unittests. `/proc/mounts`
+confirmed the executable tmpfs without `noexec`. Required `npm run check` passed;33 test/typecheck
+and20 build tasks reused unchanged Turbo cache, while direct repository gates executed. Subsequent
+documentation edits passed `npm run docs:check`. Hosted latest-head success is still a separate gate.

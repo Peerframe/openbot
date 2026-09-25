@@ -2680,7 +2680,7 @@ class SandboxTest(unittest.TestCase):
         with mock.patch.dict(os.environ, {"DOCKER_HOST": "tcp://evil.invalid:2375",
                                           "DOCKER_CONFIG": "/tmp/evil",
                                           "PATH": os.environ.get("PATH", "/usr/bin:/bin")}):
-            commander = SubprocessCommander()
+            commander = SubprocessCommander(binary=sys.executable)
         self.assertNotIn("DOCKER_HOST", commander.environment)
         self.assertNotIn("DOCKER_CONFIG", commander.environment)
         self.assertTrue(commander.binary.startswith("/"))

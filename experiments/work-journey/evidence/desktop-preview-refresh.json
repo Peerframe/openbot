@@ -1,0 +1,48 @@
+{
+  "format": "openbot.desktop.preview-refresh/v1",
+  "sourceCommit": "1978bcb4d46160ecd75a0c862328495876a71e53",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "unsignedDevelopmentCandidate": true,
+  "installed": false,
+  "canonicalMigrations": 43,
+  "workerDependencyCount": 63,
+  "matchingPythonSourceModules": 159,
+  "lifecycleScriptsAndLockMatch": true,
+  "stagedSmoke": {
+    "parentEofStoppedActualApi": true,
+    "unsafeDirectoryRefusedAndPostgresStopped": true,
+    "pythonProductHealth": true,
+    "ownerLogin": true,
+    "postgresInitialized": true,
+    "restartPreservedData": true,
+    "serverAndPostgresStopped": true,
+    "syntheticOnly": true,
+    "nativeKeychainVerified": false
+  },
+  "packagedSmoke": {
+    "parentEofStoppedActualApi": true,
+    "unsafeDirectoryRefusedAndPostgresStopped": true,
+    "pythonProductHealth": true,
+    "ownerLogin": true,
+    "postgresInitialized": true,
+    "restartPreservedData": true,
+    "serverAndPostgresStopped": true,
+    "syntheticOnly": true,
+    "nativeKeychainVerified": false
+  },
+  "asarSha256": "452c9429b2a8ae16a9732e65b250e700ab3ec084f67cb4aca267eb268708c38e",
+  "matchingControllerHashes": {
+    "native-server.js": "62cc7faf9a54d424240f7c91e42d770a6d483bedcc28c2ddf6ef71d8be54838e",
+    "python-server.js": "4ebec0d833502b8bc0455110230ba121cbe9e8369bfe01c6d883e52d596c7b4d"
+  },
+  "packagedLauncherMatchesCompiledSource": true,
+  "changedProductSourcesSincePreviousCandidate": [
+    "apps/server-python/scripts/serve.py",
+    "apps/server-python/src/openbot_server/model_connections_inputs.py"
+  ],
+  "mtlsWorkerRerun": false,
+  "nativeGuiRerun": false,
+  "signingVerified": false,
+  "fullInferenceVerified": false
+}

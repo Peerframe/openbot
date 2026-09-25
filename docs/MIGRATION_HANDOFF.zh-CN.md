@@ -4,7 +4,7 @@
 
 - 交付：[草稿 PR #96](https://github.com/Peerframe/openbot/pull/96)，分支
   `codex/python-migration-draft-20260925`，首个已发布检查点为
-  `4beb58b1adac1a68b6c098c84fa116b21a8d9f77`，后续代码已提交至`4a523b9178363307eacc571d0ff861a692bb0a0f`。
+  `4beb58b1adac1a68b6c098c84fa116b21a8d9f77`，后续代码已提交至`1978bcb4d46160ecd75a0c862328495876a71e53`。
   迁移历史和整合产品已在 GitHub；本交接记录增量的最终本地验收与 CI 修复。本检查点不授权合并、默认后端切换、替换已安装应用或部署生产。
 - 架构：用户确认《2026-09-24 OpenBot 设计研究 v2》。模块归属和文档事实修正已整合；Server 管权限，
   Temporal 管持久恢复，DSH 协助传输开发。全仓包／目录重排、视觉系统和市场仍是后续工作，不阻塞本草稿。
@@ -29,29 +29,30 @@
   （默认）或0.0.0.0，非法值先于DB／密钥初始化拒绝。本地Linux arm64实际镜像通过Owner／Web、43条迁移、
   DOCX／PDF／空白OCR、SIGTERM重启后原文件／密钥／schema持久化、四项非法启动及自有资源清理，不含TS业务
   Server／oracle。该镜像在817d46c的原生Linux amd64和arm64 CI均已实际构建并通过smoke；配置Temporal与部署分别验收。见[容器结果](../deploy/server/PRODUCT_CONTAINER_RESULT.json)。
-- Desktop：canonical43／63依赖unsigned arm64 Preview此前通过暂存／包内API、重启、清理和实际mTLS Worker；
-  160源码一致性属于当时冻结构建。新增可选监听配置后最终包须重新构建。原生GUI／Keychain证据仍属于此前
-  canonical41产物，未安装任何候选。
-- CI和检查：817d46c的托管CI有9项独立检查成功，Windows portable与Python runtime失败，汇总check失败，整体尚未通过。
-  已成功项包含新Python产品容器的原生amd64／arm64构建与实际smoke。Windows失败是IPC夹具误用Unix路径，
-  本次改为Windows命名管道，仍保留真实传输断言；本地Unix执行53项通过。Python失败是混装旧DBOS与产品Worker
-  的冲突依赖，本次仅安装既有63项锁，并延迟DBOS专属导入；新建环境的精确依赖、4项实际入口检查通过。
-  `npm run check`通过33项test及20项build，未变任务复用缓存；新增修复仍需托管Windows／Linux验证。保留此前实际基础入口1304通过、453项夹具依赖跳过，以及完整独占PG
-  base826通过（2项可选跳过）、Worker1489通过（1项缺少历史夹具跳过）；这些结果不代替本次托管CI。
-- 后续CI：4a523b9已实际通过Windows的53项IPC测试和Linux Worker依赖启动，进入独占PostgreSQL门禁。
-  Windows随后暴露Desktop测试的换行、POSIX权限与信号假设，本次保留许可证原始字节，断言各系统真实终止结果，
-  并在Windows明确验证拒绝尚未支持的POSIX候选。本地Desktop37项通过，2项Windows专属反例待原生执行。
-  五个旧Work流程夹具已对齐历史纠正上下文及当前失败收尾契约；新锁环境实际通过172项流程、153项相邻pytest
-  和198项Linux执行检查。仍须新托管CI通过，不能据此宣称整体验收完成。
+- Desktop：1978bcb的canonical43／63依赖unsigned arm64 Preview已重新构建，通过暂存／包内API启动、
+  parent-EOF停止、不安全目录拒绝、重启和清理。159个Python源码模块及生命周期脚本／锁与该提交一致，
+  ASAR／控制器哈希与前一候选一致。见[刷新证据](../experiments/work-journey/evidence/desktop-preview-refresh.json)。
+  本轮不新增mTLS Worker、GUI、Keychain、签名或安装验收声明。
+- CI和检查：1978bcb的[run36160191190](https://github.com/Peerframe/openbot/actions/runs/36160191190)
+  已通过三个Portable任务、Windows Host构建、validation、database、security和两个原生Server容器任务。
+  Windows实际安装与原生Server生命周期已通过；合成迁移也已通过。Python精确Worker启动和独占PostgreSQL
+  base826项（2项可选跳过）、Worker1489项（1项缺少历史夹具跳过）通过，随后两个真实Unix socket夹具因
+  使用macOS专属`/private/tmp`失败，汇总check因此失败。
+- 当前CI修复：Linux／macOS均使用短canonical `/tmp` socket路径。整合DSH实际实现的测试修复
+  `SubprocessCommander(binary=sys.executable)`，环境过滤断言不再依赖Docker CLI；缺失可执行文件的
+  拒绝行为及独立反例保持不变。另一个本地Linux容器的`/tmp`已确认带`noexec`，仅为该临时夹具的合成
+  shell执行显式启用`exec`，不改产品或安全断言。实际Linux复查通过198项执行器、153项pytest和172项流程
+  测试；`npm run check`通过，未变Turbo任务复用缓存。仍须最新提交托管检查通过，本地通过不能代替CI验收。
 - 退役：publisher／MCP工具、解析器与运行依赖已解耦。差异测试使用固定59文件`tests/oracles/legacy-server`，
   没有产品入口。剩余命令链路、浏览器产品／接管及最终候选检查通过后，才将已替代TS业务Server退出主构建／CI／
   发布，保留恢复提交及TS Node／Provider驱动，不启用未验收路径来宣称完成。
-- 资源与归属：root独占仓库写入，代理只交冻结CI补丁；所有有界代理和新增本地验收进程均已停止。PG `openbot-migration-c8b2-30b7e37a`在51899保留
+- 资源与归属：CI任务在独立工作树独占后续修复；原迁移工作树与交接补丁保留。DSH只接收最小公开／合成材料，
+  其他任务不写CI归属文件。PG `openbot-migration-c8b2-30b7e37a`在51899保留
   terminal／native／Kimi证据，必须保留；UI API33551／Vite33552为合成数据。当前没有VPS测试窗口，远端测试及
   本地容器smoke资源均已清理。早期夹具曾把镜像放入共享Docker缓存，之后已改私有containerd，不可盲删共享缓存。
   原数据／配置及已消耗stage记录保留。
-- 下一个有界检查点：将结果及CI修复补到同一草稿；仅在product3具体授权后执行；然后完成浏览器产品／人工接管
-  及最终候选包／退役门槛。复用既有证据，不因继续任务而重跑成功的真实模型、native case2或CDP测试。
+- 下一个有界检查点：完成同一草稿最新提交的全部托管检查与汇总check。product3仍须具体授权；
+  浏览器产品／人工接管和候选包／退役门槛属于其他迁移工作。复用既有证据，不因继续任务而重跑成功的真实模型、native case2或CDP测试。
 
 以下阶段说明仅作为历史证据，不是当前工作顺序。
 
