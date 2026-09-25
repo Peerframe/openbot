@@ -158,3 +158,21 @@ tests passed, including the real Bash guard with matched, missing and failed-pro
 `bash -n` and the required full `npm run check` passed; unchanged Turbo tasks reused cache.
 The next native hosted run must verify the complete original smoke and retain diagnostic logs
 if the preflight marker is absent. This fix does not infer success from a producer failure.
+## Hosted qualification job budget (2026-09-26)
+
+The complete Python job at `13f6828` [passed in 38 minutes 15 seconds](https://github.com/Peerframe/openbot/actions/runs/36166126715/job/108174206138).
+Its final PostgreSQL/mTLS step took 27 minutes 35 seconds and finished with 22 adjacent-release
+cases, after the eight separately selected journey invocations and all unit suites. In the next
+run at `254690e`, the same final step began after 14 minutes 1 second of setup and control tests,
+compared with 10 minutes 37 seconds in the passing run. Applying the observed passing step duration
+to that setup cost exceeds the existing 40-minute job ceiling. This is evidence of insufficient
+job-budget margin, not evidence of a stalled individual operation.
+
+Reuse GitHub Actions' existing
+[`jobs.<job_id>.timeout-minutes`](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idtimeout-minutes)
+setting and raise only this job's ceiling to 50 minutes. The existing reuse-ledger CI completion
+entry and required `check` dependencies remain applicable. Keep the 600-second History Shard
+warm-up, all test commands, individual operation bounds, cleanup, negative assertions and exact
+dependency locks unchanged. Do not split or skip qualification to meet an arbitrary wall clock.
+No dependency, copied code, production timeout or support claim changes. The next head must still
+complete the full hosted job and protected aggregate successfully.

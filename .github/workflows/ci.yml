@@ -397,8 +397,9 @@ jobs:
   python-runtime:
     name: Python runtime and control reference (Linux amd64)
     runs-on: ubuntu-24.04
-    # The adjacent-release gate includes the documented ten-minute History Shard warm-up.
-    timeout-minutes: 40
+    # A full passing run took 38m; allow cold setup variance while retaining every probe bound
+    # and the documented ten-minute History Shard warm-up.
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
