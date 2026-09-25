@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from temporalio.client import WorkflowFailureError, WorkflowExecutionStatus
+from temporalio.exceptions import ApplicationError
 from temporalio.api.enums.v1 import PendingActivityState
 from temporalio.worker import Replayer
 from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
@@ -55,12 +56,22 @@ async def qualify_shared(client, api, bot, dsn, artifact_root, server, launch, c
     try:
         await asyncio.wait_for(handles[0].result(), 30)
     except WorkflowFailureError as error:
-        causes = []
-        cause = error
-        while cause is not None:
-            causes.append(str(cause))
-            cause = getattr(cause, 'cause', None)
-        assert any('admission_closed' in c for c in causes), causes
+        if product:
+            # Product work_worker.py finalizes, then re-raises OpenBotTaskFailed from None:
+            # its deliberate sanitation boundary stops the cause chain at this ApplicationError.
+            failure = error.cause
+            assert isinstance(failure, ApplicationError), failure
+            assert failure.type == 'OpenBotTaskFailed', failure.type
+            assert failure.message == 'execution_failed', failure.message
+            assert failure.non_retryable is True, failure.non_retryable
+            assert failure.cause is None, failure.cause
+        else:
+            causes = []
+            cause = error
+            while cause is not None:
+                causes.append(str(cause))
+                cause = getattr(cause, 'cause', None)
+            assert any('admission_closed' in c for c in causes), causes
     else:
         raise AssertionError('Cancelled Task continued to publication')
     await asyncio.wait_for(handles[1].result(), 30)

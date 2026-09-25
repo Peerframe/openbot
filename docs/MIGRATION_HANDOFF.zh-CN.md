@@ -43,6 +43,12 @@
   拒绝行为及独立反例保持不变。另一个本地Linux容器的`/tmp`已确认带`noexec`，仅为该临时夹具的合成
   shell执行显式启用`exec`，不改产品或安全断言。实际Linux复查通过198项执行器、153项pytest和172项流程
   测试；`npm run check`通过，未变Turbo任务复用缓存。仍须最新提交托管检查通过，本地通过不能代替CI验收。
+- 后续托管80e2b90：除Python外所有独立检查通过，包括完整Windows安装／原生生命周期。Python已通过修复后
+  的单元／socket检查和四个真实PostgreSQL／mTLS场景，随后`product-concurrent-runs`暴露旧错误文本断言。
+  DSH已实现对当前脱敏产品错误的精确检查（`OpenBotTaskFailed`、`execution_failed`、不可重试、无底层原因）；
+  参考路径错误链及全部取消、费用、效果、产物、回放断言保留，不改产品代码。真实并发、延期审批、关闭后
+  修复和Owner纠正四场景均在本地HTTP／PostgreSQL／mTLS通过，原计数、下载及离线回放检查保留。
+  `npm run check`再次通过；最新提交托管检查仍为验收门槛。
 - 退役：publisher／MCP工具、解析器与运行依赖已解耦。差异测试使用固定59文件`tests/oracles/legacy-server`，
   没有产品入口。剩余命令链路、浏览器产品／接管及最终候选检查通过后，才将已替代TS业务Server退出主构建／CI／
   发布，保留恢复提交及TS Node／Provider驱动，不启用未验收路径来宣称完成。

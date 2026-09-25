@@ -106,3 +106,28 @@ unittests,153 Host/native/Temporal/deferred pytest cases and172 journey unittest
 confirmed the executable tmpfs without `noexec`. Required `npm run check` passed;33 test/typecheck
 and20 build tasks reused unchanged Turbo cache, while direct repository gates executed. Subsequent
 documentation edits passed `npm run docs:check`. Hosted latest-head success is still a separate gate.
+
+### Hosted product cancellation assertion
+
+At80e2b90 all198 execution,153 adjacent pytest and172 journey cases passed in hosted Linux.
+Four real PostgreSQL/mTLS scenarios then passed. `product-concurrent-runs` failed because its
+shared reference/product probe still searched the exception chain for `admission_closed`.
+The reviewed product failure wrapper in `work_worker.py` deliberately emits the sanitized,
+non-retryable `ApplicationError('execution_failed', type='OpenBotTaskFailed') from None` after
+finalization. The unwrapped reference Worker retains its original exception chain.
+
+Reuse the ledger's Product Worker/failure entries and `python-work-failure.md`: Temporal1.33.0
+commit `ab52fdde33ee8ed193402625bfdba25d240a762d`, MIT. Read the official
+[ApplicationError API](https://python.temporal.io/temporalio.exceptions.ApplicationError.html)
+and the installed pinned implementation; the pinned GitHub source URL again returned a fetch
+error. Use the released typed `cause`, `type`, `message` and `non_retryable` properties, not a new
+exception protocol. DSH is assigned the bounded fixture implementation: assert the exact sanitized
+product error, retain the reference assertion, and preserve all cancellation, usage, action/effect,
+independent completion, artifact and replay checks. No product behavior or upstream source copy.
+
+The DSH patch passed the actual `--engine postgres-mtls --only-case product-concurrent-runs`
+entry in this checkout, including its unchanged public snapshots, accounting/effect counters,
+artifact download and offline replay. The following three previously unreached hosted cases also
+passed locally: product-deferred-approval, product-closed-repair and product-owner-corrections,
+each with real HTTP/PostgreSQL/mTLS and synthetic model/effect peers. Required `npm run check`
+passed again with unchanged Turbo tasks cached. No paid model or remote VPS call was repeated.

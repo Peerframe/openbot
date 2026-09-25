@@ -64,6 +64,15 @@
   The actual Linux follow-up passed198 execution,153 pytest and172 journey cases; `npm run check`
   passed with unchanged Turbo tasks cached. New-head hosted qualification remains required; local
   passes are not overall CI acceptance.
+- Follow-up hosted80e2b90: all individual checks except Python passed, including complete Windows
+  installation/native lifecycle. Python passed the repaired unit/socket gates and four real
+  PostgreSQL/mTLS scenarios, then `product-concurrent-runs` exposed an old exception-text assertion.
+  DSH implemented the exact current sanitized product error check (`OpenBotTaskFailed`,
+  `execution_failed`, non-retryable, no underlying cause); the reference error-chain check and every
+  cancellation, accounting, effect, artifact and replay assertion remain. Product code is unchanged.
+  Corrected concurrent, deferred-approval, closed-repair and Owner-correction scenarios all passed
+  locally with real HTTP/PostgreSQL/mTLS, original counters/downloads and offline replay.
+  `npm run check` passed again; new-head hosted checks still gate acceptance.
 - Retirement: publisher/MCP tooling and parser/runtime dependencies are separated. Differential
   tests use the immutable59-file `tests/oracles/legacy-server` snapshot with no product entry.
   The replaced TS business Server leaves main build/CI/release only after the remaining command,
