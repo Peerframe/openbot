@@ -880,6 +880,12 @@ Zod4.6.2. Neither tool depends on the legacy business Server or test oracle.
 
 ## Python product container (2026-09-25)
 
+The [architecture-specific CI scope](research/architecture-ci-scope.md) reuses GitHub Actions
+`workflow_call` and required job results, plus the existing exact-pin Desktop Python and direct
+container qualification. Python product results are distinct from retained-client/legacy
+compatibility, and S7 participates in the protected aggregate. No dependency or upstream source
+is added; the [Chinese scope record](research/architecture-ci-scope.zh-CN.md) states the same limits.
+
 The [direct product candidate](research/python-product-container.md) reuses the reviewed official
 Python3.12.13 and Node24.21.0 Bookworm image digests, unchanged63-distribution Worker lock,
 retained43-entry Node parser/DB dependency closure and existing npm10.9.9 projection resolver.
