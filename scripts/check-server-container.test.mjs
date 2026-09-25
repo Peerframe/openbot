@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { checkServerHealth } from "../deploy/server/healthcheck.mjs";
@@ -38,6 +39,44 @@ const valid = {
   contributing,
   contributingChinese,
 };
+
+test("POSIX preflight log guard drains the stream and rejects missing or failed evidence", {
+  skip: process.platform === "win32",
+}, () => {
+  const start = smoke.indexOf('  if ! docker logs "$invalid_python_container"');
+  assert.notEqual(start, -1);
+  const end = smoke.indexOf("\n  fi", start);
+  assert.notEqual(end, -1);
+  const guard = smoke.slice(start, end + "\n  fi".length);
+  for (const mode of ["matched", "missing", "failed"]) {
+    const result = spawnSync(
+      "bash",
+      [
+        "-c",
+        `
+set -euo pipefail
+invalid_python_container=synthetic-log-stream
+docker() {
+  if [[ "$LOG_MODE" != "missing" ]]; then
+    printf '%s\\n' 'Python Agent runtime preflight failed'
+  fi
+  for ((i=0; i<256; i++)); do printf '%2048s\\n' ''; done
+  [[ "$LOG_MODE" != "failed" ]]
+}
+${guard}
+`,
+      ],
+      {
+        env: { ...process.env, LOG_MODE: mode },
+        encoding: "utf8",
+        timeout: 5_000,
+        maxBuffer: 2 * 1024 * 1024,
+      },
+    );
+    assert.ifError(result.error);
+    assert.equal(result.status, mode === "matched" ? 0 : 1, `${mode}: ${result.stderr}`);
+  }
+});
 
 test("accepts the exact non-root multi-stage Server container contract", () => {
   assert.doesNotThrow(() => validateServerContainer(valid));

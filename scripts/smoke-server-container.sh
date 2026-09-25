@@ -239,7 +239,9 @@ if [[ "$agent_runtime" == "python" ]]; then
     echo "Broken Python installation did not stop startup." >&2
     exit 1
   fi
-  if ! docker logs "$invalid_python_container" 2>&1 | grep --quiet 'Python Agent runtime preflight failed'; then
+  # Consume every log byte: quiet grep can SIGPIPE Docker after a match under pipefail.
+  if ! docker logs "$invalid_python_container" 2>&1 | grep 'Python Agent runtime preflight failed' >/dev/null; then
+    docker logs "$invalid_python_container" >&2
     echo "Broken Python installation did not fail at the fixed preflight." >&2
     exit 1
   fi

@@ -131,3 +131,30 @@ artifact download and offline replay. The following three previously unreached h
 passed locally: product-deferred-approval, product-closed-repair and product-owner-corrections,
 each with real HTTP/PostgreSQL/mTLS and synthetic model/effect peers. Required `npm run check`
 passed again with unchanged Turbo tasks cached. No paid model or remote VPS call was repeated.
+
+### Container preflight log pipeline race
+
+Native amd64 run36166126715 failed its optional Python smoke at the expected-preflight log
+assertion; the same step passed on arm64 and preceding amd64 commits. Its current Bash script
+uses `set -euo pipefail` with `docker logs ... | grep --quiet`. Quiet matching can close the pipe
+before Docker finishes writing, so a present marker is not sufficient for pipeline success.
+The failing run discarded that container's logs, so its exact producer status was not retained.
+A real Docker CLI reproduction with an owned, networkless synthetic-log container produced
+producer/reader statuses141/0 for the current form and0/0 for a complete-reading grep.
+
+Reuse the existing reviewed Server-container smoke and native shell tools; no dependency or
+product change. The [GNU grep3.12 manual](https://www.gnu.org/s/grep/manual/html_node/Usage.html)
+explicitly documents early pipe closure with `set -e -o pipefail`.
+[Docker's CLI implementation](https://github.com/docker/cli/blob/master/cli/command/container/logs.go)
+and [logs API](https://docs.docker.com/reference/cli/docker/container/logs/) describe streaming
+container stdout/stderr. The unpinned Docker source is contextual only; no CLI upgrade or copied
+source is proposed. Select the existing normal grep behavior with output redirected to `/dev/null`,
+which consumes the producer to EOF while preserving pipefail. Add a real Bash stream regression
+using the actual checked-in guard, including a missing marker and a failed producer that emits
+the marker. Keep startup exit, empty-database and all real container assertions unchanged.
+
+The actual Docker log-stream comparison passed (old141/0, fixed0/0). All14 container-contract
+tests passed, including the real Bash guard with matched, missing and failed-producer streams.
+`bash -n` and the required full `npm run check` passed; unchanged Turbo tasks reused cache.
+The next native hosted run must verify the complete original smoke and retain diagnostic logs
+if the preflight marker is absent. This fix does not infer success from a producer failure.
