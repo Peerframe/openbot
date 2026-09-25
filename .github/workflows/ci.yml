@@ -429,16 +429,21 @@ jobs:
         run: |
           python3.12 -m venv "$RUNNER_TEMP/openbot-work-reference"
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install \
-            -r experiments/work-journey/requirements-model.txt -r apps/server-python/requirements-worker.txt
+            -r apps/server-python/requirements-worker.lock
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip check
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -I apps/server-python/scripts/verify_environment.py --worker
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py --help > /dev/null
       - name: Compare Python and TypeScript against owned PostgreSQL
         run: npm run test:control:python
         env:
           OPENBOT_TEMPORAL_TEST_PYTHON: ${{ runner.temp }}/openbot-work-reference/bin/python
       - name: Qualify adjacent Temporal release recovery with PostgreSQL and mutual TLS
         shell: bash
+        env:
+          PYTHONPATH: apps/server-python/src:apps/agent-runtime-python/src:experiments/work-journey:experiments/linux-execution
         run: |
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/linux-execution -p 'test_*.py' -q
-          PYTHONPATH=apps/server-python/src:experiments/linux-execution "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q experiments/linux-execution/protected_host_test.py experiments/linux-execution/protected_native_test.py
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q experiments/linux-execution/protected_host_test.py experiments/linux-execution/protected_native_test.py
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q apps/agent-runtime-python/tests/test_temporal_agent.py experiments/work-journey/test_product_deferred_workflow.py
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \

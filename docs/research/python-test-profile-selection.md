@@ -35,3 +35,23 @@ Final integrated owned PostgreSQL execution passed826 base cases (+2 optional sk
 Worker cases (+1 missing-history fixture skip), with real HTTP, session issuance/revocation and
 read parity. The full `npm run check` also passed. These are actual local executions; the next
 hosted run separately validates the clean Linux CI bootstrap and native container matrix.
+
+## Hosted bootstrap conflict — 2026-09-26
+
+CI currently passes both `experiments/work-journey/requirements-model.txt` and `apps/server-python/requirements-worker.txt` to the same pip invocation. The former recursively includes `sdk-durability/requirements.txt` -> `durable-execution/requirements-temporal.txt` -> `requirements.txt`, whose DBOS3.0.0 experiment pins websockets17.1. The product closure pins17.0.1; pip correctly refuses. Even arbitrarily aligning those versions would introduce DBOS/SQLAlchemy/greenlet into the exact63-distribution product environment and fail `verify_environment.py --worker`.
+
+Read `docs/OPEN_SOURCE_REUSE.md` (durability experiments and product Worker sections), `docs/research/work-product-worker.md`, `work-model-ports.md`, `work-temporal-journey.md`, and `temporal-postgres-operations.md`. The accepted product Worker deliberately excludes the discarded DBOS experiment dependency and composes Temporal1.33.0, Pydantic AI2.47.0 and the current control/Runtime lock. Existing successful local product checks use the63-distribution Worker separately from the52-distribution base API environment. Reuse those exact locks, without new resolutions or upgrades.
+
+Trace: `work-journey/probe.py` imports `durable-execution/probe_temporal.py`, which imports disposable database/polling/effect helpers from `durable-execution/probe.py`. Only that last module's DBOS `qualify()` uses `DBOSClient`/`WorkflowSerializationFormat`; the common helpers and all Temporal routes do not. Move that import to the start of DBOS `qualify()` so importing common fixtures does not require the unused engine. The original DBOS requirements and execution behavior remain intact when its own experiment is invoked. No helper duplication, alternate engine or interpreter selector is introduced.
+
+Downstream interpreter audit: `work-journey/probe.py:launch` uses `sys.executable` for all Worker/dispatch subprocesses; `product_dispatch_entry.py` again uses `sys.executable` for the real product `dispatch-work.py`. Therefore starting the probe with the exact Worker interpreter keeps every product child in the same63-pin environment. `API.start` intentionally uses the separate existing `apps/server-python/.venv/bin/python` for its base work API. No new ambient path, account configuration or provider credential is used. Add explicit existing repository source roots to the adjacent qualification step so mixed-directory pytest/unittest entrypoints can import both source packages independently of collection order.
+
+## Primary source reuse
+
+Python3.12 [venv](https://docs.python.org/3.12/library/venv.html) documents isolated site-packages and absolute interpreter invocation; [sys.executable](https://docs.python.org/3.12/library/sys.html#sys.executable) identifies the active interpreter. Reviewed project pins remain Python3.12.13, Temporal1.33.0, Pydantic AI2.47.0 and pytest8.4.2; no update is inferred from the documentation site's newer patch label. No upstream source is copied. Existing MIT OpenBot helper is narrowed with a local import using standard Python semantics.
+
+## Chosen gate
+
+Install only the existing `requirements-worker.lock` in the fresh CI reference venv, then run pip check and the unchanged exact Worker verifier. Keep the actual PostgreSQL gate and every adjacent qualification command. Check the real `work-journey/probe.py --help` before the expensive fixture stage; it must import in an environment with no DBOS. The CI probe help command guards the optional-engine import boundary; four local packet checks also cover the same-interpreter product CLI entry without Docker, DB, a Temporal server or a model request. Existing DBOS experiment requirements remain independent and unmodified.
+
+Actual validation used a fresh install of the existing63-package lock: pip check and the exact Worker verifier passed. Four bootstrap/entry tests passed against the integrated checkout (1.942 seconds), including real probe/dispatch help, child imports and refusal to run the uninstalled DBOS engine. Mixed-directory protected Host and Temporal pytest collection succeeded; Work-journey discovery collected172 cases. Collection is not execution. This is bootstrap/import/unit evidence on macOS; native Linux PG/mTLS qualification remains a hosted CI gate.

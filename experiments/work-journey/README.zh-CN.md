@@ -119,7 +119,7 @@ Temporal 生产部署授权/PKI、历史保留、完整产品备份恢复、版�
 使用已发布 SDK 与合成 HTTP，不使用真实凭据。公开 Task 在回复保存后经历 Worker 中断，旧 claim
 过期后仍复用原回复、不重复请求，结算一次并交付文件。缺失／损坏回执与取消反例位于
 `apps/server-python/tests/test_work_model_receipts_postgres.py`；向已有控制层数据库 runner 提供
-`OPENBOT_TEMPORAL_TEST_PYTHON` 指向独立 SDK 环境。见[审查边界](../../docs/research/work-model-ports.md)。
+`OPENBOT_TEMPORAL_TEST_PYTHON` 指向下节的精确 Worker 环境，不能混装旧 DBOS 实验依赖。见[审查边界](../../docs/research/work-model-ports.md)。
 新引擎 Run 链、产品配置及真实模型效果仍需分别验收。
 
 ## 产品 Worker 恢复用例
@@ -131,7 +131,9 @@ Temporal 生产部署授权/PKI、历史保留、完整产品备份恢复、版�
 恢复时任何服务加载或重新核验都会使测试失败，必须回读原结果。110 秒等待覆盖真实的 75 秒 Activity 超时。
 两个用例均用 `--engine postgres-mtls --only-case <用例名>`；完整安装与执行命令见英文页。
 
-产品依赖入口是 `apps/server-python/requirements-worker.txt`，实验环境另需夹具依赖。
+产品验收必须在新建虚拟环境安装 `apps/server-python/requirements-worker.lock`，执行 `pip check` 和
+`verify_environment.py --worker`，核对精确63项依赖；完整命令见英文页。该锁已包含 Temporal 夹具依赖，
+共享辅助模块仅在调用独立 DBOS 实验时导入 DBOS，不得向产品环境添加旧实验 requirements。
 运维命令为 `python -I apps/server-python/scripts/dispatch-work.py --config /绝对路径/operator.json`；
 `--check` 仅检查本地结构与文件权限，不验证 TLS 连通性。
 私有 JSON 必须包含 `database_url`、`temporal_address`（host:port）、`namespace`、`queue`，

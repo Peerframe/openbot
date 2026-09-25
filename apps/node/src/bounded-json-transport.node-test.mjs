@@ -1,11 +1,11 @@
 /**
- * bounded-json-transport.test.mjs
+ * bounded-json-transport.node-test.mjs
  *
  * Executable tests for bounded-json-transport.mjs using Node's built-in test
- * runner and assert. All fixtures are synthetic Duplex streams owned by this
- * test; no existing socket is connected and no port is opened.
+ * runner and assert. Synthetic Duplex fixtures and one disposable local IPC
+ * endpoint are owned by this test; no existing socket or TCP port is used.
  *
- * Run with:  node --test bounded-json-transport.test.mjs
+ * Run with:  node --test bounded-json-transport.node-test.mjs
  */
 
 import assert from "node:assert/strict";
@@ -1083,13 +1083,13 @@ test("removes its abort listener on shutdown and socket listeners on close", asy
   assert.equal(socket.listenerCount("error"), 0);
 });
 
-test("exchanges bounded frames over a real disposable Unix socket with backpressure", {
+test("exchanges bounded frames over a real disposable local IPC stream with backpressure", {
   timeout: 5000,
 }, async (t) => {
   const { createServer, createConnection } = await import("node:net");
   const { mkdtemp, rm, chmod } = await import("node:fs/promises");
   const { tmpdir } = await import("node:os");
-  const { join } = await import("node:path");
+  const { basename, join } = await import("node:path");
   const root = await mkdtemp(join(tmpdir(), "obj-"));
   await chmod(root, 0o700);
   const peers = new Set();
@@ -1114,7 +1114,11 @@ test("exchanges bounded frames over a real disposable Unix socket with backpress
     if (server.listening) await new Promise((resolve) => server.close(resolve));
     await rm(root, { recursive: true, force: true });
   });
-  const path = join(root, "s");
+  // Node uses named pipes for Windows IPC and filesystem sockets on Unix.
+  const path =
+    process.platform === "win32"
+      ? String.raw`\\.\pipe\openbot-bounded-json-${basename(root)}`
+      : join(root, "s");
   await new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(path, resolve);

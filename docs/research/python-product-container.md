@@ -95,3 +95,14 @@ Per-step bounds are2/12/6/1 minutes within that total; no new job, dependency, r
 framework is added. Existing parser/security tests and full YAML comparison passed25 checks.
 Only success JSON is retained; raw environment, Docker stderr and database state are not artifacts.
 Hosted results must be read from the corresponding commit, not inferred from local qualification.
+
+## Hosted native matrix result
+
+On code `817d46c7aad73b51e6af12702665c3f1e26c956d`, GitHub run36155987717 passed both
+[Linux amd64](https://github.com/Peerframe/openbot/actions/runs/36155987717/job/108140533288) and
+[Linux arm64](https://github.com/Peerframe/openbot/actions/runs/36155987717/job/108140533359).
+Each job's product Compose/Dockerfile validation, native image build, actual product Owner/Web/
+parser/migration/lifecycle smoke and sanitized artifact retention steps report success. This
+closes the native product-container matrix gate for those bytes. The same overall CI run still
+failed unrelated Windows IPC-test and Python fixture-bootstrap checks; it is not an overall PR pass.
+Configured Temporal, existing-volume upgrades and deployment remain outside this container smoke.

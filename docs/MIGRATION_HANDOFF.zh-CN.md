@@ -1,10 +1,10 @@
-# 架构迁移交接 — 2026-09-25
+# 架构迁移交接 — 2026-09-26
 
 ## 当前检查点——草稿已发布，浏览器组件和产品容器通过验收
 
 - 交付：[草稿 PR #96](https://github.com/Peerframe/openbot/pull/96)，分支
   `codex/python-migration-draft-20260925`，首个已发布检查点为
-  `4beb58b1adac1a68b6c098c84fa116b21a8d9f77`，后续代码已提交至`9ff01468e193842ed5eafa67d8551f18de03a484`。
+  `4beb58b1adac1a68b6c098c84fa116b21a8d9f77`，后续代码已提交至`817d46c7aad73b51e6af12702665c3f1e26c956d`。
   迁移历史和整合产品已在 GitHub；本交接记录增量的最终本地验收与 CI 修复。本检查点不授权合并、默认后端切换、替换已安装应用或部署生产。
 - 架构：用户确认《2026-09-24 OpenBot 设计研究 v2》。模块归属和文档事实修正已整合；Server 管权限，
   Temporal 管持久恢复，DSH 协助传输开发。全仓包／目录重排、视觉系统和市场仍是后续工作，不阻塞本草稿。
@@ -28,16 +28,16 @@
 - 产品容器：独立Python主入口镜像与可选Compose已整合。已批准的`OPENBOT_CONTROL_HOST`只允许127.0.0.1
   （默认）或0.0.0.0，非法值先于DB／密钥初始化拒绝。本地Linux arm64实际镜像通过Owner／Web、43条迁移、
   DOCX／PDF／空白OCR、SIGTERM重启后原文件／密钥／schema持久化、四项非法启动及自有资源清理，不含TS业务
-  Server／oracle。原生Linux CI、配置Temporal与部署分别验收。见[容器结果](../deploy/server/PRODUCT_CONTAINER_RESULT.json)。
+  Server／oracle。该镜像在817d46c的原生Linux amd64和arm64 CI均已实际构建并通过smoke；配置Temporal与部署分别验收。见[容器结果](../deploy/server/PRODUCT_CONTAINER_RESULT.json)。
 - Desktop：canonical43／63依赖unsigned arm64 Preview此前通过暂存／包内API、重启、清理和实际mTLS Worker；
   160源码一致性属于当时冻结构建。新增可选监听配置后最终包须重新构建。原生GUI／Keychain证据仍属于此前
   canonical41产物，未安装任何候选。
-- CI和检查：首轮草稿已通过安全、元数据、合成迁移、Linux／macOS portable、旧容器双架构及Windows Host构建。
-  Windows MCP测试入口与数据库饱和断言失败已修复，本地实际SDK回环及26项PG集成检查通过。Python CI暴露基础
-  环境误收集Worker专用模块，现以共享清单保留全部原Worker文件并补两个遗漏Temporal文件；三条旧基础断言
-  已对齐当前公共模型／来源契约。最终基础入口1304通过、453项因未提供对应夹具跳过；完整独占PG门禁为base826
-  通过（另2项可选跳过）、Worker1489通过（另1项因缺少历史夹具跳过）。`npm run check`通过33项test及20项build，
-  未变任务复用缓存。新旧Python容器均接入原生amd64／arm64 CI，增量托管CI待运行，不能以本地通过代替。
+- CI和检查：817d46c的托管CI有9项独立检查成功，Windows portable与Python runtime失败，汇总check失败，整体尚未通过。
+  已成功项包含新Python产品容器的原生amd64／arm64构建与实际smoke。Windows失败是IPC夹具误用Unix路径，
+  本次改为Windows命名管道，仍保留真实传输断言；本地Unix执行53项通过。Python失败是混装旧DBOS与产品Worker
+  的冲突依赖，本次仅安装既有63项锁，并延迟DBOS专属导入；新建环境的精确依赖、4项实际入口检查通过。
+  `npm run check`通过33项test及20项build，未变任务复用缓存；新增修复仍需托管Windows／Linux验证。保留此前实际基础入口1304通过、453项夹具依赖跳过，以及完整独占PG
+  base826通过（2项可选跳过）、Worker1489通过（1项缺少历史夹具跳过）；这些结果不代替本次托管CI。
 - 退役：publisher／MCP工具、解析器与运行依赖已解耦。差异测试使用固定59文件`tests/oracles/legacy-server`，
   没有产品入口。剩余命令链路、浏览器产品／接管及最终候选检查通过后，才将已替代TS业务Server退出主构建／CI／
   发布，保留恢复提交及TS Node／Provider驱动，不启用未验收路径来宣称完成。

@@ -1,11 +1,11 @@
-# Architecture migration handoff — 2026-09-25
+# Architecture migration handoff — 2026-09-26
 
 ## Current checkpoint — draft published; browser component and product container qualified
 
 - Delivery: [draft PR #96](https://github.com/Peerframe/openbot/pull/96), branch
   `codex/python-migration-draft-20260925`, initial published head `4beb58b1adac1a68b6c098c84fa116b21a8d9f77`.
   The migration history and integrated product are on GitHub. Follow-up code is committed through
-  `9ff01468e193842ed5eafa67d8551f18de03a484`; this handoff records its final local qualification and CI repairs. No merge, default-backend change, installed-app
+  `817d46c7aad73b51e6af12702665c3f1e26c956d`; this handoff records its final local qualification and CI repairs. No merge, default-backend change, installed-app
   replacement or production deployment is authorized by this checkpoint.
 - Architecture: the Owner confirmed the 2026-09-24 OpenBot design review v2. Module ownership and
   factual documentation corrections are integrated. Server remains authoritative; Temporal owns
@@ -43,23 +43,23 @@
   `OPENBOT_CONTROL_HOST` accepts only127.0.0.1(default) or0.0.0.0; invalid values fail before DB/key
   initialization. Local Linux arm64 image smoke passed real Owner/Web,43 migrations, DOCX/PDF/blank
   OCR, original files/keys/schema across SIGTERM/restart, four invalid-startup cases and owned cleanup.
-  No TS business Server/oracle is shipped. Native Linux CI, configured Temporal and deployment have
-  separate boundaries. See [container result](../deploy/server/PRODUCT_CONTAINER_RESULT.json).
+  No TS business Server/oracle is shipped. Both native Linux amd64 and arm64 CI built and smoke-tested the product image on817d46c.
+  Configured Temporal and deployment have separate boundaries. See [container result](../deploy/server/PRODUCT_CONTAINER_RESULT.json).
 - Desktop: the canonical43/63-package unsigned arm64 Preview passed staged/packaged API, restart,
   cleanup and bundled mTLS Worker lifecycle before the new optional listen seam. Its frozen160-source
   comparison belongs to that build; a final package must be rebuilt after source changes. Native
   GUI/Keychain evidence remains scoped to the earlier canonical41 artifact. Nothing is installed.
-- CI and tests: the initial draft passed security, metadata validation, synthetic migration, Linux
-  and macOS portable checks, both old Server container architectures and Windows Host build. Windows
-  MCP-test startup and the database saturation assertion failed; local fixes passed the real SDK
-  loopback tests and all26 PostgreSQL integration cases. Python CI exposed base-profile collection
-  of Worker-only imports. One shared list now preserves every existing Worker file and adds two
-  omitted Temporal files; three stale base assertions now match current public/source contracts.
-  Final actual base entry:1304 passed,453 fixture-dependent skips. The full owned PostgreSQL gate:
-  826 base passed (+2 optional skips) and1489 Worker passed (+1 missing-history fixture skip).
-  `npm run check` passed33 test tasks and20 build tasks with unchanged tasks cached. Both old and
-  new Python product-container smoke are wired into native amd64/arm64 CI. Hosted rerun on the
-  follow-up commit is pending; local evidence does not imply it has passed.
+- CI and tests: hosted817d46c has nine successful individual checks, failed Windows portable and
+  Python runtime jobs, and a failed aggregate check. Overall CI has not passed. Both native product
+  container architectures built and completed their actual smoke. Windows IPC used a Unix path;
+  this repair selects a native Windows named pipe while retaining real transport assertions.
+  The local Unix execution passed53 tests. Python bootstrap mixed incompatible DBOS experiment
+  and product dependencies; this repair installs the existing63-package Worker lock and defers the
+  DBOS-only import. A fresh environment passed exact-lock verification and four actual entry tests.
+  `npm run check` passed (33 test tasks,20 build tasks; unchanged tasks reused cache).
+  Hosted Windows/Linux validation of these repairs remains pending. Retained earlier local evidence:
+  base entry1304 passed with453 fixture-dependent skips; full owned PostgreSQL base826 passed
+  (+2 optional skips), Worker1489 passed (+1 missing-history skip). None substitutes for hosted CI.
 - Retirement: publisher/MCP tooling and parser/runtime dependencies are separated. Differential
   tests use the immutable59-file `tests/oracles/legacy-server` snapshot with no product entry.
   The replaced TS business Server leaves main build/CI/release only after the remaining command,

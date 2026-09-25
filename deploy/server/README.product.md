@@ -9,8 +9,10 @@ Real Owner HTTP, built Web, all 43 canonical migrations, DOCX/PDF extraction, bl
 initialization, original attachment/key/schema persistence and SIGTERM stop/restart passed.
 Four invalid-startup cases failed before schema creation; all owned resources were removed.
 The [bounded result and source hashes](PRODUCT_CONTAINER_RESULT.json) identify the exact image.
-This is a local Docker VM run; native Linux amd64 CI, configured Temporal and deployment remain
-separate gates.
+The local result is a Docker VM run. Subsequent native Linux amd64/arm64 CI also passed on
+commit817d46c; [job-level evidence](../../docs/research/python-product-container.md#hosted-native-matrix-result)
+is distinct from the overall PR, which still has other failed checks. Configured Temporal and
+deployment remain separate gates.
 
 `serve.py` accepts only `OPENBOT_CONTROL_HOST=127.0.0.1` or `0.0.0.0`, with127.0.0.1 as the
 unchanged default. An invalid value fails before database, key or model initialization. This
@@ -61,7 +63,7 @@ Dependencies are the existing63-distribution Worker profile (including pytest/de
 profile. Node24.21.0 and Python3.12.13 use existing exact official Bookworm image digests;
 build-only Web/TypeScript dependencies never enter the final image. Package notices, Node license,
 Python/component notices and THIRD_PARTY_NOTICES remain included. Build uses wheels only and
-fails when a pinned architecture lacks one. The local Linux arm64 image passed; native Linux amd64/arm64 CI results are recorded separately.
+fails when a pinned architecture lacks one. Local Linux arm64 and native Linux amd64/arm64 CI image smoke passed at their recorded commits.
 
 Local focused checks (no Docker or provider):
 

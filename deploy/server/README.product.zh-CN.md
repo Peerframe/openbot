@@ -6,7 +6,9 @@
 **2026-09-25 已通过真实 Linux arm64 镜像及独占临时容器验收。** 真实 Owner HTTP、Web、
 43 条迁移、DOCX／PDF 提取、空白 OCR 初始化、原附件／密钥／schema 持久化及 SIGTERM 停止／重启均通过。
 四项非法启动在创建 schema 前拒绝，测试资源全部清理。[结果与源码哈希](PRODUCT_CONTAINER_RESULT.json)
-标识本次确切镜像。该结果来自本地 Docker VM；原生 Linux amd64 CI、配置 Temporal 与部署另行验收。
+标识本次确切镜像。该结果来自本地 Docker VM；随后 commit817d46c 的原生 Linux amd64／arm64 CI
+也已通过，见[任务级证据](../../docs/research/python-product-container.md#hosted-native-matrix-result)。
+同一轮 PR 仍有其他检查失败，不能据此宣称整体通过；配置 Temporal 与部署仍另行验收。
 
 `serve.py`的`OPENBOT_CONTROL_HOST`仅接受127.0.0.1或0.0.0.0，默认仍为127.0.0.1；
 非法值在数据库、密钥或模型初始化前失败。显式候选镜像选择0.0.0.0，不自动改变Origin、Cookie或代理信任。
@@ -48,7 +50,7 @@ Temporal服务，再通过另选Compose覆盖文件只读挂载配置、证书�
 依赖沿用完整63项Worker锁（含pytest／开发辅助包）以及平台过滤前43项Node parser／DB闭包，
 不声称Python已经按生产最小化。Node24.21.0／Python3.12.13复用已固定官方Bookworm镜像摘要。
 Web／TypeScript构建依赖不进入最终镜像；保留包内许可、Node许可、Python组件通知和THIRD_PARTY_NOTICES。
-Python只安装锁定wheel，缺少对应架构wheel时拒绝构建。本地Linux arm64镜像已通过；原生Linux amd64／arm64 CI结果单独记录。
+Python只安装锁定wheel，缺少对应架构wheel时拒绝构建。本地Linux arm64及原生Linux amd64／arm64 CI镜像smoke均已在记录的提交上通过。
 
 不使用Docker或模型的聚焦检查：
 

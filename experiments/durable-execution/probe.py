@@ -16,7 +16,6 @@ from tempfile import TemporaryDirectory
 import threading
 import time
 
-from dbos import DBOSClient, WorkflowSerializationFormat
 import psycopg
 
 IMAGE = 'postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0'
@@ -163,6 +162,9 @@ class Worker:
 
 
 def qualify(dsn, effects, tmp):
+    # Temporal reuses the fixture helpers without installing this separate DBOS experiment.
+    from dbos import DBOSClient, WorkflowSerializationFormat
+
     records = []
     client = None
     workers = []

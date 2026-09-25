@@ -165,7 +165,7 @@ This uses the released model SDK with synthetic HTTP and no live credentials. Th
 survives Worker death after immutable reply persistence, reuses it after claim expiry without a
 second provider call, settles once and delivers its file. Missing/corrupt reply and cancelled-task
 counterexamples live in `apps/server-python/tests/test_work_model_receipts_postgres.py`; pass the
-isolated SDK interpreter as `OPENBOT_TEMPORAL_TEST_PYTHON` to the existing control database runner.
+exact Worker interpreter described below as `OPENBOT_TEMPORAL_TEST_PYTHON` to the existing control database runner. Its product lock must not be mixed with the older DBOS experiment profile.
 See [the reviewed boundary](../../docs/research/work-model-ports.md). New engine Run chains,
 production service configuration and live provider quality remain separate gates.
 
@@ -181,13 +181,18 @@ all service/verifier callbacks deliberately fail if called; the original result 
 The 110-second result wait covers the actual 75-second Activity timeout before engine retry.
 
 ```sh
-/tmp/openbot-work-reference/bin/python -m pip install -r experiments/work-journey/requirements-model.txt -r apps/server-python/requirements-worker.txt
-/tmp/openbot-work-reference/bin/python -B experiments/work-journey/probe.py --engine postgres-mtls --only-case product-model-recovery
-/tmp/openbot-work-reference/bin/python -B experiments/work-journey/probe.py --engine postgres-mtls --only-case product-publication-recovery
+python3.12 -m venv /tmp/openbot-product-work-reference
+/tmp/openbot-product-work-reference/bin/python -m pip install -r apps/server-python/requirements-worker.lock
+/tmp/openbot-product-work-reference/bin/python -m pip check
+/tmp/openbot-product-work-reference/bin/python -I apps/server-python/scripts/verify_environment.py --worker
+/tmp/openbot-product-work-reference/bin/python -B experiments/work-journey/probe.py --engine postgres-mtls --only-case product-model-recovery
+/tmp/openbot-product-work-reference/bin/python -B experiments/work-journey/probe.py --engine postgres-mtls --only-case product-publication-recovery
 ```
 
-Product-only dependencies are `apps/server-python/requirements-worker.txt`; the experiment
-profile additionally supplies fixture dependencies. Operator invocation is
+Use a fresh virtual environment for the exact63-distribution product Worker lock above. It also
+supplies the Temporal fixture dependencies; shared helpers import DBOS only when the separate
+DBOS experiment is invoked. Do not add the historical experiment requirements to this environment.
+Operator invocation is
 `python -I apps/server-python/scripts/dispatch-work.py --config /absolute/operator.json`;
 add `--check` for local-only structural/file-permission validation (not TLS connectivity).
 The private JSON requires `database_url`, `temporal_address` (host:port), `namespace`, `queue`,

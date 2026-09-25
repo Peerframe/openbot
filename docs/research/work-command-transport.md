@@ -42,3 +42,21 @@ TCP alternative or reconnection. The path is not supplied by Worker/model frames
 is unprivileged and does not prove root ownership or peer identity: the protected Host separately
 checks Linux SO_PEERCRED, and Control/Host retain all pinned signature/identity checks. It remains
 an optional constructor injection, not a default installer or new public command.
+
+## Hosted Windows test endpoint — 2026-09-25
+
+PR96 run36155987717 passed the52 synthetic transport cases but failed the real IPC fixture at
+`server.listen`: a temporary filesystem pathname is a Unix-domain endpoint, not a Windows pipe
+name. The transport itself receives a connected Duplex and selects no endpoint. Reviewed Node's
+[exact CI release IPC documentation](https://raw.githubusercontent.com/nodejs/node/v22.22.2/doc/api/net.md):
+Windows requires its local named-pipe namespace; Unix uses a filesystem path. Reuse that built-in
+API, not another transport library or a test skip. No dependency or upstream source copy is added.
+
+Change only the fixture endpoint: keep the same owned random-directory suffix, Unix path on
+Unix, and local named pipe on Windows. Preserve real byte framing, backpressure, Unicode, cleanup
+and the five-second test bound on every platform. Existing53 cases still execute. This neither
+adds a product Windows command installation nor changes the Linux Host's peer-credential gate.
+Local Unix execution and hosted Windows execution remain distinct evidence.
+
+All53 transport cases passed locally after the fixture correction, including real Unix IPC.
+The Windows named-pipe branch still requires the next native Windows CI run.
