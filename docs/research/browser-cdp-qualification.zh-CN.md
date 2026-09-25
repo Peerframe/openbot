@@ -34,4 +34,10 @@ CDP framing窄适配Playwright1.62.1 `pipeTransport.ts`，保留Google2018/Micro
 
 `npm run test:browser:boundary` 为15项Node合成流和25项Python边界测试，不启动浏览器/容器/SSH；覆盖错误帧/上限、session、无重发、生命周期、PNG失败保留DOM、诊断session、CRC/像素、固定配置/helper、Unix路径、残缺加载和真实耗时记录。中英README明确证据等级。
 
-b2到达Chrome，但25秒CLI被杀、渲染未通过；独立Mac到viewport后导航超时，不代表Linux兼容。缺失历史不补推。实际Linux/runsc的CDP、DOM/PNG、profile重开和内层沙箱尚未通过；egress、产品权限/profile与接管另验。仓库整合不隐含上传或执行授权。
+b2到达Chrome，但25秒CLI被杀、渲染未通过；独立Mac到viewport后导航超时，不代表Linux兼容。缺失历史不补推。现已获明确授权的单次`deadline-a1-cdp1`通过固定镜像Linux/runsc的CDP、DOM/PNG、同profile重开及内层沙箱诊断；egress、产品权限/profile与接管仍需单独验收。本次证据不授权未来运行。
+
+## 真实Linux有界证据——2026-09-25
+
+[安全结果](../../experiments/browser-execution/REAL_CDP_RESULT.json)：两次Chrome启动均正常关闭，guest总耗时14,957ms，无强制终止、外部站点或模型调用。首次取得658字节DOM与15,240字节1280×800 PNG；第二次取得656字节DOM，确认合成profile状态保留。namespace／PID／network／seccomp诊断通过，采样进程NNP1／Seccomp2，未出现禁用沙箱参数。实验派生profile及实际OCI／Sentry参数符合原固定输入；记录保留7次早期参数观测错误，最终必需的参数核验通过。
+
+原180秒Invocation到期，54ms后观测停止，cgroup／unit／运行目录均已清理，清理问题为0。原10个生产容器及防火墙语义规则在before／after证据中保持一致。仅发布安全元数据与哈希，不导出DOM正文、PNG内容、原始stderr或完整argv。这是固定合成页面上的组件验收，不是完整产品浏览器或宿主平台认证；此前b2失败保留，不倒推出其根因。

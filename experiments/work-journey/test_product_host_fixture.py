@@ -255,6 +255,38 @@ def test_raw_error_secret_never_enters_records_or_output(staged_root,monkeypatch
     assert secret not in output.err and 'PRIVATE KEY' not in output.err and output.out==''
 
 
+@pytest.mark.parametrize('case',['valid','exact-bound','over-bound','duplicate','malformed','wrong-token'])
+def test_preflight_reads_real_bounded_enrollment_stdin(staged_root,monkeypatch,case):
+    import io,protected_host,protected_native,protected_io
+    from types import SimpleNamespace
+    root,value,_=staged_root;calls=[]
+    token='obenr_'+'A'*43
+    payload=json.dumps({'version':1,'enrollmentToken':token}).encode()
+    if case=='exact-bound':payload+=b' '*(512-len(payload))
+    if case=='over-bound':payload+=b' '*(513-len(payload))
+    if case=='duplicate':payload=b'{"version":1,"version":1,"enrollmentToken":"'+token.encode()+b'"}'
+    if case=='malformed':payload=payload[:-1]
+    if case=='wrong-token':payload=json.dumps({'version':1,'enrollmentToken':'invalid'}).encode()
+    cfg=SimpleNamespace(route=value['route'],policy=value['timing'],native={})
+    monkeypatch.setattr(protected_host.Configuration,'load',lambda path:cfg)
+    monkeypatch.setattr(protected_native,'LinuxNative',lambda *a,**k:object())
+    monkeypatch.setattr(f.sys,'stdin',SimpleNamespace(buffer=io.BytesIO(payload)))
+    monkeypatch.setattr(f,'check_loopback',lambda port:calls.append(port))
+    monkeypatch.setattr(f,'BASE',root.parent)
+    monkeypatch.setattr(f,'clock',lambda:(100,'synthetic-boot'))
+    exclusive(root.parent/'MANIFEST.json',{'relay/node':'c'*64})
+    monkeypatch.setattr(protected_io,'digest',lambda path:value['nodeBundleSha256']
+        if path.name=='product-command-node.cjs' else 'c'*64)
+    if case in ('valid','exact-bound'):
+        result=f.run_preflight()
+        assert result[3]=={'version':1,'enrollmentToken':token}
+        assert calls==[value['serverPort']]
+    else:
+        with pytest.raises((ValueError,RuntimeError)):f.run_preflight()
+        assert calls==[]
+    assert not (root/'run-reserved.json').exists() and not (root/'single-action.json').exists()
+
+
 @pytest.mark.parametrize('step',['configuration','token','listener','bundle','node'])
 def test_real_preflight_entry_failure_points(staged_root,monkeypatch,step):
     import protected_host,protected_native,protected_io

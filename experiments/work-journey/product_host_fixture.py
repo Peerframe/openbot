@@ -338,7 +338,7 @@ def run_preflight():
     from protected_host import Configuration
     from protected_native import LinuxNative
     cfg=Configuration.load(ROOT/'config.json');native=LinuxNative(cfg.native,route=cfg.route,policy=cfg.policy);value=read_record(ROOT/'public.json')
-    secret=read_stdin(1024)
+    secret=read_stdin(512)
     require(type(secret) is dict and set(secret)=={'version','enrollmentToken'} and type(secret['version']) is int and secret['version']==1
         and type(secret['enrollmentToken']) is str and re.fullmatch('obenr_[A-Za-z0-9_-]{43}',secret['enrollmentToken']) is not None,'invalid_enrollment_input')
     require_peer_free();check_loopback(value['serverPort'])

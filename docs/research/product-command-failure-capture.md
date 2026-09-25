@@ -29,3 +29,19 @@ and does not recover or repeat the consumed attempt. Root separately owns contro
 Tests use synthetic streams, including delayed stderr after stdout EOF, early remote_finished,
 oversized stderr, hanging stderr/exit, and token crossing the capture boundary. No remote qualification
 or support claim follows from those tests.
+
+## Product2 input-bound diagnosis — 2026-09-25
+
+The explicitly approved fresh product2 attempt preserved a finite pre-run diagnostic at
+`read_stdin`: the unchanged command codec accepts only512/8192/16384/32768-byte classes,
+while the fixture called it with1024. Local reproduction using the actual codec and an86-byte
+synthetic enrollment message rejects1024 and accepts512. No Node, Action or native unit started;
+the original pre-run cleanup removed the unused key, and read-only reconciliation confirmed no
+fixture process/socket/forward, unchanged10 production containers and unchanged firewall rules.
+
+Reuse the existing reviewed strict JSON codec and its512-byte class for this tiny envelope;
+do not broaden the codec or change native/Host/crypto pins. This narrows the fixture input ceiling
+and preserves duplicate-key, malformed-value and size rejection. The earlier preflight tests
+mocked the parser, so add real stdin-to-codec coverage through the preflight entry, with external
+native checks stubbed. The consumed remote identity remains consumed; a future attempt requires
+its own authorized fresh packet. No external implementation or dependency is added.

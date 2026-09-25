@@ -1,6 +1,6 @@
 # Chromium/runsc 边界实验
 
-**Linux 浏览器验收尚未通过。** 此目录保留有界 CDP 兼容候选及可复现离线测试，不开启产品浏览器能力，也不宣称 egress、Employee profile 权限或人工接管通过。见[研究](../../docs/research/browser-cdp-qualification.zh-CN.md)及[之前 b2 实测](../linux-execution/REAL_BROWSER_CHROOT_ATTEMPT.json)。
+**固定镜像的 Linux/runsc CDP 组件于2026-09-25实测通过。** 已授权的单次测试取得合成页面真实DOM与PNG、同profile重开、内层沙箱诊断及原生期限／清理证据，见[有界实测记录](REAL_CDP_RESULT.json)。这不启用产品浏览器能力，也不代表egress、Employee profile权限或人工接管通过。见[研究](../../docs/research/browser-cdp-qualification.zh-CN.md)及[此前b2失败记录](../linux-execution/REAL_BROWSER_CHROOT_ATTEMPT.json)。
 
 ## 从干净检出运行边界测试
 

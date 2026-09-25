@@ -93,7 +93,15 @@ local product entry, Owner approval, PostgreSQL/mTLS Temporal and OpenBotNodeCli
 command, complete CSV output, separate review, two artifact downloads and offline replay passed.
 Native execution, peer identity and model HTTP in that journey are explicit fixtures; see
 [scoped evidence](../experiments/work-journey/evidence/product-command-local.json). Real Linux
-product composition and browser qualification remain open and public execution stays disabled by default.
+product composition remains open and public execution stays disabled by default. The browser CDP
+component has separate bounded acceptance; product browser/handover remains open.
 The actual protected Linux Host component has separately passed one original signed command, exact
 CSV output, native expiry and cleanup; its Control signer was synthetic. See
 [component evidence](../experiments/linux-execution/REAL_PROTECTED_COMMAND.json).
+
+The authorized product2 remote attempt failed before run/Action reservation because its tiny
+enrollment envelope selected an unsupported1024-byte codec limit. The fixture now uses the
+existing512-byte class, with six actual-stdin regressions and161 controller/Host tests passing.
+No native execution occurred; owned resources were reconciled and existing services were unchanged.
+[Failure evidence](../experiments/work-journey/evidence/product-command-remote-product2-attempt.json)
+is retained. A fresh product3 packet awaits its specific authorization; product2 is not retried.

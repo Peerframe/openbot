@@ -48,4 +48,23 @@ English/Chinese [README](../../experiments/browser-execution/README.md) and [tra
 
 ## Unresolved questions
 
-Actual fixed-image Linux/runsc CDP readiness, DOM/PNG, profile reopen and inner sandbox remain unaccepted. Egress, product authority/profile mapping and human takeover are separate gates. Repository integration implies no remote upload or single-run authorization.
+The explicitly authorized single `deadline-a1-cdp1` case now qualifies fixed-image Linux/runsc CDP
+readiness, DOM/PNG, same-profile reopen and inner sandbox diagnostics. Egress, product authority/profile
+mapping and human takeover remain separate gates. This evidence does not authorize future runs.
+
+## Actual bounded Linux evidence — 2026-09-25
+
+[Safe result](../../experiments/browser-execution/REAL_CDP_RESULT.json): both browser launches closed
+gracefully within14,957ms total guest time, without forced termination, external sites or model calls.
+The first produced658-byte DOM and a15,240-byte1280x800 PNG; the second produced656-byte DOM and
+confirmed the expected same-profile synthetic state. Namespace/PID/network/seccomp diagnostics passed;
+sampled processes reported NNP1/Seccomp2 with no sandbox-disabling arguments. The experimental derivative
+profile and actual OCI/Sentry flags matched the original pins. Seven transient runtime argument
+observation errors remain in the receipt; the final required argument verification passed.
+
+The original180-second native Invocation expired; stop was observed54ms later, cgroup/unit/runtime
+directories were absent, and cleanup reported zero problems. The original10 production containers
+and semantic firewall rules matched both before/after proofs. Only safe metadata and hashes are
+published; no DOM body, PNG content, raw stderr or full argv is exported. This is component conformance
+on the fixed synthetic page, not complete product-browser or host-platform certification. The earlier
+b2 failure remains evidence for that different CLI attempt; no cause is retroactively inferred.

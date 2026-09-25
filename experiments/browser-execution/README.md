@@ -1,6 +1,6 @@
 # Chromium/runsc boundary experiment
 
-**Linux browser acceptance has not passed.** This directory preserves a bounded CDP compatibility candidate and its reproducible offline tests. It does not enable product browser capabilities or claim egress, persistent Employee-profile authority or human takeover acceptance. See the [research](../../docs/research/browser-cdp-qualification.md) and [earlier actual b2 evidence](../linux-execution/REAL_BROWSER_CHROOT_ATTEMPT.json).
+**The fixed-image Linux/runsc CDP component passed on2026-09-25.** The authorized single case produced real synthetic-page DOM and PNG, reopened the same browser profile, observed inner sandbox diagnostics and verified native expiry/cleanup. See [actual bounded evidence](REAL_CDP_RESULT.json). This does not enable product browser capabilities or qualify egress, Employee-profile authority or human takeover. See the [research](../../docs/research/browser-cdp-qualification.md) and [earlier actual b2 failure](../linux-execution/REAL_BROWSER_CHROOT_ATTEMPT.json).
 
 ## Fresh-checkout boundary tests
 
