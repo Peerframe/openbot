@@ -247,3 +247,165 @@ must preserve the original model receipt, superseded proposals, complete deferre
 lookup-only Owner commands and exact publication acknowledgement. Histories replay without effects.
 A stored command is not a semantic-quality claim. Existing full-history limits remain in force;
 no real account or Linux isolation is exercised. See [scope and evidence](../../docs/research/work-owner-corrections.md).
+
+## Product media and completed paired restore
+
+`product_media_probe.py` exercises the actual product `serve.py`, Owner HTTP upload and channel
+submission, PostgreSQL, and a mutually authenticated Temporal service/Worker. Only the external
+model transport is synthetic. Its OpenAI Responses assertions require the exact original PNG
+and PDF bytes, MIME types and Chinese PDF filename in both producer requests and the independent
+review request. Task completion, report download and source-message publication are checked before
+the actual original history is replayed offline. Decoded history Payloads must contain neither
+raw/base64 media nor the synthetic API key; bounded media manifests are permitted.
+
+Use the pinned full Worker environment, existing Node dependencies, Docker Compose and the
+reviewed pinned engine images. Provide a private JSON fixture with `dsn` for an owned, canonically
+migrated loopback database named `openbot_control_test_*` with no Work Tasks. Output must be new
+or empty. Run against a stable checkout so the Worker and Replayer load the same Workflow code.
+
+```sh
+apps/server-python/.worker-venv/bin/python -B experiments/work-journey/product_media_probe.py \
+  --repo . --fixture "$OPENBOT_MEDIA_FIXTURE" --output "$OPENBOT_MEDIA_OUTPUT" \
+  --restore-container "$OPENBOT_MEDIA_PG_CONTAINER"
+```
+
+The optional restore argument must name the fixture's owned PostgreSQL 17.11 container. The probe
+checks its immutable ID, pinned image and loopback port. After the completed product API/Worker
+stops, `product_restore_probe.py` pairs a native custom dump with private artifacts, attachments,
+model settings/key, plugin state/key and the raw 32-byte connection key. Before backup, the real
+Owner services create an enabled synthetic saved connection and an independent Bot with explicit
+`model` profile/selection, without modifying the completed media source. It restores into a new random empty database in that
+container with `pg_restore --single-transaction --exit-on-error`. Complete per-table row hashes,
+sequence state and paired file hashes/modes must match. Actual Python readers then verify Owner
+authentication, Task/report, all blobs, both media, settings decryption and disabled synthetic
+plugin/token/audit decryption. The restored connection service resolves that Bot selection and
+compares the original secret, revision and provenance. Missing/wrong settings, plugin and connection
+key copies must fail closed; a missing connection key must not be regenerated, and a wrong one
+must be rejected with `model_credential_unavailable`. The disabled plugin has no tools or grants.
+The connection uses an explicitly allowed `.invalid` endpoint and deny-all provider transport;
+no discovery, metered test or provider request runs.
+
+The [2026-09-25 result](evidence/product-media-paired-restore.json) records exit 0: two producer
+requests and one review; 134-byte PNG plus 620-byte PDF; completed 90-byte report; 44 decoded
+history Payloads checked and original-history replay passed. Restore preserved 42 tables,
+109 rows, 40 canonical migrations, 18 paired files and six verified immutable blobs; all six
+key negatives passed. Owned API, Compose, authored SQL rows and temporary restore DB were cleaned.
+Earlier cleanup/dump-role failures and a run that loaded the older restore probe are identified
+separately in the evidence; only the final candidate run qualifies nonempty connections.
+
+This qualifies one synthetic model protocol and a completed, stopped product snapshot. It does
+not establish live-model understanding, OCR, other-protocol end-to-end execution, online SQL/file
+atomic backup, active Temporal database restore, cluster roles/ACLs, OS keychain or cross-version
+migration. Original history replay is separate from active-engine recovery. Keep generated
+dumps, paired keys, engine PKI/configuration, session hashes and full history private; commit only
+the bounded public result. See the [media boundary](../../docs/research/work-product-media.md) and
+[native dump/restore review](../../docs/research/s7-migration-qualification.md) and
+[connection restore boundary](../../docs/research/product-connection-paired-restore.md).
+
+## Active Task paired cold restore
+
+`active_restore_probe.py` qualifies one matching current snapshot containing a pending approval,
+an approved unknown effect, and an already cancelled Task. It uses the actual Owner HTTP API
+(`OPENBOT_CONTROL_AUTHORITY=work`), product Worker and PostgreSQL/mTLS Temporal. Model/effect ports
+reuse the accepted scripted CSV fixture; this is not a full `ProductWorkRuntime` or live-provider
+journey. It creates its own random source/destination Control containers, engine projects and
+volumes; it needs no existing database, private configuration, VPS or model account.
+
+Build the canonical database package and use the pinned full Worker environment, Node, Docker
+Compose and OpenSSL. The three digest-pinned images in `deploy/temporal/compose.yaml` must already
+be present; preflight refuses missing images. Keep Workflow sources stable through Replay.
+
+```sh
+npm run build --workspace @openbot/db
+apps/server-python/.worker-venv/bin/python -B experiments/work-journey/active_restore_probe.py \
+  --repo . --output /tmp/openbot-active-restore-new
+```
+
+Output must be new or empty. The scenario has a 600-second bound, followed by bounded cleanup;
+individual native commands have 60-second limits. Source and destination run sequentially with
+at most three persistent containers plus a transient schema tool. Each native archive is capped
+at 64 MiB; private paired application files are capped at 64 MiB. It does not install dependencies
+or use the older DBOS experiment. Only recorded owned processes, containers and volumes are removed.
+Generated dumps, keys, PKI, session/configuration and complete histories stay in the private output;
+retain them only as needed for local diagnosis, never as repository/CI artifacts.
+
+The source API/Worker stops first, then Temporal stops before native dumps of Control, history
+and visibility. Application files/keys and mTLS/configuration are paired at that stopped boundary.
+Source database containers then stop permanently. New empty target databases restore transactionally,
+with the target engine/API/Worker held down until complete table/sequence hashes, file/mode hashes,
+Owner session, media/blob readers and settings/plugin/saved-connection decryption match. Six missing
+or wrong key copies fail closed; a missing connection key is not regenerated. An incomplete file
+copy fails the manifest comparison while held. This hold is the probe's lifecycle, not a new
+product restore admission service. Required Temporal roles are recreated by the existing profile;
+runtime schema and schema-metadata write denials are checked after restore.
+
+The target retains original namespace, visibility, Workflow/engine Run, Work Run and Action IDs.
+Pending approval remains pending until the Owner explicitly approves after restoration. Unknown
+retains its original approved Action and reserved cost; a public Owner reconciliation command
+uses lookup of the original external receipt, without replaying the write. A Worker tripwire
+rejects any repeated unknown/cancelled apply, and the planner is disabled after restore. The
+external receipt service never rolls back. Cancellation remains terminal. Waiting and terminal
+histories use the official offline Replayer; source history prefixes are preserved and Replay
+changes neither product rows nor external counters. Decoded Payloads exclude fixture media and
+the tested Owner/session, Control DB, model API and saved-connection credentials.
+
+The [2026-09-25 evidence](evidence/active-paired-restore.json) records a successful local Docker
+qualification of all three states, all 43 canonical migrations, Control and both engine databases,
+paired files/keys, original-ID continuation, key negatives and complete owned-resource cleanup.
+The completed-product journey above remains separate evidence. This active scenario does not
+qualify online snapshots, arbitrary stale-backup rollback, concurrent source/target execution,
+HA/PITR, cross-version migration, OS keychain, Linux execution isolation, arbitrary deployment
+roles/ACLs, actual provider billing, or full product prompt/tool/model integration. Authority
+revoked after an old snapshot cannot be recovered by restoring that old snapshot alone. See
+[research and precise boundary](../../docs/research/work-active-paired-restore.md).
+
+
+## Product command composition candidate
+
+`product_command_probe.py` exercises the actual `serve.py` product entry, Owner HTTP creation and
+approval, PostgreSQL/mTLS Temporal, OpenBotNodeClient, WebSocket/Unix command transport, signed Host
+observations, full artifact download and separate result review. It creates and removes its own
+Control/engine containers. The model HTTP response, local Native and Unix peer identity are explicit
+fixtures; this local run does not establish Linux isolation support. The canonical43 run passed
+after correcting Docker Employee model selection and the trusted command claim lifetime. Exactly
+one command produced the complete CSV; separate content review, two artifact downloads and offline
+history replay passed without another execution. See [scoped evidence](evidence/product-command-local.json).
+
+With the locked Worker environment, built shared packages and a working local Docker engine:
+
+```sh
+node_modules/.bin/esbuild experiments/work-journey/product_command_node.mjs --bundle --platform=node --format=cjs --target=node22 --outfile=/tmp/openbot-command-node.cjs
+apps/server-python/.worker-venv/bin/python -B -u experiments/work-journey/product_command_probe.py --output /tmp/openbot-command-product-1 --node-bundle /tmp/openbot-command-node.cjs
+```
+
+Use a fresh output directory; existing directories are refused. Private fixture logs/history stay
+there. `result.json` is written only after all product assertions and offline replay pass. Node
+enrollment and its credential are memory-only; the local Control private key is removed on exit.
+Remote Linux execution requires its separately reviewed exact upload list and owned Host lifecycle;
+this script never discovers an SSH target or copies local credentials to another machine. See
+[the research boundary](../../docs/research/work-command-product-qualification.md) and
+[command configuration](../../docs/WORK_COMMAND_READINESS.md).
+
+The optional remote branch requires `--remote-ssh-target`, `--remote-ssh-identity`,
+`--remote-known-hosts`, `--remote-server-port`, `--remote-fixture-name` and
+`--remote-upload-authorized` together. Choose an explicitly approved fresh basename matching
+`product[1-9][0-9]{0,2}` (for example `--remote-fixture-name product2`) under
+`/opt/openbot-command-0925`; the CLI has no default or automatic next-name discovery.
+Place the fixture script in that exact directory. Stage, run, check and unused-stage cleanup
+use the same root, and symlink aliases are refused. Existing reservations remain intact;
+selecting a name neither proves freshness nor authorizes another upload or invocation.
+It never uploads by itself. Provision the reviewed fixed Host fixture and exact CommonJS Node bundle
+first; use the same bundle for `--node-bundle`. `product_host_fixture.py` retains the remote source,
+and [remote qualification research](../../docs/research/product-command-remote-probe.md) describes
+its one-use stage/run boundary. Owner credentials, the Control private key and engine secrets remain
+local; only a fresh Node enrollment token travels on stdin. The foreground SSH tunnel binds only
+loopback. Original SQL binding, signed product results, exact output/review and remote cleanup are
+all required. A failed or uncertain invocation cannot be rerun with the same reservation.
+Pre-run private error/cleanup records retain a bounded exception category and known source
+location; they omit exception text, inputs, local variables and full paths.
+
+The controller and fixture boundary tests require no SSH, container or provider:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=experiments/work-journey:experiments/linux-execution:apps/server-python/src:apps/agent-runtime-python/src apps/server-python/.worker-venv/bin/python -m pytest -p no:cacheprovider -q experiments/work-journey/test_product_command_remote.py experiments/work-journey/test_product_host_fixture.py
+```

@@ -2,8 +2,9 @@ import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import { parseBrowserClickInstruction } from "@openbot/protocol";
 import type { ComputerProvider, ProviderArtifact, ProviderRunInput } from "@openbot/provider-sdk";
+import { BrowserCoordinator } from "./browser.js";
 import { computerRequest } from "./computer-request.js";
-import { reviewedClick } from "./reviewed-click.js";
+import { commitReviewedClick, prepareReviewedClick } from "./reviewed-click.js";
 
 const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024;
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -11,6 +12,7 @@ const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0
 export interface DockerProviderOptions {
   computerUrl: string;
   computerToken: string;
+  enableBrowserSessions?: boolean;
   allowPrivateHosts?: boolean;
   inputOrigins?: string[];
   fetcher?: typeof fetch;
@@ -34,12 +36,37 @@ export function createDockerProvider(options: DockerProviderOptions): ComputerPr
   const activeBots = new Set<string>();
   const computerUrl = options.computerUrl.replace(/\/$/, "");
 
+  const browser = new BrowserCoordinator(
+    (botId, path, signal, body) =>
+      computerRequest(
+        fetcher,
+        `${computerUrl}${path}`,
+        options.computerToken,
+        botId,
+        signal,
+        body === undefined ? {} : { method: "POST", body: JSON.stringify(body) },
+      ),
+    (url) => {
+      const target = new URL(url);
+      if (!["http:", "https:"].includes(target.protocol))
+        throw new Error("Only HTTP(S) navigation is supported.");
+      if (target.username || target.password)
+        throw new Error("Navigation URLs must not contain credentials.");
+      return assertNavigationAllowed(target, options.allowPrivateHosts === true, resolveHost);
+    },
+  );
   return {
+    ...(options.enableBrowserSessions === true
+      ? { browser: (command, signal) => browser.command(command, signal) }
+      : {}),
     id: "docker",
     displayName: "CopilotKit/OpenBot agent-computer",
     platforms: ["linux", "windows", "macos"],
     capabilities: ["browser", "screenshot"],
     capabilityManifest: [
+      ...(options.enableBrowserSessions === true
+        ? [{ id: "browser.session" as const, version: 1, providerId: "docker", constraints: {} }]
+        : []),
       { id: "browser.observe", version: 1, providerId: "docker", constraints: {} },
       { id: "screen.capture", version: 1, providerId: "docker", constraints: {} },
       ...(inputOrigins.size
@@ -61,61 +88,78 @@ export function createDockerProvider(options: DockerProviderOptions): ComputerPr
         const click = parseBrowserClickInstruction(input.instruction);
         if (click && (!inputOrigins.has(new URL(click.target).origin) || !requestApproval))
           throw new Error("Browser input is not configured for this exact origin.");
-        const target = extractNavigationTarget(input);
-        await assertNavigationAllowed(target, options.allowPrivateHosts === true, resolveHost);
+        const prepared = await browser.run(input.botId, context.signal, async (generation) => {
+          const target = extractNavigationTarget(input);
+          await assertNavigationAllowed(target, options.allowPrivateHosts === true, resolveHost);
 
-        report({ stage: "navigate", message: `正在打开 ${target.hostname}` });
-        const navigation = await computerRequest<NavigationResponse>(
-          fetcher,
-          `${computerUrl}/navigate`,
-          options.computerToken,
-          input.botId,
-          context.signal,
-          { method: "POST", body: JSON.stringify({ url: target.href }) },
-        );
-        if (typeof navigation.url !== "string" || typeof navigation.title !== "string") {
-          throw new Error("agent-computer returned an invalid navigation response.");
-        }
+          report({ stage: "navigate", message: `正在打开 ${target.hostname}` });
+          const navigation = await computerRequest<NavigationResponse>(
+            fetcher,
+            `${computerUrl}/navigate`,
+            options.computerToken,
+            input.botId,
+            context.signal,
+            { method: "POST", body: JSON.stringify({ url: target.href }) },
+          );
+          if (typeof navigation.url !== "string" || typeof navigation.title !== "string") {
+            throw new Error("agent-computer returned an invalid navigation response.");
+          }
 
-        report({ stage: "screenshot", message: "正在截取浏览器画面" });
-        const screenshot = await computerRequest<ScreenshotResponse>(
-          fetcher,
-          `${computerUrl}/screenshot`,
-          options.computerToken,
-          input.botId,
-          context.signal,
-        );
-        const artifact = screenshotArtifact(input, screenshot);
-        reportFrame?.({
-          mediaType: "image/png",
-          base64: artifact.base64,
-          ...(typeof screenshot.width === "number" ? { width: screenshot.width } : {}),
-          ...(typeof screenshot.height === "number" ? { height: screenshot.height } : {}),
-          capturedAt:
-            typeof screenshot.capturedAt === "string"
-              ? screenshot.capturedAt
-              : new Date().toISOString(),
-        });
-        if (click) {
-          if (navigation.url !== click.target || !requestApproval)
-            throw new Error("Navigation changed the approved target.");
-          report({ stage: "approval", message: `等待审核按钮：${click.buttonName}` });
-          await reviewedClick({
-            ...click,
-            signal: context.signal,
-            screenshot,
-            requestApproval,
-            request: (path, body) =>
-              computerRequest(
-                fetcher,
-                `${computerUrl}${path}`,
-                options.computerToken,
-                input.botId,
-                context.signal,
-                body === undefined ? {} : { method: "POST", body: JSON.stringify(body) },
-                path === "/screenshot" ? 8 * 1024 * 1024 : 256 * 1024,
-              ),
+          report({ stage: "screenshot", message: "正在截取浏览器画面" });
+          const screenshot = await computerRequest<ScreenshotResponse>(
+            fetcher,
+            `${computerUrl}/screenshot`,
+            options.computerToken,
+            input.botId,
+            context.signal,
+          );
+          const artifact = screenshotArtifact(input, screenshot);
+          reportFrame?.({
+            mediaType: "image/png",
+            base64: artifact.base64,
+            ...(typeof screenshot.width === "number" ? { width: screenshot.width } : {}),
+            ...(typeof screenshot.height === "number" ? { height: screenshot.height } : {}),
+            capturedAt:
+              typeof screenshot.capturedAt === "string"
+                ? screenshot.capturedAt
+                : new Date().toISOString(),
           });
+          if (click) {
+            if (navigation.url !== click.target || !requestApproval)
+              throw new Error("Navigation changed the approved target.");
+            const reviewed = await prepareReviewedClick({
+              ...click,
+              signal: context.signal,
+              screenshot,
+              request: (path, body) =>
+                computerRequest(
+                  fetcher,
+                  `${computerUrl}${path}`,
+                  options.computerToken,
+                  input.botId,
+                  context.signal,
+                  body === undefined ? {} : { method: "POST", body: JSON.stringify(body) },
+                  path === "/screenshot" ? 8 * 1024 * 1024 : 256 * 1024,
+                ),
+            });
+            return { generation, navigation, artifact, reviewed };
+          }
+          return { generation, navigation, artifact, reviewed: undefined };
+        });
+        if (!prepared.reviewed || !click || !requestApproval) {
+          return {
+            ok: true,
+            summary: `已打开 ${prepared.navigation.title || prepared.navigation.url} 并截取画面。`,
+            artifacts: [prepared.artifact],
+          };
+        }
+        // No Bot queue is held while the Server waits for the Owner's decision.
+        context.signal.throwIfAborted();
+        report({ stage: "approval", message: `等待审核按钮：${click.buttonName}` });
+        const approval = await requestApproval(prepared.reviewed.action);
+        const reviewed = prepared.reviewed;
+        return await browser.resume(input.botId, context.signal, prepared.generation, async () => {
+          await commitReviewedClick(reviewed, approval);
           const after = await computerRequest<ScreenshotResponse>(
             fetcher,
             `${computerUrl}/screenshot`,
@@ -139,12 +183,7 @@ export function createDockerProvider(options: DockerProviderOptions): ComputerPr
             summary: `已按批准点击“${click.buttonName}”一次，结果画面已附上。`,
             artifacts: [finalArtifact],
           };
-        }
-        return {
-          ok: true,
-          summary: `已打开 ${navigation.title || navigation.url} 并截取画面。`,
-          artifacts: [artifact],
-        };
+        });
       } finally {
         activeBots.delete(input.botId);
       }

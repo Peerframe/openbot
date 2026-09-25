@@ -166,7 +166,7 @@ THIS SOFTWARE.
 
 - officeparser 7.8.0 — Copyright (c) 2019 Harsh Ankur; MIT. Used unchanged for bounded Office
   document extraction in a separate process.
-- pdfjs-dist 6.2.108 — Mozilla/PDF.js contributors; Apache-2.0. The distribution also includes
+- pdfjs-dist 6.3.289 — Mozilla/PDF.js contributors; Apache-2.0. The distribution also includes
   Foxit fonts (BSD-style notice), Liberation fonts (SIL OFL 1.1), Adobe CMaps, ICC profiles
   (CC0), and separately licensed OpenJPEG, QCMS and PDFium/JBIG2 decoders. Their complete
   packaged license files are retained alongside the main license.

@@ -9,11 +9,12 @@ preparation for S7, not a production migration utility or evidence that S7 is co
 | --- | --- | --- |
 | Architecture, 27 migrations | `c33e03f1a14de739196113769c59fdaace9029e7` | Restore old data, then apply current migrations with the existing production startup guard. |
 | Feature, 19 migrations | `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` | Direct upgrade fails at index 17. A separate fixture-only transfer copies a bounded compatible record set into a freshly migrated target. |
-| Qualified target, 35 migrations | `aa84c5ff97270d050a4110ff5ac17b311dcfac10` | SQL bytes and journal entries must match `target-history.json`; changes require an explicit requalification. |
+| Qualified working-tree target, 43 migrations | Parent `482bdc5bea56c5b1a996492701b6dbb012d5691e`; exact uncommitted bytes below | SQL bytes and journal entries must match `target-history.json`; changes require an explicit requalification. |
 
-The target was tested as a frozen working tree on parent `135df6d`, then pinned to the commit
-above after comparing its SQL and journal hashes. `qualificationInput` preserves the actual test
-input provenance. Only this metadata binding changed; the qualified database bytes did not.
+The current target passed all40 retained migration/restore cases on2026-09-25. Its parent commit
+is a recovery reference, not a claim that the commit includes uncommitted0035-0042. Exact SQL and
+journal hashes are recorded in `qualificationInput` and [the result](evidence/command-readiness-result.json).
+The previous 40-entry target remains in [its historical evidence](evidence/python-product-result.json); no original source-history bytes changed.
 
 The two old histories share migrations 0000–0016. `histories/common` contains those original bytes;
 `histories/feature` and `histories/architecture` contain their different suffixes. The history JSON
@@ -36,7 +37,7 @@ needed. Missing prerequisites fail the command; the database checks never silent
 ```bash
 npm ci
 node experiments/s7-migration/sources.mjs
-npm exec -- turbo run build --filter=@openbot/server
+npm run oracle:build
 node --test experiments/s7-migration/cleanup.test.mjs
 node experiments/s7-migration/qualify.mjs --report /tmp/s7-migration-summary.json
 npm run check
@@ -113,3 +114,26 @@ The finalized `0034_work_corrections` working-tree target was separately requali
 histories. SQL and journal hashes were unchanged across the run. The exact local report and
 parent-only provenance are recorded in the [research record](../../docs/research/s7-migration-qualification.md).
 This requalification does not test correction behavior or complete S7.
+
+
+## Canonical 41 requalification
+
+On 2026-09-25 the unchanged runner passed all **40 cases** against the 41-entry target through
+`0040_native_task_scope`; all eight startup cleanup tests also passed without skips.
+The [new result](evidence/native-task-scope-result.json) records exact uncommitted SQL/journal
+hashes under the working-tree parent. All 71 sealed-source and target SQL/journal files matched
+before and after execution. The invocation's disposable PostgreSQL container was removed.
+Only the target manifest and qualification evidence/docs changed; source histories, fixtures,
+migration engine and test logic are unchanged.
+
+This checks the existing synthetic legacy rows/files through additive schema creation and real
+restore. It does not populate native Task scope/proposal/collaboration records or qualify their
+product authorization behavior. It is not a production conversion, active-task/Temporal restore,
+release/default switch, hosted CI result or completion of S7.
+
+## Canonical42 command authority requalification
+
+The unchanged40 migration/restore cases and8 cleanup cases passed against0041 on2026-09-25;
+[the new evidence](evidence/command-authority-result.json) and target-history.json retain exact
+hashes. The prior41-entry result above remains historical. This adds two inactive tables and
+does not enable remote command execution or qualify restoration of an in-flight command.

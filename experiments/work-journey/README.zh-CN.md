@@ -182,3 +182,130 @@ Temporal 与脚本模型验证显式启用的纠正配置。三个并发任务�
 保留原模型收据、作废提案、完整工具调用配对、只读核对命令和准确的发布回执；历史重放不能产生副作用。
 命令落盘不代表语义质量保证，仍保留完整历史大小限制；不涉及真实账号或 Linux 隔离。
 范围和证据见[研究记录](../../docs/research/work-owner-corrections.md)。
+
+## 产品媒体与完成后配对恢复
+
+`product_media_probe.py` 使用实际产品 `serve.py`、Owner HTTP 上传与频道提交、PostgreSQL、
+双向认证的 Temporal 服务和 Worker；仅外部模型传输使用合成响应。OpenAI Responses 请求断言
+要求两次生产请求与一次独立审阅请求都包含准确的原始 PNG/PDF 字节、MIME 类型和中文 PDF 文件名。
+任务完成、报告下载和源消息发布均经实际检查，再离线重放原始历史。解码后的 history Payload
+不得包含原始／base64 媒体或合成 API key；允许有界媒体 manifest。
+
+使用固定依赖的完整 Worker 环境、现有 Node 依赖、Docker Compose 和已审查的固定引擎镜像。
+私有 JSON fixture 的 `dsn` 必须指向自有、已完成 canonical 迁移的 loopback 数据库，名称以
+`openbot_control_test_` 开头且没有 Work Task。输出目录须为空或不存在。运行期间保持代码稳定，
+使 Worker 与 Replayer 加载相同 Workflow。完整命令见英文页；`OPENBOT_MEDIA_FIXTURE`、
+`OPENBOT_MEDIA_OUTPUT`、`OPENBOT_MEDIA_PG_CONTAINER` 分别指定私有 fixture、新输出目录和自有 PG 容器。
+
+可选 `--restore-container` 指定该 fixture 的 PostgreSQL 17.11 容器；探针核对不可变 ID、固定镜像
+和 loopback 端口。已完成的产品 API/Worker 停止后，`product_restore_probe.py` 将原生 custom dump
+与私有产物、附件、模型设置／密钥、插件状态／密钥，以及 32 字节原始连接密钥配对。
+备份前，真实 Owner 服务创建一个启用的合成保存连接和一个显式 `model` profile／selection 的独立 Bot，
+不修改已完成媒体任务的源。通过
+`pg_restore --single-transaction --exit-on-error` 恢复到同容器的新随机空库。逐表完整行哈希、
+sequence 状态、全部文件哈希与权限必须一致，再用实际 Python 接口核对 Owner 会话、任务／报告、
+全部 blob、两份媒体，以及模型设置和禁用插件 token／审计的解密。恢复后的连接服务实际 resolve Bot
+选择，并比较原 secret、revision 和来源信息。模型、插件、连接密钥分别缺失或错误的六个副本必须拒绝读取；
+缺失连接密钥不得重新生成，错误连接密钥须返回 `model_credential_unavailable`。禁用插件没有工具或授权，
+连接使用明确允许的 `.invalid` 端点和拒绝所有请求的 transport，不调用发现、计费测试或 provider 网络。
+
+[2026-09-25 结果](evidence/product-media-paired-restore.json)记录最终 exit 0：两次生产请求、
+一次审阅，134 字节 PNG 与 620 字节 PDF，90 字节报告完成，44 个解码 Payload 通过隐私检查且原历史
+离线重放通过。恢复保留 42 张表、109 行、40 条 canonical 迁移、18 个配对文件和 6 个验证过的不可变
+blob；六个密钥负例通过。自有 API、Compose、生成的 SQL 行和临时恢复库均已清理。早期清理及 dump
+角色错误，以及一次误加载旧恢复探针的尝试在 evidence 中单独记录；只有最终候选运行计作非空连接验收。
+
+范围仅为一个合成模型协议和完成后停写的产品快照；不证明真实模型理解、OCR、其他协议端到端执行、
+在线 SQL／文件原子备份、活跃 Temporal 数据库恢复、集群角色／ACL、OS keychain 或跨版本迁移。
+原 history 重放与活跃引擎恢复是分别验收的事项。
+生成的 dump、配对密钥、引擎 PKI／配置、session hash 和完整历史保持私有，只提交有界公开结果。
+参见[媒体边界](../../docs/research/work-product-media.md)和
+[原生备份恢复审查](../../docs/research/s7-migration-qualification.md)及
+[连接恢复边界](../../docs/research/product-connection-paired-restore.md)。
+
+## 活动 Task 成套冷恢复
+
+`active_restore_probe.py` 验收同一份当前快照里的待审批、已批准但 unknown、已取消三个任务。
+使用实际 Owner HTTP API（`OPENBOT_CONTROL_AUTHORITY=work`）、产品 Worker、PostgreSQL 和
+mTLS Temporal；模型及外部效果复用已接受的脚本 CSV fixture，不是完整 `ProductWorkRuntime`
+或真实 provider 旅程。探针自行创建随机命名的源／目标 Control 容器、引擎项目和卷，
+不需要现有数据库、私有配置、VPS 或模型账号。
+
+先构建 canonical 数据库包，使用固定依赖的完整 Worker 环境、Node、Docker Compose、OpenSSL。
+`deploy/temporal/compose.yaml` 中三个固定 digest 的镜像必须已存在；缺失会在前置检查中拒绝。
+运行到 Replay 结束期间保持 Workflow 源码稳定。
+
+```sh
+npm run build --workspace @openbot/db
+apps/server-python/.worker-venv/bin/python -B experiments/work-journey/active_restore_probe.py \
+  --repo . --output /tmp/openbot-active-restore-new
+```
+
+输出目录必须为空或不存在。主场景上限 600 秒，之后执行有界清理；单个原生命令上限 60 秒。
+源与目标顺序运行，最多三个常驻容器与一个短期 schema 工具；每个原生归档上限 64 MiB，
+配对应用文件总量上限 64 MiB。不安装依赖、不引入旧 DBOS 实验，仅删除记录了归属的自有进程、
+容器和卷。dump、密钥、PKI、会话／配置及完整历史保留在私有输出，仅按本地诊断需要保留，
+不可作为仓库或 CI 公开产物。
+
+先停止源 API／Worker，再停止 Temporal，然后原生备份 Control、history 和 visibility 三库；
+在该停写边界配对应用文件／密钥、mTLS 和配置。之后源数据库容器永久停止。目标使用新空库事务恢复，
+引擎／API／Worker 保持停机，直到完整逐表／sequence 哈希、文件／权限哈希、Owner 会话、
+媒体／blob 读取，以及设置／插件／保存连接的实际解密全部一致。缺失或错误密钥的六个副本均拒绝读取，
+缺失连接密钥不得重建；不完整文件副本在停机时无法通过 manifest 比较。此停机控制属于探针生命周期，
+不是新增产品恢复准入服务。Temporal 角色复用原部署配置创建，恢复后再次验证 runtime 无 schema 创建
+及 schema metadata 写权限。
+
+目标保留原 namespace、visibility、Workflow／engine Run、Work Run 和 Action 身份。待审批任务
+必须由 Owner 在恢复后明确批准；unknown 保留原批准动作和预算 reservation，公开 Owner 核对命令
+仅 lookup 原外部回执，不重放写入。恢复后的 Worker 一旦尝试再次 apply unknown／cancelled 动作就失败，
+且禁用重新规划。独立外部回执服务始终不回滚，取消任务不复活。等待中和终态历史都经官方离线 Replayer，
+源历史前缀保持不变，回放不改变产品行或外部计数；解码 Payload 不得含合成媒体，或已检查的 Owner／会话、Control DB、模型 API、保存连接凭据。
+
+[2026-09-25 证据](evidence/active-paired-restore.json)记录本地 Docker 成功验收：三个状态、
+全部 43 条 canonical 迁移、Control 与两套引擎库、配对文件／密钥、原身份续跑、密钥负例、
+自有资源完整清理。前述完成后产品恢复仍是独立证据。本项不覆盖在线快照、任意陈旧备份回滚、
+源／目标并行、HA／PITR、跨版本迁移、OS keychain、Linux 执行隔离、任意部署角色／ACL、
+真实 provider 计费或完整产品 prompt／tool／model 集成；仅恢复旧快照无法恢复该快照之后的权限撤销事实。
+见[研究与准确边界](../../docs/research/work-active-paired-restore.md)。
+
+
+## 产品命令整合候选
+
+`product_command_probe.py`从真实`serve.py`入口验证Owner HTTP创建与审批、PG／mTLS Temporal、
+OpenBotNodeClient、WebSocket／Unix命令通道、Host签名观测、完整产物下载和独立结果复核。
+它创建并清理专用Control／引擎容器。模型HTTP响应、本地Native和Unix peer身份均为明确模拟，
+本机运行不证明Linux隔离。修复Docker员工模型配置和可信命令许可时限后，canonical43流程已通过：
+命令仅执行一次，完整CSV、独立内容审核、两份产物下载及历史离线重放均通过，重放不再次执行。
+见[准确范围证据](evidence/product-command-local.json)。
+
+准备已锁定Worker环境、构建共享包并启动本机Docker后执行：
+
+```sh
+node_modules/.bin/esbuild experiments/work-journey/product_command_node.mjs --bundle --platform=node --format=cjs --target=node22 --outfile=/tmp/openbot-command-node.cjs
+apps/server-python/.worker-venv/bin/python -B -u experiments/work-journey/product_command_probe.py --output /tmp/openbot-command-product-1 --node-bundle /tmp/openbot-command-node.cjs
+```
+
+必须指定新的输出目录，已有目录会被拒绝。私有夹具日志／历史保留在该目录，仅全部产品断言及
+离线回放通过后写入`result.json`。Node enrollment及credential仅驻内存，本地Control私钥退出时删除。
+真实Linux执行另需准确上传清单和已审Host生命周期；此脚本不会发现SSH目标或外传本地凭据。
+见[研究边界](../../docs/research/work-command-product-qualification.md)及
+[命令配置](../../docs/WORK_COMMAND_READINESS.zh-CN.md)。
+
+可选远程分支必须同时提供`--remote-ssh-target`、`--remote-ssh-identity`、
+`--remote-known-hosts`、`--remote-server-port`、`--remote-fixture-name`及`--remote-upload-authorized`，脚本自身不上传。
+须明确选择另行批准的新目录名，匹配`product[1-9][0-9]{0,2}`，例如`--remote-fixture-name product2`，
+固定放在`/opt/openbot-command-0925`下；CLI没有默认名称，也不会发现或递增下一个名称。
+夹具脚本必须位于该目录；stage、run、检查和未启动清理都使用同一根目录，拒绝符号链接别名。
+已有预留保持不变；选择名称不证明目录未使用，也不授权再次上传或执行。
+先准备已审的固定Host夹具与准确CommonJS Node包，并向`--node-bundle`传入同一包。
+远端源码保存在`product_host_fixture.py`；[远程验收研究](../../docs/research/product-command-remote-probe.md)
+说明一次性stage／run边界。Owner凭据、Control私钥和引擎密钥留在本地，仅本次新Node注册令牌通过stdin传递。
+前台SSH转发仅绑定回环；必须同时通过原SQL绑定、签名产品结果、完整产物／审核及远端清理检查。
+失败或未知调用不能使用同一预留重跑。
+启动前的私有错误／清理记录保留有限异常类别和已知源码位置，不记录异常原文、输入、局部变量或完整路径。
+
+控制器和夹具边界测试不连接SSH、不启动容器或调用模型：
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=experiments/work-journey:experiments/linux-execution:apps/server-python/src:apps/agent-runtime-python/src apps/server-python/.worker-venv/bin/python -m pytest -p no:cacheprovider -q experiments/work-journey/test_product_command_remote.py experiments/work-journey/test_product_host_fixture.py
+```

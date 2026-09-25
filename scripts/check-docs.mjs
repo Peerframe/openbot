@@ -7,6 +7,7 @@ const ignoredDirectories = new Set([
   ".git",
   ".turbo",
   ".venv",
+  ".worker-venv",
   "build",
   "coverage",
   "dist",

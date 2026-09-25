@@ -379,12 +379,16 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22.22.2
+      - name: Verify browser qualification boundaries without starting a browser
+        run: npm run test:browser:boundary
       - name: Verify Python and Server journeys in the isolated Linux fixture
         run: node scripts/test-runtime-linux.mjs
       - name: Select the reviewed npm version for control-plane parity
         run: npm install --global --ignore-scripts npm@10.9.9
       - name: Install existing TypeScript reference dependencies
         run: npm ci --ignore-scripts --audit=false
+      - name: Compile the frozen test-only Server oracle
+        run: npm run oracle:build
       - name: Bootstrap the isolated Python control reference
         run: apps/server-python/scripts/bootstrap.sh
         env:
@@ -406,6 +410,8 @@ jobs:
       - name: Qualify adjacent Temporal release recovery with PostgreSQL and mutual TLS
         shell: bash
         run: |
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/linux-execution -p 'test_*.py' -q
+          PYTHONPATH=apps/server-python/src:experiments/linux-execution "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q experiments/linux-execution/protected_host_test.py experiments/linux-execution/protected_native_test.py
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q apps/agent-runtime-python/tests/test_temporal_agent.py experiments/work-journey/test_product_deferred_workflow.py
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \

@@ -5,7 +5,7 @@
 插件通过 MCP Streamable HTTP 提供能力。此目录保存经审核的元数据，不接受上传后立即执行的代码。安装连接、向 Bot 分配权限仍需用户单独审核。
 
 - [协议与限制](../docs/PLUGINS.zh-CN.md)
-- [可运行示例](../apps/server/src/plugin-example.ts)
+- [可运行示例](../packages/mcp-example/src/plugin-example.ts)
 - [目录数据](catalog.json) 与 [结构约束](catalog.schema.json)
 - [提交插件](https://github.com/Peerframe/openbot/issues/new?template=plugin-submission.yml)
 

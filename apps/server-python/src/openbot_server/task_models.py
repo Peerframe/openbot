@@ -96,6 +96,8 @@ class Run(PublicModel):
     """
 
     id: str
+    workTaskId: str | None = None
+    model: dict[str, str] | None = None
     parentRunId: str | None = None
     rootRunId: str | None = None
     delegatedByBotId: str | None = None
@@ -152,9 +154,14 @@ def project_run(row: Mapping[str, object]) -> Run:
             usage = RunUsage.model_validate(row.get("model_usage"))
         except ValidationError:
             usage = None
+    model = None
+    if row.get('model_selection') is not None:
+        from .model_connections_inputs import ModelSelection
+        model = ModelSelection.model_validate(row['model_selection']).model_dump()
     instruction = row.get("instruction")
     values: dict[str, object] = {
         "id": row["id"],
+        "workTaskId": row.get("work_task_id"),
         "channelId": row["channel_id"],
         "botId": row["bot_id"],
         "executionProfile": row["execution_profile"],
@@ -162,6 +169,7 @@ def project_run(row: Mapping[str, object]) -> Run:
         "title": row["title"],
         "status": row["status"],
         "modelUsage": usage,
+        "model": model,
         "createdAt": iso_timestamp(row["created_at"]),
         "updatedAt": iso_timestamp(row["updated_at"]),
     }

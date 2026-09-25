@@ -33,9 +33,9 @@ def _decode_json_object(raw):
     return parsed
 
 
-def parse_proposal(value):
+def parse_proposal(value, *, large_arguments=False):
     """Return a detached exact-dict proposal; call_id is correlation metadata, not authority."""
-    if type(value) is not dict or set(value) != FIELDS:
+    if type(large_arguments) is not bool or type(value) is not dict or set(value) != FIELDS:
         raise InvalidWork('invalid_proposal')
     call_id = text(value['call_id'], 128)
     tool = text(value['tool'], 128)
@@ -53,7 +53,7 @@ def parse_proposal(value):
         raise InvalidWork('invalid_arguments')
 
     # canonical enforces depth, node, key-shape and size limits on the structure.
-    data, _digest = canonical(arguments)
+    data, _digest = canonical(arguments,max_bytes=65536 if large_arguments else 16384)
     # Detach by canonical encoding/JSON decode so no nested input object is aliased.
     try:
         detached = json.loads(data)

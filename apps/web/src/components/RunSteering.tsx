@@ -7,7 +7,11 @@ export function RunSteering({ run, botName }: { run: Run; botName: string }) {
   const [text, setText] = useState("");
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState("");
-  if (run.executionProfile !== "none" || !["queued", "running"].includes(run.status)) return null;
+  if (
+    !["none", "model"].includes(run.executionProfile) ||
+    !["queued", "running"].includes(run.status)
+  )
+    return null;
   return (
     <div className="run-steering">
       <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}>

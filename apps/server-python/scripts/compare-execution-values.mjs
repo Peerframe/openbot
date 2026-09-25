@@ -1,17 +1,17 @@
 // Compare the Python persisted-execution-value port with the actual compiled Server modules.
 //
-// The oracle is the real compiled TypeScript (`apps/server/dist/agent-observations.js`,
-// `agent-knowledge.js` and `sensitive-content.js`), never a JavaScript restatement of it. If the
-// Server source changed, rebuild it first: `npm run build --workspace @openbot/server`.
+// The oracle is the real compiled TypeScript (`tests/oracles/legacy-server/dist/agent-observations.js`,
+// `agent-knowledge.js` and `sensitive-content.js`), never a JavaScript restatement of it.
+// Build the fixed fixture with `npm run oracle:build`; its snapshot is not synchronized with product edits.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { nativeFailureMessages } from "../../../apps/server/dist/agent-observations.js";
 import {
   boundedKnowledgeText,
   validateKnowledgeProposal,
-} from "../../../apps/server/dist/agent-knowledge.js";
-import { scanSensitiveText } from "../../../apps/server/dist/sensitive-content.js";
+} from "../../../tests/oracles/legacy-server/dist/agent-knowledge.js";
+import { nativeFailureMessages } from "../../../tests/oracles/legacy-server/dist/agent-observations.js";
+import { scanSensitiveText } from "../../../tests/oracles/legacy-server/dist/sensitive-content.js";
 
 const packageRoot = new URL("../", import.meta.url);
 

@@ -52,16 +52,26 @@ async def read_steering(connection, run) -> list[SteeringInstruction]:
 
 
 class PostgresRunCommandStore:
-    def __init__(self, dsn: str):
+    def __init__(self, dsn: str, *, work_sources=None):
         self._transactions = OwnerTransactions(dsn, application_name='openbot-control-run-commands')
+        self.work_sources = work_sources
 
     async def verify_schema(self) -> None:
         await self._transactions.verify_schema()
 
     @staticmethod
     async def _target(connection, run_id):
+        # Match child creation's channel -> source Run -> Work Task lock order.
+        await connection.execute('SELECT pg_advisory_xact_lock(hashtextextended(channel_id,731)) '
+                                 'FROM runs WHERE id=%s', (run_id,))
+        await connection.execute('SELECT c.id FROM channels c JOIN runs r ON r.channel_id=c.id '
+                                 'WHERE r.id=%s FOR KEY SHARE OF c', (run_id,))
+        # A joined view can retain its statement snapshot while the source lock waits.
+        # Read projected authority only after the source row lock has been acquired.
+        await connection.execute('SELECT id FROM runs WHERE id=%s FOR UPDATE', (run_id,))
         cursor = await connection.execute(
-            'SELECT id,channel_id,bot_id,execution_profile,node_id,status FROM runs WHERE id=%s FOR UPDATE',
+            'SELECT r.id,r.channel_id,r.bot_id,r.execution_profile,r.node_id,p.status,p.work_task_id '
+            'FROM runs r JOIN runs_work_projection p ON p.id=r.id WHERE r.id=%s',
             (run_id,))
         row = await cursor.fetchone()
         if row is None:
@@ -72,22 +82,33 @@ class PostgresRunCommandStore:
         try:
             async with self._transactions.transaction(token) as connection:
                 row = await self._target(connection, run_id)
-                if row['execution_profile'] != 'none' or row['node_id'] is not None:
+                if row['work_task_id'] and self.work_sources is None:
+                    raise RunCommandConflict('Durable work commands are not configured.')
+                if row['execution_profile'] not in ('none','model') or row['node_id'] is not None:
                     raise RunCommandConflict('Only native Agent tasks can be stopped here.')
-                if row['status'] not in ('cancelled', 'queued', 'running'):
+                allowed = ('cancelled','queued','running','waiting_approval','blocked') if row['work_task_id'] else ('cancelled','queued','running')
+                if row['status'] not in allowed:
                     raise RunCommandConflict('This task has already ended.')
                 changed = []
                 if row['status'] != 'cancelled':
-                    # A target lock also excludes new delegation through this ancestor. Match the
-                    # existing root/parent selection, without acquiring the channel advisory lease.
+                    # The channel lease excludes new delegation while this subtree is closed.
                     cursor = await connection.execute(
                         "SELECT id,channel_id,bot_id FROM runs WHERE channel_id=%s AND id<>%s "
-                        "AND execution_profile='none' AND node_id IS NULL AND status IN ('queued','running') "
+                        "AND execution_profile IN ('none','model') AND node_id IS NULL AND id IN (SELECT id FROM runs_work_projection WHERE status IN ('queued','running','waiting_approval','blocked')) "
                         "AND (root_run_id=%s OR parent_run_id=%s) ORDER BY created_at,id COLLATE \"C\" "
                         "LIMIT 1001 FOR UPDATE", (row['channel_id'], run_id, run_id, run_id))
                     changed = await cursor.fetchall()
                     if len(changed) > 1000:
                         raise StoreUnavailable('cancellation_descendant_limit')
+                    if changed:
+                        active = await (await connection.execute(
+                            "SELECT id FROM runs_work_projection WHERE id=ANY(%s) "
+                            "AND status IN ('queued','running','waiting_approval','blocked')",
+                            ([child['id'] for child in changed],))).fetchall()
+                        active_ids = {child['id'] for child in active}
+                        changed = [child for child in changed if child['id'] in active_ids]
+                    if self.work_sources is not None:
+                        await self.work_sources.cancel(connection, [run_id, *(child['id'] for child in changed)])
                     await connection.execute(
                         "UPDATE runs SET status='cancelled',updated_at=date_trunc('milliseconds',clock_timestamp()) "
                         "WHERE id=ANY(%s)", ([run_id, *(child['id'] for child in changed)],))
@@ -118,7 +139,10 @@ class PostgresRunCommandStore:
                 except TooManyAttachments:
                     raise SteeringAttachmentRefused() from None
                 row = await self._target(connection, run_id)
-                if row['execution_profile'] != 'none' or row['node_id'] is not None or row['status'] not in ('queued', 'running'):
+                if row['work_task_id'] and self.work_sources is None:
+                    raise RunCommandConflict('Durable work commands are not configured.')
+                allowed = ('queued','running','waiting_approval') if row['work_task_id'] else ('queued','running')
+                if row['execution_profile'] not in ('none','model') or row['node_id'] is not None or row['status'] not in allowed:
                     raise RunCommandConflict('Only active native tasks accept additional instructions.')
                 cursor = await connection.execute(
                     'SELECT bot_id FROM channel_bots WHERE channel_id=%s AND bot_id=%s FOR SHARE',
@@ -132,6 +156,9 @@ class PostgresRunCommandStore:
                     "VALUES (%s,%s,%s,%s,'RUN_STEERING_SUBMITTED',%s,date_trunc('milliseconds',clock_timestamp())) "
                     "RETURNING id,run_id,channel_id,bot_id,payload,created_at",
                     (str(uuid4()), run_id, row['channel_id'], row['bot_id'], Jsonb({'instruction': text, 'actor': 'owner'})))
-                return project_steering(await cursor.fetchone())
+                event = await cursor.fetchone()
+                if self.work_sources is not None:
+                    await self.work_sources.steer(connection, run_id, instruction=text, command_id=event['id'])
+                return project_steering(event)
         except (psycopg.Error, TimeoutError, ValueError, KeyError, TypeError):
             raise StoreUnavailable('run_command_storage_unavailable') from None

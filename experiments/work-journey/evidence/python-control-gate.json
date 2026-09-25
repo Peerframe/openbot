@@ -1,0 +1,29 @@
+{
+  "format": "openbot.local-migration.control-gate/v1",
+  "workingTreeParent": "482bdc5bea56c5b1a996492701b6dbb012d5691e",
+  "qualificationInput": "uncommitted-qualified-working-tree",
+  "command": "OPENBOT_TEMPORAL_TEST_PYTHON=\"$PWD/apps/server-python/.worker-venv/bin/python\" node scripts/test-python-control.mjs",
+  "exitCode": 0,
+  "base": {
+    "passed": 684,
+    "skipped": 2,
+    "seconds": 94.78
+  },
+  "worker": {
+    "passed": 861,
+    "seconds": 322.69
+  },
+  "baseLockedDistributions": 50,
+  "workerLockedDistributions": 61,
+  "actualDisposablePostgres": true,
+  "pythonTypeScriptCompatibilityPassed": true,
+  "syntheticProviderTransport": true,
+  "liveModelQualityVerified": false,
+  "repositoryCheck": {
+    "command": "npm run check",
+    "exitCode": 0,
+    "prerequisitesExecuted": true,
+    "unchangedTurboLanesCached": true
+  },
+  "diffCheckPassed": true
+}

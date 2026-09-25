@@ -4,18 +4,18 @@ import { createHash, randomBytes } from "node:crypto";
 import { existsSync, rmSync } from "node:fs";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
-import { readSteering } from "../apps/server/dist/agent-steering.js";
-import { createApp } from "../apps/server/dist/app.js";
-import { OwnerAuthService } from "../apps/server/dist/owner-auth.js";
-import { PostgresAgentStore } from "../apps/server/dist/postgres-agent-store.js";
-import { PostgresRequestThrottleStore } from "../apps/server/dist/postgres-request-throttle-store.js";
-import { PostgresOwnerSessionStore } from "../apps/server/dist/postgres-session-store.js";
-import { PostgresControlPlaneStore } from "../apps/server/dist/postgres-store.js";
-import { RequestThrottle } from "../apps/server/dist/request-throttle.js";
 import { createDatabase } from "../packages/db/dist/index.js";
+import { readSteering } from "../tests/oracles/legacy-server/dist/agent-steering.js";
+import { createApp } from "../tests/oracles/legacy-server/dist/app.js";
+import { OwnerAuthService } from "../tests/oracles/legacy-server/dist/owner-auth.js";
+import { PostgresAgentStore } from "../tests/oracles/legacy-server/dist/postgres-agent-store.js";
+import { PostgresRequestThrottleStore } from "../tests/oracles/legacy-server/dist/postgres-request-throttle-store.js";
+import { PostgresOwnerSessionStore } from "../tests/oracles/legacy-server/dist/postgres-session-store.js";
+import { PostgresControlPlaneStore } from "../tests/oracles/legacy-server/dist/postgres-store.js";
+import { RequestThrottle } from "../tests/oracles/legacy-server/dist/request-throttle.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const image =
@@ -64,6 +64,14 @@ try {
     existsSync(join(root, "apps/agent-runtime-python/.venv/bin/python")),
     "Bootstrap apps/agent-runtime-python before the persisted SDK/control acceptance gate.",
   );
+  if (process.env.OPENBOT_TEMPORAL_TEST_PYTHON) {
+    console.log(
+      run(process.env.OPENBOT_TEMPORAL_TEST_PYTHON, [
+        join(root, "apps/server-python/scripts/verify_environment.py"),
+        "--worker",
+      ]),
+    );
+  }
   run("docker", ["info", "--format", "{{.ServerVersion}}"]);
   run("docker", [
     "create",
@@ -126,7 +134,8 @@ try {
     {
       ownerName: "验收 Owner",
       ownerPassword,
-      sessionTtlMs: 600_000,
+      // Disposable suite exceeds ten minutes; retain the original session through both profiles.
+      sessionTtlMs: 1_800_000,
     },
     throttle,
   );
@@ -237,6 +246,8 @@ try {
       ownerPassword,
       ownerName: "验收 Owner",
       expected,
+      botId: bot.id,
+      channelId: messageChannel.id,
       authResult: join(fixtureDirectory, "auth-result.json"),
       identityResult: join(fixtureDirectory, "identity-result.json"),
       conversationResult: join(fixtureDirectory, "conversation-result.json"),
@@ -275,14 +286,40 @@ try {
       "tests/test_work_reconciliation_postgres.py",
       "tests/test_work_corrections_postgres.py",
       "tests/test_execution_sdk_postgres.py",
+      "tests/test_product_control.py",
+      "tests/test_work_sources_postgres.py",
+      "tests/test_work_command_codec.py",
+      "tests/test_work_command_v2.py",
+      "tests/test_model_settings.py",
+      "tests/test_model_presets.py",
+      "tests/test_skill_yaml.py",
+      "tests/test_employee_knowledge.py",
+      "tests/test_employee_portability.py",
+      "tests/test_automation_store.py",
+      "tests/test_conversation_interactions.py",
+      "tests/test_attachment_processing.py",
+      "tests/test_plugin_service.py",
+      "tests/test_plugin_transport.py",
+      "tests/test_worker_host_identity.py",
+      "tests/test_worker_host_protocol.py",
+      "tests/test_worker_host_socket.py",
+      "tests/test_browser_sessions.py",
+      "tests/test_knowledge_runtime.py",
+      "tests/test_product_extensions.py",
       "-q",
     ],
     {
       cwd: join(root, "apps/server-python"),
-      env: { ...environment, OPENBOT_CONTROL_TEST_FIXTURE: fixture },
+      env: {
+        ...environment,
+        OPENBOT_CONTROL_TEST_FIXTURE: fixture,
+        OPENBOT_TS_SOURCE_ROOT: root,
+        OPENBOT_PROTOCOL_ORACLE_ROOT: root,
+      },
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
-      timeout: 120_000,
+      // The full base profile now contains more than 800 database checks.
+      timeout: 300_000,
     },
   );
   const output = `${result.stdout ?? ""}${result.stderr ?? ""}`
@@ -292,14 +329,110 @@ try {
     .replaceAll(ownerPassword, "[fixture password]");
   console.log(output.trim());
   assert.equal(result.status, 0, "Python/PostgreSQL compatibility checks failed.");
-  // The Temporal SDK is optional in the default control venv. When a separately pinned SDK
-  // interpreter is supplied, exercise the activity adapter and effect seam against this fixture.
+  // The full Worker SDK closure is optional in the default control venv. Model-connection
+  // tests delete all connections, so their fixture must never share the general database.
   if (process.env.OPENBOT_TEMPORAL_TEST_PYTHON) {
+    run("docker", [
+      "exec",
+      name,
+      "createdb",
+      "--username=openbot_test",
+      "--no-password",
+      "--template=template0",
+      "openbot_control_test_model_connections",
+    ]);
+    const modelDsn = new URL(dsn);
+    modelDsn.pathname = "/openbot_control_test_model_connections";
+    const modelFixture = join(fixtureDirectory, "model-connections.json");
+    const modelDatabase = createDatabase(modelDsn.href);
+    let modelToken;
+    try {
+      await modelDatabase.migrate();
+      assert.deepEqual(
+        Array.from(
+          await modelDatabase.client`SELECT hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id`,
+        ),
+        Array.from(
+          await database.client`SELECT hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id`,
+        ),
+        "The dedicated model fixture must have the complete canonical migration history.",
+      );
+      const modelAuth = new OwnerAuthService(
+        new PostgresOwnerSessionStore(modelDatabase.db),
+        { ownerName: "Model fixture Owner", ownerPassword, sessionTtlMs: 1_800_000 },
+        new RequestThrottle(new PostgresRequestThrottleStore(modelDatabase.db)),
+      );
+      ({ token: modelToken } = await modelAuth.login(
+        ownerPassword,
+        createHash("sha256").update("owned-model-connection-fixture").digest("hex"),
+      ));
+      const modelChannel = await new PostgresControlPlaneStore(modelDatabase.db).createChannel({
+        name: "Isolated model fixture",
+        description: "Synthetic model-connection tests only",
+        botIds: [],
+      });
+      await writeFile(
+        modelFixture,
+        JSON.stringify({ dsn: modelDsn.href, token: modelToken, channelId: modelChannel.id }),
+        { mode: 0o600 },
+      );
+    } finally {
+      await modelDatabase.close();
+    }
+    // Command authority tests need a dedicated disposable source/profile database too.
+    // Reuse this invocation's owned PostgreSQL lifecycle; never share the model-delete fixture.
+    run("docker", [
+      "exec",
+      name,
+      "createdb",
+      "--username=openbot_test",
+      "--no-password",
+      "--template=template0",
+      "openbot_control_test_commands",
+    ]);
+    const commandDsn = new URL(dsn);
+    commandDsn.pathname = "/openbot_control_test_commands";
+    const commandFixture = join(fixtureDirectory, "commands.json");
+    const commandDatabase = createDatabase(commandDsn.href);
+    let commandToken;
+    try {
+      await commandDatabase.migrate();
+      assert.deepEqual(
+        Array.from(
+          await commandDatabase.client`SELECT hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id`,
+        ),
+        Array.from(
+          await database.client`SELECT hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id`,
+        ),
+        "The command fixture must have the complete canonical migration history.",
+      );
+      const commandAuth = new OwnerAuthService(
+        new PostgresOwnerSessionStore(commandDatabase.db),
+        { ownerName: "Command fixture Owner", ownerPassword, sessionTtlMs: 1_800_000 },
+        new RequestThrottle(new PostgresRequestThrottleStore(commandDatabase.db)),
+      );
+      ({ token: commandToken } = await commandAuth.login(
+        ownerPassword,
+        createHash("sha256").update("owned-command-authority-fixture").digest("hex"),
+      ));
+      await writeFile(
+        commandFixture,
+        JSON.stringify({
+          dsn: commandDsn.href,
+          token: commandToken,
+          fixtureKind: "work-command-authority",
+        }),
+        { mode: 0o600 },
+      );
+    } finally {
+      await commandDatabase.close();
+    }
     const temporal = spawnSync(
       process.env.OPENBOT_TEMPORAL_TEST_PYTHON,
       [
         "-m",
         "pytest",
+        "tests/test_employee_publisher_retained.py",
         "tests/test_work_temporal_activity.py",
         "tests/test_work_temporal_effect.py",
         "tests/test_work_model_receipts_postgres.py",
@@ -308,23 +441,77 @@ try {
         "tests/test_work_closed_repair_postgres.py",
         "tests/test_work_repair_dispatch.py",
         "tests/test_work_dispatch_entry.py",
+        "tests/test_product_model.py",
+        "tests/test_work_tool_results.py",
+        "tests/test_work_product_model.py",
+        "tests/test_work_product_service.py",
+        "tests/test_work_product_artifacts.py",
+        "tests/test_work_product_knowledge.py",
+        "tests/test_work_product_plugins.py",
+        "tests/test_work_plugin_large.py",
+        "tests/test_work_product_reads.py",
+        "tests/test_work_product_result.py",
+        "tests/test_work_product_runtime.py",
+        "tests/test_work_task_profiles.py",
+        "tests/test_work_collaboration_flow.py",
+        "tests/test_work_collaboration.py",
+        "tests/test_work_collaboration_checkpoint.py",
+        "tests/test_work_collaboration_deadline.py",
+        "tests/test_work_collaboration_deadline_flow.py",
+        "tests/test_work_failure.py",
+        "tests/test_work_terminal_proof.py",
+        "tests/test_work_terminal_postgres.py",
+        "tests/test_work_terminal_service.py",
+        "tests/test_work_native_scope.py",
+        "tests/test_work_native_capabilities.py",
+        "tests/test_work_native_collaboration.py",
+        "tests/test_work_command_store.py",
+        "tests/test_work_command_control.py",
+        "tests/test_work_command_actions.py",
+        "tests/test_work_command_source.py",
+        "tests/test_work_command_channel.py",
+        "tests/test_work_command_installation.py",
+        "tests/test_command_owner_profile.py",
+        "tests/test_work_product_commands.py",
+        "tests/test_worker_command_channel.py",
+        "tests/test_model_media.py",
+        "tests/test_work_product_media.py",
+        "tests/test_public_source.py",
+        "tests/test_work_product_web.py",
+        "tests/test_model_connections.py",
+        join(root, "experiments/work-journey/test_product_command_remote.py"),
+        join(root, "experiments/work-journey/test_product_host_fixture.py"),
         "-q",
       ],
       {
         cwd: join(root, "apps/server-python"),
-        env: { ...environment, OPENBOT_CONTROL_TEST_FIXTURE: fixture },
+        env: {
+          ...environment,
+          OPENBOT_CONTROL_TEST_FIXTURE: fixture,
+          OPENBOT_MODEL_CONNECTION_TEST_FIXTURE: modelFixture,
+          OPENBOT_MODEL_CONNECTION_SOURCE_ROOT: root,
+          OPENBOT_COMMAND_TEST_FIXTURE: commandFixture,
+          PYTHONPATH: [
+            join(root, "experiments/work-journey"),
+            join(root, "experiments/linux-execution"),
+            join(root, "apps/server-python/src"),
+            join(root, "apps/agent-runtime-python/src"),
+          ].join(delimiter),
+        },
         encoding: "utf8",
         stdio: ["ignore", "pipe", "pipe"],
-        timeout: 120_000,
+        timeout: 600_000,
       },
     );
     const temporalOutput = `${temporal.stdout ?? ""}${temporal.stderr ?? ""}`
       .replaceAll(password, "[fixture password]")
       .replaceAll(token, "[fixture token]")
+      .replaceAll(modelToken, "[fixture token]")
+      .replaceAll(commandToken, "[fixture token]")
       .replaceAll(tsRevocableToken, "[fixture token]")
       .replaceAll(ownerPassword, "[fixture password]");
     console.log(temporalOutput.trim());
-    assert.equal(temporal.status, 0, "Temporal activity/PostgreSQL checks failed.");
+    assert.equal(temporal.status, 0, "Worker/model-connection PostgreSQL checks failed.");
   }
   const identityResult = JSON.parse(
     await readFile(join(fixtureDirectory, "identity-result.json"), "utf8"),

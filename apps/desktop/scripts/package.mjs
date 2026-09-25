@@ -24,9 +24,21 @@ import {
   validateDesktopAsarEntries,
 } from "./package-policy.mjs";
 import { copyContainedResource } from "./package-resources.mjs";
+import { PYTHON_CANDIDATE } from "./python-runtime.mjs";
 
 const appRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const identity = desktopPackageIdentity(process.argv.slice(2));
+const args = process.argv.slice(2);
+const pythonProduct = args.includes("--python-product");
+if (args.filter((argument) => argument === "--python-product").length > 1)
+  throw new Error("Python product candidate must be selected once.");
+const identity = desktopPackageIdentity(args.filter((argument) => argument !== "--python-product"));
+if (
+  pythonProduct &&
+  (identity !== DESKTOP_PREVIEW_IDENTITY ||
+    process.platform !== "darwin" ||
+    process.arch !== "arm64")
+)
+  throw new Error("Python product packaging requires the macOS arm64 Preview candidate.");
 const signing = macosSigningOptions(
   process.env,
   process.platform,
@@ -35,7 +47,7 @@ const signing = macosSigningOptions(
 const workspaceRoot = join(appRoot, "..", "..");
 const rendererEntry = join(appRoot, "dist", "renderer", "index.html");
 const nativeRuntime = ["darwin", "win32"].includes(process.platform)
-  ? join(appRoot, "native-runtime")
+  ? join(appRoot, pythonProduct ? "out/python-product-runtime" : "native-runtime")
   : undefined;
 const desktopIconBase = join(appRoot, "resources", "openbot-icon");
 const desktopIconPng = `${desktopIconBase}.png`;
@@ -64,7 +76,9 @@ const workerCompanionSource = desktopMacOSWorkerCompanionSource(
 await Promise.all([
   ...(nativeRuntime
     ? [
-        access(join(nativeRuntime, "apps/server/dist/index.js")),
+        access(
+          join(nativeRuntime, pythonProduct ? "python-control.json" : "apps/server/dist/index.js"),
+        ),
         ...(process.platform === "darwin"
           ? [access(join(nativeRuntime, "postgres-supervisor"))]
           : []),
@@ -82,6 +96,23 @@ await Promise.all([
   access(`${desktopIconBase}.icns`),
   access(`${desktopIconBase}.ico`),
 ]);
+if (nativeRuntime) {
+  let marker;
+  try {
+    marker = JSON.parse(await readFile(join(nativeRuntime, "python-control.json"), "utf8"));
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  if (pythonProduct) {
+    if (
+      !marker ||
+      Object.keys(marker).length !== Object.keys(PYTHON_CANDIDATE).length ||
+      !Object.entries(PYTHON_CANDIDATE).every(([key, value]) => marker[key] === value)
+    )
+      throw new Error("Python candidate resources are incomplete or mismatched.");
+  } else if (marker !== undefined)
+    throw new Error("Default Desktop packaging refuses Python candidate resources.");
+}
 if (workerCompanionSource !== undefined) {
   await validateMacOSWorkerHostApplication(workerCompanionSource, {
     expectedOwner: process.getuid?.(),
@@ -99,7 +130,7 @@ const packagePaths = await packager({
   asar: true,
   dir: appRoot,
   download: { ...previewDownload, downloader: createElectronDownloader() },
-  electronVersion: "44.2.0",
+  electronVersion: pythonProduct ? "44.3.0" : "44.2.0",
   extraResource: [desktopIconPng],
   afterCopyExtraResources: [
     async ({ buildPath }) => {
@@ -152,8 +183,11 @@ const packagePaths = await packager({
   ignore: (candidatePath) => shouldIgnoreDesktopSource(appRoot, candidatePath),
   icon: desktopIconBase,
   name: identity.name,
-  out:
-    identity === DESKTOP_PREVIEW_IDENTITY ? join(appRoot, "out", "preview") : join(appRoot, "out"),
+  out: pythonProduct
+    ? join(appRoot, "out", "python-product")
+    : identity === DESKTOP_PREVIEW_IDENTITY
+      ? join(appRoot, "out", "preview")
+      : join(appRoot, "out"),
   overwrite: true,
   platform: process.platform,
   prune: false,

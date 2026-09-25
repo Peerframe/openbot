@@ -1,0 +1,30 @@
+{
+  "case": "product-command-local-composition",
+  "actualOwnerHTTP": true,
+  "actualWorkApproval": true,
+  "actualPostgres": true,
+  "canonicalMigrations": 43,
+  "mutualTLS": true,
+  "actualProductEntry": true,
+  "actualNodeClient": true,
+  "actualWebSocket": true,
+  "actualUnixTransport": true,
+  "actualHostCrypto": true,
+  "syntheticNative": true,
+  "syntheticPeerIdentity": true,
+  "linuxIsolationQualified": false,
+  "oneOriginalCommand": true,
+  "fullOutputSha256": "5accdf8fd1100f960b927385c800db12e45b22727f4fa95b3c3f7b143b5a5409",
+  "independentlyReviewed": true,
+  "artifactsDownloaded": 2,
+  "offlineReplay": true,
+  "modelCounts": {
+    "command": 1,
+    "report": 1,
+    "final": 1,
+    "review": 1
+  },
+  "cleanupComplete": true,
+  "nodeBundleSha256": "49ff5bd048d71651831a573eaec70c3a313b9841905f223b067b0dd94bf04bc2",
+  "commandProbeSha256": "dbd3dd2af1285ab08e0cfd128d0e2b5fb33ccb5f1b3b09477e3357a0957d70e8"
+}

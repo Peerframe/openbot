@@ -31,7 +31,7 @@ MAX_ID = "ffffffff-ffff-ffff-ffff-ffffffffffff"
 APPEARANCE = {"head": "round", "body": "cape", "mobility": "hover", "accessory": "backpack", "accent": "red"}
 
 # Enum members copied verbatim from packages/protocol/src/index.ts and packages/domain.
-PROFILE_UNION = ["none", "docker-linux", "macos-cua", "lume-vm", "coder"]
+PROFILE_UNION = ["none", "model", "docker-linux", "macos-cua", "lume-vm", "coder"]
 APPEARANCE_UNIONS = {
     "head": ["round", "square", "cat"],
     "body": ["classic", "tall", "cape", "armor", "storage", "quadruped"],

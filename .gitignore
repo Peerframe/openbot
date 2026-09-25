@@ -9,6 +9,9 @@ apps/desktop/out/
 coverage/
 .turbo/
 .vite/
+__pycache__/
+*.py[cod]
+.pytest_cache/
 apps/worker-host-windows/**/bin/
 apps/worker-host-windows/**/obj/
 data/

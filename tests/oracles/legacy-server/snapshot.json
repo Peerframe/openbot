@@ -1,0 +1,535 @@
+{
+  "version": 1,
+  "license": "MIT",
+  "sourceCommit": "482bdc5bea56c5b1a996492701b6dbb012d5691e",
+  "workingTreeSnapshot": true,
+  "consumers": {
+    "compare-task-contracts.mjs": {
+      "roots": [
+        "apps/server/src/task-routing.ts",
+        "apps/server/src/postgres-task-records.ts"
+      ],
+      "currentRelativeSourceClosure": [
+        "apps/server/src/agent-observations.ts",
+        "apps/server/src/control-plane-store.ts",
+        "apps/server/src/postgres-task-records.ts",
+        "apps/server/src/task-routing.ts"
+      ]
+    },
+    "compare-runtime-wire.mjs": {
+      "roots": [
+        "apps/server/src/agent-runtime-wire.ts"
+      ],
+      "currentRelativeSourceClosure": [
+        "apps/server/src/agent-observations.ts",
+        "apps/server/src/agent-runtime-wire.ts"
+      ]
+    },
+    "compare-execution-values.mjs": {
+      "roots": [
+        "apps/server/src/agent-observations.ts",
+        "apps/server/src/agent-knowledge.ts",
+        "apps/server/src/sensitive-content.ts"
+      ],
+      "currentRelativeSourceClosure": [
+        "apps/server/src/agent-knowledge.ts",
+        "apps/server/src/agent-observations.ts",
+        "apps/server/src/control-plane-store.ts",
+        "apps/server/src/sensitive-content.ts"
+      ]
+    },
+    "test_knowledge_runtime.py": {
+      "roots": [
+        "apps/server/src/agent-knowledge.ts"
+      ],
+      "currentRelativeSourceClosure": [
+        "apps/server/src/agent-knowledge.ts",
+        "apps/server/src/control-plane-store.ts",
+        "apps/server/src/sensitive-content.ts"
+      ]
+    },
+    "test_employee_portability.py": {
+      "roots": [
+        "apps/server/src/employee-package.ts"
+      ],
+      "currentRelativeSourceClosure": [
+        "apps/server/src/agent-skills.ts",
+        "apps/server/src/control-plane-store.ts",
+        "apps/server/src/employee-package-content.ts",
+        "apps/server/src/employee-package.ts",
+        "apps/server/src/execution-routing.ts",
+        "apps/server/src/sensitive-content.ts"
+      ]
+    },
+    "test_plugin_service.py": {
+      "roots": [
+        "apps/server/src/plugin-types.ts",
+        "apps/server/src/plugin-store.ts",
+        "apps/server/src/plugin-example.ts"
+      ],
+      "currentRelativeSourceClosure": [
+        "apps/server/src/plugin-example-view.ts",
+        "apps/server/src/plugin-example.ts",
+        "apps/server/src/plugin-store.ts",
+        "apps/server/src/plugin-types.ts"
+      ]
+    },
+    "scripts/test-python-control.mjs": {
+      "roots": [
+        "apps/server/src/agent-steering.ts",
+        "apps/server/src/app.ts",
+        "apps/server/src/owner-auth.ts",
+        "apps/server/src/postgres-agent-store.ts",
+        "apps/server/src/postgres-request-throttle-store.ts",
+        "apps/server/src/postgres-session-store.ts",
+        "apps/server/src/postgres-store.ts",
+        "apps/server/src/request-throttle.ts"
+      ],
+      "currentRelativeSourceClosure": [
+        "apps/server/src/agent-attachments.ts",
+        "apps/server/src/agent-collaboration.ts",
+        "apps/server/src/agent-knowledge.ts",
+        "apps/server/src/agent-observations.ts",
+        "apps/server/src/agent-runtime-executor.ts",
+        "apps/server/src/agent-runtime.ts",
+        "apps/server/src/agent-skills.ts",
+        "apps/server/src/agent-sources.ts",
+        "apps/server/src/agent-steering.ts",
+        "apps/server/src/agent-stream.ts",
+        "apps/server/src/app.ts",
+        "apps/server/src/artifact-storage.ts",
+        "apps/server/src/attachment-processing.ts",
+        "apps/server/src/automations.ts",
+        "apps/server/src/channel-attachment-routes.ts",
+        "apps/server/src/channel-attachments.ts",
+        "apps/server/src/channel-interactions-routes.ts",
+        "apps/server/src/channel-interactions-store.ts",
+        "apps/server/src/channel-realtime-hub.ts",
+        "apps/server/src/client-identity.ts",
+        "apps/server/src/control-plane-store.ts",
+        "apps/server/src/employee-package-content.ts",
+        "apps/server/src/employee-package.ts",
+        "apps/server/src/execution-routing.ts",
+        "apps/server/src/model-settings.ts",
+        "apps/server/src/native-agent.ts",
+        "apps/server/src/native-web-tools.ts",
+        "apps/server/src/node-identity.ts",
+        "apps/server/src/owner-auth.ts",
+        "apps/server/src/plugin-routes.ts",
+        "apps/server/src/plugin-service.ts",
+        "apps/server/src/plugin-store.ts",
+        "apps/server/src/plugin-transport.ts",
+        "apps/server/src/plugin-types.ts",
+        "apps/server/src/postgres-agent-collaboration.ts",
+        "apps/server/src/postgres-agent-skills.ts",
+        "apps/server/src/postgres-agent-store.ts",
+        "apps/server/src/postgres-knowledge-store.ts",
+        "apps/server/src/postgres-request-throttle-store.ts",
+        "apps/server/src/postgres-session-store.ts",
+        "apps/server/src/postgres-store.ts",
+        "apps/server/src/postgres-task-records.ts",
+        "apps/server/src/postgres-task-submission.ts",
+        "apps/server/src/realtime-event-buffer.ts",
+        "apps/server/src/request-throttle.ts",
+        "apps/server/src/run-frame-store.ts",
+        "apps/server/src/sensitive-content.ts",
+        "apps/server/src/session-store.ts",
+        "apps/server/src/task-attachment-references.ts",
+        "apps/server/src/task-routing.ts",
+        "apps/server/src/workspace-realtime-hub.ts"
+      ]
+    },
+    "scripts/verify-database.mjs": {
+      "roots": [
+        "apps/server/src/node-identity.ts",
+        "apps/server/src/postgres-node-identity-store.ts",
+        "apps/server/src/postgres-request-throttle-store.ts",
+        "apps/server/src/request-throttle.ts",
+        "apps/server/src/postgres-store.ts",
+        "apps/server/src/employee-package.ts"
+      ],
+      "currentRelativeSourceClosure": [
+        "apps/server/src/agent-observations.ts",
+        "apps/server/src/agent-skills.ts",
+        "apps/server/src/client-identity.ts",
+        "apps/server/src/control-plane-store.ts",
+        "apps/server/src/employee-package-content.ts",
+        "apps/server/src/employee-package.ts",
+        "apps/server/src/execution-routing.ts",
+        "apps/server/src/node-identity.ts",
+        "apps/server/src/postgres-node-identity-store.ts",
+        "apps/server/src/postgres-request-throttle-store.ts",
+        "apps/server/src/postgres-store.ts",
+        "apps/server/src/postgres-task-records.ts",
+        "apps/server/src/postgres-task-submission.ts",
+        "apps/server/src/request-throttle.ts",
+        "apps/server/src/sensitive-content.ts",
+        "apps/server/src/task-routing.ts"
+      ]
+    },
+    "experiments/s7-migration/qualify.mjs": {
+      "roots": [
+        "apps/server/src/artifact-storage.ts"
+      ],
+      "currentRelativeSourceClosure": [
+        "apps/server/src/artifact-storage.ts"
+      ]
+    }
+  },
+  "files": [
+    {
+      "path": "src/agent-attachments.ts",
+      "origin": "apps/server/src/agent-attachments.ts",
+      "sha256": "df3d4956479d4584e76d24a8239b00a807d7dc7183dccf5af0e66d19c05a4a80",
+      "bytes": 7265
+    },
+    {
+      "path": "src/agent-collaboration.ts",
+      "origin": "apps/server/src/agent-collaboration.ts",
+      "sha256": "e0b6d24af0f25f4810e0f943aa056c53fcdd3a10b1a8a1637877712260abfb15",
+      "bytes": 735
+    },
+    {
+      "path": "src/agent-knowledge.ts",
+      "origin": "apps/server/src/agent-knowledge.ts",
+      "sha256": "b7960a6a8c99383cada8b0cf3624647ad563b7ecae0b0bf7a8cc6c5a1ae16e46",
+      "bytes": 2187
+    },
+    {
+      "path": "src/agent-observations.ts",
+      "origin": "apps/server/src/agent-observations.ts",
+      "sha256": "af61b0561016abb11615a016af60b12b8d33e10a52f3e17250325e66403fdac5",
+      "bytes": 4070
+    },
+    {
+      "path": "src/agent-runtime-executor.ts",
+      "origin": "apps/server/src/agent-runtime-executor.ts",
+      "sha256": "cf90ad9553b72b3063d4038157898415ea607f904127e9b63b1cf3f2b1786c1a",
+      "bytes": 2764
+    },
+    {
+      "path": "src/agent-runtime-wire.ts",
+      "origin": "apps/server/src/agent-runtime-wire.ts",
+      "sha256": "e48a967d9df8a64bc2e56d297ccc5a9ccde32f5885bc696b7e1e31b1ebd06ad1",
+      "bytes": 6286
+    },
+    {
+      "path": "src/agent-runtime.ts",
+      "origin": "apps/server/src/agent-runtime.ts",
+      "sha256": "33a2e52b7708a4e82cb293c3e51bfffddff6332dc3a6a74797fbd1b302f43c03",
+      "bytes": 9680
+    },
+    {
+      "path": "src/agent-skills.ts",
+      "origin": "apps/server/src/agent-skills.ts",
+      "sha256": "48933fd010ca4766f1828a813693674b39f9ba0a13b5067b90b3146ac553bcd5",
+      "bytes": 3250
+    },
+    {
+      "path": "src/agent-sources.ts",
+      "origin": "apps/server/src/agent-sources.ts",
+      "sha256": "617cb313954e8798ef8ac2d0826a0200afd98a203bcaaf80a4bf94927a701867",
+      "bytes": 8244
+    },
+    {
+      "path": "src/agent-steering.ts",
+      "origin": "apps/server/src/agent-steering.ts",
+      "sha256": "02634f4301245c39b609ca4bda08bb2d2c8736d2476152234b4142aa7b50f602",
+      "bytes": 4100
+    },
+    {
+      "path": "src/agent-stream.ts",
+      "origin": "apps/server/src/agent-stream.ts",
+      "sha256": "18afc2fd897537f2de92a4cff6544d38df273f5fffac6c50a16031ff84cee341",
+      "bytes": 1942
+    },
+    {
+      "path": "src/app.ts",
+      "origin": "apps/server/src/app.ts",
+      "sha256": "b54b724845dedf841768d36686f798c576aab62481ee1af10aed47a36c7b3c0b",
+      "bytes": 50048
+    },
+    {
+      "path": "src/artifact-storage.ts",
+      "origin": "apps/server/src/artifact-storage.ts",
+      "sha256": "ec21ccff13a1eebf7a6c12ee9d5f3bca2851e3fb6235b1f88d6cd293c78b90b8",
+      "bytes": 4416
+    },
+    {
+      "path": "src/attachment-processing.ts",
+      "origin": "apps/server/src/attachment-processing.ts",
+      "sha256": "da68305c3b6bb28a2d63d29a14a4ffd99192cf13f7aa4bd1a7f22e6a9f22f394",
+      "bytes": 12655
+    },
+    {
+      "path": "src/automations.ts",
+      "origin": "apps/server/src/automations.ts",
+      "sha256": "5d548631e9a6ad63ade7cc5a3c1f63f53010915e82865a23d528bc09e36286f9",
+      "bytes": 3052
+    },
+    {
+      "path": "src/channel-attachment-routes.ts",
+      "origin": "apps/server/src/channel-attachment-routes.ts",
+      "sha256": "b7137044b2bdef3f67ed8ea91a38809dc292d82d28989bb511e02e41c62c8656",
+      "bytes": 8940
+    },
+    {
+      "path": "src/channel-attachments.ts",
+      "origin": "apps/server/src/channel-attachments.ts",
+      "sha256": "9d9c7e18d532e9abf3f446ba502fc5dd6c69138c473e929e2197962f0c27b422",
+      "bytes": 16052
+    },
+    {
+      "path": "src/channel-interactions-routes.ts",
+      "origin": "apps/server/src/channel-interactions-routes.ts",
+      "sha256": "3d3789e4e2d222e76a8a7c9512b7a98bf24f0c74bf4c1403e679c28cc1209c1f",
+      "bytes": 2576
+    },
+    {
+      "path": "src/channel-interactions-store.ts",
+      "origin": "apps/server/src/channel-interactions-store.ts",
+      "sha256": "969108be53626335a68412ba1024fa762804c2b04e01b1106bdf2b3de9edfd91",
+      "bytes": 7022
+    },
+    {
+      "path": "src/channel-realtime-hub.ts",
+      "origin": "apps/server/src/channel-realtime-hub.ts",
+      "sha256": "c92dc1868234fcd0e82a910a37ebeba72ce1f9a968c711e774995e678384a6f1",
+      "bytes": 765
+    },
+    {
+      "path": "src/client-identity.ts",
+      "origin": "apps/server/src/client-identity.ts",
+      "sha256": "a7bd37e1e796c5ba4a6a215211d6885a4dff7fb86f959447908377556be13289",
+      "bytes": 3750
+    },
+    {
+      "path": "src/control-plane-store.ts",
+      "origin": "apps/server/src/control-plane-store.ts",
+      "sha256": "ff0b2db636c5482a61d93d2a5bee4f8b787ad4eb3f6317b462ac73d4ce8e42a6",
+      "bytes": 4956
+    },
+    {
+      "path": "src/employee-package-content.ts",
+      "origin": "apps/server/src/employee-package-content.ts",
+      "sha256": "e4244faa0e6b977c72cec0e78e9306e394af5e4bc3bc0cb909e25ab1130038b5",
+      "bytes": 2762
+    },
+    {
+      "path": "src/employee-package.ts",
+      "origin": "apps/server/src/employee-package.ts",
+      "sha256": "711bf19fa76f1bfb7aa726e01f0a4c0638dfa9a5dcaf7e5dad4b0ec1e2377353",
+      "bytes": 28512
+    },
+    {
+      "path": "src/execution-routing.ts",
+      "origin": "apps/server/src/execution-routing.ts",
+      "sha256": "a77346a30b9e345f2b9d03b78b18c285a4eb7217e69560bea7c1491cda16b2c3",
+      "bytes": 4338
+    },
+    {
+      "path": "src/model-settings.ts",
+      "origin": "apps/server/src/model-settings.ts",
+      "sha256": "48fce86768090e471056117e323abfb0fe101e02a0f23e4385b03014f0fb006c",
+      "bytes": 14941
+    },
+    {
+      "path": "src/native-agent.ts",
+      "origin": "apps/server/src/native-agent.ts",
+      "sha256": "8dd4387136d66d639834e8e668c025bf2e8e8df832c089532f664cb15b4daee0",
+      "bytes": 45704
+    },
+    {
+      "path": "src/native-web-tools.ts",
+      "origin": "apps/server/src/native-web-tools.ts",
+      "sha256": "f3e417f447abeac63667dc5920343d59b06041d96c7a0a5702e3acceebe0c1dd",
+      "bytes": 6784
+    },
+    {
+      "path": "src/node-identity.ts",
+      "origin": "apps/server/src/node-identity.ts",
+      "sha256": "0408468ce3d661cc4f87aded5a47068d956a782c1c3fcc2997fac505efc60bbc",
+      "bytes": 3866
+    },
+    {
+      "path": "src/owner-auth.ts",
+      "origin": "apps/server/src/owner-auth.ts",
+      "sha256": "b2677b7468fb84b2deb27c826b913e755e9f849bcaf4afd3c3c0a00d823c74f1",
+      "bytes": 3272
+    },
+    {
+      "path": "src/plugin-example-view.ts",
+      "origin": "apps/server/src/plugin-example-view.ts",
+      "sha256": "46b52005b4ec91a029c7d85001f900d073ab1b541114375dcc9fc395123bbddc",
+      "bytes": 2029
+    },
+    {
+      "path": "src/plugin-example.ts",
+      "origin": "apps/server/src/plugin-example.ts",
+      "sha256": "a319358e1509255e4bcf4ffd97eb1b3b554f579bb35d772b01a82474ea1cdfd3",
+      "bytes": 5663
+    },
+    {
+      "path": "src/plugin-routes.ts",
+      "origin": "apps/server/src/plugin-routes.ts",
+      "sha256": "ecfb0015c94f6e73efb7d2e37e5ffc06f2d218128e8539b65e7fba8a14c3075f",
+      "bytes": 4284
+    },
+    {
+      "path": "src/plugin-service.ts",
+      "origin": "apps/server/src/plugin-service.ts",
+      "sha256": "94127efd31feb83878dd7ddd4431f1037d2b205a9c45862796fe7bae86b54d15",
+      "bytes": 24085
+    },
+    {
+      "path": "src/plugin-store.ts",
+      "origin": "apps/server/src/plugin-store.ts",
+      "sha256": "4b476505330114d54a0b8192239d87fb695ddcf30dcfde256aad5cc6a4524f9c",
+      "bytes": 8466
+    },
+    {
+      "path": "src/plugin-transport.ts",
+      "origin": "apps/server/src/plugin-transport.ts",
+      "sha256": "561aa85111c93ec8780a4b861f4622a4af404bd958748932ea043aa87300cc00",
+      "bytes": 14459
+    },
+    {
+      "path": "src/plugin-types.ts",
+      "origin": "apps/server/src/plugin-types.ts",
+      "sha256": "b08b48b575786c722ff5fd425d2de5f1990f93e0e3e93beaca04df815f5692cb",
+      "bytes": 6672
+    },
+    {
+      "path": "src/postgres-agent-collaboration.ts",
+      "origin": "apps/server/src/postgres-agent-collaboration.ts",
+      "sha256": "77b609dc3f4d075c51b36cae3faa6a47a7b7e62e534a71763fba79ff2ea6a9e0",
+      "bytes": 7036
+    },
+    {
+      "path": "src/postgres-agent-skills.ts",
+      "origin": "apps/server/src/postgres-agent-skills.ts",
+      "sha256": "141119cfd8291cb66c6a78308c25cd7f187f3758f2b6faa59b5aa26d0368f2e7",
+      "bytes": 3508
+    },
+    {
+      "path": "src/postgres-agent-store.ts",
+      "origin": "apps/server/src/postgres-agent-store.ts",
+      "sha256": "c864e47873ed076c56abb1686ff14763ff5f75bdbadabfd4b73e9b1087eaba45",
+      "bytes": 27315
+    },
+    {
+      "path": "src/postgres-knowledge-store.ts",
+      "origin": "apps/server/src/postgres-knowledge-store.ts",
+      "sha256": "c1cf66111c1a1fa68559d671fcdae52866621019e7c432c5f042e416d391f7e8",
+      "bytes": 4512
+    },
+    {
+      "path": "src/postgres-node-identity-store.ts",
+      "origin": "apps/server/src/postgres-node-identity-store.ts",
+      "sha256": "313304b29397e516f9da8e6325495f638686fd0cc465fdaa97877ca8573388ee",
+      "bytes": 4904
+    },
+    {
+      "path": "src/postgres-request-throttle-store.ts",
+      "origin": "apps/server/src/postgres-request-throttle-store.ts",
+      "sha256": "916d72f86d45ddadf223410a943f4fa37ed51fd99d0d4e1987eba836902f8adb",
+      "bytes": 3074
+    },
+    {
+      "path": "src/postgres-session-store.ts",
+      "origin": "apps/server/src/postgres-session-store.ts",
+      "sha256": "8a52b7436ff1e9714596654e1eaca8539fe6e837641de44b44722a82f148747e",
+      "bytes": 2000
+    },
+    {
+      "path": "src/postgres-store.ts",
+      "origin": "apps/server/src/postgres-store.ts",
+      "sha256": "0eb2dc6c2499d3cbf8b9af66643c7cbea7cb950443930a3d8a1751c0be03bef6",
+      "bytes": 76077
+    },
+    {
+      "path": "src/postgres-task-records.ts",
+      "origin": "apps/server/src/postgres-task-records.ts",
+      "sha256": "4438df989f87f59997ab6f8da73f083ac6ca60730def8261fdd6e1750879f3f8",
+      "bytes": 2142
+    },
+    {
+      "path": "src/postgres-task-submission.ts",
+      "origin": "apps/server/src/postgres-task-submission.ts",
+      "sha256": "68906089dc971e62c91ed5ca2254d7a959d15874753a21af53e54b24adb0fe3f",
+      "bytes": 4796
+    },
+    {
+      "path": "src/realtime-event-buffer.ts",
+      "origin": "apps/server/src/realtime-event-buffer.ts",
+      "sha256": "1d78f5be78f464ba513602928eb33c787342144b5532e46120a817c4c188c3eb",
+      "bytes": 1059
+    },
+    {
+      "path": "src/request-throttle.ts",
+      "origin": "apps/server/src/request-throttle.ts",
+      "sha256": "0ea844e497f4c2df33ff53b907fdfe0505fb584bfa9e4f4ea7b68748109d7d6b",
+      "bytes": 1558
+    },
+    {
+      "path": "src/run-frame-store.ts",
+      "origin": "apps/server/src/run-frame-store.ts",
+      "sha256": "4529f7b63f3e9134b56a09ce3833e9a781878cfa6b55ff93b2c699ecfebb71a6",
+      "bytes": 2434
+    },
+    {
+      "path": "src/sensitive-content.ts",
+      "origin": "apps/server/src/sensitive-content.ts",
+      "sha256": "7068da074cef7d7084a46c7ef432f6ac3c7aa40b92f2f03d47d0329a0117bb51",
+      "bytes": 2458
+    },
+    {
+      "path": "src/session-store.ts",
+      "origin": "apps/server/src/session-store.ts",
+      "sha256": "45db22899858ebe922a750a9eb29913591d9a477ab13fdbe00ed6377ff1d37c0",
+      "bytes": 552
+    },
+    {
+      "path": "src/task-attachment-references.ts",
+      "origin": "apps/server/src/task-attachment-references.ts",
+      "sha256": "1ab3a23168289616dda2269bb4f72309f4eb467e964f1e68b549dbcf46d4e5ee",
+      "bytes": 1435
+    },
+    {
+      "path": "src/task-routing.ts",
+      "origin": "apps/server/src/task-routing.ts",
+      "sha256": "99dcac872f7993943fd1ab9ba2ec3fe8cd7922bc6374337925b6819a9332f9e5",
+      "bytes": 2144
+    },
+    {
+      "path": "src/workspace-realtime-hub.ts",
+      "origin": "apps/server/src/workspace-realtime-hub.ts",
+      "sha256": "91fd1835d52cde0c5a5eeca5f0bc9e0bfb48505caef5df4e2a82d643b3c4efb3",
+      "bytes": 499
+    },
+    {
+      "path": "src/__fixtures__/attachments/README.md",
+      "origin": "apps/server/src/__fixtures__/attachments/README.md",
+      "sha256": "523370b2203a07a31749af2fa9bf2d6e0885d4b8c2a01ad84447190eb97dcac6",
+      "bytes": 896
+    },
+    {
+      "path": "src/__fixtures__/attachments/encrypted.pdf",
+      "origin": "apps/server/src/__fixtures__/attachments/encrypted.pdf",
+      "sha256": "4dd070a6d2098d824954c00f2d7e2ff391a7732e841c0db98d89b733fa386922",
+      "bytes": 1820
+    },
+    {
+      "path": "src/__fixtures__/attachments/image-only.pdf",
+      "origin": "apps/server/src/__fixtures__/attachments/image-only.pdf",
+      "sha256": "81968231b146eaf2f3bd35a187d69b354f39f555ba7418c6944aa624b95103c6",
+      "bytes": 653
+    },
+    {
+      "path": "src/__fixtures__/attachments/script-action.pdf",
+      "origin": "apps/server/src/__fixtures__/attachments/script-action.pdf",
+      "sha256": "afaf2b9b051b86ec7f8dfcc067d8832d06865fe702a4803c9c98bf8d76ec3f1e",
+      "bytes": 1267
+    }
+  ]
+}

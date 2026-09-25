@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { reviewedClick } from "./reviewed-click.js";
+import { commitReviewedClick, prepareReviewedClick, reviewedClick } from "./reviewed-click.js";
 
 const target = "https://example.com/";
 const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0]).toString("base64");
@@ -103,4 +103,30 @@ describe("reviewed browser click commit", () => {
     await expect(reviewedClick(f.options)).rejects.toThrow("it may have occurred");
     expect(f.clicks).toHaveLength(1);
   });
+});
+
+it("consumes a prepared handle before an uncertain dispatch and forbids replay", async () => {
+  const f = fixture();
+  const original = f.options.request;
+  f.options.request = async (path, body) => {
+    const result = await original(path, body);
+    if (path === "/click") throw new Error("Connection lost after commit");
+    return result;
+  };
+  const prepared = await prepareReviewedClick(f.options);
+  expect(f.requestApproval).not.toHaveBeenCalled();
+  const approval = { approvalId: "once", status: "approved" as const };
+  await expect(commitReviewedClick(prepared, approval)).rejects.toThrow("it may have occurred");
+  await expect(commitReviewedClick(prepared, approval)).rejects.toThrow("already consumed");
+  expect(f.clicks).toHaveLength(1);
+});
+it("does not accept a reconstructed or mutated preparation as a commit handle", async () => {
+  const f = fixture();
+  const prepared = await prepareReviewedClick(f.options);
+  expect(Object.isFrozen(prepared.action)).toBe(true);
+  expect(Object.isFrozen(prepared.action.beforeState)).toBe(true);
+  await expect(
+    commitReviewedClick({ action: prepared.action }, { approvalId: "copied", status: "approved" }),
+  ).rejects.toThrow("invalid");
+  expect(f.clicks).toHaveLength(0);
 });

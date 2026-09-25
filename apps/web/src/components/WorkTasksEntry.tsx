@@ -2,8 +2,21 @@ import { useEffect, useState } from "react";
 import { listWorkBots } from "../work-api";
 import { WorkTasksScreen } from "./WorkTasksScreen";
 
+export function parseWorkEntry(hash: string): { taskId: string } | undefined {
+  const [path, query] = hash.split("?", 2);
+  if (path !== "#/tasks") return undefined;
+  const taskId = new URLSearchParams(query).get("task") ?? "";
+  return { taskId: /^[A-Za-z0-9_-]{1,128}$/.test(taskId) ? taskId : "" };
+}
+
 // The Python work reference exposes /bots, but not the legacy /workspace aggregate.
-export function WorkTasksEntry({ onLogout }: { onLogout(): Promise<void> }) {
+export function WorkTasksEntry({
+  onLogout,
+  initialTaskId = "",
+}: {
+  onLogout(): Promise<void>;
+  initialTaskId?: string | undefined;
+}) {
   const [bots, setBots] = useState<Awaited<ReturnType<typeof listWorkBots>>>([]);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
@@ -58,7 +71,7 @@ export function WorkTasksEntry({ onLogout }: { onLogout(): Promise<void> }) {
           </button>
         </p>
       )}
-      <WorkTasksScreen bots={bots} active />
+      <WorkTasksScreen key={initialTaskId} bots={bots} active initialTaskId={initialTaskId} nativeCapabilitiesEnabled />
     </div>
   );
 }

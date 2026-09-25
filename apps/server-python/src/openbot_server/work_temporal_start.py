@@ -29,7 +29,7 @@ from .work_values import WorkConflict, WorkNotFound, text, tokens
 MAX_TASK_ID = 128
 MAX_RUN_ID = 128
 MAX_BOT_ID = 128
-MAX_OBJECTIVE = 16384
+MAX_OBJECTIVE = 32768
 
 # Exact conflict text emitted by the existing binding gate when the durable handoff has not been
 # acknowledged. Only this exact value is translated; every other conflict is a real refusal.
@@ -116,7 +116,7 @@ async def load_current_activity_task(store: PostgresWorkStore, client, *, expect
             raise WorkConflict('run_closed')
 
         # Detach bounded scalars before leaving the transaction so no row mapping or cursor can
-        # outlive the lock. IDs use the work-domain 128-byte bound; objective uses its 16384 one.
+        # outlive the lock. IDs use the work-domain 128-byte bound; source objective uses its 32768 one.
         return WorkRuntimeContext(
             task_id=text(accepted.task_id, MAX_TASK_ID),
             run_id=text(accepted.run_id, MAX_RUN_ID),

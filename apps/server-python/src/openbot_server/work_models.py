@@ -3,6 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
 
 from .work_values import text
+from .work_native_scope import NativeTaskScope
 
 
 class StrictModel(BaseModel):
@@ -10,6 +11,7 @@ class StrictModel(BaseModel):
 
 
 class CreateTask(StrictModel):
+    scope: NativeTaskScope | None = None
     botId: str = Field(min_length=1, max_length=128)
     objective: str = Field(min_length=1, max_length=16384)
     tokenLimit: int = Field(ge=0, le=1_000_000_000)
@@ -53,7 +55,7 @@ class WorkCorrection(StrictModel):
     @field_validator('instruction')
     @classmethod
     def bounded_instruction(cls, value):
-        return text(value, 4096)
+        return text(value, 16384)
 
 
 class WorkReconciliation(StrictModel):

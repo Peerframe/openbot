@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ApiError } from "./api";
+import type { NativeTaskScopeInput } from "./native-task-api";
 
 // Public projection from Python work_models.py; engine history is never client authority.
 const reconciliation = z.object({
@@ -75,6 +76,7 @@ export interface CreateWorkInput {
   objective: string;
   tokenLimit: number;
   requestKey: string;
+  scope?: NativeTaskScopeInput;
 }
 
 async function request(path: string, signal: AbortSignal, body?: object): Promise<unknown> {
@@ -99,7 +101,22 @@ async function request(path: string, signal: AbortSignal, body?: object): Promis
 export async function listWorkBots(signal: AbortSignal) {
   const result = await request("/api/v1/bots", signal);
   return z
-    .object({ bots: z.array(z.object({ id: z.string().min(1), name: z.string() })) })
+    .object({
+      bots: z.array(
+        z.object({
+          id: z.string().min(1),
+          name: z.string(),
+          computerProfile: z.enum([
+            "none",
+            "model",
+            "docker-linux",
+            "macos-cua",
+            "lume-vm",
+            "coder",
+          ]),
+        }),
+      ),
+    })
     .parse(result).bots;
 }
 export async function createWorkTask(input: CreateWorkInput, signal: AbortSignal) {

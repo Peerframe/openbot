@@ -48,6 +48,26 @@ def reference(run_id):
     return 'temporal:' + NAMESPACE + ':openbot-work-v1-' + run_id
 
 
+def test_accepted_binding_reuses_the_callers_locked_transaction(fixture):
+    from openbot_server.work_engine_binding import assert_accepted_workflow_in_transaction
+    async def check():
+        store = PostgresWorkStore(fixture['dsn'])
+        task = await new(fixture, store)
+        run = task['runs'][0]['id']
+        attempt = await acknowledge(fixture,store,task,reference(run))
+        identity = dict(taskId=task['id'],runId=run)
+        async with asyncio.timeout(3), store._transaction(trusted=True) as db:
+            await store._task(db,task['id'])
+            accepted = await assert_accepted_workflow_in_transaction(store,db,identity,
+                facts(task['id'],run,attempt),**settings())
+            assert accepted.run_id == run
+            with pytest.raises(WorkConflict,match='handoff_attempt_changed'):
+                await assert_accepted_workflow_in_transaction(store,db,identity,
+                    facts(task['id'],run,OTHER_ATTEMPT_ID),**settings())
+        assert recorded(fixture,task)[3] == 3
+    asyncio.run(check())
+
+
 def recorded(fixture, task):
     with psycopg.connect(fixture['dsn']) as db:
         return db.execute(

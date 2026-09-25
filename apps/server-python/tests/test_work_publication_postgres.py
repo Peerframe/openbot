@@ -1,6 +1,6 @@
 """Publication authority with owned PostgreSQL, real private files and an actual HTTP process."""
 import asyncio
-from contextlib import contextmanager
+from contextlib import contextmanager, asynccontextmanager
 import hashlib
 import os
 from pathlib import Path
@@ -46,6 +46,37 @@ async def publish(fixture,store,task,fence,**changes):
               artifacts=[artifact()],verification=proof())
     args.update(changes)
     return await store.complete(task['id'],task['runs'][0]['id'],**args)
+
+
+@pytest.mark.parametrize('failure', ['before', 'after', 'expired', None])
+def test_trusted_publication_hook_shares_terminal_transaction_and_final_fence(fixture,tmp_path,failure):
+    async def check():
+        store=service(fixture,tmp_path);task,fence=await task_and_claim(fixture,store)
+        visits=[]
+        @asynccontextmanager
+        async def hook(db):
+            before=await (await db.execute('SELECT status FROM work_tasks WHERE id=%s',(task['id'],))).fetchone()
+            visits.append(before['status'])
+            if failure=='before': raise WorkConflict('hook_refused')
+            yield
+            after=await (await db.execute('SELECT status FROM work_tasks WHERE id=%s',(task['id'],))).fetchone()
+            visits.append(after['status'])
+            if failure=='after': raise WorkConflict('hook_refused')
+            if failure=='expired':
+                await db.execute("UPDATE work_claims SET expires_at=clock_timestamp()-interval '1 second' "
+                                 'WHERE run_id=%s',(fence.run_id,))
+        if failure:
+            with pytest.raises(WorkConflict): await publish(fixture,store,task,fence,publication=hook)
+            snap=await store.snapshot(fixture['token'],task['id'])
+            assert snap['status']=='open' and snap['artifacts']==[]
+            assert not any(event['kind']=='task.completed' for event in snap['events'])
+        else:
+            result=await publish(fixture,store,task,fence,publication=hook)
+            assert result['status']=='completed' and visits==['open','completed']
+            # Lost acknowledgement reads back the original completion, without running hooks again.
+            assert (await publish(fixture,store,task,fence,publication=hook))==result
+            assert visits==['open','completed']
+    asyncio.run(check())
 
 
 def test_new_attempt_fences_stale_proposal_admission_and_publication(fixture,tmp_path):

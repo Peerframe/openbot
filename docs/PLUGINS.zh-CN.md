@@ -40,7 +40,7 @@ SKILL.md 提供工作指令，MCP 插件提供工具、资源、提示词和隔�
 源码目录完成 `npm ci` 后启动独立 MCP 服务：
 
 ```sh
-npx tsx apps/server/src/plugin-example.ts
+npx tsx packages/mcp-example/src/plugin-example.ts
 ```
 
 在 OpenBot **服务电脑** 明确配置开发地址并重启：
@@ -48,6 +48,14 @@ npx tsx apps/server/src/plugin-example.ts
 ```dotenv
 OPENBOT_PLUGIN_LOCAL_ENDPOINTS=http://127.0.0.1:4318/mcp
 ```
+
+显式 Python product 入口使用独立的 JSON 数组配置：
+
+```dotenv
+OPENBOT_CONTROL_PLUGIN_LOCAL_ENDPOINTS=["http://127.0.0.1:4318/mcp"]
+```
+
+两个变量不会自动互相映射；按实际选用的 Server 入口配置。
 
 如果由 Desktop 托管本地 Server，应在应用启动环境中设置后重新打开应用。localhost 指服务电脑，不是远程客户端。
 只允许完整名单内的字面 `127.0.0.1` / `::1` 本机地址；外部服务要求公开 HTTPS，所有 DNS 结果必须为公网 IP。
@@ -67,7 +75,7 @@ OPENBOT_PLUGIN_LOCAL_ENDPOINTS=http://127.0.0.1:4318/mcp
 ```
 
 批准前不会写入，批准后只追加一次；其他未授权员工不能调用。笔记是示例服务真实的内存状态，重启清空，
-不涉及第三方账户或本地文档。参考[示例源码](../apps/server/src/plugin-example.ts)。
+不涉及第三方账户或本地文档。参考[示例源码](../packages/mcp-example/src/plugin-example.ts)。
 
 ## 作者契约
 

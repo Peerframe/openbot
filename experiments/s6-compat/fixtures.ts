@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createDatabase } from "@openbot/db";
 import type { Run } from "@openbot/domain";
-import { startExamplePlugin } from "../../apps/server/src/plugin-example.js";
+import { startExamplePlugin } from "../../packages/mcp-example/src/plugin-example.js";
 import { PluginService } from "../../apps/server/src/plugin-service.js";
 import { FilePluginStore } from "../../apps/server/src/plugin-store.js";
 import type { InstalledPlugin } from "../../apps/server/src/plugin-types.js";

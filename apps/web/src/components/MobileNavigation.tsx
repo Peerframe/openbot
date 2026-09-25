@@ -17,6 +17,7 @@ export function MobileNavigation({
   onCreateBot,
   onCreateChannel,
   onManageNodes,
+  onManageModels,
   onSelectChannel,
   onSelectBot,
 }: {
@@ -30,6 +31,7 @@ export function MobileNavigation({
   onCreateBot(): void;
   onCreateChannel(): void;
   onManageNodes(): void;
+  onManageModels?: (() => void) | undefined;
   onSelectChannel(channelId: string): void;
   onSelectBot(botId: string): void;
 }) {
@@ -72,6 +74,11 @@ export function MobileNavigation({
                 <PlusIcon />
                 创建 Bot
               </button>
+              {onManageModels ? (
+                <button className="mobile-create" type="button" onClick={onManageModels}>
+                  模型服务
+                </button>
+              ) : null}
               {bots.map((bot) => {
                 const run = activeRunByBot.get(bot.id);
                 return (

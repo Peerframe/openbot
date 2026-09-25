@@ -4,11 +4,22 @@ import { fileURLToPath } from "node:url";
 import { collectProductionPackageGraph } from "../../../scripts/node-linux-release.mjs";
 
 import { nativeOptionalPackageApplies } from "./native-runtime-policy.mjs";
-import { stageWindowsPostgres } from "./windows-postgres-runtime.mjs";
 import { buildPostgresSupervisor } from "./postgres-supervisor-build.mjs";
+import { pythonCandidateGraph, stagePythonProduct } from "./python-runtime.mjs";
+import { stageWindowsPostgres } from "./windows-postgres-runtime.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-const output = join(root, "apps/desktop/native-runtime");
+const args = process.argv.slice(2);
+if (args.length > 1 || (args.length === 1 && args[0] !== "--python-product"))
+  throw new Error("Native runtime preparation accepts only --python-product.");
+const pythonProduct = args[0] === "--python-product";
+if (pythonProduct && (process.platform !== "darwin" || process.arch !== "arm64"))
+  throw new Error("Python product candidate supports only macOS arm64.");
+const output = join(
+  root,
+  "apps/desktop",
+  pythonProduct ? "out/python-product-runtime" : "native-runtime",
+);
 if (
   !(
     (process.platform === "darwin" && ["arm64", "x64"].includes(process.arch)) ||
@@ -19,7 +30,9 @@ if (
   process.exit(0);
 }
 const lock = JSON.parse(await readFile(join(root, "package-lock.json"), "utf8"));
-const graph = collectProductionPackageGraph(lock, "apps/server");
+const graph = pythonProduct
+  ? pythonCandidateGraph(lock)
+  : collectProductionPackageGraph(lock, "apps/server");
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await cp(join(root, "LICENSE"), join(output, "LICENSE"));
@@ -93,6 +106,7 @@ if (process.platform === "win32") {
     }
   }
 }
-await readFile(join(output, "apps/server/dist/index.js"));
+if (pythonProduct) await stagePythonProduct(root, output);
+else await readFile(join(output, "apps/server/dist/index.js"));
 await readdir(join(output, "postgres/bin"));
 console.log("Staged app-owned native Server runtime; no services started.");

@@ -1,0 +1,15 @@
+{
+  "name": "@openbot/python-node-runtime",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Locked Node dependencies for Python document parsing and retained database migrations.",
+  "license": "MIT",
+  "dependencies": {
+    "@openbot/db": "0.0.0",
+    "@tesseract.js-data/chi_sim": "1.0.0",
+    "@tesseract.js-data/eng": "1.0.0",
+    "officeparser": "7.8.0",
+    "pdfjs-dist": "6.3.289",
+    "tesseract.js": "7.0.0"
+  }
+}

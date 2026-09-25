@@ -7,7 +7,7 @@ import inspect
 
 from temporalio import activity
 from .work_deferred_values import parse_proposal
-from .work_effects import execute_action, recover_action
+from .work_effects import EffectOutcome, execute_action, recover_action
 from .work_reconciliation import ReconciliationStore
 from .work_runtime_ports import WorkRuntimeDeps
 from .work_temporal_activity import _bind_activity_identity, _claim_bound_activity, bind_failed_activity
@@ -22,12 +22,17 @@ class DeferredPlan:
     reserved_tokens: int
     requires_approval: bool = True
     expires_seconds: int = 300
+    prepared_arguments: dict | None = None
 
 
 @dataclass(frozen=True)
 class EffectServices:
     adapter: object
     verifier: object
+    # Trusted composition only: some effects must prepare resources before Work admission.
+    # The callback retains that original gate; it is never selected from a tool payload.
+    execute: object = None
+    claim_seconds: int = 60
 
 
 def operation_key(accepted, activity_id):
@@ -45,11 +50,22 @@ async def call(callback, *args):
 
 
 class DeferredActivities:
-    def __init__(self, host, plan_effect, load_effect):
+    def __init__(self, host, plan_effect, load_effect, *, readiness=None):
         if not callable(plan_effect) or not callable(load_effect):
             raise InvalidWork('effect_callbacks_required')
         self.host, self.plan_effect, self.load_effect = host, plan_effect, load_effect
         self.store, self.client, self.scope = host.store, host.client, host.scope
+        if readiness is not None and not callable(readiness):
+            raise InvalidWork('invalid_effect_readiness')
+        self.readiness=readiness
+
+    async def _ready(self, context, row):
+        if self.readiness is None:return True
+        if row.get('correction_context_id') is not None:
+            context=replace(context,correction_token=row['correction_context_id'])
+        state=await call(self.readiness,context,deepcopy(row))
+        if state not in ('ready','pending'):raise InvalidWork('invalid_effect_readiness_result')
+        return state=='ready'
 
     async def _context(self):
         return await load_current_activity_task(self.store, self.client, **self.scope)
@@ -63,7 +79,8 @@ class DeferredActivities:
                 raise WorkConflict('effect_scope_changed')
             intent = row['intent']
             if (not row['action_key'].startswith('tool-activity-v1-') or type(intent) is not dict
-                    or set(intent) != {'kind','tool','arguments','effect'}
+                    or set(intent) not in ({'kind','tool','arguments','effect'},
+                                          {'kind','tool','arguments','effect','proposalSha256'})
                     or intent['kind'] != 'deferred_tool' or canonical(intent)[1] != row['intent_digest']):
                 raise WorkConflict('deferred_record_invalid')
             return deepcopy(row)
@@ -75,7 +92,9 @@ class DeferredActivities:
         services = await call(self.load_effect, context, deepcopy(row['intent']))
         if (type(services) is not EffectServices or not callable(getattr(services.adapter, 'apply', None))
                 or not callable(getattr(services.adapter, 'lookup', None))
-                or not callable(getattr(services.verifier, 'verify', None))):
+                or not callable(getattr(services.verifier, 'verify', None))
+                or services.execute is not None and not callable(services.execute)
+                or type(services.claim_seconds) is not int or not 1 <= services.claim_seconds <= 300):
             raise InvalidWork('invalid_effect_services')
         return services
 
@@ -84,7 +103,9 @@ class DeferredActivities:
         return await self.prepare_request(proposal)
 
     async def prepare_request(self, proposal, correction_context=None):
-        request = parse_proposal(proposal)
+        large = getattr(self.host,'large_tool_arguments',False)
+        request = parse_proposal(proposal,large_arguments=large)
+        request_digest = canonical(request['arguments'],max_bytes=65536 if large else 16384)[1]
         accepted, activity_id = await _bind_activity_identity(self.store, self.client, **self.scope)
         key = operation_key(accepted, activity_id)
         context = await self._context()
@@ -99,18 +120,23 @@ class DeferredActivities:
             original = await self._read(context, row['id'])
             if (original.get('correction_context_id') != correction_context
                     or original['intent']['tool'] != request['tool']
-                    or canonical(original['intent']['arguments'])[1] != canonical(request['arguments'])[1]):
+                    or original['intent'].get('proposalSha256',canonical(original['intent']['arguments'])[1]) != request_digest):
                 raise WorkConflict('action_content_changed')
             return row['id']
         catalog = await self.host.ports.deferred_catalog(WorkRuntimeDeps(context.task_id, context.run_id, correction_context))
         arguments = catalog.validate_arguments(request['tool'], request['arguments'])
-        plan = await call(self.plan_effect, context, ToolRequest(request['tool'], deepcopy(arguments), canonical(arguments)[1]))
+        plan = await call(self.plan_effect, context, ToolRequest(request['tool'], deepcopy(arguments), request_digest))
         if (type(plan) is not DeferredPlan or type(plan.intent) is not dict
                 or type(plan.requires_approval) is not bool or type(plan.expires_seconds) is not int
                 or not 1 <= plan.expires_seconds <= 3600):
             raise InvalidWork('invalid_deferred_plan')
         tokens(plan.reserved_tokens)
         intent = deepcopy(dict(kind='deferred_tool', tool=request['tool'], arguments=arguments, effect=plan.intent))
+        if plan.prepared_arguments is not None:
+            if not large or type(plan.prepared_arguments) is not dict:
+                raise InvalidWork('prepared_arguments_profile_required')
+            intent['arguments'] = deepcopy(plan.prepared_arguments)
+            intent['proposalSha256'] = request_digest
         canonical(intent)
         fence = await _claim_bound_activity(self.store, accepted, activity_id)
         return await self.store.propose(context.task_id, context.run_id, fence=fence, action_key=key,
@@ -125,10 +151,34 @@ class DeferredActivities:
         state = row['status']
         if state == 'proposed':
             state = 'denied' if row['decision']=='denied' else 'expired' if not row['unexpired'] else row['decision']
+            if state in ('approved','not_required') and not await self._ready(context,row):
+                state='pending'
         async with self.store._transaction(trusted=True) as db:
             command = await (await db.execute('SELECT id FROM work_reconciliation_commands '
                 'WHERE action_id=%s AND finished_at IS NULL ORDER BY sequence LIMIT 1', (action_id,))).fetchone()
         return dict(actionId=action_id, status=state, commandId=command['id'] if command else None)
+
+    @activity.defn(name='openbot.tool_result.v1')
+    async def result(self, action_id: str) -> dict:
+        from .work_tool_results import encode_result, decode_result
+        context = await self._context()
+        row = await self._read(context, action_id)
+        if row['status'] != 'applied' or self.host.load_tool_result is None:
+            raise WorkConflict('tool_result_not_available')
+        if row.get('correction_context_id') is not None:
+            context = replace(context, correction_token=row['correction_context_id'])
+        # The trusted reader must revalidate content-specific permissions. A historically
+        # applied Action does not make revoked knowledge available to another model turn.
+        value = await call(self.host.load_tool_result, context, deepcopy(row))
+        data, _ = encode_result(value)
+        # Rebind after I/O and refuse authority loss, including a concurrent cancellation.
+        current = await self._context()
+        if (current.task_id, current.run_id) != (context.task_id, context.run_id):
+            raise WorkConflict('effect_scope_changed')
+        fresh = await self._read(current, action_id)
+        if fresh['status'] != 'applied' or fresh['intent_digest'] != row['intent_digest']:
+            raise WorkConflict('tool_result_changed')
+        return dict(actionId=action_id, status='applied', result=decode_result(data))
 
     @activity.defn(name='openbot.execute_tool.v1')
     async def execute(self, action_id: str) -> dict:
@@ -138,18 +188,30 @@ class DeferredActivities:
             return dict(actionId=action_id, status=row['status'])
         if row['status'] == 'proposed' and (not row['unexpired'] or row['decision'] not in ('approved','not_required')):
             raise WorkConflict('action_not_authorized')
+        if row['status']=='proposed' and not await self._ready(context,row):
+            return dict(actionId=action_id,status='pending')
         services = await self._services(context, row)
         if row['status'] in ('admitted','unknown'):
             outcome = await recover_action(self.store, task_id=context.task_id, run_id=context.run_id,
                 action_id=action_id, adapter=services.adapter, verifier=services.verifier)
         else:
             accepted, activity_id = await _bind_activity_identity(self.store, self.client, **self.scope)
-            fence = await _claim_bound_activity(self.store, accepted, activity_id)
-            outcome = await execute_action(self.store, task_id=context.task_id, run_id=context.run_id,
-                fence=fence, action_key=row['action_key'], intent=row['intent'],
-                reserved_tokens=row['reserved_tokens'], requires_approval=row['requires_approval'],
-                adapter=services.adapter, verifier=services.verifier,
-                correction_context=row.get("correction_context_id"))
+            fence = await _claim_bound_activity(self.store, accepted, activity_id,
+                                                 expires_seconds=services.claim_seconds)
+            if services.execute is not None:
+                outcome = await services.execute(action_id, fence)
+                current = await self._read(context, action_id)
+                if (type(outcome) is not EffectOutcome or outcome.action_id != action_id
+                        or outcome.status != current['status']
+                        or outcome.status not in ('admitted','unknown','applied','not_applied')
+                        or current['intent_digest'] != row['intent_digest']):
+                    raise WorkConflict('effect_execution_mismatch')
+            else:
+                outcome = await execute_action(self.store, task_id=context.task_id, run_id=context.run_id,
+                    fence=fence, action_key=row['action_key'], intent=row['intent'],
+                    reserved_tokens=row['reserved_tokens'], requires_approval=row['requires_approval'],
+                    adapter=services.adapter, verifier=services.verifier,
+                    correction_context=row.get("correction_context_id"))
         return dict(actionId=action_id, status=outcome.status)
 
     @activity.defn(name='openbot.reconcile_tool.v1')
@@ -207,6 +269,8 @@ class DeferredActivities:
                     'expired' if row['status']=='proposed' and not row['unexpired'] else None)
                 if reason is None: raise WorkConflict('terminal_refusal_required')
                 # A verified refusal closes execution; unresolved budgets/facts are retained.
+                from .work_collaboration import cascade
+                await cascade(db,self.store,context.task_id,reason='failed',include_self=False)
                 await db.execute("UPDATE work_tasks SET status='failed',authority_active=false,"
                     'authority_generation=authority_generation+1 WHERE id=%s',(context.task_id,))
                 await db.execute("UPDATE work_runs SET status='failed' WHERE task_id=%s AND status IN ('queued','running')",

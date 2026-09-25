@@ -10,8 +10,10 @@
       "!**/coverage",
       "!**/node_modules",
       "!**/.venv",
+      "!**/.worker-venv",
       "!package-lock.json",
-      "!apps/web/dist-demo"
+      "!apps/web/dist-demo",
+      "!tests/oracles/legacy-server/src"
     ]
   },
   "formatter": {

@@ -160,9 +160,13 @@ def test_latest_fifty_runs_preserve_nullable_usage_and_refuse_oversize_text(fixt
         assert rows[0]["modelUsage"]["inputTokens"] is None and rows[0]["modelUsage"]["outputTokens"] == 2
         with psycopg.connect(fixture["dsn"]) as connection:
             connection.execute("UPDATE runs SET instruction=repeat('x',4194305) WHERE id=%s",(latest.id,))
-        assert client.get(f"/api/v1/channels/{channel.id}/runs").status_code == 503
-        with psycopg.connect(fixture["dsn"]) as connection:
-            assert connection.execute("SELECT octet_length(instruction) FROM runs WHERE id=%s",(latest.id,)).fetchone() == (4194305,)
+        try:
+            assert client.get(f"/api/v1/channels/{channel.id}/runs").status_code == 503
+            with psycopg.connect(fixture["dsn"]) as connection:
+                assert connection.execute("SELECT octet_length(instruction) FROM runs WHERE id=%s",(latest.id,)).fetchone() == (4194305,)
+        finally:
+            with psycopg.connect(fixture["dsn"]) as connection:
+                connection.execute('UPDATE runs SET instruction=%s WHERE id=%s', (latest.instruction,latest.id))
 
 
 def test_explicit_task_process_commits_and_lists_over_real_http(fixture):

@@ -36,3 +36,15 @@ class ProductDeferredTests(unittest.IsolatedAsyncioTestCase):
         self.assertIs(initial.kwargs['usage'],resumed.kwargs['usage'])
         self.assertEqual(resumed.kwargs['message_history'],['original-message-history'])
         self.assertEqual(resumed.kwargs['deferred_tool_results'].calls,{'call':dict(actionId='action',status='applied')})
+
+    async def test_opt_in_received_content_reaches_next_model_turn(self):
+        first=SimpleNamespace(output=DeferredToolRequests(calls=[ToolCallPart('read',{},tool_call_id='call')]),
+                              all_messages=lambda:['original-history'])
+        run=AsyncMock(side_effect=[first,SimpleNamespace(output='checked')])
+        content=dict(actionId='action',status='applied',result={'actual':'received content'})
+        execute=AsyncMock(side_effect=[dict(taskId='t',runId='r',objective='task',toolResultProtocol=1),
+            'action',dict(status='applied'),content,dict(status='completed')])
+        with patch.object(worker.workflow,'execute_activity',execute),patch.object(worker,'agent',SimpleNamespace(run=run)):
+            await worker.OpenBotWork().run({})
+        self.assertEqual(execute.await_args_list[3].args,('openbot.tool_result.v1','action'))
+        self.assertEqual(run.await_args_list[1].kwargs['deferred_tool_results'].calls,{'call':content})

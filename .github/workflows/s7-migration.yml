@@ -24,7 +24,7 @@ jobs:
       - name: Verify sealed historical SQL and current target pin
         run: node experiments/s7-migration/sources.mjs
       - name: Build the existing migration guard and artifact reader
-        run: npm exec -- turbo run build --filter=@openbot/server
+        run: npm run oracle:build
       - name: Check cleanup after unknown container startup
         run: node --test experiments/s7-migration/cleanup.test.mjs
       - name: Qualify both synthetic histories and paired restores

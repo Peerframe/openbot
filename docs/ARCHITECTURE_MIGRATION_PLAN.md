@@ -1,5 +1,63 @@
 # Architecture migration delivery plan
 
+> Update 2026-09-25: the Owner supplied a VPS and authorized testing, completion of remaining migration and dsh assistance. The prior no-Linux-host constraint is superseded. Follow the current handoff for native Tasks, active restore, terminal reconciliation and isolated Linux qualification; preserve existing VPS services.
+
+> Delivery update, 2026-09-25: publish the integrated candidate as a GitHub draft first, then
+> execute the approved product2 and browser CDP qualification packets and the local Python
+> container checkpoint. Production/default cutover and merging remain outside this authorization.
+> Kimi remains an existing connection used for model verification, not a new report product.
+
+## Design-review alignment — 2026-09-25
+
+The Owner confirmed the separate **2026-09-24 OpenBot design review v2** as the architecture
+reference. Its DSH review pins `46a7f68b0922371ce7144b668b90e377d8e799f4`; its ZCode review pins
+`29628c9acdb81b703bbd4080c207a0e7ce5e276e`. This is alignment with existing research, not a new
+upstream qualification or copied implementation.
+
+- Keep the monorepo and distinguish contracts, implementations, consumers and application
+  composition. The [workspace map](REPOSITORY.md) identifies the current Python candidate and
+  retained TypeScript clients, providers and developer tools.
+- Preserve Server-owned identity, routing, authorization, approval and audit; Runtime, Node and
+  plugins do not gain that authority. Existing work contracts and Temporal ADR 0046 already
+  implement the review's identity and recovery direction. Do not reopen the superseded DBOS
+  comparison or introduce a second recovery owner.
+- Include current module ownership and factual documentation corrections in this draft. Retain
+  compatibility, real-entry, artifact and failure evidence at its tested scope. The frozen oracle
+  gate checks product/oracle separation; it does not claim general dependency-graph enforcement.
+- After the draft, qualify remaining Linux execution and container paths. Broader dependency
+  analysis needs its own tool comparison and negative cases. Full directory/package reorganization,
+  a unified visual specification, plugin marketplaces and further agent protocols are follow-up
+  work, not additional prerequisites for this migration draft.
+
+## Current integration batches
+
+| Batch | Remaining old responsibility -> Python replacement | Dependency and retirement gate |
+| --- | --- | --- |
+| Owner product control | TS model settings; workspace/profile; knowledge/skills; schedules; conversations/files -> Python services in `apps/server-python`, existing React DTOs | Preserve source semantics, authorization and assets; integrate modules into the real entry as they arrive. Root owns routes/files; isolated module owners implement model, knowledge, conversations/schedules. |
+| Execution and clients | TS native business loop/dispatch; Worker/MCP/browser/model-connection contracts -> existing Python Runtime + Temporal and trusted services | Reuse accepted S3 and existing S4–S6 sources; no synthetic service in the product composition. Web/Desktop connect to the same Python API. Missing execution/isolation remains an explicit gate. |
+| Compatibility and retirement | Old build/install/runtime selection and redundant native hosts -> qualified Python product and thin TS clients | Reuse S7 synthetic lineage/restore work; verify complete retained journey and candidate packages, then remove replaced implementations from main build/CI/release with recovery references. |
+
+One integrated repository and runnable candidate are the deliverable. Development checks cover
+changed behavior; batch contracts and final package/journey checks are consolidated. No completed
+module alone claims migration completion. The Owner supplied the Linux x86-64 VPS on2026-09-25; isolated command/resource and four native
+lifetime cases now pass. Product authority and browser qualification remain active work. `482bdc5` is the recovery baseline. The original five
+model-service preparation files are now extended by locally verified generic modules; report-only
+drafts are preserved outside the product tree. Local Python product wiring and the opt-in macOS
+arm64 package are integrated: one configured Temporal Worker handles native model Tasks and
+channel work, durable corrections, media, scoped tools, collaboration and final publication.
+Actual synthetic HTTP/PostgreSQL/mTLS journeys and packaged connection/lifecycle checks are
+recorded in the current handoff. Canonical43 legacy migration/restore and canonical42 active paired
+SQL/file restore are qualified within their documented fixture scope. Actual native Keychain/GUI
+restart and one real Kimi Task also passed. Command v2 authority/frames/default-off relay are already
+integrated in this worktree. The remaining delivery checkpoints are the full Linux command chain,
+actual Chromium/browser takeover, and a rebuilt latest candidate with affected regressions.
+Only after those checkpoints may the replaced TS business Server leave the main build/CI/release;
+retain the recovery commit and the TS Node/Provider drivers required by the new architecture.
+Signed/installed distribution, production data conversion and default-backend activation remain
+separately authorized gates. No unqualified path is enabled to declare local completion.
+The older stage sequence below is historical context; the current batches and short handoff govern work.
+
+
 > Execution boundary updated 2026-09-24: renewed user approval resumes S3 with independent
 > S2 client, existing S4 executor and existing S5 selection work. S6/S7 have no new assignment.
 > Integrate only independently accepted changes; no default switch, production migration or release.

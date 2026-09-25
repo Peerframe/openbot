@@ -11,6 +11,16 @@ authenticated Owner may then activate the exact reviewed digest as a fresh local
 skill remains a disabled candidate. Activation cannot copy memory, bind a Worker Host, or grant
 authority.
 
+The offline CLI lives in `packages/employee-publisher`; it neither starts nor imports the old
+TypeScript Server or a test oracle. After the repository's normal locked `npm ci`, build its
+shared contracts once with `npm exec -- turbo run build --filter=@openbot/employee-publisher`.
+
+The root command still loads the root `.env`. For compatibility, relative publisher flags
+(`--keyring`, `--passphrase-file`, `--public-key`, `--output`) and
+`OPENBOT_EMPLOYEE_PUBLISHER_*` paths retain their previous `apps/server` base, even when that
+directory no longer exists. Prefer absolute paths for a new installation. For example, the
+`./data` paths below refer to `<checkout>/apps/server/data`, not `<checkout>/data`.
+
 ## Initialize the local publisher
 
 Choose two different protected locations: one for the keyring and one for its passphrase.
@@ -29,6 +39,19 @@ material. Configure both paths and restart the Server:
 OPENBOT_EMPLOYEE_PUBLISHER_KEYRING_PATH=./data/employee-publisher
 OPENBOT_EMPLOYEE_PUBLISHER_PASSPHRASE_FILE=./data/employee-publisher-secret/passphrase
 ```
+
+Those two variables configure the CLI and the legacy Server. The Python product entry point
+uses a separate explicit pair; set them to the **same absolute paths** selected above:
+
+```dotenv
+OPENBOT_CONTROL_PUBLISHER_DIRECTORY=/absolute/protected/employee-publisher
+OPENBOT_CONTROL_PUBLISHER_PASSPHRASE_FILE=/absolute/protected/employee-publisher-secret/passphrase
+```
+
+Both Python variables are required together. They are not implicit aliases of the CLI
+variables, and Python does not inherit the launcher's historical relative-path base. Restart
+the selected Server after key or trust changes. The existing encrypted keyring, public trust
+manifest and DSSE format are unchanged. See [relocation research](research/retained-developer-tools.md).
 
 An explicitly configured but unreadable, loosely permissioned, symlinked, malformed, or mismatched
 keyring stops Server startup. OpenBot does not silently fall back to unsigned export.

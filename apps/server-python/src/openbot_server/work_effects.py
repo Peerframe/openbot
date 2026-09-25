@@ -217,7 +217,8 @@ async def _settle(store, *, task_id, run_id, action_id, intent, intent_digest, a
 
 
 async def execute_action(store, *, task_id, run_id, fence, action_key, intent, reserved_tokens,
-                         requires_approval, adapter, verifier, expires_seconds=300, correction_context=None):
+                         requires_approval, adapter, verifier, expires_seconds=300, correction_context=None,
+                         admission_check=None):
     """Execute at most one external effect for the immutable Action identified by ``action_key``.
 
     ``propose``/``admit`` remain the only new-effect gate, so this function performs the external
@@ -242,7 +243,8 @@ async def execute_action(store, *, task_id, run_id, fence, action_key, intent, r
                                     requires_approval=requires_approval,
                                     expires_seconds=expires_seconds,
                                     **({"correction_context": correction_context} if correction_context is not None else {}))
-    admitted = await store.admit(action_id, fence=fence)
+    admitted = await store.admit(action_id, fence=fence,
+        **({'admission_check': admission_check} if admission_check is not None else {}))
     return await _settle(store, task_id=task_id, run_id=run_id, action_id=action_id,
                          intent=immutable_intent, intent_digest=digest, adapter=adapter,
                          verifier=verifier, invoke_apply=admitted)

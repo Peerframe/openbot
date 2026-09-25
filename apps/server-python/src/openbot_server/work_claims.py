@@ -14,12 +14,18 @@ async def check_fence(connection, run_id, fence):
     if (not isinstance(fence, WorkFence) or fence.run_id != run_id or
             type(fence.epoch) is not int or not 1 <= fence.epoch <= 10000):
         raise WorkConflict('execution_claim_required')
-    cursor = await connection.execute('SELECT r.execution_epoch,c.epoch,c.expires_at>clock_timestamp() AS live '
+    cursor = await connection.execute('SELECT r.task_id,r.execution_epoch,c.epoch,c.expires_at>clock_timestamp() AS live '
         'FROM work_runs r JOIN work_claims c ON c.run_id=r.id WHERE r.id=%s AND c.claim_id=%s',
         (run_id, fence.claim_id))
     row = await cursor.fetchone()
     if row is None or not row['live'] or row['epoch'] != fence.epoch or row['execution_epoch'] != fence.epoch:
         raise WorkConflict('execution_claim_stale')
+    # A live attempt cannot extend the tree's fixed deadline across awaited I/O.
+    # All admission/publication callers already hold the canonical source/Task locks.
+    # Initial authority checks hold ancestor locks throughout the transaction. Completion's
+    # final fence follows its own terminal write, so only time is rechecked at this boundary.
+    from .work_collaboration import lock_task, check_deadline
+    await check_deadline(connection, await lock_task(connection, row['task_id'], read=True))
 
 
 async def claim(store, task_id, run_id, claim_id, *, expires_seconds=60):

@@ -246,6 +246,62 @@
       "when": 1790208000004,
       "tag": "0034_work_corrections",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1790208000005,
+      "tag": "0035_model_connections",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1790208000006,
+      "tag": "0036_work_sources",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1790208000007,
+      "tag": "0037_work_tool_results",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1790208000008,
+      "tag": "0038_work_task_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1790208000009,
+      "tag": "0039_work_collaboration",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1790208000010,
+      "tag": "0040_native_task_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1790208000011,
+      "tag": "0041_work_command_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1790208000012,
+      "tag": "0042_work_command_preparations",
+      "breakpoints": true
     }
   ]
 }

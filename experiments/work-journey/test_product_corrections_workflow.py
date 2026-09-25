@@ -17,6 +17,29 @@ def answer(value):return SimpleNamespace(output=value,all_messages=lambda:['reta
 def stale():return ApplicationError('corrections_changed',type='CorrectionsChanged',non_retryable=True)
 
 class CorrectionWorkflowTests(IsolatedAsyncioTestCase):
+    async def test_product_correction_discards_knowledge_and_model_copies_but_keeps_action_facts(self):
+        prior=dict(actionId='observed-write',tool='call_plugin',status='applied')
+        agent=SimpleNamespace(run=AsyncMock(side_effect=[answer('old private knowledge'),answer('new result')]))
+        execute=AsyncMock(side_effect=[FROZEN,stale(),dict(NEW,priorActions=[prior]),dict(status='completed')])
+        with patch.object(module.workflow,'execute_activity',execute):
+            assert await module.run_corrected(dict(CTX,correctionHistoryProtocol=1,prompt='Server role and work'),{},agent,{})==dict(status='completed')
+        first,second=agent.run.await_args_list
+        assert first.args[0]=='Server role and work'
+        assert second.kwargs['message_history']==[] and second.kwargs['deferred_tool_results'] is None
+        assert 'Server role and work' in second.args[0] and 'Corrected instruction' in second.args[0]
+        assert 'observed-write' in second.args[0] and 'applied' in second.args[0]
+        assert 'old private knowledge' not in second.args[0] and 'retained-history' not in second.args[0]
+        assert second.kwargs['usage'] is first.kwargs['usage']
+
+    async def test_product_correction_during_tool_result_redacts_before_resuming(self):
+        batch=DeferredToolRequests(calls=[ToolCallPart('read_employee_memory',{},tool_call_id='memory')])
+        agent=SimpleNamespace(run=AsyncMock(side_effect=[answer(batch),answer('new result')]))
+        execute=AsyncMock(side_effect=[FROZEN,'action',dict(status='applied'),stale(),NEW,dict(status='completed')])
+        with patch.object(module.workflow,'execute_activity',execute):
+            assert await module.run_corrected(dict(CTX,correctionHistoryProtocol=1,toolResultProtocol=1),{},agent,{})==dict(status='completed')
+        second=agent.run.await_args_list[1]
+        assert second.kwargs['message_history']==[] and second.kwargs['deferred_tool_results'] is None
+
     async def test_mixed_batch_is_paired_before_new_corrected_segment(self):
         batch=DeferredToolRequests(calls=[ToolCallPart('write',{},tool_call_id=str(i)) for i in range(4)])
         agent=SimpleNamespace(run=AsyncMock(side_effect=[answer(batch),answer('corrected result')]))

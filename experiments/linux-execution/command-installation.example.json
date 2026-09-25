@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "route": {
+    "nodeId": "qualified-node",
+    "providerId": "linux-command",
+    "enforcementKeyId": "enforcement-1",
+    "ledgerId": "00000000-0000-0000-0000-000000000001"
+  },
+  "policy": {
+    "id": "offline-command",
+    "image": "python@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "limits": {
+      "nanoCPUs": 500000000,
+      "memoryMiB": 128,
+      "pids": 64,
+      "nofile": 128,
+      "tmpMiB": 16,
+      "wallSeconds": 60,
+      "outputMiB": 16,
+      "capturedOutputKiB": 64
+    }
+  },
+  "timing": {
+    "prepareBudgetMs": 30000,
+    "challengeBudgetMs": 5000,
+    "runtimeMaxMs": 50000,
+    "stopAllowanceMs": 5000,
+    "clockRateErrorPpm": 1000,
+    "clockQuantizationMs": 100,
+    "policyDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "control": {
+    "issuer": "openbot-control",
+    "keyId": "control-1",
+    "privateKeyPath": "/absolute/private/control.pem"
+  },
+  "enforcement": {
+    "issuer": "openbot-enforcement",
+    "keyId": "enforcement-1",
+    "publicKeyPath": "/absolute/private/enforcement-public.pem"
+  }
+}

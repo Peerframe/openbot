@@ -1,0 +1,75 @@
+{
+  "rowHashesEqual": true,
+  "fileHashesEqual": true,
+  "tlsHashesEqual": true,
+  "negativeKeyCases": [
+    "model-missing",
+    "model-wrong",
+    "plugin-missing",
+    "plugin-wrong",
+    "connection-missing",
+    "connection-wrong"
+  ],
+  "incompleteSetHeld": true,
+  "controlTables": 46,
+  "controlRows": 110,
+  "engineTables": {
+    "temporal": 40,
+    "temporal_visibility": 3
+  },
+  "files": 13,
+  "tlsFiles": 36,
+  "controlDumpBytes": 161354,
+  "case": "active-paired-cold-restore",
+  "scope": "actual product Worker + HTTP/PG/mTLS Temporal; scripted ports, no live provider",
+  "originalWorkflowRunAction": true,
+  "restoredVisibility": true,
+  "ownerApprovalAfterRestore": true,
+  "unknownOnlyOriginalLookup": true,
+  "unknownReservationPreserved": true,
+  "cancelNotRevived": true,
+  "pendingHistoryReplay": "passed",
+  "terminalHistoryReplay": "passed",
+  "offlineReplaySideEffects": 0,
+  "originalHistoryPrefixPreserved": true,
+  "decodedPayloadsChecked": 106,
+  "noMediaOrCredentialsInHistory": true,
+  "canonicalMigrations": 43,
+  "externalBefore": [
+    {
+      "attempts": 1,
+      "writes": 0,
+      "lookups": 1
+    },
+    {
+      "attempts": 2,
+      "writes": 1,
+      "lookups": 2
+    },
+    {
+      "attempts": 1,
+      "writes": 0,
+      "lookups": 1
+    }
+  ],
+  "externalAfter": [
+    {
+      "attempts": 3,
+      "writes": 1,
+      "lookups": 3
+    },
+    {
+      "attempts": 3,
+      "writes": 1,
+      "lookups": 4
+    },
+    {
+      "attempts": 1,
+      "writes": 0,
+      "lookups": 1
+    }
+  ],
+  "runtimeSchemaAuthorityUnchanged": true,
+  "sourceAndDestinationExecutionNeverOverlap": true,
+  "elapsedSeconds": 64.18
+}

@@ -145,7 +145,7 @@ MIT/Apache 代码时，必须在 `THIRD_PARTY_NOTICES.md` 或对应 vendor 目�
 | Provider SDK 与当前 Docker 浏览器适配器 | 已审查 | 已记录 CopilotKit/OpenBot `agent-computer`、Cua、MCP conformance、OCI 和平台声明等级；原生 Provider 只能按证据宣称。 |
 | GitHub 贡献与 CI | 已审查 | 复用 Issue Form 和 RFC/KEP 证据结构；现有 checkout/setup Action 已固定到审查过的 commit，并关闭 checkout 凭证持久化。 |
 | PostgreSQL store 与 migration 生命周期 | 已审查 | 已固定 Drizzle/Postgres.js/PostgreSQL 行为；journal 与数据库历史出现漂移时 fail closed，真实 PostgreSQL CI 覆盖首次并发 migration 和重复启动。 |
-| PostgreSQL 与 Artifact 备份/恢复 | 部分 | 已选择原生 `pg_dump`/`pg_restore` 配合 Artifact 快照，并提供双语运维说明；定时、加密、保留、异地适配器和可重复完整恢复工具仍需专项上游审查。 |
+| PostgreSQL 与 Artifact 备份/恢复 | 部分 | 固定版本的原生 `pg_dump`/`pg_restore` 配合私有文件已有可重复的已完成产品恢复探针、真实读取／解密及密钥反例，见[审查](research/python-product-paired-restore.md)。活动引擎／在线完整恢复、定时、备份加密、保留和异地适配器仍在该夹具验收范围外。 |
 | 多 Server 调度与事件分发 | 部分 | [周期提交调研](research/server-automations.md)完成有界单 Server 固定时长计划这一部分，覆盖事务领取和普通 Run 提交。多个 Server 副本共享调度及事件分发仍需审查；当前继续保持单进程边界。 |
 | 办公室可视化插件 | 延期 | 只有公开产品图，没有找到可复用源码许可证，本版本不继续扩展。 |
 
@@ -461,3 +461,98 @@ server/sql-tool。CPython 标准库执行有界的精确成员提取，不新增
 限制传输并关闭 SDK 自动重试。版本、许可证、独立审查及实际 SDK/PostgreSQL/mTLS
 重启证据见[研究记录](research/work-model-ports.md)。未复制上游源码，未启用默认后端，
 不代表真实提供方或 Linux 隔离已验收。
+
+## Python 产品控制与本地集成（2026-09-25）
+
+产品迁移复用既有 FastAPI／Pydantic／Psycopg／PostgreSQL、Temporal1.33.0 与 Pydantic AI2.47.0，
+把原 OpenBot MIT 的设置、工作区、知识、定时、会话和附件模块按职责移入 Python，保持 React／Electron DTO。
+[PyYAML6.0.3 事件端口](research/python-skill-yaml.md)保留原 YAML1.2 字符串／映射语义。
+频道消息、Work 身份及待派发记录同事务提交，完成发布与 Bot 回复同事务写入；见
+[频道接入](research/work-channel-admission.md)与[产品组合](research/python-product-runtime.md)。
+
+插件复用 MCP1.29.0／jsonschema4.26.0（MIT），Worker 通道复用 websockets17.0.1（BSD-3-Clause）及已有认证边界；
+见[插件](research/python-plugins.md)、[版本依据](research/python-plugin-dependencies.md)及
+[Worker 通道](research/python-worker-host.md)。模型连接／界面改编自原 MIT feature 源
+`9cc73c9e78451e572f57d142d6b9caf62ccb78e2`，见[模型服务](research/python-model-services.md)和
+[客户端恢复](research/python-model-client-restoration.md)。没有复制外部实现。
+
+显式 Desktop 候选复用固定 standalone CPython、Node 和现有 PostgreSQL／迁移资源；见
+[版本与声明](research/desktop-python-product.md)、[复现说明](DESKTOP_PYTHON_CANDIDATE.zh-CN.md)。
+知识运行时保留 Hermes Agent 归因及版本回执，见[知识读取](research/python-work-knowledge-runtime.md)。
+[浏览器会话迁移](research/python-browser-sessions.md)沿用既有固定协议与 Server 权限；接管继续停用，
+本地模拟检查不证明真实 Linux/runsc、浏览器权限或登录状态已验收。
+
+[点击审核接管修复](research/browser-approval-handover.md)继续复用固定的
+agent-computer `257c1280d684089be9adb0b35cce262efc7064bf`（MIT）及既有 Server 审批契约。
+仅调整本地适配：等待审批时释放 Bot 队列，人工接管使旧 generation 失效，准备好的点击只能消费一次。
+无新依赖或上游源码复制；34 项专项模拟检查通过，真实浏览器和产品权限链路仍待验收。
+
+产品 Worker 复用已审查的持久 Action、私有媒体／工具观察与独立复核。见
+[读取工具](research/python-work-product-reads.md)、[报告复核](research/python-work-product-result.md)及
+[公开网页](research/python-work-product-web.md)。HTML 提取采用 Beautiful Soup4.15.0／Soup Sieve2.8.3（MIT），
+[精确哈希](research/python-work-web-pins.json)和包内声明完整保留。报告使用私有 blob 维持24KiB契约，
+不扩大 Action 上限；内容复核是可能出错的质量信号，不是外部业务效果证明。
+
+[原生 Task](research/python-work-task-profiles.md)、[协作](research/python-work-collaboration.md)、
+[失败收尾](research/python-work-failure.md)及[原媒体](research/work-product-media.md)继续复用同一固定栈：
+不可变非敏感模型快照、SQL 子任务关系、Temporal 持久计时器和有限历史收尾。改编原 OpenBot MIT 契约，
+无第三方实现复制。插件完整声明使用既有24KiB上限及内容寻址文件；schema12KiB、参数8KiB、Action16KiB限制不变。
+
+原生独立 Task 的显式附件／知识／插件／网页／协作者范围继续复用这些固定版本和原有 Server 门禁。新增薄来源适配与0040约束，不伪造频道；私有知识回执绑定 profile／scope，真实 Work 子任务只继承缩小后的范围，沿用固定截止与 unknown 不重发。Hermes 学习归因保留。无新依赖或第三方源码复制；见[复用研究](research/python-native-task-capabilities.md)与[双语接口契约](NATIVE_TASK_SCOPE.zh-CN.md)。
+
+## Work命令身份与指纹（2026-09-25）
+
+复用RFC8725／8785／9864、joserfc1.7.5／357c319119773c021bc8da433bdf31e42f77974b
+（BSD-3-Clause）、rfc8785 0.1.4／4d9b161f6054301d98d0566e813d020fb019ee10（Apache-2.0）、
+已有cryptography50.0.1及已复核TypeScript jose6.2.12／canonicalize5.0.0。
+严格有界schema和分离身份的Compact JWS薄适配使用这些库，不自造签名算法或JCS编码器。
+未复制上游实现；打包许可证保存在`apps/desktop/resources/python-notices/COMMAND_DEPENDENCIES.md`。
+Python／TypeScript互操作向量强制覆盖每种令牌用途。解析与签名不授予Work权限；SQL入场、单次消费、
+宿主执行和产物发布仍有独立验收。详见[源码、发布、问题、安全公告及许可证研究](research/work-command-authority.md)。
+
+[命令授权事务适配](research/work-command-transactions.md)复用 PostgreSQL17 锁、既有 Work admission／fence、
+ModelConnections 和 OwnerFiles 快照。0041不回填历史，后续显式产品接入仍默认关闭；独占一次性PG夹具
+已接入既有Worker门禁。没有新增依赖、上游实现、时钟服务或执行／恢复框架。
+
+[v2 准备适配](research/work-command-readiness.md)复用上述准确 JOSE/JCS 版本、systemd v255 与 Linux
+BOOTTIME。迁移0042保留历史 dispatch；Node 帧镜像复用现有 Zod4.6.2 与原生 WebCrypto。未复制源码、
+未新增依赖，命令传输、受保护 Host 与产品路由已整合到显式配置之后，真实Linux产品验收仍未完成。
+
+## 受保护命令 Host 与 Unix 传输（2026-09-25）
+
+[受保护 Host](research/command-protected-host.md)复用已审 systemd255、Docker29.8.1／containerd2.3.5／
+runsc release-20260914.0、现有有界 sandbox／output capacity helper 及固定 JOSE／JCS 契约。
+58 项本机检查包含真实 Unix peer credential，native 效果为明确模拟，Linux 验收仍未完成。
+[Node 传输](research/work-command-transport.md)使用已审 Node22.23.2 内置 Duplex／Buffer／TextDecoder，
+未增加依赖。dsh 开发公开规格候选，root 整合并跑53项检查，包含真实本机 Unix 连接。
+传输本身不授予执行权限；未复制上游源码。
+
+[产品命令适配](research/work-command-transactions.md)保留既有延期Action、审批、admission、
+ToolResults和最终内容复核；完整输出保存在原私有Work字节存储，模型只接收有界不可信节选。
+[可信配置](research/work-command-installation.md)复用严格解析器、本地所属文件读取及
+cryptography50.0.1序列化，不从环境或Node发现密钥／路由。
+[真实入口验收](research/work-command-product-qualification.md)复用Owner HTTP、PG／mTLS Temporal、
+OpenBotNodeClient和Unix传输夹具；模拟Native证据与真实Linux隔离证据分开记录。
+
+[解析依赖解耦](research/python-parser-runtime-retirement.md)复用npm workspace及原准确锁解析器。
+仅含依赖元数据的`@openbot/python-node-runtime`独立拥有原PDF／Office／OCR／数据库依赖，
+不再借用旧业务Server作为打包根。版本、完整性摘要、解析实现、迁移资产和打包许可保持不变。
+
+[固定的旧Server测试参考实现](research/legacy-server-test-oracle.md)将Python控制层兼容比较和S7产物读取
+迁到具有准确哈希的MIT测试夹具，复用npm10.9.9 workspace、TypeScript7.0.2与原依赖固定版本。
+产品入口不导出或分发该夹具；默认运行时、容器／桥接及真实远端／浏览器验收仍是最终退役门槛。
+
+
+## 固定镜像浏览器 CDP 验收（2026-09-25）
+
+[CDP 边界候选](research/browser-cdp-qualification.zh-CN.md)复用 Chromium151.0.7922.34 发布的
+pipe 协议、Playwright1.62.1 ASCII-NUL framing 窄适配（Apache-2.0）及 Node24.18.1 内建流/zlib。
+现有 runsc release-20260914.0 与 native helper 不复制、不增权；实验 clone3/chroot seccomp
+始终区别于官方 profile，Apache许可、NOTICE和修改归因保存在 `experiments/browser-execution`。
+40项离线测试可从干净检出运行，接入已有 Python/Linux CI；Linux 渲染、profile持久化和内层
+沙箱验收仍未完成，此实验不启用任何产品能力。
+
+[离线开发工具迁移](research/retained-developer-tools.md)将原 MIT 发布者 CLI 与 MCP 示例移入独立
+工作区，沿用已审核的 Node 密钥 API、Sigstore、原子文件写入与 MCP SDK 固定版本。源码许可与
+初始哈希保留，CLI 保持历史相对路径语义，生成器对齐现有 Zod4.6.2；不新增密码学实现或依赖
+版本，两项工具均不依赖旧业务 Server 或测试 oracle。

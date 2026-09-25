@@ -1,6 +1,10 @@
 """Work-domain transactions. This module neither schedules nor executes external actions."""
 import asyncio
-from contextlib import asynccontextmanager
+import hashlib
+import json
+import inspect
+from copy import deepcopy
+from contextlib import asynccontextmanager, nullcontext
 from uuid import uuid4
 
 import psycopg
@@ -14,8 +18,16 @@ from .work_values import InvalidWork, WorkConflict, WorkNotFound, canonical, rec
 
 
 class PostgresWorkStore:
-    def __init__(self, dsn, *, files=None):
+    def __init__(self, dsn, *, files=None, task_profiles=None, command_profiles=None):
+        if task_profiles is not None and not callable(getattr(task_profiles,'capture_in_transaction',None)):
+            raise InvalidWork('invalid_task_profile_composition')
         self.files = files
+        self.task_profiles = task_profiles
+        if command_profiles is not None:
+            from .work_command_profiles import CommandProfiles
+            if type(command_profiles) is not CommandProfiles:
+                raise InvalidWork('invalid_command_profile_composition')
+        self.command_profiles = command_profiles
         self._owner = OwnerTransactions(dsn, application_name='openbot-work-owner')
         self._control = PostgresTransactions(dsn, application_name='openbot-work-control')
 
@@ -36,12 +48,8 @@ class PostgresWorkStore:
     @staticmethod
     async def _task(connection, task_id, *, read=False):
         text(task_id, 128)
-        cursor = await connection.execute('SELECT * FROM work_tasks WHERE id=%s ' +
-                                         ('FOR SHARE' if read else 'FOR UPDATE'), (task_id,))
-        task = await cursor.fetchone()
-        if task is None:
-            raise WorkNotFound()
-        return task
+        from .work_collaboration import lock_task
+        return await lock_task(connection, task_id, read=read)
 
     @classmethod
     async def _action(cls, connection, action_id):
@@ -57,8 +65,10 @@ class PostgresWorkStore:
 
     @staticmethod
     def _active(task):
+        from .work_collaboration import assert_active
         if not task['authority_active'] or task['cancel_requested'] or task['status'] not in ('queued', 'open'):
             raise WorkConflict('admission_closed')
+        assert_active(task)
 
     @staticmethod
     async def _event(connection, task_id, kind, payload):
@@ -109,31 +119,65 @@ class PostgresWorkStore:
                     resultSummary=task['result_summary'],artifacts=artifacts,
                     usage={'tokenLimit': task['token_limit'], **usage}, runs=runs, actions=actions, events=events, eventsTruncated=bool(events and events[0]['revision'] > 1))
 
-    async def create(self, token, *, bot_id, objective, token_limit, request_key):
-        text(bot_id, 128); text(objective, 16384); text(request_key, 128); tokens(token_limit)
-        _, digest = canonical({'botId': bot_id, 'objective': objective, 'tokenLimit': token_limit})
-        async with self._transaction(token) as connection:
-            # Unique-key insertion below serializes same-key concurrent submissions. No workflow
-            # can exist without its Task/Run/handoff record committing in this transaction.
-            cursor = await connection.execute('SELECT id FROM bots WHERE id=%s FOR SHARE', (bot_id,))
-            if await cursor.fetchone() is None:
-                raise WorkNotFound()
-            task_id, run_id = str(uuid4()), str(uuid4())
-            cursor = await connection.execute('INSERT INTO work_tasks(id,owner_id,bot_id,request_key,request_digest,objective,token_limit) '
-                "VALUES (%s,'owner',%s,%s,%s,%s,%s) ON CONFLICT(request_key) DO NOTHING RETURNING id",
-                (task_id, bot_id, request_key, digest, objective, token_limit))
-            if await cursor.fetchone() is None:
-                cursor = await connection.execute('SELECT id,request_digest FROM work_tasks WHERE request_key=%s', (request_key,))
-                existing = await cursor.fetchone()
-                if existing['request_digest'] != digest:
-                    raise WorkConflict('idempotency_content_changed')
-                await self._task(connection, existing['id'], read=True)
-                return await self._view(connection, existing['id'])
-            await connection.execute('INSERT INTO work_runs(id,task_id,ordinal) VALUES (%s,%s,1)', (run_id, task_id))
-            await connection.execute('INSERT INTO work_admissions(run_id) VALUES (%s)', (run_id,))
-            await connection.execute("INSERT INTO work_events(task_id,revision,kind,payload) VALUES (%s,1,'task.created',%s)",
-                                     (task_id, Jsonb({'runId': run_id})))
-            return await self._view(connection, task_id)
+    async def create(self, token, *, bot_id, objective, token_limit, request_key, scope=None):
+        from .work_native_scope import scope_input
+        scope=scope_input(scope)
+        if scope is not None and self.task_profiles is None:raise WorkConflict('native_task_profile_required')
+        async with self.task_profiles.scope_lock(scope) if scope is not None else nullcontext():
+            async with self._transaction(token) as connection:
+                return await self.create_in_transaction(connection, bot_id=bot_id, objective=objective,
+                    token_limit=token_limit, request_key=request_key, scope=scope)
+
+    async def create_in_transaction(self, connection, *, bot_id, objective, token_limit, request_key, source=False, scope=None):
+        """Trusted source admission shares the caller's authority transaction and commit."""
+        text(bot_id, 128); text(objective, 32768 if source else 16384); text(request_key, 128); tokens(token_limit)
+        payload = {'botId': bot_id, 'objective': objective, 'tokenLimit': token_limit}
+        if scope is not None:
+            from .work_native_scope import scope_input
+            scope=scope_input(scope)
+            if source or self.task_profiles is None:raise InvalidWork('native_task_scope_required')
+            payload['scope']=scope
+        if source or scope is not None:
+            # Closed bounded shape: retain the same digest encoding without the unrelated
+            # generic Action JSON cap narrowing the legacy 8,000 UTF-16 character input.
+            digest = hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True,
+                separators=(',', ':')).encode('utf-8')).hexdigest()
+        else:
+            _, digest = canonical(payload)
+        # Unique-key insertion below serializes same-key concurrent submissions. No workflow
+        # can exist without its Task/Run/handoff record committing in this transaction.
+        cursor = await connection.execute('SELECT id FROM bots WHERE id=%s FOR SHARE', (bot_id,))
+        if await cursor.fetchone() is None:
+            raise WorkNotFound()
+        task_id, run_id = str(uuid4()), str(uuid4())
+        cursor = await connection.execute('INSERT INTO work_tasks(id,owner_id,bot_id,request_key,request_digest,objective,token_limit) '
+            "VALUES (%s,'owner',%s,%s,%s,%s,%s) ON CONFLICT(request_key) DO NOTHING RETURNING id",
+            (task_id, bot_id, request_key, digest, objective, token_limit))
+        if await cursor.fetchone() is None:
+            cursor = await connection.execute('SELECT id,request_digest FROM work_tasks WHERE request_key=%s', (request_key,))
+            existing = await cursor.fetchone()
+            if existing['request_digest'] != digest:
+                raise WorkConflict('idempotency_content_changed')
+            await self._task(connection, existing['id'], read=True)
+            return await self._view(connection, existing['id'])
+        product_native = self.task_profiles is not None and not source
+        if product_native:
+            # The unique-key winner owns this one snapshot. Idempotent replays never
+            # reread today's Bot selection or backfill historical execution authority.
+            await self.task_profiles.capture_in_transaction(connection,task_id,bot_id,
+                **({'scope':scope} if scope is not None else {}))
+        await connection.execute('INSERT INTO work_runs(id,task_id,ordinal,corrections_enabled) VALUES (%s,%s,1,%s)',
+                                 (run_id, task_id, product_native))
+        await connection.execute('INSERT INTO work_admissions(run_id) VALUES (%s)', (run_id,))
+        await connection.execute("INSERT INTO work_events(task_id,revision,kind,payload) VALUES (%s,1,'task.created',%s)",
+                                 (task_id, Jsonb({'runId': run_id})))
+        return await self._view(connection, task_id)
+
+    async def native_scope(self, token, task_id):
+        from .work_native_scope import public_scope, read_scope
+        async with self._transaction(token) as db:
+            task=await self._task(db,task_id,read=True)
+            return public_scope(await read_scope(db,task_id,task['bot_id']))
 
     async def snapshot(self, token, task_id):
         async with self._transaction(token) as connection:
@@ -207,7 +251,7 @@ class PostgresWorkStore:
             await self._event(connection, task['id'], 'action.decided', {'actionId': action_id, 'decision': decision, 'intentDigest': intent_digest})
             return await self._view(connection, task['id'])
 
-    async def admit(self, action_id, *, fence):
+    async def admit(self, action_id, *, fence, admission_check=None):
         """True is one new admission; False requires inspecting/reconciling the existing outcome."""
         from .work_corrections import check_context
         async with self._transaction(trusted=True) as connection:
@@ -223,6 +267,12 @@ class PostgresWorkStore:
             usage = await self._usage(connection, task['id'])
             if usage['reservedTokens'] + usage['spentTokens'] + action['reserved_tokens'] > task['token_limit']:
                 raise WorkConflict('token_budget_exhausted')
+            if admission_check is not None:
+                if not callable(admission_check):
+                    raise InvalidWork('invalid_admission_check')
+                checked = admission_check(connection, deepcopy(task), deepcopy(action))
+                if not inspect.isawaitable(checked) or await checked is not True:
+                    raise WorkConflict('product_admission_refused')
             await connection.execute("UPDATE work_actions SET status='admitted' WHERE id=%s", (action_id,))
             await self._event(connection, task['id'], 'action.admitted', {'actionId': action_id, 'reservedTokens': action['reserved_tokens']})
             await check_fence(connection,action['run_id'],fence)
@@ -287,20 +337,15 @@ class PostgresWorkStore:
                 return await self._view(connection, task_id)
             if task['status'] not in ('queued', 'open'):
                 raise WorkConflict('task_closed')
-            await connection.execute('UPDATE work_tasks SET cancel_requested=true,authority_active=false,'
-                                     'authority_generation=authority_generation+1 WHERE id=%s', (task_id,))
-            task['cancel_requested'] = True
-            await self._finish_cancel(connection, task)
-            await self._event(connection, task_id, 'task.cancel_requested', {})
+            from .work_collaboration import cascade
+            await cascade(connection, self, task_id, reason='cancel')
             return await self._view(connection, task_id)
 
     async def revoke(self, token, task_id):
         async with self._transaction(token) as connection:
             task = await self._task(connection, task_id)
-            if task['authority_active']:
-                await connection.execute('UPDATE work_tasks SET authority_active=false,'
-                                         'authority_generation=authority_generation+1 WHERE id=%s', (task_id,))
-                await self._event(connection, task_id, 'task.authority_revoked', {})
+            from .work_collaboration import cascade
+            await cascade(connection, self, task_id, reason='revoke')
             return await self._view(connection, task_id)
 
     async def claim(self, task_id, run_id, claim_id, *, expires_seconds=60):

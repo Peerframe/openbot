@@ -1,0 +1,97 @@
+{
+  "case": "native-task-scoped-capabilities",
+  "actualOwnerHTTP": true,
+  "actualPostgres": true,
+  "mutualTLS": true,
+  "actualProductWorkRuntime": true,
+  "syntheticProvider": true,
+  "attachmentReads": 2,
+  "authorizedChildTasks": 1,
+  "childResultConsumed": true,
+  "reportPublished": true,
+  "reportBytes": 192,
+  "knowledgePendingAfterCompletion": true,
+  "ownerReviewedRealTaskProvenance": true,
+  "memoryAutomaticallyEnabled": false,
+  "legacySourceRows": 0,
+  "sourceChannelRows": 0,
+  "providerCounts": {
+    "root:read": 1,
+    "root:memory": 1,
+    "root:delegate": 1,
+    "child:read": 1,
+    "child:final": 1,
+    "child:review": 1,
+    "root:proposal": 1,
+    "root:report": 1,
+    "root:final": 1,
+    "root:review": 1
+  },
+  "commitAckRecovery": true,
+  "originalEngineRun": true,
+  "historyReplayCount": 2,
+  "noProviderResend": true,
+  "qualifiedAt": "2026-09-25",
+  "canonicalMigrationEntries": 41,
+  "hostQualification": "macOS controller with Docker Linux Temporal/PostgreSQL; not a Linux-host claim",
+  "histories": {
+    "history-parent.json": {
+      "originalSha256": "2ecfe264d8fc5b5715313c1d344018b37b080ae4a0201231c99b8f358d0d5616",
+      "exportSha256": "ec5da7d9e91579d98a500136e0a6e5783e93a538732350d758aa29dc659881cb",
+      "workerIdentityRedactions": 252,
+      "workflowId": "openbot-work-v1-df3500e2-2c27-4855-aedb-b4bcc3c45ac6",
+      "stickyQueueRedactions": 66
+    },
+    "history-child.json": {
+      "originalSha256": "3537550853954831782fa5867615d4710e899a5661ebcfbffbb288cc5fcfcd88",
+      "exportSha256": "8f976c5d967245848eeea6a6e19031a710b58d35df10e7543693973214000c27",
+      "workerIdentityRedactions": 60,
+      "workflowId": "openbot-work-v1-9768cce5-6b91-44d0-89ac-a9587afb608a",
+      "stickyQueueRedactions": 14
+    }
+  },
+  "sourceVersions": {
+    "parentHEAD": "482bdc5bea56c5b1a996492701b6dbb012d5691e",
+    "slice1Patch": "878ffd7c6d9b344940d75cd1685c16baa3b74ad16837557bd0afddeb4bafe314",
+    "slice2Patch": "31b89ff35e806a53482f28cc031c8f45fd388a1e58a36da9ef6bd037ab02e6dc",
+    "finalSourceFiles": {
+      "overlay/work_product_runtime.py": "71bc0f7b12731e55fbfd8dd28031323d5eaca77a7d7dcb98cada58aa873528cd",
+      "overlay/work_product_reads.py": "9bd3fe42fc8b1a5ef45de9f1710d70da51eb7070812cbbbc23e6f43812ad1310",
+      "overlay/work_native_scope.py": "67200195f2cb62c88ba0368a54a31fe793dc844adbbdf1e2e690241ef8277c03",
+      "overlay/work_native_collaboration.py": "336bad8548b4d96c0589dfece936b2ee44b24418a1d7d4f88b0fcc359dea54b1",
+      "overlay/work_native_knowledge.py": "3561dae18503fbbfbd8351cd1c06a1193839d8270de8f45584f1b1279d2e2b72",
+      "root/work_worker.py": "eca4865b4e6e1b1a84ef05c7efc672e5b0befcef4639e4edfd63ab6f97895c9f",
+      "root/work_corrected_workflow.py": "474ff5136eddc157d39f670c80f4663f12d6153d1b46fa0d707f3939bef0e82e",
+      "root/work_collaboration_workflow.py": "41fcef9dc7a254322bf071c3160beafd2313b2f049095d46b0aea62ed9870a04",
+      "root/work_collaboration_activities.py": "388d156bc73c393a841dad72a70bc306ac4749e83e4c5ccdea00507b17b70543",
+      "root/work_product_service.py": "88e6d4d3a8de5d40f375bb857f075fa39d43c66a4792bed41df976e12ab0347f",
+      "root/work_product_result.py": "4935d260fb577004b7bba4be8878a0d2bf092d1ee15d199d08afc821fab4bc52",
+      "root/work_product_model.py": "4d463753a13c275fe8a3d1c4f334df259b575176498db782a378d1c7ae93c0bc",
+      "root/product_model.py": "f986e4d47a7bafc8ad2e660c1b77565baeaac468920a5f687c97f5bd85887dd2",
+      "root/work_model_activity.py": "78f205e9221f7af4a3f2962952c69aa4f659b5365eb519d2e85a02e52da95837",
+      "root/work_tool_results.py": "cfdecb1b46df9235607914b5682d628d18cd091f789c7ddf1a4570de417c26ef"
+    }
+  },
+  "independentTests": {
+    "fixture": "native_scope (exclusive synthetic PostgreSQL, canonical41)",
+    "tests": [
+      "test_native_web_requires_explicit_grant_and_never_resends",
+      "test_native_plugins_intersect_scope_and_live_owner_grant"
+    ],
+    "passed": 2,
+    "deselected": 11,
+    "seconds": 7.09,
+    "transports": [
+      "synthetic HTTP",
+      "localhost FastMCP"
+    ],
+    "actualSDKActivityEnvironment": true,
+    "externalRequests": false,
+    "warnings": [
+      "Starlette BlockingPortal deprecation",
+      "pydantic-settings lifespan forward reference"
+    ]
+  },
+  "redaction": "Only Temporal worker identity and sticky queue name metadata were replaced. Normal task queue, Workflow commands, event IDs, payloads and recorded observations were not modified.",
+  "earlierAttempts": "Fixture wire escaping/content-shape and duplicate-name errors were retained as terminal SQL facts; no unknown Action was resent. Successful case used new identities."
+}

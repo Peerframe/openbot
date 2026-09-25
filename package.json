@@ -12,21 +12,22 @@
   "workspaces": [
     "apps/*",
     "packages/*",
-    "providers/*"
+    "providers/*",
+    "tests/oracles/legacy-server"
   ],
   "scripts": {
     "build": "turbo run build",
-    "check": "npm run docs:check && npm run research:check && npm run server:container:check && npm run migrations:check && npm run security:config-check && npm run worker-host:macos:check && npm run release:check && npm run lint && npm run typecheck && npm run test && npm run build",
+    "check": "npm run oracle:check && npm run test:browser:boundary && npm run docs:check && npm run research:check && npm run server:container:check && npm run migrations:check && npm run security:config-check && npm run worker-host:macos:check && npm run release:check && npm run lint && npm run typecheck && npm run test && npm run build",
     "db:up": "docker compose --env-file .env -f deploy/server/compose.yaml up -d postgres",
     "db:stop": "docker compose --env-file .env -f deploy/server/compose.yaml stop postgres",
-    "db:verify": "turbo run build --filter=@openbot/server && node scripts/verify-database.mjs",
+    "db:verify": "npm run oracle:build && node scripts/verify-database.mjs",
     "dev": "turbo run dev --filter=@openbot/server --filter=@openbot/web",
     "dev:server": "turbo run dev --filter=@openbot/server",
     "dev:web": "turbo run dev --filter=@openbot/web",
     "dev:node": "turbo run dev --filter=@openbot/node",
     "dev:smoke": "node scripts/smoke-dev-startup.mjs",
     "docs:check": "node scripts/check-docs.mjs",
-    "employee:publisher-key": "npm run employee:publisher-key --workspace @openbot/server --",
+    "employee:publisher-key": "node --env-file-if-exists=.env scripts/employee-publisher-key.mjs",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "lint": "biome lint .",
@@ -50,16 +51,21 @@
     "worker-host:macos:native-check": "swift build --package-path apps/worker-host-macos && swift test --package-path apps/worker-host-macos",
     "plugin:create": "node scripts/create-mcp-plugin.mjs",
     "migration:compare": "node scripts/compare-migration-lineage.mjs",
-    "test:control:python": "turbo run build --filter=@openbot/server && node apps/server-python/scripts/compare-identity-inputs.mjs && node apps/server-python/scripts/compare-task-contracts.mjs && node apps/server-python/scripts/compare-runtime-wire.mjs && node apps/server-python/scripts/compare-run-commands.mjs && node apps/server-python/scripts/compare-execution-values.mjs && node scripts/test-python-control.mjs"
+    "test:control:python": "npm run oracle:build && node apps/server-python/scripts/compare-identity-inputs.mjs && node apps/server-python/scripts/compare-task-contracts.mjs && node apps/server-python/scripts/compare-runtime-wire.mjs && node apps/server-python/scripts/compare-run-commands.mjs && node apps/server-python/scripts/compare-execution-values.mjs && node scripts/test-python-control.mjs",
+    "oracle:check": "node --test scripts/check-server-oracle.test.mjs && node scripts/check-server-oracle.mjs",
+    "oracle:build": "npm run oracle:check && turbo run build --filter=@openbot/legacy-server-oracle^... && npm run build:oracle --workspace @openbot/legacy-server-oracle",
+    "test:browser:boundary": "node --test experiments/browser-execution/probe.test.mjs && python3 -B -m unittest discover -s experiments/browser-execution -p \"test_*.py\" -v"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",
     "@types/node": "26.5.1",
     "@vercel/ncc": "0.45.0",
+    "canonicalize": "5.0.0",
+    "jose": "6.2.12",
+    "officeparser": "7.8.0",
     "turbo": "2.10.12",
     "typescript": "7.0.2",
-    "vitest": "5.0.0",
-    "officeparser": "7.8.0"
+    "vitest": "5.0.0"
   },
   "overrides": {
     "pdfjs-dist": "6.3.289"

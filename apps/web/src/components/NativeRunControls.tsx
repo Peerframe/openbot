@@ -43,7 +43,7 @@ export function NativeRunControls({
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
-  if (run.executionProfile !== "none" || run.nodeId !== undefined) return null;
+  if (!["none", "model"].includes(run.executionProfile) || run.nodeId !== undefined) return null;
   const canStop = run.status === "queued" || run.status === "running";
   const canResubmit = run.status === "failed" || run.status === "cancelled";
   if (!canStop && !canResubmit) return null;

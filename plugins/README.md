@@ -6,7 +6,7 @@ Plugins expose capabilities through MCP Streamable HTTP. This directory contains
 metadata, not executable uploads. Installation and Bot grants always require a separate Owner review.
 
 - [Protocol and limits](../docs/PLUGINS.md)
-- [Runnable example](../apps/server/src/plugin-example.ts)
+- [Runnable example](../packages/mcp-example/src/plugin-example.ts)
 - [Catalog](catalog.json) and [schema](catalog.schema.json)
 - [Submit an integration](https://github.com/Peerframe/openbot/issues/new?template=plugin-submission.yml)
 

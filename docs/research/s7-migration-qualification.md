@@ -213,3 +213,72 @@ The final target pin now names that commit; `qualificationInput` retains the ear
 provenance. SQL0034 and raw journal hashes were compared against `git show` and are identical
 to the final qualified snapshot above. Source manifests are rechecked without rerunning the
 unchanged database qualification. This pin update is not a new product migration or S7 completion.
+
+## Local product schema candidate, 2026-09-25
+
+Requalify the retained sealed source histories against canonical40 through0039. Existing official
+PostgreSQL17.11 dump/restore and guarded migration tools remain the first viable implementation;
+no migration engine or source transfer policy changes. `target-history.json` identifies the current
+working-tree parent separately from the uncommitted SQL/journal hashes, never claiming that the
+parent commit contains those changes. Original source snapshots and journals stay byte-identical.
+The existing40 historical lineage/restore checks remain a bounded fixture gate; complete product
+keys/plugin/media/engine restoration is a separate acceptance check, not implied by this run.
+
+All40 existing cases passed on2026-09-25 with canonical40; the source histories remained sealed.
+The checked-in `experiments/s7-migration/evidence/python-product-result.json` retains the actual
+case results and adds the manifest's explicit parent-role/working-tree hashes to prevent a false
+commit provenance claim. The report generator now emits those optional provenance fields too;
+no database/test logic changed after the passing run.
+
+
+## Native Task scope schema requalification, 2026-09-25
+
+Canonical 41 adds only `0040_native_task_scope` at timestamp `1790208000010` to the previous
+40-entry target. The prior forty SQL hashes and timestamps are unchanged. Reuse the existing
+reviewed PostgreSQL 17.11 native dump/restore and exact-prefix Drizzle guard; no new framework,
+dependency, migration/transfer logic or upstream source copy. The official
+[pg_restore transaction contract](https://www.postgresql.org/docs/17/app-pgrestore.html) was
+rechecked; the accepted `REL_17_11` source review above remains applicable.
+
+`sources.mjs` has no expected-history override: it reads its adjacent target manifest and validates
+the complete canonical journal. The bounded requalification therefore used an isolated path
+mirror with byte-identical runner/helpers, sealed historical fixtures, built DB migrator and
+artifact reader. Only its target manifest changed. The current parent remains
+`482bdc5bea56c5b1a996492701b6dbb012d5691e`; it is not claimed to contain these uncommitted SQL bytes.
+
+| Exact qualification input | SHA-256 |
+| --- | --- |
+| `0040_native_task_scope.sql` | `8aaed72a5691a531cad058c7652da6df003773e671730f03c1c6fb209dca2d6e` |
+| Raw canonical 41 journal | `4aa566b0dcb473dc82c2db0b994a99fc8224a83e507fe9bc80f6f4ff0612c148` |
+| Native Task scope result | `83578c42476484bfebe43a3c09bb700f05f7ed361701def2c365f45ea37b5ffa` |
+
+The original forty real PostgreSQL migration/restore cases passed, as did all eight startup
+cleanup tests (simulated Docker cleanup failures). The main qualification process exited 0, with
+v26.0.0 on darwin/arm64 and pg_dump (PostgreSQL) 17.11 (Debian 17.11-1.pgdg12+2). Sources and canonical migration checks passed before/after;
+71 source/target SQL/journal files retained their exact hashes, and the fixture-label container
+inventory was empty after the original cleanup path. The historical canonical 40 result remains
+unchanged; [canonical 41 evidence](../../experiments/s7-migration/evidence/native-task-scope-result.json)
+contains only safe runtime metadata, digests and case results.
+
+The additive schema is qualified only against existing bounded synthetic legacy data. These cases
+do not populate or test native Task scope/proposal/collaboration behavior, run a production
+conversion, restore active Temporal state, change defaults, publish a release or complete S7.
+The root integrator owns the repository-wide check and final product acceptance.
+
+## Command authority target requalification — 2026-09-25
+
+Canonical42 adds0041, two inactive command authority tables, with no history rewrite or backfill.
+The unchanged runner passed all40 dual-lineage/restore cases; the8 owned-cleanup checks passed.
+Exact SQL/journal bytes are pinned in target-history.json and the new
+[actual result](../../experiments/s7-migration/evidence/command-authority-result.json).
+The42-entry active paired restore also passed with45 Control tables/109 rows; the two inactive
+command tables were empty, so this is not pending-command recovery evidence.
+
+## Canonical43 command readiness requalification — 2026-09-25
+
+The unchanged40-case dual-lineage/restore runner and8 cleanup tests passed with migration0042.
+The [result](../../experiments/s7-migration/evidence/command-readiness-result.json) preserves the
+actual SQL/journal hashes and working-tree parent. Only the target pin and additive SQL changed;
+sealed historical fixtures and runner assertions are retained. The owned PostgreSQL resources
+were removed. Newly inactive command tables are empty in this fixture, so no in-flight command
+restoration, product execution or production conversion is claimed.

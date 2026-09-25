@@ -34,7 +34,9 @@ def tokens(value):
     return value
 
 
-def canonical(value):
+def canonical(value, *, max_bytes=16384):
+    if type(max_bytes) is not int or max_bytes not in (16384,65536):
+        raise InvalidWork('invalid_json_limit')
     remaining = 4096
     def visit(item, depth):
         nonlocal remaining
@@ -67,7 +69,7 @@ def canonical(value):
                           separators=(',', ':'), allow_nan=False).encode('utf-8')
     except (ValueError, TypeError, UnicodeError):
         raise InvalidWork('invalid_json') from None
-    if len(data) > 16384:
+    if len(data) > max_bytes:
         raise InvalidWork('intent_size_limit')
     return data, hashlib.sha256(data).hexdigest()
 

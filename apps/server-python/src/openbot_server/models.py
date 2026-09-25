@@ -51,7 +51,8 @@ class Bot(PublicModel):
     role: str
     status: Literal["idle", "running", "waiting_approval", "blocked", "human_takeover",
                     "offline", "completed", "failed"]
-    computerProfile: Literal["none", "docker-linux", "macos-cua", "lume-vm", "coder"]
+    computerProfile: Literal["none", "model", "docker-linux", "macos-cua", "lume-vm", "coder"]
+    model: dict[str, str] | None = None
     appearance: BotAppearance | None = None
     createdAt: str
 
@@ -88,8 +89,12 @@ def project_bot(row: Mapping[str, object]) -> Bot:
             appearance = BotAppearance.model_validate({key: candidate.get(key) for key in BotAppearance.model_fields})
         except ValidationError:
             pass
+    model = None
+    if isinstance(configuration, dict) and configuration.get('model') is not None:
+        from .model_connections_inputs import ModelSelection
+        model = ModelSelection.model_validate(configuration['model']).model_dump()
     return Bot(id=row["id"], name=row["name"], role=row["role"], status=row["status"],
-               computerProfile=row["computer_profile"], appearance=appearance,
+               computerProfile=row["computer_profile"], appearance=appearance, model=model,
                createdAt=iso_timestamp(row["created_at"]))
 
 

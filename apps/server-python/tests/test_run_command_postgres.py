@@ -268,9 +268,13 @@ def test_cancel_projection_limit_rolls_back_without_transferring_oversize_text(f
     run,_ = task(fixture,'Python command projection bound')
     with psycopg.connect(fixture['dsn']) as connection:
         connection.execute("UPDATE runs SET instruction=repeat('x',4194305) WHERE id=%s",(run.id,))
-    with pytest.raises(StoreUnavailable):
-        asyncio.run(PostgresRunCommandStore(fixture['dsn']).cancel(fixture['token'],run.id))
-    assert state(fixture,run.id) == 'queued' and event_rows(fixture,run.id) == []
+    try:
+        with pytest.raises(StoreUnavailable):
+            asyncio.run(PostgresRunCommandStore(fixture['dsn']).cancel(fixture['token'],run.id))
+        assert state(fixture,run.id) == 'queued' and event_rows(fixture,run.id) == []
+    finally:
+        with psycopg.connect(fixture['dsn']) as connection:
+            connection.execute('UPDATE runs SET instruction=%s WHERE id=%s', (run.instruction,run.id))
 
 
 def test_http_commands_return_only_committed_state_and_steering(fixture):

@@ -1,6 +1,7 @@
 """Trusted publication checks. A Runtime final answer never calls this method directly."""
 import asyncio
 import hashlib
+from contextlib import nullcontext
 from uuid import uuid4
 
 from .database import StoreUnavailable
@@ -28,9 +29,11 @@ def normalize(artifacts):
 
 
 async def complete(store, task_id, run_id, *, fence, expected_revision, summary, artifacts, verification,
-                   correction_context=None):
+                   correction_context=None, publication=None):
     """The trusted verifier provides evidence of task quality; this store checks publication facts."""
     text(run_id,128); text(summary,16384); receipt(verification)
+    if publication is not None and not callable(publication):
+        raise InvalidWork('invalid_publication_hook')
     if type(expected_revision) is not int or expected_revision < 1:
         raise InvalidWork('invalid_revision')
     descriptors = normalize(artifacts)
@@ -89,23 +92,26 @@ async def complete(store, task_id, run_id, *, fence, expected_revision, summary,
     async with store._transaction(trusted=True) as connection:
         if not await ready(connection):
             return await store._view(connection,task_id)
-        artifact_ids = []
-        for descriptor in descriptors:
-            # Reopen bytes after staging; a descriptor returned by a Worker is not evidence.
-            await asyncio.to_thread(store.files.read,descriptor['sha256'],descriptor['sizeBytes'])
-            identity = str(uuid4()); artifact_ids.append(identity)
-            await connection.execute('INSERT INTO work_artifacts(id,task_id,run_id,artifact_key,name,media_type,sha256,size_bytes) '
-                'VALUES (%s,%s,%s,%s,%s,%s,%s,%s)', (identity,task_id,run_id,descriptor['key'],descriptor['name'],
-                descriptor['mediaType'],descriptor['sha256'],descriptor['sizeBytes']))
-        await connection.execute("UPDATE work_runs SET status='completed' WHERE id=%s", (run_id,))
-        await connection.execute("UPDATE work_tasks SET status='completed',authority_active=false,"
-            'authority_generation=authority_generation+1,result_summary=%s,completion_digest=%s,completed_at=clock_timestamp() WHERE id=%s',
-            (summary,digest,task_id))
-        event = {'runId':run_id,'artifactIds':artifact_ids,'completionDigest':digest,'verification':verification}
-        if correction_context is not None:
-            event['correctionContext'] = correction_context
-        await store._event(connection,task_id,'task.completed',event)
-        result = await store._view(connection,task_id)
+        async with publication(connection) if publication is not None else nullcontext():
+            artifact_ids = []
+            for descriptor in descriptors:
+                # Reopen bytes after staging; a descriptor returned by a Worker is not evidence.
+                await asyncio.to_thread(store.files.read,descriptor['sha256'],descriptor['sizeBytes'])
+                identity = str(uuid4()); artifact_ids.append(identity)
+                await connection.execute('INSERT INTO work_artifacts(id,task_id,run_id,artifact_key,name,media_type,sha256,size_bytes) '
+                    'VALUES (%s,%s,%s,%s,%s,%s,%s,%s)', (identity,task_id,run_id,descriptor['key'],descriptor['name'],
+                    descriptor['mediaType'],descriptor['sha256'],descriptor['sizeBytes']))
+            await connection.execute("UPDATE work_runs SET status='completed' WHERE id=%s", (run_id,))
+            await connection.execute("UPDATE work_tasks SET status='completed',authority_active=false,"
+                'authority_generation=authority_generation+1,result_summary=%s,completion_digest=%s,completed_at=clock_timestamp() WHERE id=%s',
+                (summary,digest,task_id))
+            event = {'runId':run_id,'artifactIds':artifact_ids,'completionDigest':digest,'verification':verification}
+            if correction_context is not None:
+                event['correctionContext'] = correction_context
+            await store._event(connection,task_id,'task.completed',event)
+            from .work_sources import publish_source_message
+            await publish_source_message(connection, task_id, summary)
+            result = await store._view(connection,task_id)
         # Disk reads and audit writes may take time; expiration must still pass at publication.
         await check_fence(connection,run_id,fence)
         return result

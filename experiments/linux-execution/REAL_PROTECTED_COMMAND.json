@@ -1,0 +1,60 @@
+{
+  "after": {
+    "ipv4Ipv6FirewallSemanticsUnchanged": true,
+    "originalIdentitiesAndStateUnchanged": true,
+    "productionContainerCount": 10
+  },
+  "automaticRetries": 0,
+  "before": {
+    "ipv4Ipv6FirewallSemanticsUnchanged": true,
+    "originalIdentitiesAndStateUnchanged": true,
+    "productionContainerCount": 10
+  },
+  "cleanup": {
+    "backingAbsent": true,
+    "exactOwnedCleanup": true,
+    "originalReservationRetained": true,
+    "privateRuntimeDirectoriesAbsent": true,
+    "unitReleased": true
+  },
+  "execution": {
+    "compressedLoggingDisabledByTypedPrestartReadback": true,
+    "exactCsvBytes": 18,
+    "oneStartAttempt": true,
+    "originalAction": true,
+    "originalDispatch": true,
+    "originalEpoch": 1,
+    "outputSha256": "da4619ba2344052bc1112fbfaddfb00e73987936f76ef44842308196b741c484",
+    "receiptSignatureVerified": true
+  },
+  "keysRemoved": true,
+  "nativeReadiness": {
+    "actualNamespacesPrivate": true,
+    "emptyShimPropagation": true,
+    "keyHiddenFromUnit": true,
+    "mountFlagsDbusSignature": "t",
+    "mountFlagsValue": 262144,
+    "originalInvocation": "c454ac0062dc4dc6a73a4d969f6227a7",
+    "privateShimTmpfsBytes": 16777216,
+    "runtimeMaxMs": 50000
+  },
+  "previousCasesUnchanged": true,
+  "realWorkTemporalAuthority": false,
+  "relay": {
+    "actualGid": 62425,
+    "actualUid": 62425,
+    "capabilities": 0,
+    "noNewPrivileges": true,
+    "supplementaryGroups": 0
+  },
+  "success": true,
+  "syntheticControl": true,
+  "termination": {
+    "nativeResult": "timeout",
+    "nativeRuntimeMaxSeconds": 50,
+    "originalCgroupEmpty": true,
+    "originalInvocation": true,
+    "stopObservationDelayMs": 155,
+    "stopObservedWithin5SecondMargin": true
+  }
+}

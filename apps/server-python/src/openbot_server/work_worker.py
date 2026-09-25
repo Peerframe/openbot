@@ -5,7 +5,7 @@ result verification must independently inspect work and artifacts. No model-supp
 experiment import, credentials in Workflow inputs, per-Run cache or alternate retry owner exists.
 """
 import asyncio
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, nullcontext
 from dataclasses import dataclass, asdict, replace
 from datetime import timedelta
 from copy import deepcopy
@@ -17,7 +17,7 @@ from temporalio.worker import Worker
 from pydantic_ai import DeferredToolRequests, DeferredToolResults
 from pydantic_ai.toolsets import ExternalToolset
 from pydantic_ai.usage import UsageLimits, RunUsage
-from temporalio.exceptions import ApplicationError
+from temporalio.exceptions import ApplicationError, FailureError
 from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
 
 with workflow.unsafe.imports_passed_through():
@@ -29,6 +29,9 @@ with workflow.unsafe.imports_passed_through():
     from .work_corrections import CorrectionStore, check_context
     from .work_deferred import DeferredActivities
     from .work_closed_repair import ClosedRepair, ClosedRepairActivities
+    from .work_collaboration_activities import CollaborationActivities
+    from .work_collaboration_workflow import CollaborationDeadline, completion_children, join_child
+    from .work_failure import FailureActivities
     from .work_deferred_values import parse_proposal
     from .work_runtime_ports import WorkRuntimeDeps, WorkRuntimePortFactory
     from .work_temporal_start import load_current_activity_task
@@ -43,6 +46,10 @@ CONFIG = {'start_to_close_timeout': timedelta(seconds=75),
             non_retryable_error_types=['WorkConflict', 'CorrectionsChanged', 'InvalidWork', 'RuntimeFailure'])}
 START_CONFIG = {**CONFIG, 'retry_policy': RetryPolicy(initial_interval=timedelta(seconds=1),
     maximum_interval=timedelta(seconds=5), non_retryable_error_types=['WorkConflict', 'InvalidWork', 'WorkNotFound', 'RuntimeFailure'])}
+FINALIZE_CONFIG = {'start_to_close_timeout': timedelta(seconds=15),
+    'schedule_to_close_timeout': timedelta(seconds=120),
+    'retry_policy': RetryPolicy(initial_interval=timedelta(seconds=1),maximum_interval=timedelta(seconds=10),
+        maximum_attempts=20,non_retryable_error_types=['WorkConflict','InvalidWork'])}
 # One deployment composition per process, no identity map. Never used during Workflow replay.
 _HOST = None
 
@@ -71,11 +78,14 @@ class VerifiedTaskResult:
     """Trusted verifier's checked artifact bytes/evidence; Runtime final text cannot construct it."""
     artifacts: tuple[dict, ...]
     verification: dict
+    observed_revision: int | None = None
 
 
 class WorkActivities:
     def __init__(self, store, client, *, namespace, queue, load_services, verify_result,
-                 plan_effect=None, load_effect=None, enable_corrections=False):
+                 plan_effect=None, load_effect=None, enable_corrections=False, load_tool_result=None,
+                 reset_history_on_correction=False, load_prompt=None, publication=None, publication_scope=None,
+                 large_tool_arguments=False, effect_readiness=None, join_request=None, unconsumed_children=None):
         text(namespace, 64); text(queue, 256)
         if getattr(client, 'namespace', None) != namespace:
             raise WorkConflict('engine_namespace_mismatch')
@@ -89,9 +99,28 @@ class WorkActivities:
                                            load_services=load_services, deadline_seconds=60)
         if type(enable_corrections) is not bool: raise InvalidWork("invalid_correction_profile")
         self.enable_corrections = enable_corrections
+        if (type(reset_history_on_correction) is not bool
+                or reset_history_on_correction and not enable_corrections):
+            raise InvalidWork('invalid_correction_history_profile')
+        if any(value is not None and not callable(value) for value in (load_prompt, publication, publication_scope)):
+            raise InvalidWork('invalid_product_callbacks')
+        self.reset_history_on_correction = reset_history_on_correction
+        self.load_prompt, self.publication, self.publication_scope = load_prompt, publication, publication_scope
+        if type(large_tool_arguments) is not bool: raise InvalidWork('invalid_tool_arguments_profile')
+        self.large_tool_arguments = large_tool_arguments
+        if load_tool_result is not None and (not callable(load_tool_result)
+                                             or plan_effect is None or load_effect is None):
+            raise InvalidWork('tool_result_reader_requires_deferred_effects')
+        self.load_tool_result = load_tool_result
         self.deferred = None
         if plan_effect is not None or load_effect is not None:
-            self.deferred = DeferredActivities(self, plan_effect, load_effect)
+            self.deferred = DeferredActivities(self, plan_effect, load_effect, readiness=effect_readiness)
+        elif effect_readiness is not None:
+            raise InvalidWork('readiness_requires_deferred_effects')
+        self.collaboration=None
+        if join_request is not None or unconsumed_children is not None:
+            if effect_readiness is None:raise InvalidWork('collaboration_readiness_required')
+            self.collaboration=CollaborationActivities(self,join_request,unconsumed_children)
 
 
     @activity.defn(name='openbot.load_task.v1')
@@ -99,15 +128,37 @@ class WorkActivities:
         context = await load_current_activity_task(self.store, self.client, **self.scope)
         if (context.task_id, context.run_id) != (identity.get('taskId'), identity.get('runId')):
             raise WorkConflict('runtime_deps_scope_mismatch')
+        if self.reset_history_on_correction:
+            await CorrectionStore(self.store).enable(context.task_id, context.run_id)
+            frozen = await CorrectionActivities(self).freeze(identity)
+            context = replace(context, correction_token=frozen['id'])
         result = {'taskId': context.task_id, 'runId': context.run_id, 'objective': context.objective}
+        if self.large_tool_arguments: result['largeToolArgumentsProtocol'] = 1
+        if self.collaboration is not None:
+            result['collaborationProtocol'] = 1
+            result['collaborationDeadline'] = await self.collaboration.observed_deadline()
+        if self.load_prompt is not None:
+            async with asyncio.timeout(30):
+                prompt = self.load_prompt(context)
+                if inspect.isawaitable(prompt): prompt = await prompt
+            result['prompt'] = text(prompt, 65536)
+            fresh = await load_current_activity_task(self.store, self.client, **self.scope)
+            if replace(fresh, correction_token=context.correction_token) != context:
+                raise WorkConflict('runtime_context_changed')
         if self.deferred is not None:
-            catalog = await self.ports.deferred_catalog(WorkRuntimeDeps(context.task_id, context.run_id))
+            catalog = await self.ports.deferred_catalog(WorkRuntimeDeps(context.task_id, context.run_id, context.correction_token))
             result['deferredTools'] = [asdict(tool) for tool in catalog.descriptors]
+            if self.load_tool_result is not None:
+                # This recorded result selects the new command path. Older histories without
+                # the flag keep their original status-only outcomes during replay.
+                result['toolResultProtocol'] = 1
         if self.enable_corrections:
-            _, _, _, inline = await self.ports._prepare(WorkRuntimeDeps(context.task_id, context.run_id))
+            _, _, _, inline = await self.ports._prepare(WorkRuntimeDeps(context.task_id, context.run_id, context.correction_token))
             if inline.descriptors: raise WorkConflict('correction_inline_tools_unsupported')
             await CorrectionStore(self.store).enable(context.task_id, context.run_id)
             result['correctionProtocol'] = 1
+            if self.reset_history_on_correction:
+                result['correctionHistoryProtocol'] = 1
         return result
 
     async def completed_result(self, summary, correction_context=None):
@@ -188,11 +239,21 @@ class WorkActivities:
             raise WorkConflict('task_result_unverified')
         artifacts, verification = deepcopy(result.artifacts), deepcopy(result.verification)
         normalize(artifacts); receipt(verification)
+        if result.observed_revision is not None:
+            if type(result.observed_revision) is not int or result.observed_revision < revision:
+                raise WorkConflict('verification_revision_invalid')
+            # A trusted product reviewer may settle its own separately admitted model call.
+            # Its final transaction must bind all reviewed facts to this precise revision.
+            revision = result.observed_revision
         # store.complete rechecks authority, the captured revision and the original fence before
         # and after blob I/O. Verification is evidence, never permission to renew a stale claim.
-        completed = await self.store.complete(context.task_id, context.run_id, fence=fence,
-            expected_revision=revision, summary=summary, artifacts=artifacts, verification=verification,
-            **({"correction_context": correction_context} if correction_context is not None else {}))
+        # Owner attachment mutation uses files -> Task. Acquire the same outer resource scope
+        # before completion opens SQL, never from its already-locked publication callback.
+        async with self.publication_scope(context) if self.publication_scope else nullcontext():
+            completed = await self.store.complete(context.task_id, context.run_id, fence=fence,
+                expected_revision=revision, summary=summary, artifacts=artifacts, verification=verification,
+                **({"correction_context": correction_context} if correction_context is not None else {}),
+                **({'publication': lambda db: self.publication(context, db)} if self.publication is not None else {}))
         return {'taskId': completed['id'], 'status': completed['status'],
                 'artifactIds': [a['id'] for a in completed['artifacts']]}
 
@@ -203,9 +264,35 @@ class OpenBotWork:
 
     @workflow.run
     async def run(self, identity: dict) -> dict:
+        finalize=workflow.patched('openbot-product-failure-finalization-v1')
+        self._loaded=False
+        try:
+            return await self._run(identity)
+        except (FailureError,asyncio.CancelledError) as error:
+            if not finalize:raise
+            cancelled=isinstance(error,asyncio.CancelledError)
+            code=('engine_cancelled' if cancelled else 'startup_failed' if not self._loaded else
+                'publication_failed' if getattr(error,'activity_type',None) in
+                    ('openbot.publish_task.v1','openbot.publish_corrected_task.v1') else 'execution_failed')
+            # The Workflow owns bounded delivery; this historical Activity grants no new effects.
+            result=await asyncio.shield(workflow.execute_activity('openbot.finalize_task_failure.v1',
+                dict(version=1,code=code),**FINALIZE_CONFIG))
+            if result['completion'] is not None:return result['completion']
+            if cancelled:raise
+            raise ApplicationError(code,type='OpenBotTaskFailed',non_retryable=True) from None
+
+    async def _run(self, identity: dict) -> dict:
         context = await workflow.execute_activity('openbot.load_task.v1', identity, **START_CONFIG)
+        self._loaded=True
+        if (context.get('collaborationProtocol') == 1
+                and workflow.patched('openbot-collaboration-deadline-v1')):
+            deadline=CollaborationDeadline(context.get('collaborationDeadline'), CONFIG)
+            return await deadline.run(lambda: self._run_loaded(context,identity,deadline))
+        return await self._run_loaded(context,identity)
+
+    async def _run_loaded(self, context, identity, deadline=None) -> dict:
         if context.get('correctionProtocol') == 1:
-            return await run_corrected(context, identity, agent, CONFIG)
+            return await run_corrected(context, identity, agent, CONFIG, deadline=deadline)
         deps = WorkRuntimeDeps(context['taskId'], context['runId'])
         options = {}
         if context.get('deferredTools'):
@@ -214,26 +301,37 @@ class OpenBotWork:
             options = dict(output_type=[str, DeferredToolRequests],
                 toolsets=[ExternalToolset(list(catalog.sdk_definitions().values()), id='openbot-deferred')])
         usage = RunUsage()
-        result = await agent.run(context['objective'], deps=deps, usage=usage,
+        result = await agent.run(context.get('prompt', context['objective']), deps=deps, usage=usage,
                                  usage_limits=UsageLimits(request_limit=32), **options)
         pauses = 0
-        while isinstance(result.output, DeferredToolRequests):
+        while True:
+            if not isinstance(result.output, DeferredToolRequests):
+                continuation,terminal=await completion_children(context,None,CONFIG)
+                if terminal is not None:return terminal
+                if continuation is None:
+                    return await workflow.execute_activity('openbot.publish_task.v1',result.output,**CONFIG)
+                result=await agent.run(continuation,message_history=result.all_messages(),deps=deps,usage=usage,
+                    usage_limits=UsageLimits(request_limit=32),**options)
+                continue
             calls = result.output.calls
             pauses += 1
             if pauses > 16 or result.output.approvals or not 1 <= len(calls) <= 8:
                 raise ApplicationError('invalid_deferred_batch', non_retryable=True)
             try:
-                proposals = [parse_proposal(dict(call_id=c.tool_call_id, tool=c.tool_name, arguments=c.args)) for c in calls]
+                proposals = [parse_proposal(dict(call_id=c.tool_call_id, tool=c.tool_name, arguments=c.args),
+                    large_arguments=context.get('largeToolArgumentsProtocol') == 1) for c in calls]
                 if len({p['call_id'] for p in proposals}) != len(proposals):
                     raise InvalidWork('duplicate_correlation')
             except InvalidWork:
                 raise ApplicationError('invalid_deferred_proposal', non_retryable=True) from None
             prepared = []
+            if deadline is not None and any(p['tool'] in ('start_task','delegate_task') for p in proposals):
+                deadline.expect_tree()
             for proposal in proposals:
                 action_id = await workflow.execute_activity('openbot.prepare_tool.v1', proposal, **CONFIG)
-                prepared.append((proposal['call_id'], action_id))
+                prepared.append((proposal['call_id'], action_id,proposal['tool']))
             outcomes = {}
-            for call_id, action_id in prepared:
+            for call_id, action_id,tool in prepared:
                 while True:
                     state = await workflow.execute_activity('openbot.tool_state.v1', action_id, **CONFIG)
                     if state['status'] in ('approved','not_required','admitted'):
@@ -244,7 +342,13 @@ class OpenBotWork:
                     if state['status'] in ('not_applied','denied','expired'):
                         return await workflow.execute_activity('openbot.stop_tool.v1', action_id, **CONFIG)
                     if state['status'] == 'applied':
-                        outcomes[call_id] = dict(actionId=action_id, status=state['status'])
+                        if tool=='delegate_task' and context.get('collaborationProtocol')==1:
+                            outcomes[call_id],terminal=await join_child(action_id,None,CONFIG)
+                            if terminal is not None:return terminal
+                        else:
+                            outcomes[call_id] = (await workflow.execute_activity('openbot.tool_result.v1', action_id, **CONFIG)
+                            if context.get('toolResultProtocol') == 1
+                            else dict(actionId=action_id, status=state['status']))
                         break
                     if state['status'] not in ('pending','unknown'):
                         raise ApplicationError('invalid_deferred_state', non_retryable=True)
@@ -253,12 +357,14 @@ class OpenBotWork:
             result = await agent.run(message_history=result.all_messages(), deps=deps, usage=usage,
                 deferred_tool_results=DeferredToolResults(calls=outcomes),
                 usage_limits=UsageLimits(request_limit=32), **options)
-        return await workflow.execute_activity('openbot.publish_task.v1', result.output, **CONFIG)
 
 
 @asynccontextmanager
 async def product_worker(client, store, *, namespace, queue, load_services, verify_result,
-                         plan_effect=None, load_effect=None, load_lookup=None, enable_corrections=False):
+                         plan_effect=None, load_effect=None, load_lookup=None, enable_corrections=False,
+                         load_tool_result=None, reset_history_on_correction=False, load_prompt=None,
+                         publication=None, publication_scope=None, large_tool_arguments=False,
+                         effect_readiness=None,join_request=None,unconsumed_children=None):
     """Serve one operator-selected queue. The connected client needs PydanticAIPlugin.
 
     Callbacks are required Python composition, not import paths or defaults. Shutdown drains the
@@ -269,10 +375,19 @@ async def product_worker(client, store, *, namespace, queue, load_services, veri
         raise WorkConflict('worker_already_configured')
     host = WorkActivities(store, client, namespace=namespace, queue=queue,
                           load_services=load_services, verify_result=verify_result,
-                          plan_effect=plan_effect, load_effect=load_effect, enable_corrections=enable_corrections)
-    activities = [host.load_task, host.publish_task]
+                          plan_effect=plan_effect, load_effect=load_effect, enable_corrections=enable_corrections,
+                          load_tool_result=load_tool_result, reset_history_on_correction=reset_history_on_correction,
+                          load_prompt=load_prompt, publication=publication, publication_scope=publication_scope,
+                          large_tool_arguments=large_tool_arguments,effect_readiness=effect_readiness,
+                          join_request=join_request,unconsumed_children=unconsumed_children)
+    failure=FailureActivities(store,client,namespace=namespace,queue=queue,completed_result=host.completed_result)
+    activities = [host.load_task, host.publish_task,failure.finalize]
+    if host.collaboration is not None:
+        activities += [host.collaboration.pending,host.collaboration.prepare,host.collaboration.deadline]
     if host.deferred is not None:
         activities += [host.deferred.prepare, host.deferred.state, host.deferred.execute, host.deferred.reconcile, host.deferred.stop]
+        if load_tool_result is not None:
+            activities.append(host.deferred.result)
     correction_activities = CorrectionActivities(host)
     activities += [correction_activities.freeze, correction_activities.prepare, correction_activities.publish]
     workflows = [OpenBotWork]

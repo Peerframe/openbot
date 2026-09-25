@@ -11,9 +11,9 @@ def name(value):
     return re.sub(r"[-_.]+", "-", value).lower()
 
 
-def verify():
+def verify(*, worker=False):
     expected = {}
-    for line in (ROOT / "requirements.lock").read_text().splitlines():
+    for line in (ROOT / ("requirements-worker.lock" if worker else "requirements.lock")).read_text().splitlines():
         if not line.strip() or line.startswith("#"):
             continue
         match = re.fullmatch(r"([A-Za-z0-9_.-]+)==([A-Za-z0-9_.+!-]+)", line)
@@ -44,7 +44,8 @@ def verify():
 
 if __name__ == "__main__":
     try:
-        print(f"Control-plane environment matches {verify()} locked distributions.")
+        if sys.argv[1:] not in ([], ['--worker']): raise ValueError('Unknown environment profile.')
+        print(f"Control-plane environment matches {verify(worker=sys.argv[1:] == ['--worker'])} locked distributions.")
     except (ValueError, OSError, KeyError):
         print("Control-plane dependency verification failed.", file=sys.stderr)
         raise SystemExit(1) from None

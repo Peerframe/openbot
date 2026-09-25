@@ -1,0 +1,47 @@
+{
+  "license": "MIT",
+  "sourceCommit": "482bdc5bea56c5b1a996492701b6dbb012d5691e",
+  "workingTreeSnapshot": true,
+  "files": [
+    {
+      "path": "src/employee-publisher-key-cli.ts",
+      "origin": "apps/server/src/employee-publisher-key-cli.ts",
+      "sha256": "be8af3b21089bb75b055f921d501e3fb57f9313d36135e7996924a374832dbfb"
+    },
+    {
+      "path": "src/employee-publisher-keyring.ts",
+      "origin": "apps/server/src/employee-publisher-keyring.ts",
+      "sha256": "c1da6e4b328a9b8e23f193ebfadf30785050c6006d8e570ba27baa3831191bf7"
+    },
+    {
+      "path": "src/employee-package.ts",
+      "origin": "apps/server/src/employee-package.ts",
+      "sha256": "711bf19fa76f1bfb7aa726e01f0a4c0638dfa9a5dcaf7e5dad4b0ec1e2377353"
+    },
+    {
+      "path": "src/employee-package-content.ts",
+      "origin": "apps/server/src/employee-package-content.ts",
+      "sha256": "e4244faa0e6b977c72cec0e78e9306e394af5e4bc3bc0cb909e25ab1130038b5"
+    },
+    {
+      "path": "src/execution-routing.ts",
+      "origin": "apps/server/src/execution-routing.ts",
+      "sha256": "a77346a30b9e345f2b9d03b78b18c285a4eb7217e69560bea7c1491cda16b2c3"
+    },
+    {
+      "path": "src/sensitive-content.ts",
+      "origin": "apps/server/src/sensitive-content.ts",
+      "sha256": "7068da074cef7d7084a46c7ef432f6ac3c7aa40b92f2f03d47d0329a0117bb51"
+    },
+    {
+      "path": "src/agent-skills.ts",
+      "origin": "apps/server/src/agent-skills.ts",
+      "sha256": "48933fd010ca4766f1828a813693674b39f9ba0a13b5067b90b3146ac553bcd5"
+    },
+    {
+      "path": "src/control-plane-store.ts",
+      "origin": "apps/server/src/control-plane-store.ts",
+      "sha256": "ff0b2db636c5482a61d93d2a5bee4f8b787ad4eb3f6317b462ac73d4ce8e42a6"
+    }
+  ]
+}

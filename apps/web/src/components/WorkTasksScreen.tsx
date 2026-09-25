@@ -2,12 +2,23 @@ import type { Bot } from "@openbot/domain";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "../api";
 import {
-  cancelWorkTask,
   type CreateWorkInput,
+  cancelWorkTask,
   createWorkTask,
   getWorkTask,
   type WorkSnapshot,
 } from "../work-api";
+import {
+  emptyNativeTaskScope,
+  type NativeTaskScopeInput,
+  type OwnerAttachment,
+} from "../native-task-api";
+import {
+  NativeTaskScopeForm,
+  attachmentNeedsProcessing,
+  taskBotSupported,
+} from "./NativeTaskScopeForm";
+import { NativeTaskScopeView } from "./NativeTaskScopeView";
 import "./destinations.css";
 import "./WorkTasksScreen.css";
 
@@ -35,15 +46,33 @@ function failure(cause: unknown) {
 export function WorkTasksScreen({
   bots,
   active,
+  initialTaskId = "",
+  nativeCapabilitiesEnabled = false,
 }: {
-  bots: Pick<Bot, "id" | "name">[];
+  bots: Pick<Bot, "id" | "name" | "computerProfile">[];
   active: boolean;
+  initialTaskId?: string | undefined;
+  nativeCapabilitiesEnabled?: boolean;
 }) {
+  const eligibleBots = bots.filter(taskBotSupported);
   const [botId, setBotId] = useState("");
+  const selectedBotId = botId || eligibleBots[0]?.id || "";
+  const [scope, setScope] = useState<NativeTaskScopeInput>(emptyNativeTaskScope);
+  const [files, setFiles] = useState<OwnerAttachment[]>([]);
+  const [filesFresh, setFilesFresh] = useState(true);
+  const [resourcesBusy, setResourcesBusy] = useState(false);
+  const [formGeneration, setFormGeneration] = useState(0);
+  const resourcesInvalid =
+    scope.attachmentIds.length > 0 &&
+    (!filesFresh ||
+      scope.attachmentIds.some((id) => {
+        const file = files.find((item) => item.id === id);
+        return !file || !!file.deletedAt || attachmentNeedsProcessing(file);
+      }));
   const [objective, setObjective] = useState("");
   const [tokenLimit, setTokenLimit] = useState("10000");
-  const [lookup, setLookup] = useState("");
-  const [taskId, setTaskId] = useState("");
+  const [lookup, setLookup] = useState(initialTaskId);
+  const [taskId, setTaskId] = useState(initialTaskId);
   const [snapshot, setSnapshot] = useState<WorkSnapshot>();
   const [fresh, setFresh] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -155,11 +184,32 @@ export function WorkTasksScreen({
   }
   async function create(event: FormEvent) {
     event.preventDefault();
+    if (!attempt && (resourcesBusy || resourcesInvalid)) {
+      setError("请刷新并完成所选附件的必要处理，或解除选择后再提交。");
+      return;
+    }
+    if (
+      !attempt &&
+      (!eligibleBots.some((bot) => bot.id === selectedBotId) ||
+        scope.collaboratorBotIds.some(
+          (id) => id === selectedBotId || !eligibleBots.some((bot) => bot.id === id),
+        ) ||
+        (!nativeCapabilitiesEnabled &&
+          (scope.knowledge || scope.plugins || scope.web || scope.collaboratorBotIds.length > 0)))
+    ) {
+      setError("所选 Bot 或额外能力当前不可用，请检查本次任务范围。");
+      return;
+    }
     const input = attempt ?? {
-      botId: botId || bots[0]?.id || "",
+      botId: selectedBotId,
       objective: objective.trim(),
       tokenLimit: Number(tokenLimit),
       requestKey: crypto.randomUUID(),
+      scope: {
+        ...scope,
+        attachmentIds: [...scope.attachmentIds].sort(),
+        collaboratorBotIds: [...scope.collaboratorBotIds].sort(),
+      },
     };
     if (
       !input.botId ||
@@ -245,15 +295,23 @@ export function WorkTasksScreen({
         <p>创建任务或输入任务 ID，查看 Server 保存的最新状态。</p>
         <form className="work-form" onSubmit={(event) => void create(event)}>
           <h2>{created ? "已提交任务" : "创建任务"}</h2>
-          <fieldset hidden={created} disabled={busy || !!attempt}>
+          <fieldset hidden={created} disabled={busy || !!attempt || resourcesBusy}>
             <label>
               Bot
               <select
-                value={botId || bots[0]?.id || ""}
-                onChange={(event) => setBotId(event.target.value)}
+                value={selectedBotId}
+                onChange={(event) => {
+                  setBotId(event.target.value);
+                  setScope({
+                    ...scope,
+                    collaboratorBotIds: scope.collaboratorBotIds.filter(
+                      (id) => id !== event.target.value,
+                    ),
+                  });
+                }}
                 required
               >
-                {bots.map((bot) => (
+                {eligibleBots.map((bot) => (
                   <option value={bot.id} key={bot.id}>
                     {bot.name}
                   </option>
@@ -282,20 +340,50 @@ export function WorkTasksScreen({
                 onChange={(event) => setTokenLimit(event.target.value)}
               />
             </label>
+            <NativeTaskScopeForm
+              key={formGeneration}
+              bots={eligibleBots}
+              botId={selectedBotId}
+              value={scope}
+              onChange={setScope}
+              files={files}
+              onFilesChange={setFiles}
+              onBusyChange={setResourcesBusy}
+              onFreshChange={setFilesFresh}
+              disabled={busy || !!attempt}
+              active={active && !created}
+              capabilitiesEnabled={nativeCapabilitiesEnabled}
+            />
           </fieldset>
+          {resourcesInvalid && !attempt && (
+            <p>请刷新并完成所选附件的必要处理，或解除选择后再提交。</p>
+          )}
           {!created ? (
-            <button className="primary-button" type="submit" disabled={busy || bots.length === 0}>
+            <button
+              className="primary-button"
+              type="submit"
+              disabled={
+                busy ||
+                (!attempt && (eligibleBots.length === 0 || resourcesBusy || resourcesInvalid))
+              }
+            >
               {attempt ? "重试同一创建请求" : "提交任务"}
             </button>
           ) : (
             <button
               type="button"
               disabled={busy}
-              onClick={() => {
+              onClick={(event) => {
+                // React reuses this node as the submit button after the state reset.
+                event.preventDefault();
                 setAttempt(undefined);
                 setCreated(false);
                 setObjective("");
                 setNotice("");
+                setScope(emptyNativeTaskScope());
+                setFiles([]);
+                setFilesFresh(true);
+                setFormGeneration((value) => value + 1);
               }}
             >
               创建另一个任务
@@ -307,7 +395,9 @@ export function WorkTasksScreen({
               {!created && " · 请保留此页面，确认后再创建其他任务。"}
             </small>
           )}
-          {bots.length === 0 && <p>请先创建 Bot。</p>}
+          {eligibleBots.length === 0 && (
+            <p>请先创建使用 none 或 model 配置的 Bot；此入口不支持计算机环境 Bot。</p>
+          )}
         </form>
         <form className="work-lookup" onSubmit={open}>
           <label>
@@ -386,6 +476,12 @@ export function WorkTasksScreen({
             >
               取消任务
             </button>
+            <NativeTaskScopeView
+              key={snapshot.id}
+              taskId={snapshot.id}
+              active={active}
+              fresh={fresh}
+            />
             <h3>Run 状态</h3>
             <ul>
               {snapshot.runs.map((run) => (

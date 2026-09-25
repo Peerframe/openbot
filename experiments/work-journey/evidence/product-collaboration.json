@@ -1,0 +1,32 @@
+{
+  "case": "collaboration",
+  "actualHTTP": true,
+  "actualPostgres": true,
+  "mutualTLS": true,
+  "syntheticModel": true,
+  "sqlCommitBeforeACKRecovery": true,
+  "originalEngineRun": true,
+  "noProviderResend": true,
+  "counts": {
+    "parent:start": 1,
+    "a:answer": 1,
+    "a:review": 1,
+    "parent:delegate": 1,
+    "b:answer": 1,
+    "b:review": 1,
+    "parent:draft": 1,
+    "parent:final": 1,
+    "parent:review": 1
+  },
+  "offlineReplay": true,
+  "replayedHistories": 3,
+  "childRelations": 2,
+  "taskStatus": "completed",
+  "qualificationInput": "uncommitted-qualified-working-tree",
+  "workingTreeParent": "482bdc5bea56c5b1a996492701b6dbb012d5691e",
+  "historySha256": {
+    "history-1.json": "95bcb4cae488d5bfaac70a09157559bfff2d79bc705e1f4a4c4ab0c9b2813bfe",
+    "history-0.json": "553aec7ec1f4eb8d379a78377405b1fb14b6f67e7da69251ae955159c00c2d21",
+    "history-2.json": "85e446427c0fc16fad73474e040e8057e21f6fca74a7f11142f5d3ff1d8e9f9a"
+  }
+}

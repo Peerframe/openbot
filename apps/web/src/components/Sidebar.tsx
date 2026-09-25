@@ -23,6 +23,7 @@ interface SidebarProps {
   onCreateBot(): void;
   onCreateChannel(): void;
   onManageNodes(): void;
+  onManageModels?: (() => void) | undefined;
   onLogout(): Promise<void>;
 }
 
@@ -42,6 +43,7 @@ export function Sidebar({
   onOpenBotProfile,
   onCreateBot,
   onCreateChannel,
+  onManageModels,
   onLogout,
 }: SidebarProps) {
   const [query, setQuery] = useState("");
@@ -266,6 +268,18 @@ export function Sidebar({
                 </button>
               </>
             )}
+            {onManageModels ? (
+              <button
+                type="button"
+                onClick={() => {
+                  dismiss();
+                  onManageModels();
+                }}
+              >
+                <SettingsIcon />
+                模型服务
+              </button>
+            ) : null}
             <a href="https://github.com/yxflc11/openbot#readme" target="_blank" rel="noreferrer">
               帮助中心<span aria-hidden="true">↗</span>
             </a>

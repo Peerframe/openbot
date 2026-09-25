@@ -50,6 +50,32 @@ async def harness(fixture,tmp_path):
     return activities,service,task,effect,planner,loader,current,stack
 
 
+def test_bounded_prepared_arguments_recover_original_proposal_without_replanning(fixture,tmp_path):
+    async def check():
+        a,s,t,e,p,l,current,stack=await harness(fixture,tmp_path)
+        a.host.large_tool_arguments=True
+        a.host.ports.deferred_catalog=AsyncMock(return_value=ToolCatalog((ToolDescriptor('update','Prepared input',
+            dict(type='object',properties=dict(value={'type':'string'}),required=['value'],additionalProperties=False)),),
+            max_tools=8,max_bytes=4096))
+        p.return_value=deferred.DeferredPlan({'operation':'write'},0,False,prepared_arguments={'blob':'control-descriptor'})
+        proposal=dict(call_id='c',tool='update',arguments={'value':'x'*24000})
+        with stack:
+            identity=await a.prepare(proposal)
+            snapshot=await s.snapshot(fixture['token'],t['id'])
+            from openbot_server.work_values import canonical
+            with psycopg.connect(fixture['dsn']) as db:
+                intent=db.execute('SELECT intent FROM work_actions WHERE id=%s',(identity,)).fetchone()[0]
+            assert canonical(intent)[1]==snapshot['actions'][0]['intentDigest']
+            assert intent['proposalSha256']==canonical(proposal['arguments'],max_bytes=65536)[1]
+            assert intent['arguments']=={'blob':'control-descriptor'}
+            p.side_effect=AssertionError('original proposal must not be repacked')
+            assert await a.prepare(proposal)==identity
+            with pytest.raises(WorkConflict,match='action_content_changed'):
+                await a.prepare({**proposal,'arguments':{'value':'y'*24000}})
+            assert p.await_count==1
+    asyncio.run(check())
+
+
 def decide_http(fixture,service,action_id,approved=True):
     app=create_app(PostgresReadStore(fixture['dsn']),owner_name=fixture['ownerName'],secure_cookies=False,
                    allowed_origins=('http://control.test',),work=service)
@@ -84,6 +110,30 @@ def test_prepare_replay_and_approved_execution_never_replan(fixture,tmp_path):
             assert await a.execute(identity)==dict(actionId=identity,status='applied')
             assert await a.execute(identity)==dict(actionId=identity,status='applied')
             assert p.await_count==1 and len(e.applies)==1 and len(e.lookups)==1
+    asyncio.run(check())
+
+
+def test_pending_readiness_does_not_admit_claim_or_load_effect(fixture,tmp_path):
+    async def check():
+        a,s,t,e,p,l,current,stack=await harness(fixture,tmp_path)
+        a.readiness=AsyncMock(return_value='pending')
+        with stack:
+            identity=await a.prepare(PROPOSAL)
+            assert (await a.state(identity))['status']=='pending'
+            assert a.readiness.await_count==0  # Owner approval still takes precedence.
+            decide_http(fixture,s,identity)
+            before=await s.snapshot(fixture['token'],t['id'])
+            current['activity']='waiting'
+            assert (await a.state(identity))['status']=='pending'
+            assert (await a.execute(identity))['status']=='pending'
+            assert await s.snapshot(fixture['token'],t['id'])==before
+            assert not e.applies and l.await_count==0
+            a.readiness.return_value='ready';current['activity']='execute-ready'
+            assert (await a.state(identity))['status']=='approved'
+            assert (await a.execute(identity))['status']=='applied'
+            a.readiness.side_effect=AssertionError('An applied operation must only read its recorded result')
+            assert (await a.execute(identity))['status']=='applied'
+            assert len(e.applies)==1
     asyncio.run(check())
 
 

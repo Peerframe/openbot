@@ -49,7 +49,7 @@ Use a trusted backend and narrowly privileged service account.
 After `npm ci`, run this separate local MCP server from the source checkout:
 
 ```sh
-npx tsx apps/server/src/plugin-example.ts
+npx tsx packages/mcp-example/src/plugin-example.ts
 ```
 
 Explicitly configure the development endpoint on the **OpenBot Server computer**, then restart:
@@ -57,6 +57,14 @@ Explicitly configure the development endpoint on the **OpenBot Server computer**
 ```dotenv
 OPENBOT_PLUGIN_LOCAL_ENDPOINTS=http://127.0.0.1:4318/mcp
 ```
+
+For the explicit Python product entry point, use its own JSON-array setting instead:
+
+```dotenv
+OPENBOT_CONTROL_PLUGIN_LOCAL_ENDPOINTS=["http://127.0.0.1:4318/mcp"]
+```
+
+These variables are not implicit aliases; configure the selected Server entry point.
 
 For an application-hosted Server, set the variable in the application's launch environment before
 opening it. Localhost means the Server computer, not a remote client. Only exact operator-listed
@@ -68,7 +76,7 @@ as confirm to one Bot, and enable it. Enable the native Agent with a tool-capabl
 “Use sum_numbers to add 13 and 29.” Next ask “Use append_note to save ‘Checked result: 42’.” The
 second operation appends one note only after approval. Other ungranted Bots cannot call these tools.
 Notes are real state in the example process's memory, cleared on restart; no external account or
-local document is used. Source: [plugin-example.ts](../apps/server/src/plugin-example.ts).
+local document is used. Source: [plugin-example.ts](../packages/mcp-example/src/plugin-example.ts).
 
 ## Author contract
 

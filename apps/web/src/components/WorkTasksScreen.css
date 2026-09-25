@@ -100,3 +100,49 @@
 .work-snapshot li {
   margin: 10px 0;
 }
+
+.native-task-scope,
+.native-task-scope-readonly {
+  border-top: 1px solid var(--destination-line);
+  padding-top: 12px;
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+}
+.work-tasks .native-task-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.work-tasks .native-task-checkbox input {
+  width: auto;
+  flex: 0 0 auto;
+}
+.native-task-file-controls {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.native-task-files {
+  list-style: none;
+  padding: 0;
+}
+.native-task-files > li {
+  border: 1px solid var(--destination-line);
+  border-radius: 6px;
+  margin: 12px 0;
+  padding: 12px;
+}
+.native-task-files details {
+  margin-top: 12px;
+}
+.native-task-files summary {
+  cursor: pointer;
+}
+.native-task-files details button {
+  margin-top: 8px;
+}
+.native-task-capabilities legend {
+  margin-bottom: 12px;
+  font-weight: 600;
+}

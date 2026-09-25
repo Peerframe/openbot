@@ -45,7 +45,12 @@ def register_work_routes(app: FastAPI, writer, read_store, *, secure_cookies, al
     async def create(request: Request):
         token, body = await write_input(request, CreateTask, 20000)
         return await result(writer.create(token, bot_id=body.botId, objective=body.objective,
-                                         token_limit=body.tokenLimit, request_key=body.requestKey))
+                                         token_limit=body.tokenLimit, request_key=body.requestKey,
+                                         **({"scope":body.scope.model_dump()} if body.scope is not None else {})))
+
+    @app.get('/api/v1/tasks/{task_id}/scope', operation_id='getNativeWorkTaskScope')
+    async def scope(request: Request, task_id: str = Path(min_length=1,max_length=128)):
+        return await result(writer.native_scope(request.cookies.get(cookie_name),task_id))
 
     @app.get('/api/v1/tasks/{task_id}', response_model=WorkSnapshot, operation_id='getWorkTask')
     async def read(request: Request, task_id: str = Path(min_length=1, max_length=128)):

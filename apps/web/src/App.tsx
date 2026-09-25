@@ -26,8 +26,6 @@ import {
   subscribeToWorkspaceEvents,
 } from "./api";
 import { resolveAuthSession } from "./auth-session-recovery";
-import { WorkTasksEntry } from "./components/WorkTasksEntry";
-import { WorkTasksScreen } from "./components/WorkTasksScreen";
 import { AutomationsScreen } from "./components/AutomationsScreen";
 import { ChannelMembersMenu } from "./components/ChannelMembersMenu";
 import { ChannelWorkspace } from "./components/ChannelWorkspace";
@@ -39,6 +37,7 @@ import { DesktopInstallScreen } from "./components/DesktopInstallScreen";
 import { DesktopLocalWorkerScreen } from "./components/DesktopLocalWorkerScreen";
 import { DesktopSettingsScreen } from "./components/DesktopSettingsScreen";
 import { DesktopSetupScreen } from "./components/DesktopSetupScreen";
+import { EmployeeBrowser } from "./components/EmployeeBrowser";
 import { EmployeeProfileRail } from "./components/EmployeeProfileRail";
 import { EmployeeProfileView, type ProfileTab } from "./components/EmployeeProfileView";
 import { ExportEmployeeDialog } from "./components/ExportEmployeeDialog";
@@ -54,6 +53,7 @@ import {
 import { ImportEmployeeDialog } from "./components/ImportEmployeeDialog";
 import { LoginScreen } from "./components/LoginScreen";
 import { MobileNavigation, type MobilePanel } from "./components/MobileNavigation";
+import { ModelConnectionsDialog } from "./components/ModelConnectionsDialog";
 import { ModelSettingsScreen } from "./components/ModelSettingsScreen";
 import { NodeManagerDialog } from "./components/NodeManagerDialog";
 import { OpenBotMark } from "./components/OpenBotMark";
@@ -62,6 +62,8 @@ import { RunInspector } from "./components/RunInspector";
 import { ShareConversationDialog } from "./components/ShareConversationDialog";
 import { Sidebar } from "./components/Sidebar";
 import { SkillLibraryScreen } from "./components/SkillLibraryScreen";
+import { parseWorkEntry, WorkTasksEntry } from "./components/WorkTasksEntry";
+import { WorkTasksScreen } from "./components/WorkTasksScreen";
 import { createConversationSession } from "./conversation-session";
 import {
   type DesktopConnectionState,
@@ -79,9 +81,9 @@ import { updatePreferences, useWorkspacePreferences } from "./workspace-preferen
 type Dialog = "bot" | "channel" | "node" | undefined;
 
 export function App() {
-  const [workEntry, setWorkEntry] = useState(() => window.location.hash === "#/tasks");
+  const [workEntry, setWorkEntry] = useState(() => parseWorkEntry(window.location.hash));
   useEffect(() => {
-    const update = () => setWorkEntry(window.location.hash === "#/tasks");
+    const update = () => setWorkEntry(parseWorkEntry(window.location.hash));
     window.addEventListener("hashchange", update);
     return () => window.removeEventListener("hashchange", update);
   }, []);
@@ -422,6 +424,7 @@ export function App() {
   if (workEntry)
     return (
       <WorkTasksEntry
+        initialTaskId={workEntry.taskId}
         key={`${session.owner.id}:${desktopConnection?.status === "configured" ? desktopConnection.serverUrl : "web"}`}
         onLogout={async () => {
           explicitlyLoggedOut.current = true;
@@ -598,6 +601,9 @@ export function AuthenticatedWorkspace({
     };
   }, [conversationSession]);
   const [dialog, setDialog] = useState<Dialog>();
+  const [browserBotId, setBrowserBotId] = useState<string>();
+  const [modelServicesOpen, setModelServicesOpen] = useState(false);
+  const [modelServicesVersion, setModelServicesVersion] = useState(0);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>();
   const [error, setError] = useState<string>();
   const {
@@ -1026,12 +1032,13 @@ export function AuthenticatedWorkspace({
           onCreateBot={() => setDialog("bot")}
           onCreateChannel={() => setDialog("channel")}
           onManageNodes={() => setDialog("node")}
+          onManageModels={() => setModelServicesOpen(true)}
           onLogout={onLogout}
           onSettings={onSettings}
         />
       </div>
 
-      <WorkTasksScreen bots={workspace.bots} active={destination === "work" && active} />
+      <WorkTasksScreen bots={workspace.bots} active={destination === "work" && active} nativeCapabilitiesEnabled />
       {destination === "work" ? null : destination === "automations" ? (
         <AutomationsScreen bots={workspace.bots} channels={workspace.channels} />
       ) : destination === "skills" ? (
@@ -1063,6 +1070,9 @@ export function AuthenticatedWorkspace({
           onAssign={() => assignEmployee(selectedEmployeeId)}
           onExport={() => setEmployeeExportOpen(true)}
           onProfileChanged={() => loadEmployeeProfile(selectedEmployeeId)}
+          onManageModels={() => setModelServicesOpen(true)}
+          modelServicesVersion={modelServicesVersion}
+          onOpenBrowser={() => setBrowserBotId(selectedEmployeeId)}
         />
       ) : selectedChannel ? (
         <ChannelWorkspace
@@ -1125,6 +1135,10 @@ export function AuthenticatedWorkspace({
           setMobilePanel(undefined);
           setDialog("node");
         }}
+        onManageModels={() => {
+          setMobilePanel(undefined);
+          setModelServicesOpen(true);
+        }}
         onSelectChannel={selectChannel}
         onSelectBot={openEmployee}
       />
@@ -1159,6 +1173,10 @@ export function AuthenticatedWorkspace({
           progress={workspace.progress.filter((item) => item.runId === selectedRun.id)}
           liveFrame={framesByRun.get(selectedRun.id)}
           run={selectedRun}
+          onOpenBrowser={() => {
+            setBrowserBotId(selectedRun.botId);
+            closeInspector();
+          }}
           onClose={closeInspector}
           onInspectRun={setSelectedRunId}
           onRun={(run) => {
@@ -1172,6 +1190,8 @@ export function AuthenticatedWorkspace({
         <CreateBotDialog
           onClose={() => setDialog(undefined)}
           onCreate={handleCreateBot}
+          onManageModels={() => setModelServicesOpen(true)}
+          modelServicesVersion={modelServicesVersion}
           onImport={() => {
             setDialog(undefined);
             setEmployeeImportOpen(true);
@@ -1187,6 +1207,18 @@ export function AuthenticatedWorkspace({
       ) : null}
       {dialog === "node" ? (
         <NodeManagerDialog onlineNodes={workspace.nodes} onClose={() => setDialog(undefined)} />
+      ) : null}
+      {browserBotId && workspace.bots.find((bot) => bot.id === browserBotId) ? (
+        <EmployeeBrowser
+          bot={workspace.bots.find((bot) => bot.id === browserBotId)!}
+          onClose={() => setBrowserBotId(undefined)}
+        />
+      ) : null}
+      {modelServicesOpen ? (
+        <ModelConnectionsDialog
+          onClose={() => setModelServicesOpen(false)}
+          onChanged={() => setModelServicesVersion((version) => version + 1)}
+        />
       ) : null}
       {sharedBotId && workspace.bots.find((bot) => bot.id === sharedBotId) ? (
         <ExportEmployeeDialog

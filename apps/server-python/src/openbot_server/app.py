@@ -41,7 +41,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
                allowed_origins: tuple[str, ...] = (), auth: OwnerAuthentication | None = None,
                identity: IdentityStore | None = None, conversations: ConversationStore | None = None,
                profiles: ProfileStore | None = None, tasks: TaskStore | None = None,
-               run_commands: RunCommandStore | None = None, work=None) -> FastAPI:
+               run_commands: RunCommandStore | None = None, work=None, product=None) -> FastAPI:
     if not owner_name or any(origin == "*" or origin == "null" for origin in allowed_origins):
         raise ValueError("An Owner name and explicit origins are required.")
     if auth is not None and auth.owner_name != owner_name:
@@ -66,14 +66,20 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
             await run_commands.verify_schema()
         if work is not None:
             await work.verify_schema()
-        yield
+        if product is not None:
+            await product.verify_schema()
+        try:
+            if product is not None: await product.start()
+            yield
+        finally:
+            if product is not None: await product.close()
 
     app = FastAPI(title="OpenBot control-plane reference", version="0.0.0",
                   docs_url=None, redoc_url=None, lifespan=lifespan)
     app.add_middleware(CORSMiddleware, allow_origins=list(allowed_origins),
-                       allow_credentials=True, allow_methods=(["GET", "POST", "PATCH"] if profiles else
+                       allow_credentials=True, allow_methods=(["GET", "POST", "PATCH", "PUT", "DELETE"] if product else ["GET", "POST", "PATCH"] if profiles else
                                       ["GET", "POST"] if auth or identity or conversations or tasks or run_commands or work else ["GET"]),
-                       allow_headers=["Content-Type"] if auth or identity or conversations or profiles or tasks or run_commands or work else [])
+                       allow_headers=(["Content-Type", "X-OpenBot-Filename", "If-Match"] if product else ["Content-Type"] if auth or identity or conversations or profiles or tasks or run_commands or work else []))
 
     @app.middleware("http")
     async def private_response(request: Request, call_next):
@@ -90,7 +96,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         work_write = work is not None and request.method == "POST" and (
             request.url.path == "/api/v1/tasks" or re.fullmatch(r"/api/v1/tasks/[^/]+/(cancel|corrections)", request.url.path)
             or re.fullmatch(r"/api/v1/actions/[^/]+/(decision|reconcile)", request.url.path))
-        if request.method not in ("GET", "HEAD", "OPTIONS") and not (auth_write or identity_write or conversation_write or profile_write or task_write or run_command_write or work_write):
+        if request.method not in ("GET", "HEAD", "OPTIONS") and not (auth_write or identity_write or conversation_write or profile_write or task_write or run_command_write or work_write or product is not None and product.permits_write(request)):
             response = JSONResponse({"error": "Operation is unavailable in this reference."}, status_code=405)
         else:
             response = await call_next(request)
@@ -98,6 +104,11 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         return response
+
+    from .control_errors import ControlError
+    @app.exception_handler(ControlError)
+    async def control_error(request: Request, error: ControlError):
+        return JSONResponse({"error": error.code}, status_code=error.status)
 
     @app.exception_handler(StoreUnavailable)
     async def unavailable(request: Request, error: StoreUnavailable):
@@ -130,7 +141,11 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
 
     @app.get("/health", operation_id="getHealth")
     async def health():
-        return {"ok": True, "service": "openbot-server", "phase": "s3-work-admission-reference" if work else "s2b-task-reference" if tasks or run_commands else "s2a-identity-reference" if identity or conversations or profiles else "s2a-auth-reference" if auth else "s2a-read-reference",
+        runtime = getattr(product, 'work_runtime', None)
+        if runtime is not None and runtime.status['state'] != 'running':
+            return JSONResponse({'ok': False, 'service': 'openbot-server',
+                                 'execution': runtime.status}, status_code=503)
+        return {"ok": True, "service": "openbot-server", "phase": "python-product-candidate" if product else "s3-work-admission-reference" if work else "s2b-task-reference" if tasks or run_commands else "s2a-identity-reference" if identity or conversations or profiles else "s2a-auth-reference" if auth else "s2a-read-reference",
                 "time": iso_timestamp(datetime.now(timezone.utc))}
 
     @app.get("/api/v1/auth/session", response_model=AuthSession,
@@ -216,6 +231,10 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         from .work_routes import register_work_routes
         register_work_routes(app, work, store, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
 
+    if product is not None:
+        from .product_control import register_product_routes
+        register_product_routes(app, product, store, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
+
     # Cookie parsing is invoked inside the adapter to keep the store request-scoped. Declare
     # that exact scheme in generated OpenAPI too; a schema is never an authorization check.
     schema = app.openapi()
@@ -252,4 +271,10 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
                              ("/api/v1/actions/{action_id}/reconcile", "post"),
                              ("/api/v1/artifacts/{artifact_id}", "get")):
             schema["paths"][path][method]["security"] = [{"OwnerSession": []}]
+    if product is not None:
+        for path, operations in schema["paths"].items():
+            if path.startswith('/api/v1/') and path not in ('/api/v1/auth/login','/api/v1/auth/session','/api/v1/nodes/enroll'):
+                for method, operation in operations.items():
+                    if method in ('get','post','put','patch','delete'):
+                        operation['security']=[{'OwnerSession': []}]
     return app

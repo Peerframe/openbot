@@ -1,0 +1,27 @@
+{
+  "case": "live-kimi-synthetic-native-task",
+  "provider": "moonshot",
+  "model": "kimi-k3",
+  "actualProvider": true,
+  "actualPostgres": true,
+  "mutualTLS": true,
+  "taskCount": 1,
+  "modelReceipts": 4,
+  "actualTokens": 8854,
+  "tokenLimit": 65536,
+  "independentReviewAccepted": true,
+  "producerReceiptMatched": true,
+  "attachmentRead": true,
+  "reportDownloaded": {
+    "sha256": "ce648fb576cbe297ad4a02af20d8ac8847a768c3b7c37cf2a62f7f393b897744",
+    "sizeBytes": 231
+  },
+  "historyReplayCount": 1,
+  "replayActivitiesRegistered": 0,
+  "providerResendsRequested": 0,
+  "date": "2026-09-25",
+  "canonicalMigrations": 42,
+  "ownedEngineClosed": true,
+  "originalProfileUnmodified": true,
+  "providerResubmissions": 0
+}

@@ -1,17 +1,25 @@
 // @vitest-environment jsdom
+vi.mock("./native-task-api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./native-task-api")>()),
+  getNativeTaskScope: vi.fn(async () => null),
+}));
 
 import type { Bot, Channel, Run, WorkspaceSnapshot } from "@openbot/domain";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 import * as api from "./api";
+import { parseWorkEntry } from "./components/WorkTasksEntry";
 import type { OpenBotDesktopBridge } from "./desktop-runtime";
 import { interact, renderComponent, setInputValue } from "./test/render-component";
-import { defaultPreferences, updatePreferences } from "./workspace-preferences";
+import { workFixture } from "./test/work-fixture";
 import * as workApi from "./work-api";
+import { defaultPreferences, updatePreferences } from "./workspace-preferences";
 
 vi.mock("./work-api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./work-api")>()),
-  listWorkBots: vi.fn(async () => [{ id: "bot-one", name: "Navigator" }]),
+  listWorkBots: vi.fn(async () => [{ id: "bot-one", name: "Navigator", computerProfile: "none" }]),
+  getWorkTask: vi.fn(async (id: string) => workFixture({ id })),
+  createWorkTask: vi.fn(),
 }));
 
 vi.mock("./api", async (importOriginal) => {
@@ -20,6 +28,7 @@ vi.mock("./api", async (importOriginal) => {
     ...original,
     getAuthSession: vi.fn(),
     getWorkspace: vi.fn(),
+    getModelServices: vi.fn(),
     getEmployeeProfile: vi.fn(),
     listMessages: vi.fn(),
     listRuns: vi.fn(),
@@ -77,6 +86,11 @@ beforeEach(() => {
     owner: { id: "owner-one", name: "Owner" },
   });
   vi.mocked(api.getWorkspace).mockImplementation(async () => snapshot);
+  vi.mocked(api.getModelServices).mockResolvedValue({
+    presets: [],
+    connections: [],
+    customBaseUrls: [],
+  });
   vi.mocked(api.listMessages).mockResolvedValue([]);
   vi.mocked(api.listRuns).mockResolvedValue([]);
   vi.mocked(api.getEmployeeProfile).mockRejectedValue(
@@ -441,4 +455,93 @@ it("preserves the work draft when navigating away through the shared sidebar", a
   } finally {
     await rendered.unmount();
   }
+});
+
+it("opens model services from the owner menu without discarding the conversation draft", async () => {
+  const rendered = await renderComponent(<App />);
+  try {
+    await settleEffects();
+    await enterDraft(composer(rendered.container), "保留对话草稿");
+    await interact(() =>
+      rendered.container.querySelector<HTMLElement>(".owner-menu summary")?.click(),
+    );
+    await interact(() => buttonByText(rendered.container, "模型服务").click());
+    await settleEffects();
+    expect(api.getModelServices).toHaveBeenCalledTimes(1);
+    expect(rendered.container.querySelector(".model-services-dialog")).not.toBeNull();
+    await interact(() => buttonByLabel(rendered.container, "关闭模型服务").click());
+    expect(rendered.container.querySelector(".model-services-dialog")).toBeNull();
+    expect(composer(rendered.container).value).toBe("保留对话草稿");
+    expect(api.getWorkspace).toHaveBeenCalledTimes(1);
+  } finally {
+    await rendered.unmount();
+  }
+});
+
+it("keeps the creation draft mounted while configuring model services", async () => {
+  const rendered = await renderComponent(<App />);
+  try {
+    await settleEffects();
+    await interact(() =>
+      rendered.container.querySelector<HTMLElement>(".create-menu summary")?.click(),
+    );
+    await interact(() => buttonByText(rendered.container, "创建 Bot").click());
+    const creation = rendered.container.querySelector(".create-dialog");
+    const name = creation?.querySelector<HTMLInputElement>("input");
+    if (!name) throw new Error("Create Bot name input missing");
+    await setInputValue(name, "Draft model Bot");
+    const mode = Array.from(creation?.querySelectorAll("select") ?? []).find((select) =>
+      Array.from(select.options).some((option) => option.value === "model"),
+    );
+    if (!mode) throw new Error("Computer profile select missing");
+    expect(mode.value).toBe("none");
+    await interact(() => {
+      mode.value = "model";
+      mode.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await settleEffects();
+    await interact(() => buttonByText(rendered.container, "管理模型服务").click());
+    await settleEffects();
+    expect(rendered.container.querySelectorAll("dialog")).toHaveLength(2);
+    await interact(() => buttonByLabel(rendered.container, "关闭模型服务").click());
+    expect(rendered.container.querySelectorAll("dialog")).toHaveLength(1);
+    expect(rendered.container.querySelector(".create-dialog")).toBe(creation);
+    expect(name.value).toBe("Draft model Bot");
+    expect(mode.value).toBe("model");
+  } finally {
+    await rendered.unmount();
+  }
+});
+
+it.each(["web", "desktop"])(
+  "opens a mapped Run task deep link on %s and follows task identity changes",
+  async (shell) => {
+    if (shell === "web") delete window.openbotDesktop;
+    window.history.replaceState(null, "", "#/tasks?task=task-one");
+    const rendered = await renderComponent(<App />);
+    try {
+      await settleEffects();
+      expect(api.getWorkspace).not.toHaveBeenCalled();
+      expect(workApi.getWorkTask).toHaveBeenCalledWith("task-one", expect.any(AbortSignal));
+      expect(rendered.container.querySelector(".work-snapshot")?.textContent).toContain("task-one");
+      await interact(() => {
+        window.history.replaceState(null, "", "#/tasks?task=task-two");
+        window.dispatchEvent(new Event("hashchange"));
+      });
+      await settleEffects();
+      expect(workApi.getWorkTask).toHaveBeenLastCalledWith("task-two", expect.any(AbortSignal));
+      expect(rendered.container.querySelector(".work-snapshot")?.textContent).toContain("task-two");
+      expect(workApi.createWorkTask).not.toHaveBeenCalled();
+    } finally {
+      await rendered.unmount();
+      window.history.replaceState(null, "", "/");
+    }
+  },
+);
+
+it("limits the task deep link to the exact route and a bounded identity", () => {
+  expect(parseWorkEntry("#/tasks?task=task-one")).toEqual({ taskId: "task-one" });
+  expect(parseWorkEntry("#/tasks?task=" + "x".repeat(129))).toEqual({ taskId: "" });
+  expect(parseWorkEntry("#/tasks?task=..%2Fprivate")).toEqual({ taskId: "" });
+  expect(parseWorkEntry("#/tasks-other?task=task-one")).toBeUndefined();
 });

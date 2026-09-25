@@ -188,7 +188,7 @@ class PostgresServer:
         await self.rejected_client('retired-client-ca', previous)
         self.evidence.append({'case': 'mtls-stop-rotate-reconnect', 'namespacePreserved': True})
 
-    def backup(self, destination):
+    def backup(self, destination, *, restart_engine=True):
         """Cold engine-only snapshot; the caller has already stopped its owned workers."""
         self.command('stop', 'temporal')
         destination.mkdir(mode=0o700)
@@ -200,12 +200,13 @@ class PostgresServer:
             path = destination / (db + '.dump'); path.write_bytes(result.stdout); path.chmod(0o600)
             manifest['databases'][db] = {'sha256': hashlib.sha256(result.stdout).hexdigest(), 'size': len(result.stdout)}
         (destination / 'manifest.json').write_text(json.dumps(manifest))
-        self.command('up', '-d', 'temporal')
+        if restart_engine:
+            self.command('up', '-d', 'temporal')
         self.evidence.append({'case': 'cold-engine-backup', 'schema': manifest['schema'],
             'bytes': {key: value['size'] for key, value in manifest['databases'].items()}})
         return destination
 
-    def restore(self, snapshot):
+    def restore(self, snapshot, *, start_engine=True):
         """Restore to a new named volume; never overwrite a preexisting database."""
         self.command('stop', 'temporal')
         manifest = json.loads((snapshot / 'manifest.json').read_text())
@@ -221,10 +222,11 @@ class PostgresServer:
             assert len(data) == manifest['databases'][db]['size']
             assert hashlib.sha256(data).hexdigest() == manifest['databases'][db]['sha256']
             self.command('exec', '-T', 'postgresql', 'pg_restore', '-U', 'temporal_schema',
-                '--exit-on-error', '--no-owner', '--no-privileges', '-d', db, input=data)
+                '--single-transaction', '--exit-on-error', '--no-owner', '--no-privileges', '-d', db, input=data)
         assert self.versions() == manifest['schema']
         maintenance.seal_metadata(self.sql)
-        self.command('up', '-d', 'temporal')
+        if start_engine:
+            self.command('up', '-d', 'temporal')
         self.evidence.append({'case': 'restore-new-engine-volume', 'schema': manifest['schema'], 'namespacePreserved': True})
 
     def crash_restart(self):

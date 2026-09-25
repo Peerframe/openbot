@@ -14,6 +14,7 @@ Nothing here writes, claims, schedules, retries or audits, and the module never 
 Worker input.
 """
 from dataclasses import dataclass
+from contextlib import asynccontextmanager
 
 from .work_dispatcher import REFERENCE_PREFIX, WORKFLOW_ID_PREFIX
 from .work_handoff import valid_attempt_id
@@ -103,6 +104,27 @@ async def assert_accepted_workflow(store: PostgresWorkStore, identity, facts, *,
         expected_queue=expected_queue, expected_workflow_type=expected_workflow_type, completed=False)
 
 
+async def assert_accepted_workflow_in_transaction(store, connection, identity, facts, *,
+                                                  expected_namespace, expected_queue, expected_workflow_type):
+    """Same read-only binding inside an existing control transaction; facts still come from SDK.
+
+    Admission/publication already hold the Task lock. Opening a second connection here would
+    wait on that transaction's own lock. This entry adds no claim or caller-supplied authority.
+    """
+    return await _assert_workflow(store, identity, facts, expected_namespace=expected_namespace,
+        expected_queue=expected_queue, expected_workflow_type=expected_workflow_type, completed=False,
+        connection=connection)
+
+
+@asynccontextmanager
+async def _binding_transaction(store, connection):
+    if connection is not None:
+        yield connection
+    else:
+        async with store._transaction(trusted=True) as opened:
+            yield opened
+
+
 async def assert_completed_workflow(store: PostgresWorkStore, identity, facts, *,
                                     expected_namespace, expected_queue, expected_workflow_type):
     """Correlate a completed result for readback only. Never supplies fresh authority or a fence."""
@@ -123,8 +145,16 @@ async def assert_historical_workflow(store, identity, facts, *, expected_namespa
         completed=False, historical=True)
 
 
+async def assert_historical_workflow_in_transaction(store, connection, identity, facts, *,
+                                                    expected_namespace, expected_queue, expected_workflow_type):
+    """Original handoff proof under the caller's locks; never grants fresh execution authority."""
+    return await _assert_workflow(store, identity, facts, expected_namespace=expected_namespace,
+        expected_queue=expected_queue, expected_workflow_type=expected_workflow_type,
+        completed=False, historical=True, connection=connection)
+
+
 async def _assert_workflow(store, identity, facts, *, expected_namespace, expected_queue,
-                           expected_workflow_type, completed, failed=False, historical=False):
+                           expected_workflow_type, completed, failed=False, historical=False, connection=None):
     """Fail closed unless this activity matches one acknowledged Task/Run engine start.
 
     ``expected_*`` are trusted settings from control composition; ``identity`` must be exactly
@@ -182,7 +212,7 @@ async def _assert_workflow(store, identity, facts, *, expected_namespace, expect
     if facts.workflow_id != workflow_id:
         raise WorkConflict('engine_workflow_id_mismatch')
 
-    async with store._transaction(trusted=True) as connection:
+    async with _binding_transaction(store, connection) as connection:
         # All control writers take the Task lock first; this SHARE lock makes the following
         # reads consistent with cancellation/revocation while granting no write.
         task = await store._task(connection, task_id, read=True)

@@ -1,0 +1,293 @@
+{
+  "$defs": {
+    "CommandLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "nanoCPUs": {
+          "maximum": 1000000000,
+          "minimum": 1,
+          "title": "Nanocpus",
+          "type": "integer"
+        },
+        "memoryMiB": {
+          "maximum": 512,
+          "minimum": 1,
+          "title": "Memorymib",
+          "type": "integer"
+        },
+        "pids": {
+          "maximum": 512,
+          "minimum": 1,
+          "title": "Pids",
+          "type": "integer"
+        },
+        "nofile": {
+          "maximum": 256,
+          "minimum": 1,
+          "title": "Nofile",
+          "type": "integer"
+        },
+        "tmpMiB": {
+          "maximum": 32,
+          "minimum": 1,
+          "title": "Tmpmib",
+          "type": "integer"
+        },
+        "wallSeconds": {
+          "maximum": 60,
+          "minimum": 1,
+          "title": "Wallseconds",
+          "type": "integer"
+        },
+        "outputMiB": {
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Outputmib",
+          "type": "integer"
+        },
+        "capturedOutputKiB": {
+          "maximum": 1024,
+          "minimum": 1,
+          "title": "Capturedoutputkib",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "nanoCPUs",
+        "memoryMiB",
+        "pids",
+        "nofile",
+        "tmpMiB",
+        "wallSeconds",
+        "outputMiB",
+        "capturedOutputKiB"
+      ],
+      "title": "CommandLimits",
+      "type": "object"
+    },
+    "CommandRoute": {
+      "additionalProperties": false,
+      "properties": {
+        "nodeId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Nodeid",
+          "type": "string"
+        },
+        "providerId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Providerid",
+          "type": "string"
+        },
+        "enforcementKeyId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Enforcementkeyid",
+          "type": "string"
+        },
+        "ledgerId": {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "title": "Ledgerid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "nodeId",
+        "providerId",
+        "enforcementKeyId",
+        "ledgerId"
+      ],
+      "title": "CommandRoute",
+      "type": "object"
+    },
+    "TimingPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "prepareBudgetMs": {
+          "maximum": 30000,
+          "minimum": 1,
+          "title": "Preparebudgetms",
+          "type": "integer"
+        },
+        "challengeBudgetMs": {
+          "maximum": 5000,
+          "minimum": 1,
+          "title": "Challengebudgetms",
+          "type": "integer"
+        },
+        "runtimeMaxMs": {
+          "maximum": 50000,
+          "minimum": 1,
+          "title": "Runtimemaxms",
+          "type": "integer"
+        },
+        "stopAllowanceMs": {
+          "maximum": 5000,
+          "minimum": 1,
+          "title": "Stopallowancems",
+          "type": "integer",
+          "const": 5000
+        },
+        "clockRateErrorPpm": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Clockrateerrorppm",
+          "type": "integer"
+        },
+        "clockQuantizationMs": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Clockquantizationms",
+          "type": "integer"
+        },
+        "policyDigest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Policydigest",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prepareBudgetMs",
+        "challengeBudgetMs",
+        "runtimeMaxMs",
+        "stopAllowanceMs",
+        "clockRateErrorPpm",
+        "clockQuantizationMs",
+        "policyDigest"
+      ],
+      "title": "TimingPolicy",
+      "type": "object"
+    },
+    "_Control": {
+      "additionalProperties": false,
+      "properties": {
+        "issuer": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Issuer",
+          "type": "string"
+        },
+        "keyId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Keyid",
+          "type": "string"
+        },
+        "privateKeyPath": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Privatekeypath",
+          "type": "string"
+        }
+      },
+      "required": [
+        "issuer",
+        "keyId",
+        "privateKeyPath"
+      ],
+      "title": "_Control",
+      "type": "object"
+    },
+    "_Enforcement": {
+      "additionalProperties": false,
+      "properties": {
+        "issuer": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Issuer",
+          "type": "string"
+        },
+        "keyId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Keyid",
+          "type": "string"
+        },
+        "publicKeyPath": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Publickeypath",
+          "type": "string"
+        }
+      },
+      "required": [
+        "issuer",
+        "keyId",
+        "publicKeyPath"
+      ],
+      "title": "_Enforcement",
+      "type": "object"
+    },
+    "_Policy": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "image": {
+          "maxLength": 256,
+          "minLength": 73,
+          "pattern": "^[a-z0-9][a-z0-9._:/-]*@sha256:[0-9a-f]{64}$",
+          "title": "Image",
+          "type": "string"
+        },
+        "limits": {
+          "$ref": "#/$defs/CommandLimits"
+        }
+      },
+      "required": [
+        "id",
+        "image",
+        "limits"
+      ],
+      "title": "_Policy",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "route": {
+      "$ref": "#/$defs/CommandRoute"
+    },
+    "policy": {
+      "$ref": "#/$defs/_Policy"
+    },
+    "timing": {
+      "$ref": "#/$defs/TimingPolicy"
+    },
+    "control": {
+      "$ref": "#/$defs/_Control"
+    },
+    "enforcement": {
+      "$ref": "#/$defs/_Enforcement"
+    }
+  },
+  "required": [
+    "version",
+    "route",
+    "policy",
+    "timing",
+    "control",
+    "enforcement"
+  ],
+  "title": "_Configuration",
+  "type": "object",
+  "description": "Trusted command installation. Strict JSON, cross-field, file ownership and key-role checks additionally apply."
+}

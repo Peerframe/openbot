@@ -10,7 +10,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 import { createDatabase } from "../../packages/db/dist/index.js";
-import { FileArtifactStorage } from "../../apps/server/dist/artifact-storage.js";
+import { FileArtifactStorage } from "../../tests/oracles/legacy-server/dist/artifact-storage.js";
 import { materializeHistory, readJson, root, sha256, verifySources } from "./sources.mjs";
 
 // This entry point has no database URL or input-archive option: it owns every tested destination.
@@ -659,6 +659,8 @@ try {
         label,
         {
           commit: history.commit,
+          ...(history.commitRole ? { commitRole: history.commitRole } : {}),
+          ...(history.qualificationInput ? { qualificationInput: history.qualificationInput } : {}),
           migrationCount: history.migrations.length,
           digest: sha256(JSON.stringify(history.migrations)),
         },

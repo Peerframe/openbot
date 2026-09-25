@@ -2,7 +2,8 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { runtimeWorkerMessageSchema } from "../../server/dist/agent-runtime-wire.js";
+import { runtimeWorkerMessageSchema } from "../../../tests/oracles/legacy-server/dist/agent-runtime-wire.js";
+
 const request = (method, params = {}, id = "w1") => ({ jsonrpc: "2.0", id, method, params });
 const final = (text) => ({ jsonrpc: "2.0", id: "run", result: { text } });
 const denied = (reason) => ({

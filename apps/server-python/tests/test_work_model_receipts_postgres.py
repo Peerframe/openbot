@@ -25,6 +25,46 @@ def response():
     return ModelResponse([TextPart('persisted answer')], usage=RequestUsage(input_tokens=2, output_tokens=1))
 
 
+def configuration(**changes):
+    return dict(source='singleton', revision='configured-revision', provider='openai-responses',
+        model='gpt-4o-mini', baseUrl='https://api.openai.com/v1', protocol='responses-v1') | changes
+
+
+def test_model_configuration_is_secret_free_and_part_of_operation(fixture, tmp_path):
+    async def check():
+        _, _, _, call, _ = await setup(fixture, tmp_path)
+        provider = AsyncMock(return_value=response())
+        original = configuration()
+        assert (await call(provider, configuration=original)).parts[0].content == 'persisted answer'
+        assert await call(provider, configuration=original)
+        with pytest.raises(WorkConflict, match='model_operation_changed'):
+            await call(provider, configuration=configuration(revision='rotated'))
+        from openbot_server.work_values import InvalidWork
+        for changed in (configuration(apiKey='must-never-persist'), configuration(model='other'),
+                        configuration(baseUrl='https://name:secret@api.example/v1'),
+                        configuration(baseUrl='https://api.example/v1?key=secret')):
+            with pytest.raises(InvalidWork): await call(provider, configuration=changed)
+        assert provider.await_count == 1
+    asyncio.run(check())
+
+
+@pytest.mark.parametrize('mode', ['false', 'synchronous', 'raises'])
+def test_product_admission_callback_refuses_before_model_or_receipt(fixture, tmp_path, mode):
+    async def check():
+        service, task, receipts, call, _ = await setup(fixture, tmp_path)
+        provider = AsyncMock(return_value=response())
+        async def guard(db, selected, action):
+            assert selected['id'] == task['id'] and action['intent']['kind'] == 'model'
+            if mode == 'raises': raise WorkConflict('fixture_configuration_changed')
+            return False
+        with pytest.raises(WorkConflict):
+            await call(provider, admission_check=(lambda *_:True) if mode == 'synchronous' else guard)
+        current = await service.snapshot(fixture['token'], task['id'])
+        assert current['actions'][0]['status'] == 'proposed' and current['usage']['spentTokens'] == 0
+        assert provider.await_count == 0 and list(receipts.files.directory.iterdir()) == []
+    asyncio.run(check())
+
+
 async def setup(fixture, tmp_path):
     service = store(fixture)
     task = await new(fixture, service, 20)

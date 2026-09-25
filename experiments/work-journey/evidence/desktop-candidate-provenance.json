@@ -1,0 +1,22 @@
+{
+  "apps/server-python/src/openbot_server": {
+    "files": 128,
+    "sha256": "14e723bb8a0084cefcda8c56e094c665f3d43744bf25d95aaeb04c27a5cccfb9",
+    "matchesWorkingTree": true
+  },
+  "apps/agent-runtime-python/src/openbot_agent_runtime": {
+    "files": 12,
+    "sha256": "3d8d3b7604a8600e58de469de35b14f8d8a9f3d2d29f7f196ad5e72124c031e5",
+    "matchesWorkingTree": true
+  },
+  "packages/db/migrations": {
+    "files": 42,
+    "sha256": "eecda9d0a8e7407eca82f05a1a8cbf8e5c388f2a9fdd15de90697fd6c20e5d38",
+    "matchesWorkingTree": true
+  },
+  "appAsarSha256": "0ca993b581bbec75b99f4bc28188f17ecce594933405f27cc9224204de8d793f",
+  "workingTreeParent": "482bdc5bea56c5b1a996492701b6dbb012d5691e",
+  "qualificationInput": "uncommitted-qualified-working-tree",
+  "installed": false,
+  "signed": false
+}

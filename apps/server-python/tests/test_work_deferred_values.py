@@ -155,3 +155,13 @@ def test_decoder_recursion_becomes_bounded_invalid_work():
     value = {'call_id':'c', 'tool':'t', 'arguments':'{"x":' + '['*20000 + '0' + ']'*20000 + '}'}
     with pytest.raises(InvalidWork, match='invalid_json_arguments'):
         parse_proposal(value)
+
+
+def test_large_arguments_are_explicit_bounded_and_leave_original_intents_small():
+    import pytest
+    proposal=dict(call_id='c',tool='write_report',arguments=dict(name='report.md',markdown='x'*24000))
+    with pytest.raises(InvalidWork):parse_proposal(proposal)
+    large=parse_proposal(proposal,large_arguments=True)
+    assert large==proposal and large['arguments'] is not proposal['arguments']
+    with pytest.raises(InvalidWork):canonical(large['arguments'])
+    with pytest.raises(InvalidWork):parse_proposal({**proposal,'arguments':{'x':'x'*65536}},large_arguments=True)

@@ -1,15 +1,21 @@
-# Python 控制层参考实现
+# Python 控制层与产品候选
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-这是[迁移计划](../../docs/ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)的 S2a 与 S2b-1：Python/FastAPI 读取现有 Owner 会话、Bot、频道和近期消息，
-并可显式启用基于现有 PostgreSQL 的登录/退出。可信控制层与不受信任的 Agent Runtime 分开。
-**默认后端仍是 TypeScript。** Python 默认只读；显式 `owner-auth` 启用认证，`identity` 额外启用 Bot/频道创建、私聊、加入成员与带版本检查的资料编辑。
-`tasks` 额外启用原子任务入队。任务派发、审批、文件、日程和实时事件尚未迁移。
+Python/FastAPI 实现[迁移计划](../../docs/ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)中的可信业务控制层，
+与不受信任的 Agent Runtime 分开。显式 `product` 入口已组合 Owner 身份／工作区、模型连接、知识、
+对话、日程、文件／处理器、插件／MCP 和 Worker Host 服务；明确配置的 Temporal 引擎负责持久 Work 执行、审批、修正与发布。
+入口仍默认只读；退役验收尚未完成，仓库开发与发行默认入口仍选择 TypeScript Server。
+
+当前范围与证据见[迁移交接](../../docs/MIGRATION_HANDOFF.zh-CN.md)。本地产品链路和 macOS arm64 Preview
+打包流程已通过；完整远程 Linux 命令链路和 Chromium／人工接管验收尚未完成。
+下文早期分阶段章节记录较窄模式的契约与历史测试，不代表当前产品的全部功能范围。
 
 ## 开发与验证
 
-本目录已有 Python 3.12 时运行：
+完整本地测试先在仓库根目录安装锁定的 npm 依赖并运行 `npm run oracle:build`。
+这也会构建保留的发布者 CLI 互操作测试所需的共享契约；该测试仅创建并清理临时合成密钥。
+然后在本目录用 Python 3.12 运行：
 
 ```sh
 ./scripts/bootstrap.sh
@@ -17,7 +23,7 @@
 ```
 
 `OPENBOT_CONTROL_PYTHON` 可选择可信的启动解释器。已验收的 Agent Runtime 虚拟环境保持独立。
-锁定 23 项开发依赖，拒绝缺失、多余或版本漂移。环境包含测试工具，不是生产镜像；启动不会自动安装依赖。
+锁文件记录精确的开发依赖闭包，拒绝缺失、多余或版本漂移。环境包含测试工具，不是生产镜像；启动不会自动安装依赖。
 
 仓库根目录运行一次性数据库流程：
 
@@ -26,7 +32,8 @@ apps/agent-runtime-python/scripts/bootstrap.sh
 npm run test:control:python
 ```
 
-夹具先构建现有 Server，自建回环 PostgreSQL 17.11 容器，执行未改动的 Node 迁移历史，使用合成凭据、Bot 和频道。
+夹具先构建固定的[测试专用 Server oracle](../../tests/oracles/legacy-server/README.zh-CN.md)，
+自建回环 PostgreSQL 17.11 容器，执行未改动的 Node 迁移历史，使用合成凭据、Bot 和频道。
 与真实 TypeScript API 对照，覆盖 Unicode、多成员频道和私聊。旧接口未规定成员顺序，只有成员 ID 按集合比较，Python 按 ID 排序；
 其余夹具字段逐项相同。两边可识别对方签发的会话，并共同识别撤权。
 

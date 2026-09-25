@@ -1,0 +1,10 @@
+services:
+  postgresql:
+    mem_limit: 512m
+    cpus: 1.0
+  temporal:
+    mem_limit: 1536m
+    cpus: 2.0
+  schema:
+    mem_limit: 512m
+    cpus: 1.0

@@ -1,0 +1,19 @@
+{
+  "counterexample": {
+    "admitted_bytes": 1048576,
+    "child_exit": 0,
+    "fsync": true,
+    "written_bytes": 2097152
+  },
+  "evidence": "real-linux-filesystem-negative-only",
+  "kernel": "6.12.76-linuxkit",
+  "machine": "x86_64",
+  "python": "3.12.13",
+  "refusals": {
+    "ordinary_directory": "output must be the root of its own dedicated filesystem",
+    "volatile_mount": "output filesystem must be persistent ext4; tmpfs/overlay are refused"
+  },
+  "runsc_qualified": false,
+  "sandbox_execution": false,
+  "uid": 10001
+}

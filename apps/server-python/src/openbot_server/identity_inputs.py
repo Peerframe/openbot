@@ -135,6 +135,15 @@ class CreateBotInput(BaseModel):
     name: BotName
     role: BotRole
     computerProfile: ComputerProfile = "none"
+    model: dict[str, str] | None = None
+
+    @field_validator('model', mode='before')
+    @classmethod
+    def selected_model(cls, value, info):
+        from .model_connections_inputs import ModelSelection
+        if value is None or info.data.get('computerProfile') not in ('model', 'docker-linux'):
+            raise ValueError('Only model or Docker Linux Employees can select a model connection.')
+        return ModelSelection.model_validate(value).model_dump()
     appearance: CreateBotAppearance | SkipJsonSchema[None] = Field(default=None, json_schema_extra=_omit_default)
 
     @field_validator("appearance", mode="before")

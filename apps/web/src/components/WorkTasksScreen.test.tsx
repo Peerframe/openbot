@@ -1,12 +1,16 @@
 // @vitest-environment jsdom
+vi.mock("../native-task-api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../native-task-api")>()),
+  getNativeTaskScope: vi.fn(async () => null),
+}));
 import type { Bot } from "@openbot/domain";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ApiError } from "../api";
 import {
   deferred,
   interact,
-  renderComponent,
   type RenderedComponent,
+  renderComponent,
   setInputValue,
 } from "../test/render-component";
 import { workFixture } from "../test/work-fixture";
@@ -306,4 +310,17 @@ it("allows correcting a multibyte request rejected with 413 using a new request 
   expect(corrected.objective).toBe("缩短后的任务");
   expect(corrected.requestKey).not.toBe(rejected.requestKey);
   expect(ui.container.textContent).toContain("Server 已持久化任务");
+});
+
+it("observes an existing task from a deep link without creating or cancelling it", async () => {
+  ui = await renderComponent(<WorkTasksScreen bots={bots} active initialTaskId="task-one" />);
+  expect(api.getWorkTask).toHaveBeenCalledExactlyOnceWith("task-one", expect.any(AbortSignal));
+  expect(api.createWorkTask).not.toHaveBeenCalled();
+  expect(api.cancelWorkTask).not.toHaveBeenCalled();
+  expect(ui.container.querySelector<HTMLInputElement>(".work-lookup input")?.value).toBe(
+    "task-one",
+  );
+  expect(ui.container.querySelector(".work-snapshot")?.textContent).toContain(
+    "Review the document",
+  );
 });

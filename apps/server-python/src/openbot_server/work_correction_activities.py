@@ -18,7 +18,21 @@ class CorrectionActivities:
             raise WorkConflict('runtime_deps_scope_mismatch')
         data, _ = canonical([accepted.engine_run_id, activity_id])
         key = 'context-v1-' + hashlib.sha256(data).hexdigest()
-        return await self.store.freeze(accepted.task_id, accepted.run_id, key)
+        frozen = await self.store.freeze(accepted.task_id, accepted.run_id, key)
+        if getattr(self.host, 'reset_history_on_correction', False):
+            async with self.host.store._transaction(trusted=True) as db:
+                task = await self.host.store._task(db, accepted.task_id, read=True)
+                self.host.store._active(task)
+                from .work_corrections import check_context
+                await check_context(db, task, accepted.run_id, frozen['id'])
+                rows = await (await db.execute("SELECT id,status,intent->>'tool' AS tool FROM work_actions "
+                    "WHERE task_id=%s AND intent->>'kind'='deferred_tool' ORDER BY created_at,id LIMIT 129",
+                    (accepted.task_id,))).fetchall()
+                if len(rows) > 128: raise WorkConflict('correction_history_limit')
+                frozen['priorActions'] = [dict(actionId=row['id'], status=row['status'],
+                                              tool=text(row['tool'], 128)) for row in rows]
+                canonical(frozen['priorActions'])
+        return frozen
 
     @activity.defn(name='openbot.prepare_corrected_tool.v1')
     async def prepare(self, value: dict) -> str:

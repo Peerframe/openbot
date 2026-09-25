@@ -7,11 +7,13 @@ one engine Run, not a new Workflow retry/Continue-As-New without an explicit con
 import hashlib
 from copy import deepcopy
 import json
+from urllib.parse import urlsplit
 
 from pydantic_ai.messages import ModelMessagesTypeAdapter
 from openbot_agent_runtime.catalog import ToolCatalog
 from openbot_agent_runtime.contracts import ModelStepRequest
 
+from .model_media import media_reference
 from .work_effects import VerifiedOutcome, execute_action, recover_action
 from .work_temporal_activity import _bind_activity_identity, _claim_bound_activity
 from .work_values import InvalidWork, WorkConflict, canonical, text, tokens
@@ -30,10 +32,35 @@ def operation_key(accepted, activity_id):
     return 'model-activity-v1-' + hashlib.sha256(DOMAIN + data).hexdigest()
 
 
-def model_request(request, *, provider_id, model_id, max_output_tokens):
+def configuration_record(value):
+    required = {'source','revision','provider','model','baseUrl','protocol'}
+    if type(value) is not dict or not required <= value.keys() or value.keys() - required - {'connectionId'}:
+        raise InvalidWork('invalid_model_configuration_record')
+    if value['source'] not in ('singleton','connection','environment'):
+        raise InvalidWork('invalid_model_configuration_record')
+    revision = value['revision']
+    if type(revision) is int:
+        if revision < 1 or revision > 2**53-1: raise InvalidWork('invalid_model_configuration_record')
+    else:
+        text(revision, 128)
+    text(value['provider'], 64); text(value['model'], 256); text(value['baseUrl'], 2048)
+    if 'connectionId' in value: text(value['connectionId'], 64)
+    url = urlsplit(value['baseUrl'])
+    if (url.scheme != 'https' or not url.hostname or url.username is not None or url.password is not None
+            or url.query or url.fragment or any(c.isspace() for c in value['baseUrl'])):
+        raise InvalidWork('invalid_model_configuration_record')
+    if value['protocol'] not in ('responses-v1','chat-completions-v1','anthropic-messages-v1'):
+        raise InvalidWork('invalid_model_configuration_record')
+    canonical(value)
+    return deepcopy(value)
+
+
+def model_request(request, *, provider_id, model_id, max_output_tokens, protocol='responses-v1', configuration=None, input_media=None):
     if type(request) is not ModelStepRequest:
         raise InvalidWork('invalid_model_request')
-    text(provider_id, 64); text(model_id, 128)
+    text(provider_id, 64); text(model_id, 256)
+    if protocol not in ('responses-v1', 'chat-completions-v1', 'anthropic-messages-v1'):
+        raise InvalidWork('invalid_model_protocol')
     if type(max_output_tokens) is not int or not 1 <= max_output_tokens <= 65536:
         raise InvalidWork('invalid_model_output_limit')
     if not 1 <= len(request.messages) <= 256:
@@ -49,7 +76,14 @@ def model_request(request, *, provider_id, model_id, max_output_tokens):
     encoded = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(',', ':'), allow_nan=False).encode()
     intent = dict(kind='model', provider=provider_id, model=model_id,
                   requestSha256=hashlib.sha256(encoded).hexdigest(), maxOutputTokens=max_output_tokens,
-                  store=False, protocol='responses-v1')
+                  store=False, protocol=protocol)
+    if configuration is not None:
+        config = configuration_record(configuration)
+        if (config['provider'], config['model'], config['protocol']) != (provider_id, model_id, protocol):
+            raise InvalidWork('model_configuration_mismatch')
+        intent['configuration'] = config
+    if input_media is not None:
+        intent['inputMedia'] = media_reference(input_media)
     # Provider callback receives detached data; mutation cannot change the stored intent.
     detached = ModelStepRequest(step=request.step,
         messages=ModelMessagesTypeAdapter.validate_json(messages), tools=tuple(deepcopy(catalog.descriptors)))
@@ -88,7 +122,8 @@ class ModelReceiptVerifier:
 
 async def execute_model_activity(store, client, *, expected_namespace, expected_queue,
                                   expected_workflow_type, receipts, provider, request,
-                                  provider_id, model_id, max_output_tokens, reserved_tokens, correction_context=None):
+                                  provider_id, model_id, max_output_tokens, reserved_tokens, correction_context=None,
+                                  protocol='responses-v1', configuration=None, admission_check=None, input_media=None):
     """Call a model once after admission, or recover a previously admitted observation.
 
     The provider and its configuration are trusted composition, never Workflow/model input.
@@ -97,7 +132,7 @@ async def execute_model_activity(store, client, *, expected_namespace, expected_
     """
     tokens(reserved_tokens)
     detached, intent = model_request(request, provider_id=provider_id, model_id=model_id,
-                                     max_output_tokens=max_output_tokens)
+                                     max_output_tokens=max_output_tokens, protocol=protocol, configuration=configuration, input_media=input_media)
     accepted, activity_id = await _bind_activity_identity(store, client,
         expected_namespace=expected_namespace, expected_queue=expected_queue,
         expected_workflow_type=expected_workflow_type)
@@ -125,7 +160,7 @@ async def execute_model_activity(store, client, *, expected_namespace, expected_
         outcome = await execute_action(store, task_id=accepted.task_id, run_id=accepted.run_id,
             fence=fence, action_key=key, intent=intent, reserved_tokens=reserved_tokens,
             requires_approval=False, expires_seconds=300, adapter=adapter, verifier=verifier,
-            correction_context=correction_context)
+            correction_context=correction_context, admission_check=admission_check)
     if outcome.status != 'applied':
         raise WorkConflict('model_observation_unknown')
     # Applied Actions skip adapter lookup in the common seam. Always read back the immutable

@@ -19,8 +19,9 @@ class UnknownMembers(Exception):
 
 
 class PostgresIdentityStore:
-    def __init__(self, dsn: str):
+    def __init__(self, dsn: str, *, model_connections=None):
         self._transactions = OwnerTransactions(dsn)
+        self.model_connections = model_connections
 
     async def verify_schema(self) -> None:
         await self._transactions.verify_schema()
@@ -29,6 +30,12 @@ class PostgresIdentityStore:
         try:
             async with self._transactions.transaction(token) as connection:
                 configuration = {} if value.appearance is None else {"appearance": value.appearance.model_dump(mode="json")}
+                if value.model is not None:
+                    if value.computerProfile not in ('model', 'docker-linux') or self.model_connections is None:
+                        raise ValueError('model_selection_unavailable')
+                    selection = value.model
+                    await self.model_connections.resolve_in_transaction(connection, selection)
+                    configuration['model'] = selection
                 cursor = await connection.execute(
                     "INSERT INTO bots (id, name, role, status, computer_profile, configuration, created_at, updated_at) "
                     "VALUES (%s, %s, %s, 'idle', %s, %s, date_trunc('milliseconds', statement_timestamp()), "

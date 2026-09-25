@@ -131,7 +131,7 @@ class PostgresReadStore:
                     if projection == "bots":
                         cursor = await connection.execute(
                             "SELECT id, name, role, status, computer_profile, "
-                            "jsonb_build_object('appearance', configuration->'appearance') AS configuration, created_at "
+                            "jsonb_build_object('appearance', configuration->'appearance', 'model', configuration->'model') AS configuration, created_at "
                             "FROM bots ORDER BY created_at DESC, id LIMIT 1001"
                         )
                     elif projection == "channels":

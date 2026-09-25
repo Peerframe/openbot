@@ -1,7 +1,7 @@
 {
-  "commit": "aa84c5ff97270d050a4110ff5ac17b311dcfac10",
-  "commitRole": "qualified-target",
-  "parentCommit": "135df6d4a67ed7903673f3aa23b9e5c6ab75da26",
+  "commit": "482bdc5bea56c5b1a996492701b6dbb012d5691e",
+  "commitRole": "working-tree-parent",
+  "parentCommit": "482bdc5bea56c5b1a996492701b6dbb012d5691e",
   "migrations": [
     {
       "index": 0,
@@ -212,19 +212,101 @@
       "tag": "0034_work_corrections",
       "timestamp": 1790208000004,
       "sha256": "74418c22fdbd0dd8e0e28ef5ceacfb64fbd47c34f85816bafe1b39eba0aece63"
+    },
+    {
+      "index": 35,
+      "tag": "0035_model_connections",
+      "timestamp": 1790208000005,
+      "sha256": "b9f7e48ce1dc0f184ca8a92db96111da00989fbae228d240414ab423ba52f57c"
+    },
+    {
+      "index": 36,
+      "tag": "0036_work_sources",
+      "timestamp": 1790208000006,
+      "sha256": "5109d4efa721bb0452ae30673362f09feb4782286c685877069f2287f9f625a1"
+    },
+    {
+      "index": 37,
+      "tag": "0037_work_tool_results",
+      "timestamp": 1790208000007,
+      "sha256": "72e2b1e1af5a69d315ffedbaf9f470154c6b7f045193125efba95593c24a6d1b"
+    },
+    {
+      "index": 38,
+      "tag": "0038_work_task_profiles",
+      "timestamp": 1790208000008,
+      "sha256": "0c874d1a0fd44ab667dd3694a4a88a6319405cccd5b488effb51b49ff23c8397"
+    },
+    {
+      "index": 39,
+      "tag": "0039_work_collaboration",
+      "timestamp": 1790208000009,
+      "sha256": "8f32b1372be12077e140b29b4f10a733fa0262fbc1ced370b5b419991f16adf5"
+    },
+    {
+      "index": 40,
+      "tag": "0040_native_task_scope",
+      "timestamp": 1790208000010,
+      "sha256": "8aaed72a5691a531cad058c7652da6df003773e671730f03c1c6fb209dca2d6e"
+    },
+    {
+      "index": 41,
+      "tag": "0041_work_command_authority",
+      "timestamp": 1790208000011,
+      "sha256": "7c0c4785cf265b1f0682b0c635cb6ce3f167ff7a8753291d5eb71aa2003652fd"
+    },
+    {
+      "index": 42,
+      "tag": "0042_work_command_preparations",
+      "timestamp": 1790208000012,
+      "sha256": "0f60721763078e1679493c957daab3d5617ed7bc851946b85941ef3c291b359e"
     }
   ],
   "qualificationInput": {
-    "state": "uncommitted-when-tested-now-pinned-identical",
+    "state": "uncommitted-qualified-working-tree",
+    "previousQualifiedTarget": "aa84c5ff97270d050a4110ff5ac17b311dcfac10",
     "journal": {
       "path": "packages/db/migrations/meta/_journal.json",
-      "sha256": "a75feb5339e5b06bd96fa543e39d964d20922a2f13de5c9853b861cb14fff10c"
+      "sha256": "c5d0a020dd392447ea4fd462223bbfacc0f0ec249fa12c70f6acfee538ebe0f3"
     },
     "changedSql": [
       {
-        "path": "packages/db/migrations/0034_work_corrections.sql",
-        "sha256": "74418c22fdbd0dd8e0e28ef5ceacfb64fbd47c34f85816bafe1b39eba0aece63"
+        "path": "packages/db/migrations/0035_model_connections.sql",
+        "sha256": "b9f7e48ce1dc0f184ca8a92db96111da00989fbae228d240414ab423ba52f57c"
+      },
+      {
+        "path": "packages/db/migrations/0036_work_sources.sql",
+        "sha256": "5109d4efa721bb0452ae30673362f09feb4782286c685877069f2287f9f625a1"
+      },
+      {
+        "path": "packages/db/migrations/0037_work_tool_results.sql",
+        "sha256": "72e2b1e1af5a69d315ffedbaf9f470154c6b7f045193125efba95593c24a6d1b"
+      },
+      {
+        "path": "packages/db/migrations/0038_work_task_profiles.sql",
+        "sha256": "0c874d1a0fd44ab667dd3694a4a88a6319405cccd5b488effb51b49ff23c8397"
+      },
+      {
+        "path": "packages/db/migrations/0039_work_collaboration.sql",
+        "sha256": "8f32b1372be12077e140b29b4f10a733fa0262fbc1ced370b5b419991f16adf5"
+      },
+      {
+        "path": "packages/db/migrations/0040_native_task_scope.sql",
+        "sha256": "8aaed72a5691a531cad058c7652da6df003773e671730f03c1c6fb209dca2d6e"
+      },
+      {
+        "path": "packages/db/migrations/0041_work_command_authority.sql",
+        "sha256": "7c0c4785cf265b1f0682b0c635cb6ce3f167ff7a8753291d5eb71aa2003652fd"
+      },
+      {
+        "path": "packages/db/migrations/0042_work_command_preparations.sql",
+        "sha256": "0f60721763078e1679493c957daab3d5617ed7bc851946b85941ef3c291b359e"
       }
-    ]
+    ],
+    "previousQualification": {
+      "migrationCount": 42,
+      "evidence": "evidence/command-authority-result.json",
+      "migrationDigest": "902cfe18d26cc1f21a5be235a9d9a3f7326335e5de8613700f81372a2b159cc4"
+    }
   }
 }

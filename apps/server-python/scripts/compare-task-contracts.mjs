@@ -3,8 +3,8 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { selectChannelAssignees } from "../../server/dist/task-routing.js";
-import { toRun } from "../../server/dist/postgres-task-records.js";
+import { toRun } from "../../../tests/oracles/legacy-server/dist/postgres-task-records.js";
+import { selectChannelAssignees } from "../../../tests/oracles/legacy-server/dist/task-routing.js";
 
 const root = new URL("../", import.meta.url);
 const candidates = [

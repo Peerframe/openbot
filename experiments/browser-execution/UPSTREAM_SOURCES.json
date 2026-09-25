@@ -1,0 +1,187 @@
+[
+  {
+    "file": "chromium__components__headless__command_handler__headless_command_handler.cc",
+    "url": "https://raw.githubusercontent.com/chromium/chromium/151.0.7922.34/components/headless/command_handler/headless_command_handler.cc",
+    "sha256": "016393b63e2176d9805b37f9dd16a24caf902b08f6fef5064e99793fcef537e5",
+    "bytes": 16031
+  },
+  {
+    "file": "chromium__components__headless__command_handler__headless_command_handler_browsertest.cc",
+    "url": "https://raw.githubusercontent.com/chromium/chromium/151.0.7922.34/components/headless/command_handler/headless_command_handler_browsertest.cc",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "file": "chromium__chrome__browser__devtools__remote_debugging_server.cc",
+    "url": "https://raw.githubusercontent.com/chromium/chromium/151.0.7922.34/chrome/browser/devtools/remote_debugging_server.cc",
+    "sha256": "1c2d72a079bf51a0581c62ac8f2ace19aa80568bf1969b249374c48f5354f931",
+    "bytes": 15024
+  },
+  {
+    "file": "chromium__content__browser__devtools__devtools_pipe_handler.cc",
+    "url": "https://raw.githubusercontent.com/chromium/chromium/151.0.7922.34/content/browser/devtools/devtools_pipe_handler.cc",
+    "sha256": "99dc4380cdbd8bb833cff7294b9e6a3f90605cfe415379201081c2599314a283",
+    "bytes": 15096
+  },
+  {
+    "file": "chromium__LICENSE",
+    "url": "https://raw.githubusercontent.com/chromium/chromium/151.0.7922.34/LICENSE",
+    "sha256": "368cca1106be99d39ecd32a38d8305585d802a475effb66380b91ffc9bcf709b",
+    "bytes": 1536
+  },
+  {
+    "file": "playwright__packages__playwright-core__src__server__pipeTransport.ts",
+    "url": "https://raw.githubusercontent.com/microsoft/playwright/v1.62.1/packages/playwright-core/src/server/pipeTransport.ts",
+    "sha256": "292100a8f2c5eef9176a265ef41d8ba4502ed7aa4f801ed213fc023cf90213fe",
+    "bytes": 2992
+  },
+  {
+    "file": "playwright__packages__playwright-core__src__server__chromium__chromium.ts",
+    "url": "https://raw.githubusercontent.com/microsoft/playwright/v1.62.1/packages/playwright-core/src/server/chromium/chromium.ts",
+    "sha256": "6697c04b42ad14429ec767affa61205f42c0ce7d06794546859f4b5c28523ae1",
+    "bytes": 24226
+  },
+  {
+    "file": "playwright__packages__playwright-core__src__server__chromium__crBrowser.ts",
+    "url": "https://raw.githubusercontent.com/microsoft/playwright/v1.62.1/packages/playwright-core/src/server/chromium/crBrowser.ts",
+    "sha256": "60ea210dbc8b4ee01c06f6aa6d8752b15a2d70ca118b8dd5d60263071c623d25",
+    "bytes": 24401
+  },
+  {
+    "file": "playwright__tests__library__chromium__chromium.spec.ts",
+    "url": "https://raw.githubusercontent.com/microsoft/playwright/v1.62.1/tests/library/chromium/chromium.spec.ts",
+    "sha256": "0124d385f8a0e6b570e25f2d464531cc1447bc103a149321c4a45f1349177931",
+    "bytes": 31142
+  },
+  {
+    "file": "playwright__LICENSE",
+    "url": "https://raw.githubusercontent.com/microsoft/playwright/v1.62.1/LICENSE",
+    "sha256": "45873d00a0dd243596deb4aa23b2493b3d1f0671921bf2538ea431d7380220eb",
+    "bytes": 11601
+  },
+  {
+    "file": "playwright__NOTICE",
+    "url": "https://raw.githubusercontent.com/microsoft/playwright/v1.62.1/NOTICE",
+    "sha256": "6d602191187b35b9b01d2cffa01c8469c2c8d9de8a96f1bf868e0f264f51c81d",
+    "bytes": 254
+  },
+  {
+    "file": "gvisor-chromium-hang-issues.json",
+    "url": "https://api.github.com/search/issues?q=repo%3Agoogle/gvisor%20chromium%20hang&per_page=20",
+    "sha256": "71015142c1747921890a9cd6c5fd31ae254b005fac8ff633c10ecf900ad56385",
+    "bytes": 11469
+  },
+  {
+    "file": "playwright-headless-command-issues.json",
+    "url": "https://api.github.com/search/issues?q=repo%3Amicrosoft/playwright%20dump-dom%20screenshot&per_page=20",
+    "sha256": "bef8e5b9b5be2d1743e5d529272b1b353ae501602382e02961006809d4f5d59a",
+    "bytes": 7512
+  },
+  {
+    "file": "chromium__browser_protocol.pdl",
+    "url": "https://raw.githubusercontent.com/chromium/chromium/151.0.7922.34/third_party/blink/public/devtools_protocol/browser_protocol.pdl",
+    "sha256": "63772f30a2a626a7ef9edaabfb56d6fa9ac324748bd650ee171fbe781c003c30",
+    "bytes": 1798
+  },
+  {
+    "file": "gvisor-issue14408.json",
+    "url": "https://api.github.com/repos/google/gvisor/issues/14408",
+    "sha256": "16c06e229c976e33918e7f3608d232962f1ac001f3d9031a5d345c95625c2b3f",
+    "bytes": 6755
+  },
+  {
+    "file": "playwright-issue41532.json",
+    "url": "https://api.github.com/repos/microsoft/playwright/issues/41532",
+    "sha256": "939e38f43b76267d411c01a6c279a37c4c18dd6c86ae53173752e8a5432b33df",
+    "bytes": 6331
+  },
+  {
+    "file": "chromium-headless-directory.json",
+    "url": "https://api.github.com/repos/chromium/chromium/contents/components/headless/command_handler?ref=151.0.7922.34",
+    "sha256": "364b5df0f00f6bb1c17735b8ab755cb838bc53dae8e8b7277abe5885f8fe4387",
+    "bytes": 9601
+  },
+  {
+    "file": "chromium__Browser.pdl",
+    "url": "https://raw.githubusercontent.com/chromium/chromium/151.0.7922.34/third_party/blink/public/devtools_protocol/domains/Browser.pdl",
+    "sha256": "1fd00cce8209d25818c598bb8f4cc7cdef91e02dfeb69771a094bf99c2e8ae48",
+    "bytes": 11817
+  },
+  {
+    "file": "chromium__Page.pdl",
+    "url": "https://raw.githubusercontent.com/chromium/chromium/151.0.7922.34/third_party/blink/public/devtools_protocol/domains/Page.pdl",
+    "sha256": "76674ec47093a6cf88560599586e2a6b94e047304b88ec091bdf4491ce1c48e1",
+    "bytes": 60792
+  },
+  {
+    "file": "chromium__Target.pdl",
+    "url": "https://raw.githubusercontent.com/chromium/chromium/151.0.7922.34/third_party/blink/public/devtools_protocol/domains/Target.pdl",
+    "sha256": "136ca4a240e64aa727e0b261cbe7ac853748154aaa8c4a86fe818d7c522535d6",
+    "bytes": 14847
+  },
+  {
+    "file": "chromium__Emulation.pdl",
+    "url": "https://raw.githubusercontent.com/chromium/chromium/151.0.7922.34/third_party/blink/public/devtools_protocol/domains/Emulation.pdl",
+    "sha256": "d08a208fa8ebff350723e20de406297e1da89fccf6ac8b011fdabd0efcd99f04",
+    "bytes": 24965
+  },
+  {
+    "file": "playwright__protocol.d.ts",
+    "url": "https://raw.githubusercontent.com/microsoft/playwright/v1.62.1/packages/playwright-core/src/server/chromium/protocol.d.ts",
+    "sha256": "b836eed98b79fabb54f1df73252a0ce178b8df4a89794251ade2fa0c5e52b678",
+    "bytes": 823302
+  },
+  {
+    "file": "chromium__headless_command.js",
+    "url": "https://raw.githubusercontent.com/chromium/chromium/151.0.7922.34/components/headless/command_handler/headless_command.js",
+    "bytes": 9493,
+    "sha256": "fc20901b64873c4d9155d6339861769b6fa25b57e4cb71bdc25ca61db6c0369b"
+  },
+  {
+    "file": "gvisor__sysmsg_thread.go",
+    "url": "https://raw.githubusercontent.com/google/gvisor/95eb5d5930b0e7736826cc2cb949ba9d2c4d5d29/pkg/sentry/platform/systrap/sysmsg_thread.go",
+    "bytes": 5618,
+    "sha256": "fa4456ca32e3842de32b73e41769c5fa3f35888bfdbc2f67b2a6ee077b0b978b"
+  },
+  {
+    "file": "gvisor__sysmsg_thread_unsafe.go",
+    "url": "https://raw.githubusercontent.com/google/gvisor/95eb5d5930b0e7736826cc2cb949ba9d2c4d5d29/pkg/sentry/platform/systrap/sysmsg_thread_unsafe.go",
+    "bytes": 3063,
+    "sha256": "85206db04a0ca7d097de97f25ca015a180102ef690ba21295194863cc8b419c3"
+  },
+  {
+    "file": "chromium__address_tracker_linux.cc",
+    "url": "https://raw.githubusercontent.com/chromium/chromium/151.0.7922.34/net/base/address_tracker_linux.cc",
+    "bytes": 27049,
+    "sha256": "aca82c4466478ddeba089613ce7d154262cde9237ff61d3fcd9bea1194b24779"
+  },
+  {
+    "file": "playwright-Dockerfile.noble",
+    "url": "https://raw.githubusercontent.com/microsoft/playwright/v1.62.1/utils/docker/Dockerfile.noble",
+    "bytes": 2924,
+    "sha256": "da0a5eb89a4c4ee523b584019f71987b1f0180d807ef8f399e6b7bb347ff3115"
+  },
+  {
+    "file": "gvisor__LICENSE",
+    "url": "https://raw.githubusercontent.com/google/gvisor/95eb5d5930b0e7736826cc2cb949ba9d2c4d5d29/LICENSE",
+    "bytes": 14110,
+    "sha256": "0fbab5c58efbdf6d31e8085214f2dd821659c03d73cff3ed2b08e98826ea1cd9"
+  },
+  {
+    "file": "node__zlib.md",
+    "url": "https://raw.githubusercontent.com/nodejs/node/v24.18.1/doc/api/zlib.md",
+    "sha256": "c71dfdc81912de24dc764e9b7aa119cfd108bd461e1b0eaddd848fbe24f0c6fb",
+    "bytes": 50147
+  },
+  {
+    "file": "node__LICENSE",
+    "url": "https://raw.githubusercontent.com/nodejs/node/v24.18.1/LICENSE",
+    "sha256": "148eacf7863ef4329224a29398623077200a27194aa075569faf4a0a85566ca5",
+    "bytes": 157606
+  },
+  {
+    "file": "playwright__browserType.ts",
+    "url": "https://raw.githubusercontent.com/microsoft/playwright/v1.62.1/packages/playwright-core/src/server/browserType.ts",
+    "sha256": "a167128b2d21869fc4b95306fc7183de33b4225c605e4d5566c4d13c18b9c651",
+    "bytes": 17194
+  }
+]

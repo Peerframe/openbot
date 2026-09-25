@@ -1,0 +1,22 @@
+{
+  "case": "cancel",
+  "actualHTTP": true,
+  "actualPostgres": true,
+  "mutualTLS": true,
+  "syntheticModel": true,
+  "sqlCommitBeforeACKRecovery": false,
+  "originalEngineRun": true,
+  "noProviderResend": true,
+  "counts": {
+    "parent:start": 1
+  },
+  "offlineReplay": true,
+  "replayedHistories": 1,
+  "childRelations": 1,
+  "taskStatus": "open",
+  "qualificationInput": "uncommitted-qualified-working-tree",
+  "workingTreeParent": "482bdc5bea56c5b1a996492701b6dbb012d5691e",
+  "historySha256": {
+    "history-0.json": "4adf359070c0055548cddcde956fe2c66ad9bee6916f3a77a25ea7e923016c10"
+  }
+}

@@ -39,6 +39,7 @@ import { DesktopMicrophonePolicy } from "./microphone-policy.js";
 import { NativeServerController } from "./native-server.js";
 import { DesktopNavigationMenuController } from "./navigation-menu.js";
 import { desktopProfileCompatibility } from "./profile-compatibility.js";
+import { launchPythonProductServer, selectsPythonProduct } from "./python-server.js";
 import { DesktopReportSaver } from "./report-save.js";
 import {
   DESKTOP_CONFIGURE_SERVER_CHANNEL,
@@ -446,6 +447,8 @@ async function startDesktop(): Promise<void> {
       return (await safeStorage.decryptStringAsync(Buffer.from(value, "base64"))).result;
     },
     launchServer: async (env) => {
+      if (await selectsPythonProduct(nativeRuntimeRoot))
+        return launchPythonProductServer(nativeRuntimeRoot, env);
       const child = utilityProcess.fork(join(nativeRuntimeRoot, "apps/server/dist/index.js"), [], {
         env,
         cwd: nativeRuntimeRoot,

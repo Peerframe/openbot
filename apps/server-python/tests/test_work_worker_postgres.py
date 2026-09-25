@@ -1,5 +1,6 @@
 """Product publication binding and recovery against the owned PostgreSQL fixture."""
 import asyncio
+from contextlib import asynccontextmanager
 from dataclasses import replace
 import hashlib
 from pathlib import Path
@@ -119,6 +120,48 @@ def test_active_to_completed_race_recovers_the_original_result(fixture,tmp_path)
             result=await invoke(host,context,bind,claim)
         assert result['status']=='completed' and verify.await_count==1
         assert sum(e['kind']=='task.completed' for e in (await service.snapshot(fixture['token'],task['id']))['events'])==1
+    asyncio.run(check())
+
+
+@pytest.mark.parametrize('changed_after_review',[False,True])
+def test_review_revision_and_publication_scope_preserve_atomic_read_authority(fixture,tmp_path,changed_after_review):
+    async def check():
+        service,task,host,verify,verdict,_,context,bind,claim=await setup(fixture,tmp_path)
+        order=[]
+        lock=asyncio.Lock()
+        async def reviewed(*args):
+            assert not lock.locked()
+            async with service._transaction(trusted=True) as db:
+                await service._task(db,task['id'])
+                await service._event(db,task['id'],'fixture.review_settled',{})
+                current=await service._task(db,task['id'],read=True)
+                revision=current['revision']
+            return replace(verdict,observed_revision=revision)
+        @asynccontextmanager
+        async def scope(_context):
+            async with lock:
+                order.append('scope')
+                if changed_after_review:
+                    async with service._transaction(trusted=True) as db:
+                        await service._task(db,task['id'])
+                        await service._event(db,task['id'],'fixture.concurrent_change',{})
+                try: yield
+                finally: order.append('released')
+        @asynccontextmanager
+        async def publication(_context,db):
+            assert lock.locked()
+            order.append('publication')
+            yield
+        verify.side_effect=reviewed
+        host.publication_scope=scope;host.publication=publication
+        if changed_after_review:
+            with pytest.raises(WorkConflict):await invoke(host,context,bind,claim)
+            assert (await service.snapshot(fixture['token'],task['id']))['status']!='completed'
+            assert order==['scope','released']
+        else:
+            assert (await invoke(host,context,bind,claim))['status']=='completed'
+            assert order==['scope','publication','released']
+        assert not lock.locked()
     asyncio.run(check())
 
 

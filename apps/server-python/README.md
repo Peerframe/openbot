@@ -1,17 +1,26 @@
-# Python control-plane reference
+# Python control plane and product candidate
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-S2a and S2b-1 of the [migration plan](../../docs/ARCHITECTURE_MIGRATION_PLAN.md): Python/FastAPI reads
-existing Owner sessions, Bots, channels and recent messages and can explicitly enable Owner login/logout against the
-current PostgreSQL schema. This trusted control layer is separate from the untrusted Agent Runtime.
-**The TypeScript Server remains the default.** Python starts read-only; explicit `owner-auth` mode
-enables authentication, and `identity` mode adds Bot/channel creation, direct conversations, member joins and revision-checked profile edits. `tasks` adds atomic queued task submission. Task dispatch, approvals,
-files, schedules and realtime events have not moved.
+Python/FastAPI implements the trusted business control layer in the
+[migration plan](../../docs/ARCHITECTURE_MIGRATION_PLAN.md), separately from the untrusted Agent Runtime.
+The explicit `product` entry composes Owner identity/workspace, model connections, knowledge,
+conversations, schedules, files/processors, plugins/MCP and Worker Host services. An explicitly
+configured Temporal engine supplies durable Work execution, approvals, corrections and publication.
+The entry still defaults to read-only; repository development and release defaults still select
+the TypeScript Server while retirement gates remain open.
+
+Current scope and evidence are in the [migration handoff](../../docs/MIGRATION_HANDOFF.md).
+Local product and packaged macOS arm64 Preview journeys pass; full remote Linux command and
+Chromium/human-takeover qualification remain incomplete. Earlier staged-mode sections below
+describe their narrower contracts and historical tests, not the complete current product surface.
 
 ## Develop and verify
 
-From this directory, with Python 3.12 available:
+For the full local suite, first install the repository's locked npm dependencies and run
+`npm run oracle:build` from the repository root. This also builds the shared contracts used by
+the retained publisher CLI interoperability test; that test creates and removes only temporary
+synthetic keys. Then, from this directory with Python 3.12 available:
 
 ```sh
 ./scripts/bootstrap.sh
@@ -19,7 +28,7 @@ From this directory, with Python 3.12 available:
 ```
 
 `OPENBOT_CONTROL_PYTHON` selects a trusted bootstrap interpreter. The accepted Agent Runtime venv
-is separate. The lock contains 23 exact development pins; verification rejects missing, extra or
+is separate. The lock records the exact development dependency closure; verification rejects missing, extra or
 drifted distributions. This environment includes test tools, is not a production image, and never
 installs dependencies on startup.
 
@@ -30,7 +39,8 @@ apps/agent-runtime-python/scripts/bootstrap.sh
 npm run test:control:python
 ```
 
-The fixture builds the existing Server, owns a temporary loopback PostgreSQL 17.11 container,
+The fixture builds the fixed [test-only Server oracle](../../tests/oracles/legacy-server/README.md),
+owns a temporary loopback PostgreSQL 17.11 container,
 applies the unchanged Node migration history, and uses synthetic credentials/Bots/channels. It
 compares Python reads to the actual TypeScript API, including Unicode, multi-member and direct
 channels. Legacy membership order is unspecified, so only member IDs are compared as sets; Python

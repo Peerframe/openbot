@@ -1,0 +1,22 @@
+{
+  "case": "failure",
+  "actualHTTP": true,
+  "actualPostgres": true,
+  "mutualTLS": true,
+  "syntheticModel": true,
+  "sqlCommitBeforeACKRecovery": true,
+  "originalEngineRun": true,
+  "noProviderResend": true,
+  "counts": {
+    "failed-model": 1
+  },
+  "offlineReplay": true,
+  "replayedHistories": 1,
+  "childRelations": 0,
+  "taskStatus": "failed",
+  "qualificationInput": "uncommitted-qualified-working-tree",
+  "workingTreeParent": "482bdc5bea56c5b1a996492701b6dbb012d5691e",
+  "historySha256": {
+    "history-0.json": "70bd09156864b9869438d4ae6739a41c5d0d1e73ee8626e58a15a40e99d8d264"
+  }
+}

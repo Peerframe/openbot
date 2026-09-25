@@ -9,10 +9,11 @@
 | --- | --- | --- |
 | 架构历史，27 条迁移 | `c33e03f1a14de739196113769c59fdaace9029e7` | 恢复旧数据，再通过现有生产启动守卫执行增量迁移。 |
 | 功能历史，19 条迁移 | `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` | 直接升级必须在索引 17 失败；专用实验随后将有限兼容记录转入新建目标库。 |
-| 已验证目标，35 条迁移 | `aa84c5ff97270d050a4110ff5ac17b311dcfac10` | SQL 字节与 journal 条目必须匹配 `target-history.json`；变化后需重新验证并更新固定记录。 |
+| 已验证工作树目标，43 条迁移 | 父提交 `482bdc5bea56c5b1a996492701b6dbb012d5691e`，未提交字节另存精确哈希 | SQL 与 journal 必须匹配 `target-history.json`；变化后重新验证。 |
 
-本次目标先以父提交 `135df6d` 上的冻结工作树完成验证，再比较 SQL 与 journal 哈希，固定到上表提交。
-`qualificationInput` 保留实际测试输入的来源。这里只更新提交绑定，已验证的数据库字节没有变化。
+当前目标已于2026-09-25通过全部40项保留迁移／恢复检查。父提交只作恢复参考，不表示该提交含有
+未提交的0035–0042。`qualificationInput` 与[结果记录](evidence/command-readiness-result.json)保存精确
+SQL／journal 哈希。此前 40 条目标仍保留在[历史证据](evidence/python-product-result.json)中，原始来源历史字节未修改。
 
 两条旧历史共享 0000–0016。`histories/common` 保存公共 SQL 原始字节，两个分支目录保存各自后缀。
 history JSON 记录每份 SQL 的哈希、时间戳和来源提交。`sources.mjs` 校验这些快照、复现已有
@@ -31,7 +32,7 @@ Bot 私聊频道引用。所有内容均为合成数据，没有真实凭据、�
 ```bash
 npm ci
 node experiments/s7-migration/sources.mjs
-npm exec -- turbo run build --filter=@openbot/server
+npm run oracle:build
 node --test experiments/s7-migration/cleanup.test.mjs
 node experiments/s7-migration/qualify.mjs --report /tmp/s7-migration-summary.json
 npm run check
@@ -94,3 +95,22 @@ npm run check
 现有 40 项合成迁移/恢复检查全部通过，运行前后 SQL 和 journal 哈希一致。确切本地报告和
 仅作父基线的提交来源见[研究记录](../../docs/research/s7-migration-qualification.md)。
 此次重新验证不测试纠偏功能行为，也不代表 S7 完成。
+
+
+## Canonical 41 重新验证
+
+2026-09-25，原样探针对包含 `0040_native_task_scope` 的 41 条目标迁移通过全部 **40 项用例**；
+八项启动清理测试也全部通过，没有跳过。[新结果](evidence/native-task-scope-result.json)在工作树
+父提交之外记录精确未提交 SQL/journal 哈希。运行前后 71 个封存来源与目标 SQL/journal 文件完全
+一致，本次一次性 PostgreSQL 容器已移除。仅更新目标清单、验收证据和说明；来源历史、夹具、
+迁移引擎及测试逻辑均未修改。
+
+这验证了现有合成旧记录/文件经过增量建表与真实恢复后保留，不会填充原生 Task scope、提案或
+协作记录，也不证明其产品授权行为。它不是生产转换、活动任务/Temporal 恢复、发布/默认切换、
+托管 CI 结果或 S7 整体完成。
+
+## Canonical42 命令授权重新验证
+
+2026-09-25，原样40项迁移／恢复及8项清理检查通过0041目标；
+[新证据](evidence/command-authority-result.json)与target-history.json保存精确哈希。
+此前41条结果保留为历史。本次只增加两张尚未启用的表，不启用远端命令，也不证明执行中命令恢复。

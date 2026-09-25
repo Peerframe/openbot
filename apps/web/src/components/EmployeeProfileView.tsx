@@ -8,6 +8,7 @@ import {
 } from "../api";
 import { runStatusLabel } from "../run-state";
 import { EmployeeEvolutionArchive } from "./EmployeeEvolutionArchive";
+import { EmployeeModelEditor } from "./EmployeeModelEditor";
 import { EmployeeSkillReview } from "./EmployeeSkillReview";
 import { KnowledgeReviewPanel } from "./KnowledgeReviewPanel";
 import { runStatusSummary } from "./NativeRunControls";
@@ -55,6 +56,9 @@ export function EmployeeProfileView({
   onAssign,
   onExport,
   onProfileChanged,
+  onOpenBrowser,
+  onManageModels,
+  modelServicesVersion,
 }: {
   headerAction?: ReactNode;
   initialTab?: ProfileTab;
@@ -65,6 +69,9 @@ export function EmployeeProfileView({
   onAssign(): void;
   onExport(): void;
   onProfileChanged(): Promise<void>;
+  onOpenBrowser?: (() => void) | undefined;
+  onManageModels?: (() => void) | undefined;
+  modelServicesVersion?: number | undefined;
 }) {
   const [tab, setTab] = useState<ProfileTab>(initialTab);
   const tabButtons = useRef<Array<HTMLButtonElement | null>>([]);
@@ -100,6 +107,11 @@ export function EmployeeProfileView({
           </span>
         </div>
         <div className="employee-profile-actions">
+          {employee.computerProfile === "docker-linux" && onOpenBrowser ? (
+            <button className="secondary-button" type="button" onClick={onOpenBrowser}>
+              打开浏览器
+            </button>
+          ) : null}
           <button className="primary-button" type="button" onClick={onAssign}>
             分配任务
           </button>
@@ -153,7 +165,18 @@ export function EmployeeProfileView({
         ) : null}
         {tab === "records" ? <Records profile={profile} /> : null}
         {tab === "configuration" ? (
-          <EmployeeProfileDetailsEditor profile={profile} onProfileChanged={onProfileChanged} />
+          <>
+            <EmployeeProfileDetailsEditor profile={profile} onProfileChanged={onProfileChanged} />
+            {["model", "docker-linux"].includes(profile.employee.computerProfile) ? (
+              <EmployeeModelEditor
+                key={profile.employee.id}
+                profile={profile}
+                onProfileChanged={onProfileChanged}
+                onManageModels={onManageModels}
+                modelServicesVersion={modelServicesVersion}
+              />
+            ) : null}
+          </>
         ) : null}
       </section>
     </main>
@@ -338,9 +361,26 @@ export function EmployeeMemoryPanel({
                     {memoryPortabilityLabel(memory.portability)} · 修订 {memory.revision} ·{" "}
                     {memory.modelUseEnabled ? "允许模型使用" : "仅供你查看"}
                   </small>
-                  {typeof memory.provenance.sourceRunId === "string" ? (
+                  {memory.provenance.source === "reviewed-work-proposal" ? (
                     <small className="knowledge-source">
-                      来源任务：{memory.provenance.sourceRunId}
+                      {typeof memory.provenance.sourceTaskId === "string" &&
+                      typeof memory.provenance.sourceWorkRunId === "string" ? (
+                        <>
+                          来源 Task：
+                          <a
+                            href={`#/tasks?task=${encodeURIComponent(memory.provenance.sourceTaskId)}`}
+                          >
+                            {memory.provenance.sourceTaskId}
+                          </a>
+                          {" · "}Work Run：<code>{memory.provenance.sourceWorkRunId}</code>
+                        </>
+                      ) : (
+                        "原生任务来源信息不完整。"
+                      )}
+                    </small>
+                  ) : typeof memory.provenance.sourceRunId === "string" ? (
+                    <small className="knowledge-source">
+                      来源频道 Run：{memory.provenance.sourceRunId}
                     </small>
                   ) : null}
                 </div>

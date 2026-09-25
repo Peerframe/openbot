@@ -43,19 +43,31 @@ def task_title(content: str) -> str:
 
 
 class PostgresTaskStore:
-    def __init__(self, dsn: str):
+    def __init__(self, dsn: str, *, files=None, work_sources=None, model_connections=None):
         self._transactions = OwnerTransactions(dsn, application_name="openbot-control-tasks")
+        self.files = files
+        self.work_sources = work_sources
+        self.model_connections = model_connections
 
     async def verify_schema(self) -> None:
         await self._transactions.verify_schema()
 
     async def submit(self, token: str | None, channel_id: str, value: CreateMessageInput) -> SubmitTaskResult:
+        if self.files is not None and attachment_ids(value.content):
+            async with self.files.lock():
+                return await self._submit(token, channel_id, value)
+        return await self._submit(token, channel_id, value)
+
+    async def _submit(self, token: str | None, channel_id: str, value: CreateMessageInput) -> SubmitTaskResult:
         try:
             async with self._transactions.transaction(token) as connection:
-                # The initial Owner instruction is the only source of file references. Until the
-                # file lock/validator is migrated, never persist an unchecked reference as a task.
-                if attachment_ids(value.content):
-                    raise AttachmentReferencesUnavailable()
+                # The file authority lock spans validation and SQL commit, so delete/cleanup
+                # cannot race a newly retained task reference. Model text grants no file scope.
+                references = attachment_ids(value.content)
+                if references:
+                    if self.files is None:
+                        raise AttachmentReferencesUnavailable()
+                    self.files.validate_references(channel_id, references)
                 try:
                     value.content.encode("utf-8")
                 except UnicodeError:
@@ -102,7 +114,16 @@ class PostgresTaskStore:
                         "VALUES (%s,%s,%s,%s,%s,%s,%s,'queued',%s,%s) RETURNING *",
                         (first_run_id if index == 0 else str(uuid4()), channel_id, candidate.id, message_id,
                          candidate.computerProfile, value.content, title, created_at, created_at))
-                    runs.append(project_run(await cursor.fetchone()))
+                    run = project_run(await cursor.fetchone())
+                    selection = None
+                    if self.model_connections is not None:
+                        selection = await self.model_connections.in_transaction(connection, candidate.id)
+                        await connection.execute('UPDATE runs SET model_selection=%s WHERE id=%s',
+                                                 (Jsonb(selection) if selection else None, run.id))
+                    if self.work_sources is not None:
+                        task = await self.work_sources.admit(connection, run)
+                        run = run.model_copy(update={"workTaskId":task["id"]})
+                    runs.append(run.model_copy(update={"model":selection}))
                 await connection.execute(
                     "INSERT INTO run_events(id,channel_id,type,payload) VALUES (%s,%s,'MESSAGE_CREATED',%s)",
                     (str(uuid4()), channel_id, Jsonb({"messageId": message_id, "authorType": "human"})))
