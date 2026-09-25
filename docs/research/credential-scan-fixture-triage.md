@@ -186,3 +186,15 @@ publishing. No source or binary acceptance pin is changed to hide a detector mat
 
 Validation: all15 focused credential/workflow cases passed, including mutations of every
 new tuple field. The original twelve-finding offline result passed the exact adapter.
+
+A second scan reported the other reviewed gVisor binary on the adjacent inventory line.
+The pinned detector iterates a map of unique candidates and the existing unverified-result filter
+can select either digest in a chunk. Bind both actual binary digests at their exact historical
+locations; do not rely on output order or exempt a detector/path/line range. This adds two tuples,
+one actually observed on the second scan and one derived from the same inspected immutable
+binary-map line and detector. The resulting17-entry regression set covers both possible results.
+
+| Commit | File:line | Detector | Raw SHA-256 | RawV2 SHA-256 |
+| --- | --- | --- | --- | --- |
+| `778236bdb01014f62aa590e22389263a4c5ec4ee` | `experiments/linux-execution/REAL_HOST_DEADLINE.json:8` | `87` (content digest) | `3488860627e07cf82ec8321f043b8f12578e7b01106da1d0cd0528ba73cc3af6` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `778236bdb01014f62aa590e22389263a4c5ec4ee` | `experiments/linux-execution/protected_native.py:24` | `87` (content digest) | `15ff853549b0957c0de5f3e8db4edc74d4fbdc10fda10276d0bedf1b31c0d75f` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |

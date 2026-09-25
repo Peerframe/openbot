@@ -5,6 +5,24 @@ import { pathToFileURL } from "node:url";
 const MAX_BYTES = 16 * 1024 * 1024;
 const REVIEWED_FIXTURES = Object.freeze([
   {
+    detectorType: 87,
+    detectorName: "SentryToken",
+    commit: "778236bdb01014f62aa590e22389263a4c5ec4ee",
+    file: "experiments/linux-execution/REAL_HOST_DEADLINE.json",
+    line: 8,
+    raw: "3488860627e07cf82ec8321f043b8f12578e7b01106da1d0cd0528ba73cc3af6",
+    rawV2: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  },
+  {
+    detectorType: 87,
+    detectorName: "SentryToken",
+    commit: "778236bdb01014f62aa590e22389263a4c5ec4ee",
+    file: "experiments/linux-execution/protected_native.py",
+    line: 24,
+    raw: "15ff853549b0957c0de5f3e8db4edc74d4fbdc10fda10276d0bedf1b31c0d75f",
+    rawV2: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  },
+  {
     detectorType: 968,
     detectorName: "Postgres",
     commit: "778236bdb01014f62aa590e22389263a4c5ec4ee",
