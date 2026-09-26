@@ -4,7 +4,7 @@
 
 - Delivery: PR96 merged at `b186c11`; [PR98](https://github.com/Peerframe/openbot/pull/98)
   merged at `1dacf4e` after all17 hosted jobs plus aggregate `check` passed on `255d535`.
-  Root continues on `codex/final-server-retirement-20260926`; CI and DSH tasks are complete.
+  Root continues on `codex/final-server-retirement-20260926`; the separate CI-fix and DSH tasks are complete.
 - Linux browser: actual Work/Node/PostgreSQL/mTLS Temporal passed four approvals, navigation,
   Unicode input, one click, read/report/download and history replay against actual Bun/Chromium
   through Squid7.7 and runsc. Worker stop/approval/resume executed the original click once.
@@ -63,7 +63,8 @@
   SQL history, Node/Providers, publisher/MCP and credential helpers. Default dev, Docker and
   macOS arm64 Desktop now select Python. Canonical Desktop uses separate `python-local-server`
   storage; old installations, bootstrap and databases were not converted or deleted.
-- [PR99](https://github.com/Peerframe/openbot/pull/99) contains the isolated Preview fix; retirement commit`e3208b8` is pushed and hosted checks are running. DSH implemented Windows remote-install/DPAPI-restart gates;
+- [PR99](https://github.com/Peerframe/openbot/pull/99) contains the isolated Preview fix, retirement
+  commit `e3208b8` and test-only dependency metadata `6af2078`. DSH implemented Windows remote-install/DPAPI-restart gates;
   root integrated them with the existing process-identity/installer helpers. No external writer
   remains. Replace legacy Windows database CI with remote-client installation acceptance;
   real local execution belongs to the Python product gates.
@@ -77,8 +78,11 @@
   parent EOF and invalid-config refusal/cleanup passed. `npm run check` passed (19 builds,18 cached);
   final fixture/doc corrections passed. Fresh npm10.9.9 install passed. Fresh Python/Web startup, Owner login and proxy passed after canonicalizing the macOS
   fixture temporary directory.
-- Remaining: push and await this head's hosted CI including
-  Windows remote installation and Linux images. Do not claim final acceptance before that result.
+- Hosted acceptance on `6af2078` passed Windows remote installation/DPAPI, macOS packaging and
+  Python Preview, Linux retained clients and native amd64/arm64 images. Its `validate` job stopped
+  on missing research fields in the PR description; restore the existing evidence there before
+  dispatching this documentation checkpoint. No product code changed to bypass that gate.
+- Remaining: await final-head hosted CI. Do not claim final acceptance before that result.
   Signed releases, replacing installed software and production-data conversion are separate;
   source retirement is not an automatic installed upgrade.
 

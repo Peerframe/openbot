@@ -4,7 +4,7 @@
 
 - 交付：PR96 在 `b186c11` 合并；[PR98](https://github.com/Peerframe/openbot/pull/98)
   在 `1dacf4e` 合并，合并前 `255d535` 的17项独立检查及总检查全部通过。
-  root 在 `codex/final-server-retirement-20260926` 继续；CI 与 DSH 任务已经结束。
+  root 在 `codex/final-server-retirement-20260926` 继续；独立 CI 修复任务与 DSH 任务已经结束。
 - Linux 浏览器：真实 Work／Node／PG／mTLS Temporal 已经过 Squid7.7／runsc／Bun／Chromium
   完成四次审批、导航、中文输入、单次点击、读取、报告下载和历史回放；Worker 暂停期间批准
   的原点击只执行一次。浏览器容器有序替换前确认旧容器退出，同一私有档案保留 localStorage、
@@ -52,7 +52,8 @@
   只在原目录保留退役说明；59文件冻结 oracle、SQL 历史、Node／Provider、publisher／MCP
   与凭据 helper 保留。默认开发、Docker 和 macOS arm64 Desktop 选择 Python。
   Canonical Desktop 使用独立 `python-local-server` 目录，原安装、bootstrap、数据库未转换或删除。
-- [PR99](https://github.com/Peerframe/openbot/pull/99) 已有独立 Preview 修复；退役提交`e3208b8`已推送；当前托管检查进行中。
+- [PR99](https://github.com/Peerframe/openbot/pull/99) 已有独立 Preview 修复、退役提交 `e3208b8`
+  和仅用于测试的依赖标记修正 `6af2078`。
   DSH完成 Windows远程安装／DPAPI跨进程验收脚本，root整合时复用了原有身份／安装器helper。
   当前无外部写入者。旧Windows数据库CI被替换为远程客户端安装验收，原生执行留给Python产品门禁。
 - 一次新获批的真实打包 Kimi Task通过：4份模型回执、8,845 tokens、独立复核、353字节报告、
@@ -63,7 +64,10 @@
 - 默认macOS arm64包已构建，包内真实API／PG、Owner登录、保留数据重启、父进程EOF和非法配置
   拒绝／清理均通过。`npm run check`通过（19项构建、18项缓存）；最终复查通过。
   npm10.9.9全新依赖安装通过。全新Python/Web开发启动、Owner登录和代理通过；Mac临时路径已规范化。
-- 剩余：推送并等待此次提交CI（含Windows远程安装及Linux镜像）。
+- `6af2078` 的 Windows 远程安装／DPAPI、macOS 打包与 Python Preview、Linux 客户端及
+  amd64／arm64 原生镜像已通过。`validate` 因 PR 说明缺少研究字段而提前停止；推送本次
+  文档检查点前补回已有研究证据，没有修改产品代码绕过检查。
+- 剩余：等待最终提交的托管 CI。
   托管结果未回来前不宣布最终验收结束。签名发行、替换已安装软件、生产数据转换另行执行；
   本轮不会把源码退役等同于自动升级现有安装。
 
