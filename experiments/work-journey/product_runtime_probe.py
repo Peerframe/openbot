@@ -16,7 +16,7 @@ from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
 from temporalio.worker import Replayer
 
 from product_http_fixture import API, Process, REPO
-sys.path[:0]=[str(REPO/'apps/server-python/src'),str(REPO/'apps/agent-runtime-python/src')]
+sys.path[:0]=[str(REPO/'apps/server-python/src'),str(REPO/'packages/harness/src')]
 from postgres_server import PostgresServer
 from product_runtime_server import REPORT, SUMMARY
 from openbot_server.model_settings import ModelSettingsService

@@ -7,7 +7,7 @@
 启动见[贡献指南](../CONTRIBUTING.zh-CN.md)，升级状态只在[交接](REPOSITORY_UPGRADE_PLAN.md)维护。
 
 Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README；[冻结 oracle](../tests/oracles/legacy-server/AGENTS.md)
-只作比较输入。核心仍在 `apps/agent-runtime-python`，`packages/harness` 和 wheel 是 C2 目标。
+只作比较输入。核心仍在 `packages/harness`，`packages/harness` 和 wheel 是 C2 目标。
 
 ## UI 交互
 
@@ -29,25 +29,25 @@ Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README�
 
 ## Python 核心
 
-- 规则/契约：[runtime AGENTS](../apps/agent-runtime-python/AGENTS.md)、
-  [contracts](../apps/agent-runtime-python/src/openbot_agent_runtime/contracts.py)、
-  [现有研究](../apps/agent-runtime-python/RESEARCH.md#9-real-server-catalog-and-tool-correlation-integration)。
+- 规则/契约：[runtime AGENTS](../packages/harness/AGENTS.md)、
+  [contracts](../packages/harness/src/openbot_agent_runtime/contracts.py)、
+  [现有研究](../packages/harness/RESEARCH.md#9-real-server-catalog-and-tool-correlation-integration)。
   第 9 节取代原 4/4a 节的 catalog 选择，应以当前实现为准。
-- 实现：[executor](../apps/agent-runtime-python/src/openbot_agent_runtime/executor.py)、
-  [catalog](../apps/agent-runtime-python/src/openbot_agent_runtime/catalog.py)、
-  [bounds](../apps/agent-runtime-python/src/openbot_agent_runtime/bounds.py)。
+- 实现：[executor](../packages/harness/src/openbot_agent_runtime/executor.py)、
+  [catalog](../packages/harness/src/openbot_agent_runtime/catalog.py)、
+  [bounds](../packages/harness/src/openbot_agent_runtime/bounds.py)。
 - 消费者：控制层 [host](../apps/server-python/src/openbot_server/runtime_host.py)、
   [process](../apps/server-python/src/openbot_server/runtime_process.py)、
   [Work runtime](../apps/server-python/src/openbot_server/work_product_runtime.py) 和
   [Desktop 打包](../apps/desktop/scripts/prepare-native-server.mjs)。可选
-  [Temporal 组装](../apps/agent-runtime-python/src/openbot_agent_runtime/temporal_agent.py)有独立生命周期；
+  [Temporal 组装](../packages/harness/src/openbot_agent_runtime/temporal_agent.py)有独立生命周期；
   [可信端口](../apps/server-python/src/openbot_server/work_runtime_ports.py)由控制层拥有。
-- 测试：[catalog/limits](../apps/agent-runtime-python/tests/test_catalog_and_limits.py)、
-  [authority](../apps/agent-runtime-python/tests/test_authority.py)、
-  [lifecycle](../apps/agent-runtime-python/tests/test_lifecycle.py)、
-  [Temporal](../apps/agent-runtime-python/tests/test_temporal_agent.py)。
-- 命令：`apps/agent-runtime-python/scripts/bootstrap.sh`，再执行
-  `apps/agent-runtime-python/scripts/check.sh -k catalog`；全包检查去掉 `-k`，核对实际收集数量。
+- 测试：[catalog/limits](../packages/harness/tests/test_catalog_and_limits.py)、
+  [authority](../packages/harness/tests/test_authority.py)、
+  [lifecycle](../packages/harness/tests/test_lifecycle.py)、
+  [Temporal](../packages/harness/tests/test_temporal_agent.py)。
+- 命令：`packages/harness/scripts/bootstrap.sh`，再执行
+  `packages/harness/scripts/check.sh -k catalog`；全包检查去掉 `-k`，核对实际收集数量。
   需要 Python 3.12+；只有锁定安装联网，基础测试无需 DB、Electron、Temporal 或模型账户。
   Worker 环境见[控制层 README](../apps/server-python/README.zh-CN.md)，基础测试不证明 replay。
 
@@ -61,7 +61,7 @@ Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README�
   [work-api](../apps/web/src/work-api.ts)、[测试](../apps/web/src/work-api.test.ts)与
   [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx)。Python→TS 自动生成仍是 C2 待办。
 - Runtime wire：[控制校验](../apps/server-python/src/openbot_server/runtime_wire.py) ↔
-  [核心 wire](../apps/agent-runtime-python/src/openbot_agent_runtime/wire.py)；
+  [核心 wire](../packages/harness/src/openbot_agent_runtime/wire.py)；
   [比较脚本](../apps/server-python/scripts/compare-runtime-wire.mjs)对照冻结 TS oracle，不能把它当活跃 Server。
   保留 missing/null、错误码、大小限制和未知字段拒绝。
 - 命令：`npm run oracle:build`、`apps/server-python/scripts/bootstrap.sh`，再运行

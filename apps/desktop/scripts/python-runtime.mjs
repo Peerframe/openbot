@@ -181,8 +181,8 @@ export async function stagePythonProduct(root, output) {
   ])
     await cp(join(source, name), join(target, name));
   await cp(
-    join(root, "apps/agent-runtime-python/src"),
-    join(output, "apps/agent-runtime-python/src"),
+    join(root, "packages/harness/src"),
+    join(output, "packages/harness/src"),
     {
       recursive: true,
       filter: (path) => !path.endsWith("__pycache__") && !path.endsWith(".pyc"),

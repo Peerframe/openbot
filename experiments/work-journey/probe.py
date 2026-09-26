@@ -27,7 +27,7 @@ from effect_service import EffectService
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
-sys.path[:0] = [str(REPO / 'apps/server-python/src'), str(REPO / 'apps/agent-runtime-python/src')]
+sys.path[:0] = [str(REPO / 'apps/server-python/src'), str(REPO / 'packages/harness/src')]
 # These reused helpers create only owned loopback services and disposable databases.
 sys.path.insert(0, str(REPO / 'experiments/durable-execution'))
 from probe_temporal import Server

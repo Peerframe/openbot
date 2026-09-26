@@ -11,7 +11,7 @@ def main():
     parser.add_argument('--repo',type=Path,required=True)
     repo=parser.parse_args().repo.resolve()
     sys.path[:0]=[str(repo/'experiments/work-journey'),str(repo/'apps/server-python/src'),
-                 str(repo/'apps/agent-runtime-python/src')]
+                 str(repo/'packages/harness/src')]
     import control
     import product_approval_worker
     config=control.settings();original=control.http

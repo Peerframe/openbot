@@ -8,8 +8,8 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
   && npm install --global --ignore-scripts npm@10.9.9 \
   && test "$(node --version)" = "v24.21.0" \
   && test "$(npm --version)" = "10.9.9"
-WORKDIR /workspace/apps/agent-runtime-python
-COPY apps/agent-runtime-python/requirements.lock ./requirements.lock
+WORKDIR /workspace/packages/harness
+COPY packages/harness/requirements.lock ./requirements.lock
 RUN python -m venv .venv \
   && .venv/bin/python -m pip --isolated install --no-cache-dir --disable-pip-version-check \
        --index-url https://pypi.org/simple -r requirements.lock

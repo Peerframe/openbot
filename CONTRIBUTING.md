@@ -50,7 +50,7 @@ Start with the [repository map](docs/REPOSITORY_MAP.md) for module ownership, co
 | --- | --- |
 | Product and mobile UX | `apps/web`, `docs/INTERFACE.md` |
 | Control plane and realtime | `apps/server-python`, `packages/db` |
-| Python execution core | `apps/agent-runtime-python` (current harness source) |
+| Python execution core | `packages/harness` (current harness source) |
 | Node protocol and reliability | `apps/node`, `packages/protocol` |
 | Computer integrations | `providers/*`, `packages/provider-sdk` |
 | Policy and security | `packages/policy`, `docs/SECURITY.md` |

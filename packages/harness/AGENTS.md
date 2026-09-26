@@ -1,6 +1,7 @@
 # Python runtime contributor rules
 
-This is the current harness source; `packages/harness` is a C2 target, not an existing package.
+This is the single active harness source, moved from `apps/agent-runtime-python` in C2.
+Wheel packaging and installed-consumer acceptance are in progress; follow the current handoff.
 Start with the [core route](../../docs/REPOSITORY_MAP.md#python-core). `contracts.py` defines bounded
 ports; `executor.py` composes ordinary execution; `temporal_agent.py` is optional Worker composition.
 Keep ordinary import independent of Temporal and of control/database/provider implementations.

@@ -1,6 +1,6 @@
 # Implementation research — Python execution unit
 
-Scope: the bounded, SDK-backed Python unit under `apps/agent-runtime-python/`. Sections 1–7 are the
+Scope: the bounded, SDK-backed Python unit under `packages/harness/`. Sections 1–7 are the
 `TASK_002_PYTHON_RUNTIME.md` record, written before that implementation. Section 8 is the
 `TASK_003_PYTHON_WORKER.md` record for the one-invocation process adapter, added alongside it. This
 note records exactly which upstream releases and public APIs the code targets, what was verified by

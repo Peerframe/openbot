@@ -12,7 +12,7 @@ import psycopg
 import pytest
 pytest.importorskip('temporalio', reason='optional Worker SDK profile')
 pytest.importorskip('pydantic_ai', reason='optional Worker SDK profile')
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'agent-runtime-python/src'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'packages/harness/src'))
 from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
 from openbot_server import work_worker as worker
 from openbot_server.work_files import LocalWorkFiles

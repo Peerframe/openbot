@@ -39,8 +39,8 @@
 !apps/server-python/scripts/serve.py
 !apps/server-python/scripts/verify_environment.py
 !apps/server-python/src/**
-!apps/agent-runtime-python/
-!apps/agent-runtime-python/src/**
+!packages/harness/
+!packages/harness/src/**
 !apps/desktop/
 !apps/desktop/resources/
 !apps/desktop/resources/openbot-icon.png

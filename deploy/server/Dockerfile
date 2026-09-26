@@ -65,7 +65,7 @@ COPY --from=product-build /workspace/apps/web/dist/ ./apps/web/dist/
 COPY packages/db/migrations/ ./packages/db/migrations/
 COPY apps/server-python/src/ ./apps/server-python/src/
 COPY apps/server-python/scripts/serve.py ./apps/server-python/scripts/serve.py
-COPY apps/agent-runtime-python/src/ ./apps/agent-runtime-python/src/
+COPY packages/harness/src/ ./packages/harness/src/
 COPY deploy/server/product-entry.py deploy/server/product-migrate.mjs deploy/server/product-preflight.mjs deploy/server/product-health.py ./deploy/server/
 COPY LICENSE THIRD_PARTY_NOTICES.md ./
 COPY apps/desktop/resources/python-notices/ /usr/share/doc/openbot/python-notices/

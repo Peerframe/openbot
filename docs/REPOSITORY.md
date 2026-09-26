@@ -26,9 +26,9 @@ openbot/
 │   ├── web/                 # Web/PWA work, supervision and artifact interfaces
 │   ├── desktop/             # Thin Electron client and packaged runtime lifecycle
 │   ├── server-python/       # Active Python product authority, API and trusted services
-│   ├── agent-runtime-python/ # Independently testable Python Agent Runtime
 │   └── node/                # Replaceable execution-node daemon
 ├── packages/
+│   ├── harness/           # Single Python execution core; wheel extraction in progress
 │   ├── config/              # Validated environment contracts
 │   ├── db/                  # PostgreSQL schema and migrations
 │   ├── domain/              # Product entities
@@ -53,7 +53,7 @@ openbot/
 
 `apps/server` is retired. `npm run dev` uses `scripts/dev-python.mjs`; containers and the supported
 macOS arm64 local Desktop payload select Python product mode. Direct `serve.py` remains read-only
-unless configured. The runtime still lives under `apps/agent-runtime-python`; formal harness
+unless configured. The runtime still lives under `packages/harness`; formal harness
 packaging is planned in C2, not already delivered. The retained Node parser closure is required.
 Use the [repository map](REPOSITORY_MAP.md) for bounded code/consumer/check routes and the
 [upgrade handoff](REPOSITORY_UPGRADE_PLAN.md) for C1→C2→C3 status.

@@ -6,7 +6,7 @@ import unittest
 from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[2]
-for source in ('apps/server-python/src', 'apps/agent-runtime-python/src'):
+for source in ('apps/server-python/src', 'packages/harness/src'):
     sys.path.insert(0, str(ROOT / source))
 from pydantic_ai.messages import ModelRequest, ModelResponse, UserPromptPart, TextPart
 from pydantic_ai.usage import RequestUsage

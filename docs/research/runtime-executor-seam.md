@@ -65,7 +65,7 @@ claim follows from these checks.
 ## Python environment coexistence
 
 The first combined check found that the documentation walker traversed installed SDK docs inside
-`apps/agent-runtime-python/.venv` and reported upstream links omitted from the distribution.
+`packages/harness/.venv` and reported upstream links omitted from the distribution.
 Python 3.12 [venv documentation](https://docs.python.org/3.12/library/venv.html) describes virtual
 environments as disposable and not checked into source control. Exclude `.venv` from repository
 documentation and Biome traversal, just as existing `node_modules` is excluded. Continue checking

@@ -8,7 +8,7 @@ import sys
 
 ROOT=Path(os.environ['OPENBOT_TERMINAL_REPO'])
 sys.path[:0]=[str(ROOT/'apps/server-python/src'),
-             str(ROOT/'apps/agent-runtime-python/src'),str(ROOT/'experiments/work-journey')]
+             str(ROOT/'packages/harness/src'),str(ROOT/'experiments/work-journey')]
 # Load the product service before the reused journey helper adjusts sys.path.
 from openbot_server.work_product_service import ProductWorkService
 import product_approval_worker as fixture

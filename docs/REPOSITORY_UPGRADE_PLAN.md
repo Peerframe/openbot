@@ -5,7 +5,8 @@ English canonical; 中文摘要见文末。This is the only C1→C2→C3 task re
 
 ## Baseline and ownership
 
-- Date: 2026-09-27. Requested slice: baseline + C1 only. C2/C3 remain unstarted.
+- Date: 2026-09-27. Initial baseline + C1 accepted locally. The user requested continued
+  completion; C2 is active, followed by C3. Publishing/paid/production restrictions remain.
 - Original checkout: `/Users/yxflc/Project/openbot`, `feat/cross-platform-employees`,
   `9cc73c9e78451e572f57d142d6b9caf62ccb78e2`; this is an older TS branch.
 - Pre-existing changes: modified root AGENTS, untracked Chinese AGENTS, user PNG and `output/`.
@@ -16,7 +17,7 @@ English canonical; 中文摘要见文末。This is the only C1→C2→C3 task re
 - Main [CI 36241261445](https://github.com/Peerframe/openbot/actions/runs/36241261445) passed on the base;
   Dependabot Updates failed separately. Neither result validates this C1 diff.
 - One implementation owner: current Codex task, all C1 files. Any acceptance reviewer is read-only.
-  No source migration, product data, remote protection, release or paid-model work is authorized.
+  C2 source/package migration is authorized. No product data, remote protection, release or paid-model work is authorized.
 
 ## Reuse and finite scope
 
@@ -132,3 +133,32 @@ C1 本地验收已通过：修正根/六处局部规则、地图/贡献/设计�
 UI/API 9 项；完整 npm check 通过，最终 Turbo 结果均复用缓存，根级检查实际重跑。
 无本地 C1 技术阻断；候选未推送，故未验证 C1 云端 CI，未合并/发布。原目录及用户资产保留。
 C2 wheel/消费者和 C3 CI/完整贡献流程尚未开始，不能把本轮阅读验收当作这些事项完成。
+
+## Continued delivery — C2 in progress
+
+C1 is preserved at `a770d870e81cb2295a1c4ed76da7796997c67716`. The same checkout/branch
+continues; one writer owns the integration. C1 paths above record that historical revision.
+
+The move retains `openbot_agent_runtime` and every loop, guard, wire and Temporal name. All 12
+source modules, tests, locks, research and contributor rules move together to `packages/harness`;
+there is no second implementation or empty application shell. Active scripts/consumer source paths
+and local links follow the move. Frozen oracle and historical migration handoff are not new status.
+
+| Consumer | Current boundary / C2 work |
+| --- | --- |
+| Ordinary process | `runtime_executor.py` and `run-worker.py`; keep one invocation, pipes, teardown; install wheel |
+| Product / Temporal | `work_runtime_ports.py`, `work_product_runtime.py`, `work_worker.py`; preserve control factories and replay IDs; Worker environment installs wheel |
+| Local development | `serve.py`, `dispatch-work.py`, `.worker-venv`; remove source-path dependency after install |
+| Container | `deploy/server/Dockerfile`; build wheel once, install to product venv, no source copy |
+| Desktop | `python-runtime.mjs`; install same wheel to pinned Python, keep Node parser closure |
+| Checks / experiments | core scripts, control acceptance, CI Worker closure, experiments; paths and environment validation follow package |
+
+Docker 29.5.2 is available locally through the approved local socket. C2 checks are pending; a
+path-only move is not wheel, consumer or Temporal qualification. C3 remains unstarted.
+
+中文：用户要求继续，现进入 C2，随后 C3；上文 C1 证据仍按原版本复用。当前唯一写入者继续维护
+本交接；搬迁与打包/行为改动分开，尚不宣称 wheel、产品消费者或恢复验收完成。
+
+Path-move check: original core suite 419 passed / 1 optional Temporal module skipped (60.15s);
+no runtime implementation bytes changed. Docs: 4 routing tests / 535 Markdown files passed.
+Research reference grammar now also accepts package-owned RESEARCH after its directory move.

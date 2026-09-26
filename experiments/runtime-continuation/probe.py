@@ -20,7 +20,7 @@ and credential out of the experiment. See ``docs/research/runtime-continuation.m
 
 Run with the package-local interpreter, from anywhere:
 
-    apps/agent-runtime-python/.venv/bin/python experiments/runtime-continuation/probe.py
+    packages/harness/.venv/bin/python experiments/runtime-continuation/probe.py
 
 Exit code 0 means every case produced the outcome recorded in ``EXPECTED`` below. The parent owns
 that table and re-checks the child-written observations, so a child cannot declare its own success.
@@ -47,7 +47,7 @@ from typing import Any, Callable
 PINNED_PACKAGE = "pydantic-ai-slim"
 PINNED_VERSION = "2.47.0"
 # Tag `v2.47.0` of pydantic/pydantic-ai, the revision already reviewed in
-# apps/agent-runtime-python/RESEARCH.md section 1. Recorded in the checkpoint envelope so a version
+# packages/harness/RESEARCH.md section 1. Recorded in the checkpoint envelope so a version
 # change requires an explicit compatibility/migration choice, never silent Task loss.
 PINNED_COMMIT = "77d5fce751ab8ab04bd5db4ed6acc1131a4baed6"
 
@@ -115,7 +115,7 @@ def load_sdk() -> dict[str, Any]:
         raise SystemExit(
             f"expected {PINNED_PACKAGE}=={PINNED_VERSION} in this interpreter, found "
             f"{pydantic_ai.__version__} at {pydantic_ai.__file__}. Run this probe with "
-            "apps/agent-runtime-python/.venv/bin/python; the probe never installs anything."
+            "packages/harness/.venv/bin/python; the probe never installs anything."
         )
     # The SDK prints a startup banner to stdout on the first run, and stdout carries this probe's own
     # channel. Same public switch the runtime uses (RESEARCH.md 3a.6).

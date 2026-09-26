@@ -355,9 +355,9 @@ test("ordinary UI and core repairs reuse the decision without repeating upstream
     validatePullRequestResearch(
       reuse.replace(
         "docs/research/channel-member-layout.md",
-        "apps/agent-runtime-python/RESEARCH.md",
+        "packages/harness/RESEARCH.md",
       ),
-      [repair({ path: "apps/agent-runtime-python/src/openbot_agent_runtime/catalog.py" })],
+      [repair({ path: "packages/harness/src/openbot_agent_runtime/catalog.py" })],
     ),
     [],
   );
@@ -381,15 +381,15 @@ test("repair label cannot hide dependencies, authorization, persistence, protoco
   for (const path of [
     "package.json",
     "package-lock.json",
-    "apps/agent-runtime-python/pyproject.toml",
-    "apps/agent-runtime-python/requirements.lock",
+    "packages/harness/pyproject.toml",
+    "packages/harness/requirements.lock",
     "packages/protocol/src/frames.ts",
     "apps/server-python/src/openbot_server/auth_store.py",
     "packages/policy/src/index.ts",
     "apps/server-python/src/openbot_server/work_store.py",
     "packages/db/migrations/0099.sql",
-    "apps/agent-runtime-python/src/openbot_agent_runtime/contracts.py",
-    "apps/agent-runtime-python/src/openbot_agent_runtime/guard.py",
+    "packages/harness/src/openbot_agent_runtime/contracts.py",
+    "packages/harness/src/openbot_agent_runtime/guard.py",
     "AGENTS.md",
     "apps/web/AGENTS.md",
     ".agents/skills/openbot-change/SKILL.md",

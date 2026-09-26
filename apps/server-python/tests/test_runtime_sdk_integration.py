@@ -12,8 +12,8 @@ from openbot_server.runtime_ports import ModelStep, RuntimeDenied
 from test_runtime_host import Fixture, intent
 
 ROOT = Path(__file__).resolve().parents[3]
-PYTHON = ROOT / "apps/agent-runtime-python/.venv/bin/python"
-WORKER = ROOT / "apps/agent-runtime-python/scripts/run-worker.py"
+PYTHON = ROOT / "packages/harness/.venv/bin/python"
+WORKER = ROOT / "packages/harness/scripts/run-worker.py"
 pytestmark = pytest.mark.skipif(sys.platform == "win32" or not PYTHON.exists(),
     reason="Requires the separately bootstrapped Python SDK worker on POSIX")
 

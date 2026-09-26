@@ -12,7 +12,7 @@ from uuid import uuid4
 import psycopg
 import pytest
 pytest.importorskip('pydantic_ai',reason='Optional Worker SDK profile is required')
-sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'agent-runtime-python/src'))
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'packages/harness/src'))
 from openbot_server.employee_knowledge import PostgresEmployeeKnowledge
 from openbot_server.database import StoreUnavailable
 from openbot_server.knowledge_runtime_values import KnowledgeUnavailable

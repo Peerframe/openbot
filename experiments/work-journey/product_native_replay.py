@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 
 async def replay(repo,directory):
-    sys.path[:0]=[str(repo/'apps/server-python/src'),str(repo/'apps/agent-runtime-python/src')]
+    sys.path[:0]=[str(repo/'apps/server-python/src'),str(repo/'packages/harness/src')]
     from temporalio.client import WorkflowHistory
     from temporalio.worker import Replayer
     from pydantic_ai.durable_exec.temporal import PydanticAIPlugin

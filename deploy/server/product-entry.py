@@ -55,7 +55,7 @@ def preflight(env):
 
 def main():
     os.umask(0o077)
-    sys.path[:0]=[str(ROOT/'apps/server-python/src'),str(ROOT/'apps/agent-runtime-python/src')]
+    sys.path[:0]=[str(ROOT/'apps/server-python/src'),str(ROOT/'packages/harness/src')]
     try:
         env=environment(os.environ);preflight(env)
     except Exception:

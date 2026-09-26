@@ -40,7 +40,7 @@ Python/FastAPI 实现[迁移计划](../../docs/ARCHITECTURE_MIGRATION_PLAN.zh-CN
 仓库根目录运行一次性数据库流程：
 
 ```sh
-apps/agent-runtime-python/scripts/bootstrap.sh
+packages/harness/scripts/bootstrap.sh
 npm run test:control:python
 ```
 
@@ -147,7 +147,7 @@ SDK Worker 只接收既有进程协议。这些模块尚未接入任务 HTTP 派
 在执行监督阶段验收时，包测试 651 项通过，另在独立数据库夹具中通过当时的 45 项；83 项进程/真实 SDK 测试和 48 项实际 TS/Python 协议对照通过。
 这不代表数据库任务执行已接通，详见[监督层研究](../../docs/research/python-control-runtime-supervision.md)。
 
-真实 Worker 测试需要先在 `apps/agent-runtime-python` 中建立独立虚拟环境。
+真实 Worker 测试需要先在 `packages/harness` 中建立独立虚拟环境。
 缺少该环境或在 Windows 上时，`tests/test_runtime_sdk_integration.py` 会跳过；跳过不代表互操作已验证。
 既有 `npm run test:runtime:linux` 夹具会在固定 Linux 镜像中安装两套隔离的锁定环境，并要求真实 Worker 存在。
 控制层测试不继承 TS 测试阶段使用的合成数据库凭据。

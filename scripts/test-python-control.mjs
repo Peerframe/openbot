@@ -69,8 +69,8 @@ for (const signal of ["SIGINT", "SIGTERM"])
   });
 try {
   assert(
-    existsSync(join(root, "apps/agent-runtime-python/.venv/bin/python")),
-    "Bootstrap apps/agent-runtime-python before the persisted SDK/control acceptance gate.",
+    existsSync(join(root, "packages/harness/.venv/bin/python")),
+    "Bootstrap packages/harness before the persisted SDK/control acceptance gate.",
   );
   if (process.env.OPENBOT_TEMPORAL_TEST_PYTHON) {
     // Worker qualification starts a real Node from source; its workspace imports need
@@ -460,7 +460,7 @@ try {
             join(root, "experiments/work-journey"),
             join(root, "experiments/linux-execution"),
             join(root, "apps/server-python/src"),
-            join(root, "apps/agent-runtime-python/src"),
+            join(root, "packages/harness/src"),
           ].join(delimiter),
         },
         encoding: "utf8",

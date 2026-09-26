@@ -13,7 +13,7 @@ export function reusableChange(change) {
     /^(?:apps|packages|providers)\/[\w-]+\/(?:tests\/.*\.py|src\/.*\.test\.[cm]?[jt]sx?)$/u;
   const presentation = /^apps\/web\/src\/components\/[\w/-]+\.(?:tsx|css)$/u;
   const core =
-    /^apps\/agent-runtime-python\/src\/openbot_agent_runtime\/(?:bounds|catalog|errors)\.py$/u;
+    /^packages\/harness\/src\/openbot_agent_runtime\/(?:bounds|catalog|errors)\.py$/u;
   if (
     !test.test(change.path) &&
     !(change.beforeMode === "100644" && (presentation.test(change.path) || core.test(change.path)))
@@ -43,7 +43,7 @@ export function validateResearchReuse(fields, changes) {
   }
   const reference = fields["Research reuse"] ?? "";
   if (
-    !/^(?:(?:docs\/(?:research|decisions)\/[\w/-]+\.md|docs\/OPEN_SOURCE_REUSE\.md|apps\/[\w-]+\/RESEARCH\.md)(?:#[\w-]+)?|https:\/\/github\.com\/Peerframe\/openbot\/(?:issues|pull)\/\d+(?:#[\w-]+)?)$/u.test(
+    !/^(?:(?:docs\/(?:research|decisions)\/[\w/-]+\.md|docs\/OPEN_SOURCE_REUSE\.md|(?:apps|packages)\/[\w-]+\/RESEARCH\.md)(?:#[\w-]+)?|https:\/\/github\.com\/Peerframe\/openbot\/(?:issues|pull)\/\d+(?:#[\w-]+)?)$/u.test(
       reference,
     )
   )

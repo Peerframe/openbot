@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, patch
 import psycopg
 import pytest
 pytest.importorskip('pydantic_ai', reason='optional Worker SDK profile')
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'agent-runtime-python/src'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'packages/harness/src'))
 from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
 from pydantic_ai.usage import RequestUsage
 from openbot_agent_runtime.contracts import ModelStepRequest

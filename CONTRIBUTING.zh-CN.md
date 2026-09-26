@@ -47,7 +47,7 @@ OpenBot 必须方便多位独立开发者参与，不能形成只有项目负责
 主要代码区域：产品和移动端体验在 `apps/web`；控制平面与实时同步在 `apps/server-python`、
 `packages/db`；Node 协议在 `apps/node`、`packages/protocol`；电脑集成在 `providers/*` 与
 `packages/provider-sdk`；策略和安全在 `packages/policy`、`docs/SECURITY.md`；可选体验在
-`packages/office-plugin`。当前 Python 执行核心在 `apps/agent-runtime-python`，正式包提取属于 C2。
+`packages/office-plugin`。当前 Python 执行核心在 `packages/harness`，正式包提取属于 C2。
 
 ## 本地开发
 

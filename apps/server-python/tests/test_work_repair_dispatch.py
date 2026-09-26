@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 pytest.importorskip('temporalio')
 pytest.importorskip('pydantic_ai')
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'agent-runtime-python/src'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'packages/harness/src'))
 from temporalio.client import WorkflowExecutionStatus as Status
 from openbot_server import work_repair_dispatch as dispatch
 from openbot_server.work_values import WorkConflict, InvalidWork

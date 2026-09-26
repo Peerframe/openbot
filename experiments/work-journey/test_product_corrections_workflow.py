@@ -4,7 +4,7 @@ import sys
 from types import SimpleNamespace
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, patch
-sys.path[:0]=[str(Path(__file__).parents[2]/'apps/server-python/src'),str(Path(__file__).parents[2]/'apps/agent-runtime-python/src')]
+sys.path[:0]=[str(Path(__file__).parents[2]/'apps/server-python/src'),str(Path(__file__).parents[2]/'packages/harness/src')]
 from pydantic_ai import DeferredToolRequests
 from pydantic_ai.messages import ToolCallPart
 from temporalio.exceptions import ApplicationError

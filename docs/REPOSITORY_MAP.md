@@ -9,7 +9,7 @@ when the route does not answer the question. Do not load all research records. S
 
 Python is the product control default. `apps/server` retains only a retirement README; the
 [frozen oracle](../tests/oracles/legacy-server/AGENTS.md) is comparison input only. Current runtime
-source is still `apps/agent-runtime-python`; a wheel under `packages/harness` is a C2 goal.
+source is still `packages/harness`; a wheel under `packages/harness` is a C2 goal.
 
 ## UI interaction
 
@@ -33,25 +33,25 @@ source is still `apps/agent-runtime-python`; a wheel under `packages/harness` is
 
 ## Python core
 
-- Rules/contract: [runtime AGENTS](../apps/agent-runtime-python/AGENTS.md),
-  [contracts](../apps/agent-runtime-python/src/openbot_agent_runtime/contracts.py),
-  [existing reviewed decision](../apps/agent-runtime-python/RESEARCH.md#9-real-server-catalog-and-tool-correlation-integration).
+- Rules/contract: [runtime AGENTS](../packages/harness/AGENTS.md),
+  [contracts](../packages/harness/src/openbot_agent_runtime/contracts.py),
+  [existing reviewed decision](../packages/harness/RESEARCH.md#9-real-server-catalog-and-tool-correlation-integration).
   Section 9 supersedes the earlier catalog decision in sections 4/4a; use the current implementation.
-- Representative implementation: [executor](../apps/agent-runtime-python/src/openbot_agent_runtime/executor.py),
-  [catalog](../apps/agent-runtime-python/src/openbot_agent_runtime/catalog.py),
-  [bounds](../apps/agent-runtime-python/src/openbot_agent_runtime/bounds.py).
+- Representative implementation: [executor](../packages/harness/src/openbot_agent_runtime/executor.py),
+  [catalog](../packages/harness/src/openbot_agent_runtime/catalog.py),
+  [bounds](../packages/harness/src/openbot_agent_runtime/bounds.py).
 - Actual consumers: control [runtime host](../apps/server-python/src/openbot_server/runtime_host.py),
   [process](../apps/server-python/src/openbot_server/runtime_process.py),
   [Work runtime](../apps/server-python/src/openbot_server/work_product_runtime.py) and
   [Desktop payload builder](../apps/desktop/scripts/prepare-native-server.mjs).
-  Optional [Temporal composition](../apps/agent-runtime-python/src/openbot_agent_runtime/temporal_agent.py)
+  Optional [Temporal composition](../packages/harness/src/openbot_agent_runtime/temporal_agent.py)
   has a different lifecycle; control owns [trusted ports](../apps/server-python/src/openbot_server/work_runtime_ports.py).
-- Tests: [limits/catalog](../apps/agent-runtime-python/tests/test_catalog_and_limits.py),
-  [authority](../apps/agent-runtime-python/tests/test_authority.py),
-  [lifecycle](../apps/agent-runtime-python/tests/test_lifecycle.py),
-  [Temporal](../apps/agent-runtime-python/tests/test_temporal_agent.py).
-- Commands: `apps/agent-runtime-python/scripts/bootstrap.sh` (Python 3.12+, network only for locked
-  install), then `apps/agent-runtime-python/scripts/check.sh -k catalog` for a catalog change;
+- Tests: [limits/catalog](../packages/harness/tests/test_catalog_and_limits.py),
+  [authority](../packages/harness/tests/test_authority.py),
+  [lifecycle](../packages/harness/tests/test_lifecycle.py),
+  [Temporal](../packages/harness/tests/test_temporal_agent.py).
+- Commands: `packages/harness/scripts/bootstrap.sh` (Python 3.12+, network only for locked
+  install), then `packages/harness/scripts/check.sh -k catalog` for a catalog change;
   omit `-k` for the package suite. Check collection counts. No DB, Electron, Temporal or model account
   is needed for the base suite. Optional Worker tests require the separate environment in
   [the control README](../apps/server-python/README.md); base success does not prove replay.
@@ -68,7 +68,7 @@ source is still `apps/agent-runtime-python`; a wheel under `packages/harness` is
   and [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx). Generated Python-to-TS
   consumption is not yet implemented; one real chain is a C2 deliverable.
 - Existing runtime wire: [Python control validator](../apps/server-python/src/openbot_server/runtime_wire.py)
-  ↔ [runtime wire](../apps/agent-runtime-python/src/openbot_agent_runtime/wire.py);
+  ↔ [runtime wire](../packages/harness/src/openbot_agent_runtime/wire.py);
   [comparison script](../apps/server-python/scripts/compare-runtime-wire.mjs) checks the frozen TS
   oracle, not an active TS Server. Preserve missing/null, errors, bounds and unknown-field rejection.
 - Checks: `npm run oracle:build`, `apps/server-python/scripts/bootstrap.sh`, then

@@ -105,7 +105,7 @@ using `test_work_sources_postgres.py` produced the 187-test result. No failed/em
 included in the passing counts.
 
 Reproduce from the pinned Worker environment and an owned synthetic PostgreSQL fixture via
-`OPENBOT_CONTROL_TEST_FIXTURE`, with `PYTHONPATH=apps/server-python/src:apps/agent-runtime-python/src`:
+`OPENBOT_CONTROL_TEST_FIXTURE`, with `PYTHONPATH=apps/server-python/src:packages/harness/src`:
 
 ```sh
 npm run check

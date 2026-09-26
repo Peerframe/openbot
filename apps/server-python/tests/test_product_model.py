@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock
 import httpx2
 import pytest
 pytest.importorskip('pydantic_ai', reason='Product Worker SDK profile is required')
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'agent-runtime-python/src'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'packages/harness/src'))
 from pydantic_ai.messages import (
     BinaryContent, ModelRequest, ModelResponse, NativeToolCallPart, TextPart, ThinkingPart,
     ToolCallPart, ToolReturnPart, UserPromptPart,
