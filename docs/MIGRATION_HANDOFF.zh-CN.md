@@ -1,6 +1,6 @@
 # 架构迁移交接 — 2026-09-26
 
-## 当前检查点——经审批的浏览器页面操作与 Worker 恢复
+## 当前检查点——浏览器丢回执与档案进程替换
 
 - 交付：#96 已合并至 main `b186c11`，原提交15项托管检查通过。新浏览器增量发布为
   [草稿 PR #98](https://github.com/Peerframe/openbot/pull/98)，分支
@@ -28,7 +28,10 @@
   Node中断保留，旧窗口拒绝，明确重新接管及交还后页面状态保留。新凭据不能继承原浏览器绑定。
   三份历史重放均未新增浏览器／模型调用，独占夹具已移除。见
   [安全结果](../experiments/work-journey/evidence/product-browser-interruption.json)。三种模式已接入CI。
-  此处不覆盖浏览器／Host进程替换、磁盘档案迁移或执行中响应丢失。
+  新增两个真实本地用例也已通过：点击已生效后切断HTTP回执，动作保持unknown且不重发；
+  优雅替换服务与Chromium，确认旧进程退出，保留localStorage、有效期Cookie及IndexedDB，
+  清除会话Cookie，人工暂停直到明确交还。使用独占合成档案，不证明强制杀浏览器、档案跨Host
+  迁移或隔离Linux替换。五种模式移至独立且必需的浏览器CI，只上传安全结果。
 - Linux 命令：明确授权的 product3 已在44条迁移上通过一次真实 Work→Node→受保护 Linux Host
   执行，包括 Owner 审批、PG／mTLS Temporal、准确 CSV、独立合成模型审核、两份下载与离线
   重放。原50／150秒限制成立；原生运行目录／磁盘、socket、临时密钥及公共Node副本已清理，
@@ -44,16 +47,23 @@
   启动接受合法浏览器配置；非法浏览器／命令配置及无引擎配置均拒绝启动并清理PG。独占夹具
   已移除。见[准确产物证据](../experiments/work-journey/evidence/desktop-preview-schema45.json)。
   原生GUI仍待验：Computer Use按完整路径与已核实包标识连接均超时，列表没有Preview，
-  已请用户打开此未安装候选。旧GUI／Keychain证据不覆盖新版，完整包内推理也仍开放。
+  最新Finder尝试也返回cgWindowNotFound。已请用户打开此未安装候选。旧GUI／Keychain证据
+  不覆盖新版，完整包内推理也仍开放。
   未替换已安装应用或默认后端。
 - 检查：63242fc的13项独立CI通过，Python作业因未构建真实Node夹具依赖失败，共享入口已补
   构建。074d17c快照已有13项托管检查通过，仅Python／Temporal仍运行，未见失败。
   容器／S7固定为45条迁移，40项历史迁移／恢复及8项清理测试通过。页面增量`npm run check`
   已通过；真实PG上15项页面权限、57项页面／结果组合测试通过。Python基础检查1306项通过、
   463项环境相关检查跳过。启动器增量通过`npm run check`、44项Desktop测试（两项Windows专用
-  检查在macOS跳过）及9项探针支持测试。进程中断验收增量的`npm run check`也已通过，其托管CI待验。
-- 剩余退役门槛：强制浏览器出口隔离与隔离Linux产品Host，包括浏览器／档案替换及执行中
-  不确定结果；最终源码／安装包／安装替换验收。可信本地页面上的Control／Node进程中断及
+  检查在macOS跳过）及9项探针支持测试。进程中断验收增量也通过`npm run check`。9927513上
+  13项托管作业已通过，Python／Temporal在最后长步骤达到50分钟上限后被取消。将浏览器
+  及原长Temporal恢复／升级步骤各自拆成独立必需作业，减少串行耗时，未删用例或改探针截止。丢回执／档案增量的仓库检查
+  已通过，20个build任务复用缓存，仓库审计实际运行；首次受限运行因回环EPERM失败，获准正常运行后通过。
+- 剩余退役门槛：强制浏览器出口隔离与隔离Linux产品Host，包括隔离档案／Host替换；
+  最终源码／安装包／安装替换验收。执行中HTTP丢回执和本地优雅浏览器进程替换现已通过。
+  VPS只读预检确认x86-64、cgroup v2、内核6.8.0-136和Docker29.8.1，缺少Squid及编译工具。
+  DSH正在独立临时包按匿名核实哈希的公开Linux设计实现纯Squid策略编译器，不写仓库。
+  可信本地页面上的Control／Node进程中断及
   同id新凭据拒绝现已通过。其他门槛通过前保留被替代的
   TS业务Server，并保留不可变59文件oracle及TS Node／Provider／工具。
 - 保留证据：DSH已按获批材料实现浏览器快照模块，SQL／身份修正与整合已提交。真实Kimi任务

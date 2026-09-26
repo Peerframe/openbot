@@ -144,7 +144,11 @@ Control；新路由不能自动替换已有原宿主绑定。
 状态保留；新凭据不能继承旧浏览器绑定。取消会关闭权限并保留未知证据供核对，三份历史重放
 都没有新增动作。见[限定范围的结果](../experiments/work-journey/evidence/product-browser-interruption.json)。
 
+真实丢回执用例完成一次获批点击后断开返回连接，动作保持unknown，取消和重放均未重试。
+另一用例优雅替换浏览器服务：旧Chromium先退出，再创建新进程；同一私有档案保留localStorage、
+有效期Cookie和IndexedDB，清除会话Cookie，人工暂停保持到明确交还。这些结论限于本地合成账户。
+
 此候选要求使用行为已知的自有页面。origin 清单和截图检查不能隔离重定向、脚本或子资源网络
-请求；不可信公网浏览、隔离 Linux 浏览器部署及浏览器／Host档案替换仍是独立退役门槛。
+请求；不可信公网浏览、隔离 Linux 浏览器部署及档案跨 Host 迁移仍是独立退役门槛。
 见[页面操作记录](research/work-browser-page-actions.md)及
 [可复现验收](../experiments/work-journey/README.zh-CN.md#经审批的浏览器产品验收)。

@@ -1,6 +1,6 @@
 # Architecture migration handoff — 2026-09-26
 
-## Current checkpoint — approved browser page actions and Worker recovery
+## Current checkpoint — browser response loss and profile process replacement
 
 - Delivery: PR #96 is merged into `main` at `b186c11`, with all15 hosted jobs green on its accepted
   head. New browser work is published as draft [PR #98](https://github.com/Peerframe/openbot/pull/98)
@@ -36,8 +36,12 @@
   return preserved page state. New credentials could not inherit the original browser binding.
   All three histories replayed without new browser/model calls; owned fixtures were removed.
   [Safe evidence](../experiments/work-journey/evidence/product-browser-interruption.json).
-  Browser/Host process replacement, disk-profile migration and in-flight lost responses are not
-  covered. The same three modes are wired into CI with exact child handles and safe result uploads.
+  Two additional actual local cases now pass: a successful click followed by destroyed HTTP response
+  stays unknown without retry; graceful service/Chromium replacement proves old-process exit and
+  preserves localStorage, expiry cookie and IndexedDB, while dropping session cookies and retaining
+  human pause until explicit return. Both use synthetic owned profiles. Abrupt browser loss, profile
+  transfer to another Host and isolated Linux replacement remain unqualified. All five modes move
+  to a separate required browser CI job, with exact child handles and safe result uploads.
 - Linux command: specifically authorized product3 passed one real Work→Node→protected Linux Host
   execution on canonical44, with real Owner approval, PostgreSQL/mTLS Temporal, exact CSV,
   independent synthetic-model review, two downloads and offline replay. Original50/150-second
@@ -57,8 +61,8 @@
   accepted valid browser configuration; malformed browser/command files and configuration
   without an engine failed closed and reaped PG. Owned fixtures are removed. See the exact
   [artifact evidence](../experiments/work-journey/evidence/desktop-preview-schema45.json).
-  Native GUI is pending: Computer Use timed out for both the exact path and verified bundle ID,
-  and Preview was absent from app inventory. The user has been asked to open this uninstalled
+  Native GUI is pending: Computer Use timed out for both the exact path and verified bundle ID;
+  the latest Finder attempt also failed with cgWindowNotFound, and Preview is absent from inventory. The user has been asked to open this uninstalled
   candidate. Old GUI/Keychain evidence does not qualify the current bundle; full packaged
   inference is also open. Installed app/default backend are unchanged.
 - Checks: CI on63242fc passed13 individual jobs; Python qualification failed because the real
@@ -68,10 +72,18 @@
   `npm run check` passed;15 page authority tests and57 combined page/result tests passed on real PG.
   Base Python passed1306 with463 environment-dependent skips. The launcher increment passed
   `npm run check`,44 focused Desktop tests (two Windows-only skips) and9 probe-support tests;
-  `npm run check` also passed for the new process-interruption fixture; its hosted CI remains pending.
+  `npm run check` also passed for the new process-interruption fixture. On9927513,13 hosted jobs
+  passed; Python/Temporal was cancelled at its50-minute limit during the final long qualification
+  step. Browser and the unchanged long Temporal recovery/upgrade step now each have their own
+  required job, removing serial work without dropping cases or changing probe deadlines. The response/
+  profile increment passed `npm run check`;20 build tasks were cached, repository audits ran.
+  The initial restricted run hit loopback EPERM; the authorized normal test run passed.
 - Remaining retirement gates: enforced browser egress and isolated Linux product Host, including
-  browser/profile replacement and in-flight uncertainty; final source/package/installed replacement
-  qualification. Control/Node process interruption and same-id identity refusal are now qualified
+  isolated profile/Host replacement; final source/package/installed replacement qualification.
+  In-flight HTTP response loss and graceful local browser process replacement now pass.
+  Read-only VPS preflight confirms x86-64, cgroup v2, kernel6.8.0-136 and Docker29.8.1; Squid and
+  build tools are absent. DSH is implementing only a pure Squid policy compiler from the anonymously
+  hash-verified public Linux design in a private packet; it has no repository write ownership. Control/Node process interruption and same-id identity refusal are now qualified
   for trusted local pages. Keep the replaced TS business
   Server until these gates pass, and retain the frozen59-file oracle plus TS Node/Provider/tools.
 - Retained evidence: DSH implemented the browser profile module from the explicitly approved

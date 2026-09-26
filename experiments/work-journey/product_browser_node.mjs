@@ -1,15 +1,21 @@
 import { once } from "node:events";
 import { createServer } from "node:http";
-import { spawn } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
+import { promisify } from "node:util";
 import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { startProbeClient } from "./product_browser_client.mjs";
+import { responseLossRelay } from "./browser_response_loss.mjs";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 let input = "";
 for await (const c of process.stdin) input += c;
 const c = JSON.parse(input);
 const state = { text: "", submitted: 0, scroll: 0, stored: "" };
-const page = `<!doctype html><meta charset="utf-8"><title>Owned browser task fixture</title><style>body{font:24px system-ui;margin:40px;background:#eef7f1}input{position:absolute;left:40px;top:140px;width:520px;height:45px;font:24px system-ui}button{position:absolute;left:40px;top:220px;height:50px}#result{position:absolute;top:300px}#bottom{margin-top:1500px}</style><h1>OpenBot browser task</h1><form><input aria-label="Fixture text"><button>Save synthetic entry</button></form><p id="result">Waiting for input</p><p id="bottom">Scroll target</p><script>const f=document.querySelector('input');f.value=localStorage.getItem('entry')||'';function report(){fetch('/event',{method:'POST',body:JSON.stringify({text:f.value,submitted:Number(document.body.dataset.count||0),scroll:scrollY,stored:localStorage.getItem('entry')||''})})}f.oninput=report;onscroll=report;document.querySelector('form').onsubmit=e=>{e.preventDefault();document.body.dataset.count=Number(document.body.dataset.count||0)+1;localStorage.setItem('entry',f.value);document.querySelector('#result').textContent='Saved: '+f.value;report()};report();</script>`;
+let page = `<!doctype html><meta charset="utf-8"><title>Owned browser task fixture</title><style>body{font:24px system-ui;margin:40px;background:#eef7f1}input{position:absolute;left:40px;top:140px;width:520px;height:45px;font:24px system-ui}button{position:absolute;left:40px;top:220px;height:50px}#result{position:absolute;top:300px}#bottom{margin-top:1500px}</style><h1>OpenBot browser task</h1><form><input aria-label="Fixture text"><button>Save synthetic entry</button></form><p id="result">Waiting for input</p><p id="bottom">Scroll target</p><script>const f=document.querySelector('input');f.value=localStorage.getItem('entry')||'';function report(){fetch('/event',{method:'POST',body:JSON.stringify({text:f.value,submitted:Number(document.body.dataset.count||0),scroll:scrollY,stored:localStorage.getItem('entry')||''})})}f.oninput=report;onscroll=report;document.querySelector('form').onsubmit=e=>{e.preventDefault();document.body.dataset.count=Number(document.body.dataset.count||0)+1;localStorage.setItem('entry',f.value);document.querySelector('#result').textContent='Saved: '+f.value;report()};report();</script>`;
+if (c.profileRestart) {
+  page = page.replace("stored:localStorage.getItem('entry')||''", "stored:localStorage.getItem('entry')||'',persistentCookie:document.cookie.includes('fixture_expiry=retained'),sessionCookie:document.cookie.includes('fixture_session=temporary'),indexedDB:window.persistedValue||''");
+  page += `<script>const opening=indexedDB.open('profile-fixture',1);opening.onupgradeneeded=()=>opening.result.createObjectStore('entries');opening.onsuccess=()=>{const db=opening.result;const read=db.transaction('entries').objectStore('entries').get('saved');read.onsuccess=()=>{window.persistedValue=read.result||'';report()};document.querySelector('form').addEventListener('submit',()=>{document.cookie='fixture_expiry=retained;Max-Age=86400;SameSite=Strict;Path=/';document.cookie='fixture_session=temporary;SameSite=Strict;Path=/';const tx=db.transaction('entries','readwrite');tx.objectStore('entries').put('synthetic-indexed-value','saved');tx.oncomplete=()=>{window.persistedValue='synthetic-indexed-value';report()}})};</script>`;
+}
 const target = createServer(async (req, res) => {
   if (req.url === "/state") {
     res.setHeader("content-type", "application/json");
@@ -36,7 +42,7 @@ await new Promise((r) => portServer.close(r));
 const token = randomBytes(32).toString("hex");
 await mkdir(c.directory + "/profiles", { recursive: true, mode: 0o700 });
 await mkdir(c.directory + "/workspace", { recursive: true, mode: 0o700 });
-const upstream = spawn("bun", ["src/index.ts"], {
+const upstreamOptions = {
   cwd: c.upstream,
   env: {
     ...process.env,
@@ -49,47 +55,82 @@ const upstream = spawn("bun", ["src/index.ts"], {
     ACTION_TIMEOUT_MS: "3000",
   },
   stdio: ["ignore", "ignore", "inherit"],
-});
+};
+let upstream = spawn("bun", ["src/index.ts"], upstreamOptions);
 const computerUrl = `http://127.0.0.1:${port}`,
   targetUrl = `http://127.0.0.1:${target.address().port}`;
 let client;
+let relay;
 let nodeChild;
 const nodeProcesses = [];
 let controlTimer;
 let stopped = false;
+async function stopUpstream() {
+  if (upstream.exitCode !== null || upstream.signalCode !== null) return;
+  const exited = once(upstream, "exit", { signal: AbortSignal.timeout(10000) });
+  upstream.kill("SIGTERM");
+  try {
+    await exited;
+  } catch {
+    upstream.kill("SIGKILL");
+    await once(upstream, "exit");
+    throw Error("Owned browser service did not close gracefully");
+  }
+  if (upstream.exitCode !== 0) throw Error("Owned browser service failed while closing");
+}
+async function readyUpstream() {
+  for (let i = 0; i < 100; i++) {
+    if (upstream.exitCode !== null) throw Error("Upstream exited");
+    try {
+      if ((await fetch(computerUrl + "/health", { signal: AbortSignal.timeout(100) })).ok)
+        return;
+    } catch {}
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw Error("Upstream timeout");
+}
+async function browserPid() {
+  // Headless shell does not create SingletonLock. Read only PID/parent ids globally, then
+  // inspect arguments of exact children of this owned service; never collect other argv.
+  const execute = promisify(execFile);
+  const options = { timeout: 3000, maxBuffer: 1024 * 1024 };
+  const { stdout } = await execute("/bin/ps", ["-A", "-o", "pid=,ppid="], options);
+  const children = stdout.trim().split("\n").map((row) => row.trim().split(/\s+/u).map(Number))
+    .filter((row) => row.length === 2 && row[1] === upstream.pid);
+  const matches = [];
+  const profile = `--user-data-dir=${c.directory}/profiles/${c.botId}`;
+  for (const [pid] of children) {
+    const command = (await execute("/bin/ps", ["-p", String(pid), "-o", "args="], options)).stdout;
+    if (command.trim().split(/\s+/u).includes(profile)) matches.push(pid);
+  }
+  if (matches.length !== 1) throw Error("Expected exactly one owned Chromium process");
+  return matches[0];
+}
 async function stop() {
   if (stopped) return;
   stopped = true;
   clearInterval(controlTimer);
-  await client?.stop();
-  upstream.kill("SIGTERM");
-  await Promise.race([once(upstream, "exit"), new Promise((r) => setTimeout(r, 8000))]);
-  if (upstream.exitCode === null) upstream.kill("SIGKILL");
-  target.closeAllConnections();
-  target.close();
+  try {
+    await client?.stop();
+  } finally {
+    relay?.close();
+    try {
+      await stopUpstream();
+    } finally {
+      target.closeAllConnections();
+      target.close();
+    }
+  }
 }
 process.once("SIGTERM", () => void stop());
 process.once("SIGINT", () => void stop());
 try {
-  let ready = false;
-  for (let i = 0; i < 100; i++) {
-    if (upstream.exitCode !== null) throw Error("Upstream exited");
-    try {
-      if (
-        (
-          await fetch(computerUrl + "/health", {
-            headers: { "x-openbot-computer-token": token },
-            signal: AbortSignal.timeout(100),
-          })
-        ).ok
-      ) {
-        ready = true;
-        break;
-      }
-    } catch {}
-    await new Promise((r) => setTimeout(r, 50));
+  await readyUpstream();
+  if (c.responseLoss) {
+    relay = await responseLossRelay(computerUrl, state, async (value) => {
+      await writeFile(c.directory + "/response-loss.json", JSON.stringify(value));
+    });
   }
-  if (!ready) throw Error("Upstream timeout");
   async function stopNode(signal = "SIGTERM") {
     if (!nodeChild || nodeChild.exitCode !== null || nodeChild.signalCode !== null) return;
     const child = nodeChild;
@@ -105,7 +146,7 @@ try {
     await writeFile(c.directory + "/node-processes.json", JSON.stringify(nodeProcesses));
   }
   async function startNode(credential) {
-    const config = { ...c, credential, computerUrl, token, targetUrl };
+    const config = { ...c, credential, computerUrl: relay?.url ?? computerUrl, token, targetUrl };
     if (!c.nodeProcess) {
       client = await startProbeClient(config);
       return;
@@ -149,6 +190,26 @@ try {
         } else if (request.operation === "connect" && !connected) {
           await startNode(request.credential ?? c.credential);
           connected = true;
+        } else if (request.operation === "browser-restart" && connected) {
+          const oldService = upstream.pid;
+          const oldBrowser = await browserPid();
+          await stopUpstream();
+          let gone = false;
+          try { process.kill(oldBrowser, 0); } catch (error) {
+            if (error.code !== "ESRCH") throw error;
+            gone = true;
+          }
+          if (!gone) throw Error("Original Chromium survived graceful service shutdown");
+          upstream = spawn("bun", ["src/index.ts"], upstreamOptions);
+          if (upstream.pid === oldService) throw Error("Service PID was reused");
+          await readyUpstream();
+          await writeFile(c.directory + "/browser-processes.json",
+            JSON.stringify({ oldService, oldBrowser, newService: upstream.pid, oldBrowserExited: true }));
+        } else if (request.operation === "browser-readback" && connected) {
+          const evidence = JSON.parse(await readFile(c.directory + "/browser-processes.json", "utf8"));
+          evidence.newBrowser = await browserPid();
+          if (evidence.newBrowser === evidence.oldBrowser) throw Error("Chromium PID was reused");
+          await writeFile(c.directory + "/browser-processes.json", JSON.stringify(evidence));
         } else throw Error("Invalid fixture lifecycle transition");
         await writeFile(
           c.directory + `/control-${request.id}.json`,

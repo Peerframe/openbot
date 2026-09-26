@@ -175,8 +175,14 @@ credential cannot inherit the old browser binding. Cancellation removes authorit
 unknown evidence for reconciliation; all three histories replay without new effects. See the
 [scoped results](../experiments/work-journey/evidence/product-browser-interruption.json).
 
+A real lost-response case applied one approved click, then broke its return connection. The action
+stayed unknown and was never retried, including after cancellation and replay. A separate graceful
+browser-service replacement retained the same private profile's localStorage, expiring cookie and
+IndexedDB, dropped its session cookie, and preserved human pause until explicit return. The old
+Chromium exited before the new process started. These are local synthetic-account observations.
+
 This candidate requires pages you control with known behavior. Allowed origins and screenshot
 checks do not enforce network isolation against redirects, scripts or subresources. General
-untrusted browsing, isolated Linux browser deployment and browser/Host profile replacement remain
+untrusted browsing, isolated Linux browser deployment and profile transfer to another Host remain
 separate retirement gates. See the [page action record](research/work-browser-page-actions.md) and
 [reproducible product probe](../experiments/work-journey/README.md#approved-browser-product-probe).

@@ -455,7 +455,7 @@ Choose unused output/source directories. On a fresh Linux machine use Playwright
 public file and MIT license, then restricts the upstream listener to loopback and supplies a
 separate integrity-locked fixture dependency tree. The probe verifies those bytes before starting;
 it never launches the user's normal browser. Source acquisition was also tested without GitHub
-credentials. The same commands run in the Python CI job, which uploads only `RESULT.json`.
+credentials. The same commands run in the independent browser CI job, which uploads only `RESULT.json`.
 Logs, temporary credentials, database state, history and synthetic browser profiles stay in the
 private output directory. API, Node, upstream browser, Temporal and owned database resources are
 closed in `finally`; dependencies remain reusable. Essential authority/cancellation/correction
@@ -470,6 +470,16 @@ changes, require zero click dispatch/submission, cancel the original Task and re
 effects. Control/Node cases additionally hold human control across another interruption, refuse
 the old viewer, observe the persisted pause and explicitly reacquire/return after the original
 30-second lease expires. A new credential must be refused by the original browser binding.
-Each run has a six-minute deadline plus fixture cleanup; CI runs the three modes against disposable
-resources and retains only content-free results. These cases do not test an in-flight lost response,
-migration of a browser profile to a different Host, public egress or Linux isolation.
+Each run has a six-minute deadline plus fixture cleanup; CI runs the modes against disposable
+resources and retains only content-free results.
+
+`--recovery response-loss` adds a loopback-only fault relay to the owned upstream. It forwards the
+approved click once, sees upstream success and an independent target submission, then destroys the
+response socket. The product must preserve unknown, never repeat the click, close authority on
+cancellation and replay without new calls. `--recovery browser-restart` completes the approved Task,
+takes human control and gracefully replaces the exact owned browser service and Chromium processes.
+It verifies the old browser exited before replacement, the same private profile retains localStorage,
+an expiring cookie and IndexedDB, a session cookie is dropped, and human pause survives until explicit
+return. Both actual local cases passed; see [safe results](evidence/product-browser-interruption.json).
+This does not qualify abrupt browser loss, profile transfer to a different Host, public egress or
+Linux isolation. The response-loss relay is a test fault injector, not a network security boundary.

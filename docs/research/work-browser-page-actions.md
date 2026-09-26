@@ -138,3 +138,45 @@ browser/model counters, and owned resources closed. The probe's initial missing-
 cancellation/error-envelope assumptions were corrected without weakening product guards.
 `npm run check` passed; reproducible modes run in CI. Results are in
 `experiments/work-journey/evidence/product-browser-interruption.json`.
+
+## Lost browser response and profile process replacement — design 2026-09-26
+
+Reuse the same pinned upstream, Playwright, Node HTTP transport and owned product probe. Read the
+exact cached upstream `profiles.ts` and `index.ts` stop/shutdown implementations, the upstream
+GitHub profile/configuration documentation and open issue246 (human control does not restrict its
+shell). Rechecked [Node HTTP](https://nodejs.org/api/http.html) response destruction and
+[Playwright context close](https://playwright.dev/docs/api/class-browsercontext#browser-context-close).
+No shell endpoint is exposed by this fixture or the product browser adapter. Dependencies, source
+pins, licenses and production authority remain unchanged; no upstream source is copied.
+
+For response loss, insert a disposable loopback-only HTTP relay to the exact owned upstream.
+Forward a click once, wait for its successful upstream response and independent target submission,
+then destroy its response socket. Assert that the product records unknown, never resends the click,
+closes authority on cancellation, and replays without another browser/model call. This is an actual
+transport failure after an actual effect, not a mocked Provider result. The relay is a fault fixture,
+not an egress proxy or deployable network boundary.
+
+For process replacement, stop the exact owned browser service gracefully, prove its exit before
+starting a distinct process on the same private profile directory, and check persisted synthetic
+state through the product's human-control path. Do not infer crash consistency, arbitrary site
+login retention, Linux isolation, disk migration or permission to repeat unresolved actions.
+
+Both actual local cases passed. After the relay destroyed the successful click response, the target
+had one submission, the original action stayed unknown, cancellation closed authority and offline
+replay added no calls. Graceful service replacement proved distinct service and Chromium PIDs and
+old-browser exit, retained localStorage/expiry cookie/IndexedDB in the same private directory, dropped
+the session cookie and preserved human control until explicit return. The initial fixture assumed
+a SingletonLock existed; the actual headless shell does not create it. The corrected observation reads
+PID/parent ids, then only the exact owned service's child arguments to identify its private profile;
+no personal process arguments are collected. No product guard changed.
+
+The existing browser CI steps move to a separate required job, using the same reviewed setup-node,
+setup-bun, npm and Python locks. This lets the browser cases run alongside the long Temporal matrix;
+no lane loses a gate. The final merge check includes every lane and refuses skipped/failed results.
+The new job builds the actual Node dependency closure and canonical DB package before the real probe.
+
+Hosted9927513 reached its50-minute job limit after all four browser modes passed, during the final
+Temporal matrix. Actual step times were16m50s through SQL parity,5m32s browser setup/cases, then
+27m50s of still-running recovery. Move that unchanged long recovery/upgrade step to its own required
+job as well, with the same Control/Runtime bootstraps, full Worker lock and canonical DB build.
+No timeout, per-probe deadline, matrix case or expected failure changes.
