@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest==8.4.2"]
+dev = ["pytest==9.0.3"]
 
 # This package is consumed directly from src/ (see [tool.pytest.ini_options]
 # pythonpath). It deliberately declares no build backend: the Server supervises
