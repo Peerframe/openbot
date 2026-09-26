@@ -4,6 +4,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import sys
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from fastapi import FastAPI
@@ -43,22 +44,21 @@ def snapshot() -> dict:
                 "evidence": None,
             }
         ],
-        "events": [
-            {"revision": 1, "kind": "observation", "payload": {"summary": "unknown"}}
-        ],
+        "events": [{"revision": 1, "kind": "observation", "payload": {"summary": "unknown"}}],
         "eventsTruncated": False,
     }
 
 
 def fixtures() -> dict:
     cases = []
-    for name, changes in [
+    mutations: list[tuple[str, dict[str, Any]]] = [
         ("nulls-and-unicode", {}),
         ("summary", {"resultSummary": "A bounded summary. 中文"}),
         ("wrong-status", {"status": "success"}),
         ("wrong-boolean", {"authorityActive": "false"}),
         ("null-required-array", {"actions": None}),
-    ]:
+    ]
+    for name, changes in mutations:
         value = snapshot() | changes
         cases.append((name, value))
     missing = snapshot()
@@ -71,9 +71,7 @@ def fixtures() -> dict:
     for name, value in cases:
         try:
             serialized = WorkSnapshot.model_validate(value).model_dump(mode="json")
-            results.append(
-                {"name": name, "input": value, "valid": True, "serialized": serialized}
-            )
+            results.append({"name": name, "input": value, "valid": True, "serialized": serialized})
         except ValidationError:
             results.append({"name": name, "input": value, "valid": False})
 
@@ -99,9 +97,7 @@ def fixtures() -> dict:
         responses = []
         for name in ("task-one", "unauthorized", "missing", "conflict"):
             response = client.get(f"/api/v1/tasks/{name}")
-            responses.append(
-                {"id": name, "status": response.status_code, "body": response.json()}
-            )
+            responses.append({"id": name, "status": response.status_code, "body": response.json()})
     return {"cases": results, "responses": responses}
 
 

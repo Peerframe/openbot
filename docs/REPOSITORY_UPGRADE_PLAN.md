@@ -6,7 +6,7 @@ English canonical; 中文摘要见文末。This is the only C1→C2→C3 task re
 ## Baseline and ownership
 
 - Date: 2026-09-27. Initial baseline + C1 accepted locally. The user requested continued
-  completion; C2 is active, followed by C3. Publishing/paid/production restrictions remain.
+  completion; C2 is locally accepted; C3 is active. Publishing/paid/production restrictions remain.
 - Original checkout: `/Users/yxflc/Project/openbot`, `feat/cross-platform-employees`,
   `9cc73c9e78451e572f57d142d6b9caf62ccb78e2`; this is an older TS branch.
 - Pre-existing changes: modified root AGENTS, untracked Chinese AGENTS, user PNG and `output/`.
@@ -178,7 +178,7 @@ Worker test closure is 63 external + local. Runtime and dev core closures are 18
 | Outside-repo wheel | clean venv, `-I`, site-packages path; exact 19 distributions; no DB/Temporal/pytest/build tools; synthetic tool returned canonical/model/UI results |
 | Full core regression | 436 passed, 1 optional Temporal module skipped, 63.96s; explicit separate Worker validation below |
 | Extension | 6 passed: canonical projection, declined authority, error, unknown without retry, cancellation, mid-read revocation; resource cleanup asserted |
-| Type/quality | Ruff/format and mypy passed, 14 core/example/real-adapter files; explicit repo config avoids user-global Ruff rules |
+| Type/quality | Ruff/format and mypy passed, 18 core/example/real-adapter and new contract/lock script files; explicit repo config avoids user-global Ruff rules |
 | Cross-language | generated real Work GET response, Web uses generated type + Zod; 11 Python HTTP/DTO→Web cases passed; Web typecheck/freshness passed |
 | Actual mTLS Temporal | concurrent Runs / isolated cancellation accounting and artifacts / real offline replay passed; public HTTP + PostgreSQL + scripted ports; no live model |
 | Container | `runtime-product` image built on arm64; smoke passed login, built Web, docx/pdf/OCR initialization, restart/persistent keys/files, 45 migrations, preflight refusal, SIGTERM and resource cleanup |
@@ -194,15 +194,33 @@ and the corrected real mTLS journey passed. The Work acceptance file was moved o
 so the lean container build need not install Vitest. Full-root scanner exclusions now account for
 the two explicit generated tool venvs, preserving frozen oracle/source symlink refusal.
 
-Current checkpoint: full `npm run check` exited 0; final Turbo build 19/19 successful,
-18 cached. The control base suite passed 836 / 2 environment-only skips in 105.89s with the
-unchanged 300s limit; the earlier timeout did not recur. Worker collection exposed two existing
-catalog ceilings absent from root exports; those are now public and the import checker rejects
-undeclared root names as well as private submodules. All 13 boundary tests and mypy passed;
-outside-checkout wheel installation passed again (19 exact distributions). The Worker suite and
-final macOS preview staging are running; their results are not yet claimed. The last source hash
-comparison predates this four-line export fix, so final installed consumer matching remains pending.
-CI now builds the wheel before every cold Worker install. Generated build/quality/Worker venvs
-and Desktop payloads are excluded from runtime-fixture Docker context.
-C2 is not closed. C3 implementation follows these current consumer checks. Logs use `/private/tmp/openbot-c2-*`; these are local evidence,
-not tracked artifacts. No push, remote CI, release, paid model or production mutation occurred.
+C2 locally accepted at `b6e623a` plus the following quality-coverage follow-up. Full
+`npm run check` exited 0; final Turbo build 19/19 successful, 18 cached. PostgreSQL base:
+836 passed / 2 skipped in 105.89s. Worker: 1526 passed / 1 skipped in 540.08s. Existing
+300s/600s timeouts were not increased. Cross-language comparisons also passed: identity 129,
+tasks/usage 60, runtime 48, commands 34 and execution values 40. The base/Worker skips are
+reported as unexecuted; independent actual Temporal replay above remains the durable evidence.
+All 13 public-import boundary tests passed after exporting the two existing catalog ceilings
+needed by the real OpenAI adapter. Quality now covers 18 typed files, including new contract
+and product-lock scripts. Outside-checkout wheel install passed again (19 distributions).
+Final macOS arm64 preview and arm64 container rebuilt from the current source, passed their
+actual start/restart/refusal/cleanup probes, and all 12 installed source-module hashes matched
+core, Worker, preview and container. The old generated native-runtime is earlier evidence only.
+A fixed-revision read-only second reviewer found no confirmed functional regression in
+`17fb2f4..b6e623a`; it did not execute tests. Hosted platform jobs, packaged preview, native
+Keychain and Windows/Linux native clients are not established by these local checks.
+Logs: `/private/tmp/openbot-c2-{control-final,check,desktop-final-smoke,container-final-smoke,contracts-final,wheel-final}.log`.
+No push, remote CI, release, paid model or production mutation occurred.
+
+## Current delivery — C3
+
+One implementation owner continues in the same checkout. C2 artifact/check writers have
+finished. The fixed-diff reviewer is finished. C3 will verify scope fixtures before allowing
+conditional jobs; preserve full `npm run check`, production security and final success-only
+aggregation; then run the three real fresh-context contributor journeys. Hosted CI at the
+final candidate remains pending explicit push authorization, not a waived completion gate.
+
+中文当前状态：C1、C2 已在本地验收，C3 进行中。C2 实际安装包、真实消费者、类型/依赖边界、
+扩展范例和 Work 契约消费链均已验证；控制基础 836、Worker 1526 项通过，原有跳过如实保留。
+容器和 macOS 预览载荷最终版本实跑通过并核对源码哈希。尚未推送/运行候选云端 CI，未签名、
+安装到用户应用、调用付费模型或修改生产数据。接下来为 CI 选择/汇总与新会话完整贡献验收。
