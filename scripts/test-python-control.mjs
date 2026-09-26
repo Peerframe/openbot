@@ -76,12 +76,14 @@ try {
     // Worker qualification starts a real Node from source; its workspace imports need
     // the complete dependency closure even when the legacy oracle does not use it.
     console.log(
-      run(process.execPath, [
-        join(root, "node_modules/turbo/bin/turbo"),
-        "run",
-        "build",
-        "--filter=@openbot/node^...",
-      ]),
+      run(
+        process.execPath,
+        [join(root, "node_modules/turbo/bin/turbo"), "run", "build", "--filter=@openbot/node^..."],
+        {
+          // Keep npm's toolchain/platform cache identity through this otherwise scrubbed environment.
+          env: { ...environment, npm_config_user_agent: process.env.npm_config_user_agent },
+        },
+      ),
     );
     console.log(
       run(process.env.OPENBOT_TEMPORAL_TEST_PYTHON, [
