@@ -7,6 +7,7 @@ import {
   DESKTOP_MACOS_WORKER_COMPANION_NAME,
   DESKTOP_PACKAGE_IDENTITY,
   DESKTOP_PREVIEW_IDENTITY,
+  DESKTOP_PYTHON_PREVIEW_IDENTITY,
   DESKTOP_RUNTIME_DEPENDENCIES,
   DESKTOP_WINDOWS_METADATA,
   desktopMacOSWorkerCompanionSource,
@@ -69,6 +70,37 @@ describe("Desktop package source policy", () => {
         identity,
       ),
     ).toThrow(/production Worker/u);
+  });
+
+  it("isolates Python qualification from canonical apps retaining the legacy Preview profile", () => {
+    const identity = desktopPackageIdentity(["--preview", "--python-product"]);
+    expect(identity).toBe(DESKTOP_PYTHON_PREVIEW_IDENTITY);
+    expect(desktopPackageIdentity(["--python-product", "--preview"])).toBe(identity);
+    const manifest = { name: "@openbot/desktop", productName: "OpenBot" };
+    const staged = desktopPackagedManifest(manifest, identity);
+    expect(staged.productName).toBe("OpenBot Python Preview");
+    for (const retained of [DESKTOP_PACKAGE_IDENTITY, DESKTOP_PREVIEW_IDENTITY]) {
+      expect(staged.productName).not.toBe(retained.name);
+      expect(identity.appBundleId).not.toBe(retained.appBundleId);
+      expect(identity.executableName).not.toBe(retained.executableName);
+    }
+    expect(manifest.productName).toBe("OpenBot");
+    expect(packagedAsarPath("/fixture", "darwin", identity)).toBe(
+      join("/fixture", `${identity.name}.app`, "Contents", "Resources", "app.asar"),
+    );
+    expect(() =>
+      desktopMacOSWorkerCompanionSource(
+        resolve("workspace", DESKTOP_MACOS_WORKER_COMPANION_NAME),
+        "darwin",
+        identity,
+      ),
+    ).toThrow(/production Worker/u);
+    for (const args of [
+      ["--python-product"],
+      ["--preview", "--python-product", "--python-product"],
+    ]) {
+      expect(() => desktopPackageIdentity(args)).toThrow(/only/u);
+    }
   });
 
   it.each([

@@ -444,7 +444,7 @@ jobs:
         run: |
           umask 077
           node apps/desktop/scripts/smoke-python-product.mjs \
-            "apps/desktop/out/python-product/OpenBot Preview-darwin-arm64/OpenBot Preview.app/Contents/Resources/native-runtime" \
+            "apps/desktop/out/python-product/OpenBot Python Preview-darwin-arm64/OpenBot Python Preview.app/Contents/Resources/native-runtime" \
             > "$RUNNER_TEMP/python-preview-packaged.json"
           cat "$RUNNER_TEMP/python-preview-packaged.json"
       - name: Retain synthetic Python Preview lifecycle evidence
@@ -460,7 +460,7 @@ jobs:
         shell: bash
         run: |
           tar -czf "$RUNNER_TEMP/python-desktop-preview-${{ github.sha }}.tar.gz" \
-            -C apps/desktop/out/python-product "OpenBot Preview-darwin-arm64"
+            -C apps/desktop/out/python-product "OpenBot Python Preview-darwin-arm64"
       - name: Retain the unsigned Python Preview for review
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

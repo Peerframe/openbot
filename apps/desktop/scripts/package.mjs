@@ -11,6 +11,7 @@ import {
   createDesktopFuseConfig,
   DESKTOP_ICON_RESOURCE_NAME,
   DESKTOP_PREVIEW_IDENTITY,
+  DESKTOP_PYTHON_PREVIEW_IDENTITY,
   DESKTOP_RUNTIME_DEPENDENCIES,
   DESKTOP_WINDOWS_METADATA,
   desktopMacOSWorkerCompanionSource,
@@ -31,19 +32,17 @@ const args = process.argv.slice(2);
 const pythonProduct = args.includes("--python-product");
 if (args.filter((argument) => argument === "--python-product").length > 1)
   throw new Error("Python product candidate must be selected once.");
-const identity = desktopPackageIdentity(args.filter((argument) => argument !== "--python-product"));
+const identity = desktopPackageIdentity(args);
+const preview =
+  identity === DESKTOP_PREVIEW_IDENTITY || identity === DESKTOP_PYTHON_PREVIEW_IDENTITY;
 if (
   pythonProduct &&
-  (identity !== DESKTOP_PREVIEW_IDENTITY ||
+  (identity !== DESKTOP_PYTHON_PREVIEW_IDENTITY ||
     process.platform !== "darwin" ||
     process.arch !== "arm64")
 )
   throw new Error("Python product packaging requires the macOS arm64 Preview candidate.");
-const signing = macosSigningOptions(
-  process.env,
-  process.platform,
-  identity === DESKTOP_PREVIEW_IDENTITY,
-);
+const signing = macosSigningOptions(process.env, process.platform, preview);
 const workspaceRoot = join(appRoot, "..", "..");
 const rendererEntry = join(appRoot, "dist", "renderer", "index.html");
 const nativeRuntime = ["darwin", "win32"].includes(process.platform)
@@ -52,21 +51,20 @@ const nativeRuntime = ["darwin", "win32"].includes(process.platform)
 const desktopIconBase = join(appRoot, "resources", "openbot-icon");
 const desktopIconPng = `${desktopIconBase}.png`;
 const packageManifest = JSON.parse(await readFile(join(appRoot, "package.json"), "utf8"));
-const previewDownload =
-  identity === DESKTOP_PREVIEW_IDENTITY
-    ? {
-        cacheRoot: join(appRoot, "out", "preview", ".electron-cache"),
-        checksums: JSON.parse(
-          await readFile(
-            join(
-              dirname(fileURLToPath(import.meta.resolve("electron/package.json"))),
-              "checksums.json",
-            ),
-            "utf8",
+const previewDownload = preview
+  ? {
+      cacheRoot: join(appRoot, "out", "preview", ".electron-cache"),
+      checksums: JSON.parse(
+        await readFile(
+          join(
+            dirname(fileURLToPath(import.meta.resolve("electron/package.json"))),
+            "checksums.json",
           ),
+          "utf8",
         ),
-      }
-    : undefined;
+      ),
+    }
+  : undefined;
 const workerCompanionSource = desktopMacOSWorkerCompanionSource(
   process.env.OPENBOT_DESKTOP_MACOS_WORKER_COMPANION,
   process.platform,
@@ -171,7 +169,7 @@ const packagePaths = await packager({
   afterCopy: [
     async ({ buildPath }) => {
       await stageDesktopRuntimeDependencies(buildPath);
-      if (identity === DESKTOP_PREVIEW_IDENTITY) {
+      if (preview) {
         await writeFile(
           join(buildPath, "package.json"),
           `${JSON.stringify(desktopPackagedManifest(packageManifest, identity), null, 2)}\n`,

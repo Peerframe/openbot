@@ -2,10 +2,9 @@
 
 ## 当前检查点——Linux 隔离浏览器产品
 
-- 交付：PR96 已在 `b186c11` 合并。继续分支 `codex/browser-product-integration-20260926`
-  的[草稿 PR98](https://github.com/Peerframe/openbot/pull/98)。`550a981` 的17项独立检查及
-  总检查全部通过；该绿色状态不覆盖新的组合验收增量。root 是当前唯一写入者，CI 与 DSH
-  实现任务已经结束。
+- 交付：PR96 在 `b186c11` 合并；[PR98](https://github.com/Peerframe/openbot/pull/98)
+  在 `1dacf4e` 合并，合并前 `255d535` 的17项独立检查及总检查全部通过。
+  root 在 `codex/final-server-retirement-20260926` 继续；CI 与 DSH 任务已经结束。
 - Linux 浏览器：真实 Work／Node／PG／mTLS Temporal 已经过 Squid7.7／runsc／Bun／Chromium
   完成四次审批、导航、中文输入、单次点击、读取、报告下载和历史回放；Worker 暂停期间批准
   的原点击只执行一次。浏览器容器有序替换前确认旧容器退出，同一私有档案保留 localStorage、
@@ -31,25 +30,31 @@
 - 恢复：canonical44 成对冷恢复通过47张 Control 表／111行、40张历史加3张可见性表、
   13个文件、36个 TLS 文件和六个密钥反例，保留审批／unknown／取消语义和两份历史回放。
   浏览器档案表为空，不能据此推断档案恢复。
-- Preview：canonical45 包含163份匹配的 Python 模块和 SQL，包内 API／PG、登录、重启、
-  父进程 EOF、非法配置拒绝与清理、两次 mTLS Worker 启动均通过，见
-  [产物证据](../experiments/work-journey/evidence/desktop-preview-schema45.json)。当前 GUI／
-  Keychain 和完整包内推理仍未通过。Computer Use 明确返回 Mac 锁定且无法自动解锁；
-  已请用户解锁并打开未安装 Preview，尚无回复。旧 GUI 证据属于其他产物。
-- 检查：35项 Python 边界检查通过；完整 `npm run check` 通过，20项构建命中缓存、仓库
+- Preview：canonical45 的包内 API／PG／mTLS 证据保留在
+  [schema45](../experiments/work-journey/evidence/desktop-preview-schema45.json)。已安装应用占用
+  早期 Preview 的档案和单实例锁，导致旧候选启动即退出。新的固定身份 `OpenBot Python Preview`
+  已与旧应用同时运行，不修改旧档案。真实首次启动用系统加密初始化包内 PG／Python；菜单退出
+  关闭二者；重启解密原密文和密钥并显示已登录 Owner 工作区，见
+  [当前产物证据](../experiments/work-journey/evidence/desktop-python-preview-native.json)。
+  真实 GUI 创建合成频道，并在下一次菜单退出／重启后恢复频道。最终正常退出关闭候选、API 和
+  PG，旧应用始终运行。初期旧画面／捕捉错误属于暂时界面工具问题，已恢复并核实当前可访问性内容。
+  完整包内推理仍待验收。独立测试档案保留作为证据，不能删除已安装应用使用的早期 Preview 档案。
+- 检查：本轮27项包身份／档案检查和完整 `npm run check` 通过（20项构建成功，19项缓存）。
+  首轮发现 CI 检查器仍引用旧产物路径，已同步修复；随后沙箱禁止回环监听导致的 EPERM 在允许
+  本地网络后通过。保留的35项 Python 边界检查通过；完整 `npm run check` 通过，20项构建命中缓存、仓库
   检查实际执行。TLS 正反例在本地真实 Chromium 与原生 Linux 运行。发布的远端 Node 夹具
   改为必须提供 `sshTarget`，不把个人宿主写入仓库；四项输入预检通过。实际运行的固定宿主
   版本保留在私有证据中，选择的 SSH 命令不变。
 
 ### 剩余退役工作
 
-1. 推送本次已验收增量并核对对应提交的托管 CI。
-2. 验收新版 Preview GUI、原生 Keychain 和完整包内推理。Mac 解锁是当前外部阻塞，
-   不能用无界面或旧产物证据替代。
+1. 推送独立 Preview 修复并核对对应提交的托管 CI。
+2. 完成包内推理。当前独立候选的 GUI 写入／重启、原生系统加解密和 Owner 恢复已通过。
 3. 替代验收后，移除旧 TS 业务 Server 和冗余探索链。`apps/server` 有129个跟踪文件；
    实际入口仍位于根 dev／check、旧 Dockerfile／Compose、Desktop 原生准备与 `main.ts`
    回退、旧 CI。Windows／x64 本地 Desktop 仍使用旧 Server，删除前要明确支持的替代或
-   远程客户端能力。保留59文件冻结 oracle、迁移历史、TS Node／Provider、publisher／MCP
+   远程客户端能力。已向 Owner 询问本轮先改为远程客户端，还是完成跨平台本地 Python 验收后再退役；
+   答复前保留该入口。保留59文件冻结 oracle、迁移历史、TS Node／Provider、publisher／MCP
    和凭据保护 helper；额外保留 `550a981` 源码恢复点。
 4. 运行受影响检查并推送退役改动。签名／已安装分发、生产数据转换和默认启用仍需分别明确，
    用户数据与现有安装不属于测试清理范围。

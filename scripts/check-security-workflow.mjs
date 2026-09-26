@@ -256,7 +256,7 @@ export function validatePythonProductWorkflow(workflow, migrationWorkflow) {
     "node apps/desktop/scripts/prepare-native-server.mjs --python-product",
     "node apps/desktop/scripts/smoke-python-product.mjs apps/desktop/out/python-product-runtime",
     "node apps/desktop/scripts/package.mjs --preview --python-product",
-    "apps/desktop/out/python-product/OpenBot Preview-darwin-arm64/OpenBot Preview.app/Contents/Resources/native-runtime",
+    "apps/desktop/out/python-product/OpenBot Python Preview-darwin-arm64/OpenBot Python Preview.app/Contents/Resources/native-runtime",
   ];
   let previous = -1;
   for (const stage of orderedStages) {

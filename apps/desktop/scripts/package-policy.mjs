@@ -47,10 +47,19 @@ export const DESKTOP_PREVIEW_IDENTITY = Object.freeze({
   executableName: "OpenBot Preview",
 });
 
+// The canonical app may still own the legacy Preview profile after an upgrade.
+export const DESKTOP_PYTHON_PREVIEW_IDENTITY = Object.freeze({
+  name: "OpenBot Python Preview",
+  appBundleId: "dev.openbot.desktop.python-preview",
+  executableName: "OpenBot Python Preview",
+});
+
 export function desktopPackageIdentity(args) {
   if (args.length === 0) return DESKTOP_PACKAGE_IDENTITY;
   if (args.length === 1 && args[0] === "--preview") return DESKTOP_PREVIEW_IDENTITY;
-  throw new Error("Desktop packaging accepts only the optional --preview argument.");
+  if (args.length === 2 && args.includes("--preview") && args.includes("--python-product"))
+    return DESKTOP_PYTHON_PREVIEW_IDENTITY;
+  throw new Error("Desktop packaging accepts only --preview with optional --python-product.");
 }
 
 export function desktopPackagedManifest(manifest, identity) {
@@ -58,6 +67,9 @@ export function desktopPackagedManifest(manifest, identity) {
   if (identity === DESKTOP_PREVIEW_IDENTITY) {
     // Electron resolves this name before main starts, isolating its profile and instance lock.
     return { ...manifest, name: "openbot-preview", productName: identity.name };
+  }
+  if (identity === DESKTOP_PYTHON_PREVIEW_IDENTITY) {
+    return { ...manifest, name: "openbot-python-preview", productName: identity.name };
   }
   throw new Error("Desktop package identity is invalid.");
 }
@@ -83,7 +95,7 @@ export function desktopMacOSWorkerCompanionSource(
   identity = DESKTOP_PACKAGE_IDENTITY,
 ) {
   if (input === undefined || input === "") return undefined;
-  if (identity === DESKTOP_PREVIEW_IDENTITY) {
+  if (identity === DESKTOP_PREVIEW_IDENTITY || identity === DESKTOP_PYTHON_PREVIEW_IDENTITY) {
     throw new Error("Desktop Preview cannot include the production Worker companion.");
   }
   if (

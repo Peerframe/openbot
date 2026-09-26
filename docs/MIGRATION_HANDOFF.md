@@ -2,10 +2,9 @@
 
 ## Current checkpoint — isolated Linux browser product
 
-- Delivery: PR96 merged at `b186c11`. Continue draft [PR98](https://github.com/Peerframe/openbot/pull/98)
-  on `codex/browser-product-integration-20260926`. All17 individual hosted checks plus aggregate
-  `check` passed on `550a981`. New composition work is not covered by that earlier green head.
-  Root owns this increment; the separate CI task and DSH implementation tasks are complete.
+- Delivery: PR96 merged at `b186c11`; [PR98](https://github.com/Peerframe/openbot/pull/98)
+  merged at `1dacf4e` after all17 hosted jobs plus aggregate `check` passed on `255d535`.
+  Root continues on `codex/final-server-retirement-20260926`; CI and DSH tasks are complete.
 - Linux browser: actual Work/Node/PostgreSQL/mTLS Temporal passed four approvals, navigation,
   Unicode input, one click, read/report/download and history replay against actual Bun/Chromium
   through Squid7.7 and runsc. Worker stop/approval/resume executed the original click once.
@@ -36,13 +35,22 @@
 - Restore: canonical44 paired cold restore passed47 Control tables/111 rows,40 history plus3
   visibility tables,13 files,36 TLS files and six key negatives, original approval/unknown/cancel
   semantics and two replays. Browser-profile table was empty, so it does not qualify profile recovery.
-- Preview: canonical45 candidate contains163 matching Python modules and SQL. Packaged API/PG,
-  login, restart, parent EOF, invalid configuration refusal/cleanup and two mTLS Worker starts passed.
-  [Artifact evidence](../experiments/work-journey/evidence/desktop-preview-schema45.json).
-  Current GUI/Keychain and full packaged inference are still unqualified. Computer Use explicitly
-  reports the Mac is locked and automatic unlock failed. The user has been asked to unlock and
-  open the uninstalled Preview; no reply yet. Earlier GUI evidence belongs to another artifact.
-- Checks: composition boundary35 Python tests pass; full `npm run check` passed with20 cached build
+- Preview: canonical45 API/PG and mTLS evidence remains in
+  [schema45](../experiments/work-journey/evidence/desktop-preview-schema45.json). The installed
+  canonical app owns the legacy Preview profile/lock; this explained the old candidate's immediate
+  exit. A fixed `OpenBot Python Preview` identity now coexists with it without modifying its data.
+  Actual native first launch initialized PG/Python using system encryption; menu quit closed both;
+  restart decrypted the same ciphertext/key and displayed the authenticated Owner workspace.
+  [Current artifact evidence](../experiments/work-journey/evidence/desktop-python-preview-native.json).
+  Native GUI created a synthetic channel and recovered it on the next menu-quit/restart. Final
+  normal quit closed the candidate, API and PG. The installed app remained running. Initial stale
+  UI/capture failures were transient and resolved through current accessibility observations.
+  Full packaged inference remains open. The separate test profile is retained for evidence;
+  do not remove the installed app's old profile.
+- Checks: the Preview increment passed27 focused package/profile tests and full `npm run check`
+  (20 successful build tasks,19 cached). The first check caught the CI validator’s old artifact path,
+  now updated; a later sandbox-only loopback EPERM passed with local network access.
+  Retained composition boundary35 Python tests pass; full `npm run check` passed with20 cached build
   tasks and actual repository audits. TLS positives/negatives ran in actual local Chromium and
   native Linux. The repository remote Node fixture now requires explicit operator `sshTarget`
   instead of publishing the personal host; four validation preflights pass. The executed fixed-host
@@ -50,14 +58,15 @@
 
 ### Remaining retirement work
 
-1. Publish this accepted increment and qualify its exact hosted CI head.
-2. Qualify the current Preview GUI, native Keychain and complete packaged inference. Mac unlock is
-   the immediate external blocker; do not replace it with headless evidence or old artifact evidence.
+1. Publish the isolated Preview fix and qualify its hosted CI head.
+2. Complete packaged inference. Current native GUI write/restart, system encryption/decryption
+   and Owner restoration passed on the isolated candidate.
 3. Remove the replaced TS business Server and redundant exploration paths only after replacement
    acceptance. Source inventory finds129 tracked `apps/server` files. Concrete integration points
    remain in root dev/check scripts, legacy Dockerfile/Compose, Desktop native preparation and
    `main.ts` fallback, and legacy CI jobs. Windows/x64 local Desktop still uses the old Server;
-   choose and document a supported replacement/remote-client capability before removing that path.
+   Owner has been asked whether to qualify their Python local runtime first or make those
+   platforms remote clients in this milestone. Keep that decision pending before removing the path.
    Keep the59-file frozen oracle, migration histories, TS Node/Providers, publisher/MCP tools and
    credential helpers. Preserve `550a981` as an additional source recovery checkpoint.
 4. Run the affected final checks and publish the retirement change. Signing/installed distribution,

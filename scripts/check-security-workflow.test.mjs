@@ -25,7 +25,7 @@ test("qualifies Python product artifacts independently of legacy compatibility",
       "npm run package --workspace @openbot/desktop",
     ),
     workflow.replace(
-      "OpenBot Preview.app/Contents/Resources/native-runtime",
+      "OpenBot Python Preview.app/Contents/Resources/native-runtime",
       "OpenBot.app/Contents/Resources/native-runtime",
     ),
     workflow.replace(
