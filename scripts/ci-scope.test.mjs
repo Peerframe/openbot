@@ -214,3 +214,18 @@ test("transitive runtime consumers keep platform, browser and Python qualificati
   }
   assert(select("packages/employee-publisher/src/index.ts").required.includes("python-runtime"));
 });
+
+test("actual Work HTTP consumers and conformance inputs retain the cross-language gate", () => {
+  for (const path of [
+    "apps/web/src/work-api.ts",
+    "apps/web/src/work-api.test.ts",
+    "apps/web/src/api.ts",
+    "apps/web/conformance/work-contract.acceptance.ts",
+  ]) {
+    const plan = select(path);
+    assert(plan.required.includes("harness"), path);
+    assert(plan.workspaces.includes("@openbot/web"));
+    assert(plan.workspaces.includes("@openbot/desktop"));
+  }
+  assert(!select("apps/web/src/components/ChannelMembersMenu.tsx").required.includes("harness"));
+});

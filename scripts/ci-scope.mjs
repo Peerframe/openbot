@@ -145,6 +145,12 @@ export function selectChecks(files, graph, { full = false } = {}) {
       selected.add("portable");
       continue;
     }
+    // These Web files participate in the actual Python HTTP → TypeScript qualification.
+    if (
+      /^apps\/web\/src\/(?:work-api(?:\.test)?|api)\.ts$/.test(file) ||
+      file.startsWith("apps/web/conformance/")
+    )
+      selected.add("harness");
     const owner = graph.find((node) => file.startsWith(`${node.path}/`));
     if (!owner) {
       broaden(`Unmapped input: ${file}`);

@@ -62,7 +62,7 @@
     "harness:check": "sh packages/harness/scripts/check.sh",
     "harness:wheel": "sh packages/harness/scripts/check-wheel.sh",
     "harness:quality": "sh packages/harness/scripts/quality.sh",
-    "contracts:test": "npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts",
+    "contracts:test": "npm exec -- turbo run build --filter=@openbot/web^... && npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts",
     "ci:scope": "node scripts/ci-scope.mjs",
     "ci:check": "node --test scripts/ci-scope.test.mjs scripts/check-python-audit.test.mjs scripts/check-ci-cache.test.mjs",
     "check:affected": "node scripts/check-affected.mjs"
