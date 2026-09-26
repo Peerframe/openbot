@@ -16,12 +16,13 @@ English canonical; 中文摘要见文末。This is the single C1→C2→C3 task 
 - Local checkpoints: C1 `a770d870e81cb2295a1c4ed76da7796997c67716`; pure C2 move
   `17fb2f4`; C2 package/consumers `b6e623a`; C2 final evidence/quality `7399e11`.
   Resolve the current result with `git rev-parse HEAD` and `git status --short`.
-- User requested continued completion after C1. C1/C2 are locally accepted; **C3 is active**.
-  One parent owns all integration files. C3 is being preserved as a local review checkpoint; follow-up evidence remains with this parent.
+- User requested continued completion after C1. C1/C2 and the C3 local implementation are accepted; **final hosted CI is pending**.
+  One parent owns all integration files. C3 implementation ends at `074f94d95e7066e7d04c657e3e65c8d1eb463df3`; later handoff-only edits
+  reuse that executed evidence. The final branch HEAD is the review candidate.
   No push, merge, publication, paid model call, production mutation or remote protection change
   is authorized. Final candidate hosted CI remains a completion gate.
 - Separate acceptance checkout: `/Users/yxflc/.codex/worktrees/contributor-acceptance/openbot`,
-  based on `7399e11`. All three contributor writers finished; only the integration parent is active.
+  based on `7399e11`. All three contributor writers finished. All integration checks and artifact writers also finished.
   Demo patches remain isolated and must not be merged automatically. Its copy of this handoff
   records outgoing ownership so each new session can continue without oral project context.
 
@@ -122,45 +123,90 @@ runtime environment, source/lock graph and root script/generator inputs. `npm ru
 are qualification entrypoints; raw Turbo without that identity is not. CI caches npm downloads,
 not prior successful tests. Native qualification and uncached root/Python probes remain separate.
 
-### C3 actual evidence and remaining work
+### C3 final local evidence (2026-09-27)
 
-- Selection + aggregate + audit + release focused set: 21 passed. Structured workflow + real cache
-  identity/empty-test set: 24 passed. No job may satisfy requirements with an unexpected skip.
-- Actual new audit first found six Soup Sieve 2.8.3 records (four distinct advisories). Targeted
-  review chose 2.9.2; base/Worker/product pins agree. The new audit actually covered all 58 product
-  external pins with no known advisory or skip. No vulnerability ignore list was added.
-- Fresh contributor UI: 35 repository files + one skill read; 15m45s. First failure was closed
-  `details` after ArrowDown. Focused 31 passed, real Python/owned PG page at 1440×900 and 390×844
-  checked keyboard/empty/disabled/failure/recovery/bounds. Full check passed; Web 478 and Desktop
-  402 passed/3 skipped were fresh. Services, browser and synthetic data were cleaned.
-- New Python session read the same brief handoff and preserved UI hashes: 24 repository files,
-  7m07s. Initial 3 failed/20 passed; final 23 passed, 1 optional Temporal collection skip and
-  434 deselected. Actual installed-wheel path and quality 18 files passed; complete npm check
-  passed with Turbo groups fully cached. Example demo only, no core loop or authority change.
-- Contract session independently completed the third task: 35 repository paths, 7m42s; first
-  5 failed/17 passed, final 32 actual FastAPI TestClient/DTO→Web cases and 22 Web API tests passed.
-  Generation/freshness, Web typecheck, quality and full check passed; Web 493 and Desktop 402/3
-  skipped were fresh; other cached results stay labeled. All four previous demo hashes unchanged.
-  This is synthetic Writer HTTP-boundary evidence, not DB/production qualification. No real
-  Token/price metrics are available; the samples establish usable paths, not percentage gains.
-- Full repository check passed: typecheck 31/31 (0 cached), test 26/26 (12 cached), build 19/19
-  (12 cached). Public-source extraction 54 passed; npm production audit 0 vulnerabilities.
-  Manifest/lock consistency and CI checks passed after fixing a stale pyproject pin and notices.
-- C3 first refreshed base control: 836 passed/2 skipped in 104.06s; concurrent Worker reached
-  its unchanged 600s limit. Diagnostic verbosity/traceback were added, without increasing limits;
-  rerun sequentially. Desktop Node-archive download also hit its existing network timeout.
-  First refreshed arm64 container smoke passed; rebuild its final metadata/notices before reuse.
-- Pending local integration: final review and follow-up gates, sequential refreshed Worker,
-  container and staged/packaged Desktop smoke after the dependency update; final scope comparison
-  and read-only fixed-diff review. Native non-Mac targets and final-head hosted CI are not claimed.
+| Gate | Actual result / evidence boundary |
+| --- | --- |
+| Final `npm run check` at `074f94d` | exit 0; root Node 208 passed / 2 platform skips; browser Python 35 passed; 61.42s wall, 167.04s user + 26.77s system CPU |
+| Turbo distinction | typecheck 31/31, 0 cached; test group 26/26, 12 cached; build 19/19, 12 cached. Web 473, Desktop 402/3 skips, Node Vitest 94/3 skips + Node test runner 53 actually executed; other package counts remain in the log |
+| CI selection/cache/audit fixtures | 19 passed, including real Git committed/local separation, transitive/dynamic/contract/browser inputs, every required failure/cancel/missing/skip, environment hash changes and an actual empty Vitest failure |
+| Workflow policy | `security:config-check`: 25 passed; YAML peer/step renaming accepted, essential sources/permissions/native/release/aggregate behavior enforced |
+| Rules/docs/research | 4 discovery/routing tests, 535 Markdown files, 22 research tests; local non-PR invocation explicitly does not validate a remote PR body |
+| Actual selection | final upgrade selects all 12 qualifications; clean candidate plus one owned README newline selected focused validation + security, passed in 8.73s (10.05s user, 2.81s system); exact README bytes restored |
+| Cold contract | fresh Git snapshot had no node_modules/dist; direct old-style runner failed to resolve `@openbot/domain` and collected no tests. Canonical `contracts:test` built both dependencies without cache, then 11 cases passed; actual OpenAPI freshness also passed |
+| Python quality | one existing Ruff/format + mypy entry now also checks the new audit verifier: 22 formatted files, 19 typed files; exact 7-tool environment and 12-module boundary passed |
+| Dependency security | all 58 external production Python pins audited, no known advisory/skips; npm production audit found 0 vulnerabilities. Soup Sieve 2.9.2 metadata, all locks and complete MIT notices agree |
+| Candidate Git history | pinned TruffleHog, network/verification disabled, full local candidate ancestor history: 13 exact pre-reviewed historical fixtures, no unreviewed finding. No new exception; private raw reports removed. This is not a scan of every remote ref |
+| Fresh control/Worker | owned PostgreSQL base 836 passed / 2 skipped in 105.13s; Worker 1526 passed / 1 skipped in 524.53s. Same original 300s/600s limits; cross-language identity 129, task 60, wire 48, command 34 and execution 40 comparisons passed |
+| HTML extraction | 54 public-source tests passed against Soup Sieve 2.9.2; C2 actual mTLS/replay evidence reused because engine/core behavior is unchanged |
+| Final arm64 container | `openbot-c3-product:local`: Owner HTTP, built Web, docx/pdf/OCR, restart keys/files, 45 migrations, preflight refusal, SIGTERM/owned-resource cleanup all passed |
+| Actual macOS arm64 app | staged runtime and packaged `apps/desktop/out/python-product/OpenBot Python Preview-darwin-arm64/OpenBot Python Preview.app` both passed Python API/PostgreSQL start/login/restart, parent EOF, unsafe/symlink/config refusal and cleanup; unsigned preview, synthetic encryption, no native Keychain claim |
+| Same installed core | all 12 source-module hashes match Worker, staged Desktop, actual packaged Desktop and container; every consumer reports harness 0.1.0 and Soup Sieve 2.9.2 |
 
-Logs live under `/private/tmp/openbot-c3-*`; they are not committed. Keep this section current,
-not append a second status record. After all local acceptance, commit a reviewable C3 checkpoint;
-final hosted CI requires separately authorized push/PR. No automatic merge/release follows.
+The new audit initially found six Soup Sieve 2.8.3 records representing four unique advisories.
+Targeted review and the narrow 2.9.2 update fixed the real gate; no ignored advisory. A stale
+pyproject pin was found during final closure checking; metadata/notices and a consistency check
+were added before final packaging. The first concurrent Worker run hit its unchanged timeout;
+sequential rerun passed. Existing bounded Desktop downloads timed out once, then the same producer
+succeeded. A bare Git scan fixture was rejected; the same ordinary-clone layout as CI passed.
+These failed attempts are not counted as passes or hidden by larger limits.
+
+A read-only review of `7399e11..46ddb3e` found three real gaps: cold contract dependencies,
+missing contract-consumer propagation, and skipped browser boundary regressions. Fixes at
+`34a9394` / `5b09c33` were incrementally reviewed and tested, including the actual cold failure→pass
+above. `6389bc4` added audit type coverage; `074f94d` preserves npm cache identity only in the
+control fixture's build prerequisite (the passed Worker environment is unchanged). Full check then
+passed at that final implementation revision. No later code change is hidden in handoff evidence.
+
+### Three completed fresh-session contributions
+
+All demos stay in the detached acceptance checkout; eleven dirty files are owned and described in
+its copy of this same handoff. No demo was committed or merged into the integration branch.
+
+| New context | Entry and useful feedback | Actual acceptance / cost |
+| --- | --- | --- |
+| UI | located App toolbar/member menu/design rules; first ArrowDown regression 4/7 failed | focused 31 passed; actual Python + owned PG page at 1440×900 and 390×844 checked keyboard/empty/disabled/failure/recovery/bounds. Full check passed; Web 478 and Desktop 402/3 skips fresh. 35 repo paths + one external skill, 15m45s |
+| Python | read the prior handoff and local core contract; initial 3 failed/20 passed | installed-wheel example 23 passed, 1 optional Temporal module collection skip, 434 deselected; quality passed. Full check passed with Turbo groups cached; prior UI hashes unchanged. 24 repo paths, 7m07s |
+| Python→TS | independently followed DTO→HTTP→generator→real Web consumer; initial 5 failed/17 passed | 32 actual FastAPI TestClient/DTO→Web cases, 22 Web API tests, generation/freshness/type/quality passed. Full check passed; Web 493 and Desktop 402/3 skips fresh, remaining cache labeled. Four prior demo hashes unchanged. 35 repo paths, 7m42s |
+
+This proves two handoffs can continue from repository rules and one short current summary without
+oral file answers. The contract task used a synthetic Writer behind the actual HTTP route, not a
+production DB. UI synthetic services/browser/data were cleaned; all three writers stopped. Reading
+counts include partial reads and exclude search-only hits. These are three usability samples, not
+statistical performance gains. Real tokens, model price, active labor and hosted CI compute/wall time
+are unavailable; local wall/CPU times above are not CI cost estimates or comparable-workload savings.
+
+### Logs, limits and next authorized action
+
+- `/private/tmp/openbot-c3-check-result.log`, `openbot-c3-control-final.log`,
+  `openbot-c3-{ci-final,security-final,quality,python-audit-fixed,npm-audit,credential-summary}.log`.
+- `/private/tmp/openbot-c3-cold-contract-{red,green,freshness}.log`,
+  `openbot-c3-prose-affected.log`, `openbot-c3-upgrade-scope.json`.
+- `/private/tmp/openbot-c3-{container-smoke-final,desktop-staged-smoke,desktop-packaged-smoke}.log`
+  and matching build/package logs; four `openbot-c3-*-hashes.json` files retain installed proof.
+- Contributor logs use `/private/tmp/openbot-contributor-{python,contract}-*`; actual UI viewport
+  evidence is `/private/tmp/openbot-contributor-1440.png` and `openbot-contributor-390.png`.
+
+No local C1→C2 entry blocker remains; local C2/C3 implementation and bounded acceptance are done.
+**The overall upgrade is not closed:** final candidate hosted `check` still requires an explicitly
+authorized push to `origin` (`https://github.com/Peerframe/openbot.git`), normally the existing local
+`codex/repository-c1` branch and a review PR. No push/PR/merge is performed here. The eventual PR must
+supply research evidence and wait for the final candidate, not borrow base CI or local aggregate
+fixtures. Native Windows/Linux lanes, both hosted container architectures, complete hosted recovery/
+migration suites and remote PR-body validation remain unverified at this head. Native Keychain,
+formal signing/notarization, user installation and release were outside this local candidate scope.
+
+All owned test services, temporary DBs, cold/scan fixtures and writers finished or were cleaned.
+Keep the unsigned generated preview for review, the isolated demos and the original user assets.
+The integration working tree is committed and clean after this handoff-only checkpoint; always
+recheck actual status before the next write. No paid model, production data or remote protection
+was touched. Do not rerun unchanged full suites solely for this status record.
 
 ## 中文当前摘要
 
-原 checkout 与用户修改保留。C1 和 C2 已本地验收；C3 正在完成 CI 选择/汇总、真实安全闭包、
-缓存/构建职责及三条新会话贡献路径。新安全门发现的 Soup Sieve 漏洞已针对性升级并重新审计通过。
-UI、Python 两次独立贡献及真实交接已完成，契约会话及两次换会话交接也已完成；无关演示补丁留在独立 checkout。
-安装物与最终整合仍在验证，尚未推送、合并、发布或验证最终候选云端 CI；不将本地成功冒充远程资格。
+已完成 C1、C2 和 C3 的本地实施与验收；原 checkout 与用户修改保留。统一开发入口、正式 harness
+wheel/真实消费者、扩展与契约链、按影响选择的 CI 和失败关闭汇总均已落实。三条新会话贡献及两次
+真实交接通过，演示补丁留在独立 checkout。完整门禁、真实 PostgreSQL/Worker、最终容器与桌面包
+均通过；新安全门发现的依赖漏洞已修复，未靠忽略或延长时限过关。缓存、跳过、合成与真实范围如上。
+唯一仍阻止关闭整项升级的外部步骤是最终候选云端 CI：需明确授权推送，尚未执行；不将本地证据冒充
+云端/全部平台结果，也未合并、发布、替换用户安装、调用付费模型或操作生产数据。
