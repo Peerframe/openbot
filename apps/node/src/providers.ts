@@ -16,6 +16,8 @@ export function configuredProviders(env: NodeEnv): ComputerProvider[] {
         computerToken: env.OPENBOT_DOCKER_COMPUTER_TOKEN,
         allowPrivateHosts: env.OPENBOT_DOCKER_ALLOW_PRIVATE_HOSTS,
         inputOrigins: env.OPENBOT_DOCKER_INPUT_ORIGINS,
+        enableBrowserSessions: env.OPENBOT_DOCKER_BROWSER_SESSIONS,
+        enableBrowserTasks: env.OPENBOT_DOCKER_BROWSER_TASKS,
       }),
     );
   }

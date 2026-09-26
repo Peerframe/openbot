@@ -1,0 +1,83 @@
+{
+  "format": "openbot.desktop.preview-refresh/v1",
+  "sourceCommit": "618e3996531f14e5ada6c025f9eea1bc559ca895",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "unsignedDevelopmentCandidate": true,
+  "installed": false,
+  "canonicalMigrations": 44,
+  "workerDependencyCount": 63,
+  "matchingPythonSourceModules": 162,
+  "lifecycleScriptsAndLockMatch": true,
+  "allSourceAndSqlBytesEqual": true,
+  "stagedSmoke": {
+    "parentEofStoppedActualApi": true,
+    "unsafeDirectoryRefusedAndPostgresStopped": true,
+    "pythonProductHealth": true,
+    "ownerLogin": true,
+    "postgresInitialized": true,
+    "restartPreservedData": true,
+    "serverAndPostgresStopped": true,
+    "syntheticOnly": true,
+    "nativeKeychainVerified": false
+  },
+  "packagedSmoke": {
+    "parentEofStoppedActualApi": true,
+    "unsafeDirectoryRefusedAndPostgresStopped": true,
+    "pythonProductHealth": true,
+    "ownerLogin": true,
+    "postgresInitialized": true,
+    "restartPreservedData": true,
+    "serverAndPostgresStopped": true,
+    "syntheticOnly": true,
+    "nativeKeychainVerified": false
+  },
+  "asarSha256": "adeb27ff792042b5c7254e3ed6dfefe1d2fafa8332593e51b532fda106594507",
+  "matchingControllerHashes": {
+    "native-server.js": "62cc7faf9a54d424240f7c91e42d770a6d483bedcc28c2ddf6ef71d8be54838e",
+    "python-server.js": "4ebec0d833502b8bc0455110230ba121cbe9e8369bfe01c6d883e52d596c7b4d"
+  },
+  "packagedLauncherMatchesCompiledSource": true,
+  "mtlsWorkerRerun": true,
+  "packagedTemporal": {
+    "format": "openbot.desktop.packaged-temporal-smoke/v1",
+    "connectedStarts": 2,
+    "pollerObservations": [
+      {
+        "format": "openbot.desktop.temporal-pollers/v1",
+        "freshActivityPollers": 1,
+        "freshWorkflowPollers": 1,
+        "sameWorkerIdentity": true,
+        "workerIdentitySha256": "681116c2ccad42294a73d5cc10c92281d4ec50b70eac272b805062075f2f9361"
+      },
+      {
+        "format": "openbot.desktop.temporal-pollers/v1",
+        "freshActivityPollers": 1,
+        "freshWorkflowPollers": 1,
+        "sameWorkerIdentity": true,
+        "workerIdentitySha256": "b89a0b3e958add2458a3669353a1840b5e2ad1d74cdc71c7f19a08e9040d4d40"
+      }
+    ],
+    "invalidPrivateConfigRefusedAndPostgresStopped": true,
+    "isolatedQueue": true,
+    "originalLauncherUsed": true,
+    "diagnosticEvents": 2,
+    "fullInferenceVerified": false,
+    "workflowReplayVerified": false,
+    "parentEofStoppedActualApi": true,
+    "unsafeDirectoryRefusedAndPostgresStopped": true,
+    "pythonProductHealth": true,
+    "ownerLogin": true,
+    "postgresInitialized": true,
+    "restartPreservedData": true,
+    "serverAndPostgresStopped": true,
+    "syntheticOnly": true,
+    "nativeKeychainVerified": false
+  },
+  "ownedEngineCleanup": {
+    "ownedEngineRemoved": true
+  },
+  "nativeGuiRerun": false,
+  "signingVerified": false,
+  "fullInferenceVerified": false
+}

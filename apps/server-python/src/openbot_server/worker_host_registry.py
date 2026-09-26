@@ -51,6 +51,14 @@ class _Offer:
     result: asyncio.Future
 
 
+@dataclass(frozen=True)
+class BrowserHostBinding:
+    """Internal snapshot of one live Browser Host connection; never wire output or authority."""
+    node_id: str
+    connection_id: str
+    credential_digest: str
+
+
 class WorkerHostRegistry:
     def __init__(self, identity, *, offer_timeout=10.0, enrollment_timeout=10.0,
                  on_available=None, on_updated=None, on_unavailable=None, on_run_message=None, command_channel=None):
@@ -311,10 +319,30 @@ class WorkerHostRegistry:
             self._detach(connection, "Node disconnected before accepting the run.")
             self._connections.discard(connection)
 
-    async def browser_command(self, value, *, dispatch_guard):
+    def browser_binding(self, node_id):
+        """Internal metadata for the current compatible browser.session@1/docker connection."""
+        connection = self._nodes.get(node_id)
+        if (self._closed or connection is None or connection.node is None
+                or not connection.connection_id or not connection.credential_digest
+                or not any(cap["id"] == "browser.session" and cap["version"] == 1 and cap["providerId"] == "docker"
+                           for cap in connection.node["capabilityManifest"])):
+            raise RuntimeError("Browser Host unavailable.")
+        return BrowserHostBinding(node_id, connection.connection_id, connection.credential_digest)
+
+    def _require_binding(self, node_id, binding):
+        """Exact frozen snapshot equality: reconnect, re-credential, or capability loss refuses."""
+        if type(binding) is not BrowserHostBinding or binding != self.browser_binding(node_id):
+            raise RuntimeError("Browser Host binding changed.")
+
+    async def browser_command(self, value, *, binding: BrowserHostBinding, dispatch_guard):
         """Only BrowserSessions may supply this short authority context; no unguarded send."""
         frame = parse_frame(value, server=True)
+        self._require_binding(frame["nodeId"], binding)
         connection = self._nodes.get(frame["nodeId"])
+        if (frame['action']['kind'] == 'agent' and (connection is None or not any(
+                cap['id'] == 'browser.page' and cap['version'] == 1 and cap['providerId'] == 'docker'
+                for cap in connection.node['capabilityManifest']))):
+            raise RuntimeError('Browser page Host unavailable.')
         if (self._closed or connection is None or len(self._browser_pending) >= 64
                 or frame["requestId"] in self._browser_pending
                 or not any(cap["id"] == "browser.session" and cap["version"] == 1 and cap["providerId"] == "docker"
@@ -326,7 +354,9 @@ class WorkerHostRegistry:
         try:
             async with asyncio.timeout(5), self.identity_guard(frame["nodeId"]), connection.send_lock:
                 if not self._current(connection): raise RuntimeError("Browser Host disconnected.")
+                self._require_binding(frame["nodeId"], binding)
                 async with dispatch_guard(frame):
+                    self._require_binding(frame["nodeId"], binding)
                     frame = parse_frame(frame, server=True)
                     expiry = datetime.fromisoformat(frame["expiresAt"]).timestamp()
                     if not 0 < expiry - datetime.now(timezone.utc).timestamp() <= 25.1:
@@ -334,6 +364,7 @@ class WorkerHostRegistry:
                     await connection.socket.send_json(frame)
             async with asyncio.timeout(max(0, expiry - datetime.now(timezone.utc).timestamp())):
                 result = await future
+            self._require_binding(frame["nodeId"], binding)
             if result is None: raise RuntimeError("Browser command delivery is uncertain.")
             return result
         finally:

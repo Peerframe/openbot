@@ -330,7 +330,8 @@ def test_legacy_browser_command_roundtrip_on_negotiated_socket():
                     expiresAt=iso_timestamp(datetime.now(timezone.utc)+timedelta(seconds=5)))
                 @asynccontextmanager
                 async def synthetic_authority(_): yield
-                task = asyncio.create_task(registry.browser_command(value, dispatch_guard=synthetic_authority))
+                task = asyncio.create_task(registry.browser_command(value,
+                    binding=registry.browser_binding('synthetic-host'), dispatch_guard=synthetic_authority))
                 assert await receive(ws) == value
                 result = dict(type='browser.result',protocolVersion='0.9.0',nodeId='synthetic-host',
                     requestId=value['requestId'],sessionId=value['sessionId'],ok=False,error='unavailable')

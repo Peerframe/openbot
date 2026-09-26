@@ -1,6 +1,7 @@
 import type {
   BrowserCommand,
   BrowserFrame,
+  BrowserPage,
   NodeCapability,
   NodeCapabilityDescriptor,
   NodePlatform,
@@ -72,6 +73,10 @@ export interface ProviderFrame {
  */
 export interface ComputerProvider {
   browser?(command: BrowserCommand, signal: AbortSignal): Promise<BrowserFrame>;
+  browserTask?(
+    command: BrowserCommand,
+    signal: AbortSignal,
+  ): Promise<{ frame: BrowserFrame; page: BrowserPage }>;
   id: string;
   displayName: string;
   platforms: NodePlatform[];

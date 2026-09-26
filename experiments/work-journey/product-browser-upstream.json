@@ -1,0 +1,90 @@
+{
+  "commit": "257c1280d684089be9adb0b35cce262efc7064bf",
+  "files": [
+    {
+      "path": "src/aria-snapshot.ts",
+      "sha256": "47c888a912e47d30b856c6838835683a6a29e88a82b695821250f951825d050d",
+      "bytes": 7946
+    },
+    {
+      "path": "src/authorisation.ts",
+      "sha256": "d092cb4679912603e6ef78ddc9fada7270337ae43b52c728cba6ac2841ef2612",
+      "bytes": 2955
+    },
+    {
+      "path": "src/bot-id.ts",
+      "sha256": "b2a53d7815abe07b5eeb486573092e4b9f87ca7ef59322deb91d555529b738a1",
+      "bytes": 2411
+    },
+    {
+      "path": "src/browser-eviction.ts",
+      "sha256": "01e4912c6301dbe01badbb3ca715139371157b4367c475923e04dda4b2bcedf8",
+      "bytes": 2489
+    },
+    {
+      "path": "src/control.ts",
+      "sha256": "dfd5ceb74be8ba98408781b4d327324bdefd80a64afede1dc302a5966e764000",
+      "bytes": 8986
+    },
+    {
+      "path": "src/egress.ts",
+      "sha256": "59192797e7ac46b06336a1e204c84e81eba8c15eec7ea6dd6fbb3a6682725c96",
+      "bytes": 3129
+    },
+    {
+      "path": "src/env.ts",
+      "sha256": "199a9b37ba38f4f9a569ba9b5308a97c1b2e08f439cb348f6001613ee4d1d59b",
+      "bytes": 2248
+    },
+    {
+      "path": "src/identity.ts",
+      "sha256": "645bce644dcbdfeacd940919a332ebddf764de67123b9368822962321339a16a",
+      "bytes": 3299
+    },
+    {
+      "path": "src/index.ts",
+      "sha256": "c3158d1362294e89ec6591c539a11f6cd6dcfa01376354b62bb4f8f13c3ebdfd",
+      "bytes": 50838
+    },
+    {
+      "path": "src/live-page.ts",
+      "sha256": "2fa7004b0a227e808ca446f791052854cd13ec8d007af7047db0e59b4bfe7fdf",
+      "bytes": 689
+    },
+    {
+      "path": "src/profile-listing.ts",
+      "sha256": "d29417e91bbf8b79cb672dacba12fae35adfcdbbda29fcbddc9080aab096918b",
+      "bytes": 1781
+    },
+    {
+      "path": "src/profiles.ts",
+      "sha256": "41759ff43c242a0c89374ea902e11e8838197cef8a48378de2825f85bf0f539c",
+      "bytes": 25475
+    },
+    {
+      "path": "src/screencast.ts",
+      "sha256": "be79bde5007f03f37e3b99a1ef1388ba672d684ba32ec2b9090c417f9f47f566",
+      "bytes": 6906
+    },
+    {
+      "path": "src/shell.ts",
+      "sha256": "1a525acb27da1474b1021af340a32cf6233ef388c55be8e837a10984542940db",
+      "bytes": 13404
+    },
+    {
+      "path": "src/viewer.ts",
+      "sha256": "d0bfa6249ab0e0e61d1d775dc9bf9b685509147e5a72f57f8f28f9fd72eae7d8",
+      "bytes": 9886
+    },
+    {
+      "path": "src/workspace.ts",
+      "sha256": "a159731c9fdb33094482e82dc1696d00af08fec9462c38e4ba5bed44e02057b7",
+      "bytes": 15459
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "6d35a6bb107ae508da34636387f6208e75a6938e797bc0d5bfa9489d2ca95bad",
+      "bytes": 1067
+    }
+  ]
+}

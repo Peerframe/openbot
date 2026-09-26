@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { fork } from "node:child_process";
 import { channel } from "node:diagnostics_channel";
-import { lstat, mkdtemp, readFile, realpath, rm, symlink } from "node:fs/promises";
+import { lstat, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -147,8 +147,16 @@ export async function smokePythonProduct(runtimeRoot) {
     );
     await controller.stop();
     assert.throws(() => process.kill(restartedPostgres, 0));
-    // A poisoned new artifact directory must fail before the API, then release PostgreSQL.
     testParentExit = false;
+    for (const name of ["browser.json", "command.json"]) {
+      // A present execution configuration without Temporal must refuse API-only fallback.
+      await writeFile(join(dataRoot, name), "{}", { mode: 0o600 });
+      assert.equal((await controller.start()).status, "failed");
+      await assert.rejects(readFile(join(dataRoot, "postgres/postmaster.pid")), { code: "ENOENT" });
+      await controller.stop();
+      await rm(join(dataRoot, name));
+    }
+    // A poisoned new artifact directory must fail before the API, then release PostgreSQL.
     await rm(join(dataRoot, "objects/work-artifacts"), { recursive: true });
     await symlink(root, join(dataRoot, "objects/work-artifacts"));
     assert.equal((await controller.start()).status, "failed");
@@ -156,6 +164,7 @@ export async function smokePythonProduct(runtimeRoot) {
     return {
       parentEofStoppedActualApi: true,
       unsafeDirectoryRefusedAndPostgresStopped: true,
+      executionConfigurationWithoutEngineRefusedAndPostgresStopped: true,
       pythonProductHealth: true,
       ownerLogin: true,
       postgresInitialized: true,

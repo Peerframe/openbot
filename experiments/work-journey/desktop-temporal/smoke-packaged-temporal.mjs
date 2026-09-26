@@ -172,6 +172,16 @@ export async function smokePackagedTemporal({ runtimeRoot, desktopDist, temporal
   try {
     await mkdir(dataRoot, { mode: 0o700 });
     await writeFile(join(dataRoot, "temporal.json"), privateConfig, { mode: 0o600, flag: "wx" });
+    const fixtureBot = "00000000-0000-4000-8000-000000000001";
+    await writeFile(
+      join(dataRoot, "browser.json"),
+      JSON.stringify({
+        version: 1,
+        routes: { [fixtureBot]: "synthetic-unconnected-node" },
+        pageOrigins: { [fixtureBot]: ["https://synthetic.invalid"] },
+      }),
+      { mode: 0o600, flag: "wx" },
+    );
     await startConnected("initial");
     const firstPort = new URL(base).port;
     const headers = { Cookie: cookie, Origin: base, "Content-Type": "application/json" };
@@ -208,6 +218,17 @@ export async function smokePackagedTemporal({ runtimeRoot, desktopDist, temporal
     stage = "parent-eof-stop";
     await stopped(restartedPostgres, new URL(base).port);
     testParentExit = false;
+    for (const name of ["browser.json", "command.json"]) {
+      stage = `invalid-${name.replace(".json", "")}-configuration`;
+      const logins = ownerLogins;
+      // The engine configuration remains valid; the actual Python installation parser refuses {}.
+      await writeFile(join(dataRoot, name), "{}", { mode: 0o600 });
+      assert.equal((await controller.start()).status, "failed");
+      assert.equal(ownerLogins, logins);
+      await assert.rejects(readFile(join(dataRoot, "postgres/postmaster.pid")), { code: "ENOENT" });
+      await controller.stop();
+      await rm(join(dataRoot, name));
+    }
     stage = "invalid-private-config";
     // This passes the Node ownership/size preflight, then fails Python's real config schema.
     await writeFile(join(dataRoot, "temporal.json"), '{"invalid_probe_configuration":true}', {
@@ -234,6 +255,8 @@ export async function smokePackagedTemporal({ runtimeRoot, desktopDist, temporal
       connectedStarts: pollerObservations.length,
       pollerObservations,
       invalidPrivateConfigRefusedAndPostgresStopped: true,
+      privateBrowserConfigurationAccepted: true,
+      invalidExecutionConfigurationsRefusedAndPostgresStopped: true,
       isolatedQueue: true,
       originalLauncherUsed: true,
       diagnosticEvents: diagnosticsCount,

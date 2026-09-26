@@ -15,6 +15,7 @@ from .work_values import WorkConflict, canonical, text
 _NATIVE_CAPABILITIES = frozenset(('model','report','result_review'))
 _CHANNEL_CAPABILITIES = _NATIVE_CAPABILITIES | frozenset(('channel_reads','attachments','knowledge','plugins','web','collaboration'))
 _COMMAND_CAPABILITIES = _NATIVE_CAPABILITIES | frozenset(('channel_reads','attachments','command'))
+_BROWSER_CAPABILITIES = _NATIVE_CAPABILITIES | frozenset(('channel_reads','attachments','browser_capture'))
 
 
 def _profile(task_id, bot_id, execution_profile, selection):
@@ -58,7 +59,7 @@ class WorkTaskProfiles:
         await capture_scope(db,task_id,bot_id,scope,self.files)
 
 
-async def resolve_product_source(db, task, bot_id, *, command_profiles=None):
+async def resolve_product_source(db, task, bot_id, *, command_profiles=None, browser_profiles=None):
     """Caller owns the existing source-before-Task locks; this does not grant authority."""
     if task['bot_id'] != bot_id: raise WorkConflict('product_source_changed')
     mapping=await (await db.execute('SELECT legacy_run_id,channel_id,source_message_id FROM work_sources '
@@ -67,6 +68,10 @@ async def resolve_product_source(db, task, bot_id, *, command_profiles=None):
         'FROM work_task_profiles WHERE task_id=%s FOR SHARE',(task['id'],))).fetchone()
     command=await (await db.execute('SELECT 1 FROM work_command_profiles WHERE task_id=%s FOR SHARE',
         (task['id'],))).fetchone()
+    browser=await (await db.execute('SELECT 1 FROM work_browser_profiles WHERE task_id=%s FOR SHARE',
+        (task['id'],))).fetchone()
+    if browser is not None and (native is not None or mapping is None or command is not None):
+        raise WorkConflict('product_source_ambiguous')
     if command is not None and (native is not None or mapping is None):
         raise WorkConflict('product_source_ambiguous')
     if mapping is not None and native is not None:
@@ -90,13 +95,22 @@ async def resolve_product_source(db, task, bot_id, *, command_profiles=None):
         snapshot = {}
         selection = origin['model_selection']
         if origin['execution_profile'] == 'docker-linux':
-            from .work_command_profiles import CommandProfiles
-            if type(command_profiles) is not CommandProfiles:
-                raise WorkConflict('command_profile_required')
-            profile,digest = await command_profiles.resolve_in_transaction(db,task)
+            if browser is not None:
+                from .work_browser_profiles import BrowserProfiles
+                if type(browser_profiles) is not BrowserProfiles:
+                    raise WorkConflict('browser_profile_required')
+                profile,digest = await browser_profiles.resolve_in_transaction(db,task)
+                snapshot = dict(browser_profile_digest=digest)
+                page_scope = await browser_profiles.page_scope(db, task)
+                if page_scope is not None: snapshot['browser_page_scope_digest'] = page_scope['sha256']
+            else:
+                from .work_command_profiles import CommandProfiles
+                if type(command_profiles) is not CommandProfiles:
+                    raise WorkConflict('command_profile_required')
+                profile,digest = await command_profiles.resolve_in_transaction(db,task)
+                snapshot = dict(command_profile_digest=digest)
             selection = profile.modelSelection.model_dump()
-            snapshot = dict(command_profile_digest=digest)
-        elif command is not None:
+        elif command is not None or browser is not None:
             raise WorkConflict('product_source_ambiguous')
         # Keep the original channel Model source keys stable; only the discriminator is new.
         return dict(source_kind='channel',**mapping,bot_id=bot_id,run_channel=origin['channel_id'],
@@ -116,10 +130,18 @@ def product_capabilities(source):
     if type(source) is not dict or source.get('execution_profile') not in ('none','model','docker-linux'):
         raise WorkConflict('product_source_required')
     if source['execution_profile']=='docker-linux':
-        digest=source.get('command_profile_digest')
+        is_browser='browser_profile_digest' in source
+        if is_browser and 'command_profile_digest' in source:raise WorkConflict('product_source_ambiguous')
+        digest=source.get('browser_profile_digest' if is_browser else 'command_profile_digest')
         if (source.get('source_kind')!='channel' or type(digest) is not str or len(digest)!=64
                 or any(c not in '0123456789abcdef' for c in digest)):
             raise WorkConflict('command_profile_required')
+        if is_browser:
+            page = source.get('browser_page_scope_digest')
+            if page is not None and (type(page) is not str or len(page) != 64
+                    or any(c not in '0123456789abcdef' for c in page)):
+                raise WorkConflict('browser_page_scope_changed')
+            return _BROWSER_CAPABILITIES | (frozenset(('browser_page',)) if page is not None else frozenset())
         return _COMMAND_CAPABILITIES
     if source.get('source_kind')=='task':
         from .work_native_scope import capabilities

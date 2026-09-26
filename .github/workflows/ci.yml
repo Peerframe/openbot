@@ -472,8 +472,7 @@ jobs:
   python-runtime:
     name: Python control, Worker and Temporal (Linux amd64)
     runs-on: ubuntu-24.04
-    # A full passing run took 38m; allow cold setup variance while retaining every probe bound
-    # and the documented ten-minute History Shard warm-up.
+    # Keep API/SQL parity independent of the long recovery and browser qualification jobs.
     timeout-minutes: 50
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -513,6 +512,37 @@ jobs:
         run: npm run test:control:python
         env:
           OPENBOT_TEMPORAL_TEST_PYTHON: ${{ runner.temp }}/openbot-work-reference/bin/python
+
+  temporal-qualification:
+    name: Temporal durable recovery and upgrade (Linux amd64)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Prepare the canonical database package
+        run: |
+          npm install --global --ignore-scripts npm@10.9.9
+          npm ci --ignore-scripts --audit=false
+          npm exec -- turbo run build --filter=@openbot/db
+      - name: Bootstrap the existing isolated Control and Runtime environments
+        run: |
+          apps/server-python/scripts/bootstrap.sh
+          apps/agent-runtime-python/scripts/bootstrap.sh
+        env:
+          OPENBOT_CONTROL_PYTHON: python3.12
+      - name: Prepare the exact durable Worker environment
+        shell: bash
+        run: |
+          python3.12 -m venv "$RUNNER_TEMP/openbot-work-reference"
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install \
+            -r apps/server-python/requirements-worker.lock
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip check
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -I apps/server-python/scripts/verify_environment.py --worker
       - name: Qualify adjacent Temporal release recovery with PostgreSQL and mutual TLS
         shell: bash
         env:
@@ -546,6 +576,130 @@ jobs:
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
             --engine postgres-mtls --upgrade-archive "$RUNNER_TEMP/temporal_1.31.3_linux_amd64.tar.gz"
 
+  browser-product:
+    name: Python product browser recovery (Linux amd64)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Prepare the retained Node and canonical database packages
+        run: |
+          npm install --global --ignore-scripts npm@10.9.9
+          npm ci --ignore-scripts --audit=false
+          npm exec -- turbo run build --filter=@openbot/node^... --filter=@openbot/db
+      - name: Prepare the exact product Worker environment
+        shell: bash
+        run: |
+          python3.12 -m venv "$RUNNER_TEMP/openbot-work-reference"
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install \
+            -r apps/server-python/requirements-worker.lock
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip check
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -I apps/server-python/scripts/verify_environment.py --worker
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.3.14
+      - name: Prepare the pinned disposable browser fixture
+        timeout-minutes: 5
+        shell: bash
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/openbot-browser-binaries
+        run: |
+          python3.12 -B experiments/work-journey/product_browser_upstream.py "$RUNNER_TEMP/openbot-browser-upstream"
+          npm ci --ignore-scripts --prefix "$RUNNER_TEMP/openbot-browser-upstream"
+          node "$RUNNER_TEMP/openbot-browser-upstream/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Qualify approved page input across an actual Worker restart
+        timeout-minutes: 8
+        shell: bash
+        run: |
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/product_browser_probe.py \
+            --output "$RUNNER_TEMP/openbot-browser-product" \
+            --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
+            --browsers "$RUNNER_TEMP/openbot-browser-binaries"
+      - name: Retain content-free browser qualification result
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-product-result
+          path: ${{ runner.temp }}/openbot-browser-product/RESULT.json
+          if-no-files-found: ignore
+      - name: Qualify browser interruption, response loss and private profile persistence
+        timeout-minutes: 15
+        shell: bash
+        run: |
+          for recovery in control node replacement response-loss browser-restart; do
+            "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/product_browser_probe.py \
+              --output "$RUNNER_TEMP/openbot-browser-recovery-$recovery" \
+              --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
+              --browsers "$RUNNER_TEMP/openbot-browser-binaries" \
+              --recovery "$recovery"
+          done
+      - name: Retain content-free browser interruption results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-recovery-results
+          path: ${{ runner.temp }}/openbot-browser-recovery-*/RESULT.json
+          if-no-files-found: ignore
+
+  browser-egress:
+    name: Browser proxy and kernel egress (Linux amd64)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build released proxy and disposable fixture tools
+        timeout-minutes: 6
+        run: |
+          docker build --platform linux/amd64 \
+            -f experiments/browser-execution/egress-fixture.Dockerfile \
+            -t openbot-egress-fixture:ci experiments/browser-execution
+      - name: Qualify real HTTP and CONNECT policy in network-none
+        timeout-minutes: 3
+        run: |
+          image_id="$(docker image inspect openbot-egress-fixture:ci --format '{{.Id}}')"
+          python3 -B experiments/browser-execution/qualify_egress.py \
+            --fixture-image "$image_id" --output "$RUNNER_TEMP/openbot-egress-result"
+      - name: Retain content-free proxy result
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-egress-result
+          path: ${{ runner.temp }}/openbot-egress-result/RESULT.json
+          if-no-files-found: ignore
+      - name: Qualify native kernel routing and revoke an established connection
+        timeout-minutes: 3
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends nftables=1.0.9-1ubuntu0.1 iproute2=6.1.0-1ubuntu6.4 iptables=1.8.10-3ubuntu2
+          root=/opt/openbot-qualification-20260925-c8b2/network-20260926-a2
+          sudo mkdir -p /opt/openbot-qualification-20260925-c8b2
+          sudo mkdir -m 700 "$root"
+          sudo install -m 600 experiments/browser-execution/native-network/network_probe.py "$root/"
+          sudo install -m 600 experiments/browser-execution/native-network/run_probe.py "$root/"
+          sudo install -m 600 experiments/browser-execution/native-network/fixture.nft "$root/"
+          sudo python3 -B "$root/run_probe.py" --docker /usr/bin/docker
+      - name: Retain content-free native network result
+        if: always()
+        run: |
+          source=/opt/openbot-qualification-20260925-c8b2/network-20260926-a2/FINAL_RESULT.json
+          if sudo test -f "$source"; then
+            sudo cp "$source" "$RUNNER_TEMP/openbot-kernel-network-result.json"
+            sudo chmod 644 "$RUNNER_TEMP/openbot-kernel-network-result.json"
+          fi
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: browser-kernel-network-result
+          path: ${{ runner.temp }}/openbot-kernel-network-result.json
+          if-no-files-found: ignore
+
   synthetic-migration:
     name: Python migration and paired restore (synthetic)
     uses: ./.github/workflows/s7-migration.yml
@@ -553,7 +707,7 @@ jobs:
   # Python product qualification and retained compatibility must each succeed independently.
   check:
     if: always()
-    needs: [security, validate, portable, windows-worker-host, database, server-container, python-runtime, python-product-container, python-desktop-preview, synthetic-migration]
+    needs: [security, validate, portable, windows-worker-host, database, server-container, python-runtime, temporal-qualification, browser-product, browser-egress, python-product-container, python-desktop-preview, synthetic-migration]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -567,11 +721,14 @@ jobs:
           DATABASE_RESULT: ${{ needs.database.result }}
           SERVER_CONTAINER_RESULT: ${{ needs.server-container.result }}
           PYTHON_RUNTIME_RESULT: ${{ needs.python-runtime.result }}
+          TEMPORAL_QUALIFICATION_RESULT: ${{ needs.temporal-qualification.result }}
+          BROWSER_PRODUCT_RESULT: ${{ needs.browser-product.result }}
+          BROWSER_EGRESS_RESULT: ${{ needs.browser-egress.result }}
           PYTHON_PRODUCT_CONTAINER_RESULT: ${{ needs.python-product-container.result }}
           PYTHON_DESKTOP_PREVIEW_RESULT: ${{ needs.python-desktop-preview.result }}
           SYNTHETIC_MIGRATION_RESULT: ${{ needs.synthetic-migration.result }}
         run: |
-          for result in "$SECURITY_RESULT" "$VALIDATE_RESULT" "$PORTABLE_RESULT" "$WINDOWS_WORKER_HOST_RESULT" "$DATABASE_RESULT" "$SERVER_CONTAINER_RESULT" "$PYTHON_RUNTIME_RESULT" "$PYTHON_PRODUCT_CONTAINER_RESULT" "$PYTHON_DESKTOP_PREVIEW_RESULT" "$SYNTHETIC_MIGRATION_RESULT"; do
+          for result in "$SECURITY_RESULT" "$VALIDATE_RESULT" "$PORTABLE_RESULT" "$WINDOWS_WORKER_HOST_RESULT" "$DATABASE_RESULT" "$SERVER_CONTAINER_RESULT" "$PYTHON_RUNTIME_RESULT" "$TEMPORAL_QUALIFICATION_RESULT" "$BROWSER_PRODUCT_RESULT" "$BROWSER_EGRESS_RESULT" "$PYTHON_PRODUCT_CONTAINER_RESULT" "$PYTHON_DESKTOP_PREVIEW_RESULT" "$SYNTHETIC_MIGRATION_RESULT"; do
             if [[ "$result" != "success" ]]; then
               printf 'Every required CI job must succeed; observed result: %s\n' "$result" >&2
               exit 1

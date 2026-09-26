@@ -1,0 +1,21 @@
+# Fixed synthetic topology in one PrivateNetwork=yes unit only. Not production configuration.
+table inet openbot_fixture {
+    chain admitted {
+        iifname "ob_client" oifname "ob_proxy" ip saddr 10.77.10.2 ip daddr 10.77.11.2 tcp dport 3128 accept
+        iifname "ob_proxy" oifname "ob_client" ip saddr 10.77.11.2 ip daddr 10.77.10.2 tcp sport 3128 ct state established accept
+        iifname "ob_proxy" oifname "ob_public" ip saddr 10.77.11.2 ip daddr 93.184.216.34 tcp dport { 18080, 18443 } accept
+        iifname "ob_public" oifname "ob_proxy" ip saddr 93.184.216.34 ip daddr 10.77.11.2 tcp sport { 18080, 18443 } ct state established accept
+        iifname "ob_proxy" oifname "ob_public" ip6 saddr fd77:11::2 ip6 daddr 2606:4700:4700:ffee::2 tcp dport { 18080, 18443 } accept
+        iifname "ob_public" oifname "ob_proxy" ip6 saddr 2606:4700:4700:ffee::2 ip6 daddr fd77:11::2 tcp sport { 18080, 18443 } ct state established accept
+    }
+    chain forward {
+        type filter hook forward priority -10; policy drop;
+        ct state invalid drop
+        jump admitted
+    }
+    chain input {
+        type filter hook input priority -10; policy drop;
+        iifname "lo" accept
+        meta l4proto ipv6-icmp icmpv6 type { nd-neighbor-solicit, nd-neighbor-advert } accept
+    }
+}

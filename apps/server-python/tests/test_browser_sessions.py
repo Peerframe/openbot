@@ -26,7 +26,7 @@ from openbot_server.browser_routes import register_browser_routes
 from openbot_server.browser_sessions import BrowserSessionsService
 from openbot_server.control_errors import ControlError
 from openbot_server.database import StoreUnavailable
-from openbot_server.worker_host_identity import PostgresWorkerHostIdentity
+from openbot_server.worker_host_identity import PostgresWorkerHostIdentity, resolve_client_identity
 from openbot_server.worker_host_registry import WorkerHostRegistry, now, worker_host_uvicorn_options
 from openbot_server.worker_host_routes import register_worker_host_routes
 from test_worker_host_identity import worker_db  # noqa: F401
@@ -59,10 +59,10 @@ def seed(worker_db):
 
 
 @asynccontextmanager
-async def server(seed, *, configured=True):
+async def server(seed, *, configured=True, profiles=None):
     identity = PostgresWorkerHostIdentity(seed["dsn"])
     registry = WorkerHostRegistry(identity)
-    service = BrowserSessionsService(seed["dsn"], registry, agent_gate_configured=configured)
+    service = BrowserSessionsService(seed["dsn"], registry, agent_gate_configured=configured, profiles=profiles)
     app = FastAPI()
     @app.exception_handler(HTTPException)
     async def http_error(request, error):
@@ -94,17 +94,23 @@ async def server(seed, *, configured=True):
         listener.close()
 
 
-@asynccontextmanager
-async def worker(seed, http, url, *, capability=True, hook=None):
+async def enroll_worker(seed, http):
     issued = await http.post("/api/v1/nodes/enrollment-tokens", json={"nodeId": seed["node"]})
     assert issued.status_code == 201
     enrolled = await http.post("/api/v1/nodes/enroll", json={"nodeId": seed["node"], "token": issued.json()["token"]})
     assert enrolled.status_code == 201
+    return enrolled.json()["credential"]
+
+
+@asynccontextmanager
+async def worker(seed, http, url, *, capability=True, hook=None, credential=None, page_hook=None):
+    credential = credential or await enroll_worker(seed, http)
     async with connect(url, proxy=None, compression=None, open_timeout=3, close_timeout=1) as ws:
         await ws.send(json.dumps(dict(type="node.hello", protocolVersion="0.9.0", nodeId=seed["node"],
             name="Synthetic Browser Host", platform="linux", capabilities=["browser"],
-            capabilityManifest=[CAP] if capability else [], maxConcurrentRuns=1, sentAt=now(),
-            credential=enrolled.json()["credential"])))
+            capabilityManifest=([CAP]+([dict(id='browser.page',version=1,providerId='docker',constraints={})]
+                if page_hook is not None else [])) if capability else [], maxConcurrentRuns=1, sentAt=now(),
+            credential=credential)))
         assert json.loads(await ws.recv())["accepted"] is True
         calls = []
         async def reply():
@@ -118,8 +124,9 @@ async def worker(seed, http, url, *, capability=True, hook=None):
                     override = await hook(command)
                     if override is False: continue
                     if isinstance(override, dict): frame = override
+                extra = await page_hook(command) if page_hook is not None and command['action']['kind']=='agent' else {}
                 await ws.send(json.dumps(dict(type="browser.result", protocolVersion="0.9.0", nodeId=seed["node"],
-                    sessionId=command["sessionId"], requestId=command["requestId"], ok=True, frame=frame)))
+                    sessionId=command["sessionId"], requestId=command["requestId"], ok=True, **({"frame":frame}|extra))))
         task = asyncio.create_task(reply())
         try:
             yield calls, ws
@@ -331,6 +338,139 @@ def test_original_worker_binding_never_moves_to_another_account_state(seed):
                 assert response.status_code == 503
                 assert response.json()["error"] == "browser_original_host_unavailable"
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("change", ["rotate", "revoke"])
+@pytest.mark.parametrize("phase", ["before-intent", "before-send", "after-release"])
+def test_current_host_identity_is_required_at_every_effect_boundary(seed, change, phase):
+    async def change_identity():
+        # Another Server process does not share this registry's in-memory identity lock.
+        identity = PostgresWorkerHostIdentity(seed["dsn"])
+        if change == "revoke":
+            await identity.revoke(seed["token"], seed["node"])
+        else:
+            issued = await identity.issue(seed["token"], {"nodeId": seed["node"]})
+            await identity.enroll({"nodeId": seed["node"], "token": issued["token"]},
+                resolve_client_identity("2001:db8::" + uuid4().hex[:4]))
+
+    async def run():
+        async def hook(value):
+            if phase == "after-release" and value["action"]["kind"] == "release":
+                await change_identity()
+        async with server(seed) as (service, registry, http, url):
+            async with worker(seed, http, url, hook=hook) as (calls, _):
+                view = await opened(http, seed)
+                assert (await command(http, view, "take")).status_code == 200
+                original_binding = registry.browser_binding(seed["node"])
+                if phase == "before-intent":
+                    await change_identity()
+                elif phase == "before-send":
+                    send = registry.browser_command
+                    async def changed(*args, **kwargs):
+                        await change_identity()
+                        return await send(*args, **kwargs)
+                    registry.browser_command = changed
+                response = await command(http, view, "release")
+                assert response.status_code == 409, response.text
+                assert response.json() == {"error": "browser_host_identity_changed"}
+                # The stale socket remains live: the database check, not disconnect, refused it.
+                assert registry.browser_binding(seed["node"]) == original_binding
+                assert len([c for c in calls if c["action"]["kind"] == "release"]) == (phase == "after-release")
+                assert not any(payload.get("action") == "release" and payload.get("phase") == "completed"
+                               for _, payload in events(seed))
+                with pytest.raises(ControlError):
+                    async with service.gate.agent(seed["botId"]): pass
+    asyncio.run(run())
+
+
+def test_durable_profile_binding_survives_restart_and_refuses_reenrollment(seed):
+    async def run():
+        async with server(seed) as (_, _, http, url):
+            credential = await enroll_worker(seed, http)
+            async with worker(seed, http, url, credential=credential):
+                old = await opened(http, seed)
+                assert (await command(http, old, "take")).status_code == 200
+                await http.delete(f'/api/v1/browser-sessions/{old["id"]}')
+        async with server(seed) as (_, _, http, url):
+            async with worker(seed, http, url, credential=credential) as (calls, _):
+                assert (await command(http, old, "observe")).status_code == 404
+                view = await opened(http, seed)
+                assert view["control"] == "paused"
+                assert (await command(http, view, "take")).status_code == 200
+                assert (await command(http, view, "release")).json()["control"] == "available"
+                assert len(calls) == 2
+        async with server(seed) as (_, _, http, url):
+            # A fresh enrollment with the same id does not prove ownership of the old profile.
+            async with worker(seed, http, url) as (calls, _):
+                response = await http.post(f'/api/v1/bots/{seed["botId"]}/browser')
+                assert response.status_code == 409
+                assert response.json() == {"error": "browser_host_identity_changed"}
+                assert calls == []
+        bindings = [payload for kind, payload in events(seed) if kind == "BROWSER_HOST_BOUND"]
+        assert len(bindings) == 1
+        assert credential not in json.dumps(events(seed))
+        assert "credentialDigest" not in json.dumps(view)
+    asyncio.run(run())
+
+
+def test_legacy_browser_history_cannot_silently_bind_a_new_identity(seed):
+    async def run():
+        async with server(seed) as (_, _, http, url):
+            async with worker(seed, http, url) as (calls, _):
+                await opened(http, seed)
+                with psycopg.connect(seed["dsn"]) as db:
+                    db.execute("DELETE FROM run_events WHERE bot_id=%s AND type='BROWSER_HOST_BOUND'", (seed["botId"],))
+                response = await http.post(f'/api/v1/bots/{seed["botId"]}/browser')
+                assert response.status_code == 409
+                assert response.json() == {"error": "browser_original_host_identity_unverified"}
+                assert calls == []
+                assert not any(kind == "BROWSER_HOST_BOUND" for kind, _ in events(seed))
+    asyncio.run(run())
+
+
+def test_failed_open_cannot_commit_a_profile_binding_or_view(seed):
+    async def run():
+        async with server(seed) as (service, _, http, url):
+            async with worker(seed, http, url) as (calls, _):
+                original = service._event
+                async def fail(*_): raise StoreUnavailable("synthetic audit failure")
+                service._event = fail
+                response = await http.post(f'/api/v1/bots/{seed["botId"]}/browser')
+                assert response.status_code == 503
+                assert not service._sessions
+                assert not service._opening
+                assert not any(kind in ("BROWSER_HOST_BOUND", "BROWSER_OPENED") for kind, _ in events(seed))
+                service._event = original
+                await opened(http, seed)
+                assert calls == []
+    asyncio.run(run())
+
+
+def test_two_bots_keep_independent_host_bindings_and_control_leases(seed):
+    other = {**seed, "botId": str(uuid4())}
+    with psycopg.connect(seed["dsn"]) as db:
+        db.execute("INSERT INTO bots(id,name,role,status,computer_profile) VALUES(%s,'Other browser','Fixture','idle','docker-linux')",
+                   (other["botId"],))
+    async def run():
+        async with server(seed) as (service, _, http, url):
+            async with worker(seed, http, url) as (calls, _):
+                first, second = await opened(http, seed), await opened(http, other)
+                assert (await command(http, first, "take")).status_code == 200
+                async with service.gate.agent(other["botId"]): pass
+                assert (await command(http, second, "take")).status_code == 200
+                assert (await command(http, second, "release")).status_code == 200
+                with pytest.raises(ControlError):
+                    async with service.gate.agent(seed["botId"]): pass
+                assert (await command(http, first, "type", text="first bot only")).status_code == 200
+                assert calls[-1]["botId"] == seed["botId"]
+                assert len([event for event in events(seed) if event[0] == "BROWSER_HOST_BOUND"]) == 1
+                assert len([event for event in events(other) if event[0] == "BROWSER_HOST_BOUND"]) == 1
+    try:
+        asyncio.run(run())
+    finally:
+        with psycopg.connect(seed["dsn"]) as db:
+            db.execute("DELETE FROM run_events WHERE bot_id=%s", (other["botId"],))
+            db.execute("DELETE FROM bots WHERE id=%s", (other["botId"],))
 
 
 def test_browser_schemas_match_source_zod():

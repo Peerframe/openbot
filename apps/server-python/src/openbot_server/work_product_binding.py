@@ -35,7 +35,7 @@ class ProductWorkBinding:
             raise WorkConflict('product_scope_changed')
         await check_context(db, task, context.run_id, context.correction_token)
         source = await resolve_product_source(db, task, context.bot_id,
-            command_profiles=self.store.command_profiles)
+            command_profiles=self.store.command_profiles, browser_profiles=self.store.browser_profiles)
         if require_fence:
             key = temporal.derive_claim_id(accepted.namespace,accepted.workflow_id,accepted.engine_run_id,activity_id)
             claim = await (await db.execute('SELECT epoch FROM work_claims WHERE run_id=%s AND claim_id=%s',

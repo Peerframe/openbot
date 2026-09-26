@@ -131,10 +131,10 @@ export function validateSecurityWorkflow(workflow) {
 
   const setupNodeReferences = workflow.match(/actions\/setup-node@[^\s]+/g) ?? [];
   if (
-    setupNodeReferences.length !== 6 ||
+    setupNodeReferences.length !== 8 ||
     setupNodeReferences.some((reference) => reference !== SETUP_NODE_PIN)
   ) {
-    throw new Error("CI must use the exact reviewed setup-node pin in all six jobs.");
+    throw new Error("CI must use the exact reviewed setup-node pin in all eight jobs.");
   }
 
   const companionBuild = portableJob.indexOf("name: Build the pinned macOS Worker companion");
@@ -212,6 +212,33 @@ export function validatePythonProductWorkflow(workflow, migrationWorkflow) {
       throw new Error(`Python product CI must not bypass ${id}.`);
     return section;
   };
+  const temporal = job("temporal-qualification");
+  if (
+    !temporal.includes("--engine postgres-mtls --upgrade-archive") ||
+    !temporal.includes("--only-case product-owner-corrections")
+  )
+    throw new Error(
+      "Python Temporal CI must retain the original recovery and upgrade qualification.",
+    );
+  const browser = job("browser-product");
+  for (const fragment of [
+    "--filter=@openbot/node^... --filter=@openbot/db",
+    "experiments/work-journey/product_browser_probe.py",
+    "for recovery in control node replacement response-loss browser-restart; do",
+  ]) {
+    if (!browser.includes(fragment))
+      throw new Error(`Python browser CI must retain its real product recovery cases: ${fragment}`);
+  }
+  const egress = job("browser-egress");
+  for (const fragment of [
+    "experiments/browser-execution/egress-fixture.Dockerfile",
+    "experiments/browser-execution/qualify_egress.py",
+    "--fixture-image",
+    'sudo python3 -B "$root/run_probe.py" --docker /usr/bin/docker',
+  ]) {
+    if (!egress.includes(fragment))
+      throw new Error(`Browser egress CI must exercise the actual proxy: ${fragment}`);
+  }
   const container = job("python-product-container");
   for (const fragment of [
     "runner: ubuntu-24.04\n            arch: amd64",

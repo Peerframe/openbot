@@ -63,6 +63,8 @@ async def qualify(directory,bundle,remote_options=None):
             control=dict(issuer='product-control',keyId='product-control-key',privateKeyPath=str(control)),
             enforcement=dict(issuer='product-enforcer',keyId=route['enforcementKeyId'],publicKeyPath=str(pin))))
         await asyncio.to_thread(postgres.start);await asyncio.to_thread(postgres.migrate,ROOT)
+        with psycopg.connect(postgres.dsn) as db:
+            canonical_migrations = db.execute('SELECT count(*) FROM drizzle.__drizzle_migrations').fetchone()[0]
         engine=PostgresServer(directory,mtls=True)
         engine.release_overlay=ROOT/'experiments/work-journey/terminal-recovery/resources.yaml'
         await asyncio.to_thread(engine.start);client=await engine.connect()
@@ -164,7 +166,7 @@ async def qualify(directory,bundle,remote_options=None):
             remote_evidence=await remote.finish(binding)
             private(directory/'remote-result.json',remote_evidence)
         record=dict(case='product-command-remote-composition' if remote else 'product-command-local-composition',actualOwnerHTTP=True,actualWorkApproval=True,
-            actualPostgres=True,canonicalMigrations=43,mutualTLS=True,actualProductEntry=True,actualNodeClient=True,
+            actualPostgres=True,canonicalMigrations=canonical_migrations,mutualTLS=True,actualProductEntry=True,actualNodeClient=True,
             actualWebSocket=True,actualUnixTransport=True,actualHostCrypto=True,syntheticNative=remote is None,syntheticPeerIdentity=remote is None,
             linuxIsolationQualified=remote is not None,oneOriginalCommand=True,fullOutputSha256=hashlib.sha256(CSV).hexdigest(),
             independentlyReviewed=True,artifactsDownloaded=2,offlineReplay=True,modelCounts=counts)

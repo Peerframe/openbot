@@ -311,3 +311,64 @@ apps/server-python/.worker-venv/bin/python -B -u experiments/work-journey/produc
 ```sh
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=experiments/work-journey:experiments/linux-execution:apps/server-python/src:apps/agent-runtime-python/src apps/server-python/.worker-venv/bin/python -m pytest -p no:cacheprovider -q experiments/work-journey/test_product_command_remote.py experiments/work-journey/test_product_host_fixture.py
 ```
+
+2026-09-26刷新：同一成对停写恢复探针已通过44条迁移、47张Control表／111行，见
+[schema44证据](evidence/active-paired-restore-schema44.json)。明确授权的一次性product3也已通过
+真实Linux产品命令链路、原期限与清理、产物及重放检查；模型HTTP仍为合成，见
+[product3证据](evidence/product-command-remote-product3.json)。已消费身份不得重跑；两项结果均不
+代表通用浏览器出口或默认后端切换已经验收。
+
+
+## 经审批的浏览器产品验收
+
+`product_browser_probe.py`连接真实 Python 产品入口、Node／Docker适配器、Chromium、PG 和
+mTLS Temporal，测试页面及七次模型／审核响应为合成内容，无私人档案或付费模型账户。
+它分别批准导航／填字／点击／读取，在点击批准前关闭真实 SDK Worker，保留同一个 Node 连接
+并恢复 Worker，核对表单只提交一次、报告可下载，最后重放历史且没有新增动作。
+这是可信本地页面验收，不代表公网出口或隔离 Linux Host 通过，见[结果](evidence/product-browser-pages.json)。
+
+准备 POSIX、Docker、项目支持的 Node／npm、Bun1.3.14、OpenSSL 和 Python3.12。从新克隆运行：
+
+```sh
+npm ci
+npm exec -- turbo run build --filter=@openbot/node... --filter=@openbot/db
+python3.12 -m venv /tmp/openbot-browser-worker
+/tmp/openbot-browser-worker/bin/python -m pip install -r apps/server-python/requirements-worker.lock
+python3 -B experiments/work-journey/product_browser_upstream.py /tmp/openbot-browser-upstream
+npm ci --ignore-scripts --prefix /tmp/openbot-browser-upstream
+PLAYWRIGHT_BROWSERS_PATH=/tmp/openbot-browser-binaries node /tmp/openbot-browser-upstream/node_modules/playwright/cli.js install chromium
+/tmp/openbot-browser-worker/bin/python -B experiments/work-journey/product_browser_probe.py \
+  --output /tmp/openbot-browser-product \
+  --upstream /tmp/openbot-browser-upstream \
+  --browsers /tmp/openbot-browser-binaries
+```
+
+选择尚不存在的输出／源码目录。新 Linux 环境可用 `install --with-deps chromium`安装系统库。
+准备器检查每份固定公开源码和 MIT 许可证哈希，只修改回环监听地址并提供独立的依赖锁。
+验收运行前再次检查，不启动用户日常浏览器；无 GitHub 凭据的公开下载也已验证。
+独立的浏览器 CI 作业运行相同流程，只上传 `RESULT.json`。日志、临时凭据、数据库、历史与合成浏览器
+档案保留在私有输出目录；`finally`关闭 API／Node／上游浏览器／Temporal 并删除独占数据库，
+依赖可复用。权限／取消／纠正回归保存在 `test_work_browser_page_actions.py`和 Docker 适配器测试中。
+
+补充旧审批失效验收时，分别传入 `--recovery control`、`--recovery node` 或
+`--recovery replacement`，每次使用新的输出目录。第一种杀掉并重启完整的独占 Control 进程；
+后两种杀掉并重新创建真实 Node 子进程，分别保留原凭据或撤销后重新登记同一 Node id。
+核对实际子进程 PID 和强制退出；独占浏览器进程继续运行，不据此宣称浏览器／Host 替换通过。
+连接改变后才批准原待执行点击，要求没有点击派发／提交，然后取消原 Task 并重放，不能新增动作。
+Control／Node 模式还在另一次中断前取得人工控制，验证旧窗口被拒绝、暂停状态保留，原30秒
+租期届满后必须明确重新接管和交还。新凭据不能继承原浏览器绑定。每次运行有6分钟截止及
+夹具清理；CI 使用独占资源运行各模式，只保留不含内容的结果。
+
+`--recovery response-loss` 在独占上游前加入仅监听回环的故障夹具。批准点击只转发一次，
+确认上游成功及独立目标提交后，断开返回连接。产品必须保留 unknown，不重发点击，取消时
+关闭权限，重放不得新增调用。`--recovery browser-restart` 完成已审批 Task 后取得人工控制，
+优雅关闭准确的测试浏览器服务及 Chromium，再从相同私有档案创建新进程。检查旧浏览器已退出，
+localStorage、有效期 Cookie 和 IndexedDB 保留，会话 Cookie 清除，人工暂停保持到明确交还。
+两个真实本地用例均通过，见[安全结果](evidence/product-browser-interruption.json)。此处不证明
+强制杀浏览器后的恢复、档案跨 Host 迁移、公网出口或 Linux 隔离；丢回执夹具不是网络安全边界。
+
+独立的 `--recovery linux-replacement` 使用明确配置的 SSH 回环夹具，执行相同的真实产品审批、
+回放与档案恢复检查。固定依赖、TLS 策略、原生期限和清理见
+[原生组合验收](../browser-execution/composition/README.zh-CN.md)。Control／Node 凭据留在本地。
+产品 `RESULT.json` 中 `remoteNativeCleanupPending:true` 表示暂未完成远端清理验收，
+必须结合配对的原生结果才能认定隔离生命周期通过。仓库不会自动选择个人 SSH 宿主或安装环境。

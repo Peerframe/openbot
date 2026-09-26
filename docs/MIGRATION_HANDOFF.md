@@ -1,94 +1,75 @@
 # Architecture migration handoff — 2026-09-26
 
-## Current checkpoint — draft published; browser component and product container qualified
+## Current checkpoint — isolated Linux browser product
 
-- Delivery: [draft PR #96](https://github.com/Peerframe/openbot/pull/96), branch
-  `codex/python-migration-draft-20260925`, initial published head `4beb58b1adac1a68b6c098c84fa116b21a8d9f77`.
-  The migration history and integrated product are on GitHub. Follow-up code is committed through
-  `1978bcb4d46160ecd75a0c862328495876a71e53`; this handoff records its hosted readback and subsequent fixture repairs. No merge, default-backend change, installed-app
-  replacement or production deployment is authorized by this checkpoint.
-- Architecture: the Owner confirmed the 2026-09-24 OpenBot design review v2. Module ownership and
-  factual documentation corrections are integrated. Server remains authoritative; Temporal owns
-  durable continuation. DSH assisted transport development. Whole-repository package rearrangement,
-  visual-system work and marketplaces remain follow-ups, not prerequisites for this draft.
-- Product: Python Owner APIs and retained React clients cover identity, workspace, model profiles,
-  knowledge, conversations, schedules, files, processors, plugins/MCP and Worker Host. Native Tasks
-  retain immutable Owner-selected attachment/knowledge/plugin/web/collaborator scope; children only
-  narrow it. Real HTTP/PostgreSQL/mTLS synthetic parent/child, approval, correction, cancellation,
-  terminal/commit-loss recovery, publication and offline replay journeys passed. Their synthetic
-  providers or Native peers remain explicitly scoped; they do not establish remote Linux completion.
-- Data and real model evidence: canonical schema is43 entries through0042. Paired stopped synthetic
-  restore passed for46 Control tables/110 rows,40 history plus3 visibility tables,13 paired files,
-  36 TLS files and six wrong-key negatives; original identities and offline replay survived.
-  The one completed Kimi Task used four receipts and8,854 tokens and downloaded a231-byte report.
-  Do not resubmit it. Live migration/atomic backup and production conversion are not established.
-- Real Linux command: native case2 already passed exact CSV output, signed receipt and original
-  50-second lifetime/cleanup, with synthetic Control authority. Product1 stopped before reservation
-  with unclassified original stderr loss. The authorized product2 attempt also stopped before any
-  run/Action reservation: `product_host_fixture.py` supplied a1024-byte parser class unsupported by
-  the fixed codec. It is corrected to the existing512-byte class; six real-stdin cases and161 focused
-  controller/Host tests pass. Product2 keys, public bundle, processes/socket/listener and test units
-  are reconciled; the10 existing containers and firewall semantics are unchanged. See
-  [bounded failure evidence](../experiments/work-journey/evidence/product-command-remote-product2-attempt.json).
-  Both identities are consumed. A new four-file product3 packet is prepared; its exact upload and
-  one150-second test authorization is pending. Never silently rerun product1 or product2.
-- Browser component: the authorized fixed-image CDP case passed on real Linux x86-64/runsc.
-  Two actual Chromium launches rendered synthetic DOM/PNG and retained the intended profile;
-  namespace/PID/network/seccomp and actual runtime arguments were checked. The original180-second
-  unit lifetime was observed stopping54ms after expiry; all owned resources were removed and the
- 10 existing containers/firewall semantics were unchanged. Early transient observation errors remain
-  in the evidence. This establishes the bounded component, not product authority/profile ownership,
-  egress or human takeover. See [REAL_CDP_RESULT.json](../experiments/browser-execution/REAL_CDP_RESULT.json).
-- Product container: a separate Python-first image and opt-in Compose are integrated. The approved
-  `OPENBOT_CONTROL_HOST` accepts only127.0.0.1(default) or0.0.0.0; invalid values fail before DB/key
-  initialization. Local Linux arm64 image smoke passed real Owner/Web,43 migrations, DOCX/PDF/blank
-  OCR, original files/keys/schema across SIGTERM/restart, four invalid-startup cases and owned cleanup.
-  No TS business Server/oracle is shipped. Both native Linux amd64 and arm64 CI built and smoke-tested the product image on817d46c.
-  Configured Temporal and deployment have separate boundaries. See [container result](../deploy/server/PRODUCT_CONTAINER_RESULT.json).
-- Desktop: the refreshed canonical43/63-package unsigned arm64 Preview at1978bcb passed
-  staged/packaged API startup, parent-EOF shutdown, unsafe-directory refusal, restart and cleanup.
-  All159 Python source modules and lifecycle scripts/lock match that commit; ASAR/controller hashes
-  match the preceding candidate. See [refresh evidence](../experiments/work-journey/evidence/desktop-preview-refresh.json).
-  No new mTLS Worker, GUI, Keychain, signing or installation evidence is claimed.
-- CI and tests: [run36160191190](https://github.com/Peerframe/openbot/actions/runs/36160191190)
-  at1978bcb passed all three Portable jobs, Windows Host build, validation, database, security and
-  both native Server-container jobs. Windows completed actual installation and native Server lifecycle.
-  Synthetic migration also passed. Python passed its exact Worker bootstrap and owned PostgreSQL
-  base826 cases (+2 optional skips) and Worker1489 cases (+1 missing-history skip), then failed two
-  real Unix-socket fixtures using macOS-only `/private/tmp`. The aggregate therefore failed.
-- Current CI repair: retain short canonical `/tmp` socket paths on Linux/macOS. Integrate DSH's
-  test-only `SubprocessCommander(binary=sys.executable)` implementation so environment-filtering
-  assertions do not require a Docker CLI; missing-executable refusal remains covered and unchanged.
-  A separate disposable Linux fixture's `/tmp` was verified `noexec`; enable `exec` only for that
-  fixture's synthetic shell execution, without changing product code or security assertions.
-  The actual Linux follow-up passed198 execution,153 pytest and172 journey cases; `npm run check`
-  passed with unchanged Turbo tasks cached. New-head hosted qualification remains required; local
-  passes are not overall CI acceptance.
-- Follow-up hosted80e2b90: all individual checks except Python passed, including complete Windows
-  installation/native lifecycle. Python passed the repaired unit/socket gates and four real
-  PostgreSQL/mTLS scenarios, then `product-concurrent-runs` exposed an old exception-text assertion.
-  DSH implemented the exact current sanitized product error check (`OpenBotTaskFailed`,
-  `execution_failed`, non-retryable, no underlying cause); the reference error-chain check and every
-  cancellation, accounting, effect, artifact and replay assertion remain. Product code is unchanged.
-  Corrected concurrent, deferred-approval, closed-repair and Owner-correction scenarios all passed
-  locally with real HTTP/PostgreSQL/mTLS, original counters/downloads and offline replay.
-  `npm run check` passed again; new-head hosted checks still gate acceptance.
-- Retirement: publisher/MCP tooling and parser/runtime dependencies are separated. Differential
-  tests use the immutable59-file `tests/oracles/legacy-server` snapshot with no product entry.
-  The replaced TS business Server leaves main build/CI/release only after the remaining command,
-  browser product/handover and final candidate checks. Keep the recovery commit and TS Node/Provider
-  drivers; do not enable an unqualified path to declare retirement complete.
-- Resources and ownership: the CI task owns follow-up fixes in its independent worktree; the original
-  migration worktree and handed-off patch remain preserved. DSH receives only bounded public/synthetic
-  materials. No other task writes the CI-owned files. Retained PG `openbot-migration-c8b2-30b7e37a` at51899 holds prior terminal/native/Kimi
-  evidence and must remain. UI API33551/Vite33552 contain synthetic data. No VPS test window is
-  active. Do not purge shared Docker cache: an early fixture image entered it before private
-  containerd was corrected. Current remote tests and local container smoke have cleaned owned
-  resources. Original source/data/configuration and consumed stage tombstones remain preserved.
-- Next bounded checkpoint: finish all hosted checks, including the aggregate, on the same draft.
-  Product3 still requires its exact authorization; product browser/handover and package/retirement
-  acceptance remain separate migration work. Reuse accepted evidence; do not repeat successful live-model,
-  native case2 or CDP runs merely because the task resumes.
+- Delivery: PR96 merged at `b186c11`. Continue draft [PR98](https://github.com/Peerframe/openbot/pull/98)
+  on `codex/browser-product-integration-20260926`. All17 individual hosted checks plus aggregate
+  `check` passed on `550a981`. New composition work is not covered by that earlier green head.
+  Root owns this increment; the separate CI task and DSH implementation tasks are complete.
+- Linux browser: actual Work/Node/PostgreSQL/mTLS Temporal passed four approvals, navigation,
+  Unicode input, one click, read/report/download and history replay against actual Bun/Chromium
+  through Squid7.7 and runsc. Worker stop/approval/resume executed the original click once.
+  Graceful container replacement proved old exit before profile reuse, retained localStorage,
+  expiring cookie and IndexedDB, dropped session cookie, and preserved human pause until return.
+  The original600-second unit expired automatically; cgroup and owned runtime closed, with9
+  existing containers and host network state unchanged. See the [paired safe result](../experiments/work-journey/evidence/product-browser-linux.json).
+- TLS/network: matching Linux NSS3.98 fixed the synthetic CA trust mismatch. Real trusted HTTPS
+  passed; wrong hostname and unknown CA failed without bypass flags. Thirteen real container
+  socket cases passed. Flushing native admission revoked the same existing verified TLS proxy
+  tunnel with no new target hit. Earlier real20-case Squid and23-case native routing results remain
+  separately scoped evidence. See [composition](../experiments/browser-execution/composition/README.md)
+  and [research](research/browser-egress-policy.md). No public Internet or general Host installer
+  is qualified. No host trust store, packages or production firewall was changed.
+- Native attempts: long Unix path and missing helper import failed before start; missing Docker
+  config alias failed after private load; public HTTP was correctly rejected by product policy;
+  the macOS-built NSS database then failed Chromium TLS. All consumed attempts were diagnosed and
+  closed; no identity was reused. Final code uses the reviewed manifest/config fallback and Linux
+  NSS fixture. Never rerun command product1/2/3 or browser comp1–comp5 identities.
+- Local browser evidence remains accepted: Web at1440×1100 and390×844, full Owner navigation/input/
+  key/scroll/take/return; Control SIGKILL, two Node SIGKILLs, credential replacement refusal;
+  successful click followed by destroyed response stays unknown with no retry. These cases retain
+  their precise local scope. Abrupt browser loss and profile transfer to another machine are open.
+- Linux command product3 passed actual Work→Node→protected Host, Owner approval, exact CSV,
+  independent synthetic-model review, two downloads and replay under original50/150-second limits.
+  Its Node was revoked and resources removed. Do not rerun. The prior real Kimi Task used four
+  receipts/8,854 tokens and downloaded231 bytes; do not resubmit it.
+- Restore: canonical44 paired cold restore passed47 Control tables/111 rows,40 history plus3
+  visibility tables,13 files,36 TLS files and six key negatives, original approval/unknown/cancel
+  semantics and two replays. Browser-profile table was empty, so it does not qualify profile recovery.
+- Preview: canonical45 candidate contains163 matching Python modules and SQL. Packaged API/PG,
+  login, restart, parent EOF, invalid configuration refusal/cleanup and two mTLS Worker starts passed.
+  [Artifact evidence](../experiments/work-journey/evidence/desktop-preview-schema45.json).
+  Current GUI/Keychain and full packaged inference are still unqualified. Computer Use explicitly
+  reports the Mac is locked and automatic unlock failed. The user has been asked to unlock and
+  open the uninstalled Preview; no reply yet. Earlier GUI evidence belongs to another artifact.
+- Checks: composition boundary35 Python tests pass; full `npm run check` passed with20 cached build
+  tasks and actual repository audits. TLS positives/negatives ran in actual local Chromium and
+  native Linux. The repository remote Node fixture now requires explicit operator `sshTarget`
+  instead of publishing the personal host; four validation preflights pass. The executed fixed-host
+  fixture remains in private evidence; the selected SSH command is unchanged.
+
+### Remaining retirement work
+
+1. Publish this accepted increment and qualify its exact hosted CI head.
+2. Qualify the current Preview GUI, native Keychain and complete packaged inference. Mac unlock is
+   the immediate external blocker; do not replace it with headless evidence or old artifact evidence.
+3. Remove the replaced TS business Server and redundant exploration paths only after replacement
+   acceptance. Source inventory finds129 tracked `apps/server` files. Concrete integration points
+   remain in root dev/check scripts, legacy Dockerfile/Compose, Desktop native preparation and
+   `main.ts` fallback, and legacy CI jobs. Windows/x64 local Desktop still uses the old Server;
+   choose and document a supported replacement/remote-client capability before removing that path.
+   Keep the59-file frozen oracle, migration histories, TS Node/Providers, publisher/MCP tools and
+   credential helpers. Preserve `550a981` as an additional source recovery checkpoint.
+4. Run the affected final checks and publish the retirement change. Signing/installed distribution,
+   production data conversion and default activation remain separate visible actions; no user data
+   or existing installation is part of disposable fixture cleanup.
+
+Keep the Owner-confirmed2026-09-24 design review v2: Server owns authority and Temporal continuation.
+Broader repository rearrangement, visual redesign and marketplaces remain later work. Preserve six
+old stashes, retained migration PG and all unrelated user data/configuration. No external writer owns
+these files. Local private packet: `/private/tmp/openbot-browser-linux-composition-20260926`;
+actual checkout: `/Users/yxflc/.codex/worktrees/c8b2/openbot`. Completed execution used `execute6.py` and
+`product-linux-nss`; no native window or test process is active. Do not restart consumed identities.
 
 The stage notes below are historical evidence, not the current work order.
 

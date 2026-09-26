@@ -1,0 +1,185 @@
+{
+  "format": "openbot-product-browser-linux/v1",
+  "accepted": true,
+  "date": "2026-09-26",
+  "sourceParent": "550a9813b5a64c21412e82cb89453b3402d898e9",
+  "product": {
+    "accepted": true,
+    "scope": "synthetic page on isolated Linux Chromium through Squid and native packet enforcement",
+    "actualProductEntry": true,
+    "actualNode": true,
+    "actualChromium": true,
+    "actualPostgres": true,
+    "mutualTLS": true,
+    "canonicalMigrations": 45,
+    "actualWorkApprovals": 4,
+    "modelHTTP": "synthetic",
+    "browserCalls": {
+      "navigate": 1,
+      "type": 1,
+      "click": 1,
+      "read": 1
+    },
+    "modelCalls": {
+      "navigate": 1,
+      "type": 1,
+      "click": 1,
+      "read": 1,
+      "report": 1,
+      "final": 1,
+      "review": 1
+    },
+    "approvedWhileWorkerStopped": true,
+    "sameNodeConnectionRetained": true,
+    "originalClickOnlyOnce": true,
+    "actualTargetIndependentState": true,
+    "reportDownloaded": true,
+    "offlineReplay": true,
+    "publicEgressQualified": false,
+    "isolatedLinuxBrowserProduct": true,
+    "mode": "linux-replacement",
+    "browserProcessRestarted": true,
+    "browserServiceProcessRestarted": true,
+    "originalBrowserExitedBeforeReplacement": true,
+    "samePrivateProfileReused": true,
+    "localStorageRetained": true,
+    "expiringCookieRetained": true,
+    "sessionCookieDropped": true,
+    "indexedDBRetained": true,
+    "humanPauseSurvived": true,
+    "explicitReturnRequired": true,
+    "agentCallsUnchangedAfterBrowserRestart": true,
+    "actualContainerReplacement": true,
+    "remoteNativeCleanupPending": false,
+    "ownedFixturesClosed": true
+  },
+  "native": {
+    "accepted": true,
+    "actualProductJourney": true,
+    "actualRunsc": true,
+    "actualSquid": true,
+    "existingContainerCount": 9,
+    "format": "openbot-linux-browser-composition",
+    "kernelSocketCases": [
+      {
+        "denied": true,
+        "name": "direct-public"
+      },
+      {
+        "denied": true,
+        "name": "direct-public-v6"
+      },
+      {
+        "denied": true,
+        "name": "private"
+      },
+      {
+        "denied": true,
+        "name": "private-v6"
+      },
+      {
+        "denied": true,
+        "name": "metadata"
+      },
+      {
+        "denied": true,
+        "name": "management"
+      },
+      {
+        "denied": true,
+        "name": "gateway"
+      },
+      {
+        "name": "public",
+        "status": 200
+      },
+      {
+        "name": "public-v6",
+        "status": 200
+      },
+      {
+        "name": "private-dns",
+        "status": 403
+      },
+      {
+        "name": "metadata-dns",
+        "status": 403
+      },
+      {
+        "name": "management-dns",
+        "status": 403
+      },
+      {
+        "name": "wrong-domain",
+        "status": 403
+      }
+    ],
+    "nativeDeadlineSeconds": 600,
+    "originalNativeExpiryVerified": true,
+    "ownedRuntimeRemoved": true,
+    "productionUnchanged": true,
+    "publicInternetQualified": false,
+    "version": 1
+  },
+  "tls": {
+    "accepted": true,
+    "cases": [
+      {
+        "case": "trusted",
+        "status": 200
+      },
+      {
+        "case": "wrong-host",
+        "status": 502
+      },
+      {
+        "case": "unknown-ca",
+        "status": 502
+      }
+    ],
+    "certificateErrorsIgnored": false
+  },
+  "existingTunnelRevocation": {
+    "accepted": true,
+    "revoked": true,
+    "sameSocket": true,
+    "verifiedTLS": true
+  },
+  "replacement": {
+    "newContainer": true,
+    "oldContainerExited": true,
+    "oldExitCode": 0,
+    "samePrivateProfile": true
+  },
+  "originalLifetime": {
+    "cgroupEmpty": true,
+    "result": "timeout",
+    "restarts": 0,
+    "observedStopLatencySeconds": 0.34519733767956495
+  },
+  "executedSourceHashes": {
+    "socket_probe.mjs": "530db1b74ca829313d5baf6e55a3fc722b6c8d3b4a1b1f139760d7e4753c0a64",
+    "seccomp_profile.json": "d00ad84f5a67031fe2bb64de8d77a5ad9c06adb82935ebdb3c18b5f7ba60a5d0",
+    "bun": "a8f9ebd1770ddc8e55dab7a68d4ec1ec1eebf374bb97cc65cf2c3cb373fc6791",
+    "api/package-lock.json": "d4a30a623f84824ccc644429b1c7179cbbeb57180f19699053af273673464c6a",
+    "api/src/index.ts": "3949eec59fa1dbaa8df2a4a7380a10352e4c6dfc3231b0bc3e7a170b81349655",
+    "api/src/profiles.ts": "41759ff43c242a0c89374ea902e11e8838197cef8a48378de2825f85bf0f539c",
+    "run.py": "cf996b56b7469106b8bde659a29b24c2c527501ecb8726c5c266a9990ac50baf",
+    "companion.py": "47189e724269102226b1ffcc6cd611aef9dcb42c3e69552caa109d894421a131",
+    "fixture.nft": "c746ab6075dc6f917ed264357e34852801d2b4cdd517eb65457cb04c27662190",
+    "browser-entry.mjs": "79e2a478e1f0e0f1e2932057ef07d98f986c96cb3022b28a6ca5f94c5f39bd41",
+    "nssdb/cert9.db": "d71a75e65849ae1b684e105ed38ab146438f07016a169e1d408cafa8b5cf78ba",
+    "nssdb/key4.db": "7f211f445949f9582c5060fc2ecfb1dbcca05de8a5a7d776470eb7886d754867",
+    "tunnel_probe.mjs": "bc8791cd74cd2dda267d2bad0aa625c4ed67aafd493bd8b958322de60e6693db",
+    "nssdb/ca.pem": "7026a971ac53031d0b232ba1891f91a48e733ec1aa4d91a9b4117fddccfb6562"
+  },
+  "scopeLimitations": [
+    "Disconnected synthetic HTTPS origins only; no public Internet browsing claim",
+    "Synthetic model responses, not live visual inference",
+    "Graceful container replacement on the same machine and private profile; not abrupt loss or cross-machine transfer",
+    "Experimental reviewed seccomp derivative; not an approved production Host installer",
+    "Native GUI, current Keychain, packaged inference and final source retirement remain separate gates"
+  ],
+  "localExecutedFixtureSha256": "519df554bb870fa16866a3a48cb9e62c23ce2d38e8a377ed94925b51b8188b30",
+  "publicationChange": "Remote Node fixture now requires explicit operator sshTarget instead of the fixed personal host; four preflight checks passed, actual SSH command unchanged."
+}

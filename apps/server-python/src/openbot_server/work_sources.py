@@ -38,8 +38,10 @@ class WorkSourceAdmission:
             self.command_policy_id = command_policy_id
 
     async def admit(self, db, run):
-        command = run.executionProfile == 'docker-linux'
-        if run.executionProfile not in ('none', 'model') and not (command and self.command_route is not None):
+        isolated = run.executionProfile == 'docker-linux'
+        browser = isolated and self.store.browser_profiles is not None and run.botId in self.store.browser_profiles.routes
+        command = isolated and not browser and self.command_route is not None
+        if run.executionProfile not in ('none', 'model') and not (command or browser):
             raise WorkConflict('isolated_execution_unqualified')
         task = await self.store.create_in_transaction(db, bot_id=run.botId,
             objective=run.instruction, token_limit=self.token_limit,
@@ -51,6 +53,8 @@ class WorkSourceAdmission:
                 raise WorkConflict('source_content_changed')
             if command:
                 await self.store.command_profiles.resolve_in_transaction(db, await self.store._task(db, task['id']))
+            if browser:
+                await self.store.browser_profiles.resolve_in_transaction(db, await self.store._task(db, task['id']))
             return task
         await db.execute('INSERT INTO work_sources(task_id,legacy_run_id,channel_id,source_message_id) '
             'VALUES (%s,%s,%s,%s)', (task['id'], run.id, run.channelId, run.sourceMessageId))
@@ -66,6 +70,8 @@ class WorkSourceAdmission:
                     route=self.command_route, credential_digest=identity['credential_digest'], policy_id=self.command_policy_id)
             except CommandContractError:
                 raise WorkConflict('command_profile_invalid') from None
+        elif browser:
+            await self.store.browser_profiles.capture_in_transaction(db, await self.store._task(db, task['id']))
         # The selected product Worker implements the correction protocol before its first model
         # request. Enabling now preserves Owner steering while the initial handoff is still queued.
         await db.execute('UPDATE work_runs SET corrections_enabled=true WHERE task_id=%s', (task['id'],))

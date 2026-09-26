@@ -1,0 +1,43 @@
+{
+  "accepted": true,
+  "scope": "trusted synthetic page on local Chromium",
+  "actualProductEntry": true,
+  "actualNode": true,
+  "actualChromium": true,
+  "actualPostgres": true,
+  "mutualTLS": true,
+  "canonicalMigrations": 45,
+  "actualWorkApprovals": 4,
+  "modelHTTP": "synthetic",
+  "browserCalls": {
+    "navigate": 1,
+    "type": 1,
+    "click": 1,
+    "read": 1
+  },
+  "modelCalls": {
+    "navigate": 1,
+    "type": 1,
+    "click": 1,
+    "read": 1,
+    "report": 1,
+    "final": 1,
+    "review": 1
+  },
+  "approvedWhileWorkerStopped": true,
+  "sameNodeConnectionRetained": true,
+  "originalClickOnlyOnce": true,
+  "actualTargetIndependentState": true,
+  "reportDownloaded": true,
+  "offlineReplay": true,
+  "publicEgressQualified": false,
+  "isolatedLinuxBrowserProduct": false,
+  "ownedFixturesClosed": true,
+  "platform": "darwin-arm64",
+  "chromium": "151.0.7922.34",
+  "bun": "1.3.14",
+  "playwright": "1.62.1",
+  "upstreamCommit": "257c1280d684089be9adb0b35cce262efc7064bf",
+  "sourceParent": "63242fc06d9ba3efe018509f7e0868ac293ea7f7",
+  "sourceState": "working-tree browser page integration; see containing commit"
+}

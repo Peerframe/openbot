@@ -50,10 +50,12 @@ export class BrowserCoordinator {
   }
 
   async command(command: BrowserCommand, signal: AbortSignal): Promise<BrowserFrame> {
+    if (command.action.kind === "agent") throw new Error("Work browser composition required.");
     return this.#serial(command.botId, async () => {
       signal.throwIfAborted();
       if (Date.parse(command.expiresAt) <= Date.now()) throw new Error("Expired browser command.");
       const { botId, sessionId, action } = command;
+      if (action.kind === "agent") throw new Error("Work browser composition required.");
       const call = (path: string, body?: unknown, requestSignal = signal) =>
         this.request(botId, path, requestSignal, body);
       const held = this.#control.get(botId);

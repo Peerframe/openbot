@@ -10,9 +10,54 @@ Requirements: a repository-supported Node version with built-in `node:zlib` CRC3
 npm run test:browser:boundary
 ```
 
-It runs15 Node synthetic CDP/artifact tests and25 Python command/authority/budget tests. The existing Python/Linux CI runs the same command. It never invokes the wrapper's executable entry point or launches a browser/container. The wrapper resolves native helpers from a complete adjacent `reviewed/` directory when explicitly packaged for the remote test; otherwise it uses the exact sibling `../linux-execution`. An existing incomplete `reviewed/` is rejected. It does not search arbitrary directories. The three helpers are not duplicated here and their reviewed hashes remain checked.
+It runs15 Node synthetic CDP/artifact tests and35 Python command/authority/budget/policy tests. The existing Python/Linux CI runs the same command. It never invokes the wrapper's executable entry point or launches a browser/container. The wrapper resolves native helpers from a complete adjacent `reviewed/` directory when explicitly packaged for the remote test; otherwise it uses the exact sibling `../linux-execution`. An existing incomplete `reviewed/` is rejected. It does not search arbitrary directories. The three helpers are not duplicated here and their reviewed hashes remain checked.
 
 `fixtures/v3-construction.json` is data generated from the previous OpenBot MIT wrapper's pure construction methods, with source/hash provenance. It replaces a duplicate historical executable in the original temporary test packet. The check preserves the prior command/configuration boundary, apart from the already reviewed explicit `compress=false` log option.
+
+## Actual egress proxy policy
+
+The strict compiler and real Debian Squid7.7-1 passed20 cases in a disposable Linux amd64
+`network=none` container: HTTP over IPv4/IPv6 and CONNECT reached owned canaries;17 wrong-source,
+host, port, protocol, numeric-host and forbidden-destination cases returned403 with zero target
+requests. Private, metadata, management and IPv6 canaries were directly reachable before the proxy
+checks. Parse warnings/coercions fail the test. The proxy exited cleanly and its container was removed.
+See [safe evidence](REAL_EGRESS_RESULT.json) and [research](../../docs/research/browser-egress-policy.md).
+This is proxy-only evidence; direct sockets, DNS rebinding, actual host packet rules and revoke of
+preexisting tunnels are separate gates. No production browser scope is widened.
+
+With Docker and network access for the build, a fresh checkout can reproduce it without credentials:
+
+```sh
+docker build --platform linux/amd64 -f experiments/browser-execution/egress-fixture.Dockerfile \
+  -t openbot-egress-fixture:local experiments/browser-execution
+python3 -B experiments/browser-execution/qualify_egress.py \
+  --fixture-image "$(docker image inspect openbot-egress-fixture:local --format '{{.Id}}')" \
+  --output /tmp/openbot-egress-result
+```
+
+Choose a new output directory. The runner uses only synthetic inputs,150-second execution and
+bounded cleanup; NET_ADMIN applies only inside its own disconnected network namespace to add
+loopback canary addresses. It publishes no ports and changes no host/VPS networking. Required CI
+runs this actual proxy fixture separately from browser recovery. Keep Squid/Debian and Node notices
+with the image; this fixture image is not the production browser/Host image.
+
+## Native kernel routing and connection revocation
+
+The supplied Ubuntu24.04/nftables1.0.9 host passed23 forwarding cases plus client-to-proxy
+connection/revocation. All canaries were reachable before filtering; forbidden paths then produced
+zero target receipts, and the already-open socket stopped delivering after admission was removed.
+The original150-second systemd unit and all children closed. Existing9 containers, firewall semantics
+and host forwarding settings were unchanged. See [safe result](REAL_KERNEL_NETWORK_RESULT.json).
+These are TCP/UDP echo canaries, not a replacement proxy. Squid composition, actual Chromium/runsc
+and product authorization remain separate acceptance gates.
+
+The required egress CI job reproduces the native fixture on a disposable Ubuntu24.04 systemd
+runner with nft/iproute2/iptables and Docker's snapshot-only CLI. It stages the three files in
+`native-network/` at the fixed, single-use root-private directory declared by the fixture, then
+invokes `run_probe.py --docker /usr/bin/docker`. No Docker container or outside route is created by
+this native check. Do not run it over an existing result directory or reuse a consumed unit identity.
+The exact deployment and resource arguments live in the launcher and CI. The kernel probe refuses
+any process outside its original unit or in PID1's network namespace before changing links/rules.
 
 ## Candidate contract
 
@@ -43,3 +88,11 @@ Bounds are DOM16KiB, PNG192KiB with CRC and bounded exact pixel-decompression va
 These files do not provision a host or authorize an execution. The wrapper intentionally retains the fixed qualification site's reviewed paths and original single-use identity/reservation rules; it is not a general installer. A real case requires a separately authorized isolated host, exact image/archive/binary pins, root-owned inputs, exclusive window, capacity and production before/after comparison, then original Invocation/cgroup cleanup. A partial/unknown case must never be retried under another name or by relaxing sandbox permissions. No remote command is part of npm/CI.
 
 The CDP framing narrowly adapts Playwright v1.62.1 transport behavior. Required [Apache license](playwright-LICENSE), [notice](playwright-NOTICE), [modification notice](DERIVATIVE_NOTICE.md) and [primary-source hashes](UPSTREAM_SOURCES.json) are retained. OpenBot orchestration and tests remain under the repository MIT license.
+
+## Native browser product composition
+
+The separate600-second composition passed actual HTTPS Chromium/runsc/Squid, product approvals,
+report/replay, private-profile container replacement and established TLS tunnel revocation, with
+original native expiry and unchanged production state. See [paired evidence](../work-journey/evidence/product-browser-linux.json)
+and the [fixture and scope](composition/README.md). Earlier component results retain their original
+scope. This adds no general public egress or production Host installation claim.

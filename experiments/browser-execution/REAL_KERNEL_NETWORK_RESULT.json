@@ -1,0 +1,173 @@
+{
+  "format": "openbot-native-kernel-egress",
+  "version": 1,
+  "accepted": true,
+  "nativeDeadlineSeconds": 150,
+  "noExternalRoute": true,
+  "cases": [
+    {
+      "source": "client",
+      "target": "public-v4",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "client",
+      "target": "public-v6",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "client",
+      "target": "private-v4",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "client",
+      "target": "private-v6",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "client",
+      "target": "metadata",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "client",
+      "target": "gateway",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "client",
+      "target": "gateway-v6",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "client",
+      "target": "management",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "client",
+      "target": "dns-tcp",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "client",
+      "target": "dns-udp",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "client",
+      "target": "quic-udp",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "client",
+      "target": "wrong-proxy-port",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "proxy",
+      "target": "public-v4",
+      "allowed": true,
+      "targetRequests": 1
+    },
+    {
+      "source": "proxy",
+      "target": "public-v6",
+      "allowed": true,
+      "targetRequests": 1
+    },
+    {
+      "source": "proxy",
+      "target": "private-v4",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "proxy",
+      "target": "private-v6",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "proxy",
+      "target": "metadata",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "proxy",
+      "target": "gateway",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "proxy",
+      "target": "gateway-v6",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "proxy",
+      "target": "management",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "proxy",
+      "target": "dns-tcp",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "proxy",
+      "target": "dns-udp",
+      "allowed": false,
+      "targetRequests": 0
+    },
+    {
+      "source": "proxy",
+      "target": "quic-udp",
+      "allowed": false,
+      "targetRequests": 0
+    }
+  ],
+  "squidCompositionQualified": false,
+  "browserRunscQualified": false,
+  "productAuthorityQualified": false,
+  "allCanariesInitiallyReachable": true,
+  "rulesInstalledInOriginalPrivateNamespace": true,
+  "originalConnectionRevoked": true,
+  "ownedChildrenReaped": true,
+  "nativeUnitClosed": true,
+  "productionUnchanged": true,
+  "existingContainerCount": 9,
+  "launcherExit": 0,
+  "acceptedAt": "2026-09-26",
+  "sourceParent": "099faf3",
+  "environment": {
+    "distribution": "Ubuntu 24.04",
+    "kernel": "6.8.0-136-generic",
+    "architecture": "x86_64",
+    "nftables": "1.0.9",
+    "iproute2": "6.1.0",
+    "systemd": "255.4-1ubuntu8.17"
+  },
+  "sourceSha256": {
+    "network_probe.py": "650cd0d50247c536cc936999a00f6eff741c407039313b30027a8bed3d7bc672",
+    "run_probe.py": "836f27555d61d6b9a4c4ee60c88312a29431d903e26e34da664cc278199e3223",
+    "fixture.nft": "50ae7bd19a414d7a52d594cc7daac0cf967eea1372c3aae8c614bd59507b4da3"
+  }
+}

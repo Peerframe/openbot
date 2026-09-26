@@ -114,3 +114,14 @@ The unchanged actual HTTP/PG/mTLS fixture completed in52.62s after0041:45 Contro
 negatives. Original pending/unknown/cancelled behavior and106 decoded-Payload privacy checks
 passed; no Replay effects or remaining owned resources. The two inactive command tables were
 empty; their structure is included, but in-flight command restoration is not claimed.
+# Current schema refresh — 2026-09-26
+
+The unchanged bounded probe passed on canonical44 after browser profile integration. Native dumps
+and fresh restores preserved47 Control tables/111 rows,40 history and3 visibility tables,13 paired
+files and36 TLS files. All six missing/wrong-key negatives and the incomplete-pair hold passed.
+Pending approval continued on its original Workflow; unknown effects used lookup only; cancellation
+was not revived. Both histories replayed without side effects. Source and target execution never
+overlapped. Owned containers/processes were removed. The browser profile table was empty in this
+scripted active-Task fixture; this is schema/paired recovery evidence, not a real browser continuation
+test. [Safe evidence](../../experiments/work-journey/evidence/active-paired-restore-schema44.json)
+retains the current count instead of relabeling the earlier43-entry result.

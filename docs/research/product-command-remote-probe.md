@@ -91,3 +91,21 @@ unreserved ephemeral key, and requires an explicit canonical fresh directory; se
 [capture research](product-command-failure-capture.md). Their 155 local checks pass.
 No accepted Native/Host/crypto pin or 50/150-second limit changes. The new product2 package is
 prepared separately; it has not been uploaded or qualified by the product1 authorization.
+
+## Product3 acceptance — 2026-09-26
+
+The Owner explicitly approved the fresh four-file product3 manifest, 1,278,959 bytes. Its archive
+and all uploaded bytes were verified. One real product journey passed with current canonical44:
+actual Owner HTTP approval, Python product entry, PostgreSQL/mTLS Temporal, enrolled Node WebSocket,
+Unix relay, protected Host signatures and real Linux native isolation. One original command yielded
+the exact CSV, separate result review, two artifact downloads and offline history replay. Model
+HTTP remains synthetic; no paid-model claim is inferred. The probe now reads the actual migration
+count instead of reporting a stale literal43; 161 controller/Host tests passed with this change.
+
+The original50-second native lifetime and150-second runner bound held. Original cgroup emptiness,
+unit release, runtime/backing removal, ephemeral-key removal and socket absence passed. Control
+revoked this Node and removed its private key. The exact owned public bundle was removed after
+identity/hash/process checks; consumed reservations and evidence remain. All ten pre-existing
+containers and IPv4/IPv6 firewall semantics were unchanged. No earlier case was retried.
+See [bounded public evidence](../../experiments/work-journey/evidence/product-command-remote-product3.json).
+This closes the Linux product-command gate, while browser and final replacement gates remain distinct.

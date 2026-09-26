@@ -30,8 +30,9 @@ class Process:
 
 
 class API:
-    def __init__(self,directory,dsn,artifacts):
+    def __init__(self,directory,dsn,artifacts,*,request_timeout=5):
         self.directory=directory/'api'
+        self.request_timeout=request_timeout
         with socket.socket() as sock:
             sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
         self.url=f'http://127.0.0.1:{port}'
@@ -44,7 +45,7 @@ class API:
     def call(self,path,body=None,*,expected=200,raw=False):
         request=Request(self.url+path,None if body is None else json.dumps(body).encode(),
             {'Content-Type':'application/json','Origin':self.url})
-        try:response=self.opener.open(request,timeout=5)
+        try:response=self.opener.open(request,timeout=self.request_timeout)
         except HTTPError as error:response=error
         with response:
             content=response.read()

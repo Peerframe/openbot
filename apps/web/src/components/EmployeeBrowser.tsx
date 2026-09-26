@@ -6,6 +6,19 @@ import { CloseIcon } from "./Icons";
 import { useModalDialog } from "./useModalDialog";
 import "./EmployeeBrowser.css";
 
+const endedHostErrors: Record<string, string> = {
+  browser_host_identity_changed: "设备身份已变化，无法继续使用原浏览器。登录状态不会自动迁移。",
+  browser_host_connection_changed: "浏览器连接已变化，请重新连接。",
+  browser_original_host_identity_unverified: "无法确认原浏览器与当前设备的关联，已停止连接。",
+  browser_route_changed: "浏览器设备配置已变化，请重新连接。",
+};
+
+function browserError(cause: unknown, fallback: string) {
+  if (cause instanceof ApiError && endedHostErrors[cause.message])
+    return endedHostErrors[cause.message];
+  return cause instanceof Error ? cause.message : fallback;
+}
+
 export function EmployeeBrowser({ bot, onClose }: { bot: Bot; onClose(): void }) {
   const { dialogRef, closeDialog } = useModalDialog(onClose);
   const [session, setSession] = useState<BrowserSessionView>();
@@ -58,10 +71,22 @@ export function EmployeeBrowser({ bot, onClose }: { bot: Bot; onClose(): void })
         if (action.kind === "navigate") setAddress(next.frame?.url ?? "");
       } catch (cause) {
         if (!alive.current) return;
-        setError(cause instanceof Error ? cause.message : "浏览器暂时不可用。");
-        if (cause instanceof ApiError && cause.status === 404) {
+        setError(browserError(cause, "浏览器暂时不可用。"));
+        if (
+          cause instanceof ApiError &&
+          ([401, 403, 404].includes(cause.status) || endedHostErrors[cause.message])
+        ) {
           sessionRef.current = undefined;
           setSession(undefined);
+          setText("");
+          setAddress("");
+        } else {
+          // A failed request cannot prove that the old frame or input lease is still current.
+          // Observation may refresh state, but the uncertain input is never sent again.
+          const { controlExpiresAt: _expiry, frame: _frame, ...view } = current;
+          apply({ ...view, control: "paused" });
+          setText("");
+          setAddress("");
         }
       } finally {
         inFlight.current = false;
@@ -96,7 +121,7 @@ export function EmployeeBrowser({ bot, onClose }: { bot: Bot; onClose(): void })
         await send({ kind: "observe" });
       })
       .catch((cause: unknown) => {
-        if (!disposed) setError(cause instanceof Error ? cause.message : "无法打开浏览器。");
+        if (!disposed) setError(browserError(cause, "无法打开浏览器。"));
       })
       .finally(() => {
         if (!disposed) setOpening(false);
@@ -138,10 +163,10 @@ export function EmployeeBrowser({ bot, onClose }: { bot: Bot; onClose(): void })
             <button
               type="button"
               className={mine ? "secondary-button" : "primary-button"}
-              disabled={busy || session.control === "other"}
+              disabled={busy || session.control === "other" || session.controlAvailable === false}
               onClick={() => void send({ kind: mine ? "release" : "take" })}
             >
-              {mine ? "交还员工" : "接管浏览器"}
+              {session.controlAvailable === false ? "仅查看" : mine ? "交还员工" : "接管浏览器"}
             </button>
           ) : null}
           <button
@@ -332,7 +357,9 @@ export function EmployeeBrowser({ bot, onClose }: { bot: Bot; onClose(): void })
         <p className="browser-hint">
           {mine
             ? "关闭窗口会暂停控制。完成操作后，请点击“交还员工”。"
-            : "接管后可点击网页、输入文本和滚动。登录状态保留在员工工作主机。"}
+            : session?.controlAvailable === false
+              ? "当前浏览器仅供查看，尚未启用人工接管。"
+              : "接管后可点击网页、输入文本和滚动。登录状态保留在员工工作主机。"}
         </p>
       </footer>
     </dialog>

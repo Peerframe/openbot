@@ -70,11 +70,15 @@ profile、credential与已批准Action；只有原dispatch已消费时才允许�
 及socket整合已通过真实本地产品入口、Owner审批、PG／mTLS Temporal及OpenBotNodeClient验收：
 原命令仅一次执行，完整CSV、独立审核、两份产物下载及离线重放通过。本流程的Native执行、peer身份
 及模型HTTP为明确模拟，见[准确范围证据](../experiments/work-journey/evidence/product-command-local.json)。
-真实Linux Host产品执行仍未完成，公开执行保持默认关闭。浏览器CDP组件已有独立有界验收，产品浏览器／接管仍待完成。
+真实Linux Host产品执行随后在下述明确授权的product3中通过。公开执行保持默认关闭；浏览器验收仍是独立边界。
 
-真实受保护Linux Host组件已独立通过原命令签名、准确CSV、原生期限终止与清理；该组件的Control签名者为模拟，完整真实Work产品链路仍待验收。见[组件证据](../experiments/linux-execution/REAL_PROTECTED_COMMAND.json)。
+真实受保护Linux Host组件已独立通过原命令签名、准确CSV、原生期限终止与清理；该组件的Control签名者为模拟，其范围独立于下述真实Work产品链路。见[组件证据](../experiments/linux-execution/REAL_PROTECTED_COMMAND.json)。
 
 已授权product2远端尝试在run／Action预留前失败，原因是小型注册信封选择了不支持的1024字节codec上限。
 夹具现使用已有512字节类别，6项真实stdin回归及共161项控制器／Host检查通过。未发生原生执行，
 测试资源已核对清理、既有服务未变；保留[失败证据](../experiments/work-journey/evidence/product-command-remote-product2-attempt.json)。
-新product3包等待具体授权，不重跑product2。
+Owner 随后明确授权 product3 的四文件清单。2026-09-26，当前44条迁移上的真实 Work→Node→受保护
+Linux Host 命令验收通过，包括实际 Owner 审批、PG／mTLS Temporal、准确 CSV、独立合成模型审核、
+两份产物下载及离线重放。原生50秒／整体150秒限制与清理通过，既有10个容器及防火墙状态未变。
+模型HTTP仍为合成，不重跑任何已消费身份。见[product3证据](../experiments/work-journey/evidence/product-command-remote-product3.json)。
+这关闭了Linux产品命令验收项，不代表通用浏览器或最终安装替换已经完成。

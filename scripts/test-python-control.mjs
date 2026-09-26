@@ -73,6 +73,16 @@ try {
     "Bootstrap apps/agent-runtime-python before the persisted SDK/control acceptance gate.",
   );
   if (process.env.OPENBOT_TEMPORAL_TEST_PYTHON) {
+    // Worker qualification starts a real Node from source; its workspace imports need
+    // the complete dependency closure even when the legacy oracle does not use it.
+    console.log(
+      run(process.execPath, [
+        join(root, "node_modules/turbo/bin/turbo"),
+        "run",
+        "build",
+        "--filter=@openbot/node^...",
+      ]),
+    );
     console.log(
       run(process.env.OPENBOT_TEMPORAL_TEST_PYTHON, [
         join(root, "apps/server-python/scripts/verify_environment.py"),

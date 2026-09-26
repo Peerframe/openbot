@@ -33,6 +33,9 @@ test("qualifies Python product artifacts independently of legacy compatibility",
       "scripts/smoke-server-container.sh",
     ),
     workflow.replace("  python-desktop-preview:\n", "  python-desktop-preview:\n    if: false\n"),
+    workflow.replace("--engine postgres-mtls --upgrade-archive", "--engine postgres-mtls"),
+    workflow.replace("  browser-product:\n", "  browser-product:\n    if: false\n"),
+    workflow.replace("control node replacement response-loss browser-restart", "control node"),
     workflow.replace(
       "uses: ./.github/workflows/s7-migration.yml",
       "uses: someone/other/.github/workflows/migration.yml@main",
@@ -263,7 +266,7 @@ test("the actual merge gate accepts only success from every required job", () =>
   const variables = [
     ...gate.matchAll(/^ {10}([A-Z_]+): \$\{\{ needs\.[a-z-]+\.result \}\}$/gm),
   ].map((match) => match[1]);
-  assert.equal(variables.length, 10);
+  assert.equal(variables.length, 13);
   const source = gate
     .split("        run: |\n")[1]
     .split("\n")

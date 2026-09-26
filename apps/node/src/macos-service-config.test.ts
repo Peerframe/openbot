@@ -51,6 +51,8 @@ describe("macOS Node service configuration", () => {
         ),
         OPENBOT_LOG_LEVEL: "warn",
         OPENBOT_DOCKER_ALLOW_PRIVATE_HOSTS: false,
+        OPENBOT_DOCKER_BROWSER_SESSIONS: false,
+        OPENBOT_DOCKER_BROWSER_TASKS: false,
         OPENBOT_DOCKER_INPUT_ORIGINS: [],
       });
       expect(environment).not.toHaveProperty("OPENBOT_NODE_CREDENTIAL");

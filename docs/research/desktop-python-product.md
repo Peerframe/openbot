@@ -183,3 +183,38 @@ upstream source, dependency or support claim changes; existing notices and pins 
 Local affected Desktop execution passed37 tests; the two Windows-only refusal cases are explicitly
 platform-gated on macOS. Git's actual checkout filter with `core.autocrlf=true` preserves the
 original pinned notice SHA256 with this attribute. Native Windows execution remains required.
+
+
+## Fixed execution configuration mapping — 2026-09-26
+
+Inspection after page integration5b3f6bd found that Desktop mapped only D/temporal.json; browser
+and protected-command installation files supported by the product entry were unreachable. Before
+implementation, rechecked the existing reuse entry, Node24.21.0 [filesystem API](https://github.com/nodejs/node/blob/v24.21.0/doc/api/fs.md)
+and Python3.12 [O_NOFOLLOW](https://docs.python.org/3.12/library/os.html#os.O_NOFOLLOW), together
+with the reviewed `work_browser_installation.py` and `work_command_installation.py` readers.
+Node/GitHub's rendered file was unavailable; existing pinned source/ownership tests and the
+actual local launcher establish its lstat/realpath/UID/mode behavior. Existing Node/CPython pins,
+licenses and release/test review above remain applicable. No new dependency/source is copied.
+
+The first viable option is a small extension of the existing private-file launcher projection:
+D/browser.json maps to OPENBOT_CONTROL_BROWSER_CONFIG_PATH, D/command.json to
+OPENBOT_CONTROL_COMMAND_CONFIG_PATH, alongside unchanged D/temporal.json. Only those fixed names
+inside canonical private D are accepted; no generic environment or renderer-selected paths.
+Absent files leave their capability disabled. Present symlink/public/empty/oversized/wrong-owner
+files fail before launch. Python still opens O_NOFOLLOW and owns strict JSON, credentials, routes,
+model policy, Host identity and individual approvals; this preflight grants no cached authority.
+No config, key, route or execution host is created for the Owner. Qualification must cover all
+three path refusals, cold/restart behavior and actual bundled startup. This does not close the
+unqualified isolated browser egress or production installation gates.
+
+
+Actual verification:44 Desktop tests passed (two Windows-only cases skipped on macOS), and the
+complete repository check passed. Both staged and packaged API smoke passed, including refusal of
+execution config without an engine. The first draft fixture incorrectly expected browser config
+without Temporal to start; the existing product refusal was correct and was not weakened. Positive
+browser configuration and malformed browser/command schema checks were moved into the real mTLS
+probe. Both actual bundled Worker starts then passed; all three malformed private configs refused
+startup and closed PG.163 modules and all45 SQL migrations match the checkout; ASAR controllers
+match compiled source. Safe results are in `desktop-preview-schema45.json`. Computer Use could not
+connect to this Preview by path or bundle id, so current native GUI/Keychain acceptance remains
+pending user opening the application. No installed app or production state was changed.

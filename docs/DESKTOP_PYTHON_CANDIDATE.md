@@ -2,7 +2,22 @@
 
 This explicit macOS arm64 Preview build starts the existing Python product API with a bundled, relocatable CPython distribution. It retains Desktop's PostgreSQL supervisor, encrypted bootstrap, Owner login and local data layout. Normal Desktop packaging and release assembly still select the existing backend.
 
-This is an unsigned development candidate. The Python API and packaged runtime lifecycle have been exercised with disposable data. The canonical41/61-package Preview subsequently passed native system secret decryption across process restart, Owner-ready Electron UI, synthetic channel retention after normal menu quit/restart, and final API/PostgreSQL shutdown. [Native evidence](../experiments/work-journey/evidence/desktop-native-keychain.json) records the actual scope. Automation used `--force-renderer-accessibility=complete` without modifying the bundle. The earlier canonical43/63-package candidate also passed two real bundled mTLS Worker connection/lifecycle starts, with its exact source evidence retained. The latest refresh from1978bcb passed a fresh63-package build, actual staged and packaged API/restart/cleanup smoke, and byte comparison of159 Python source modules plus lifecycle scripts and the lock. Its ASAR/controller hashes match the prior package; `serve.py` and model-connection validation are the changed product Python files. [Refresh evidence](../experiments/work-journey/evidence/desktop-preview-refresh.json) distinguishes these new checks from prior mTLS and native GUI evidence. Signing, native GUI/Keychain requalification, a fresh mTLS connection on this refreshed artifact and full packaged model execution remain separate gates.
+This is an unsigned development candidate. The current page source `5b3f6bd` plus the fixed execution
+configuration increment packages all45 canonical migrations and63 pinned dependencies. Fresh staged
+and packaged tests passed actual API/PostgreSQL startup, Owner login, preserved data across restart,
+parent-death cleanup, unsafe-directory refusal and refusal of execution configuration without an
+engine. All163 Python source modules, lifecycle scripts, lock and SQL bytes match the checkout;
+ASAR controller hashes identify the exact launcher increment. Two actual bundled Worker starts
+connected to owned mTLS Temporal and accepted the fixed browser configuration. Malformed browser,
+command and engine configuration each refused startup and cleaned PostgreSQL. Owned fixtures and
+the engine were removed. [Current evidence](../experiments/work-journey/evidence/desktop-preview-schema45.json)
+records the checks and exact hashes.
+
+Earlier canonical41 native GUI/Keychain evidence and canonical44 packaging evidence remain pinned
+to their original artifacts. The new native GUI check is pending: Computer Use timed out using both
+the exact application path and verified bundle identifier, and Preview was absent from its app
+inventory. Opening the new Preview locally is needed to resume that check. Complete packaged model
+execution, signing and installation remain unqualified; normal packaging retains its original backend.
 
 ## Reproduce from a checkout
 
@@ -43,6 +58,8 @@ Let `D` be Desktop's existing `<userData>/openbot/local-server` directory:
 | `D/objects/work-artifacts` | Private immutable control-owned files through `OPENBOT_CONTROL_ARTIFACT_ROOT` |
 | `D/model-connections.key` | `OPENBOT_CONTROL_MODEL_CONNECTION_KEY_PATH`; Python creates a missing 32-byte private key only when its SQL rules permit |
 | Optional owner-created `D/temporal.json` | Fixed `OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH`; absent means API-only, present must be private/owned/regular and pass Python mTLS configuration checks |
+| Optional owner-created `D/browser.json` | Fixed `OPENBOT_CONTROL_BROWSER_CONFIG_PATH`; original enrolled Node routes, optional human control and trusted page origins; absent leaves Work browser routing disabled |
+| Optional owner-created `D/command.json` | Fixed `OPENBOT_CONTROL_COMMAND_CONFIG_PATH`; existing protected-command installation, separate keys/pins and timing; absent leaves Work command execution disabled |
 | Explicit `OPENBOT_DESKTOP_TAVILY_API_KEY` supplied to the Desktop process | Existing trusted launcher maps it to `TAVILY_API_KEY` for the Python Work web-search adapter; generic shell `TAVILY_API_KEY` is ignored |
 | Bundled Node and parser dependency closure | `OPENBOT_CONTROL_NODE_EXECUTABLE`, `OPENBOT_CONTROL_NODE_MODULE_ROOT` |
 
@@ -91,6 +108,16 @@ silently falling back to API-only. A valid connection starts the **existing** Pr
 SDK Worker and Work admission path. Model/tool authority still comes from the current Owner
 configuration and Work Actions; no Worker Host/computer profile is newly qualified. Stop the local
 Server before changing or moving the opt-in file. Configuration is read at startup, not watched.
+
+The same fixed private-file checks now apply to `D/browser.json` and `D/command.json`, each
+1–16,384 bytes and mode0600, with canonical owner-controlled parents. Generic shell variables
+cannot select either path. Python rechecks the real file descriptor and strict schema; a malformed
+present file fails startup rather than silently disabling it. No configuration or signing key is
+created automatically. Configure browser routes using [the controlled-browser contract](CONTROLLED_BROWSER.md)
+and command installation using [the existing command contract](WORK_COMMAND_READINESS.md).
+Both execution paths require Temporal; commands also require their original enrolled Host and reviewed keys.
+These mappings expose existing opt-in adapters; they do not qualify a new host or authorize input.
+Stop the local Server before changing any of the three files.
 
 Shutdown closes a private parent pipe and waits for Python's orderly exit before the existing controller stops PostgreSQL. Abrupt Desktop parent death also closes that pipe; a bounded hard exit covers a stuck Python shutdown. Failed startup reaps the API and database. The launcher uses no shell and has fixed preflight, migration and readiness deadlines.
 

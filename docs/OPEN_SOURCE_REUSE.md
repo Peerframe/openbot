@@ -145,7 +145,7 @@ expansion until its upstream and license review is recorded.
 | Structured redacted operational logging | [Pino `10.3.1` / `6b344980`](https://github.com/pinojs/pino/tree/6b344980eae3ebed904fc87caf4bba0ab9dbe946), [Winston `3.19.0`](https://github.com/winstonjs/winston/tree/v3.19.0), and [OWASP Cheat Sheet Series `b8586414`](https://github.com/OWASP/CheatSheetSeries/tree/b8586414a5c47ae68911edb97d4e7b7bc6301035) | MIT; MIT; documentation CC BY-SA 4.0 | Use Pino behind a narrow local allowlisted API for levels, child correlation fields, and redaction. Do not expose generic object/error logging from control-plane code. Winston's transport breadth is unnecessary. No upstream source is copied; see [research evidence](research/dev-001-short-term-hardening.md). |
 | Web component interaction tests | [jsdom `30.0.1` / `6584485f`](https://github.com/jsdom/jsdom/tree/6584485f094d5b271553005b68804c93a455c002), [Happy DOM `20.14.0` / `eac5a380`](https://github.com/capricorn86/happy-dom/tree/eac5a38026b0569f2d52b609b2bb4cbaa94d9644), and [Vitest `5.0.0` / `f441c6fa`](https://github.com/vitest-dev/vitest/tree/f441c6fab25e579c5b7dd3dd50538416f415fbae) (jsdom env; browser mode still future) | MIT | Use exact-pinned jsdom only as a development test environment for React form, focus, button, alert, and async-state behavior under the root Vitest 5.0.0 runner. It matches the repository Node floor and needs no browser download or application network access. Happy DOM has relevant open disabled-control/timer differences; Vitest browser mode remains the future rendered cross-browser layer. No upstream source is copied; see [research evidence](research/dev-001-short-term-hardening.md) and [Vitest 5 migration](research/vitest-5-migration.md). |
 | CI dependency and secret scanning | [TruffleHog `3.97.1` / `20652fbb`](https://github.com/trufflesecurity/trufflehog/tree/20652fbbdefffcdaa493a5bf57ab2ac6b1db715b), [Gitleaks `v8.27.2` / `c7acf33`](https://github.com/gitleaks/gitleaks/tree/c7acf33), and [npm CLI `10.9.9` / `745d8d90`](https://github.com/npm/cli/tree/745d8d90b5403110d26ba332ba83d8c5a51f0578) | AGPL-3.0; MIT; Artistic-2.0 | Run TruffleHog as a read-only, digest-pinned CI container with verification and updates disabled; it is not linked into or shipped with OpenBot. Select the exact reviewed npm CLI, use `npm ci --ignore-scripts` to validate and construct the complete lock tree, then run the production-only audit fail closed. Gitleaks remains the reserve static alternative; its official action's separate organization license is not adopted. See [research evidence](research/dev-001-short-term-hardening.md). See [exact historical fixture triage](research/credential-scan-fixture-triage.md) for the JSON adapter; full history and all detectors remain scanned. |
-| Browser egress hardening | [OWASP SSRF Prevention Cheat Sheet `b8586414`](https://github.com/OWASP/CheatSheetSeries/blob/b8586414a5c47ae68911edb97d4e7b7bc6301035/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.md) and [CopilotKit/OpenBot `agent-computer` `257c1280`](https://github.com/CopilotKit/openbot/tree/257c1280d684089be9adb0b35cce262efc7064bf/agent-computer) | Documentation CC BY-SA 4.0; MIT | Deferred. The current Docker Provider's DNS preflight cannot bind a separate browser service's redirect and connection behavior. Keep the adapter limited to trusted test targets until egress is enforced inside `agent-computer` or its network namespace. No additional preflight is presented as an SSRF control; see [research evidence](research/dev-001-short-term-hardening.md). |
+| Browser egress hardening | [Squid7.7 `173863d3`](https://github.com/squid-cache/squid/tree/173863d3ec547d7fc5227ddbb5d8093c88b4842f), [OWASP SSRF Prevention Cheat Sheet `b8586414`](https://github.com/OWASP/CheatSheetSeries/blob/b8586414a5c47ae68911edb97d4e7b7bc6301035/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.md) and [agent-computer `257c1280`](https://github.com/CopilotKit/openbot/tree/257c1280d684089be9adb0b35cce262efc7064bf/agent-computer) | Separate Squid executable GPL-2.0-or-later; documentation CC BY-SA4.0; adapter MIT | Proxy-only qualification passed20 real cases; host enforcement remains unqualified. Squid exact name/port/source policy requires host packet enforcement and tunnel teardown; DNS preflight is not isolation. Keep product origins restricted to trusted fixtures. See [selected Linux boundary](research/linux-execution-boundary.md), [compiler/runtime record](research/browser-egress-policy.md) and [earlier gap](research/dev-001-short-term-hardening.md). |
 | Office visualization | Public Tencent Marvis product imagery supplied by the project owner | No reusable source-code license identified | Visual inspiration only. No Marvis code or assets are incorporated; the office remains a deferred optional plugin. |
 | Desktop event-stream lifecycle | Electron 44.2.0 / tag object `369b0d9d3afdd5b8c0bdb0ad42391443947a7424`; AbortController | MIT; Node.js license | Bound the single window to one workspace and one channel stream; abort on replacement/navigation/close. Existing protocol cancellation is insufficient for reconstructed responses. No copied source; [research](research/desktop-stream-lifecycle.md). |
 
@@ -756,6 +756,45 @@ existing authenticated Worker channel; no new dependency or SQL. See the
 Provider capability stay disabled until every real browser effect shares the gate; local synthetic
 HTTP/WebSocket tests do not qualify Chromium, Linux/runsc or real login-state preservation.
 
+Browser profile host binding reuses the same Worker connection id, credential digest and existing
+PostgreSQL authority locks, with an append-only audit binding. See the
+[identity review](research/browser-host-binding.md). A same-id enrollment cannot inherit the old
+profile; expired authority clears client frames/input. DeepSeek implemented the thin registry
+binding against verified public OpenBot source. No new dependency or upstream implementation copy;
+profile rebind and egress remain separate gates. The opt-in Work capture-only adapter now reuses
+Work deferred Actions, approval, immutable ToolResults/LocalWorkFiles, the pause gate and the retained
+`browser.command` observe operation; see [capture review](research/work-browser-capture.md).
+DeepSeek implemented the initial immutable profile adapter against the public MIT OpenBot command
+profile reference; integration corrected its schema query and preserved exact case-sensitive IDs.
+No dependency, driver, authority framework or third-party source copy was added. The model sees
+metadata only; capture does not qualify page interpretation, input or general browser automation.
+
+The [routed handover adapter](research/work-browser-handover.md) activates the retained Owner
+navigation/click/type/key/scroll APIs only for explicitly configured Work browser routes. It reuses
+the same pinned agent-computer, Playwright and PostgreSQL gate; no new dependency or copied source.
+Real macOS Chromium/Node/Python/PG and the retained Web validate trusted synthetic page interaction,
+exclusive control, close/reconnect pause and explicit return. Public egress and autonomous page
+interpretation remain separate gates.
+
+The [Work page adapter](research/work-browser-page-actions.md) reuses those same upstream
+`/read`, `/snapshot` and one-shot input endpoints through the existing approved Action/receipt path.
+DeepSeek implemented the thin TypeScript adapter; integration retains exact-origin opt-in, immutable
+new-Task page scope, original observation/reference/connection checks and no-retry recovery. No
+production dependency or upstream implementation is copied. The reproducible fixture separately
+fetches hash-pinned MIT upstream sources with their license and locks the existing Playwright pair.
+Official MIT setup-bun2.2.0 (commit0c5077e51419868618aeaa5fe8019c62421857d6) installs Bun1.3.14 in CI;
+source, tests, release and open issues are recorded in the review. Actual local Worker restart,
+approvals, Unicode input, read/report/download and replay passed with synthetic model HTTP.
+Public egress and isolated Linux browser product execution remain unqualified.
+
+The same pinned page fixture now qualifies whole Control process restart, actual Node process
+SIGKILL/recreation and same-id re-enrollment refusal. It reuses the existing SDK replay, Node
+lifecycle and Server pause/identity contracts, with no product runtime change or copied upstream
+source. Original approvals never dispatch across changed connections; cancellation preserves
+unknown evidence and removes authority. See the [interruption review](research/work-browser-page-actions.md)
+and [content-free results](../experiments/work-journey/evidence/product-browser-interruption.json).
+The browser process remains alive in these cases; Host/profile migration is not inferred.
+
 The reviewed-click [handover repair](research/browser-approval-handover.md) retains pinned
 agent-computer `257c1280d684089be9adb0b35cce262efc7064bf` (MIT) and the existing Server approval
 contract. Only the local adapter changes: approval waiting releases the Bot queue, human take
@@ -899,3 +938,11 @@ parser/restart checks passed; native matrix CI reuses the same smoke without pub
 43项Node parser／DB闭包和原npm投影，不新增依赖或复制上游实现，最终镜像不含TS业务Server／oracle／
 构建工具。默认仍监听127.0.0.1。真实本地Linux arm64镜像及独占临时Owner／Web／PG／解析／重启验收
 已通过，原生双架构CI复用同一smoke；不发布镜像、不切默认、不部署生产。
+
+
+Desktop's [fixed execution-file projection](research/desktop-python-product.md#fixed-execution-configuration-mapping--2026-09-26)
+reuses its existing canonical private dataRoot/lstat/UID/mode checks and the Server's no-follow
+installation readers. The fixed browser.json and command.json paths close a real packaged-entry
+gap without another configuration system, environment forwarding, runtime dependency or copied
+source. Existing Node24.21.0 and CPython3.12.13 pins/licenses remain unchanged. Present invalid
+configuration refuses startup; source/Host/Action authority still belongs to the Server.

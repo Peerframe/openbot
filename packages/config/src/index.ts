@@ -197,6 +197,8 @@ export const nodeEnvSchema = z
     OPENBOT_DOCKER_COMPUTER_URL: z.string().url().optional(),
     OPENBOT_DOCKER_COMPUTER_TOKEN: z.string().min(16).optional(),
     OPENBOT_DOCKER_ALLOW_PRIVATE_HOSTS: booleanSchema,
+    OPENBOT_DOCKER_BROWSER_SESSIONS: booleanSchema,
+    OPENBOT_DOCKER_BROWSER_TASKS: booleanSchema,
     OPENBOT_DOCKER_INPUT_ORIGINS: z
       .string()
       .default("")
@@ -227,6 +229,21 @@ export const nodeEnvSchema = z
       ),
   })
   .superRefine((value, context) => {
+    if (
+      value.OPENBOT_DOCKER_BROWSER_TASKS &&
+      (!value.OPENBOT_DOCKER_BROWSER_SESSIONS || !value.OPENBOT_DOCKER_INPUT_ORIGINS.length)
+    )
+      context.addIssue({
+        code: "custom",
+        message: "Browser tasks require sessions and explicit trusted origins.",
+        path: ["OPENBOT_DOCKER_BROWSER_TASKS"],
+      });
+    if (value.OPENBOT_DOCKER_BROWSER_SESSIONS && !value.OPENBOT_DOCKER_COMPUTER_URL)
+      context.addIssue({
+        code: "custom",
+        message: "Browser sessions require a configured computer.",
+        path: ["OPENBOT_DOCKER_BROWSER_SESSIONS"],
+      });
     if (value.OPENBOT_DOCKER_INPUT_ORIGINS.length && !value.OPENBOT_DOCKER_COMPUTER_URL)
       context.addIssue({
         code: "custom",

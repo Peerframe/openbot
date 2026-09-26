@@ -93,8 +93,8 @@ local product entry, Owner approval, PostgreSQL/mTLS Temporal and OpenBotNodeCli
 command, complete CSV output, separate review, two artifact downloads and offline replay passed.
 Native execution, peer identity and model HTTP in that journey are explicit fixtures; see
 [scoped evidence](../experiments/work-journey/evidence/product-command-local.json). Real Linux
-product composition remains open and public execution stays disabled by default. The browser CDP
-component has separate bounded acceptance; product browser/handover remains open.
+product composition subsequently passed in the explicitly authorized product3 case below. Public
+execution stays disabled by default. Browser qualification remains a separate boundary.
 The actual protected Linux Host component has separately passed one original signed command, exact
 CSV output, native expiry and cleanup; its Control signer was synthetic. See
 [component evidence](../experiments/linux-execution/REAL_PROTECTED_COMMAND.json).
@@ -104,4 +104,10 @@ enrollment envelope selected an unsupported1024-byte codec limit. The fixture no
 existing512-byte class, with six actual-stdin regressions and161 controller/Host tests passing.
 No native execution occurred; owned resources were reconciled and existing services were unchanged.
 [Failure evidence](../experiments/work-journey/evidence/product-command-remote-product2-attempt.json)
-is retained. A fresh product3 packet awaits its specific authorization; product2 is not retried.
+is retained. The Owner subsequently authorized product3's exact four-file manifest. On 2026-09-26, one actual
+Work→Node→protected Linux Host command passed on canonical44, with real Owner approval, PostgreSQL/
+mTLS Temporal, exact CSV, independent synthetic-model review, two downloads and offline replay.
+Original50-second native/150-second runner limits and cleanup passed; existing ten containers and
+firewall semantics were unchanged. Model HTTP was synthetic. Consumed prior cases were not rerun.
+See [product3 evidence](../experiments/work-journey/evidence/product-command-remote-product3.json).
+This closes the Linux product-command gate, not general browser or final package replacement.

@@ -302,6 +302,20 @@
       "when": 1790208000012,
       "tag": "0042_work_command_preparations",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1790208000013,
+      "tag": "0043_work_browser_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1790208000014,
+      "tag": "0044_work_browser_page_scopes",
+      "breakpoints": true
     }
   ]
 }

@@ -50,6 +50,11 @@ def main():
     conversations = None
     profiles = None
     product = None
+    browser_profiles = None
+    browser_path = os.environ.get('OPENBOT_CONTROL_BROWSER_CONFIG_PATH')
+    if browser_path is not None and (authority != 'product'
+            or not os.environ.get('OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH')):
+        raise SystemExit('Browser capture configuration requires product mode and an explicit Work engine configuration.')
     command_installation = None
     command_path = os.environ.get('OPENBOT_CONTROL_COMMAND_CONFIG_PATH')
     if command_path is not None and (authority != 'product'
@@ -80,6 +85,8 @@ def main():
         connections = asyncio.run(ModelConnectionsService.from_key_path(dsn,
             os.environ.get('OPENBOT_CONTROL_MODEL_CONNECTION_KEY_PATH', str(Path(object_root)/'model-connections.key')),
             custom_base_urls=custom_urls))
+        from openbot_server.work_browser_installation import browser_profiles_from_file
+        browser_profiles = browser_profiles_from_file(browser_path, connections)
         from openbot_server.work_command_installation import CommandInstallation
         command_installation = CommandInstallation.from_file(command_path, connections)
         from openbot_server.worker_host_identity import PostgresWorkerHostIdentity
@@ -92,7 +99,7 @@ def main():
         from openbot_server.browser_gate import BrowserPauseGate
         from openbot_server.browser_sessions import BrowserSessionsService
         browser = BrowserSessionsService(dsn,worker_registry,gate=BrowserPauseGate(dsn),
-                                        agent_gate_configured=False)
+                                        profiles=browser_profiles)
         from openbot_server.plugin_service import PluginService
         from openbot_server.plugin_inputs import LegacyManifestCodec
         plugins = PluginService(dsn,
@@ -141,7 +148,8 @@ def main():
         artifact_root = os.environ.get("OPENBOT_CONTROL_ARTIFACT_ROOT")
         work = PostgresWorkStore(dsn,files=LocalWorkFiles(artifact_root) if artifact_root else None,
                                  task_profiles=WorkTaskProfiles(files=product.files) if product is not None else None,
-                                 command_profiles=command_installation.profiles if command_installation else None)
+                                 command_profiles=command_installation.profiles if command_installation else None,
+                                 browser_profiles=browser_profiles)
     if product is not None:
         from openbot_server.work_sources import WorkSourceAdmission
         budget_text = os.environ.get('OPENBOT_CONTROL_WORK_TOKEN_LIMIT', '100000')
