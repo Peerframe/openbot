@@ -63,8 +63,7 @@
   SQL history, Node/Providers, publisher/MCP and credential helpers. Default dev, Docker and
   macOS arm64 Desktop now select Python. Canonical Desktop uses separate `python-local-server`
   storage; old installations, bootstrap and databases were not converted or deleted.
-- [PR99](https://github.com/Peerframe/openbot/pull/99) contains the isolated Preview fix; this
-  retirement increment awaits push. DSH implemented Windows remote-install/DPAPI-restart gates;
+- [PR99](https://github.com/Peerframe/openbot/pull/99) contains the isolated Preview fix; retirement commit`e3208b8` is pushed and hosted checks are running. DSH implemented Windows remote-install/DPAPI-restart gates;
   root integrated them with the existing process-identity/installer helpers. No external writer
   remains. Replace legacy Windows database CI with remote-client installation acceptance;
   real local execution belongs to the Python product gates.

@@ -52,7 +52,7 @@
   只在原目录保留退役说明；59文件冻结 oracle、SQL 历史、Node／Provider、publisher／MCP
   与凭据 helper 保留。默认开发、Docker 和 macOS arm64 Desktop 选择 Python。
   Canonical Desktop 使用独立 `python-local-server` 目录，原安装、bootstrap、数据库未转换或删除。
-- [PR99](https://github.com/Peerframe/openbot/pull/99) 已有独立 Preview 修复；当前退役增量待推送。
+- [PR99](https://github.com/Peerframe/openbot/pull/99) 已有独立 Preview 修复；退役提交`e3208b8`已推送；当前托管检查进行中。
   DSH完成 Windows远程安装／DPAPI跨进程验收脚本，root整合时复用了原有身份／安装器helper。
   当前无外部写入者。旧Windows数据库CI被替换为远程客户端安装验收，原生执行留给Python产品门禁。
 - 一次新获批的真实打包 Kimi Task通过：4份模型回执、8,845 tokens、独立复核、353字节报告、

@@ -65,3 +65,8 @@ approved public MIT input. Root reused the existing identity/progress helpers in
 duplicating them, retained the installer/executable/ASAR checks, and added remote-only layout
 checks. Native Windows execution belongs to this change's hosted CI; local macOS tests do not
 claim Windows or Intel Mac native execution.
+
+A clean npm10.9.9 metadata refresh identifies36 formerly production dependencies now used
+only by test/development consumers. Adopt those `dev` classifications without changing any
+version, integrity, dependency edge or unrelated platform metadata. Production image and
+Desktop projections still use their explicit retained dependency closures.
