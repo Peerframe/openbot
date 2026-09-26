@@ -4,13 +4,14 @@ import json
 from pathlib import Path
 import re
 import sys
+from typing import Any
 
 
-def canonical(name):
+def canonical(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
-def check(lock, report):
+def check(lock: str, report: dict[str, Any]) -> int:
     expected = {}
     for line in lock.splitlines():
         if not line or line.startswith("#"):
