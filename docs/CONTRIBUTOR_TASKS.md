@@ -2,9 +2,14 @@
 
 [English](CONTRIBUTOR_TASKS.md) · [简体中文](CONTRIBUTOR_TASKS.zh-CN.md)
 
-These packages turn roadmap items into independently reviewable contributions. Open an issue from
-the matching form before implementation, link the pinned upstream review, and keep every support
-claim at the lowest level proven by tests.
+These packages are backlog scope and historical delivery notes, not instructions to rebuild completed
+work. Before choosing one, check its current implementation and [repository map](REPOSITORY_MAP.md).
+Use an issue to agree large/new scope; ordinary fixes may start with a focused PR. Apply
+[root research triggers](../AGENTS.md#research-before-implementation): reuse valid decisions and pins;
+only new dependencies/protocols/authority/persistence/architecture choices need targeted research.
+Older “Research first” lists below are references for those choices, not a fresh survey per repair.
+Keep support claims within actual evidence. C1→C2→C3 progress lives only in the
+[upgrade handoff](REPOSITORY_UPGRADE_PLAN.md).
 
 ## Next: fresh-checkout contributor smoke
 
@@ -216,7 +221,7 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
 
 - **Delivered:** ADR-0014 and ADR-0024 define the signature envelope, encrypted local keyring,
   explicit trust, rotation, revocation, and offline verification for `openbot.employee/v1`.
-- **Start in:** `docs/decisions`, `apps/server/src/employee-package.ts`, `packages/domain`.
+- **Start in:** `docs/decisions`, `apps/server-python/src/openbot_server/employee_portability.py`, `packages/domain`.
 - **Research first:** Sigstore, in-toto, DSSE, TUF, and existing agent-package signing work.
 - **Remaining contribution:** add native keyring/KMS adapters, publisher-key expiry, TUF continuity,
   and public identity/transparency without changing the DSSE package contract.
@@ -226,7 +231,7 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
 
 - **Delivered:** a quarantined preview becomes a new local Employee only through an exact digest,
   explicit Owner command, candidate-only skills, and immutable idempotent receipt.
-- **Start in:** `apps/server`, `packages/db`, `apps/web`.
+- **Start in:** `apps/server-python`, `packages/db`, `apps/web`.
 - **Research baseline:** Backstage preview/review/create, Kubernetes dry-run, and OpenClaw
   default-untrusted skills; see ADR-0025.
 - **Remaining contribution:** package-family updates, registry distribution, selective-memory clone,
@@ -239,7 +244,7 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
 - **Delivered:** bounded Owner-only create/edit/delete, optimistic revisions, credential-value
   blocking, physical content deletion, content-free lifecycle audit, and an accessible profile
   editor. Every v1 Employee package still contains zero memories.
-- **Start in:** `apps/server`, `apps/web`, `packages/protocol`, `packages/db`, and ADR-0026.
+- **Start in:** `apps/server-python`, `apps/web`, `packages/protocol`, `packages/db`, and ADR-0026.
 - **Research baseline:** Hermes, Letta, Mem0, and LangMem; see
   `docs/research/owner-managed-employee-memory.md`.
 - **Remaining contribution:** retrieval, retention, autonomous proposal review, prompt-injection
@@ -252,7 +257,7 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
 - **Delivered:** authenticated role and biography editing, strict field bounds, PostgreSQL
   compare-and-swap revisions, content-free evolution/SSE metadata, multi-device stale-draft review,
   and biography preservation in safety-scanned Employee templates.
-- **Start in:** `apps/server/src/postgres-store.ts`, `apps/web/src/components/EmployeeProfileView.tsx`,
+- **Start in:** `apps/server-python/src/openbot_server/profile_details.py`, `apps/web/src/components/EmployeeProfileView.tsx`,
   `packages/protocol`, `packages/db`, and the
   [research record](research/owner-employee-profile-details.md).
 - **Research baseline:** Hermes profile editing/UI metadata CAS and Kubernetes `resourceVersion`.
@@ -265,7 +270,7 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
 
 - **Outcome:** replace the current individually revocable bearer credential with a rotatable,
   proof-of-possession Worker Host identity.
-- **Start in:** `apps/server`, `apps/node`, `packages/protocol`, deployment docs.
+- **Start in:** `apps/server-python`, `apps/node`, `packages/protocol`, deployment docs.
 - **Research first:** SPIFFE/SPIRE, mTLS bootstrap patterns, short-lived certificate rotation, and
   device enrollment threat models.
 - **Acceptance:** preserve one-time enrollment and revocation; add non-exportable-key support,

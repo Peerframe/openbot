@@ -6,7 +6,7 @@ Argument validation belongs here for a verified reason: the SDK's own
 validation of the arguments is skipped", because a JSON Schema cannot be compiled
 into a pydantic-core schema without an extra translation layer. The Server hands
 the unit JSON input schemas, so the unit validates against them itself and never
-forwards unchecked arguments to the tool authority. See RESEARCH.md §3.5 and §4.
+forwards unchecked arguments to the tool authority. See RESEARCH.md §3.5 and §9 (which supersedes §4/4a).
 """
 
 from __future__ import annotations

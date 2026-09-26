@@ -4,12 +4,12 @@
 
 ## Policy
 
-OpenBot researches established open-source implementations before designing a non-trivial feature.
+OpenBot researches new dependencies/versions, public protocols, authorization/security or persistent-data
+boundaries, and material architecture choices before implementing the affected decision.
 The goal is to reuse maintained standards, libraries, protocols, and narrow services instead of
 building another incompatible subsystem.
 
-Research does not mean copying the first repository that looks similar. Every feature intake must
-record:
+Research does not mean copying the first repository that looks similar. When a trigger applies, record:
 
 1. the user outcome and security boundary;
 2. relevant upstream repositories or open standards;
@@ -48,12 +48,14 @@ Audit date: 2026-09-04. Commit pins are research baselines, not automatic depend
 
 This table is also the retroactive review ledger for non-trivial code already present on this
 branch. A feature that is not mapped here, in an ADR, or in its issue is blocked from further
-expansion until its upstream and license review is recorded.
+expansion of the affected decision until relevant upstream/license evidence is recorded. Ordinary
+fixes reuse valid decisions and reviewed versions; they do not reopen the full ledger. See
+[the research paths](../CONTRIBUTING.md#research-evidence-and-documentation-exemptions).
 
 | OpenBot area | Researched source | License | Decision and current status |
 | --- | --- | --- | --- |
 | Windows delivery reliability and required CI completion | Electron get 5.1.0 / `da84467e`; Packager 20.3.0 / `8c5cc941`; builder 26.16.1 / `7d3b30f3`; .NET Process; GitHub Actions dependency results | MIT; BSD-2-Clause; Microsoft/GitHub documentation terms | Retry only transient verified-download failures; observe fixture installation progress with idle and overall bounds; require every CI job in the protected completion check. No copied source. See [download](research/windows-ci-download-reliability.md), [installer](research/windows-installer-progress.md), and [merge gate](research/windows-ci-merge-gate.md). |
-| Documentation research exemptions | Git 2.55.0 / `e9019fca`; checkout 7.0.1 / `3d3c42e5` | GPL-2.0; MIT | Reuse committed Git diffs and blob identities to validate a short exemption for ordinary Markdown prose. Source, policy and protected technical content keep the research form; unchanged claims remain a review responsibility. No dependency or source copied; see [research](research/2026-09-15-research-exemptions.md). |
+| Documentation exemptions and ordinary-fix decision reuse | Git 2.55.0 / `e9019fca`; checkout 7.0.1 / `3d3c42e5` | GPL-2.0; MIT | Reuse committed Git diffs and blob identities to validate a short exemption for ordinary Markdown prose. Source, policy and protected technical content keep the research form; unchanged claims remain a review responsibility. No dependency or source copied; see [research](research/2026-09-15-research-exemptions.md). |
 | Contributor startup and clean-checkout verification | Turborepo 2.10.12 / `53752d45`; existing Node APIs and Postgres.js 3.4.9 | MIT; Node.js license; Unlicense | Reuse the dependency graph and filtered persistent tasks for Server/Web/optional Node. A bounded POSIX smoke starts the real root command against an empty loopback database before any build. No dependency or source copied; see [research](research/2026-09-15-contributor-startup.md). |
 | Streamed JSON request bounds | WHATWG Streams `b9ba9f49`; Hono 4.13.7 / `eebdf7be` reviewed | WHATWG terms; Node.js license; MIT | Reuse native readers and streaming UTF-8 decoding to count actual bytes, cancel overflow and preserve route-specific limits and errors. The reviewed Hono middleware trusts declared length and does not meet this cleanup contract unchanged. No source copied or dependency added; see [research](research/2026-09-15-request-body-limits.md). |
 | Shared task, attachment and automation flow | PostgreSQL 17; ai 7.0.93 / 6359fd58; existing Zod 4.5.4 | PostgreSQL; Apache-2.0; MIT | Reuse the existing transaction and file lock, shared protocol descriptors and one Run-scoped tool map. Preserve paused schedule references and stop invalid occurrences with an additive outcome migration. No source copied or dependency added; see [research](research/task-flow-refactor.md). |

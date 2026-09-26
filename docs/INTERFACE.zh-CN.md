@@ -2,6 +2,10 @@
 
 [English](INTERFACE.md) · [简体中文](INTERFACE.zh-CN.md)
 
+当前开发阅读入口：[设计索引](design/README.zh-CN.md) → 实际组件/测试。本文件保留频道阶段的
+设计意图；新的 Work Task/Run 语义和已验证状态以当前代码与[仓库地图](REPOSITORY_MAP.zh-CN.md)
+为准，不能把下方全部历史计划当作已实现。
+
 ## 1. 当前结论
 
 当前版本以 **长期频道中的多 Bot 对话**为核心。腾讯 Marvis 只作为未来空间化总览的参考，办公室不出现在当前桌面侧栏、移动端导航或默认 Web bundle 中。

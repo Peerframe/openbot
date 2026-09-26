@@ -3,6 +3,10 @@
 - Status: Proposed
 - Date: YYYY-MM-DD
 
+Use this template for a new/reopened durable decision under [root research triggers](../../AGENTS.md#research-before-implementation).
+An ordinary fix cites its existing ADR in the PR/handoff. Reuse valid evidence; identify only the
+changed assumption before opening another architecture review.
+
 ## Context
 
 Describe the user outcome, existing behavior, constraints, and security boundary.

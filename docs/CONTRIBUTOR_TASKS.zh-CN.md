@@ -2,8 +2,11 @@
 
 [English](CONTRIBUTOR_TASKS.md) · [简体中文](CONTRIBUTOR_TASKS.zh-CN.md)
 
-这些任务把路线图拆成可以独立审查的贡献。实现前请使用对应表单创建 Issue，链接固定版本的上游
-调研，并把支持声明限制在测试真正证明的最低等级。
+这些任务是待办范围及历史交付记录，不要求重做已完成工作。领取前核对当前实现和
+[仓库地图](REPOSITORY_MAP.zh-CN.md)。较大/新增范围用 Issue 对齐，普通修复可直接提交聚焦 PR。
+按[根研究触发规则](../AGENTS.zh-CN.md#实现前调研)复用有效决定/固定版本；只有新增依赖、协议、
+授权、持久化或架构选择才做针对性调研。下方旧“先调研”列表是对应选择的参考，不要求每次修复
+重查。支持声明不得超出证据；C1→C2→C3 只在[升级交接](REPOSITORY_UPGRADE_PLAN.md)记进度。
 
 ## 优先共建：全新克隆的开发流程验收
 
@@ -187,7 +190,7 @@
 
 - **已交付：**ADR-0014 与 ADR-0024 定义签名信封、加密本地密钥库、显式信任、轮换、撤销和
   `openbot.employee/v1` 离线验证。
-- **路径：**`docs/decisions`、`apps/server/src/employee-package.ts`、`packages/domain`。
+- **路径：**`docs/decisions`、`apps/server-python/src/openbot_server/employee_portability.py`、`packages/domain`。
 - **先调研：**Sigstore、in-toto、DSSE、TUF 和现有 Agent 包签名方案。
 - **待共建：**系统钥匙串/KMS 适配、发布密钥过期、TUF 连续信任和公开身份/透明度，且不得改变
   DSSE 员工包契约。
@@ -197,7 +200,7 @@
 
 - **已交付：**只有准确预览摘要、Owner 明确命令、候选禁用技能和不可变幂等收据，才能把隔离
   预览变成新的本地员工。
-- **路径：**`apps/server`、`packages/db`、`apps/web`。
+- **路径：**`apps/server-python`、`packages/db`、`apps/web`。
 - **调研基线：**Backstage 预览/审核/创建、Kubernetes dry-run 和 OpenClaw 第三方技能默认不可信；
   参见 ADR-0025。
 - **后续贡献：**包家族更新、注册表分发、选择性记忆复制、更完整的收据检查和认证所有权转移。
@@ -208,7 +211,7 @@
 
 - **已交付：**仅 Owner 可用的有界新增/编辑/删除、乐观 revision、凭据值阻止、正文物理删除、
   无内容生命周期审计和可访问员工主页编辑器；每个 v1 员工包仍固定包含零条记忆。
-- **路径：**`apps/server`、`apps/web`、`packages/protocol`、`packages/db` 与 ADR-0026。
+- **路径：**`apps/server-python`、`apps/web`、`packages/protocol`、`packages/db` 与 ADR-0026。
 - **调研基线：**Hermes、Letta、Mem0 与 LangMem；见
   `docs/research/owner-managed-employee-memory.md`。
 - **待共建：**检索、保留、自主提案审核、提示注入防护、版本恢复、脱敏和选择性导出。
@@ -219,7 +222,7 @@
 
 - **已交付：**经过认证的职责/简介编辑、严格字段上限、PostgreSQL compare-and-swap revision、
   无正文进化/SSE 元数据、多设备旧草稿审核，以及经过安全扫描的员工模板简介迁移。
-- **路径：**`apps/server/src/postgres-store.ts`、`apps/web/src/components/EmployeeProfileView.tsx`、
+- **路径：**`apps/server-python/src/openbot_server/profile_details.py`、`apps/web/src/components/EmployeeProfileView.tsx`、
   `packages/protocol`、`packages/db` 和[调研记录](research/owner-employee-profile-details.md)。
 - **调研基线：**Hermes profile 编辑/UI metadata CAS 与 Kubernetes `resourceVersion`。
 - **待共建：**分别审查并实现显示名、模型/Provider、工作主机、例行任务和组合外观编辑器。
@@ -229,7 +232,7 @@
 ## 高级：每 Node 独立注册
 
 - **结果：**把当前可单独吊销的 bearer credential 升级为可轮换、具有持有证明的工作主机身份。
-- **路径：**`apps/server`、`apps/node`、`packages/protocol` 和部署文档。
+- **路径：**`apps/server-python`、`apps/node`、`packages/protocol` 和部署文档。
 - **先调研：**SPIFFE/SPIRE、mTLS 引导、短期证书轮换与设备注册威胁模型。
 - **验收：**保留单次登记与吊销；增加不可导出密钥支持、挑战应答、轮换、防重放测试、Server
   审计，并且 Node 不开放公网端口。

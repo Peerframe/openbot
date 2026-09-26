@@ -45,8 +45,8 @@ OpenBot Agent 行为的参考实现；身份、任务、路由、授权、审批
 ## 边界
 
 * 已评审的 Server 上限，作为上限保留：**8** 个模型步、**16** 次工具调用、每个工具结果
-  **128 KiB**（与 `apps/server/src/agent-runtime.ts` 中的
-  `AgentRuntimeToolPolicy.maximumResultBytes` 一致）。
+  **128 KiB**（历史依据为冻结的 `tests/oracles/legacy-server/src/agent-runtime.ts` 中的
+  `AgentRuntimeToolPolicy.maximumResultBytes`；当前控制检查在 `apps/server-python/src/openbot_server/runtime_host.py`）。
 * 运行时本地边界：目录大小与字节数、消息字节数、历史长度、最终输出字节数、进度事件数与修正数。
 * Server 可以收紧任一上限。高于其上限的限额会在运行开始**之前**被拒绝，因此无法偷渡更宽松的
   预算。
@@ -182,7 +182,8 @@ RESEARCH.md      所依赖的每个 SDK 行为对应的固定上游证据
 * 进程 profile 已实现并有子进程测试覆盖，但这些测试使用*合成*父进程。与 Server 自身进程适配器的
   端到端验收由 Server 负责，证据记录在运行时说明中。
 * Linux/amd64 参考容器通过 369 项包内测试与 222 项 Server/PostgreSQL 测试，运行于 ARM Mac
-  模拟环境。这不证明原生云端 CI、Windows 或生产打包已通过。现有 TypeScript 路径仍是默认值。
+  模拟环境。这份历史结果不证明原生云端 CI、Windows 或生产打包已通过。当前产品默认已是 Python；
+  后续有范围的证据见[仓库地图](../../docs/REPOSITORY_MAP.zh-CN.md)和当前迁移交接。冻结 TS oracle 不是运行选项。
 * 依赖配置测试使用真实锁文件、合成安装集，并复现 Server 的预检调用。
   可选 Server 镜像另行验证实际安装的运行依赖和 SDK 工具循环，见[容器验收](../../docs/SERVER_CONTAINER.zh-CN.md)。
   这些检查不证明独立系统隔离或真实模型服务的行为。

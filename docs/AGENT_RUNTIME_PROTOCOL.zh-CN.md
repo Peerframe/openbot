@@ -2,7 +2,10 @@
 
 [English](AGENT_RUNTIME_PROTOCOL.md) · [简体中文](AGENT_RUNTIME_PROTOCOL.zh-CN.md)
 
-状态：供内部适配器实现的已固定协议，尚未启用生产运行时，也不是公开 API。
+状态：已实现的内部普通进程协议，不是公开 API。当前 Python 控制适配器为 `runtime_host.py` /
+`runtime_process.py`；TS 比较输入冻结在 `tests/oracles/legacy-server`。本次调用生命周期与可选
+Temporal Activity 组装不同；实际入口见[仓库地图](REPOSITORY_MAP.zh-CN.md#跨语言契约)，本协议
+本身不证明产品部署或平台资格。
 完整字段与示例以[英文协议](AGENT_RUNTIME_PROTOCOL.md)为准；复用依据见[调研](research/python-runtime-transport.md)。
 
 每次执行使用一个已安装的可信 Python 进程，由 Server 选择固定程序、参数、环境、工作目录和管道。
@@ -35,7 +38,7 @@ Server 只发送一次 `runtime.execute`，参数为版本、工具描述及 1 �
 存在待执行意图时不能进入下一模型步骤；协议请求 ID 仍不得复用。
 
 成功时，子进程只返回 `result:{text:string}`，刷新管道并以零退出。Server 核对最后一轮真实模型
-回答、无待处理操作、干净 EOF 和零退出，才接受待提交结果；最终发布仍由 NativeAgentRunner
+回答、无待处理操作、干净 EOF 和零退出，才接受待提交结果；最终发布仍由可信控制层
 完成。不存在子进程审计、用量写入、追加指令写入、批准或完成提交接口。
 
 应用错误使用固定消息和有界原因标识，不能发送原始异常。Server 接口失败不能被后续子进程成功

@@ -25,8 +25,7 @@ openbot/
 ├── apps/
 │   ├── web/                 # Web/PWA work, supervision and artifact interfaces
 │   ├── desktop/             # Thin Electron client and packaged runtime lifecycle
-│   ├── server/              # Transitional TypeScript business Server/default
-│   ├── server-python/       # Candidate Python authority, API and trusted services
+│   ├── server-python/       # Active Python product authority, API and trusted services
 │   ├── agent-runtime-python/ # Independently testable Python Agent Runtime
 │   └── node/                # Replaceable execution-node daemon
 ├── packages/
@@ -52,7 +51,14 @@ openbot/
 └── .github/
 ```
 
-This is a responsibility map of the main migration paths, not an exhaustive directory listing.
+`apps/server` is retired. `npm run dev` uses `scripts/dev-python.mjs`; containers and the supported
+macOS arm64 local Desktop payload select Python product mode. Direct `serve.py` remains read-only
+unless configured. The runtime still lives under `apps/agent-runtime-python`; formal harness
+packaging is planned in C2, not already delivered. The retained Node parser closure is required.
+Use the [repository map](REPOSITORY_MAP.md) for bounded code/consumer/check routes and the
+[upgrade handoff](REPOSITORY_UPGRADE_PLAN.md) for C1→C2→C3 status.
+
+This is a responsibility map, not an exhaustive directory listing.
 The [migration plan](ARCHITECTURE_MIGRATION_PLAN.md) and
 [handoff](MIGRATION_HANDOFF.md) distinguish integrated candidates from qualified defaults.
 Server remains the only authority for identity, policy, routing, approvals and audit, regardless

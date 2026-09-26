@@ -8,7 +8,16 @@ Closes #
 
 ## Open-source research
 
-<!-- Choose one path. For ordinary Markdown spelling, faithful translation, or prose formatting
+<!-- Choose one path. Ordinary fixes reuse valid decisions; new dependencies/versions, public
+     protocols, authorization/security, persistence or material architecture need targeted evidence.
+     Eligible existing UI/core helper repairs and tests may replace all seven fields with:
+     - Research reuse: exact existing docs/research/...md, ADR, module RESEARCH.md or OpenBot issue
+     - Reuse scope: concrete repair and affected consumer
+     - Unchanged assumptions: why the existing decision still covers dependency/protocol/authority/persistence/architecture
+     - Source copied or substantially adapted: no
+     CI verifies the actual committed diff; sensitive/unknown paths use the full form, which may
+     still cite existing research without a new survey. Skills/prompts/AGENTS are not pure prose.
+ For ordinary Markdown spelling, faithful translation, or prose formatting
      with unchanged behavior/claims and unchanged commands, code, links and markup, replace ALL
      seven fields below with:
      - Research exemption: spelling / translation / mechanical-formatting (choose one)

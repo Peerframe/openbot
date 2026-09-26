@@ -26,7 +26,7 @@
     "dev:web": "turbo run dev --filter=@openbot/web",
     "dev:node": "turbo run dev --filter=@openbot/node",
     "dev:smoke": "node scripts/smoke-dev-startup.mjs",
-    "docs:check": "node scripts/check-docs.mjs",
+    "docs:check": "node --test scripts/check-developer-entrypoints.test.mjs && node scripts/check-docs.mjs",
     "employee:publisher-key": "node --env-file-if-exists=.env scripts/employee-publisher-key.mjs",
     "format": "biome format --write .",
     "format:check": "biome format .",

@@ -44,14 +44,14 @@ OpenBot 必须方便多位独立开发者参与，不能形成只有项目负责
 | 安全漏洞 | Private Security Advisory | 影响和最小安全复现；不要创建公开 Issue |
 | 只是安装疑问 | 现有文档；启用后使用 Discussions | 没有可复现缺陷时不要创建 Bug |
 
-主要代码区域：产品和移动端体验在 `apps/web`；控制平面与实时同步在 `apps/server`、
+主要代码区域：产品和移动端体验在 `apps/web`；控制平面与实时同步在 `apps/server-python`、
 `packages/db`；Node 协议在 `apps/node`、`packages/protocol`；电脑集成在 `providers/*` 与
 `packages/provider-sdk`；策略和安全在 `packages/policy`、`docs/SECURITY.md`；可选体验在
-`packages/office-plugin`。
+`packages/office-plugin`。当前 Python 执行核心在 `apps/agent-runtime-python`，正式包提取属于 C2。
 
 ## 本地开发
 
-需要 Node.js 22.22.2（CI 基线）、npm 10.9.9、Docker 和 Docker Compose。其他 Node.js 版本必须满足 `package.json` 的精确 engines 范围。使用 `npm ci` 复现已提交的锁文件。模块职责、扩展入口和定向检查见[仓库地图](docs/REPOSITORY_MAP.zh-CN.md)。
+需要 Node.js 22.22.2（CI 基线）、npm 10.9.9、Python 3.12+、Docker 和 Docker Compose。其他 Node.js 版本必须满足 `package.json` 的精确 engines 范围。使用 `npm ci` 复现已提交的锁文件。模块职责、扩展入口和定向检查见[仓库地图](docs/REPOSITORY_MAP.zh-CN.md)。
 
 ```bash
 git clone https://github.com/Peerframe/openbot.git
@@ -68,9 +68,9 @@ npm run db:up
 npm run dev
 ```
 
-保持终端运行。Turbo 会先构建所需共享包，再启动 Server/Web。打开 `http://localhost:5173`，
+保持终端运行。`scripts/dev-python.mjs` 先校验锁定 Worker 环境，通过 Turbo 构建共享包，再启动 Python Server/Web。打开 `http://localhost:5173`，
 使用 `.env` 中的 Owner 密码登录；Server 使用端口 `3001`。这已足够进行前端和控制平面开发。
-原生 Agent 需要在模型设置里明确启用。已有 checkout 应保留原 `.env` 和数据目录。
+执行 Work 另需明确的模型设置与 mTLS Temporal 配置；启动 API 不会创建引擎。已有 checkout 应保留原 `.env` 和数据目录。
 使用临时数据库复现 CI 的全新启动流程，见 [Server 启动冒烟说明](apps/server-python/README.zh-CN.md)。
 
 做一次小型 UI 修改时，先通过[仓库地图](docs/REPOSITORY_MAP.zh-CN.md)定位组件，在开发命令
@@ -119,9 +119,9 @@ npm audit
 
 ## 工程规则
 
-- 非简单功能先查维护中的 GitHub 仓库与开放标准，在 Issue、ADR 或
-  [功能调研记录](docs/research/README.zh-CN.md)中写明搜索词、候选、固定版本、许可证和选择，
-  完成记录后才能开始实现。
+- 普通修复和接线复用已有决定。新增依赖/版本、公共协议、授权/安全或持久数据边界及重大架构
+  选择，才在实现前补针对性证据。按[根触发规则](AGENTS.zh-CN.md#实现前调研)和
+  [研究指南](docs/research/README.zh-CN.md)只审查受影响的决定。
 - 选择顺序是开放标准、正式依赖、薄适配器、向上游贡献、窄 fork，最后才是有文档依据的本地
   差集。
 - Server 始终保存任务、审批、身份、策略和审计的唯一真相。
@@ -133,7 +133,7 @@ npm audit
 - README 不堆大型架构图；使用简短文本流程、表格和专门文档链接。
 
 根目录的 [AGENTS.md](AGENTS.md) 同时约束人工和自动化贡献者。扩展旧代码前，先在
-[追溯复用账本](docs/OPEN_SOURCE_REUSE.zh-CN.md)找到对应条目；缺失或标记不完整时先补审查。
+[追溯复用账本](docs/OPEN_SOURCE_REUSE.zh-CN.md)找到对应条目；缺失或不完整时只补本次相关证据，不重复全栈调查。
 
 ### 必要 CI 全部完成
 
@@ -158,25 +158,62 @@ manifest 与锁文件。触发 CI 前填写 PR 的七项研究字段，执行干
 
 ### 研究依据与文档豁免
 
-行为、依赖、协议和非简单功能变化，填写 PR 模板的七项研究字段，链接实现前创建的记录。
-已有模块研究覆盖当前修改时可以复用。
+根据实际差异选择 PR 证据，不能只看“修复”标题：
 
-普通 Markdown 的纯拼写修正、忠实翻译或段落排版，且行为和主张均未改变时，可以将
-`## Open-source research` 下的全部七项字段替换为两行：
+| 变化 | 证据 |
+| --- | --- |
+| 既定决定内的普通修复/接线 | 引用原决定、范围、不变假设及相关回归，不新做候选调查 |
+| 新依赖/版本、公共协议、授权/安全、持久数据边界或重大架构 | 受影响选择的针对性审查、版本固定和负向/兼容测试 |
+| 纯拼写、忠实翻译、段落排版 | 以下有界文字豁免，行为和主张不变 |
+
+已有 Web 组件、runtime `bounds.py`/`catalog.py`/`errors.py` 或测试中的合格修复，可将
+`## Open-source research` 下七项替换为：
+
+```markdown
+- Research reuse: docs/research/channel-member-layout.md
+- Reuse scope: Restore focus after the existing member menu closes.
+- Unchanged assumptions: Same event contract; dependency, protocol, authority, persistence and architecture boundaries unchanged.
+- Source copied or substantially adapted: no
+```
+
+引用实际相关决定，不默认套用示例。CI 读取实际提交 base/head 的不可变 blob；缺证据、混用表单、
+新产品文件、import 变化、依赖、边界所有者、规则/提示词及未知路径均不能走捷径。这是保守便利，
+不是语义证明或审批；审查仍需追到消费者，识别合格路径内隐藏的权限或协议变化。
+
+其他普通修复（包括边界文件）仍可填写原七项，引用已有审查与固定版本，**不要求新开研究循环**。
+只有假设变化才重开相关决定；新增边界使用同一表单提供新针对性证据，源码引入保留许可/声明。
+研究模板先判断触发与复用，不因行为变化就新建报告。
+
+普通文字行为/主张不变时，可替换为：
 
 ```markdown
 - Research exemption: spelling
 - Exemption reason: Correct the README introduction's spelling; instructions and product claims are unchanged.
 ```
 
-类别选择 `spelling`、`translation` 或 `mechanical-formatting`。CI 读取实际提交差异，不信任
-自行填写的文件清单。自动范围包括根目录 README、`docs/` 内 Markdown 和 workspace README；
-不包括规则文档、ADR/研究记录、源码、配置、依赖、可执行位，以及代码块、行内命令、链接目标、标记或元数据
-变化。翻译命令和链接周围的文字时，保留其中技术内容即可。不要混用豁免与不完整的研究字段。
+类别为 `spelling`、`translation`、`mechanical-formatting`。CI 验证实际 diff，仅根 README、普通
+`docs/` Markdown 和 workspace README 可用，命令、代码、链接、标记和元数据不变。规则、skill、
+提示词、ADR/研究、源码、配置、依赖和可执行位不能豁免。翻译忠实与主张不变由审查负责。表单不得
+混用；只编辑 PR 正文不触发 CI；历史缺失/浅克隆时失败关闭。
 
-自动检查不能证明翻译忠实或文字主张不变，这仍由原有 PR 审查判断。无害修改超出自动范围时，
-用七项字段引用模块已有研究并说明行为不变；AGENTS 对纯源码排版免做新研究的规则保持不变，
-无需新增审批。只编辑 PR 正文不会自动触发 CI；新提交会按原有流程执行检查。
+### AI 开发入口与验证
+
+按[AGENTS](AGENTS.zh-CN.md) → [仓库地图](docs/REPOSITORY_MAP.zh-CN.md)相关路线 → 局部规则、契约、
+消费者和测试阅读。`.agents/skills` 提供 `openbot-change`、`openbot-check`、`openbot-ui`、
+`openbot-review`，只选择当前工作流。这些是仓库开发指令，不是 Employee 技能，不得打进产品载荷。
+
+Codex 从当前目录向仓库根查找 skills；启动规则按根到当前目录加载 AGENTS。编辑更深路径时显式
+读取局部文件。客户端未刷新目录时，在该 checkout 重开会话并调用 `$openbot-change`，或读取根
+AGENTS 链接的 SKILL.md，记录实际生效方式。这里未配置 Claude 集成，不复制第二套规则；未来兼容
+入口必须指向 canonical AGENTS，并在实际工具中验证。
+
+工作流修改运行 `npm run docs:check`、`npm run research:check` 和真实发现/读取验收，Markdown
+不代表纯文字。纯文字/指令运行适用检查；脚本/实现修改交接前仍须 `npm run check`。必要云端及
+发布/迁移/安全门不变。C3 才处理 CI 选择，本阶段不跳过 job。记录测试数、缓存、跳过和缺失环境。
+
+升级只维护[一份交接](docs/REPOSITORY_UPGRADE_PLAN.md)。UI 使用[既有设计索引](docs/design/README.zh-CN.md)、
+tokens/组件及受影响状态。C1 新会话验收定位 UI、Python 核心和跨语言任务；C3 才执行完整贡献流程，
+不能把定位成功当作后者完成。
 
 ## 提交 Pull Request
 

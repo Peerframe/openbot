@@ -49,7 +49,8 @@ Start with the [repository map](docs/REPOSITORY_MAP.md) for module ownership, co
 | Interest | Main paths |
 | --- | --- |
 | Product and mobile UX | `apps/web`, `docs/INTERFACE.md` |
-| Control plane and realtime | `apps/server`, `packages/db` |
+| Control plane and realtime | `apps/server-python`, `packages/db` |
+| Python execution core | `apps/agent-runtime-python` (current harness source) |
 | Node protocol and reliability | `apps/node`, `packages/protocol` |
 | Computer integrations | `providers/*`, `packages/provider-sdk` |
 | Policy and security | `packages/policy`, `docs/SECURITY.md` |
@@ -69,7 +70,7 @@ expected behavior, milestone, and permission boundary are recorded before implem
 
 ## Local development
 
-Requirements: Node.js 22.22.2 (the CI baseline), npm 10.9.9, and Docker with Docker Compose. Other Node.js releases must satisfy the exact engine range in `package.json`. Use `npm ci` to reproduce the committed lockfile.
+Requirements: Node.js 22.22.2 (the CI baseline), npm 10.9.9, Python 3.12+, and Docker with Docker Compose. Other Node.js releases must satisfy the exact engine range in `package.json`. Use `npm ci` to reproduce the committed lockfile.
 
 ```bash
 git clone https://github.com/Peerframe/openbot.git
@@ -86,10 +87,11 @@ npm run db:up
 npm run dev
 ```
 
-Keep this terminal open. Turbo builds the required shared packages before starting Server/Web.
+Keep this terminal open. `scripts/dev-python.mjs` verifies the locked Worker environment, builds
+the required shared packages through Turbo, then starts Python Server/Web.
 Open `http://localhost:5173` and sign in with the Owner password from `.env`; Server uses port
-`3001`. This is sufficient for frontend/control-plane development. The native Agent remains off
-until explicitly enabled in model settings. Keep an existing checkout's `.env` and data directories.
+`3001`. This is sufficient for frontend/control-plane development. Executing Work additionally needs explicit model settings and mTLS Temporal configuration;
+API startup does not create an engine. Keep an existing checkout's `.env` and data directories.
 To reproduce the clean-start CI journey with a disposable database, see
 [the Server startup smoke instructions](apps/server-python/README.md).
 
@@ -142,9 +144,10 @@ Run `npm run db:stop` when the development database is no longer needed.
 
 ## Engineering principles
 
-- Research maintained GitHub repositories and open standards before designing any non-trivial
-  feature. Create a durable issue, ADR, or [feature research record](docs/research/README.md) before
-  implementation and record the queries, comparison, selected version, license, and decision.
+- Reuse existing decisions for ordinary fixes and wiring. New dependencies/versions, public
+  protocols, authorization/security or persistent-data boundaries, and material architecture choices
+  require targeted evidence before implementation. Apply [root triggers](AGENTS.md#research-before-implementation)
+  and the [research guide](docs/research/README.md) only to the affected decision.
 - Prefer, in order: an open standard, a released dependency, a thin pinned adapter, an upstream
   contribution, a narrow fork, and finally a documented local gap implementation.
 - Preserve one Server-owned source of truth for tasks, approvals, and audit events.
@@ -160,7 +163,7 @@ Run `npm run db:stop` when the development database is no longer needed.
 The root [repository instructions](AGENTS.md) apply equally to human and automated contributors.
 When expanding old code, locate its entry in the
 [retroactive reuse ledger](docs/OPEN_SOURCE_REUSE.md) first; an absent or partial entry must be
-reviewed before expansion.
+reviewed for the affected decision before expansion, not a repeated full-stack investigation.
 
 ### Required CI completion
 
@@ -189,32 +192,74 @@ proposals, not proposals per week. Preserve security updates and existing major-
 
 ### Research evidence and documentation exemptions
 
-Behavior, dependency, protocol and non-trivial feature changes use the seven research fields in the
-PR template. Link the durable record created before implementation; existing module research can
-be reused when it covers the change.
+Choose one PR evidence path based on the actual change, not its title:
 
-For an ordinary Markdown spelling correction, faithful translation, or mechanical prose formatting
-change that changes neither behavior nor claims, replace all seven fields under `## Open-source
-research` with these two lines:
+| Change | Evidence |
+| --- | --- |
+| Ordinary fix/wiring within a valid decision | Cite that decision, scope, unchanged assumptions and focused regression; no fresh candidate survey |
+| New dependency/version, public protocol, authorization/security, persistent-data boundary or material architecture | Targeted review of the affected choice, pinned evidence and negative/compatibility tests |
+| Pure spelling, faithful translation, mechanical prose formatting | Bounded prose exemption below; unchanged behavior and claims |
+
+For eligible existing Web components, runtime `bounds.py`/`catalog.py`/`errors.py`, or tests, replace
+the seven fields under `## Open-source research` with:
+
+```markdown
+- Research reuse: docs/research/channel-member-layout.md
+- Reuse scope: Restore focus after the existing member menu closes.
+- Unchanged assumptions: Same event contract; dependency, protocol, authority, persistence and architecture boundaries unchanged.
+- Source copied or substantially adapted: no
+```
+
+Use the relevant existing decision, not this example by default. CI reads immutable committed
+base/head blobs and rejects missing evidence, mixed forms, new product files, changed imports,
+dependencies, boundary owners, instructions/prompts and unknown paths on this shortcut. This is a
+conservative convenience, not a semantic proof or approval. Review must still trace actual consumers
+and detect a permission or protocol change hidden inside an otherwise eligible file.
+
+Other routine fixes, including changes to boundary-owner files, may use the existing seven fields
+with the already-reviewed decision and pins; this does **not** require a new research cycle. Only
+changed assumptions reopen the affected choice. New boundaries use those same fields with their
+new targeted evidence. Source copying/adaptation keeps license/notice review. Research templates
+start with a trigger/reuse assessment; do not fill a new report merely because behavior changed.
+
+For unchanged ordinary prose, replace all seven fields with:
 
 ```markdown
 - Research exemption: spelling
 - Exemption reason: Correct the README introduction's spelling; instructions and product claims are unchanged.
 ```
 
-Choose `spelling`, `translation`, or `mechanical-formatting`. CI checks the actual committed PR
-diff, rather than a self-reported file list. The automatic path covers root READMEs, Markdown under
-`docs/`, and workspace READMEs. It excludes policy documents, ADR/research records, source, configuration, dependencies,
-executable modes and changes to code blocks, inline commands, link destinations, markup or metadata.
-Unchanged commands and links can remain inside translated prose. Do not mix exemption fields with
-partial research answers.
+Choose `spelling`, `translation`, or `mechanical-formatting`. CI verifies the committed diff. Only
+root READMEs, ordinary `docs/` Markdown and workspace READMEs qualify; commands, code, links,
+markup and metadata must remain unchanged. Policy, skills, prompts, ADR/research records, source,
+configuration, dependencies and executable modes cannot use this exemption. Translation faithfulness
+and unchanged claims remain review responsibilities. Do not mix evidence paths. PR-body edits alone
+do not trigger CI; missing/shallow history fails closed.
 
-The check cannot prove that a translation is faithful or a prose claim is unchanged; that remains
-part of the existing PR review. If a harmless change falls outside the automatic scope, use the
-seven fields to reference existing module research and explain the unchanged behavior. Pure source
-formatting still needs no new research under `AGENTS.md`. This limitation does not add an approval
-step. An edited PR body alone does not automatically trigger CI; a new commit follows the usual
-pull-request checks.
+### AI development entry and validation
+
+Read [AGENTS](AGENTS.md) → one [repository map](docs/REPOSITORY_MAP.md) route → local AGENTS, contract,
+consumer and test. `.agents/skills` provides `openbot-change`, `openbot-check`, `openbot-ui` and
+`openbot-review`; select only the relevant workflow. These are repository-development instructions,
+not Employee skills, and must not enter product payloads.
+
+Codex discovers repository skills from the current directory up to the repo root. Its startup rules
+follow root-to-current-directory AGENTS; when editing a deeper path, read that local file explicitly.
+If a client does not refresh its catalog, reopen the session at this checkout and invoke
+`$openbot-change`, or read the SKILL.md linked by root AGENTS. Record which mechanism actually worked.
+No Claude integration is configured here; do not maintain a second copy of the rules. A future
+compatibility entry must route to canonical AGENTS and be tested in the actual tool.
+
+For workflow changes run `npm run docs:check`, `npm run research:check` and a real discovery/reading
+exercise; Markdown is not proof of prose-only impact. Pure prose/instructions need their applicable
+gates; script/implementation changes still require `npm run check` before handoff. Hosted required
+checks and release/migration/security gates remain applicable. C3 will address CI selection; this
+stage does not skip jobs. State actual test counts, cached results, skips and missing environments.
+
+The upgrade continues in [one handoff](docs/REPOSITORY_UPGRADE_PLAN.md). UI work also follows
+[the existing design index](docs/design/README.md), current tokens/components and affected rendered
+states. New-session C1 acceptance locates UI, Python-core and cross-language tasks; C3 executes the
+complete contribution journeys. Do not claim the latter from a successful lookup.
 
 ## Code and comments
 

@@ -7,6 +7,17 @@
 - Acceptance journey: <one observable end-to-end outcome>
 - Security boundary: <authority, data, side effects, and failure behavior>
 
+## Trigger and existing decision
+
+- Trigger: new dependency/version / public protocol / authorization or security / persistent data / material architecture
+- Existing decision and reviewed pin:
+- Changed assumption or precise missing evidence:
+- Scope of this targeted review:
+
+If no trigger applies, cite the existing decision, unchanged assumptions and focused tests in the
+PR/handoff; do not instantiate this template. Reuse still-valid evidence below, updating only the
+changed choice. New boundary evidence and source/notice obligations remain required.
+
 ## Search evidence
 
 - Search date:

@@ -2,31 +2,20 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-Every behavior-changing OpenBot feature starts with evidence that maintained open-source code and
-standards were considered before local implementation. This directory stores a lightweight record
-when an issue or full ADR is not the better home.
+Follow [root research triggers](../../AGENTS.md#research-before-implementation): new dependencies or
+versions, public protocols, authorization/security or persistent-data boundaries, and material
+architecture choices need targeted evidence. Ordinary fixes and wiring cite the existing decision,
+reviewed pins, unchanged assumptions and affected tests in the PR/handoff; do not create a new report.
+Complete only missing evidence relevant to the touched choice. No broad survey is required again.
 
-Use [the template](TEMPLATE.md) before implementation. One record should cover one acceptance
-journey and should remain useful after the original author leaves. The record is a decision aid,
-not a star-count contest: activity, tests, platform fit, permission model, API stability, and
-license compatibility matter more than popularity alone.
-
-An issue is sufficient when it contains every template field and remains permanently linkable. Use
-an ADR when the choice changes a public contract, trust boundary, persistence format, dependency,
-or long-lived architecture. Tiny spelling, translation, and mechanical formatting changes do not
-need a record.
-
-Implementation may start only after the record identifies one of these decisions:
-
-1. adopt an open standard;
-2. depend on a released package or separate service;
-3. write a thin adapter pinned to an upstream contract;
-4. contribute the general gap upstream;
-5. maintain a narrow fork with an update plan;
-6. implement the precisely documented OpenBot-specific gap.
-
-No-result research must include the date, actual queries, repositories inspected, and the gap that
-made them unsuitable. It must not be used to avoid attribution or license review.
+Use [the template](TEMPLATE.md) only for a triggered new/reopened decision when an existing issue or
+ADR is not a better home. Keep one observable acceptance journey, compare viable maintained choices
+by fit, license and total delivery/maintenance cost, and pin the reviewed release/commit. An existing
+record may be amended with the changed assumption; a boundary change still needs targeted review.
+An issue can hold equivalent durable evidence. Use an ADR for a long-lived contract or architecture.
+No candidate fitting the requirement means recording the actual queries/candidates and precise gap,
+not dropping attribution/license review. [PR evidence paths](../../CONTRIBUTING.md#research-evidence-and-documentation-exemptions)
+retain the seven-field form, existing-decision reuse and the narrow unchanged-prose exemption.
 
 Accepted records include [Owner-managed Employee memory](owner-managed-employee-memory.md), which
 attributes the evolution/memory direction to Hermes and compares Letta, Mem0, and LangMem before

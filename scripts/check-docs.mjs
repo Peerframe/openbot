@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { validateDeveloperEntrypoints } from "./check-developer-entrypoints.mjs";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ignoredDirectories = new Set([
@@ -8,6 +9,7 @@ const ignoredDirectories = new Set([
   ".turbo",
   ".venv",
   ".worker-venv",
+  ".pytest_cache",
   "build",
   "coverage",
   "dist",
@@ -24,6 +26,7 @@ for (const file of markdownFiles) {
 }
 
 validateResearchPolicy();
+failures.push(...validateDeveloperEntrypoints(repositoryRoot));
 
 for (const name of ["README.md", "README.zh-CN.md"]) {
   const file = resolve(repositoryRoot, name);

@@ -335,3 +335,121 @@ test("fails closed on invalid or unavailable Git objects without exposing subpro
     /^Error: Cannot verify exemption changes\./u,
   );
 });
+
+const reuse = `## Open-source research
+
+- Research reuse: docs/research/channel-member-layout.md
+- Reuse scope: Restore focus after the existing member menu closes.
+- Unchanged assumptions: Same React event contract; no dependency, public protocol, authority, persistence or architecture change.
+- Source copied or substantially adapted: no
+`;
+const repair = (overrides = {}) =>
+  documentationChange('export const label = "Before";', 'export const label = "After";', {
+    path: "apps/web/src/components/ChannelMembersMenu.tsx",
+    ...overrides,
+  });
+
+test("ordinary UI and core repairs reuse the decision without repeating upstream research", () => {
+  assert.deepEqual(validatePullRequestResearch(reuse, [repair()]), []);
+  assert.deepEqual(
+    validatePullRequestResearch(
+      reuse.replace(
+        "docs/research/channel-member-layout.md",
+        "apps/agent-runtime-python/RESEARCH.md",
+      ),
+      [repair({ path: "apps/agent-runtime-python/src/openbot_agent_runtime/catalog.py" })],
+    ),
+    [],
+  );
+});
+
+test("reuse needs a concrete decision, assumptions, no copying and immutable diff evidence", () => {
+  for (const body of [
+    reuse.replace("docs/research/channel-member-layout.md", "TODO"),
+    reuse.replace(/Unchanged assumptions:.*/u, "Unchanged assumptions: TBD"),
+    reuse.replace("adapted: no", "adapted: yes"),
+    `${reuse}\n- Research artifact: docs/research/example.md`,
+    `${reuse}\n- Research exemption: spelling`,
+  ])
+    assert.ok(validatePullRequestResearch(body, [repair()]).length > 0);
+  assert.ok(validatePullRequestResearch(reuse).length > 0);
+  assert.ok(validatePullRequestResearch(reuse, []).length > 0);
+  assert.ok(validatePullRequestResearch(reuse, Array(101).fill(repair())).length > 0);
+});
+
+test("repair label cannot hide dependencies, authorization, persistence, protocols or workflow rules", () => {
+  for (const path of [
+    "package.json",
+    "package-lock.json",
+    "apps/agent-runtime-python/pyproject.toml",
+    "apps/agent-runtime-python/requirements.lock",
+    "packages/protocol/src/frames.ts",
+    "apps/server-python/src/openbot_server/auth_store.py",
+    "packages/policy/src/index.ts",
+    "apps/server-python/src/openbot_server/work_store.py",
+    "packages/db/migrations/0099.sql",
+    "apps/agent-runtime-python/src/openbot_agent_runtime/contracts.py",
+    "apps/agent-runtime-python/src/openbot_agent_runtime/guard.py",
+    "AGENTS.md",
+    "apps/web/AGENTS.md",
+    ".agents/skills/openbot-change/SKILL.md",
+    ".github/workflows/ci.yml",
+    "scripts/check-pr-research.mjs",
+    "unknown/file.py",
+  ])
+    assert.ok(validatePullRequestResearch(reuse, [repair(), repair({ path })]).length > 0, path);
+  for (const overrides of [
+    { beforeMode: "000000" },
+    { afterMode: "100755" },
+    { afterMode: "120000" },
+    { after: 'import extra from "new-dependency";\nexport const label = "After";' },
+    { after: "binary\0" },
+  ])
+    assert.ok(validatePullRequestResearch(reuse, [repair(overrides)]).length > 0);
+});
+
+test("skills and prompts are not ordinary prose even under docs", () => {
+  for (const path of [
+    "docs/skills/example/SKILL.md",
+    "docs/prompts/model.md",
+    "docs/SKILL.md",
+    ".agents/skills/example/SKILL.md",
+  ])
+    assert.ok(
+      validatePullRequestResearch(exemption, [documentationChange("before", "after", { path })])
+        .length > 0,
+      path,
+    );
+});
+
+test("reuse CLI reads actual blobs and refuses a mixed dependency or permission change", (t) => {
+  const fixture = fixtureRepository(t);
+  const source = "apps/web/src/components/Menu.tsx";
+  fixture.write(source, 'export const label = "Before";');
+  const base = fixture.commit();
+  fixture.write(source, 'export const label = "After";');
+  let head = fixture.commit();
+  const eventPath = join(tmpdir(), `openbot-reuse-${process.pid}.json`);
+  t.after(() => rmSync(eventPath, { force: true }));
+  const run = () => {
+    writeFileSync(
+      eventPath,
+      JSON.stringify({ pull_request: { body: reuse, base: { sha: base }, head: { sha: head } } }),
+    );
+    return spawnSync(process.execPath, [resolve("scripts/check-pr-research.mjs")], {
+      cwd: fixture.cwd,
+      env: { ...process.env, GITHUB_EVENT_NAME: "pull_request", GITHUB_EVENT_PATH: eventPath },
+      encoding: "utf8",
+    });
+  };
+  fixture.write(source, 'import unexpected from "working-tree-lie";');
+  assert.equal(run().status, 0);
+  fixture.write("package.json", '{"dependencies":{"new":"1.0.0"}}');
+  head = fixture.commit();
+  assert.equal(run().status, 1);
+  fixture.git("reset", "--hard", base);
+  fixture.write(source, 'export const label = "After";');
+  fixture.write("apps/server-python/src/openbot_server/auth_store.py", "allow = True");
+  head = fixture.commit();
+  assert.equal(run().status, 1);
+});

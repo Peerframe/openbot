@@ -32,7 +32,8 @@ credentials, database handles or any Server write.
 
 * Reviewed Server ceilings, kept as ceilings: **8** model steps, **16** tool calls,
   **128 KiB** per tool result (matching `AgentRuntimeToolPolicy.maximumResultBytes`
-  in `apps/server/src/agent-runtime.ts`).
+  in the frozen `tests/oracles/legacy-server/src/agent-runtime.ts`; current control enforcement
+  is in `apps/server-python/src/openbot_server/runtime_host.py`).
 * Runtime-local bounds on catalog size and bytes, message bytes, history length,
   final output bytes, progress events and corrections.
 * The Server may tighten any limit. A limit above its ceiling is refused **before**
@@ -217,7 +218,9 @@ CPython >= 3.12 (`asyncio.timeout`); the pinned SDK itself only needs 3.10.
   integration gate; its evidence is recorded in the runtime guide.
 * The Linux/amd64 reference container passed 369 package and 222 Server/PostgreSQL tests.
   It ran under emulation on an ARM Mac; native hosted CI, Windows and production packaging are
-  not established by that result. The existing TypeScript runtime remains the default.
+  not established by that historical result. Current product defaults are Python; consult the
+  [repository map](../../docs/REPOSITORY_MAP.md) and current migration handoff for later scoped evidence.
+  The frozen TS oracle is not a runtime option.
 * Profile tests use real locks, synthetic installed sets and the exact Server preflight invocation.
   The opt-in Server image separately verifies the installed runtime closure and actual SDK/tool loop;
   see [container verification](../../docs/SERVER_CONTAINER.md#optional-python-execution-image).
