@@ -56,9 +56,11 @@ def main():
             with (output / "RUN.log").open("w") as stream:
                 run = subprocess.run(["docker", "start", "--attach", name], stdout=stream,
                                      stderr=subprocess.STDOUT, timeout=150)
-            if not (output / "RESULT.json").is_file():
+            if not (output / "GUEST_RESULT.json").is_file():
                 raise RuntimeError("fixture did not produce a result; inspect RUN.log")
-            result = json.loads((output / "RESULT.json").read_text())
+            # On native Linux the guest file belongs to root. The invoking user
+            # writes its separate final receipt only after container cleanup.
+            result = json.loads((output / "GUEST_RESULT.json").read_text())
             result.update({"fixtureImage": args.fixture_image, "containerExitCode": run.returncode})
             result["accepted"] = result["accepted"] and run.returncode == 0
         finally:

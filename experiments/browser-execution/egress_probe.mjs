@@ -227,6 +227,6 @@ try {
   for (const socket of sockets) socket.destroy();
   await Promise.all(servers.map((server) => new Promise((resolve) => server.close(resolve))));
   clearTimeout(deadline);
-  writeFileSync("/output/RESULT.json", JSON.stringify(result, null, 2) + "\n");
+  writeFileSync("/output/GUEST_RESULT.json", JSON.stringify(result, null, 2) + "\n");
   console.log(JSON.stringify(result));
 }
