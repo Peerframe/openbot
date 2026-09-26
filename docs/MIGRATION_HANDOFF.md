@@ -31,9 +31,12 @@
   behavior and both history replays passed; owned resources were removed. The new browser profile
   table was empty in this scripted fixture; browser-specific continuation is not inferred.
   [Safe result](../experiments/work-journey/evidence/active-paired-restore-schema44.json).
-- Packaging/checks: the current repository check passed; Python Preview refresh is in progress. Earlier
-  schema43 Preview/containers and green PR96 results remain pinned to their source. No installed
-  app replacement, default-backend switch or release has occurred.
+- Packaging/checks: source618e399 Preview passed staged/packaged startup, restart preservation,
+  cleanup, exact162-module/SQL comparison and two actual bundled mTLS Worker starts. The owned
+  engine was removed. Native GUI/Keychain and full packaged inference remain separate. Current CI
+  exposed the stale43-entry container/S7 pins and a missing PR research section; both are corrected and all40 historical
+  migration/restore plus8 cleanup cases passed on44. The updated head still requires hosted CI. No installed app replacement,
+  default-backend switch or release has occurred.
 - Remaining retirement gates: model page interpretation and approved browser actions with a real
   enforced egress/Host boundary; complete product browser continuation after interruption; final
   source/package/replacement qualification. Manual Owner page input is now accepted in its scoped

@@ -10,6 +10,9 @@
 也已通过，见[任务级证据](../../docs/research/python-product-container.md#hosted-native-matrix-result)。
 同一轮 PR 仍有其他检查失败，不能据此宣称整体通过；配置 Temporal 与部署仍另行验收。
 
+当前浏览器增量将构建和smoke固定为44条迁移。上方43条迁移镜像证据保留原范围；
+更新后的镜像需要新的原生CI验收。
+
 `serve.py`的`OPENBOT_CONTROL_HOST`仅接受127.0.0.1或0.0.0.0，默认仍为127.0.0.1；
 非法值在数据库、密钥或模型初始化前失败。显式候选镜像选择0.0.0.0，不自动改变Origin、Cookie或代理信任。
 

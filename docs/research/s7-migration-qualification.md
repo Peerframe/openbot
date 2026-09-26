@@ -282,3 +282,13 @@ actual SQL/journal hashes and working-tree parent. Only the target pin and addit
 sealed historical fixtures and runner assertions are retained. The owned PostgreSQL resources
 were removed. Newly inactive command tables are empty in this fixture, so no in-flight command
 restoration, product execution or production conversion is claimed.
+
+## Canonical44 browser profile requalification — 2026-09-26
+
+The unchanged forty real PostgreSQL dual-lineage/restore cases passed against committed source
+`618e3996531f14e5ada6c025f9eea1bc559ca895`, including0043. Eight cleanup cases also passed.
+The [new result](../../experiments/s7-migration/evidence/browser-profiles-result.json) records
+exact hashes; all historical SQL, seeds and assertions remain unchanged. The existing runner
+removed its owned resources. The target pin and product container preflight/smoke now require44;
+new hosted container qualification must run on the updated source. The browser profile table is
+empty here; active browser continuation is not established by this legacy-data fixture.

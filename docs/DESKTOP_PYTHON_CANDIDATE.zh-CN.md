@@ -2,7 +2,9 @@
 
 这个显式选择的 macOS arm64 Preview 包使用可迁移的 CPython 启动现有 Python product API，保留 Desktop 的 PostgreSQL 管理、加密引导配置、Owner 登录和本地数据布局。默认打包与发布流程保持原来的后端选择。
 
-这是未签名的开发候选。已用一次性合成数据验证 Python API 和包内运行时生命周期。此前 canonical41／61依赖的 Preview 还通过了真实系统解密、跨进程恢复、Owner 就绪界面、正常菜单退出／重启后合成频道保留，以及最终 API／PG 关闭。[原生证据](../experiments/work-journey/evidence/desktop-native-keychain.json)记录实际范围；界面自动化使用 `--force-renderer-accessibility=complete`，未修改包内容。此前canonical43／63依赖候选还通过了包内真实mTLS Worker两次连接及生命周期检查，原始源码证据保留。最新1978bcb候选已完成全新63项依赖构建、暂存与包内API／重启／清理实测，并核对159个Python源码模块、生命周期脚本和锁文件。ASAR／控制器哈希与前包一致，产品Python变更是`serve.py`和模型连接校验。[更新证据](../experiments/work-journey/evidence/desktop-preview-refresh.json)明确区分本次检查与之前的mTLS、原生GUI证据。正式签名、新产物GUI／Keychain复验、新包mTLS连接及完整模型执行仍属独立门槛。
+这是未签名的开发候选。当前 `618e399` 包含全部44条规范迁移及63项固定依赖。暂存与实际包内测试均通过 Owner 登录、API／PostgreSQL 启动、重启数据保留、父进程退出清理和不安全目录拒绝。162个 Python 源码模块、生命周期脚本、锁文件及 SQL 与检出内容一致，包内控制器与编译结果一致。两次真实包内 Worker 启动连接了本轮独占 mTLS Temporal 服务，均观察到新的 Workflow／Activity poller，结束后资源已清理。[当前证据](../experiments/work-journey/evidence/desktop-preview-schema44.json)记录这些检查。
+
+此前 canonical41 的原生 GUI／Keychain、canonical43 的打包证据继续保留各自产物范围：[原生结果](../experiments/work-journey/evidence/desktop-native-keychain.json)、[前次更新](../experiments/work-journey/evidence/desktop-preview-refresh.json)。当前产物尚未重复原生 GUI／Keychain 验收，也未验证完整包内模型执行；未安装、签名或正式发布，常规打包仍选择原后端。
 
 ## 从仓库重现
 

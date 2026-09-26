@@ -9,11 +9,13 @@
 | --- | --- | --- |
 | 架构历史，27 条迁移 | `c33e03f1a14de739196113769c59fdaace9029e7` | 恢复旧数据，再通过现有生产启动守卫执行增量迁移。 |
 | 功能历史，19 条迁移 | `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` | 直接升级必须在索引 17 失败；专用实验随后将有限兼容记录转入新建目标库。 |
-| 已验证工作树目标，43 条迁移 | 父提交 `482bdc5bea56c5b1a996492701b6dbb012d5691e`，未提交字节另存精确哈希 | SQL 与 journal 必须匹配 `target-history.json`；变化后重新验证。 |
+| 已验证目标，44 条迁移 | `618e3996531f14e5ada6c025f9eea1bc559ca895` | SQL 与 journal 必须匹配 `target-history.json`；变化后重新验证。 |
 
-当前目标已于2026-09-25通过全部40项保留迁移／恢复检查。父提交只作恢复参考，不表示该提交含有
-未提交的0035–0042。`qualificationInput` 与[结果记录](evidence/command-readiness-result.json)保存精确
-SQL／journal 哈希。此前 40 条目标仍保留在[历史证据](evidence/python-product-result.json)中，原始来源历史字节未修改。
+当前目标于2026-09-26通过全部40项历史迁移／恢复检查。固定提交已包含0043浏览器档案表；
+[当前证据](evidence/browser-profiles-result.json)保留准确SQL／journal哈希及真实执行结果。
+八项清理测试也通过；旧43条迁移的[证据](evidence/command-readiness-result.json)保留。
+历史SQL、夹具数据和验收断言未修改。新增浏览器档案表在此夹具中为空，含活动浏览器任务的
+恢复另作验收。
 
 两条旧历史共享 0000–0016。`histories/common` 保存公共 SQL 原始字节，两个分支目录保存各自后缀。
 history JSON 记录每份 SQL 的哈希、时间戳和来源提交。`sources.mjs` 校验这些快照、复现已有

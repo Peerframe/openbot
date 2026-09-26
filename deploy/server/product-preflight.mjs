@@ -14,7 +14,7 @@ for (const name of [
 const journal = JSON.parse(
   await readFile(new URL("../../packages/db/migrations/meta/_journal.json", import.meta.url)),
 );
-if (journal.entries.length !== 43)
+if (journal.entries.length !== 44)
   throw new Error("Product migration snapshot changed; requalify it.");
 await access(new URL("../../apps/web/dist/index.html", import.meta.url));
 await import("../../packages/db/dist/index.js");
