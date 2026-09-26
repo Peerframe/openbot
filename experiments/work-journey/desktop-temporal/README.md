@@ -97,3 +97,12 @@ apps/server-python/.worker-venv/bin/python -B -m pytest -q \
 Those checks use synthetic files and real SDK protobuf types with synthetic service responses.
 They do not count as an actual packaged connection. The root runs and retains the final
 successful CLI JSON after rebuilding the candidate. No repository patch is needed.
+
+
+The current probe additionally starts with a valid fixed `D/browser.json` route/page-scope file.
+There is no connected Node and it submits no browser action. On both starts the real Worker must
+still connect. With the engine configuration left valid, private `{}` browser and command files
+must each fail the actual Python installation parser, produce no Owner login and close PG. The
+result records `privateBrowserConfigurationAccepted` and
+`invalidExecutionConfigurationsRefusedAndPostgresStopped`. API-only smoke separately checks that
+present execution configuration without Temporal cannot silently fall back to API-only startup.

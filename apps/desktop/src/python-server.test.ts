@@ -5,7 +5,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import {
   launchPythonProductServer,
   pythonProductEnvironment,
-  pythonProductTemporalEnvironment,
+  pythonProductConfigurationEnvironment,
   selectsPythonProduct,
 } from "./python-server.js";
 
@@ -43,6 +43,8 @@ it("retains PostgreSQL, object/plugin paths and the encrypted bootstrap key with
     OPENBOT_CONTROL_AUTHORITY: "read-only",
     OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH: "/untrusted/control.json",
     OPENBOT_DESKTOP_TEMPORAL_CONFIG_PATH: "/untrusted/desktop.json",
+    OPENBOT_CONTROL_BROWSER_CONFIG_PATH: "/untrusted/browser.json",
+    OPENBOT_CONTROL_COMMAND_CONFIG_PATH: "/untrusted/command.json",
     TEMPORAL_ADDRESS: "untrusted.example:7233",
     OPENBOT_PLUGIN_LOCAL_ENDPOINTS: " http://127.0.0.1:34321/mcp, http://[::1]:34322/mcp ",
   });
@@ -66,6 +68,8 @@ it("retains PostgreSQL, object/plugin paths and the encrypted bootstrap key with
     "OPENBOT_CONTROL_MODEL_DIRECTORY",
     "OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH",
     "OPENBOT_DESKTOP_TEMPORAL_CONFIG_PATH",
+    "OPENBOT_CONTROL_BROWSER_CONFIG_PATH",
+    "OPENBOT_CONTROL_COMMAND_CONFIG_PATH",
     "TEMPORAL_ADDRESS",
     "OPENBOT_MODEL_ENCRYPTION_KEY",
     "OPENBOT_DATABASE_URL",
@@ -130,7 +134,7 @@ const posixIt = it.runIf(process.platform !== "win32");
 posixIt("keeps API-only startup without the fixed private Temporal file", async () => {
   const directory = await temporary();
   const env = pythonProductEnvironment(directory, input(directory));
-  await expect(pythonProductTemporalEnvironment(env)).resolves.toEqual({});
+  await expect(pythonProductConfigurationEnvironment(env)).resolves.toEqual({});
 });
 
 posixIt(
@@ -140,7 +144,7 @@ posixIt(
     const path = join(directory, "temporal.json");
     await writeFile(path, '{"synthetic":"not yet a valid engine configuration"}', { mode: 0o600 });
     const env = pythonProductEnvironment(directory, input(directory));
-    expect(await pythonProductTemporalEnvironment(env)).toEqual({
+    expect(await pythonProductConfigurationEnvironment(env)).toEqual({
       OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH: path,
     });
     expect(env.OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH).toBeUndefined();
@@ -169,7 +173,7 @@ posixIt.each(["symlink", "dangling", "directory", "empty", "oversized", "public"
       if (kind === "public") await chmod(path, 0o644);
     }
     const env = pythonProductEnvironment(directory, input(directory));
-    await expect(pythonProductTemporalEnvironment(env)).rejects.toThrow("private owned file");
+    await expect(pythonProductConfigurationEnvironment(env)).rejects.toThrow("private owned file");
   },
 );
 
@@ -182,7 +186,7 @@ posixIt("rejects another file owner even when permissions are private", async ()
     .mockReturnValueOnce(owner)
     .mockReturnValue(owner + 1);
   const env = pythonProductEnvironment(directory, input(directory));
-  await expect(pythonProductTemporalEnvironment(env)).rejects.toThrow("private owned file");
+  await expect(pythonProductConfigurationEnvironment(env)).rejects.toThrow("private owned file");
 });
 
 posixIt(
@@ -195,11 +199,11 @@ posixIt(
     const alias = join(directory, "alias");
     await symlink(data, alias);
     await expect(
-      pythonProductTemporalEnvironment(pythonProductEnvironment(directory, input(alias))),
+      pythonProductConfigurationEnvironment(pythonProductEnvironment(directory, input(alias))),
     ).rejects.toThrow("directory must be private");
     await chmod(data, 0o755);
     await expect(
-      pythonProductTemporalEnvironment(pythonProductEnvironment(directory, input(data))),
+      pythonProductConfigurationEnvironment(pythonProductEnvironment(directory, input(data))),
     ).rejects.toThrow("directory must be private");
   },
 );
@@ -209,14 +213,14 @@ posixIt("does not cache prior Temporal file admission", async () => {
   const env = pythonProductEnvironment(directory, input(directory));
   const path = join(directory, "temporal.json");
   await writeFile(path, "{}", { mode: 0o600 });
-  await expect(pythonProductTemporalEnvironment(env)).resolves.toHaveProperty(
+  await expect(pythonProductConfigurationEnvironment(env)).resolves.toHaveProperty(
     "OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH",
     path,
   );
   await chmod(path, 0o644);
-  await expect(pythonProductTemporalEnvironment(env)).rejects.toThrow("private owned file");
+  await expect(pythonProductConfigurationEnvironment(env)).rejects.toThrow("private owned file");
   await rm(path);
-  await expect(pythonProductTemporalEnvironment(env)).resolves.toEqual({});
+  await expect(pythonProductConfigurationEnvironment(env)).resolves.toEqual({});
 });
 
 it.runIf(process.platform === "win32").each([false, true])(
@@ -225,8 +229,50 @@ it.runIf(process.platform === "win32").each([false, true])(
     const directory = await temporary();
     if (present) await writeFile(join(directory, "temporal.json"), "{}", { mode: 0o600 });
     const env = pythonProductEnvironment(directory, input(directory));
-    await expect(pythonProductTemporalEnvironment(env)).rejects.toThrow(
+    await expect(pythonProductConfigurationEnvironment(env)).rejects.toThrow(
       "directory must be private",
     );
+  },
+);
+
+posixIt(
+  "projects only present fixed execution files, without creating configuration or reading secrets",
+  async () => {
+    const directory = await temporary();
+    const env = pythonProductEnvironment(directory, input(directory));
+    await writeFile(join(directory, "browser.json"), "{}", { mode: 0o600 });
+    expect(await pythonProductConfigurationEnvironment(env)).toEqual({
+      OPENBOT_CONTROL_BROWSER_CONFIG_PATH: join(directory, "browser.json"),
+    });
+    await writeFile(join(directory, "command.json"), "{}", { mode: 0o600 });
+    expect(await pythonProductConfigurationEnvironment(env)).toEqual({
+      OPENBOT_CONTROL_BROWSER_CONFIG_PATH: join(directory, "browser.json"),
+      OPENBOT_CONTROL_COMMAND_CONFIG_PATH: join(directory, "command.json"),
+    });
+  },
+);
+
+posixIt.each(["browser.json", "command.json"])(
+  "refuses unsafe execution configuration %s on every startup",
+  async (name) => {
+    const directory = await temporary();
+    const path = join(directory, name);
+    const env = pythonProductEnvironment(directory, input(directory));
+    const assertRejected = () =>
+      expect(pythonProductConfigurationEnvironment(env)).rejects.toThrow("private owned file");
+    await symlink(join(directory, "missing"), path);
+    await assertRejected();
+    await rm(path);
+    for (const content of ["", "x".repeat(16385)]) {
+      await writeFile(path, content, { mode: 0o600 });
+      await assertRejected();
+      await rm(path);
+    }
+    await writeFile(path, "{}", { mode: 0o600 });
+    expect(Object.values(await pythonProductConfigurationEnvironment(env))).toEqual([path]);
+    await chmod(path, 0o644);
+    await assertRejected();
+    await rm(path);
+    expect(await pythonProductConfigurationEnvironment(env)).toEqual({});
   },
 );

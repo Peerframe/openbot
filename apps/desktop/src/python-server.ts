@@ -118,13 +118,13 @@ export function pythonProductEnvironment(
   };
 }
 
-/** Only the Owner's fixed app-data file opts the bundled product into its existing engine. */
-export async function pythonProductTemporalEnvironment(
+/** Only fixed Owner-controlled app-data files select existing engine and execution adapters. */
+export async function pythonProductConfigurationEnvironment(
   env: Record<string, string>,
 ): Promise<Record<string, string>> {
   const modelPath = env.OPENBOT_CONTROL_MODEL_SETTINGS_PATH;
   if (!modelPath || !isAbsolute(modelPath))
-    throw new Error("Python candidate Temporal configuration is invalid.");
+    throw new Error("Python candidate product configuration is invalid.");
   const dataRoot = dirname(modelPath);
   const directory = await lstat(dataRoot);
   if (
@@ -134,27 +134,35 @@ export async function pythonProductTemporalEnvironment(
     (directory.mode & 0o077) !== 0 ||
     (await realpath(dataRoot)) !== dataRoot
   )
-    throw new Error("Python candidate Temporal configuration directory must be private.");
-  const path = join(dataRoot, "temporal.json");
-  let entry: Awaited<ReturnType<typeof lstat>>;
-  try {
-    entry = await lstat(path);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return {};
-    throw new Error("Python candidate Temporal configuration is unavailable.");
+    throw new Error("Python candidate product configuration directory must be private.");
+  const result: Record<string, string> = {};
+  for (const [name, variable] of [
+    ["temporal.json", "OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH"],
+    ["browser.json", "OPENBOT_CONTROL_BROWSER_CONFIG_PATH"],
+    ["command.json", "OPENBOT_CONTROL_COMMAND_CONFIG_PATH"],
+  ] as const) {
+    const path = join(dataRoot, name);
+    let entry: Awaited<ReturnType<typeof lstat>>;
+    try {
+      entry = await lstat(path);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
+      throw new Error("Python candidate product configuration is unavailable.");
+    }
+    if (
+      !entry.isFile() ||
+      entry.isSymbolicLink() ||
+      entry.uid !== process.getuid?.() ||
+      (entry.mode & 0o077) !== 0 ||
+      entry.size < 1 ||
+      entry.size > 16384
+    )
+      throw new Error("Python candidate product configuration must be a private owned file.");
+    // Python reopens O_NOFOLLOW and validates the descriptor, JSON, route and credentials.
+    // This preflight neither reads secrets nor grants cached execution authority.
+    result[variable] = path;
   }
-  if (
-    !entry.isFile() ||
-    entry.isSymbolicLink() ||
-    entry.uid !== process.getuid?.() ||
-    (entry.mode & 0o077) !== 0 ||
-    entry.size < 1 ||
-    entry.size > 16384
-  )
-    throw new Error("Python candidate Temporal configuration must be a private owned file.");
-  // Python reopens with O_NOFOLLOW and validates the actual descriptor, strict JSON and
-  // mTLS credentials. This preflight neither reads secrets nor grants a cached permission.
-  return { OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH: path };
+  return result;
 }
 
 async function containedFile(root: string, name: string): Promise<string> {
@@ -287,7 +295,7 @@ export async function launchPythonProductServer(
     15_000,
   );
   await preparePrivateDirectories(env);
-  Object.assign(env, await pythonProductTemporalEnvironment(env));
+  Object.assign(env, await pythonProductConfigurationEnvironment(env));
   await fixedProcess(
     node,
     [migration],

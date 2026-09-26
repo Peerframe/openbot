@@ -30,3 +30,10 @@ node --test experiments/work-journey/desktop-temporal/probe-support.test.mjs
 apps/server-python/.worker-venv/bin/python -B -m pytest -q \
   experiments/work-journey/desktop-temporal/test_observe_pollers.py
 ```
+
+
+当前探针还写入合法固定 `D/browser.json` 路由／页面范围文件，不登记Node、不发送浏览器动作。
+两次包内Worker启动仍须真实连接引擎。保持引擎配置合法时，分别写入内容为`{}`的私有浏览器
+和命令配置，必须被真实Python安装解析器拒绝、不产生Owner登录并关闭PG。结果记录
+`privateBrowserConfigurationAccepted`及`invalidExecutionConfigurationsRefusedAndPostgresStopped`。
+无引擎情况下不允许通过执行配置静默回退API-only，由独立API smoke验证。

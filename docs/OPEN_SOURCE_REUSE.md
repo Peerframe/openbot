@@ -930,3 +930,11 @@ parser/restart checks passed; native matrix CI reuses the same smoke without pub
 43项Node parser／DB闭包和原npm投影，不新增依赖或复制上游实现，最终镜像不含TS业务Server／oracle／
 构建工具。默认仍监听127.0.0.1。真实本地Linux arm64镜像及独占临时Owner／Web／PG／解析／重启验收
 已通过，原生双架构CI复用同一smoke；不发布镜像、不切默认、不部署生产。
+
+
+Desktop's [fixed execution-file projection](research/desktop-python-product.md#fixed-execution-configuration-mapping--2026-09-26)
+reuses its existing canonical private dataRoot/lstat/UID/mode checks and the Server's no-follow
+installation readers. The fixed browser.json and command.json paths close a real packaged-entry
+gap without another configuration system, environment forwarding, runtime dependency or copied
+source. Existing Node24.21.0 and CPython3.12.13 pins/licenses remain unchanged. Present invalid
+configuration refuses startup; source/Host/Action authority still belongs to the Server.

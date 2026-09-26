@@ -2,9 +2,17 @@
 
 这个显式选择的 macOS arm64 Preview 包使用可迁移的 CPython 启动现有 Python product API，保留 Desktop 的 PostgreSQL 管理、加密引导配置、Owner 登录和本地数据布局。默认打包与发布流程保持原来的后端选择。
 
-这是未签名的开发候选。当前 `618e399` 包含全部44条规范迁移及63项固定依赖。暂存与实际包内测试均通过 Owner 登录、API／PostgreSQL 启动、重启数据保留、父进程退出清理和不安全目录拒绝。162个 Python 源码模块、生命周期脚本、锁文件及 SQL 与检出内容一致，包内控制器与编译结果一致。两次真实包内 Worker 启动连接了本轮独占 mTLS Temporal 服务，均观察到新的 Workflow／Activity poller，结束后资源已清理。[当前证据](../experiments/work-journey/evidence/desktop-preview-schema44.json)记录这些检查。
+这是未签名的开发候选。2026-09-26实际产物采用页面源码 `5b3f6bd` 加固定执行配置入口，包含45条迁移和
+63个固定依赖。暂存及包内API／PG、Owner登录、重启保留、父进程退出、非法目录和无引擎配置
+拒绝均通过；163个Python源码模块及SQL与当前仓库逐字节一致。真实包内Worker两次连接
+独占mTLS Temporal，合法浏览器配置可加载，非法浏览器／命令／引擎配置均在启动时拒绝并
+清理PG，独占资源已移除。[当前证据](../experiments/work-journey/evidence/desktop-preview-schema45.json)
+记录准确ASAR和控制器哈希。
 
-此前 canonical41 的原生 GUI／Keychain、canonical43 的打包证据继续保留各自产物范围：[原生结果](../experiments/work-journey/evidence/desktop-native-keychain.json)、[前次更新](../experiments/work-journey/evidence/desktop-preview-refresh.json)。当前产物尚未重复原生 GUI／Keychain 验收，也未验证完整包内模型执行；未安装、签名或正式发布，常规打包仍选择原后端。
+本版原生GUI尚未通过：Computer Use按完整应用路径与已核实包标识连接均超时，应用列表也
+没有Preview，已请用户打开此未安装候选后继续。旧41条迁移的
+[GUI／Keychain证据](../experiments/work-journey/evidence/desktop-native-keychain.json)不能覆盖此版。
+完整包内模型执行、签名、安装替换仍未验收；默认后端未切换。
 
 ## 从仓库重现
 
@@ -45,6 +53,8 @@ node apps/desktop/scripts/smoke-python-product.mjs 'apps/desktop/out/python-prod
 | `D/objects/work-artifacts` | `OPENBOT_CONTROL_ARTIFACT_ROOT` 指向控制层持有的私有不可变文件 |
 | `D/model-connections.key` | `OPENBOT_CONTROL_MODEL_CONNECTION_KEY_PATH`；只有 Python SQL 规则允许时才创建缺失的 32 字节私有 key |
 | Owner 可选创建的 `D/temporal.json` | 固定映射为 `OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH`；缺失时仅启动 API，存在时必须是当前用户私有普通文件，并通过 Python mTLS 配置校验 |
+| Owner 可选创建的 `D/browser.json` | 固定映射为 `OPENBOT_CONTROL_BROWSER_CONFIG_PATH`；原登记 Node 路由、可选人工接管和可信页面 origin；缺失时不启用 Work 浏览器路由 |
+| Owner 可选创建的 `D/command.json` | 固定映射为 `OPENBOT_CONTROL_COMMAND_CONFIG_PATH`；原受保护命令安装、独立密钥、版本及时间约束；缺失时不启用 Work 命令执行 |
 | 显式传给 Desktop 进程的 `OPENBOT_DESKTOP_TAVILY_API_KEY` | 原启动器将其映射为 `TAVILY_API_KEY`，供 Python Work 网页搜索适配器使用；通用终端 `TAVILY_API_KEY` 会被忽略 |
 | 包内 Node、parser 依赖 | `OPENBOT_CONTROL_NODE_EXECUTABLE`、`OPENBOT_CONTROL_NODE_MODULE_ROOT` |
 
@@ -98,3 +108,19 @@ smoke 创建新的临时私有规范目录，启动真实包内 PG 和 CPython�
 同一 smoke 已在构建出的 `.app` 资源目录中执行，证明不依赖宿主 venv 的迁移运行。默认 smoke 没有启动 Electron 界面，也没有验证原生 safeStorage、签名、公证、系统权限弹窗、安装器、Linux/Windows 包、模型传输或真实 mTLS Temporal 执行路径。另一个[包内连接探针](../experiments/work-journey/desktop-temporal/README.zh-CN.md)已于2026-09-25连接专用 mTLS／PostgreSQL Temporal 服务通过：两次启动都观察到同一新 Worker 的 Workflow／Activity poller，正常退出、重启保留数据、父进程 EOF 以及无效配置／不安全目录拒绝均通过。包内控制器与启动器字节和编译产物一致。这证明真实包内 Worker 的连接和生命周期；模型执行与历史重放由独立产品流程验收，不归入包内探针。无凭据的[公开结果](../experiments/work-journey/evidence/desktop-packaged-temporal.json)已入库。现有 Python 功能边界仍然有效；正式发布需分别完成这些产品路径的验收，并为所有嵌套原生运行时制定经过审阅的签名、公证方案。
 
 精确上游版本、来源、许可证和复用决策见 [研究记录](research/desktop-python-product.md)。
+
+
+## 固定执行配置入口
+
+本轮为原 Temporal 固定文件入口补上 `D/browser.json` 和 `D/command.json`，其中 D 为现有
+`<userData>/openbot/local-server` 私有目录。两者分别映射至 Python 浏览器路由和受保护命令
+配置，不接受开发者 shell 或渲染界面另选路径。每份文件必须由当前用户拥有、常规非符号链接、
+权限0600、大小1–16,384字节，父目录保持原私有／canonical要求。不存在时不启用相应能力；
+存在但内容或属性非法时启动失败，不能静默回退。Python仍以真实文件描述符重新检查并解析
+严格schema。不会自动生成配置、路由或签名密钥。
+
+浏览器配置遵循[现有浏览器契约](CONTROLLED_BROWSER.zh-CN.md)，命令配置遵循
+[现有命令契约](WORK_COMMAND_READINESS.zh-CN.md)。两条执行路径均须配置Temporal，命令还需
+原登记Host及固定密钥。入口连通不代表宿主平台已合格，也不替代逐次Owner批准。修改任一文件前先停止
+本地Server。新版smoke额外检查合法浏览器配置重启，以及包内Python对两份非法配置的实际拒绝
+和PostgreSQL清理；具体通过版本以顶部证据为准。

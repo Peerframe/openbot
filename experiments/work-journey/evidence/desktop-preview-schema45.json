@@ -1,0 +1,90 @@
+{
+  "format": "openbot.desktop.preview-refresh/v1",
+  "pythonSourceCommit": "5b3f6bd5593cb4d091eac475a9da82b7b1f3888e",
+  "launcherSourceParent": "5b3f6bd5593cb4d091eac475a9da82b7b1f3888e",
+  "launcherSourceState": "fixed execution configuration increment; exact compiled hashes below",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "unsignedDevelopmentCandidate": true,
+  "installed": false,
+  "workerDependencyCount": 63,
+  "matchingPythonSourceModules": 163,
+  "canonicalMigrations": 45,
+  "allSourceAndSqlBytesEqual": true,
+  "lifecycleScriptsAndLockMatch": true,
+  "pythonModuleDigest": "33439ca0b563622262469a8dd5a5e04968e874aff1e84402d0cffd141da0f251",
+  "stagedSmoke": {
+    "parentEofStoppedActualApi": true,
+    "unsafeDirectoryRefusedAndPostgresStopped": true,
+    "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+    "pythonProductHealth": true,
+    "ownerLogin": true,
+    "postgresInitialized": true,
+    "restartPreservedData": true,
+    "serverAndPostgresStopped": true,
+    "syntheticOnly": true,
+    "nativeKeychainVerified": false
+  },
+  "packagedSmoke": {
+    "parentEofStoppedActualApi": true,
+    "unsafeDirectoryRefusedAndPostgresStopped": true,
+    "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+    "pythonProductHealth": true,
+    "ownerLogin": true,
+    "postgresInitialized": true,
+    "restartPreservedData": true,
+    "serverAndPostgresStopped": true,
+    "syntheticOnly": true,
+    "nativeKeychainVerified": false
+  },
+  "asarSha256": "9320142e49796722167c60ca6e3a3807552aeb3ec0813e0778e2e1e7010712dd",
+  "matchingControllerHashes": {
+    "native-server.js": "62cc7faf9a54d424240f7c91e42d770a6d483bedcc28c2ddf6ef71d8be54838e",
+    "python-server.js": "6ab46f749f272da27556a73f35086ddc84452acb958bfe995837f1ecee2d8acc"
+  },
+  "packagedLauncherMatchesCompiledSource": true,
+  "packagedTemporal": {
+    "format": "openbot.desktop.packaged-temporal-smoke/v1",
+    "connectedStarts": 2,
+    "pollerObservations": [
+      {
+        "format": "openbot.desktop.temporal-pollers/v1",
+        "freshActivityPollers": 1,
+        "freshWorkflowPollers": 1,
+        "sameWorkerIdentity": true,
+        "workerIdentitySha256": "dd11fb562b2f565261f90592023aa12d89d55f1e2976efc76c1b1cd98a635ac1"
+      },
+      {
+        "format": "openbot.desktop.temporal-pollers/v1",
+        "freshActivityPollers": 1,
+        "freshWorkflowPollers": 1,
+        "sameWorkerIdentity": true,
+        "workerIdentitySha256": "6dd6792b22522432380e1a03515f9a3ebd35b114c4e8c60ed8ef7133f6164f63"
+      }
+    ],
+    "invalidPrivateConfigRefusedAndPostgresStopped": true,
+    "privateBrowserConfigurationAccepted": true,
+    "invalidExecutionConfigurationsRefusedAndPostgresStopped": true,
+    "isolatedQueue": true,
+    "originalLauncherUsed": true,
+    "diagnosticEvents": 4,
+    "fullInferenceVerified": false,
+    "workflowReplayVerified": false,
+    "parentEofStoppedActualApi": true,
+    "unsafeDirectoryRefusedAndPostgresStopped": true,
+    "pythonProductHealth": true,
+    "ownerLogin": true,
+    "postgresInitialized": true,
+    "restartPreservedData": true,
+    "serverAndPostgresStopped": true,
+    "syntheticOnly": true,
+    "nativeKeychainVerified": false
+  },
+  "ownedEngineCleanup": {
+    "ownedEngineRemoved": true
+  },
+  "nativeGuiRerun": false,
+  "nativeGuiBlocker": "Computer Use connection timed out using exact application path and verified bundle identifier; Preview absent from app inventory",
+  "signingVerified": false,
+  "fullInferenceVerified": false
+}

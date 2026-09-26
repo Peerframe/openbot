@@ -31,12 +31,20 @@
   13个文件、36个TLS文件和六个密钥反例。原审批／未知结果／取消行为及两份历史重放通过，
   独占资源已清理。此脚本夹具的新增浏览器档案表为空，不据此宣称浏览器自动继续已通过。
   见[安全结果](../experiments/work-journey/evidence/active-paired-restore-schema44.json)。
-- 打包／检查：源码618e399的Preview通过暂存／包内启动、重启保留、清理、162模块及SQL
-  字节核对，并通过两次真实包内mTLS Worker连接；独占引擎已移除。原生GUI／Keychain及完整
-  包内推理另作验收。63242fc的13项独立CI通过，Python作业因未构建真实Node夹具的依赖失败，
-  已在共享测试入口补构建。页面增量将容器／S7固定推进至45条迁移，40项历史迁移／恢复及
-  8项清理测试通过。`npm run check`已通过；真实PG上15项页面权限、57项页面／结果组合测试通过。
-  Python基础检查1306项通过、463项环境相关检查跳过；新提交托管CI待验。未替换应用或默认后端。
+- 打包：源码5b3f6bd加固定执行配置入口，在Temporal文件旁接通私有 `D/browser.json` 与
+  `D/command.json`。当前45条迁移Preview通过暂存／包内API及PG、Owner登录、重启保留、
+  父进程退出与失败清理；163个Python模块及SQL与检出内容一致。两次真实包内mTLS Worker
+  启动接受合法浏览器配置；非法浏览器／命令配置及无引擎配置均拒绝启动并清理PG。独占夹具
+  已移除。见[准确产物证据](../experiments/work-journey/evidence/desktop-preview-schema45.json)。
+  原生GUI仍待验：Computer Use按完整路径与已核实包标识连接均超时，列表没有Preview，
+  已请用户打开此未安装候选。旧GUI／Keychain证据不覆盖新版，完整包内推理也仍开放。
+  未替换已安装应用或默认后端。
+- 检查：63242fc的13项独立CI通过，Python作业因未构建真实Node夹具依赖失败，共享入口已补
+  构建。5b3f6bd快照已有12项托管检查通过，Windows客户端与Python／Temporal仍运行，未见失败。
+  容器／S7固定为45条迁移，40项历史迁移／恢复及8项清理测试通过。页面增量`npm run check`
+  已通过；真实PG上15项页面权限、57项页面／结果组合测试通过。Python基础检查1306项通过、
+  463项环境相关检查跳过。启动器增量通过`npm run check`、44项Desktop测试（两项Windows专用
+  检查在macOS跳过）及9项探针支持测试；此增量托管CI待验。
 - 剩余退役门槛：强制浏览器出口隔离与隔离Linux产品Host；超出本次同连接Worker恢复范围的
   完整Control／Node中断及替换恢复；最终源码／安装包／安装替换验收。通过前保留被替代的
   TS业务Server，并保留不可变59文件oracle及TS Node／Provider／工具。

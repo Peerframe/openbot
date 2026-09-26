@@ -40,15 +40,25 @@
   behavior and both history replays passed; owned resources were removed. The new browser profile
   table was empty in this scripted fixture; browser-specific continuation is not inferred.
   [Safe result](../experiments/work-journey/evidence/active-paired-restore-schema44.json).
-- Packaging/checks: source618e399 Preview passed staged/packaged startup, restart preservation,
-  cleanup, exact162-module/SQL comparison and two actual bundled mTLS Worker starts. The owned
-  engine was removed. Native GUI/Keychain and full packaged inference remain separate. CI
-  on63242fc passed13 individual jobs; Python qualification failed because the real Node fixture's
-  dependency closure had not been built. The shared test runner now builds that closure. The page
-  increment advances container/S7 pins to45;40 migration/restore cases and8 cleanup cases passed.
+- Packaging: source5b3f6bd plus fixed execution configuration now maps private `D/browser.json`
+  and `D/command.json` alongside the existing Temporal file. Current45-migration Preview passed
+  staged/packaged API/PG, Owner login, restart preservation, parent EOF and refusal cleanup;
+  all163 Python modules and SQL match the checkout. Two actual bundled mTLS Worker starts
+  accepted valid browser configuration; malformed browser/command files and configuration
+  without an engine failed closed and reaped PG. Owned fixtures are removed. See the exact
+  [artifact evidence](../experiments/work-journey/evidence/desktop-preview-schema45.json).
+  Native GUI is pending: Computer Use timed out for both the exact path and verified bundle ID,
+  and Preview was absent from app inventory. The user has been asked to open this uninstalled
+  candidate. Old GUI/Keychain evidence does not qualify the current bundle; full packaged
+  inference is also open. Installed app/default backend are unchanged.
+- Checks: CI on63242fc passed13 individual jobs; Python qualification failed because the real
+  Node fixture's dependency closure had not been built. The shared runner now builds it. On5b3f6bd,
+  12 hosted jobs have passed; Windows clients and Python/Temporal are running, with no failed job
+  in that snapshot. Container/S7 pins are45;40 migration/restore and8 cleanup cases passed.
   `npm run check` passed;15 page authority tests and57 combined page/result tests passed on real PG.
-  Base Python passed1306 with463 environment-dependent skips. Hosted CI for the new head remains
-  pending. Installed app/default backend are unchanged.
+  Base Python passed1306 with463 environment-dependent skips. The launcher increment passed
+  `npm run check`,44 focused Desktop tests (two Windows-only skips) and9 probe-support tests;
+  its hosted CI remains pending.
 - Remaining retirement gates: enforced browser egress and isolated Linux product Host; full
   Control/Node interruption/replacement recovery beyond the accepted same-connection Worker
   restart; final source/package/installed replacement qualification. Keep the replaced TS business
