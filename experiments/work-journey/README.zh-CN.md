@@ -349,3 +349,13 @@ PLAYWRIGHT_BROWSERS_PATH=/tmp/openbot-browser-binaries node /tmp/openbot-browser
 Python CI 运行相同流程，只上传 `RESULT.json`。日志、临时凭据、数据库、历史与合成浏览器
 档案保留在私有输出目录；`finally`关闭 API／Node／上游浏览器／Temporal 并删除独占数据库，
 依赖可复用。权限／取消／纠正回归保存在 `test_work_browser_page_actions.py`和 Docker 适配器测试中。
+
+补充旧审批失效验收时，分别传入 `--recovery control`、`--recovery node` 或
+`--recovery replacement`，每次使用新的输出目录。第一种杀掉并重启完整的独占 Control 进程；
+后两种杀掉并重新创建真实 Node 子进程，分别保留原凭据或撤销后重新登记同一 Node id。
+核对实际子进程 PID 和强制退出；独占浏览器进程继续运行，不据此宣称浏览器／Host 替换通过。
+连接改变后才批准原待执行点击，要求没有点击派发／提交，然后取消原 Task 并重放，不能新增动作。
+Control／Node 模式还在另一次中断前取得人工控制，验证旧窗口被拒绝、暂停状态保留，原30秒
+租期届满后必须明确重新接管和交还。新凭据不能继承原浏览器绑定。每次运行有6分钟截止及
+夹具清理；CI 使用独占资源运行三种模式，只保留不含内容的结果。这些用例不验证执行中响应
+丢失、浏览器档案跨 Host 迁移、公网出口或 Linux 隔离。

@@ -2,11 +2,9 @@ import { once } from "node:events";
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import { nodeEnvSchema } from "../../packages/config/src/index.ts";
-import { createSilentLogger } from "../../packages/logging/src/index.ts";
-import { OpenBotNodeClient } from "../../apps/node/src/client.ts";
-import { configuredProviders } from "../../apps/node/src/providers.ts";
+import { fileURLToPath } from "node:url";
+import { startProbeClient } from "./product_browser_client.mjs";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 let input = "";
 for await (const c of process.stdin) input += c;
 const c = JSON.parse(input);
@@ -55,10 +53,14 @@ const upstream = spawn("bun", ["src/index.ts"], {
 const computerUrl = `http://127.0.0.1:${port}`,
   targetUrl = `http://127.0.0.1:${target.address().port}`;
 let client;
+let nodeChild;
+const nodeProcesses = [];
+let controlTimer;
 let stopped = false;
 async function stop() {
   if (stopped) return;
   stopped = true;
+  clearInterval(controlTimer);
   await client?.stop();
   upstream.kill("SIGTERM");
   await Promise.race([once(upstream, "exit"), new Promise((r) => setTimeout(r, 8000))]);
@@ -88,45 +90,79 @@ try {
     await new Promise((r) => setTimeout(r, 50));
   }
   if (!ready) throw Error("Upstream timeout");
-  const env = nodeEnvSchema.parse({
-    OPENBOT_NODE_ID: c.nodeId,
-    OPENBOT_NODE_NAME: "Synthetic Browser Host",
-    OPENBOT_NODE_SERVER_URL: c.serverUrl,
-    OPENBOT_DOCKER_COMPUTER_URL: computerUrl,
-    OPENBOT_DOCKER_COMPUTER_TOKEN: token,
-    OPENBOT_DOCKER_ALLOW_PRIVATE_HOSTS: "true",
-    OPENBOT_DOCKER_INPUT_ORIGINS: targetUrl,
-    OPENBOT_DOCKER_BROWSER_SESSIONS: "true",
-    OPENBOT_DOCKER_BROWSER_TASKS: "true",
-  });
-  const providers = configuredProviders(env);
-  const calls = {};
-  for (const provider of providers) {
-    if (provider.browserTask) {
-      const run = provider.browserTask;
-      provider.browserTask = async (...args) => {
-        const kind = args[0].action.operation.kind;
-        calls[kind] = (calls[kind] || 0) + 1;
-        await writeFile(c.directory + "/browser-counts.json", JSON.stringify(calls));
-        return run(...args);
-      };
+  async function stopNode(signal = "SIGTERM") {
+    if (!nodeChild || nodeChild.exitCode !== null || nodeChild.signalCode !== null) return;
+    const child = nodeChild;
+    const exited = once(child, "exit", { signal: AbortSignal.timeout(5000) });
+    child.kill(signal);
+    try {
+      await exited;
+    } catch {
+      child.kill("SIGKILL");
+      await once(child, "exit");
     }
+    nodeProcesses.push({ pid: child.pid, event: "exit", signal: child.signalCode });
+    await writeFile(c.directory + "/node-processes.json", JSON.stringify(nodeProcesses));
   }
-  client = new OpenBotNodeClient(
-    env,
-    providers,
-    {
-      load: async () => ({
-        format: "openbot.node-identity/v1",
-        nodeId: c.nodeId,
-        credential: c.credential,
-        enrolledAt: new Date().toISOString(),
-      }),
-      save: async () => {},
-    },
-    createSilentLogger(),
-  );
-  await client.start();
+  async function startNode(credential) {
+    const config = { ...c, credential, computerUrl, token, targetUrl };
+    if (!c.nodeProcess) {
+      client = await startProbeClient(config);
+      return;
+    }
+    nodeChild = spawn(
+      process.execPath,
+      ["--import", "tsx", fileURLToPath(new URL("./product_browser_client.mjs", import.meta.url))],
+      { env: process.env, stdio: ["pipe", "pipe", "inherit"] },
+    );
+    const ready = once(nodeChild.stdout, "data", { signal: AbortSignal.timeout(10000) });
+    nodeChild.stdin.end(JSON.stringify(config));
+    client = { stop: () => stopNode() };
+    if (JSON.parse(String((await ready)[0])).started !== true) throw Error("Node child failed");
+    nodeProcesses.push({ pid: nodeChild.pid, event: "start" });
+    await writeFile(c.directory + "/node-processes.json", JSON.stringify(nodeProcesses));
+  }
+  await startNode(c.credential);
+  if (c.recovery === true) {
+    // Private fixture controls call the real Node lifecycle; no production transport hook.
+    let busy = false;
+    let connected = true;
+    controlTimer = setInterval(async () => {
+      if (busy || stopped) return;
+      busy = true;
+      try {
+        const path = c.directory + "/control-request.json";
+        let request;
+        try {
+          request = JSON.parse(await readFile(path, "utf8"));
+        } catch (error) {
+          if (error.code === "ENOENT") return;
+          throw error;
+        }
+        if (!Number.isSafeInteger(request.id) || request.id < 1 || request.id > 8)
+          throw Error("Invalid fixture control id");
+        await unlink(path);
+        if (request.operation === "disconnect" && connected) {
+          if (c.nodeProcess) await stopNode("SIGKILL");
+          else await client.stop();
+          connected = false;
+        } else if (request.operation === "connect" && !connected) {
+          await startNode(request.credential ?? c.credential);
+          connected = true;
+        } else throw Error("Invalid fixture lifecycle transition");
+        await writeFile(
+          c.directory + `/control-${request.id}.json`,
+          JSON.stringify({ done: true }),
+        );
+      } catch (error) {
+        process.stderr.write(String(error) + "\n");
+        await stop();
+        process.exitCode = 1;
+      } finally {
+        busy = false;
+      }
+    }, 100);
+  }
   process.stdout.write(JSON.stringify({ started: true, targetUrl }) + "\n");
 } catch (e) {
   await stop();

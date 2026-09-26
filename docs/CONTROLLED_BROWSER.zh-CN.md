@@ -139,7 +139,12 @@ Control；新路由不能自动替换已有原宿主绑定。
 报告通过审核后发布。真实本地产品验收已覆盖逐次审批、中文输入、单次点击、页面读取、报告
 下载、真实 Worker 停止／恢复及不重复动作的历史重放；模型响应为合成夹具。
 
+补充的真实用例杀掉并重启完整Control或Node进程，并撤销后重新登记同一Node id。
+连接变化后，旧批准点击不会派发。人工暂停保留，旧窗口失效，明确重新接管及交还后现场页面
+状态保留；新凭据不能继承旧浏览器绑定。取消会关闭权限并保留未知证据供核对，三份历史重放
+都没有新增动作。见[限定范围的结果](../experiments/work-journey/evidence/product-browser-interruption.json)。
+
 此候选要求使用行为已知的自有页面。origin 清单和截图检查不能隔离重定向、脚本或子资源网络
-请求；不可信公网浏览、隔离 Linux 浏览器部署、完整 Control／Node 替换仍是独立退役门槛。
+请求；不可信公网浏览、隔离 Linux 浏览器部署及浏览器／Host档案替换仍是独立退役门槛。
 见[页面操作记录](research/work-browser-page-actions.md)及
 [可复现验收](../experiments/work-journey/README.zh-CN.md#经审批的浏览器产品验收)。

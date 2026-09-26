@@ -22,6 +22,13 @@
   正常新检查点不会错误取消原观察，真正的Owner纠正仍会使旧引用失效。
   [证据](../experiments/work-journey/evidence/product-browser-pages.json)和仓库脚本可由新贡献者
   复现，无私人路径或付费模型凭据；合成模型HTTP不证明视觉理解。该脚本已接入固定依赖的CI。
+- 中断恢复：完整Control被SIGKILL后重启、真实Node进程两次被杀后重建、同id更换凭据，均在
+  独占本地Chromium／PG／mTLS Temporal通过。旧点击批准没有到达Node派发或目标页面，提交
+  次数为零。取消关闭执行权限并保留unknown证据；引擎失败不冒充Task成功。人工暂停跨Control／
+  Node中断保留，旧窗口拒绝，明确重新接管及交还后页面状态保留。新凭据不能继承原浏览器绑定。
+  三份历史重放均未新增浏览器／模型调用，独占夹具已移除。见
+  [安全结果](../experiments/work-journey/evidence/product-browser-interruption.json)。三种模式已接入CI。
+  此处不覆盖浏览器／Host进程替换、磁盘档案迁移或执行中响应丢失。
 - Linux 命令：明确授权的 product3 已在44条迁移上通过一次真实 Work→Node→受保护 Linux Host
   执行，包括 Owner 审批、PG／mTLS Temporal、准确 CSV、独立合成模型审核、两份下载与离线
   重放。原50／150秒限制成立；原生运行目录／磁盘、socket、临时密钥及公共Node副本已清理，
@@ -40,13 +47,14 @@
   已请用户打开此未安装候选。旧GUI／Keychain证据不覆盖新版，完整包内推理也仍开放。
   未替换已安装应用或默认后端。
 - 检查：63242fc的13项独立CI通过，Python作业因未构建真实Node夹具依赖失败，共享入口已补
-  构建。5b3f6bd快照已有12项托管检查通过，Windows客户端与Python／Temporal仍运行，未见失败。
+  构建。074d17c快照已有13项托管检查通过，仅Python／Temporal仍运行，未见失败。
   容器／S7固定为45条迁移，40项历史迁移／恢复及8项清理测试通过。页面增量`npm run check`
   已通过；真实PG上15项页面权限、57项页面／结果组合测试通过。Python基础检查1306项通过、
   463项环境相关检查跳过。启动器增量通过`npm run check`、44项Desktop测试（两项Windows专用
-  检查在macOS跳过）及9项探针支持测试；此增量托管CI待验。
-- 剩余退役门槛：强制浏览器出口隔离与隔离Linux产品Host；超出本次同连接Worker恢复范围的
-  完整Control／Node中断及替换恢复；最终源码／安装包／安装替换验收。通过前保留被替代的
+  检查在macOS跳过）及9项探针支持测试。进程中断验收增量的`npm run check`也已通过，其托管CI待验。
+- 剩余退役门槛：强制浏览器出口隔离与隔离Linux产品Host，包括浏览器／档案替换及执行中
+  不确定结果；最终源码／安装包／安装替换验收。可信本地页面上的Control／Node进程中断及
+  同id新凭据拒绝现已通过。其他门槛通过前保留被替代的
   TS业务Server，并保留不可变59文件oracle及TS Node／Provider／工具。
 - 保留证据：DSH已按获批材料实现浏览器快照模块，SQL／身份修正与整合已提交。真实Kimi任务
   四份回执／8,854 tokens、231字节下载不重发；native case2和Linux CDP组件不重复。

@@ -460,3 +460,16 @@ Logs, temporary credentials, database state, history and synthetic browser profi
 private output directory. API, Node, upstream browser, Temporal and owned database resources are
 closed in `finally`; dependencies remain reusable. Essential authority/cancellation/correction
 regressions are in `test_work_browser_page_actions.py` and the Docker adapter's tests.
+
+For complementary stale-approval cases, pass `--recovery control`, `--recovery node` or
+`--recovery replacement`, each with a new output directory. The first kills/restarts the full owned
+Control process; the others kill/recreate a real Node child process with the same credential or
+revoke/re-enroll the same Node id. The Node child PIDs and abrupt exits are checked while the owned browser process stays alive.
+All approve the original pending click only after the connection
+changes, require zero click dispatch/submission, cancel the original Task and replay without new
+effects. Control/Node cases additionally hold human control across another interruption, refuse
+the old viewer, observe the persisted pause and explicitly reacquire/return after the original
+30-second lease expires. A new credential must be refused by the original browser binding.
+Each run has a six-minute deadline plus fixture cleanup; CI runs the three modes against disposable
+resources and retains only content-free results. These cases do not test an in-flight lost response,
+migration of a browser profile to a different Host, public egress or Linux isolation.

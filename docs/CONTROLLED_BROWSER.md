@@ -168,8 +168,15 @@ transaction. Reports are reviewed before publication. The real local product tes
 approvals, Unicode fill, one click, page reading, report download, an actual Worker stop/restart and
 replay without repeated effects; its model responses are synthetic.
 
+Additional real cases kill/restart the full Control or Node process and revoke/re-enroll the same
+Node id. Old approved clicks never dispatch after the connection changes. Human pause survives,
+old viewers expire and explicit reacquisition/return preserves the live browser state. A new
+credential cannot inherit the old browser binding. Cancellation removes authority while retaining
+unknown evidence for reconciliation; all three histories replay without new effects. See the
+[scoped results](../experiments/work-journey/evidence/product-browser-interruption.json).
+
 This candidate requires pages you control with known behavior. Allowed origins and screenshot
 checks do not enforce network isolation against redirects, scripts or subresources. General
-untrusted browsing, isolated Linux browser deployment and complete Control/Node replacement remain
+untrusted browsing, isolated Linux browser deployment and browser/Host profile replacement remain
 separate retirement gates. See the [page action record](research/work-browser-page-actions.md) and
 [reproducible product probe](../experiments/work-journey/README.md#approved-browser-product-probe).

@@ -28,6 +28,16 @@
   [Evidence](../experiments/work-journey/evidence/product-browser-pages.json) and the repository
   probe are reproducible without private paths or paid model credentials. Synthetic model HTTP
   is not visual inference. The probe now runs in CI with fixed Bun/upstream/Playwright versions.
+- Interruption: whole Control SIGKILL/restart, two actual Node process SIGKILL/restarts and a
+  same-id credential replacement passed against owned local Chromium/PG/mTLS Temporal. Old click
+  approvals reached neither Node dispatch nor the target (zero submissions). Cancellation closed
+  authority while preserving unknown evidence; engine failure is not a successful Task result.
+  Human pause survived Control/Node interruption; old views failed, and explicit reacquisition/
+  return preserved page state. New credentials could not inherit the original browser binding.
+  All three histories replayed without new browser/model calls; owned fixtures were removed.
+  [Safe evidence](../experiments/work-journey/evidence/product-browser-interruption.json).
+  Browser/Host process replacement, disk-profile migration and in-flight lost responses are not
+  covered. The same three modes are wired into CI with exact child handles and safe result uploads.
 - Linux command: specifically authorized product3 passed one real Work→Node→protected Linux Host
   execution on canonical44, with real Owner approval, PostgreSQL/mTLS Temporal, exact CSV,
   independent synthetic-model review, two downloads and offline replay. Original50/150-second
@@ -52,16 +62,17 @@
   candidate. Old GUI/Keychain evidence does not qualify the current bundle; full packaged
   inference is also open. Installed app/default backend are unchanged.
 - Checks: CI on63242fc passed13 individual jobs; Python qualification failed because the real
-  Node fixture's dependency closure had not been built. The shared runner now builds it. On5b3f6bd,
-  12 hosted jobs have passed; Windows clients and Python/Temporal are running, with no failed job
-  in that snapshot. Container/S7 pins are45;40 migration/restore and8 cleanup cases passed.
+  Node fixture's dependency closure had not been built. The shared runner now builds it. On074d17c,
+  13 hosted jobs have passed; only Python/Temporal remains running, with no failed job in that
+  snapshot. Container/S7 pins are45;40 migration/restore and8 cleanup cases passed.
   `npm run check` passed;15 page authority tests and57 combined page/result tests passed on real PG.
   Base Python passed1306 with463 environment-dependent skips. The launcher increment passed
   `npm run check`,44 focused Desktop tests (two Windows-only skips) and9 probe-support tests;
-  its hosted CI remains pending.
-- Remaining retirement gates: enforced browser egress and isolated Linux product Host; full
-  Control/Node interruption/replacement recovery beyond the accepted same-connection Worker
-  restart; final source/package/installed replacement qualification. Keep the replaced TS business
+  `npm run check` also passed for the new process-interruption fixture; its hosted CI remains pending.
+- Remaining retirement gates: enforced browser egress and isolated Linux product Host, including
+  browser/profile replacement and in-flight uncertainty; final source/package/installed replacement
+  qualification. Control/Node process interruption and same-id identity refusal are now qualified
+  for trusted local pages. Keep the replaced TS business
   Server until these gates pass, and retain the frozen59-file oracle plus TS Node/Provider/tools.
 - Retained evidence: DSH implemented the browser profile module from the explicitly approved
   packet; its SQL/identity corrections and integration are committed. The real Kimi Task used four

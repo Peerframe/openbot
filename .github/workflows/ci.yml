@@ -540,6 +540,24 @@ jobs:
           name: browser-product-result
           path: ${{ runner.temp }}/openbot-browser-product/RESULT.json
           if-no-files-found: ignore
+      - name: Refuse stale browser approvals after Control and Node interruption
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          for recovery in control node replacement; do
+            "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/product_browser_probe.py \
+              --output "$RUNNER_TEMP/openbot-browser-recovery-$recovery" \
+              --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
+              --browsers "$RUNNER_TEMP/openbot-browser-binaries" \
+              --recovery "$recovery"
+          done
+      - name: Retain content-free browser interruption results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-recovery-results
+          path: ${{ runner.temp }}/openbot-browser-recovery-*/RESULT.json
+          if-no-files-found: ignore
       - name: Qualify adjacent Temporal release recovery with PostgreSQL and mutual TLS
         shell: bash
         env:

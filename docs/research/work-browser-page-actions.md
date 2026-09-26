@@ -87,7 +87,7 @@ against the current instruction generation, while actual Owner correction still 
 page references. A dedicated PostgreSQL regression covers both outcomes.
 
 The host remains a trusted local-page fixture. Network egress, hostile pages, isolated Linux
-browser product execution, whole-Control/Node replacement and final installed retirement remain
+browser product execution, browser/Host replacement and final installed retirement remain
 unqualified. Screenshot equality is change detection, not a network or malicious-DOM boundary.
 
 Validation at this checkpoint: `npm run check` passed;15 page authority/cancellation tests passed on
@@ -97,3 +97,44 @@ that57-case batch. The base Python gate passed1306 with463 environment-dependent
 historical migration/restore and eight cleanup cases passed on canonical45. The actual repository
 product probe and unauthenticated pinned-source fetch both completed, with owned runtime resources
 closed. Hosted Linux browser results are pending the new PR head.
+
+## Whole-Control and Node interruption qualification — 2026-09-26
+
+Before expanding the fixture, reviewed the current Server connection binding, durable pause gate,
+Node stop/reconnect implementation and the existing reuse entries. Rechecked the primary
+[Workflow execution contract](https://docs.temporal.io/workflow-execution),
+[SDK1.33.0 release](https://github.com/temporalio/sdk-python/releases/tag/1.33.0) at ab52fdd and
+[open replay issue1881](https://github.com/temporalio/sdk-python/issues/1881). Existing Apache-2.0
+SDK source/tests and pinned browser dependencies remain unchanged; no upstream code is copied.
+This probe uses the existing remote Activities and explicit history replay; no local-Activity
+adapter or alternate recovery engine is introduced.
+
+Extend the owned product fixture, retaining the already accepted same-connection case. Stop the
+Worker at the original pending click, then separately kill/restart the complete Control process,
+kill/recreate the actual Node process, or revoke/re-enroll that same Node id in a new process. Approving the old click after a
+connection/identity change must never dispatch it. Record the original action's durable outcome,
+the independent target counter, cancellation and replay without new input. Separately hold human
+control through disconnection and check old-view refusal, persisted pause, explicit reacquisition
+and return; a replaced credential must not inherit the original browser binding or profile.
+Reuse released transport/lifecycle APIs and the existing probe rather than a second fixture or
+production restart mechanism. These are actual process/connection tests on a trusted local page;
+they do not qualify Linux isolation, network egress, in-flight response loss or profile migration.
+
+The interruption fixture uses a separate child process for the Node modes, with the owned target
+and upstream browser kept in the parent fixture. Private stdin supplies only disposable test
+credentials; SIGKILL targets the exact child handle and distinct recorded PIDs prove replacement.
+The Node, Provider and browser authority code is unchanged. Browser/Host process replacement is
+not inferred from Node replacement. The pinned Playwright1.62.1 exported coreBundle registry is
+read only to verify its exact headless-shell binary before starting any owned database or Action.
+
+All three actual local cases passed: whole Control restart, two Node SIGKILL/replacements with
+three distinct child PIDs, and one same-id credential replacement with two distinct PIDs. Old
+click approvals caused zero Node click calls and zero target submissions. Human pause survived
+Control/Node interruption and required explicit reacquisition/return. New credentials could not
+open the old bound browser. Cancellation removed authority and preserved the unknown action;
+the engine closed FAILED, while the Task remained open for reconciliation. This is expected
+fail-closed behavior, not successful completion. All three histories replayed with unchanged
+browser/model counters, and owned resources closed. The probe's initial missing-browser and
+cancellation/error-envelope assumptions were corrected without weakening product guards.
+`npm run check` passed; reproducible modes run in CI. Results are in
+`experiments/work-journey/evidence/product-browser-interruption.json`.

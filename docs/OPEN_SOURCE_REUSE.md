@@ -787,6 +787,14 @@ source, tests, release and open issues are recorded in the review. Actual local 
 approvals, Unicode input, read/report/download and replay passed with synthetic model HTTP.
 Public egress and isolated Linux browser product execution remain unqualified.
 
+The same pinned page fixture now qualifies whole Control process restart, actual Node process
+SIGKILL/recreation and same-id re-enrollment refusal. It reuses the existing SDK replay, Node
+lifecycle and Server pause/identity contracts, with no product runtime change or copied upstream
+source. Original approvals never dispatch across changed connections; cancellation preserves
+unknown evidence and removes authority. See the [interruption review](research/work-browser-page-actions.md)
+and [content-free results](../experiments/work-journey/evidence/product-browser-interruption.json).
+The browser process remains alive in these cases; Host/profile migration is not inferred.
+
 The reviewed-click [handover repair](research/browser-approval-handover.md) retains pinned
 agent-computer `257c1280d684089be9adb0b35cce262efc7064bf` (MIT) and the existing Server approval
 contract. Only the local adapter changes: approval waiting releases the Bot queue, human take
