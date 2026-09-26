@@ -74,6 +74,7 @@ function dependents(names, graph) {
 
 export function selectChecks(files, graph, { full = false } = {}) {
   const selected = new Set(["security", "validate"]);
+  const rootChecks = new Set(ROOT_CHECKS);
   const workspaces = new Set();
   const reasons = [];
   let mode = "focused";
@@ -121,6 +122,7 @@ export function selectChecks(files, graph, { full = false } = {}) {
       continue;
     }
     if (file.startsWith("experiments/browser-execution/")) {
+      rootChecks.add("test:browser:boundary");
       selected.add("browser-egress");
       selected.add("browser-product");
       continue;
@@ -189,7 +191,7 @@ export function selectChecks(files, graph, { full = false } = {}) {
     version: 1,
     mode,
     workspaces: affected,
-    rootChecks: ROOT_CHECKS,
+    rootChecks: [...rootChecks],
     required: JOBS.filter((job) => selected.has(job)),
     notApplicable: JOBS.filter((job) => !selected.has(job)),
     reasons,

@@ -229,3 +229,18 @@ test("actual Work HTTP consumers and conformance inputs retain the cross-languag
   }
   assert(!select("apps/web/src/components/ChannelMembersMenu.tsx").required.includes("harness"));
 });
+
+test("browser probe and boundary test edits execute their actual regression suite", () => {
+  for (const file of [
+    "experiments/browser-execution/probe.mjs",
+    "experiments/browser-execution/probe.test.mjs",
+    "experiments/browser-execution/test_network.py",
+  ]) {
+    const plan = select(file);
+    assert(plan.rootChecks.includes("test:browser:boundary"), file);
+    assert(plan.required.includes("browser-egress"));
+    assert(plan.required.includes("browser-product"));
+    assert(!plan.required.includes("python-runtime"));
+  }
+  assert(!select("README.md").rootChecks.includes("test:browser:boundary"));
+});
