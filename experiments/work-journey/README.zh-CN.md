@@ -311,3 +311,9 @@ apps/server-python/.worker-venv/bin/python -B -u experiments/work-journey/produc
 ```sh
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=experiments/work-journey:experiments/linux-execution:apps/server-python/src:apps/agent-runtime-python/src apps/server-python/.worker-venv/bin/python -m pytest -p no:cacheprovider -q experiments/work-journey/test_product_command_remote.py experiments/work-journey/test_product_host_fixture.py
 ```
+
+2026-09-26刷新：同一成对停写恢复探针已通过44条迁移、47张Control表／111行，见
+[schema44证据](evidence/active-paired-restore-schema44.json)。明确授权的一次性product3也已通过
+真实Linux产品命令链路、原期限与清理、产物及重放检查；模型HTTP仍为合成，见
+[product3证据](evidence/product-command-remote-product3.json)。已消费身份不得重跑；两项结果均不
+代表通用浏览器出口或默认后端切换已经验收。

@@ -414,3 +414,10 @@ The controller and fixture boundary tests require no SSH, container or provider:
 ```sh
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=experiments/work-journey:experiments/linux-execution:apps/server-python/src:apps/agent-runtime-python/src apps/server-python/.worker-venv/bin/python -m pytest -p no:cacheprovider -q experiments/work-journey/test_product_command_remote.py experiments/work-journey/test_product_host_fixture.py
 ```
+
+Current refresh (2026-09-26): the same paired cold-restore probe passed canonical44, with47 Control
+tables/111 rows; see [schema44 evidence](evidence/active-paired-restore-schema44.json). The explicitly
+authorized one-shot product3 remote command also passed the real Linux product chain, original
+lifetime/cleanup and artifact/replay checks; model HTTP remained synthetic. See
+[product3 evidence](evidence/product-command-remote-product3.json). Prior consumed identities must
+not be retried. Neither result qualifies general browser egress or a default-backend switch.

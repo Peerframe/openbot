@@ -42,6 +42,14 @@
   justify-content: space-between;
   padding: 18px 22px 12px;
 }
+.browser-header > div:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.browser-header-actions {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
 .browser-header h2 {
   margin: 0;
   font-size: 18px;

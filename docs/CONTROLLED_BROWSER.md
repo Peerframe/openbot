@@ -69,8 +69,8 @@ Identity revocation or replacement is checked before input, at dispatch and befo
 Unconfirmed input is never retried, and a failed return of control leaves the durable pause in place.
 The client removes the old frame and unsent input after losing session authority. These checks use
 real PostgreSQL and HTTP/WebSocket tests with synthetic frames; they do not establish physical
-profile persistence or browser egress isolation. Human takeover remains disabled in default Python
-composition until the complete Work browser effect path is integrated. See the
+profile migration or browser egress isolation. Human takeover is an explicit per-route opt-in in
+Python composition; it is disabled by default. See the
 [identity binding review](research/browser-host-binding.md).
 
 
@@ -93,6 +93,7 @@ Set `OPENBOT_CONTROL_BROWSER_CONFIG_PATH` to an absolute, non-symlink, owner-pri
 ```json
 {
   "version": 1,
+  "humanControl": true,
   "routes": {
     "00000000-0000-4000-8000-000000000001": "your-enrolled-node-id"
   }
@@ -104,7 +105,18 @@ and have a configured model connection. Open that Bot's browser view as Owner on
 the channel Task; this establishes its original host binding. Then request, for example:
 “Capture the current browser as a PNG file without interpreting the page.” Browser routes select
 capture-only Tasks instead of command Tasks for those Bots; existing Tasks are never converted.
-Native Tasks and other Bots retain their existing capabilities.
+Native Tasks and other Bots retain their existing capabilities. The optional `humanControl` boolean
+defaults to `false`; set it to `true` to enable Owner takeover for only these routes. An unavailable
+configured Node cannot be replaced by another available Node. Restart Control after configuration
+changes; a changed route cannot silently replace an existing original host binding.
+
+From the Employee profile, choose **Open browser**, then **Take control**. Navigate, click the
+rendered page, enter text, use keys or scroll; finish with **Return to employee**. Closing the view,
+disconnecting or allowing its lease to expire leaves the browser paused. A newly opened view may
+need the former Node lease to expire (at most 30 seconds) before taking control. Only a confirmed
+return permits fresh Work captures; an older approved action invalidated by takeover is not revived.
+Observation-only deployments show **View only**. An uncertain operation clears stale input/frame
+and is never resent automatically.
 
 Each proposal freezes the current connection and human-control revision. A reconnect, identity
 replacement, cancelled Task, revoked scope, expired claim or human takeover/release prevents that
@@ -113,6 +125,10 @@ acknowledgement reads the original stored observation; missing evidence stays un
 not trigger a replacement screenshot. Already received PNGs retain their original contents.
 
 The PNG header/dimensions, size and digest are verified; models and result review see metadata only.
-Do not treat capture success as proof of page meaning or an external action. Public egress, page
-interaction, host profile relocation and default human takeover remain outside this candidate.
+Do not treat capture success as proof of page meaning or an external action. Owner input has been
+tested through the actual Python/Node/Chromium path against owned synthetic pages, including the
+retained Web at desktop and phone sizes. Local storage persisted after closing/reopening the view.
+This does not qualify public egress, autonomous page interpretation, host profile relocation or
+general isolated browser deployment. Use trusted test pages with known behavior as described above.
 See the [implementation and validation record](research/work-browser-capture.md).
+See the [handover qualification](research/work-browser-handover.md) for the input/control boundary.

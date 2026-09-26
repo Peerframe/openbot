@@ -60,8 +60,11 @@ async def browser_source(db, task):
 
 
 class BrowserProfiles:
-    def __init__(self, connections, *, routes):
+    def __init__(self, connections, *, routes, human_control=False):
         # Routes are trusted deployment composition, never a model/Node supplied allowlist.
+        if type(human_control) is not bool:
+            raise ValueError('browser_human_control_invalid')
+        self.human_control = human_control
         if type(routes) is not dict or not 1 <= len(routes) <= 32:
             raise ValueError('browser_route_required')
         self.connections = connections

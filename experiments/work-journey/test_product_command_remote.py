@@ -508,8 +508,9 @@ class ProbeCompositionTests(IsolatedAsyncioTestCase):
         class SQL:
             def __enter__(self):return self
             def __exit__(self,*args):pass
-            def execute(self,sql,params):self.sql=sql;self.params=params;return self
+            def execute(self,sql,params=()):self.sql=sql;self.params=params;return self
             def fetchone(self):
+                if 'drizzle.__drizzle_migrations' in self.sql:return (44,)
                 if 'work_sources' in self.sql:return ('task-original','run-original')
                 if self.sql.startswith('SELECT count'):return (1,)
                 if 'SELECT status' in self.sql:return ('applied',)
@@ -536,6 +537,7 @@ class ProbeCompositionTests(IsolatedAsyncioTestCase):
         assert self.trace[-2:]==['engine-close','pg-close']
         assert not (self.directory/'control.pem').exists()
         assert json.loads((self.directory/'result.json').read_text())['case']=='product-command-remote-composition'
+        assert json.loads((self.directory/'result.json').read_text())['canonicalMigrations']==44
 
     async def test_default_local_branch_still_uses_one_original_synthetic_host(self):
         self.local=True;owner=self

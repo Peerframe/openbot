@@ -104,12 +104,24 @@ it("clears typed input before dispatch, never retries uncertainty, and only clos
   expect(browserCommand).toHaveBeenLastCalledWith("view", { kind: "type", text: "合成文本" });
   expect(browserCommand).toHaveBeenCalledTimes(2);
   expect(view.container.textContent).toContain("Unconfirmed input");
+  expect(input.disabled).toBe(true);
+  expect(view.container.querySelector(".browser-screen")).toBeNull();
+  expect(view.container.textContent).not.toContain("交还员工");
   await view.unmount();
   view = undefined;
   expect(closeBrowser).toHaveBeenCalledExactlyOnceWith("view");
   expect(vi.mocked(browserCommand).mock.calls.some(([, action]) => action.kind === "release")).toBe(
     false,
   );
+});
+it("shows observation-only availability without offering unavailable takeover", async () => {
+  vi.mocked(browserCommand).mockResolvedValueOnce({ ...available, controlAvailable: false });
+  view = await renderComponent(<EmployeeBrowser bot={bot} onClose={vi.fn()} />);
+  expect(button("仅查看").disabled).toBe(true);
+  expect(view.container.querySelector<HTMLInputElement>("#browser-text-input")?.disabled).toBe(
+    true,
+  );
+  expect(browserCommand).toHaveBeenCalledTimes(1);
 });
 it("disables input for another controller and exposes reconnect after grant loss", async () => {
   vi.mocked(browserCommand).mockResolvedValueOnce({ ...available, control: "other" });

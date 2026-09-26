@@ -1,58 +1,54 @@
 # Architecture migration handoff — 2026-09-26
 
-## Current checkpoint — product browser capture; CI isolated
+## Current checkpoint — routed browser handover and Linux product acceptance
 
-- Delivery: [PR #96](https://github.com/Peerframe/openbot/pull/96) is merged into `main` at
-  `b186c11`. All 15 hosted jobs on `5b592b6` passed, including both Python product containers,
-  Desktop Preview, Control/Worker/Temporal, paired synthetic restore and the aggregate check.
-  The CI repair task is complete with no active writers. Browser commits `364d308` and `175dace`
-  are integrated with that main on `codex/browser-product-integration-20260926` for a new draft.
-  The accepted baseline does not qualify the new browser head. No new merge, deployment,
-  default-backend switch or installed-app replacement is authorized.
-- New product path: an explicit private Bot-to-Node configuration captures immutable browser
-  profiles for new channel Tasks. Work approval precedes an observation on the original Worker
-  connection. The private PNG becomes an artifact only after verified completion. Models see file
-  metadata only. Human takeover/release invalidates prepared captures; reconnect/re-enrollment,
-  cancellation and changed source/claim fail closed. Four attempts per Task across corrections;
-  acknowledgement recovery only reads original receipts. Missing receipts remain unresolved.
-  Default composition is disabled. See [configuration](CONTROLLED_BROWSER.md) and
-  [research/validation](research/work-browser-capture.md).
-- DeepSeek development: DSH implemented the profile adapter from the public MIT OpenBot command
-  profile pattern. Root corrected the SQL event discriminator/order and exact case-sensitive ID
-  semantics, then integrated transport, private PNG evidence, result review, startup and tests.
-- Evidence: 17 focused browser Work tests and 187 adjacent PostgreSQL/HTTP/WS tests passed;
-  30 Node/config tests and `npm run check` passed. One new test runs the actual Node process and
-  Docker Provider against an explicitly synthetic loopback computer. Work approval/recovery,
-  model receipts, result review and PNG download use real SQL/API transactions; SDK history and
-  model responses remain synthetic. See the research record for exact scope and reusable commands.
-- Data: canonical migrations now have 44 entries through `0043_work_browser_profiles`, verified on
-  a fresh owned database. The earlier paired stopped restore evidence remains pinned to 43 entries:
-  46 Control tables/110 rows, 40 history plus 3 visibility tables, 13 paired files, 36 TLS files and
-  six wrong-key negatives. It has not been silently relabeled as 44-entry restore qualification.
-  Likewise final Desktop packaging and product-container qualification require the new source/schema.
-- Retained evidence: the one real Kimi Task used four receipts/8,854 tokens and downloaded a
-  231-byte report; do not resubmit it. Native Linux command case2 passed exact CSV, signed receipt,
-  original 50-second lifetime and cleanup, with synthetic Control authority. The authorized fixed
-  CDP component passed real Linux x86-64/runsc, synthetic DOM/PNG, profile continuity, isolation
-  probes and the original 180-second deadline. Do not rerun these accepted cases merely on resume.
-- Linux product command remains open: product1 and product2 identities are consumed. Product2's
-  fixture parser is fixed to the supported 512-byte class; see the
-  [failure record](../experiments/work-journey/evidence/product-command-remote-product2-attempt.json).
-  The prepared product3 four-file upload and one 150-second test require their exact authorization.
-  No remote test window is active.
-- Remaining product gates: browser page interpretation/input/egress and complete handover;
-  remote Work→Node→protected Host command acceptance; updated paired restore, final package and
-  replacement qualification. A capture-only Task does not establish general browser automation.
-  Keep the replaced TS business Server until those gates pass. Preserve the immutable 59-file
-  `tests/oracles/legacy-server` test oracle and retained TS Node/Provider/publisher/MCP tooling.
-- Ownership: root continues product development; the CI repair task is complete. Six old
-  CI/Preview recovery copies are preserved in a separate Git stash; the working tree uses their
-  merged canonical versions. Preserve user data/configuration, the retained migration PostgreSQL
-  fixture and accepted evidence. Clean only newly owned fixtures; never purge shared Docker cache.
-- Architecture: the Owner-confirmed 2026-09-24 design review v2 remains the reference. Server owns
-  identity/permissions and Temporal owns continuation. Whole-repository package rearrangement,
-  visual-system work and marketplaces remain later work. Root product work must not become a
-  second CI repair task.
+- Delivery: PR #96 is merged into `main` at `b186c11`, with all15 hosted jobs green on its accepted
+  head. New browser work is published as draft [PR #98](https://github.com/Peerframe/openbot/pull/98)
+  on `codex/browser-product-integration-20260926`, integrated with main at `9f8cb96`. Root owns this
+  increment; the separate CI repair task is complete. A passing old head does not qualify this head.
+- Browser: capture-only Work profiles retain immutable model/original Node identity and approvals.
+  Optional private `humanControl:true` now activates Owner takeover only on exact configured routes;
+  first open cannot substitute another Node. Uncertain input clears the stale frame and is not
+  retried. Close/disconnect/expiry remain paused; confirmed return permits a fresh Work capture but
+  does not revive an old approved action. See [configuration](CONTROLLED_BROWSER.md) and
+  [handover evidence](research/work-browser-handover.md).
+- Actual browser evidence: pinned macOS Chromium151.0.7922.34/agent-computer, Node, Python product
+  API and PostgreSQL passed navigation/click/Unicode typing/key/scroll, exclusive Owner control,
+  close/reopen pause, local storage continuity, old approval invalidation and fresh capture after
+  return. The actual retained Web employee entry passed at1440×1100 and390×844; the follow-up fixes
+  a narrow-screen control button compressed by long names. This is trusted synthetic-page evidence,
+  not general public egress or an isolated Linux browser product.46 focused backend and9 React
+  tests passed; earlier187 adjacent and30 Node/config checks remain separately scoped evidence.
+- Linux command: specifically authorized product3 passed one real Work→Node→protected Linux Host
+  execution on canonical44, with real Owner approval, PostgreSQL/mTLS Temporal, exact CSV,
+  independent synthetic-model review, two downloads and offline replay. Original50/150-second
+  limits held. Native runtime/backing, socket, ephemeral keys and owned public Node copy were
+  removed; Node was revoked. Ten existing containers and firewall semantics were unchanged.
+  All product1/2/3 identities are consumed; never rerun them. No VPS test window is active.
+  [Safe result](../experiments/work-journey/evidence/product-command-remote-product3.json).
+- Restore: current canonical44 paired cold restore passed47 Control tables/111 rows,40 history plus
+  3 visibility tables,13 files,36 TLS files and six key negatives. Original approval/unknown/cancel
+  behavior and both history replays passed; owned resources were removed. The new browser profile
+  table was empty in this scripted fixture; browser-specific continuation is not inferred.
+  [Safe result](../experiments/work-journey/evidence/active-paired-restore-schema44.json).
+- Packaging/checks: the current repository check passed; Python Preview refresh is in progress. Earlier
+  schema43 Preview/containers and green PR96 results remain pinned to their source. No installed
+  app replacement, default-backend switch or release has occurred.
+- Remaining retirement gates: model page interpretation and approved browser actions with a real
+  enforced egress/Host boundary; complete product browser continuation after interruption; final
+  source/package/replacement qualification. Manual Owner page input is now accepted in its scoped
+  local path. Keep the replaced TS business Server until remaining gates pass. Preserve the frozen
+  59-file oracle and retained TS Node/Provider/publisher/MCP tooling.
+- Retained evidence: DSH implemented the browser profile module from the explicitly approved
+  packet; its SQL/identity corrections and integration are committed. The real Kimi Task used four
+  receipts/8,854 tokens and downloaded231 bytes; do not resubmit. Accepted native case2 and Linux
+  CDP component runs are unchanged and were not repeated.
+- Ownership/data: six prior CI/Preview recovery copies remain in Git stash; do not pop over merged
+  canonical versions. Preserve user data/configuration and the retained migration PostgreSQL
+  fixture. Clean only newly owned fixtures; never purge shared caches. No new agent owns these files.
+- Architecture: keep the Owner-confirmed2026-09-24 design review v2. Server owns authorization and
+  Temporal owns continuation. Whole-repository rearrangement, visual-system work and marketplaces
+  remain later work. Do not turn root product work into another CI repair task.
 
 The stage notes below are historical evidence, not the current work order.
 

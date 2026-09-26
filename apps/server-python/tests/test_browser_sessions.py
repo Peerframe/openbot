@@ -59,10 +59,10 @@ def seed(worker_db):
 
 
 @asynccontextmanager
-async def server(seed, *, configured=True):
+async def server(seed, *, configured=True, profiles=None):
     identity = PostgresWorkerHostIdentity(seed["dsn"])
     registry = WorkerHostRegistry(identity)
-    service = BrowserSessionsService(seed["dsn"], registry, agent_gate_configured=configured)
+    service = BrowserSessionsService(seed["dsn"], registry, agent_gate_configured=configured, profiles=profiles)
     app = FastAPI()
     @app.exception_handler(HTTPException)
     async def http_error(request, error):

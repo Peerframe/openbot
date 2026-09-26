@@ -1,0 +1,72 @@
+{
+  "case": "product-command-remote-composition",
+  "actualOwnerHTTP": true,
+  "actualWorkApproval": true,
+  "actualPostgres": true,
+  "canonicalMigrations": 44,
+  "mutualTLS": true,
+  "actualProductEntry": true,
+  "actualNodeClient": true,
+  "actualWebSocket": true,
+  "actualUnixTransport": true,
+  "actualHostCrypto": true,
+  "syntheticNative": false,
+  "syntheticPeerIdentity": false,
+  "linuxIsolationQualified": true,
+  "oneOriginalCommand": true,
+  "fullOutputSha256": "5accdf8fd1100f960b927385c800db12e45b22727f4fa95b3c3f7b143b5a5409",
+  "independentlyReviewed": true,
+  "artifactsDownloaded": 2,
+  "offlineReplay": true,
+  "modelCounts": {
+    "command": 1,
+    "report": 1,
+    "final": 1,
+    "review": 1
+  },
+  "accepted": true,
+  "qualificationDate": "2026-09-26",
+  "fixture": "product3",
+  "modelTransport": "synthetic HTTP; no paid model call",
+  "remoteMaximumSeconds": 150,
+  "nativeMaximumSeconds": 50,
+  "stopObservationMarginSeconds": 5,
+  "automaticRetries": 0,
+  "priorAcceptedCasesRerun": false,
+  "cleanup": {
+    "runnerSucceeded": true,
+    "runnerWithin150s": true,
+    "enforcerKeyRemoved": true,
+    "socketAbsent": true,
+    "before": {
+      "containerCount": 10,
+      "identitiesAndStateUnchanged": true,
+      "ipv4Ipv6SemanticsUnchanged": true
+    },
+    "after": {
+      "containerCount": 10,
+      "identitiesAndStateUnchanged": true,
+      "ipv4Ipv6SemanticsUnchanged": true
+    },
+    "publicBundle": {
+      "ownedPublicBundleRemoved": true,
+      "unusedEnforcerKeyAbsent": true,
+      "consumedRunAndActionReservationsRetained": true,
+      "stageTombstoneRetained": true
+    }
+  },
+  "native": {
+    "result": "timeout",
+    "originalCgroupEmpty": true,
+    "stopObservedWithin5SecondMargin": true,
+    "unitReleased": true,
+    "reservationRetained": true,
+    "privateRuntimeAbsent": true,
+    "backingAbsent": true
+  },
+  "sourceFilesSha256": {
+    "experiments/work-journey/product_command_probe.py": "75a522bb8b1a6b1fac7b06c0b3ac2c677146eb349278a67f301fbbd51635b7ac",
+    "experiments/work-journey/product_host_fixture.py": "e98643b52bc30763443b34126b7ed3888e0ebdef7b065c19a4d6556c3c327460",
+    "experiments/work-journey/product_command_remote.py": "bbd90cd68353896053e383a7e1211d310c9f467cd60835cc251fe5e7db356a9f"
+  }
+}

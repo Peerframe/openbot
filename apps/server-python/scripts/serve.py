@@ -99,7 +99,7 @@ def main():
         from openbot_server.browser_gate import BrowserPauseGate
         from openbot_server.browser_sessions import BrowserSessionsService
         browser = BrowserSessionsService(dsn,worker_registry,gate=BrowserPauseGate(dsn),
-                                        agent_gate_configured=False)
+                                        profiles=browser_profiles)
         from openbot_server.plugin_service import PluginService
         from openbot_server.plugin_inputs import LegacyManifestCodec
         plugins = PluginService(dsn,

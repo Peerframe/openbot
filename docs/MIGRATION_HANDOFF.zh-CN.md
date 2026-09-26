@@ -1,43 +1,41 @@
 # 架构迁移交接 — 2026-09-26
 
-## 当前检查点——产品截图任务；CI 独立负责
+## 当前检查点——指定路由接管与 Linux 产品链路验收
 
-- 交付：[PR #96](https://github.com/Peerframe/openbot/pull/96) 已合并至 `main` 的 `b186c11`；
-  合并前 `5b592b6` 的全部 15 项托管检查通过，包括 Python 产品双架构容器、Desktop Preview、
-  Control／Worker／Temporal、成套合成恢复及总门禁。CI 修复任务已完成，无活动写入者。
-  浏览器产品提交 `364d308`、`175dace` 基于该 main 整合到
-  `codex/browser-product-integration-20260926`，以新草稿交付。合并基线不代表本次浏览器
-  增量的托管检查已通过，也不授权新合并、部署、默认后端切换或替换已安装应用。
-- 新产品路径：通过显式私有员工→Node 配置，为新频道任务冻结浏览器快照。经 Work 审批后在
-  原 Worker 连接截图，结果审核与完成事务之后才能下载私有 PNG。模型只看到文件信息。
-  人工接管后归还会使旧提案失效；连接重建、身份替换、取消、来源或执行租约变化均拒绝发送。
-  每任务最多尝试四次，纠正不重置额度；回执恢复只读原记录，缺失则保持未解决。默认关闭。
-  详见[配置](CONTROLLED_BROWSER.zh-CN.md)和[研究与验证](research/work-browser-capture.md)。
-- DeepSeek 开发：DSH 根据公开 MIT OpenBot 命令档案模式实现浏览器快照模块。主控修正 SQL
-  事件列／排序及区分大小写的精确 ID 语义，整合传输、私有 PNG、结果审核、启动配置与测试。
-- 验证：17 项截图 Work 测试、187 项相邻 PG／HTTP／WS 测试、30 项 Node／配置测试和
-  `npm run check` 通过。新增用例实际运行 Node 进程和 Docker Provider，连接明确标注的本机
-  合成电脑。审批、恢复、模型回执、结果审核和 PNG 下载使用真实 SQL／API；SDK 历史和模型
-  回复仍是合成夹具。精确范围及可复用命令见研究记录。
-- 数据：规范迁移现为 44 条至 `0043_work_browser_profiles`，已在独占新数据库验证。此前成套
-  停写恢复证据仍固定为 43 条：46 张 Control 表／110 行、40 张历史表加 3 张可见性表、13 个
-  配套文件、36 个 TLS 文件及六个错误密钥反例，不能改称 44 条已验收。最终 Desktop 包与产品
-  容器也须基于新源码和迁移重新验收。
-- 保留证据：唯一真实 Kimi 任务使用四份回执／8,854 tokens，下载 231 字节报告，不得重发。
-  Linux 命令 native case2 已通过 CSV、签名回执、原 50 秒期限和清理，Control 权限仍为合成。
-  固定 CDP 组件已在真实 Linux x86-64／runsc 通过合成 DOM／PNG、资料连续性、隔离探针和原
-  180 秒期限。恢复任务时不重复已通过的案例。
-- Linux 产品命令仍未完成：product1、product2 身份已消费。product2 夹具已改为受支持的 512
-  字节解析等级，见[失败记录](../experiments/work-journey/evidence/product-command-remote-product2-attempt.json)。
-  已准备 product3 四文件包及一次 150 秒测试，仍需针对该清单的准确授权。当前无远端测试窗口。
-- 剩余产品验收：浏览器页面解释／输入／出口与完整接管；远端 Work→Node→隔离宿主命令；更新
-  成套恢复、最终安装包与替代验收。截图任务不代表通用浏览代理完成。通过这些门槛后再退役被
-  替代的 TS 业务 Server，保留不可变 59 文件测试 oracle 和 TS Node／Provider／发布／MCP 工具。
-- 归属：主控继续产品开发，CI 修复任务已完成。六份旧 CI／Preview 恢复副本已单独保存到
-  Git stash，当前工作区采用已合并的规范版本。保留用户数据、配置、原迁移 PG 夹具及验收证据；
-  只清理本次独占夹具，不清空共享 Docker 缓存。
-- 架构：继续采用 Owner 确认的 2026-09-24 设计研究 v2。Server 管身份与权限，Temporal 管恢复。
-  全仓包目录重排、视觉系统和市场仍为后续工作；产品主控不得成为第二个 CI 修复任务。
+- 交付：#96 已合并至 main `b186c11`，原提交15项托管检查通过。新浏览器增量发布为
+  [草稿 PR #98](https://github.com/Peerframe/openbot/pull/98)，分支
+  `codex/browser-product-integration-20260926`，已在 `9f8cb96` 整合 main。主控负责本增量，
+  独立 CI 修复任务已完成；旧提交通过不等于新提交已通过。
+- 浏览器：保留仅截图 Work 的不可变模型／原 Node 身份和审批。私有配置 `humanControl:true`
+  现在只为精确指定路由启用 Owner 接管；首次打开不再替换为其他可用 Node。输入不确定时清除
+  旧画面，不重发。关闭／断线／到期保持暂停；确认交还后允许新的 Work 截图，不复活旧批准。
+  见[配置](CONTROLLED_BROWSER.zh-CN.md)及[接管记录](research/work-browser-handover.md)。
+- 真实浏览器验收：固定 macOS Chromium151.0.7922.34／agent-computer、Node、Python 产品 API
+  与 PG 已通过导航、点击、中文输入、按键、滚动、独占控制、关闭重开暂停、页面存储连续性、
+  旧批准失效和交还后新截图。现有 Web 员工入口在1440×1100和390×844通过，已修复长名称将
+  手机接管按钮挤成竖排的问题。46项后端及9项React测试通过；此前187项相邻测试及30项Node／
+  配置检查保留其原范围。这是可信合成网页验收，不代表公网出口或隔离Linux浏览器产品通过。
+- Linux 命令：明确授权的 product3 已在44条迁移上通过一次真实 Work→Node→受保护 Linux Host
+  执行，包括 Owner 审批、PG／mTLS Temporal、准确 CSV、独立合成模型审核、两份下载与离线
+  重放。原50／150秒限制成立；原生运行目录／磁盘、socket、临时密钥及公共Node副本已清理，
+  本次Node已撤销。既有10个容器及防火墙状态未变。product1／2／3身份全部已消费，不得重跑；
+  当前无VPS测试窗口。见[准确结果](../experiments/work-journey/evidence/product-command-remote-product3.json)。
+- 恢复：44条迁移的成对停写恢复通过，包含47张Control表／111行、40张历史加3张可见性表、
+  13个文件、36个TLS文件和六个密钥反例。原审批／未知结果／取消行为及两份历史重放通过，
+  独占资源已清理。此脚本夹具的新增浏览器档案表为空，不据此宣称浏览器自动继续已通过。
+  见[安全结果](../experiments/work-journey/evidence/active-paired-restore-schema44.json)。
+- 打包／检查：当前仓库检查已通过，Python Preview刷新正在执行。旧schema43安装包／容器和PR96
+  结果继续保留其固定来源。未替换已安装应用，未切换默认后端，未发布正式版本。
+- 剩余退役门槛：模型页面理解与经审批的浏览器动作、真实出口／宿主隔离、产品浏览器中断后的
+  完整继续，以及最终源码／安装包／替换验收。Owner手工页面操作已在上述本地范围通过。
+  其余门槛通过前保留被替代的TS业务Server；保留不可变59文件oracle及TS Node／Provider／
+  发布／MCP工具。
+- 保留证据：DSH已按获批材料实现浏览器快照模块，SQL／身份修正与整合已提交。真实Kimi任务
+  四份回执／8,854 tokens、231字节下载不重发；native case2和Linux CDP组件不重复。
+- 归属／数据：六份旧CI／Preview恢复副本保存在Git stash，不覆盖已合并规范版本。保留用户
+  数据配置及原迁移PG，只清理本轮独占夹具，不清空共享缓存。没有新Agent写入这些文件。
+- 架构：沿用Owner确认的2026-09-24设计研究v2；Server管权限，Temporal管继续。全仓目录
+  重排、视觉系统和市场留待后续，主控不另做第二份CI修复。
 
 下方阶段记录只作历史证据，不是当前工作顺序。
 

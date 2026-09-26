@@ -18,6 +18,7 @@ pytest.importorskip('pydantic_ai', reason='Locked Worker profile required')
 
 from openbot_server.app import create_app
 from openbot_server.database import PostgresReadStore, StoreUnavailable
+from openbot_server.control_errors import ControlError
 from openbot_server.owner_files import OwnerFiles
 from openbot_server.task_inputs import CreateMessageInput
 from openbot_server.task_store import PostgresTaskStore
@@ -295,6 +296,11 @@ def test_private_configuration_is_opt_in_exact_and_does_not_normalize_ids(config
     assert browser_profiles_from_file(None,f.connections) is None
     config=tmp_path/'browser.json';config.write_text(json.dumps(dict(version=1,routes={f.bot:f.seed['node']})));config.chmod(0o600)
     assert browser_profiles_from_file(config,f.connections).routes=={f.bot:f.seed['node']}
+    assert browser_profiles_from_file(config,f.connections).human_control is False
+    config.write_text(json.dumps(dict(version=1,routes={f.bot:f.seed['node']},humanControl=True)))
+    assert browser_profiles_from_file(config,f.connections).human_control is True
+    config.write_text(json.dumps(dict(version=1,routes={f.bot:f.seed['node']},humanControl='true')))
+    with pytest.raises(InvalidWork):browser_profiles_from_file(config,f.connections)
     config.chmod(0o644)
     with pytest.raises(InvalidWork,match='browser_installation_invalid'):browser_profiles_from_file(config,f.connections)
     config.chmod(0o600);config.write_text('{"version":1,"routes":{},"routes":{}}')
@@ -303,6 +309,74 @@ def test_private_configuration_is_opt_in_exact_and_does_not_normalize_ids(config
     assert BrowserProfiles(f.connections,routes={upper:f.seed['node']}).routes=={upper:f.seed['node']}
     for routes in ({}, {'not-a-uuid':'node'}, {f.bot:''}):
         with pytest.raises(ValueError): BrowserProfiles(f.connections,routes=routes)
+
+
+@pytest.mark.parametrize('enabled', [False, True])
+def test_configured_route_selects_original_host_and_only_explicitly_enables_handover(configured,enabled):
+    f=configured
+    profiles=f.store.browser_profiles
+    profiles.human_control=enabled
+    async def check():
+        async with server(f.seed,configured=False,profiles=profiles) as (service,registry,http,url):
+            async with worker(f.seed,http,url) as (calls,_):
+                # An available unrelated host must never stand in for the deployment route.
+                profiles.routes[f.bot]='absent-original-host'
+                assert (await http.post(f'/api/v1/bots/{f.bot}/browser')).status_code==503
+                profiles.routes[f.bot]=f.seed['node']
+                view=await opened(http,f.seed)
+                assert view['nodeId']==f.seed['node'] and view['controlAvailable'] is enabled
+                assert (await command(http,view,'take')).status_code==(200 if enabled else 503)
+                if enabled:
+                    with pytest.raises(ControlError):
+                        async with service.gate.agent(f.bot):pass
+                    assert (await command(http,view,'release')).json()['control']=='available'
+                    async with service.gate.agent(f.bot):pass
+                profiles.routes[f.bot]='changed-host'
+                assert (await http.post(f'/api/v1/bots/{f.bot}/browser')).json()['error']=='browser_route_changed'
+                before=len(calls)
+                assert (await command(http,view,'observe')).json()['error']=='browser_route_changed'
+                del profiles.routes[f.bot]
+                assert (await command(http,view,'observe')).json()['error']=='browser_route_changed'
+                assert len(calls)==before
+    asyncio.run(check())
+
+
+@pytest.mark.parametrize('phase', ['dispatch','reply'])
+def test_handover_route_change_is_checked_at_actual_effect_and_publication(configured,phase):
+    f=configured
+    profiles=f.store.browser_profiles
+    profiles.human_control=True
+    async def hook(value):
+        if phase=='reply':profiles.routes.clear()
+    async def check():
+        async with server(f.seed,configured=False,profiles=profiles) as (service,registry,http,url):
+            async with worker(f.seed,http,url,hook=hook) as (calls,_):
+                view=await opened(http,f.seed)
+                send=registry.browser_command
+                async def changed(*args,**kwargs):
+                    profiles.routes.clear()
+                    return await send(*args,**kwargs)
+                if phase=='dispatch':registry.browser_command=changed
+                result=await command(http,view,'take')
+                assert result.status_code==409 and 'frame' not in result.json()
+                assert len(calls)==(0 if phase=='dispatch' else 1)
+                with pytest.raises(ControlError):
+                    async with service.gate.agent(f.bot):pass
+    asyncio.run(check())
+
+
+def test_human_opt_in_does_not_enable_an_unrouted_employee(configured):
+    f=configured
+    profiles=BrowserProfiles(f.connections,routes={str(uuid4()):f.seed['node']},human_control=True)
+    async def check():
+        async with server(f.seed,configured=False,profiles=profiles) as (_,_,http,url):
+            async with worker(f.seed,http,url) as (calls,_):
+                view=await opened(http,f.seed)
+                assert view['controlAvailable'] is False
+                assert (await command(http,view,'take')).status_code==503
+                assert calls==[]
+                assert (await command(http,view,'observe')).status_code==200
+    asyncio.run(check())
 
 
 def test_actual_node_provider_and_work_share_the_same_capture(configured):

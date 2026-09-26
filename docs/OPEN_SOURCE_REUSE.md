@@ -769,6 +769,13 @@ profile reference; integration corrected its schema query and preserved exact ca
 No dependency, driver, authority framework or third-party source copy was added. The model sees
 metadata only; capture does not qualify page interpretation, input or general browser automation.
 
+The [routed handover adapter](research/work-browser-handover.md) activates the retained Owner
+navigation/click/type/key/scroll APIs only for explicitly configured Work browser routes. It reuses
+the same pinned agent-computer, Playwright and PostgreSQL gate; no new dependency or copied source.
+Real macOS Chromium/Node/Python/PG and the retained Web validate trusted synthetic page interaction,
+exclusive control, close/reconnect pause and explicit return. Public egress and autonomous page
+interpretation remain separate gates.
+
 The reviewed-click [handover repair](research/browser-approval-handover.md) retains pinned
 agent-computer `257c1280d684089be9adb0b35cce262efc7064bf` (MIT) and the existing Server approval
 contract. Only the local adapter changes: approval waiting releases the Bot queue, human take

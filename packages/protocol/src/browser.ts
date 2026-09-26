@@ -99,6 +99,7 @@ export interface BrowserSessionView {
   nodeId: string;
   nodeName: string;
   control: "available" | "mine" | "other" | "paused";
+  controlAvailable?: boolean;
   controlExpiresAt?: string;
   frame?: BrowserFrame;
 }
