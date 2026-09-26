@@ -483,3 +483,10 @@ an expiring cookie and IndexedDB, a session cookie is dropped, and human pause s
 return. Both actual local cases passed; see [safe results](evidence/product-browser-interruption.json).
 This does not qualify abrupt browser loss, profile transfer to a different Host, public egress or
 Linux isolation. The response-loss relay is a test fault injector, not a network security boundary.
+
+The separate `--recovery linux-replacement` mode uses an explicitly configured SSH-loopback
+fixture and the same actual product approvals/replay/profile checks. See the
+[native composition](../browser-execution/composition/README.md) for fixed pins, TLS policy,
+native lifetime and cleanup. Control/Node credentials stay local. A product `RESULT.json` with
+`remoteNativeCleanupPending:true` is provisional: only the paired native result can qualify
+isolation closure. The repository does not select a personal SSH host or provision one automatically.

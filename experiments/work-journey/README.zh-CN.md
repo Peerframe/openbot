@@ -366,3 +366,9 @@ Control／Node 模式还在另一次中断前取得人工控制，验证旧窗�
 localStorage、有效期 Cookie 和 IndexedDB 保留，会话 Cookie 清除，人工暂停保持到明确交还。
 两个真实本地用例均通过，见[安全结果](evidence/product-browser-interruption.json)。此处不证明
 强制杀浏览器后的恢复、档案跨 Host 迁移、公网出口或 Linux 隔离；丢回执夹具不是网络安全边界。
+
+独立的 `--recovery linux-replacement` 使用明确配置的 SSH 回环夹具，执行相同的真实产品审批、
+回放与档案恢复检查。固定依赖、TLS 策略、原生期限和清理见
+[原生组合验收](../browser-execution/composition/README.zh-CN.md)。Control／Node 凭据留在本地。
+产品 `RESULT.json` 中 `remoteNativeCleanupPending:true` 表示暂未完成远端清理验收，
+必须结合配对的原生结果才能认定隔离生命周期通过。仓库不会自动选择个人 SSH 宿主或安装环境。

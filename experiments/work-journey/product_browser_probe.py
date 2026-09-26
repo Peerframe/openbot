@@ -16,13 +16,15 @@ from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
 from openbot_server.work_worker import OpenBotWork
 
 def emit(**v):print(json.dumps(v),flush=True)
-async def run(directory,upstream,browsers,recovery='worker'):
+async def run(directory,upstream,browsers,recovery='worker',remote=None):
  os.umask(0o077)
  connection_recovery=recovery in ('control','node','replacement')
+ profile_recovery=recovery in ('browser-restart','linux-replacement')
+ if (recovery=='linux-replacement') != (remote is not None):raise ValueError('Linux replacement requires the explicit remote fixture configuration')
  from product_browser_upstream import verify
  verify(upstream)
  # Read the pinned registry's binary path before starting owned databases or approving input.
- subprocess.run(['node','-e',"const fs=require('node:fs'); const {registry}=require(process.argv[1]+'/node_modules/playwright-core/lib/coreBundle.js'); const p=registry.registry.findExecutable('chromium-headless-shell').executablePath(); if(!p||!fs.existsSync(p)) throw Error('Install the pinned Playwright chromium headless shell in --browsers before this probe');",str(upstream)],env={**CLEAN_ENV,'PLAYWRIGHT_BROWSERS_PATH':str(browsers)},check=True,timeout=10)
+ if remote is None:subprocess.run(['node','-e',"const fs=require('node:fs'); const {registry}=require(process.argv[1]+'/node_modules/playwright-core/lib/coreBundle.js'); const p=registry.registry.findExecutable('chromium-headless-shell').executablePath(); if(!p||!fs.existsSync(p)) throw Error('Install the pinned Playwright chromium headless shell in --browsers before this probe');",str(upstream)],env={**CLEAN_ENV,'PLAYWRIGHT_BROWSERS_PATH':str(browsers)},check=True,timeout=10)
  if directory.exists():raise ValueError("Use a new owned output directory")
  directory.mkdir(mode=0o700)
  for name in ('artifacts','objects','provider','node'):(directory/name).mkdir(mode=0o700)
@@ -35,7 +37,7 @@ async def run(directory,upstream,browsers,recovery='worker'):
   await asyncio.to_thread(engine.start);client=await engine.connect();emit(stage='engine-ready')
   ec=directory/'engine.json';private(ec,dict(temporal_address=engine.address,namespace='default',queue='browser-'+secrets.token_hex(6),tls=engine.client_settings,interval_seconds=1,execution_timeout_seconds=600))
   pc=directory/'provider.json';private(pc,dict(directory=str(directory/'provider')))
-  api=API(directory,db.dsn,directory/'artifacts')
+  api=API(directory,db.dsn,directory/'artifacts',request_timeout=20 if remote else 5)
   api.env.update(OPENBOT_CONTROL_AUTHORITY='product',OPENBOT_CONTROL_WORK_TOKEN_LIMIT='1000000',OPENBOT_CONTROL_OBJECT_ROOT=str(directory/'objects'),OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH=str(ec),OPENBOT_BROWSER_PROBE_CONFIG=str(pc))
   def start():api.child=Process([sys.executable,'-u','-B',str(PACKET/'product_browser_server.py')],api.directory,api.env)
   async def until(f,seconds=60):
@@ -59,7 +61,7 @@ async def run(directory,upstream,browsers,recovery='worker'):
    if credential is not None:request['credential']=credential
    staged=directory/'node/control-request.next'
    private(staged,request);staged.replace(directory/'node/control-request.json')
-   await until(lambda:(directory/f'node/control-{control_id}.json').exists(),20)
+   await until(lambda:(directory/f'node/control-{control_id}.json').exists(),60 if remote else 20)
    if operation in ('connect','disconnect'):
     await until(lambda:any(x['id']==node_id for x in api.call('/api/v1/nodes')['nodes']) == (operation=='connect'))
   async def interrupt_connection():
@@ -80,9 +82,10 @@ async def run(directory,upstream,browsers,recovery='worker'):
   issued=await asyncio.to_thread(api.call,'/api/v1/nodes/enrollment-tokens',dict(nodeId=node_id),expected=201)
   credential=(await asyncio.to_thread(api.call,'/api/v1/nodes/enroll',dict(nodeId=node_id,token=issued.pop('token')),expected=201))['credential']
   log=(directory/'node.log').open('w')
-  node=await asyncio.create_subprocess_exec('node','--import','tsx',str(PACKET/'product_browser_node.mjs'),cwd=ROOT,env={**CLEAN_ENV,'PLAYWRIGHT_BROWSERS_PATH':str(browsers)},stdin=asyncio.subprocess.PIPE,stdout=asyncio.subprocess.PIPE,stderr=log)
-  node.stdin.write(json.dumps(dict(nodeId=node_id,botId=bot['id'],serverUrl=api.url.replace('http:','ws:')+'/ws/nodes',credential=credential,directory=str(directory/'node'),upstream=str(upstream),recovery=connection_recovery or recovery=='browser-restart',nodeProcess=recovery in ('node','replacement'),responseLoss=recovery=='response-loss',profileRestart=recovery=='browser-restart')).encode());await node.stdin.drain();node.stdin.close()
+  node=await asyncio.create_subprocess_exec('node','--import','tsx',str(PACKET/('product_browser_remote_node.mjs' if remote else 'product_browser_node.mjs')),cwd=ROOT,env={**CLEAN_ENV,'PLAYWRIGHT_BROWSERS_PATH':str(browsers)},stdin=asyncio.subprocess.PIPE,stdout=asyncio.subprocess.PIPE,stderr=log)
+  node.stdin.write(json.dumps(dict(nodeId=node_id,botId=bot['id'],serverUrl=api.url.replace('http:','ws:')+'/ws/nodes',credential=credential,directory=str(directory/'node'),upstream=str(upstream),recovery=connection_recovery or profile_recovery,nodeProcess=recovery in ('node','replacement'),responseLoss=recovery=='response-loss',profileRestart=profile_recovery,remote=remote)).encode());await node.stdin.drain();node.stdin.close()
   async with asyncio.timeout(20):target=json.loads(await node.stdout.readline())['targetUrl']
+  state_target=remote['stateUrl'].rstrip('/') if remote else target
   cfg=dict(version=1,humanControl=True,routes={bot['id']:node_id},pageOrigins={bot['id']:[target]})
   bc=directory/'browser.json';private(bc,cfg);private(pc,dict(directory=str(directory/'provider'),target=target))
   api.env['OPENBOT_CONTROL_BROWSER_CONFIG_PATH']=str(bc)
@@ -104,7 +107,7 @@ async def run(directory,upstream,browsers,recovery='worker'):
    assert action['decision']=='pending'
    if name=='click_browser':
     (directory/'provider/pause-worker').touch();await until(lambda:(directory/'provider/worker-stopped').exists(),30)
-    async with httpx.AsyncClient(trust_env=False) as http:state=(await http.get(target+'/state')).json()
+    async with httpx.AsyncClient(trust_env=False) as http:state=(await http.get(state_target+'/state')).json()
     assert state['submitted']==0 and state['text']=='浏览器任务 你好 🌏',state
     emit(stage='worker-stopped-with-original-click-pending')
     if connection_recovery:
@@ -116,7 +119,7 @@ async def run(directory,upstream,browsers,recovery='worker'):
    await asyncio.to_thread(api.call,f"/api/v1/actions/{action['id']}/decision",dict(intentDigest=action['intentDigest'],approved=True))
    if name=='click_browser':
     await asyncio.sleep(.4)
-    async with httpx.AsyncClient(trust_env=False) as http:state=(await http.get(target+'/state')).json()
+    async with httpx.AsyncClient(trust_env=False) as http:state=(await http.get(state_target+'/state')).json()
     assert state['submitted']==0
     (directory/'provider/resume-worker').touch();await until(lambda:(directory/'provider/worker-resumed').exists(),30)
    emit(stage='approved',tool=name)
@@ -163,7 +166,7 @@ async def run(directory,upstream,browsers,recovery='worker'):
        raise
      assert (await until(reacquire,35))['control']=='mine'
      assert (await asyncio.to_thread(api.call,f"/api/v1/browser-sessions/{reopened['id']}/commands",dict(kind='release')))['control']=='available'
-    async with httpx.AsyncClient(trust_env=False) as http:state=(await http.get(target+'/state')).json()
+    async with httpx.AsyncClient(trust_env=False) as http:state=(await http.get(state_target+'/state')).json()
     expected_submitted=1 if recovery=='response-loss' else 0
     assert state['submitted']==expected_submitted and state['text']=='浏览器任务 你好 🌏',state
     model_counts=json.loads((directory/'provider/provider-counts.json').read_text())
@@ -201,14 +204,14 @@ async def run(directory,upstream,browsers,recovery='worker'):
   model_counts=json.loads((directory/'provider/provider-counts.json').read_text());assert all(x==1 for x in model_counts.values()) and len(model_counts)==7,model_counts
   assert len(snapshot['artifacts'])==1
   report=await asyncio.to_thread(api.call,snapshot['artifacts'][0]['downloadUrl'],raw=True);assert 'Saved: 浏览器任务 你好 🌏' in report.decode()
-  async with httpx.AsyncClient(trust_env=False) as http:state=(await http.get(target+'/state')).json()
+  async with httpx.AsyncClient(trust_env=False) as http:state=(await http.get(state_target+'/state')).json()
   assert state['submitted']==1 and state['stored']=='浏览器任务 你好 🌏'
   handle=client.get_workflow_handle('openbot-work-v1-'+rid);assert (await asyncio.wait_for(handle.result(),20))['status']=='completed'
   history=await handle.fetch_history();(directory/'history.json').write_text(history.to_json())
   with ThreadPoolExecutor(max_workers=2) as executor:await Replayer(workflows=[OpenBotWork],plugins=[PydanticAIPlugin()],workflow_task_executor=executor).replay_workflow(history)
   assert json.loads((directory/'node/browser-counts.json').read_text())==counts and json.loads((directory/'provider/provider-counts.json').read_text())==model_counts
   record=dict(accepted=True,scope='trusted synthetic page on local Chromium',actualProductEntry=True,actualNode=True,actualChromium=True,actualPostgres=True,mutualTLS=True,canonicalMigrations=canonical_migrations,actualWorkApprovals=4,modelHTTP='synthetic',browserCalls=counts,modelCalls=model_counts,approvedWhileWorkerStopped=True,sameNodeConnectionRetained=True,originalClickOnlyOnce=True,actualTargetIndependentState=True,reportDownloaded=True,offlineReplay=True,publicEgressQualified=False,isolatedLinuxBrowserProduct=False)
-  if recovery=='browser-restart':
+  if profile_recovery:
    assert state['persistentCookie'] and state['sessionCookie'] and state['indexedDB']=='synthetic-indexed-value',state
    held=await asyncio.to_thread(api.call,f"/api/v1/browser-sessions/{view['id']}/commands",dict(kind='take'))
    assert held['control']=='mine'
@@ -218,7 +221,7 @@ async def run(directory,upstream,browsers,recovery='worker'):
    await asyncio.to_thread(api.call,f"/api/v1/browser-sessions/{view['id']}/commands",dict(kind='navigate',url=target+'/'))
    async with httpx.AsyncClient(trust_env=False) as http:
     for _ in range(40):
-     restored=(await http.get(target+'/state')).json()
+     restored=(await http.get(state_target+'/state')).json()
      if restored.get('indexedDB')=='synthetic-indexed-value':break
      await asyncio.sleep(.1)
    assert restored['stored']=='浏览器任务 你好 🌏' and restored['text']==restored['stored'],restored
@@ -226,11 +229,13 @@ async def run(directory,upstream,browsers,recovery='worker'):
    assert restored['indexedDB']=='synthetic-indexed-value',restored
    await node_control('browser-readback')
    processes=json.loads((directory/'node/browser-processes.json').read_text())
-   assert processes['oldBrowserExited'] and processes['oldBrowser']!=processes['newBrowser'] and processes['oldService']!=processes['newService']
+   if remote:assert processes==dict(oldContainerExited=True,oldExitCode=0,newContainer=True,samePrivateProfile=True)
+   else:assert processes['oldBrowserExited'] and processes['oldBrowser']!=processes['newBrowser'] and processes['oldService']!=processes['newService']
    assert (await asyncio.to_thread(api.call,f"/api/v1/browser-sessions/{view['id']}/commands",dict(kind='release')))['control']=='available'
    assert json.loads((directory/'node/browser-counts.json').read_text())==counts
    assert json.loads((directory/'provider/provider-counts.json').read_text())==model_counts
    record.update(mode=recovery,browserProcessRestarted=True,browserServiceProcessRestarted=True,originalBrowserExitedBeforeReplacement=True,samePrivateProfileReused=True,localStorageRetained=True,expiringCookieRetained=True,sessionCookieDropped=True,indexedDBRetained=True,humanPauseSurvived=True,explicitReturnRequired=True,agentCallsUnchangedAfterBrowserRestart=True)
+  if remote:record.update(scope='synthetic page on isolated Linux Chromium through Squid and native packet enforcement',isolatedLinuxBrowserProduct=True,actualContainerReplacement=True,remoteNativeCleanupPending=True)
   private(directory/'RESULT.json',record);emit(**record)
  finally:
   if node and node.returncode is None:
@@ -253,9 +258,10 @@ if __name__=='__main__':
  parser.add_argument('--output',type=Path,required=True)
  parser.add_argument('--upstream',type=Path,required=True)
  parser.add_argument('--browsers',type=Path,required=True)
- parser.add_argument('--recovery',choices=('worker','control','node','replacement','response-loss','browser-restart'),default='worker')
+ parser.add_argument('--recovery',choices=('worker','control','node','replacement','response-loss','browser-restart','linux-replacement'),default='worker')
+ parser.add_argument('--remote-host-config',type=Path)
  args=parser.parse_args()
  async def bounded():
   async with asyncio.timeout(360):
-   await run(args.output.resolve(),args.upstream.resolve(),args.browsers.resolve(),args.recovery)
+   await run(args.output.resolve(),args.upstream.resolve(),args.browsers.resolve(),args.recovery,json.loads(args.remote_host_config.read_text()) if args.remote_host_config else None)
  asyncio.run(bounded())

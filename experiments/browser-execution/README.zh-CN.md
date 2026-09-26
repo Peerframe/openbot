@@ -10,7 +10,7 @@
 npm run test:browser:boundary
 ```
 
-命令运行15项 Node 合成 CDP/产物测试、30项 Python 命令/权限/预算/策略测试，现有 Python/Linux CI 使用同一入口。它不调用 wrapper 可执行入口，也不启动浏览器或容器。
+命令运行15项 Node 合成 CDP/产物测试、35项 Python 命令/权限/预算/策略测试，现有 Python/Linux CI 使用同一入口。它不调用 wrapper 可执行入口，也不启动浏览器或容器。
 
 wrapper 优先使用显式远端包中的完整同级 `reviewed/`；仅在该目录不存在时使用准确兄弟目录 `../linux-execution`。已存在但残缺的 `reviewed/` 直接拒绝，不搜索任意目录。三份 helper 没有复制进来，仍检查原已审 hash。`fixtures/v3-construction.json` 是从旧 OpenBot MIT wrapper 的纯构造函数生成的数据，带原源码与 hash 来源；它取代临时包中重复的历史可执行代码，保留原命令/配置边界回归。
 
@@ -59,3 +59,10 @@ python3 -B experiments/browser-execution/qualify_egress.py \
 这些文件不部署宿主，也不授予执行授权。wrapper 保留已审资格测试站点的固定路径、单次身份和 reservation，不是通用安装器。真实验证须另行具备授权宿主、精确镜像/archive/binary、root-owned 输入、独占窗口、余量、生产 before/after、原 Invocation/cgroup 清理。未知不能换名字重试或放宽沙箱。npm/CI 不含远程命令。
 
 CDP framing 窄适配自 Playwright1.62.1；保留 [Apache许可](playwright-LICENSE)、[NOTICE](playwright-NOTICE)、[修改声明](DERIVATIVE_NOTICE.md)和[上游来源hash](UPSTREAM_SOURCES.json)。OpenBot 编排与测试沿用仓库 MIT。
+
+## 原生浏览器产品组合
+
+独立600秒组合已通过真实 HTTPS Chromium／runsc／Squid、产品审批、报告／回放、
+私有档案容器替换和已建立 TLS 连接撤销，原生期限自动结束，生产状态未变。见
+[配对证据](../work-journey/evidence/product-browser-linux.json)及[夹具与范围](composition/README.zh-CN.md)。
+此前组件结果保留原范围；不据此宣称通用公网出口或生产 Host 安装器通过。

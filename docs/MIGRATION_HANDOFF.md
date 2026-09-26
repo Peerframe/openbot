@@ -1,119 +1,75 @@
 # Architecture migration handoff — 2026-09-26
 
-## Current checkpoint — actual proxy and native packet enforcement
+## Current checkpoint — isolated Linux browser product
 
-- Delivery: PR #96 is merged into `main` at `b186c11`, with all15 hosted jobs green on its accepted
-  head. New browser work is published as draft [PR #98](https://github.com/Peerframe/openbot/pull/98)
-  on `codex/browser-product-integration-20260926`, integrated with main at `9f8cb96`. Root owns this
-  increment; the separate CI repair task is complete. A passing old head does not qualify this head.
-- Browser: capture-only Work profiles retain immutable model/original Node identity and approvals.
-  Optional private `humanControl:true` now activates Owner takeover only on exact configured routes;
-  first open cannot substitute another Node. Uncertain input clears the stale frame and is not
-  retried. Close/disconnect/expiry remain paused; confirmed return permits a fresh Work capture but
-  does not revive an old approved action. See [configuration](CONTROLLED_BROWSER.md) and
-  [handover evidence](research/work-browser-handover.md).
-- Actual browser evidence: pinned macOS Chromium151.0.7922.34/agent-computer, Node, Python product
-  API and PostgreSQL passed navigation/click/Unicode typing/key/scroll, exclusive Owner control,
-  close/reopen pause, local storage continuity, old approval invalidation and fresh capture after
-  return. The actual retained Web employee entry passed at1440×1100 and390×844; the follow-up fixes
-  a narrow-screen control button compressed by long names. This is trusted synthetic-page evidence,
-  not general public egress or an isolated Linux browser product.46 focused backend and9 React
-  tests passed; earlier187 adjacent and30 Node/config checks remain separately scoped evidence.
-- New page increment: immutable0044 page scope enables six approved tools only for new Tasks on
-  trusted origins. DSH implemented the thin TS adapter from the approved packet; root integrated
-  protocol, Node, Server authority and replay. Actual local Chromium/Node/product API/PG/mTLS
-  Temporal passed navigate/Unicode fill/click/read/report/download and replay. The original click
-  was approved while the SDK Worker was stopped; restart with the same Node connection applied it
-  once. New checkpoint ids do not invalidate unchanged instructions; actual corrections do.
-  [Evidence](../experiments/work-journey/evidence/product-browser-pages.json) and the repository
-  probe are reproducible without private paths or paid model credentials. Synthetic model HTTP
-  is not visual inference. The probe now runs in CI with fixed Bun/upstream/Playwright versions.
-- Interruption: whole Control SIGKILL/restart, two actual Node process SIGKILL/restarts and a
-  same-id credential replacement passed against owned local Chromium/PG/mTLS Temporal. Old click
-  approvals reached neither Node dispatch nor the target (zero submissions). Cancellation closed
-  authority while preserving unknown evidence; engine failure is not a successful Task result.
-  Human pause survived Control/Node interruption; old views failed, and explicit reacquisition/
-  return preserved page state. New credentials could not inherit the original browser binding.
-  All three histories replayed without new browser/model calls; owned fixtures were removed.
-  [Safe evidence](../experiments/work-journey/evidence/product-browser-interruption.json).
-  Two additional actual local cases now pass: a successful click followed by destroyed HTTP response
-  stays unknown without retry; graceful service/Chromium replacement proves old-process exit and
-  preserves localStorage, expiry cookie and IndexedDB, while dropping session cookies and retaining
-  human pause until explicit return. Both use synthetic owned profiles. Abrupt browser loss, profile
-  transfer to another Host and isolated Linux replacement remain unqualified. All five modes move
-  to a separate required browser CI job, with exact child handles and safe result uploads.
-- Linux command: specifically authorized product3 passed one real Work→Node→protected Linux Host
-  execution on canonical44, with real Owner approval, PostgreSQL/mTLS Temporal, exact CSV,
-  independent synthetic-model review, two downloads and offline replay. Original50/150-second
-  limits held. Native runtime/backing, socket, ephemeral keys and owned public Node copy were
-  removed; Node was revoked. Ten existing containers and firewall semantics were unchanged.
-  All product1/2/3 identities are consumed; never rerun them. No VPS test window is active.
-  [Safe result](../experiments/work-journey/evidence/product-command-remote-product3.json).
-- Restore: current canonical44 paired cold restore passed47 Control tables/111 rows,40 history plus
-  3 visibility tables,13 files,36 TLS files and six key negatives. Original approval/unknown/cancel
-  behavior and both history replays passed; owned resources were removed. The new browser profile
-  table was empty in this scripted fixture; browser-specific continuation is not inferred.
-  [Safe result](../experiments/work-journey/evidence/active-paired-restore-schema44.json).
-- Packaging: source5b3f6bd plus fixed execution configuration now maps private `D/browser.json`
-  and `D/command.json` alongside the existing Temporal file. Current45-migration Preview passed
-  staged/packaged API/PG, Owner login, restart preservation, parent EOF and refusal cleanup;
-  all163 Python modules and SQL match the checkout. Two actual bundled mTLS Worker starts
-  accepted valid browser configuration; malformed browser/command files and configuration
-  without an engine failed closed and reaped PG. Owned fixtures are removed. See the exact
-  [artifact evidence](../experiments/work-journey/evidence/desktop-preview-schema45.json).
-  Native GUI is pending: Computer Use timed out for both the exact path and verified bundle ID;
-  the latest Finder attempt also failed with cgWindowNotFound, and Preview is absent from inventory. The user has been asked to open this uninstalled
-  candidate. Old GUI/Keychain evidence does not qualify the current bundle; full packaged
-  inference is also open. Installed app/default backend are unchanged.
-- Checks: CI on63242fc passed13 individual jobs; Python qualification failed because the real
-  Node fixture's dependency closure had not been built. The shared runner now builds it. On074d17c,
-  13 hosted jobs have passed; only Python/Temporal remains running, with no failed job in that
-  snapshot. Container/S7 pins are45;40 migration/restore and8 cleanup cases passed.
-  `npm run check` passed;15 page authority tests and57 combined page/result tests passed on real PG.
-  Base Python passed1306 with463 environment-dependent skips. The launcher increment passed
-  `npm run check`,44 focused Desktop tests (two Windows-only skips) and9 probe-support tests;
-  `npm run check` also passed for the new process-interruption fixture. On9927513,13 hosted jobs
-  passed; Python/Temporal was cancelled at its50-minute limit during the final long qualification
-  step. Browser and the unchanged long Temporal recovery/upgrade step now each have their own
-  required job, removing serial work without dropping cases or changing probe deadlines. The response/
-  profile increment passed `npm run check`;20 build tasks were cached, repository audits ran.
-  The initial restricted run hit loopback EPERM; the authorized normal test run passed.
-  Hosted CI on64b4fed is now fully green:16 individual checks plus aggregate check, including
-  the separated browser recovery and Temporal recovery/upgrade jobs. The new proxy increment
-  passed `npm run check` (20 cached build tasks; repository checks executed),30 Python boundary
-  tests and13 workflow checks. Its hosted checks are pending; earlier green does not qualify it.
-- Proxy: DSH delivered the pure Squid policy candidate; root corrected protocol/IP handling and
-  integrated actual Debian7.7-1 tests.20 actual cases pass in a disconnected local Linux amd64
-  fixture, with warning-free configuration, reachable forbidden canaries, zero forbidden requests
-  and verified container removal. A source build under emulation hit its bound; the released
-  Debian package replaces that slow route. No VPS software/networking changed. New required CI
-  runs this same proxy fixture. Native kernel follow-up passed23 routed cases, direct client bypass
-  refusal, host/metadata/private IPv4/IPv6 denial and removal of an already-open connection. The
-  original150-second private unit and all children closed;9 existing containers, firewall semantics
-  and forwarding sysctls were unchanged. First case stopped before rules on IPv6 readiness; its
-  consumed identity was closed. Final kernel code is byte-identical to the accepted run; the launcher
-  adds only a snapshot-only CI Docker path and source hashing. Required CI now includes this fixture;
-  the native-network increment passed `npm run check` with20 cached builds and actual repository audits.
-  Actual Squid/browser/runsc/product composition is still pending; no general egress is enabled.
-- Remaining retirement gates: enforced browser egress and isolated Linux product Host, including
-  isolated profile/Host replacement; final source/package/installed replacement qualification.
-  In-flight HTTP response loss and graceful local browser process replacement now pass.
-  Read-only VPS preflight confirms x86-64, cgroup v2, kernel6.8.0-136 and Docker29.8.1; Squid and
-  build tools are absent; installed nftables1.0.9/iproute2 6.1.0/systemd255 were used for the native
-  packet check without host package/rule changes. DSH has finished and no external writer owns repository files.
-  Control/Node process interruption and same-id identity refusal are now qualified
-  for trusted local pages. Keep the replaced TS business
-  Server until these gates pass, and retain the frozen59-file oracle plus TS Node/Provider/tools.
-- Retained evidence: DSH implemented the browser profile module from the explicitly approved
-  packet; its SQL/identity corrections and integration are committed. The real Kimi Task used four
-  receipts/8,854 tokens and downloaded231 bytes; do not resubmit. Accepted native case2 and Linux
-  CDP component runs are unchanged and were not repeated.
-- Ownership/data: six prior CI/Preview recovery copies remain in Git stash; do not pop over merged
-  canonical versions. Preserve user data/configuration and the retained migration PostgreSQL
-  fixture. Clean only newly owned fixtures; never purge shared caches. No new agent owns these files.
-- Architecture: keep the Owner-confirmed2026-09-24 design review v2. Server owns authorization and
-  Temporal owns continuation. Whole-repository rearrangement, visual-system work and marketplaces
-  remain later work. Do not turn root product work into another CI repair task.
+- Delivery: PR96 merged at `b186c11`. Continue draft [PR98](https://github.com/Peerframe/openbot/pull/98)
+  on `codex/browser-product-integration-20260926`. All17 individual hosted checks plus aggregate
+  `check` passed on `550a981`. New composition work is not covered by that earlier green head.
+  Root owns this increment; the separate CI task and DSH implementation tasks are complete.
+- Linux browser: actual Work/Node/PostgreSQL/mTLS Temporal passed four approvals, navigation,
+  Unicode input, one click, read/report/download and history replay against actual Bun/Chromium
+  through Squid7.7 and runsc. Worker stop/approval/resume executed the original click once.
+  Graceful container replacement proved old exit before profile reuse, retained localStorage,
+  expiring cookie and IndexedDB, dropped session cookie, and preserved human pause until return.
+  The original600-second unit expired automatically; cgroup and owned runtime closed, with9
+  existing containers and host network state unchanged. See the [paired safe result](../experiments/work-journey/evidence/product-browser-linux.json).
+- TLS/network: matching Linux NSS3.98 fixed the synthetic CA trust mismatch. Real trusted HTTPS
+  passed; wrong hostname and unknown CA failed without bypass flags. Thirteen real container
+  socket cases passed. Flushing native admission revoked the same existing verified TLS proxy
+  tunnel with no new target hit. Earlier real20-case Squid and23-case native routing results remain
+  separately scoped evidence. See [composition](../experiments/browser-execution/composition/README.md)
+  and [research](research/browser-egress-policy.md). No public Internet or general Host installer
+  is qualified. No host trust store, packages or production firewall was changed.
+- Native attempts: long Unix path and missing helper import failed before start; missing Docker
+  config alias failed after private load; public HTTP was correctly rejected by product policy;
+  the macOS-built NSS database then failed Chromium TLS. All consumed attempts were diagnosed and
+  closed; no identity was reused. Final code uses the reviewed manifest/config fallback and Linux
+  NSS fixture. Never rerun command product1/2/3 or browser comp1–comp5 identities.
+- Local browser evidence remains accepted: Web at1440×1100 and390×844, full Owner navigation/input/
+  key/scroll/take/return; Control SIGKILL, two Node SIGKILLs, credential replacement refusal;
+  successful click followed by destroyed response stays unknown with no retry. These cases retain
+  their precise local scope. Abrupt browser loss and profile transfer to another machine are open.
+- Linux command product3 passed actual Work→Node→protected Host, Owner approval, exact CSV,
+  independent synthetic-model review, two downloads and replay under original50/150-second limits.
+  Its Node was revoked and resources removed. Do not rerun. The prior real Kimi Task used four
+  receipts/8,854 tokens and downloaded231 bytes; do not resubmit it.
+- Restore: canonical44 paired cold restore passed47 Control tables/111 rows,40 history plus3
+  visibility tables,13 files,36 TLS files and six key negatives, original approval/unknown/cancel
+  semantics and two replays. Browser-profile table was empty, so it does not qualify profile recovery.
+- Preview: canonical45 candidate contains163 matching Python modules and SQL. Packaged API/PG,
+  login, restart, parent EOF, invalid configuration refusal/cleanup and two mTLS Worker starts passed.
+  [Artifact evidence](../experiments/work-journey/evidence/desktop-preview-schema45.json).
+  Current GUI/Keychain and full packaged inference are still unqualified. Computer Use explicitly
+  reports the Mac is locked and automatic unlock failed. The user has been asked to unlock and
+  open the uninstalled Preview; no reply yet. Earlier GUI evidence belongs to another artifact.
+- Checks: composition boundary35 Python tests pass; full `npm run check` passed with20 cached build
+  tasks and actual repository audits. TLS positives/negatives ran in actual local Chromium and
+  native Linux. The repository remote Node fixture now requires explicit operator `sshTarget`
+  instead of publishing the personal host; four validation preflights pass. The executed fixed-host
+  fixture remains in private evidence; the selected SSH command is unchanged.
+
+### Remaining retirement work
+
+1. Publish this accepted increment and qualify its exact hosted CI head.
+2. Qualify the current Preview GUI, native Keychain and complete packaged inference. Mac unlock is
+   the immediate external blocker; do not replace it with headless evidence or old artifact evidence.
+3. Remove the replaced TS business Server and redundant exploration paths only after replacement
+   acceptance. Source inventory finds129 tracked `apps/server` files. Concrete integration points
+   remain in root dev/check scripts, legacy Dockerfile/Compose, Desktop native preparation and
+   `main.ts` fallback, and legacy CI jobs. Windows/x64 local Desktop still uses the old Server;
+   choose and document a supported replacement/remote-client capability before removing that path.
+   Keep the59-file frozen oracle, migration histories, TS Node/Providers, publisher/MCP tools and
+   credential helpers. Preserve `550a981` as an additional source recovery checkpoint.
+4. Run the affected final checks and publish the retirement change. Signing/installed distribution,
+   production data conversion and default activation remain separate visible actions; no user data
+   or existing installation is part of disposable fixture cleanup.
+
+Keep the Owner-confirmed2026-09-24 design review v2: Server owns authority and Temporal continuation.
+Broader repository rearrangement, visual redesign and marketplaces remain later work. Preserve six
+old stashes, retained migration PG and all unrelated user data/configuration. No external writer owns
+these files. Local private packet: `/private/tmp/openbot-browser-linux-composition-20260926`;
+actual checkout: `/Users/yxflc/.codex/worktrees/c8b2/openbot`. Completed execution used `execute6.py` and
+`product-linux-nss`; no native window or test process is active. Do not restart consumed identities.
 
 The stage notes below are historical evidence, not the current work order.
 

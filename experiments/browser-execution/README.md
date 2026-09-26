@@ -10,7 +10,7 @@ Requirements: a repository-supported Node version with built-in `node:zlib` CRC3
 npm run test:browser:boundary
 ```
 
-It runs15 Node synthetic CDP/artifact tests and30 Python command/authority/budget/policy tests. The existing Python/Linux CI runs the same command. It never invokes the wrapper's executable entry point or launches a browser/container. The wrapper resolves native helpers from a complete adjacent `reviewed/` directory when explicitly packaged for the remote test; otherwise it uses the exact sibling `../linux-execution`. An existing incomplete `reviewed/` is rejected. It does not search arbitrary directories. The three helpers are not duplicated here and their reviewed hashes remain checked.
+It runs15 Node synthetic CDP/artifact tests and35 Python command/authority/budget/policy tests. The existing Python/Linux CI runs the same command. It never invokes the wrapper's executable entry point or launches a browser/container. The wrapper resolves native helpers from a complete adjacent `reviewed/` directory when explicitly packaged for the remote test; otherwise it uses the exact sibling `../linux-execution`. An existing incomplete `reviewed/` is rejected. It does not search arbitrary directories. The three helpers are not duplicated here and their reviewed hashes remain checked.
 
 `fixtures/v3-construction.json` is data generated from the previous OpenBot MIT wrapper's pure construction methods, with source/hash provenance. It replaces a duplicate historical executable in the original temporary test packet. The check preserves the prior command/configuration boundary, apart from the already reviewed explicit `compress=false` log option.
 
@@ -88,3 +88,11 @@ Bounds are DOM16KiB, PNG192KiB with CRC and bounded exact pixel-decompression va
 These files do not provision a host or authorize an execution. The wrapper intentionally retains the fixed qualification site's reviewed paths and original single-use identity/reservation rules; it is not a general installer. A real case requires a separately authorized isolated host, exact image/archive/binary pins, root-owned inputs, exclusive window, capacity and production before/after comparison, then original Invocation/cgroup cleanup. A partial/unknown case must never be retried under another name or by relaxing sandbox permissions. No remote command is part of npm/CI.
 
 The CDP framing narrowly adapts Playwright v1.62.1 transport behavior. Required [Apache license](playwright-LICENSE), [notice](playwright-NOTICE), [modification notice](DERIVATIVE_NOTICE.md) and [primary-source hashes](UPSTREAM_SOURCES.json) are retained. OpenBot orchestration and tests remain under the repository MIT license.
+
+## Native browser product composition
+
+The separate600-second composition passed actual HTTPS Chromium/runsc/Squid, product approvals,
+report/replay, private-profile container replacement and established TLS tunnel revocation, with
+original native expiry and unchanged production state. See [paired evidence](../work-journey/evidence/product-browser-linux.json)
+and the [fixture and scope](composition/README.md). Earlier component results retain their original
+scope. This adds no general public egress or production Host installation claim.

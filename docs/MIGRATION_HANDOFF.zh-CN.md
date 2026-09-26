@@ -1,81 +1,64 @@
 # 架构迁移交接 — 2026-09-26
 
-## 当前检查点——真实代理与原生包过滤
+## 当前检查点——Linux 隔离浏览器产品
 
-- 当前新增：`64b4fed` 的16项独立CI及总检查全部通过，包括独立浏览器恢复与Temporal恢复／升级。DSH已交付代理策略编译器；root修正协议／IP语义，并用官方Debian Squid7.7-1在断网Linux amd64容器中实测20项通过，禁止目标实际可达而经代理收到零请求，解析无告警、容器已清理。代理增量已通过 `npm run check`（20项构建命中缓存，仓库检查实际执行）、30项Python边界与13项工作流检查，新的托管CI仍待完成；原生内核增量也已通过完整 `npm run check`；追加23项路由检查、直接绕过／宿主与私网IPv4/IPv6拒绝、已有连接撤销已通过；原150秒私有单元与所有子进程已关闭，9个现有容器、宿主规则和转发设置未变。首轮IPv6未就绪在安装规则前退出，已清理且未重用身份；修正后通过。实际Squid／Chromium／runsc／产品授权的组合仍待验收。VPS未安装软件或修改宿主网络，新版Preview仍未出现在原生应用列表。
+- 交付：PR96 已在 `b186c11` 合并。继续分支 `codex/browser-product-integration-20260926`
+  的[草稿 PR98](https://github.com/Peerframe/openbot/pull/98)。`550a981` 的17项独立检查及
+  总检查全部通过；该绿色状态不覆盖新的组合验收增量。root 是当前唯一写入者，CI 与 DSH
+  实现任务已经结束。
+- Linux 浏览器：真实 Work／Node／PG／mTLS Temporal 已经过 Squid7.7／runsc／Bun／Chromium
+  完成四次审批、导航、中文输入、单次点击、读取、报告下载和历史回放；Worker 暂停期间批准
+  的原点击只执行一次。浏览器容器有序替换前确认旧容器退出，同一私有档案保留 localStorage、
+  有效期 Cookie、IndexedDB，清除会话 Cookie；人工暂停保持到明确交还。
+  原始600秒单元自动到期，cgroup与独占运行目录已清理，9个现有容器及宿主网络未变，见
+  [配对安全结果](../experiments/work-journey/evidence/product-browser-linux.json)。
+- TLS／网络：用匹配的 Linux NSS3.98 测试库修复跨版本信任标记问题。真实合法 HTTPS 通过，
+  错误域名和未知 CA 均拒绝，没有证书忽略开关。13项真实容器 socket 检查通过；清除私有
+  admission 链后同一个已建立 TLS 代理连接停止投递，目标未收到新请求。此前真实20项
+  Squid 与23项原生路由证据分别保留。见[组合说明](../experiments/browser-execution/composition/README.zh-CN.md)
+  和[研究](research/browser-egress-policy.md)。不据此宣称公网浏览或通用 Host 安装器通过；
+  未修改宿主信任库、软件包或生产防火墙。
+- 已消费尝试：Unix 路径过长和缺少 helper 在启动前失败；私有镜像加载后发现配置 ID 别名
+  不存在；产品正确拒绝公共 HTTP；随后 Mac 生成的 NSS 库未被 Chromium 信任。均已诊断并
+  关闭，没有复用身份。最终采用固定 manifest／config 回退及 Linux NSS 库。
+  command product1／2／3 与 browser comp1–comp5 不得重跑。
+- 保留本地浏览器证据：1440×1100 和390×844 Web，完整 Owner 导航／输入／按键／滚动／
+  接管／交还；Control 强杀、两次 Node 强杀、新凭据拒绝；点击成功后丢回执保持 unknown 且
+  不重发。强杀浏览器后的档案恢复和跨机器档案迁移仍未验收。
+- Linux 命令 product3 的 Work→Node→隔离 Host、审批、准确 CSV、独立合成模型审核、两份
+  下载和回放已在原50／150秒限制内通过，Node 已撤销、资源已清理，不重跑。
+  此前真实 Kimi Task 的四份回执／8,854 tokens／231字节下载保留，不重新提交该任务。
+- 恢复：canonical44 成对冷恢复通过47张 Control 表／111行、40张历史加3张可见性表、
+  13个文件、36个 TLS 文件和六个密钥反例，保留审批／unknown／取消语义和两份历史回放。
+  浏览器档案表为空，不能据此推断档案恢复。
+- Preview：canonical45 包含163份匹配的 Python 模块和 SQL，包内 API／PG、登录、重启、
+  父进程 EOF、非法配置拒绝与清理、两次 mTLS Worker 启动均通过，见
+  [产物证据](../experiments/work-journey/evidence/desktop-preview-schema45.json)。当前 GUI／
+  Keychain 和完整包内推理仍未通过。Computer Use 明确返回 Mac 锁定且无法自动解锁；
+  已请用户解锁并打开未安装 Preview，尚无回复。旧 GUI 证据属于其他产物。
+- 检查：35项 Python 边界检查通过；完整 `npm run check` 通过，20项构建命中缓存、仓库
+  检查实际执行。TLS 正反例在本地真实 Chromium 与原生 Linux 运行。发布的远端 Node 夹具
+  改为必须提供 `sshTarget`，不把个人宿主写入仓库；四项输入预检通过。实际运行的固定宿主
+  版本保留在私有证据中，选择的 SSH 命令不变。
 
-- 交付：#96 已合并至 main `b186c11`，原提交15项托管检查通过。新浏览器增量发布为
-  [草稿 PR #98](https://github.com/Peerframe/openbot/pull/98)，分支
-  `codex/browser-product-integration-20260926`，已在 `9f8cb96` 整合 main。主控负责本增量，
-  独立 CI 修复任务已完成；旧提交通过不等于新提交已通过。
-- 浏览器：保留仅截图 Work 的不可变模型／原 Node 身份和审批。私有配置 `humanControl:true`
-  现在只为精确指定路由启用 Owner 接管；首次打开不再替换为其他可用 Node。输入不确定时清除
-  旧画面，不重发。关闭／断线／到期保持暂停；确认交还后允许新的 Work 截图，不复活旧批准。
-  见[配置](CONTROLLED_BROWSER.zh-CN.md)及[接管记录](research/work-browser-handover.md)。
-- 真实浏览器验收：固定 macOS Chromium151.0.7922.34／agent-computer、Node、Python 产品 API
-  与 PG 已通过导航、点击、中文输入、按键、滚动、独占控制、关闭重开暂停、页面存储连续性、
-  旧批准失效和交还后新截图。现有 Web 员工入口在1440×1100和390×844通过，已修复长名称将
-  手机接管按钮挤成竖排的问题。46项后端及9项React测试通过；此前187项相邻测试及30项Node／
-  配置检查保留其原范围。这是可信合成网页验收，不代表公网出口或隔离Linux浏览器产品通过。
-- 页面增量：新增0044不可变范围表，只为可信origin上新建任务开放六种逐次审批工具。
-  DSH按获批材料实现TS适配器，主控完成协议、Node、Server权限与恢复整合。真实本地
-  Chromium／Node／产品API／PG／mTLS Temporal已通过导航、中文填字、点击、读取、报告下载
-  和历史重放；真实SDK Worker停止期间批准原点击，保持原Node连接恢复后仅执行一次。
-  正常新检查点不会错误取消原观察，真正的Owner纠正仍会使旧引用失效。
-  [证据](../experiments/work-journey/evidence/product-browser-pages.json)和仓库脚本可由新贡献者
-  复现，无私人路径或付费模型凭据；合成模型HTTP不证明视觉理解。该脚本已接入固定依赖的CI。
-- 中断恢复：完整Control被SIGKILL后重启、真实Node进程两次被杀后重建、同id更换凭据，均在
-  独占本地Chromium／PG／mTLS Temporal通过。旧点击批准没有到达Node派发或目标页面，提交
-  次数为零。取消关闭执行权限并保留unknown证据；引擎失败不冒充Task成功。人工暂停跨Control／
-  Node中断保留，旧窗口拒绝，明确重新接管及交还后页面状态保留。新凭据不能继承原浏览器绑定。
-  三份历史重放均未新增浏览器／模型调用，独占夹具已移除。见
-  [安全结果](../experiments/work-journey/evidence/product-browser-interruption.json)。三种模式已接入CI。
-  新增两个真实本地用例也已通过：点击已生效后切断HTTP回执，动作保持unknown且不重发；
-  优雅替换服务与Chromium，确认旧进程退出，保留localStorage、有效期Cookie及IndexedDB，
-  清除会话Cookie，人工暂停直到明确交还。使用独占合成档案，不证明强制杀浏览器、档案跨Host
-  迁移或隔离Linux替换。五种模式移至独立且必需的浏览器CI，只上传安全结果。
-- Linux 命令：明确授权的 product3 已在44条迁移上通过一次真实 Work→Node→受保护 Linux Host
-  执行，包括 Owner 审批、PG／mTLS Temporal、准确 CSV、独立合成模型审核、两份下载与离线
-  重放。原50／150秒限制成立；原生运行目录／磁盘、socket、临时密钥及公共Node副本已清理，
-  本次Node已撤销。既有10个容器及防火墙状态未变。product1／2／3身份全部已消费，不得重跑；
-  当前无VPS测试窗口。见[准确结果](../experiments/work-journey/evidence/product-command-remote-product3.json)。
-- 恢复：44条迁移的成对停写恢复通过，包含47张Control表／111行、40张历史加3张可见性表、
-  13个文件、36个TLS文件和六个密钥反例。原审批／未知结果／取消行为及两份历史重放通过，
-  独占资源已清理。此脚本夹具的新增浏览器档案表为空，不据此宣称浏览器自动继续已通过。
-  见[安全结果](../experiments/work-journey/evidence/active-paired-restore-schema44.json)。
-- 打包：源码5b3f6bd加固定执行配置入口，在Temporal文件旁接通私有 `D/browser.json` 与
-  `D/command.json`。当前45条迁移Preview通过暂存／包内API及PG、Owner登录、重启保留、
-  父进程退出与失败清理；163个Python模块及SQL与检出内容一致。两次真实包内mTLS Worker
-  启动接受合法浏览器配置；非法浏览器／命令配置及无引擎配置均拒绝启动并清理PG。独占夹具
-  已移除。见[准确产物证据](../experiments/work-journey/evidence/desktop-preview-schema45.json)。
-  原生GUI仍待验：Computer Use按完整路径与已核实包标识连接均超时，列表没有Preview，
-  最新Finder尝试也返回cgWindowNotFound。已请用户打开此未安装候选。旧GUI／Keychain证据
-  不覆盖新版，完整包内推理也仍开放。
-  未替换已安装应用或默认后端。
-- 检查：63242fc的13项独立CI通过，Python作业因未构建真实Node夹具依赖失败，共享入口已补
-  构建。074d17c快照已有13项托管检查通过，仅Python／Temporal仍运行，未见失败。
-  容器／S7固定为45条迁移，40项历史迁移／恢复及8项清理测试通过。页面增量`npm run check`
-  已通过；真实PG上15项页面权限、57项页面／结果组合测试通过。Python基础检查1306项通过、
-  463项环境相关检查跳过。启动器增量通过`npm run check`、44项Desktop测试（两项Windows专用
-  检查在macOS跳过）及9项探针支持测试。进程中断验收增量也通过`npm run check`。9927513上
-  13项托管作业已通过，Python／Temporal在最后长步骤达到50分钟上限后被取消。将浏览器
-  及原长Temporal恢复／升级步骤各自拆成独立必需作业，减少串行耗时，未删用例或改探针截止。丢回执／档案增量的仓库检查
-  已通过，20个build任务复用缓存，仓库审计实际运行；首次受限运行因回环EPERM失败，获准正常运行后通过。
-- 剩余退役门槛：强制浏览器出口隔离与隔离Linux产品Host，包括隔离档案／Host替换；
-  最终源码／安装包／安装替换验收。执行中HTTP丢回执和本地优雅浏览器进程替换现已通过。
-  VPS只读预检确认x86-64、cgroup v2、内核6.8.0-136和Docker29.8.1，缺少Squid及编译工具。
-  DSH已交付纯Squid策略编译器，无外部实现者继续写入仓库。
-  可信本地页面上的Control／Node进程中断及
-  同id新凭据拒绝现已通过。其他门槛通过前保留被替代的
-  TS业务Server，并保留不可变59文件oracle及TS Node／Provider／工具。
-- 保留证据：DSH已按获批材料实现浏览器快照模块，SQL／身份修正与整合已提交。真实Kimi任务
-  四份回执／8,854 tokens、231字节下载不重发；native case2和Linux CDP组件不重复。
-- 归属／数据：六份旧CI／Preview恢复副本保存在Git stash，不覆盖已合并规范版本。保留用户
-  数据配置及原迁移PG，只清理本轮独占夹具，不清空共享缓存。没有新Agent写入这些文件。
-- 架构：沿用Owner确认的2026-09-24设计研究v2；Server管权限，Temporal管继续。全仓目录
-  重排、视觉系统和市场留待后续，主控不另做第二份CI修复。
+### 剩余退役工作
 
-下方阶段记录只作历史证据，不是当前工作顺序。
+1. 推送本次已验收增量并核对对应提交的托管 CI。
+2. 验收新版 Preview GUI、原生 Keychain 和完整包内推理。Mac 解锁是当前外部阻塞，
+   不能用无界面或旧产物证据替代。
+3. 替代验收后，移除旧 TS 业务 Server 和冗余探索链。`apps/server` 有129个跟踪文件；
+   实际入口仍位于根 dev／check、旧 Dockerfile／Compose、Desktop 原生准备与 `main.ts`
+   回退、旧 CI。Windows／x64 本地 Desktop 仍使用旧 Server，删除前要明确支持的替代或
+   远程客户端能力。保留59文件冻结 oracle、迁移历史、TS Node／Provider、publisher／MCP
+   和凭据保护 helper；额外保留 `550a981` 源码恢复点。
+4. 运行受影响检查并推送退役改动。签名／已安装分发、生产数据转换和默认启用仍需分别明确，
+   用户数据与现有安装不属于测试清理范围。
+
+保留 Owner 已确认的2026-09-24设计研究v2：Server负责权限，Temporal负责续跑。全仓库
+重排、视觉系统和市场仍属后续工作。保留六份旧 stash、迁移 PG 及无关数据／配置。
+当前目录 `/Users/yxflc/.codex/worktrees/c8b2/openbot`，私有测试包
+`/private/tmp/openbot-browser-linux-composition-20260926`；本次 `execute6.py` 与
+`product-linux-nss` 已结束，没有活动原生窗口或测试进程，不得重启已消耗身份。以下内容仅为历史证据。
 
 ## 当前简短交接——已验收并行增量（代码 `a61153e`）
 
