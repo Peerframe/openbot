@@ -90,7 +90,7 @@ try {
     join(root, "node_modules/turbo/bin/turbo"),
     "run",
     "build",
-    "--filter=@openbot/server^...",
+    "--filter=@openbot/node^...",
   ]);
   run(process.execPath, [
     join(root, "node_modules/typescript/bin/tsc"),

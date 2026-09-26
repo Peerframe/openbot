@@ -3,6 +3,7 @@ import type { DesktopSetupPlanInput } from "./setup-plan.js";
 export interface DesktopRuntimeInfo {
   kind: "desktop";
   platform: string;
+  arch?: string;
   shellVersion: string;
 }
 

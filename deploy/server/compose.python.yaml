@@ -1,7 +1,0 @@
-# Combine with compose.yaml. Existing data volumes and network settings are inherited.
-services:
-  server:
-    build:
-      target: runtime-python
-    environment:
-      OPENBOT_AGENT_RUNTIME: python

@@ -1,55 +1,43 @@
+# Python product: use a new project when moving from a legacy deployment.
 services:
   postgres:
-    # Debian avoids the documented PostgreSQL 17 / Alpine 3.23 ARM64 crash on Apple Silicon.
     image: postgres:17.11-bookworm
-    restart: unless-stopped
     environment:
       POSTGRES_DB: openbot
       POSTGRES_USER: openbot
-      POSTGRES_PASSWORD: ${OPENBOT_POSTGRES_PASSWORD:-openbot-development-only}
+      POSTGRES_PASSWORD: ${OPENBOT_POSTGRES_PASSWORD:?set OPENBOT_POSTGRES_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U openbot -d openbot"]
+      test: [CMD-SHELL, pg_isready -U openbot -d openbot]
       interval: 5s
       timeout: 3s
-      retries: 10
-    ports:
-      - "127.0.0.1:5432:5432"
+      retries: 12
     volumes:
-      - openbot-postgres:/var/lib/postgresql/data
-
+      - product-postgres:/var/lib/postgresql/data
   server:
     build:
       context: ../..
       dockerfile: deploy/server/Dockerfile
-    restart: unless-stopped
+      target: runtime-product
     stop_grace_period: 20s
     read_only: true
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
     tmpfs:
-      - /tmp:rw,noexec,nosuid,nodev,size=16m,uid=1000,gid=1000,mode=0700
+      - /tmp:rw,noexec,nosuid,nodev,size=128m,uid=1000,gid=1000,mode=0700
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      OPENBOT_HOST: 0.0.0.0
-      OPENBOT_PORT: 3001
-      OPENBOT_DATABASE_URL: postgres://openbot:${OPENBOT_POSTGRES_PASSWORD:-openbot-development-only}@postgres:5432/openbot
+      OPENBOT_CONTROL_DATABASE_URL: postgres://openbot:${OPENBOT_POSTGRES_PASSWORD:?set OPENBOT_POSTGRES_PASSWORD}@postgres:5432/openbot
+      OPENBOT_CONTROL_OWNER_PASSWORD: ${OPENBOT_OWNER_PASSWORD:?set OPENBOT_OWNER_PASSWORD}
       OPENBOT_OWNER_NAME: ${OPENBOT_OWNER_NAME:-Owner}
-      OPENBOT_OWNER_PASSWORD: ${OPENBOT_OWNER_PASSWORD:?set OPENBOT_OWNER_PASSWORD}
-      OPENBOT_SESSION_TTL_HOURS: ${OPENBOT_SESSION_TTL_HOURS:-12}
-      OPENBOT_SECURE_COOKIES: ${OPENBOT_SECURE_COOKIES:-false}
-      OPENBOT_ALLOWED_ORIGINS: ${OPENBOT_ALLOWED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
-      OPENBOT_TRUSTED_PROXY_ADDRESS: ${OPENBOT_TRUSTED_PROXY_ADDRESS:-}
-      OPENBOT_LOG_LEVEL: ${OPENBOT_LOG_LEVEL:-info}
-      OPENBOT_OBJECT_STORE_PATH: /var/lib/openbot/objects
-      OPENBOT_MODEL_DIRECTORY: /var/lib/openbot/model
-      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      OPENBOT_CONTROL_COOKIE_MODE: ${OPENBOT_CONTROL_COOKIE_MODE:-loopback}
+      OPENBOT_CONTROL_ALLOWED_ORIGINS: ${OPENBOT_CONTROL_ALLOWED_ORIGINS:-http://localhost:3001,http://127.0.0.1:3001}
+      OPENBOT_CONTROL_SESSION_TTL_HOURS: ${OPENBOT_CONTROL_SESSION_TTL_HOURS:-12}
     ports:
-      - "127.0.0.1:3001:3001"
+      - 127.0.0.1:3001:3001
     volumes:
-      - openbot-objects:/var/lib/openbot/objects
-      - openbot-model:/var/lib/openbot/model
-
+      - product-state:/var/lib/openbot
 volumes:
-  openbot-postgres:
-  openbot-objects:
-  openbot-model:
+  product-postgres:
+  product-state:

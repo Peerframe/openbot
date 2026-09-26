@@ -1,11 +1,10 @@
 # Architecture migration handoff — 2026-09-26
 
-## Current checkpoint — isolated Linux browser product
+## Current checkpoint — final business Server retirement
 
-- Delivery: PR96 merged at `b186c11`. Continue draft [PR98](https://github.com/Peerframe/openbot/pull/98)
-  on `codex/browser-product-integration-20260926`. All17 individual hosted checks plus aggregate
-  `check` passed on `550a981`. New composition work is not covered by that earlier green head.
-  Root owns this increment; the separate CI task and DSH implementation tasks are complete.
+- Delivery: PR96 merged at `b186c11`; [PR98](https://github.com/Peerframe/openbot/pull/98)
+  merged at `1dacf4e` after all17 hosted jobs plus aggregate `check` passed on `255d535`.
+  Root continues on `codex/final-server-retirement-20260926`; the separate CI-fix and DSH tasks are complete.
 - Linux browser: actual Work/Node/PostgreSQL/mTLS Temporal passed four approvals, navigation,
   Unicode input, one click, read/report/download and history replay against actual Bun/Chromium
   through Squid7.7 and runsc. Worker stop/approval/resume executed the original click once.
@@ -36,33 +35,56 @@
 - Restore: canonical44 paired cold restore passed47 Control tables/111 rows,40 history plus3
   visibility tables,13 files,36 TLS files and six key negatives, original approval/unknown/cancel
   semantics and two replays. Browser-profile table was empty, so it does not qualify profile recovery.
-- Preview: canonical45 candidate contains163 matching Python modules and SQL. Packaged API/PG,
-  login, restart, parent EOF, invalid configuration refusal/cleanup and two mTLS Worker starts passed.
-  [Artifact evidence](../experiments/work-journey/evidence/desktop-preview-schema45.json).
-  Current GUI/Keychain and full packaged inference are still unqualified. Computer Use explicitly
-  reports the Mac is locked and automatic unlock failed. The user has been asked to unlock and
-  open the uninstalled Preview; no reply yet. Earlier GUI evidence belongs to another artifact.
-- Checks: composition boundary35 Python tests pass; full `npm run check` passed with20 cached build
+- Preview: canonical45 API/PG and mTLS evidence remains in
+  [schema45](../experiments/work-journey/evidence/desktop-preview-schema45.json). The installed
+  canonical app owns the legacy Preview profile/lock; this explained the old candidate's immediate
+  exit. A fixed `OpenBot Python Preview` identity now coexists with it without modifying its data.
+  Actual native first launch initialized PG/Python using system encryption; menu quit closed both;
+  restart decrypted the same ciphertext/key and displayed the authenticated Owner workspace.
+  [Current artifact evidence](../experiments/work-journey/evidence/desktop-python-preview-native.json).
+  Native GUI created a synthetic channel and recovered it on the next menu-quit/restart. Final
+  normal quit closed the candidate, API and PG. The installed app remained running. Initial stale
+  UI/capture failures were transient and resolved through current accessibility observations.
+  Full packaged inference passed; see the retirement result below. The separate test profile is retained for evidence;
+  do not remove the installed app's old profile.
+- Checks: the Preview increment passed27 focused package/profile tests and full `npm run check`
+  (20 successful build tasks,19 cached). The first check caught the CI validator’s old artifact path,
+  now updated; a later sandbox-only loopback EPERM passed with local network access.
+  Retained composition boundary35 Python tests pass; full `npm run check` passed with20 cached build
   tasks and actual repository audits. TLS positives/negatives ran in actual local Chromium and
   native Linux. The repository remote Node fixture now requires explicit operator `sshTarget`
   instead of publishing the personal host; four validation preflights pass. The executed fixed-host
   fixture remains in private evidence; the selected SSH command is unchanged.
 
-### Remaining retirement work
+### Current retirement result and remaining acceptance
 
-1. Publish this accepted increment and qualify its exact hosted CI head.
-2. Qualify the current Preview GUI, native Keychain and complete packaged inference. Mac unlock is
-   the immediate external blocker; do not replace it with headless evidence or old artifact evidence.
-3. Remove the replaced TS business Server and redundant exploration paths only after replacement
-   acceptance. Source inventory finds129 tracked `apps/server` files. Concrete integration points
-   remain in root dev/check scripts, legacy Dockerfile/Compose, Desktop native preparation and
-   `main.ts` fallback, and legacy CI jobs. Windows/x64 local Desktop still uses the old Server;
-   choose and document a supported replacement/remote-client capability before removing that path.
-   Keep the59-file frozen oracle, migration histories, TS Node/Providers, publisher/MCP tools and
-   credential helpers. Preserve `550a981` as an additional source recovery checkpoint.
-4. Run the affected final checks and publish the retirement change. Signing/installed distribution,
-   production data conversion and default activation remain separate visible actions; no user data
-   or existing installation is part of disposable fixture cleanup.
+- Owner accepts Windows/Intel Mac as remote clients. The live `apps/server` source/workspace is
+  removed, with retirement pointers retained at its old directory. Keep the59-file frozen oracle,
+  SQL history, Node/Providers, publisher/MCP and credential helpers. Default dev, Docker and
+  macOS arm64 Desktop now select Python. Canonical Desktop uses separate `python-local-server`
+  storage; old installations, bootstrap and databases were not converted or deleted.
+- [PR99](https://github.com/Peerframe/openbot/pull/99) contains the isolated Preview fix, retirement
+  commit `e3208b8` and test-only dependency metadata `6af2078`. DSH implemented Windows remote-install/DPAPI-restart gates;
+  root integrated them with the existing process-identity/installer helpers. No external writer
+  remains. Replace legacy Windows database CI with remote-client installation acceptance;
+  real local execution belongs to the Python product gates.
+- One newly authorized actual packaged Kimi Task passed:4 model receipts,8,845 tokens, independent
+  content review,353-byte report, original Workflow completion and replay without Activities.
+  The new default artifact has identical Python source trees. [Safe evidence](../experiments/work-journey/evidence/desktop-packaged-inference.json).
+  Preflight found55 missing official empty locale directories; restoring the exact manifest
+  resolved it before any model request. Owned engine/database closed; root additionally identified
+  and stopped the residual test receiver. Original app remained untouched. Never rerun this Task.
+- Default macOS arm64 package built; actual packaged API/PG, Owner login, persistent restart,
+  parent EOF and invalid-config refusal/cleanup passed. `npm run check` passed (19 builds,18 cached);
+  final fixture/doc corrections passed. Fresh npm10.9.9 install passed. Fresh Python/Web startup, Owner login and proxy passed after canonicalizing the macOS
+  fixture temporary directory.
+- Hosted acceptance on `6af2078` passed Windows remote installation/DPAPI, macOS packaging and
+  Python Preview, Linux retained clients and native amd64/arm64 images. Its `validate` job stopped
+  on missing research fields in the PR description; restore the existing evidence there before
+  dispatching this documentation checkpoint. No product code changed to bypass that gate.
+- Remaining: await final-head hosted CI. Do not claim final acceptance before that result.
+  Signed releases, replacing installed software and production-data conversion are separate;
+  source retirement is not an automatic installed upgrade.
 
 Keep the Owner-confirmed2026-09-24 design review v2: Server owns authority and Temporal continuation.
 Broader repository rearrangement, visual redesign and marketplaces remain later work. Preserve six

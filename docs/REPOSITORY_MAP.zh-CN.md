@@ -6,15 +6,15 @@
 
 | 区域 | 主要位置 | 扩展方式与检查 |
 | --- | --- | --- |
-| Server API | `apps/server/src/app.ts`、各功能 `*-routes.ts` | Owner/Origin middleware 后挂载；先校验后变更；运行 Server 测试 |
-| 持久化 | `packages/db/src/schema.ts`、migrations、Server `postgres-*.ts` | [手写 SQL 与只读迁移计划](DATABASE.zh-CN.md#编写迁移)；条件事务；不重生成既有历史。运行 `npm run migration:plan --workspace @openbot/db -- --help`、迁移检查与隔离 PostgreSQL 测试 |
+| Server API | `apps/server-python/src/openbot_server/app.py`、各功能 `*_routes.py` | Owner/Origin middleware 后挂载；先校验后变更；运行 Server 测试 |
+| 持久化 | `packages/db/src/schema.ts`、migrations、Server `*_store.py` | [手写 SQL 与只读迁移计划](DATABASE.zh-CN.md#编写迁移)；条件事务；不重生成既有历史。运行 `npm run migration:plan --workspace @openbot/db -- --help`、迁移检查与隔离 PostgreSQL 测试 |
 | 原生 Agent | Server `native-agent.ts`、`agent-*.ts`、`postgres-agent-*.ts` | 有界工具、执行前审计、准确身份和取消；运行 SDK 流测试与协作数据库测试 |
-| MCP 扩展 | Server `plugin-*.ts`、Web `Plugin*` 组件 | 已审阅的工具/资源/提示词及沙箱网页；运行 service/content/transport/sandbox 测试 |
+| MCP 扩展 | Server `plugin_*.py`、Web `Plugin*` 组件 | 已审阅的工具/资源/提示词及沙箱网页；运行 service/content/transport/sandbox 测试 |
 | 产品类型 | `packages/domain/src` | 稳定 DTO，不导入 apps；运行 domain typecheck |
 | 外部协议 | `packages/protocol/src` | 严格 schema 和非法输入测试，与内部类型区分 |
 | 频道体验 | Web `ChannelWorkspace`、`MessageActionBar`、`MessageReactions`、附件组件 | 每个组件负责一种交互，回调变更 Server 状态；组件测试及宽窄窗口实测 |
 | Web 数据与会话 | `api.ts`、`conversation-session.ts`、`run-output-state.ts` | 鉴权请求、草稿所有权、准确频道事件；API/session 测试和类型检查 |
-| Desktop 边界 | `apps/desktop/src/main.ts`、`preload.ts`、`native-server.ts` | 类型化受限桥接、可信 frame 校验；运行桌面测试及目标平台安装/启停 |
+| Desktop 边界 | `apps/desktop/src/main.ts`、`preload.cts`、`native-server.ts` | 类型化受限桥接、可信 frame 校验；运行桌面测试及目标平台安装/启停 |
 | Node 执行 | `apps/node/src/client.ts`、`runtime.ts`、`providers.ts` | 先[登记开发 Node](../CONTRIBUTING.zh-CN.md#按需启动开发-node)，再连接；分派与实际能力校验、生命周期/传输测试 |
 | Provider | `providers/*`、`packages/provider-sdk`、conformance runner | 对维护中的上游做薄适配；通过具体能力的符合性检查 |
 | 安全/策略 | `packages/policy`、`docs/SECURITY.md`、Server auth/approval | 默认拒绝、权限上限、显式审计；策略/鉴权负测与安全配置检查 |

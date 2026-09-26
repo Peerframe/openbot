@@ -77,10 +77,11 @@ cd openbot
 cp .env.example .env
 ```
 
-Replace `OPENBOT_OWNER_PASSWORD` in `.env`, then run:
+Replace `OPENBOT_CONTROL_OWNER_PASSWORD` in `.env`, then run:
 
 ```bash
 npm ci
+apps/server-python/scripts/bootstrap-worker.sh
 npm run db:up
 npm run dev
 ```
@@ -90,7 +91,7 @@ Open `http://localhost:5173` and sign in with the Owner password from `.env`; Se
 `3001`. This is sufficient for frontend/control-plane development. The native Agent remains off
 until explicitly enabled in model settings. Keep an existing checkout's `.env` and data directories.
 To reproduce the clean-start CI journey with a disposable database, see
-[the Server startup smoke instructions](apps/server/README.md).
+[the Server startup smoke instructions](apps/server-python/README.md).
 
 For a small UI change, locate its component through the [repository map](docs/REPOSITORY_MAP.md),
 edit it while this dev command runs, and inspect the real page. For example, the channel member menu

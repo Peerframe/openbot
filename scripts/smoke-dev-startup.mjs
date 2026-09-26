@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdtemp, readdir, rm } from "node:fs/promises";
+import { mkdtemp, readdir, realpath, rm } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -65,7 +65,7 @@ try {
   await sql.end({ timeout: 5 });
 }
 
-const directory = await mkdtemp(join(tmpdir(), "openbot-dev-smoke-"));
+const directory = await realpath(await mkdtemp(join(tmpdir(), "openbot-dev-smoke-")));
 const password = randomBytes(24).toString("hex");
 const origin = "http://localhost:5173";
 const controller = new AbortController();
@@ -87,14 +87,15 @@ const child = spawn(process.execPath, [npmCli, "run", "dev"], {
     CI: "1",
     TURBO_TELEMETRY_DISABLED: "1",
     TURBO_CACHE: "local:rw",
-    OPENBOT_HOST: "127.0.0.1",
-    OPENBOT_PORT: "3001",
-    OPENBOT_DATABASE_URL: databaseUrl,
-    OPENBOT_OWNER_PASSWORD: password,
-    OPENBOT_ALLOWED_ORIGINS: origin,
-    OPENBOT_SECURE_COOKIES: "false",
-    OPENBOT_OBJECT_STORE_PATH: join(directory, "objects"),
-    OPENBOT_MODEL_DIRECTORY: join(directory, "model"),
+    OPENBOT_CONTROL_HOST: "127.0.0.1",
+    OPENBOT_CONTROL_PORT: "3001",
+    OPENBOT_CONTROL_DATABASE_URL: databaseUrl,
+    OPENBOT_CONTROL_OWNER_PASSWORD: password,
+    OPENBOT_CONTROL_ALLOWED_ORIGINS: origin,
+    OPENBOT_CONTROL_COOKIE_MODE: "loopback",
+    OPENBOT_CONTROL_OBJECT_ROOT: join(directory, "objects"),
+    OPENBOT_CONTROL_ARTIFACT_ROOT: join(directory, "artifacts"),
+    OPENBOT_CONTROL_MODEL_DIRECTORY: join(directory, "model"),
   },
 });
 let output = "";

@@ -2,8 +2,8 @@
 set -eu
 # Docker supplies this init; report the actual reaper used by descendant lifecycle tests.
 /sbin/docker-init --version
-node scripts/test-runtime-headless.mjs --python
-# The control process never inherits the synthetic database credential used by the TS fixture.
+apps/agent-runtime-python/scripts/check.sh --maxfail=1
+# Control and Runtime tests need no database credential in this child-process lane.
 # Fail on a missing SDK environment; silently skipped integration is not Linux acceptance.
 test -x apps/agent-runtime-python/.venv/bin/python
 env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 LC_ALL=C.UTF-8 \

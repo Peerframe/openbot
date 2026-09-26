@@ -946,3 +946,12 @@ installation readers. The fixed browser.json and command.json paths close a real
 gap without another configuration system, environment forwarding, runtime dependency or copied
 source. Existing Node24.21.0 and CPython3.12.13 pins/licenses remain unchanged. Present invalid
 configuration refuses startup; source/Host/Action authority still belongs to the Server.
+
+## Final business Server retirement (2026-09-26)
+
+[Retirement decision](research/final-server-retirement.md) promotes the existing reviewed
+Python product, container and Desktop modules. Electron44.3.0 platform metadata gates
+macOS arm64 local hosting; Windows/Intel Mac are remote clients with retained old data.
+No new dependency or upstream implementation is copied. Frozen oracle and canonical
+SQL remain unchanged. Container, native artifact and public startup checks cover the
+new defaults; historical evidence is not relabeled as current qualification.

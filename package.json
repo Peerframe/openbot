@@ -17,12 +17,12 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "check": "npm run oracle:check && npm run test:browser:boundary && npm run docs:check && npm run research:check && npm run server:container:check && npm run server:product-container:check && npm run migrations:check && npm run security:config-check && npm run worker-host:macos:check && npm run release:check && npm run lint && npm run typecheck && npm run test && npm run build",
-    "db:up": "docker compose --env-file .env -f deploy/server/compose.yaml up -d postgres",
-    "db:stop": "docker compose --env-file .env -f deploy/server/compose.yaml stop postgres",
+    "check": "npm run oracle:check && npm run test:browser:boundary && npm run docs:check && npm run research:check && npm run server:container:check && npm run migrations:check && npm run security:config-check && npm run worker-host:macos:check && npm run release:check && npm run lint && npm run typecheck && npm run test && npm run build",
+    "db:up": "docker compose --env-file .env -p openbot-python-dev -f deploy/server/compose.dev.yaml up -d postgres",
+    "db:stop": "docker compose --env-file .env -p openbot-python-dev -f deploy/server/compose.dev.yaml stop postgres",
     "db:verify": "npm run oracle:build && node scripts/verify-database.mjs",
-    "dev": "turbo run dev --filter=@openbot/server --filter=@openbot/web",
-    "dev:server": "turbo run dev --filter=@openbot/server",
+    "dev": "node --env-file-if-exists=.env scripts/dev-python.mjs",
+    "dev:server": "node --env-file-if-exists=.env scripts/dev-python.mjs --server-only",
     "dev:web": "turbo run dev --filter=@openbot/web",
     "dev:node": "turbo run dev --filter=@openbot/node",
     "dev:smoke": "node scripts/smoke-dev-startup.mjs",
@@ -41,7 +41,7 @@
     "release:node-linux:candidate": "npm run build && node scripts/build-node-linux-candidate.mjs",
     "release:node-linux:smoke": "node scripts/smoke-node-linux-candidate.mjs",
     "security:config-check": "node --test scripts/check-credential-findings.test.mjs scripts/check-security-workflow.test.mjs scripts/check-node-release-workflow.test.mjs scripts/check-windows-worker-host-workflow.test.mjs && node scripts/check-security-workflow.mjs && node scripts/check-node-release-workflow.mjs && node scripts/check-windows-worker-host-workflow.mjs",
-    "server:container:check": "node --test scripts/check-server-container.test.mjs && node scripts/check-server-container.mjs",
+    "server:container:check": "node --test deploy/server/product-container.test.mjs",
     "test": "turbo run test --concurrency=2",
     "test:runtime": "node scripts/test-runtime-headless.mjs",
     "test:runtime:python": "node scripts/test-runtime-headless.mjs --python",
@@ -55,7 +55,7 @@
     "oracle:check": "node --test scripts/check-server-oracle.test.mjs && node scripts/check-server-oracle.mjs",
     "oracle:build": "npm run oracle:check && turbo run build --filter=@openbot/legacy-server-oracle^... && npm run build:oracle --workspace @openbot/legacy-server-oracle",
     "test:browser:boundary": "node --test experiments/browser-execution/probe.test.mjs && python3 -B -m unittest discover -s experiments/browser-execution -p \"test_*.py\" -v",
-    "server:product-container:check": "node --test deploy/server/product-container.test.mjs"
+    "server:product-container:check": "npm run server:container:check"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",

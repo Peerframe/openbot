@@ -1,0 +1,19 @@
+# Separate development database; no legacy volume reuse and no deployed Server.
+services:
+  postgres:
+    image: postgres:17.11-bookworm
+    environment:
+      POSTGRES_DB: openbot_python_dev
+      POSTGRES_USER: openbot
+      POSTGRES_PASSWORD: ${OPENBOT_POSTGRES_PASSWORD:?set OPENBOT_POSTGRES_PASSWORD}
+    ports:
+      - 127.0.0.1:5432:5432
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U openbot -d openbot_python_dev]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    volumes:
+      - python-dev-postgres:/var/lib/postgresql/data
+volumes:
+  python-dev-postgres:

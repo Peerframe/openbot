@@ -34,6 +34,7 @@ export interface NativeServerOptions {
   runtimeRoot: string;
   dataRoot: string;
   platform: string;
+  localServiceSupported?: boolean;
   encrypt(value: string): string | Promise<string>;
   decrypt(value: string): string | Promise<string>;
   launchServer(env: Record<string, string>): Promise<ManagedServerProcess>;
@@ -103,7 +104,10 @@ export class NativeServerController {
   }
 
   async #start(): Promise<NativeServerState> {
-    if (!["darwin", "win32"].includes(this.#options.platform)) {
+    if (
+      this.#options.localServiceSupported === false ||
+      !["darwin", "win32"].includes(this.#options.platform)
+    ) {
       this.#state = { status: "failed", code: "unsupported_platform" };
       return this.getState();
     }

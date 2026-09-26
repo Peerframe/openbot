@@ -1,5 +1,7 @@
 # Windows Desktop
 
+Current source scope: only macOS arm64 bundles the local Python service. Windows, Intel Mac and Linux are remote clients. Earlier local-Server installation/qualification records below are historical, not claims for new builds. Existing installations, encrypted settings and databases are retained.
+
 Windows x64 Desktop can run its own local OpenBot Server and PostgreSQL, or connect to an existing Server. The local process belongs to the signed-in user's Desktop session. Installing it does not enroll a Worker Host or grant computer-control authority.
 
 ## Install and run

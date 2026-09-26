@@ -11,9 +11,9 @@ export function validateWindowsWorkerHostBuildLane({
   artifactChecker,
 }) {
   const jobStart = workflow.indexOf("\n  windows-worker-host:\n");
-  const databaseStart = workflow.indexOf("\n  database:\n");
+  const databaseStart = workflow.indexOf("\n  python-product-container:\n");
   if (jobStart === -1 || databaseStart <= jobStart) {
-    throw new Error("CI must define the Windows Worker Host job before the database job.");
+    throw new Error("CI must define the Windows Worker Host job before the Python product container job.");
   }
 
   const job = workflow.slice(jobStart, databaseStart);

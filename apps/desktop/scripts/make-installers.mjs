@@ -82,7 +82,20 @@ if (platform === "darwin") {
     const application = join(mount, "OpenBot.app");
     const resources = join(application, "Contents", "Resources");
     await access(join(application, "Contents", "MacOS", "OpenBot"), constants.X_OK);
-    await access(join(resources, "native-runtime", "postgres", "bin", "postgres"), constants.X_OK);
+    if (arch === "arm64") {
+      await access(
+        join(resources, "native-runtime", "postgres", "bin", "postgres"),
+        constants.X_OK,
+      );
+      await access(join(resources, "native-runtime", "python-control.json"));
+    } else {
+      try {
+        await access(join(resources, "native-runtime"));
+        throw new Error("Remote-only Desktop must not bundle a local service.");
+      } catch (error) {
+        if (error?.code !== "ENOENT") throw error;
+      }
+    }
     await access(join(resources, "LICENSE"));
     await access(join(resources, "LICENSES.chromium.html"));
     if ((await hashInstaller(join(resources, "app.asar"))).sha256 !== asarBefore.sha256) {

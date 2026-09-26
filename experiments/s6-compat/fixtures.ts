@@ -5,11 +5,11 @@ import { join } from "node:path";
 import { createDatabase } from "@openbot/db";
 import type { Run } from "@openbot/domain";
 import { startExamplePlugin } from "../../packages/mcp-example/src/plugin-example.js";
-import { PluginService } from "../../apps/server/src/plugin-service.js";
-import { FilePluginStore } from "../../apps/server/src/plugin-store.js";
-import type { InstalledPlugin } from "../../apps/server/src/plugin-types.js";
-import { PostgresAgentStore } from "../../apps/server/src/postgres-agent-store.js";
-import { PostgresControlPlaneStore } from "../../apps/server/src/postgres-store.js";
+import { PluginService } from "../../tests/oracles/legacy-server/src/plugin-service.js";
+import { FilePluginStore } from "../../tests/oracles/legacy-server/src/plugin-store.js";
+import type { InstalledPlugin } from "../../tests/oracles/legacy-server/src/plugin-types.js";
+import { PostgresAgentStore } from "../../tests/oracles/legacy-server/src/postgres-agent-store.js";
+import { PostgresControlPlaneStore } from "../../tests/oracles/legacy-server/src/postgres-store.js";
 
 export function fixtureDatabaseUrl(): string {
   const value = process.env.OPENBOT_S6_TEST_DATABASE_URL;

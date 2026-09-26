@@ -287,12 +287,19 @@ export function App() {
     desktopBridge !== undefined &&
     desktopSetupPlan !== undefined &&
     desktopSetupPlan !== null &&
-    (showSetupPlan || desktopSetupPlan.status !== "configured")
+    (showSetupPlan ||
+      desktopSetupPlan.status !== "configured" ||
+      (desktopSetupPlan.plan.mode === "host" &&
+        !(
+          desktopBridge.getRuntimeInfo?.().platform === "darwin" &&
+          desktopBridge.getRuntimeInfo?.().arch === "arm64"
+        )))
   ) {
     return (
       <DesktopSetupScreen
         state={desktopSetupPlan}
         platform={desktopBridge.getRuntimeInfo?.().platform}
+        arch={desktopBridge.getRuntimeInfo?.().arch}
         onCancel={showSettings ? () => setShowSetupPlan(false) : undefined}
         onSave={async (plan) => {
           const result = await desktopBridge.saveSetupPlan(plan);
@@ -1038,7 +1045,11 @@ export function AuthenticatedWorkspace({
         />
       </div>
 
-      <WorkTasksScreen bots={workspace.bots} active={destination === "work" && active} nativeCapabilitiesEnabled />
+      <WorkTasksScreen
+        bots={workspace.bots}
+        active={destination === "work" && active}
+        nativeCapabilitiesEnabled
+      />
       {destination === "work" ? null : destination === "automations" ? (
         <AutomationsScreen bots={workspace.bots} channels={workspace.channels} />
       ) : destination === "skills" ? (

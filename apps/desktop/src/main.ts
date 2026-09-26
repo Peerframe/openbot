@@ -14,7 +14,6 @@ import {
   session,
   shell,
   systemPreferences,
-  utilityProcess,
   type WebContents,
 } from "electron";
 import { originalAttachmentSaveDialog } from "./attachment-save-dialog.js";
@@ -39,7 +38,7 @@ import { DesktopMicrophonePolicy } from "./microphone-policy.js";
 import { NativeServerController } from "./native-server.js";
 import { DesktopNavigationMenuController } from "./navigation-menu.js";
 import { desktopProfileCompatibility } from "./profile-compatibility.js";
-import { launchPythonProductServer, selectsPythonProduct } from "./python-server.js";
+import { launchPythonProductServer } from "./python-server.js";
 import { DesktopReportSaver } from "./report-save.js";
 import {
   DESKTOP_CONFIGURE_SERVER_CHANNEL,
@@ -286,6 +285,14 @@ function registerDesktopIpc(
     if (!isTrustedDesktopIpcSender(event, mainWindow?.webContents)) {
       throw new Error("Desktop IPC sender is not allowed.");
     }
+    if (
+      (process.platform !== "darwin" || process.arch !== "arm64") &&
+      typeof plan === "object" &&
+      plan !== null &&
+      "mode" in plan &&
+      plan.mode === "host"
+    )
+      return { status: "failed", code: "invalid_plan" };
     const result = await setupPlanController.save(plan);
     if (result.status === "configured" && result.plan.mode !== "host") await nativeServer?.stop();
     return result;
@@ -434,7 +441,12 @@ async function startDesktop(): Promise<void> {
     : join(app.getAppPath(), "native-runtime");
   nativeServer = new NativeServerController({
     runtimeRoot: nativeRuntimeRoot,
-    dataRoot: join(app.getPath("userData"), "openbot", "local-server"),
+    dataRoot: join(
+      app.getPath("userData"),
+      "openbot",
+      app.name === "OpenBot Python Preview" ? "local-server" : "python-local-server",
+    ),
+    localServiceSupported: process.platform === "darwin" && process.arch === "arm64",
     platform: process.platform,
     encrypt: async (value) => {
       if (!(await safeStorage.isAsyncEncryptionAvailable()))
@@ -446,68 +458,7 @@ async function startDesktop(): Promise<void> {
         throw new Error("Operating-system secret storage is unavailable.");
       return (await safeStorage.decryptStringAsync(Buffer.from(value, "base64"))).result;
     },
-    launchServer: async (env) => {
-      if (await selectsPythonProduct(nativeRuntimeRoot))
-        return launchPythonProductServer(nativeRuntimeRoot, env);
-      const child = utilityProcess.fork(join(nativeRuntimeRoot, "apps/server/dist/index.js"), [], {
-        env,
-        cwd: nativeRuntimeRoot,
-        stdio: "ignore",
-        serviceName: "OpenBot Server",
-      });
-      let alive = true;
-      child.once("exit", () => {
-        alive = false;
-      });
-      await new Promise<void>((resolve, reject) => {
-        const timer = setTimeout(() => {
-          child.kill();
-          reject(new Error("Server startup timed out."));
-        }, 30_000);
-        child.once("exit", () => {
-          clearTimeout(timer);
-          reject(new Error("Server exited before readiness."));
-        });
-        child.on("message", (message: unknown) => {
-          if (
-            typeof message === "object" &&
-            message !== null &&
-            "type" in message &&
-            "port" in message &&
-            message.type === "openbot-server-ready" &&
-            message.port === Number(env.OPENBOT_PORT)
-          ) {
-            clearTimeout(timer);
-            resolve();
-          }
-        });
-      });
-      return {
-        isAlive: () => alive,
-        stop: async () => {
-          if (!alive) return;
-          await new Promise<void>((resolve) => {
-            const timer = setTimeout(() => {
-              if (alive && child.pid !== undefined) {
-                try {
-                  process.kill(child.pid, "SIGKILL");
-                } catch {
-                  /* Child already exited. */
-                }
-              }
-              resolve();
-            }, 12_000);
-            child.once("exit", () => {
-              clearTimeout(timer);
-              resolve();
-            });
-            if (process.platform === "win32")
-              child.postMessage({ type: "openbot-server-shutdown" });
-            else child.kill();
-          });
-        },
-      };
-    },
+    launchServer: (env) => launchPythonProductServer(nativeRuntimeRoot, env),
     authenticate: authenticateLocalServer,
     connect: async (serverUrl, ownerPassword) => {
       const connected = await connectionController.configure(serverUrl);

@@ -1,17 +1,11 @@
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const suffix = randomBytes(6).toString("hex");
-const databaseName = `openbot-python-db-${suffix}`;
 const runnerName = `openbot-python-test-${suffix}`;
-const password = randomBytes(24).toString("hex");
 const image = `openbot-python-acceptance:${suffix}`;
-const postgresImage =
-  "postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0";
-const databaseUrl = `postgres://openbot_test:${password}@127.0.0.1:5432/openbot_collab_test_linux`;
 const environment = Object.fromEntries(
   [
     "PATH",
@@ -28,7 +22,6 @@ const environment = Object.fromEntries(
     .map((key) => [key, process.env[key]]),
 );
 let imageOwned = false;
-let databaseOwned = false;
 let runnerOwned = false;
 
 function docker(args, { capture = false, timeout = 600_000 } = {}) {
@@ -40,20 +33,14 @@ function docker(args, { capture = false, timeout = 600_000 } = {}) {
     timeout,
   });
   if (result.error || result.status !== 0) {
-    const detail = String(result.stderr ?? result.error?.message ?? "").replaceAll(
-      password,
-      "[fixture password]",
-    );
+    const detail = String(result.stderr ?? result.error?.message ?? "");
     throw new Error(`Linux runtime fixture failed (${result.status ?? "unavailable"}). ${detail}`);
   }
   return result.stdout?.trim() ?? "";
 }
 
 function cleanup() {
-  for (const name of [
-    ...(runnerOwned ? [runnerName] : []),
-    ...(databaseOwned ? [databaseName] : []),
-  ]) {
+  for (const name of [...(runnerOwned ? [runnerName] : [])]) {
     const removed = spawnSync("docker", ["rm", "--force", name], {
       env: environment,
       stdio: "ignore",
@@ -71,7 +58,6 @@ function cleanup() {
     imageOwned = false;
   }
   runnerOwned = false;
-  databaseOwned = false;
 }
 for (const [signal, status] of [
   ["SIGINT", 130],
@@ -96,50 +82,7 @@ try {
     ".",
   ]);
   imageOwned = true;
-  console.log("Starting owned Linux/amd64 PostgreSQL and Python runtime acceptance fixtures.");
-  docker(
-    [
-      "create",
-      "--name",
-      databaseName,
-      "--platform",
-      "linux/amd64",
-      "--network",
-      "none",
-      "--env",
-      "POSTGRES_USER=openbot_test",
-      "--env",
-      `POSTGRES_PASSWORD=${password}`,
-      "--env",
-      "POSTGRES_DB=openbot_collab_test_linux",
-      "--tmpfs",
-      "/var/lib/postgresql/data",
-      postgresImage,
-      "-c",
-      "client_min_messages=warning",
-    ],
-    { capture: true },
-  );
-  databaseOwned = true;
-  docker(["start", databaseName], { capture: true });
-  let ready = false;
-  for (let attempt = 0; attempt < 60; attempt++) {
-    const check = spawnSync(
-      "docker",
-      ["exec", databaseName, "pg_isready", "-U", "openbot_test", "-d", "openbot_collab_test_linux"],
-      {
-        env: environment,
-        stdio: "ignore",
-        timeout: 5_000,
-      },
-    );
-    if (check.status === 0) {
-      ready = true;
-      break;
-    }
-    await delay(500);
-  }
-  if (!ready) throw new Error("Linux fixture database did not become ready.");
+  console.log("Starting owned Linux/amd64 Python runtime acceptance fixture.");
   docker(
     [
       "create",
@@ -149,13 +92,11 @@ try {
       "--platform",
       "linux/amd64",
       "--network",
-      `container:${databaseName}`,
+      "none",
       "--cap-drop=ALL",
       "--security-opt=no-new-privileges",
       "--pids-limit=512",
       "--memory=3g",
-      "--env",
-      `OPENBOT_COLLAB_TEST_DATABASE_URL=${databaseUrl}`,
       image,
     ],
     { capture: true },

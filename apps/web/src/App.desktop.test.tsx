@@ -102,7 +102,12 @@ describe("Desktop application connection gate", () => {
       enableLocalWorker: vi.fn(),
       openLocalWorkerSettings: vi.fn(),
       installNativeServer: install,
-      getRuntimeInfo: () => ({ kind: "desktop", platform: "darwin", shellVersion: "44.2.0" }),
+      getRuntimeInfo: () => ({
+        kind: "desktop",
+        platform: "darwin",
+        arch: "arm64",
+        shellVersion: "44.2.0",
+      }),
       getNativeServerState: vi.fn(async () => ({ status: "installing", step: "database" })),
     };
     const rendered = await renderComponent(<App />);
@@ -149,6 +154,7 @@ describe("Desktop application connection gate", () => {
       ),
     );
     window.openbotDesktop = {
+      getRuntimeInfo: () => ({ kind: "desktop", platform: "darwin", arch: "arm64", shellVersion: "44.3.0" }),
       getConnectionState: vi.fn(async () => ({
         status: "configured",
         serverUrl: "http://127.0.0.1:45678",
@@ -177,7 +183,7 @@ describe("Desktop application connection gate", () => {
     try {
       await settleEffects();
       expect(restoreLocalSession).toHaveBeenCalledOnce();
-      expect(rendered.container.querySelector('#owner-password')).toBeNull();
+      expect(rendered.container.querySelector("#owner-password")).toBeNull();
       expect(rendered.container.textContent).toContain("为 Bot 配置模型");
     } finally {
       await rendered.unmount();

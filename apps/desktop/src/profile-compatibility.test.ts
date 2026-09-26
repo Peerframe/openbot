@@ -13,6 +13,9 @@ describe("canonical Desktop name with retained Preview identity", () => {
     });
     expect(desktopProfileCompatibility(root, "win32", "OpenBot", exists)).toBeUndefined();
     expect(desktopProfileCompatibility(root, "darwin", "OpenBot Preview", exists)).toBeUndefined();
+    expect(
+      desktopProfileCompatibility(root, "darwin", "OpenBot Python Preview", exists),
+    ).toBeUndefined();
   });
   it("never replaces canonical data and leaves new installations canonical", () => {
     expect(

@@ -12,7 +12,7 @@
       "source": {
         "repository": "https://github.com/yxflc11/openbot",
         "ref": "desktop-v0.1.0-alpha.6",
-        "path": "apps/server/src/plugin-example.ts",
+        "path": "packages/mcp-example/src/index.ts",
         "sha256": "a319358e1509255e4bcf4ffd97eb1b3b554f579bb35d772b01a82474ea1cdfd3"
       },
       "guide": "https://yxflc11.github.io/openbot-website/plugins/quickstart/"

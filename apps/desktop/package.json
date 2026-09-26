@@ -19,7 +19,7 @@
     "start": "npm run build && electron .",
     "test": "vitest run src scripts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "prepare:native": "turbo run build --filter=@openbot/server && node scripts/prepare-native-server.mjs"
+    "prepare:native": "turbo run build --filter=@openbot/python-node-runtime && node scripts/prepare-native-server.mjs"
   },
   "dependencies": {
     "postgres": "3.4.9",

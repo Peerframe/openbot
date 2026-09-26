@@ -1,5 +1,7 @@
 # OpenBot 系统架构
 
+当前源码以 Python 为业务 Server、Temporal 为持久执行协调者。macOS arm64 桌面可托管本地 Python 服务；Windows 与 Intel Mac 使用远程服务，既有本地安装与数据保留。旧 TS Server 仅保留冻结的测试参照，不进入产品。
+
 [English](ARCHITECTURE.md) · [仓库地图](REPOSITORY_MAP.zh-CN.md)
 
 OpenBot 是一个 TypeScript monorepo，由唯一权威 Server、可替换的执行 Node 和共享 Desktop/Web 客户端组成。本文件描述当前源码，不把目录、接口声明或构建产物当作平台已具备执行能力的证据。
@@ -8,7 +10,7 @@ OpenBot 是一个 TypeScript monorepo，由唯一权威 Server、可替换的执
 
 | 部件 | 当前职责 | 不获得的权限 |
 | --- | --- | --- |
-| `apps/server` | Owner 会话、Bot 与频道身份、成员、路由、任务、审批、审计、原生 Agent 和插件授权 | 模型与外部资料不能覆盖 Server 策略 |
+| `apps/server-python` | Owner 会话、Bot 与频道身份、成员、路由、任务、审批、审计、原生 Agent 和插件授权 | 模型与外部资料不能覆盖 Server 策略 |
 | `apps/web` | 频道、草稿、任务监督、设置、扩展展示 | 不直接访问数据库、模型凭据或决定授权 |
 | `apps/desktop` | 打包客户端、受限类型化桥接、连接策略、本地 Server 安装与生命周期 | 渲染页面不能任意调用主进程 |
 | `apps/node` | 出站连接、注册、可执行能力声明、任务生命周期和 Provider 调度 | 能力声明不是任务或副作用授权 |

@@ -32,6 +32,25 @@
 
 ## Candidate comparison
 
+### Python candidate collision — 2026-09-26
+
+Before this increment, rechecked the reuse entries above, Electron's pinned
+[44.3.0 application API](https://github.com/electron/electron/blob/v44.3.0/docs/api/app.md)
+and GitHub singleton reports, including [issue24447](https://github.com/electron/electron/issues/24447).
+The installed canonical app can intentionally retain the original `OpenBot Preview` profile
+through `desktopProfileCompatibility`. Read-only process and profile-lock inspection confirmed
+that exact case: the installed app owns the legacy Preview database and singleton lock. The new
+Python Preview consequently exits normally as a second instance; the UI tool reports a timeout.
+Deleting the lock, bypassing singleton protection or closing the user's installed app is not a fix.
+
+Reuse Packager20.3.0 and Electron44.3.0 with one fixed Python candidate identity:
+`OpenBot Python Preview`, bundle `dev.openbot.desktop.python-preview`, staged package
+`openbot-python-preview`. Select it only for `--preview --python-product`. Keep the legacy Preview
+and canonical migration identity intact. The candidate has its own profile, Keychain namespace
+and process lock; it still refuses a shared production Worker companion. No dependency, copied
+source, generic profile override or security bypass is introduced. Qualification must reproduce
+coexistence with the installed app and check native onboarding/restart on the newly packaged bytes.
+
 | Candidate | Pin / license | Platform and boundary fit | Decision |
 | --- | --- | --- | --- |
 | Existing Electron Packager | 20.3.0 / BSD-2-Clause | Native app, helper, executable, bundle ID and icon metadata without another packaging framework | Select released API with a narrow fixed Preview target |

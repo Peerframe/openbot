@@ -1,8 +1,10 @@
 # OpenBot architecture
 
+Current source uses the Python business Server and Temporal durable execution. macOS arm64 Desktop can host Python locally; Windows and Intel Mac use remote services while retaining old installations/data. The frozen TS oracle is test-only and never packaged as a backend.
+
 [简体中文](ARCHITECTURE.zh-CN.md) · [Repository map](REPOSITORY_MAP.md)
 
-OpenBot is a TypeScript monorepo with one authoritative Server, replaceable execution Nodes and shared Desktop/Web clients. This document describes the current source tree. A directory, interface declaration or build artifact is not evidence that a platform can execute a capability.
+OpenBot is a Python/TypeScript monorepo with one authoritative Server, replaceable execution Nodes and shared Desktop/Web clients. This document describes the current source tree. A directory, interface declaration or build artifact is not evidence that a platform can execute a capability.
 
 ```mermaid
 flowchart LR
@@ -20,7 +22,7 @@ flowchart LR
 
 | Component | Current responsibility | Authority it does not receive |
 | --- | --- | --- |
-| `apps/server` | Owner sessions, channel/Bot identity, membership, routing, task state, approvals, audit, native Agent execution and authorized plugin access | Models and external data cannot override Server policy |
+| `apps/server-python` | Owner sessions, channel/Bot identity, membership, routing, task state, approvals, audit, native Agent execution and authorized plugin access | Models and external data cannot override Server policy |
 | `apps/web` | Channel conversations, drafts, task supervision, settings and extension presentation | No direct database access, provider credentials or authorization decisions |
 | `apps/desktop` | Bundled client, trusted typed bridge, connection policy, supported local Server installation and platform lifecycle | Renderer content cannot invoke arbitrary main-process operations |
 | `apps/node` | Outbound enrollment/session, advertised executable capabilities, assignment lifecycle and Provider dispatch | A capability declaration does not authorize a task or side effect |
