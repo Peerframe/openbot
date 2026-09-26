@@ -20,8 +20,10 @@ For a PR use its verified base/head; do not infer the diff from a stale remote b
 3. For rules/skills/prompts run `npm run docs:check` and `npm run research:check`, plus the affected
    workflow tests. Verify actual discovery and a realistic reading task; file existence is insufficient.
 4. For implementation/script integration run `npm run check`. Pure instruction/prose changes use
-   applicable workflow/documentation gates; this does not waive hosted required CI. C3 has not yet
-   changed CI selection. Do not edit workflows or suppress a check merely to shorten this run.
+   applicable workflow/documentation gates. `npm run check:affected -- --local` runs the selected
+   validation lane and lists separate qualifications. A PR uses verified immutable `--base SHA
+   --head SHA`; do not mix local/untracked changes into that range. Security and required hosted
+   results remain necessary. Do not suppress a check merely to shorten a run.
 5. Count collected/executed tests, inspect skips and first useful failure. Fix task regressions;
    record existing unrelated failures. Reuse unchanged evidence with its original revision and scope.
 

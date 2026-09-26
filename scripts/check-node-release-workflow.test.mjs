@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { parse, stringify } from "yaml";
 import { validateNodeReleaseWorkflow } from "./check-node-release-workflow.mjs";
 
 const workflow = await readFile(
@@ -37,7 +38,7 @@ test("rejects a runner context before a release job is assigned", () => {
           "RELEASE_ROOT: ${{ runner.temp }}/openbot-node-release-${{ matrix.arch }}",
         ),
       ),
-    /missing required fragment|broadens/,
+    /required|Required|broadens|immutable|reviewed|exact/,
   );
 });
 
@@ -50,7 +51,7 @@ test("rejects moving action references and omitted attestations", () => {
           "actions/setup-node@v7",
         ),
       ),
-    /missing required fragment|exact setup-node pin|broadens/,
+    /required|Required|broadens|immutable|reviewed|exact/,
   );
   assert.throws(
     () =>
@@ -60,7 +61,7 @@ test("rejects moving action references and omitted attestations", () => {
           "actions/checkout@v7",
         ),
       ),
-    /missing required fragment|broadens/,
+    /required|Required|broadens|immutable|reviewed|exact/,
   );
   assert.throws(
     () =>
@@ -70,7 +71,7 @@ test("rejects moving action references and omitted attestations", () => {
           "actions/attest@v4",
         ),
       ),
-    /exact attest pin/,
+    /exact attest pin|immutable/,
   );
   assert.throws(
     () =>
@@ -80,7 +81,7 @@ test("rejects moving action references and omitted attestations", () => {
           "",
         ),
       ),
-    /missing|required|exact attest pin/,
+    /missing|required|Required|exact attest pin/,
   );
 });
 
@@ -93,7 +94,7 @@ test("rejects omitted ancestry, repeat-build, or direct-upload gates", () => {
           'git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/release',
         ),
       ),
-    /missing required fragment/,
+    /required|Required|broadens|immutable|reviewed|exact/,
   );
   assert.throws(
     () =>
@@ -111,6 +112,43 @@ test("rejects omitted ancestry, repeat-build, or direct-upload gates", () => {
       validateNodeReleaseWorkflow(
         workflow.replace("npm run release:node-linux:smoke --", "npm run omitted-smoke --"),
       ),
-    /missing required fragment|smoke-test/,
+    /required|Required|broadens|immutable|reviewed|exact/,
   );
+});
+
+test("accepts formatting, renamed steps and an extra pinned setup without layout counts", () => {
+  const changed = parse(workflow);
+  changed.name = "Reviewed Node artifacts";
+  const job = changed.jobs["build-attest"];
+  for (const step of job.steps) if (step.name) step.name = `Step: ${step.name.length}`;
+  job.steps.splice(2, 0, structuredClone(job.steps[1]));
+  assert.doesNotThrow(() => validateNodeReleaseWorkflow(stringify(changed, { indent: 4 })));
+});
+
+test("rejects conditional or ignored release evidence and incomplete compared outputs", () => {
+  for (const mutate of [
+    (job) => {
+      job.steps.find((s) => s.run?.includes("release:node-linux:smoke")).if = false;
+    },
+    (job) => {
+      job.steps.find((s) => s.run?.includes("release:node-linux:archive")).run =
+        "# " +
+        job.steps
+          .find((s) => s.run?.includes("release:node-linux:archive"))
+          .run.replaceAll("\n", "\n# ");
+    },
+    (job) => {
+      job.steps.find((s) => s.with?.["sbom-path"]).if = false;
+    },
+    (job) => {
+      job["continue-on-error"] = true;
+    },
+    (job) => {
+      job.steps.find((s) => s.with?.path?.endsWith("*.SHA256SUMS")).with.path = "missing";
+    },
+  ]) {
+    const changed = parse(workflow);
+    mutate(changed.jobs["build-attest"]);
+    assert.throws(() => validateNodeReleaseWorkflow(stringify(changed)));
+  }
 });

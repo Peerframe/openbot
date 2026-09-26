@@ -103,3 +103,29 @@ so a restart with a different credential cannot consume an earlier selection as 
 credentials remain private; only the revision participates in the durable intent. Tavily keeps
 priority over selected Kimi and has no runtime fallback after failure. Existing pinned official
 Tavily/Kimi review and transport tests apply; no new provider, endpoint or dependency is added.
+
+## C3 advisory-driven Soup Sieve update (2026-09-27)
+
+The new production-lock audit reported six records for 2.8.3, representing four unique
+advisories (CVE-2026-49476, CVE-2026-49477, CVE-2026-85999 and CVE-2026-86000).
+Keep Beautiful Soup and the bounded HTML subprocess; update only Soup Sieve to **2.9.2**,
+MIT, immutable upstream commit `78661a6e4f54e0bc3ec99f548e9fcd6787d1902c`.
+Its Python >=3.10 floor fits our 3.12 product. No source is copied or adapted.
+
+Reviewed official [version metadata](https://pypi.org/project/soupsieve/2.9.2/),
+[changelog](https://facelessuser.github.io/soupsieve/about/changelog/),
+[advisory](https://github.com/facelessuser/soupsieve/security/advisories/GHSA-gjv8-xp57-g29c),
+and the pinned source's `soupsieve/css_parser.py`, `tests/test_api.py` and `LICENSE.md`.
+The parser bounds pseudo-class nesting and fixes empty selector handling. Existing API tests
+cover Beautiful Soup integration and selection limits. The wheel SHA256 is
+`8089a26fd974ca7a1f30276d3d8492ab266ab15af581642dfe8aa162e0c1c823`.
+The maintained upstream issue/security pages are evidence sources, not a claim of no open bugs.
+
+2.8.4 fixes only the first two advisories; 2.9.0 addresses the other two but later 2.9.x
+patches fix empty attribute/selector behavior. 2.9.2 is the narrow patched line. 2.10 adds
+new cache/selection options unnecessary for our fixed `find_all` and `get_text` consumer.
+Replacing the converter or adding another parser would change the accepted output contract.
+No arbitrary CSS selector is exposed by OpenBot, so the audit finding alone does not establish
+exploitability of our API. It still blocks the production dependency gate; no advisory is ignored.
+Validate actual public-source extraction, installed base/Worker closures and regenerated
+product packages before reusing qualification evidence. Historical pins above remain historical.

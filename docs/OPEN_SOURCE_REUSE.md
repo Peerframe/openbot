@@ -809,7 +809,7 @@ with current source, knowledge, plugin and attachment gates. See the
 [read tools](research/python-work-product-reads.md),
 [answer/report review](research/python-work-product-result.md) and
 [public web tools](research/python-work-product-web.md) records.
-HTML extraction selects Beautiful Soup 4.15.0 and Soup Sieve 2.8.3 (MIT), with release hashes in
+HTML extraction selects Beautiful Soup 4.15.0 and Soup Sieve 2.9.2 (MIT; C3 security-update evidence below), retaining historical release hashes in
 [dependency pins](research/python-work-web-pins.json) and complete bundled notices. No upstream
 source is copied; the existing private blob store preserves the report size contract without
 raising Action limits. Result review is a fallible quality signal, not external-effect proof.
@@ -966,3 +966,16 @@ C2 preserves the reviewed execution/Temporal stack and extracts its single sourc
 mypy 2.3.1 are isolated development tools, all MIT, no copied upstream source. Runtime, test and
 build/quality closures remain separate; exact references and tradeoffs are in
 [the package research](../packages/harness/RESEARCH.md#10-c2-installed-harness-and-contributor-tools-2026-09-27).
+
+## C3 CI qualification and production advisory repair
+
+Reuse the existing npm/Turbo graph and pinned Actions. YAML 2.9.0 (ISC) is promoted from an
+existing dependency to explicit root tooling; pip-audit 2.10.1 (Apache-2.0) audits the real Python
+product lock with an isolated exact tool closure. No upstream source is copied. Exact commits,
+primary sources and bounded alternatives are in [the CI decision](research/windows-ci-merge-gate.md).
+Soup Sieve 2.9.2 (MIT) fixes advisories found by this gate; retain Beautiful Soup and the bounded
+subprocess, with [targeted security-update evidence](research/python-work-product-web.md#c3-advisory-driven-soup-sieve-update-2026-09-27).
+
+C3 复用现有 npm/Turbo 图和已固定的 Actions。YAML 2.9.0 从已有依赖提升为显式根工具，
+pip-audit 2.10.1 在隔离工具环境审计实际 Python 生产锁；不复制上游源码。Soup Sieve 2.9.2
+修复该门发现的安全公告，保留原 HTML 提取契约和有界子进程；固定版本与针对性证据见上方链接。

@@ -42,3 +42,37 @@ No upstream source copied or substantially adapted; no new dependency or distrib
 - Update English and Chinese contributor guidance. This change grants no new platform support level.
 
 The existing Server container validator assumed its job was the last YAML job. Adding the final gate exposes that boundary error: the next job's `ubuntu-latest` is misread as a container runner. Bound extraction at the next peer job and test that peer content neither violates nor supplies the container contract; preserve all container restrictions.
+
+## C3 scoped qualification (2026-09-27)
+
+Reuse the native Actions `needs`/`always()` result contract and the existing npm workspace graph.
+The upgrade's concrete gap is explicit non-applicability: a tested selector records every required
+or non-applicable job from immutable PR base/head; the aggregate accepts only success for required
+jobs and never hides failed/cancelled/missing results. Pushes to main, empty/unknown inputs,
+selectors, locks and build configuration remain conservative. Local tracked/untracked changes are
+separate inputs. No remote protection, permissions or release trigger changes are authorized.
+
+The existing text checker freezes peer job order and action counts. Promote the already locked
+[YAML 2.9.0](https://github.com/eemeli/yaml/tree/ddb21b04cb889722cec8f89dc1b67f19d62d7f7d)
+(ISC, no dependencies) to an explicit development dependency and use its standard parser with
+unique keys, no alias expansion and the default YAML 1.2 schema. Source, tests, license, release
+and current issue index were reviewed; duplicate-key/alias and semantic mutation tests protect the
+local use. Existing js-yaml is also maintained but offers no benefit over the already used YAML 2
+API. Keeping hand-written substring extraction cannot reliably distinguish a property from a
+comment or an adjacent job. No source is copied and this parser is not a product dependency.
+
+Add one Python advisory scanner to the existing security lane: [pip-audit 2.10.1](https://github.com/pypa/pip-audit/tree/8894eb8cee033531a1fbd9f2fb160892531c14e3),
+Apache-2.0. Reviewed PyPA release, `_cli.py`, CLI tests, dependency metadata, security model and
+[open issue #874](https://github.com/pypa/pip-audit/issues/874) about unpublished distributions.
+The selected released tool directly handles the existing exact requirements lock. OSV is a viable
+advisory service, but adding another CLI or a custom query engine is unnecessary; npm audit remains
+for npm only. Use a separate pinned tooling closure, `--disable-pip --no-deps --strict`, no `--fix`,
+no ignores and no hidden return-code suppression. Audit every external product pin, compare report
+coverage with the lock, and fail on missing/skipped dependencies or any advisory. The local wheel is
+first-party source, not a fictitious PyPI package; its exact installation and dependency closure are
+checked by C2. Advisory coverage does not establish native shared-library or malicious-package safety.
+
+Primary references: [YAML options](https://eemeli.org/yaml/#parse-options),
+[Actions needs](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#needs-context),
+[pip-audit usage/security model](https://github.com/pypa/pip-audit/blob/v2.10.1/README.md).
+No copied/adapted upstream implementation, new service authority or runtime dependency is introduced.

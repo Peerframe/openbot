@@ -167,11 +167,47 @@ reviewed for the affected decision before expansion, not a repeated full-stack i
 
 ### Required CI completion
 
-The protected `check` status is the final CI gate. It waits for security scanning, repository
-validation, every portable platform, the Windows Worker Host build, database journeys, and both
-Server container architectures. A failed, cancelled, or skipped required job prevents success.
-Wait for this gate on the latest PR commit before merging; local `npm run check` covers only the
-repository checks and cannot substitute for hosted platform results.
+The protected `check` status is the final CI gate. It compares the selector's explicit required
+and not-applicable sets with actual job results. Security and validation always run. Required jobs
+must succeed; failure, cancellation, missing results or unexpected skips fail. Main pushes retain
+full qualification. Wait for the latest candidate's hosted gate before merging; local success
+cannot substitute for native platform, recovery or packaging results.
+
+During development, inspect selection with `npm run ci:scope -- --local`, then run
+`npm run check:affected -- --local`. Local tracked and untracked changes are reported separately.
+For a PR, use verified immutable 40-character commit IDs:
+
+```sh
+npm run ci:scope -- --base "$BASE_SHA" --head "$HEAD_SHA"
+npm run check:affected -- --base "$BASE_SHA" --head "$HEAD_SHA"
+```
+
+The committed range uses the actual merge base; it excludes uncommitted files. A missing/shallow
+base fails instead of guessing `origin/main`. `check:affected` runs **the validation lane only**
+and lists separate required qualifications. It does not mean all CI passed. `npm run check`
+retains full repository validation before implementation/script handoff. Prose uses the focused
+repository gates; AGENTS, skills and prompts also need behavioral discovery/reading acceptance.
+Contract, lock, generator, build, CI and unmapped inputs conservatively select the full set.
+
+Selection follows the npm lockfile's transitive consumer graph plus explicit Python, dynamic
+Desktop and packaging edges. `npm run ci:check` exercises scope/result counterexamples and real
+cache/zero-test behavior. No-test packages expose no fake passing test task; their actual consumer
+coverage and missing local tests remain explicit. See the [check duties and producer table](docs/REPOSITORY_UPGRADE_PLAN.md#c3-check-duties-and-artifact-ownership).
+
+Use npm entrypoints (`npm run` / `npm exec -- turbo`) so the Turbo cache hashes the actual npm,
+Node, OS and architecture identity in `npm_config_user_agent`. Source, lockfile graph, generators,
+config and declared runtime environment also enter task hashes. Direct standalone Turbo invocations
+without that identity are not qualification evidence. CI restores npm downloads only, not earlier
+successful Turbo test results. Local cached successes must be labeled; root gates and real Python,
+Temporal and installed-artifact probes run outside this cache. Parallel jobs own separate checkouts;
+builds within a job precede packaging, which consumes their outputs without rebuilding them.
+Obsolete PR jobs cancel; main and tag-only release qualification retain their own lifecycles.
+
+Security audits include `npm audit --omit=dev --audit-level=high` and `sh scripts/audit-python.sh`.
+The latter uses an isolated pinned audit tool against the exact production Python closure and
+rejects skipped/incomplete reports or known advisories. Network failure is a failed gate, not a
+clean audit. Normal PR checks do not establish an unsigned artifact, signing/notarization or a
+release: changed payloads still need actual packaged startup/refusal/cleanup on supported targets.
 
 ### Dependency update intake
 
@@ -253,8 +289,8 @@ compatibility entry must route to canonical AGENTS and be tested in the actual t
 For workflow changes run `npm run docs:check`, `npm run research:check` and a real discovery/reading
 exercise; Markdown is not proof of prose-only impact. Pure prose/instructions need their applicable
 gates; script/implementation changes still require `npm run check` before handoff. Hosted required
-checks and release/migration/security gates remain applicable. C3 will address CI selection; this
-stage does not skip jobs. State actual test counts, cached results, skips and missing environments.
+checks and release/migration/security gates remain applicable. Only the tested CI selector may
+declare a lane not applicable. State actual test counts, cached results, skips and missing environments.
 
 The upgrade continues in [one handoff](docs/REPOSITORY_UPGRADE_PLAN.md). UI work also follows
 [the existing design index](docs/design/README.md), current tokens/components and affected rendered

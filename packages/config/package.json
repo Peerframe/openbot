@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "vitest run src --passWithNoTests",
+    "test": "vitest run src",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

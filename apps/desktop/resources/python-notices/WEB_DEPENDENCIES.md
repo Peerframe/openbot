@@ -1,6 +1,6 @@
 # Public web Python text extraction dependencies
 
-Beautiful Soup 4.15.0 and Soup Sieve 2.8.3 are used as installed dependencies; no upstream source copied.
+Beautiful Soup 4.15.0 and Soup Sieve 2.9.2 are used as installed dependencies; no upstream source copied.
 
 Beautiful Soup is made available under the MIT license:
 
@@ -35,7 +35,7 @@ which is also made available under the MIT license. Copyright (c)
 Isaac Muse
 
 
-Soup Sieve 2.8.3
+Soup Sieve 2.9.2
 
 MIT License
 

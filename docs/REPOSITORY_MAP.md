@@ -132,3 +132,13 @@ generated type and keeps Zod runtime validation. Run
 `npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts` with the base
 control `.venv` for actual Python HTTP→Web serialization/status fixtures. No DB or model is needed.
 The Node wire protocol remains owned by `packages/protocol`.
+
+### CI selection and artifact qualification
+
+Use `npm run ci:scope -- --local` for tracked/untracked work, or verified `--base SHA --head SHA`
+for a committed PR. `npm run check:affected` takes the same explicit arguments and runs only the
+validation lane; separate required jobs are printed. `npm run check` remains the repository total.
+The actual policy is [ci-scope](../scripts/ci-scope.mjs), with success-only
+[aggregation](../scripts/ci-results.mjs); counterexamples run via `npm run ci:check`. Read
+[contribution rules](../CONTRIBUTING.md#required-ci-completion) and the unique handoff's
+[producer/duty table](REPOSITORY_UPGRADE_PLAN.md#c3-check-duties-and-artifact-ownership) before CI work.

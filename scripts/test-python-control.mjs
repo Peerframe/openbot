@@ -454,7 +454,7 @@ try {
     }
     const temporal = spawnSync(
       process.env.OPENBOT_TEMPORAL_TEST_PYTHON,
-      ["-m", "pytest", ...workerTests, "-q"],
+      ["-m", "pytest", ...workerTests, "-v", "-o", "faulthandler_timeout=45", "--durations=10"],
       {
         cwd: join(root, "apps/server-python"),
         env: {

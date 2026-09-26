@@ -1,106 +1,203 @@
+import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import {
+  assertPinnedSources,
+  hasCommands,
+  requiredJob,
+  runs,
+  workflowDocument,
+} from "./workflow-policy.mjs";
 
-const ATTEST_PIN = "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6";
-const SETUP_NODE_PIN = "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020";
-const UPLOAD_PIN = "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a";
+const ATTEST = "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6";
+const UPLOAD = "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a";
+const ROOT = "${{ env.RELEASE_ROOT }}";
+const artifacts = ["*.tar.xz", "*.build.json", "*.SHA256SUMS"].map(
+  (name) => `${ROOT}/archives-1/${name}`,
+);
+const lines = (value) =>
+  String(value ?? "")
+    .trim()
+    .split(/\s*\n\s*/)
+    .filter(Boolean);
 
-export function validateNodeReleaseWorkflow(workflow) {
-  const requiredFragments = [
-    "name: Node Linux provenance",
-    'tags:\n      - "node-v*"',
-    "permissions:\n  contents: read\n  id-token: write\n  attestations: write",
-    "group: node-linux-provenance-$" + "{{ github.ref }}",
-    "cancel-in-progress: false",
-    "runs-on: $" + "{{ matrix.runner }}",
-    "RELEASE_ROOT: $" + "{{ github.workspace }}-node-release-${{ matrix.arch }}",
-    "timeout-minutes: 30",
-    "fail-fast: false",
-    "- arch: x64\n            runner: ubuntu-24.04",
-    "- arch: arm64\n            runner: ubuntu-24.04-arm",
-    "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
-    "fetch-depth: 0",
-    "persist-credentials: false",
-    SETUP_NODE_PIN,
-    "node-version: 22.22.2",
-    'git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main',
-    "https://nodejs.org/dist/v22.22.2/node-v22.22.2-linux-$" + "{RELEASE_ARCH}.tar.xz",
-    "npm@10.9.9",
-    "d60fba8cb42f688b81e33c2f1cbef2ad7b977166700ec0ad057f1b6d60ea6ef2524abf673e20c35931cd8305d1dbb8887134d6eefdc0e7b8435bd458bf65b862",
-    "npm run release:node-linux:candidate --",
-    "npm run release:node-linux:archive --",
-    "--dpkg-query /usr/bin/dpkg-query",
-    "--gnu-tar /usr/bin/tar",
-    "--xz /usr/bin/xz",
-    'cmp "$RELEASE_ROOT/archives-1/$artifact" "$RELEASE_ROOT/archives-2/$artifact"',
-    'sha256sum --check "$artifact.SHA256SUMS"',
-    '/usr/bin/xz --test "$artifact"',
-    "name: Smoke packaged runtime on matching architecture",
-    "npm run release:node-linux:smoke --",
-    "name: Attest build provenance",
-    "name: Attest archive SBOM",
-    "sbom-path:",
-    "if-no-files-found: error",
-    "retention-days: 14",
-    "overwrite: false",
-    "archive: false",
-  ];
-  for (const fragment of requiredFragments) {
-    if (!workflow.includes(fragment)) {
-      throw new Error(`Node release workflow is missing required fragment: ${fragment}`);
+export function validateNodeReleaseWorkflow(source) {
+  const workflow = workflowDocument(source);
+  assert.deepEqual(
+    workflow.on,
+    { push: { tags: ["node-v*"] } },
+    "Node release broadens its tag-only trigger.",
+  );
+  assert.deepEqual(
+    workflow.permissions,
+    { contents: "read", "id-token": "write", attestations: "write" },
+    "Node release broadens required attestation authority.",
+  );
+  assert.equal(workflow.concurrency?.group, "node-linux-provenance-${{ github.ref }}");
+  assert.equal(workflow.concurrency?.["cancel-in-progress"], false);
+  assertPinnedSources(workflow);
+  for (const job of Object.values(workflow.jobs)) {
+    if (job.permissions)
+      assert.deepEqual(
+        job.permissions,
+        workflow.permissions,
+        "Node release broadens job authority.",
+      );
+    assert(
+      !/gh release|create-release|action-gh-release|push-to-registry/.test(JSON.stringify(job)),
+      "Node release broadens publication output.",
+    );
+  }
+  const job = requiredJob(workflow, "build-attest");
+  assert(!("if" in job), "Required release qualification cannot be bypassed.");
+  assert.equal(job["runs-on"], "${{ matrix.runner }}");
+  assert.equal(
+    job.env?.RELEASE_ROOT,
+    "${{ github.workspace }}-node-release-${{ matrix.arch }}",
+    "Required release root must exist before runner assignment.",
+  );
+  assert.equal(job.strategy?.["fail-fast"], false);
+  assert(
+    Number.isInteger(job["timeout-minutes"]) &&
+      job["timeout-minutes"] > 0 &&
+      job["timeout-minutes"] <= 60,
+    "Release qualification must remain bounded.",
+  );
+  assert.deepEqual(job.strategy.matrix.include.map((row) => `${row.arch}:${row.runner}`).sort(), [
+    "arm64:ubuntu-24.04-arm",
+    "x64:ubuntu-24.04",
+  ]);
+  assert(
+    job.steps.some(
+      (step) => step.uses?.startsWith("actions/checkout@") && step.with?.["fetch-depth"] === 0,
+    ),
+    "Required full release ancestry is missing.",
+  );
+  hasCommands(
+    job,
+    [
+      'git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main',
+      "^node-v[0-9]+\\.[0-9]+\\.[0-9]+",
+      "https://nodejs.org/dist/v22.22.2/node-v22.22.2-linux-${RELEASE_ARCH}.tar.xz",
+      "curl --fail --location --proto '=https' --tlsv1.2",
+      "npm@10.9.9",
+      "d60fba8cb42f688b81e33c2f1cbef2ad7b977166700ec0ad057f1b6d60ea6ef2524abf673e20c35931cd8305d1dbb8887134d6eefdc0e7b8435bd458bf65b862",
+      "sha512sum --check --status",
+      'test "$("$npm_cli" --version)" = \'10.9.9\'',
+      "npm run release:node-linux:candidate --",
+      '--source-commit "$GITHUB_SHA"',
+      '--source-date-epoch "$SOURCE_DATE_EPOCH"',
+      '--node-archive "$RUNTIME_ARCHIVE"',
+      'sha256sum --check "$artifact.SHA256SUMS"',
+      '/usr/bin/xz --test "$artifact"',
+      "npm run release:node-linux:smoke --",
+      '--arch "$RELEASE_ARCH"',
+    ],
+    "Required Node release",
+  );
+  for (const directory of ["archives-1", "archives-2"]) {
+    const command = runs(job)
+      .split("\n")
+      .find(
+        (line) =>
+          line.includes("npm run release:node-linux:archive --") &&
+          line.includes(`--out-dir "$RELEASE_ROOT/${directory}"`),
+      );
+    assert(
+      command,
+      "Required reproducibility builds must construct each archive twice into independent directories.",
+    );
+    for (const option of [
+      '--candidate "$candidate"',
+      "--dpkg-query /usr/bin/dpkg-query",
+      "--gnu-tar /usr/bin/tar",
+      "--xz /usr/bin/xz",
+    ])
+      assert(command.includes(option), `Required archive construction: missing ${option}`);
+    hasCommands(job, [command], "Required archive construction");
+  }
+  for (const suffix of ["", ".build.json", ".SHA256SUMS"])
+    hasCommands(
+      job,
+      [
+        `cmp "$RELEASE_ROOT/archives-1/$artifact${suffix}" "$RELEASE_ROOT/archives-2/$artifact${suffix}"`,
+      ],
+      "Required repeat-build comparison",
+    );
+  const index = (fragment) =>
+    job.steps.findIndex((step) => runs({ steps: [step] }).includes(fragment));
+  const candidate = index("npm run release:node-linux:candidate --");
+  const archive = index("npm run release:node-linux:archive --");
+  const comparison = index('cmp "$RELEASE_ROOT/archives-1/');
+  const smoke = index("npm run release:node-linux:smoke --");
+  assert(
+    candidate < archive && archive <= comparison && comparison < smoke,
+    "Required release must build, compare, then smoke the native package.",
+  );
+
+  const provenance = new Set();
+  const uploads = new Set();
+  let sbom = false;
+  let lastAttest = smoke;
+  for (const [position, step] of job.steps.entries()) {
+    if (step.uses?.startsWith("actions/attest@")) {
+      assert.equal(step.uses, ATTEST, "Required exact attest pin.");
+      assert(
+        !("if" in step) && position > smoke,
+        "Required attestations must follow successful smoke.",
+      );
+      const subjects = lines(step.with?.["subject-path"]);
+      assert(
+        subjects.length && subjects.every((path) => artifacts.includes(path)),
+        "Attest actual compared review artifacts.",
+      );
+      if (step.with?.["sbom-path"]) {
+        assert.equal(
+          step.with["sbom-path"],
+          ROOT +
+            "/candidates/openbot-node-${{ steps.inputs.outputs.version }}-linux-${{ matrix.arch }}-unsigned/SBOM.spdx.json",
+        );
+        assert(subjects.includes(artifacts[0]), "SBOM must describe the native archive.");
+        sbom = true;
+      } else for (const path of subjects) provenance.add(path);
+      lastAttest = position;
+    }
+    if (step.uses?.startsWith("actions/upload-artifact@")) {
+      assert.equal(step.uses, UPLOAD, "Required reviewed upload pin.");
+      assert(
+        !("if" in step) && position > lastAttest && provenance.size === artifacts.length && sbom,
+        "Required artifacts must be attested before direct upload.",
+      );
+      assert.equal(step.with?.["if-no-files-found"], "error");
+      assert.equal(step.with?.overwrite, false);
+      assert(
+        Number.isInteger(step.with?.["retention-days"]) &&
+          step.with["retention-days"] > 0 &&
+          step.with["retention-days"] <= 14,
+        "Bound review artifact retention.",
+      );
+      assert.equal(
+        step.with?.archive,
+        false,
+        "Must directly upload all three review artifact kinds.",
+      );
+      const paths = lines(step.with?.path);
+      assert(
+        paths.length && paths.every((path) => artifacts.includes(path)),
+        "Only compared release review artifacts may be uploaded.",
+      );
+      for (const path of paths) uploads.add(path);
     }
   }
-
-  if ((workflow.match(new RegExp(escapeRegExp(ATTEST_PIN), "g")) ?? []).length !== 2) {
-    throw new Error("Node release workflow must use the exact attest pin twice.");
-  }
-  const setupNodeReferences = workflow.match(/actions\/setup-node@[^\s]+/g) ?? [];
-  if (setupNodeReferences.length !== 1 || setupNodeReferences[0] !== SETUP_NODE_PIN) {
-    throw new Error("Node release workflow must use the exact setup-node pin once.");
-  }
-  if ((workflow.match(new RegExp(escapeRegExp(UPLOAD_PIN), "g")) ?? []).length !== 3) {
-    throw new Error("Node release workflow must use the exact upload pin three times.");
-  }
-  if ((workflow.match(/npm run release:node-linux:archive --/g) ?? []).length !== 2) {
-    throw new Error("Node release workflow must construct each archive twice.");
-  }
-  if ((workflow.match(/archive: false/g) ?? []).length !== 3) {
-    throw new Error("Node release workflow must directly upload all three review files.");
-  }
-  if ((workflow.match(/npm run release:node-linux:smoke --/g) ?? []).length !== 1) {
-    throw new Error("Node release workflow must smoke-test each native matrix package.");
-  }
-
-  const compare = workflow.indexOf("Build twice and require byte-identical archives");
-  const smoke = workflow.indexOf("name: Smoke packaged runtime on matching architecture");
-  const attest = workflow.indexOf("name: Attest build provenance");
-  const upload = workflow.indexOf("name: Upload archive for review");
-  if (compare === -1 || smoke <= compare || attest <= smoke || upload <= attest) {
-    throw new Error(
-      "Node release workflow must compare, smoke, attest, then upload in that order.",
-    );
-  }
-
-  if (
-    /workflow_dispatch:|pull_request:|branches:|contents: write|packages: write|continue-on-error:|uses: [^\n]+@(v|main\b)|gh release|create-release|softprops\/action-gh-release|push-to-registry:\s*true|RELEASE_ROOT:\s*\$\{\{ runner\./.test(
-      workflow,
-    )
-  ) {
-    throw new Error(
-      "Node release workflow broadens its trigger, authority, action pins, or output.",
-    );
-  }
-}
-
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  assert(
+    sbom && artifacts.every((path) => provenance.has(path) && uploads.has(path)),
+    "Required SBOM, provenance or review output is missing.",
+  );
 }
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const workflow = await readFile(
-    new URL("../.github/workflows/node-linux-release.yml", import.meta.url),
-    "utf8",
+  validateNodeReleaseWorkflow(
+    await readFile(new URL("../.github/workflows/node-linux-release.yml", import.meta.url), "utf8"),
   );
-  validateNodeReleaseWorkflow(workflow);
-  console.info("Node Linux release workflow checks passed.");
+  console.info("Node Linux release workflow properties passed.");
 }

@@ -1,15 +1,5 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalPassThroughEnv": [
-    "GITHUB_EVENT_NAME",
-    "GITHUB_EVENT_PATH",
-    "OPENBOT_ALLOWED_ORIGINS",
-    "OPENBOT_DATABASE_URL",
-    "OPENBOT_NODE_ID",
-    "OPENBOT_NODE_SERVER_URL",
-    "OPENBOT_OWNER_PASSWORD",
-    "OPENBOT_PORT"
-  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -29,5 +19,26 @@
       "dependsOn": ["^build"],
       "outputs": []
     }
-  }
+  },
+  "globalEnv": [
+    "GITHUB_EVENT_NAME",
+    "GITHUB_EVENT_PATH",
+    "OPENBOT_ALLOWED_ORIGINS",
+    "OPENBOT_DATABASE_URL",
+    "OPENBOT_NODE_ID",
+    "OPENBOT_NODE_SERVER_URL",
+    "OPENBOT_OWNER_PASSWORD",
+    "OPENBOT_PORT",
+    "npm_config_user_agent",
+    "NODE_ENV",
+    "CI"
+  ],
+  "globalDependencies": [
+    "scripts/**",
+    "apps/server-python/requirements*.lock",
+    "packages/harness/distribution.lock",
+    "packages/harness/pyproject.toml",
+    "packages/harness/scripts/**",
+    ".github/workflows/**"
+  ]
 }

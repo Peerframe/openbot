@@ -491,7 +491,7 @@ agent-computer `257c1280d684089be9adb0b35cce262efc7064bf`（MIT）及既有 Serv
 
 产品 Worker 复用已审查的持久 Action、私有媒体／工具观察与独立复核。见
 [读取工具](research/python-work-product-reads.md)、[报告复核](research/python-work-product-result.md)及
-[公开网页](research/python-work-product-web.md)。HTML 提取采用 Beautiful Soup4.15.0／Soup Sieve2.8.3（MIT），
+[公开网页](research/python-work-product-web.md)。HTML 提取采用 Beautiful Soup4.15.0／Soup Sieve2.9.2（MIT；C3 安全升级证据见下文），
 [精确哈希](research/python-work-web-pins.json)和包内声明完整保留。报告使用私有 blob 维持24KiB契约，
 不扩大 Action 上限；内容复核是可能出错的质量信号，不是外部业务效果证明。
 
@@ -558,3 +558,10 @@ pipe 协议、Playwright1.62.1 ASCII-NUL framing 窄适配（Apache-2.0）及 No
 工作区，沿用已审核的 Node 密钥 API、Sigstore、原子文件写入与 MCP SDK 固定版本。源码许可与
 初始哈希保留，CLI 保持历史相对路径语义，生成器对齐现有 Zod4.6.2；不新增密码学实现或依赖
 版本，两项工具均不依赖旧业务 Server 或测试 oracle。
+
+## C3 CI 资格与生产依赖安全修复
+
+复用现有 npm/Turbo 图和固定 Actions。YAML 2.9.0（ISC）从已有依赖提升为显式根工具，
+pip-audit 2.10.1（Apache-2.0）通过隔离、精确锁定的工具闭包审计实际 Python 生产锁；无上游源码复制。
+精确提交和有界取舍见 [CI 决定](research/windows-ci-merge-gate.md)。Soup Sieve 2.9.2（MIT）
+修复新安全门发现的公告，保留 Beautiful Soup 和有界子进程，见[针对性升级证据](research/python-work-product-web.md#c3-advisory-driven-soup-sieve-update-2026-09-27)。

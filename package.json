@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "check": "npm run oracle:check && npm run test:browser:boundary && npm run docs:check && npm run research:check && npm run server:container:check && npm run migrations:check && npm run security:config-check && npm run worker-host:macos:check && npm run release:check && npm run lint && npm run typecheck && npm run test && npm run build",
+    "check": "npm run ci:check && npm run oracle:check && npm run test:browser:boundary && npm run docs:check && npm run research:check && npm run server:container:check && npm run migrations:check && npm run security:config-check && npm run worker-host:macos:check && npm run release:check && npm run lint && npm run typecheck && npm run test && npm run build",
     "db:up": "docker compose --env-file .env -p openbot-python-dev -f deploy/server/compose.dev.yaml up -d postgres",
     "db:stop": "docker compose --env-file .env -p openbot-python-dev -f deploy/server/compose.dev.yaml stop postgres",
     "db:verify": "npm run oracle:build && node scripts/verify-database.mjs",
@@ -34,7 +34,7 @@
     "migrations:check": "node --test scripts/check-migrations.test.mjs scripts/compare-migration-lineage.test.mjs && node scripts/check-migrations.mjs",
     "node:enrollment-token": "node --env-file-if-exists=.env scripts/issue-node-enrollment.mjs",
     "research:check": "node --test scripts/check-pr-research.test.mjs && node scripts/check-pr-research.mjs",
-    "release:check": "node --test scripts/node-linux-release.test.mjs scripts/node-linux-install-lease.test.mjs scripts/node-linux-archive-import.test.mjs scripts/node-linux-privileged-layout.test.mjs scripts/node-linux-bootstrap.test.mjs scripts/node-linux-bootstrap-command.test.mjs scripts/node-linux-install-transaction.test.mjs scripts/node-linux-provenance.test.mjs scripts/node-linux-extract.test.mjs scripts/node-linux-systemd.test.mjs scripts/macos-worker-host-release.test.mjs scripts/prepare-desktop-release.test.mjs scripts/install-desktop.test.mjs scripts/create-mcp-plugin.test.mjs",
+    "release:check": "node --test scripts/node-linux-release.test.mjs scripts/node-linux-install-lease.test.mjs scripts/node-linux-archive-import.test.mjs scripts/node-linux-privileged-layout.test.mjs scripts/node-linux-bootstrap.test.mjs scripts/node-linux-bootstrap-command.test.mjs scripts/node-linux-install-transaction.test.mjs scripts/node-linux-provenance.test.mjs scripts/node-linux-extract.test.mjs scripts/node-linux-systemd.test.mjs scripts/prepare-desktop-release.test.mjs scripts/install-desktop.test.mjs scripts/create-mcp-plugin.test.mjs",
     "release:node-macos:candidate": "node scripts/build-macos-worker-host-candidate.mjs",
     "release:node-macos:package": "node scripts/package-macos-worker-host-distribution.mjs",
     "release:node-linux:archive": "node scripts/pack-node-linux-candidate.mjs",
@@ -62,7 +62,10 @@
     "harness:check": "sh packages/harness/scripts/check.sh",
     "harness:wheel": "sh packages/harness/scripts/check-wheel.sh",
     "harness:quality": "sh packages/harness/scripts/quality.sh",
-    "contracts:test": "npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts"
+    "contracts:test": "npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts",
+    "ci:scope": "node scripts/ci-scope.mjs",
+    "ci:check": "node --test scripts/ci-scope.test.mjs scripts/check-python-audit.test.mjs scripts/check-ci-cache.test.mjs",
+    "check:affected": "node scripts/check-affected.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",
@@ -73,7 +76,8 @@
     "officeparser": "7.8.0",
     "turbo": "2.10.12",
     "typescript": "7.0.2",
-    "vitest": "5.0.0"
+    "vitest": "5.0.0",
+    "yaml": "2.9.0"
   },
   "overrides": {
     "pdfjs-dist": "6.3.289"

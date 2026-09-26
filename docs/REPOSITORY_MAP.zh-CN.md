@@ -117,3 +117,11 @@ Work snapshot 的真实 HTTP 响应由 `work_models.py` 经 `work_routes.py` 定
 准备控制层基础 `.venv` 后运行
 `npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts`，验证真实 Python HTTP
 序列化及状态到 Web 的兼容性，无需 DB 或模型。Node wire 契约仍归 `packages/protocol`。
+
+### CI 选择与安装物资格
+
+本地已跟踪/未跟踪变化用 `npm run ci:scope -- --local`；已提交 PR 用已核实的 `--base SHA --head SHA`。
+`npm run check:affected` 接受同样的显式参数，只跑校验 lane，并列出其他必需 job；`npm run check`
+仍是仓库总检查。策略在 [ci-scope](../scripts/ci-scope.mjs)，[汇总](../scripts/ci-results.mjs)只接受必需项成功；
+反例用 `npm run ci:check`。CI 改动先读[贡献规则](../CONTRIBUTING.zh-CN.md#必要-ci-全部完成)及唯一交接的
+[职责/产物表](REPOSITORY_UPGRADE_PLAN.md#c3-check-duties-and-artifact-ownership)。

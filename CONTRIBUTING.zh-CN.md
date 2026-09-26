@@ -137,10 +137,37 @@ npm audit
 
 ### 必要 CI 全部完成
 
-受保护的 `check` 是最终汇总检查，等待安全扫描、仓库校验、所有便携平台、Windows Worker
-Host 构建、数据库流程和两个 Server 容器架构全部成功。任何必要任务失败、取消或跳过，都
-不能得到通过结果。合并前等待 PR 最新提交的此项检查；本地 `npm run check` 只覆盖仓库
-检查，不能替代远程平台结果。
+受保护的 `check` 把选择器的必需/不适用集合与真实 job 结果比对。安全和仓库校验始终执行；
+必需项只有 success 满足，失败、取消、缺失和意外跳过均失败。main 推送保持全量资格验证。
+合并前等待最终候选的云端结果；本地成功不代替原生平台、恢复或打包验证。
+
+开发时先用 `npm run ci:scope -- --local` 查看范围，再运行 `npm run check:affected -- --local`。
+本地已跟踪和未跟踪变化分别报告；PR 使用已核实的 40 位不可变提交：
+
+```sh
+npm run ci:scope -- --base "$BASE_SHA" --head "$HEAD_SHA"
+npm run check:affected -- --base "$BASE_SHA" --head "$HEAD_SHA"
+```
+
+提交范围采用真实 merge base，不混入未提交文件；缺失/浅历史时失败，不猜 `origin/main`。
+`check:affected` **只执行校验 lane**，另列需要的集成资格，不代表全部 CI 已通过。
+实现/脚本交接前 `npm run check` 仍承担完整仓库校验。文字使用定向仓库门；AGENTS、skills、
+提示词还需真实发现/读取验收。契约、锁、生成器、构建、CI 和未知输入保守选择全部集合。
+
+范围基于 npm 锁文件的传递消费者图及少量 Python、Desktop 动态和打包映射。
+`npm run ci:check` 包含选择/汇总反例和真实缓存/零测试验证。无局部测试的包不再暴露虚假的
+测试成功任务，明确依靠消费者覆盖及局部缺口。职责和产物归属见[唯一交接](docs/REPOSITORY_UPGRADE_PLAN.md#c3-check-duties-and-artifact-ownership)。
+
+使用 npm 入口（`npm run` / `npm exec -- turbo`），让缓存通过 `npm_config_user_agent`
+纳入实际 npm、Node、OS、架构身份，以及源码、锁依赖图、生成器、配置和声明的运行环境。
+没有该身份的独立 Turbo 调用不作为资格证据。CI 仅复用 npm 下载缓存，不恢复过去的 Turbo 测试
+成功结果；本地缓存结果须明确标注。根级门和真实 Python、Temporal、安装物探针在此缓存之外。
+并行 job 各有 checkout，同一 job 先构建再打包并复用产物；过时 PR 可取消，main 与标签发行保留各自生命周期。
+
+安全检查覆盖 `npm audit --omit=dev --audit-level=high` 及 `sh scripts/audit-python.sh`。
+后者用隔离、固定版本工具审计精确 Python 生产闭包，拒绝遗漏、跳过和已知公告；网络失败不算
+干净审计。普通 PR 通过不代表已有无签名安装物、签名/公证或发行资格；载荷变化仍需在受支持目标
+验证真实包的启动、拒绝和清理。
 
 ### 依赖更新流程
 
@@ -209,7 +236,7 @@ AGENTS 链接的 SKILL.md，记录实际生效方式。这里未配置 Claude �
 
 工作流修改运行 `npm run docs:check`、`npm run research:check` 和真实发现/读取验收，Markdown
 不代表纯文字。纯文字/指令运行适用检查；脚本/实现修改交接前仍须 `npm run check`。必要云端及
-发布/迁移/安全门不变。C3 才处理 CI 选择，本阶段不跳过 job。记录测试数、缓存、跳过和缺失环境。
+发布/迁移/安全门不变，仅通过反例验证的 CI 选择器可以声明某 lane 不适用。记录测试数、缓存、跳过和缺失环境。
 
 升级只维护[一份交接](docs/REPOSITORY_UPGRADE_PLAN.md)。UI 使用[既有设计索引](docs/design/README.zh-CN.md)、
 tokens/组件及受影响状态。C1 新会话验收定位 UI、Python 核心和跨语言任务；C3 才执行完整贡献流程，
