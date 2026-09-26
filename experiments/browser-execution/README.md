@@ -41,6 +41,24 @@ loopback canary addresses. It publishes no ports and changes no host/VPS network
 runs this actual proxy fixture separately from browser recovery. Keep Squid/Debian and Node notices
 with the image; this fixture image is not the production browser/Host image.
 
+## Native kernel routing and connection revocation
+
+The supplied Ubuntu24.04/nftables1.0.9 host passed23 forwarding cases plus client-to-proxy
+connection/revocation. All canaries were reachable before filtering; forbidden paths then produced
+zero target receipts, and the already-open socket stopped delivering after admission was removed.
+The original150-second systemd unit and all children closed. Existing9 containers, firewall semantics
+and host forwarding settings were unchanged. See [safe result](REAL_KERNEL_NETWORK_RESULT.json).
+These are TCP/UDP echo canaries, not a replacement proxy. Squid composition, actual Chromium/runsc
+and product authorization remain separate acceptance gates.
+
+The required egress CI job reproduces the native fixture on a disposable Ubuntu24.04 systemd
+runner with nft/iproute2/iptables and Docker's snapshot-only CLI. It stages the three files in
+`native-network/` at the fixed, single-use root-private directory declared by the fixture, then
+invokes `run_probe.py --docker /usr/bin/docker`. No Docker container or outside route is created by
+this native check. Do not run it over an existing result directory or reuse a consumed unit identity.
+The exact deployment and resource arguments live in the launcher and CI. The kernel probe refuses
+any process outside its original unit or in PID1's network namespace before changing links/rules.
+
 ## Candidate contract
 
 The image is Playwright1.62.1 noble, fixed linux/amd64 manifest, with Chromium151.0.7922.34 and the already observed Node24.18.1. Complete pins are in [PINS.json](PINS.json). The image's final layer removes its temporary Playwright SDK. The probe uses Chromium's existing ASCII-NUL CDP pipe on child stdio3/4 through Node built-ins; no new SDK, debug TCP port or custom wire protocol.

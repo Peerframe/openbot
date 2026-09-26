@@ -1,6 +1,6 @@
 # Architecture migration handoff — 2026-09-26
 
-## Current checkpoint — browser recovery CI and actual proxy policy
+## Current checkpoint — actual proxy and native packet enforcement
 
 - Delivery: PR #96 is merged into `main` at `b186c11`, with all15 hosted jobs green on its accepted
   head. New browser work is published as draft [PR #98](https://github.com/Peerframe/openbot/pull/98)
@@ -87,13 +87,20 @@
   fixture, with warning-free configuration, reachable forbidden canaries, zero forbidden requests
   and verified container removal. A source build under emulation hit its bound; the released
   Debian package replaces that slow route. No VPS software/networking changed. New required CI
-  runs this same proxy fixture. Host forwarding rules, direct bypass and tunnel revocation remain
-  unqualified; this does not enable general browser egress.
+  runs this same proxy fixture. Native kernel follow-up passed23 routed cases, direct client bypass
+  refusal, host/metadata/private IPv4/IPv6 denial and removal of an already-open connection. The
+  original150-second private unit and all children closed;9 existing containers, firewall semantics
+  and forwarding sysctls were unchanged. First case stopped before rules on IPv6 readiness; its
+  consumed identity was closed. Final kernel code is byte-identical to the accepted run; the launcher
+  adds only a snapshot-only CI Docker path and source hashing. Required CI now includes this fixture;
+  the native-network increment passed `npm run check` with20 cached builds and actual repository audits.
+  Actual Squid/browser/runsc/product composition is still pending; no general egress is enabled.
 - Remaining retirement gates: enforced browser egress and isolated Linux product Host, including
   isolated profile/Host replacement; final source/package/installed replacement qualification.
   In-flight HTTP response loss and graceful local browser process replacement now pass.
   Read-only VPS preflight confirms x86-64, cgroup v2, kernel6.8.0-136 and Docker29.8.1; Squid and
-  build tools are absent. DSH has finished and no external writer owns repository files.
+  build tools are absent; installed nftables1.0.9/iproute2 6.1.0/systemd255 were used for the native
+  packet check without host package/rule changes. DSH has finished and no external writer owns repository files.
   Control/Node process interruption and same-id identity refusal are now qualified
   for trusted local pages. Keep the replaced TS business
   Server until these gates pass, and retain the frozen59-file oracle plus TS Node/Provider/tools.

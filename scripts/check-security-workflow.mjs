@@ -234,6 +234,7 @@ export function validatePythonProductWorkflow(workflow, migrationWorkflow) {
     "experiments/browser-execution/egress-fixture.Dockerfile",
     "experiments/browser-execution/qualify_egress.py",
     "--fixture-image",
+    'sudo python3 -B "$root/run_probe.py" --docker /usr/bin/docker',
   ]) {
     if (!egress.includes(fragment))
       throw new Error(`Browser egress CI must exercise the actual proxy: ${fragment}`);

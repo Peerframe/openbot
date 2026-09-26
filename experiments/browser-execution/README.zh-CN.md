@@ -30,6 +30,12 @@ python3 -B experiments/browser-execution/qualify_egress.py \
 
 选择未存在的输出目录。执行最多150秒，随后有界清理；NET_ADMIN仅用于测试容器自己的断网空间，给loopback配置合成目标，不发布端口，不修改本机／VPS网络。必需CI独立运行此代理测试，不串在浏览器恢复后面。镜像保留Squid／Debian和Node许可证；它不是生产浏览器或Host镜像。
 
+## 原生内核路由与已有连接撤销
+
+提供的Ubuntu24.04／nftables1.0.9宿主已通过23项转发检查及客户端到代理端口的连接／撤销。所有目标在过滤前可达；过滤后禁止路径收到零请求，撤销准入后已建立的连接也无法继续送达。原150秒systemd单元及子进程已关闭；现有9个容器、防火墙语义和宿主转发设置未变。见[安全结果](REAL_KERNEL_NETWORK_RESULT.json)。目标使用TCP／UDP回显，不冒充代理；与真实Squid、Chromium/runsc和产品授权的组合仍需验收。
+
+必需egress CI在一次性Ubuntu24.04 systemd runner中复现，依赖nft／iproute2／iptables及仅读取状态的Docker CLI。将 `native-network/` 三份文件复制到探针声明的固定、一次性root私有目录，再运行 `run_probe.py --docker /usr/bin/docker`。此原生检查不创建Docker容器或外部路由；不得覆盖旧结果目录或重用已消费单元。准确参数在launcher与CI中。探针修改链路／规则前必须确认自己属于原单元，且不在PID1的网络命名空间。
+
 ## 候选约束
 
 使用固定 Playwright1.62.1 noble linux/amd64 镜像、Chromium151.0.7922.34 和之前实际观测到的 Node24.18.1；详见 [PINS.json](PINS.json)。最终镜像已移除临时 Playwright SDK，本探针使用 Chromium 的既有 CDP ASCII-NUL 管道及 Node 内建流，不新装 SDK、不开放调试 TCP、不另造协议。

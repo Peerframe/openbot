@@ -90,3 +90,49 @@ be DOWN and unaddressed, alongside Docker's inspected network-none mode. All att
 No host packet, DNS rebinding, Linux product Host or preexisting-tunnel revocation claim follows.
 The required CI job uses the same real executable fixture; five compiler-only tests remain cheap
 offline regressions. `npm run check` verification is recorded in the current handoff.
+
+## Actual native packet check
+
+The supplied Ubuntu24.04 VPS has nftables1.0.9-1ubuntu0.1, iproute2 6.1.0-1ubuntu6.4,
+iptables1.8.10-3ubuntu2 and systemd255.4-1ubuntu8.17. CI installs these exact networking packages
+only on its disposable runner.
+Read-only version checks changed no service, package or rule. Reviewed the official
+[nftables hook/verdict semantics](https://netfilter.org/projects/nftables/manpage.html),
+[netfilter hooks](https://wiki.nftables.org/wiki-nftables/index.php/Netfilter_hooks), and
+[Docker packet filtering constraints](https://docs.docker.com/engine/network/packet-filtering-firewalls/).
+Use the installed Linux packet filter, not another proxy or a Python model of its decisions.
+
+Qualify a fixed routed topology inside one native150-second `PrivateNetwork=yes` systemd
+unit. Its four owned child namespaces contain synthetic client, proxy-port canary, public and private
+targets, joined by owned veth pairs. Require the parent and all child namespace inodes to differ
+from PID1 before touching links or rules. Prove TCP/UDP/IPv6/private/metadata/host canaries reachable
+before installing the exact fixture table. An inet forward chain then admits only client→proxy and
+proxy→public fixture ports, while input refuses client/target access to the namespace's own host.
+Flush the dedicated admission chain to revoke an already-open connection; no established-state
+exception outside that chain may keep it usable. All rules live in the private unit namespace;
+never flush a host ruleset or change the production Docker daemon/backend.
+
+This is kernel-routing qualification only: the proxy-port canary is an echo service, explicitly
+not a Squid substitute. Real Squid is covered above. Their later composition with actual gVisor,
+Chromium, product authority and profile lifecycle still requires its own evidence. The fixture is
+not a general privileged installer or production network configuration. All child services and
+namespace anchors belong to the original unit cgroup; the native deadline and explicit cleanup
+bound lifetime even if the SSH caller disappears. No external route or real account is involved.
+
+The corrected fixture passed23 actual forwarding cases on the supplied VPS. Before filtering,
+all IPv4/IPv6, private, metadata, host, DNS TCP/UDP and QUIC-port UDP echo canaries were reachable.
+After filtering, only the declared proxy-to-public TCP paths passed. Client-to-proxy TCP passed;
+flushing the admission chain then blocked the same established socket with no additional target
+receipt. All owned children were reaped, the unit closed, and9 existing production containers,
+both iptables variants, nft rules (ignoring counters) and host forwarding sysctls were unchanged.
+See [safe native evidence](../../experiments/browser-execution/REAL_KERNEL_NETWORK_RESULT.json).
+
+The first native attempt stopped before rule installation because the IPv6 canary was not ready.
+Global addresses used nodad but their link-local neighbors still required DAD completion. The
+corrected fixture waits for actual non-tentative/non-failed addresses instead of extending request
+timeouts or weakening rules. The consumed first identity was not reused; its children and original
+unit were closed, with production unchanged. Final source is retained under `native-network/`.
+The launcher now additionally permits the CI runner's snapshot-only `/usr/bin/docker` and records
+its source hashes; the kernel probe and nft bytes match the accepted native run. Required CI runs
+this same private-unit fixture on a disposable Ubuntu24.04 runner. No Squid/browser composition,
+DNS rebinding application path or product authority acceptance is inferred.

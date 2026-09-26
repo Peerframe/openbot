@@ -647,7 +647,7 @@ jobs:
           if-no-files-found: ignore
 
   browser-egress:
-    name: Actual Squid browser egress policy (Linux amd64)
+    name: Browser proxy and kernel egress (Linux amd64)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -672,6 +672,32 @@ jobs:
         with:
           name: browser-egress-result
           path: ${{ runner.temp }}/openbot-egress-result/RESULT.json
+          if-no-files-found: ignore
+      - name: Qualify native kernel routing and revoke an established connection
+        timeout-minutes: 3
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends nftables=1.0.9-1ubuntu0.1 iproute2=6.1.0-1ubuntu6.4 iptables=1.8.10-3ubuntu2
+          root=/opt/openbot-qualification-20260925-c8b2/network-20260926-a2
+          sudo mkdir -p /opt/openbot-qualification-20260925-c8b2
+          sudo mkdir -m 700 "$root"
+          sudo install -m 600 experiments/browser-execution/native-network/network_probe.py "$root/"
+          sudo install -m 600 experiments/browser-execution/native-network/run_probe.py "$root/"
+          sudo install -m 600 experiments/browser-execution/native-network/fixture.nft "$root/"
+          sudo python3 -B "$root/run_probe.py" --docker /usr/bin/docker
+      - name: Retain content-free native network result
+        if: always()
+        run: |
+          source=/opt/openbot-qualification-20260925-c8b2/network-20260926-a2/FINAL_RESULT.json
+          if sudo test -f "$source"; then
+            sudo cp "$source" "$RUNNER_TEMP/openbot-kernel-network-result.json"
+            sudo chmod 644 "$RUNNER_TEMP/openbot-kernel-network-result.json"
+          fi
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: browser-kernel-network-result
+          path: ${{ runner.temp }}/openbot-kernel-network-result.json
           if-no-files-found: ignore
 
   synthetic-migration:
