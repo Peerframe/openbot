@@ -1,6 +1,6 @@
 # Architecture migration handoff — 2026-09-26
 
-## Current checkpoint — browser response loss and profile process replacement
+## Current checkpoint — browser recovery CI and actual proxy policy
 
 - Delivery: PR #96 is merged into `main` at `b186c11`, with all15 hosted jobs green on its accepted
   head. New browser work is published as draft [PR #98](https://github.com/Peerframe/openbot/pull/98)
@@ -78,12 +78,23 @@
   required job, removing serial work without dropping cases or changing probe deadlines. The response/
   profile increment passed `npm run check`;20 build tasks were cached, repository audits ran.
   The initial restricted run hit loopback EPERM; the authorized normal test run passed.
+  Hosted CI on64b4fed is now fully green:16 individual checks plus aggregate check, including
+  the separated browser recovery and Temporal recovery/upgrade jobs. The new proxy increment
+  passed `npm run check` (20 cached build tasks; repository checks executed),30 Python boundary
+  tests and13 workflow checks. Its hosted checks are pending; earlier green does not qualify it.
+- Proxy: DSH delivered the pure Squid policy candidate; root corrected protocol/IP handling and
+  integrated actual Debian7.7-1 tests.20 actual cases pass in a disconnected local Linux amd64
+  fixture, with warning-free configuration, reachable forbidden canaries, zero forbidden requests
+  and verified container removal. A source build under emulation hit its bound; the released
+  Debian package replaces that slow route. No VPS software/networking changed. New required CI
+  runs this same proxy fixture. Host forwarding rules, direct bypass and tunnel revocation remain
+  unqualified; this does not enable general browser egress.
 - Remaining retirement gates: enforced browser egress and isolated Linux product Host, including
   isolated profile/Host replacement; final source/package/installed replacement qualification.
   In-flight HTTP response loss and graceful local browser process replacement now pass.
   Read-only VPS preflight confirms x86-64, cgroup v2, kernel6.8.0-136 and Docker29.8.1; Squid and
-  build tools are absent. DSH is implementing only a pure Squid policy compiler from the anonymously
-  hash-verified public Linux design in a private packet; it has no repository write ownership. Control/Node process interruption and same-id identity refusal are now qualified
+  build tools are absent. DSH has finished and no external writer owns repository files.
+  Control/Node process interruption and same-id identity refusal are now qualified
   for trusted local pages. Keep the replaced TS business
   Server until these gates pass, and retain the frozen59-file oracle plus TS Node/Provider/tools.
 - Retained evidence: DSH implemented the browser profile module from the explicitly approved

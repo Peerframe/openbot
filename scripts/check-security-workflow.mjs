@@ -213,8 +213,13 @@ export function validatePythonProductWorkflow(workflow, migrationWorkflow) {
     return section;
   };
   const temporal = job("temporal-qualification");
-  if (!temporal.includes("--engine postgres-mtls --upgrade-archive") || !temporal.includes("--only-case product-owner-corrections"))
-    throw new Error("Python Temporal CI must retain the original recovery and upgrade qualification.");
+  if (
+    !temporal.includes("--engine postgres-mtls --upgrade-archive") ||
+    !temporal.includes("--only-case product-owner-corrections")
+  )
+    throw new Error(
+      "Python Temporal CI must retain the original recovery and upgrade qualification.",
+    );
   const browser = job("browser-product");
   for (const fragment of [
     "--filter=@openbot/node^... --filter=@openbot/db",
@@ -223,6 +228,15 @@ export function validatePythonProductWorkflow(workflow, migrationWorkflow) {
   ]) {
     if (!browser.includes(fragment))
       throw new Error(`Python browser CI must retain its real product recovery cases: ${fragment}`);
+  }
+  const egress = job("browser-egress");
+  for (const fragment of [
+    "experiments/browser-execution/egress-fixture.Dockerfile",
+    "experiments/browser-execution/qualify_egress.py",
+    "--fixture-image",
+  ]) {
+    if (!egress.includes(fragment))
+      throw new Error(`Browser egress CI must exercise the actual proxy: ${fragment}`);
   }
   const container = job("python-product-container");
   for (const fragment of [

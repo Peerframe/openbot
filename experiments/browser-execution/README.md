@@ -10,9 +10,36 @@ Requirements: a repository-supported Node version with built-in `node:zlib` CRC3
 npm run test:browser:boundary
 ```
 
-It runs15 Node synthetic CDP/artifact tests and25 Python command/authority/budget tests. The existing Python/Linux CI runs the same command. It never invokes the wrapper's executable entry point or launches a browser/container. The wrapper resolves native helpers from a complete adjacent `reviewed/` directory when explicitly packaged for the remote test; otherwise it uses the exact sibling `../linux-execution`. An existing incomplete `reviewed/` is rejected. It does not search arbitrary directories. The three helpers are not duplicated here and their reviewed hashes remain checked.
+It runs15 Node synthetic CDP/artifact tests and30 Python command/authority/budget/policy tests. The existing Python/Linux CI runs the same command. It never invokes the wrapper's executable entry point or launches a browser/container. The wrapper resolves native helpers from a complete adjacent `reviewed/` directory when explicitly packaged for the remote test; otherwise it uses the exact sibling `../linux-execution`. An existing incomplete `reviewed/` is rejected. It does not search arbitrary directories. The three helpers are not duplicated here and their reviewed hashes remain checked.
 
 `fixtures/v3-construction.json` is data generated from the previous OpenBot MIT wrapper's pure construction methods, with source/hash provenance. It replaces a duplicate historical executable in the original temporary test packet. The check preserves the prior command/configuration boundary, apart from the already reviewed explicit `compress=false` log option.
+
+## Actual egress proxy policy
+
+The strict compiler and real Debian Squid7.7-1 passed20 cases in a disposable Linux amd64
+`network=none` container: HTTP over IPv4/IPv6 and CONNECT reached owned canaries;17 wrong-source,
+host, port, protocol, numeric-host and forbidden-destination cases returned403 with zero target
+requests. Private, metadata, management and IPv6 canaries were directly reachable before the proxy
+checks. Parse warnings/coercions fail the test. The proxy exited cleanly and its container was removed.
+See [safe evidence](REAL_EGRESS_RESULT.json) and [research](../../docs/research/browser-egress-policy.md).
+This is proxy-only evidence; direct sockets, DNS rebinding, actual host packet rules and revoke of
+preexisting tunnels are separate gates. No production browser scope is widened.
+
+With Docker and network access for the build, a fresh checkout can reproduce it without credentials:
+
+```sh
+docker build --platform linux/amd64 -f experiments/browser-execution/egress-fixture.Dockerfile \
+  -t openbot-egress-fixture:local experiments/browser-execution
+python3 -B experiments/browser-execution/qualify_egress.py \
+  --fixture-image "$(docker image inspect openbot-egress-fixture:local --format '{{.Id}}')" \
+  --output /tmp/openbot-egress-result
+```
+
+Choose a new output directory. The runner uses only synthetic inputs,150-second execution and
+bounded cleanup; NET_ADMIN applies only inside its own disconnected network namespace to add
+loopback canary addresses. It publishes no ports and changes no host/VPS networking. Required CI
+runs this actual proxy fixture separately from browser recovery. Keep Squid/Debian and Node notices
+with the image; this fixture image is not the production browser/Host image.
 
 ## Candidate contract
 

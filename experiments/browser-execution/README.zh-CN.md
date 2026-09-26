@@ -10,9 +10,25 @@
 npm run test:browser:boundary
 ```
 
-命令运行15项 Node 合成 CDP/产物测试、25项 Python 命令/权限/预算测试，现有 Python/Linux CI 使用同一入口。它不调用 wrapper 可执行入口，也不启动浏览器或容器。
+命令运行15项 Node 合成 CDP/产物测试、30项 Python 命令/权限/预算/策略测试，现有 Python/Linux CI 使用同一入口。它不调用 wrapper 可执行入口，也不启动浏览器或容器。
 
 wrapper 优先使用显式远端包中的完整同级 `reviewed/`；仅在该目录不存在时使用准确兄弟目录 `../linux-execution`。已存在但残缺的 `reviewed/` 直接拒绝，不搜索任意目录。三份 helper 没有复制进来，仍检查原已审 hash。`fixtures/v3-construction.json` 是从旧 OpenBot MIT wrapper 的纯构造函数生成的数据，带原源码与 hash 来源；它取代临时包中重复的历史可执行代码，保留原命令/配置边界回归。
+
+## 真实出口代理策略
+
+严格配置编译器与 Debian Squid7.7-1 在一次性 Linux amd64 `network=none` 容器中通过20项实测：IPv4／IPv6 HTTP 和 CONNECT 成功到达合成目标；17类来源、域名、端口、协议、数字主机名和禁止地址请求均返回403，目标收到零请求。测试先证明私网、元数据、管理地址及IPv6目标实际可达。解析告警或静默改写算失败；代理正常退出，容器已清理。见[安全结果](REAL_EGRESS_RESULT.json)及[研究](../../docs/research/browser-egress-policy.md)。
+
+这只验收代理策略。直接连接、DNS重绑定、实际宿主包过滤和已有隧道撤销仍需独立验证；产品浏览器范围不扩大。干净检出可使用Docker及构建时联网复现，无需凭据：
+
+```sh
+docker build --platform linux/amd64 -f experiments/browser-execution/egress-fixture.Dockerfile \
+  -t openbot-egress-fixture:local experiments/browser-execution
+python3 -B experiments/browser-execution/qualify_egress.py \
+  --fixture-image "$(docker image inspect openbot-egress-fixture:local --format '{{.Id}}')" \
+  --output /tmp/openbot-egress-result
+```
+
+选择未存在的输出目录。执行最多150秒，随后有界清理；NET_ADMIN仅用于测试容器自己的断网空间，给loopback配置合成目标，不发布端口，不修改本机／VPS网络。必需CI独立运行此代理测试，不串在浏览器恢复后面。镜像保留Squid／Debian和Node许可证；它不是生产浏览器或Host镜像。
 
 ## 候选约束
 

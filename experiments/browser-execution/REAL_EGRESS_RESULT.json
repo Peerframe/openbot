@@ -1,0 +1,130 @@
+{
+  "format": "openbot-real-squid-egress",
+  "version": 1,
+  "accepted": true,
+  "network": "none",
+  "sourceVersion": "7.7",
+  "sourceCommit": "173863d3ec547d7fc5227ddbb5d8093c88b4842f",
+  "cases": [
+    {
+      "name": "allowed-http-ipv4",
+      "status": 200,
+      "targetRequests": 1
+    },
+    {
+      "name": "allowed-connect",
+      "status": 200,
+      "targetRequests": 1
+    },
+    {
+      "name": "allowed-http-ipv6",
+      "status": 200,
+      "targetRequests": 1
+    },
+    {
+      "name": "foreign-client",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "unknown-host",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "subdomain",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "http-wrong-port",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "cross-origin-port",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "connect-to-http-only",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "http-to-connect-only",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "ftp-to-http-origin",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "numeric-public",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "numeric-mapped-public",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "numeric-private",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "private-dns",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "numeric-integer",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "numeric-hex",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "metadata-dns",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "management-dns",
+      "status": 403,
+      "targetRequests": 0
+    },
+    {
+      "name": "private-ipv6-dns",
+      "status": 403,
+      "targetRequests": 0
+    }
+  ],
+  "hostPacketBoundaryQualified": false,
+  "tlsInspectionQualified": false,
+  "debianPackage": "7.7-1",
+  "binarySha256": "4e343ba74e3ae6f83dd319ad6f320150e76a0fcf5e90a81dff7a815bfefb9d4b",
+  "configurationParsed": true,
+  "directCanariesReachable": true,
+  "proxyCleanExit": true,
+  "fixtureImage": "sha256:fad04b80804e8de9228ddf78229712edb21ef86eb218c4d77de8dad1f1a74b8f",
+  "containerExitCode": 0,
+  "ownedContainerRemoved": true,
+  "sourceParent": "64b4fed",
+  "environment": "Local Docker Desktop Linux amd64 emulation",
+  "acceptedAt": "2026-09-26",
+  "proxyOnly": true,
+  "sourceSha256": {
+    "egress_policy.py": "4cc4a865e4c9e4ec526521416d2d54999414533e5bc9f1eaeac0c3b15a7f2480",
+    "egress_probe.mjs": "9ac16a92a3bd7e09307c24b41acf2240b2a38e0102896394d71bbbb9a6ea464e",
+    "qualify_egress.py": "21396eff1ce84be31cab7f9c682a19312406dce7334478c9774534cbe25b74e0",
+    "egress-fixture.Dockerfile": "683998ed5b283f27482c84dc1f5dd665cf95a49992a5a2071f285f8a63aeec94"
+  }
+}

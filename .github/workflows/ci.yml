@@ -646,6 +646,34 @@ jobs:
           path: ${{ runner.temp }}/openbot-browser-recovery-*/RESULT.json
           if-no-files-found: ignore
 
+  browser-egress:
+    name: Actual Squid browser egress policy (Linux amd64)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build released proxy and disposable fixture tools
+        timeout-minutes: 6
+        run: |
+          docker build --platform linux/amd64 \
+            -f experiments/browser-execution/egress-fixture.Dockerfile \
+            -t openbot-egress-fixture:ci experiments/browser-execution
+      - name: Qualify real HTTP and CONNECT policy in network-none
+        timeout-minutes: 3
+        run: |
+          image_id="$(docker image inspect openbot-egress-fixture:ci --format '{{.Id}}')"
+          python3 -B experiments/browser-execution/qualify_egress.py \
+            --fixture-image "$image_id" --output "$RUNNER_TEMP/openbot-egress-result"
+      - name: Retain content-free proxy result
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-egress-result
+          path: ${{ runner.temp }}/openbot-egress-result/RESULT.json
+          if-no-files-found: ignore
+
   synthetic-migration:
     name: Python migration and paired restore (synthetic)
     uses: ./.github/workflows/s7-migration.yml
@@ -653,7 +681,7 @@ jobs:
   # Python product qualification and retained compatibility must each succeed independently.
   check:
     if: always()
-    needs: [security, validate, portable, windows-worker-host, database, server-container, python-runtime, temporal-qualification, browser-product, python-product-container, python-desktop-preview, synthetic-migration]
+    needs: [security, validate, portable, windows-worker-host, database, server-container, python-runtime, temporal-qualification, browser-product, browser-egress, python-product-container, python-desktop-preview, synthetic-migration]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -669,11 +697,12 @@ jobs:
           PYTHON_RUNTIME_RESULT: ${{ needs.python-runtime.result }}
           TEMPORAL_QUALIFICATION_RESULT: ${{ needs.temporal-qualification.result }}
           BROWSER_PRODUCT_RESULT: ${{ needs.browser-product.result }}
+          BROWSER_EGRESS_RESULT: ${{ needs.browser-egress.result }}
           PYTHON_PRODUCT_CONTAINER_RESULT: ${{ needs.python-product-container.result }}
           PYTHON_DESKTOP_PREVIEW_RESULT: ${{ needs.python-desktop-preview.result }}
           SYNTHETIC_MIGRATION_RESULT: ${{ needs.synthetic-migration.result }}
         run: |
-          for result in "$SECURITY_RESULT" "$VALIDATE_RESULT" "$PORTABLE_RESULT" "$WINDOWS_WORKER_HOST_RESULT" "$DATABASE_RESULT" "$SERVER_CONTAINER_RESULT" "$PYTHON_RUNTIME_RESULT" "$TEMPORAL_QUALIFICATION_RESULT" "$BROWSER_PRODUCT_RESULT" "$PYTHON_PRODUCT_CONTAINER_RESULT" "$PYTHON_DESKTOP_PREVIEW_RESULT" "$SYNTHETIC_MIGRATION_RESULT"; do
+          for result in "$SECURITY_RESULT" "$VALIDATE_RESULT" "$PORTABLE_RESULT" "$WINDOWS_WORKER_HOST_RESULT" "$DATABASE_RESULT" "$SERVER_CONTAINER_RESULT" "$PYTHON_RUNTIME_RESULT" "$TEMPORAL_QUALIFICATION_RESULT" "$BROWSER_PRODUCT_RESULT" "$BROWSER_EGRESS_RESULT" "$PYTHON_PRODUCT_CONTAINER_RESULT" "$PYTHON_DESKTOP_PREVIEW_RESULT" "$SYNTHETIC_MIGRATION_RESULT"; do
             if [[ "$result" != "success" ]]; then
               printf 'Every required CI job must succeed; observed result: %s\n' "$result" >&2
               exit 1
