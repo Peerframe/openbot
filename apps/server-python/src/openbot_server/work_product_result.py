@@ -9,7 +9,7 @@ import inspect
 import json
 
 from pydantic_ai.messages import ModelRequest, ModelResponse, SystemPromptPart, TextPart, ThinkingPart, UserPromptPart
-from openbot_agent_runtime.contracts import ModelStepRequest
+from openbot_agent_runtime import ModelStepRequest
 
 from .work_completion import normalize
 from .work_corrections import check_context

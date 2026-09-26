@@ -7,7 +7,7 @@ import sys
 from product_command_fixture import CSV,SUMMARY,REPORT,ARGUMENTS
 
 ROOT=Path(__file__).resolve().parents[2]
-sys.path[:0]=[str(ROOT/'apps/server-python/src'),str(ROOT/'packages/harness/src')]
+sys.path[:0]=[str(ROOT/'apps/server-python/src')]
 import httpx2
 from openbot_server import work_product_runtime as runtime
 

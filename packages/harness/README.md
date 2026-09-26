@@ -1,233 +1,85 @@
-# OpenBot Python execution unit
+# OpenBot Python harness
 
-A bounded, SDK-backed Python agent loop that **proposes** actions and owns no task
-state. It is the reference implementation for OpenBot agent behaviour; the Server
-remains the only authority for identity, tasks, routing, authorisation, approvals,
-budget, artifacts, audit and persistence.
+English · [简体中文](README.zh-CN.md)
 
-Status: implementation slice only. No persistence engine, no provider credentials,
-no OS isolation. A normal Python process is not a sandbox, and nothing here claims
-to be one. The one-invocation process adapter (below) is a *framing and lifecycle*
-contract, not a security boundary: it does not confine the interpreter, and the
-Server must still supervise the process.
+The single active `openbot-agent-runtime` package lives here. It keeps the existing import name
+`openbot_agent_runtime`, bounded Pydantic AI loop and optional Temporal composition. It proposes
+work; Python control owns identity, authorization, routing, approvals, root budgets, facts and
+publication. A Python process is not an OS sandbox. No second recovery or authority system is added.
 
-## What it does
+## Start and check
 
-One call drives one bounded run through four ports supplied by a trusted host
-adapter (in-process, or over the process profile in the next section but one; a
-Server adapter owns the real implementations):
-
-| Port | Required | Called | Purpose |
-| --- | --- | --- | --- |
-| `authority` | yes | before and after every awaited boundary, and before a result | Server guard for this exact run. A missing port, or one that answers without awaiting, fails the run closed. |
-| `model` | yes | once per SDK model step | Receives bounded messages, the descriptors actually offered and the step index; returns a `pydantic_ai` `ModelResponse`. The Server adapter owns real step authority and usage persistence here. |
-| `tool` | yes | once per admitted tool call | Receives the tool name, schema-validated arguments and the SDK call identifier. The identifier is **correlation only**: it is model-invocation data (the provider's tool-call entry, or an SDK-generated stand-in), so it is never authority and never an exactly-once key. The runtime performs no local effects. |
-| `corrections`, `progress` | no | once / per stage | Non-durable. The runtime stores nothing and claims no durable state. |
-
-The result carries bounded final text plus the identifiers of corrections actually
-applied. It never carries run status, usage, artifacts, approval outcomes,
-credentials, database handles or any Server write.
-
-## Bounds
-
-* Reviewed Server ceilings, kept as ceilings: **8** model steps, **16** tool calls,
-  **128 KiB** per tool result (matching `AgentRuntimeToolPolicy.maximumResultBytes`
-  in the frozen `tests/oracles/legacy-server/src/agent-runtime.ts`; current control enforcement
-  is in `apps/server-python/src/openbot_server/runtime_host.py`).
-* Runtime-local bounds on catalog size and bytes, message bytes, history length,
-  final output bytes, progress events and corrections.
-* The Server may tighten any limit. A limit above its ceiling is refused **before**
-  the run starts, so a looser budget cannot be smuggled in.
-* Every bound is measured in UTF-8 **bytes** on the payload that would actually
-  cross the boundary. Oversize tool results are refused, never truncated.
-* One absolute monotonic deadline covers the **whole** run — the entry authority
-  check, the corrections read, the SDK run and the exit authority check — rather than
-  only the model loop. Preparation cannot reset it. Declared tool input schemas are
-  self-contained: external `$ref`/`$dynamicRef` resolution is impossible, so argument
-  validation can never fetch a URI.
-
-Tool schemas are compiled with the reviewed `jsonschema-rs` dependency and `offline=True`.
-External references fail during catalog admission, before any model/tool work; internal references
-still work. Unicode ECMA patterns are retained with explicit backtracking and compilation bounds.
-
-## Refusal semantics
-
-* There is no permissive fallback. Authority, model and tool ports are mandatory.
-* Failures are sticky: the first refusal seals the run, and a later attempt can only
-  re-raise it. A port that swallows a cancellation and returns late therefore cannot
-  produce a success.
-* A refused tool call is never converted into a retry prompt or a failed observation.
-  The SDK converts exactly `ToolFailed` and `ModelRetry` that way, so the runtime
-  never raises either from a port failure, and the model is never asked again after a
-  failure.
-* Authority is re-checked after **every** awaited boundary, including the progress
-  event; a revocation that happens while progress is emitted stops the step before the
-  model port is asked to work.
-* A blank or whitespace-only answer is refused (`output_invalid`) and accepted text is
-  trimmed, matching the Server's own final validation.
-* The tool-call identifier is treated as **correlation data only**. It is never passed
-  to the authority port (which takes no arguments at all), so a well-formed or
-  freshly chosen identifier grants nothing and cannot restore withdrawn authority.
-  The `duplicate_tool_call` refusal catches only a literal repeat of one identifier
-  inside one model response; it is **not** replay protection, and identical name-plus-arguments
-  under a fresh identifier is admitted twice. A later model step may also reuse a
-  consumed ID for a newly proposed intent. Exactly-once effect safety is the
-  Server's, at authorisation or at the effect itself.
-* Cancelling the caller's task re-raises `CancelledError`; it never becomes a result.
-* The unit writes nothing to stdout on its own: the SDK's first-run banner is
-  disabled, and a fresh-interpreter test asserts a completed run prints only what the
-  caller asked for.
-
-## Optional Temporal composition
-
-`openbot_agent_runtime.temporal_agent.build_temporal_agent` composes one Agent before Worker
-startup in the separately pinned Pydantic AI 2.47.0 / Temporal 1.33.0 environment. Typed per-Run
-deps reach trusted sync/async factories only inside activities. Workflow preparation and replay
-receive inert model metadata that cannot issue a request. Factories must create fresh ports and
-bind deps to the accepted engine identity; control still owns authorization and durable budgets.
-
-Optional `deferred_tools` accepts bounded `ToolDescriptor` declarations. The SDK returns
-`DeferredToolRequests` instead of executing them. Control must validate the proposed arguments,
-obtain approval and verify the exact Action outcome before supplying `DeferredToolResults`.
-The model catalog includes inline and deferred tools; the executing catalog includes inline
-ones only. Declarations are deeply detached from caller changes. The public work reference now
-uses this entrypoint for model/read steps, with writes and publication still owned by control.
-
-This builder does not replace `BoundedExecutor.execute`, apply corrections, validate final output
-or publish completion. No default Runtime dependency or process profile changes. The real
-[two-Run probe](../../experiments/work-journey/multirun_port_probe.py) checks overlapping isolated
-calls and history replay without host work; it does not prove Worker crash recovery or S3 completion.
-In the [pinned experiment environment](../../experiments/work-journey/README.md), run
-`python -B experiments/work-journey/multirun_port_probe.py --address <owned-disposable-Temporal-address>`.
-Never point the probe at a production namespace.
-
-## Process adapter (`scripts/run-worker.py`)
-
-The reviewed profile `openbot-agent-runtime/1` (fixed in `docs/AGENT_RUNTIME_PROTOCOL.md`) is a
-**one-invocation** contract: one child, one request, one terminal frame, exit. The same unit above can
-be driven in-process, or as this process with a trusted parent supplying the ports over pipes:
+Run from the repository root with Python 3.12+:
 
 ```sh
-<package>/.venv/bin/python -I -u <package>/scripts/run-worker.py
+packages/harness/scripts/bootstrap.sh
+npm run harness:check
+packages/harness/scripts/check.sh -k catalog
+npm run harness:wheel
 ```
 
-* **Framing.** JSON-RPC 2.0, one object per line (UTF-8, LF-delimited) on stdin, answers on stdout.
-  The child writes protocol frames to stdout only; stderr is never used for protocol, and a test
-  asserts a clean stdout and empty stderr.
-* **What the parent may send.** Exactly one `runtime.execute` request for id `run`, with
-  `{protocol, tools[], deadlineMs}`, then one reply per child request. Batches, notifications, unknown
-  fields, duplicate or replayed ids, non-finite JSON and invalid UTF-8 are refused.
-* **What the child sends.** At most one outstanding request at a time, with monotonic ids `w1 … w512`:
-  `authority.check` (empty params, empty result), `model.generate` (bounded messages) and
-  `tool.execute` (id, name, validated arguments). A reply reuses the request id and carries exactly one
-  of `result`/`error`.
-* **Bounds.** 512 KiB per frame (excluding the newline), 8 MiB and 1024 frames per direction, 64 KiB of
-  stderr, JSON nesting depth ≤ 64, and finite JSON only.
-* **Lifecycle.** Parent EOF at any await cancels the run before it can publish. Success writes one
-  `result` frame and exits `0`. A refused run writes one fixed `error` frame and exits `1`. A broken
-  channel is closed with a fixed JSON-RPC error and exits `2`. Nothing is ever replayed or retried.
-* **Isolation it does claim.** The child adds only its own resolved `src` directory to `sys.path`,
-  derives no path from the environment or cwd, opens no network, database or plugin surface, and reads
-  no credential. `-I` keeps the working directory and `PYTHONPATH` out of the import path.
+Bootstrap installs locked external dependencies and the locally built wheel into `.venv`. Build
+tools live separately in `.build-venv`. `check.sh` rebuilds and installs the wheel before testing,
+so an old installed copy cannot silently qualify new source. `harness:wheel` creates a disposable
+environment outside the checkout, installs runtime dependencies and the wheel with no source path,
+then runs the deterministic example and checks its actual module path. It uses no model account.
 
-The frozen limits the adapter fixes are the profile's own: `catalog_tools=64`, `history_messages=128`,
-`output_bytes=32000`. No counter, correction id or usage reading is added to the final wire response —
-those are Server-owned and have no port here.
+`scripts/build.sh` is an offline wheel build after `scripts/bootstrap-build.sh`; its result is
+`dist/openbot_agent_runtime-0.1.0-py3-none-any.whl`. Only the package, `py.typed`, metadata and license
+are shipped. Development skills, tests, examples, control and build tools are not wheel resources.
+The distribution is not published to PyPI. Editable installs are possible for exploration but do
+not qualify a product payload or the installed-package gate.
 
-## Layout
+| Environment | External lock | Local artifact |
+| --- | --- | --- |
+| Base runtime | `requirements-runtime.lock` | exact `distribution.lock` |
+| Core tests | `requirements.lock` | same local wheel |
+| Build / quality | `requirements-build.lock` / `requirements-quality.lock` | never runtime dependencies |
+| Control Worker tests | `apps/server-python/requirements-worker.lock` | same local wheel |
+| Product container / Desktop | `apps/server-python/requirements-product.lock` | same local wheel |
 
-```
-src/openbot_agent_runtime/
-  contracts.py   typed request/result, limits and port protocols
-  errors.py      closed failure vocabulary + advisory Server code mapping
-  bounds.py      UTF-8 byte accounting and one-JSON-value checks
-  catalog.py     catalog admission and JSON Schema argument validation ($ref never fetched)
-  guard.py       authority checks, counters, one absolute deadline and the failure seal
-  sdk_ports.py   the only two SDK touch points (PortModel, PortToolset)
-  executor.py    composition and the bounded run
-  wire.py        the process profile's framing and JSON codec (newline frames, strict bounds)
-  profile.py     wire <-> SDK mapping: request parsing, message shapes, reason vocabulary
-  worker.py      the one-invocation session: the three RPC ports, lifecycle and exit codes
-requirements.lock          the frozen development closure (23 pins)
-requirements-runtime.lock  the frozen runtime-only closure (18 pins, no test tooling)
-scripts/
-  bootstrap.sh            the only networked step: creates ./.venv from requirements.lock
-  check.sh                verifies the dev profile, then runs the tests
-  run-worker.py           the trusted process entry point (adds its own src dir, then serves stdin)
-  verify_environment.py   profile-aware environment verifier (dev | runtime | auto)
-tests/           deterministic fakes only: no paid API, no credentials, no database
-RESEARCH.md      pinned upstream evidence for every SDK behaviour relied on
-```
+`verify_environment.py --profile dev|runtime|auto|build|quality` checks exact installed metadata.
+`auto` selects only a whole dev/runtime profile. Locks remain bare exact pins; unknown entries,
+drift, extra distributions or a missing local artifact fail. `pip`, `setuptools`, `wheel` retain the
+existing interpreter-tooling exemption. The control verifier has separate `--worker`/`--product`
+profiles; `derive-product-lock.py --check` proves the runtime closure from reviewed metadata.
 
-## Dependency profiles (`scripts/verify_environment.py`)
+## Public contribution surface
 
-Two locked environments are approved. The **development** profile (`requirements.lock`, 23 pins) is the
-default and includes the test runner. The **runtime** profile (`requirements-runtime.lock`, 18 pins) is
-the same closure at the same pins with the test tooling removed, so a production image never ships
-pytest. The split is derived from installed distribution metadata rather than guessed: `pytest` is the
-only distribution that reaches `iniconfig`, `packaging`, `pluggy` and `Pygments`, and nothing in the
-runtime closure reaches them (see [RESEARCH.md](RESEARCH.md) §10).
+Import supported contracts, `execute_runtime`, `ToolCatalog`, `RunGuard`, `PortModel` and
+`PortToolset` from the package root. See [contracts](src/openbot_agent_runtime/contracts.py) and
+the actual [control adapter](../../apps/server-python/src/openbot_server/work_runtime_ports.py).
+Internal worker/profile/wire helpers are not public extension points.
+
+[read_note.py](examples/read_note.py) is a synthetic read-only extension through existing ports.
+Its host admits one fixture note, emits one canonical result, derives model/UI summaries, and closes
+the resource on success/error/cancellation. Unknown stays unknown, without retry or publication.
+Run the example in the clean wheel gate; its [six tests](tests/test_extension_example.py) can run
+with `scripts/check.sh -k extension_example`. It registers no new default product tool.
+
+Optional `openbot_agent_runtime.temporal_agent.build_temporal_agent` is an explicit Worker API.
+Normal package imports do not load Temporal. Activity factories, fixed tool IDs and replay identity
+remain unchanged. An ordinary one-invocation pipe worker and a replayable Activity have different
+lifetimes. Use `scripts/run-worker.py` with `python -I -u` for the former; the installed module is
+resolved by the interpreter, not a source-path injection. Temporal tests need the locked Worker
+environment and actual engine/replay checks in the [repository map](../../docs/REPOSITORY_MAP.md).
+
+## Quality and evidence
 
 ```sh
-./.venv/bin/python scripts/verify_environment.py                   # dev (the default)
-./.venv/bin/python scripts/verify_environment.py --profile dev
-./.venv/bin/python scripts/verify_environment.py --profile runtime
-./.venv/bin/python scripts/verify_environment.py --profile auto
+packages/harness/scripts/bootstrap-quality.sh
+OPENBOT_CONTROL_PYTHON=python3.12 sh apps/server-python/scripts/bootstrap-worker.sh
+packages/harness/scripts/quality.sh
 ```
 
-* `dev` and `runtime` each check one exact lock: every pin installed at exactly that version, nothing
-  else installed except `pip`/`setuptools`/`wheel`, and every direct pin of that profile present in the
-  lock at the same version.
-* `auto` matches the installed distributions against a *whole* lock and then applies that profile's
-  checks. It succeeds only on an exact match, because a partial development install, a missing runtime
-  pin, a version drift and an extra package are one and the same problem: the environment is not one
-  this package approved. This is the mode the Server's startup preflight runs.
-* Lock files accept only bare `name==version` pins. Non-pin lines, pip options and duplicate entries
-  (even at the same version) are errors; none is silently skipped.
-* The verifier reads distribution metadata only. It never installs, never uses the network, and takes no
-  lock path from the caller: the lock is a fixed file beside the package, so it resolves identically
-  from any working directory and under `python -I`.
-* Exit status is `0` on a match, `1` for a lock or drift problem, and `2` for an invalid `--profile`
-  value.
+One Ruff lint/format entry and one mypy entry cover the core, example and real control adapter.
+The Worker interpreter supplies optional SDK types; it is not installed into the base runtime.
+`check-boundaries.py` rejects control/DB/provider imports and private consumer imports. New Python
+modules have a 400-line review threshold, `contracts.py` 300; four existing lifecycle/wire modules
+have individually explained fixed caps in pyproject. These are reviewed exceptions, not a refreshed
+baseline for new violations. Test/format changes do not change authorization or budget semantics.
 
-## Running the checks
-
-```sh
-./scripts/bootstrap.sh   # the only networked step: creates ./.venv from requirements.lock
-./scripts/check.sh       # verifies the dev profile, then runs the tests
-```
-
-`check.sh` never installs anything: a missing environment is a failure. Requires
-CPython >= 3.12 (`asyncio.timeout`); the pinned SDK itself only needs 3.10.
-
-## Known limits
-
-* Package tests use synthetic ports/parents. The separate real Server/PostgreSQL lane
-  passed 222 cases on macOS with this child; see the [runtime guide](../../docs/NATIVE_AGENT.md).
-  OS isolation, crash recovery and live provider quality are not established by those tests.
-* `format` keywords in declared tool input schemas are annotations, not assertions:
-  `validate_formats=False` is explicit.
-* `ToolDescriptor` names are restricted to `[A-Za-z0-9][A-Za-z0-9._:-]{0,63}` and
-  input schemas must describe an object.
-* The unit provides **no idempotency or replay protection** for tool effects, and does
-  not claim any: the only per-call identifier it is given is model-invocation data.
-  Exactly-once behaviour has to come from the Server's authorisation or from the
-  effect itself.
-* The process profile is implemented and covered by subprocess tests, but those tests use a
-  *synthetic* parent. End-to-end behaviour against the Server's own process adapter is a Server-owned
-  integration gate; its evidence is recorded in the runtime guide.
-* The Linux/amd64 reference container passed 369 package and 222 Server/PostgreSQL tests.
-  It ran under emulation on an ARM Mac; native hosted CI, Windows and production packaging are
-  not established by that historical result. Current product defaults are Python; consult the
-  [repository map](../../docs/REPOSITORY_MAP.md) and current migration handoff for later scoped evidence.
-  The frozen TS oracle is not a runtime option.
-* Profile tests use real locks, synthetic installed sets and the exact Server preflight invocation.
-  The opt-in Server image separately verifies the installed runtime closure and actual SDK/tool loop;
-  see [container verification](../../docs/SERVER_CONTAINER.md#optional-python-execution-image).
-  These checks do not establish OS isolation or live-provider behavior.
-* Running `--profile runtime` in a development checkout is *expected* to fail: it reports the five
-  test-only distributions as unexpected. That is the check working, not drift.
-* The adapter reads no environment variable and loads no provider client — asserted by tests — but
-  `-I` does not hide `os.environ`, so this is a property of this code, not of the interpreter switch.
-* No streaming: the child emits exactly one terminal frame and exits. Progressive output is not part of
-  this profile.
+The [reuse evidence](RESEARCH.md#10-c2-installed-harness-and-contributor-tools-2026-09-27),
+[local rules](AGENTS.md), [repository map](../../docs/REPOSITORY_MAP.md) and
+[single current handoff](../../docs/REPOSITORY_UPGRADE_PLAN.md) give exact integration status and
+unverified platforms. Wheel success alone is not full product, native-platform or release qualification.

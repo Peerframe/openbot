@@ -10,7 +10,7 @@ from product_native_fixture import REPORT,SUMMARY,CHILD,DRAFT
 
 
 def main(repo):
-    sys.path[:0]=[str(repo/'apps/server-python/src'),str(repo/'packages/harness/src')]
+    sys.path[:0]=[str(repo/'apps/server-python/src')]
     import httpx2
     from openbot_server import work_product_runtime as runtime
     from openbot_server.work_store import PostgresWorkStore

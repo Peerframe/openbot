@@ -10,8 +10,8 @@ import json
 from urllib.parse import urlsplit
 
 from pydantic_ai.messages import ModelMessagesTypeAdapter
-from openbot_agent_runtime.catalog import ToolCatalog
-from openbot_agent_runtime.contracts import ModelStepRequest
+from openbot_agent_runtime import ToolCatalog
+from openbot_agent_runtime import ModelStepRequest
 
 from .model_media import media_reference
 from .work_effects import VerifiedOutcome, execute_action, recover_action

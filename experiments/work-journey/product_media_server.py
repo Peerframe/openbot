@@ -12,7 +12,7 @@ from product_media_fixture import REPORT,SUMMARY,assert_wire
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--repo',type=Path,required=True)
     args=parser.parse_args();repo=args.repo.resolve()
-    sys.path[:0]=[str(repo/'apps/server-python/src'),str(repo/'packages/harness/src')]
+    sys.path[:0]=[str(repo/'apps/server-python/src')]
     import httpx2
     from openbot_server import work_product_runtime as runtime
     config=json.loads(Path(os.environ['OPENBOT_MEDIA_PROBE_CONFIG']).read_text())

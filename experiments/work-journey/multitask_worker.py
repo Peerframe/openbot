@@ -19,7 +19,6 @@ from engine_client import connect as connect_engine
 
 with workflow.unsafe.imports_passed_through():
     import control
-    sys.path.insert(0, str(Path(__file__).parents[2] / 'packages/harness/src'))
     from openbot_agent_runtime.contracts import ToolDescriptor
     from openbot_agent_runtime.temporal_agent import build_temporal_agent
     from openbot_server.work_runtime_ports import WorkRuntimeDeps, WorkRuntimeServices, WorkRuntimePortFactory

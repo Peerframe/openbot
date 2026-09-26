@@ -39,8 +39,8 @@ from pydantic_ai.providers.moonshotai import MoonshotAIProvider
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.providers.openrouter import OpenRouterProvider
 
-from openbot_agent_runtime.catalog import ToolCatalog
-from openbot_agent_runtime.contracts import ModelStepRequest
+from openbot_agent_runtime import ToolCatalog
+from openbot_agent_runtime import ModelStepRequest
 
 from .model_media import PreparedModelMedia, inject, adapt_wire
 from .work_values import WorkConflict, InvalidWork

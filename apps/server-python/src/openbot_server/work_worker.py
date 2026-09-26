@@ -22,8 +22,8 @@ from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
 
 with workflow.unsafe.imports_passed_through():
     from openbot_agent_runtime.temporal_agent import build_temporal_agent
-    from openbot_agent_runtime.catalog import ToolCatalog
-    from openbot_agent_runtime.contracts import ToolDescriptor
+    from openbot_agent_runtime import ToolCatalog
+    from openbot_agent_runtime import ToolDescriptor
     from .work_corrected_workflow import run_corrected
     from .work_correction_activities import CorrectionActivities
     from .work_corrections import CorrectionStore, check_context

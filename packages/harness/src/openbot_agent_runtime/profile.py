@@ -138,9 +138,7 @@ def parse_execute_request(value: Any) -> ExecuteRequest:
             raise ProtocolViolation(INVALID_PARAMS_CODE)
         if not isinstance(schema, dict):
             raise ProtocolViolation(INVALID_PARAMS_CODE)
-        descriptors.append(
-            ToolDescriptor(name=name, description=description, input_schema=schema)
-        )
+        descriptors.append(ToolDescriptor(name=name, description=description, input_schema=schema))
     declared = [
         {"name": item.name, "description": item.description, "inputSchema": item.input_schema}
         for item in descriptors
@@ -237,7 +235,10 @@ def bound_wire_messages(payload: Sequence[Mapping[str, Any]]) -> None:
     try:
         size = json_utf8_size(list(payload))
     except (TypeError, ValueError) as exc:
-        _refuse(FailureReason.MESSAGE_LIMIT, f"translated history has no JSON form: {type(exc).__name__}")
+        _refuse(
+            FailureReason.MESSAGE_LIMIT,
+            f"translated history has no JSON form: {type(exc).__name__}",
+        )
         raise AssertionError("unreachable") from exc
     if size > MAX_WIRE_MESSAGE_BYTES:
         _refuse(
@@ -280,9 +281,7 @@ def model_response_from_wire(value: Any) -> ModelResponse:
         parts.append(TextPart(text))
     for item in intents_raw:
         intent = _tool_intent(item)
-        parts.append(
-            ToolCallPart(intent.name, dict(intent.arguments), tool_call_id=intent.call_id)
-        )
+        parts.append(ToolCallPart(intent.name, dict(intent.arguments), tool_call_id=intent.call_id))
 
     usage = _request_usage(result["usage"])
     if usage is None:
@@ -450,10 +449,14 @@ def _request_usage(value: Any) -> RequestUsage | None:
         fields[sdk_key] = count
     if not fields:
         return None
-    return RequestUsage(**fields)
+    return RequestUsage(
+        input_tokens=fields.get("input_tokens", 0), output_tokens=fields.get("output_tokens", 0)
+    )
 
 
-def _bounded_call_id(value: Any, *, reason: FailureReason = FailureReason.MODEL_RESPONSE_INVALID) -> str:
+def _bounded_call_id(
+    value: Any, *, reason: FailureReason = FailureReason.MODEL_RESPONSE_INVALID
+) -> str:
     if not isinstance(value, str) or not value or len(value) > MAX_TOOL_CALL_ID_CHARS:
         _refuse(
             reason,

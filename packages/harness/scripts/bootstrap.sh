@@ -24,4 +24,7 @@ else
 fi
 
 ./.venv/bin/python -m pip install --disable-pip-version-check --quiet -r requirements.lock
+sh scripts/bootstrap-build.sh
+sh scripts/build.sh
+sh scripts/install-wheel.sh "$here/.venv/bin/python"
 ./.venv/bin/python scripts/verify_environment.py

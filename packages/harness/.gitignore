@@ -1,5 +1,7 @@
 # Package-local toolchain state. Never committed, never shared across machines.
 .venv/
+.build-venv/
+.quality-venv/
 
 # Python bytecode and caches.
 __pycache__/

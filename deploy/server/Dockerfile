@@ -38,14 +38,22 @@ COPY --from=product-projection /runtime/ ./
 RUN npm ci --omit=dev --ignore-scripts --audit=false --fund=false
 
 FROM python:3.12.13-slim-bookworm@sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2 AS product-python
+FROM product-python AS product-harness-build
+WORKDIR /workspace/packages/harness
+COPY packages/harness/ ./
+RUN PYTHON=python sh scripts/bootstrap-build.sh && sh scripts/build.sh
+
 FROM product-python AS product-python-dependencies
 WORKDIR /workspace
-COPY apps/server-python/requirements-worker.lock apps/server-python/requirements.lock apps/server-python/requirements.txt apps/server-python/requirements-dev.txt ./apps/server-python/
+COPY apps/server-python/requirements-product.lock apps/server-python/requirements.lock apps/server-python/requirements.txt apps/server-python/requirements-dev.txt apps/server-python/requirements-temporal.txt ./apps/server-python/
 COPY apps/server-python/scripts/verify_environment.py ./apps/server-python/scripts/verify_environment.py
+COPY --from=product-harness-build /workspace/packages/harness/dist/ /wheels/
+COPY packages/harness/distribution.lock ./packages/harness/distribution.lock
 RUN python -m venv /opt/openbot/venv \
- && /opt/openbot/venv/bin/python -I -B -m pip --isolated install --only-binary=:all: --no-deps --no-cache-dir --disable-pip-version-check --index-url https://pypi.org/simple -r apps/server-python/requirements-worker.lock \
+ && /opt/openbot/venv/bin/python -I -B -m pip --isolated install --only-binary=:all: --no-deps --no-cache-dir --disable-pip-version-check --index-url https://pypi.org/simple -r apps/server-python/requirements-product.lock \
+ && /opt/openbot/venv/bin/python -I -B -m pip --isolated install --no-index --no-deps /wheels/*.whl \
  && /opt/openbot/venv/bin/python -I -B -m pip check \
- && /opt/openbot/venv/bin/python -I -B apps/server-python/scripts/verify_environment.py --worker
+ && /opt/openbot/venv/bin/python -I -B apps/server-python/scripts/verify_environment.py --product
 
 FROM product-python AS runtime-product
 WORKDIR /workspace
@@ -65,13 +73,13 @@ COPY --from=product-build /workspace/apps/web/dist/ ./apps/web/dist/
 COPY packages/db/migrations/ ./packages/db/migrations/
 COPY apps/server-python/src/ ./apps/server-python/src/
 COPY apps/server-python/scripts/serve.py ./apps/server-python/scripts/serve.py
-COPY packages/harness/src/ ./packages/harness/src/
+COPY packages/harness/distribution.lock ./packages/harness/distribution.lock
 COPY deploy/server/product-entry.py deploy/server/product-migrate.mjs deploy/server/product-preflight.mjs deploy/server/product-health.py ./deploy/server/
 COPY LICENSE THIRD_PARTY_NOTICES.md ./
 COPY apps/desktop/resources/python-notices/ /usr/share/doc/openbot/python-notices/
 RUN test "$(node --version)" = "v24.21.0" \
  && /opt/openbot/venv/bin/python -I -B -c 'import sys; assert sys.version_info[:3] == (3,12,13)' \
- && /opt/openbot/venv/bin/python -I -B apps/server-python/scripts/verify_environment.py --worker \
+ && /opt/openbot/venv/bin/python -I -B apps/server-python/scripts/verify_environment.py --product \
  && node deploy/server/product-preflight.mjs
 USER 1000:1000
 EXPOSE 3001

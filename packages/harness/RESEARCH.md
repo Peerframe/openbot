@@ -511,3 +511,61 @@ each pin in the chosen lock must be installed at exactly that version, and no di
 the chosen lock (apart from the documented `pip`/`setuptools`/`wheel` exemptions) may be present.
 Both locks are static lists, so the verifier stays standard-library-only and never installs, never
 touches the network, and never accepts a caller-supplied lock path.
+
+
+## 10. C2 installed harness and contributor tools (2026-09-27)
+
+Trigger: the previous source-only decision no longer meets independent contribution and packaged
+consumer acceptance. Preserve Pydantic AI 2.47.0, jsonschema-rs 0.57.1, Temporal 1.33.0 and every
+execution/authority/replay contract; only packaging and development verification change.
+
+The [PyPA packaging guide](https://packaging.python.org/en/latest/tutorials/packaging-projects/)
+and [Hatch build configuration](https://hatch.pypa.io/1.16/config/build/) describe standard wheels,
+src layout and explicit package selection. Choose Hatchling **1.32.4**, commit
+`c4abc454f908bb4fc2a92452a82cb33dac14abf3` ([release](https://github.com/pypa/hatch/releases/tag/hatchling-v1.32.4)).
+Its release repairs the generic plugin regression of 1.32.3; OpenBot uses no plugins. Compared with
+setuptools 84.0.0 (also viable), explicit package-only selection and isolated build tools suit this
+small typed pure-Python distribution. No custom backend or package-manager migration is needed.
+Hatch source/downstream tests and open wheel issue #767 were inspected; wheel installation and
+archive contents remain local acceptance, not inferred from upstream reputation.
+
+One lint/format tool: Ruff **0.16.8**, `62914c4b9b79a9e5004374a9c482ad2ed69290e1`
+([release](https://github.com/astral-sh/ruff/releases/tag/0.16.8), [docs](https://docs.astral.sh/ruff/)).
+One type entry: mypy **2.3.1**, `d642c4478e9e3acbe9233edbe17ffc569a1a778c`
+([source/tests](https://github.com/python/mypy/tree/v2.3.1),
+[import checking](https://mypy.readthedocs.io/en/stable/running_mypy.html)).
+Black + Flake8 would overlap Ruff; pyright requires another runtime integration. Mypy is sufficient
+for the existing annotations and typed installed library. Open Ruff formatter #28445/#28519 and
+mypy plugin #21621/#18579 were inspected; no fmt suppression or Pydantic/django mypy plugin is adopted.
+These tools execute only in isolated development environments; no new runtime capability/authority.
+All three selected tools are MIT, installed as released dependencies, with no upstream source copied
+or substantially adapted. Build and quality closures must be pinned separately and excluded from
+product installs; external lock parsing remains strict bare pins. The local distribution is required
+by its own exact pin and installed only from a newly built local wheel, never ignored by verification.
+
+Public API remains the existing root exports and the explicit optional `temporal_agent` module;
+normal imports must not load Temporal, control, databases or providers. Source movement does not
+rename Workflows/Activities. A wheel installation outside the repository and actual product
+consumers are required evidence. No PyPI publishing or support expansion is implied.
+
+
+### One generated public Work response (C2)
+
+Python `work_models.WorkSnapshot` already owns the HTTP projection returned by the real
+`getWorkTask` route. Generate that route's OpenAPI response types with
+[openapi-typescript 7.13.0](https://github.com/openapi-ts/openapi-typescript/tree/5709d33a5977c4908b9e331f01cd0f9e181b1c37),
+commit `5709d33a5977c4908b9e331f01cd0f9e181b1c37`, MIT, using its
+[documented Node API](https://openapi-ts.dev/node). Existing FastAPI/Pydantic definitions remain
+the source; no protocol semantics or authorization changes. Existing Zod runtime validation and
+request code remain. This tool produces types only; it cannot grant authority or publish data.
+
+Reviewed Node API, source/tests, release metadata and nullable issues #1940/#1955. OpenAPI 3.1
+uses explicit null unions; `defaultNonNullable: false` preserves omission independently of null.
+Unlike a handwritten schema translator, it handles recursive JsonValue and named refs without a
+second schema implementation; a full client generator is unnecessary for this single existing fetch.
+The first strict npm resolution rejected its `typescript ^5.x` peer against repo TypeScript 7.0.2.
+Keep product TypeScript unchanged. A private generator workspace owns TypeScript **5.9.3** (Apache-2.0,
+[release](https://github.com/microsoft/TypeScript/releases/tag/v5.9.3)) solely for the generator's AST
+API, with both closures pinned in the same root npm lock. No force/legacy-peer-deps or separate
+dependency platform. No upstream source copied or adapted. Regenerate/freshness and real Python→Web
+serialization tests must prove nullable, missing, Unicode, statuses and errors before acceptance.

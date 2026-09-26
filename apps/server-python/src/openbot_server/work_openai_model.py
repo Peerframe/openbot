@@ -52,8 +52,8 @@ from pydantic_ai.models import ModelRequestParameters
 from pydantic_ai.models.openai import OpenAIResponsesModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from openbot_agent_runtime.catalog import ToolCatalog
-from openbot_agent_runtime.contracts import (
+from openbot_agent_runtime import ToolCatalog
+from openbot_agent_runtime import (
     MAX_CATALOG_BYTES_CEILING,
     MAX_CATALOG_TOOLS_CEILING,
     ModelStepRequest,

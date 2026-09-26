@@ -10,7 +10,7 @@ import hashlib
 import json
 
 import psycopg
-from openbot_agent_runtime.contracts import ToolDescriptor
+from openbot_agent_runtime import ToolDescriptor
 
 from .control_errors import ControlError
 from .database import StoreUnavailable

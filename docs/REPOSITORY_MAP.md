@@ -9,7 +9,7 @@ when the route does not answer the question. Do not load all research records. S
 
 Python is the product control default. `apps/server` retains only a retirement README; the
 [frozen oracle](../tests/oracles/legacy-server/AGENTS.md) is comparison input only. Current runtime
-source is still `packages/harness`; a wheel under `packages/harness` is a C2 goal.
+source is `packages/harness`; core checks and product consumers install its typed wheel.
 
 ## UI interaction
 
@@ -63,10 +63,9 @@ source is still `packages/harness`; a wheel under `packages/harness` is a C2 goa
   [Node client](../apps/node/src/client.ts). Do not replace their authority with a second DTO registry.
 - Python product HTTP currently uses explicit projections in
   [work routes](../apps/server-python/src/openbot_server/work_routes.py) and
-  [work values](../apps/server-python/src/openbot_server/work_values.py); actual TS consumption is
+  [public Work DTOs](../apps/server-python/src/openbot_server/work_models.py); actual TS consumption is
   [work-api](../apps/web/src/work-api.ts), [its tests](../apps/web/src/work-api.test.ts),
-  and [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx). Generated Python-to-TS
-  consumption is not yet implemented; one real chain is a C2 deliverable.
+  and [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx). The Work snapshot response has generated Python-to-TS types; see the contribution checks below.
 - Existing runtime wire: [Python control validator](../apps/server-python/src/openbot_server/runtime_wire.py)
   ↔ [runtime wire](../packages/harness/src/openbot_agent_runtime/wire.py);
   [comparison script](../apps/server-python/scripts/compare-runtime-wire.mjs) checks the frozen TS
@@ -117,3 +116,19 @@ packages dependency direction. Use [openbot-check](../.agents/skills/openbot-che
 are generated/private, not source. Development skills are excluded from product resources. Backups
 follow [the persistent-asset inventory](DATABASE.md#backup-boundary); retained notices live in
 [licenses/runtime](../licenses/runtime/README.md). Read migration history only for the affected decision.
+
+
+### Installed core and Work HTTP contribution checks
+
+Use `npm run harness:check` / `npm run harness:wheel` and the package's `scripts/quality.sh`.
+`sh apps/server-python/scripts/bootstrap-worker.sh` installs the same wheel into the Worker env.
+Build/quality tools and product dependencies have separate exact locks; see
+[harness setup](../packages/harness/README.md).
+
+The real Work snapshot HTTP response comes from `work_models.py` through `work_routes.py`.
+`npm run contracts:generate` writes [consumer types](../apps/web/src/generated/work-contract.ts);
+`npm run contracts:check` checks freshness. [work-api](../apps/web/src/work-api.ts) consumes the
+generated type and keeps Zod runtime validation. Run
+`npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts` with the base
+control `.venv` for actual Python HTTP→Web serialization/status fixtures. No DB or model is needed.
+The Node wire protocol remains owned by `packages/protocol`.

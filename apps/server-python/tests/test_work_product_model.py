@@ -15,7 +15,6 @@ import psycopg
 from psycopg.types.json import Jsonb
 import pytest
 pytest.importorskip('pydantic_ai',reason='Optional Worker SDK profile is required')
-sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'packages/harness/src'))
 from pydantic_ai.messages import ModelRequest, UserPromptPart
 from openbot_agent_runtime.contracts import ModelStepRequest
 from openbot_server.control_errors import ControlError

@@ -957,3 +957,12 @@ macOS arm64 local hosting; Windows/Intel Mac are remote clients with retained ol
 No new dependency or upstream implementation is copied. Frozen oracle and canonical
 SQL remain unchanged. Container, native artifact and public startup checks cover the
 new defaults; historical evidence is not relabeled as current qualification.
+
+
+## Installed Python harness and contributor tooling (2026-09-27)
+
+C2 preserves the reviewed execution/Temporal stack and extracts its single source to
+`packages/harness`. Hatchling 1.32.4 builds an explicitly selected typed wheel; Ruff 0.16.8 and
+mypy 2.3.1 are isolated development tools, all MIT, no copied upstream source. Runtime, test and
+build/quality closures remain separate; exact references and tradeoffs are in
+[the package research](../packages/harness/RESEARCH.md#10-c2-installed-harness-and-contributor-tools-2026-09-27).

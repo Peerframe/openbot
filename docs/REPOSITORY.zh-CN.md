@@ -42,7 +42,7 @@
 
 `apps/server` 已退役。`npm run dev` 使用 `scripts/dev-python.mjs`；容器及受支持的 macOS arm64
 本地 Desktop 载荷选用 Python product 模式。直接启动 `serve.py` 未配置时仍只读。
-核心仍在 `packages/harness`；正式 harness 包是 C2 目标。必要的 Node 解析闭包保留。
+核心是 `packages/harness` 的 typed wheel，开发和产品宿主均安装此包。必要的 Node 解析闭包保留。
 定位源码/消费者/测试见[仓库地图](REPOSITORY_MAP.zh-CN.md)，C1→C2→C3 状态见[唯一交接](REPOSITORY_UPGRADE_PLAN.md)。
 
 本表说明主要职责，不穷举目录。[迁移计划](ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)

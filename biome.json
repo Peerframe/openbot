@@ -11,6 +11,8 @@
       "!**/node_modules",
       "!**/.venv",
       "!**/.worker-venv",
+      "!**/.build-venv",
+      "!**/.quality-venv",
       "!package-lock.json",
       "!apps/web/dist-demo",
       "!tests/oracles/legacy-server/src"

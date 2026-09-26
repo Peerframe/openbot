@@ -66,14 +66,8 @@ def build_sdk_agent(
     """
     silence_sdk_startup_banner()
     agent: Agent[object] = Agent(
-        model=PortModel(
-            step_port=ports.model, catalog=catalog, guard=guard, limits=limits
-        ),
-        toolsets=[
-            PortToolset(
-                catalog=catalog, tool_port=ports.tool, guard=guard, limits=limits
-            )
-        ],
+        model=PortModel(step_port=ports.model, catalog=catalog, guard=guard, limits=limits),
+        toolsets=[PortToolset(catalog=catalog, tool_port=ports.tool, guard=guard, limits=limits)],
         output_type=str,
         instructions=instructions or None,
         retries=0,
@@ -165,7 +159,11 @@ class BoundedExecutor:
             ports=self._ports, guard=guard, limits=limits, base=request.instructions
         )
         agent = build_sdk_agent(
-            ports=self._ports, catalog=catalog, guard=guard, limits=limits, instructions=instructions
+            ports=self._ports,
+            catalog=catalog,
+            guard=guard,
+            limits=limits,
+            instructions=instructions,
         )
 
         try:
@@ -272,7 +270,8 @@ def _validated_prompt(
     """Bound and check the prompt, refusing an empty request."""
     if not isinstance(request, RuntimeRequest):
         raise RuntimeFailure(
-            FailureReason.INVALID_REQUEST, f"request must be a RuntimeRequest, got {type(request).__name__}"
+            FailureReason.INVALID_REQUEST,
+            f"request must be a RuntimeRequest, got {type(request).__name__}",
         )
     if not isinstance(request.instructions, str):
         raise RuntimeFailure(FailureReason.INVALID_REQUEST, "instructions must be a string")
@@ -395,7 +394,8 @@ async def _apply_corrections(
             or item.id in applied
         ):
             raise guard.fail(
-                FailureReason.CORRECTION_INVALID, "correction identifiers must be unique and bounded"
+                FailureReason.CORRECTION_INVALID,
+                "correction identifiers must be unique and bounded",
             )
         if not isinstance(item.instruction, str) or not item.instruction.strip():
             raise guard.fail(

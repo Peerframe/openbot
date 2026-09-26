@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from psycopg.types.json import Jsonb
 from pydantic import TypeAdapter
-from openbot_agent_runtime.contracts import ToolDescriptor
+from openbot_agent_runtime import ToolDescriptor
 
 from .execution_values import KnowledgeProposal, validate_proposal
 from .identity_inputs import ChannelBotId

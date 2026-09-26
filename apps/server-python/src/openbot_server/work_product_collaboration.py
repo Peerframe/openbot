@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from copy import deepcopy
 from uuid import UUID
 
-from openbot_agent_runtime.contracts import ToolDescriptor
+from openbot_agent_runtime import ToolDescriptor
 
 from . import work_collaboration as tree
 from . import work_temporal_activity as temporal

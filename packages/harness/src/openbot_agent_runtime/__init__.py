@@ -32,6 +32,8 @@ from __future__ import annotations
 
 from .catalog import ToolCatalog
 from .contracts import (
+    MAX_CATALOG_BYTES_CEILING,
+    MAX_CATALOG_TOOLS_CEILING,
     AuthorityPort,
     Correction,
     CorrectionsPort,
@@ -59,6 +61,8 @@ __all__ = [
     "Correction",
     "CorrectionsPort",
     "FailureReason",
+    "MAX_CATALOG_BYTES_CEILING",
+    "MAX_CATALOG_TOOLS_CEILING",
     "ModelStepPort",
     "ModelStepRequest",
     "PORT_MODEL_NAME",

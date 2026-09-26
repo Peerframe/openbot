@@ -1,0 +1,5 @@
+# Existing product Worker integration pins.
+nexus-rpc==1.4.0
+protobuf==7.36.2
+temporalio==1.33.0
+types-protobuf==7.35.1.20260906

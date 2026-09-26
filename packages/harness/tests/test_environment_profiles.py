@@ -67,7 +67,6 @@ _BOOTSTRAP = (
 _SERVER_PREFLIGHT = (
     "import sys, runpy; "
     "assert sys.version_info >= (3, 12); "
-    "sys.path.insert(0, sys.argv[1]); "
     "import openbot_agent_runtime; "
     'sys.argv = [sys.argv[2], "--profile", "auto"]; '
     'runpy.run_path(sys.argv[0], run_name="__main__")'
@@ -85,7 +84,10 @@ class Result:
 
 def pins(path: Path) -> dict[str, str]:
     """The shipped lock's canonical pins, read through the verifier's own parser."""
-    return verifier.parse_pins(path, allow_options=False)
+    result = verifier.parse_pins(path, allow_options=False)
+    if path in (DEV_LOCK, RUNTIME_LOCK):
+        result.update(verifier.parse_pins(PACKAGE / "distribution.lock", allow_options=False))
+    return result
 
 
 def literal_names(path: Path) -> dict[str, str]:
@@ -97,6 +99,7 @@ def literal_names(path: Path) -> dict[str, str]:
             continue
         name, _separator, _version = line.partition("==")
         names[verifier.canonical(name)] = name.strip()
+    names["openbot-agent-runtime"] = "openbot-agent-runtime"
     return names
 
 
@@ -110,6 +113,7 @@ def write_distribution(root: Path, name: str, version: str) -> None:
 
 
 def materialise(root: Path, installed: dict[str, str]) -> Path:
+    installed = {"openbot-agent-runtime": "0.1.0", **installed}
     for name, version in installed.items():
         write_distribution(root, name, version)
     return root
@@ -164,6 +168,7 @@ def fake_package(tmp_path: Path):
         root = tmp_path / "pkg"
         (root / "scripts").mkdir(parents=True, exist_ok=True)
         shutil.copy(VERIFIER_PATH, root / "scripts" / "verify_environment.py")
+        shutil.copy(PACKAGE / "distribution.lock", root / "distribution.lock")
         if lock is not None:
             (root / "requirements.lock").write_text(lock, encoding="utf-8")
         if runtime_lock is not None:
@@ -273,7 +278,7 @@ def test_the_runtime_lock_is_the_metadata_derived_closure() -> None:
     if not _REAL_ENV.exists():
         pytest.skip("the package virtualenv is required for the metadata derivation")
 
-    roots = sorted(pins(PACKAGE / "requirements.txt"))
+    roots = sorted(pins(PACKAGE / "requirements.txt")) + ["openbot-agent-runtime"]
     reachable: set[str] = set()
     frontier = list(roots)
     while frontier:
@@ -310,7 +315,7 @@ def test_the_runtime_lock_is_the_metadata_derived_closure() -> None:
 def test_the_default_profile_still_accepts_the_real_development_environment() -> None:
     result = run_real()
     assert result.code == 0
-    assert result.stdout == "environment matches the lock (23 pinned distributions)\n"
+    assert result.stdout == "environment matches the lock (24 pinned distributions)\n"
     assert result.stderr == ""
 
 
@@ -323,7 +328,7 @@ def test_auto_selects_the_development_profile_in_the_real_environment() -> None:
     assert result.code == 0
     assert result.stdout == (
         "auto selected the dev profile\n"
-        "environment matches the lock (23 pinned distributions)\n"
+        "environment matches the lock (24 pinned distributions)\n"
     )
 
 
@@ -369,7 +374,7 @@ def test_the_development_profile_accepts_the_exact_locked_set(installed: Path) -
     materialise(installed, pins(DEV_LOCK))
     result = run_fixture(installed, "--profile", "dev")
     assert result.code == 0, result.stderr
-    assert result.stdout == "environment matches the lock (23 pinned distributions)\n"
+    assert result.stdout == "environment matches the lock (24 pinned distributions)\n"
 
 
 def test_the_development_profile_ignores_interpreter_tooling(installed: Path) -> None:
@@ -418,7 +423,7 @@ def test_no_arguments_means_the_development_profile(installed: Path) -> None:
     materialise(installed, pins(DEV_LOCK))
     result = run_fixture(installed)
     assert result.code == 0
-    assert result.stdout == "environment matches the lock (23 pinned distributions)\n"
+    assert result.stdout == "environment matches the lock (24 pinned distributions)\n"
 
 
 # --- the runtime profile over synthetic metadata -------------------------------
@@ -427,7 +432,7 @@ def test_the_runtime_profile_accepts_the_exact_runtime_set(installed: Path) -> N
     materialise(installed, pins(RUNTIME_LOCK))
     result = run_fixture(installed, "--profile", "runtime")
     assert result.code == 0, result.stderr
-    assert result.stdout == "environment matches the lock (18 pinned distributions)\n"
+    assert result.stdout == "environment matches the lock (19 pinned distributions)\n"
 
 
 def test_the_runtime_profile_ignores_interpreter_tooling(installed: Path) -> None:
@@ -471,7 +476,7 @@ def test_auto_selects_the_runtime_profile_for_the_runtime_set(installed: Path) -
     assert result.code == 0, result.stderr
     assert result.stdout == (
         "auto selected the runtime profile\n"
-        "environment matches the lock (18 pinned distributions)\n"
+        "environment matches the lock (19 pinned distributions)\n"
     )
 
 
@@ -670,5 +675,15 @@ def test_the_verifier_offers_no_lock_path_option() -> None:
 
 
 def test_the_profile_choices_are_the_frozen_three() -> None:
-    assert verifier.PROFILE_CHOICES == ("dev", "runtime", "auto")
+    assert verifier.PROFILE_CHOICES == ("dev", "runtime", "auto", "build", "quality")
     assert verifier.build_parser().parse_args([]).profile == "dev"
+
+
+@pytest.mark.parametrize("profile", ["dev", "runtime"])
+def test_local_harness_distribution_is_required_at_exact_version(profile):
+    selected = verifier.PROFILE_SPECS[profile]
+    present = verifier.environment_pins(selected)
+    present.pop("openbot-agent-runtime")
+    assert "not installed: openbot-agent-runtime==0.1.0" in verifier.check_profile(selected, present)
+    present["openbot-agent-runtime"] = "0.0.0"
+    assert any("version drift: openbot-agent-runtime" in item for item in verifier.check_profile(selected, present))

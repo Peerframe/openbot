@@ -27,7 +27,15 @@ import re
 import time
 from typing import Any, Final
 
-from .contracts import ModelStepRequest, RuntimeLimits, RuntimePorts, RuntimeRequest, ToolCallRequest
+from pydantic_ai.messages import ModelResponse
+
+from .contracts import (
+    ModelStepRequest,
+    RuntimeLimits,
+    RuntimePorts,
+    RuntimeRequest,
+    ToolCallRequest,
+)
 from .errors import FailureReason, RuntimeFailure
 from .executor import execute_runtime
 from .profile import (
@@ -146,9 +154,7 @@ class WorkerSession:
                 ports,
             )
         except RuntimeFailure as failure:
-            return await self._terminate_error(
-                failure.reason, deadline_at, EXIT_APPLICATION_ERROR
-            )
+            return await self._terminate_error(failure.reason, deadline_at, EXIT_APPLICATION_ERROR)
         return await self._terminate_result(result.text, deadline_at)
 
     async def _terminate_result(self, text: str, deadline_at: float) -> int:
@@ -200,8 +206,8 @@ class WorkerSession:
     async def _authority(self) -> None:
         parse_authority_result(await self._call(AUTHORITY_METHOD, {}))
 
-    async def _model(self, step: ModelStepRequest) -> Any:
-        payload = wire_messages(step.messages)
+    async def _model(self, request: ModelStepRequest) -> ModelResponse:
+        payload = wire_messages(request.messages)
         bound_wire_messages(payload)
         response = await self._call(MODEL_METHOD, {"messages": payload})
         return model_response_from_wire(response)
@@ -275,8 +281,8 @@ async def _session(reader: FrameReader, writer: FrameWriter) -> int:
     """Read the one request, run it while watching for EOF, then close."""
     try:
         first = await reader.next_value()
-    except ProtocolViolation as violation:
-        await _best_effort_protocol_error(writer, None, violation)
+    except ProtocolViolation as initial_violation:
+        await _best_effort_protocol_error(writer, None, initial_violation)
         return EXIT_PROTOCOL_ERROR
     if first is None:
         # The parent produced no request at all: there is nothing to answer.
@@ -286,8 +292,8 @@ async def _session(reader: FrameReader, writer: FrameWriter) -> int:
     received_at = time.monotonic()
     try:
         request = parse_execute_request(first)
-    except ProtocolViolation as violation:
-        await _best_effort_protocol_error(writer, _frame_id(first), violation)
+    except ProtocolViolation as request_violation:
+        await _best_effort_protocol_error(writer, _frame_id(first), request_violation)
         return EXIT_PROTOCOL_ERROR
 
     session = WorkerSession(writer)

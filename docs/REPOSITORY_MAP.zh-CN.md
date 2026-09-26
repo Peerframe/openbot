@@ -7,7 +7,7 @@
 启动见[贡献指南](../CONTRIBUTING.zh-CN.md)，升级状态只在[交接](REPOSITORY_UPGRADE_PLAN.md)维护。
 
 Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README；[冻结 oracle](../tests/oracles/legacy-server/AGENTS.md)
-只作比较输入。核心仍在 `packages/harness`，`packages/harness` 和 wheel 是 C2 目标。
+只作比较输入。核心在 `packages/harness`，测试及真实消费者安装其带类型信息的 wheel。
 
 ## UI 交互
 
@@ -57,9 +57,9 @@ Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README�
   [protocol/src](../packages/protocol/src/index.ts)拥有 Node Zod 契约，实际消费者包括
   [Node client](../apps/node/src/client.ts)，不得另造 DTO 权威。
 - Python HTTP 当前用 [work routes](../apps/server-python/src/openbot_server/work_routes.py) 与
-  [work values](../apps/server-python/src/openbot_server/work_values.py)显式投影；TS 消费者是
+  [公共 Work DTO](../apps/server-python/src/openbot_server/work_models.py)显式投影；TS 消费者是
   [work-api](../apps/web/src/work-api.ts)、[测试](../apps/web/src/work-api.test.ts)与
-  [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx)。Python→TS 自动生成仍是 C2 待办。
+  [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx)。Work snapshot 已接入 Python→TS 生成类型，命令见文末。
 - Runtime wire：[控制校验](../apps/server-python/src/openbot_server/runtime_wire.py) ↔
   [核心 wire](../packages/harness/src/openbot_agent_runtime/wire.py)；
   [比较脚本](../apps/server-python/scripts/compare-runtime-wire.mjs)对照冻结 TS oracle，不能把它当活跃 Server。
@@ -103,3 +103,17 @@ Schema 变化使用 `npm run migration:plan --workspace @openbot/db -- --name de
 `dist`、`node_modules`、`.turbo`、venv、Desktop `out`/`native-runtime`、`.env`、数据库和日志为生成/私有内容。
 开发 skills 不进入产品资源。备份按[持久资产清单](DATABASE.zh-CN.md#备份边界)，许可见
 [licenses/runtime](../licenses/runtime/README.md)；迁移历史仅为相关决定按需读取。
+
+
+### 安装物与 Work HTTP 贡献检查
+
+用 `npm run harness:check`／`npm run harness:wheel` 和包内 `scripts/quality.sh`。
+`sh apps/server-python/scripts/bootstrap-worker.sh` 把同一 wheel 安装到 Worker 环境。
+构建／质量／产品依赖有独立精确锁，见[harness 设置](../packages/harness/README.zh-CN.md)。
+
+Work snapshot 的真实 HTTP 响应由 `work_models.py` 经 `work_routes.py` 定义。
+`npm run contracts:generate` 生成[消费类型](../apps/web/src/generated/work-contract.ts)，
+`npm run contracts:check` 检查新鲜度；[work-api](../apps/web/src/work-api.ts)实际引用类型并保留 Zod 验证。
+准备控制层基础 `.venv` 后运行
+`npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts`，验证真实 Python HTTP
+序列化及状态到 Web 的兼容性，无需 DB 或模型。Node wire 契约仍归 `packages/protocol`。

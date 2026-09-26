@@ -55,7 +55,14 @@
     "oracle:check": "node --test scripts/check-server-oracle.test.mjs && node scripts/check-server-oracle.mjs",
     "oracle:build": "npm run oracle:check && turbo run build --filter=@openbot/legacy-server-oracle^... && npm run build:oracle --workspace @openbot/legacy-server-oracle",
     "test:browser:boundary": "node --test experiments/browser-execution/probe.test.mjs && python3 -B -m unittest discover -s experiments/browser-execution -p \"test_*.py\" -v",
-    "server:product-container:check": "npm run server:container:check"
+    "server:product-container:check": "npm run server:container:check",
+    "contracts:generate": "npm run generate --workspace @openbot/work-contract-generator",
+    "contracts:check": "npm run check --workspace @openbot/work-contract-generator",
+    "harness:build": "sh packages/harness/scripts/build.sh",
+    "harness:check": "sh packages/harness/scripts/check.sh",
+    "harness:wheel": "sh packages/harness/scripts/check-wheel.sh",
+    "harness:quality": "sh packages/harness/scripts/quality.sh",
+    "contracts:test": "npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",

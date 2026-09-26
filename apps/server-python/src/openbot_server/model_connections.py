@@ -371,7 +371,7 @@ class ModelConnectionsService:
         Root may wrap this method in durable probe admission; nothing is scheduled implicitly.
         Authorization and connection revision are rechecked immediately before send and return.
         """
-        from openbot_agent_runtime.contracts import ModelStepRequest
+        from openbot_agent_runtime import ModelStepRequest
         from pydantic_ai.messages import ModelRequest, UserPromptPart
         from .model_connections_port import ModelConnectionPort
         from .product_model import ProductModelError

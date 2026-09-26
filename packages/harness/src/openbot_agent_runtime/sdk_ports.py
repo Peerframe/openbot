@@ -32,18 +32,18 @@ from .contracts import ModelStepRequest, RuntimeLimits, ToolCallRequest, ToolDes
 from .errors import FailureReason, RuntimeFailure
 from .guard import RunGuard
 
-try:
-    from temporalio import workflow as _temporal_workflow
-except ImportError:
-    # The standalone supervised Runtime deliberately has no Temporal dependency.
-    _temporal_workflow = None
-
 
 def _refuse_inline_temporal_tool() -> None:
     # TemporalDurability 2.47.0 does not wrap arbitrary AbstractToolset leaves. Without a
     # constructor-time DynamicToolset, this port would execute in replayable workflow code.
-    if _temporal_workflow is not None and _temporal_workflow.in_workflow():
+    # Optional import belongs at execution, not ordinary package import. Base consumers stay lean.
+    try:
+        from temporalio import workflow as temporal_workflow
+    except ImportError:
+        return
+    if temporal_workflow.in_workflow():
         raise UserError("OpenBot tool ports require a registered Temporal tool activity")
+
 
 PASSTHROUGH_ARGS_VALIDATOR: Final = SchemaValidator(schema=core_schema.any_schema())
 """Accepts any argument shape so the SDK never rejects what this unit must judge."""

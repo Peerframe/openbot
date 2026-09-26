@@ -42,6 +42,7 @@ from pathlib import Path
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 DEV_LOCK_FILE = PACKAGE_ROOT / "requirements.lock"
 RUNTIME_LOCK_FILE = PACKAGE_ROOT / "requirements-runtime.lock"
+DISTRIBUTION_LOCK_FILE = PACKAGE_ROOT / "distribution.lock"
 
 # Distributions that an interpreter's own tooling owns. They are exempt in both
 # directions: `python -m venv` provisions pip, and setuptools/wheel may appear in
@@ -52,7 +53,7 @@ IGNORED = {"pip", "setuptools", "wheel"}
 PROFILE_DEV = "dev"
 PROFILE_RUNTIME = "runtime"
 PROFILE_AUTO = "auto"
-PROFILE_CHOICES = (PROFILE_DEV, PROFILE_RUNTIME, PROFILE_AUTO)
+PROFILE_CHOICES = (PROFILE_DEV, PROFILE_RUNTIME, PROFILE_AUTO, "build", "quality")
 
 # A pin is `name==version`. The name is a distribution name (no extras, no
 # brackets, no marker) and the version is a single token. Anything else -- an
@@ -80,11 +81,15 @@ class Profile:
     direct_files: tuple[str, ...]
 
 
-DEV_PROFILE = Profile(
-    PROFILE_DEV, DEV_LOCK_FILE, ("requirements.txt", "requirements-dev.txt")
-)
+DEV_PROFILE = Profile(PROFILE_DEV, DEV_LOCK_FILE, ("requirements.txt", "requirements-dev.txt"))
 RUNTIME_PROFILE = Profile(PROFILE_RUNTIME, RUNTIME_LOCK_FILE, ("requirements.txt",))
 PROFILE_SPECS = {profile.name: profile for profile in (DEV_PROFILE, RUNTIME_PROFILE)}
+PROFILE_SPECS["quality"] = Profile(
+    "quality", PACKAGE_ROOT / "requirements-quality.lock", ("requirements-quality.txt",)
+)
+PROFILE_SPECS["build"] = Profile(
+    "build", PACKAGE_ROOT / "requirements-build.lock", ("requirements-build.txt",)
+)
 
 
 def canonical(name: str) -> str:
@@ -116,15 +121,12 @@ def parse_pins(path: Path, *, allow_options: bool) -> dict[str, str]:
             )
         name, separator, version = line.partition("==")
         if not separator:
-            raise LockError(
-                f"{path.name}:{number}: expected name==version, got {raw.strip()!r}"
-            )
+            raise LockError(f"{path.name}:{number}: expected name==version, got {raw.strip()!r}")
         name = name.strip()
         version = version.strip()
         if not _NAME_PATTERN.match(name) or not _VERSION_PATTERN.match(version):
             raise LockError(
-                f"{path.name}:{number}: expected a bare name==version pin, "
-                f"got {raw.strip()!r}"
+                f"{path.name}:{number}: expected a bare name==version pin, got {raw.strip()!r}"
             )
         key = canonical(name)
         previous = pins.get(key)
@@ -139,6 +141,16 @@ def parse_pins(path: Path, *, allow_options: bool) -> dict[str, str]:
 
     if not pins:
         raise LockError(f"{path.name}: no pinned distributions found")
+    return pins
+
+
+def environment_pins(profile: Profile) -> dict[str, str]:
+    pins = parse_pins(profile.lock_file, allow_options=False)
+    if profile.name in (PROFILE_DEV, PROFILE_RUNTIME):
+        own = parse_pins(DISTRIBUTION_LOCK_FILE, allow_options=False)
+        if set(own) != {"openbot-agent-runtime"} or set(own) & set(pins):
+            raise LockError("invalid local distribution lock")
+        pins.update(own)
     return pins
 
 
@@ -197,12 +209,8 @@ def _elide(names: list[str]) -> str:
 def _summarise(lock: dict[str, str], observed: dict[str, str]) -> list[str]:
     """Compact per-category differences between an observed set and a lock."""
     missing = sorted(name for name in lock if name not in observed)
-    drift = sorted(
-        name for name in lock if name in observed and observed[name] != lock[name]
-    )
-    unexpected = sorted(
-        name for name in observed if name not in lock and name not in IGNORED
-    )
+    drift = sorted(name for name in lock if name in observed and observed[name] != lock[name])
+    unexpected = sorted(name for name in observed if name not in lock and name not in IGNORED)
     summary: list[str] = []
     if missing:
         summary.append(f"missing {len(missing)} ({_elide(missing)})")
@@ -216,7 +224,7 @@ def _summarise(lock: dict[str, str], observed: dict[str, str]) -> list[str]:
 def check_profile(profile: Profile, observed: dict[str, str] | None = None) -> list[str]:
     """Return every way the environment fails to be this profile. Empty means match."""
     problems: list[str] = []
-    lock = parse_pins(profile.lock_file, allow_options=False)
+    lock = environment_pins(profile)
     if observed is None:
         observed, inconsistency = installed_distributions()
         problems.extend(inconsistency)
@@ -226,9 +234,7 @@ def check_profile(profile: Profile, observed: dict[str, str] | None = None) -> l
         if installed_version is None:
             problems.append(f"not installed: {name}=={version}")
         elif installed_version != version:
-            problems.append(
-                f"version drift: {name} installed {installed_version}, lock {version}"
-            )
+            problems.append(f"version drift: {name} installed {installed_version}, lock {version}")
 
     for name in sorted(set(observed) - set(lock) - IGNORED):
         problems.append(f"unexpected installed distribution: {name}")
@@ -253,8 +259,7 @@ def _report_mismatch(profile: Profile, problems: list[str]) -> None:
     for problem in problems:
         print(f"  - {problem}", file=sys.stderr)
     print(
-        f"re-resolve deliberately and refresh {profile.lock_file.name} "
-        "if the change is intended",
+        f"re-resolve deliberately and refresh {profile.lock_file.name} if the change is intended",
         file=sys.stderr,
     )
 
@@ -272,7 +277,7 @@ def _run_profile(profile: Profile) -> int:
     if problems:
         _report_mismatch(profile, problems)
         return 1
-    lock = parse_pins(profile.lock_file, allow_options=False)
+    lock = environment_pins(profile)
     _report_success(profile, len(lock))
     return 0
 
@@ -288,8 +293,8 @@ def _run_auto() -> int:
     matches: list[Profile] = []
     lines: list[str] = []
     try:
-        for profile in PROFILE_SPECS.values():
-            lock = parse_pins(profile.lock_file, allow_options=False)
+        for profile in (DEV_PROFILE, RUNTIME_PROFILE):
+            lock = environment_pins(profile)
             summary = _summarise(lock, observed)
             if summary:
                 lines.append(f"  {profile.name}: " + "; ".join(summary))
@@ -331,7 +336,7 @@ def _run_auto() -> int:
         _report_mismatch(profile, problems)
         return 1
     print(f"auto selected the {profile.name} profile")
-    lock = parse_pins(profile.lock_file, allow_options=False)
+    lock = environment_pins(profile)
     _report_success(profile, len(lock))
     return 0
 

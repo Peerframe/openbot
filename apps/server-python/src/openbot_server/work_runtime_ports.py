@@ -35,6 +35,7 @@ are therefore built from :func:`copy.deepcopy` copies of the validated bounded d
 mutation of the caller's nested schema can neither change a returned port nor leak state between
 two Activities.
 """
+
 from __future__ import annotations
 
 import inspect
@@ -43,26 +44,26 @@ from copy import deepcopy
 from dataclasses import dataclass, replace
 from typing import Any
 
-from openbot_agent_runtime.catalog import ToolCatalog
-from openbot_agent_runtime.contracts import (
+from openbot_agent_runtime import ToolCatalog
+from openbot_agent_runtime import (
     ModelStepPort,
     RuntimeLimits,
     ToolDescriptor,
     ToolPort,
     validate_deadline,
 )
-from openbot_agent_runtime.errors import FailureReason, RuntimeFailure
-from openbot_agent_runtime.guard import RunGuard
-from openbot_agent_runtime.sdk_ports import PortModel, PortToolset
+from openbot_agent_runtime import FailureReason, RuntimeFailure
+from openbot_agent_runtime import RunGuard
+from openbot_agent_runtime import PortModel, PortToolset
 
 from .work_store import PostgresWorkStore
 from .work_temporal_activity import bind_current_activity
 from .work_temporal_start import load_current_activity_task
 from .work_values import InvalidWork, WorkConflict, text
 
-__all__ = ['WorkRuntimeDeps', 'WorkRuntimePortFactory', 'WorkRuntimeServices']
+__all__ = ["WorkRuntimeDeps", "WorkRuntimePortFactory", "WorkRuntimeServices"]
 
-SCOPE_MISMATCH = 'runtime_deps_scope_mismatch'
+SCOPE_MISMATCH = "runtime_deps_scope_mismatch"
 """Exact conflict text the existing reference Worker uses for a deps/context disagreement.
 
 Reusing one stable signal keeps callers, logs and tests aligned without inventing a new error
@@ -78,6 +79,7 @@ class WorkRuntimeDeps:
     They are a routing hint, not authority: the factory re-derives the actual binding from the
     pinned SDK snapshot and refuses any disagreement before it assembles services.
     """
+
     task_id: str
     run_id: str
     correction_token: str | None = None
@@ -93,6 +95,7 @@ class WorkRuntimeServices:
     offered to the model and ``inline_tools`` the subset the executing toolset may reach. This is
     configuration only: it holds no guard, catalog, lease or budget, and it grants no effect.
     """
+
     model_step: ModelStepPort
     tool_call: ToolPort
     model_tools: Sequence[ToolDescriptor]
@@ -107,13 +110,23 @@ class WorkRuntimePortFactory:
     :meth:`toolset_factory` call builds a fresh guard, catalog and port.
     """
 
-    def __init__(self, store: PostgresWorkStore, client: Any, *, expected_namespace,
-                 expected_queue, expected_workflow_type, load_services,
-                 limits: RuntimeLimits = RuntimeLimits(), deadline_seconds: float = 30) -> None:
+    def __init__(
+        self,
+        store: PostgresWorkStore,
+        client: Any,
+        *,
+        expected_namespace,
+        expected_queue,
+        expected_workflow_type,
+        load_services,
+        limits: RuntimeLimits = RuntimeLimits(),
+        deadline_seconds: float = 30,
+    ) -> None:
         if not isinstance(limits, RuntimeLimits):
             raise RuntimeFailure(
                 FailureReason.INVALID_REQUEST,
-                f"limits must be RuntimeLimits, got {type(limits).__name__}")
+                f"limits must be RuntimeLimits, got {type(limits).__name__}",
+            )
         # The existing contracts own both validations: one bounded limit set and one bounded,
         # finite, positive deadline. Expected routing is deliberately not re-validated here; the
         # existing binding gate owns it.
@@ -137,15 +150,22 @@ class WorkRuntimePortFactory:
         authority callback re-derives that binding before and after every model await.
         """
         guard, services, model_catalog, _ = await self._prepare(deps)
-        return PortModel(step_port=services.model_step, catalog=model_catalog, guard=guard,
-                         limits=self._limits)
+        return PortModel(
+            step_port=services.model_step,
+            catalog=model_catalog,
+            guard=guard,
+            limits=self._limits,
+        )
 
     async def deferred_catalog(self, deps: WorkRuntimeDeps) -> ToolCatalog:
         """Detached non-executing declarations from this accepted activity's trusted catalog."""
         _, _, model, inline = await self._prepare(deps)
         names = {tool.name for tool in inline.descriptors}
-        return ToolCatalog(tuple(tool for tool in model.descriptors if tool.name not in names),
-            max_tools=self._limits.catalog_tools, max_bytes=self._limits.catalog_bytes)
+        return ToolCatalog(
+            tuple(tool for tool in model.descriptors if tool.name not in names),
+            max_tools=self._limits.catalog_tools,
+            max_bytes=self._limits.catalog_bytes,
+        )
 
     async def toolset_factory(self, deps: WorkRuntimeDeps) -> PortToolset:
         """Return a fresh ``PortToolset`` for one Activity, or refuse before any tool work.
@@ -154,13 +174,18 @@ class WorkRuntimePortFactory:
         declaration can never be reached through the toolset.
         """
         guard, services, _, inline_catalog = await self._prepare(deps)
-        return PortToolset(catalog=inline_catalog, tool_port=services.tool_call, guard=guard,
-                           limits=self._limits)
+        return PortToolset(
+            catalog=inline_catalog,
+            tool_port=services.tool_call,
+            guard=guard,
+            limits=self._limits,
+        )
 
     # -- internals -------------------------------------------------------------
 
-    async def _prepare(self, deps: WorkRuntimeDeps
-                       ) -> tuple[RunGuard, WorkRuntimeServices, ToolCatalog, ToolCatalog]:
+    async def _prepare(
+        self, deps: WorkRuntimeDeps
+    ) -> tuple[RunGuard, WorkRuntimeServices, ToolCatalog, ToolCatalog]:
         """Validate one Activity and return its fresh guard, services and final catalogs."""
         _validated_deps(deps)
         # The guard is created before the context load so its single monotonic deadline spans the
@@ -174,33 +199,39 @@ class WorkRuntimePortFactory:
             deadline_seconds=self._deadline_seconds,
         )
         context = await load_current_activity_task(
-            self._store, self._client, expected_namespace=self._expected_namespace,
+            self._store,
+            self._client,
+            expected_namespace=self._expected_namespace,
             expected_queue=self._expected_queue,
-            expected_workflow_type=self._expected_workflow_type)
+            expected_workflow_type=self._expected_workflow_type,
+        )
         if (context.task_id, context.run_id) != (deps.task_id, deps.run_id):
             raise WorkConflict(SCOPE_MISMATCH)
         # A context loader that outlived the deadline is refused here, and the actual current
         # binding is re-derived before any service is assembled: cancellation, revocation or a
         # superseding Activity during that awaited load must not reach load_services.
-        guard.check_sync('context load')
+        guard.check_sync("context load")
         await self._assert_scope(deps)
-        guard.check_sync('binding before services')
+        guard.check_sync("binding before services")
         if deps.correction_token is not None:
             from .work_corrections import CorrectionStore
-            await CorrectionStore(self._store).read(context.task_id, context.run_id, deps.correction_token)
+
+            await CorrectionStore(self._store).read(
+                context.task_id, context.run_id, deps.correction_token
+            )
             context = replace(context, correction_token=deps.correction_token)
         outcome = self._load_services(context)
         services = await outcome if inspect.isawaitable(outcome) else outcome
         services = _validated_services(services)
         # The same deadline still applies after the service loader; it is never restarted.
-        guard.check_sync('service load')
+        guard.check_sync("service load")
         await self._assert_scope(deps)
-        guard.check_sync('binding after services')
+        guard.check_sync("binding after services")
         model_catalog, inline_catalog = _detached_catalogs(services, self._limits)
         # The correction profile may discard a stale, unfinished model segment. It must never
         # contain inline effects, including after a Worker/configuration change.
         if deps.correction_token is not None and inline_catalog.descriptors:
-            raise WorkConflict('correction_inline_tools_unsupported')
+            raise WorkConflict("correction_inline_tools_unsupported")
         return guard, services, model_catalog, inline_catalog
 
     async def _assert_scope(self, deps: WorkRuntimeDeps) -> None:
@@ -211,9 +242,12 @@ class WorkRuntimePortFactory:
         trusts the serialized routing identity.
         """
         accepted = await bind_current_activity(
-            self._store, self._client, expected_namespace=self._expected_namespace,
+            self._store,
+            self._client,
+            expected_namespace=self._expected_namespace,
             expected_queue=self._expected_queue,
-            expected_workflow_type=self._expected_workflow_type)
+            expected_workflow_type=self._expected_workflow_type,
+        )
         if (accepted.task_id, accepted.run_id) != (deps.task_id, deps.run_id):
             raise WorkConflict(SCOPE_MISMATCH)
 
@@ -226,13 +260,17 @@ def _validated_deps(deps: WorkRuntimeDeps) -> WorkRuntimeDeps:
     if not isinstance(deps, WorkRuntimeDeps):
         raise RuntimeFailure(
             FailureReason.INVALID_REQUEST,
-            f"runtime deps must be WorkRuntimeDeps, got {type(deps).__name__}")
+            f"runtime deps must be WorkRuntimeDeps, got {type(deps).__name__}",
+        )
     try:
         text(deps.task_id, 128)
         text(deps.run_id, 128)
-        if deps.correction_token is not None: text(deps.correction_token, 128)
+        if deps.correction_token is not None:
+            text(deps.correction_token, 128)
     except InvalidWork as error:
-        raise RuntimeFailure(FailureReason.INVALID_REQUEST, 'Invalid Task/Run correlation ID') from error
+        raise RuntimeFailure(
+            FailureReason.INVALID_REQUEST, "Invalid Task/Run correlation ID"
+        ) from error
     return deps
 
 
@@ -241,7 +279,8 @@ def _validated_services(services: Any) -> WorkRuntimeServices:
     if not isinstance(services, WorkRuntimeServices):
         raise RuntimeFailure(
             FailureReason.INVALID_REQUEST,
-            f"load_services must return WorkRuntimeServices, got {type(services).__name__}")
+            f"load_services must return WorkRuntimeServices, got {type(services).__name__}",
+        )
     if not callable(services.model_step):
         raise RuntimeFailure(FailureReason.MODEL_PORT_UNAVAILABLE, "model_step must be callable")
     if not callable(services.tool_call):
@@ -249,8 +288,9 @@ def _validated_services(services: Any) -> WorkRuntimeServices:
     return services
 
 
-def _detached_catalogs(services: WorkRuntimeServices,
-                       limits: RuntimeLimits) -> tuple[ToolCatalog, ToolCatalog]:
+def _detached_catalogs(
+    services: WorkRuntimeServices, limits: RuntimeLimits
+) -> tuple[ToolCatalog, ToolCatalog]:
     """Validate, cross-check and detach the model and executing catalogs.
 
     The existing :class:`ToolCatalog` validates every descriptor, name, schema and byte bound. An
@@ -260,23 +300,37 @@ def _detached_catalogs(services: WorkRuntimeServices,
     shallow-copies a nested schema and an alias would let a later caller mutation change a live
     port.
     """
-    model_declared = ToolCatalog(services.model_tools, max_tools=limits.catalog_tools,
-                                 max_bytes=limits.catalog_bytes)
-    inline_declared = ToolCatalog(services.inline_tools, max_tools=limits.catalog_tools,
-                                  max_bytes=limits.catalog_bytes)
+    model_declared = ToolCatalog(
+        services.model_tools,
+        max_tools=limits.catalog_tools,
+        max_bytes=limits.catalog_bytes,
+    )
+    inline_declared = ToolCatalog(
+        services.inline_tools,
+        max_tools=limits.catalog_tools,
+        max_bytes=limits.catalog_bytes,
+    )
     for descriptor in inline_declared.descriptors:
         try:
             declared = model_declared.descriptor(descriptor.name)
         except RuntimeFailure:
             raise RuntimeFailure(
                 FailureReason.CATALOG_INVALID,
-                f"inline tool {descriptor.name!r} is not declared by the model catalog") from None
+                f"inline tool {descriptor.name!r} is not declared by the model catalog",
+            ) from None
         if declared != descriptor:
             raise RuntimeFailure(
                 FailureReason.CATALOG_INVALID,
-                f"inline tool {descriptor.name!r} does not match its model declaration")
-    model_catalog = ToolCatalog(deepcopy(list(model_declared.descriptors)),
-                                max_tools=limits.catalog_tools, max_bytes=limits.catalog_bytes)
-    inline_catalog = ToolCatalog(deepcopy(list(inline_declared.descriptors)),
-                                 max_tools=limits.catalog_tools, max_bytes=limits.catalog_bytes)
+                f"inline tool {descriptor.name!r} does not match its model declaration",
+            )
+    model_catalog = ToolCatalog(
+        deepcopy(list(model_declared.descriptors)),
+        max_tools=limits.catalog_tools,
+        max_bytes=limits.catalog_bytes,
+    )
+    inline_catalog = ToolCatalog(
+        deepcopy(list(inline_declared.descriptors)),
+        max_tools=limits.catalog_tools,
+        max_bytes=limits.catalog_bytes,
+    )
     return model_catalog, inline_catalog

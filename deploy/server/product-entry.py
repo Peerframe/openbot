@@ -39,7 +39,7 @@ def environment(values):
 
 def preflight(env):
     spec=importlib.util.spec_from_file_location('product_environment',ROOT/'apps/server-python/scripts/verify_environment.py')
-    verifier=importlib.util.module_from_spec(spec);spec.loader.exec_module(verifier);verifier.verify(worker=True)
+    verifier=importlib.util.module_from_spec(spec);spec.loader.exec_module(verifier);verifier.verify(product=True)
     for name in ('OBJECT_ROOT','ARTIFACT_ROOT','MODEL_DIRECTORY'):
         path=Path(env['OPENBOT_CONTROL_'+name]);info=path.lstat()
         if path.resolve()!=path or not stat.S_ISDIR(info.st_mode) or info.st_uid!=os.geteuid() or stat.S_IMODE(info.st_mode)!=0o700:
@@ -55,7 +55,7 @@ def preflight(env):
 
 def main():
     os.umask(0o077)
-    sys.path[:0]=[str(ROOT/'apps/server-python/src'),str(ROOT/'packages/harness/src')]
+    sys.path[:0]=[str(ROOT/'apps/server-python/src')]
     try:
         env=environment(os.environ);preflight(env)
     except Exception:

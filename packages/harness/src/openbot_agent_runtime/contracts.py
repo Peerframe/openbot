@@ -13,7 +13,7 @@ to the Server, or any other Server write.
 from __future__ import annotations
 
 import math
-from collections.abc import Awaitable, Callable, Mapping, Sequence
+from collections.abc import Awaitable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Final, Literal, Protocol, TypeAlias
 
@@ -228,13 +228,9 @@ class RuntimePorts:
                 "an authority port is required; there is no permissive fallback",
             )
         if not callable(self.model):
-            raise RuntimeFailure(
-                FailureReason.MODEL_PORT_UNAVAILABLE, "a model port is required"
-            )
+            raise RuntimeFailure(FailureReason.MODEL_PORT_UNAVAILABLE, "a model port is required")
         if not callable(self.tool):
-            raise RuntimeFailure(
-                FailureReason.TOOL_PORT_UNAVAILABLE, "a tool port is required"
-            )
+            raise RuntimeFailure(FailureReason.TOOL_PORT_UNAVAILABLE, "a tool port is required")
         if self.corrections is not None and not callable(self.corrections):
             raise RuntimeFailure(
                 FailureReason.CORRECTION_INVALID, "corrections port must be callable"

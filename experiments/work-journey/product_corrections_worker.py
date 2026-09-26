@@ -5,7 +5,7 @@ import secrets
 import sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
-sys.path[:0]=[str(ROOT/'apps/server-python/src'),str(ROOT/'packages/harness/src')]
+sys.path[:0]=[str(ROOT/'apps/server-python/src')]
 from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart, ToolReturnPart, ModelMessagesTypeAdapter
 from pydantic_ai.usage import RequestUsage

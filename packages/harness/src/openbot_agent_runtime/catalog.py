@@ -79,9 +79,7 @@ class ToolCatalog:
                     f"tool {name!r} declares an unsupported or invalid JSON Schema",
                 ) from exc
             validated.append(
-                ToolDescriptor(
-                    name=name, description=descriptor.description, input_schema=schema
-                )
+                ToolDescriptor(name=name, description=descriptor.description, input_schema=schema)
             )
 
         payload = [

@@ -19,7 +19,7 @@ def emit(**value):print(json.dumps(value),flush=True)
 
 async def qualify(repo,fixture_path,directory):
     sys.path[:0]=[str(Path(__file__).resolve().parent),str(repo/'experiments/work-journey'),
-                 str(repo/'apps/server-python/src'),str(repo/'packages/harness/src')]
+                 str(repo/'apps/server-python/src')]
     import httpx2
     import psycopg
     from product_http_fixture import API,Process

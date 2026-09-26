@@ -53,12 +53,14 @@ import functools
 import inspect
 from copy import deepcopy
 from collections.abc import Awaitable, Callable, Mapping, Sequence
-from typing import Any, Final, TypeAlias
+from typing import Any, Final, TypeAlias, cast
 
 from pydantic_ai import Agent
 from pydantic_ai.models import Model
+from pydantic_ai.capabilities.resolve_model_id import ModelIdResolver
 from pydantic_ai.durable_exec.temporal import TemporalDurability
 from temporalio import activity as temporal_activity, workflow
+from temporalio.workflow import ActivityConfig
 
 try:  # Public location on the reviewed 2.47.0 release; fallback keeps the diagnostic readable.
     from pydantic_ai.capabilities import ResolveModelId
@@ -355,10 +357,11 @@ def build_temporal_agent(
         retries=0,
         capabilities=[
             TemporalDurability(
-                activity_config=deepcopy(dict(activity_config)),
-                model_activity_config=deepcopy(dict(model_activity_config)),
+                activity_config=cast(ActivityConfig, deepcopy(dict(activity_config))),
+                model_activity_config=cast(ActivityConfig, deepcopy(dict(model_activity_config))),
             ),
-            ResolveModelId(resolve_model),
+            # The SDK awaits either return shape; replay still receives inert metadata.
+            ResolveModelId(cast(ModelIdResolver[Any], resolve_model)),
         ],
     )
     # Same explicit assertion as ``build_sdk_agent``: instrumentation is off and owned here, not

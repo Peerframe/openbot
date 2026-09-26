@@ -48,10 +48,11 @@ asyncio.run(main())
 
 
 def test_a_completed_run_writes_nothing_to_stdout() -> None:
-    env = {**os.environ, "PYTHONPATH": str(SRC)}
+    env = dict(os.environ)
+    env.pop("PYTHONPATH", None)
     env.pop("PYDANTIC_AI_NO_BANNER", None)
     completed = subprocess.run(
-        [sys.executable, "-c", RUN_SCRIPT],
+        [sys.executable, "-I", "-c", RUN_SCRIPT],
         capture_output=True,
         text=True,
         env=env,

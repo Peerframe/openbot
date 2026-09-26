@@ -324,7 +324,10 @@ try {
       "tests/test_browser_sessions.py",
       "tests/test_knowledge_runtime.py",
       "tests/test_product_extensions.py",
-      "-q",
+      "-v",
+      "-o",
+      "faulthandler_timeout=45",
+      "--durations=10",
     ],
     {
       cwd: join(root, "apps/server-python"),
@@ -346,7 +349,11 @@ try {
     .replaceAll(tsRevocableToken, "[fixture token]")
     .replaceAll(ownerPassword, "[fixture password]");
   console.log(output.trim());
-  assert.equal(result.status, 0, "Python/PostgreSQL compatibility checks failed.");
+  assert.equal(
+    result.status,
+    0,
+    `Python/PostgreSQL compatibility checks failed (code=${result.error?.code ?? "none"}, signal=${result.signal ?? "none"}).`,
+  );
   // The full Worker SDK closure is optional in the default control venv. Model-connection
   // tests delete all connections, so their fixture must never share the general database.
   if (process.env.OPENBOT_TEMPORAL_TEST_PYTHON) {
@@ -460,7 +467,6 @@ try {
             join(root, "experiments/work-journey"),
             join(root, "experiments/linux-execution"),
             join(root, "apps/server-python/src"),
-            join(root, "packages/harness/src"),
           ].join(delimiter),
         },
         encoding: "utf8",

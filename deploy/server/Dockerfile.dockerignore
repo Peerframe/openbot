@@ -40,7 +40,12 @@
 !apps/server-python/scripts/verify_environment.py
 !apps/server-python/src/**
 !packages/harness/
-!packages/harness/src/**
+!packages/harness/**
+packages/harness/.venv/**
+packages/harness/.build-venv/**
+packages/harness/.quality-venv/**
+packages/harness/dist/**
+packages/harness/**/__pycache__/**
 !apps/desktop/
 !apps/desktop/resources/
 !apps/desktop/resources/openbot-icon.png

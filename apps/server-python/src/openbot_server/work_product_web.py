@@ -3,7 +3,7 @@ import asyncio
 from copy import deepcopy
 import hmac
 
-from openbot_agent_runtime.contracts import ToolDescriptor
+from openbot_agent_runtime import ToolDescriptor
 
 from . import work_temporal_activity as temporal
 from .public_source import PublicWebClient, PublicWebError, SearchConfiguration, normalize_source_url, query_input, task_source_urls

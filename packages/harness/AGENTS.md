@@ -1,7 +1,8 @@
 # Python runtime contributor rules
 
 This is the single active harness source, moved from `apps/agent-runtime-python` in C2.
-Wheel packaging and installed-consumer acceptance are in progress; follow the current handoff.
+Build a typed wheel with `scripts/build.sh`; hosts and tests consume installed artifacts.
+See README for separate base, build, quality, Worker and product closures; the handoff tracks acceptance.
 Start with the [core route](../../docs/REPOSITORY_MAP.md#python-core). `contracts.py` defines bounded
 ports; `executor.py` composes ordinary execution; `temporal_agent.py` is optional Worker composition.
 Keep ordinary import independent of Temporal and of control/database/provider implementations.
@@ -14,4 +15,5 @@ Do not collapse a bounded process lifetime into a replayable Activity or change 
 Use `scripts/bootstrap.sh`, then `scripts/check.sh` from this directory for the locked, synthetic
 core suite. The map lists focused `-k` selectors and actual consumers. Optional Temporal integration
 requires its separate Worker environment; base tests are not replay evidence. Keep dependencies and
-lock/environment checks intact. No core move, wheel or new public API is implied by these rules.
+lock/environment checks intact. Use root exports for ordinary consumers; Temporal remains explicit. Run `scripts/quality.sh` for
+Ruff, mypy and import/size boundaries. Do not add build/test tools to runtime closures.

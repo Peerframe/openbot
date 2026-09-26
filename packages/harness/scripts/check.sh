@@ -11,5 +11,7 @@ if [ ! -x .venv/bin/python ]; then
   exit 1
 fi
 
+sh scripts/build.sh
+sh scripts/install-wheel.sh "$here/.venv/bin/python"
 ./.venv/bin/python scripts/verify_environment.py
 exec ./.venv/bin/python -m pytest tests "$@"

@@ -9,6 +9,8 @@ const ignoredDirectories = new Set([
   ".turbo",
   ".venv",
   ".worker-venv",
+  ".build-venv",
+  ".quality-venv",
   ".pytest_cache",
   "build",
   "coverage",

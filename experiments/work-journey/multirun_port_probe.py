@@ -71,13 +71,7 @@ from temporalio.client import Client
 from temporalio.common import RetryPolicy, WorkflowIDReusePolicy
 from temporalio.worker import Replayer, Worker
 
-# Repository paths without pathlib.Path.resolve(): the Temporal workflow sandbox refuses
-# `Path.resolve` while validating this module (observed failure evidence in REVIEW-01.md).
-_HERE = Path(__file__).parent
-_SRC = str(_HERE.parents[1] / 'apps' / 'agent-runtime-python' / 'src')
-if _SRC not in sys.path:
-    sys.path.insert(0, _SRC)
-
+# Import the installed harness; Workflow replay never resolves repository source paths.
 with workflow.unsafe.imports_passed_through():
     # The reviewed runtime package is imported outside the workflow sandbox. It pulls compiled
     # extensions (jsonschema_rs) and is non-deterministic by construction, so the sandbox must not

@@ -3,7 +3,7 @@ import asyncio,json,os,runpy,sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
-sys.path[:0]=[str(ROOT/'apps/server-python/src'),str(ROOT/'packages/harness/src')]
+sys.path[:0]=[str(ROOT/'apps/server-python/src')]
 import httpx2
 from openbot_server import work_product_runtime as runtime
 from openbot_server import work_product_service as service

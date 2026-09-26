@@ -352,9 +352,7 @@ jobs:
       - name: Bootstrap optional model and durable Worker qualification
         shell: bash
         run: |
-          python3.12 -m venv apps/server-python/.worker-venv
-          apps/server-python/.worker-venv/bin/python -m pip install \
-            -r apps/server-python/requirements-worker.lock
+          OPENBOT_CONTROL_PYTHON=python3.12 apps/server-python/scripts/bootstrap-worker.sh
           apps/server-python/.worker-venv/bin/python -m pip check
           apps/server-python/.worker-venv/bin/python -I apps/server-python/scripts/verify_environment.py --worker
           apps/server-python/.worker-venv/bin/python -B experiments/work-journey/probe.py --help > /dev/null
@@ -405,12 +403,13 @@ jobs:
           python3.12 -m venv "$RUNNER_TEMP/openbot-work-reference"
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install \
             -r apps/server-python/requirements-worker.lock
+          packages/harness/scripts/install-wheel.sh "$RUNNER_TEMP/openbot-work-reference/bin/python"
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip check
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -I apps/server-python/scripts/verify_environment.py --worker
       - name: Qualify adjacent Temporal release recovery with PostgreSQL and mutual TLS
         shell: bash
         env:
-          PYTHONPATH: apps/server-python/src:packages/harness/src:experiments/work-journey:experiments/linux-execution
+          PYTHONPATH: apps/server-python/src:experiments/work-journey:experiments/linux-execution
         run: |
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/linux-execution -p 'test_*.py' -q
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q experiments/linux-execution/protected_host_test.py experiments/linux-execution/protected_native_test.py
@@ -459,9 +458,12 @@ jobs:
       - name: Prepare the exact product Worker environment
         shell: bash
         run: |
+          PYTHON=python3.12 packages/harness/scripts/bootstrap-build.sh
+          packages/harness/scripts/build.sh
           python3.12 -m venv "$RUNNER_TEMP/openbot-work-reference"
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install \
             -r apps/server-python/requirements-worker.lock
+          packages/harness/scripts/install-wheel.sh "$RUNNER_TEMP/openbot-work-reference/bin/python"
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip check
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -I apps/server-python/scripts/verify_environment.py --worker
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0

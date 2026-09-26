@@ -1,0 +1,2 @@
+# Local artifact, installed from the freshly built wheel, never fetched by name.
+openbot-agent-runtime==0.1.0

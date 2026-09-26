@@ -162,3 +162,47 @@ path-only move is not wheel, consumer or Temporal qualification. C3 remains unst
 Path-move check: original core suite 419 passed / 1 optional Temporal module skipped (60.15s);
 no runtime implementation bytes changed. Docs: 4 routing tests / 535 Markdown files passed.
 Research reference grammar now also accepts package-owned RESEARCH after its directory move.
+
+
+### C2 current local evidence (in progress, 2026-09-27)
+
+Path-only commit: `17fb2f4`; package/integration changes remain owned by this task and uncommitted.
+Hatchling wheel, explicit public imports, optional Temporal import, separate build/quality locks,
+Ruff/mypy and import/size gates are implemented. Four legacy module caps have concrete reasons;
+no automatic baseline refresh. Core tests now consume an installed wheel, not pytest pythonpath.
+Product external closure is 58 pins derived from existing Worker metadata, plus the local package;
+Worker test closure is 63 external + local. Runtime and dev core closures are 18/23 external + local.
+
+| C2 check | Actual evidence |
+| --- | --- |
+| Outside-repo wheel | clean venv, `-I`, site-packages path; exact 19 distributions; no DB/Temporal/pytest/build tools; synthetic tool returned canonical/model/UI results |
+| Full core regression | 436 passed, 1 optional Temporal module skipped, 63.96s; explicit separate Worker validation below |
+| Extension | 6 passed: canonical projection, declined authority, error, unknown without retry, cancellation, mid-read revocation; resource cleanup asserted |
+| Type/quality | Ruff/format and mypy passed, 14 core/example/real-adapter files; explicit repo config avoids user-global Ruff rules |
+| Cross-language | generated real Work GET response, Web uses generated type + Zod; 11 Python HTTP/DTO→Web cases passed; Web typecheck/freshness passed |
+| Actual mTLS Temporal | concurrent Runs / isolated cancellation accounting and artifacts / real offline replay passed; public HTTP + PostgreSQL + scripted ports; no live model |
+| Container | `runtime-product` image built on arm64; smoke passed login, built Web, docx/pdf/OCR initialization, restart/persistent keys/files, 45 migrations, preflight refusal, SIGTERM and resource cleanup |
+| Desktop | real macOS arm64 payload staged; 59-pin product check and pip check pass; actual start/login/restart, parent EOF and invalid-config/symlink cleanup passed; synthetic encryption, native Keychain not claimed |
+| Same implementation | SHA-256 comparison of all 12 current source modules matches core venv, Worker venv, staged Desktop and container installed packages |
+
+Corrected actual integration failures: an old test injected the former eager Temporal module;
+lazy-import injection now exercises the same refusal. Desktop build venv bundled pip lacks
+`--resume-retries`, so only that build-tool invocation uses supported arguments (no pip upgrade).
+Desktop launcher still selected `--worker` after the production split; it now uses `--product`.
+Experimental path-injection removal left two malformed imports; all modified Python now parses,
+and the corrected real mTLS journey passed. The Work acceptance file was moved out of product src
+so the lean container build need not install Vitest. Full-root scanner exclusions now account for
+the two explicit generated tool venvs, preserving frozen oracle/source symlink refusal.
+
+Current checkpoint: full `npm run check` exited 0; final Turbo build 19/19 successful,
+18 cached. The control base suite passed 836 / 2 environment-only skips in 105.89s with the
+unchanged 300s limit; the earlier timeout did not recur. Worker collection exposed two existing
+catalog ceilings absent from root exports; those are now public and the import checker rejects
+undeclared root names as well as private submodules. All 13 boundary tests and mypy passed;
+outside-checkout wheel installation passed again (19 exact distributions). The Worker suite and
+final macOS preview staging are running; their results are not yet claimed. The last source hash
+comparison predates this four-line export fix, so final installed consumer matching remains pending.
+CI now builds the wheel before every cold Worker install. Generated build/quality/Worker venvs
+and Desktop payloads are excluded from runtime-fixture Docker context.
+C2 is not closed. C3 implementation follows these current consumer checks. Logs use `/private/tmp/openbot-c2-*`; these are local evidence,
+not tracked artifacts. No push, remote CI, release, paid model or production mutation occurred.

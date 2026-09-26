@@ -49,8 +49,7 @@ def cleanup_database(dsn,bot_id,channel_id,session_digest):
 
 async def qualify(repo,fixture_path,directory,restore_container=None):
     # Keep sibling candidate probes ahead of the checkout's already integrated helpers.
-    sys.path[:0]=[str(Path(__file__).resolve().parent),str(repo/'experiments/work-journey'),str(repo/'apps/server-python/src'),
-                 str(repo/'packages/harness/src')]
+    sys.path[:0]=[str(Path(__file__).resolve().parent),str(repo/'experiments/work-journey'),str(repo/'apps/server-python/src')]
     import httpx2
     import psycopg
     from product_http_fixture import API,Process

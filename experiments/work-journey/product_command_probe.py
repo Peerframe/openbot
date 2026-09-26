@@ -15,7 +15,7 @@ from urllib.request import Request
 from uuid import uuid4
 
 ROOT=Path(__file__).resolve().parents[2]
-sys.path[:0]=[str(ROOT/'apps/server-python/src'),str(ROOT/'packages/harness/src')]
+sys.path[:0]=[str(ROOT/'apps/server-python/src')]
 import psycopg
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding,PrivateFormat,PublicFormat,NoEncryption

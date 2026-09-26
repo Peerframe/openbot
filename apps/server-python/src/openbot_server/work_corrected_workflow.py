@@ -7,8 +7,8 @@ from pydantic_ai.usage import RunUsage, UsageLimits
 from pydantic_ai.toolsets import ExternalToolset
 
 with workflow.unsafe.imports_passed_through():
-    from openbot_agent_runtime.catalog import ToolCatalog
-    from openbot_agent_runtime.contracts import ToolDescriptor
+    from openbot_agent_runtime import ToolCatalog
+    from openbot_agent_runtime import ToolDescriptor
     from .work_runtime_ports import WorkRuntimeDeps
     from .work_deferred_values import parse_proposal
     from .work_values import InvalidWork

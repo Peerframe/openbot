@@ -11,6 +11,7 @@ scenario, which is the property the rest of the suite relies on.
 from __future__ import annotations
 
 from types import SimpleNamespace
+import sys
 from typing import Any
 
 import pytest
@@ -131,8 +132,8 @@ async def test_direct_toolset_refuses_a_temporal_workflow_before_any_tool_effect
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """An unwrapped custom toolset cannot silently run a tool during workflow replay."""
-    monkeypatch.setattr(
-        sdk_ports, "_temporal_workflow", SimpleNamespace(in_workflow=lambda: True)
+    monkeypatch.setitem(
+        sys.modules, "temporalio", SimpleNamespace(workflow=SimpleNamespace(in_workflow=lambda: True))
     )
     model = ScriptedModelPort([call("search", {"query": "a"}, call_id="c1")])
     tools = RecordingToolPort()

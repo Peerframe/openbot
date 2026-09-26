@@ -28,7 +28,7 @@ openbot/
 │   ├── server-python/       # Active Python product authority, API and trusted services
 │   └── node/                # Replaceable execution-node daemon
 ├── packages/
-│   ├── harness/           # Single Python execution core; wheel extraction in progress
+│   ├── harness/           # Typed Python execution core wheel
 │   ├── config/              # Validated environment contracts
 │   ├── db/                  # PostgreSQL schema and migrations
 │   ├── domain/              # Product entities
@@ -53,8 +53,7 @@ openbot/
 
 `apps/server` is retired. `npm run dev` uses `scripts/dev-python.mjs`; containers and the supported
 macOS arm64 local Desktop payload select Python product mode. Direct `serve.py` remains read-only
-unless configured. The runtime still lives under `packages/harness`; formal harness
-packaging is planned in C2, not already delivered. The retained Node parser closure is required.
+unless configured. The runtime is the typed `packages/harness` wheel, installed by development and product hosts. The retained Node parser closure is required.
 Use the [repository map](REPOSITORY_MAP.md) for bounded code/consumer/check routes and the
 [upgrade handoff](REPOSITORY_UPGRADE_PLAN.md) for C1→C2→C3 status.
 

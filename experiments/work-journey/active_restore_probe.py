@@ -128,7 +128,7 @@ def tls_snapshot(root):
 async def qualify(repo,output):
     canonical_count=len(json.loads((repo/'packages/db/migrations/meta/_journal.json').read_text())['entries'])
     sys.path[:0]=[str(Path(__file__).resolve().parent),str(repo/'experiments/work-journey'),
-        str(repo/'apps/server-python/src'),str(repo/'packages/harness/src')]
+        str(repo/'apps/server-python/src')]
     import httpx2
     import psycopg
     from product_http_fixture import API,Process,CLEAN_ENV
