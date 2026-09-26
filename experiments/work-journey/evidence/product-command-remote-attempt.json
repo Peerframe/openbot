@@ -1,0 +1,28 @@
+{
+  "kind": "product1-unstarted-cleanup",
+  "routeMatchedLocal": true,
+  "enforcerPublicPinMatchedLocal": true,
+  "runReservationAbsent": true,
+  "actionReservationAbsent": true,
+  "testProcessesAbsent": true,
+  "forwardListenerAbsent": true,
+  "socketAbsent": true,
+  "enforcerKeyRemoved": true,
+  "publicBundleRemoved": true,
+  "stageTombstoneRetained": true,
+  "before": {
+    "containerCount": 10,
+    "identitiesAndStateUnchanged": true,
+    "ipv4Ipv6SemanticsUnchanged": true
+  },
+  "after": {
+    "containerCount": 10,
+    "identitiesAndStateUnchanged": true,
+    "ipv4Ipv6SemanticsUnchanged": true
+  },
+  "newRunStarted": false,
+  "scope": "Actual product1 attempt ended before remote runner/Action reservation. No product/Linux integration success is claimed.",
+  "failureCategory": "remote-startup-unclassified",
+  "originalStderrRetained": false,
+  "automaticExecutionRetries": 0
+}

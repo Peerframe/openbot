@@ -204,7 +204,7 @@ export async function verifyNodeRuntimeArchive(filePath, architecture) {
 }
 
 export function collectProductionPackageGraph(lockfile, entryPoint = "apps/node") {
-  if (!["apps/node", "apps/server"].includes(entryPoint)) {
+  if (!["apps/node", "apps/server", "packages/python-node-runtime"].includes(entryPoint)) {
     throw new Error("Unsupported production entry point.");
   }
   if (lockfile?.lockfileVersion !== 3 || !isRecord(lockfile.packages)) {

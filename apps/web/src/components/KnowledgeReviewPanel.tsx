@@ -113,7 +113,20 @@ export function KnowledgeProposalReview({
       }}
     >
       <p className="knowledge-source">
-        来源任务：<code>{proposal.sourceRunId}</code> ·{" "}
+        {proposal.source?.kind === "task" ? (
+          <>
+            来源 Task：
+            <a href={`#/tasks?task=${encodeURIComponent(proposal.source.taskId)}`}>
+              {proposal.source.taskId}
+            </a>
+            {" · "}Work Run：<code>{proposal.source.runId}</code>
+          </>
+        ) : (
+          <>
+            来源频道 Run：<code>{proposal.sourceRunId}</code>
+          </>
+        )}
+        {" · "}
         {new Date(proposal.createdAt).toLocaleString()}
       </p>
       <label htmlFor={`${id}-title`}>

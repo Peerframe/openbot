@@ -37,6 +37,7 @@ import { DesktopInstallScreen } from "./components/DesktopInstallScreen";
 import { DesktopLocalWorkerScreen } from "./components/DesktopLocalWorkerScreen";
 import { DesktopSettingsScreen } from "./components/DesktopSettingsScreen";
 import { DesktopSetupScreen } from "./components/DesktopSetupScreen";
+import { EmployeeBrowser } from "./components/EmployeeBrowser";
 import { EmployeeProfileRail } from "./components/EmployeeProfileRail";
 import { EmployeeProfileView, type ProfileTab } from "./components/EmployeeProfileView";
 import { ExportEmployeeDialog } from "./components/ExportEmployeeDialog";
@@ -52,6 +53,7 @@ import {
 import { ImportEmployeeDialog } from "./components/ImportEmployeeDialog";
 import { LoginScreen } from "./components/LoginScreen";
 import { MobileNavigation, type MobilePanel } from "./components/MobileNavigation";
+import { ModelConnectionsDialog } from "./components/ModelConnectionsDialog";
 import { ModelSettingsScreen } from "./components/ModelSettingsScreen";
 import { NodeManagerDialog } from "./components/NodeManagerDialog";
 import { OpenBotMark } from "./components/OpenBotMark";
@@ -60,6 +62,8 @@ import { RunInspector } from "./components/RunInspector";
 import { ShareConversationDialog } from "./components/ShareConversationDialog";
 import { Sidebar } from "./components/Sidebar";
 import { SkillLibraryScreen } from "./components/SkillLibraryScreen";
+import { parseWorkEntry, WorkTasksEntry } from "./components/WorkTasksEntry";
+import { WorkTasksScreen } from "./components/WorkTasksScreen";
 import { createConversationSession } from "./conversation-session";
 import {
   type DesktopConnectionState,
@@ -77,6 +81,12 @@ import { updatePreferences, useWorkspacePreferences } from "./workspace-preferen
 type Dialog = "bot" | "channel" | "node" | undefined;
 
 export function App() {
+  const [workEntry, setWorkEntry] = useState(() => parseWorkEntry(window.location.hash));
+  useEffect(() => {
+    const update = () => setWorkEntry(parseWorkEntry(window.location.hash));
+    window.addEventListener("hashchange", update);
+    return () => window.removeEventListener("hashchange", update);
+  }, []);
   const material = useWorkspaceAppearance();
   const desktopBridge = getOpenBotDesktopBridge();
   const [desktopConnection, setDesktopConnection] = useState<
@@ -411,6 +421,25 @@ export function App() {
     return <LoginScreen onLogin={async (password) => setSession(await login(password))} />;
   }
 
+  if (workEntry)
+    return (
+      <WorkTasksEntry
+        initialTaskId={workEntry.taskId}
+        key={`${session.owner.id}:${desktopConnection?.status === "configured" ? desktopConnection.serverUrl : "web"}`}
+        onLogout={async () => {
+          explicitlyLoggedOut.current = true;
+          ++authRequest.current;
+          try {
+            await logout();
+          } catch (error) {
+            explicitlyLoggedOut.current = false;
+            throw error;
+          }
+          setSession({ authenticated: false });
+        }}
+      />
+    );
+
   if (nativeReady && !modelChecked)
     return (
       <main className="loading-screen">
@@ -554,7 +583,9 @@ export function AuthenticatedWorkspace({
   const navigation = useWorkspaceNavigation();
   const location = navigation.location;
   const destination =
-    location.kind === "automations" || location.kind === "skills" ? location.kind : "chat";
+    location.kind === "automations" || location.kind === "skills" || location.kind === "work"
+      ? location.kind
+      : "chat";
   const selectedChannelId = location.kind === "channel" ? location.id : undefined;
   const selectedEmployeeId = location.kind === "employee" ? location.id : undefined;
   const employeeInitialTab = location.kind === "employee" ? location.tab : "overview";
@@ -570,6 +601,9 @@ export function AuthenticatedWorkspace({
     };
   }, [conversationSession]);
   const [dialog, setDialog] = useState<Dialog>();
+  const [browserBotId, setBrowserBotId] = useState<string>();
+  const [modelServicesOpen, setModelServicesOpen] = useState(false);
+  const [modelServicesVersion, setModelServicesVersion] = useState(0);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>();
   const [error, setError] = useState<string>();
   const {
@@ -841,12 +875,13 @@ export function AuthenticatedWorkspace({
             重新连接
           </button>
         ) : null}
+        <a href="#/tasks">打开任务监督</a>
       </main>
     );
   }
 
   const selectedChannel = workspace.channels.find((channel) => channel.id === selectedChannelId);
-  const fullPage = destination === "skills" || destination === "automations";
+  const fullPage = destination !== "chat";
   const selectedRun = workspace.runs.find((run) => run.id === selectedRunId);
   const panelToggle = (
     <button
@@ -916,22 +951,26 @@ export function AuthenticatedWorkspace({
               <HashIcon />
               <h1
                 title={
-                  destination === "automations"
+                  destination === "work"
+                    ? "任务监督"
+                    : destination === "automations"
+                      ? "自动任务"
+                      : destination === "skills"
+                        ? "技能广场"
+                        : selectedEmployeeId
+                          ? (employeeProfile?.employee.name ?? "Bot 档案")
+                          : "频道聊天"
+                }
+              >
+                {destination === "work"
+                  ? "任务监督"
+                  : destination === "automations"
                     ? "自动任务"
                     : destination === "skills"
                       ? "技能广场"
                       : selectedEmployeeId
                         ? (employeeProfile?.employee.name ?? "Bot 档案")
-                        : "频道聊天"
-                }
-              >
-                {destination === "automations"
-                  ? "自动任务"
-                  : destination === "skills"
-                    ? "技能广场"
-                    : selectedEmployeeId
-                      ? (employeeProfile?.employee.name ?? "Bot 档案")
-                      : "频道聊天"}
+                        : "频道聊天"}
               </h1>
             </div>
           )}
@@ -979,6 +1018,7 @@ export function AuthenticatedWorkspace({
           onAutomations={() =>
             onSettings ? onSettings("automations") : navigation.navigate({ kind: "automations" })
           }
+          onWork={() => navigation.navigate({ kind: "work" })}
           onSkills={() => navigation.navigate({ kind: "skills" })}
           selectedChannelId={destination === "chat" ? selectedChannel?.id : undefined}
           selectedBotId={
@@ -992,12 +1032,14 @@ export function AuthenticatedWorkspace({
           onCreateBot={() => setDialog("bot")}
           onCreateChannel={() => setDialog("channel")}
           onManageNodes={() => setDialog("node")}
+          onManageModels={() => setModelServicesOpen(true)}
           onLogout={onLogout}
           onSettings={onSettings}
         />
       </div>
 
-      {destination === "automations" ? (
+      <WorkTasksScreen bots={workspace.bots} active={destination === "work" && active} nativeCapabilitiesEnabled />
+      {destination === "work" ? null : destination === "automations" ? (
         <AutomationsScreen bots={workspace.bots} channels={workspace.channels} />
       ) : destination === "skills" ? (
         <SkillLibraryScreen
@@ -1028,6 +1070,9 @@ export function AuthenticatedWorkspace({
           onAssign={() => assignEmployee(selectedEmployeeId)}
           onExport={() => setEmployeeExportOpen(true)}
           onProfileChanged={() => loadEmployeeProfile(selectedEmployeeId)}
+          onManageModels={() => setModelServicesOpen(true)}
+          modelServicesVersion={modelServicesVersion}
+          onOpenBrowser={() => setBrowserBotId(selectedEmployeeId)}
         />
       ) : selectedChannel ? (
         <ChannelWorkspace
@@ -1090,6 +1135,10 @@ export function AuthenticatedWorkspace({
           setMobilePanel(undefined);
           setDialog("node");
         }}
+        onManageModels={() => {
+          setMobilePanel(undefined);
+          setModelServicesOpen(true);
+        }}
         onSelectChannel={selectChannel}
         onSelectBot={openEmployee}
       />
@@ -1124,6 +1173,10 @@ export function AuthenticatedWorkspace({
           progress={workspace.progress.filter((item) => item.runId === selectedRun.id)}
           liveFrame={framesByRun.get(selectedRun.id)}
           run={selectedRun}
+          onOpenBrowser={() => {
+            setBrowserBotId(selectedRun.botId);
+            closeInspector();
+          }}
           onClose={closeInspector}
           onInspectRun={setSelectedRunId}
           onRun={(run) => {
@@ -1137,6 +1190,8 @@ export function AuthenticatedWorkspace({
         <CreateBotDialog
           onClose={() => setDialog(undefined)}
           onCreate={handleCreateBot}
+          onManageModels={() => setModelServicesOpen(true)}
+          modelServicesVersion={modelServicesVersion}
           onImport={() => {
             setDialog(undefined);
             setEmployeeImportOpen(true);
@@ -1152,6 +1207,18 @@ export function AuthenticatedWorkspace({
       ) : null}
       {dialog === "node" ? (
         <NodeManagerDialog onlineNodes={workspace.nodes} onClose={() => setDialog(undefined)} />
+      ) : null}
+      {browserBotId && workspace.bots.find((bot) => bot.id === browserBotId) ? (
+        <EmployeeBrowser
+          bot={workspace.bots.find((bot) => bot.id === browserBotId)!}
+          onClose={() => setBrowserBotId(undefined)}
+        />
+      ) : null}
+      {modelServicesOpen ? (
+        <ModelConnectionsDialog
+          onClose={() => setModelServicesOpen(false)}
+          onChanged={() => setModelServicesVersion((version) => version + 1)}
+        />
       ) : null}
       {sharedBotId && workspace.bots.find((bot) => bot.id === sharedBotId) ? (
         <ExportEmployeeDialog

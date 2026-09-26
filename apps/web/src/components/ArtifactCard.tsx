@@ -1,6 +1,6 @@
 import type { Artifact } from "@openbot/domain";
 import { type ReactNode, useState } from "react";
-import { getOpenBotDesktopBridge } from "../desktop-runtime";
+import { getArtifactShellSaver } from "../artifact-shell-save";
 
 export function ArtifactCard({
   artifact,
@@ -65,22 +65,22 @@ export function ArtifactDownloadLink({
         aria-label={preview ? `查看 ${artifact.name}` : `下载 ${artifact.name}`}
         aria-busy={saving || undefined}
         onClick={async (event) => {
-          const desktop = getOpenBotDesktopBridge();
-          if (preview || !desktop) return;
+          const shellSaver = getArtifactShellSaver();
+          if (preview || !shellSaver) return;
           event.preventDefault();
           if (saving) return;
           setSaving(true);
           setNotice(undefined);
           try {
-            const result = await desktop.saveReport?.(artifact.id);
+            const status = await shellSaver.save(artifact.id);
             setNotice(
-              result?.status === "saved"
+              status === "saved"
                 ? `${label}已保存`
-                : result?.status === "cancelled"
+                : status === "cancelled"
                   ? undefined
-                  : result?.status === "exists"
+                  : status === "exists"
                     ? "文件已存在，请换一个文件名。"
-                    : result?.status === "busy"
+                    : status === "busy"
                       ? "请先完成当前保存操作。"
                       : `无法保存${label}，请检查连接或更新 Desktop。`,
             );

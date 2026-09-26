@@ -1,0 +1,22 @@
+[project]
+name = "openbot-agent-runtime"
+version = "0.1.0"
+description = "Bounded Python agent execution unit for OpenBot. Proposes actions; owns no Run state."
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = [
+  "pydantic-ai-slim==2.47.0",
+  "jsonschema-rs==0.57.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==8.4.2"]
+
+# This package is consumed directly from src/ (see [tool.pytest.ini_options]
+# pythonpath). It deliberately declares no build backend: the Server supervises
+# it as a plain interpreter process, so a packaging step would add a download
+# and a second way to import the same code without adding any capability.
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q --strict-markers --strict-config"

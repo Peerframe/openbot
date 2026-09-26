@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { once } from "node:events";
 import { createServer } from "node:http";
 import { protocolVersion, type ServerMessage, serverMessageSchema } from "@openbot/protocol";
@@ -215,6 +216,45 @@ describe("node enrollment", () => {
       expect(code).toBe(1008);
       expect(reason.toString()).toBe("invalid-credential");
       expect(registry.list()).toEqual([]);
+    } finally {
+      client.terminate();
+      registry.close();
+      server.close();
+      await once(server, "close");
+    }
+  });
+
+  it("refuses browser receipts without Python browser-session authority", async () => {
+    const server = createServer();
+    const registry = new NodeRegistry(nodeIdentity());
+    registry.attach(server);
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const address = server.address();
+    if (address === null || typeof address === "string") throw new Error("Missing test port.");
+    const client = new WebSocket(`ws://127.0.0.1:${address.port}/ws/nodes`);
+    const runtimeMessages: NodeRunMessage[] = [];
+    registry.onRunMessage((_node, message) => runtimeMessages.push(message));
+    try {
+      await once(client, "open");
+      client.send(JSON.stringify(nodeHello("linux-node")));
+      await waitFor(() => registry.list().length === 1);
+      const closed = once(client, "close");
+      client.send(
+        JSON.stringify({
+          type: "browser.result",
+          protocolVersion,
+          nodeId: "linux-node",
+          requestId: randomUUID(),
+          sessionId: randomUUID(),
+          ok: false,
+          error: "unavailable",
+        }),
+      );
+      const [code, reason] = await withTimeout(closed);
+      expect(code).toBe(1008);
+      expect(reason.toString()).toBe("browser-session-unavailable");
+      expect(runtimeMessages).toEqual([]);
     } finally {
       client.terminate();
       registry.close();

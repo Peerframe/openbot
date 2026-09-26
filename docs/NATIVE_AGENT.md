@@ -114,7 +114,10 @@ records only retrieved IDs/revisions in audit; source Run IDs accompany reviewed
 model steps and final publication recheck those revisions and permissions. Disabling, deleting or
 editing a used record stops further use of the stale snapshot; content already sent upstream cannot
 be recalled. Pending proposals never enter retrieval. Each Bot can have at most 50 pending lessons;
-review the queue before creating more. Acceptance/rejection is serialized and cannot duplicate memory.
+review the queue before creating more. A full queue skips the optional candidate and records
+`KNOWLEDGE_PROPOSAL_SKIPPED` with reason `pending_limit`; the valid reply and reports still commit.
+Invalid proposals, revoked knowledge and database failures still fail closed.
+Acceptance/rejection is serialized and cannot duplicate memory.
 Rejected text is removed; accepted text lives in the Owner memory, not the proposal audit.
 
 This is an experimental reviewed-memory loop inspired by Hermes Agent, not autonomous skill learning.
@@ -143,3 +146,188 @@ Desktop Settings → Model & API includes Kimi (Moonshot CN), default model `kim
 ## Asynchronous coordination, corrections and output
 
 [Asynchronous collaboration](ASYNC_COLLABORATION.md) documents nonblocking assignment receipts, result joins, safe Owner corrections and real streamed text. The shared Run budget includes all continuations. Interrupted trees still fail on restart; external side effects are never automatically replayed.
+
+Continuations retain staged reports, source provenance, the frozen memory snapshot, consumed
+memory/skill revisions and the single candidate lesson. Their original per-Run limits still apply;
+an Owner correction or colleague join cannot reset those limits or bypass a consumed grant's
+revocation. Reports receive one source footer when prepared for publication.
+
+## Contribute without a UI or model account
+
+From a fresh checkout, use the repository's Node version, npm and a running Docker daemon with
+Linux container support:
+
+```sh
+npm ci --ignore-scripts
+node scripts/test-runtime-headless.mjs
+```
+
+The command builds only the Server's shared dependencies, starts a digest-pinned PostgreSQL 17.11
+fixture on a random loopback port, runs the isolated execution, native and collaboration tests serially, and removes
+its own container and temporary report files. The first run may download the image. No Web or
+Electron build, `.env`, Owner setup, model API key or paid request is required. Missing prerequisites
+fail the command; the acceptance suite does not silently skip its database checks.
+
+If an existing disposable PostgreSQL service is preferred, set
+`OPENBOT_COLLAB_TEST_DATABASE_URL` to a loopback URL whose database name starts with
+`openbot_collab_test_` (letters, digits and underscores only). Fixture tables in that database are
+reset. The command never uses `OPENBOT_DATABASE_URL`; it does not remove externally supplied
+databases. Integration suites sharing the same fixture database must run serially.
+
+| Change location | Responsibility and verification |
+| --- | --- |
+| `apps/server/src/agent-runtime.ts` | `executeAgentRuntime` composes the real SDK through explicit model, tool, authority, storage and audit ports. Use `agent-runtime.test.ts` without the Server app or database. |
+| `apps/server/src/native-agent.ts` | `executeAgentRun` binds Server-owned context, identities, tools and the `AgentRunStore` adapter to those ports; `NativeAgentRunner` owns scheduling, budgets, cancellation and continuation. Use `native-agent.test.ts` for adapter and authority regressions. |
+| `apps/server/src/postgres-agent-store.ts` | Durable claims, scope, cancellation, reply/report publication and audit. Use the headless and collaboration integration suites; an in-memory mock cannot establish transaction behavior. |
+| `apps/server/src/app.ts` | Owner-authenticated submission, stop, realtime observation and artifact download; UI clients do not own execution. |
+| `apps/server/src/native-agent-headless.integration.test.ts` | Runnable examples combining real Server routes, Owner authentication, PostgreSQL stores, file artifacts and the SDK's deterministic model. |
+
+The headless suite verifies authenticated task-to-download delivery, tool failure without partial
+publication, durable cancellation before a late result, SSE response disconnection without task
+abort, correction-time report retention, and optional learning saturation. Existing native and
+collaboration suites verify consumed reference revocation and bounded colleague joins.
+Requests use Hono's in-process HTTP interface and the real PostgreSQL driver; this is not a deployed
+socket/proxy test, paid-provider evaluation, process-crash recovery test or desktop certification.
+The fixture settings/model adapter is test-only and is never enabled by a production environment flag.
+
+For fast edits after dependencies are built:
+
+```sh
+node node_modules/vitest/vitest.mjs run apps/server/src/native-agent.test.ts
+npm run typecheck --workspace=@openbot/server
+```
+
+Run `npm run check` before handoff and the headless command after changing task lifecycle or
+publication behavior. See the [acceptance research](research/headless-runtime-acceptance.md).
+
+## Isolated execution ports
+
+For changes to iteration policy, use the production `executeAgentRuntime` unit directly. From a
+fresh checkout, this entry needs Node and npm but no Docker, Server process or model account:
+
+```sh
+npm ci --ignore-scripts
+npx turbo run build --filter='@openbot/domain...'
+node node_modules/vitest/vitest.mjs run apps/server/src/agent-runtime.test.ts
+```
+
+The unit accepts a prepared instruction, bounded messages, an abort signal and the shared Run
+budget. All ports except public output are required; fixtures supply explicit deterministic
+implementations. Production adapters are constructed only by the Server:
+
+| Port | Required contract |
+| --- | --- |
+| `model` | A resolved SDK model adapter plus its provider/model identity. Credentials, endpoints, HTTP bounds and model selection stay in the Server. String IDs that implicitly select the SDK gateway are rejected. |
+| `authority.assertActive` | Revalidate the exact claimed Run, settings, scope and consumed references. The unit checks before model calls and before/after tools, including after awaited correction reads. No permissive default is provided. |
+| `tools` | Local SDK definitions already bound to Server identities and target/approval policy, an explicit result-byte/web-budget policy for every tool, and fixed error classification. Each tool returns one completed JSON value; generators, provider-executed tools and missing/unbounded policies are rejected. |
+| `storage` | Read only this Run's authorized corrections and persist cumulative provider-reported usage before a subsequent model call or successful return. |
+| `audit.progress` | Resolve only after durable bounded progress commits. Web start audit must succeed before dispatch; failed result audit cannot become a successful execution. |
+| `output` (optional) | Observe public text deltas/reset events. It conveys no completion authority and excludes provider reasoning. |
+
+The SDK still owns model/tool iteration. The unit enforces the existing execution limits and
+returns validated text and applied correction IDs. This is a provisional execution result: only
+the Server can commit the reply, report metadata, optional candidate lesson, terminal Run state and
+audit together. The Server also retains grants, plugin approval, artifact storage, continuation
+state, task-tree scheduling and cancellation. Ports are trusted Server adapters, never capabilities
+accepted from a model, plugin or UI request.
+
+The isolated tests cover actual SDK tool feedback, scope revocation, durable audit/usage failure,
+invalid calls, bounded results, cancellation with a late answer, correction propagation, shared
+budgets and public streaming. The headless command above additionally verifies the same unit through
+the real Server and PostgreSQL. This internal module does not establish a separately published
+runtime package, process-crash checkpoints or multi-Server execution support. See the
+[port extraction research](research/runtime-execution-ports.md).
+
+### Replacing the execution adapter
+
+Server code can pass `NativeAgentOptions.executeRuntime` (an `AgentRuntimeExecutor`) to compose
+another reviewed execution adapter. `executeAgentRun` accepts the same option for focused tests;
+omitting it retains `executeAgentRuntime`. Roots, delegated tasks and continuations use the same
+selected adapter, with each Run's existing Server-owned budget and staged report state.
+
+`runAgentRuntime` guards entry and return, races cancellation, checks final text and accepts only
+unique correction IDs observed through the bound storage port. The Server runner still commits
+completion and publishes artifacts. The adapter must implement the existing per-step authority,
+audit, usage and tool policy contract; these final checks cannot replace those gates.
+
+This is an internal trusted-code extension point, not a per-task request field or worker protocol.
+Do not serialize model/tool ports or credentials to an external worker. Runtime selection and
+subprocess termination belong to the composition and process adapter described below; the seam
+alone does not implement those lifecycle behaviors. See the
+[executor seam research](research/runtime-executor-seam.md).
+
+### Server gates for an external loop
+
+`AgentRuntimeHost` prepares declarative tool schemas, executes one model step at a time and admits
+only matching, unused model-issued tool intents. Credentials, executable tools, approval policy,
+shared budgets and durable usage stay in the Server. It rereads corrections on each step, checks
+authority across asynchronous boundaries, bounds history/results and refuses new media references.
+A pending tool call blocks another step or completion; any operation failure seals the invocation.
+Final text must match the latest completed model response before the runner may commit it.
+
+The headless report journey exercises this host with the real Server and disposable PostgreSQL;
+unit tests cover denial, cancellation, failed persistence, concurrent calls and altered tool intents.
+The driver in that integration test is a deterministic two-step fixture. The production default
+remains the existing TypeScript SDK loop. See [host research](research/python-runtime-host.md).
+
+`createPythonAgentExecutor` now composes the host with a fixed Python executable/entry point,
+a minimal environment, bounded newline transport and owned POSIX process-group cleanup. A child
+failure aborts in-flight Server operations; only a final response followed by clean child exit can
+reach host completion checks. Transport/lifecycle tests use adversarial Node child fixtures and
+cover flooding, malformed traffic, concurrent/repeated requests, crash, cancellation and stubborn
+descendants. The host also streams bounded public text directly from the Server while the child
+awaits a complete model response; reasoning stays private and failed streams are not retried.
+These Node fixtures alone do not establish Python integration or Linux product support; the
+paired acceptance below runs the actual Python child. See the [wire profile](AGENT_RUNTIME_PROTOCOL.md)
+and [transport research](research/python-runtime-transport.md).
+
+### Paired runtime acceptance
+
+`npm run test:runtime:python` selects the real Python process for the Owner API/PostgreSQL journeys.
+It requires the package-local virtual environment and `scripts/run-worker.py`, runs the Python
+package checks first, and fails if either prerequisite is absent; it never falls back to TypeScript.
+The collaboration Runner cases use the same selection, including child cancellation and joined
+results; the focused unit tests retain their explicitly selected adapters.
+
+The paired journeys cover report download, cancellation, persisted scope revocation, durable
+audit/usage failure, the eight-step budget, per-step Owner corrections, approve/reject/cancel
+during plugin approval, provisional public streaming, and retained reports across continuation.
+They use deterministic SDK model responses and a synthetic plugin connector; they send no paid
+model request or external plugin effect. On macOS, both selected runtime lanes passed 222 cases
+across nine files, including 15 Owner API/database journeys. The Python lane first passed its
+367 package tests. The report journey preserves a Chinese filename through artifact download;
+delegation exercises provider IDs reused by a later model step. These are deterministic integration
+results, not paid-provider reliability measurements.
+
+### Explicit source-install selection
+
+The standalone Server accepts `OPENBOT_AGENT_RUNTIME=typescript|python`, defaulting to TypeScript.
+For the experimental Python path, bootstrap the package-local environment, run
+`npm run test:runtime:python`, then start the Server with `OPENBOT_AGENT_RUNTIME=python`.
+The normal Model Settings opt-in is still required; this selector grants no additional tool or
+model access. Root tasks, delegated tasks and continuation use the same selected adapter.
+
+Startup checks the fixed package worker, interpreter, imports and dependency lock from an empty
+temporary directory with a minimal environment. An absent or incompatible package fails before
+database migration or interrupted-Run recovery. There is no automatic install, command/script
+configuration, or fallback. Existing PostgreSQL data and migrations are unchanged. The optional
+[Python Server container](SERVER_CONTAINER.md#optional-python-execution-image) bundles the fixed
+interpreter and runtime dependency closure. The separate Linux reference result below covers
+the acceptance image; container packaging has its own startup and lifecycle smoke. See [activation research](research/python-runtime-activation.md).
+
+### Linux reference acceptance fixture
+
+`npm run test:runtime:linux` builds the dedicated `deploy/runtime-acceptance/Dockerfile` test image
+with pinned Node 24.21.0, Python 3.12.13 and the existing lockfiles, then runs the paired acceptance
+command against an owned PostgreSQL container. Only Docker and Node are needed on the host; the
+first build downloads public dependencies. The test containers share an isolated loopback namespace
+with no external network or published host ports. Model credentials and local collaboration files
+are excluded. The command removes its uniquely named containers and tagged image on exit; Docker
+may retain normal build-cache layers. It never selects or resets an existing database.
+
+This is a Linux/amd64 acceptance fixture, distinct from the production Server image. Running it on
+an ARM Mac uses emulation and does not prove native hosted CI or desktop support. The final
+reference run passed 369 Python tests and all 222 Server/PostgreSQL tests across nine files, with
+no external network. Earlier fixture failures and their corrections are recorded in the research.
+The `python-runtime` CI job runs this same command and is required by `check`; hosted execution
+has not been triggered from this local task.

@@ -1,0 +1,44 @@
+{
+  "format": "openbot.desktop.packaged-temporal-smoke/v1",
+  "connectedStarts": 2,
+  "pollerObservations": [
+    {
+      "format": "openbot.desktop.temporal-pollers/v1",
+      "freshActivityPollers": 1,
+      "freshWorkflowPollers": 1,
+      "sameWorkerIdentity": true,
+      "workerIdentitySha256": "1d9233a1ac6c4e91be83bd592a548b64d713d878ab4f0f2397582801173218a6"
+    },
+    {
+      "format": "openbot.desktop.temporal-pollers/v1",
+      "freshActivityPollers": 1,
+      "freshWorkflowPollers": 1,
+      "sameWorkerIdentity": true,
+      "workerIdentitySha256": "21551b6bcf0d4c8e304f21d521b0bc40581d10f6efec4a4ae1da78451518c15c"
+    }
+  ],
+  "invalidPrivateConfigRefusedAndPostgresStopped": true,
+  "isolatedQueue": true,
+  "originalLauncherUsed": true,
+  "diagnosticEvents": 2,
+  "fullInferenceVerified": false,
+  "workflowReplayVerified": false,
+  "parentEofStoppedActualApi": true,
+  "unsafeDirectoryRefusedAndPostgresStopped": true,
+  "pythonProductHealth": true,
+  "ownerLogin": true,
+  "postgresInitialized": true,
+  "restartPreservedData": true,
+  "serverAndPostgresStopped": true,
+  "syntheticOnly": true,
+  "nativeKeychainVerified": false,
+  "asarSha256": "452c9429b2a8ae16a9732e65b250e700ab3ec084f67cb4aca267eb268708c38e",
+  "matchingControllerHashes": {
+    "native-server.js": "62cc7faf9a54d424240f7c91e42d770a6d483bedcc28c2ddf6ef71d8be54838e",
+    "python-server.js": "4ebec0d833502b8bc0455110230ba121cbe9e8369bfe01c6d883e52d596c7b4d"
+  },
+  "canonicalMigrationsInPackage": 43,
+  "workerDependencyCountInPackage": 63,
+  "matchingPythonSourceFiles": 160,
+  "packagedLauncherMatchesCompiledSource": true
+}

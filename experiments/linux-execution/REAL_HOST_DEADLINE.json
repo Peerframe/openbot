@@ -1,0 +1,150 @@
+{
+  "binarySha256": {
+    "containerd": "8260dd2b405520c10d44f1b75ace6b58e2579d10113cadc6d6b8df533ff68f6e",
+    "containerd-shim-runsc-v1": "4b0c2a8eb7414d8b5f3d032e158784b454e9c98ffa3fdebbdd79047faf930d7c",
+    "docker": "9c46230f41e4263b3a9d93ae9284722709923c50d138bc64eed2bb6c02af0581",
+    "dockerd": "809c45f959337b17be8b413d96fdcaad826393eef643b4e476a5df918d25a162",
+    "gvisor-bin/checkpointgofer": "e29be2ab32a10eb885c4a46635f47b80ad661be6f23b5d7903f11906941c7aab",
+    "gvisor-bin/gvisor-sentry-prewarmer": "3315d7ad7c2d3751d349e4976fa02da1da6fd7e41746c35622304e5fabe4fce0",
+    "gvisor-bin/gvisor_sentry": "aff3ed7dfac54b04aab14de2dde53e021402f0ba238bc7ece3ac7d4b6604b055",
+    "gvisor-bin/runsc-fd-parking": "03af90d07ea466c10ecc3e3ba839b2a59540959dd3286aea3886917cba850c11",
+    "gvisor-bin/runsc-metric-server": "02bb563cd060fe7992ccd00927024b02b70e0803b61abfa015e158d9d7e88507",
+    "runsc": "c0f4ec0ac1198975d5cf919a78f2302426de096f69eebd33e50125c3ca42d699"
+  },
+  "formerFailedPreflightResourcesReconciled": true,
+  "limitations": [
+    "Not a hard real-time scheduler or universal future-host guarantee",
+    "Native cessation is not a business effect receipt",
+    "Product consume/partition/browser gates remain separate"
+  ],
+  "mechanism": "systemd 255 RuntimeMaxSec with non-restarting private Docker/containerd/runsc tree",
+  "observationBoundSecondsAfterNominalDeadline": 5,
+  "offlineArchiveSha256": "b6a087a833e6d00409197b8ba06071a1890df84eb52b770b757f092b7d2e8788",
+  "productionContainerCount": 10,
+  "productionContainerIdentityAndStateUnchanged": true,
+  "records": [
+    {
+      "businessOutcome": "unknown",
+      "case": "baseline",
+      "cleanupProblems": [],
+      "nativeResult": "timeout",
+      "noResend": true,
+      "nominalDeadline": 4492206.277041,
+      "observedStopLatencySeconds": 0.300188,
+      "originalNativeInvocationVerified": true,
+      "originalRuntimeTreeEmpty": true,
+      "output": {
+        "heartbeat": {
+          "bytes": 6013,
+          "sha256": "e289c5db60e2d79dea570b9f0b9f6ff1f96d744fbc31cec55115486847d7ca61"
+        },
+        "started": {
+          "bytes": 10,
+          "sha256": "1a3ac5a43bf788febbf92fd79edb4a091f95b4eb54815c45be37e3f157b9f973"
+        }
+      },
+      "runtimeRoles": [
+        "gofer",
+        "sentry",
+        "shim",
+        "supervisor"
+      ],
+      "runtimeSeconds": 60,
+      "startAttempts": 1,
+      "status": "passed",
+      "stoppedObserved": 4492206.577228522
+    },
+    {
+      "businessOutcome": "unknown",
+      "case": "controller-gone",
+      "cleanupProblems": [],
+      "nativeResult": "timeout",
+      "noResend": true,
+      "nominalDeadline": 4492293.32725,
+      "observedStopLatencySeconds": 0.259318,
+      "originalNativeInvocationVerified": true,
+      "originalRuntimeTreeEmpty": true,
+      "output": {
+        "heartbeat": {
+          "bytes": 6167,
+          "sha256": "33aa8b9fe7a3fc94c34864ddb02f8d979c1775a78b787b3797c7843b1b08f635"
+        },
+        "started": {
+          "bytes": 10,
+          "sha256": "1a3ac5a43bf788febbf92fd79edb4a091f95b4eb54815c45be37e3f157b9f973"
+        }
+      },
+      "runtimeRoles": [
+        "gofer",
+        "sentry",
+        "shim",
+        "supervisor"
+      ],
+      "runtimeSeconds": 60,
+      "startAttempts": 1,
+      "status": "passed",
+      "stoppedObserved": 4492293.586568024
+    },
+    {
+      "businessOutcome": "unknown",
+      "case": "daemon-stopped",
+      "cleanupProblems": [],
+      "nativeResult": "timeout",
+      "noResend": true,
+      "nominalDeadline": 4492403.689469,
+      "observedStopLatencySeconds": 0.118147,
+      "originalNativeInvocationVerified": true,
+      "originalRuntimeTreeEmpty": true,
+      "output": {
+        "heartbeat": {
+          "bytes": 6232,
+          "sha256": "36f637010ddb6787077045e01fa85f3e9e4dae8b74c6391f03f9e5e0070c044f"
+        },
+        "started": {
+          "bytes": 10,
+          "sha256": "1a3ac5a43bf788febbf92fd79edb4a091f95b4eb54815c45be37e3f157b9f973"
+        }
+      },
+      "runtimeRoles": [
+        "gofer",
+        "sentry",
+        "shim",
+        "supervisor"
+      ],
+      "runtimeSeconds": 60,
+      "startAttempts": 1,
+      "status": "passed",
+      "stoppedObserved": 4492403.807615741
+    },
+    {
+      "businessOutcome": "unknown",
+      "case": "queued-start",
+      "cleanupProblems": [],
+      "nativeResult": "timeout",
+      "noResend": true,
+      "nominalDeadline": 4492677.383514,
+      "observedStopLatencySeconds": 0.165902,
+      "originalNativeInvocationVerified": true,
+      "originalRuntimeTreeEmpty": true,
+      "output": {
+        "heartbeat": null,
+        "started": null
+      },
+      "runtimeRoles": [
+        "supervisor"
+      ],
+      "runtimeSeconds": 60,
+      "startAttempts": 1,
+      "status": "passed",
+      "stoppedObserved": 4492677.549415713
+    }
+  ],
+  "scope": "single-Action native lifetime qualification; no product authorization",
+  "semanticFirewallRulesUnchanged": true,
+  "sourceSha256": {
+    "deadline_probe.py": "ef19d46fd24bc5512ae880bcc895da8639f0d895e22347edf832d0a1a7950bb4",
+    "output_capacity.py": "1d25ff9f64ff1110d555c1431a0d1cfcf023c6338cd949b38fb88a79ed794ab6",
+    "sandbox.py": "5859262340afb15ca7ac3153a586dbc96339fc71576fa4cd1a01151423fa7465"
+  },
+  "status": "passed"
+}

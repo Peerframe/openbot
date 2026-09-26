@@ -1,5 +1,7 @@
 # Repository strategy
 
+[English](REPOSITORY.md) · [简体中文](REPOSITORY.zh-CN.md)
+
 ## Decision
 
 The foundation uses **one monorepo**. No upstream fork is required to build or test the initial
@@ -21,8 +23,11 @@ but it is not part of the product foundation.
 ```text
 openbot/
 ├── apps/
-│   ├── web/                 # Local Web/PWA channel and office shell
-│   ├── server/              # Control plane, API and Node gateway
+│   ├── web/                 # Web/PWA work, supervision and artifact interfaces
+│   ├── desktop/             # Thin Electron client and packaged runtime lifecycle
+│   ├── server/              # Transitional TypeScript business Server/default
+│   ├── server-python/       # Candidate Python authority, API and trusted services
+│   ├── agent-runtime-python/ # Independently testable Python Agent Runtime
 │   └── node/                # Replaceable execution-node daemon
 ├── packages/
 │   ├── config/              # Validated environment contracts
@@ -30,7 +35,10 @@ openbot/
 │   ├── domain/              # Product entities
 │   ├── policy/              # Fail-closed policy evaluation
 │   ├── protocol/            # Versioned Server–Node and event contracts
-│   └── provider-sdk/        # Execution provider interface
+│   ├── provider-sdk/        # Execution provider interface
+│   ├── python-node-runtime/ # Retained Node parser dependency closure
+│   ├── employee-publisher/  # Retained publisher key and signed-package helpers
+│   └── mcp-example/         # Retained MCP scaffold implementation
 ├── providers/
 │   ├── docker/
 │   ├── cua/
@@ -40,8 +48,17 @@ openbot/
 │   ├── server/
 │   └── node/
 ├── docs/
+├── tests/oracles/           # Frozen migration comparison inputs, never product runtime
 └── .github/
 ```
+
+This is a responsibility map of the main migration paths, not an exhaustive directory listing.
+The [migration plan](ARCHITECTURE_MIGRATION_PLAN.md) and
+[handoff](MIGRATION_HANDOFF.md) distinguish integrated candidates from qualified defaults.
+Server remains the only authority for identity, policy, routing, approvals and audit, regardless
+of implementation language. Web consumes contracts; providers implement execution interfaces.
+Keep application composition explicit and split existing modules only when the touched behavior
+requires it. The office visualization remains a deferred optional plugin.
 
 ## Split criteria
 

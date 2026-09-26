@@ -1,0 +1,158 @@
+# Temporal PostgreSQL qualification profile
+
+[English](README.md) · [简体中文](README.zh-CN.md)
+
+This explicit single-host reference uses released Temporal Server/admin-tools **1.32.0** and
+PostgreSQL **17.11**, pinned by image digest. It qualifies engine persistence for the
+[public work journey](../../experiments/work-journey/README.md); it does not enable a production
+dispatcher or change OpenBot's default backend. [Source and decision](../../docs/research/temporal-postgres-operations.md).
+
+## Boundary
+
+Engine history and visibility live in two databases on their own PostgreSQL instance. Neither is
+OpenBot's authority database. The runtime SQL role has data privileges; the bootstrap/schema owner
+is an administrator. Runtime cannot create schema objects or write schema version/history metadata.
+Upstream SQL tools own migrations. Startup never initializes or upgrades the schema.
+
+Only the gRPC frontend is published, on host IPv4 loopback. Database and internal service ports
+are not published. The base Compose file deliberately has **no frontend authentication/TLS**: it trusts all
+host users and Docker administrators with access to that endpoint/network. Keep untrusted tools,
+execution sandboxes and unrelated clients away. Do not expose it publicly or use it as the target
+production security configuration. Docker socket administrators can inspect container credentials.
+
+The opt-in `compose.mtls.yaml` overlay enables native mutual TLS for one trusted control group.
+It verifies the server name and requires client certificates, including internal engine traffic.
+This is **not API/namespace RBAC**: every authenticated client is trusted for engine operations.
+Never give these credentials to untrusted Runtime code, tools or public clients. Docker/host
+administrators remain trusted, and PostgreSQL traffic on the private bridge is not encrypted.
+[Transport review](../../docs/research/temporal-transport-security.md).
+
+## Reproduce the acceptance
+
+Use the separate Python experiment environment described in the journey README, Docker Compose,
+and already-built repository dependencies:
+
+```sh
+/tmp/openbot-work-reference/bin/python -B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v
+/tmp/openbot-work-reference/bin/python -B experiments/work-journey/probe.py --engine postgres-mtls
+```
+
+The mTLS path also needs an OpenSSL CLI on PATH. It creates disposable test CAs/certificates,
+rejects plaintext, missing certificates, unknown client roots and the wrong server name; it proves
+valid access before and after each rejection. At approval it stops the engine, changes the client
+CA, rejects the old credential and resumes the same task with a new one. This is stopped-service
+rotation, not immediate revocation of established connections or a production PKI. Histories at
+approval and completion replay in memory without effects; a deliberately incompatible definition
+must fail. `--engine postgres` retains the explicit plaintext comparison mode.
+
+For an operator-owned mTLS instance, set `OPENBOT_TEMPORAL_TLS_DIRECTORY` in the private env file
+to an absolute directory with `server.pem`, `server.key`, `server-ca.pem`, `client-ca.pem`. The
+engine leaf needs server/client auth and SAN `temporal.openbot.internal`; the separate control
+client issuer signs trusted client leaves. Keep CA signing keys and client private keys outside
+this mounted directory. Parent permissions must restrict host access while the four individual
+read-only mounts remain readable by the engine UID. Add `--file deploy/temporal/compose.mtls.yaml`
+to **every** Compose command and `--mtls` to `maintain.py`. Missing TLS fields/files fail startup.
+The manual commands below intentionally demonstrate the plaintext base profile only.
+
+The runner creates random project names, private temporary credentials and new named volumes. It
+initializes matching schemas, verifies SQL permission failures, runs the public journeys, restores
+an older engine snapshot into another new volume, and removes only its owned resources in `finally`.
+It never opens an existing user database. Abrupt host/power loss may require cleaning the exact
+`openbot-temporal-qualification-*` project reported by Docker; never use a global prune.
+
+## Adjacent-release qualification
+
+Supply the official **1.31.3 Linux archive matching the Docker daemon architecture**, using the
+[reviewed URLs and hashes](../../docs/research/temporal-release-upgrade.md). There is no automatic
+download, unverified extraction or fallback version:
+
+```sh
+/tmp/openbot-work-reference/bin/python -B experiments/work-journey/probe.py --engine postgres-mtls --upgrade-archive /absolute/path/to/temporal_1.31.3_linux_arm64.tar.gz
+```
+
+The archive and both exact regular binary members must match their pinned sizes/SHA-256. Only
+the server and SQL-tool binaries are mounted over the existing pinned 1.32.0 base images; this is
+an **official-binary substitution fixture, not an official 1.31.3 container image**. Schema files
+are byte-identical in these releases (history1.19, visibility1.14), so this tests a service upgrade,
+not a schema-DDL change. Original binaries receive 600 seconds of successful health observations
+before task creation; this wait cannot be disabled. The upgrade stops the engine, checks all four
+shards and unchanged schema history, runs official target maintenance and verifies runtime1.32.0.
+
+Approval-waiting and published-but-unacknowledged tasks first resume on the upgraded original
+volume. Only then is an older engine snapshot restored into a new volume against newer business
+facts, including the main unknown-write task. Original engine run IDs, complete product snapshots,
+exact POST counts, budget and verified downloads are checked. Restoring an old approval history
+for an already-completed Task must stop at its now-revoked authority; it must not repeat work.
+The engine result and the authoritative completed Task are deliberately distinct.
+
+This longer test uses bounded 1200-second workflow timeouts and runs in the existing Linux CI job.
+It does not prove rolling/HA upgrades, downgrade, arbitrary future worker changes, genuine DDL
+migration or full-product rollback. The shorter same-version reference remains available.
+
+## Manual schema inspection
+
+A trusted operator can retain a private reference instance. From repository root, create a **new**
+credential file outside the repository; the example intentionally refuses to overwrite it:
+
+```sh
+python3 - <<'PY'
+import os, secrets
+path = '/tmp/openbot-temporal-reference.env'
+fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+with os.fdopen(fd, 'w') as stream:
+    stream.write('OPENBOT_TEMPORAL_SCHEMA_PASSWORD=' + secrets.token_hex(32) + '\n')
+    stream.write('OPENBOT_TEMPORAL_RUNTIME_PASSWORD=' + secrets.token_hex(32) + '\n')
+    stream.write('OPENBOT_TEMPORAL_PORT=7233\n')
+PY
+docker compose --env-file /tmp/openbot-temporal-reference.env --project-name openbot-temporal-reference --file deploy/temporal/compose.yaml up -d --wait postgresql
+python3 deploy/temporal/maintain.py initialize --env-file /tmp/openbot-temporal-reference.env --project openbot-temporal-reference
+docker compose --env-file /tmp/openbot-temporal-reference.env --project-name openbot-temporal-reference --file deploy/temporal/compose.yaml up -d temporal
+```
+
+Use distinct random hexadecimal credentials (48–128 characters). The pinned upstream embedded
+YAML template does not escape arbitrary password characters; `start.sh` rejects unsupported values
+before invoking the unchanged upstream entrypoint. Do not print resolved Compose config, commit the
+file or pass passwords as command-line flags. Rotation needs an explicit database/config procedure;
+changing the env file alone does not change an existing PostgreSQL role password.
+
+Maintenance assumes **one exclusive administrator**. Stop workers and the engine first. `initialize`
+requires both stores empty before writing either; it cannot be used to upgrade an existing database.
+`upgrade` preflights both version records, rejects newer/malformed versions, invokes the matching
+SQL tool with explicit history **1.19** / visibility **1.14** targets, verifies both results and
+revokes runtime metadata writes. A failure leaves the engine stopped; inspect a partially changed
+schema before retrying. Do not invoke `schema.sh` or the raw tools to bypass these checks.
+
+```sh
+docker compose --env-file /tmp/openbot-temporal-reference.env --project-name openbot-temporal-reference --file deploy/temporal/compose.yaml stop temporal
+python3 deploy/temporal/maintain.py upgrade --env-file /tmp/openbot-temporal-reference.env --project openbot-temporal-reference
+```
+
+The base profile verifies same-version maintenance and rejection boundaries. The explicit adjacent
+release fixture above adds a separate service-upgrade check. It does not qualify arbitrary versions,
+changed worker code or rollback. Follow Temporal's supported
+adjacent-release policy, review/pin the new images and schema first, and run history replay plus
+restored-work journeys before changing the reference. The Server itself accepts some newer schemas;
+our operator rejects newer versions rather than claiming universal binary/schema mismatch rejection.
+
+## Restore semantics
+
+The test stops engine writers before `pg_dump --format=custom` of both engine databases, records
+size/SHA-256/schema/namespace identity, then restores with `pg_restore --exit-on-error` into **new
+empty storage**. It recreates roles/grants from this profile and reseals schema metadata privileges.
+The hash is an integrity check for this trusted local test, not authenticated backup provenance.
+
+Product state, artifact files and external receipts are deliberately **not rolled back**. The test
+restores history saved while approval was pending after a write has actually happened and become
+unknown in the newer product state. Recovery must query the receipt, keep current authorization and
+budget, and publish verified bytes without another write. This is engine-only restore qualification,
+not an atomic full-product backup or disaster-recovery service.
+
+Production API authorization/PKI, supported version upgrades and representative future-code replay, retention/archival, HA, storage
+failure, workload/idle cost, credential recovery and full product restore remain separate gates.
+A full product rollback can resurrect old grants and requires an execution hold and reconciliation.
+No native Linux isolation or real-provider quality claim follows from this profile.
+
+Local qualification: all twelve upgrade/public-work records and 57 unit checks pass on arm64;
+eleven actual histories replay without side effects and reject an incompatible first command.
+Original-volume continuation precedes older-snapshot restore. See the
+[measured scope](../../docs/research/temporal-release-upgrade.md#measured-qualification--2026-09-23).

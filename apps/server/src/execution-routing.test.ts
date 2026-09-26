@@ -77,6 +77,7 @@ describe("execution routing", () => {
       platform: "macos",
     });
     expect(requirementsForRun({ ...run, executionProfile: "none" })).toBeUndefined();
+    expect(requirementsForRun({ ...run, executionProfile: "model" })).toBeUndefined();
   });
 
   it("selects the least-loaded compatible node with a stable ID tie-break", () => {

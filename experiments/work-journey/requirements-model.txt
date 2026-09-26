@@ -1,0 +1,5 @@
+# Optional SDK model-port qualification; no account credentials or default provider activation.
+-r requirements.txt
+openai==3.17.0
+jiter==0.17.0
+sniffio==1.3.1

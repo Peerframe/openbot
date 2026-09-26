@@ -6,6 +6,8 @@ const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ignoredDirectories = new Set([
   ".git",
   ".turbo",
+  ".venv",
+  ".worker-venv",
   "build",
   "coverage",
   "dist",

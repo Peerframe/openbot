@@ -130,7 +130,7 @@ export function ContextRail({
                   run={run}
                   detail={
                     runStatusSummary(run, latestProgress.get(run.id)?.message) ??
-                    `${bot?.name ?? "未知 Bot"} · ${run.executionProfile === "none" ? "正在处理" : (node?.name ?? "等待分配电脑")}`
+                    `${bot?.name ?? "未知 Bot"} · ${run.executionProfile === "none" || run.executionProfile === "model" ? "正在处理" : (node?.name ?? "等待分配电脑")}`
                   }
                   onInspect={onInspectRun}
                   key={run.id}

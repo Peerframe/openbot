@@ -1,0 +1,256 @@
+{
+  "accepted": false,
+  "actualSentryArgumentsVerified": true,
+  "cgroupExists": false,
+  "cgroupMemberCount": 0,
+  "cleanupProblemCount": 0,
+  "commandCounts": {
+    "create": 1,
+    "image": 1,
+    "info": 2,
+    "inspect": 3,
+    "load": 1,
+    "logs": 1,
+    "other": 0,
+    "start": 1,
+    "version": 1,
+    "wait": 1
+  },
+  "commands": [
+    {
+      "errorCategories": [
+        "no such file or directory"
+      ],
+      "outputTruncated": false,
+      "sequence": 1,
+      "status": 1,
+      "stderrBytes": 300,
+      "stdoutBytes": 1730,
+      "timedOut": false,
+      "verb": "info"
+    },
+    {
+      "errorCategories": [],
+      "outputTruncated": false,
+      "sequence": 2,
+      "status": 0,
+      "stderrBytes": 0,
+      "stdoutBytes": 21802,
+      "timedOut": false,
+      "verb": "info"
+    },
+    {
+      "errorCategories": [],
+      "outputTruncated": false,
+      "sequence": 3,
+      "status": 0,
+      "stderrBytes": 0,
+      "stdoutBytes": 7,
+      "timedOut": false,
+      "verb": "version"
+    },
+    {
+      "errorCategories": [],
+      "outputTruncated": false,
+      "sequence": 4,
+      "status": 0,
+      "stderrBytes": 0,
+      "stdoutBytes": 89,
+      "timedOut": false,
+      "verb": "load"
+    },
+    {
+      "errorCategories": [],
+      "outputTruncated": false,
+      "sequence": 5,
+      "status": 0,
+      "stderrBytes": 0,
+      "stdoutBytes": 1345,
+      "timedOut": false,
+      "verb": "image"
+    },
+    {
+      "errorCategories": [],
+      "outputTruncated": false,
+      "sequence": 6,
+      "status": 0,
+      "stderrBytes": 0,
+      "stdoutBytes": 65,
+      "timedOut": false,
+      "verb": "create"
+    },
+    {
+      "errorCategories": [],
+      "outputTruncated": false,
+      "sequence": 7,
+      "status": 0,
+      "stderrBytes": 0,
+      "stdoutBytes": 14624,
+      "timedOut": false,
+      "verb": "inspect"
+    },
+    {
+      "errorCategories": [],
+      "outputTruncated": false,
+      "sequence": 8,
+      "status": 0,
+      "stderrBytes": 0,
+      "stdoutBytes": 65,
+      "timedOut": false,
+      "verb": "start"
+    },
+    {
+      "errorCategories": [],
+      "outputTruncated": false,
+      "sequence": 9,
+      "status": 0,
+      "stderrBytes": 0,
+      "stdoutBytes": 15410,
+      "timedOut": false,
+      "verb": "inspect"
+    },
+    {
+      "errorCategories": [],
+      "outputTruncated": false,
+      "sequence": 10,
+      "status": 0,
+      "stderrBytes": 0,
+      "stdoutBytes": 2,
+      "timedOut": false,
+      "verb": "wait"
+    },
+    {
+      "errorCategories": [],
+      "outputTruncated": false,
+      "sequence": 11,
+      "status": 0,
+      "stderrBytes": 0,
+      "stdoutBytes": 15194,
+      "timedOut": false,
+      "verb": "inspect"
+    },
+    {
+      "errorCategories": [],
+      "outputTruncated": false,
+      "sequence": 12,
+      "status": 0,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 12852,
+      "stdoutSha256": "3c76295ee0af8e3ae76793d460a37d2804ebfb1b0f465a9178999353cf761acd",
+      "timedOut": false,
+      "verb": "logs"
+    }
+  ],
+  "containerErrorCategories": [],
+  "containerExitCode": 2,
+  "containerOomKilled": false,
+  "containerRestartCount": 0,
+  "containerStatus": "exited",
+  "createdDerivedProfileReadbackVerified": true,
+  "createdExactLoggingReadbackVerified": true,
+  "currentUnitState": {
+    "ActiveState": "inactive",
+    "LoadState": "not-found",
+    "Result": "success",
+    "SubState": "dead"
+  },
+  "daemonRunscExplicitFlagsVerified": true,
+  "evidenceHashes": {
+    "commands/0001.json": "6af259b97b9a3d5f322b45d2e41c786f0830acd1e3c8894f322b1e68e2b8d129",
+    "commands/0002.json": "4d3d9ef9fbad81a5c3d94b52f85de202dcbd11d765923fe8837394d54df83b76",
+    "commands/0003.json": "c3ff7e74f92c1fd6a3f84172e674c8bdacdd2a76acb052a136895d224bacb351",
+    "commands/0004.json": "72cb2d35f7851d6f19bbc0fe4f9d90ef7395ca4a47413c608b4e1fc931d246de",
+    "commands/0005.json": "6824c3d84a7d66127cc77f44e70ee858cae0f05137e49f2a5472d41a646d2870",
+    "commands/0006.json": "ea0bf5b3cca67239ba6aa1e2a8a69137f3a258628cf3fb8f81debb3b30201b02",
+    "commands/0007.json": "59f343a18add377c38ef4664533533cd21c3831aa7cbd4d2cbc6111188e481e3",
+    "commands/0008.json": "b9bb1185654fa18f2a7c0df5c78a96b9ff4b313b1edd86b5669fcace9554b20e",
+    "commands/0009.json": "4664c4fcb807145aa2b81097fbbd10087a85f9b795a29a34f11beb8c320a8463",
+    "commands/0010.json": "90c7e9120cc3453634b404a7273f2a98e1bd25571c67ccb83987c5d8054660da",
+    "commands/0011.json": "bb5c868e26458aaf81bcbda01da6c423087289fedd4977b316ddc80375975793",
+    "commands/0012.json": "9ce3cec45bcb80c8dd8b00961167caecbb182a36ad82f3aba4c64e746816a3e3",
+    "container-after-start.json": "f7143ea6728d5af891670c37d85287c62ea32e9472621b0af56e66f98bfe07d8",
+    "container-created.json": "f3f3a48c6aba1a8107d51819dd0af738117eb795f4705b164a5fe764f7642e68",
+    "container-final.json": "0c261c12839508b5eccf4ba31718c3bb7ee0e80484106c7ce499e736be94fa10",
+    "create-reserved.json": "107539b2f5f3df4835090b25398ba238b0c0b1d74fb8093ee959319ca6041fb6",
+    "daemon-readback.json": "5e48e1cbce26fc9f8aa65f61db29471c928f11efc17228a3b5fcc48fd5a61685",
+    "image-readback.json": "ad026f5ececfc3ff2ffc1240827f1628e722a4b71bbf27c7204b5f1f903ed0aa",
+    "load-reserved.json": "f56d947fc6c6729e451bc967ccccd1b0fb72d5dd7bc96e0d35cb6b2f75c3ac89",
+    "native-expiry.json": "ba5fcfb239ac9f7e08fe2c6483d5d172b2a1f5ecab834f6a5d443750004abd8b",
+    "native-journal.json": "33cecbe4d6535171969fc4edf83ec24c251d8b34e3d1bc53d8522fa6d91f86dd",
+    "native-reset-failed.json": "6581a5403ba7c2ad4d72b7c7156e7900dd7dac3596a43fe0a2614712670f44c2",
+    "native-terminal-readback.json": "36c78e906e4405669c14a5ba6775fc7b90cce80cb0e590c2ba37bb3408a58660",
+    "native-unit.json": "b24095d95be7152a9a8e1e706f60ab8276a37aa2a24c0cd6b951a9d45fa48cbb",
+    "ownership.json": "9d03061c8a518140d55a019c37a4f967ed851282aae7b962c43bfdb4e8ead526",
+    "result.json": "d37947cf8b62298daaccf6e04b042cc99687101879101c79ba9f77a01556f9cb",
+    "runtime-arguments.json": "8f291d22a88fa60f636c859b6a65a90e656d70a5cc4c581f4a6823d243b560f1",
+    "runtime-members.json": "a6aa7308fdc496fbb6cdbe7a3fdb03da77e4aefb8c419d5625b2690ae0e32bb4",
+    "socket-path-preflight.json": "60d7a938cac131e03a2d77a904478bdd6a86c12871a0f61bf5775c53373dcff3",
+    "start-reserved.json": "94de36a4a2b4cb6c7f2526d2ec442ccf951f8ab1b28febb2af638d0fe8314a5e",
+    "systemd-start.json": "51f653a49417e3b43fc39928df6cd8232132cb4997c9a1c6ea136e6333704003",
+    "unit-readback.json": "5459b04eb39042c7c6bba25c4c687054aa31915338be6a88b3e87c809307acee",
+    "unit-start-reserved.json": "96c0cd4f96ad522459e5bb1a6b3d1cec4298047658faf4125ae6bbfd2dd652c3"
+  },
+  "failureCategory": "browser-execution-failed-or-unknown",
+  "failureType": "RuntimeError",
+  "finalDerivedProfileReadbackVerified": true,
+  "finalExactLoggingReadbackVerified": true,
+  "kind": "openbot-a1b-chroot-safe-result",
+  "mainPid": 0,
+  "nativeExpiryVerified": true,
+  "nativeTerminalResult": "timeout",
+  "observedStopLatencySeconds": 0.1264374116435647,
+  "originalInvocation": "cae1a81dd3134e0b809579edeb0182e7",
+  "profileKind": "openbot-a1b-chroot-experimental-derivative",
+  "profileSha256": "d00ad84f5a67031fe2bb64de8d77a5ad9c06adb82935ebdb3c18b5f7ba60a5d0",
+  "rawLogsExported": false,
+  "remainingRuntimeDirectories": [],
+  "restarts": 0,
+  "runtimeArgumentObservationErrorCount": 7,
+  "sameInvocationOrReleased": true,
+  "startAttempts": 1,
+  "syntheticResult": {
+    "accepted": false,
+    "agentComputerStarted": false,
+    "externalSitesZero": true,
+    "failureCategory": "chromium-launch-or-sandbox-refused",
+    "gid1001": true,
+    "modelCallsZero": true,
+    "nodeVersion": "24.18.1",
+    "preflightFailure": false,
+    "reasonCategory": null,
+    "runs": [
+      {
+        "code": null,
+        "expectedSyntheticRenderMatches": false,
+        "index": 0,
+        "observedNoNewPrivsValues": [
+          "1"
+        ],
+        "observedSandboxDisablingArgument": false,
+        "observedSeccompValues": [
+          "2"
+        ],
+        "oversize": false,
+        "sampledChromeProcesses": 15,
+        "signal": "SIGKILL",
+        "stderrCategories": [
+          "no such file or directory",
+          "not supported",
+          "operation not supported"
+        ],
+        "timedOut": true
+      }
+    ],
+    "sandboxRequestedByDefault": true,
+    "uid1001": true
+  },
+  "terminalSameInvocation": true,
+  "unit": "openbot-qualification-deadline-a1-b2.service",
+  "scope": "Actual isolated Chromium component fixture; render was not accepted; not product Work or takeover qualification.",
+  "productionAfter": {
+    "containerCount": 10,
+    "identitiesAndStateUnchanged": true,
+    "ipv4Ipv6SemanticsUnchanged": true
+  }
+}

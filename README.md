@@ -90,7 +90,7 @@ See the [repository map](docs/REPOSITORY_MAP.md), [architecture](docs/ARCHITECTU
 
 ## Extend and contribute
 
-**Plugins:** implement a standard MCP Streamable HTTP endpoint for tools, resources, prompts or Apps. Follow the [plugin contract](docs/PLUGINS.md), start from an [example](apps/server/src/plugin-example.ts), and submit your extension for review. No OpenBot-specific SDK is required; installation and per-Bot permission are separate steps.
+**Plugins:** implement a standard MCP Streamable HTTP endpoint for tools, resources, prompts or Apps. Follow the [plugin contract](docs/PLUGINS.md), start from an [example](packages/mcp-example/src/plugin-example.ts), and submit your extension for review. No OpenBot-specific SDK is required; installation and per-Bot permission are separate steps.
 
 **Core:** read [Contributing](CONTRIBUTING.md), [open-source reuse](docs/OPEN_SOURCE_REUSE.md) and the [documentation index](docs/README.md). Use [Issues](https://github.com/Peerframe/openbot/issues) for bugs and proposals, and [pull requests](https://github.com/Peerframe/openbot/pulls) for changes. Report vulnerabilities through [Security](SECURITY.md).
 

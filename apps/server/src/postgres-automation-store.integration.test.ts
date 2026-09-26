@@ -960,18 +960,32 @@ describe.skipIf(!databaseUrl)("PostgreSQL automation transaction", () => {
       await task.native.complete(task.active, "Done", [], { ...lesson, title: `Lesson ${index}` });
     }
     const overflow = await knowledgeTask("Overflow");
-    await expect(
-      overflow.native.complete(overflow.active, "Done", [], lesson),
-    ).rejects.toMatchObject({ code: "task_limit" });
+    const completed = await overflow.native.complete(overflow.active, "Done", [], lesson);
+    expect(completed.run).toMatchObject({ id: overflow.active.id, status: "completed" });
     expect(await overflow.knowledge.list("test-bot")).toHaveLength(50);
+    // The public list is capped at 50, so count SQL rows to detect an accidental extra proposal.
+    const [pending] =
+      await database.client`select count(*)::integer as count from knowledge_proposals where bot_id='test-bot' and status='pending'`;
+    expect(pending?.count).toBe(50);
+    expect(
+      await database.client`select id from knowledge_proposals where source_run_id=${overflow.active.id}`,
+    ).toHaveLength(0);
     expect(
       (
         await database.client`select count(*)::integer as count from runs where status='completed'`
       )[0]?.count,
-    ).toBe(50);
+    ).toBe(51);
     expect(
-      await database.client`select id from messages where run_id=${overflow.active.id} and author_type='bot'`,
-    ).toHaveLength(0);
+      await database.client`select id,content from messages where run_id=${overflow.active.id} and author_type='bot'`,
+    ).toEqual([{ id: completed.message.id, content: "Done" }]);
+    const events =
+      await database.client`select type,payload from run_events where run_id=${overflow.active.id} and type in ('KNOWLEDGE_PROPOSED','KNOWLEDGE_PROPOSAL_SKIPPED')`;
+    expect(events).toEqual([
+      {
+        type: "KNOWLEDGE_PROPOSAL_SKIPPED",
+        payload: { executor: "native-agent", reason: "pending_limit" },
+      },
+    ]);
     // This case executes 51 real, sequential task/claim/completion transactions.
   }, 15_000);
 });

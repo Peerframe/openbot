@@ -12,25 +12,26 @@
   "workspaces": [
     "apps/*",
     "packages/*",
-    "providers/*"
+    "providers/*",
+    "tests/oracles/legacy-server"
   ],
   "scripts": {
     "build": "turbo run build",
-    "check": "npm run docs:check && npm run research:check && npm run server:container:check && npm run migrations:check && npm run security:config-check && npm run worker-host:macos:check && npm run release:check && npm run lint && npm run typecheck && npm run test && npm run build",
+    "check": "npm run oracle:check && npm run test:browser:boundary && npm run docs:check && npm run research:check && npm run server:container:check && npm run server:product-container:check && npm run migrations:check && npm run security:config-check && npm run worker-host:macos:check && npm run release:check && npm run lint && npm run typecheck && npm run test && npm run build",
     "db:up": "docker compose --env-file .env -f deploy/server/compose.yaml up -d postgres",
     "db:stop": "docker compose --env-file .env -f deploy/server/compose.yaml stop postgres",
-    "db:verify": "turbo run build --filter=@openbot/server && node scripts/verify-database.mjs",
+    "db:verify": "npm run oracle:build && node scripts/verify-database.mjs",
     "dev": "turbo run dev --filter=@openbot/server --filter=@openbot/web",
     "dev:server": "turbo run dev --filter=@openbot/server",
     "dev:web": "turbo run dev --filter=@openbot/web",
     "dev:node": "turbo run dev --filter=@openbot/node",
     "dev:smoke": "node scripts/smoke-dev-startup.mjs",
     "docs:check": "node scripts/check-docs.mjs",
-    "employee:publisher-key": "npm run employee:publisher-key --workspace @openbot/server --",
+    "employee:publisher-key": "node --env-file-if-exists=.env scripts/employee-publisher-key.mjs",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "lint": "biome lint .",
-    "migrations:check": "node --test scripts/check-migrations.test.mjs && node scripts/check-migrations.mjs",
+    "migrations:check": "node --test scripts/check-migrations.test.mjs scripts/compare-migration-lineage.test.mjs && node scripts/check-migrations.mjs",
     "node:enrollment-token": "node --env-file-if-exists=.env scripts/issue-node-enrollment.mjs",
     "research:check": "node --test scripts/check-pr-research.test.mjs && node scripts/check-pr-research.mjs",
     "release:check": "node --test scripts/node-linux-release.test.mjs scripts/node-linux-install-lease.test.mjs scripts/node-linux-archive-import.test.mjs scripts/node-linux-privileged-layout.test.mjs scripts/node-linux-bootstrap.test.mjs scripts/node-linux-bootstrap-command.test.mjs scripts/node-linux-install-transaction.test.mjs scripts/node-linux-provenance.test.mjs scripts/node-linux-extract.test.mjs scripts/node-linux-systemd.test.mjs scripts/macos-worker-host-release.test.mjs scripts/prepare-desktop-release.test.mjs scripts/install-desktop.test.mjs scripts/create-mcp-plugin.test.mjs",
@@ -42,19 +43,30 @@
     "security:config-check": "node --test scripts/check-credential-findings.test.mjs scripts/check-security-workflow.test.mjs scripts/check-node-release-workflow.test.mjs scripts/check-windows-worker-host-workflow.test.mjs && node scripts/check-security-workflow.mjs && node scripts/check-node-release-workflow.mjs && node scripts/check-windows-worker-host-workflow.mjs",
     "server:container:check": "node --test scripts/check-server-container.test.mjs && node scripts/check-server-container.mjs",
     "test": "turbo run test --concurrency=2",
+    "test:runtime": "node scripts/test-runtime-headless.mjs",
+    "test:runtime:python": "node scripts/test-runtime-headless.mjs --python",
+    "test:runtime:linux": "node scripts/test-runtime-linux.mjs",
     "typecheck": "turbo run typecheck",
     "worker-host:macos:check": "node --test scripts/check-macos-worker-host.test.mjs scripts/macos-worker-host-release.test.mjs && node scripts/check-macos-worker-host.mjs",
     "worker-host:macos:native-check": "swift build --package-path apps/worker-host-macos && swift test --package-path apps/worker-host-macos",
-    "plugin:create": "node scripts/create-mcp-plugin.mjs"
+    "plugin:create": "node scripts/create-mcp-plugin.mjs",
+    "migration:compare": "node scripts/compare-migration-lineage.mjs",
+    "test:control:python": "npm run oracle:build && node apps/server-python/scripts/compare-identity-inputs.mjs && node apps/server-python/scripts/compare-task-contracts.mjs && node apps/server-python/scripts/compare-runtime-wire.mjs && node apps/server-python/scripts/compare-run-commands.mjs && node apps/server-python/scripts/compare-execution-values.mjs && node scripts/test-python-control.mjs",
+    "oracle:check": "node --test scripts/check-server-oracle.test.mjs && node scripts/check-server-oracle.mjs",
+    "oracle:build": "npm run oracle:check && turbo run build --filter=@openbot/legacy-server-oracle^... && npm run build:oracle --workspace @openbot/legacy-server-oracle",
+    "test:browser:boundary": "node --test experiments/browser-execution/probe.test.mjs && python3 -B -m unittest discover -s experiments/browser-execution -p \"test_*.py\" -v",
+    "server:product-container:check": "node --test deploy/server/product-container.test.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",
     "@types/node": "26.5.1",
     "@vercel/ncc": "0.45.0",
+    "canonicalize": "5.0.0",
+    "jose": "6.2.12",
+    "officeparser": "7.8.0",
     "turbo": "2.10.12",
     "typescript": "7.0.2",
-    "vitest": "5.0.0",
-    "officeparser": "7.8.0"
+    "vitest": "5.0.0"
   },
   "overrides": {
     "pdfjs-dist": "6.3.289"

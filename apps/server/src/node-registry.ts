@@ -443,6 +443,13 @@ export class NodeRegistry {
           return;
         }
 
+        // The retained Server has no browser-session authority or pending browser receipts.
+        if (message.type === "browser.result") {
+          sendAck(socket, false, "Browser sessions require Python product control.");
+          socket.close(1008, "browser-session-unavailable");
+          return;
+        }
+
         const pending = this.#pendingOffers.get(message.offerId);
         if (
           pending === undefined ||

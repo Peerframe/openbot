@@ -1,0 +1,47 @@
+[
+  {
+    "task": {
+      "id": "task-new-sales",
+      "run_id": "run-new-sales",
+      "scope": {
+        "owner_id": "owner",
+        "bot_id": "bot-bookkeeping",
+        "workspace_id": "workspace-synthetic",
+        "task_kind": "csv-dollar-to-cent"
+      },
+      "query": "Convert this sales CSV from dollar amounts to integer cent amounts.",
+      "input_csv": "id,amount_dollars\nsale-a,2.37\nsale-b,19.99\nsale-c,10\n"
+    },
+    "expected_csv": "id,amount_cents\nsale-a,237\nsale-b,1999\nsale-c,1000\n"
+  },
+  {
+    "task": {
+      "id": "task-new-refunds",
+      "run_id": "run-new-refunds",
+      "scope": {
+        "owner_id": "owner",
+        "bot_id": "bot-bookkeeping",
+        "workspace_id": "workspace-synthetic",
+        "task_kind": "csv-dollar-to-cent"
+      },
+      "query": "Please prepare the refund CSV in cents and keep the zero row.",
+      "input_csv": "id,amount_dollars\nrefund-a,-4.21\nrefund-b,0.00\nrefund-c,0.07\n"
+    },
+    "expected_csv": "id,amount_cents\nrefund-a,-421\nrefund-b,0\nrefund-c,7\n"
+  },
+  {
+    "task": {
+      "id": "task-new-subcent",
+      "run_id": "run-new-subcent",
+      "scope": {
+        "owner_id": "owner",
+        "bot_id": "bot-bookkeeping",
+        "workspace_id": "workspace-synthetic",
+        "task_kind": "csv-dollar-to-cent"
+      },
+      "query": "Check this CSV dollar amount and reject a sub-cent conversion.",
+      "input_csv": "id,amount_dollars\nfraction-a,0.005\n"
+    },
+    "expected_error": "subcent_value"
+  }
+]

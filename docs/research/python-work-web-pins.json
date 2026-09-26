@@ -1,0 +1,44 @@
+[
+  {
+    "name": "beautifulsoup4",
+    "version": "4.15.0",
+    "requires": [
+      "soupsieve>=1.6.1",
+      "typing-extensions>=4.0.0",
+      "cchardet; extra == \"cchardet\"",
+      "chardet; extra == \"chardet\"",
+      "charset-normalizer; extra == \"charset-normalizer\"",
+      "html5lib; extra == \"html5lib\"",
+      "lxml; extra == \"lxml\""
+    ],
+    "files": [
+      {
+        "filename": "beautifulsoup4-4.15.0-py3-none-any.whl",
+        "sha256": "d6f88de62e1d4e38ecb1077eb9724cd0eff29d2a08ca16a401e9b9e93f117cf9",
+        "url": "https://files.pythonhosted.org/packages/88/c6/92fcd42f1ba33e1184263f25bfabf3d27c383410470f169e4b8163bf9c17/beautifulsoup4-4.15.0-py3-none-any.whl"
+      },
+      {
+        "filename": "beautifulsoup4-4.15.0.tar.gz",
+        "sha256": "288e3ca7d54b06f2ac191970bc275c1939cb46d450b255bf6718b04aa37ab4f7",
+        "url": "https://files.pythonhosted.org/packages/43/65/318323f98dbee45d42dff61d8f047181bc6f2268a9068cfad035a46be5af/beautifulsoup4-4.15.0.tar.gz"
+      }
+    ]
+  },
+  {
+    "name": "soupsieve",
+    "version": "2.8.3",
+    "requires": null,
+    "files": [
+      {
+        "filename": "soupsieve-2.8.3-py3-none-any.whl",
+        "sha256": "ed64f2ba4eebeab06cc4962affce381647455978ffc1e36bb79a545b91f45a95",
+        "url": "https://files.pythonhosted.org/packages/46/2c/1462b1d0a634697ae9e55b3cecdcb64788e8b7d63f54d923fcd0bb140aed/soupsieve-2.8.3-py3-none-any.whl"
+      },
+      {
+        "filename": "soupsieve-2.8.3.tar.gz",
+        "sha256": "3267f1eeea4251fb42728b6dfb746edc9acaffc4a45b27e19450b676586e8349",
+        "url": "https://files.pythonhosted.org/packages/7b/ae/2d9c981590ed9999a0d91755b47fc74f74de286b0f5cee14c9269041e6c4/soupsieve-2.8.3.tar.gz"
+      }
+    ]
+  }
+]

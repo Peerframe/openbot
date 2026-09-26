@@ -15,6 +15,7 @@ export function RunInspector({
   liveFrame,
   node,
   onClose,
+  onOpenBrowser,
   onInspectRun,
   onRun,
   progress,
@@ -27,6 +28,7 @@ export function RunInspector({
   liveFrame: RunFrame | undefined;
   node: ExecutionNode | undefined;
   onClose(): void;
+  onOpenBrowser?: (() => void) | undefined;
   onInspectRun?(runId: string): void;
   onRun(run: Run): void;
   progress: RunProgress[];
@@ -47,7 +49,8 @@ export function RunInspector({
     };
   }, [onClose]);
 
-  const native = run.executionProfile === "none" && !run.nodeId;
+  const serverExecuted =
+    (run.executionProfile === "none" || run.executionProfile === "model") && !run.nodeId;
 
   return (
     <div className="inspector-backdrop">
@@ -69,6 +72,11 @@ export function RunInspector({
         </header>
 
         <div className="inspector-body">
+          {bot?.computerProfile === "docker-linux" && onOpenBrowser ? (
+            <button className="primary-button" type="button" onClick={onOpenBrowser}>
+              打开员工浏览器
+            </button>
+          ) : null}
           <section className="inspector-section">
             <h3>任务</h3>
             <p className="instruction-copy">{run.instruction}</p>
@@ -93,7 +101,7 @@ export function RunInspector({
               <span>
                 <small>执行电脑</small>
                 <strong>
-                  {native
+                  {serverExecuted
                     ? "由 Server 执行"
                     : (node?.name ?? (run.nodeId ? "节点已离线" : "等待分配"))}
                 </strong>
@@ -101,7 +109,20 @@ export function RunInspector({
             </div>
           </section>
 
+          {run.workTaskId ? (
+            <section className="inspector-section" aria-label="任务监督入口">
+              <a href={`#/tasks?task=${encodeURIComponent(run.workTaskId)}`}>查看任务</a>
+            </section>
+          ) : null}
           <NativeRunControls key={run.id} run={run} onRun={onRun} />
+          {run.model ? (
+            <section className="inspector-section" aria-label="任务模型选择">
+              <h3>任务模型</h3>
+              <p>{run.model.modelId}</p>
+              <p className="frame-meta">连接 {run.model.connectionId}</p>
+              <p className="frame-meta">保留任务创建时的选择，员工之后切换模型不会改变此任务。</p>
+            </section>
+          ) : null}
           {run.modelUsage ? (
             <section className="inspector-section" aria-label="任务模型用量">
               <h3>模型用量</h3>

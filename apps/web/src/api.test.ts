@@ -2,11 +2,12 @@ import { getOpenBotDesktopBridge } from "./desktop-runtime";
 import { createHash, webcrypto } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  downloadEmployeeTemplate,
+  fetchEmployeeTemplate,
   isEmployeeProfileChangedEvent,
   updateEmployeeProfileDetails,
   updateEmployeeSkillState,
 } from "./api";
+import { downloadEmployeeTemplate } from "./employee-template-delivery";
 
 vi.mock("./desktop-runtime", () => ({ getOpenBotDesktopBridge: vi.fn() }));
 
@@ -108,6 +109,22 @@ describe("Employee profile details API", () => {
 });
 
 describe("Employee export review binding", () => {
+  it("returns verified bytes without invoking a shell save operation", async () => {
+    const body = '{"portable":true}\n';
+    const reviewToken = createHash("sha256").update(body).digest("hex");
+    vi.stubGlobal("crypto", webcrypto);
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(body, { status: 200, headers: { ETag: `"${reviewToken}"` } }),
+    );
+
+    const blob = await fetchEmployeeTemplate("employee-1", {
+      ...exportPreview(),
+      downloadReviewToken: reviewToken,
+    });
+
+    expect(await blob.text()).toBe(body);
+  });
+
   it("returns the reviewed package identity and strong tag on download", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ error: "The export changed." }), {

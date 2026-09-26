@@ -1,0 +1,854 @@
+{
+  "comment": "Inputs and case labels only. The differential runner derives the expected behaviour from the installed compiled Zod schemas; this file must not carry expected outputs.",
+  "cases": [
+    {
+      "id": "bot-minimal",
+      "schema": "bot",
+      "input": {
+        "name": "a",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-unknown-keys-stripped",
+      "schema": "bot",
+      "input": {
+        "name": "a",
+        "role": "b",
+        "extra": 1,
+        "description": "private",
+        "revision": 2
+      }
+    },
+    {
+      "id": "bot-profile-explicit",
+      "schema": "bot",
+      "input": {
+        "name": "a",
+        "role": "b",
+        "computerProfile": "coder"
+      }
+    },
+    {
+      "id": "bot-profile-unknown",
+      "schema": "bot",
+      "input": {
+        "name": "a",
+        "role": "b",
+        "computerProfile": "windows"
+      }
+    },
+    {
+      "id": "bot-profile-null",
+      "schema": "bot",
+      "input": {
+        "name": "a",
+        "role": "b",
+        "computerProfile": null
+      }
+    },
+    {
+      "id": "bot-appearance-full",
+      "schema": "bot",
+      "input": {
+        "name": "a",
+        "role": "b",
+        "appearance": {
+          "head": "round",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "backpack",
+          "accent": "red"
+        }
+      }
+    },
+    {
+      "id": "bot-appearance-unknown-key-stripped",
+      "schema": "bot",
+      "input": {
+        "name": "a",
+        "role": "b",
+        "appearance": {
+          "head": "round",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "backpack",
+          "accent": "red",
+          "extra": 1
+        }
+      }
+    },
+    {
+      "id": "bot-appearance-missing-member",
+      "schema": "bot",
+      "input": {
+        "name": "a",
+        "role": "b",
+        "appearance": {
+          "head": "round",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "backpack"
+        }
+      }
+    },
+    {
+      "id": "bot-appearance-bad-member",
+      "schema": "bot",
+      "input": {
+        "name": "a",
+        "role": "b",
+        "appearance": {
+          "head": "cone",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "backpack",
+          "accent": "red"
+        }
+      }
+    },
+    {
+      "id": "bot-appearance-null",
+      "schema": "bot",
+      "input": {
+        "name": "a",
+        "role": "b",
+        "appearance": null
+      }
+    },
+    {
+      "id": "bot-appearance-empty-object",
+      "schema": "bot",
+      "input": {
+        "name": "a",
+        "role": "b",
+        "appearance": {}
+      }
+    },
+    {
+      "id": "bot-appearance-array",
+      "schema": "bot",
+      "input": {
+        "name": "a",
+        "role": "b",
+        "appearance": [
+          {
+            "head": "round",
+            "body": "cape",
+            "mobility": "hover",
+            "accessory": "backpack",
+            "accent": "red"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bot-name-missing",
+      "schema": "bot",
+      "input": {
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-role-missing",
+      "schema": "bot",
+      "input": {
+        "name": "a"
+      }
+    },
+    {
+      "id": "bot-name-null",
+      "schema": "bot",
+      "input": {
+        "name": null,
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-number",
+      "schema": "bot",
+      "input": {
+        "name": 1,
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-bool",
+      "schema": "bot",
+      "input": {
+        "name": true,
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-role-number",
+      "schema": "bot",
+      "input": {
+        "name": "a",
+        "role": 7
+      }
+    },
+    {
+      "id": "bot-input-string",
+      "schema": "bot",
+      "input": "not an object"
+    },
+    {
+      "id": "bot-input-array",
+      "schema": "bot",
+      "input": [
+        1,
+        2
+      ]
+    },
+    {
+      "id": "bot-input-null",
+      "schema": "bot",
+      "input": null
+    },
+    {
+      "id": "bot-name-ascii-spaces",
+      "schema": "bot",
+      "input": {
+        "name": "   ",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-bom-only",
+      "schema": "bot",
+      "input": {
+        "name": "﻿",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-bom-wrapped",
+      "schema": "bot",
+      "input": {
+        "name": "﻿x﻿",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-fs-only",
+      "schema": "bot",
+      "input": {
+        "name": "\u001c",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-us-wrapped",
+      "schema": "bot",
+      "input": {
+        "name": "\u001fx\u001f",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-nel-only",
+      "schema": "bot",
+      "input": {
+        "name": "",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-nel-wrapped",
+      "schema": "bot",
+      "input": {
+        "name": "x",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-nbsp-only",
+      "schema": "bot",
+      "input": {
+        "name": " ",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-ideographic-space",
+      "schema": "bot",
+      "input": {
+        "name": "　x　",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-zwsp-only",
+      "schema": "bot",
+      "input": {
+        "name": "​",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-tab-lf-wrapped",
+      "schema": "bot",
+      "input": {
+        "name": "\t\nx\n\t",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-inner-spaces-kept",
+      "schema": "bot",
+      "input": {
+        "name": "  a  b  ",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-nbsp-wrapped",
+      "schema": "bot",
+      "input": {
+        "name": " x ",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-64-ascii",
+      "schema": "bot",
+      "input": {
+        "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-65-ascii",
+      "schema": "bot",
+      "input": {
+        "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-32-astral",
+      "schema": "bot",
+      "input": {
+        "name": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-33-astral",
+      "schema": "bot",
+      "input": {
+        "name": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-64-astral",
+      "schema": "bot",
+      "input": {
+        "name": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-65-astral",
+      "schema": "bot",
+      "input": {
+        "name": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-63-astral-plus-ascii",
+      "schema": "bot",
+      "input": {
+        "name": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀a",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-name-64-plus-padding",
+      "schema": "bot",
+      "input": {
+        "name": "  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  ",
+        "role": "b"
+      }
+    },
+    {
+      "id": "bot-role-160",
+      "schema": "bot",
+      "input": {
+        "name": "a",
+        "role": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+      }
+    },
+    {
+      "id": "bot-role-161",
+      "schema": "bot",
+      "input": {
+        "name": "a",
+        "role": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+      }
+    },
+    {
+      "id": "bot-name-emoji-with-variation-selector",
+      "schema": "bot",
+      "input": {
+        "name": "❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️❤️",
+        "role": "b"
+      }
+    },
+    {
+      "id": "channel-minimal",
+      "schema": "channel",
+      "input": {
+        "name": "c"
+      }
+    },
+    {
+      "id": "channel-unknown-keys-stripped",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "description": "d",
+        "extra": true,
+        "botIds": []
+      }
+    },
+    {
+      "id": "channel-name-missing",
+      "schema": "channel",
+      "input": {}
+    },
+    {
+      "id": "channel-name-ascii-spaces",
+      "schema": "channel",
+      "input": {
+        "name": "   "
+      }
+    },
+    {
+      "id": "channel-name-80",
+      "schema": "channel",
+      "input": {
+        "name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+      }
+    },
+    {
+      "id": "channel-name-81",
+      "schema": "channel",
+      "input": {
+        "name": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+      }
+    },
+    {
+      "id": "channel-description-null",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "description": null
+      }
+    },
+    {
+      "id": "channel-description-spaces",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "description": "   "
+      }
+    },
+    {
+      "id": "channel-description-nbsp",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "description": " x "
+      }
+    },
+    {
+      "id": "channel-description-500",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "description": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    },
+    {
+      "id": "channel-description-501",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "description": "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    },
+    {
+      "id": "channel-description-number",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "description": 5
+      }
+    },
+    {
+      "id": "channel-botids-null",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": null
+      }
+    },
+    {
+      "id": "channel-botids-not-array",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": "abc"
+      }
+    },
+    {
+      "id": "channel-botids-empty",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": []
+      }
+    },
+    {
+      "id": "channel-botids-lowercase",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-uppercase-kept",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "1F8B0F1E-5E3D-4F8A-9C2B-7D6E5F4A3B2C"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-nil",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "00000000-0000-0000-0000-000000000000"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-max",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "ffffffff-ffff-ffff-ffff-ffffffffffff"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-version-1",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "1f8b0f1e-5e3d-1f8a-9c2b-7d6e5f4a3b2c"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-bad-variant",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "1f8b0f1e-5e3d-4f8a-0c2b-7d6e5f4a3b2c"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-bad-version-0",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "1f8b0f1e-5e3d-0f8a-9c2b-7d6e5f4a3b2c"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-version-9",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "1f8b0f1e-5e3d-9f8a-9c2b-7d6e5f4a3b2c"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-guid-only",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "00000000-0000-0000-0000-00000000000a"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-no-hyphens",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "1f8b0f1e5e3d4f8a9c2b7d6e5f4a3b2c"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-braces",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "{1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c}"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-urn",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "urn:uuid:1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-padded",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          " 1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c "
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-number",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          1
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-dedupe-order",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "2f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "2f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "2f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-case-sensitive-dedupe",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1F8B0F1E-5E3D-4F8A-9C2B-7D6E5F4A3B2C"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-32-identical",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-33-identical",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-33-distinct",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "00000000-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000001-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000002-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000003-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000004-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000005-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000006-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000007-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000008-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000009-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000000a-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000000b-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000000c-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000000d-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000000e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000000f-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000010-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000011-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000012-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000013-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000014-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000015-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000016-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000017-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000018-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000019-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000001a-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000001b-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000001c-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000001d-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000001e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000001f-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000020-5e3d-4f8a-9c2b-7d6e5f4a3b2c"
+        ]
+      }
+    },
+    {
+      "id": "channel-botids-33-with-duplicates",
+      "schema": "channel",
+      "input": {
+        "name": "c",
+        "botIds": [
+          "00000000-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000001-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000002-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000003-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000004-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000005-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000006-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000007-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000008-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000009-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000000a-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000000b-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000000c-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000000d-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000000e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000000f-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000010-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000011-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000012-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000013-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000014-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000015-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000016-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000017-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000018-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "00000019-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000001a-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000001b-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000001c-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000001d-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000001e-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "0000001f-5e3d-4f8a-9c2b-7d6e5f4a3b2c",
+          "1f8b0f1e-5e3d-4f8a-9c2b-7d6e5f4a3b2c"
+        ]
+      }
+    },
+    {
+      "id": "channel-input-string",
+      "schema": "channel",
+      "input": "not an object"
+    }
+  ]
+}

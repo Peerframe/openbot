@@ -63,7 +63,7 @@ jobs:
         run: npm exec --workspace @openbot/server -- vitest run src/agent-sources.live.test.ts
 
   portable:
-    name: Portable (${{ matrix.name }})
+    name: Retained clients and legacy Desktop (${{ matrix.name }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 50
     strategy:
@@ -242,6 +242,7 @@ jobs:
         run: ../../scripts/check-windows-worker-host-artifact.ps1 -PublishDirectory "$env:RUNNER_TEMP\openbot-windows-host"
 
   database:
+    name: Legacy Server and shared SQL regressions
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
@@ -307,10 +308,10 @@ jobs:
           OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
           OPENBOT_IMPORT_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_import_test_ci
 
-      - name: Verify asynchronous Bot collaboration in a disposable PostgreSQL database
+      - name: Verify headless runtime and Bot collaboration in a disposable PostgreSQL database
         run: |
           node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_collab_test_ci"); } finally { await sql.end(); }'
-          npm exec --workspace @openbot/server -- vitest run src/agent-collaboration.integration.test.ts
+          npm exec --workspace @openbot/server -- vitest run src/agent-collaboration.integration.test.ts src/native-agent-headless.integration.test.ts --maxWorkers=1 --no-file-parallelism
         env:
           OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
           OPENBOT_COLLAB_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_collab_test_ci
@@ -323,7 +324,7 @@ jobs:
           OPENBOT_INTERACTIONS_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_interactions_test_ci
 
   server-container:
-    name: Server container (${{ matrix.name }})
+    name: Legacy Server compatibility (${{ matrix.name }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 25
     strategy:
@@ -354,10 +355,205 @@ jobs:
           OPENBOT_TEST_IMAGE: openbot-server:smoke
           OPENBOT_TEST_PLATFORM: ${{ matrix.arch }}
 
-  # Keep this protected context pending until every platform and integration job finishes.
+      - name: Validate the Python Compose overlay
+        run: docker compose --file deploy/server/compose.yaml --file deploy/server/compose.python.yaml config --quiet
+        env:
+          OPENBOT_OWNER_PASSWORD: openbot-compose-ci-validation-only
+      - name: Build the optional Python Server image without publication
+        run: docker build --platform "linux/${{ matrix.arch }}" --target runtime-python --tag openbot-server:python-smoke --file deploy/server/Dockerfile .
+      - name: Exercise packaged Python loop, cancellation and Server lifecycle
+        run: bash scripts/smoke-server-container.sh
+        env:
+          OPENBOT_TEST_IMAGE: openbot-server:python-smoke
+          OPENBOT_TEST_PLATFORM: ${{ matrix.arch }}
+          OPENBOT_TEST_AGENT_RUNTIME: python
+
+  python-product-container:
+    name: Python product container (${{ matrix.name }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux amd64
+            runner: ubuntu-24.04
+            arch: amd64
+          - name: Linux arm64
+            runner: ubuntu-24.04-arm
+            arch: arm64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate the Python product Compose and Dockerfile contracts
+        timeout-minutes: 2
+        run: |
+          docker compose --file deploy/server/compose.product.yaml config --quiet
+          docker build --check --file deploy/server/Dockerfile.product .
+        env:
+          OPENBOT_POSTGRES_PASSWORD: openbot-product-compose-ci-only
+          OPENBOT_OWNER_PASSWORD: openbot-product-compose-owner-ci-only
+      - name: Build the native Python product image without publication
+        timeout-minutes: 12
+        run: docker build --platform "linux/${{ matrix.arch }}" --target runtime-product --tag openbot-server:product-smoke --file deploy/server/Dockerfile.product .
+      - name: Exercise Python product Owner HTTP, parsers, migrations and lifecycle
+        timeout-minutes: 6
+        shell: bash
+        run: |
+          umask 077
+          python3 deploy/server/smoke-product.py --image openbot-server:product-smoke > "$RUNNER_TEMP/python-product-smoke.json"
+          cat "$RUNNER_TEMP/python-product-smoke.json"
+      - name: Retain the synthetic Python product smoke summary
+        timeout-minutes: 1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-product-smoke-${{ matrix.arch }}-${{ github.sha }}
+          path: ${{ runner.temp }}/python-product-smoke.json
+          if-no-files-found: error
+          retention-days: 7
+
+  python-desktop-preview:
+    name: Python Desktop Preview (macOS arm64)
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+          cache: npm
+      - run: npm ci
+      - name: Build retained clients and parser/database packages without the legacy Server
+        run: npm exec -- turbo run build --filter=@openbot/desktop --filter=@openbot/python-node-runtime
+      - name: Stage the exact Python product runtime
+        run: node apps/desktop/scripts/prepare-native-server.mjs --python-product
+      - name: Verify the staged Python API and PostgreSQL lifecycle
+        shell: bash
+        run: |
+          umask 077
+          node apps/desktop/scripts/smoke-python-product.mjs apps/desktop/out/python-product-runtime \
+            > "$RUNNER_TEMP/python-preview-staged.json"
+          cat "$RUNNER_TEMP/python-preview-staged.json"
+      - name: Package the explicit unsigned Python Preview
+        run: node apps/desktop/scripts/package.mjs --preview --python-product
+      - name: Verify the packaged Python API and PostgreSQL lifecycle
+        shell: bash
+        run: |
+          umask 077
+          node apps/desktop/scripts/smoke-python-product.mjs \
+            "apps/desktop/out/python-product/OpenBot Preview-darwin-arm64/OpenBot Preview.app/Contents/Resources/native-runtime" \
+            > "$RUNNER_TEMP/python-preview-packaged.json"
+          cat "$RUNNER_TEMP/python-preview-packaged.json"
+      - name: Retain synthetic Python Preview lifecycle evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-desktop-preview-evidence-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/python-preview-staged.json
+            ${{ runner.temp }}/python-preview-packaged.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Archive the Python Preview with executable modes and symlinks
+        shell: bash
+        run: |
+          tar -czf "$RUNNER_TEMP/python-desktop-preview-${{ github.sha }}.tar.gz" \
+            -C apps/desktop/out/python-product "OpenBot Preview-darwin-arm64"
+      - name: Retain the unsigned Python Preview for review
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          path: ${{ runner.temp }}/python-desktop-preview-${{ github.sha }}.tar.gz
+          archive: false
+          if-no-files-found: error
+          retention-days: 7
+
+  python-runtime:
+    name: Python control, Worker and Temporal (Linux amd64)
+    runs-on: ubuntu-24.04
+    # A full passing run took 38m; allow cold setup variance while retaining every probe bound
+    # and the documented ten-minute History Shard warm-up.
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+      - name: Verify browser qualification boundaries without starting a browser
+        run: npm run test:browser:boundary
+      - name: Verify Python and Server journeys in the isolated Linux fixture
+        run: node scripts/test-runtime-linux.mjs
+      - name: Select the reviewed npm version for control-plane parity
+        run: npm install --global --ignore-scripts npm@10.9.9
+      - name: Install existing TypeScript reference dependencies
+        run: npm ci --ignore-scripts --audit=false
+      - name: Compile the frozen test-only Server oracle
+        run: npm run oracle:build
+      - name: Bootstrap the isolated Python control reference
+        run: apps/server-python/scripts/bootstrap.sh
+        env:
+          OPENBOT_CONTROL_PYTHON: python3.12
+      - name: Bootstrap the separate SDK for persisted control integration
+        run: apps/agent-runtime-python/scripts/bootstrap.sh
+      - name: Verify Python control models and HTTP boundaries
+        run: apps/server-python/scripts/check.sh -q
+      - name: Bootstrap optional model and durable Worker qualification
+        shell: bash
+        run: |
+          python3.12 -m venv "$RUNNER_TEMP/openbot-work-reference"
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install \
+            -r apps/server-python/requirements-worker.lock
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip check
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -I apps/server-python/scripts/verify_environment.py --worker
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py --help > /dev/null
+      - name: Compare Python and TypeScript against owned PostgreSQL
+        run: npm run test:control:python
+        env:
+          OPENBOT_TEMPORAL_TEST_PYTHON: ${{ runner.temp }}/openbot-work-reference/bin/python
+      - name: Qualify adjacent Temporal release recovery with PostgreSQL and mutual TLS
+        shell: bash
+        env:
+          PYTHONPATH: apps/server-python/src:apps/agent-runtime-python/src:experiments/work-journey:experiments/linux-execution
+        run: |
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/linux-execution -p 'test_*.py' -q
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q experiments/linux-execution/protected_host_test.py experiments/linux-execution/protected_native_test.py
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q apps/agent-runtime-python/tests/test_temporal_agent.py experiments/work-journey/test_product_deferred_workflow.py
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
+            --engine postgres-mtls --only-case concurrent-runs
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
+            --engine postgres-mtls --only-case model-receipt-recovery
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
+            --engine postgres-mtls --only-case product-model-recovery
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
+            --engine postgres-mtls --only-case product-publication-recovery
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
+            --engine postgres-mtls --only-case product-concurrent-runs
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
+            --engine postgres-mtls --only-case product-deferred-approval
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
+            --engine postgres-mtls --only-case product-closed-repair
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
+            --engine postgres-mtls --only-case product-owner-corrections
+          curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
+            --max-time 180 --max-filesize 93822307 \
+            --output "$RUNNER_TEMP/temporal_1.31.3_linux_amd64.tar.gz" \
+            https://github.com/temporalio/temporal/releases/download/v1.31.3/temporal_1.31.3_linux_amd64.tar.gz
+          # The runner verifies pinned archive/member sizes and hashes before executing either binary.
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
+            --engine postgres-mtls --upgrade-archive "$RUNNER_TEMP/temporal_1.31.3_linux_amd64.tar.gz"
+
+  synthetic-migration:
+    name: Python migration and paired restore (synthetic)
+    uses: ./.github/workflows/s7-migration.yml
+
+  # Python product qualification and retained compatibility must each succeed independently.
   check:
     if: always()
-    needs: [security, validate, portable, windows-worker-host, database, server-container]
+    needs: [security, validate, portable, windows-worker-host, database, server-container, python-runtime, python-product-container, python-desktop-preview, synthetic-migration]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -370,8 +566,12 @@ jobs:
           WINDOWS_WORKER_HOST_RESULT: ${{ needs.windows-worker-host.result }}
           DATABASE_RESULT: ${{ needs.database.result }}
           SERVER_CONTAINER_RESULT: ${{ needs.server-container.result }}
+          PYTHON_RUNTIME_RESULT: ${{ needs.python-runtime.result }}
+          PYTHON_PRODUCT_CONTAINER_RESULT: ${{ needs.python-product-container.result }}
+          PYTHON_DESKTOP_PREVIEW_RESULT: ${{ needs.python-desktop-preview.result }}
+          SYNTHETIC_MIGRATION_RESULT: ${{ needs.synthetic-migration.result }}
         run: |
-          for result in "$SECURITY_RESULT" "$VALIDATE_RESULT" "$PORTABLE_RESULT" "$WINDOWS_WORKER_HOST_RESULT" "$DATABASE_RESULT" "$SERVER_CONTAINER_RESULT"; do
+          for result in "$SECURITY_RESULT" "$VALIDATE_RESULT" "$PORTABLE_RESULT" "$WINDOWS_WORKER_HOST_RESULT" "$DATABASE_RESULT" "$SERVER_CONTAINER_RESULT" "$PYTHON_RUNTIME_RESULT" "$PYTHON_PRODUCT_CONTAINER_RESULT" "$PYTHON_DESKTOP_PREVIEW_RESULT" "$SYNTHETIC_MIGRATION_RESULT"; do
             if [[ "$result" != "success" ]]; then
               printf 'Every required CI job must succeed; observed result: %s\n' "$result" >&2
               exit 1

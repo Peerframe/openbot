@@ -2,7 +2,8 @@
 import type { Bot, EmployeeExportPreview } from "@openbot/domain";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { downloadEmployeeTemplate, getEmployeeExportPreview } from "../api";
+import { getEmployeeExportPreview } from "../api";
+import { downloadEmployeeTemplate } from "../employee-template-delivery";
 import { interact, renderComponent } from "../test/render-component";
 import { ExportEmployeeDialog, ExportPreviewDetails } from "./ExportEmployeeDialog";
 
@@ -79,9 +80,9 @@ describe("ExportPreviewDetails", () => {
 });
 
 vi.mock("../api", () => ({
-  downloadEmployeeTemplate: vi.fn(),
   getEmployeeExportPreview: vi.fn(),
 }));
+vi.mock("../employee-template-delivery", () => ({ downloadEmployeeTemplate: vi.fn() }));
 beforeEach(() => {
   HTMLDialogElement.prototype.showModal = vi.fn();
   HTMLDialogElement.prototype.close = vi.fn();

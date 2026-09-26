@@ -1,0 +1,114 @@
+{
+  "status": "passed",
+  "seconds": 67.67,
+  "records": [
+    {
+      "case": "terminated",
+      "actualMTLS": true,
+      "actualEngineStatus": "TERMINATED",
+      "serviceRestartClosure": true,
+      "unknownReservationPreserved": true,
+      "originalReceiptReadback": true,
+      "oneTerminalEvent": true,
+      "postCountUnchanged": true,
+      "singleWrite": true,
+      "noNewClaim": true,
+      "offlineReplay": "passed",
+      "ownerLookupOnly": true,
+      "commitBeforeAckProcessKill": false
+    },
+    {
+      "case": "timed_out",
+      "actualMTLS": true,
+      "actualEngineStatus": "TIMED_OUT",
+      "serviceRestartClosure": true,
+      "unknownReservationPreserved": true,
+      "originalReceiptReadback": true,
+      "oneTerminalEvent": true,
+      "postCountUnchanged": true,
+      "singleWrite": true,
+      "noNewClaim": true,
+      "offlineReplay": "passed",
+      "ownerLookupOnly": false,
+      "commitBeforeAckProcessKill": false
+    },
+    {
+      "case": "commit_ack_loss",
+      "actualMTLS": true,
+      "actualEngineStatus": "TERMINATED",
+      "serviceRestartClosure": true,
+      "unknownReservationPreserved": true,
+      "originalReceiptReadback": true,
+      "oneTerminalEvent": true,
+      "postCountUnchanged": true,
+      "singleWrite": true,
+      "noNewClaim": true,
+      "offlineReplay": "passed",
+      "ownerLookupOnly": false,
+      "commitBeforeAckProcessKill": true
+    }
+  ],
+  "history": [
+    {
+      "case": "terminated",
+      "file": "terminated-history-0.json",
+      "sha256": "abad12b3c01874b0c05350c2db83dcff6f89b75566fa1870d57fee861f5d738e",
+      "events": 55
+    },
+    {
+      "case": "terminated",
+      "file": "terminated-history-1.json",
+      "sha256": "ed884e6a3b885c38db2c9ee7f08343507ae5aac64c91b8302439429614a1d5b9",
+      "events": 11
+    },
+    {
+      "case": "timed_out",
+      "file": "timed_out-history-0.json",
+      "sha256": "f4464a8b799288df0867a49d5379389667c183147786cbf6f61bfb0c3f00ca2b",
+      "events": 48
+    },
+    {
+      "case": "commit_ack_loss",
+      "file": "commit_ack_loss-history-0.json",
+      "sha256": "070a8d8d94697dc20292ff9b1560d617eabe7c843007f7c7524446c57b1d9573",
+      "events": 55
+    }
+  ],
+  "transport": [
+    {
+      "case": "schema-and-role-boundary",
+      "versions": {
+        "temporal": "1.19",
+        "temporal_visibility": "1.14"
+      },
+      "absentSchemaRejected": true,
+      "runtimeDDLRejected": true,
+      "runtimeSchemaWritesRejected": true,
+      "initializeExistingRejected": true,
+      "sameVersionUpgrade": "unchanged"
+    },
+    {
+      "case": "mtls-reject-plaintext",
+      "failure": "RuntimeError"
+    },
+    {
+      "case": "mtls-reject-missing-certificate",
+      "failure": "RuntimeError"
+    },
+    {
+      "case": "mtls-reject-unknown-client-ca",
+      "failure": "RuntimeError"
+    },
+    {
+      "case": "mtls-reject-wrong-server-name",
+      "failure": "RuntimeError"
+    },
+    {
+      "case": "mtls-valid-client",
+      "issuerTool": "OpenSSL 3.6.2 7 Apr 2026 (Library: OpenSSL 3.6.2 7 Apr 2026)",
+      "serverNameVerified": true,
+      "namespaceIdentity": "retained"
+    }
+  ],
+  "productPatchSha256": "82e24b415c2bea30fae521d5a34be7ee393afa1efe5fdf3aba8994229c66e6ec"
+}

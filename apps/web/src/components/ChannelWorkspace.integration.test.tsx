@@ -12,7 +12,7 @@ import {
   subscribeToChannelEvents,
 } from "../api";
 import { createConversationSession } from "../conversation-session";
-import { interact, renderComponent, type RenderedComponent } from "../test/render-component";
+import { interact, type RenderedComponent, renderComponent } from "../test/render-component";
 import { ChannelWorkspace } from "./ChannelWorkspace";
 
 vi.mock("../plugin-api", () => ({
@@ -169,32 +169,36 @@ it("recovers output on ready and merges forward SSE projections before the forma
   await interact(() => handlers().onOutput?.(output(5, "Late terminal output")));
   expect(view.container.textContent).not.toContain("Late terminal output");
 });
-it("retains conflicting steering input and clears it only after an accepted submission", async () => {
-  await render();
-  await interact(() => button("补充指令").click());
-  await type(".run-steering textarea", "Keep the source citations");
-  vi.mocked(steerRun).mockRejectedValueOnce(new ApiError("Ended", 409));
-  await interact(() =>
-    document
-      .querySelector(".run-steering form")
-      ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
-  );
-  expect(document.querySelector<HTMLTextAreaElement>(".run-steering textarea")?.value).toBe(
-    "Keep the source citations",
-  );
-  expect(document.querySelector(".run-steering")?.textContent).toContain("内容已保留");
-  vi.mocked(steerRun).mockResolvedValueOnce(undefined);
-  await interact(() =>
-    document
-      .querySelector(".run-steering form")
-      ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
-  );
-  expect(steerRun).toHaveBeenLastCalledWith(run.id, "Keep the source citations");
-  expect(document.querySelector(".run-steering textarea")).toBeNull();
-  expect(document.querySelector(".run-steering")?.textContent).toContain("已接收");
-  await interact(() => button("补充指令").click());
-  expect(document.querySelector<HTMLTextAreaElement>(".run-steering textarea")?.value).toBe("");
-});
+it.each(["none", "model"] as const)(
+  "retains conflicting %s steering input and clears it only after acceptance",
+  async (executionProfile) => {
+    vi.mocked(listRuns).mockResolvedValue([{ ...run, executionProfile }]);
+    await render();
+    await interact(() => button("补充指令").click());
+    await type(".run-steering textarea", "Keep the source citations");
+    vi.mocked(steerRun).mockRejectedValueOnce(new ApiError("Ended", 409));
+    await interact(() =>
+      document
+        .querySelector(".run-steering form")
+        ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
+    );
+    expect(document.querySelector<HTMLTextAreaElement>(".run-steering textarea")?.value).toBe(
+      "Keep the source citations",
+    );
+    expect(document.querySelector(".run-steering")?.textContent).toContain("内容已保留");
+    vi.mocked(steerRun).mockResolvedValueOnce(undefined);
+    await interact(() =>
+      document
+        .querySelector(".run-steering form")
+        ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
+    );
+    expect(steerRun).toHaveBeenLastCalledWith(run.id, "Keep the source citations");
+    expect(document.querySelector(".run-steering textarea")).toBeNull();
+    expect(document.querySelector(".run-steering")?.textContent).toContain("已接收");
+    await interact(() => button("补充指令").click());
+    expect(document.querySelector<HTMLTextAreaElement>(".run-steering textarea")?.value).toBe("");
+  },
+);
 it("wires side actions to reply targets, persistent emoji intent and overflow copy", async () => {
   vi.mocked(listMessages).mockResolvedValue([final]);
   vi.mocked(listRuns).mockResolvedValue([{ ...run, status: "completed" }]);

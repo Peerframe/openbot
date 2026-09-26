@@ -1,0 +1,595 @@
+{
+  "schema": "openbot.s5-offline-evidence/v1",
+  "interpreter": "decimal-scale-fixture/1",
+  "environment": {
+    "python": "3.12.13",
+    "system": "Darwin"
+  },
+  "fixture_sha256": "678a07b22230d23132fcade3a7b726ac8aadcd3efec9e05f84f92abdd8fbefef",
+  "candidate": {
+    "id": "skill-correction-owner-1",
+    "lesson_id": "lesson-correction-owner-1",
+    "scope": {
+      "owner_id": "owner",
+      "bot_id": "bot-bookkeeping",
+      "workspace_id": "workspace-synthetic",
+      "task_kind": "csv-dollar-to-cent"
+    },
+    "source": {
+      "task_id": "task-training",
+      "run_id": "run-training",
+      "artifact_id": "artifact-training",
+      "artifact_sha256": "f6b3145c4ae8e2a69ae022e8476d1e917fe8dcaf5e550e9dc0ecf2aa6429db3f",
+      "correction_id": "correction-owner-1"
+    },
+    "markdown": "---\nname: csv-dollar-to-cent\ndescription: Convert scoped CSV dollar amounts into integer cent amounts.\n---\n\nFor this CSV dollar to cent workflow, amounts must be integer cents. Preserve IDs and row order. Treat negative amounts as refunds and reject sub-cent values.\n\nMultiply each decimal amount_dollars value by 100. Require an exact integer result; preserve row IDs and order. Reject sub-cent values. Publish only through existing authorized actions.\n",
+    "factor": 100,
+    "version": "1.0.0",
+    "state": "candidate",
+    "revision": 1,
+    "review_digest": "ba0b7d9a52340fa0eedfa96b25c5916922c018ac907bb0f2bd94a1220194f982"
+  },
+  "retrieved_memory": [
+    {
+      "id": "lesson-correction-owner-1",
+      "revision": 2,
+      "content": "For this CSV dollar to cent workflow, amounts must be integer cents. Preserve IDs and row order. Treat negative amounts as refunds and reject sub-cent values.",
+      "source": {
+        "task_id": "task-training",
+        "run_id": "run-training",
+        "artifact_id": "artifact-training",
+        "artifact_sha256": "f6b3145c4ae8e2a69ae022e8476d1e917fe8dcaf5e550e9dc0ecf2aa6429db3f",
+        "correction_id": "correction-owner-1"
+      },
+      "scope": {
+        "owner_id": "owner",
+        "bot_id": "bot-bookkeeping",
+        "workspace_id": "workspace-synthetic",
+        "task_kind": "csv-dollar-to-cent"
+      },
+      "score": 3
+    }
+  ],
+  "phases": {
+    "baseline": {
+      "passed": 0,
+      "total": 3,
+      "cases": [
+        {
+          "id": "task-new-sales",
+          "passed": false,
+          "expected_csv": "id,amount_cents\nsale-a,237\nsale-b,1999\nsale-c,1000\n",
+          "result": {
+            "task_id": "task-new-sales",
+            "run_id": "run-new-sales",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nsale-a,2.37\nsale-b,19.99\nsale-c,10\n",
+            "sha256": "30f9291c190d35c28f73d5c0a53f681c252f6fe23efbc4b22b11ebd55ee495c1",
+            "size_bytes": 51,
+            "used_skills": [],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": []
+        },
+        {
+          "id": "task-new-refunds",
+          "passed": false,
+          "expected_csv": "id,amount_cents\nrefund-a,-421\nrefund-b,0\nrefund-c,7\n",
+          "result": {
+            "task_id": "task-new-refunds",
+            "run_id": "run-new-refunds",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nrefund-a,-4.21\nrefund-b,0.00\nrefund-c,0.07\n",
+            "sha256": "0dccc18a99a491ba8628a80099094c6985a7631dff379fe764f7b9497d6b312e",
+            "size_bytes": 59,
+            "used_skills": [],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": []
+        },
+        {
+          "id": "task-new-subcent",
+          "passed": false,
+          "expected_csv": null,
+          "result": {
+            "task_id": "task-new-subcent",
+            "run_id": "run-new-subcent",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nfraction-a,0.005\n",
+            "sha256": "61c61863590093d0c1eee35be97dbb7a7ca048c20598d236691126e335e0e960",
+            "size_bytes": 33,
+            "used_skills": [],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": []
+        }
+      ]
+    },
+    "pending": {
+      "passed": 0,
+      "total": 3,
+      "cases": [
+        {
+          "id": "task-new-sales",
+          "passed": false,
+          "expected_csv": "id,amount_cents\nsale-a,237\nsale-b,1999\nsale-c,1000\n",
+          "result": {
+            "task_id": "task-new-sales",
+            "run_id": "run-new-sales",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nsale-a,2.37\nsale-b,19.99\nsale-c,10\n",
+            "sha256": "30f9291c190d35c28f73d5c0a53f681c252f6fe23efbc4b22b11ebd55ee495c1",
+            "size_bytes": 51,
+            "used_skills": [],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": []
+        },
+        {
+          "id": "task-new-refunds",
+          "passed": false,
+          "expected_csv": "id,amount_cents\nrefund-a,-421\nrefund-b,0\nrefund-c,7\n",
+          "result": {
+            "task_id": "task-new-refunds",
+            "run_id": "run-new-refunds",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nrefund-a,-4.21\nrefund-b,0.00\nrefund-c,0.07\n",
+            "sha256": "0dccc18a99a491ba8628a80099094c6985a7631dff379fe764f7b9497d6b312e",
+            "size_bytes": 59,
+            "used_skills": [],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": []
+        },
+        {
+          "id": "task-new-subcent",
+          "passed": false,
+          "expected_csv": null,
+          "result": {
+            "task_id": "task-new-subcent",
+            "run_id": "run-new-subcent",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nfraction-a,0.005\n",
+            "sha256": "61c61863590093d0c1eee35be97dbb7a7ca048c20598d236691126e335e0e960",
+            "size_bytes": 33,
+            "used_skills": [],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": []
+        }
+      ]
+    },
+    "reviewed": {
+      "passed": 3,
+      "total": 3,
+      "cases": [
+        {
+          "id": "task-new-sales",
+          "passed": true,
+          "expected_csv": "id,amount_cents\nsale-a,237\nsale-b,1999\nsale-c,1000\n",
+          "result": {
+            "task_id": "task-new-sales",
+            "run_id": "run-new-sales",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nsale-a,237\nsale-b,1999\nsale-c,1000\n",
+            "sha256": "8491a8030933862fcf384734dc2eee519bc86f135f3f70b0c27c2ea32825097f",
+            "size_bytes": 51,
+            "used_skills": [
+              {
+                "id": "skill-correction-owner-1",
+                "revision": 2,
+                "review_digest": "ba0b7d9a52340fa0eedfa96b25c5916922c018ac907bb0f2bd94a1220194f982"
+              }
+            ],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": [
+            {
+              "id": "skill-correction-owner-1",
+              "revision": 2,
+              "review_digest": "ba0b7d9a52340fa0eedfa96b25c5916922c018ac907bb0f2bd94a1220194f982"
+            }
+          ]
+        },
+        {
+          "id": "task-new-refunds",
+          "passed": true,
+          "expected_csv": "id,amount_cents\nrefund-a,-421\nrefund-b,0\nrefund-c,7\n",
+          "result": {
+            "task_id": "task-new-refunds",
+            "run_id": "run-new-refunds",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nrefund-a,-421\nrefund-b,0\nrefund-c,7\n",
+            "sha256": "b9eb9d740eabb1f7ab4e0ecd6d511d1453b6021056f86bc8908ac40ec668a48d",
+            "size_bytes": 52,
+            "used_skills": [
+              {
+                "id": "skill-correction-owner-1",
+                "revision": 2,
+                "review_digest": "ba0b7d9a52340fa0eedfa96b25c5916922c018ac907bb0f2bd94a1220194f982"
+              }
+            ],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": [
+            {
+              "id": "skill-correction-owner-1",
+              "revision": 2,
+              "review_digest": "ba0b7d9a52340fa0eedfa96b25c5916922c018ac907bb0f2bd94a1220194f982"
+            }
+          ]
+        },
+        {
+          "id": "task-new-subcent",
+          "passed": true,
+          "expected_error": "subcent_value",
+          "error": "subcent_value",
+          "used_skills": [
+            {
+              "id": "skill-correction-owner-1",
+              "revision": 2,
+              "review_digest": "ba0b7d9a52340fa0eedfa96b25c5916922c018ac907bb0f2bd94a1220194f982"
+            }
+          ],
+          "selected_skills": [
+            {
+              "id": "skill-correction-owner-1",
+              "revision": 2,
+              "review_digest": "ba0b7d9a52340fa0eedfa96b25c5916922c018ac907bb0f2bd94a1220194f982"
+            }
+          ]
+        }
+      ]
+    },
+    "suspended": {
+      "passed": 0,
+      "total": 3,
+      "cases": [
+        {
+          "id": "task-new-sales",
+          "passed": false,
+          "expected_csv": "id,amount_cents\nsale-a,237\nsale-b,1999\nsale-c,1000\n",
+          "result": {
+            "task_id": "task-new-sales",
+            "run_id": "run-new-sales",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nsale-a,2.37\nsale-b,19.99\nsale-c,10\n",
+            "sha256": "30f9291c190d35c28f73d5c0a53f681c252f6fe23efbc4b22b11ebd55ee495c1",
+            "size_bytes": 51,
+            "used_skills": [],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": []
+        },
+        {
+          "id": "task-new-refunds",
+          "passed": false,
+          "expected_csv": "id,amount_cents\nrefund-a,-421\nrefund-b,0\nrefund-c,7\n",
+          "result": {
+            "task_id": "task-new-refunds",
+            "run_id": "run-new-refunds",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nrefund-a,-4.21\nrefund-b,0.00\nrefund-c,0.07\n",
+            "sha256": "0dccc18a99a491ba8628a80099094c6985a7631dff379fe764f7b9497d6b312e",
+            "size_bytes": 59,
+            "used_skills": [],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": []
+        },
+        {
+          "id": "task-new-subcent",
+          "passed": false,
+          "expected_csv": null,
+          "result": {
+            "task_id": "task-new-subcent",
+            "run_id": "run-new-subcent",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nfraction-a,0.005\n",
+            "sha256": "61c61863590093d0c1eee35be97dbb7a7ca048c20598d236691126e335e0e960",
+            "size_bytes": 33,
+            "used_skills": [],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": []
+        }
+      ]
+    },
+    "resumed": {
+      "passed": 3,
+      "total": 3,
+      "cases": [
+        {
+          "id": "task-new-sales",
+          "passed": true,
+          "expected_csv": "id,amount_cents\nsale-a,237\nsale-b,1999\nsale-c,1000\n",
+          "result": {
+            "task_id": "task-new-sales",
+            "run_id": "run-new-sales",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nsale-a,237\nsale-b,1999\nsale-c,1000\n",
+            "sha256": "8491a8030933862fcf384734dc2eee519bc86f135f3f70b0c27c2ea32825097f",
+            "size_bytes": 51,
+            "used_skills": [
+              {
+                "id": "skill-correction-owner-1",
+                "revision": 4,
+                "review_digest": "ba0b7d9a52340fa0eedfa96b25c5916922c018ac907bb0f2bd94a1220194f982"
+              }
+            ],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": [
+            {
+              "id": "skill-correction-owner-1",
+              "revision": 4,
+              "review_digest": "ba0b7d9a52340fa0eedfa96b25c5916922c018ac907bb0f2bd94a1220194f982"
+            }
+          ]
+        },
+        {
+          "id": "task-new-refunds",
+          "passed": true,
+          "expected_csv": "id,amount_cents\nrefund-a,-421\nrefund-b,0\nrefund-c,7\n",
+          "result": {
+            "task_id": "task-new-refunds",
+            "run_id": "run-new-refunds",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nrefund-a,-421\nrefund-b,0\nrefund-c,7\n",
+            "sha256": "b9eb9d740eabb1f7ab4e0ecd6d511d1453b6021056f86bc8908ac40ec668a48d",
+            "size_bytes": 52,
+            "used_skills": [
+              {
+                "id": "skill-correction-owner-1",
+                "revision": 4,
+                "review_digest": "ba0b7d9a52340fa0eedfa96b25c5916922c018ac907bb0f2bd94a1220194f982"
+              }
+            ],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": [
+            {
+              "id": "skill-correction-owner-1",
+              "revision": 4,
+              "review_digest": "ba0b7d9a52340fa0eedfa96b25c5916922c018ac907bb0f2bd94a1220194f982"
+            }
+          ]
+        },
+        {
+          "id": "task-new-subcent",
+          "passed": true,
+          "expected_error": "subcent_value",
+          "error": "subcent_value",
+          "used_skills": [
+            {
+              "id": "skill-correction-owner-1",
+              "revision": 4,
+              "review_digest": "ba0b7d9a52340fa0eedfa96b25c5916922c018ac907bb0f2bd94a1220194f982"
+            }
+          ],
+          "selected_skills": [
+            {
+              "id": "skill-correction-owner-1",
+              "revision": 4,
+              "review_digest": "ba0b7d9a52340fa0eedfa96b25c5916922c018ac907bb0f2bd94a1220194f982"
+            }
+          ]
+        }
+      ]
+    },
+    "revoked": {
+      "passed": 0,
+      "total": 3,
+      "cases": [
+        {
+          "id": "task-new-sales",
+          "passed": false,
+          "expected_csv": "id,amount_cents\nsale-a,237\nsale-b,1999\nsale-c,1000\n",
+          "result": {
+            "task_id": "task-new-sales",
+            "run_id": "run-new-sales",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nsale-a,2.37\nsale-b,19.99\nsale-c,10\n",
+            "sha256": "30f9291c190d35c28f73d5c0a53f681c252f6fe23efbc4b22b11ebd55ee495c1",
+            "size_bytes": 51,
+            "used_skills": [],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": []
+        },
+        {
+          "id": "task-new-refunds",
+          "passed": false,
+          "expected_csv": "id,amount_cents\nrefund-a,-421\nrefund-b,0\nrefund-c,7\n",
+          "result": {
+            "task_id": "task-new-refunds",
+            "run_id": "run-new-refunds",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nrefund-a,-4.21\nrefund-b,0.00\nrefund-c,0.07\n",
+            "sha256": "0dccc18a99a491ba8628a80099094c6985a7631dff379fe764f7b9497d6b312e",
+            "size_bytes": 59,
+            "used_skills": [],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": []
+        },
+        {
+          "id": "task-new-subcent",
+          "passed": false,
+          "expected_csv": null,
+          "result": {
+            "task_id": "task-new-subcent",
+            "run_id": "run-new-subcent",
+            "scope": {
+              "owner_id": "owner",
+              "bot_id": "bot-bookkeeping",
+              "workspace_id": "workspace-synthetic",
+              "task_kind": "csv-dollar-to-cent"
+            },
+            "output_csv": "id,amount_cents\nfraction-a,0.005\n",
+            "sha256": "61c61863590093d0c1eee35be97dbb7a7ca048c20598d236691126e335e0e960",
+            "size_bytes": 33,
+            "used_skills": [],
+            "grants": ["artifact.write", "csv.read"]
+          },
+          "selected_skills": []
+        }
+      ]
+    }
+  },
+  "controls": {
+    "pending_memory_excluded": true,
+    "suspended_memory_excluded": true,
+    "revoked_memory_excluded": true,
+    "authority_denial": "capability_denied",
+    "grants_before": ["artifact.write", "csv.read"],
+    "grants_after": ["artifact.write", "csv.read"],
+    "stale_reference_denial": "skill_changed",
+    "deleted_lessons": 0,
+    "deleted_skills": 0,
+    "tombstones": ["lesson-correction-owner-1", "skill-correction-owner-1"]
+  },
+  "audit": [
+    {
+      "action": "lesson.proposed",
+      "id": "lesson-correction-owner-1",
+      "revision": 1
+    },
+    {
+      "action": "skill.proposed",
+      "id": "skill-correction-owner-1",
+      "revision": 1
+    },
+    {
+      "action": "lesson.reviewed",
+      "id": "lesson-correction-owner-1",
+      "revision": 2
+    },
+    {
+      "action": "skill.verified",
+      "id": "skill-correction-owner-1",
+      "revision": 2
+    },
+    {
+      "action": "lesson.eligibility_changed",
+      "id": "lesson-correction-owner-1",
+      "revision": 3
+    },
+    {
+      "action": "skill.suspended",
+      "id": "skill-correction-owner-1",
+      "revision": 3
+    },
+    {
+      "action": "lesson.eligibility_changed",
+      "id": "lesson-correction-owner-1",
+      "revision": 4
+    },
+    {
+      "action": "skill.verified",
+      "id": "skill-correction-owner-1",
+      "revision": 4
+    },
+    {
+      "action": "lesson.eligibility_changed",
+      "id": "lesson-correction-owner-1",
+      "revision": 5
+    },
+    {
+      "action": "skill.revoked",
+      "id": "skill-correction-owner-1",
+      "revision": 5
+    },
+    {
+      "action": "skill.deleted",
+      "id": "skill-correction-owner-1",
+      "revision": 6
+    },
+    {
+      "action": "lesson.deleted",
+      "id": "lesson-correction-owner-1",
+      "revision": 6
+    }
+  ],
+  "limits": [
+    "Synthetic deterministic interpreter; no model quality or generalization claim.",
+    "Single-process reference checks; no production auth, concurrency or durable storage.",
+    "Deletion covers the current fixture store, not original fixtures or exported evidence.",
+    "S2 integration and S5 completion remain open."
+  ]
+}

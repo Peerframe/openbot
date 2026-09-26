@@ -1,0 +1,158 @@
+{
+  "profile": "openbot.work-command.operation/v1",
+  "prefixUtf8Hex": "6f70656e626f743a776f726b2d636f6d6d616e643a6f7065726174696f6e3a763100",
+  "intent": {
+    "kind": "work_command",
+    "version": 1,
+    "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "command": {
+      "image": "python@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "argv": [
+        "/usr/bin/python3",
+        "-c",
+        "print('测试😀')"
+      ],
+      "inputManifest": [
+        {
+          "path": "input.csv",
+          "size": 4,
+          "sha256": "5be08c9684a1d25efcee09318204824278b08bbfb4aef973ffefd0b9d7478313"
+        }
+      ],
+      "inputDigest": "sha256:ed05e4c3128a7d243aacf94acf1c4f97f2d45672c1cf647b2351dab1bb302688",
+      "output": {
+        "name": "result.csv",
+        "mediaType": "text/csv",
+        "maxBytes": 1024
+      },
+      "limits": {
+        "nanoCPUs": 500000000,
+        "memoryMiB": 128,
+        "pids": 64,
+        "nofile": 128,
+        "tmpMiB": 16,
+        "wallSeconds": 60,
+        "outputMiB": 16,
+        "capturedOutputKiB": 64
+      },
+      "network": "none",
+      "rootfs": "readonly",
+      "user": "10001:10001",
+      "environment": []
+    }
+  },
+  "positive": [
+    {
+      "name": "baseline-unicode-argv",
+      "operation": {
+        "format": "openbot.work-command.operation/v1",
+        "taskId": "task-1",
+        "runId": "run-1",
+        "actionId": "action-1",
+        "authorityGeneration": 1,
+        "originalEpoch": 2,
+        "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "route": {
+          "nodeId": "node-1",
+          "providerId": "command-provider",
+          "enforcementKeyId": "enforcement-key",
+          "ledgerId": "00000000-0000-0000-0000-000000000001"
+        },
+        "intentDigest": "591a37175edbb304f17436f9ac901debc4ad10f02b41ee65dbd87816b6083515",
+        "command": {
+          "image": "python@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "argv": [
+            "/usr/bin/python3",
+            "-c",
+            "print('测试😀')"
+          ],
+          "inputManifest": [
+            {
+              "path": "input.csv",
+              "size": 4,
+              "sha256": "5be08c9684a1d25efcee09318204824278b08bbfb4aef973ffefd0b9d7478313"
+            }
+          ],
+          "inputDigest": "sha256:ed05e4c3128a7d243aacf94acf1c4f97f2d45672c1cf647b2351dab1bb302688",
+          "output": {
+            "name": "result.csv",
+            "mediaType": "text/csv",
+            "maxBytes": 1024
+          },
+          "limits": {
+            "nanoCPUs": 500000000,
+            "memoryMiB": 128,
+            "pids": 64,
+            "nofile": 128,
+            "tmpMiB": 16,
+            "wallSeconds": 60,
+            "outputMiB": 16,
+            "capturedOutputKiB": 64
+          },
+          "network": "none",
+          "rootfs": "readonly",
+          "user": "10001:10001",
+          "environment": []
+        }
+      },
+      "canonical": "{\"actionId\":\"action-1\",\"authorityGeneration\":1,\"command\":{\"argv\":[\"/usr/bin/python3\",\"-c\",\"print('测试😀')\"],\"environment\":[],\"image\":\"python@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"inputDigest\":\"sha256:ed05e4c3128a7d243aacf94acf1c4f97f2d45672c1cf647b2351dab1bb302688\",\"inputManifest\":[{\"path\":\"input.csv\",\"sha256\":\"5be08c9684a1d25efcee09318204824278b08bbfb4aef973ffefd0b9d7478313\",\"size\":4}],\"limits\":{\"capturedOutputKiB\":64,\"memoryMiB\":128,\"nanoCPUs\":500000000,\"nofile\":128,\"outputMiB\":16,\"pids\":64,\"tmpMiB\":16,\"wallSeconds\":60},\"network\":\"none\",\"output\":{\"maxBytes\":1024,\"mediaType\":\"text/csv\",\"name\":\"result.csv\"},\"rootfs\":\"readonly\",\"user\":\"10001:10001\"},\"format\":\"openbot.work-command.operation/v1\",\"intentDigest\":\"591a37175edbb304f17436f9ac901debc4ad10f02b41ee65dbd87816b6083515\",\"originalEpoch\":2,\"profileDigest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"route\":{\"enforcementKeyId\":\"enforcement-key\",\"ledgerId\":\"00000000-0000-0000-0000-000000000001\",\"nodeId\":\"node-1\",\"providerId\":\"command-provider\"},\"runId\":\"run-1\",\"taskId\":\"task-1\"}",
+      "fingerprint": "6ab76222ff549505ba0728cfaf37e4cac5764c6ad99954f796f5d21b21e0e0c3"
+    },
+    {
+      "name": "changed-original-epoch",
+      "operation": {
+        "format": "openbot.work-command.operation/v1",
+        "taskId": "task-1",
+        "runId": "run-1",
+        "actionId": "action-1",
+        "authorityGeneration": 1,
+        "originalEpoch": 3,
+        "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "route": {
+          "nodeId": "node-1",
+          "providerId": "command-provider",
+          "enforcementKeyId": "enforcement-key",
+          "ledgerId": "00000000-0000-0000-0000-000000000001"
+        },
+        "intentDigest": "591a37175edbb304f17436f9ac901debc4ad10f02b41ee65dbd87816b6083515",
+        "command": {
+          "image": "python@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "argv": [
+            "/usr/bin/python3",
+            "-c",
+            "print('测试😀')"
+          ],
+          "inputManifest": [
+            {
+              "path": "input.csv",
+              "size": 4,
+              "sha256": "5be08c9684a1d25efcee09318204824278b08bbfb4aef973ffefd0b9d7478313"
+            }
+          ],
+          "inputDigest": "sha256:ed05e4c3128a7d243aacf94acf1c4f97f2d45672c1cf647b2351dab1bb302688",
+          "output": {
+            "name": "result.csv",
+            "mediaType": "text/csv",
+            "maxBytes": 1024
+          },
+          "limits": {
+            "nanoCPUs": 500000000,
+            "memoryMiB": 128,
+            "pids": 64,
+            "nofile": 128,
+            "tmpMiB": 16,
+            "wallSeconds": 60,
+            "outputMiB": 16,
+            "capturedOutputKiB": 64
+          },
+          "network": "none",
+          "rootfs": "readonly",
+          "user": "10001:10001",
+          "environment": []
+        }
+      },
+      "canonical": "{\"actionId\":\"action-1\",\"authorityGeneration\":1,\"command\":{\"argv\":[\"/usr/bin/python3\",\"-c\",\"print('测试😀')\"],\"environment\":[],\"image\":\"python@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"inputDigest\":\"sha256:ed05e4c3128a7d243aacf94acf1c4f97f2d45672c1cf647b2351dab1bb302688\",\"inputManifest\":[{\"path\":\"input.csv\",\"sha256\":\"5be08c9684a1d25efcee09318204824278b08bbfb4aef973ffefd0b9d7478313\",\"size\":4}],\"limits\":{\"capturedOutputKiB\":64,\"memoryMiB\":128,\"nanoCPUs\":500000000,\"nofile\":128,\"outputMiB\":16,\"pids\":64,\"tmpMiB\":16,\"wallSeconds\":60},\"network\":\"none\",\"output\":{\"maxBytes\":1024,\"mediaType\":\"text/csv\",\"name\":\"result.csv\"},\"rootfs\":\"readonly\",\"user\":\"10001:10001\"},\"format\":\"openbot.work-command.operation/v1\",\"intentDigest\":\"591a37175edbb304f17436f9ac901debc4ad10f02b41ee65dbd87816b6083515\",\"originalEpoch\":3,\"profileDigest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"route\":{\"enforcementKeyId\":\"enforcement-key\",\"ledgerId\":\"00000000-0000-0000-0000-000000000001\",\"nodeId\":\"node-1\",\"providerId\":\"command-provider\"},\"runId\":\"run-1\",\"taskId\":\"task-1\"}",
+      "fingerprint": "60c41279186dd262184a7d22716602c351f829fbd7b459b54b78f4a468b516f0"
+    }
+  ]
+}

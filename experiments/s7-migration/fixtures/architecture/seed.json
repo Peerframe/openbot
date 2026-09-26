@@ -1,0 +1,90 @@
+{
+  "synthetic": true,
+  "history": "architecture",
+  "tables": {
+    "bots": [
+      {
+        "id": "22222222-2222-4222-8222-000000000001",
+        "name": "Synthetic architecture Bot",
+        "role": "Fixture reviewer",
+        "status": "idle",
+        "computer_profile": "none",
+        "configuration": {
+          "fixture": "architecture"
+        },
+        "description": "Synthetic S7 identity",
+        "profile_revision": 2,
+        "created_at": "2026-09-01T00:00:00+00:00",
+        "updated_at": "2026-09-01T00:00:00+00:00"
+      }
+    ],
+    "channels": [
+      {
+        "id": "22222222-2222-4222-8222-000000000002",
+        "name": "Synthetic architecture channel",
+        "description": "Synthetic migration fixture",
+        "created_at": "2026-09-01T00:00:00+00:00",
+        "updated_at": "2026-09-01T00:00:00+00:00",
+        "direct_bot_id": "22222222-2222-4222-8222-000000000001"
+      }
+    ],
+    "channel_bots": [
+      {
+        "channel_id": "22222222-2222-4222-8222-000000000002",
+        "bot_id": "22222222-2222-4222-8222-000000000001",
+        "joined_at": "2026-09-01T00:00:00+00:00"
+      }
+    ],
+    "messages": [
+      {
+        "id": "22222222-2222-4222-8222-000000000003",
+        "channel_id": "22222222-2222-4222-8222-000000000002",
+        "author_type": "human",
+        "author_id": "owner",
+        "content": "Check synthetic records.",
+        "created_at": "2026-09-01T00:00:00+00:00"
+      },
+      {
+        "id": "22222222-2222-4222-8222-000000000004",
+        "channel_id": "22222222-2222-4222-8222-000000000002",
+        "author_type": "bot",
+        "author_id": "22222222-2222-4222-8222-000000000001",
+        "content": "Synthetic report is ready.",
+        "reply_to_message_id": "22222222-2222-4222-8222-000000000003",
+        "run_id": "22222222-2222-4222-8222-000000000005",
+        "created_at": "2026-09-01T00:00:00+00:00"
+      }
+    ],
+    "runs": [
+      {
+        "id": "22222222-2222-4222-8222-000000000005",
+        "channel_id": "22222222-2222-4222-8222-000000000002",
+        "bot_id": "22222222-2222-4222-8222-000000000001",
+        "node_id": null,
+        "title": "Synthetic completed task",
+        "status": "completed",
+        "source_message_id": "22222222-2222-4222-8222-000000000003",
+        "execution_profile": "none",
+        "instruction": "Check synthetic records.",
+        "result_summary": "Synthetic report saved.",
+        "created_at": "2026-09-01T00:00:00+00:00",
+        "updated_at": "2026-09-01T00:00:00+00:00"
+      }
+    ],
+    "artifacts": [
+      {
+        "id": "22222222-2222-4222-8222-000000000006",
+        "run_id": "22222222-2222-4222-8222-000000000005",
+        "name": "Synthetic report.md",
+        "media_type": "text/markdown",
+        "storage_key": "runs/22222222-2222-4222-8222-000000000005/22222222-2222-4222-8222-000000000006.md",
+        "sha256": "215570592b4e7ee71769d0eee4e52c7b378b1ad8cdd9fb5136e380689626fe3e",
+        "metadata": {
+          "sizeBytes": 77,
+          "fixture": "architecture"
+        },
+        "created_at": "2026-09-01T00:00:00+00:00"
+      }
+    ]
+  }
+}

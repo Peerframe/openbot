@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { checkServerHealth } from "../deploy/server/healthcheck.mjs";
@@ -8,6 +9,7 @@ const repositoryRoot = new URL("../", import.meta.url);
 const paths = [
   "deploy/server/Dockerfile",
   "deploy/server/compose.yaml",
+  "deploy/server/compose.python.yaml",
   ".dockerignore",
   ".github/workflows/ci.yml",
   "scripts/smoke-server-container.sh",
@@ -18,6 +20,7 @@ const paths = [
 const [
   dockerfile,
   compose,
+  pythonCompose,
   dockerignore,
   workflow,
   smoke,
@@ -28,6 +31,7 @@ const [
 const valid = {
   dockerfile,
   compose,
+  pythonCompose,
   dockerignore,
   workflow,
   smoke,
@@ -35,6 +39,44 @@ const valid = {
   contributing,
   contributingChinese,
 };
+
+test("POSIX preflight log guard drains the stream and rejects missing or failed evidence", {
+  skip: process.platform === "win32",
+}, () => {
+  const start = smoke.indexOf('  if ! docker logs "$invalid_python_container"');
+  assert.notEqual(start, -1);
+  const end = smoke.indexOf("\n  fi", start);
+  assert.notEqual(end, -1);
+  const guard = smoke.slice(start, end + "\n  fi".length);
+  for (const mode of ["matched", "missing", "failed"]) {
+    const result = spawnSync(
+      "bash",
+      [
+        "-c",
+        `
+set -euo pipefail
+invalid_python_container=synthetic-log-stream
+docker() {
+  if [[ "$LOG_MODE" != "missing" ]]; then
+    printf '%s\\n' 'Python Agent runtime preflight failed'
+  fi
+  for ((i=0; i<256; i++)); do printf '%2048s\\n' ''; done
+  [[ "$LOG_MODE" != "failed" ]]
+}
+${guard}
+`,
+      ],
+      {
+        env: { ...process.env, LOG_MODE: mode },
+        encoding: "utf8",
+        timeout: 5_000,
+        maxBuffer: 2 * 1024 * 1024,
+      },
+    );
+    assert.ifError(result.error);
+    assert.equal(result.status, mode === "matched" ? 0 : 1, `${mode}: ${result.stderr}`);
+  }
+});
 
 test("accepts the exact non-root multi-stage Server container contract", () => {
   assert.doesNotThrow(() => validateServerContainer(valid));
@@ -323,5 +365,45 @@ test("isolates the container policy from a following peer job", () => {
           "    steps:\n      - run: bash scripts/smoke-server-container.sh\n",
       }),
     /Server container CI job is missing required fragment/,
+  );
+});
+
+test("rejects Python dependency and overlay bypasses", () => {
+  for (const fragment of [
+    "--only-binary=:all:",
+    "--profile runtime",
+    "-r requirements-runtime.lock",
+  ]) {
+    assert.throws(
+      () => validateServerContainer({ ...valid, dockerfile: dockerfile.replace(fragment, "") }),
+      /Python dependency/,
+    );
+  }
+  assert.throws(
+    () =>
+      validateServerContainer({
+        ...valid,
+        pythonCompose: pythonCompose.replace("runtime-python", "runtime"),
+      }),
+    /Python Compose/,
+  );
+  assert.throws(
+    () =>
+      validateServerContainer({
+        ...valid,
+        pythonCompose: `${pythonCompose}    privileged: true\n`,
+      }),
+    /Python Compose/,
+  );
+  assert.throws(
+    () =>
+      validateServerContainer({
+        ...valid,
+        dockerfile: dockerfile.replace(
+          "FROM python-base AS runtime-python",
+          "FROM python-base AS runtime-python\nRUN pip install pytest",
+        ),
+      }),
+    /Python runtime/,
   );
 });

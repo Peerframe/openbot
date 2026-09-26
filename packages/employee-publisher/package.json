@@ -1,0 +1,28 @@
+{
+  "name": "@openbot/employee-publisher",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Retained offline Owner publisher-key tooling; not a Server runtime.",
+  "exports": {},
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run src && node --test ../../scripts/employee-publisher-key.test.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@openbot/domain": "0.0.0",
+    "@openbot/protocol": "0.0.0",
+    "@sigstore/core": "4.0.1",
+    "filename-reserved-regex": "4.0.1",
+    "write-file-atomic": "8.0.0",
+    "yaml": "2.9.0",
+    "zod": "4.6.2"
+  },
+  "devDependencies": {
+    "@types/filename-reserved-regex": "3.0.0",
+    "@types/write-file-atomic": "4.0.3",
+    "tsx": "4.23.13"
+  }
+}

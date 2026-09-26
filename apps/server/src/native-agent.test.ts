@@ -8,6 +8,8 @@ import type { Run } from "@openbot/domain";
 import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it, vi } from "vitest";
 import { NativeExecutionError } from "./agent-observations.js";
+import { type AgentRuntimeExecutor, executeAgentRuntime } from "./agent-runtime.js";
+import { PendingSteeringError } from "./agent-steering.js";
 import { FileChannelAttachmentStorage } from "./channel-attachments.js";
 import { ChannelRealtimeHub } from "./channel-realtime-hub.js";
 import type { ModelSettingsService } from "./model-settings.js";
@@ -87,7 +89,162 @@ function fixture() {
     signal: new AbortController().signal,
   };
 }
+describe("Run-scoped continuation integrity", () => {
+  it.each(["memory", "skill"] as const)(
+    "retains consumed %s authority after a completion correction",
+    async (kind) => {
+      const f = fixture();
+      vi.mocked(f.store.queued).mockResolvedValueOnce([run]).mockResolvedValue([]);
+      let revoked = false;
+      const descriptor = {
+        id: randomUUID(),
+        name: "report-workflow",
+        description: "Reports",
+        version: "1.0.0",
+        revision: 2,
+        sha256: "a".repeat(64),
+      };
+      const assertReferences = async (_run: Run, references: unknown[]) => {
+        if (revoked && references.length)
+          throw new NativeExecutionError(kind === "memory" ? "memory_changed" : "skills_changed");
+      };
+      if (kind === "memory") {
+        f.store.knowledge = async () => ({
+          memories: [
+            {
+              id: "memory",
+              revision: 2,
+              title: "Prior lesson",
+              content: "Reviewed evidence.",
+              kind: "semantic",
+              truncated: false,
+            },
+          ],
+          truncated: false,
+        });
+        f.store.assertKnowledge = assertReferences;
+      } else {
+        f.store.skills = async () => ({ skills: [descriptor], truncated: false });
+        f.store.readSkill = async () => ({ ...descriptor, markdown: "Use reviewed evidence." });
+        f.store.assertSkills = assertReferences;
+      }
+      vi.mocked(f.store.complete)
+        .mockImplementationOnce(async () => {
+          revoked = true;
+          throw new PendingSteeringError();
+        })
+        .mockResolvedValue({
+          run: { ...run, status: "completed" },
+          message: {
+            id: "reply",
+            channelId: run.channelId,
+            authorType: "bot",
+            authorId: run.botId,
+            content: "Invalid late answer",
+            createdAt: run.createdAt,
+          },
+        });
+      const model = new MockLanguageModelV4({
+        doGenerate: [
+          calls(
+            kind === "memory" ? "read_employee_memory" : "read_skill",
+            kind === "memory" ? "{}" : JSON.stringify({ skillId: descriptor.id }),
+          ),
+          answer("Initial draft"),
+          answer("Invalid late answer"),
+        ],
+      });
+      const settings = {
+        agentSettings: async () => ({
+          provider: "openai",
+          model: "fixture",
+          apiKey: "fixture",
+          revision: "1",
+          agentEnabled: true,
+          agentEnabledAt: run.createdAt,
+        }),
+        onChange: () => () => {},
+      } as unknown as ModelSettingsService;
+      const runner = new NativeAgentRunner(
+        f.store,
+        settings,
+        new ChannelRealtimeHub(),
+        vi.fn(),
+        () => model,
+      );
+      try {
+        runner.start();
+        await vi.waitFor(() =>
+          expect(f.store.fail).toHaveBeenCalledWith(
+            run,
+            kind === "memory" ? "memory_changed" : "skills_changed",
+          ),
+        );
+        expect(f.store.complete).toHaveBeenCalledTimes(1);
+        expect(model.doGenerateCalls).toHaveLength(2);
+      } finally {
+        await runner.stop();
+      }
+    },
+  );
+});
 describe("native Agent loop", () => {
+  it("composes a selected executor through the real runner while Server commits delivery", async () => {
+    const f = fixture();
+    vi.mocked(f.store.queued).mockResolvedValueOnce([run]).mockResolvedValue([]);
+    vi.mocked(f.store.complete).mockResolvedValue({
+      run: { ...run, status: "completed" },
+      message: {
+        id: "reply",
+        channelId: run.channelId,
+        authorType: "bot",
+        authorId: run.botId,
+        content: "Delivered.",
+        createdAt: run.createdAt,
+      },
+    });
+    const settings = {
+      agentSettings: async () => ({
+        provider: "openai" as const,
+        model: "fixture",
+        apiKey: "test",
+        revision: "1",
+        agentEnabled: true,
+        agentEnabledAt: run.createdAt,
+      }),
+      onChange: () => () => {},
+    };
+    const executeRuntime = vi.fn<AgentRuntimeExecutor>(executeAgentRuntime);
+    const model = new MockLanguageModelV4({ doGenerate: [calls(), answer("Delivered.")] });
+    const runner = new NativeAgentRunner(
+      f.store,
+      settings,
+      new ChannelRealtimeHub(),
+      vi.fn(),
+      () => model,
+      { executeRuntime },
+    );
+    try {
+      runner.start();
+      await vi.waitFor(() => expect(f.store.complete).toHaveBeenCalledOnce());
+      expect(executeRuntime).toHaveBeenCalledOnce();
+      expect(Object.keys(executeRuntime.mock.calls[0]?.[0] ?? {})).not.toContain("complete");
+      expect(JSON.stringify(executeRuntime.mock.calls[0]?.[1].messages)).toContain(run.instruction);
+      expect(f.store.context).toHaveBeenCalledWith(run);
+      expect(f.store.complete).toHaveBeenCalledWith(
+        run,
+        "Delivered.",
+        [],
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
+      expect(f.store.fail).not.toHaveBeenCalled();
+    } finally {
+      await runner.stop();
+    }
+  });
   it.each([
     ["processed.pdf", Buffer.from("%PDF-1.7\n%%EOF"), "extract"],
     ["processed.docx", Buffer.from([80, 75, 3, 4]), "extract"],

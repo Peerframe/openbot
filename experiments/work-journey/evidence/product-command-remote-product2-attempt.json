@@ -1,0 +1,48 @@
+{
+  "case": "product-command-remote-composition-product2",
+  "accepted": false,
+  "actualControlPostgresAndMutualTLSStarted": true,
+  "nodeStarted": false,
+  "workActionCreated": false,
+  "nativeCommandStarted": false,
+  "failure": {
+    "code": "invalid_command_contract",
+    "errorType": "ValueError",
+    "source": {
+      "file": "product_host_fixture.py",
+      "function": "read_stdin",
+      "line": 65
+    }
+  },
+  "diagnosis": "The fixture passed1024 to strict_json; its bounded value class only accepts512/8192/16384/32768. The86-byte synthetic enrollment is accepted with512.",
+  "evidenceBoundary": "Finite remote pre-run error plus local exact-codec reproduction; not Linux product-chain acceptance.",
+  "naturalRemoteExit": 1,
+  "automaticRetries": 0,
+  "consumedIdentityRetained": true,
+  "cleanup": {
+    "ownedPublicBundleRemoved": true,
+    "unusedEnforcerKeyAbsent": true,
+    "noRunOrActionWasReserved": true,
+    "stageTombstoneRetained": true
+  },
+  "resources": {
+    "runReservationAbsent": true,
+    "actionReservationAbsent": true,
+    "unusedEnforcerKeyAbsent": true,
+    "fixtureUidProcessesAbsent": true,
+    "socketAbsent": true,
+    "forwardPortAbsent": true,
+    "activeQualificationUnits": 0
+  },
+  "production": {
+    "containerCount": 10,
+    "identitiesAndStateUnchanged": true,
+    "ipv4Ipv6SemanticsUnchanged": true
+  },
+  "repair": {
+    "fixtureEnvelopeBytes": 512,
+    "commandNativeAndCryptoPinsUnchanged": true,
+    "localControllerAndHostTestsPassed": 161,
+    "linuxProductRequalificationPending": true
+  }
+}

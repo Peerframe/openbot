@@ -9,6 +9,15 @@ OpenBot 可以使用 Owner 控制的 Ed25519 密钥，为现有的不含身份�
 此功能仍为实验性。验签成功后先显示只读隔离预览；经过认证的 Owner 可以把人工审核过的准确
 摘要激活为新的本地员工，全部技能仍保持候选禁用。激活不能复制记忆、绑定工作主机或授予权限。
 
+离线 CLI 现位于 `packages/employee-publisher`，不会启动或导入旧 TypeScript Server，也不依赖
+测试 oracle。完成仓库常规的锁定安装 `npm ci` 后，先运行
+`npm exec -- turbo run build --filter=@openbot/employee-publisher` 构建共享契约。
+
+根命令仍加载仓库根目录的 `.env`。为保持兼容，相对路径参数（`--keyring`、
+`--passphrase-file`、`--public-key`、`--output`）与 `OPENBOT_EMPLOYEE_PUBLISHER_*`
+路径继续以 `apps/server` 为基准，即使该目录已不存在。新安装建议使用绝对路径；例如下文的
+`./data` 指向 `<checkout>/apps/server/data`，不是 `<checkout>/data`。
+
 ## 初始化本地发布者
 
 为密钥库与口令选择两个不同的受保护位置：
@@ -26,6 +35,18 @@ npm run employee:publisher-key -- init \
 OPENBOT_EMPLOYEE_PUBLISHER_KEYRING_PATH=./data/employee-publisher
 OPENBOT_EMPLOYEE_PUBLISHER_PASSPHRASE_FILE=./data/employee-publisher-secret/passphrase
 ```
+
+上述两个变量配置 CLI 与旧 Server。Python product 入口使用另一组显式变量，必须设置为
+上面选择的**同一组绝对路径**：
+
+```dotenv
+OPENBOT_CONTROL_PUBLISHER_DIRECTORY=/absolute/protected/employee-publisher
+OPENBOT_CONTROL_PUBLISHER_PASSPHRASE_FILE=/absolute/protected/employee-publisher-secret/passphrase
+```
+
+Python 的两个变量必须同时提供，不会自动读取 CLI 变量，也不继承启动器的历史相对路径基准。
+密钥或信任设置变化后，重启所选 Server。原加密密钥库、公钥信任清单与 DSSE 格式不变。参见
+[迁移调研](research/retained-developer-tools.md)。
 
 一旦显式配置，密钥库若不可读、权限过宽、使用符号链接、格式错误或公私钥不匹配，Server 将
 拒绝启动，不会静默退回无签名导出。

@@ -55,6 +55,7 @@ export const macOSNodeServiceConfigSchema = z
 export const serverEnvSchema = z
   .object({
     OPENBOT_HOST: z.string().default("127.0.0.1"),
+    OPENBOT_AGENT_RUNTIME: z.enum(["typescript", "python"]).default("typescript"),
     OPENBOT_PORT: portSchema.default(3001),
     OPENBOT_DATABASE_URL: z.string().default("postgres://openbot:openbot@localhost:5432/openbot"),
     OPENBOT_OWNER_NAME: z.string().trim().min(1).max(80).default("Owner"),

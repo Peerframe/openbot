@@ -1,0 +1,27 @@
+{
+  "case": "expiry",
+  "actualHTTP": true,
+  "actualPostgres": true,
+  "mutualTLS": true,
+  "syntheticModel": true,
+  "sqlCommitBeforeACKRecovery": false,
+  "originalEngineRun": true,
+  "noProviderResend": true,
+  "counts": {
+    "parent:start": 1,
+    "a:answer": 1,
+    "a:review": 1
+  },
+  "offlineReplay": true,
+  "replayedHistories": 2,
+  "childRelations": 1,
+  "taskStatus": "failed",
+  "durableDeadlineTimerFired": true,
+  "deadlineTimerSeconds": 292.332349,
+  "qualificationInput": "uncommitted-qualified-working-tree",
+  "workingTreeParent": "482bdc5bea56c5b1a996492701b6dbb012d5691e",
+  "historySha256": {
+    "history-1.json": "099f429c0da65790224f1d02939970a5523d208baa4b1c127fd8113b640c9ee8",
+    "history-0.json": "704e03ba23f91964be43105a2beb6fb8f21149e91e890c76e055d1049466cd34"
+  }
+}

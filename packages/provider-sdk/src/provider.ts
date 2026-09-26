@@ -1,4 +1,10 @@
-import type { NodeCapability, NodeCapabilityDescriptor, NodePlatform } from "@openbot/protocol";
+import type {
+  BrowserCommand,
+  BrowserFrame,
+  NodeCapability,
+  NodeCapabilityDescriptor,
+  NodePlatform,
+} from "@openbot/protocol";
 
 export interface ProviderContext {
   nodeId: string;
@@ -65,6 +71,7 @@ export interface ProviderFrame {
  * never authorize a Run or bypass Server policy.
  */
 export interface ComputerProvider {
+  browser?(command: BrowserCommand, signal: AbortSignal): Promise<BrowserFrame>;
   id: string;
   displayName: string;
   platforms: NodePlatform[];

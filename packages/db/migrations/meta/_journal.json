@@ -190,6 +190,118 @@
       "when": 1789968000008,
       "tag": "0026_automation_attachment_outcome",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1790150400000,
+      "tag": "0027_work_domain",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1790150400001,
+      "tag": "0028_work_publication",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1790150400002,
+      "tag": "0029_work_reconciliation",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1790208000000,
+      "tag": "0030_work_handoff_submission",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1790208000001,
+      "tag": "0031_work_engine_chain",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1790208000002,
+      "tag": "0032_work_submission_attempt_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1790208000003,
+      "tag": "0033_work_model_receipts",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1790208000004,
+      "tag": "0034_work_corrections",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1790208000005,
+      "tag": "0035_model_connections",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1790208000006,
+      "tag": "0036_work_sources",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1790208000007,
+      "tag": "0037_work_tool_results",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1790208000008,
+      "tag": "0038_work_task_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1790208000009,
+      "tag": "0039_work_collaboration",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1790208000010,
+      "tag": "0040_native_task_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1790208000011,
+      "tag": "0041_work_command_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1790208000012,
+      "tag": "0042_work_command_preparations",
+      "breakpoints": true
     }
   ]
 }

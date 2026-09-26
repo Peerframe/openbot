@@ -4,7 +4,7 @@ import { join } from "node:path";
 import type { Run } from "@openbot/domain";
 import type { WindowsSecretAcl } from "@openbot/windows-secret-acl";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { startExamplePlugin } from "./plugin-example.js";
+import { startExamplePlugin } from "../../../packages/mcp-example/src/plugin-example.js";
 import { PluginService } from "./plugin-service.js";
 import { FilePluginStore } from "./plugin-store.js";
 import type { PluginConnection } from "./plugin-transport.js";

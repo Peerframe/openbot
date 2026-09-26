@@ -48,6 +48,11 @@ function pluginDevCspNonce(): Plugin {
 
 export default defineConfig(({ command, mode }) => {
   const desktopRenderer = mode === "desktop";
+  const apiTarget = process.env.OPENBOT_DEV_API_URL ?? "http://localhost:3001";
+  const target = new URL(apiTarget);
+  if (!["localhost", "127.0.0.1", "[::1]"].includes(target.hostname) || target.protocol !== "http:" ||
+      target.username || target.password || target.pathname !== "/" || target.search || target.hash)
+    throw new Error("OPENBOT_DEV_API_URL must select an explicit loopback HTTP service.");
   // Only the standard web development document receives response-specific nonces.
   const enableDevCspNonce = command === "serve" && !desktopRenderer;
 
@@ -75,8 +80,8 @@ export default defineConfig(({ command, mode }) => {
       host: "0.0.0.0",
       port: 5173,
       proxy: {
-        "/api": "http://localhost:3001",
-        "/health": "http://localhost:3001",
+        "/api": apiTarget,
+        "/health": apiTarget,
       },
     },
   };

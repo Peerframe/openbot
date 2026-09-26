@@ -86,7 +86,6 @@ describe("EmployeeProfileView", () => {
   });
 });
 
-
 const interactiveViews: RenderedComponent[] = [];
 
 afterEach(async () => {
@@ -153,9 +152,89 @@ describe("EmployeeProfileView keyboard DOM regression", () => {
     expect(document.activeElement).toBe(configuration);
 
     await interact(() =>
-      configuration.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true })),
+      configuration.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }),
+      ),
     );
     expect(configuration.getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(configuration);
+  });
+});
+
+describe("reviewed knowledge memory provenance", () => {
+  function memoryProfile(provenance: Record<string, unknown>): EmployeeProfile {
+    return {
+      ...profile,
+      memories: [
+        {
+          id: "memory",
+          botId: "employee-1",
+          kind: "procedural",
+          title: "Reviewed evidence",
+          content: "Synthetic reviewed content",
+          sensitivity: "internal",
+          portability: "never",
+          provenance,
+          modelUseEnabled: false,
+          revision: 1,
+          createdAt: "2026-09-25T00:00:00Z",
+          updatedAt: "2026-09-25T00:00:00Z",
+        },
+      ],
+    };
+  }
+  it("shows the actual reviewed native Task and Work Run without inventing a channel source", () => {
+    const html = renderToStaticMarkup(
+      <EmployeeMemoryPanel
+        profile={memoryProfile({
+          source: "reviewed-work-proposal",
+          actor: "owner",
+          proposalId: "proposal",
+          sourceTaskId: "native-task",
+          sourceWorkRunId: "native-work-run",
+        })}
+        onProfileChanged={async () => {}}
+      />,
+    );
+    expect(html).toContain('href="#/tasks?task=native-task"');
+    expect(html).toContain("native-work-run");
+    expect(html).toContain("Work Run");
+    expect(html).toContain("仅供你查看");
+    expect(html).not.toContain("来源频道 Run");
+  });
+  it("retains legacy channel Run provenance without granting a native Task identity", () => {
+    const html = renderToStaticMarkup(
+      <EmployeeMemoryPanel
+        profile={memoryProfile({ source: "reviewed-agent-proposal", sourceRunId: "channel-run" })}
+        onProfileChanged={async () => {}}
+      />,
+    );
+    expect(html).toContain("来源频道 Run：channel-run");
+    expect(html).not.toContain("#/tasks?task=");
+  });
+  it("does not fall back to a misleading legacy identity when native provenance is incomplete", () => {
+    const html = renderToStaticMarkup(
+      <EmployeeMemoryPanel
+        profile={memoryProfile({
+          source: "reviewed-work-proposal",
+          sourceTaskId: "native-task",
+          sourceRunId: "not-the-source",
+        })}
+        onProfileChanged={async () => {}}
+      />,
+    );
+    expect(html).toContain("原生任务来源信息不完整");
+    expect(html).not.toContain("not-the-source");
+    expect(html).not.toContain("#/tasks?task=");
+  });
+  it("does not invent a source link for manually authored Owner memory", () => {
+    const html = renderToStaticMarkup(
+      <EmployeeMemoryPanel
+        profile={memoryProfile({ source: "owner", actor: "owner" })}
+        onProfileChanged={async () => {}}
+      />,
+    );
+    expect(html).not.toContain("#/tasks?task=");
+    expect(html).not.toContain("来源频道 Run");
   });
 });

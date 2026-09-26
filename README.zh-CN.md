@@ -90,7 +90,7 @@ Desktop 和 Web 共用 React 界面。Server 统一管理 Bot 身份、路由、
 
 ## 扩展与贡献
 
-**开发插件：** 实现标准 MCP Streamable HTTP 接口，提供工具、资源、提示词或 Apps。依照[插件契约](docs/PLUGINS.zh-CN.md)，从[示例](apps/server/src/plugin-example.ts)开始，提交扩展供审核。无需 OpenBot 专属 SDK；安装插件和为 Bot 授权分开进行。
+**开发插件：** 实现标准 MCP Streamable HTTP 接口，提供工具、资源、提示词或 Apps。依照[插件契约](docs/PLUGINS.zh-CN.md)，从[示例](packages/mcp-example/src/plugin-example.ts)开始，提交扩展供审核。无需 OpenBot 专属 SDK；安装插件和为 Bot 授权分开进行。
 
 **参与核心开发：** 先阅读[贡献指南](CONTRIBUTING.zh-CN.md)、[开源复用规则](docs/OPEN_SOURCE_REUSE.zh-CN.md)和[文档索引](docs/README.zh-CN.md)。通过 [Issues](https://github.com/Peerframe/openbot/issues) 反馈问题与提案，通过 [Pull requests](https://github.com/Peerframe/openbot/pulls) 提交修改。安全问题请遵循[安全政策](SECURITY.md)。
 

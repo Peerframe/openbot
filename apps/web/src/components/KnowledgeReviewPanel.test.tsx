@@ -85,3 +85,87 @@ describe("Owner knowledge review", () => {
     }
   });
 });
+
+describe("native Task knowledge provenance", () => {
+  const nativeProposal: KnowledgeProposal = {
+    id: "native-proposal",
+    botId: "bot",
+    source: { kind: "task", taskId: "task-identity", runId: "work-run-identity" },
+    kind: "procedural",
+    title: "Retain native evidence",
+    content: "Review before using this memory.",
+    createdAt: "2026-09-25T00:00:00Z",
+  };
+  it("links the actual native Task, separately labels its Work Run, and leaves model use off", async () => {
+    const reviewed = vi.fn(async () => {});
+    vi.mocked(reviewKnowledgeProposal).mockResolvedValue({
+      proposalId: "native-proposal",
+      decision: "accept",
+      memoryId: "native-memory",
+    });
+    const view = await renderComponent(
+      <KnowledgeProposalReview proposal={nativeProposal} onReviewed={reviewed} />,
+    );
+    try {
+      const source = view.container.querySelector(".knowledge-source");
+      expect(source?.textContent).toContain("来源 Task：task-identity");
+      expect(source?.textContent).toContain("Work Run：work-run-identity");
+      expect(source?.textContent).not.toContain("来源频道 Run");
+      const link = source?.querySelector("a");
+      expect(link?.getAttribute("href")).toBe("#/tasks?task=task-identity");
+      expect(link?.textContent).toBe("task-identity");
+      expect(
+        view.container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked,
+      ).toBe(false);
+      await interact(() =>
+        view.container.querySelector<HTMLButtonElement>('button[type="submit"]')?.click(),
+      );
+      expect(reviewKnowledgeProposal).toHaveBeenCalledExactlyOnceWith("bot", "native-proposal", {
+        decision: "accept",
+        ownerReviewed: true,
+        title: nativeProposal.title,
+        content: nativeProposal.content,
+        modelUseEnabled: false,
+      });
+      expect(reviewed).toHaveBeenCalledOnce();
+    } finally {
+      await view.unmount();
+    }
+  });
+  it("rejects a native proposal without sending or fabricating any source identity", async () => {
+    vi.mocked(reviewKnowledgeProposal).mockResolvedValue({
+      proposalId: "native-proposal",
+      decision: "reject",
+      memoryId: null,
+    });
+    const view = await renderComponent(
+      <KnowledgeProposalReview proposal={nativeProposal} onReviewed={async () => {}} />,
+    );
+    try {
+      await interact(() =>
+        [...view.container.querySelectorAll("button")]
+          .find((button) => button.textContent?.includes("拒绝"))
+          ?.click(),
+      );
+      expect(reviewKnowledgeProposal).toHaveBeenCalledExactlyOnceWith("bot", "native-proposal", {
+        decision: "reject",
+        ownerReviewed: true,
+      });
+    } finally {
+      await view.unmount();
+    }
+  });
+  it("keeps channel proposals distinct and does not turn a legacy Run into a Task link", async () => {
+    const view = await renderComponent(
+      <KnowledgeProposalReview proposal={proposal} onReviewed={async () => {}} />,
+    );
+    try {
+      expect(view.container.querySelector(".knowledge-source")?.textContent).toContain(
+        "来源频道 Run：source-run",
+      );
+      expect(view.container.querySelector(".knowledge-source a")).toBeNull();
+    } finally {
+      await view.unmount();
+    }
+  });
+});

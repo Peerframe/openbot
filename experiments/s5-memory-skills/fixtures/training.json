@@ -1,0 +1,35 @@
+{
+  "source": {
+    "task_id": "task-training",
+    "run_id": "run-training",
+    "artifact_id": "artifact-training",
+    "status": "completed",
+    "scope": {
+      "owner_id": "owner",
+      "bot_id": "bot-bookkeeping",
+      "workspace_id": "workspace-synthetic",
+      "task_kind": "csv-dollar-to-cent"
+    },
+    "input_csv": "id,amount_dollars\ntrain-a,1.23\ntrain-b,4.56\n",
+    "input_sha256": "b58a86ec8189bad5b71c8982a86470840c1f8d85dbfe3ed40a54fa237c836431",
+    "artifact_csv": "id,amount_cents\ntrain-a,1.23\ntrain-b,4.56\n",
+    "artifact_sha256": "f6b3145c4ae8e2a69ae022e8476d1e917fe8dcaf5e550e9dc0ecf2aa6429db3f"
+  },
+  "correction": {
+    "id": "correction-owner-1",
+    "source": {
+      "task_id": "task-training",
+      "run_id": "run-training",
+      "artifact_id": "artifact-training",
+      "artifact_sha256": "f6b3145c4ae8e2a69ae022e8476d1e917fe8dcaf5e550e9dc0ecf2aa6429db3f"
+    },
+    "scope": {
+      "owner_id": "owner",
+      "bot_id": "bot-bookkeeping",
+      "workspace_id": "workspace-synthetic",
+      "task_kind": "csv-dollar-to-cent"
+    },
+    "lesson": "For this CSV dollar to cent workflow, amounts must be integer cents. Preserve IDs and row order. Treat negative amounts as refunds and reject sub-cent values.",
+    "corrected_csv": "id,amount_cents\ntrain-a,123\ntrain-b,456\n"
+  }
+}

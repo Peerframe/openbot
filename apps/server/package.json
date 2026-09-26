@@ -6,7 +6,6 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
-    "employee:publisher-key": "tsx --env-file-if-exists=../../.env src/employee-publisher-key-cli.ts",
     "start": "node --env-file-if-exists=../../.env dist/index.js",
     "test": "vitest run src --maxWorkers=2",
     "typecheck": "tsc --noEmit -p tsconfig.json"

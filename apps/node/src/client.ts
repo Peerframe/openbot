@@ -23,6 +23,8 @@ import {
   type PreparedAction,
 } from "@openbot/provider-sdk";
 import WebSocket from "ws";
+import { BrowserCommandHost } from "./browser-host.js";
+import { CommandRelay, type CommandRelayInstallation } from "./command-relay.js";
 import { createNodeCredentialStore, type NodeCredentialStore } from "./credential-store.js";
 import { detectWorkerHost } from "./host.js";
 import {
@@ -50,6 +52,10 @@ export class OpenBotNodeClient {
   readonly #providers: ComputerProvider[];
   readonly #credentialStore: NodeCredentialStore;
   readonly #logger: OpenBotLogger;
+  readonly #browser: BrowserCommandHost;
+  readonly #commandInstallation: CommandRelayInstallation | undefined;
+  #commandRelay?: CommandRelay;
+  readonly #browserTasks = new Set<Promise<void>>();
   #credential?: string;
   #socket?: WebSocket;
   #heartbeat?: NodeJS.Timeout;
@@ -77,10 +83,15 @@ export class OpenBotNodeClient {
     providers = configuredProviders(env),
     credentialStore: NodeCredentialStore = createNodeCredentialStore(env),
     logger: OpenBotLogger = createLogger({ level: env.OPENBOT_LOG_LEVEL }),
+    commandInstallation?: CommandRelayInstallation,
   ) {
     this.#env = env;
+    if (commandInstallation && commandInstallation.selection.nodeId !== env.OPENBOT_NODE_ID)
+      throw new Error("Command enforcer selection belongs to a different Node.");
+    this.#commandInstallation = commandInstallation;
     assertProviderDeclarations(providers);
     this.#providers = providers;
+    this.#browser = new BrowserCommandHost(env.OPENBOT_NODE_ID, providers);
     this.#credentialStore = credentialStore;
     this.#logger = logger;
   }
@@ -122,13 +133,14 @@ export class OpenBotNodeClient {
 
   async #stopOnce(): Promise<void> {
     this.#stopped = true;
+    this.#commandRelay?.close();
     this.#identityController?.abort();
     clearInterval(this.#heartbeat);
     clearTimeout(this.#reconnect);
     this.#abortExecutions();
     this.#assignedRunIds.clear();
     this.#acceptedOffers.clear();
-    const executions = Array.from(this.#executionTasks.values());
+    const executions = [...this.#executionTasks.values(), ...this.#browserTasks];
     const startup = this.#startPromise?.catch(() => undefined) ?? Promise.resolve();
     await Promise.all([startup, this.#closeSocket(), ...executions]);
   }
@@ -145,6 +157,8 @@ export class OpenBotNodeClient {
     this.#socket = socket;
     let authenticated = false;
     let authenticationRejected = false;
+    const commandSession = new AbortController();
+    let commandRelay: CommandRelay | undefined;
 
     socket.on("open", () => {
       const host = detectWorkerHost();
@@ -158,14 +172,44 @@ export class OpenBotNodeClient {
         capabilityManifest: availableCapabilityManifest(this.#providers),
         maxConcurrentRuns: this.#env.OPENBOT_NODE_MAX_CONCURRENT_RUNS,
         credential,
+        ...(this.#commandInstallation
+          ? { commandChannel: { protocolVersion: "0.10.0" as const } }
+          : {}),
         sentAt: new Date().toISOString(),
       };
       socket.send(JSON.stringify(hello));
     });
 
-    socket.on("message", (raw) => {
-      const parsed = serverMessageSchema.safeParse(parseJson(raw.toString()));
+    socket.on("message", (raw, isBinary) => {
+      const value = parseJson(raw.toString());
+      if (
+        value !== null &&
+        typeof value === "object" &&
+        "type" in value &&
+        typeof value.type === "string" &&
+        value.type.startsWith("work.command.")
+      ) {
+        if (!authenticated || !commandRelay || this.#socket !== socket) return;
+        if (isBinary) {
+          commandRelay.close("invalid_frame");
+          return;
+        }
+        const input = Array.isArray(raw)
+          ? Buffer.concat(raw)
+          : raw instanceof ArrayBuffer
+            ? new Uint8Array(raw)
+            : raw;
+        // The relay snapshots these bytes and never sends a result through a replacement socket.
+        void commandRelay.receiveServer(input).catch(() => undefined);
+        return;
+      }
+      const parsed = serverMessageSchema.safeParse(value);
       if (!parsed.success) {
+        if (value !== null && typeof value === "object" && "commandChannel" in value) {
+          authenticationRejected = true;
+          commandSession.abort();
+          socket.close(1008, "invalid-command-negotiation");
+        }
         this.#logger.error("node.protocol_invalid", "Invalid Server protocol message.", {
           nodeId: this.#env.OPENBOT_NODE_ID,
           phase: "receive",
@@ -183,8 +227,33 @@ export class OpenBotNodeClient {
           });
           return;
         }
+        if (
+          (authenticated && message.commandChannel !== undefined) ||
+          (!authenticated && Boolean(this.#commandInstallation) !== Boolean(message.commandChannel))
+        ) {
+          authenticationRejected = true;
+          commandSession.abort();
+          socket.close(1008, "command-negotiation-required");
+          return;
+        }
         if (!authenticated) {
           authenticated = true;
+          if (this.#commandInstallation && message.commandChannel) {
+            commandRelay = new CommandRelay(
+              this.#commandInstallation,
+              socket,
+              () => this.#socket === socket && authenticated && !this.#stopped,
+              commandSession.signal,
+              message.commandChannel.connectionId,
+              (code) =>
+                this.#logger.warn(
+                  "node.command_relay_closed",
+                  "Command relay closed; no uncertain request is retried.",
+                  { nodeId: this.#env.OPENBOT_NODE_ID, code },
+                ),
+            );
+            this.#commandRelay = commandRelay;
+          }
           this.#heartbeat = setInterval(() => {
             if (socket.readyState !== WebSocket.OPEN) return;
             const heartbeat: NodeMessage = {
@@ -197,6 +266,18 @@ export class OpenBotNodeClient {
             socket.send(JSON.stringify(heartbeat));
           }, heartbeatIntervalMs);
         }
+        return;
+      }
+
+      if (message.type === "browser.command") {
+        if (!authenticated || message.nodeId !== this.#env.OPENBOT_NODE_ID) return;
+        const task = this.#browser.execute(message).then((result) => {
+          // A late result never travels on a replacement authenticated connection.
+          if (this.#socket === socket && socket.readyState === WebSocket.OPEN)
+            socket.send(JSON.stringify(result));
+        });
+        this.#browserTasks.add(task);
+        void task.finally(() => this.#browserTasks.delete(task));
         return;
       }
 
@@ -269,6 +350,8 @@ export class OpenBotNodeClient {
     });
 
     socket.on("close", () => {
+      commandSession.abort();
+      commandRelay?.close();
       clearInterval(this.#heartbeat);
       this.#abortExecutions();
       this.#assignedRunIds.clear();
@@ -511,6 +594,7 @@ export class OpenBotNodeClient {
   }
 
   #abortExecutions(): void {
+    this.#browser.disconnect();
     for (const controller of this.#executions.values()) controller.abort();
     this.#executions.clear();
     for (const [requestId, waiter] of this.#approvalWaiters) {

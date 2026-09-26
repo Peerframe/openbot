@@ -1,0 +1,40 @@
+# Explicit private-engine transport profile. CA signing keys never enter this service.
+services:
+  temporal:
+    environment:
+      OPENBOT_REQUIRE_MTLS: "true"
+      TEMPORAL_TLS_REQUIRE_CLIENT_AUTH: "true"
+      TEMPORAL_TLS_SERVER_CERT: /openbot/tls/server.pem
+      TEMPORAL_TLS_SERVER_KEY: /openbot/tls/server.key
+      TEMPORAL_TLS_SERVER_CA_CERT: /openbot/tls/server-ca.pem
+      TEMPORAL_TLS_INTERNODE_SERVER_NAME: temporal.openbot.internal
+      TEMPORAL_TLS_INTERNODE_DISABLE_HOST_VERIFICATION: "false"
+      TEMPORAL_TLS_FRONTEND_CERT: /openbot/tls/server.pem
+      TEMPORAL_TLS_FRONTEND_KEY: /openbot/tls/server.key
+      TEMPORAL_TLS_FRONTEND_SERVER_NAME: temporal.openbot.internal
+      TEMPORAL_TLS_FRONTEND_DISABLE_HOST_VERIFICATION: "false"
+      TEMPORAL_TLS_CLIENT1_CA_CERT: /openbot/tls/client-ca.pem
+      TEMPORAL_TLS_CLIENT2_CA_CERT: /openbot/tls/server-ca.pem
+      # All authenticated clients are trusted control services. This is not API/namespace RBAC.
+      TEMPORAL_ALLOW_NO_AUTH: "true"
+    volumes:
+      - type: bind
+        source: ${OPENBOT_TEMPORAL_TLS_DIRECTORY:?Set private engine leaf directory}/server.pem
+        target: /openbot/tls/server.pem
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${OPENBOT_TEMPORAL_TLS_DIRECTORY:?Set private engine leaf directory}/server.key
+        target: /openbot/tls/server.key
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${OPENBOT_TEMPORAL_TLS_DIRECTORY:?Set private engine leaf directory}/server-ca.pem
+        target: /openbot/tls/server-ca.pem
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${OPENBOT_TEMPORAL_TLS_DIRECTORY:?Set private engine leaf directory}/client-ca.pem
+        target: /openbot/tls/client-ca.pem
+        read_only: true
+        bind: {create_host_path: false}

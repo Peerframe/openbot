@@ -3,3 +3,4 @@ deploy/node/systemd/*.service text eol=lf
 # Binary fixtures and verbatim upstream notices preserve exact reviewed bytes.
 *.pdf binary
 licenses/** -whitespace
+apps/desktop/resources/python-notices/NOTICES.txt -text

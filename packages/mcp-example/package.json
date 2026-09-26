@@ -1,0 +1,22 @@
+{
+  "name": "@openbot/mcp-example",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Standalone local MCP example and scaffolder source.",
+  "exports": {},
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "tsx src/plugin-example.ts",
+    "test": "node --test ../../scripts/create-mcp-plugin.test.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "zod": "4.6.2"
+  },
+  "devDependencies": {
+    "tsx": "4.23.13"
+  }
+}

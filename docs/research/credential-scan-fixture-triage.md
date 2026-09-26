@@ -142,3 +142,74 @@ scan included the four candidate files in a local-only temporary commit and agai
 The integration worktree was not committed or pushed during this review. The parent integration
 check also completed `npm run check` successfully; hosted CI on the final published commit is the
 remaining merge gate.
+
+## Python migration draft fixtures and content digests (2026-09-25)
+
+Before publishing the migration draft, the unchanged pinned offline scanner inspected a
+standalone clone of the exact candidate branch. It returned 183 with twelve findings: three
+previously reviewed historical URI fixtures and nine new exact tuples below. No verification,
+upload, broad exclusion or detector change was used. A recursive check of the two synthetic
+native-task histories also inspected decoded payload strings for credentials and private paths.
+
+Inspected the immutable source lines before extending the existing tuple list. Six new findings
+are five negative URL fixtures (one is reported twice at distinct line offsets): Desktop rejects
+an external database before process creation; model connections reject userinfo; public-source
+validation rejects userinfo before network access; model receipt configuration refuses credentials;
+and the protocol schema rejects userinfo. These contain deliberate fake values on reserved domains
+or localhost. The scanner reports the public-source fixture at both lines76 and81; the literal is
+at81. Preserve each reported tuple exactly, without accepting a line range.
+
+The other three values are content digests: two fixed gVisor binary hashes (also recorded in the
+reviewed binary inventory), and the historical WorkTasksEntry source SHA-256. The pinned official
+[Sentry v1 detector](https://github.com/trufflesecurity/trufflehog/blob/20652fbbdefffcdaa493a5bf57ab2ac6b1db715b/pkg/detectors/sentrytoken/v1/sentrytoken.go)
+accepts64 lowercase hex characters near a case-insensitive `sentry` prefix; gVisor binary names
+and WorkTasksEntry accidentally match that context. They are not service tokens. RawV2 is empty
+for these three results. This reuses the existing reviewed TruffleHog3.97.1 adapter and AGPL-3.0
+external-tool boundary; no upstream implementation is copied or linked.
+
+Decision: add only these nine commit/path/line/detector/verification/raw-hash tuples. Preserve all
+existing mismatch, scanner-error and inconsistent-result refusal. Test every new tuple and mutations
+of its fields, then replay the exact full-history output and scan the committed follow-up before
+publishing. No source or binary acceptance pin is changed to hide a detector match.
+
+| Commit | File:line | Detector | Raw SHA-256 | RawV2 SHA-256 |
+| --- | --- | --- | --- | --- |
+| `778236bdb01014f62aa590e22389263a4c5ec4ee` | `apps/desktop/src/python-server.test.ts:87` | `968` / Postgres | `c6a2596aaaad66778be7c26f55d25dcbd4dbc54d5b985c4eca99ac02d9532c2e` | `c6a2596aaaad66778be7c26f55d25dcbd4dbc54d5b985c4eca99ac02d9532c2e` |
+| `778236bdb01014f62aa590e22389263a4c5ec4ee` | `apps/server-python/tests/test_model_connections.py:95` | `17` / URI | `99829bbe372d9735dbb6bc6c0e37bd5c3915f2b358455788fca51621b8c4c997` | `99829bbe372d9735dbb6bc6c0e37bd5c3915f2b358455788fca51621b8c4c997` |
+| `778236bdb01014f62aa590e22389263a4c5ec4ee` | `apps/server-python/tests/test_public_source.py:76` | `17` / URI | `1231625e7e70c4e56347672932d37a1c35eff89051483b37cbd09f7b9c58337e` | `1231625e7e70c4e56347672932d37a1c35eff89051483b37cbd09f7b9c58337e` |
+| `778236bdb01014f62aa590e22389263a4c5ec4ee` | `apps/server-python/tests/test_public_source.py:81` | `17` / URI | `1231625e7e70c4e56347672932d37a1c35eff89051483b37cbd09f7b9c58337e` | `1231625e7e70c4e56347672932d37a1c35eff89051483b37cbd09f7b9c58337e` |
+| `778236bdb01014f62aa590e22389263a4c5ec4ee` | `apps/server-python/tests/test_work_model_receipts_postgres.py:44` | `17` / URI | `d27f4ddbd325cde074e00ff1c583ebb6dfe5f649e8ed4a7782c0853cfbfd14bc` | `3637dbb5222f14ede4ee81c299ca7d04ad5f8492d40c1a52bfd84cb3347ddad6` |
+| `778236bdb01014f62aa590e22389263a4c5ec4ee` | `experiments/linux-execution/REAL_HOST_DEADLINE.json:9` | `87` (content digest) | `15ff853549b0957c0de5f3e8db4edc74d4fbdc10fda10276d0bedf1b31c0d75f` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `778236bdb01014f62aa590e22389263a4c5ec4ee` | `experiments/linux-execution/protected_native.py:24` | `87` (content digest) | `3488860627e07cf82ec8321f043b8f12578e7b01106da1d0cd0528ba73cc3af6` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `778236bdb01014f62aa590e22389263a4c5ec4ee` | `packages/protocol/src/model-services.test.ts:46` | `17` / URI | `d88f84291a4085c5aa7a5c1aab71a7baf64065e805c8c2c60c51aabf7ec55af9` | `d88f84291a4085c5aa7a5c1aab71a7baf64065e805c8c2c60c51aabf7ec55af9` |
+| `ef1e2545101766284a2104647015a4c5a5638dfc` | `docs/research/s2-work-supervision.md:73` | `87` (content digest) | `5fb64d41242d2546f1713381ae57f7ea5b8e8e1e2f17023d63c7d3cc3c2e5de6` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+
+Validation: all15 focused credential/workflow cases passed, including mutations of every
+new tuple field. The original twelve-finding offline result passed the exact adapter.
+
+A second scan reported the other reviewed gVisor binary on the adjacent inventory line.
+The pinned detector iterates a map of unique candidates and the existing unverified-result filter
+can select either digest in a chunk. Bind both actual binary digests at their exact historical
+locations; do not rely on output order or exempt a detector/path/line range. This adds two tuples,
+one actually observed on the second scan and one derived from the same inspected immutable
+binary-map line and detector. The resulting17-entry regression set covers both possible results.
+
+| Commit | File:line | Detector | Raw SHA-256 | RawV2 SHA-256 |
+| --- | --- | --- | --- | --- |
+| `778236bdb01014f62aa590e22389263a4c5ec4ee` | `experiments/linux-execution/REAL_HOST_DEADLINE.json:8` | `87` (content digest) | `3488860627e07cf82ec8321f043b8f12578e7b01106da1d0cd0528ba73cc3af6` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `778236bdb01014f62aa590e22389263a4c5ec4ee` | `experiments/linux-execution/protected_native.py:24` | `87` (content digest) | `15ff853549b0957c0de5f3e8db4edc74d4fbdc10fda10276d0bedf1b31c0d75f` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+
+## Product-container synthetic PostgreSQL fixture (2026-09-25)
+
+The unchanged offline scanner reports one new Postgres968 finding in commit
+`ed33238f866b52508bcce939e1f62fe2ad2faed4`, `deploy/server/smoke-product.py:58`. Inspecting the
+source and bounded finding confirms the explicitly synthetic password used only for the smoke's
+new random-name PostgreSQL container on its private internal network. That fixture publishes no
+PG port, selects no existing service, and removes its owned container before completion. The
+scanner's constructed candidate has no real host. It is not an account secret.
+
+Retain the prior reviewed detector and exact-tuple mechanism. Add only detector968/Postgres, this
+commit/path/line, unverified state and both exact Raw/RawV2 SHA256 values
+`e58bc479a694bb81fb43e7765c5d9171bfdb60acd80d816b1a3f69a8fee5f4e8`.
+No network verification, scanner exclusion, history rewrite or result upload is introduced. Extend
+all-field mutation tests to this eighteenth tuple and replay the actual private offline result.

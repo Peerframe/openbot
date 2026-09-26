@@ -1,0 +1,276 @@
+{
+  "schemaVersion": 1,
+  "syntheticOnly": true,
+  "result": "passed",
+  "generatedAt": "2026-09-25T05:25:33.615Z",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "node": "v26.0.0",
+  "image": "postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0",
+  "pgDumpVersion": "pg_dump (PostgreSQL) 17.11 (Debian 17.11-1.pgdg12+2)",
+  "histories": {
+    "feature": {
+      "commit": "9cc73c9e78451e572f57d142d6b9caf62ccb78e2",
+      "migrationCount": 19,
+      "digest": "f1b1dd00e5903d1fa592db1430fbc62ba3a57f358034af5b515673d28298764c"
+    },
+    "architecture": {
+      "commit": "c33e03f1a14de739196113769c59fdaace9029e7",
+      "migrationCount": 27,
+      "digest": "adfe5fa4650c778bddade614c8473d2fdbdff16cce03c62339b045bc9d6332bf"
+    },
+    "target": {
+      "commit": "482bdc5bea56c5b1a996492701b6dbb012d5691e",
+      "commitRole": "working-tree-parent",
+      "qualificationInput": {
+        "state": "uncommitted-qualified-working-tree",
+        "previousQualifiedTarget": "aa84c5ff97270d050a4110ff5ac17b311dcfac10",
+        "journal": {
+          "path": "packages/db/migrations/meta/_journal.json",
+          "sha256": "4aa566b0dcb473dc82c2db0b994a99fc8224a83e507fe9bc80f6f4ff0612c148"
+        },
+        "changedSql": [
+          {
+            "path": "packages/db/migrations/0035_model_connections.sql",
+            "sha256": "b9f7e48ce1dc0f184ca8a92db96111da00989fbae228d240414ab423ba52f57c"
+          },
+          {
+            "path": "packages/db/migrations/0036_work_sources.sql",
+            "sha256": "5109d4efa721bb0452ae30673362f09feb4782286c685877069f2287f9f625a1"
+          },
+          {
+            "path": "packages/db/migrations/0037_work_tool_results.sql",
+            "sha256": "72e2b1e1af5a69d315ffedbaf9f470154c6b7f045193125efba95593c24a6d1b"
+          },
+          {
+            "path": "packages/db/migrations/0038_work_task_profiles.sql",
+            "sha256": "0c874d1a0fd44ab667dd3694a4a88a6319405cccd5b488effb51b49ff23c8397"
+          },
+          {
+            "path": "packages/db/migrations/0039_work_collaboration.sql",
+            "sha256": "8f32b1372be12077e140b29b4f10a733fa0262fbc1ced370b5b419991f16adf5"
+          },
+          {
+            "path": "packages/db/migrations/0040_native_task_scope.sql",
+            "sha256": "8aaed72a5691a531cad058c7652da6df003773e671730f03c1c6fb209dca2d6e"
+          }
+        ],
+        "previousQualification": {
+          "migrationCount": 40,
+          "migrationDigest": "80307240448077db1925d5d7b045781d1590c9b48a2e5e659ed94c5c04a0dd31",
+          "evidence": "evidence/python-product-result.json"
+        }
+      },
+      "migrationCount": 41,
+      "digest": "c73efdc9600fee15678048d38a650e3a9f9cefa0e7de86d641520fee78afb7dc"
+    }
+  },
+  "cases": [
+    {
+      "name": "architecture: historical bootstrap and linked fixture",
+      "result": "passed",
+      "durationMs": 205
+    },
+    {
+      "name": "architecture: nonempty restore destination rejected",
+      "result": "passed",
+      "durationMs": 29
+    },
+    {
+      "name": "architecture: damaged backup rejected before restore",
+      "result": "passed",
+      "durationMs": 19
+    },
+    {
+      "name": "architecture: full old database and file restore",
+      "result": "passed",
+      "durationMs": 183
+    },
+    {
+      "name": "architecture: guarded additive upgrade preserves records",
+      "result": "passed",
+      "durationMs": 117
+    },
+    {
+      "name": "architecture: repeat guarded startup is idempotent",
+      "result": "passed",
+      "durationMs": 58
+    },
+    {
+      "name": "architecture: target backup restores database and file references",
+      "result": "passed",
+      "durationMs": 325
+    },
+    {
+      "name": "architecture: same-size corrupted file rejected",
+      "result": "passed",
+      "durationMs": 2
+    },
+    {
+      "name": "architecture: missing file rejected",
+      "result": "passed",
+      "durationMs": 2
+    },
+    {
+      "name": "architecture: hash history failure leaves database unchanged",
+      "result": "passed",
+      "durationMs": 360
+    },
+    {
+      "name": "architecture: timestamp history failure leaves database unchanged",
+      "result": "passed",
+      "durationMs": 355
+    },
+    {
+      "name": "architecture: missing history failure leaves database unchanged",
+      "result": "passed",
+      "durationMs": 338
+    },
+    {
+      "name": "architecture: ahead history failure leaves database unchanged",
+      "result": "passed",
+      "durationMs": 347
+    },
+    {
+      "name": "architecture: native restore failure rolls back all DDL",
+      "result": "passed",
+      "durationMs": 349
+    },
+    {
+      "name": "feature: historical bootstrap and linked fixture",
+      "result": "passed",
+      "durationMs": 123
+    },
+    {
+      "name": "feature: nonempty restore destination rejected",
+      "result": "passed",
+      "durationMs": 21
+    },
+    {
+      "name": "feature: damaged backup rejected before restore",
+      "result": "passed",
+      "durationMs": 19
+    },
+    {
+      "name": "feature: full old database and file restore",
+      "result": "passed",
+      "durationMs": 179
+    },
+    {
+      "name": "feature: direct upgrade rejects divergence without mutation",
+      "result": "passed",
+      "durationMs": 29
+    },
+    {
+      "name": "feature: unknown nonempty table rejected",
+      "result": "passed",
+      "durationMs": 97
+    },
+    {
+      "name": "feature: unsupported s7_extra schema table rejected",
+      "result": "passed",
+      "durationMs": 56
+    },
+    {
+      "name": "feature: unsupported drizzle schema table rejected",
+      "result": "passed",
+      "durationMs": 62
+    },
+    {
+      "name": "feature: model connection rejected",
+      "result": "passed",
+      "durationMs": 66
+    },
+    {
+      "name": "feature: unmapped source column rejected",
+      "result": "passed",
+      "durationMs": 81
+    },
+    {
+      "name": "feature: model Run with null selection rejected",
+      "result": "passed",
+      "durationMs": 62
+    },
+    {
+      "name": "feature: active work rejected",
+      "result": "passed",
+      "durationMs": 66
+    },
+    {
+      "name": "feature: unprotected message reference orphan rejected",
+      "result": "passed",
+      "durationMs": 59
+    },
+    {
+      "name": "feature: drifted source ledger rejected",
+      "result": "passed",
+      "durationMs": 64
+    },
+    {
+      "name": "feature: late insert failure rolls back the whole transfer",
+      "result": "passed",
+      "durationMs": 94
+    },
+    {
+      "name": "feature: bounded transfer preserves identities and references",
+      "result": "passed",
+      "durationMs": 53
+    },
+    {
+      "name": "feature: duplicate transfer rejected without mutation",
+      "result": "passed",
+      "durationMs": 54
+    },
+    {
+      "name": "feature: repeat guarded startup is idempotent",
+      "result": "passed",
+      "durationMs": 51
+    },
+    {
+      "name": "feature: target backup restores database and file references",
+      "result": "passed",
+      "durationMs": 325
+    },
+    {
+      "name": "feature: same-size corrupted file rejected",
+      "result": "passed",
+      "durationMs": 2
+    },
+    {
+      "name": "feature: missing file rejected",
+      "result": "passed",
+      "durationMs": 2
+    },
+    {
+      "name": "feature: hash history failure leaves database unchanged",
+      "result": "passed",
+      "durationMs": 341
+    },
+    {
+      "name": "feature: timestamp history failure leaves database unchanged",
+      "result": "passed",
+      "durationMs": 339
+    },
+    {
+      "name": "feature: missing history failure leaves database unchanged",
+      "result": "passed",
+      "durationMs": 337
+    },
+    {
+      "name": "feature: ahead history failure leaves database unchanged",
+      "result": "passed",
+      "durationMs": 329
+    },
+    {
+      "name": "feature: native restore failure rolls back all DDL",
+      "result": "passed",
+      "durationMs": 325
+    }
+  ],
+  "limitations": [
+    "Fixture-only feature transfer; no general divergent-history upgrade",
+    "Legacy runs retained; no work_tasks conversion",
+    "No settings/key/plugin/attachment/Temporal restore",
+    "No production migration, default switch, release, or S7 completion"
+  ]
+}

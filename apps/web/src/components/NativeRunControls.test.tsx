@@ -26,25 +26,30 @@ const run: Run = {
 };
 beforeEach(() => vi.clearAllMocks());
 describe("native task execution controls", () => {
-  it("waits for durable cancellation and prevents duplicate requests", async () => {
-    const pending = deferred<Run>();
-    vi.mocked(cancelNativeRun).mockReturnValue(pending.promise);
-    const onRun = vi.fn();
-    const view = await renderComponent(<NativeRunControls run={run} onRun={onRun} />);
-    try {
-      const button = view.container.querySelector("button");
-      await interact(() => button?.click());
-      expect(button?.disabled).toBe(true);
-      expect(onRun).not.toHaveBeenCalled();
-      await interact(() => button?.click());
-      expect(cancelNativeRun).toHaveBeenCalledExactlyOnceWith(run.id);
-      const cancelled = { ...run, status: "cancelled" as const };
-      await interact(() => pending.resolve(cancelled));
-      expect(onRun).toHaveBeenCalledExactlyOnceWith(cancelled);
-    } finally {
-      await view.unmount();
-    }
-  });
+  it.each(["none", "model"] as const)(
+    "waits for durable %s cancellation and prevents duplicate requests",
+    async (executionProfile) => {
+      const pending = deferred<Run>();
+      vi.mocked(cancelNativeRun).mockReturnValue(pending.promise);
+      const onRun = vi.fn();
+      const view = await renderComponent(
+        <NativeRunControls run={{ ...run, executionProfile }} onRun={onRun} />,
+      );
+      try {
+        const button = view.container.querySelector("button");
+        await interact(() => button?.click());
+        expect(button?.disabled).toBe(true);
+        expect(onRun).not.toHaveBeenCalled();
+        await interact(() => button?.click());
+        expect(cancelNativeRun).toHaveBeenCalledExactlyOnceWith(run.id);
+        const cancelled = { ...run, status: "cancelled" as const };
+        await interact(() => pending.resolve(cancelled));
+        expect(onRun).toHaveBeenCalledExactlyOnceWith(cancelled);
+      } finally {
+        await view.unmount();
+      }
+    },
+  );
   it("resubmits the original instruction through normal task creation only on explicit click", async () => {
     const next = { ...run, id: "new-run", status: "queued" as const };
     vi.mocked(createMessage).mockResolvedValue({

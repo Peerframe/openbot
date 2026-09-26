@@ -1,0 +1,17 @@
+{
+  "license": "MIT",
+  "sourceCommit": "482bdc5bea56c5b1a996492701b6dbb012d5691e",
+  "workingTreeSnapshot": true,
+  "files": [
+    {
+      "path": "src/plugin-example.ts",
+      "origin": "apps/server/src/plugin-example.ts",
+      "sha256": "a319358e1509255e4bcf4ffd97eb1b3b554f579bb35d772b01a82474ea1cdfd3"
+    },
+    {
+      "path": "src/plugin-example-view.ts",
+      "origin": "apps/server/src/plugin-example-view.ts",
+      "sha256": "46b52005b4ec91a029c7d85001f900d073ab1b541114375dcc9fc395123bbddc"
+    }
+  ]
+}

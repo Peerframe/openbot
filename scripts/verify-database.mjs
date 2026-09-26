@@ -10,17 +10,21 @@ if (!databaseName.endsWith("_test")) {
 }
 
 const { createDatabase } = await import("../packages/db/dist/index.js");
-const { NodeIdentityService } = await import("../apps/server/dist/node-identity.js");
+const { NodeIdentityService } = await import(
+  "../tests/oracles/legacy-server/dist/node-identity.js"
+);
 const { PostgresNodeIdentityStore } = await import(
-  "../apps/server/dist/postgres-node-identity-store.js"
+  "../tests/oracles/legacy-server/dist/postgres-node-identity-store.js"
 );
 const { PostgresRequestThrottleStore } = await import(
-  "../apps/server/dist/postgres-request-throttle-store.js"
+  "../tests/oracles/legacy-server/dist/postgres-request-throttle-store.js"
 );
-const { RequestThrottle } = await import("../apps/server/dist/request-throttle.js");
-const { PostgresControlPlaneStore } = await import("../apps/server/dist/postgres-store.js");
+const { RequestThrottle } = await import("../tests/oracles/legacy-server/dist/request-throttle.js");
+const { PostgresControlPlaneStore } = await import(
+  "../tests/oracles/legacy-server/dist/postgres-store.js"
+);
 const { buildEmployeeTemplate, employeeTemplatePackageDigest } = await import(
-  "../apps/server/dist/employee-package.js"
+  "../tests/oracles/legacy-server/dist/employee-package.js"
 );
 const first = createDatabase(databaseUrl);
 const second = createDatabase(databaseUrl);

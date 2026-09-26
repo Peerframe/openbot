@@ -1,0 +1,35 @@
+# Frozen runtime-only transitive closure for requirements.txt.
+#
+# This is the complete closure reachable from the direct runtime pins, at the
+# same versions as requirements.lock. Test-only distributions are intentionally
+# absent (pytest and its closure: iniconfig, packaging, pluggy, Pygments), so a
+# production image can install this file without ever shipping a test runner.
+#
+# The split was derived from installed distribution metadata
+# (importlib.metadata.requires, extra-guarded requirements skipped), not guessed:
+# see RESEARCH.md section 10. Regenerate deliberately. The two locks must always
+# agree on every pin they share.
+#
+# Install:  python -m venv .venv
+#           ./.venv/bin/pip install -r requirements-runtime.lock
+# Verify:   ./.venv/bin/python scripts/verify_environment.py --profile runtime
+#
+# Python 3.12, macOS arm64 (cp312 wheels).
+annotated-types==0.8.0
+anyio==4.15.1
+genai-prices==0.1.7
+griffelib==2.3.0
+h11==0.16.0
+httpcore2==2.13.0
+httpx2==2.13.0
+idna==3.20
+jsonschema-rs==0.57.1
+logfire-api==5.1.0
+opentelemetry-api==1.44.0
+pydantic-ai-slim==2.47.0
+pydantic-graph==2.47.0
+pydantic==2.13.5
+pydantic_core==2.46.5
+truststore==0.10.4
+typing-inspection==0.4.4
+typing_extensions==4.16.0

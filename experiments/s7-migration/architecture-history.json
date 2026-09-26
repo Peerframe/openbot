@@ -1,0 +1,167 @@
+{
+  "commit": "c33e03f1a14de739196113769c59fdaace9029e7",
+  "migrations": [
+    {
+      "index": 0,
+      "tag": "0000_foundation",
+      "timestamp": 1788412800000,
+      "sha256": "bd68f2e8aeaf7970a75f730cb9ef0d203e3cc9391c543f502f8e840539ed6e79"
+    },
+    {
+      "index": 1,
+      "tag": "0001_m0_control_plane",
+      "timestamp": 1788499200000,
+      "sha256": "ee2287f0659fea6683add77f20a7e79a041a004ccc936c7f09bfbfa42eb685c1"
+    },
+    {
+      "index": 2,
+      "tag": "0002_message_constraints",
+      "timestamp": 1788585600000,
+      "sha256": "2bc90973d7f6d21c3bd1422e94899ded3e6795630cfe872b7e5447ec5aa23ab5"
+    },
+    {
+      "index": 3,
+      "tag": "0003_local_owner_sessions",
+      "timestamp": 1788672000000,
+      "sha256": "713eb2e9ad1d322257a9ea31e10fadfbc9c5e57e05477f933de7b09404775cea"
+    },
+    {
+      "index": 4,
+      "tag": "0004_channel_task_runs",
+      "timestamp": 1788758400000,
+      "sha256": "b25429bad805f9ed20da79e2dc8d1b61dfee1b9c32b6a782bb8c39d49ab3d483"
+    },
+    {
+      "index": 5,
+      "tag": "0005_global_runs_index",
+      "timestamp": 1788844800000,
+      "sha256": "c0728e0d23ff4cf57245e8a4a8272f520cdd27f7759e80ca20268f5f2bded1ac"
+    },
+    {
+      "index": 6,
+      "tag": "0006_run_assignment",
+      "timestamp": 1788931200000,
+      "sha256": "209cbd1b80e0d125eecffefbcc64899c8a5a1be7dbf68df47e8ae107f0cc8989"
+    },
+    {
+      "index": 7,
+      "tag": "0007_run_execution",
+      "timestamp": 1789017600000,
+      "sha256": "272cb3d44caec185508733ef1f2bc163e5b27e48e530364338fdf8c12ed5797b"
+    },
+    {
+      "index": 8,
+      "tag": "0008_owner_approvals",
+      "timestamp": 1789104000000,
+      "sha256": "e74c38878f0095f88a60cd32470a25dc562c9ae5662e16d44389d7782ffcd964"
+    },
+    {
+      "index": 9,
+      "tag": "0009_channel_conversations",
+      "timestamp": 1789190400000,
+      "sha256": "4d466d76bea86dfa8027a76d91fc3beaa18e2c9261aaad906ff1d7e6221bb41b"
+    },
+    {
+      "index": 10,
+      "tag": "0010_cross_platform_nodes",
+      "timestamp": 1789276800000,
+      "sha256": "abd1ef4548fad1a1fe0db2dbeee8d97e984198b52c499d43ef1c172a7ebf6860"
+    },
+    {
+      "index": 11,
+      "tag": "0011_employee_profiles",
+      "timestamp": 1789363200000,
+      "sha256": "ad818e2475c857adb71904381c0294e6bb2bcdb7f81742227c238c7667bd4623"
+    },
+    {
+      "index": 12,
+      "tag": "0012_backfill_employee_creation",
+      "timestamp": 1789449600000,
+      "sha256": "61df006f2781a9115f889f6b1088dd1319d50554c7243aafcec07fb1593c4f3c"
+    },
+    {
+      "index": 13,
+      "tag": "0013_node_identity",
+      "timestamp": 1789536000000,
+      "sha256": "8a060ee8fa4dc3c534b111b99820fbe580094f29e568a4cd809b4098848491b0"
+    },
+    {
+      "index": 14,
+      "tag": "0014_employee_import_receipts",
+      "timestamp": 1789622400000,
+      "sha256": "8e35b25387df5a4ab661c003ecf10b8986d819b061931b708113bd0bbe0c7c4d"
+    },
+    {
+      "index": 15,
+      "tag": "0015_employee_memory_lifecycle",
+      "timestamp": 1789708800000,
+      "sha256": "4548e244ca7fa630e64d483238547cf47941b2194debfa0a4ba4b94fc88d123b"
+    },
+    {
+      "index": 16,
+      "tag": "0016_employee_profile_details",
+      "timestamp": 1789795200000,
+      "sha256": "6c625292533e6b9fb0c3f16e5918c20f16bc484329a53765b1751618d675e437"
+    },
+    {
+      "index": 17,
+      "tag": "0017_request_throttle_buckets",
+      "timestamp": 1789881600000,
+      "sha256": "a119af2e5477b688f757fac382ddc86c497c9f4c30872faff677625e67fe5a19"
+    },
+    {
+      "index": 18,
+      "tag": "0018_automations",
+      "timestamp": 1789968000000,
+      "sha256": "78468021e2f32ca1e137e2640e59f2cdcbc90a12787ac0cf25583430b8c776c6"
+    },
+    {
+      "index": 19,
+      "tag": "0019_native_run_observations",
+      "timestamp": 1789968000001,
+      "sha256": "d7c44b2d712483013f9d641b93222dec1eb4f6b0eb33f3837de1fb9a73303889"
+    },
+    {
+      "index": 20,
+      "tag": "0020_reviewed_knowledge",
+      "timestamp": 1789968000002,
+      "sha256": "4de04e21256430126ecbde0b8fc3ca15effba3f9052cf70515873a153cc8520d"
+    },
+    {
+      "index": 21,
+      "tag": "0021_reviewed_skill_content",
+      "timestamp": 1789968000003,
+      "sha256": "fbdf7191d3ee3a8d786413f1d16f6291a356f27a0687b6f3c81bdc546ba470c5"
+    },
+    {
+      "index": 22,
+      "tag": "0022_direct_bot_conversations",
+      "timestamp": 1789968000004,
+      "sha256": "c649f6dcc0745dd2e04610c1a202ead49701324ce0eafb6e7b642c92054a5cc1"
+    },
+    {
+      "index": 23,
+      "tag": "0023_channel_bot_collaboration",
+      "timestamp": 1789968000005,
+      "sha256": "09fbc12fb1c576bd2f3625924f4324ffa7ac3283b2e4190d762818114fc57ab9"
+    },
+    {
+      "index": 24,
+      "tag": "0024_multi_bot_message_recipients",
+      "timestamp": 1789968000006,
+      "sha256": "1444e435b61b7b6b160c718b31194972ddf40fed4a7fad6b2bd6df6454093dbc"
+    },
+    {
+      "index": 25,
+      "tag": "0025_channel_reactions",
+      "timestamp": 1789968000007,
+      "sha256": "36d69d7c052987946cb8a552964d2567e0e15cdf766cf121f745466502934b35"
+    },
+    {
+      "index": 26,
+      "tag": "0026_automation_attachment_outcome",
+      "timestamp": 1789968000008,
+      "sha256": "3d13a114383ab4fd8b8fb50096f8442836702c8a93913b1512df413412f94486"
+    }
+  ]
+}

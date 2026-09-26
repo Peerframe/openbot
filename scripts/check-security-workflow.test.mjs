@@ -2,9 +2,49 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { validateSecurityWorkflow } from "./check-security-workflow.mjs";
+import {
+  validatePythonProductWorkflow,
+  validateSecurityWorkflow,
+} from "./check-security-workflow.mjs";
 
 const workflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
+const migration = await readFile(
+  new URL("../.github/workflows/s7-migration.yml", import.meta.url),
+  "utf8",
+);
+
+test("qualifies Python product artifacts independently of legacy compatibility", () => {
+  assert.doesNotThrow(() => validatePythonProductWorkflow(workflow, migration));
+  for (const changed of [
+    workflow.replace(
+      "node apps/desktop/scripts/prepare-native-server.mjs --python-product",
+      "npm run prepare:native --workspace @openbot/desktop",
+    ),
+    workflow.replace(
+      "node apps/desktop/scripts/package.mjs --preview --python-product",
+      "npm run package --workspace @openbot/desktop",
+    ),
+    workflow.replace(
+      "OpenBot Preview.app/Contents/Resources/native-runtime",
+      "OpenBot.app/Contents/Resources/native-runtime",
+    ),
+    workflow.replace(
+      "deploy/server/smoke-product.py --image openbot-server:product-smoke",
+      "scripts/smoke-server-container.sh",
+    ),
+    workflow.replace("  python-desktop-preview:\n", "  python-desktop-preview:\n    if: false\n"),
+    workflow.replace(
+      "uses: ./.github/workflows/s7-migration.yml",
+      "uses: someone/other/.github/workflows/migration.yml@main",
+    ),
+  ]) {
+    assert.throws(() => validatePythonProductWorkflow(changed, migration), /Python/);
+  }
+  assert.throws(
+    () => validatePythonProductWorkflow(workflow, migration.replace("  workflow_call:", "  push:")),
+    /same-commit qualification/,
+  );
+});
 
 test("accepts the pinned required portable matrix", () => {
   assert.doesNotThrow(() => validateSecurityWorkflow(workflow));
@@ -223,7 +263,7 @@ test("the actual merge gate accepts only success from every required job", () =>
   const variables = [
     ...gate.matchAll(/^ {10}([A-Z_]+): \$\{\{ needs\.[a-z-]+\.result \}\}$/gm),
   ].map((match) => match[1]);
-  assert.equal(variables.length, 6);
+  assert.equal(variables.length, 10);
   const source = gate
     .split("        run: |\n")[1]
     .split("\n")

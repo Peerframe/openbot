@@ -5,7 +5,8 @@ import { BotIcon, HashIcon, PlusIcon, SearchIcon, SettingsIcon, SkillIcon } from
 import { RobotAvatar } from "./RobotAvatar";
 
 interface SidebarProps {
-  destination?: "chat" | "automations" | "skills";
+  destination?: "chat" | "automations" | "skills" | "work";
+  onWork?: (() => void) | undefined;
   onAutomations?: (() => void) | undefined;
   onSkills?: (() => void) | undefined;
   bots: Bot[];
@@ -22,10 +23,12 @@ interface SidebarProps {
   onCreateBot(): void;
   onCreateChannel(): void;
   onManageNodes(): void;
+  onManageModels?: (() => void) | undefined;
   onLogout(): Promise<void>;
 }
 
 export function Sidebar({
+  onWork,
   onSkills,
   bots,
   channels,
@@ -40,6 +43,7 @@ export function Sidebar({
   onOpenBotProfile,
   onCreateBot,
   onCreateChannel,
+  onManageModels,
   onLogout,
 }: SidebarProps) {
   const [query, setQuery] = useState("");
@@ -220,6 +224,12 @@ export function Sidebar({
         </section>
       </div>
       <footer className="sidebar-footer">
+        {onWork && (
+          <button className="sidebar-plugin" type="button" onClick={onWork}>
+            <HashIcon />
+            <span>任务监督</span>
+          </button>
+        )}
         {onSkills && (
           <button className="sidebar-plugin" type="button" onClick={onSkills}>
             <SkillIcon />
@@ -258,6 +268,18 @@ export function Sidebar({
                 </button>
               </>
             )}
+            {onManageModels ? (
+              <button
+                type="button"
+                onClick={() => {
+                  dismiss();
+                  onManageModels();
+                }}
+              >
+                <SettingsIcon />
+                模型服务
+              </button>
+            ) : null}
             <a href="https://github.com/yxflc11/openbot#readme" target="_blank" rel="noreferrer">
               帮助中心<span aria-hidden="true">↗</span>
             </a>

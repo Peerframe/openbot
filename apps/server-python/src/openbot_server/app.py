@@ -1,0 +1,280 @@
+"""Compatible control reads with explicitly selected Owner authentication and identity writes."""
+
+from __future__ import annotations
+
+from contextlib import asynccontextmanager
+import json
+import re
+from datetime import datetime, timezone
+from typing import Protocol, TYPE_CHECKING
+
+from fastapi import FastAPI, HTTPException, Path, Request
+from fastapi.exceptions import RequestValidationError, ResponseValidationError
+from fastapi.responses import JSONResponse
+from fastapi.security import APIKeyCookie
+from starlette.middleware.cors import CORSMiddleware
+
+from .auth import OwnerAuthentication
+from .auth_routes import register_auth_routes
+from .identity_routes import IdentityStore, register_identity_routes
+from .database import ReadResult, StoreUnavailable
+from .message_models import MessagesResponse, project_messages
+from .task_models import RunsResponse, project_runs
+from .models import (
+    AuthSession, BotsResponse, ChannelsResponse, iso_timestamp, project_bot, project_channels,
+)
+
+
+if TYPE_CHECKING:
+    from .conversation_routes import ConversationStore
+    from .profile_routes import ProfileStore
+    from .task_routes import TaskStore
+    from .run_command_routes import RunCommandStore
+
+
+class ReadStore(Protocol):
+    async def verify_schema(self) -> None: ...
+    async def read(self, token: str | None, projection: str, *, channel_id: str | None = None) -> ReadResult: ...
+
+
+def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True,
+               allowed_origins: tuple[str, ...] = (), auth: OwnerAuthentication | None = None,
+               identity: IdentityStore | None = None, conversations: ConversationStore | None = None,
+               profiles: ProfileStore | None = None, tasks: TaskStore | None = None,
+               run_commands: RunCommandStore | None = None, work=None, product=None) -> FastAPI:
+    if not owner_name or any(origin == "*" or origin == "null" for origin in allowed_origins):
+        raise ValueError("An Owner name and explicit origins are required.")
+    if auth is not None and auth.owner_name != owner_name:
+        raise ValueError("Owner-auth and read identity must match.")
+    cookie_name = "__Host-openbot_session" if secure_cookies else "openbot_session"
+    cookie = APIKeyCookie(name=cookie_name, auto_error=False)
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        await store.verify_schema()
+        if auth is not None:
+            await auth.verify_schema()
+        if identity is not None:
+            await identity.verify_schema()
+        if conversations is not None:
+            await conversations.verify_schema()
+        if profiles is not None:
+            await profiles.verify_schema()
+        if tasks is not None:
+            await tasks.verify_schema()
+        if run_commands is not None:
+            await run_commands.verify_schema()
+        if work is not None:
+            await work.verify_schema()
+        if product is not None:
+            await product.verify_schema()
+        try:
+            if product is not None: await product.start()
+            yield
+        finally:
+            if product is not None: await product.close()
+
+    app = FastAPI(title="OpenBot control-plane reference", version="0.0.0",
+                  docs_url=None, redoc_url=None, lifespan=lifespan)
+    app.add_middleware(CORSMiddleware, allow_origins=list(allowed_origins),
+                       allow_credentials=True, allow_methods=(["GET", "POST", "PATCH", "PUT", "DELETE"] if product else ["GET", "POST", "PATCH"] if profiles else
+                                      ["GET", "POST"] if auth or identity or conversations or tasks or run_commands or work else ["GET"]),
+                       allow_headers=(["Content-Type", "X-OpenBot-Filename", "If-Match"] if product else ["Content-Type"] if auth or identity or conversations or profiles or tasks or run_commands or work else []))
+
+    @app.middleware("http")
+    async def private_response(request: Request, call_next):
+        auth_write = auth is not None and request.method == "POST" and request.url.path in (
+            "/api/v1/auth/login", "/api/v1/auth/logout")
+        identity_write = identity is not None and request.method == "POST" and request.url.path in (
+            "/api/v1/bots", "/api/v1/channels")
+        conversation_write = conversations is not None and request.method == "POST" and (
+            re.fullmatch(r"/api/v1/bots/[^/]+/conversation", request.url.path) is not None
+            or re.fullmatch(r"/api/v1/channels/[^/]+/bots", request.url.path) is not None)
+        profile_write = profiles is not None and request.method == "PATCH" and re.fullmatch(r"/api/v1/bots/[^/]+/profile", request.url.path) is not None
+        task_write = tasks is not None and request.method == "POST" and re.fullmatch(r"/api/v1/channels/[^/]+/messages", request.url.path) is not None
+        run_command_write = run_commands is not None and request.method == "POST" and re.fullmatch(r"/api/v1/runs/[^/]+/(cancel|steer)", request.url.path) is not None
+        work_write = work is not None and request.method == "POST" and (
+            request.url.path == "/api/v1/tasks" or re.fullmatch(r"/api/v1/tasks/[^/]+/(cancel|corrections)", request.url.path)
+            or re.fullmatch(r"/api/v1/actions/[^/]+/(decision|reconcile)", request.url.path))
+        if request.method not in ("GET", "HEAD", "OPTIONS") and not (auth_write or identity_write or conversation_write or profile_write or task_write or run_command_write or work_write or product is not None and product.permits_write(request)):
+            response = JSONResponse({"error": "Operation is unavailable in this reference."}, status_code=405)
+        else:
+            response = await call_next(request)
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        return response
+
+    from .control_errors import ControlError
+    @app.exception_handler(ControlError)
+    async def control_error(request: Request, error: ControlError):
+        return JSONResponse({"error": error.code}, status_code=error.status)
+
+    @app.exception_handler(StoreUnavailable)
+    async def unavailable(request: Request, error: StoreUnavailable):
+        return JSONResponse({"error": "Control-plane storage is unavailable."}, status_code=503)
+
+    @app.exception_handler(RequestValidationError)
+    async def bad_request(request: Request, error: RequestValidationError):
+        return JSONResponse({"error": "Invalid request input."}, status_code=422)
+
+    @app.exception_handler(ResponseValidationError)
+    async def bad_projection(request: Request, error: ResponseValidationError):
+        return JSONResponse({"error": "Control-plane data could not be projected."}, status_code=503)
+
+    def bounded_response(value):
+        content = value.model_dump(mode="json", exclude_none=True)
+        if len(json.dumps(content, ensure_ascii=False).encode("utf-8")) > 4 * 1024 * 1024:
+            raise StoreUnavailable("projection_limit")
+        return value
+
+    async def read(request: Request, projection: str, *, required: bool = True):
+        token = await cookie(request)
+        result = await store.read(token, projection)
+        if required and result.expires_at is None:
+            raise HTTPException(status_code=401, detail="Authentication required.")
+        return result
+
+    @app.exception_handler(HTTPException)
+    async def http_error(request: Request, error: HTTPException):
+        return JSONResponse({"error": error.detail}, status_code=error.status_code)
+
+    @app.get("/health", operation_id="getHealth")
+    async def health():
+        runtime = getattr(product, 'work_runtime', None)
+        if runtime is not None and runtime.status['state'] != 'running':
+            return JSONResponse({'ok': False, 'service': 'openbot-server',
+                                 'execution': runtime.status}, status_code=503)
+        return {"ok": True, "service": "openbot-server", "phase": "python-product-candidate" if product else "s3-work-admission-reference" if work else "s2b-task-reference" if tasks or run_commands else "s2a-identity-reference" if identity or conversations or profiles else "s2a-auth-reference" if auth else "s2a-read-reference",
+                "time": iso_timestamp(datetime.now(timezone.utc))}
+
+    @app.get("/api/v1/auth/session", response_model=AuthSession,
+             response_model_exclude_none=True, operation_id="getOwnerSession")
+    async def session(request: Request):
+        result = await read(request, "session", required=False)
+        if result.expires_at is None:
+            return {"authenticated": False}
+        return {"authenticated": True, "owner": {"id": "owner", "name": owner_name},
+                "expiresAt": iso_timestamp(result.expires_at)}
+
+    @app.get("/api/v1/bots", response_model=BotsResponse,
+             response_model_exclude_none=True, operation_id="listBots")
+    async def bots(request: Request):
+        result = await read(request, "bots")
+        try:
+            return bounded_response(BotsResponse(bots=[project_bot(row) for row in result.rows]))
+        except (ValueError, TypeError, KeyError):
+            raise StoreUnavailable("invalid_projection") from None
+
+    @app.get("/api/v1/channels", response_model=ChannelsResponse,
+             response_model_exclude_none=True, operation_id="listChannels")
+    async def channels(request: Request):
+        result = await read(request, "channels")
+        try:
+            return bounded_response(ChannelsResponse(channels=project_channels(result.rows)))
+        except (ValueError, TypeError, KeyError):
+            raise StoreUnavailable("invalid_projection") from None
+
+    @app.get("/api/v1/channels/{channel_id}/messages", response_model=MessagesResponse,
+             response_model_exclude_none=True, operation_id="listMessages")
+    async def messages(request: Request, channel_id: str = Path(min_length=1, max_length=128)):
+        result = await store.read(await cookie(request), "messages", channel_id=channel_id)
+        if result.expires_at is None:
+            raise HTTPException(401, "Authentication required.")
+        if not result.found:
+            raise HTTPException(404, "Channel not found.")
+        try:
+            return bounded_response(MessagesResponse(messages=project_messages(result.rows)))
+        except (ValueError, TypeError, KeyError):
+            raise StoreUnavailable("invalid_projection") from None
+
+    @app.get("/api/v1/channels/{channel_id}/runs", response_model=RunsResponse,
+             response_model_exclude_none=True, operation_id="listRuns")
+    async def runs(request: Request, channel_id: str = Path(min_length=1, max_length=128)):
+        result = await store.read(await cookie(request), "runs", channel_id=channel_id)
+        if result.expires_at is None:
+            raise HTTPException(401, "Authentication required.")
+        if not result.found:
+            raise HTTPException(404, "Channel not found.")
+        try:
+            return bounded_response(RunsResponse(runs=project_runs(result.rows)))
+        except (ValueError, TypeError, KeyError):
+            raise StoreUnavailable("invalid_projection") from None
+
+    if auth is not None:
+        register_auth_routes(app, auth, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
+
+    input_definitions = register_identity_routes(
+        app, identity, store, secure_cookies=secure_cookies, allowed_origins=allowed_origins,
+    ) if identity is not None else {}
+
+    if conversations is not None:
+        from .conversation_routes import register_conversation_routes
+        register_conversation_routes(app, conversations, store, secure_cookies=secure_cookies,
+                                     allowed_origins=allowed_origins)
+
+    if profiles is not None:
+        from .profile_routes import register_profile_routes
+        register_profile_routes(app, profiles, store, secure_cookies=secure_cookies,
+                                allowed_origins=allowed_origins)
+
+    if tasks is not None:
+        from .task_routes import register_task_routes
+        register_task_routes(app, tasks, store, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
+
+    if run_commands is not None:
+        from .run_command_routes import register_run_command_routes
+        register_run_command_routes(app, run_commands, store, secure_cookies=secure_cookies,
+                                    allowed_origins=allowed_origins)
+
+    if work is not None:
+        from .work_routes import register_work_routes
+        register_work_routes(app, work, store, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
+
+    if product is not None:
+        from .product_control import register_product_routes
+        register_product_routes(app, product, store, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
+
+    # Cookie parsing is invoked inside the adapter to keep the store request-scoped. Declare
+    # that exact scheme in generated OpenAPI too; a schema is never an authorization check.
+    schema = app.openapi()
+    components = schema.setdefault("components", {}).setdefault("schemas", {})
+    for name, definition in input_definitions.items():
+        if name in components and components[name] != definition:
+            raise ValueError("Conflicting OpenAPI input definitions.")
+        components[name] = definition
+    schema.setdefault("components", {}).setdefault("securitySchemes", {})["OwnerSession"] = {
+        "type": "apiKey", "in": "cookie", "name": cookie_name,
+    }
+    for path in ("/api/v1/bots", "/api/v1/channels", "/api/v1/channels/{channel_id}/messages", "/api/v1/channels/{channel_id}/runs"):
+        schema["paths"][path]["get"]["security"] = [{"OwnerSession": []}]
+    schema["paths"]["/api/v1/auth/session"]["get"]["security"] = [{}, {"OwnerSession": []}]
+    if auth is not None:
+        schema["paths"]["/api/v1/auth/logout"]["post"]["security"] = [{"OwnerSession": []}]
+        schema["paths"]["/api/v1/auth/login"]["post"]["security"] = []
+    if identity is not None:
+        for path in ("/api/v1/bots", "/api/v1/channels"):
+            schema["paths"][path]["post"]["security"] = [{"OwnerSession": []}]
+    if conversations is not None:
+        for path in ("/api/v1/bots/{bot_id}/conversation", "/api/v1/channels/{channel_id}/bots"):
+            schema["paths"][path]["post"]["security"] = [{"OwnerSession": []}]
+    if profiles is not None:
+        schema["paths"]["/api/v1/bots/{bot_id}/profile"]["patch"]["security"] = [{"OwnerSession": []}]
+    if tasks is not None:
+        schema["paths"]["/api/v1/channels/{channel_id}/messages"]["post"]["security"] = [{"OwnerSession": []}]
+    if run_commands is not None:
+        for path in ("/api/v1/runs/{run_id}/cancel", "/api/v1/runs/{run_id}/steer"):
+            schema["paths"][path]["post"]["security"] = [{"OwnerSession": []}]
+    if work is not None:
+        for path, method in (("/api/v1/tasks", "post"), ("/api/v1/tasks/{task_id}", "get"),
+                             ("/api/v1/tasks/{task_id}/cancel", "post"), ("/api/v1/tasks/{task_id}/corrections", "post"), ("/api/v1/actions/{action_id}/decision", "post"),
+                             ("/api/v1/actions/{action_id}/reconcile", "post"),
+                             ("/api/v1/artifacts/{artifact_id}", "get")):
+            schema["paths"][path][method]["security"] = [{"OwnerSession": []}]
+    if product is not None:
+        for path, operations in schema["paths"].items():
+            if path.startswith('/api/v1/') and path not in ('/api/v1/auth/login','/api/v1/auth/session','/api/v1/nodes/enroll'):
+                for method, operation in operations.items():
+                    if method in ('get','post','put','patch','delete'):
+                        operation['security']=[{'OwnerSession': []}]
+    return app

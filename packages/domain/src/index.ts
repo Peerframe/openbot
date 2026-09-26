@@ -2,6 +2,7 @@ import type { MessageReaction } from "./channel-interactions.js";
 import type { ModelProviderId } from "./model-providers.js";
 
 export * from "./model-providers.js";
+export * from "./model-services.js";
 
 import type {
   NodeArchitecture,
@@ -67,8 +68,9 @@ export interface Bot {
   name: string;
   role: string;
   status: BotStatus;
-  computerProfile: "none" | "docker-linux" | "macos-cua" | "lume-vm" | "coder";
+  computerProfile: "none" | "model" | "docker-linux" | "macos-cua" | "lume-vm" | "coder";
   appearance?: BotAppearance | undefined;
+  model?: import("./model-services.js").ModelSelection | undefined;
   createdAt: string;
 }
 
@@ -273,6 +275,7 @@ export interface EmployeeProfile {
   };
   configuration: {
     executionProfile: Bot["computerProfile"];
+    model?: import("./model-services.js").ModelSelection | undefined;
     portabilityFormat: "openbot.employee/v1";
   };
 }
@@ -483,6 +486,7 @@ export interface NodeEnrollmentToken {
 
 export interface Run {
   id: EntityId;
+  workTaskId?: string | undefined;
   parentRunId?: EntityId;
   rootRunId?: EntityId;
   delegatedByBotId?: EntityId;
@@ -491,6 +495,7 @@ export interface Run {
   sourceMessageId?: EntityId;
   nodeId?: EntityId;
   executionProfile: Bot["computerProfile"];
+  model?: import("./model-services.js").ModelSelection | undefined;
   instruction: string;
   title: string;
   status: RunStatus;
@@ -703,6 +708,7 @@ export interface CreateBotInput {
   role: string;
   computerProfile: Bot["computerProfile"];
   appearance?: BotAppearance | undefined;
+  model?: import("./model-services.js").ModelSelection | undefined;
 }
 
 export interface CreateChannelInput {
@@ -730,12 +736,17 @@ export interface KnowledgeProposalDraft {
   title: string;
   content: string;
 }
-export interface KnowledgeProposal extends KnowledgeProposalDraft {
+interface KnowledgeProposalRecord extends KnowledgeProposalDraft {
   id: string;
   botId: string;
-  sourceRunId: string;
   createdAt: string;
 }
+/** Native Work Runs and legacy channel Runs are distinct source identities. */
+export type KnowledgeProposal = KnowledgeProposalRecord &
+  (
+    | { sourceRunId: string; source?: never }
+    | { source: { kind: "task"; taskId: string; runId: string }; sourceRunId?: never }
+  );
 export type ReviewKnowledgeProposalInput =
   | { decision: "reject"; ownerReviewed: true }
   | {

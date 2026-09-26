@@ -1,0 +1,47 @@
+{
+  "architecture": "arm64",
+  "boundary": "Disposable synthetic Owner/API/Web/PostgreSQL/parser and restart qualification. No configured Temporal, paid model, remote deployment, existing-volume upgrade, default cutover or general platform certification.",
+  "date": "2026-09-25",
+  "first": {
+    "builtWeb": true,
+    "ownerHttp": true,
+    "parsers": [
+      "docx",
+      "pdf",
+      "ocr-blank-initialization"
+    ],
+    "persistentKeyAndFiles": true,
+    "phase": "create"
+  },
+  "host": "local Docker VM on macOS arm64",
+  "imageId": "sha256:014c794aff194f76f615eba50711762b1ba69f93b8537e6fc1a9c353f2bfdbe2",
+  "kind": "openbot-python-product-container-qualification",
+  "migrations": 43,
+  "ok": true,
+  "ownedResourcesRemoved": true,
+  "platform": "linux/arm64",
+  "preflightBeforeSchema": true,
+  "realModelCalled": false,
+  "restart": {
+    "builtWeb": true,
+    "ownerHttp": true,
+    "parsers": [],
+    "persistentKeyAndFiles": true,
+    "phase": "restart"
+  },
+  "sigtermExitWithoutKill": true,
+  "sourceSha256": {
+    "apps/server-python/requirements-worker.lock": "f81ff52332fcf2d6136246463a6eabf48f55b700390eeec43e92de535d6b1886",
+    "apps/server-python/scripts/serve.py": "ff5e402041229c6b2c48d284977d89da29046660c889050423516f9770f6a6c0",
+    "deploy/server/Dockerfile.product": "2987af1798b3100f8007e7f41664db0b8ab205f21b90929eec79d42c24c0b0c2",
+    "deploy/server/Dockerfile.product.dockerignore": "1ed6699b222610f8730dfb8493b3af44b4a598d51e4cd390f6c5228e5bd88b1b",
+    "deploy/server/product-entry.py": "0647032c4969535b6374cfd09275c6461239d54eb6ae825447bd0e4284cfc690",
+    "deploy/server/product-health.py": "b0ddbbba12251d51507da8bec62a501e073973928d9e1ca1e905d092668e4b1f",
+    "deploy/server/product-migrate.mjs": "fb324a6d19197bdec4c7735658523a189750de35b8700ebee0332a46cd92ef14",
+    "deploy/server/product-node-project.mjs": "91a01cd191d60a43a4cdc2e95e4aa5adc5522ca56a19743041b4ddedd673f478",
+    "deploy/server/product-preflight.mjs": "3e964b3673b5a3bfb4d10f4317aa028826ca1d20f639f565d3b365e9e772ece2",
+    "deploy/server/product-smoke-client.py": "e9a6fc0a3fe66bcdb171471c89c9e024085f794f66bedfab5977645fecf42f6a",
+    "deploy/server/smoke-product.py": "4aaa8846f016c66a49f92c1fe0402be2bc383615e60ba1f92107679c1fc973ec"
+  },
+  "temporalConfigured": false
+}

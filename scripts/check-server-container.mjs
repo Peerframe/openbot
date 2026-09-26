@@ -3,11 +3,14 @@ import { pathToFileURL } from "node:url";
 
 const NODE_IMAGE =
   "node:24.21.0-bookworm-slim@sha256:2fe369e969550cde8e867afc3fe370b260140cab4a23d467074295b42163d553";
+const PYTHON_IMAGE =
+  "python:3.12.13-slim-bookworm@sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2";
 const CHECKOUT_PIN = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1";
 
 export function validateServerContainer({
   dockerfile,
   compose,
+  pythonCompose,
   dockerignore,
   workflow,
   smoke,
@@ -21,7 +24,11 @@ export function validateServerContainer({
     "FROM toolchain AS pruner",
     "FROM toolchain AS build",
     "FROM toolchain AS production-dependencies",
-    "FROM base AS runtime",
+    "FROM base AS runtime-node",
+    `FROM ${PYTHON_IMAGE} AS python-base`,
+    "FROM python-base AS python-dependencies",
+    "FROM python-base AS runtime-python",
+    "FROM runtime-node AS runtime",
   ];
   const actualFromLines = dockerfile.match(/^FROM .+$/gm) ?? [];
   if (JSON.stringify(actualFromLines) !== JSON.stringify(expectedFromLines)) {
@@ -75,7 +82,10 @@ export function validateServerContainer({
   if ((dockerfile.match(/^COPY \. \.$/gm) ?? []).length !== 1) {
     throw new Error("Server Dockerfile must copy the complete context only into the pruner stage.");
   }
-  const runtime = dockerfile.slice(dockerfile.indexOf("FROM base AS runtime"));
+  const runtime = dockerfile.slice(
+    dockerfile.indexOf("FROM base AS runtime-node"),
+    dockerfile.indexOf(`FROM ${PYTHON_IMAGE}`),
+  );
   if (
     /\b(?:ADD|USER root)\b|COPY \. \.|\/src(?:\s|$)|\/apps\/(?:desktop|node|web)|\/providers|npm (?:ci|install|exec|run)/.test(
       runtime,
@@ -93,6 +103,47 @@ export function validateServerContainer({
   }
   if (dockerfile.indexOf("USER node") > dockerfile.indexOf("HEALTHCHECK")) {
     throw new Error("Server Dockerfile must select the non-root user before runtime commands.");
+  }
+
+  const pythonRuntime =
+    dockerfile
+      .split("FROM python-base AS runtime-python")[1]
+      ?.split("FROM runtime-node AS runtime")[0] ?? "";
+  for (const fragment of [
+    "ENV OPENBOT_AGENT_RUNTIME=python",
+    "COPY --from=base /usr/local/bin/node /usr/local/bin/node",
+    "COPY --from=runtime-node /workspace/ ./",
+    "COPY --from=python-dependencies /workspace/apps/agent-runtime-python/ ./apps/agent-runtime-python/",
+    "COPY apps/agent-runtime-python/src/ ./apps/agent-runtime-python/src/",
+    "COPY apps/agent-runtime-python/scripts/run-worker.py ./apps/agent-runtime-python/scripts/run-worker.py",
+    "USER node",
+    "STOPSIGNAL SIGTERM",
+  ]) {
+    if (!pythonRuntime.includes(fragment))
+      throw new Error(`Python runtime missing required fragment: ${fragment}`);
+  }
+  if (
+    /\b(?:ADD|USER root)\b|COPY \. \.|pip .*install|npm |agent-runtime-python\/tests/.test(
+      pythonRuntime,
+    )
+  ) {
+    throw new Error("Python runtime includes installers, tests or unexpected privileges.");
+  }
+  for (const fragment of [
+    "--only-binary=:all:",
+    "-r requirements-runtime.lock",
+    "--profile runtime",
+    "python -m venv .venv",
+  ]) {
+    if (!dockerfile.includes(fragment))
+      throw new Error(`Python dependency stage missing required fragment: ${fragment}`);
+  }
+  if (
+    !pythonCompose.includes("target: runtime-python") ||
+    !pythonCompose.includes("OPENBOT_AGENT_RUNTIME: python") ||
+    /ports:|volumes:|privileged:|network_mode:/.test(pythonCompose)
+  ) {
+    throw new Error("Python Compose overlay must select only the target and fixed runtime.");
   }
 
   const requiredComposeFragments = [
@@ -141,7 +192,7 @@ export function validateServerContainer({
   const nextJob = jobSource.slice(1).search(/^ {2}[A-Za-z_][A-Za-z0-9_-]*:\s*$/m);
   const job = nextJob === -1 ? jobSource : jobSource.slice(0, nextJob + 1);
   const requiredWorkflowFragments = [
-    "name: Server container ($" + "{{ matrix.name }})",
+    "name: Legacy Server compatibility ($" + "{{ matrix.name }})",
     "runs-on: $" + "{{ matrix.runner }}",
     "timeout-minutes: 25",
     "fail-fast: false",
@@ -156,6 +207,9 @@ export function validateServerContainer({
       '{{ matrix.arch }}" --tag openbot-server:smoke --file deploy/server/Dockerfile .',
     "OPENBOT_TEST_PLATFORM: $" + "{{ matrix.arch }}",
     "bash scripts/smoke-server-container.sh",
+    "--target runtime-python --tag openbot-server:python-smoke",
+    "OPENBOT_TEST_AGENT_RUNTIME: python",
+    "--file deploy/server/compose.python.yaml config --quiet",
   ];
   for (const fragment of requiredWorkflowFragments) {
     if (!job.includes(fragment)) {
@@ -172,6 +226,12 @@ export function validateServerContainer({
     );
   }
 
+  if ((job.match(/^ +run: bash scripts\/smoke-server-container\.sh$/gm) ?? []).length !== 2) {
+    throw new Error(
+      "Server container CI job is missing required fragment: both runtime smoke lanes.",
+    );
+  }
+
   const requiredSmokeFragments = [
     'runtime_version" != "v24.21.0"',
     'runtime_uid" == "0"',
@@ -183,7 +243,7 @@ export function validateServerContainer({
     "@types/filename-reserved-regex",
     "expected_migration_count",
     "invalid_server_container",
-    "--read-only",
+    "  --read-only " + "\\" + "\n  --tmpfs",
     "postgres:17.11-bookworm",
     "select count(*) from drizzle.__drizzle_migrations",
     "Server container returned an unexpected health identity.",
@@ -191,6 +251,9 @@ export function validateServerContainer({
     "docker stop --time 20",
     "server.shutdown_started",
     "server.shutdown_failed",
+    "--profile runtime",
+    "scripts/smoke-python-runtime.mjs",
+    "Python preflight failure changed the fresh database.",
   ];
   for (const fragment of requiredSmokeFragments) {
     if (!smoke.includes(fragment)) {
@@ -222,6 +285,7 @@ if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.a
   const [
     dockerfile,
     compose,
+    pythonCompose,
     dockerignore,
     workflow,
     smoke,
@@ -232,6 +296,7 @@ if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.a
     [
       "deploy/server/Dockerfile",
       "deploy/server/compose.yaml",
+      "deploy/server/compose.python.yaml",
       ".dockerignore",
       ".github/workflows/ci.yml",
       "scripts/smoke-server-container.sh",
@@ -243,6 +308,7 @@ if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.a
   validateServerContainer({
     dockerfile,
     compose,
+    pythonCompose,
     dockerignore,
     workflow,
     smoke,

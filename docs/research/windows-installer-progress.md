@@ -24,7 +24,7 @@ Evidence: PR #71's last successful native run installed and completed ten cold s
 
 ## Reuse decision
 
-Use the existing held-process observer with a small fixture-only progress adapter. Count files and bytes under the harness-created installation destination; changes extend an idle deadline of 120 seconds, while an independent 300-second overall ceiling always applies. Polling evidence contains only elapsed time, byte/file counts and CPU duration. A live but stalled process cannot pass; successful exit still requires exit code zero, installed ASAR equality, native bootstrap, ten independent cold starts, cleanup and uninstall.
+Use the existing held-process observer with a small fixture-only progress adapter. Count files and bytes under the harness-created installation destination and observe CPU time on the held installer process; file growth or at least 250 ms of accumulated CPU work extends an idle deadline of 120 seconds, while an independent 300-second overall ceiling always applies. Polling evidence contains only elapsed time, byte/file counts and CPU duration. A live or CPU-busy process cannot pass by itself; successful exit still requires exit code zero, installed ASAR equality, native bootstrap, ten independent cold starts, cleanup and uninstall.
 
 On timeout, terminate the held installer process tree and wait boundedly before uninstall/cleanup. `WaitForExit` proves the held process exited, not that arbitrary detached descendants did; do not enlarge claims beyond the existing fixture cleanup evidence. Add native fixture tests for progress, stall and the absolute ceiling, and keep all existing native checks.
 
@@ -43,3 +43,37 @@ Run native Windows process fixtures in CI before packaging, then run the real in
 ## Unresolved questions
 
 Native CI must establish whether extraction actually continues beyond the former cutoff. A successful longer run without progress evidence is insufficient to classify the old failure.
+
+## PR #96: account for work before destination files appear (2026-09-26)
+
+The [failed Windows job](https://github.com/Peerframe/openbot/actions/runs/36166820890/job/108176484131)
+recorded zero destination files at 120 seconds, but the held installer's CPU time increased from
+0.86 seconds at 75 seconds to 13.78 seconds at termination. The preceding successful job recorded
+26.64 CPU seconds before the first destination files appeared, and completed installation in
+117.34 seconds. The old observer ignored CPU work when calculating its idle deadline.
+
+Rechecked the existing reuse entry and the pinned electron-builder 26.16.1 template at
+`7d3b30f3b15950d19f7c5ff882cf2d161cd3ba2c`: its
+[extractAppPackage.nsh](https://github.com/electron-userland/electron-builder/blob/7d3b30f3b15950d19f7c5ff882cf2d161cd3ba2c/packages/app-builder-lib/templates/nsis/include/extractAppPackage.nsh)
+places the archive in `$PLUGINSDIR`, extracts it into `$PLUGINSDIR/7z-out`, and only then copies it
+to the destination. Destination file growth therefore cannot observe that earlier work. This
+explains the monitoring gap; it does not identify exactly which upstream operation consumed CPU
+in the failed run. GitHub search `repo:electron-userland/electron-builder nsis installer slow
+extraction TEMP` did not establish a matching upstream fix. Keep the pinned installer unchanged.
+
+The existing [.NET TotalProcessorTime API](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.totalprocessortime)
+provides accumulated processor time for the held process. Count accumulated increases of at least
+250 ms as activity, without resetting the hard ceiling. The threshold avoids treating every tiny
+timer wakeup as progress, and a busy loop still fails at the absolute limit. A missing CPU sample
+must not invent activity. Do not enumerate other processes or scan the shared temporary directory.
+
+Extend the real-process fixtures to cover CPU work without destination writes, CPU work followed
+by a stall, and an endless CPU loop that hits the hard ceiling; retain file-progress, sleeping,
+nonzero-exit and file-writing hard-limit cases. Windows CI must run these fixtures and the actual
+installation, ASAR comparison, ten cold starts and uninstall. No dependency, copied source,
+product-runtime change or weaker success condition is introduced.
+
+Before hosted qualification, the old observer reproduced `stalled` at 2.5 seconds despite 2.78
+CPU seconds. All seven real-process cases pass with the new observer on macOS PowerShell 7.5.2
+and in the Linux PowerShell fixture; the CPU-only case fails against the old observer. These
+validate the shared observer behavior and bounds, not Windows installation support.

@@ -90,7 +90,7 @@ export function validateSecurityWorkflow(workflow) {
 
   const portableJob = workflow.slice(portableJobStart, windowsWorkerHostJobStart);
   const requiredPortableFragments = [
-    "name: Portable ($" + "{{ matrix.name }})",
+    "name: Retained clients and legacy Desktop ($" + "{{ matrix.name }})",
     "runs-on: $" + "{{ matrix.runner }}",
     "timeout-minutes: 50",
     "fail-fast: false",
@@ -131,10 +131,10 @@ export function validateSecurityWorkflow(workflow) {
 
   const setupNodeReferences = workflow.match(/actions\/setup-node@[^\s]+/g) ?? [];
   if (
-    setupNodeReferences.length !== 4 ||
+    setupNodeReferences.length !== 6 ||
     setupNodeReferences.some((reference) => reference !== SETUP_NODE_PIN)
   ) {
-    throw new Error("CI must use the exact reviewed setup-node pin in all four jobs.");
+    throw new Error("CI must use the exact reviewed setup-node pin in all six jobs.");
   }
 
   const companionBuild = portableJob.indexOf("name: Build the pinned macOS Worker companion");
@@ -199,8 +199,65 @@ export function validateSecurityWorkflow(workflow) {
   }
 }
 
+export function validatePythonProductWorkflow(workflow, migrationWorkflow) {
+  const job = (id) => {
+    const section = workflow.match(
+      new RegExp(
+        `^ {2}${id}:\\n([\\s\\S]*?)(?=^ {2}[A-Za-z_][A-Za-z0-9_-]*:\\n|$(?![\\s\\S]))`,
+        "m",
+      ),
+    )?.[1];
+    if (!section) throw new Error(`Python product CI is missing job: ${id}`);
+    if (/^ {4}if:|continue-on-error:|\|\|\s*true/m.test(section))
+      throw new Error(`Python product CI must not bypass ${id}.`);
+    return section;
+  };
+  const container = job("python-product-container");
+  for (const fragment of [
+    "runner: ubuntu-24.04\n            arch: amd64",
+    "runner: ubuntu-24.04-arm\n            arch: arm64",
+    "--target runtime-product",
+    "--file deploy/server/Dockerfile.product",
+    "deploy/server/smoke-product.py --image openbot-server:product-smoke",
+  ]) {
+    if (!container.includes(fragment))
+      throw new Error(`Python product container must qualify its own entry: ${fragment}`);
+  }
+  const preview = job("python-desktop-preview");
+  const orderedStages = [
+    "npm exec -- turbo run build --filter=@openbot/desktop --filter=@openbot/python-node-runtime",
+    "node apps/desktop/scripts/prepare-native-server.mjs --python-product",
+    "node apps/desktop/scripts/smoke-python-product.mjs apps/desktop/out/python-product-runtime",
+    "node apps/desktop/scripts/package.mjs --preview --python-product",
+    "apps/desktop/out/python-product/OpenBot Preview-darwin-arm64/OpenBot Preview.app/Contents/Resources/native-runtime",
+  ];
+  let previous = -1;
+  for (const stage of orderedStages) {
+    const at = preview.indexOf(stage);
+    if (at <= previous)
+      throw new Error(`Python Preview must execute its staged and packaged lifecycle: ${stage}`);
+    previous = at;
+  }
+  if (
+    !preview.includes("runs-on: macos-15") ||
+    /prepare:native|npm run package|--filter=@openbot\/server|apps\/server\//.test(preview)
+  )
+    throw new Error("Python Preview must not substitute legacy Desktop packaging.");
+  if (
+    !job("synthetic-migration").includes("uses: ./.github/workflows/s7-migration.yml") ||
+    !/^  workflow_call:\s*$/m.test(migrationWorkflow) ||
+    !migrationWorkflow.includes("node experiments/s7-migration/qualify.mjs --report")
+  )
+    throw new Error("Python migration must invoke the existing same-commit qualification.");
+}
+
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const workflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
   validateSecurityWorkflow(workflow);
+  const migration = await readFile(
+    new URL("../.github/workflows/s7-migration.yml", import.meta.url),
+    "utf8",
+  );
+  validatePythonProductWorkflow(workflow, migration);
   console.info("CI security workflow checks passed.");
 }

@@ -13,6 +13,17 @@ const nodeCredential = `obn_${"a".repeat(43)}`;
 const enrollmentToken = `obenr_${"b".repeat(43)}`;
 
 describe("server environment", () => {
+  it("selects a known runtime without enabling inference or accepting commands", () => {
+    expect(serverEnvSchema.parse(required).OPENBOT_AGENT_RUNTIME).toBe("typescript");
+    expect(
+      serverEnvSchema.parse({ ...required, OPENBOT_AGENT_RUNTIME: "python" }).OPENBOT_AGENT_RUNTIME,
+    ).toBe("python");
+    for (const value of ["", "automatic", "python3", "/tmp/worker.py", "python; echo ignored"]) {
+      expect(serverEnvSchema.safeParse({ ...required, OPENBOT_AGENT_RUNTIME: value }).success).toBe(
+        false,
+      );
+    }
+  });
   it("normalizes local authentication settings", () => {
     const environment = serverEnvSchema.parse({
       ...required,

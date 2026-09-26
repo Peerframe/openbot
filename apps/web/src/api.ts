@@ -1,6 +1,3 @@
-import { reactionEmojis } from "@openbot/domain";
-import { getOpenBotDesktopBridge } from "./desktop-runtime";
-import type { ModelProviderId } from "@openbot/domain";
 import type {
   Approval,
   ApprovalDecision,
@@ -14,6 +11,7 @@ import type {
   CreateChannelInput,
   CreateEmployeeMemoryInput,
   CreateMessageInput,
+  CreateModelConnectionInput,
   DeleteEmployeeMemoryInput,
   EmployeeExportPreview,
   EmployeeImportActivationResult,
@@ -28,25 +26,55 @@ import type {
   KnowledgeProposal,
   Message,
   MessageReaction,
-  ReactionEmoji,
+  ModelConnection,
+  ModelProviderId,
+  ModelServicesSnapshot,
   NodeEnrollmentToken,
   NodeIdentitySummary,
+  ReactionEmoji,
   ReviewKnowledgeProposalInput,
   Run,
   RunFrame,
-  RunProgress,
   RunOutput,
+  RunProgress,
   SubmitTaskResult,
   UpdateEmployeeMemoryInput,
+  UpdateEmployeeModelInput,
   UpdateEmployeeProfileDetailsInput,
   UpdateEmployeeSkillStateInput,
+  UpdateModelConnectionInput,
   WorkspaceRealtimeEvent,
   WorkspaceSnapshot,
 } from "@openbot/domain";
+import { reactionEmojis } from "@openbot/domain";
 
 interface ErrorPayload {
   error?: string;
   fields?: Record<string, string[]>;
+}
+
+export async function openBrowser(
+  botId: string,
+): Promise<import("@openbot/protocol").BrowserSessionView> {
+  return request(`/api/v1/bots/${encodeURIComponent(botId)}/browser`, { method: "POST" });
+}
+
+export async function browserCommand(
+  sessionId: string,
+  action: import("@openbot/protocol").BrowserAction,
+): Promise<import("@openbot/protocol").BrowserSessionView> {
+  return request(`/api/v1/browser-sessions/${encodeURIComponent(sessionId)}/commands`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(action),
+  });
+}
+
+export async function closeBrowser(sessionId: string): Promise<void> {
+  await request(`/api/v1/browser-sessions/${encodeURIComponent(sessionId)}`, {
+    method: "DELETE",
+    keepalive: true,
+  });
 }
 
 export class ApiError extends Error {
@@ -169,6 +197,77 @@ export function subscribeToUnauthorized(handler: () => void): () => void {
 
 export async function getWorkspace(signal?: AbortSignal): Promise<WorkspaceSnapshot> {
   return request<WorkspaceSnapshot>("/api/v1/workspace", signal ? { signal } : undefined);
+}
+
+export async function getModelServices(signal?: AbortSignal): Promise<ModelServicesSnapshot> {
+  return request<ModelServicesSnapshot>("/api/v1/model-services", signal ? { signal } : undefined);
+}
+
+export async function createModelConnection(
+  input: CreateModelConnectionInput,
+): Promise<ModelConnection> {
+  const result = await request<{ connection: ModelConnection }>("/api/v1/model-connections", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return result.connection;
+}
+
+export async function updateModelConnection(
+  connectionId: string,
+  input: UpdateModelConnectionInput,
+): Promise<ModelConnection> {
+  const result = await request<{ connection: ModelConnection }>(
+    `/api/v1/model-connections/${encodeURIComponent(connectionId)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  return result.connection;
+}
+
+export async function discoverConnectionModels(
+  connectionId: string,
+  signal?: AbortSignal,
+): Promise<string[]> {
+  const result = await request<{ models: string[] }>(
+    `/api/v1/model-connections/${encodeURIComponent(connectionId)}/models`,
+    { method: "POST", ...(signal ? { signal } : {}) },
+  );
+  return result.models;
+}
+
+export async function testModelConnection(
+  connectionId: string,
+  modelId: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  await request<{ ok: true }>(
+    `/api/v1/model-connections/${encodeURIComponent(connectionId)}/test`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ modelId }),
+      ...(signal ? { signal } : {}),
+    },
+  );
+}
+
+export async function updateEmployeeModel(
+  botId: string,
+  input: UpdateEmployeeModelInput,
+): Promise<EmployeeProfileDetailsMutationResult> {
+  return request<EmployeeProfileDetailsMutationResult>(
+    `/api/v1/bots/${encodeURIComponent(botId)}/model`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
 }
 
 export async function listNodeIdentities(signal?: AbortSignal): Promise<NodeIdentitySummary[]> {
@@ -306,31 +405,10 @@ export async function getEmployeeExportPreview(
   return result.preview;
 }
 
-export async function downloadEmployeeTemplate(
+export async function fetchEmployeeTemplate(
   botId: string,
   preview: EmployeeExportPreview,
-): Promise<"saved" | "cancelled"> {
-  const desktop = getOpenBotDesktopBridge();
-  if (desktop) {
-    const result = await desktop.saveEmployeeTemplate?.({
-      botId,
-      packageId: preview.packageId,
-      generatedAt: preview.generatedAt,
-      downloadReviewToken: preview.downloadReviewToken,
-      ...(preview.format === "openbot.employee/v2" ? { includeSkillContent: true } : {}),
-    });
-    if (result?.status === "saved" || result?.status === "cancelled") return result.status;
-    if (result?.status === "changed")
-      throw new ApiError("员工内容在审核后发生变化，请刷新预览。", 412);
-    throw new ApiError(
-      result?.status === "exists"
-        ? "文件已存在，请换一个文件名。"
-        : result?.status === "busy"
-          ? "请先完成当前保存操作。"
-          : "无法保存员工模板，请检查连接或更新 Desktop。",
-      0,
-    );
-  }
+): Promise<Blob> {
   const parameters = new URLSearchParams({
     packageId: preview.packageId,
     generatedAt: preview.generatedAt,
@@ -352,19 +430,7 @@ export async function downloadEmployeeTemplate(
     throw new ApiError("下载的员工模板未通过完整性检查，请刷新预览后重试。", 0);
   }
 
-  const objectUrl = URL.createObjectURL(blob);
-  try {
-    const anchor = document.createElement("a");
-    anchor.href = objectUrl;
-    anchor.download = preview.fileName;
-    anchor.hidden = true;
-    document.body.append(anchor);
-    anchor.click();
-    anchor.remove();
-  } finally {
-    URL.revokeObjectURL(objectUrl);
-  }
-  return "saved";
+  return blob;
 }
 
 async function browserSha256Hex(bytes: ArrayBuffer): Promise<string> {

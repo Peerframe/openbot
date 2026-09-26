@@ -1,0 +1,396 @@
+{
+  "accepted": true,
+  "actualImageChromium": "151.0.7922.34",
+  "actualSentryArgumentsVerified": true,
+  "cgroupExists": false,
+  "cgroupMemberCount": 0,
+  "cleanupProblemCount": 0,
+  "commandCounts": {
+    "create": 1,
+    "image": 1,
+    "info": 1,
+    "inspect": 3,
+    "load": 1,
+    "logs": 1,
+    "other": 0,
+    "start": 1,
+    "version": 1,
+    "wait": 1
+  },
+  "containerErrorCategories": [],
+  "containerExitCode": 0,
+  "containerOomKilled": false,
+  "containerRestartCount": 0,
+  "containerStatus": "exited",
+  "createdDerivedProfileReadbackVerified": true,
+  "createdExactLoggingReadbackVerified": true,
+  "currentUnitState": {
+    "ActiveState": "inactive",
+    "LoadState": "not-found",
+    "Result": "success",
+    "SubState": "dead"
+  },
+  "daemonRunscExplicitFlagsVerified": true,
+  "evidenceBoundary": "Actual fixed-image Linux/runsc synthetic-page render, same-profile restart and sandbox diagnostics. Product authority/profile ownership, egress and human takeover are not qualified by this component test.",
+  "failureCategory": "none",
+  "failureType": null,
+  "finalDerivedProfileReadbackVerified": true,
+  "finalExactLoggingReadbackVerified": true,
+  "kind": "openbot-cdp-safe-result",
+  "mainPid": 0,
+  "nativeExpiryVerified": true,
+  "nativeTerminalResult": "timeout",
+  "observedStopLatencySeconds": 0.05422860197722912,
+  "originalInvocation": "5366190471124922bfbe9347b1a5238a",
+  "pins": "PINS.json",
+  "productionComparison": {
+    "after": {
+      "normalizedRuleHashes": {
+        "ip6tables-save": "0953f0dc3d9c3225cd5ebb423980f7419902127cee16007daa03a0198f21f960",
+        "iptables-save": "023b0f3bf63a15978fb5054eaf251ce9172b7e9619de4477f9d5c0b205eff21f"
+      },
+      "originalContainerIdentityAndStateUnchanged": true,
+      "phaseMatches": true,
+      "present": true,
+      "productionContainers": 10,
+      "proofSha256": "98ae5a24e71169661a183f7adef3242a19e11e097a92ad0200c620fede6ac0ca",
+      "semanticFirewallRulesUnchanged": true
+    },
+    "before": {
+      "normalizedRuleHashes": {
+        "ip6tables-save": "0953f0dc3d9c3225cd5ebb423980f7419902127cee16007daa03a0198f21f960",
+        "iptables-save": "023b0f3bf63a15978fb5054eaf251ce9172b7e9619de4477f9d5c0b205eff21f"
+      },
+      "originalContainerIdentityAndStateUnchanged": true,
+      "phaseMatches": true,
+      "present": true,
+      "productionContainers": 10,
+      "proofSha256": "0c937fee8070b239f7871952323d36c4c5e67134a1c14374c5608dee7a1fc7c1",
+      "semanticFirewallRulesUnchanged": true
+    }
+  },
+  "profileKind": "openbot-a1b-chroot-experimental-derivative",
+  "profileSha256": "d00ad84f5a67031fe2bb64de8d77a5ad9c06adb82935ebdb3c18b5f7ba60a5d0",
+  "rawLogsExported": false,
+  "remainingRuntimeDirectories": [],
+  "restarts": 0,
+  "runtimeArgumentObservationErrorCount": 7,
+  "sameInvocationOrReleased": true,
+  "startAttempts": 1,
+  "syntheticResult": {
+    "accepted": true,
+    "agentComputerStarted": false,
+    "elapsedMs": 14957,
+    "externalSitesZero": true,
+    "failureCategory": null,
+    "gid1001": true,
+    "guestBudgetMs": 65000,
+    "guestTimedOut": false,
+    "modelCallsZero": true,
+    "nodeVersion": "24.18.1",
+    "runs": [
+      {
+        "artifacts": {
+          "page": {
+            "dom": {
+              "bytes": 658,
+              "sha256": "a6e8e6877c3ca84c2211db6d84975b284f37f58b67c2c7895632279e669a39eb"
+            },
+            "domAttempted": true,
+            "png": {
+              "bytes": 15240,
+              "height": 800,
+              "sha256": "bc00c83bec64a7762921ad563fa01dde937d56177a5bc806c0a9339b258410e1",
+              "width": 1280
+            },
+            "pngAttempted": true
+          },
+          "sandbox": {
+            "dom": {
+              "bytes": 1656,
+              "sha256": "7a2206dfce76c1a7d9559ce786ffd5d6977777cfe90182558a7e1858eaf0aaf6"
+            },
+            "domAttempted": true,
+            "pngAttempted": false
+          }
+        },
+        "code": 0,
+        "expectedSyntheticRenderMatches": true,
+        "forcedTermination": false,
+        "gracefulClose": true,
+        "index": 0,
+        "observedNoNewPrivsValues": [
+          "1"
+        ],
+        "observedSandboxDisablingArgument": false,
+        "observedSeccompValues": [
+          "2"
+        ],
+        "outputBytes": 5626,
+        "oversize": false,
+        "pipeBytes": 34158,
+        "sampledChromeProcesses": 18,
+        "signal": null,
+        "stderrCategories": [
+          "no such file or directory",
+          "not supported",
+          "operation not supported"
+        ],
+        "stderrSha256": "96a909d1d273b0bcf0da99be26f3e747ef119034873c51f3a46363e9a9a753cc",
+        "timedOut": false
+      },
+      {
+        "artifacts": {
+          "page": {
+            "dom": {
+              "bytes": 656,
+              "sha256": "2acfb38397fd9c8afa6a29594f3c078b07ffdb6405aa12c8b58eb1542b9f1f36"
+            },
+            "domAttempted": true,
+            "pngAttempted": false
+          }
+        },
+        "code": 0,
+        "expectedSyntheticRenderMatches": true,
+        "forcedTermination": false,
+        "gracefulClose": true,
+        "index": 1,
+        "observedNoNewPrivsValues": [
+          "1"
+        ],
+        "observedSandboxDisablingArgument": false,
+        "observedSeccompValues": [
+          "2"
+        ],
+        "outputBytes": 5688,
+        "oversize": false,
+        "pipeBytes": 5964,
+        "sampledChromeProcesses": 15,
+        "signal": null,
+        "stderrCategories": [
+          "no such file or directory",
+          "not supported",
+          "operation not supported"
+        ],
+        "stderrSha256": "9dd0344f6242a99397d872363a2c73edfabf289553535e1a9605a2e20e19023c",
+        "timedOut": false
+      }
+    ],
+    "sandboxDiagnostics": {
+      "namespaceLayer1": true,
+      "networkNamespaces": true,
+      "pidNamespaces": true,
+      "seccomp": true
+    },
+    "sandboxRequestedByDefault": true,
+    "schemaVersion": 1,
+    "stages": [
+      {
+        "elapsedMs": 1966,
+        "error": null,
+        "name": "run0.browser-ready",
+        "startedMs": 62,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 1064,
+        "error": null,
+        "name": "run0.create",
+        "startedMs": 2028,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 518,
+        "error": null,
+        "name": "run0.attach",
+        "startedMs": 3093,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 1490,
+        "error": null,
+        "name": "run0.page-enable",
+        "startedMs": 3611,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 117,
+        "error": null,
+        "name": "run0.lifecycle-enable",
+        "startedMs": 5101,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 70,
+        "error": null,
+        "name": "run0.viewport",
+        "startedMs": 5218,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 1193,
+        "error": null,
+        "name": "run0.navigate",
+        "startedMs": 5288,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 909,
+        "error": null,
+        "name": "run0.domcontentloaded",
+        "startedMs": 6481,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 134,
+        "error": null,
+        "name": "run0.dom",
+        "startedMs": 7389,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 983,
+        "error": null,
+        "name": "run0.png",
+        "startedMs": 7523,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 382,
+        "error": null,
+        "name": "sandbox.create",
+        "startedMs": 8506,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 97,
+        "error": null,
+        "name": "sandbox.attach",
+        "startedMs": 8888,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 181,
+        "error": null,
+        "name": "sandbox.page-enable",
+        "startedMs": 8985,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 54,
+        "error": null,
+        "name": "sandbox.lifecycle-enable",
+        "startedMs": 9166,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 69,
+        "error": null,
+        "name": "sandbox.viewport",
+        "startedMs": 9220,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 112,
+        "error": null,
+        "name": "sandbox.navigate",
+        "startedMs": 9288,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 753,
+        "error": null,
+        "name": "sandbox.domcontentloaded",
+        "startedMs": 9401,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 24,
+        "error": null,
+        "name": "sandbox.dom",
+        "startedMs": 10154,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 482,
+        "error": null,
+        "name": "run0.close",
+        "startedMs": 10181,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 1346,
+        "error": null,
+        "name": "run1.browser-ready",
+        "startedMs": 10691,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 712,
+        "error": null,
+        "name": "run1.create",
+        "startedMs": 12037,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 399,
+        "error": null,
+        "name": "run1.attach",
+        "startedMs": 12749,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 876,
+        "error": null,
+        "name": "run1.page-enable",
+        "startedMs": 13148,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 168,
+        "error": null,
+        "name": "run1.lifecycle-enable",
+        "startedMs": 14024,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 6,
+        "error": null,
+        "name": "run1.viewport",
+        "startedMs": 14192,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 84,
+        "error": null,
+        "name": "run1.navigate",
+        "startedMs": 14199,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 234,
+        "error": null,
+        "name": "run1.domcontentloaded",
+        "startedMs": 14283,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 44,
+        "error": null,
+        "name": "run1.dom",
+        "startedMs": 14516,
+        "status": "ok"
+      },
+      {
+        "elapsedMs": 396,
+        "error": null,
+        "name": "run1.close",
+        "startedMs": 14560,
+        "status": "ok"
+      }
+    ],
+    "uid1001": true
+  },
+  "terminalSameInvocation": true,
+  "unit": "openbot-qualification-deadline-a1-cdp1.service"
+}

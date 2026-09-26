@@ -163,7 +163,7 @@ named boundary until the missing review is completed.
 | Provider SDK and current Docker browser adapter | Reviewed | CopilotKit/OpenBot `agent-computer`, Cua, MCP conformance, OCI evidence, and platform claim levels are recorded. Native Provider claims remain limited to their evidence. |
 | GitHub contribution and CI surface | Reviewed | Issue forms and RFC/KEP evidence are adapted locally. Existing checkout/setup actions are pinned to reviewed commits with credentials persistence disabled. |
 | PostgreSQL store and migration lifecycle | Reviewed | Drizzle/Postgres.js/PostgreSQL behavior is pinned. The journal and database history fail closed on drift; a real PostgreSQL CI job covers concurrent first migration and repeat startup. |
-| PostgreSQL and artifact backup/restore | Partial | Native `pg_dump`/`pg_restore` and a paired artifact snapshot are the selected boundary and a bilingual runbook exists. Scheduling, encryption, retention, off-host adapters, and a repeatable full restore harness remain blocked on focused upstream review. |
+| PostgreSQL and artifact backup/restore | Partial | Pinned native `pg_dump`/`pg_restore` plus paired private files have a repeatable completed-product restore probe, actual reader/decryption checks and key-failure counterexamples; see [review](research/python-product-paired-restore.md). Active-engine/online full restore, scheduling, backup encryption, retention and off-host adapters remain outside that accepted fixture. |
 | Multi-Server scheduling and event distribution | Partial | [Recurring submission research](research/server-automations.md) completes the bounded single-Server interval-schedule slice, including transactional claims and normal Run submission. Shared dispatch and event distribution remain unreviewed for multiple Server replicas; the single-process boundary remains. |
 | Office visualization plugin | Deferred | Only public product imagery was supplied; no reusable code license was identified, and this release does not expand the plugin. |
 
@@ -409,3 +409,493 @@ historical review context; the lockfile and this follow-up identify the current 
 React DOM types 19.3.0 / DefinitelyTyped `de5e8f01d01a14ae4ae502283d3d09f042f1ad89`
 and Zod 4.6.2 / `e359f7378fe56d695134701cda1e9055a08892dc` (both MIT) preserve the
 existing renderer and validation contracts. No copied source; see the [review](research/dependency-types-zod-september15.md).
+
+## Server gates for a Python-driven loop (2026-09-23)
+
+Reuse ai 7.0.93 / `6359fd58fe68eaade096b5d923bac26de84ca3bd` (Apache-2.0)
+`generateText`, schema validation and single-step execution. A narrow Server adapter retains
+bound tool execution, authority, budgets, durable usage/audit and final commit ownership.
+No copied source or added dependency. This is not yet a Python transport or production runtime
+switch; see [research](research/python-runtime-host.md) and [runtime](NATIVE_AGENT.md).
+
+The process adapter profile additionally reuses `@modelcontextprotocol/sdk` 1.30.0 /
+`2d889f2b329e46680ec9bdd565de4616c497825a` (MIT) newline codec helpers and Node's POSIX
+child-process APIs. A narrow supervisor supplies the missing environment, group cleanup and
+Server-bound operation policy; the full MCP client is not used as a runtime authority protocol.
+The supervisor is implemented and verified with real Node child fault fixtures; Python integration
+is pending. See [transport review](research/python-runtime-transport.md).
+
+Explicit Server startup selection reuses Node child-process APIs, Python isolated-mode/venv
+contracts and the package lock verifier. It validates the fixed installed package before durable
+initialization, with no automatic installation or fallback. No source copied or dependency added;
+see [activation research](research/python-runtime-activation.md).
+
+
+## Python tool-schema compatibility (2026-09-23)
+
+Select jsonschema-rs 0.57.1 / 5f2f3f341f20a9460caef88f017d10ce2dc91227 (MIT) for the Python
+unit's offline JSON Schema admission. Actual Server tool schemas contain Unicode property escapes;
+the previous Python-regex validator refused them before model execution. The released complete
+validator is preferred over a partial regex monkeypatch. Offline compilation, format annotations,
+bounded regex options and unchanged Server authority are required. No source copied; full evidence
+and pending integration gates: [schema review](research/python-schema-compatibility.md).
+
+## Optional Python Server packaging (2026-09-23)
+
+Reuse official Python 3.12.13 slim-bookworm / docker-library/python
+3362634339580d3232e65a66dd5a36c47ae7ff14 (MIT image source; PSF interpreter; Debian licenses),
+index sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2, and the existing
+Node 24.21.0 base with Docker multi-stage targets and Python venv/metadata contracts.
+The opt-in target keeps only the runtime dependency closure at existing pins and checks the
+installed profile before database startup. No new dependency, copied source or authority change.
+See [packaging research](research/python-server-container.md).
+
+## Source migration lineage preflight (2026-09-23)
+
+Reuse installed Git 2.54.0 tree/blob plumbing, Node SHA-256 and the existing migration manifest
+validator at c33e03f. Compare committed source histories without database or working-tree reads.
+Preserve Drizzle 0.45.2 raw-SQL hashing and the existing runtime history guard. No new dependency
+or copied upstream source; see [research](research/migration-lineage-audit.md). This is a source
+compatibility gate, not proof of data migration or a repair tool.
+
+## Python control-plane read reference (2026-09-23)
+
+Reuse OpenAPI 3.1, FastAPI 0.141.1 and Pydantic 2.13.5 (MIT), Starlette 1.6.0 and Uvicorn 0.53.0
+(BSD-3-Clause), and Psycopg/binary 3.3.6 (LGPL-3.0-only). A narrow adapter projects existing
+PostgreSQL rows and validates existing Owner sessions; the default TypeScript Server retains business
+writes; explicit Owner-auth selection is reviewed below. The fixed SQL history, read-only transactions, bounded requests and revocation checks
+remain explicit. No upstream source copied, second migration engine or model authority added.
+Installed dependency notices remain intact. See [research](research/python-control-read-slice.md)
+and [development/paired fixture](../apps/server-python/README.md).
+
+## Python Owner-auth reference (2026-09-23)
+
+Reuse CPython 3.12.13 secrets/hmac/hashlib/ipaddress (PSF), Starlette 1.6.0 cookie serialization
+(BSD-3-Clause), PostgreSQL 17.11 transactions/advisory locks (PostgreSQL License), and Psycopg
+3.3.6 (LGPL-3.0-only). Preserve the existing session-digest, expiry/revocation and throttle schema;
+invalid attempts commit reservations, successful auth commits before cookie issuance. Default
+reference remains read-only; explicit auth mode adds no business writer or model authority. No
+new dependency or copied upstream source. See [review](research/python-owner-auth.md).
+
+## Python identity creation reference (2026-09-23)
+
+Reuse the same PostgreSQL 17.11 constraints/row locks and Psycopg 3.3.6 Jsonb/transactions for
+Owner-authorized Bot/channel creation and atomic audit rows. Existing Zod 4.6.2 is the input
+compatibility oracle; Pydantic 2.13.5 validates the Python representation. No new dependency,
+migration engine, task authority or default switch. See [input review](research/python-identity-inputs.md)
+and [transaction review](research/python-identity-transactions.md) for source incorporation and gates.
+
+## Python conversation reference (2026-09-23)
+
+Reuse the reviewed PostgreSQL 17.11 row locks, unique indexes and Psycopg 3.3.6 transactions for
+single private conversations and idempotent member joins. Extract existing Owner transaction
+logic once; preserve audit atomicity, revocation locking and final expiry checks. No new dependency,
+schema or upstream source. See [research and acceptance](research/python-conversations.md).
+
+## Python message read reference (2026-09-23)
+
+Reuse the same released PostgreSQL/Psycopg/Pydantic stack for a parameterized, read-only latest-100
+message window. Standard SQL ordering, a materialized bounded window and byte sums prevent
+unbounded text transfer. The existing Owner session is rechecked before returning data. No new
+library, migration, dispatch or copied upstream source. See [research](research/python-message-reads.md).
+
+## Python profile editing reference (2026-09-23)
+
+Reuse PostgreSQL 17.11 row locks/revision predicates, Psycopg 3.3.6 and the accepted Pydantic/ECMAScript
+input adapters for optimistic descriptive profile updates. Owner authorization, revision, evolution
+and audit remain one transaction. No new dependency, migration or copied upstream source; existing
+Zod license notices continue to cover reused input helpers. See [research](research/python-profile-details.md).
+
+
+## Python queued task reference (2026-09-23)
+
+Reuse the already-reviewed PostgreSQL 17.11/Psycopg 3.3.6 transaction and locking APIs, Pydantic
+2.13.5 adapters, and Zod 4.6.2 as the installed input oracle. Preserve existing OpenBot recipient
+selection, Run projections and message/run/audit atomicity; no new schema, dependency or upstream
+source is introduced. Exact Zod notices remain bundled. The bounded SQL reader uses the accepted
+materialized-window pattern. Execution and file authority are not implied by queue persistence.
+See [design and acceptance](research/python-task-authority.md).
+
+
+## Python control runtime supervision (2026-09-23)
+
+Reuse CPython 3.12.13 stdlib Popen, asyncio pipe transports/flow control and json behind the accepted
+internal runtime profile; no new dependency or copied upstream source. The PID is owned before
+any asynchronous pipe attachment, so cancellation cannot lose an early process group. Exact
+source, tests, license, cancellation corrections and qualification evidence are recorded in
+[the supervision review](research/python-control-runtime-supervision.md). The control host/process
+seam is locally verified; persisted execution and production selection remain pending.
+
+
+## Python Owner run commands (2026-09-23)
+
+Reuse the reviewed PostgreSQL 17.11 row locks/transactions and Psycopg 3.3.6 for atomic cancellation,
+descendant settlement and steering audits. Reuse Pydantic 2.13.5 and the accepted ECMAScript text
+adapter; actual Zod 4.6.2 schemas are the compatibility oracle. No dependency, migration, upstream
+source copy or dispatcher change. The original OpenBot MIT application semantics are ported;
+see [frozen lifecycle design and acceptance](research/python-task-authority.md).
+
+
+## Python model settings and provider services (2026-09-23)
+
+Reuse released OpenAI3.17.0/8c72a700 (Apache-2.0), Anthropic1.8.0/4421d56a (MIT),
+PyCA cryptography50.0.1/ffde75a2 (Apache-2.0 OR BSD-3-Clause) and the reviewed
+HTTPX2 2.13.0 transport. Preserve the current11 provider endpoint allowlists and AES-GCM settings
+envelope; keep all keys, settings authority, retries and output checks in the Python control layer.
+No SDK source copied/patched; retain dependency notices. See [review](research/python-model-services.md).
+
+
+## Durable execution candidate qualification (2026-09-23)
+
+The isolated fault experiment reviews DBOS Python 3.0.0 /
+`dd8a5f315a54c02a750f80dd15127958243ed339` (MIT), with Temporal Python 1.33.0
+as the comparison candidate. This is an experiment-only released dependency, not a new
+production dispatcher or an accepted recovery engine. No upstream source copied. See
+[the evidence and remaining gates](research/durable-execution-qualification.md).
+
+Temporal's executable candidate profile additionally pins CLI 1.9.1 /
+`1de87a9f26991bf4f5c0a5ff96f2cea8d7a3cbde` (MIT), embedding Server 1.32.0 with disposable
+SQLite persistence. The SDK/CLI are experiment-only; this does not qualify production deployment.
+Source/tests and the official archive checksum were reviewed before running the fixture. See
+[the Temporal profile](research/temporal-durability-review.md#executable-probe-profile-2026-09-23).
+
+## Work-domain admission and Runtime continuation (2026-09-23)
+
+Reuse PostgreSQL 17.11 row locks/constraints (PostgreSQL License), psycopg 3.3.6 transactions
+(LGPL-3.0-only), the existing Owner transaction boundary and Pydantic models. Additive application
+Task/Action facts complement, rather than replace, the engine's recovery history. No new library,
+custom retry scheduler or copied upstream implementation. See [admission research](research/work-domain-admission.md).
+The separate [continuation probe](research/runtime-continuation.md) uses existing Pydantic AI 2.47.0 /
+`77d5fce751ab8ab04bd5db4ed6acc1131a4baed6` (MIT) public deferred-result/history APIs with scripted
+models. Official granular durable adapters remain candidates; the probe does not establish a
+production checkpoint protocol or select an orchestration engine.
+
+## Fenced work publication (2026-09-23)
+
+Reuse CPython3.12.13 POSIX descriptor/file APIs (PSF), PostgreSQL17.11 transactions and existing
+psycopg3.3.6, the reviewed OCI size/digest invariant and RFC6266 attachment disposition. No new
+dependency or copied upstream code. Application epochs fence writes but do not schedule retries;
+files stay in a private control-owned root. See [publication research](research/work-artifact-publication.md).
+
+## Official SDK durability composition (2026-09-23)
+
+The [eight-case integration probe](research/sdk-durability-integration.md) uses existing pinned
+Pydantic AI2.47.0, DBOS3.0.0 and Temporal Python1.33.0 public adapters (MIT); no upstream source
+copied or changed. Its separate environment composes the existing lock files. Temporal is the next
+public-work reference candidate, not a production engine selection; DBOS/deferred JSON remains
+viable. Product dependencies, default dispatch and private data remain unchanged.
+
+
+## Public work recovery journey (2026-09-23)
+
+Reuse the pinned official Temporal/Pydantic AI adapters and existing PostgreSQL control stores.
+A thin acceptance adapter records engine facts under the existing Task lock; CPython3.12 sqlite3
+(PSF) backs only the independent fake HTTP receipts. No new product dependency, recovery scheduler,
+public trusted-write route or upstream source copy. See [integration review](research/work-temporal-journey.md)
+and [executable reference](../experiments/work-journey/README.md).
+
+The product handoff extension reuses the same PostgreSQL 17 Task-row lock and Temporal Python
+1.33.0 start/history contract. A durable submission-attempt fact is recorded before any engine
+request, so an unacknowledged attempt is inspected rather than blindly submitted again after
+workflow history expiry. No new product dependency, scheduler or upstream source copy is involved;
+see [the bounded ingress review](research/work-temporal-journey.md#product-handoff-attempt-before-external-submission-2026-09-24).
+
+
+## Runtime port durability boundary (2026-09-24)
+
+The runtime-port compatibility review reuses pinned Pydantic AI 2.47.0 and Temporal Python
+1.33.0 public `DynamicToolset`/activity APIs. Direct custom `AbstractToolset` execution is not
+durable under the pinned integration; OpenBot adds only a fail-closed local check and keeps
+control-owned effects. No new dependency or copied upstream code. See
+[the measured port boundary](research/work-temporal-journey.md#runtime-tool-port-under-temporaldurability-2026-09-24).
+
+## Temporal persistence and Linux boundary review (2026-09-23)
+
+The [PostgreSQL profile](research/temporal-postgres-operations.md) uses Temporal Server/admin1.32.0
+`d94e34a1ebba5410a2e7d07119a76896909591aa` (MIT), existing PostgreSQL17.11 and official SQL/backup
+tools. Compose topology is adapted from samples-server `f811a033a5e79402cab9f792cea132f50344bd17`;
+its full MIT notice is retained in deploy/temporal/THIRD_PARTY_NOTICES.md. No engine source copy,
+custom migrator or product dependency change. The [Linux design](research/linux-execution-boundary.md)
+reviews OCI1.3, Docker29.8.1, runsc release-20260914.0 (Apache-2.0), Squid7.7 (GPL-2.0 separate
+process), Firecracker1.17 and OpenSandbox1.1 candidates, with exact commits and limits there.
+The [VPS qualification extension](research/linux-vps-qualification.md) reuses these exact pins and systemd255 namespace primitives; implementation is in progress, not qualified. No upstream source is copied. Browser mechanics retain the
+existing MIT attribution. Command and browser authority/resource/egress gates remain explicit.
+
+
+## Trusted engine transport and history replay (2026-09-23)
+
+Reuse Temporal Server1.32.0 native mTLS and Temporal Python1.33.0 TLSConfig/Replayer with the
+existing Pydantic AI2.47.0 plugin (all MIT; exact commits in the research). Disposable PKI uses
+OpenSSL CLI only as a test issuer, not a shipped CA or custom crypto. The Compose overlay follows
+the already-attributed upstream topology. No copied engine/SDK implementation, new dependency or
+product default change. See [transport](research/temporal-transport-security.md) and
+[replay](research/temporal-history-replay.md). mTLS authenticates one trusted control group, not
+API RBAC; same-version replay does not establish future workflow/SDK compatibility.
+
+
+## Adjacent Temporal service upgrade (2026-09-23)
+
+Reuse official MIT Temporal 1.31.3 release binaries (`8c78934b67fbac43d2ea7f8ada448c539780584d`)
+and the existing pinned 1.32.0 images/tools. A thin test-only bind overlay substitutes the verified
+older server/sql-tool because official 1.31.3 container tags were unavailable when checked.
+CPython stdlib tarfile/gzip/hashlib performs bounded exact-member extraction, not a general updater.
+No upstream source copied, new dependency, custom schema migration or production default change.
+The two releases share the entire PostgreSQL schema tree. See [pins and actual qualification](research/temporal-release-upgrade.md).
+
+
+## Durable model observations and optional OpenAI port (2026-09-24)
+
+Reuse Pydantic AI2.47.0 and OpenAI3.17.0 with explicit control-owned configuration, bounded
+transport and SDK retries disabled. Existing Action authority and immutable LocalWorkFiles retain
+model replies before engine acknowledgement. Missing receipts remain unknown, never permission
+to resend. Activity recovery and historical settlement grant no new authority. The initial port
+supports text/functions only and refuses hosted/media inputs. See [research and qualification](research/work-model-ports.md)
+for pins, licenses, independent review, actual SDK/PostgreSQL/mTLS restart proof and limits.
+No source copied; no live-provider acceptance, default activation or Linux isolation claim.
+
+### Product Worker and finite operator dispatch
+
+Reuse the pinned Temporal1.33.0/Pydantic AI2.47.0 Worker and Agent integration, existing admitted
+Action ports and control completion/digest contracts. Product composition owns one importable
+workflow and fresh per-Run services; the trusted verifier remains separate from model output.
+The operator CLI requires explicit mTLS/private configuration and makes one bounded dispatch
+pass over existing reservations. Recovery reads the original immutable completion/artifacts;
+it cannot grant authority, rerun verification or repeat effects. No upstream source copied or
+new scheduler/dependency introduced. See [qualification and limits](research/work-product-worker.md).
+
+
+## Durable product tool results (2026-09-25)
+
+Reuse Pydantic AI 2.47.0 `DeferredToolResults`, Temporal Python 1.33.0 Activities, PostgreSQL
+17.11 and the existing immutable private blob store. A thin opt-in adapter retains received
+tool content across acknowledgement loss; observed response bytes confer no authority or
+independent business-effect proof. No new dependency or upstream source copied. See the
+[pre-implementation review and contract](research/work-tool-results.md).
+
+## Python product composition and lifecycle (2026-09-25)
+
+Reuse the reviewed Temporal/PydanticAI Worker, durable model/tool observations, PostgreSQL
+publication and retained OpenBot Markdown/context contracts. Private operator configuration
+selects one Worker; bounded admission passes leave continuation with Temporal. Product correction
+history is explicitly versioned, and pending knowledge insertion shares verified publication's
+transaction. No new dependency or upstream implementation copied. Test-only original OpenBot MIT
+model oracles are retained with exact commit/hash for shallow checkouts. See
+[composition](research/python-product-runtime.md) and [model adapter](research/python-work-product-model.md).
+
+## Product deferred approval (2026-09-24)
+
+Reuse the same Pydantic AI2.47.0 ExternalToolset/DeferredToolResults and Temporal1.33.0
+Activity/timer APIs, with the existing control Action, approval and reconciliation stores.
+Control retains immutable proposals and performs authorization; SDK declarations do not grant
+execution. No upstream code copied, dependency or schema added. See
+[review, contracts and qualification](research/work-deferred-approval.md).
+
+
+## Product closed-workflow lookup (2026-09-24)
+
+Reuse Temporal Python1.33.0 exact-history and REJECT_DUPLICATE APIs, the accepted closed-history
+reference and existing Action/reconciliation transactions. Historical binding proves origin only;
+lookup cannot resume execution. No new schema/dependency or upstream code copied. See
+[scope and independent review](research/work-closed-repair.md).
+
+## Product Owner corrections (2026-09-24)
+
+Reuse pinned Pydantic AI2.47.0 history/DeferredToolResults, Temporal1.33.0 Activities and
+PostgreSQL Task locks. Small additive domain records bind immutable instruction contexts to
+existing proposal/admission/publication gates. No SDK fork or source copy; see
+[review and acceptance boundary](research/work-owner-corrections.md).
+
+## Consolidated Python product-control integration (2026-09-24)
+
+Reuse the pinned FastAPI/Pydantic/Psycopg/PostgreSQL stack and accepted Owner transaction,
+identity, work/receipt and file boundaries above. Port original OpenBot MIT product modules
+(model settings, workspace/profile, knowledge/skills, schedules, conversations and attachments)
+as responsibility groups while preserving the existing React/Electron DTOs. Existing source
+reviews remain applicable; no new framework or copied upstream source. The
+[PyYAML6.0.3 event adapter](research/python-skill-yaml.md) preserves the reviewed YAML1.2 core
+string/map metadata syntax; the released parser replaces the unaccepted line-parser draft.
+The product Worker lock is the exact union of reviewed control/Runtime/Temporal dependencies,
+without the discarded DBOS experiment dependency. Execution,
+client integration and retirement gates are recorded in the existing migration plan's current
+integration batches. This entry is implementation authorization/evidence reuse, not acceptance.
+
+## Channel admission into durable Work (2026-09-25)
+
+Reuse the accepted PostgreSQL 17.11 transaction and Temporal Python 1.33.0 handoff/correction
+ports. Add immutable source mapping and a read projection, preserving original channel text
+bounds and source history. Message, Work identity and pending admission commit together;
+publication and its Bot reply share the completion transaction. No new recovery loop, dependency
+or copied upstream source. See [review and local qualification](research/work-channel-admission.md).
+
+## Python plugins, model connections and Worker transport (2026-09-25)
+
+Reuse official MCP1.29.0 (MIT), jsonschema4.26.0 (MIT), websockets17.0.1 (BSD-3-Clause),
+and the already pinned HTTP/Pydantic/PostgreSQL/cryptography dependencies. Thin adapters preserve
+Server authority, original encrypted storage, Owner grants and the retained Host protocol.
+See [plugins](research/python-plugins.md), [dependency pins](research/python-plugin-dependencies.md)
+and [Worker channel](research/python-worker-host.md). Per-Bot model connections translate original
+OpenBot MIT feature source `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` under the existing
+[model service review](research/python-model-services.md); no external source copied.
+Fixed Node serialization preserves the original manifest digest; it runs no plugin code.
+The integrated macOS tests do not establish Linux isolation or Windows protected storage support.
+
+The restored thin model-connection client reuses the same OpenBot feature source and existing
+React/Zod forms, including Run-to-Work supervision links. See the
+[client integration review](research/python-model-client-restoration.md). The opt-in Desktop
+Python product package uses reviewed standalone CPython, Node and retained PostgreSQL/migration
+resources, without the TypeScript business Server; see
+[distribution pins and notices](research/desktop-python-product.md) and
+[candidate reproduction](DESKTOP_PYTHON_CANDIDATE.md). Work-bound knowledge uses the existing
+recent-record selection and typed version receipts, retaining Hermes Agent attribution; see
+[runtime knowledge review](research/python-work-knowledge-runtime.md).
+
+Human browser sessions preserve the fixed F protocol/UI/Node/provider path through Python Owner
+authority and a PostgreSQL pause/lease gate. Reuse the reviewed OpenBot MIT feature source and
+existing authenticated Worker channel; no new dependency or SQL. See the
+[browser session migration review](research/python-browser-sessions.md). Default takeover and
+Provider capability stay disabled until every real browser effect shares the gate; local synthetic
+HTTP/WebSocket tests do not qualify Chromium, Linux/runsc or real login-state preservation.
+
+The reviewed-click [handover repair](research/browser-approval-handover.md) retains pinned
+agent-computer `257c1280d684089be9adb0b35cce262efc7064bf` (MIT) and the existing Server approval
+contract. Only the local adapter changes: approval waiting releases the Bot queue, human take
+invalidates the prior generation, and a prepared click is consumed once. No dependency or upstream
+source is added. The 34 focused synthetic checks passed; live browser/product authority gates stay open.
+
+The explicit Python product Worker composes the existing Temporal/PydanticAI/deferred contracts
+with current source, knowledge, plugin and attachment gates. See the
+[service composition](research/python-product-runtime.md),
+[read tools](research/python-work-product-reads.md),
+[answer/report review](research/python-work-product-result.md) and
+[public web tools](research/python-work-product-web.md) records.
+HTML extraction selects Beautiful Soup 4.15.0 and Soup Sieve 2.8.3 (MIT), with release hashes in
+[dependency pins](research/python-work-web-pins.json) and complete bundled notices. No upstream
+source is copied; the existing private blob store preserves the report size contract without
+raising Action limits. Result review is a fallible quality signal, not external-effect proof.
+
+The native and continuation adapters reuse the same pinned stack: immutable non-secret Task
+profiles, SQL-owned child relations, released Temporal timers and finite historical failure
+closure. See [native Tasks](research/python-work-task-profiles.md),
+[collaboration](research/python-work-collaboration.md), [failure closure](research/python-work-failure.md)
+and [original media](research/work-product-media.md). OpenBot's retained MIT collaboration and
+multimodal contracts are adapted with attribution; no third-party implementation is copied.
+Complete plugin declarations reuse the existing24KiB contract through private content-addressed
+blobs; schema12KiB, arguments8KiB and Action16KiB limits remain unchanged.
+
+Explicit native Task attachments, knowledge, plugins, web and collaborator scope reuse these
+pins and existing Server gates. Thin source adapters and migration0040 bind real Work provenance
+without fabricating channels. Private knowledge receipts bind profile/scope; children inherit
+only narrowing grants and reuse fixed deadlines and unknown-no-resend behavior. Hermes learning
+attribution remains. No new dependency or third-party code copy; see the
+[reuse review](research/python-native-task-capabilities.md) and [bilingual contract](NATIVE_TASK_SCOPE.md).
+
+## Hard-terminal Task closure (2026-09-25)
+
+Thin adapter over pinned Temporal Python1.33.0 exact Describe/GetHistory and current
+PostgreSQL Task/ancestor locks. Reuses shared tree closure, preserves unknown effects
+and costs, and uses no extra executor. No upstream source copied; existing MIT notices
+remain. Review: [terminal recovery](research/work-terminal-recovery.md). Actual mTLS
+TERMINATED/TIMED_OUT, commit-before-ACK restart and four offline history replays passed;
+the separate synthetic SDK/real SQL checks cover malformed proof and authority races.
+
+## Work command identity and fingerprints (2026-09-25)
+
+Reuse RFC8725/8785/9864, released joserfc1.7.5 /357c319119773c021bc8da433bdf31e42f77974b
+(BSD-3-Clause), rfc8785 0.1.4 /4d9b161f6054301d98d0566e813d020fb019ee10 (Apache-2.0),
+existing cryptography50.0.1, and reviewed TypeScript jose6.2.12/canonicalize5.0.0.
+Strict bounded schemas and role-separated Compact JWS adapt those libraries; no custom signing
+algorithm or JCS serializer. No upstream source copied. Bundled notices are preserved in
+`apps/desktop/resources/python-notices/COMMAND_DEPENDENCIES.md`. Mandatory Python/TypeScript
+vectors cover every token purpose. Parsing and signatures grant no Work authority; SQL admission,
+single consumption, host enforcement and artifact publication remain separate gates.
+See [source, release, issue, advisory and license review](research/work-command-authority.md).
+
+The same-transaction [command authority adapter](research/work-command-transactions.md) reuses
+PostgreSQL 17 locks, existing Work admission/fences, ModelConnections and OwnerFiles snapshots.
+Migration0041 has no historical backfill; the later explicit product composition remains default-off.
+The dedicated disposable PostgreSQL fixture is included in the existing Worker gate. No new
+dependency, upstream implementation, clock service or execution/recovery framework is added.
+
+The [v2 readiness adapter](research/work-command-readiness.md) reuses these exact JOSE/JCS pins,
+systemd v255 and Linux BOOTTIME primitives. Migration0042 preserves historical dispatches; the
+Node-only frame mirror reuses existing Zod4.6.2 and native WebCrypto. No source copied or dependency
+added. Command transport, protected Host and product routing are integrated behind explicit configuration;
+real Linux product qualification remains open.
+
+## Protected command Host and Unix transport (2026-09-25)
+
+The [protected Host](research/command-protected-host.md) reuses the reviewed systemd255,
+Docker29.8.1/containerd2.3.5/runsc release-20260914.0, existing bounded sandbox and output capacity
+helpers, and the pinned JOSE/JCS contracts. Its58 local tests include actual Unix peer credentials,
+with synthetic native effects; Linux acceptance remains open. The [Node transport](research/work-command-transport.md)
+uses reviewed Node22.23.2 built-in Duplex/Buffer/TextDecoder APIs without a new dependency. Dsh
+implemented the public-spec candidate; root integrated and checked53 cases, including a real local
+Unix connection. Neither transport grants execution authority. No upstream source was copied.
+
+The [product command adapter](research/work-command-transactions.md) keeps the existing deferred
+Action, approval, admission, ToolResults and final content review. Complete output is retained in
+the existing private Work blob store; the model receives a bounded untrusted excerpt. The
+[trusted installation](research/work-command-installation.md) reuses existing strict parsers,
+owned-file loading and cryptography50.0.1 serialization with no ambient key/route discovery.
+The [full-entry qualification](research/work-command-product-qualification.md) uses existing
+Owner HTTP, PostgreSQL/mTLS Temporal, OpenBotNodeClient and Unix transport fixtures. Synthetic
+Native evidence remains distinct from actual Linux enforcement.
+
+The [parser dependency separation](research/python-parser-runtime-retirement.md) reuses npm
+workspaces and the existing exact lock resolver. The metadata-only `@openbot/python-node-runtime`
+owns the same PDF/Office/OCR/database roots independently of the old business Server. Versions,
+integrity pins, parser implementation, migration assets and bundled licenses are unchanged.
+
+The [frozen legacy Server test oracle](research/legacy-server-test-oracle.md) moves the Python
+control compatibility and S7 artifact-reader dependencies to an exact-hash, MIT test fixture.
+It reuses npm 10.9.9 workspace metadata, TypeScript 7.0.2 and unchanged existing dependency
+pins. No production entry point exports or ships it; the remaining default-runtime,
+container/bridge and real remote/browser qualification gates still precede final retirement.
+
+
+## Fixed-image browser CDP qualification (2026-09-25)
+
+The [CDP boundary candidate](research/browser-cdp-qualification.md) reuses Chromium151.0.7922.34's
+released pipe protocol, narrowly adapted Playwright1.62.1 ASCII-NUL framing (Apache-2.0), and
+Node24.18.1 built-in streams/zlib. Existing runsc release-20260914.0 and native helpers are reused
+without copies or new permissions. The experimental clone3/chroot seccomp derivative remains
+explicitly separate from the official profile; Apache notices and modification attribution are
+preserved in `experiments/browser-execution`. Forty offline tests are reproducible from a fresh
+checkout and wired to existing Python/Linux CI. The actual fixed Linux/runsc CDP component now
+passes rendering, profile persistence, inner sandbox readback and original-lifetime cleanup;
+[bounded evidence](../experiments/browser-execution/REAL_CDP_RESULT.json) preserves the exact scope.
+Product authority/profile mapping, egress and human takeover remain open; no capability is enabled.
+
+The [retained offline developer tools](research/retained-developer-tools.md) move the existing
+MIT publisher CLI and MCP example into dedicated workspaces. They reuse the reviewed Node
+22.23.2 key APIs, @sigstore/core4.0.1, write-file-atomic8.0.0 and MCP SDK1.30.0; no new dependency
+release or cryptographic implementation is added. Source notices/hashes are preserved, the
+CLI keeps its historical relative-path base, and the scaffolder uses the existing locked
+Zod4.6.2. Neither tool depends on the legacy business Server or test oracle.
+
+[离线开发工具迁移](research/retained-developer-tools.md)将原 MIT 发布者 CLI 与 MCP 示例移入独立
+工作区，沿用已审核的 Node 密钥 API、Sigstore、原子文件写入与 MCP SDK 固定版本。源码许可与
+初始哈希保留，CLI 保持历史相对路径语义，生成器对齐现有 Zod4.6.2；不新增密码学实现或依赖
+版本，两项工具均不依赖旧业务 Server 或测试 oracle。
+
+## Python product container (2026-09-25)
+
+The [architecture-specific CI scope](research/architecture-ci-scope.md) reuses GitHub Actions
+`workflow_call` and required job results, plus the existing exact-pin Desktop Python and direct
+container qualification. Python product results are distinct from retained-client/legacy
+compatibility, and S7 participates in the protected aggregate. No dependency or upstream source
+is added; the [Chinese scope record](research/architecture-ci-scope.zh-CN.md) states the same limits.
+
+The [direct product candidate](research/python-product-container.md) reuses the reviewed official
+Python3.12.13 and Node24.21.0 Bookworm image digests, unchanged63-distribution Worker lock,
+retained43-entry Node parser/DB dependency closure and existing npm10.9.9 projection resolver.
+The separate build projection adds only existing pinned Web/TypeScript roots; the final image
+ships no TS business Server, oracle or build tools. Original component notices are retained,
+no upstream source is copied and no dependency version is added. The explicitly approved listen
+setting preserves127.0.0.1 by default. Actual local Linux arm64 image and disposable Owner/Web/PG/
+parser/restart checks passed; native matrix CI reuses the same smoke without publishing an image.
+
+[Python产品容器](research/python-product-container.md)复用已审核官方镜像摘要、63项Worker锁、
+43项Node parser／DB闭包和原npm投影，不新增依赖或复制上游实现，最终镜像不含TS业务Server／oracle／
+构建工具。默认仍监听127.0.0.1。真实本地Linux arm64镜像及独占临时Owner／Web／PG／解析／重启验收
+已通过，原生双架构CI复用同一smoke；不发布镜像、不切默认、不部署生产。

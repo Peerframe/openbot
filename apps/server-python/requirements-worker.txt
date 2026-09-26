@@ -1,0 +1,7 @@
+# Product Worker composition of the existing reviewed control, Runtime and Temporal pins.
+-r requirements-dev.txt
+-r ../agent-runtime-python/requirements.lock
+nexus-rpc==1.4.0
+protobuf==7.36.2
+temporalio==1.33.0
+types-protobuf==7.35.1.20260906
