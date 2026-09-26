@@ -2,7 +2,7 @@
 
 这个显式选择的 macOS arm64 Preview 包使用可迁移的 CPython 启动现有 Python product API，保留 Desktop 的 PostgreSQL 管理、加密引导配置、Owner 登录和本地数据布局。默认打包与发布流程保持原来的后端选择。
 
-这是未签名的开发候选。已用一次性合成数据验证 Python API 和包内运行时生命周期。此前 canonical41／61依赖的 Preview 还通过了真实系统解密、跨进程恢复、Owner 就绪界面、正常菜单退出／重启后合成频道保留，以及最终 API／PG 关闭。[原生证据](../experiments/work-journey/evidence/desktop-native-keychain.json)记录实际范围；界面自动化使用 `--force-renderer-accessibility=complete`，未修改包内容。canonical43／63依赖候选现已重建：暂存与包内API／重启／清理检查通过，160个Python源文件与当前仓库一致，包内真实mTLS Worker两次连接及生命周期检查通过。正式签名、新产物的原生GUI／Keychain再次验收及包内完整模型执行仍属独立门槛。
+这是未签名的开发候选。已用一次性合成数据验证 Python API 和包内运行时生命周期。此前 canonical41／61依赖的 Preview 还通过了真实系统解密、跨进程恢复、Owner 就绪界面、正常菜单退出／重启后合成频道保留，以及最终 API／PG 关闭。[原生证据](../experiments/work-journey/evidence/desktop-native-keychain.json)记录实际范围；界面自动化使用 `--force-renderer-accessibility=complete`，未修改包内容。此前canonical43／63依赖候选还通过了包内真实mTLS Worker两次连接及生命周期检查，原始源码证据保留。最新1978bcb候选已完成全新63项依赖构建、暂存与包内API／重启／清理实测，并核对159个Python源码模块、生命周期脚本和锁文件。ASAR／控制器哈希与前包一致，产品Python变更是`serve.py`和模型连接校验。[更新证据](../experiments/work-journey/evidence/desktop-preview-refresh.json)明确区分本次检查与之前的mTLS、原生GUI证据。正式签名、新产物GUI／Keychain复验、新包mTLS连接及完整模型执行仍属独立门槛。
 
 ## 从仓库重现
 

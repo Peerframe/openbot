@@ -192,7 +192,7 @@ export function validateServerContainer({
   const nextJob = jobSource.slice(1).search(/^ {2}[A-Za-z_][A-Za-z0-9_-]*:\s*$/m);
   const job = nextJob === -1 ? jobSource : jobSource.slice(0, nextJob + 1);
   const requiredWorkflowFragments = [
-    "name: Server container ($" + "{{ matrix.name }})",
+    "name: Legacy Server compatibility ($" + "{{ matrix.name }})",
     "runs-on: $" + "{{ matrix.runner }}",
     "timeout-minutes: 25",
     "fail-fast: false",

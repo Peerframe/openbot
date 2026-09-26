@@ -2,11 +2,12 @@
 
 ## Current checkpoint — product browser capture; CI isolated
 
-- Delivery: the migration draft is [PR #96](https://github.com/Peerframe/openbot/pull/96).
-  Product development continues on `codex/browser-product-integration-20260926`, after browser
-  identity commit `364d3082f7934605b6f70600704b60bc00a69f82`. The separate CI task owns the PR branch
-  `codex/python-migration-draft-20260925` while its hosted checks run. Integrate the product branch
-  after that checkpoint; do not overwrite or restart its active CI head. No merge, deployment,
+- Delivery: [PR #96](https://github.com/Peerframe/openbot/pull/96) is merged into `main` at
+  `b186c11`. All 15 hosted jobs on `5b592b6` passed, including both Python product containers,
+  Desktop Preview, Control/Worker/Temporal, paired synthetic restore and the aggregate check.
+  The CI repair task is complete with no active writers. Browser commits `364d308` and `175dace`
+  are integrated with that main on `codex/browser-product-integration-20260926` for a new draft.
+  The accepted baseline does not qualify the new browser head. No new merge, deployment,
   default-backend switch or installed-app replacement is authorized.
 - New product path: an explicit private Bot-to-Node configuration captures immutable browser
   profiles for new channel Tasks. Work approval precedes an observation on the original Worker
@@ -44,11 +45,10 @@
   replacement qualification. A capture-only Task does not establish general browser automation.
   Keep the replaced TS business Server until those gates pass. Preserve the immutable 59-file
   `tests/oracles/legacy-server` test oracle and retained TS Node/Provider/publisher/MCP tooling.
-- Ownership: root alone writes this product branch. The CI task alone repairs and verifies the
-  draft's CI branch. Six earlier CI/Preview handoff files may still be dirty in the original
-  checkout as recovery copies; do not include them in the product commit. Preserve existing user
-  data/configuration, the retained migration PostgreSQL fixture and accepted evidence. Clean only
-  the new owned capture fixture after validation; never purge shared Docker cache.
+- Ownership: root continues product development; the CI repair task is complete. Six old
+  CI/Preview recovery copies are preserved in a separate Git stash; the working tree uses their
+  merged canonical versions. Preserve user data/configuration, the retained migration PostgreSQL
+  fixture and accepted evidence. Clean only newly owned fixtures; never purge shared Docker cache.
 - Architecture: the Owner-confirmed 2026-09-24 design review v2 remains the reference. Server owns
   identity/permissions and Temporal owns continuation. Whole-repository package rearrangement,
   visual-system work and marketplaces remain later work. Root product work must not become a

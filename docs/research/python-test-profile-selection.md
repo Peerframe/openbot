@@ -74,3 +74,105 @@ Actual follow-up execution passed all172 Work-journey unittest cases,153 protect
 Temporal and deferred-workflow pytest cases, and198 Linux execution unittest cases. The repository
 `npm run check` passed again with unchanged Turbo tasks cached. These executions use the fresh
 canonical Worker environment; the hosted Linux database/engine sequence remains separate.
+
+
+### Native Linux short-socket fixture correction
+
+Hosted4a523b9 passed the exact Worker bootstrap,826 base PostgreSQL cases (+2 optional skips)
+and1489 Worker cases (+1 missing-history skip), then failed two real Unix-stream fixture setups:
+`/private/tmp` exists on macOS but not the Linux runner. Use canonical `/tmp` on both systems;
+retain the short random directory, actual peer credentials, signed flow, assertions and cleanup.
+The system default macOS temporary path can exceed the Unix socket length limit, so simply
+removing the short-directory selection would reintroduce a separate known platform failure.
+This changes test location only, with no product fallback or bypass.
+
+### CLI-independent environment assertions and disposable Linux fixture
+
+Reuse the existing `SubprocessCommander(binary=sys.executable)` synthetic-child pattern and
+Python3.12's documented `sys.executable`; DSH implemented the one-line test constructor change
+in an isolated public/synthetic packet. All environment-filtering assertions and the independent
+missing-CLI refusal test remain unchanged. No production fallback, dependency or upstream source
+copy is introduced. The actual Linux image has no Docker CLI, exposing the old implicit dependency.
+
+The follow-up disposable container's `/proc/mounts` confirmed `rw,nosuid,nodev,noexec` for `/tmp`.
+The172-case journey suite intentionally executes a synthetic upstream shell script there, so its
+exit126 was a local runner constraint. The official [Docker tmpfs options](https://docs.docker.com/engine/storage/tmpfs/)
+define explicit `exec`/`noexec`; DSH implemented a temporary runner using `rw,exec,nosuid,nodev`
+with the same pinned image, read-only source, no network/socket, dropped capabilities and resource
+limits. This runner is validation machinery only; repository/product mount policy is unchanged.
+
+Actual execution of the reviewed DSH runner on the pinned Linux arm64 image passed198 execution
+unittests,153 Host/native/Temporal/deferred pytest cases and172 journey unittests. `/proc/mounts`
+confirmed the executable tmpfs without `noexec`. Required `npm run check` passed;33 test/typecheck
+and20 build tasks reused unchanged Turbo cache, while direct repository gates executed. Subsequent
+documentation edits passed `npm run docs:check`. Hosted latest-head success is still a separate gate.
+
+### Hosted product cancellation assertion
+
+At80e2b90 all198 execution,153 adjacent pytest and172 journey cases passed in hosted Linux.
+Four real PostgreSQL/mTLS scenarios then passed. `product-concurrent-runs` failed because its
+shared reference/product probe still searched the exception chain for `admission_closed`.
+The reviewed product failure wrapper in `work_worker.py` deliberately emits the sanitized,
+non-retryable `ApplicationError('execution_failed', type='OpenBotTaskFailed') from None` after
+finalization. The unwrapped reference Worker retains its original exception chain.
+
+Reuse the ledger's Product Worker/failure entries and `python-work-failure.md`: Temporal1.33.0
+commit `ab52fdde33ee8ed193402625bfdba25d240a762d`, MIT. Read the official
+[ApplicationError API](https://python.temporal.io/temporalio.exceptions.ApplicationError.html)
+and the installed pinned implementation; the pinned GitHub source URL again returned a fetch
+error. Use the released typed `cause`, `type`, `message` and `non_retryable` properties, not a new
+exception protocol. DSH is assigned the bounded fixture implementation: assert the exact sanitized
+product error, retain the reference assertion, and preserve all cancellation, usage, action/effect,
+independent completion, artifact and replay checks. No product behavior or upstream source copy.
+
+The DSH patch passed the actual `--engine postgres-mtls --only-case product-concurrent-runs`
+entry in this checkout, including its unchanged public snapshots, accounting/effect counters,
+artifact download and offline replay. The following three previously unreached hosted cases also
+passed locally: product-deferred-approval, product-closed-repair and product-owner-corrections,
+each with real HTTP/PostgreSQL/mTLS and synthetic model/effect peers. Required `npm run check`
+passed again with unchanged Turbo tasks cached. No paid model or remote VPS call was repeated.
+
+### Container preflight log pipeline race
+
+Native amd64 run36166126715 failed its optional Python smoke at the expected-preflight log
+assertion; the same step passed on arm64 and preceding amd64 commits. Its current Bash script
+uses `set -euo pipefail` with `docker logs ... | grep --quiet`. Quiet matching can close the pipe
+before Docker finishes writing, so a present marker is not sufficient for pipeline success.
+The failing run discarded that container's logs, so its exact producer status was not retained.
+A real Docker CLI reproduction with an owned, networkless synthetic-log container produced
+producer/reader statuses141/0 for the current form and0/0 for a complete-reading grep.
+
+Reuse the existing reviewed Server-container smoke and native shell tools; no dependency or
+product change. The [GNU grep3.12 manual](https://www.gnu.org/s/grep/manual/html_node/Usage.html)
+explicitly documents early pipe closure with `set -e -o pipefail`.
+[Docker's CLI implementation](https://github.com/docker/cli/blob/master/cli/command/container/logs.go)
+and [logs API](https://docs.docker.com/reference/cli/docker/container/logs/) describe streaming
+container stdout/stderr. The unpinned Docker source is contextual only; no CLI upgrade or copied
+source is proposed. Select the existing normal grep behavior with output redirected to `/dev/null`,
+which consumes the producer to EOF while preserving pipefail. Add a real Bash stream regression
+using the actual checked-in guard, including a missing marker and a failed producer that emits
+the marker. Keep startup exit, empty-database and all real container assertions unchanged.
+
+The actual Docker log-stream comparison passed (old141/0, fixed0/0). All14 container-contract
+tests passed, including the real Bash guard with matched, missing and failed-producer streams.
+`bash -n` and the required full `npm run check` passed; unchanged Turbo tasks reused cache.
+The next native hosted run must verify the complete original smoke and retain diagnostic logs
+if the preflight marker is absent. This fix does not infer success from a producer failure.
+## Hosted qualification job budget (2026-09-26)
+
+The complete Python job at `13f6828` [passed in 38 minutes 15 seconds](https://github.com/Peerframe/openbot/actions/runs/36166126715/job/108174206138).
+Its final PostgreSQL/mTLS step took 27 minutes 35 seconds and finished with 22 adjacent-release
+cases, after the eight separately selected journey invocations and all unit suites. In the next
+run at `254690e`, the same final step began after 14 minutes 1 second of setup and control tests,
+compared with 10 minutes 37 seconds in the passing run. Applying the observed passing step duration
+to that setup cost exceeds the existing 40-minute job ceiling. This is evidence of insufficient
+job-budget margin, not evidence of a stalled individual operation.
+
+Reuse GitHub Actions' existing
+[`jobs.<job_id>.timeout-minutes`](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idtimeout-minutes)
+setting and raise only this job's ceiling to 50 minutes. The existing reuse-ledger CI completion
+entry and required `check` dependencies remain applicable. Keep the 600-second History Shard
+warm-up, all test commands, individual operation bounds, cleanup, negative assertions and exact
+dependency locks unchanged. Do not split or skip qualification to meet an arbitrary wall clock.
+No dependency, copied code, production timeout or support claim changes. The next head must still
+complete the full hosted job and protected aggregate successfully.
