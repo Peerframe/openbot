@@ -1,5 +1,7 @@
 # Desktop downloads and installation
 
+Current source scope: only macOS arm64 bundles the local Python service. Windows, Intel Mac and Linux are remote clients. Earlier local-Server installation/qualification records below are historical, not claims for new builds. Existing installations, encrypted settings and databases are retained.
+
 [English](DESKTOP_INSTALLATION.md) · [简体中文](DESKTOP_INSTALLATION.zh-CN.md)
 
 **Current preview: [Desktop 0.1.0-alpha.9](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9)** provides a macOS Apple Silicon DMG and Windows x64 EXE, with a combined manifest and SHA256SUMS. Both come from the same source commit that passed full CI. The table also lists Linux build targets; alpha.9 does not publish Linux installers.

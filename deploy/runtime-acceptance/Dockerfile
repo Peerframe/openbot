@@ -22,7 +22,7 @@ WORKDIR /workspace
 COPY . .
 ENV TURBO_TELEMETRY_DISABLED=1
 RUN npm ci --ignore-scripts --audit=false \
-  && node node_modules/turbo/bin/turbo run build --filter=@openbot/server^... \
+  && node node_modules/turbo/bin/turbo run build --filter=@openbot/node^... \
   && chown -R 1000:1000 /workspace
 USER 1000:1000
 CMD ["sh", "deploy/runtime-acceptance/check.sh"]

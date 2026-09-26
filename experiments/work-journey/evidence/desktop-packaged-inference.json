@@ -1,0 +1,55 @@
+{
+  "case": "live-kimi-synthetic-native-task",
+  "provider": "moonshot",
+  "model": "kimi-k3",
+  "actualProvider": true,
+  "actualPostgres": true,
+  "mutualTLS": true,
+  "taskCount": 1,
+  "modelReceipts": 4,
+  "actualTokens": 8845,
+  "tokenLimit": 65536,
+  "independentReviewAccepted": true,
+  "producerReceiptMatched": true,
+  "attachmentRead": true,
+  "reportDownloaded": {
+    "sha256": "b29dc5b44a182dbbeeaaf19ef33f4ecf3da03b39a29a313d358b053e23d4a213",
+    "sizeBytes": 353
+  },
+  "historyReplayCount": 1,
+  "replayActivitiesRegistered": 0,
+  "providerResendsRequested": 0,
+  "format": "openbot.desktop.packaged-inference/v1",
+  "packagedPython": "3.12.13",
+  "bundledNode": "24.21.0",
+  "runtimeModulesUnmodified": true,
+  "sourceTrees": {
+    "apps/server-python/src": {
+      "files": 151,
+      "sha256": "d94d56cf16528a1f7aca743663f88c2e146dde7490f44b50e47619785106f235"
+    },
+    "apps/agent-runtime-python/src": {
+      "files": 12,
+      "sha256": "193f7aee24654316403946fdb0dd036ef86afab4568f77ccfd3b34b9ef88368a"
+    }
+  },
+  "defaultArtifactAsarSha256": "f5a81e51c56fdae81267a62d407eae5d5db64b16fc4db5192da3e20ef73d64bc",
+  "defaultArtifactRuntimeMatches": true,
+  "fixtureCleanup": {
+    "ownedContainerRemoved": true
+  },
+  "receiverCleanup": {
+    "ownedReceiverStopped": true,
+    "residualReceiverObserved": true,
+    "identityCheckedBeforeStop": true
+  },
+  "preflightResolution": {
+    "restoredOfficialEmptyDirectories": 55,
+    "runnerMatchesOriginalManifest": true,
+    "workTasksInDump": 0,
+    "helperStarted": false,
+    "providerRequests": 0
+  },
+  "existingInstallationReplaced": false,
+  "originalDataConverted": false
+}

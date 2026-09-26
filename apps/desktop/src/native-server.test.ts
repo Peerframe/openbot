@@ -37,6 +37,28 @@ async function fakeResources(opts: NativeServerOptions) {
   await writeFile(join(opts.runtimeRoot, "postgres-supervisor"), "not executable");
 }
 describe("Native Server boundary", () => {
+  it.each(["darwin", "win32"])(
+    "remote-only %s leaves retained bootstrap and data untouched",
+    async (platform) => {
+      const opts = await options();
+      await mkdir(join(opts.dataRoot, "postgres"), { recursive: true });
+      await writeFile(join(opts.dataRoot, "bootstrap.json"), '"retained ciphertext"');
+      await writeFile(join(opts.dataRoot, "postgres/PG_VERSION"), "17");
+      const service = new NativeServerController({
+        ...opts,
+        platform,
+        localServiceSupported: false,
+      });
+      expect(await service.start()).toEqual({ status: "failed", code: "unsupported_platform" });
+      expect(await readFile(join(opts.dataRoot, "bootstrap.json"), "utf8")).toBe(
+        '"retained ciphertext"',
+      );
+      expect(await readFile(join(opts.dataRoot, "postgres/PG_VERSION"), "utf8")).toBe("17");
+      expect(opts.decrypt).not.toHaveBeenCalled();
+      expect(opts.encrypt).not.toHaveBeenCalled();
+      expect(opts.launchServer).not.toHaveBeenCalled();
+    },
+  );
   it("ignores another application's generic search credential", () => {
     expect(desktopSearchEnvironment({ TAVILY_API_KEY: "unrelated-search-fixture" })).toEqual({});
   });

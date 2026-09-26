@@ -1,5 +1,7 @@
 # Desktop 下载与安装
 
+本轮源码范围：仅 macOS arm64 打包本地 Python 服务；Windows、Intel Mac 和 Linux 为远程客户端。以下旧版本本地 Server 验收与安装记录保留为历史证据，不表示新版本在这些平台仍提供本地服务。已有安装、加密配置和数据库保留。
+
 [English](DESKTOP_INSTALLATION.md) · [简体中文](DESKTOP_INSTALLATION.zh-CN.md)
 
 **当前预览版：[Desktop 0.1.0-alpha.9](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9)**，提供 macOS Apple Silicon DMG 与 Windows x64 EXE，随附合并清单和 SHA256SUMS。两者来自同一已通过完整 CI 的源码提交。下表也列出流水线支持的 Linux 构建目标；alpha.9 未发布 Linux 安装器。

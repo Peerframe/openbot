@@ -77,20 +77,20 @@ export function validateSecurityWorkflow(workflow) {
 
   const portableJobStart = workflow.indexOf("\n  portable:\n");
   const windowsWorkerHostJobStart = workflow.indexOf("\n  windows-worker-host:\n");
-  const databaseJobStart = workflow.indexOf("\n  database:\n");
+  const databaseJobStart = workflow.indexOf("\n  python-product-container:\n");
   if (
     portableJobStart === -1 ||
     windowsWorkerHostJobStart <= portableJobStart ||
     databaseJobStart <= windowsWorkerHostJobStart
   ) {
     throw new Error(
-      "CI must define the portable matrix before the Windows Worker Host and database jobs.",
+      "CI must define the portable matrix before the Windows Worker Host and Python product container jobs.",
     );
   }
 
   const portableJob = workflow.slice(portableJobStart, windowsWorkerHostJobStart);
   const requiredPortableFragments = [
-    "name: Retained clients and legacy Desktop ($" + "{{ matrix.name }})",
+    "name: Retained clients and Python Desktop ($" + "{{ matrix.name }})",
     "runs-on: $" + "{{ matrix.runner }}",
     "timeout-minutes: 50",
     "fail-fast: false",
@@ -131,10 +131,10 @@ export function validateSecurityWorkflow(workflow) {
 
   const setupNodeReferences = workflow.match(/actions\/setup-node@[^\s]+/g) ?? [];
   if (
-    setupNodeReferences.length !== 8 ||
+    setupNodeReferences.length !== 7 ||
     setupNodeReferences.some((reference) => reference !== SETUP_NODE_PIN)
   ) {
-    throw new Error("CI must use the exact reviewed setup-node pin in all eight jobs.");
+    throw new Error("CI must use the exact reviewed setup-node pin in all seven jobs.");
   }
 
   const companionBuild = portableJob.indexOf("name: Build the pinned macOS Worker companion");
@@ -244,7 +244,7 @@ export function validatePythonProductWorkflow(workflow, migrationWorkflow) {
     "runner: ubuntu-24.04\n            arch: amd64",
     "runner: ubuntu-24.04-arm\n            arch: arm64",
     "--target runtime-product",
-    "--file deploy/server/Dockerfile.product",
+    "--file deploy/server/Dockerfile",
     "deploy/server/smoke-product.py --image openbot-server:product-smoke",
   ]) {
     if (!container.includes(fragment))

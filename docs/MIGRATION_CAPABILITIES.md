@@ -88,8 +88,8 @@ journey; `partial` means important target behavior is missing.
 
 - Evidence: [schema.ts](../packages/db/src/schema.ts) (`bots`), `packages/db/migrations/0000_foundation.sql`,
   `0011_employee_profiles.sql`, `0016_employee_profile_details.sql`,
-  [postgres-store.ts](../apps/server/src/postgres-store.ts), and `POST /api/v1/bots` in
-  [app.ts](../apps/server/src/app.ts).
+  [postgres-store.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-store.ts), and `POST /api/v1/bots` in
+  [app.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/app.ts).
 - Preserve: Bot identity plus configuration (`bots.configuration`), the evolution archive, and the
   employee package/import receipt tables. Identity must outlive any runtime swap.
 - Acceptance: create a Bot, restart the Server, and confirm the same identity, profile and history.
@@ -110,13 +110,13 @@ journey; `partial` means important target behavior is missing.
 
 ### C3 — Multi-step task execution
 
-- Evidence: [native-agent.ts](../apps/server/src/native-agent.ts) (`NativeAgentRunner`,
-  `executeAgentRun`), [agent-runtime-host.ts](../apps/server/src/agent-runtime-host.ts)
-  (`catalog`/`generate`/`executeTool`/`finish`), [agent-runtime-process.ts](../apps/server/src/agent-runtime-process.ts)
+- Evidence: [native-agent.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts) (`NativeAgentRunner`,
+  `executeAgentRun`), [agent-runtime-host.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-runtime-host.ts)
+  (`catalog`/`generate`/`executeTool`/`finish`), [agent-runtime-process.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-runtime-process.ts)
   (`createPythonAgentExecutor`, `superviseRuntimeProcess`),
-  [agent-runtime-bootstrap.ts](../apps/server/src/agent-runtime-bootstrap.ts) (opt-in
+  [agent-runtime-bootstrap.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-runtime-bootstrap.ts) (opt-in
   `OPENBOT_AGENT_RUNTIME=python`; TypeScript stays the default),
-  [postgres-task-submission.ts](../apps/server/src/postgres-task-submission.ts)
+  [postgres-task-submission.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-task-submission.ts)
   (`submitTaskInTransaction`).
 - Authority: the Server owns the tool-intent loop, budgets and the final commit. The accepted Python
   runtime is a supervised child process behind a frozen wire profile — see
@@ -131,7 +131,7 @@ journey; `partial` means important target behavior is missing.
 ### C4 — Persistent work environment
 
 - Evidence in this checkout: object storage via `OPENBOT_OBJECT_STORE_PATH` (artifacts,
-  attachments, plugins); [workspace-realtime-hub.ts](../apps/server/src/workspace-realtime-hub.ts) is
+  attachments, plugins); [workspace-realtime-hub.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/workspace-realtime-hub.ts) is
   a UI event channel, not a filesystem workspace. There is **no** persistent workspace directory and
   **no** restricted command execution: [coder provider](../providers/coder/src/index.ts) declares
   `shell.execute` and implements no `execute`.
@@ -176,10 +176,10 @@ Recorded per operation, not as one number. Aspiration must not be read as capabi
 | DOCX, XLSX, PPTX | yes (`officeparser`) | **no** | no | no |
 | PNG | n/a | screenshot only | no | n/a |
 
-- Evidence: [channel-attachments.ts](../apps/server/src/channel-attachments.ts) (SHA-256 + size
-  admission), [attachment-processing.ts](../apps/server/src/attachment-processing.ts) (extraction in a
+- Evidence: [channel-attachments.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/channel-attachments.ts) (SHA-256 + size
+  admission), [attachment-processing.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/attachment-processing.ts) (extraction in a
   worker thread; also image OCR via `tesseract.js` and audio transcription),
-  [artifact-storage.ts](../apps/server/src/artifact-storage.ts).
+  [artifact-storage.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/artifact-storage.ts).
 - Hard bounds worth preserving exactly: artifacts accept **only** `image/png` (≤ 5 MiB, PNG signature
   checked) and `text/markdown` reports (≤ 32 KiB, non-empty, no NUL), each stored with SHA-256 and
   re-verified on read by `GET /api/v1/artifacts/:artifactId/content`.
@@ -189,11 +189,11 @@ Recorded per operation, not as one number. Aspiration must not be read as capabi
 
 ### C7 — Approval and human takeover
 
-- Evidence: [approval-policy.ts](../apps/server/src/approval-policy.ts) (`approvalPolicyRules`,
+- Evidence: [approval-policy.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/approval-policy.ts) (`approvalPolicyRules`,
   `isRiskDowngrade`) covering `browser.click` (HTTPS/loopback) and `form.submit` (HTTPS);
   `approvals` in [schema.ts](../packages/db/src/schema.ts) with `pending`/`approved`/`rejected`/
-  `expired`; `POST /api/v1/approvals/:approvalId/decision` in [app.ts](../apps/server/src/app.ts);
-  the plugin confirm lifecycle in [plugin-service.ts](../apps/server/src/plugin-service.ts).
+  `expired`; `POST /api/v1/approvals/:approvalId/decision` in [app.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/app.ts);
+  the plugin confirm lifecycle in [plugin-service.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/plugin-service.ts).
 - The feature source already has the shared `0008_owner_approvals.sql` Worker approval path.
   The later native plugin confirmation lifecycle is a separate addition.
 - Preserve: approval is a **state**, not a log line, and it is context-bound — the approved target
@@ -233,11 +233,11 @@ are gone but the audit rows and the Bot's browser profile remain.
 
 ### C8 — Background, schedules and safe recovery
 
-- Evidence: [automations.ts](../apps/server/src/automations.ts) (`AutomationScheduler.start/tick/stop`,
-  `nextIntervalOccurrence`), [postgres-automation-store.ts](../apps/server/src/postgres-automation-store.ts)
+- Evidence: [automations.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/automations.ts) (`AutomationScheduler.start/tick/stop`,
+  `nextIntervalOccurrence`), [postgres-automation-store.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-automation-store.ts)
   (`submitDue`), migrations `0018_automations.sql`, `0026_automation_attachment_outcome.sql`;
-  startup recovery at [run-dispatcher.ts](../apps/server/src/run-dispatcher.ts) calling
-  `requeueAssignedRuns` and `failRunningRuns` in [postgres-store.ts](../apps/server/src/postgres-store.ts)
+  startup recovery at [run-dispatcher.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/run-dispatcher.ts) calling
+  `requeueAssignedRuns` and `failRunningRuns` in [postgres-store.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-store.ts)
   with payload reason `server-recovery`.
 - Preserve exactly: recovery does **not** replay external side effects. Missed intervals are skipped,
   and `running` work is failed rather than blindly retried. This is the correct default and S3 must
@@ -247,20 +247,20 @@ are gone but the audit rows and the Bot's browser profile remain.
 
 ### C9 — Scoped long-term memory
 
-- Evidence: [agent-knowledge.ts](../apps/server/src/agent-knowledge.ts),
-  [postgres-knowledge-store.ts](../apps/server/src/postgres-knowledge-store.ts), and
-  [native-agent.ts](../apps/server/src/native-agent.ts). The model receives a bounded recent snapshot
+- Evidence: [agent-knowledge.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-knowledge.ts),
+  [postgres-knowledge-store.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-knowledge-store.ts), and
+  [native-agent.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts). The model receives a bounded recent snapshot
   (up to eight entries), not task-relevance retrieval.
 - Preserve Owner review, provenance, scope and deletion. S5 must qualify relevant retrieval and
   demonstrate that deleting or disabling a memory prevents later use.
 
 ### C10 — Skills and teaching reuse
 
-- Evidence: [agent-knowledge.ts](../apps/server/src/agent-knowledge.ts) (`validateKnowledgeProposal`,
-  `boundedKnowledgeText`), [postgres-knowledge-store.ts](../apps/server/src/postgres-knowledge-store.ts),
+- Evidence: [agent-knowledge.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-knowledge.ts) (`validateKnowledgeProposal`,
+  `boundedKnowledgeText`), [postgres-knowledge-store.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-knowledge-store.ts),
   migrations `0020_reviewed_knowledge.sql`, `0015_employee_memory_lifecycle.sql`, `0011_employee_profiles.sql`
   (`employee_memories`, `employee_memory_events`, `skills`, `employee_skills`, `skill_dependencies`);
-  [agent-skills.ts](../apps/server/src/agent-skills.ts); [agent-steering.ts](../apps/server/src/agent-steering.ts).
+  [agent-skills.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-skills.ts); [agent-steering.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-steering.ts).
 - **A reviewed `SKILL.md` is advisory text, not an executable skill.** `parseSkillDocument` admits one
   Markdown document ≤ 12 KiB with bounded YAML frontmatter, SHA-256-bound, and its own comment states
   the rule: parsing text never follows files, URLs or tool declarations. The Agent reads the text
@@ -277,10 +277,10 @@ are gone but the audit rows and the Bot's browser profile remain.
 
 ### C11 — Responsible multi-Bot collaboration
 
-- Evidence: [agent-collaboration.ts](../apps/server/src/agent-collaboration.ts),
-  [postgres-agent-collaboration.ts](../apps/server/src/postgres-agent-collaboration.ts)
+- Evidence: [agent-collaboration.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-collaboration.ts),
+  [postgres-agent-collaboration.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-agent-collaboration.ts)
   (`activeCollaborationChain`, `channelColleagues`, `createDelegatedRun`), the `start_task` /
-  `wait_for_task` / `delegate_task` tools in [native-agent.ts](../apps/server/src/native-agent.ts),
+  `wait_for_task` / `delegate_task` tools in [native-agent.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts),
   and `agent-collaboration.integration.test.ts`.
 - What "independent grant" means in code: a delegated child Bot runs with **its own** profile, skills,
   memories and plugin grants, which are not inherited from the caller. Step, tool and web-call
@@ -298,12 +298,12 @@ are gone but the audit rows and the Bot's browser profile remain.
 
 ### C12 — Open tools and models
 
-- Evidence in this checkout: MCP support in [plugin-service.ts](../apps/server/src/plugin-service.ts)
+- Evidence in this checkout: MCP support in [plugin-service.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/plugin-service.ts)
   and `plugin-routes.ts` (`install`/`grant`/`call`, per-Bot grants, `read`/`confirm` modes);
-  bounded web tools in [native-web-tools.ts](../apps/server/src/native-web-tools.ts)
-  (`web_search`, wired at [native-agent.ts](../apps/server/src/native-agent.ts)).
+  bounded web tools in [native-web-tools.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-web-tools.ts)
+  (`web_search`, wired at [native-agent.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts)).
 - **Model configuration here is a workspace-wide Owner singleton**, not per-Bot:
-  [model-settings.ts](../apps/server/src/model-settings.ts) (`ModelSettingsService`) behind
+  [model-settings.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/model-settings.ts) (`ModelSettingsService`) behind
   `GET`/`POST /api/v1/settings/model` and `POST /api/v1/settings/model/models`.
 - Feature-source delta — the per-Bot path this checkout does not have:
   `PATCH /api/v1/bots/:botId/model` → `updateEmployeeModel`, which requires
@@ -335,7 +335,7 @@ its replacement, its data consequence and its security consequence.
 | Office visualization | [packages/office-plugin/src/index.tsx](../packages/office-plugin/src/index.tsx) — manifest `status: "deferred"`, and the core Web application does not import it | None needed for this scope; it is already inert | None | None — no authority |
 | Unimplemented Provider placeholders | [cua](../providers/cua/src/index.ts), [lume](../providers/lume/src/index.ts), [coder](../providers/coder/src/index.ts) declare no `execute`; [PROVIDER_CONFORMANCE.md](PROVIDER_CONFORMANCE.md) marks all three "Not implemented in this repository" | Check declared profiles, persisted configuration, consumers and CI; keep conformance boundaries explicit | None | Retiring the *placeholder* must not remove the conformance document, which is what prevents capability overclaiming |
 | Replaced TypeScript backend | `apps/server/src/*` — the transitional authority per the plan | S2 single-writer cutover with the same fixtures against the selected implementation | PostgreSQL data, migrations and applied history are preserved, not moved | Authorization, approval and audit code is security-bearing; each retirement needs the effective security tests to move with it |
-| Employee marketplace / distribution / graph | No marketplace or registry exists in either source. The only artifact is the signed employee package export/import in [employee-package.ts](../apps/server/src/employee-package.ts) with `employee_import_receipts`; [EMPLOYEE.md](EMPLOYEE.md) states authenticated ownership transfer is not implemented | n/a | None | Do not describe an *absent* feature as retired, and do not let "employee ecosystem" language sweep up login, approvals or credential protection |
+| Employee marketplace / distribution / graph | No marketplace or registry exists in either source. The only artifact is the signed employee package export/import in [employee-package.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/employee-package.ts) with `employee_import_receipts`; [EMPLOYEE.md](EMPLOYEE.md) states authenticated ownership transfer is not implemented | n/a | None | Do not describe an *absent* feature as retired, and do not let "employee ecosystem" language sweep up login, approvals or credential protection |
 
 ## Data compatibility risks
 

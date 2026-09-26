@@ -107,7 +107,12 @@ export interface OpenBotDesktopBridge {
   onSidebarMaterialChanged?(listener: (state: DesktopSidebarMaterialState) => void): () => void;
   getNativeServerState?(): Promise<NativeServerState>;
   installNativeServer?(): Promise<NativeServerState>;
-  getRuntimeInfo?(): Readonly<{ kind: "desktop"; platform: string; shellVersion: string }>;
+  getRuntimeInfo?(): Readonly<{
+    kind: "desktop";
+    platform: string;
+    arch?: string;
+    shellVersion: string;
+  }>;
   getConnectionState(): Promise<DesktopConnectionState>;
   configureServer(serverUrl: string): Promise<ConfigureDesktopServerResult>;
   getSetupPlanState(): Promise<DesktopSetupPlanState>;

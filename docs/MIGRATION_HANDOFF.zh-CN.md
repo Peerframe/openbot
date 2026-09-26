@@ -1,6 +1,6 @@
 # 架构迁移交接 — 2026-09-26
 
-## 当前检查点——Linux 隔离浏览器产品
+## 当前检查点——业务 Server 最终退役
 
 - 交付：PR96 在 `b186c11` 合并；[PR98](https://github.com/Peerframe/openbot/pull/98)
   在 `1dacf4e` 合并，合并前 `255d535` 的17项独立检查及总检查全部通过。
@@ -38,7 +38,7 @@
   [当前产物证据](../experiments/work-journey/evidence/desktop-python-preview-native.json)。
   真实 GUI 创建合成频道，并在下一次菜单退出／重启后恢复频道。最终正常退出关闭候选、API 和
   PG，旧应用始终运行。初期旧画面／捕捉错误属于暂时界面工具问题，已恢复并核实当前可访问性内容。
-  完整包内推理仍待验收。独立测试档案保留作为证据，不能删除已安装应用使用的早期 Preview 档案。
+  包内真实推理已通过，见当前退役结果。独立测试档案保留作为证据，不能删除已安装应用使用的早期 Preview 档案。
 - 检查：本轮27项包身份／档案检查和完整 `npm run check` 通过（20项构建成功，19项缓存）。
   首轮发现 CI 检查器仍引用旧产物路径，已同步修复；随后沙箱禁止回环监听导致的 EPERM 在允许
   本地网络后通过。保留的35项 Python 边界检查通过；完整 `npm run check` 通过，20项构建命中缓存、仓库
@@ -46,18 +46,26 @@
   改为必须提供 `sshTarget`，不把个人宿主写入仓库；四项输入预检通过。实际运行的固定宿主
   版本保留在私有证据中，选择的 SSH 命令不变。
 
-### 剩余退役工作
+### 当前退役结果与剩余验收
 
-1. 推送独立 Preview 修复并核对对应提交的托管 CI。
-2. 完成包内推理。当前独立候选的 GUI 写入／重启、原生系统加解密和 Owner 恢复已通过。
-3. 替代验收后，移除旧 TS 业务 Server 和冗余探索链。`apps/server` 有129个跟踪文件；
-   实际入口仍位于根 dev／check、旧 Dockerfile／Compose、Desktop 原生准备与 `main.ts`
-   回退、旧 CI。Windows／x64 本地 Desktop 仍使用旧 Server，删除前要明确支持的替代或
-   远程客户端能力。已向 Owner 询问本轮先改为远程客户端，还是完成跨平台本地 Python 验收后再退役；
-   答复前保留该入口。保留59文件冻结 oracle、迁移历史、TS Node／Provider、publisher／MCP
-   和凭据保护 helper；额外保留 `550a981` 源码恢复点。
-4. 运行受影响检查并推送退役改动。签名／已安装分发、生产数据转换和默认启用仍需分别明确，
-   用户数据与现有安装不属于测试清理范围。
+- Owner已接受 Windows／Intel Mac 使用远程服务。旧 `apps/server` 业务源码与工作区已移除，
+  只在原目录保留退役说明；59文件冻结 oracle、SQL 历史、Node／Provider、publisher／MCP
+  与凭据 helper 保留。默认开发、Docker 和 macOS arm64 Desktop 选择 Python。
+  Canonical Desktop 使用独立 `python-local-server` 目录，原安装、bootstrap、数据库未转换或删除。
+- [PR99](https://github.com/Peerframe/openbot/pull/99) 已有独立 Preview 修复；当前退役增量待推送。
+  DSH完成 Windows远程安装／DPAPI跨进程验收脚本，root整合时复用了原有身份／安装器helper。
+  当前无外部写入者。旧Windows数据库CI被替换为远程客户端安装验收，原生执行留给Python产品门禁。
+- 一次新获批的真实打包 Kimi Task通过：4份模型回执、8,845 tokens、独立复核、353字节报告、
+  原Workflow完成和无Activity回放。默认新产物与该包内Python源码树相同。
+  [安全证据](../experiments/work-journey/evidence/desktop-packaged-inference.json)。
+  前置清单检查发现55个官方空语言目录缺失，按原清单恢复后再验证，失败阶段没有模型请求。
+  引擎／数据库已关闭；额外识别并终止测试receiver残留，原应用未动。不得重跑此已消费任务。
+- 默认macOS arm64包已构建，包内真实API／PG、Owner登录、保留数据重启、父进程EOF和非法配置
+  拒绝／清理均通过。`npm run check`通过（19项构建、18项缓存）；最终复查通过。
+  npm10.9.9全新依赖安装通过。全新Python/Web开发启动、Owner登录和代理通过；Mac临时路径已规范化。
+- 剩余：推送并等待此次提交CI（含Windows远程安装及Linux镜像）。
+  托管结果未回来前不宣布最终验收结束。签名发行、替换已安装软件、生产数据转换另行执行；
+  本轮不会把源码退役等同于自动升级现有安装。
 
 保留 Owner 已确认的2026-09-24设计研究v2：Server负责权限，Temporal负责续跑。全仓库
 重排、视觉系统和市场仍属后续工作。保留六份旧 stash、迁移 PG 及无关数据／配置。

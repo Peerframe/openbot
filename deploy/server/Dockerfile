@@ -1,104 +1,80 @@
-FROM node:24.21.0-bookworm-slim@sha256:2fe369e969550cde8e867afc3fe370b260140cab4a23d467074295b42163d553 AS base
-
-FROM base AS toolchain
-ENV TURBO_TELEMETRY_DISABLED=1
-RUN corepack enable npm \
-  && corepack prepare npm@10.9.9 --activate \
-  && test "$(npm --version)" = "10.9.9"
+FROM node:24.21.0-bookworm-slim@sha256:2fe369e969550cde8e867afc3fe370b260140cab4a23d467074295b42163d553 AS product-node
+RUN corepack enable npm && corepack prepare npm@10.9.9 --activate && test "$(npm --version)" = "10.9.9"
 WORKDIR /workspace
 
-FROM toolchain AS pruner
-COPY . .
-RUN npm ci --ignore-scripts --audit=false
-RUN npm exec -- turbo prune @openbot/server --docker --out-dir=/pruned
+FROM product-node AS product-projection
+COPY package-lock.json ./
+COPY scripts/node-linux-release.mjs ./scripts/node-linux-release.mjs
+COPY deploy/server/product-node-project.mjs ./deploy/server/product-node-project.mjs
+COPY packages/python-node-runtime/package.json ./packages/python-node-runtime/package.json
+COPY packages/db/package.json ./packages/db/package.json
+COPY packages/domain/package.json ./packages/domain/package.json
+COPY packages/protocol/package.json ./packages/protocol/package.json
+COPY apps/web/package.json ./apps/web/package.json
+RUN node deploy/server/product-node-project.mjs /workspace /runtime runtime \
+ && node deploy/server/product-node-project.mjs /workspace /build build
 
-FROM toolchain AS build
-COPY --from=pruner /pruned/json/ ./
-RUN npm ci --ignore-scripts --audit=false
-COPY --from=pruner /pruned/full/ ./
-COPY --from=pruner /workspace/tsconfig.base.json ./tsconfig.base.json
-RUN npm exec -- turbo run build --filter=@openbot/server...
+FROM product-node AS product-build
+COPY --from=product-projection /build/ ./
+RUN npm ci --ignore-scripts --audit=false --fund=false
+COPY tsconfig.base.json ./
+COPY packages/db/src/ ./packages/db/src/
+COPY packages/db/tsconfig.json ./packages/db/tsconfig.json
+COPY packages/domain/src/ ./packages/domain/src/
+COPY packages/domain/tsconfig.json ./packages/domain/tsconfig.json
+COPY packages/protocol/src/ ./packages/protocol/src/
+COPY packages/protocol/tsconfig.json ./packages/protocol/tsconfig.json
+COPY apps/web/src/ ./apps/web/src/
+COPY apps/web/index.html apps/web/vite.config.ts apps/web/tsconfig.json ./apps/web/
+COPY apps/desktop/resources/openbot-icon.png ./apps/desktop/resources/openbot-icon.png
+RUN node_modules/.bin/tsc -p packages/db/tsconfig.json \
+ && node_modules/.bin/tsc -p packages/protocol/tsconfig.json \
+ && node_modules/.bin/tsc -p packages/domain/tsconfig.json \
+ && node_modules/.bin/tsc --noEmit -p apps/web/tsconfig.json \
+ && cd apps/web && ../../node_modules/.bin/vite build
 
-FROM toolchain AS production-dependencies
-COPY --from=pruner /pruned/json/ ./
-# Keep an apps/server/node_modules directory even when npm hoists every Server
-# production dependency: Docker COPY fails on a missing source, and workspace
-# installs may nest packages here when another workspace pins a different major.
-RUN npm ci --omit=dev --ignore-scripts --audit=false \
-  && mkdir -p apps/server/node_modules
+FROM product-node AS product-node-dependencies
+COPY --from=product-projection /runtime/ ./
+RUN npm ci --omit=dev --ignore-scripts --audit=false --fund=false
 
-FROM base AS runtime-node
-ENV NODE_ENV=production
-ENV OPENBOT_OBJECT_STORE_PATH=/var/lib/openbot/objects
+FROM python:3.12.13-slim-bookworm@sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2 AS product-python
+FROM product-python AS product-python-dependencies
 WORKDIR /workspace
+COPY apps/server-python/requirements-worker.lock apps/server-python/requirements.lock apps/server-python/requirements.txt apps/server-python/requirements-dev.txt ./apps/server-python/
+COPY apps/server-python/scripts/verify_environment.py ./apps/server-python/scripts/verify_environment.py
+RUN python -m venv /opt/openbot/venv \
+ && /opt/openbot/venv/bin/python -I -B -m pip --isolated install --only-binary=:all: --no-deps --no-cache-dir --disable-pip-version-check --index-url https://pypi.org/simple -r apps/server-python/requirements-worker.lock \
+ && /opt/openbot/venv/bin/python -I -B -m pip check \
+ && /opt/openbot/venv/bin/python -I -B apps/server-python/scripts/verify_environment.py --worker
 
-RUN install -d --owner=node --group=node --mode=0700 /var/lib/openbot/objects
-RUN install -d --owner=node --group=node --mode=0700 /var/lib/openbot/model
-
-COPY --from=production-dependencies --chown=node:node /workspace/node_modules ./node_modules
-# Nested Server workspace production closure (omit=dev). Root node_modules alone is
-# not enough when npm nests a Server production dependency under apps/server.
-COPY --from=production-dependencies --chown=node:node /workspace/apps/server/node_modules ./apps/server/node_modules
-COPY --from=build --chown=node:node /workspace/package.json ./package.json
-COPY --from=build --chown=node:node /workspace/apps/server/package.json ./apps/server/package.json
-COPY --from=build --chown=node:node /workspace/apps/server/dist ./apps/server/dist
-COPY --from=build --chown=node:node /workspace/packages/config/package.json ./packages/config/package.json
-COPY --from=build --chown=node:node /workspace/packages/config/dist ./packages/config/dist
-COPY --from=build --chown=node:node /workspace/packages/db/package.json ./packages/db/package.json
-COPY --from=build --chown=node:node /workspace/packages/db/dist ./packages/db/dist
-COPY --from=build --chown=node:node /workspace/packages/db/migrations ./packages/db/migrations
-COPY --from=build --chown=node:node /workspace/packages/domain/package.json ./packages/domain/package.json
-COPY --from=build --chown=node:node /workspace/packages/domain/dist ./packages/domain/dist
-COPY --from=build --chown=node:node /workspace/packages/logging/package.json ./packages/logging/package.json
-COPY --from=build --chown=node:node /workspace/packages/logging/dist ./packages/logging/dist
-COPY --from=build --chown=node:node /workspace/packages/policy/package.json ./packages/policy/package.json
-COPY --from=build --chown=node:node /workspace/packages/policy/dist ./packages/policy/dist
-COPY --from=build --chown=node:node /workspace/packages/protocol/package.json ./packages/protocol/package.json
-COPY --from=build --chown=node:node /workspace/packages/protocol/dist ./packages/protocol/dist
-COPY --from=build --chown=node:node /workspace/packages/windows-secret-acl/package.json ./packages/windows-secret-acl/package.json
-COPY --from=build --chown=node:node /workspace/packages/windows-secret-acl/dist ./packages/windows-secret-acl/dist
-COPY --chown=node:node deploy/server/healthcheck.mjs ./deploy/server/healthcheck.mjs
-
-USER node
-EXPOSE 3001
-STOPSIGNAL SIGTERM
-HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=6 \
-  CMD ["node", "deploy/server/healthcheck.mjs"]
-CMD ["node", "apps/server/dist/index.js"]
-
-# Opt-in Python runtime. Both stages use the same interpreter and absolute venv path.
-FROM python:3.12.13-slim-bookworm@sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2 AS python-base
-FROM python-base AS python-dependencies
-WORKDIR /workspace/apps/agent-runtime-python
-COPY apps/agent-runtime-python/requirements-runtime.lock ./requirements-runtime.lock
-RUN python -m venv .venv \
-  && .venv/bin/python -m pip --isolated install --only-binary=:all: --no-cache-dir \
-       --disable-pip-version-check --index-url https://pypi.org/simple -r requirements-runtime.lock \
-  && .venv/bin/python -m pip check
-COPY apps/agent-runtime-python/requirements*.txt apps/agent-runtime-python/requirements.lock ./
-COPY apps/agent-runtime-python/scripts/verify_environment.py ./scripts/verify_environment.py
-RUN .venv/bin/python -I scripts/verify_environment.py --profile runtime
-
-FROM python-base AS runtime-python
-ENV NODE_ENV=production
-ENV OPENBOT_AGENT_RUNTIME=python
-ENV OPENBOT_OBJECT_STORE_PATH=/var/lib/openbot/objects
-WORKDIR /workspace/scripts
+FROM product-python AS runtime-product
 WORKDIR /workspace
-RUN groupadd --gid 1000 node \
-  && useradd --uid 1000 --gid node --create-home --shell /bin/sh node \
-  && install -d --owner=node --group=node --mode=0700 /var/lib/openbot/objects /var/lib/openbot/model
-COPY --from=base /usr/local/bin/node /usr/local/bin/node
-COPY --from=runtime-node /workspace/ ./
-COPY --from=python-dependencies /workspace/apps/agent-runtime-python/ ./apps/agent-runtime-python/
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 NODE_ENV=production
+ENV OPENBOT_CONTROL_AUTHORITY=product OPENBOT_CONTROL_HOST=0.0.0.0 OPENBOT_CONTROL_PORT=3001
+ENV OPENBOT_CONTROL_OBJECT_ROOT=/var/lib/openbot/objects OPENBOT_CONTROL_ARTIFACT_ROOT=/var/lib/openbot/artifacts OPENBOT_CONTROL_MODEL_DIRECTORY=/var/lib/openbot/model
+ENV OPENBOT_CONTROL_NODE_EXECUTABLE=/usr/local/bin/node OPENBOT_CONTROL_NODE_MODULE_ROOT=/workspace/node_modules OPENBOT_CONTROL_WEB_ROOT=/workspace/apps/web/dist
+RUN groupadd --gid 1000 openbot && useradd --uid 1000 --gid openbot --no-create-home --shell /usr/sbin/nologin openbot \
+ && install -d -o openbot -g openbot -m 0700 /var/lib/openbot /var/lib/openbot/objects /var/lib/openbot/artifacts /var/lib/openbot/model
+COPY --from=product-node /usr/local/bin/node /usr/local/bin/node
+COPY --from=product-node /usr/local/LICENSE /usr/share/doc/openbot/NODE_LICENSE
+COPY --from=product-python-dependencies /opt/openbot/venv/ /opt/openbot/venv/
+COPY --from=product-python-dependencies /workspace/apps/server-python/ ./apps/server-python/
+COPY --from=product-node-dependencies /workspace/ ./
+COPY --from=product-build /workspace/packages/db/dist/ ./packages/db/dist/
+COPY --from=product-build /workspace/apps/web/dist/ ./apps/web/dist/
+COPY packages/db/migrations/ ./packages/db/migrations/
+COPY apps/server-python/src/ ./apps/server-python/src/
+COPY apps/server-python/scripts/serve.py ./apps/server-python/scripts/serve.py
 COPY apps/agent-runtime-python/src/ ./apps/agent-runtime-python/src/
-COPY apps/agent-runtime-python/scripts/run-worker.py ./apps/agent-runtime-python/scripts/run-worker.py
-USER node
+COPY deploy/server/product-entry.py deploy/server/product-migrate.mjs deploy/server/product-preflight.mjs deploy/server/product-health.py ./deploy/server/
+COPY LICENSE THIRD_PARTY_NOTICES.md ./
+COPY apps/desktop/resources/python-notices/ /usr/share/doc/openbot/python-notices/
+RUN test "$(node --version)" = "v24.21.0" \
+ && /opt/openbot/venv/bin/python -I -B -c 'import sys; assert sys.version_info[:3] == (3,12,13)' \
+ && /opt/openbot/venv/bin/python -I -B apps/server-python/scripts/verify_environment.py --worker \
+ && node deploy/server/product-preflight.mjs
+USER 1000:1000
 EXPOSE 3001
 STOPSIGNAL SIGTERM
-HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=6 \
-  CMD ["node", "deploy/server/healthcheck.mjs"]
-CMD ["node", "apps/server/dist/index.js"]
-
-# Keep the unqualified build and existing Compose file on the established default.
-FROM runtime-node AS runtime
+HEALTHCHECK --interval=5s --timeout=3s --start-period=30s --retries=12 CMD ["/opt/openbot/venv/bin/python", "-I", "-B", "deploy/server/product-health.py"]
+CMD ["/opt/openbot/venv/bin/python", "-I", "-B", "deploy/server/product-entry.py"]

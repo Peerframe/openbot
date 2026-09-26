@@ -9,7 +9,12 @@ describe("Desktop role selection", () => {
     async (mode) => {
       const onSave = vi.fn(async (plan) => ({ status: "configured" as const, plan }));
       const rendered = await renderComponent(
-        <DesktopSetupScreen platform="darwin" state={{ status: "unconfigured" }} onSave={onSave} />,
+        <DesktopSetupScreen
+          platform="darwin"
+          arch="arm64"
+          state={{ status: "unconfigured" }}
+          onSave={onSave}
+        />,
       );
       try {
         expect(rendered.container.querySelectorAll("input[type='radio']")).toHaveLength(2);
@@ -29,13 +34,20 @@ describe("Desktop role selection", () => {
       }
     },
   );
-  it.each(["linux", undefined])(
-    "offers a usable client default on %s even with a retained host plan",
-    async (platform) => {
+  it.each([
+    ["linux", "x64"],
+    [undefined, undefined],
+    ["win32", "x64"],
+    ["darwin", "x64"],
+    ["darwin", undefined],
+  ])(
+    "offers a usable client default on %s/%s even with a retained host plan",
+    async (platform, arch) => {
       const onSave = vi.fn(async (plan) => ({ status: "configured" as const, plan }));
       const rendered = await renderComponent(
         <DesktopSetupScreen
           platform={platform}
+          arch={arch}
           state={{
             status: "configured",
             plan: { mode: "host", localWorker: false, plannedWorkerCount: 0 },

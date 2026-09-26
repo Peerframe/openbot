@@ -75,8 +75,8 @@ main 独有提交数          338
 
 - 证据：[schema.ts](../packages/db/src/schema.ts)（`bots`）、`packages/db/migrations/0000_foundation.sql`、
   `0011_employee_profiles.sql`、`0016_employee_profile_details.sql`、
-  [postgres-store.ts](../apps/server/src/postgres-store.ts)、
-  [app.ts](../apps/server/src/app.ts) 中的 `POST /api/v1/bots`。
+  [postgres-store.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-store.ts)、
+  [app.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/app.ts) 中的 `POST /api/v1/bots`。
 - 必须保留：Bot 身份及其配置（`bots.configuration`）、演化档案、员工包/导入回执表。
   身份必须比任何运行时替换更长寿。
 - 验收旅程：创建 Bot，重启 Server，确认同一身份、档案与历史仍在。这是
@@ -95,12 +95,12 @@ main 独有提交数          338
 
 ### C3 —— 多步骤执行
 
-- 证据：[native-agent.ts](../apps/server/src/native-agent.ts)（`NativeAgentRunner`、`executeAgentRun`）、
-  [agent-runtime-host.ts](../apps/server/src/agent-runtime-host.ts)（`catalog`/`generate`/`executeTool`/`finish`）、
-  [agent-runtime-process.ts](../apps/server/src/agent-runtime-process.ts)（`createPythonAgentExecutor`、
-  `superviseRuntimeProcess`）、[agent-runtime-bootstrap.ts](../apps/server/src/agent-runtime-bootstrap.ts)
+- 证据：[native-agent.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts)（`NativeAgentRunner`、`executeAgentRun`）、
+  [agent-runtime-host.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-runtime-host.ts)（`catalog`/`generate`/`executeTool`/`finish`）、
+  [agent-runtime-process.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-runtime-process.ts)（`createPythonAgentExecutor`、
+  `superviseRuntimeProcess`）、[agent-runtime-bootstrap.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-runtime-bootstrap.ts)
   （显式开启 `OPENBOT_AGENT_RUNTIME=python`；TypeScript 仍为默认）、
-  [postgres-task-submission.ts](../apps/server/src/postgres-task-submission.ts)（`submitTaskInTransaction`）。
+  [postgres-task-submission.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-task-submission.ts)（`submitTaskInTransaction`）。
 - 权威归属：工具意图循环、预算与最终提交由 Server 拥有。已验收的 Python 运行时是被监督的子进程，
   位于冻结线协议之后——见 [AGENT_RUNTIME_PROTOCOL.zh-CN.md](AGENT_RUNTIME_PROTOCOL.zh-CN.md)。
 - 不要把功能源码的 `model-run-dispatcher.ts` / `model-services.ts` 当作第二个引擎去合并。
@@ -112,7 +112,7 @@ main 独有提交数          338
 ### C4 —— 持久工作环境
 
 - 本检出证据：经 `OPENBOT_OBJECT_STORE_PATH` 的对象存储（产物、附件、插件）；
-  [workspace-realtime-hub.ts](../apps/server/src/workspace-realtime-hub.ts) 是 UI 事件通道，不是文件系统工作目录。
+  [workspace-realtime-hub.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/workspace-realtime-hub.ts) 是 UI 事件通道，不是文件系统工作目录。
   这里**没有**持久工作目录，也**没有**受限命令执行：
   [coder provider](../providers/coder/src/index.ts) 声明了 `shell.execute`，但未实现任何 `execute`。
 - 功能源码差异：功能线新增按 Bot 的执行环境隔离，经 `x-openbot-bot-id` 抵达的浏览器 profile 卷，
@@ -151,9 +151,9 @@ main 独有提交数          338
 | DOCX、XLSX、PPTX | 是（`officeparser`） | **否** | 否 | 否 |
 | PNG | 不适用 | 仅截图 | 否 | 不适用 |
 
-- 证据：[channel-attachments.ts](../apps/server/src/channel-attachments.ts)（SHA-256 与尺寸准入）、
-  [attachment-processing.ts](../apps/server/src/attachment-processing.ts)（在 Worker 线程中抽取；
-  另有 `tesseract.js` 图像 OCR 与音频转写）、[artifact-storage.ts](../apps/server/src/artifact-storage.ts)。
+- 证据：[channel-attachments.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/channel-attachments.ts)（SHA-256 与尺寸准入）、
+  [attachment-processing.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/attachment-processing.ts)（在 Worker 线程中抽取；
+  另有 `tesseract.js` 图像 OCR 与音频转写）、[artifact-storage.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/artifact-storage.ts)。
 - 应原样保留的硬边界：产物**只**接受 `image/png`（≤ 5 MiB，校验 PNG 签名）与 `text/markdown` 报告
   （≤ 32 KiB、非空、不含 NUL），均按 SHA-256 存储，并在读取时由
   `GET /api/v1/artifacts/:artifactId/content` 复核。
@@ -162,11 +162,11 @@ main 独有提交数          338
 
 ### C7 —— 审批与人工接管
 
-- 证据：[approval-policy.ts](../apps/server/src/approval-policy.ts)（`approvalPolicyRules`、`isRiskDowngrade`）
+- 证据：[approval-policy.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/approval-policy.ts)（`approvalPolicyRules`、`isRiskDowngrade`）
   覆盖 `browser.click`（HTTPS/回环）与 `form.submit`（HTTPS）；[schema.ts](../packages/db/src/schema.ts) 的
   `approvals` 表含 `pending`/`approved`/`rejected`/`expired`；
-  [app.ts](../apps/server/src/app.ts) 的 `POST /api/v1/approvals/:approvalId/decision`；
-  [plugin-service.ts](../apps/server/src/plugin-service.ts) 的插件确认生命周期。
+  [app.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/app.ts) 的 `POST /api/v1/approvals/:approvalId/decision`；
+  [plugin-service.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/plugin-service.ts) 的插件确认生命周期。
 - 功能线已含共享的 `0008_owner_approvals.sql` Worker 审批路径；后来的原生插件确认是另一项新增。
 - 必须保留：审批是一个**状态**而不是日志行，且与上下文绑定——被批准的目标必须就是实际执行的目标。
   等待审批不是运行的终态。
@@ -199,11 +199,11 @@ main 独有提交数          338
 
 ### C8 —— 后台、定时与安全恢复
 
-- 证据：[automations.ts](../apps/server/src/automations.ts)（`AutomationScheduler.start/tick/stop`、
-  `nextIntervalOccurrence`）、[postgres-automation-store.ts](../apps/server/src/postgres-automation-store.ts)
+- 证据：[automations.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/automations.ts)（`AutomationScheduler.start/tick/stop`、
+  `nextIntervalOccurrence`）、[postgres-automation-store.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-automation-store.ts)
   （`submitDue`）、迁移 `0018_automations.sql`、`0026_automation_attachment_outcome.sql`；
-  启动恢复在 [run-dispatcher.ts](../apps/server/src/run-dispatcher.ts)，
-  调用 [postgres-store.ts](../apps/server/src/postgres-store.ts) 的 `requeueAssignedRuns` 与
+  启动恢复在 [run-dispatcher.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/run-dispatcher.ts)，
+  调用 [postgres-store.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-store.ts) 的 `requeueAssignedRuns` 与
   `failRunningRuns`，事件 payload 为 `server-recovery`。
 - 必须原样保留：恢复**不**重放外部副作用。错过的周期直接跳过，`running` 的工作被标记失败而不是盲目重试。
   这是正确的默认行为，S3 必须守住它，同时补上计划要求的"按动作确定重试策略"。
@@ -211,18 +211,18 @@ main 独有提交数          338
 
 ### C9 —— 有范围的长期记忆
 
-- 证据：[agent-knowledge.ts](../apps/server/src/agent-knowledge.ts)、
-  [postgres-knowledge-store.ts](../apps/server/src/postgres-knowledge-store.ts) 与
-  [native-agent.ts](../apps/server/src/native-agent.ts)。模型获得至多八条近期快照，不是按当前任务的相关性检索。
+- 证据：[agent-knowledge.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-knowledge.ts)、
+  [postgres-knowledge-store.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-knowledge-store.ts) 与
+  [native-agent.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts)。模型获得至多八条近期快照，不是按当前任务的相关性检索。
 - 保留 Owner 审核、来源、范围与删除。S5 需验证相关检索，以及删除/停用后不再使用对应记忆。
 
 ### C10 —— 技能与教学复用
 
-- 证据：[agent-knowledge.ts](../apps/server/src/agent-knowledge.ts)（`validateKnowledgeProposal`、
-  `boundedKnowledgeText`）、[postgres-knowledge-store.ts](../apps/server/src/postgres-knowledge-store.ts)、
+- 证据：[agent-knowledge.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-knowledge.ts)（`validateKnowledgeProposal`、
+  `boundedKnowledgeText`）、[postgres-knowledge-store.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-knowledge-store.ts)、
   迁移 `0020_reviewed_knowledge.sql`、`0015_employee_memory_lifecycle.sql`、`0011_employee_profiles.sql`
   （`employee_memories`、`employee_memory_events`、`skills`、`employee_skills`、`skill_dependencies`）；
-  [agent-skills.ts](../apps/server/src/agent-skills.ts)；[agent-steering.ts](../apps/server/src/agent-steering.ts)。
+  [agent-skills.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-skills.ts)；[agent-steering.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-steering.ts)。
 - **被复核的 `SKILL.md` 是咨询性文本，不是可执行技能。** `parseSkillDocument` 只接受一份 ≤ 12 KiB 的
   Markdown 文档加有界 YAML frontmatter，按 SHA-256 绑定，且其自身注释写明规则：解析文本绝不跟随文件、
   URL 或工具声明。Agent 读取该文本（`read_skill`，上限 8 条描述、2 份完整文档）。没有脚本执行、
@@ -237,10 +237,10 @@ main 独有提交数          338
 
 ### C11 —— 有负责人的多 Bot 协作
 
-- 证据：[agent-collaboration.ts](../apps/server/src/agent-collaboration.ts)、
-  [postgres-agent-collaboration.ts](../apps/server/src/postgres-agent-collaboration.ts)
+- 证据：[agent-collaboration.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/agent-collaboration.ts)、
+  [postgres-agent-collaboration.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-agent-collaboration.ts)
   （`activeCollaborationChain`、`channelColleagues`、`createDelegatedRun`）、
-  [native-agent.ts](../apps/server/src/native-agent.ts) 中的 `start_task` / `wait_for_task` / `delegate_task`，
+  [native-agent.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts) 中的 `start_task` / `wait_for_task` / `delegate_task`，
   以及 `agent-collaboration.integration.test.ts`。
 - 代码中"独立授权"的含义：被委派的子 Bot 使用**自己的** profile、技能、记忆与插件授权，
   不继承调用方。模型步骤、工具和网页调用预算按 Run 分别计算；共享的是根任务期限
@@ -254,12 +254,12 @@ main 独有提交数          338
 
 ### C12 —— 开放工具与模型
 
-- 本检出证据：MCP 支持见 [plugin-service.ts](../apps/server/src/plugin-service.ts) 与 `plugin-routes.ts`
+- 本检出证据：MCP 支持见 [plugin-service.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/plugin-service.ts) 与 `plugin-routes.ts`
   （`install`/`grant`/`call`、按 Bot 授权、`read`/`confirm` 模式）；有界 Web 工具见
-  [native-web-tools.ts](../apps/server/src/native-web-tools.ts)（`web_search`，在
-  [native-agent.ts](../apps/server/src/native-agent.ts) 中接线）。
+  [native-web-tools.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-web-tools.ts)（`web_search`，在
+  [native-agent.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts) 中接线）。
 - **这里的模型配置是工作区级的 Owner 单例，不是按 Bot 的：**
-  [model-settings.ts](../apps/server/src/model-settings.ts)（`ModelSettingsService`），
+  [model-settings.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/model-settings.ts)（`ModelSettingsService`），
   路由为 `GET`/`POST /api/v1/settings/model` 与 `POST /api/v1/settings/model/models`。
 - 功能源码差异——本检出所没有的按 Bot 路径：
   `PATCH /api/v1/bots/:botId/model` → `updateEmployeeModel`，要求 `computerProfile === "model"`，
@@ -288,7 +288,7 @@ main 独有提交数          338
 | 办公室可视化 | [packages/office-plugin/src/index.tsx](../packages/office-plugin/src/index.tsx) —— manifest 标 `status: "deferred"`，核心 Web 应用不导入它 | 本次范围无需替代；它已是惰性的 | 无 | 无 —— 不涉及权限 |
 | 未实现的 Provider 占位 | [cua](../providers/cua/src/index.ts)、[lume](../providers/lume/src/index.ts)、[coder](../providers/coder/src/index.ts) 均未声明 `execute`；[PROVIDER_CONFORMANCE.zh-CN.md](PROVIDER_CONFORMANCE.zh-CN.md) 把三者标为 "Not implemented in this repository" | 检查已声明 profile、持久配置、调用方与 CI，保持一致性边界明确 | 无 | 退役*占位*不得移除一致性文档——正是它防止能力被虚报 |
 | 被替代的 TypeScript 后端 | `apps/server/src/*` —— 按计划属过渡性权威 | S2 单写入方切换，且同一批夹具要在选定实现上跑通 | PostgreSQL 数据、迁移与已应用历史被保留，而非搬移 | 授权、审批与审计代码属安全关键；每次退役都要求相应的有效安全测试随之移动 |
-| 员工市场／分发／图谱 | 两棵树都不存在市场或注册中心。唯一的产物是 [employee-package.ts](../apps/server/src/employee-package.ts) 中的签名员工包导出/导入与 `employee_import_receipts`；[EMPLOYEE.zh-CN.md](EMPLOYEE.zh-CN.md) 声明未实现认证式所有权转移 | 不适用 | 无 | 不要把*不存在*的能力说成"已退役"，也不要让"员工生态"这类措辞把登录、审批或凭据保护一并扫走 |
+| 员工市场／分发／图谱 | 两棵树都不存在市场或注册中心。唯一的产物是 [employee-package.ts](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/employee-package.ts) 中的签名员工包导出/导入与 `employee_import_receipts`；[EMPLOYEE.zh-CN.md](EMPLOYEE.zh-CN.md) 声明未实现认证式所有权转移 | 不适用 | 无 | 不要把*不存在*的能力说成"已退役"，也不要让"员工生态"这类措辞把登录、审批或凭据保护一并扫走 |
 
 ## 数据兼容风险
 

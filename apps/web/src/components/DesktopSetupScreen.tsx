@@ -9,15 +9,17 @@ import { OpenBotMark } from "./OpenBotMark";
 export function DesktopSetupScreen({
   state,
   platform,
+  arch,
   onSave,
   onCancel,
 }: {
   state: DesktopSetupPlanState;
   platform?: string | undefined;
+  arch?: string | undefined;
   onSave(plan: DesktopSetupPlanInput): Promise<SaveDesktopSetupPlanResult>;
   onCancel?: (() => void) | undefined;
 }) {
-  const canHost = platform === "darwin" || platform === "win32";
+  const canHost = platform === "darwin" && arch === "arm64";
   const [mode, setMode] = useState<"host" | "client">(
     canHost && (state.status !== "configured" || state.plan.mode === "host") ? "host" : "client",
   );
@@ -114,7 +116,7 @@ export function DesktopSetupScreen({
         <p className="login-note">
           {canHost
             ? "模型和工作电脑可以随时在设置中调整。"
-            : "本版本在这台电脑上提供远程客户端；本地服务安装适用于 Windows 和 macOS。"}
+            : "本版本在这台电脑上连接远程 Python 服务。本地服务适用于 Apple Silicon Mac；已有本地数据会保留。"}
         </p>
       </section>
     </main>

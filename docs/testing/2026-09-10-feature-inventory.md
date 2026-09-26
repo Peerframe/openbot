@@ -26,7 +26,7 @@ A **Bot** is an employee; a **Channel** is a persistent working context; a **Run
 | Skill selection | Request up to two reviewed skills belonging to the selected Bot; remove draft selections. | Runtime rechecks assignment, state, and content identity. A request cannot create tools or external authority. |
 | Timeline/live updates | Persisted messages, quoted replies, Markdown/tables, artifacts, task links, and Server event updates. | Continuity exists; unrestricted history search and offline editing do not. |
 
-Evidence: [setup](../../apps/web/src/components/DesktopSetupScreen.tsx), [installation](../../apps/web/src/components/DesktopInstallScreen.tsx), [connection](../../apps/web/src/components/DesktopConnectionScreen.tsx), [app navigation](../../apps/web/src/App.tsx), [sidebar](../../apps/web/src/components/Sidebar.tsx), [channel creation](../../apps/web/src/components/CreateChannelDialog.tsx), [members](../../apps/web/src/components/ChannelMembersMenu.tsx), [Bot creation](../../apps/web/src/components/CreateBotDialog.tsx), [conversation](../../apps/web/src/components/ChannelWorkspace.tsx), [attachment composition](../../apps/web/src/composer-context.ts), [Server routes](../../apps/server/src/app.ts).
+Evidence: [setup](../../apps/web/src/components/DesktopSetupScreen.tsx), [installation](../../apps/web/src/components/DesktopInstallScreen.tsx), [connection](../../apps/web/src/components/DesktopConnectionScreen.tsx), [app navigation](../../apps/web/src/App.tsx), [sidebar](../../apps/web/src/components/Sidebar.tsx), [channel creation](../../apps/web/src/components/CreateChannelDialog.tsx), [members](../../apps/web/src/components/ChannelMembersMenu.tsx), [Bot creation](../../apps/web/src/components/CreateBotDialog.tsx), [conversation](../../apps/web/src/components/ChannelWorkspace.tsx), [attachment composition](../../apps/web/src/composer-context.ts), [Server routes](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/app.ts).
 
 ## Agent execution, results, and oversight
 
@@ -44,7 +44,7 @@ This is not an interactive logged-in browser. Public fetch rejects private netwo
 | Information panel | Current-channel approvals, active tasks, recent results; expandable workspace/worker overview. | Limited to loaded records, not unlimited analytics history. |
 | Token usage | Sum known input/output usage in scope; preserve unknown/no-data states. | Not provider quota, balance, cost, or billing; missing usage is not estimated. |
 
-Evidence: [Agent tools](../../apps/server/src/native-agent.ts), [runtime wiring](../../apps/server/src/index.ts), [bounded context](../../apps/server/src/postgres-agent-store.ts), [inspector](../../apps/web/src/components/RunInspector.tsx), [controls](../../apps/web/src/components/NativeRunControls.tsx), [artifacts](../../apps/web/src/components/ArtifactCard.tsx), [approvals](../../apps/web/src/components/ApprovalCard.tsx), [information panel](../../apps/web/src/components/ContextRail.tsx).
+Evidence: [Agent tools](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts), [runtime wiring](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/index.ts), [bounded context](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-agent-store.ts), [inspector](../../apps/web/src/components/RunInspector.tsx), [controls](../../apps/web/src/components/NativeRunControls.tsx), [artifacts](../../apps/web/src/components/ArtifactCard.tsx), [approvals](../../apps/web/src/components/ApprovalCard.tsx), [information panel](../../apps/web/src/components/ContextRail.tsx).
 
 ## Employee profile and reviewed learning
 
@@ -60,7 +60,7 @@ Evidence: [Agent tools](../../apps/server/src/native-agent.ts), [runtime wiring]
 
 The learning loop is partially real: a successful task may propose one reusable lesson. The Owner can edit its title/body, accept it as internal non-portable memory, or reject and delete the candidate. A separate checkbox permits later model use. Before review, it is neither active memory nor available to later tasks; the Agent cannot approve itself. This is reviewed learning, not observation of a user’s computer followed by automatic learning.
 
-Evidence: [profile/memory](../../apps/web/src/components/EmployeeProfileView.tsx), [evolution](../../apps/web/src/components/EmployeeEvolutionArchive.tsx), [skills](../../apps/web/src/components/EmployeeSkillReview.tsx), [candidate experience](../../apps/web/src/components/KnowledgeReviewPanel.tsx), [runtime skill/memory tools](../../apps/server/src/native-agent.ts).
+Evidence: [profile/memory](../../apps/web/src/components/EmployeeProfileView.tsx), [evolution](../../apps/web/src/components/EmployeeEvolutionArchive.tsx), [skills](../../apps/web/src/components/EmployeeSkillReview.tsx), [candidate experience](../../apps/web/src/components/KnowledgeReviewPanel.tsx), [runtime skill/memory tools](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts).
 
 ## Plugins and portable employees
 
@@ -86,7 +86,7 @@ Evidence: [plugin destination](../../apps/web/src/components/SkillLibraryScreen.
 | About/help/feedback | Platform/Electron and Hermes attribution; GitHub documentation/issues links. | No automatic feedback sending or update-check workflow. |
 | Mobile navigation | Responsive channel/Bot/approval/host entry points. | Source presence is not mobile or all-platform acceptance. |
 
-Evidence: [automations](../../apps/web/src/components/AutomationsScreen.tsx), [destination API](../../apps/web/src/destination-api.ts), [Server](../../apps/server/src/app.ts), [workers](../../apps/web/src/components/NodeManagerDialog.tsx), [local worker](../../apps/web/src/components/DesktopLocalWorkerScreen.tsx), [settings](../../apps/web/src/components/DesktopSettingsScreen.tsx), [model settings](../../apps/web/src/components/ModelSettingsScreen.tsx), [preferences](../../apps/web/src/workspace-preferences.ts), [mobile](../../apps/web/src/components/MobileNavigation.tsx).
+Evidence: [automations](../../apps/web/src/components/AutomationsScreen.tsx), [destination API](../../apps/web/src/destination-api.ts), [Server](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/app.ts), [workers](../../apps/web/src/components/NodeManagerDialog.tsx), [local worker](../../apps/web/src/components/DesktopLocalWorkerScreen.tsx), [settings](../../apps/web/src/components/DesktopSettingsScreen.tsx), [model settings](../../apps/web/src/components/ModelSettingsScreen.tsx), [preferences](../../apps/web/src/workspace-preferences.ts), [mobile](../../apps/web/src/components/MobileNavigation.tsx).
 
 ## Sharing changes in this delivery
 
@@ -101,7 +101,7 @@ The recipient receives the bounded employee definition and allowed metadata, not
 | Output file | Download the actual artifact produced by a task. | Not the employee identity or a transcript. |
 | Bot/employee template | Review and export the selected Bot using the portable employee package. | Not a task-method summary, complete clone, permission transfer or authenticated ownership transfer. |
 
-Evidence: [sharing dialog](../../apps/web/src/components/ShareConversationDialog.tsx), [downloads](../../apps/web/src/components/ArtifactCard.tsx), [toolbar/export routing](../../apps/web/src/App.tsx), [export preview](../../apps/web/src/components/ExportEmployeeDialog.tsx), [package rules](../../apps/server/src/employee-package.ts).
+Evidence: [sharing dialog](../../apps/web/src/components/ShareConversationDialog.tsx), [downloads](../../apps/web/src/components/ArtifactCard.tsx), [toolbar/export routing](../../apps/web/src/App.tsx), [export preview](../../apps/web/src/components/ExportEmployeeDialog.tsx), [package rules](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/employee-package.ts).
 
 ## Product alignment
 

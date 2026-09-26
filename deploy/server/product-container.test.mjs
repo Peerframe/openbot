@@ -87,7 +87,7 @@ test("projection retains DB exports and writes independent npm manifests", async
 });
 
 test("explicit Docker target uses immutable bases and selective public context", async () => {
-  const file = await readFile(new URL("./Dockerfile.product", import.meta.url), "utf8");
+  const file = await readFile(new URL("./Dockerfile", import.meta.url), "utf8");
   assert.match(
     file,
     /python:3\.12\.13-slim-bookworm@sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2/,
@@ -107,7 +107,7 @@ test("explicit Docker target uses immutable bases and selective public context",
   assert.match(file, /USER 1000:1000/);
   assert.match(file, /STOPSIGNAL SIGTERM/);
   const ignore = await readFile(
-    new URL("./Dockerfile.product.dockerignore", import.meta.url),
+    new URL("./Dockerfile.dockerignore", import.meta.url),
     "utf8",
   );
   assert.ok(ignore.startsWith("**\n"));
@@ -116,7 +116,7 @@ test("explicit Docker target uses immutable bases and selective public context",
 });
 
 test("standalone Compose uses distinct volumes, no published PG or automatic engine", async () => {
-  const file = await readFile(new URL("./compose.product.yaml", import.meta.url), "utf8");
+  const file = await readFile(new URL("./compose.yaml", import.meta.url), "utf8");
   assert.match(file, /127\.0\.0\.1:3001:3001/);
   assert.doesNotMatch(file, /5432:5432|privileged:|docker.sock|TEMPORAL|COMMAND_CONFIG|restart:/);
   assert.match(file, /product-postgres:/);

@@ -59,10 +59,11 @@ cd openbot
 cp .env.example .env
 ```
 
-先替换 `.env` 中的 `OPENBOT_OWNER_PASSWORD`，再运行：
+先替换 `.env` 中的 `OPENBOT_CONTROL_OWNER_PASSWORD`，再运行：
 
 ```bash
 npm ci
+apps/server-python/scripts/bootstrap-worker.sh
 npm run db:up
 npm run dev
 ```
@@ -70,7 +71,7 @@ npm run dev
 保持终端运行。Turbo 会先构建所需共享包，再启动 Server/Web。打开 `http://localhost:5173`，
 使用 `.env` 中的 Owner 密码登录；Server 使用端口 `3001`。这已足够进行前端和控制平面开发。
 原生 Agent 需要在模型设置里明确启用。已有 checkout 应保留原 `.env` 和数据目录。
-使用临时数据库复现 CI 的全新启动流程，见 [Server 启动冒烟说明](apps/server/README.zh-CN.md)。
+使用临时数据库复现 CI 的全新启动流程，见 [Server 启动冒烟说明](apps/server-python/README.zh-CN.md)。
 
 做一次小型 UI 修改时，先通过[仓库地图](docs/REPOSITORY_MAP.zh-CN.md)定位组件，在开发命令
 运行期间修改并检查真实页面。例如频道成员菜单位于

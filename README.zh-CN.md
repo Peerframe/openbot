@@ -24,6 +24,8 @@
 
 ## 下载
 
+当前源码已切换到 Python Server。新构建在 Apple Silicon Mac 提供本地服务；Windows 和 Intel Mac 连接远程 Python 服务。下列已发布 alpha.9 安装包仍是历史版本，本次源码变更不会更新已有安装或转换数据。
+
 **Desktop 0.1.0-alpha.9**
 
 | 平台 | 安装包 | 工作区 |
@@ -55,14 +57,15 @@
 
 ## 从源码运行
 
-使用 **Node.js 22.22.2**、**npm 10.9.9**，并安装 Docker 运行本地 PostgreSQL。
+使用 **Node.js 22.22.2**、**npm 10.9.9**，并安装 Python 3.12 和 Docker 运行本地 PostgreSQL。
 
 ```sh
 git clone https://github.com/Peerframe/openbot.git
 cd openbot
 npm ci
+apps/server-python/scripts/bootstrap-worker.sh
 cp .env.example .env
-# 将 .env 中的 OPENBOT_OWNER_PASSWORD 设置为至少 15 个字符的随机密码。
+# 将 .env 中的 OPENBOT_CONTROL_OWNER_PASSWORD 设置为至少 15 个字符的随机密码。
 npm run db:up
 npm run dev
 ```
@@ -81,7 +84,7 @@ Desktop 和 Web 共用 React 界面。Server 统一管理 Bot 身份、路由、
 | --- | --- |
 | [apps/web](apps/web) | 共享工作区界面 |
 | [apps/desktop](apps/desktop) | Electron 桌面壳、本地服务与打包 |
-| [apps/server](apps/server) | API、模型执行、协作调度与权限 |
+| [apps/server-python](apps/server-python) | API、模型执行、协作调度与权限 |
 | [apps/node](apps/node) · [Worker Hosts](docs/NODE_ENROLLMENT.zh-CN.md) | 已登记的执行节点与原生生命周期 |
 | [packages](packages) · [providers](providers) | 共享契约与执行适配器 |
 | [openbot-website](https://github.com/Peerframe/openbot-website) | 独立官网、手册与交互演示 |

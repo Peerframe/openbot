@@ -7,13 +7,27 @@ Python/FastAPI implements the trusted business control layer in the
 The explicit `product` entry composes Owner identity/workspace, model connections, knowledge,
 conversations, schedules, files/processors, plugins/MCP and Worker Host services. An explicitly
 configured Temporal engine supplies durable Work execution, approvals, corrections and publication.
-The entry still defaults to read-only; repository development and release defaults still select
-the TypeScript Server while retirement gates remain open.
+Repository development, containers and macOS arm64 Desktop now select Python `product` mode.
+Direct `serve.py` still defaults to read-only and requires explicit authority. Windows/Intel Mac
+Desktop use remote services.
 
 Current scope and evidence are in the [migration handoff](../../docs/MIGRATION_HANDOFF.md).
-Local product and packaged macOS arm64 Preview journeys pass; full remote Linux command and
-Chromium/human-takeover qualification remain incomplete. Earlier staged-mode sections below
+Local product and packaged macOS arm64 Preview journeys pass; isolated Linux command and
+Chromium/human-takeover product qualification passed within the documented scope. Earlier staged-mode sections below
 describe their narrower contracts and historical tests, not the complete current product surface.
+
+
+## Start product development
+
+From the root, run `npm ci` and `apps/server-python/scripts/bootstrap-worker.sh`, copy `.env.example`
+to `.env`, set `OPENBOT_CONTROL_OWNER_PASSWORD` (at least15 characters), then run `npm run db:up`
+and `npm run dev`. API listens on3001 and Web on5173. Development data is separate from legacy
+services. Executing Work additionally requires explicit mTLS Temporal configuration; API startup
+does not create an engine.
+
+`npm run dev:smoke` uses a disposable loopback database ending `_dev_smoke`, supplied through
+`OPENBOT_DEV_SMOKE_DATABASE_URL`, to verify fresh-checkout Web proxy, Owner login and Python
+startup. Prepare the Worker environment first; no model account is needed.
 
 ## Develop and verify
 

@@ -1,5 +1,7 @@
 # Windows 桌面版
 
+本轮源码范围：仅 macOS arm64 打包本地 Python 服务；Windows、Intel Mac 和 Linux 为远程客户端。以下旧版本本地 Server 验收与安装记录保留为历史证据，不表示新版本在这些平台仍提供本地服务。已有安装、加密配置和数据库保留。
+
 Windows x64 桌面版可以在本机运行 OpenBot Server 与 PostgreSQL，也可以连接已有 Server。本机进程属于当前用户的桌面会话；安装应用不会自动注册 Worker Host，也不会授予电脑控制权限。
 
 ## 安装与启动

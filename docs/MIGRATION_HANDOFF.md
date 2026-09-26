@@ -1,6 +1,6 @@
 # Architecture migration handoff — 2026-09-26
 
-## Current checkpoint — isolated Linux browser product
+## Current checkpoint — final business Server retirement
 
 - Delivery: PR96 merged at `b186c11`; [PR98](https://github.com/Peerframe/openbot/pull/98)
   merged at `1dacf4e` after all17 hosted jobs plus aggregate `check` passed on `255d535`.
@@ -45,7 +45,7 @@
   Native GUI created a synthetic channel and recovered it on the next menu-quit/restart. Final
   normal quit closed the candidate, API and PG. The installed app remained running. Initial stale
   UI/capture failures were transient and resolved through current accessibility observations.
-  Full packaged inference remains open. The separate test profile is retained for evidence;
+  Full packaged inference passed; see the retirement result below. The separate test profile is retained for evidence;
   do not remove the installed app's old profile.
 - Checks: the Preview increment passed27 focused package/profile tests and full `npm run check`
   (20 successful build tasks,19 cached). The first check caught the CI validator’s old artifact path,
@@ -56,22 +56,32 @@
   instead of publishing the personal host; four validation preflights pass. The executed fixed-host
   fixture remains in private evidence; the selected SSH command is unchanged.
 
-### Remaining retirement work
+### Current retirement result and remaining acceptance
 
-1. Publish the isolated Preview fix and qualify its hosted CI head.
-2. Complete packaged inference. Current native GUI write/restart, system encryption/decryption
-   and Owner restoration passed on the isolated candidate.
-3. Remove the replaced TS business Server and redundant exploration paths only after replacement
-   acceptance. Source inventory finds129 tracked `apps/server` files. Concrete integration points
-   remain in root dev/check scripts, legacy Dockerfile/Compose, Desktop native preparation and
-   `main.ts` fallback, and legacy CI jobs. Windows/x64 local Desktop still uses the old Server;
-   Owner has been asked whether to qualify their Python local runtime first or make those
-   platforms remote clients in this milestone. Keep that decision pending before removing the path.
-   Keep the59-file frozen oracle, migration histories, TS Node/Providers, publisher/MCP tools and
-   credential helpers. Preserve `550a981` as an additional source recovery checkpoint.
-4. Run the affected final checks and publish the retirement change. Signing/installed distribution,
-   production data conversion and default activation remain separate visible actions; no user data
-   or existing installation is part of disposable fixture cleanup.
+- Owner accepts Windows/Intel Mac as remote clients. The live `apps/server` source/workspace is
+  removed, with retirement pointers retained at its old directory. Keep the59-file frozen oracle,
+  SQL history, Node/Providers, publisher/MCP and credential helpers. Default dev, Docker and
+  macOS arm64 Desktop now select Python. Canonical Desktop uses separate `python-local-server`
+  storage; old installations, bootstrap and databases were not converted or deleted.
+- [PR99](https://github.com/Peerframe/openbot/pull/99) contains the isolated Preview fix; this
+  retirement increment awaits push. DSH implemented Windows remote-install/DPAPI-restart gates;
+  root integrated them with the existing process-identity/installer helpers. No external writer
+  remains. Replace legacy Windows database CI with remote-client installation acceptance;
+  real local execution belongs to the Python product gates.
+- One newly authorized actual packaged Kimi Task passed:4 model receipts,8,845 tokens, independent
+  content review,353-byte report, original Workflow completion and replay without Activities.
+  The new default artifact has identical Python source trees. [Safe evidence](../experiments/work-journey/evidence/desktop-packaged-inference.json).
+  Preflight found55 missing official empty locale directories; restoring the exact manifest
+  resolved it before any model request. Owned engine/database closed; root additionally identified
+  and stopped the residual test receiver. Original app remained untouched. Never rerun this Task.
+- Default macOS arm64 package built; actual packaged API/PG, Owner login, persistent restart,
+  parent EOF and invalid-config refusal/cleanup passed. `npm run check` passed (19 builds,18 cached);
+  final fixture/doc corrections passed. Fresh npm10.9.9 install passed. Fresh Python/Web startup, Owner login and proxy passed after canonicalizing the macOS
+  fixture temporary directory.
+- Remaining: push and await this head's hosted CI including
+  Windows remote installation and Linux images. Do not claim final acceptance before that result.
+  Signed releases, replacing installed software and production-data conversion are separate;
+  source retirement is not an automatic installed upgrade.
 
 Keep the Owner-confirmed2026-09-24 design review v2: Server owns authority and Temporal continuation.
 Broader repository rearrangement, visual redesign and marketplaces remain later work. Preserve six

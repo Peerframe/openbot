@@ -5,11 +5,18 @@
 Python/FastAPI 实现[迁移计划](../../docs/ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)中的可信业务控制层，
 与不受信任的 Agent Runtime 分开。显式 `product` 入口已组合 Owner 身份／工作区、模型连接、知识、
 对话、日程、文件／处理器、插件／MCP 和 Worker Host 服务；明确配置的 Temporal 引擎负责持久 Work 执行、审批、修正与发布。
-入口仍默认只读；退役验收尚未完成，仓库开发与发行默认入口仍选择 TypeScript Server。
+仓库开发、容器和 macOS arm64 桌面默认入口选择 Python `product` 模式。直接调用 `serve.py` 仍默认只读，必须显式选择权限。Windows／Intel Mac 桌面使用远程服务。
 
 当前范围与证据见[迁移交接](../../docs/MIGRATION_HANDOFF.zh-CN.md)。本地产品链路和 macOS arm64 Preview
-打包流程已通过；完整远程 Linux 命令链路和 Chromium／人工接管验收尚未完成。
+打包流程已通过；隔离 Linux 命令和 Chromium／人工接管产品链路已验收；支持范围见交接记录。
 下文早期分阶段章节记录较窄模式的契约与历史测试，不代表当前产品的全部功能范围。
+
+
+## 启动产品开发环境
+
+从根目录执行 `npm ci`、`apps/server-python/scripts/bootstrap-worker.sh`，复制 `.env.example` 为 `.env` 并设置 `OPENBOT_CONTROL_OWNER_PASSWORD`（至少15字符），然后运行 `npm run db:up` 和 `npm run dev`。API在3001端口、Web在5173端口。开发数据库与旧服务独立。执行 Work 还需显式 mTLS Temporal 配置；API启动不会自动创建引擎。
+
+`npm run dev:smoke`使用临时回环数据库（名称以 `_dev_smoke` 结尾，通过 `OPENBOT_DEV_SMOKE_DATABASE_URL`提供），验证全新检出后的真实Web代理、Owner登录和Python服务。先准备Worker环境，不需要模型账户。
 
 ## 开发与验证
 

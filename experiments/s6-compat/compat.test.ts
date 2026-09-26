@@ -2,8 +2,8 @@ import { readFile } from "node:fs/promises";
 import { createDatabase } from "@openbot/db";
 import { MockLanguageModelV4 } from "ai/test";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { NativeAgentRunner } from "../../apps/server/src/native-agent.js";
-import { PostgresAgentStore } from "../../apps/server/src/postgres-agent-store.js";
+import { NativeAgentRunner } from "../../tests/oracles/legacy-server/src/native-agent.js";
+import { PostgresAgentStore } from "../../tests/oracles/legacy-server/src/postgres-agent-store.js";
 import {
   call,
   createFixture,

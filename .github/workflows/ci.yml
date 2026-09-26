@@ -57,13 +57,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
-      - name: Verify real public HTTPS reading on the hosted network
-        env:
-          OPENBOT_LIVE_SOURCE_TEST: "1"
-        run: npm exec --workspace @openbot/server -- vitest run src/agent-sources.live.test.ts
 
   portable:
-    name: Retained clients and legacy Desktop (${{ matrix.name }})
+    name: Retained clients and Python Desktop (${{ matrix.name }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 50
     strategy:
@@ -125,32 +121,11 @@ jobs:
             --version 0.0.0
           echo "OPENBOT_DESKTOP_MACOS_WORKER_COMPANION=$companion_root/OpenBot Worker Host.app" \
             >> "$GITHUB_ENV"
-      - name: Build and verify the auditable Windows PostgreSQL runtime
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $runtime = Join-Path $env:RUNNER_TEMP 'openbot-windows-postgresql'
-          ./scripts/build-windows-postgresql.ps1 -OutputDirectory $runtime
-          "OPENBOT_WINDOWS_POSTGRES_RUNTIME=$runtime" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-      - name: Verify retained 17.10 cluster data with the new Windows database
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: ./scripts/test-windows-postgresql-upgrade.ps1 -RuntimeDirectory "$env:OPENBOT_WINDOWS_POSTGRES_RUNTIME"
-      - name: Retain PostgreSQL source, license notices, and build provenance
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: windows-postgresql-source-and-provenance-${{ github.sha }}
-          path: |
-            ${{ env.OPENBOT_WINDOWS_POSTGRES_RUNTIME }}/licenses
-            ${{ env.OPENBOT_WINDOWS_POSTGRES_RUNTIME }}/openbot-postgresql-build.json
-          if-no-files-found: error
-          retention-days: 14
       - name: Package the unsigned Desktop development artifact
         run: npm run package --workspace @openbot/desktop
       - name: Make the unsigned Desktop installers from the verified package
         run: npm run make:installers --workspace @openbot/desktop
-      - name: Validate Windows per-user installation and native Server lifecycle
+      - name: Validate Windows remote-client installation and encrypted profile restart
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -159,8 +134,8 @@ jobs:
           node -e "const r=require('node:module').createRequire(require('node:path').resolve('apps/desktop/package.json'));require('node:fs').writeFileSync(process.argv[1],r('electron'));" $electronPathFile
           if ($LASTEXITCODE -ne 0) { throw 'Cannot prepare the pinned Electron test runtime.' }
           $electron = Get-Content -LiteralPath $electronPathFile -Raw
-          ./scripts/check-windows-desktop-install.ps1 -Installer "$env:GITHUB_WORKSPACE/apps/desktop/out/installers/win32-x64/openbot-desktop-$version-win32-x64.exe" -PackagedDirectory "$env:GITHUB_WORKSPACE/apps/desktop/out/OpenBot-win32-x64" -Electron $electron -SmokeScript "$env:GITHUB_WORKSPACE/apps/desktop/scripts/windows-native-smoke.mjs" -EvidenceDirectory "$env:RUNNER_TEMP/openbot-windows-native-evidence"
-      - name: Retain Windows cold-start evidence without fixture secrets
+          ./scripts/check-windows-desktop-install.ps1 -Installer "$env:GITHUB_WORKSPACE/apps/desktop/out/installers/win32-x64/openbot-desktop-$version-win32-x64.exe" -PackagedDirectory "$env:GITHUB_WORKSPACE/apps/desktop/out/OpenBot-win32-x64" -Electron $electron -SmokeScript "$env:GITHUB_WORKSPACE/apps/desktop/scripts/windows-remote-smoke.mjs" -EvidenceDirectory "$env:RUNNER_TEMP/openbot-windows-native-evidence"
+      - name: Retain Windows remote-client evidence without fixture secrets
         if: always() && runner.os == 'Windows'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -241,133 +216,6 @@ jobs:
         shell: pwsh
         run: ../../scripts/check-windows-worker-host-artifact.ps1 -PublishDirectory "$env:RUNNER_TEMP\openbot-windows-host"
 
-  database:
-    name: Legacy Server and shared SQL regressions
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    services:
-      postgres:
-        image: postgres:17.11-bookworm
-        env:
-          POSTGRES_DB: openbot_test
-          POSTGRES_USER: openbot
-          POSTGRES_PASSWORD: openbot-ci-only
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U openbot -d openbot_test"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 22.22.2
-          cache: npm
-      - run: npm ci
-      - name: Verify contributor startup before shared packages have been built
-        run: |
-          node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_dev_smoke"); } finally { await sql.end(); }'
-          npm run dev:smoke
-        env:
-          OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
-          OPENBOT_DEV_SMOKE_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_dev_smoke
-      - run: npm run db:verify
-        env:
-          OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
-      - name: Verify recurring-task transactions in a disposable PostgreSQL database
-        run: |
-          node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_automation_test_ci"); } finally { await sql.end(); }'
-          npm exec --workspace @openbot/server -- vitest run src/postgres-automation-store.integration.test.ts
-        env:
-          OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
-          OPENBOT_AUTOMATION_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_automation_test_ci
-      - name: Verify task attachment retention and invalid occurrences in a disposable PostgreSQL database
-        run: |
-          node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_attachment_test_ci"); } finally { await sql.end(); }'
-          npm exec --workspace @openbot/server -- vitest run src/task-attachment-references.integration.test.ts
-        env:
-          OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
-          OPENBOT_ATTACHMENT_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_attachment_test_ci
-      - name: Verify direct Bot conversations in a disposable PostgreSQL database
-        run: |
-          node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_direct_test_ci"); } finally { await sql.end(); }'
-          npm exec --workspace @openbot/server -- vitest run src/postgres-direct-conversations.integration.test.ts
-        env:
-          OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
-          OPENBOT_DIRECT_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_direct_test_ci
-
-      - name: Verify portable Bot instructions in a disposable PostgreSQL database
-        run: |
-          node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_import_test_ci"); } finally { await sql.end(); }'
-          npm exec --workspace @openbot/server -- vitest run src/employee-package.integration.test.ts
-        env:
-          OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
-          OPENBOT_IMPORT_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_import_test_ci
-
-      - name: Verify headless runtime and Bot collaboration in a disposable PostgreSQL database
-        run: |
-          node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_collab_test_ci"); } finally { await sql.end(); }'
-          npm exec --workspace @openbot/server -- vitest run src/agent-collaboration.integration.test.ts src/native-agent-headless.integration.test.ts --maxWorkers=1 --no-file-parallelism
-        env:
-          OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
-          OPENBOT_COLLAB_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_collab_test_ci
-      - name: Verify reactions and member removal in a disposable PostgreSQL database
-        run: |
-          node --input-type=module -e 'import postgres from "postgres"; const sql = postgres(process.env.OPENBOT_DATABASE_URL); try { await sql.unsafe("CREATE DATABASE openbot_interactions_test_ci"); } finally { await sql.end(); }'
-          npm exec --workspace @openbot/server -- vitest run src/channel-interactions.integration.test.ts
-        env:
-          OPENBOT_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_test
-          OPENBOT_INTERACTIONS_TEST_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5432/openbot_interactions_test_ci
-
-  server-container:
-    name: Legacy Server compatibility (${{ matrix.name }})
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Linux amd64
-            runner: ubuntu-24.04
-            arch: amd64
-          - name: Linux arm64
-            runner: ubuntu-24.04-arm
-            arch: arm64
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Validate the Server Compose contract
-        run: docker compose --file deploy/server/compose.yaml config --quiet
-        env:
-          OPENBOT_OWNER_PASSWORD: openbot-compose-ci-validation-only
-      - name: Run Dockerfile build checks
-        run: docker build --check --file deploy/server/Dockerfile .
-      - name: Build the native Server image without publication
-        run: docker build --platform "linux/${{ matrix.arch }}" --tag openbot-server:smoke --file deploy/server/Dockerfile .
-      - name: Exercise production dependencies, PostgreSQL migrations, health, restart, and SIGTERM
-        run: bash scripts/smoke-server-container.sh
-        env:
-          OPENBOT_TEST_IMAGE: openbot-server:smoke
-          OPENBOT_TEST_PLATFORM: ${{ matrix.arch }}
-
-      - name: Validate the Python Compose overlay
-        run: docker compose --file deploy/server/compose.yaml --file deploy/server/compose.python.yaml config --quiet
-        env:
-          OPENBOT_OWNER_PASSWORD: openbot-compose-ci-validation-only
-      - name: Build the optional Python Server image without publication
-        run: docker build --platform "linux/${{ matrix.arch }}" --target runtime-python --tag openbot-server:python-smoke --file deploy/server/Dockerfile .
-      - name: Exercise packaged Python loop, cancellation and Server lifecycle
-        run: bash scripts/smoke-server-container.sh
-        env:
-          OPENBOT_TEST_IMAGE: openbot-server:python-smoke
-          OPENBOT_TEST_PLATFORM: ${{ matrix.arch }}
-          OPENBOT_TEST_AGENT_RUNTIME: python
-
   python-product-container:
     name: Python product container (${{ matrix.name }})
     runs-on: ${{ matrix.runner }}
@@ -389,14 +237,14 @@ jobs:
       - name: Validate the Python product Compose and Dockerfile contracts
         timeout-minutes: 2
         run: |
-          docker compose --file deploy/server/compose.product.yaml config --quiet
-          docker build --check --file deploy/server/Dockerfile.product .
+          docker compose --file deploy/server/compose.yaml config --quiet
+          docker build --check --file deploy/server/Dockerfile .
         env:
           OPENBOT_POSTGRES_PASSWORD: openbot-product-compose-ci-only
           OPENBOT_OWNER_PASSWORD: openbot-product-compose-owner-ci-only
       - name: Build the native Python product image without publication
         timeout-minutes: 12
-        run: docker build --platform "linux/${{ matrix.arch }}" --target runtime-product --tag openbot-server:product-smoke --file deploy/server/Dockerfile.product .
+        run: docker build --platform "linux/${{ matrix.arch }}" --target runtime-product --tag openbot-server:product-smoke --file deploy/server/Dockerfile .
       - name: Exercise Python product Owner HTTP, parsers, migrations and lifecycle
         timeout-minutes: 6
         shell: bash
@@ -474,6 +322,18 @@ jobs:
     runs-on: ubuntu-24.04
     # Keep API/SQL parity independent of the long recovery and browser qualification jobs.
     timeout-minutes: 50
+    services:
+      postgres-dev:
+        image: postgres:17.11-bookworm
+        env:
+          POSTGRES_DB: openbot_python_dev_smoke
+          POSTGRES_USER: openbot
+          POSTGRES_PASSWORD: openbot-ci-only
+        ports:
+          - 5545:5432
+        options: >-
+          --health-cmd "pg_isready -U openbot -d openbot_python_dev_smoke"
+          --health-interval 5s --health-timeout 3s --health-retries 12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -489,6 +349,19 @@ jobs:
         run: npm install --global --ignore-scripts npm@10.9.9
       - name: Install existing TypeScript reference dependencies
         run: npm ci --ignore-scripts --audit=false
+      - name: Bootstrap optional model and durable Worker qualification
+        shell: bash
+        run: |
+          python3.12 -m venv apps/server-python/.worker-venv
+          apps/server-python/.worker-venv/bin/python -m pip install \
+            -r apps/server-python/requirements-worker.lock
+          apps/server-python/.worker-venv/bin/python -m pip check
+          apps/server-python/.worker-venv/bin/python -I apps/server-python/scripts/verify_environment.py --worker
+          apps/server-python/.worker-venv/bin/python -B experiments/work-journey/probe.py --help > /dev/null
+      - name: Verify fresh Python and Web source startup
+        run: npm run dev:smoke
+        env:
+          OPENBOT_DEV_SMOKE_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5545/openbot_python_dev_smoke
       - name: Compile the frozen test-only Server oracle
         run: npm run oracle:build
       - name: Bootstrap the isolated Python control reference
@@ -499,19 +372,10 @@ jobs:
         run: apps/agent-runtime-python/scripts/bootstrap.sh
       - name: Verify Python control models and HTTP boundaries
         run: apps/server-python/scripts/check.sh -q
-      - name: Bootstrap optional model and durable Worker qualification
-        shell: bash
-        run: |
-          python3.12 -m venv "$RUNNER_TEMP/openbot-work-reference"
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install \
-            -r apps/server-python/requirements-worker.lock
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip check
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -I apps/server-python/scripts/verify_environment.py --worker
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py --help > /dev/null
       - name: Compare Python and TypeScript against owned PostgreSQL
         run: npm run test:control:python
         env:
-          OPENBOT_TEMPORAL_TEST_PYTHON: ${{ runner.temp }}/openbot-work-reference/bin/python
+          OPENBOT_TEMPORAL_TEST_PYTHON: ${{ github.workspace }}/apps/server-python/.worker-venv/bin/python
 
   temporal-qualification:
     name: Temporal durable recovery and upgrade (Linux amd64)
@@ -707,7 +571,7 @@ jobs:
   # Python product qualification and retained compatibility must each succeed independently.
   check:
     if: always()
-    needs: [security, validate, portable, windows-worker-host, database, server-container, python-runtime, temporal-qualification, browser-product, browser-egress, python-product-container, python-desktop-preview, synthetic-migration]
+    needs: [security, validate, portable, windows-worker-host, python-runtime, temporal-qualification, browser-product, browser-egress, python-product-container, python-desktop-preview, synthetic-migration]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -718,8 +582,6 @@ jobs:
           VALIDATE_RESULT: ${{ needs.validate.result }}
           PORTABLE_RESULT: ${{ needs.portable.result }}
           WINDOWS_WORKER_HOST_RESULT: ${{ needs.windows-worker-host.result }}
-          DATABASE_RESULT: ${{ needs.database.result }}
-          SERVER_CONTAINER_RESULT: ${{ needs.server-container.result }}
           PYTHON_RUNTIME_RESULT: ${{ needs.python-runtime.result }}
           TEMPORAL_QUALIFICATION_RESULT: ${{ needs.temporal-qualification.result }}
           BROWSER_PRODUCT_RESULT: ${{ needs.browser-product.result }}
@@ -728,7 +590,7 @@ jobs:
           PYTHON_DESKTOP_PREVIEW_RESULT: ${{ needs.python-desktop-preview.result }}
           SYNTHETIC_MIGRATION_RESULT: ${{ needs.synthetic-migration.result }}
         run: |
-          for result in "$SECURITY_RESULT" "$VALIDATE_RESULT" "$PORTABLE_RESULT" "$WINDOWS_WORKER_HOST_RESULT" "$DATABASE_RESULT" "$SERVER_CONTAINER_RESULT" "$PYTHON_RUNTIME_RESULT" "$TEMPORAL_QUALIFICATION_RESULT" "$BROWSER_PRODUCT_RESULT" "$BROWSER_EGRESS_RESULT" "$PYTHON_PRODUCT_CONTAINER_RESULT" "$PYTHON_DESKTOP_PREVIEW_RESULT" "$SYNTHETIC_MIGRATION_RESULT"; do
+          for result in "$SECURITY_RESULT" "$VALIDATE_RESULT" "$PORTABLE_RESULT" "$WINDOWS_WORKER_HOST_RESULT" "$PYTHON_RUNTIME_RESULT" "$TEMPORAL_QUALIFICATION_RESULT" "$BROWSER_PRODUCT_RESULT" "$BROWSER_EGRESS_RESULT" "$PYTHON_PRODUCT_CONTAINER_RESULT" "$PYTHON_DESKTOP_PREVIEW_RESULT" "$SYNTHETIC_MIGRATION_RESULT"; do
             if [[ "$result" != "success" ]]; then
               printf 'Every required CI job must succeed; observed result: %s\n' "$result" >&2
               exit 1

@@ -2,7 +2,7 @@ import type { DesktopConnectionState, DesktopServerFetcher } from "./connection-
 import { DESKTOP_SCHEME } from "./local-content.js";
 
 export const MAXIMUM_DESKTOP_PROXY_REQUEST_BYTES = 3 * 1024 * 1024;
-/** Mirrors Server `MAX_TASK_ATTACHMENT_BYTES` in `apps/server/src/channel-attachments.ts`. */
+/** Mirrors Server `MAX_TASK_ATTACHMENT_BYTES` in `apps/server-python/src/openbot_server/attachments.py`. */
 export const MAXIMUM_DESKTOP_ATTACHMENT_PROXY_REQUEST_BYTES = 20 * 1024 * 1024;
 export const MAXIMUM_DESKTOP_PROXY_URL_BYTES = 8 * 1024;
 export const DESKTOP_PROXY_REQUEST_TIMEOUT_MS = 30_000;

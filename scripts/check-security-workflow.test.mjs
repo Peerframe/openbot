@@ -255,7 +255,7 @@ test("requires every CI job in the final gate even after a skipped or failed dep
     workflow.replace("needs: [security, validate, portable,", "needs: [security, validate,"),
     `${workflow}\n  additional-platform:\n    runs-on: ubuntu-latest\n`,
     workflow.replace("  check:\n", "  check:\n    continue-on-error: true\n"),
-    workflow.replace("needs.database.result", "needs.validate.result"),
+    workflow.replace("needs.python-runtime.result", "needs.validate.result"),
   ]) {
     assert.throws(() => validateSecurityWorkflow(changed), /CI check must/);
   }
@@ -266,7 +266,7 @@ test("the actual merge gate accepts only success from every required job", () =>
   const variables = [
     ...gate.matchAll(/^ {10}([A-Z_]+): \$\{\{ needs\.[a-z-]+\.result \}\}$/gm),
   ].map((match) => match[1]);
-  assert.equal(variables.length, 13);
+  assert.equal(variables.length, 11);
   const source = gate
     .split("        run: |\n")[1]
     .split("\n")

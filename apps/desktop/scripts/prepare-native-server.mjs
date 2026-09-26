@@ -1,12 +1,10 @@
 import { cp, lstat, mkdir, readdir, readFile, rm, symlink } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { collectProductionPackageGraph } from "../../../scripts/node-linux-release.mjs";
 
 import { nativeOptionalPackageApplies } from "./native-runtime-policy.mjs";
 import { buildPostgresSupervisor } from "./postgres-supervisor-build.mjs";
 import { pythonCandidateGraph, stagePythonProduct } from "./python-runtime.mjs";
-import { stageWindowsPostgres } from "./windows-postgres-runtime.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const args = process.argv.slice(2);
@@ -20,19 +18,14 @@ const output = join(
   "apps/desktop",
   pythonProduct ? "out/python-product-runtime" : "native-runtime",
 );
-if (
-  !(
-    (process.platform === "darwin" && ["arm64", "x64"].includes(process.arch)) ||
-    (process.platform === "win32" && process.arch === "x64")
-  )
-) {
-  console.log("Native Server omitted: this platform ships the remote client.");
+if (process.platform !== "darwin" || process.arch !== "arm64") {
+  // Remove only generated staging, never profiles or installed services.
+  await rm(output, { recursive: true, force: true });
+  console.log("Native Python service omitted: this platform ships the remote client.");
   process.exit(0);
 }
 const lock = JSON.parse(await readFile(join(root, "package-lock.json"), "utf8"));
-const graph = pythonProduct
-  ? pythonCandidateGraph(lock)
-  : collectProductionPackageGraph(lock, "apps/server");
+const graph = pythonCandidateGraph(lock);
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await cp(join(root, "LICENSE"), join(output, "LICENSE"));
@@ -63,12 +56,7 @@ for (const key of graph.packageKeys) {
   await mkdir(dirname(join(output, key)), { recursive: true });
   await cp(join(root, key), join(output, key), { recursive: true, verbatimSymlinks: true });
 }
-if (process.platform === "win32") {
-  await stageWindowsPostgres(
-    process.env.OPENBOT_WINDOWS_POSTGRES_RUNTIME,
-    join(output, "postgres"),
-  );
-} else {
+{
   await buildPostgresSupervisor(
     join(root, "apps/desktop/native/postgres-supervisor.c"),
     join(output, "postgres-supervisor"),
@@ -106,7 +94,6 @@ if (process.platform === "win32") {
     }
   }
 }
-if (pythonProduct) await stagePythonProduct(root, output);
-else await readFile(join(output, "apps/server/dist/index.js"));
+await stagePythonProduct(root, output);
 await readdir(join(output, "postgres/bin"));
 console.log("Staged app-owned native Server runtime; no services started.");

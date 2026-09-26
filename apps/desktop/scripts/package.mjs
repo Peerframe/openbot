@@ -45,9 +45,10 @@ if (
 const signing = macosSigningOptions(process.env, process.platform, preview);
 const workspaceRoot = join(appRoot, "..", "..");
 const rendererEntry = join(appRoot, "dist", "renderer", "index.html");
-const nativeRuntime = ["darwin", "win32"].includes(process.platform)
-  ? join(appRoot, pythonProduct ? "out/python-product-runtime" : "native-runtime")
-  : undefined;
+const nativeRuntime =
+  process.platform === "darwin" && process.arch === "arm64"
+    ? join(appRoot, pythonProduct ? "out/python-product-runtime" : "native-runtime")
+    : undefined;
 const desktopIconBase = join(appRoot, "resources", "openbot-icon");
 const desktopIconPng = `${desktopIconBase}.png`;
 const packageManifest = JSON.parse(await readFile(join(appRoot, "package.json"), "utf8"));
@@ -74,9 +75,7 @@ const workerCompanionSource = desktopMacOSWorkerCompanionSource(
 await Promise.all([
   ...(nativeRuntime
     ? [
-        access(
-          join(nativeRuntime, pythonProduct ? "python-control.json" : "apps/server/dist/index.js"),
-        ),
+        access(join(nativeRuntime, "python-control.json")),
         ...(process.platform === "darwin"
           ? [access(join(nativeRuntime, "postgres-supervisor"))]
           : []),
@@ -101,15 +100,14 @@ if (nativeRuntime) {
   } catch (error) {
     if (error?.code !== "ENOENT") throw error;
   }
-  if (pythonProduct) {
+  {
     if (
       !marker ||
       Object.keys(marker).length !== Object.keys(PYTHON_CANDIDATE).length ||
       !Object.entries(PYTHON_CANDIDATE).every(([key, value]) => marker[key] === value)
     )
       throw new Error("Python candidate resources are incomplete or mismatched.");
-  } else if (marker !== undefined)
-    throw new Error("Default Desktop packaging refuses Python candidate resources.");
+  }
 }
 if (workerCompanionSource !== undefined) {
   await validateMacOSWorkerHostApplication(workerCompanionSource, {
@@ -128,7 +126,7 @@ const packagePaths = await packager({
   asar: true,
   dir: appRoot,
   download: { ...previewDownload, downloader: createElectronDownloader() },
-  electronVersion: pythonProduct ? "44.3.0" : "44.2.0",
+  electronVersion: "44.3.0",
   extraResource: [desktopIconPng],
   afterCopyExtraResources: [
     async ({ buildPath }) => {

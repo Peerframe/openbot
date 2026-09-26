@@ -43,6 +43,7 @@ if (shellVersion === undefined || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u.test(s
 const runtimeInfo = Object.freeze({
   kind: "desktop" as const,
   platform: process.platform,
+  arch: process.arch,
   shellVersion,
 });
 const bridge: OpenBotDesktopBridge = Object.freeze({

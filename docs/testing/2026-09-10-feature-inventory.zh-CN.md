@@ -26,7 +26,7 @@
 | 使用技能 | 请求所选 Bot 最多 2 个已审核技能，可从草稿移除。 | 运行时重查分配、状态和内容身份；请求技能不能增加工具或外部操作权限。 |
 | 时间线与实时更新 | 保存消息、引用、Markdown/表格、产物、任务链接，接收 Server 事件更新。 | 有连续上下文；没有不限范围的历史搜索或离线编辑。 |
 
-证据：[引导](../../apps/web/src/components/DesktopSetupScreen.tsx)、[安装](../../apps/web/src/components/DesktopInstallScreen.tsx)、[连接](../../apps/web/src/components/DesktopConnectionScreen.tsx)、[应用导航](../../apps/web/src/App.tsx)、[左栏](../../apps/web/src/components/Sidebar.tsx)、[创建频道](../../apps/web/src/components/CreateChannelDialog.tsx)、[成员](../../apps/web/src/components/ChannelMembersMenu.tsx)、[创建 Bot](../../apps/web/src/components/CreateBotDialog.tsx)、[对话](../../apps/web/src/components/ChannelWorkspace.tsx)、[附件组合](../../apps/web/src/composer-context.ts)、[Server 路由](../../apps/server/src/app.ts)。
+证据：[引导](../../apps/web/src/components/DesktopSetupScreen.tsx)、[安装](../../apps/web/src/components/DesktopInstallScreen.tsx)、[连接](../../apps/web/src/components/DesktopConnectionScreen.tsx)、[应用导航](../../apps/web/src/App.tsx)、[左栏](../../apps/web/src/components/Sidebar.tsx)、[创建频道](../../apps/web/src/components/CreateChannelDialog.tsx)、[成员](../../apps/web/src/components/ChannelMembersMenu.tsx)、[创建 Bot](../../apps/web/src/components/CreateBotDialog.tsx)、[对话](../../apps/web/src/components/ChannelWorkspace.tsx)、[附件组合](../../apps/web/src/composer-context.ts)、[Server 路由](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/app.ts)。
 
 ## Agent 执行、产出与监督
 
@@ -44,7 +44,7 @@
 | 信息栏 | 当前频道审批、进行中、最近结果，可展开工作区和主机概览。 | 限于已加载记录，不是无限历史分析。 |
 | Token 用量 | 汇总范围内已知输入/输出，保留未知/无数据状态。 | 不是供应商额度、余额、费用或账单；不推算缺失用量。 |
 
-证据：[Agent 工具](../../apps/server/src/native-agent.ts)、[运行时接线](../../apps/server/src/index.ts)、[有界上下文](../../apps/server/src/postgres-agent-store.ts)、[详情](../../apps/web/src/components/RunInspector.tsx)、[控制](../../apps/web/src/components/NativeRunControls.tsx)、[产物](../../apps/web/src/components/ArtifactCard.tsx)、[审批](../../apps/web/src/components/ApprovalCard.tsx)、[信息栏](../../apps/web/src/components/ContextRail.tsx)。
+证据：[Agent 工具](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts)、[运行时接线](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/index.ts)、[有界上下文](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-agent-store.ts)、[详情](../../apps/web/src/components/RunInspector.tsx)、[控制](../../apps/web/src/components/NativeRunControls.tsx)、[产物](../../apps/web/src/components/ArtifactCard.tsx)、[审批](../../apps/web/src/components/ApprovalCard.tsx)、[信息栏](../../apps/web/src/components/ContextRail.tsx)。
 
 ## 员工档案与审核式学习
 
@@ -60,7 +60,7 @@
 
 学习已经有部分真实闭环：成功任务可提出一条可复用经验。Owner 可以编辑标题/正文、接受为内部不可迁移记忆，或拒绝并删除候选；另行勾选才能允许后续模型使用。审核前不是生效记忆，也不可供后续任务读取；Agent 不能自己批准。这是审核式学习，不是观察用户电脑后自动学习。
 
-证据：[主页/记忆](../../apps/web/src/components/EmployeeProfileView.tsx)、[进化](../../apps/web/src/components/EmployeeEvolutionArchive.tsx)、[技能](../../apps/web/src/components/EmployeeSkillReview.tsx)、[候选经验](../../apps/web/src/components/KnowledgeReviewPanel.tsx)、[运行时工具](../../apps/server/src/native-agent.ts)。
+证据：[主页/记忆](../../apps/web/src/components/EmployeeProfileView.tsx)、[进化](../../apps/web/src/components/EmployeeEvolutionArchive.tsx)、[技能](../../apps/web/src/components/EmployeeSkillReview.tsx)、[候选经验](../../apps/web/src/components/KnowledgeReviewPanel.tsx)、[运行时工具](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts)。
 
 ## 插件与可迁移员工
 
@@ -86,7 +86,7 @@ SKILL.md 导入接受一个不超过 12 KiB 的 Markdown 文档及版本号，�
 | 关于/帮助/反馈 | 平台/Electron、Hermes 归因、GitHub文档和问题链接。 | 不自动发送反馈，没有更新检查流程。 |
 | 移动端 | 响应式频道/Bot/审批/主机入口。 | 源码存在不构成移动端或所有平台验收。 |
 
-证据：[自动任务](../../apps/web/src/components/AutomationsScreen.tsx)、[页面 API](../../apps/web/src/destination-api.ts)、[Server](../../apps/server/src/app.ts)、[主机](../../apps/web/src/components/NodeManagerDialog.tsx)、[本机 Worker](../../apps/web/src/components/DesktopLocalWorkerScreen.tsx)、[设置](../../apps/web/src/components/DesktopSettingsScreen.tsx)、[模型设置](../../apps/web/src/components/ModelSettingsScreen.tsx)、[偏好](../../apps/web/src/workspace-preferences.ts)、[移动端](../../apps/web/src/components/MobileNavigation.tsx)。
+证据：[自动任务](../../apps/web/src/components/AutomationsScreen.tsx)、[页面 API](../../apps/web/src/destination-api.ts)、[Server](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/app.ts)、[主机](../../apps/web/src/components/NodeManagerDialog.tsx)、[本机 Worker](../../apps/web/src/components/DesktopLocalWorkerScreen.tsx)、[设置](../../apps/web/src/components/DesktopSettingsScreen.tsx)、[模型设置](../../apps/web/src/components/ModelSettingsScreen.tsx)、[偏好](../../apps/web/src/workspace-preferences.ts)、[移动端](../../apps/web/src/components/MobileNavigation.tsx)。
 
 ## 本次分享调整
 
@@ -101,7 +101,7 @@ SKILL.md 导入接受一个不超过 12 KiB 的 Markdown 文档及版本号，�
 | 产出文件 | 下载任务实际生成的成果。 | 不是员工身份或聊天全文。 |
 | Bot/员工模板 | 按可迁移员工包规则预览并导出选定 Bot。 | 不是任务方法总结、完整克隆、权限转移或认证所有权转移。 |
 
-证据：[分享面板](../../apps/web/src/components/ShareConversationDialog.tsx)、[下载](../../apps/web/src/components/ArtifactCard.tsx)、[工具栏/导出路由](../../apps/web/src/App.tsx)、[导出预览](../../apps/web/src/components/ExportEmployeeDialog.tsx)、[包规则](../../apps/server/src/employee-package.ts)。
+证据：[分享面板](../../apps/web/src/components/ShareConversationDialog.tsx)、[下载](../../apps/web/src/components/ArtifactCard.tsx)、[工具栏/导出路由](../../apps/web/src/App.tsx)、[导出预览](../../apps/web/src/components/ExportEmployeeDialog.tsx)、[包规则](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/employee-package.ts)。
 
 ## 与整体产品设想的对照
 
