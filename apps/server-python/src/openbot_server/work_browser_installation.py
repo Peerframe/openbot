@@ -25,9 +25,10 @@ def browser_profiles_from_file(path, connections):
             return result
         value = json.loads(read_owned_file(path, private=True, maximum=16384), object_pairs_hook=pairs)
         if (type(value) is not dict or not {'version','routes'} <= set(value)
-                or set(value) - {'version','routes','humanControl'}
+                or set(value) - {'version','routes','humanControl','pageOrigins'}
                 or type(value['version']) is not int or value['version'] != 1):
             raise ValueError()
-        return BrowserProfiles(connections, routes=value['routes'], human_control=value.get('humanControl', False))
+        return BrowserProfiles(connections, routes=value['routes'], human_control=value.get('humanControl', False),
+                               page_origins=value.get('pageOrigins'))
     except Exception:
         raise InvalidWork('browser_installation_invalid') from None

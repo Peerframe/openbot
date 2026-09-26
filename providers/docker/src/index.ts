@@ -1,10 +1,15 @@
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
-import { parseBrowserClickInstruction } from "@openbot/protocol";
+import {
+  parseBrowserClickInstruction,
+  browserFrameSchema,
+  browserPageSchema,
+} from "@openbot/protocol";
 import type { ComputerProvider, ProviderArtifact, ProviderRunInput } from "@openbot/provider-sdk";
 import { BrowserCoordinator } from "./browser.js";
 import { computerRequest } from "./computer-request.js";
 import { commitReviewedClick, prepareReviewedClick } from "./reviewed-click.js";
+import { runBrowserTask } from "./browser-task.js";
 
 const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024;
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -13,6 +18,7 @@ export interface DockerProviderOptions {
   computerUrl: string;
   computerToken: string;
   enableBrowserSessions?: boolean;
+  enableBrowserTasks?: boolean;
   allowPrivateHosts?: boolean;
   inputOrigins?: string[];
   fetcher?: typeof fetch;
@@ -34,6 +40,8 @@ export function createDockerProvider(options: DockerProviderOptions): ComputerPr
       throw new Error("Browser input origins must be exact HTTPS or loopback origins.");
   }
   const activeBots = new Set<string>();
+  if (options.enableBrowserTasks && (!options.enableBrowserSessions || !inputOrigins.size))
+    throw new Error("Browser tasks require sessions and explicit trusted origins.");
   const computerUrl = options.computerUrl.replace(/\/$/, "");
 
   const browser = new BrowserCoordinator(
@@ -59,6 +67,26 @@ export function createDockerProvider(options: DockerProviderOptions): ComputerPr
     ...(options.enableBrowserSessions === true
       ? { browser: (command, signal) => browser.command(command, signal) }
       : {}),
+    ...(options.enableBrowserTasks === true
+      ? {
+          browserTask: (command, signal) =>
+            browser.run(command.botId, signal, async () => {
+              if (command.action.kind !== "agent" || Date.parse(command.expiresAt) <= Date.now())
+                throw new Error("Invalid Work browser operation.");
+              const result = await runBrowserTask({
+                request: (path, body) => browser.request(command.botId, path, signal, body),
+                checkUrl: browser.checkUrl,
+                origins: [...inputOrigins],
+                action: command.action.operation,
+                signal,
+              });
+              return {
+                frame: browserFrameSchema.parse(result.frame),
+                page: browserPageSchema.parse(result.page),
+              };
+            }),
+        }
+      : {}),
     id: "docker",
     displayName: "CopilotKit/OpenBot agent-computer",
     platforms: ["linux", "windows", "macos"],
@@ -66,6 +94,16 @@ export function createDockerProvider(options: DockerProviderOptions): ComputerPr
     capabilityManifest: [
       ...(options.enableBrowserSessions === true
         ? [{ id: "browser.session" as const, version: 1, providerId: "docker", constraints: {} }]
+        : []),
+      ...(options.enableBrowserTasks === true
+        ? [
+            {
+              id: "browser.page" as const,
+              version: 1,
+              providerId: "docker",
+              constraints: { trustedOriginsOnly: true },
+            },
+          ]
         : []),
       { id: "browser.observe", version: 1, providerId: "docker", constraints: {} },
       { id: "screen.capture", version: 1, providerId: "docker", constraints: {} },

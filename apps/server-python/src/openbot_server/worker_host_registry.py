@@ -339,6 +339,10 @@ class WorkerHostRegistry:
         frame = parse_frame(value, server=True)
         self._require_binding(frame["nodeId"], binding)
         connection = self._nodes.get(frame["nodeId"])
+        if (frame['action']['kind'] == 'agent' and (connection is None or not any(
+                cap['id'] == 'browser.page' and cap['version'] == 1 and cap['providerId'] == 'docker'
+                for cap in connection.node['capabilityManifest']))):
+            raise RuntimeError('Browser page Host unavailable.')
         if (self._closed or connection is None or len(self._browser_pending) >= 64
                 or frame["requestId"] in self._browser_pending
                 or not any(cap["id"] == "browser.session" and cap["version"] == 1 and cap["providerId"] == "docker"

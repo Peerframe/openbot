@@ -9,13 +9,12 @@
 | --- | --- | --- |
 | 架构历史，27 条迁移 | `c33e03f1a14de739196113769c59fdaace9029e7` | 恢复旧数据，再通过现有生产启动守卫执行增量迁移。 |
 | 功能历史，19 条迁移 | `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` | 直接升级必须在索引 17 失败；专用实验随后将有限兼容记录转入新建目标库。 |
-| 已验证目标，44 条迁移 | `618e3996531f14e5ada6c025f9eea1bc559ca895` | SQL 与 journal 必须匹配 `target-history.json`；变化后重新验证。 |
+| 已验证目标，45 条迁移 | 工作树父提交 `63242fc06d9ba3efe018509f7e0868ac293ea7f7`，附当前 SQL／journal 准确哈希 | SQL 与 journal 必须匹配 `target-history.json`；变化后重新验证。 |
 
-当前目标于2026-09-26通过全部40项历史迁移／恢复检查。固定提交已包含0043浏览器档案表；
-[当前证据](evidence/browser-profiles-result.json)保留准确SQL／journal哈希及真实执行结果。
-八项清理测试也通过；旧43条迁移的[证据](evidence/command-readiness-result.json)保留。
-历史SQL、夹具数据和验收断言未修改。新增浏览器档案表在此夹具中为空，含活动浏览器任务的
-恢复另作验收。
+当前目标于2026-09-26通过全部40项历史迁移／恢复检查，包含0044页面范围表。
+[当前证据](evidence/browser-pages-result.json)记录准确SQL／journal哈希及真实结果，八项清理测试也通过。
+44条迁移的[历史证据](evidence/browser-profiles-result.json)保持原样。历史SQL、夹具数据与断言未修改；
+此夹具中浏览器表为空，实际浏览器恢复使用独立的[产品证据](../work-journey/evidence/product-browser-pages.json)。
 
 两条旧历史共享 0000–0016。`histories/common` 保存公共 SQL 原始字节，两个分支目录保存各自后缀。
 history JSON 记录每份 SQL 的哈希、时间戳和来源提交。`sources.mjs` 校验这些快照、复现已有

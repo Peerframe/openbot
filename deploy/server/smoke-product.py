@@ -74,7 +74,7 @@ def qualify(image):
         created.append(server)
         docker('run','-d','--name',server,*common,'-e','OPENBOT_CONTROL_OWNER_PASSWORD=openbot-product-smoke-synthetic-owner',image)
         ready(server)
-        assert sql('select count(*) from drizzle.__drizzle_migrations')=='44'
+        assert sql('select count(*) from drizzle.__drizzle_migrations')=='45'
         before=sql('select hash,created_at from drizzle.__drizzle_migrations order by id')
         client=(HERE/'product-smoke-client.py').read_bytes()
         first=json.loads(docker('exec','-i',server,PYTHON,'-I','-B','-',f'http://{server}:3001','create',input=client,timeout=150))
@@ -88,7 +88,7 @@ def qualify(image):
         second=json.loads(docker('exec','-i',server,PYTHON,'-I','-B','-',f'http://{server}:3001','restart',input=client,timeout=40))
         assert sql('select hash,created_at from drizzle.__drizzle_migrations order by id')==before
         docker('stop','--time','20',server);assert inspect(server)['State']['ExitCode'] in (0,143)
-        result={'ok':True,'architecture':metadata['Architecture'],'migrations':44,'first':first,'restart':second,
+        result={'ok':True,'architecture':metadata['Architecture'],'migrations':45,'first':first,'restart':second,
             'preflightBeforeSchema':True,'sigtermExitWithoutKill':True,'temporalConfigured':False,'realModelCalled':False}
     finally:
         for name in reversed(created):

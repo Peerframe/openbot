@@ -14,7 +14,7 @@ commit817d46c; [job-level evidence](../../docs/research/python-product-container
 is distinct from the overall PR, which still has other failed checks. Configured Temporal and
 deployment remain separate gates.
 
-The current browser increment advances the build and smoke pin to44 migrations. The historical
+The current browser increment advances the build and smoke pin to45 migrations. The historical
 43-entry image evidence above is retained; new native CI must qualify the updated image.
 
 `serve.py` accepts only `OPENBOT_CONTROL_HOST=127.0.0.1` or `0.0.0.0`, with127.0.0.1 as the
@@ -31,7 +31,7 @@ python3 deploy/server/smoke-product.py --image openbot-python-product:candidate
 The smoke creates only random-name disposable PostgreSQL/API containers, an internal network and
 one owned state volume, then removes those exact resources. No existing database, Docker socket
 mount, SSH, paid provider, Temporal engine or user data is selected. It checks real Owner HTTP,
-real built Web, all44 canonical migrations, Office/PDF extraction and blank-image offline OCR
+real built Web, all45 canonical migrations, Office/PDF extraction and blank-image offline OCR
 initialization, original attachment/key/schema persistence and SIGTERM stop/restart. Blank OCR
 checks engine/language loading, not recognition quality. The Uvicorn0.53.0 implementation restores
 and re-raises SIGTERM after shutdown, so the smoke accepts exit0 or143, never forced-kill137.

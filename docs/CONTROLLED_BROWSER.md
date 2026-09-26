@@ -132,3 +132,44 @@ This does not qualify public egress, autonomous page interpretation, host profil
 general isolated browser deployment. Use trusted test pages with known behavior as described above.
 See the [implementation and validation record](research/work-browser-capture.md).
 See the [handover qualification](research/work-browser-handover.md) for the input/control boundary.
+
+
+## Python candidate: approved page reading and input
+
+A separate page scope extends newly created Tasks on explicitly trusted test origins. Apply
+canonical migrations through `0044_work_browser_page_scopes`. Keep the capture configuration above
+and add a `pageOrigins` map using the same Bot id:
+
+```json
+"pageOrigins": {
+  "00000000-0000-4000-8000-000000000001": ["https://your-owned-test.example"]
+}
+```
+
+On that original Node, also set `OPENBOT_DOCKER_BROWSER_TASKS=true` and
+`OPENBOT_DOCKER_INPUT_ORIGINS=https://your-owned-test.example`, alongside the existing session opt-in.
+Use one to ten exact HTTPS origins (no trailing slash, path or credentials); an owned local fixture
+may use an exact `http://127.0.0.1:<port>` origin. These values are private deployment configuration,
+not model instructions. Existing capture-only Tasks never gain page capabilities, and changed
+configuration does not widen a Task's frozen scope. Restart Control and Node after configuration.
+
+New Tasks offer `read_browser`, `navigate_browser`, `click_browser`, `type_browser`,
+`press_browser_key` and `scroll_browser`. Each operation, including a read, requires its own Owner
+approval in the existing Action view. At most sixteen page attempts are allowed per Task. Input
+must reference a previous applied observation from this Task, with the original Node connection,
+control revision, URL, screenshot digest and element snapshot. A changed page or actual Owner
+correction invalidates the input. Filling replaces a field's value; empty text clears it.
+An uncertain attempt is never resent. Human takeover retains the same exclusive pause/return rules.
+
+The model receives bounded, untrusted page text and element data (16,000 characters, 200 elements,
+64 KiB JSON maximum). It does not receive screenshot pixels. A successful response records an
+observed attempt; it does not independently verify a payment, message delivery or other external
+transaction. Reports are reviewed before publication. The real local product test covers separate
+approvals, Unicode fill, one click, page reading, report download, an actual Worker stop/restart and
+replay without repeated effects; its model responses are synthetic.
+
+This candidate requires pages you control with known behavior. Allowed origins and screenshot
+checks do not enforce network isolation against redirects, scripts or subresources. General
+untrusted browsing, isolated Linux browser deployment and complete Control/Node replacement remain
+separate retirement gates. See the [page action record](research/work-browser-page-actions.md) and
+[reproducible product probe](../experiments/work-journey/README.md#approved-browser-product-probe).

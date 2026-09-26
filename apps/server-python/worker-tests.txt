@@ -42,6 +42,7 @@ tests/test_work_command_installation.py
 tests/test_command_owner_profile.py
 tests/test_work_product_commands.py
 tests/test_work_product_browser.py
+tests/test_work_browser_page_actions.py
 tests/test_worker_command_channel.py
 tests/test_model_media.py
 tests/test_work_product_media.py

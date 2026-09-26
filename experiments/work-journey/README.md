@@ -421,3 +421,42 @@ authorized one-shot product3 remote command also passed the real Linux product c
 lifetime/cleanup and artifact/replay checks; model HTTP remained synthetic. See
 [product3 evidence](evidence/product-command-remote-product3.json). Prior consumed identities must
 not be retried. Neither result qualifies general browser egress or a default-backend switch.
+
+
+## Approved browser product probe
+
+`product_browser_probe.py` exercises the actual Python product entry, Node/Docker adapter, Chromium,
+PostgreSQL and mTLS Temporal. The target page and seven model/reviewer responses are synthetic;
+no personal profile or paid model account is used. It approves navigate/fill/click/read separately,
+closes the actual SDK Worker before click approval, restarts it with the same Node connection,
+checks one real form submission and report download, then replays history with zero new effects.
+This is a trusted local-page qualification, not public egress or isolated Linux Host acceptance.
+[Local evidence](evidence/product-browser-pages.json) identifies the tested scope.
+
+Use a POSIX host with Docker, the repository Node/npm versions, Bun1.3.14, OpenSSL and a Python3.12
+virtual environment containing `apps/server-python/requirements-worker.lock`. From a fresh checkout:
+
+```sh
+npm ci
+npm exec -- turbo run build --filter=@openbot/node... --filter=@openbot/db
+python3.12 -m venv /tmp/openbot-browser-worker
+/tmp/openbot-browser-worker/bin/python -m pip install -r apps/server-python/requirements-worker.lock
+python3 -B experiments/work-journey/product_browser_upstream.py /tmp/openbot-browser-upstream
+npm ci --ignore-scripts --prefix /tmp/openbot-browser-upstream
+PLAYWRIGHT_BROWSERS_PATH=/tmp/openbot-browser-binaries node /tmp/openbot-browser-upstream/node_modules/playwright/cli.js install chromium
+/tmp/openbot-browser-worker/bin/python -B experiments/work-journey/product_browser_probe.py \
+  --output /tmp/openbot-browser-product \
+  --upstream /tmp/openbot-browser-upstream \
+  --browsers /tmp/openbot-browser-binaries
+```
+
+Choose unused output/source directories. On a fresh Linux machine use Playwright's
+`install --with-deps chromium` to provide OS libraries. The source preparer verifies every pinned
+public file and MIT license, then restricts the upstream listener to loopback and supplies a
+separate integrity-locked fixture dependency tree. The probe verifies those bytes before starting;
+it never launches the user's normal browser. Source acquisition was also tested without GitHub
+credentials. The same commands run in the Python CI job, which uploads only `RESULT.json`.
+Logs, temporary credentials, database state, history and synthetic browser profiles stay in the
+private output directory. API, Node, upstream browser, Temporal and owned database resources are
+closed in `finally`; dependencies remain reusable. Essential authority/cancellation/correction
+regressions are in `test_work_browser_page_actions.py` and the Docker adapter's tests.

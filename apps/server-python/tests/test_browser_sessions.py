@@ -103,12 +103,13 @@ async def enroll_worker(seed, http):
 
 
 @asynccontextmanager
-async def worker(seed, http, url, *, capability=True, hook=None, credential=None):
+async def worker(seed, http, url, *, capability=True, hook=None, credential=None, page_hook=None):
     credential = credential or await enroll_worker(seed, http)
     async with connect(url, proxy=None, compression=None, open_timeout=3, close_timeout=1) as ws:
         await ws.send(json.dumps(dict(type="node.hello", protocolVersion="0.9.0", nodeId=seed["node"],
             name="Synthetic Browser Host", platform="linux", capabilities=["browser"],
-            capabilityManifest=[CAP] if capability else [], maxConcurrentRuns=1, sentAt=now(),
+            capabilityManifest=([CAP]+([dict(id='browser.page',version=1,providerId='docker',constraints={})]
+                if page_hook is not None else [])) if capability else [], maxConcurrentRuns=1, sentAt=now(),
             credential=credential)))
         assert json.loads(await ws.recv())["accepted"] is True
         calls = []
@@ -123,8 +124,9 @@ async def worker(seed, http, url, *, capability=True, hook=None, credential=None
                     override = await hook(command)
                     if override is False: continue
                     if isinstance(override, dict): frame = override
+                extra = await page_hook(command) if page_hook is not None and command['action']['kind']=='agent' else {}
                 await ws.send(json.dumps(dict(type="browser.result", protocolVersion="0.9.0", nodeId=seed["node"],
-                    sessionId=command["sessionId"], requestId=command["requestId"], ok=True, frame=frame)))
+                    sessionId=command["sessionId"], requestId=command["requestId"], ok=True, **({"frame":frame}|extra))))
         task = asyncio.create_task(reply())
         try:
             yield calls, ws

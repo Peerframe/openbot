@@ -72,6 +72,7 @@ export type NodeCapability = z.infer<typeof nodeCapabilitySchema>;
 
 export const versionedCapabilityIdSchema = z.enum([
   "browser.session",
+  "browser.page",
   "browser.observe",
   "browser.input",
   "screen.capture",

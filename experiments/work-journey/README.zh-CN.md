@@ -317,3 +317,35 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=experiments/work-journey:experiments/linux-
 真实Linux产品命令链路、原期限与清理、产物及重放检查；模型HTTP仍为合成，见
 [product3证据](evidence/product-command-remote-product3.json)。已消费身份不得重跑；两项结果均不
 代表通用浏览器出口或默认后端切换已经验收。
+
+
+## 经审批的浏览器产品验收
+
+`product_browser_probe.py`连接真实 Python 产品入口、Node／Docker适配器、Chromium、PG 和
+mTLS Temporal，测试页面及七次模型／审核响应为合成内容，无私人档案或付费模型账户。
+它分别批准导航／填字／点击／读取，在点击批准前关闭真实 SDK Worker，保留同一个 Node 连接
+并恢复 Worker，核对表单只提交一次、报告可下载，最后重放历史且没有新增动作。
+这是可信本地页面验收，不代表公网出口或隔离 Linux Host 通过，见[结果](evidence/product-browser-pages.json)。
+
+准备 POSIX、Docker、项目支持的 Node／npm、Bun1.3.14、OpenSSL 和 Python3.12。从新克隆运行：
+
+```sh
+npm ci
+npm exec -- turbo run build --filter=@openbot/node... --filter=@openbot/db
+python3.12 -m venv /tmp/openbot-browser-worker
+/tmp/openbot-browser-worker/bin/python -m pip install -r apps/server-python/requirements-worker.lock
+python3 -B experiments/work-journey/product_browser_upstream.py /tmp/openbot-browser-upstream
+npm ci --ignore-scripts --prefix /tmp/openbot-browser-upstream
+PLAYWRIGHT_BROWSERS_PATH=/tmp/openbot-browser-binaries node /tmp/openbot-browser-upstream/node_modules/playwright/cli.js install chromium
+/tmp/openbot-browser-worker/bin/python -B experiments/work-journey/product_browser_probe.py \
+  --output /tmp/openbot-browser-product \
+  --upstream /tmp/openbot-browser-upstream \
+  --browsers /tmp/openbot-browser-binaries
+```
+
+选择尚不存在的输出／源码目录。新 Linux 环境可用 `install --with-deps chromium`安装系统库。
+准备器检查每份固定公开源码和 MIT 许可证哈希，只修改回环监听地址并提供独立的依赖锁。
+验收运行前再次检查，不启动用户日常浏览器；无 GitHub 凭据的公开下载也已验证。
+Python CI 运行相同流程，只上传 `RESULT.json`。日志、临时凭据、数据库、历史与合成浏览器
+档案保留在私有输出目录；`finally`关闭 API／Node／上游浏览器／Temporal 并删除独占数据库，
+依赖可复用。权限／取消／纠正回归保存在 `test_work_browser_page_actions.py`和 Docker 适配器测试中。

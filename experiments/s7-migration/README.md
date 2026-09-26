@@ -9,14 +9,14 @@ preparation for S7, not a production migration utility or evidence that S7 is co
 | --- | --- | --- |
 | Architecture, 27 migrations | `c33e03f1a14de739196113769c59fdaace9029e7` | Restore old data, then apply current migrations with the existing production startup guard. |
 | Feature, 19 migrations | `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` | Direct upgrade fails at index 17. A separate fixture-only transfer copies a bounded compatible record set into a freshly migrated target. |
-| Qualified target, 44 migrations | `618e3996531f14e5ada6c025f9eea1bc559ca895` | SQL bytes and journal entries must match `target-history.json`; changes require an explicit requalification. |
+| Qualified target, 45 migrations | Working-tree parent `63242fc06d9ba3efe018509f7e0868ac293ea7f7`, with exact current SQL/journal hashes | SQL bytes and journal entries must match `target-history.json`; changes require an explicit requalification. |
 
-The current target passed all40 retained migration/restore cases on2026-09-26. The committed
-source includes0043 browser profiles; exact SQL/journal hashes and the real result are retained
-in [the current evidence](evidence/browser-profiles-result.json). The eight cleanup cases also
-passed. Historical43-entry [evidence](evidence/command-readiness-result.json) remains unchanged.
-Source histories, fixture data and qualification assertions were not modified. The new browser
-profile table is empty in this fixture; populated browser task recovery is a separate gate.
+The current target passed all40 retained migration/restore cases on2026-09-26. The target includes
+0044 page scopes; exact SQL/journal hashes and the real result are retained in
+[the current evidence](evidence/browser-pages-result.json). The eight cleanup cases also passed.
+Historical44-entry [evidence](evidence/browser-profiles-result.json) remains unchanged. Source
+histories, fixture data and assertions were not modified. Browser tables are empty in this fixture;
+populated browser recovery has separate [product evidence](../work-journey/evidence/product-browser-pages.json).
 
 The two old histories share migrations 0000–0016. `histories/common` contains those original bytes;
 `histories/feature` and `histories/architecture` contain their different suffixes. The history JSON

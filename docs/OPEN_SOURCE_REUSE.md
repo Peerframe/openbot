@@ -776,6 +776,17 @@ Real macOS Chromium/Node/Python/PG and the retained Web validate trusted synthet
 exclusive control, close/reconnect pause and explicit return. Public egress and autonomous page
 interpretation remain separate gates.
 
+The [Work page adapter](research/work-browser-page-actions.md) reuses those same upstream
+`/read`, `/snapshot` and one-shot input endpoints through the existing approved Action/receipt path.
+DeepSeek implemented the thin TypeScript adapter; integration retains exact-origin opt-in, immutable
+new-Task page scope, original observation/reference/connection checks and no-retry recovery. No
+production dependency or upstream implementation is copied. The reproducible fixture separately
+fetches hash-pinned MIT upstream sources with their license and locks the existing Playwright pair.
+Official MIT setup-bun2.2.0 (commit0c5077e51419868618aeaa5fe8019c62421857d6) installs Bun1.3.14 in CI;
+source, tests, release and open issues are recorded in the review. Actual local Worker restart,
+approvals, Unicode input, read/report/download and replay passed with synthetic model HTTP.
+Public egress and isolated Linux browser product execution remain unqualified.
+
 The reviewed-click [handover repair](research/browser-approval-handover.md) retains pinned
 agent-computer `257c1280d684089be9adb0b35cce262efc7064bf` (MIT) and the existing Server approval
 contract. Only the local adapter changes: approval waiting releases the Bot queue, human take

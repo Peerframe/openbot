@@ -10,7 +10,7 @@
 也已通过，见[任务级证据](../../docs/research/python-product-container.md#hosted-native-matrix-result)。
 同一轮 PR 仍有其他检查失败，不能据此宣称整体通过；配置 Temporal 与部署仍另行验收。
 
-当前浏览器增量将构建和smoke固定为44条迁移。上方43条迁移镜像证据保留原范围；
+当前浏览器增量将构建和smoke固定为45条迁移。上方43条迁移镜像证据保留原范围；
 更新后的镜像需要新的原生CI验收。
 
 `serve.py`的`OPENBOT_CONTROL_HOST`仅接受127.0.0.1或0.0.0.0，默认仍为127.0.0.1；
@@ -25,7 +25,7 @@ python3 deploy/server/smoke-product.py --image openbot-python-product:candidate
 
 smoke 只创建随机名称的独立 PG／API 容器、内部网络和一个状态卷，并清理这些确切资源。
 不选择已有数据库、Docker socket挂载、SSH、付费模型、Temporal引擎或用户数据。
-入口检查真实 Owner HTTP、真实 Web、canonical43迁移、Office／PDF提取及空白图像离线OCR初始化，
+入口检查真实 Owner HTTP、真实 Web、canonical45迁移、Office／PDF提取及空白图像离线OCR初始化，
 再检查原附件／密钥／迁移历史持久化和SIGTERM停止／重启。空白OCR仅验证引擎和语言加载，不证明识别质量。
 Uvicorn0.53.0关闭完成后会恢复并重新发出SIGTERM，因此接受退出码0或143，不接受强杀137。
 缺少Owner密码、无效Origin／Temporal路径和隐藏Python依赖必须在创建迁移schema前失败。

@@ -101,6 +101,8 @@ async def resolve_product_source(db, task, bot_id, *, command_profiles=None, bro
                     raise WorkConflict('browser_profile_required')
                 profile,digest = await browser_profiles.resolve_in_transaction(db,task)
                 snapshot = dict(browser_profile_digest=digest)
+                page_scope = await browser_profiles.page_scope(db, task)
+                if page_scope is not None: snapshot['browser_page_scope_digest'] = page_scope['sha256']
             else:
                 from .work_command_profiles import CommandProfiles
                 if type(command_profiles) is not CommandProfiles:
@@ -134,7 +136,13 @@ def product_capabilities(source):
         if (source.get('source_kind')!='channel' or type(digest) is not str or len(digest)!=64
                 or any(c not in '0123456789abcdef' for c in digest)):
             raise WorkConflict('command_profile_required')
-        return _BROWSER_CAPABILITIES if is_browser else _COMMAND_CAPABILITIES
+        if is_browser:
+            page = source.get('browser_page_scope_digest')
+            if page is not None and (type(page) is not str or len(page) != 64
+                    or any(c not in '0123456789abcdef' for c in page)):
+                raise WorkConflict('browser_page_scope_changed')
+            return _BROWSER_CAPABILITIES | (frozenset(('browser_page',)) if page is not None else frozenset())
+        return _COMMAND_CAPABILITIES
     if source.get('source_kind')=='task':
         from .work_native_scope import capabilities
         return _NATIVE_CAPABILITIES | capabilities(source)

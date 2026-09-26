@@ -48,7 +48,7 @@ def _timestamp(value):
 
 Timestamp = Annotated[str, AfterValidator(_timestamp)]
 Capability = Literal["browser", "shell", "screenshot", "cua", "lume", "coder"]
-CapabilityId = Literal["browser.session", "browser.observe", "browser.input", "screen.capture", "desktop.observe",
+CapabilityId = Literal["browser.session", "browser.page", "browser.observe", "browser.input", "screen.capture", "desktop.observe",
                        "desktop.input", "shell.execute", "filesystem.read", "filesystem.write",
                        "computer.takeover", "vm.manage", "code.execute"]
 

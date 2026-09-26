@@ -1,6 +1,6 @@
 # Architecture migration handoff — 2026-09-26
 
-## Current checkpoint — routed browser handover and Linux product acceptance
+## Current checkpoint — approved browser page actions and Worker recovery
 
 - Delivery: PR #96 is merged into `main` at `b186c11`, with all15 hosted jobs green on its accepted
   head. New browser work is published as draft [PR #98](https://github.com/Peerframe/openbot/pull/98)
@@ -19,6 +19,15 @@
   a narrow-screen control button compressed by long names. This is trusted synthetic-page evidence,
   not general public egress or an isolated Linux browser product.46 focused backend and9 React
   tests passed; earlier187 adjacent and30 Node/config checks remain separately scoped evidence.
+- New page increment: immutable0044 page scope enables six approved tools only for new Tasks on
+  trusted origins. DSH implemented the thin TS adapter from the approved packet; root integrated
+  protocol, Node, Server authority and replay. Actual local Chromium/Node/product API/PG/mTLS
+  Temporal passed navigate/Unicode fill/click/read/report/download and replay. The original click
+  was approved while the SDK Worker was stopped; restart with the same Node connection applied it
+  once. New checkpoint ids do not invalidate unchanged instructions; actual corrections do.
+  [Evidence](../experiments/work-journey/evidence/product-browser-pages.json) and the repository
+  probe are reproducible without private paths or paid model credentials. Synthetic model HTTP
+  is not visual inference. The probe now runs in CI with fixed Bun/upstream/Playwright versions.
 - Linux command: specifically authorized product3 passed one real Work→Node→protected Linux Host
   execution on canonical44, with real Owner approval, PostgreSQL/mTLS Temporal, exact CSV,
   independent synthetic-model review, two downloads and offline replay. Original50/150-second
@@ -33,15 +42,17 @@
   [Safe result](../experiments/work-journey/evidence/active-paired-restore-schema44.json).
 - Packaging/checks: source618e399 Preview passed staged/packaged startup, restart preservation,
   cleanup, exact162-module/SQL comparison and two actual bundled mTLS Worker starts. The owned
-  engine was removed. Native GUI/Keychain and full packaged inference remain separate. Current CI
-  exposed the stale43-entry container/S7 pins and a missing PR research section; both are corrected and all40 historical
-  migration/restore plus8 cleanup cases passed on44. The updated head still requires hosted CI. No installed app replacement,
-  default-backend switch or release has occurred.
-- Remaining retirement gates: model page interpretation and approved browser actions with a real
-  enforced egress/Host boundary; complete product browser continuation after interruption; final
-  source/package/replacement qualification. Manual Owner page input is now accepted in its scoped
-  local path. Keep the replaced TS business Server until remaining gates pass. Preserve the frozen
-  59-file oracle and retained TS Node/Provider/publisher/MCP tooling.
+  engine was removed. Native GUI/Keychain and full packaged inference remain separate. CI
+  on63242fc passed13 individual jobs; Python qualification failed because the real Node fixture's
+  dependency closure had not been built. The shared test runner now builds that closure. The page
+  increment advances container/S7 pins to45;40 migration/restore cases and8 cleanup cases passed.
+  `npm run check` passed;15 page authority tests and57 combined page/result tests passed on real PG.
+  Base Python passed1306 with463 environment-dependent skips. Hosted CI for the new head remains
+  pending. Installed app/default backend are unchanged.
+- Remaining retirement gates: enforced browser egress and isolated Linux product Host; full
+  Control/Node interruption/replacement recovery beyond the accepted same-connection Worker
+  restart; final source/package/installed replacement qualification. Keep the replaced TS business
+  Server until these gates pass, and retain the frozen59-file oracle plus TS Node/Provider/tools.
 - Retained evidence: DSH implemented the browser profile module from the explicitly approved
   packet; its SQL/identity corrections and integration are committed. The real Kimi Task used four
   receipts/8,854 tokens and downloaded231 bytes; do not resubmit. Accepted native case2 and Linux

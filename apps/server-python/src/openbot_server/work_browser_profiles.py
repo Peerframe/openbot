@@ -1,5 +1,7 @@
 """Insert-only browser capture snapshots; deployment-routed, no command or browser effects."""
 from typing import Annotated, Literal
+import re
+from urllib.parse import urlsplit
 
 from psycopg.types.json import Jsonb
 from pydantic import Field, TypeAdapter
@@ -26,6 +28,31 @@ class BrowserProfile(Strict):
 _BROWSER_PROFILE = TypeAdapter(BrowserProfile)
 _IDENTITY = TypeAdapter(Id)
 _NODE = TypeAdapter(NodeId)
+
+
+def browser_origin(value):
+    """Canonical HTTP(S) origins only; this syntax/policy check is not egress enforcement."""
+    if (type(value) is not str or len(value) > 2048 or not value.isascii()
+            or any(c.isspace() or ord(c) < 32 for c in value) or '\\' in value):
+        raise ValueError('browser_origin_invalid')
+    url = urlsplit(value)
+    host = url.hostname
+    if (not host or url.scheme not in ('http', 'https') or url.username is not None
+            or url.password is not None or not re.fullmatch(r'[a-z0-9]+(?:[a-z0-9.-]*[a-z0-9])?', host)
+            or url.scheme == 'http' and host != '127.0.0.1'):
+        raise ValueError('browser_origin_invalid')
+    port = url.port
+    if port is not None and not 1 <= port <= 65535: raise ValueError('browser_origin_invalid')
+    origin = url.scheme+'://'+host+((':'+str(port)) if port and port != (443 if url.scheme == 'https' else 80) else '')
+    if url.netloc != origin.split('://', 1)[1]: raise ValueError('browser_origin_invalid')
+    return origin
+
+
+def _origins(values):
+    if (type(values) is not list or not 1 <= len(values) <= 10
+            or any(browser_origin(value) != value for value in values) or len(values) != len(set(values))):
+        raise ValueError('browser_origins_invalid')
+    return list(values)
 
 
 def _profile(value):
@@ -60,7 +87,7 @@ async def browser_source(db, task):
 
 
 class BrowserProfiles:
-    def __init__(self, connections, *, routes, human_control=False):
+    def __init__(self, connections, *, routes, human_control=False, page_origins=None):
         # Routes are trusted deployment composition, never a model/Node supplied allowlist.
         if type(human_control) is not bool:
             raise ValueError('browser_human_control_invalid')
@@ -80,6 +107,12 @@ class BrowserProfiles:
             if key in self.routes:
                 raise ValueError('browser_route_duplicate')
             self.routes[key] = value
+        if page_origins is not None and (type(page_origins) is not dict or not 1 <= len(page_origins) <= 32):
+            raise ValueError('browser_page_routes_invalid')
+        self.page_origins = {}
+        for identity, origins in (page_origins or {}).items():
+            if identity not in self.routes: raise ValueError('browser_page_route_required')
+            self.page_origins[identity] = _origins(origins)
 
     def _route_for(self, identity):
         return self.routes.get(identity)
@@ -119,7 +152,31 @@ class BrowserProfiles:
         await db.execute('INSERT INTO work_browser_profiles(task_id,source_run_id,bot_id,model_selection,profile,profile_digest) '
             'VALUES(%s,%s,%s,%s,%s,%s)', (task['id'],mapping['legacy_run_id'],task['bot_id'],Jsonb(value.modelSelection.model_dump()),
             Jsonb(value.model_dump()),digest))
+        if task['bot_id'] in self.page_origins:
+            scope = dict(kind='work_browser_page_scope', version=1, taskId=task['id'],
+                         origins=list(self.page_origins[task['bot_id']]), maxActions=16)
+            await db.execute('INSERT INTO work_browser_page_scopes(task_id,scope,scope_digest) VALUES(%s,%s,%s)',
+                             (task['id'], Jsonb(scope), canonical(scope)[1]))
         return digest
+
+    async def page_scope(self, db, task, *, required=False):
+        row = await (await db.execute('SELECT scope,scope_digest FROM work_browser_page_scopes WHERE task_id=%s FOR SHARE',
+                                     (task['id'],))).fetchone()
+        if row is None:
+            if required: raise WorkConflict('browser_page_scope_required')
+            return None
+        try:
+            scope = row['scope']
+            if (type(scope) is not dict or set(scope) != {'kind','version','taskId','origins','maxActions'}
+                    or scope['kind'] != 'work_browser_page_scope' or type(scope['version']) is not int
+                    or scope['version'] != 1 or scope['taskId'] != task['id']
+                    or type(scope['maxActions']) is not int or scope['maxActions'] != 16
+                    or _origins(scope['origins']) != self.page_origins.get(task['bot_id'])
+                    or canonical(scope)[1] != row['scope_digest']):
+                raise ValueError()
+        except (ValueError, TypeError, KeyError):
+            raise WorkConflict('browser_page_scope_changed') from None
+        return dict(scope=scope, sha256=row['scope_digest'])
 
     async def resolve_in_transaction(self, db, task):
         """Read-only verification of an existing immutable profile; no update, backfill, retry or effect."""
@@ -132,4 +189,5 @@ class BrowserProfiles:
                 or row['model_selection'] != profile.modelSelection.model_dump() or canonical(row['profile'])[1] != row['profile_digest']):
             raise WorkConflict('browser_profile_changed')
         await self._current(db, profile)
+        await self.page_scope(db, task)
         return profile, row['profile_digest']

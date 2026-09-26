@@ -52,6 +52,7 @@ def configured(setup, tmp_path):
     profile(f, 'docker-linux')
     yield f
     with psycopg.connect(f.dsn) as db:
+        db.execute('DELETE FROM work_browser_page_scopes WHERE task_id IN (SELECT task_id FROM work_browser_profiles WHERE bot_id=%s)', (f.bot,))
         db.execute('DELETE FROM work_browser_profiles WHERE bot_id=%s', (f.bot,))
         db.execute('DELETE FROM run_events WHERE bot_id=%s', (f.bot,))
         for table in ('node_identity_events','node_enrollment_tokens','node_credentials','nodes'):

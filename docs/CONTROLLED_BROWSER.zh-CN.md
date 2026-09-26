@@ -109,3 +109,37 @@ Control；新路由不能自动替换已有原宿主绑定。
 宿主资料迁移或通用隔离浏览器部署。仍按上文限制使用行为已知的可信测试页面。
 详见[实现与验证记录](research/work-browser-capture.md)。
 输入及控制权的准确范围见[接管验收记录](research/work-browser-handover.md)。
+
+
+## Python 候选：经审批的页面读取与输入
+
+独立页面范围只扩展在明确可信测试源上新建的任务。先应用至 `0044_work_browser_page_scopes`
+的全部迁移，在前述截图配置里加入 `pageOrigins`，使用同一个 Bot id：
+
+```json
+"pageOrigins": {
+  "00000000-0000-4000-8000-000000000001": ["https://your-owned-test.example"]
+}
+```
+
+在原 Node 上同时配置 `OPENBOT_DOCKER_BROWSER_TASKS=true`、
+`OPENBOT_DOCKER_INPUT_ORIGINS=https://your-owned-test.example` 及已有浏览器会话开关。
+使用一至十个准确 HTTPS origin，不含尾部斜杠、路径或凭据；自有本地夹具可使用
+`http://127.0.0.1:<port>`。这些是私有部署配置，不能由模型指令设置。旧截图任务不会获得页面
+能力，修改配置也不会扩张任务创建时冻结的范围。修改后重启 Control 和 Node。
+
+新任务提供读取、导航、点击、填入文字、按键和滚动工具。每次操作（包括读取）都在现有 Action
+界面单独等待 Owner 批准；每个任务最多尝试16次。输入必须引用本任务已应用的页面观察，绑定
+原 Node 连接、控制版本、URL、截图摘要和元素快照。页面变化或 Owner 真正修改指令后，旧输入
+失效。填入文字替换字段内容，空文字清空字段；结果不确定时不重发。人工接管沿用独占暂停及
+明确交还规则。
+
+模型收到有界、不可信的页面文字和元素数据，最多16,000字符、200元素、64 KiB JSON，不接收
+截图像素。成功响应只记录一次观察到的尝试，不能独立证明付款、消息送达等外部业务效果。
+报告通过审核后发布。真实本地产品验收已覆盖逐次审批、中文输入、单次点击、页面读取、报告
+下载、真实 Worker 停止／恢复及不重复动作的历史重放；模型响应为合成夹具。
+
+此候选要求使用行为已知的自有页面。origin 清单和截图检查不能隔离重定向、脚本或子资源网络
+请求；不可信公网浏览、隔离 Linux 浏览器部署、完整 Control／Node 替换仍是独立退役门槛。
+见[页面操作记录](research/work-browser-page-actions.md)及
+[可复现验收](../experiments/work-journey/README.zh-CN.md#经审批的浏览器产品验收)。

@@ -1,6 +1,7 @@
 """Retained F browser.session@1 contract; syntax never grants browser authority."""
 import base64
 import calendar
+import json
 import math
 import re
 from typing import Annotated, Literal
@@ -90,6 +91,77 @@ class BrowserFrame(Strict):
     url: Annotated[str, Field(max_length=2048)]
 
 
+Ref = Annotated[str, Field(pattern=r'^(?:f[0-9]{1,8})?e[0-9]{1,8}$')]
+
+
+class ExpectedPage(Strict):
+    url: Annotated[str, Field(max_length=2048), AfterValidator(url)]
+    snapshotId: Annotated[int, BeforeValidator(integer), Field(ge=1, le=9007199254740991)]
+    frameSha256: Annotated[str, Field(pattern=r'^[a-f0-9]{64}$')]
+
+
+class ReadPage(Strict):
+    kind: Literal['read']
+
+
+class ClickPage(Strict):
+    kind: Literal['click']
+    ref: Ref
+    expected: ExpectedPage
+
+
+class TypePage(Strict):
+    kind: Literal['type']
+    ref: Ref
+    text: Annotated[str, Field(max_length=4096)]
+    expected: ExpectedPage
+
+
+class KeyPage(Key):
+    expected: ExpectedPage
+
+
+class ScrollPage(Scroll):
+    expected: ExpectedPage
+
+
+TaskOperation = Annotated[ReadPage | Navigate | ClickPage | TypePage | KeyPage | ScrollPage,
+                          Field(discriminator='kind')]
+TaskAction = TypeAdapter(TaskOperation)
+
+
+class AgentPage(Strict):
+    kind: Literal['agent']
+    operation: TaskOperation
+
+
+class PageElement(Strict):
+    ref: Ref
+    role: Annotated[str, Field(min_length=1, max_length=64)]
+    name: Annotated[str, Field(max_length=1024)]
+    value: Annotated[str, Field(max_length=4096)] = None
+    disabled: bool = None
+    checked: bool = None
+
+
+class BrowserPage(Strict):
+    url: Annotated[str, Field(max_length=2048)]
+    title: Annotated[str, Field(max_length=1024)]
+    text: Annotated[str, Field(max_length=16000)]
+    truncated: bool
+    snapshotId: Annotated[int, BeforeValidator(integer), Field(ge=1, le=9007199254740991)]
+    elements: Annotated[list[PageElement], Field(max_length=200)]
+
+
+def validate_page(value):
+    page = BrowserPage.model_validate(value).model_dump(exclude_none=True)
+    refs = [element['ref'] for element in page['elements']]
+    if (len(refs) != len(set(refs)) or len(json.dumps(page, ensure_ascii=False,
+            separators=(',', ':')).encode('utf-8')) > 65536):
+        raise ValueError('Invalid browser page.')
+    return page
+
+
 class BrowserCommand(Strict):
     type: Literal["browser.command"]
     protocolVersion: Literal["0.9.0"]
@@ -99,7 +171,7 @@ class BrowserCommand(Strict):
     botId: Id
     expiresAt: Timestamp
     controlExpiresAt: Timestamp = None
-    action: Annotated[Observe | Take | Release | Navigate | Click | Type | Key | Scroll,
+    action: Annotated[Observe | Take | Release | Navigate | Click | Type | Key | Scroll | AgentPage,
                       Field(discriminator="kind")]
 
 
@@ -111,6 +183,7 @@ class BrowserResult(Strict):
     sessionId: Id
     ok: bool
     frame: BrowserFrame = None
+    page: Annotated[BrowserPage, BeforeValidator(validate_page)] = None
     error: Literal["unavailable", "busy", "expired", "control_required", "invalid_response", "action_failed"] = None
 
 
