@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { existsSync } from "node:fs";
-import { mkdtemp, readdir, realpath, rm } from "node:fs/promises";
+import { mkdtemp, realpath, rm } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { assertFreshSourceCheckout } from "./dev-startup-inputs.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 // biome-ignore lint/suspicious/noUndeclaredEnvVars: this uncached root driver runs outside Turbo and preserves npm's selected CLI.
@@ -27,21 +27,7 @@ assert(
   "Use a loopback PostgreSQL URL without query parameters and a database ending _dev_smoke.",
 );
 
-for (const directory of [root, join(root, "apps/web")]) {
-  const files = await readdir(directory);
-  assert(
-    !files.some((name) => name === ".env" || (name.startsWith(".env.") && name !== ".env.example")),
-    "Use a fresh checkout without local .env files; this check supplies its own configuration.",
-  );
-}
-for (const group of ["apps", "packages", "providers"]) {
-  for (const name of await readdir(join(root, group))) {
-    assert(
-      !existsSync(join(root, group, name, "dist")),
-      "Run dev:smoke immediately after npm ci in a fresh checkout, before build/test/check.",
-    );
-  }
-}
+await assertFreshSourceCheckout(root);
 for (const port of [3001, 5173]) {
   const listener = createServer();
   await new Promise((resolve, reject) => {

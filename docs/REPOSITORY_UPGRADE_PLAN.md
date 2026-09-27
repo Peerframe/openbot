@@ -17,8 +17,8 @@ English canonical; 中文摘要见文末。This is the single C1→C2→C3 task 
   `17fb2f4`; C2 package/consumers `b6e623a`; C2 final evidence/quality `7399e11`.
   Resolve the current result with `git rev-parse HEAD` and `git status --short`.
 - User requested continued completion after C1. C1/C2 and the C3 local implementation are accepted; **final hosted CI is pending**.
-  One parent owns all integration files. C3 implementation ends at `074f94d95e7066e7d04c657e3e65c8d1eb463df3`; later handoff-only edits
-  reuse that executed evidence. The final branch HEAD is the review candidate.
+  One parent owns all integration files. The initial C3 implementation is `074f94d95e7066e7d04c657e3e65c8d1eb463df3`; handoff-only edits
+  reuse that evidence. The subsequent PR #100 source-startup correction is recorded below. The final branch HEAD is the review candidate.
   On 2026-09-27 the user explicitly authorized branch push, then draft PR creation and CI.
   The branch was pushed and [draft PR #100](https://github.com/Peerframe/openbot/pull/100) is open
   against main. Final candidate hosted CI remains a completion gate. Merge, publication, paid
@@ -178,6 +178,27 @@ counts include partial reads and exclude search-only hits. These are three usabi
 statistical performance gains. Real tokens, model price, active labor and hosted CI compute/wall time
 are unavailable; local wall/CPU times above are not CI cost estimates or comparable-workload savings.
 
+### PR #100 hosted qualification correction
+
+The initial final-candidate run at `014a867` passed security, scope, repository validation, the
+installed harness/contract lane, both product container architectures, Windows Worker build,
+Linux/Windows clients, Python Desktop Preview, egress and synthetic migration. Its Linux runtime
+lane then rejected the required harness wheel `dist/` as if it were a prebuilt JS workspace.
+The cold source-startup preflight now identifies actual npm package manifests; required Python
+wheel artifacts are permitted while prebuilt app/shared/provider JS and local `.env` remain
+rejected. Focused regression fixtures cover both outcomes. The real `dev:smoke` and all downstream
+runtime checks remain required in CI; no step or timeout is waived. The updated PR head must pass
+hosted qualification before this upgrade is closed.
+
+The correction passed all three new preflight regression tests and a fresh full `npm run check`
+(`/private/tmp/openbot-pr100-startup-check.log`). A fresh temporary Git snapshot with `npm ci`,
+new Worker/wheel installation and an owned PostgreSQL database passed actual shared builds,
+Server/Web/proxy health and Owner authentication. Its macOS process-group cleanup probe then
+returned `EPERM`, so this is not a full smoke pass. Independent process/port checks confirmed no
+fixture service survived; the owned database and temporary snapshot were removed. Preserve that
+failure in `/private/tmp/openbot-pr100-cold-startup.log`; the original Linux CI smoke remains the
+required end-to-end gate rather than suppressing cleanup errors.
+
 ### Logs, limits and next authorized action
 
 - `/private/tmp/openbot-c3-check-result.log`, `openbot-c3-control-final.log`,
@@ -211,5 +232,6 @@ wheel/真实消费者、扩展与契约链、按影响选择的 CI 和失败关�
 真实交接通过，演示补丁留在独立 checkout。完整门禁、真实 PostgreSQL/Worker、最终容器与桌面包
 均通过；新安全门发现的依赖漏洞已修复，未靠忽略或延长时限过关。缓存、跳过、合成与真实范围如上。
 用户已明确授权推送、创建草稿 PR 和运行 CI；分支已推送，草稿 PR #100 已创建，真实 PR 正文通过
-研究门禁校验。最终候选云端 CI 正在执行，须以 PR 上最新提交的最终 check 为准；本地证据不能替代
+研究门禁校验。首轮云端检查发现冷启动校验误把必要的 Python wheel 当作预构建 JS；已修正识别范围并
+保留拒绝预构建 JS/本地环境文件的回归测试。须以 PR 最新提交的最终 check 为准；本地证据不能替代
 云端/全部平台结果。尚未授权或执行合并、发布、替换用户安装、付费模型调用或生产数据操作。
