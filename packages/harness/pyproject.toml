@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
+[project]
+name = "openbot-agent-runtime"
+version = "0.1.0"
+description = "Bounded Python execution harness; control retains authority and durable facts."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = ["pydantic-ai-slim==2.47.0", "jsonschema-rs==0.57.1"]
+
+[project.optional-dependencies]
+dev = ["pytest==8.4.2"]
+
+[project.scripts]
+openbot-runtime-worker = "openbot_agent_runtime.worker:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/openbot_agent_runtime"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/src", "/tests", "/examples", "/scripts", "/*.toml", "/*.lock", "/*.txt", "/*.md", "/LICENSE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers --strict-config"
+
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+[tool.mypy]
+python_version = "3.12"
+check_untyped_defs = true
+follow_imports = "silent"
+warn_unused_ignores = true
+
+
+# Reviewed pre-extraction responsibilities, not an automatically refreshed violation baseline.
+# New modules have 400 lines; contracts.py has 300. Any growth beyond these exact caps fails.
+[tool.openbot.review-exceptions."executor.py"]
+maximum-lines = 423
+reason = "Existing 423-line bounded lifecycle; unchanged execution logic, split only with a lifecycle change."
+[tool.openbot.review-exceptions."profile.py"]
+maximum-lines = 527
+reason = "Existing process-profile validators and exact wire constants kept together for compatibility; one typed usage construction."
+[tool.openbot.review-exceptions."wire.py"]
+maximum-lines = 470
+reason = "Unchanged descriptor framing/backpressure resource lifecycle; no new transport abstraction in extraction."
+[tool.openbot.review-exceptions."worker.py"]
+maximum-lines = 414
+reason = "Existing one-invocation pipe lifecycle; only callback annotation and exception binding names changed."

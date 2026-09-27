@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { parse, stringify } from "yaml";
 import { validateWindowsWorkerHostBuildLane } from "./check-windows-worker-host-workflow.mjs";
 
 const fixture = Object.fromEntries(
@@ -93,5 +94,15 @@ test("rejects SDK, package, or artifact-boundary drift", () => {
         artifactChecker: fixture.artifactChecker.replace("128MB", "512MB"),
       }),
     /artifact checker is missing/,
+  );
+});
+
+test("accepts peer reordering, step renaming and YAML formatting", () => {
+  const value = parse(fixture.workflow);
+  value.jobs = Object.fromEntries(Object.entries(value.jobs).reverse());
+  for (const step of value.jobs["windows-worker-host"].steps)
+    if (step.name) step.name = "Describe a checked property";
+  assert.doesNotThrow(() =>
+    validateWindowsWorkerHostBuildLane({ ...fixture, workflow: stringify(value, { indent: 4 }) }),
   );
 });

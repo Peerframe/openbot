@@ -101,7 +101,7 @@ test("explicit Docker target uses immutable bases and selective public context",
     /COPY \. \.|apps\/server\/|tests\/oracles|\.worker-venv|OPENBOT_CONTROL_OWNER_PASSWORD|OPENBOT_DATABASE_URL/,
   );
   assert.match(file, /--only-binary=:all: --no-deps/);
-  assert.match(file, /verify_environment.py --worker/);
+  assert.match(file, /verify_environment.py --product/);
   assert.match(file, /COPY --from=product-build \/workspace\/apps\/web\/dist/);
   assert.match(file, /COPY apps\/desktop\/resources\/openbot-icon\.png/);
   assert.match(file, /USER 1000:1000/);

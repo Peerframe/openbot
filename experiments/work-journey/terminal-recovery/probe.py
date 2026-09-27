@@ -33,8 +33,7 @@ def command(args):
 
 async def run(repo,fixture_path,output):
     probe_directory=Path(__file__).resolve().parent
-    sys.path[:0]=[str(repo/'apps/server-python/src'),
-                 str(repo/'apps/agent-runtime-python/src'),str(repo/'experiments/work-journey')]
+    sys.path[:0]=[str(repo/'apps/server-python/src'),str(repo/'experiments/work-journey')]
     from openbot_server import work_terminal
     from openbot_server.work_store import PostgresWorkStore
     from openbot_server.work_files import LocalWorkFiles

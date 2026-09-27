@@ -1,294 +1,257 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { parse, stringify } from "yaml";
 import {
   validatePythonProductWorkflow,
   validateSecurityWorkflow,
 } from "./check-security-workflow.mjs";
+import { SETUP_NODE, workflowDocument } from "./workflow-policy.mjs";
 
-const workflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
+const source = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
 const migration = await readFile(
   new URL("../.github/workflows/s7-migration.yml", import.meta.url),
   "utf8",
 );
+function changed(change) {
+  const value = parse(source);
+  change(value);
+  return stringify(value, { lineWidth: 0 });
+}
+function command(value, id, fragment) {
+  return value.jobs[id].steps.find((step) => step.run?.includes(fragment));
+}
+const check = (text) => {
+  validateSecurityWorkflow(text);
+  validatePythonProductWorkflow(text, migration);
+};
 
-test("qualifies Python product artifacts independently of legacy compatibility", () => {
-  assert.doesNotThrow(() => validatePythonProductWorkflow(workflow, migration));
-  for (const changed of [
-    workflow.replace(
-      "node apps/desktop/scripts/prepare-native-server.mjs --python-product",
-      "npm run prepare:native --workspace @openbot/desktop",
-    ),
-    workflow.replace(
-      "node apps/desktop/scripts/package.mjs --preview --python-product",
-      "npm run package --workspace @openbot/desktop",
-    ),
-    workflow.replace(
-      "OpenBot Python Preview.app/Contents/Resources/native-runtime",
-      "OpenBot.app/Contents/Resources/native-runtime",
-    ),
-    workflow.replace(
-      "deploy/server/smoke-product.py --image openbot-server:product-smoke",
-      "scripts/smoke-server-container.sh",
-    ),
-    workflow.replace("  python-desktop-preview:\n", "  python-desktop-preview:\n    if: false\n"),
-    workflow.replace("--engine postgres-mtls --upgrade-archive", "--engine postgres-mtls"),
-    workflow.replace("  browser-product:\n", "  browser-product:\n    if: false\n"),
-    workflow.replace("control node replacement response-loss browser-restart", "control node"),
-    workflow.replace(
-      "uses: ./.github/workflows/s7-migration.yml",
-      "uses: someone/other/.github/workflows/migration.yml@main",
-    ),
-  ]) {
-    assert.throws(() => validatePythonProductWorkflow(changed, migration), /Python/);
-  }
-  assert.throws(
-    () => validatePythonProductWorkflow(workflow, migration.replace("  workflow_call:", "  push:")),
-    /same-commit qualification/,
-  );
-});
-
-test("accepts the pinned required portable matrix", () => {
-  assert.doesNotThrow(() => validateSecurityWorkflow(workflow));
-});
-
-test("requires exact finding review without excluding history or printing candidates", () => {
-  const review =
-    'node scripts/check-credential-findings.mjs "${RUNNER_TEMP}/trufflehog-results.jsonl" "$status"';
-  for (const changed of [
-    workflow.replace(review, "echo ignored"),
-    workflow.replace(review, `${review} || true`),
-    workflow.replace("--json --fail", "--fail"),
-    workflow.replace("git file:///repo", "git file:///repo --branch HEAD"),
-    workflow.replace("git file:///repo", "git file:///repo --exclude-paths tests"),
-    workflow.replace(review, `${review}\n          cat trufflehog-results.jsonl`),
-  ]) {
-    assert.throws(() => validateSecurityWorkflow(changed), /missing required|full history/);
-  }
-});
-
-test("requires the exact npm CLI and a clean lock tree before auditing", () => {
-  assert.throws(
-    () => validateSecurityWorkflow(workflow.replace("npm@10.9.9", "npm@latest")),
-    /missing required fragment/,
-  );
-  assert.throws(
-    () =>
-      validateSecurityWorkflow(
-        workflow.replace("npm ci --ignore-scripts --audit=false", "npm install"),
-      ),
-    /missing required fragment/,
-  );
-  const auditFirst = workflow
-    .replace("        run: npm ci --ignore-scripts --audit=false\n", "")
-    .replace(
-      "        run: npm audit --omit=dev --audit-level=high\n",
-      "        run: npm audit --omit=dev --audit-level=high\n      - run: npm ci --ignore-scripts --audit=false\n",
-    );
-  assert.throws(() => validateSecurityWorkflow(auditFirst), /install the lock tree, then audit/);
-});
-
-test("rejects dependency audit bypasses and mutation", () => {
-  assert.throws(
-    () =>
-      validateSecurityWorkflow(
-        workflow.replace(
-          "run: npm audit --omit=dev --audit-level=high",
-          "run: npm audit --omit=dev --audit-level=high || true",
-        ),
-      ),
-    /read-only and fail closed/,
-  );
-  assert.throws(
-    () =>
-      validateSecurityWorkflow(
-        workflow.replace(
-          "run: npm audit --omit=dev --audit-level=high",
-          "run: npm audit fix --force",
-        ),
-      ),
-    /missing required fragment|read-only and fail closed/,
-  );
-});
-
-test("rejects a missing platform or moving runner label", () => {
-  assert.throws(
-    () =>
-      validateSecurityWorkflow(workflow.replace("runner: windows-2025", "runner: windows-latest")),
-    /missing required fragment|explicit runner labels/,
-  );
-});
-
-test("rejects a matrix member that is allowed to fail", () => {
-  const changed = workflow.replace(
-    "    timeout-minutes: 50\n    strategy:\n      fail-fast: false",
-    "    timeout-minutes: 50\n    continue-on-error: true\n    strategy:\n      fail-fast: false",
-  );
-  assert.throws(() => validateSecurityWorkflow(changed), /members must be required/);
-});
-
-test("rejects action, Node, or checkout-security drift in the portable job", () => {
-  const portableStart = workflow.indexOf("\n  portable:\n");
-  const windowsWorkerHostStart = workflow.indexOf("\n  windows-worker-host:\n");
-  const beforePortable = workflow.slice(0, portableStart);
-  const portableJob = workflow.slice(portableStart, windowsWorkerHostStart);
-  const afterPortable = workflow.slice(windowsWorkerHostStart);
-
-  assert.throws(
-    () =>
-      validateSecurityWorkflow(
-        `${beforePortable}${portableJob.replace(
-          "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0\n        with:\n          node-version: 22.22.2",
-          "actions/setup-node@v7\n        with:\n          node-version: 22",
-        )}${afterPortable}`,
-      ),
-    /missing required fragment/,
-  );
-
-  assert.throws(
-    () =>
-      validateSecurityWorkflow(
-        `${beforePortable}${portableJob.replace(
-          "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1",
-          "actions/checkout@v7",
-        )}${afterPortable}`,
-      ),
-    /missing required fragment/,
-  );
-
-  const portableWithoutCheckoutProtection = portableJob.replace(
-    "          persist-credentials: false\n",
-    "",
-  );
-  const changed = `${beforePortable}${portableWithoutCheckoutProtection}${afterPortable}`;
-  assert.throws(() => validateSecurityWorkflow(changed), /missing required fragment/);
-});
-
-test("requires the reviewed setup-node pin in every CI job", () => {
-  assert.throws(
-    () =>
-      validateSecurityWorkflow(
-        workflow.replace(
-          "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0",
-          "actions/setup-node@v7",
-        ),
-      ),
-    /exact reviewed setup-node pin/,
-  );
-
-  assert.throws(
-    () =>
-      validateSecurityWorkflow(
-        workflow.replace(
-          "      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0\n",
-          "",
-        ),
-      ),
-    /exact reviewed setup-node pin/,
-  );
-});
-
-test("rejects removal or broadening of the native macOS plist gate", () => {
-  assert.throws(
-    () =>
-      validateSecurityWorkflow(
-        workflow.replace(
-          "name: Validate macOS LaunchAgent contract with native plist parser\n        if: runner.os == 'macOS'",
-          "name: Validate macOS LaunchAgent contract with native plist parser\n        if: runner.os != 'Windows'",
-        ),
-      ),
-    /missing required fragment|build the pinned macOS companion/,
-  );
-  assert.throws(
-    () =>
-      validateSecurityWorkflow(
-        workflow.replace(
-          "/usr/bin/plutil -lint apps/worker-host-macos/Resources/com.openbot.worker-host.node.plist",
-          "echo skipped",
-        ),
-      ),
-    /missing required fragment/,
-  );
-  assert.throws(
-    () =>
-      validateSecurityWorkflow(
-        workflow.replace("          npm run worker-host:macos:native-check\n", ""),
-      ),
-    /missing required fragment/,
-  );
-});
-
-test("rejects removal or network broadening of the macOS Desktop companion gate", () => {
-  assert.throws(
-    () =>
-      validateSecurityWorkflow(
-        workflow.replace("node scripts/build-macos-worker-host-candidate.mjs", "echo skipped"),
-      ),
-    /missing required fragment/,
-  );
-  assert.throws(
-    () =>
-      validateSecurityWorkflow(
-        workflow.replace(
-          "curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error",
-          "curl --location",
-        ),
-      ),
-    /build the pinned macOS companion/,
-  );
-  assert.throws(
-    () =>
-      validateSecurityWorkflow(
-        workflow.replace(
-          "name: Build the pinned macOS Worker companion",
-          "name: Package the unsigned Desktop development artifact",
-        ),
-      ),
-    /missing required fragment|build the pinned macOS companion/,
-  );
-});
-
-test("requires every CI job in the final gate even after a skipped or failed dependency", () => {
-  for (const changed of [
-    workflow.replace("    if: always()\n    needs:", "    needs:"),
-    workflow.replace("needs: [security, validate, portable,", "needs: [security, validate,"),
-    `${workflow}\n  additional-platform:\n    runs-on: ubuntu-latest\n`,
-    workflow.replace("  check:\n", "  check:\n    continue-on-error: true\n"),
-    workflow.replace("needs.python-runtime.result", "needs.validate.result"),
-  ]) {
-    assert.throws(() => validateSecurityWorkflow(changed), /CI check must/);
-  }
-});
-
-test("the actual merge gate accepts only success from every required job", () => {
-  const gate = workflow.slice(workflow.indexOf("\n  check:\n"));
-  const variables = [
-    ...gate.matchAll(/^ {10}([A-Z_]+): \$\{\{ needs\.[a-z-]+\.result \}\}$/gm),
-  ].map((match) => match[1]);
-  assert.equal(variables.length, 11);
-  const source = gate
-    .split("        run: |\n")[1]
-    .split("\n")
-    .map((line) => (line.startsWith("          ") ? line.slice(10) : line))
-    .join("\n");
-  const successful = Object.fromEntries(variables.map((name) => [name, "success"]));
-  const execute = (results) =>
-    spawnSync("bash", ["--noprofile", "--norc", "-euo", "pipefail", "-c", source], {
-      encoding: "utf8",
-      env: { PATH: process.env.PATH, ...results },
-    });
-  assert.equal(execute(successful).status, 0);
-  for (const variable of variables) {
-    for (const result of ["failure", "cancelled", "skipped", "", "unknown"]) {
-      assert.equal(
-        execute({ ...successful, [variable]: result }).status,
-        1,
-        `${variable}=${result}`,
-      );
+test("real CI preserves security and independent installed product qualifications", () =>
+  check(source));
+test("peer order, display names, indentation and extra pinned setup are not security contracts", () => {
+  const value = parse(source);
+  value.jobs = Object.fromEntries(Object.entries(value.jobs).reverse());
+  for (const job of Object.values(value.jobs)) {
+    job.name = "Descriptive name can change";
+    for (const step of job.steps ?? []) {
+      if (step.name) step.name = "Another description";
     }
-    const missing = { ...successful };
-    delete missing[variable];
-    assert.notEqual(execute(missing).status, 0, `${variable} missing`);
   }
+  value.jobs.validate.steps.splice(2, 0, { uses: SETUP_NODE, with: { "node-version": "22.22.2" } });
+  check(stringify(value, { indent: 4, lineWidth: 100 }));
+});
+test("YAML duplicate keys, aliases and comments cannot satisfy executable policy", () => {
+  assert.throws(() => workflowDocument("jobs:\n  security: {}\n  security: {}\n"));
+  assert.throws(() => workflowDocument("jobs:\n  security: &job {}\n  validate: *job\n"));
+  assert.throws(() =>
+    check(
+      changed((v) => {
+        const step = command(v, "security", "npm audit ");
+        step.run = `# ${step.run}\necho omitted`;
+      }),
+    ),
+  );
+});
+test("read-only authority, exact source pins and disabled credential persistence are required", () => {
+  for (const mutate of [
+    (v) => {
+      v.permissions.contents = "write";
+    },
+    (v) => {
+      v.on.pull_request_target = null;
+    },
+    (v) => {
+      v.jobs.validate.permissions = { "id-token": "write" };
+    },
+    (v) => {
+      v.jobs.validate.secrets = "inherit";
+    },
+    (v) => {
+      v.jobs.security.steps[0].with["persist-credentials"] = true;
+    },
+    (v) => {
+      v.jobs.security.steps[0].with["fetch-depth"] = 1;
+    },
+    (v) => {
+      v.jobs.validate.steps[1].uses = "actions/setup-node@v7";
+    },
+    (v) => {
+      v.jobs.validate.steps = v.jobs.validate.steps.filter((s) => s.uses !== SETUP_NODE);
+    },
+    (v) => {
+      v.jobs.validate.steps[1].with["node-version"] = "latest";
+    },
+  ])
+    assert.throws(() => check(changed(mutate)));
+});
+test("production audits retain exact CLI, coverage and fail-closed execution", () => {
+  for (const mutate of [
+    (v) => {
+      command(v, "security", "npm@10.9.9").run = "npm install -g npm@latest";
+    },
+    (v) => {
+      command(v, "security", "npm ci ").run = "npm install";
+    },
+    (v) => {
+      command(v, "security", "npm audit ").run = "npm audit fix --force";
+    },
+    (v) => {
+      command(v, "security", "npm audit ").run += " || true";
+    },
+    (v) => {
+      command(v, "security", "npm audit ")["continue-on-error"] = true;
+    },
+    (v) => {
+      command(v, "security", "npm audit ").if = false;
+    },
+    (v) => {
+      command(v, "security", "audit-python.sh").run = "echo omitted";
+    },
+    (v) => {
+      const steps = v.jobs.security.steps;
+      const a = steps.indexOf(command(v, "security", "npm audit "));
+      const b = steps.indexOf(command(v, "security", "npm ci "));
+      [steps[a], steps[b]] = [steps[b], steps[a]];
+    },
+  ])
+    assert.throws(() => check(changed(mutate)));
+});
+test("credential scanning retains full history and content-free exact finding review", () => {
+  for (const suffix of [" --branch HEAD", " --exclude-paths tests", " --since-commit HEAD~1"])
+    assert.throws(() =>
+      check(
+        changed((v) => {
+          const s = command(v, "security", "git file:///repo");
+          s.run = s.run.replace("git file:///repo", `git file:///repo${suffix}`);
+        }),
+      ),
+    );
+  for (const substitute of [
+    "echo ignored",
+    "cat trufflehog-results.jsonl",
+    "node scripts/check-credential-findings.mjs ignored 0 || true",
+  ])
+    assert.throws(() =>
+      check(
+        changed((v) => {
+          const s = command(v, "security", "check-credential-findings");
+          s.run = s.run.replace(/node scripts\/check-credential-findings[^\n]+/, substitute);
+        }),
+      ),
+    );
+});
+test("native portable capabilities survive without unrelated repeated suites", () => {
+  for (const mutate of [
+    (v) => {
+      v.jobs.portable.strategy.matrix.include.pop();
+    },
+    (v) => {
+      v.jobs.portable.strategy.matrix.include[0].runner = "ubuntu-latest";
+    },
+    (v) => {
+      v.jobs.portable["continue-on-error"] = true;
+    },
+    (v) => {
+      command(v, "portable", "/usr/bin/plutil").if = "runner.os != 'Windows'";
+    },
+    (v) => {
+      command(v, "portable", "build-macos-worker-host-candidate").run = "echo omitted";
+    },
+    (v) => {
+      command(v, "portable", "prepare-native-server.mjs").run = "echo omitted";
+    },
+    (v) => {
+      command(v, "portable", "turbo run test").if = false;
+    },
+  ])
+    assert.throws(() => check(changed(mutate)));
+});
+test("selection cannot bypass required qualifications or lose the authoritative PR input", () => {
+  for (const mutate of [
+    (v) => {
+      v.jobs["python-runtime"].if = "false";
+    },
+    (v) => {
+      v.jobs["browser-product"].if = "github.actor == 'maintainer'";
+    },
+    (v) => {
+      delete v.jobs["harness"].needs;
+    },
+    (v) => {
+      command(v, "scope", "ci-scope.mjs").run = "node scripts/ci-scope.mjs --local";
+    },
+    (v) => {
+      v.jobs.scope.outputs.plan = "{}";
+    },
+    (v) => {
+      delete v.jobs.check.needs[0];
+    },
+    (v) => {
+      v.jobs.check.if = "success()";
+    },
+    (v) => {
+      v.jobs.check.steps.at(-1).env.OPENBOT_CI_NEEDS = "{}";
+    },
+    (v) => {
+      v.jobs.check.steps.at(-1).run += " || true";
+    },
+    (v) => {
+      v.jobs.check.steps.at(-1).if = "false";
+    },
+    (v) => {
+      v.jobs.additional = { "runs-on": "ubuntu-24.04" };
+    },
+  ])
+    assert.throws(() => check(changed(mutate)));
+});
+test("all C2 gates and real product recovery stay required when selected", () => {
+  for (const [job, fragment] of [
+    ["harness", "npm run harness:wheel"],
+    ["harness", "npm run contracts:test"],
+    ["temporal-qualification", "--engine postgres-mtls --upgrade-archive"],
+    ["browser-product", "control node replacement response-loss browser-restart"],
+    ["python-product-container", "deploy/server/smoke-product.py"],
+    ["python-desktop-preview", "node apps/desktop/scripts/package.mjs --preview --python-product"],
+  ])
+    assert.throws(() =>
+      check(
+        changed((v) => {
+          const step = command(v, job, fragment);
+          step.run = step.run.replace(fragment, "omitted");
+        }),
+      ),
+    );
+  assert.throws(() =>
+    check(
+      changed((v) => {
+        command(v, "harness", "npm run harness:wheel").if = "runner.os == 'Windows'";
+      }),
+    ),
+  );
+  assert.throws(() =>
+    check(
+      changed((v) => {
+        v.jobs["synthetic-migration"].uses = "someone/other/.github/workflows/migration.yml@main";
+      }),
+    ),
+  );
+  assert.throws(() =>
+    validatePythonProductWorkflow(source, migration.replace("workflow_call:", "push:")),
+  );
+});
+test("obsolete PR cancellation cannot cancel main qualification", () => {
+  assert.throws(() =>
+    check(
+      changed((v) => {
+        v.concurrency["cancel-in-progress"] = true;
+      }),
+    ),
+  );
+  assert.throws(() =>
+    check(
+      changed((v) => {
+        v.concurrency.group = "all-ci";
+      }),
+    ),
+  );
 });

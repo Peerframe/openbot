@@ -55,7 +55,7 @@ local database gate reports Worker checks as not run; base success is not full W
 From the repository root, run the owned disposable database journey:
 
 ```sh
-apps/agent-runtime-python/scripts/bootstrap.sh
+packages/harness/scripts/bootstrap.sh
 npm run test:control:python
 ```
 
@@ -223,7 +223,7 @@ pipes and completes group cleanup before propagating cancellation. At the superv
 48 actual TS/Python profile comparisons pass. These do not establish persisted task execution; see
 [supervision research](../../docs/research/python-control-runtime-supervision.md).
 
-For the real-worker control tests, first bootstrap `apps/agent-runtime-python` in its own venv.
+For the real-worker control tests, first bootstrap `packages/harness` in its own venv.
 `tests/test_runtime_sdk_integration.py` skips when that environment is absent or on Windows; a
 skip does not establish interoperability. The existing `npm run test:runtime:linux` fixture
 installs both isolated locked environments in the pinned Linux image and requires the real worker.

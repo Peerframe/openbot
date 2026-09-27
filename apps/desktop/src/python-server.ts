@@ -289,7 +289,7 @@ export async function launchPythonProductServer(
   // Validate the complete installed Python profile before any database migration.
   await fixedProcess(
     python,
-    ["-I", "-B", verify, "--worker"],
+    ["-I", "-B", verify, "--product"],
     { PATH: "/usr/bin:/bin", LANG: "C" },
     runtimeRoot,
     15_000,

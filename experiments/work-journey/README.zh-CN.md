@@ -309,7 +309,7 @@ apps/server-python/.worker-venv/bin/python -B -u experiments/work-journey/produc
 控制器和夹具边界测试不连接SSH、不启动容器或调用模型：
 
 ```sh
-PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=experiments/work-journey:experiments/linux-execution:apps/server-python/src:apps/agent-runtime-python/src apps/server-python/.worker-venv/bin/python -m pytest -p no:cacheprovider -q experiments/work-journey/test_product_command_remote.py experiments/work-journey/test_product_host_fixture.py
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=experiments/work-journey:experiments/linux-execution:apps/server-python/src:packages/harness/src apps/server-python/.worker-venv/bin/python -m pytest -p no:cacheprovider -q experiments/work-journey/test_product_command_remote.py experiments/work-journey/test_product_host_fixture.py
 ```
 
 2026-09-26刷新：同一成对停写恢复探针已通过44条迁移、47张Control表／111行，见

@@ -5,7 +5,7 @@ import sys
 from types import SimpleNamespace
 import unittest
 from unittest.mock import AsyncMock,patch
-sys.path[:0]=[str(Path(__file__).parents[2]/'apps/server-python/src'),str(Path(__file__).parents[2]/'apps/agent-runtime-python/src')]
+sys.path[:0]=[str(Path(__file__).parents[2]/'apps/server-python/src')]
 from pydantic_ai import DeferredToolRequests
 from pydantic_ai.messages import ToolCallPart
 from temporalio.exceptions import ApplicationError

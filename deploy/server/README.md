@@ -72,7 +72,7 @@ Local focused checks (no Docker or provider):
 
 ```sh
 node --test deploy/server/product-container.test.mjs
-PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=apps/server-python/src:apps/agent-runtime-python/src apps/server-python/.worker-venv/bin/python -m pytest -p no:cacheprovider -q deploy/server/test_product_container.py apps/server-python/tests/test_entry.py
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=apps/server-python/src:packages/harness/src apps/server-python/.worker-venv/bin/python -m pytest -p no:cacheprovider -q deploy/server/test_product_container.py apps/server-python/tests/test_entry.py
 ```
 
 See [research and exact boundary](../../docs/research/python-product-container.md).

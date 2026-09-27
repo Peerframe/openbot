@@ -8,7 +8,7 @@
     "build:desktop": "tsc --noEmit -p tsconfig.json && vite build --mode desktop",
     "dev": "vite",
     "preview": "vite preview",
-    "test": "vitest run src --passWithNoTests --maxWorkers=2",
+    "test": "vitest run src --maxWorkers=2",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "build:demo": "tsc --noEmit -p tsconfig.json && vite build --config vite.demo.config.ts"
   },

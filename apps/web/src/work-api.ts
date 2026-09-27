@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ApiError } from "./api";
+import type { components } from "./generated/work-contract";
 import type { NativeTaskScopeInput } from "./native-task-api";
 
 // Public projection from Python work_models.py; engine history is never client authority.
@@ -47,7 +48,7 @@ export const workSnapshotSchema = z.object({
       reservedTokens: z.number().nonnegative(),
       actualTokens: z.number().nonnegative().nullable(),
       evidence: z.record(z.string(), z.string()).nullable(),
-      reconciliation: reconciliation.nullable().optional(),
+      reconciliation: reconciliation.nullable().default(null),
     }),
   ),
   artifacts: z.array(
@@ -69,8 +70,8 @@ export const workSnapshotSchema = z.object({
     }),
   ),
   eventsTruncated: z.boolean(),
-});
-export type WorkSnapshot = z.infer<typeof workSnapshotSchema>;
+}) satisfies z.ZodType<WorkSnapshot>;
+export type WorkSnapshot = components["schemas"]["WorkSnapshot"];
 export interface CreateWorkInput {
   botId: string;
   objective: string;

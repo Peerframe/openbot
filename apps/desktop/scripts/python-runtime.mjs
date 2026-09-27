@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { cp, mkdir, open, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { collectProductionPackageGraph } from "../../../scripts/node-linux-release.mjs";
+import { stageInstalledHarness } from "./harness-wheel.mjs";
 import { validateContainedResource } from "./package-resources.mjs";
 
 export const PYTHON_CANDIDATE = Object.freeze({
@@ -174,20 +175,13 @@ export async function stagePythonProduct(root, output) {
   for (const name of ["serve.py", "verify_environment.py"])
     await cp(join(source, "scripts", name), join(target, "scripts", name));
   for (const name of [
-    "requirements-worker.lock",
+    "requirements-product.lock",
     "requirements.lock",
     "requirements.txt",
     "requirements-dev.txt",
+    "requirements-temporal.txt",
   ])
     await cp(join(source, name), join(target, name));
-  await cp(
-    join(root, "apps/agent-runtime-python/src"),
-    join(output, "apps/agent-runtime-python/src"),
-    {
-      recursive: true,
-      filter: (path) => !path.endsWith("__pycache__") && !path.endsWith(".pyc"),
-    },
-  );
   await mkdir(join(output, "desktop"));
   for (const name of ["python-control-entry.py", "python-control-migrate.mjs"])
     await cp(join(root, "apps/desktop/native", name), join(output, "desktop", name));
@@ -201,14 +195,21 @@ export async function stagePythonProduct(root, output) {
   await runPythonBuildStage(
     "install Python dependencies",
     python,
-    pythonInstallArguments(join(target, "requirements-worker.lock")),
+    pythonInstallArguments(join(target, "requirements-product.lock")),
     output,
     PYTHON_INSTALL_TIMEOUT_MS,
+  );
+  const harness = await stageInstalledHarness(
+    root,
+    output,
+    python,
+    runPythonBuildStage,
+    pythonInstallArguments,
   );
   await runPythonBuildStage(
     "verify Python environment",
     python,
-    ["-I", "-B", join(target, "scripts/verify_environment.py"), "--worker"],
+    ["-I", "-B", join(target, "scripts/verify_environment.py"), "--product"],
     output,
   );
   await runPythonBuildStage(
@@ -222,11 +223,12 @@ export async function stagePythonProduct(root, output) {
     `${JSON.stringify(
       {
         python: PYTHON_ARCHIVE,
+        harness,
         node: NODE_ARCHIVE,
         pythonSource:
           "https://github.com/astral-sh/python-build-standalone/tree/00c8a06113f11220667c3bcf5fab1672ff9e78ef",
         requirementsSha256: createHash("sha256")
-          .update(await readFile(join(target, "requirements-worker.lock")))
+          .update(await readFile(join(target, "requirements-product.lock")))
           .digest("hex"),
         support:
           "unsigned macOS arm64 development candidate; no native execution or signing qualification",

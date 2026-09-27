@@ -1,3 +1,12 @@
+import assert from "node:assert/strict";
+import {
+  CHECKOUT,
+  assertNoFailureBypass,
+  hasCommands,
+  requiredJob,
+  runs,
+  workflowDocument,
+} from "./workflow-policy.mjs";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
@@ -10,44 +19,31 @@ export function validateWindowsWorkerHostBuildLane({
   hostProject,
   artifactChecker,
 }) {
-  const jobStart = workflow.indexOf("\n  windows-worker-host:\n");
-  const databaseStart = workflow.indexOf("\n  python-product-container:\n");
-  if (jobStart === -1 || databaseStart <= jobStart) {
-    throw new Error("CI must define the Windows Worker Host job before the Python product container job.");
-  }
-
-  const job = workflow.slice(jobStart, databaseStart);
-  const requiredJobFragments = [
-    "name: Windows Worker Host (build only)",
-    "runs-on: windows-2025",
-    "timeout-minutes: 20",
-    "defaults:\n      run:\n        working-directory: apps/worker-host-windows",
-    "DOTNET_CLI_TELEMETRY_OPTOUT: 1",
-    "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
-    "persist-credentials: false",
-    SETUP_DOTNET_PIN,
-    "global-json-file: apps/worker-host-windows/global.json",
+  const lane = requiredJob(workflowDocument(workflow), "windows-worker-host");
+  assertNoFailureBypass(lane, "Windows Worker Host");
+  const boundary = "Windows Worker Host job broadens its runner, dependency, or artifact boundary.";
+  assert.equal(lane["runs-on"], "windows-2025", boundary);
+  assert.equal(lane.defaults?.run?.["working-directory"], "apps/worker-host-windows", boundary);
+  assert.equal(lane.env?.DOTNET_CLI_TELEMETRY_OPTOUT, 1, boundary);
+  const checkout = lane.steps.find((step) => step.uses?.startsWith("actions/checkout@"));
+  assert(checkout?.uses === CHECKOUT && checkout.with?.["persist-credentials"] === false, boundary);
+  const setup = lane.steps.find((step) => step.uses?.startsWith("actions/setup-dotnet@"));
+  assert(
+    setup?.uses === SETUP_DOTNET_PIN &&
+      setup.with?.["global-json-file"] === "apps/worker-host-windows/global.json" &&
+      !setup.with?.cache,
+    boundary,
+  );
+  assert(!lane.steps.some((step) => step.uses?.startsWith("actions/upload-artifact")), boundary);
+  const commands = [
     "dotnet restore OpenBot.WorkerHost.Windows.ContractTests/OpenBot.WorkerHost.Windows.ContractTests.csproj --locked-mode",
     "dotnet build OpenBot.WorkerHost.Windows.ContractTests/OpenBot.WorkerHost.Windows.ContractTests.csproj --configuration Release --no-restore",
     "dotnet run --project OpenBot.WorkerHost.Windows.ContractTests/OpenBot.WorkerHost.Windows.ContractTests.csproj --configuration Release --no-build --no-restore",
     "dotnet publish OpenBot.WorkerHost.Windows/OpenBot.WorkerHost.Windows.csproj --configuration Release --runtime win-x64 --self-contained true --no-restore",
     "../../scripts/check-windows-worker-host-artifact.ps1",
   ];
-  for (const fragment of requiredJobFragments) {
-    if (!job.includes(fragment)) {
-      throw new Error(`Windows Worker Host job is missing required fragment: ${fragment}`);
-    }
-  }
-
-  if (
-    /continue-on-error:|windows-latest|actions\/upload-artifact|cache:\s*(?:true|nuget)|uses: actions\/setup-dotnet@(?!a98b56852c35b8e3190ac28c8c2271da59106c68)/.test(
-      job,
-    )
-  ) {
-    throw new Error(
-      "Windows Worker Host job broadens its runner, dependency, or artifact boundary.",
-    );
-  }
+  hasCommands(lane, commands, "Windows Worker Host job is missing required fragment");
+  const job = runs(lane);
 
   const restore = job.indexOf("dotnet restore ");
   const build = job.indexOf("dotnet build ");

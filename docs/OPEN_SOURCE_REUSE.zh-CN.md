@@ -4,10 +4,10 @@
 
 ## 规则
 
-OpenBot 在设计任何非简单功能前，必须先调研成熟的开源实现。目标是优先复用持续维护的标准、
+OpenBot 在实现新依赖/版本、公共协议、授权/安全或持久数据边界、重大架构决定前，针对受影响选择调研。目标是优先复用持续维护的标准、
 依赖、协议和窄服务，避免再造一套不兼容系统。
 
-调研不等于直接复制看起来相似的仓库。每项功能都要记录：用户结果与安全边界；候选仓库或开放
+调研不等于直接复制看起来相似的仓库。触发调研时记录：用户结果与安全边界；候选仓库或开放
 标准；维护状态、平台/API 适配和测试质量；候选及其传递依赖许可证；最终选择依赖、适配、向上游
 贡献、保留署名移植，还是只开发有证据的差集；以及固定版本/commit 和升级替换方案。
 
@@ -31,12 +31,13 @@ MIT/Apache 代码时，必须在 `THIRD_PARTY_NOTICES.md` 或对应 vendor 目�
 审查日期：2026-09-04。以下 commit 只是调研基线，不会自动成为依赖。
 
 本表同时是当前分支已有非简单代码的追溯审查账本。没有在这里、ADR 或对应 Issue 中登记上游与
-许可证审查的功能，在补齐记录前不能继续扩展。
+许可证审查的功能，应先补齐受影响决定的相关证据再扩展。普通修复复用有效决定与已审查版本，
+不重开整本账本，见[研究路径](../CONTRIBUTING.zh-CN.md#研究依据与文档豁免)。
 
 | OpenBot 范围 | 调研来源 | 许可证 | 决定与现状 |
 | --- | --- | --- | --- |
 | Windows 交付稳定性与完整 CI 门禁 | Electron get 5.1.0 / `da84467e`；Packager 20.3.0 / `8c5cc941`；builder 26.16.1 / `7d3b30f3`；.NET Process；GitHub Actions 依赖结果 | MIT；BSD-2-Clause；微软/GitHub 文档条款 | 只重试短暂下载故障，保留校验；安装夹具按进度检查停滞和总时限；受保护的完成检查要求全部任务通过。未复制源码，见[下载](research/windows-ci-download-reliability.zh-CN.md)、[安装](research/windows-installer-progress.zh-CN.md)、[合并门禁](research/windows-ci-merge-gate.zh-CN.md)。 |
-| 文档研究豁免 | Git 2.55.0 / `e9019fca`；checkout 7.0.1 / `3d3c42e5` | GPL-2.0；MIT | 复用已提交的 Git 差异和 blob 标识，验证普通 Markdown 正文的简短豁免。源码、政策和受保护技术内容仍使用研究表；主张是否不变仍由审查判断。未增加依赖或复制源码；见[研究](research/2026-09-15-research-exemptions.zh-CN.md)。 |
+| 文档豁免与普通修复决定复用 | Git 2.55.0 / `e9019fca`；checkout 7.0.1 / `3d3c42e5` | GPL-2.0；MIT | 复用已提交的 Git 差异和 blob 标识，验证普通 Markdown 正文的简短豁免。源码、政策和受保护技术内容仍使用研究表；主张是否不变仍由审查判断。未增加依赖或复制源码；见[研究](research/2026-09-15-research-exemptions.zh-CN.md)。 |
 | 贡献者首次启动与全新检出验证 | Turborepo 2.10.12 / `53752d45`；既有 Node API 和 Postgres.js 3.4.9 | MIT；Node.js 许可；Unlicense | 复用任务依赖图和筛选后的持久任务，启动 Server/Web/可选 Node。在构建前使用空回环数据库验证真实根目录入口，限定 POSIX 进程组并清理。未增加依赖或复制源码；见[研究](research/2026-09-15-contributor-startup.zh-CN.md)。 |
 | 流式 JSON 请求大小限制 | WHATWG Streams `b9ba9f49`；已审查 Hono 4.13.7 / `eebdf7be` | WHATWG 条款；Node.js 许可；MIT | 复用原生读取器和流式 UTF-8 解码，按实际字节计数、超限取消，保留各入口上限与错误格式。已审查的 Hono 中间件信任声明长度，直接使用不能满足清理要求。未复制源码或增加依赖；见[研究](research/2026-09-15-request-body-limits.zh-CN.md)。 |
 | 统一任务、附件与定时流程 | PostgreSQL 17；ai 7.0.93 / 6359fd58；现有 Zod 4.5.4 | PostgreSQL；Apache-2.0；MIT | 复用既有事务和文件锁、共享协议定义和单份工具表；暂停任务保留附件引用，追加结果约束迁移，失效时停用。未复制源码或增加依赖；见[研究](research/task-flow-refactor.zh-CN.md)。 |
@@ -490,7 +491,7 @@ agent-computer `257c1280d684089be9adb0b35cce262efc7064bf`（MIT）及既有 Serv
 
 产品 Worker 复用已审查的持久 Action、私有媒体／工具观察与独立复核。见
 [读取工具](research/python-work-product-reads.md)、[报告复核](research/python-work-product-result.md)及
-[公开网页](research/python-work-product-web.md)。HTML 提取采用 Beautiful Soup4.15.0／Soup Sieve2.8.3（MIT），
+[公开网页](research/python-work-product-web.md)。HTML 提取采用 Beautiful Soup4.15.0／Soup Sieve2.9.2（MIT；C3 安全升级证据见下文），
 [精确哈希](research/python-work-web-pins.json)和包内声明完整保留。报告使用私有 blob 维持24KiB契约，
 不扩大 Action 上限；内容复核是可能出错的质量信号，不是外部业务效果证明。
 
@@ -557,3 +558,10 @@ pipe 协议、Playwright1.62.1 ASCII-NUL framing 窄适配（Apache-2.0）及 No
 工作区，沿用已审核的 Node 密钥 API、Sigstore、原子文件写入与 MCP SDK 固定版本。源码许可与
 初始哈希保留，CLI 保持历史相对路径语义，生成器对齐现有 Zod4.6.2；不新增密码学实现或依赖
 版本，两项工具均不依赖旧业务 Server 或测试 oracle。
+
+## C3 CI 资格与生产依赖安全修复
+
+复用现有 npm/Turbo 图和固定 Actions。YAML 2.9.0（ISC）从已有依赖提升为显式根工具，
+pip-audit 2.10.1（Apache-2.0）通过隔离、精确锁定的工具闭包审计实际 Python 生产锁；无上游源码复制。
+精确提交和有界取舍见 [CI 决定](research/windows-ci-merge-gate.md)。Soup Sieve 2.9.2（MIT）
+修复新安全门发现的公告，保留 Beautiful Soup 和有界子进程，见[针对性升级证据](research/python-work-product-web.md#c3-advisory-driven-soup-sieve-update-2026-09-27)。

@@ -18,7 +18,7 @@
     "generate": "node ../../scripts/plan-migration.mjs --reject-generate",
     "migration:plan": "node ../../scripts/plan-migration.mjs",
     "migrate": "drizzle-kit migrate",
-    "test": "node --test ../../scripts/plan-migration.test.mjs && vitest run src --passWithNoTests",
+    "test": "node --test ../../scripts/plan-migration.test.mjs && vitest run src",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

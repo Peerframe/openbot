@@ -5,7 +5,7 @@ from dataclasses import replace
 import asyncio
 import json
 
-from openbot_agent_runtime.contracts import ToolDescriptor
+from openbot_agent_runtime import ToolDescriptor
 
 from . import work_temporal_activity as temporal
 from .identity_inputs import _UUID_PATTERN_TEXT

@@ -15,8 +15,6 @@ from pydantic_ai.messages import ModelResponse,TextPart,ToolCallPart,ToolReturnP
 from pydantic_ai.usage import RequestUsage,UsageLimits
 with workflow.unsafe.imports_passed_through():
     import control
-    # Pure path assembly; resolving paths during Workflow module replay is forbidden.
-    sys.path.insert(0,str(Path(__file__).parents[2]/'apps/agent-runtime-python/src'))
     from openbot_agent_runtime.catalog import ToolCatalog
     from openbot_agent_runtime.contracts import RuntimeLimits, ToolDescriptor
     from openbot_agent_runtime.guard import RunGuard

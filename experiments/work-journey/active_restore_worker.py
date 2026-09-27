@@ -10,8 +10,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--repo',type=Path,required=True)
     repo=parser.parse_args().repo.resolve()
-    sys.path[:0]=[str(repo/'experiments/work-journey'),str(repo/'apps/server-python/src'),
-                 str(repo/'apps/agent-runtime-python/src')]
+    sys.path[:0]=[str(repo/'experiments/work-journey'),str(repo/'apps/server-python/src')]
     import control
     import product_approval_worker
     config=control.settings();original=control.http

@@ -80,7 +80,7 @@ def qualify(image):
         first=json.loads(docker('exec','-i',server,PYTHON,'-I','-B','-',f'http://{server}:3001','create',input=client,timeout=150))
         state=inspect(server);assert state['HostConfig']['ReadonlyRootfs'] and state['Config']['User']=='1000:1000'
         assert docker('exec',server,'/usr/local/bin/node','--version')=='v24.21.0'
-        docker('exec',server,PYTHON,'-I','-B','/workspace/apps/server-python/scripts/verify_environment.py','--worker')
+        docker('exec',server,PYTHON,'-I','-B','/workspace/apps/server-python/scripts/verify_environment.py','--product')
         # The image ships no TS business Server/oracle or Node build tools.
         docker('exec',server,PYTHON,'-I','-B','-c',"from pathlib import Path; assert all(not Path('/workspace',p).exists() for p in ['apps/server','tests/oracles','node_modules/typescript','node_modules/vite'])")
         docker('stop','--time','20',server);assert inspect(server)['State']['ExitCode'] in (0,143)

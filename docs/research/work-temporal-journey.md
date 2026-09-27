@@ -469,7 +469,7 @@ pydantic-ai-slim 2.47.0 (`77d5fce751ab8ab04bd5db4ed6acc1131a4baed6`) and Tempora
 (`ab52fdde33ee8ed193402625bfdba25d240a762d`), against the disposable Temporal CLI 1.9.1 / Server
 1.32.0 profile. Reviewed public surface: `Agent(model, deps_type, toolsets, capabilities,
 output_type, instructions, retries)` and `Agent.run(user_prompt, *, deps, message_history,
-usage_limits, ...)` (`apps/agent-runtime-python/RESEARCH.md` §2); `Model.request`;
+usage_limits, ...)` (`packages/harness/RESEARCH.md` §2); `Model.request`;
 `AbstractToolset.get_tools`/`call_tool`; `DynamicToolset(id=...)`;
 `TemporalDurability(activity_config, model_activity_config)`; `PydanticAIPlugin`; and the workflow
 registration `__pydantic_ai_agents__` already exercised in
@@ -673,8 +673,8 @@ implementer remained during those edits.
 Candidate files were copied byte-for-byte into the integration tree after the
 existing uncommitted probe was saved and both diffs reviewed. Code SHA-256:
 
-- `apps/agent-runtime-python/src/openbot_agent_runtime/temporal_agent.py`: `0dc778548ca9f0cc0a885a5a5a7c8ba4b827ea03399f2c4c140b68db10a3927c`
-- `apps/agent-runtime-python/tests/test_temporal_agent.py`: `dfbb73ad06ea6b64aa7894b3e4477be9507123e311ac505d6e06a77a41cd332f`
+- `packages/harness/src/openbot_agent_runtime/temporal_agent.py`: `0dc778548ca9f0cc0a885a5a5a7c8ba4b827ea03399f2c4c140b68db10a3927c`
+- `packages/harness/tests/test_temporal_agent.py`: `dfbb73ad06ea6b64aa7894b3e4477be9507123e311ac505d6e06a77a41cd332f`
 - `experiments/work-journey/multirun_port_probe.py`: `7a37118a242bc9ca3bedff7600361fd3831f7b955e6c0ed0dc60f443a6a3236a`
 
 Actual execution evidence (Python3.12.13, Pydantic AI2.47.0, Temporal SDK1.33.0;
@@ -809,8 +809,8 @@ The following SHA-256 values were checked again after process exit and all match
 
 | File | SHA-256 |
 | --- | --- |
-| `apps/agent-runtime-python/src/openbot_agent_runtime/temporal_agent.py` | `2d37eaf2985cdb34d9a0eb37218fe3d39ccbaf9092b535104fa972dad72f27e7` |
-| `apps/agent-runtime-python/tests/test_temporal_agent.py` | `1955bb456ea0bb4795a6d40fc82a9dbb7d7f034752ba6cf0022728d2ef18a45f` |
+| `packages/harness/src/openbot_agent_runtime/temporal_agent.py` | `2d37eaf2985cdb34d9a0eb37218fe3d39ccbaf9092b535104fa972dad72f27e7` |
+| `packages/harness/tests/test_temporal_agent.py` | `1955bb456ea0bb4795a6d40fc82a9dbb7d7f034752ba6cf0022728d2ef18a45f` |
 | `experiments/work-journey/workflow_worker.py` | `a3387b052f00c9f2d13ae1c90ceb117d6df465e9f81181eb852b90ffd69f3a7f` |
 | `experiments/work-journey/test_runtime_worker.py` | `382bf315cabbf2aa884440f210be666209be4f0f5f7a542bccd70df10ed5dca5` |
 | `experiments/work-journey/probe.py` | `7eb7330647115b6a587f9b011711cf71bf568a962053993443cadd8947a2d589` |

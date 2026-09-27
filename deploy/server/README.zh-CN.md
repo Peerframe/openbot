@@ -61,7 +61,7 @@ Python只安装锁定wheel，缺少对应架构wheel时拒绝构建。本地Linu
 
 ```sh
 node --test deploy/server/product-container.test.mjs
-PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=apps/server-python/src:apps/agent-runtime-python/src apps/server-python/.worker-venv/bin/python -m pytest -p no:cacheprovider -q deploy/server/test_product_container.py apps/server-python/tests/test_entry.py
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=apps/server-python/src:packages/harness/src apps/server-python/.worker-venv/bin/python -m pytest -p no:cacheprovider -q deploy/server/test_product_container.py apps/server-python/tests/test_entry.py
 ```
 
 见[研究与准确边界](../../docs/research/python-product-container.md)。

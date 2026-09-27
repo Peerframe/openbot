@@ -8,7 +8,7 @@ Reuse the exact PostgreSQL 17.11, Psycopg 3.3.6, Pydantic 2.13.5 and Zod 4.6.2 p
 [identity transactions](python-identity-transactions.md), [inputs](python-identity-inputs.md), and
 [control reads](python-control-read-slice.md). Keep the existing SQL history, identifiers and audits.
 No new workflow engine, ORM or model authority is selected. Existing released runtime/transport
-reuse remains in apps/agent-runtime-python/RESEARCH.md; this document does not yet authorize an
+reuse remains in packages/harness/RESEARCH.md; this document does not yet authorize an
 invented second wire protocol or a dependency addition.
 
 ## Inspected responsibilities

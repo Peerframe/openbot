@@ -23,3 +23,10 @@ README*.md
 **/.venv
 **/__pycache__
 **/.pytest_cache
+
+# Separate reviewed build, quality and optional Worker environments are host-only.
+**/.build-venv
+**/.quality-venv
+**/.worker-venv
+apps/desktop/native-runtime
+apps/desktop/out

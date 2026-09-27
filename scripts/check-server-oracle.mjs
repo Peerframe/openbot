@@ -13,6 +13,8 @@ const excluded = new Set([
   ".turbo",
   ".venv",
   ".worker-venv",
+  ".build-venv",
+  ".quality-venv",
   "__pycache__",
   "__fixtures__",
   "fixtures",

@@ -4,12 +4,12 @@
 
 ## Policy
 
-OpenBot researches established open-source implementations before designing a non-trivial feature.
+OpenBot researches new dependencies/versions, public protocols, authorization/security or persistent-data
+boundaries, and material architecture choices before implementing the affected decision.
 The goal is to reuse maintained standards, libraries, protocols, and narrow services instead of
 building another incompatible subsystem.
 
-Research does not mean copying the first repository that looks similar. Every feature intake must
-record:
+Research does not mean copying the first repository that looks similar. When a trigger applies, record:
 
 1. the user outcome and security boundary;
 2. relevant upstream repositories or open standards;
@@ -48,12 +48,14 @@ Audit date: 2026-09-04. Commit pins are research baselines, not automatic depend
 
 This table is also the retroactive review ledger for non-trivial code already present on this
 branch. A feature that is not mapped here, in an ADR, or in its issue is blocked from further
-expansion until its upstream and license review is recorded.
+expansion of the affected decision until relevant upstream/license evidence is recorded. Ordinary
+fixes reuse valid decisions and reviewed versions; they do not reopen the full ledger. See
+[the research paths](../CONTRIBUTING.md#research-evidence-and-documentation-exemptions).
 
 | OpenBot area | Researched source | License | Decision and current status |
 | --- | --- | --- | --- |
 | Windows delivery reliability and required CI completion | Electron get 5.1.0 / `da84467e`; Packager 20.3.0 / `8c5cc941`; builder 26.16.1 / `7d3b30f3`; .NET Process; GitHub Actions dependency results | MIT; BSD-2-Clause; Microsoft/GitHub documentation terms | Retry only transient verified-download failures; observe fixture installation progress with idle and overall bounds; require every CI job in the protected completion check. No copied source. See [download](research/windows-ci-download-reliability.md), [installer](research/windows-installer-progress.md), and [merge gate](research/windows-ci-merge-gate.md). |
-| Documentation research exemptions | Git 2.55.0 / `e9019fca`; checkout 7.0.1 / `3d3c42e5` | GPL-2.0; MIT | Reuse committed Git diffs and blob identities to validate a short exemption for ordinary Markdown prose. Source, policy and protected technical content keep the research form; unchanged claims remain a review responsibility. No dependency or source copied; see [research](research/2026-09-15-research-exemptions.md). |
+| Documentation exemptions and ordinary-fix decision reuse | Git 2.55.0 / `e9019fca`; checkout 7.0.1 / `3d3c42e5` | GPL-2.0; MIT | Reuse committed Git diffs and blob identities to validate a short exemption for ordinary Markdown prose. Source, policy and protected technical content keep the research form; unchanged claims remain a review responsibility. No dependency or source copied; see [research](research/2026-09-15-research-exemptions.md). |
 | Contributor startup and clean-checkout verification | Turborepo 2.10.12 / `53752d45`; existing Node APIs and Postgres.js 3.4.9 | MIT; Node.js license; Unlicense | Reuse the dependency graph and filtered persistent tasks for Server/Web/optional Node. A bounded POSIX smoke starts the real root command against an empty loopback database before any build. No dependency or source copied; see [research](research/2026-09-15-contributor-startup.md). |
 | Streamed JSON request bounds | WHATWG Streams `b9ba9f49`; Hono 4.13.7 / `eebdf7be` reviewed | WHATWG terms; Node.js license; MIT | Reuse native readers and streaming UTF-8 decoding to count actual bytes, cancel overflow and preserve route-specific limits and errors. The reviewed Hono middleware trusts declared length and does not meet this cleanup contract unchanged. No source copied or dependency added; see [research](research/2026-09-15-request-body-limits.md). |
 | Shared task, attachment and automation flow | PostgreSQL 17; ai 7.0.93 / 6359fd58; existing Zod 4.5.4 | PostgreSQL; Apache-2.0; MIT | Reuse the existing transaction and file lock, shared protocol descriptors and one Run-scoped tool map. Preserve paused schedule references and stop invalid occurrences with an additive outcome migration. No source copied or dependency added; see [research](research/task-flow-refactor.md). |
@@ -807,7 +809,7 @@ with current source, knowledge, plugin and attachment gates. See the
 [read tools](research/python-work-product-reads.md),
 [answer/report review](research/python-work-product-result.md) and
 [public web tools](research/python-work-product-web.md) records.
-HTML extraction selects Beautiful Soup 4.15.0 and Soup Sieve 2.8.3 (MIT), with release hashes in
+HTML extraction selects Beautiful Soup 4.15.0 and Soup Sieve 2.9.2 (MIT; C3 security-update evidence below), retaining historical release hashes in
 [dependency pins](research/python-work-web-pins.json) and complete bundled notices. No upstream
 source is copied; the existing private blob store preserves the report size contract without
 raising Action limits. Result review is a fallible quality signal, not external-effect proof.
@@ -955,3 +957,25 @@ macOS arm64 local hosting; Windows/Intel Mac are remote clients with retained ol
 No new dependency or upstream implementation is copied. Frozen oracle and canonical
 SQL remain unchanged. Container, native artifact and public startup checks cover the
 new defaults; historical evidence is not relabeled as current qualification.
+
+
+## Installed Python harness and contributor tooling (2026-09-27)
+
+C2 preserves the reviewed execution/Temporal stack and extracts its single source to
+`packages/harness`. Hatchling 1.32.4 builds an explicitly selected typed wheel; Ruff 0.16.8 and
+mypy 2.3.1 are isolated development tools, all MIT, no copied upstream source. Runtime, test and
+build/quality closures remain separate; exact references and tradeoffs are in
+[the package research](../packages/harness/RESEARCH.md#10-c2-installed-harness-and-contributor-tools-2026-09-27).
+
+## C3 CI qualification and production advisory repair
+
+Reuse the existing npm/Turbo graph and pinned Actions. YAML 2.9.0 (ISC) is promoted from an
+existing dependency to explicit root tooling; pip-audit 2.10.1 (Apache-2.0) audits the real Python
+product lock with an isolated exact tool closure. No upstream source is copied. Exact commits,
+primary sources and bounded alternatives are in [the CI decision](research/windows-ci-merge-gate.md).
+Soup Sieve 2.9.2 (MIT) fixes advisories found by this gate; retain Beautiful Soup and the bounded
+subprocess, with [targeted security-update evidence](research/python-work-product-web.md#c3-advisory-driven-soup-sieve-update-2026-09-27).
+
+C3 复用现有 npm/Turbo 图和已固定的 Actions。YAML 2.9.0 从已有依赖提升为显式根工具，
+pip-audit 2.10.1 在隔离工具环境审计实际 Python 生产锁；不复制上游源码。Soup Sieve 2.9.2
+修复该门发现的安全公告，保留原 HTML 提取契约和有界子进程；固定版本与针对性证据见上方链接。

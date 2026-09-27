@@ -1,45 +1,127 @@
 # 仓库地图
 
-[English](REPOSITORY_MAP.md)
+[English](REPOSITORY_MAP.md) · 简体中文
 
-先读[当前架构](ARCHITECTURE.zh-CN.md)理解权限边界，按[贡献指南](../CONTRIBUTING.zh-CN.md)复现环境。下列命令都在仓库根目录运行。每次修改聚焦一个行为及其负面测试，避免增加第二个状态权威或重复的全局样式覆盖。
+从[根规则](../AGENTS.zh-CN.md)开始，只选下面相关路线和局部规则。命令都从仓库根目录运行。
+以当前 checkout 核对路径；不足时沿调用、import 或失败测试继续查，不预加载整个研究库。
+启动见[贡献指南](../CONTRIBUTING.zh-CN.md)，升级状态只在[交接](REPOSITORY_UPGRADE_PLAN.md)维护。
 
-| 区域 | 主要位置 | 扩展方式与检查 |
+Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README；[冻结 oracle](../tests/oracles/legacy-server/AGENTS.md)
+只作比较输入。核心在 `packages/harness`，测试及真实消费者安装其带类型信息的 wheel。
+
+## UI 交互
+
+- 规则：[Web AGENTS](../apps/web/AGENTS.md)、[设计入口](design/README.zh-CN.md)。
+- 实现：[ChannelMembersMenu](../apps/web/src/components/ChannelMembersMenu.tsx)、
+  [CSS](../apps/web/src/components/ChannelMembersMenu.css)、[测试](../apps/web/src/components/ChannelMembersMenu.test.tsx)，
+  当前产品父级是 [App](../apps/web/src/App.tsx) 工具栏，绑定加入/移除/打开档案。
+  [ChannelWorkspace](../apps/web/src/components/ChannelWorkspace.tsx) 仅在无 `globalHeader` 时内嵌菜单，
+  当前 App 传入 `globalHeader`。焦点/导航修改需读取两处。
+- 状态/消费者：[workspace hook](../apps/web/src/use-workspace-state.ts)、[API](../apps/web/src/api.ts)
+  把 Server 事实投影到 Web 和 Desktop 共用 renderer；Work 使用
+  [work-api](../apps/web/src/work-api.ts) 和 [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx)。
+- 检查：`npm exec -- turbo run build --filter=@openbot/web^...`，然后
+  `npm exec --workspace @openbot/web -- vitest run src/components/ChannelMembersMenu.test.tsx`、
+  `npm run typecheck --workspace @openbot/web`；按改动选择真实组件测试。
+- 环境：`npm ci`；真实页面使用文档中的 Python Server/Web 开发入口和临时 Owner/数据库，
+  检查宽窄视口及受影响状态，不需要付费模型。组件测试不等于渲染验收。桥接改动另读
+  [Desktop 规则](../apps/desktop/AGENTS.md)。
+
+## Python 核心
+
+- 规则/契约：[runtime AGENTS](../packages/harness/AGENTS.md)、
+  [contracts](../packages/harness/src/openbot_agent_runtime/contracts.py)、
+  [现有研究](../packages/harness/RESEARCH.md#9-real-server-catalog-and-tool-correlation-integration)。
+  第 9 节取代原 4/4a 节的 catalog 选择，应以当前实现为准。
+- 实现：[executor](../packages/harness/src/openbot_agent_runtime/executor.py)、
+  [catalog](../packages/harness/src/openbot_agent_runtime/catalog.py)、
+  [bounds](../packages/harness/src/openbot_agent_runtime/bounds.py)。
+- 消费者：控制层 [host](../apps/server-python/src/openbot_server/runtime_host.py)、
+  [process](../apps/server-python/src/openbot_server/runtime_process.py)、
+  [Work runtime](../apps/server-python/src/openbot_server/work_product_runtime.py) 和
+  [Desktop 打包](../apps/desktop/scripts/prepare-native-server.mjs)。可选
+  [Temporal 组装](../packages/harness/src/openbot_agent_runtime/temporal_agent.py)有独立生命周期；
+  [可信端口](../apps/server-python/src/openbot_server/work_runtime_ports.py)由控制层拥有。
+- 测试：[catalog/limits](../packages/harness/tests/test_catalog_and_limits.py)、
+  [authority](../packages/harness/tests/test_authority.py)、
+  [lifecycle](../packages/harness/tests/test_lifecycle.py)、
+  [Temporal](../packages/harness/tests/test_temporal_agent.py)。
+- 命令：`packages/harness/scripts/bootstrap.sh`，再执行
+  `packages/harness/scripts/check.sh -k catalog`；全包检查去掉 `-k`，核对实际收集数量。
+  需要 Python 3.12+；只有锁定安装联网，基础测试无需 DB、Electron、Temporal 或模型账户。
+  Worker 环境见[控制层 README](../apps/server-python/README.zh-CN.md)，基础测试不证明 replay。
+
+## 跨语言契约
+
+- 读[协议规则](../packages/protocol/AGENTS.md)和[控制规则](../apps/server-python/AGENTS.md)。
+  [protocol/src](../packages/protocol/src/index.ts)拥有 Node Zod 契约，实际消费者包括
+  [Node client](../apps/node/src/client.ts)，不得另造 DTO 权威。
+- Python HTTP 当前用 [work routes](../apps/server-python/src/openbot_server/work_routes.py) 与
+  [公共 Work DTO](../apps/server-python/src/openbot_server/work_models.py)显式投影；TS 消费者是
+  [work-api](../apps/web/src/work-api.ts)、[测试](../apps/web/src/work-api.test.ts)与
+  [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx)。Work snapshot 已接入 Python→TS 生成类型，命令见文末。
+- Runtime wire：[控制校验](../apps/server-python/src/openbot_server/runtime_wire.py) ↔
+  [核心 wire](../packages/harness/src/openbot_agent_runtime/wire.py)；
+  [比较脚本](../apps/server-python/scripts/compare-runtime-wire.mjs)对照冻结 TS oracle，不能把它当活跃 Server。
+  保留 missing/null、错误码、大小限制和未知字段拒绝。
+- 命令：`npm run oracle:build`、`apps/server-python/scripts/bootstrap.sh`，再运行
+  `node apps/server-python/scripts/compare-runtime-wire.mjs`（合成数据，无 DB/模型）。HTTP 改动另跑
+  `npm exec --workspace @openbot/web -- vitest run src/work-api.test.ts` 及控制层相关测试；Node wire 跑
+  `npm run test --workspace @openbot/protocol`。`npm run test:control:python` 增加临时 PostgreSQL 与差分，
+  Worker 覆盖还要按文档配置 `OPENBOT_TEMPORAL_TEST_PYTHON`。
+
+## 控制与持久化
+
+[局部规则](../apps/server-python/AGENTS.md) → [app](../apps/server-python/src/openbot_server/app.py) →
+[product 组装](../apps/server-python/src/openbot_server/product_control.py)。控制层拥有身份、授权、
+路由、审批、预算、Task/Action 事实与审计；[task store](../apps/server-python/src/openbot_server/task_store.py)
+处理保留的提交，[Work store](../apps/server-python/src/openbot_server/work_store.py)处理持久 Work 事实。
+Web/Desktop/Node 消费这些事实，SQL 历史保留在 `packages/db/migrations`。
+
+执行 `apps/server-python/scripts/bootstrap.sh` 和 `apps/server-python/scripts/check.sh -q`；互操作
+测试先 `npm run oracle:build`。基础脚本明确委派 Worker 文件，DB 测试需要临时夹具。
+Schema 变化使用 `npm run migration:plan --workspace @openbot/db -- --name describe_change`、
+`npm run migrations:check` 与[迁移契约](DATABASE.zh-CN.md#编写迁移)。不改已应用 SQL，不使用用户数据库验收。
+
+## 其他局部路线
+
+| 范围 | 所有者/入口及消费者 | 验证/环境 |
 | --- | --- | --- |
-| Server API | `apps/server-python/src/openbot_server/app.py`、各功能 `*_routes.py` | Owner/Origin middleware 后挂载；先校验后变更；运行 Server 测试 |
-| 持久化 | `packages/db/src/schema.ts`、migrations、Server `*_store.py` | [手写 SQL 与只读迁移计划](DATABASE.zh-CN.md#编写迁移)；条件事务；不重生成既有历史。运行 `npm run migration:plan --workspace @openbot/db -- --help`、迁移检查与隔离 PostgreSQL 测试 |
-| 原生 Agent | Server `native-agent.ts`、`agent-*.ts`、`postgres-agent-*.ts` | 有界工具、执行前审计、准确身份和取消；运行 SDK 流测试与协作数据库测试 |
-| MCP 扩展 | Server `plugin_*.py`、Web `Plugin*` 组件 | 已审阅的工具/资源/提示词及沙箱网页；运行 service/content/transport/sandbox 测试 |
-| 产品类型 | `packages/domain/src` | 稳定 DTO，不导入 apps；运行 domain typecheck |
-| 外部协议 | `packages/protocol/src` | 严格 schema 和非法输入测试，与内部类型区分 |
-| 频道体验 | Web `ChannelWorkspace`、`MessageActionBar`、`MessageReactions`、附件组件 | 每个组件负责一种交互，回调变更 Server 状态；组件测试及宽窄窗口实测 |
-| Web 数据与会话 | `api.ts`、`conversation-session.ts`、`run-output-state.ts` | 鉴权请求、草稿所有权、准确频道事件；API/session 测试和类型检查 |
-| Desktop 边界 | `apps/desktop/src/main.ts`、`preload.cts`、`native-server.ts` | 类型化受限桥接、可信 frame 校验；运行桌面测试及目标平台安装/启停 |
-| Node 执行 | `apps/node/src/client.ts`、`runtime.ts`、`providers.ts` | 先[登记开发 Node](../CONTRIBUTING.zh-CN.md#按需启动开发-node)，再连接；分派与实际能力校验、生命周期/传输测试 |
-| Provider | `providers/*`、`packages/provider-sdk`、conformance runner | 对维护中的上游做薄适配；通过具体能力的符合性检查 |
-| 安全/策略 | `packages/policy`、`docs/SECURITY.md`、Server auth/approval | 默认拒绝、权限上限、显式审计；策略/鉴权负测与安全配置检查 |
-| 打包/CI | `scripts`、Desktop scripts、`.github/workflows`、`deploy` | 可复现版本、目标平台构建与生命周期；release checks 和原生 smoke |
-| 官网/手册 | [openbot-website](https://github.com/yxflc11/openbot-website)、`docs`、根 README | 链接当前正式文档，区分实现/验证/计划；站点构建、docs check 和浏览器验收 |
+| MCP 扩展 | Python `plugin_*.py`、[PLUGINS](PLUGINS.md)、Web `Plugin*` | 控制插件、Web sandbox 测试，合成 MCP 夹具 |
+| Node / Provider | `apps/node/src/runtime.ts`、`providers/*`、`packages/provider-sdk`；Server 分派 | Node/Provider 测试及[一致性](PROVIDER_CONFORMANCE.zh-CN.md)；真实 Node 流程才登记 |
+| 产品类型 | `packages/domain/src`；Web/Node | `npm run typecheck --workspace @openbot/domain` 和消费者构建 |
+| Desktop | [局部规则](../apps/desktop/AGENTS.md)、main/preload/native-server | Desktop 测试；载荷变化需目标系统打包/安装/启停 |
+| 打包/CI | `scripts`、`.github/workflows`、`deploy`；安装物和 CI | `npm run release:check`、受影响原生任务；`npm run check` 保持总检查 |
+| 规则/开发 skill | 根/局部 AGENTS、`.agents/skills`、贡献/研究门 | docs/research 检查和真实发现/读取；脚本变化另跑完整 check |
 
-## 修改流程
+## 修改与生成物
 
-先运行[最短 Server/Web 开发流程](../CONTRIBUTING.zh-CN.md#本地开发)，再按需启用执行能力。
-恢复操作使用[完整持久资产清单](DATABASE.zh-CN.md#备份边界)，包含模型密钥/设置和插件状态。
-第三方运行时原始声明及版本/哈希清单位于 [licenses/runtime](../licenses/runtime/README.zh-CN.md)。
+只查相关[复用条目](OPEN_SOURCE_REUSE.zh-CN.md)，按[触发规则](../CONTRIBUTING.zh-CN.md#研究依据与文档豁免)
+决定是否补针对性研究；普通修复复用有效决定。追到消费者，补有意义的失败测试，同步英文和维护中的翻译。
+依赖方向保持 apps → shared packages。检查取证见 [openbot-check](../.agents/skills/openbot-check/SKILL.md)。
 
-1. 找到模块以及[开源复用记录](OPEN_SOURCE_REUSE.zh-CN.md)。
-2. 非简单行为变更先记录一手来源研究。
-3. 修改最小功能模块；授权留在 Server，外部契约使用共享 schema。
-4. 边界变化增加有意义的失败或竞态测试；数据库使用独立临时实例，不使用用户数据。
-5. 单独运行下游 typecheck 前先构建改过的 shared package；根 Turbo 脚本会按依赖顺序处理。
-6. 同步英文正式文档与中文翻译，最后运行 `npm run check`。
+`dist`、`node_modules`、`.turbo`、venv、Desktop `out`/`native-runtime`、`.env`、数据库和日志为生成/私有内容。
+开发 skills 不进入产品资源。备份按[持久资产清单](DATABASE.zh-CN.md#备份边界)，许可见
+[licenses/runtime](../licenses/runtime/README.md)；迁移历史仅为相关决定按需读取。
 
-## 源码与生成内容
 
-`dist`、`node_modules`、`.turbo`、Desktop `out`/`native-runtime`、私有 `.env`、数据库和日志不提交。已安装应用不是源码权威。`docs/research` 保存决策依据，产品手册通过链接引用，避免复制旧实现历史。
+### 安装物与 Work HTTP 贡献检查
 
-依赖方向是 apps 使用共享 packages，共享 packages 不能反向导入 apps。插件作者从[插件协议](PLUGINS.zh-CN.md)开始；电脑后端作者从[Provider 符合性](PROVIDER_CONFORMANCE.zh-CN.md)开始。技能只是一种内容，不等于整个扩展协议。
+用 `npm run harness:check`／`npm run harness:wheel` 和包内 `scripts/quality.sh`。
+`sh apps/server-python/scripts/bootstrap-worker.sh` 把同一 wheel 安装到 Worker 环境。
+构建／质量／产品依赖有独立精确锁，见[harness 设置](../packages/harness/README.zh-CN.md)。
 
-任务流程入口：`task-attachment-references.ts` 管理新引用策略；`postgres-task-submission.ts` 管理既有 Message/Run 同事务提交；`postgres-task-records.ts` 仅作行数据映射；`postgres-attachment-references.ts` 为清理查询持久引用。共享协议文件 `attachments.ts`、`automations.ts`、`plugins.ts` 只包含数据契约。Web 的 `use-workspace-state.ts` 统一快照、操作响应与实时事件。见[任务研究](research/task-flow-refactor.zh-CN.md)和[工作区研究](research/workspace-state-refactor.zh-CN.md)。
+Work snapshot 的真实 HTTP 响应由 `work_models.py` 经 `work_routes.py` 定义。
+`npm run contracts:generate` 生成[消费类型](../apps/web/src/generated/work-contract.ts)，
+`npm run contracts:check` 检查新鲜度；[work-api](../apps/web/src/work-api.ts)实际引用类型并保留 Zod 验证。
+准备控制层基础 `.venv` 后运行
+`npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts`，验证真实 Python HTTP
+序列化及状态到 Web 的兼容性，无需 DB 或模型。Node wire 契约仍归 `packages/protocol`。
 
-[设计素材索引](design/README.zh-CN.md)明确区分当前参考与历史概念。
+### CI 选择与安装物资格
+
+本地已跟踪/未跟踪变化用 `npm run ci:scope -- --local`；已提交 PR 用已核实的 `--base SHA --head SHA`。
+`npm run check:affected` 接受同样的显式参数，只跑校验 lane，并列出其他必需 job；`npm run check`
+仍是仓库总检查。策略在 [ci-scope](../scripts/ci-scope.mjs)，[汇总](../scripts/ci-results.mjs)只接受必需项成功；
+反例用 `npm run ci:check`。CI 改动先读[贡献规则](../CONTRIBUTING.zh-CN.md#必要-ci-全部完成)及唯一交接的
+[职责/产物表](REPOSITORY_UPGRADE_PLAN.md#c3-check-duties-and-artifact-ownership)。

@@ -2,7 +2,11 @@
 
 [English](AGENT_RUNTIME_PROTOCOL.md) · [简体中文](AGENT_RUNTIME_PROTOCOL.zh-CN.md)
 
-Status: frozen for internal adapter implementation, not a production-enabled runtime or public API.
+Status: implemented internal ordinary-process profile, not a public API. Current Python control
+adapters are `runtime_host.py` / `runtime_process.py`; TS comparison inputs are frozen under
+`tests/oracles/legacy-server`. This invocation lifecycle is distinct from the optional Temporal
+Activity composition. See [current entrypoints](REPOSITORY_MAP.md#cross-language-contract); this
+protocol does not itself qualify a product deployment or platform.
 Research and scope: [transport review](research/python-runtime-transport.md).
 
 ## Authority and transport
@@ -83,7 +87,7 @@ There is no worker audit, usage-write, correction-write, approval or result-subm
 
 On SDK completion the child responds to `run` with `result:{text:string}` only, flushes and exits
 zero. The Server requires valid bounded nonblank text matching its last model answer, no outstanding
-operation, clean EOF and exit zero before accepting a provisional result. Only NativeAgentRunner
+operation, clean EOF and exit zero before accepting a provisional result. Only the trusted control layer
 later publishes the reply/artifacts and commits Run state. Any extra frame after final is failure.
 
 Application errors use `{code:-32000,message:"Runtime operation refused",data:{reason:string}}`.

@@ -21,7 +21,7 @@
   `pydantic-ai human in the loop tool approval`, `pydantic-ai durable execution checkpoints`.
 - Primary documentation: the Pydantic AI deferred-tools page, the durable execution backends page and
   the installed distribution metadata (license/version), fetched 2026-09-23.
-- Existing OpenBot entries checked: `apps/agent-runtime-python/RESEARCH.md` (§1 pin, §2 API surface,
+- Existing OpenBot entries checked: `packages/harness/RESEARCH.md` (§1 pin, §2 API surface,
   §3 probes, §3a.6 banner, §3a.9 near-miss serialization, §5 constraints),
   `docs/WORK_EXECUTION_CONTRACT.md` ("One owner of continuation"), `docs/OPEN_SOURCE_REUSE.md`.
   TASK016's durability review is not repeated; this note covers only the continuation seam.
@@ -88,7 +88,7 @@
 
 ## Measured results
 
-Command: `apps/agent-runtime-python/.venv/bin/python experiments/runtime-continuation/probe.py`.
+Command: `packages/harness/.venv/bin/python experiments/runtime-continuation/probe.py`.
 WorkBuddy reported four successful local runs. Codex independently reproduced all 14 cases,
 inspected the cross-process event ledger and added counter assertions for invalid continuations.
 The experiment has no real model usage or production outcome verifier.

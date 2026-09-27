@@ -4,7 +4,7 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 ROOT=Path(__file__).resolve().parents[2]
 PACKET=Path(__file__).resolve().parent
-sys.path[:0]=[str(ROOT/'experiments/work-journey'),str(ROOT/'apps/server-python/src'),str(ROOT/'apps/agent-runtime-python/src')]
+sys.path[:0]=[str(ROOT/'experiments/work-journey'),str(ROOT/'apps/server-python/src')]
 import psycopg
 import httpx
 from active_restore_probe import ControlDatabase,private

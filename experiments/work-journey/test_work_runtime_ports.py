@@ -17,7 +17,7 @@ from unittest.mock import AsyncMock, patch
 
 _ROOT = Path(__file__).resolve().parents[2]
 # Prepend the two existing source trees; the tests perform no environment read and install nothing.
-for _relative in ('apps/server-python/src', 'apps/agent-runtime-python/src'):
+for _relative in ('apps/server-python/src',):
     _source = str(_ROOT / _relative)
     if _source not in sys.path:
         sys.path.insert(0, _source)

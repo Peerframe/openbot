@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import { reusableChange, reuseFields, validateResearchReuse } from "./check-research-reuse.mjs";
 
 const requiredFields = [
   "Research artifact",
@@ -21,6 +22,23 @@ export function validatePullRequestResearch(body, changes) {
   const section = extractSection(body.replace(/<!--[\s\S]*?-->/gu, ""), "Open-source research");
   if (section === undefined) return ["missing the 'Open-source research' section"];
 
+  const reuse = extractListField(section, "Research reuse");
+  if (reuse !== undefined) {
+    if (
+      extractListField(section, "Research exemption") !== undefined ||
+      requiredFields
+        .filter((label) => label !== "Source copied or substantially adapted")
+        .some((label) => extractListField(section, label) !== undefined)
+    )
+      return ["choose one research path, not mixed reuse, exemption or full evidence"];
+    const fields = Object.fromEntries(
+      [...reuseFields, "Source copied or substantially adapted"].map((label) => [
+        label,
+        extractListField(section, label),
+      ]),
+    );
+    return validateResearchReuse(fields, changes);
+  }
   const exemption = extractListField(section, "Research exemption");
   if (exemption !== undefined) return validateExemption(section, exemption, changes);
 
@@ -90,11 +108,12 @@ function isOrdinaryDocumentation(change) {
   const allowedPath =
     /^(?:README(?:\.[\w-]+)?\.md|docs\/.+\.md|(?:apps|packages|providers)\/[^/]+\/README(?:\.[\w-]+)?\.md)$/u;
   const policyPath =
-    /(?:^|\/)(?:AGENTS|CLAUDE|CONTRIBUTING|SECURITY|CODE_OF_CONDUCT|LICENSE|TEMPLATE|OPEN_SOURCE_REUSE)(?:\.[\w-]+)?\.md$/u;
+    /(?:^|\/)(?:AGENTS|CLAUDE|SKILL|CONTRIBUTING|SECURITY|CODE_OF_CONDUCT|LICENSE|TEMPLATE|OPEN_SOURCE_REUSE)(?:\.[\w-]+)?\.md$/u;
   return (
     allowedPath.test(change.path) &&
     !policyPath.test(change.path) &&
     !/^docs\/(?:decisions|research)\//u.test(change.path) &&
+    !/(?:^|\/)(?:skills|prompts)(?:\/|\.)/u.test(change.path) &&
     ["000000", "100644"].includes(change.beforeMode) &&
     ["000000", "100644"].includes(change.afterMode) &&
     typeof change.before === "string" &&
@@ -225,8 +244,8 @@ export function readPullRequestChanges(event, { cwd = process.cwd() } = {}) {
       if (!header) throw new Error("Unsupported change record.");
       const [, beforeMode, afterMode, beforeId, afterId] = header;
       const change = { path: fields[index + 1], beforeMode, afterMode, before: "", after: "" };
-      // Read immutable blobs only for candidate documents, never arbitrary working-tree paths.
-      if (isOrdinaryDocumentation(change)) {
+      // Read bounded immutable blobs only for candidate paths; never working-tree content.
+      if (isOrdinaryDocumentation(change) || reusableChange(change)) {
         change.before = beforeMode === "000000" ? "" : git(["cat-file", "blob", beforeId]);
         change.after = afterMode === "000000" ? "" : git(["cat-file", "blob", afterId]);
       }
@@ -273,7 +292,12 @@ function run() {
 
   const section = extractSection(body.replace(/<!--[\s\S]*?-->/gu, ""), "Open-source research");
   let changes;
-  if (section && extractListField(section, "Research exemption") !== undefined) {
+  if (
+    section &&
+    ["Research exemption", "Research reuse"].some(
+      (label) => extractListField(section, label) !== undefined,
+    )
+  ) {
     try {
       changes = readPullRequestChanges(event);
     } catch (error) {
@@ -288,13 +312,13 @@ function run() {
       [
         "Pull-request research check failed:",
         ...failures.map((failure) => `- ${failure}`),
-        "Use the research fields or the bounded documentation exemption described in CONTRIBUTING.md.",
+        "Use the full evidence, existing-decision reuse or bounded prose path in CONTRIBUTING.md.",
       ].join("\n"),
     );
     process.exitCode = 1;
     return;
   }
-  console.info("Pull-request research evidence or bounded documentation exemption is present.");
+  console.info("Pull-request research evidence, bounded reuse or prose exemption is present.");
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) run();

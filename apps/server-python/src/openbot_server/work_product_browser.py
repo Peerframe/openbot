@@ -8,7 +8,7 @@ from datetime import timedelta
 from typing import Annotated, Literal
 
 from pydantic import Field
-from openbot_agent_runtime.contracts import ToolDescriptor
+from openbot_agent_runtime import ToolDescriptor
 
 from .browser_gate import BrowserPauseGate
 from .browser_protocol import Id, Strict, Timestamp, validate_frame
