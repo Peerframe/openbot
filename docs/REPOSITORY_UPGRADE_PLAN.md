@@ -19,8 +19,10 @@ English canonical; 中文摘要见文末。This is the single C1→C2→C3 task 
 - User requested continued completion after C1. C1/C2 and the C3 local implementation are accepted; **final hosted CI is pending**.
   One parent owns all integration files. C3 implementation ends at `074f94d95e7066e7d04c657e3e65c8d1eb463df3`; later handoff-only edits
   reuse that executed evidence. The final branch HEAD is the review candidate.
-  No push, merge, publication, paid model call, production mutation or remote protection change
-  is authorized. Final candidate hosted CI remains a completion gate.
+  On 2026-09-27 the user explicitly authorized branch push, then draft PR creation and CI.
+  The branch was pushed and [draft PR #100](https://github.com/Peerframe/openbot/pull/100) is open
+  against main. Final candidate hosted CI remains a completion gate. Merge, publication, paid
+  model calls, production mutation and remote protection changes remain unauthorized.
 - Separate acceptance checkout: `/Users/yxflc/.codex/worktrees/contributor-acceptance/openbot`,
   based on `7399e11`. All three contributor writers finished. All integration checks and artifact writers also finished.
   Demo patches remain isolated and must not be merged automatically. Its copy of this handoff
@@ -188,12 +190,12 @@ are unavailable; local wall/CPU times above are not CI cost estimates or compara
   evidence is `/private/tmp/openbot-contributor-1440.png` and `openbot-contributor-390.png`.
 
 No local C1→C2 entry blocker remains; local C2/C3 implementation and bounded acceptance are done.
-**The overall upgrade is not closed:** final candidate hosted `check` still requires an explicitly
-authorized push to `origin` (`https://github.com/Peerframe/openbot.git`), normally the existing local
-`codex/repository-c1` branch and a review PR. No push/PR/merge is performed here. The eventual PR must
-supply research evidence and wait for the final candidate, not borrow base CI or local aggregate
-fixtures. Native Windows/Linux lanes, both hosted container architectures, complete hosted recovery/
-migration suites and remote PR-body validation remain unverified at this head. Native Keychain,
+**The overall upgrade is not closed:** the authorized branch push and draft PR are complete;
+[PR #100](https://github.com/Peerframe/openbot/pull/100) is running hosted CI. Its actual remote
+research body passed the existing local PR-event validator. Wait for the final candidate hosted
+`check`, not base CI or local aggregate fixtures; any newer push supersedes an older run.
+Native Windows/Linux lanes, both hosted container architectures and complete hosted recovery/
+migration suites remain pending at this checkpoint. Read their final results from the PR. Native Keychain,
 formal signing/notarization, user installation and release were outside this local candidate scope.
 
 All owned test services, temporary DBs, cold/scan fixtures and writers finished or were cleaned.
@@ -208,5 +210,6 @@ was touched. Do not rerun unchanged full suites solely for this status record.
 wheel/真实消费者、扩展与契约链、按影响选择的 CI 和失败关闭汇总均已落实。三条新会话贡献及两次
 真实交接通过，演示补丁留在独立 checkout。完整门禁、真实 PostgreSQL/Worker、最终容器与桌面包
 均通过；新安全门发现的依赖漏洞已修复，未靠忽略或延长时限过关。缓存、跳过、合成与真实范围如上。
-唯一仍阻止关闭整项升级的外部步骤是最终候选云端 CI：需明确授权推送，尚未执行；不将本地证据冒充
-云端/全部平台结果，也未合并、发布、替换用户安装、调用付费模型或操作生产数据。
+用户已明确授权推送、创建草稿 PR 和运行 CI；分支已推送，草稿 PR #100 已创建，真实 PR 正文通过
+研究门禁校验。最终候选云端 CI 正在执行，须以 PR 上最新提交的最终 check 为准；本地证据不能替代
+云端/全部平台结果。尚未授权或执行合并、发布、替换用户安装、付费模型调用或生产数据操作。
