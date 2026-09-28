@@ -1,9 +1,11 @@
-import { execFileSync } from "node:child_process";
-import { appendFile, readFile } from "node:fs/promises";
-import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+/**
+ * ci-selection.ts
+ *
+ * Pure CI check-selection policy: workspace graph, dependency propagation, and
+ * selectChecks. This is not a second workspace graph or a release qualification.
+ * Git / event / CLI ownership lives in ci-scope.ts.
+ */
 
-// This is a check selection policy, not a second workspace graph or a release qualification.
 export const JOBS = [
   "security",
   "validate",
@@ -17,7 +19,10 @@ export const JOBS = [
   "python-product-container",
   "python-desktop-preview",
   "synthetic-migration",
-];
+] as const;
+
+export type JobName = (typeof JOBS)[number];
+
 const PYTHON_CONSUMERS = [
   "harness",
   "python-runtime",
@@ -26,32 +31,72 @@ const PYTHON_CONSUMERS = [
   "python-product-container",
   "python-desktop-preview",
   "synthetic-migration",
-];
+] as const;
+
 const ROOT_CHECKS = [
   "oracle:check",
   "docs:check",
   "research:check",
   "security:config-check",
   "ci:check",
-];
+] as const;
 
-export function workspaceGraph(lock) {
-  const nodes = Object.entries(lock.packages ?? {}).filter(
-    ([path, item]) => path && !path.includes("node_modules") && item.name?.startsWith("@openbot/"),
-  );
-  if (!nodes.length) throw new Error("No existing npm workspace graph found.");
-  return nodes.map(([path, item]) => ({
-    path,
-    name: item.name,
-    dependencies: Object.keys({
-      ...item.dependencies,
-      ...item.devDependencies,
-      ...item.optionalDependencies,
-    }),
-  }));
+export type WorkspaceNode = {
+  readonly path: string;
+  readonly name: string;
+  readonly dependencies: readonly string[];
+};
+
+export type SelectChecksOptions = {
+  readonly full?: boolean;
+};
+
+export type SelectionPlan = {
+  readonly version: 1;
+  readonly mode: "focused" | "workspace" | "full";
+  readonly workspaces: readonly string[];
+  readonly rootChecks: readonly string[];
+  readonly required: readonly JobName[];
+  readonly notApplicable: readonly JobName[];
+  readonly reasons: readonly string[];
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function dependents(names, graph) {
+function packageDependencyKeys(item: Record<string, unknown>, path: string): string[] {
+  const merge: Record<string, unknown> = {};
+  for (const key of ["dependencies", "devDependencies", "optionalDependencies"] as const) {
+    const section = item[key];
+    if (section === undefined) continue;
+    if (!isRecord(section)) throw new Error(`Invalid ${key} for workspace package ${path}.`);
+    Object.assign(merge, section);
+  }
+  return Object.keys(merge);
+}
+
+export function workspaceGraph(lock: unknown): WorkspaceNode[] {
+  if (!isRecord(lock)) throw new Error("No existing npm workspace graph found.");
+  const packages = lock.packages;
+  if (!isRecord(packages)) throw new Error("No existing npm workspace graph found.");
+  const nodes: WorkspaceNode[] = [];
+  for (const [path, item] of Object.entries(packages)) {
+    if (!path || path.includes("node_modules")) continue;
+    if (!isRecord(item)) throw new Error(`Invalid package entry for ${path || "(root)"}.`);
+    const name = item.name;
+    if (typeof name !== "string" || !name.startsWith("@openbot/")) continue;
+    nodes.push({
+      path,
+      name,
+      dependencies: packageDependencyKeys(item, path),
+    });
+  }
+  if (!nodes.length) throw new Error("No existing npm workspace graph found.");
+  return nodes;
+}
+
+function dependents(names: Iterable<string>, graph: readonly WorkspaceNode[]): string[] {
   const affected = new Set(names);
   let changed = true;
   while (changed) {
@@ -72,17 +117,22 @@ function dependents(names, graph) {
   return [...affected].sort();
 }
 
-export function selectChecks(files, graph, { full = false } = {}) {
-  const selected = new Set(["security", "validate"]);
-  const rootChecks = new Set(ROOT_CHECKS);
-  const workspaces = new Set();
-  const reasons = [];
-  let mode = "focused";
-  const broaden = (reason) => {
+export function selectChecks(
+  files: readonly unknown[],
+  graph: readonly WorkspaceNode[],
+  options: SelectChecksOptions = {},
+): SelectionPlan {
+  let full = options.full === true;
+  const selected = new Set<string>(["security", "validate"]);
+  const rootChecks = new Set<string>(ROOT_CHECKS);
+  const workspaces = new Set<string>();
+  const reasons: string[] = [];
+  let mode: SelectionPlan["mode"] = "focused";
+  const broaden = (reason: string): void => {
     full = true;
     reasons.push(reason);
   };
-  const python = () => {
+  const python = (): void => {
     for (const job of PYTHON_CONSUMERS) selected.add(job);
   };
   if (!files.length) broaden("No change paths: conservative full qualification.");
@@ -211,101 +261,4 @@ export function selectChecks(files, graph, { full = false } = {}) {
     notApplicable: JOBS.filter((job) => !selected.has(job)),
     reasons,
   };
-}
-
-function git(root, args) {
-  return execFileSync("git", args, {
-    cwd: root,
-    encoding: "utf8",
-    maxBuffer: 8 * 1024 * 1024,
-  }).trimEnd();
-}
-function paths(output) {
-  return output.split("\0").filter(Boolean);
-}
-function revision(root, sha) {
-  if (!/^[0-9a-f]{40}$/.test(sha ?? ""))
-    throw new Error("An immutable 40-character commit is required.");
-  if (git(root, ["rev-parse", "--verify", `${sha}^{commit}`]) !== sha)
-    throw new Error("Commit identity mismatch.");
-  return sha;
-}
-export function changedFiles(root, { base, head, local = false } = {}) {
-  if (local && (base || head))
-    throw new Error("Local working changes and committed PR ranges are separate inputs.");
-  if (local) {
-    return {
-      source: "local",
-      head: git(root, ["rev-parse", "HEAD"]),
-      tracked: paths(git(root, ["diff", "--name-only", "--no-renames", "-z", "HEAD", "--"])),
-      untracked: paths(git(root, ["ls-files", "--others", "--exclude-standard", "-z"])),
-    };
-  }
-  revision(root, base);
-  revision(root, head);
-  const mergeBase = git(root, ["merge-base", base, head]);
-  return {
-    source: "commits",
-    base,
-    head,
-    mergeBase,
-    tracked: paths(
-      git(root, ["diff", "--name-only", "--no-renames", "-z", `${base}...${head}`, "--"]),
-    ),
-    untracked: [],
-  };
-}
-
-export async function makePlan(root, args) {
-  let input;
-  let full = args.full;
-  if (args.event) {
-    const event = JSON.parse(await readFile(args.event, "utf8"));
-    if (event.pull_request)
-      input = changedFiles(root, {
-        base: event.pull_request.base.sha,
-        head: event.pull_request.head.sha,
-      });
-    else {
-      full = true;
-      input = {
-        source: "push",
-        head: git(root, ["rev-parse", "HEAD"]),
-        tracked: [],
-        untracked: [],
-      };
-    }
-  } else if (full)
-    input = { source: "full", head: git(root, ["rev-parse", "HEAD"]), tracked: [], untracked: [] };
-  else input = changedFiles(root, args);
-  const graph = workspaceGraph(
-    JSON.parse(await readFile(resolve(root, "package-lock.json"), "utf8")),
-  );
-  return { ...selectChecks([...input.tracked, ...input.untracked], graph, { full }), input };
-}
-
-export function argumentsFor(argv) {
-  const options = {};
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    if (["--local", "--full"].includes(arg)) options[arg.slice(2)] = true;
-    else if (["--base", "--head", "--event", "--github-output"].includes(arg) && argv[i + 1])
-      options[arg.slice(2)] = argv[++i];
-    else throw new Error(`Unsupported scope argument: ${arg}`);
-  }
-  const sources =
-    Number(Boolean(options.local)) +
-    Number(Boolean(options.full)) +
-    Number(Boolean(options.event)) +
-    Number(Boolean(options.base || options.head));
-  if (sources !== 1)
-    throw new Error("Choose --local, --base SHA --head SHA, --event FILE, or --full.");
-  return options;
-}
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  const args = argumentsFor(process.argv.slice(2));
-  const plan = await makePlan(process.cwd(), args);
-  const serialized = JSON.stringify(plan);
-  if (args["github-output"]) await appendFile(args["github-output"], `plan=${serialized}\n`);
-  console.log(serialized);
 }

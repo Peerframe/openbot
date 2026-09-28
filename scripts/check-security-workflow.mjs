@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
-import { JOBS } from "./ci-scope.mjs";
+import { JOBS } from "./ci-selection.ts";
 import {
   assertPinnedSources,
   expression,
@@ -106,7 +106,7 @@ export function validateSecurityWorkflow(source) {
   );
   hasCommands(
     scope,
-    ['node scripts/ci-scope.mjs --event "$GITHUB_EVENT_PATH" --github-output "$GITHUB_OUTPUT"'],
+    ['node scripts/ci-scope.ts --event "$GITHUB_EVENT_PATH" --github-output "$GITHUB_OUTPUT"'],
     "Scope",
   );
   assert(
@@ -236,7 +236,7 @@ export function validateSecurityWorkflow(source) {
     ["scope", ...JOBS].sort(),
     "New jobs must join the explicit selection and result contract.",
   );
-  const aggregate = gate.steps.find((step) => step.run?.trim() === "node scripts/ci-results.mjs");
+  const aggregate = gate.steps.find((step) => step.run?.trim() === "node scripts/ci-results.ts");
   assert(
     aggregate && !("if" in aggregate),
     "CI check must execute the tested success-only result validator.",

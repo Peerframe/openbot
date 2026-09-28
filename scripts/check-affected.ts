@@ -1,16 +1,29 @@
-import { readFile } from "node:fs/promises";
+/**
+ * check-affected.ts
+ *
+ * Real check invocation for the selected validation lane. Does not own selection
+ * policy; imports makePlan / argumentsFor from ci-scope.ts.
+ */
+
 import { spawnSync } from "node:child_process";
-import { argumentsFor, makePlan } from "./ci-scope.mjs";
+import { readFile } from "node:fs/promises";
+
+import { argumentsFor, makePlan } from "./ci-scope.ts";
+import { workspaceGraph } from "./ci-selection.ts";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
 
 const plan = await makePlan(process.cwd(), argumentsFor(process.argv.slice(2)));
 console.log(JSON.stringify(plan, null, 2));
-if (
-  process.env.OPENBOT_CI_PLAN &&
-  JSON.stringify(JSON.parse(process.env.OPENBOT_CI_PLAN)) !== JSON.stringify(plan)
-)
-  throw new Error("Validation must use the same immutable input and selection as the scope job.");
+if (process.env.OPENBOT_CI_PLAN) {
+  const expected: unknown = JSON.parse(process.env.OPENBOT_CI_PLAN);
+  if (JSON.stringify(expected) !== JSON.stringify(plan))
+    throw new Error("Validation must use the same immutable input and selection as the scope job.");
+}
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-function run(args) {
+function run(args: readonly string[]): void {
   const result = spawnSync(npm, args, { stdio: "inherit", shell: process.platform === "win32" });
   if (result.error || result.status !== 0)
     throw new Error(`Affected validation failed: npm ${args.join(" ")}`);
@@ -20,14 +33,15 @@ else {
   for (const command of plan.rootChecks) run(["run", command]);
   if (plan.mode === "workspace") {
     run(["run", "lint"]);
-    const lock = JSON.parse(await readFile("package-lock.json", "utf8"));
-    const entries = Object.entries(lock.packages);
+    const lock: unknown = JSON.parse(await readFile("package-lock.json", "utf8"));
+    const graph = workspaceGraph(lock);
     for (const name of plan.workspaces) {
-      const [path] = entries.find(
-        ([path, value]) => !path.includes("node_modules") && value.name === name,
-      );
-      const pkg = JSON.parse(await readFile(`${path}/package.json`, "utf8"));
-      if (!pkg.scripts?.test)
+      const node = graph.find((entry) => entry.name === name);
+      if (!node) throw new Error(`Missing workspace package entry for ${name}`);
+      const { path } = node;
+      const pkg: unknown = JSON.parse(await readFile(`${path}/package.json`, "utf8"));
+      const scripts = isRecord(pkg) && isRecord(pkg.scripts) ? pkg.scripts : undefined;
+      if (!scripts || typeof scripts.test !== "string")
         console.log(
           `${name}: no package-local tests; consumer coverage only, not a zero-test pass.`,
         );

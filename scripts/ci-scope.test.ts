@@ -1,23 +1,23 @@
+/**
+ * ci-scope.test.ts — selection, git inputs, and aggregate closure tests.
+ * Run with: node --import tsx --test scripts/ci-scope.test.ts
+ */
+
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile, mkdir } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import {
-  argumentsFor,
-  changedFiles,
-  JOBS,
-  makePlan,
-  selectChecks,
-  workspaceGraph,
-} from "./ci-scope.mjs";
-import { checkResults } from "./ci-results.mjs";
+
+import { checkResults } from "./ci-results.ts";
+import { JOBS, selectChecks, workspaceGraph, type JobName } from "./ci-selection.ts";
+import { argumentsFor, changedFiles, makePlan } from "./ci-scope.ts";
 
 const graph = workspaceGraph(
-  JSON.parse(await readFile(new URL("../package-lock.json", import.meta.url), "utf8")),
+  JSON.parse(await readFile(new URL("../package-lock.json", import.meta.url), "utf8")) as unknown,
 );
-const select = (...paths) => selectChecks(paths, graph);
+const select = (...paths: string[]) => selectChecks(paths, graph);
 test("prose only keeps repository and security duties without binaries", () => {
   const plan = select("docs/INTERFACE.md", "README.zh-CN.md");
   assert.deepEqual(plan.required, ["security", "validate"]);
@@ -67,7 +67,7 @@ test("developer navigation paths do not exempt helpers, resources or near matche
 });
 test("developer navigation cannot narrow mixed changes or forced full qualification", () => {
   for (const file of [
-    "scripts/ci-scope.mjs",
+    "scripts/ci-scope.ts",
     ".agents/skills/openbot-check/scripts/check.py",
     "apps/server-python/src/openbot_server/work_models.py",
     "unknown.file",
@@ -88,7 +88,7 @@ test("harness includes real installed and persistent consumers", () => {
       "python-product-container",
       "python-desktop-preview",
       "browser-product",
-    ])
+    ] as const satisfies readonly JobName[])
       assert(plan.required.includes(job), `${file}: ${job}`);
   }
 });
@@ -126,6 +126,7 @@ test("contracts, generators, locks and config conservatively include every quali
     "scripts/argument-pairs.ts",
     "scripts/argument-pairs.test.ts",
     "scripts/tsconfig.json",
+    "scripts/ci-selection.ts",
     "apps/web/src/generated/work-contract.ts",
     "package-lock.json",
     "packages/harness/pyproject.toml",
@@ -155,7 +156,7 @@ test("unmapped, selector, mixed and empty changes never produce an empty green",
   for (const files of [
     [],
     ["unknown.file"],
-    ["scripts/ci-scope.mjs"],
+    ["scripts/ci-scope.ts"],
     ["README.md", "unknown.file"],
     [".github/workflows/ci.yml"],
   ])
@@ -165,7 +166,8 @@ test("unmapped, selector, mixed and empty changes never produce an empty green",
 });
 test("immutable PR ranges and local tracked/untracked changes are separate", async () => {
   const root = await mkdtemp(join(tmpdir(), "openbot-ci-scope-"));
-  const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
+  const git = (...args: string[]) =>
+    execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
   try {
     git("init", "--quiet");
     git("config", "user.name", "Synthetic CI fixture");
@@ -203,6 +205,20 @@ test("immutable PR ranges and local tracked/untracked changes are separate", asy
     assert.deepEqual((await makePlan(root, { local: true })).required, JOBS);
     await writeFile(event, JSON.stringify({ after: head }));
     assert.deepEqual((await makePlan(root, { event })).required, JOBS);
+    for (const payload of [
+      null,
+      [],
+      "push",
+      { pull_request: null },
+      { pull_request: {} },
+      { pull_request: { base: { sha: base }, head: {} } },
+      { pull_request: { base: {}, head: { sha: head } } },
+      { pull_request: { base: { sha: base }, head: { sha: 1 } } },
+      { pull_request: { base: { sha: null }, head: { sha: head } } },
+    ]) {
+      await writeFile(event, JSON.stringify(payload));
+      await assert.rejects(() => makePlan(root, { event }), Error, JSON.stringify(payload));
+    }
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -214,10 +230,22 @@ test("scope CLI never guesses a remote or silently combines input modes", () => 
     ["--what"],
     ["--base"],
     ["--event", "x", "--local"],
-  ])
+    ["--local", "--github-output", ""],
+    ["--github-output", ""],
+    ["--event", ""],
+    ["--base", "", "--head", "abc"],
+  ] as const)
     assert.throws(() => argumentsFor(args));
+  const sparse = ["--local"] as string[];
+  sparse.length = 3;
+  sparse[2] = "--full";
+  assert.throws(() => argumentsFor(sparse));
+  assert.deepEqual(argumentsFor(["--local", "--github-output", "out.txt"]), {
+    local: true,
+    "github-output": "out.txt",
+  });
 });
-const results = (plan) =>
+const results = (plan: { required: readonly string[]; notApplicable: readonly string[] }) =>
   Object.fromEntries(
     ["scope", ...JOBS].map((job) => [
       job,
@@ -225,15 +253,19 @@ const results = (plan) =>
     ]),
   );
 test("each required job rejects failure, cancellation, missing, unknown and unexpected skip", () => {
-  const plan = select("scripts/ci-scope.mjs");
+  const plan = select("scripts/ci-scope.ts");
   assert.match(checkResults(plan, results(plan)), /satisfied/);
   for (const job of ["scope", ...JOBS]) {
-    for (const result of ["failure", "cancelled", "skipped", "", "unknown", undefined]) {
-      const needs = results(plan);
+    for (const result of ["failure", "cancelled", "skipped", "", "unknown", undefined] as const) {
+      const needs: Record<string, { result?: unknown }> = results(plan);
       needs[job] = { result };
-      assert.throws(() => checkResults(plan, needs), undefined, `${job}: ${result}`);
+      assert.throws(
+        () => checkResults(plan, needs),
+        (error: unknown) => error instanceof Error,
+        `${job}: ${result}`,
+      );
     }
-    const needs = results(plan);
+    const needs: Record<string, { result?: unknown }> = results(plan);
     delete needs[job];
     assert.throws(() => checkResults(plan, needs));
   }
@@ -241,8 +273,8 @@ test("each required job rejects failure, cancellation, missing, unknown and unex
 test("only explicit non-applicability can skip; omissions and hidden failures fail", () => {
   const plan = select("README.md");
   assert.match(checkResults(plan, results(plan)), /satisfied/);
-  for (const result of ["failure", "cancelled", undefined]) {
-    const needs = results(plan);
+  for (const result of ["failure", "cancelled", undefined] as const) {
+    const needs: Record<string, { result?: unknown }> = results(plan);
     needs.portable = { result };
     assert.throws(() => checkResults(plan, needs));
   }
@@ -256,11 +288,15 @@ test("only explicit non-applicability can skip; omissions and hidden failures fa
 });
 test("actual aggregate command fails closed with missing input and accepts a valid selection", () => {
   const plan = select("README.md");
-  const run = (env) =>
-    spawnSync(process.execPath, [new URL("./ci-results.mjs", import.meta.url).pathname], {
-      env,
-      encoding: "utf8",
-    });
+  const run = (env: NodeJS.ProcessEnv) =>
+    spawnSync(
+      process.execPath,
+      [...process.execArgv, new URL("./ci-results.ts", import.meta.url).pathname],
+      {
+        env,
+        encoding: "utf8",
+      },
+    );
   assert.equal(
     run({ OPENBOT_CI_PLAN: JSON.stringify(plan), OPENBOT_CI_NEEDS: JSON.stringify(results(plan)) })
       .status,
@@ -272,7 +308,11 @@ test("actual aggregate command fails closed with missing input and accepts a val
 test("transitive runtime consumers keep platform, browser and Python qualifications", () => {
   for (const path of ["packages/config/src/index.ts", "packages/logging/src/index.ts"]) {
     const plan = select(path);
-    for (const job of ["portable", "browser-product", "temporal-qualification"])
+    for (const job of [
+      "portable",
+      "browser-product",
+      "temporal-qualification",
+    ] as const satisfies readonly JobName[])
       assert(plan.required.includes(job), `${path}: ${job}`);
   }
   assert(select("packages/employee-publisher/src/index.ts").required.includes("python-runtime"));
@@ -329,4 +369,33 @@ test("runtime-nested AGENTS resources cannot impersonate contributor rules", () 
     ),
   );
   assert(select("apps/web/src/resources/AGENTS.md").workspaces.includes("@openbot/web"));
+});
+
+test("workspace graph rejects malformed package dependencies", () => {
+  assert.throws(
+    () =>
+      workspaceGraph({
+        packages: { "apps/web": { name: "@openbot/web", dependencies: 1 } },
+      }),
+    /Invalid dependencies/,
+  );
+  assert.throws(
+    () =>
+      workspaceGraph({
+        packages: { "apps/web": { name: "@openbot/web", devDependencies: "x" } },
+      }),
+    /Invalid devDependencies/,
+  );
+  assert.throws(
+    () =>
+      workspaceGraph({
+        packages: { "apps/web": { name: "@openbot/web", optionalDependencies: [] } },
+      }),
+    /Invalid optionalDependencies/,
+  );
+  assert.throws(() => workspaceGraph({ packages: { "apps/web": null } }), /Invalid package entry/);
+  assert.throws(
+    () => workspaceGraph({ packages: { "apps/web": ["@openbot/web"] } }),
+    /Invalid package entry/,
+  );
 });

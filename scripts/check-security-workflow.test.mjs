@@ -178,7 +178,7 @@ test("selection cannot bypass required qualifications or lose the authoritative 
       delete v.jobs["harness"].needs;
     },
     (v) => {
-      command(v, "scope", "ci-scope.mjs").run = "node scripts/ci-scope.mjs --local";
+      command(v, "scope", "ci-scope.ts").run = "node scripts/ci-scope.ts --local";
     },
     (v) => {
       v.jobs.scope.outputs.plan = "{}";

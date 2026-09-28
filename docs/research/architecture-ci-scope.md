@@ -78,3 +78,14 @@ private remote replay, live migration and release/signing remain separately boun
 acceptance items. Current npm advisory scanning does not imply Python advisory coverage; exact
 Python locks and `pip check` establish a different property. None of these gaps can be closed by
 making legacy jobs green.
+
+## Typed cleanup — 2026-09-29
+
+Reuse the same CI selection and fixed-revision contract. Pure workspace dependency/policy logic
+now lives in `scripts/ci-selection.ts`; Git/event input, aggregate and actual check invocation have
+separate typed consumers. All four manual MJS implementations exit together with package/workflow
+and guard updates. Existing supported Node executes erasable TS directly; no loader, dependency,
+new graph authority or prebuild is added. Malformed present PR events remain fail-closed. Original
+assertions and per-path differential verification are recorded in [the cleanup ledger](../CLEANUP_2026-09-28.md).
+No upstream source copied or dependency/pin changed. Hosted workflow execution remains unverified
+without remote-write authorization; local gate success does not claim hosted qualification.

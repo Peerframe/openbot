@@ -622,7 +622,7 @@ jobs:
         env:
           OPENBOT_CI_PLAN: ${{ needs.scope.outputs.plan }}
           OPENBOT_CI_NEEDS: ${{ toJSON(needs) }}
-        run: node scripts/ci-results.mjs
+        run: node scripts/ci-results.ts
   scope:
     runs-on: ubuntu-24.04
     timeout-minutes: 3
@@ -638,7 +638,7 @@ jobs:
           node-version: 22.22.2
       - id: scope
         name: Select from immutable PR base/head or full main qualification
-        run: node scripts/ci-scope.mjs --event "$GITHUB_EVENT_PATH" --github-output "$GITHUB_OUTPUT"
+        run: node scripts/ci-scope.ts --event "$GITHUB_EVENT_PATH" --github-output "$GITHUB_OUTPUT"
   harness:
     name: Installed harness, Python quality and Work contract
     needs: scope
