@@ -5,6 +5,10 @@ English canonical; 中文摘要见文末。This is the single engineering-upgrad
 
 ## Current engineering-quality acceptance (2026-09-28)
 
+- Status: finite local acceptance complete; no confirmed blocker remains. Implementation/review
+  pin: `ef495bf1d118f8835442eb3c1d5f36241253fdcd`; the final commit only updates this evidence record.
+  Resolve that documentation HEAD with `git rev-parse HEAD`. All check/installation processes and
+  both read-only reviewers have finished; no outgoing writer owns an unfinished patch.
 - Checkout: `/Users/yxflc/.codex/worktrees/engineering-quality/openbot`, branch
   `codex/engineering-quality`; fixed base `4891b807b7b677820f82821f87b95c2bb80d74c3`.
   Its tree equals C3 `3b771c3`. The original user checkout and the separate contributor demos
@@ -58,9 +62,10 @@ initialization/cancellation failed 2, and a tool-result alias fixture bypassed i
 bound. Fixes detach the exact model value and cancel pending initialization with the existing
 deadline; resources still belong to their actual host/Activity. First boundary checkpoint
 `bfddaba` passed 21 boundary, 24 CI and 4 entrypoint tests plus 535-document checks. Formatting-only
-tool observation preparation is `b1b397d`, separate from its type changes. Later results are pending.
+tool observation preparation is `b1b397d`, separate from its type changes. Lifecycle/result changes
+are `6ac4eb2`; HTTP/developer integration is `e3ecf4e`; reviewed corrections are `ef495bf`.
 
-Quality profiles share one existing tool environment; a 16-line optional SDK guard is the only
+Quality profiles share one existing tool environment; a 14-line optional SDK guard is the only
 new runtime module, moved without changing behavior. Ordinary core type checks exclude only the
 two Temporal adapters; mandatory full quality checks them against the real Worker SDK. Typed result
 metadata/invoker contracts are shared by the actual read/web adapters; SQL/raw external data remain
@@ -72,11 +77,106 @@ on full checks and whenever browser probe inputs change (selector positive/negat
 Browser-product/egress, real runtime and per-platform gates remain independent and retained.
 No successful-test cache or new wheel cache is introduced. Installed artifact writers run serially.
 
-Evidence, implementation commits, review disposition and remaining gates are updated in this section.
+### Fixed-diff review and corrections
 
-中文当前范围：从已合并且原 CI 全绿的 C3 基线继续工程质量升级。原目录及演示修改不动；本工作区
-仅主控写入、子任务只读审查。先修复已证实扫描/分类/冷启动和局部质量缺口，再完成真实工具与 Work
-契约链、受影响安装验证和固定 diff 整改。不新增产品能力；本候选的验证与历史证据分别记录。
+Two read-only agents reviewed `4891b80..e3ecf4e`, then the fixed correction `ef495bf`.
+Their confirmed P2 findings were reproduced and repaired:
+
+- Removing the duplicate browser gate missed the probe's Linux helper dependencies. Changes in
+  `experiments/linux-execution` now select the retained boundary gate in `validate`; runtime
+  resources named `AGENTS.md` cannot impersonate contributor rules.
+- `work-api`'s real scope dependency and its tests now select the cross-language gate. Eleven
+  nonempty/boundary/invalid DTO cases and two actual HTTP cases expose case-insensitive duplicate
+  UUIDs; Web now compares identity as Server already does, without rewriting input or authority.
+  Error-body cancellation also had a reproduced regression and now propagates unchanged.
+- The existing reads decorator erased return types to `Any`. `ParamSpec`/`TypeVar` retain its
+  actual signature; a previously accepted invalid integer assignment now fails. Four permanent
+  `assert_type` checks cover both real adapters in the existing full quality gate. The wrapper's
+  runtime body and exception policy are unchanged, also checked by a focused invocation.
+
+Both reviewers closed their findings at `ef495bf`, with no remaining confirmed blocker. One
+independently executed CI selection 18/18 and 53 Python/Web fixture assertions plus three error
+body cases; the other performed source review of the type remedy. Their fixture HTTP Writer is
+synthetic, not database evidence. Reviewers did not write the checkout or shared caches.
+
+### Current executed evidence
+
+| Gate | Actual result and boundary |
+| --- | --- |
+| Repository at `ef495bf` | `npm run check` exit 0: 61.18s wall, 162.44s user, 26.32s system; all mandatory root checks ran |
+| Turbo cache distinction | typecheck 31/31, 0 cached; test 26/26, 12 cached; build 19/19, 12 cached; Web 477, Desktop 402/3 skips and Node 94/3 skips actually ran |
+| Core runtime | 449 passed, one optional Temporal module skipped; real SDK factory tests 30 passed separately |
+| Boundaries/CI | recursive/public regressions 21 passed; final selector 18 passed; aggregate failure/cancel/missing/skip policy retained and passed inside full check |
+| Quality | core-only 12 typed files; full real Worker 24 typed files and 25 formatted files passed; no new dependency, fake SDK or missing-import ignore |
+| Cold core feedback | fresh Git snapshot, no Worker environment, fresh mypy cache; existing exact core/tool environments and download caches reused; `--core` 6.00s wall, 4.33s user, 0.37s system; full profile correctly refused absent Worker |
+| Lifecycle current measurement | 30 tests passed in 1.29s; process wall 1.81s, maximum RSS 103,251,968 bytes. Three 20ms hung-init cases together took 0.07s and closed their pending loaders; late-after-deadline case 0.03s. Local scripted ports, not model/network latency |
+| Work HTTP | 53 actual Python DTO/FastAPI → real Web consumer assertions; 31 focused Web scope/API tests; generated OpenAPI/TS freshness passed. Missing/null, ranges, Unicode, scope, error/status, cancellation and additive response compatibility covered |
+| Cross-language retained interfaces | identity 129, task/routing/usage 60, runtime 48, commands 34 and execution 40 agreed |
+| Actual PostgreSQL/control | 836 passed / 2 collection skips in 111.58s; the skipped optional Temporal modules ran in Worker |
+| Actual Worker/SQL/tool consumers | 1,526 passed / 1 skipped in 555.34s, original 600s limit retained. Skip requires separately supplied retained collaboration histories. Executed before annotation-only wrapper correction; reviewers confirmed reuse, then full types and wrapper return/error/cancellation were retested |
+| Outside-checkout wheel | freshly built wheel, clean temporary venv, `-I` site-packages, 19 exact distributions, `pip check`, no DB/Temporal/pytest; public tool example executes and closes |
+| Actual Temporal | PostgreSQL + mTLS journey passed: approve while Worker absent, restart with planner disabled, same Action/single write, unknown retains reservation, explicit lookup recovery, cancellation prevents approved write, denial acknowledgement recovery and offline replay. Real HTTP/SQL/engine, scripted model/effects; 179.47s wall, probe-command maximum RSS 189,595,648 bytes (not container/service memory) |
+| Actual arm64 container | image `openbot-quality-product:local`; fresh changed wheel/Web/product layers, unchanged Docker layers reused; 59 exact runtime distributions. Owner HTTP, built Web, docx/pdf/OCR, restart keys/files, 45 migrations, preflight refusal and SIGTERM/owned-resource cleanup passed; build 102.53s, smoke 33.34s |
+| Actual macOS arm64 payload | staged and packaged-resource service smoke both passed: real Python API/PostgreSQL start/login/restart, parent EOF, unsafe directory/symlink/configuration refusal and cleanup. Stage 124.67s with the verified Node download reused; smoke 27.36s; unsigned packaging 211.91s; packaged smoke 23.33s. Synthetic encrypted profile; native Keychain and interactive Electron launch not qualified |
+| Installed bytes/resources | all 13 core module hashes match source, wheel, core/Worker installs, staged and packaged Desktop, and container. Nine changed control/lock/notice files also match across product payloads; Desktop provenance matches the complete wheel SHA-256 and requirements hash; all 64 compiled Desktop/renderer files in actual `app.asar` match the verified build |
+| Contributor entry | fresh-context reviewer found UI/core/wire ownership, generated files, `--core`, cold contract command and this record from the rules/map. Reuse C1's three actual isolated contributor exercises and native discovery; demo patches remain unmerged |
+
+Raw local logs are `/private/tmp/openbot-quality-{check-final,core-final,review-types,core-isolated,
+lifecycle-final,guard-smoke,scope-contract-green,error-abort-green,control,wheel,temporal,
+container-build,container-smoke,desktop-stage-cached-download,desktop-stage-smoke,
+desktop-package,desktop-package-smoke}.log`; failed
+regressions are retained separately as `*-red.log`. No comparative speed or token saving is claimed:
+there is no matched before/after workload baseline. CI saves one duplicate browser suite per
+selected Python-runtime run; independent platform, engine and security gates remain.
+
+Byte evidence is in `/private/tmp/openbot-quality-{installed-hashes,asar-hashes}.json`.
+The local unsigned artifact is `apps/desktop/out/python-product/OpenBot Python Preview-darwin-arm64/OpenBot Python Preview.app`;
+it does not replace the user's installation. All owned test containers/processes were removed.
+The original checkout remains at `9cc73c9` with its original user-owned dirty files untouched.
+
+The first Desktop producer timed out downloading Node through Node fetch
+at its unchanged 120s bound. Both clients returned HTTP 200 on diagnosis; curl transferred the
+exact 52,909,993-byte official archive in 6.75s and matched pinned SHA-256
+`bed7eea5325e1108f32ce5228ddd6a5f0f08a499ee42aa7442aea583702f6057`. A one-run temporary download
+input reuses these bytes for that exact URL; the unmodified producer still checks its hash/size,
+then installs the normal payload. This is reused download evidence, not a passing retest of the
+original Node fetch transfer. No timeout, lock, production downloader or CI gate was changed.
+Artifact writers ran serially against the fixed implementation. Hosted candidate CI, push/merge,
+signing/release, updates to the user's installed app and production conversion are unexecuted and
+outside this authorization. Historical CI is evidence for that historical base only.
+
+### Finite outcome and remaining limits
+
+| Acceptance | Status / disposition |
+| --- | --- |
+| Public modules, dependency boundaries and reasonable extension | Verified: recursive checks, exact public exports, installed public example and actual consumers |
+| Selected tools/control/API contract | Verified: shared typed immutable results, existing authority checks, real create/get/cancel chain and reviewed failures |
+| Ordinary local core / required integration | Verified separately: no Worker required for core quality; actual Worker/SQL and mTLS journey retained |
+| Contributor UI/core/wire entry and handoff | Verified current routing; prior accepted isolated modification exercises/native discovery reused explicitly |
+| CI classification, aggregation and duplicate work | Verified: missing/failed/cancelled/unexpected skipped gates refuse success; one proven repeated boundary invocation removed without losing dependencies |
+| Affected installed consumers and compatibility | Verified for clean wheel, Linux arm64 container and macOS arm64 staged/packaged service; current history recovery/replay and retained protocol differentials pass |
+| Authority, budget, observations, publication and recovery | Verified within the existing synthetic-effects/real SQL+engine acceptance; no production or paid-model claim |
+| Other platforms / special retained histories | Pending: no fresh Windows, Intel Mac or Linux amd64 installation; external retained collaboration-history fixture was not supplied. These do not expand the accepted affected-combination scope |
+| Hosted candidate CI / merge | Pending and not requested/authorized; base hosted CI is not candidate CI |
+| Formal release / production qualification | Not applicable to this local unsigned candidate; signing, user-app update, native Keychain and production conversion remain separate authorized work |
+
+The maintenance gain is concrete: contributors can find the owner/check command, check ordinary
+core without assembling a Worker, receive type/contract errors before integration, and avoid one
+duplicate browser suite. Added upkeep is narrow: keep the declared public-module list, explicit
+cross-directory CI dependencies, four static consumer assertions and the selected HTTP runtime
+validators/fixtures aligned as these actual interfaces change. One private Temporal helper was
+moved, not duplicated; no new external dependency, service, framework or durable fact model exists.
+No unrelated enhancement became an additional completion gate or product feature.
+
+中文验收：本轮有限本地目标已完成，两个只读审查的已确认问题均已复现、整改和复审关闭。
+递归边界/CI 分类、核心初始化与取消、共享工具结果类型、Work 创建/读取/取消契约、开发入口和
+检查去重均已落地。最终全仓检查通过；核心 449、工厂 30、跨语言契约 53、真实 PostgreSQL 836、
+Worker 1,526 项通过，另有真实 mTLS 审批/取消/恢复/重放以及 wheel、arm64 容器和 macOS 暂存/
+打包后服务验证。13 个核心模块、9 个控制/锁/notice 文件和 64 个 Desktop 编译文件完成字节比对。
+缓存、历史复用与跳过已分别列明；Node fetch 曾超时，使用官方 curl 下载并验哈希后的同一归档完成
+生产器验证，没有放宽限制。新增维护成本限于公开模块列表、真实 CI 跨目录依赖和局部类型/契约
+样例，没有新服务或依赖。原用户目录和演示修改保持不动，预览未替换用户安装。候选 hosted CI、
+推送合并、签名发行、其他平台和未提供的旧协作历史仍未验证，不冒充生产资格。
 
 ## Historical C1–C3 record (preserved evidence)
 
