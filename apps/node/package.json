@@ -8,8 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
     "start": "node --env-file-if-exists=../../.env dist/index.js",
-    "test": "vitest run src && node --test src/bounded-json-transport.node-test.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "test": "vitest run src && node --import tsx --test src/bounded-json-transport.node-test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.node-tests.json"
   },
   "dependencies": {
     "@openbot/config": "0.0.0",

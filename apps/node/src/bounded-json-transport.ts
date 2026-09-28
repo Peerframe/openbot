@@ -1,5 +1,5 @@
 /**
- * bounded-json-transport.mjs
+ * bounded-json-transport.ts
  *
  * A standalone, generic, bounded length-prefixed JSON transport for an
  * already-connected, exclusively-owned Duplex (typically a node:net.Socket).
@@ -13,6 +13,9 @@
  * This module does not connect, listen, resolve paths, authenticate, reconnect
  * or replay, and it never treats a delivered message as authorization.
  * Only Node built-ins are used.
+ *
+ * Encoding constants, TransportError, and encodeMessage live in
+ * bounded-json-codec.ts; this file owns Duplex lifecycle and accounting.
  *
  * Retained-input accounting (inbound)
  * -----------------------------------
@@ -55,260 +58,116 @@
  */
 
 import { Buffer } from "node:buffer";
+import type { Duplex } from "node:stream";
 import { TextDecoder } from "node:util";
 
-const MAX_PAYLOAD = 32768; // inbound and outbound payload bytes
-const MAX_RETAINED_BYTES = 65536; // inbound retained payload bytes
-const MAX_RETAINED_FRAMES = 4; // inbound retained frames, active callback included
-const MAX_SEND_BYTES = 65536; // outbound queued + active frame bytes, headers included
-const MAX_SEND_FRAMES = 4; // outbound queued + active frames
-const MAX_DEPTH = 12; // outbound structural nesting, root container counts as depth 1
-const MAX_VALUES = 4096; // outbound visited values, containers and scalars alike
+import {
+  encodeMessage,
+  MAX_PAYLOAD,
+  MAX_RETAINED_BYTES,
+  MAX_RETAINED_FRAMES,
+  MAX_SEND_BYTES,
+  MAX_SEND_FRAMES,
+  TRANSPORT_CODES,
+  TransportError,
+  type JsonTransportMessage,
+  type TransportCode,
+} from "./bounded-json-codec.js";
 
-/** Finite, payload-free error / close codes. */
-export const TRANSPORT_CODES = Object.freeze({
-  CLOSED: "ERR_JSON_TRANSPORT_CLOSED",
-  ABORTED: "ERR_JSON_TRANSPORT_ABORTED",
-  PROTOCOL: "ERR_JSON_TRANSPORT_PROTOCOL",
-  OVERFLOW: "ERR_JSON_TRANSPORT_OVERFLOW",
-  ENCODE: "ERR_JSON_TRANSPORT_ENCODE",
-  CALLBACK: "ERR_JSON_TRANSPORT_CALLBACK",
-  SOCKET: "ERR_JSON_TRANSPORT_SOCKET",
-  REMOTE: "ERR_JSON_TRANSPORT_REMOTE",
-});
+export { TRANSPORT_CODES, TransportError };
+export type { JsonTransportMessage, TransportCode };
 
-/** Error carrying only a finite code; no payload or peer text is attached. */
-export class TransportError extends Error {
-  constructor(code) {
-    super(code);
-    this.name = "TransportError";
-    this.code = code;
-  }
-}
+export type AttachJsonTransportOptions = {
+  readonly signal?: AbortSignal;
+  readonly onMessage: (value: JsonTransportMessage) => unknown;
+  readonly onClose?: (code: TransportCode) => void;
+};
 
-function hasLoneSurrogate(value) {
-  for (let i = 0; i < value.length; i += 1) {
-    const unit = value.charCodeAt(i);
-    if (unit >= 0xd800 && unit <= 0xdbff) {
-      const next = value.charCodeAt(i + 1);
-      if (!(next >= 0xdc00 && next <= 0xdfff)) return true;
-      i += 1;
-    } else if (unit >= 0xdc00 && unit <= 0xdfff) {
-      return true;
-    }
-  }
-  return false;
-}
+export type JsonTransport = {
+  readonly send: (value: unknown) => Promise<void>;
+  readonly close: () => void;
+};
 
-/**
- * JSON-encode one string after bounding its source length. A string longer than
- * the payload cap can never fit in a frame, so it is rejected before
- * JSON.stringify can materialize a very large intermediate text.
- */
-function writeString(value) {
-  if (value.length > MAX_PAYLOAD) throw new TransportError(TRANSPORT_CODES.ENCODE);
-  if (hasLoneSurrogate(value)) throw new TransportError(TRANSPORT_CODES.ENCODE);
-  return JSON.stringify(value);
-}
+type ActiveFrame = {
+  buf: Buffer;
+  fill: number;
+};
 
-/**
- * Append one already-JSON-encoded fragment, bounding the accumulated text
- * before it grows large. JSON text's UTF-8 byte length is always >= its UTF-16
- * code-unit length, so exceeding the code-unit cap implies exceeding the byte
- * cap and may be rejected early. The exact 32768-byte check still runs on the
- * final buffer.
- */
-function push(ctx, text) {
-  ctx.units += text.length;
-  if (ctx.units > MAX_PAYLOAD) throw new TransportError(TRANSPORT_CODES.ENCODE);
-  ctx.parts.push(text);
-}
+type InboundEntry = {
+  value: JsonTransportMessage;
+  bytes: number;
+};
 
-function writeObject(node, depth, ctx) {
-  if (depth > MAX_DEPTH) throw new TransportError(TRANSPORT_CODES.ENCODE);
-  const proto = Object.getPrototypeOf(node);
-  if (proto !== Object.prototype && proto !== null) {
-    throw new TransportError(TRANSPORT_CODES.ENCODE);
-  }
-  if ("toJSON" in node) throw new TransportError(TRANSPORT_CODES.ENCODE);
-  if (ctx.seen.has(node)) throw new TransportError(TRANSPORT_CODES.ENCODE);
-  ctx.seen.add(node);
+type OutboundEntry = {
+  frame: Buffer;
+  resolve: () => void;
+  reject: (error: TransportError) => void;
+  callbackDone: boolean;
+};
 
-  // Reflect.ownKeys is used instead of Object.keys so that symbol keys,
-  // non-enumerable own data properties and own accessors are all seen and
-  // rejected rather than silently dropped by JSON normalization.
-  const ownKeys = Reflect.ownKeys(node);
-  push(ctx, "{");
-  for (let i = 0; i < ownKeys.length; i += 1) {
-    const key = ownKeys[i];
-    if (typeof key === "symbol" || key === "toJSON") {
-      throw new TransportError(TRANSPORT_CODES.ENCODE);
-    }
-    const descriptor = Object.getOwnPropertyDescriptor(node, key);
-    if (
-      descriptor === undefined ||
-      descriptor.get !== undefined ||
-      descriptor.set !== undefined ||
-      descriptor.enumerable !== true
-    ) {
-      throw new TransportError(TRANSPORT_CODES.ENCODE);
-    }
-    if (i > 0) push(ctx, ",");
-    push(ctx, writeString(key));
-    push(ctx, ":");
-    writeValue(descriptor.value, depth + 1, ctx);
-  }
-  push(ctx, "}");
-  ctx.seen.delete(node);
-}
+type WriteCallback = (error?: Error | null) => void;
 
-function writeArray(node, depth, ctx) {
-  if (depth > MAX_DEPTH) throw new TransportError(TRANSPORT_CODES.ENCODE);
-  if (Object.getPrototypeOf(node) !== Array.prototype) {
-    throw new TransportError(TRANSPORT_CODES.ENCODE);
-  }
-  if ("toJSON" in node) throw new TransportError(TRANSPORT_CODES.ENCODE);
-  if (ctx.seen.has(node)) throw new TransportError(TRANSPORT_CODES.ENCODE);
-  ctx.seen.add(node);
-
-  const length = node.length;
-  // Reject extra own properties and symbol keys; Object.keys would silently
-  // ignore them. Only 'length' and canonical in-range index keys are allowed.
-  const ownKeys = Reflect.ownKeys(node);
-  for (let k = 0; k < ownKeys.length; k += 1) {
-    const key = ownKeys[k];
-    if (key === "length") continue;
-    if (typeof key === "symbol") throw new TransportError(TRANSPORT_CODES.ENCODE);
-    const index = Number(key);
-    if (!Number.isInteger(index) || index < 0 || index >= length || String(index) !== key) {
-      throw new TransportError(TRANSPORT_CODES.ENCODE);
-    }
-    const descriptor = Object.getOwnPropertyDescriptor(node, key);
-    if (
-      descriptor === undefined ||
-      descriptor.get !== undefined ||
-      descriptor.set !== undefined ||
-      descriptor.enumerable !== true
-    ) {
-      throw new TransportError(TRANSPORT_CODES.ENCODE);
-    }
-  }
-
-  push(ctx, "[");
-  for (let i = 0; i < length; i += 1) {
-    if (i > 0) push(ctx, ",");
-    const descriptor = Object.getOwnPropertyDescriptor(node, String(i));
-    if (descriptor === undefined || descriptor.get !== undefined || descriptor.set !== undefined) {
-      throw new TransportError(TRANSPORT_CODES.ENCODE); // sparse hole
-    }
-    writeValue(descriptor.value, depth + 1, ctx);
-  }
-  push(ctx, "]");
-  ctx.seen.delete(node);
-}
-
-function writeValue(node, depth, ctx) {
-  ctx.count += 1;
-  if (ctx.count > MAX_VALUES) throw new TransportError(TRANSPORT_CODES.ENCODE);
-  switch (typeof node) {
-    case "string":
-      push(ctx, writeString(node));
-      return;
-    case "number":
-      if (!Number.isFinite(node)) throw new TransportError(TRANSPORT_CODES.ENCODE);
-      push(ctx, JSON.stringify(node));
-      return;
-    case "boolean":
-      push(ctx, node ? "true" : "false");
-      return;
-    case "object":
-      break;
-    default:
-      // undefined, function, symbol and bigint are unsupported.
-      throw new TransportError(TRANSPORT_CODES.ENCODE);
-  }
-  if (node === null) {
-    push(ctx, "null");
-    return;
-  }
-  if (Array.isArray(node)) writeArray(node, depth, ctx);
-  else writeObject(node, depth, ctx);
-}
-
-/**
- * Encode exactly one message. Traversal is bounded in depth and value count,
- * string/array/object work is bounded before large intermediate JSON text is
- * produced, getters/toJSON/cycles/non-finite numbers/lone surrogates and
- * unsupported own properties are rejected, and UTF-8 is produced exactly once.
- */
-function encodeMessage(value) {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    throw new TransportError(TRANSPORT_CODES.ENCODE);
-  }
-  const ctx = { count: 0, units: 0, parts: [], seen: new Set() };
-  writeValue(value, 1, ctx);
-  const text = ctx.parts.join("");
-  const payload = Buffer.from(text, "utf8");
-  if (payload.length > MAX_PAYLOAD) throw new TransportError(TRANSPORT_CODES.ENCODE);
-  return payload;
-}
-
-function isThenable(value) {
+function isThenable(value: unknown): boolean {
   return (
     value !== null &&
     (typeof value === "object" || typeof value === "function") &&
-    typeof value.then === "function"
+    typeof (value as { then?: unknown }).then === "function"
   );
+}
+
+function isJsonTransportMessage(value: unknown): value is JsonTransportMessage {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 /**
  * Attach the transport to an already-connected, exclusively-owned Duplex.
- *
- * @param {object} socket event-emitting Duplex owned by the caller
- * @param {{signal?: AbortSignal, onMessage?: Function, onClose?: Function}} [options]
- * @returns {{send: (value: object) => Promise<void>, close: () => void}}
  */
-export function attachJsonTransport(socket, options = {}) {
+export function attachJsonTransport(
+  socket: Duplex,
+  options: Partial<AttachJsonTransportOptions> = {},
+): JsonTransport {
   if (socket === null || typeof socket !== "object" || typeof socket.on !== "function") {
     throw new TypeError("socket must be an event-emitting Duplex");
   }
-  const { signal, onMessage, onClose } = options;
-  if (typeof onMessage !== "function") {
+  const { signal, onMessage: messageHandler, onClose } = options;
+  if (typeof messageHandler !== "function") {
     throw new TypeError("onMessage must be a function");
   }
   if (onClose !== undefined && onClose !== null && typeof onClose !== "function") {
     throw new TypeError("onClose must be a function or omitted");
   }
 
+  const onMessage = messageHandler;
+
   // ignoreBOM: true keeps a leading U+FEFF visible instead of silently stripping
   // it; the byte-level check below rejects it explicitly.
   const decoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
 
   let finished = false;
-  let finalCode = null;
+  let finalCode: TransportCode | null = null;
   let closeNotified = false;
   let closeObserved = false;
 
   // Inbound assembly and delivery state.
   const header = Buffer.allocUnsafe(4);
   let headerFill = 0;
-  let activeFrame = null; // { buf, fill }
-  const inboundQueue = [];
+  let activeFrame: ActiveFrame | null = null;
+  const inboundQueue: InboundEntry[] = [];
   let inboundQueueBytes = 0;
-  let inFlight = null; // { value, bytes }
+  let inFlight: InboundEntry | null = null;
   let paused = false;
 
   // Outbound write state.
-  const outbound = [];
+  const outbound: OutboundEntry[] = [];
   let outboundBytes = 0;
   let outboundCount = 0;
-  let activeWrite = null;
+  let activeWrite: OutboundEntry | null = null;
   let needDrain = false;
   let drainGeneration = 0;
 
-  let abortHandler = null;
+  let abortHandler: (() => void) | null = null;
 
-  function notifyClose(code) {
+  function notifyClose(code: TransportCode): void {
     if (closeNotified) return;
     closeNotified = true;
     if (typeof onClose === "function") {
@@ -320,14 +179,14 @@ export function attachJsonTransport(socket, options = {}) {
     }
   }
 
-  function detachAbort() {
+  function detachAbort(): void {
     if (signal && abortHandler !== null && typeof signal.removeEventListener === "function") {
       signal.removeEventListener("abort", abortHandler);
     }
     abortHandler = null;
   }
 
-  function detachSocket() {
+  function detachSocket(): void {
     if (typeof socket.removeListener === "function") {
       socket.removeListener("data", onData);
       socket.removeListener("end", onEnd);
@@ -337,7 +196,7 @@ export function attachJsonTransport(socket, options = {}) {
     }
   }
 
-  function fail(code) {
+  function fail(code: TransportCode): void {
     if (finished) return;
     finished = true;
     finalCode = code;
@@ -361,6 +220,7 @@ export function attachJsonTransport(socket, options = {}) {
     }
     while (outbound.length > 0) {
       const entry = outbound.shift();
+      if (entry === undefined) break;
       try {
         entry.reject(error);
       } catch {
@@ -391,19 +251,19 @@ export function attachJsonTransport(socket, options = {}) {
     if (alreadyClosed || destroyThrew || closeObserved) detachSocket();
   }
 
-  function pauseRead() {
+  function pauseRead(): void {
     if (paused || finished) return;
     paused = true;
     if (typeof socket.pause === "function") socket.pause();
   }
 
-  function resumeRead() {
+  function resumeRead(): void {
     if (!paused) return;
     paused = false;
     if (!finished && typeof socket.resume === "function") socket.resume();
   }
 
-  function retainedBytes() {
+  function retainedBytes(): number {
     let total = headerFill;
     if (activeFrame !== null) total += activeFrame.buf.length;
     total += inboundQueueBytes;
@@ -411,7 +271,7 @@ export function attachJsonTransport(socket, options = {}) {
     return total;
   }
 
-  function retainedFrames() {
+  function retainedFrames(): number {
     return (
       inboundQueue.length +
       (activeFrame !== null || headerFill > 0 ? 1 : 0) +
@@ -419,13 +279,13 @@ export function attachJsonTransport(socket, options = {}) {
     );
   }
 
-  function retainedOverflowed() {
+  function retainedOverflowed(): boolean {
     return retainedFrames() > MAX_RETAINED_FRAMES || retainedBytes() > MAX_RETAINED_BYTES;
   }
 
-  function deliver(entry) {
+  function deliver(entry: InboundEntry): boolean {
     inFlight = entry;
-    let result;
+    let result: unknown;
     try {
       result = onMessage(entry.value);
     } catch {
@@ -435,7 +295,7 @@ export function attachJsonTransport(socket, options = {}) {
 
     // Reading result.then can itself throw (e.g. a throwing getter). That must
     // fail closed, not escape the stream callback as an uncaught exception.
-    let thenable;
+    let thenable: boolean;
     try {
       thenable = isThenable(result);
     } catch {
@@ -448,7 +308,7 @@ export function attachJsonTransport(socket, options = {}) {
     }
 
     pauseRead();
-    let chain;
+    let chain: Promise<unknown>;
     try {
       chain = Promise.resolve(result);
     } catch {
@@ -469,22 +329,23 @@ export function attachJsonTransport(socket, options = {}) {
     return true;
   }
 
-  function pump() {
+  function pump(): void {
     if (finished) return;
     while (!finished && inFlight === null && inboundQueue.length > 0) {
       const entry = inboundQueue.shift();
+      if (entry === undefined) break;
       inboundQueueBytes -= entry.bytes;
       if (deliver(entry)) return;
     }
     if (!finished && inFlight === null && inboundQueue.length === 0) resumeRead();
   }
 
-  function handlePayload(payload) {
+  function handlePayload(payload: Buffer): void {
     if (payload.length >= 3 && payload[0] === 0xef && payload[1] === 0xbb && payload[2] === 0xbf) {
       fail(TRANSPORT_CODES.PROTOCOL);
       return;
     }
-    let text;
+    let text: string;
     try {
       text = decoder.decode(payload);
     } catch {
@@ -495,18 +356,18 @@ export function attachJsonTransport(socket, options = {}) {
       fail(TRANSPORT_CODES.PROTOCOL);
       return;
     }
-    let value;
+    let parsed: unknown;
     try {
-      value = JSON.parse(text);
+      parsed = JSON.parse(text) as unknown;
     } catch {
       fail(TRANSPORT_CODES.PROTOCOL);
       return;
     }
-    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    if (!isJsonTransportMessage(parsed)) {
       fail(TRANSPORT_CODES.PROTOCOL);
       return;
     }
-    const entry = { value, bytes: payload.length };
+    const entry: InboundEntry = { value: parsed, bytes: payload.length };
     inboundQueue.push(entry);
     inboundQueueBytes += entry.bytes;
     if (retainedOverflowed()) {
@@ -516,7 +377,7 @@ export function attachJsonTransport(socket, options = {}) {
     pump();
   }
 
-  function onData(chunk) {
+  function onData(chunk: Buffer | string): void {
     if (finished) return;
     const data = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
     let offset = 0;
@@ -572,13 +433,13 @@ export function attachJsonTransport(socket, options = {}) {
     }
   }
 
-  function onEnd() {
+  function onEnd(): void {
     if (finished) return;
     if (headerFill !== 0 || activeFrame !== null) fail(TRANSPORT_CODES.PROTOCOL);
     else fail(TRANSPORT_CODES.REMOTE);
   }
 
-  function onSocketClose() {
+  function onSocketClose(): void {
     closeObserved = true;
     if (!finished) {
       fail(TRANSPORT_CODES.REMOTE);
@@ -587,13 +448,13 @@ export function attachJsonTransport(socket, options = {}) {
     }
   }
 
-  function onSocketError() {
+  function onSocketError(): void {
     if (!finished) fail(TRANSPORT_CODES.SOCKET);
     // After failure the listener stays attached until 'close' so that a delayed
     // destruction-time error is absorbed instead of becoming unhandled.
   }
 
-  function onDrain() {
+  function onDrain(): void {
     if (finished) return;
     drainGeneration += 1;
     needDrain = false;
@@ -601,7 +462,7 @@ export function attachJsonTransport(socket, options = {}) {
     else maybeWriteNext();
   }
 
-  function completeActiveWrite(entry, error) {
+  function completeActiveWrite(entry: OutboundEntry, error: Error | null): void {
     if (activeWrite !== entry) return;
     if (error) {
       // A write callback error argument is not local completion: fail with a
@@ -622,17 +483,18 @@ export function attachJsonTransport(socket, options = {}) {
     maybeWriteNext();
   }
 
-  function maybeWriteNext() {
+  function maybeWriteNext(): void {
     if (finished) return;
     if (activeWrite !== null || needDrain) return;
     if (outbound.length === 0) return;
     const entry = outbound.shift();
+    if (entry === undefined) return;
     activeWrite = entry;
 
     let writeReturned = false;
     let callbackDone = false;
-    let callbackError = null;
-    const onWriteCallback = (error) => {
+    let callbackError: Error | null = null;
+    const onWriteCallback: WriteCallback = (error) => {
       callbackDone = true;
       callbackError = error || null;
       // If the Duplex called back synchronously, wait until write() has
@@ -642,7 +504,7 @@ export function attachJsonTransport(socket, options = {}) {
       completeActiveWrite(entry, callbackError);
     };
 
-    let writable;
+    let writable: boolean;
     const drainBeforeWrite = drainGeneration;
     try {
       writable = socket.write(entry.frame, onWriteCallback);
@@ -655,9 +517,11 @@ export function attachJsonTransport(socket, options = {}) {
     if (callbackDone) completeActiveWrite(entry, callbackError);
   }
 
-  function send(value) {
-    if (finished) return Promise.reject(new TransportError(finalCode || TRANSPORT_CODES.CLOSED));
-    let payload;
+  function send(value: unknown): Promise<void> {
+    if (finished) {
+      return Promise.reject(new TransportError(finalCode ?? TRANSPORT_CODES.CLOSED));
+    }
+    let payload: Buffer;
     try {
       payload = encodeMessage(value);
     } catch (error) {
@@ -675,14 +539,14 @@ export function attachJsonTransport(socket, options = {}) {
     frame.writeUInt32BE(payload.length, 0);
     payload.copy(frame, 4);
     return new Promise((resolve, reject) => {
-      outbound.push({ frame, resolve, reject });
+      outbound.push({ frame, resolve, reject, callbackDone: false });
       outboundBytes += frameLength;
       outboundCount += 1;
       maybeWriteNext();
     });
   }
 
-  function close() {
+  function close(): void {
     if (finished) return;
     fail(TRANSPORT_CODES.CLOSED);
   }

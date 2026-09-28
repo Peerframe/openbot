@@ -1,22 +1,36 @@
 /**
- * bounded-json-transport.node-test.mjs
+ * bounded-json-transport.node-test.ts
  *
- * Executable tests for bounded-json-transport.mjs using Node's built-in test
- * runner and assert. Synthetic Duplex fixtures and one disposable local IPC
- * endpoint are owned by this test; no existing socket or TCP port is used.
+ * Executable tests for bounded-json-transport.ts using Node's built-in test
+ * runner and assert, loaded via tsx. Synthetic Duplex fixtures and one
+ * disposable local IPC endpoint are owned by this test; no existing socket or
+ * TCP port is used.
  *
- * Run with:  node --test bounded-json-transport.node-test.mjs
+ * Run with:  node --import tsx --test src/bounded-json-transport.node-test.ts
  */
 
 import assert from "node:assert/strict";
+import { Buffer } from "node:buffer";
+import type { Socket } from "node:net";
 import { Duplex } from "node:stream";
+import type { TestContext } from "node:test";
 import test from "node:test";
 
 import {
   attachJsonTransport,
   TRANSPORT_CODES as CODES,
   TransportError,
-} from "./bounded-json-transport.mjs";
+  type JsonTransportMessage,
+  type TransportCode,
+} from "./bounded-json-transport.js";
+
+type WriteCallback = (error?: Error | null) => void;
+
+type ManualSocketOptions = {
+  readonly autoWriteCallback?: boolean;
+  readonly syncWriteCallback?: boolean;
+  readonly forceWriteFalse?: boolean;
+};
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 async function settle() {
@@ -26,7 +40,7 @@ async function settle() {
 }
 
 /** Wait for a real stream to report 'close' without hanging the suite. */
-async function waitForClose(socket, rounds = 50) {
+async function waitForClose(socket: Duplex, rounds = 50): Promise<boolean> {
   for (let i = 0; i < rounds && socket.closed !== true; i += 1) await tick();
   return socket.closed === true;
 }
@@ -41,18 +55,27 @@ async function waitForClose(socket, rounds = 50) {
  *   - forceWriteFalse:true makes write() always report backpressure
  */
 class ManualSocket extends Duplex {
-  constructor(options = {}) {
+  written: Buffer[] = [];
+  pendingWriteCallbacks: WriteCallback[] = [];
+  autoWriteCallback: boolean;
+  syncWriteCallback: boolean;
+  forceWriteFalse: boolean;
+  connect?: () => void;
+
+  constructor(options: ManualSocketOptions = {}) {
     super();
-    this.written = [];
-    this.pendingWriteCallbacks = [];
     this.autoWriteCallback = options.autoWriteCallback !== false;
     this.syncWriteCallback = options.syncWriteCallback === true;
     this.forceWriteFalse = options.forceWriteFalse === true;
   }
 
-  _read() {}
+  override _read(_size?: number): void {}
 
-  _write(chunk, _encoding, callback) {
+  override _write(
+    chunk: Buffer | string | Uint8Array,
+    _encoding: NodeJS.BufferEncoding,
+    callback: WriteCallback,
+  ): void {
     this.written.push(Buffer.from(chunk));
     if (!this.autoWriteCallback) {
       this.pendingWriteCallbacks.push(callback);
@@ -63,68 +86,97 @@ class ManualSocket extends Duplex {
     }
   }
 
-  write(chunk, callback) {
-    const result = super.write(chunk, callback);
+  override write(
+    chunk: string | Buffer | Uint8Array,
+    encodingOrCb?: NodeJS.BufferEncoding | WriteCallback,
+    callback?: WriteCallback,
+  ): boolean {
+    const result =
+      typeof encodingOrCb === "function"
+        ? super.write(chunk, encodingOrCb)
+        : super.write(chunk, encodingOrCb as NodeJS.BufferEncoding, callback);
     return this.forceWriteFalse ? false : result;
   }
 
-  releaseWrite() {
+  releaseWrite(): void {
     const callback = this.pendingWriteCallbacks.shift();
     if (callback) callback();
   }
 
-  feed(bytes) {
+  feed(bytes: Buffer | Uint8Array | string): void {
     this.push(Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes));
   }
 
-  endInput() {
+  endInput(): void {
     this.push(null);
   }
 }
 
-function encodeFrame(value) {
+function encodeFrame(value: JsonTransportMessage): Buffer {
   const payload = Buffer.from(JSON.stringify(value), "utf8");
   return frameFromPayload(payload);
 }
 
-function frameFromPayload(payload) {
-  const body = Buffer.isBuffer(payload) ? payload : Buffer.from(payload, "utf8");
+function frameFromPayload(payload: Buffer | string | Uint8Array): Buffer {
+  const body = Buffer.isBuffer(payload) ? payload : Buffer.from(payload as string | Uint8Array);
   const header = Buffer.alloc(4);
   header.writeUInt32BE(body.length, 0);
   return Buffer.concat([header, body]);
 }
 
-function headerOfLength(length) {
+function headerOfLength(length: number): Buffer {
   const header = Buffer.alloc(4);
   header.writeUInt32BE(length, 0);
   return header;
 }
 
 /** Build an object whose JSON payload is exactly `size` ASCII bytes. */
-function objectOfPayloadSize(size) {
-  const value = { s: "a".repeat(size - 8) };
+function objectOfPayloadSize(size: number): JsonTransportMessage {
+  const value: JsonTransportMessage = { s: "a".repeat(size - 8) };
   assert.equal(Buffer.byteLength(JSON.stringify(value), "utf8"), size);
   return value;
 }
 
-function payloadOfObject(value) {
+function payloadOfObject(value: JsonTransportMessage): Buffer {
   return Buffer.from(JSON.stringify(value), "utf8");
 }
 
-function recorder() {
-  const messages = [];
-  const closes = [];
+function recorder(): {
+  messages: JsonTransportMessage[];
+  closes: TransportCode[];
+  onMessage: (value: JsonTransportMessage) => void;
+  onClose: (code: TransportCode) => void;
+} {
+  const messages: JsonTransportMessage[] = [];
+  const closes: TransportCode[] = [];
   return {
     messages,
     closes,
-    onMessage: (value) => messages.push(value),
-    onClose: (code) => closes.push(code),
+    onMessage: (value) => {
+      messages.push(value);
+    },
+    onClose: (code) => {
+      closes.push(code);
+    },
   };
 }
 
 // ---------------------------------------------------------------------------
 // Inbound framing
 // ---------------------------------------------------------------------------
+
+test("rejects a missing message handler before attaching to the owned stream", () => {
+  const socket = new ManualSocket();
+  for (const options of [undefined, {}]) {
+    assert.throws(() => attachJsonTransport(socket, options), {
+      name: "TypeError",
+      message: "onMessage must be a function",
+    });
+  }
+  assert.equal(socket.listenerCount("data"), 0);
+  assert.equal(socket.destroyed, false);
+  socket.destroy();
+});
 
 test("reassembles a frame delivered one byte at a time", async () => {
   const socket = new ManualSocket();
@@ -166,7 +218,10 @@ test("accepts a payload of exactly 32768 bytes", async () => {
   await settle();
 
   assert.equal(rec.messages.length, 1);
-  assert.equal(rec.messages[0].s.length, 32768 - 8);
+  const firstMessage = rec.messages[0];
+  assert.ok(firstMessage !== undefined);
+  assert.equal(typeof firstMessage.s, "string");
+  assert.equal((firstMessage.s as string).length, 32768 - 8);
   assert.deepEqual(rec.closes, []);
   socket.destroy();
 });
@@ -175,7 +230,7 @@ for (const [name, length] of [
   ["zero", 0],
   ["32769", 32769],
   ["uint32 maximum", 0xffffffff],
-]) {
+] as const) {
   test(`rejects a ${name} length before allocating a body`, async () => {
     const socket = new ManualSocket();
     const rec = recorder();
@@ -202,7 +257,7 @@ for (const [name, payload] of [
   ["a boolean scalar", Buffer.from("true", "utf8")],
   ["an array", Buffer.from("[1,2]", "utf8")],
   ["null", Buffer.from("null", "utf8")],
-]) {
+] as const) {
   test(`destroys the transport on ${name}`, async () => {
     const socket = new ManualSocket();
     const rec = recorder();
@@ -263,30 +318,41 @@ test("clean remote EOF closes once with the remote code", async () => {
 
 test("invokes onMessage serially and waits for async callbacks", async () => {
   const socket = new ManualSocket();
-  const order = [];
-  const pending = [];
-  const closes = [];
+  const order: number[] = [];
+  const pending: Array<() => void> = [];
+  const closes: TransportCode[] = [];
   attachJsonTransport(socket, {
     onMessage: (value) => {
-      order.push(value.n);
-      return new Promise((resolve) => pending.push(resolve));
+      assert.equal(typeof value.n, "number");
+      order.push(value.n as number);
+      return new Promise<void>((resolve) => {
+        pending.push(resolve);
+      });
     },
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   socket.feed(Buffer.concat([encodeFrame({ n: 1 }), encodeFrame({ n: 2 }), encodeFrame({ n: 3 })]));
   await settle();
   assert.deepEqual(order, [1]);
 
-  pending.shift()();
+  const firstPending = pending.shift();
+  assert.ok(firstPending !== undefined);
+  firstPending();
   await settle();
   assert.deepEqual(order, [1, 2]);
 
-  pending.shift()();
+  const secondPending = pending.shift();
+  assert.ok(secondPending !== undefined);
+  secondPending();
   await settle();
   assert.deepEqual(order, [1, 2, 3]);
 
-  pending.shift()();
+  const thirdPending = pending.shift();
+  assert.ok(thirdPending !== undefined);
+  thirdPending();
   await settle();
   assert.deepEqual(order, [1, 2, 3]);
   assert.deepEqual(closes, []);
@@ -295,17 +361,20 @@ test("invokes onMessage serially and waits for async callbacks", async () => {
 
 test("destroys when retained inbound frames exceed four", async () => {
   const socket = new ManualSocket();
-  const order = [];
-  const closes = [];
+  const order: number[] = [];
+  const closes: TransportCode[] = [];
   attachJsonTransport(socket, {
     onMessage: (value) => {
-      order.push(value.n);
-      return new Promise(() => {});
+      assert.equal(typeof value.n, "number");
+      order.push(value.n as number);
+      return new Promise<void>(() => {});
     },
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
-  const frames = [];
+  const frames: Buffer[] = [];
   for (let i = 0; i < 5; i += 1) frames.push(encodeFrame({ n: i + 1 }));
   socket.feed(Buffer.concat(frames));
   await settle();
@@ -317,14 +386,16 @@ test("destroys when retained inbound frames exceed four", async () => {
 
 test("destroys when retained inbound bytes exceed 65536", async () => {
   const socket = new ManualSocket();
-  const order = [];
-  const closes = [];
+  const order: JsonTransportMessage[] = [];
+  const closes: TransportCode[] = [];
   attachJsonTransport(socket, {
     onMessage: (value) => {
       order.push(value);
-      return new Promise(() => {});
+      return new Promise<void>(() => {});
     },
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   const big = payloadOfObject(objectOfPayloadSize(30000));
@@ -338,14 +409,17 @@ test("destroys when retained inbound bytes exceed 65536", async () => {
 
 test("counts a partial header against the retained byte cap before allocating a body", async () => {
   const socket = new ManualSocket();
-  const order = [];
-  const closes = [];
+  const order: unknown[] = [];
+  const closes: TransportCode[] = [];
   attachJsonTransport(socket, {
     onMessage: (value) => {
+      // Original payload is { s }, so .n is undefined; retain that push for length accounting.
       order.push(value.n);
-      return new Promise(() => {});
+      return new Promise<void>(() => {});
     },
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   // Two 32768-byte frames fill the 65536 retained-byte budget exactly: the
@@ -365,20 +439,23 @@ test("counts a partial header against the retained byte cap before allocating a 
 
 test("counts a partial header as the fifth retained frame", async () => {
   const socket = new ManualSocket();
-  const order = [];
-  const closes = [];
+  const order: number[] = [];
+  const closes: TransportCode[] = [];
   attachJsonTransport(socket, {
     onMessage: (value) => {
-      order.push(value.n);
-      return new Promise(() => {});
+      assert.equal(typeof value.n, "number");
+      order.push(value.n as number);
+      return new Promise<void>(() => {});
     },
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   // One active callback plus three queued frames already reach the 4-frame cap;
   // a partial header for a fifth frame overflows on the first byte. As above the
   // byte is coalesced with the frames because reads are paused.
-  const frames = [];
+  const frames: Buffer[] = [];
   for (let i = 0; i < 4; i += 1) frames.push(encodeFrame({ n: i + 1 }));
   frames.push(Buffer.from([0x00]));
   socket.feed(Buffer.concat(frames));
@@ -391,14 +468,17 @@ test("counts a partial header as the fifth retained frame", async () => {
 
 test("treats a throwing onMessage callback as fatal and stops callbacks", async () => {
   const socket = new ManualSocket();
-  const order = [];
-  const closes = [];
+  const order: number[] = [];
+  const closes: TransportCode[] = [];
   attachJsonTransport(socket, {
     onMessage: (value) => {
-      order.push(value.n);
+      assert.equal(typeof value.n, "number");
+      order.push(value.n as number);
       throw new Error("callback boom");
     },
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   socket.feed(Buffer.concat([encodeFrame({ n: 1 }), encodeFrame({ n: 2 })]));
@@ -411,14 +491,17 @@ test("treats a throwing onMessage callback as fatal and stops callbacks", async 
 
 test("treats a rejecting onMessage promise as fatal", async () => {
   const socket = new ManualSocket();
-  const order = [];
-  const closes = [];
+  const order: number[] = [];
+  const closes: TransportCode[] = [];
   attachJsonTransport(socket, {
     onMessage: (value) => {
-      order.push(value.n);
+      assert.equal(typeof value.n, "number");
+      order.push(value.n as number);
       return Promise.reject(new Error("callback boom"));
     },
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   socket.feed(encodeFrame({ n: 1 }));
@@ -432,20 +515,23 @@ test("treats a rejecting onMessage promise as fatal", async () => {
 
 test("fails closed when the callback result then-getter throws", async () => {
   const socket = new ManualSocket();
-  const order = [];
-  const closes = [];
+  const order: number[] = [];
+  const closes: TransportCode[] = [];
   // biome-ignore lint/suspicious/noThenProperty: Exercise a malicious then getter at the callback boundary.
-  const poisoned = Object.defineProperty({}, "then", {
+  const poisoned: unknown = Object.defineProperty({}, "then", {
     get() {
       throw new Error("poisoned then");
     },
   });
   attachJsonTransport(socket, {
     onMessage: (value) => {
-      order.push(value.n);
+      assert.equal(typeof value.n, "number");
+      order.push(value.n as number);
       return poisoned;
     },
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   socket.feed(Buffer.concat([encodeFrame({ n: 1 }), encodeFrame({ n: 2 })]));
@@ -459,19 +545,23 @@ test("fails closed when the callback result then-getter throws", async () => {
 
 test("fails closed when the callback result then-function throws", async () => {
   const socket = new ManualSocket();
-  const order = [];
-  const closes = [];
+  const order: number[] = [];
+  const closes: TransportCode[] = [];
   attachJsonTransport(socket, {
     onMessage: (value) => {
-      order.push(value.n);
-      return {
+      assert.equal(typeof value.n, "number");
+      order.push(value.n as number);
+      const thenable: unknown = {
         // biome-ignore lint/suspicious/noThenProperty: Exercise an intentionally rejecting thenable.
         then() {
           throw new Error("throwing then");
         },
       };
+      return thenable;
     },
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   socket.feed(encodeFrame({ n: 1 }));
@@ -496,6 +586,7 @@ test("writes a four-byte big-endian length followed by UTF-8 JSON", async () => 
 
   assert.equal(socket.written.length, 1);
   const frame = socket.written[0];
+  assert.ok(frame !== undefined);
   assert.equal(frame.readUInt32BE(0), Buffer.byteLength('{"a":1}', "utf8"));
   assert.equal(frame.subarray(4).toString("utf8"), '{"a":1}');
   socket.destroy();
@@ -503,8 +594,13 @@ test("writes a four-byte big-endian length followed by UTF-8 JSON", async () => 
 
 test("respects write(false), the write callback and drain ordering", async () => {
   const socket = new ManualSocket({ autoWriteCallback: false, forceWriteFalse: true });
-  const closes = [];
-  const transport = attachJsonTransport(socket, { onMessage() {}, onClose: (c) => closes.push(c) });
+  const closes: TransportCode[] = [];
+  const transport = attachJsonTransport(socket, {
+    onMessage() {},
+    onClose: (c) => {
+      closes.push(c);
+    },
+  });
 
   const first = transport.send({ a: 1 });
   first.catch(() => {});
@@ -534,16 +630,22 @@ test("respects write(false), the write callback and drain ordering", async () =>
 
 test("fails when the socket write callback receives an error", async () => {
   class ErrorWriteSocket extends Duplex {
-    _read() {}
-    _write(_chunk, _encoding, callback) {
+    override _read(_size?: number): void {}
+    override _write(
+      _chunk: Buffer | string | Uint8Array,
+      _encoding: NodeJS.BufferEncoding,
+      callback: WriteCallback,
+    ): void {
       callback(new Error("write failed"));
     }
   }
   const socket = new ErrorWriteSocket();
-  const closes = [];
+  const closes: TransportCode[] = [];
   const transport = attachJsonTransport(socket, {
     onMessage() {},
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   await assert.rejects(transport.send({ a: 1 }), { code: CODES.SOCKET });
@@ -555,10 +657,12 @@ test("fails when the socket write callback receives an error", async () => {
 
 test("does not resolve or write ahead when the write callback is synchronous", async () => {
   const socket = new ManualSocket({ syncWriteCallback: true, forceWriteFalse: true });
-  const closes = [];
+  const closes: TransportCode[] = [];
   const transport = attachJsonTransport(socket, {
     onMessage() {},
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   const first = transport.send({ a: 1 });
@@ -595,6 +699,8 @@ test("writes the next frame after a synchronous successful write callback", asyn
   await settle();
 
   assert.equal(socket.written.length, 2);
+  assert.ok(socket.written[0] !== undefined);
+  assert.ok(socket.written[1] !== undefined);
   assert.equal(socket.written[0].subarray(4).toString("utf8"), '{"a":1}');
   assert.equal(socket.written[1].subarray(4).toString("utf8"), '{"b":2}');
   socket.destroy();
@@ -602,10 +708,15 @@ test("writes the next frame after a synchronous successful write callback", asyn
 
 test("rejects and closes when the outbound message count exceeds four", async () => {
   const socket = new ManualSocket({ autoWriteCallback: false });
-  const closes = [];
-  const transport = attachJsonTransport(socket, { onMessage() {}, onClose: (c) => closes.push(c) });
+  const closes: TransportCode[] = [];
+  const transport = attachJsonTransport(socket, {
+    onMessage() {},
+    onClose: (c) => {
+      closes.push(c);
+    },
+  });
 
-  const held = [];
+  const held: Array<Promise<void>> = [];
   for (let i = 0; i < 4; i += 1) {
     const promise = transport.send({ n: i });
     promise.catch(() => {});
@@ -624,8 +735,13 @@ test("rejects and closes when the outbound message count exceeds four", async ()
 
 test("rejects and closes when the outbound byte budget exceeds 65536", async () => {
   const socket = new ManualSocket({ autoWriteCallback: false });
-  const closes = [];
-  const transport = attachJsonTransport(socket, { onMessage() {}, onClose: (c) => closes.push(c) });
+  const closes: TransportCode[] = [];
+  const transport = attachJsonTransport(socket, {
+    onMessage() {},
+    onClose: (c) => {
+      closes.push(c);
+    },
+  });
 
   const big = objectOfPayloadSize(30000); // frame = 4 + 30000 = 30004 bytes
   const first = transport.send(big);
@@ -649,12 +765,17 @@ test("rejects and closes when the outbound byte budget exceeds 65536", async () 
 
 test("send rejects invalid values without closing the transport", async () => {
   const socket = new ManualSocket();
-  const closes = [];
-  const transport = attachJsonTransport(socket, { onMessage() {}, onClose: (c) => closes.push(c) });
+  const closes: TransportCode[] = [];
+  const transport = attachJsonTransport(socket, {
+    onMessage() {},
+    onClose: (c) => {
+      closes.push(c);
+    },
+  });
 
-  const cyclic = {};
+  const cyclic: Record<string, unknown> = {};
   cyclic.self = cyclic;
-  const cases = [
+  const cases: Array<[string, unknown]> = [
     ["null", null],
     ["an array", []],
     ["a number", 1],
@@ -691,7 +812,7 @@ test("send rejects invalid values without closing the transport", async () => {
   for (const [name, value] of cases) {
     await assert.rejects(
       transport.send(value),
-      (error) => error instanceof TransportError && error.code === CODES.ENCODE,
+      (error: unknown) => error instanceof TransportError && error.code === CODES.ENCODE,
       `expected ENCODE for ${name}`,
     );
   }
@@ -708,11 +829,13 @@ test("send accepts ordinary and null-prototype objects", async () => {
   const transport = attachJsonTransport(socket, { onMessage() {}, onClose() {} });
 
   await transport.send({ a: 1 });
-  const nullProto = Object.create(null);
+  const nullProto: JsonTransportMessage = Object.create(null) as JsonTransportMessage;
   nullProto.b = 2;
   await transport.send(nullProto);
   await settle();
 
+  assert.ok(socket.written[0] !== undefined);
+  assert.ok(socket.written[1] !== undefined);
   assert.equal(socket.written[0].subarray(4).toString("utf8"), '{"a":1}');
   assert.equal(socket.written[1].subarray(4).toString("utf8"), '{"b":2}');
   socket.destroy();
@@ -720,13 +843,15 @@ test("send accepts ordinary and null-prototype objects", async () => {
 
 test("rejects own properties that Object.keys would silently drop", async () => {
   const socket = new ManualSocket();
-  const closes = [];
+  const closes: TransportCode[] = [];
   const transport = attachJsonTransport(socket, {
     onMessage() {},
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
-  const hiddenData = {};
+  const hiddenData: Record<string, unknown> = {};
   Object.defineProperty(hiddenData, "hidden", { value: 1, enumerable: false });
   const hiddenAccessor = {};
   Object.defineProperty(hiddenAccessor, "secret", {
@@ -739,7 +864,7 @@ test("rejects own properties that Object.keys would silently drop", async () => 
   const nullProtoSymbol = Object.create(null);
   nullProtoSymbol[Symbol("s")] = 1;
 
-  const cases = [
+  const cases: Array<[string, unknown]> = [
     ["a symbol key", symbolKey],
     ["a symbol key on a null-prototype object", nullProtoSymbol],
     ["a non-enumerable data property", hiddenData],
@@ -749,7 +874,7 @@ test("rejects own properties that Object.keys would silently drop", async () => 
   for (const [name, value] of cases) {
     await assert.rejects(
       transport.send(value),
-      (error) => error instanceof TransportError && error.code === CODES.ENCODE,
+      (error: unknown) => error instanceof TransportError && error.code === CODES.ENCODE,
       `expected ENCODE for ${name}`,
     );
   }
@@ -762,10 +887,12 @@ test("rejects own properties that Object.keys would silently drop", async () => 
 
 test("rejects nonstandard array prototypes and extra own array properties", async () => {
   const socket = new ManualSocket();
-  const closes = [];
+  const closes: TransportCode[] = [];
   const transport = attachJsonTransport(socket, {
     onMessage() {},
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   class DerivedArray extends Array {}
@@ -773,14 +900,14 @@ test("rejects nonstandard array prototypes and extra own array properties", asyn
   derived.push(1);
   const rePrototyped = [1, 2];
   Object.setPrototypeOf(rePrototyped, null);
-  const extraString = [1];
+  const extraString = [1] as number[] & { extra?: number };
   extraString.extra = 2;
   const extraSymbol = [1];
-  extraSymbol[Symbol("s")] = 2;
-  const nonCanonicalIndex = [1];
+  (extraSymbol as number[] & { [key: symbol]: number })[Symbol("s")] = 2;
+  const nonCanonicalIndex = [1] as number[] & { [key: string]: number };
   nonCanonicalIndex["01"] = 2;
 
-  const cases = [
+  const cases: Array<[string, unknown]> = [
     ["a subclassed array", derived],
     ["an array with a nonstandard prototype", rePrototyped],
     ["an array with an extra string property", extraString],
@@ -792,7 +919,7 @@ test("rejects nonstandard array prototypes and extra own array properties", asyn
   for (const [name, value] of cases) {
     await assert.rejects(
       transport.send({ value }),
-      (error) => error instanceof TransportError && error.code === CODES.ENCODE,
+      (error: unknown) => error instanceof TransportError && error.code === CODES.ENCODE,
       `expected ENCODE for ${name}`,
     );
   }
@@ -806,8 +933,8 @@ test("bounds outbound structural depth at 12", async () => {
   const socket = new ManualSocket();
   const transport = attachJsonTransport(socket, { onMessage() {}, onClose() {} });
 
-  function nest(levels) {
-    let value = {};
+  function nest(levels: number): JsonTransportMessage {
+    let value: JsonTransportMessage = {};
     for (let i = 1; i < levels; i += 1) value = { a: value };
     return value;
   }
@@ -837,10 +964,12 @@ test("rejects an encoded payload larger than 32768 bytes", async () => {
 
 test("rejects an oversized string before materializing huge JSON text", async () => {
   const socket = new ManualSocket();
-  const closes = [];
+  const closes: TransportCode[] = [];
   const transport = attachJsonTransport(socket, {
     onMessage() {},
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   // Far longer than any frame; must be rejected by the source-length bound
@@ -870,14 +999,16 @@ test("bounds accumulated encoded text before it exceeds the payload cap", async 
 
 test("handles an already-aborted signal", async () => {
   const socket = new ManualSocket();
-  const closes = [];
+  const closes: TransportCode[] = [];
   const controller = new AbortController();
   controller.abort();
 
   const transport = attachJsonTransport(socket, {
     signal: controller.signal,
     onMessage() {},
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   assert.deepEqual(closes, [CODES.ABORTED]);
@@ -887,12 +1018,14 @@ test("handles an already-aborted signal", async () => {
 
 test("aborting during a blocked write rejects outstanding sends", async () => {
   const socket = new ManualSocket({ autoWriteCallback: false });
-  const closes = [];
+  const closes: TransportCode[] = [];
   const controller = new AbortController();
   const transport = attachJsonTransport(socket, {
     signal: controller.signal,
     onMessage() {},
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   const pending = transport.send({ a: 1 });
@@ -908,19 +1041,24 @@ test("aborting during a blocked write rejects outstanding sends", async () => {
 
 test("aborting during an async callback closes once and suppresses later delivery", async () => {
   const socket = new ManualSocket();
-  const order = [];
-  const closes = [];
-  let release = null;
+  const order: number[] = [];
+  const closes: TransportCode[] = [];
+  let release: (() => void) | undefined;
   const controller = new AbortController();
   attachJsonTransport(socket, {
     signal: controller.signal,
     onMessage: (value) => {
-      order.push(value.n);
-      return new Promise((resolve) => {
-        release = resolve;
+      assert.equal(typeof value.n, "number");
+      order.push(value.n as number);
+      return new Promise<void>((resolve) => {
+        release = () => {
+          resolve();
+        };
       });
     },
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   socket.feed(Buffer.concat([encodeFrame({ n: 1 }), encodeFrame({ n: 2 })]));
@@ -930,7 +1068,11 @@ test("aborting during an async callback closes once and suppresses later deliver
   controller.abort();
   assert.deepEqual(closes, [CODES.ABORTED]);
 
-  release();
+  const releaseAfterAbort = release;
+  if (releaseAfterAbort === undefined) {
+    throw new Error("expected pending callback release");
+  }
+  releaseAfterAbort();
   await settle();
   assert.deepEqual(order, [1], "a queued frame must not be delivered after abort");
   assert.deepEqual(closes, [CODES.ABORTED]);
@@ -942,8 +1084,13 @@ test("aborting during an async callback closes once and suppresses later deliver
 
 test("notifies and rejects outstanding sends on a socket error", async () => {
   const socket = new ManualSocket({ autoWriteCallback: false });
-  const closes = [];
-  const transport = attachJsonTransport(socket, { onMessage() {}, onClose: (c) => closes.push(c) });
+  const closes: TransportCode[] = [];
+  const transport = attachJsonTransport(socket, {
+    onMessage() {},
+    onClose: (c) => {
+      closes.push(c);
+    },
+  });
 
   const pending = transport.send({ a: 1 });
   pending.catch(() => {});
@@ -957,11 +1104,15 @@ test("notifies and rejects outstanding sends on a socket error", async () => {
 
 test("keeps the error listener through delayed asynchronous destruction", async () => {
   class SlowDestroySocket extends Duplex {
-    _read() {}
-    _write(_chunk, _encoding, callback) {
+    override _read(_size?: number): void {}
+    override _write(
+      _chunk: Buffer | string | Uint8Array,
+      _encoding: NodeJS.BufferEncoding,
+      callback: WriteCallback,
+    ): void {
       callback();
     }
-    _destroy(_err, callback) {
+    override _destroy(_err: Error | null, callback: (error?: Error | null) => void): void {
       // Destruction is asynchronous and reports an error, so the stream emits
       // 'error' only after destroy() has returned. The transport must keep its
       // listener attached until 'close' is observed, or this error would be
@@ -970,10 +1121,12 @@ test("keeps the error listener through delayed asynchronous destruction", async 
     }
   }
   const socket = new SlowDestroySocket();
-  const closes = [];
+  const closes: TransportCode[] = [];
   const transport = attachJsonTransport(socket, {
     onMessage() {},
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   transport.close();
@@ -988,8 +1141,13 @@ test("keeps the error listener through delayed asynchronous destruction", async 
 
 test("close is idempotent, notifies once and rejects later sends", async () => {
   const socket = new ManualSocket();
-  const closes = [];
-  const transport = attachJsonTransport(socket, { onMessage() {}, onClose: (c) => closes.push(c) });
+  const closes: TransportCode[] = [];
+  const transport = attachJsonTransport(socket, {
+    onMessage() {},
+    onClose: (c) => {
+      closes.push(c);
+    },
+  });
 
   transport.close();
   transport.close();
@@ -1002,17 +1160,22 @@ test("close is idempotent, notifies once and rejects later sends", async () => {
 
 test("delivers no further callbacks after a fatal close", async () => {
   const socket = new ManualSocket();
-  const order = [];
-  const closes = [];
-  let release = null;
+  const order: number[] = [];
+  const closes: TransportCode[] = [];
+  let release: (() => void) | undefined;
   const transport = attachJsonTransport(socket, {
     onMessage: (value) => {
-      order.push(value.n);
-      return new Promise((resolve) => {
-        release = resolve;
+      assert.equal(typeof value.n, "number");
+      order.push(value.n as number);
+      return new Promise<void>((resolve) => {
+        release = () => {
+          resolve();
+        };
       });
     },
-    onClose: (code) => closes.push(code),
+    onClose: (code) => {
+      closes.push(code);
+    },
   });
 
   socket.feed(Buffer.concat([encodeFrame({ n: 1 }), encodeFrame({ n: 2 })]));
@@ -1020,7 +1183,11 @@ test("delivers no further callbacks after a fatal close", async () => {
   assert.deepEqual(order, [1]);
 
   transport.close();
-  release();
+  const releaseAfterClose = release;
+  if (releaseAfterClose === undefined) {
+    throw new Error("expected pending callback release");
+  }
+  releaseAfterClose();
   await settle();
 
   assert.deepEqual(order, [1]);
@@ -1029,21 +1196,26 @@ test("delivers no further callbacks after a fatal close", async () => {
 
 test("close codes are finite strings from the documented set", async () => {
   const socket = new ManualSocket();
-  const closes = [];
-  attachJsonTransport(socket, { onMessage() {}, onClose: (c) => closes.push(c) });
+  const closes: TransportCode[] = [];
+  attachJsonTransport(socket, {
+    onMessage() {},
+    onClose: (c) => {
+      closes.push(c);
+    },
+  });
   socket.destroy();
   await settle();
 
-  const finite = new Set(Object.values(CODES));
+  const finite = new Set<string>(Object.values(CODES));
   assert.equal(closes.length, 1);
   assert.equal(typeof closes[0], "string");
-  assert.equal(finite.has(closes[0]), true);
+  assert.equal(finite.has(closes[0] as string), true);
 });
 
 test("never connects, listens, reconnects or replays", async () => {
   const socket = new ManualSocket();
   let connectCalls = 0;
-  socket.connect = () => {
+  socket.connect = (): void => {
     connectCalls += 1;
   };
   const transport = attachJsonTransport(socket, { onMessage() {}, onClose() {} });
@@ -1062,16 +1234,16 @@ test("never connects, listens, reconnects or replays", async () => {
 
 test("removes its abort listener on shutdown and socket listeners on close", async () => {
   const socket = new ManualSocket();
-  const abortListeners = new Set();
+  const abortListeners = new Set<() => void>();
   const signal = {
     aborted: false,
-    addEventListener(_type, handler) {
+    addEventListener(_type: string, handler: () => void): void {
       abortListeners.add(handler);
     },
-    removeEventListener(_type, handler) {
+    removeEventListener(_type: string, handler: () => void): void {
       abortListeners.delete(handler);
     },
-  };
+  } as AbortSignal;
   const transport = attachJsonTransport(socket, { signal, onMessage() {}, onClose() {} });
   assert.equal(abortListeners.size, 1);
 
@@ -1085,18 +1257,18 @@ test("removes its abort listener on shutdown and socket listeners on close", asy
 
 test("exchanges bounded frames over a real disposable local IPC stream with backpressure", {
   timeout: 5000,
-}, async (t) => {
+}, async (t: TestContext) => {
   const { createServer, createConnection } = await import("node:net");
   const { mkdtemp, rm, chmod } = await import("node:fs/promises");
   const { tmpdir } = await import("node:os");
   const { basename, join } = await import("node:path");
   const root = await mkdtemp(join(tmpdir(), "obj-"));
   await chmod(root, 0o700);
-  const peers = new Set();
-  const transports = new Set();
-  let done;
-  const received = [];
-  const observed = new Promise((resolve) => {
+  const peers = new Set<Socket>();
+  const transports = new Set<ReturnType<typeof attachJsonTransport>>();
+  let done: (() => void) | undefined;
+  const received: JsonTransportMessage[] = [];
+  const observed = new Promise<void>((resolve) => {
     done = resolve;
   });
   const server = createServer({ highWaterMark: 16 }, (socket) => {
@@ -1111,7 +1283,10 @@ test("exchanges bounded frames over a real disposable local IPC stream with back
   t.after(async () => {
     for (const transport of transports) transport.close();
     for (const socket of peers) socket.destroy();
-    if (server.listening) await new Promise((resolve) => server.close(resolve));
+    if (server.listening)
+      await new Promise<void>((resolve) => {
+        server.close(() => resolve());
+      });
     await rm(root, { recursive: true, force: true });
   });
   // Node uses named pipes for Windows IPC and filesystem sockets on Unix.
@@ -1119,24 +1294,29 @@ test("exchanges bounded frames over a real disposable local IPC stream with back
     process.platform === "win32"
       ? String.raw`\\.\pipe\openbot-bounded-json-${basename(root)}`
       : join(root, "s");
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
     server.listen(path, resolve);
   });
-  const socket = createConnection({ path, highWaterMark: 16 });
+  // highWaterMark is honored by Node at runtime; current @types omit it on NetConnectOpts.
+  const connectOptions: import("node:net").NetConnectOpts = {
+    path,
+    highWaterMark: 16,
+  } as import("node:net").NetConnectOpts;
+  const socket = createConnection(connectOptions);
   peers.add(socket);
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     socket.once("error", reject);
     socket.once("connect", resolve);
   });
   const transport = attachJsonTransport(socket, {
     onMessage(value) {
       received.push(value);
-      if (received.length === 2) done();
+      if (received.length === 2) done?.();
     },
   });
   transports.add(transport);
-  const messages = [{ text: "中文😀".repeat(200) }, { second: true }];
+  const messages: JsonTransportMessage[] = [{ text: "中文😀".repeat(200) }, { second: true }];
   await Promise.all([...messages.map((value) => transport.send(value)), observed]);
   assert.deepEqual(
     received,

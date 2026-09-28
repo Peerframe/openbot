@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "src",
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "src/bounded-json-codec.ts",
+    "src/bounded-json-transport.ts",
+    "src/bounded-json-transport.node-test.ts"
+  ]
+}
