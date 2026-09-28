@@ -45,9 +45,7 @@ for (const key of graph.workspaceKeys) {
   }
   const name = lock.packages[key].name;
   const link = join(output, "node_modules", name);
-  if (process.platform === "win32") {
-    await cp(destination, link, { recursive: true });
-  } else await symlink(relative(dirname(link), destination), link);
+  await symlink(relative(dirname(link), destination), link);
 }
 for (const key of graph.packageKeys) {
   const entry = lock.packages[key];

@@ -28,13 +28,12 @@ OpenBot's MIT license does not replace these licenses or prohibit modification,
 replacement or reverse engineering permitted by them. No library is statically
 incorporated into OpenBot application code.
 
-Windows source-built runtime (2026-09-10)
+Historical Windows source-build review (2026-09-10)
 
-The Windows runtime is built from the official PostgreSQL 17.11 source archive
-by scripts/build-windows-postgresql.ps1, not @embedded-postgres/windows-x64.
-The previous Windows npm candidate was rejected because its modified LGPL DLL
-source/provenance was incomplete. It is not a permitted packaging fallback.
-Windows-specific build provenance and complete notices travel inside
-postgres/openbot-postgresql-build.json and postgres/licenses. The Darwin
-source/version inventory above must not be used as Windows provenance.
-See docs/research/windows-desktop-completion.md for the build and CI boundary.
+Windows Desktop now ships the remote client and no PostgreSQL runtime. The retired
+source-build tooling is preserved in Git history, not in current packaging.
+The previous Windows npm candidate remains rejected because its modified LGPL DLL
+source/provenance was incomplete; it is not a permitted packaging fallback.
+Historical Windows notices and audit evidence remain in licenses/windows-postgresql.
+The Darwin source/version inventory above must not be used as Windows provenance.
+See docs/research/final-server-retirement.md for the current platform boundary.

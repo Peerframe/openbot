@@ -1,5 +1,10 @@
 # Research: Windows Desktop local Server
 
+Current status (2026-09-29): the [accepted Server retirement](final-server-retirement.md)
+made Windows Desktop a remote client. The unused PostgreSQL source builder, staging adapter and
+upgrade probe have now exited; this document preserves the historical review and limitations.
+Historical source remains in Git at `e3208b8`; license and rejected-candidate evidence is retained.
+
 - Status: Accepted for implementation; native Windows verification required
 - Date: 2026-09-10
 - Acceptance journey: On Windows x64, install the per-user Desktop, select this computer as the Server, create a local authenticated cluster without Docker, stop it, and reopen the retained database.
