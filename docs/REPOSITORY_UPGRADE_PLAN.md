@@ -6,8 +6,11 @@ English canonical; 中文摘要见文末。This is the single engineering-upgrad
 ## Current engineering-quality acceptance (2026-09-28)
 
 - Status: finite local acceptance complete; no confirmed blocker remains. Implementation/review
-  pin: `ef495bf1d118f8835442eb3c1d5f36241253fdcd`; the final commit only updates this evidence record.
-  Resolve that documentation HEAD with `git rev-parse HEAD`. All check/installation processes and
+  pin: `ef495bf1d118f8835442eb3c1d5f36241253fdcd`; the local delivery HEAD was
+  `ee4251c2f68f75bb8758b26354918b91f396af59` (documentation only). The publication clarification
+  following it also changes only this record. Resolve the publication HEAD with `git rev-parse HEAD`
+  and match it to the draft PR's `headRefOid` and CI `head_sha`; the PR records the concrete SHA.
+  All local check/installation processes and
   both read-only reviewers have finished; no outgoing writer owns an unfinished patch.
 - Checkout: `/Users/yxflc/.codex/worktrees/engineering-quality/openbot`, branch
   `codex/engineering-quality`; fixed base `4891b807b7b677820f82821f87b95c2bb80d74c3`.
@@ -15,7 +18,9 @@ English canonical; 中文摘要见文末。This is the single engineering-upgrad
   remain untouched. One implementation writer owns this checkout; review agents are read-only.
 - Read-only GitHub verification: PR #100 is merged at this base and all final candidate jobs,
   including `check`, passed in run `36291315723`. The older pending statements below describe
-  their original checkpoint, not current status. No new push, merge or release is authorized.
+  their original checkpoint, not current status. The user subsequently authorized pushing
+  `codex/engineering-quality`, creating a draft PR and running required candidate hosted CI.
+  Merge, release, production actions and paid model calls remain unauthorized.
 - Finite acceptance: recursive source/public API boundaries; behavior-aware CI selection and
   cold commands; two actual tool consumers sharing typed result/lifecycle conventions; one
   existing Work HTTP request/response/error chain through Python and generated TS; core-only
@@ -134,6 +139,66 @@ The local unsigned artifact is `apps/desktop/out/python-product/OpenBot Python P
 it does not replace the user's installation. All owned test containers/processes were removed.
 The original checkout remains at `9cc73c9` with its original user-owned dirty files untouched.
 
+### Revision-to-evidence mapping before publication
+
+| Revision/input | Review and validation correspondence |
+| --- | --- |
+| Base `4891b807b7b677820f82821f87b95c2bb80d74c3` | Same tree as PR #100 head `3b771c300533d3d4e780a9d867a702a5daed5b80`; hosted run `36291315723` succeeded on that PR head. It is Base evidence, not a run on this candidate |
+| Core/lifecycle `6ac4eb2`, retained in `e3ecf4e779b469b8438a4381b821ac0e8f58506e` | Core source/tests and factory input bytes did not change between these commits. Core 449 and clean wheel evidence use these bytes, also matched to final installed modules. Original read-only review was fixed at `4891b80..e3ecf4e` |
+| Pre-correction `e3ecf4e` control/Worker runtime | Actual SQL/control 836 and Worker 1,526 ran here. In `ef495bf`, the only changed Python runtime file was the reads decorator's typing, with unchanged executable body; full types and actual return/error/cancellation were then rechecked. New HTTP scope fixtures are separate Python DTO/FastAPI + Web evidence |
+| Correction `ef495bf1d118f8835442eb3c1d5f36241253fdcd` | Both reviewers closed findings on this fixed diff. HTTP 53 and Web 31 ran on the input bytes committed here; full Ruff/mypy with permanent consumer assertions, final `npm run check`, real Temporal journey, container, staged/packaged Desktop and final byte comparisons cover this implementation |
+| Local delivery `ee4251c2f68f75bb8758b26354918b91f396af59` | Only this record changed from `ef495bf`. Docs 4/535 files and research 22 checks actually ran; implementation checks are reused, not represented as new runs at `ee4251c` |
+| Publication clarification after `ee4251c` | Only this record changes. Run documentation/research gates and PR-body validation; do not repeat unchanged full local suites. Candidate hosted CI is separately identified by the draft PR head SHA, run ID/attempt and aggregate result |
+
+Final local Turbo results are **31/31 typecheck, 0 cached; 26/26 test tasks, 12 cached; 19/19
+build tasks, 12 cached**. Cached logs are not fresh execution. Core feedback measurement reused
+locked environments/downloads but started a fresh type cache in a snapshot without Worker.
+Container unchanged layers and C1 contributor exercises are reuse; native discovery/three demo
+edits retain their original revisions. No local success is promoted to hosted candidate evidence.
+
+### Retained collaboration-history skip: still supported, not newly introduced
+
+The exact skipped node is
+`apps/server-python/tests/test_work_collaboration_deadline_replay.py::test_retained_history_replays_without_new_deadline_commands[NOTSET]`.
+`OPENBOT_COLLABORATION_REPLAY_HISTORIES` was unset; the parameter list was empty and pytest used
+the reason `Supply retained synthetic history files for real SDK Replay`. This is missing original
+external history input, not a failing replay or an intentionally retired compatibility promise.
+
+At Base the test and its skip condition are byte-identical. The retained C3 local Worker log
+`/private/tmp/openbot-c3-control-final.log` records this exact node as skipped and 1,526 passed /
+1 skipped. Base's hosted Python job was successful; its same `scripts/test-python-control.mjs`
+constructs a scrubbed Worker environment without this variable, so that standard lane does not
+supply the opt-in histories. Do not infer historical replay success from the green job badge.
+This candidate's `/private/tmp/openbot-quality-control.log` records the same skip explicitly.
+
+Compatibility remains supported: histories without `collaborationProtocol=1`, and old flagged
+histories without `openbot-collaboration-deadline-v1`, retain their previous command sequence.
+See [the original decision and four historical SDK replay results](research/python-work-collaboration-deadline.md).
+Those four results were recorded on 2026-09-25; original histories were disposable external
+evidence and were not committed. The test, `work_worker.py`, `work_collaboration_workflow.py` and
+`work_corrected_workflow.py` are unchanged from Base in this upgrade. This is an inherited coverage
+gap, not new evidence of a regression. Current mTLS approval/recovery histories passed replay,
+but do not substitute for those older histories. No compatibility gate or assertion was removed.
+
+When the original synthetic, pre-deadline histories are available, run this opt-in gate directly
+(the ordinary scrubbed SQL runner does not forward the variable). Do not recreate them under the
+new Workflow and describe them as old histories:
+
+```sh
+OPENBOT_COLLABORATION_REPLAY_HISTORIES='/absolute/root-history.json:/absolute/child-history.json' \
+  apps/server-python/.worker-venv/bin/python -B -m pytest \
+  apps/server-python/tests/test_work_collaboration_deadline_replay.py -v -rs
+```
+
+Paths use `os.pathsep` (`:` on this POSIX qualification host); the existing locked Worker closure
+is required, while an engine connection and production credentials are not.
+
+### Official Node archive: assisted installation versus automated download
+
+The source is [Node.js v24.21.0, macOS arm64 official archive](https://nodejs.org/dist/v24.21.0/node-v24.21.0-darwin-arm64.tar.gz),
+exactly `NODE_ARCHIVE.url` in `apps/desktop/scripts/python-runtime.mjs`. Size: 52,909,993 bytes;
+SHA-256: `bed7eea5325e1108f32ce5228ddd6a5f0f08a499ee42aa7442aea583702f6057`.
+
 The first Desktop producer timed out downloading Node through Node fetch
 at its unchanged 120s bound. Both clients returned HTTP 200 on diagnosis; curl transferred the
 exact 52,909,993-byte official archive in 6.75s and matched pinned SHA-256
@@ -141,9 +206,57 @@ exact 52,909,993-byte official archive in 6.75s and matched pinned SHA-256
 input reuses these bytes for that exact URL; the unmodified producer still checks its hash/size,
 then installs the normal payload. This is reused download evidence, not a passing retest of the
 original Node fetch transfer. No timeout, lock, production downloader or CI gate was changed.
-Artifact writers ran serially against the fixed implementation. Hosted candidate CI, push/merge,
-signing/release, updates to the user's installed app and production conversion are unexecuted and
-outside this authorization. Historical CI is evidence for that historical base only.
+Reproduce the **assisted archive path** from a macOS arm64 checkout with the documented built
+Desktop/parser prerequisites. This temporary preload supplies only that exact public archive;
+all other downloads use the original fetch, and the producer still enforces its own bounds and
+SHA-256 before extraction. It does not change source, locks or the production downloader:
+
+```sh
+set -eu
+quality_archive_dir=$(mktemp -d "${TMPDIR:-/tmp}/openbot-quality-archive.XXXXXX")
+trap 'rm -rf "$quality_archive_dir"' EXIT HUP INT TERM
+export OPENBOT_QUALITY_NODE_ARCHIVE="$quality_archive_dir/node-v24.21.0-darwin-arm64.tar.gz"
+curl --fail --location --connect-timeout 10 --max-time 120 --max-filesize 67108864 \
+  --output "$OPENBOT_QUALITY_NODE_ARCHIVE" \
+  https://nodejs.org/dist/v24.21.0/node-v24.21.0-darwin-arm64.tar.gz
+printf '%s  %s\n' 'bed7eea5325e1108f32ce5228ddd6a5f0f08a499ee42aa7442aea583702f6057' \
+  "$OPENBOT_QUALITY_NODE_ARCHIVE" | shasum -a 256 -c -
+cat > "$quality_archive_dir/cached-node.mjs" <<'JS'
+import { createReadStream } from 'node:fs';
+import { Readable } from 'node:stream';
+const originalFetch = globalThis.fetch;
+globalThis.fetch = async (url, init) => {
+  if (url === 'https://nodejs.org/dist/v24.21.0/node-v24.21.0-darwin-arm64.tar.gz') {
+    const body = Readable.toWeb(createReadStream(process.env.OPENBOT_QUALITY_NODE_ARCHIVE, {
+      signal: init?.signal,
+    }));
+    return new Response(body, {
+      status: 200,
+      headers: { 'content-type': 'application/gzip', 'content-length': '52909993' },
+    });
+  }
+  return originalFetch(url, init);
+};
+JS
+node --import "$quality_archive_dir/cached-node.mjs" \
+  apps/desktop/scripts/prepare-native-server.mjs --python-product
+node apps/desktop/scripts/smoke-python-product.mjs apps/desktop/out/python-product-runtime
+node apps/desktop/scripts/package.mjs --preview --python-product
+node apps/desktop/scripts/smoke-python-product.mjs \
+  'apps/desktop/out/python-product/OpenBot Python Preview-darwin-arm64/OpenBot Python Preview.app/Contents/Resources/native-runtime'
+```
+
+The original ephemeral archive/preload were removed after successful byte verification. The
+procedure above reconstructs them; no private path, credentials or hidden download override is
+required. The normal automated route is `node apps/desktop/scripts/prepare-native-server.mjs
+--python-product` **without** `--import`; the local unassisted transfer failed, so its success remains
+unverified locally. The candidate macOS CI lane will independently exercise its normal producer;
+only that actual result can add hosted automated-download evidence. Later successful CI would not
+retroactively turn the earlier local failure into a success.
+
+Artifact writers ran serially against the fixed implementation. Push, draft PR and candidate CI
+are now authorized; their exact head/status are recorded on the PR. Merge, signing/release,
+updates to the user's installed app, production conversion and paid model calls remain excluded.
 
 ### Finite outcome and remaining limits
 
@@ -157,7 +270,7 @@ outside this authorization. Historical CI is evidence for that historical base o
 | Affected installed consumers and compatibility | Verified for clean wheel, Linux arm64 container and macOS arm64 staged/packaged service; current history recovery/replay and retained protocol differentials pass |
 | Authority, budget, observations, publication and recovery | Verified within the existing synthetic-effects/real SQL+engine acceptance; no production or paid-model claim |
 | Other platforms / special retained histories | Pending: no fresh Windows, Intel Mac or Linux amd64 installation; external retained collaboration-history fixture was not supplied. These do not expand the accepted affected-combination scope |
-| Hosted candidate CI / merge | Pending and not requested/authorized; base hosted CI is not candidate CI |
+| Hosted candidate CI / merge | Candidate push/draft PR/CI now authorized and pending; match checks to the actual PR head. Merge remains unauthorized. Base hosted CI is not candidate CI |
 | Formal release / production qualification | Not applicable to this local unsigned candidate; signing, user-app update, native Keychain and production conversion remain separate authorized work |
 
 The maintenance gain is concrete: contributors can find the owner/check command, check ordinary
@@ -175,8 +288,13 @@ Worker 1,526 项通过，另有真实 mTLS 审批/取消/恢复/重放以及 whe
 打包后服务验证。13 个核心模块、9 个控制/锁/notice 文件和 64 个 Desktop 编译文件完成字节比对。
 缓存、历史复用与跳过已分别列明；Node fetch 曾超时，使用官方 curl 下载并验哈希后的同一归档完成
 生产器验证，没有放宽限制。新增维护成本限于公开模块列表、真实 CI 跨目录依赖和局部类型/契约
-样例，没有新服务或依赖。原用户目录和演示修改保持不动，预览未替换用户安装。候选 hosted CI、
-推送合并、签名发行、其他平台和未提供的旧协作历史仍未验证，不冒充生产资格。
+样例，没有新服务或依赖。原用户目录和演示修改保持不动，预览未替换用户安装。原本地交付 HEAD
+为 `ee4251c`，实现和复审固定于 `ef495bf`，后续仅补本文；完整 SHA 和逐项证据对应关系见上表。
+旧协作历史测试 `test_retained_history_replays_without_new_deadline_commands[NOTSET]` 在 Base
+已因缺少外部原始历史而跳过，仍是支持的兼容范围，本轮没有改对应 Workflow 命令分支；本轮
+新历史重放不能冒充该旧历史验收。官方 Node 归档来源、完整哈希和临时复现命令已列出，人工
+介入归档后安装通过与原自动下载超时明确区分。用户现已授权推送、草稿 PR 和候选托管 CI；合并、
+签名发行、生产操作和付费模型仍未授权。托管结果按 PR 实际 HEAD 报告，不能沿用 Base 绿灯。
 
 ## Historical C1–C3 record (preserved evidence)
 
