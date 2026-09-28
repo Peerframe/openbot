@@ -20,7 +20,7 @@ from pydantic import ValidationError
 from .control_errors import ControlError
 from .employee_knowledge_inputs import _SENSITIVE, parse_skill_document
 from .employee_portability_inputs import DsseEnvelope, EmployeePackage, PortablePayload
-from .identity_inputs import _ECMASCRIPT_WHITESPACE
+from .text_compat import ECMASCRIPT_WHITESPACE
 from .models import iso_timestamp
 
 PAYLOAD_TYPES = {"openbot.employee/v1": "application/vnd.openbot.employee.v1+json", "openbot.employee/v2": "application/vnd.openbot.employee.v2+json"}
@@ -213,7 +213,7 @@ def verify_envelope(value, trusted_keys):
         if len(trusted_keys) > 256:
             raise ValueError()
         for entry in trusted_keys:
-            identity = entry["keyid"].strip(_ECMASCRIPT_WHITESPACE)
+            identity = entry["keyid"].strip(ECMASCRIPT_WHITESPACE)
             if not 1 <= len(identity) <= 256 or identity in trusted:
                 raise ValueError()
             key = entry["publicKey"]

@@ -8,7 +8,7 @@ from psycopg.types.json import Jsonb
 from .database import StoreUnavailable
 from .execution_scope import active_chain
 from .execution_values import KnowledgeReference, SkillReference, validate_artifacts, validate_proposal
-from .identity_inputs import _ECMASCRIPT_WHITESPACE
+from .text_compat import ECMASCRIPT_WHITESPACE
 from .message_models import Message, project_messages
 from .run_command_store import RunCommandConflict, read_steering
 from .run_query import read_run_records
@@ -35,7 +35,7 @@ async def complete(transactions, run, text, *, artifacts=(), proposal=None, refe
                    skill_references=(), applied_steering_ids=()):
     from .execution_store import audit, timestamp
     try:
-        if type(text) is not str or not text.strip(_ECMASCRIPT_WHITESPACE) or '\0' in text or len(text.encode('utf-16-le'))//2>8000:
+        if type(text) is not str or not text.strip(ECMASCRIPT_WHITESPACE) or '\0' in text or len(text.encode('utf-16-le'))//2>8000:
             raise ValueError()
         text.encode('utf-8')
         if len(references)>8 or len(skill_references)>2 or len(applied_steering_ids)>8:

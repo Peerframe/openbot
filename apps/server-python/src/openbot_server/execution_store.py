@@ -9,7 +9,7 @@ from .authority import PostgresTransactions
 from .database import StoreUnavailable
 from .execution_scope import active_chain
 from .execution_values import FAILURE_MESSAGES
-from .identity_inputs import _ECMASCRIPT_WHITESPACE
+from .text_compat import ECMASCRIPT_WHITESPACE
 from .models import iso_timestamp
 from .run_command_store import read_steering
 from .run_query import read_run_records
@@ -122,7 +122,7 @@ class PostgresExecutionStore:
 
     async def progress(self, run: Run, stage: str, message: str):
         try:
-            if any(type(v) is not str or not v.strip(_ECMASCRIPT_WHITESPACE) or '\0' in v or len(v.encode('utf-8'))>cap
+            if any(type(v) is not str or not v.strip(ECMASCRIPT_WHITESPACE) or '\0' in v or len(v.encode('utf-8'))>cap
                    for v,cap in ((stage,256),(message,8000))):
                 raise ValueError()
         except (ValueError,TypeError):

@@ -18,7 +18,8 @@ from openbot_agent_runtime import ToolDescriptor
 from .control_errors import ControlError
 from .database import StoreUnavailable
 from .execution_values import bounded_text
-from .identity_inputs import _uuid, _ECMASCRIPT_WHITESPACE, _UUID_PATTERN_TEXT
+from .identity_inputs import _uuid, _UUID_PATTERN_TEXT
+from .text_compat import ECMASCRIPT_WHITESPACE
 from .task_store import attachment_ids, TooManyAttachments
 from .work_claims import WorkFence, check_fence
 from .work_corrections import check_context
@@ -29,6 +30,7 @@ from .work_temporal_effect import ToolRequest
 from .work_temporal_start import WorkRuntimeContext, load_current_activity_task
 from .work_tool_results import ToolResults, ToolResponseAdapter, ToolResponseVerifier, encode_result
 from .work_values import InvalidWork, WorkConflict, canonical, text
+from .text_compat import utf16_unit_count as _units
 
 TOOLS = frozenset(('read_channel_context', 'read_task_status', 'read_attachment', 'list_channel_bots'))
 _SCOPE = {'expected_namespace', 'expected_queue', 'expected_workflow_type'}
@@ -70,10 +72,6 @@ def _guard(function: Callable[_P, Awaitable[_R]]) -> Callable[_P, Awaitable[_R]]
 
 def _hash(value):
     return hashlib.sha256(encode_result(value)[0]).hexdigest()
-
-
-def _units(value):
-    return len(value.encode('utf-16-le')) // 2
 
 
 def _arguments(tool, value):
@@ -249,7 +247,7 @@ class ProductWorkReads:
                 required = {'text', 'truncated', 'sha256', 'operation', 'processedAt'}
                 processing = item['processing']
                 if (type(derived) is not dict or set(derived) != required
-                        or type(derived['text']) is not str or not derived['text'].strip(_ECMASCRIPT_WHITESPACE)
+                        or type(derived['text']) is not str or not derived['text'].strip(ECMASCRIPT_WHITESPACE)
                         or _units(derived['text']) > 262144 or type(derived['truncated']) is not bool
                         or derived['sha256'] != item['sha256'] or type(processing) is not dict
                         or set(processing) != {'operation', 'characters', 'truncated', 'processedAt'}
@@ -404,7 +402,7 @@ class ProductWorkReads:
         truncated = len(rows) > 32
         for row in rows[:32]:
             text(row['id'],128)
-            if not row['role'].strip(_ECMASCRIPT_WHITESPACE) or len(row['role']) > 160:
+            if not row['role'].strip(ECMASCRIPT_WHITESPACE) or len(row['role']) > 160:
                 raise WorkConflict('read_profile_invalid')
             # SQL left is scalar-based; preserve the retained UTF-16 description bound.
             row['description'] = row['description'].encode('utf-16-le')[:480].decode('utf-16-le',errors='ignore')
@@ -601,8 +599,8 @@ class ProductWorkReads:
                     'FROM bots WHERE id=%s', (context.bot_id,))).fetchone()
                 if not bot:
                     raise WorkConflict('read_source_changed')
-                if (not bot['name'].strip(_ECMASCRIPT_WHITESPACE) or len(bot['name']) > 64
-                        or not bot['role'].strip(_ECMASCRIPT_WHITESPACE) or len(bot['role']) > 160
+                if (not bot['name'].strip(ECMASCRIPT_WHITESPACE) or len(bot['name']) > 64
+                        or not bot['role'].strip(ECMASCRIPT_WHITESPACE) or len(bot['role']) > 160
                         or len(bot['description']) > 2000):
                     raise WorkConflict('read_profile_invalid')
                 attachments = []

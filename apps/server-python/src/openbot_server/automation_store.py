@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from .authority import OwnerTransactions, PostgresTransactions
 from .control_errors import ControlError
 from .database import StoreUnavailable
-from .identity_inputs import _ECMASCRIPT_WHITESPACE
+from .text_compat import ECMASCRIPT_WHITESPACE
 from .message_models import project_messages
 from .models import iso_timestamp
 from .task_inputs import CreateMessageInput
@@ -34,7 +34,7 @@ _SELECT = f"{_COLUMNS},({_SIZE})>65536 AS oversized,interval_minutes,enabled,nex
 
 def _text(value: str, maximum: int, *, trim: bool = False) -> str:
     if trim:
-        value = value.strip(_ECMASCRIPT_WHITESPACE)
+        value = value.strip(ECMASCRIPT_WHITESPACE)
     try:
         value.encode("utf-8")
         size = len(value.encode("utf-16-le")) // 2

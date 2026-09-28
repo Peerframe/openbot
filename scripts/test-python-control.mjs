@@ -473,7 +473,9 @@ try {
         },
         encoding: "utf8",
         stdio: ["ignore", "pipe", "pipe"],
-        timeout: 600_000,
+        // The 1,527-case Worker profile takes 607s on the pinned Node/Python toolchain.
+        // Keep a bounded runner and the 45s faulthandler; per-operation limits stay unchanged.
+        timeout: 900_000,
       },
     );
     const temporalOutput = `${temporal.stdout ?? ""}${temporal.stderr ?? ""}`

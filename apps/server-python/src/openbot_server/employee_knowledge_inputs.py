@@ -11,7 +11,8 @@ from typing import Annotated, Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator, model_validator
 
 from .control_errors import ControlError
-from .identity_inputs import ChannelBotId, _ECMASCRIPT_WHITESPACE, _bounded_text
+from .identity_inputs import ChannelBotId, _bounded_text
+from .text_compat import ECMASCRIPT_WHITESPACE
 from .profile_details import ExpectedRevision
 
 
@@ -189,8 +190,8 @@ ReviewProposalInput = Annotated[AcceptProposalInput | RejectProposalInput, Field
 
 # Same credential refusal patterns as sensitive-content.ts with portable=false. ASCII word
 # boundaries match ECMAScript's non-Unicode \b; local paths are allowed for local-only knowledge.
-_JS_SPACE = "[" + _ECMASCRIPT_WHITESPACE + "]"
-_SENSITIVE = tuple(re.compile(pattern.replace(r"[^\s", "[^" + _ECMASCRIPT_WHITESPACE).replace(r"\s", _JS_SPACE), re.IGNORECASE | re.ASCII) for pattern in (
+_JS_SPACE = "[" + ECMASCRIPT_WHITESPACE + "]"
+_SENSITIVE = tuple(re.compile(pattern.replace(r"[^\s", "[^" + ECMASCRIPT_WHITESPACE).replace(r"\s", _JS_SPACE), re.IGNORECASE | re.ASCII) for pattern in (
     r"-----BEGIN [A-Z ]*PRIVATE KEY-----",
     r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b|\bgh[pousr]_[A-Za-z0-9_]{20,}\b|\bglpat-[A-Za-z0-9_-]{20,}\b|\bnpm_[A-Za-z0-9]{36}\b",
     r"\b(?:sk|rk)_live_[A-Za-z0-9]{16,}\b|\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b|\bAIza[A-Za-z0-9_-]{35}\b|\bxox[baprs]-[A-Za-z0-9-]{20,}\b",
@@ -212,7 +213,7 @@ def parse_skill_document(value: str) -> dict:
         if len(markdown.encode()) > 12288 or re.search(r"[\x00-\x08\x0b-\x1f\x7f\u2028\u2029]", markdown):
             raise ValueError()
         match = re.fullmatch(r"---\n([\s\S]*?)\n---\n([\s\S]+)", markdown)
-        if not match or not match[2].strip(_ECMASCRIPT_WHITESPACE) or len(match[1].encode()) > 4096:
+        if not match or not match[2].strip(ECMASCRIPT_WHITESPACE) or len(match[1].encode()) > 4096:
             raise ValueError()
         if len(json.dumps({"markdown": markdown}, ensure_ascii=False, separators=(",", ":")).encode()) > 14336 or sensitive_text(markdown):
             raise ValueError()
@@ -232,7 +233,7 @@ def parse_skill_document(value: str) -> dict:
                 raise ValueError()
         if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", result.get("name", "")) or len(result["name"]) > 64:
             raise ValueError()
-        result["description"] = result.get("description", "").strip(_ECMASCRIPT_WHITESPACE)
+        result["description"] = result.get("description", "").strip(ECMASCRIPT_WHITESPACE)
         if not 1 <= len(result["description"]) <= 1024:
             raise ValueError()
         for field, maximum in (("license", 500), ("compatibility", 500), ("allowed-tools", 1024)):

@@ -21,7 +21,7 @@ from .employee_knowledge_inputs import (
     parse_memory_delete, parse_memory_update, parse_proposal_review, parse_skill_create,
     parse_skill_document, parse_skill_import, parse_skill_state,
 )
-from .identity_inputs import _ECMASCRIPT_WHITESPACE
+from .text_compat import ECMASCRIPT_WHITESPACE
 from .models import iso_timestamp, project_bot
 from .task_models import project_run
 
@@ -335,7 +335,7 @@ class PostgresEmployeeKnowledge:
                 raise ControlError(409, "memory_revision_conflict")
             merged = {key: value.get(key, current[key]) for key in MEMORY_FIELDS}
             for field in ("title", "content"):
-                merged[field] = merged[field].strip(_ECMASCRIPT_WHITESPACE)
+                merged[field] = merged[field].strip(ECMASCRIPT_WHITESPACE)
             # Validate merged policy: an omitted modelUseEnabled cannot bypass sensitivity changes.
             memory_policy(merged)
             fields = [key for key in MEMORY_FIELDS if current[key] != merged[key]]

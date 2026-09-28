@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from psycopg.types.json import Jsonb
 
-from .identity_inputs import _ECMASCRIPT_WHITESPACE
+from .text_compat import ECMASCRIPT_WHITESPACE
 from .task_models import project_run
 from .task_store import task_title
 from .work_values import WorkConflict, WorkNotFound
@@ -231,7 +231,7 @@ async def receipt(db, action):
             or row['parent_work_run_id'] != action['run_id'] or row['mapped_task'] != row['child_task_id']
             or row['source_message_id'] != row['assignment_message_id'] or row['author_type'] != 'bot'
             or row['author_id'] != row['parent_bot'] or row['bot_id'] != args['botId'].lower()
-            or row['content'] != args['task'].strip(_ECMASCRIPT_WHITESPACE) or row['instruction'] != args['task'].strip(_ECMASCRIPT_WHITESPACE)
+            or row['content'] != args['task'].strip(ECMASCRIPT_WHITESPACE) or row['instruction'] != args['task'].strip(ECMASCRIPT_WHITESPACE)
             or row['model_selection'] != effect['target']['modelSelection']
             or row['root_task_id'] != effect['tree']['rootTaskId'] or row['root_work_run_id'] != effect['tree']['rootWorkRunId']
             or row['deadline_at'].isoformat() != effect['tree']['deadline']):
