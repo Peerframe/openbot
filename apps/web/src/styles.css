@@ -64,7 +64,6 @@ select:focus-visible {
   color: #0d0f12;
   font-size: 25px;
   font-weight: 740;
-  letter-spacing: -0.045em;
   text-decoration: none;
 }
 
@@ -856,19 +855,8 @@ select:focus-visible {
   grid-row: 1 / span 2;
   align-self: center;
 }
-.message-list {
-  min-height: 260px;
-  max-height: 380px;
-  overflow-y: auto;
-  margin-top: 16px;
-  border: 1px solid var(--line);
-  border-radius: 10px 10px 0 0;
-  background: #fafbfc;
-}
 .message-list .conversation-empty {
-  min-height: 258px;
   margin: 0;
-  border: 0;
   border-radius: 0;
 }
 .conversation-status {
@@ -877,13 +865,6 @@ select:focus-visible {
   color: var(--muted);
   font-size: 12px;
   text-align: center;
-}
-.message-row {
-  display: grid;
-  grid-template-columns: 34px 1fr;
-  gap: 11px;
-  padding: 16px 18px;
-  border-bottom: 1px solid #e8eaed;
 }
 .message-row:last-child {
   border-bottom: 0;
@@ -925,13 +906,6 @@ select:focus-visible {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.message-composer {
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-top: 0;
-  border-radius: 0 0 10px 10px;
-  background: #fff;
-}
 .message-composer > label {
   display: block;
   margin-bottom: 8px;
@@ -947,20 +921,11 @@ select:focus-visible {
 }
 .message-composer textarea {
   width: 100%;
-  min-height: 62px;
-  resize: vertical;
-  padding: 11px 12px;
-  border: 1px solid #d2d7dd;
   border-radius: 8px;
   color: var(--text);
-  background: #fafbfc;
   font: inherit;
   font-size: 13px;
   line-height: 1.5;
-}
-.message-composer textarea:focus {
-  border-color: var(--blue);
-  outline: 3px solid var(--blue-soft);
 }
 .message-composer textarea:disabled {
   color: #8b929a;
