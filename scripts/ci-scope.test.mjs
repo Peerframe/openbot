@@ -59,6 +59,33 @@ test("harness includes real installed and persistent consumers", () => {
       assert(plan.required.includes(job), `${file}: ${job}`);
   }
 });
+
+test("runtime Markdown and prompt resources follow actual consumers", () => {
+  for (const file of [
+    "packages/harness/src/openbot_agent_runtime/prompts/system.md",
+    "apps/server-python/src/openbot_server/prompts/work.md",
+  ]) {
+    const plan = select(file);
+    assert(plan.required.includes("python-runtime"), file);
+    assert(plan.required.includes("python-product-container"), file);
+  }
+  const web = select("apps/web/src/prompts/tool.md");
+  assert(web.workspaces.includes("@openbot/web"));
+  assert(web.workspaces.includes("@openbot/desktop"));
+  assert.deepEqual(select("packages/work-contract-generator/schema.md").required, JOBS);
+  assert.deepEqual(select("unknown/prompt.md").required, JOBS);
+});
+
+test("executable skill inputs cannot inherit a prose exemption", () => {
+  for (const file of [
+    ".agents/skills/openbot-check/scripts/check.py",
+    ".agents/skills/openbot-check/assets/template.json",
+    "docs/prompts/scripts/verify.mjs",
+  ])
+    assert.deepEqual(select(file).required, JOBS, file);
+  assert.equal(select(".agents/skills/openbot-check/SKILL.md").mode, "focused");
+  assert.equal(select("packages/harness/README.md").mode, "focused");
+});
 test("contracts, generators, locks and config conservatively include every qualification", () => {
   for (const file of [
     "apps/server-python/src/openbot_server/work_models.py",

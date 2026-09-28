@@ -38,8 +38,16 @@ def imports(source: str, name: str) -> list[str]:
     return problems
 
 
-def public_exports() -> set[str]:
-    tree = ast.parse((ROOT / "src/openbot_agent_runtime/__init__.py").read_text())
+def policy() -> dict:
+    return tomllib.loads((ROOT / "pyproject.toml").read_text())["tool"]["openbot"]
+
+
+def public_exports(module: str = "") -> set[str]:
+    source = ROOT / "src/openbot_agent_runtime"
+    path = source / (module.replace(".", "/") + ".py") if module else source / "__init__.py"
+    if not path.is_file():
+        path = source / module.replace(".", "/") / "__init__.py"
+    tree = ast.parse(path.read_text())
     for node in tree.body:
         if isinstance(node, ast.Assign) and any(
             isinstance(target, ast.Name) and target.id == "__all__" for target in node.targets
@@ -50,50 +58,72 @@ def public_exports() -> set[str]:
 
 def consumer_imports(source: str, name: str) -> list[str]:
     problems = []
-    exports = public_exports()
+    public = {"openbot_agent_runtime": public_exports()}
+    for module in policy()["public-modules"]:
+        public[f"openbot_agent_runtime.{module}"] = public_exports(module)
     for node in ast.walk(ast.parse(source, filename=name)):
         modules = []
         if isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
             modules = [node.module]
-            if node.module == "openbot_agent_runtime":
+            if node.module in public:
                 for item in node.names:
-                    if item.name not in exports:
+                    if (
+                        item.name not in public[node.module]
+                        and f"{node.module}.{item.name}" not in public
+                    ):
                         problems.append(f"{name}: undeclared harness export {item.name}")
         elif isinstance(node, ast.Import):
             modules = [item.name for item in node.names]
         for module in modules:
-            if (
-                module.startswith("openbot_agent_runtime.")
-                and module != "openbot_agent_runtime.temporal_agent"
-            ):
+            if module.startswith("openbot_agent_runtime.") and module not in public:
                 problems.append(f"{name}: use public harness exports, not {module}")
     return problems
 
 
+def sources(root: Path) -> list[Path]:
+    # Only declared source roots are traversed. Local environments/build inputs are not source.
+    excluded = {"venv", "node_modules", "dist", "build", "__pycache__", "site-packages"}
+    return sorted(
+        file
+        for file in root.rglob("*.py")
+        if not any(
+            part.startswith(".") or part in excluded for part in file.relative_to(root).parts
+        )
+    )
+
+
 def main() -> int:
-    policy = tomllib.loads((ROOT / "pyproject.toml").read_text())["tool"]["openbot"]
-    exceptions = policy["review-exceptions"]
+    exceptions = policy()["review-exceptions"]
     problems = []
-    files = sorted((ROOT / "src/openbot_agent_runtime").glob("*.py"))
+    core = ROOT / "src/openbot_agent_runtime"
+    files = sources(core)
     for file in files:
         source = file.read_text()
-        problems.extend(imports(source, file.name))
-        limit = 300 if file.name == "contracts.py" else 400
-        if file.name in exceptions:
-            exception = exceptions[file.name]
+        name = file.relative_to(core).as_posix()
+        problems.extend(imports(source, name))
+        limit = 300 if name == "contracts.py" else 400
+        if name in exceptions:
+            exception = exceptions[name]
             if not exception["reason"].strip():
-                problems.append(f"{file.name}: missing concrete review reason")
+                problems.append(f"{name}: missing concrete review reason")
             limit = exception["maximum-lines"]
         if len(source.splitlines()) > limit:
             problems.append(
-                f"{file.name}: exceeds {limit} reviewed lines; split or review this responsibility"
+                f"{name}: exceeds {limit} reviewed lines; split or review this responsibility"
             )
     for folder in (ROOT / "scripts", ROOT / "examples"):
-        for file in folder.glob("*.py"):
+        for file in sources(folder):
             if len(file.read_text().splitlines()) > 400:
-                problems.append(f"{file.name}: exceeds 400 review lines")
-    for file in (ROOT.parents[1] / "apps/server-python/src/openbot_server").glob("*.py"):
-        problems.extend(consumer_imports(file.read_text(), file.name))
+                problems.append(f"{file.relative_to(ROOT)}: exceeds 400 review lines")
+    for folder in (
+        ROOT / "examples",
+        ROOT.parents[1] / "apps/server-python/src/openbot_server",
+        ROOT.parents[1] / "apps/server-python/scripts",
+    ):
+        for file in sources(folder):
+            problems.extend(
+                consumer_imports(file.read_text(), str(file.relative_to(ROOT.parents[1])))
+            )
     if problems:
         print("\n".join(problems), file=sys.stderr)
         return 1

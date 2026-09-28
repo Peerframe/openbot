@@ -129,8 +129,9 @@ The real Work snapshot HTTP response comes from `work_models.py` through `work_r
 `npm run contracts:generate` writes [consumer types](../apps/web/src/generated/work-contract.ts);
 `npm run contracts:check` checks freshness. [work-api](../apps/web/src/work-api.ts) consumes the
 generated type and keeps Zod runtime validation. Run
-`npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts` with the base
-control `.venv` for actual Python HTTP→Web serialization/status fixtures. No DB or model is needed.
+`apps/server-python/scripts/bootstrap.sh` once, then `npm run contracts:test` for actual Python
+HTTP→Web serialization/status fixtures. The command builds shared dependencies in a cold checkout;
+calling Vitest directly assumes those outputs already exist. No DB or model is needed.
 The Node wire protocol remains owned by `packages/protocol`.
 
 ### CI selection and artifact qualification

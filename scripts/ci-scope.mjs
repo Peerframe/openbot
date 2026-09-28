@@ -91,14 +91,23 @@ export function selectChecks(files, graph, { full = false } = {}) {
       throw new Error("Changed paths must be repository-relative.");
     if (
       /(^|\/)AGENTS(?:\.[^/]+)?\.md$/.test(file) ||
-      file.startsWith(".agents/") ||
-      /(^|\/)prompts?\//.test(file) ||
+      /^\.agents\/skills\/[^/]+\/SKILL\.md$/.test(file) ||
+      /^docs\/prompts?\/[^/]+\.md$/.test(file) ||
       file === ".github/PULL_REQUEST_TEMPLATE.md"
     ) {
       reasons.push(`Contributor behavior: ${file}`);
       continue;
     }
-    if (/\.md$/.test(file) && !file.startsWith(".github/")) continue;
+    // Prose has explicit locations. Markdown below runtime/resource/generator roots is an input.
+    // New executable skill helpers and unknown paths fail conservatively into the full lane.
+    if (
+      /^docs\/(?!prompts?\/).*\.md$/.test(file) ||
+      /^[^/]+\.md$/.test(file) ||
+      /^(?:apps|packages|providers|experiments|deploy)\/[^/]+\/(?:README(?:\.[^/]+)?|RESEARCH|THIRD_PARTY_NOTICES)\.md$/.test(
+        file,
+      )
+    )
+      continue;
     if (
       /(^|\/)(package(?:-lock)?\.json|pyproject\.toml|requirements[^/]*\.(?:lock|txt)|distribution\.lock|[^/]*config[^/]*|Dockerfile[^/]*)$/.test(
         file,

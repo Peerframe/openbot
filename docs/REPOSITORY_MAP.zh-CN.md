@@ -114,9 +114,9 @@ Schema 变化使用 `npm run migration:plan --workspace @openbot/db -- --name de
 Work snapshot 的真实 HTTP 响应由 `work_models.py` 经 `work_routes.py` 定义。
 `npm run contracts:generate` 生成[消费类型](../apps/web/src/generated/work-contract.ts)，
 `npm run contracts:check` 检查新鲜度；[work-api](../apps/web/src/work-api.ts)实际引用类型并保留 Zod 验证。
-准备控制层基础 `.venv` 后运行
-`npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts`，验证真实 Python HTTP
-序列化及状态到 Web 的兼容性，无需 DB 或模型。Node wire 契约仍归 `packages/protocol`。
+先用 `apps/server-python/scripts/bootstrap.sh` 准备控制层基础环境，再运行 `npm run contracts:test`，
+该命令会构建冷环境缺少的共享依赖，验证真实 Python HTTP 序列化及状态到 Web 的兼容性。
+直接调用 Vitest 依赖已有构建输出；正式命令无需 DB 或模型。Node wire 契约仍归 `packages/protocol`。
 
 ### CI 选择与安装物资格
 

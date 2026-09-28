@@ -74,7 +74,10 @@ packages/harness/scripts/quality.sh
 
 One Ruff lint/format entry and one mypy entry cover the core, example and real control adapter.
 The Worker interpreter supplies optional SDK types; it is not installed into the base runtime.
-`check-boundaries.py` rejects control/DB/provider imports and private consumer imports. New Python
+`check-boundaries.py` recursively scans declared source roots, excludes local environments/builds,
+and rejects control/DB/provider imports and private consumer imports. The existing optional public
+module is declared in `tool.openbot.public-modules`; each module's `__all__` owns its exports.
+Exceptions match package-relative paths, so nested names cannot inherit them. New Python
 modules have a 400-line review threshold, `contracts.py` 300; four existing lifecycle/wire modules
 have individually explained fixed caps in pyproject. These are reviewed exceptions, not a refreshed
 baseline for new violations. Test/format changes do not change authorization or budget semantics.

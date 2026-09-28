@@ -1,7 +1,47 @@
 # Repository upgrade — current handoff
 
-English canonical; 中文摘要见文末。This is the single C1→C2→C3 task record.
+English canonical; 中文摘要见文末。This is the single engineering-upgrade task record.
 [MIGRATION_HANDOFF](MIGRATION_HANDOFF.md) remains historical migration evidence.
+
+## Current engineering-quality acceptance (2026-09-28)
+
+- Checkout: `/Users/yxflc/.codex/worktrees/engineering-quality/openbot`, branch
+  `codex/engineering-quality`; fixed base `4891b807b7b677820f82821f87b95c2bb80d74c3`.
+  Its tree equals C3 `3b771c3`. The original user checkout and the separate contributor demos
+  remain untouched. One implementation writer owns this checkout; review agents are read-only.
+- Read-only GitHub verification: PR #100 is merged at this base and all final candidate jobs,
+  including `check`, passed in run `36291315723`. The older pending statements below describe
+  their original checkpoint, not current status. No new push, merge or release is authorized.
+- Finite acceptance: recursive source/public API boundaries; behavior-aware CI selection and
+  cold commands; two actual tool consumers sharing typed result/lifecycle conventions; one
+  existing Work HTTP request/response/error chain through Python and generated TS; core-only
+  quality without Worker; proven CI duplication and affected installed-consumer checks. No
+  new product capability, persistence model, authority, runtime loop or framework.
+- First confirmed gaps: top-level-only boundary scanning and basename exceptions, blanket
+  `.agents/`/prompt/Markdown CI exemptions, a cold contract command bypassing dependency builds,
+  and core quality requiring the entire Worker environment. Regression fixtures precede repairs.
+- Reuse: C2 harness/tooling/public API and OpenAPI decision in `packages/harness/RESEARCH.md`,
+  C3 CI decision in `docs/research/windows-ci-merge-gate.md`, retained Temporal/security contracts.
+  Existing three fresh-session contribution exercises stay evidence at their recorded revision;
+  only changed routes need new reading/discovery acceptance.
+
+| Area | Coverage status / current bounded action |
+| --- | --- |
+| Core | Confirmed scanning and local-quality gaps; preserve installed wheel and loop behavior |
+| Control | Trace existing tool/result consumers and types before selecting repairs |
+| Clients | Trace real Work API/Web/Desktop consumers, retain runtime validation |
+| Execution adapters | Reuse process/Activity distinction; verify affected cancel/late-result cases |
+| Contracts | Extend existing Work OpenAPI generation through request/response/error consumers |
+| Build/CI | Confirmed classification gap; aggregate already rejects missing/cancelled/skipped jobs |
+| Developer entry | Four existing skills reused; repair cold commands and verify fresh reading |
+
+Evidence, implementation commits, review disposition and remaining gates will be updated here.
+
+中文当前范围：从已合并且原 CI 全绿的 C3 基线继续工程质量升级。原目录及演示修改不动；本工作区
+仅主控写入、子任务只读审查。先修复已证实扫描/分类/冷启动和局部质量缺口，再完成真实工具与 Work
+契约链、受影响安装验证和固定 diff 整改。不新增产品能力；本候选的验证与历史证据分别记录。
+
+## Historical C1–C3 record (preserved evidence)
 
 ## Baseline, ownership and current state
 
