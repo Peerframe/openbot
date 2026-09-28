@@ -13,7 +13,7 @@ license-files = ["LICENSE"]
 dependencies = ["pydantic-ai-slim==2.47.0", "jsonschema-rs==0.57.1"]
 
 [project.optional-dependencies]
-dev = ["pytest==8.4.2"]
+dev = ["pytest==9.0.3"]
 
 [project.scripts]
 openbot-runtime-worker = "openbot_agent_runtime.worker:main"
