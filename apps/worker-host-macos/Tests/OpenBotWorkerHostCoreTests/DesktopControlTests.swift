@@ -114,6 +114,29 @@ private let enrollmentToken = "obenr_" + String(repeating: "t", count: 43)
     #expect(recorder.events == ["enrollment.exchange", "identity.save"])
 }
 
+@Test func desktopControlRefusesRegistrationWhenSavedIdentityOrConfigurationCannotBeReadBack() async throws {
+    for failIdentityReadback in [true, false] {
+        let recorder = EventRecorder()
+        let configurationStore = TestConfigurationStore(recorder: recorder)
+        configurationStore.failReadback = !failIdentityReadback
+        let identityStore = TestIdentityStore(recorder: recorder)
+        identityStore.failReadback = failIdentityReadback
+        let controller = DesktopWorkerHostController(
+            configurationStore: configurationStore,
+            enrollmentClient: TestEnrollmentClient(recorder: recorder),
+            identityStore: identityStore,
+            registration: TestRegistration(recorder: recorder)
+        )
+        let response = await controller.handle(
+            try .enroll(nodeId: nodeId, serverUrl: serverUrl, enrollmentToken: enrollmentToken)
+        )
+        #expect(response.status == .invalid)
+        #expect(recorder.events == (failIdentityReadback
+            ? ["enrollment.exchange", "identity.save", "identity.load"]
+            : ["enrollment.exchange", "identity.save", "identity.load", "configuration.save", "configuration.load"]))
+    }
+}
+
 @Test func desktopControlEnablesOnlyAnExistingValidIdentityAndOpensFirstPartySettings() async throws {
     let recorder = EventRecorder()
     let configurationStore = TestConfigurationStore(recorder: recorder)
@@ -190,12 +213,14 @@ private final class EventRecorder: @unchecked Sendable {
 
 private final class TestConfigurationStore: MacOSConfigurationStoring, @unchecked Sendable {
     var configuration: MacOSNodeConfiguration?
+    var failReadback = false
     let recorder: EventRecorder
 
     init(recorder: EventRecorder) { self.recorder = recorder }
 
     func load() throws -> MacOSNodeConfiguration {
         recorder.append("configuration.load")
+        if failReadback { throw OpenBotMacOSError.invalidConfiguration }
         guard let configuration else { throw OpenBotMacOSError.unavailableConfiguration }
         return configuration
     }
@@ -209,12 +234,14 @@ private final class TestConfigurationStore: MacOSConfigurationStoring, @unchecke
 private final class TestIdentityStore: NodeIdentityStore, @unchecked Sendable {
     var envelope: MacOSKeychainEnvelope?
     var failSave = false
+    var failReadback = false
     let recorder: EventRecorder
 
     init(recorder: EventRecorder) { self.recorder = recorder }
 
     func load(configuration: MacOSNodeConfiguration) throws -> MacOSKeychainEnvelope? {
         recorder.append("identity.load")
+        if failReadback { return nil }
         return envelope
     }
 
