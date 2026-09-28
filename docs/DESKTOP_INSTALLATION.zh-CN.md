@@ -4,16 +4,22 @@
 
 [English](DESKTOP_INSTALLATION.md) · [简体中文](DESKTOP_INSTALLATION.zh-CN.md)
 
-**当前预览版：[Desktop 0.1.0-alpha.9](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9)**，提供 macOS Apple Silicon DMG 与 Windows x64 EXE，随附合并清单和 SHA256SUMS。两者来自同一已通过完整 CI 的源码提交。下表也列出流水线支持的 Linux 构建目标；alpha.9 未发布 Linux 安装器。
+## 已记录发行：alpha.9
+
+**历史预览版：[Desktop 0.1.0-alpha.9](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9)**，提供 macOS Apple Silicon DMG 与 Windows x64 EXE，随附合并清单和 SHA256SUMS。两者来自同一已通过完整 CI 的源码提交。下表也列出流水线支持的 Linux 构建目标；alpha.9 未发布 Linux 安装器。
 
 alpha.9 恢复频道成员菜单的姓名、头像与操作，保证插件权限编辑始终对应所选 Bot，并将任务状态或资源变化与真实频道权限丢失分开提示。中文界面的空白 PDF 提取失败和原始附件保存对话框也改为中文。升级流程保留已有工作区数据和模型配置。
 
-[固定版本发行页](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9)记录源码提交和已通过的 main CI；随附的 [desktop-manifest.json](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/desktop-manifest.json)记录准确源码、所含平台和安装器摘要。请使用 [SHA256SUMS](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/SHA256SUMS)核对下载文件。Windows 安装与数据保留证据来自托管运行器，见[发行源码冷启动证据](WINDOWS_DESKTOP.zh-CN.md#发行源码冷启动证据)。正式签名、公证和用户 Windows 真机界面验收仍未完成。
+[固定版本发行页](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9)记录源码提交和已通过的 main CI；随附的 [desktop-manifest.json](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/desktop-manifest.json)记录准确源码、所含平台和安装器摘要。请使用 [SHA256SUMS](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/SHA256SUMS)核对下载文件。Windows 安装与数据保留证据来自托管运行器，见[历史本地 Server 证据](WINDOWS_DESKTOP.zh-CN.md#历史本地-server-证据与限制)。正式签名、公证和用户 Windows 真机界面验收仍未完成。
 
-| 平台 | Release 中的文件 | 安装方法 | 实际组合能力 |
+## 当前源码构建目标
+
+以下组合能力取代 alpha.9 的本地 Server 矩阵。历史发行清单只描述其对应版本；本轮清理没有发布新安装器。
+
+| 平台 | 安装器文件名 | 安装方法 | 实际组合能力 |
 | --- | --- | --- | --- |
 | macOS Apple Silicon | `openbot-desktop-<version>-darwin-arm64.dmg` | 打开磁盘映像，将 OpenBot 拖入 Applications | 客户端、内置 Server/PostgreSQL、可选随包 Worker companion |
-| Windows x64 | `openbot-desktop-<version>-win32-x64.exe` | 打开安装器，安装到当前用户并创建开始菜单入口 | 内置本地 Server/PostgreSQL，或连接已有 Server |
+| Windows x64 | `openbot-desktop-<version>-win32-x64.exe` | 打开安装器，安装到当前用户并创建开始菜单入口 | 连接已有 Server 的客户端；不含本地运行时 |
 | Linux x64 | `openbot-desktop-<version>-linux-x64.deb` | 使用发行版的软件包管理器安装 | 连接已有 Server 的客户端 |
 | Linux x64 便携版 | `openbot-desktop-<version>-linux-x64.AppImage` | 添加可执行权限后运行；仍需系统 AppImage 依赖 | 连接已有 Server 的客户端 |
 
@@ -52,16 +58,16 @@ PowerShell 脚本打开当前用户安装器并等待结果。如果系统执行
 
 ## 第一次实际使用
 
-1. macOS 或 Windows x64 选择“作为服务电脑”初始化本地服务，或连接已有 Server。Linux 使用连接流程。
+1. macOS arm64 可选择“作为服务电脑”初始化本地服务，或连接已有 Server；Windows、Intel Mac 和 Linux 使用连接已有 Server 的流程。
 2. 以 Owner 登录，在“Owner → 设置 → 模型服务”配置 Server 唯一默认提供方、模型与密钥，
    准备好后明确启用原生 Agent。
 3. 使用 OpenBot 文字右侧的 **+** 创建 Bot 或频道。点击 Bot 单独对话，或在频道中 **@** 它，
    然后提交 `none` 配置任务。模型元数据检查不能证明推理可用；第一次真实任务成功
    才是实际模型验收。
-4. 退出后重新打开 Desktop，确认工作区与模型摘要仍存在。退出 Desktop 会停止 macOS/Windows 本地服务；
+4. 退出后重新打开 Desktop，确认工作区与模型摘要仍存在。退出 Desktop 会停止 macOS arm64 本地服务；
    无人值守定时任务需要持续运行的 Server。
 
-Desktop 支持受限频道协作、更丰富附件、经审核 MCP 资料与应用、语音草稿和恢复启动。分享导出可复用 Bot 档案/已验证技能并下载成果，不发布私人记忆或聊天记录。Windows 本地服务证据见 [Windows 桌面版](WINDOWS_DESKTOP.zh-CN.md)。macOS 随包 PostgreSQL 为 17.10，Windows 为 17.11。
+Desktop 支持受限频道协作、更丰富附件、经审核 MCP 资料与应用、语音草稿和恢复启动。分享导出可复用 Bot 档案/已验证技能并下载成果，不发布私人记忆或聊天记录。当前 Windows 安装验收与历史证据分别记录在 [Windows 桌面版](WINDOWS_DESKTOP.zh-CN.md)。macOS arm64 随包 PostgreSQL 为 17.10；当前 Windows 包不包含 PostgreSQL。
 
 完整能力边界见 [Desktop 引导](DESKTOP_ONBOARDING.zh-CN.md)、[原生 Agent](NATIVE_AGENT.zh-CN.md)
 和 [Server 容器](SERVER_CONTAINER.zh-CN.md)。

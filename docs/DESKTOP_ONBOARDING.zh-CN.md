@@ -2,10 +2,10 @@
 
 [English](DESKTOP_ONBOARDING.md)
 
-macOS arm64 和 Windows x64 桌面发行包含本地 Server 与 PostgreSQL。
-首次使用时选择这台电脑的连接方式：
+当前 macOS arm64 构建包含本地 Python Server 与 PostgreSQL；Windows、Intel Mac 和 Linux
+构建为远程客户端。首次使用时选择这台电脑支持的连接方式：
 
-- **服务电脑：** Desktop 初始化自己的 PostgreSQL 17 数据库、启动随包提供的 Server、创建
+- **服务电脑（macOS arm64）：** Desktop 初始化自己的 PostgreSQL 17 数据库、启动随包提供的 Server、创建
   私有 Owner 身份、自动连接，然后进入模型设置。无需 Docker、Homebrew、管理员账户或首次启动下载。
 - **远程客户端：** 验证并保存已有 HTTPS Server 地址，再登录对应的 Owner 账户。
   不初始化或启动本地数据库和 Server。
@@ -42,7 +42,7 @@ Server 返回的真实标识。单独对话无需提及 Bot。输入区底部不
 技能正文后使用 v2 包。私人记忆、历史、密钥与电脑权限保留在来源 Server。
 接收方创建新 Bot，并在模型使用前审核导入的技能正文。见[员工分享说明](EMPLOYEE.zh-CN.md)。
 
-完成首次设置后，再次打开会恢复原本的本地服务和数据库，用紧凑连接状态代替安装检查清单，
+完成 macOS arm64 本地设置后，再次打开会恢复原本的本地服务和数据库，用紧凑连接状态代替安装检查清单，
 沿用已保存凭据。系统密钥读取采用异步方式，系统授权期间启动窗口仍可响应；解锁失败不会覆盖
 原有加密身份或数据。未签名构建变更后，macOS 仍可能要求钥匙串授权，详见下方发行限制。
 
@@ -136,11 +136,10 @@ Bot 模板审核导入流程。档案读取失败明确显示不可用，不视�
 
 ## 当前边界
 
-当前公开预览版为 **0.1.0-alpha.9**，提供 macOS arm64 DMG 和 Windows x64 EXE。
-两端均支持内置本地 Server/PostgreSQL，也可连接已有 Server。Linux x64 仍为远程客户端构建目标；
-alpha.9 未发布 Linux 安装器。这些是未签名开发构建，正式代码签名和 macOS 公证仍未完成。
-Windows 安装与保留数据的运行检查已在托管运行器执行；Windows 真机桌面和 SmartScreen 验收仍未完成。
-macOS Intel 不在安装器矩阵内。版本产物和发行边界见
+当前源码仅在 macOS arm64 提供随包本地 Python 服务；Windows、Intel Mac 和 Linux 连接已有
+Server。CI 安装器目标为 macOS arm64、Windows x64 和 Linux x64；Intel 远程客户端源码路径
+不等于 Intel 安装器验收。历史 **0.1.0-alpha.9** 产物及托管检查不能证明当前源码已通过验收。
+正式签名、macOS 公证、Windows 真机桌面和 SmartScreen 验收仍未完成。版本产物和发行边界见
 [安装说明](DESKTOP_INSTALLATION.zh-CN.md)与 [Windows 验证说明](WINDOWS_DESKTOP.zh-CN.md)。
 
 [原生 Agent](NATIVE_AGENT.zh-CN.md) 在 Owner 启用后提供模型回复。输入框通过认证的频道附件接口
@@ -148,7 +147,7 @@ macOS Intel 不在安装器矩阵内。版本产物和发行边界见
 或转写。任务提交不会自动重试。已有原生任务停止与明确重新提交继续由 Server 管理；
 重新提交会创建新任务，不保证安全重放此前的副作用。
 
-macOS 和 Windows 的内置 Server **仅供这台电脑使用**。让另一台电脑访问这个原生安装实例，仍需实现经过认证的
+macOS arm64 的内置 Server **仅供这台电脑使用**。让另一台电脑访问这个原生安装实例，仍需实现经过认证的
 HTTPS 接入配置。不能把本机回环地址填到另一台电脑。当前远程使用应连接已有的 HTTPS 部署，
 高级部署见下文。关闭 macOS 窗口会保留后台 Desktop；关闭 Windows 窗口会退出 Desktop。
 退出应用会停止它自己的 Server 和数据库。
@@ -161,10 +160,11 @@ HTTPS 接入配置。不能把本机回环地址填到另一台电脑。当前�
 
 
 数据保存在 Desktop 用户数据目录的 `openbot/local-server`。Electron safeStorage 通过 macOS
-钥匙串或 Windows DPAPI 加密引导秘密，
+钥匙串加密引导秘密（历史 Windows 配置使用 DPAPI），
 数据库使用随机私有凭据和 SCRAM；模型密钥由 Server 使用 AES-256-GCM 加密。模型摘要接口不返回密钥。
 资源缺失、系统凭据存储不可用、数据路径不安全或数据库版本不兼容时会明确失败；重试不会删除已有数据库。
-切换为远程客户端会停止本机服务并保留数据，切回后复用数据。
+切换为远程客户端会停止本机服务并保留数据；macOS arm64 切回后复用数据。当前 Windows、
+Intel Mac 和 Linux 构建保留旧本地配置，不启动或自动迁移其中的数据库。
 
 ## 模型接口
 
@@ -181,8 +181,8 @@ Server 保存唯一默认提供方/模型配置，由原生 Agent 任务共用�
 ## 构建与高级自部署
 
 在仓库根目录安装锁定依赖并运行 `npm run check`，然后在目标操作系统执行
-`npm run package --workspace @openbot/desktop`。macOS 和 Windows 打包会将编译后的 Server、生产依赖、PostgreSQL
-和许可通知放入 `native-runtime`，再组装应用。生成目录不会进入 Git。
+`npm run package --workspace @openbot/desktop`。macOS arm64 将 Python Server、已安装的 harness
+wheel、Node 辅助依赖、PostgreSQL 和许可通知放入 `native-runtime`；远程客户端目标不包含该运行时。生成目录不会进入 Git。
 本地开发启动前也需先运行 `npm run prepare:native --workspace @openbot/desktop`，再执行
 `npm start --workspace @openbot/desktop`。首次启动不下载可执行代码。
 
@@ -193,17 +193,18 @@ Silicon 打开 `apps/desktop/out/preview/OpenBot Preview-darwin-arm64/OpenBot Pr
 开发启动器，与这个打包应用不同。Preview 的 bundle ID 为 `dev.openbot.desktop.preview`，
 可执行文件为 `OpenBot Preview`，独立数据目录为 `~/Library/Application Support/OpenBot Preview`，
 包含会话 Cookie 和本机 Server 数据，不迁移已安装应用的数据。重新打包保留 Preview 数据。
-Preview 包含本地 Server，但禁止携带正式 macOS Worker 配套应用，因为后者的后台服务身份独立且共享。
+macOS arm64 Preview 包含本地 Server，但禁止携带正式 macOS Worker 配套应用，因为后者的后台服务身份独立且共享。
 普通打包命令保留原有应用身份。
 
 高级用户可按[根目录源码部署说明](../README.zh-CN.md)分别部署 Server、PostgreSQL、Web 和 Worker。
 这些选项放在 GitHub 文档中，不进入 Desktop 首次用途选择。远程使用需配置受信任的 HTTPS 反向代理；
 数据库凭据和 Owner 认证留在服务端。
 
-单独部署的 Server 如需模型设置，必须同时设置 `OPENBOT_MODEL_SETTINGS_PATH`（私有持久目录中的
-绝对路径）和 `OPENBOT_MODEL_ENCRYPTION_KEY`（32 个随机字节对应的 64 位小写十六进制文本）。
-加密主密钥应保存在独立秘密管理工具中；丢失后无法解密原有 API Key。两项均不设置则禁用此接口。
-每个配置文件只允许一个 Server 写入。Owner 专用的 `GET`/`POST /api/v1/settings/model` 沿用来源检查；
+新部署的 Python Server 使用 `OPENBOT_CONTROL_MODEL_DIRECTORY` 指向私有持久目录，服务在其中
+管理设置和加密密钥。保留既有设置文件和密钥时，改用成对的 `OPENBOT_CONTROL_MODEL_SETTINGS_PATH`
+与 `OPENBOT_CONTROL_MODEL_ENCRYPTION_KEY`，不能同时使用目录模式。原有密钥须与恢复材料一起
+保留；丢失后无法解密旧凭据。完整环境见 [Server 部署](SERVER_CONTAINER.zh-CN.md)。
+每个设置存储只允许一个 Server 写入。Owner 专用的 `GET`/`POST /api/v1/settings/model` 沿用来源检查；
 POST 接收 `provider`、`model`、`apiKey` 和最新 `revision`（首次为 null）。
 `agentEnabled` 默认 false，Owner 明确启用后才推理新建任务。
 
@@ -213,9 +214,9 @@ CI 打包 Linux x64、Windows x64 和 macOS arm64，各端验证成功后保留�
 这些是临时开发产物，不是签名安装器、自动更新或桌面控制认证。
 见[交付调研](research/desktop-cross-platform-handoff.md)。
 
-macOS 使用固定原生包 `17.10.0-beta.17` 提供的 PostgreSQL 17.10。Windows 从固定的官方
-PostgreSQL 17.11 源码构建，不再接受原 Windows npm 二进制包。见
-[Windows 构建来源](research/windows-desktop-completion.md)。生产发行仍需审查原生依赖来源、
+macOS arm64 使用固定原生包 `17.10.0-beta.17` 提供的 PostgreSQL 17.10。当前 Windows 包不含
+PostgreSQL；[Windows 构建来源](research/windows-desktop-completion.md)记录旧版本及其许可义务。
+生产发行仍需审查原生依赖来源、
 分发许可、签名和公证；本机功能测试不能替代发行支持证据。
 
 视觉测试只在隔离环境使用测试数据，不向实际用户资料写入示例对话。

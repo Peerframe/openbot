@@ -1,32 +1,37 @@
 # Windows 桌面版
 
-本轮源码范围：仅 macOS arm64 打包本地 Python 服务；Windows、Intel Mac 和 Linux 为远程客户端。以下旧版本本地 Server 验收与安装记录保留为历史证据，不表示新版本在这些平台仍提供本地服务。已有安装、加密配置和数据库保留。
-
-Windows x64 桌面版可以在本机运行 OpenBot Server 与 PostgreSQL，也可以连接已有 Server。本机进程属于当前用户的桌面会话；安装应用不会自动注册 Worker Host，也不会授予电脑控制权限。
+当前 Windows x64 Desktop 是远程客户端，需要连接已有 OpenBot Server；仅 macOS arm64 随包
+提供本地 Python 服务。安装 Desktop 不会注册 Worker Host，也不会授予电脑控制权限。
 
 ## 安装与启动
 
-使用带版本号的 `openbot-desktop-<版本>-win32-x64.exe`，并与该版本 `SHA256SUMS` 核对 SHA-256。NSIS 安装器按当前用户安装，不申请管理员权限，创建开始菜单快捷方式，卸载时保留应用数据。开发安装器尚未签名，保留 Windows 信任提示；OpenBot 不绕过 SmartScreen、系统策略或杀毒软件。
+使用带版本号的 `openbot-desktop-<版本>-win32-x64.exe`，并与该版本 `SHA256SUMS` 核对 SHA-256。
+NSIS 按当前用户安装，创建开始菜单快捷方式，卸载时保留应用数据。开发安装器保留 Windows
+信任提示；OpenBot 不绕过 SmartScreen、系统策略或杀毒软件。
 
-打开 OpenBot，选择将这台电脑作为 Server。应用会初始化私有 PostgreSQL 17 数据库，在回环地址启动随包携带的 Server，迁移数据库结构并登录本机 Owner。让 Bot 工作之前，先在设置中配置模型。本机模式无需 Docker、PowerShell 安装脚本、单独安装 Node.js，也不开放公网监听端口。
+打开 OpenBot，配置已有 Server 地址并登录该 Server。当前 Windows 包不包含本地 PostgreSQL
+或 Server 运行时，也不会初始化本机数据库。下载安装包后，安装本身无需网络；使用远程 Server
+需要能够访问该 Server。详见[Desktop Server 连接](DESKTOP_ONBOARDING.zh-CN.md)。
 
-下载安装包后，安装本身不需要网络。远程模型和外部工具可能需要联网。数据库可执行文件已包含在安装包中，首次使用不会再下载数据库程序。
+## 保留数据
 
-Windows 通过 PostgreSQL 官方启动机制收紧数据库进程权限，即使 Desktop 继承了管理员令牌。数据库旁的 `postgres.log` 是本机诊断日志，不会自动上传；停止数据库前会核对进程身份。
+已有安装、加密设置和数据库继续保留。历史本地 Server 配置包含 `local-server/bootstrap.json`、
+PostgreSQL 数据、上传对象与模型设置。请在原 Windows 登录身份下成套保留；把 DPAPI 加密的
+初始化文件复制到另一登录身份不是已支持的迁移。当前远程客户端不会重启已退役的本地 Server，
+也不会自动迁移其数据库。详见[数据库恢复](DATABASE.zh-CN.md)。
 
-## 数据与退出
+DPAPI 的保护边界是 Windows 登录身份，不能防范同一用户身份下的恶意软件。备份与迁移仍须
+遵守已有凭据和数据规则。
 
-数据位于 Electron 当前用户应用数据目录下的 `openbot/local-server`，包含数据库、上传对象、模型设置与加密的初始化身份。Electron `safeStorage` 使用 Windows DPAPI 加密初始化身份。数据目录设置仅当前用户可访问、可继承的 NTFS DACL；已有目录出现意外授权时会拒绝使用，不自动修复。DPAPI 的边界是用户登录身份，不能阻止同一身份下的恶意软件。
+## 当前安装验收（Windows x64）
 
-正常退出先通过私有父进程通道通知 Server 关闭，再调用支持 Windows 的 `pg_ctl stop` 停止数据库。重新打开后复用原有身份与数据。手工备份前应退出 OpenBot 并确认数据库进程已经停止；数据库和加密初始化文件需要一起保留。将数据复制到另一登录身份不是已支持的迁移方式，PostgreSQL 大版本升级也需要明确迁移。
+当前 [CI 定义](../.github/workflows/ci.yml)构建 NSIS 并运行
+[check-windows-desktop-install.ps1](../scripts/check-windows-desktop-install.ps1)，检查当前用户安装、
+原位升级、已安装 ASAR 身份、已退役 `native-runtime` 不在安装物中、两个独立 Electron 进程的
+真实 DPAPI 加解密与密文保持、进程身份、卸载及测试清理。测试只用一次性配置目录；单独的
+原生 ACL 测试继续保留真实 NTFS 反例。
 
-## 验证与限制
-
-Windows CI 会构建 NSIS 安装器，在唯一临时目录中完成安装，核对安装后的 ASAR 哈希，通过 Electron 对**安装后的运行时**验证 DPAPI、真实数据库、结构迁移、Owner 登录、同进程保留重启，以及 **十次彼此独立的 Electron 进程冷启动**（以启动时间与可执行路径证明的新进程身份、上一轮子进程已结束、PG 行与 bootstrap 密文摘要保留、Owner 登录次数），最后卸载。单独的 Windows 测试检查真实 NTFS 权限。应查看对应源码提交的实际 CI 结果；写好工作流不等于工作流已经通过。
-
-### 在本地 Windows x64 运行冷启动验收门禁
-
-前置：已构建的每用户 NSIS 安装器、对应的 `OpenBot-win32-x64` 打包目录、固定版本的 Electron 开发可执行文件，以及本仓库中的冒烟脚本。只使用一次性临时目录（脚本在 `%RUNNER_TEMP%` 下自建，否则失败）。
+准备已构建的安装器、对应打包目录和固定的开发 Electron：
 
 ```powershell
 $version = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).version
@@ -38,32 +43,30 @@ $env:RUNNER_TEMP = $env:TEMP
   -Installer "$PWD/apps/desktop/out/installers/win32-x64/openbot-desktop-$version-win32-x64.exe" `
   -PackagedDirectory "$PWD/apps/desktop/out/OpenBot-win32-x64" `
   -Electron $electron `
-  -SmokeScript "$PWD/apps/desktop/scripts/windows-native-smoke.mjs"
+  -SmokeScript "$PWD/apps/desktop/scripts/windows-remote-smoke.mjs"
 ```
 
-通过标准：脚本打印 `PASS: native smoke receipt verified (postgresql,migrations,dpapi,owner-login,retained-data,stop,restart,cleanup,cold-start-10)` 并完成卸载。仅在同一 Electron 进程内循环 stop/start **不算**冷启动证据。
+验收必须完成两个远程客户端 safeStorage 生命周期及卸载、清理。`summary.json` 只记录允许的
+进程身份、密文摘要等字段，不包含原始密文、密码或测试配置目录。CI 产物暂沿用历史名称
+`windows-desktop-cold-start-<源码 SHA>`；应读取其中 schemaVersion2 与远程客户端回执，不能
+根据名称推断做了十次 PostgreSQL 冷启动。必须查看对应源码的实际执行结果，工作流定义本身
+不代表已执行。本轮清理尚未在 Windows 原生环境运行当前源码的安装、DPAPI 或安装后 GUI。
 
-脚本会在打印的证据目录（或指定的 `-EvidenceDirectory`）保留 `summary.json`。
-CI 将其上传为 `windows-desktop-cold-start-<源码 SHA>`，验证启动后的失败也保留回执。
-内容包括初始化及十轮冷启动、实际 Electron/Server/PostgreSQL 进程身份、登录次数、
-保持不变的引导密文摘要、错误进程身份负例与卸载结果。只保留这些明确选定的字段，
-不上传测试配置目录、原始密文、密码或诊断日志。
-
-
-可移植 harness 单测（Linux/macOS/Windows）：
+可移植身份辅助测试仍可运行：
 
 ```bash
 npm test --workspace @openbot/desktop -- scripts/windows-native-smoke-harness.test.mjs
 ```
 
-早期 Windows 桌面版开发主机是 macOS。历史 [Windows 托管执行](https://github.com/yxflc11/openbot/actions/runs/34497646235) 通过了冷启动扩展前的回执。
+## 历史本地 Server 证据与限制
 
-### 发行源码冷启动证据
+[早期托管验收](https://github.com/yxflc11/openbot/actions/runs/34497646235)和
+[主线 CI34768475942](https://github.com/yxflc11/openbot/actions/runs/34768475942)属于历史记录。
+后者对应 `64569ece36141fa112266cdf93e2694bc88a632b`：首次启动加十次独立 Electron 冷启动、
+十二次 Owner 登录、PostgreSQL 记录和初始化密文保留、进程身份反例及清理。该证据不能用于
+证明当前远程客户端源码或其 GUI 通过验收。旧 `windows-native-smoke.mjs` 入口和 Windows
+PostgreSQL 构建链已退出；使用上方当前验收入口。旧版本接收者所需的源码构建许可与来源记录
+继续保留，详见[历史研究](research/windows-desktop-completion.md)。
 
-[主线 CI 34768475942](https://github.com/yxflc11/openbot/actions/runs/34768475942)已通过，源码为 `64569ece36141fa112266cdf93e2694bc88a632b`。独立核对的 Windows Server 2025 x64 回执确认：首次启动加十次冷启动，共十一次独立 Electron 进程生命周期；十二次 Owner 登录、DPAPI 解密、数据库记录与引导密文摘要保留、前次子进程退出、当前用户 NSIS 卸载、测试数据移除及清理验证均通过。进程身份负向检查与跨运行时身份检查也通过。这些证据属于托管原生运行时检查，不等于安装后应用 GUI 或 Windows 10/11 真机验收。
-
-验证脚本使用固定的开发版 Electron 可执行文件、经 ASAR 校验的已安装原生运行时和相同控制器，检查首次启动加十次独立冷启动、Owner 登录、DPAPI 解密、数据库记录与密文摘要保留、前次子进程退出、卸载及测试数据清理。它没有操作安装后应用的窗口。Windows 桌面界面、SmartScreen、代码签名、无障碍与真实电脑控制仍需分别验收。当前安装包只针对 Windows x64，不支持 Windows ARM64。
-
-Windows Worker Host 服务是单独审查的组件，桌面版安装不能证明其 SCM 安装、服务身份和真机验收已完成。发布前需核对实际 CI 的来源清单、随包许可证与代码签名结果，详见[研究记录](research/windows-desktop-completion.md)。本阶段未增加 macOS 或 Linux 适配。
-
-Windows PostgreSQL 改为从固定的官方 17.11 源码使用 Meson/MSVC 构建，关闭非必需依赖并静态链接 MSVC runtime。打包必须提供源码构建清单，并校验每个文件；不再接受原 npm 二进制包。实际发布依据仍是该提交的 Windows CI、产物来源与签名证据。
+Windows ARM64、Windows 10/11 真机 GUI、签名、SmartScreen、无障碍与电脑控制仍是独立验收项。
+Windows Worker Host 服务另行审查，Desktop 安装不能证明其 SCM 身份或登记生命周期已合格。

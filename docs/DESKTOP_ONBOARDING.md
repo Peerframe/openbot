@@ -2,10 +2,10 @@
 
 [简体中文](DESKTOP_ONBOARDING.zh-CN.md)
 
-The macOS arm64 and Windows x64 desktop distributions include a local Server and PostgreSQL.
-Choose how this computer should connect:
+Current macOS arm64 builds include the local Python Server and PostgreSQL. Windows, Intel Mac
+and Linux builds are remote clients. Choose among the roles supported on this computer:
 
-- **Service computer:** Desktop initializes an app-owned PostgreSQL 17 database, starts the
+- **Service computer (macOS arm64):** Desktop initializes an app-owned PostgreSQL 17 database, starts the
   bundled Server, creates its private Owner bootstrap identity, connects and opens model setup.
   No Docker, Homebrew, administrator account or first-launch download is required.
 - **Remote client:** Desktop saves and verifies an existing HTTPS Server origin, then asks for
@@ -56,7 +56,7 @@ profile and verified skills; selected reviewed single-file instructions use the 
 Private memory, history, keys and computer permissions remain on the source Server. The recipient
 creates a new Bot and reviews imported instructions before model use. See [Employee sharing](EMPLOYEE.md).
 
-After initial setup, reopening resumes the existing local service and database with a compact
+After macOS arm64 local setup, reopening resumes the existing local service and database with a compact
 connection state instead of repeating the installation checklist. Saved credentials are reused.
 Credential access is asynchronous so system authorization does not freeze the startup window;
 an unlock failure preserves the existing encrypted identity and data. macOS can still request
@@ -176,12 +176,11 @@ See [recurring-task research](research/server-automations.md).
 
 ## Current boundaries
 
-The current public preview is **0.1.0-alpha.9**, with a macOS arm64 DMG and Windows x64 EXE.
-Both platforms support a bundled local Server/PostgreSQL or an existing Server connection.
-Linux x64 remains a remote-client build target; alpha.9 publishes no Linux installers. These are
-unsigned development builds; production signing and macOS notarization remain outstanding.
-Windows installation and retained-runtime checks ran on a hosted runner; manual Windows desktop
-and SmartScreen acceptance remain outstanding. macOS Intel is outside the installer matrix. See
+Current source supports a bundled local Python service only on macOS arm64. Windows, Intel Mac
+and Linux connect to an existing Server. CI installer targets are macOS arm64, Windows x64 and
+Linux x64; an Intel remote-client source path is not an Intel installer qualification. Historical
+**0.1.0-alpha.9** artifacts and their hosted checks do not qualify the current source. Production
+signing, macOS notarization, manual Windows desktop and SmartScreen acceptance remain outstanding. See
 [installation](DESKTOP_INSTALLATION.md) and [Windows verification](WINDOWS_DESKTOP.md) for
 versioned artifacts and distribution boundaries.
 
@@ -192,7 +191,7 @@ automatically extract, OCR or transcribe it. Task submissions are not automatica
 Existing native-task stop and explicit resubmission controls retain their Server-owned lifecycle;
 resubmission creates a new task and does not promise safe replay of prior side effects.
 
-On macOS and Windows, the bundled Server listens **only on this computer**. Sharing this native
+On macOS arm64, the bundled Server listens **only on this computer**. Sharing this native
 installation with another computer requires a future authenticated HTTPS provisioning flow. Do
 not enter its loopback address on another computer. For remote use today, connect to an existing
 HTTPS deployment using the advanced instructions below. Closing the macOS window keeps Desktop
@@ -208,12 +207,13 @@ covered. This lifecycle change does not establish Windows crash recovery.
 
 
 Data lives under Desktop's user-data directory in `openbot/local-server`. Bootstrap secrets are
-sealed with Electron safeStorage using macOS Keychain or Windows DPAPI; database access uses
+sealed with Electron safeStorage using macOS Keychain (historical Windows profiles use DPAPI); database access uses
 private random credentials and SCRAM. Model keys are encrypted by the Server with AES-256-GCM.
 No secret is returned by the model summary API. Missing resources, unavailable system credential
 storage, unsafe data paths or incompatible existing database state fail visibly; retry does not
 delete an existing cluster. Switching to remote-client mode stops local services and retains
-their data. Switching back reuses that data.
+their data. On macOS arm64, switching back reuses that data. Current Windows/Intel/Linux builds
+retain earlier local profiles without starting or automatically migrating those databases.
 
 ## Model access
 
@@ -235,9 +235,9 @@ Remote clients cannot configure older Servers that do not implement the endpoint
 ## Build and advanced self-deployment
 
 From the repository root, install locked dependencies, run `npm run check`, then run
-`npm run package --workspace @openbot/desktop` on the target OS. macOS and Windows packaging stage the compiled Server,
-production dependency closure, PostgreSQL binaries and notices in `native-runtime` before
-assembling the application. The generated runtime is ignored by Git. A local development launch
+`npm run package --workspace @openbot/desktop` on the target OS. macOS arm64 packaging stages the
+Python Server, installed harness wheel, Node helper closure, PostgreSQL binaries and notices in
+`native-runtime`. Remote-client targets omit that runtime. The generated runtime is ignored by Git. A local development launch
 also needs `npm run prepare:native --workspace @openbot/desktop` before `npm start --workspace
 @openbot/desktop`. First launch does not download executable code.
 
@@ -250,18 +250,19 @@ Preview uses bundle ID `dev.openbot.desktop.preview`, executable `OpenBot Previe
 `~/Library/Application Support/OpenBot Preview` profile, including cookies and local Server data.
 It does not migrate the installed app's data. Rebuilding retains the Preview profile. Preview
 cannot include the production macOS Worker companion because its background identity is shared;
-the bundled local Server is included. The normal package target keeps its existing identity.
+the bundled local Server is included on macOS arm64. The normal package target keeps its existing identity.
 
 Advanced users can install Server, PostgreSQL, Web and Worker components separately using the
 [root source setup](../README.md#development). These options belong in repository documentation,
 not in the initial Desktop role selector. Configure a trusted HTTPS reverse proxy for remote use;
 keep database credentials and Owner authentication server-side.
 
-To enable model settings on a separately deployed Server, set both
-`OPENBOT_MODEL_SETTINGS_PATH` (an absolute path in a private persistent directory) and
-`OPENBOT_MODEL_ENCRYPTION_KEY` (64 lowercase hexadecimal characters representing 32 random bytes).
-Keep the encryption key in a secret manager outside the settings file; losing it makes saved keys
-unreadable. Omit both to disable the endpoint. Run one Server writer per settings file. The API is
+For a new Python Server deployment, set `OPENBOT_CONTROL_MODEL_DIRECTORY` to a private persistent
+directory; the service owns its settings and encryption key there. To retain an existing settings
+file/key, use `OPENBOT_CONTROL_MODEL_SETTINGS_PATH` and `OPENBOT_CONTROL_MODEL_ENCRYPTION_KEY`
+together instead. Do not combine that pair with the directory mode. Keep existing encryption keys
+with the recovery material; losing them makes saved credentials unreadable. See
+[Server deployment](SERVER_CONTAINER.md) for the complete environment. Run one Server writer per settings store. The API is
 Owner-only `GET`/`POST /api/v1/settings/model`, with the existing mutation-origin checks; POST
 requires `provider`, `model`, `apiKey`, and the last `revision` (null for initial configuration).
 `agentEnabled` defaults to false. Only Owner opt-in enables inference for newly created tasks.
@@ -273,9 +274,9 @@ Extract with `tar -xzf <archive>` to preserve executable modes and internal link
 are temporary development artifacts, not signed installers, automatic updates or desktop-control
 certification. See [handoff research](research/desktop-cross-platform-handoff.md).
 
-macOS uses PostgreSQL 17.10 from the pinned `17.10.0-beta.17` native package. Windows uses the
-pinned official PostgreSQL 17.11 source build; the former Windows npm binary package is not
-accepted. See [Windows build provenance](research/windows-desktop-completion.md). Production
+macOS arm64 uses PostgreSQL 17.10 from the pinned `17.10.0-beta.17` native package. Current
+Windows packages omit PostgreSQL; the [Windows build provenance](research/windows-desktop-completion.md)
+records previous releases and their licensing obligations. Production
 distribution still requires review of native dependency provenance, redistribution terms,
 signing and notarization. Local functionality tests do not substitute for release-support evidence.
 

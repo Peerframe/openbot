@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Historical direct-Node sketch; not a current installation entry.
+     OPENBOT_NODE_TOKEN and the unmanaged executable path are obsolete.
+     Use docs/NODE_ENROLLMENT.md for the native SMAppService candidate and its
+     remaining distribution qualification. Never put real credentials here. -->
 <plist version="1.0">
   <dict>
     <key>Label</key>
