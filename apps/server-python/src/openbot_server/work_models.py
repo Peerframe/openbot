@@ -73,10 +73,15 @@ class EmptyCommand(StrictModel):
     pass
 
 
+class WorkError(StrictModel):
+    # Explicit command errors use strings; FastAPI path validation uses issue objects.
+    detail: str | list[dict[str, JsonValue]]
+
+
 class WorkUsage(StrictModel):
-    tokenLimit: int
-    reservedTokens: int
-    spentTokens: int
+    tokenLimit: int = Field(ge=0)
+    reservedTokens: int = Field(ge=0)
+    spentTokens: int = Field(ge=0)
 
 
 class WorkRun(StrictModel):
@@ -93,8 +98,8 @@ class WorkAction(StrictModel):
     decision: Literal['not_required', 'pending', 'approved', 'denied']
     status: Literal['proposed', 'admitted', 'unknown', 'applied', 'not_applied', 'superseded']
     expiresAt: str
-    reservedTokens: int
-    actualTokens: int | None
+    reservedTokens: int = Field(ge=0)
+    actualTokens: int | None = Field(ge=0)
     evidence: dict[str, str] | None
     reconciliation: WorkReconciliation | None = None
 
@@ -111,7 +116,7 @@ class WorkArtifact(StrictModel):
     name: str
     mediaType: str
     sha256: str
-    sizeBytes: int
+    sizeBytes: int = Field(ge=0)
     downloadUrl: str
 
 
@@ -120,7 +125,7 @@ class WorkSnapshot(StrictModel):
     botId: str
     objective: str
     status: Literal['queued', 'open', 'completed', 'cancelled', 'failed']
-    revision: int
+    revision: int = Field(ge=0)
     resultSummary: str | None
     artifacts: list[WorkArtifact]
     authorityActive: bool

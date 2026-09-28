@@ -1,5 +1,22 @@
-// Generated from Python Work HTTP responses. Run npm run contracts:generate.
+// Generated from Python Work HTTP requests, responses and errors. Run npm run contracts:generate.
 export interface paths {
+  "/api/v1/tasks": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create */
+    post: operations["createWorkTask"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/tasks/{task_id}": {
     parameters: {
       query?: never;
@@ -17,16 +34,92 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/tasks/{task_id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Cancel */
+    post: operations["cancelWorkTask"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    /** CreateTask */
+    CreateTask: {
+      /** Botid */
+      botId: string;
+      /** Objective */
+      objective: string;
+      /** Requestkey */
+      requestKey: string;
+      /** @default null */
+      scope?: components["schemas"]["NativeTaskScope"] | null;
+      /** Tokenlimit */
+      tokenLimit: number;
+    };
+    /** DecideAction */
+    DecideAction: {
+      /** Approved */
+      approved: boolean;
+      /** Intentdigest */
+      intentDigest: string;
+    };
+    /** EmptyCommand */
+    EmptyCommand: Record<string, never>;
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
     };
     JsonValue: unknown;
+    /** NativeTaskScope */
+    NativeTaskScope: {
+      /** Attachmentids */
+      attachmentIds: string[];
+      /** Collaboratorbotids */
+      collaboratorBotIds: string[];
+      /** Knowledge */
+      knowledge: boolean;
+      /** Plugins */
+      plugins: boolean;
+      /** Version */
+      version: number;
+      /** Web */
+      web: boolean;
+    };
+    /** RequestCorrection */
+    RequestCorrection: {
+      /** Expectedsequence */
+      expectedSequence: number;
+      /** Instruction */
+      instruction: string;
+      /** Requestkey */
+      requestKey: string;
+      /** Runid */
+      runId: string;
+    };
+    /** RequestReconciliation */
+    RequestReconciliation: {
+      /** Expectedsequence */
+      expectedSequence: number;
+      /** Intentdigest */
+      intentDigest: string;
+      /** Reason */
+      reason: string;
+      /** Requestkey */
+      requestKey: string;
+    };
     /** ValidationError */
     ValidationError: {
       /** Context */
@@ -112,6 +205,15 @@ export interface components {
       sequence: number;
       /** Taskid */
       taskId: string;
+    };
+    /** WorkError */
+    WorkError: {
+      /** Detail */
+      detail:
+        | string
+        | {
+            [key: string]: components["schemas"]["JsonValue"];
+          }[];
     };
     /** WorkEvent */
     WorkEvent: {
@@ -211,6 +313,93 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  createWorkTask: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateTask"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkSnapshot"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+      /** @description Request Timeout */
+      408: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+      /** @description Request Entity Too Large */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+    };
+  };
   getWorkTask: {
     parameters: {
       query?: never;
@@ -231,13 +420,129 @@ export interface operations {
           "application/json": components["schemas"]["WorkSnapshot"];
         };
       };
-      /** @description Validation Error */
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+      /** @description Unprocessable Entity */
       422: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+    };
+  };
+  cancelWorkTask: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["EmptyCommand"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkSnapshot"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+      /** @description Request Timeout */
+      408: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+      /** @description Request Entity Too Large */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkError"];
         };
       };
     };

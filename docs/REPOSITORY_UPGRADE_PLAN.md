@@ -35,7 +35,44 @@ English canonical; 中文摘要见文末。This is the single engineering-upgrad
 | Build/CI | Confirmed classification gap; aggregate already rejects missing/cancelled/skipped jobs |
 | Developer entry | Four existing skills reused; repair cold commands and verify fresh reading |
 
-Evidence, implementation commits, review disposition and remaining gates will be updated here.
+Selected paths: ordinary `PortToolset` → host result/model projection and Work
+`ProductWorkReads` / `WorkWebAdapter` → `ToolResponseAdapter` / immutable `ToolResults`; Work
+create/get/cancel DTOs → real FastAPI OpenAPI → generated TS → `work-api`/Web/Desktop.
+The existing UI projection uses Work snapshot Action status and Artifact facts; tool JSON never
+becomes an Artifact or independent business-success proof. No second projection registry is added.
+
+Decisions reuse the exact C2/C3 pins and `docs/research/work-tool-results.md`: Python 3.12,
+Pydantic AI 2.47.0, Temporal 1.33.0, FastAPI 0.141.1, Pydantic 2.13.5, openapi-typescript 7.13.0.
+Rechecked [asyncio cancellation/timeouts](https://docs.python.org/3.12/library/asyncio-task.html),
+[FastAPI additional responses](https://fastapi.tiangolo.com/advanced/additional-responses/) and
+the [pinned generator source](https://github.com/openapi-ts/openapi-typescript/tree/5709d33a5977c4908b9e331f01cd0f9e181b1c37).
+Use a single standard-library timeout over existing initialization instead of a new supervisor.
+Retain manually bounded/authenticated request reads; register their existing DTOs in OpenAPI
+instead of switching to eager FastAPI body parsing. Request definitions are lifted into standard
+OpenAPI components, avoiding dangling nested `$defs` references. No source copied or new dependency.
+Response nonnegative counters restate the SQL/UI invariants; no stored data migration or valid
+product state changes. Additive response fields remain readable by older Web consumers.
+
+Confirmed regression evidence: initial boundary fixtures failed 8 cases, CI fixtures failed 2,
+initialization/cancellation failed 2, and a tool-result alias fixture bypassed its validated byte
+bound. Fixes detach the exact model value and cancel pending initialization with the existing
+deadline; resources still belong to their actual host/Activity. First boundary checkpoint
+`bfddaba` passed 21 boundary, 24 CI and 4 entrypoint tests plus 535-document checks. Formatting-only
+tool observation preparation is `b1b397d`, separate from its type changes. Later results are pending.
+
+Quality profiles share one existing tool environment; a 16-line optional SDK guard is the only
+new runtime module, moved without changing behavior. Ordinary core type checks exclude only the
+two Temporal adapters; mandatory full quality checks them against the real Worker SDK. Typed result
+metadata/invoker contracts are shared by the actual read/web adapters; SQL/raw external data remain
+dynamically validated at their existing trust boundaries.
+
+CI duty change: remove the duplicate `test:browser:boundary` invocation from `python-runtime`.
+Both copies used the same source and Linux/Node/Python boundary suite; `validate` already runs it
+on full checks and whenever browser probe inputs change (selector positive/negative fixtures).
+Browser-product/egress, real runtime and per-platform gates remain independent and retained.
+No successful-test cache or new wheel cache is introduced. Installed artifact writers run serially.
+
+Evidence, implementation commits, review disposition and remaining gates are updated in this section.
 
 中文当前范围：从已合并且原 CI 全绿的 C3 基线继续工程质量升级。原目录及演示修改不动；本工作区
 仅主控写入、子任务只读审查。先修复已证实扫描/分类/冷启动和局部质量缺口，再完成真实工具与 Work

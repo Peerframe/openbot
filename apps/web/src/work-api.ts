@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ApiError } from "./api";
-import type { components } from "./generated/work-contract";
-import type { NativeTaskScopeInput } from "./native-task-api";
+import type { components, operations } from "./generated/work-contract";
+import { nativeTaskScopeInputSchema } from "./native-task-api";
 
 // Public projection from Python work_models.py; engine history is never client authority.
 const reconciliation = z.object({
@@ -25,9 +25,9 @@ export const workSnapshotSchema = z.object({
   cancelRequested: z.boolean(),
   attention: z.enum(["approval", "reconciliation", "budget"]).nullable(),
   usage: z.object({
-    tokenLimit: z.number().nonnegative(),
-    reservedTokens: z.number().nonnegative(),
-    spentTokens: z.number().nonnegative(),
+    tokenLimit: z.number().int().nonnegative(),
+    reservedTokens: z.number().int().nonnegative(),
+    spentTokens: z.number().int().nonnegative(),
   }),
   runs: z.array(
     z.object({
@@ -45,8 +45,8 @@ export const workSnapshotSchema = z.object({
       decision: z.enum(["not_required", "pending", "approved", "denied"]),
       status: z.enum(["proposed", "admitted", "unknown", "applied", "not_applied", "superseded"]),
       expiresAt: z.string(),
-      reservedTokens: z.number().nonnegative(),
-      actualTokens: z.number().nonnegative().nullable(),
+      reservedTokens: z.number().int().nonnegative(),
+      actualTokens: z.number().int().nonnegative().nullable(),
       evidence: z.record(z.string(), z.string()).nullable(),
       reconciliation: reconciliation.nullable().default(null),
     }),
@@ -58,7 +58,7 @@ export const workSnapshotSchema = z.object({
       name: z.string(),
       mediaType: z.string(),
       sha256: z.string(),
-      sizeBytes: z.number().nonnegative(),
+      sizeBytes: z.number().int().nonnegative(),
       downloadUrl: z.string(),
     }),
   ),
@@ -72,13 +72,31 @@ export const workSnapshotSchema = z.object({
   eventsTruncated: z.boolean(),
 }) satisfies z.ZodType<WorkSnapshot>;
 export type WorkSnapshot = components["schemas"]["WorkSnapshot"];
-export interface CreateWorkInput {
-  botId: string;
-  objective: string;
-  tokenLimit: number;
-  requestKey: string;
-  scope?: NativeTaskScopeInput;
-}
+export type CreateWorkInput =
+  operations["createWorkTask"]["requestBody"]["content"]["application/json"];
+export type CancelWorkInput =
+  operations["cancelWorkTask"]["requestBody"]["content"]["application/json"];
+// JSON Schema length counts Unicode code points, whereas JavaScript string.length counts UTF-16.
+const boundedText = (max: number) =>
+  z.string().refine((value) => {
+    const length = [...value].length;
+    return length >= 1 && length <= max;
+  });
+export const createWorkInputSchema = z
+  .object({
+    botId: boundedText(128),
+    objective: boundedText(16384),
+    tokenLimit: z.number().int().min(0).max(1_000_000_000),
+    requestKey: boundedText(128),
+    scope: nativeTaskScopeInputSchema.nullable().optional(),
+  })
+  .strict()
+  .transform(({ scope, ...required }) =>
+    scope === undefined ? required : { ...required, scope },
+  ) satisfies z.ZodType<CreateWorkInput>;
+const workErrorSchema = z.object({
+  detail: z.union([z.string(), z.array(z.record(z.string(), z.json()))]),
+}) satisfies z.ZodType<components["schemas"]["WorkError"]>;
 
 async function request(path: string, signal: AbortSignal, body?: object): Promise<unknown> {
   const response = await fetch(path, {
@@ -95,7 +113,14 @@ async function request(path: string, signal: AbortSignal, body?: object): Promis
   });
   if (!response.ok) {
     if (response.status === 401) window.dispatchEvent(new Event("openbot:unauthorized"));
-    throw new ApiError(`Work request failed (${response.status}).`, response.status);
+    // Validate the documented error envelope, but keep diagnostics out of UI messages.
+    const error = workErrorSchema.safeParse(await response.json().catch(() => null));
+    throw new ApiError(
+      error.success
+        ? `Work request failed (${response.status}).`
+        : `Invalid Work error response (${response.status}).`,
+      response.status,
+    );
   }
   return response.json();
 }
@@ -121,7 +146,9 @@ export async function listWorkBots(signal: AbortSignal) {
     .parse(result).bots;
 }
 export async function createWorkTask(input: CreateWorkInput, signal: AbortSignal) {
-  return workSnapshotSchema.parse(await request("/api/v1/tasks", signal, input));
+  return workSnapshotSchema.parse(
+    await request("/api/v1/tasks", signal, createWorkInputSchema.parse(input)),
+  );
 }
 export async function getWorkTask(id: string, signal: AbortSignal) {
   const snapshot = workSnapshotSchema.parse(
@@ -132,7 +159,11 @@ export async function getWorkTask(id: string, signal: AbortSignal) {
 }
 export async function cancelWorkTask(id: string, signal: AbortSignal) {
   const snapshot = workSnapshotSchema.parse(
-    await request(`/api/v1/tasks/${encodeURIComponent(id)}/cancel`, signal, {}),
+    await request(
+      `/api/v1/tasks/${encodeURIComponent(id)}/cancel`,
+      signal,
+      {} satisfies CancelWorkInput,
+    ),
   );
   if (snapshot.id !== id) throw new Error("Task identity mismatch.");
   return snapshot;

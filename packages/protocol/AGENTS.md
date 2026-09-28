@@ -1,7 +1,8 @@
 # Protocol contributor rules
 
 This package owns retained Node/wire Zod contracts. Python product HTTP DTOs and Web `work-api.ts`
-are a separate current contract chain; no generated Python-to-TS client is claimed yet.
+are a separate contract chain. Work create/get/cancel types are generated from actual Python
+OpenAPI; `work-api.ts` retains runtime validation and safe errors. This is not a generated client.
 Use the [cross-language route](../../docs/REPOSITORY_MAP.md#cross-language-contract).
 Trace actual Node, Web/Desktop and Python consumers, not just direct imports. Preserve strict runtime
 validation, unknown fields, missing versus null, error codes, byte bounds and negative serialization

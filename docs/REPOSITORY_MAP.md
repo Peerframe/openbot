@@ -65,7 +65,8 @@ source is `packages/harness`; core checks and product consumers install its type
   [work routes](../apps/server-python/src/openbot_server/work_routes.py) and
   [public Work DTOs](../apps/server-python/src/openbot_server/work_models.py); actual TS consumption is
   [work-api](../apps/web/src/work-api.ts), [its tests](../apps/web/src/work-api.test.ts),
-  and [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx). The Work snapshot response has generated Python-to-TS types; see the contribution checks below.
+  and [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx). Work create/get/cancel
+  requests, responses and errors have generated Python-to-TS types; see the checks below.
 - Existing runtime wire: [Python control validator](../apps/server-python/src/openbot_server/runtime_wire.py)
   ↔ [runtime wire](../packages/harness/src/openbot_agent_runtime/wire.py);
   [comparison script](../apps/server-python/scripts/compare-runtime-wire.mjs) checks the frozen TS
@@ -120,12 +121,14 @@ follow [the persistent-asset inventory](DATABASE.md#backup-boundary); retained n
 
 ### Installed core and Work HTTP contribution checks
 
-Use `npm run harness:check` / `npm run harness:wheel` and the package's `scripts/quality.sh`.
+Use `npm run harness:check` / `npm run harness:wheel` and, after `bootstrap-quality.sh`,
+the package's `scripts/quality.sh --core` for ordinary core changes. Default `quality.sh` adds
+real Temporal/control types and requires the Worker environment.
 `sh apps/server-python/scripts/bootstrap-worker.sh` installs the same wheel into the Worker env.
 Build/quality tools and product dependencies have separate exact locks; see
 [harness setup](../packages/harness/README.md).
 
-The real Work snapshot HTTP response comes from `work_models.py` through `work_routes.py`.
+The real Work create/get/cancel requests, snapshots and errors come from `work_models.py` through `work_routes.py`.
 `npm run contracts:generate` writes [consumer types](../apps/web/src/generated/work-contract.ts);
 `npm run contracts:check` checks freshness. [work-api](../apps/web/src/work-api.ts) consumes the
 generated type and keeps Zod runtime validation. Run

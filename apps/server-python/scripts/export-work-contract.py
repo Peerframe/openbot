@@ -1,4 +1,4 @@
-"""Export one real HTTP response contract without starting services or reading configuration."""
+"""Export real Work request/response/error contracts without starting services."""
 
 import json
 from pathlib import Path
@@ -10,7 +10,7 @@ from openbot_server.work_routes import register_work_routes
 
 
 def contract() -> dict:
-    app = FastAPI(title="OpenBot Work response", version="1")
+    app = FastAPI(title="OpenBot Work HTTP", version="1")
     # Registration is declarative: no writer, store, session, DB or model is called by OpenAPI.
     register_work_routes(
         app,
@@ -20,8 +20,14 @@ def contract() -> dict:
         allowed_origins=("https://openbot.invalid",),
     )
     schema = app.openapi()
-    path = "/api/v1/tasks/{task_id}"
-    schema["paths"] = {path: {"get": schema["paths"][path]["get"]}}
+    schema["paths"] = {
+        path: {method: schema["paths"][path][method]}
+        for path, method in (
+            ("/api/v1/tasks", "post"),
+            ("/api/v1/tasks/{task_id}", "get"),
+            ("/api/v1/tasks/{task_id}/cancel", "post"),
+        )
+    }
     return schema
 
 

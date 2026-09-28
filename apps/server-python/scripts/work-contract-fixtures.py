@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 from openbot_server.authority import AuthenticationRequired
-from openbot_server.work_models import WorkSnapshot
+from openbot_server.work_models import WorkSnapshot, CreateTask
 from openbot_server.work_routes import register_work_routes
 from openbot_server.work_values import WorkConflict, WorkNotFound
 
@@ -61,6 +61,18 @@ def fixtures() -> dict:
     for name, changes in mutations:
         value = snapshot() | changes
         cases.append((name, value))
+    for name, field_path in (
+        ("fractional-usage", ("usage", "spentTokens")),
+        ("negative-usage", ("usage", "reservedTokens")),
+        ("fractional-action", ("actions", 0, "actualTokens")),
+    ):
+        value = snapshot()
+        target = value
+        for key in field_path[:-1]:
+            target = target[key]
+        target[field_path[-1]] = -1 if name.startswith("negative") else 0.5
+        cases.append((name, value))
+    cases.append(("negative-revision", snapshot() | {"revision": -1}))
     missing = snapshot()
     del missing["resultSummary"]
     cases.append(("missing-required-nullable", missing))
@@ -85,20 +97,93 @@ def fixtures() -> dict:
                 raise WorkConflict("task_changed")
             return snapshot()
 
+        async def create(self, token, *, bot_id, objective, token_limit, request_key, **kwargs):
+            assert token == "fixture-session"
+            if request_key == "conflict":
+                raise WorkConflict("private create diagnostic")
+            return snapshot() | {
+                "botId": bot_id,
+                "objective": objective,
+                "usage": {"tokenLimit": token_limit, "reservedTokens": 0, "spentTokens": 0},
+            }
+
+        async def cancel(self, token, task_id):
+            if task_id in ("missing", "conflict"):
+                return await self.snapshot(token, task_id)
+            return snapshot() | {"id": task_id, "cancelRequested": True, "authorityActive": False}
+
+    class Reader:
+        async def read(self, token, resource):
+            from types import SimpleNamespace
+
+            return SimpleNamespace(expires_at="future" if token == "fixture-session" else None)
+
     app = FastAPI()
     register_work_routes(
         app,
         Writer(),
-        None,
+        Reader(),
         secure_cookies=True,
         allowed_origins=("https://openbot.invalid",),
     )
-    with TestClient(app) as client:
+    create = {"botId": "bot-one", "objective": "Read 文档", "tokenLimit": 10, "requestKey": "key"}
+    inputs = [
+        ("omitted-scope", create),
+        ("null-scope", create | {"scope": None}),
+        ("zero-budget", create | {"tokenLimit": 0}),
+        ("max-budget", create | {"tokenLimit": 1_000_000_000}),
+        ("oversize-budget", create | {"tokenLimit": 1_000_000_001}),
+        ("fractional-budget", create | {"tokenLimit": 0.5}),
+        ("boolean-budget", create | {"tokenLimit": True}),
+        ("null-objective", create | {"objective": None}),
+        ("empty-objective", create | {"objective": ""}),
+        ("unknown-input", create | {"unexpected": True}),
+        ("missing-key", {key: value for key, value in create.items() if key != "requestKey"}),
+        ("unicode-boundary", create | {"botId": "🧪" * 128}),
+        ("unicode-overflow", create | {"botId": "🧪" * 129}),
+    ]
+    requests = []
+    for name, value in inputs:
+        try:
+            serialized = CreateTask.model_validate(value).model_dump(mode="json")
+            requests.append({"name": name, "input": value, "valid": True, "serialized": serialized})
+        except ValidationError:
+            requests.append({"name": name, "input": value, "valid": False})
+    with TestClient(app, base_url="https://openbot.invalid") as client:
         responses = []
         for name in ("task-one", "unauthorized", "missing", "conflict"):
             response = client.get(f"/api/v1/tasks/{name}")
             responses.append({"id": name, "status": response.status_code, "body": response.json()})
-    return {"cases": results, "responses": responses}
+        commands = []
+        for operation, identity, payload, origin, token in (
+            ("create", "null-scope", create | {"scope": None}, True, True),
+            ("create", "omitted-scope", create, True, True),
+            ("create", "conflict", create | {"requestKey": "conflict"}, True, True),
+            ("create", "invalid", create | {"tokenLimit": -1}, True, True),
+            ("create", "too-large", create | {"objective": "文" * 7000}, True, True),
+            ("cancel", "task-one", {}, True, True),
+            ("cancel", "missing", {}, True, True),
+            ("cancel", "conflict", {}, True, True),
+            ("cancel", "invalid", {"extra": True}, True, True),
+            ("cancel", "forbidden", {}, False, True),
+            ("cancel", "unauthorized", {}, True, False),
+            ("cancel", "x" * 129, {}, True, True),
+        ):
+            headers = {"Origin": "https://openbot.invalid" if origin else "https://other.invalid"}
+            if token:
+                headers["Cookie"] = "__Host-openbot_session=fixture-session"
+            path = "/api/v1/tasks" if operation == "create" else f"/api/v1/tasks/{identity}/cancel"
+            response = client.post(path, json=payload, headers=headers)
+            commands.append(
+                {
+                    "operation": operation,
+                    "id": identity,
+                    "input": payload,
+                    "status": response.status_code,
+                    "body": response.json(),
+                }
+            )
+    return {"cases": results, "responses": responses, "requests": requests, "commands": commands}
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ from .http_input import authorize_owner, read_json
 from .work_models import CreateTask, DecideAction, EmptyCommand, WorkSnapshot, RequestReconciliation, WorkReconciliation
 from .work_corrections import CorrectionStore
 from .work_models import RequestCorrection, WorkCorrection
+from .work_models import WorkError
 from .work_values import InvalidWork, WorkConflict, WorkNotFound
 
 
@@ -37,11 +38,29 @@ def register_work_routes(app: FastAPI, writer, read_store, *, secure_cookies, al
         except InvalidWork:
             raise HTTPException(422, 'Invalid work command.') from None
 
+    command_schemas = {}
+    original_openapi = app.openapi
+
+    def openapi():
+        document = original_openapi()
+        document.setdefault('components', {}).setdefault('schemas', {}).update(command_schemas)
+        return document
+
+    # Request parsing must remain after Owner/origin admission and bounded byte reads. Register
+    # those same DTOs in OpenAPI without moving validation into FastAPI's eager Body parsing.
+    app.openapi = openapi
+
     def schema(model):
-        return {'requestBody': {'required': True, 'content': {'application/json': {'schema': model.model_json_schema()}}}}
+        definition = model.model_json_schema(ref_template='#/components/schemas/{model}')
+        command_schemas.update(definition.pop('$defs', {}))
+        command_schemas[model.__name__] = definition
+        return {'requestBody': {'required': True, 'content': {'application/json': {
+            'schema': {'$ref': f'#/components/schemas/{model.__name__}'}}}}}
+
+    errors = {status: {'model': WorkError} for status in (401, 403, 404, 408, 409, 413, 422)}
 
     @app.post('/api/v1/tasks', response_model=WorkSnapshot, status_code=202,
-              operation_id='createWorkTask', openapi_extra=schema(CreateTask))
+              operation_id='createWorkTask', openapi_extra=schema(CreateTask), responses=errors)
     async def create(request: Request):
         token, body = await write_input(request, CreateTask, 20000)
         return await result(writer.create(token, bot_id=body.botId, objective=body.objective,
@@ -52,12 +71,13 @@ def register_work_routes(app: FastAPI, writer, read_store, *, secure_cookies, al
     async def scope(request: Request, task_id: str = Path(min_length=1,max_length=128)):
         return await result(writer.native_scope(request.cookies.get(cookie_name),task_id))
 
-    @app.get('/api/v1/tasks/{task_id}', response_model=WorkSnapshot, operation_id='getWorkTask')
+    @app.get('/api/v1/tasks/{task_id}', response_model=WorkSnapshot, operation_id='getWorkTask',
+             responses={status: errors[status] for status in (401, 404, 409, 422)})
     async def read(request: Request, task_id: str = Path(min_length=1, max_length=128)):
         return await result(writer.snapshot(request.cookies.get(cookie_name), task_id))
 
     @app.post('/api/v1/tasks/{task_id}/cancel', response_model=WorkSnapshot,
-              operation_id='cancelWorkTask', openapi_extra=schema(EmptyCommand))
+              operation_id='cancelWorkTask', openapi_extra=schema(EmptyCommand), responses=errors)
     async def cancel(request: Request, task_id: str = Path(min_length=1, max_length=128)):
         token, _ = await write_input(request, EmptyCommand, 128)
         return await result(writer.cancel(token, task_id))
