@@ -53,7 +53,7 @@ Start with the [repository map](docs/REPOSITORY_MAP.md) for module ownership, co
 | Python execution core | `packages/harness` (current harness source) |
 | Node protocol and reliability | `apps/node`, `packages/protocol` |
 | Computer integrations | `providers/*`, `packages/provider-sdk` |
-| Policy and security | `packages/policy`, `docs/SECURITY.md` |
+| Policy and security | `apps/server-python/src/openbot_server`, `docs/SECURITY.md` |
 | Documentation and translations | `README*.md`, `docs/`, ADRs |
 | Optional experiences | `packages/office-plugin` and future plugins |
 

@@ -29,10 +29,9 @@ openbot/
 │   └── node/                # Replaceable execution-node daemon
 ├── packages/
 │   ├── harness/           # Typed Python execution core wheel
-│   ├── config/              # Validated environment contracts
+│   ├── config/              # Node environment and native macOS configuration
 │   ├── db/                  # PostgreSQL schema and migrations
 │   ├── domain/              # Product entities
-│   ├── policy/              # Fail-closed policy evaluation
 │   ├── protocol/            # Versioned Server–Node and event contracts
 │   ├── provider-sdk/        # Execution provider interface
 │   ├── python-node-runtime/ # Retained Node parser dependency closure

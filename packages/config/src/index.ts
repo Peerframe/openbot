@@ -1,8 +1,6 @@
-import { isIP } from "node:net";
 import { URL } from "node:url";
 import { z } from "zod";
 
-const portSchema = z.coerce.number().int().positive().max(65_535);
 const booleanSchema = z
   .enum(["true", "false"])
   .default("false")
@@ -51,135 +49,6 @@ export const macOSNodeServiceConfigSchema = z
     logLevel: z.enum(["debug", "info", "warn", "error"]).default("info"),
   })
   .strict();
-
-export const serverEnvSchema = z
-  .object({
-    OPENBOT_HOST: z.string().default("127.0.0.1"),
-    OPENBOT_AGENT_RUNTIME: z.enum(["typescript", "python"]).default("typescript"),
-    OPENBOT_PORT: portSchema.default(3001),
-    OPENBOT_DATABASE_URL: z.string().default("postgres://openbot:openbot@localhost:5432/openbot"),
-    OPENBOT_OWNER_NAME: z.string().trim().min(1).max(80).default("Owner"),
-    OPENBOT_OWNER_PASSWORD: z
-      .string()
-      .min(15)
-      .refine(
-        (value) => value !== "replace-with-a-long-random-owner-password",
-        "Replace the example owner password before starting OpenBot.",
-      ),
-    OPENBOT_SESSION_TTL_HOURS: z.coerce.number().int().min(1).max(168).default(12),
-    OPENBOT_SECURE_COOKIES: booleanSchema,
-    OPENBOT_ALLOWED_ORIGINS: z
-      .string()
-      .default("http://localhost:5173,http://127.0.0.1:5173")
-      .transform((value) =>
-        value
-          .split(",")
-          .map((origin) => origin.trim())
-          .filter(Boolean),
-      )
-      .pipe(z.array(z.string().url()).min(1)),
-    OPENBOT_OBJECT_STORE_PATH: z.string().default("./data/objects"),
-    OPENBOT_PLUGIN_LOCAL_ENDPOINTS: z
-      .string()
-      .max(32768)
-      .default("")
-      .transform((value) =>
-        value
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean),
-      )
-      .pipe(z.array(z.string().url().max(2048)).max(16)),
-    OPENBOT_EMPLOYEE_PUBLISHER_KEYRING_PATH: z.string().trim().min(1).optional(),
-    OPENBOT_EMPLOYEE_PUBLISHER_PASSPHRASE_FILE: z.string().trim().min(1).optional(),
-    OPENBOT_MODEL_SETTINGS_PATH: z.string().trim().min(1).optional(),
-    OPENBOT_MODEL_DIRECTORY: z.string().trim().min(1).optional(),
-    OPENBOT_MODEL_ENCRYPTION_KEY: z
-      .string()
-      .regex(/^[a-f0-9]{64}$/u)
-      .optional(),
-    OPENBOT_LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
-    TAVILY_API_KEY: z.preprocess(
-      (value) => (value === "" ? undefined : value),
-      z
-        .string()
-        .trim()
-        .min(1)
-        .max(512)
-        .regex(/^[\x21-\x7e]+$/u)
-        .optional(),
-    ),
-    OPENBOT_TRUSTED_PROXY_ADDRESS: z.preprocess(
-      (value) => (value === "" ? undefined : value),
-      z
-        .string()
-        .trim()
-        .refine((value) => isIP(value) !== 0, "Trusted proxy address must be one exact IP address.")
-        .optional(),
-    ),
-  })
-  .superRefine((value, context) => {
-    if (
-      value.OPENBOT_MODEL_DIRECTORY !== undefined &&
-      (value.OPENBOT_MODEL_SETTINGS_PATH !== undefined ||
-        value.OPENBOT_MODEL_ENCRYPTION_KEY !== undefined)
-    ) {
-      context.addIssue({
-        code: "custom",
-        message: "Model directory cannot be combined with legacy model path or encryption key.",
-        path: ["OPENBOT_MODEL_DIRECTORY"],
-      });
-    }
-    if (
-      (value.OPENBOT_MODEL_SETTINGS_PATH === undefined) !==
-      (value.OPENBOT_MODEL_ENCRYPTION_KEY === undefined)
-    ) {
-      context.addIssue({
-        code: "custom",
-        message: "Model settings path and encryption key must be configured together.",
-        path: ["OPENBOT_MODEL_SETTINGS_PATH"],
-      });
-    }
-    let hasRemoteOrigin = false;
-    for (const origin of value.OPENBOT_ALLOWED_ORIGINS) {
-      const url = new URL(origin);
-      if (url.protocol !== "http:" && url.protocol !== "https:") {
-        context.addIssue({
-          code: "custom",
-          message: "Allowed origins must use HTTP or HTTPS.",
-          path: ["OPENBOT_ALLOWED_ORIGINS"],
-        });
-        continue;
-      }
-      if (isLoopbackHostname(url.hostname)) continue;
-      hasRemoteOrigin = true;
-      if (url.protocol !== "https:") {
-        context.addIssue({
-          code: "custom",
-          message: "Non-loopback origins must use HTTPS.",
-          path: ["OPENBOT_ALLOWED_ORIGINS"],
-        });
-      }
-    }
-    if (hasRemoteOrigin && !value.OPENBOT_SECURE_COOKIES) {
-      context.addIssue({
-        code: "custom",
-        message: "Secure cookies are required when an allowed origin is not loopback.",
-        path: ["OPENBOT_SECURE_COOKIES"],
-      });
-    }
-    if (
-      (value.OPENBOT_EMPLOYEE_PUBLISHER_KEYRING_PATH === undefined) !==
-      (value.OPENBOT_EMPLOYEE_PUBLISHER_PASSPHRASE_FILE === undefined)
-    ) {
-      context.addIssue({
-        code: "custom",
-        message:
-          "Employee publisher keyring and passphrase-file paths must be configured together.",
-        path: ["OPENBOT_EMPLOYEE_PUBLISHER_KEYRING_PATH"],
-      });
-    }
-  });
 
 export const nodeEnvSchema = z
   .object({
@@ -312,7 +181,6 @@ export const nodeEnvSchema = z
     }
   });
 
-export type ServerEnv = z.infer<typeof serverEnvSchema>;
 export type NodeEnv = z.infer<typeof nodeEnvSchema>;
 export type MacOSNodeServiceConfig = z.infer<typeof macOSNodeServiceConfigSchema>;
 

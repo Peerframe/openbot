@@ -25,10 +25,9 @@
 | `apps/server-python` | 当前 Python 产品权威层、API 和可信服务 |
 | `packages/harness` | 可独立验证的 Python Agent Runtime |
 | `apps/node` | 可替换的执行节点 daemon |
-| `packages/config` | 经验证的环境契约 |
+| `packages/config` | Node 环境与 macOS 原生配置契约 |
 | `packages/db` | PostgreSQL schema 和迁移 |
 | `packages/domain` | 产品实体 |
-| `packages/policy` | 默认拒绝的策略求值 |
 | `packages/protocol` | 有版本的 Server–Node 和事件契约 |
 | `packages/provider-sdk` | 执行 Provider 接口 |
 | `packages/python-node-runtime` | 保留的 Node 解析依赖闭包 |
