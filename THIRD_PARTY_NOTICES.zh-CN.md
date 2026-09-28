@@ -32,3 +32,9 @@ Server 使用显式 OpenAI、Anthropic、OpenRouter 和 Moonshot 适配器；SDK
 研究依据：[MCP 插件](docs/research/third-party-mcp-plugins.md)、[原生 Agent](docs/research/native-agent-loop.md)、
 [OpenRouter](docs/research/openrouter-model-entry.md)、[本次 SDK 补丁](docs/research/ai-sdk-patches-september15.zh-CN.md)、
 [Electron 更新](docs/research/electron-44.3-ci-review.zh-CN.md)。
+
+当前原生 PostgreSQL 暂存仅使用 `@embedded-postgres/darwin-arm64`
+`17.10.0-beta.17`（MIT packager；PostgreSQL 17.10 使用其自身许可证）。Intel Mac 和 Windows
+现为远程客户端，已移除无现役消费者的 Intel 二进制依赖及 Windows 构建、暂存和升级脚本。
+原始上游声明、源码引用及被拒绝 Windows 候选的审计证据仍保留，历史接收者的许可不受影响；
+不因此声称当前原生包已完成公开分发所需的来源或 LGPL 验证。详见[英文规范声明](THIRD_PARTY_NOTICES.md)。

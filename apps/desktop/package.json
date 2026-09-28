@@ -36,8 +36,7 @@
     "electron-builder": "26.16.1"
   },
   "optionalDependencies": {
-    "@embedded-postgres/darwin-arm64": "17.10.0-beta.17",
-    "@embedded-postgres/darwin-x64": "17.10.0-beta.17"
+    "@embedded-postgres/darwin-arm64": "17.10.0-beta.17"
   },
   "productName": "OpenBot"
 }

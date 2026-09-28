@@ -1,8 +1,10 @@
 OpenBot native PostgreSQL preview notices
 
-The locked @embedded-postgres/darwin-arm64 and darwin-x64 packages are
+The locked @embedded-postgres/darwin-arm64 package is
 17.10.0-beta.17, git c23ad8a026c711c8666c3c2596d0fde643cf378a.
-Their MIT packager license is copied separately into postgres/PACKAGER-LICENSE.md.
+Its MIT packager license is copied separately into postgres/PACKAGER-LICENSE.md.
+Intel Mac now ships the remote client; its unused darwin-x64 binary dependency
+has exited. These upstream notices also remain for historical native recipients.
 PostgreSQL is 17.10, distributed under the PostgreSQL License.
 
 License texts in this directory are unmodified upstream notices (Libedit.txt is
