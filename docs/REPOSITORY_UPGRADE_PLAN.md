@@ -1,26 +1,39 @@
-# Repository upgrade — current handoff
+# Repository upgrade — completion record
 
 English canonical; 中文摘要见文末。This is the single engineering-upgrade task record.
 [MIGRATION_HANDOFF](MIGRATION_HANDOFF.md) remains historical migration evidence.
 
 ## Current engineering-quality acceptance (2026-09-28)
 
-- Status: finite local acceptance complete; no confirmed blocker remains. Implementation/review
-  pin: `ef495bf1d118f8835442eb3c1d5f36241253fdcd`; the local delivery HEAD was
-  `ee4251c2f68f75bb8758b26354918b91f396af59` (documentation only). The publication clarification
-  following it also changes only this record. Resolve the publication HEAD with `git rev-parse HEAD`
-  and match it to the draft PR's `headRefOid` and CI `head_sha`; the PR records the concrete SHA.
-  All local check/installation processes and
-  both read-only reviewers have finished; no outgoing writer owns an unfinished patch.
+- Status: the finite upgrade is merged and closed; no confirmed acceptance blocker remains.
+  [PR #102](https://github.com/Peerframe/openbot/pull/102) was marked ready and merged on
+  2026-09-28 at 10:56:11 UTC. Its authorized, unchanged HEAD was
+  `98c8e00c6f6d290a6968cbe0fa52e80da145bc26`; main's merge commit is
+  `413323f120100a3aaf45a1d09efaf497b886ab04`. Implementation and independent-review corrections
+  remain pinned to `ef495bf1d118f8835442eb3c1d5f36241253fdcd`; `ee4251c` and `98c8e00` changed
+  only this record. Both read-only reviewers and all local implementation/install writers finished.
 - Checkout: `/Users/yxflc/.codex/worktrees/engineering-quality/openbot`, branch
   `codex/engineering-quality`; fixed base `4891b807b7b677820f82821f87b95c2bb80d74c3`.
   Its tree equals C3 `3b771c3`. The original user checkout and the separate contributor demos
   remain untouched. One implementation writer owns this checkout; review agents are read-only.
-- Read-only GitHub verification: PR #100 is merged at this base and all final candidate jobs,
-  including `check`, passed in run `36291315723`. The older pending statements below describe
-  their original checkpoint, not current status. The user subsequently authorized pushing
-  `codex/engineering-quality`, creating a draft PR and running required candidate hosted CI.
-  Merge, release, production actions and paid model calls remain unauthorized.
+- Candidate CI: [run 36403361979](https://github.com/Peerframe/openbot/actions/runs/36403361979),
+  attempt 1, passed all 17 jobs including `check` on the exact authorized HEAD. No job was rerun.
+  PR #100/run `36291315723` is Base evidence only; older pending statements in the historical
+  section describe their original checkpoint, not the current result.
+- Merge rules were read before the action: strict required `check`, administrator enforcement,
+  required conversation resolution, zero required approving reviews, no additional branch rules.
+  Base/HEAD were unchanged, all checks succeeded, no review thread was unresolved, and GitHub
+  reported `CLEAN`. The normal merge used `--match-head-commit` with the authorized full SHA;
+  no administrator bypass, protection edit, force push or unsupported approval claim was used.
+- Post-merge [main CI run 36412639452](https://github.com/Peerframe/openbot/actions/runs/36412639452)
+  passed all 17 jobs including `check` on attempt 1, without reruns. The merge parents are the
+  fixed Base and authorized HEAD; tree
+  `b8cff931315f4e8d5f999ea87c8097f7e4ff32de` exactly matches the tested candidate. Existing
+  implementation evidence therefore remains applicable. Main's existing push policy selects
+  full hosted qualification; no unchanged full local suite was rerun.
+- This closing record is a local documentation-only update after the merge, in this same worktree;
+  it does not change the merged product candidate. Release, user-install replacement, production
+  operations and paid model calls remain excluded.
 - Finite acceptance: recursive source/public API boundaries; behavior-aware CI selection and
   cold commands; two actual tool consumers sharing typed result/lifecycle conventions; one
   existing Work HTTP request/response/error chain through Python and generated TS; core-only
@@ -139,7 +152,7 @@ The local unsigned artifact is `apps/desktop/out/python-product/OpenBot Python P
 it does not replace the user's installation. All owned test containers/processes were removed.
 The original checkout remains at `9cc73c9` with its original user-owned dirty files untouched.
 
-### Revision-to-evidence mapping before publication
+### Revision-to-evidence mapping
 
 | Revision/input | Review and validation correspondence |
 | --- | --- |
@@ -148,7 +161,9 @@ The original checkout remains at `9cc73c9` with its original user-owned dirty fi
 | Pre-correction `e3ecf4e` control/Worker runtime | Actual SQL/control 836 and Worker 1,526 ran here. In `ef495bf`, the only changed Python runtime file was the reads decorator's typing, with unchanged executable body; full types and actual return/error/cancellation were then rechecked. New HTTP scope fixtures are separate Python DTO/FastAPI + Web evidence |
 | Correction `ef495bf1d118f8835442eb3c1d5f36241253fdcd` | Both reviewers closed findings on this fixed diff. HTTP 53 and Web 31 ran on the input bytes committed here; full Ruff/mypy with permanent consumer assertions, final `npm run check`, real Temporal journey, container, staged/packaged Desktop and final byte comparisons cover this implementation |
 | Local delivery `ee4251c2f68f75bb8758b26354918b91f396af59` | Only this record changed from `ef495bf`. Docs 4/535 files and research 22 checks actually ran; implementation checks are reused, not represented as new runs at `ee4251c` |
-| Publication clarification after `ee4251c` | Only this record changes. Run documentation/research gates and PR-body validation; do not repeat unchanged full local suites. Candidate hosted CI is separately identified by the draft PR head SHA, run ID/attempt and aggregate result |
+| Candidate `98c8e00c6f6d290a6968cbe0fa52e80da145bc26` | Only this record changed after `ee4251c`. Docs/research gates and PR-body validation ran; unchanged full local suites were reused. Hosted run `36403361979`, attempt 1, passed all 17 jobs including `check` on this candidate |
+| Main merge `413323f120100a3aaf45a1d09efaf497b886ab04` | PR #102 merged the exact authorized HEAD with the unchanged Base. Its tree is identical to `98c8e00`; main push run `36412639452`, attempt 1, passed all 17 jobs including `check`. No source input changed, so local implementation/install evidence is reused |
+| Local closing record after the merge | Only this file changes. `npm run docs:check` passed 4 entrypoint tests and checked 535 Markdown files; `npm run research:check` passed 22 tests, with its PR-event-only invocation explicitly skipped locally. Diff/link checks passed. No unchanged full local suite was rerun; this local record update does not alter merged main |
 
 Final local Turbo results are **31/31 typecheck, 0 cached; 26/26 test tasks, 12 cached; 19/19
 build tasks, 12 cached**. Cached logs are not fresh execution. Core feedback measurement reused
@@ -166,10 +181,15 @@ external history input, not a failing replay or an intentionally retired compati
 
 At Base the test and its skip condition are byte-identical. The retained C3 local Worker log
 `/private/tmp/openbot-c3-control-final.log` records this exact node as skipped and 1,526 passed /
-1 skipped. Base's hosted Python job was successful; its same `scripts/test-python-control.mjs`
-constructs a scrubbed Worker environment without this variable, so that standard lane does not
-supply the opt-in histories. Do not infer historical replay success from the green job badge.
-This candidate's `/private/tmp/openbot-quality-control.log` records the same skip explicitly.
+1 skipped. Base's [hosted Python job](https://github.com/Peerframe/openbot/actions/runs/36291315723/job/108541997596)
+explicitly records the same skipped node and 1,526 passed / 1 skipped in 488.95s. The candidate's
+hosted job records the same skip, as does the merged [main Python job](https://github.com/Peerframe/openbot/actions/runs/36412639452/job/108896279962)
+(1,526 passed / 1 skipped in 483.23s). Main also ran core 449 passed / 1 skipped and PostgreSQL
+control 836 passed / 2 skipped. These are actual main results, separate from reused local evidence.
+The unchanged `scripts/test-python-control.mjs` constructs a scrubbed Worker environment without
+the history variable, so that standard lane does not supply the opt-in histories. Do not infer
+historical replay success from a green job badge. The local candidate log
+`/private/tmp/openbot-quality-control.log` also records the same skip explicitly.
 
 Compatibility remains supported: histories without `collaborationProtocol=1`, and old flagged
 histories without `openbot-collaboration-deadline-v1`, retain their previous command sequence.
@@ -250,12 +270,14 @@ The original ephemeral archive/preload were removed after successful byte verifi
 procedure above reconstructs them; no private path, credentials or hidden download override is
 required. The normal automated route is `node apps/desktop/scripts/prepare-native-server.mjs
 --python-product` **without** `--import`; the local unassisted transfer failed, so its success remains
-unverified locally. The candidate macOS CI lane will independently exercise its normal producer;
-only that actual result can add hosted automated-download evidence. Later successful CI would not
-retroactively turn the earlier local failure into a success.
+unverified locally. The candidate's [macOS CI job](https://github.com/Peerframe/openbot/actions/runs/36403361979/job/108866298190)
+ran that normal producer without a preload and passed staged and packaged service smoke. This is
+actual hosted automatic-download evidence; it does not turn the earlier local failure or assisted
+installation into a passing local automatic transfer. Native Keychain and interactive Electron
+remain outside that synthetic-profile service smoke.
 
-Artifact writers ran serially against the fixed implementation. Push, draft PR and candidate CI
-are now authorized; their exact head/status are recorded on the PR. Merge, signing/release,
+Artifact writers ran serially against the fixed implementation. The user authorized ready-for-review
+and merge after the required gates; PR #102 is now merged at the SHA above. Signing/release,
 updates to the user's installed app, production conversion and paid model calls remain excluded.
 
 ### Finite outcome and remaining limits
@@ -269,8 +291,8 @@ updates to the user's installed app, production conversion and paid model calls 
 | CI classification, aggregation and duplicate work | Verified: missing/failed/cancelled/unexpected skipped gates refuse success; one proven repeated boundary invocation removed without losing dependencies |
 | Affected installed consumers and compatibility | Verified for clean wheel, Linux arm64 container and macOS arm64 staged/packaged service; current history recovery/replay and retained protocol differentials pass |
 | Authority, budget, observations, publication and recovery | Verified within the existing synthetic-effects/real SQL+engine acceptance; no production or paid-model claim |
-| Other platforms / special retained histories | Pending: no fresh Windows, Intel Mac or Linux amd64 installation; external retained collaboration-history fixture was not supplied. These do not expand the accepted affected-combination scope |
-| Hosted candidate CI / merge | Candidate push/draft PR/CI now authorized and pending; match checks to the actual PR head. Merge remains unauthorized. Base hosted CI is not candidate CI |
+| Other platforms / special retained histories | Hosted selected Linux/macOS/Windows client and Linux amd64/arm64 container jobs passed. Windows Worker is build-only; Intel Mac, native Keychain and interactive Electron are unqualified. Original external collaboration histories remain missing, and the local unassisted Node download remains unverified. No compatibility commitment is retired |
+| Hosted candidate CI / merge | Exact candidate and merged main each passed all 17 jobs on attempt 1, including `check`; no rerun or protection bypass. Base CI is never substituted for either result |
 | Formal release / production qualification | Not applicable to this local unsigned candidate; signing, user-app update, native Keychain and production conversion remain separate authorized work |
 
 The maintenance gain is concrete: contributors can find the owner/check command, check ordinary
@@ -281,7 +303,7 @@ validators/fixtures aligned as these actual interfaces change. One private Tempo
 moved, not duplicated; no new external dependency, service, framework or durable fact model exists.
 No unrelated enhancement became an additional completion gate or product feature.
 
-中文验收：本轮有限本地目标已完成，两个只读审查的已确认问题均已复现、整改和复审关闭。
+中文验收：本轮有限升级已完成、按授权合并并结案；两个只读审查的已确认问题均已复现、整改和复审关闭。
 递归边界/CI 分类、核心初始化与取消、共享工具结果类型、Work 创建/读取/取消契约、开发入口和
 检查去重均已落地。最终全仓检查通过；核心 449、工厂 30、跨语言契约 53、真实 PostgreSQL 836、
 Worker 1,526 项通过，另有真实 mTLS 审批/取消/恢复/重放以及 wheel、arm64 容器和 macOS 暂存/
@@ -293,8 +315,12 @@ Worker 1,526 项通过，另有真实 mTLS 审批/取消/恢复/重放以及 whe
 旧协作历史测试 `test_retained_history_replays_without_new_deadline_commands[NOTSET]` 在 Base
 已因缺少外部原始历史而跳过，仍是支持的兼容范围，本轮没有改对应 Workflow 命令分支；本轮
 新历史重放不能冒充该旧历史验收。官方 Node 归档来源、完整哈希和临时复现命令已列出，人工
-介入归档后安装通过与原自动下载超时明确区分。用户现已授权推送、草稿 PR 和候选托管 CI；合并、
-签名发行、生产操作和付费模型仍未授权。托管结果按 PR 实际 HEAD 报告，不能沿用 Base 绿灯。
+介入归档后安装通过与原自动下载超时明确区分；候选 macOS 托管 CI 正常自动下载和安装通过，
+不能倒写为本地原路径通过。候选 `98c8e00` 的 17 项托管检查首轮全过；用户授权后，PR #102
+转为正式评审并按现有规则合并为 main `413323f`，没有绕过保护。main 与候选源码树完全一致，
+main 自动触发的 CI `36412639452` 也首轮 17/17 全过，含最终 `check`；未重复全量本地验证。
+合并后仅在原工作树更新本记录，
+不增加工程改造或 TS 迁移。签名发行、替换用户安装、生产操作和付费模型仍未执行。
 
 ## Historical C1–C3 record (preserved evidence)
 
