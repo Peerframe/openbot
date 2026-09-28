@@ -127,6 +127,15 @@ def fixtures() -> dict:
         allowed_origins=("https://openbot.invalid",),
     )
     create = {"botId": "bot-one", "objective": "Read 文档", "tokenLimit": 10, "requestKey": "key"}
+    identities = [f"abcdefab-1234-4234-8234-{index:012x}" for index in range(33)]
+    scope = {
+        "version": 1,
+        "attachmentIds": [identities[0]],
+        "collaboratorBotIds": [identities[1]],
+        "knowledge": True,
+        "plugins": False,
+        "web": True,
+    }
     inputs = [
         ("omitted-scope", create),
         ("null-scope", create | {"scope": None}),
@@ -142,6 +151,23 @@ def fixtures() -> dict:
         ("unicode-boundary", create | {"botId": "🧪" * 128}),
         ("unicode-overflow", create | {"botId": "🧪" * 129}),
     ]
+    for name, changes in (
+        ("nonempty-scope", {}),
+        ("attachment-boundary", {"attachmentIds": identities[:8]}),
+        ("attachment-overflow", {"attachmentIds": identities[:9]}),
+        ("collaborator-boundary", {"collaboratorBotIds": identities[:32]}),
+        ("collaborator-overflow", {"collaboratorBotIds": identities}),
+        ("duplicate-attachment", {"attachmentIds": [identities[0], identities[0]]}),
+        ("case-duplicate-attachment", {"attachmentIds": [identities[0], identities[0].upper()]}),
+        (
+            "case-duplicate-collaborator",
+            {"collaboratorBotIds": [identities[0], identities[0].upper()]},
+        ),
+        ("uppercase-scope", {"attachmentIds": [identities[0].upper()]}),
+        ("invalid-identity", {"attachmentIds": ["not-a-uuid"]}),
+        ("invalid-scope-boolean", {"knowledge": "true"}),
+    ):
+        inputs.append((name, create | {"scope": scope | changes}))
     requests = []
     for name, value in inputs:
         try:
@@ -158,6 +184,14 @@ def fixtures() -> dict:
         for operation, identity, payload, origin, token in (
             ("create", "null-scope", create | {"scope": None}, True, True),
             ("create", "omitted-scope", create, True, True),
+            ("create", "nonempty-scope", create | {"scope": scope}, True, True),
+            (
+                "create",
+                "scope-overflow",
+                create | {"scope": scope | {"attachmentIds": identities[:9]}},
+                True,
+                True,
+            ),
             ("create", "conflict", create | {"requestKey": "conflict"}, True, True),
             ("create", "invalid", create | {"tokenLimit": -1}, True, True),
             ("create", "too-large", create | {"objective": "文" * 7000}, True, True),

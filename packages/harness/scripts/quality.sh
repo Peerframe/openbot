@@ -21,7 +21,7 @@ if [ "$profile" = --core ]; then
     "$here/src" "$here/examples"
 fi
 "$worker" -I apps/server-python/scripts/verify_environment.py --worker
-set -- scripts/check-python-audit.py apps/server-python/scripts/derive-product-lock.py apps/server-python/scripts/export-work-contract.py apps/server-python/scripts/work-contract-fixtures.py
+set -- scripts/check-python-audit.py apps/server-python/scripts/derive-product-lock.py apps/server-python/scripts/export-work-contract.py apps/server-python/scripts/work-contract-fixtures.py apps/server-python/scripts/check-tool-types.py
 set -- "$@" apps/server-python/src/openbot_server/work_runtime_ports.py apps/server-python/src/openbot_server/work_tool_results.py
 "$quality" -m ruff check --config "$here/pyproject.toml" "$here/src" "$here/scripts" "$here/examples" "$@"
 "$quality" -m ruff format --config "$here/pyproject.toml" --check "$here/src" "$here/scripts" "$here/examples" "$@"

@@ -132,3 +132,20 @@ it("keeps additive response fields compatible with existing consumers", async ()
   expect(result.id).toBe("task-one");
   expect(result).not.toHaveProperty("futureField");
 });
+
+it("preserves cancellation while consuming an HTTP error body", async () => {
+  const controller = new AbortController();
+  const aborted = new DOMException("Aborted", "AbortError");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => ({
+      ok: false,
+      status: 409,
+      json: async () => {
+        controller.abort();
+        throw aborted;
+      },
+    })),
+  );
+  await expect(getWorkTask("task-one", controller.signal)).rejects.toBe(aborted);
+});

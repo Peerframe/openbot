@@ -271,3 +271,26 @@ test("browser probe and boundary test edits execute their actual regression suit
   }
   assert(!select("README.md").rootChecks.includes("test:browser:boundary"));
 });
+
+test("shared browser helpers and Work request schemas select their actual consumers", () => {
+  for (const file of [
+    "experiments/linux-execution/deadline_probe.py",
+    "experiments/linux-execution/sandbox.py",
+    "experiments/linux-execution/output_capacity.py",
+  ]) {
+    const plan = select(file);
+    assert(plan.rootChecks.includes("test:browser:boundary"), file);
+    assert(plan.required.includes("browser-product"));
+  }
+  assert(select("apps/web/src/native-task-api.ts").required.includes("harness"));
+  assert(!select("apps/web/src/components/ChannelMembersMenu.tsx").required.includes("harness"));
+});
+
+test("runtime-nested AGENTS resources cannot impersonate contributor rules", () => {
+  assert(
+    select("packages/harness/src/openbot_agent_runtime/prompts/AGENTS.md").required.includes(
+      "python-runtime",
+    ),
+  );
+  assert(select("apps/web/src/resources/AGENTS.md").workspaces.includes("@openbot/web"));
+});

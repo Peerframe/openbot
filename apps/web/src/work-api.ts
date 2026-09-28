@@ -114,7 +114,12 @@ async function request(path: string, signal: AbortSignal, body?: object): Promis
   if (!response.ok) {
     if (response.status === 401) window.dispatchEvent(new Event("openbot:unauthorized"));
     // Validate the documented error envelope, but keep diagnostics out of UI messages.
-    const error = workErrorSchema.safeParse(await response.json().catch(() => null));
+    const error = workErrorSchema.safeParse(
+      await response.json().catch((cause: unknown) => {
+        if (signal.aborted || (cause instanceof Error && cause.name === "AbortError")) throw cause;
+        return null;
+      }),
+    );
     throw new ApiError(
       error.success
         ? `Work request failed (${response.status}).`

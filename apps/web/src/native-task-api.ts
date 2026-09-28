@@ -13,7 +13,8 @@ const identities = (max: number) =>
   z
     .array(z.string().uuid())
     .max(max)
-    .refine((ids) => new Set(ids).size === ids.length);
+    // Server compares UUID identity after canonicalization, including letter case.
+    .refine((ids) => new Set(ids.map((id) => id.toLowerCase())).size === ids.length);
 export const nativeTaskScopeInputSchema = z
   .object({
     version: z.literal(1),

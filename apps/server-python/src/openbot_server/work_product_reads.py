@@ -3,11 +3,13 @@
 Adapted from the existing MIT OpenBot context/collaboration/attachment contracts.
 No old Run execution loop, claim issuer, scheduler, or model-provided scope is used.
 """
+from collections.abc import Awaitable, Callable
 from contextlib import nullcontext
 from copy import deepcopy
 from functools import wraps
 import hashlib
 import json
+from typing import ParamSpec, TypeVar
 
 import psycopg
 from pydantic import JsonValue
@@ -52,9 +54,13 @@ def tool_descriptors():
     return tuple(result)
 
 
-def _guard(function):
+_P = ParamSpec('_P')
+_R = TypeVar('_R')
+
+
+def _guard(function: Callable[_P, Awaitable[_R]]) -> Callable[_P, Awaitable[_R]]:
     @wraps(function)
-    async def guarded(*args, **kwargs):
+    async def guarded(*args: _P.args, **kwargs: _P.kwargs) -> _R:
         try:
             return await function(*args, **kwargs)
         except (psycopg.Error, OSError, TimeoutError, UnicodeError):
