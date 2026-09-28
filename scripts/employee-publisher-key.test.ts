@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { publisherInvocation } from "./employee-publisher-key.mjs";
+import { publisherInvocation } from "./employee-publisher-key.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -82,8 +82,8 @@ test("real CLI uses only an owned .env/keyring; old Server and oracle directorie
   await mkdir(join(temporary, "scripts"));
   await mkdir(join(temporary, "packages"));
   await cp(
-    join(root, "scripts/employee-publisher-key.mjs"),
-    join(temporary, "scripts/employee-publisher-key.mjs"),
+    join(root, "scripts/employee-publisher-key.ts"),
+    join(temporary, "scripts/employee-publisher-key.ts"),
   );
   await cp(
     join(root, "packages/employee-publisher"),
@@ -103,7 +103,7 @@ test("real CLI uses only an owned .env/keyring; old Server and oracle directorie
       process.platform === "win32" ? "junction" : "dir",
     );
   } catch (error) {
-    if (error.code !== "ENOENT") throw error;
+    if (!(error instanceof Error) || !("code" in error) || error.code !== "ENOENT") throw error;
   }
   await writeFile(
     join(temporary, ".env"),
@@ -115,10 +115,10 @@ test("real CLI uses only an owned .env/keyring; old Server and oracle directorie
       .filter((name) => process.env[name] !== undefined)
       .map((name) => [name, process.env[name]]),
   );
-  function cli(args, expected = 0) {
+  function cli(args: string[], expected = 0) {
     const result = spawnSync(
       process.execPath,
-      ["--env-file-if-exists=.env", "scripts/employee-publisher-key.mjs", ...args],
+      ["--env-file-if-exists=.env", "scripts/employee-publisher-key.ts", ...args],
       { cwd: temporary, env: environment, encoding: "utf8", timeout: 10000 },
     );
     assert.equal(result.status, expected, result.stderr);
@@ -140,7 +140,7 @@ test("real CLI uses only an owned .env/keyring; old Server and oracle directorie
   cli(["revoke", "--key-id", keyid]);
   assert.equal(
     JSON.parse(await readFile(join(temporary, "keys/trust.json"), "utf8")).keys.find(
-      (key) => key.keyid === keyid,
+      (key: { keyid: string; status: string }) => key.keyid === keyid,
     ).status,
     "revoked",
   );

@@ -5,7 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { test } from "node:test";
-import { createMcpPlugin } from "./create-mcp-plugin.mjs";
+import { createMcpPlugin } from "./create-mcp-plugin.ts";
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 test("creates a standalone pinned plugin and refuses to overwrite an existing project", async (t) => {
   const root = await mkdtemp(join(tmpdir(), "openbot-plugin-starter-"));
@@ -85,7 +85,7 @@ console.log('MCP tool/resource/prompt/view, origin, size and method checks passe
     { cwd: directory, env, encoding: "utf8", timeout: 15000 },
   );
   const diagnostic = JSON.stringify({
-    error: result.error?.code ?? null,
+    error: (result.error as NodeJS.ErrnoException | undefined)?.code ?? null,
     signal: result.signal,
     stdout: result.stdout,
     stderr: result.stderr,

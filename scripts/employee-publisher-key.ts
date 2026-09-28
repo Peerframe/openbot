@@ -11,22 +11,37 @@ const pathVariables = [
 
 // npm previously ran the CLI in apps/server. Preserve that path base without depending on
 // the old directory/source; only the retained CLI reads or mutates the requested key files.
-export function publisherInvocation(arguments_, environment, repositoryRoot = root) {
+interface PublisherInvocation {
+  args: string[];
+  cwd: string;
+  env: NodeJS.ProcessEnv;
+}
+
+export function publisherInvocation(
+  arguments_: readonly string[],
+  environment: Readonly<NodeJS.ProcessEnv>,
+  repositoryRoot = root,
+): PublisherInvocation {
   const previousBase = join(repositoryRoot, "apps/server");
-  const absolute = (value) => (typeof value === "string" ? resolve(previousBase, value) : value);
   const args = [...arguments_];
   for (let index = 1; index < args.length; index++) {
+    const option = args[index];
+    const value = args[index + 1];
     if (
-      pathOptions.has(args[index]) &&
-      args[index + 1] !== undefined &&
-      !args[index + 1].startsWith("--")
+      option !== undefined &&
+      pathOptions.has(option) &&
+      value !== undefined &&
+      !value.startsWith("--")
     ) {
-      args[index + 1] = absolute(args[index + 1]);
+      args[index + 1] = resolve(previousBase, value);
       index++;
     }
   }
   const env = { ...environment };
-  for (const name of pathVariables) if (env[name] !== undefined) env[name] = absolute(env[name]);
+  for (const name of pathVariables) {
+    const value = env[name];
+    if (value !== undefined) env[name] = resolve(previousBase, value);
+  }
   return {
     args: [
       "--import",
