@@ -31,7 +31,7 @@ from .runtime_child_process import PipeProcess
 
 MAX_TEXT = 262144
 MAX_RESPONSE = 2 * 1024 * 1024
-PARSER_WORKER = Path(__file__).with_name('parser_worker.mjs')
+PARSER_WORKER = Path(__file__).with_name('parser_worker.ts')
 
 
 def _utf16_length(value):

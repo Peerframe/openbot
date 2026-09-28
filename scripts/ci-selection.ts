@@ -180,6 +180,8 @@ export function selectChecks(
     }
     if (file.startsWith("apps/server-python/")) {
       python();
+      if (file === "apps/server-python/src/openbot_server/parser_worker.ts")
+        rootChecks.add("typecheck:parsers");
       if (/work_(models|values|routes)|runtime_wire|input_models/.test(file))
         broaden(`Cross-language authority: ${file}`);
       continue;

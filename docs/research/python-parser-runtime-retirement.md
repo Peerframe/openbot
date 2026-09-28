@@ -53,3 +53,24 @@ rewrites were not adopted. Project-pinned npm10.9.9 clean installation and final
 Desktop packaging remain root integration checks. No dependency was downloaded.
 The removed Server-lock regression preserves the complete dependency closure; existing
 TS interop tests remain in place and must be relocated before deleting legacy source.
+
+## Typed parser consolidation — 2026-09-29
+
+The fixed worker is now `apps/server-python/src/openbot_server/parser_worker.ts`.
+Its bounded header, dependency verification and PDF/Office/OCR adapters have explicit types;
+the released parser declarations supply upstream API types. The Python child command and its
+network preload both select this single source. The old handwritten MJS exits after independent
+Node22.22.2 and24.21.0 parser checks. No additional loader, build step, dependency, wire format,
+permission or released version is introduced. Direct native TS reuses the cleanup record's
+reviewed Node/TypeScript contract; root and affected CI include `typecheck:parsers`.
+
+Real consumption was verified from the existing Desktop staging entry with Python3.12.13,
+Node24.21.0 and the production dependency projection, and from a newly built local Linux arm64
+product container. Source hashes match staging; old MJS is absent. Synthetic Office/PDF/OCR,
+Owner HTTP, restart and bounded shutdown checks pass. This does not qualify signed releases,
+Keychain, Windows/Intel Mac execution, configured Temporal or real model calls.
+
+中文：固定解析器已整理为一个 TS 实现，Python 子进程与网络预加载同时切换，旧 MJS 已退出。
+复用原 Node、TS 和解析库版本，没有新增加载器、编译阶段或权限。最低 Node22.22.2 与产品
+Node24.21.0 的真实解析检查、Desktop 暂存安装物和 Linux arm64 产品容器消费链已通过；
+签名发布、Keychain、Windows/Intel Mac、配置后的 Temporal 和真实模型调用不在这些证据内。

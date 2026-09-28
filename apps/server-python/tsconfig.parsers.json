@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+    "erasableSyntaxOnly": true,
+    "types": ["node"]
+  },
+  "files": ["src/openbot_server/parser_worker.ts"]
+}

@@ -310,6 +310,38 @@ def test_fixed_network_preload_is_inherited_by_nested_parser_worker(tmp_path):
     assert result.stdout == b'parser_network_refused'
 
 
+def test_preload_refuses_fetch_http_tls_dgram_relative_worker_and_eval(tmp_path):
+    """Live fixed preload covers entrypoints beyond the nested-net test."""
+    import openbot_server.attachment_processing as module
+    node = shutil.which('node')
+    assert node
+    relative = tmp_path / 'relative-worker.cjs'
+    relative.write_text("require('node:worker_threads').parentPort.postMessage('FAILED')\n")
+    program = r"""
+const assertRefused = (label, run) => {
+  try { run(); throw new Error(label + ':FAILED'); }
+  catch (error) { if (error.message !== 'parser_network_refused') throw error; }
+};
+assertRefused('fetch', () => { globalThis.fetch('http://127.0.0.1/'); });
+assertRefused('http.get', () => require('node:http').get('http://127.0.0.1/'));
+assertRefused('https.get', () => require('node:https').get('https://127.0.0.1/'));
+assertRefused('tls.connect', () => require('node:tls').connect(443, '127.0.0.1'));
+assertRefused('dgram', () => require('node:dgram').createSocket('udp4'));
+const { Worker } = require('node:worker_threads');
+try { new Worker('./relative-worker.cjs'); throw new Error('relative:FAILED'); }
+catch (error) { if (error.message !== 'parser_worker_refused') throw error; }
+try { new Worker('1+1', { eval: true }); throw new Error('eval:FAILED'); }
+catch (error) { if (error.message !== 'parser_worker_refused') throw error; }
+process.stdout.write('ok');
+"""
+    result = subprocess.run(
+        [node, '--import', str(module.PARSER_WORKER), '-e', program], cwd=tmp_path,
+        capture_output=True, timeout=10, check=False, env={'LANG': 'C.UTF-8'},
+    )
+    assert result.returncode == 0, result.stderr.decode('utf-8', 'replace')
+    assert result.stdout == b'ok'
+
+
 def test_expiry_at_final_file_commit_restores_metadata_and_existing_derived_text(seed,storage,monkeypatch):
     token=secrets.token_urlsafe(32)
     digest=hashlib.sha256(token.encode()).hexdigest()

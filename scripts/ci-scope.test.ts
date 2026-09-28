@@ -1,6 +1,6 @@
 /**
  * ci-scope.test.ts — selection, git inputs, and aggregate closure tests.
- * Run with: node --import tsx --test scripts/ci-scope.test.ts
+ * Run with: node --test scripts/ci-scope.test.ts
  */
 
 import assert from "node:assert/strict";
@@ -398,4 +398,11 @@ test("workspace graph rejects malformed package dependencies", () => {
     () => workspaceGraph({ packages: { "apps/web": ["@openbot/web"] } }),
     /Invalid package entry/,
   );
+});
+
+test("the native parser source keeps types and installed Python consumers", () => {
+  const plan = select("apps/server-python/src/openbot_server/parser_worker.ts");
+  assert(plan.rootChecks.includes("typecheck:parsers"));
+  for (const job of ["python-runtime", "python-product-container", "python-desktop-preview"] as const)
+    assert(plan.required.includes(job), job);
 });
