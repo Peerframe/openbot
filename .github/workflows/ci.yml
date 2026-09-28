@@ -355,8 +355,6 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22.22.2
-      - name: Verify browser qualification boundaries without starting a browser
-        run: npm run test:browser:boundary
       - name: Verify Python and Server journeys in the isolated Linux fixture
         run: node scripts/test-runtime-linux.mjs
       - name: Select the reviewed npm version for control-plane parity

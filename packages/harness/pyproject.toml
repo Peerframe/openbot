@@ -45,6 +45,10 @@ warn_unused_ignores = true
 
 # Reviewed pre-extraction responsibilities, not an automatically refreshed violation baseline.
 # New modules have 400 lines; contracts.py has 300. Any growth beyond these exact caps fails.
+[tool.openbot]
+# Each declared module must expose __all__; this declares existing API, not a new module.
+public-modules = ["temporal_agent"]
+
 [tool.openbot.review-exceptions."executor.py"]
 maximum-lines = 423
 reason = "Existing 423-line bounded lifecycle; unchanged execution logic, split only with a lifecycle change."

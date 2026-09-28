@@ -13,7 +13,7 @@ const schema = JSON.parse(
 );
 const ast = await openapiTS(schema, { alphabetize: true, defaultNonNullable: false });
 const generated =
-  "// Generated from Python Work HTTP responses. Run npm run contracts:generate.\n" +
+  "// Generated from Python Work HTTP requests, responses and errors. Run npm run contracts:generate.\n" +
   astToString(ast);
 const output = new URL("../../apps/web/src/generated/work-contract.ts", import.meta.url);
 // Use the repository's formatter so freshness includes the format actually reviewed in Git.

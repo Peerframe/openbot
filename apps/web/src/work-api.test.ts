@@ -94,3 +94,58 @@ it("retains a superseded proposal without treating it as applied", async () => {
     decision: "approved",
   });
 });
+
+it("keeps malformed error bodies safe and retains HTTP status", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => Response.json({ private: "diagnostic" }, { status: 409 })),
+  );
+  await expect(getWorkTask("task-one", new AbortController().signal)).rejects.toMatchObject({
+    status: 409,
+    message: "Invalid Work error response (409).",
+  });
+});
+
+it("refuses a wrong-task cancel result and preserves caller cancellation", async () => {
+  const signal = new AbortController().signal;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => Response.json(workFixture({ id: "other" }))),
+  );
+  await expect(cancelWorkTask("task-one", signal)).rejects.toThrow("Task identity mismatch.");
+  const aborted = new DOMException("Aborted", "AbortError");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => {
+      throw aborted;
+    }),
+  );
+  await expect(cancelWorkTask("task-one", signal)).rejects.toBe(aborted);
+});
+
+it("keeps additive response fields compatible with existing consumers", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => Response.json({ ...workFixture(), futureField: true })),
+  );
+  const result = await getWorkTask("task-one", new AbortController().signal);
+  expect(result.id).toBe("task-one");
+  expect(result).not.toHaveProperty("futureField");
+});
+
+it("preserves cancellation while consuming an HTTP error body", async () => {
+  const controller = new AbortController();
+  const aborted = new DOMException("Aborted", "AbortError");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => ({
+      ok: false,
+      status: 409,
+      json: async () => {
+        controller.abort();
+        throw aborted;
+      },
+    })),
+  );
+  await expect(getWorkTask("task-one", controller.signal)).rejects.toBe(aborted);
+});

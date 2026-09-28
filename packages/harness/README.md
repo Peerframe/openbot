@@ -68,13 +68,22 @@ environment and actual engine/replay checks in the [repository map](../../docs/R
 
 ```sh
 packages/harness/scripts/bootstrap-quality.sh
+packages/harness/scripts/quality.sh --core
+# Only changes to optional Temporal or control adapters need the Worker type environment:
 OPENBOT_CONTROL_PYTHON=python3.12 sh apps/server-python/scripts/bootstrap-worker.sh
 packages/harness/scripts/quality.sh
 ```
 
-One Ruff lint/format entry and one mypy entry cover the core, example and real control adapter.
-The Worker interpreter supplies optional SDK types; it is not installed into the base runtime.
-`check-boundaries.py` rejects control/DB/provider imports and private consumer imports. New Python
+One Ruff/mypy tool environment serves both profiles. `--core` uses the locked base test interpreter
+and checks ordinary core/examples without Worker or database dependencies. The existing optional
+Temporal guard is isolated in `temporal_guard.py`; that file and `temporal_agent.py` are checked
+against the real SDK in the default `--all` profile, along with control factories, tool observations,
+and the real read/web adapters. No missing-import suppression or replacement SDK stub is used.
+The full Worker profile remains mandatory in CI and for changes to those integrations.
+`check-boundaries.py` recursively scans declared source roots, excludes local environments/builds,
+and rejects control/DB/provider imports and private consumer imports. The existing optional public
+module is declared in `tool.openbot.public-modules`; each module's `__all__` owns its exports.
+Exceptions match package-relative paths, so nested names cannot inherit them. New Python
 modules have a 400-line review threshold, `contracts.py` 300; four existing lifecycle/wire modules
 have individually explained fixed caps in pyproject. These are reviewed exceptions, not a refreshed
 baseline for new violations. Test/format changes do not change authorization or budget semantics.

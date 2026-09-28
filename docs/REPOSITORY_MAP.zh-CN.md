@@ -59,7 +59,8 @@ Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README�
 - Python HTTP 当前用 [work routes](../apps/server-python/src/openbot_server/work_routes.py) 与
   [公共 Work DTO](../apps/server-python/src/openbot_server/work_models.py)显式投影；TS 消费者是
   [work-api](../apps/web/src/work-api.ts)、[测试](../apps/web/src/work-api.test.ts)与
-  [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx)。Work snapshot 已接入 Python→TS 生成类型，命令见文末。
+  [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx)。Work 创建／读取／取消的请求、响应和错误
+  已接入 Python→TS 生成类型，命令见文末。
 - Runtime wire：[控制校验](../apps/server-python/src/openbot_server/runtime_wire.py) ↔
   [核心 wire](../packages/harness/src/openbot_agent_runtime/wire.py)；
   [比较脚本](../apps/server-python/scripts/compare-runtime-wire.mjs)对照冻结 TS oracle，不能把它当活跃 Server。
@@ -107,16 +108,17 @@ Schema 变化使用 `npm run migration:plan --workspace @openbot/db -- --name de
 
 ### 安装物与 Work HTTP 贡献检查
 
-用 `npm run harness:check`／`npm run harness:wheel` 和包内 `scripts/quality.sh`。
+用 `npm run harness:check`／`npm run harness:wheel`；普通核心在 `bootstrap-quality.sh` 后运行
+包内 `scripts/quality.sh --core`，默认 `quality.sh` 增加真实 Temporal／控制类型并需要 Worker 环境。
 `sh apps/server-python/scripts/bootstrap-worker.sh` 把同一 wheel 安装到 Worker 环境。
 构建／质量／产品依赖有独立精确锁，见[harness 设置](../packages/harness/README.zh-CN.md)。
 
-Work snapshot 的真实 HTTP 响应由 `work_models.py` 经 `work_routes.py` 定义。
+Work 创建／读取／取消的真实请求、snapshot 响应和错误由 `work_models.py` 经 `work_routes.py` 定义。
 `npm run contracts:generate` 生成[消费类型](../apps/web/src/generated/work-contract.ts)，
 `npm run contracts:check` 检查新鲜度；[work-api](../apps/web/src/work-api.ts)实际引用类型并保留 Zod 验证。
-准备控制层基础 `.venv` 后运行
-`npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts`，验证真实 Python HTTP
-序列化及状态到 Web 的兼容性，无需 DB 或模型。Node wire 契约仍归 `packages/protocol`。
+先用 `apps/server-python/scripts/bootstrap.sh` 准备控制层基础环境，再运行 `npm run contracts:test`，
+该命令会构建冷环境缺少的共享依赖，验证真实 Python HTTP 序列化及状态到 Web 的兼容性。
+直接调用 Vitest 依赖已有构建输出；正式命令无需 DB 或模型。Node wire 契约仍归 `packages/protocol`。
 
 ### CI 选择与安装物资格
 

@@ -58,13 +58,19 @@ bootstrap 把锁定外部依赖和本地 wheel 装入 `.venv`；构建工具单�
 
 ```sh
 packages/harness/scripts/bootstrap-quality.sh
+packages/harness/scripts/quality.sh --core
+# 改动可选 Temporal 或控制适配器时，再准备 Worker 类型环境：
 OPENBOT_CONTROL_PYTHON=python3.12 sh apps/server-python/scripts/bootstrap-worker.sh
 packages/harness/scripts/quality.sh
 ```
 
-仅一个 Ruff lint/format 入口和一个 mypy 入口，覆盖核心、范例与真实控制适配器；可选 SDK 类型
-由 Worker 解释器提供，不混入基础运行依赖。依赖检查拒绝控制／DB／Provider 反向导入和消费者
-使用内部模块。新 Python 模块评审阈值 400 行、契约 300 行；四个现有生命周期／wire 模块在
+同一 Ruff/mypy 工具环境提供两个范围。`--core` 用锁定的基础测试解释器检查普通核心与范例，
+无需 Worker 或数据库。现有 Temporal 防护移入 `temporal_guard.py`，该文件与 `temporal_agent.py`
+在默认 `--all` 范围用真实 SDK 检查，同时覆盖控制工厂、工具观察、真实读取和 Web 适配器；不使用
+缺失导入豁免或虚拟 SDK 类型。CI 与集成改动仍必需完整范围。依赖检查拒绝反向导入和消费者
+使用内部模块。扫描递归覆盖声明的源码根，排除环境与构建目录；公开子模块在
+`tool.openbot.public-modules` 声明，并用各自 `__all__` 定义导出。例外按包内相对路径匹配，
+嵌套同名文件不能继承豁免。新 Python 模块评审阈值 400 行、契约 300 行；四个现有生命周期／wire 模块在
 pyproject 单列原因和固定上限，不自动刷新 baseline 接受新违规。
 
 版本依据见[现有研究](RESEARCH.md#10-c2-installed-harness-and-contributor-tools-2026-09-27)，

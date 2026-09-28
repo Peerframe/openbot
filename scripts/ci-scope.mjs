@@ -90,15 +90,26 @@ export function selectChecks(files, graph, { full = false } = {}) {
     if (typeof file !== "string" || !file || file.startsWith("/") || file.split("/").includes(".."))
       throw new Error("Changed paths must be repository-relative.");
     if (
-      /(^|\/)AGENTS(?:\.[^/]+)?\.md$/.test(file) ||
-      file.startsWith(".agents/") ||
-      /(^|\/)prompts?\//.test(file) ||
+      /^(?:(?:apps|packages|providers)\/[^/]+\/|tests\/oracles\/legacy-server\/)?AGENTS(?:\.[^/]+)?\.md$/.test(
+        file,
+      ) ||
+      /^\.agents\/skills\/[^/]+\/SKILL\.md$/.test(file) ||
+      /^docs\/prompts?\/[^/]+\.md$/.test(file) ||
       file === ".github/PULL_REQUEST_TEMPLATE.md"
     ) {
       reasons.push(`Contributor behavior: ${file}`);
       continue;
     }
-    if (/\.md$/.test(file) && !file.startsWith(".github/")) continue;
+    // Prose has explicit locations. Markdown below runtime/resource/generator roots is an input.
+    // New executable skill helpers and unknown paths fail conservatively into the full lane.
+    if (
+      /^docs\/(?!prompts?\/).*\.md$/.test(file) ||
+      /^[^/]+\.md$/.test(file) ||
+      /^(?:apps|packages|providers|experiments|deploy)\/[^/]+\/(?:README(?:\.[^/]+)?|RESEARCH|THIRD_PARTY_NOTICES)\.md$/.test(
+        file,
+      )
+    )
+      continue;
     if (
       /(^|\/)(package(?:-lock)?\.json|pyproject\.toml|requirements[^/]*\.(?:lock|txt)|distribution\.lock|[^/]*config[^/]*|Dockerfile[^/]*)$/.test(
         file,
@@ -131,6 +142,8 @@ export function selectChecks(files, graph, { full = false } = {}) {
       file.startsWith("experiments/work-journey/") ||
       file.startsWith("experiments/linux-execution/")
     ) {
+      // browser_a1 imports these sibling helpers and its boundary suite verifies their hashes.
+      if (file.startsWith("experiments/linux-execution/")) rootChecks.add("test:browser:boundary");
       python();
       continue;
     }
@@ -149,7 +162,7 @@ export function selectChecks(files, graph, { full = false } = {}) {
     }
     // These Web files participate in the actual Python HTTP → TypeScript qualification.
     if (
-      /^apps\/web\/src\/(?:work-api(?:\.test)?|api)\.ts$/.test(file) ||
+      /^apps\/web\/src\/(?:work-api(?:\.test)?|native-task-api(?:\.test)?|api)\.ts$/.test(file) ||
       file.startsWith("apps/web/conformance/")
     )
       selected.add("harness");

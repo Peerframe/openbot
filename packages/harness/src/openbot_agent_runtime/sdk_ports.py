@@ -15,10 +15,10 @@ validation is owned by :mod:`openbot_agent_runtime.catalog`.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Any, Final
 
 import pydantic_ai
-from pydantic_ai.exceptions import UserError
 from pydantic_ai.messages import ModelMessage, ModelMessagesTypeAdapter, ModelResponse, ToolCallPart
 from pydantic_ai.models import Model, ModelRequestParameters
 from pydantic_ai.settings import ModelSettings
@@ -28,21 +28,17 @@ from pydantic_core import SchemaValidator, core_schema
 
 from .bounds import is_stream_like, json_utf8_size
 from .catalog import ToolCatalog
-from .contracts import ModelStepRequest, RuntimeLimits, ToolCallRequest, ToolDescriptor
+from .contracts import (
+    ModelStepPort,
+    ModelStepRequest,
+    RuntimeLimits,
+    ToolCallRequest,
+    ToolDescriptor,
+    ToolPort,
+)
 from .errors import FailureReason, RuntimeFailure
 from .guard import RunGuard
-
-
-def _refuse_inline_temporal_tool() -> None:
-    # TemporalDurability 2.47.0 does not wrap arbitrary AbstractToolset leaves. Without a
-    # constructor-time DynamicToolset, this port would execute in replayable workflow code.
-    # Optional import belongs at execution, not ordinary package import. Base consumers stay lean.
-    try:
-        from temporalio import workflow as temporal_workflow
-    except ImportError:
-        return
-    if temporal_workflow.in_workflow():
-        raise UserError("OpenBot tool ports require a registered Temporal tool activity")
+from .temporal_guard import refuse_inline_temporal_tool
 
 
 PASSTHROUGH_ARGS_VALIDATOR: Final = SchemaValidator(schema=core_schema.any_schema())
@@ -72,7 +68,7 @@ class PortModel(Model):
     def __init__(
         self,
         *,
-        step_port: Any,
+        step_port: ModelStepPort,
         catalog: ToolCatalog,
         guard: RunGuard,
         limits: RuntimeLimits,
@@ -155,7 +151,7 @@ class PortToolset(AbstractToolset[object]):
         self,
         *,
         catalog: ToolCatalog,
-        tool_port: Any,
+        tool_port: ToolPort,
         guard: RunGuard,
         limits: RuntimeLimits,
     ) -> None:
@@ -170,7 +166,7 @@ class PortToolset(AbstractToolset[object]):
         return "openbot-ports"
 
     async def get_tools(self, ctx: Any) -> dict[str, ToolsetTool[object]]:
-        _refuse_inline_temporal_tool()
+        refuse_inline_temporal_tool()
         self._guard.check_sync("tool catalog")
         return {
             name: ToolsetTool(
@@ -185,7 +181,7 @@ class PortToolset(AbstractToolset[object]):
     async def call_tool(
         self, name: str, tool_args: dict[str, Any], ctx: Any, tool: ToolsetTool[object]
     ) -> Any:
-        _refuse_inline_temporal_tool()
+        refuse_inline_temporal_tool()
         guard = self._guard
         guard.check_sync("tool call")
         call_id = ctx.tool_call_id
@@ -234,7 +230,7 @@ def _bounded_messages(
     return tuple(messages)
 
 
-def _bounded_tool_result(result: Any, name: str, limit: int, guard: RunGuard) -> Any:
+def _bounded_tool_result(result: object, name: str, limit: int, guard: RunGuard) -> object:
     """Require exactly one JSON value within the byte bound. Never truncate."""
     if is_stream_like(result):
         raise guard.fail(
@@ -242,8 +238,11 @@ def _bounded_tool_result(result: Any, name: str, limit: int, guard: RunGuard) ->
             f"tool {name!r} returned a stream; one completed JSON value is required",
         )
     try:
-        size = json_utf8_size(result)
-    except (TypeError, ValueError) as exc:
+        # The host can mutate its result during progress awaits. Validate the detached value
+        # actually handed to the SDK so later host changes cannot bypass this byte ceiling.
+        payload = deepcopy(result)
+        size = json_utf8_size(payload)
+    except (TypeError, ValueError, RecursionError) as exc:
         raise guard.fail(
             FailureReason.TOOL_RESULT_INVALID,
             f"tool {name!r} returned a value with no JSON form: {type(exc).__name__}",
@@ -253,7 +252,7 @@ def _bounded_tool_result(result: Any, name: str, limit: int, guard: RunGuard) ->
             FailureReason.TOOL_RESULT_LIMIT,
             f"tool {name!r} returned {size} bytes, above the limit of {limit}",
         )
-    return result
+    return payload
 
 
 __all__ = [

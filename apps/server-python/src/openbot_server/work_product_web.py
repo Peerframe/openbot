@@ -13,7 +13,8 @@ from .work_deferred import DeferredPlan, EffectServices
 from .work_engine_binding import assert_accepted_workflow_in_transaction
 from .work_temporal_effect import ToolRequest
 from .work_temporal_start import WorkRuntimeContext
-from .work_tool_results import ToolResponseAdapter, ToolResponseVerifier
+from .work_tool_results import ToolResults, ToolResponseAdapter, ToolResponseVerifier
+from pydantic import JsonValue
 from .work_values import InvalidWork, WorkConflict, canonical, text
 
 _SCOPE={'expected_namespace','expected_queue','expected_workflow_type'}
@@ -67,7 +68,7 @@ class WorkWebAdapter:
     use current Owner-controlled config, prefer Tavily if configured, and bind Kimi to the exact
     currently selected model configuration. None means no search. No environment is consulted.
     """
-    def __init__(self,store,client,scope,results,*,web=None,search_configuration=None,history_reset_on_correction=False):
+    def __init__(self,store,client,scope,results: ToolResults,*,web=None,search_configuration=None,history_reset_on_correction=False):
         if type(scope) is not dict or set(scope)!=_SCOPE:raise InvalidWork('invalid_work_web_scope')
         for value in scope.values():text(value,256)
         if results.store is not store:raise InvalidWork('work_web_results_store_changed')
@@ -206,7 +207,7 @@ class WorkWebAdapter:
             selected=await self._search(db,context)
             return dict(sourceUrls=task_source_urls(task['objective']),searchProvider=selected.provider if selected else None,maxWebCalls=MAX_WEB_CALLS)
 
-    async def load(self,context,intent):
+    async def load(self,context,intent) -> EffectServices:
         self._intent(intent)
         async def invoke(action_id,original):return await self.invoke(context,action_id,original)
         return EffectServices(ToolResponseAdapter(self.results,invoke,task_id=context.task_id,run_id=context.run_id,
@@ -226,7 +227,7 @@ class WorkWebAdapter:
         if selected is not None:return await self.web.search(intent['arguments'],selected,before_send=before_send)
         return await self.web.read(effect['selection']['url'],before_send=before_send)
 
-    async def load_result(self,context,row):
+    async def load_result(self,context,row) -> JsonValue:
         intent=row['intent'];self._intent(intent)
         async def check():
             facts,activity_id=await self._facts(context)
