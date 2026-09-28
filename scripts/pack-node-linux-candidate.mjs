@@ -1,3 +1,4 @@
+import { parseArgumentPairs } from "./argument-pairs.ts";
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   lstat,
@@ -214,20 +215,10 @@ function validateArchiveMembers(source, candidateName) {
 }
 
 function parseArguments(arguments_) {
-  const values = new Map();
-  for (let index = 0; index < arguments_.length; index += 2) {
-    const key = arguments_[index];
-    const value = arguments_[index + 1];
-    if (
-      !key?.startsWith("--") ||
-      value === undefined ||
-      value.startsWith("--") ||
-      values.has(key)
-    ) {
-      throw new Error("Archive arguments must be unique --name value pairs.");
-    }
-    values.set(key, value);
-  }
+  const values = parseArgumentPairs(
+    arguments_,
+    "Archive arguments must be unique --name value pairs.",
+  );
   const allowed = new Set(["--candidate", "--dpkg-query", "--gnu-tar", "--out-dir", "--xz"]);
   for (const key of values.keys()) {
     if (!allowed.has(key)) throw new Error(`Unknown archive argument: ${key}.`);

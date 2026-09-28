@@ -1,3 +1,4 @@
+import { parseArgumentPairs } from "./argument-pairs.ts";
 import { execFileSync } from "node:child_process";
 import { mkdtemp, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -174,20 +175,10 @@ function run(command, args, cwd = repositoryRoot) {
 }
 
 function parseArguments(arguments_) {
-  const values = new Map();
-  for (let index = 0; index < arguments_.length; index += 2) {
-    const key = arguments_[index];
-    const value = arguments_[index + 1];
-    if (
-      !key?.startsWith("--") ||
-      value === undefined ||
-      value.startsWith("--") ||
-      values.has(key)
-    ) {
-      throw new Error("Release arguments must be unique --name value pairs.");
-    }
-    values.set(key, value);
-  }
+  const values = parseArgumentPairs(
+    arguments_,
+    "Release arguments must be unique --name value pairs.",
+  );
   const allowed = new Set([
     "--arch",
     "--node-archive",

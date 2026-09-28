@@ -123,6 +123,9 @@ test("contracts, generators, locks and config conservatively include every quali
   for (const file of [
     "apps/server-python/src/openbot_server/work_models.py",
     "packages/work-contract-generator/generate.mjs",
+    "scripts/argument-pairs.ts",
+    "scripts/argument-pairs.test.ts",
+    "scripts/tsconfig.json",
     "apps/web/src/generated/work-contract.ts",
     "package-lock.json",
     "packages/harness/pyproject.toml",

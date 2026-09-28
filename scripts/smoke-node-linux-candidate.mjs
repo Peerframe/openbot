@@ -1,3 +1,4 @@
+import { parseArgumentPairs } from "./argument-pairs.ts";
 import { spawn } from "node:child_process";
 import { constants } from "node:fs";
 import { access, lstat, mkdtemp, mkdir, rm } from "node:fs/promises";
@@ -182,20 +183,10 @@ function closeGateway(gateway) {
 }
 
 function parseArguments(arguments_) {
-  const values = new Map();
-  for (let index = 0; index < arguments_.length; index += 2) {
-    const key = arguments_[index];
-    const value = arguments_[index + 1];
-    if (
-      !key?.startsWith("--") ||
-      value === undefined ||
-      value.startsWith("--") ||
-      values.has(key)
-    ) {
-      throw new Error("Smoke arguments must be unique --name value pairs.");
-    }
-    values.set(key, value);
-  }
+  const values = parseArgumentPairs(
+    arguments_,
+    "Smoke arguments must be unique --name value pairs.",
+  );
   for (const key of values.keys()) {
     if (key !== "--arch" && key !== "--candidate") {
       throw new Error(`Unknown smoke argument: ${key}.`);
