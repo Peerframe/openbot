@@ -1,5 +1,5 @@
 #!/bin/sh
-# Package checks. Never installs anything: a missing environment is a failure.
+# Offline package checks: rebuild/install the local wheel; missing locked environments fail.
 set -eu
 
 here=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)

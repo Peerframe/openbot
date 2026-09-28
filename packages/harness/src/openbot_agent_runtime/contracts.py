@@ -191,7 +191,7 @@ class ModelStepPort(Protocol):
 class ToolPort(Protocol):
     """Trusted host adapter. Performs the side effect; the unit has no local effects."""
 
-    def __call__(self, request: ToolCallRequest) -> Awaitable[Any]: ...
+    def __call__(self, request: ToolCallRequest) -> Awaitable[object]: ...
 
 
 class AuthorityPort(Protocol):

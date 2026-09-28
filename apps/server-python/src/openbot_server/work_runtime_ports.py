@@ -38,11 +38,12 @@ two Activities.
 
 from __future__ import annotations
 
+import asyncio
 import inspect
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass, replace
-from typing import Any
+from temporalio.client import Client
 
 from openbot_agent_runtime import ToolCatalog
 from openbot_agent_runtime import (
@@ -58,7 +59,7 @@ from openbot_agent_runtime import PortModel, PortToolset
 
 from .work_store import PostgresWorkStore
 from .work_temporal_activity import bind_current_activity
-from .work_temporal_start import load_current_activity_task
+from .work_temporal_start import WorkRuntimeContext, load_current_activity_task
 from .work_values import InvalidWork, WorkConflict, text
 
 __all__ = ["WorkRuntimeDeps", "WorkRuntimePortFactory", "WorkRuntimeServices"]
@@ -113,12 +114,14 @@ class WorkRuntimePortFactory:
     def __init__(
         self,
         store: PostgresWorkStore,
-        client: Any,
+        client: Client,
         *,
-        expected_namespace,
-        expected_queue,
-        expected_workflow_type,
-        load_services,
+        expected_namespace: str,
+        expected_queue: str,
+        expected_workflow_type: str,
+        load_services: Callable[
+            [WorkRuntimeContext], WorkRuntimeServices | Awaitable[WorkRuntimeServices]
+        ],
         limits: RuntimeLimits = RuntimeLimits(),
         deadline_seconds: float = 30,
     ) -> None:
@@ -198,6 +201,30 @@ class WorkRuntimePortFactory:
             progress_events_limit=self._limits.progress_events,
             deadline_seconds=self._deadline_seconds,
         )
+        try:
+            async with asyncio.timeout_at(guard.deadline_at):
+                return await self._load_prepared(deps, guard)
+        except TimeoutError as error:
+            if not guard.deadline_passed():
+                raise
+            raise guard.fail(
+                FailureReason.DEADLINE_EXCEEDED, "runtime preparation expired"
+            ) from error
+        except asyncio.CancelledError:
+            guard.note_cancellation()
+            raise
+
+    async def _load_prepared(
+        self, deps: WorkRuntimeDeps, guard: RunGuard
+    ) -> tuple[RunGuard, WorkRuntimeServices, ToolCatalog, ToolCatalog]:
+        def check(where: str) -> None:
+            guard.check_sync(where)
+            # A trusted loader must not turn swallowed caller cancellation into a usable port.
+            task = asyncio.current_task()
+            if task is not None and task.cancelling():
+                guard.note_cancellation()
+                raise asyncio.CancelledError
+
         context = await load_current_activity_task(
             self._store,
             self._client,
@@ -210,9 +237,9 @@ class WorkRuntimePortFactory:
         # A context loader that outlived the deadline is refused here, and the actual current
         # binding is re-derived before any service is assembled: cancellation, revocation or a
         # superseding Activity during that awaited load must not reach load_services.
-        guard.check_sync("context load")
+        check("context load")
         await self._assert_scope(deps)
-        guard.check_sync("binding before services")
+        check("binding before services")
         if deps.correction_token is not None:
             from .work_corrections import CorrectionStore
 
@@ -220,13 +247,14 @@ class WorkRuntimePortFactory:
                 context.task_id, context.run_id, deps.correction_token
             )
             context = replace(context, correction_token=deps.correction_token)
+            check("correction load")
         outcome = self._load_services(context)
         services = await outcome if inspect.isawaitable(outcome) else outcome
         services = _validated_services(services)
         # The same deadline still applies after the service loader; it is never restarted.
-        guard.check_sync("service load")
+        check("service load")
         await self._assert_scope(deps)
-        guard.check_sync("binding after services")
+        check("binding after services")
         model_catalog, inline_catalog = _detached_catalogs(services, self._limits)
         # The correction profile may discard a stale, unfinished model segment. It must never
         # contain inline effects, including after a Worker/configuration change.
@@ -274,7 +302,7 @@ def _validated_deps(deps: WorkRuntimeDeps) -> WorkRuntimeDeps:
     return deps
 
 
-def _validated_services(services: Any) -> WorkRuntimeServices:
+def _validated_services(services: object) -> WorkRuntimeServices:
     """Refuse anything but the declared services shape with two callable callbacks."""
     if not isinstance(services, WorkRuntimeServices):
         raise RuntimeFailure(

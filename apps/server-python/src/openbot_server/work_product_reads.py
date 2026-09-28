@@ -10,6 +10,7 @@ import hashlib
 import json
 
 import psycopg
+from pydantic import JsonValue
 from openbot_agent_runtime import ToolDescriptor
 
 from .control_errors import ControlError
@@ -24,7 +25,7 @@ from .work_engine_binding import assert_accepted_workflow_in_transaction
 from . import work_temporal_activity as binding
 from .work_temporal_effect import ToolRequest
 from .work_temporal_start import WorkRuntimeContext, load_current_activity_task
-from .work_tool_results import ToolResponseAdapter, ToolResponseVerifier, encode_result
+from .work_tool_results import ToolResults, ToolResponseAdapter, ToolResponseVerifier, encode_result
 from .work_values import InvalidWork, WorkConflict, canonical, text
 
 TOOLS = frozenset(('read_channel_context', 'read_task_status', 'read_attachment', 'list_channel_bots'))
@@ -86,7 +87,7 @@ def _arguments(tool, value):
         _uuid(identity)
     except ValueError:
         raise InvalidWork('invalid_attachment_identity') from None
-    result = {'attachmentId': identity}
+    result: dict[str, str | int] = {'attachmentId': identity}
     for field, default, low, high in (('offset', 0, 0, 262144), ('limit', 12000, 1, 16000)):
         number = value.get(field, default)
         if type(number) not in (int, float) or not low <= number <= high or number != int(number):
@@ -125,7 +126,7 @@ def _page(item, value, truncated, request):
 
 
 class ProductWorkReads:
-    def __init__(self, store, client, scope, files, results, *, history_reset_on_correction=True):
+    def __init__(self, store, client, scope, files, results: ToolResults, *, history_reset_on_correction=True):
         if (type(scope) is not dict or set(scope) != _SCOPE or results.store is not store
                 or type(history_reset_on_correction) is not bool):
             raise InvalidWork('invalid_read_scope')
@@ -302,7 +303,7 @@ class ProductWorkReads:
                 return DeferredPlan(effect, 0, requires_approval=False)
 
     @_guard
-    async def load(self, context, intent):
+    async def load(self, context, intent) -> EffectServices:
         self._intent(intent)
         if type(context) is not WorkRuntimeContext:
             raise WorkConflict('read_context_required')
@@ -393,7 +394,8 @@ class ProductWorkReads:
         rows = await (await db.execute("SELECT b.id,left(b.name,160) AS name,left(b.role,161) AS role,left(b.description,240) AS description "
             "FROM bots b JOIN channel_bots cb ON cb.bot_id=b.id WHERE cb.channel_id=%s AND NOT (b.id=ANY(%s)) "
             "AND b.computer_profile IN ('none','model') ORDER BY b.name,b.id LIMIT 33", (source['channelId'],excluded))).fetchall()
-        catalog, truncated = [], len(rows) > 32
+        catalog: list[dict[str, str]] = []
+        truncated = len(rows) > 32
         for row in rows[:32]:
             text(row['id'],128)
             if not row['role'].strip(_ECMASCRIPT_WHITESPACE) or len(row['role']) > 160:
@@ -492,7 +494,7 @@ class ProductWorkReads:
         return deepcopy(result)
 
     @_guard
-    async def load_result(self, context, row):
+    async def load_result(self, context, row) -> JsonValue:
         if (type(context) is not WorkRuntimeContext or type(row) is not dict or row.get('status') != 'applied'
                 or (row.get('task_id'), row.get('run_id')) != (context.task_id,context.run_id)):
             raise WorkConflict('read_result_scope_changed')

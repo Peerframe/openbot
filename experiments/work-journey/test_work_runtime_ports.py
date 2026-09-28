@@ -367,6 +367,61 @@ class FactoryTestCase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(raised.exception.reason, FailureReason.DEADLINE_EXCEEDED)
         self.loader.assert_not_awaited()
 
+    async def test_hanging_initialization_is_cancelled_at_its_deadline(self):
+        for stage in ('context', 'binding', 'services'):
+            with self.subTest(stage=stage):
+                factory = self.make_factory(deadline_seconds=0.02)
+                closed = asyncio.Event()
+
+                async def hang(*_args, **_kwargs):
+                    try:
+                        await asyncio.Event().wait()
+                    finally:
+                        closed.set()
+
+                target = {'context': self.loaded, 'binding': self.bound, 'services': self.loader}[stage]
+                target.side_effect = hang
+                with self.assertRaises(RuntimeFailure) as raised:
+                    await asyncio.wait_for(factory.model_factory(WorkRuntimeDeps(TASK_ID, RUN_ID)), 1)
+                self.assertEqual(raised.exception.reason, FailureReason.DEADLINE_EXCEEDED)
+                self.assertTrue(closed.is_set())
+
+    async def test_service_cannot_swallow_external_cancellation_and_return_a_port(self):
+        factory = self.make_factory()
+        started = asyncio.Event()
+        closed = asyncio.Event()
+
+        async def swallow(_context):
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                return services()
+            finally:
+                closed.set()
+
+        self.loader.side_effect = swallow
+        task = asyncio.create_task(factory.model_factory(WorkRuntimeDeps(TASK_ID, RUN_ID)))
+        await asyncio.wait_for(started.wait(), 1)
+        task.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await task
+        self.assertTrue(closed.is_set())
+
+    async def test_service_cannot_swallow_deadline_cancellation_and_return_late(self):
+        factory = self.make_factory(deadline_seconds=0.02)
+
+        async def swallow(_context):
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                return services()
+
+        self.loader.side_effect = swallow
+        with self.assertRaises(RuntimeFailure) as raised:
+            await asyncio.wait_for(factory.model_factory(WorkRuntimeDeps(TASK_ID, RUN_ID)), 1)
+        self.assertEqual(raised.exception.reason, FailureReason.DEADLINE_EXCEEDED)
+
     async def test_service_loader_that_outlives_the_deadline_is_refused(self):
         factory = self.make_factory(deadline_seconds=0.05)
 

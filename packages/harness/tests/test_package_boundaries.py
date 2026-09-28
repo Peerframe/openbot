@@ -131,7 +131,7 @@ def test_scans_nested_sources_without_basename_exemptions(nested_repo, path, sou
 
 
 def test_public_submodule_declarations_and_generated_exclusions(nested_repo):
-    nested_repo("packages/harness/src/openbot_agent_runtime/sdk_ports.py", "import temporalio\n")
+    nested_repo("packages/harness/src/openbot_agent_runtime/temporal_guard.py", "import temporalio\n")
     nested_repo("packages/harness/src/openbot_agent_runtime/executor.py", "# line\n" * 440)
     nested_repo(
         "packages/harness/examples/nested/example.py",

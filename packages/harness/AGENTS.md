@@ -16,5 +16,7 @@ Use `scripts/bootstrap.sh`, then `scripts/check.sh` from this directory for the 
 core suite. The map lists focused `-k` selectors and actual consumers. Optional Temporal integration
 requires its separate Worker environment; base tests are not replay evidence. Keep dependencies and
 lock/environment checks intact. Use declared public exports; optional public modules are listed in
-`pyproject.toml` and declare their own `__all__`. Temporal remains explicit. Run `scripts/quality.sh` for
+`pyproject.toml` and declare their own `__all__`. Temporal remains explicit. Run `scripts/quality.sh --core`
+for ordinary core changes after the core/quality bootstraps. Run default `scripts/quality.sh` for
+the Worker/control integration profile with actual SDK types; CI retains this full gate. Both run
 Ruff, mypy and import/size boundaries. Do not add build/test tools to runtime closures.

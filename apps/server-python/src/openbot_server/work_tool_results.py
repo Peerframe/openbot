@@ -4,6 +4,13 @@ import asyncio
 import hashlib
 import json
 from dataclasses import dataclass
+from collections.abc import Awaitable, Callable
+from typing import TypedDict
+
+from pydantic import JsonValue
+
+from .work_store import PostgresWorkStore
+from .work_files import LocalWorkFiles
 
 from .work_effects import VerifiedOutcome
 from .work_values import InvalidWork, WorkConflict, WorkNotFound, canonical
@@ -14,7 +21,7 @@ CODEC = "openbot-tool-json-v1"
 MAX_RESULT_BYTES = 128 * 1024
 
 
-def encode_result(value):
+def encode_result(value: object) -> tuple[bytes, str]:
     # Retain the reviewed tool JSON contract, including long/empty keys and 64-level depth.
     # The stricter Action-intent codec must not discard a valid already-received response.
     try:
@@ -27,7 +34,7 @@ def encode_result(value):
     return data, hashlib.sha256(data).hexdigest()
 
 
-def decode_result(data):
+def decode_result(data: bytes) -> JsonValue:
     try:
         value = json.loads(data)
         encoded, _ = encode_result(value)
@@ -38,18 +45,32 @@ def decode_result(data):
     return value
 
 
+class ToolResultMetadata(TypedDict):
+    action_id: str
+    task_id: str
+    run_id: str
+    intent_digest: str
+    codec: str
+    sha256: str
+    size_bytes: int
+
+
+ToolInvoker = Callable[[str, dict[str, JsonValue]], Awaitable[object]]
+"""One already-admitted invocation; returned JSON is observation, never success authority."""
+
+
 @dataclass(frozen=True)
 class ToolObservation:
-    value: object
-    metadata: dict
+    value: JsonValue
+    metadata: ToolResultMetadata
 
 
-def evidence(action_id, digest):
+def evidence(action_id: str, digest: str) -> dict[str, str]:
     return dict(source="control-tool-observation", reference=action_id, sha256=digest)
 
 
 class ToolResults:
-    def __init__(self, store, files):
+    def __init__(self, store: PostgresWorkStore, files: LocalWorkFiles) -> None:
         self.store, self.files = store, files
 
     @staticmethod
@@ -69,19 +90,17 @@ class ToolResults:
             raise WorkConflict("tool_result_intent_mismatch")
 
     @staticmethod
-    def _metadata(row):
-        return {
-            key: row[key]
-            for key in (
-                "action_id",
-                "task_id",
-                "run_id",
-                "intent_digest",
-                "codec",
-                "sha256",
-                "size_bytes",
-            )
-        }
+    def _metadata(row) -> ToolResultMetadata:
+        # Explicit projection preserves the SQL insertion order and the retained receipt keys.
+        return ToolResultMetadata(
+            action_id=row["action_id"],
+            task_id=row["task_id"],
+            run_id=row["run_id"],
+            intent_digest=row["intent_digest"],
+            codec=row["codec"],
+            sha256=row["sha256"],
+            size_bytes=row["size_bytes"],
+        )
 
     @staticmethod
     def _settled(action, metadata):
@@ -91,9 +110,11 @@ class ToolResults:
         ):
             raise WorkConflict("tool_result_settlement_conflict")
 
-    async def save(self, action_id, *, task_id, run_id, intent_digest, value):
+    async def save(
+        self, action_id: str, *, task_id: str, run_id: str, intent_digest: str, value: object
+    ) -> ToolResultMetadata:
         data, digest = encode_result(value)
-        metadata = dict(
+        metadata = ToolResultMetadata(
             action_id=action_id,
             task_id=task_id,
             run_id=run_id,
@@ -133,13 +154,17 @@ class ToolResults:
                 )
         return metadata
 
-    async def load(self, action_id, *, task_id, run_id, intent_digest):
+    async def load(
+        self, action_id: str, *, task_id: str, run_id: str, intent_digest: str
+    ) -> ToolObservation | None:
         async with self.store._transaction(trusted=True) as db:
             return await self.load_in_transaction(
                 db, action_id, task_id=task_id, run_id=run_id, intent_digest=intent_digest
             )
 
-    async def load_in_transaction(self, db, action_id, *, task_id, run_id, intent_digest):
+    async def load_in_transaction(
+        self, db, action_id: str, *, task_id: str, run_id: str, intent_digest: str
+    ) -> ToolObservation | None:
         """Read original bytes under caller-owned locks; never open a second Task transaction."""
         mapped = await (
             await db.execute("SELECT task_id FROM work_actions WHERE id=%s", (action_id,))
@@ -185,13 +210,21 @@ class ToolResponseAdapter:
     verified: a response (including an error result) proves only the invocation was observed.
     """
 
-    def __init__(self, results, invoke, *, task_id, run_id, intent_digest):
+    def __init__(
+        self,
+        results: ToolResults,
+        invoke: ToolInvoker,
+        *,
+        task_id: str,
+        run_id: str,
+        intent_digest: str,
+    ) -> None:
         if not callable(invoke):
             raise InvalidWork("tool_invoker_required")
         self.results, self.invoke = results, invoke
         self.scope = dict(task_id=task_id, run_id=run_id, intent_digest=intent_digest)
 
-    async def apply(self, action_id, intent):
+    async def apply(self, action_id: str, intent: dict[str, JsonValue]) -> None:
         if canonical(intent)[1] != self.scope["intent_digest"]:
             raise WorkConflict("tool_result_intent_mismatch")
         # Detect a wrongly assembled adapter before any callback, not only when saving its
@@ -201,16 +234,25 @@ class ToolResponseAdapter:
         value = await self.invoke(action_id, intent)
         await self.results.save(action_id, **self.scope, value=value)
 
-    async def lookup(self, action_id):
+    async def lookup(self, action_id: str) -> ToolResultMetadata | None:
         observed = await self.results.load(action_id, **self.scope)
         return None if observed is None else observed.metadata
 
 
 class ToolResponseVerifier:
-    def __init__(self, results):
+    def __init__(self, results: ToolResults) -> None:
         self.results = results
 
-    async def verify(self, *, action_id, task_id, run_id, intent_digest, intent, lookup):
+    async def verify(
+        self,
+        *,
+        action_id: str,
+        task_id: str,
+        run_id: str,
+        intent_digest: str,
+        intent: dict[str, JsonValue],
+        lookup: object,
+    ) -> VerifiedOutcome | None:
         observed = await self.results.load(
             action_id, task_id=task_id, run_id=run_id, intent_digest=intent_digest
         )

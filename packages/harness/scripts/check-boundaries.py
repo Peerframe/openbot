@@ -21,7 +21,7 @@ def imports(source: str, name: str) -> list[str]:
             modules = [node.module]
         for module in modules:
             top = module.split(".")[0]
-            optional = top == "temporalio" and name in {"temporal_agent.py", "sdk_ports.py"}
+            optional = top == "temporalio" and name in {"temporal_agent.py", "temporal_guard.py"}
             if (
                 top not in sys.stdlib_module_names | THIRD_PARTY | {"openbot_agent_runtime"}
                 and not optional

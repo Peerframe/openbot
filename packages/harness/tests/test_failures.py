@@ -171,6 +171,26 @@ async def test_an_oversize_tool_result_is_refused_rather_than_truncated() -> Non
     assert "128" in caught.value.detail
 
 
+async def test_completed_tool_result_is_detached_before_progress_can_mutate_it() -> None:
+    from pydantic_ai.messages import ToolReturnPart
+
+    value = {"nested": ["original"]}
+    model = ScriptedModelPort([call("search", {"query": "a"}, call_id="c1"), text("done")])
+    tools = RecordingToolPort(results={"search": value})
+
+    async def progress(stage, message):
+        if message == "Completed search.":
+            value["nested"].append("x" * 1000)
+
+    await execute_runtime(
+        request(tools=[descriptor()], limits=RuntimeLimits(tool_result_bytes=128)),
+        RuntimePorts(model=model, tool=tools, authority=Authority(), progress=progress),
+    )
+    results = [part.content for message in model.requests[1].messages
+               for part in message.parts if isinstance(part, ToolReturnPart)]
+    assert results == [{"nested": ["original"]}]
+
+
 async def test_oversize_final_output_is_refused() -> None:
     model = ScriptedModelPort([text("y" * 64)])
     limits = RuntimeLimits(output_bytes=16)
