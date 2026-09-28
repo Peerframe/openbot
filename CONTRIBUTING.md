@@ -87,7 +87,7 @@ npm run db:up
 npm run dev
 ```
 
-Keep this terminal open. `scripts/dev-python.mjs` verifies the locked Worker environment, builds
+Keep this terminal open. `scripts/dev-python.ts` verifies the locked Worker environment, builds
 the required shared packages through Turbo, then starts Python Server/Web.
 Open `http://localhost:5173` and sign in with the Owner password from `.env`; Server uses port
 `3001`. This is sufficient for frontend/control-plane development. Executing Work additionally needs explicit model settings and mTLS Temporal configuration;

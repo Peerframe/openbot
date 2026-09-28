@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 
-export async function assertFreshSourceCheckout(root) {
+export async function assertFreshSourceCheckout(root: string): Promise<void> {
   for (const directory of [root, join(root, "apps/web")]) {
     const files = await readdir(directory);
     assert(

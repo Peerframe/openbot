@@ -51,7 +51,7 @@ openbot/
 └── .github/
 ```
 
-`apps/server` is retired. `npm run dev` uses `scripts/dev-python.mjs`; containers and the supported
+`apps/server` is retired. `npm run dev` uses `scripts/dev-python.ts`; containers and the supported
 macOS arm64 local Desktop payload select Python product mode. Direct `serve.py` remains read-only
 unless configured. The runtime is the typed `packages/harness` wheel, installed by development and product hosts. The retained Node parser closure is required.
 Use the [development entry](../.agents/README.md) and [repository map](REPOSITORY_MAP.md) for current

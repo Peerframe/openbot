@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
-import { assertFreshSourceCheckout } from "./dev-startup-inputs.mjs";
+import { assertFreshSourceCheckout } from "./dev-startup-inputs.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 // biome-ignore lint/suspicious/noUndeclaredEnvVars: this uncached root driver runs outside Turbo and preserves npm's selected CLI.

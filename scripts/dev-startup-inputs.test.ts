@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import test from "node:test";
-import { assertFreshSourceCheckout } from "./dev-startup-inputs.mjs";
+import test, { type TestContext } from "node:test";
+import { assertFreshSourceCheckout } from "./dev-startup-inputs.ts";
 
-async function fixture(t) {
+async function fixture(t: TestContext): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "openbot-startup-inputs-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   for (const path of ["apps/web", "packages/harness/dist", "providers"])

@@ -40,7 +40,7 @@
 | `.agents` | 贡献者开发导航与仓库 skills |
 | `.github` | 仓库自动检查与协作配置 |
 
-`apps/server` 已退役。`npm run dev` 使用 `scripts/dev-python.mjs`；容器及受支持的 macOS arm64
+`apps/server` 已退役。`npm run dev` 使用 `scripts/dev-python.ts`；容器及受支持的 macOS arm64
 本地 Desktop 载荷选用 Python product 模式。直接启动 `serve.py` 未配置时仍只读。
 核心是 `packages/harness` 的 typed wheel，开发和产品宿主均安装此包。必要的 Node 解析闭包保留。
 定位当前源码/消费者/测试见[开发入口](../.agents/README.zh-CN.md)与[仓库地图](REPOSITORY_MAP.zh-CN.md)。
