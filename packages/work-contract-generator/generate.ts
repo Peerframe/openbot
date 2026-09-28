@@ -3,13 +3,21 @@ import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import openapiTS, { astToString } from "openapi-typescript";
 
+const argv = process.argv.slice(2);
+if (argv.length > 1 || argv.some((arg) => arg !== "--check")) {
+  throw new Error("Only --check is supported.");
+}
+
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const python = `${root}apps/server-python/.venv/bin/python`;
-const schema = JSON.parse(
-  execFileSync(python, ["-I", "apps/server-python/scripts/export-work-contract.py"], {
+// Let the existing OpenAPI parser validate the exported text; no unchecked JSON shape cast.
+const schema: string = execFileSync(
+  python,
+  ["-I", "apps/server-python/scripts/export-work-contract.py"],
+  {
     cwd: root,
     encoding: "utf8",
-  }),
+  },
 );
 const ast = await openapiTS(schema, { alphabetize: true, defaultNonNullable: false });
 const generated =
@@ -22,9 +30,7 @@ const formatted = execFileSync(
   ["format", "--stdin-file-path=work-contract.ts"],
   { cwd: root, input: generated, encoding: "utf8" },
 );
-if (process.argv.slice(2).length > 1 || process.argv.slice(2).some((arg) => arg !== "--check"))
-  throw new Error("Only --check is supported.");
-if (process.argv.includes("--check")) {
+if (argv.includes("--check")) {
   if ((await readFile(output, "utf8")) !== formatted)
     throw new Error("Work contract types are stale; run npm run contracts:generate.");
   console.log("Work HTTP generated types match the actual Python route and DTO.");

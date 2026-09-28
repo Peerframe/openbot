@@ -122,7 +122,7 @@ test("executable skill inputs cannot inherit a prose exemption", () => {
 test("contracts, generators, locks and config conservatively include every qualification", () => {
   for (const file of [
     "apps/server-python/src/openbot_server/work_models.py",
-    "packages/work-contract-generator/generate.mjs",
+    "packages/work-contract-generator/generate.ts",
     "scripts/argument-pairs.ts",
     "scripts/argument-pairs.test.ts",
     "scripts/tsconfig.json",

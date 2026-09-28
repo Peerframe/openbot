@@ -347,6 +347,38 @@ describe("Provider conformance runner", () => {
     ).rejects.toThrow("more than 256 scenarios");
   });
 
+  it.each([
+    "provider.declaration",
+    "provider.target-platform",
+    "provider.executable",
+    "target.evidence-level",
+    "target.real-device-metadata",
+  ])("refuses reserved check %s before any scenario lifecycle action", async (id) => {
+    const lifecycle: string[] = [];
+    await expect(
+      runProviderConformanceSuite(
+        suite({
+          scenarios: [
+            successfulScenario({
+              id,
+              setup: () => {
+                lifecycle.push("setup");
+              },
+              run: () => {
+                lifecycle.push("run");
+                return { status: "success", code: "done" };
+              },
+              cleanup: () => {
+                lifecycle.push("cleanup");
+              },
+            }),
+          ],
+        }),
+      ),
+    ).rejects.toThrow("invalid or reserved");
+    expect(lifecycle).toEqual([]);
+  });
+
   it("requires complete opaque metadata for real-device evidence", async () => {
     await expect(
       runProviderConformanceSuite(

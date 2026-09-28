@@ -8,6 +8,9 @@ import {
   nodeArchitectureSchema,
   nodePlatformSchema,
   providerConformanceCheckSchema,
+  providerConformanceCheckSeveritySchema,
+  providerConformanceCheckStatusSchema,
+  providerConformanceStageSchema,
   providerConformanceEvidenceLevelSchema,
   providerExpectedFailureSchema,
 } from "@openbot/protocol";
@@ -15,35 +18,15 @@ import {
   buildProviderConformanceReport,
   type ComputerProvider,
   inspectProviderDeclaration,
+  isGeneratedConformanceCheckId,
   type ProviderConformanceTargetInput,
 } from "@openbot/provider-sdk";
 
 const conformanceIdPattern = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
-const generatedCheckIds = new Set([
-  "provider.declaration",
-  "provider.target-platform",
-  "provider.executable",
-  "target.evidence-level",
-  "target.real-device-metadata",
-]);
-const stages = new Set<ProviderConformanceStage>([
-  "declaration",
-  "routing",
-  "integration",
-  "real-device",
-]);
-const statuses = new Set<ProviderConformanceCheckStatus>([
-  "success",
-  "failure",
-  "warning",
-  "skipped",
-  "info",
-]);
-const severities = new Set<ProviderConformanceCheckSeverity>([
-  "required",
-  "recommended",
-  "informational",
-]);
+// Vocabulary belongs to the wire contract; this runner still validates before side effects.
+const stages = new Set<string>(providerConformanceStageSchema.options);
+const statuses = new Set<string>(providerConformanceCheckStatusSchema.options);
+const severities = new Set<string>(providerConformanceCheckSeveritySchema.options);
 const minimumTimeoutMs = 100;
 const maximumTimeoutMs = 120_000;
 const maximumScenarios = 256;
@@ -203,7 +186,7 @@ function validateSuite(input: ProviderConformanceSuite): void {
       throw new Error("Suite scenario is invalid.");
     }
     assertBoundedString(scenario.id, "Scenario id", 160);
-    if (!conformanceIdPattern.test(scenario.id) || generatedCheckIds.has(scenario.id)) {
+    if (!conformanceIdPattern.test(scenario.id) || isGeneratedConformanceCheckId(scenario.id)) {
       throw new Error("Scenario id is invalid or reserved.");
     }
     if (ids.has(scenario.id)) throw new Error("Scenario ids must be unique.");
@@ -294,7 +277,7 @@ function outcomeCheck(
     !keys.includes("status") ||
     !keys.includes("code") ||
     typeof status !== "string" ||
-    !statuses.has(status as ProviderConformanceCheckStatus) ||
+    !statuses.has(status) ||
     (scenario.severity === "required" && (status === "skipped" || status === "info")) ||
     typeof code !== "string" ||
     code.length < 1 ||
