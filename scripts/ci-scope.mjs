@@ -90,6 +90,8 @@ export function selectChecks(files, graph, { full = false } = {}) {
     if (typeof file !== "string" || !file || file.startsWith("/") || file.split("/").includes(".."))
       throw new Error("Changed paths must be repository-relative.");
     if (
+      file === ".agents/README.md" ||
+      file === ".agents/README.zh-CN.md" ||
       /^(?:(?:apps|packages|providers)\/[^/]+\/|tests\/oracles\/legacy-server\/)?AGENTS(?:\.[^/]+)?\.md$/.test(
         file,
       ) ||

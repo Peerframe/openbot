@@ -108,12 +108,9 @@ Server/Web；Node 完成登记后按需另启。前端和控制平面开发不�
 `npm run migration:plan --workspace @openbot/db -- --name describe_change`，并遵循
 [手写迁移契约](docs/DATABASE.zh-CN.md#编写迁移)。自动 `generate` 已停用。
 
-提交 PR 前运行：
-
-```bash
-npm run check
-npm audit
-```
+提交 PR 前遵循[适用验证规则](#ai-开发入口与验证)：实现和脚本修改须运行 `npm run check`，
+文字与贡献指令修改运行适用的文档和工作流检查。运行 `npm audit` 并满足必要的安全和托管 CI 门；
+定向验证不豁免这些要求。
 
 开发数据库暂时不用时运行 `npm run db:stop`。
 
@@ -225,6 +222,7 @@ manifest 与锁文件。触发 CI 前填写 PR 的七项研究字段，执行干
 
 ### AI 开发入口与验证
 
+[开发入口](.agents/README.zh-CN.md)链接已有工作流与职责。
 按[AGENTS](AGENTS.zh-CN.md) → [仓库地图](docs/REPOSITORY_MAP.zh-CN.md)相关路线 → 局部规则、契约、
 消费者和测试阅读。`.agents/skills` 提供 `openbot-change`、`openbot-check`、`openbot-ui`、
 `openbot-review`，只选择当前工作流。这些是仓库开发指令，不是 Employee 技能，不得打进产品载荷。
@@ -238,9 +236,10 @@ AGENTS 链接的 SKILL.md，记录实际生效方式。这里未配置 Claude �
 不代表纯文字。纯文字/指令运行适用检查；脚本/实现修改交接前仍须 `npm run check`。必要云端及
 发布/迁移/安全门不变，仅通过反例验证的 CI 选择器可以声明某 lane 不适用。记录测试数、缓存、跳过和缺失环境。
 
-升级只维护[一份交接](docs/REPOSITORY_UPGRADE_PLAN.md)。UI 使用[既有设计索引](docs/design/README.zh-CN.md)、
-tokens/组件及受影响状态。C1 新会话验收定位 UI、Python 核心和跨语言任务；C3 才执行完整贡献流程，
-不能把定位成功当作后者完成。
+[已完成升级记录](docs/REPOSITORY_UPGRADE_PLAN.md)保留带日期的证据和限制，不是常驻 C1/C2/C3
+待办。以当前请求和 checkout 为起点，保留本地结案记录。UI 使用
+[既有设计索引](docs/design/README.zh-CN.md)、现有 tokens/组件及受影响状态。
+发现/读取验收只证明可以找到职责和检查，不代表实现、渲染验收或托管 CI 已完成。
 
 ## 提交 Pull Request
 
@@ -248,7 +247,8 @@ tokens/组件及受影响状态。C1 新会话验收定位 UI、Python 核心和
 2. 一个 PR 只解决一条验收路径；已有 Issue 时关联。可复现的小修复或文档纠正可以直接提交 PR，
    较大功能先用 Issue 对齐范围。
 3. 在最低有效边界加测试；跨组件行为再补集成测试。
-4. 运行 `npm run check`，并记录真实设备、浏览器或辅助技术证据。
+4. 运行[适用检查](#ai-开发入口与验证)，实现/脚本修改包含 `npm run check`；
+   记录真实设备、浏览器或辅助技术证据。
 5. 用户可见行为变化时，同步英文权威文档和维护中的翻译。
 6. 填完 PR 模板中所有适用部分。
 7. 保留上游版权和许可证声明，并说明是否复制或实质改编源码。

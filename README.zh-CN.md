@@ -74,7 +74,8 @@ npm run dev
 
 打开 [localhost:5173](http://localhost:5173)，用刚设置的密码登录。启动应用、修改界面和运行普通测试不需要模型账号；需要执行模型任务时，再到设置中连接模型并创建第一位 Bot。部署独立服务见 [Server 容器](docs/SERVER_CONTAINER.zh-CN.md)；构建原生桌面包见 [Desktop 安装指南](docs/DESKTOP_INSTALLATION.zh-CN.md#构建与准备发布)。
 
-提交修改前，在仓库根目录运行 `npm run check`。
+实现或脚本修改交接前，在仓库根目录运行 `npm run check`。文字或贡献指令修改遵循
+[适用验证规则](CONTRIBUTING.zh-CN.md#ai-开发入口与验证)，安全与必要托管检查仍然适用。
 
 ## 架构与目录
 
@@ -95,7 +96,7 @@ Desktop 和 Web 共用 React 界面。Server 统一管理 Bot 身份、路由、
 
 **开发插件：** 实现标准 MCP Streamable HTTP 接口，提供工具、资源、提示词或 Apps。依照[插件契约](docs/PLUGINS.zh-CN.md)，从[示例](packages/mcp-example/src/plugin-example.ts)开始，提交扩展供审核。无需 OpenBot 专属 SDK；安装插件和为 Bot 授权分开进行。
 
-**参与核心开发：** 先阅读[贡献指南](CONTRIBUTING.zh-CN.md)、[开源复用规则](docs/OPEN_SOURCE_REUSE.zh-CN.md)和[文档索引](docs/README.zh-CN.md)。通过 [Issues](https://github.com/Peerframe/openbot/issues) 反馈问题与提案，通过 [Pull requests](https://github.com/Peerframe/openbot/pulls) 提交修改。安全问题请遵循[安全政策](SECURITY.md)。
+**参与核心开发：** 从[开发入口](.agents/README.zh-CN.md)开始，再阅读[贡献指南](CONTRIBUTING.zh-CN.md)、[开源复用规则](docs/OPEN_SOURCE_REUSE.zh-CN.md)和[文档索引](docs/README.zh-CN.md)。通过 [Issues](https://github.com/Peerframe/openbot/issues) 反馈问题与提案，通过 [Pull requests](https://github.com/Peerframe/openbot/pulls) 提交修改。安全问题请遵循[安全政策](SECURITY.md)。
 
 ## 许可与致谢
 

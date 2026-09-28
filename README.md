@@ -74,7 +74,9 @@ This command builds shared packages first, then starts Server and Web. For separ
 
 Open [localhost:5173](http://localhost:5173) and sign in with the password you configured. A model account is needed for model tasks, but not to start the app or work on its interface and ordinary tests. Configure your model in Settings when needed, then create your first Bot. For a hosted Server, follow [container deployment](docs/SERVER_CONTAINER.md); for native Desktop builds, follow [Desktop installation](docs/DESKTOP_INSTALLATION.md#build-and-prepare-a-release).
 
-Before submitting a change, run `npm run check` from the repository root.
+Before an implementation or script handoff, run `npm run check` from the repository root.
+For prose or contributor instructions, follow the [applicable validation rules](CONTRIBUTING.md#ai-development-entry-and-validation).
+Security and required hosted checks remain applicable.
 
 ## Architecture
 
@@ -95,7 +97,7 @@ See the [repository map](docs/REPOSITORY_MAP.md), [architecture](docs/ARCHITECTU
 
 **Plugins:** implement a standard MCP Streamable HTTP endpoint for tools, resources, prompts or Apps. Follow the [plugin contract](docs/PLUGINS.md), start from an [example](packages/mcp-example/src/plugin-example.ts), and submit your extension for review. No OpenBot-specific SDK is required; installation and per-Bot permission are separate steps.
 
-**Core:** read [Contributing](CONTRIBUTING.md), [open-source reuse](docs/OPEN_SOURCE_REUSE.md) and the [documentation index](docs/README.md). Use [Issues](https://github.com/Peerframe/openbot/issues) for bugs and proposals, and [pull requests](https://github.com/Peerframe/openbot/pulls) for changes. Report vulnerabilities through [Security](SECURITY.md).
+**Core:** start at the [development entry](.agents/README.md), then read [Contributing](CONTRIBUTING.md), [open-source reuse](docs/OPEN_SOURCE_REUSE.md) and the [documentation index](docs/README.md). Use [Issues](https://github.com/Peerframe/openbot/issues) for bugs and proposals, and [pull requests](https://github.com/Peerframe/openbot/pulls) for changes. Report vulnerabilities through [Security](SECURITY.md).
 
 ## License and acknowledgments
 

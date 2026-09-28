@@ -48,18 +48,21 @@ openbot/
 │   └── node/
 ├── docs/
 ├── tests/oracles/           # Frozen migration comparison inputs, never product runtime
+├── .agents/                # Contributor navigation and repository skills
 └── .github/
 ```
 
 `apps/server` is retired. `npm run dev` uses `scripts/dev-python.mjs`; containers and the supported
 macOS arm64 local Desktop payload select Python product mode. Direct `serve.py` remains read-only
 unless configured. The runtime is the typed `packages/harness` wheel, installed by development and product hosts. The retained Node parser closure is required.
-Use the [repository map](REPOSITORY_MAP.md) for bounded code/consumer/check routes and the
-[upgrade handoff](REPOSITORY_UPGRADE_PLAN.md) for C1→C2→C3 status.
+Use the [development entry](../.agents/README.md) and [repository map](REPOSITORY_MAP.md) for current
+code/consumer/check routes. The [completed upgrade record](REPOSITORY_UPGRADE_PLAN.md) preserves
+dated C1→C2→C3 evidence and limitations; it is not a standing work queue.
 
 This is a responsibility map, not an exhaustive directory listing.
 The [migration plan](ARCHITECTURE_MIGRATION_PLAN.md) and
-[handoff](MIGRATION_HANDOFF.md) distinguish integrated candidates from qualified defaults.
+[handoff](MIGRATION_HANDOFF.md) preserve historical migration decisions and qualification evidence.
+Read them when the affected decision needs that context; they do not reactivate completed steps.
 Server remains the only authority for identity, policy, routing, approvals and audit, regardless
 of implementation language. Web consumes contracts; providers implement execution interfaces.
 Keep application composition explicit and split existing modules only when the touched behavior

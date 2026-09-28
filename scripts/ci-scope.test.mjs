@@ -42,6 +42,39 @@ test("instructions, skills and prompts retain behavioral workflow gates", () => 
     assert(plan.rootChecks.includes("research:check"));
   }
 });
+test("developer navigation READMEs retain behavioral gates without runtime qualification", () => {
+  for (const file of [".agents/README.md", ".agents/README.zh-CN.md"]) {
+    const plan = select(file);
+    assert.equal(plan.mode, "focused", file);
+    assert.deepEqual(plan.required, ["security", "validate"], file);
+    assert(plan.reasons.includes(`Contributor behavior: ${file}`), file);
+    for (const gate of ["ci:check", "docs:check", "research:check", "security:config-check"])
+      assert(plan.rootChecks.includes(gate), `${file}: ${gate}`);
+  }
+});
+test("developer navigation paths do not exempt helpers, resources or near matches", () => {
+  for (const file of [
+    ".agents/README.en.md",
+    ".agents/README.zh-cn.md",
+    ".agents/readme.md",
+    ".agents/README.md.mjs",
+    ".agents/README.md/resource.json",
+    ".agents/skills/README.md",
+    ".agents/scripts/check.mjs",
+    ".agents/assets/README.md",
+  ])
+    assert.deepEqual(select(file).required, JOBS, file);
+});
+test("developer navigation cannot narrow mixed changes or forced full qualification", () => {
+  for (const file of [
+    "scripts/ci-scope.mjs",
+    ".agents/skills/openbot-check/scripts/check.py",
+    "apps/server-python/src/openbot_server/work_models.py",
+    "unknown.file",
+  ])
+    assert.deepEqual(select(".agents/README.md", file).required, JOBS, file);
+  assert.deepEqual(selectChecks([".agents/README.zh-CN.md"], graph, { full: true }).required, JOBS);
+});
 test("harness includes real installed and persistent consumers", () => {
   for (const file of [
     "packages/harness/src/openbot_agent_runtime/catalog.py",

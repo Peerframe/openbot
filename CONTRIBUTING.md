@@ -133,12 +133,10 @@ For schema changes, start with the read-only
 `npm run migration:plan --workspace @openbot/db -- --name describe_change` and the
 [manual migration contract](docs/DATABASE.md#author-a-migration). Automatic `generate` is disabled.
 
-Before opening a pull request:
-
-```bash
-npm run check
-npm audit
-```
+Before opening a pull request, follow the [applicable validation rules](#ai-development-entry-and-validation).
+Implementation and script changes require `npm run check`; prose and contributor instructions use
+their applicable documentation and workflow checks. Run `npm audit` and satisfy the required
+security and hosted CI gates; focused validation does not exempt them.
 
 Run `npm run db:stop` when the development database is no longer needed.
 
@@ -274,6 +272,7 @@ do not trigger CI; missing/shallow history fails closed.
 
 ### AI development entry and validation
 
+The [development entry](.agents/README.md) links the existing workflows and owners.
 Read [AGENTS](AGENTS.md) → one [repository map](docs/REPOSITORY_MAP.md) route → local AGENTS, contract,
 consumer and test. `.agents/skills` provides `openbot-change`, `openbot-check`, `openbot-ui` and
 `openbot-review`; select only the relevant workflow. These are repository-development instructions,
@@ -292,10 +291,11 @@ gates; script/implementation changes still require `npm run check` before handof
 checks and release/migration/security gates remain applicable. Only the tested CI selector may
 declare a lane not applicable. State actual test counts, cached results, skips and missing environments.
 
-The upgrade continues in [one handoff](docs/REPOSITORY_UPGRADE_PLAN.md). UI work also follows
-[the existing design index](docs/design/README.md), current tokens/components and affected rendered
-states. New-session C1 acceptance locates UI, Python-core and cross-language tasks; C3 executes the
-complete contribution journeys. Do not claim the latter from a successful lookup.
+The [completed upgrade record](docs/REPOSITORY_UPGRADE_PLAN.md) preserves dated evidence and limits,
+not a standing queue of C1/C2/C3 work. Start from the current request and checkout; preserve local
+completion records. UI work follows [the existing design index](docs/design/README.md), current
+tokens/components and affected rendered states. A discovery/reading exercise locates owners and
+checks; it does not establish a completed implementation, rendered acceptance or hosted CI.
 
 ## Code and comments
 
@@ -342,7 +342,8 @@ through the private process in [SECURITY.md](SECURITY.md), not a public issue.
    a small reproducible bug fix or documentation correction can start directly as a PR. Use an issue
    to agree scope before a large feature.
 3. Add tests at the lowest useful boundary and an integration test for cross-component behavior.
-4. Run `npm run check`; record any real-device, browser, or assistive-technology evidence.
+4. Run the [applicable checks](#ai-development-entry-and-validation), including `npm run check` for
+   implementation/script changes; record any real-device, browser, or assistive-technology evidence.
 5. Update docs and existing translations when user-visible behavior or project claims change.
 6. Complete every applicable section of the pull request template.
 7. Preserve upstream copyright and license notices.
