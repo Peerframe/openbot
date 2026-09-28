@@ -29,7 +29,7 @@ import {
   type EmployeeTemplatePayload,
 } from "@openbot/protocol";
 import { portableSkillContent, skillContentProblem } from "./employee-package-content.js";
-import { requirementsForExecutionProfile } from "./execution-routing.js";
+import { requirementsForExecutionProfile } from "./execution-requirements.js";
 import { scanSensitiveText } from "./sensitive-content.js";
 
 interface EmployeeTemplateBuildOptions {
