@@ -47,6 +47,8 @@ import type {
   WorkspaceSnapshot,
 } from "@openbot/domain";
 import { reactionEmojis } from "@openbot/domain";
+import { openEventStream, type RealtimeConnectionState } from "./event-stream";
+export type { RealtimeConnectionState };
 
 interface ErrorPayload {
   error?: string;
@@ -567,8 +569,6 @@ export async function createMessage(
   });
 }
 
-export type RealtimeConnectionState = "connecting" | "live" | "retrying";
-
 export function subscribeToChannelEvents(
   channelId: string,
   handlers: {
@@ -583,127 +583,94 @@ export function subscribeToChannelEvents(
     onState(state: RealtimeConnectionState): void;
   },
 ): () => void {
-  const reconnectDelayMs = 2000;
-  const staleAfterMs = 35_000;
-  let source: EventSource | undefined;
-  let reconnectTimer: number | undefined;
-  let closed = false;
-  let lastActivityAt = Date.now();
-
-  const markLive = () => {
-    lastActivityAt = Date.now();
-    handlers.onState("live");
-  };
-  const onReady = () => {
-    markLive();
-    handlers.onReady();
-  };
-  const onMessage = (event: Event) => {
-    const payload = parseEventPayload(event);
-    if (!isMessageCreatedEvent(payload, channelId)) return;
-    markLive();
-    handlers.onMessage(payload.message);
-  };
-  const onRun = (event: Event) => {
-    const payload = parseEventPayload(event);
-    if (!isRunProjectionEvent(payload, channelId)) return;
-    markLive();
-    handlers.onRun(payload.run, payload.type === "run.updated" ? (payload.artifacts ?? []) : []);
-  };
-  const onProgress = (event: Event) => {
-    const payload = parseEventPayload(event);
-    if (!isRunProgressProjectionEvent(payload, channelId)) return;
-    markLive();
-    handlers.onProgress(payload.progress);
-  };
-  const onFrame = (event: Event) => {
-    const payload = parseEventPayload(event);
-    if (!isRunFrameProjectionEvent(payload, channelId)) return;
-    markLive();
-    handlers.onFrame(payload.frame);
-  };
-  const onOutput = (event: Event) => {
-    const payload = parseEventPayload(event);
-    if (!isRunOutputProjection(payload, channelId)) return;
-    markLive();
-    handlers.onOutput?.(payload);
-  };
-  const onReactions = (event: Event) => {
-    const value = parseEventPayload(event) as Record<string, unknown> | null;
-    if (
-      !value ||
-      value.type !== "message.reactions" ||
-      value.channelId !== channelId ||
-      typeof value.messageId !== "string" ||
-      !isMessageReactions(value.reactions) ||
-      value.reactions.some((item) => item.messageId !== value.messageId)
-    )
-      return;
-    markLive();
-    handlers.onReactions?.(value.messageId, value.reactions);
-  };
-  const onChannel = (event: Event) => {
-    const value = parseEventPayload(event) as {
-      type?: string;
-      channelId?: string;
-      channel?: Channel;
-    } | null;
-    if (
-      !value ||
-      value.type !== "channel.updated" ||
-      value.channelId !== channelId ||
-      value.channel?.id !== channelId ||
-      !Array.isArray(value.channel.botIds) ||
-      value.channel.botIds.length > 100 ||
-      !value.channel.botIds.every((id) => typeof id === "string")
-    )
-      return;
-    markLive();
-    handlers.onChannel?.(value.channel);
-  };
-  const scheduleReconnect = () => {
-    if (closed || reconnectTimer !== undefined) return;
-    source?.close();
-    source = undefined;
-    handlers.onState("retrying");
-    reconnectTimer = window.setTimeout(() => {
-      reconnectTimer = undefined;
-      connect();
-    }, reconnectDelayMs);
-  };
-  const connect = () => {
-    if (closed) return;
-    const nextSource = new EventSource(`/api/v1/channels/${channelId}/events`);
-    source = nextSource;
-    lastActivityAt = Date.now();
-    nextSource.onopen = markLive;
-    nextSource.onerror = () => {
-      if (source === nextSource) scheduleReconnect();
-    };
-    nextSource.addEventListener("channel.ready", onReady);
-    nextSource.addEventListener("heartbeat", markLive);
-    nextSource.addEventListener("message.created", onMessage);
-    nextSource.addEventListener("run.created", onRun);
-    nextSource.addEventListener("run.updated", onRun);
-    nextSource.addEventListener("run.progress", onProgress);
-    nextSource.addEventListener("run.frame", onFrame);
-    nextSource.addEventListener("run.output", onOutput);
-    nextSource.addEventListener("message.reactions", onReactions);
-    nextSource.addEventListener("channel.updated", onChannel);
-  };
-
-  handlers.onState("connecting");
-  connect();
-  const watchdog = window.setInterval(() => {
-    if (Date.now() - lastActivityAt > staleAfterMs) scheduleReconnect();
-  }, 5000);
-
-  return () => {
-    closed = true;
-    source?.close();
-    window.clearInterval(watchdog);
-    if (reconnectTimer !== undefined) window.clearTimeout(reconnectTimer);
-  };
+  return openEventStream({
+    url: `/api/v1/channels/${channelId}/events`,
+    onState: (state) => handlers.onState(state),
+    bind(source, session) {
+      source.addEventListener("channel.ready", () => {
+        if (!session.markLive()) return;
+        handlers.onReady();
+      });
+      source.addEventListener("heartbeat", () => {
+        session.markLive();
+      });
+      source.addEventListener("message.created", (event) => {
+        if (!session.isActive()) return;
+        const payload = parseEventPayload(event);
+        if (!isMessageCreatedEvent(payload, channelId)) return;
+        if (!session.markLive()) return;
+        handlers.onMessage(payload.message);
+      });
+      const onRun = (event: Event): void => {
+        if (!session.isActive()) return;
+        const payload = parseEventPayload(event);
+        if (!isRunProjectionEvent(payload, channelId)) return;
+        if (!session.markLive()) return;
+        handlers.onRun(
+          payload.run,
+          payload.type === "run.updated" ? (payload.artifacts ?? []) : [],
+        );
+      };
+      source.addEventListener("run.created", onRun);
+      source.addEventListener("run.updated", onRun);
+      source.addEventListener("run.progress", (event) => {
+        if (!session.isActive()) return;
+        const payload = parseEventPayload(event);
+        if (!isRunProgressProjectionEvent(payload, channelId)) return;
+        if (!session.markLive()) return;
+        handlers.onProgress(payload.progress);
+      });
+      source.addEventListener("run.frame", (event) => {
+        if (!session.isActive()) return;
+        const payload = parseEventPayload(event);
+        if (!isRunFrameProjectionEvent(payload, channelId)) return;
+        if (!session.markLive()) return;
+        handlers.onFrame(payload.frame);
+      });
+      source.addEventListener("run.output", (event) => {
+        if (!session.isActive()) return;
+        const payload = parseEventPayload(event);
+        if (!isRunOutputProjection(payload, channelId)) return;
+        if (!session.markLive()) return;
+        handlers.onOutput?.(payload);
+      });
+      source.addEventListener("message.reactions", (event) => {
+        if (!session.isActive()) return;
+        const value = parseEventPayload(event) as Record<string, unknown> | null;
+        if (
+          !value ||
+          value.type !== "message.reactions" ||
+          value.channelId !== channelId ||
+          typeof value.messageId !== "string" ||
+          !isMessageReactions(value.reactions) ||
+          value.reactions.some((item) => item.messageId !== value.messageId)
+        )
+          return;
+        if (!session.markLive()) return;
+        handlers.onReactions?.(value.messageId, value.reactions);
+      });
+      source.addEventListener("channel.updated", (event) => {
+        if (!session.isActive()) return;
+        const value = parseEventPayload(event) as {
+          type?: string;
+          channelId?: string;
+          channel?: Channel;
+        } | null;
+        if (
+          !value ||
+          value.type !== "channel.updated" ||
+          value.channelId !== channelId ||
+          value.channel?.id !== channelId ||
+          !Array.isArray(value.channel.botIds) ||
+          value.channel.botIds.length > 100 ||
+          !value.channel.botIds.every((id) => typeof id === "string")
+        )
+          return;
+        if (!session.markLive()) return;
+        handlers.onChannel?.(value.channel);
+      });
+    },
+  });
 }
 
 export function isRunOutputProjection(value: unknown, channelId: string): value is RunOutput {
@@ -732,93 +699,57 @@ export function subscribeToWorkspaceEvents(handlers: {
   onRun(run: Run, artifacts: Artifact[]): void;
   onState(state: RealtimeConnectionState): void;
 }): () => void {
-  const reconnectDelayMs = 2000;
-  const staleAfterMs = 35_000;
-  let source: EventSource | undefined;
-  let reconnectTimer: number | undefined;
-  let closed = false;
-  let lastActivityAt = Date.now();
-
-  const markLive = () => {
-    lastActivityAt = Date.now();
-    handlers.onState("live");
-  };
-  const onReady = (event: Event) => {
-    const payload = parseEventPayload(event);
-    if (!isWorkspaceReadyEvent(payload)) return;
-    markLive();
-    handlers.onReady(payload.nodes);
-  };
-  const onNode = (event: Event) => {
-    const payload = parseEventPayload(event);
-    if (!isNodeUpsertedEvent(payload)) return;
-    markLive();
-    handlers.onNode(payload.node);
-  };
-  const onNodeRemoved = (event: Event) => {
-    const payload = parseEventPayload(event);
-    if (!isNodeRemovedEvent(payload)) return;
-    markLive();
-    handlers.onNodeRemoved(payload.nodeId);
-  };
-  const onApproval = (event: Event) => {
-    const payload = parseEventPayload(event);
-    if (!isApprovalUpdatedEvent(payload)) return;
-    markLive();
-    handlers.onApproval(payload.approval, payload.run);
-  };
-  const onEmployeeProfileChanged = (event: Event) => {
-    const payload = parseEventPayload(event);
-    if (!isEmployeeProfileChangedEvent(payload)) return;
-    markLive();
-    handlers.onEmployeeProfileChanged(payload.botId, payload.sections);
-  };
-  const onRun = (event: Event) => {
-    const payload = parseEventPayload(event);
-    if (!isWorkspaceRunUpdatedEvent(payload)) return;
-    markLive();
-    handlers.onRun(payload.run, payload.artifacts ?? []);
-  };
-  const scheduleReconnect = () => {
-    if (closed || reconnectTimer !== undefined) return;
-    source?.close();
-    source = undefined;
-    handlers.onState("retrying");
-    reconnectTimer = window.setTimeout(() => {
-      reconnectTimer = undefined;
-      connect();
-    }, reconnectDelayMs);
-  };
-  const connect = () => {
-    if (closed) return;
-    const nextSource = new EventSource("/api/v1/workspace/events");
-    source = nextSource;
-    lastActivityAt = Date.now();
-    nextSource.onopen = markLive;
-    nextSource.onerror = () => {
-      if (source === nextSource) scheduleReconnect();
-    };
-    nextSource.addEventListener("workspace.ready", onReady);
-    nextSource.addEventListener("heartbeat", markLive);
-    nextSource.addEventListener("node.upserted", onNode);
-    nextSource.addEventListener("node.removed", onNodeRemoved);
-    nextSource.addEventListener("approval.updated", onApproval);
-    nextSource.addEventListener("employee.profile.changed", onEmployeeProfileChanged);
-    nextSource.addEventListener("run.updated", onRun);
-  };
-
-  handlers.onState("connecting");
-  connect();
-  const watchdog = window.setInterval(() => {
-    if (Date.now() - lastActivityAt > staleAfterMs) scheduleReconnect();
-  }, 5000);
-
-  return () => {
-    closed = true;
-    source?.close();
-    window.clearInterval(watchdog);
-    if (reconnectTimer !== undefined) window.clearTimeout(reconnectTimer);
-  };
+  return openEventStream({
+    url: "/api/v1/workspace/events",
+    onState: (state) => handlers.onState(state),
+    bind(source, session) {
+      source.addEventListener("workspace.ready", (event) => {
+        if (!session.isActive()) return;
+        const payload = parseEventPayload(event);
+        if (!isWorkspaceReadyEvent(payload)) return;
+        if (!session.markLive()) return;
+        handlers.onReady(payload.nodes);
+      });
+      source.addEventListener("heartbeat", () => {
+        session.markLive();
+      });
+      source.addEventListener("node.upserted", (event) => {
+        if (!session.isActive()) return;
+        const payload = parseEventPayload(event);
+        if (!isNodeUpsertedEvent(payload)) return;
+        if (!session.markLive()) return;
+        handlers.onNode(payload.node);
+      });
+      source.addEventListener("node.removed", (event) => {
+        if (!session.isActive()) return;
+        const payload = parseEventPayload(event);
+        if (!isNodeRemovedEvent(payload)) return;
+        if (!session.markLive()) return;
+        handlers.onNodeRemoved(payload.nodeId);
+      });
+      source.addEventListener("approval.updated", (event) => {
+        if (!session.isActive()) return;
+        const payload = parseEventPayload(event);
+        if (!isApprovalUpdatedEvent(payload)) return;
+        if (!session.markLive()) return;
+        handlers.onApproval(payload.approval, payload.run);
+      });
+      source.addEventListener("employee.profile.changed", (event) => {
+        if (!session.isActive()) return;
+        const payload = parseEventPayload(event);
+        if (!isEmployeeProfileChangedEvent(payload)) return;
+        if (!session.markLive()) return;
+        handlers.onEmployeeProfileChanged(payload.botId, payload.sections);
+      });
+      source.addEventListener("run.updated", (event) => {
+        if (!session.isActive()) return;
+        const payload = parseEventPayload(event);
+        if (!isWorkspaceRunUpdatedEvent(payload)) return;
+        if (!session.markLive()) return;
+        handlers.onRun(payload.run, payload.artifacts ?? []);
+      });
+    },
+  });
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
