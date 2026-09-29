@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { compareMigrationHistories } from "../../scripts/compare-migration-lineage.mjs";
+import { compareMigrationHistories } from "../../scripts/compare-migration-lineage.ts";
 import { validateMigrationManifest } from "../../scripts/migration-manifest.ts";
 
 export const root = dirname(fileURLToPath(import.meta.url));
