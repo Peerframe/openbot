@@ -1,6 +1,11 @@
 # Chromium/runsc 边界实验
 
-**固定镜像的 Linux/runsc CDP 组件于2026-09-25实测通过。** 已授权的单次测试取得合成页面真实DOM与PNG、同profile重开、内层沙箱诊断及原生期限／清理证据，见[有界实测记录](REAL_CDP_RESULT.json)。这不启用产品浏览器能力，也不代表egress、Employee profile权限或人工接管通过。见[研究](../../docs/research/browser-cdp-qualification.zh-CN.md)及[此前b2失败记录](../linux-execution/REAL_BROWSER_CHROOT_ATTEMPT.json)。
+CDP 资格入口为 `probe.ts`，传输和证据 TS 模块均由 `browser_a1.py` 固定源码哈希。
+egress guest 使用 `egress_probe.ts`；两者通过既有 guest Node 的类型擦除运行。
+Python 资格工具不新增主机 Node 前置条件或编译层。
+当前 TS 入口的边界测试通过；固定 Linux/runsc 复验仍待执行。
+
+**此前 MJS 版固定镜像 Linux/runsc CDP 组件于2026-09-25实测通过。** 已授权的单次测试取得合成页面真实DOM与PNG、同profile重开、内层沙箱诊断及原生期限／清理证据，见[有界实测记录](REAL_CDP_RESULT.json)。这不启用产品浏览器能力，也不代表egress、Employee profile权限或人工接管通过。见[研究](../../docs/research/browser-cdp-qualification.zh-CN.md)及[此前b2失败记录](../linux-execution/REAL_BROWSER_CHROOT_ATTEMPT.json)。
 
 ## 从干净检出运行边界测试
 
@@ -10,7 +15,7 @@
 npm run test:browser:boundary
 ```
 
-命令运行15项 Node 合成 CDP/产物测试、35项 Python 命令/权限/预算/策略测试，现有 Python/Linux CI 使用同一入口。它不调用 wrapper 可执行入口，也不启动浏览器或容器。
+命令运行16项 Node 合成 CDP/产物测试、35项 Python 命令/权限/预算/策略测试，现有 Python/Linux CI 使用同一入口。它不调用 wrapper 可执行入口，也不启动浏览器或容器。
 
 wrapper 优先使用显式远端包中的完整同级 `reviewed/`；仅在该目录不存在时使用准确兄弟目录 `../linux-execution`。已存在但残缺的 `reviewed/` 直接拒绝，不搜索任意目录。三份 helper 没有复制进来，仍检查原已审 hash。`fixtures/v3-construction.json` 是从旧 OpenBot MIT wrapper 的纯构造函数生成的数据，带原源码与 hash 来源；它取代临时包中重复的历史可执行代码，保留原命令/配置边界回归。
 

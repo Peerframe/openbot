@@ -34,7 +34,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="openbot-egress-input-") as directory:
         inputs = Path(directory)
         (inputs / "squid.conf").write_text(compile_egress_policy(policy))
-        shutil.copyfile(source / "egress_probe.mjs", inputs / "egress_probe.mjs")
+        shutil.copyfile(source / "egress_probe.ts", inputs / "egress_probe.ts")
         # Squid's unprivileged worker must be able to read the synthetic policy.
         inputs.chmod(0o755)
         for file in inputs.iterdir():
@@ -46,7 +46,7 @@ def main():
                    "--env=OPENBOT_EGRESS_FIXTURE=network-none-v1",
                    "--mount", f"type=bind,src={inputs},dst=/input,readonly",
                    "--mount", f"type=bind,src={output},dst=/output",
-                   args.fixture_image, "node", "/input/egress_probe.mjs"]
+                   args.fixture_image, "node", "/input/egress_probe.ts"]
         try:
             subprocess.run(command, check=True, capture_output=True, timeout=30)
             created = True

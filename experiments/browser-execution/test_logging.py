@@ -47,7 +47,10 @@ class Logging(unittest.TestCase):
         index = actual.index("compress=false")
         self.assertEqual(actual[index - 1], "--log-opt")
         del actual[index - 1:index + 1]
-        self.assertEqual(actual, prior["createArgv"])
+        expected = list(prior["createArgv"])
+        self.assertEqual(expected[-1], "/qualification/probe.mjs")
+        expected[-1] = "/qualification/probe.ts"
+        self.assertEqual(actual, expected)
         self.assertEqual(list(a1.configurations(root)), prior["configurations"])
         self.assertEqual(a1.systemd_argv(root), prior["systemdArgv"])
         for name, expected in a1.SOURCES.items():

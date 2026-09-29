@@ -6,7 +6,7 @@ from .task_store import attachment_ids
 from .work_command_contract import Command, bounded_value, parse, strict_json
 from .work_command_profiles import command_source
 from .work_corrections import check_context
-from .work_product_reads import ProductWorkReads
+from .work_product_attachment_reads import read_attachment
 from .work_values import WorkConflict
 
 
@@ -50,13 +50,13 @@ class CommandInputScope:
                 raise WorkConflict('command_input_scope_changed')
             names.append(item['path']);ids.append(item['attachmentId'])
             if item['attachmentId'] not in refs: raise WorkConflict('command_input_scope_changed')
-            # Reuse the retained read snapshot, including explicit derived-text version. This
-            # first adapter refuses binary inputs with no authorized extraction; it never OCRs.
-            snapshot,_=ProductWorkReads._attachment(self,context,dict(channelId=source['channel_id']),
+            # One shared read supplies the retained snapshot (including explicit derived-text
+            # version) and the original size under the caller's files lock. Binary inputs with
+            # no authorized extraction are refused; this adapter never OCRs.
+            read=read_attachment(self.files,context,dict(channelId=source['channel_id']),
                 dict(attachmentId=item['attachmentId'],offset=0,limit=12000))
-            metadata,data=self.files.read(source['channel_id'],item['attachmentId'])
-            items.append(dict(path=item['path'],attachmentId=item['attachmentId'],snapshot=snapshot,
-                size=len(data),sha256=metadata['sha256']))
+            items.append(dict(path=item['path'],attachmentId=item['attachmentId'],snapshot=read.snapshot,
+                size=read.size_bytes,sha256=read.snapshot['sha256']))
         if len(set(ids))!=len(ids) or names!=sorted(set(names)):
             raise WorkConflict('command_input_scope_changed')
         manifest=[dict(path=item['path'],size=item['size'],sha256=item['sha256']) for item in items]

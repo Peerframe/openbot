@@ -55,7 +55,7 @@
     "test:control:python": "npm run oracle:build && node apps/server-python/scripts/compare-identity-inputs.ts && node apps/server-python/scripts/compare-task-contracts.mjs && node apps/server-python/scripts/compare-runtime-wire.mjs && node apps/server-python/scripts/compare-run-commands.ts && node apps/server-python/scripts/compare-execution-values.mjs && node scripts/test-python-control.mjs",
     "oracle:check": "node --test scripts/check-server-oracle.test.ts && node scripts/check-server-oracle.ts",
     "oracle:build": "npm run oracle:check && turbo run build --filter=@openbot/legacy-server-oracle^... && npm run build:oracle --workspace @openbot/legacy-server-oracle",
-    "test:browser:boundary": "node --test experiments/browser-execution/probe.test.mjs && python3 -B -m unittest discover -s experiments/browser-execution -p \"test_*.py\" -v",
+    "test:browser:boundary": "node --test experiments/browser-execution/probe.test.ts && python3 -B -m unittest discover -s experiments/browser-execution -p \"test_*.py\" -v",
     "server:product-container:check": "npm run server:container:check",
     "contracts:generate": "npm run generate --workspace @openbot/work-contract-generator",
     "contracts:check": "npm run check --workspace @openbot/work-contract-generator",

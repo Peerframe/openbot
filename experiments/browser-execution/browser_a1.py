@@ -39,7 +39,10 @@ MANIFEST = "sha256:c091b21d9fae78c76e85cd4356431e9b018402f172a214fc7d7a5e9a7e29d
 CONFIG = "sha256:fee853fafa59550d162cef52bca02d907694b44ebf6ef9fb075bcc0c65d8dedb"
 INPUTS = {
     "PINS.json": "6834e2c0beedff5ab8a7d8565e28f62e03c16e5495d1bed8797aa10daa9c5543",
-    "probe.mjs": "2613e9740c9574baf9ee68d6b562d9451daae02148ef46c054fbd22d66f29cfc",
+    "probe.ts": "176da154ef101baffbf153a72cdf598435a1e0264ebf21554b45cba467a2646b",
+    "probe-contract.ts": "14c550830db5911d3bbc7d57777f110a554dd6fb0d6d206bb20a5fb8c934ff23",
+    "probe-transport.ts": "bb38f60ea17ba4a00ae32cc98cbfce8af8c9e8ecc4d8e356bc4396fb23dc3dcd",
+    "probe-artifacts.ts": "463f1ee3d98325cce9df7fed22036d0ea0f6b27099a9c40adfcfc40780b9003e",
     "seccomp_profile.json": "d00ad84f5a67031fe2bb64de8d77a5ad9c06adb82935ebdb3c18b5f7ba60a5d0",
 }
 SOURCES = {
@@ -177,7 +180,7 @@ def create_argv(root, image):
         "--mount", "type=bind,src=" + str(root / "input") + ",dst=/qualification,readonly",
         "--env", "HOME=/tmp", "--env", "LANG=C.UTF-8", "--log-driver", "local", "--log-opt", "max-size=1m",
         "--log-opt", "max-file=1", "--log-opt", "compress=false",
-        "--entrypoint", "/usr/bin/node", image, "/qualification/probe.mjs")
+        "--entrypoint", "/usr/bin/node", image, "/qualification/probe.ts")
 
 
 class RecordingCommander(sandbox.Commander):
@@ -237,7 +240,7 @@ def validate_container(root, image, value, *, created):
     require(value.get("Name") == "/" + root.name and value.get("Image") == image["Id"], "container identity differs")
     config, host_config = value["Config"], value["HostConfig"]
     require(config.get("User") == "1001:1001" and config.get("Entrypoint") == ["/usr/bin/node"]
-            and config.get("Cmd") == ["/qualification/probe.mjs"] and config.get("Image") == image["Id"],
+            and config.get("Cmd") == ["/qualification/probe.ts"] and config.get("Image") == image["Id"],
             "guest identity/command differs")
     require(config.get("Labels", {}).get("openbot.qualification") == "browser-A1"
             and config["Labels"].get("openbot.qualification.root") == root.name, "container ownership differs")

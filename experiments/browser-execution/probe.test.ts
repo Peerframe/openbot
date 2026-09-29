@@ -1,30 +1,51 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { PassThrough } from "node:stream";
+import test from "node:test";
 import { crc32, deflateSync } from "node:zlib";
 import {
+  type ArtifactSlot,
   CDPPipe,
-  LIMITS,
-  FORBIDDEN,
-  chromeArgs,
-  proof,
-  domEvidence,
-  pngEvidence,
-  stage,
-  page,
+  type CdpBrowser,
+  type CdpPageBrowser,
   captureDOM,
   capturePNG,
+  chromeArgs,
+  domEvidence,
+  FORBIDDEN,
+  LIMITS,
+  page,
+  pngEvidence,
+  proof,
+  type StageRecord,
+  type StageRow,
   sandboxProof,
   serialize,
-} from "./probe.mjs";
+  stage,
+} from "./probe.ts";
+
+/** Read a path through parsed JSON, failing if any intermediate member is not an object. */
+function field(value: unknown, ...path: readonly (string | number)[]): unknown {
+  let current = value;
+  for (const key of path) {
+    assert(typeof current === "object" && current !== null, `missing parent of ${String(key)}`);
+    current = Reflect.get(current, key);
+  }
+  return current;
+}
 
 function pair() {
-  const write = new PassThrough(),
-    read = new PassThrough(),
-    sent = [];
-  write.on("data", (b) => sent.push(JSON.parse(b.subarray(0, -1).toString())));
+  const write = new PassThrough();
+  const read = new PassThrough();
+  const sent: unknown[] = [];
+  write.on("data", (b: Buffer) => sent.push(JSON.parse(b.subarray(0, -1).toString())));
   const c = new CDPPipe(write, read);
-  return { c, write, read, sent, reply: (v) => read.write(Buffer.from(JSON.stringify(v) + "\0")) };
+  return {
+    c,
+    write,
+    read,
+    sent,
+    reply: (v: unknown) => read.write(Buffer.from(JSON.stringify(v) + "\0")),
+  };
 }
 const value = {
   synthetic: true,
@@ -34,8 +55,8 @@ const value = {
   cookiePrevious: false,
 };
 const dom = '<pre id="result">' + JSON.stringify(value) + "</pre>";
-function png() {
-  const chunk = (type, payload) => {
+function png(): string {
+  const chunk = (type: string, payload: Buffer): Buffer => {
     const b = Buffer.alloc(payload.length + 12);
     b.writeUInt32BE(payload.length);
     b.write(type, 4);
@@ -46,8 +67,8 @@ function png() {
   const header = Buffer.alloc(13);
   header.writeUInt32BE(1280);
   header.writeUInt32BE(800, 4);
-  header[8] = 8;
-  header[9] = 6;
+  header.writeUInt8(8, 8);
+  header.writeUInt8(6, 9);
   return Buffer.concat([
     Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
     chunk("IHDR", header),
@@ -57,9 +78,9 @@ function png() {
 }
 
 test("split UTF-8/NUL frames and multiple responses retain correct ids and sessions", async () => {
-  const p = pair(),
-    a = p.c.call("Browser.getVersion"),
-    b = p.c.call("Runtime.evaluate", {}, "session");
+  const p = pair();
+  const a = p.c.call("Browser.getVersion");
+  const b = p.c.call("Runtime.evaluate", {}, "session");
   const buffer = Buffer.from(
     JSON.stringify({ id: 2, sessionId: "session", result: { text: "你好" } }) +
       "\0" +
@@ -73,22 +94,22 @@ test("split UTF-8/NUL frames and multiple responses retain correct ids and sessi
   p.c.close();
 });
 test("wrong response session fails closed", async () => {
-  const p = pair(),
-    a = p.c.call("Runtime.evaluate", {}, "expected");
+  const p = pair();
+  const a = p.c.call("Runtime.evaluate", {}, "expected");
   p.reply({ id: 1, sessionId: "other", result: {} });
   await assert.rejects(a, { code: "pipe-session-mismatch" });
   assert.equal(p.c.closed, true);
 });
 test("protocol error is not a fabricated success", async () => {
-  const p = pair(),
-    a = p.c.call("Browser.getVersion");
+  const p = pair();
+  const a = p.c.call("Browser.getVersion");
   p.reply({ id: 1, error: { code: -32000, message: "untrusted message" } });
   await assert.rejects(a, { code: "cdp-protocol-error", protocolCode: -32000 });
   p.c.close();
 });
 test("timed-out request is not resent and late response does not resolve anything", async () => {
-  const p = pair(),
-    a = p.c.call("Browser.getVersion", {}, "", 5);
+  const p = pair();
+  const a = p.c.call("Browser.getVersion", {}, "", 5);
   await assert.rejects(a, { code: "cdp-timeout" });
   p.reply({ id: 1, result: { product: "late" } });
   assert.equal(p.sent.length, 1);
@@ -96,9 +117,9 @@ test("timed-out request is not resent and late response does not resolve anythin
   p.c.close();
 });
 test("pipe closure rejects pending calls and lifecycle waiters", async () => {
-  const p = pair(),
-    a = p.c.call("Browser.getVersion"),
-    b = p.c.loaded("s", "f", "l", 100);
+  const p = pair();
+  const a = p.c.call("Browser.getVersion");
+  const b = p.c.loaded("s", "f", "l", 100);
   p.c.close("pipe-ended");
   await assert.rejects(a, { code: "pipe-ended" });
   await assert.rejects(b, { code: "pipe-ended" });
@@ -111,8 +132,8 @@ test("malformed, invalid UTF-8 and oversized frames fail before JSON content is 
     Buffer.from([0xff, 0]),
     Buffer.alloc(LIMITS.frame + 1, 65),
   ]) {
-    const p = pair(),
-      a = p.c.call("Browser.getVersion");
+    const p = pair();
+    const a = p.c.call("Browser.getVersion");
     p.read.write(bytes);
     await assert.rejects(a);
     assert.equal(p.c.closed, true);
@@ -168,28 +189,29 @@ test("launch uses only the existing private CDP pipe with no sandbox bypass or C
 test("actual fixed DOM and bounded PNG are retained independently", () => {
   assert.deepEqual(proof(dom), value);
   assert.throws(() => proof('<pre id="result">pending</pre>'));
-  const d = domEvidence(dom),
-    image = pngEvidence(png());
+  const d = domEvidence(dom);
+  const image = pngEvidence(png());
   assert.equal(d.text, dom);
   assert.equal(image.width, 1280);
   assert(image.bytes > 100);
   const corrupted = Buffer.from(png(), "base64");
-  corrupted[30] ^= 1;
+  corrupted.writeUInt8(corrupted.readUInt8(30) ^ 1, 30);
   assert.throws(() => pngEvidence(corrupted.toString("base64")));
   assert.throws(() => domEvidence("x".repeat(LIMITS.dom + 1)));
   assert.throws(() => pngEvidence("A".repeat(LIMITS.png * 2)));
   assert.throws(() => pngEvidence("bad!"));
 });
 test("PNG failure leaves already captured DOM and phase/error timing in the final failed record", async () => {
-  const artifact = {},
-    record = {
-      origin: performance.now(),
-      accepted: false,
-      runs: [{ artifacts: { page: artifact } }],
-      stages: [],
-    };
+  const artifact: ArtifactSlot = {};
+  const stages: StageRow[] = [];
+  const record = {
+    origin: performance.now(),
+    accepted: false,
+    runs: [{ artifacts: { page: artifact } }],
+    stages,
+  };
   let calls = 0;
-  const browser = {
+  const browser: CdpBrowser = {
     cdp: {
       call: async (method) => {
         calls++;
@@ -205,10 +227,11 @@ test("PNG failure leaves already captured DOM and phase/error timing in the fina
     { code: "cdp-timeout" },
   );
   assert.equal(calls, 2);
-  const retained = JSON.parse(serialize(record));
-  assert.equal(retained.runs[0].artifacts.page.dom.text, dom);
-  assert.equal(retained.stages[1].status, "failed");
-  assert(retained.stages[1].elapsedMs >= 0);
+  const retained: unknown = JSON.parse(serialize(record));
+  assert.equal(field(retained, "runs", 0, "artifacts", "page", "dom", "text"), dom);
+  assert.equal(field(retained, "stages", 1, "status"), "failed");
+  const elapsed = field(retained, "stages", 1, "elapsedMs");
+  assert(typeof elapsed === "number" && elapsed >= 0);
   assert.equal(artifact.pngAttempted, true);
 });
 test("CDP DOM from an unexpected origin or script exception is rejected", async () => {
@@ -234,19 +257,19 @@ test("result cap is failclosed and retains artifact hashes without unbounded bod
     dom: { text: "a".repeat(LIMITS.result), bytes: LIMITS.result, sha256: "a".repeat(64) },
     png: { base64: "b".repeat(LIMITS.result), bytes: 1, sha256: "b".repeat(64) },
   };
-  const value = JSON.parse(
+  const value: unknown = JSON.parse(
     serialize({ accepted: true, runs: [{ artifacts: { page: artifact } }] }),
   );
-  assert.equal(value.accepted, false);
-  assert.equal(value.failure, "record-bound");
-  assert.equal(value.runs[0].artifacts.page.dom.sha256, "a".repeat(64));
-  assert(!value.runs[0].artifacts.page.png.base64);
+  assert.equal(field(value, "accepted"), false);
+  assert.equal(field(value, "failure"), "record-bound");
+  assert.equal(field(value, "runs", 0, "artifacts", "page", "dom", "sha256"), "a".repeat(64));
+  assert(!field(value, "runs", 0, "artifacts", "page", "png", "base64"));
 });
 
 test("failed navigation retains the actual attached diagnostic session for bounded evidence", async () => {
-  const record = { origin: performance.now(), stages: [] };
-  let bound = null;
-  const browser = {
+  const record: StageRecord = { origin: performance.now(), stages: [] };
+  let bound: string | null = null;
+  const browser: CdpPageBrowser = {
     cdp: {
       call: async (method) => {
         if (method === "Target.createTarget") return { targetId: "diagnostic-target" };
@@ -254,20 +277,29 @@ test("failed navigation retains the actual attached diagnostic session for bound
         if (method === "Page.navigate") throw Object.assign(new Error(), { code: "cdp-timeout" });
         return {};
       },
+      loaded: async () => assert.fail("a failed navigation must not reach lifecycle waiting"),
     },
   };
   await assert.rejects(
-    page(
-      record,
-      browser,
-      "sandbox",
-      "chrome://sandbox",
-      performance.now() + 1000,
-      (s) => (bound = s),
-    ),
+    page(record, browser, "sandbox", "chrome://sandbox", performance.now() + 1000, (s) => {
+      bound = s;
+    }),
     { code: "cdp-timeout" },
   );
   assert.equal(bound, "diagnostic-session");
-  assert.equal(record.stages.at(-1).name, "sandbox.navigate");
-  assert.equal(record.stages.at(-1).status, "failed");
+  const last = record.stages.at(-1);
+  assert(last);
+  assert.equal(last.name, "sandbox.navigate");
+  assert.equal(last.status, "failed");
+});
+
+// Library metadata is opaque here; the existing origin/body guards are the boundary.
+test("DOM capture preserves checked object identity and extra library fields", async () => {
+  const result = { url: "about:blank", dom, libraryMetadata: { revision: 3 } };
+  const browser = { cdp: { call: async () => ({ result: { value: result } }) } };
+  const artifact: ArtifactSlot = {};
+  const captured = await captureDOM(browser, "owned-session", artifact, performance.now() + 2000);
+  assert.strictEqual(captured, result);
+  assert.deepEqual(captured.libraryMetadata, { revision: 3 });
+  assert.equal(artifact.dom?.text, dom);
 });

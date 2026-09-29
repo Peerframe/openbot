@@ -335,8 +335,12 @@ test("actual Work HTTP consumers and conformance inputs retain the cross-languag
 
 test("browser probe and boundary test edits execute their actual regression suite", () => {
   for (const file of [
-    "experiments/browser-execution/probe.mjs",
-    "experiments/browser-execution/probe.test.mjs",
+    "experiments/browser-execution/probe.ts",
+    "experiments/browser-execution/probe-contract.ts",
+    "experiments/browser-execution/probe-transport.ts",
+    "experiments/browser-execution/probe-artifacts.ts",
+    "experiments/browser-execution/egress_probe.ts",
+    "experiments/browser-execution/probe.test.ts",
     "experiments/browser-execution/test_network.py",
   ]) {
     const plan = select(file);

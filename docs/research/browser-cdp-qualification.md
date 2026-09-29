@@ -36,7 +36,7 @@ Upgrade/exit: retain pins until separately reviewed updates and actual Linux con
 
 ## Source incorporation
 
-Yes: ASCII-NUL framing narrowly adapts Playwright1.62.1 `pipeTransport.ts`, with Google2018/Microsoft Apache notices in `probe.mjs`, `playwright-LICENSE`, `playwright-NOTICE`, and `DERIVATIVE_NOTICE.md`. The seccomp derivative retains its applicable notices. Chromium/gVisor/Node source was research evidence, not copied implementation. Native helpers and V3 construction data originate from OpenBot MIT. No new binary/package is distributed by this change.
+Yes: ASCII-NUL framing narrowly adapts Playwright1.62.1 `pipeTransport.ts`, with Google2018/Microsoft Apache notices in `probe-transport.ts`, `playwright-LICENSE`, `playwright-NOTICE`, and `DERIVATIVE_NOTICE.md`. The seccomp derivative retains its applicable notices. Chromium/gVisor/Node source was research evidence, not copied implementation. Native helpers and V3 construction data originate from OpenBot MIT. No new binary/package is distributed by this change.
 
 Fixed [Node zlib](https://github.com/nodejs/node/blob/v24.18.1/doc/api/zlib.md#L1152) documents CRC32 and bounded inflate `maxOutputLength`, avoiding a new PNG package. The probe checks bounded1280x800 pixel data; it is not a general image sanitizer.
 

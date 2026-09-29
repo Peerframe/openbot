@@ -1,4 +1,5 @@
 import type { EmployeeProfile, ExecutionNode } from "@openbot/domain";
+import { isActiveRun } from "../run-state";
 import { NodeIcon } from "./Icons";
 
 export function EmployeeProfileRail({
@@ -8,9 +9,7 @@ export function EmployeeProfileRail({
   profile: EmployeeProfile | undefined;
   nodes: ExecutionNode[];
 }) {
-  const activeRun = profile?.records.runs.find((run) =>
-    ["queued", "assigned", "running", "waiting_approval", "blocked"].includes(run.status),
-  );
+  const activeRun = profile?.records.runs.find(isActiveRun);
   const activeNode = nodes.find((node) => node.id === activeRun?.nodeId);
 
   return (

@@ -17,7 +17,8 @@
     "../experiments/work-journey/desktop-temporal/*.ts",
     "../apps/server-python/tests/command_node_vectors.ts",
     "../experiments/s7-migration/*.ts",
-    "../experiments/s6-compat/run.ts"
+    "../experiments/s6-compat/run.ts",
+    "../experiments/browser-execution/*.ts"
   ],
   "exclude": [
     "node_modules",

@@ -2910,17 +2910,6 @@ select:focus-visible {
   font-size: clamp(30px, 4vw, 46px);
   letter-spacing: -0.045em;
 }
-.channel-first-empty > p:not(.empty-eyebrow) {
-  max-width: 560px;
-  margin: 14px 0 26px;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.7;
-}
-.channel-first-empty > div {
-  display: flex;
-  gap: 10px;
-}
 
 .channel-workspace {
   display: flex;

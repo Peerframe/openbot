@@ -21,13 +21,14 @@ from openbot_server.work_effects import execute_action, recover_action
 from openbot_server.work_engine_binding import EngineActivityFacts
 from openbot_server.work_files import LocalWorkFiles
 from openbot_server.work_handoff import HandoffStore
-from openbot_server.work_product_reads import ProductWorkReads, _arguments, _page, TOOLS, tool_descriptors
+from openbot_server.work_product_attachment_reads import page_attachment, read_attachment
+from openbot_server.work_product_reads import ProductWorkReads, _arguments, TOOLS, tool_descriptors
 from openbot_server.work_sources import WorkSourceAdmission
 from openbot_server.work_store import PostgresWorkStore
 from openbot_server.work_temporal_activity import derive_claim_id
 from openbot_server.work_temporal_effect import ToolRequest
 from openbot_server.work_temporal_start import WorkRuntimeContext
-from openbot_server.work_tool_results import ToolResults
+from openbot_server.work_tool_results import ToolResults, encode_result
 from openbot_server.work_values import InvalidWork, WorkConflict, canonical
 
 SCOPE = dict(expected_namespace='default', expected_queue='read-fixture', expected_workflow_type='read-fixture')
@@ -145,14 +146,33 @@ def test_attachment_input_bounds(changes):
 def test_utf16_pages_preserve_offsets_bytes_and_json_bounds():
     item=dict(id=str(uuid4()),name='Sample.txt',sha256='a'*64)
     request=_arguments('read_attachment',{'attachmentId':item['id'],'offset':3.0,'limit':1.0})
-    value=_page(item,'A😀B',False,request)
+    value=page_attachment(item,'A😀B',False,request)
     assert value['text']=='B' and value['totalCharacters']==4 and value['nextOffset'] is None
-    page=_page(item,'中文'*10000,True,{'offset':0,'limit':16000})
+    page=page_attachment(item,'中文'*10000,True,{'offset':0,'limit':16000})
     assert len(page['text'].encode())<=8192 and page['truncated'] is True
-    escaped=_page(item,'\x01'*16000,False,{'offset':0,'limit':16000})
+    escaped=page_attachment(item,'\x01'*16000,False,{'offset':0,'limit':16000})
     assert len(json.dumps(escaped['text'],ensure_ascii=False).encode())-2<=10240
-    with pytest.raises(InvalidWork): _page(item,'A😀B',False,{'offset':2,'limit':1})
-    with pytest.raises(InvalidWork): _page(item,'A😀B',False,{'offset':8,'limit':1})
+    with pytest.raises(InvalidWork): page_attachment(item,'A😀B',False,{'offset':2,'limit':1})
+    with pytest.raises(InvalidWork): page_attachment(item,'A😀B',False,{'offset':8,'limit':1})
+
+
+def test_shared_attachment_read_needs_only_files_and_keeps_codec_hash(tmp_path):
+    root=tmp_path.resolve()/'attachments'; root.mkdir(mode=0o700); root.chmod(0o700)
+    files=OwnerFiles(root); channel=str(uuid4()); data='A😀B'.encode()
+    async def check():
+        async with files.lock():
+            item=files.persist(channel,'Shared.txt',data)
+            context=SimpleNamespace(objective='Read [OpenBot attachment: '+item['id']+']')
+            read=read_attachment(files,context,dict(channelId=channel),
+                {'attachmentId':item['id'],'offset':0,'limit':12000})
+            assert read.snapshot==dict(id=item['id'],sha256=item['sha256'],
+                metadataSha256=hashlib.sha256(encode_result(item)[0]).hexdigest(),derivedSha256=None)
+            assert read.page['text']=='A😀B' and read.page['untrusted'] is True
+            assert read.size_bytes==len(data)
+            with pytest.raises(WorkConflict):
+                read_attachment(files,SimpleNamespace(objective='No reference'),dict(channelId=channel),
+                    {'attachmentId':item['id'],'offset':0,'limit':1})
+    asyncio.run(check())
 
 
 def test_real_context_cutoff_reference_and_prompt(setup):
