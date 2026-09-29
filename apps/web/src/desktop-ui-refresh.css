@@ -328,25 +328,6 @@
 .desktop-workspace .message-list {
   padding: 30px 30px 18px;
 }
-.conversation-round-one .message-composer {
-  position: relative;
-  margin: 10px 24px 0;
-  padding: 13px 14px 11px;
-  border: 1px solid #c7d1df;
-  border-radius: 19px;
-  box-shadow: 0 1px 3px #17283d04;
-  background: #fff;
-}
-.conversation-round-one .message-composer:focus-within {
-  border-color: #97b4db;
-  box-shadow: 0 0 0 2px #e8f1ff;
-}
-.conversation-round-one .message-composer textarea {
-  min-height: 45px;
-  padding: 4px;
-  resize: none;
-  font-size: var(--chat-font-size, 14px);
-}
 .composer-mention {
   display: inline-flex;
   align-items: center;
@@ -479,20 +460,6 @@
   color: #738199;
   cursor: pointer;
 }
-.conversation-round-one .composer-send {
-  width: 39px;
-  height: 39px;
-  min-width: 39px;
-  border: 0;
-  border-radius: 50%;
-  background: #253146;
-  color: white;
-  display: grid;
-  place-items: center;
-}
-.conversation-round-one .composer-send:disabled {
-  opacity: 0.4;
-}
 .composer-skills-panel {
   left: 10px;
   right: 10px;
@@ -506,10 +473,6 @@
   border: 0;
   background: transparent;
   cursor: pointer;
-}
-.conversation-round-one .conversation-footer {
-  padding: 9px 27px 16px;
-  font-size: 11px;
 }
 .share-dialog {
   width: min(700px, 90vw);
@@ -571,10 +534,6 @@
   .active-task-stage {
     display: none;
   }
-  .conversation-round-one .message-composer {
-    margin-left: 16px;
-    margin-right: 16px;
-  }
   .desktop-workspace .message-list {
     padding-left: 18px;
     padding-right: 18px;
@@ -591,10 +550,6 @@
 }
 :root[data-reduced-motion="true"] .task-spinner {
   animation: none;
-}
-
-.app-shell .conversation-round-one .message-row.human .message-content {
-  background: #eef5ff;
 }
 .app-shell .usage-rail-header h2 {
   font-size: 16px;
