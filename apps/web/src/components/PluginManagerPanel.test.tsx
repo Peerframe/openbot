@@ -5,14 +5,14 @@ import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Plugin, PluginManifest } from "../plugin-api";
 import { interact, renderComponent, setInputValue } from "../test/render-component";
+import { PluginGrantEditor } from "./PluginGrantEditor";
+import { PluginInstallForm } from "./PluginInstallForm";
 import {
-  PluginGrantEditor,
-  PluginInstallForm,
   PluginManager,
   PluginManagerPanel,
-  PluginToolList,
   resetGrantBotSelectionForTests,
 } from "./PluginManagerPanel";
+import { PluginToolList } from "./PluginToolList";
 
 const manifest: PluginManifest = {
   name: "Example",
