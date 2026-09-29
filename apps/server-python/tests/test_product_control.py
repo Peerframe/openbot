@@ -149,3 +149,30 @@ def test_integrated_model_knowledge_schedule_and_reactions(fixture,tmp_path):
         assert reaction.status_code==200,reaction.text
         assert reaction.json()['reactions'][0]['emoji']=='👍'
         assert api.get(f'/api/v1/channels/{channel}/reactions').status_code==200
+
+
+@pytest.mark.parametrize('owner', [False, True])
+def test_attachment_processing_http_preserves_namespace_and_signal(fixture, tmp_path, owner):
+    from types import SimpleNamespace
+    service = product(fixture, tmp_path)
+    calls = []
+    signals = []
+    async def process(*args, cancelled):
+        assert isinstance(cancelled, asyncio.Event) and not cancelled.is_set()
+        calls.append(args)
+        signals.append(cancelled)
+        return {'id': 'synthetic-attachment'}
+    service.processing = SimpleNamespace(process=process, process_owner=process)
+    base = '/api/v1/task-attachments' if owner else f"/api/v1/channels/{fixture['channelId']}/attachments"
+    with client(fixture, service) as api:
+        url = base + '/synthetic-attachment/process'
+        assert api.post(url, json={'operation': 'extract'}).status_code == 403
+        assert calls == []
+        for _ in range(2):
+            response = api.post(url, json={'operation': 'extract'}, headers={'Origin': 'http://testserver'})
+            assert response.status_code == 200, response.text
+            assert response.json() == {'attachment': {'id': 'synthetic-attachment'}}
+    expected = (fixture['token'], 'synthetic-attachment', {'operation': 'extract'}) if owner else (
+        fixture['token'], fixture['channelId'], 'synthetic-attachment', {'operation': 'extract'})
+    assert calls == [expected, expected]
+    assert signals[0] is not signals[1]

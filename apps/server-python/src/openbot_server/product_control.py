@@ -1,5 +1,4 @@
 """Explicit Python product composition for the retained Owner API; no implicit service selection."""
-from contextlib import asynccontextmanager
 from pathlib import Path
 import asyncio
 import hashlib
@@ -7,7 +6,7 @@ import json
 import os
 import re
 import stat
-from urllib.parse import quote, unquote
+from urllib.parse import quote
 
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
@@ -17,7 +16,7 @@ import psycopg
 from .authority import AuthenticationRequired, OwnerTransactions
 from .control_errors import ControlError
 from .database import StoreUnavailable
-from .http_input import authorize_owner, read_json
+from .http_input import authorize_owner, read_attachment_upload, read_json, request_signal
 from .owner_files import OwnerFiles, MAX_BYTES
 from .workspace import PostgresWorkspace
 
@@ -169,16 +168,8 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
     route('/api/v1/channels/{channel_id}/attachments','GET',attachment_list)
 
     async def upload(value,path,_body,request):
-        if request.headers.get('content-type')!='application/octet-stream': raise ControlError(415,'raw_attachment_required')
-        encoded=request.headers.get('x-openbot-filename','')
-        if not encoded or len(encoded)>2048: raise ControlError(400,'attachment_name_required')
-        name=unquote(encoded,errors='strict')
-        data=bytearray()
-        async with asyncio.timeout(10):
-            async for chunk in request.stream():
-                data.extend(chunk)
-                if len(data)>MAX_BYTES: raise ControlError(413,'attachment_size_limit')
-        result=await product.file_mutation(value,path['channel_id'],lambda:product.files.persist(path['channel_id'],name,bytes(data)))
+        name,data=await read_attachment_upload(request,max_bytes=MAX_BYTES)
+        result=await product.file_mutation(value,path['channel_id'],lambda:product.files.persist(path['channel_id'],name,data))
         return {'attachment':result}
     route('/api/v1/channels/{channel_id}/attachments','POST',upload,status=201)
 
@@ -296,17 +287,9 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
     route('/api/v1/employees/import/activate','POST',import_activate,limit=2*1024*1024+65536)
 
     async def process_attachment(value,path,body,request):
-        cancelled=asyncio.Event()
-        async def disconnect():
-            while not await request.is_disconnected(): await asyncio.sleep(.1)
-            cancelled.set()
-        watcher=asyncio.create_task(disconnect())
-        try:
+        async with request_signal(request) as cancelled:
             result=await service('processing').process(value,path['channel_id'],path['attachment_id'],body,cancelled=cancelled)
             return {'attachment':result}
-        finally:
-            watcher.cancel()
-            await asyncio.gather(watcher,return_exceptions=True)
     route('/api/v1/channels/{channel_id}/attachments/{attachment_id}/process','POST',process_attachment,limit=4096)
 
     async def approval_decision(value,path,body,_request):

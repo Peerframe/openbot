@@ -3,10 +3,10 @@
 The fixed owner namespace is the existing single Owner control domain, never a new principal.
 An upload alone grants no Task access: creation must explicitly capture its ID and digest.
 """
-import asyncio
-from urllib.parse import unquote,quote
+from urllib.parse import quote
 from fastapi.responses import Response
 from .control_errors import ControlError
+from .http_input import read_attachment_upload, request_signal
 from .owner_files import MAX_BYTES
 
 
@@ -18,15 +18,8 @@ def register_native_attachment_routes(route,product):
     route(base,'GET',listing)
 
     async def upload(token,path,body,request):
-        if request.headers.get('content-type')!='application/octet-stream':raise ControlError(415,'raw_attachment_required')
-        encoded=request.headers.get('x-openbot-filename','')
-        if not encoded or len(encoded)>2048:raise ControlError(400,'attachment_name_required')
-        name=unquote(encoded,errors='strict');data=bytearray()
-        async with asyncio.timeout(10):
-            async for chunk in request.stream():
-                data.extend(chunk)
-                if len(data)>MAX_BYTES:raise ControlError(413,'attachment_size_limit')
-        item=await product.file_mutation(token,None,lambda:product.files.owner_persist(name,bytes(data)),owner=True)
+        name,data=await read_attachment_upload(request,max_bytes=MAX_BYTES)
+        item=await product.file_mutation(token,None,lambda:product.files.owner_persist(name,data),owner=True)
         return dict(attachment=item)
     route(base,'POST',upload,status=201)
 
@@ -54,14 +47,7 @@ def register_native_attachment_routes(route,product):
 
     async def process(token,path,body,request):
         if product.processing is None:raise ControlError(503,'processing_unavailable')
-        cancelled=asyncio.Event()
-        async def disconnect():
-            while not await request.is_disconnected():await asyncio.sleep(.1)
-            cancelled.set()
-        watcher=asyncio.create_task(disconnect())
-        try:
+        async with request_signal(request) as cancelled:
             result=await product.processing.process_owner(token,path['attachment_id'],body,cancelled=cancelled)
             return dict(attachment=result)
-        finally:
-            watcher.cancel();await asyncio.gather(watcher,return_exceptions=True)
     route(base+'/{attachment_id}/process','POST',process,limit=4096)
