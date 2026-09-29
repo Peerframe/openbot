@@ -3,9 +3,9 @@ import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, test } from "node:test";
-import { isolatedConfiguration, parseArguments } from "./probe-support.mjs";
+import { isolatedConfiguration, parseArguments } from "./probe-support.ts";
 
-const roots = [];
+const roots: string[] = [];
 afterEach(async () => {
   await Promise.all(roots.splice(0).map((path) => rm(path, { recursive: true, force: true })));
 });
@@ -91,7 +91,8 @@ for (const fault of [
     if (fault === "oversized") await writeFile(path, "x".repeat(16385));
     if (fault === "invalid-json") await writeFile(path, "secret-invalid-value");
     if (fault === "array") await writeFile(path, "[]");
-    await assert.rejects(isolatedConfiguration(path), (error) => {
+    await assert.rejects(isolatedConfiguration(path), (error: unknown) => {
+      assert.ok(error instanceof Error);
       assert.equal(
         error.message,
         "Explicit probe configuration must be a bounded private owned JSON file.",

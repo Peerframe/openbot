@@ -1,22 +1,24 @@
 # Desktop Python product 开发候选
 
-这个显式选择的 macOS arm64 Preview 包使用可迁移的 CPython 启动现有 Python product API，保留 Desktop 的 PostgreSQL 管理、加密引导配置、Owner 登录和本地数据布局。默认打包与发布流程保持原来的后端选择。
+这个显式选择的 macOS arm64 Preview 包使用可迁移的 CPython 启动现有 Python product API，保留 Desktop 的 PostgreSQL 管理、加密引导配置、Owner 登录和本地数据布局。默认 macOS arm64 Desktop 打包也使用 Python 资源；显式 Preview 保留独立暂存路径与应用身份。
 
 这是未签名的开发候选。2026-09-26实际产物采用页面源码 `5b3f6bd` 加固定执行配置入口，包含45条迁移和
 63个固定依赖。暂存及包内API／PG、Owner登录、重启保留、父进程退出、非法目录和无引擎配置
 拒绝均通过；163个Python源码模块及SQL与当前仓库逐字节一致。真实包内Worker两次连接
 独占mTLS Temporal，合法浏览器配置可加载，非法浏览器／命令／引擎配置均在启动时拒绝并
-清理PG，独占资源已移除。[当前证据](../experiments/work-journey/evidence/desktop-preview-schema45.json)
+清理PG，独占资源已移除。[历史证据](../experiments/work-journey/evidence/desktop-preview-schema45.json)
 记录准确ASAR和控制器哈希。
 
 本版原生GUI尚未通过：Computer Use按完整应用路径与已核实包标识连接均超时，应用列表也
 没有Preview，已请用户打开此未安装候选后继续。旧41条迁移的
 [GUI／Keychain证据](../experiments/work-journey/evidence/desktop-native-keychain.json)不能覆盖此版。
-完整包内模型执行、签名、安装替换仍未验收；默认后端未切换。
+完整包内模型执行、签名、安装替换仍未验收；当前验收结论须绑定对应提交。
 
 ## 从仓库重现
 
 需要 macOS arm64、仓库要求的 Node/npm 和 Xcode Command Line Tools（`xcrun clang`）。无需系统 Python、维护者虚拟环境、Docker、付费模型账户或现成数据库。构建时需要访问公开 GitHub、nodejs.org 和 PyPI；建议为资源、应用包和临时副本预留约 3 GB 空间，不会使用付费服务。
+
+smoke 入口由仓库固定的 Node22.22.2 或其他受支持版本直接执行 TypeScript，无需新增编译器或运行器。API-only 与 Temporal 探针共用一次性父进程 helper，实际控制权仍由编译后的产品 controller／launcher 持有。
 
 应用本改动后，在仓库根目录执行：
 
@@ -24,12 +26,12 @@
 npm ci
 npx turbo run build --filter=@openbot/desktop... --filter=@openbot/db...
 node apps/desktop/scripts/prepare-native-server.ts --python-product
-node apps/desktop/scripts/smoke-python-product.mjs apps/desktop/out/python-product-runtime
+node apps/desktop/scripts/smoke-python-product.ts apps/desktop/out/python-product-runtime
 node apps/desktop/scripts/package.mjs --preview --python-product
-node apps/desktop/scripts/smoke-python-product.mjs 'apps/desktop/out/python-product/OpenBot Preview-darwin-arm64/OpenBot Preview.app/Contents/Resources/native-runtime'
+node apps/desktop/scripts/smoke-python-product.ts 'apps/desktop/out/python-product/OpenBot Python Preview-darwin-arm64/OpenBot Python Preview.app/Contents/Resources/native-runtime'
 ```
 
-暂存资源位于 `apps/desktop/out/python-product-runtime`，未安装应用位于 `apps/desktop/out/python-product/OpenBot Preview-darwin-arm64/OpenBot Preview.app`；两者都在已有生成目录排除规则内。不带参数的资源准备与既有发布命令不变。候选要求同时指定 `--preview --python-product`，拒绝正式签名配置和正式 Worker companion。`scripts/prepare-desktop-release.ts` 保留原有发布选择，不会收集这个本地候选。
+暂存资源位于 `apps/desktop/out/python-product-runtime`，未安装应用位于 `apps/desktop/out/python-product/OpenBot Python Preview-darwin-arm64/OpenBot Python Preview.app`；两者都在已有生成目录排除规则内。不带参数的资源准备与既有发布命令不变。候选要求同时指定 `--preview --python-product`，拒绝正式签名配置和正式 Worker companion。`scripts/prepare-desktop-release.ts` 保留原有发布选择，不会收集这个本地候选。
 
 开发者之后可以打开这个尚未安装的 Preview 应用，进入既有本地 Server 设置流程。这会使用 Preview 应用自己的用户目录，和一次性 smoke 不同；不要让两个 Server 同时写同一个目录。固定资源 manifest 只选择包内后端，不支持通过环境变量提供任意解释器或命令。
 

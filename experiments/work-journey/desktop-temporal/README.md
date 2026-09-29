@@ -16,8 +16,10 @@ Use a reviewed macOS arm64 Python candidate. `--runtime` must be the finished ap
 check that its controller/launcher bytes match the packaged ASAR files, as in the original
 packaging acceptance. Normal Node cannot import JavaScript directly from ASAR.
 
+The entry uses the repository Node requirement (reviewed Node22.22.2 supports native erasable TypeScript) and the same typed disposable-parent owner as the API-only smoke. Its compiled product consumers and Python SDK observer remain unchanged.
+
 ```sh
-node experiments/work-journey/desktop-temporal/smoke-packaged-temporal.mjs \
+node experiments/work-journey/desktop-temporal/smoke-packaged-temporal.ts \
   --runtime /absolute/candidate.app/Contents/Resources/native-runtime \
   --desktop-dist /absolute/checkout/apps/desktop/dist \
   --temporal-config /absolute/private/existing-engine.json
@@ -89,7 +91,7 @@ and160 Python source files matching the current checkout. The earlier native GUI
 qualification belongs to its original artifact and is not implied by this connection probe.
 
 ```sh
-node --test experiments/work-journey/desktop-temporal/probe-support.test.mjs
+node --test experiments/work-journey/desktop-temporal/probe-support.test.ts
 apps/server-python/.worker-venv/bin/python -B -m pytest -q \
   experiments/work-journey/desktop-temporal/test_observe_pollers.py
 ```

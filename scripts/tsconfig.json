@@ -7,6 +7,11 @@
     "erasableSyntaxOnly": true,
     "types": ["node"]
   },
-  "include": ["**/*.ts", "../apps/desktop/scripts/**/*.ts", "../deploy/server/*.ts"],
+  "include": [
+    "**/*.ts",
+    "../apps/desktop/scripts/**/*.ts",
+    "../deploy/server/*.ts",
+    "../experiments/work-journey/desktop-temporal/*.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

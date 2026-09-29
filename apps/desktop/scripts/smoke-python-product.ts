@@ -1,87 +1,32 @@
 import assert from "node:assert/strict";
-import { fork } from "node:child_process";
 import { channel } from "node:diagnostics_channel";
 import { lstat, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { NativeServerController } from "../dist/native-server.js";
-import { launchPythonProductServer } from "../dist/python-server.js";
+import { launchThroughDisposableParent, loadDesktopModules } from "./python-product-probe.ts";
 
-// A disposable launcher parent is killed to test the real API's inherited pipe EOF.
-async function launchThroughDisposableParent(runtimeRoot, env) {
-  const parent = fork(fileURLToPath(import.meta.url), ["--parent-child"], {
-    env: { PATH: "/usr/bin:/bin", LANG: "C.UTF-8" },
-    stdio: ["ignore", "ignore", "ignore", "ipc"],
-  });
-  let alive = true;
-  const closed = new Promise((resolve) =>
-    parent.once("close", () => {
-      alive = false;
-      resolve();
-    }),
-  );
-  try {
-    await new Promise((resolve, reject) => {
-      const timer = setTimeout(
-        () => reject(new Error("Disposable candidate parent timed out.")),
-        90_000,
-      );
-      parent.once("error", () => {
-        clearTimeout(timer);
-        reject(new Error("Disposable parent failed."));
-      });
-      parent.once("close", () => {
-        clearTimeout(timer);
-        reject(new Error("Disposable parent exited."));
-      });
-      parent.once("message", (message) => {
-        clearTimeout(timer);
-        message?.ready === true ? resolve() : reject(new Error("Disposable API failed."));
-      });
-      parent.send({ runtimeRoot, env });
-    });
-  } catch (error) {
-    parent.kill("SIGKILL");
-    await closed;
-    throw error;
-  }
-  return {
-    isAlive: () => alive,
-    async stop() {
-      parent.kill("SIGKILL");
-      await closed;
-      const deadline = Date.now() + 15_000;
-      while (Date.now() < deadline) {
-        try {
-          await fetch(`http://127.0.0.1:${env.OPENBOT_PORT}/health`, {
-            signal: AbortSignal.timeout(500),
-          });
-        } catch {
-          return;
-        }
-        await delay(100);
-      }
-      throw new Error("Python API survived its disposable parent.");
-    },
-  };
-}
+const desktopDist = fileURLToPath(new URL("../dist/", import.meta.url));
 
-export async function smokePythonProduct(runtimeRoot) {
+export async function smokePythonProduct(runtimeRoot: string) {
+  const { NativeServerController, launchPythonProductServer } =
+    await loadDesktopModules(desktopDist);
   const root = await realpath(await mkdtemp(join(tmpdir(), "openbot-python-candidate-smoke-")));
   const dataRoot = join(root, "local-server");
-  let cookie;
-  let base;
+  let cookie: string | undefined;
+  let base: string | undefined;
   let testParentExit = false;
-  const problems = [];
+  const problems: string[] = [];
   const diagnostics = channel("openbot.desktop.native-startup");
   // Do not collect child stderr, bootstrap data or any submitted credential.
-  const observer = (value) => problems.push(value?.error?.message ?? "Native startup failed.");
+  const observer = (value: unknown) => {
+    const error = value && typeof value === "object" && "error" in value ? value.error : undefined;
+    problems.push(error instanceof Error ? error.message : "Native startup failed.");
+  };
   diagnostics.subscribe(observer);
-  const authenticate = async (url, password) => {
+  const authenticate = async (url: string, password: string) => {
     const health = await fetch(`${url}/health`, { signal: AbortSignal.timeout(3000) });
-    assert.equal((await health.json()).phase, "python-product-candidate");
+    assert.equal(((await health.json()) as { phase: unknown }).phase, "python-product-candidate");
     const result = await fetch(`${url}/api/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Origin: url },
@@ -102,13 +47,14 @@ export async function smokePythonProduct(runtimeRoot) {
     decrypt: (value) => Buffer.from(value, "base64").toString(),
     launchServer: (env) =>
       testParentExit
-        ? launchThroughDisposableParent(runtimeRoot, env)
+        ? launchThroughDisposableParent(runtimeRoot, desktopDist, env)
         : launchPythonProductServer(runtimeRoot, env),
     connect: authenticate,
     authenticate,
   });
   try {
     assert.equal((await controller.start()).status, "ready", problems.join("; "));
+    assert.ok(base && cookie);
     const firstPort = new URL(base).port;
     const headers = { Cookie: cookie, Origin: base, "Content-Type": "application/json" };
     const created = await fetch(`${base}/api/v1/channels`, {
@@ -117,7 +63,7 @@ export async function smokePythonProduct(runtimeRoot) {
       body: JSON.stringify({ name: "Python Desktop synthetic", botIds: [] }),
     });
     assert.equal(created.status, 201);
-    const channelId = (await created.json()).channel.id;
+    const channelId = ((await created.json()) as { channel: { id: unknown } }).channel.id;
     const bootstrap = await readFile(join(dataRoot, "bootstrap.json"));
     const key = await readFile(join(dataRoot, "model-connections.key"));
     assert.equal(key.length, 32);
@@ -136,10 +82,14 @@ export async function smokePythonProduct(runtimeRoot) {
     assert.deepEqual(await readFile(join(dataRoot, "bootstrap.json")), bootstrap);
     assert.deepEqual(await readFile(join(dataRoot, "model-connections.key")), key);
     const channels = await fetch(`${base}/api/v1/channels`, { headers: { Cookie: cookie } });
-    assert.ok((await channels.json()).channels.some((value) => value.id === channelId));
+    assert.ok(
+      ((await channels.json()) as { channels: { id: unknown }[] }).channels.some(
+        (value: { id: unknown }) => value.id === channelId,
+      ),
+    );
     const nodes = await fetch(`${base}/api/v1/nodes`, { headers: { Cookie: cookie } });
     assert.equal(nodes.status, 200);
-    assert.deepEqual((await nodes.json()).nodes, []);
+    assert.deepEqual(((await nodes.json()) as { nodes: unknown }).nodes, []);
     const plugins = await fetch(`${base}/api/v1/plugins`, { headers: { Cookie: cookie } });
     assert.equal(plugins.status, 200);
     const restartedPostgres = Number(
@@ -181,20 +131,7 @@ export async function smokePythonProduct(runtimeRoot) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  if (process.argv[2] === "--parent-child" && process.send) {
-    process.once("message", async ({ runtimeRoot, env }) => {
-      try {
-        await launchPythonProductServer(runtimeRoot, env);
-        process.send({ ready: true });
-      } catch {
-        process.send({ ready: false });
-        process.exitCode = 1;
-        process.disconnect();
-      }
-    });
-  } else {
-    if (process.argv.length !== 3)
-      throw new Error("Usage: smoke-python-product <candidate-native-runtime>");
-    console.log(JSON.stringify(await smokePythonProduct(resolve(process.argv[2]))));
-  }
+  if (process.argv.length !== 3 || !process.argv[2])
+    throw new Error("Usage: smoke-python-product <candidate-native-runtime>");
+  console.log(JSON.stringify(await smokePythonProduct(resolve(process.argv[2]))));
 }

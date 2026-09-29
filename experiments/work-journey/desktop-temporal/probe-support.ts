@@ -1,33 +1,47 @@
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { constants } from "node:fs";
-import { open } from "node:fs/promises";
+import { open, type FileHandle } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { parseArgumentPairs } from "../../../scripts/argument-pairs.ts";
+
 const maximumBytes = 16384;
 
-export function parseArguments(args) {
-  const names = new Map([
-    ["--runtime", "runtimeRoot"],
-    ["--desktop-dist", "desktopDist"],
-    ["--temporal-config", "temporalConfigPath"],
-  ]);
-  const options = {};
-  for (let i = 0; i < args.length; i += 2) {
-    const key = names.get(args[i]);
-    if (!key || key in options || !args[i + 1] || !isAbsolute(args[i + 1]))
-      throw new Error("Three explicit absolute probe paths are required.");
-    options[key] = args[i + 1];
-  }
-  if (Object.keys(options).length !== names.size)
-    throw new Error("Three explicit absolute probe paths are required.");
-  return options;
+export interface ProbePaths {
+  runtimeRoot: string;
+  desktopDist: string;
+  temporalConfigPath: string;
+}
+export interface PollerObservation {
+  format: "openbot.desktop.temporal-pollers/v1";
+  freshWorkflowPollers: 1;
+  freshActivityPollers: 1;
+  sameWorkerIdentity: true;
+  workerIdentitySha256: string;
+}
+
+export function parseArguments(args: readonly string[]): ProbePaths {
+  const failure = "Three explicit absolute probe paths are required.";
+  const values = parseArgumentPairs(args, failure);
+  const runtimeRoot = values.get("--runtime");
+  const desktopDist = values.get("--desktop-dist");
+  const temporalConfigPath = values.get("--temporal-config");
+  if (
+    values.size !== 3 ||
+    !runtimeRoot ||
+    !desktopDist ||
+    !temporalConfigPath ||
+    ![runtimeRoot, desktopDist, temporalConfigPath].every(isAbsolute)
+  )
+    throw new Error(failure);
+  return { runtimeRoot, desktopDist, temporalConfigPath };
 }
 
 /** Read only the explicit trusted input; never copy TLS private-key contents. */
-export async function isolatedConfiguration(path) {
-  let handle;
+export async function isolatedConfiguration(path: string): Promise<string> {
+  let handle: FileHandle | undefined;
   try {
     if (!isAbsolute(path) || !process.getuid) throw new Error();
     handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
@@ -56,11 +70,12 @@ export async function isolatedConfiguration(path) {
       before.ctimeMs !== after.ctimeMs
     )
       throw new Error();
-    const config = JSON.parse(buffer.subarray(0, length).toString("utf8"));
+    const config: unknown = JSON.parse(buffer.subarray(0, length).toString("utf8"));
     if (
       !config ||
       typeof config !== "object" ||
       Array.isArray(config) ||
+      !("queue" in config) ||
       typeof config.queue !== "string"
     )
       throw new Error();
@@ -77,9 +92,13 @@ export async function isolatedConfiguration(path) {
   }
 }
 
-export async function observeBundledPollers(runtimeRoot, configPath, startedAt) {
+export async function observeBundledPollers(
+  runtimeRoot: string,
+  configPath: string,
+  startedAt: number,
+): Promise<PollerObservation> {
   const helper = fileURLToPath(new URL("./observe-pollers.py", import.meta.url));
-  const data = await new Promise((resolve, reject) => {
+  const data = await new Promise<string>((resolve, reject) => {
     const child = spawn(
       join(runtimeRoot, "python/bin/python3.12"),
       ["-I", "-B", helper, runtimeRoot, configPath, String(startedAt)],
@@ -90,10 +109,10 @@ export async function observeBundledPollers(runtimeRoot, configPath, startedAt) 
         stdio: ["ignore", "pipe", "ignore"],
       },
     );
-    const chunks = [];
+    const chunks: Buffer[] = [];
     let size = 0;
     const timer = setTimeout(() => child.kill("SIGKILL"), 45_000);
-    child.stdout.on("data", (part) => {
+    child.stdout.on("data", (part: Buffer) => {
       size += part.length;
       if (size > 4096) child.kill("SIGKILL");
       else chunks.push(part);
@@ -109,19 +128,27 @@ export async function observeBundledPollers(runtimeRoot, configPath, startedAt) 
       else resolve(Buffer.concat(chunks).toString("utf8"));
     });
   });
-  let result;
+  let result: unknown;
   try {
     result = JSON.parse(data);
   } catch {
     throw new Error("Invalid SDK probe response.");
   }
   if (
-    result?.format !== "openbot.desktop.temporal-pollers/v1" ||
+    !result ||
+    typeof result !== "object" ||
+    !("format" in result) ||
+    result.format !== "openbot.desktop.temporal-pollers/v1" ||
+    !("freshWorkflowPollers" in result) ||
     result.freshWorkflowPollers !== 1 ||
+    !("freshActivityPollers" in result) ||
     result.freshActivityPollers !== 1 ||
+    !("sameWorkerIdentity" in result) ||
     result.sameWorkerIdentity !== true ||
+    !("workerIdentitySha256" in result) ||
+    typeof result.workerIdentitySha256 !== "string" ||
     !/^[a-f0-9]{64}$/u.test(result.workerIdentitySha256)
   )
     throw new Error("Required fresh Workflow and Activity pollers were not observed.");
-  return result;
+  return result as PollerObservation;
 }

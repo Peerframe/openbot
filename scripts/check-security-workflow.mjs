@@ -291,7 +291,7 @@ export function validatePythonProductWorkflow(source, migrationSource) {
   const stages = [
     "--filter=@openbot/desktop --filter=@openbot/python-node-runtime",
     "node apps/desktop/scripts/prepare-native-server.ts --python-product",
-    "node apps/desktop/scripts/smoke-python-product.mjs apps/desktop/out/python-product-runtime",
+    "node apps/desktop/scripts/smoke-python-product.ts apps/desktop/out/python-product-runtime",
     "node apps/desktop/scripts/package.mjs --preview --python-product",
     "OpenBot Python Preview.app/Contents/Resources/native-runtime",
   ];

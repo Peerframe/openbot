@@ -1,5 +1,5 @@
+// Adapted from the existing MIT OpenBot smoke; production controller/launcher remain unchanged.
 import assert from "node:assert/strict";
-import { fork } from "node:child_process";
 import { channel } from "node:diagnostics_channel";
 import {
   lstat,
@@ -13,105 +13,51 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { setTimeout as delay } from "node:timers/promises";
-import { fileURLToPath, pathToFileURL } from "node:url";
-import { isolatedConfiguration, observeBundledPollers, parseArguments } from "./probe-support.mjs";
+import { pathToFileURL } from "node:url";
+import {
+  isolatedConfiguration,
+  observeBundledPollers,
+  parseArguments,
+  type ProbePaths,
+  type PollerObservation,
+} from "./probe-support.ts";
 
-// Adapted from the existing MIT OpenBot smoke; production controller/launcher remain unchanged.
-async function desktopModules(desktopDist) {
-  const controller = await import(pathToFileURL(join(desktopDist, "native-server.js")).href);
-  const launcher = await import(pathToFileURL(join(desktopDist, "python-server.js")).href);
-  return {
-    NativeServerController: controller.NativeServerController,
-    launchPythonProductServer: launcher.launchPythonProductServer,
-  };
-}
+import {
+  launchThroughDisposableParent,
+  loadDesktopModules,
+} from "../../../apps/desktop/scripts/python-product-probe.ts";
 
-// A disposable launcher parent is killed to test the real API's inherited pipe EOF.
-async function launchThroughDisposableParent(runtimeRoot, desktopDist, env) {
-  const parent = fork(fileURLToPath(import.meta.url), ["--parent-child"], {
-    env: { PATH: "/usr/bin:/bin", LANG: "C.UTF-8" },
-    stdio: ["ignore", "ignore", "ignore", "ipc"],
-  });
-  let alive = true;
-  const closed = new Promise((resolve) =>
-    parent.once("close", () => {
-      alive = false;
-      resolve();
-    }),
-  );
-  try {
-    await new Promise((resolve, reject) => {
-      const timer = setTimeout(
-        () => reject(new Error("Disposable candidate parent timed out.")),
-        90_000,
-      );
-      parent.once("error", () => {
-        clearTimeout(timer);
-        reject(new Error("Disposable parent failed."));
-      });
-      parent.once("close", () => {
-        clearTimeout(timer);
-        reject(new Error("Disposable parent exited."));
-      });
-      parent.once("message", (message) => {
-        clearTimeout(timer);
-        message?.ready === true ? resolve() : reject(new Error("Disposable API failed."));
-      });
-      parent.send({ runtimeRoot, desktopDist, env });
-    });
-  } catch (error) {
-    parent.kill("SIGKILL");
-    await closed;
-    throw error;
-  }
-  return {
-    isAlive: () => alive,
-    async stop() {
-      parent.kill("SIGKILL");
-      await closed;
-      const deadline = Date.now() + 15_000;
-      while (Date.now() < deadline) {
-        try {
-          await fetch(`http://127.0.0.1:${env.OPENBOT_PORT}/health`, {
-            signal: AbortSignal.timeout(500),
-          });
-        } catch {
-          return;
-        }
-        await delay(100);
-      }
-      throw new Error("Python API survived its disposable parent.");
-    },
-  };
-}
-
-export async function smokePackagedTemporal({ runtimeRoot, desktopDist, temporalConfigPath }) {
+export async function smokePackagedTemporal({
+  runtimeRoot,
+  desktopDist,
+  temporalConfigPath,
+}: ProbePaths) {
   const privateConfig = await isolatedConfiguration(temporalConfigPath);
-  const { NativeServerController, launchPythonProductServer } = await desktopModules(desktopDist);
+  const { NativeServerController, launchPythonProductServer } =
+    await loadDesktopModules(desktopDist);
   const root = await realpath(await mkdtemp(join(tmpdir(), "openbot-python-temporal-smoke-")));
   const dataRoot = join(root, "local-server");
-  let cookie;
-  let base;
+  let cookie: string | undefined;
+  let base: string | undefined;
   let testParentExit = false;
   let stage = "prepare";
-  let attemptedPort;
+  let attemptedPort: string | undefined;
   let ownerLogins = 0;
   let diagnosticsCount = 0;
-  const pollerObservations = [];
+  const pollerObservations: PollerObservation[] = [];
   const diagnostics = channel("openbot.desktop.native-startup");
   // Do not collect child stderr, bootstrap data or any submitted credential.
   const observer = () => {
     diagnosticsCount += 1;
   };
   diagnostics.subscribe(observer);
-  const authenticate = async (url, password) => {
+  const authenticate = async (url: string, password: string) => {
     const health = await fetch(`${url}/health`, {
       signal: AbortSignal.timeout(3000),
       redirect: "error",
     });
     assert.equal(health.status, 200);
-    assert.equal((await health.json()).phase, "python-product-candidate");
+    assert.equal(((await health.json()) as { phase: unknown }).phase, "python-product-candidate");
     const result = await fetch(`${url}/api/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Origin: url },
@@ -144,7 +90,7 @@ export async function smokePackagedTemporal({ runtimeRoot, desktopDist, temporal
     connect: authenticate,
     authenticate,
   });
-  const startConnected = async (label) => {
+  const startConnected = async (label: string) => {
     const startedAt = Date.now();
     stage = `${label}-launch`;
     assert.equal((await controller.start()).status, "ready", "Packaged product startup failed.");
@@ -158,9 +104,9 @@ export async function smokePackagedTemporal({ runtimeRoot, desktopDist, temporal
       redirect: "error",
     });
     assert.equal(health.status, 200);
-    assert.equal((await health.json()).phase, "python-product-candidate");
+    assert.equal(((await health.json()) as { phase: unknown }).phase, "python-product-candidate");
   };
-  const stopped = async (pid, port) => {
+  const stopped = async (pid: number, port: string) => {
     await controller.stop();
     assert.equal(controller.getState().status, "idle");
     assert.throws(() => process.kill(pid, 0));
@@ -183,6 +129,7 @@ export async function smokePackagedTemporal({ runtimeRoot, desktopDist, temporal
       { mode: 0o600, flag: "wx" },
     );
     await startConnected("initial");
+    assert.ok(base && cookie);
     const firstPort = new URL(base).port;
     const headers = { Cookie: cookie, Origin: base, "Content-Type": "application/json" };
     const created = await fetch(`${base}/api/v1/channels`, {
@@ -191,7 +138,7 @@ export async function smokePackagedTemporal({ runtimeRoot, desktopDist, temporal
       body: JSON.stringify({ name: "Python Desktop synthetic", botIds: [] }),
     });
     assert.equal(created.status, 201);
-    const channelId = (await created.json()).channel.id;
+    const channelId = ((await created.json()) as { channel: { id: unknown } }).channel.id;
     const bootstrap = await readFile(join(dataRoot, "bootstrap.json"));
     const key = await readFile(join(dataRoot, "model-connections.key"));
     assert.equal(key.length, 32);
@@ -206,10 +153,14 @@ export async function smokePackagedTemporal({ runtimeRoot, desktopDist, temporal
     assert.deepEqual(await readFile(join(dataRoot, "bootstrap.json")), bootstrap);
     assert.deepEqual(await readFile(join(dataRoot, "model-connections.key")), key);
     const channels = await fetch(`${base}/api/v1/channels`, { headers: { Cookie: cookie } });
-    assert.ok((await channels.json()).channels.some((value) => value.id === channelId));
+    assert.ok(
+      ((await channels.json()) as { channels: { id: unknown }[] }).channels.some(
+        (value: { id: unknown }) => value.id === channelId,
+      ),
+    );
     const nodes = await fetch(`${base}/api/v1/nodes`, { headers: { Cookie: cookie } });
     assert.equal(nodes.status, 200);
-    assert.deepEqual((await nodes.json()).nodes, []);
+    assert.deepEqual(((await nodes.json()) as { nodes: unknown }).nodes, []);
     const plugins = await fetch(`${base}/api/v1/plugins`, { headers: { Cookie: cookie } });
     assert.equal(plugins.status, 200);
     const restartedPostgres = Number(
@@ -282,30 +233,16 @@ export async function smokePackagedTemporal({ runtimeRoot, desktopDist, temporal
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  if (process.argv[2] === "--parent-child" && process.send) {
-    process.once("message", async ({ runtimeRoot, desktopDist, env }) => {
-      try {
-        const { launchPythonProductServer } = await desktopModules(desktopDist);
-        await launchPythonProductServer(runtimeRoot, env);
-        process.send({ ready: true });
-      } catch {
-        process.send({ ready: false });
-        process.exitCode = 1;
-        process.disconnect();
-      }
-    });
-  } else {
-    try {
-      console.log(
-        JSON.stringify(await smokePackagedTemporal(parseArguments(process.argv.slice(2)))),
-      );
-    } catch (error) {
-      // Error objects from product/RPC/files never reach the terminal.
-      const message = /^Packaged Temporal smoke failed during [a-z-]+\.$/u.test(error.message)
+  try {
+    console.log(JSON.stringify(await smokePackagedTemporal(parseArguments(process.argv.slice(2)))));
+  } catch (error: unknown) {
+    // Error objects from product/RPC/files never reach the terminal.
+    const message =
+      error instanceof Error &&
+      /^Packaged Temporal smoke failed during [a-z-]+\.$/u.test(error.message)
         ? error.message
         : "Packaged Temporal smoke input or setup failed.";
-      console.log(JSON.stringify({ ok: false, message }));
-      process.exitCode = 1;
-    }
+    console.log(JSON.stringify({ ok: false, message }));
+    process.exitCode = 1;
   }
 }

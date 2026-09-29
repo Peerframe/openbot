@@ -297,7 +297,7 @@ jobs:
         shell: bash
         run: |
           umask 077
-          node apps/desktop/scripts/smoke-python-product.mjs apps/desktop/out/python-product-runtime \
+          node apps/desktop/scripts/smoke-python-product.ts apps/desktop/out/python-product-runtime \
             > "$RUNNER_TEMP/python-preview-staged.json"
           cat "$RUNNER_TEMP/python-preview-staged.json"
       - name: Package the explicit unsigned Python Preview
@@ -306,7 +306,7 @@ jobs:
         shell: bash
         run: |
           umask 077
-          node apps/desktop/scripts/smoke-python-product.mjs \
+          node apps/desktop/scripts/smoke-python-product.ts \
             "apps/desktop/out/python-product/OpenBot Python Preview-darwin-arm64/OpenBot Python Preview.app/Contents/Resources/native-runtime" \
             > "$RUNNER_TEMP/python-preview-packaged.json"
           cat "$RUNNER_TEMP/python-preview-packaged.json"

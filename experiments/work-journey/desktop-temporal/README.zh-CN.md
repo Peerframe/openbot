@@ -6,8 +6,10 @@
 
 构建候选后，先核对编译的 `native-server.js` 和 `python-server.js` 与应用 ASAR 中的字节相同。提供一个已运行的可信 mTLS Temporal 服务、现有 namespace 和当前用户拥有的私有配置文件：
 
+入口遵循仓库 Node 版本要求（已核查的 Node22.22.2 可直接执行可擦除 TypeScript），与 API-only smoke 共用同一个父进程生命周期实现；编译后的产品消费者和 Python SDK 观察器保留。
+
 ```sh
-node experiments/work-journey/desktop-temporal/smoke-packaged-temporal.mjs \
+node experiments/work-journey/desktop-temporal/smoke-packaged-temporal.ts \
   --runtime /absolute/candidate.app/Contents/Resources/native-runtime \
   --desktop-dist /absolute/checkout/apps/desktop/dist \
   --temporal-config /absolute/private/existing-engine.json
@@ -26,7 +28,7 @@ node experiments/work-journey/desktop-temporal/smoke-packaged-temporal.mjs \
 在仓库根目录复现探针单元检查：
 
 ```sh
-node --test experiments/work-journey/desktop-temporal/probe-support.test.mjs
+node --test experiments/work-journey/desktop-temporal/probe-support.test.ts
 apps/server-python/.worker-venv/bin/python -B -m pytest -q \
   experiments/work-journey/desktop-temporal/test_observe_pollers.py
 ```
