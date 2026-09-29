@@ -30,6 +30,7 @@ done
 case "$program" in
   sleep) exec sleep 60 ;;
   flood) head -c ${ONE_MIB + 1} /dev/zero; exit 0 ;;
+  flood-hold) head -c ${ONE_MIB + 1} /dev/zero; exec sleep 60 ;;
   fail) printf 'refused\\n' >&2; exit 3 ;;
 esac
 printf 'argc=%s\\n' "$#"
@@ -159,17 +160,23 @@ test("a missing package interpreter surfaces as ENOENT for the caller's diagnost
 
 test("output beyond the caller's bound is refused and the larger bound admits it", async (t) => {
   const packageRoot = await fakePackage(t, true);
-  const flood = (maxBufferBytes: ComparatorOutputLimit) =>
+  const flood = (maxBufferBytes: ComparatorOutputLimit, program = "flood") =>
     runPythonComparator({
       packageRoot,
-      program: "flood",
+      program,
       unbuffered: false,
       timeoutMs: TEN_SECONDS,
       maxBufferBytes,
     });
-  const refused = flood(ONE_MIB);
+  // Node v22.22.2 src/spawn_sync.cc records pipe errors independently of the process exit.
+  // Keep this child alive to test termination; a fast exit may legitimately retain status 0
+  // alongside ENOBUFS. The separate fast-exit case below still requires overflow refusal.
+  const refused = flood(ONE_MIB, "flood-hold");
   assert.equal(spawnErrorCode(refused.error), "ENOBUFS");
   assert.notEqual(refused.status, 0);
+  assert.equal(refused.signal, "SIGTERM");
+  const fastExit = flood(ONE_MIB);
+  assert.equal(spawnErrorCode(fastExit.error), "ENOBUFS");
   const admitted = flood(TWO_MIB);
   assert.equal(admitted.error, undefined);
   assert.equal(admitted.status, 0);
