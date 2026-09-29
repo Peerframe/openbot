@@ -1,5 +1,7 @@
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { FuseV1Options, FuseVersion } from "@electron/fuses";
+import { FuseState, FuseV1Options, FuseVersion } from "@electron/fuses";
 import { describe, expect, it } from "vitest";
 import {
   createDesktopFuseConfig,
@@ -19,7 +21,8 @@ import {
   packagedElectronTarget,
   shouldIgnoreDesktopSource,
   validateDesktopAsarEntries,
-} from "./package-policy.mjs";
+  verifyDesktopFuses,
+} from "./package-policy.ts";
 
 describe("Desktop package source policy", () => {
   const appRoot = resolve("workspace", "apps", "desktop");
@@ -103,7 +106,7 @@ describe("Desktop package source policy", () => {
     }
   });
 
-  it.each([
+  it.each<[string, boolean]>([
     ["package.json", false],
     [join("dist", "main.js"), false],
     [join("dist", "renderer", "index.html"), false],
@@ -245,5 +248,62 @@ describe("Desktop package source policy", () => {
     expect(fuses[FuseV1Options.LoadBrowserProcessSpecificV8Snapshot]).toBe(false);
     expect(fuses[FuseV1Options.GrantFileProtocolExtraPrivileges]).toBe(false);
     expect(fuses[FuseV1Options.WasmTrapHandlers]).toBe(false);
+  });
+});
+
+// Electron V1 wire: sentinel, numeric version, byte count, then the declared fuse states.
+// Exercise the installed reader against bytes rather than substituting its decoded result.
+async function withFuseWire(states: readonly number[], check: (target: string) => Promise<void>) {
+  const root = await mkdtemp(join(tmpdir(), "openbot-fuses-"));
+  const target = join(root, "electron-fixture");
+  const bytes = Buffer.concat([
+    Buffer.from("dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX"),
+    Buffer.from([1, states.length, ...states]),
+  ]);
+  try {
+    await writeFile(target, bytes);
+    await check(target);
+    expect(await readFile(target)).toEqual(bytes);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}
+
+describe("packaged Electron fuse verification", () => {
+  // Independent expected wire: Node/debug/extra file privileges disabled, ASAR confinement enabled.
+  const wire = [48, 49, 48, 48, 49, 49, 48, 48, 48];
+
+  it.each(["darwin", "win32", "linux"])(
+    "reads the retained policy without writing on %s",
+    async (platform) => {
+      await withFuseWire(wire, (target) => verifyDesktopFuses(target, platform, "arm64"));
+    },
+  );
+
+  it.each([
+    FuseV1Options.RunAsNode,
+    FuseV1Options.EnableCookieEncryption,
+    FuseV1Options.EnableNodeOptionsEnvironmentVariable,
+    FuseV1Options.EnableNodeCliInspectArguments,
+    FuseV1Options.EnableEmbeddedAsarIntegrityValidation,
+    FuseV1Options.OnlyLoadAppFromAsar,
+    FuseV1Options.LoadBrowserProcessSpecificV8Snapshot,
+    FuseV1Options.GrantFileProtocolExtraPrivileges,
+    FuseV1Options.WasmTrapHandlers,
+  ])("rejects opposite, removed, inherited and missing fuse %s", async (index) => {
+    for (const state of [wire[index] === 48 ? 49 : 48, FuseState.REMOVED, FuseState.INHERIT]) {
+      const changed = [...wire];
+      changed[index] = state;
+      await withFuseWire(changed, async (target) => {
+        await expect(verifyDesktopFuses(target, "win32", "x64")).rejects.toThrow(
+          `Packaged Desktop fuse ${FuseV1Options[index]} did not match policy.`,
+        );
+      });
+    }
+    await withFuseWire(wire.slice(0, index), async (target) => {
+      await expect(verifyDesktopFuses(target, "linux", "x64")).rejects.toThrow(
+        `Packaged Desktop fuse ${FuseV1Options[index]} did not match policy.`,
+      );
+    });
   });
 });

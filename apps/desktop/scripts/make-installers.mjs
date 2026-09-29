@@ -1,4 +1,3 @@
-import { macosSigningOptions, verifyNotarizedDesktop } from "./macos-signing.mjs";
 import { execFile } from "node:child_process";
 import { constants } from "node:fs";
 import { access, appendFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -7,7 +6,6 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { listPackage } from "@electron/asar";
-import { FuseState, FuseV1Options, getCurrentFuseWire } from "@electron/fuses";
 import { Arch, build, Platform } from "electron-builder";
 import {
   DESKTOP_INSTALLER_FORMAT,
@@ -18,12 +16,13 @@ import {
   validateInstallerVersion,
   verifyInstallerManifest,
 } from "./installer-policy.ts";
+import { macosSigningOptions, verifyNotarizedDesktop } from "./macos-signing.mjs";
 import {
-  createDesktopFuseConfig,
   packagedAsarPath,
   packagedElectronTarget,
   validateDesktopAsarEntries,
-} from "./package-policy.mjs";
+  verifyDesktopFuses,
+} from "./package-policy.ts";
 
 if (process.argv.length !== 2) throw new Error("Installer creation takes no positional arguments.");
 const appRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -43,16 +42,7 @@ const asarPath = packagedAsarPath(bundle, platform);
 const binary = packagedElectronTarget(bundle, platform);
 validateDesktopAsarEntries(listPackage(asarPath, { isPack: false }));
 const asarBefore = await hashInstaller(asarPath);
-const expectedFuses = createDesktopFuseConfig(platform, arch);
-async function verifyFuses(target = binary) {
-  const actual = await getCurrentFuseWire(target);
-  for (const index of Object.values(FuseV1Options).filter((value) => typeof value === "number")) {
-    if (actual[index] !== (expectedFuses[index] ? FuseState.ENABLE : FuseState.DISABLE)) {
-      throw new Error(`Desktop fuse ${FuseV1Options[index]} changed during installer creation.`);
-    }
-  }
-}
-await verifyFuses();
+await verifyDesktopFuses(binary, platform, arch);
 if (signing) await verifyNotarizedDesktop(join(bundle, "OpenBot.app"));
 process.env.CSC_IDENTITY_AUTO_DISCOVERY = "false";
 await build({
@@ -60,9 +50,16 @@ await build({
   prepackaged: platform === "darwin" ? join(bundle, "OpenBot.app") : bundle,
   targets: Platform.fromString(target.builderPlatform).createTarget(target.targets, Arch[arch]),
   publish: "never",
-  config: installerConfig({ appRoot, outputDirectory, version, platform, arch, electronVersion: manifest.devDependencies.electron }),
+  config: installerConfig({
+    appRoot,
+    outputDirectory,
+    version,
+    platform,
+    arch,
+    electronVersion: manifest.devDependencies.electron,
+  }),
 });
-await verifyFuses();
+await verifyDesktopFuses(binary, platform, arch);
 if ((await hashInstaller(asarPath)).sha256 !== asarBefore.sha256) {
   throw new Error("Installer creation modified the reviewed ASAR.");
 }
@@ -101,7 +98,7 @@ if (platform === "darwin") {
     if ((await hashInstaller(join(resources, "app.asar"))).sha256 !== asarBefore.sha256) {
       throw new Error("The DMG does not contain the verified application at its installable root.");
     }
-    await verifyFuses(application);
+    await verifyDesktopFuses(application, platform, arch);
     if (signing) await verifyNotarizedDesktop(application);
   } finally {
     // Do not recursively remove a still-mounted image if detaching fails.

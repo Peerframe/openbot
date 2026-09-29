@@ -2,7 +2,7 @@ import { access, cp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { listPackage } from "@electron/asar";
-import { FuseState, FuseV1Options, flipFuses, getCurrentFuseWire } from "@electron/fuses";
+import { flipFuses } from "@electron/fuses";
 import { packager } from "@electron/packager";
 import { validateMacOSWorkerHostApplication } from "../../../scripts/macos-worker-host-release.mjs";
 import { createElectronDownloader } from "./electron-download.mjs";
@@ -23,7 +23,8 @@ import {
   packagedElectronTarget,
   shouldIgnoreDesktopSource,
   validateDesktopAsarEntries,
-} from "./package-policy.mjs";
+  verifyDesktopFuses,
+} from "./package-policy.ts";
 import { copyContainedResource } from "./package-resources.ts";
 import { PYTHON_CANDIDATE } from "./python-runtime.ts";
 
@@ -100,14 +101,12 @@ if (nativeRuntime) {
   } catch (error) {
     if (error?.code !== "ENOENT") throw error;
   }
-  {
-    if (
-      !marker ||
-      Object.keys(marker).length !== Object.keys(PYTHON_CANDIDATE).length ||
-      !Object.entries(PYTHON_CANDIDATE).every(([key, value]) => marker[key] === value)
-    )
-      throw new Error("Python candidate resources are incomplete or mismatched.");
-  }
+  if (
+    !marker ||
+    Object.keys(marker).length !== Object.keys(PYTHON_CANDIDATE).length ||
+    !Object.entries(PYTHON_CANDIDATE).every(([key, value]) => marker[key] === value)
+  )
+    throw new Error("Python candidate resources are incomplete or mismatched.");
 }
 if (workerCompanionSource !== undefined) {
   await validateMacOSWorkerHostApplication(workerCompanionSource, {
@@ -205,13 +204,7 @@ await access(
   packagedDesktopResource(packagePaths[0], process.platform, DESKTOP_ICON_RESOURCE_NAME, identity),
 );
 
-const actualFuses = await getCurrentFuseWire(target);
-for (const fuseIndex of Object.values(FuseV1Options).filter((value) => typeof value === "number")) {
-  const expectedState = expectedFuses[fuseIndex] ? FuseState.ENABLE : FuseState.DISABLE;
-  if (actualFuses[fuseIndex] !== expectedState) {
-    throw new Error(`Packaged Desktop fuse ${FuseV1Options[fuseIndex]} did not match policy.`);
-  }
-}
+await verifyDesktopFuses(target, process.platform, process.arch);
 
 const packagedWorkerCompanion = packagedDesktopMacOSWorkerCompanion(
   packagePaths[0],
