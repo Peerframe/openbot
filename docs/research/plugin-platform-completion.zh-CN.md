@@ -17,5 +17,5 @@ Cookie 和直接 fetch 均被阻止；撤销内容权限后关闭现有界面；
 
 补充原生回归：使用现有 Electron 44.2.0、独立隐藏文件页面和实际构建的代理/CSP，
 macOS 已通过初始化、宿主/代理 DOM 与 Cookie 隔离；真实监听的网络探针收到零请求。
-`apps/desktop/scripts/check-plugin-sandbox.mjs` 已加入 macOS/Windows CI 构建后检查。
+`apps/desktop/scripts/check-plugin-sandbox.ts` 已加入 macOS/Windows CI 构建后检查。
 这证明渲染器边界，不代表已安装应用的钥匙串流程或签名发行已验收。

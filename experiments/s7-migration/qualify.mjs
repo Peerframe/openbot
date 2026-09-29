@@ -11,7 +11,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 import { createDatabase } from "../../packages/db/dist/index.js";
 import { FileArtifactStorage } from "../../tests/oracles/legacy-server/dist/artifact-storage.js";
-import { materializeHistory, readJson, root, sha256, verifySources } from "./sources.mjs";
+import { materializeHistory, readJson, root, sha256, verifySources } from "./sources.ts";
 
 // This entry point has no database URL or input-archive option: it owns every tested destination.
 const image =

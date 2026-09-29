@@ -9,7 +9,7 @@ PostgreSQL 容器，并用现有官方 SDK 示例提供带身份验证的本机 
 
 ```sh
 npm ci --ignore-scripts --no-audit
-node experiments/s6-compat/run.mjs
+node experiments/s6-compat/run.ts
 ```
 
 入口构建依赖包、检查专属测试类型、运行六个探针并删除自建容器。PostgreSQL 使用现有无界面

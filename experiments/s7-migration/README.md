@@ -21,7 +21,7 @@ populated browser recovery has separate [product evidence](../work-journey/evide
 The two old histories share migrations 0000–0016. `histories/common` contains those original bytes;
 `histories/feature` and `histories/architecture` contain their different suffixes. The history JSON
 files record every SQL hash and timestamp. These snapshots were extracted from the commits above,
-without rewriting SQL. `sources.mjs` verifies them, reproduces the existing
+without rewriting SQL. `sources.ts` verifies them, reproduces the existing
 [`migration-lineage-baseline.json`](../../docs/migration-lineage-baseline.json), and verifies the
 current target. A shallow fresh checkout is sufficient; historical Git objects are not required.
 
@@ -38,9 +38,9 @@ needed. Missing prerequisites fail the command; the database checks never silent
 
 ```bash
 npm ci
-node experiments/s7-migration/sources.mjs
+node experiments/s7-migration/sources.ts
 npm run oracle:build
-node --test experiments/s7-migration/cleanup.test.mjs
+node --test experiments/s7-migration/cleanup.test.ts
 node experiments/s7-migration/qualify.mjs --report /tmp/s7-migration-summary.json
 npm run check
 ```

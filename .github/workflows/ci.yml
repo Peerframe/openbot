@@ -131,7 +131,7 @@ jobs:
       # installer consumes the same cache for the native sandbox probe.
       - name: Verify plugin isolation in native Desktop Chromium
         if: runner.os == 'macOS' || runner.os == 'Windows'
-        run: node apps/desktop/scripts/check-plugin-sandbox.mjs
+        run: node apps/desktop/scripts/check-plugin-sandbox.ts
       - name: Make the unsigned Desktop installers from the verified package
         run: npm run make:installers --workspace @openbot/desktop
       - name: Validate Windows remote-client installation and encrypted profile restart

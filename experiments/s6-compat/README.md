@@ -10,7 +10,7 @@ From the repository root, with the repository-supported Node version and Docker 
 
 ```sh
 npm ci --ignore-scripts --no-audit
-node experiments/s6-compat/run.mjs
+node experiments/s6-compat/run.ts
 ```
 
 The runner builds the required workspace packages, typechecks the dedicated tests, runs the six

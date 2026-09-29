@@ -17,7 +17,7 @@
 此夹具中浏览器表为空，实际浏览器恢复使用独立的[产品证据](../work-journey/evidence/product-browser-pages.json)。
 
 两条旧历史共享 0000–0016。`histories/common` 保存公共 SQL 原始字节，两个分支目录保存各自后缀。
-history JSON 记录每份 SQL 的哈希、时间戳和来源提交。`sources.mjs` 校验这些快照、复现已有
+history JSON 记录每份 SQL 的哈希、时间戳和来源提交。`sources.ts` 校验这些快照、复现已有
 [`migration-lineage-baseline.json`](../../docs/migration-lineage-baseline.json)，再检查当前目标。
 普通浅克隆即可运行，不依赖本机保存的旧 Git 对象。
 
@@ -32,9 +32,9 @@ Bot 私聊频道引用。所有内容均为合成数据，没有真实凭据、�
 
 ```bash
 npm ci
-node experiments/s7-migration/sources.mjs
+node experiments/s7-migration/sources.ts
 npm run oracle:build
-node --test experiments/s7-migration/cleanup.test.mjs
+node --test experiments/s7-migration/cleanup.test.ts
 node experiments/s7-migration/qualify.mjs --report /tmp/s7-migration-summary.json
 npm run check
 ```
