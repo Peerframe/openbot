@@ -20,15 +20,6 @@ const ignoredDirectories = new Set([
   "native-runtime",
   "out",
 ]);
-const decisionHeadings = [
-  "## Upstream review",
-  "## Reuse decision",
-  "## Source incorporation",
-  "## Verification plan",
-  "## Decision",
-  "## Consequences",
-];
-
 export interface DocumentationResult {
   markdownFiles: string[];
   failures: string[];
@@ -133,7 +124,8 @@ export function validateDocumentation(repositoryRoot: string): DocumentationResu
       },
       {
         name: "docs/decisions/TEMPLATE.md",
-        headings: decisionHeadings,
+        // ADR structure follows the decision; reviewers assess reasons, consequences and evidence.
+        headings: [],
       },
     ];
 
@@ -146,16 +138,6 @@ export function validateDocumentation(repositoryRoot: string): DocumentationResu
       const source = readFileSync(file, "utf8");
       for (const heading of contract.headings) {
         if (!source.includes(heading)) failures.push(`${contract.name}: missing '${heading}'.`);
-      }
-    }
-
-    const decisionDirectory = resolve(repositoryRoot, "docs/decisions");
-    for (const entry of readdirSync(decisionDirectory, { withFileTypes: true })) {
-      const match = entry.name.match(/^(\d{4})-.*\.md$/u);
-      if (!entry.isFile() || match === null || Number(match[1]) < 20) continue;
-      const source = readFileSync(resolve(decisionDirectory, entry.name), "utf8");
-      for (const heading of decisionHeadings) {
-        if (!source.includes(heading)) failures.push(`${entry.name}: missing '${heading}'.`);
       }
     }
 

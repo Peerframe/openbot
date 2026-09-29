@@ -262,6 +262,10 @@ evidence. Do not use the reuse label to hide one. Reopen only changed assumption
 notice review for copied/adapted source. Neither route requires a new ADR or duplicate research
 record when existing evidence covers the change.
 
+When a durable decision needs an ADR, adapt the [outline](docs/decisions/TEMPLATE.md) to the decision.
+Review reasons, consequences and necessary sources; neither its number nor directory requires a
+fixed set of headings. Existing ADRs need no formatting migration.
+
 For unchanged ordinary prose, replace all seven fields with:
 
 ```markdown

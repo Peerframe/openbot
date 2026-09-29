@@ -65,21 +65,36 @@ test("generated directories do not pollute source docs, and separate roots canno
   assert.deepEqual(validateDocumentation(other.root).failures, []);
 });
 
-test("research and ADR policy requirements remain enforced", (t) => {
+test("ADRs can use decision-specific structure while their local links remain checked", (t) => {
   const f = fixture(t);
-  rmSync(join(f.root, "docs/research/TEMPLATE.md"));
-  f.write("docs/decisions/0020-example.md", "## Decision\n## Consequences\n");
-  const failures = validateDocumentation(f.root).failures;
+  const decision =
+    "# ADR-0099: Keep the existing transport\n\n" +
+    "Retain the current transport because it preserves cancellation and needs no new runtime. " +
+    "The cost is maintaining the current adapter; [evidence](../../README.md) covers its consumer.\n";
+  f.write("docs/decisions/0099-example.md", decision);
+  assert.deepEqual(validateDocumentation(f.root).failures, []);
+  f.write("docs/decisions/0099-example.md", `${decision}[missing](absent.md)\n`);
+  assert.deepEqual(validateDocumentation(f.root).failures, [
+    "docs/decisions/0099-example.md: local link does not exist: absent.md",
+  ]);
+});
+
+test("research-policy files and targeted evidence requirements remain enforced", (t) => {
+  const f = fixture(t);
+  f.write("docs/research/TEMPLATE.md", "## Search evidence\n");
   assert.ok(
-    failures.includes("docs/research/TEMPLATE.md: required research-policy file is missing."),
+    validateDocumentation(f.root).failures.includes(
+      "docs/research/TEMPLATE.md: missing '## Source incorporation'.",
+    ),
   );
-  for (const heading of [
-    "Upstream review",
-    "Reuse decision",
-    "Source incorporation",
-    "Verification plan",
-  ])
-    assert.ok(failures.includes(`0020-example.md: missing '## ${heading}'.`));
+  for (const path of ["docs/research/TEMPLATE.md", "docs/decisions/TEMPLATE.md"]) {
+    rmSync(join(f.root, path));
+    assert.ok(
+      validateDocumentation(f.root).failures.includes(
+        `${path}: required research-policy file is missing.`,
+      ),
+    );
+  }
 });
 
 test("unpinning an action or removing developer routing still fails", (t) => {
