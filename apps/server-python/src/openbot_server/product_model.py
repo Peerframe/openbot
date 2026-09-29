@@ -424,7 +424,8 @@ def _validate_wire(body, provider, attempt):
             if kind == "text":
                 visible = bool(_text(part.get("text"))) or visible
             elif kind == "thinking":
-                _text(part.get("thinking")); _text(part.get("signature"), empty=False)
+                _text(part.get("thinking"))
+                _text(part.get("signature"), empty=False)
             elif kind == "redacted_thinking":
                 _text(part.get("data"), empty=False)
             elif kind == "tool_use":
