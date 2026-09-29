@@ -3,11 +3,11 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { downloadArtifact } from "@electron/get";
+import { downloadArtifact, type FetchDownloaderOptions } from "@electron/get";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createElectronDownloader } from "./electron-download.mjs";
+import { createElectronDownloader } from "./electron-download.ts";
 
-const roots = [];
+const roots: string[] = [];
 afterEach(async () => {
   vi.restoreAllMocks();
   vi.useRealTimers();
@@ -17,8 +17,10 @@ afterEach(async () => {
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), "openbot-electron-download-"));
   roots.push(root);
-  const sleep = vi.fn(async () => {});
-  const warn = vi.fn();
+  const sleep = vi.fn(
+    async (_ms: number, _value?: undefined, _options?: { signal?: AbortSignal | undefined }) => {},
+  );
+  const warn = vi.fn<(message: string) => void>();
   const downloader = createElectronDownloader({ sleep, warn });
   const target = join(root, "download.zip");
   const content = "synthetic Electron release bytes";
@@ -63,7 +65,7 @@ describe("Electron download recovery", () => {
     expect(cancelled).toBe(true);
     expect(sleep).toHaveBeenCalledWith(1_000, undefined, { signal: undefined });
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0][0]).not.toContain("https:");
+    expect(warn.mock.calls[0]?.[0]).not.toContain("https:");
   });
 
   it("reuses verified packaging bytes in Electron's own installer after a transient response", async () => {
@@ -87,7 +89,7 @@ describe("Electron download recovery", () => {
 
   it("does not wait indefinitely for a failed response body to cancel", async () => {
     const { downloader, target, content } = await fixture();
-    const cancel = vi.fn(() => new Promise(() => {}));
+    const cancel = vi.fn(() => new Promise<void>(() => {}));
     const fetch = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(new Response(new ReadableStream({ cancel }), { status: 504 }))
@@ -139,7 +141,7 @@ describe("Electron download recovery", () => {
     });
     expect(await readFile(target, "utf8")).toBe(content);
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(fetch.mock.calls[1][1]).toMatchObject({
+    expect(fetch.mock.calls[1]?.[1]).toMatchObject({
       headers: { Accept: "application/zip" },
       signal: expect.any(AbortSignal),
     });
@@ -217,9 +219,12 @@ describe("Electron download recovery", () => {
   it("stops immediately on caller cancellation", async () => {
     const { downloader, target, sleep } = await fixture();
     const abort = new AbortController();
-    const fetch = vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, { signal }) => {
+    const fetch = vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, options) => {
+      const signal = options?.signal;
+      if (!signal) throw new Error("Missing attempt signal");
       abort.abort();
       signal.throwIfAborted();
+      throw new Error("Abort signal did not stop fetch");
     });
     await expect(
       downloader.download(artifactUrl, target, { quiet: true, signal: abort.signal }),
@@ -232,8 +237,9 @@ describe("Electron download recovery", () => {
     const { target } = await fixture();
     vi.useFakeTimers();
     const download = vi.fn(
-      (_url, _target, { signal }) =>
-        new Promise((_resolve, reject) => {
+      (_url: string, _target: string, { signal }: FetchDownloaderOptions) =>
+        new Promise<void>((_resolve, reject) => {
+          if (!signal) throw new Error("Missing attempt signal");
           signal.addEventListener("abort", () => reject(signal.reason), { once: true });
         }),
     );
@@ -249,5 +255,78 @@ describe("Electron download recovery", () => {
     await pending;
     expect(download).toHaveBeenCalledTimes(3);
     expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+describe("download boundary exception and cancellation ownership", () => {
+  it.each([undefined, null, 0, "network failed", { code: 42 }, { cause: "ECONNRESET" }])(
+    "preserves an unclassified rejection without retry: %j",
+    async (failure) => {
+      const download = vi.fn(async () => {
+        throw failure;
+      });
+      const sleep = vi.fn(async () => {});
+      const downloader = createElectronDownloader({ downloader: { download }, sleep });
+      await expect(downloader.download(artifactUrl, "/unused")).rejects.toBe(failure);
+      expect(download).toHaveBeenCalledTimes(1);
+      expect(sleep).not.toHaveBeenCalled();
+    },
+  );
+
+  it("does not start a download for an already-cancelled caller", async () => {
+    const controller = new AbortController();
+    const reason = new Error("fixture cancellation");
+    controller.abort(reason);
+    const download = vi.fn(async () => {});
+    const downloader = createElectronDownloader({ downloader: { download } });
+    await expect(
+      downloader.download(artifactUrl, "/unused", { signal: controller.signal }),
+    ).rejects.toBe(reason);
+    expect(download).not.toHaveBeenCalled();
+  });
+
+  it("clears its attempt timer before cancellable backoff", async () => {
+    vi.useFakeTimers();
+    const controller = new AbortController();
+    const reason = new Error("cancel during backoff");
+    const download = vi.fn(async () => {
+      throw Object.assign(new Error("reset"), { code: "ECONNRESET" });
+    });
+    const sleep = vi.fn(
+      async (_ms: number, _value: undefined, options: { signal?: AbortSignal | undefined }) => {
+        expect(vi.getTimerCount()).toBe(0);
+        expect(options.signal).toBe(controller.signal);
+        controller.abort(reason);
+        options.signal?.throwIfAborted();
+      },
+    );
+    const downloader = createElectronDownloader({
+      downloader: { download },
+      sleep,
+      warn: () => {},
+    });
+    await expect(
+      downloader.download(artifactUrl, "/unused", { signal: controller.signal }),
+    ).rejects.toBe(reason);
+    expect(download).toHaveBeenCalledTimes(1);
+    expect(sleep).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("bounds cause traversal, including cyclic errors", async () => {
+    const cycle: { cause?: unknown } = {};
+    cycle.cause = cycle;
+    const download = vi.fn(async () => {
+      throw cycle;
+    });
+    const sleep = vi.fn(async () => {});
+    await expect(
+      createElectronDownloader({ downloader: { download }, sleep }).download(
+        artifactUrl,
+        "/unused",
+      ),
+    ).rejects.toBe(cycle);
+    expect(download).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
   });
 });

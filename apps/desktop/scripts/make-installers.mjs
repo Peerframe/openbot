@@ -16,7 +16,7 @@ import {
   validateInstallerVersion,
   verifyInstallerManifest,
 } from "./installer-policy.ts";
-import { macosSigningOptions, verifyNotarizedDesktop } from "./macos-signing.mjs";
+import { macosSigningOptions, verifyNotarizedDesktop } from "./macos-signing.ts";
 import {
   packagedAsarPath,
   packagedElectronTarget,

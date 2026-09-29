@@ -1,8 +1,15 @@
 import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
+import type { Options } from "@electron/packager";
 
-export function macosSigningOptions(env, platform, preview = false) {
+const nativeTimeoutMs = 60_000;
+
+export function macosSigningOptions(
+  env: Readonly<Record<string, string | undefined>>,
+  platform: string,
+  preview = false,
+) {
   const identity = env.OPENBOT_DESKTOP_MACOS_SIGNING_IDENTITY;
   const profile = env.OPENBOT_DESKTOP_MACOS_NOTARY_PROFILE;
   if (!identity && !profile) return undefined;
@@ -28,18 +35,25 @@ export function macosSigningOptions(env, platform, preview = false) {
       }),
     },
     osxNotarize: { keychainProfile: profile },
-  };
+  } satisfies Pick<Options, "osxSign" | "osxNotarize">;
 }
 
-export async function verifyNotarizedDesktop(appPath) {
+/** Read-only native checks in fixed order; each command has its own bounded lifetime. */
+export async function verifyNotarizedDesktop(appPath: string): Promise<void> {
   const run = promisify(execFile);
-  await run("/usr/bin/codesign", ["--verify", "--deep", "--strict", appPath], { timeout: 60_000 });
-  const { stderr } = await run("/usr/bin/codesign", ["--display", "--verbose=4", appPath]);
+  await run("/usr/bin/codesign", ["--verify", "--deep", "--strict", appPath], {
+    timeout: nativeTimeoutMs,
+  });
+  const { stderr } = await run("/usr/bin/codesign", ["--display", "--verbose=4", appPath], {
+    timeout: nativeTimeoutMs,
+  });
   if (
     !/^Authority=Developer ID Application:/mu.test(stderr) ||
     !/^TeamIdentifier=[A-Z0-9]{10}$/mu.test(stderr)
   )
     throw new Error("The application does not have a Developer ID signature.");
-  await run("/usr/bin/xcrun", ["stapler", "validate", appPath], { timeout: 60_000 });
-  await run("/usr/sbin/spctl", ["--assess", "--type", "execute", appPath], { timeout: 60_000 });
+  await run("/usr/bin/xcrun", ["stapler", "validate", appPath], { timeout: nativeTimeoutMs });
+  await run("/usr/sbin/spctl", ["--assess", "--type", "execute", appPath], {
+    timeout: nativeTimeoutMs,
+  });
 }

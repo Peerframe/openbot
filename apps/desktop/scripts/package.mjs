@@ -5,8 +5,8 @@ import { listPackage } from "@electron/asar";
 import { flipFuses } from "@electron/fuses";
 import { packager } from "@electron/packager";
 import { validateMacOSWorkerHostApplication } from "../../../scripts/macos-worker-host-release.mjs";
-import { createElectronDownloader } from "./electron-download.mjs";
-import { macosSigningOptions, verifyNotarizedDesktop } from "./macos-signing.mjs";
+import { createElectronDownloader } from "./electron-download.ts";
+import { macosSigningOptions, verifyNotarizedDesktop } from "./macos-signing.ts";
 import {
   createDesktopFuseConfig,
   DESKTOP_ICON_RESOURCE_NAME,
