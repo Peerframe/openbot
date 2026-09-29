@@ -1,17 +1,17 @@
-import { spawn, execFile } from "node:child_process";
-import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { type ChildProcess, execFile, spawn } from "node:child_process";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { beforeAll, afterAll, afterEach, describe, expect, it, vi } from "vitest";
-import { buildPostgresSupervisor } from "./postgres-supervisor-build.mjs";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { buildPostgresSupervisor } from "./postgres-supervisor-build.ts";
 
 describe.skipIf(process.platform !== "darwin")("native macOS database supervisor", () => {
-  let root;
-  let supervisor;
-  let postgres;
-  const children = new Set();
+  let root: string;
+  let supervisor: string;
+  let postgres: string;
+  const children = new Set<ChildProcess>();
   beforeAll(async () => {
     root = await mkdtemp(join(tmpdir(), "openbot-supervisor-"));
     supervisor = join(root, "postgres-supervisor");
@@ -65,7 +65,7 @@ int main(void) {
     if (root) await rm(root, { recursive: true, force: true });
   });
 
-  function launch(env = {}, executable = postgres, port = "5432") {
+  function launch(env: NodeJS.ProcessEnv = {}, executable = postgres, port = "5432") {
     const child = spawn(supervisor, [executable, root, port], {
       stdio: ["pipe", "pipe", "pipe"],
       env: { PATH: "/usr/bin:/bin", ...env },
@@ -88,7 +88,8 @@ int main(void) {
       },
     };
   }
-  function alive(pid) {
+  function alive(pid: number | undefined) {
+    if (pid === undefined) return false;
     try {
       process.kill(pid, 0);
       return true;

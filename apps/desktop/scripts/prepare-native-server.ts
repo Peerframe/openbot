@@ -2,9 +2,13 @@ import { cp, lstat, mkdir, readdir, readFile, rm, symlink } from "node:fs/promis
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { nativeOptionalPackageApplies } from "./native-runtime-policy.mjs";
-import { buildPostgresSupervisor } from "./postgres-supervisor-build.mjs";
-import { pythonCandidateGraph, stagePythonProduct } from "./python-runtime.mjs";
+import {
+  type NativeRuntimeLock,
+  nativeOptionalPackageApplies,
+  pythonCandidateGraph,
+} from "./native-runtime-policy.ts";
+import { buildPostgresSupervisor } from "./postgres-supervisor-build.ts";
+import { stagePythonProduct } from "./python-runtime.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const args = process.argv.slice(2);
@@ -24,7 +28,7 @@ if (process.platform !== "darwin" || process.arch !== "arm64") {
   console.log("Native Python service omitted: this platform ships the remote client.");
   process.exit(0);
 }
-const lock = JSON.parse(await readFile(join(root, "package-lock.json"), "utf8"));
+const lock: NativeRuntimeLock = JSON.parse(await readFile(join(root, "package-lock.json"), "utf8"));
 const graph = pythonCandidateGraph(lock);
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
@@ -43,12 +47,14 @@ for (const key of graph.workspaceKeys) {
   if (key === "packages/db") {
     await cp(join(root, key, "migrations"), join(destination, "migrations"), { recursive: true });
   }
-  const name = lock.packages[key].name;
+  const name = lock.packages?.[key]?.name;
+  if (typeof name !== "string") throw new Error("Workspace package name is missing.");
   const link = join(output, "node_modules", name);
   await symlink(relative(dirname(link), destination), link);
 }
 for (const key of graph.packageKeys) {
-  const entry = lock.packages[key];
+  const entry = lock.packages?.[key];
+  if (!entry) throw new Error("Locked package entry is missing.");
   if (entry.optional && !nativeOptionalPackageApplies(entry, process.platform, process.arch))
     continue;
   await mkdir(dirname(join(output, key)), { recursive: true });
@@ -71,7 +77,7 @@ for (const key of graph.packageKeys) {
   // npm strips symlinks. Recreate only links within the already locked binary package, at build time.
   const links = JSON.parse(await readFile(join(output, "postgres/pg-symlinks.json"), "utf8"));
   for (const { source, target } of links) {
-    const toLocal = (value) => {
+    const toLocal = (value: unknown): string => {
       if (
         typeof value !== "string" ||
         !value.startsWith("native/") ||
@@ -87,7 +93,7 @@ for (const key of graph.packageKeys) {
     try {
       await lstat(targetPath);
     } catch (error) {
-      if (error.code !== "ENOENT") throw error;
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
       await symlink(relative(dirname(targetPath), sourcePath), targetPath);
     }
   }

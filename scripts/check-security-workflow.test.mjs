@@ -158,7 +158,7 @@ test("native portable capabilities survive without unrelated repeated suites", (
       command(v, "portable", "build-macos-worker-host-candidate").run = "echo omitted";
     },
     (v) => {
-      command(v, "portable", "prepare-native-server.mjs").run = "echo omitted";
+      command(v, "portable", "prepare-native-server.ts").run = "echo omitted";
     },
     (v) => {
       command(v, "portable", "turbo run test").if = false;

@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
-export async function buildPostgresSupervisor(source, output) {
+export async function buildPostgresSupervisor(source: string, output: string): Promise<void> {
   if (process.platform !== "darwin" || !["arm64", "x64"].includes(process.arch))
     throw new Error("The PostgreSQL supervisor requires a native macOS build.");
   await promisify(execFile)(

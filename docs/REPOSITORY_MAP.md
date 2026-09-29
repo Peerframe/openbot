@@ -45,7 +45,7 @@ source is `packages/harness`; core checks and product consumers install its type
 - Actual consumers: control [runtime host](../apps/server-python/src/openbot_server/runtime_host.py),
   [process](../apps/server-python/src/openbot_server/runtime_process.py),
   [Work runtime](../apps/server-python/src/openbot_server/work_product_runtime.py) and
-  [Desktop payload builder](../apps/desktop/scripts/prepare-native-server.mjs).
+  [Desktop payload builder](../apps/desktop/scripts/prepare-native-server.ts).
   Optional [Temporal composition](../packages/harness/src/openbot_agent_runtime/temporal_agent.py)
   has a different lifecycle; control owns [trusted ports](../apps/server-python/src/openbot_server/work_runtime_ports.py).
 - Tests: [limits/catalog](../packages/harness/tests/test_catalog_and_limits.py),

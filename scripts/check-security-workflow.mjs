@@ -156,7 +156,7 @@ export function validateSecurityWorkflow(source) {
     [
       "turbo run test --concurrency=2 --filter=@openbot/desktop --filter=@openbot/node --filter=@openbot/windows-secret-acl",
       "turbo run build --filter=@openbot/desktop --filter=@openbot/node --filter=@openbot/python-node-runtime",
-      "node apps/desktop/scripts/prepare-native-server.mjs",
+      "node apps/desktop/scripts/prepare-native-server.ts",
       "node apps/desktop/scripts/package.mjs",
       "npm run make:installers --workspace @openbot/desktop",
     ],
@@ -171,7 +171,7 @@ export function validateSecurityWorkflow(source) {
       "node scripts/build-macos-worker-host-candidate.mjs",
       "https://nodejs.org/dist/v22.22.2/node-v22.22.2-darwin-arm64.tar.gz",
       "OPENBOT_DESKTOP_MACOS_WORKER_COMPANION=$companion_root/OpenBot Worker Host.app",
-      "node apps/desktop/scripts/prepare-native-server.mjs",
+      "node apps/desktop/scripts/prepare-native-server.ts",
       "node apps/desktop/scripts/package.mjs",
       "npm run make:installers --workspace @openbot/desktop",
       "npm run worker-host:macos:native-check",
@@ -290,7 +290,7 @@ export function validatePythonProductWorkflow(source, migrationSource) {
   assert.equal(preview["runs-on"], "macos-15");
   const stages = [
     "--filter=@openbot/desktop --filter=@openbot/python-node-runtime",
-    "node apps/desktop/scripts/prepare-native-server.mjs --python-product",
+    "node apps/desktop/scripts/prepare-native-server.ts --python-product",
     "node apps/desktop/scripts/smoke-python-product.mjs apps/desktop/out/python-product-runtime",
     "node apps/desktop/scripts/package.mjs --preview --python-product",
     "OpenBot Python Preview.app/Contents/Resources/native-runtime",

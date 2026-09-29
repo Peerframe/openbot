@@ -2,9 +2,11 @@ import { createHash } from "node:crypto";
 import { cp, mkdir, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 
+import { pythonInstallArguments, runPythonBuildStage } from "./python-build.ts";
+
 // Build tools exist only in this disposable staging directory. The payload gets the wheel and
 // its exact local-distribution lock, not a source directory or contributor skills.
-export async function stageInstalledHarness(root, output, python, run, installArguments) {
+export async function stageInstalledHarness(root: string, output: string, python: string) {
   const source = join(root, "packages/harness");
   const stage = join(output, ".harness-build");
   await mkdir(join(stage, "scripts"), { recursive: true });
@@ -25,30 +27,35 @@ export async function stageInstalledHarness(root, output, python, run, installAr
       recursive: true,
       filter: (path) => !path.endsWith("__pycache__") && !path.endsWith(".pyc"),
     });
-    await run(
+    await runPythonBuildStage(
       "create harness build environment",
       python,
       ["-I", "-m", "venv", join(stage, ".build-venv")],
       stage,
     );
     const builder = join(stage, ".build-venv/bin/python");
-    await run(
+    await runPythonBuildStage(
       "install harness build tools",
       builder,
-      installArguments(join(stage, "requirements-build.lock")).filter(
+      pythonInstallArguments(join(stage, "requirements-build.lock")).filter(
         (arg, index, args) => arg !== "--resume-retries" && args[index - 1] !== "--resume-retries",
       ),
       stage,
       15 * 60_000,
     );
-    await run(
+    await runPythonBuildStage(
       "verify harness build tools",
       builder,
       ["-I", "scripts/verify_environment.py", "--profile", "build"],
       stage,
     );
-    await run("verify harness metadata", builder, ["-I", "scripts/check-metadata.py"], stage);
-    await run(
+    await runPythonBuildStage(
+      "verify harness metadata",
+      builder,
+      ["-I", "scripts/check-metadata.py"],
+      stage,
+    );
+    await runPythonBuildStage(
       "build harness wheel",
       builder,
       ["-I", "-m", "hatchling", "build", "-t", "wheel"],
@@ -56,14 +63,15 @@ export async function stageInstalledHarness(root, output, python, run, installAr
     );
     const lock = await readFile(join(stage, "distribution.lock"), "utf8");
     const pins = lock.split("\n").filter((line) => line && !line.startsWith("#"));
-    if (pins.length !== 1 || !/^openbot-agent-runtime==[0-9]+\.[0-9]+\.[0-9]+$/u.test(pins[0]))
+    const [pin] = pins;
+    if (pins.length !== 1 || !pin || !/^openbot-agent-runtime==[0-9]+\.[0-9]+\.[0-9]+$/u.test(pin))
       throw new Error("Invalid local harness distribution pin.");
-    const version = pins[0].split("==")[1];
+    const version = pin.slice("openbot-agent-runtime==".length);
     const wheel = join(stage, "dist", `openbot_agent_runtime-${version}-py3-none-any.whl`);
     const sha256 = createHash("sha256")
       .update(await readFile(wheel))
       .digest("hex");
-    await run(
+    await runPythonBuildStage(
       "install harness wheel",
       python,
       ["-I", "-m", "pip", "--isolated", "install", "--no-index", "--no-deps", wheel],
@@ -71,7 +79,7 @@ export async function stageInstalledHarness(root, output, python, run, installAr
     );
     await mkdir(join(output, "packages/harness"), { recursive: true });
     await cp(join(stage, "distribution.lock"), join(output, "packages/harness/distribution.lock"));
-    await run(
+    await runPythonBuildStage(
       "verify installed harness",
       python,
       [

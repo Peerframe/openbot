@@ -24,8 +24,8 @@ import {
   shouldIgnoreDesktopSource,
   validateDesktopAsarEntries,
 } from "./package-policy.mjs";
-import { copyContainedResource } from "./package-resources.mjs";
-import { PYTHON_CANDIDATE } from "./python-runtime.mjs";
+import { copyContainedResource } from "./package-resources.ts";
+import { PYTHON_CANDIDATE } from "./python-runtime.ts";
 
 const appRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);

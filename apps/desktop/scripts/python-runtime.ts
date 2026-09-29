@@ -1,10 +1,13 @@
-import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { cp, mkdir, open, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { collectProductionPackageGraph } from "../../../scripts/production-package-graph.ts";
-import { stageInstalledHarness } from "./harness-wheel.mjs";
-import { validateContainedResource } from "./package-resources.mjs";
+import { stageInstalledHarness } from "./harness-wheel.ts";
+import { validateContainedResource } from "./package-resources.ts";
+import {
+  PYTHON_INSTALL_TIMEOUT_MS,
+  pythonInstallArguments,
+  runPythonBuildStage,
+} from "./python-build.ts";
 
 export const PYTHON_CANDIDATE = Object.freeze({
   format: "openbot.desktop.python-control/v1",
@@ -26,93 +29,16 @@ export const NODE_ARCHIVE = Object.freeze({
   maximumBytes: 64 * 1024 * 1024,
 });
 
-export function pythonCandidateGraph(lock) {
-  const entryPoint = "packages/python-node-runtime";
-  const runtime = lock.packages?.[entryPoint];
-  for (const name of [
-    "@openbot/db",
-    "pdfjs-dist",
-    "officeparser",
-    "tesseract.js",
-    "@tesseract.js-data/eng",
-    "@tesseract.js-data/chi_sim",
-  ]) {
-    if (typeof runtime?.dependencies?.[name] !== "string")
-      throw new Error("Retained Python parser dependency is missing.");
-  }
-  // The metadata-only workspace owns these pins independently of the retired business Server.
-  const graph = collectProductionPackageGraph(lock, entryPoint);
-  return {
-    ...graph,
-    workspaceKeys: graph.workspaceKeys.filter((key) => key !== entryPoint),
-  };
+export interface RuntimeArchive {
+  url: string;
+  sha256: string;
+  maximumBytes: number;
 }
 
-export const PYTHON_INSTALL_TIMEOUT_MS = 15 * 60_000;
-
-export function pythonInstallArguments(requirements) {
-  return [
-    "-I",
-    "-B",
-    "-m",
-    "pip",
-    "--isolated",
-    "install",
-    "--no-cache-dir",
-    "--index-url",
-    "https://pypi.org/simple",
-    "--disable-pip-version-check",
-    "--timeout",
-    "30",
-    "--retries",
-    "5",
-    "--resume-retries",
-    "5",
-    "--no-deps",
-    "--only-binary=:all:",
-    "-r",
-    requirements,
-  ];
-}
-
-export async function runPythonBuildStage(stage, executable, args, cwd, timeout = 60_000) {
-  console.info(`[Python candidate] ${stage} (limit ${timeout} ms).`);
-  const started = performance.now();
-  await new Promise((resolve, reject) => {
-    let timedOut = false;
-    const child = spawn(executable, args, {
-      cwd,
-      env: { PATH: "/usr/bin:/bin", LANG: "C.UTF-8", LC_ALL: "C.UTF-8" },
-      shell: false,
-      stdio: "inherit",
-    });
-    const timer = setTimeout(() => {
-      timedOut = true;
-      child.kill("SIGKILL");
-    }, timeout);
-    function failure(code, signal, spawnCode = null) {
-      const elapsedMs = Math.round(performance.now() - started);
-      // Preserve subprocess facts without printing potentially private paths or arguments.
-      return Object.assign(
-        new Error(
-          `Python candidate stage "${stage}" failed after ${elapsedMs} ms ` +
-            `(timeout=${timedOut}, code=${code}, signal=${signal}, spawn=${spawnCode}).`,
-        ),
-        { stage, elapsedMs, timedOut, exitCode: code, signal, spawnCode },
-      );
-    }
-    child.once("error", (error) => {
-      clearTimeout(timer);
-      reject(failure(null, null, error.code ?? "unknown"));
-    });
-    child.once("close", (code, signal) => {
-      clearTimeout(timer);
-      code === 0 && !timedOut ? resolve() : reject(failure(code, signal));
-    });
-  });
-}
-
-export async function verifiedDownload(archive, destination) {
+export async function verifiedDownload(
+  archive: RuntimeArchive,
+  destination: string,
+): Promise<void> {
   const response = await fetch(archive.url, {
     signal: AbortSignal.timeout(120_000),
     redirect: "follow",
@@ -139,7 +65,7 @@ export async function verifiedDownload(archive, destination) {
   await file.close();
 }
 
-export async function stagePythonProduct(root, output) {
+export async function stagePythonProduct(root: string, output: string): Promise<void> {
   if (process.platform !== "darwin" || process.arch !== "arm64")
     throw new Error("Only the macOS arm64 Python candidate has a reviewed distribution.");
   const downloads = join(output, ".downloads");
@@ -199,13 +125,7 @@ export async function stagePythonProduct(root, output) {
     output,
     PYTHON_INSTALL_TIMEOUT_MS,
   );
-  const harness = await stageInstalledHarness(
-    root,
-    output,
-    python,
-    runPythonBuildStage,
-    pythonInstallArguments,
-  );
+  const harness = await stageInstalledHarness(root, output, python);
   await runPythonBuildStage(
     "verify Python environment",
     python,

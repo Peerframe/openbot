@@ -11,9 +11,9 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { copyContainedResource, validateContainedResource } from "./package-resources.mjs";
+import { copyContainedResource, validateContainedResource } from "./package-resources.ts";
 
-const roots = [];
+const roots: string[] = [];
 afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
@@ -48,7 +48,9 @@ describe("packaged native resource portability", () => {
     },
   );
 
-  it.skipIf(process.platform === "win32").each(["absolute", "external", "broken", "cyclic"])(
+  it
+    .skipIf(process.platform === "win32")
+    .each(["absolute", "external", "broken", "cyclic"] as const)(
     "rejects %s symlinks before creating a destination",
     async (kind) => {
       const { root, source, destination } = await fixture();

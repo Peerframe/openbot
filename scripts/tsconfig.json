@@ -1,12 +1,12 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": ".",
+    "rootDir": "..",
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
     "types": ["node"]
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "../apps/desktop/scripts/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -28,13 +28,13 @@ After applying this change and installing the repository lock with the normal co
 ```sh
 npm ci
 npx turbo run build --filter=@openbot/desktop... --filter=@openbot/db...
-node apps/desktop/scripts/prepare-native-server.mjs --python-product
+node apps/desktop/scripts/prepare-native-server.ts --python-product
 node apps/desktop/scripts/smoke-python-product.mjs apps/desktop/out/python-product-runtime
 node apps/desktop/scripts/package.mjs --preview --python-product
 node apps/desktop/scripts/smoke-python-product.mjs 'apps/desktop/out/python-product/OpenBot Preview-darwin-arm64/OpenBot Preview.app/Contents/Resources/native-runtime'
 ```
 
-The staged runtime is `apps/desktop/out/python-product-runtime`; the uninstalled app is `apps/desktop/out/python-product/OpenBot Preview-darwin-arm64/OpenBot Preview.app`. Both are under the existing generated-output exclusion. `prepare-native-server.mjs` without the flag and all existing release commands retain their original selection. The candidate requires `--preview --python-product`; it refuses production signing configuration and a production Worker companion. `scripts/prepare-desktop-release.mjs` is unchanged and does not consume this local candidate.
+The staged runtime is `apps/desktop/out/python-product-runtime`; the uninstalled app is `apps/desktop/out/python-product/OpenBot Preview-darwin-arm64/OpenBot Preview.app`. Both are under the existing generated-output exclusion. `prepare-native-server.ts` without the flag and all existing release commands retain their original selection. The candidate requires `--preview --python-product`; it refuses production signing configuration and a production Worker companion. `scripts/prepare-desktop-release.mjs` is unchanged and does not consume this local candidate.
 
 A developer may then open the uninstalled Preview app and select the existing local Server setup flow. This uses that app's Preview profile; it is not the disposable smoke test. Do not point two Server instances at the same data directory. No environment switch can select an arbitrary interpreter or executable: a completed fixed-format resource manifest selects only the bundled backend.
 

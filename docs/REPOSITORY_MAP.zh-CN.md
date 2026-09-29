@@ -41,7 +41,7 @@ Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README�
 - 消费者：控制层 [host](../apps/server-python/src/openbot_server/runtime_host.py)、
   [process](../apps/server-python/src/openbot_server/runtime_process.py)、
   [Work runtime](../apps/server-python/src/openbot_server/work_product_runtime.py) 和
-  [Desktop 打包](../apps/desktop/scripts/prepare-native-server.mjs)。可选
+  [Desktop 打包](../apps/desktop/scripts/prepare-native-server.ts)。可选
   [Temporal 组装](../packages/harness/src/openbot_agent_runtime/temporal_agent.py)有独立生命周期；
   [可信端口](../apps/server-python/src/openbot_server/work_runtime_ports.py)由控制层拥有。
 - 测试：[catalog/limits](../packages/harness/tests/test_catalog_and_limits.py)、

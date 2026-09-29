@@ -1,17 +1,17 @@
 import { cp, lstat, readdir, readlink, realpath } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, sep } from "node:path";
 
-function isWithin(root, path) {
+function isWithin(root: string, path: string): boolean {
   const child = relative(root, path);
   return child !== ".." && !child.startsWith(`..${sep}`) && !isAbsolute(child);
 }
 
-export async function validateContainedResource(source) {
+export async function validateContainedResource(source: string): Promise<void> {
   if (!(await lstat(source)).isDirectory()) {
     throw new Error("Desktop native resource root must be a directory.");
   }
   const root = await realpath(source);
-  async function visit(directory) {
+  async function visit(directory: string): Promise<void> {
     for (const entry of await readdir(directory, { withFileTypes: true })) {
       const path = join(directory, entry.name);
       if (entry.isSymbolicLink()) {
@@ -29,7 +29,7 @@ export async function validateContainedResource(source) {
   await visit(root);
 }
 
-export async function copyContainedResource(source, destination) {
+export async function copyContainedResource(source: string, destination: string): Promise<void> {
   await validateContainedResource(source);
   const resolvedDestination = join(await realpath(dirname(destination)), basename(destination));
   if (isWithin(await realpath(source), resolvedDestination)) {

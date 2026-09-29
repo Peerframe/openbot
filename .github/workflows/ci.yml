@@ -124,7 +124,7 @@ jobs:
           echo "OPENBOT_DESKTOP_MACOS_WORKER_COMPANION=$companion_root/OpenBot Worker Host.app" \
             >> "$GITHUB_ENV"
       - name: Package the unsigned Desktop development artifact
-        run: node apps/desktop/scripts/prepare-native-server.mjs
+        run: node apps/desktop/scripts/prepare-native-server.ts
 
           node apps/desktop/scripts/package.mjs
       # Package through the bounded, checksum-verified downloader before Electron's lazy
@@ -292,7 +292,7 @@ jobs:
       - name: Build retained clients and parser/database packages without the legacy Server
         run: npm exec -- turbo run build --filter=@openbot/desktop --filter=@openbot/python-node-runtime
       - name: Stage the exact Python product runtime
-        run: node apps/desktop/scripts/prepare-native-server.mjs --python-product
+        run: node apps/desktop/scripts/prepare-native-server.ts --python-product
       - name: Verify the staged Python API and PostgreSQL lifecycle
         shell: bash
         run: |

@@ -23,7 +23,7 @@
 ```sh
 npm ci
 npx turbo run build --filter=@openbot/desktop... --filter=@openbot/db...
-node apps/desktop/scripts/prepare-native-server.mjs --python-product
+node apps/desktop/scripts/prepare-native-server.ts --python-product
 node apps/desktop/scripts/smoke-python-product.mjs apps/desktop/out/python-product-runtime
 node apps/desktop/scripts/package.mjs --preview --python-product
 node apps/desktop/scripts/smoke-python-product.mjs 'apps/desktop/out/python-product/OpenBot Preview-darwin-arm64/OpenBot Preview.app/Contents/Resources/native-runtime'
