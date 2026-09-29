@@ -27,7 +27,7 @@ npm ci
 npx turbo run build --filter=@openbot/desktop... --filter=@openbot/db...
 node apps/desktop/scripts/prepare-native-server.ts --python-product
 node apps/desktop/scripts/smoke-python-product.ts apps/desktop/out/python-product-runtime
-node apps/desktop/scripts/package.mjs --preview --python-product
+node apps/desktop/scripts/package.ts --preview --python-product
 node apps/desktop/scripts/smoke-python-product.ts 'apps/desktop/out/python-product/OpenBot Python Preview-darwin-arm64/OpenBot Python Preview.app/Contents/Resources/native-runtime'
 ```
 

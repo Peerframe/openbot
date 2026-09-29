@@ -1,3 +1,4 @@
+import { discardBody, readBoundedBytes } from "./bounded-response.js";
 import type { DesktopConnectionState, DesktopServerFetcher } from "./connection-controller.js";
 import { DESKTOP_SCHEME } from "./local-content.js";
 
@@ -101,6 +102,7 @@ export async function proxyDesktopServerRequest(
         : MAXIMUM_DESKTOP_PROXY_REQUEST_BYTES,
     );
   } catch {
+    discardBody(request.body);
     return jsonError(413, "Desktop Server request is too large.");
   }
 
@@ -137,7 +139,7 @@ export async function proxyDesktopServerRequest(
   }
 
   if (response.status >= 300 && response.status < 400) {
-    await response.body?.cancel().catch(() => undefined);
+    discardBody(response.body);
     return jsonError(502, "OpenBot Server redirects are not allowed.");
   }
 
@@ -192,29 +194,12 @@ async function readBoundedRequestBody(
   }
   if (request.body === null) return undefined;
 
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let length = 0;
-  try {
-    while (true) {
-      const result = await reader.read();
-      if (result.done) break;
-      length += result.value.byteLength;
-      if (length > maximumBytes) throw new Error("Request exceeds its byte limit.");
-      chunks.push(result.value);
-    }
-  } catch (error) {
-    await reader.cancel().catch(() => undefined);
-    throw error;
-  }
-
-  const body = new Uint8Array(length);
-  let offset = 0;
-  for (const chunk of chunks) {
-    body.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return body;
+  const bytes = await readBoundedBytes(
+    request.body,
+    maximumBytes,
+    "Request exceeds its byte limit.",
+  );
+  return new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 }
 
 function jsonError(

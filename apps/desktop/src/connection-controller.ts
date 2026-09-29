@@ -1,4 +1,4 @@
-import { isJsonContentType, readBoundedText } from "./bounded-response.js";
+import { discardBody, isJsonContentType, readBoundedText } from "./bounded-response.js";
 import {
   createDesktopConnectionConfig,
   type DesktopConnectionStore,
@@ -115,11 +115,11 @@ export async function verifyDesktopServer(
   }
 
   if (response.status >= 300 && response.status < 400) {
-    await response.body?.cancel().catch(() => undefined);
+    discardBody(response.body);
     return "server_redirected";
   }
   if (response.status !== 200 || !isJsonContentType(response.headers.get("content-type"))) {
-    await response.body?.cancel().catch(() => undefined);
+    discardBody(response.body);
     return "not_openbot_server";
   }
 
@@ -128,6 +128,8 @@ export async function verifyDesktopServer(
     body = await readBoundedText(response, MAXIMUM_DESKTOP_HEALTH_RESPONSE_BYTES);
   } catch {
     return "not_openbot_server";
+  } finally {
+    discardBody(response.body);
   }
 
   try {

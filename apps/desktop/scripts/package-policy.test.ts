@@ -1,8 +1,11 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { FuseState, FuseV1Options, FuseVersion } from "@electron/fuses";
 import { describe, expect, it } from "vitest";
+import { parseDesktopPackageArguments } from "./package.ts";
 import {
   createDesktopFuseConfig,
   DESKTOP_ICON_RESOURCE_NAME,
@@ -115,7 +118,7 @@ describe("Desktop package source policy", () => {
     [join("node_modules", "electron", "index.js"), true],
     [join("node_modules", "@electron", "fuses", "dist", "index.js"), true],
     [join("src", "main.ts"), true],
-    [join("scripts", "package.mjs"), true],
+    [join("scripts", "package.ts"), true],
     [join("node_modules", ".vite", "results.json"), true],
     [join("out", "OpenBot.app"), true],
   ])("applies the package allowlist to %s", (candidate, ignored) => {
@@ -305,5 +308,96 @@ describe("packaged Electron fuse verification", () => {
         `Packaged Desktop fuse ${FuseV1Options[index]} did not match policy.`,
       );
     });
+  });
+});
+
+describe("packaging execution boundaries", () => {
+  const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+  const entries = [
+    "scripts/build-macos-worker-host-candidate.ts",
+    "scripts/package-macos-worker-host-distribution.ts",
+    "apps/desktop/scripts/package.ts",
+  ];
+  const env = { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot };
+
+  it("imports all packaging entries without starting a build, credential lookup or signing", () => {
+    const program =
+      entries
+        .map(
+          (entry) =>
+            `await import(${JSON.stringify(pathToFileURL(join(repositoryRoot, entry)).href)});`,
+        )
+        .join("\n") + '\nprocess.stdout.write("imported");';
+    const result = spawnSync(process.execPath, ["--input-type=module", "-e", program], {
+      cwd: tmpdir(),
+      env,
+      encoding: "utf8",
+      timeout: 15_000,
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toBe("imported");
+  });
+
+  it("keeps direct CLI refusal active, including POSIX symlink invocation", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "openbot-package-cli-"));
+    try {
+      for (const [index, entry] of entries.entries()) {
+        const direct = join(repositoryRoot, entry);
+        const invocations = [direct];
+        if (process.platform !== "win32") {
+          // Windows non-elevated symlink creation is not an installation prerequisite.
+          const link = join(directory, `${index}.ts`);
+          await symlink(direct, link);
+          invocations.push(link);
+        }
+        for (const script of invocations) {
+          const result = spawnSync(process.execPath, [script, "--unexpected", "value"], {
+            cwd: directory,
+            env,
+            encoding: "utf8",
+            timeout: 15_000,
+          });
+          expect(result.error).toBeUndefined();
+          expect(result.status).toBe(1);
+          expect(result.stderr).toMatch(/Unknown macOS|only.*macOS|Desktop packaging accepts only/);
+          expect(result.stdout).toBe("");
+        }
+      }
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps Python Preview tied to its separate identity and supported native payload", () => {
+    expect(parseDesktopPackageArguments([], "win32", "x64")).toEqual({
+      pythonProduct: false,
+      preview: false,
+      identity: DESKTOP_PACKAGE_IDENTITY,
+    });
+    expect(parseDesktopPackageArguments(["--preview"], "linux", "x64").identity).toBe(
+      DESKTOP_PREVIEW_IDENTITY,
+    );
+    for (const args of [
+      ["--preview", "--python-product"],
+      ["--python-product", "--preview"],
+    ]) {
+      expect(parseDesktopPackageArguments(args, "darwin", "arm64")).toEqual({
+        pythonProduct: true,
+        preview: true,
+        identity: DESKTOP_PYTHON_PREVIEW_IDENTITY,
+      });
+      for (const [platform, arch] of [
+        ["darwin", "x64"],
+        ["linux", "arm64"],
+        ["win32", "x64"],
+      ]) {
+        expect(() => parseDesktopPackageArguments(args, platform, arch)).toThrow(/macOS arm64/);
+      }
+    }
+    expect(() => parseDesktopPackageArguments(["--python-product"])).toThrow(/accepts only/);
+    expect(() =>
+      parseDesktopPackageArguments(["--preview", "--python-product", "--python-product"]),
+    ).toThrow(/selected once/);
   });
 });

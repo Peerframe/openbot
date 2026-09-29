@@ -211,7 +211,7 @@ test("all C2 gates and real product recovery stay required when selected", () =>
     ["temporal-qualification", "--engine postgres-mtls --upgrade-archive"],
     ["browser-product", "control node replacement response-loss browser-restart"],
     ["python-product-container", "deploy/server/smoke-product.py"],
-    ["python-desktop-preview", "node apps/desktop/scripts/package.mjs --preview --python-product"],
+    ["python-desktop-preview", "node apps/desktop/scripts/package.ts --preview --python-product"],
   ])
     assert.throws(() =>
       check(

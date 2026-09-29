@@ -9,29 +9,43 @@ export async function readBoundedText(response: Response, maximumBytes: number):
   }
   if (response.body === null) return "";
 
-  const reader = response.body.getReader();
+  return new TextDecoder("utf-8", { fatal: true }).decode(
+    await readBoundedBytes(response.body, maximumBytes, "Response exceeds its byte limit."),
+  );
+}
+
+/** Callers retain their media, identity and byte-limit policy; this owns only the reader. */
+export async function readBoundedBytes(
+  body: ReadableStream<Uint8Array>,
+  maximumBytes: number,
+  overflowMessage: string,
+): Promise<Buffer<ArrayBuffer>> {
+  if (!Number.isSafeInteger(maximumBytes) || maximumBytes < 0)
+    throw new RangeError("maximumBytes must be a non-negative safe integer.");
+  const reader = body.getReader();
   const chunks: Uint8Array[] = [];
   let length = 0;
+  let complete = false;
   try {
     while (true) {
       const result = await reader.read();
-      if (result.done) break;
+      if (result.done) {
+        complete = true;
+        return Buffer.concat(chunks, length);
+      }
       length += result.value.byteLength;
-      if (length > maximumBytes) throw new Error("Response exceeds its byte limit.");
+      if (length > maximumBytes) throw new Error(overflowMessage);
       chunks.push(result.value);
     }
-  } catch (error) {
-    await reader.cancel().catch(() => undefined);
-    throw error;
+  } finally {
+    // Untrusted cancellation must not hold a rejected operation or its reader lock open.
+    if (!complete) void reader.cancel().catch(() => undefined);
+    reader.releaseLock();
   }
+}
 
-  const bytes = new Uint8Array(length);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+export function discardBody(body: ReadableStream<Uint8Array> | null | undefined): void {
+  if (body) void body.cancel().catch(() => undefined);
 }
 
 export function isJsonContentType(value: string | null): boolean {

@@ -157,7 +157,7 @@ export function validateSecurityWorkflow(source) {
       "turbo run test --concurrency=2 --filter=@openbot/desktop --filter=@openbot/node --filter=@openbot/windows-secret-acl",
       "turbo run build --filter=@openbot/desktop --filter=@openbot/node --filter=@openbot/python-node-runtime",
       "node apps/desktop/scripts/prepare-native-server.ts",
-      "node apps/desktop/scripts/package.mjs",
+      "node apps/desktop/scripts/package.ts",
       "npm run make:installers --workspace @openbot/desktop",
     ],
     "Required portable commands",
@@ -168,11 +168,11 @@ export function validateSecurityWorkflow(source) {
       "--filter=@openbot/desktop",
       "--filter=@openbot/node",
       "--filter=@openbot/python-node-runtime",
-      "node scripts/build-macos-worker-host-candidate.mjs",
+      "node scripts/build-macos-worker-host-candidate.ts",
       "https://nodejs.org/dist/v22.22.2/node-v22.22.2-darwin-arm64.tar.gz",
       "OPENBOT_DESKTOP_MACOS_WORKER_COMPANION=$companion_root/OpenBot Worker Host.app",
       "node apps/desktop/scripts/prepare-native-server.ts",
-      "node apps/desktop/scripts/package.mjs",
+      "node apps/desktop/scripts/package.ts",
       "npm run make:installers --workspace @openbot/desktop",
       "npm run worker-host:macos:native-check",
       "/usr/bin/plutil -lint apps/worker-host-macos/Resources/com.openbot.worker-host.node.plist",
@@ -183,12 +183,12 @@ export function validateSecurityWorkflow(source) {
     { conditional: true },
   );
   assert(
-    portableRuns.indexOf("node scripts/build-macos-worker-host-candidate.mjs") <
-      portableRuns.indexOf("node apps/desktop/scripts/package.mjs"),
+    portableRuns.indexOf("node scripts/build-macos-worker-host-candidate.ts") <
+      portableRuns.indexOf("node apps/desktop/scripts/package.ts"),
     "Build the companion before packaging.",
   );
   for (const fragment of [
-    "node scripts/build-macos-worker-host-candidate.mjs",
+    "node scripts/build-macos-worker-host-candidate.ts",
     "/usr/bin/plutil -lint",
   ]) {
     const step = portable.steps.find((step) => step.run?.includes(fragment));
@@ -292,7 +292,7 @@ export function validatePythonProductWorkflow(source, migrationSource) {
     "--filter=@openbot/desktop --filter=@openbot/python-node-runtime",
     "node apps/desktop/scripts/prepare-native-server.ts --python-product",
     "node apps/desktop/scripts/smoke-python-product.ts apps/desktop/out/python-product-runtime",
-    "node apps/desktop/scripts/package.mjs --preview --python-product",
+    "node apps/desktop/scripts/package.ts --preview --python-product",
     "OpenBot Python Preview.app/Contents/Resources/native-runtime",
   ];
   const script = hasCommands(preview, stages, "Python Preview");

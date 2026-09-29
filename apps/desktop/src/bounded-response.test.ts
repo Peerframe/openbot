@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import { isJsonContentType, readBoundedText } from "./bounded-response.js";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { isJsonContentType, readBoundedBytes, readBoundedText } from "./bounded-response.js";
 import { verifyDesktopServer } from "./connection-controller.js";
 import {
   isDesktopSessionAuthenticated,
@@ -92,4 +92,147 @@ describe("Desktop response caller boundaries", () => {
       ).resolves.toEqual({ status: "server-unavailable" });
     },
   );
+});
+
+async function promptly<T>(operation: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("Cancellation held the operation open")), 1000);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function stalledCancellation(bytes = new Uint8Array(), init: ResponseInit = {}) {
+  const cancel = vi.fn(() => new Promise<void>(() => undefined));
+  const response = new Response(
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        if (bytes.length) controller.enqueue(bytes);
+      },
+      cancel,
+    }),
+    init,
+  );
+  return { response, cancel };
+}
+
+import { verifyPythonProductHealth } from "./python-server.js";
+import { proxyDesktopServerRequest } from "./server-proxy.js";
+
+afterEach(() => vi.restoreAllMocks());
+
+describe("Desktop body ownership across real consumers", () => {
+  const connection = { status: "configured" as const, serverUrl: "https://openbot.example" };
+
+  it("releases the successful reader and keeps byte identity", async () => {
+    const response = streamed([new Uint8Array([0, 255]), new Uint8Array([7])]);
+    if (!response.body) throw new Error("Missing synthetic stream");
+    expect(await readBoundedBytes(response.body, 3, "overflow")).toEqual(Buffer.from([0, 255, 7]));
+    expect(response.body?.locked).toBe(false);
+  });
+
+  it("does not wait for failed-read cancellation and releases the reader", async () => {
+    const { response, cancel } = stalledCancellation(new Uint8Array(9));
+    await expect(promptly(readBoundedText(response, 8))).rejects.toThrow(
+      "Response exceeds its byte limit.",
+    );
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(response.body?.locked).toBe(false);
+  });
+
+  it.each(["health", "session", "enrollment", "proxy"])(
+    "rejects %s responses without awaiting untrusted disposal",
+    async (consumer) => {
+      const { response, cancel } = stalledCancellation(undefined, { status: 302 });
+      const result =
+        consumer === "health"
+          ? verifyDesktopServer(async () => response, connection.serverUrl)
+          : consumer === "session"
+            ? isDesktopSessionAuthenticated(connection, async () => response)
+            : consumer === "enrollment"
+              ? issueDesktopNodeEnrollmentToken("node", connection, async () => response)
+              : proxyDesktopServerRequest(
+                  new Request("openbot://app/api/v1/bots"),
+                  connection,
+                  async () => response,
+                );
+      const value = await promptly(result);
+      if (consumer === "health") expect(value).toBe("server_redirected");
+      else if (consumer === "session") expect(value).toBe(false);
+      else if (consumer === "enrollment") expect(value).toEqual({ status: "server-unavailable" });
+      else expect(value).toBeInstanceOf(Response);
+      expect(cancel).toHaveBeenCalledOnce();
+      expect(response.body?.locked).toBe(false);
+    },
+  );
+
+  it("disposes rejected declared lengths at the health consumer without opening a reader", async () => {
+    const { response, cancel } = stalledCancellation(undefined, {
+      headers: { "content-type": "application/json", "content-length": "4097" },
+    });
+    await expect(
+      promptly(verifyDesktopServer(async () => response, connection.serverUrl)),
+    ).resolves.toBe("not_openbot_server");
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(response.body?.locked).toBe(false);
+  });
+
+  it("refuses an oversized streamed renderer request before network and releases its lock", async () => {
+    const { response, cancel } = stalledCancellation(new Uint8Array(3 * 1024 * 1024 + 1));
+    const request = new Request("openbot://app/api/v1/bots", {
+      method: "POST",
+      body: response.body,
+      duplex: "half",
+    } as RequestInit);
+    const fetcher = vi.fn();
+    const result = await promptly(proxyDesktopServerRequest(request, connection, fetcher));
+    expect(result?.status).toBe(413);
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(request.body?.locked).toBe(false);
+  });
+
+  it.each([
+    [
+      "application/jsonx",
+      '{"ok":true,"service":"openbot-server","phase":"python-product-candidate"}',
+      false,
+    ],
+    [
+      "Application/JSON; charset=utf-8",
+      '{"ok":true,"service":"openbot-server","phase":"python-product-candidate"}',
+      true,
+    ],
+    ["application/json", '{"ok":true,"service":"openbot-server","phase":"wrong"}', false],
+  ] as const)(
+    "keeps Python startup health's phase and exact JSON media type: %s",
+    async (type, body, accepted) => {
+      const response = new Response(body, { headers: { "content-type": type } });
+      const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
+      await expect(verifyPythonProductHealth("http://127.0.0.1:39100")).resolves.toBe(accepted);
+      expect(fetcher).toHaveBeenCalledWith(
+        "http://127.0.0.1:39100/health",
+        expect.objectContaining({ redirect: "error", signal: expect.any(AbortSignal) }),
+      );
+      expect(response.body?.locked).toBe(false);
+    },
+  );
+
+  it("bounds Python startup bytes even when cancellation never finishes", async () => {
+    const { response, cancel } = stalledCancellation(new Uint8Array(4097), {
+      headers: { "content-type": "application/json" },
+    });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
+    await expect(promptly(verifyPythonProductHealth("http://127.0.0.1:39100"))).resolves.toBe(
+      false,
+    );
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(response.body?.locked).toBe(false);
+  });
 });

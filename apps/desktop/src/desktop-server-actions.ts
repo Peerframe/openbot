@@ -1,4 +1,4 @@
-import { isJsonContentType, readBoundedText } from "./bounded-response.js";
+import { discardBody, isJsonContentType, readBoundedText } from "./bounded-response.js";
 import type { DesktopConnectionState, DesktopServerFetcher } from "./connection-controller.js";
 import { proxyDesktopServerRequest } from "./server-proxy.js";
 
@@ -20,8 +20,10 @@ export async function isDesktopSessionAuthenticated(
     connection,
     fetcher,
   );
-  if (response?.status !== 200 || !isJsonContentType(response.headers.get("content-type")))
+  if (response?.status !== 200 || !isJsonContentType(response.headers.get("content-type"))) {
+    discardBody(response?.body);
     return false;
+  }
   try {
     const value = JSON.parse(
       await readBoundedText(response, MAXIMUM_DESKTOP_ACTION_RESPONSE_BYTES),
@@ -29,6 +31,8 @@ export async function isDesktopSessionAuthenticated(
     return isRecord(value) && value.authenticated === true;
   } catch {
     return false;
+  } finally {
+    discardBody(response.body);
   }
 }
 
@@ -48,11 +52,11 @@ export async function issueDesktopNodeEnrollmentToken(
     fetcher,
   );
   if (response?.status === 401) {
-    await response.body?.cancel().catch(() => undefined);
+    discardBody(response.body);
     return Object.freeze({ status: "authentication-required" });
   }
   if (response?.status !== 201 || !isJsonContentType(response.headers.get("content-type"))) {
-    await response?.body?.cancel().catch(() => undefined);
+    discardBody(response?.body);
     return Object.freeze({ status: "server-unavailable" });
   }
 
@@ -79,6 +83,8 @@ export async function issueDesktopNodeEnrollmentToken(
     return Object.freeze({ status: "issued", token: value.token });
   } catch {
     return Object.freeze({ status: "server-unavailable" });
+  } finally {
+    discardBody(response.body);
   }
 }
 

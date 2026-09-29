@@ -113,7 +113,7 @@ jobs:
             https://nodejs.org/dist/v22.22.2/node-v22.22.2-darwin-arm64.tar.gz \
             --output "$runtime_archive"
           mkdir -p "$companion_root"
-          node scripts/build-macos-worker-host-candidate.mjs \
+          node scripts/build-macos-worker-host-candidate.ts \
             --arch arm64 \
             --build-version 1 \
             --node-archive "$runtime_archive" \
@@ -126,7 +126,7 @@ jobs:
       - name: Package the unsigned Desktop development artifact
         run: node apps/desktop/scripts/prepare-native-server.ts
 
-          node apps/desktop/scripts/package.mjs
+          node apps/desktop/scripts/package.ts
       # Package through the bounded, checksum-verified downloader before Electron's lazy
       # installer consumes the same cache for the native sandbox probe.
       - name: Verify plugin isolation in native Desktop Chromium
@@ -301,7 +301,7 @@ jobs:
             > "$RUNNER_TEMP/python-preview-staged.json"
           cat "$RUNNER_TEMP/python-preview-staged.json"
       - name: Package the explicit unsigned Python Preview
-        run: node apps/desktop/scripts/package.mjs --preview --python-product
+        run: node apps/desktop/scripts/package.ts --preview --python-product
       - name: Verify the packaged Python API and PostgreSQL lifecycle
         shell: bash
         run: |
