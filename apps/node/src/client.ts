@@ -8,7 +8,6 @@ import {
   type NodeCapability,
   type NodeCapabilityDescriptor,
   type NodeMessage,
-  nodeEnrollmentResultSchema,
   protocolVersion,
   type RunFailureCode,
   type RunOffer,
@@ -27,6 +26,8 @@ import { BrowserCommandHost } from "./browser-host.js";
 import { CommandRelay, type CommandRelayInstallation } from "./command-relay.js";
 import { createNodeCredentialStore, type NodeCredentialStore } from "./credential-store.js";
 import { detectWorkerHost } from "./host.js";
+import { NodeEnrollmentRequiredError, prepareNodeIdentity } from "./node-identity.js";
+
 import {
   availableCapabilities,
   availableCapabilityManifest,
@@ -34,18 +35,11 @@ import {
   providerForProfile,
 } from "./providers.js";
 
+export { nodeEnrollmentUrl } from "./node-identity.js";
+
 const heartbeatIntervalMs = 10_000;
 const reconnectDelayMs = 2_000;
 const maxServerMessageBytes = 1024 * 1024;
-
-class NodeEnrollmentRequiredError extends Error {
-  constructor() {
-    super(
-      "Node is not enrolled. Start the Server, run npm run node:enrollment-token -- <node-id>, " +
-        "set OPENBOT_NODE_ENROLLMENT_TOKEN once in .env, then restart the Node. See CONTRIBUTING.md.",
-    );
-  }
-}
 
 export class OpenBotNodeClient {
   readonly #env: NodeEnv;
@@ -100,7 +94,12 @@ export class OpenBotNodeClient {
     if (this.#startPromise !== undefined) return this.#startPromise;
     this.#stopped = false;
     this.#identityController = new AbortController();
-    this.#startPromise = this.#prepareIdentity(this.#identityController.signal)
+    this.#startPromise = prepareNodeIdentity(
+      this.#env,
+      this.#credentialStore,
+      this.#logger,
+      this.#identityController.signal,
+    )
       .then((credential) => {
         if (this.#stopped) return;
         this.#credential = credential;
@@ -370,45 +369,6 @@ export class OpenBotNodeClient {
     });
   }
 
-  async #prepareIdentity(signal: AbortSignal): Promise<string> {
-    if (this.#env.OPENBOT_NODE_CREDENTIAL !== undefined) {
-      // Programmatic clients must obey the same identity-source boundary as the CLI schema.
-      if (
-        this.#env.OPENBOT_NODE_ALLOW_ENV_CREDENTIAL !== true ||
-        this.#env.OPENBOT_NODE_CREDENTIAL_STORE !== "file"
-      ) {
-        throw new Error("Environment Node credentials are not enabled for this profile.");
-      }
-      this.#logger.warn(
-        "node.environment_credential_enabled",
-        "Using an explicitly enabled environment credential. Prefer enrollment with a persistent credential store.",
-        { nodeId: this.#env.OPENBOT_NODE_ID, phase: "identity" },
-      );
-      return this.#env.OPENBOT_NODE_CREDENTIAL;
-    }
-    const stored = await this.#credentialStore.load(this.#env.OPENBOT_NODE_ID);
-    if (stored !== undefined) return stored.credential;
-
-    const token = this.#env.OPENBOT_NODE_ENROLLMENT_TOKEN;
-    if (token === undefined) {
-      throw new NodeEnrollmentRequiredError();
-    }
-    const response = await fetch(nodeEnrollmentUrl(this.#env.OPENBOT_NODE_SERVER_URL), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nodeId: this.#env.OPENBOT_NODE_ID, token }),
-      signal: AbortSignal.any([signal, AbortSignal.timeout(10_000)]),
-    });
-    const body = await readBoundedResponse(response, 8 * 1024);
-    if (!response.ok) throw new Error("Server rejected the one-time Node enrollment token.");
-    const parsed = nodeEnrollmentResultSchema.safeParse(JSON.parse(body));
-    if (!parsed.success || parsed.data.nodeId !== this.#env.OPENBOT_NODE_ID) {
-      throw new Error("Server returned an invalid Node identity.");
-    }
-    await this.#credentialStore.save(parsed.data);
-    return parsed.data.credential;
-  }
-
   async #executeRun(runId: string): Promise<void> {
     if (this.#executions.has(runId)) return;
     const offer = this.#acceptedOffers.get(runId);
@@ -639,38 +599,6 @@ export function runOfferRejectionReason(
     return `Missing capability: ${mismatch.capability}@${mismatch.expectedVersion}.`;
   }
   return `Unsupported capability version: ${mismatch.capability}@${mismatch.expectedVersion}; advertised ${mismatch.advertisedVersions.join(", ")}.`;
-}
-
-export function nodeEnrollmentUrl(serverUrl: string): string {
-  const url = new URL(serverUrl);
-  url.protocol = url.protocol === "wss:" ? "https:" : "http:";
-  url.pathname = "/api/v1/nodes/enroll";
-  url.search = "";
-  url.hash = "";
-  return url.toString();
-}
-
-async function readBoundedResponse(response: Response, maximumBytes: number): Promise<string> {
-  const declaredSize = Number(response.headers.get("content-length"));
-  if (Number.isFinite(declaredSize) && declaredSize > maximumBytes) {
-    throw new Error("Node enrollment response is too large.");
-  }
-  if (response.body === null) return "";
-
-  const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  while (true) {
-    const item = await reader.read();
-    if (item.done) break;
-    total += item.value.byteLength;
-    if (total > maximumBytes) {
-      await reader.cancel();
-      throw new Error("Node enrollment response is too large.");
-    }
-    chunks.push(item.value);
-  }
-  return Buffer.concat(chunks).toString("utf8");
 }
 
 function parseJson(value: string): unknown {
