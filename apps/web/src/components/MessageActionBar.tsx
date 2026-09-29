@@ -80,16 +80,7 @@ export function MessageActionBar({
   }, [open]);
   useEffect(() => {
     if (!open) return;
-    const outside = (event: PointerEvent) => {
-      if (
-        event.target instanceof Node &&
-        !popup.current?.contains(event.target) &&
-        !emojiButton.current?.contains(event.target) &&
-        !moreButton.current?.contains(event.target)
-      )
-        setOpen(undefined);
-    };
-    const focusOutside = (event: FocusEvent) => {
+    const outside = (event: Event) => {
       if (
         event.target instanceof Node &&
         !popup.current?.contains(event.target) &&
@@ -99,10 +90,10 @@ export function MessageActionBar({
         setOpen(undefined);
     };
     document.addEventListener("pointerdown", outside);
-    document.addEventListener("focusin", focusOutside);
+    document.addEventListener("focusin", outside);
     return () => {
       document.removeEventListener("pointerdown", outside);
-      document.removeEventListener("focusin", focusOutside);
+      document.removeEventListener("focusin", outside);
     };
   }, [open]);
   const toggle = (kind: "emoji" | "more") => {
