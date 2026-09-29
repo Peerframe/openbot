@@ -77,7 +77,7 @@ export function EmployeeProfileView({
   const tabButtons = useRef<Array<HTMLButtonElement | null>>([]);
   const tabSetId = useId();
 
-  if (loading || profile === undefined) {
+  if (loading || profile === undefined || error !== undefined) {
     return (
       <main className="workspace-main employee-profile-loading">
         <div className="loading-header-action">{headerAction}</div>

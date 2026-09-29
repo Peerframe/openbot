@@ -3,7 +3,6 @@ import type {
   AuthSessionSnapshot,
   CreateBotInput,
   CreateChannelInput,
-  EmployeeProfile,
   RunFrame,
   WorkspaceSnapshot,
 } from "@openbot/domain";
@@ -13,7 +12,6 @@ import {
   createChannel,
   decideApproval,
   getAuthSession,
-  getEmployeeProfile,
   getModelSettings,
   getWorkspace,
   joinBotToChannel,
@@ -73,6 +71,7 @@ import {
 } from "./desktop-runtime";
 import { shortcutLabel } from "./desktop-shortcuts";
 import { useDesktopNavigation } from "./use-desktop-navigation";
+import { useEmployeeProfile } from "./use-employee-profile";
 import { useWorkspaceAppearance } from "./use-workspace-appearance";
 import { useWorkspaceState } from "./use-workspace-state";
 import { useWorkspaceNavigation } from "./workspace-navigation";
@@ -629,10 +628,12 @@ export function AuthenticatedWorkspace({
     [location, active],
   );
   const [selectedRunId, setSelectedRunId] = useState<string>();
-  const [employeeProfile, setEmployeeProfile] = useState<EmployeeProfile>();
-  const [employeeProfileLoading, setEmployeeProfileLoading] = useState(false);
-  const [employeeProfileError, setEmployeeProfileError] = useState<string>();
-  const selectedEmployeeIdRef = useRef<string | undefined>(undefined);
+  const {
+    profile: employeeProfile,
+    loading: employeeProfileLoading,
+    error: employeeProfileError,
+    refresh: refreshEmployeeProfile,
+  } = useEmployeeProfile(selectedEmployeeId);
   const [employeeExportOpen, setEmployeeExportOpen] = useState(false);
   const [employeeImportOpen, setEmployeeImportOpen] = useState(false);
   const [framesByRun, setFramesByRun] = useState<Map<string, RunFrame>>(() => new Map());
@@ -654,36 +655,6 @@ export function AuthenticatedWorkspace({
       return next;
     });
   }, []);
-
-  const loadEmployeeProfile = useCallback(async (botId: string, signal?: AbortSignal) => {
-    setEmployeeProfileLoading(true);
-    setEmployeeProfileError(undefined);
-    try {
-      const profile = await getEmployeeProfile(botId, signal);
-      if (!signal?.aborted && selectedEmployeeIdRef.current === botId) setEmployeeProfile(profile);
-    } catch (cause) {
-      if (cause instanceof DOMException && cause.name === "AbortError") return;
-      if (selectedEmployeeIdRef.current === botId)
-        setEmployeeProfileError(cause instanceof Error ? cause.message : "无法读取员工档案。");
-    } finally {
-      if (!signal?.aborted && selectedEmployeeIdRef.current === botId)
-        setEmployeeProfileLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    selectedEmployeeIdRef.current = selectedEmployeeId;
-    if (selectedEmployeeId === undefined) {
-      setEmployeeProfile(undefined);
-      setEmployeeProfileError(undefined);
-      setEmployeeProfileLoading(false);
-      return;
-    }
-    const controller = new AbortController();
-    setEmployeeProfile(undefined);
-    void loadEmployeeProfile(selectedEmployeeId, controller.signal);
-    return () => controller.abort();
-  }, [loadEmployeeProfile, selectedEmployeeId]);
 
   const workspaceReady = workspace !== undefined;
   useEffect(() => {
@@ -752,12 +723,11 @@ export function AuthenticatedWorkspace({
         projectNodes(nodes);
         // Reconcile any events missed while the browser was disconnected.
         void refresh();
-        const selectedEmployee = selectedEmployeeIdRef.current;
-        if (selectedEmployee !== undefined) void loadEmployeeProfile(selectedEmployee);
+        void refreshEmployeeProfile();
       },
       onEmployeeProfileChanged(botId, sections) {
         if (sections.includes("identity")) void refresh();
-        if (selectedEmployeeIdRef.current === botId) void loadEmployeeProfile(botId);
+        void refreshEmployeeProfile(botId);
       },
       onNode: projectNode,
       onNodeRemoved: removeNode,
@@ -766,7 +736,7 @@ export function AuthenticatedWorkspace({
       onState: setWorkspaceRealtimeState,
     });
   }, [
-    loadEmployeeProfile,
+    refreshEmployeeProfile,
     projectRun,
     projectNodes,
     projectNode,
@@ -882,6 +852,10 @@ export function AuthenticatedWorkspace({
   const selectedChannel = workspace.channels.find((channel) => channel.id === selectedChannelId);
   const fullPage = destination !== "chat";
   const selectedRun = workspace.runs.find((run) => run.id === selectedRunId);
+  const browserBot = browserBotId
+    ? workspace.bots.find((bot) => bot.id === browserBotId)
+    : undefined;
+  const sharedBot = sharedBotId ? workspace.bots.find((bot) => bot.id === sharedBotId) : undefined;
   const panelToggle = (
     <button
       className="icon-button panel-toggle"
@@ -1069,10 +1043,10 @@ export function AuthenticatedWorkspace({
           profile={employeeProfile}
           loading={employeeProfileLoading}
           error={employeeProfileError}
-          onRetry={() => void loadEmployeeProfile(selectedEmployeeId)}
+          onRetry={() => void refreshEmployeeProfile(selectedEmployeeId)}
           onAssign={() => assignEmployee(selectedEmployeeId)}
           onExport={() => setEmployeeExportOpen(true)}
-          onProfileChanged={() => loadEmployeeProfile(selectedEmployeeId)}
+          onProfileChanged={() => refreshEmployeeProfile(selectedEmployeeId)}
           onManageModels={() => setModelServicesOpen(true)}
           modelServicesVersion={modelServicesVersion}
           onOpenBrowser={() => setBrowserBotId(selectedEmployeeId)}
@@ -1211,11 +1185,8 @@ export function AuthenticatedWorkspace({
       {dialog === "node" ? (
         <NodeManagerDialog onlineNodes={workspace.nodes} onClose={() => setDialog(undefined)} />
       ) : null}
-      {browserBotId && workspace.bots.find((bot) => bot.id === browserBotId) ? (
-        <EmployeeBrowser
-          bot={workspace.bots.find((bot) => bot.id === browserBotId)!}
-          onClose={() => setBrowserBotId(undefined)}
-        />
+      {browserBot ? (
+        <EmployeeBrowser bot={browserBot} onClose={() => setBrowserBotId(undefined)} />
       ) : null}
       {modelServicesOpen ? (
         <ModelConnectionsDialog
@@ -1223,9 +1194,9 @@ export function AuthenticatedWorkspace({
           onChanged={() => setModelServicesVersion((version) => version + 1)}
         />
       ) : null}
-      {sharedBotId && workspace.bots.find((bot) => bot.id === sharedBotId) ? (
+      {sharedBot ? (
         <ExportEmployeeDialog
-          employee={workspace.bots.find((bot) => bot.id === sharedBotId)!}
+          employee={sharedBot}
           onClose={() => setSharedBotId(undefined)}
           onDownloaded={(fileName) => {
             setSharedBotId(undefined);
