@@ -9,7 +9,7 @@ import psycopg
 import httpx
 from active_restore_probe import ControlDatabase,private
 from postgres_server import PostgresServer
-from product_http_fixture import API,Process,CLEAN_ENV
+from product_http_fixture import API,Process,CLEAN_ENV,ReadUnavailable
 from temporalio.worker import Replayer
 from temporalio.client import WorkflowFailureError
 from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
@@ -29,6 +29,7 @@ async def run(directory,upstream,browsers,recovery='worker',remote=None):
  directory.mkdir(mode=0o700)
  for name in ('artifacts','objects','provider','node'):(directory/name).mkdir(mode=0o700)
  db=ControlDatabase(directory,'browser-product','postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0')
+ unavailable_reads=0
  engine=api=node=log=None;node_id='browser-product-'+secrets.token_hex(5)
  try:
   await asyncio.to_thread(db.start);await asyncio.to_thread(db.migrate,ROOT)
@@ -41,10 +42,13 @@ async def run(directory,upstream,browsers,recovery='worker',remote=None):
   api.env.update(OPENBOT_CONTROL_AUTHORITY='product',OPENBOT_CONTROL_WORK_TOKEN_LIMIT='1000000',OPENBOT_CONTROL_OBJECT_ROOT=str(directory/'objects'),OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH=str(ec),OPENBOT_BROWSER_PROBE_CONFIG=str(pc))
   def start():api.child=Process([sys.executable,'-u','-B',str(PACKET/'product_browser_server.py')],api.directory,api.env)
   async def until(f,seconds=60):
+   nonlocal unavailable_reads
    deadline=time.monotonic()+seconds
    while time.monotonic()<deadline:
     api.child.alive()
     try:value=await asyncio.to_thread(f)
+    except ReadUnavailable:
+     unavailable_reads+=1;emit(stage='task-read-unavailable',count=unavailable_reads);value=None
     except OSError:value=None
     if value:return value
     await asyncio.sleep(.15)
@@ -82,7 +86,7 @@ async def run(directory,upstream,browsers,recovery='worker',remote=None):
   issued=await asyncio.to_thread(api.call,'/api/v1/nodes/enrollment-tokens',dict(nodeId=node_id),expected=201)
   credential=(await asyncio.to_thread(api.call,'/api/v1/nodes/enroll',dict(nodeId=node_id,token=issued.pop('token')),expected=201))['credential']
   log=(directory/'node.log').open('w')
-  node=await asyncio.create_subprocess_exec('node','--import','tsx',str(PACKET/('product_browser_remote_node.mjs' if remote else 'product_browser_node.mjs')),cwd=ROOT,env={**CLEAN_ENV,'PLAYWRIGHT_BROWSERS_PATH':str(browsers)},stdin=asyncio.subprocess.PIPE,stdout=asyncio.subprocess.PIPE,stderr=log)
+  node=await asyncio.create_subprocess_exec('node','--import','tsx',str(PACKET/('product_browser_remote_node.ts' if remote else 'product_browser_node.ts')),cwd=ROOT,env={**CLEAN_ENV,'PLAYWRIGHT_BROWSERS_PATH':str(browsers)},stdin=asyncio.subprocess.PIPE,stdout=asyncio.subprocess.PIPE,stderr=log)
   node.stdin.write(json.dumps(dict(nodeId=node_id,botId=bot['id'],serverUrl=api.url.replace('http:','ws:')+'/ws/nodes',credential=credential,directory=str(directory/'node'),upstream=str(upstream),recovery=connection_recovery or profile_recovery,nodeProcess=recovery in ('node','replacement'),responseLoss=recovery=='response-loss',profileRestart=profile_recovery,remote=remote)).encode());await node.stdin.drain();node.stdin.close()
   async with asyncio.timeout(20):target=json.loads(await node.stdout.readline())['targetUrl']
   state_target=remote['stateUrl'].rstrip('/') if remote else target
@@ -175,7 +179,7 @@ async def run(directory,upstream,browsers,recovery='worker',remote=None):
     with ThreadPoolExecutor(max_workers=2) as executor:await Replayer(workflows=[OpenBotWork],plugins=[PydanticAIPlugin()],workflow_task_executor=executor).replay_workflow(history)
     assert json.loads((directory/'node/browser-counts.json').read_text())==counts
     assert json.loads((directory/'provider/provider-counts.json').read_text())==model_counts
-    record=dict(accepted=True,mode=recovery,scope='trusted synthetic page on local Chromium',actualProductEntry=True,actualNode=True,actualChromium=True,actualPostgres=True,mutualTLS=True,canonicalMigrations=canonical_migrations,actualWorkApprovals=3,modelHTTP='synthetic',browserCalls=counts,modelCalls=model_counts,originalClickStatus=denied['status'],actualTargetSubmitted=expected_submitted,cancelRequested=True,authorityActive=False,unresolvedActionPreserved=True,taskStatus=closed['status'],offlineReplay=True,publicEgressQualified=False,isolatedLinuxBrowserProduct=False)
+    record=dict(accepted=True,readUnavailablePolls=unavailable_reads,mode=recovery,scope='trusted synthetic page on local Chromium',actualProductEntry=True,actualNode=True,actualChromium=True,actualPostgres=True,mutualTLS=True,canonicalMigrations=canonical_migrations,actualWorkApprovals=3,modelHTTP='synthetic',browserCalls=counts,modelCalls=model_counts,originalClickStatus=denied['status'],actualTargetSubmitted=expected_submitted,cancelRequested=True,authorityActive=False,unresolvedActionPreserved=True,taskStatus=closed['status'],offlineReplay=True,publicEgressQualified=False,isolatedLinuxBrowserProduct=False)
     if connection_recovery:record.update(staleApprovalNeverDispatched=True,oldViewRefused=True)
     if recovery=='response-loss':
      fault=json.loads((directory/'node/response-loss.json').read_text())
@@ -210,7 +214,7 @@ async def run(directory,upstream,browsers,recovery='worker',remote=None):
   history=await handle.fetch_history();(directory/'history.json').write_text(history.to_json())
   with ThreadPoolExecutor(max_workers=2) as executor:await Replayer(workflows=[OpenBotWork],plugins=[PydanticAIPlugin()],workflow_task_executor=executor).replay_workflow(history)
   assert json.loads((directory/'node/browser-counts.json').read_text())==counts and json.loads((directory/'provider/provider-counts.json').read_text())==model_counts
-  record=dict(accepted=True,scope='trusted synthetic page on local Chromium',actualProductEntry=True,actualNode=True,actualChromium=True,actualPostgres=True,mutualTLS=True,canonicalMigrations=canonical_migrations,actualWorkApprovals=4,modelHTTP='synthetic',browserCalls=counts,modelCalls=model_counts,approvedWhileWorkerStopped=True,sameNodeConnectionRetained=True,originalClickOnlyOnce=True,actualTargetIndependentState=True,reportDownloaded=True,offlineReplay=True,publicEgressQualified=False,isolatedLinuxBrowserProduct=False)
+  record=dict(accepted=True,readUnavailablePolls=unavailable_reads,scope='trusted synthetic page on local Chromium',actualProductEntry=True,actualNode=True,actualChromium=True,actualPostgres=True,mutualTLS=True,canonicalMigrations=canonical_migrations,actualWorkApprovals=4,modelHTTP='synthetic',browserCalls=counts,modelCalls=model_counts,approvedWhileWorkerStopped=True,sameNodeConnectionRetained=True,originalClickOnlyOnce=True,actualTargetIndependentState=True,reportDownloaded=True,offlineReplay=True,publicEgressQualified=False,isolatedLinuxBrowserProduct=False)
   if profile_recovery:
    assert state['persistentCookie'] and state['sessionCookie'] and state['indexedDB']=='synthetic-indexed-value',state
    held=await asyncio.to_thread(api.call,f"/api/v1/browser-sessions/{view['id']}/commands",dict(kind='take'))

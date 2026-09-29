@@ -29,6 +29,10 @@ class Process:
         self.log.close()
 
 
+class ReadUnavailable(AssertionError):
+    """A read-only snapshot may be polled again within its caller's existing deadline."""
+
+
 class API:
     def __init__(self,directory,dsn,artifacts,*,request_timeout=5):
         self.directory=directory/'api'
@@ -49,7 +53,14 @@ class API:
         except HTTPError as error:response=error
         with response:
             content=response.read()
-            if response.status!=expected:raise AssertionError((path,response.status,content[:500]))
+            if response.status!=expected:
+                # A bounded Task read can contend with the product's short publication lock.
+                # Preserve the refusal; only a caller's bounded read poll may handle it.
+                if (body is None and not raw and expected==200 and response.status==503
+                        and path.startswith('/api/v1/tasks/')
+                        and content==b'{"error":"Control-plane storage is unavailable."}'):
+                    raise ReadUnavailable((path,response.status,content))
+                raise AssertionError((path,response.status,content[:500]))
             if raw:
                 assert response.headers['X-Content-Type-Options']=='nosniff'
                 assert response.headers['Content-Disposition'].startswith('attachment;')

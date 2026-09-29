@@ -47,7 +47,7 @@
     "test:runtime:python": "node scripts/test-runtime-headless.mjs --python",
     "test:runtime:linux": "node scripts/test-runtime-linux.ts",
     "typecheck:parsers": "tsc --noEmit -p apps/server-python/tsconfig.parsers.json",
-    "typecheck": "turbo run build --filter=@openbot/db --filter=@openbot/protocol && tsc --noEmit -p scripts/tsconfig.json && npm run typecheck:parsers && turbo run typecheck",
+    "typecheck": "turbo run build --filter=@openbot/db --filter=@openbot/protocol && tsc --noEmit -p scripts/tsconfig.json && tsc --noEmit -p experiments/work-journey/tsconfig.json && npm run typecheck:parsers && turbo run typecheck",
     "worker-host:macos:check": "node --test scripts/check-macos-worker-host.test.mjs scripts/macos-worker-host-release.test.ts && node scripts/check-macos-worker-host.mjs",
     "worker-host:macos:native-check": "swift build --package-path apps/worker-host-macos && swift test --package-path apps/worker-host-macos",
     "plugin:create": "node scripts/create-mcp-plugin.ts",
@@ -65,7 +65,7 @@
     "harness:quality": "sh packages/harness/scripts/quality.sh",
     "contracts:test": "npm exec -- turbo run build --filter=@openbot/web^... && npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts",
     "ci:scope": "node scripts/ci-scope.ts",
-    "ci:check": "node --test scripts/ci-scope.test.ts scripts/check-python-audit.test.mjs scripts/check-ci-cache.test.mjs scripts/python-acceptance-fixture.test.ts scripts/output-redaction.test.ts scripts/smoke-dev-startup.test.ts apps/server-python/scripts/python-comparator.test.ts scripts/dev-startup-inputs.test.ts scripts/dev-processes.test.ts",
+    "ci:check": "node --test scripts/ci-scope.test.ts scripts/check-python-audit.test.mjs scripts/check-ci-cache.test.mjs scripts/python-acceptance-fixture.test.ts scripts/output-redaction.test.ts scripts/smoke-dev-startup.test.ts apps/server-python/scripts/python-comparator.test.ts scripts/dev-startup-inputs.test.ts scripts/dev-processes.test.ts experiments/work-journey/probe-inputs.test.ts experiments/work-journey/browser_response_loss.test.ts",
     "check:affected": "node scripts/check-affected.ts"
   },
   "devDependencies": {

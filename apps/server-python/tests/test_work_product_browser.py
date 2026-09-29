@@ -386,7 +386,7 @@ def test_actual_node_provider_and_work_share_the_same_capture(configured):
     async def check():
         async with server(f.seed,configured=False) as (service,registry,http,url):
             credential=await enroll_worker(f.seed,http)
-            script=Path(__file__).parent/'fixtures/work-browser-node.mjs'
+            script=Path(__file__).parent/'fixtures/work-browser-node.ts'
             child=await asyncio.create_subprocess_exec('node','--import','tsx',str(script),
                 cwd=Path(__file__).resolve().parents[3],stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE)

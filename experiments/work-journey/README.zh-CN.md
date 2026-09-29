@@ -283,7 +283,7 @@ OpenBotNodeClient、WebSocket／Unix命令通道、Host签名观测、完整产�
 准备已锁定Worker环境、构建共享包并启动本机Docker后执行：
 
 ```sh
-node_modules/.bin/esbuild experiments/work-journey/product_command_node.mjs --bundle --platform=node --format=cjs --target=node22 --outfile=/tmp/openbot-command-node.cjs
+node_modules/.bin/esbuild experiments/work-journey/product_command_node.ts --bundle --platform=node --format=cjs --target=node22 --outfile=/tmp/openbot-command-node.cjs
 apps/server-python/.worker-venv/bin/python -B -u experiments/work-journey/product_command_probe.py --output /tmp/openbot-command-product-1 --node-bundle /tmp/openbot-command-node.cjs
 ```
 
@@ -326,6 +326,10 @@ mTLS Temporal，测试页面及七次模型／审核响应为合成内容，无�
 它分别批准导航／填字／点击／读取，在点击批准前关闭真实 SDK Worker，保留同一个 Node 连接
 并恢复 Worker，核对表单只提交一次、报告可下载，最后重放历史且没有新增动作。
 这是可信本地页面验收，不代表公网出口或隔离 Linux Host 通过，见[结果](evidence/product-browser-pages.json)。
+
+Task 快照查询可能遇到产品的有界发布锁。原有轮询时限同样覆盖明确的存储暂不可用 `503`，
+每次都会输出 `task-read-unavailable` 并计入 `readUnavailablePolls`。这项处理不重试写入、
+其他错误或未知的浏览器动作。
 
 准备 POSIX、Docker、项目支持的 Node／npm、Bun1.3.14、OpenSSL 和 Python3.12。从新克隆运行：
 
