@@ -55,7 +55,7 @@ $env:RUNNER_TEMP = $env:TEMP
 可移植身份辅助测试仍可运行：
 
 ```bash
-npm test --workspace @openbot/desktop -- scripts/windows-native-smoke-harness.test.mjs
+npm test --workspace @openbot/desktop -- scripts/smoke-process-identity.test.ts
 ```
 
 ## 历史本地 Server 证据与限制

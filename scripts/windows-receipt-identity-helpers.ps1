@@ -242,7 +242,7 @@ function Assert-CrossRuntimeProcessIdentityConsistency {
     $info.RedirectStandardInput = $true
     $info.RedirectStandardOutput = $true
     $info.RedirectStandardError = $true
-    $helper = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../apps/desktop/scripts/windows-native-smoke-harness.mjs'))
+    $helper = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../apps/desktop/scripts/smoke-process-identity.ts'))
     $code = 'import {pathToFileURL} from "node:url"; const {observeProcessIdentity}=await import(pathToFileURL(process.argv[1]).href); console.log(JSON.stringify({electron:observeProcessIdentity(Number(process.argv[2]))}));'
     foreach ($argument in @('--input-type=module', '-e', $code, $helper, [string]$hostProcess.Id)) {
       $info.ArgumentList.Add($argument)

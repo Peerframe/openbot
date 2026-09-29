@@ -62,7 +62,7 @@ Windows installation, DPAPI or installed-app GUI on the current source.
 Portable identity/helper tests remain available:
 
 ```bash
-npm test --workspace @openbot/desktop -- scripts/windows-native-smoke-harness.test.mjs
+npm test --workspace @openbot/desktop -- scripts/smoke-process-identity.test.ts
 ```
 
 ## Historical local-Server evidence and limits

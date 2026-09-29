@@ -22,6 +22,7 @@
 // It performs no network access and prints no plaintext fixture bytes.
 
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
@@ -29,11 +30,9 @@ import { app, safeStorage } from "electron";
 
 import {
   isProcessIdentity,
-  processIdentitiesEqual,
-  isProcessAlive,
+  assertPreviousProcessEnded,
   observeProcessIdentity,
-  digestCiphertext,
-} from "./windows-native-smoke-harness.mjs";
+} from "./smoke-process-identity.ts";
 
 const RESULT_SCHEMA_VERSION = 1;
 const STATE_SCHEMA_VERSION = 1;
@@ -81,27 +80,16 @@ function requireObservedIdentity(pid) {
 }
 
 /**
- * Fail closed if the previous Electron lifetime is still running under the same
- * identity. A reused PID with a different start time/path is a different process.
- * @param {ProcessIdentity | null | undefined} previous
- */
-function assertPreviousLifetimeEnded(previous) {
-  if (previous == null) return;
-  if (!isProcessIdentity(previous)) throw new Error("Previous Electron identity is invalid.");
-  if (!isProcessAlive(previous.pid)) return;
-  if (previous.startTimeUtc == null || previous.executablePath == null) {
-    throw new Error(`Previous Electron lifetime ${previous.pid} is alive without a full identity.`);
-  }
-  const current = observeProcessIdentity(previous.pid);
-  if (current == null || processIdentitiesEqual(previous, current)) {
-    throw new Error(`Previous Electron lifetime ${previous.pid} is still alive.`);
-  }
-}
-
-/**
  * SHA-256 hex digest of ciphertext (never log raw ciphertext).
  * @param {string} ciphertext
  */
+function digestCiphertext(ciphertext) {
+  if (typeof ciphertext !== "string" || ciphertext.length === 0) {
+    throw new Error("ciphertext digest requires non-empty ciphertext.");
+  }
+  return createHash("sha256").update(ciphertext, "utf8").digest("hex");
+}
+
 function isRemoteSmokeState(value) {
   if (!value || typeof value !== "object") return false;
   const state = /** @type {Record<string, unknown>} */ (value);
@@ -296,7 +284,7 @@ async function runRestartLifetime() {
   const previous = await readState();
   assert.equal(previous.firstLifetimeComplete, true, "restart requires a completed first lifetime");
   // Fail closed if the first Electron lifetime somehow survived the orchestrator.
-  assertPreviousLifetimeEnded(previous.electron);
+  assertPreviousProcessEnded(previous.electron);
 
   const checks = [];
   const available = await safeStorage.isAsyncEncryptionAvailable();
