@@ -120,6 +120,18 @@ export function App() {
     localHost && nativeReady ? desktopBridge?.restoreLocalSession : undefined;
   const authRequest = useRef(0);
   const explicitlyLoggedOut = useRef(false);
+  async function logoutWorkspace() {
+    explicitlyLoggedOut.current = true;
+    ++authRequest.current;
+    try {
+      await logout();
+    } catch (error) {
+      explicitlyLoggedOut.current = false;
+      throw error;
+    }
+    setSession({ authenticated: false });
+  }
+
   const refreshSession = useCallback(
     async (signal?: AbortSignal) => {
       const requestId = ++authRequest.current;
@@ -433,17 +445,7 @@ export function App() {
       <WorkTasksEntry
         initialTaskId={workEntry.taskId}
         key={`${session.owner.id}:${desktopConnection?.status === "configured" ? desktopConnection.serverUrl : "web"}`}
-        onLogout={async () => {
-          explicitlyLoggedOut.current = true;
-          ++authRequest.current;
-          try {
-            await logout();
-          } catch (error) {
-            explicitlyLoggedOut.current = false;
-            throw error;
-          }
-          setSession({ authenticated: false });
-        }}
+        onLogout={logoutWorkspace}
       />
     );
 
@@ -556,17 +558,7 @@ export function App() {
             setSettingsSection(section);
             setShowSettings(true);
           }}
-          onLogout={async () => {
-            explicitlyLoggedOut.current = true;
-            ++authRequest.current;
-            try {
-              await logout();
-            } catch (error) {
-              explicitlyLoggedOut.current = false;
-              throw error;
-            }
-            setSession({ authenticated: false });
-          }}
+          onLogout={logoutWorkspace}
         />
       </div>
       {settingsPanel}

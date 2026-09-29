@@ -116,6 +116,19 @@ describe("native report saving", () => {
       await expect(readFile(f.path)).rejects.toThrow();
     },
   );
+  it("refuses a server switch while the final session check is in flight", async () => {
+    const f = await fixture();
+    const fetchResponse = f.fetcher.getMockImplementation();
+    if (!fetchResponse) throw new Error("Fixture fetcher is missing.");
+    f.fetcher.mockImplementation(async (url) => {
+      const response = await fetchResponse(url);
+      if (url.endsWith("/auth/session")) f.changeServer();
+      return response;
+    });
+    expect(await f.saver.save(id)).toEqual({ status: "unavailable" });
+    expect(f.choosePath).toHaveBeenCalledTimes(1);
+    await expect(readFile(f.path)).rejects.toMatchObject({ code: "ENOENT" });
+  });
   it("saves PNG bytes using a fixed artifact filename and never overwrites", async () => {
     const f = await fixture();
     f.fetcher.mockImplementation(async (url) =>

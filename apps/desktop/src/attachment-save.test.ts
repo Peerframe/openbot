@@ -49,6 +49,47 @@ it("saves only a scoped, digest verified original through the native dialog and 
     await rm(directory, { recursive: true, force: true });
   }
 });
+it.each(["dialog", "session"])("refuses an attachment server switch during %s", async (phase) => {
+  const directory = await mkdtemp(join(tmpdir(), "openbot-original-switch-"));
+  const path = join(directory, "original.docx");
+  const bytes = Buffer.from("immutable original");
+  let serverUrl = "https://server.example";
+  const choosePath = vi.fn(async () => {
+    if (phase === "dialog") serverUrl = "https://other.example";
+    return path;
+  });
+  const saver = new DesktopReportSaver({
+    connection: () => ({ status: "configured", serverUrl }),
+    active: () => true,
+    choosePath,
+    fetch: async (url) => {
+      if (url.endsWith("/auth/session")) {
+        if (phase === "session") serverUrl = "https://other.example";
+        return Response.json({ authenticated: true });
+      }
+      return url.endsWith("/content")
+        ? new Response(bytes, { headers: { "Content-Type": "application/octet-stream" } })
+        : Response.json({
+            attachment: {
+              id: attachmentId,
+              channelId,
+              name: "original.docx",
+              sizeBytes: bytes.length,
+              sha256: createHash("sha256").update(bytes).digest("hex"),
+            },
+          });
+    },
+  });
+  try {
+    expect(await saver.saveAttachment({ channelId, attachmentId })).toEqual({
+      status: "unavailable",
+    });
+    expect(choosePath).toHaveBeenCalledTimes(1);
+    await expect(readFile(path)).rejects.toMatchObject({ code: "ENOENT" });
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 describe("attachment identity IPC boundary", () => {
   it.each([
     {},

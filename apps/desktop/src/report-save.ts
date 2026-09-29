@@ -51,14 +51,6 @@ export class DesktopReportSaver {
     if (connection.status !== "configured" || !this.options.active())
       return { status: "unavailable" };
     this.#busy = true;
-    const sameConnection = () => {
-      const current = this.options.connection();
-      return (
-        this.options.active() &&
-        current.status === "configured" &&
-        current.serverUrl === connection.serverUrl
-      );
-    };
     try {
       const url = new URL(
         `/api/v1/channels/${value.channelId}/attachments/${value.attachmentId}`,
@@ -109,7 +101,7 @@ export class DesktopReportSaver {
         createHash("sha256").update(bytes).digest("hex") !== attachment.sha256
       )
         throw new Error("Attachment integrity check failed");
-      if (!sameConnection()) return { status: "unavailable" };
+      if (!this.#sameConnection(connection)) return { status: "unavailable" };
       const path = await (this.options.chooseAttachmentPath ?? this.options.choosePath)(
         attachment.name,
       );
@@ -117,21 +109,12 @@ export class DesktopReportSaver {
       if (
         !isAbsolute(path) ||
         extname(path) !== extname(attachment.name) ||
-        !sameConnection() ||
+        !this.#sameConnection(connection) ||
         !(await isDesktopSessionAuthenticated(connection, this.options.fetch)) ||
-        !sameConnection()
+        !this.#sameConnection(connection)
       )
         return { status: "unavailable" };
-      const handle = await open(path, "wx", 0o600);
-      try {
-        await handle.writeFile(bytes);
-        await handle.sync();
-      } catch (error) {
-        await handle.close();
-        await unlink(path).catch(() => undefined);
-        throw error;
-      }
-      await handle.close();
+      await writeNewPrivateFile(path, bytes);
       return { status: "saved" };
     } catch (error) {
       return {
@@ -210,34 +193,17 @@ export class DesktopReportSaver {
             : !/^[\p{L}\p{N}][\p{L}\p{N} ._-]{0,100}\.md$/u.test(name)
       )
         return { status: "unavailable" };
-      const sameConnection = () => {
-        const current = this.options.connection();
-        return (
-          this.options.active() &&
-          current.status === "configured" &&
-          current.serverUrl === connection.serverUrl
-        );
-      };
-      if (!sameConnection()) return { status: "unavailable" };
+      if (!this.#sameConnection(connection)) return { status: "unavailable" };
       const path = await this.options.choosePath(name);
       if (path === undefined) return { status: "cancelled" };
-      if (!isAbsolute(path) || extname(path) !== extname(name) || !sameConnection())
+      if (!isAbsolute(path) || extname(path) !== extname(name) || !this.#sameConnection(connection))
         return { status: "unavailable" };
       if (
         !(await isDesktopSessionAuthenticated(connection, this.options.fetch)) ||
-        !sameConnection()
+        !this.#sameConnection(connection)
       )
         return { status: "unavailable" };
-      const handle = await open(path, "wx", 0o600);
-      try {
-        await handle.writeFile(bytes);
-        await handle.sync();
-      } catch (error) {
-        await handle.close();
-        await unlink(path).catch(() => undefined);
-        throw error;
-      }
-      await handle.close();
+      await writeNewPrivateFile(path, bytes);
       return { status: "saved" };
     } catch (error) {
       return {
@@ -250,6 +216,28 @@ export class DesktopReportSaver {
       this.#busy = false;
     }
   }
+  #sameConnection(connection: Extract<DesktopConnectionState, { status: "configured" }>): boolean {
+    const current = this.options.connection();
+    return (
+      this.options.active() &&
+      current.status === "configured" &&
+      current.serverUrl === connection.serverUrl
+    );
+  }
+}
+
+// Both save routes reach this only after their own content, dialog and current-session checks.
+async function writeNewPrivateFile(path: string, bytes: Buffer): Promise<void> {
+  const handle = await open(path, "wx", 0o600);
+  try {
+    await handle.writeFile(bytes);
+    await handle.sync();
+  } catch (error) {
+    await handle.close();
+    await unlink(path).catch(() => undefined);
+    throw error;
+  }
+  await handle.close();
 }
 
 async function readArtifact(response: Response): Promise<Buffer> {
