@@ -13,15 +13,17 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { withLinuxInstallLease } from "./node-linux-install-lease.mjs";
+import { withLinuxInstallLease } from "./node-linux-install-lease.ts";
 import {
   installStagedLinuxRelease,
-  LINUX_INSTALL_PROVENANCE_POLICY,
-  linuxProvenanceCertificateIdentity,
   readCurrentTarget,
   recoverLinuxInstallTransaction,
+} from "./node-linux-install-transaction.ts";
+import {
+  LINUX_INSTALL_PROVENANCE_POLICY,
+  linuxProvenanceCertificateIdentity,
   validateLinuxInstallProvenance,
-} from "./node-linux-install-transaction.mjs";
+} from "./node-linux-provenance.ts";
 import {
   createFileManifest,
   linuxInstalledReleaseName,
@@ -88,9 +90,11 @@ test("first install selects verified bytes without starting an inactive service"
     `versions/${result.releaseName}`,
   );
   assert.equal(await pathType(path.join(fixture.stateRoot, "transaction.json")), "missing");
-  const receipt = JSON.parse(await readFile(path.join(fixture.stateRoot, "last-success.json")));
-  assert.equal(receipt.outcome, "activated");
-  assert.equal(receipt.serviceWasActive, false);
+  const receipt: unknown = JSON.parse(
+    await readFile(path.join(fixture.stateRoot, "last-success.json"), "utf8"),
+  );
+  assert.equal(field(receipt, "outcome"), "activated");
+  assert.equal(field(receipt, "serviceWasActive"), false);
 });
 
 test("active upgrade restarts only after the atomic version switch", async () => {
@@ -118,7 +122,10 @@ test("active upgrade restarts only after the atomic version switch", async () =>
   assert.deepEqual(service.calls, ["is-active", "restart", "is-active"]);
   assert.equal(await readCurrentTarget(fixture.installRoot), `versions/${result.releaseName}`);
   assert.equal(
-    JSON.parse(await readFile(path.join(fixture.stateRoot, "last-success.json"))).outcome,
+    field(
+      JSON.parse(await readFile(path.join(fixture.stateRoot, "last-success.json"), "utf8")),
+      "outcome",
+    ),
     "activated",
   );
 });
@@ -161,7 +168,10 @@ test("failed upgrade restores and rechecks the previous active release", async (
   assert.deepEqual(service.calls, ["is-active", "restart", "restart", "is-active"]);
   assert.equal(await readCurrentTarget(fixture.installRoot), previousTarget);
   assert.equal(
-    JSON.parse(await readFile(path.join(fixture.stateRoot, "last-success.json"))).outcome,
+    field(
+      JSON.parse(await readFile(path.join(fixture.stateRoot, "last-success.json"), "utf8")),
+      "outcome",
+    ),
     "rolled-back",
   );
   assert.equal(await pathType(path.join(fixture.stateRoot, "transaction.json")), "missing");
@@ -179,11 +189,18 @@ test("failed recovery keeps both releases and a bounded recovery journal", async
   );
 
   assert.equal(await readCurrentTarget(fixture.installRoot), previousTarget);
-  const journal = JSON.parse(await readFile(path.join(fixture.stateRoot, "transaction.json")));
-  assert.equal(journal.phase, "recovery-failed");
-  assert.equal((await lstat(path.join(fixture.installRoot, previousTarget))).isDirectory(), true);
+  const journal: unknown = JSON.parse(
+    await readFile(path.join(fixture.stateRoot, "transaction.json"), "utf8"),
+  );
+  assert.equal(field(journal, "phase"), "recovery-failed");
   assert.equal(
-    (await lstat(path.join(fixture.installRoot, `versions/${journal.releaseName}`))).isDirectory(),
+    (await lstat(path.join(fixture.installRoot, present(previousTarget)))).isDirectory(),
+    true,
+  );
+  assert.equal(
+    (
+      await lstat(path.join(fixture.installRoot, `versions/${field(journal, "releaseName")}`))
+    ).isDirectory(),
     true,
   );
 });
@@ -207,7 +224,10 @@ test("explicit recovery clears a staged journal only when selection and service 
   assert.deepEqual(service.calls, ["is-active"]);
   assert.equal(await pathType(path.join(fixture.stateRoot, "transaction.json")), "missing");
   assert.equal(
-    JSON.parse(await readFile(path.join(fixture.stateRoot, "last-success.json"))).outcome,
+    field(
+      JSON.parse(await readFile(path.join(fixture.stateRoot, "last-success.json"), "utf8")),
+      "outcome",
+    ),
     "recovered-before-switch",
   );
 });
@@ -289,11 +309,16 @@ test("explicit recovery retains both releases and marks a failed retry for manua
 
   assert.equal(await readCurrentTarget(fixture.installRoot), interrupted.previousTarget);
   assert.equal(
-    JSON.parse(await readFile(path.join(fixture.stateRoot, "transaction.json"))).phase,
+    field(
+      JSON.parse(await readFile(path.join(fixture.stateRoot, "transaction.json"), "utf8")),
+      "phase",
+    ),
     "recovery-failed",
   );
   assert.equal(
-    (await lstat(path.join(fixture.installRoot, interrupted.previousTarget))).isDirectory(),
+    (
+      await lstat(path.join(fixture.installRoot, present(interrupted.previousTarget)))
+    ).isDirectory(),
     true,
   );
   assert.equal(
@@ -405,7 +430,28 @@ test("architecture mismatch and an existing transaction lock fail before activat
   );
 });
 
-async function installedFixture(version, sourceCommit) {
+interface TransactionFixture {
+  readonly installRoot: string;
+  readonly stateRoot: string;
+}
+
+interface InterruptedUpgrade {
+  readonly phase: string;
+  readonly selectNew: boolean;
+  readonly serviceWasActive: boolean;
+  readonly sourceCommit: string;
+  readonly version: string;
+}
+
+interface ScriptedServiceOptions {
+  readonly activeResults: boolean[];
+  readonly restartFailures?: readonly number[];
+}
+
+async function installedFixture(
+  version: string,
+  sourceCommit: string,
+): Promise<TransactionFixture> {
   const fixture = await createFixture();
   const candidate = await createCandidate(fixture.installRoot, version, sourceCommit);
   await install(
@@ -418,7 +464,7 @@ async function installedFixture(version, sourceCommit) {
   return fixture;
 }
 
-async function createFixture() {
+async function createFixture(): Promise<TransactionFixture> {
   const root = await mkdtemp(path.join(tmpdir(), "openbot-linux-install-test-"));
   return {
     installRoot: path.join(root, "opt/openbot-node"),
@@ -426,7 +472,11 @@ async function createFixture() {
   };
 }
 
-async function createCandidate(installRoot, version, sourceCommit) {
+async function createCandidate(
+  installRoot: string,
+  version: string,
+  sourceCommit: string,
+): Promise<string> {
   const manifestInput = manifestFor(version, sourceCommit);
   const candidate = path.join(
     installRoot,
@@ -459,8 +509,8 @@ async function createCandidate(installRoot, version, sourceCommit) {
 }
 
 async function interruptUpgrade(
-  fixture,
-  { phase, selectNew, serviceWasActive, sourceCommit, version },
+  fixture: TransactionFixture,
+  { phase, selectNew, serviceWasActive, sourceCommit, version }: InterruptedUpgrade,
 ) {
   const previousTarget = await readCurrentTarget(fixture.installRoot);
   const candidate = await createCandidate(fixture.installRoot, version, sourceCommit);
@@ -493,7 +543,7 @@ async function interruptUpgrade(
   return { journal, previousTarget, target };
 }
 
-function manifestFor(version, sourceCommit) {
+function manifestFor(version: string, sourceCommit: string) {
   return {
     architecture: "x64",
     platform: "linux",
@@ -502,7 +552,7 @@ function manifestFor(version, sourceCommit) {
   };
 }
 
-function provenanceFor(manifest) {
+function provenanceFor(manifest: { readonly sourceCommit: string; readonly version: string }) {
   return {
     schemaVersion: 1,
     ...LINUX_INSTALL_PROVENANCE_POLICY,
@@ -514,8 +564,8 @@ function provenanceFor(manifest) {
   };
 }
 
-function scriptedService({ activeResults, restartFailures = [] }) {
-  const calls = [];
+function scriptedService({ activeResults, restartFailures = [] }: ScriptedServiceOptions) {
+  const calls: string[] = [];
   let restartCount = 0;
   return {
     calls,
@@ -533,7 +583,13 @@ function scriptedService({ activeResults, restartFailures = [] }) {
   };
 }
 
-function install(fixture, candidate, manifest, service, transactionId) {
+function install(
+  fixture: TransactionFixture,
+  candidate: string,
+  manifest: { readonly sourceCommit: string; readonly version: string },
+  service: unknown,
+  transactionId: unknown,
+) {
   return installStagedLinuxRelease({
     architecture: "x64",
     candidate,
@@ -546,7 +602,7 @@ function install(fixture, candidate, manifest, service, transactionId) {
   });
 }
 
-function recover(fixture, service) {
+function recover(fixture: TransactionFixture, service: unknown) {
   return recoverLinuxInstallTransaction({
     installRoot: fixture.installRoot,
     now: () => fixedTime,
@@ -556,12 +612,21 @@ function recover(fixture, service) {
   });
 }
 
-async function pathType(filePath) {
+async function pathType(filePath: string): Promise<"directory" | "file" | "missing"> {
   try {
     const metadata = await lstat(filePath);
     return metadata.isDirectory() ? "directory" : "file";
   } catch (error) {
-    if (error?.code === "ENOENT") return "missing";
+    if (field(error, "code") === "ENOENT") return "missing";
     throw error;
   }
+}
+
+function field(value: unknown, key: string): unknown {
+  return value === null || value === undefined ? undefined : Reflect.get(Object(value), key);
+}
+
+function present<T>(value: T | null | undefined): T {
+  if (value === null || value === undefined) throw new TypeError("Expected a recorded value.");
+  return value;
 }

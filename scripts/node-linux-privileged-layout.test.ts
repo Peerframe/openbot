@@ -5,7 +5,7 @@ import {
   provisionLinuxPrivilegedInstallerLayout,
   validateLinuxPrivilegedLayoutSnapshot,
   validateLinuxPrivilegedRuntime,
-} from "./node-linux-privileged-layout.mjs";
+} from "./node-linux-privileged-layout.ts";
 
 const expectedPaths = [
   "/",
@@ -106,7 +106,7 @@ test("creates missing fixed children parent-first and normalizes only their open
     childPolicies.map(({ mode, path }) => `mkdir:${path}:${mode.toString(8)}:false`),
   );
   for (const { mode, path } of childPolicies) {
-    assert.equal(fixture.entries.get(path).mode & 0o777, mode);
+    assert.equal(present(fixture.entries.get(path)).mode & 0o777, mode);
     assert.ok(fixture.events.includes(`chmod:${path}:${mode.toString(8)}`));
   }
 });
@@ -168,7 +168,25 @@ const childPolicies = Object.freeze([
   Object.freeze({ mode: 0o700, path: LINUX_PRIVILEGED_INSTALL_LAYOUT.importsRoot }),
 ]);
 
-function provisioningFixture({ includeChildren = false, replaceAfterChmod } = {}) {
+interface ProvisioningFixtureOptions {
+  readonly includeChildren?: boolean;
+  readonly replaceAfterChmod?: string;
+}
+
+interface MetadataOptions {
+  readonly dev?: number;
+  readonly directory?: boolean;
+  readonly gid?: number;
+  readonly ino?: number;
+  readonly mode?: number;
+  readonly symbolicLink?: boolean;
+  readonly uid?: number;
+}
+
+function provisioningFixture({
+  includeChildren = false,
+  replaceAfterChmod,
+}: ProvisioningFixtureOptions = {}) {
   const entries = new Map([
     ["/", metadata({ ino: 1 })],
     ["/opt", metadata({ ino: 2 })],
@@ -181,29 +199,32 @@ function provisioningFixture({ includeChildren = false, replaceAfterChmod } = {}
       entries.set(policy.path, metadata({ ino: nextInode++, mode: policy.mode }));
     }
   }
-  const events = [];
+  const events: string[] = [];
   const operations = {
-    async lstat(entryPath) {
+    async lstat(entryPath: string) {
       events.push(`lstat:${entryPath}`);
       const entry = entries.get(entryPath);
       if (entry === undefined) throw fileSystemError("ENOENT");
       return entry;
     },
-    async mkdir(entryPath, options) {
+    async mkdir(
+      entryPath: string,
+      options: { readonly mode: number; readonly recursive: boolean },
+    ) {
       events.push(`mkdir:${entryPath}:${options.mode.toString(8)}:${String(options.recursive)}`);
       if (entries.has(entryPath)) throw fileSystemError("EEXIST");
       const parent = entryPath.slice(0, entryPath.lastIndexOf("/")) || "/";
       if (!entries.has(parent)) throw fileSystemError("ENOENT");
       entries.set(entryPath, metadata({ ino: nextInode++, mode: options.mode & 0o700 }));
     },
-    async openDirectory(entryPath) {
+    async openDirectory(entryPath: string) {
       events.push(`open:${entryPath}`);
       const opened = entries.get(entryPath);
       if (opened === undefined || opened.isSymbolicLink() || !opened.isDirectory()) {
         throw fileSystemError("ELOOP");
       }
       return {
-        async chmod(mode) {
+        async chmod(mode: number) {
           events.push(`chmod:${entryPath}:${mode.toString(8)}`);
           opened.mode = mode;
           if (replaceAfterChmod === entryPath) {
@@ -223,7 +244,7 @@ function provisioningFixture({ includeChildren = false, replaceAfterChmod } = {}
   return { entries, events, operations };
 }
 
-function fileSystemError(code) {
+function fileSystemError(code: string) {
   return Object.assign(new Error(code), { code });
 }
 
@@ -233,7 +254,7 @@ function validSnapshot() {
   );
 }
 
-function expectedMode(entryPath) {
+function expectedMode(entryPath: string): number {
   if (
     entryPath === LINUX_PRIVILEGED_INSTALL_LAYOUT.stagingRoot ||
     entryPath === LINUX_PRIVILEGED_INSTALL_LAYOUT.stateRoot ||
@@ -252,7 +273,7 @@ function metadata({
   mode = 0o755,
   symbolicLink = false,
   uid = 0,
-} = {}) {
+}: MetadataOptions = {}) {
   return {
     dev,
     gid,
@@ -262,4 +283,9 @@ function metadata({
     mode,
     uid,
   };
+}
+
+function present<T>(value: T | null | undefined): T {
+  if (value === null || value === undefined) throw new TypeError("Expected a recorded value.");
+  return value;
 }

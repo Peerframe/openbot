@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { Stats } from "node:fs";
 import {
   chmod,
   lstat,
@@ -14,64 +15,82 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import writeFileAtomic from "write-file-atomic";
-import { enterLinuxInstallLease } from "./node-linux-install-lease.mjs";
+import { enterLinuxInstallLease } from "./node-linux-install-lease.ts";
+import { validateLinuxInstallProvenance } from "./node-linux-provenance.ts";
 import {
+  type LinuxReleaseManifest,
   linuxInstalledReleaseName,
   verifyCandidateDirectory,
   verifyInstalledLinuxReleaseDirectory,
 } from "./node-linux-release.ts";
 
-export const LINUX_INSTALL_PROVENANCE_POLICY = Object.freeze({
-  issuer: "https://token.actions.githubusercontent.com",
-  predicateType: "https://slsa.dev/provenance/v1",
-  repository: "yxflc11/openbot",
-  runnerEnvironment: "github-hosted",
-  signerWorkflow: "yxflc11/openbot/.github/workflows/node-linux-release.yml",
-  verifier: "gh/2.93.0",
-});
+/** Bounded service seam; each operation receives an AbortSignal tied to its deadline. */
+export interface LinuxInstallServiceAdapter {
+  readonly isActive: (signal: AbortSignal) => unknown;
+  readonly restartSelected: (signal: AbortSignal) => unknown;
+}
 
-export function linuxProvenanceCertificateIdentity(version) {
-  return `https://github.com/${LINUX_INSTALL_PROVENANCE_POLICY.signerWorkflow}@refs/tags/node-v${version}`;
+export interface LinuxStagedInstallOptions {
+  readonly architecture: unknown;
+  readonly candidate: string;
+  readonly installLease?: unknown;
+  readonly installRoot: unknown;
+  readonly now?: (() => unknown) | undefined;
+  readonly service: unknown;
+  readonly serviceDeadlineMs?: unknown;
+  readonly stateRoot: unknown;
+  readonly transactionId?: unknown;
+  readonly verifiedProvenance: unknown;
+}
+
+export interface LinuxStagedInstallResult {
+  readonly alreadyInstalled: boolean;
+  readonly releaseName: string;
+  readonly restarted: boolean;
+  readonly rolledBack: false;
+}
+
+export interface LinuxInstallRecoveryOptions {
+  readonly installLease?: unknown;
+  readonly installRoot: unknown;
+  readonly now?: (() => unknown) | undefined;
+  readonly recoveryId?: unknown;
+  readonly service: unknown;
+  readonly serviceDeadlineMs?: unknown;
+  readonly stateRoot: unknown;
+}
+
+export interface LinuxInstallRecoveryResult {
+  readonly outcome: "recovered-before-switch" | "recovered-previous";
+  readonly releaseName: string;
+  readonly restarted: boolean;
+  readonly restoredTarget: string | null;
+}
+
+/** Transaction journal; key order here is the on-disk canonical order. */
+interface LinuxInstallJournal {
+  readonly schemaVersion: 1;
+  readonly transactionId: string;
+  readonly phase: string;
+  readonly releaseName: string;
+  readonly target: string;
+  readonly previousTarget: string | null;
+  readonly serviceWasActive: boolean;
+  readonly archiveSha256: unknown;
+  readonly sourceCommit: unknown;
+  readonly sourceRef: string;
+  readonly createdAt: string;
 }
 
 const maximumServiceDeadlineMs = 60_000;
-
-export function validateLinuxInstallProvenance(provenance, manifest) {
-  if (!isRecord(provenance) || provenance.schemaVersion !== 1) {
-    throw new Error("Linux install provenance is missing or malformed.");
-  }
-  for (const [key, expected] of Object.entries(LINUX_INSTALL_PROVENANCE_POLICY)) {
-    if (provenance[key] !== expected) {
-      throw new Error(`Linux install provenance does not satisfy ${key} policy.`);
-    }
-  }
-  if (provenance.sourceCommit !== manifest.sourceCommit) {
-    throw new Error("Linux install provenance source commit does not match the manifest.");
-  }
-  if (provenance.sourceRef !== `refs/tags/node-v${manifest.version}`) {
-    throw new Error("Linux install provenance source ref does not match the release version.");
-  }
-  if (provenance.certificateIdentity !== linuxProvenanceCertificateIdentity(manifest.version)) {
-    throw new Error("Linux install provenance certificate identity does not match the release.");
-  }
-  if (!/^[0-9a-f]{64}$/.test(provenance.archiveSha256 ?? "")) {
-    throw new Error("Linux install provenance archive digest is missing or malformed.");
-  }
-  const verifiedAt = Date.parse(provenance.verifiedAt);
-  if (
-    !Number.isFinite(verifiedAt) ||
-    new Date(verifiedAt).toISOString() !== provenance.verifiedAt
-  ) {
-    throw new Error("Linux install provenance verification time is not canonical.");
-  }
-  return provenance;
-}
 
 /**
  * Rootless transaction core. A future privileged bootstrap must obtain `verifiedProvenance` and
  * the candidate directly from the pinned verifier and safe extraction adapters.
  */
-export async function installStagedLinuxRelease(options) {
+export async function installStagedLinuxRelease(
+  options: LinuxStagedInstallOptions,
+): Promise<LinuxStagedInstallResult> {
   const installRoot = assertAbsoluteRoot(options.installRoot, "install");
   const stateRoot = assertAbsoluteRoot(options.stateRoot, "state");
   if (pathsOverlap(installRoot, stateRoot)) {
@@ -99,7 +118,7 @@ export async function installStagedLinuxRelease(options) {
   const leaveInstallLease = await enterLinuxInstallLease(stateRoot, options.installLease);
   const journalPath = path.join(stateRoot, "transaction.json");
   const receiptPath = path.join(stateRoot, "last-success.json");
-  let journal;
+  let journal: LinuxInstallJournal | undefined;
   let switched = false;
 
   try {
@@ -218,7 +237,9 @@ export async function installStagedLinuxRelease(options) {
  * Resume only the rollback described by a previously validated transaction journal. Recovery never
  * chooses a release by recency and never deletes either side of the interrupted upgrade.
  */
-export async function recoverLinuxInstallTransaction(options) {
+export async function recoverLinuxInstallTransaction(
+  options: LinuxInstallRecoveryOptions,
+): Promise<LinuxInstallRecoveryResult> {
   const installRoot = assertAbsoluteRoot(options.installRoot, "install");
   const stateRoot = assertAbsoluteRoot(options.stateRoot, "state");
   if (pathsOverlap(installRoot, stateRoot)) {
@@ -237,7 +258,7 @@ export async function recoverLinuxInstallTransaction(options) {
   const leaveInstallLease = await enterLinuxInstallLease(stateRoot, options.installLease);
   const journalPath = path.join(stateRoot, "transaction.json");
   const receiptPath = path.join(stateRoot, "last-success.json");
-  let journal;
+  let journal: LinuxInstallJournal | undefined;
   let recoveryStarted = false;
 
   try {
@@ -307,9 +328,9 @@ export async function recoverLinuxInstallTransaction(options) {
   }
 }
 
-export async function readCurrentTarget(installRoot) {
+export async function readCurrentTarget(installRoot: string): Promise<string | null> {
   const current = path.join(path.resolve(installRoot), "current");
-  let metadata;
+  let metadata: Stats;
   try {
     metadata = await lstat(current);
   } catch (error) {
@@ -327,7 +348,11 @@ export async function readCurrentTarget(installRoot) {
   return target;
 }
 
-async function selectCurrentTarget(installRoot, target, transactionId) {
+async function selectCurrentTarget(
+  installRoot: string,
+  target: string | null,
+  transactionId: string,
+): Promise<void> {
   const current = path.join(installRoot, "current");
   if (target === null) {
     const metadata = await lstat(current);
@@ -349,7 +374,12 @@ async function selectCurrentTarget(installRoot, target, transactionId) {
   }
 }
 
-async function releasesMatch(candidate, destination, candidateManifest, installedManifest) {
+async function releasesMatch(
+  candidate: string,
+  destination: string,
+  candidateManifest: LinuxReleaseManifest,
+  installedManifest: LinuxReleaseManifest,
+): Promise<boolean> {
   if (JSON.stringify(candidateManifest) !== JSON.stringify(installedManifest)) return false;
   const [candidateChecksums, installedChecksums] = await Promise.all([
     readFile(path.join(candidate, "SHA256SUMS"), "utf8"),
@@ -358,7 +388,11 @@ async function releasesMatch(candidate, destination, candidateManifest, installe
   return candidateChecksums === installedChecksums;
 }
 
-function completionReceipt(journal, outcome, completedAt) {
+function completionReceipt(
+  journal: LinuxInstallJournal,
+  outcome: string,
+  completedAt: string,
+): Record<string, unknown> {
   return {
     schemaVersion: 1,
     transactionId: journal.transactionId,
@@ -374,7 +408,7 @@ function completionReceipt(journal, outcome, completedAt) {
   };
 }
 
-async function writeState(destination, value) {
+async function writeState(destination: string, value: unknown): Promise<void> {
   const source = `${JSON.stringify(value, null, 2)}\n`;
   if (Buffer.byteLength(source) > 16 * 1024) {
     throw new Error("Linux install transaction state exceeds the 16 KiB bound.");
@@ -396,7 +430,7 @@ const recoveryJournalKeys = Object.freeze([
   "createdAt",
 ]);
 
-const recoverablePhases = new Set([
+const recoverablePhases: ReadonlySet<unknown> = new Set([
   "staged",
   "switched",
   "restoring-selection",
@@ -404,7 +438,7 @@ const recoverablePhases = new Set([
   "recovery-failed",
 ]);
 
-async function readRecoveryJournal(journalPath) {
+async function readRecoveryJournal(journalPath: string): Promise<LinuxInstallJournal> {
   const before = await lstat(journalPath);
   if (
     !before.isFile() ||
@@ -417,7 +451,7 @@ async function readRecoveryJournal(journalPath) {
   }
 
   const handle = await open(journalPath, "r");
-  let source;
+  let source: string;
   try {
     const opened = await handle.stat();
     if (!sameFile(before, opened)) {
@@ -436,7 +470,7 @@ async function readRecoveryJournal(journalPath) {
     throw new Error("Linux install recovery journal was replaced while it was read.");
   }
 
-  let value;
+  let value: unknown;
   try {
     value = JSON.parse(source);
   } catch {
@@ -453,7 +487,13 @@ async function readRecoveryJournal(journalPath) {
   return value;
 }
 
-function validateRecoveryJournal(journal) {
+/**
+ * Receipt-side trust boundary: re-validates bytes this installer wrote earlier. It is intentionally
+ * separate from provenance validation even where individual checks look alike.
+ */
+function validateRecoveryJournal(
+  journal: Record<string, unknown>,
+): asserts journal is Record<string, unknown> & LinuxInstallJournal {
   if (journal.schemaVersion !== 1) {
     throw new Error("Linux install recovery journal schema is unsupported.");
   }
@@ -480,10 +520,11 @@ function validateRecoveryJournal(journal) {
   if (journal.phase !== "staged" && journal.previousTarget === journal.target) {
     throw new Error("Linux install recovery journal has no distinct rollback target.");
   }
-  if (!/^[0-9a-f]{64}$/.test(journal.archiveSha256)) {
+  // Template coercion keeps the original RegExp#test string conversion exactly.
+  if (!/^[0-9a-f]{64}$/.test(`${journal.archiveSha256}`)) {
     throw new Error("Linux install recovery journal archive digest is invalid.");
   }
-  if (!/^[0-9a-f]{40}$/.test(journal.sourceCommit)) {
+  if (!/^[0-9a-f]{40}$/.test(`${journal.sourceCommit}`)) {
     throw new Error("Linux install recovery journal source commit is invalid.");
   }
   if (typeof journal.sourceRef !== "string" || journal.sourceRef.length > 128) {
@@ -492,7 +533,10 @@ function validateRecoveryJournal(journal) {
   assertCanonicalTimestamp(journal.createdAt, "journal creation");
 }
 
-async function validateRecoveryReleaseSet(installRoot, journal) {
+async function validateRecoveryReleaseSet(
+  installRoot: string,
+  journal: LinuxInstallJournal,
+): Promise<void> {
   const manifest = await verifyInstalledLinuxReleaseDirectory(
     path.join(installRoot, journal.target),
   );
@@ -508,7 +552,7 @@ async function validateRecoveryReleaseSet(installRoot, journal) {
   }
 }
 
-async function ensureDirectory(directory, mode) {
+async function ensureDirectory(directory: string, mode: number): Promise<void> {
   await mkdir(directory, { recursive: true, mode });
   const metadata = await lstat(directory);
   if (!metadata.isDirectory() || metadata.isSymbolicLink()) {
@@ -517,7 +561,10 @@ async function ensureDirectory(directory, mode) {
   await chmod(directory, mode);
 }
 
-async function assertExistingDirectory(directory, privateDirectory) {
+async function assertExistingDirectory(
+  directory: string,
+  privateDirectory: boolean,
+): Promise<void> {
   const metadata = await lstat(directory);
   if (!metadata.isDirectory() || metadata.isSymbolicLink()) {
     throw new Error("Linux recovery layout contains a non-directory or symbolic link.");
@@ -527,7 +574,10 @@ async function assertExistingDirectory(directory, privateDirectory) {
   }
 }
 
-async function serviceIsActive(service, deadlineMs) {
+async function serviceIsActive(
+  service: LinuxInstallServiceAdapter,
+  deadlineMs: number,
+): Promise<boolean> {
   const active = await boundedServiceCall(service.isActive, deadlineMs);
   if (typeof active !== "boolean") {
     throw new Error("Linux service adapter returned an invalid active state.");
@@ -535,17 +585,23 @@ async function serviceIsActive(service, deadlineMs) {
   return active;
 }
 
-async function serviceRestart(service, deadlineMs) {
+async function serviceRestart(
+  service: LinuxInstallServiceAdapter,
+  deadlineMs: number,
+): Promise<void> {
   await boundedServiceCall(service.restartSelected, deadlineMs);
 }
 
-async function boundedServiceCall(operation, deadlineMs) {
+async function boundedServiceCall(
+  operation: (signal: AbortSignal) => unknown,
+  deadlineMs: number,
+): Promise<unknown> {
   const controller = new AbortController();
-  let timeout;
+  let timeout: NodeJS.Timeout | undefined;
   try {
     return await Promise.race([
       operation(controller.signal),
-      new Promise((_, reject) => {
+      new Promise<never>((_, reject) => {
         timeout = setTimeout(() => {
           controller.abort();
           reject(new Error("Linux service operation exceeded its deadline."));
@@ -557,25 +613,29 @@ async function boundedServiceCall(operation, deadlineMs) {
   }
 }
 
-function validateServiceAdapter(service) {
-  if (
-    !isRecord(service) ||
-    typeof service.isActive !== "function" ||
-    typeof service.restartSelected !== "function"
-  ) {
+function validateServiceAdapter(service: unknown): LinuxInstallServiceAdapter {
+  if (!isServiceAdapter(service)) {
     throw new Error("Linux install transaction requires a bounded service adapter.");
   }
   return service;
 }
 
-function assertAbsoluteRoot(value, name) {
+function isServiceAdapter(service: unknown): service is LinuxInstallServiceAdapter {
+  return (
+    isRecord(service) &&
+    typeof service.isActive === "function" &&
+    typeof service.restartSelected === "function"
+  );
+}
+
+function assertAbsoluteRoot(value: unknown, name: string): string {
   if (typeof value !== "string" || !path.isAbsolute(value)) {
     throw new Error(`Linux ${name} root must be an absolute path.`);
   }
   return path.resolve(value);
 }
 
-function pathsOverlap(left, right) {
+function pathsOverlap(left: string, right: string): boolean {
   const leftToRight = path.relative(left, right);
   const rightToLeft = path.relative(right, left);
   return (
@@ -585,7 +645,7 @@ function pathsOverlap(left, right) {
   );
 }
 
-function assertTransactionId(value) {
+function assertTransactionId(value: unknown): string {
   if (
     typeof value !== "string" ||
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value)
@@ -595,14 +655,19 @@ function assertTransactionId(value) {
   return value;
 }
 
-function assertServiceDeadline(value) {
-  if (!Number.isSafeInteger(value) || value < 1 || value > maximumServiceDeadlineMs) {
+function assertServiceDeadline(value: unknown): number {
+  if (
+    typeof value !== "number" ||
+    !Number.isSafeInteger(value) ||
+    value < 1 ||
+    value > maximumServiceDeadlineMs
+  ) {
     throw new Error("Linux service deadline must be between 1 and 60000 milliseconds.");
   }
   return value;
 }
 
-function canonicalNow(now) {
+function canonicalNow(now: () => unknown): string {
   const value = now();
   if (!(value instanceof Date) || !Number.isFinite(value.valueOf())) {
     throw new Error("Linux install transaction clock returned an invalid time.");
@@ -610,21 +675,21 @@ function canonicalNow(now) {
   return value.toISOString();
 }
 
-function assertCanonicalTimestamp(value, name) {
-  const parsed = Date.parse(value);
+function assertCanonicalTimestamp(value: unknown, name: string): asserts value is string {
+  const parsed = Date.parse(`${value}`);
   if (!Number.isFinite(parsed) || new Date(parsed).toISOString() !== value) {
     throw new Error(`Linux install ${name} time is not canonical.`);
   }
 }
 
-function isLinuxReleaseTarget(value) {
+function isLinuxReleaseTarget(value: unknown): value is string {
   return (
     typeof value === "string" &&
     /^versions\/openbot-node-[0-9A-Za-z.+-]{1,64}-linux-(?:x64|arm64)-[0-9a-f]{40}$/.test(value)
   );
 }
 
-function sameFile(left, right) {
+function sameFile(left: Stats, right: Stats): boolean {
   return (
     left.dev === right.dev &&
     left.ino === right.ino &&
@@ -635,7 +700,7 @@ function sameFile(left, right) {
   );
 }
 
-async function pathExists(filePath) {
+async function pathExists(filePath: string): Promise<boolean> {
   try {
     await lstat(filePath);
     return true;
@@ -645,10 +710,14 @@ async function pathExists(filePath) {
   }
 }
 
-function isMissing(error) {
-  return error?.code === "ENOENT";
+function isMissing(error: unknown): boolean {
+  // Same observable result as `error?.code === "ENOENT"` for any thrown value.
+  return (
+    (error === null || error === undefined ? undefined : Reflect.get(Object(error), "code")) ===
+    "ENOENT"
+  );
 }
 
-function isRecord(value) {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

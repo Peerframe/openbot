@@ -2,9 +2,15 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   executeLinuxBootstrapCommand,
+  type LinuxBootstrapCommandAdapters,
+  type LinuxBootstrapCommandRequest,
   parseLinuxBootstrapArguments,
   runPrivilegedLinuxBootstrapCli,
-} from "./node-linux-bootstrap-command.mjs";
+} from "./node-linux-bootstrap-command.ts";
+
+type MutableCommandAdapters = {
+  -readonly [K in keyof LinuxBootstrapCommandAdapters]: LinuxBootstrapCommandAdapters[K];
+};
 
 const archivePath = "/tmp/openbot-node-1.2.3-linux-x64.tar.xz";
 const sourceCommit = "b".repeat(40);
@@ -15,7 +21,7 @@ const operationIds = [
 ];
 
 test("executes one strict install with derived architecture and generated ids", async () => {
-  const seen = {};
+  const seen: Record<string, unknown> = {};
   const adapters = commandAdapters();
   adapters.install = async (request) => {
     Object.assign(seen, request);
@@ -53,7 +59,7 @@ test("executes one strict install with derived architecture and generated ids", 
 
 test("executes recovery without accepting install options", async () => {
   const adapters = commandAdapters();
-  let recoveryRequest;
+  let recoveryRequest: unknown;
   adapters.recover = async (request) => {
     recoveryRequest = request;
     return {
@@ -138,8 +144,8 @@ test("rejects unsupported runtime and malformed environment credentials before a
 });
 
 test("writes only allowlisted success or a generic failure record", async () => {
-  const output = [];
-  const errors = [];
+  const output: string[] = [];
+  const errors: string[] = [];
   const successful = commandAdapters();
   successful.install = async () => ({
     alreadyInstalled: true,
@@ -161,8 +167,8 @@ test("writes only allowlisted success or a generic failure record", async () => 
   );
   assert.equal(output.length, 1);
   assert.equal(errors.length, 0);
-  assert.equal(output[0].includes("token-value"), false);
-  assert.equal(output[0].includes("must-not-escape"), false);
+  assert.equal(output[0]?.includes("token-value"), false);
+  assert.equal(output[0]?.includes("must-not-escape"), false);
 
   const failing = commandAdapters();
   failing.install = async () => {
@@ -182,7 +188,10 @@ test("writes only allowlisted success or a generic failure record", async () => 
   assert.equal(errors[0], '{"error":"bootstrap-failed","ok":false}\n');
 });
 
-function commandRequest(arguments_, environment = {}) {
+function commandRequest(
+  arguments_: readonly string[],
+  environment: Record<string, unknown> = {},
+): LinuxBootstrapCommandRequest {
   return {
     arguments: arguments_,
     environment,
@@ -202,7 +211,7 @@ function installArguments() {
   ];
 }
 
-function commandAdapters() {
+function commandAdapters(): MutableCommandAdapters {
   let idIndex = 0;
   return {
     generateId: () => operationIds[idIndex++],

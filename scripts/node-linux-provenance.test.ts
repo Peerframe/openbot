@@ -1,18 +1,19 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm, symlink, truncate, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, symlink, truncate, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import {
+  type BoundedCommandRequest,
+  type BoundedCommandRunner,
   LINUX_INSTALL_PROVENANCE_POLICY,
-  linuxProvenanceCertificateIdentity,
-} from "./node-linux-install-transaction.mjs";
-import {
   LINUX_PROVENANCE_VERIFIER,
   linuxAttestationVerifyArguments,
+  linuxProvenanceCertificateIdentity,
   runBoundedCommand,
+  validateLinuxInstallProvenance,
   verifyLinuxReleaseProvenance,
-} from "./node-linux-provenance.mjs";
+} from "./node-linux-provenance.ts";
 import { sha256File } from "./release-source.ts";
 
 const version = "1.2.3";
@@ -55,8 +56,8 @@ test("builds an exact GitHub attestation policy without the prefix matcher", () 
 test("derives trusted provenance only after exact gh verification", async () => {
   await withArchive(async (archivePath) => {
     const archiveSha256 = await sha256File(archivePath);
-    const requests = [];
-    const commandRunner = async (request) => {
+    const requests: BoundedCommandRequest[] = [];
+    const commandRunner: BoundedCommandRunner = async (request) => {
       requests.push(request);
       if (request.arguments[0] === "--version") return versionResult();
       return successResult(verificationJson(archiveSha256, { repository: "attacker/controlled" }));
@@ -80,13 +81,13 @@ test("derives trusted provenance only after exact gh verification", async () => 
       verifiedAt: fixedTime.toISOString(),
     });
     assert.equal(requests.length, 2);
-    assert.equal(requests[0].executable, "/usr/bin/gh");
-    assert.deepEqual(requests[0].arguments, ["--version"]);
-    assert.equal(requests[0].environment.GH_HOST, "github.com");
-    assert.equal(requests[0].environment.GH_PROMPT_DISABLED, "1");
-    assert.equal("HOME" in requests[0].environment, false);
+    assert.equal(requests[0]?.executable, "/usr/bin/gh");
+    assert.deepEqual(requests[0]?.arguments, ["--version"]);
+    assert.equal(requests[0]?.environment.GH_HOST, "github.com");
+    assert.equal(requests[0]?.environment.GH_PROMPT_DISABLED, "1");
+    assert.equal("HOME" in present(requests[0]).environment, false);
     assert.deepEqual(
-      requests[1].arguments,
+      present(requests[1]).arguments,
       linuxAttestationVerifyArguments({ archivePath, sourceCommit, version }),
     );
   });
@@ -116,7 +117,7 @@ test("fails closed on the wrong gh release or a failed command", async () => {
         sourceCommit,
         version,
       }),
-      (error) => {
+      (error: Error) => {
         assert.equal(error.message, "Linux provenance verifier command failed.");
         assert.doesNotMatch(error.message, /secret/u);
         return true;
@@ -228,7 +229,7 @@ test("bounds subprocess time and output without exposing child output", async ()
       timeoutMs: 1_000,
       maximumBytes: 64,
     }),
-    (error) => {
+    (error: Error) => {
       assert.equal(error.message, "Linux provenance verifier command failed.");
       assert.doesNotMatch(error.message, /sensitive/u);
       return true;
@@ -248,7 +249,53 @@ test("bounds subprocess time and output without exposing child output", async ()
   await assert.rejects(aborted, /command failed/);
 });
 
-async function withArchive(operation) {
+test("owns the provenance policy below the install transaction", async () => {
+  const transaction = await import("./node-linux-install-transaction.ts");
+  for (const name of [
+    "LINUX_INSTALL_PROVENANCE_POLICY",
+    "linuxProvenanceCertificateIdentity",
+    "validateLinuxInstallProvenance",
+  ]) {
+    assert.equal(Object.hasOwn(transaction, name), false, name);
+  }
+  assert.equal(LINUX_INSTALL_PROVENANCE_POLICY.repository, "yxflc11/openbot");
+  assert.equal(Object.isFrozen(LINUX_INSTALL_PROVENANCE_POLICY), true);
+
+  const subject = { sourceCommit, version };
+  const verified = {
+    schemaVersion: 1,
+    ...LINUX_INSTALL_PROVENANCE_POLICY,
+    archiveSha256: "9".repeat(64),
+    certificateIdentity: linuxProvenanceCertificateIdentity(version),
+    sourceCommit,
+    sourceRef: "refs/tags/node-v1.2.3",
+    verifiedAt: fixedTime.toISOString(),
+  };
+  assert.equal(validateLinuxInstallProvenance(verified, subject), verified);
+  assert.throws(
+    () => validateLinuxInstallProvenance({ ...verified, repository: "Peerframe/openbot" }, subject),
+    /repository policy/,
+  );
+
+  // Lower-level install modules must never import the transaction or bootstrap layers.
+  for (const lowerModule of [
+    "node-linux-archive-import.ts",
+    "node-linux-extract.ts",
+    "node-linux-install-lease.ts",
+    "node-linux-privileged-layout.ts",
+    "node-linux-provenance.ts",
+    "node-linux-systemd.ts",
+  ]) {
+    const source = await readFile(new URL(`./${lowerModule}`, import.meta.url), "utf8");
+    assert.doesNotMatch(
+      source,
+      /from "\.\/node-linux-(?:install-transaction|bootstrap)[^"]*"/u,
+      lowerModule,
+    );
+  }
+});
+
+async function withArchive<T>(operation: (archivePath: string) => Promise<T>): Promise<T> {
   const root = await mkdtemp(path.join(tmpdir(), "openbot-provenance-"));
   const archivePath = path.join(root, "openbot-node-1.2.3-linux-x64-unsigned.tar.xz");
   try {
@@ -268,11 +315,16 @@ function versionResult() {
   );
 }
 
-function successResult(stdout) {
+function successResult(stdout: Buffer) {
   return { exitCode: 0, signal: null, stdout, stderr: Buffer.alloc(0) };
 }
 
-function verificationJson(digest, predicate = {}, count = 1, predicateType) {
+function verificationJson(
+  digest: string,
+  predicate: Record<string, unknown> = {},
+  count = 1,
+  predicateType?: string,
+): Buffer {
   const result = {
     attestation: {},
     verificationResult: {
@@ -284,4 +336,9 @@ function verificationJson(digest, predicate = {}, count = 1, predicateType) {
     },
   };
   return Buffer.from(JSON.stringify(Array.from({ length: count }, () => result)));
+}
+
+function present<T>(value: T | null | undefined): T {
+  if (value === null || value === undefined) throw new TypeError("Expected a recorded value.");
+  return value;
 }

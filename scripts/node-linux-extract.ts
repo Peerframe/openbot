@@ -1,9 +1,42 @@
 import { lstat, readdir, rm } from "node:fs/promises";
 import path from "node:path";
-import { validateLinuxInstallProvenance } from "./node-linux-install-transaction.mjs";
-import { runBoundedCommand } from "./node-linux-provenance.mjs";
+import {
+  type BoundedCommandRequest,
+  type BoundedCommandRunner,
+  isSuccessfulCommandResult,
+  runBoundedCommand,
+  type SuccessfulCommandResult,
+  validateLinuxInstallProvenance,
+} from "./node-linux-provenance.ts";
+import {
+  LINUX_RELEASE_ARCHIVE_BOUNDS,
+  type LinuxReleaseManifest,
+  verifyCandidateDirectory,
+} from "./node-linux-release.ts";
 import { assertReleaseVersion, assertSourceCommit, sha256File } from "./release-source.ts";
-import { LINUX_RELEASE_ARCHIVE_BOUNDS, verifyCandidateDirectory } from "./node-linux-release.ts";
+
+export interface LinuxArchiveInventoryEntry {
+  readonly directory: boolean;
+  readonly mode: string;
+  readonly path: string;
+  readonly size: number;
+}
+
+export interface LinuxArchiveExtractionOptions {
+  readonly architecture: unknown;
+  readonly archivePath: unknown;
+  readonly commandRunner?: BoundedCommandRunner | undefined;
+  readonly sourceCommit: unknown;
+  readonly stagingRoot: unknown;
+  readonly verifiedProvenance: unknown;
+  readonly version: unknown;
+}
+
+export interface ExtractedLinuxRelease {
+  readonly candidate: string;
+  readonly manifest: LinuxReleaseManifest;
+  readonly archiveSha256: string;
+}
 
 export const LINUX_ARCHIVE_EXTRACTION_TOOLS = Object.freeze({
   gnuTar: "/usr/bin/tar",
@@ -17,7 +50,7 @@ const maximumExpandedBytes = 256 * 1024 * 1024;
 const maximumMembers = 300;
 const maximumListingBytes = 256 * 1024;
 
-export function linuxArchiveListArguments(archivePath) {
+export function linuxArchiveListArguments(archivePath: unknown): string[] {
   return [
     "--list",
     "--verbose",
@@ -28,7 +61,7 @@ export function linuxArchiveListArguments(archivePath) {
   ];
 }
 
-export function linuxArchiveExtractArguments(archivePath, stagingRoot) {
+export function linuxArchiveExtractArguments(archivePath: unknown, stagingRoot: unknown): string[] {
   return [
     "--extract",
     `--directory=${assertAbsolutePath(stagingRoot, "staging")}`,
@@ -45,7 +78,10 @@ export function linuxArchiveExtractArguments(archivePath, stagingRoot) {
   ];
 }
 
-export function validateLinuxArchiveInventory(source, expectedRoot) {
+export function validateLinuxArchiveInventory(
+  source: unknown,
+  expectedRoot: string,
+): LinuxArchiveInventoryEntry[] {
   if (
     typeof source !== "string" ||
     source.length < 1 ||
@@ -60,8 +96,8 @@ export function validateLinuxArchiveInventory(source, expectedRoot) {
     throw new Error("Linux archive inventory has an unsafe member count.");
   }
 
-  const entries = [];
-  const paths = new Set();
+  const entries: LinuxArchiveInventoryEntry[] = [];
+  const paths = new Set<string>();
   let totalSize = 0;
   for (const line of lines) {
     const match =
@@ -74,6 +110,9 @@ export function validateLinuxArchiveInventory(source, expectedRoot) {
     const mode = match[1];
     const size = Number(match[2]);
     const listedPath = match[3];
+    if (mode === undefined || listedPath === undefined) {
+      throw new Error("Linux archive inventory contains an unsafe type, mode, owner, or path.");
+    }
     const directory = mode.startsWith("d");
     if (directory !== listedPath.endsWith("/") || (!directory && listedPath.endsWith("/"))) {
       throw new Error("Linux archive inventory type and path disagree.");
@@ -104,7 +143,8 @@ export function validateLinuxArchiveInventory(source, expectedRoot) {
     paths.add(relativePath);
     entries.push({ directory, mode, path: relativePath, size });
   }
-  if (!entries[0].directory || entries[0].path !== expectedRoot) {
+  const rootEntry = entries[0];
+  if (rootEntry === undefined || !rootEntry.directory || rootEntry.path !== expectedRoot) {
     throw new Error("Linux archive inventory does not start with the expected root.");
   }
   const sortedPaths = entries.map((entry) => entry.path).sort();
@@ -118,11 +158,13 @@ export function validateLinuxArchiveInventory(source, expectedRoot) {
  * Rootless extraction boundary. A future privileged wrapper must additionally prove root ownership
  * and serialize this operation with the install transaction before exposing it as a command.
  */
-export async function extractVerifiedLinuxRelease(options) {
+export async function extractVerifiedLinuxRelease(
+  options: LinuxArchiveExtractionOptions,
+): Promise<ExtractedLinuxRelease> {
   if (!isRecord(options)) throw new Error("Linux archive extraction options are malformed.");
   const version = assertReleaseVersion(options.version);
   const sourceCommit = assertSourceCommit(options.sourceCommit);
-  const architecture = options.architecture;
+  const architecture: unknown = options.architecture;
   if (architecture !== "x64" && architecture !== "arm64") {
     throw new Error("Linux archive extraction architecture must be x64 or arm64.");
   }
@@ -163,7 +205,12 @@ export async function extractVerifiedLinuxRelease(options) {
     throw new Error("Linux release archive digest does not match verified provenance.");
   }
 
-  const environment = { PATH: "/usr/bin:/bin", LANG: "C", LC_ALL: "C", TZ: "UTC" };
+  const environment: Readonly<Record<string, string>> = {
+    PATH: "/usr/bin:/bin",
+    LANG: "C",
+    LC_ALL: "C",
+    TZ: "UTC",
+  };
   await requireToolVersion(
     runner,
     LINUX_ARCHIVE_EXTRACTION_TOOLS.gnuTar,
@@ -232,9 +279,12 @@ export async function extractVerifiedLinuxRelease(options) {
   }
 }
 
-async function verifyExtractedInventory(candidate, expectedEntries) {
-  const actual = [];
-  const visit = async (directory, relative) => {
+async function verifyExtractedInventory(
+  candidate: string,
+  expectedEntries: readonly LinuxArchiveInventoryEntry[],
+): Promise<void> {
+  const actual: LinuxArchiveInventoryEntry[] = [];
+  const visit = async (directory: string, relative: string): Promise<void> => {
     for (const name of (await readdir(directory)).sort()) {
       const child = path.join(directory, name);
       const childRelative = relative === "" ? name : `${relative}/${name}`;
@@ -281,7 +331,12 @@ async function verifyExtractedInventory(candidate, expectedEntries) {
   }
 }
 
-async function requireToolVersion(runner, executable, expectedLine, environment) {
+async function requireToolVersion(
+  runner: BoundedCommandRunner,
+  executable: string,
+  expectedLine: string,
+  environment: Readonly<Record<string, string>>,
+): Promise<void> {
   const result = await runChecked(runner, {
     executable,
     arguments: ["--version"],
@@ -294,19 +349,19 @@ async function requireToolVersion(runner, executable, expectedLine, environment)
   }
 }
 
-async function runChecked(runner, request, requireEmptyOutput = false) {
-  let result;
+async function runChecked(
+  runner: BoundedCommandRunner,
+  request: BoundedCommandRequest,
+  requireEmptyOutput = false,
+): Promise<SuccessfulCommandResult> {
+  let result: unknown;
   try {
     result = await runner(request);
   } catch {
     throw new Error("Linux archive extraction command failed.");
   }
   if (
-    !isRecord(result) ||
-    result.exitCode !== 0 ||
-    result.signal !== null ||
-    !Buffer.isBuffer(result.stdout) ||
-    !Buffer.isBuffer(result.stderr) ||
+    !isSuccessfulCommandResult(result) ||
     result.stdout.length > request.maximumBytes ||
     result.stderr.length > request.maximumBytes ||
     result.stderr.length !== 0 ||
@@ -317,7 +372,7 @@ async function runChecked(runner, request, requireEmptyOutput = false) {
   return result;
 }
 
-function assertInventoryPath(value, expectedRoot) {
+function assertInventoryPath(value: string, expectedRoot: string): void {
   if (
     (value !== expectedRoot && !value.startsWith(`${expectedRoot}/`)) ||
     value.startsWith("/") ||
@@ -328,7 +383,7 @@ function assertInventoryPath(value, expectedRoot) {
   }
 }
 
-function modeString(mode, directory) {
+function modeString(mode: number, directory: boolean): string {
   const permissions = mode & 0o777;
   if (directory && permissions === 0o755) return "drwxr-xr-x";
   if (!directory && permissions === 0o644) return "-rw-r--r--";
@@ -336,13 +391,13 @@ function modeString(mode, directory) {
   return `unsafe:${permissions.toString(8)}`;
 }
 
-function assertAbsolutePath(value, name) {
+function assertAbsolutePath(value: unknown, name: string): string {
   if (typeof value !== "string" || !path.isAbsolute(value) || value.includes("\0")) {
     throw new Error(`Linux archive ${name} path must be absolute.`);
   }
   return path.resolve(value);
 }
 
-function isRecord(value) {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

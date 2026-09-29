@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { BoundedCommandRequest } from "./node-linux-provenance.ts";
 import {
   createLinuxSystemdServiceAdapter,
   LINUX_SYSTEMD_SERVICE,
   parseSystemdState,
-} from "./node-linux-systemd.mjs";
+} from "./node-linux-systemd.ts";
 
 test("queries and restarts only the fixed loaded system service", async () => {
-  const requests = [];
+  const requests: BoundedCommandRequest[] = [];
   const states = [state("active"), state("inactive")];
   const adapter = createLinuxSystemdServiceAdapter({
     commandRunner: async (request) => {
@@ -101,17 +102,17 @@ test("rejects version drift, failed commands, and untrusted diagnostics", async 
       };
     },
   });
-  await assert.rejects(failed.restartSelected(new AbortController().signal), (error) => {
+  await assert.rejects(failed.restartSelected(new AbortController().signal), (error: Error) => {
     assert.equal(error.message, "Linux systemd command failed.");
     assert.doesNotMatch(error.message, /credential|secret/u);
     return true;
   });
 });
 
-function state(activeState) {
+function state(activeState: string): Buffer {
   return Buffer.from(`LoadState=loaded\nActiveState=${activeState}\n`);
 }
 
-function success(stdout = Buffer.alloc(0)) {
+function success(stdout: Buffer = Buffer.alloc(0)) {
   return { exitCode: 0, signal: null, stdout, stderr: Buffer.alloc(0) };
 }

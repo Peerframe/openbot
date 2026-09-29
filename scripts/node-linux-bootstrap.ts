@@ -1,22 +1,93 @@
 import { lstat, readdir } from "node:fs/promises";
 import path from "node:path";
 import {
+  type ImportedLinuxReleaseArchive,
+  type ImportedLinuxReleaseArchiveCleanup,
   importLinuxReleaseArchive,
   LINUX_ARCHIVE_IMPORT_BOUNDS,
+  type LinuxArchiveImportOptions,
   removeImportedLinuxReleaseArchive,
-} from "./node-linux-archive-import.mjs";
-import { extractVerifiedLinuxRelease } from "./node-linux-extract.mjs";
-import { withLinuxInstallLease } from "./node-linux-install-lease.mjs";
+} from "./node-linux-archive-import.ts";
+import {
+  extractVerifiedLinuxRelease,
+  type LinuxArchiveExtractionOptions,
+} from "./node-linux-extract.ts";
+import {
+  type LinuxInstallLease,
+  type LinuxInstallLeaseOptions,
+  withLinuxInstallLease,
+} from "./node-linux-install-lease.ts";
 import {
   installStagedLinuxRelease,
+  type LinuxInstallRecoveryResult,
+  type LinuxStagedInstallOptions,
   recoverLinuxInstallTransaction,
-} from "./node-linux-install-transaction.mjs";
-import { prepareLinuxPrivilegedInstallerLayout } from "./node-linux-privileged-layout.mjs";
-import { verifyLinuxReleaseProvenance } from "./node-linux-provenance.mjs";
+} from "./node-linux-install-transaction.ts";
+import {
+  type LinuxPrivilegedInstallLayout,
+  prepareLinuxPrivilegedInstallerLayout,
+} from "./node-linux-privileged-layout.ts";
+import {
+  type LinuxReleaseProvenanceOptions,
+  verifyLinuxReleaseProvenance,
+} from "./node-linux-provenance.ts";
+import { createLinuxSystemdServiceAdapter } from "./node-linux-systemd.ts";
 import { assertReleaseVersion, assertSourceCommit } from "./release-source.ts";
-import { createLinuxSystemdServiceAdapter } from "./node-linux-systemd.mjs";
 
-const layoutKeys = Object.freeze([
+/** Operator-facing install request; every field is validated before any privileged step uses it. */
+export interface LinuxPrivilegedInstallOptions {
+  readonly architecture: unknown;
+  readonly archivePath: unknown;
+  readonly githubToken?: unknown;
+  readonly importId: unknown;
+  readonly now?: (() => unknown) | undefined;
+  readonly serviceDeadlineMs?: unknown;
+  readonly sourceCommit: unknown;
+  readonly transactionId: unknown;
+  readonly version: unknown;
+}
+
+export interface LinuxReleaseInstallCompositionOptions extends LinuxPrivilegedInstallOptions {
+  readonly layout: unknown;
+}
+
+export interface LinuxPrivilegedRecoveryOptions {
+  readonly now?: (() => unknown) | undefined;
+  readonly recoveryId?: unknown;
+  readonly serviceDeadlineMs?: unknown;
+}
+
+/** Stage adapters; results are untrusted and re-validated by the composition core. */
+export interface LinuxReleaseInstallAdapters {
+  readonly extractArchive: (request: LinuxArchiveExtractionOptions) => Promise<unknown>;
+  readonly importArchive: (request: LinuxArchiveImportOptions) => Promise<unknown>;
+  readonly installRelease: (request: LinuxStagedInstallOptions) => Promise<unknown>;
+  readonly removeImportedArchive: (request: ImportedLinuxReleaseArchiveCleanup) => Promise<unknown>;
+  readonly service: unknown;
+  readonly verifyProvenance: (request: LinuxReleaseProvenanceOptions) => Promise<unknown>;
+  readonly withLease: (
+    options: LinuxInstallLeaseOptions,
+    operation: (installLease: LinuxInstallLease) => Promise<unknown>,
+  ) => Promise<unknown>;
+}
+
+type ValidatedImportedArchive = Omit<ImportedLinuxReleaseArchive, "archiveSha256"> & {
+  readonly archiveSha256: unknown;
+};
+
+interface ExtractedCandidateResult {
+  readonly archiveSha256: unknown;
+  readonly candidate: string;
+  readonly manifest: Record<string, unknown>;
+}
+
+interface ExpectedReleaseIdentity {
+  readonly architecture: string;
+  readonly sourceCommit: string;
+  readonly version: string;
+}
+
+const layoutKeys: readonly (keyof LinuxPrivilegedInstallLayout)[] = Object.freeze([
   "importsRoot",
   "installRoot",
   "stagingRoot",
@@ -28,7 +99,9 @@ const layoutKeys = Object.freeze([
  * Dormant privileged entry point. Distribution remains disabled until the separately trusted
  * bootstrap channel and native-host evidence are approved.
  */
-export async function installPrivilegedLinuxRelease(options) {
+export async function installPrivilegedLinuxRelease(
+  options: LinuxPrivilegedInstallOptions,
+): Promise<unknown> {
   if (!isRecord(options)) throw new Error("Linux privileged install options are malformed.");
   const layout = await prepareLinuxPrivilegedInstallerLayout();
   return await composeLinuxReleaseInstall(
@@ -45,7 +118,9 @@ export async function installPrivilegedLinuxRelease(options) {
   );
 }
 
-export async function recoverPrivilegedLinuxInstall(options = {}) {
+export async function recoverPrivilegedLinuxInstall(
+  options: LinuxPrivilegedRecoveryOptions = {},
+): Promise<LinuxInstallRecoveryResult> {
   if (!isRecord(options)) throw new Error("Linux privileged recovery options are malformed.");
   const layout = await prepareLinuxPrivilegedInstallerLayout();
   const service = createLinuxSystemdServiceAdapter();
@@ -66,14 +141,17 @@ export async function recoverPrivilegedLinuxInstall(options = {}) {
  * Deterministic composition core for policy tests. Only the wrapper above supplies privileged
  * authority: it fixes the real layout and concrete verifier, extractor, service, and transaction.
  */
-export async function composeLinuxReleaseInstall(options, adapters) {
+export async function composeLinuxReleaseInstall(
+  options: LinuxReleaseInstallCompositionOptions,
+  adapters: LinuxReleaseInstallAdapters,
+): Promise<unknown> {
   if (!isRecord(options) || !isRecord(adapters)) {
     throw new Error("Linux bootstrap composition options are malformed.");
   }
   const layout = validateCompositionLayout(options.layout);
   const version = assertReleaseVersion(options.version);
   const sourceCommit = assertSourceCommit(options.sourceCommit);
-  const architecture = options.architecture;
+  const architecture: unknown = options.architecture;
   if (architecture !== "x64" && architecture !== "arm64") {
     throw new Error("Linux bootstrap architecture must be x64 or arm64.");
   }
@@ -87,7 +165,7 @@ export async function composeLinuxReleaseInstall(options, adapters) {
     "removeImportedArchive",
     "verifyProvenance",
     "withLease",
-  ]) {
+  ] as const) {
     if (typeof adapters[name] !== "function") {
       throw new Error(`Linux bootstrap composition adapter is missing: ${name}`);
     }
@@ -113,7 +191,7 @@ export async function composeLinuxReleaseInstall(options, adapters) {
       sourceCommit,
       version,
     });
-    if (provenance?.archiveSha256 !== imported.archiveSha256) {
+    if (property(provenance, "archiveSha256") !== imported.archiveSha256) {
       throw new Error("Linux bootstrap provenance does not match the private imported archive.");
     }
 
@@ -149,7 +227,7 @@ export async function composeLinuxReleaseInstall(options, adapters) {
   });
 }
 
-async function assertInstallWorkspaceReady(layout) {
+async function assertInstallWorkspaceReady(layout: LinuxPrivilegedInstallLayout): Promise<void> {
   const [stagingEntries, importEntries, journalExists] = await Promise.all([
     readdir(layout.stagingRoot),
     readdir(layout.importsRoot),
@@ -163,12 +241,18 @@ async function assertInstallWorkspaceReady(layout) {
   }
 }
 
-function validateImportedResult(imported, layout, importId) {
+function validateImportedResult(
+  imported: unknown,
+  layout: LinuxPrivilegedInstallLayout,
+  importId: string,
+): asserts imported is ValidatedImportedArchive {
   const expectedPath = path.join(layout.importsRoot, `openbot-node-import-${importId}.tar.xz`);
   if (
     !isRecord(imported) ||
     imported.archivePath !== expectedPath ||
-    !/^[0-9a-f]{64}$/u.test(imported.archiveSha256 ?? "") ||
+    // Template coercion keeps the original RegExp#test string conversion exactly.
+    !/^[0-9a-f]{64}$/u.test(`${imported.archiveSha256 ?? ""}`) ||
+    typeof imported.size !== "number" ||
     !Number.isSafeInteger(imported.size) ||
     imported.size < LINUX_ARCHIVE_IMPORT_BOUNDS.minimumBytes ||
     imported.size > LINUX_ARCHIVE_IMPORT_BOUNDS.maximumBytes
@@ -177,7 +261,12 @@ function validateImportedResult(imported, layout, importId) {
   }
 }
 
-function validateExtractedResult(extracted, imported, layout, options) {
+function validateExtractedResult(
+  extracted: unknown,
+  imported: ValidatedImportedArchive,
+  layout: LinuxPrivilegedInstallLayout,
+  options: ExpectedReleaseIdentity,
+): asserts extracted is ExtractedCandidateResult {
   const expectedCandidate = path.join(
     layout.stagingRoot,
     `openbot-node-${options.version}-linux-${options.architecture}-unsigned`,
@@ -195,23 +284,14 @@ function validateExtractedResult(extracted, imported, layout, options) {
   }
 }
 
-function validateCompositionLayout(layout) {
+function validateCompositionLayout(layout: unknown): LinuxPrivilegedInstallLayout {
   if (
     !isRecord(layout) ||
     JSON.stringify(Object.keys(layout).sort()) !== JSON.stringify([...layoutKeys].sort())
   ) {
     throw new Error("Linux bootstrap composition layout is malformed.");
   }
-  for (const value of Object.values(layout)) {
-    if (
-      typeof value !== "string" ||
-      !path.isAbsolute(value) ||
-      path.resolve(value) !== value ||
-      value.includes("\0")
-    ) {
-      throw new Error("Linux bootstrap composition layout must use absolute paths.");
-    }
-  }
+  assertCompositionLayoutShape(layout);
   if (
     path.dirname(layout.stagingRoot) !== layout.installRoot ||
     path.dirname(layout.versionsRoot) !== layout.installRoot ||
@@ -223,7 +303,23 @@ function validateCompositionLayout(layout) {
   return layout;
 }
 
-function assertAbsoluteInput(value, name) {
+/** Validate values once, after the caller has checked the exact layout keys. */
+function assertCompositionLayoutShape(
+  layout: Record<string, unknown>,
+): asserts layout is Record<string, unknown> & LinuxPrivilegedInstallLayout {
+  for (const value of Object.values(layout)) {
+    if (
+      typeof value !== "string" ||
+      !path.isAbsolute(value) ||
+      path.resolve(value) !== value ||
+      value.includes("\0")
+    ) {
+      throw new Error("Linux bootstrap composition layout must use absolute paths.");
+    }
+  }
+}
+
+function assertAbsoluteInput(value: unknown, name: string): string {
   if (
     typeof value !== "string" ||
     !path.isAbsolute(value) ||
@@ -235,7 +331,7 @@ function assertAbsoluteInput(value, name) {
   return value;
 }
 
-function assertOperationId(value, name) {
+function assertOperationId(value: unknown, name: string): string {
   if (
     typeof value !== "string" ||
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(value)
@@ -245,16 +341,22 @@ function assertOperationId(value, name) {
   return value;
 }
 
-async function pathExists(filePath) {
+async function pathExists(filePath: string): Promise<boolean> {
   try {
     await lstat(filePath);
     return true;
   } catch (error) {
-    if (error?.code === "ENOENT") return false;
+    if (property(error, "code") === "ENOENT") return false;
     throw error;
   }
 }
 
-function isRecord(value) {
+/** Same observable result as optional chaining `value?.[key]` on an untrusted value. */
+function property(value: unknown, key: string): unknown {
+  return value === null || value === undefined ? undefined : Reflect.get(Object(value), key);
+}
+
+/** Generic so that narrowing a typed options object keeps its declared optional members. */
+function isRecord<T>(value: T): value is T & Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { runPrivilegedLinuxBootstrapCli } from "./node-linux-bootstrap-command.mjs";
+import { runPrivilegedLinuxBootstrapCli } from "./node-linux-bootstrap-command.ts";
 
 process.exitCode = await runPrivilegedLinuxBootstrapCli({
   arguments: process.argv.slice(2),

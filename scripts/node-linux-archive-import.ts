@@ -1,10 +1,60 @@
-import { constants } from "node:fs";
+import { constants, type Stats } from "node:fs";
 import { lstat, open, rm, unlink } from "node:fs/promises";
 import path from "node:path";
-import { assertLinuxInstallLease } from "./node-linux-install-lease.mjs";
-import { LINUX_RELEASE_ARCHIVE_BOUNDS, sha256BoundedRegularFile } from "./node-linux-release.ts";
+import { assertLinuxInstallLease } from "./node-linux-install-lease.ts";
+import {
+  type ByteBounds,
+  LINUX_RELEASE_ARCHIVE_BOUNDS,
+  sha256BoundedRegularFile,
+} from "./node-linux-release.ts";
 
-export const LINUX_ARCHIVE_IMPORT_BOUNDS = LINUX_RELEASE_ARCHIVE_BOUNDS;
+/** Minimal file-handle surface the importer uses; `FileHandle` from node:fs/promises satisfies it. */
+export interface LinuxArchiveImportFileHandle {
+  stat(): Promise<Stats>;
+  read(
+    buffer: Buffer,
+    offset: number,
+    length: number,
+    position: null,
+  ): Promise<{ readonly bytesRead: number }>;
+  write(
+    buffer: Buffer,
+    offset: number,
+    length: number,
+    position: null,
+  ): Promise<{ readonly bytesWritten: number }>;
+  sync(): Promise<void>;
+  close(): Promise<void>;
+}
+
+export type LinuxArchiveImportFileOpener = (
+  filePath: string,
+  flags: string | number,
+  mode?: number,
+) => Promise<LinuxArchiveImportFileHandle>;
+
+export interface LinuxArchiveImportOptions {
+  readonly importId: unknown;
+  readonly installLease: unknown;
+  readonly openFile?: LinuxArchiveImportFileOpener | undefined;
+  readonly sourcePath: unknown;
+  readonly stateRoot: unknown;
+}
+
+export interface ImportedLinuxReleaseArchive {
+  readonly archivePath: string;
+  readonly archiveSha256: string;
+  readonly size: number;
+}
+
+export interface ImportedLinuxReleaseArchiveCleanup {
+  readonly archivePath: unknown;
+  readonly archiveSha256: unknown;
+  readonly installLease: unknown;
+  readonly stateRoot: unknown;
+}
+
+export const LINUX_ARCHIVE_IMPORT_BOUNDS: ByteBounds = LINUX_RELEASE_ARCHIVE_BOUNDS;
 
 /** Same fixed flags as bounded pre-digest — used for the actual import source reopen. */
 export const LINUX_ARCHIVE_IMPORT_SOURCE_OPEN_FLAGS =
@@ -17,12 +67,14 @@ const importedNamePattern = /^openbot-node-import-[0-9a-f-]{36}\.tar\.xz$/u;
  * Copies an untrusted archive exactly once into the private installer state root. Later privileged
  * stages must use only the returned path while the same opaque lease remains active.
  */
-export async function importLinuxReleaseArchive(options) {
+export async function importLinuxReleaseArchive(
+  options: LinuxArchiveImportOptions,
+): Promise<ImportedLinuxReleaseArchive> {
   if (!isRecord(options)) throw new Error("Linux archive import options are malformed.");
   const stateRoot = assertAbsolutePath(options.stateRoot, "state root");
   const sourcePath = assertAbsolutePath(options.sourcePath, "source");
   const importId = assertImportId(options.importId);
-  const openFile = options.openFile ?? open;
+  const openFile: LinuxArchiveImportFileOpener = options.openFile ?? open;
   if (typeof openFile !== "function") throw new Error("Linux archive import opener is malformed.");
 
   await assertLinuxInstallLease(options.installLease, stateRoot);
@@ -42,8 +94,8 @@ export async function importLinuxReleaseArchive(options) {
   // FIFO/symlink swap cannot hang the injectable (or default) openFile path.
   const sourceDigest = await sha256BoundedRegularFile(sourcePath, LINUX_ARCHIVE_IMPORT_BOUNDS);
 
-  let sourceHandle;
-  let destinationHandle;
+  let sourceHandle: LinuxArchiveImportFileHandle | undefined;
+  let destinationHandle: LinuxArchiveImportFileHandle | undefined;
   let destinationCreated = false;
   try {
     sourceHandle = await openFile(sourcePath, LINUX_ARCHIVE_IMPORT_SOURCE_OPEN_FLAGS);
@@ -112,7 +164,9 @@ export async function importLinuxReleaseArchive(options) {
   }
 }
 
-export async function removeImportedLinuxReleaseArchive(options) {
+export async function removeImportedLinuxReleaseArchive(
+  options: ImportedLinuxReleaseArchiveCleanup,
+): Promise<void> {
   if (!isRecord(options)) throw new Error("Linux archive cleanup options are malformed.");
   const stateRoot = assertAbsolutePath(options.stateRoot, "state root");
   const archivePath = assertAbsolutePath(options.archivePath, "imported archive");
@@ -123,7 +177,8 @@ export async function removeImportedLinuxReleaseArchive(options) {
   ) {
     throw new Error("Linux archive cleanup path is outside the private import root.");
   }
-  if (!/^[0-9a-f]{64}$/u.test(options.archiveSha256 ?? "")) {
+  // Template coercion keeps the original RegExp#test string conversion exactly.
+  if (!/^[0-9a-f]{64}$/u.test(`${options.archiveSha256 ?? ""}`)) {
     throw new Error("Linux archive cleanup digest is malformed.");
   }
 
@@ -147,7 +202,7 @@ export async function removeImportedLinuxReleaseArchive(options) {
   await assertLinuxInstallLease(options.installLease, stateRoot);
 }
 
-async function assertPrivateImportLayout(stateRoot, importsRoot) {
+async function assertPrivateImportLayout(stateRoot: string, importsRoot: string): Promise<void> {
   const [stateMetadata, importsMetadata] = await Promise.all([
     lstat(stateRoot),
     lstat(importsRoot),
@@ -162,7 +217,11 @@ async function assertPrivateImportLayout(stateRoot, importsRoot) {
   }
 }
 
-async function writeAll(handle, buffer, length) {
+async function writeAll(
+  handle: LinuxArchiveImportFileHandle,
+  buffer: Buffer,
+  length: number,
+): Promise<void> {
   let offset = 0;
   while (offset < length) {
     const { bytesWritten } = await handle.write(buffer, offset, length - offset, null);
@@ -171,7 +230,7 @@ async function writeAll(handle, buffer, length) {
   }
 }
 
-async function closeQuietly(handle) {
+async function closeQuietly(handle: LinuxArchiveImportFileHandle | undefined): Promise<void> {
   if (handle === undefined) return;
   try {
     await handle.close();
@@ -180,7 +239,7 @@ async function closeQuietly(handle) {
   }
 }
 
-function isReviewedSource(metadata) {
+function isReviewedSource(metadata: Stats): boolean {
   return (
     metadata.isFile() &&
     !metadata.isSymbolicLink() &&
@@ -189,11 +248,11 @@ function isReviewedSource(metadata) {
   );
 }
 
-function isPrivateDirectory(metadata) {
+function isPrivateDirectory(metadata: Stats): boolean {
   return metadata.isDirectory() && !metadata.isSymbolicLink() && (metadata.mode & 0o777) === 0o700;
 }
 
-function isPrivateImportedFile(metadata) {
+function isPrivateImportedFile(metadata: Stats): boolean {
   return (
     metadata.isFile() &&
     !metadata.isSymbolicLink() &&
@@ -204,7 +263,7 @@ function isPrivateImportedFile(metadata) {
   );
 }
 
-function sameSource(left, right) {
+function sameSource(left: Stats, right: Stats): boolean {
   return (
     left.dev === right.dev &&
     left.ino === right.ino &&
@@ -214,7 +273,7 @@ function sameSource(left, right) {
   );
 }
 
-function sameImportedFile(left, right) {
+function sameImportedFile(left: Stats, right: Stats): boolean {
   return (
     isPrivateImportedFile(right) &&
     left.dev === right.dev &&
@@ -225,14 +284,14 @@ function sameImportedFile(left, right) {
   );
 }
 
-function assertAbsolutePath(value, name) {
+function assertAbsolutePath(value: unknown, name: string): string {
   if (typeof value !== "string" || !path.isAbsolute(value) || value.includes("\0")) {
     throw new Error(`Linux archive import ${name} must be an absolute path.`);
   }
   return path.resolve(value);
 }
 
-function assertImportId(value) {
+function assertImportId(value: unknown): string {
   if (
     typeof value !== "string" ||
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(value)
@@ -242,6 +301,6 @@ function assertImportId(value) {
   return value;
 }
 
-function isRecord(value) {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

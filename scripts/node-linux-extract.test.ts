@@ -18,13 +18,15 @@ import {
   linuxArchiveExtractArguments,
   linuxArchiveListArguments,
   validateLinuxArchiveInventory,
-} from "./node-linux-extract.mjs";
+} from "./node-linux-extract.ts";
 import {
+  type BoundedCommandRequest,
+  type BoundedCommandRunner,
   LINUX_INSTALL_PROVENANCE_POLICY,
   linuxProvenanceCertificateIdentity,
-} from "./node-linux-install-transaction.mjs";
-import { sha256File } from "./release-source.ts";
+} from "./node-linux-provenance.ts";
 import { createFileManifest, listRegularFiles, writeChecksums } from "./node-linux-release.ts";
+import { sha256File } from "./release-source.ts";
 
 const version = "1.2.3";
 const sourceCommit = "a".repeat(40);
@@ -91,7 +93,7 @@ test("accepts only a sorted bounded regular-file and directory inventory", () =>
 
 test("extracts into a private empty root and revalidates every byte", async () => {
   await withFixture(async (fixture) => {
-    const requests = [];
+    const requests: BoundedCommandRequest[] = [];
     const commandRunner = scriptedExtraction(fixture, requests);
     const result = await extractVerifiedLinuxRelease({
       architecture: "x64",
@@ -116,8 +118,8 @@ test("extracts into a private empty root and revalidates every byte", async () =
         ["/usr/bin/tar", "--extract"],
       ],
     );
-    assert.equal(requests[4].environment.LC_ALL, "C");
-    assert.equal(requests[4].timeoutMs, 60_000);
+    assert.equal(requests[4]?.environment.LC_ALL, "C");
+    assert.equal(requests[4]?.timeoutMs, 60_000);
   });
 });
 
@@ -200,7 +202,20 @@ test("rejects insecure staging and a digest mismatch before invoking tools", asy
   });
 });
 
-async function withFixture(operation) {
+interface ExtractFixture {
+  readonly archivePath: string;
+  readonly inventory: string;
+  readonly provenance: ReturnType<typeof provenanceFor>;
+  readonly sourceCandidate: string;
+  readonly stagingRoot: string;
+}
+
+interface ExtractionBehavior {
+  readonly changeArchive?: boolean;
+  readonly failExtraction?: boolean;
+}
+
+async function withFixture(operation: (fixture: ExtractFixture) => Promise<void>): Promise<void> {
   const root = await mkdtemp(path.join(tmpdir(), "openbot-extract-"));
   try {
     const sourceRoot = path.join(root, "source");
@@ -224,7 +239,7 @@ async function withFixture(operation) {
   }
 }
 
-async function createCandidate(parent) {
+async function createCandidate(parent: string): Promise<string> {
   const candidate = path.join(parent, rootName);
   await mkdir(path.join(candidate, "app"), { recursive: true, mode: 0o755 });
   await mkdir(path.join(candidate, "bin"), { recursive: true, mode: 0o755 });
@@ -248,7 +263,11 @@ async function createCandidate(parent) {
   return candidate;
 }
 
-function scriptedExtraction(fixture, requests, behavior = {}) {
+function scriptedExtraction(
+  fixture: ExtractFixture,
+  requests: BoundedCommandRequest[],
+  behavior: ExtractionBehavior = {},
+): BoundedCommandRunner {
   return async (request) => {
     requests.push(request);
     if (request.arguments[0] === "--version") {
@@ -270,9 +289,9 @@ function scriptedExtraction(fixture, requests, behavior = {}) {
   };
 }
 
-async function inventoryFor(candidate) {
-  const entries = [];
-  const visit = async (directory, relative) => {
+async function inventoryFor(candidate: string): Promise<string> {
+  const entries: string[] = [];
+  const visit = async (directory: string, relative: string): Promise<void> => {
     for (const name of (await readdir(directory)).sort()) {
       const child = path.join(directory, name);
       const metadata = await lstat(child);
@@ -296,15 +315,15 @@ async function inventoryFor(candidate) {
   return `${entries.join("\n")}\n`;
 }
 
-function pathFromLine(value) {
+function pathFromLine(value: string): string {
   return value.slice(value.lastIndexOf(" ") + 1).replace(/\/$/u, "");
 }
 
-function line(mode, size, name) {
+function line(mode: string, size: number, name: string): string {
   return `${mode} 0/0 ${String(size).padStart(15)} 2026-09-04 04:15 ${name}`;
 }
 
-function provenanceFor(archiveSha256) {
+function provenanceFor(archiveSha256: string) {
   return {
     schemaVersion: 1,
     ...LINUX_INSTALL_PROVENANCE_POLICY,
@@ -316,6 +335,6 @@ function provenanceFor(archiveSha256) {
   };
 }
 
-function success(stdout = Buffer.alloc(0)) {
+function success(stdout: Buffer = Buffer.alloc(0)) {
   return { exitCode: 0, signal: null, stdout, stderr: Buffer.alloc(0) };
 }

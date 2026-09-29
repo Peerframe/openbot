@@ -1,9 +1,40 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
-import { constants } from "node:fs";
-import { lstat, mkdir, open, rmdir, unlink } from "node:fs/promises";
+import { constants, type Stats } from "node:fs";
+import { type FileHandle, lstat, mkdir, open, rmdir, unlink } from "node:fs/promises";
 import path from "node:path";
 
-const leaseRecords = new WeakMap();
+declare const linuxInstallLeaseBrand: unique symbol;
+
+/**
+ * Opaque installer lease. At runtime it is a frozen prototype-less object whose only meaning is
+ * its private WeakMap record below; the brand exists for the type checker alone.
+ */
+export interface LinuxInstallLease {
+  readonly [linuxInstallLeaseBrand]: true;
+}
+
+export interface LinuxInstallLeaseOptions {
+  readonly stateRoot: unknown;
+}
+
+interface LeaseEntryIdentity {
+  readonly ctimeMs: number | undefined;
+  readonly dev: number;
+  readonly ino: number;
+  readonly mode: number;
+}
+
+interface LeaseRecord {
+  active: boolean;
+  readonly lockIdentity: LeaseEntryIdentity;
+  readonly lockPath: string;
+  readonly stateIdentity: LeaseEntryIdentity;
+  readonly stateRoot: string;
+  readonly token: Buffer;
+  readonly tokenPath: string;
+}
+
+const leaseRecords = new WeakMap<object, LeaseRecord>();
 const TOKEN_BYTES = 32;
 const TOKEN_NAME = "lease.token";
 
@@ -11,7 +42,10 @@ const TOKEN_NAME = "lease.token";
  * Holds the installer lock across archive import, verification, extraction, and activation. The
  * opaque lease proves only local serialization; it never grants Server or Node authority.
  */
-export async function withLinuxInstallLease(options, operation) {
+export async function withLinuxInstallLease<T>(
+  options: LinuxInstallLeaseOptions,
+  operation: (lease: LinuxInstallLease) => Promise<T> | T,
+): Promise<T> {
   if (!isRecord(options) || typeof operation !== "function") {
     throw new Error("Linux install lease request is malformed.");
   }
@@ -28,7 +62,10 @@ export async function withLinuxInstallLease(options, operation) {
  * Lets a transaction either acquire its own lease or join an already-held outer bootstrap lease.
  * The returned release function never releases a caller-owned outer lease.
  */
-export async function enterLinuxInstallLease(stateRootInput, lease) {
+export async function enterLinuxInstallLease(
+  stateRootInput: unknown,
+  lease?: unknown,
+): Promise<() => Promise<void>> {
   const stateRoot = assertAbsoluteStateRoot(stateRootInput);
   if (lease === undefined) {
     const ownedLease = await acquireLinuxInstallLease(stateRoot);
@@ -38,7 +75,10 @@ export async function enterLinuxInstallLease(stateRootInput, lease) {
   return async () => await assertLinuxInstallLease(lease, stateRoot);
 }
 
-export async function assertLinuxInstallLease(lease, stateRootInput) {
+export async function assertLinuxInstallLease(
+  lease: unknown,
+  stateRootInput: unknown,
+): Promise<void> {
   const stateRoot = assertAbsoluteStateRoot(stateRootInput);
   const record = isRecord(lease) ? leaseRecords.get(lease) : undefined;
   if (record === undefined || !record.active || record.stateRoot !== stateRoot) {
@@ -46,8 +86,8 @@ export async function assertLinuxInstallLease(lease, stateRootInput) {
       "Linux install lease is missing, released, forged, or belongs to another root.",
     );
   }
-  let rootMetadata;
-  let lockMetadata;
+  let rootMetadata: Stats;
+  let lockMetadata: Stats;
   try {
     [rootMetadata, lockMetadata] = await Promise.all([
       lstat(record.stateRoot),
@@ -69,7 +109,7 @@ export async function assertLinuxInstallLease(lease, stateRootInput) {
   await assertLeaseToken(record);
 }
 
-async function acquireLinuxInstallLease(stateRoot) {
+async function acquireLinuxInstallLease(stateRoot: string): Promise<LinuxInstallLease> {
   const stateMetadata = await lstat(stateRoot);
   if (!isPrivateDirectory(stateMetadata)) {
     throw new Error("Linux install lease state root must be a private real directory.");
@@ -79,12 +119,12 @@ async function acquireLinuxInstallLease(stateRoot) {
   try {
     await mkdir(lockPath, { mode: 0o700 });
   } catch (error) {
-    if (error?.code === "EEXIST") {
+    if (errorCode(error) === "EEXIST") {
       throw new Error("Another Linux install transaction or stale lock exists.");
     }
     throw error;
   }
-  let ownedToken;
+  let ownedToken: Buffer | undefined;
   try {
     const token = randomBytes(TOKEN_BYTES);
     await writeExclusiveToken(tokenPath, token);
@@ -93,7 +133,7 @@ async function acquireLinuxInstallLease(stateRoot) {
     if (!isPrivateDirectory(stateAfterLock) || !isPrivateDirectory(lockMetadata)) {
       throw new Error("Linux install lease lock is not a private real directory.");
     }
-    const lease = Object.freeze(Object.create(null));
+    const lease: LinuxInstallLease = Object.freeze(Object.create(null));
     leaseRecords.set(lease, {
       active: true,
       lockIdentity: identityOf(lockMetadata, true),
@@ -105,17 +145,13 @@ async function acquireLinuxInstallLease(stateRoot) {
     });
     return lease;
   } catch (error) {
-    try {
-      await discardIncompleteLock(lockPath, tokenPath, ownedToken);
-    } catch (cleanupError) {
-      // Ownership-unproven cleanup must surface; do not blind-unlink or swallow it.
-      throw cleanupError;
-    }
+    // Ownership-unproven cleanup must surface before the original error; never blind-unlink.
+    await discardIncompleteLock(lockPath, tokenPath, ownedToken);
     throw error;
   }
 }
 
-async function releaseLinuxInstallLease(lease) {
+async function releaseLinuxInstallLease(lease: LinuxInstallLease): Promise<void> {
   const record = leaseRecords.get(lease);
   if (record === undefined || !record.active) {
     throw new Error("Linux install lease cannot be released twice.");
@@ -130,8 +166,8 @@ async function releaseLinuxInstallLease(lease) {
   record.active = false;
 }
 
-async function assertLeaseToken(record) {
-  let handle;
+async function assertLeaseToken(record: LeaseRecord): Promise<void> {
+  let handle: FileHandle | undefined;
   try {
     handle = await open(
       record.tokenPath,
@@ -165,7 +201,7 @@ async function assertLeaseToken(record) {
   }
 }
 
-async function writeExclusiveToken(tokenPath, token) {
+async function writeExclusiveToken(tokenPath: string, token: Buffer): Promise<void> {
   const handle = await open(
     tokenPath,
     constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW,
@@ -193,7 +229,11 @@ async function writeExclusiveToken(tokenPath, token) {
  * root-owned and non-writable by group/other so unprivileged rename/replace of the root is out
  * of scope.
  */
-export async function discardIncompleteLock(lockPath, tokenPath, ownedToken) {
+export async function discardIncompleteLock(
+  lockPath: string,
+  tokenPath: string,
+  ownedToken: unknown,
+): Promise<void> {
   if (ownedToken === undefined) {
     throw new Error(
       "Linux install lease acquire failed; lock cleanup is unproven and was refused.",
@@ -212,15 +252,15 @@ export async function discardIncompleteLock(lockPath, tokenPath, ownedToken) {
   try {
     await rmdir(lockPath);
   } catch (error) {
-    if (error?.code === "ENOENT") return;
+    if (errorCode(error) === "ENOENT") return;
     throw new Error(
       "Linux install lease acquire failed; lock directory could not be removed safely.",
     );
   }
 }
 
-async function unlinkProvenToken(tokenPath, ownedToken) {
-  let handle;
+async function unlinkProvenToken(tokenPath: string, ownedToken: Buffer): Promise<void> {
+  let handle: FileHandle | undefined;
   try {
     handle = await open(
       tokenPath,
@@ -247,18 +287,18 @@ async function unlinkProvenToken(tokenPath, ownedToken) {
   await unlink(tokenPath);
 }
 
-function assertAbsoluteStateRoot(value) {
+function assertAbsoluteStateRoot(value: unknown): string {
   if (typeof value !== "string" || !path.isAbsolute(value)) {
     throw new Error("Linux install lease state root must be an absolute path.");
   }
   return path.resolve(value);
 }
 
-function isPrivateDirectory(metadata) {
+function isPrivateDirectory(metadata: Stats): boolean {
   return metadata.isDirectory() && !metadata.isSymbolicLink() && (metadata.mode & 0o777) === 0o700;
 }
 
-function isPrivateTokenFile(metadata) {
+function isPrivateTokenFile(metadata: Stats): boolean {
   return (
     metadata.isFile() &&
     !metadata.isSymbolicLink() &&
@@ -268,7 +308,7 @@ function isPrivateTokenFile(metadata) {
   );
 }
 
-function identityOf(metadata, trackContentChanges) {
+function identityOf(metadata: Stats, trackContentChanges: boolean): LeaseEntryIdentity {
   return Object.freeze({
     ctimeMs: trackContentChanges ? metadata.ctimeMs : undefined,
     dev: metadata.dev,
@@ -277,7 +317,7 @@ function identityOf(metadata, trackContentChanges) {
   });
 }
 
-function sameEntry(metadata, identity) {
+function sameEntry(metadata: Stats, identity: LeaseEntryIdentity): boolean {
   return (
     metadata.dev === identity.dev &&
     metadata.ino === identity.ino &&
@@ -286,6 +326,11 @@ function sameEntry(metadata, identity) {
   );
 }
 
-function isRecord(value) {
+/** Same observable result as `error?.code` for any thrown value. */
+function errorCode(error: unknown): unknown {
+  return error === null || error === undefined ? undefined : Reflect.get(Object(error), "code");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

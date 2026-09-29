@@ -1,33 +1,32 @@
 import assert from "node:assert/strict";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import { spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { execFile, spawn } from "node:child_process";
 import {
   lstat,
   mkdir,
   mkdtemp,
   open,
-  readFile,
   readdir,
+  readFile,
   symlink,
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 import {
   importLinuxReleaseArchive,
   LINUX_ARCHIVE_IMPORT_BOUNDS,
   LINUX_ARCHIVE_IMPORT_SOURCE_OPEN_FLAGS,
   removeImportedLinuxReleaseArchive,
-} from "./node-linux-archive-import.mjs";
-import { withLinuxInstallLease } from "./node-linux-install-lease.mjs";
+} from "./node-linux-archive-import.ts";
+import { withLinuxInstallLease } from "./node-linux-install-lease.ts";
 import { sha256BoundedRegularFile } from "./node-linux-release.ts";
 
 const execFileAsync = promisify(execFile);
-const importModulePath = fileURLToPath(new URL("./node-linux-archive-import.mjs", import.meta.url));
-const leaseModulePath = fileURLToPath(new URL("./node-linux-install-lease.mjs", import.meta.url));
+const importModulePath = fileURLToPath(new URL("./node-linux-archive-import.ts", import.meta.url));
+const leaseModulePath = fileURLToPath(new URL("./node-linux-install-lease.ts", import.meta.url));
 
 const importIds = ["00000000-0000-4000-8000-000000000001", "00000000-0000-4000-8000-000000000002"];
 
@@ -89,7 +88,7 @@ test("rejects symlink, undersized, and changed sources before retaining an impor
       /reviewed-size regular file/,
     );
 
-    const hostileOpen = async (filePath, flags, mode) => {
+    const hostileOpen = async (filePath: string, flags: string | number, mode?: number) => {
       const handle = await open(filePath, flags, mode);
       if (filePath === sourcePath && flags === LINUX_ARCHIVE_IMPORT_SOURCE_OPEN_FLAGS) {
         const writer = await open(sourcePath, "r+");
@@ -350,7 +349,7 @@ async function createFixture() {
   return { importsRoot, root, stateRoot };
 }
 
-async function createSparseArchive(root, name) {
+async function createSparseArchive(root: string, name: string): Promise<string> {
   const sourcePath = path.join(root, name);
   const handle = await open(sourcePath, "wx", 0o600);
   await handle.truncate(LINUX_ARCHIVE_IMPORT_BOUNDS.minimumBytes);
@@ -359,8 +358,20 @@ async function createSparseArchive(root, name) {
   return sourcePath;
 }
 
-function spawnBounded(command, args, timeoutMs) {
-  return new Promise((resolve) => {
+interface BoundedSpawnResult {
+  readonly timedOut: boolean;
+  readonly code: number | null;
+  readonly signal: NodeJS.Signals | null;
+  readonly stdout: string;
+  readonly stderr: string;
+}
+
+function spawnBounded(
+  command: string,
+  args: readonly string[],
+  timeoutMs: number,
+): Promise<BoundedSpawnResult> {
+  return new Promise<BoundedSpawnResult>((resolve) => {
     const child = spawn(command, args, {
       stdio: ["ignore", "pipe", "pipe"],
       env: process.env,
@@ -374,10 +385,10 @@ function spawnBounded(command, args, timeoutMs) {
       child.kill("SIGKILL");
       resolve({ timedOut: true, code: null, signal: "SIGKILL", stdout, stderr });
     }, timeoutMs);
-    child.stdout.on("data", (chunk) => {
+    child.stdout.on("data", (chunk: Buffer) => {
       stdout += chunk;
     });
-    child.stderr.on("data", (chunk) => {
+    child.stderr.on("data", (chunk: Buffer) => {
       stderr += chunk;
     });
     child.on("exit", (code, signal) => {

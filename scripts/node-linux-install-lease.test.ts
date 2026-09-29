@@ -1,28 +1,19 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import {
-  lstat,
-  mkdir,
-  mkdtemp,
-  open,
-  readFile,
-  rm,
-  symlink,
-  writeFile,
-} from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, open, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import {
   assertLinuxInstallLease,
   discardIncompleteLock,
   enterLinuxInstallLease,
   withLinuxInstallLease,
-} from "./node-linux-install-lease.mjs";
+} from "./node-linux-install-lease.ts";
 
-const leaseModulePath = fileURLToPath(new URL("./node-linux-install-lease.mjs", import.meta.url));
+const leaseModulePath = fileURLToPath(new URL("./node-linux-install-lease.ts", import.meta.url));
 
 const TOKEN_NAME = "lease.token";
 const TOKEN_BYTES = 32;
@@ -56,7 +47,7 @@ test("an operation without an outer lease acquires and releases its own lock", a
 test("rejects forged, released, cross-root, and concurrent leases", async () => {
   const stateRoot = await createStateRoot();
   const otherRoot = await createStateRoot();
-  let released;
+  let released: unknown;
 
   await withLinuxInstallLease({ stateRoot }, async (lease) => {
     released = lease;
@@ -262,22 +253,22 @@ process.exit(0);
   assert.equal((await lstat(lockPath)).isDirectory(), true);
 });
 
-async function createStateRoot() {
+async function createStateRoot(): Promise<string> {
   const root = await mkdtemp(path.join(tmpdir(), "openbot-linux-lease-test-"));
   const stateRoot = path.join(root, "state");
   await mkdir(stateRoot, { mode: 0o700 });
   return stateRoot;
 }
 
-async function rmdirAndReplace(lockPath) {
+async function rmdirAndReplace(lockPath: string): Promise<void> {
   await rm(lockPath, { recursive: true });
   await mkdir(lockPath, { mode: 0o700 });
 }
 
-async function mkfifo(fifoPath, mode) {
+async function mkfifo(fifoPath: string, mode: number): Promise<void> {
   const { execFile } = await import("node:child_process");
   const modeFlag = (mode & 0o777).toString(8).padStart(3, "0");
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     execFile("mkfifo", ["-m", modeFlag, fifoPath], (error) => {
       if (error) reject(error);
       else resolve();
@@ -285,8 +276,20 @@ async function mkfifo(fifoPath, mode) {
   });
 }
 
-function spawnBounded(command, args, timeoutMs) {
-  return new Promise((resolve) => {
+interface BoundedSpawnResult {
+  readonly timedOut: boolean;
+  readonly code: number | null;
+  readonly signal: NodeJS.Signals | null;
+  readonly stdout: string;
+  readonly stderr: string;
+}
+
+function spawnBounded(
+  command: string,
+  args: readonly string[],
+  timeoutMs: number,
+): Promise<BoundedSpawnResult> {
+  return new Promise<BoundedSpawnResult>((resolve) => {
     const child = spawn(command, args, {
       stdio: ["ignore", "pipe", "pipe"],
       env: process.env,
@@ -300,10 +303,10 @@ function spawnBounded(command, args, timeoutMs) {
       child.kill("SIGKILL");
       resolve({ timedOut: true, code: null, signal: "SIGKILL", stdout, stderr });
     }, timeoutMs);
-    child.stdout.on("data", (chunk) => {
+    child.stdout.on("data", (chunk: Buffer) => {
       stdout += chunk;
     });
-    child.stderr.on("data", (chunk) => {
+    child.stderr.on("data", (chunk: Buffer) => {
       stderr += chunk;
     });
     child.on("exit", (code, signal) => {

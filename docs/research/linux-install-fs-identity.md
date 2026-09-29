@@ -29,7 +29,7 @@
   `docs/research/linux-worker-host-privileged-bootstrap.md`,
   `docs/research/linux-worker-host-install-transaction.md`,
   `docs/OPEN_SOURCE_REUSE.md` Linux Worker Host privileged bootstrap row, and the current
-  `scripts/node-linux-install-lease.mjs` / `scripts/node-linux-archive-import.mjs` identity checks.
+  `scripts/node-linux-install-lease.ts` / `scripts/node-linux-archive-import.ts` identity checks.
 
 ## Builder-box reproduction
 
@@ -37,7 +37,7 @@
 - `/tmp` is overlayfs (`stat -f -c %T` → `overlayfs`; `df -T /tmp` → `overlay`).
 - Baseline SHA `0ff279895697061ac47701bfdda935f444c4549c`.
 
-### Lock directory replace (`node-linux-install-lease.test.mjs:56`)
+### Lock directory replace (`node-linux-install-lease.test.ts`)
 
 `rmdir` + `mkdir` of the same `transaction.lock` path reused overlay `st_ino` **300/300** times
 (always `dev=39`, `ino=666838` in the probe). Node default `ctimeMs` matched **287/300** times.
@@ -47,7 +47,7 @@ directory looked identical and `releaseLinuxInstallLease` removed it.
 
 Actual test fail rate on this box: **33/40** (`Missing expected rejection.`).
 
-### Same-size source overwrite (`node-linux-archive-import.test.mjs:47`)
+### Same-size source overwrite (`node-linux-archive-import.test.ts`)
 
 A 1-byte in-place overwrite of a 20 MiB sparse source often left `mtimeMs`/`ctimeMs`/`mtimeNs`/
 `ctimeNs` and size unchanged. A 50-trial Node probe missed the change **47/50** times. GNU
