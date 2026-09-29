@@ -34,6 +34,12 @@ const POWERSHELL_SPAWN_TIMEOUT_MS = 15_000;
  * See docs/research/windows-native-acl-test-budget.md (Node follow-up).
  */
 const NATIVE_TIMEOUT_MS = 120_000;
+/** Save (2) plus two loads (2 each) use six native ACL spawns on Windows.
+ * Reuse the same per-spawn budget and 15s margin; other hosts retain Vitest's default.
+ * See docs/research/windows-native-acl-test-budget.md; no ACL assertions are mocked here.
+ */
+const NATIVE_ROUND_TRIP_TIMEOUT_MS =
+  process.platform === "win32" ? 6 * POWERSHELL_SPAWN_TIMEOUT_MS + 15_000 : undefined;
 
 /**
  * Broaden a credential path DACL for native negative tests.
@@ -123,19 +129,23 @@ afterEach(async () => {
 });
 
 describe("file Node credential store", () => {
-  it("atomically persists and reloads a bounded identity document", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "openbot-node-identity-"));
-    temporaryDirectories.push(directory);
-    const path = join(directory, "private", "identity.json");
-    const store = new FileNodeCredentialStore(path);
+  it(
+    "atomically persists and reloads a bounded identity document",
+    async () => {
+      const directory = await mkdtemp(join(tmpdir(), "openbot-node-identity-"));
+      temporaryDirectories.push(directory);
+      const path = join(directory, "private", "identity.json");
+      const store = new FileNodeCredentialStore(path);
 
-    expect(await store.load("linux-node")).toBeUndefined();
-    await store.save(identity);
-    expect(await store.load("linux-node")).toEqual(identity);
-    expect(JSON.parse(await readFile(path, "utf8"))).toEqual(identity);
-    if (process.platform !== "win32") expect((await stat(path)).mode & 0o777).toBe(0o600);
-    await expect(store.load("other-node")).rejects.toThrow("different Node id");
-  });
+      expect(await store.load("linux-node")).toBeUndefined();
+      await store.save(identity);
+      expect(await store.load("linux-node")).toEqual(identity);
+      expect(JSON.parse(await readFile(path, "utf8"))).toEqual(identity);
+      if (process.platform !== "win32") expect((await stat(path)).mode & 0o777).toBe(0o600);
+      await expect(store.load("other-node")).rejects.toThrow("different Node id");
+    },
+    NATIVE_ROUND_TRIP_TIMEOUT_MS,
+  );
 
   it.skipIf(process.platform === "win32")(
     "refuses a credential that became accessible to other POSIX users",
@@ -245,27 +255,31 @@ describe("file Node credential store", () => {
     NATIVE_TIMEOUT_MS,
   );
 
-  it("refuses directories, oversized content, and malformed packages", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "openbot-node-identity-"));
-    temporaryDirectories.push(directory);
+  it(
+    "refuses directories, oversized content, and malformed packages",
+    async () => {
+      const directory = await mkdtemp(join(tmpdir(), "openbot-node-identity-"));
+      temporaryDirectories.push(directory);
 
-    const asDirectory = join(directory, "not-a-file");
-    await mkdir(asDirectory);
-    await expect(new FileNodeCredentialStore(asDirectory).load(identity.nodeId)).rejects.toThrow(
-      "regular file",
-    );
+      const asDirectory = join(directory, "not-a-file");
+      await mkdir(asDirectory);
+      await expect(new FileNodeCredentialStore(asDirectory).load(identity.nodeId)).rejects.toThrow(
+        "regular file",
+      );
 
-    // Fresh nested path so Windows creates+protects the dedicated directory (verify-only on an
-    // already-existing temp parent would fail closed by design).
-    const path = join(directory, "private", "identity.json");
-    const store = new FileNodeCredentialStore(path);
-    await store.save(identity);
-    await writeFile(path, "x".repeat(4 * 1024 + 1), { mode: 0o600 });
-    await expect(store.load(identity.nodeId)).rejects.toThrow("4 KiB limit");
+      // Fresh nested path so Windows creates+protects the dedicated directory (verify-only on an
+      // already-existing temp parent would fail closed by design).
+      const path = join(directory, "private", "identity.json");
+      const store = new FileNodeCredentialStore(path);
+      await store.save(identity);
+      await writeFile(path, "x".repeat(4 * 1024 + 1), { mode: 0o600 });
+      await expect(store.load(identity.nodeId)).rejects.toThrow("4 KiB limit");
 
-    await writeFile(path, "{}\n", { mode: 0o600 });
-    await expect(store.load(identity.nodeId)).rejects.toThrow("invalid");
-  });
+      await writeFile(path, "{}\n", { mode: 0o600 });
+      await expect(store.load(identity.nodeId)).rejects.toThrow("invalid");
+    },
+    NATIVE_ROUND_TRIP_TIMEOUT_MS,
+  );
 
   it.skipIf(process.platform === "win32")(
     "rejects a symlink ancestor within a realpath trust root",
