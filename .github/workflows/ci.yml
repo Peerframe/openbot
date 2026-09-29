@@ -99,9 +99,6 @@ jobs:
         run: ./scripts/check-windows-installer-progress.ps1
       - run: npm exec -- turbo run test --concurrency=2 --filter=@openbot/desktop --filter=@openbot/node --filter=@openbot/windows-secret-acl
       - run: npm exec -- turbo run build --filter=@openbot/desktop --filter=@openbot/node --filter=@openbot/python-node-runtime
-      - name: Verify plugin isolation in native Desktop Chromium
-        if: runner.os == 'macOS' || runner.os == 'Windows'
-        run: node apps/desktop/scripts/check-plugin-sandbox.mjs
       - name: Build the pinned macOS Worker companion
         if: runner.os == 'macOS'
         shell: bash
@@ -130,6 +127,11 @@ jobs:
         run: node apps/desktop/scripts/prepare-native-server.mjs
 
           node apps/desktop/scripts/package.mjs
+      # Package through the bounded, checksum-verified downloader before Electron's lazy
+      # installer consumes the same cache for the native sandbox probe.
+      - name: Verify plugin isolation in native Desktop Chromium
+        if: runner.os == 'macOS' || runner.os == 'Windows'
+        run: node apps/desktop/scripts/check-plugin-sandbox.mjs
       - name: Make the unsigned Desktop installers from the verified package
         run: npm run make:installers --workspace @openbot/desktop
       - name: Validate Windows remote-client installation and encrypted profile restart

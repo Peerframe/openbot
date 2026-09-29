@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { downloadArtifact } from "@electron/get";
@@ -63,6 +64,25 @@ describe("Electron download recovery", () => {
     expect(sleep).toHaveBeenCalledWith(1_000, undefined, { signal: undefined });
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).not.toContain("https:");
+  });
+
+  it("reuses verified packaging bytes in Electron's own installer after a transient response", async () => {
+    const { content, details } = await fixture();
+    const fetch = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response("unavailable", { status: 500 }))
+      .mockResolvedValueOnce(new Response(content));
+    const cached = await downloadArtifact(details);
+    expect(fetch).toHaveBeenCalledTimes(2);
+
+    const require = createRequire(import.meta.url);
+    const electronRequire = createRequire(require.resolve("electron/package.json"));
+    const installer = electronRequire("@electron/get");
+    const { downloader: _packagingDownloader, ...installerDetails } = details;
+    const installed = await installer.downloadArtifact(installerDetails);
+    expect(installed).toBe(cached);
+    expect(await readFile(installed, "utf8")).toBe(content);
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 
   it("does not wait indefinitely for a failed response body to cancel", async () => {
