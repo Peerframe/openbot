@@ -1,9 +1,14 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { reusableChange, reuseFields, validateResearchReuse } from "./check-research-reuse.mjs";
+import {
+  type ResearchChange,
+  researchTextChange,
+  reuseFields,
+  validateResearchReuse,
+} from "./check-research-reuse.ts";
 
-const requiredFields = [
+export const requiredResearchFields = [
   "Research artifact",
   "Selected upstream/standard",
   "Version or commit",
@@ -18,7 +23,7 @@ const exemptionCategories = new Set(["spelling", "translation", "mechanical-form
 const maximumEvidenceBytes = 1024 * 1024;
 const maximumChangedFiles = 100;
 
-export function validatePullRequestResearch(body, changes) {
+export function validatePullRequestResearch(body: string, changes?: ResearchChange[]): string[] {
   const section = extractSection(body.replace(/<!--[\s\S]*?-->/gu, ""), "Open-source research");
   if (section === undefined) return ["missing the 'Open-source research' section"];
 
@@ -26,7 +31,7 @@ export function validatePullRequestResearch(body, changes) {
   if (reuse !== undefined) {
     if (
       extractListField(section, "Research exemption") !== undefined ||
-      requiredFields
+      requiredResearchFields
         .filter((label) => label !== "Source copied or substantially adapted")
         .some((label) => extractListField(section, label) !== undefined)
     )
@@ -42,8 +47,8 @@ export function validatePullRequestResearch(body, changes) {
   const exemption = extractListField(section, "Research exemption");
   if (exemption !== undefined) return validateExemption(section, exemption, changes);
 
-  const failures = [];
-  for (const label of requiredFields) {
+  const failures: string[] = [];
+  for (const label of requiredResearchFields) {
     const value = extractListField(section, label);
     if (value === undefined) {
       failures.push(`missing '- ${label}:'`);
@@ -54,8 +59,12 @@ export function validatePullRequestResearch(body, changes) {
   return failures;
 }
 
-function validateExemption(section, exemption, changes) {
-  const failures = [];
+function validateExemption(
+  section: string,
+  exemption: string,
+  changes?: ResearchChange[],
+): string[] {
+  const failures: string[] = [];
   if (!exemptionCategories.has(exemption)) {
     failures.push("'Research exemption' must be spelling, translation, or mechanical-formatting");
   }
@@ -63,7 +72,7 @@ function validateExemption(section, exemption, changes) {
   if (!reason || placeholderPattern.test(reason)) {
     failures.push("explain the specific correction and why behavior and claims are unchanged");
   }
-  if (requiredFields.some((label) => extractListField(section, label) !== undefined)) {
+  if (requiredResearchFields.some((label) => extractListField(section, label) !== undefined)) {
     failures.push("choose either the exemption fields or the seven research fields, not both");
   }
   if (!Array.isArray(changes) || changes.length === 0) {
@@ -95,7 +104,7 @@ function validateExemption(section, exemption, changes) {
   return failures;
 }
 
-function isOrdinaryDocumentation(change) {
+function isOrdinaryDocumentation(change: ResearchChange): boolean {
   if (
     typeof change.path !== "string" ||
     [...change.path].some(
@@ -123,11 +132,11 @@ function isOrdinaryDocumentation(change) {
   );
 }
 
-function protectedMarkdownContent(source) {
+function protectedMarkdownContent(source: string): string | undefined {
   // This conservatively protects technical content; prose semantics remain a normal review concern.
-  const tokens = [];
-  const prose = [];
-  let fence;
+  const tokens: string[] = [];
+  const prose: string[] = [];
+  let fence: string | undefined;
   let metadata = false;
   for (const [index, line] of source.replace(/\r\n/gu, "\n").split("\n").entries()) {
     if (index === 0 && line === "---") metadata = true;
@@ -139,7 +148,7 @@ function protectedMarkdownContent(source) {
     const marker = line.match(/(`{3,}|~{3,})/u)?.[1];
     if (fence) {
       tokens.push(line);
-      if (marker?.[0] === fence[0] && marker.length >= fence.length) fence = undefined;
+      if (marker && marker[0] === fence[0] && marker.length >= fence.length) fence = undefined;
     } else if (marker) {
       fence = marker;
       tokens.push(line);
@@ -151,7 +160,7 @@ function protectedMarkdownContent(source) {
   }
   if (fence || metadata) return undefined;
   const sourceText = prose.join("\n");
-  const textParts = [];
+  const textParts: string[] = [];
   let previousEnd = 0;
   const inline = /`+/gu;
   for (let match = inline.exec(sourceText); match !== null; match = inline.exec(sourceText)) {
@@ -195,7 +204,12 @@ function protectedMarkdownContent(source) {
   return JSON.stringify(tokens);
 }
 
-function closingDelimiter(text, start, open, close) {
+function closingDelimiter(
+  text: string,
+  start: number,
+  open: string,
+  close: string,
+): number | undefined {
   let depth = 1;
   for (let index = start + 1; index < text.length; index += 1) {
     if (text[index] === "\\") index += 1;
@@ -205,13 +219,20 @@ function closingDelimiter(text, start, open, close) {
   return undefined;
 }
 
-export function readPullRequestChanges(event, { cwd = process.cwd() } = {}) {
+interface PullRequestEvent {
+  pull_request?: { base?: { sha?: string }; head?: { sha?: string }; body?: unknown };
+}
+
+export function readPullRequestChanges(
+  event: PullRequestEvent,
+  { cwd = process.cwd() } = {},
+): ResearchChange[] {
   const base = event.pull_request?.base?.sha;
   const head = event.pull_request?.head?.sha;
   if (![base, head].every((sha) => typeof sha === "string" && /^[a-f0-9]{40}$/u.test(sha))) {
-    throw new Error("Exemption evidence requires valid pull-request base and head commits.");
+    throw new Error("Research evidence requires valid pull-request base and head commits.");
   }
-  const git = (args) =>
+  const git = (args: string[]) =>
     execFileSync("git", args, {
       cwd,
       encoding: "utf8",
@@ -236,16 +257,19 @@ export function readPullRequestChanges(event, { cwd = process.cwd() } = {}) {
     if (fields.pop() !== "" || fields.length % 2 !== 0 || fields.length / 2 > maximumChangedFiles) {
       throw new Error("Unsupported change inventory.");
     }
-    const changes = [];
+    const changes: ResearchChange[] = [];
     for (let index = 0; index < fields.length; index += 2) {
-      const header = fields[index].match(
+      const header = fields[index]?.match(
         /^:(\d{6}) (\d{6}) ([a-f0-9]{40}) ([a-f0-9]{40}) [AMDT][0-9]*$/u,
       );
       if (!header) throw new Error("Unsupported change record.");
       const [, beforeMode, afterMode, beforeId, afterId] = header;
-      const change = { path: fields[index + 1], beforeMode, afterMode, before: "", after: "" };
+      const path = fields[index + 1];
+      if (!beforeMode || !afterMode || !beforeId || !afterId || path === undefined)
+        throw new Error("Incomplete change record.");
+      const change = { path, beforeMode, afterMode, before: "", after: "" };
       // Read bounded immutable blobs only for candidate paths; never working-tree content.
-      if (isOrdinaryDocumentation(change) || reusableChange(change)) {
+      if (isOrdinaryDocumentation(change) || researchTextChange(change)) {
         change.before = beforeMode === "000000" ? "" : git(["cat-file", "blob", beforeId]);
         change.after = afterMode === "000000" ? "" : git(["cat-file", "blob", afterId]);
       }
@@ -254,12 +278,12 @@ export function readPullRequestChanges(event, { cwd = process.cwd() } = {}) {
     return changes;
   } catch {
     throw new Error(
-      "Cannot verify exemption changes. Fetch complete PR history or use research evidence.",
+      "Cannot verify research changes. Fetch complete PR history or use research evidence.",
     );
   }
 }
 
-function extractSection(body, heading) {
+function extractSection(body: string, heading: string): string | undefined {
   const escaped = escapeRegExp(heading);
   const match = body.match(
     new RegExp(`(?:^|\\n)## ${escaped}[^\\S\\r\\n]*\\r?\\n([\\s\\S]*?)(?=\\r?\\n## |$)`, "iu"),
@@ -267,18 +291,18 @@ function extractSection(body, heading) {
   return match?.[1]?.trim();
 }
 
-function extractListField(section, label) {
+function extractListField(section: string, label: string): string | undefined {
   const escaped = escapeRegExp(label);
   const match = section.match(new RegExp(`^- ${escaped}:[ \\t]*(.*?)[ \\t]*$`, "imu"));
   const value = match?.[1]?.trim();
   return value ? value : undefined;
 }
 
-function escapeRegExp(value) {
+function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 
-function run() {
+function run(): void {
   if (process.env.GITHUB_EVENT_NAME !== "pull_request") {
     console.info("Pull-request research check skipped outside a pull_request event.");
     return;
@@ -291,7 +315,7 @@ function run() {
   if (typeof body !== "string") throw new Error("Pull request body is missing.");
 
   const section = extractSection(body.replace(/<!--[\s\S]*?-->/gu, ""), "Open-source research");
-  let changes;
+  let changes: ResearchChange[] | undefined;
   if (
     section &&
     ["Research exemption", "Research reuse"].some(
@@ -301,7 +325,7 @@ function run() {
     try {
       changes = readPullRequestChanges(event);
     } catch (error) {
-      console.error(error.message);
+      console.error(error instanceof Error ? error.message : "Cannot verify research changes.");
       process.exitCode = 1;
       return;
     }
@@ -318,7 +342,9 @@ function run() {
     process.exitCode = 1;
     return;
   }
-  console.info("Pull-request research evidence, bounded reuse or prose exemption is present.");
+  console.info(
+    "Pull-request research evidence, existing-decision reuse or prose exemption is present.",
+  );
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) run();

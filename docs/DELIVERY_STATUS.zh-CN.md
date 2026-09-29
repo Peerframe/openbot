@@ -5,8 +5,9 @@
 后续进展：[已审核的单文件技能指令](REVIEWED_SKILLS.zh-CN.md)现已支持导入、绑定正文摘要的 Owner 审核、原生任务按需读取及撤销。脚本和附属资源仍待实现。
 
 这是 2026 年 9 月 8 日交付分支的实际状态，不是公开发布公告。代码见
-[PR #19](https://github.com/yxflc11/openbot/pull/19)，实施与验证见[工作记录](DELIVERY_WORKLOG.zh-CN.md)。
-旧[路线图](ROADMAP.md)保留此前阶段；本页用于核对这次完成的功能与缺口。
+[PR #19](https://github.com/yxflc11/openbot/pull/19)，历史验证及保留约束见[交付证据](DELIVERY_WORKLOG.zh-CN.md)。
+旧[路线图](ROADMAP.md)保留此前阶段；本页记录当时完成的功能与缺口。当前实现与剩余工作以
+[仓库地图](REPOSITORY_MAP.zh-CN.md)及[贡献者任务](CONTRIBUTOR_TASKS.zh-CN.md)为准。
 
 ## 本次交付
 
@@ -23,9 +24,9 @@
 
 ## 代码功能库与 Hermes 对照
 
-以下是当前代码审查结果，不应全部计为这四小时新增的功能。
+以下是该历史检查点的代码审查结果，不代表今天的实现状态。
 
-| 能力 | 当前真实状态 | 尚未完成 |
+| 能力 | 当时证据 | 当时剩余工作 |
 | --- | --- | --- |
 | 定时自动化 | `automations.ts`、`postgres-automation-store.ts` 已有 15 分钟至 7 天间隔、暂停/恢复/删除和持久化派发 | 自然语言建计划、cron/时区语义、外部平台投递、多 Server 协调 |
 | 技能库与迁移 | 版本化元数据、模板导入/导出、单文件 SKILL.md 导入、绑定正文摘要的全文审核、原生任务受限读取及执行中撤销 | 脚本、附属资源、正文迁移、原生任务技能依赖和真实模型效果 |
@@ -39,7 +40,7 @@
 学习方向明确借鉴 [Hermes Agent](https://github.com/NousResearch/hermes-agent/tree/63279301bcbdc185c1b07b98a9312eb0c862f26d)。
 本次完成的是需要人工审核的记忆闭环，尚未达到 Hermes 全功能对齐。
 
-## 接下来按此顺序验收
+## 当时尚未完成的验收
 
 1. **真正公开安装：**补齐捆绑 PostgreSQL 原生依赖与源码对应、LGPL 源码/重新链接证据，
    再进行维护者发布审查、main CI 和公开安装下载。补签名、公证与干净设备安装/升级/卸载证据。
@@ -51,5 +52,5 @@
    参见 [Provider 验证](PROVIDER_CONFORMANCE.zh-CN.md)。
 5. **生态：**先一个消息网关，再按实际工作流补委派或另一个后端，不再堆只有声明的适配器。
 
-macOS 当前可运行本地 Server；Windows/Linux 是远程客户端。退出桌面会停止应用托管的本地服务；
+该检查点的 macOS 可运行本地 Server；Windows/Linux 是远程客户端。退出桌面会停止应用托管的本地服务；
 无人值守自动任务需要持续在线的 Server。自动更新、完整备份恢复、三端本地 Server 均未完成。

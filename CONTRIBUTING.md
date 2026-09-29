@@ -234,8 +234,8 @@ Choose one PR evidence path based on the actual change, not its title:
 | New dependency/version, public protocol, authorization/security, persistent-data boundary or material architecture | Targeted review of the affected choice, pinned evidence and negative/compatibility tests |
 | Pure spelling, faithful translation, mechanical prose formatting | Bounded prose exemption below; unchanged behavior and claims |
 
-For eligible existing Web components, runtime `bounds.py`/`catalog.py`/`errors.py`, or tests, replace
-the seven fields under `## Open-source research` with:
+For ordinary internal repairs within an accepted design, in any directory, replace the seven
+fields under `## Open-source research` with:
 
 ```markdown
 - Research reuse: docs/research/channel-member-layout.md
@@ -244,17 +244,23 @@ the seven fields under `## Open-source research` with:
 - Source copied or substantially adapted: no
 ```
 
-Use the relevant existing decision, not this example by default. CI reads immutable committed
-base/head blobs and rejects missing evidence, mixed forms, new product files, changed imports,
-dependencies, boundary owners, instructions/prompts and unknown paths on this shortcut. This is a
-conservative convenience, not a semantic proof or approval. Review must still trace actual consumers
-and detect a permission or protocol change hidden inside an otherwise eligible file.
+Cite the relevant existing decision, not this example by default. An internal import, helper
+extraction, source retirement or different directory does not by itself require another research
+table. The same form covers ordinary source, tests, styles and explanatory documentation. npm
+script wiring can qualify when dependencies, runtime, exports and install/publish hooks are unchanged.
 
-Other routine fixes, including changes to boundary-owner files, may use the existing seven fields
-with the already-reviewed decision and pins; this does **not** require a new research cycle. Only
-changed assumptions reopen the affected choice. New boundaries use those same fields with their
-new targeted evidence. Source copying/adaptation keeps license/notice review. Research templates
-start with a trigger/reuse assessment; do not fill a new report merely because behavior changed.
+CI reads bounded immutable base/head blobs, including both sides of moves, and rejects missing
+content, mixed forms, binary/symlink or executable-mode changes. Known authority, credential,
+budget, recovery, storage and public-contract owners retain targeted review, as do dependency/lock,
+schema, security declaration, CI and instruction/prompt changes. The failure names the affected
+file and reason; the full form can cite its existing decision and reviewed pins without a new survey.
+
+These are conservative evidence checks, not semantic proof or approval. Independent review must
+trace real consumers and required tests for **every** changed file: a new permission, persistence,
+public protocol or material architecture change in an ordinary helper still requires targeted
+evidence. Do not use the reuse label to hide one. Reopen only changed assumptions; keep license and
+notice review for copied/adapted source. Neither route requires a new ADR or duplicate research
+record when existing evidence covers the change.
 
 For unchanged ordinary prose, replace all seven fields with:
 

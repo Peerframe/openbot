@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import test from "node:test";
-import { validateDeveloperEntrypoints } from "./check-developer-entrypoints.mjs";
+import test, { type TestContext } from "node:test";
+import { validateDeveloperEntrypoints } from "./check-developer-entrypoints.ts";
 
-function fixture(t) {
+function fixture(t: TestContext) {
   const root = mkdtempSync(join(tmpdir(), "openbot-entry-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const dir = join(root, ".agents/skills/openbot-change");

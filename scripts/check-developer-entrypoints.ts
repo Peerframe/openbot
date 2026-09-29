@@ -1,27 +1,27 @@
-import { lstatSync, readdirSync, readFileSync } from "node:fs";
+import { type Dirent, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 
 // The repository deliberately uses plain files and scalar metadata. Native Codex discovery is a
 // separate acceptance exercise; this check catches broken contributor routing without a model call.
-export function validateDeveloperEntrypoints(root) {
-  const failures = [];
+export function validateDeveloperEntrypoints(root: string): string[] {
+  const failures: string[] = [];
   const rules = readFileSync(join(root, "AGENTS.md"), "utf8");
   const directory = join(root, ".agents/skills");
-  let folders;
+  let folders: Dirent[];
   try {
     folders = readdirSync(directory, { withFileTypes: true });
   } catch {
     return ["missing repository development skills directory"];
   }
   if (folders.length === 0) failures.push("no development skills discovered");
-  const names = new Set();
+  const names = new Set<string | undefined>();
   for (const folder of folders) {
     const path = join(directory, folder.name, "SKILL.md");
     if (!folder.isDirectory()) {
       failures.push(`${folder.name}: use a plain skill directory, not a symlink`);
       continue;
     }
-    let source;
+    let source: string;
     try {
       if (!lstatSync(path).isFile()) throw new Error("not a plain file");
       source = readFileSync(path, "utf8");

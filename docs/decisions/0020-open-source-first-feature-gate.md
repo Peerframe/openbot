@@ -48,8 +48,8 @@ this ADR and the reuse ledger.
 
 ## Verification plan
 
-- `scripts/check-docs.mjs` verifies that the policy and templates retain their required sections.
-- `scripts/check-pr-research.mjs` rejects a pull request whose research fields are absent, empty, or
+- `scripts/check-docs.ts` verifies that the policy and templates retain their required sections.
+- `scripts/check-pr-research.ts` rejects a pull request whose research fields are absent, empty, or
   still contain template placeholders; Node's built-in test runner covers accepted and rejected
   bodies.
 - `npm run check` runs both gates before lint, typecheck, product tests, and build.

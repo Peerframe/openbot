@@ -42,7 +42,7 @@
   - `apps/web/src/components/MobileNavigation.tsx` — sheet has labelled panel and “完成” close;
     **no** test file; Escape not wired (left as ACCESSIBILITY known-gap / Intermediate follow-on,
     not a new Starter inventing product behavior without an issue)
-  - `scripts/check-docs.mjs` — local-link and research-policy checks exist; they do **not** already
+  - `scripts/check-docs.ts` — local-link and research-policy checks exist; they do **not** already
     implement a translation consistency gate
 - GitHub / standards queries (documentation decision only; no new dependency selected):
   - WAI-ARIA APG tabs and modal dialog guidance already pinned in `docs/ACCESSIBILITY.md`

@@ -3,8 +3,9 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import test from "node:test";
-import { readPullRequestChanges, validatePullRequestResearch } from "./check-pr-research.mjs";
+import test, { type TestContext } from "node:test";
+import { readPullRequestChanges, validatePullRequestResearch } from "./check-pr-research.ts";
+import type { ResearchChange } from "./check-research-reuse.ts";
 
 const validSection = `
 ## Open-source research
@@ -59,7 +60,11 @@ const exemption = `## Open-source research
 - Exemption reason: Translate the introductory paragraph faithfully; commands and product claims are unchanged.
 `;
 
-function documentationChange(before, after, overrides = {}) {
+function documentationChange(
+  before: string,
+  after: string,
+  overrides: Partial<ResearchChange> = {},
+): ResearchChange {
   return {
     path: "README.zh-CN.md",
     beforeMode: "100644",
@@ -170,7 +175,7 @@ test("rejects executable, symlink and binary documentation changes", () => {
 });
 
 test("protects technical Markdown content across apparent prose-only paths", () => {
-  const cases = [
+  const cases: [string, string][] = [
     ["Run `npm ci`.", "Run `npm install`."],
     ["Run ``npm ci``.", "Run ``npm install``."],
     ["```bash\nnpm ci\n```\n", "```bash\nnpm install\n```\n"],
@@ -210,10 +215,10 @@ test("preserves ordinary research validation even when the change inventory is u
   assert.equal(validatePullRequestResearch(validSection.replace("v1.2.3", "N/A")).length, 1);
 });
 
-function fixtureRepository(t) {
+function fixtureRepository(t: TestContext) {
   const cwd = mkdtempSync(join(tmpdir(), "openbot-research-check-"));
   t.after(() => rmSync(cwd, { recursive: true, force: true }));
-  const git = (...args) =>
+  const git = (...args: string[]) =>
     execFileSync(
       "git",
       [
@@ -229,7 +234,7 @@ function fixtureRepository(t) {
       ],
       { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
     ).trim();
-  const write = (path, body) => {
+  const write = (path: string, body: string) => {
     mkdirSync(dirname(join(cwd, path)), { recursive: true });
     writeFileSync(join(cwd, path), body);
   };
@@ -285,7 +290,7 @@ test("keeps NUL-delimited unusual paths distinct and rejects unsafe automatic sc
     { pull_request: { base: { sha: fixture.base }, head: { sha: head } } },
     fixture,
   );
-  assert.equal(changes[0].path, "docs/multiple\nlines.md");
+  assert.equal(changes[0]?.path, "docs/multiple\nlines.md");
   assert.match(validatePullRequestResearch(exemption, changes).join(" "), /ordinary Markdown/u);
 });
 
@@ -301,7 +306,7 @@ test("the actual CLI accepts a documented correction and rejects a code change",
         pull_request: { body: exemption, base: { sha: fixture.base }, head: { sha: head } },
       }),
     );
-    return spawnSync(process.execPath, [resolve("scripts/check-pr-research.mjs")], {
+    return spawnSync(process.execPath, [resolve("scripts/check-pr-research.ts")], {
       cwd: fixture.cwd,
       env: { ...process.env, GITHUB_EVENT_NAME: "pull_request", GITHUB_EVENT_PATH: eventPath },
       encoding: "utf8",
@@ -332,7 +337,7 @@ test("fails closed on invalid or unavailable Git objects without exposing subpro
         { pull_request: { base: { sha: "f".repeat(40) }, head: { sha: fixture.base } } },
         fixture,
       ),
-    /^Error: Cannot verify exemption changes\./u,
+    /^Error: Cannot verify research changes\./u,
   );
 });
 
@@ -343,7 +348,7 @@ const reuse = `## Open-source research
 - Unchanged assumptions: Same React event contract; no dependency, public protocol, authority, persistence or architecture change.
 - Source copied or substantially adapted: no
 `;
-const repair = (overrides = {}) =>
+const repair = (overrides: Partial<ResearchChange> = {}) =>
   documentationChange('export const label = "Before";', 'export const label = "After";', {
     path: "apps/web/src/components/ChannelMembersMenu.tsx",
     ...overrides,
@@ -353,10 +358,7 @@ test("ordinary UI and core repairs reuse the decision without repeating upstream
   assert.deepEqual(validatePullRequestResearch(reuse, [repair()]), []);
   assert.deepEqual(
     validatePullRequestResearch(
-      reuse.replace(
-        "docs/research/channel-member-layout.md",
-        "packages/harness/RESEARCH.md",
-      ),
+      reuse.replace("docs/research/channel-member-layout.md", "packages/harness/RESEARCH.md"),
       [repair({ path: "packages/harness/src/openbot_agent_runtime/catalog.py" })],
     ),
     [],
@@ -394,17 +396,14 @@ test("repair label cannot hide dependencies, authorization, persistence, protoco
     "apps/web/AGENTS.md",
     ".agents/skills/openbot-change/SKILL.md",
     ".github/workflows/ci.yml",
-    "scripts/check-pr-research.mjs",
-    "unknown/file.py",
+    "scripts/check-pr-research.ts",
+    "apps/web/src/helpers/authorization.ts",
+    "other/credential-store.py",
+    "deploy/app.entitlements",
+    "api/wire.schema.json",
   ])
     assert.ok(validatePullRequestResearch(reuse, [repair(), repair({ path })]).length > 0, path);
-  for (const overrides of [
-    { beforeMode: "000000" },
-    { afterMode: "100755" },
-    { afterMode: "120000" },
-    { after: 'import extra from "new-dependency";\nexport const label = "After";' },
-    { after: "binary\0" },
-  ])
+  for (const overrides of [{ afterMode: "100755" }, { afterMode: "120000" }, { after: "binary\0" }])
     assert.ok(validatePullRequestResearch(reuse, [repair(overrides)]).length > 0);
 });
 
@@ -436,7 +435,7 @@ test("reuse CLI reads actual blobs and refuses a mixed dependency or permission 
       eventPath,
       JSON.stringify({ pull_request: { body: reuse, base: { sha: base }, head: { sha: head } } }),
     );
-    return spawnSync(process.execPath, [resolve("scripts/check-pr-research.mjs")], {
+    return spawnSync(process.execPath, [resolve("scripts/check-pr-research.ts")], {
       cwd: fixture.cwd,
       env: { ...process.env, GITHUB_EVENT_NAME: "pull_request", GITHUB_EVENT_PATH: eventPath },
       encoding: "utf8",
@@ -452,4 +451,136 @@ test("reuse CLI reads actual blobs and refuses a mixed dependency or permission 
   fixture.write("apps/server-python/src/openbot_server/auth_store.py", "allow = True");
   head = fixture.commit();
   assert.equal(run().status, 1);
+});
+
+test("ordinary internal repairs reuse decisions across languages and directories", () => {
+  for (const path of [
+    "apps/web/src/format.ts",
+    "apps/desktop/src/format.ts",
+    "apps/node/src/text.ts",
+    "apps/server-python/src/openbot_server/text.py",
+    "packages/harness/src/openbot_agent_runtime/text.py",
+    "providers/docker/src/text.ts",
+    "scripts/format.mjs",
+    "deploy/server/healthcheck.py",
+    "experiments/example/render.ts",
+    "unknown/helper.py",
+    "docs/guide.md",
+    "apps/web/src/themes.css",
+  ])
+    assert.deepEqual(validatePullRequestResearch(reuse, [repair({ path })]), [], path);
+});
+
+test("internal extraction can add, import and retire source in the same reviewed change", () => {
+  assert.deepEqual(
+    validatePullRequestResearch(reuse, [
+      repair({
+        path: "scripts/text.ts",
+        beforeMode: "000000",
+        before: "",
+        after: "export const label = 'After';",
+      }),
+      repair({ path: "scripts/text.mjs", afterMode: "000000", after: "" }),
+      repair({
+        path: "scripts/print.ts",
+        after: "import { label } from './text.ts'; console.log(label);",
+      }),
+      repair({ path: "scripts/print.test.ts", beforeMode: "000000", before: "" }),
+    ]),
+    [],
+  );
+});
+
+test("manifest script wiring can reuse a decision, but dependencies, runtime and public exports cannot", () => {
+  const manifest = {
+    name: "fixture",
+    version: "1.0.0",
+    scripts: { check: "node check.mjs" },
+    dependencies: { existing: "1.0.0" },
+    engines: { node: ">=22.22.2" },
+  };
+  const change = repair({
+    path: "tools/example/package.json",
+    before: JSON.stringify(manifest),
+    after: JSON.stringify({ ...manifest, scripts: { check: "node check.ts" } }),
+  });
+  assert.deepEqual(validatePullRequestResearch(reuse, [change]), []);
+  for (const override of [
+    { dependencies: { existing: "2.0.0" } },
+    { devDependencies: { added: "1.0.0" } },
+    { engines: { node: ">=26" } },
+    { exports: "./new.ts" },
+    { workspaces: ["extra"] },
+    { bin: "./run.ts" },
+    { scripts: { postinstall: "node new-side-effect.ts" } },
+  ])
+    assert.match(
+      validatePullRequestResearch(reuse, [
+        { ...change, after: JSON.stringify({ ...manifest, ...override }) },
+      ]).join(" "),
+      /package contract changed/u,
+    );
+  for (const after of ["broken", "null", "[]"])
+    assert.match(
+      validatePullRequestResearch(reuse, [{ ...change, after }]).join(" "),
+      /unreadable package manifest/u,
+    );
+});
+
+test("boundary artifacts stay protected even under test or previously eligible UI paths", () => {
+  for (const path of [
+    "apps/web/src/components/permission.ts",
+    "apps/web/src/components/identity.ts",
+    "fixtures/new.proto",
+    "fixtures/new.sql",
+    "fixtures/test.schema.json",
+    "tools/requirements-dev.txt",
+    "tools/Cargo.lock",
+    "tools/go.mod",
+    "apps/desktop/app.entitlements",
+    "other/prompts/model.md",
+    ".github/CODEOWNERS",
+  ])
+    assert.ok(validatePullRequestResearch(reuse, [repair({ path })]).length > 0, path);
+  for (const overrides of [
+    { beforeMode: "100755", afterMode: "100644" },
+    { beforeMode: "000000", afterMode: "100755" },
+    { beforeMode: "100755", afterMode: "000000" },
+    { path: "docs/../other.py" },
+    { path: "space\nname.ts" },
+  ])
+    assert.ok(validatePullRequestResearch(reuse, [repair(overrides)]).length > 0);
+});
+
+test("actual Git inventory reads retired source and manifest blobs before deciding reuse", (t) => {
+  const f = fixtureRepository(t);
+  f.write("scripts/text.mjs", "export const label = 'Before';");
+  f.write(
+    "package.json",
+    JSON.stringify({ scripts: { check: "node scripts/text.mjs" }, dependencies: { old: "1.0.0" } }),
+  );
+  const base = f.commit();
+  f.git("mv", "scripts/text.mjs", "scripts/text.ts");
+  f.write(
+    "package.json",
+    JSON.stringify({ scripts: { check: "node scripts/text.ts" }, dependencies: { old: "1.0.0" } }),
+  );
+  const head = f.commit();
+  const changes = readPullRequestChanges(
+    { pull_request: { base: { sha: base }, head: { sha: head } } },
+    f,
+  );
+  assert.equal(changes.length, 3);
+  assert.deepEqual(validatePullRequestResearch(reuse, changes), []);
+  f.write(
+    "package.json",
+    JSON.stringify({ scripts: { check: "node scripts/text.ts" }, dependencies: { old: "2.0.0" } }),
+  );
+  const rejectedHead = f.commit();
+  f.write("package.json", "{}");
+  const rejected = readPullRequestChanges(
+    { pull_request: { base: { sha: base }, head: { sha: rejectedHead } } },
+    f,
+  );
+  assert.match(validatePullRequestResearch(reuse, rejected).join(" "), /package contract changed/u);
 });
