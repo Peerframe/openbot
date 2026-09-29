@@ -52,15 +52,15 @@ Temporal服务，再通过另选Compose覆盖文件只读挂载配置、证书�
 此包不嵌入引擎，不提供明文回退，也不自动授予command／browser能力；其他可信Control配置仍须明确选择，
 不会把凭据放进镜像。
 
-依赖沿用完整63项Worker锁（含pytest／开发辅助包）以及平台过滤前43项Node parser／DB闭包，
-不声称Python已经按生产最小化。Node24.21.0／Python3.12.13复用已固定官方Bookworm镜像摘要。
+Python使用`requirements-product.lock`中的58项外部运行依赖和本仓构建的harness wheel，
+不安装pytest等Worker开发辅助包；Node使用平台过滤前43项parser／DB锁条目。Node24.21.0／Python3.12.13复用已固定官方Bookworm镜像摘要。
 Web／TypeScript构建依赖不进入最终镜像；保留包内许可、Node许可、Python组件通知和THIRD_PARTY_NOTICES。
 Python只安装锁定wheel，缺少对应架构wheel时拒绝构建。本地Linux arm64及原生Linux amd64／arm64 CI镜像smoke均已在记录的提交上通过。
 
 不使用Docker或模型的聚焦检查：
 
 ```sh
-node --test deploy/server/product-container.test.mjs
+node --test deploy/server/product-container.test.ts
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=apps/server-python/src:packages/harness/src apps/server-python/.worker-venv/bin/python -m pytest -p no:cacheprovider -q deploy/server/test_product_container.py apps/server-python/tests/test_entry.py
 ```
 

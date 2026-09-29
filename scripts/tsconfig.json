@@ -7,6 +7,6 @@
     "erasableSyntaxOnly": true,
     "types": ["node"]
   },
-  "include": ["**/*.ts", "../apps/desktop/scripts/**/*.ts"],
+  "include": ["**/*.ts", "../apps/desktop/scripts/**/*.ts", "../deploy/server/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

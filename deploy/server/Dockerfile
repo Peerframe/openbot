@@ -5,14 +5,14 @@ WORKDIR /workspace
 FROM product-node AS product-projection
 COPY package-lock.json ./
 COPY scripts/production-package-graph.ts ./scripts/production-package-graph.ts
-COPY deploy/server/product-node-project.mjs ./deploy/server/product-node-project.mjs
+COPY deploy/server/product-node-project.ts ./deploy/server/product-node-project.ts
 COPY packages/python-node-runtime/package.json ./packages/python-node-runtime/package.json
 COPY packages/db/package.json ./packages/db/package.json
 COPY packages/domain/package.json ./packages/domain/package.json
 COPY packages/protocol/package.json ./packages/protocol/package.json
 COPY apps/web/package.json ./apps/web/package.json
-RUN node deploy/server/product-node-project.mjs /workspace /runtime runtime \
- && node deploy/server/product-node-project.mjs /workspace /build build
+RUN node deploy/server/product-node-project.ts /workspace /runtime runtime \
+ && node deploy/server/product-node-project.ts /workspace /build build
 
 FROM product-node AS product-build
 COPY --from=product-projection /build/ ./
@@ -74,13 +74,13 @@ COPY packages/db/migrations/ ./packages/db/migrations/
 COPY apps/server-python/src/ ./apps/server-python/src/
 COPY apps/server-python/scripts/serve.py ./apps/server-python/scripts/serve.py
 COPY packages/harness/distribution.lock ./packages/harness/distribution.lock
-COPY deploy/server/product-entry.py deploy/server/product-migrate.mjs deploy/server/product-preflight.mjs deploy/server/product-health.py ./deploy/server/
+COPY deploy/server/product-entry.py deploy/server/product-migrate.ts deploy/server/product-preflight.ts deploy/server/product-health.py ./deploy/server/
 COPY LICENSE THIRD_PARTY_NOTICES.md ./
 COPY apps/desktop/resources/python-notices/ /usr/share/doc/openbot/python-notices/
 RUN test "$(node --version)" = "v24.21.0" \
  && /opt/openbot/venv/bin/python -I -B -c 'import sys; assert sys.version_info[:3] == (3,12,13)' \
  && /opt/openbot/venv/bin/python -I -B apps/server-python/scripts/verify_environment.py --product \
- && node deploy/server/product-preflight.mjs
+ && node deploy/server/product-preflight.ts
 USER 1000:1000
 EXPOSE 3001
 STOPSIGNAL SIGTERM

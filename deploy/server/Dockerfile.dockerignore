@@ -7,7 +7,9 @@
 !scripts/production-package-graph.ts
 !deploy/
 !deploy/server/
-!deploy/server/product-*.mjs
+!deploy/server/product-node-project.ts
+!deploy/server/product-preflight.ts
+!deploy/server/product-migrate.ts
 !deploy/server/product-*.py
 !packages/
 !packages/python-node-runtime/

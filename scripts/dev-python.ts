@@ -114,7 +114,7 @@ try {
   );
   assertNotStopping();
   await owner.waitSuccess(
-    owner.start(process.execPath, ["deploy/server/product-migrate.mjs"], {
+    owner.start(process.execPath, ["deploy/server/product-migrate.ts"], {
       ...env,
       OPENBOT_DATABASE_URL: env.OPENBOT_CONTROL_DATABASE_URL,
     }),
