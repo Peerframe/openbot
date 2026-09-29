@@ -88,7 +88,10 @@ def test_attachment_is_not_retained_after_final_authority_expiry(fixture,tmp_pat
 def test_attachment_boundaries_and_legacy_layout(tmp_path):
     tmp_path.chmod(0o700);files=OwnerFiles(tmp_path);channel=str(uuid4())
     with pytest.raises(ControlError): files._read('../foreign',100)
-    with pytest.raises(ControlError): validate_attachment('a.txt',b'\xff')
+    for invalid_text in (b'\xff', b'a\0b'):
+        with pytest.raises(ControlError, match='attachment_utf8_required'):
+            validate_attachment('a.txt', invalid_text)
+    assert validate_attachment('a.txt', b'x'*(256*1024)) == 'text/plain'
     with pytest.raises(ControlError): validate_attachment('a.txt',b'x'*(256*1024+1))
     item=files.persist(channel,'safe.txt',b'payload')
     assert files.metadata(channel,item['id'])==item
