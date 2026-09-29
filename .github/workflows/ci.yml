@@ -358,7 +358,7 @@ jobs:
         with:
           node-version: 22.22.2
       - name: Verify Python and Server journeys in the isolated Linux fixture
-        run: node scripts/test-runtime-linux.mjs
+        run: node scripts/test-runtime-linux.ts
       - name: Select the reviewed npm version for control-plane parity
         run: npm install --global --ignore-scripts npm@10.9.9
       - name: Install existing TypeScript reference dependencies

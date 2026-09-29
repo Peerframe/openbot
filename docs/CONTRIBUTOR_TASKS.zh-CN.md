@@ -15,7 +15,7 @@ Owner 和鉴权工作区访问，Linux Python CI 已运行此检查。开发 Nod
 
 - **结果：**同一条本地/CI 路径证明全新克隆能启动 Server/Web、登录、按需登记开发 Node，
   并使用保留身份重启。
-- **路径：**`CONTRIBUTING.md`、`scripts/smoke-dev-startup.mjs`、`.github/workflows/ci.yml`、
+- **路径：**`CONTRIBUTING.md`、`scripts/smoke-dev-startup.ts`、`.github/workflows/ci.yml`、
   已有认证及 Node 测试。扩展现有 smoke，不另造启动检查入口。
 - **先调研：**复用当前固定 Node/npm/PostgreSQL 与生命周期测试，比较已有 CI 服务就绪检查，
   再决定是否需要新的运行入口。

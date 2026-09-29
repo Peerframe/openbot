@@ -1,8 +1,7 @@
 // Independent actual TypeScript/Python profile comparison; no process, model or database effects.
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { runtimeWorkerMessageSchema } from "../../../tests/oracles/legacy-server/dist/agent-runtime-wire.js";
+import { ONE_MIB, runPythonComparator, TEN_SECONDS } from "./python-comparator.ts";
 
 const request = (method, params = {}, id = "w1") => ({ jsonrpc: "2.0", id, method, params });
 const final = (text) => ({ jsonrpc: "2.0", id: "run", result: { text } });
@@ -105,17 +104,14 @@ for item in json.load(sys.stdin):
 json.dump(result,sys.stdout,ensure_ascii=True)
 `;
 const root = new URL("../", import.meta.url);
-const child = spawnSync(
-  fileURLToPath(new URL(".venv/bin/python", root)),
-  ["-I", "-c", program, fileURLToPath(new URL("src", root))],
-  {
-    input: JSON.stringify(cases),
-    encoding: "utf8",
-    env: { PATH: "/usr/bin:/bin" },
-    timeout: 10000,
-    maxBuffer: 1024 * 1024,
-  },
-);
+const child = runPythonComparator({
+  packageRoot: root,
+  program,
+  unbuffered: false,
+  stdin: JSON.stringify(cases),
+  timeoutMs: TEN_SECONDS,
+  maxBufferBytes: ONE_MIB,
+});
 assert.equal(child.status, 0, child.stderr);
 const actual = JSON.parse(child.stdout);
 const expected = cases.map((value) => {

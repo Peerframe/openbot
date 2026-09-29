@@ -1,10 +1,9 @@
 // Run the retained TypeScript functions and Python adapters against the same synthetic inputs.
 // No model, database, inherited credentials, or caller-supplied path is involved.
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { toRun } from "../../../tests/oracles/legacy-server/dist/postgres-task-records.js";
 import { selectChannelAssignees } from "../../../tests/oracles/legacy-server/dist/task-routing.js";
+import { ONE_MIB, runPythonComparator, TEN_SECONDS } from "./python-comparator.ts";
 
 const root = new URL("../", import.meta.url);
 const candidates = [
@@ -146,17 +145,14 @@ for row in cases["runs"]:
     result["runs"].append(project_run(row).model_dump(mode="json", exclude_none=True))
 json.dump(result, sys.stdout, ensure_ascii=True)
 `;
-const child = spawnSync(
-  fileURLToPath(new URL(".venv/bin/python", root)),
-  ["-I", "-c", program, fileURLToPath(new URL("src", root))],
-  {
-    env: { PATH: "/usr/bin:/bin" },
-    input: JSON.stringify(cases),
-    encoding: "utf8",
-    timeout: 10_000,
-    maxBuffer: 1024 * 1024,
-  },
-);
+const child = runPythonComparator({
+  packageRoot: root,
+  program,
+  unbuffered: false,
+  stdin: JSON.stringify(cases),
+  timeoutMs: TEN_SECONDS,
+  maxBufferBytes: ONE_MIB,
+});
 assert.equal(child.status, 0, child.stderr);
 assert.deepEqual(JSON.parse(child.stdout), expected);
 console.log(

@@ -4,7 +4,7 @@ These cases pin the *observable* contract of the installed Zod 4.6.2 schemas
 (``createBotInputSchema`` / ``createChannelInputSchema`` in ``packages/protocol/src/index.ts``) as
 reproduced by ``openbot_server.identity_inputs``. Expected payloads are written out explicitly so the
 suite is meaningful offline; the differential runner
-(``scripts/compare-identity-inputs.mjs``) is what re-derives the truth from TypeScript, against the
+(``scripts/compare-identity-inputs.ts``) is what re-derives the truth from TypeScript, against the
 81-case fixture.
 
 The suite is deliberately lean: a homogeneous sweep is one case per *property* with a labelled loop,

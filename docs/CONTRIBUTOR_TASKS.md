@@ -19,7 +19,7 @@ Optional development Node enrollment and restart with retained identity remain o
 
 - **Outcome:** one documented CI/local path proves a clean checkout can start Server/Web, sign in,
   enroll an optional development Node and restart it with the retained identity.
-- **Start in:** `CONTRIBUTING.md`, `scripts/smoke-dev-startup.mjs`, `.github/workflows/ci.yml`,
+- **Start in:** `CONTRIBUTING.md`, `scripts/smoke-dev-startup.ts`, `.github/workflows/ci.yml`,
   existing auth/Node fixtures. Extend the existing smoke instead of adding another startup runner.
 - **Research first:** reuse the current pinned Node/npm/PostgreSQL toolchain and lifecycle tests;
   compare existing CI service/readiness patterns before introducing a runner.

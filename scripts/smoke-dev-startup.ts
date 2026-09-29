@@ -8,7 +8,9 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import type postgresClient from "postgres";
 import { assertFreshSourceCheckout } from "./dev-startup-inputs.ts";
+import { FIXTURE_DATABASE, FIXTURE_PASSWORD, redactFixtureOutput } from "./output-redaction.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 // biome-ignore lint/suspicious/noUndeclaredEnvVars: this uncached root driver runs outside Turbo and preserves npm's selected CLI.
@@ -30,23 +32,26 @@ assert(
 await assertFreshSourceCheckout(root);
 for (const port of [3001, 5173]) {
   const listener = createServer();
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     listener.once("error", reject);
     listener.listen(port, "::", resolve);
   });
-  await new Promise((resolve, reject) =>
+  await new Promise<void>((resolve, reject) =>
     listener.close((error) => (error ? reject(error) : resolve())),
   );
 }
 
-const postgres = createRequire(new URL("../packages/db/package.json", import.meta.url))("postgres");
+// Resolve the reviewed client from its owning package; a fresh checkout has no db build.
+const postgres: typeof postgresClient = createRequire(
+  new URL("../packages/db/package.json", import.meta.url),
+)("postgres");
 const sql = postgres(databaseUrl, { max: 1, connect_timeout: 5 });
 try {
-  const [result] = await sql`
+  const [result] = await sql<{ count: number }[]>`
     select count(*)::int as count from pg_catalog.pg_tables
     where schemaname not like 'pg_%' and schemaname <> 'information_schema'
   `;
-  assert.equal(result.count, 0, "The disposable startup database must be empty.");
+  assert.equal(result?.count, 0, "The disposable startup database must be empty.");
 } finally {
   await sql.end({ timeout: 5 });
 }
@@ -85,17 +90,17 @@ const child = spawn(process.execPath, [npmCli, "run", "dev"], {
   },
 });
 let output = "";
-let startupError;
+let startupError: Error | undefined;
 child.once("error", (error) => {
   startupError = error;
 });
 for (const stream of [child.stdout, child.stderr]) {
-  stream.on("data", (chunk) => {
+  stream.on("data", (chunk: Buffer) => {
     output = (output + chunk.toString()).slice(-64 * 1024);
   });
 }
 
-async function ready(url, verify) {
+async function ready(url: string, verify: (response: Response) => Promise<boolean>) {
   const deadline = Date.now() + 120_000;
   while (Date.now() < deadline) {
     controller.signal.throwIfAborted();
@@ -114,11 +119,21 @@ async function ready(url, verify) {
 
 try {
   await ready("http://127.0.0.1:3001/health", async (response) => {
-    const value = await response.json();
-    return value.ok === true && value.service === "openbot-server";
+    const value: unknown = await response.json();
+    return (
+      typeof value === "object" &&
+      value !== null &&
+      "ok" in value &&
+      value.ok === true &&
+      "service" in value &&
+      value.service === "openbot-server"
+    );
   });
   await ready(`${origin}/`, async (response) => (await response.text()).includes("/src/main.tsx"));
-  await ready(`${origin}/health`, async (response) => (await response.json()).ok === true);
+  await ready(`${origin}/health`, async (response) => {
+    const value: unknown = await response.json();
+    return typeof value === "object" && value !== null && "ok" in value && value.ok === true;
+  });
   const login = await fetch(`${origin}/api/v1/auth/login`, {
     method: "POST",
     headers: { Origin: origin, "Content-Type": "application/json" },
@@ -127,12 +142,21 @@ try {
   });
   assert.equal(login.status, 200, "Owner login through the development proxy failed.");
   const cookie = login.headers.get("set-cookie")?.split(";")[0];
-  assert(cookie?.startsWith("openbot_session="), "Login did not return the Owner session cookie.");
+  assert(
+    typeof cookie === "string" && cookie.startsWith("openbot_session="),
+    "Login did not return the Owner session cookie.",
+  );
   const session = await fetch(`${origin}/api/v1/auth/session`, {
     headers: { Cookie: cookie },
     signal: AbortSignal.timeout(5_000),
   });
-  assert.equal((await session.json()).authenticated, true);
+  const sessionValue: unknown = await session.json();
+  assert.equal(
+    typeof sessionValue === "object" && sessionValue !== null && "authenticated" in sessionValue
+      ? sessionValue.authenticated
+      : undefined,
+    true,
+  );
   const channels = await fetch(`${origin}/api/v1/channels`, {
     headers: { Cookie: cookie },
     signal: AbortSignal.timeout(5_000),
@@ -141,18 +165,21 @@ try {
   console.log("Fresh startup passed: shared builds, Server health, Web/proxy and Owner session.");
 } catch (error) {
   console.error(
-    output.replaceAll(databaseUrl, "[fixture database]").replaceAll(password, "[fixture password]"),
+    redactFixtureOutput(output, [
+      [databaseUrl, FIXTURE_DATABASE],
+      [password, FIXTURE_PASSWORD],
+    ]),
   );
   throw error;
 } finally {
   // npm, Turbo and watchers form a process tree. Signal its dedicated group,
   // then bound cleanup even when a watcher fails to forward termination.
-  function signalGroup(signal) {
+  function signalGroup(signal: NodeJS.Signals | 0): boolean {
     try {
       if (child.pid) process.kill(-child.pid, signal);
       return true;
     } catch (error) {
-      if (error.code === "ESRCH") return false;
+      if (error instanceof Error && "code" in error && error.code === "ESRCH") return false;
       throw error;
     }
   }

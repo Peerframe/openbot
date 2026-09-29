@@ -2,10 +2,9 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { existsSync, rmSync } from "node:fs";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
-import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { createDatabase } from "../packages/db/dist/index.js";
 import { readSteering } from "../tests/oracles/legacy-server/dist/agent-steering.js";
@@ -16,57 +15,103 @@ import { PostgresRequestThrottleStore } from "../tests/oracles/legacy-server/dis
 import { PostgresOwnerSessionStore } from "../tests/oracles/legacy-server/dist/postgres-session-store.js";
 import { PostgresControlPlaneStore } from "../tests/oracles/legacy-server/dist/postgres-store.js";
 import { RequestThrottle } from "../tests/oracles/legacy-server/dist/request-throttle.js";
+import { FIXTURE_PASSWORD, FIXTURE_TOKEN, redactFixtureOutput } from "./output-redaction.ts";
+import {
+  allowlistedEnvironment,
+  cleanupOnTerminationSignals,
+  createControlDatabase,
+  OwnedDockerFixture,
+  readWorkerTests,
+  runFixtureCommand,
+  startControlPostgres,
+  writePrivateFixture,
+} from "./python-acceptance-fixture.ts";
 
+// Stays JavaScript: the frozen oracle is compiled without declarations and must keep loading
+// from dist; typed fixture lifetime and redaction live in the imported TypeScript helpers.
 const root = fileURLToPath(new URL("../", import.meta.url));
 // The base check excludes exactly these files; this invocation executes them with the Worker closure.
-const workerTests = (await readFile(join(root, "apps/server-python/worker-tests.txt"), "utf8"))
-  .trim()
-  .split("\n");
-assert(workerTests.length > 0 && workerTests.every((path) => path.length > 0));
-assert.equal(new Set(workerTests).size, workerTests.length, "Duplicate Worker test path.");
-for (const path of workerTests)
-  assert(existsSync(join(root, "apps/server-python", path)), `Missing Worker test: ${path}`);
-const image =
-  "postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0";
+const workerTests = await readWorkerTests(root);
+const controlTests = [
+  "tests/test_postgres_integration.py",
+  "tests/test_auth_postgres.py",
+  "tests/test_identity_postgres.py",
+  "tests/test_conversation_postgres.py",
+  "tests/test_message_postgres.py",
+  "tests/test_profile_postgres.py",
+  "tests/test_task_postgres.py",
+  "tests/test_run_command_postgres.py",
+  "tests/test_execution_postgres.py",
+  "tests/test_work_postgres.py",
+  "tests/test_work_effects_postgres.py",
+  "tests/test_work_publication_postgres.py",
+  "tests/test_work_handoff_postgres.py",
+  "tests/test_work_engine_binding_postgres.py",
+  "tests/test_work_temporal_activity.py",
+  "tests/test_work_temporal_effect.py",
+  "tests/test_work_reconciliation_postgres.py",
+  "tests/test_work_corrections_postgres.py",
+  "tests/test_execution_sdk_postgres.py",
+  "tests/test_product_control.py",
+  "tests/test_http_input_lifecycle.py",
+  "tests/test_work_sources_postgres.py",
+  "tests/test_work_command_codec.py",
+  "tests/test_work_command_v2.py",
+  "tests/test_model_settings.py",
+  "tests/test_model_presets.py",
+  "tests/test_skill_yaml.py",
+  "tests/test_employee_knowledge.py",
+  "tests/test_employee_portability.py",
+  "tests/test_automation_store.py",
+  "tests/test_conversation_interactions.py",
+  "tests/test_attachment_processing.py",
+  "tests/test_plugin_service.py",
+  "tests/test_plugin_transport.py",
+  "tests/test_worker_host_identity.py",
+  "tests/test_worker_host_protocol.py",
+  "tests/test_worker_host_socket.py",
+  "tests/test_browser_sessions.py",
+  "tests/test_knowledge_runtime.py",
+  "tests/test_product_extensions.py",
+];
 const name = `openbot-control-${randomBytes(6).toString("hex")}`;
 const password = randomBytes(24).toString("hex");
-const environment = Object.fromEntries(
-  ["PATH", "HOME", "TMPDIR", "DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_CONFIG"]
-    .filter((key) => process.env[key] !== undefined)
-    .map((key) => [key, process.env[key]]),
-);
-let owned = false;
+const environment = allowlistedEnvironment([
+  "PATH",
+  "HOME",
+  "TMPDIR",
+  "DOCKER_HOST",
+  "DOCKER_CONTEXT",
+  "DOCKER_CONFIG",
+]);
+const docker = new OwnedDockerFixture(root, environment);
 let fixtureDirectory;
 let database;
 function run(command, args, options = {}) {
-  const result = spawnSync(command, args, {
-    cwd: root,
-    env: environment,
-    encoding: "utf8",
-    timeout: 120_000,
-    stdio: ["ignore", "pipe", "pipe"],
-    ...options,
-  });
-  if (result.status !== 0 || result.error) throw new Error(`${command} fixture command failed.`);
-  return result.stdout.trim();
+  return runFixtureCommand(command, args, { cwd: root, env: environment, ...options });
 }
-function removeContainer() {
-  if (owned) {
-    const removed = spawnSync("docker", ["rm", "--force", name], {
-      env: environment,
-      stdio: "ignore",
-      timeout: 20_000,
-    });
-    if (removed.status !== 0) console.error(`Could not remove owned fixture ${name}.`);
-    owned = false;
-  }
+// Prints only redacted pytest output; the caller asserts the status after the log is visible.
+function pytest(python, files, env, timeout, redactions) {
+  const result = spawnSync(
+    python,
+    ["-m", "pytest", ...files, "-v", "-o", "faulthandler_timeout=45", "--durations=10"],
+    {
+      cwd: join(root, "apps/server-python"),
+      env,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      timeout,
+    },
+  );
+  console.log(
+    redactFixtureOutput(`${result.stdout ?? ""}${result.stderr ?? ""}`, redactions).trim(),
+  );
+  return result;
 }
-for (const signal of ["SIGINT", "SIGTERM"])
-  process.once(signal, () => {
-    removeContainer();
-    if (fixtureDirectory) rmSync(fixtureDirectory, { recursive: true, force: true });
-    process.exit(signal === "SIGINT" ? 130 : 143);
-  });
+cleanupOnTerminationSignals(() => {
+  docker.cleanup();
+  if (fixtureDirectory) rmSync(fixtureDirectory, { recursive: true, force: true });
+});
 try {
   assert(
     existsSync(join(root, "packages/harness/.venv/bin/python")),
@@ -92,58 +137,7 @@ try {
       ]),
     );
   }
-  run("docker", ["info", "--format", "{{.ServerVersion}}"]);
-  run("docker", [
-    "create",
-    "--name",
-    name,
-    "--publish",
-    "127.0.0.1::5432",
-    "--env",
-    "POSTGRES_USER=openbot_test",
-    "--env",
-    `POSTGRES_PASSWORD=${password}`,
-    "--env",
-    "POSTGRES_DB=openbot_control_test_reference",
-    "--tmpfs",
-    "/var/lib/postgresql/data",
-    image,
-    "-c",
-    "client_min_messages=warning",
-  ]);
-  owned = true;
-  run("docker", ["start", name]);
-  const binding = run("docker", ["port", name, "5432/tcp"]);
-  assert.match(binding, /^127\.0\.0\.1:\d+$/);
-  const dsn = `postgres://openbot_test:${password}@${binding}/openbot_control_test_reference`;
-  let ready = false;
-  for (let attempt = 0; attempt < 60; attempt += 1) {
-    const result = spawnSync(
-      "docker",
-      [
-        "exec",
-        name,
-        "pg_isready",
-        "-h",
-        "127.0.0.1",
-        "-U",
-        "openbot_test",
-        "-d",
-        "openbot_control_test_reference",
-      ],
-      {
-        env: environment,
-        stdio: "ignore",
-        timeout: 5000,
-      },
-    );
-    if (result.status === 0) {
-      ready = true;
-      break;
-    }
-    await delay(250);
-  }
-  assert(ready, "Owned PostgreSQL did not become ready.");
+  const dsn = await startControlPostgres(docker, name, password);
   database = createDatabase(dsn);
   await database.migrate();
   const store = new PostgresControlPlaneStore(database.db);
@@ -257,101 +251,43 @@ try {
   }
   fixtureDirectory = await mkdtemp(join(tmpdir(), "openbot-control-fixture-"));
   const fixture = join(fixtureDirectory, "reference.json");
-  await writeFile(
-    fixture,
-    JSON.stringify({
-      dsn,
-      token,
-      tsRevocableToken,
-      ownerPassword,
-      ownerName: "验收 Owner",
-      expected,
-      botId: bot.id,
-      channelId: messageChannel.id,
-      authResult: join(fixtureDirectory, "auth-result.json"),
-      identityResult: join(fixtureDirectory, "identity-result.json"),
-      conversationResult: join(fixtureDirectory, "conversation-result.json"),
-      profileResult: join(fixtureDirectory, "profile-result.json"),
-      taskResult: join(fixtureDirectory, "task-result.json"),
-      runCommandResult: join(fixtureDirectory, "run-command-result.json"),
-      contextResult: join(fixtureDirectory, "context-result.json"),
-      executionResult: join(fixtureDirectory, "execution-result.json"),
-      artifactDirectory: join(fixtureDirectory, "artifacts"),
-    }),
-    {
-      mode: 0o600,
-    },
-  );
-  const result = spawnSync(
+  await writePrivateFixture(fixture, {
+    dsn,
+    token,
+    tsRevocableToken,
+    ownerPassword,
+    ownerName: "验收 Owner",
+    expected,
+    botId: bot.id,
+    channelId: messageChannel.id,
+    authResult: join(fixtureDirectory, "auth-result.json"),
+    identityResult: join(fixtureDirectory, "identity-result.json"),
+    conversationResult: join(fixtureDirectory, "conversation-result.json"),
+    profileResult: join(fixtureDirectory, "profile-result.json"),
+    taskResult: join(fixtureDirectory, "task-result.json"),
+    runCommandResult: join(fixtureDirectory, "run-command-result.json"),
+    contextResult: join(fixtureDirectory, "context-result.json"),
+    executionResult: join(fixtureDirectory, "execution-result.json"),
+    artifactDirectory: join(fixtureDirectory, "artifacts"),
+  });
+  const result = pytest(
     join(root, "apps/server-python/.venv/bin/python"),
-    [
-      "-m",
-      "pytest",
-      "tests/test_postgres_integration.py",
-      "tests/test_auth_postgres.py",
-      "tests/test_identity_postgres.py",
-      "tests/test_conversation_postgres.py",
-      "tests/test_message_postgres.py",
-      "tests/test_profile_postgres.py",
-      "tests/test_task_postgres.py",
-      "tests/test_run_command_postgres.py",
-      "tests/test_execution_postgres.py",
-      "tests/test_work_postgres.py",
-      "tests/test_work_effects_postgres.py",
-      "tests/test_work_publication_postgres.py",
-      "tests/test_work_handoff_postgres.py",
-      "tests/test_work_engine_binding_postgres.py",
-      "tests/test_work_temporal_activity.py",
-      "tests/test_work_temporal_effect.py",
-      "tests/test_work_reconciliation_postgres.py",
-      "tests/test_work_corrections_postgres.py",
-      "tests/test_execution_sdk_postgres.py",
-      "tests/test_product_control.py",
-      "tests/test_http_input_lifecycle.py",
-      "tests/test_work_sources_postgres.py",
-      "tests/test_work_command_codec.py",
-      "tests/test_work_command_v2.py",
-      "tests/test_model_settings.py",
-      "tests/test_model_presets.py",
-      "tests/test_skill_yaml.py",
-      "tests/test_employee_knowledge.py",
-      "tests/test_employee_portability.py",
-      "tests/test_automation_store.py",
-      "tests/test_conversation_interactions.py",
-      "tests/test_attachment_processing.py",
-      "tests/test_plugin_service.py",
-      "tests/test_plugin_transport.py",
-      "tests/test_worker_host_identity.py",
-      "tests/test_worker_host_protocol.py",
-      "tests/test_worker_host_socket.py",
-      "tests/test_browser_sessions.py",
-      "tests/test_knowledge_runtime.py",
-      "tests/test_product_extensions.py",
-      "-v",
-      "-o",
-      "faulthandler_timeout=45",
-      "--durations=10",
-    ],
+    controlTests,
     {
-      cwd: join(root, "apps/server-python"),
-      env: {
-        ...environment,
-        OPENBOT_CONTROL_TEST_FIXTURE: fixture,
-        OPENBOT_TS_SOURCE_ROOT: root,
-        OPENBOT_PROTOCOL_ORACLE_ROOT: root,
-      },
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-      // The full base profile now contains more than 800 database checks.
-      timeout: 300_000,
+      ...environment,
+      OPENBOT_CONTROL_TEST_FIXTURE: fixture,
+      OPENBOT_TS_SOURCE_ROOT: root,
+      OPENBOT_PROTOCOL_ORACLE_ROOT: root,
     },
+    // The full base profile now contains more than 800 database checks.
+    300_000,
+    [
+      [password, FIXTURE_PASSWORD],
+      [token, FIXTURE_TOKEN],
+      [tsRevocableToken, FIXTURE_TOKEN],
+      [ownerPassword, FIXTURE_PASSWORD],
+    ],
   );
-  const output = `${result.stdout ?? ""}${result.stderr ?? ""}`
-    .replaceAll(password, "[fixture password]")
-    .replaceAll(token, "[fixture token]")
-    .replaceAll(tsRevocableToken, "[fixture token]")
-    .replaceAll(ownerPassword, "[fixture password]");
-  console.log(output.trim());
   assert.equal(
     result.status,
     0,
@@ -360,133 +296,105 @@ try {
   // The full Worker SDK closure is optional in the default control venv. Model-connection
   // tests delete all connections, so their fixture must never share the general database.
   if (process.env.OPENBOT_TEMPORAL_TEST_PYTHON) {
-    run("docker", [
-      "exec",
-      name,
-      "createdb",
-      "--username=openbot_test",
-      "--no-password",
-      "--template=template0",
-      "openbot_control_test_model_connections",
-    ]);
-    const modelDsn = new URL(dsn);
-    modelDsn.pathname = "/openbot_control_test_model_connections";
+    // Each dedicated database is created, migrated, history-checked, given its own Owner
+    // session and closed before the Worker run; only its 0600 descriptor reaches Python.
+    const createIsolatedFixture = async (
+      databaseName,
+      ownerName,
+      sessionSeed,
+      historyMessage,
+      fixturePath,
+      describe,
+    ) => {
+      const isolatedDsn = createControlDatabase(docker, name, dsn, databaseName);
+      const isolatedDatabase = createDatabase(isolatedDsn);
+      try {
+        await isolatedDatabase.migrate();
+        assert.deepEqual(
+          Array.from(
+            await isolatedDatabase.client`SELECT hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id`,
+          ),
+          Array.from(
+            await database.client`SELECT hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id`,
+          ),
+          historyMessage,
+        );
+        const isolatedAuth = new OwnerAuthService(
+          new PostgresOwnerSessionStore(isolatedDatabase.db),
+          { ownerName, ownerPassword, sessionTtlMs: 1_800_000 },
+          new RequestThrottle(new PostgresRequestThrottleStore(isolatedDatabase.db)),
+        );
+        const { token: isolatedToken } = await isolatedAuth.login(
+          ownerPassword,
+          createHash("sha256").update(sessionSeed).digest("hex"),
+        );
+        await writePrivateFixture(
+          fixturePath,
+          await describe(isolatedDatabase, isolatedDsn, isolatedToken),
+        );
+        return isolatedToken;
+      } finally {
+        await isolatedDatabase.close();
+      }
+    };
     const modelFixture = join(fixtureDirectory, "model-connections.json");
-    const modelDatabase = createDatabase(modelDsn.href);
-    let modelToken;
-    try {
-      await modelDatabase.migrate();
-      assert.deepEqual(
-        Array.from(
-          await modelDatabase.client`SELECT hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id`,
-        ),
-        Array.from(
-          await database.client`SELECT hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id`,
-        ),
-        "The dedicated model fixture must have the complete canonical migration history.",
-      );
-      const modelAuth = new OwnerAuthService(
-        new PostgresOwnerSessionStore(modelDatabase.db),
-        { ownerName: "Model fixture Owner", ownerPassword, sessionTtlMs: 1_800_000 },
-        new RequestThrottle(new PostgresRequestThrottleStore(modelDatabase.db)),
-      );
-      ({ token: modelToken } = await modelAuth.login(
-        ownerPassword,
-        createHash("sha256").update("owned-model-connection-fixture").digest("hex"),
-      ));
-      const modelChannel = await new PostgresControlPlaneStore(modelDatabase.db).createChannel({
-        name: "Isolated model fixture",
-        description: "Synthetic model-connection tests only",
-        botIds: [],
-      });
-      await writeFile(
-        modelFixture,
-        JSON.stringify({ dsn: modelDsn.href, token: modelToken, channelId: modelChannel.id }),
-        { mode: 0o600 },
-      );
-    } finally {
-      await modelDatabase.close();
-    }
-    // Command authority tests need a dedicated disposable source/profile database too.
-    // Reuse this invocation's owned PostgreSQL lifecycle; never share the model-delete fixture.
-    run("docker", [
-      "exec",
-      name,
-      "createdb",
-      "--username=openbot_test",
-      "--no-password",
-      "--template=template0",
-      "openbot_control_test_commands",
-    ]);
-    const commandDsn = new URL(dsn);
-    commandDsn.pathname = "/openbot_control_test_commands";
-    const commandFixture = join(fixtureDirectory, "commands.json");
-    const commandDatabase = createDatabase(commandDsn.href);
-    let commandToken;
-    try {
-      await commandDatabase.migrate();
-      assert.deepEqual(
-        Array.from(
-          await commandDatabase.client`SELECT hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id`,
-        ),
-        Array.from(
-          await database.client`SELECT hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id`,
-        ),
-        "The command fixture must have the complete canonical migration history.",
-      );
-      const commandAuth = new OwnerAuthService(
-        new PostgresOwnerSessionStore(commandDatabase.db),
-        { ownerName: "Command fixture Owner", ownerPassword, sessionTtlMs: 1_800_000 },
-        new RequestThrottle(new PostgresRequestThrottleStore(commandDatabase.db)),
-      );
-      ({ token: commandToken } = await commandAuth.login(
-        ownerPassword,
-        createHash("sha256").update("owned-command-authority-fixture").digest("hex"),
-      ));
-      await writeFile(
-        commandFixture,
-        JSON.stringify({
-          dsn: commandDsn.href,
-          token: commandToken,
-          fixtureKind: "work-command-authority",
-        }),
-        { mode: 0o600 },
-      );
-    } finally {
-      await commandDatabase.close();
-    }
-    const temporal = spawnSync(
-      process.env.OPENBOT_TEMPORAL_TEST_PYTHON,
-      ["-m", "pytest", ...workerTests, "-v", "-o", "faulthandler_timeout=45", "--durations=10"],
-      {
-        cwd: join(root, "apps/server-python"),
-        env: {
-          ...environment,
-          OPENBOT_CONTROL_TEST_FIXTURE: fixture,
-          OPENBOT_MODEL_CONNECTION_TEST_FIXTURE: modelFixture,
-          OPENBOT_MODEL_CONNECTION_SOURCE_ROOT: root,
-          OPENBOT_COMMAND_TEST_FIXTURE: commandFixture,
-          PYTHONPATH: [
-            join(root, "experiments/work-journey"),
-            join(root, "experiments/linux-execution"),
-            join(root, "apps/server-python/src"),
-          ].join(delimiter),
-        },
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "pipe"],
-        // The 1,527-case Worker profile takes 607s on the pinned Node/Python toolchain.
-        // Keep a bounded runner and the 45s faulthandler; per-operation limits stay unchanged.
-        timeout: 900_000,
+    const modelToken = await createIsolatedFixture(
+      "openbot_control_test_model_connections",
+      "Model fixture Owner",
+      "owned-model-connection-fixture",
+      "The dedicated model fixture must have the complete canonical migration history.",
+      modelFixture,
+      async (modelDatabase, modelDsn, sessionToken) => {
+        const modelChannel = await new PostgresControlPlaneStore(modelDatabase.db).createChannel({
+          name: "Isolated model fixture",
+          description: "Synthetic model-connection tests only",
+          botIds: [],
+        });
+        return { dsn: modelDsn, token: sessionToken, channelId: modelChannel.id };
       },
     );
-    const temporalOutput = `${temporal.stdout ?? ""}${temporal.stderr ?? ""}`
-      .replaceAll(password, "[fixture password]")
-      .replaceAll(token, "[fixture token]")
-      .replaceAll(modelToken, "[fixture token]")
-      .replaceAll(commandToken, "[fixture token]")
-      .replaceAll(tsRevocableToken, "[fixture token]")
-      .replaceAll(ownerPassword, "[fixture password]");
-    console.log(temporalOutput.trim());
+    // Command authority tests need a dedicated disposable source/profile database too.
+    // Reuse this invocation's owned PostgreSQL lifecycle; never share the model-delete fixture.
+    const commandFixture = join(fixtureDirectory, "commands.json");
+    const commandToken = await createIsolatedFixture(
+      "openbot_control_test_commands",
+      "Command fixture Owner",
+      "owned-command-authority-fixture",
+      "The command fixture must have the complete canonical migration history.",
+      commandFixture,
+      async (_commandDatabase, commandDsn, sessionToken) => ({
+        dsn: commandDsn,
+        token: sessionToken,
+        fixtureKind: "work-command-authority",
+      }),
+    );
+    const temporal = pytest(
+      process.env.OPENBOT_TEMPORAL_TEST_PYTHON,
+      workerTests,
+      {
+        ...environment,
+        OPENBOT_CONTROL_TEST_FIXTURE: fixture,
+        OPENBOT_MODEL_CONNECTION_TEST_FIXTURE: modelFixture,
+        OPENBOT_MODEL_CONNECTION_SOURCE_ROOT: root,
+        OPENBOT_COMMAND_TEST_FIXTURE: commandFixture,
+        PYTHONPATH: [
+          join(root, "experiments/work-journey"),
+          join(root, "experiments/linux-execution"),
+          join(root, "apps/server-python/src"),
+        ].join(delimiter),
+      },
+      // The 1,527-case Worker profile takes 607s on the pinned Node/Python toolchain.
+      // Keep a bounded runner and the 45s faulthandler; per-operation limits stay unchanged.
+      900_000,
+      [
+        [password, FIXTURE_PASSWORD],
+        [token, FIXTURE_TOKEN],
+        [modelToken, FIXTURE_TOKEN],
+        [commandToken, FIXTURE_TOKEN],
+        [tsRevocableToken, FIXTURE_TOKEN],
+        [ownerPassword, FIXTURE_PASSWORD],
+      ],
+    );
     assert.equal(temporal.status, 0, "Worker/model-connection PostgreSQL checks failed.");
   } else {
     console.log(
@@ -641,7 +549,7 @@ try {
   try {
     if (database) await database.close();
   } finally {
-    removeContainer();
+    docker.cleanup();
     if (fixtureDirectory) await rm(fixtureDirectory, { recursive: true, force: true });
   }
 }

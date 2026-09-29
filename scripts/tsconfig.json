@@ -10,6 +10,7 @@
   "include": [
     "**/*.ts",
     "../apps/desktop/scripts/**/*.ts",
+    "../apps/server-python/scripts/*.ts",
     "../deploy/server/*.ts",
     "../experiments/work-journey/desktop-temporal/*.ts"
   ],
