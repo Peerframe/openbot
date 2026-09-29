@@ -77,4 +77,4 @@ its unused evaluator has been removed. Current tool selection, admission and app
 are enforced by Python `work_product_runtime`, the per-tool adapters and `work_store` /
 `work_effects`. Removing the old package does not change these checks or revive Node authority.
 The historical rationale above remains intact; see the [current code map](../REPOSITORY_MAP.md)
-and [cleanup evidence](../CLEANUP_2026-09-28.md).
+and [accepted cleanup evidence](https://github.com/Peerframe/openbot/pull/104).

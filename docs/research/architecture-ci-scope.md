@@ -86,6 +86,7 @@ now lives in `scripts/ci-selection.ts`; Git/event input, aggregate and actual ch
 separate typed consumers. All four manual MJS implementations exit together with package/workflow
 and guard updates. Existing supported Node executes erasable TS directly; no loader, dependency,
 new graph authority or prebuild is added. Malformed present PR events remain fail-closed. Original
-assertions and per-path differential verification are recorded in [the cleanup ledger](../CLEANUP_2026-09-28.md).
-No upstream source copied or dependency/pin changed. Hosted workflow execution remains unverified
-without remote-write authorization; local gate success does not claim hosted qualification.
+assertions remain in `scripts/ci-scope.test.ts`; revision-specific differential and hosted results
+are recorded in [PR104](https://github.com/Peerframe/openbot/pull/104).
+No upstream source copied or dependency/pin changed. Local gate success and hosted qualification
+are reported separately against the revision each actually tested.
