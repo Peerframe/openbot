@@ -38,14 +38,6 @@
   width: 20px;
   height: 20px;
 }
-.workspace-actions button[aria-current="page"] {
-  background: #e8edf1;
-  color: #202c3b;
-}
-.workspace-actions button {
-  -webkit-app-region: no-drag;
-  app-region: no-drag;
-}
 .app-shell .rich-message,
 .app-shell .message-content p,
 .app-shell .message-composer textarea {
@@ -63,10 +55,6 @@
 :root[data-density="compact"] .app-shell .sidebar-row {
   min-height: 34px;
   padding-block: 5px;
-}
-:root[data-density="compact"] .app-shell .workspace-actions button {
-  min-height: 34px;
-  padding-block: 6px;
 }
 :root[data-reduced-motion="true"] *,
 :root[data-reduced-motion="true"] *::before,
