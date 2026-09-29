@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
-import { collectProductionPackageGraph } from "../../../scripts/node-linux-release.mjs";
+import { collectProductionPackageGraph } from "../../../scripts/production-package-graph.ts";
 import {
   NODE_ARCHIVE,
   PYTHON_ARCHIVE,

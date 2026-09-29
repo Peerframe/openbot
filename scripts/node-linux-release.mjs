@@ -13,6 +13,7 @@ import {
 } from "node:fs/promises";
 import { builtinModules } from "node:module";
 import path from "node:path";
+import { collectProductionPackageGraph } from "./production-package-graph.ts";
 
 export const NODE_RUNTIME_VERSION = "22.22.2";
 export const NCC_VERSION = "0.45.0";
@@ -201,71 +202,6 @@ export async function verifyNodeRuntimeArchive(filePath, architecture) {
   if (actual !== target.sha256)
     throw new Error("Node runtime archive SHA-256 does not match the pin.");
   return target;
-}
-
-export function collectProductionPackageGraph(lockfile, entryPoint = "apps/node") {
-  if (!["apps/node", "apps/server", "packages/python-node-runtime"].includes(entryPoint)) {
-    throw new Error("Unsupported production entry point.");
-  }
-  if (lockfile?.lockfileVersion !== 3 || !isRecord(lockfile.packages)) {
-    throw new Error("Release packaging requires an npm lockfileVersion 3 package graph.");
-  }
-  const packages = lockfile.packages;
-  const workspaceByName = new Map();
-  for (const [packageKey, entry] of Object.entries(packages)) {
-    if (packageKey !== "" && !packageKey.includes("node_modules") && isRecord(entry)) {
-      if (typeof entry.name !== "string" || workspaceByName.has(entry.name)) {
-        throw new Error("Workspace package names must be present and unique.");
-      }
-      workspaceByName.set(entry.name, packageKey);
-    }
-  }
-
-  const workspaceKeys = new Set();
-  const packageKeys = new Set();
-  const visiting = new Set();
-
-  const visit = (packageKey) => {
-    if (workspaceKeys.has(packageKey) || packageKeys.has(packageKey)) return;
-    if (visiting.has(packageKey))
-      throw new Error(`Dependency cycle is ambiguous at ${packageKey}.`);
-    const entry = packages[packageKey];
-    if (!isRecord(entry)) throw new Error(`Dependency lock entry is missing: ${packageKey}.`);
-    if (entry.dev === true)
-      throw new Error(`Production dependency is marked development-only: ${packageKey}.`);
-    visiting.add(packageKey);
-    if (packageKey.includes("node_modules")) packageKeys.add(packageKey);
-    else workspaceKeys.add(packageKey);
-
-    for (const dependencyName of Object.keys(entry.dependencies ?? {}).sort()) {
-      const workspaceKey = workspaceByName.get(dependencyName);
-      if (workspaceKey !== undefined) {
-        const link = packages[`node_modules/${dependencyName}`];
-        if (!isRecord(link) || link.link !== true || link.resolved !== workspaceKey) {
-          throw new Error(`Workspace dependency link is invalid: ${dependencyName}.`);
-        }
-        visit(workspaceKey);
-        continue;
-      }
-      const dependencyKey = resolvePackageKey(packages, packageKey, dependencyName);
-      if (dependencyKey === undefined) {
-        throw new Error(`Production dependency is unresolved: ${packageKey} -> ${dependencyName}.`);
-      }
-      visit(dependencyKey);
-    }
-
-    for (const dependencyName of Object.keys(entry.optionalDependencies ?? {}).sort()) {
-      const dependencyKey = resolvePackageKey(packages, packageKey, dependencyName);
-      if (dependencyKey !== undefined) visit(dependencyKey);
-    }
-    visiting.delete(packageKey);
-  };
-
-  visit(entryPoint);
-  return {
-    workspaceKeys: [...workspaceKeys].sort(),
-    packageKeys: [...packageKeys].sort(),
-  };
 }
 
 export async function writeProductionSbomProjection({ destination, lockfile, version }) {
@@ -703,19 +639,6 @@ export async function verifyChecksums(root, source) {
     throw new Error("Release checksum file is not canonical.");
   }
   return paths;
-}
-
-function resolvePackageKey(packages, fromKey, dependencyName) {
-  let cursor = fromKey;
-  while (cursor !== "") {
-    const nested = `${cursor}/node_modules/${dependencyName}`;
-    if (isRecord(packages[nested]) && packages[nested].link !== true) return nested;
-    const marker = cursor.lastIndexOf("/node_modules/");
-    if (marker === -1) break;
-    cursor = cursor.slice(0, marker);
-  }
-  const root = `node_modules/${dependencyName}`;
-  return isRecord(packages[root]) && packages[root].link !== true ? root : undefined;
 }
 
 function projectPackageEntry(entry, workspace) {

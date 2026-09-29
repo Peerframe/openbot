@@ -4,7 +4,7 @@ WORKDIR /workspace
 
 FROM product-node AS product-projection
 COPY package-lock.json ./
-COPY scripts/node-linux-release.mjs ./scripts/node-linux-release.mjs
+COPY scripts/production-package-graph.ts ./scripts/production-package-graph.ts
 COPY deploy/server/product-node-project.mjs ./deploy/server/product-node-project.mjs
 COPY packages/python-node-runtime/package.json ./packages/python-node-runtime/package.json
 COPY packages/db/package.json ./packages/db/package.json

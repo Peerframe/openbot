@@ -4,7 +4,7 @@
 !LICENSE
 !THIRD_PARTY_NOTICES.md
 !scripts/
-!scripts/node-linux-release.mjs
+!scripts/production-package-graph.ts
 !deploy/
 !deploy/server/
 !deploy/server/product-*.mjs

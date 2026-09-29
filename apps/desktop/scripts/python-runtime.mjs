@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { cp, mkdir, open, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { collectProductionPackageGraph } from "../../../scripts/node-linux-release.mjs";
+import { collectProductionPackageGraph } from "../../../scripts/production-package-graph.ts";
 import { stageInstalledHarness } from "./harness-wheel.mjs";
 import { validateContainedResource } from "./package-resources.mjs";
 

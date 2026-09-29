@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { collectProductionPackageGraph } from "./production-package-graph.ts";
 import {
   NCC_VERSION,
   NODE_RUNTIME_TARGETS,
@@ -14,7 +15,6 @@ import {
   assertSourceDateEpoch,
   assertSourceTreeState,
   canonicalizeSpdxSbom,
-  collectProductionPackageGraph,
   createFileManifest,
   deterministicTarArguments,
   deterministicXzArguments,

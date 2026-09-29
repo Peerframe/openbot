@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { project, writeProjection } from "./product-node-project.mjs";
-import { collectProductionPackageGraph } from "../../scripts/node-linux-release.mjs";
+import { collectProductionPackageGraph } from "../../scripts/production-package-graph.ts";
 const root = resolve(
   process.env.OPENBOT_CONTAINER_SOURCE ?? fileURLToPath(new URL("../..", import.meta.url)),
 );

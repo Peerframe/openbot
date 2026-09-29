@@ -2,7 +2,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { collectProductionPackageGraph } from "../../scripts/node-linux-release.mjs";
+import { collectProductionPackageGraph } from "../../scripts/production-package-graph.ts";
 
 const ENTRY = "packages/python-node-runtime";
 const WORKSPACES = ["packages/db", ENTRY, "packages/domain", "packages/protocol", "apps/web"];
