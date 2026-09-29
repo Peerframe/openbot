@@ -4,11 +4,8 @@ import { lstat, mkdtemp, mkdir, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  assertSourceCommit,
-  assertSourceTreeState,
-  validateNccStats,
-} from "./node-linux-release.mjs";
+import { assertSourceCommit, assertSourceTreeState } from "./release-source.ts";
+import { validateNccStats } from "./node-linux-release.ts";
 import {
   assertMacOSExtendedAttributes,
   inspectMachOArchitecture,

@@ -12,7 +12,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import path from "node:path";
-import { assertReleaseVersion, assertSourceCommit, sha256File } from "./node-linux-release.mjs";
+import { assertReleaseVersion, assertSourceCommit, sha256File } from "./release-source.ts";
 
 export const MACOS_RUNTIME_TARGETS = Object.freeze({
   arm64: Object.freeze({

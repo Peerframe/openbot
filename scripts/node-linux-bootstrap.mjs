@@ -13,7 +13,7 @@ import {
 } from "./node-linux-install-transaction.mjs";
 import { prepareLinuxPrivilegedInstallerLayout } from "./node-linux-privileged-layout.mjs";
 import { verifyLinuxReleaseProvenance } from "./node-linux-provenance.mjs";
-import { assertReleaseVersion, assertSourceCommit } from "./node-linux-release.mjs";
+import { assertReleaseVersion, assertSourceCommit } from "./release-source.ts";
 import { createLinuxSystemdServiceAdapter } from "./node-linux-systemd.mjs";
 
 const layoutKeys = Object.freeze([

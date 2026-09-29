@@ -13,17 +13,17 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { sha256File } from "./release-source.ts";
 import {
   deterministicTarArguments,
   deterministicXzArguments,
   parseDpkgPackageVersions,
   parseOsRelease,
-  sha256File,
   validateLinuxArchiveToolchain,
   validateLinuxArchiveToolPaths,
   verifyCandidateDirectory,
   writeChecksums,
-} from "./node-linux-release.mjs";
+} from "./node-linux-release.ts";
 
 if (process.platform !== "linux") {
   throw new Error("Linux release archives can only be created on Linux.");

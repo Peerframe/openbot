@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { nodeMessageSchema, protocolVersion } from "@openbot/protocol";
 import { WebSocketServer } from "ws";
-import { validatePackagedNodeHello, verifyCandidateDirectory } from "./node-linux-release.mjs";
+import { validatePackagedNodeHello, verifyCandidateDirectory } from "./node-linux-release.ts";
 
 if (process.platform !== "linux") {
   throw new Error("Packaged Linux runtime smoke tests can only run on Linux.");

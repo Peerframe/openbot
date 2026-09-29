@@ -2,10 +2,7 @@ import { constants } from "node:fs";
 import { lstat, open, rm, unlink } from "node:fs/promises";
 import path from "node:path";
 import { assertLinuxInstallLease } from "./node-linux-install-lease.mjs";
-import {
-  LINUX_RELEASE_ARCHIVE_BOUNDS,
-  sha256BoundedRegularFile,
-} from "./node-linux-release.mjs";
+import { LINUX_RELEASE_ARCHIVE_BOUNDS, sha256BoundedRegularFile } from "./node-linux-release.ts";
 
 export const LINUX_ARCHIVE_IMPORT_BOUNDS = LINUX_RELEASE_ARCHIVE_BOUNDS;
 
@@ -43,10 +40,7 @@ export async function importLinuxReleaseArchive(options) {
   // proves only that two reads observed the same bytes — source authenticity still requires
   // later attestation. The later source reopen must use the same fixed flags so a post-digest
   // FIFO/symlink swap cannot hang the injectable (or default) openFile path.
-  const sourceDigest = await sha256BoundedRegularFile(
-    sourcePath,
-    LINUX_ARCHIVE_IMPORT_BOUNDS,
-  );
+  const sourceDigest = await sha256BoundedRegularFile(sourcePath, LINUX_ARCHIVE_IMPORT_BOUNDS);
 
   let sourceHandle;
   let destinationHandle;
@@ -91,10 +85,7 @@ export async function importLinuxReleaseArchive(options) {
 
     await destinationHandle.close();
     destinationHandle = undefined;
-    const archiveSha256 = await sha256BoundedRegularFile(
-      archivePath,
-      LINUX_ARCHIVE_IMPORT_BOUNDS,
-    );
+    const archiveSha256 = await sha256BoundedRegularFile(archivePath, LINUX_ARCHIVE_IMPORT_BOUNDS);
     if (archiveSha256 !== sourceDigest) {
       throw new Error("Linux archive import source changed while it was opened.");
     }

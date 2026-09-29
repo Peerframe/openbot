@@ -2,13 +2,8 @@ import { lstat, readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { validateLinuxInstallProvenance } from "./node-linux-install-transaction.mjs";
 import { runBoundedCommand } from "./node-linux-provenance.mjs";
-import {
-  assertReleaseVersion,
-  assertSourceCommit,
-  LINUX_RELEASE_ARCHIVE_BOUNDS,
-  sha256File,
-  verifyCandidateDirectory,
-} from "./node-linux-release.mjs";
+import { assertReleaseVersion, assertSourceCommit, sha256File } from "./release-source.ts";
+import { LINUX_RELEASE_ARCHIVE_BOUNDS, verifyCandidateDirectory } from "./node-linux-release.ts";
 
 export const LINUX_ARCHIVE_EXTRACTION_TOOLS = Object.freeze({
   gnuTar: "/usr/bin/tar",

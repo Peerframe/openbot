@@ -23,12 +23,8 @@ import {
   LINUX_INSTALL_PROVENANCE_POLICY,
   linuxProvenanceCertificateIdentity,
 } from "./node-linux-install-transaction.mjs";
-import {
-  createFileManifest,
-  listRegularFiles,
-  sha256File,
-  writeChecksums,
-} from "./node-linux-release.mjs";
+import { sha256File } from "./release-source.ts";
+import { createFileManifest, listRegularFiles, writeChecksums } from "./node-linux-release.ts";
 
 const version = "1.2.3";
 const sourceCommit = "a".repeat(40);

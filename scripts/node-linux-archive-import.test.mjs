@@ -23,16 +23,13 @@ import {
   removeImportedLinuxReleaseArchive,
 } from "./node-linux-archive-import.mjs";
 import { withLinuxInstallLease } from "./node-linux-install-lease.mjs";
-import { sha256BoundedRegularFile } from "./node-linux-release.mjs";
+import { sha256BoundedRegularFile } from "./node-linux-release.ts";
 
 const execFileAsync = promisify(execFile);
 const importModulePath = fileURLToPath(new URL("./node-linux-archive-import.mjs", import.meta.url));
 const leaseModulePath = fileURLToPath(new URL("./node-linux-install-lease.mjs", import.meta.url));
 
-const importIds = [
-  "00000000-0000-4000-8000-000000000001",
-  "00000000-0000-4000-8000-000000000002",
-];
+const importIds = ["00000000-0000-4000-8000-000000000001", "00000000-0000-4000-8000-000000000002"];
 
 test("imports and removes exact bytes only while the private lease is held", async () => {
   const fixture = await createFixture();
@@ -119,10 +116,7 @@ test("rejects symlink, undersized, and changed sources before retaining an impor
 test("exclusive import never overwrites an existing private path", async () => {
   const fixture = await createFixture();
   const sourcePath = await createSparseArchive(fixture.root, "source.tar.xz");
-  const destination = path.join(
-    fixture.importsRoot,
-    `openbot-node-import-${importIds[0]}.tar.xz`,
-  );
+  const destination = path.join(fixture.importsRoot, `openbot-node-import-${importIds[0]}.tar.xz`);
   await writeFile(destination, "keep", { mode: 0o600 });
 
   await withLinuxInstallLease({ stateRoot: fixture.stateRoot }, async (installLease) => {
@@ -163,7 +157,6 @@ test("cleanup preserves imported bytes when the expected digest is wrong", async
     assert.equal((await lstat(imported.archivePath)).isFile(), true);
   });
 });
-
 
 test("pre-digest rejects symlink, FIFO, and oversize or growing sources", async () => {
   const fixture = await createFixture();

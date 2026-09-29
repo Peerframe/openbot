@@ -13,7 +13,7 @@ import {
   runBoundedCommand,
   verifyLinuxReleaseProvenance,
 } from "./node-linux-provenance.mjs";
-import { sha256File } from "./node-linux-release.mjs";
+import { sha256File } from "./release-source.ts";
 
 const version = "1.2.3";
 const sourceCommit = "a".repeat(40);

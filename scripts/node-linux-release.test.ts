@@ -6,19 +6,22 @@ import path from "node:path";
 import test from "node:test";
 import { collectProductionPackageGraph } from "./production-package-graph.ts";
 import {
-  NCC_VERSION,
-  NODE_RUNTIME_TARGETS,
-  NODE_RUNTIME_VERSION,
-  RELEASE_NPM_VERSION,
   assertReleaseVersion,
   assertSourceCommit,
   assertSourceDateEpoch,
   assertSourceTreeState,
+} from "./release-source.ts";
+import {
+  NCC_VERSION,
+  NODE_RUNTIME_TARGETS,
+  NODE_RUNTIME_VERSION,
+  RELEASE_NPM_VERSION,
   canonicalizeSpdxSbom,
   createFileManifest,
   deterministicTarArguments,
   deterministicXzArguments,
   listRegularFiles,
+  linuxInstalledReleaseName,
   parseDpkgPackageVersions,
   parseOsRelease,
   validateNccStats,
@@ -31,7 +34,7 @@ import {
   verifyNodeRuntimeArchive,
   writeChecksums,
   writeProductionSbomProjection,
-} from "./node-linux-release.mjs";
+} from "./node-linux-release.ts";
 
 const repositoryRoot = path.resolve(new URL("..", import.meta.url).pathname);
 const lockfile = JSON.parse(await readFile(path.join(repositoryRoot, "package-lock.json"), "utf8"));
@@ -113,14 +116,16 @@ test("emits an npm-readable production-only SPDX projection", async () => {
     { cwd: directory, encoding: "utf8", maxBuffer: 8 * 1024 * 1024 },
   );
   const sbom = validateSpdxSbom(JSON.parse(output), graph, lockfile);
-  const names = new Set(sbom.packages.map((entry) => entry.name));
+  const names = new Set(sbom.packages.map((entry) => record(entry).name));
   assert.ok(names.has("@openbot/node"));
   assert.ok(names.has("write-file-atomic"));
   assert.ok(!names.has("@openbot/provider-cua"));
   assert.ok(!names.has("vitest"));
   const npmVersion = execFileSync(npmCommand, ["--version"], { encoding: "utf8" }).trim();
   const canonicalInput = structuredClone(sbom);
-  canonicalInput.creationInfo.creators = canonicalInput.creationInfo.creators.map((creator) =>
+  const creationInfo = record(canonicalInput.creationInfo);
+  assert.ok(Array.isArray(creationInfo.creators));
+  creationInfo.creators = creationInfo.creators.map((creator: unknown) =>
     creator === `Tool: npm/cli-${npmVersion}` ? `Tool: npm/cli-${RELEASE_NPM_VERSION}` : creator,
   );
   const canonical = canonicalizeSpdxSbom(canonicalInput, {
@@ -129,7 +134,7 @@ test("emits an npm-readable production-only SPDX projection", async () => {
     sourceCommit: "d".repeat(40),
     sourceDateEpoch: 1_700_000_000,
   });
-  assert.equal(canonical.creationInfo.created, "2023-11-14T22:13:20.000Z");
+  assert.equal(record(canonical.creationInfo).created, "2023-11-14T22:13:20.000Z");
   assert.equal(
     canonical.documentNamespace,
     `https://openbot.dev/spdx/openbot-node/1.2.3-test.1/linux/x64/${"d".repeat(40)}`,
@@ -178,6 +183,11 @@ test("accepts only the reviewed ncc assets, builtins, stubs, and internal notice
     /non-builtin dependency external/,
   );
   assert.throws(() => validateNccStats(stats, [...outputs, "surprise.node"]), /unexpected files/);
+  assert.throws(
+    () => validateNccStats({ ...stats, modules: "external module" }, outputs),
+    /unexpected module set/,
+  );
+  assert.throws(() => validateNccStats({ ...stats, assets: {} }, outputs), /unexpected asset set/);
 });
 
 test("builds a canonical bounded file manifest and checksums", async () => {
@@ -391,3 +401,72 @@ test("accepts only a least-authority packaged Node smoke hello", () => {
     /identity/,
   );
 });
+
+test("rejects inherited architecture keys before accessing release paths", async () => {
+  const metadata = { version: "1.2.3", sourceCommit: "a".repeat(40), sourceDateEpoch: 1 };
+  for (const architecture of ["constructor", "toString", "__proto__"]) {
+    await assert.rejects(
+      verifyNodeRuntimeArchive("missing", architecture),
+      /architecture must be x64 or arm64/,
+    );
+    await assert.rejects(
+      createFileManifest("missing", { ...metadata, architecture }),
+      /architecture must be x64 or arm64/,
+    );
+    assert.throws(
+      () => linuxInstalledReleaseName({ ...metadata, architecture, platform: "linux" }),
+      /architecture must be x64 or arm64/,
+    );
+    assert.throws(
+      () => canonicalizeSpdxSbom({}, { ...metadata, architecture }),
+      /architecture must be x64 or arm64/,
+    );
+  }
+});
+
+test("keeps malformed SBOM structures outside typed release results", () => {
+  const metadata = {
+    architecture: "x64",
+    version: "1.2.3",
+    sourceCommit: "a".repeat(40),
+    sourceDateEpoch: 1,
+  };
+  const base = {
+    creationInfo: { creators: [`Tool: npm/cli-${RELEASE_NPM_VERSION}`] },
+    packages: [],
+  };
+  for (const malformed of [
+    { ...base, packages: {} },
+    { ...base, packages: [null] },
+    { ...base, packages: [[]] },
+    { ...base, relationships: [null] },
+  ])
+    assert.throws(() => canonicalizeSpdxSbom(malformed, metadata), /SPDX 2.3/);
+  assert.throws(
+    () =>
+      validateSpdxSbom(
+        { spdxVersion: "SPDX-2.3", packages: [] },
+        { packageKeys: [], workspaceKeys: [] },
+        {},
+      ),
+    /lockfileVersion 3/,
+  );
+});
+
+test("does not coerce archive package revisions into trusted strings", () => {
+  assert.throws(
+    () =>
+      validateLinuxArchiveToolchain({
+        osRelease: { ID: "ubuntu", VERSION_ID: "24.04" },
+        tarVersion: "tar (GNU tar) 1.35",
+        xzVersion: "xz (XZ Utils) 5.4.5",
+        packageVersions: { tar: 123, "xz-utils": "5.4.5" },
+      }),
+    /package revisions/,
+  );
+});
+
+function record(value: unknown): Record<string, unknown> {
+  assert.ok(typeof value === "object" && value !== null && !Array.isArray(value));
+  return value as Record<string, unknown>;
+}

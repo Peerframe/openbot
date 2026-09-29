@@ -5,12 +5,14 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  NCC_VERSION,
-  RELEASE_NPM_VERSION,
   assertSourceDateEpoch,
   assertSourceTreeState,
   assertReleaseVersion,
   assertSourceCommit,
+} from "./release-source.ts";
+import {
+  NCC_VERSION,
+  RELEASE_NPM_VERSION,
   canonicalizeSpdxSbom,
   copyReleaseFile,
   createFileManifest,
@@ -20,7 +22,7 @@ import {
   verifyNodeRuntimeArchive,
   writeChecksums,
   writeProductionSbomProjection,
-} from "./node-linux-release.mjs";
+} from "./node-linux-release.ts";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const options = parseArguments(process.argv.slice(2));

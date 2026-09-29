@@ -5,12 +5,8 @@ import {
   LINUX_INSTALL_PROVENANCE_POLICY,
   linuxProvenanceCertificateIdentity,
 } from "./node-linux-install-transaction.mjs";
-import {
-  assertReleaseVersion,
-  assertSourceCommit,
-  LINUX_RELEASE_ARCHIVE_BOUNDS,
-  sha256File,
-} from "./node-linux-release.mjs";
+import { assertReleaseVersion, assertSourceCommit, sha256File } from "./release-source.ts";
+import { LINUX_RELEASE_ARCHIVE_BOUNDS } from "./node-linux-release.ts";
 
 export const LINUX_PROVENANCE_VERIFIER = Object.freeze({
   executable: "/usr/bin/gh",

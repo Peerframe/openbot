@@ -27,7 +27,7 @@ import {
   linuxInstalledReleaseName,
   listRegularFiles,
   writeChecksums,
-} from "./node-linux-release.mjs";
+} from "./node-linux-release.ts";
 
 const fixedTime = new Date("2026-09-04T00:00:00.000Z");
 const transactionIds = [

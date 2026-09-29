@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { constants, createReadStream } from "node:fs";
+import { constants } from "node:fs";
 import {
   chmod,
   copyFile,
@@ -13,28 +13,119 @@ import {
 } from "node:fs/promises";
 import { builtinModules } from "node:module";
 import path from "node:path";
-import { collectProductionPackageGraph } from "./production-package-graph.ts";
+import {
+  collectProductionPackageGraph,
+  type ProductionPackageGraph,
+} from "./production-package-graph.ts";
+
+import {
+  assertReleaseVersion,
+  assertSourceCommit,
+  assertSourceDateEpoch,
+  sha256File,
+} from "./release-source.ts";
+
+export interface ByteBounds {
+  readonly maximumBytes: number;
+  readonly minimumBytes: number;
+}
+export type LinuxArchitecture = "x64" | "arm64";
+export interface NodeRuntimeTarget {
+  readonly directory: string;
+  readonly filename: string;
+  readonly sha256: string;
+}
+/** Caller and manifest fields are validated before they become release metadata. */
+export interface LinuxReleaseMetadata {
+  readonly architecture: unknown;
+  readonly version: unknown;
+  readonly sourceCommit: unknown;
+  readonly sourceDateEpoch: unknown;
+}
+export interface LinuxReleaseFileEntry {
+  readonly path: string;
+  readonly size: number;
+  readonly mode: string;
+  readonly sha256: string;
+}
+export interface LinuxReleaseManifest {
+  readonly schemaVersion: 1;
+  readonly product: "openbot-node";
+  readonly platform: "linux";
+  readonly architecture: LinuxArchitecture;
+  readonly version: string;
+  readonly sourceCommit: string;
+  readonly sourceDate: string;
+  readonly runtime: {
+    readonly name: "node";
+    readonly version: string;
+    readonly archiveSha256: string;
+  };
+  readonly signed: false;
+  readonly files: readonly LinuxReleaseFileEntry[];
+}
+export interface SpdxDocument extends Record<string, unknown> {
+  spdxVersion: "SPDX-2.3";
+  packages: unknown[];
+}
+export interface SbomProjectionInput {
+  readonly destination: string;
+  readonly lockfile: unknown;
+  readonly version: unknown;
+}
+export interface DpkgPackageVersions {
+  readonly tar: string;
+  readonly "xz-utils": string;
+}
+export interface LinuxArchiveToolchainInput {
+  readonly osRelease: unknown;
+  readonly tarVersion: unknown;
+  readonly xzVersion: unknown;
+  readonly packageVersions: unknown;
+}
+export interface LinuxArchiveToolchain {
+  readonly tar: string;
+  readonly xzUtils: string;
+}
+export interface LinuxArchiveToolPaths {
+  readonly dpkgQuery: "/usr/bin/dpkg-query";
+  readonly gnuTar: "/usr/bin/tar";
+  readonly xz: "/usr/bin/xz";
+}
+export interface PackagedNodeHelloExpectation {
+  readonly architecture: string;
+  readonly credential: string;
+  readonly nodeId: string;
+  readonly protocolVersion: string;
+}
+export interface DeterministicTarInput {
+  readonly candidateName: unknown;
+  readonly sourceDateEpoch: unknown;
+  readonly tarPath: string;
+  readonly parentDirectory: string;
+}
 
 export const NODE_RUNTIME_VERSION = "22.22.2";
 export const NCC_VERSION = "0.45.0";
 export const RELEASE_NPM_VERSION = "10.9.9";
-export const LINUX_RELEASE_ARCHIVE_BOUNDS = Object.freeze({
+export const LINUX_RELEASE_ARCHIVE_BOUNDS: ByteBounds = Object.freeze({
   maximumBytes: 96 * 1024 * 1024,
   minimumBytes: 20 * 1024 * 1024,
 });
 
-export const NODE_RUNTIME_TARGETS = Object.freeze({
-  x64: Object.freeze({
-    directory: `node-v${NODE_RUNTIME_VERSION}-linux-x64`,
-    filename: `node-v${NODE_RUNTIME_VERSION}-linux-x64.tar.xz`,
-    sha256: "88fd1ce767091fd8d4a99fdb2356e98c819f93f3b1f8663853a2dee9b438068a",
-  }),
-  arm64: Object.freeze({
-    directory: `node-v${NODE_RUNTIME_VERSION}-linux-arm64`,
-    filename: `node-v${NODE_RUNTIME_VERSION}-linux-arm64.tar.xz`,
-    sha256: "e9e1930fd321a470e29bb68f30318bf58e3ecb4acb4f1533fb19c58328a091fe",
-  }),
-});
+export const NODE_RUNTIME_TARGETS: Readonly<Record<LinuxArchitecture, NodeRuntimeTarget>> =
+  Object.freeze({
+    x64: Object.freeze({
+      directory: `node-v${NODE_RUNTIME_VERSION}-linux-x64`,
+      filename: `node-v${NODE_RUNTIME_VERSION}-linux-x64.tar.xz`,
+      sha256: "88fd1ce767091fd8d4a99fdb2356e98c819f93f3b1f8663853a2dee9b438068a",
+    }),
+    arm64: Object.freeze({
+      directory: `node-v${NODE_RUNTIME_VERSION}-linux-arm64`,
+      filename: `node-v${NODE_RUNTIME_VERSION}-linux-arm64.tar.xz`,
+      sha256: "e9e1930fd321a470e29bb68f30318bf58e3ecb4acb4f1533fb19c58328a091fe",
+    }),
+  });
 
 const EXPECTED_NCC_ASSETS = Object.freeze([
   "file.js",
@@ -70,46 +161,6 @@ const FORBIDDEN_RELEASE_PACKAGES = new Set([
   "vitest",
 ]);
 
-export function assertReleaseVersion(version) {
-  if (
-    typeof version !== "string" ||
-    version.length > 64 ||
-    !/^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(version)
-  ) {
-    throw new Error("Release version must be a bounded SemVer value.");
-  }
-  return version;
-}
-
-export function assertSourceCommit(commit) {
-  if (typeof commit !== "string" || !/^[0-9a-f]{40}$/.test(commit)) {
-    throw new Error("Source commit must be a full lowercase Git SHA-1.");
-  }
-  return commit;
-}
-
-export function assertSourceDateEpoch(value) {
-  const epoch = typeof value === "number" ? value : Number(value);
-  if (!Number.isSafeInteger(epoch) || epoch < 0 || epoch > 4_102_444_800) {
-    throw new Error("Source date epoch must be an integer between 1970 and 2100.");
-  }
-  return epoch;
-}
-
-export function assertSourceTreeState(sourceCommit, headCommit, porcelainStatus) {
-  assertSourceCommit(sourceCommit);
-  if (headCommit.trim() !== sourceCommit)
-    throw new Error("Source commit does not match repository HEAD.");
-  if (porcelainStatus.trim() !== "")
-    throw new Error("Release candidate requires a clean source tree.");
-}
-
-export async function sha256File(filePath) {
-  const digest = createHash("sha256");
-  for await (const chunk of createReadStream(filePath)) digest.update(chunk);
-  return digest.digest("hex");
-}
-
 /**
  * Fixed-bound regular-file SHA-256 for untrusted installer paths.
  *
@@ -131,9 +182,9 @@ export async function sha256File(filePath) {
  * than the fstat-declared size or the configured maximum.
  */
 export async function sha256BoundedRegularFile(
-  filePath,
-  bounds = LINUX_RELEASE_ARCHIVE_BOUNDS,
-) {
+  filePath: string,
+  bounds: ByteBounds = LINUX_RELEASE_ARCHIVE_BOUNDS,
+): Promise<string> {
   if (
     !isRecord(bounds) ||
     !Number.isSafeInteger(bounds.minimumBytes) ||
@@ -152,10 +203,7 @@ export async function sha256BoundedRegularFile(
     if (!metadata.isFile() || metadata.isSymbolicLink()) {
       throw new Error("Linux bounded file digest source is not a regular file.");
     }
-    if (
-      metadata.size < bounds.minimumBytes ||
-      metadata.size > bounds.maximumBytes
-    ) {
+    if (metadata.size < bounds.minimumBytes || metadata.size > bounds.maximumBytes) {
       throw new Error("Linux bounded file digest source size is outside the reviewed bound.");
     }
     const expectedSize = metadata.size;
@@ -191,9 +239,13 @@ export async function sha256BoundedRegularFile(
   }
 }
 
-export async function verifyNodeRuntimeArchive(filePath, architecture) {
+export async function verifyNodeRuntimeArchive(
+  filePath: string,
+  architecture: unknown,
+): Promise<NodeRuntimeTarget> {
+  if (!isLinuxArchitecture(architecture))
+    throw new Error("Linux runtime architecture must be x64 or arm64.");
   const target = NODE_RUNTIME_TARGETS[architecture];
-  if (target === undefined) throw new Error("Linux runtime architecture must be x64 or arm64.");
   const metadata = await stat(filePath);
   if (!metadata.isFile() || metadata.size < 20 * 1024 * 1024 || metadata.size > 40 * 1024 * 1024) {
     throw new Error("Node runtime archive size is outside the reviewed bound.");
@@ -204,19 +256,25 @@ export async function verifyNodeRuntimeArchive(filePath, architecture) {
   return target;
 }
 
-export async function writeProductionSbomProjection({ destination, lockfile, version }) {
-  assertReleaseVersion(version);
+export async function writeProductionSbomProjection({
+  destination,
+  lockfile,
+  version,
+}: SbomProjectionInput): Promise<ProductionPackageGraph> {
+  const releaseVersion = assertReleaseVersion(version);
   const graph = collectProductionPackageGraph(lockfile);
-  const packages = lockfile.packages;
+  const packages = field(lockfile, "packages");
+  if (!isRecord(packages)) {
+    throw new Error("Release packaging requires an npm lockfileVersion 3 package graph.");
+  }
   const root = {
     name: "openbot-node-linux-runtime",
-    version,
+    version: releaseVersion,
     private: true,
     license: "MIT",
     workspaces: graph.workspaceKeys,
   };
-  const projectedPackages = { "": root };
-
+  const projectedPackages: Record<string, unknown> = { "": root };
   for (const workspaceKey of graph.workspaceKeys) {
     const source = packages[workspaceKey];
     const projected = projectPackageEntry(source, true);
@@ -228,10 +286,9 @@ export async function writeProductionSbomProjection({ destination, lockfile, ver
   for (const packageKey of graph.packageKeys) {
     projectedPackages[packageKey] = projectPackageEntry(packages[packageKey], false);
   }
-
   const projectedLock = {
     name: root.name,
-    version,
+    version: releaseVersion,
     lockfileVersion: 3,
     requires: true,
     packages: Object.fromEntries(
@@ -244,74 +301,103 @@ export async function writeProductionSbomProjection({ destination, lockfile, ver
   return graph;
 }
 
-export function validateSpdxSbom(sbom, graph, lockfile) {
-  if (sbom?.spdxVersion !== "SPDX-2.3" || !Array.isArray(sbom.packages)) {
-    throw new Error("Release SBOM must be an SPDX 2.3 document.");
-  }
-  const actual = new Set(
-    sbom.packages.map((entry) => entry?.name).filter((name) => typeof name === "string"),
+export function validateSpdxSbom(
+  sbom: unknown,
+  graph: ProductionPackageGraph,
+  lockfile: unknown,
+): SpdxDocument {
+  if (!isSpdxDocument(sbom)) throw new Error("Release SBOM must be an SPDX 2.3 document.");
+  const actual = new Set<unknown>(
+    sbom.packages.map((entry) => field(entry, "name")).filter((name) => typeof name === "string"),
   );
   for (const forbidden of FORBIDDEN_RELEASE_PACKAGES) {
     if (actual.has(forbidden))
       throw new Error(`Release SBOM contains a non-production package: ${forbidden}.`);
   }
+  const packages = field(lockfile, "packages");
+  if (!isRecord(packages)) {
+    throw new Error("Release packaging requires an npm lockfileVersion 3 package graph.");
+  }
   for (const packageKey of [...graph.workspaceKeys, ...graph.packageKeys]) {
-    const expectedName = lockfile.packages[packageKey]?.name ?? packageNameFromLockKey(packageKey);
+    const expectedName = field(packages[packageKey], "name") ?? packageNameFromLockKey(packageKey);
     if (!actual.has(expectedName)) throw new Error(`Release SBOM is missing ${expectedName}.`);
   }
   return sbom;
 }
 
-export function canonicalizeSpdxSbom(sbom, metadata) {
+function isSpdxDocument(value: unknown): value is SpdxDocument {
+  return isRecord(value) && value.spdxVersion === "SPDX-2.3" && Array.isArray(value.packages);
+}
+
+export function canonicalizeSpdxSbom(
+  sbom: unknown,
+  metadata: LinuxReleaseMetadata,
+): Record<string, unknown> {
   const version = assertReleaseVersion(metadata.version);
   const sourceCommit = assertSourceCommit(metadata.sourceCommit);
   const sourceDateEpoch = assertSourceDateEpoch(metadata.sourceDateEpoch);
-  if (NODE_RUNTIME_TARGETS[metadata.architecture] === undefined) {
+  const architecture = metadata.architecture;
+  if (!isLinuxArchitecture(architecture))
     throw new Error("Linux SBOM architecture must be x64 or arm64.");
-  }
-  const canonical = structuredClone(sbom);
-  if (!isRecord(canonical.creationInfo) || !Array.isArray(canonical.creationInfo.creators)) {
+  const canonical: unknown = structuredClone(sbom);
+  const creationInfo = field(canonical, "creationInfo");
+  if (!isRecord(canonical) || !isRecord(creationInfo) || !Array.isArray(creationInfo.creators)) {
     throw new Error("Release SBOM creation information is missing.");
   }
-  if (!canonical.creationInfo.creators.includes(`Tool: npm/cli-${RELEASE_NPM_VERSION}`)) {
+  const creators: unknown[] = creationInfo.creators;
+  if (!creators.includes(`Tool: npm/cli-${RELEASE_NPM_VERSION}`)) {
     throw new Error(`Release SBOM was not generated by npm ${RELEASE_NPM_VERSION}.`);
+  }
+  const packages = canonical.packages;
+  if (!Array.isArray(packages) || !packages.every((entry) => isRecord(entry))) {
+    throw new Error("Release SBOM must be an SPDX 2.3 document.");
+  }
+  const relationships = canonical.relationships;
+  if (Array.isArray(relationships) && !relationships.every((entry) => isRecord(entry))) {
+    throw new Error("Release SBOM must be an SPDX 2.3 document.");
   }
   canonical.name = `openbot-node-${version}-linux-${metadata.architecture}`;
   canonical.documentNamespace = `https://openbot.dev/spdx/openbot-node/${version}/linux/${metadata.architecture}/${sourceCommit}`;
-  canonical.creationInfo.created = new Date(sourceDateEpoch * 1000).toISOString();
-  canonical.creationInfo.creators.sort();
-  canonical.packages.sort((left, right) => String(left.SPDXID).localeCompare(String(right.SPDXID)));
-  if (Array.isArray(canonical.relationships)) {
-    canonical.relationships.sort((left, right) =>
-      `${left.spdxElementId}\0${left.relationshipType}\0${left.relatedSpdxElement}`.localeCompare(
-        `${right.spdxElementId}\0${right.relationshipType}\0${right.relatedSpdxElement}`,
-      ),
+  creationInfo.created = new Date(sourceDateEpoch * 1000).toISOString();
+  creators.sort();
+  packages.sort((left, right) =>
+    String(field(left, "SPDXID")).localeCompare(String(field(right, "SPDXID"))),
+  );
+  if (Array.isArray(relationships)) {
+    relationships.sort((left, right) =>
+      relationshipKey(left).localeCompare(relationshipKey(right)),
     );
   }
   return canonical;
 }
 
-export function validateNccStats(stats, outputNames) {
+export function validateNccStats(stats: unknown, outputNames: Iterable<string>): void {
   if (!isRecord(stats) || stats.errorsCount !== 0 || !Array.isArray(stats.warnings)) {
     throw new Error("ncc reported build errors or an invalid warning set.");
   }
-  const warnings = stats.warnings.map((warning) => warning?.message);
+  const warnings: unknown[] = stats.warnings.map((warning) => field(warning, "message"));
   if (
     stats.warningsCount !== EXPECTED_INTERNAL_LICENSE_WARNINGS.size ||
-    warnings.some((warning) => !EXPECTED_INTERNAL_LICENSE_WARNINGS.has(warning)) ||
+    warnings.some(
+      (warning) => typeof warning !== "string" || !EXPECTED_INTERNAL_LICENSE_WARNINGS.has(warning),
+    ) ||
     new Set(warnings).size !== EXPECTED_INTERNAL_LICENSE_WARNINGS.size
   ) {
     throw new Error("ncc reported an unexpected build warning.");
   }
-  const assets = (stats.assets ?? []).map((asset) => asset?.name).sort();
+  const assetEntries = stats.assets ?? [];
+  if (!Array.isArray(assetEntries)) throw new Error("ncc emitted an unexpected asset set.");
+  const assets = assetEntries.map((asset) => field(asset, "name")).sort();
   if (JSON.stringify(assets) !== JSON.stringify(EXPECTED_NCC_ASSETS)) {
     throw new Error("ncc emitted an unexpected asset set.");
   }
   if (JSON.stringify([...outputNames].sort()) !== JSON.stringify(EXPECTED_NCC_OUTPUTS)) {
     throw new Error("ncc output directory contains unexpected files.");
   }
-  for (const module of stats.modules ?? []) {
-    const name = module?.name;
+  const modules = stats.modules ?? [];
+  if (!Array.isArray(modules)) throw new Error("ncc emitted an unexpected module set.");
+  for (const module of modules) {
+    const name = field(module, "name");
     if (typeof name !== "string") continue;
     const external = /^external "([^"]+)"$/.exec(name)?.[1];
     if (external !== undefined && !BUILTINS.has(external)) {
@@ -324,14 +410,19 @@ export function validateNccStats(stats, outputNames) {
   }
 }
 
-export async function createFileManifest(root, metadata, excludedPaths = []) {
-  if (NODE_RUNTIME_TARGETS[metadata.architecture] === undefined) {
+export async function createFileManifest(
+  root: string,
+  metadata: LinuxReleaseMetadata,
+  excludedPaths: Iterable<string> = [],
+): Promise<LinuxReleaseManifest> {
+  const architecture = metadata.architecture;
+  if (!isLinuxArchitecture(architecture)) {
     throw new Error("Linux manifest architecture must be x64 or arm64.");
   }
   const sourceDateEpoch = assertSourceDateEpoch(metadata.sourceDateEpoch);
   const exclusions = new Set(excludedPaths);
   for (const excludedPath of exclusions) assertRelativeArchivePath(excludedPath);
-  const files = [];
+  const files: LinuxReleaseFileEntry[] = [];
   let totalSize = 0;
   await walk(
     root,
@@ -349,22 +440,26 @@ export async function createFileManifest(root, metadata, excludedPaths = []) {
     schemaVersion: 1,
     product: "openbot-node",
     platform: "linux",
-    architecture: metadata.architecture,
+    architecture,
     version: assertReleaseVersion(metadata.version),
     sourceCommit: assertSourceCommit(metadata.sourceCommit),
     sourceDate: new Date(sourceDateEpoch * 1000).toISOString(),
     runtime: {
       name: "node",
       version: NODE_RUNTIME_VERSION,
-      archiveSha256: NODE_RUNTIME_TARGETS[metadata.architecture]?.sha256,
+      archiveSha256: NODE_RUNTIME_TARGETS[architecture].sha256,
     },
     signed: false,
     files: files.sort((left, right) => left.path.localeCompare(right.path)),
   };
 }
 
-export async function writeChecksums(root, relativePaths, destination) {
-  const lines = [];
+export async function writeChecksums(
+  root: string,
+  relativePaths: Iterable<string>,
+  destination: string,
+): Promise<void> {
+  const lines: string[] = [];
   for (const relativePath of [...relativePaths].sort()) {
     assertRelativeArchivePath(relativePath);
     lines.push(`${await sha256File(path.join(root, relativePath))}  ${relativePath}`);
@@ -376,58 +471,61 @@ export async function writeChecksums(root, relativePaths, destination) {
   });
 }
 
-export async function copyReleaseFile(source, destination, mode = 0o644) {
+export async function copyReleaseFile(
+  source: string,
+  destination: string,
+  mode = 0o644,
+): Promise<void> {
   await mkdir(path.dirname(destination), { recursive: true });
   await copyFile(source, destination);
   await chmod(destination, mode);
 }
 
-export async function listRegularFiles(root) {
-  const files = [];
+export async function listRegularFiles(root: string): Promise<string[]> {
+  const files: LinuxReleaseFileEntry[] = [];
   await walk(root, "", files, () => undefined, new Set());
   return files.map((entry) => entry.path);
 }
 
-export function parseOsRelease(source) {
+export function parseOsRelease(source: unknown): Record<string, string> {
   if (typeof source !== "string" || source.length < 1 || source.length > 64 * 1024) {
     throw new Error("OS release metadata is missing or too large.");
   }
-  const values = {};
+  const values: Record<string, string> = {};
   for (const line of source.split("\n")) {
     if (line === "" || line.startsWith("#")) continue;
     const match = /^([A-Z0-9_]+)=(.*)$/.exec(line);
-    if (match === null || Object.hasOwn(values, match[1])) {
+    const key = match?.[1];
+    let value = match?.[2];
+    if (key === undefined || value === undefined || Object.hasOwn(values, key)) {
       throw new Error("OS release metadata is malformed or contains duplicate keys.");
     }
-    let value = match[2];
     if (value.startsWith('"')) {
       if (!value.endsWith('"') || value.length < 2) {
         throw new Error("OS release metadata contains an unterminated quoted value.");
       }
       value = value.slice(1, -1).replaceAll('\\"', '"').replaceAll("\\\\", "\\");
     }
-    values[match[1]] = value;
+    values[key] = value;
   }
   return values;
 }
 
-export function parseDpkgPackageVersions(source) {
+export function parseDpkgPackageVersions(source: unknown): DpkgPackageVersions {
   if (typeof source !== "string" || source.length < 1 || source.length > 4 * 1024) {
     throw new Error("Release package metadata is missing or too large.");
   }
-  const versions = {};
+  const versions: Record<string, string> = {};
   for (const line of source.trimEnd().split("\n")) {
     const match = /^(tar|xz-utils)=([^\s=]{1,128})$/.exec(line);
-    if (match === null || Object.hasOwn(versions, match?.[1])) {
+    const name = match?.[1];
+    const version = match?.[2];
+    if (name === undefined || version === undefined || Object.hasOwn(versions, name)) {
       throw new Error("Release package metadata is malformed or duplicated.");
     }
-    versions[match[1]] = match[2];
+    versions[name] = version;
   }
-  if (
-    Object.keys(versions).length !== 2 ||
-    versions.tar === undefined ||
-    versions["xz-utils"] === undefined
-  ) {
+  if (!hasDpkgPackageVersions(versions)) {
     throw new Error("Release package metadata must contain tar and xz-utils exactly once.");
   }
   return versions;
@@ -438,8 +536,8 @@ export function validateLinuxArchiveToolchain({
   tarVersion,
   xzVersion,
   packageVersions,
-}) {
-  if (osRelease?.ID !== "ubuntu" || osRelease?.VERSION_ID !== "24.04") {
+}: LinuxArchiveToolchainInput): LinuxArchiveToolchain {
+  if (field(osRelease, "ID") !== "ubuntu" || field(osRelease, "VERSION_ID") !== "24.04") {
     throw new Error("Linux archives must be created on Ubuntu 24.04.");
   }
   if (String(tarVersion).split("\n")[0] !== "tar (GNU tar) 1.35") {
@@ -448,31 +546,38 @@ export function validateLinuxArchiveToolchain({
   if (String(xzVersion).split("\n")[0] !== "xz (XZ Utils) 5.4.5") {
     throw new Error("Linux archives require XZ Utils 5.4.5.");
   }
+  const tar = field(packageVersions, "tar");
+  const xzUtils = field(packageVersions, "xz-utils");
   if (
-    !packageVersions ||
-    !/^[^\s=]{1,128}$/.test(packageVersions.tar ?? "") ||
-    !/^[^\s=]{1,128}$/.test(packageVersions["xz-utils"] ?? "")
+    typeof tar !== "string" ||
+    typeof xzUtils !== "string" ||
+    !/^[^\s=]{1,128}$/.test(tar) ||
+    !/^[^\s=]{1,128}$/.test(xzUtils)
   ) {
     throw new Error("Linux archive package revisions are missing or invalid.");
   }
-  return { tar: packageVersions.tar, xzUtils: packageVersions["xz-utils"] };
+  return { tar, xzUtils };
 }
 
-export function validateLinuxArchiveToolPaths(paths) {
-  const expected = {
+export function validateLinuxArchiveToolPaths(paths: unknown): LinuxArchiveToolPaths {
+  const expected: LinuxArchiveToolPaths = {
     dpkgQuery: "/usr/bin/dpkg-query",
     gnuTar: "/usr/bin/tar",
     xz: "/usr/bin/xz",
   };
-  for (const [name, expectedPath] of Object.entries(expected)) {
-    if (paths?.[name] !== expectedPath) {
+  for (const name of ["dpkgQuery", "gnuTar", "xz"] as const) {
+    const expectedPath = expected[name];
+    if (field(paths, name) !== expectedPath) {
       throw new Error(`Linux archive tool must use the reviewed path: ${expectedPath}.`);
     }
   }
   return expected;
 }
 
-export function validatePackagedNodeHello(message, expected) {
+export function validatePackagedNodeHello(
+  message: unknown,
+  expected: PackagedNodeHelloExpectation,
+): Record<string, unknown> {
   if (!isRecord(message) || message.type !== "node.hello") {
     throw new Error("Packaged Node did not send a hello message.");
   }
@@ -509,7 +614,7 @@ export function deterministicTarArguments({
   sourceDateEpoch,
   tarPath,
   parentDirectory,
-}) {
+}: DeterministicTarInput): string[] {
   assertRelativeArchivePath(candidateName);
   if (candidateName.includes("/")) throw new Error("Candidate name must be one path component.");
   const epoch = assertSourceDateEpoch(sourceDateEpoch);
@@ -530,33 +635,38 @@ export function deterministicTarArguments({
   ];
 }
 
-export function deterministicXzArguments(tarPath) {
+export function deterministicXzArguments(tarPath: string): string[] {
   return ["--threads=1", "--check=sha256", "--no-adjust", "-6", "--compress", "--stdout", tarPath];
 }
 
-export function linuxInstalledReleaseName(manifest) {
+export function linuxInstalledReleaseName(manifest: unknown): string {
   if (!isRecord(manifest) || manifest.platform !== "linux") {
     throw new Error("Installed release manifest must declare Linux.");
   }
   const architecture = manifest.architecture;
-  if (NODE_RUNTIME_TARGETS[architecture] === undefined) {
+  if (!isLinuxArchitecture(architecture)) {
     throw new Error("Installed release architecture must be x64 or arm64.");
   }
   return `openbot-node-${assertReleaseVersion(manifest.version)}-linux-${architecture}-${assertSourceCommit(manifest.sourceCommit)}`;
 }
 
-export async function verifyCandidateDirectory(candidate) {
+export async function verifyCandidateDirectory(candidate: string): Promise<LinuxReleaseManifest> {
   return verifyLinuxReleaseDirectory(
     candidate,
     (manifest) => `openbot-node-${manifest.version}-linux-${manifest.architecture}-unsigned`,
   );
 }
 
-export async function verifyInstalledLinuxReleaseDirectory(directory) {
+export async function verifyInstalledLinuxReleaseDirectory(
+  directory: string,
+): Promise<LinuxReleaseManifest> {
   return verifyLinuxReleaseDirectory(directory, linuxInstalledReleaseName);
 }
 
-async function verifyLinuxReleaseDirectory(directory, expectedNameForManifest) {
+async function verifyLinuxReleaseDirectory(
+  directory: string,
+  expectedNameForManifest: (manifest: Record<string, unknown>) => string,
+): Promise<LinuxReleaseManifest> {
   const rootMetadata = await lstat(directory);
   if (!rootMetadata.isDirectory() || rootMetadata.isSymbolicLink()) {
     throw new Error("Linux release must be a real directory.");
@@ -568,11 +678,12 @@ async function verifyLinuxReleaseDirectory(directory, expectedNameForManifest) {
     }
   }
   const manifestText = await readFile(path.join(directory, "manifest.json"), "utf8");
-  const manifest = JSON.parse(manifestText);
+  const manifest: unknown = JSON.parse(manifestText);
   if (!isRecord(manifest) || manifest.schemaVersion !== 1 || manifest.signed !== false) {
     throw new Error("Release candidate manifest must be schema 1 and explicitly unsigned.");
   }
-  const sourceDateMilliseconds = Date.parse(manifest.sourceDate);
+  const sourceDate = manifest.sourceDate;
+  const sourceDateMilliseconds = typeof sourceDate === "string" ? Date.parse(sourceDate) : NaN;
   if (
     !Number.isFinite(sourceDateMilliseconds) ||
     sourceDateMilliseconds % 1000 !== 0 ||
@@ -610,26 +721,29 @@ async function verifyLinuxReleaseDirectory(directory, expectedNameForManifest) {
   if (JSON.stringify(actualChecksumPaths) !== JSON.stringify(expectedChecksumPaths)) {
     throw new Error("Release checksums do not cover the candidate exactly once.");
   }
-  return manifest;
+  return rebuilt;
 }
 
-export async function verifyChecksums(root, source) {
+export async function verifyChecksums(root: string, source: unknown): Promise<string[]> {
   if (typeof source !== "string" || !source.endsWith("\n") || source.length > 128 * 1024) {
     throw new Error("Release checksum file is missing, too large, or non-canonical.");
   }
-  const paths = [];
-  const canonicalLines = [];
+  const paths: string[] = [];
+  const canonicalLines: string[] = [];
   for (const line of source.slice(0, -1).split("\n")) {
     const match = /^([0-9a-f]{64}) {2}(.+)$/.exec(line);
-    if (match === null) throw new Error("Release checksum entry is malformed.");
-    assertRelativeArchivePath(match[2]);
-    if (match[2] === "SHA256SUMS" || paths.includes(match[2])) {
+    const digest = match?.[1];
+    const relativePath = match?.[2];
+    if (digest === undefined || relativePath === undefined)
+      throw new Error("Release checksum entry is malformed.");
+    assertRelativeArchivePath(relativePath);
+    if (relativePath === "SHA256SUMS" || paths.includes(relativePath)) {
       throw new Error("Release checksum entry is recursive or duplicated.");
     }
-    paths.push(match[2]);
-    canonicalLines.push(`${match[1]}  ${match[2]}`);
-    if ((await sha256File(path.join(root, match[2]))) !== match[1]) {
-      throw new Error(`Release checksum mismatch: ${match[2]}.`);
+    paths.push(relativePath);
+    canonicalLines.push(`${digest}  ${relativePath}`);
+    if ((await sha256File(path.join(root, relativePath))) !== digest) {
+      throw new Error(`Release checksum mismatch: ${relativePath}.`);
     }
   }
   if (JSON.stringify(paths) !== JSON.stringify([...paths].sort())) {
@@ -641,7 +755,7 @@ export async function verifyChecksums(root, source) {
   return paths;
 }
 
-function projectPackageEntry(entry, workspace) {
+function projectPackageEntry(entry: unknown, workspace: boolean): Record<string, unknown> {
   if (!isRecord(entry)) throw new Error("Package projection received an invalid lock entry.");
   const projected = { ...entry };
   delete projected.dev;
@@ -650,12 +764,18 @@ function projectPackageEntry(entry, workspace) {
   return projected;
 }
 
-function packageNameFromLockKey(packageKey) {
+function packageNameFromLockKey(packageKey: string): string {
   const marker = packageKey.lastIndexOf("node_modules/");
   return packageKey.slice(marker + "node_modules/".length);
 }
 
-async function walk(root, relative, files, addSize, exclusions) {
+async function walk(
+  root: string,
+  relative: string,
+  files: LinuxReleaseFileEntry[],
+  addSize: (size: number) => void,
+  exclusions: ReadonlySet<string>,
+): Promise<void> {
   const current = relative === "" ? root : path.join(root, relative);
   for (const name of (await readdir(current)).sort()) {
     const childRelative = relative === "" ? name : `${relative}/${name}`;
@@ -682,7 +802,7 @@ async function walk(root, relative, files, addSize, exclusions) {
   }
 }
 
-function assertRelativeArchivePath(value) {
+function assertRelativeArchivePath(value: unknown): asserts value is string {
   if (
     typeof value !== "string" ||
     value.length < 1 ||
@@ -699,7 +819,7 @@ function assertRelativeArchivePath(value) {
   }
 }
 
-async function writeJson(filePath, value) {
+async function writeJson(filePath: string, value: unknown): Promise<void> {
   await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, {
     encoding: "utf8",
     mode: 0o644,
@@ -707,6 +827,25 @@ async function writeJson(filePath, value) {
   });
 }
 
-function isRecord(value) {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function field(value: unknown, key: string): unknown {
+  return isRecord(value) ? value[key] : undefined;
+}
+function isLinuxArchitecture(value: unknown): value is LinuxArchitecture {
+  return value === "x64" || value === "arm64";
+}
+function hasDpkgPackageVersions(
+  versions: Record<string, string>,
+): versions is Record<string, string> & DpkgPackageVersions {
+  return (
+    Object.keys(versions).length === 2 &&
+    versions.tar !== undefined &&
+    versions["xz-utils"] !== undefined
+  );
+}
+function relationshipKey(entry: unknown): string {
+  return `${field(entry, "spdxElementId")}\0${field(entry, "relationshipType")}\0${field(entry, "relatedSpdxElement")}`;
 }

@@ -19,7 +19,7 @@ import {
   linuxInstalledReleaseName,
   verifyCandidateDirectory,
   verifyInstalledLinuxReleaseDirectory,
-} from "./node-linux-release.mjs";
+} from "./node-linux-release.ts";
 
 export const LINUX_INSTALL_PROVENANCE_POLICY = Object.freeze({
   issuer: "https://token.actions.githubusercontent.com",
@@ -493,7 +493,9 @@ function validateRecoveryJournal(journal) {
 }
 
 async function validateRecoveryReleaseSet(installRoot, journal) {
-  const manifest = await verifyInstalledLinuxReleaseDirectory(path.join(installRoot, journal.target));
+  const manifest = await verifyInstalledLinuxReleaseDirectory(
+    path.join(installRoot, journal.target),
+  );
   if (
     linuxInstalledReleaseName(manifest) !== journal.releaseName ||
     manifest.sourceCommit !== journal.sourceCommit ||

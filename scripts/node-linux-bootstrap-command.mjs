@@ -5,7 +5,7 @@ import {
   installPrivilegedLinuxRelease,
   recoverPrivilegedLinuxInstall,
 } from "./node-linux-bootstrap.mjs";
-import { assertReleaseVersion, assertSourceCommit } from "./node-linux-release.mjs";
+import { assertReleaseVersion, assertSourceCommit } from "./release-source.ts";
 
 const genericFailure = Object.freeze({ error: "bootstrap-failed", ok: false });
 const maximumArgumentCount = 8;
