@@ -17,7 +17,6 @@ from collections.abc import Mapping
 from contextvars import ContextVar
 from copy import deepcopy
 from dataclasses import dataclass
-import json
 import os
 import re
 from typing import Any
@@ -42,11 +41,12 @@ from pydantic_ai.providers.openrouter import OpenRouterProvider
 from openbot_agent_runtime import ToolCatalog
 from openbot_agent_runtime import ModelStepRequest
 
+from .model_response import ProductModelError, decode_model_json, read_model_response
 from .model_media import PreparedModelMedia, inject, adapt_wire
 from .work_values import WorkConflict, InvalidWork
 from .model_presets import ModelSettingsInput, RetainedModelSettings, model_provider_base_url
 from .work_openai_model import (
-    ModelTransportError, _bounded_deadline, _bounded_messages, _bounded_positive_int, _plain_json,
+    _bounded_deadline, _bounded_messages, _bounded_positive_int, _plain_json,
 )
 
 __all__ = ["ProductModelPort", "ProductModelError"]
@@ -55,13 +55,6 @@ _REQUEST_BYTES = 512 * 1024
 _MAX_COUNT = 1_000_000_000
 _FORBIDDEN_ENV = ("OPENAI_CUSTOM_HEADERS", "OPENAI_LOG", "ANTHROPIC_CUSTOM_HEADERS", "ANTHROPIC_LOG")
 _ROUTER_POLICY = {"require_parameters": True, "allow_fallbacks": False, "data_collection": "deny"}
-
-
-class ProductModelError(ModelTransportError):
-    """Fixed public failure classification; no SDK/provider body or credential in the message."""
-    def __init__(self, code: str = "model_unavailable"):
-        self.code = code
-        super().__init__(code)
 
 
 def _refuse_ambient_options() -> None:
@@ -278,20 +271,6 @@ class ProductModelPort:
             self._attempt.reset(token)
 
 
-class _BufferedStream(httpx2.AsyncByteStream):
-    def __init__(self, content: bytes):
-        self.content = content
-
-    async def __aiter__(self):
-        yield self.content
-
-
-def _json(value: bytes) -> Any:
-    def invalid(_: str) -> None:
-        raise ValueError()
-    return json.loads(value.decode("utf-8"), parse_constant=invalid)
-
-
 class _BoundedTransport(httpx2.AsyncBaseTransport):
     def __init__(self, inner, *, provider, model, base_url, key, maximum, max_output, attempt, before_send=None):
         self._inner, self._provider, self._model = inner, provider, model
@@ -325,7 +304,7 @@ class _BoundedTransport(httpx2.AsyncBaseTransport):
                 request = httpx2.Request(request.method, request.url, headers=request.headers, content=body, extensions=request.extensions)
             elif len(body) > _REQUEST_BYTES:
                 raise ProductModelError("task_limit")
-            payload = _json(body)
+            payload = decode_model_json(body)
             self._check_request(payload)
             # Keep protocol/auth headers only; SDK attribution/runtime headers are not required.
             headers = {"Host": self._url.host, "Content-Type": "application/json", "Accept": "application/json",
@@ -344,47 +323,10 @@ class _BoundedTransport(httpx2.AsyncBaseTransport):
                 await self._before_send()
             attempt.count += 1
             response = await self._inner.handle_async_request(request)
-            try:
-                if response.status_code in {401, 403}:
-                    raise ProductModelError("model_credentials")
-                if response.status_code == 429:
-                    raise ProductModelError("model_rate_limit")
-                if (not 200 <= response.status_code < 300
-                        or "application/json" not in response.headers.get("content-type", "").lower()
-                        or response.headers.get("content-encoding", "identity").lower() != "identity"):
-                    raise ProductModelError()
-                length = response.headers.get("content-length")
-                if length is not None and (not length.isdigit() or int(length) > self._maximum):
-                    raise ProductModelError("task_limit")
-                chunks = bytearray()
-                if response.is_stream_consumed:
-                    if len(response.content) > self._maximum:
-                        raise ProductModelError("task_limit")
-                    chunks.extend(response.content)
-                else:
-                    async for chunk in response.aiter_raw():
-                        if len(chunks) + len(chunk) > self._maximum:
-                            raise ProductModelError("task_limit")
-                        chunks.extend(chunk)
-                value = _json(bytes(chunks))
-                _validate_wire(value, self._provider, attempt)
-                if self._provider in {"openrouter", "minimax"}:
-                    # The released common codec additionally requires Router attribution.
-                    # Preserve actual attribution when present; an empty internal sentinel is
-                    # removed from the result when this Chat endpoint did not supply it.
-                    attempt.downstream_reported = "provider" in value
-                    value.setdefault("provider", "")
-                    message = value["choices"][0]["message"]
-                    if not message.get("reasoning_details"):
-                        plain = message.get("reasoning") or message.get("reasoning_content")
-                        if plain:
-                            # Use the released common reasoning_details codec for round trips.
-                            message["reasoning_details"] = [{"type": "reasoning.text", "text": plain, "format": "unknown"}]
-                    chunks = bytearray(json.dumps(value, separators=(",", ":"), allow_nan=False).encode())
-                return httpx2.Response(response.status_code, headers={"content-type": "application/json"},
-                                       stream=_BufferedStream(bytes(chunks)), request=request)
-            finally:
-                await response.aclose()
+            return await read_model_response(
+                response, request, maximum=self._maximum, provider=self._provider, attempt=attempt,
+                validate_wire=lambda value: _validate_wire(value, self._provider, attempt),
+            )
         except asyncio.CancelledError:
             raise
         except httpx2.TimeoutException:
@@ -444,7 +386,7 @@ def _call(identifier, name, args, seen, *, encoded):
     if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]*", name) is None:
         raise ProductModelError()
     if encoded:
-        args = _json(_text(args).encode())
+        args = decode_model_json(_text(args).encode())
     if type(args) is not dict:
         raise ProductModelError()
     _plain_json(args)
