@@ -17,7 +17,7 @@ import {
   installerTarget,
   validateInstallerVersion,
   verifyInstallerManifest,
-} from "./installer-policy.mjs";
+} from "./installer-policy.ts";
 import {
   createDesktopFuseConfig,
   packagedAsarPath,
@@ -60,7 +60,7 @@ await build({
   prepackaged: platform === "darwin" ? join(bundle, "OpenBot.app") : bundle,
   targets: Platform.fromString(target.builderPlatform).createTarget(target.targets, Arch[arch]),
   publish: "never",
-  config: installerConfig({ appRoot, outputDirectory, version, platform, arch }),
+  config: installerConfig({ appRoot, outputDirectory, version, platform, arch, electronVersion: manifest.devDependencies.electron }),
 });
 await verifyFuses();
 if ((await hashInstaller(asarPath)).sha256 !== asarBefore.sha256) {

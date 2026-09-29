@@ -126,7 +126,7 @@ const packagePaths = await packager({
   asar: true,
   dir: appRoot,
   download: { ...previewDownload, downloader: createElectronDownloader() },
-  electronVersion: "44.3.0",
+  electronVersion: packageManifest.devDependencies.electron,
   extraResource: [desktopIconPng],
   afterCopyExtraResources: [
     async ({ buildPath }) => {

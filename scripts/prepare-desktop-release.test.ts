@@ -5,13 +5,13 @@ import { fileURLToPath } from "node:url";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { test } from "node:test";
+import { test, type TestContext } from "node:test";
 import {
   DESKTOP_INSTALLER_FORMAT,
   hashInstaller,
   installerFileNames,
-} from "../apps/desktop/scripts/installer-policy.mjs";
-import { prepareDesktopRelease, validateDesktopReleaseRun } from "./prepare-desktop-release.mjs";
+} from "../apps/desktop/scripts/installer-policy.ts";
+import { prepareDesktopRelease, validateDesktopReleaseRun } from "./prepare-desktop-release.ts";
 
 const sourceCommit = "a".repeat(40);
 const version = "0.1.0-alpha.2";
@@ -39,7 +39,7 @@ test("release authority requires this repository's successful main push CI", () 
     assert.throws(() => validateDesktopReleaseRun({ ...run, ...changed }, "yxflc11/openbot"));
 });
 
-async function fixture(t) {
+async function fixture(t: TestContext) {
   const root = await mkdtemp(join(tmpdir(), "openbot-release-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   const inputDirectory = join(root, "downloads");
@@ -93,7 +93,9 @@ test("assembles four verified assets with a source-pinned manifest and checksums
 test("does not assemble a partial, altered or wrong-commit release", async (t) => {
   const options = await fixture(t);
   const directory = join(options.inputDirectory, `openbot-installers-linux-x64-${sourceCommit}`);
-  await writeFile(join(directory, installerFileNames(version, "linux", "x64")[0]), "tampered");
+  const [assetName] = installerFileNames(version, "linux", "x64");
+  assert.ok(assetName);
+  await writeFile(join(directory, assetName), "tampered");
   await assert.rejects(prepareDesktopRelease(options), /checksum/u);
   await assert.rejects(
     prepareDesktopRelease({ ...options, sourceCommit: "b".repeat(40) }),
@@ -130,7 +132,9 @@ test("Windows-only scope never bypasses missing, altered or swapped Windows arti
   const options = await fixture(t);
   await assert.rejects(prepareDesktopRelease({ ...options, windowsOnly: "true" }), /boolean/u);
   const directory = join(options.inputDirectory, `openbot-installers-win32-x64-${sourceCommit}`);
-  await writeFile(join(directory, installerFileNames(version, "win32", "x64")[0]), "tampered");
+  const [assetName] = installerFileNames(version, "win32", "x64");
+  assert.ok(assetName);
+  await writeFile(join(directory, assetName), "tampered");
   await assert.rejects(prepareDesktopRelease({ ...options, windowsOnly: true }), /checksum/u);
   await rm(directory, { recursive: true });
   await assert.rejects(prepareDesktopRelease({ ...options, windowsOnly: true }), /Missing/u);
@@ -143,7 +147,7 @@ test("CLI accepts only the explicit final Windows flag and assembles its selecte
   const options = await fixture(t);
   const runPath = join(options.inputDirectory, "run.json");
   await writeFile(runPath, JSON.stringify(run));
-  const script = fileURLToPath(new URL("./prepare-desktop-release.mjs", import.meta.url));
+  const script = fileURLToPath(new URL("./prepare-desktop-release.ts", import.meta.url));
   const args = [
     script,
     options.inputDirectory,
@@ -172,7 +176,9 @@ test("explicit macOS and Windows set omits Linux and verifies both requested art
     await readFile(join(options.outputDirectory, "desktop-manifest.json"), "utf8"),
   );
   assert.deepEqual(
-    manifest.targets.map((entry) => `${entry.platform}-${entry.arch}`),
+    manifest.targets.map(
+      (entry: { platform: string; arch: string }) => `${entry.platform}-${entry.arch}`,
+    ),
     targets,
   );
   assert.equal(
@@ -190,7 +196,9 @@ test("explicit platform selection rejects empty, unknown, duplicate, mixed and p
     /not both/u,
   );
   const directory = join(options.inputDirectory, `openbot-installers-darwin-arm64-${sourceCommit}`);
-  await writeFile(join(directory, installerFileNames(version, "darwin", "arm64")[0]), "tampered");
+  const [assetName] = installerFileNames(version, "darwin", "arm64");
+  assert.ok(assetName);
+  await writeFile(join(directory, assetName), "tampered");
   await assert.rejects(
     prepareDesktopRelease({ ...options, targets: ["darwin-arm64", "win32-x64"] }),
     /checksum/u,
@@ -199,5 +207,75 @@ test("explicit platform selection rejects empty, unknown, duplicate, mixed and p
   await assert.rejects(
     prepareDesktopRelease({ ...options, targets: ["darwin-arm64", "win32-x64"] }),
     /Missing/u,
+  );
+});
+
+test("rejects malformed run metadata before accepting release authority", () => {
+  for (const value of [null, [], 1, {}, { ...run, head_sha: null }, { ...run, repository: null }]) {
+    assert.throws(
+      () => validateDesktopReleaseRun(value, "yxflc11/openbot"),
+      /successful main-branch/u,
+    );
+  }
+});
+
+test("rejects sparse targets and inherited property names before assembling output", async (t) => {
+  const options = await fixture(t);
+  for (const targets of [Array<string>(1), ["toString"], ["__proto__"]]) {
+    await assert.rejects(prepareDesktopRelease({ ...options, targets }), /Targets/u);
+  }
+  await assert.rejects(readFile(join(options.outputDirectory, "desktop-manifest.json")), {
+    code: "ENOENT",
+  });
+});
+
+test("rejects malformed manifests and asset fields before creating any release output", async (t) => {
+  const options = await fixture(t);
+  const directory = join(options.inputDirectory, `openbot-installers-linux-x64-${sourceCommit}`);
+  const manifestPath = join(directory, "manifest.json");
+  const valid = JSON.parse(await readFile(manifestPath, "utf8"));
+  const mutations = [
+    null,
+    [],
+    42,
+    { ...valid, platform: 42 },
+    { ...valid, sourceCommit: "main" },
+    { ...valid, signing: "developer-id-notarized" },
+    ...[
+      null,
+      {},
+      { ...valid.files[0], name: "" },
+      { ...valid.files[0], bytes: 0 },
+      { ...valid.files[0], bytes: 0.5 },
+      { ...valid.files[0], sha256: "A".repeat(64) },
+      { ...valid.files[0], sha256: undefined },
+    ].map((entry) => ({ ...valid, files: [entry, valid.files[1]] })),
+  ];
+  for (const changed of mutations) {
+    await writeFile(manifestPath, JSON.stringify(changed));
+    await assert.rejects(prepareDesktopRelease(options), /Invalid installer manifest/u);
+    await assert.rejects(readFile(join(options.outputDirectory, "desktop-manifest.json")), {
+      code: "ENOENT",
+    });
+  }
+});
+
+test("preserves valid extra metadata, incoming file order and exact receipt bytes", async (t) => {
+  const options = await fixture(t);
+  const directory = join(options.inputDirectory, `openbot-installers-linux-x64-${sourceCommit}`);
+  const manifestPath = join(directory, "manifest.json");
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+  manifest.reviewedMetadata = { fixture: true };
+  manifest.files.reverse();
+  await writeFile(manifestPath, JSON.stringify(manifest));
+  await prepareDesktopRelease({ ...options, targets: ["linux-x64"] });
+  assert.equal(
+    await readFile(join(options.outputDirectory, "desktop-manifest.json"), "utf8"),
+    `${JSON.stringify({ version, sourceCommit, targets: [manifest] }, null, 2)}\n`,
+  );
+  const files: { sha256: string; name: string }[] = manifest.files;
+  assert.equal(
+    await readFile(join(options.outputDirectory, "SHA256SUMS"), "utf8"),
+    files.map((file) => `${file.sha256}  ${file.name}\n`).join(""),
   );
 });

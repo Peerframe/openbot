@@ -29,7 +29,7 @@ node apps/desktop/scripts/package.mjs --preview --python-product
 node apps/desktop/scripts/smoke-python-product.mjs 'apps/desktop/out/python-product/OpenBot Preview-darwin-arm64/OpenBot Preview.app/Contents/Resources/native-runtime'
 ```
 
-暂存资源位于 `apps/desktop/out/python-product-runtime`，未安装应用位于 `apps/desktop/out/python-product/OpenBot Preview-darwin-arm64/OpenBot Preview.app`；两者都在已有生成目录排除规则内。不带参数的资源准备与既有发布命令不变。候选要求同时指定 `--preview --python-product`，拒绝正式签名配置和正式 Worker companion。`scripts/prepare-desktop-release.mjs` 未改动，也不会收集这个本地候选。
+暂存资源位于 `apps/desktop/out/python-product-runtime`，未安装应用位于 `apps/desktop/out/python-product/OpenBot Preview-darwin-arm64/OpenBot Preview.app`；两者都在已有生成目录排除规则内。不带参数的资源准备与既有发布命令不变。候选要求同时指定 `--preview --python-product`，拒绝正式签名配置和正式 Worker companion。`scripts/prepare-desktop-release.ts` 保留原有发布选择，不会收集这个本地候选。
 
 开发者之后可以打开这个尚未安装的 Preview 应用，进入既有本地 Server 设置流程。这会使用 Preview 应用自己的用户目录，和一次性 smoke 不同；不要让两个 Server 同时写同一个目录。固定资源 manifest 只选择包内后端，不支持通过环境变量提供任意解释器或命令。
 

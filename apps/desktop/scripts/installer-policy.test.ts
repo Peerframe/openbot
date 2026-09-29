@@ -8,9 +8,9 @@ import {
   installerFileNames,
   installerTarget,
   validateInstallerVersion,
-} from "./installer-policy.mjs";
+} from "./installer-policy.ts";
 
-const directories = [];
+const directories: string[] = [];
 afterEach(async () =>
   Promise.all(directories.splice(0).map((path) => rm(path, { recursive: true, force: true }))),
 );
@@ -39,6 +39,7 @@ describe("Desktop installer boundary", () => {
       version: "0.1.0-alpha.2",
       platform: "win32",
       arch: "x64",
+      electronVersion: "44.3.0",
     });
     expect(config.publish).toBeNull();
     expect(config.nsis).toMatchObject({
@@ -66,4 +67,21 @@ describe("Desktop installer boundary", () => {
       await expect(hashInstaller(join(directory, "alias"))).rejects.toThrow("regular file");
     }
   });
+});
+
+it("uses the caller's exact Electron pin and refuses ranges or missing pins", () => {
+  const input = {
+    appRoot: "/app",
+    outputDirectory: "/out",
+    version: "0.1.0-alpha.2",
+    platform: "win32",
+    arch: "x64",
+    electronVersion: "44.3.0",
+  };
+  expect(installerConfig(input).electronVersion).toBe("44.3.0");
+  for (const value of [undefined, null, "44.3", "v44.3.0", "^44.3.0", "latest", "44.3.0\n"]) {
+    expect(() =>
+      Reflect.apply(installerConfig, undefined, [{ ...input, electronVersion: value }]),
+    ).toThrow("exact pinned Electron version");
+  }
 });
