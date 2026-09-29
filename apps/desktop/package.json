@@ -13,7 +13,7 @@
     "build:main": "tsc -p tsconfig.json",
     "build:renderer": "npm run build:desktop --workspace @openbot/web",
     "package": "npm run build && npm run prepare:native && node scripts/package.mjs",
-    "make:installers": "node scripts/make-installers.mjs",
+    "make:installers": "node scripts/make-installers.ts",
     "package:installers": "npm run package && npm run make:installers",
     "package:preview": "npm run build && npm run prepare:native && node scripts/package.mjs --preview",
     "start": "npm run build && electron .",
