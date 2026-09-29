@@ -88,6 +88,45 @@ describe("channel attachment display boundary", () => {
     ).rejects.toThrow("标识");
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+  it("rejects denied metadata before locking or reading a hostile body", async () => {
+    const pull = vi.fn(() => {
+      throw new Error("must not read denied content");
+    });
+    const stream = new ReadableStream<Uint8Array>({ pull }, { highWaterMark: 0 });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(stream, { status: 403 })));
+    await expect(getChannelAttachment(channel, id, new AbortController().signal)).rejects.toThrow(
+      "无权访问",
+    );
+    expect(pull).not.toHaveBeenCalled();
+    expect(stream.locked).toBe(false);
+  });
+
+  it("takes update identity from a second scoped metadata request", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ attachment: { ...attachment, channelId: "wrong" } }))
+      .mockResolvedValueOnce(Response.json({ attachment }));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(updateAttachment(attachment, "restore")).resolves.toEqual(attachment);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `/api/v1/channels/${channel}/attachments/${id}/restore`,
+      expect.objectContaining({ method: "POST", credentials: "include", redirect: "error" }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `/api/v1/channels/${channel}/attachments/${id}`,
+      expect.objectContaining({ credentials: "include", redirect: "error" }),
+    );
+  });
+
+  it("does not invent metadata success for a missing update body", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(updateAttachment(attachment, "restore")).rejects.toThrow("未返回有效内容");
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
   it("only previews bounded PNG/JPEG bytes and rejects active content", async () => {
     const bytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
     const fetchMock = vi

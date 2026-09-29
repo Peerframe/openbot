@@ -56,6 +56,31 @@ describe("persistent composer attachment requests", () => {
       ).rejects.toThrow("不匹配");
     },
   );
+  it("reads bounded upload errors before applying status without accepting returned identity", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({ attachment, error: "denied".repeat(110) }, { status: 403 }),
+    );
+    await expect(
+      uploadComposerAttachment(channelId, new File(["a".repeat(200000)], "large.ts")),
+    ).rejects.toMatchObject({ message: "denied".repeat(110).slice(0, 500) });
+  });
+
+  it("rejects upload overflow even when stream cancellation never settles", async () => {
+    const cancel = vi.fn(() => new Promise<void>(() => undefined));
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(16385));
+      },
+      cancel,
+    });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(stream));
+    await expect(
+      uploadComposerAttachment(channelId, new File(["data"], "file.txt")),
+    ).rejects.toThrow("附件上传响应过大。");
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(stream.locked).toBe(false);
+  }, 1000);
+
   it("allows richer code/text types and bounds file count, bytes and unsupported formats", () => {
     for (const name of [
       "file.ts",

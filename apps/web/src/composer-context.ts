@@ -7,6 +7,7 @@ import {
   MAX_TASK_ATTACHMENT_BYTES,
   MAX_TASK_ATTACHMENTS,
 } from "@openbot/protocol";
+import { readBoundedResponse } from "./bounded-response";
 
 export { attachmentMediaTypes as ATTACHMENT_MEDIA_TYPES } from "@openbot/protocol";
 export type UploadedComposerAttachment = ChannelAttachment & { text?: undefined };
@@ -112,28 +113,10 @@ export async function uploadComposerAttachment(
       ? AbortSignal.any([signal, AbortSignal.timeout(60000)])
       : AbortSignal.timeout(60000),
   });
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error("附件上传未返回有效响应。");
-  let size = 0;
-  const chunks: Uint8Array[] = [];
-  try {
-    while (true) {
-      const next = await reader.read();
-      if (next.done) break;
-      size += next.value.byteLength;
-      if (size > 16384) throw new Error("附件上传响应过大。");
-      chunks.push(next.value);
-    }
-  } finally {
-    await reader.cancel().catch(() => undefined);
-    reader.releaseLock();
-  }
-  const data = new Uint8Array(size);
-  let offset = 0;
-  for (const chunk of chunks) {
-    data.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
+  const data = await readBoundedResponse(response, 16384, {
+    missingBody: "附件上传未返回有效响应。",
+    tooLarge: "附件上传响应过大。",
+  });
   const result = JSON.parse(new TextDecoder().decode(data)) as {
     attachment?: UploadedComposerAttachment;
     error?: string;
