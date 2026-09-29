@@ -35,7 +35,8 @@ from openbot_server.work_task_profiles import WorkTaskProfiles,resolve_product_s
 from openbot_server.work_temporal_start import WorkRuntimeContext
 from openbot_server.work_tool_results import ToolResults
 from openbot_server.work_values import InvalidWork,WorkConflict
-from test_work_product_model import CONFIG,request,response
+from test_work_product_model import CONFIG, request
+from product_model_fixtures import response
 
 SCOPE=dict(expected_namespace='default',expected_queue='native-scope',expected_workflow_type='OpenBotWorkV1')
 

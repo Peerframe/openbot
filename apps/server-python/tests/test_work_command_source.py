@@ -13,7 +13,8 @@ from psycopg.types.json import Jsonb
 import pytest
 
 from conftest import fixture
-from test_work_product_model import bound, binding, product, selected, request, KEY, SCOPE
+from test_work_product_model import product, selected, request, KEY, SCOPE
+from product_model_fixtures import bound, binding
 from test_work_product_reads import run_read
 from openbot_server.control_errors import ControlError
 from openbot_server.model_connections import ModelConnectionsService
@@ -135,7 +136,7 @@ def test_opt_in_is_explicit_and_complete(setup,options):
 
 def test_real_submit_freezes_snapshot_and_concurrent_repeat_never_recaptures(setup):
     async def check():
-        f=setup;conn=await selected(f);b=await bound(f,'docker-linux',conn)
+        f=setup;conn=await selected(f);b=await bound(f,'docker-linux',conn,scope=SCOPE)
         original=await source(f,b)
         assert original['model_selection']==dict(connectionId=conn['id'],modelId='queued-model')
         assert set(product_capabilities(original))=={'model','report','result_review','channel_reads','attachments','command'}
@@ -181,7 +182,7 @@ def test_real_source_submit_refusal_rolls_back_every_row(setup,failure):
     'missing_snapshot','wrong_composition','no_composition','mixed_native','disabled'])
 def test_current_authority_is_rechecked_by_binding_model_and_reads(setup,failure):
     async def check():
-        f=setup;conn=await selected(f);b=await bound(f,'docker-linux',conn)
+        f=setup;conn=await selected(f);b=await bound(f,'docker-linux',conn,scope=SCOPE)
         if failure=='disabled': await f.connections.update(f.token,conn['id'],dict(expectedRevision=1,enabled=False))
         else: change(f,failure)
         with binding(b):
@@ -195,7 +196,7 @@ def test_current_authority_is_rechecked_by_binding_model_and_reads(setup,failure
 
 def test_model_uses_original_selection_with_current_legal_owner_revision(setup,monkeypatch):
     async def check():
-        f=setup;first=await selected(f);second=await selected(f);b=await bound(f,'docker-linux',first)
+        f=setup;first=await selected(f);second=await selected(f);b=await bound(f,'docker-linux',first,scope=SCOPE)
         with psycopg.connect(f.dsn) as db:
             db.execute('UPDATE bots SET configuration=%s WHERE id=%s',(Jsonb({'model':{'connectionId':second['id'],'modelId':'replacement'}}),f.bot))
         await f.connections.update(f.token,first['id'],dict(expectedRevision=1,apiKey='synthetic-new-owner-key'))
@@ -216,7 +217,7 @@ def test_model_uses_original_selection_with_current_legal_owner_revision(setup,m
 @pytest.mark.parametrize('failure',['key','credential','membership','policy'])
 def test_awaited_before_send_change_leaves_unknown_and_never_sends(setup,failure):
     async def check():
-        f=setup;conn=await selected(f);b=await bound(f,'docker-linux',conn)
+        f=setup;conn=await selected(f);b=await bound(f,'docker-linux',conn,scope=SCOPE)
         async def before():
             if failure=='key': await f.connections.update(f.token,conn['id'],dict(expectedRevision=1,apiKey='synthetic-new-owner-key'))
             else: change(f,failure)
@@ -229,7 +230,7 @@ def test_awaited_before_send_change_leaves_unknown_and_never_sends(setup,failure
 
 def test_applied_read_and_publication_barrier_recheck_original_profile(setup):
     async def check():
-        f=setup;conn=await selected(f);b=await bound(f,'docker-linux',conn)
+        f=setup;conn=await selected(f);b=await bound(f,'docker-linux',conn,scope=SCOPE)
         with binding(b):
             prompt=await f.reads.read_prompt(b.context)
             outcome,row,_=await run_read(f,b,'read_channel_context')

@@ -1,18 +1,16 @@
 """Real SQL/settings/provider SDK; synthetic HTTP and the current engine's SDK/history seam."""
 import asyncio
-from contextlib import contextmanager
 from dataclasses import replace
 from datetime import datetime, timezone
 import json
 from pathlib import Path
 import sys
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import httpx2
 import psycopg
-from psycopg.types.json import Jsonb
 import pytest
 pytest.importorskip('pydantic_ai',reason='Optional Worker SDK profile is required')
 from pydantic_ai.messages import ModelRequest, UserPromptPart
@@ -22,20 +20,17 @@ from openbot_server.model_connections import ModelConnectionsService
 from openbot_server.model_connections_cipher import ModelCredentialCipher
 from openbot_server.model_settings import ModelSettingsService
 from openbot_server.product_model import ProductModelError
-from openbot_server.task_inputs import CreateMessageInput
-from openbot_server.task_store import PostgresTaskStore
 from openbot_server.work_corrections import CorrectionStore
 from openbot_server.work_files import LocalWorkFiles
-from openbot_server.work_engine_binding import EngineActivityFacts
-from openbot_server.work_handoff import HandoffStore
 from openbot_server.work_model_receipts import ModelReceipts
 import openbot_server
 openbot_server.__path__.insert(0,str(Path(__file__).resolve().parents[1]/'src/openbot_server'))
 from openbot_server.work_product_model import ProductWorkModel
 from openbot_server.work_sources import WorkSourceAdmission
 from openbot_server.work_store import PostgresWorkStore
-from openbot_server.work_temporal_start import WorkRuntimeContext
 from openbot_server.work_values import InvalidWork, WorkConflict
+
+from product_model_fixtures import binding, bound, response
 
 KEY='synthetic-product-key-never-real'
 SCOPE=dict(expected_namespace='default',expected_queue='fixture-queue',expected_workflow_type='fixture-workflow')
@@ -80,48 +75,12 @@ async def selected(f):
     f.ids.append(item['id'])
     return item
 
-async def bound(f,profile='none',connection=None):
-    with psycopg.connect(f.dsn) as db:
-        db.execute('UPDATE bots SET computer_profile=%s,configuration=%s WHERE id=%s',(profile,Jsonb({'model':{'connectionId':connection['id'],'modelId':'queued-model'}} if connection else {}),f.bot))
-    result=await PostgresTaskStore(f.dsn,model_connections=f.connections,work_sources=f.sources).submit(f.token,f.channel,
-        CreateMessageInput(content='Synthetic model task',botId=f.bot))
-    async with f.store._transaction(trusted=True) as db:
-        row=await (await db.execute('SELECT task_id FROM work_sources WHERE legacy_run_id=%s',(result.run.id,))).fetchone()
-    task=await f.store.snapshot(f.token,row['task_id'])
-    rid=task['runs'][0]['id']
-    correction=await CorrectionStore(f.store).freeze(task['id'],rid,'initial')
-    context=WorkRuntimeContext(task['id'],rid,f.bot,task['objective'],task['usage']['tokenLimit'],correction['id'])
-    accepted=SimpleNamespace(task_id=task['id'],run_id=rid,namespace='default',workflow_id='openbot-work-v1-'+rid,
-        engine_run_id='synthetic-engine',first_run_id='synthetic-engine')
-    handoff=HandoffStore(f.store);reference='temporal:default:'+accepted.workflow_id
-    reservation=await handoff.reserve_submission(task['id'],rid,reference)
-    await handoff.acknowledge(task['id'],rid,reference,reservation.attempt_id,'synthetic-engine')
-    facts=EngineActivityFacts(namespace='default',queue=SCOPE['expected_queue'],start_queue=SCOPE['expected_queue'],
-        workflow_id=accepted.workflow_id,workflow_type=SCOPE['expected_workflow_type'],engine_run_id='synthetic-engine',
-        first_run_id='synthetic-engine',start_input=dict(taskId=task['id'],runId=rid,attemptId=reservation.attempt_id))
-    return SimpleNamespace(context=context,accepted=accepted,facts=facts,source=result.run,activity='model-1')
 
-@contextmanager
-def binding(b):
-    async def inspect(*args,**kwargs): return b.facts
-    with patch('openbot_server.work_temporal_activity.activity_info',lambda:SimpleNamespace(activity_id=b.activity)), \
-            patch('openbot_server.work_temporal_activity.inspect_activity_start',inspect):
-        yield
 
 def request(text='Synthetic prompt',step=1):
     return ModelStepRequest(step=step,messages=[ModelRequest(parts=[UserPromptPart(
         text,timestamp=datetime(2026,9,25,tzinfo=timezone.utc))])],tools=())
 
-def response(req):
-    body=json.loads(req.content);model=body['model']
-    if req.url.path.endswith('/responses'):
-        return {'id':'response-fixture','object':'response','created_at':1,'model':model,'status':'completed',
-            'output':[{'id':'message-fixture','type':'message','role':'assistant','status':'completed',
-                'content':[{'type':'output_text','text':'Checked answer','annotations':[]}]}],
-            'usage':{'input_tokens':10,'output_tokens':4,'total_tokens':14}}
-    return {'id':'chat-fixture','object':'chat.completion','created':1,'model':model,
-        'choices':[{'index':0,'finish_reason':'stop','message':{'role':'assistant','content':'Checked answer'}}],
-        'usage':{'prompt_tokens':10,'completion_tokens':4,'total_tokens':14}}
 
 def product(f,handler=None,**options):
     def send(req):
@@ -150,7 +109,7 @@ ACCEPT='{"accepted":true,"reason":"The answer accurately reports the supplied ev
 
 async def prepared(f):
     await f.settings.save(CONFIG)
-    b=await bound(f)
+    b=await bound(f,scope=SCOPE)
     f.next_text=SUMMARY
     f.hook=None
     def send(req):

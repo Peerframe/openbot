@@ -16,7 +16,8 @@ from openbot_server.work_product_runtime import ProductWorkRuntime
 from openbot_server.work_sources import WorkSourceAdmission
 from openbot_server.work_worker import WorkActivities, TYPE
 from openbot_server.work_values import WorkConflict
-from test_work_product_model import setup, bound, binding, product, request, response, CONFIG, SCOPE
+from test_work_product_model import setup, product, request, CONFIG, SCOPE
+from product_model_fixtures import bound, binding, response
 from test_work_task_profiles import setup as native_setup, bound as native_bound
 
 
@@ -33,7 +34,7 @@ def configured(setup,tmp_path):
 
 def test_initial_product_load_freezes_context_before_prompt_and_catalog(configured):
     async def check():
-        f=configured;b=await bound(f)
+        f=configured;b=await bound(f,scope=SCOPE)
         scope={**SCOPE,'expected_workflow_type':TYPE}
         b.facts=replace(b.facts,workflow_type=TYPE)
         client=SimpleNamespace(namespace='default',config=lambda:dict(plugins=[PydanticAIPlugin()]))
@@ -58,7 +59,7 @@ def test_initial_product_load_freezes_context_before_prompt_and_catalog(configur
 
 def test_product_model_review_and_atomic_channel_publication(configured):
     async def check():
-        f=configured;await f.settings.save(CONFIG);b=await bound(f)
+        f=configured;await f.settings.save(CONFIG);b=await bound(f,scope=SCOPE)
         def provider(req):
             answer=response(req)
             if len(f.calls)>1:
@@ -89,7 +90,7 @@ def test_product_model_review_and_atomic_channel_publication(configured):
 
 def test_product_validation_never_accepts_an_expired_outer_scope(configured):
     async def check():
-        f=configured;b=await bound(f)
+        f=configured;b=await bound(f,scope=SCOPE)
         runtime=ProductWorkRuntime(f.store,object(),SCOPE,f.owner,model=product(f),web=False)
         with binding(b):
             await runtime.binding.claim(b.context)
@@ -136,7 +137,7 @@ def test_native_runtime_uses_own_profile_and_completes_without_channel_tools(nat
 
 def test_explicit_host_search_preserves_private_key_and_rotation_identity(configured):
     async def check():
-        f=configured;b=await bound(f)
+        f=configured;b=await bound(f,scope=SCOPE)
         runtime=ProductWorkRuntime(f.store,object(),SCOPE,f.owner,model=product(f),tavily_key='synthetic-search-first')
         with binding(b):
             catalog=await runtime.web.catalog(b.context)

@@ -40,7 +40,8 @@ from openbot_server.work_tool_results import ToolResults
 from openbot_server.work_values import WorkConflict, canonical
 
 # Existing synthetic SDK/protocol fixture helpers; no provider/network framework is added.
-from test_work_product_model import binding, request, product, response, selected, KEY, SCOPE, CONFIG
+from test_work_product_model import request, product, selected, KEY, SCOPE, CONFIG
+from product_model_fixtures import binding, response
 from test_work_product_result import tool, producer, ACCEPT
 
 
