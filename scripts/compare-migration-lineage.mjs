@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
-import { validateMigrationManifest } from "./check-migrations.mjs";
+import { validateMigrationManifest } from "./migration-manifest.ts";
 
 const subtree = "packages/db/migrations/";
 const journalPath = `${subtree}meta/_journal.json`;

@@ -1,7 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateMigrationManifest } from "./check-migrations.mjs";
+import { validateMigrationManifest } from "./migration-manifest.ts";
 
 const help = `OpenBot uses reviewed, hand-written SQL migrations.
 Usage: npm run migration:plan --workspace @openbot/db -- --name describe_change
@@ -11,11 +11,35 @@ The proposed number is not reserved. Recalculate after rebasing concurrent migra
 See docs/DATABASE.md#author-a-migration and run npm run migrations:check.
 `;
 
-export function planMigration(journal, sqlFiles, name, now = Date.now()) {
+export interface MigrationPlan {
+  readonly file: string;
+  readonly sqlTemplate: string;
+  readonly journalEntry: {
+    readonly idx: number;
+    readonly version: "7";
+    readonly when: number;
+    readonly tag: string;
+    readonly breakpoints: true;
+  };
+}
+
+export function planMigration(
+  journal: unknown,
+  sqlFiles: readonly string[],
+  name: unknown,
+  now = Date.now(),
+): MigrationPlan {
   if (typeof name !== "string" || !/^[a-z][a-z0-9_]{0,63}$/u.test(name)) {
     throw new Error("Use a lowercase migration name with letters, digits and underscores.");
   }
-  if (journal?.version !== "7" || journal?.dialect !== "postgresql") {
+  if (
+    journal === null ||
+    typeof journal !== "object" ||
+    !("version" in journal) ||
+    journal.version !== "7" ||
+    !("dialect" in journal) ||
+    journal.dialect !== "postgresql"
+  ) {
     throw new Error("Unsupported migration journal. Review the migration format before planning.");
   }
   validateMigrationManifest(journal, sqlFiles);
@@ -35,7 +59,7 @@ export function planMigration(journal, sqlFiles, name, now = Date.now()) {
   };
 }
 
-export async function migrationPlanCommand(args) {
+export async function migrationPlanCommand(args: readonly string[]): Promise<number> {
   if (args[0] === "--reject-generate") {
     console.error("OPENBOT_MIGRATION_GENERATE_DISABLED: automatic DDL generation is disabled.");
     console.error(help);
@@ -51,7 +75,9 @@ export async function migrationPlanCommand(args) {
   }
   const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
   const directory = join(repositoryRoot, "packages/db/migrations");
-  const journal = JSON.parse(await readFile(join(directory, "meta/_journal.json"), "utf8"));
+  const journal: unknown = JSON.parse(
+    await readFile(join(directory, "meta/_journal.json"), "utf8"),
+  );
   const plan = planMigration(journal, await readdir(directory), args[1]);
   console.info(JSON.stringify(plan, null, 2));
   return 0;
@@ -62,7 +88,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     (code) => {
       process.exitCode = code;
     },
-    (error) => {
+    (error: unknown) => {
       console.error(error instanceof Error ? error.message : "Migration planning failed.");
       process.exitCode = 1;
     },

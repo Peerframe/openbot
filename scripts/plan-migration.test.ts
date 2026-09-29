@@ -5,10 +5,10 @@ import { readdir, readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { planMigration } from "./plan-migration.mjs";
+import { planMigration } from "./plan-migration.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const command = join(root, "scripts/plan-migration.mjs");
+const command = join(root, "scripts/plan-migration.ts");
 const journal = {
   version: "7",
   dialect: "postgresql",
@@ -46,9 +46,11 @@ test("rejects invalid names, ambiguous history and out-of-range timestamps", () 
   assert.throws(() => planMigration({ ...journal, dialect: "sqlite" }, [], "wrong_format"));
 });
 
-async function snapshot(directory) {
+type DirectorySnapshot = { [name: string]: string | DirectorySnapshot };
+
+async function snapshot(directory: string): Promise<DirectorySnapshot> {
   const entries = await readdir(directory, { withFileTypes: true });
-  const result = {};
+  const result: DirectorySnapshot = {};
   for (const entry of entries) {
     const path = join(directory, entry.name);
     result[entry.name] = entry.isDirectory()
@@ -64,18 +66,19 @@ test("legacy generate fails before any migration writes; plan only prints a temp
   const directory = join(root, "packages/db/migrations");
   const before = await snapshot(directory);
   const manifest = JSON.parse(await readFile(join(root, "packages/db/package.json"), "utf8"));
-  assert.equal(
-    manifest.scripts.generate,
-    "node ../../scripts/plan-migration.mjs --reject-generate",
-  );
+  assert.equal(manifest.scripts.generate, "node ../../scripts/plan-migration.ts --reject-generate");
   assert.throws(
     () =>
       execFileSync(process.execPath, [command, "--reject-generate", "--custom"], {
         encoding: "utf8",
         stdio: "pipe",
       }),
-    (error) =>
+    (error: unknown) =>
+      error instanceof Error &&
+      "status" in error &&
       error.status === 1 &&
+      "stderr" in error &&
+      typeof error.stderr === "string" &&
       error.stderr.includes("OPENBOT_MIGRATION_GENERATE_DISABLED") &&
       error.stderr.includes("docs/DATABASE.md"),
   );

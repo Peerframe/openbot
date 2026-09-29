@@ -15,10 +15,10 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "generate": "node ../../scripts/plan-migration.mjs --reject-generate",
-    "migration:plan": "node ../../scripts/plan-migration.mjs",
+    "generate": "node ../../scripts/plan-migration.ts --reject-generate",
+    "migration:plan": "node ../../scripts/plan-migration.ts",
     "migrate": "drizzle-kit migrate",
-    "test": "node --test ../../scripts/plan-migration.test.mjs && vitest run src",
+    "test": "node --test ../../scripts/plan-migration.test.ts && vitest run src",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

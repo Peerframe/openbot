@@ -4,7 +4,7 @@ import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compareMigrationHistories } from "../../scripts/compare-migration-lineage.mjs";
-import { validateMigrationManifest } from "../../scripts/check-migrations.mjs";
+import { validateMigrationManifest } from "../../scripts/migration-manifest.ts";
 
 export const root = dirname(fileURLToPath(import.meta.url));
 export const repository = resolve(root, "../..");
