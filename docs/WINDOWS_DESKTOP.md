@@ -48,7 +48,7 @@ $env:RUNNER_TEMP = $env:TEMP
   -Installer "$PWD/apps/desktop/out/installers/win32-x64/openbot-desktop-$version-win32-x64.exe" `
   -PackagedDirectory "$PWD/apps/desktop/out/OpenBot-win32-x64" `
   -Electron $electron `
-  -SmokeScript "$PWD/apps/desktop/scripts/windows-remote-smoke.mjs"
+  -SmokeScript "$PWD/apps/desktop/scripts/windows-remote-smoke.ts"
 ```
 
 The gate must complete both remote safeStorage lifetimes and uninstall/cleanup. Its allowlisted

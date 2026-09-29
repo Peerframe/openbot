@@ -43,7 +43,7 @@ $env:RUNNER_TEMP = $env:TEMP
   -Installer "$PWD/apps/desktop/out/installers/win32-x64/openbot-desktop-$version-win32-x64.exe" `
   -PackagedDirectory "$PWD/apps/desktop/out/OpenBot-win32-x64" `
   -Electron $electron `
-  -SmokeScript "$PWD/apps/desktop/scripts/windows-remote-smoke.mjs"
+  -SmokeScript "$PWD/apps/desktop/scripts/windows-remote-smoke.ts"
 ```
 
 验收必须完成两个远程客户端 safeStorage 生命周期及卸载、清理。`summary.json` 只记录允许的
