@@ -1,39 +1,28 @@
-import { randomUUID } from "node:crypto";
 import { hostname } from "node:os";
 import type { NodeEnv } from "@openbot/config";
 import { createLogger, diagnosticFields, type OpenBotLogger } from "@openbot/logging";
 import {
-  approvalRequestSchema,
   firstCapabilityRequirementMismatch,
   type NodeCapability,
   type NodeCapabilityDescriptor,
   type NodeMessage,
   protocolVersion,
-  type RunFailureCode,
   type RunOffer,
-  runFailureMessages,
-  runFrameSchema,
   serverMessageSchema,
 } from "@openbot/protocol";
-import {
-  type ApprovalOutcome,
-  assertProviderDeclarations,
-  type ComputerProvider,
-  type PreparedAction,
-} from "@openbot/provider-sdk";
+import { assertProviderDeclarations, type ComputerProvider } from "@openbot/provider-sdk";
 import WebSocket from "ws";
 import { BrowserCommandHost } from "./browser-host.js";
 import { CommandRelay, type CommandRelayInstallation } from "./command-relay.js";
 import { createNodeCredentialStore, type NodeCredentialStore } from "./credential-store.js";
 import { detectWorkerHost } from "./host.js";
 import { NodeEnrollmentRequiredError, prepareNodeIdentity } from "./node-identity.js";
-
 import {
   availableCapabilities,
   availableCapabilityManifest,
   configuredProviders,
-  providerForProfile,
 } from "./providers.js";
+import { RunDrainRegistry, RunSession } from "./run-session.js";
 
 export { nodeEnrollmentUrl } from "./node-identity.js";
 
@@ -54,19 +43,10 @@ export class OpenBotNodeClient {
   #socket?: WebSocket;
   #heartbeat?: NodeJS.Timeout;
   #reconnect?: NodeJS.Timeout;
-  readonly #assignedRunIds = new Set<string>();
-  readonly #acceptedOffers = new Map<string, RunOffer>();
-  readonly #executions = new Map<string, AbortController>();
-  readonly #executionTasks = new Map<string, Promise<void>>();
-  readonly #approvalWaiters = new Map<
-    string,
-    {
-      runId: string;
-      resolve(outcome: ApprovalOutcome): void;
-      reject(error: Error): void;
-      timer: NodeJS.Timeout;
-    }
-  >();
+  /** Run lifetime of the current connection only; replaced on every new socket. */
+  #session?: RunSession;
+  /** Cross-connection execution reservations; suppresses same-Run overlap and drives draining. */
+  readonly #drains = new RunDrainRegistry();
   #stopped = false;
   #identityController?: AbortController;
   #startPromise?: Promise<void>;
@@ -136,10 +116,9 @@ export class OpenBotNodeClient {
     this.#identityController?.abort();
     clearInterval(this.#heartbeat);
     clearTimeout(this.#reconnect);
-    this.#abortExecutions();
-    this.#assignedRunIds.clear();
-    this.#acceptedOffers.clear();
-    const executions = [...this.#executionTasks.values(), ...this.#browserTasks];
+    this.#browser.disconnect();
+    this.#session?.dispose();
+    const executions = [this.#drains.drain(), ...this.#browserTasks];
     const startup = this.#startPromise?.catch(() => undefined) ?? Promise.resolve();
     await Promise.all([startup, this.#closeSocket(), ...executions]);
   }
@@ -154,6 +133,17 @@ export class OpenBotNodeClient {
       perMessageDeflate: false,
     });
     this.#socket = socket;
+    const session = new RunSession({
+      socket,
+      nodeId: this.#env.OPENBOT_NODE_ID,
+      workDirectory: this.#env.OPENBOT_NODE_WORK_DIRECTORY,
+      maxConcurrentRuns: this.#env.OPENBOT_NODE_MAX_CONCURRENT_RUNS,
+      providers: this.#providers,
+      logger: this.#logger,
+      drains: this.#drains,
+      admission: runOfferRejectionReason,
+    });
+    this.#session = session;
     let authenticated = false;
     let authenticationRejected = false;
     const commandSession = new AbortController();
@@ -259,7 +249,7 @@ export class OpenBotNodeClient {
               type: "node.heartbeat",
               protocolVersion,
               nodeId: this.#env.OPENBOT_NODE_ID,
-              activeRunIds: Array.from(this.#assignedRunIds),
+              activeRunIds: session.activeRunIds(),
               sentAt: new Date().toISOString(),
             };
             socket.send(JSON.stringify(heartbeat));
@@ -281,80 +271,34 @@ export class OpenBotNodeClient {
       }
 
       if (message.type === "run.offer") {
-        const capabilities = availableCapabilities(this.#providers);
-        const capabilityManifest = availableCapabilityManifest(this.#providers);
-        const rejection = runOfferRejectionReason(
-          message,
-          capabilities,
-          capabilityManifest,
-          this.#assignedRunIds.size,
-          this.#env.OPENBOT_NODE_MAX_CONCURRENT_RUNS,
-        );
-        const response: NodeMessage = rejection
-          ? {
-              type: "run.reject",
-              protocolVersion,
-              nodeId: this.#env.OPENBOT_NODE_ID,
-              offerId: message.offerId,
-              runId: message.runId,
-              reason: rejection,
-              rejectedAt: new Date().toISOString(),
-            }
-          : {
-              type: "run.accept",
-              protocolVersion,
-              nodeId: this.#env.OPENBOT_NODE_ID,
-              offerId: message.offerId,
-              runId: message.runId,
-              acceptedAt: new Date().toISOString(),
-            };
-        if (rejection === undefined) this.#acceptedOffers.set(message.runId, message);
-        socket.send(JSON.stringify(response));
+        session.offer(message);
         return;
       }
 
       if (message.type === "run.assigned") {
-        if (
-          message.nodeId === this.#env.OPENBOT_NODE_ID &&
-          this.#acceptedOffers.has(message.runId)
-        ) {
-          this.#assignedRunIds.add(message.runId);
-          this.#send({
-            type: "run.start_request",
-            protocolVersion,
-            nodeId: this.#env.OPENBOT_NODE_ID,
-            runId: message.runId,
-            requestedAt: new Date().toISOString(),
-          });
-        }
+        session.assigned(message);
         return;
       }
 
       if (message.type === "run.start") {
-        if (message.nodeId === this.#env.OPENBOT_NODE_ID) this.#startExecution(message.runId);
+        session.start(message);
         return;
       }
 
       if (message.type === "approval.resolved") {
-        const waiter = this.#approvalWaiters.get(message.requestId);
-        if (waiter === undefined || waiter.runId !== message.runId) return;
-        clearTimeout(waiter.timer);
-        this.#approvalWaiters.delete(message.requestId);
-        waiter.resolve({ approvalId: message.requestId, status: message.decision });
+        session.approvalResolved(message);
         return;
       }
 
-      if (message.type === "run.cancel") this.#executions.get(message.runId)?.abort();
-      this.#releaseRun(message.runId);
+      session.release(message.runId);
     });
 
     socket.on("close", () => {
       commandSession.abort();
       commandRelay?.close();
       clearInterval(this.#heartbeat);
-      this.#abortExecutions();
-      this.#assignedRunIds.clear();
-      this.#acceptedOffers.clear();
+      this.#browser.disconnect();
+      session.dispose();
       if (!this.#stopped && !authenticationRejected) {
         this.#reconnect = setTimeout(() => this.#connect(), reconnectDelayMs);
       }
@@ -367,201 +311,6 @@ export class OpenBotNodeClient {
         ...diagnosticFields(error),
       });
     });
-  }
-
-  async #executeRun(runId: string): Promise<void> {
-    if (this.#executions.has(runId)) return;
-    const offer = this.#acceptedOffers.get(runId);
-    if (offer === undefined) return;
-    const provider = providerForProfile(this.#providers, offer.executionProfile);
-    if (provider?.execute === undefined) {
-      this.#sendFailure(runId, "provider_unavailable");
-      return;
-    }
-
-    const controller = new AbortController();
-    this.#executions.set(runId, controller);
-    try {
-      const result = await provider.execute(
-        {
-          nodeId: this.#env.OPENBOT_NODE_ID,
-          workDirectory: this.#env.OPENBOT_NODE_WORK_DIRECTORY,
-          signal: controller.signal,
-        },
-        {
-          runId: offer.runId,
-          channelId: offer.channelId,
-          botId: offer.botId,
-          title: offer.title,
-          instruction: offer.instruction,
-          executionProfile: offer.executionProfile,
-        },
-        (progress) => {
-          this.#send({
-            type: "run.progress",
-            protocolVersion,
-            nodeId: this.#env.OPENBOT_NODE_ID,
-            runId,
-            stage: progress.stage.slice(0, 80),
-            message: progress.message.slice(0, 500),
-            occurredAt: new Date().toISOString(),
-          });
-        },
-        (frame) => {
-          const message = runFrameSchema.safeParse({
-            type: "run.frame",
-            protocolVersion,
-            nodeId: this.#env.OPENBOT_NODE_ID,
-            runId,
-            mediaType: frame.mediaType,
-            base64: frame.base64,
-            ...(frame.width === undefined ? {} : { width: frame.width }),
-            ...(frame.height === undefined ? {} : { height: frame.height }),
-            capturedAt: frame.capturedAt,
-          });
-          if (message.success) {
-            this.#send(message.data);
-          } else {
-            this.#logger.warn(
-              "provider.frame_rejected",
-              "Provider emitted an invalid or oversized live frame; frame skipped.",
-              { runId, nodeId: this.#env.OPENBOT_NODE_ID, providerId: provider.id },
-            );
-          }
-        },
-        (action) => this.#requestApproval(runId, action, controller.signal),
-      );
-      if (controller.signal.aborted) return;
-      if (!result.ok) {
-        this.#logger.warn("provider.reported_failure", "Provider reported a failed result.", {
-          runId,
-          nodeId: this.#env.OPENBOT_NODE_ID,
-          providerId: provider.id,
-        });
-        this.#sendFailure(runId, "provider_execution_failed");
-        return;
-      }
-      this.#send({
-        type: "run.completed",
-        protocolVersion,
-        nodeId: this.#env.OPENBOT_NODE_ID,
-        runId,
-        summary: result.summary.slice(0, 2000),
-        artifacts: result.artifacts,
-        completedAt: new Date().toISOString(),
-      });
-    } catch (error) {
-      if (!controller.signal.aborted) {
-        this.#logger.error("provider.execution_failed", "Provider execution failed.", {
-          runId,
-          nodeId: this.#env.OPENBOT_NODE_ID,
-          providerId: provider.id,
-          phase: "execute",
-          ...diagnosticFields(error),
-        });
-        this.#sendFailure(runId, "provider_execution_failed");
-      }
-    } finally {
-      this.#executions.delete(runId);
-    }
-  }
-
-  #startExecution(runId: string): void {
-    if (this.#executionTasks.has(runId)) return;
-    const task = this.#executeRun(runId);
-    this.#executionTasks.set(runId, task);
-    const remove = () => {
-      if (this.#executionTasks.get(runId) === task) this.#executionTasks.delete(runId);
-    };
-    void task.then(remove, remove);
-  }
-
-  #sendFailure(runId: string, code: RunFailureCode): void {
-    this.#send({
-      type: "run.failed",
-      protocolVersion,
-      nodeId: this.#env.OPENBOT_NODE_ID,
-      runId,
-      code,
-      error: runFailureMessages[code],
-      failedAt: new Date().toISOString(),
-    });
-  }
-
-  #send(message: NodeMessage): void {
-    if (this.#socket?.readyState === WebSocket.OPEN) {
-      this.#socket.send(JSON.stringify(message));
-    }
-  }
-
-  #requestApproval(
-    runId: string,
-    action: PreparedAction,
-    signal: AbortSignal,
-  ): Promise<ApprovalOutcome> {
-    if (action.risk === "read") {
-      throw new Error("Read-only actions must not request an approval lease.");
-    }
-    if (this.#socket?.readyState !== WebSocket.OPEN) {
-      throw new Error("Approval request could not reach the Server.");
-    }
-    const requestId = randomUUID();
-    const expiresInSeconds = Math.floor(
-      Math.min(900, Math.max(30, action.expiresInSeconds ?? 300)),
-    );
-    const message = approvalRequestSchema.parse({
-      type: "approval.request",
-      protocolVersion,
-      nodeId: this.#env.OPENBOT_NODE_ID,
-      runId,
-      requestId,
-      action: action.action,
-      target: action.target,
-      summary: action.summary,
-      risk: action.risk,
-      beforeState: action.beforeState ?? {},
-      expiresInSeconds,
-      requestedAt: new Date().toISOString(),
-    });
-
-    return new Promise((resolve, reject) => {
-      const finishWithError = (error: Error) => {
-        const waiter = this.#approvalWaiters.get(requestId);
-        if (waiter === undefined) return;
-        clearTimeout(waiter.timer);
-        this.#approvalWaiters.delete(requestId);
-        waiter.reject(error);
-      };
-      const timer = setTimeout(
-        () => finishWithError(new Error("Approval request expired before it was decided.")),
-        expiresInSeconds * 1000,
-      );
-      this.#approvalWaiters.set(requestId, { runId, resolve, reject, timer });
-      signal.addEventListener(
-        "abort",
-        () => finishWithError(new Error("Approval request was cancelled.")),
-        { once: true },
-      );
-      this.#send(message);
-    });
-  }
-
-  #releaseRun(runId: string): void {
-    this.#executions.get(runId)?.abort();
-    this.#executions.delete(runId);
-    this.#assignedRunIds.delete(runId);
-    this.#acceptedOffers.delete(runId);
-  }
-
-  #abortExecutions(): void {
-    this.#browser.disconnect();
-    for (const controller of this.#executions.values()) controller.abort();
-    this.#executions.clear();
-    for (const [requestId, waiter] of this.#approvalWaiters) {
-      clearTimeout(waiter.timer);
-      waiter.reject(new Error("Node connection closed while approval was pending."));
-      this.#approvalWaiters.delete(requestId);
-    }
   }
 
   #closeSocket(): Promise<void> {
