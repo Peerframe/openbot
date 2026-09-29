@@ -35,6 +35,10 @@ python3 -B experiments/browser-execution/qualify_egress.py \
   --output /tmp/openbot-egress-result
 ```
 
+The fixture keeps exact packages and the signed Debian `20260926T022600Z` snapshot, including
+their dependency closure. Historical metadata expiry is scoped to that snapshot; signature and
+package-hash verification remain enabled. See the research for the reproducibility repair.
+
 Choose a new output directory. The runner uses only synthetic inputs,150-second execution and
 bounded cleanup; NET_ADMIN applies only inside its own disconnected network namespace to add
 loopback canary addresses. It publishes no ports and changes no host/VPS networking. Required CI
