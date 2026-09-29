@@ -56,7 +56,8 @@ test("advisory command scans the product lock without resolution, fixes or exclu
 test("actual Python direct manifests agree with every production environment lock", async () => {
   const root = new URL("../apps/server-python/", import.meta.url);
   const metadata = await readFile(new URL("pyproject.toml", root), "utf8");
-  const dependencyBlock = metadata.match(/dependencies = \[([\s\S]*?)\n\]/)[1];
+  const dependencyBlock = metadata.match(/dependencies = \[([\s\S]*?)\n\]/)?.[1];
+  assert(dependencyBlock !== undefined, "pyproject.toml must declare direct dependencies.");
   const manifestPins = [...dependencyBlock.matchAll(/"([^"\n]+)==([^"\n]+)"/g)]
     .map((match) => `${match[1]}==${match[2]}`)
     .sort();
@@ -65,7 +66,7 @@ test("actual Python direct manifests agree with every production environment loc
     .filter((line) => line && !line.startsWith("#"))
     .sort();
   assert.deepEqual(manifestPins, direct);
-  const normalize = (line) =>
+  const normalize = (line: string): string =>
     line
       .toLowerCase()
       .replace(/\[[^\]]+\]/g, "")

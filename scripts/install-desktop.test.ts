@@ -9,8 +9,15 @@ import { fileURLToPath } from "node:url";
 const script = fileURLToPath(new URL("./install-desktop.sh", import.meta.url));
 
 test("bootstrap defaults match the Desktop version and Windows keeps OS trust policy", async () => {
-  const manifest = JSON.parse(
+  const manifest: unknown = JSON.parse(
     await readFile(new URL("../apps/desktop/package.json", import.meta.url), "utf8"),
+  );
+  assert.ok(
+    typeof manifest === "object" &&
+      manifest !== null &&
+      "version" in manifest &&
+      typeof manifest.version === "string",
+    "Desktop package version is required.",
   );
   const shell = await readFile(script, "utf8");
   const powershell = await readFile(new URL("./install-desktop.ps1", import.meta.url), "utf8");

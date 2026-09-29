@@ -29,20 +29,37 @@ const response = await fetch(new URL("/api/v1/nodes/enrollment-tokens", serverUr
   signal: AbortSignal.timeout(10_000),
 });
 if (!response.ok) throw new Error(`Enrollment token request failed with HTTP ${response.status}.`);
-const result = await response.json();
-if (typeof result?.token !== "string" || typeof result?.expiresAt !== "string") {
-  throw new Error("Server returned an invalid enrollment token response.");
-}
+const result = enrollmentResponse(await response.json());
 
 console.info(`Node: ${nodeId}`);
 console.info(`Expires: ${result.expiresAt}`);
 console.info(`OPENBOT_NODE_ENROLLMENT_TOKEN=${result.token}`);
 
-function controlPlaneUrl(nodeServerUrl) {
+function controlPlaneUrl(nodeServerUrl: string): URL {
   const url = new URL(nodeServerUrl);
   url.protocol = url.protocol === "wss:" ? "https:" : "http:";
   url.pathname = "/";
   url.search = "";
   url.hash = "";
   return url;
+}
+
+interface EnrollmentResponse {
+  readonly token: string;
+  readonly expiresAt: string;
+}
+
+/** Narrows the untrusted Server body to the two fields this CLI prints. */
+function enrollmentResponse(value: unknown): EnrollmentResponse {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "token" in value &&
+    "expiresAt" in value &&
+    typeof value.token === "string" &&
+    typeof value.expiresAt === "string"
+  ) {
+    return { token: value.token, expiresAt: value.expiresAt };
+  }
+  throw new Error("Server returned an invalid enrollment token response.");
 }

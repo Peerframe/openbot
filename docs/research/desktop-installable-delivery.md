@@ -94,7 +94,7 @@ Validation: the full repository check passed. Real Linux Bash fixtures passed co
 retry, existing-checksum verification and concurrent destination retention. All nine HTTP/file
 fixtures passed in Microsoft PowerShell 7.5.0, using an isolated network-disabled container pinned
 to `mcr.microsoft.com/powershell@sha256:042240d57ec9e47e511033b92625a8d95875ee5860af3015992c248b58a8be81`.
-The portable matrix explicitly runs `scripts/install-desktop.test.mjs`, including both Windows
+The portable matrix explicitly runs `scripts/install-desktop.test.ts`, including both Windows
 PowerShell and pwsh on Windows. Ubuntu CI exposed a newer coreutils `mv -nT` nonzero no-clobber
 exit where the older Debian fixture returned zero. Both paths now preserve the concurrent target,
 clean only the private stage and report the same retained-installation outcome. They include

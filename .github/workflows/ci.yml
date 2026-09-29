@@ -41,7 +41,7 @@ jobs:
             >"${RUNNER_TEMP}/trufflehog-results.jsonl" 2>"${RUNNER_TEMP}/trufflehog-diagnostics.log"
           status=$?
           set -e
-          node scripts/check-credential-findings.mjs "${RUNNER_TEMP}/trufflehog-results.jsonl" "$status"
+          node scripts/check-credential-findings.ts "${RUNNER_TEMP}/trufflehog-results.jsonl" "$status"
       - name: Audit the complete Python product closure
         run: sh scripts/audit-python.sh
 
@@ -88,7 +88,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Verify native Desktop bootstrap behavior
-        run: node --test scripts/install-desktop.test.mjs
+        run: node --test scripts/install-desktop.test.ts
       - name: Verify Windows receipt identity before native packaging
         if: runner.os == 'Windows'
         shell: pwsh

@@ -7,7 +7,7 @@ import {
   expectedMacOSLaunchAgentPlist,
   macOSLaunchAgentURL,
   validateMacOSLaunchAgent,
-} from "./check-macos-worker-host.mjs";
+} from "./check-macos-worker-host.ts";
 
 test("accepts the fixed app-bundled LaunchAgent contract", async () => {
   await assert.doesNotReject(validateMacOSLaunchAgent(macOSLaunchAgentURL));

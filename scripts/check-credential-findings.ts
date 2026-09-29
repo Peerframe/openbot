@@ -2,8 +2,30 @@ import { createHash } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
+interface ReviewedFixture {
+  readonly detectorType: number;
+  readonly detectorName: string;
+  readonly commit: string;
+  readonly file: string;
+  readonly line: number;
+  readonly raw: string;
+  readonly rawV2: string;
+}
+
+/** The only scanner fields an exact historical exception may compare; values stay unverified. */
+interface FindingEvidence {
+  readonly verified: unknown;
+  readonly detectorType: unknown;
+  readonly detectorName: unknown;
+  readonly commit: unknown;
+  readonly file: unknown;
+  readonly line: unknown;
+  readonly raw: string | undefined;
+  readonly rawV2: string | undefined;
+}
+
 const MAX_BYTES = 16 * 1024 * 1024;
-const REVIEWED_FIXTURES = Object.freeze([
+const REVIEWED_FIXTURES: readonly ReviewedFixture[] = Object.freeze([
   {
     detectorType: 968,
     detectorName: "Postgres",
@@ -168,30 +190,52 @@ const REVIEWED_FIXTURES = Object.freeze([
   },
 ]);
 
-function digest(value) {
+function digest(value: unknown): string | undefined {
   return typeof value === "string" ? createHash("sha256").update(value).digest("hex") : undefined;
 }
 
-function reviewedFixture(finding) {
-  const source = finding?.SourceMetadata?.Data?.Git;
+/** JavaScript property reads, so a non-object finding reads every field as absent. */
+function member(value: unknown, key: string): unknown {
+  return typeof value === "object" && value !== null ? Reflect.get(value, key) : undefined;
+}
+
+function findingEvidence(finding: unknown): FindingEvidence {
+  const source = member(member(member(finding, "SourceMetadata"), "Data"), "Git");
+  return {
+    verified: member(finding, "Verified"),
+    detectorType: member(finding, "DetectorType"),
+    detectorName: member(finding, "DetectorName"),
+    commit: member(source, "commit"),
+    file: member(source, "file"),
+    line: member(source, "line"),
+    raw: digest(member(finding, "Raw")),
+    rawV2: digest(member(finding, "RawV2")),
+  };
+}
+
+function reviewedFixture(finding: unknown): boolean {
+  const evidence = findingEvidence(finding);
   // This exception binds an immutable synthetic test line, never an entire file or detector.
   // Review evidence: docs/research/credential-scan-fixture-triage.md.
   return (
-    finding?.Verified === false &&
+    evidence.verified === false &&
     REVIEWED_FIXTURES.some(
       (fixture) =>
-        finding.DetectorType === fixture.detectorType &&
-        finding.DetectorName === fixture.detectorName &&
-        source?.commit === fixture.commit &&
-        source.file === fixture.file &&
-        source.line === fixture.line &&
-        digest(finding.Raw) === fixture.raw &&
-        digest(finding.RawV2) === fixture.rawV2,
+        evidence.detectorType === fixture.detectorType &&
+        evidence.detectorName === fixture.detectorName &&
+        evidence.commit === fixture.commit &&
+        evidence.file === fixture.file &&
+        evidence.line === fixture.line &&
+        evidence.raw === fixture.raw &&
+        evidence.rawV2 === fixture.rawV2,
     )
   );
 }
 
-export function checkCredentialFindings(output, scannerExit) {
+export function checkCredentialFindings(
+  output: string,
+  scannerExit: number | undefined,
+): { readonly reviewedFixtures: number } {
   if (scannerExit !== 0 && scannerExit !== 183) {
     throw new Error("Credential scanner failed; findings cannot override a scan error.");
   }
@@ -203,7 +247,7 @@ export function checkCredentialFindings(output, scannerExit) {
     throw new Error("Credential scanner exit and findings are inconsistent.");
   }
   for (const line of lines) {
-    let finding;
+    let finding: unknown;
     try {
       finding = JSON.parse(line);
     } catch {

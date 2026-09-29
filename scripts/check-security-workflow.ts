@@ -3,61 +3,74 @@ import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { JOBS } from "./ci-selection.ts";
 import {
+  asMapping,
   assertPinnedSources,
   expression,
+  fetchesFullHistory,
+  field,
   hasCommands,
-  prerequisites,
+  matrixRows,
   requiredJob,
-  runs,
   selectedCondition,
   workflowDocument,
-} from "./workflow-policy.mjs";
+} from "./workflow-policy.ts";
 
-export function validateSecurityWorkflow(source) {
+function ordered(script: string, stages: readonly string[]): boolean {
+  return stages.every((stage, index) => {
+    const previous = stages[index - 1];
+    return previous === undefined || script.indexOf(stage) > script.indexOf(previous);
+  });
+}
+
+export function validateSecurityWorkflow(source: string): void {
   const workflow = workflowDocument(source);
   assert.deepEqual(
-    workflow.permissions,
+    workflow.source.permissions,
     { contents: "read" },
     "CI permissions must remain read-only.",
   );
+  const on = asMapping(workflow.source.on);
   assert(
-    !("pull_request_target" in (workflow.on ?? {})),
+    on === undefined || !Object.hasOwn(on, "pull_request_target"),
     "Untrusted PRs cannot use a privileged trigger.",
   );
   assert(
-    workflow.on && "pull_request" in workflow.on && "push" in workflow.on,
+    on !== undefined && Object.hasOwn(on, "pull_request") && Object.hasOwn(on, "push"),
     "PR and main qualification triggers are required.",
   );
-  assert.deepEqual(workflow.on.push.branches, ["main"], "Push qualification remains main-only.");
+  assert.deepEqual(
+    field(on, "push", "branches"),
+    ["main"],
+    "Push qualification remains main-only.",
+  );
   assert.equal(
-    expression(workflow.concurrency?.["cancel-in-progress"]),
+    expression(field(workflow.source, "concurrency", "cancel-in-progress")),
     "github.event_name == 'pull_request'",
     "Cancel obsolete PRs, not main qualification.",
   );
   assert(
-    expression(workflow.concurrency?.group).includes(
+    expression(field(workflow.source, "concurrency", "group")).includes(
       "github.event.pull_request.number || github.ref",
     ),
     "Concurrency must distinguish PRs and refs.",
   );
   assertPinnedSources(workflow);
-  for (const [id, job] of Object.entries(workflow.jobs)) {
-    assert(!job.secrets, `${id}: do not expose secrets to PR qualification.`);
-    if (job.permissions)
-      for (const [name, permission] of Object.entries(job.permissions))
+  for (const [id, job] of workflow.jobs) {
+    assert(!job.source.secrets, `${id}: do not expose secrets to PR qualification.`);
+    const permissions = job.source.permissions;
+    if (permissions) {
+      const grants = asMapping(permissions);
+      assert(grants !== undefined, `${id}: permission escalation.`);
+      for (const [name, permission] of Object.entries(grants))
         assert(
           permission === "none" || (name === "contents" && permission === "read"),
           `${id}: permission escalation.`,
         );
+    }
   }
   const security = requiredJob(workflow, "security");
-  assert(!("if" in security), "Security must always be required.");
-  assert(
-    security.steps.some(
-      (step) => step.uses?.startsWith("actions/checkout@") && step.with?.["fetch-depth"] === 0,
-    ),
-    "Security must scan complete history.",
-  );
+  assert(!security.conditional, "Security must always be required.");
+  assert(fetchesFullHistory(security), "Security must scan complete history.");
   const script = hasCommands(
     security,
     [
@@ -73,17 +86,12 @@ export function validateSecurityWorkflow(source) {
       "--no-update",
       "--json --fail --fail-on-scan-errors git file:///repo",
       '>"${RUNNER_TEMP}/trufflehog-results.jsonl" 2>"${RUNNER_TEMP}/trufflehog-diagnostics.log"',
-      'node scripts/check-credential-findings.mjs "${RUNNER_TEMP}/trufflehog-results.jsonl" "$status"',
+      'node scripts/check-credential-findings.ts "${RUNNER_TEMP}/trufflehog-results.jsonl" "$status"',
     ],
     "Security",
   );
   const stages = ["npm@10.9.9", 'test "$(npm --version)"', "npm ci ", "npm audit "];
-  assert(
-    stages.every(
-      (stage, index) => index === 0 || script.indexOf(stage) > script.indexOf(stages[index - 1]),
-    ),
-    "Select and verify npm, install the lock tree, then audit.",
-  );
+  assert(ordered(script, stages), "Select and verify npm, install the lock tree, then audit.");
   assert(
     !/npm audit fix|--exclude-|--branch|--since-commit|--verifier|\bcat\s+[^\n]*trufflehog-/.test(
       script,
@@ -91,16 +99,16 @@ export function validateSecurityWorkflow(source) {
     "Security scans must be complete, read-only, local and non-printing.",
   );
   assert(
-    !/trufflehog-action@|upload-sarif/.test(JSON.stringify(security)),
+    !/trufflehog-action@|upload-sarif/.test(JSON.stringify(security.source)),
     "Do not upload credential candidates.",
   );
   for (const step of security.steps)
-    if (step.run) assert(!("if" in step), "Security commands cannot be conditionally bypassed.");
+    if (step.run) assert(!step.conditional, "Security commands cannot be conditionally bypassed.");
 
   const scope = requiredJob(workflow, "scope");
-  assert(!("if" in scope) && !scope.needs, "Scope must run independently.");
+  assert(!scope.conditional && !scope.source.needs, "Scope must run independently.");
   assert.equal(
-    scope.outputs?.plan,
+    field(scope.source, "outputs", "plan"),
     "${{ steps.scope.outputs.plan }}",
     "Scope output must come from the selector.",
   );
@@ -109,45 +117,42 @@ export function validateSecurityWorkflow(source) {
     ['node scripts/ci-scope.ts --event "$GITHUB_EVENT_PATH" --github-output "$GITHUB_OUTPUT"'],
     "Scope",
   );
-  assert(
-    scope.steps.some(
-      (step) => step.uses?.startsWith("actions/checkout@") && step.with?.["fetch-depth"] === 0,
-    ),
-    "Scope needs actual commit ancestry.",
-  );
+  assert(fetchesFullHistory(scope), "Scope needs actual commit ancestry.");
   for (const id of JOBS.filter((id) => !["security", "validate"].includes(id))) {
     const job = requiredJob(workflow, id);
-    assert(prerequisites(job).includes("scope"), `${id}: scope prerequisite missing.`);
+    assert(job.needs.includes("scope"), `${id}: scope prerequisite missing.`);
     assert.equal(
-      expression(job.if),
+      expression(job.condition),
       selectedCondition(id),
       `${id}: only the tested scope may declare non-applicability.`,
     );
   }
   const validate = requiredJob(workflow, "validate");
   assert(
-    prerequisites(validate).includes("scope") && !("if" in validate),
+    validate.needs.includes("scope") && !validate.conditional,
     "Validation cannot be omitted.",
   );
   hasCommands(validate, ['npm run check:affected -- --event "$GITHUB_EVENT_PATH"'], "Validation");
   assert(
-    validate.steps.some((step) => step.env?.OPENBOT_CI_PLAN === "${{ needs.scope.outputs.plan }}"),
+    validate.steps.some((step) => step.env.OPENBOT_CI_PLAN === "${{ needs.scope.outputs.plan }}"),
     "Validation must verify the same selected plan.",
   );
 
   const portable = requiredJob(workflow, "portable");
   assert.equal(
-    portable.strategy?.["fail-fast"],
+    field(portable.source, "strategy", "fail-fast"),
     false,
     "Platform failures must remain independent.",
   );
   assert.deepEqual(
-    portable.strategy.matrix.include.map((row) => row.runner).sort(),
+    matrixRows(portable)
+      .map((row) => row.runner)
+      .sort(),
     ["macos-15", "ubuntu-24.04", "windows-2025"],
     "Retain all explicitly supported runners.",
   );
   assert.equal(
-    portable["runs-on"],
+    portable.source["runs-on"],
     "${{ matrix.runner }}",
     "Execute on the selected native runner.",
   );
@@ -191,15 +196,15 @@ export function validateSecurityWorkflow(source) {
     "node scripts/build-macos-worker-host-candidate.ts",
     "/usr/bin/plutil -lint",
   ]) {
-    const step = portable.steps.find((step) => step.run?.includes(fragment));
+    const step = portable.steps.find((candidate) => candidate.run?.includes(fragment));
     assert.equal(
-      expression(step.if),
+      expression(step?.condition),
       "runner.os == 'macOS'",
       "Native macOS checks need their actual platform.",
     );
     if (fragment.startsWith("node"))
       assert(
-        step.run.includes("curl --proto '=https' --tlsv1.2 --fail"),
+        (step?.run ?? "").includes("curl --proto '=https' --tlsv1.2 --fail"),
         "Companion download must verify HTTPS and errors.",
       );
   }
@@ -219,15 +224,13 @@ export function validateSecurityWorkflow(source) {
   );
   const gate = requiredJob(workflow, "check");
   assert.equal(
-    expression(gate.if),
+    expression(gate.condition),
     "always()",
     "CI check must run after failed or skipped prerequisites.",
   );
-  const expected = Object.keys(workflow.jobs)
-    .filter((id) => id !== "check")
-    .sort();
+  const expected = [...workflow.jobs.keys()].filter((id) => id !== "check").sort();
   assert.deepEqual(
-    prerequisites(gate).toSorted(),
+    gate.needs.toSorted(),
     expected,
     "CI check must depend on every job exactly once.",
   );
@@ -238,16 +241,16 @@ export function validateSecurityWorkflow(source) {
   );
   const aggregate = gate.steps.find((step) => step.run?.trim() === "node scripts/ci-results.ts");
   assert(
-    aggregate && !("if" in aggregate),
+    aggregate && !aggregate.conditional,
     "CI check must execute the tested success-only result validator.",
   );
-  assert.equal(aggregate.env?.OPENBOT_CI_PLAN, "${{ needs.scope.outputs.plan }}");
-  assert.equal(aggregate.env?.OPENBOT_CI_NEEDS, "${{ toJSON(needs) }}");
+  assert.equal(aggregate.env.OPENBOT_CI_PLAN, "${{ needs.scope.outputs.plan }}");
+  assert.equal(aggregate.env.OPENBOT_CI_NEEDS, "${{ toJSON(needs) }}");
 }
 
-export function validatePythonProductWorkflow(source, migrationSource) {
+export function validatePythonProductWorkflow(source: string, migrationSource: string): void {
   const workflow = workflowDocument(source);
-  const job = (id) => requiredJob(workflow, id);
+  const job = (id: string) => requiredJob(workflow, id);
   hasCommands(
     job("temporal-qualification"),
     ["--engine postgres-mtls --upgrade-archive", "--only-case product-owner-corrections"],
@@ -273,7 +276,9 @@ export function validatePythonProductWorkflow(source, migrationSource) {
   );
   const container = job("python-product-container");
   assert.deepEqual(
-    container.strategy.matrix.include.map((row) => `${row.runner}:${row.arch}`).sort(),
+    matrixRows(container)
+      .map((row) => `${String(row.runner)}:${String(row.arch)}`)
+      .sort(),
     ["ubuntu-24.04-arm:arm64", "ubuntu-24.04:amd64"],
     "Python container keeps both actual architectures.",
   );
@@ -287,7 +292,7 @@ export function validatePythonProductWorkflow(source, migrationSource) {
     "Python product container",
   );
   const preview = job("python-desktop-preview");
-  assert.equal(preview["runs-on"], "macos-15");
+  assert.equal(preview.source["runs-on"], "macos-15");
   const stages = [
     "--filter=@openbot/desktop --filter=@openbot/python-node-runtime",
     "node apps/desktop/scripts/prepare-native-server.ts --python-product",
@@ -297,9 +302,7 @@ export function validatePythonProductWorkflow(source, migrationSource) {
   ];
   const script = hasCommands(preview, stages, "Python Preview");
   assert(
-    stages.every(
-      (stage, index) => index === 0 || script.indexOf(stage) > script.indexOf(stages[index - 1]),
-    ),
+    ordered(script, stages),
     "Python Preview must stage, smoke, package, then smoke the installed payload.",
   );
   assert(
@@ -312,7 +315,11 @@ export function validatePythonProductWorkflow(source, migrationSource) {
     "Python migration uses same-commit qualification.",
   );
   const migration = workflowDocument(migrationSource);
-  assert("workflow_call" in migration.on, "Python migration needs same-commit qualification.");
+  const migrationOn = asMapping(migration.source.on);
+  assert(
+    migrationOn !== undefined && Object.hasOwn(migrationOn, "workflow_call"),
+    "Python migration needs same-commit qualification.",
+  );
   hasCommands(
     requiredJob(migration, "synthetic-migration"),
     ["node experiments/s7-migration/qualify.mjs --report"],

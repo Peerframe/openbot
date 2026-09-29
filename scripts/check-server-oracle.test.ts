@@ -1,12 +1,27 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import test from "node:test";
-import { checkServerOracle } from "./check-server-oracle.mjs";
+import test, { type TestContext } from "node:test";
+import { checkServerOracle } from "./check-server-oracle.ts";
 
-async function fixture(t) {
+interface SnapshotFile {
+  path: string;
+  origin: string;
+  bytes: number;
+  sha256: string;
+}
+
+interface OraclePackage {
+  name: string;
+  private: boolean;
+  exports: Record<string, never> | null;
+  scripts: Record<string, string>;
+  devDependencies: Record<string, string>;
+}
+
+async function fixture(t: TestContext) {
   const root = await mkdtemp(join(tmpdir(), "openbot-oracle-test-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   for (const path of [
@@ -21,20 +36,19 @@ async function fixture(t) {
   const base = join(root, "tests/oracles/legacy-server");
   const content = "export const original = true;\n";
   await writeFile(join(base, "src/example.ts"), content);
+  const file: SnapshotFile = {
+    path: "src/example.ts",
+    origin: "apps/server/src/example.ts",
+    bytes: Buffer.byteLength(content),
+    sha256: createHash("sha256").update(content).digest("hex"),
+  };
   const snapshot = {
     version: 1,
     license: "MIT",
-    files: [
-      {
-        path: "src/example.ts",
-        origin: "apps/server/src/example.ts",
-        bytes: Buffer.byteLength(content),
-        sha256: createHash("sha256").update(content).digest("hex"),
-      },
-    ],
+    files: [file],
   };
   await writeFile(join(base, "snapshot.json"), JSON.stringify(snapshot));
-  const pkg = {
+  const pkg: OraclePackage = {
     name: "@openbot/legacy-server-oracle",
     private: true,
     exports: {},
@@ -42,19 +56,18 @@ async function fixture(t) {
     devDependencies: { zod: "4.6.2" },
   };
   await writeFile(join(base, "package.json"), JSON.stringify(pkg));
-  await writeFile(
-    join(root, "package-lock.json"),
-    JSON.stringify({
-      packages: {
-        "tests/oracles/legacy-server": { devDependencies: pkg.devDependencies },
-        "node_modules/@openbot/legacy-server-oracle": {
-          resolved: "tests/oracles/legacy-server",
-          link: true,
-        },
+  const oracleLock = { devDependencies: pkg.devDependencies };
+  const lock = {
+    packages: {
+      "tests/oracles/legacy-server": oracleLock,
+      "node_modules/@openbot/legacy-server-oracle": {
+        resolved: "tests/oracles/legacy-server",
+        link: true,
       },
-    }),
-  );
-  return { root, base, pkg, snapshot };
+    },
+  };
+  await writeFile(join(root, "package-lock.json"), JSON.stringify(lock));
+  return { root, base, pkg, snapshot, file, lock, oracleLock };
 }
 
 test("accepts a fixed test-only fixture without the old Server directory", async (t) => {
@@ -73,7 +86,7 @@ for (const mutation of [
   "package-exports",
 ]) {
   test(`refuses ${mutation}`, async (t) => {
-    const { root, base, pkg, snapshot } = await fixture(t);
+    const { root, base, pkg, snapshot, file, lock, oracleLock } = await fixture(t);
     if (mutation === "changed")
       await writeFile(join(base, "src/example.ts"), "export const original = false;\n");
     if (mutation === "added") await writeFile(join(base, "src/other.ts"), "");
@@ -82,11 +95,11 @@ for (const mutation of [
       await symlink("../../../../package-lock.json", join(base, "src/example.ts"));
     }
     if (mutation === "traversal") {
-      snapshot.files[0].path = "src/../../../../package-lock.json";
+      file.path = "src/../../../../package-lock.json";
       await writeFile(join(base, "snapshot.json"), JSON.stringify(snapshot));
     }
     if (mutation === "duplicate") {
-      snapshot.files.push(snapshot.files[0]);
+      snapshot.files.push(file);
       await writeFile(join(base, "snapshot.json"), JSON.stringify(snapshot));
     }
     if (mutation === "package-exports") {
@@ -103,8 +116,7 @@ for (const mutation of [
         'import "@openbot/legacy-server-oracle";',
       );
     if (mutation === "lock-drift") {
-      const lock = JSON.parse(await readFile(join(root, "package-lock.json"), "utf8"));
-      lock.packages["tests/oracles/legacy-server"].devDependencies.zod = "0.0.0";
+      oracleLock.devDependencies = { ...oracleLock.devDependencies, zod: "0.0.0" };
       await writeFile(join(root, "package-lock.json"), JSON.stringify(lock));
     }
     await assert.rejects(() => checkServerOracle(root));

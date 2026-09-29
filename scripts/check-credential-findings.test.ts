@@ -1,8 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { checkCredentialFindings } from "./check-credential-findings.mjs";
+import { checkCredentialFindings } from "./check-credential-findings.ts";
 
-function fixture(index = 0) {
+interface Finding {
+  DetectorType: number;
+  DetectorName: string;
+  Verified?: boolean;
+  Raw: string;
+  RawV2: string;
+  SourceMetadata: { Data: { Git: { commit: string; file: string; line: number } } };
+}
+
+function fixture(index = 0): Finding {
   if (index === 17) {
     const raw =
       "postgres://" + "openbot:" + "synthetic-product-db@" + String.fromCharCode(92) + ":5432";
@@ -72,6 +81,7 @@ function fixture(index = 0) {
     },
   ];
   const definition = definitions[index];
+  if (definition === undefined) throw new RangeError(`Unknown credential fixture: ${index}`);
   const url = new URL(definition.url);
   const postgres = url.protocol === "postgres:";
   url.username = definition.username ?? "user";
@@ -90,14 +100,14 @@ function fixture(index = 0) {
   };
 }
 
-function syntheticUrl(base, username, password) {
+function syntheticUrl(base: string, username: string, password: string): string {
   const url = new URL(base);
   url.username = username;
   url.password = password;
   return url.href.endsWith("/") ? url.href.slice(0, -1) : url.href;
 }
-function migrationFixture(index) {
-  const extra = [
+function migrationFixture(index: number): Finding {
+  const extra: Finding[] = [
     {
       DetectorType: 87,
       DetectorName: "SentryToken",
@@ -131,8 +141,7 @@ function migrationFixture(index) {
       },
     },
   ];
-  if (index >= 9) return extra[index - 9];
-  return [
+  const findings: Finding[] = [
     {
       DetectorType: 968,
       DetectorName: "Postgres",
@@ -277,7 +286,10 @@ function migrationFixture(index) {
         },
       },
     },
-  ][index];
+  ];
+  const finding = index >= 9 ? extra[index - 9] : findings[index];
+  if (finding === undefined) throw new RangeError(`Unknown migration fixture: ${index}`);
+  return finding;
 }
 
 test("accepts clean scans and only the eighteen exact reviewed historical findings", () => {
@@ -291,7 +303,7 @@ test("accepts clean scans and only the eighteen exact reviewed historical findin
 });
 
 test("does not exempt another value, detector, verified result, or source location", () => {
-  const mutations = [
+  const mutations: ReadonlyArray<(value: Finding) => void> = [
     (value) => {
       value.Raw += "different";
     },
@@ -331,7 +343,11 @@ test("does not exempt another value, detector, verified result, or source locati
       mutate(value);
       assert.throws(() => checkCredentialFindings(JSON.stringify(value), 183), /Unreviewed/);
       assert.throws(
-        () => checkCredentialFindings([fixture(), value].map(JSON.stringify).join("\n"), 183),
+        () =>
+          checkCredentialFindings(
+            [fixture(), value].map((finding) => JSON.stringify(finding)).join("\n"),
+            183,
+          ),
         /Unreviewed/,
       );
     }
@@ -351,6 +367,7 @@ test("fails closed on scanner errors, inconsistent results, malformed and oversi
   assert.throws(
     () => checkCredentialFindings(`{"Raw":"${candidate}`, 183),
     (error) => {
+      assert.ok(error instanceof Error);
       assert.equal(error.message, "Credential scanner produced invalid JSON.");
       assert.ok(!error.message.includes(candidate));
       return true;

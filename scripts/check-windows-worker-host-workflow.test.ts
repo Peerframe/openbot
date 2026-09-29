@@ -1,23 +1,33 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { parse, stringify } from "yaml";
-import { validateWindowsWorkerHostBuildLane } from "./check-windows-worker-host-workflow.mjs";
+import { stringify } from "yaml";
+import {
+  type WindowsWorkerHostSources,
+  validateWindowsWorkerHostBuildLane,
+} from "./check-windows-worker-host-workflow.ts";
+import { fixtureJob, fixtureSteps, workflowFixture } from "./workflow-test-fixture.ts";
 
-const fixture = Object.fromEntries(
-  await Promise.all(
-    Object.entries({
-      workflow: new URL("../.github/workflows/ci.yml", import.meta.url),
-      globalJson: new URL("../apps/worker-host-windows/global.json", import.meta.url),
-      buildProps: new URL("../apps/worker-host-windows/Directory.Build.props", import.meta.url),
-      hostProject: new URL(
-        "../apps/worker-host-windows/OpenBot.WorkerHost.Windows/OpenBot.WorkerHost.Windows.csproj",
-        import.meta.url,
-      ),
-      artifactChecker: new URL("./check-windows-worker-host-artifact.ps1", import.meta.url),
-    }).map(async ([name, url]) => [name, await readFile(url, "utf8")]),
+const [workflow, globalJson, buildProps, hostProject, artifactChecker] = await Promise.all([
+  readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8"),
+  readFile(new URL("../apps/worker-host-windows/global.json", import.meta.url), "utf8"),
+  readFile(new URL("../apps/worker-host-windows/Directory.Build.props", import.meta.url), "utf8"),
+  readFile(
+    new URL(
+      "../apps/worker-host-windows/OpenBot.WorkerHost.Windows/OpenBot.WorkerHost.Windows.csproj",
+      import.meta.url,
+    ),
+    "utf8",
   ),
-);
+  readFile(new URL("./check-windows-worker-host-artifact.ps1", import.meta.url), "utf8"),
+]);
+const fixture: WindowsWorkerHostSources = {
+  workflow,
+  globalJson,
+  buildProps,
+  hostProject,
+  artifactChecker,
+};
 
 test("accepts the locked build-only Windows Worker Host lane", () => {
   assert.doesNotThrow(() => validateWindowsWorkerHostBuildLane(fixture));
@@ -98,9 +108,9 @@ test("rejects SDK, package, or artifact-boundary drift", () => {
 });
 
 test("accepts peer reordering, step renaming and YAML formatting", () => {
-  const value = parse(fixture.workflow);
+  const value = workflowFixture(fixture.workflow);
   value.jobs = Object.fromEntries(Object.entries(value.jobs).reverse());
-  for (const step of value.jobs["windows-worker-host"].steps)
+  for (const step of fixtureSteps(fixtureJob(value, "windows-worker-host")))
     if (step.name) step.name = "Describe a checked property";
   assert.doesNotThrow(() =>
     validateWindowsWorkerHostBuildLane({ ...fixture, workflow: stringify(value, { indent: 4 }) }),

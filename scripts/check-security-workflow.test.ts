@@ -1,27 +1,41 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { parse, stringify } from "yaml";
+import { stringify } from "yaml";
 import {
   validatePythonProductWorkflow,
   validateSecurityWorkflow,
-} from "./check-security-workflow.mjs";
-import { SETUP_NODE, workflowDocument } from "./workflow-policy.mjs";
+} from "./check-security-workflow.ts";
+import { SETUP_NODE, workflowDocument } from "./workflow-policy.ts";
+import {
+  type CommandStep,
+  type FixtureWorkflow,
+  commandStep,
+  environmentOf,
+  fixtureJob,
+  fixtureSteps,
+  matrixRows,
+  settingsOf,
+  stepAt,
+  workflowFixture,
+} from "./workflow-test-fixture.ts";
+
+type Mutation = (value: FixtureWorkflow) => void;
 
 const source = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
 const migration = await readFile(
   new URL("../.github/workflows/s7-migration.yml", import.meta.url),
   "utf8",
 );
-function changed(change) {
-  const value = parse(source);
+function changed(change: Mutation): string {
+  const value = workflowFixture(source);
   change(value);
   return stringify(value, { lineWidth: 0 });
 }
-function command(value, id, fragment) {
-  return value.jobs[id].steps.find((step) => step.run?.includes(fragment));
+function command(value: FixtureWorkflow, id: string, fragment: string): CommandStep {
+  return commandStep(fixtureJob(value, id), fragment);
 }
-const check = (text) => {
+const check = (text: string): void => {
   validateSecurityWorkflow(text);
   validatePythonProductWorkflow(text, migration);
 };
@@ -29,7 +43,7 @@ const check = (text) => {
 test("real CI preserves security and independent installed product qualifications", () =>
   check(source));
 test("peer order, display names, indentation and extra pinned setup are not security contracts", () => {
-  const value = parse(source);
+  const value = workflowFixture(source);
   value.jobs = Object.fromEntries(Object.entries(value.jobs).reverse());
   for (const job of Object.values(value.jobs)) {
     job.name = "Descriptive name can change";
@@ -37,7 +51,10 @@ test("peer order, display names, indentation and extra pinned setup are not secu
       if (step.name) step.name = "Another description";
     }
   }
-  value.jobs.validate.steps.splice(2, 0, { uses: SETUP_NODE, with: { "node-version": "22.22.2" } });
+  fixtureSteps(fixtureJob(value, "validate")).splice(2, 0, {
+    uses: SETUP_NODE,
+    with: { "node-version": "22.22.2" },
+  });
   check(stringify(value, { indent: 4, lineWidth: 100 }));
 });
 test("YAML duplicate keys, aliases and comments cannot satisfy executable policy", () => {
@@ -52,8 +69,21 @@ test("YAML duplicate keys, aliases and comments cannot satisfy executable policy
     ),
   );
 });
+test("the shared parser rejects job, step and command shapes no policy can inspect", () => {
+  for (const text of [
+    "jobs: []\n",
+    "jobs:\n  security: run\n",
+    "jobs:\n  security:\n    steps: run\n",
+    "jobs:\n  security:\n    steps:\n      - npm audit\n",
+    "jobs:\n  security:\n    steps:\n      - run: [npm, audit]\n",
+    "jobs:\n  security:\n    steps:\n      - uses: 7\n",
+    "jobs:\n  security:\n    steps:\n      - with: fetch-depth\n",
+    "jobs:\n  check:\n    needs: {scope: true}\n",
+  ])
+    assert.throws(() => workflowDocument(text));
+});
 test("read-only authority, exact source pins and disabled credential persistence are required", () => {
-  for (const mutate of [
+  const mutations: readonly Mutation[] = [
     (v) => {
       v.permissions.contents = "write";
     },
@@ -61,31 +91,32 @@ test("read-only authority, exact source pins and disabled credential persistence
       v.on.pull_request_target = null;
     },
     (v) => {
-      v.jobs.validate.permissions = { "id-token": "write" };
+      fixtureJob(v, "validate").permissions = { "id-token": "write" };
     },
     (v) => {
-      v.jobs.validate.secrets = "inherit";
+      fixtureJob(v, "validate").secrets = "inherit";
     },
     (v) => {
-      v.jobs.security.steps[0].with["persist-credentials"] = true;
+      settingsOf(stepAt(fixtureJob(v, "security"), 0))["persist-credentials"] = true;
     },
     (v) => {
-      v.jobs.security.steps[0].with["fetch-depth"] = 1;
+      settingsOf(stepAt(fixtureJob(v, "security"), 0))["fetch-depth"] = 1;
     },
     (v) => {
-      v.jobs.validate.steps[1].uses = "actions/setup-node@v7";
+      stepAt(fixtureJob(v, "validate"), 1).uses = "actions/setup-node@v7";
     },
     (v) => {
-      v.jobs.validate.steps = v.jobs.validate.steps.filter((s) => s.uses !== SETUP_NODE);
+      const job = fixtureJob(v, "validate");
+      job.steps = fixtureSteps(job).filter((s) => s.uses !== SETUP_NODE);
     },
     (v) => {
-      v.jobs.validate.steps[1].with["node-version"] = "latest";
+      settingsOf(stepAt(fixtureJob(v, "validate"), 1))["node-version"] = "latest";
     },
-  ])
-    assert.throws(() => check(changed(mutate)));
+  ];
+  for (const mutate of mutations) assert.throws(() => check(changed(mutate)));
 });
 test("production audits retain exact CLI, coverage and fail-closed execution", () => {
-  for (const mutate of [
+  const mutations: readonly Mutation[] = [
     (v) => {
       command(v, "security", "npm@10.9.9").run = "npm install -g npm@latest";
     },
@@ -108,13 +139,16 @@ test("production audits retain exact CLI, coverage and fail-closed execution", (
       command(v, "security", "audit-python.sh").run = "echo omitted";
     },
     (v) => {
-      const steps = v.jobs.security.steps;
+      const steps = fixtureSteps(fixtureJob(v, "security"));
       const a = steps.indexOf(command(v, "security", "npm audit "));
       const b = steps.indexOf(command(v, "security", "npm ci "));
-      [steps[a], steps[b]] = [steps[b], steps[a]];
+      const audit = steps[a];
+      const install = steps[b];
+      assert(audit && install);
+      [steps[a], steps[b]] = [install, audit];
     },
-  ])
-    assert.throws(() => check(changed(mutate)));
+  ];
+  for (const mutate of mutations) assert.throws(() => check(changed(mutate)));
 });
 test("credential scanning retains full history and content-free exact finding review", () => {
   for (const suffix of [" --branch HEAD", " --exclude-paths tests", " --since-commit HEAD~1"])
@@ -129,7 +163,7 @@ test("credential scanning retains full history and content-free exact finding re
   for (const substitute of [
     "echo ignored",
     "cat trufflehog-results.jsonl",
-    "node scripts/check-credential-findings.mjs ignored 0 || true",
+    "node scripts/check-credential-findings.ts ignored 0 || true",
   ])
     assert.throws(() =>
       check(
@@ -141,15 +175,17 @@ test("credential scanning retains full history and content-free exact finding re
     );
 });
 test("native portable capabilities survive without unrelated repeated suites", () => {
-  for (const mutate of [
+  const mutations: readonly Mutation[] = [
     (v) => {
-      v.jobs.portable.strategy.matrix.include.pop();
+      matrixRows(fixtureJob(v, "portable")).pop();
     },
     (v) => {
-      v.jobs.portable.strategy.matrix.include[0].runner = "ubuntu-latest";
+      const [row] = matrixRows(fixtureJob(v, "portable"));
+      assert(row);
+      row.runner = "ubuntu-latest";
     },
     (v) => {
-      v.jobs.portable["continue-on-error"] = true;
+      fixtureJob(v, "portable")["continue-on-error"] = true;
     },
     (v) => {
       command(v, "portable", "/usr/bin/plutil").if = "runner.os != 'Windows'";
@@ -163,46 +199,52 @@ test("native portable capabilities survive without unrelated repeated suites", (
     (v) => {
       command(v, "portable", "turbo run test").if = false;
     },
-  ])
-    assert.throws(() => check(changed(mutate)));
+  ];
+  for (const mutate of mutations) assert.throws(() => check(changed(mutate)));
 });
 test("selection cannot bypass required qualifications or lose the authoritative PR input", () => {
-  for (const mutate of [
+  const mutations: readonly Mutation[] = [
     (v) => {
-      v.jobs["python-runtime"].if = "false";
+      fixtureJob(v, "python-runtime").if = "false";
     },
     (v) => {
-      v.jobs["browser-product"].if = "github.actor == 'maintainer'";
+      fixtureJob(v, "browser-product").if = "github.actor == 'maintainer'";
     },
     (v) => {
-      delete v.jobs["harness"].needs;
+      delete fixtureJob(v, "harness").needs;
     },
     (v) => {
       command(v, "scope", "ci-scope.ts").run = "node scripts/ci-scope.ts --local";
     },
     (v) => {
-      v.jobs.scope.outputs.plan = "{}";
+      const outputs = fixtureJob(v, "scope").outputs;
+      assert(outputs);
+      outputs.plan = "{}";
     },
     (v) => {
-      delete v.jobs.check.needs[0];
+      const needs = fixtureJob(v, "check").needs;
+      assert(Array.isArray(needs));
+      delete needs[0];
     },
     (v) => {
-      v.jobs.check.if = "success()";
+      fixtureJob(v, "check").if = "success()";
     },
     (v) => {
-      v.jobs.check.steps.at(-1).env.OPENBOT_CI_NEEDS = "{}";
+      environmentOf(stepAt(fixtureJob(v, "check"), -1)).OPENBOT_CI_NEEDS = "{}";
     },
     (v) => {
-      v.jobs.check.steps.at(-1).run += " || true";
+      const step = stepAt(fixtureJob(v, "check"), -1);
+      assert(typeof step.run === "string");
+      step.run += " || true";
     },
     (v) => {
-      v.jobs.check.steps.at(-1).if = "false";
+      stepAt(fixtureJob(v, "check"), -1).if = "false";
     },
     (v) => {
       v.jobs.additional = { "runs-on": "ubuntu-24.04" };
     },
-  ])
-    assert.throws(() => check(changed(mutate)));
+  ];
+  for (const mutate of mutations) assert.throws(() => check(changed(mutate)));
 });
 test("all C2 gates and real product recovery stay required when selected", () => {
   for (const [job, fragment] of [
@@ -212,7 +254,7 @@ test("all C2 gates and real product recovery stay required when selected", () =>
     ["browser-product", "control node replacement response-loss browser-restart"],
     ["python-product-container", "deploy/server/smoke-product.py"],
     ["python-desktop-preview", "node apps/desktop/scripts/package.ts --preview --python-product"],
-  ])
+  ] as const)
     assert.throws(() =>
       check(
         changed((v) => {
@@ -231,7 +273,8 @@ test("all C2 gates and real product recovery stay required when selected", () =>
   assert.throws(() =>
     check(
       changed((v) => {
-        v.jobs["synthetic-migration"].uses = "someone/other/.github/workflows/migration.yml@main";
+        fixtureJob(v, "synthetic-migration").uses =
+          "someone/other/.github/workflows/migration.yml@main";
       }),
     ),
   );

@@ -2,15 +2,24 @@ import assert from "node:assert/strict";
 import {
   CHECKOUT,
   assertNoFailureBypass,
+  field,
   hasCommands,
   requiredJob,
   runs,
   workflowDocument,
-} from "./workflow-policy.mjs";
+} from "./workflow-policy.ts";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 const SETUP_DOTNET_PIN = "actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68";
+
+export interface WindowsWorkerHostSources {
+  readonly workflow: string;
+  readonly globalJson: string;
+  readonly buildProps: string;
+  readonly hostProject: string;
+  readonly artifactChecker: string;
+}
 
 export function validateWindowsWorkerHostBuildLane({
   workflow,
@@ -18,20 +27,24 @@ export function validateWindowsWorkerHostBuildLane({
   buildProps,
   hostProject,
   artifactChecker,
-}) {
+}: WindowsWorkerHostSources): void {
   const lane = requiredJob(workflowDocument(workflow), "windows-worker-host");
   assertNoFailureBypass(lane, "Windows Worker Host");
   const boundary = "Windows Worker Host job broadens its runner, dependency, or artifact boundary.";
-  assert.equal(lane["runs-on"], "windows-2025", boundary);
-  assert.equal(lane.defaults?.run?.["working-directory"], "apps/worker-host-windows", boundary);
-  assert.equal(lane.env?.DOTNET_CLI_TELEMETRY_OPTOUT, 1, boundary);
+  assert.equal(lane.source["runs-on"], "windows-2025", boundary);
+  assert.equal(
+    field(lane.source, "defaults", "run", "working-directory"),
+    "apps/worker-host-windows",
+    boundary,
+  );
+  assert.equal(lane.env.DOTNET_CLI_TELEMETRY_OPTOUT, 1, boundary);
   const checkout = lane.steps.find((step) => step.uses?.startsWith("actions/checkout@"));
-  assert(checkout?.uses === CHECKOUT && checkout.with?.["persist-credentials"] === false, boundary);
+  assert(checkout?.uses === CHECKOUT && checkout.with["persist-credentials"] === false, boundary);
   const setup = lane.steps.find((step) => step.uses?.startsWith("actions/setup-dotnet@"));
   assert(
     setup?.uses === SETUP_DOTNET_PIN &&
-      setup.with?.["global-json-file"] === "apps/worker-host-windows/global.json" &&
-      !setup.with?.cache,
+      setup.with["global-json-file"] === "apps/worker-host-windows/global.json" &&
+      !setup.with.cache,
     boundary,
   );
   assert(!lane.steps.some((step) => step.uses?.startsWith("actions/upload-artifact")), boundary);
@@ -62,11 +75,11 @@ export function validateWindowsWorkerHostBuildLane({
     );
   }
 
-  const sdk = JSON.parse(globalJson).sdk;
+  const sdk = field(JSON.parse(globalJson) as unknown, "sdk");
   if (
-    sdk?.version !== "10.0.400" ||
-    sdk?.rollForward !== "disable" ||
-    sdk?.allowPrerelease !== false
+    field(sdk, "version") !== "10.0.400" ||
+    field(sdk, "rollForward") !== "disable" ||
+    field(sdk, "allowPrerelease") !== false
   ) {
     throw new Error("Windows Worker Host global.json must select only .NET SDK 10.0.400.");
   }

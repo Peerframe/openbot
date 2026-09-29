@@ -3,76 +3,80 @@ import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import {
   assertPinnedSources,
+  fetchesFullHistory,
+  field,
   hasCommands,
+  matrixRows,
   requiredJob,
   runs,
+  stepScript,
   workflowDocument,
-} from "./workflow-policy.mjs";
+} from "./workflow-policy.ts";
 
 const ATTEST = "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6";
 const UPLOAD = "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a";
 const ROOT = "${{ env.RELEASE_ROOT }}";
-const artifacts = ["*.tar.xz", "*.build.json", "*.SHA256SUMS"].map(
-  (name) => `${ROOT}/archives-1/${name}`,
-);
-const lines = (value) =>
+const ARCHIVE = `${ROOT}/archives-1/*.tar.xz`;
+const artifacts = [ARCHIVE, `${ROOT}/archives-1/*.build.json`, `${ROOT}/archives-1/*.SHA256SUMS`];
+const lines = (value: unknown): string[] =>
   String(value ?? "")
     .trim()
     .split(/\s*\n\s*/)
     .filter(Boolean);
 
-export function validateNodeReleaseWorkflow(source) {
+export function validateNodeReleaseWorkflow(source: string): void {
   const workflow = workflowDocument(source);
   assert.deepEqual(
-    workflow.on,
+    workflow.source.on,
     { push: { tags: ["node-v*"] } },
     "Node release broadens its tag-only trigger.",
   );
   assert.deepEqual(
-    workflow.permissions,
+    workflow.source.permissions,
     { contents: "read", "id-token": "write", attestations: "write" },
     "Node release broadens required attestation authority.",
   );
-  assert.equal(workflow.concurrency?.group, "node-linux-provenance-${{ github.ref }}");
-  assert.equal(workflow.concurrency?.["cancel-in-progress"], false);
+  assert.equal(
+    field(workflow.source, "concurrency", "group"),
+    "node-linux-provenance-${{ github.ref }}",
+  );
+  assert.equal(field(workflow.source, "concurrency", "cancel-in-progress"), false);
   assertPinnedSources(workflow);
-  for (const job of Object.values(workflow.jobs)) {
-    if (job.permissions)
+  for (const job of workflow.jobs.values()) {
+    if (job.source.permissions)
       assert.deepEqual(
-        job.permissions,
-        workflow.permissions,
+        job.source.permissions,
+        workflow.source.permissions,
         "Node release broadens job authority.",
       );
     assert(
-      !/gh release|create-release|action-gh-release|push-to-registry/.test(JSON.stringify(job)),
+      !/gh release|create-release|action-gh-release|push-to-registry/.test(
+        JSON.stringify(job.source),
+      ),
       "Node release broadens publication output.",
     );
   }
   const job = requiredJob(workflow, "build-attest");
-  assert(!("if" in job), "Required release qualification cannot be bypassed.");
-  assert.equal(job["runs-on"], "${{ matrix.runner }}");
+  assert(!job.conditional, "Required release qualification cannot be bypassed.");
+  assert.equal(job.source["runs-on"], "${{ matrix.runner }}");
   assert.equal(
-    job.env?.RELEASE_ROOT,
+    job.env.RELEASE_ROOT,
     "${{ github.workspace }}-node-release-${{ matrix.arch }}",
     "Required release root must exist before runner assignment.",
   );
-  assert.equal(job.strategy?.["fail-fast"], false);
+  assert.equal(field(job.source, "strategy", "fail-fast"), false);
+  const timeout = job.source["timeout-minutes"];
   assert(
-    Number.isInteger(job["timeout-minutes"]) &&
-      job["timeout-minutes"] > 0 &&
-      job["timeout-minutes"] <= 60,
+    typeof timeout === "number" && Number.isInteger(timeout) && timeout > 0 && timeout <= 60,
     "Release qualification must remain bounded.",
   );
-  assert.deepEqual(job.strategy.matrix.include.map((row) => `${row.arch}:${row.runner}`).sort(), [
-    "arm64:ubuntu-24.04-arm",
-    "x64:ubuntu-24.04",
-  ]);
-  assert(
-    job.steps.some(
-      (step) => step.uses?.startsWith("actions/checkout@") && step.with?.["fetch-depth"] === 0,
-    ),
-    "Required full release ancestry is missing.",
+  assert.deepEqual(
+    matrixRows(job)
+      .map((row) => `${String(row.arch)}:${String(row.runner)}`)
+      .sort(),
+    ["arm64:ubuntu-24.04-arm", "x64:ubuntu-24.04"],
   );
+  assert(fetchesFullHistory(job), "Required full release ancestry is missing.");
   hasCommands(
     job,
     [
@@ -124,8 +128,8 @@ export function validateNodeReleaseWorkflow(source) {
       ],
       "Required repeat-build comparison",
     );
-  const index = (fragment) =>
-    job.steps.findIndex((step) => runs({ steps: [step] }).includes(fragment));
+  const index = (fragment: string): number =>
+    job.steps.findIndex((step) => stepScript(step).includes(fragment));
   const candidate = index("npm run release:node-linux:candidate --");
   const archive = index("npm run release:node-linux:archive --");
   const comparison = index('cmp "$RELEASE_ROOT/archives-1/');
@@ -135,29 +139,29 @@ export function validateNodeReleaseWorkflow(source) {
     "Required release must build, compare, then smoke the native package.",
   );
 
-  const provenance = new Set();
-  const uploads = new Set();
+  const provenance = new Set<string>();
+  const uploads = new Set<string>();
   let sbom = false;
   let lastAttest = smoke;
   for (const [position, step] of job.steps.entries()) {
     if (step.uses?.startsWith("actions/attest@")) {
       assert.equal(step.uses, ATTEST, "Required exact attest pin.");
       assert(
-        !("if" in step) && position > smoke,
+        !step.conditional && position > smoke,
         "Required attestations must follow successful smoke.",
       );
-      const subjects = lines(step.with?.["subject-path"]);
+      const subjects = lines(step.with["subject-path"]);
       assert(
         subjects.length && subjects.every((path) => artifacts.includes(path)),
         "Attest actual compared review artifacts.",
       );
-      if (step.with?.["sbom-path"]) {
+      if (step.with["sbom-path"]) {
         assert.equal(
           step.with["sbom-path"],
           ROOT +
             "/candidates/openbot-node-${{ steps.inputs.outputs.version }}-linux-${{ matrix.arch }}-unsigned/SBOM.spdx.json",
         );
-        assert(subjects.includes(artifacts[0]), "SBOM must describe the native archive.");
+        assert(subjects.includes(ARCHIVE), "SBOM must describe the native archive.");
         sbom = true;
       } else for (const path of subjects) provenance.add(path);
       lastAttest = position;
@@ -165,23 +169,25 @@ export function validateNodeReleaseWorkflow(source) {
     if (step.uses?.startsWith("actions/upload-artifact@")) {
       assert.equal(step.uses, UPLOAD, "Required reviewed upload pin.");
       assert(
-        !("if" in step) && position > lastAttest && provenance.size === artifacts.length && sbom,
+        !step.conditional && position > lastAttest && provenance.size === artifacts.length && sbom,
         "Required artifacts must be attested before direct upload.",
       );
-      assert.equal(step.with?.["if-no-files-found"], "error");
-      assert.equal(step.with?.overwrite, false);
+      assert.equal(step.with["if-no-files-found"], "error");
+      assert.equal(step.with.overwrite, false);
+      const retention = step.with["retention-days"];
       assert(
-        Number.isInteger(step.with?.["retention-days"]) &&
-          step.with["retention-days"] > 0 &&
-          step.with["retention-days"] <= 14,
+        typeof retention === "number" &&
+          Number.isInteger(retention) &&
+          retention > 0 &&
+          retention <= 14,
         "Bound review artifact retention.",
       );
       assert.equal(
-        step.with?.archive,
+        step.with.archive,
         false,
         "Must directly upload all three review artifact kinds.",
       );
-      const paths = lines(step.with?.path);
+      const paths = lines(step.with.path);
       assert(
         paths.length && paths.every((path) => artifacts.includes(path)),
         "Only compared release review artifacts may be uploaded.",

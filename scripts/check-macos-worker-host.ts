@@ -1,3 +1,4 @@
+import type { Stats } from "node:fs";
 import { lstat, readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
@@ -38,8 +39,10 @@ export const expectedMacOSLaunchAgentPlist = `<?xml version="1.0" encoding="UTF-
 
 const maximumPlistBytes = 4 * 1024;
 
-export async function validateMacOSLaunchAgent(plistURL = macOSLaunchAgentURL) {
-  let metadata;
+export async function validateMacOSLaunchAgent(
+  plistURL: URL | string = macOSLaunchAgentURL,
+): Promise<void> {
+  let metadata: Stats;
   try {
     metadata = await lstat(plistURL);
   } catch {

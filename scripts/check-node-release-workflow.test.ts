@@ -1,8 +1,17 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { parse, stringify } from "yaml";
-import { validateNodeReleaseWorkflow } from "./check-node-release-workflow.mjs";
+import { stringify } from "yaml";
+import { validateNodeReleaseWorkflow } from "./check-node-release-workflow.ts";
+import {
+  type FixtureJob,
+  commandStep,
+  fixtureJob,
+  fixtureSteps,
+  settingsOf,
+  stepAt,
+  workflowFixture,
+} from "./workflow-test-fixture.ts";
 
 const workflow = await readFile(
   new URL("../.github/workflows/node-linux-release.yml", import.meta.url),
@@ -117,38 +126,43 @@ test("rejects omitted ancestry, repeat-build, or direct-upload gates", () => {
 });
 
 test("accepts formatting, renamed steps and an extra pinned setup without layout counts", () => {
-  const changed = parse(workflow);
+  const changed = workflowFixture(workflow);
   changed.name = "Reviewed Node artifacts";
-  const job = changed.jobs["build-attest"];
-  for (const step of job.steps) if (step.name) step.name = `Step: ${step.name.length}`;
-  job.steps.splice(2, 0, structuredClone(job.steps[1]));
+  const job = fixtureJob(changed, "build-attest");
+  for (const step of fixtureSteps(job)) if (step.name) step.name = `Step: ${step.name.length}`;
+  fixtureSteps(job).splice(2, 0, structuredClone(stepAt(job, 1)));
   assert.doesNotThrow(() => validateNodeReleaseWorkflow(stringify(changed, { indent: 4 })));
 });
 
 test("rejects conditional or ignored release evidence and incomplete compared outputs", () => {
-  for (const mutate of [
+  const mutations: ReadonlyArray<(job: FixtureJob) => void> = [
     (job) => {
-      job.steps.find((s) => s.run?.includes("release:node-linux:smoke")).if = false;
+      commandStep(job, "release:node-linux:smoke").if = false;
     },
     (job) => {
-      job.steps.find((s) => s.run?.includes("release:node-linux:archive")).run =
-        "# " +
-        job.steps
-          .find((s) => s.run?.includes("release:node-linux:archive"))
-          .run.replaceAll("\n", "\n# ");
+      const step = commandStep(job, "release:node-linux:archive");
+      step.run = "# " + step.run.replaceAll("\n", "\n# ");
     },
     (job) => {
-      job.steps.find((s) => s.with?.["sbom-path"]).if = false;
+      const step = fixtureSteps(job).find((s) => s.with?.["sbom-path"]);
+      assert(step);
+      step.if = false;
     },
     (job) => {
       job["continue-on-error"] = true;
     },
     (job) => {
-      job.steps.find((s) => s.with?.path?.endsWith("*.SHA256SUMS")).with.path = "missing";
+      const step = fixtureSteps(job).find((s) => {
+        const path = s.with?.path;
+        return typeof path === "string" && path.endsWith("*.SHA256SUMS");
+      });
+      assert(step);
+      settingsOf(step).path = "missing";
     },
-  ]) {
-    const changed = parse(workflow);
-    mutate(changed.jobs["build-attest"]);
+  ];
+  for (const mutate of mutations) {
+    const changed = workflowFixture(workflow);
+    mutate(fixtureJob(changed, "build-attest"));
     assert.throws(() => validateNodeReleaseWorkflow(stringify(changed)));
   }
 });
