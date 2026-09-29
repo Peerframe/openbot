@@ -1,3 +1,4 @@
+import type { DesktopConnectionState, ConfigureDesktopServerResult } from "@openbot/protocol";
 import { discardBody, isJsonContentType, readBoundedText } from "./bounded-response.js";
 import {
   createDesktopConnectionConfig,
@@ -8,23 +9,11 @@ import {
 export const MAXIMUM_DESKTOP_HEALTH_RESPONSE_BYTES = 4 * 1024;
 export const DESKTOP_SERVER_HEALTH_TIMEOUT_MS = 5_000;
 
-export type DesktopConnectionState =
-  | Readonly<{ status: "unconfigured" }>
-  | Readonly<{ status: "invalid" }>
-  | Readonly<{ status: "configured"; serverUrl: string }>;
-
-export type DesktopConnectionFailureCode =
-  | "invalid_url"
-  | "server_unreachable"
-  | "server_redirected"
-  | "not_openbot_server"
-  | "confirmation_unavailable"
-  | "storage_unavailable";
-
-export type ConfigureDesktopServerResult =
-  | Readonly<{ status: "configured"; serverUrl: string }>
-  | Readonly<{ status: "cancelled" }>
-  | Readonly<{ status: "failed"; code: DesktopConnectionFailureCode }>;
+export type { DesktopConnectionState, ConfigureDesktopServerResult } from "@openbot/protocol";
+export type DesktopConnectionFailureCode = Extract<
+  ConfigureDesktopServerResult,
+  { status: "failed" }
+>["code"];
 
 export type DesktopServerFetcher = (input: string, init: RequestInit) => Promise<Response>;
 

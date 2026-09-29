@@ -1044,3 +1044,23 @@ export * from "./plugins.js";
 export * from "./provider-conformance.js";
 
 export * from "./work-command.js";
+
+export type {
+  DesktopSetupMode,
+  DesktopSetupPlanInput,
+  DesktopRuntimeInfo,
+  DesktopConnectionState,
+  ConfigureDesktopServerResult,
+  DesktopSetupPlanState,
+  SaveDesktopSetupPlanResult,
+  DesktopLocalWorkerState,
+  DesktopLocalWorkerFailureCode,
+  DesktopLocalWorkerOperationResult,
+  DesktopSidebarMaterialState,
+  DesktopNavigationCommand,
+  DesktopNavigationMenuState,
+  EmployeeTemplateSaveInput,
+  EmployeeTemplateSaveResult,
+  OpenBotDesktopBridge,
+  NativeServerState,
+} from "./desktop.js";
