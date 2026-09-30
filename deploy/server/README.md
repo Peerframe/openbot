@@ -76,3 +76,8 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=apps/server-python/src:packages/harness/src
 ```
 
 See [research and exact boundary](../../docs/research/python-product-container.md).
+
+The independent Desktop C7 candidate adds one canonical migration (47 total). Build and
+smoke pins now include it. The historical image evidence above retains its original scope; native
+container/migration qualification runs against this PR head before merge. Rebase/reindex after an
+earlier migration PR merges; preserve already-applied SQL history.
