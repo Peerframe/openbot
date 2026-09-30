@@ -36,6 +36,8 @@ class OwnerProduct:
         self.portability, self.processing = portability, processing
         self.plugins, self.model_connections = plugins, model_connections
         self.worker_identity, self.worker_registry = worker_identity, worker_registry
+        from .owner_preferences import OwnerPreferences
+        self.preferences = OwnerPreferences(dsn,model_connections=model_connections)
         self.browser = browser
         self.work_runtime = None
         self.write_routes = []
@@ -170,6 +172,11 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         row,data=await product.artifact_content(value,path['artifact_id'])
         return download_response(data,name=row['name'],media_type=row['media_type'])
     route('/api/v1/artifacts/{artifact_id}/content','GET',artifact)
+
+    async def owner_preferences(value,*_): return await product.preferences.get(value)
+    route('/api/v1/settings/general','GET',owner_preferences)
+    async def owner_preferences_save(value,_path,body,_request): return await product.preferences.update(value,body)
+    route('/api/v1/settings/general','PUT',owner_preferences_save,limit=2048)
 
     async def model_summary(value,*_):
         if product.model is None: return {'status':'unavailable'}

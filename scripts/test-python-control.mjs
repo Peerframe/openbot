@@ -53,6 +53,7 @@ const controlTests = [
   "tests/test_work_corrections_postgres.py",
   "tests/test_execution_sdk_postgres.py",
   "tests/test_product_control.py",
+  "tests/test_owner_preferences.py",
   "tests/test_http_input_lifecycle.py",
   "tests/test_work_sources_postgres.py",
   "tests/test_work_command_codec.py",
