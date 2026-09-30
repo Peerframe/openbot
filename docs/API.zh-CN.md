@@ -425,3 +425,26 @@ Artifact 与临时画面内容接口使用同一个 Owner Session，响应为 `p
 
 模型只能在有界原生循环中准备候选，不能调用 Owner 接口；成功任务与候选一起提交。
 参见[原生 Agent](NATIVE_AGENT.zh-CN.md)。
+
+## Owner 额外审批设置（C4）
+
+`GET /api/v1/settings/approvals` 返回 `{revision,productRead,publicWeb,exceptions,
+protectedExceptionCategories}`。`PUT` 要求 Owner Cookie、精确 Origin 和 ≤16KiB 严格 JSON：
+`{expectedRevision,productRead,publicWeb,exceptions}`。内置产品读取/公网读取两类 Work 操作支持
+`inherit`（适配器最低要求）与 `required`（增加确认）。版本冲突409
+`approval_policy_revision_changed`；策略缺失/损坏503。同值不增加版本，变更与
+`SETTINGS_APPROVAL_UPDATED` 审计原子提交，仅记录模式/数量/版本，不复制私有目标。
+protocol/domain 提供严格类型与 schema。
+
+最多64个精确例外：`{botId,category:"product_read"|"public_web",target:{kind,value}}`。
+频道/附件为规范 UUID，网页为无查询、片段、凭据、通配符和字面 IP 的规范 HTTPS URL。
+保存时验证存活 Bot 与未删除本地目标；执行时继续检查任务/原来源/身份和公网 DNS、重定向、
+字节上限。搜索、域名范围、前缀与文件路径不能例外。
+
+**删除、安装、改权限永远不能例外。** 返回的受保护类别还包括命令、浏览器、插件与未知操作。
+例外只取消 Owner 增加的确认，不能降低适配器强制审批或改变权限；直接 Owner 操作保留现有门禁。
+提案、准入和读取/网页执行前复查策略；撤销/收紧后未批准的旧自动 Action 返回409
+`approval_policy_changed`，需新提案；放宽不会改已有待审决定。已有精确批准与历史回执核对保持
+有效。已发出的网页请求可能在策略提交后结束，不声称可取消远程效果，也不允许重发。
+详见 [ADR-0049](decisions/0049-owner-approval-policy.zh-CN.md)。独立 C2/C7/C4 迁移在先合并项后
+必须重新基于 main 编号，不能覆盖已提交历史。

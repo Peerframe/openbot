@@ -1,5 +1,5 @@
 {
-  "commit": "e57967fcbc11daaf94563c1d8f018e1790da2b71",
+  "commit": "57341154b19d45686b2f71bce96fca38e1f07310",
   "commitRole": "working-tree-parent",
   "migrations": [
     {
@@ -277,19 +277,25 @@
       "tag": "0045_identity_lifecycle",
       "timestamp": 1790770270643,
       "sha256": "893c5edd184b6767e6d2b9a1ca0d36a743f802db8d171e9f177d13ffa1c77652"
+    },
+    {
+      "index": 46,
+      "tag": "0046_owner_approval_settings",
+      "timestamp": 1790770270646,
+      "sha256": "cd9079606c16af9319055a5ff12fcc7fa0942978c23b44d1857130f58fb8c6bd"
     }
   ],
   "qualificationInput": {
     "state": "working-tree-requalification",
-    "previousQualifiedTarget": "63242fc06d9ba3efe018509f7e0868ac293ea7f7",
+    "previousQualifiedTarget": "e57967fcbc11daaf94563c1d8f018e1790da2b71",
     "journal": {
       "path": "packages/db/migrations/meta/_journal.json",
-      "sha256": "1a6b4bb17595c00fb5daa7b7ea73fda7c028c31d01463370beed79c76035efa0"
+      "sha256": "b301740a8dea389eb30a7feb1037d97da5b5cdcc21fdaea3c8713d87e215ffcc"
     },
     "changedSql": [
       {
-        "path": "packages/db/migrations/0045_identity_lifecycle.sql",
-        "sha256": "893c5edd184b6767e6d2b9a1ca0d36a743f802db8d171e9f177d13ffa1c77652"
+        "path": "packages/db/migrations/0046_owner_approval_settings.sql",
+        "sha256": "cd9079606c16af9319055a5ff12fcc7fa0942978c23b44d1857130f58fb8c6bd"
       }
     ]
   }

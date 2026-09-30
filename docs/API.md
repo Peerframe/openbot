@@ -458,3 +458,32 @@ internal non-secret-reference entries may be enabled. Updates require the usual 
 
 Models only prepare a proposal in the bounded native loop; they do not call these Owner endpoints.
 Successful Run completion publishes the candidate atomically. See [Native Agent](NATIVE_AGENT.md).
+
+## Owner additional approval settings (C4)
+
+`GET /api/v1/settings/approvals` returns `{revision,productRead,publicWeb,exceptions,
+protectedExceptionCategories}`. `PUT` requires Owner Cookie and exact Origin, a strict JSON body
+≤16KiB `{expectedRevision,productRead,publicWeb,exceptions}`. Modes: `inherit` (adapter minimum)
+and `required` (additional confirmation) for the two built-in Work categories. Revision conflicts
+return409 `approval_policy_revision_changed`; missing/corrupt storage returns503. Same-value writes
+keep the revision; changes atomically audit `SETTINGS_APPROVAL_UPDATED` with mode/count/revision,
+without copying target URLs or attachment IDs. Types/schemas exported by protocol/domain.
+
+Exceptions (≤64) are exact `{botId,category:"product_read"|"public_web",target:{kind,value}}`.
+`channel`/`attachment` use canonical UUIDs; `page` uses an exact canonical HTTPS URL without query,
+fragment, credentials, wildcards or literal IP addresses. Save validates live Bot and existing
+non-deleted local target. Runtime still validates task access, original source, live identities,
+public DNS/redirect/byte gates and exact immutable intent. No search/domain/prefix/file exception.
+
+**Delete, installation and permission changes never allow exceptions.** `protectedExceptionCategories`
+also includes command, browser, plugin and unknown, whose current minima are unchanged. An exception
+only removes extra Owner confirmation; adapter mandatory approval can never be removed. There is
+no global auto-approve or grant-changing endpoint. Direct Owner operations keep their existing gates.
+
+Proposal computes added approval transactionally; admission and built-in read/web dispatch recheck
+current settings. Revocation/tightening refuses unapproved auto Actions with409
+`approval_policy_changed`, requiring a fresh proposal; relaxing settings preserves pending decisions.
+Already approved exact Actions and historical receipt recovery remain valid. A web request already
+sent before a policy commit may finish; policy does not cancel remote effects or authorize replay.
+See [ADR-0049](decisions/0049-owner-approval-policy.md). Independent C2/C7/C4 migrations must be
+rebased/reindexed after the first merges; no committed migration history is overwritten.

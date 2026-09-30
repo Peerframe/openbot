@@ -292,3 +292,22 @@ exact hashes; all historical SQL, seeds and assertions remain unchanged. The exi
 removed its owned resources. The target pin and product container preflight/smoke now require44;
 new hosted container qualification must run on the updated source. The browser profile table is
 empty here; active browser continuation is not established by this legacy-data fixture.
+
+## Desktop C4 additive target (2026-10-01)
+
+Retain all feature/architecture source snapshots and the existing PostgreSQL17.11 dump/restore
+contract. Advance only the canonical target pin to migration `0046_owner_approval_settings` (47 entries), SHA-256
+`cd9079606c16af9319055a5ff12fcc7fa0942978c23b44d1857130f58fb8c6bd`; raw journal digest `b301740a8dea389eb30a7feb1037d97da5b5cdcc21fdaea3c8713d87e215ffcc`. Source revision/working-tree
+role is explicit in target-history.json; no earlier SQL bytes changed. Rerun the same synthetic
+paired SQL/blob backup/restore and divergent-lineage refusal gates before delivery. Independent
+C2/C7/C4 PRs must rebase/reindex after another migration merges; this is not a production upgrade.
+
+The migration seeds an Owner preference row. Feature-transfer targets record the exact freshly
+migrated snapshot before any import, including ledger and seed data, and reject every later
+difference. This preserves defaults rather than treating a seeded database as user-populated;
+source settings are never imported and duplicate/changed-target transfers still fail closed.
+
+Candidate validation: the real disposable PostgreSQL17.11 paired SQL/blob backup/restore runner
+completed all40 lineage/refusal/retained-data checks against this target. Previous qualification
+evidence remains historical. Final PR-head native product-container CI is still the packaging
+gate; no production conversion or cross-PR migration merge is claimed.

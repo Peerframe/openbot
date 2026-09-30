@@ -181,7 +181,9 @@ async def test_refuses_changed_authority_without_tool_send(seed,tmp_path,remote,
     elif change=='intent':
         with psycopg.connect(seed['dsn']) as db:db.execute("UPDATE work_actions SET intent_digest=%s WHERE id=%s",('0'*64,h.identity))
     elif change=='approval-flag':
-        with psycopg.connect(seed['dsn']) as db:db.execute("UPDATE work_actions SET requires_approval=false,decision='not_required' WHERE id=%s",(h.identity,))
+        with pytest.raises(psycopg.errors.CheckViolation):
+            with psycopg.connect(seed['dsn']) as db:db.execute("UPDATE work_actions SET requires_approval=false,decision='not_required' WHERE id=%s",(h.identity,))
+        assert not remote['effects'];return
     try:outcome=await h.execute()
     except (WorkConflict,InvalidWork):pass
     else:assert outcome['status'] in ('unknown','superseded')

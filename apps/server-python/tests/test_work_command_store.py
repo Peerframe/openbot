@@ -555,9 +555,10 @@ def test_preparation_never_crosses_original_operation(fixture,field,value):
 def test_command_never_accepts_implicit_approval(fixture):
     async def check():
         f=await setup(fixture)
-        async with f.store._transaction(trusted=True) as db:
-            await db.execute("UPDATE work_actions SET requires_approval=false,decision='not_required' WHERE id=%s",(f.action,))
-        with pytest.raises(WorkConflict,match='command_approval_required'):await admit(f)
+        with pytest.raises(psycopg.errors.CheckViolation):
+            with psycopg.connect(fixture['dsn']) as db:
+                db.execute("UPDATE work_actions SET requires_approval=false,decision='not_required' WHERE id=%s",(f.action,))
+        with pytest.raises(WorkConflict):await admit(f)
         assert await row(f) is None
     asyncio.run(check())
 

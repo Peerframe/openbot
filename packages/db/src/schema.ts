@@ -689,3 +689,16 @@ export const messageReactions = pgTable(
     ),
   ],
 );
+
+export const ownerApprovalSettings = pgTable(
+  "owner_approval_settings",
+  {
+    ownerId: text("owner_id").primaryKey(),
+    revision: integer("revision").notNull().default(1),
+    configuration: jsonb("configuration").notNull(),
+  },
+  (t) => [
+    check("owner_approval_settings_owner", sql`${t.ownerId} = 'owner'`),
+    check("owner_approval_settings_revision", sql`${t.revision} between 1 and 2147483647`),
+  ],
+);

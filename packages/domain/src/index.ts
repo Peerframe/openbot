@@ -757,4 +757,5 @@ export type ReviewKnowledgeProposalInput =
       modelUseEnabled: boolean;
     };
 
+export type { ApprovalException, ApprovalSettings, ApprovalSettingsInput } from "@openbot/protocol";
 export * from "./channel-interactions.js";

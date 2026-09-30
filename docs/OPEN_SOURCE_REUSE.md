@@ -980,3 +980,12 @@ subprocess, with [targeted security-update evidence](research/python-work-produc
 C3 复用现有 npm/Turbo 图和已固定的 Actions。YAML 2.9.0 从已有依赖提升为显式根工具，
 pip-audit 2.10.1 在隔离工具环境审计实际 Python 生产锁；不复制上游源码。Soup Sieve 2.9.2
 修复该门发现的安全公告，保留原 HTML 提取契约和有界子进程；固定版本与针对性证据见上方链接。
+
+## Owner additional approval settings (2026-10-01)
+
+Reuse the existing Work exact-intent approval, product reads/web guards and retained Server policy
+research at OpenBot57341154b19d45686b2f71bce96fca38e1f07310. Compare Cedar4.13.0 and OPA1.21.1
+(versions, source pins, Apache-2.0 licenses and bounded integration decision in ADR-0049); retain a
+thin PostgreSQL guard for additional confirmation only. No source copied/dependency added; exact
+read exceptions never override baseline approval or permit delete/install/permission changes. See
+[research](research/desktop-approval-settings.md) and [ADR](decisions/0049-owner-approval-policy.md).
