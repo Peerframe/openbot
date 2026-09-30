@@ -135,14 +135,6 @@
 :root[data-desktop="darwin"] .app-shell.desktop-workspace .sidebar::before {
   display: none;
 }
-.desktop-workspace .sidebar .brand {
-  margin: 0 8px 22px;
-  font-size: 24px;
-}
-.desktop-workspace .sidebar-search {
-  margin-bottom: 16px;
-  background: #ffffff6b;
-}
 .app-shell.desktop-workspace > .workspace-main,
 .app-shell.desktop-workspace > .workspace-destination {
   grid-area: 2 / 2;

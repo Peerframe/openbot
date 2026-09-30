@@ -170,7 +170,7 @@ describe("Desktop workspace navigation continuity", () => {
       if (!workspace || !messages) throw new Error("Workspace did not open");
       messages.scrollTop = 84;
       await interact(() =>
-        rendered.container.querySelector<HTMLElement>(".owner-menu summary")?.click(),
+        rendered.container.querySelector<HTMLElement>(".sb-account summary")?.click(),
       );
       await interact(() => buttonByText(rendered.container, "设置").click());
       expect(workspace.hidden).toBe(true);
@@ -209,7 +209,7 @@ describe("Desktop workspace navigation continuity", () => {
       await enterDraft(composer(rendered.container), "设计频道草稿");
 
       await interact(() =>
-        rendered.container.querySelector<HTMLElement>(".owner-menu summary")?.click(),
+        rendered.container.querySelector<HTMLElement>(".sb-account summary")?.click(),
       );
       await interact(() => buttonByText(rendered.container, "设置").click());
       await interact(() => buttonByLabel(rendered.container, "关闭设置").click());
@@ -386,7 +386,7 @@ function title(container: HTMLElement) {
 
 function channelButton(container: HTMLElement, name: string): HTMLButtonElement {
   const button = Array.from(
-    container.querySelectorAll<HTMLButtonElement>(".channel-list-row"),
+    container.querySelectorAll<HTMLButtonElement>(".sb-row"),
   ).find((item) => item.querySelector("strong")?.textContent === name);
   if (!button) throw new Error(`Channel button missing: ${name}`);
   return button;
@@ -463,7 +463,7 @@ it("opens model services from the owner menu without discarding the conversation
     await settleEffects();
     await enterDraft(composer(rendered.container), "保留对话草稿");
     await interact(() =>
-      rendered.container.querySelector<HTMLElement>(".owner-menu summary")?.click(),
+      rendered.container.querySelector<HTMLElement>(".sb-account summary")?.click(),
     );
     await interact(() => buttonByText(rendered.container, "模型服务").click());
     await settleEffects();

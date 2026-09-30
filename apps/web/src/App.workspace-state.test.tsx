@@ -395,7 +395,7 @@ async function openProfile(name = "Alpha") {
   );
   const item = Array.from(
     rendered?.container.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [],
-  ).find((candidate) => candidate.textContent?.trim() === "打开档案");
+  ).find((candidate) => candidate.textContent?.trim() === "编辑资料");
   if (!item) throw new Error(`Missing profile menu item: ${name}`);
   await interact(() => item.click());
 }

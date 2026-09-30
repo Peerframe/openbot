@@ -20,6 +20,10 @@ export interface SidebarOrganization {
   unread: readonly SidebarItemKey[];
   groups: readonly SidebarGroup[];
   membership: Readonly<Record<SidebarItemKey, string>>;
+  /** Group ids whose rows are folded away outside search. */
+  collapsed: readonly string[];
+  /** Conversations whose opt-in system notifications are silenced on this device. */
+  muted: readonly SidebarItemKey[];
 }
 
 export const sidebarOrganizationKey = "openbot.sidebar-organization.v1";
@@ -34,6 +38,8 @@ export const emptyOrganization: Readonly<SidebarOrganization> = Object.freeze({
   unread: Object.freeze([]),
   groups: Object.freeze([]),
   membership: Object.freeze({}),
+  collapsed: Object.freeze([]),
+  muted: Object.freeze([]),
 });
 
 function isItemKey(value: unknown): value is SidebarItemKey {
@@ -78,12 +84,23 @@ export function parseOrganization(raw: string | null): Readonly<SidebarOrganizat
         if (++count === maxKeys) break;
       }
     }
+    const collapsed = Array.isArray(input.collapsed)
+      ? Array.from(
+          new Set(
+            input.collapsed.filter(
+              (id): id is string => typeof id === "string" && groupIds.has(id),
+            ),
+          ),
+        )
+      : [];
     return Object.freeze({
       pinned: keyList(input.pinned),
       hidden: keyList(input.hidden),
       unread: keyList(input.unread),
       groups,
       membership,
+      collapsed,
+      muted: keyList(input.muted),
     });
   } catch {
     return emptyOrganization;
@@ -148,6 +165,10 @@ function toggle(list: readonly SidebarItemKey[], key: SidebarItemKey, on: boolea
 }
 
 export const sidebarOrganization = {
+  /** Current arrangement for non-React callers (for example the notification filter). */
+  snapshot(): Readonly<SidebarOrganization> {
+    return getSnapshot().values;
+  },
   setPinned(key: SidebarItemKey, pinned: boolean) {
     const current = getSnapshot().values;
     commit({ ...current, pinned: toggle(current.pinned, key, pinned) });
@@ -195,6 +216,15 @@ export const sidebarOrganization = {
     });
     return true;
   },
+  setMuted(key: SidebarItemKey, muted: boolean) {
+    const current = getSnapshot().values;
+    commit({ ...current, muted: toggle(current.muted, key, muted) });
+  },
+  setCollapsed(groupId: string, collapsed: boolean) {
+    const current = getSnapshot().values;
+    const rest = current.collapsed.filter((id) => id !== groupId);
+    commit({ ...current, collapsed: collapsed ? [...rest, groupId] : rest });
+  },
   /** Drops every arrangement entry for an item the Server deleted, freeing its bounded slots. */
   forget(key: SidebarItemKey) {
     const current = getSnapshot().values;
@@ -205,6 +235,7 @@ export const sidebarOrganization = {
       pinned: toggle(current.pinned, key, false),
       hidden: toggle(current.hidden, key, false),
       unread: toggle(current.unread, key, false),
+      muted: toggle(current.muted, key, false),
       membership,
     });
   },
@@ -218,6 +249,7 @@ export const sidebarOrganization = {
       ...current,
       groups: current.groups.filter((group) => group.id !== groupId),
       membership,
+      collapsed: current.collapsed.filter((id) => id !== groupId),
     });
   },
 };
@@ -247,6 +279,8 @@ export interface SidebarSection<T> {
   entries: SidebarEntry<T>[];
   /** The query matched the group name, so every member is shown. */
   matchedGroup: boolean;
+  /** Folded group: the heading stays, its rows are not rendered. */
+  collapsed: boolean;
 }
 
 /**
@@ -257,22 +291,31 @@ export function arrangeSidebar<T>(
   entries: SidebarEntry<T>[],
   organization: Readonly<SidebarOrganization>,
   query: string,
+  /** Hidden rows with new activity reappear (design: 收到新消息会重新出现). */
+  revealed: ReadonlySet<SidebarItemKey> = new Set(),
 ): SidebarSection<T>[] {
   const term = query.trim().toLocaleLowerCase();
   const hidden = new Set(organization.hidden);
+  const folded = new Set(organization.collapsed ?? []);
   const pinnedRank = new Map(organization.pinned.map((key, index) => [key, index]));
   const sections: SidebarSection<T>[] = organization.groups.map((group) => ({
     group,
     entries: [],
     matchedGroup: term.length > 0 && group.name.toLocaleLowerCase().includes(term),
+    collapsed: !term && folded.has(group.id),
   }));
-  const ungrouped: SidebarSection<T> = { group: undefined, entries: [], matchedGroup: false };
+  const ungrouped: SidebarSection<T> = {
+    group: undefined,
+    entries: [],
+    matchedGroup: false,
+    collapsed: false,
+  };
   for (const entry of entries) {
     const groupId = organization.membership[entry.key];
     const section = sections.find((candidate) => candidate.group?.id === groupId) ?? ungrouped;
     const visible = term
       ? section.matchedGroup || entry.searchText.toLocaleLowerCase().includes(term)
-      : !hidden.has(entry.key);
+      : !hidden.has(entry.key) || revealed.has(entry.key);
     if (visible) section.entries.push(entry);
   }
   for (const section of [...sections, ungrouped]) {
@@ -284,6 +327,54 @@ export function arrangeSidebar<T>(
     });
   }
   return [...sections, ungrouped].filter(
-    (section) => section.entries.length > 0 || (section.matchedGroup && term.length > 0),
+    (section) =>
+      section.entries.length > 0 ||
+      (section.collapsed && section.group !== undefined) ||
+      (section.matchedGroup && term.length > 0),
   );
+}
+
+export interface SidebarSearchResult<T> {
+  /** Groups whose name matches, each with all of its conversations. */
+  groups: { group: SidebarGroup; entries: SidebarEntry<T>[] }[];
+  /** Conversations matching by name or tag, hidden ones included. */
+  conversations: SidebarEntry<T>[];
+}
+
+/** The design's search: a 分组 section and a 对话 section, pinned first within each. */
+export function searchSidebar<T>(
+  entries: SidebarEntry<T>[],
+  organization: Readonly<SidebarOrganization>,
+  query: string,
+): SidebarSearchResult<T> {
+  const term = query.trim().toLocaleLowerCase();
+  if (!term) return { groups: [], conversations: [] };
+  const pinnedRank = new Map(organization.pinned.map((key, index) => [key, index]));
+  const byPin = (left: SidebarEntry<T>, right: SidebarEntry<T>) =>
+    (pinnedRank.get(left.key) ?? Number.MAX_SAFE_INTEGER) -
+    (pinnedRank.get(right.key) ?? Number.MAX_SAFE_INTEGER);
+  const groups = organization.groups
+    .filter((group) => group.name.toLocaleLowerCase().includes(term))
+    .map((group) => ({
+      group,
+      entries: entries
+        .filter((entry) => organization.membership[entry.key] === group.id)
+        .sort(byPin),
+    }));
+  const conversations = entries
+    .filter((entry) => entry.searchText.toLocaleLowerCase().includes(term))
+    .sort(byPin);
+  return { groups, conversations };
+}
+
+/** Splits text around the first case-insensitive match so the hit can be marked. */
+export function highlightMatch(text: string, query: string) {
+  const term = query.trim();
+  const index = term ? text.toLocaleLowerCase().indexOf(term.toLocaleLowerCase()) : -1;
+  if (index < 0) return { before: text, hit: "", after: "" };
+  return {
+    before: text.slice(0, index),
+    hit: text.slice(index, index + term.length),
+    after: text.slice(index + term.length),
+  };
 }

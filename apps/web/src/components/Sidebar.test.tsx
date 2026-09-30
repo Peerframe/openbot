@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import type { Bot, Channel } from "@openbot/domain";
 import { expect, it, vi } from "vitest";
+import { sidebarOrganization } from "../sidebar-organization";
 import { interact, renderComponent, setInputValue } from "../test/render-component";
 import { Sidebar } from "./Sidebar";
 
@@ -30,7 +31,11 @@ const bots: Bot[] = [
     createdAt: "2026-09-05T00:00:00Z",
   },
 ];
-it("filters authorized channels and Bots, restores selection and keeps actions functional", async () => {
+function rows(container: HTMLElement, kind: "channel" | "bot") {
+  return container.querySelectorAll<HTMLButtonElement>(`.sb-row[data-kind="${kind}"]`);
+}
+
+it("searches conversations and groups, opens the first result and keeps actions functional", async () => {
   const select = vi.fn();
   const create = vi.fn();
   const settings = vi.fn();
@@ -54,49 +59,56 @@ it("filters authorized channels and Bots, restores selection and keeps actions f
     />,
   );
   try {
+    // No wordmark or "频道和 Bots" heading when there are no groups (Sidebar artboard).
+    expect(view.container.querySelector(".brand")).toBeNull();
+    expect(view.container.querySelector(".sb-section-title")).toBeNull();
     const search = view.container.querySelector('input[type="search"]');
     if (!(search instanceof HTMLInputElement)) throw Error("Search input missing");
+    expect(search.placeholder).toBe("搜索对话、Bot 和分组");
     await setInputValue(search, "REVIEW");
-    expect(view.container.querySelectorAll(".channel-list-row")).toHaveLength(1);
-    expect(view.container.textContent).toContain("Reviewer");
-    expect(view.container.textContent).not.toContain("Release checks");
-    await setInputValue(search, "Review");
-    expect(view.container.querySelectorAll(".bot-row")).toHaveLength(1);
+    // "Interface review" matches the channel description and "Review" the Bot role.
+    expect(rows(view.container, "channel")).toHaveLength(1);
+    expect(rows(view.container, "bot")).toHaveLength(1);
+    expect(view.container.textContent).toContain("对话2");
+    expect(view.container.querySelector(".sb-row mark")?.textContent).toBe("Review");
+    expect(view.container.textContent).toContain("按回车打开第一个结果");
+    await setInputValue(search, "not present");
+    expect(view.container.textContent).toContain("没有匹配的对话、Bot 或分组");
     await interact(() =>
       search.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
     );
     expect(search.value).toBe("");
-    expect(view.container.querySelectorAll(".channel-list-row")).toHaveLength(2);
-    await setInputValue(search, "not present");
-    expect(view.container.textContent).toContain("没有匹配的频道");
-    expect(view.container.textContent).toContain("没有匹配的 Bot");
-    await setInputValue(search, "");
+    expect(rows(view.container, "channel")).toHaveLength(2);
+    await setInputValue(search, "开发");
+    await interact(() =>
+      search.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })),
+    );
+    expect(select).toHaveBeenCalledWith("code");
+    expect(search.value).toBe("");
     const selected = view.container.querySelector('[aria-current="page"]');
     if (!(selected instanceof HTMLButtonElement)) throw Error("Selected channel missing");
     await interact(() => selected.click());
     expect(select).toHaveBeenCalledWith("design");
     const buttons = [...view.container.querySelectorAll("button")];
-    expect(view.container.querySelector(".brand")?.textContent?.trim()).toBe("OpenBot");
-    expect(view.container.querySelector(".brand svg")).toBeNull();
-    expect(view.container.textContent).not.toContain("新建对话");
-    expect(view.container.querySelectorAll(".sidebar-heading button")).toHaveLength(0);
-    await interact(() =>
-      view.container.querySelector<HTMLElement>(".create-menu summary")?.click(),
-    );
+    await interact(() => view.container.querySelector<HTMLElement>(".sb-create summary")?.click());
     await interact(() =>
       buttons.find((button) => button.textContent?.trim() === "创建频道")?.click(),
     );
-    expect(view.container.querySelector("details.create-menu")?.hasAttribute("open")).toBe(false);
-    await interact(() => view.container.querySelector<HTMLElement>(".owner-menu summary")?.click());
-    await interact(() => buttons.find((button) => button.textContent?.trim() === "设置")?.click());
-    const botRow = view.container.querySelector<HTMLButtonElement>(".bot-row");
+    expect(view.container.querySelector("details.sb-create")?.hasAttribute("open")).toBe(false);
+    await interact(() => view.container.querySelector<HTMLElement>(".sb-account summary")?.click());
+    await interact(() =>
+      [...view.container.querySelectorAll("button")]
+        .find((button) => button.textContent?.trim() === "设置")
+        ?.click(),
+    );
+    const botRow = rows(view.container, "bot")[0];
     await interact(() => botRow?.click());
     expect(direct).toHaveBeenCalledWith("reviewer");
     expect(profile).not.toHaveBeenCalled();
-    const openProfileFromMenu = async () => {
+    const editProfileFromMenu = async () => {
       const item = Array.from(
         view.container.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
-      ).find((button) => button.textContent?.trim() === "打开档案");
+      ).find((button) => button.textContent?.trim() === "编辑资料");
       expect(item).toBeDefined();
       await interact(() => item?.click());
     };
@@ -105,15 +117,15 @@ it("filters authorized channels and Bots, restores selection and keeps actions f
     );
     // Right-click opens the row menu; the profile is one explicit choice inside it.
     expect(profile).not.toHaveBeenCalled();
-    await openProfileFromMenu();
+    await editProfileFromMenu();
     expect(profile).toHaveBeenCalledWith("reviewer");
-    expect(view.container.querySelector('[role="menu"]')).toBeNull();
+    expect(view.container.querySelector('[role="menu"][aria-label$="的操作"]')).toBeNull();
     await interact(() =>
       botRow?.dispatchEvent(
         new KeyboardEvent("keydown", { key: "F10", shiftKey: true, bubbles: true }),
       ),
     );
-    await openProfileFromMenu();
+    await editProfileFromMenu();
     expect(profile).toHaveBeenCalledTimes(2);
     expect(direct).toHaveBeenCalledTimes(1);
     expect(create).toHaveBeenCalledOnce();
@@ -143,8 +155,9 @@ it("shows only known channel member avatars and retains workspace destinations",
     />,
   );
   try {
-    expect(view.container.querySelectorAll(".channel-list-avatar .robot-avatar")).toHaveLength(1);
+    expect(view.container.querySelectorAll(".sb-avatar-pair .robot-avatar")).toHaveLength(1);
     const buttons = [...view.container.querySelectorAll("button")];
+    // 任务监督 lives in the account menu; 插件 is the footer pill.
     await interact(() =>
       buttons.find((button) => button.textContent?.includes("任务监督"))?.click(),
     );
@@ -153,5 +166,55 @@ it("shows only known channel member avatars and retains workspace destinations",
     expect(skills).toHaveBeenCalledOnce();
   } finally {
     await view.unmount();
+  }
+});
+
+it("folds groups, brings hidden rows back when unread and mutes a channel", async () => {
+  sidebarOrganization.moveToNewGroup("channel:design", "市场团队");
+  sidebarOrganization.setHidden("channel:code", true);
+  const props = {
+    bots,
+    channels,
+    runs: [],
+    ownerName: "Owner",
+    onSelectChannel: vi.fn(),
+    onSelectBot: vi.fn(),
+    onCreateBot: vi.fn(),
+    onCreateChannel: vi.fn(),
+    onManageNodes: vi.fn(),
+    onLogout: vi.fn(),
+  };
+  const view = await renderComponent(<Sidebar {...props} />);
+  try {
+    const heading = view.container.querySelector<HTMLButtonElement>(".sb-group-name");
+    expect(heading?.textContent).toContain("市场团队");
+    expect(view.container.textContent).toContain("未分组");
+    expect(view.container.textContent).not.toContain("开发");
+    await interact(() => heading?.click());
+    expect(heading?.getAttribute("aria-expanded")).toBe("false");
+    expect(rows(view.container, "channel")).toHaveLength(0);
+    await interact(() => heading?.click());
+    expect(rows(view.container, "channel")).toHaveLength(1);
+  } finally {
+    await view.unmount();
+  }
+  const revealed = await renderComponent(
+    <Sidebar {...props} unreadCounts={{ "channel:code": 2 }} />,
+  );
+  try {
+    const code = Array.from(rows(revealed.container, "channel")).find((row) =>
+      row.textContent?.includes("开发"),
+    );
+    expect(code?.querySelector(".sb-unread")?.getAttribute("aria-label")).toBe("2 条未读");
+    await interact(() =>
+      code?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })),
+    );
+    const mute = Array.from(
+      revealed.container.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
+    ).find((item) => item.textContent?.trim() === "关闭通知");
+    await interact(() => mute?.click());
+    expect(sidebarOrganization.snapshot().muted).toContain("channel:code");
+  } finally {
+    await revealed.unmount();
   }
 });

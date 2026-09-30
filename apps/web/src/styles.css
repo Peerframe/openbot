@@ -109,38 +109,6 @@ select:focus-visible {
   font-weight: 740;
   text-decoration: none;
 }
-
-.sidebar-row,
-.sidebar-empty {
-  width: 100%;
-  min-height: 42px;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-}
-
-.sidebar-body {
-  display: flex;
-  min-height: 0;
-  flex: 1;
-  flex-direction: column;
-}
-.sidebar-section {
-  padding: 23px 0 18px;
-  border-bottom: 1px solid var(--line);
-}
-.sidebar-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 8px 8px 12px;
-}
-.sidebar-heading h2 {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 700;
-}
 .icon-button {
   display: inline-grid;
   width: 30px;
@@ -155,47 +123,6 @@ select:focus-visible {
 .icon-button:hover {
   border-color: #b7bec7;
   background: #f5f6f8;
-}
-.sidebar-list {
-  display: grid;
-  gap: 2px;
-}
-.sidebar-row,
-.sidebar-empty {
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  padding: 0 12px;
-  border-radius: 7px;
-  color: #42474e;
-  font-size: 14px;
-}
-.sidebar-row:hover,
-.sidebar-row.selected {
-  background: #eff1f4;
-  color: #15171a;
-}
-.sidebar-row span:nth-child(2) {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.sidebar-row small {
-  color: #949aa1;
-  font-size: 11px;
-}
-.sidebar-empty {
-  color: #a0a5ac;
-  cursor: default;
-}
-.bot-row {
-  min-height: 48px;
-}
-.bot-state {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
 }
 .status-dot {
   display: inline-block;
@@ -2582,9 +2509,6 @@ select:focus-visible {
   .brand {
     margin: 0;
     font-size: 22px;
-  }
-  .sidebar-body {
-    display: none;
   }
   .workspace-main {
     padding: 24px 18px 28px;
