@@ -30,3 +30,13 @@ setting cannot silently remove active-task evidence or delete arbitrary workspac
 has been asked whether retention concerns Server browser deliverables, local Desktop saved files,
 or both. Continue lifecycle independently; do not claim retention enforcement until this choice
 is resolved and its actual storage path is integrated. No source copied or substantially adapted.
+
+## Candidate verification
+
+`npm run check` passed. Real disposable PostgreSQL/HTTP/WS control passed876 cases with2 existing
+skips. An isolated macOS probe used the actual pinned MIT agent-computer, Playwright1.62.1 and
+Chromium headless shell1234: stopped status, restart, explicit clear/stopped status and fresh
+restart passed. Temporary upstream/browser files and the owned profile/process were cleaned.
+No navigation/account or Linux-sandbox claim. This control run did not execute Worker Temporal
+qualification; final hosted PR-head jobs provide that separate evidence. Download/screenshot
+retention awaits Owner data-scope clarification and is not simulated or represented complete.
