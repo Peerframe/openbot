@@ -24,7 +24,10 @@ describe("reviewed plugin catalog", () => {
         v.entries[0].endpoint = "http://private";
       },
       (v: typeof catalog) => {
-        v.entries[0].sourceUrl = "https://user:token@github.com/";
+        const url = new URL("https://github.com/");
+        url.username = "user";
+        url.password = "token";
+        v.entries[0].sourceUrl = url.href;
       },
       (v: typeof catalog) => {
         v.entries.push(v.entries[0]);
