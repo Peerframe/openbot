@@ -1,8 +1,8 @@
 # Desktop Python product development candidate
 
-This explicit macOS arm64 Preview build starts the existing Python product API with a bundled, relocatable CPython distribution. It retains Desktop's PostgreSQL supervisor, encrypted bootstrap, Owner login and local data layout. Normal Desktop packaging and release assembly still select the existing backend.
+This explicit macOS arm64 Preview build starts the existing Python product API with a bundled, relocatable CPython distribution. It retains Desktop's PostgreSQL supervisor, encrypted bootstrap, Owner login and local data layout. Normal macOS arm64 Desktop packaging also uses the Python payload; this explicit Preview keeps a separate staging path and application identity.
 
-This is an unsigned development candidate. The current page source `5b3f6bd` plus the fixed execution
+This is an unsigned development candidate. The historical 2026-09-26 receipt uses page source `5b3f6bd` plus the fixed execution
 configuration increment packages all45 canonical migrations and63 pinned dependencies. Fresh staged
 and packaged tests passed actual API/PostgreSQL startup, Owner login, preserved data across restart,
 parent-death cleanup, unsafe-directory refusal and refusal of execution configuration without an
@@ -10,31 +10,33 @@ engine. All163 Python source modules, lifecycle scripts, lock and SQL bytes matc
 ASAR controller hashes identify the exact launcher increment. Two actual bundled Worker starts
 connected to owned mTLS Temporal and accepted the fixed browser configuration. Malformed browser,
 command and engine configuration each refused startup and cleaned PostgreSQL. Owned fixtures and
-the engine were removed. [Current evidence](../experiments/work-journey/evidence/desktop-preview-schema45.json)
+the engine were removed. [Historical evidence](../experiments/work-journey/evidence/desktop-preview-schema45.json)
 records the checks and exact hashes.
 
 Earlier canonical41 native GUI/Keychain evidence and canonical44 packaging evidence remain pinned
 to their original artifacts. The new native GUI check is pending: Computer Use timed out using both
 the exact application path and verified bundle identifier, and Preview was absent from its app
 inventory. Opening the new Preview locally is needed to resume that check. Complete packaged model
-execution, signing and installation remain unqualified; normal packaging retains its original backend.
+execution, signing and installation remain unqualified; current qualification remains revision-specific.
 
 ## Reproduce from a checkout
 
 Use macOS arm64 with the repository's Node/npm requirements and Xcode Command Line Tools (`xcrun clang`). No system Python, maintainer venv, Docker daemon, paid model account or existing database is required. Public GitHub, nodejs.org and PyPI downloads must be reachable. Allow approximately 3 GB for staged runtime, Electron bundle and temporary copies. No paid service is used.
+
+The smoke entry runs native TypeScript on the repository-pinned Node22.22.2 or another supported version; no extra compiler or runner is needed. Both API-only and Temporal probes use the shared disposable-parent helper, while the compiled product controller/launcher retain authority.
 
 After applying this change and installing the repository lock with the normal contributor setup, run from the repository root:
 
 ```sh
 npm ci
 npx turbo run build --filter=@openbot/desktop... --filter=@openbot/db...
-node apps/desktop/scripts/prepare-native-server.mjs --python-product
-node apps/desktop/scripts/smoke-python-product.mjs apps/desktop/out/python-product-runtime
-node apps/desktop/scripts/package.mjs --preview --python-product
-node apps/desktop/scripts/smoke-python-product.mjs 'apps/desktop/out/python-product/OpenBot Preview-darwin-arm64/OpenBot Preview.app/Contents/Resources/native-runtime'
+node apps/desktop/scripts/prepare-native-server.ts --python-product
+node apps/desktop/scripts/smoke-python-product.ts apps/desktop/out/python-product-runtime
+node apps/desktop/scripts/package.ts --preview --python-product
+node apps/desktop/scripts/smoke-python-product.ts 'apps/desktop/out/python-product/OpenBot Python Preview-darwin-arm64/OpenBot Python Preview.app/Contents/Resources/native-runtime'
 ```
 
-The staged runtime is `apps/desktop/out/python-product-runtime`; the uninstalled app is `apps/desktop/out/python-product/OpenBot Preview-darwin-arm64/OpenBot Preview.app`. Both are under the existing generated-output exclusion. `prepare-native-server.mjs` without the flag and all existing release commands retain their original selection. The candidate requires `--preview --python-product`; it refuses production signing configuration and a production Worker companion. `scripts/prepare-desktop-release.mjs` is unchanged and does not consume this local candidate.
+The staged runtime is `apps/desktop/out/python-product-runtime`; the uninstalled app is `apps/desktop/out/python-product/OpenBot Python Preview-darwin-arm64/OpenBot Python Preview.app`. Both are under the existing generated-output exclusion. `prepare-native-server.ts` without the flag and all existing release commands retain their original selection. The candidate requires `--preview --python-product`; it refuses production signing configuration and a production Worker companion. `scripts/prepare-desktop-release.ts` retains the release selection and does not consume this local candidate.
 
 A developer may then open the uninstalled Preview app and select the existing local Server setup flow. This uses that app's Preview profile; it is not the disposable smoke test. Do not point two Server instances at the same data directory. No environment switch can select an arbitrary interpreter or executable: a completed fixed-format resource manifest selects only the bundled backend.
 

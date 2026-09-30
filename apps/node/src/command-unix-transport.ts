@@ -1,6 +1,6 @@
 import { createConnection, type Socket } from "node:net";
 import { posix } from "node:path";
-import { attachJsonTransport } from "./bounded-json-transport.mjs";
+import { attachJsonTransport } from "./bounded-json-transport.js";
 import {
   CommandRelayError,
   type CommandRelayInstallation,

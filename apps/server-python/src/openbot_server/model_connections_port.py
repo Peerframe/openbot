@@ -10,7 +10,6 @@ import asyncio
 from contextvars import ContextVar
 from copy import deepcopy
 from dataclasses import replace
-import json
 import re
 
 import httpx2
@@ -20,12 +19,13 @@ from pydantic_ai.models.anthropic import AnthropicModel
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.models.openrouter import OpenRouterModel
 
+from .model_response import ProductModelError, decode_model_json, read_model_response
 from .model_media import adapt_wire
 from .work_values import WorkConflict, InvalidWork
 from .model_connections_inputs import ConnectionPolicy, ResolvedModelConnection, api_key, model_id
 from .product_model import (
-    ProductModelPort, ProductModelError, _Attempt, _BufferedStream, _ConfiguredProvider,
-    _ROUTER_POLICY, _REQUEST_BYTES, _json, _profile, _refuse_ambient_options, _validate_wire,
+    ProductModelPort, _ConfiguredProvider,
+    _ROUTER_POLICY, _REQUEST_BYTES, _profile, _refuse_ambient_options, _validate_wire,
 )
 from .work_openai_model import _bounded_deadline, _bounded_positive_int
 
@@ -145,7 +145,7 @@ class _ConnectionTransport(httpx2.AsyncBaseTransport):
                 request = httpx2.Request(request.method, request.url, headers=request.headers, content=body, extensions=request.extensions)
             elif len(body) > _REQUEST_BYTES:
                 raise ProductModelError("task_limit")
-            self._check_request(_json(body))
+            self._check_request(decode_model_json(body))
             headers = {"Host": request.url.netloc.decode("ascii"), "Content-Type": "application/json",
                        "Accept": "application/json", "Accept-Encoding": "identity", "Content-Length": str(len(body))}
             if resolved.protocol == "anthropic-messages":
@@ -162,43 +162,10 @@ class _ConnectionTransport(httpx2.AsyncBaseTransport):
                 await self._before_send()
             attempt.count += 1
             response = await self._inner.handle_async_request(request)
-            try:
-                if response.status_code in (401, 403):
-                    raise ProductModelError("model_credentials")
-                if response.status_code == 429:
-                    raise ProductModelError("model_rate_limit")
-                if (not 200 <= response.status_code < 300
-                        or "application/json" not in response.headers.get("content-type", "").lower()
-                        or response.headers.get("content-encoding", "identity").lower() != "identity"):
-                    raise ProductModelError()
-                length = response.headers.get("content-length")
-                if length is not None and (not length.isdigit() or int(length) > self._maximum):
-                    raise ProductModelError("task_limit")
-                chunks = bytearray()
-                if response.is_stream_consumed:
-                    if len(response.content) > self._maximum:
-                        raise ProductModelError("task_limit")
-                    chunks.extend(response.content)
-                else:
-                    async for chunk in response.aiter_raw():
-                        if len(chunks) + len(chunk) > self._maximum:
-                            raise ProductModelError("task_limit")
-                        chunks.extend(chunk)
-                value = _json(bytes(chunks))
-                _validate_connection_wire(value, resolved.preset_id, attempt)
-                if resolved.preset_id in {"openrouter", "minimax"}:
-                    attempt.downstream_reported = "provider" in value
-                    value.setdefault("provider", "")
-                    message = value["choices"][0]["message"]
-                    if not message.get("reasoning_details"):
-                        plain = message.get("reasoning") or message.get("reasoning_content")
-                        if plain:
-                            message["reasoning_details"] = [{"type": "reasoning.text", "text": plain, "format": "unknown"}]
-                    chunks = bytearray(json.dumps(value, separators=(",", ":"), allow_nan=False).encode())
-                return httpx2.Response(response.status_code, headers={"content-type": "application/json"},
-                                       stream=_BufferedStream(bytes(chunks)), request=request)
-            finally:
-                await response.aclose()
+            return await read_model_response(
+                response, request, maximum=self._maximum, provider=resolved.preset_id, attempt=attempt,
+                validate_wire=lambda value: _validate_connection_wire(value, resolved.preset_id, attempt),
+            )
         except asyncio.CancelledError:
             raise
         except httpx2.TimeoutException:

@@ -116,6 +116,19 @@ describe("native report saving", () => {
       await expect(readFile(f.path)).rejects.toThrow();
     },
   );
+  it("refuses a server switch while the final session check is in flight", async () => {
+    const f = await fixture();
+    const fetchResponse = f.fetcher.getMockImplementation();
+    if (!fetchResponse) throw new Error("Fixture fetcher is missing.");
+    f.fetcher.mockImplementation(async (url) => {
+      const response = await fetchResponse(url);
+      if (url.endsWith("/auth/session")) f.changeServer();
+      return response;
+    });
+    expect(await f.saver.save(id)).toEqual({ status: "unavailable" });
+    expect(f.choosePath).toHaveBeenCalledTimes(1);
+    await expect(readFile(f.path)).rejects.toMatchObject({ code: "ENOENT" });
+  });
   it("saves PNG bytes using a fixed artifact filename and never overwrites", async () => {
     const f = await fixture();
     f.fetcher.mockImplementation(async (url) =>
@@ -369,5 +382,40 @@ describe("native reviewed Employee template saving", () => {
     expect(await f.saver.save(id)).toEqual({ status: "busy" });
     release();
     expect(await pending).toEqual({ status: "cancelled" });
+  });
+});
+
+describe("native save failure releases its byte reader", () => {
+  it("settles an oversized report and clears busy even if stream cancellation hangs", async () => {
+    const f = await fixture();
+    const cancel = vi.fn(() => new Promise<void>(() => undefined));
+    const response = new Response(
+      new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new Uint8Array(32 * 1024 + 1));
+        },
+        cancel,
+      }),
+      { headers: { "content-type": "text/markdown" } },
+    );
+    f.fetcher.mockResolvedValue(response);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await expect(
+        Promise.race([
+          f.saver.save(id),
+          new Promise<never>((_, reject) => {
+            timer = setTimeout(() => reject(new Error("Save did not release")), 1000);
+          }),
+        ]),
+      ).resolves.toEqual({ status: "unavailable" });
+    } finally {
+      clearTimeout(timer);
+    }
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(response.body?.locked).toBe(false);
+    expect(f.choosePath).not.toHaveBeenCalled();
+    f.fetcher.mockResolvedValue(Response.json({ error: "refused" }, { status: 403 }));
+    expect(await f.saver.save(id)).toEqual({ status: "unavailable" });
   });
 });

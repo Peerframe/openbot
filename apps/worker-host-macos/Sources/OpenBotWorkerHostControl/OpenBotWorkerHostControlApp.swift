@@ -152,28 +152,29 @@ final class WorkerHostControlModel: ObservableObject {
 
         Task {
             do {
-                let configuration = try MacOSNodeConfiguration(
-                    nodeId: inputNodeId,
-                    serverUrl: inputServerUrl
+                let controller = DesktopWorkerHostController(
+                    configurationStore: try MacOSConfigurationStore(
+                        homeDirectory: currentUserHomeDirectory()
+                    ),
+                    enrollmentClient: URLSessionNodeEnrollmentClient(),
+                    identityStore: try SystemNodeIdentityStore(accessGroup: MacOSAccessGroup.current()),
+                    registration: SystemWorkerHostRegistration()
                 )
-                let identity = try await URLSessionNodeEnrollmentClient().exchange(
+                let result = await controller.handle(try .enroll(
                     nodeId: inputNodeId,
                     serverUrl: inputServerUrl,
-                    token: token
-                )
-                let envelope = try MacOSKeychainEnvelope(
-                    serverUrl: inputServerUrl,
-                    identity: identity
-                )
-                let keychain = try SystemNodeIdentityStore(accessGroup: MacOSAccessGroup.current())
-                try keychain.save(envelope, configuration: configuration)
-                let configStore = try MacOSConfigurationStore(homeDirectory: currentUserHomeDirectory())
-                try configStore.save(configuration)
-                try SystemWorkerHostRegistration().register()
-                registrationStatus = SystemWorkerHostRegistration().status()
-                message = registrationStatus == .requiresApproval
-                    ? "Enrollment is complete. Approve OpenBot in System Settings > Login Items."
-                    : "Enrollment is complete and the Worker Host is enabled."
+                    enrollmentToken: token
+                ))
+                switch result.status {
+                case .enabled:
+                    registrationStatus = .enabled
+                    message = "Enrollment is complete and the Worker Host is enabled."
+                case .requiresApproval:
+                    registrationStatus = .requiresApproval
+                    message = "Enrollment is complete. Approve OpenBot in System Settings > Login Items."
+                default:
+                    throw OpenBotMacOSError.registrationFailure
+                }
             } catch {
                 message = "Enrollment or registration failed without changing service authority."
             }

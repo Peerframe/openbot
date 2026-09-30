@@ -26,7 +26,7 @@ probe限定方法、真实session/frame/loader、绝对预算和大小，未知�
 
 ## 源码与许可证
 
-CDP framing窄适配Playwright1.62.1 `pipeTransport.ts`，保留Google2018/Microsoft Apache声明、LICENSE、NOTICE、修改说明；seccomp派生策略沿用相同许可。Chromium（BSD）、gVisor（Apache）、Node只读研究，不复制实现。native helper/V3 fixture来自OpenBot MIT；不分发新二进制或包。
+CDP framing窄适配Playwright1.62.1 `pipeTransport.ts`，在 `probe-transport.ts` 保留Google2018/Microsoft Apache声明、LICENSE、NOTICE、修改说明；seccomp派生策略沿用相同许可。Chromium（BSD）、gVisor（Apache）、Node只读研究，不复制实现。native helper/V3 fixture来自OpenBot MIT；不分发新二进制或包。
 
 固定 [Node zlib](https://github.com/nodejs/node/blob/v24.18.1/doc/api/zlib.md#L1152) 提供CRC32和有界inflate，用于有限1280×800像素检查，无需新PNG库，不宣称通用图像清洗。
 

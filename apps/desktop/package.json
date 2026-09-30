@@ -12,14 +12,14 @@
     "build": "npm run build:renderer && npm run build:main",
     "build:main": "tsc -p tsconfig.json",
     "build:renderer": "npm run build:desktop --workspace @openbot/web",
-    "package": "npm run build && npm run prepare:native && node scripts/package.mjs",
-    "make:installers": "node scripts/make-installers.mjs",
+    "package": "npm run build && npm run prepare:native && node scripts/package.ts",
+    "make:installers": "node scripts/make-installers.ts",
     "package:installers": "npm run package && npm run make:installers",
-    "package:preview": "npm run build && npm run prepare:native && node scripts/package.mjs --preview",
+    "package:preview": "npm run build && npm run prepare:native && node scripts/package.ts --preview",
     "start": "npm run build && electron .",
     "test": "vitest run src scripts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "prepare:native": "turbo run build --filter=@openbot/python-node-runtime && node scripts/prepare-native-server.mjs"
+    "prepare:native": "turbo run build --filter=@openbot/python-node-runtime && node scripts/prepare-native-server.ts"
   },
   "dependencies": {
     "postgres": "3.4.9",
@@ -30,14 +30,14 @@
     "@electron/fuses": "2.1.3",
     "@electron/get": "5.1.0",
     "@electron/packager": "20.3.0",
+    "@openbot/protocol": "0.0.0",
     "@openbot/web": "0.0.0",
     "@types/write-file-atomic": "4.0.3",
     "electron": "44.3.0",
     "electron-builder": "26.16.1"
   },
   "optionalDependencies": {
-    "@embedded-postgres/darwin-arm64": "17.10.0-beta.17",
-    "@embedded-postgres/darwin-x64": "17.10.0-beta.17"
+    "@embedded-postgres/darwin-arm64": "17.10.0-beta.17"
   },
   "productName": "OpenBot"
 }

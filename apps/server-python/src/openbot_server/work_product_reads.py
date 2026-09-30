@@ -18,17 +18,20 @@ from openbot_agent_runtime import ToolDescriptor
 from .control_errors import ControlError
 from .database import StoreUnavailable
 from .execution_values import bounded_text
-from .identity_inputs import _uuid, _ECMASCRIPT_WHITESPACE, _UUID_PATTERN_TEXT
+from .identity_inputs import _uuid, _UUID_PATTERN_TEXT
+from .text_compat import ECMASCRIPT_WHITESPACE
 from .task_store import attachment_ids, TooManyAttachments
 from .work_claims import WorkFence, check_fence
 from .work_corrections import check_context
 from .work_deferred import DeferredPlan, EffectServices
 from .work_engine_binding import assert_accepted_workflow_in_transaction
+from .work_product_attachment_reads import read_attachment
 from . import work_temporal_activity as binding
 from .work_temporal_effect import ToolRequest
 from .work_temporal_start import WorkRuntimeContext, load_current_activity_task
 from .work_tool_results import ToolResults, ToolResponseAdapter, ToolResponseVerifier, encode_result
 from .work_values import InvalidWork, WorkConflict, canonical, text
+from .text_compat import utf16_unit_count as _units
 
 TOOLS = frozenset(('read_channel_context', 'read_task_status', 'read_attachment', 'list_channel_bots'))
 _SCOPE = {'expected_namespace', 'expected_queue', 'expected_workflow_type'}
@@ -68,14 +71,6 @@ def _guard(function: Callable[_P, Awaitable[_R]]) -> Callable[_P, Awaitable[_R]]
     return guarded
 
 
-def _hash(value):
-    return hashlib.sha256(encode_result(value)[0]).hexdigest()
-
-
-def _units(value):
-    return len(value.encode('utf-16-le')) // 2
-
-
 def _arguments(tool, value):
     if tool not in TOOLS or type(value) is not dict:
         raise InvalidWork('invalid_read_tool')
@@ -100,35 +95,6 @@ def _arguments(tool, value):
             raise InvalidWork('invalid_attachment_page')
         result[field] = int(number)
     return result
-
-
-def _page(item, value, truncated, request):
-    encoded = value.encode('utf-16-le')
-    offset, limit = request['offset'], request['limit']
-    total = len(encoded) // 2
-    if offset > total:
-        raise InvalidWork('attachment_offset_past_end')
-    available = encoded[offset * 2:(offset + limit) * 2]
-    # The persisted JSON codec refuses lone surrogates. Reject a mid-scalar start and
-    # leave an incomplete final scalar for the next page instead of rewriting its bytes.
-    if available and 0xDC00 <= int.from_bytes(available[:2], 'little') <= 0xDFFF:
-        raise InvalidWork('attachment_offset_splits_character')
-    if available and 0xD800 <= int.from_bytes(available[-2:], 'little') <= 0xDBFF:
-        available = available[:-2]
-    excerpt, utf8, escaped = [], 0, 0
-    for character in available.decode('utf-16-le'):
-        size = len(character.encode())
-        quoted = len(json.dumps(character, ensure_ascii=False).encode()) - 2
-        if utf8 + size > 8192 or escaped + quoted > 10240:
-            break
-        excerpt.append(character); utf8 += size; escaped += quoted
-    value = ''.join(excerpt)
-    following = offset + _units(value)
-    if not value and offset < total:
-        raise InvalidWork('attachment_page_splits_character')
-    return dict(attachmentId=item['id'], name=item['name'], sha256=item['sha256'], offset=offset,
-                text=value, totalCharacters=total, nextOffset=following if following < total else None,
-                truncated=following < total or truncated, untrusted=True)
 
 
 class ProductWorkReads:
@@ -227,51 +193,6 @@ class ProductWorkReads:
             return self.files.lock()
         return nullcontext()
 
-    def _attachment(self, context, source, arguments):
-        try:
-            ids = source['attachmentIds'] if source.get('kind')=='task' else attachment_ids(context.objective)
-            identity = arguments['attachmentId']
-            if identity not in ids:
-                raise WorkConflict('attachment_outside_task')
-            if source.get('kind')=='task':
-                from .work_native_scope import validate_attachments
-                validate_attachments(self.files,dict(request=dict(attachmentIds=ids),attachments=source['attachments']))
-                item,data=self.files.owner_read(identity)
-            else:
-                self.files.validate_references(source['channelId'], ids)
-                item, data = self.files.read(source['channelId'], identity)
-            if item.get('deletedAt'):
-                raise WorkConflict('attachment_unavailable')
-            derived_hash, truncated = None, False
-            if item.get('processing'):
-                raw = self.files._read(identity + '.text.json', 2 * 1024 * 1024)
-                derived = json.loads(raw)
-                required = {'text', 'truncated', 'sha256', 'operation', 'processedAt'}
-                processing = item['processing']
-                if (type(derived) is not dict or set(derived) != required
-                        or type(derived['text']) is not str or not derived['text'].strip(_ECMASCRIPT_WHITESPACE)
-                        or _units(derived['text']) > 262144 or type(derived['truncated']) is not bool
-                        or derived['sha256'] != item['sha256'] or type(processing) is not dict
-                        or set(processing) != {'operation', 'characters', 'truncated', 'processedAt'}
-                        or processing['operation'] not in ('extract', 'ocr', 'transcribe')
-                        or processing['operation'] != derived['operation']
-                        or processing['processedAt'] != derived['processedAt']
-                        or type(processing['truncated']) is not bool
-                        or processing['truncated'] != derived['truncated']
-                        or type(processing['characters']) is not int or processing['characters'] != _units(derived['text'])):
-                    raise WorkConflict('attachment_derived_invalid')
-                value, truncated = derived['text'], derived['truncated']
-                derived_hash = hashlib.sha256(raw).hexdigest()
-            elif item['mediaType'] == 'text/plain':
-                value = data.decode('utf-8')
-            else:
-                raise WorkConflict('attachment_text_required')
-            snapshot = dict(id=identity, sha256=item['sha256'], metadataSha256=_hash(item),
-                            derivedSha256=derived_hash)
-            return snapshot, _page(item, value, truncated, arguments)
-        except (ControlError, TooManyAttachments, ValueError, KeyError, TypeError, OSError):
-            raise WorkConflict('attachment_unavailable') from None
-
     @staticmethod
     def _operation(source,tool):
         if source.get('kind')=='task' and tool!='read_attachment':
@@ -303,7 +224,7 @@ class ProductWorkReads:
             async with self.store._transaction(trusted=True) as db:
                 _, _, source, _, _ = await self._source(db, context, bound)
                 self._operation(source,request.tool)
-                attachment = self._attachment(context, source, arguments)[0] if request.tool == 'read_attachment' else None
+                attachment = read_attachment(self.files, context, source, arguments).snapshot if request.tool == 'read_attachment' else None
                 effect = dict(kind='work_reads', version=1, operation=request.tool, source=source, attachment=attachment)
                 canonical(effect)
                 return DeferredPlan(effect, 0, requires_approval=False)
@@ -341,7 +262,7 @@ class ProductWorkReads:
                             or fresh['intent_digest'] != canonical(intent)[1]
                             or fresh['correction_context_id'] != context.correction_token):
                         raise WorkConflict('read_result_changed')
-                if intent['tool'] == 'read_attachment' and self._attachment(context, source, arguments)[0] != intent['effect']['attachment']:
+                if intent['tool'] == 'read_attachment' and read_attachment(self.files, context, source, arguments).snapshot != intent['effect']['attachment']:
                     raise WorkConflict('attachment_changed')
 
     async def _budget(self, db, context, action_id, request):
@@ -404,7 +325,7 @@ class ProductWorkReads:
         truncated = len(rows) > 32
         for row in rows[:32]:
             text(row['id'],128)
-            if not row['role'].strip(_ECMASCRIPT_WHITESPACE) or len(row['role']) > 160:
+            if not row['role'].strip(ECMASCRIPT_WHITESPACE) or len(row['role']) > 160:
                 raise WorkConflict('read_profile_invalid')
             # SQL left is scalar-based; preserve the retained UTF-16 description bound.
             row['description'] = row['description'].encode('utf-16-le')[:480].decode('utf-16-le',errors='ignore')
@@ -433,9 +354,10 @@ class ProductWorkReads:
                 await check_fence(db, context.run_id, fence)
                 if intent['tool'] == 'read_attachment':
                     await self._budget(db,context,action_id,arguments)
-                    snapshot, value = self._attachment(context, source, arguments)
-                    if snapshot != intent['effect']['attachment']:
+                    attachment = read_attachment(self.files, context, source, arguments)
+                    if attachment.snapshot != intent['effect']['attachment']:
                         raise WorkConflict('attachment_changed')
+                    value = attachment.page
                 elif intent['tool'] == 'read_channel_context': value = await self._context(db,source)
                 elif intent['tool'] == 'read_task_status': value = await self._statuses(db,source)
                 else: value = await self._colleagues(db,context,source)
@@ -569,7 +491,7 @@ class ProductWorkReads:
                 if identity not in checked:
                     if self.files is None:
                         raise WorkConflict('attachment_storage_required')
-                    checked[identity] = self._attachment(context,source,arguments)[0]
+                    checked[identity] = read_attachment(self.files,context,source,arguments).snapshot
                 if checked[identity] != intent['effect']['attachment']:
                     raise WorkConflict('attachment_changed')
         fresh = await self._facts()
@@ -601,8 +523,8 @@ class ProductWorkReads:
                     'FROM bots WHERE id=%s', (context.bot_id,))).fetchone()
                 if not bot:
                     raise WorkConflict('read_source_changed')
-                if (not bot['name'].strip(_ECMASCRIPT_WHITESPACE) or len(bot['name']) > 64
-                        or not bot['role'].strip(_ECMASCRIPT_WHITESPACE) or len(bot['role']) > 160
+                if (not bot['name'].strip(ECMASCRIPT_WHITESPACE) or len(bot['name']) > 64
+                        or not bot['role'].strip(ECMASCRIPT_WHITESPACE) or len(bot['role']) > 160
                         or len(bot['description']) > 2000):
                     raise WorkConflict('read_profile_invalid')
                 attachments = []
@@ -613,7 +535,7 @@ class ProductWorkReads:
                         if item.get('processing'):
                             # Validate extracted content without disclosing it or consuming a
                             # tool read. A descriptor alone never claims binary model support.
-                            self._attachment(context,source,dict(attachmentId=identity,offset=0,limit=12000))
+                            read_attachment(self.files,context,source,dict(attachmentId=identity,offset=0,limit=12000))
                         attachments.append(item)
                 except (ControlError, ValueError, KeyError, TypeError, OSError):
                     raise WorkConflict('attachment_unavailable') from None

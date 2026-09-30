@@ -62,22 +62,10 @@ from pydantic_ai.durable_exec.temporal import TemporalDurability
 from temporalio import activity as temporal_activity, workflow
 from temporalio.workflow import ActivityConfig
 
-try:  # Public location on the reviewed 2.47.0 release; fallback keeps the diagnostic readable.
-    from pydantic_ai.capabilities import ResolveModelId
-except ImportError:  # pragma: no cover - only reached if the pinned layout moved the class
-    from pydantic_ai.capabilities.resolve_model_id import ResolveModelId
-
-try:  # Public location on the reviewed 2.47.0 release; fallback keeps the diagnostic readable.
-    from pydantic_ai.toolsets import AbstractToolset, DynamicToolset, ExternalToolset
-except ImportError:  # pragma: no cover - only reached if the pinned layout moved the class
-    from pydantic_ai.toolsets._dynamic import DynamicToolset
-    from pydantic_ai.toolsets.abstract import AbstractToolset
-    from pydantic_ai.toolsets.external import ExternalToolset
-
-try:  # Public location on the reviewed 2.47.0 release; fallback keeps the diagnostic readable.
-    from pydantic_ai.tools import DeferredToolRequests
-except ImportError:  # pragma: no cover - only reached if the pinned layout moved the class
-    from pydantic_ai._deferred import DeferredToolRequests
+# The package and Worker closure pin the reviewed SDK; only its public exports are supported.
+from pydantic_ai.capabilities import ResolveModelId
+from pydantic_ai.toolsets import AbstractToolset, DynamicToolset, ExternalToolset
+from pydantic_ai.tools import DeferredToolRequests
 
 from .catalog import ToolCatalog
 from .contracts import RuntimeLimits, ToolDescriptor

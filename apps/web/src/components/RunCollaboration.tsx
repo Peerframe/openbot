@@ -1,6 +1,5 @@
 import type { Bot, Message, Run } from "@openbot/domain";
-import { runStatusLabel } from "../run-state";
-import { runStatusSummary } from "./NativeRunControls";
+import { runStatusLabel, runStatusSummary } from "../run-state";
 import { RobotAvatar } from "./RobotAvatar";
 import "./RunCollaboration.css";
 

@@ -80,11 +80,15 @@
 The existing Git/checkout pins and immutable-diff approach above remain valid. The changed assumption
 is that every behavior fix needs the full seven-field presentation. Root policy now scopes fresh
 research to changed dependencies/versions, public protocols, authority/security, persistent data or
-material architecture. Ordinary repairs reuse their original decision and pins. A conservative short
-form admits existing presentation/core helpers and tests; boundary owners, new source, imports,
-dependencies, rules/prompts and unknown paths require the full form, which can still reuse evidence.
-Negative CLI fixtures prove mixed dependency/permission changes cannot take the shortcut. This does
-not prove semantic equivalence; ordinary review still follows consumers and checks changed assumptions.
+material architecture. Ordinary repairs reuse their original decision and pins. The initial C1 shortcut used a presentation/helper allowlist. The current
+[contribution contract](../../CONTRIBUTING.md#research-evidence-and-documentation-exemptions)
+replaces that directory restriction: ordinary internal source/import/file-lifecycle changes may
+briefly cite the accepted design. Known boundary owners and dependency/runtime/export, schema,
+security, CI and instruction artifacts retain targeted evidence. Actual committed blobs are read
+before manifest comparison; npm script-only wiring excludes install/publish hooks. Source semantics
+remain an independent review/test responsibility in every path, as explicitly authorized for this
+cleanup. Existing Git/checkout pins, prose protection, licenses and the complete evidence path remain.
+No service, dependency, new ADR or copied upstream implementation is introduced.
 
 Developer discovery uses existing plain files and the Agent Skills format already reviewed in the
 ledger, without a new dependency or copied source. The scoped official lookup was `Codex AGENTS.md
@@ -95,14 +99,8 @@ AGENTS and `.agents/skills`; root links provide explicit reading when editing de
 repository maps/design/contribution docs are retained rather than a new index service or knowledge
 platform. Claude is not configured, so no duplicate compatibility instructions are introduced.
 
-Validation: preserve the existing immutable-blob tests; add positive UI/core reuse, missing/mixed
-fields, imports/new source, policy/prompt and boundary negatives, plus real Git/CLI exercises. Check
-local references and skill metadata, actual native discovery and bounded new-context task reading.
-No new dependency, upstream code or substantial upstream prose is incorporated; existing notices
-remain. This is targeted wiring of accepted contracts, not another framework/language review.
-
-中文：C1 保留原 Git/checkout 版本和不可变 diff 决定，只调整“每次行为修复填写全表”的假设。
-普通修复复用原决定；新增依赖/协议/授权或安全/持久化/架构须针对性证据。保守短表仅覆盖已有
-UI/核心纯辅助模块及测试，敏感和未知路径用可引用已有研究的完整表单。规则与 prompt 不属于纯文字。
-开发入口复用既有地图/设计文档，按上方官方文档使用普通 AGENTS 和 `.agents/skills`，无新增依赖
-或上游源码/正文复制；通过正反例、真实 Git/CLI、发现与新上下文阅读验收，不能将机械检查当语义证明。
+Validation: immutable-blob/merge-base and CLI fixtures retain the prose/policy negatives; cross-directory
+repairs and add/import/retire changes pass, while mixed dependency, permission, persistence,
+protocol and CI changes require targeted evidence. The typed documentation checker also verifies
+that the PR template retains all three evidence paths. Repository commands and negative cases are
+the evidence entrypoints; revision-specific results are in [PR104](https://github.com/Peerframe/openbot/pull/104).

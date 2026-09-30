@@ -119,7 +119,7 @@ async def create_child(db,store,task,action,target,selection,scope,assignment):
 
 async def receipt(db,action,row):
     from .work_task_profiles import resolve_product_source
-    from .identity_inputs import _ECMASCRIPT_WHITESPACE
+    from .text_compat import ECMASCRIPT_WHITESPACE
     effect=action['intent']['effect'];args=action['intent']['arguments']
     child=await (await db.execute('SELECT * FROM work_tasks WHERE id=%s',(row['child_task_id'],))).fetchone()
     if not child:raise WorkConflict('collaboration_receipt_changed')
@@ -141,7 +141,7 @@ async def receipt(db,action,row):
     if (action['status'] not in ('admitted','unknown','applied') or action['intent']['tool'] not in ('start_task','delegate_task')
             or row['intent_digest']!=action['intent_digest'] or row['parent_task_id']!=action['task_id']
             or row['parent_work_run_id']!=action['run_id'] or row['child_source_run_id'] is not None or row['assignment_message_id'] is not None
-            or child['bot_id']!=args['botId'].lower() or child['objective']!=args['task'].strip(_ECMASCRIPT_WHITESPACE)
+            or child['bot_id']!=args['botId'].lower() or child['objective']!=args['task'].strip(ECMASCRIPT_WHITESPACE)
             or source['source_kind']!='task' or source['model_selection']!=effect['target']['modelSelection']
             or source['execution_profile']!=effect['target']['profile'] or row['root_task_id']!=effect['tree']['rootTaskId']
             or row['root_work_run_id']!=effect['tree']['rootWorkRunId'] or row['deadline_at'].isoformat()!=effect['tree']['deadline']

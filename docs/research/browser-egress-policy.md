@@ -91,6 +91,32 @@ No host packet, DNS rebinding, Linux product Host or preexisting-tunnel revocati
 The required CI job uses the same real executable fixture; five compiler-only tests remain cheap
 offline regressions. `npm run check` verification is recorded in the current handoff.
 
+## Reproducible fixture archive (2026-09-29)
+
+PR104 HEAD `8b5c4d3`, CI36519662419/job109249585292 failed before either network probe:
+the unchanged Dockerfile requested iproute2 7.1.0-1 from rolling forky, which now indexes7.2.0-1.
+Reproduced in the exact amd64 base image; Squid7.7-1 remains indexed. This is archive drift, not
+evidence of a TypeScript or network-policy regression. No qualification ran after the build failure.
+
+Reviewed Debian's [snapshot usage and authentication contract](https://snapshot.debian.org/#usage),
+[September archive index](https://snapshot.debian.org/archive/debian/?year=2026&month=9), and exact
+[iproute2 binary inventory](https://snapshot.debian.org/mr/binary/iproute2/7.1.0-1/binfiles) and
+[Squid inventory](https://snapshot.debian.org/mr/package/squid/7.7-1/binpackages). Select the actual
+`20260926T022600Z` snapshot for Debian and the corresponding security archive cutoff. Signed APT
+update and full dependency simulation in the pinned base succeed: Squid7.7-1, iproute2 7.1.0-1,
+standalone tmpfiles261.2-1 and their complete closure remain available without a package downgrade.
+Retain the same keyring and all three suites, pin tmpfiles explicitly, reject any failed APT index
+fetch and preserve authenticated InRelease hashes beside the existing package/binary receipts.
+
+Keeping the rolling source is not reproducible; merely advancing iproute2 leaves the same future
+drift. Vendoring binaries adds distribution/notice obligations without a missing archive capability.
+The existing Debian archive is the narrow fix; no proxy/compiler/kernel code or job is skipped.
+`Check-Valid-Until: no` applies only to the fixed historical snapshot's expiry, as Debian documents;
+Release signatures, signed package hashes and the image digest remain mandatory. No trusted=yes,
+allow-unauthenticated, insecure source, global APT bypass or production package change is introduced.
+No upstream code was copied; existing separate Squid GPL and Debian/Node notices remain unchanged.
+Actual rebuilt-image, proxy and hosted native-kernel results are recorded in the cleanup checkpoint.
+
 ## Actual native packet check
 
 The supplied Ubuntu24.04 VPS has nftables1.0.9-1ubuntu0.1, iproute2 6.1.0-1ubuntu6.4,

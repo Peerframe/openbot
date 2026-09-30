@@ -15,10 +15,12 @@ Keep Python/Temporal, TS/React, thin Electron and retained Node helpers in their
 Read only the relevant row in [the repository map](docs/REPOSITORY_MAP.md), then its local `AGENTS.md`,
 contract, consumer and representative test. Expand along calls or a reproduced failure when needed.
 Use [CONTRIBUTING](CONTRIBUTING.md) for setup; UI work starts at [the design index](docs/design/README.md).
-Do not preload the research archive. The current C1→C2→C3 upgrade has one
-[handoff](docs/REPOSITORY_UPGRADE_PLAN.md); older migration records retain their historical scope.
+Do not preload the research archive. The completed C1→C2→C3 upgrade is preserved in the
+[upgrade record](docs/REPOSITORY_UPGRADE_PLAN.md). It and older migration records are dated evidence,
+not standing work queues; determine current work from the user's request and actual checkout.
 
-Repository development skills live in `.agents/skills`: select only the relevant skill and read it:
+The [development entry](.agents/README.md) links existing owners and workflows. Repository
+development skills remain in `.agents/skills`: select only the relevant skill and read it:
 [openbot-change](.agents/skills/openbot-change/SKILL.md),
 [openbot-check](.agents/skills/openbot-check/SKILL.md),
 [openbot-ui](.agents/skills/openbot-ui/SKILL.md), or

@@ -53,7 +53,7 @@ Start with the [repository map](docs/REPOSITORY_MAP.md) for module ownership, co
 | Python execution core | `packages/harness` (current harness source) |
 | Node protocol and reliability | `apps/node`, `packages/protocol` |
 | Computer integrations | `providers/*`, `packages/provider-sdk` |
-| Policy and security | `packages/policy`, `docs/SECURITY.md` |
+| Policy and security | `apps/server-python/src/openbot_server`, `docs/SECURITY.md` |
 | Documentation and translations | `README*.md`, `docs/`, ADRs |
 | Optional experiences | `packages/office-plugin` and future plugins |
 
@@ -87,7 +87,7 @@ npm run db:up
 npm run dev
 ```
 
-Keep this terminal open. `scripts/dev-python.mjs` verifies the locked Worker environment, builds
+Keep this terminal open. `scripts/dev-python.ts` verifies the locked Worker environment, builds
 the required shared packages through Turbo, then starts Python Server/Web.
 Open `http://localhost:5173` and sign in with the Owner password from `.env`; Server uses port
 `3001`. This is sufficient for frontend/control-plane development. Executing Work additionally needs explicit model settings and mTLS Temporal configuration;
@@ -133,12 +133,10 @@ For schema changes, start with the read-only
 `npm run migration:plan --workspace @openbot/db -- --name describe_change` and the
 [manual migration contract](docs/DATABASE.md#author-a-migration). Automatic `generate` is disabled.
 
-Before opening a pull request:
-
-```bash
-npm run check
-npm audit
-```
+Before opening a pull request, follow the [applicable validation rules](#ai-development-entry-and-validation).
+Implementation and script changes require `npm run check`; prose and contributor instructions use
+their applicable documentation and workflow checks. Run `npm audit` and satisfy the required
+security and hosted CI gates; focused validation does not exempt them.
 
 Run `npm run db:stop` when the development database is no longer needed.
 
@@ -236,8 +234,8 @@ Choose one PR evidence path based on the actual change, not its title:
 | New dependency/version, public protocol, authorization/security, persistent-data boundary or material architecture | Targeted review of the affected choice, pinned evidence and negative/compatibility tests |
 | Pure spelling, faithful translation, mechanical prose formatting | Bounded prose exemption below; unchanged behavior and claims |
 
-For eligible existing Web components, runtime `bounds.py`/`catalog.py`/`errors.py`, or tests, replace
-the seven fields under `## Open-source research` with:
+For ordinary internal repairs within an accepted design, in any directory, replace the seven
+fields under `## Open-source research` with:
 
 ```markdown
 - Research reuse: docs/research/channel-member-layout.md
@@ -246,17 +244,27 @@ the seven fields under `## Open-source research` with:
 - Source copied or substantially adapted: no
 ```
 
-Use the relevant existing decision, not this example by default. CI reads immutable committed
-base/head blobs and rejects missing evidence, mixed forms, new product files, changed imports,
-dependencies, boundary owners, instructions/prompts and unknown paths on this shortcut. This is a
-conservative convenience, not a semantic proof or approval. Review must still trace actual consumers
-and detect a permission or protocol change hidden inside an otherwise eligible file.
+Cite the relevant existing decision, not this example by default. An internal import, helper
+extraction, source retirement or different directory does not by itself require another research
+table. The same form covers ordinary source, tests, styles and explanatory documentation. npm
+script wiring can qualify when dependencies, runtime, exports and install/publish hooks are unchanged.
 
-Other routine fixes, including changes to boundary-owner files, may use the existing seven fields
-with the already-reviewed decision and pins; this does **not** require a new research cycle. Only
-changed assumptions reopen the affected choice. New boundaries use those same fields with their
-new targeted evidence. Source copying/adaptation keeps license/notice review. Research templates
-start with a trigger/reuse assessment; do not fill a new report merely because behavior changed.
+CI reads bounded immutable base/head blobs, including both sides of moves, and rejects missing
+content, mixed forms, binary/symlink or executable-mode changes. Known authority, credential,
+budget, recovery, storage and public-contract owners retain targeted review, as do dependency/lock,
+schema, security declaration, CI and instruction/prompt changes. The failure names the affected
+file and reason; the full form can cite its existing decision and reviewed pins without a new survey.
+
+These are conservative evidence checks, not semantic proof or approval. Independent review must
+trace real consumers and required tests for **every** changed file: a new permission, persistence,
+public protocol or material architecture change in an ordinary helper still requires targeted
+evidence. Do not use the reuse label to hide one. Reopen only changed assumptions; keep license and
+notice review for copied/adapted source. Neither route requires a new ADR or duplicate research
+record when existing evidence covers the change.
+
+When a durable decision needs an ADR, adapt the [outline](docs/decisions/TEMPLATE.md) to the decision.
+Review reasons, consequences and necessary sources; neither its number nor directory requires a
+fixed set of headings. Existing ADRs need no formatting migration.
 
 For unchanged ordinary prose, replace all seven fields with:
 
@@ -274,6 +282,7 @@ do not trigger CI; missing/shallow history fails closed.
 
 ### AI development entry and validation
 
+The [development entry](.agents/README.md) links the existing workflows and owners.
 Read [AGENTS](AGENTS.md) → one [repository map](docs/REPOSITORY_MAP.md) route → local AGENTS, contract,
 consumer and test. `.agents/skills` provides `openbot-change`, `openbot-check`, `openbot-ui` and
 `openbot-review`; select only the relevant workflow. These are repository-development instructions,
@@ -292,10 +301,11 @@ gates; script/implementation changes still require `npm run check` before handof
 checks and release/migration/security gates remain applicable. Only the tested CI selector may
 declare a lane not applicable. State actual test counts, cached results, skips and missing environments.
 
-The upgrade continues in [one handoff](docs/REPOSITORY_UPGRADE_PLAN.md). UI work also follows
-[the existing design index](docs/design/README.md), current tokens/components and affected rendered
-states. New-session C1 acceptance locates UI, Python-core and cross-language tasks; C3 executes the
-complete contribution journeys. Do not claim the latter from a successful lookup.
+The [completed upgrade record](docs/REPOSITORY_UPGRADE_PLAN.md) preserves dated evidence and limits,
+not a standing queue of C1/C2/C3 work. Start from the current request and checkout; preserve local
+completion records. UI work follows [the existing design index](docs/design/README.md), current
+tokens/components and affected rendered states. A discovery/reading exercise locates owners and
+checks; it does not establish a completed implementation, rendered acceptance or hosted CI.
 
 ## Code and comments
 
@@ -342,7 +352,8 @@ through the private process in [SECURITY.md](SECURITY.md), not a public issue.
    a small reproducible bug fix or documentation correction can start directly as a PR. Use an issue
    to agree scope before a large feature.
 3. Add tests at the lowest useful boundary and an integration test for cross-component behavior.
-4. Run `npm run check`; record any real-device, browser, or assistive-technology evidence.
+4. Run the [applicable checks](#ai-development-entry-and-validation), including `npm run check` for
+   implementation/script changes; record any real-device, browser, or assistive-technology evidence.
 5. Update docs and existing translations when user-visible behavior or project claims change.
 6. Complete every applicable section of the pull request template.
 7. Preserve upstream copyright and license notices.

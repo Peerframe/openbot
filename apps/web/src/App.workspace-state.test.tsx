@@ -4,6 +4,7 @@ import type {
   Approval,
   Bot,
   Channel,
+  EmployeeProfile,
   ExecutionNode,
   Run,
   WorkspaceSnapshot,
@@ -109,11 +110,13 @@ class TestEventSource extends EventTarget {
 }
 type PendingRead = ReturnType<typeof deferred<Response>> & { signal: AbortSignal | undefined };
 let reads: PendingRead[];
+let profiles: (PendingRead & { botId: string })[];
 let mutations: ReturnType<typeof deferred<Response>>[];
 let rendered: RenderedComponent | undefined;
 beforeEach(() => {
   vi.useFakeTimers();
   reads = [];
+  profiles = [];
   mutations = [];
   TestEventSource.instances = [];
   updatePreferences(defaultPreferences);
@@ -130,6 +133,16 @@ beforeEach(() => {
       if (url === "/api/v1/workspace") {
         const request = { ...deferred<Response>(), signal: init?.signal ?? undefined };
         reads.push(request);
+        return request.promise;
+      }
+      const profilePath = /^\/api\/v1\/bots\/([^/]+)\/profile$/.exec(url);
+      if (profilePath?.[1]) {
+        const request = {
+          ...deferred<Response>(),
+          botId: profilePath[1],
+          signal: init?.signal ?? undefined,
+        };
+        profiles.push(request);
         return request.promise;
       }
       if (url.startsWith("/api/v1/channels/") && url.includes("/bots")) {
@@ -354,5 +367,124 @@ describe("Authenticated workspace snapshot and realtime ordering", () => {
     expect(TestEventSource.instances.every((item) => item.closed)).toBe(true);
     await interact(() => pending?.reject(new Error("completion after unmount")));
     expect(document.body.textContent).toBe("");
+  });
+});
+
+function employeeProfile(botId: string, name: string): EmployeeProfile {
+  const employee = bots.find((bot) => bot.id === botId);
+  if (!employee) throw new Error(`Unknown employee: ${botId}`);
+  return {
+    employee: { ...employee, name },
+    details: { description: "Profile fixture", revision: 1, updatedAt: createdAt },
+    evolution: [],
+    skills: [],
+    memories: [],
+    memoryEvents: [],
+    records: { runs: [], approvals: [], artifacts: [], decisions: [] },
+    statistics: { totalRuns: 0, completedRuns: 0, failedRuns: 0, verifiedSkills: 0 },
+    configuration: { executionProfile: "none", portabilityFormat: "openbot.employee/v1" },
+  };
+}
+async function openProfile(name = "Alpha") {
+  const button = rendered?.container.querySelector(`[title="${name} · 点击对话，右键打开档案"]`);
+  if (!button) throw new Error(`Missing profile entry: ${name}`);
+  await interact(() =>
+    button.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })),
+  );
+}
+async function completeProfile(index: number, name: string) {
+  const request = profiles[index];
+  if (!request) throw new Error(`Missing profile request: ${index}`);
+  await interact(() =>
+    request.resolve(Response.json({ profile: employeeProfile(request.botId, name) })),
+  );
+}
+function displayedProfile() {
+  return rendered?.container.querySelector(".employee-profile-identity h1")?.textContent;
+}
+describe("Employee profile read ownership in the real workspace", () => {
+  it.each(["success", "failure"])(
+    "ignores stale %s after an event refresh completed",
+    async (outcome) => {
+      await mount();
+      await openProfile();
+      await identityChanged();
+      expect(profiles).toHaveLength(2);
+      await completeProfile(1, "Latest Alpha");
+      expect(displayedProfile()).toBe("Latest Alpha");
+      if (outcome === "success") await completeProfile(0, "Stale Alpha");
+      else await interact(() => profiles[0]?.reject(new Error("stale profile error")));
+      expect(displayedProfile()).toBe("Latest Alpha");
+      expect(rendered?.container.textContent).not.toContain("stale profile error");
+      expect(profiles[0]?.signal?.aborted).toBe(true);
+    },
+  );
+  it("does not let a stale completion stop the current loading state", async () => {
+    await mount();
+    await openProfile();
+    await identityChanged();
+    await completeProfile(0, "Stale Alpha");
+    expect(displayedProfile()).toBeUndefined();
+    expect(rendered?.container.textContent).toContain("正在读取员工档案");
+    await completeProfile(1, "Latest Alpha");
+    expect(displayedProfile()).toBe("Latest Alpha");
+  });
+  it("aborts a reconnect read when leaving and does not revive it on return", async () => {
+    await mount();
+    await openProfile();
+    await completeProfile(0, "Initial Alpha");
+    await ready();
+    await openProfile("Beta");
+    expect(profiles[1]?.signal?.aborted).toBe(true);
+    await openProfile();
+    await completeProfile(3, "Returned Alpha");
+    await completeProfile(1, "Old Alpha from reconnect");
+    await completeProfile(2, "Old Beta");
+    expect(displayedProfile()).toBe("Returned Alpha");
+  });
+  it("aborts event reads on unmount and does not refetch unrelated profiles", async () => {
+    await mount(snapshot(), true);
+    await openProfile("Beta");
+    await identityChanged();
+    expect(profiles).toHaveLength(1);
+    await ready();
+    expect(profiles).toHaveLength(2);
+    await rendered?.unmount();
+    rendered = undefined;
+    expect(profiles.every((request) => request.signal?.aborted)).toBe(true);
+    await completeProfile(1, "Late Beta");
+    expect(document.body.textContent).toBe("");
+  });
+  it("shows a failed refresh and retries instead of silently presenting retained data as fresh", async () => {
+    await mount();
+    await openProfile();
+    await completeProfile(0, "Initial Alpha");
+    await ready();
+    await interact(() => profiles[1]?.reject(new Error("profile refresh failed")));
+    expect(rendered?.container.querySelector(".employee-profile-loading")?.textContent).toContain(
+      "profile refresh failed",
+    );
+    expect(displayedProfile()).toBeUndefined();
+    const retry = rendered?.container.querySelector<HTMLButtonElement>(
+      ".employee-profile-loading button.primary-button",
+    );
+    if (!retry) throw new Error("Missing refresh retry button");
+    await interact(() => retry.click());
+    await completeProfile(2, "Refreshed Alpha");
+    expect(displayedProfile()).toBe("Refreshed Alpha");
+  });
+  it("keeps the retry consumer connected after a current failure", async () => {
+    await mount();
+    await openProfile();
+    await interact(() => profiles[0]?.reject(new Error("current profile failure")));
+    expect(rendered?.container.textContent).toContain("current profile failure");
+    const retry = rendered?.container.querySelector<HTMLButtonElement>(
+      ".employee-profile-loading button.primary-button",
+    );
+    if (!retry) throw new Error("Missing retry button");
+    await interact(() => retry.click());
+    await completeProfile(1, "Recovered Alpha");
+    expect(displayedProfile()).toBe("Recovered Alpha");
+    expect(rendered?.container.textContent).not.toContain("current profile failure");
   });
 });

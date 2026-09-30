@@ -4,14 +4,13 @@
 // `agent-knowledge.js` and `sensitive-content.js`), never a JavaScript restatement of it.
 // Build the fixed fixture with `npm run oracle:build`; its snapshot is not synchronized with product edits.
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import {
   boundedKnowledgeText,
   validateKnowledgeProposal,
 } from "../../../tests/oracles/legacy-server/dist/agent-knowledge.js";
 import { nativeFailureMessages } from "../../../tests/oracles/legacy-server/dist/agent-observations.js";
 import { scanSensitiveText } from "../../../tests/oracles/legacy-server/dist/sensitive-content.js";
+import { runPythonComparator, THIRTY_SECONDS, TWO_MIB } from "./python-comparator.ts";
 
 const packageRoot = new URL("../", import.meta.url);
 
@@ -102,19 +101,15 @@ for case in json.load(sys.stdin):
 json.dump({"failures": dict(values.FAILURE_MESSAGES), "results": results}, sys.stdout,
           ensure_ascii=True)
 `;
-const child = spawnSync(
-  fileURLToPath(new URL(".venv/bin/python", packageRoot)),
-  ["-I", "-u", "-c", program, fileURLToPath(new URL("src", packageRoot))],
-  {
-    cwd: fileURLToPath(packageRoot),
-    env: { PATH: "/usr/bin:/bin" },
-    input: JSON.stringify(cases),
-    encoding: "utf8",
-    timeout: 30000,
-    maxBuffer: 2 * 1024 * 1024,
-    stdio: ["pipe", "pipe", "pipe"],
-  },
-);
+const child = runPythonComparator({
+  packageRoot,
+  program,
+  unbuffered: true,
+  cwd: packageRoot,
+  stdin: JSON.stringify(cases),
+  timeoutMs: THIRTY_SECONDS,
+  maxBufferBytes: TWO_MIB,
+});
 if (child.status !== 0) console.error(child.stderr);
 assert.equal(child.error, undefined, "Python execution-value comparator did not run.");
 assert.equal(child.status, 0, "Python execution-value comparator failed.");

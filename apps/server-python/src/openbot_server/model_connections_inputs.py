@@ -13,13 +13,13 @@ from urllib.parse import urlsplit
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator, model_validator
 
-from .identity_inputs import _ECMASCRIPT_WHITESPACE
+from .text_compat import ECMASCRIPT_WHITESPACE
 from .model_presets import model_provider_presets
 from .profile_details import ExpectedRevision
 
 
 def _trim(value):
-    return value.strip(_ECMASCRIPT_WHITESPACE) if isinstance(value, str) else value
+    return value.strip(ECMASCRIPT_WHITESPACE) if isinstance(value, str) else value
 
 
 def model_id(value):

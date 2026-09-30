@@ -143,7 +143,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const demo = await startExamplePlugin();
   console.log(`Example MCP endpoint: ${demo.endpoint}`);
   console.log(
-    "Allow this exact loopback endpoint in OPENBOT_PLUGIN_LOCAL_ENDPOINTS on the OpenBot Server; preview and install it through Plugins.",
+    "Allow this exact loopback endpoint as a JSON array in OPENBOT_CONTROL_PLUGIN_LOCAL_ENDPOINTS on the OpenBot Server; preview and install it through Plugins.",
   );
   const stop = () => {
     void demo.close().then(() => process.exit(0));

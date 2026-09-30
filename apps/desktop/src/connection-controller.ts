@@ -1,3 +1,5 @@
+import type { DesktopConnectionState, ConfigureDesktopServerResult } from "@openbot/protocol";
+import { discardBody, isJsonContentType, readBoundedText } from "./bounded-response.js";
 import {
   createDesktopConnectionConfig,
   type DesktopConnectionStore,
@@ -7,23 +9,11 @@ import {
 export const MAXIMUM_DESKTOP_HEALTH_RESPONSE_BYTES = 4 * 1024;
 export const DESKTOP_SERVER_HEALTH_TIMEOUT_MS = 5_000;
 
-export type DesktopConnectionState =
-  | Readonly<{ status: "unconfigured" }>
-  | Readonly<{ status: "invalid" }>
-  | Readonly<{ status: "configured"; serverUrl: string }>;
-
-export type DesktopConnectionFailureCode =
-  | "invalid_url"
-  | "server_unreachable"
-  | "server_redirected"
-  | "not_openbot_server"
-  | "confirmation_unavailable"
-  | "storage_unavailable";
-
-export type ConfigureDesktopServerResult =
-  | Readonly<{ status: "configured"; serverUrl: string }>
-  | Readonly<{ status: "cancelled" }>
-  | Readonly<{ status: "failed"; code: DesktopConnectionFailureCode }>;
+export type { DesktopConnectionState, ConfigureDesktopServerResult } from "@openbot/protocol";
+export type DesktopConnectionFailureCode = Extract<
+  ConfigureDesktopServerResult,
+  { status: "failed" }
+>["code"];
 
 export type DesktopServerFetcher = (input: string, init: RequestInit) => Promise<Response>;
 
@@ -114,11 +104,11 @@ export async function verifyDesktopServer(
   }
 
   if (response.status >= 300 && response.status < 400) {
-    await response.body?.cancel().catch(() => undefined);
+    discardBody(response.body);
     return "server_redirected";
   }
   if (response.status !== 200 || !isJsonContentType(response.headers.get("content-type"))) {
-    await response.body?.cancel().catch(() => undefined);
+    discardBody(response.body);
     return "not_openbot_server";
   }
 
@@ -127,6 +117,8 @@ export async function verifyDesktopServer(
     body = await readBoundedText(response, MAXIMUM_DESKTOP_HEALTH_RESPONSE_BYTES);
   } catch {
     return "not_openbot_server";
+  } finally {
+    discardBody(response.body);
   }
 
   try {
@@ -138,41 +130,6 @@ export async function verifyDesktopServer(
     return "not_openbot_server";
   }
   return undefined;
-}
-
-async function readBoundedText(response: Response, maximumBytes: number): Promise<string> {
-  const declaredLength = response.headers.get("content-length");
-  if (declaredLength !== null) {
-    const parsed = Number(declaredLength);
-    if (!Number.isSafeInteger(parsed) || parsed < 0 || parsed > maximumBytes) {
-      throw new Error("Response length is invalid.");
-    }
-  }
-  if (response.body === null) return "";
-
-  const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let length = 0;
-  try {
-    while (true) {
-      const result = await reader.read();
-      if (result.done) break;
-      length += result.value.byteLength;
-      if (length > maximumBytes) throw new Error("Response exceeds its byte limit.");
-      chunks.push(result.value);
-    }
-  } catch (error) {
-    await reader.cancel().catch(() => undefined);
-    throw error;
-  }
-
-  const bytes = new Uint8Array(length);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
 }
 
 function configuredState(serverUrl: string): Readonly<{ status: "configured"; serverUrl: string }> {
@@ -191,10 +148,6 @@ function failedResult(
   code: DesktopConnectionFailureCode,
 ): Readonly<{ status: "failed"; code: DesktopConnectionFailureCode }> {
   return Object.freeze({ status: "failed", code });
-}
-
-function isJsonContentType(value: string | null): boolean {
-  return value?.split(";", 1)[0]?.trim().toLowerCase() === "application/json";
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

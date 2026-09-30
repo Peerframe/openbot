@@ -31,7 +31,8 @@ from typing import Annotated, Any, Literal
 
 from pydantic import AfterValidator, BeforeValidator, ConfigDict, Field, ValidationError
 
-from .identity_inputs import _ECMASCRIPT_WHITESPACE, _TRIM_NOTE, _bounded_text
+from .identity_inputs import _TRIM_NOTE, _bounded_text
+from .text_compat import ECMASCRIPT_WHITESPACE
 from .models import PublicModel
 from .task_models import _mathematical_integer
 
@@ -103,8 +104,8 @@ def _character_class(characters: str) -> str:
 # JavaScript ``\s`` is the ECMAScript WhiteSpace + LineTerminator set, which is *not* Python's:
 # Python additionally accepts U+001C-U+001F and U+0085 and rejects U+FEFF. The character set is
 # therefore written out from the shared constant instead of using ``\s``.
-_ECMA_SPACE_CLASS = "[" + _character_class(_ECMASCRIPT_WHITESPACE) + "]"
-_NON_ECMA_SPACE_CLASS = "[^" + _character_class(_ECMASCRIPT_WHITESPACE) + "\"',;]"
+_ECMA_SPACE_CLASS = "[" + _character_class(ECMASCRIPT_WHITESPACE) + "]"
+_NON_ECMA_SPACE_CLASS = "[^" + _character_class(ECMASCRIPT_WHITESPACE) + "\"',;]"
 _OPTIONAL_QUOTE = "[\"']?"
 
 # The ``credential-like-content`` and ``private-key-content`` expressions of

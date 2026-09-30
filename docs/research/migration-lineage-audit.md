@@ -33,7 +33,9 @@ Require full commit object IDs, reject symbolic links for journals/SQL, validate
 loading tagged files, and print hashes/metadata rather than SQL content. Do not resolve paths from
 SQL or run Git filters. Missing objects or malformed input fail; no install/fetch/repair occurs.
 Exit 0 means source-history-prefix only, 1 means incompatible direction/divergence, 2 means invalid
-input/read failure. The ordinary runtime database history guard remains unchanged.
+input/read failure. The ordinary runtime database history guard remains unchanged. The pure validator now lives in
+`scripts/migration-manifest.ts`; typed checker/planner and the committed-lineage reader consume
+that owner directly. This organization does not move format or runtime-history authority.
 
 ## Source incorporation
 

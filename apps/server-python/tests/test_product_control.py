@@ -1,5 +1,6 @@
 """Retained Web contract on the actual Python application and owned PostgreSQL fixture."""
 import asyncio
+from contextlib import asynccontextmanager
 import hashlib
 import json
 from pathlib import Path
@@ -9,14 +10,17 @@ from uuid import uuid4
 
 import psycopg
 import pytest
+from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
+from starlette.requests import Request
 
+from openbot_server import product_events
 from openbot_server.app import create_app
 from openbot_server.authority import AuthenticationRequired
-from openbot_server.database import PostgresReadStore
+from openbot_server.database import PostgresReadStore, StoreUnavailable
 from openbot_server.owner_files import OwnerFiles, validate_attachment
 from openbot_server.control_errors import ControlError
-from openbot_server.product_control import OwnerProduct
+from openbot_server.product_control import OwnerProduct, register_product_routes
 from openbot_server.task_store import PostgresTaskStore
 
 
@@ -88,7 +92,10 @@ def test_attachment_is_not_retained_after_final_authority_expiry(fixture,tmp_pat
 def test_attachment_boundaries_and_legacy_layout(tmp_path):
     tmp_path.chmod(0o700);files=OwnerFiles(tmp_path);channel=str(uuid4())
     with pytest.raises(ControlError): files._read('../foreign',100)
-    with pytest.raises(ControlError): validate_attachment('a.txt',b'\xff')
+    for invalid_text in (b'\xff', b'a\0b'):
+        with pytest.raises(ControlError, match='attachment_utf8_required'):
+            validate_attachment('a.txt', invalid_text)
+    assert validate_attachment('a.txt', b'x'*(256*1024)) == 'text/plain'
     with pytest.raises(ControlError): validate_attachment('a.txt',b'x'*(256*1024+1))
     item=files.persist(channel,'safe.txt',b'payload')
     assert files.metadata(channel,item['id'])==item
@@ -146,3 +153,205 @@ def test_integrated_model_knowledge_schedule_and_reactions(fixture,tmp_path):
         assert reaction.status_code==200,reaction.text
         assert reaction.json()['reactions'][0]['emoji']=='👍'
         assert api.get(f'/api/v1/channels/{channel}/reactions').status_code==200
+
+
+@pytest.mark.parametrize('owner', [False, True])
+def test_attachment_processing_http_preserves_namespace_and_signal(fixture, tmp_path, owner):
+    from types import SimpleNamespace
+    service = product(fixture, tmp_path)
+    calls = []
+    signals = []
+    async def process(*args, cancelled):
+        assert isinstance(cancelled, asyncio.Event) and not cancelled.is_set()
+        calls.append(args)
+        signals.append(cancelled)
+        return {'id': 'synthetic-attachment'}
+    service.processing = SimpleNamespace(process=process, process_owner=process)
+    base = '/api/v1/task-attachments' if owner else f"/api/v1/channels/{fixture['channelId']}/attachments"
+    with client(fixture, service) as api:
+        url = base + '/synthetic-attachment/process'
+        assert api.post(url, json={'operation': 'extract'}).status_code == 403
+        assert calls == []
+        for _ in range(2):
+            response = api.post(url, json={'operation': 'extract'}, headers={'Origin': 'http://testserver'})
+            assert response.status_code == 200, response.text
+            assert response.json() == {'attachment': {'id': 'synthetic-attachment'}}
+    expected = (fixture['token'], 'synthetic-attachment', {'operation': 'extract'}) if owner else (
+        fixture['token'], fixture['channelId'], 'synthetic-attachment', {'operation': 'extract'})
+    assert calls == [expected, expected]
+    assert signals[0] is not signals[1]
+
+
+HEARTBEAT = 'event: heartbeat\ndata: alive\n\n'
+
+
+def product_endpoints(fixture, service):
+    app = FastAPI()
+    register_product_routes(app, service, PostgresReadStore(fixture['dsn']), secure_cookies=False,
+        allowed_origins=('http://testserver',))
+    return {route.path: route.endpoint for route in app.routes if hasattr(route, 'endpoint')}
+
+
+def session_token(fixture, lifetime):
+    token = secrets.token_urlsafe(32)
+    with psycopg.connect(fixture['dsn']) as db:
+        db.execute("INSERT INTO auth_sessions(id,owner_id,token_digest,expires_at) VALUES(%s,'owner',%s,now()+%s::interval)",
+            (str(uuid4()), hashlib.sha256(token.encode()).hexdigest(), lifetime))
+    return token
+
+
+def stream_request(token, path):
+    disconnected = asyncio.Event()
+    async def receive():
+        await disconnected.wait()
+        return {'type': 'http.disconnect'}
+    scope = {'type': 'http', 'method': 'GET', 'path': path, 'query_string': b'',
+             'headers': [(b'cookie', ('openbot_session=' + token).encode())]}
+    return Request(scope, receive), disconnected
+
+
+def assert_stream_headers(response):
+    assert response.media_type == 'text/event-stream'
+    assert response.headers['cache-control'] == 'no-store'
+    assert response.headers['x-accel-buffering'] == 'no'
+
+
+def test_workspace_events_ready_heartbeat_revision_and_session_end(fixture, tmp_path, monkeypatch):
+    monkeypatch.setattr(product_events, 'POLL_SECONDS', 0)
+    service = product(fixture, tmp_path)
+    endpoint = product_endpoints(fixture, service)['/api/v1/workspace/events']
+    token = session_token(fixture, '3 seconds')
+    async def check():
+        request, _ = stream_request(token, '/api/v1/workspace/events')
+        response = await endpoint(request)
+        assert_stream_headers(response)
+        stream = response.body_iterator
+        first = await anext(stream)
+        head, _, data = first.partition('data: ')
+        assert head == 'event: workspace.ready\nretry: 2000\n' and first.endswith('\n\n')
+        payload = json.loads(data)
+        assert set(payload) == {'type', 'nodes'}
+        assert payload['type'] == 'workspace.ready' and isinstance(payload['nodes'], list)
+        assert await anext(stream) == HEARTBEAT
+        service.revision += 1
+        assert await anext(stream) == first
+        assert await anext(stream) == HEARTBEAT
+        # The session is re-read on every poll: once it lapses the stream ends instead of emitting.
+        await asyncio.sleep(3.1)
+        with pytest.raises(StopAsyncIteration):
+            await anext(stream)
+    asyncio.run(check())
+
+
+def test_workspace_events_propagate_store_error_without_retry(fixture, tmp_path, monkeypatch):
+    monkeypatch.setattr(product_events, 'POLL_SECONDS', 0)
+    service = product(fixture, tmp_path)
+    endpoint = product_endpoints(fixture, service)['/api/v1/workspace/events']
+    calls = []
+    real = service.workspace.snapshot
+    async def snapshot(value):
+        calls.append(value)
+        if len(calls) == 2:
+            raise psycopg.OperationalError('synthetic outage')
+        return await real(value)
+    monkeypatch.setattr(service.workspace, 'snapshot', snapshot)
+    async def check():
+        request, _ = stream_request(fixture['token'], '/api/v1/workspace/events')
+        stream = (await endpoint(request)).body_iterator
+        assert (await anext(stream)).startswith('event: workspace.ready\nretry: 2000\ndata: ')
+        with pytest.raises(StoreUnavailable):
+            await anext(stream)
+        with pytest.raises(StopAsyncIteration):
+            await anext(stream)
+    asyncio.run(check())
+    assert calls == [fixture['token'], fixture['token']]
+
+
+def test_channel_events_ready_revision_disconnect_and_refusals(fixture, tmp_path, monkeypatch):
+    monkeypatch.setattr(product_events, 'POLL_SECONDS', 0)
+    service = product(fixture, tmp_path)
+    endpoint = product_endpoints(fixture, service)['/api/v1/channels/{channel_id}/events']
+    channel = fixture['channelId']
+    ready = 'event: channel.ready\nretry: 2000\ndata: ' + json.dumps({'type': 'channel.ready', 'channelId': channel}) + '\n\n'
+    async def check():
+        missing, _ = stream_request(fixture['token'], '/api/v1/channels/missing/events')
+        with pytest.raises(ControlError) as refused:
+            await endpoint(missing, str(uuid4()))
+        assert (refused.value.status, refused.value.code) == (404, 'channel_not_found')
+        invalid, _ = stream_request(fixture['token'], '/api/v1/channels//events')
+        with pytest.raises(HTTPException) as rejected:
+            await endpoint(invalid, '')
+        assert rejected.value.status_code == 422
+        request, disconnected = stream_request(fixture['token'], f'/api/v1/channels/{channel}/events')
+        response = await endpoint(request, channel)
+        assert_stream_headers(response)
+        stream = response.body_iterator
+        assert await anext(stream) == ready
+        assert await anext(stream) == HEARTBEAT
+        service.revision += 1
+        assert await anext(stream) == ready
+        disconnected.set()
+        with pytest.raises(StopAsyncIteration):
+            await anext(stream)
+    asyncio.run(check())
+
+
+def test_attachment_families_keep_distinct_delete_lock_and_header_semantics(fixture, tmp_path, monkeypatch):
+    service = product(fixture, tmp_path)
+    order = []
+    real_lock = service.files.lock
+    real_transaction = service.transactions.transaction
+    @asynccontextmanager
+    async def lock():
+        order.append('lock')
+        async with real_lock():
+            yield
+    def transaction(token):
+        @asynccontextmanager
+        async def scoped():
+            order.append('transaction')
+            async with real_transaction(token) as db:
+                yield db
+        return scoped()
+    monkeypatch.setattr(service.files, 'lock', lock)
+    monkeypatch.setattr(service.transactions, 'transaction', transaction)
+    origin = {'Origin': 'http://testserver'}
+    raw = {**origin, 'Content-Type': 'application/octet-stream', 'X-OpenBot-Filename': '%E4%B8%AD%E6%96%87.txt'}
+    channel_base = f"/api/v1/channels/{fixture['channelId']}/attachments"
+    owner_base = '/api/v1/task-attachments'
+    def assert_download(response, data):
+        assert response.status_code == 200, response.text
+        assert response.content == data
+        assert response.headers['content-type'] == 'application/octet-stream'
+        assert response.headers['content-disposition'] == "attachment; filename*=UTF-8''%E4%B8%AD%E6%96%87.txt"
+        assert response.headers['content-length'] == str(len(data))
+        assert response.headers['x-content-type-options'] == 'nosniff'
+    with client(fixture, service) as api:
+        shared = api.post(channel_base, content=b'channel facts\n', headers=raw)
+        assert shared.status_code == 201, shared.text
+        private = api.post(owner_base, content=b'owner facts\n', headers=raw)
+        assert private.status_code == 201, private.text
+        shared_id = shared.json()['attachment']['id']
+        private_id = private.json()['attachment']['id']
+        assert private.json()['attachment']['scopeKind'] == 'owner'
+        assert api.get(channel_base + '/' + private_id + '/content').status_code == 404
+        assert api.get(owner_base + '/' + shared_id + '/content').status_code == 404
+        order.clear()
+        assert_download(api.get(channel_base + '/' + shared_id + '/content'), b'channel facts\n')
+        assert order == ['transaction']
+        order.clear()
+        assert_download(api.get(owner_base + '/' + private_id + '/content'), b'owner facts\n')
+        assert order == ['lock', 'transaction']
+        assert api.delete(channel_base + '/' + shared_id, headers=origin).status_code == 200
+        assert api.delete(owner_base + '/' + private_id, headers=origin).status_code == 200
+        # Retained channel history keeps deleted bytes readable; a deleted Owner upload is not live content.
+        assert_download(api.get(channel_base + '/' + shared_id + '/content'), b'channel facts\n')
+        assert api.get(owner_base + '/' + private_id + '/content').status_code == 404
+        assert 'deletedAt' in api.get(owner_base + '/' + private_id).json()['attachment']
+        assert api.post(owner_base + '/' + private_id + '/restore', headers=origin, json={'force': True}).status_code == 422
+        assert 'deletedAt' in api.get(owner_base + '/' + private_id).json()['attachment']
+        restored = api.post(owner_base + '/' + private_id + '/restore', headers=origin)
+        assert restored.status_code == 200, restored.text
+        assert_download(api.get(owner_base + '/' + private_id + '/content'), b'owner facts\n')
+        assert [item['id'] for item in api.get(owner_base).json()['attachments']] == [private_id]
+        assert [item['id'] for item in api.get(channel_base).json()['attachments']] == [shared_id]

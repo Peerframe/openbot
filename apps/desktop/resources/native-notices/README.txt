@@ -1,8 +1,10 @@
 OpenBot native PostgreSQL preview notices
 
-The locked @embedded-postgres/darwin-arm64 and darwin-x64 packages are
+The locked @embedded-postgres/darwin-arm64 package is
 17.10.0-beta.17, git c23ad8a026c711c8666c3c2596d0fde643cf378a.
-Their MIT packager license is copied separately into postgres/PACKAGER-LICENSE.md.
+Its MIT packager license is copied separately into postgres/PACKAGER-LICENSE.md.
+Intel Mac now ships the remote client; its unused darwin-x64 binary dependency
+has exited. These upstream notices also remain for historical native recipients.
 PostgreSQL is 17.10, distributed under the PostgreSQL License.
 
 License texts in this directory are unmodified upstream notices (Libedit.txt is
@@ -28,13 +30,12 @@ OpenBot's MIT license does not replace these licenses or prohibit modification,
 replacement or reverse engineering permitted by them. No library is statically
 incorporated into OpenBot application code.
 
-Windows source-built runtime (2026-09-10)
+Historical Windows source-build review (2026-09-10)
 
-The Windows runtime is built from the official PostgreSQL 17.11 source archive
-by scripts/build-windows-postgresql.ps1, not @embedded-postgres/windows-x64.
-The previous Windows npm candidate was rejected because its modified LGPL DLL
-source/provenance was incomplete. It is not a permitted packaging fallback.
-Windows-specific build provenance and complete notices travel inside
-postgres/openbot-postgresql-build.json and postgres/licenses. The Darwin
-source/version inventory above must not be used as Windows provenance.
-See docs/research/windows-desktop-completion.md for the build and CI boundary.
+Windows Desktop now ships the remote client and no PostgreSQL runtime. The retired
+source-build tooling is preserved in Git history, not in current packaging.
+The previous Windows npm candidate remains rejected because its modified LGPL DLL
+source/provenance was incomplete; it is not a permitted packaging fallback.
+Historical Windows notices and audit evidence remain in licenses/windows-postgresql.
+The Darwin source/version inventory above must not be used as Windows provenance.
+See docs/research/final-server-retirement.md for the current platform boundary.

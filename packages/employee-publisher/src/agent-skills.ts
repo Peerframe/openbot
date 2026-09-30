@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { isAlias, isScalar, parseDocument, visit } from "yaml";
 import { z } from "zod";
-import { StoreValidationError } from "./control-plane-store.js";
 import { scanSensitiveText } from "./sensitive-content.js";
 
 const metadataSchema = z
@@ -19,19 +18,7 @@ const metadataSchema = z
   })
   .strict();
 
-export const importSkillSchema = z
-  .object({
-    markdown: z
-      .string()
-      .min(1)
-      .max(12 * 1024),
-    version: z
-      .string()
-      .max(64)
-      .regex(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u),
-    reason: z.string().trim().min(1).max(1000),
-  })
-  .strict();
+class StoreValidationError extends Error {}
 
 /** Single-file standard adapter: parsing text never follows files, URLs or tool declarations. */
 export function parseSkillDocument(input: string) {
@@ -74,22 +61,4 @@ export function parseSkillDocument(input: string) {
   } catch {
     throw invalid();
   }
-}
-
-export interface SkillReference {
-  id: string;
-  revision: number;
-  sha256: string;
-}
-export interface AgentSkillDescriptor extends SkillReference {
-  name: string;
-  description: string;
-  version: string;
-}
-export interface AgentSkillCatalog {
-  skills: AgentSkillDescriptor[];
-  truncated: boolean;
-}
-export interface AgentSkillDocument extends AgentSkillDescriptor {
-  markdown: string;
 }

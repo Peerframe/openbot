@@ -36,3 +36,25 @@ npm、GitHub Actions 和 Docker 的普通版本 PR 上限设为零，保留生�
 未复制或实质改写上游源码，仅采用 GitHub 官方托管配置。核实三个零上限、既有分组与忽略规则、安全开关、正文研究检查及 `npm run check`，并等待最终 PR 和主分支完整云端检查。不增加平台支持或产品权限声明。
 
 主源：[触发行为](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-pull-requests)、[PR 上限与安全更新豁免](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#open-pull-requests-limit)、[安全更新配置](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-security-updates)。
+
+## 清理任务的漏洞核查（2026-09-29，PR104）
+
+`8b5c4d3` 完整审计的五项 moderate 是两条漏洞链：四项为 Drizzle 旧 loader 的 esbuild
+提示，一项覆盖三处 undici。生产审计干净不等于开发和测试无风险。已读实际依赖链、锁定条目、
+消费源码及上游修复，逐项依据见[英文核查表](dependency-update-intake.md#cleanup-advisory-review-2026-09-29-pr104)。
+
+- esbuild0.18.20 的服务接口存在跨源读取风险，绑定回环也不能消除；实际 core-utils3.3.2
+  只调用 transform/transformSync。Drizzle0.31.10 的实际 CLI/API 已使用 tsx，不再导入
+  esm-loader2.6.5，但发布的依赖声明仍安装它。
+  当前 Vite/tsx/oracle 使用0.28.2，Drizzle 直接依赖为0.25.12。四个提示保留明确限制，
+  不跨0.x版本强制覆盖，也不接受 npm 建议的 Drizzle0.18.1 回退。后续应由兼容上游版本或
+  验收后的 CLI 替代退出旧 loader；迁移命令和 SQL 历史保留。
+- jsdom30.0.1 确实向测试页面提供 undici WebSocket，恶意压缩帧可能导致进程退出，不能因其
+  是开发依赖便忽略。Electron 下载者使用 HTTP/proxy，产品 Node 使用独立 ws。选择现有父依赖
+  范围内的 undici8.10.2/7.29.1 补丁；不增加直接依赖、全局 override 或改变运行时要求。
+  已读精确发布提交、MIT 许可、inflater 修复和畸形帧回归。锁文件修复不更新 Node 自带的 undici。
+
+安装、回归和最终审计结果绑定提交记在 PR104；不把路径分析或上游自报当作实测通过。
+官方0.31.10发布说明与已安装源码一致；核对的0.31.11发布清单仍声明旧 loader，单纯升级
+该补丁不能清除漏洞。[上游问题5145](https://github.com/drizzle-team/drizzle-orm/issues/5145)
+标记 fixed-in-beta，不代表稳定版已兼容修复。需一起验证真正发布的依赖闭包与迁移消费者。

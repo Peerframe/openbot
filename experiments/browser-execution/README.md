@@ -1,6 +1,16 @@
 # Chromium/runsc boundary experiment
 
-**The fixed-image Linux/runsc CDP component passed on2026-09-25.** The authorized single case produced real synthetic-page DOM and PNG, reopened the same browser profile, observed inner sandbox diagnostics and verified native expiry/cleanup. See [actual bounded evidence](REAL_CDP_RESULT.json). This does not enable product browser capabilities or qualify egress, Employee-profile authority or human takeover. See the [research](../../docs/research/browser-cdp-qualification.md) and [earlier actual b2 failure](../linux-execution/REAL_BROWSER_CHROOT_ATTEMPT.json).
+The CDP qualification entry is `probe.ts`, with typed transport and artifact modules pinned by
+`browser_a1.py`. The egress guest runs `egress_probe.ts`; both use existing guest Node type
+stripping. No host Node prerequisite or new compilation layer is added to the Python qualifiers.
+The TS entry at `d426715` passed the authorized single fixed Linux/runsc case on2026-09-30
+(`deadline-a1-ts0930a`): both browsers closed, the profile reopened, synthetic DOM and1280×800 PNG
+were independently checked, and original180-second Invocation expiry emptied the cgroup and
+removed owned runtime directories. Production container/network state was unchanged. The case
+uses the same fixed image, native binaries and policies; see the current evidence entry in the
+[cleanup checkpoint](../../docs/CLEANUP_2026-09-28.md#current-integration-and-remaining-work).
+
+**The prior MJS fixed-image Linux/runsc CDP component passed on2026-09-25.** The authorized single case produced real synthetic-page DOM and PNG, reopened the same browser profile, observed inner sandbox diagnostics and verified native expiry/cleanup. See [actual bounded evidence](REAL_CDP_RESULT.json). This does not enable product browser capabilities or qualify egress, Employee-profile authority or human takeover. See the [research](../../docs/research/browser-cdp-qualification.md) and [earlier actual b2 failure](../linux-execution/REAL_BROWSER_CHROOT_ATTEMPT.json).
 
 ## Fresh-checkout boundary tests
 
@@ -10,7 +20,7 @@ Requirements: a repository-supported Node version with built-in `node:zlib` CRC3
 npm run test:browser:boundary
 ```
 
-It runs15 Node synthetic CDP/artifact tests and35 Python command/authority/budget/policy tests. The existing Python/Linux CI runs the same command. It never invokes the wrapper's executable entry point or launches a browser/container. The wrapper resolves native helpers from a complete adjacent `reviewed/` directory when explicitly packaged for the remote test; otherwise it uses the exact sibling `../linux-execution`. An existing incomplete `reviewed/` is rejected. It does not search arbitrary directories. The three helpers are not duplicated here and their reviewed hashes remain checked.
+It runs16 Node synthetic CDP/artifact tests and35 Python command/authority/budget/policy tests. The existing Python/Linux CI runs the same command. It never invokes the wrapper's executable entry point or launches a browser/container. The wrapper resolves native helpers from a complete adjacent `reviewed/` directory when explicitly packaged for the remote test; otherwise it uses the exact sibling `../linux-execution`. An existing incomplete `reviewed/` is rejected. It does not search arbitrary directories. The three helpers are not duplicated here and their reviewed hashes remain checked.
 
 `fixtures/v3-construction.json` is data generated from the previous OpenBot MIT wrapper's pure construction methods, with source/hash provenance. It replaces a duplicate historical executable in the original temporary test packet. The check preserves the prior command/configuration boundary, apart from the already reviewed explicit `compress=false` log option.
 
@@ -34,6 +44,10 @@ python3 -B experiments/browser-execution/qualify_egress.py \
   --fixture-image "$(docker image inspect openbot-egress-fixture:local --format '{{.Id}}')" \
   --output /tmp/openbot-egress-result
 ```
+
+The fixture keeps exact packages and the signed Debian `20260926T022600Z` snapshot, including
+their dependency closure. Historical metadata expiry is scoped to that snapshot; signature and
+package-hash verification remain enabled. See the research for the reproducibility repair.
 
 Choose a new output directory. The runner uses only synthetic inputs,150-second execution and
 bounded cleanup; NET_ADMIN applies only inside its own disconnected network namespace to add

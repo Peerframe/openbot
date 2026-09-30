@@ -88,6 +88,34 @@ describe("machine-readable Provider conformance", () => {
     evidenceLevel: "hermetic",
   } as const;
 
+  it.each([
+    "provider.declaration",
+    "provider.target-platform",
+    "provider.executable",
+    "target.evidence-level",
+    "target.real-device-metadata",
+  ])("independently refuses a caller-supplied generated check %s", (id) => {
+    expect(() =>
+      buildProviderConformanceReport({
+        provider: executableProvider(),
+        providerVersion: "0.1.0",
+        target,
+        stage: "integration",
+        suiteVersion: "1.0.0",
+        generatedAt,
+        checks: [
+          {
+            id,
+            name: "Override",
+            description: "Cannot override generated evidence.",
+            status: "success",
+            severity: "required",
+          },
+        ],
+      }),
+    ).toThrow(`Conformance check id ${id} is reserved`);
+  });
+
   it("emits a bounded, deterministic report without turning evidence into a support claim", () => {
     const report = buildProviderConformanceReport({
       provider: executableProvider(),

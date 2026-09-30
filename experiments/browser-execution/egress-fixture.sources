@@ -1,0 +1,15 @@
+# Frozen qualification inputs: retain Release signatures and package hashes.
+# Only this historical snapshot ignores Release expiry; never trust unsigned metadata.
+Types: deb
+URIs: http://snapshot.debian.org/archive/debian/20260926T022600Z/
+Suites: forky forky-updates
+Components: main
+Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
+Check-Valid-Until: no
+
+Types: deb
+URIs: http://snapshot.debian.org/archive/debian-security/20260926T022600Z/
+Suites: forky-security
+Components: main
+Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
+Check-Valid-Until: no

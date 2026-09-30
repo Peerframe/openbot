@@ -2,36 +2,6 @@ import type { Run } from "@openbot/domain";
 import { useState } from "react";
 import { ApiError, cancelNativeRun, createMessage } from "../api";
 
-export function nativeRunFailure(run: Run): string {
-  const messages: Record<string, string> = {
-    model_credentials: "模型密钥被拒绝，请到设置核对提供方和密钥后重新提交。",
-    model_rate_limit: "模型服务限流，请稍后重新提交。",
-    model_unavailable: "模型服务暂时不可用，请检查模型配置与服务状态。",
-    settings_changed: "执行期间模型设置发生变化，请确认当前配置后重新提交。",
-    scope_revoked: "Bot 已失去当前频道访问权限，请检查成员关系。",
-    invalid_target: "任务引用的协作对象或资料无效，请查看任务详情并确认所需 Bot 和资料仍可用。",
-    conflict: "任务状态已变化，本次更新未能保存。请查看最新任务状态后再提交。",
-    skills_changed: "执行期间已审阅技能发生变化，请确认当前技能分配后重新提交。",
-    memory_changed: "执行期间员工记忆发生变化，请确认当前记忆后重新提交。",
-    task_limit: "任务超过执行上限，请拆成更小的任务。",
-    tool_unavailable: "工具未能完成，请检查任务中的公开网址和所需能力。",
-    task_timeout: "任务超时，请缩小任务范围或检查模型连接。",
-    server_interrupted: "Server 中断了任务，服务恢复后可重新提交。",
-    execution_failed: "任务未能完成，请检查模型配置、频道权限和任务范围。",
-  };
-  return messages[run.errorCode ?? ""] ?? run.errorMessage ?? "任务已结束。";
-}
-
-export function runStatusSummary(run: Run, progressMessage?: string): string | undefined {
-  // Durable status outranks progress emitted before approval, blocking, or completion.
-  if (run.status === "cancelled") return "Owner 已停止此任务。";
-  if (run.status === "waiting_approval") return "敏感动作正在等待你的批准。";
-  if (run.status === "failed") return nativeRunFailure(run);
-  if (run.status === "blocked") return "任务遇到阻塞，需要人工处理。";
-  if (run.status === "completed") return run.resultSummary ?? "任务已结束。";
-  return progressMessage;
-}
-
 export function NativeRunControls({
   run,
   onRun,

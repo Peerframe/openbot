@@ -1,3 +1,4 @@
+import { discardBody, isJsonContentType, readBoundedText } from "./bounded-response.js";
 import type { DesktopConnectionState, DesktopServerFetcher } from "./connection-controller.js";
 import { proxyDesktopServerRequest } from "./server-proxy.js";
 
@@ -19,7 +20,10 @@ export async function isDesktopSessionAuthenticated(
     connection,
     fetcher,
   );
-  if (response?.status !== 200 || !isJson(response.headers.get("content-type"))) return false;
+  if (response?.status !== 200 || !isJsonContentType(response.headers.get("content-type"))) {
+    discardBody(response?.body);
+    return false;
+  }
   try {
     const value = JSON.parse(
       await readBoundedText(response, MAXIMUM_DESKTOP_ACTION_RESPONSE_BYTES),
@@ -27,6 +31,8 @@ export async function isDesktopSessionAuthenticated(
     return isRecord(value) && value.authenticated === true;
   } catch {
     return false;
+  } finally {
+    discardBody(response.body);
   }
 }
 
@@ -46,11 +52,11 @@ export async function issueDesktopNodeEnrollmentToken(
     fetcher,
   );
   if (response?.status === 401) {
-    await response.body?.cancel().catch(() => undefined);
+    discardBody(response.body);
     return Object.freeze({ status: "authentication-required" });
   }
-  if (response?.status !== 201 || !isJson(response.headers.get("content-type"))) {
-    await response?.body?.cancel().catch(() => undefined);
+  if (response?.status !== 201 || !isJsonContentType(response.headers.get("content-type"))) {
+    discardBody(response?.body);
     return Object.freeze({ status: "server-unavailable" });
   }
 
@@ -77,45 +83,9 @@ export async function issueDesktopNodeEnrollmentToken(
     return Object.freeze({ status: "issued", token: value.token });
   } catch {
     return Object.freeze({ status: "server-unavailable" });
+  } finally {
+    discardBody(response.body);
   }
-}
-
-async function readBoundedText(response: Response, maximumBytes: number): Promise<string> {
-  const declaredLength = response.headers.get("content-length");
-  if (declaredLength !== null) {
-    const parsed = Number(declaredLength);
-    if (!Number.isSafeInteger(parsed) || parsed < 0 || parsed > maximumBytes) {
-      throw new Error("Response length is invalid.");
-    }
-  }
-  if (response.body === null) return "";
-
-  const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let length = 0;
-  try {
-    while (true) {
-      const result = await reader.read();
-      if (result.done) break;
-      length += result.value.byteLength;
-      if (length > maximumBytes) throw new Error("Response exceeds its byte limit.");
-      chunks.push(result.value);
-    }
-  } catch (error) {
-    await reader.cancel().catch(() => undefined);
-    throw error;
-  }
-  const bytes = new Uint8Array(length);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-}
-
-function isJson(value: string | null): boolean {
-  return value?.split(";", 1)[0]?.trim().toLowerCase() === "application/json";
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

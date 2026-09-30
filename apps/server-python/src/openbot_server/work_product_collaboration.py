@@ -8,7 +8,7 @@ from openbot_agent_runtime import ToolDescriptor
 
 from . import work_collaboration as tree
 from . import work_temporal_activity as temporal
-from .identity_inputs import _ECMASCRIPT_WHITESPACE
+from .text_compat import ECMASCRIPT_WHITESPACE
 from .task_store import attachment_ids
 from .work_claims import WorkFence,check_fence
 from .work_corrections import check_context
@@ -44,7 +44,7 @@ def _input(tool,value):
     try:
         if type(identity) is not str or str(UUID(identity)) != identity.lower(): raise ValueError()
         if tool!='wait_for_task':
-            task=value['task'].strip(_ECMASCRIPT_WHITESPACE)
+            task=value['task'].strip(ECMASCRIPT_WHITESPACE)
             if type(value['task']) is not str or not task or len(task.encode('utf-16-le'))//2>4000: raise ValueError()
     except (ValueError,TypeError,AttributeError,UnicodeError): raise InvalidWork('invalid_collaboration_input') from None
     return identity.lower()
@@ -234,7 +234,7 @@ class WorkCollaborationAdapter:
             else:
                 target,selected=await self._target(db,task,source,intent['arguments'])
                 if selected!=effect['target']: raise WorkConflict('collaboration_target_changed')
-                value=await tree.create_child(db,self.store,self.sources,task,action,target,selected['modelSelection'],scope,intent['arguments']['task'].strip(_ECMASCRIPT_WHITESPACE))
+                value=await tree.create_child(db,self.store,self.sources,task,action,target,selected['modelSelection'],scope,intent['arguments']['task'].strip(ECMASCRIPT_WHITESPACE))
             # Re-read clock/fence after all awaited configuration/files/SQL, before this commit.
             await self._check(db,ctx,facts,activity,action_id=action_id,intent=intent,admitted=True)
             await tree.creation_scope(db,task,ctx.run_id)

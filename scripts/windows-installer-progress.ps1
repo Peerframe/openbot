@@ -28,9 +28,16 @@ function Wait-WindowsInstaller {
     $bytes = 0L
     if (Test-Path -LiteralPath $InstallationDirectory) {
       # Get-ChildItem does not follow directory symlinks without -FollowSymlink.
-      foreach ($file in Get-ChildItem -LiteralPath $InstallationDirectory -Recurse -File -Force -ErrorAction Stop) {
-        $files++
-        $bytes += $file.Length
+      try {
+        foreach ($file in Get-ChildItem -LiteralPath $InstallationDirectory -Recurse -File -Force -ErrorAction Stop) {
+          $files++
+          $bytes += $file.Length
+        }
+      } catch [IO.DirectoryNotFoundException], [IO.FileNotFoundException], [System.Management.Automation.ItemNotFoundException] {
+        # NSIS upgrade can remove the root or a child between Test-Path and enumeration.
+        # Discard the whole raced sample; missing bytes must not reset the idle baseline.
+        $files = 0L
+        $bytes = 0L
       }
     }
     $elapsedMs = $clock.ElapsedMilliseconds

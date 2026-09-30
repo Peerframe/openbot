@@ -6,8 +6,9 @@ Follow-up: [reviewed single-file skill instructions](REVIEWED_SKILLS.md) now sup
 
 This is the September 8, 2026 delivery branch status, not a public release announcement.
 [PR #19](https://github.com/yxflc11/openbot/pull/19) was merged; the skill-content follow-up builds on that main branch. The
-[work log](DELIVERY_WORKLOG.md) separates implementation, grouped checks, actual UI fixtures and
-remaining live/platform evidence. The older [roadmap](ROADMAP.md) describes earlier milestones.
+[delivery evidence](DELIVERY_WORKLOG.md) retains historical checks, constraints and evidence limits.
+The older [roadmap](ROADMAP.md) describes earlier milestones. Current implementation and remaining
+work are routed by the [repository map](REPOSITORY_MAP.md) and [contributor tasks](CONTRIBUTOR_TASKS.md).
 
 ## What this milestone delivers
 
@@ -24,9 +25,9 @@ remaining live/platform evidence. The older [roadmap](ROADMAP.md) describes earl
 
 ## Existing capabilities and remaining Hermes comparison
 
-These rows audit the current code; they are not additional completed projects in this work window.
+These rows describe the historical checkpoint, not today's implementation status.
 
-| Capability | Current code evidence | Remaining work |
+| Capability | Evidence at this checkpoint | Work then remaining |
 | --- | --- | --- |
 | Timed automation | `apps/server/src/automations.ts` and `postgres-automation-store.ts`: durable 15-minute to 7-day intervals, pause/resume/delete and due-task dispatch | Natural-language schedule creation, cron/timezone semantics, external message delivery and multi-Server coordination |
 | Skills and portability | Versioned metadata, controlled template import/export, single-file SKILL.md import, digest-bound full-text review, bounded native loading and revision-bound revocation | Scripts, referenced resources, content portability, skill dependencies in native execution and live model quality |
@@ -41,7 +42,7 @@ The learning direction remains explicitly inspired by
 [Hermes Agent](https://github.com/NousResearch/hermes-agent/tree/63279301bcbdc185c1b07b98a9312eb0c862f26d).
 This milestone supplies a reviewed-memory loop, not full Hermes parity.
 
-## Next acceptance gates
+## Gates left open at this milestone
 
 1. **Public installation:** complete native PostgreSQL binary/source correspondence and LGPL
    source/relinking evidence, then maintainer release review, main-branch CI and actual public
@@ -56,6 +57,6 @@ This milestone supplies a reviewed-memory loop, not full Hermes parity.
 5. **Ecosystem:** add one messaging gateway, then delegation or another backend according to an
    actual user workflow. Preserve the explicit remaining scope instead of adding declaration-only adapters.
 
-macOS currently includes a local Server; Windows and Linux are remote clients. Desktop quitting
+At this milestone, macOS included a local Server; Windows and Linux were remote clients. Desktop quitting
 stops app-owned local services. Unattended automation requires a continuously running Server.
 There is no automatic updater, complete backup/restore flow or cross-platform local-Server claim.

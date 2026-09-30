@@ -31,3 +31,12 @@
 安装；Windows/Linux Python Desktop 不新增支持声明。真实产品命令/runsc、浏览器接管、私有
 远程回放、在线迁移仍有独立未完成门槛。npm 漏洞扫描也不能代表 Python 依赖漏洞扫描，锁文件
 和 `pip check` 证明的是另一件事。旧 CI 全绿不能填补这些缺口。
+
+## TS 整理 — 2026-09-29
+
+复用既有 CI 选择与固定提交契约：纯依赖图/选择策略收敛到 `scripts/ci-selection.ts`，
+Git/事件输入、结果汇总和实际运行各有明确的类型化消费者。四个手工 MJS 实现同时退出，
+命令、工作流、守卫与文档入口一起切换。现有 Node 直接执行可擦除的 TS，不新增 loader、
+依赖、图权威或预构建。损坏的 PR 输入保持拒绝。旧断言保留在 `scripts/ci-scope.test.ts`；
+逐路径对照及托管结果按实际提交记录于 [PR104](https://github.com/Peerframe/openbot/pull/104)。
+没有复制上游源码或改版本；本地检查与托管验收分别绑定各自实际测试的提交。

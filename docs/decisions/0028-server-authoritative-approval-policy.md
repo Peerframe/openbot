@@ -68,3 +68,13 @@ OpenBot's existing local evaluator; upstream engines are comparison evidence onl
   authority.
 - Approval replay, post-approval target drift, Node omission of an approval request, and lease
   revocation remain unresolved until the capability-lease protocol lands.
+
+## Current implementation — 2026-09-29
+
+This decision records the retired TypeScript Server phase. The private `@openbot/policy`
+workspace has no current runtime, oracle, packaging or external published-package consumer;
+its unused evaluator has been removed. Current tool selection, admission and approval facts
+are enforced by Python `work_product_runtime`, the per-tool adapters and `work_store` /
+`work_effects`. Removing the old package does not change these checks or revive Node authority.
+The historical rationale above remains intact; see the [current code map](../REPOSITORY_MAP.md)
+and [accepted cleanup evidence](https://github.com/Peerframe/openbot/pull/104).

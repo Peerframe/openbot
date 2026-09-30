@@ -4,16 +4,23 @@ Current source scope: only macOS arm64 bundles the local Python service. Windows
 
 [English](DESKTOP_INSTALLATION.md) · [简体中文](DESKTOP_INSTALLATION.zh-CN.md)
 
-**Current preview: [Desktop 0.1.0-alpha.9](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9)** provides a macOS Apple Silicon DMG and Windows x64 EXE, with a combined manifest and SHA256SUMS. Both come from the same source commit that passed full CI. The table also lists Linux build targets; alpha.9 does not publish Linux installers.
+## Recorded release: alpha.9
+
+**Historical preview: [Desktop 0.1.0-alpha.9](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9)** provides a macOS Apple Silicon DMG and Windows x64 EXE, with a combined manifest and SHA256SUMS. Both come from the same source commit that passed full CI. The table also lists Linux build targets; alpha.9 does not publish Linux installers.
 
 alpha.9 restores channel member names, avatars and controls, keeps plugin permission editing tied to the selected Bot, and distinguishes task-state or resource changes from actual channel permission loss. Empty-PDF extraction failures and the original-attachment save dialog now use Chinese copy in the Chinese interface. Existing workspace data and model settings are retained by the upgrade path.
 
-The [versioned release page](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9) records the source commit and successful main CI. Its [desktop-manifest.json](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/desktop-manifest.json) records the exact source, included targets and installer digests; verify downloads against [SHA256SUMS](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/SHA256SUMS). Windows installation and retained-data evidence comes from a hosted runner; see the [release-source cold-start evidence](WINDOWS_DESKTOP.md#release-source-cold-start-evidence). Production signing, notarization and manual Windows desktop acceptance remain outstanding.
+The [versioned release page](https://github.com/Peerframe/openbot/releases/tag/desktop-v0.1.0-alpha.9) records the source commit and successful main CI. Its [desktop-manifest.json](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/desktop-manifest.json) records the exact source, included targets and installer digests; verify downloads against [SHA256SUMS](https://github.com/Peerframe/openbot/releases/download/desktop-v0.1.0-alpha.9/SHA256SUMS). Windows installation and retained-data evidence comes from a hosted runner; see the [historical local-Server evidence](WINDOWS_DESKTOP.md#historical-local-server-evidence-and-limits). Production signing, notarization and manual Windows desktop acceptance remain outstanding.
 
-| Platform | File in the release | Installation | Available composition |
+## Current source build targets
+
+The current composition below supersedes alpha.9's local-Server matrix. A historical release
+manifest describes that release only; this cleanup does not publish new installers.
+
+| Platform | Installer filename | Installation | Available composition |
 | --- | --- | --- | --- |
 | macOS Apple Silicon | `openbot-desktop-<version>-darwin-arm64.dmg` | Open the disk image and drag OpenBot to Applications | Client, bundled local Server/PostgreSQL, optional bundled Worker companion |
-| Windows x64 | `openbot-desktop-<version>-win32-x64.exe` | Open the installer; it installs for the current user and adds Start menu access | Client with bundled local Server/PostgreSQL, or connection to an existing Server |
+| Windows x64 | `openbot-desktop-<version>-win32-x64.exe` | Open the installer; it installs for the current user and adds Start menu access | Client connected to an existing Server; no bundled local runtime |
 | Linux x64 | `openbot-desktop-<version>-linux-x64.deb` | Install using the distribution package manager | Client connected to an existing Server |
 | Linux x64 portable | `openbot-desktop-<version>-linux-x64.AppImage` | Make executable and run; system AppImage dependencies still apply | Client connected to an existing Server |
 
@@ -60,17 +67,17 @@ part of this procedure.
 
 ## First useful session
 
-1. On macOS or Windows x64 choose **Service computer** to initialize local services, or connect to an existing
-   Server. Linux uses the existing-Server path.
+1. On macOS arm64 choose **Service computer** to initialize local services, or connect to an existing
+   Server. Windows, Intel Mac and Linux use the existing-Server path.
 2. Sign in as Owner. In **Owner → Settings → Model services**, configure the Server's single
    default provider, model and key; explicitly opt into the native Agent when ready.
 3. Use the **+** beside the OpenBot wordmark to create a Bot or channel. Click a Bot for a direct
    conversation, or address it with **@** in a channel, then submit a `none`-profile task. A provider metadata check does not
    prove inference: the first completed real task is the live model acceptance step.
-4. Quit and reopen Desktop. Verify the workspace and model summary remain available. Local macOS/Windows
+4. Quit and reopen Desktop. Verify the workspace and model summary remain available. Local macOS arm64
    services stop when Desktop quits; unattended schedules require a continuously running Server.
 
-Desktop supports bounded channel collaboration, richer files, reviewed MCP content/apps, voice drafts and retained startup. Sharing exports reusable Bot profiles/verified skills and downloads deliverables; it does not publish private memory or transcripts. Windows local-runtime evidence is recorded in [Windows Desktop](WINDOWS_DESKTOP.md). macOS bundles PostgreSQL 17.10; Windows bundles 17.11.
+Desktop supports bounded channel collaboration, richer files, reviewed MCP content/apps, voice drafts and retained startup. Sharing exports reusable Bot profiles/verified skills and downloads deliverables; it does not publish private memory or transcripts. Current Windows installation and retained historical evidence are distinguished in [Windows Desktop](WINDOWS_DESKTOP.md). macOS arm64 bundles PostgreSQL 17.10; current Windows packages contain no PostgreSQL.
 
 See [Desktop onboarding](DESKTOP_ONBOARDING.md), [native Agent](NATIVE_AGENT.md) and
 [Server container](SERVER_CONTAINER.md) for the exact supported boundaries.

@@ -60,3 +60,20 @@ Local Unix execution and hosted Windows execution remain distinct evidence.
 
 All53 transport cases passed locally after the fixture correction, including real Unix IPC.
 The Windows named-pipe branch still requires the next native Windows CI run.
+
+## Typed implementation cleanup — 2026-09-29
+
+The same reviewed Node APIs and frozen wire contract now use a typed codec plus typed Duplex
+lifecycle, emitted by the existing Node workspace TypeScript build. The two manually maintained
+MJS source/test files retire; command installation imports the emitted `.js` entry. There is no
+new dependency, runner or production runtime requirement. The existing tsx development dependency
+loads the Node test suite; a separate no-emit configuration also checks its adversarial fixtures.
+Grok Builder implemented the fixed-base replacement; Codex reviewed the erased-runtime diff,
+restored the missing-options error contract and wired every current consumer.
+
+Independent macOS arm64 Node22.23.2 evidence: strict source/test checks and Node build passed;
+94 workspace tests passed with3 existing Windows-only skips;54 typed transport cases passed.
+The original53 test cases, with only their import redirected to the actual emitted entry, also
+passed, including real disposable Unix IPC. This is no new Windows/native Host qualification.
+中文：本次沿用既有协议和依赖，将编码与流生命周期收敛到严格TS，两份手工MJS退出；
+原53测试直接验证编译产物，另含缺省参数兼容反例。Windows原生验证仍须单独完成。

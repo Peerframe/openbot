@@ -48,7 +48,7 @@ def test_retained_cli_python_exact_dsse_and_key_lifecycle(tmp_path):
 
     def cli(command, *arguments, expected=0):
         result = subprocess.run(
-            [node_binary, str(root / "scripts/employee-publisher-key.mjs"), command,
+            [node_binary, str(root / "scripts/employee-publisher-key.ts"), command,
              *map(str, arguments)],
             cwd=root, env=environment, capture_output=True, text=True, timeout=15,
         )

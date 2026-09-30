@@ -13,7 +13,7 @@ import { PostgresControlPlaneStore } from "../../tests/oracles/legacy-server/src
 
 export function fixtureDatabaseUrl(): string {
   const value = process.env.OPENBOT_S6_TEST_DATABASE_URL;
-  if (!value) throw new Error("Run node experiments/s6-compat/run.mjs; no scenarios are skipped.");
+  if (!value) throw new Error("Run node experiments/s6-compat/run.ts; no scenarios are skipped.");
   const url = new URL(value);
   if (
     !["postgres:", "postgresql:"].includes(url.protocol) ||

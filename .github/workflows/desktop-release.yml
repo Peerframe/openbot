@@ -58,7 +58,7 @@ jobs:
           gh api "repos/$GH_REPO/actions/runs/$RELEASE_RUN_ID" > "$RUNNER_TEMP/source-run.json"
           node --input-type=module -e '
             import fs from "node:fs";
-            import { validateDesktopReleaseRun } from "./scripts/prepare-desktop-release.mjs";
+            import { validateDesktopReleaseRun } from "./scripts/prepare-desktop-release.ts";
             const run = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/source-run.json", "utf8"));
             const sha = validateDesktopReleaseRun(run, process.env.GH_REPO);
             fs.appendFileSync(process.env.GITHUB_ENV, "RELEASE_SOURCE_COMMIT=" + sha + "\n");
@@ -67,7 +67,7 @@ jobs:
         shell: bash
         run: |
           node --input-type=module -e '
-            import { desktopReleaseTargets } from "./scripts/prepare-desktop-release.mjs";
+            import { desktopReleaseTargets } from "./scripts/prepare-desktop-release.ts";
             desktopReleaseTargets(process.env.RELEASE_TARGETS.split(","));
           '
           IFS=',' read -r -a targets <<< "$RELEASE_TARGETS"
@@ -75,7 +75,7 @@ jobs:
             name="openbot-installers-$target-$RELEASE_SOURCE_COMMIT"
             gh run download "$RELEASE_RUN_ID" --name "$name" --dir "$RUNNER_TEMP/downloads/$name"
           done
-          node scripts/prepare-desktop-release.mjs "$RUNNER_TEMP/downloads" "$RUNNER_TEMP/release" "$RUNNER_TEMP/source-run.json" "$RELEASE_VERSION" "$GH_REPO" "--targets=$RELEASE_TARGETS"
+          node scripts/prepare-desktop-release.ts "$RUNNER_TEMP/downloads" "$RUNNER_TEMP/release" "$RUNNER_TEMP/source-run.json" "$RELEASE_VERSION" "$GH_REPO" "--targets=$RELEASE_TARGETS"
       - name: Create a reviewable draft prerelease without replacing existing assets
         shell: bash
         run: |
@@ -88,10 +88,10 @@ jobs:
             platforms='Windows x64 only. This release contains no macOS or Linux installer.'
             install='Windows: open the EXE for a per-user installation.'
           elif [[ "$RELEASE_TARGETS" == darwin-arm64,win32-x64 ]]; then
-            platforms='macOS arm64 and Windows x64 installers, both with the local Server. This release contains no Linux installer.'
+            platforms='macOS arm64 and Windows x64 installers. macOS includes the local Python Server; Windows connects to a separately deployed Server. This release contains no Linux installer.'
             install='macOS: open the DMG and drag OpenBot into Applications. Windows: open the EXE for a per-user installation.'
           else
-            platforms='macOS arm64, Windows x64 and Linux x64 installers. macOS and Windows include the local Server; Linux connects to a separately deployed Server.'
+            platforms='macOS arm64, Windows x64 and Linux x64 installers. macOS includes the local Python Server; Windows and Linux connect to a separately deployed Server.'
             install='macOS: open the DMG and drag OpenBot into Applications. Windows: open the EXE for a per-user installation. Linux: install the DEB or run the AppImage.'
           fi
           cat > "$RUNNER_TEMP/release-notes.md" <<EOF
@@ -102,7 +102,7 @@ jobs:
 
           $platforms
 
-          Windows includes the local OpenBot Server and source-built PostgreSQL 17.11. Initial setup, DPAPI credentials, database migrations, retained restart and NSIS installation are checked by the linked Windows CI. Installing Desktop does not grant computer-control authority. Code signing and real-device conformance remain separate; no automatic updater is enabled.
+          Windows is a remote-service client. The linked Windows CI checks per-user NSIS installation, native DPAPI encrypted-profile restart across two Electron lifetimes, process identity, uninstall and fixture cleanup. Installing Desktop does not grant computer-control authority. Code signing and real-device conformance remain separate; no automatic updater is enabled.
 
           Install: $install Verify downloads against SHA256SUMS; desktop-manifest.json records the exact source and included targets. See docs/WINDOWS_DESKTOP.md in the source repository.
           EOF

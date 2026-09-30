@@ -1,6 +1,14 @@
 # Chromium/runsc 边界实验
 
-**固定镜像的 Linux/runsc CDP 组件于2026-09-25实测通过。** 已授权的单次测试取得合成页面真实DOM与PNG、同profile重开、内层沙箱诊断及原生期限／清理证据，见[有界实测记录](REAL_CDP_RESULT.json)。这不启用产品浏览器能力，也不代表egress、Employee profile权限或人工接管通过。见[研究](../../docs/research/browser-cdp-qualification.zh-CN.md)及[此前b2失败记录](../linux-execution/REAL_BROWSER_CHROOT_ATTEMPT.json)。
+CDP 资格入口为 `probe.ts`，传输和证据 TS 模块均由 `browser_a1.py` 固定源码哈希。
+egress guest 使用 `egress_probe.ts`；两者通过既有 guest Node 的类型擦除运行。
+Python 资格工具不新增主机 Node 前置条件或编译层。
+`d426715` 的 TS 入口于2026-09-30通过明确授权的单次固定 Linux/runsc 实测
+（`deadline-a1-ts0930a`）：两次浏览器正常关闭，同 profile 重开成功，合成 DOM 与1280×800 PNG
+经过独立核验；原180秒 Invocation 到期，cgroup 清空并移除本次运行时目录。生产容器和网络状态前后不变。
+固定镜像、原生二进制与策略不变，见[当前清理证据](../../docs/CLEANUP_2026-09-28.md#current-integration-and-remaining-work)。
+
+**此前 MJS 版固定镜像 Linux/runsc CDP 组件于2026-09-25实测通过。** 已授权的单次测试取得合成页面真实DOM与PNG、同profile重开、内层沙箱诊断及原生期限／清理证据，见[有界实测记录](REAL_CDP_RESULT.json)。这不启用产品浏览器能力，也不代表egress、Employee profile权限或人工接管通过。见[研究](../../docs/research/browser-cdp-qualification.zh-CN.md)及[此前b2失败记录](../linux-execution/REAL_BROWSER_CHROOT_ATTEMPT.json)。
 
 ## 从干净检出运行边界测试
 
@@ -10,7 +18,7 @@
 npm run test:browser:boundary
 ```
 
-命令运行15项 Node 合成 CDP/产物测试、35项 Python 命令/权限/预算/策略测试，现有 Python/Linux CI 使用同一入口。它不调用 wrapper 可执行入口，也不启动浏览器或容器。
+命令运行16项 Node 合成 CDP/产物测试、35项 Python 命令/权限/预算/策略测试，现有 Python/Linux CI 使用同一入口。它不调用 wrapper 可执行入口，也不启动浏览器或容器。
 
 wrapper 优先使用显式远端包中的完整同级 `reviewed/`；仅在该目录不存在时使用准确兄弟目录 `../linux-execution`。已存在但残缺的 `reviewed/` 直接拒绝，不搜索任意目录。三份 helper 没有复制进来，仍检查原已审 hash。`fixtures/v3-construction.json` 是从旧 OpenBot MIT wrapper 的纯构造函数生成的数据，带原源码与 hash 来源；它取代临时包中重复的历史可执行代码，保留原命令/配置边界回归。
 
@@ -29,6 +37,8 @@ python3 -B experiments/browser-execution/qualify_egress.py \
 ```
 
 选择未存在的输出目录。执行最多150秒，随后有界清理；NET_ADMIN仅用于测试容器自己的断网空间，给loopback配置合成目标，不发布端口，不修改本机／VPS网络。必需CI独立运行此代理测试，不串在浏览器恢复后面。镜像保留Squid／Debian和Node许可证；它不是生产浏览器或Host镜像。
+
+镜像保留固定包版本，并固定到 Debian `20260926T022600Z` 签名快照及其依赖闭包。仅对该历史快照处理元数据过期，签名和软件包哈希校验保持启用；可复现性修复依据见研究记录。
 
 ## 原生内核路由与已有连接撤销
 

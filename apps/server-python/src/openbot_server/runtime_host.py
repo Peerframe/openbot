@@ -8,7 +8,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from .identity_inputs import _ECMASCRIPT_WHITESPACE
+from .text_compat import ECMASCRIPT_WHITESPACE, utf16_unit_count
 from .runtime_ports import (ModelRequest, ModelStep, RuntimeBudget, RuntimeDenied, RuntimePorts,
                             RuntimeTool, ToolContext)
 from .task_models import RunUsage
@@ -62,7 +62,7 @@ def json_equal(first: Any, second: Any) -> bool:
 
 def text_units(text: str) -> int:
     try:
-        return len(text.encode("utf-16-le")) // 2
+        return utf16_unit_count(text)
     except UnicodeError:
         raise RuntimeDenied("invalid_target") from None
 
@@ -262,7 +262,7 @@ class RuntimeHost:
                 {"type": "tool-call", "toolCallId": item["id"], "toolName": item["name"], "input": item["arguments"]} for item in intents]
             self._transcript.append({"role": "assistant", "content": parts})
             if not intents:
-                text = result.text.strip(_ECMASCRIPT_WHITESPACE)
+                text = result.text.strip(ECMASCRIPT_WHITESPACE)
                 if result.finish_reason != "stop" or not text:
                     raise RuntimeDenied("task_limit")
                 self._last = {"text": text, "appliedCorrectionIds": [item["id"] for item in corrections]}
@@ -321,7 +321,7 @@ class RuntimeHost:
     async def finish(self, text: str) -> dict:
         async with self._operation():
             if (type(text) is not str or self._last is None or self._pending
-                or text.strip(_ECMASCRIPT_WHITESPACE) != self._last["text"]):
+                or text.strip(ECMASCRIPT_WHITESPACE) != self._last["text"]):
                 raise RuntimeDenied("conflict")
             result = json_copy(self._last, 40 * 1024)
         self._closed = True

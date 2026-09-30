@@ -24,7 +24,8 @@ from openbot_server.work_values import WorkConflict, canonical
 from test_browser_sessions import server, worker, opened, command, FRAME
 from test_work_product_browser import configured, channel_task, row, PNG
 from test_work_task_profiles import setup
-from test_work_product_model import binding, SCOPE
+from test_work_product_model import SCOPE
+from product_model_fixtures import binding
 
 ORIGIN='https://synthetic.invalid'
 PAGE=dict(url=ORIGIN+'/form',title='Owned test',text='Synthetic form',truncated=False,snapshotId=1,

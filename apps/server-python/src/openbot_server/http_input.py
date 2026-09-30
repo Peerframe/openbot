@@ -1,9 +1,14 @@
-"""Bound JSON bytes before decoding; errors never echo submitted fields."""
+"""Bound HTTP input and request lifetime; callers retain authority and storage ownership."""
 import asyncio
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 import json
+from urllib.parse import unquote
 
 from fastapi import HTTPException, Request
 from starlette.requests import ClientDisconnect
+
+from .control_errors import ControlError
 
 
 def reject_constant(value: str):
@@ -39,3 +44,35 @@ async def authorize_owner(request: Request, read_store, *, cookie_name: str,
     if (await read_store.read(token, "session")).expires_at is None:
         raise HTTPException(401, "Authentication required.")
     return token
+
+
+@asynccontextmanager
+async def request_signal(request: Request) -> AsyncIterator[asyncio.Event]:
+    signal = asyncio.Event()
+    async def watch():
+        while not await request.is_disconnected():
+            await asyncio.sleep(.1)
+        signal.set()
+    watcher = asyncio.create_task(watch())
+    try:
+        yield signal
+    finally:
+        watcher.cancel()
+        await asyncio.gather(watcher, return_exceptions=True)
+
+
+async def read_attachment_upload(request: Request, *, max_bytes: int) -> tuple[str, bytes]:
+    """Read shared raw input; callers retain authorization, locks and storage."""
+    if request.headers.get('content-type') != 'application/octet-stream':
+        raise ControlError(415, 'raw_attachment_required')
+    encoded = request.headers.get('x-openbot-filename', '')
+    if not encoded or len(encoded) > 2048:
+        raise ControlError(400, 'attachment_name_required')
+    name = unquote(encoded, errors='strict')
+    data = bytearray()
+    async with asyncio.timeout(10):
+        async for chunk in request.stream():
+            data.extend(chunk)
+            if len(data) > max_bytes:
+                raise ControlError(413, 'attachment_size_limit')
+    return name, bytes(data)

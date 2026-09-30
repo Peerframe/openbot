@@ -122,8 +122,10 @@ runtime. See `docs/research/desktop-installable-delivery.md` for the installer-o
 
 - PostgreSQL 17.10 — PostgreSQL Global Development Group and the Regents of the University
   of California; PostgreSQL License. Native packaging uses
-  `@embedded-postgres/darwin-arm64` / `darwin-x64` `17.10.0-beta.17`, MIT packager,
+  `@embedded-postgres/darwin-arm64` `17.10.0-beta.17`, MIT packager,
   commit `c23ad8a026c711c8666c3c2596d0fde643cf378a`. The wrapper code is not used.
+  Intel Mac is now a remote client; the unused `darwin-x64` binary package is no longer
+  a dependency. Upstream notices remain for historical recipients.
 - Postgres.js 3.4.9 — Rasmus Porsager; Unlicense. Its package notice is retained alongside code.
 - The PostgreSQL binary bundle includes OpenSSL, ICU, LZ4, Zstandard, zlib, libxml2, Kerberos,
   libedit, libiconv, gettext and libuuid. These are not relicensed under OpenBot's MIT license.
@@ -186,9 +188,11 @@ All of these retained texts and their file hashes are in [licenses/runtime](lice
 which Desktop packaging includes as `native-server/runtime-notices`. This supplement does not
 replace the original packages' notices or relicense their contents under OpenBot's MIT license.
 
-## Windows PostgreSQL source-build scope
+## Historical Windows PostgreSQL source-build scope
 
-Windows Desktop builds the unmodified official PostgreSQL 17.11 source with Meson/MSVC.
+Current Windows Desktop is a remote client and ships no PostgreSQL runtime. The unused
+source-build tooling has retired; all historical license and rejected-candidate evidence remains.
+The former Windows Desktop built unmodified official PostgreSQL 17.11 source with Meson/MSVC.
 NLS/gettext/iconv, ICU, OpenSSL, XML/XSLT, external procedural languages and compression
 libraries are disabled through upstream public build options. No EDB/npm Windows binary repack
 is included. The Microsoft C runtime is statically linked under the licensed MSVC toolchain's
@@ -196,11 +200,11 @@ distributable-code terms; Windows APIs remain operating-system components.
 
 [licenses/windows-postgresql](licenses/windows-postgresql/README.md) retains the PostgreSQL,
 regex, Snowball, IANA, embedded-source and parser-output notices plus exact source/tool hashes.
-Each Windows build includes the official source archive, build script/options, regression log,
+Each historical Windows build included the official source archive, build script/options, regression log,
 DLL-import inventory and per-file hashes. The GNU parser tools are build-only; Bison's generated
 output exception is preserved. The old EDB archive's byte provenance and unresolved LGPL source
 gap are retained only as rejected-candidate evidence and excluded from runtime packaging.
 
-The build manifest is written only after upstream regression and dependency checks pass.
-Windows installation and restart conformance are established separately by the CI harness.
+The historical build manifest was written only after upstream regression and dependency checks passed.
+Current remote-client installation and encrypted-profile restart retain their separate CI harness.
 See the [source-build decision](docs/research/windows-postgresql-redistribution.md).

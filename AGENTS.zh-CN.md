@@ -15,9 +15,11 @@
 只读[仓库地图](docs/REPOSITORY_MAP.zh-CN.md)中相关行，再读局部 `AGENTS.md`、契约、消费者与
 代表测试；证据不足时沿调用或可复现失败继续展开。启动见[贡献指南](CONTRIBUTING.zh-CN.md)，
 UI 从[设计入口](docs/design/README.zh-CN.md)开始，不预加载整个研究库。
-C1→C2→C3 升级只用[一份交接](docs/REPOSITORY_UPGRADE_PLAN.md)，不改写历史迁移证据。
+C1→C2→C3 已完成升级保存在[升级记录](docs/REPOSITORY_UPGRADE_PLAN.md)。它与早期迁移记录都是
+带日期的历史证据，不是常驻待办；当前工作以用户请求和实际 checkout 为准。
 
-仓库开发 skills 在 `.agents/skills`，按当前任务只选择并读取所需项：
+[开发入口](.agents/README.zh-CN.md)链接已有职责与工作流。仓库开发 skills 仍在 `.agents/skills`，
+按当前任务只选择并读取所需项：
 [openbot-change](.agents/skills/openbot-change/SKILL.md)、
 [openbot-check](.agents/skills/openbot-check/SKILL.md)、
 [openbot-ui](.agents/skills/openbot-ui/SKILL.md)、

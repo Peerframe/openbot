@@ -157,11 +157,16 @@ class ToolCatalog:
                 f"arguments for {name!r} must be a JSON object, got {type(parsed).__name__}",
             )
 
+        violation_count = 0
+        violations: list[str] = []
         try:
-            violations = [
-                f"{'/'.join(str(part) for part in error.instance_path) or '<root>'}: {error.message}"
-                for error in validator.iter_errors(parsed)
-            ]
+            # Consume every error so a later validator failure still fails closed, but
+            # retain only the bounded diagnostic prefix that the caller can observe.
+            for error in validator.iter_errors(parsed):
+                violation_count += 1
+                if violation_count <= _MAX_REPORTED_VIOLATIONS:
+                    location = "/".join(str(part) for part in error.instance_path) or "<root>"
+                    violations.append(f"{location}: {error.message}"[:_MAX_VIOLATION_CHARS])
         except Exception as exc:
             # A validator failure (including a regex limit) seals the run; no fallback
             # or retrieval path can broaden the admitted arguments.
@@ -170,11 +175,11 @@ class ToolCatalog:
                 f"arguments for {name!r} cannot be checked against its input schema: "
                 f"{type(exc).__name__}",
             ) from exc
-        if violations:
-            reported = "; ".join(violations[:_MAX_REPORTED_VIOLATIONS])[:_MAX_VIOLATION_CHARS]
+        if violation_count:
+            reported = "; ".join(violations)[:_MAX_VIOLATION_CHARS]
             raise RuntimeFailure(
                 FailureReason.INVALID_ARGUMENTS,
-                f"arguments for {name!r} violate its input schema ({len(violations)} violation(s)): "
+                f"arguments for {name!r} violate its input schema ({violation_count} violation(s)): "
                 f"{reported}",
             )
         return parsed

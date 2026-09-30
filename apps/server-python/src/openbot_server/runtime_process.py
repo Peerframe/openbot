@@ -32,6 +32,7 @@ from collections.abc import Awaitable, Callable
 from . import runtime_wire
 from .runtime_child_process import PipeProcess
 from .runtime_wire import RuntimeProtocolError
+from .text_compat import ECMASCRIPT_WHITESPACE
 
 REASONS = ("tool_unavailable", "task_limit", "invalid_target")
 
@@ -68,17 +69,6 @@ _READ_CHUNK_BYTES = 65_536
 _RUNTIME_DIRECTORY_PREFIX = "openbot-runtime-"
 _CHILD_ENVIRONMENT = {"LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"}
 
-# ECMAScript WhiteSpace + LineTerminator: exactly the characters ``String.prototype.trim`` removes,
-# and therefore exactly the set the reference uses to decide that a final text is blank. The same
-# frozen set is defined for creation inputs in ``identity_inputs``; it is repeated here so this
-# supervision seam keeps no third-party import at all.
-_ECMASCRIPT_WHITESPACE = (
-    "\u0009\u000a\u000b\u000c\u000d\u0020\u00a0\u1680"
-    "\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a"
-    "\u2028\u2029\u202f\u205f\u3000\ufeff"
-)
-
-
 class RuntimeProcessError(Exception):
     """A refused invocation.
 
@@ -99,7 +89,7 @@ def _protocol_failure() -> RuntimeProcessError:
 
 
 def _is_blank(text: str) -> bool:
-    return text.strip(_ECMASCRIPT_WHITESPACE) == ""
+    return text.strip(ECMASCRIPT_WHITESPACE) == ""
 
 
 def _require_target(executable: object, args: object, deadline_seconds: object) -> float:

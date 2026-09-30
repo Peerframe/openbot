@@ -1,1 +1,1 @@
-"""Python control-plane reference; distinct from the untrusted Agent Runtime."""
+"""Python control plane and product services; distinct from the untrusted Agent Runtime."""

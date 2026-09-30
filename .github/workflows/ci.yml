@@ -41,7 +41,7 @@ jobs:
             >"${RUNNER_TEMP}/trufflehog-results.jsonl" 2>"${RUNNER_TEMP}/trufflehog-diagnostics.log"
           status=$?
           set -e
-          node scripts/check-credential-findings.mjs "${RUNNER_TEMP}/trufflehog-results.jsonl" "$status"
+          node scripts/check-credential-findings.ts "${RUNNER_TEMP}/trufflehog-results.jsonl" "$status"
       - name: Audit the complete Python product closure
         run: sh scripts/audit-python.sh
 
@@ -88,7 +88,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Verify native Desktop bootstrap behavior
-        run: node --test scripts/install-desktop.test.mjs
+        run: node --test scripts/install-desktop.test.ts
       - name: Verify Windows receipt identity before native packaging
         if: runner.os == 'Windows'
         shell: pwsh
@@ -99,9 +99,6 @@ jobs:
         run: ./scripts/check-windows-installer-progress.ps1
       - run: npm exec -- turbo run test --concurrency=2 --filter=@openbot/desktop --filter=@openbot/node --filter=@openbot/windows-secret-acl
       - run: npm exec -- turbo run build --filter=@openbot/desktop --filter=@openbot/node --filter=@openbot/python-node-runtime
-      - name: Verify plugin isolation in native Desktop Chromium
-        if: runner.os == 'macOS' || runner.os == 'Windows'
-        run: node apps/desktop/scripts/check-plugin-sandbox.mjs
       - name: Build the pinned macOS Worker companion
         if: runner.os == 'macOS'
         shell: bash
@@ -116,7 +113,7 @@ jobs:
             https://nodejs.org/dist/v22.22.2/node-v22.22.2-darwin-arm64.tar.gz \
             --output "$runtime_archive"
           mkdir -p "$companion_root"
-          node scripts/build-macos-worker-host-candidate.mjs \
+          node scripts/build-macos-worker-host-candidate.ts \
             --arch arm64 \
             --build-version 1 \
             --node-archive "$runtime_archive" \
@@ -127,9 +124,14 @@ jobs:
           echo "OPENBOT_DESKTOP_MACOS_WORKER_COMPANION=$companion_root/OpenBot Worker Host.app" \
             >> "$GITHUB_ENV"
       - name: Package the unsigned Desktop development artifact
-        run: node apps/desktop/scripts/prepare-native-server.mjs
+        run: node apps/desktop/scripts/prepare-native-server.ts
 
-          node apps/desktop/scripts/package.mjs
+          node apps/desktop/scripts/package.ts
+      # Package through the bounded, checksum-verified downloader before Electron's lazy
+      # installer consumes the same cache for the native sandbox probe.
+      - name: Verify plugin isolation in native Desktop Chromium
+        if: runner.os == 'macOS' || runner.os == 'Windows'
+        run: node apps/desktop/scripts/check-plugin-sandbox.ts
       - name: Make the unsigned Desktop installers from the verified package
         run: npm run make:installers --workspace @openbot/desktop
       - name: Validate Windows remote-client installation and encrypted profile restart
@@ -141,7 +143,7 @@ jobs:
           node -e "const r=require('node:module').createRequire(require('node:path').resolve('apps/desktop/package.json'));require('node:fs').writeFileSync(process.argv[1],r('electron'));" $electronPathFile
           if ($LASTEXITCODE -ne 0) { throw 'Cannot prepare the pinned Electron test runtime.' }
           $electron = Get-Content -LiteralPath $electronPathFile -Raw
-          ./scripts/check-windows-desktop-install.ps1 -Installer "$env:GITHUB_WORKSPACE/apps/desktop/out/installers/win32-x64/openbot-desktop-$version-win32-x64.exe" -PackagedDirectory "$env:GITHUB_WORKSPACE/apps/desktop/out/OpenBot-win32-x64" -Electron $electron -SmokeScript "$env:GITHUB_WORKSPACE/apps/desktop/scripts/windows-remote-smoke.mjs" -EvidenceDirectory "$env:RUNNER_TEMP/openbot-windows-native-evidence"
+          ./scripts/check-windows-desktop-install.ps1 -Installer "$env:GITHUB_WORKSPACE/apps/desktop/out/installers/win32-x64/openbot-desktop-$version-win32-x64.exe" -PackagedDirectory "$env:GITHUB_WORKSPACE/apps/desktop/out/OpenBot-win32-x64" -Electron $electron -SmokeScript "$env:GITHUB_WORKSPACE/apps/desktop/scripts/windows-remote-smoke.ts" -EvidenceDirectory "$env:RUNNER_TEMP/openbot-windows-native-evidence"
       - name: Retain Windows remote-client evidence without fixture secrets
         if: always() && runner.os == 'Windows'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -290,21 +292,21 @@ jobs:
       - name: Build retained clients and parser/database packages without the legacy Server
         run: npm exec -- turbo run build --filter=@openbot/desktop --filter=@openbot/python-node-runtime
       - name: Stage the exact Python product runtime
-        run: node apps/desktop/scripts/prepare-native-server.mjs --python-product
+        run: node apps/desktop/scripts/prepare-native-server.ts --python-product
       - name: Verify the staged Python API and PostgreSQL lifecycle
         shell: bash
         run: |
           umask 077
-          node apps/desktop/scripts/smoke-python-product.mjs apps/desktop/out/python-product-runtime \
+          node apps/desktop/scripts/smoke-python-product.ts apps/desktop/out/python-product-runtime \
             > "$RUNNER_TEMP/python-preview-staged.json"
           cat "$RUNNER_TEMP/python-preview-staged.json"
       - name: Package the explicit unsigned Python Preview
-        run: node apps/desktop/scripts/package.mjs --preview --python-product
+        run: node apps/desktop/scripts/package.ts --preview --python-product
       - name: Verify the packaged Python API and PostgreSQL lifecycle
         shell: bash
         run: |
           umask 077
-          node apps/desktop/scripts/smoke-python-product.mjs \
+          node apps/desktop/scripts/smoke-python-product.ts \
             "apps/desktop/out/python-product/OpenBot Python Preview-darwin-arm64/OpenBot Python Preview.app/Contents/Resources/native-runtime" \
             > "$RUNNER_TEMP/python-preview-packaged.json"
           cat "$RUNNER_TEMP/python-preview-packaged.json"
@@ -356,7 +358,7 @@ jobs:
         with:
           node-version: 22.22.2
       - name: Verify Python and Server journeys in the isolated Linux fixture
-        run: node scripts/test-runtime-linux.mjs
+        run: node scripts/test-runtime-linux.ts
       - name: Select the reviewed npm version for control-plane parity
         run: npm install --global --ignore-scripts npm@10.9.9
       - name: Install existing TypeScript reference dependencies
@@ -622,7 +624,7 @@ jobs:
         env:
           OPENBOT_CI_PLAN: ${{ needs.scope.outputs.plan }}
           OPENBOT_CI_NEEDS: ${{ toJSON(needs) }}
-        run: node scripts/ci-results.mjs
+        run: node scripts/ci-results.ts
   scope:
     runs-on: ubuntu-24.04
     timeout-minutes: 3
@@ -638,7 +640,7 @@ jobs:
           node-version: 22.22.2
       - id: scope
         name: Select from immutable PR base/head or full main qualification
-        run: node scripts/ci-scope.mjs --event "$GITHUB_EVENT_PATH" --github-output "$GITHUB_OUTPUT"
+        run: node scripts/ci-scope.ts --event "$GITHUB_EVENT_PATH" --github-output "$GITHUB_OUTPUT"
   harness:
     name: Installed harness, Python quality and Work contract
     needs: scope

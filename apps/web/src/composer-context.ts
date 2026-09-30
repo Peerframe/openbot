@@ -7,6 +7,7 @@ import {
   MAX_TASK_ATTACHMENT_BYTES,
   MAX_TASK_ATTACHMENTS,
 } from "@openbot/protocol";
+import { readBoundedResponse } from "./bounded-response";
 
 export { attachmentMediaTypes as ATTACHMENT_MEDIA_TYPES } from "@openbot/protocol";
 export type UploadedComposerAttachment = ChannelAttachment & { text?: undefined };
@@ -41,19 +42,6 @@ export function composeTaskText(
         : `User-provided attachment: ${file.name}\n${file.text}`,
     );
   return parts.filter(Boolean).join("\n\n");
-}
-
-export async function readComposerAttachment(file: File): Promise<ComposerAttachment> {
-  if (!/\.(txt|md|csv|json)$/i.test(file.name) || file.size > 6000)
-    throw new Error("请选择不超过 6 KB 的 TXT、Markdown、CSV 或 JSON 文件。");
-  const text = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer());
-  if (text.includes("\0")) throw new Error("附件必须是 UTF-8 文本文件。");
-  return {
-    name: Array.from(file.name, (character) => (character.charCodeAt(0) < 32 ? " " : character))
-      .join("")
-      .slice(0, 160),
-    text,
-  };
 }
 
 export const COMPOSER_ATTACHMENT_ACCEPT = ATTACHMENT_ACCEPT;
@@ -112,28 +100,10 @@ export async function uploadComposerAttachment(
       ? AbortSignal.any([signal, AbortSignal.timeout(60000)])
       : AbortSignal.timeout(60000),
   });
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error("附件上传未返回有效响应。");
-  let size = 0;
-  const chunks: Uint8Array[] = [];
-  try {
-    while (true) {
-      const next = await reader.read();
-      if (next.done) break;
-      size += next.value.byteLength;
-      if (size > 16384) throw new Error("附件上传响应过大。");
-      chunks.push(next.value);
-    }
-  } finally {
-    await reader.cancel().catch(() => undefined);
-    reader.releaseLock();
-  }
-  const data = new Uint8Array(size);
-  let offset = 0;
-  for (const chunk of chunks) {
-    data.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
+  const data = await readBoundedResponse(response, 16384, {
+    missingBody: "附件上传未返回有效响应。",
+    tooLarge: "附件上传响应过大。",
+  });
   const result = JSON.parse(new TextDecoder().decode(data)) as {
     attachment?: UploadedComposerAttachment;
     error?: string;

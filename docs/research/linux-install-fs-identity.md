@@ -29,7 +29,7 @@
   `docs/research/linux-worker-host-privileged-bootstrap.md`,
   `docs/research/linux-worker-host-install-transaction.md`,
   `docs/OPEN_SOURCE_REUSE.md` Linux Worker Host privileged bootstrap row, and the current
-  `scripts/node-linux-install-lease.mjs` / `scripts/node-linux-archive-import.mjs` identity checks.
+  `scripts/node-linux-install-lease.ts` / `scripts/node-linux-archive-import.ts` identity checks.
 
 ## Builder-box reproduction
 
@@ -37,7 +37,7 @@
 - `/tmp` is overlayfs (`stat -f -c %T` → `overlayfs`; `df -T /tmp` → `overlay`).
 - Baseline SHA `0ff279895697061ac47701bfdda935f444c4549c`.
 
-### Lock directory replace (`node-linux-install-lease.test.mjs:56`)
+### Lock directory replace (`node-linux-install-lease.test.ts`)
 
 `rmdir` + `mkdir` of the same `transaction.lock` path reused overlay `st_ino` **300/300** times
 (always `dev=39`, `ino=666838` in the probe). Node default `ctimeMs` matched **287/300** times.
@@ -47,7 +47,7 @@ directory looked identical and `releaseLinuxInstallLease` removed it.
 
 Actual test fail rate on this box: **33/40** (`Missing expected rejection.`).
 
-### Same-size source overwrite (`node-linux-archive-import.test.mjs:47`)
+### Same-size source overwrite (`node-linux-archive-import.test.ts`)
 
 A 1-byte in-place overwrite of a 20 MiB sparse source often left `mtimeMs`/`ctimeMs`/`mtimeNs`/
 `ctimeNs` and size unchanged. A 50-trial Node probe missed the change **47/50** times. GNU
@@ -69,7 +69,7 @@ timestamp quantum as create; the full file failed on the first combined run).
 | Overlayfs `xino=on` | Linux overlayfs documentation, kernel 6.12 line | GPL-2.0 kernel | Kernel-maintained | Would improve inode uniqueness for this Builder mount, but the installer cannot require a host mount option and ext4 can still reuse a freed inode | Reject as a production dependency |
 | `proper-lockfile` / `fs-ext` flock | Already reviewed `4.1.2` / `2.1.1` | MIT | See privileged-bootstrap record | Still rejected: age-based takeover and a native addon do not close this identity gap | Keep rejected |
 | Process-private `O_EXCL` token file inside the `mkdir` lock | Node.js `v22.22.2` `crypto.randomBytes`, `open(O_CREAT\|O_EXCL\|O_NOFOLLOW)`, POSIX exclusive create | Node.js license; POSIX | Pinned runtime | Empty `rmdir`+`mkdir` cannot reproduce a 32-byte secret stored only in the in-process `WeakMap`. `O_NOFOLLOW` refuses a replaced symlink. Release unlinks the token then `rmdir`s only after the token matches | Select for lock identity |
-| Bounded regular-file SHA-256 before the injectable opener | `sha256BoundedRegularFile` in `scripts/node-linux-release.mjs`; `O_RDONLY\|O_NOFOLLOW\|O_NONBLOCK`, fstat regular-file + size bounds, cumulative byte limit; Node `crypto.createHash` | Node.js license | Import pre-digest + import-path digest binding | Detects same-size in-place mutation without mtime/ctime. Refuses symlink/FIFO/oversize/growing reads; does not use unbounded `createReadStream`. Two-pass equality only proves both reads observed the same bytes; source authenticity still requires later attestation. The later import source reopen uses the same fixed flags (`LINUX_ARCHIVE_IMPORT_SOURCE_OPEN_FLAGS`) so a post-digest FIFO/symlink swap cannot hang | Select for import mutation detection |
+| Bounded regular-file SHA-256 before the injectable opener | `sha256BoundedRegularFile` in `scripts/node-linux-release.ts`; `O_RDONLY\|O_NOFOLLOW\|O_NONBLOCK`, fstat regular-file + size bounds, cumulative byte limit; Node `crypto.createHash` | Node.js license | Import pre-digest + import-path digest binding | Detects same-size in-place mutation without mtime/ctime. Refuses symlink/FIFO/oversize/growing reads; does not use unbounded `createReadStream`. Two-pass equality only proves both reads observed the same bytes; source authenticity still requires later attestation. The later import source reopen uses the same fixed flags (`LINUX_ARCHIVE_IMPORT_SOURCE_OPEN_FLAGS`) so a post-digest FIFO/symlink swap cannot hang | Select for import mutation detection |
 
 ## Reuse decision
 

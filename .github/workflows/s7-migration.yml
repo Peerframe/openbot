@@ -21,11 +21,11 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Verify sealed historical SQL and current target pin
-        run: node experiments/s7-migration/sources.mjs
+        run: node experiments/s7-migration/sources.ts
       - name: Build the existing migration guard and artifact reader
         run: npm run oracle:build
       - name: Check cleanup after unknown container startup
-        run: node --test experiments/s7-migration/cleanup.test.mjs
+        run: node --test experiments/s7-migration/cleanup.test.ts
       - name: Qualify both synthetic histories and paired restores
         run: node experiments/s7-migration/qualify.mjs --report "$RUNNER_TEMP/s7-migration-summary.json"
       - name: Retain content-free qualification evidence

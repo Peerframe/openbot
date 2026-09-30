@@ -13,11 +13,14 @@ Keep support claims within actual evidence. C1→C2→C3 progress lives only in 
 
 ## Next: fresh-checkout contributor smoke
 
-Status: proposed, not delivered. Prioritize a contributor being able to work without maintainer-private setup.
+Status: partially delivered. `npm run dev:smoke` already verifies fresh Python Server/Web startup,
+Owner login through the Web proxy and authenticated workspace access; the Linux Python CI job runs it.
+Optional development Node enrollment and restart with retained identity remain outside that smoke.
 
 - **Outcome:** one documented CI/local path proves a clean checkout can start Server/Web, sign in,
   enroll an optional development Node and restart it with the retained identity.
-- **Start in:** `CONTRIBUTING.md`, `scripts`, `.github/workflows/ci.yml`, existing auth/Node fixtures.
+- **Start in:** `CONTRIBUTING.md`, `scripts/smoke-dev-startup.ts`, `.github/workflows/ci.yml`,
+  existing auth/Node fixtures. Extend the existing smoke instead of adding another startup runner.
 - **Research first:** reuse the current pinned Node/npm/PostgreSQL toolchain and lifecycle tests;
   compare existing CI service/readiness patterns before introducing a runner.
 - **Acceptance:** fresh private fixture paths, synthetic credentials, no paid model or user profile;
@@ -26,7 +29,10 @@ Status: proposed, not delivered. Prioritize a contributor being able to work wit
 
 ## Next: retained-data migration regression
 
-Status: proposed. Local upgrade evidence exists; CI does not yet retain the complete old-data fixture.
+Status: partially delivered. [S7 synthetic qualification](../experiments/s7-migration/README.md)
+already retains two sealed histories, synthetic Bot/channel/message/Run/artifact rows and paired
+restore checks in CI. The complete appearance/template/import-receipt/automation fixture below
+is still missing; extend the existing fixture rather than recreate its completed baseline.
 
 - **Outcome:** contributors can prove that the reviewed old migration prefix upgrades with retained
   appearance, Employee templates, import receipts and automation rows unchanged.
@@ -62,10 +68,12 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
   claimed for Owner create dialogs.
 - **Existing behavior:** `CreateBotDialog` opens through `useModalDialog`, labels the dialog with
   `aria-labelledby`, exposes an icon close control named `关闭`, surfaces create failures with
-  `role="alert"`, and restores the opener when the dialog closes.
-- **Regression / docs gap:** there is no `CreateBotDialog.test.tsx`; only
-  `AttachmentsManager.test.tsx` covers the shared Escape / opener-restore pattern.
-  `docs/ACCESSIBILITY.md` manual checklist still omits Create Bot.
+  `role="alert"`, and attempts to restore the opener when the dialog closes; autofocus ordering
+  remains unresolved.
+- **Covered:** `CreateBotDialog.test.tsx` now mounts the dialog and checks its labels, cancel/close
+  unmount and failed-create alert. `docs/ACCESSIBILITY.md` lists these regression commands.
+- **Remaining:** capture the true opener before autofocus and add the Create Bot path to the
+  manual browser checklist; the delivered jsdom tests do not prove browser focus restoration.
 - **Entry files:** `apps/web/src/components/CreateBotDialog.tsx`,
   `apps/web/src/components/useModalDialog.ts`, `apps/web/src/test/render-component.tsx`,
   `docs/ACCESSIBILITY.md` (+ `.zh-CN.md` if the checklist text changes).
@@ -92,9 +100,8 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
   already documented in `docs/ACCESSIBILITY.md`.
 - **Existing behavior:** `EmployeeProfileView` exposes one `tablist`, seven tabs, and
   `profileTabForNavigationKey` for ArrowLeft/ArrowRight/Home/End with wrapping.
-- **Regression / docs gap:** `EmployeeProfileView.test.tsx` only checks static markup and the pure
-  navigation helper; it does not dispatch keydown on a focused tab and assert `aria-selected` plus
-  `document.activeElement` update together.
+- **Covered:** `EmployeeProfileView.test.tsx` dispatches keydown on focused tabs and asserts
+  selection, focus and tabIndex together, including wrapping and ArrowDown remaining a no-op.
 - **Entry files:** `apps/web/src/components/EmployeeProfileView.tsx`,
   `apps/web/src/components/EmployeeProfileView.test.tsx`, `apps/web/src/test/render-component.tsx`,
   `docs/ACCESSIBILITY.md` (link the new regression from “Reproduce the checks” if needed).
@@ -120,9 +127,10 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
 - **Existing behavior:** on mount, `RunInspector` focuses the labelled close control, listens for
   Escape to call `onClose`, and restores the previous focus on unmount (`role="dialog"`,
   `aria-modal="true"`).
-- **Regression / docs gap:** `RunInspector.integration.test.tsx` covers collaboration child-run
-  wiring only; Escape/focus restore is untested. `docs/ACCESSIBILITY.md` still lists this overlay as
-  needing a fuller native-dialog review (that migration stays Intermediate).
+- **Covered:** `RunInspector.integration.test.tsx` covers child-run wiring, Escape, the labelled
+  close control and prior-focus restore on unmount.
+- **Remaining:** `docs/ACCESSIBILITY.md` still calls for a fuller native-dialog/focus-trap review;
+  that product change is separate from the delivered regression.
 - **Entry files:** `apps/web/src/components/RunInspector.tsx`,
   `apps/web/src/components/RunInspector.integration.test.tsx` (or a sibling focused test),
   `docs/ACCESSIBILITY.md`.
@@ -147,9 +155,9 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
   create/manage dialogs.
 - **Existing behavior:** `NodeManagerDialog` mounts a `<dialog>` through `useModalDialog` and
   presents revoke confirmation copy in `NodeIdentityList`.
-- **Regression / docs gap:** `NodeManagerDialog.test.tsx` only exercises static identity list markup
-  and display-state helpers; it never opens the dialog, fires `cancel`, or asserts opener focus
-  restore.
+- **Covered:** `NodeManagerDialog.test.tsx` opens the dialog, checks its labels and revoke copy,
+  then fires `cancel` and asserts unmount.
+- **Remaining:** opener focus after autofocus is not verified and shares the Create Bot defect.
 - **Entry files:** `apps/web/src/components/NodeManagerDialog.tsx`,
   `apps/web/src/components/NodeManagerDialog.test.tsx`,
   `apps/web/src/components/useModalDialog.ts`, `apps/web/src/test/render-component.tsx`.
@@ -173,8 +181,8 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
   regressions in the built Web app across CI.
 - **Start in:** `apps/web`, `.github/workflows`, `docs/ACCESSIBILITY.md`.
 - **Research first:** compare `axe-core`, Playwright accessibility tooling, and maintained Vitest
-  integrations; pin versions and licenses. Prefer landing the Starter dialog/tab regressions above
-  before selecting a repo-wide runner.
+  integrations; pin versions and licenses. Reuse the delivered Starter dialog/tab regressions above
+  when selecting a repo-wide runner.
 - **Acceptance:** deterministic local command; CI artifact; no live network; documented false
   positives; one fixture that proves a violation fails the gate.
 - **Out of scope:** claiming screen-reader or WCAG conformance from automation alone; replacing the
@@ -184,7 +192,7 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
 
 - **Outcome:** English source docs and maintained locale files cannot silently lose required safety
   warnings, commands, or configuration names.
-- **Start in:** `scripts/check-docs.mjs`, `README*.md`, `docs/*.md`.
+- **Start in:** `scripts/check-docs.ts`, `README*.md`, `docs/*.md`.
 - **Research first:** evaluate documentation-lint and localization consistency tools before adding
   local rules. Reuse existing local-link checks; do not weaken `docs:check`.
 - **Acceptance:** catches a deliberately missing warning/link in a fixture; does not require machine

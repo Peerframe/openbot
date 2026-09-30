@@ -6,12 +6,11 @@ import {
   updateEmployeeMemory,
   updateEmployeeProfileDetails,
 } from "../api";
-import { runStatusLabel } from "../run-state";
+import { isActiveRun, runStatusLabel, runStatusSummary } from "../run-state";
 import { EmployeeEvolutionArchive } from "./EmployeeEvolutionArchive";
 import { EmployeeModelEditor } from "./EmployeeModelEditor";
 import { EmployeeSkillReview } from "./EmployeeSkillReview";
 import { KnowledgeReviewPanel } from "./KnowledgeReviewPanel";
-import { runStatusSummary } from "./NativeRunControls";
 import { OpenBotMark } from "./OpenBotMark";
 import { RobotAvatar } from "./RobotAvatar";
 
@@ -77,7 +76,7 @@ export function EmployeeProfileView({
   const tabButtons = useRef<Array<HTMLButtonElement | null>>([]);
   const tabSetId = useId();
 
-  if (loading || profile === undefined) {
+  if (loading || profile === undefined || error !== undefined) {
     return (
       <main className="workspace-main employee-profile-loading">
         <div className="loading-header-action">{headerAction}</div>
@@ -249,9 +248,7 @@ function Skills({
 }
 
 function LiveWork({ profile }: { profile: EmployeeProfile }) {
-  const activeRuns = profile.records.runs.filter((run) =>
-    ["queued", "assigned", "running", "waiting_approval", "blocked"].includes(run.status),
-  );
+  const activeRuns = profile.records.runs.filter(isActiveRun);
   return (
     <ProfileSection title="运行中" description="展示结构化阶段和决策摘要，不展示模型的原始思维链。">
       {activeRuns.length === 0 && profile.records.decisions.length === 0 ? (

@@ -20,7 +20,7 @@ def fixture(root):
     image = {"Id": a1.MANIFEST, "Os": "linux", "Architecture": "amd64", "Descriptor": {"digest": a1.MANIFEST},
              "Config": {"Env": ["PATH=/usr/bin:/bin", "LANG=en_US.UTF-8"]}}
     container = {"Id": "a" * 64, "Image": image["Id"], "Name": "/" + root.name,
-        "Config": {"User": "1001:1001", "Entrypoint": ["/usr/bin/node"], "Cmd": ["/qualification/probe.mjs"],
+        "Config": {"User": "1001:1001", "Entrypoint": ["/usr/bin/node"], "Cmd": ["/qualification/probe.ts"],
             "Image": image["Id"], "Labels": {"openbot.qualification": "browser-A1", "openbot.qualification.root": root.name},
             "Env": ["PATH=/usr/bin:/bin", "HOME=/tmp", "LANG=C.UTF-8"]},
         "HostConfig": {"Runtime": "runsc", "NetworkMode": "none", "IpcMode": "private", "ReadonlyRootfs": True,
@@ -128,7 +128,7 @@ class Construction(unittest.TestCase):
         root = a1.owned_root("deadline-a1-test123")
         argv = a1.create_argv(root, a1.MANIFEST)
         self.assertEqual(argv[0], "create")
-        self.assertEqual(argv[-2:], (a1.MANIFEST, "/qualification/probe.mjs"))
+        self.assertEqual(argv[-2:], (a1.MANIFEST, "/qualification/probe.ts"))
         self.assertIn("--pull=never", argv)
         self.assertEqual(argv[argv.index("--user") + 1], "1001:1001")
         self.assertEqual(argv[argv.index("--runtime") + 1], "runsc")

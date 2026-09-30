@@ -11,7 +11,8 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic.json_schema import SkipJsonSchema
 
-from .identity_inputs import ChannelBotId, _ECMASCRIPT_WHITESPACE, _omit_default
+from .identity_inputs import ChannelBotId, _omit_default
+from .text_compat import ECMASCRIPT_WHITESPACE
 
 ModelProviderId = Literal[
     "openai", "anthropic", "gemini", "deepseek", "moonshot", "openrouter",
@@ -174,7 +175,7 @@ class ModelSettingsInput(ModelDiscoveryInput):
     @field_validator("model")
     @classmethod
     def _model_id(cls, value: str) -> str:
-        value = value.strip(_ECMASCRIPT_WHITESPACE)
+        value = value.strip(ECMASCRIPT_WHITESPACE)
         if not 1 <= len(value) <= 128 or MODEL_ID_PATTERN.fullmatch(value) is None:
             raise ValueError("Invalid model ID.")
         return value

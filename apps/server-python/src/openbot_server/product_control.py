@@ -1,16 +1,13 @@
 """Explicit Python product composition for the retained Owner API; no implicit service selection."""
-from contextlib import asynccontextmanager
 from pathlib import Path
-import asyncio
 import hashlib
 import json
 import os
 import re
 import stat
-from urllib.parse import quote, unquote
 
 from fastapi import HTTPException, Request
-from fastapi.responses import JSONResponse, Response, StreamingResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, StrictBool, ValidationError
 import psycopg
 
@@ -18,7 +15,9 @@ from .authority import AuthenticationRequired, OwnerTransactions
 from .control_errors import ControlError
 from .database import StoreUnavailable
 from .http_input import authorize_owner, read_json
-from .owner_files import OwnerFiles, MAX_BYTES
+from .owner_files import OwnerFiles
+from .product_attachment_routes import download_response, register_attachment_routes
+from .product_events import event_stream, poll_events
 from .workspace import PostgresWorkspace
 
 
@@ -145,9 +144,6 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         if method!='GET':
             product.write_routes.append((method,re.compile(re.sub(r'\{[^}]+\}',r'[^/]+',path))))
 
-    from .work_native_attachments import register_native_attachment_routes
-    register_native_attachment_routes(route,product)
-
     async def workspace(value,_path,_body,_request): return await product.workspace.snapshot(value)
     route('/api/v1/workspace','GET',workspace)
     async def bootstrap(value,*_):
@@ -157,49 +153,8 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
 
     async def artifact(value,path,*_):
         row,data=await product.artifact_content(value,path['artifact_id'])
-        return Response(data,media_type=row['media_type'],headers={
-            'Content-Disposition': "attachment; filename*=UTF-8''"+quote(row['name'],safe=''),
-            'Content-Length':str(len(data)),'X-Content-Type-Options':'nosniff'})
+        return download_response(data,name=row['name'],media_type=row['media_type'])
     route('/api/v1/artifacts/{artifact_id}/content','GET',artifact)
-
-    async def attachment_list(value,path,*_):
-        async with product.transactions.transaction(value) as db:
-            await product.channel(db,path['channel_id'])
-            return {'attachments':product.files.list(path['channel_id'])}
-    route('/api/v1/channels/{channel_id}/attachments','GET',attachment_list)
-
-    async def upload(value,path,_body,request):
-        if request.headers.get('content-type')!='application/octet-stream': raise ControlError(415,'raw_attachment_required')
-        encoded=request.headers.get('x-openbot-filename','')
-        if not encoded or len(encoded)>2048: raise ControlError(400,'attachment_name_required')
-        name=unquote(encoded,errors='strict')
-        data=bytearray()
-        async with asyncio.timeout(10):
-            async for chunk in request.stream():
-                data.extend(chunk)
-                if len(data)>MAX_BYTES: raise ControlError(413,'attachment_size_limit')
-        result=await product.file_mutation(value,path['channel_id'],lambda:product.files.persist(path['channel_id'],name,bytes(data)))
-        return {'attachment':result}
-    route('/api/v1/channels/{channel_id}/attachments','POST',upload,status=201)
-
-    async def metadata(value,path,*_):
-        async with product.transactions.transaction(value) as db:
-            await product.channel(db,path['channel_id'])
-            return {'attachment':product.files.metadata(path['channel_id'],path['attachment_id'])}
-    route('/api/v1/channels/{channel_id}/attachments/{attachment_id}','GET',metadata)
-
-    async def content(value,path,*_):
-        async with product.transactions.transaction(value) as db:
-            await product.channel(db,path['channel_id'])
-            item,data=product.files.read(path['channel_id'],path['attachment_id'])
-            return Response(data,media_type='application/octet-stream',headers={'Content-Disposition':"attachment; filename*=UTF-8''"+quote(item['name'],safe=''),
-                'Content-Length':str(len(data)),'X-Content-Type-Options':'nosniff'})
-    route('/api/v1/channels/{channel_id}/attachments/{attachment_id}/content','GET',content)
-    for method,suffix,deleted in [('DELETE','',True),('POST','/restore',False)]:
-        async def lifecycle(value,path,_body,_request,deleted=deleted):
-            result=await product.file_mutation(value,path['channel_id'],lambda:product.files.set_deleted(path['channel_id'],path['attachment_id'],deleted),path['attachment_id'])
-            return {'attachment':result}
-        route('/api/v1/channels/{channel_id}/attachments/{attachment_id}'+suffix,method,lifecycle)
 
     async def model_summary(value,*_):
         if product.model is None: return {'status':'unavailable'}
@@ -211,6 +166,7 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         if result is None: raise ControlError(503,name+'_unavailable')
         return result
 
+    register_attachment_routes(route,product,service)
     from .product_extensions import register_extensions
     register_extensions(route, service)
     if product.worker_registry is not None:
@@ -295,20 +251,6 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         return JSONResponse(result,status_code=200 if result['replayed'] else 201)
     route('/api/v1/employees/import/activate','POST',import_activate,limit=2*1024*1024+65536)
 
-    async def process_attachment(value,path,body,request):
-        cancelled=asyncio.Event()
-        async def disconnect():
-            while not await request.is_disconnected(): await asyncio.sleep(.1)
-            cancelled.set()
-        watcher=asyncio.create_task(disconnect())
-        try:
-            result=await service('processing').process(value,path['channel_id'],path['attachment_id'],body,cancelled=cancelled)
-            return {'attachment':result}
-        finally:
-            watcher.cancel()
-            await asyncio.gather(watcher,return_exceptions=True)
-    route('/api/v1/channels/{channel_id}/attachments/{attachment_id}/process','POST',process_attachment,limit=4096)
-
     async def approval_decision(value,path,body,_request):
         result=await product.approvals.decide(value,path['approval_id'],body)
         if result['approval']['status']=='expired': raise ControlError(409,'approval_expired')
@@ -317,38 +259,28 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
 
     async def workspace_events(request:Request):
         value=await token(request)
-        async def events():
-            previous=None
-            while not await request.is_disconnected():
-                if (await read_store.read(value,'session')).expires_at is None: return
-                snapshot=await guarded(product.workspace.snapshot(value))
-                encoded=json.dumps([snapshot,product.revision],sort_keys=True,ensure_ascii=False)
-                # The existing reconnect-ready contract asks clients to fetch authoritative state.
-                # Emit only when facts change; this stream grants no write authority or execution retry.
-                if encoded!=previous:
-                    yield 'event: workspace.ready\nretry: 2000\ndata: '+json.dumps(dict(type='workspace.ready',nodes=snapshot['nodes']))+'\n\n'
-                    previous=encoded
-                else: yield 'event: heartbeat\ndata: alive\n\n'
-                await asyncio.sleep(3)
-        return StreamingResponse(events(),media_type='text/event-stream',headers={'Cache-Control':'no-store','X-Accel-Buffering':'no'})
+        async def observe():
+            # Every poll re-checks the session; authorization is never cached by the stream.
+            if (await read_store.read(value,'session')).expires_at is None: return None
+            snapshot=await guarded(product.workspace.snapshot(value))
+            # The existing reconnect-ready contract asks clients to fetch authoritative state.
+            # Emit only when facts change; this stream grants no write authority or execution retry.
+            return (json.dumps([snapshot,product.revision],sort_keys=True,ensure_ascii=False),
+                dict(type='workspace.ready',nodes=snapshot['nodes']))
+        return event_stream(poll_events(request,'workspace.ready',observe))
     app.add_api_route('/api/v1/workspace/events',workspace_events,methods=['GET'])
 
     async def channel_events(request:Request,channel_id:str):
         value=await token(request)
         if not 1 <= len(channel_id) <= 128: raise HTTPException(422,'Invalid channel identifier.')
         async with product.transactions.transaction(value) as db: await product.channel(db,channel_id)
-        async def events():
-            previous=None
-            while not await request.is_disconnected():
-                messages=await read_store.read(value,'messages',channel_id=channel_id)
-                if messages.expires_at is None or not messages.found: return
-                runs=await read_store.read(value,'runs',channel_id=channel_id)
-                if runs.expires_at is None: return
-                state=json.dumps([messages.rows,runs.rows,product.revision],sort_keys=True,default=str)
-                if state!=previous:
-                    yield 'event: channel.ready\nretry: 2000\ndata: '+json.dumps({'type':'channel.ready','channelId':channel_id})+'\n\n'
-                    previous=state
-                else: yield 'event: heartbeat\ndata: alive\n\n'
-                await asyncio.sleep(3)
-        return StreamingResponse(events(),media_type='text/event-stream',headers={'Cache-Control':'no-store','X-Accel-Buffering':'no'})
+        async def observe():
+            # Messages first: a missing channel or lapsed session ends the stream before Runs are read.
+            messages=await read_store.read(value,'messages',channel_id=channel_id)
+            if messages.expires_at is None or not messages.found: return None
+            runs=await read_store.read(value,'runs',channel_id=channel_id)
+            if runs.expires_at is None: return None
+            return (json.dumps([messages.rows,runs.rows,product.revision],sort_keys=True,default=str),
+                {'type':'channel.ready','channelId':channel_id})
+        return event_stream(poll_events(request,'channel.ready',observe))
     app.add_api_route('/api/v1/channels/{channel_id}/events',channel_events,methods=['GET'])

@@ -24,18 +24,15 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from .authority import OwnerTransactions
 from .control_errors import ControlError
 from .database import StoreUnavailable
-from .identity_inputs import _ECMASCRIPT_WHITESPACE
+from .text_compat import ECMASCRIPT_WHITESPACE
 from .models import iso_timestamp
 from .owner_files import MAX_BYTES, UUID
 from .runtime_child_process import PipeProcess
+from .text_compat import utf16_unit_count_surrogatepass as _utf16_length
 
 MAX_TEXT = 262144
 MAX_RESPONSE = 2 * 1024 * 1024
-PARSER_WORKER = Path(__file__).with_name('parser_worker.mjs')
-
-
-def _utf16_length(value):
-    return len(value.encode('utf-16-le', errors='surrogatepass')) // 2
+PARSER_WORKER = Path(__file__).with_name('parser_worker.ts')
 
 
 def _bounded_text(value):
@@ -288,7 +285,7 @@ class AttachmentProcessingService:
                     or type(result['truncated']) is not bool or _utf16_length(result['text']) > MAX_TEXT):
                 raise ControlError(503, 'invalid_parser_response')
             text, cut = _bounded_text(result['text'])
-            if not text.strip(_ECMASCRIPT_WHITESPACE):
+            if not text.strip(ECMASCRIPT_WHITESPACE):
                 raise ControlError(415, 'no_readable_pdf_text' if extension == 'pdf' else 'no_readable_attachment_text')
             derived = dict(text=text, truncated=result['truncated'] or cut, sha256=item['sha256'],
                            operation=command.operation, processedAt=iso_timestamp(datetime.now(timezone.utc)))

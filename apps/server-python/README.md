@@ -204,7 +204,11 @@ Local command acceptance: 71 combined PostgreSQL/HTTP cases, actual TS cancellat
 readback, 728 Python package cases, and full repository checks passed. Database tests skip only
 in the ordinary package run; use the owned `npm run test:control:python` fixture to run them.
 
-## Control-owned runtime adapter (S2b-2 internal seam)
+## Retained process-profile compatibility seam
+
+This earlier S2b-2 adapter is preserved for explicit compatibility and installed-SDK supervision
+checks. Current product Work dispatch uses `work_product_service` / `work_product_runtime` and
+Temporal; the historical integration gaps below concern this separate seam.
 
 The separate `runtime_host`, `runtime_ports` and `runtime_executor` modules retain authority,
 model resolution, tool executors, budgets, usage and final-result checks in control. The installed

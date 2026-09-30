@@ -82,37 +82,6 @@
 .sidebar-search input::placeholder {
   color: #67717d;
 }
-.workspace-actions {
-  display: grid;
-  gap: 3px;
-  padding-bottom: 15px;
-}
-.workspace-actions button,
-.app-shell .sidebar-settings {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  width: 100%;
-  min-height: 43px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  text-align: left;
-  font-size: 14px;
-  cursor: pointer;
-}
-.workspace-actions button:hover,
-.app-shell .sidebar-settings:hover {
-  background: #eff1f3;
-}
-.workspace-actions button > span {
-  flex: 1;
-}
-.workspace-actions button:first-child {
-  color: #171b21;
-  font-weight: 610;
-}
 .app-shell .sidebar-body {
   overflow-y: auto;
   scrollbar-width: thin;
@@ -208,33 +177,6 @@
   font-size: 9px;
   color: #69727c;
 }
-.app-shell .sidebar-settings {
-  border-top: 1px solid #e7e9ec;
-  border-radius: 0;
-  min-height: 48px;
-  margin-top: 10px;
-  font-size: 13px;
-}
-.app-shell .sidebar-owner {
-  border: 0;
-  margin: 0;
-  padding: 10px 12px 4px;
-  gap: 8px;
-}
-.app-shell .sidebar-owner strong {
-  font-size: 11px;
-}
-.app-shell .sidebar-owner small {
-  font-size: 10px;
-  color: #68717c;
-}
-.app-shell .sidebar-owner button {
-  border: 0;
-  background: transparent;
-  padding: 6px;
-  font-size: 10px;
-  color: #66707d;
-}
 .app-shell .context-rail {
   grid-column: auto;
   height: calc(100dvh - 24px);
@@ -246,7 +188,6 @@
   overflow-y: auto;
   background: transparent;
 }
-.app-shell .context-rail .rail-title,
 .app-shell .context-rail .attention {
   display: flex;
 }
@@ -357,19 +298,6 @@
   padding: 10px 12px;
   box-shadow: 0 3px 12px #1a304408;
 }
-.app-shell .composer-target {
-  font-size: 10px;
-  color: #657181;
-  padding: 0 4px 4px;
-}
-.app-shell .composer-target select {
-  font-size: 11px;
-  padding: 2px 18px 2px 2px;
-}
-.app-shell .composer-input-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 35px;
-}
 .app-shell .message-composer textarea {
   padding: 9px 4px;
   min-height: 43px;
@@ -391,18 +319,6 @@
 .app-shell .composer-send:disabled {
   color: #718094;
   background: #e9edf2;
-}
-.app-shell .composer-footnote {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 7px 4px 0;
-  font-size: 9px;
-  color: #627181;
-}
-.app-shell .active-run-strip {
-  padding: 10px 14px;
-  background: #f7f9fb;
 }
 .app-shell .conversation-empty h2 {
   font-size: 18px;
@@ -535,9 +451,6 @@
   .app-shell .message-list {
     padding: 18px 12px;
   }
-  .app-shell .composer-footnote span:last-child {
-    display: none;
-  }
   .app-shell .bot-state {
     display: none;
   }
@@ -581,9 +494,6 @@
   .app-shell .message-composer {
     margin: 0 10px 10px;
     width: calc(100% - 20px);
-  }
-  .app-shell .composer-footnote span:last-child {
-    display: none;
   }
   .app-shell .empty-workspace-header {
     min-height: 72px;

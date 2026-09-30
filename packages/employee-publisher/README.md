@@ -20,7 +20,8 @@ rotation and Python configuration. The root launcher preserves the CLI's histori
 `apps/server` relative-path base without requiring that directory to exist; prefer absolute
 paths for new deployments. Never copy private keys or passphrases into an Employee package.
 
-The old Server temporarily retains unchanged keyring/template helpers for its existing runtime;
-it no longer owns this CLI entry. Those helpers leave with the separately gated runtime
-retirement, rather than becoming a second maintained implementation. This workspace is not
-a production Server replacement and does not close Linux/browser acceptance.
+The legacy TypeScript Server has retired; its frozen oracle remains test evidence. This package
+retains the offline key lifecycle, template formats and validation. Obsolete Store contracts,
+request schemas and task-routing functions from the original source closure have been removed.
+`SOURCE.json` describes the initial extraction, including paths that have since retired; it is
+historical provenance, not a current source manifest. Runtime authority remains in Python.

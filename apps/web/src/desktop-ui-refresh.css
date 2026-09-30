@@ -17,20 +17,6 @@
   align-items: center;
   padding-right: 18px;
 }
-.toolbar-share {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  border: 0;
-  background: transparent;
-  padding: 7px;
-  color: #596476;
-  cursor: pointer;
-}
-.toolbar-share:hover {
-  background: #edf1f6;
-  border-radius: 7px;
-}
 .toolbar-context {
   gap: 0;
 }
@@ -277,75 +263,12 @@
   flex-direction: column;
   min-height: 0;
 }
-.active-task-strip {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 26px;
-  min-height: 64px;
-  border-bottom: 1px solid #e6ebf1;
-  background: #f8fafc;
-  font-size: 12px;
-}
-.active-task-strip strong {
-  white-space: nowrap;
-  font-size: 12px;
-}
-.active-task-stage {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: #718097;
-}
-.active-task-strip button {
-  margin-left: auto;
-  flex-shrink: 0;
-  color: #0878f9;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-}
-.task-spinner {
-  width: 15px;
-  height: 15px;
-  flex-shrink: 0;
-  border: 2px solid #b9d9ff;
-  border-right-color: #0879ff;
-  border-radius: 50%;
-  animation: task-spin 1s linear infinite;
-}
-@keyframes task-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 .desktop-workspace .channel-conversation {
   flex: 1;
   min-height: 0;
 }
 .desktop-workspace .message-list {
   padding: 30px 30px 18px;
-}
-.conversation-round-one .message-composer {
-  position: relative;
-  margin: 10px 24px 0;
-  padding: 13px 14px 11px;
-  border: 1px solid #c7d1df;
-  border-radius: 19px;
-  box-shadow: 0 1px 3px #17283d04;
-  background: #fff;
-}
-.conversation-round-one .message-composer:focus-within {
-  border-color: #97b4db;
-  box-shadow: 0 0 0 2px #e8f1ff;
-}
-.conversation-round-one .message-composer textarea {
-  min-height: 45px;
-  padding: 4px;
-  resize: none;
-  font-size: var(--chat-font-size, 14px);
 }
 .composer-mention {
   display: inline-flex;
@@ -479,20 +402,6 @@
   color: #738199;
   cursor: pointer;
 }
-.conversation-round-one .composer-send {
-  width: 39px;
-  height: 39px;
-  min-width: 39px;
-  border: 0;
-  border-radius: 50%;
-  background: #253146;
-  color: white;
-  display: grid;
-  place-items: center;
-}
-.conversation-round-one .composer-send:disabled {
-  opacity: 0.4;
-}
 .composer-skills-panel {
   left: 10px;
   right: 10px;
@@ -506,10 +415,6 @@
   border: 0;
   background: transparent;
   cursor: pointer;
-}
-.conversation-round-one .conversation-footer {
-  padding: 9px 27px 16px;
-  font-size: 11px;
 }
 .share-dialog {
   width: min(700px, 90vw);
@@ -545,8 +450,7 @@
 }
 .full-page-destination > .workspace-toolbar,
 .full-page-destination > .workspace-sidebar,
-.full-page-destination > .workspace-details,
-.full-page-destination > .mobile-navigation {
+.full-page-destination > .workspace-details {
   display: none;
 }
 .full-page-destination > .workspace-destination {
@@ -564,17 +468,6 @@
   .toolbar-context {
     padding: 0 10px;
   }
-  .active-task-strip {
-    padding: 10px 16px;
-    gap: 8px;
-  }
-  .active-task-stage {
-    display: none;
-  }
-  .conversation-round-one .message-composer {
-    margin-left: 16px;
-    margin-right: 16px;
-  }
   .desktop-workspace .message-list {
     padding-left: 18px;
     padding-right: 18px;
@@ -584,18 +477,6 @@
     height: 29px;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .task-spinner {
-    animation: none;
-  }
-}
-:root[data-reduced-motion="true"] .task-spinner {
-  animation: none;
-}
-
-.app-shell .conversation-round-one .message-row.human .message-content {
-  background: #eef5ff;
-}
 .app-shell .usage-rail-header h2 {
   font-size: 16px;
   color: #1a2435;
@@ -603,29 +484,6 @@
 .app-shell .usage-rail-section-heading h3 {
   font-size: 14px;
   color: #202b3c;
-}
-.active-task-strip .native-run-controls.compact {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  flex: 0 0 auto;
-}
-.active-task-strip .native-run-controls.compact button {
-  padding: 6px 12px;
-  border: 1px solid #dbe3ed;
-  border-radius: 8px;
-  color: #516076;
-  font-size: 12px;
-}
-.active-task-strip .native-run-controls.compact p[role="alert"] {
-  position: absolute;
-  top: 110px;
-  right: 330px;
-  max-width: 320px;
-  background: #fff5ef;
-  padding: 10px;
-  z-index: 10;
 }
 
 :root[data-desktop="win32"] .desktop-workspace.without-sidebar,

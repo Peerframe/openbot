@@ -143,13 +143,6 @@
   margin-bottom: 16px;
   background: #ffffff6b;
 }
-.desktop-workspace .workspace-actions {
-  margin-bottom: 12px;
-}
-.desktop-workspace .workspace-actions button {
-  min-height: 39px;
-  font-size: 13px;
-}
 .app-shell.desktop-workspace > .workspace-main,
 .app-shell.desktop-workspace > .workspace-destination {
   grid-area: 2 / 2;

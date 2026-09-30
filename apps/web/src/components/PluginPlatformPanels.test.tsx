@@ -3,7 +3,7 @@ import type { Bot } from "@openbot/domain";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Plugin } from "../plugin-api";
 import { interact, renderComponent, setInputValue } from "../test/render-component";
-import { PluginGrantEditor } from "./PluginManagerPanel";
+import { PluginGrantEditor } from "./PluginGrantEditor";
 import { PluginContentPanel, PluginUpdatePanel } from "./PluginPlatformPanels";
 
 const plugin: Plugin = {

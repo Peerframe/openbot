@@ -1,23 +1,8 @@
 """Retained plugin and model-connection HTTP composition; authority stays in the services."""
 import asyncio
-from contextlib import asynccontextmanager
 
 from .control_errors import ControlError
-
-
-@asynccontextmanager
-async def request_signal(request):
-    signal = asyncio.Event()
-    async def watch():
-        while not await request.is_disconnected():
-            await asyncio.sleep(.1)
-        signal.set()
-    watcher = asyncio.create_task(watch())
-    try:
-        yield signal
-    finally:
-        watcher.cancel()
-        await asyncio.gather(watcher, return_exceptions=True)
+from .http_input import request_signal
 
 
 async def connected_request(request, operation, *, timeout=120):

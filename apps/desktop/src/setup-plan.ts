@@ -1,17 +1,11 @@
+import type { DesktopSetupMode, DesktopSetupPlanInput } from "@openbot/protocol";
+export type { DesktopSetupMode, DesktopSetupPlanInput } from "@openbot/protocol";
 import { RestrictedJsonFile } from "./restricted-json-file.js";
 
 export const DESKTOP_SETUP_PLAN_FORMAT = "openbot.desktop-setup-plan/v1" as const;
 export const MAXIMUM_DESKTOP_SETUP_PLAN_BYTES = 4 * 1024;
 export const MAXIMUM_PLANNED_WORKER_COMPUTERS = 100;
 export const DESKTOP_SETUP_MODES = ["client", "client-worker", "host", "advanced"] as const;
-
-export type DesktopSetupMode = (typeof DESKTOP_SETUP_MODES)[number];
-
-export interface DesktopSetupPlanInput {
-  localWorker: boolean;
-  mode: DesktopSetupMode;
-  plannedWorkerCount: number;
-}
 
 export interface DesktopSetupPlan extends DesktopSetupPlanInput {
   format: typeof DESKTOP_SETUP_PLAN_FORMAT;

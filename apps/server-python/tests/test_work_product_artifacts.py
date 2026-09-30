@@ -12,7 +12,8 @@ from openbot_server.work_product_artifacts import ProductWorkArtifacts, report
 from openbot_server.work_temporal_effect import ToolRequest
 from openbot_server.work_tool_results import ToolResults
 from openbot_server.work_values import InvalidWork, WorkConflict, canonical
-from test_work_product_model import setup, bound, binding, SCOPE
+from test_work_product_model import setup, SCOPE
+from product_model_fixtures import bound, binding
 
 
 @pytest.fixture
@@ -47,7 +48,7 @@ def test_report_bounds_preserve_plain_markdown_only(value):
 
 def test_durable_report_roundtrip_before_atomic_publication(prepared):
     async def check():
-        f=prepared;b=await bound(f)
+        f=prepared;b=await bound(f,scope=SCOPE)
         service=ProductWorkArtifacts(f.store,object(),SCOPE,ToolResults(f.store,f.store.files))
         with binding(b):
             result=await execute(f,b,service)
@@ -68,7 +69,7 @@ def test_durable_report_roundtrip_before_atomic_publication(prepared):
 
 def test_current_activity_fence_and_membership_refuse_stale_readback(prepared):
     async def check():
-        f=prepared;b=await bound(f)
+        f=prepared;b=await bound(f,scope=SCOPE)
         service=ProductWorkArtifacts(f.store,object(),SCOPE,ToolResults(f.store,f.store.files))
         with binding(b):
             await execute(f,b,service)
@@ -84,7 +85,7 @@ def test_current_activity_fence_and_membership_refuse_stale_readback(prepared):
 
 def test_corrupt_draft_is_not_published(prepared):
     async def check():
-        f=prepared;b=await bound(f)
+        f=prepared;b=await bound(f,scope=SCOPE)
         service=ProductWorkArtifacts(f.store,object(),SCOPE,ToolResults(f.store,f.store.files))
         with binding(b):
             result=await execute(f,b,service)
@@ -97,7 +98,7 @@ def test_corrupt_draft_is_not_published(prepared):
 
 def test_owner_correction_drops_old_unpublished_drafts_and_preserves_receipts(prepared):
     async def check():
-        f=prepared;b=await bound(f)
+        f=prepared;b=await bound(f,scope=SCOPE)
         service=ProductWorkArtifacts(f.store,object(),SCOPE,ToolResults(f.store,f.store.files))
         with binding(b):
             old=await execute(f,b,service)
@@ -119,7 +120,7 @@ def test_owner_correction_drops_old_unpublished_drafts_and_preserves_receipts(pr
 @pytest.mark.parametrize('markdown',['x'*24000,'中'*8192,'\n'*24000])
 def test_full_report_contract_uses_small_immutable_action_and_exact_blob(prepared,markdown):
     async def check():
-        f=prepared;b=await bound(f)
+        f=prepared;b=await bound(f,scope=SCOPE)
         service=ProductWorkArtifacts(f.store,object(),SCOPE,ToolResults(f.store,f.store.files))
         with binding(b):
             result=await execute(f,b,service,markdown=markdown)

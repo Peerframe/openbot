@@ -379,7 +379,7 @@ history replay passed without another execution. See [scoped evidence](evidence/
 With the locked Worker environment, built shared packages and a working local Docker engine:
 
 ```sh
-node_modules/.bin/esbuild experiments/work-journey/product_command_node.mjs --bundle --platform=node --format=cjs --target=node22 --outfile=/tmp/openbot-command-node.cjs
+node_modules/.bin/esbuild experiments/work-journey/product_command_node.ts --bundle --platform=node --format=cjs --target=node22 --outfile=/tmp/openbot-command-node.cjs
 apps/server-python/.worker-venv/bin/python -B -u experiments/work-journey/product_command_probe.py --output /tmp/openbot-command-product-1 --node-bundle /tmp/openbot-command-node.cjs
 ```
 
@@ -432,6 +432,11 @@ closes the actual SDK Worker before click approval, restarts it with the same No
 checks one real form submission and report download, then replays history with zero new effects.
 This is a trusted local-page qualification, not public egress or isolated Linux Host acceptance.
 [Local evidence](evidence/product-browser-pages.json) identifies the tested scope.
+
+Task snapshot reads can encounter the product's bounded publication lock. The original polling
+deadline also covers the exact storage-unavailable `503` response; each occurrence is visible
+as `task-read-unavailable` and counted in `readUnavailablePolls`. Writes, other failures and
+unknown browser effects are never retried by this handling.
 
 Use a POSIX host with Docker, the repository Node/npm versions, Bun1.3.14, OpenSSL and a Python3.12
 virtual environment containing `apps/server-python/requirements-worker.lock`. From a fresh checkout:

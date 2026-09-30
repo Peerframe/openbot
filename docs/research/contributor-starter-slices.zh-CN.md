@@ -15,7 +15,7 @@
 `AttachmentsManager.test.tsx`（Escape/焦点恢复范例）、`EmployeeProfileView`（仅有纯函数与静态
 markup 测试）、`RunInspector`（源码已处理 Escape/焦点，集成测试未覆盖）、
 `NodeManagerDialog`（仅有身份列表静态测试）、`MobileNavigation.tsx`（无测试且未接 Escape，留在
-ACCESSIBILITY 已知缺口，不作为本次虚构产品行为的入门卡）、`scripts/check-docs.mjs`（尚不构成翻译
+ACCESSIBILITY 已知缺口，不作为本次虚构产品行为的入门卡）、`scripts/check-docs.ts`（尚不构成翻译
 一致性门禁）。
 
 结论：把「无障碍回归检查器」和「翻译一致性检查」从入门降为中级；新增四张 grounded 入门卡——创建

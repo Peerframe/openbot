@@ -168,6 +168,43 @@ def test_unknown_tool_is_refused() -> None:
     assert _reason(caught) is FailureReason.UNKNOWN_TOOL
 
 
+def test_many_invalid_arguments_keep_the_exact_count_and_bounded_prefix() -> None:
+    catalog = _catalog(descriptor("many", schema={
+        "type": "object", "properties": {"values": {"type": "array", "items": {"type": "integer"}}},
+    }))
+    with pytest.raises(RuntimeFailure) as caught:
+        catalog.validate_arguments("many", {"values": ["x" * 32] * 5000})
+    prefix = "; ".join(f'values/{index}: "{"x" * 32}" is not of type "integer"' for index in range(3))[:160]
+    assert caught.value.reason is FailureReason.INVALID_ARGUMENTS
+    assert caught.value.detail == (
+        "arguments for 'many' violate its input schema (5000 violation(s)): " + prefix
+    )
+
+
+def test_validator_failure_after_the_reported_prefix_still_refuses_the_call(monkeypatch) -> None:
+    catalog = _catalog(descriptor("search"))
+    checked = []
+
+    class FailingValidator:
+        def iter_errors(self, arguments):
+            from types import SimpleNamespace
+
+            for index in range(5):
+                checked.append(index)
+                yield SimpleNamespace(instance_path=[index], message="invalid")
+            raise ValueError("late validator failure")
+
+    monkeypatch.setitem(catalog._validators, "search", FailingValidator())
+    with pytest.raises(RuntimeFailure) as caught:
+        catalog.validate_arguments("search", {"query": "x"})
+    assert checked == list(range(5))
+    assert caught.value.reason is FailureReason.INVALID_ARGUMENTS
+    assert caught.value.detail == (
+        "arguments for 'search' cannot be checked against its input schema: ValueError"
+    )
+    assert isinstance(caught.value.__cause__, ValueError)
+
+
 # -- limits and deadline -------------------------------------------------------
 
 

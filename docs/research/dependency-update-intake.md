@@ -43,3 +43,38 @@ No upstream source copied or substantially adapted; only official hosted-service
 - [Dependabot trigger behavior](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-pull-requests)
 - [PR limit and security exemption](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#open-pull-requests-limit)
 - [Security-only update configuration](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-security-updates)
+
+## Cleanup advisory review (2026-09-29, PR104)
+
+The full npm audit at `8b5c4d3` reported five moderate package entries, not five independent
+exploits: four entries propagate one esbuild advisory through Drizzle's installed legacy-loader dependency; one covers
+three vulnerable undici installations. Production audit is clean, but that does not classify all
+build/test use as safe. `npm explain`, lock entries and actual installed consumer source were read.
+
+| Entry / installed consumer | Reachability and disposition |
+| --- | --- |
+| `esbuild`0.18.20 | [GHSA-67mh-4wv8-2f99](https://github.com/evanw/esbuild/security/advisories/GHSA-67mh-4wv8-2f99) exposes served source through permissive CORS, including loopback servers. The actual old-loader implementation invokes `transform`/`transformSync`, not `serve`; current Vite/tsx/oracle use0.28.2 and Drizzle's direct esbuild is0.25.12. The retained package graph still installs this instance; do not use its server API. Loopback alone is not mitigation. |
+| `@esbuild-kit/core-utils`3.3.2 | Declares esbuild `~0.18.20`, calls its compiler transformations and reports the propagated advisory. Overriding it across the0.x compatibility boundary is not a proved fix. |
+| `@esbuild-kit/esm-loader`2.6.5 | Imports core-utils, but installed Drizzle0.31.10 CLI/API source already uses tsx and does not import this legacy loader. It remains declared in the published dependency graph; no maintained OpenBot command exposes its server. Await an upstream manifest cleanup or separately verified CLI replacement, rather than hand-editing generated locks. |
+| `drizzle-kit`0.31.10 | The retained `packages/db` migrate command loads reviewed config and canonical SQL; removing it based on static imports would break a real consumer. npm's proposed0.18.1 downgrade is a major compatibility reversal, not accepted remediation. SQL/history and public commands stay intact. |
+| `undici`8.10.1 /7.29.0 | [GHSA-3wwx-pv8p-q78v](https://github.com/nodejs/undici/security/advisories/GHSA-3wwx-pv8p-q78v) can crash the process on a malformed over-limit compressed WebSocket frame. jsdom30.0.1 really exposes undici WebSocket to test pages; current tests use controlled inputs, which is a bounded exposure statement, not package safety. The two Electron get consumers use HTTP fetch/proxy dispatch rather than WebSocket. The product Node client imports the separate `ws` implementation. Select the compatible8.10.2 /7.29.1 patches within existing parent ranges, without new direct dependency or global override. |
+
+Read the actual upstream inflater fix and malformed-frame regression at
+[`4411a238a98e8791da5fff10cc9e3578a7668ed6`](https://github.com/nodejs/undici/commit/4411a238a98e8791da5fff10cc9e3578a7668ed6)
+and its7.x counterpart
+[`07c60d9c7099a910451244afe42861bbdbdd974c`](https://github.com/nodejs/undici/commit/07c60d9c7099a910451244afe42861bbdbdd974c).
+The released8.10.2 source is `5e541e0b9df7563e5766bbd469fbfe383d9ae6ca`,7.29.1 is
+`d39a83e7b0d631590c3b85b5cc0dbeab66c3a1d8`; npm metadata/integrities and both release notes were
+read. MIT; no new runtime dependency, engine requirement or upstream code copied into OpenBot.
+The patches destroy the inflater after size-limit cleanup; application WebSocket error handlers
+alone cannot catch that former unhandled internal error. Existing7.29.1 SDK and6.28.1 node-gyp
+closures already contain the fix. Node's bundled implementation is a distinct version boundary;
+a lockfile update does not claim to update it. No product use of that bundled WebSocket was found
+in the traced consumers. Revision-specific installation/regression and audit results are recorded in PR104.
+
+Drizzle's [0.31.10 release](https://github.com/drizzle-team/drizzle-orm/releases/tag/drizzle-kit%400.31.10)
+confirms the tsx transition; the installed `bin.cjs`, `api.js` and `api.mjs` match it. The reviewed
+0.31.11 registry manifest still declares the old loader, so that patch alone does not remove the
+advisory. [Upstream issue5145](https://github.com/drizzle-team/drizzle-orm/issues/5145) is marked
+fixed-in-beta; that label is not proof of a compatible stable fix. Retain the known residual
+advisory until the actual published closure and migration consumer are verified together.

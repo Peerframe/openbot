@@ -1,6 +1,5 @@
 """Real SQL/settings/provider SDK; synthetic HTTP and the current engine's SDK/history seam."""
 import asyncio
-from contextlib import contextmanager
 from dataclasses import replace
 from datetime import datetime, timezone
 import json
@@ -38,6 +37,8 @@ from openbot_server.work_sources import WorkSourceAdmission
 from openbot_server.work_store import PostgresWorkStore
 from openbot_server.work_temporal_start import WorkRuntimeContext
 from openbot_server.work_values import InvalidWork, WorkConflict
+
+from product_model_fixtures import binding, response
 
 KEY='synthetic-product-key-never-real'
 SCOPE=dict(expected_namespace='default',expected_queue='fixture-queue',expected_workflow_type='fixture-workflow')
@@ -109,27 +110,11 @@ async def bound(f,profile='none',connection=None,*,instruction='Synthetic model 
         first_run_id='synthetic-engine',start_input=dict(taskId=task['id'],runId=rid,attemptId=reservation.attempt_id))
     return SimpleNamespace(context=context,accepted=accepted,facts=facts,source=result.run,activity='model-1')
 
-@contextmanager
-def binding(b):
-    async def inspect(*args,**kwargs): return b.facts
-    with patch('openbot_server.work_temporal_activity.activity_info',lambda:SimpleNamespace(activity_id=b.activity)), \
-            patch('openbot_server.work_temporal_activity.inspect_activity_start',inspect):
-        yield
 
 def request(text='Synthetic prompt',step=1):
     return ModelStepRequest(step=step,messages=[ModelRequest(parts=[UserPromptPart(
         text,timestamp=datetime(2026,9,25,tzinfo=timezone.utc))])],tools=())
 
-def response(req):
-    body=json.loads(req.content);model=body['model']
-    if req.url.path.endswith('/responses'):
-        return {'id':'response-fixture','object':'response','created_at':1,'model':model,'status':'completed',
-            'output':[{'id':'message-fixture','type':'message','role':'assistant','status':'completed',
-                'content':[{'type':'output_text','text':'Checked answer','annotations':[]}]}],
-            'usage':{'input_tokens':10,'output_tokens':4,'total_tokens':14}}
-    return {'id':'chat-fixture','object':'chat.completion','created':1,'model':model,
-        'choices':[{'index':0,'finish_reason':'stop','message':{'role':'assistant','content':'Checked answer'}}],
-        'usage':{'prompt_tokens':10,'completion_tokens':4,'total_tokens':14}}
 
 def product(f,handler=None,**options):
     def send(req):

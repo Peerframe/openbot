@@ -46,7 +46,7 @@ OpenBot 必须方便多位独立开发者参与，不能形成只有项目负责
 
 主要代码区域：产品和移动端体验在 `apps/web`；控制平面与实时同步在 `apps/server-python`、
 `packages/db`；Node 协议在 `apps/node`、`packages/protocol`；电脑集成在 `providers/*` 与
-`packages/provider-sdk`；策略和安全在 `packages/policy`、`docs/SECURITY.md`；可选体验在
+`packages/provider-sdk`；策略和安全在 `apps/server-python/src/openbot_server`、`docs/SECURITY.md`；可选体验在
 `packages/office-plugin`。当前 Python 执行核心在 `packages/harness`，验证及真实消费者安装同一 wheel；聚焦命令见该包 README。
 
 ## 本地开发
@@ -68,7 +68,7 @@ npm run db:up
 npm run dev
 ```
 
-保持终端运行。`scripts/dev-python.mjs` 先校验锁定 Worker 环境，通过 Turbo 构建共享包，再启动 Python Server/Web。打开 `http://localhost:5173`，
+保持终端运行。`scripts/dev-python.ts` 先校验锁定 Worker 环境，通过 Turbo 构建共享包，再启动 Python Server/Web。打开 `http://localhost:5173`，
 使用 `.env` 中的 Owner 密码登录；Server 使用端口 `3001`。这已足够进行前端和控制平面开发。
 执行 Work 另需明确的模型设置与 mTLS Temporal 配置；启动 API 不会创建引擎。已有 checkout 应保留原 `.env` 和数据目录。
 使用临时数据库复现 CI 的全新启动流程，见 [Server 启动冒烟说明](apps/server-python/README.zh-CN.md)。
@@ -108,12 +108,9 @@ Server/Web；Node 完成登记后按需另启。前端和控制平面开发不�
 `npm run migration:plan --workspace @openbot/db -- --name describe_change`，并遵循
 [手写迁移契约](docs/DATABASE.zh-CN.md#编写迁移)。自动 `generate` 已停用。
 
-提交 PR 前运行：
-
-```bash
-npm run check
-npm audit
-```
+提交 PR 前遵循[适用验证规则](#ai-开发入口与验证)：实现和脚本修改须运行 `npm run check`，
+文字与贡献指令修改运行适用的文档和工作流检查。运行 `npm audit` 并满足必要的安全和托管 CI 门；
+定向验证不豁免这些要求。
 
 开发数据库暂时不用时运行 `npm run db:stop`。
 
@@ -193,8 +190,7 @@ manifest 与锁文件。触发 CI 前填写 PR 的七项研究字段，执行干
 | 新依赖/版本、公共协议、授权/安全、持久数据边界或重大架构 | 受影响选择的针对性审查、版本固定和负向/兼容测试 |
 | 纯拼写、忠实翻译、段落排版 | 以下有界文字豁免，行为和主张不变 |
 
-已有 Web 组件、runtime `bounds.py`/`catalog.py`/`errors.py` 或测试中的合格修复，可将
-`## Open-source research` 下七项替换为：
+已接受设计内的普通内部修复，无论位于哪个目录，都可将 `## Open-source research` 下七项替换为：
 
 ```markdown
 - Research reuse: docs/research/channel-member-layout.md
@@ -203,13 +199,22 @@ manifest 与锁文件。触发 CI 前填写 PR 的七项研究字段，执行干
 - Source copied or substantially adapted: no
 ```
 
-引用实际相关决定，不默认套用示例。CI 读取实际提交 base/head 的不可变 blob；缺证据、混用表单、
-新产品文件、import 变化、依赖、边界所有者、规则/提示词及未知路径均不能走捷径。这是保守便利，
-不是语义证明或审批；审查仍需追到消费者，识别合格路径内隐藏的权限或协议变化。
+引用实际相关决定，不默认套用示例。内部 import、提取辅助模块、旧源码退出或目录不同，本身都不
+要求另一张研究表。普通源码、测试、样式和说明文档共用此路径；npm 命令接线在依赖、运行时、公开
+导出及安装/发布 hook 不变时也可复用。
 
-其他普通修复（包括边界文件）仍可填写原七项，引用已有审查与固定版本，**不要求新开研究循环**。
-只有假设变化才重开相关决定；新增边界使用同一表单提供新针对性证据，源码引入保留许可/声明。
-研究模板先判断触发与复用，不因行为变化就新建报告。
+CI 读取有界的 base/head 不可变 blob，包括移动两端；缺失内容、混合表单、二进制/软链接及可执行位
+变化仍拒绝。已知权限、凭据、预算、恢复、存储和公开契约所有者，以及依赖/锁、schema、安全声明、
+CI 和指令/prompt 变化，仍要求针对性审查。错误列出文件及原因；完整表可引用已有决定及固定版本，
+不要求重新调查。
+
+这些是保守的证据检查，不是语义证明或批准。独立源码审查和必需测试必须追踪**每个**修改的真实
+消费者：普通 helper 中新增权限、持久化、公开协议或重大架构变化，也须针对性依据，不能靠复用
+标签隐藏。仅重开变化的假设；复制/改编源码保留许可与声明审查。已有证据足够时，两条路径都不
+要求新建 ADR 或重复研究记录。
+
+重要且持久的决定确需 ADR 时，按决定调整[提纲](docs/decisions/TEMPLATE.md)。审查理由、后果及
+必要来源，不按编号或目录要求固定标题；现有 ADR 无须迁移格式。
 
 普通文字行为/主张不变时，可替换为：
 
@@ -225,6 +230,7 @@ manifest 与锁文件。触发 CI 前填写 PR 的七项研究字段，执行干
 
 ### AI 开发入口与验证
 
+[开发入口](.agents/README.zh-CN.md)链接已有工作流与职责。
 按[AGENTS](AGENTS.zh-CN.md) → [仓库地图](docs/REPOSITORY_MAP.zh-CN.md)相关路线 → 局部规则、契约、
 消费者和测试阅读。`.agents/skills` 提供 `openbot-change`、`openbot-check`、`openbot-ui`、
 `openbot-review`，只选择当前工作流。这些是仓库开发指令，不是 Employee 技能，不得打进产品载荷。
@@ -238,9 +244,10 @@ AGENTS 链接的 SKILL.md，记录实际生效方式。这里未配置 Claude �
 不代表纯文字。纯文字/指令运行适用检查；脚本/实现修改交接前仍须 `npm run check`。必要云端及
 发布/迁移/安全门不变，仅通过反例验证的 CI 选择器可以声明某 lane 不适用。记录测试数、缓存、跳过和缺失环境。
 
-升级只维护[一份交接](docs/REPOSITORY_UPGRADE_PLAN.md)。UI 使用[既有设计索引](docs/design/README.zh-CN.md)、
-tokens/组件及受影响状态。C1 新会话验收定位 UI、Python 核心和跨语言任务；C3 才执行完整贡献流程，
-不能把定位成功当作后者完成。
+[已完成升级记录](docs/REPOSITORY_UPGRADE_PLAN.md)保留带日期的证据和限制，不是常驻 C1/C2/C3
+待办。以当前请求和 checkout 为起点，保留本地结案记录。UI 使用
+[既有设计索引](docs/design/README.zh-CN.md)、现有 tokens/组件及受影响状态。
+发现/读取验收只证明可以找到职责和检查，不代表实现、渲染验收或托管 CI 已完成。
 
 ## 提交 Pull Request
 
@@ -248,7 +255,8 @@ tokens/组件及受影响状态。C1 新会话验收定位 UI、Python 核心和
 2. 一个 PR 只解决一条验收路径；已有 Issue 时关联。可复现的小修复或文档纠正可以直接提交 PR，
    较大功能先用 Issue 对齐范围。
 3. 在最低有效边界加测试；跨组件行为再补集成测试。
-4. 运行 `npm run check`，并记录真实设备、浏览器或辅助技术证据。
+4. 运行[适用检查](#ai-开发入口与验证)，实现/脚本修改包含 `npm run check`；
+   记录真实设备、浏览器或辅助技术证据。
 5. 用户可见行为变化时，同步英文权威文档和维护中的翻译。
 6. 填完 PR 模板中所有适用部分。
 7. 保留上游版权和许可证声明，并说明是否复制或实质改编源码。

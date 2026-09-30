@@ -14,15 +14,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, create_model,
 from pydantic.json_schema import SkipJsonSchema
 
 from .models import Bot, BotAppearance
-
-# ECMAScript WhiteSpace + LineTerminator, exactly the characters String.prototype.trim removes.
-# TAB 0009, LF 000A, VT 000B, FF 000C, CR 000D, SP 0020, NBSP 00A0, OGHAM 1680, 2000-200A,
-# LS 2028, PS 2029, NNBSP 202F, MMSP 205F, IDEO 3000, BOM FEFF.
-_ECMASCRIPT_WHITESPACE = (
-    "\u0009\u000a\u000b\u000c\u000d\u0020\u00a0\u1680"
-    "\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a"
-    "\u2028\u2029\u202f\u205f\u3000\ufeff"
-)
+from .text_compat import ECMASCRIPT_WHITESPACE
 
 # The UUID acceptance set of the installed Zod's z.string().uuid(): RFC 9562 §4.1 layout restricted to
 # versions 1-8 and variants 8/9/a/b, plus the Nil (§5.9) and Max (§5.10) literals. The text coincides
@@ -55,7 +47,7 @@ def _bounded_text(
     """
 
     def validate(value: str) -> str:
-        trimmed = value.strip(_ECMASCRIPT_WHITESPACE)
+        trimmed = value.strip(ECMASCRIPT_WHITESPACE)
         if minimum > 0 and trimmed == "":
             raise ValueError(required_message or f"Too small: expected string to have >={minimum} characters")
         if len(trimmed) > maximum:

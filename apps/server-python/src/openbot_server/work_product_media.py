@@ -14,7 +14,8 @@ from .model_media import (MAX_MANIFEST_BYTES, MIMES, MediaItem, PreparedModelMed
 from .task_store import attachment_ids, TooManyAttachments
 from .work_model_activity import operation_key
 from .work_product_binding import ProductWorkBinding
-from .work_product_reads import _hash
+from .work_product_attachment_reads import read_attachment
+from .work_tool_results import encode_result
 from .work_values import InvalidWork, WorkConflict, canonical
 
 _EVENT = 'model.media_bound'
@@ -71,11 +72,11 @@ class ProductWorkMedia:
                            else self.files.read(source['channelId'],identity))
                 if item.get('deletedAt'): raise WorkConflict('attachment_unavailable')
                 entry = dict(id=identity, name=item['name'], mediaType=item['mediaType'],
-                    sizeBytes=item['sizeBytes'], sha256=item['sha256'], metadataSha256=_hash(item),
+                    sizeBytes=item['sizeBytes'], sha256=item['sha256'], metadataSha256=encode_result(item)[1],
                     mode='binary', derivedSha256=None)
                 if item.get('processing') or item['mediaType'] == 'text/plain':
-                    snapshot, _ = self.reads._attachment(context, source,
-                        dict(attachmentId=identity, offset=0, limit=1))
+                    snapshot = read_attachment(self.files, context, source,
+                        dict(attachmentId=identity, offset=0, limit=1)).snapshot
                     entry.update(mode='derived' if item.get('processing') else 'text',
                                  derivedSha256=snapshot['derivedSha256'])
                 elif item['mediaType'] not in MIMES:

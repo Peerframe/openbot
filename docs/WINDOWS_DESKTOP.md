@@ -1,32 +1,42 @@
 # Windows Desktop
 
-Current source scope: only macOS arm64 bundles the local Python service. Windows, Intel Mac and Linux are remote clients. Earlier local-Server installation/qualification records below are historical, not claims for new builds. Existing installations, encrypted settings and databases are retained.
-
-Windows x64 Desktop can run its own local OpenBot Server and PostgreSQL, or connect to an existing Server. The local process belongs to the signed-in user's Desktop session. Installing it does not enroll a Worker Host or grant computer-control authority.
+Windows x64 Desktop is a remote client in current builds. Connect it to an existing OpenBot
+Server; only macOS arm64 currently bundles the local Python service. Installing Desktop does not
+enroll a Worker Host or grant computer-control authority.
 
 ## Install and run
 
-Use the versioned `openbot-desktop-<version>-win32-x64.exe` and verify its SHA-256 against that release's `SHA256SUMS`. The NSIS installer installs per user without requesting administrator rights. It creates a Start menu shortcut and preserves application data on uninstall. Unsigned development installers retain Windows trust prompts; OpenBot does not bypass SmartScreen, policy or antivirus controls.
+Use the versioned `openbot-desktop-<version>-win32-x64.exe` and verify its SHA-256 against that
+release's `SHA256SUMS`. NSIS installs per user, creates a Start menu shortcut and preserves
+application data on uninstall. Development installers retain Windows trust prompts; OpenBot does
+not bypass SmartScreen, policy or antivirus controls.
 
-Open OpenBot and choose this computer as the Server. The application initializes a private PostgreSQL 17 cluster, starts the bundled Server on loopback, migrates its schema and signs in the local Owner. Configure a model through Settings before asking a Bot to work. There is no Docker, PowerShell installer, separately installed Node.js or public network listener required for this local mode.
+Open OpenBot, configure the existing Server address and sign in to that Server. Current Windows
+packages contain no local PostgreSQL or Server runtime and do not initialize a local database.
+The installer itself needs no Internet connection after download; using the remote Server requires
+access to that Server. See [Desktop Server connection](DESKTOP_ONBOARDING.md).
 
-The installer itself needs no Internet connection once downloaded. A configured remote model or external tool can require network access. The application package includes the exact PostgreSQL binaries; it never downloads database executables on first use.
+## Retained data
 
-Windows uses PostgreSQL’s official restricted-token launcher even when Desktop inherits an administrator token. The private database log is `postgres.log` beside the cluster; it is local diagnostic data and is not uploaded. Stop operations verify the database process identity before acting.
+Existing installations, encrypted settings and databases are preserved. Historical local-Server
+profiles contain `local-server/bootstrap.json`, PostgreSQL data, uploaded objects and model settings.
+Keep those files together, under the original Windows login: copying a DPAPI-encrypted bootstrap to
+another login is not a supported migration. Current remote clients do not restart that retired local
+Server or automatically migrate its database. See [database recovery](DATABASE.md).
 
-## Data and lifecycle
+DPAPI protects data under the Windows login boundary; it does not protect against malicious software
+running as that same user. Backup and migration must retain the existing credential and data rules.
 
-Data lives below Electron's per-user application-data directory in `openbot/local-server`: PostgreSQL data, uploaded objects, model settings and an encrypted bootstrap file. Electron `safeStorage` uses Windows DPAPI for bootstrap encryption. The directory gets an owner-only inheritable NTFS DACL; existing unexpected access is rejected rather than silently repaired. DPAPI is a user-login boundary, not protection from malicious software running under the same login.
+## Current installation gate (Windows x64)
 
-Normal quit first asks the Server to stop through its private parent process channel, then invokes PostgreSQL's Windows-aware `pg_ctl stop`. Reopening reuses the same encrypted identity and database. Before manually backing up, quit OpenBot and verify its PostgreSQL process has stopped. Keep the encrypted bootstrap with the database; copying it to another login is not a supported migration. Major PostgreSQL version changes require an explicit migration.
+The current [CI definition](../.github/workflows/ci.yml) builds NSIS and runs
+[check-windows-desktop-install.ps1](../scripts/check-windows-desktop-install.ps1). It verifies
+per-user installation and in-place upgrade, installed ASAR identity, absence of the retired
+`native-runtime`, two independent Electron lifetimes with real DPAPI encryption/decryption and
+stable ciphertext, process identity, uninstall and fixture cleanup. It uses only a disposable
+profile. The separate native ACL tests retain their real NTFS negative checks.
 
-## Verification and current limits
-
-The Windows CI job builds and makes NSIS, installs it into a unique temporary directory, verifies the installed ASAR hash, exercises the **installed** native runtime with Electron DPAPI, real PostgreSQL, schema migration, Owner authentication, one same-process retained restart, **ten independent Electron process cold starts** (new process identity via start time + path, prior children ended, PG row + bootstrap ciphertext digest persistence, Owner login counts), and uninstall. The separate native ACL test checks actual NTFS ACLs. Read the actual CI run result for the source commit; adding a workflow is not evidence it passed.
-
-### How to run the cold-start acceptance gate locally (Windows x64)
-
-Prerequisites: a built per-user NSIS installer, the matching packaged `OpenBot-win32-x64` directory, the pinned Electron development executable, and the smoke script from this repository. Use only disposable temp directories (the script creates its own under `%RUNNER_TEMP%` or fails closed).
+Use a built installer, its matching packaged directory and the pinned development Electron:
 
 ```powershell
 $version = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).version
@@ -38,32 +48,34 @@ $env:RUNNER_TEMP = $env:TEMP
   -Installer "$PWD/apps/desktop/out/installers/win32-x64/openbot-desktop-$version-win32-x64.exe" `
   -PackagedDirectory "$PWD/apps/desktop/out/OpenBot-win32-x64" `
   -Electron $electron `
-  -SmokeScript "$PWD/apps/desktop/scripts/windows-native-smoke.mjs"
+  -SmokeScript "$PWD/apps/desktop/scripts/windows-remote-smoke.ts"
 ```
 
-Pass criteria: the script prints `PASS: native smoke receipt verified (postgresql,migrations,dpapi,owner-login,retained-data,stop,restart,cleanup,cold-start-10)` and completes uninstall. Same-process controller stop/start loops alone are **not** cold-start evidence.
+The gate must complete both remote safeStorage lifetimes and uninstall/cleanup. Its allowlisted
+`summary.json` records process identities and ciphertext digests, excluding raw ciphertext,
+passwords and fixture profiles. The CI artifact retains the historical name
+`windows-desktop-cold-start-<source SHA>`; inspect its schemaVersion2 and remote receipts rather
+than inferring ten PostgreSQL cold starts from that name. Read the actual result for the source
+commit: a workflow definition alone is not execution evidence. This cleanup has not run native
+Windows installation, DPAPI or installed-app GUI on the current source.
 
-The gate retains `summary.json` in the printed evidence directory (or the explicit
-`-EvidenceDirectory`). CI uploads it as `windows-desktop-cold-start-<source SHA>`,
-including on failure after the gate starts. It records bootstrap plus ten cold
-rounds, observed Electron/Server/PostgreSQL identities, successful login counts,
-the unchanged bootstrap ciphertext digest, process-ownership negative checks,
-and uninstall outcome. Only these projected fields are retained; fixture
-profiles, raw ciphertext, passwords, and diagnostic logs are not uploaded.
-
-
-Portable harness unit tests (Linux/macOS/Windows):
+Portable identity/helper tests remain available:
 
 ```bash
-npm test --workspace @openbot/desktop -- scripts/windows-native-smoke-harness.test.mjs
+npm test --workspace @openbot/desktop -- scripts/smoke-process-identity.test.ts
 ```
 
-The development host for earlier Windows Desktop work was macOS. Historical [hosted Windows execution](https://github.com/yxflc11/openbot/actions/runs/34497646235) passed the pre-cold-start receipt.
+## Historical local-Server evidence and limits
 
-### Release-source cold-start evidence
+The earlier [pre-cold-start run](https://github.com/yxflc11/openbot/actions/runs/34497646235) and
+[main CI34768475942](https://github.com/yxflc11/openbot/actions/runs/34768475942) are historical.
+The latter record is for `64569ece36141fa112266cdf93e2694bc88a632b`: one bootstrap plus ten independent
+Electron cold starts, twelve Owner logins, retained PostgreSQL rows/bootstrap ciphertext, process
+identity negatives and cleanup. It does not qualify the current remote-client source or its GUI.
+The old `windows-native-smoke.mjs` entry and Windows PostgreSQL build chain have retired; use the
+current gate above. Retain source-build licensing/provenance records for previous recipients; see
+[the historical research](research/windows-desktop-completion.md).
 
-[Main CI 34768475942](https://github.com/yxflc11/openbot/actions/runs/34768475942) passed for source `64569ece36141fa112266cdf93e2694bc88a632b`. Its independently checked Windows Server 2025 x64 receipt confirms one bootstrap plus ten cold starts across eleven independent Electron lifetimes, twelve successful Owner logins, DPAPI decryption, retained database rows and unchanged bootstrap ciphertext digest, prior child shutdown, per-user NSIS uninstall, fixture removal and verified cleanup. Process-identity negative checks and cross-runtime identity checks also passed. These are native hosted-runtime checks, not installed-app GUI or Windows 10/11 real-device acceptance.
-
-The smoke harness uses the pinned development Electron executable with the ASAR-verified installed native runtime and the same controller. It checks the initial bootstrap plus ten independent cold starts, Owner login, DPAPI decryption, retained database rows and ciphertext digest, prior child shutdown, uninstall and fixture cleanup. It does not drive the installed application window. Manual Windows desktop/SmartScreen, code signing, accessibility and real computer-control conformance remain separate acceptance steps. Windows ARM64 is not a supported package target.
-
-The Windows Worker Host service remains a separately reviewed component. Its SCM installer, identity and real-device acceptance cannot be inferred from Desktop installation. Windows PostgreSQL is built from the pinned official 17.11 source using Meson/MSVC with optional dependencies disabled and a static MSVC runtime. Packaging requires the source-build manifest and verifies every installed file; the former npm binary package is not accepted. Review the CI provenance, bundled licenses and code-signing result before advertising an attested production binary; see [research](research/windows-desktop-completion.md). No new macOS or Linux adaptation is included in this milestone.
+Windows ARM64, Windows 10/11 real-device GUI, signing, SmartScreen, accessibility and computer-control
+conformance remain separate evidence gates. The Windows Worker Host service is separately reviewed;
+Desktop installation cannot qualify its SCM identity or enrollment lifecycle.

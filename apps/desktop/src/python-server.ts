@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { lstat, mkdir, readFile, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, sep } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
+import { discardBody, isJsonContentType, readBoundedText } from "./bounded-response.js";
 import type { ManagedServerProcess } from "./native-server.js";
 
 const format = "openbot.desktop.python-control/v1";
@@ -229,43 +230,30 @@ async function fixedProcess(
   });
 }
 
-async function healthy(origin: string): Promise<boolean> {
+export async function verifyPythonProductHealth(origin: string): Promise<boolean> {
   let response: Response | undefined;
   try {
     response = await fetch(`${origin}/health`, {
       redirect: "error",
       signal: AbortSignal.timeout(1000),
     });
-    if (
-      !response.ok ||
-      !response.headers.get("content-type")?.startsWith("application/json") ||
-      !response.body
-    )
+    if (!response.ok || !isJsonContentType(response.headers.get("content-type")) || !response.body)
       return false;
-    const reader = response.body.getReader();
-    let bytes = 0;
-    const chunks: Uint8Array[] = [];
-    try {
-      while (true) {
-        const part = await reader.read();
-        if (part.done) break;
-        bytes += part.value.length;
-        if (bytes > 4096) return false;
-        chunks.push(part.value);
-      }
-    } finally {
-      await reader.cancel().catch(() => undefined);
-    }
-    const value = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    const value: unknown = JSON.parse(await readBoundedText(response, 4096));
     return (
-      value?.ok === true &&
+      typeof value === "object" &&
+      value !== null &&
+      "ok" in value &&
+      value.ok === true &&
+      "service" in value &&
+      "phase" in value &&
       value.service === "openbot-server" &&
       value.phase === "python-product-candidate"
     );
   } catch {
     return false;
   } finally {
-    await response?.body?.cancel().catch(() => undefined);
+    discardBody(response?.body);
   }
 }
 
@@ -344,7 +332,7 @@ export async function launchPythonProductServer(
   try {
     const deadline = Date.now() + maximumStartupMs;
     while (alive && Date.now() < deadline) {
-      if (await healthy(`http://127.0.0.1:${env.OPENBOT_CONTROL_PORT}`)) {
+      if (await verifyPythonProductHealth(`http://127.0.0.1:${env.OPENBOT_CONTROL_PORT}`)) {
         if (alive) return managed;
         break;
       }

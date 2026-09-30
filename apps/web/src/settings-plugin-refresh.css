@@ -277,6 +277,24 @@
 .plugin-refresh .plugin-import-empty button {
   margin: 16px 10px 0 0;
 }
+.plugin-content-scope {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  font-size: 13px;
+}
+.plugin-content-scope select {
+  max-width: 220px;
+  margin-left: 8px;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+
 .settings-refresh button:focus-visible,
 .plugin-refresh button:focus-visible,
 .plugin-target select:focus-visible {

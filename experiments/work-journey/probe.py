@@ -133,7 +133,7 @@ async def qualify(tmp, dsn, server, *, only_handoff=False, only_case=None):
     artifact_root.mkdir(mode=0o700)
     migration = tmp / 'migration.json'
     migration.write_text(json.dumps({'dsn': dsn})); migration.chmod(0o600)
-    result = subprocess.run(['node', str(HERE / 'migrate.mjs'), str(migration)], cwd=REPO,
+    result = subprocess.run(['node', str(HERE / 'migrate.ts'), str(migration)], cwd=REPO,
         env=CLEAN_ENV, capture_output=True, text=True, timeout=40)
     assert result.returncode == 0, result.stderr.replace(dsn, '[owned database]')
     api = API(tmp, dsn, artifact_root)

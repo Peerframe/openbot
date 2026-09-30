@@ -7,8 +7,8 @@ import type {
   WorkspaceSnapshot,
 } from "@openbot/domain";
 import type { RealtimeConnectionState } from "../api";
+import { runStatusSummary } from "../run-state";
 import { ArtifactDownloadLink } from "./ArtifactCard";
-import { runStatusSummary } from "./NativeRunControls";
 import "../context-rail.css";
 import { isActiveRun, runStatusLabel } from "../run-state";
 import { ApprovalCard } from "./ApprovalCard";

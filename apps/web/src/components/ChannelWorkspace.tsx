@@ -52,12 +52,13 @@ import { RichMessage } from "./RichMessage";
 import { RunSteering } from "./RunSteering";
 import { VoiceRecorder } from "./VoiceRecorder";
 import "./ChannelMessagePresentation.css";
+import { runStatusSummary } from "../run-state";
 import { ArtifactCard } from "./ArtifactCard";
 import { ChannelMembersMenu } from "./ChannelMembersMenu";
 import { ComposerAttachmentPicker } from "./ComposerAttachmentPicker";
 import { HashIcon, PlusIcon, SendIcon, SkillIcon } from "./Icons";
 import { MessageAttachments } from "./MessageAttachments";
-import { NativeRunControls, runStatusSummary } from "./NativeRunControls";
+import { NativeRunControls } from "./NativeRunControls";
 import { OpenBotMark } from "./OpenBotMark";
 import { PluginCallApprovals } from "./PluginCallApprovals";
 import { RobotAvatar } from "./RobotAvatar";
@@ -634,9 +635,6 @@ export function ChannelWorkspace({
                       ? (collaboration.childrenByParent.get(message.runId) ?? [])
                       : []
                   }
-                  progress={
-                    message.runId === undefined ? undefined : latestProgressByRun.get(message.runId)
-                  }
                   onReply={() => {
                     conversation.edit({
                       replyTo: message,
@@ -1052,7 +1050,6 @@ function MessageRow({
   delegatedRun,
   parentRun,
   childRuns,
-  progress,
   onReply,
   onShowMessage,
   onInspectRun,
@@ -1073,7 +1070,6 @@ function MessageRow({
   delegatedRun: CollaborationRun | undefined;
   parentRun: Run | undefined;
   childRuns: CollaborationRun[];
-  progress: RunProgress | undefined;
   onReply(): void;
   onShowMessage(id: string): void;
   onInspectRun(runId: string): void;

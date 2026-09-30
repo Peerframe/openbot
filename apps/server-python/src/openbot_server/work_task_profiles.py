@@ -8,7 +8,7 @@ from copy import deepcopy
 
 from psycopg.types.json import Jsonb
 
-from .identity_inputs import _ECMASCRIPT_WHITESPACE
+from .text_compat import ECMASCRIPT_WHITESPACE
 from .model_connections_inputs import ModelSelection
 from .work_values import WorkConflict, canonical, text
 
@@ -157,8 +157,8 @@ async def task_profile_prompt(db, context, *, binding, files=None):
     row=await (await db.execute('SELECT t.created_at,b.id,left(b.name,65) AS name,left(b.role,161) AS role,'
         'left(b.description,2001) AS description,b.profile_revision FROM work_tasks t JOIN bots b ON b.id=t.bot_id '
         'WHERE t.id=%s FOR SHARE OF b',(context.task_id,))).fetchone()
-    if (not row or row['id']!=context.bot_id or not row['name'].strip(_ECMASCRIPT_WHITESPACE)
-            or len(row['name'])>64 or not row['role'].strip(_ECMASCRIPT_WHITESPACE)
+    if (not row or row['id']!=context.bot_id or not row['name'].strip(ECMASCRIPT_WHITESPACE)
+            or len(row['name'])>64 or not row['role'].strip(ECMASCRIPT_WHITESPACE)
             or len(row['role'])>160 or len(row['description'])>2000):
         raise WorkConflict('product_profile_invalid')
     result=dict(bot=dict(id=row['id'],name=row['name'],role=row['role'],description=row['description'],

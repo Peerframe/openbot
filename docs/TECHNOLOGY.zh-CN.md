@@ -2,70 +2,78 @@
 
 [English](TECHNOLOGY.md) · [简体中文](TECHNOLOGY.zh-CN.md)
 
-审查日期为 2026-09-04。精确版本是本次审查快照；升级必须通过单独、经过测试的依赖变更，不能
-静默浮动。
+审查日期为 2026-09-28，对照本检出中的 lockfile 与清单。精确版本是本次审查快照；升级必须通过
+单独、经过测试的依赖变更，不能静默浮动。关于现行布局与本地搭建，优先阅读
+[仓库地图](REPOSITORY_MAP.zh-CN.md)、[贡献指南](../CONTRIBUTING.zh-CN.md) 以及各入口 README，
+而不要在本文件中重复容易过期的安装或平台状态。
 
 ## 一句话决定
 
-OpenBot 使用 TypeScript 编写共享产品代码，以 Electron 提供可安装 Desktop 客户端，以 React 和
-Vite 共享界面，以 Node.js 运行 Server 和可移植 Worker 逻辑，以 PostgreSQL 保存权威状态，并且
-只在操作系统确实需要时使用很薄的 Swift 或 C# 适配器。
+OpenBot 以 Python 实现产品 Server 控制面与有界 Agent harness，以 TypeScript 实现 Web、Electron
+Desktop 外壳、保留的 Node 辅助逻辑，以 React 与 Vite 共享界面，以
+PostgreSQL 保存权威状态，并且只在操作系统确实需要时使用很薄的 Swift 或 C# 适配器。
+
+## 当前技术栈与历史决定
+
+| 关注点 | 当前产品默认 | 说明 |
+| --- | --- | --- |
+| 业务 Server | `apps/server-python` 中的 Python（FastAPI/Starlette/Uvicorn） | `apps/server` 已退役；见其 README。 |
+| Agent 执行 harness | Python 包 `packages/harness`（`openbot-agent-runtime`） | 提出工作；控制面保留权威与持久事实。 |
+| 共享 UI | `apps/web` 中的 TypeScript、React、Vite | 同时作为 Desktop renderer。 |
+| Desktop 外壳 | Electron main/preload，围绕共享 Web UI | 在受支持的 Desktop 路径上监督 Python 产品载荷。 |
+| 保留的 Node 面 | Node Worker Host、Providers、协议辅助与工具链 | 不是第二个业务 Server。 |
+| 冻结的 TypeScript Server | `tests/oracles/legacy-server` | 仅作比较输入；绝不是产品回退。 |
+| 持久化 | PostgreSQL，迁移位于 `packages/db` | 持久状态权威不变。 |
+| 可选持久 Work 引擎 | 显式配置时的 Temporal 组合 | 普通 API 启动不会创建该引擎。 |
+
+历史 Desktop 基础 ADR 与调研仍是那些决定的记录；它们并不表示 Node/Hono Server 仍是现行控制面。
+迁移证据见历史文档 [MIGRATION_HANDOFF](MIGRATION_HANDOFF.zh-CN.md)。长期保留向 TypeScript
+收敛的方向，先完成有实际收益的外围替换。核心替换需要单独经过验证的切换；本轮清理不迁移
+Python Server 或 harness 核心。
 
 ## 产品入口
 
 | 入口 | 用户安装或打开的内容 | 角色 |
 | --- | --- | --- |
-| OpenBot Desktop | 在 Windows、macOS 或 Linux 上安装各平台对应的软件包，但使用同一个 OpenBot 产品 | 始终是 Client；也可以把这台电脑配置成 Server、Worker Host 或同时承担两者 |
+| OpenBot Desktop | 在 Windows、macOS 或 Linux 上安装各平台对应的软件包，但使用同一个 OpenBot 产品 | 始终是 Client；在受支持的前提下也可以把这台电脑配置成 Server、Worker Host 或同时承担两者 |
 | OpenBot Web | Server 托管的响应式 Web 应用 | 完整的远程 Client，也是没有安装 Desktop 的模块化自部署用户的主要 Client |
 | OpenBot Server | 由 Desktop 引导安装，或由用户独立部署的服务 | 身份、频道、路由、策略、审批、审计和持久状态的唯一权威 |
 | OpenBot Worker Host | 由 Desktop 引导安装，或由用户独立部署的服务 | 向 Server 提供已经声明的电脑能力；永远不会成为第二个权威 |
 | Agent 适配器 | 由 Server 管理的 OpenBot、Hermes、Pi、OpenClaw 或未来 Agent 连接 | 执行有界委派任务；不能自行取得频道、电脑、凭证或审批 |
-| 插件 | 未来通过能力范围明确的插件系统安装并审核的软件包 | 可以扩展 UI、主题、频道、Agent、工具、Provider 和自动化，但不能绕过 Server 策略 |
+| 插件 | Server 管理且经过明确授权的 MCP 连接 | 当前工具、资源、提示词和隔离 App 遵循[插件契约](PLUGINS.zh-CN.md)；未来扩展方向不表示已经实现 |
 
-Desktop 首次引导提供同一产品的四种组合：
-
-1. **使用 OpenBot：**仅安装 Client，并连接已有 Server。
-2. **使用并工作：**在这台电脑上同时启用 Client 和 Worker Host。
-3. **托管 OpenBot：**在这台电脑上启用 Client 和 Server，Worker Host 可选。
-4. **高级自部署：**独立安装 Server 与 Worker 服务，再使用 Web 或 Desktop。
-
-“我会再添加五台电脑”只会生成五台设备的配置清单。它不是授权数量限制，也不会安装不同的
-应用。每台 Worker 电脑仍然可以作为用户正常使用 OpenBot 的 Client。
-
-目前实现的 Desktop 引导已经能把四种组合保存为严格的本地安装计划，生成可见清单，支持规划最多
-100 台 Worker 电脑，并在重启后恢复。这个数字只是界面的安全上限，不是授权限制。下一屏会接收一个
-已有 Server origin，验证 `/health`、显示原生确认、只保存这个公开 origin，然后打开共享的登录和
-频道界面。远程 Server 必须使用 HTTPS；本机开发可以使用 HTTP。更换 Server 会清除 Desktop 的
-独立浏览器 Session。保存计划本身仍不会产生副作用。Owner 登录并明确开始本机 Worker 配置后，
-已经实现的 macOS 适配器会先检查固定内嵌 companion，在 main process 中申请十分钟有效的单次
-token，再由 Swift 组件兑换 token、把绑定 Server 的身份存入 Keychain，并登记 LaunchAgent。
-renderer 只接收白名单内的真实状态。签名分发和受控真实设备证据仍未完成，Windows/Linux Desktop
-服务适配器也尚未实现。
+Desktop 首次引导仍提供同一产品的四种组合（仅 Client；Client 加 Worker Host；Client 加 Server 且
+Worker Host 可选；高级自部署）。清单上限、Server origin 确认以及原生 Worker 登记细节写在现行
+Desktop 文档中，而不是本基线：从 [Desktop 贡献者规则](../apps/desktop/AGENTS.md)、
+[Desktop 安装](DESKTOP_INSTALLATION.zh-CN.md) 与 [Desktop 引导](DESKTOP_ONBOARDING.zh-CN.md)
+开始。Desktop 的 Python 产品打包见
+[DESKTOP_PYTHON_CANDIDATE](DESKTOP_PYTHON_CANDIDATE.zh-CN.md)。
 
 ## 选择的语言与运行时
 
+下表版本对本检出有效；若某入口 README 声明更窄的已证明发布运行时，以该声明为准。
+
 | 边界 | 选择 | 原因 |
 | --- | --- | --- |
-| 共享领域、协议、Server、Worker、适配器和工具 | TypeScript `7.0.2` | 一个有类型的语言已经覆盖仓库主体，也是后来者最容易参与的路径。 |
-| 独立开发运行时 | Node.js `24.20.0` LTS | 这是 2026-09-04 审查时的当前 LTS；Current 版本不作为生产默认值。 |
-| Desktop 外壳 | Electron `44.2.0` | 可以复用现有 Web 技术栈，并在不同桌面系统上交付同一套经过测试的 Chromium/Node 基线。 |
-| Desktop 打包与加固 | `@electron/packager` `20.3.0` 与 `@electron/fuses` `2.1.3` | 这两个当前稳定 Electron 软件包提供 OpenBot 所需的窄打包/ASAR 和严格 fuse API，同时避开 Forge 7 不兼容且含已知漏洞的开发依赖图。安装器、签名和发布仍使用后续单独审查的发布适配器。 |
-| Desktop Server 传输与配置 | Electron `44.2.0` 自定义协议、专用 `Session.fetch`、类型化 IPC、`write-file-atomic` `8.0.0`，以及只在构建时验证清单的 `@electron/asar` `4.3.0` | 安装包 renderer 保持同源；main process 只连接一个已经验证并确认的 Server。归档只携带经过审查的精确运行时依赖闭包。 |
-| Desktop 安装计划 | React `19.2.8` 原生表单控件、类型化 Electron IPC 与现有受限 `write-file-atomic` 存储 | 四种角色组合与 Worker 清单只需要一个可辨识计划，不需要新增表单或状态机依赖。main process 验证并保存公开意图；renderer 不能把它变成服务权限。 |
-| Desktop 引导的 macOS Worker 配置 | 现有 Swift Worker Host、Apple `SMAppService` 与 Security、有界私有 stdin/stdout 信封和已鉴权 Electron Session | 一个顶层 Desktop 安装即可引导配置，同时由独立签名的原生 companion 继续掌管 Keychain 与服务生命周期。Node id 通过类型化 IPC 进入；登记 token 绝不进入 renderer 状态、argv、环境变量、文件或日志。 |
-| 共享 UI | React `19.2.8` 与 Vite `8.2.2` | 这些精确版本已经在当前仓库中锁定、构建并通过测试。 |
-| Server HTTP 运行时 | Node.js 上的 Hono | 当前 Server、安全中间件、SSE 和停机流程已经使用并测试这个边界。 |
-| 权威数据 | PostgreSQL 17 | 已有 migration、条件状态变更、调度、审批和审计需要唯一事务真相源。 |
+| 产品 Server / 控制面 | Python `>=3.12`，FastAPI `0.141.1`、Starlette `1.6.0`、Uvicorn `0.53.0`（`apps/server-python`） | 现行受信任业务控制层；Owner 身份、路由、策略、审批、审计与产品 HTTP。 |
+| 有界 Agent harness | Python `>=3.12` 包 `openbot-agent-runtime` `0.1.0`（`packages/harness`） | 既有有界执行循环与可选 Temporal 组合；权威留在控制面。 |
+| 共享领域、协议、Web、Desktop、Node 辅助面与工具链 | TypeScript `7.0.2` | UI、Electron、保留的 Node 协议与仓库工具链的有类型贡献路径。 |
+| 独立 JavaScript 开发运行时 | Node.js `24.20.0`（`.nvmrc` 固定；根 `engines` 仍允许已证明的 `^22.22.2` 线） | 当前仓库开发基线。已证明的 Worker Host 发布运行时只能通过单独的发布迁移升级，并附带哈希、SBOM 与回滚证据。 |
+| Desktop 外壳 | Electron `44.3.0` | 复用 Web 技术栈，并在不同桌面系统上交付同一套经过测试的 Chromium/Node 基线。 |
+| Desktop 打包与加固 | `@electron/packager` `20.3.0` 与 `@electron/fuses` `2.1.3` | 提供窄打包/ASAR 与严格 fuse API，同时避开 Forge 7 不兼容的开发依赖图。安装器、签名和发布仍使用后续单独审查的发布适配器。 |
+| Desktop Server 传输与配置 | Electron `44.3.0` 自定义协议、专用 `Session.fetch`、类型化 IPC、`write-file-atomic` `8.0.0`，以及只在构建时验证清单的 `@electron/asar` `4.3.0` | 安装包 renderer 保持同源；main process 只连接一个已经验证的 Server。归档只携带经过审查的精确运行时依赖闭包。 |
+| 共享 UI | React `19.3.0` 与 Vite `8.3.0` | 已在 `apps/web` 中锁定、构建并通过测试，供 Web 与 Desktop renderer 使用。 |
+| 权威数据 | PostgreSQL 17 | migration、条件状态变更、调度、审批和审计需要唯一事务真相源。 |
 | macOS 专属服务接入 | Swift | 只用于 Keychain、Service Management、与签名绑定的注册和其他 Apple 专属契约。 |
 | Windows 专属服务接入 | .NET 上的 C# | 只用于 SCM、Credential Manager、Job Object、安装器接入和其他 Windows 专属契约。 |
 | 外部 Agent 内部实现 | 保留上游语言 | Hermes 可以继续使用 Python，其他 Agent 也可以使用 Rust、Go 或 TypeScript；OpenBot 通过有类型的进程或网络适配器接入。 |
 
-Python、Rust 和 Go 都不是 OpenBot 核心语言。只有调研证明某个持续维护的上游方案比现有技术栈
-更好地解决了明确缺口，未来依赖才能引入其中一种语言。
+Rust 与 Go 不是 OpenBot 产品核心语言。Python 是 Server 与 harness 的核心。TypeScript 仍是 Web、
+Desktop 与保留 Node 辅助面的核心。只有调研证明某个持续维护的上游方案比现有技术栈更好地解决了
+明确缺口，未来依赖才能引入其他语言。
 
-已经生成来源证明的 Worker Host 发布运行时继续使用 Node.js `22.22.2`。只有单独的发布迁移重新
-生成哈希、SBOM、声明、安装包、一致性证据和回滚数据后，才能升级它。为新开发选择 Node.js 24
-不会静默改写已有发布证据。
+已退役的 Node/Hono Server 实现细节保留在冻结 oracle 与历史调研中；不要把它当作现行 Server HTTP
+运行时。
 
 ## Desktop 安全契约
 
@@ -102,15 +110,20 @@ Agent 使用的不可信网页运行在 Worker Provider 边界内，绝不会放
 - 每次运行时变更后重新执行打包、IPC 负向、更新、回滚和真实设备检查。
 - 只有安装包大小、内存、无障碍、安全维护或平台行为经过测量仍无法达到已接受要求时，才重新
   比较 Desktop 外壳。
+- Python Server 与 harness 的固定版本升级同样要求聚焦 PR、lockfile 证据和既有控制面/harness
+  检查，不能静默浮动。
 
 ## 对贡献者的影响
 
-大部分贡献者只需要 `.nvmrc` 固定的 Node.js LTS 与 npm。Desktop 贡献者还需要对应平台的打包工具链。
-Swift 只用于 macOS 适配器，.NET 只用于 Windows 适配器。开发外部 Agent 适配器不要求贡献者把
-Agent 重写成 TypeScript。
+大部分贡献者需要 `.nvmrc` 固定的 Node.js、npm，以及 Server/harness 工作所需的 Python 3.12+。
+请遵循 [贡献指南](../CONTRIBUTING.zh-CN.md)、
+[apps/server-python/README.md](../apps/server-python/README.md) 与
+[packages/harness/README.md](../packages/harness/README.md)。Desktop 贡献者还需要对应平台的打包
+工具链；见 [Desktop 贡献者规则](../apps/desktop/AGENTS.md)。Swift 只用于 macOS 适配器，.NET 只
+用于 Windows 适配器。开发外部 Agent 适配器不要求贡献者把 Agent 重写成 TypeScript。
 
-长期决定与候选证据见 [ADR-0041](decisions/0041-desktop-application-foundation.md)和
-[Desktop 基础调研](research/desktop-application-foundation.md)。已经实现的 Server 连接边界见
+长期 Desktop 基础决定与候选证据仍见 [ADR-0041](decisions/0041-desktop-application-foundation.md)
+和 [Desktop 基础调研](research/desktop-application-foundation.md)。已经实现的 Server 连接边界见
 [ADR-0042](decisions/0042-desktop-server-connection.md)及其
 [调研证据](research/desktop-server-connection.md)。四模式安装意图及其无副作用边界见
 [ADR-0043](decisions/0043-desktop-setup-intent.md)和

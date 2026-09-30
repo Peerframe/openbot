@@ -6,7 +6,8 @@ from typing import Annotated, Any, Literal
 
 from pydantic import AfterValidator, AnyUrl, BeforeValidator, ConfigDict, Field, TypeAdapter, create_model
 
-from .identity_inputs import ChannelBotId, _ECMASCRIPT_WHITESPACE, _bounded_text
+from .identity_inputs import ChannelBotId, _bounded_text
+from .text_compat import ECMASCRIPT_WHITESPACE
 
 PROTOCOL_VERSION = "0.9.0"
 MAX_PAYLOAD_BYTES = 32 * 1024 * 1024
@@ -67,12 +68,12 @@ def _constraints(value):
         raise ValueError("Invalid capability constraints.")
     result = {}
     for key, item in value.items():
-        if type(key) is not str or not 1 <= len(key.strip(_ECMASCRIPT_WHITESPACE)) <= 64:
+        if type(key) is not str or not 1 <= len(key.strip(ECMASCRIPT_WHITESPACE)) <= 64:
             raise ValueError("Invalid constraint key.")
         if not ((type(item) is str and len(item) <= 256) or type(item) is bool
                 or (type(item) in (int, float) and math.isfinite(item))):
             raise ValueError("Invalid constraint value.")
-        result[key.strip(_ECMASCRIPT_WHITESPACE)] = item
+        result[key.strip(ECMASCRIPT_WHITESPACE)] = item
     if len(result) > 16:
         raise ValueError("Too many constraints.")
     return result
@@ -94,9 +95,9 @@ def _evidence(value):
         raise ValueError("Invalid approval evidence.")
     result = {}
     for key, item in value.items():
-        if type(key) is not str or not 1 <= len(key.strip(_ECMASCRIPT_WHITESPACE)) <= 80:
+        if type(key) is not str or not 1 <= len(key.strip(ECMASCRIPT_WHITESPACE)) <= 80:
             raise ValueError("Invalid evidence key.")
-        result[key.strip(_ECMASCRIPT_WHITESPACE)] = item
+        result[key.strip(ECMASCRIPT_WHITESPACE)] = item
     if len(result) > 32:
         raise ValueError("Too many evidence fields.")
     stack, seen, nodes = [(result, 0)], set(), 0
@@ -135,7 +136,7 @@ def _evidence(value):
 
 def _url(value):
     # Retained z.string().url() is a syntactic URL check, never permission to fetch it.
-    value = value.strip(_ECMASCRIPT_WHITESPACE)
+    value = value.strip(ECMASCRIPT_WHITESPACE)
     if len(value) > 2048:
         raise ValueError("Artifact URL exceeds the bound.")
     TypeAdapter(AnyUrl).validate_python(value)

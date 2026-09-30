@@ -51,7 +51,7 @@ def main():
                 except psycopg.OperationalError: time.sleep(0.25)
             else: raise AssertionError('Disposable PostgreSQL did not start')
             config = temporary / 'config.json'; config.write_text(json.dumps({'dsn': dsn}))
-            run('node', str(ROOT / 'experiments/work-journey/migrate.mjs'), str(config))
+            run('node', str(ROOT / 'experiments/work-journey/migrate.ts'), str(config))
             with socket.socket() as sock:
                 sock.bind(('127.0.0.1', 0)); port = sock.getsockname()[1]
             origin = f'http://127.0.0.1:{port}'

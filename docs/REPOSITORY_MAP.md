@@ -5,7 +5,9 @@
 Start with [root rules](../AGENTS.md), then one route below and its local rules. Commands run from
 this repository root. Check paths against the actual checkout; follow imports/calls or a failing test
 when the route does not answer the question. Do not load all research records. Setup is in
-[CONTRIBUTING](../CONTRIBUTING.md); the [upgrade handoff](REPOSITORY_UPGRADE_PLAN.md) tracks C1→C2→C3.
+[CONTRIBUTING](../CONTRIBUTING.md); the [development entry](../.agents/README.md) links existing workflows.
+The [completed upgrade record](REPOSITORY_UPGRADE_PLAN.md) preserves C1→C2→C3 evidence, not a standing
+work queue. Resolve the current task and revision independently of those historical checkpoints.
 
 Python is the product control default. `apps/server` retains only a retirement README; the
 [frozen oracle](../tests/oracles/legacy-server/AGENTS.md) is comparison input only. Current runtime
@@ -43,7 +45,7 @@ source is `packages/harness`; core checks and product consumers install its type
 - Actual consumers: control [runtime host](../apps/server-python/src/openbot_server/runtime_host.py),
   [process](../apps/server-python/src/openbot_server/runtime_process.py),
   [Work runtime](../apps/server-python/src/openbot_server/work_product_runtime.py) and
-  [Desktop payload builder](../apps/desktop/scripts/prepare-native-server.mjs).
+  [Desktop payload builder](../apps/desktop/scripts/prepare-native-server.ts).
   Optional [Temporal composition](../packages/harness/src/openbot_agent_runtime/temporal_agent.py)
   has a different lifecycle; control owns [trusted ports](../apps/server-python/src/openbot_server/work_runtime_ports.py).
 - Tests: [limits/catalog](../packages/harness/tests/test_catalog_and_limits.py),
@@ -73,8 +75,11 @@ source is `packages/harness`; core checks and product consumers install its type
   oracle, not an active TS Server. Preserve missing/null, errors, bounds and unknown-field rejection.
 - Checks: `npm run oracle:build`, `apps/server-python/scripts/bootstrap.sh`, then
   `node apps/server-python/scripts/compare-runtime-wire.mjs` (synthetic, no DB/model).
-  For product HTTP also run `npm exec --workspace @openbot/web -- vitest run src/work-api.test.ts`
-  and the affected control tests. Node wire uses `npm run test --workspace @openbot/protocol`.
+  For product HTTP run `npm run contracts:test` and the affected control tests. This command builds
+  shared dependencies before the Python HTTP→Web fixtures, including on a cold checkout.
+  For an isolated Web regression, `npm exec --workspace @openbot/web -- vitest run src/work-api.test.ts`
+  assumes those dependencies have already been built. Node wire uses
+  `npm run test --workspace @openbot/protocol`.
   `npm run test:control:python` adds real disposable PostgreSQL and differential checks; Worker
   coverage additionally needs the documented `OPENBOT_TEMPORAL_TEST_PYTHON` environment.
 
@@ -142,7 +147,8 @@ The Node wire protocol remains owned by `packages/protocol`.
 Use `npm run ci:scope -- --local` for tracked/untracked work, or verified `--base SHA --head SHA`
 for a committed PR. `npm run check:affected` takes the same explicit arguments and runs only the
 validation lane; separate required jobs are printed. `npm run check` remains the repository total.
-The actual policy is [ci-scope](../scripts/ci-scope.mjs), with success-only
-[aggregation](../scripts/ci-results.mjs); counterexamples run via `npm run ci:check`. Read
-[contribution rules](../CONTRIBUTING.md#required-ci-completion) and the unique handoff's
-[producer/duty table](REPOSITORY_UPGRADE_PLAN.md#c3-check-duties-and-artifact-ownership) before CI work.
+The actual policy is [ci-selection](../scripts/ci-selection.ts), with success-only
+[aggregation](../scripts/ci-results.ts); counterexamples run via `npm run ci:check`. Read
+[contribution rules](../CONTRIBUTING.md#required-ci-completion) before CI work. The upgrade record's
+[historical producer/duty table](REPOSITORY_UPGRADE_PLAN.md#c3-check-duties-and-artifact-ownership)
+explains the accepted baseline; current scripts and workflows determine the applicable checks.

@@ -4,7 +4,9 @@
 
 从[根规则](../AGENTS.zh-CN.md)开始，只选下面相关路线和局部规则。命令都从仓库根目录运行。
 以当前 checkout 核对路径；不足时沿调用、import 或失败测试继续查，不预加载整个研究库。
-启动见[贡献指南](../CONTRIBUTING.zh-CN.md)，升级状态只在[交接](REPOSITORY_UPGRADE_PLAN.md)维护。
+启动见[贡献指南](../CONTRIBUTING.zh-CN.md)，[开发入口](../.agents/README.zh-CN.md)链接已有工作流。
+[已完成升级记录](REPOSITORY_UPGRADE_PLAN.md)保留 C1→C2→C3 证据，不是常驻待办；
+当前任务和版本需独立核对，不能从历史检查点推定。
 
 Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README；[冻结 oracle](../tests/oracles/legacy-server/AGENTS.md)
 只作比较输入。核心在 `packages/harness`，测试及真实消费者安装其带类型信息的 wheel。
@@ -39,7 +41,7 @@ Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README�
 - 消费者：控制层 [host](../apps/server-python/src/openbot_server/runtime_host.py)、
   [process](../apps/server-python/src/openbot_server/runtime_process.py)、
   [Work runtime](../apps/server-python/src/openbot_server/work_product_runtime.py) 和
-  [Desktop 打包](../apps/desktop/scripts/prepare-native-server.mjs)。可选
+  [Desktop 打包](../apps/desktop/scripts/prepare-native-server.ts)。可选
   [Temporal 组装](../packages/harness/src/openbot_agent_runtime/temporal_agent.py)有独立生命周期；
   [可信端口](../apps/server-python/src/openbot_server/work_runtime_ports.py)由控制层拥有。
 - 测试：[catalog/limits](../packages/harness/tests/test_catalog_and_limits.py)、
@@ -66,9 +68,12 @@ Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README�
   [比较脚本](../apps/server-python/scripts/compare-runtime-wire.mjs)对照冻结 TS oracle，不能把它当活跃 Server。
   保留 missing/null、错误码、大小限制和未知字段拒绝。
 - 命令：`npm run oracle:build`、`apps/server-python/scripts/bootstrap.sh`，再运行
-  `node apps/server-python/scripts/compare-runtime-wire.mjs`（合成数据，无 DB/模型）。HTTP 改动另跑
-  `npm exec --workspace @openbot/web -- vitest run src/work-api.test.ts` 及控制层相关测试；Node wire 跑
-  `npm run test --workspace @openbot/protocol`。`npm run test:control:python` 增加临时 PostgreSQL 与差分，
+  `node apps/server-python/scripts/compare-runtime-wire.mjs`（合成数据，无 DB/模型）。HTTP 改动跑
+  `npm run contracts:test` 及控制层相关测试；该命令在 Python HTTP→Web 夹具前构建共享依赖，
+  冷 checkout 也走此入口。只查 Web 局部回归时，
+  `npm exec --workspace @openbot/web -- vitest run src/work-api.test.ts` 要求已构建这些依赖。
+  Node wire 跑 `npm run test --workspace @openbot/protocol`。
+  `npm run test:control:python` 增加临时 PostgreSQL 与差分，
   Worker 覆盖还要按文档配置 `OPENBOT_TEMPORAL_TEST_PYTHON`。
 
 ## 控制与持久化
@@ -124,6 +129,7 @@ Work 创建／读取／取消的真实请求、snapshot 响应和错误由 `work
 
 本地已跟踪/未跟踪变化用 `npm run ci:scope -- --local`；已提交 PR 用已核实的 `--base SHA --head SHA`。
 `npm run check:affected` 接受同样的显式参数，只跑校验 lane，并列出其他必需 job；`npm run check`
-仍是仓库总检查。策略在 [ci-scope](../scripts/ci-scope.mjs)，[汇总](../scripts/ci-results.mjs)只接受必需项成功；
-反例用 `npm run ci:check`。CI 改动先读[贡献规则](../CONTRIBUTING.zh-CN.md#必要-ci-全部完成)及唯一交接的
-[职责/产物表](REPOSITORY_UPGRADE_PLAN.md#c3-check-duties-and-artifact-ownership)。
+仍是仓库总检查。策略在 [ci-selection](../scripts/ci-selection.ts)，[汇总](../scripts/ci-results.ts)只接受必需项成功；
+反例用 `npm run ci:check`。CI 改动先读[贡献规则](../CONTRIBUTING.zh-CN.md#必要-ci-全部完成)。升级记录的
+[历史职责/产物表](REPOSITORY_UPGRADE_PLAN.md#c3-check-duties-and-artifact-ownership)说明已接受基线，
+当前适用检查由实际脚本和工作流决定。

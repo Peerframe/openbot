@@ -1,7 +1,6 @@
 import type { Artifact, Bot, Run, RunFrame, RunProgress } from "@openbot/domain";
-import { runStatusLabel } from "../run-state";
+import { runStatusLabel, runStatusSummary } from "../run-state";
 import { ArtifactCard } from "./ArtifactCard";
-import { runStatusSummary } from "./NativeRunControls";
 import { RobotAvatar } from "./RobotAvatar";
 import type { CollaborationRun } from "./RunCollaboration";
 import "./RunProgressPanel.css";

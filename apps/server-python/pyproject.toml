@@ -1,7 +1,7 @@
 [project]
 name = "openbot-server"
 version = "0.0.0"
-description = "Experimental Python OpenBot control-plane reference"
+description = "Python OpenBot control plane and product services"
 requires-python = ">=3.12"
 license = "MIT"
 dependencies = [

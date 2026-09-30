@@ -17,6 +17,7 @@ import {
   type WebContents,
 } from "electron";
 import { originalAttachmentSaveDialog } from "./attachment-save-dialog.js";
+import { discardBody } from "./bounded-response.js";
 import { FileDesktopConnectionStore } from "./connection-config.js";
 import { DesktopConnectionController } from "./connection-controller.js";
 import { desktopWindowIconPath } from "./desktop-icon.js";
@@ -482,7 +483,7 @@ async function startDesktop(): Promise<void> {
       body: JSON.stringify({ password: ownerPassword }),
       signal: AbortSignal.timeout(5000),
     });
-    await response.body?.cancel();
+    discardBody(response.body);
     if (!response.ok) throw new Error("Local session could not be created.");
     if (
       !(await isDesktopSessionAuthenticated({ status: "configured", serverUrl }, (input, init) =>

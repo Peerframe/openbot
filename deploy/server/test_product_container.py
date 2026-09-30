@@ -57,7 +57,7 @@ def test_original_migrator_then_exec_has_separate_minimal_environments(monkeypat
     monkeypatch.setattr(entry,'preflight',lambda env:calls.append('preflight'))
     def run(args,**kw):
         assert calls==['preflight'];calls.append('migrate')
-        assert args==[entry.NODE,str(entry.ROOT/'deploy/server/product-migrate.mjs')]
+        assert args==[entry.NODE,str(entry.ROOT/'deploy/server/product-migrate.ts')]
         assert set(kw['env'])=={'PATH','OPENBOT_DATABASE_URL'} and kw['timeout']==60
         assert kw['stdin']==kw['stdout']==kw['stderr']==subprocess.DEVNULL
     def execute(executable,args,env):

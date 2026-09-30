@@ -3,6 +3,7 @@ import {
   attachmentByteLimit,
   attachmentMetadataSchema,
 } from "@openbot/protocol";
+import { readBoundedResponse } from "./bounded-response";
 import type { UploadedComposerAttachment } from "./composer-context";
 
 const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/iu;
@@ -31,31 +32,17 @@ function attachmentPath(channelId: string, attachmentId: string): string {
   return `/api/v1/channels/${encodeURIComponent(channelId)}/attachments/${encodeURIComponent(attachmentId)}`;
 }
 
-async function readBounded(response: Response, limit: number): Promise<Uint8Array<ArrayBuffer>> {
+const responseMessages = {
+  missingBody: "附件未返回有效内容。",
+  tooLarge: "附件响应超过允许大小。",
+};
+
+async function readAvailableAttachment(
+  response: Response,
+  limit: number,
+): Promise<Uint8Array<ArrayBuffer>> {
   if (!response.ok) throw new Error("附件暂不可用或无权访问。");
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error("附件未返回有效内容。");
-  let length = 0;
-  const chunks: Uint8Array[] = [];
-  try {
-    while (true) {
-      const next = await reader.read();
-      if (next.done) break;
-      length += next.value.byteLength;
-      if (length > limit) throw new Error("附件响应超过允许大小。");
-      chunks.push(next.value);
-    }
-  } finally {
-    await reader.cancel().catch(() => undefined);
-    reader.releaseLock();
-  }
-  const bytes = new Uint8Array(length);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return bytes;
+  return readBoundedResponse(response, limit, responseMessages);
 }
 
 export async function getChannelAttachment(
@@ -69,7 +56,7 @@ export async function getChannelAttachment(
     signal: AbortSignal.any([signal, AbortSignal.timeout(15000)]),
   });
   const { attachment: candidate } = JSON.parse(
-    new TextDecoder().decode(await readBounded(response, 16384)),
+    new TextDecoder().decode(await readAvailableAttachment(response, 16384)),
   ) as { attachment?: UploadedComposerAttachment };
   const parsed = attachmentMetadataSchema.safeParse(candidate);
   const value = parsed.success ? parsed.data : undefined;
@@ -99,7 +86,10 @@ export async function getAttachmentImage(
     redirect: "error",
     signal: AbortSignal.any([signal, AbortSignal.timeout(30000)]),
   });
-  const bytes = await readBounded(response, Math.min(attachment.sizeBytes, 5 * 1024 * 1024));
+  const bytes = await readAvailableAttachment(
+    response,
+    Math.min(attachment.sizeBytes, 5 * 1024 * 1024),
+  );
   if (bytes.length !== attachment.sizeBytes) throw new Error("附件内容长度不匹配。");
   // Only these raster formats are interpreted by the image element; never render HTML/SVG/PDF.
   const valid =
@@ -155,7 +145,7 @@ export async function updateAttachment(
     },
   );
   const data = new TextDecoder().decode(
-    await readBounded(new Response(response.body, { status: 200 }), 16384),
+    await readBoundedResponse(response, 16384, responseMessages),
   );
   if (!response.ok) {
     const error = JSON.parse(data) as { error?: string };
@@ -190,7 +180,7 @@ export async function downloadAttachment(attachment: UploadedComposerAttachment)
     redirect: "error",
     signal: AbortSignal.timeout(30000),
   });
-  const bytes = await readBounded(response, attachment.sizeBytes);
+  const bytes = await readAvailableAttachment(response, attachment.sizeBytes);
   if (bytes.length !== attachment.sizeBytes) throw new Error("附件长度不匹配。");
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
   if (

@@ -2,8 +2,9 @@
 import type { Run } from "@openbot/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { cancelNativeRun, createMessage } from "../api";
+import { nativeRunFailure } from "../run-state";
 import { deferred, interact, renderComponent } from "../test/render-component";
-import { NativeRunControls, nativeRunFailure } from "./NativeRunControls";
+import { NativeRunControls } from "./NativeRunControls";
 import { RunInspector } from "./RunInspector";
 
 vi.mock("../api", () => ({

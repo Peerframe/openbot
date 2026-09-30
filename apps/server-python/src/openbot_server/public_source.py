@@ -16,6 +16,7 @@ import httpx
 
 from .plugin_transport import PinnedBackend, public_address
 from .work_model_activity import configuration_record
+from .text_compat import utf16_unit_count as _units
 
 MAX_PAGE_BYTES = 512 * 1024
 MAX_TEXT_BYTES = 6000
@@ -34,10 +35,6 @@ class PublicWebError(Exception):
 
 def _json(value):
     return json.dumps(value,ensure_ascii=False,separators=(',',':'),allow_nan=False)
-
-
-def _units(value):
-    return len(value.encode('utf-16-le')) // 2
 
 
 def _clip(value, size):

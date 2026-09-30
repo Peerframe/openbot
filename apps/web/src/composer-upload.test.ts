@@ -19,6 +19,39 @@ const attachment = {
 };
 
 describe("persistent composer attachment requests", () => {
+  it.each(["brief.TXT", "brief.md", "brief.csv", "brief.json"])(
+    "uploads UTF-8 %s through the current channel and retains only its immutable reference",
+    async (name) => {
+      const file = new File(["中文\nhello"], name);
+      const metadata = { ...attachment, name, sizeBytes: file.size };
+      const fetcher = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(Response.json({ attachment: metadata }, { status: 201 }));
+      const uploaded = await uploadComposerAttachment(channelId, file);
+      expect(uploaded).toEqual(metadata);
+      expect(fetcher).toHaveBeenCalledWith(
+        `/api/v1/channels/${channelId}/attachments`,
+        expect.objectContaining({ body: file }),
+      );
+      expect(new TextDecoder().decode(await file.arrayBuffer())).toBe("中文\nhello");
+      expect(composeTaskText("Review", [uploaded])).toContain(
+        `[OpenBot attachment: ${uploaded.id}]`,
+      );
+      expect(composeTaskText("Review", [uploaded])).not.toContain("中文\nhello");
+    },
+  );
+  it("rejects current file limits, unsupported formats and control characters before transport", async () => {
+    const fetcher = vi.spyOn(globalThis, "fetch");
+    for (const file of [
+      new File(["a".repeat(256 * 1024 + 1)], "large.txt"),
+      new File(["text"], "archive.zip"),
+      new File(["text"], "a\nb.md"),
+      new File(["text"], "a\0b.md"),
+    ]) {
+      await expect(uploadComposerAttachment(channelId, file)).rejects.toThrow();
+    }
+    expect(fetcher).not.toHaveBeenCalled();
+  });
   it("uploads binary file bytes and stores only a short immutable task reference", async () => {
     const file = new File(["a".repeat(200000)], "large.ts");
     const fetcher = vi
@@ -56,6 +89,31 @@ describe("persistent composer attachment requests", () => {
       ).rejects.toThrow("不匹配");
     },
   );
+  it("reads bounded upload errors before applying status without accepting returned identity", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({ attachment, error: "denied".repeat(110) }, { status: 403 }),
+    );
+    await expect(
+      uploadComposerAttachment(channelId, new File(["a".repeat(200000)], "large.ts")),
+    ).rejects.toMatchObject({ message: "denied".repeat(110).slice(0, 500) });
+  });
+
+  it("rejects upload overflow even when stream cancellation never settles", async () => {
+    const cancel = vi.fn(() => new Promise<void>(() => undefined));
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(16385));
+      },
+      cancel,
+    });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(stream));
+    await expect(
+      uploadComposerAttachment(channelId, new File(["data"], "file.txt")),
+    ).rejects.toThrow("附件上传响应过大。");
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(stream.locked).toBe(false);
+  }, 1000);
+
   it("allows richer code/text types and bounds file count, bytes and unsupported formats", () => {
     for (const name of [
       "file.ts",

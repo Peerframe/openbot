@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { createServer, type Socket } from "node:net";
 import type { CommandServerFrame } from "@openbot/protocol";
 import { describe, expect, it } from "vitest";
-import { attachJsonTransport } from "./bounded-json-transport.mjs";
+import { attachJsonTransport } from "./bounded-json-transport.js";
 import { unixCommandInstallation } from "./command-unix-transport.js";
 
 const identity = "00000000-0000-4000-8000-000000000001";

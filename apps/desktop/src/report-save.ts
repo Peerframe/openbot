@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { open, unlink } from "node:fs/promises";
 import { extname, isAbsolute } from "node:path";
+import { discardBody, readBoundedBytes } from "./bounded-response.js";
 import type { DesktopConnectionState, DesktopServerFetcher } from "./connection-controller.js";
 import { isDesktopSessionAuthenticated } from "./desktop-server-actions.js";
 
@@ -51,14 +52,6 @@ export class DesktopReportSaver {
     if (connection.status !== "configured" || !this.options.active())
       return { status: "unavailable" };
     this.#busy = true;
-    const sameConnection = () => {
-      const current = this.options.connection();
-      return (
-        this.options.active() &&
-        current.status === "configured" &&
-        current.serverUrl === connection.serverUrl
-      );
-    };
     try {
       const url = new URL(
         `/api/v1/channels/${value.channelId}/attachments/${value.attachmentId}`,
@@ -73,8 +66,10 @@ export class DesktopReportSaver {
       if (
         metadata.status !== 200 ||
         !metadata.headers.get("content-type")?.startsWith("application/json")
-      )
+      ) {
+        discardBody(metadata.body);
         throw new Error("Invalid attachment metadata");
+      }
       const { attachment } = JSON.parse(
         (await readBoundedAttachment(metadata, 16384)).toString("utf8"),
       ) as {
@@ -101,15 +96,17 @@ export class DesktopReportSaver {
       if (
         response.status !== 200 ||
         response.headers.get("content-type") !== "application/octet-stream"
-      )
+      ) {
+        discardBody(response.body);
         throw new Error("Invalid attachment content");
+      }
       const bytes = await readBoundedAttachment(response, attachment.sizeBytes);
       if (
         bytes.length !== attachment.sizeBytes ||
         createHash("sha256").update(bytes).digest("hex") !== attachment.sha256
       )
         throw new Error("Attachment integrity check failed");
-      if (!sameConnection()) return { status: "unavailable" };
+      if (!this.#sameConnection(connection)) return { status: "unavailable" };
       const path = await (this.options.chooseAttachmentPath ?? this.options.choosePath)(
         attachment.name,
       );
@@ -117,21 +114,12 @@ export class DesktopReportSaver {
       if (
         !isAbsolute(path) ||
         extname(path) !== extname(attachment.name) ||
-        !sameConnection() ||
+        !this.#sameConnection(connection) ||
         !(await isDesktopSessionAuthenticated(connection, this.options.fetch)) ||
-        !sameConnection()
+        !this.#sameConnection(connection)
       )
         return { status: "unavailable" };
-      const handle = await open(path, "wx", 0o600);
-      try {
-        await handle.writeFile(bytes);
-        await handle.sync();
-      } catch (error) {
-        await handle.close();
-        await unlink(path).catch(() => undefined);
-        throw error;
-      }
-      await handle.close();
+      await writeNewPrivateFile(path, bytes);
       return { status: "saved" };
     } catch (error) {
       return {
@@ -179,7 +167,7 @@ export class DesktopReportSaver {
           : { Accept: "text/markdown, image/png" },
       });
       if (employee && response.status === 412) {
-        await response.body?.cancel().catch(() => undefined);
+        discardBody(response.body);
         return { status: "changed" };
       }
       const bytes = employee
@@ -210,34 +198,17 @@ export class DesktopReportSaver {
             : !/^[\p{L}\p{N}][\p{L}\p{N} ._-]{0,100}\.md$/u.test(name)
       )
         return { status: "unavailable" };
-      const sameConnection = () => {
-        const current = this.options.connection();
-        return (
-          this.options.active() &&
-          current.status === "configured" &&
-          current.serverUrl === connection.serverUrl
-        );
-      };
-      if (!sameConnection()) return { status: "unavailable" };
+      if (!this.#sameConnection(connection)) return { status: "unavailable" };
       const path = await this.options.choosePath(name);
       if (path === undefined) return { status: "cancelled" };
-      if (!isAbsolute(path) || extname(path) !== extname(name) || !sameConnection())
+      if (!isAbsolute(path) || extname(path) !== extname(name) || !this.#sameConnection(connection))
         return { status: "unavailable" };
       if (
         !(await isDesktopSessionAuthenticated(connection, this.options.fetch)) ||
-        !sameConnection()
+        !this.#sameConnection(connection)
       )
         return { status: "unavailable" };
-      const handle = await open(path, "wx", 0o600);
-      try {
-        await handle.writeFile(bytes);
-        await handle.sync();
-      } catch (error) {
-        await handle.close();
-        await unlink(path).catch(() => undefined);
-        throw error;
-      }
-      await handle.close();
+      await writeNewPrivateFile(path, bytes);
       return { status: "saved" };
     } catch (error) {
       return {
@@ -250,27 +221,39 @@ export class DesktopReportSaver {
       this.#busy = false;
     }
   }
+  #sameConnection(connection: Extract<DesktopConnectionState, { status: "configured" }>): boolean {
+    const current = this.options.connection();
+    return (
+      this.options.active() &&
+      current.status === "configured" &&
+      current.serverUrl === connection.serverUrl
+    );
+  }
+}
+
+// Both save routes reach this only after their own content, dialog and current-session checks.
+async function writeNewPrivateFile(path: string, bytes: Buffer): Promise<void> {
+  const handle = await open(path, "wx", 0o600);
+  try {
+    await handle.writeFile(bytes);
+    await handle.sync();
+  } catch (error) {
+    await handle.close();
+    await unlink(path).catch(() => undefined);
+    throw error;
+  }
+  await handle.close();
 }
 
 async function readArtifact(response: Response): Promise<Buffer> {
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error("Missing report body.");
-  const chunks: Uint8Array[] = [];
-  let length = 0;
+  if (!response.body) throw new Error("Missing report body.");
   try {
     const mediaType = response.headers.get("content-type");
     const image = mediaType === "image/png";
     if (response.status !== 200 || (!image && mediaType !== "text/markdown"))
       throw new Error("Invalid report response.");
     const maxBytes = image ? 5 * 1024 * 1024 : 32 * 1024;
-    while (true) {
-      const next = await reader.read();
-      if (next.done) break;
-      length += next.value.byteLength;
-      if (length > maxBytes) throw new Error("Artifact too large.");
-      chunks.push(next.value);
-    }
-    const bytes = Buffer.concat(chunks);
+    const bytes = await readBoundedBytes(response.body, maxBytes, "Artifact too large.");
     if (image) {
       // Saving bytes grants no renderer path authority and never decodes untrusted image content.
       if (!bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])))
@@ -281,8 +264,7 @@ async function readArtifact(response: Response): Promise<Buffer> {
     if (!text.trim() || text.includes("\0")) throw new Error("Invalid report text.");
     return bytes;
   } finally {
-    await reader.cancel().catch(() => undefined);
-    reader.releaseLock();
+    discardBody(response.body);
   }
 }
 
@@ -313,8 +295,7 @@ export function isEmployeeTemplateSaveInput(value: unknown): value is EmployeeTe
 }
 
 async function readEmployeeTemplate(response: Response, reviewToken: string): Promise<Buffer> {
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error("Missing Employee template body.");
+  if (!response.body) throw new Error("Missing Employee template body.");
   try {
     if (
       response.status !== 200 ||
@@ -325,42 +306,21 @@ async function readEmployeeTemplate(response: Response, reviewToken: string): Pr
       response.headers.get("etag") !== `"${reviewToken}"`
     )
       throw new Error("Invalid Employee template response.");
-    const chunks: Uint8Array[] = [];
-    let length = 0;
-    while (true) {
-      const next = await reader.read();
-      if (next.done) break;
-      length += next.value.byteLength;
-      if (length > 2 * 1024 * 1024) throw new Error("Employee template too large.");
-      chunks.push(next.value);
-    }
-    const bytes = Buffer.concat(chunks);
+    const bytes = await readBoundedBytes(
+      response.body,
+      2 * 1024 * 1024,
+      "Employee template too large.",
+    );
     if (createHash("sha256").update(bytes).digest("hex") !== reviewToken)
       throw new Error("Employee template did not match its reviewed bytes.");
     JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
     return bytes;
   } finally {
-    await reader.cancel().catch(() => undefined);
-    reader.releaseLock();
+    discardBody(response.body);
   }
 }
 
 async function readBoundedAttachment(response: Response, limit: number): Promise<Buffer> {
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error("Missing attachment body");
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  try {
-    while (true) {
-      const item = await reader.read();
-      if (item.done) break;
-      size += item.value.byteLength;
-      if (size > limit) throw new Error("Attachment response exceeds bound");
-      chunks.push(item.value);
-    }
-    return Buffer.concat(chunks);
-  } finally {
-    await reader.cancel().catch(() => undefined);
-    reader.releaseLock();
-  }
+  if (!response.body) throw new Error("Missing attachment body");
+  return readBoundedBytes(response.body, limit, "Attachment response exceeds bound");
 }

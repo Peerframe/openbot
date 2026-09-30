@@ -10,13 +10,17 @@ Closes #
 
 <!-- Choose one path. Ordinary fixes reuse valid decisions; new dependencies/versions, public
      protocols, authorization/security, persistence or material architecture need targeted evidence.
-     Eligible existing UI/core helper repairs and tests may replace all seven fields with:
+     Ordinary internal repairs in any directory may replace all seven fields with:
      - Research reuse: exact existing docs/research/...md, ADR, module RESEARCH.md or OpenBot issue
      - Reuse scope: concrete repair and affected consumer
      - Unchanged assumptions: why the existing decision still covers dependency/protocol/authority/persistence/architecture
      - Source copied or substantially adapted: no
-     CI verifies the actual committed diff; sensitive/unknown paths use the full form, which may
-     still cite existing research without a new survey. Skills/prompts/AGENTS are not pure prose.
+     Internal imports and adding/retiring helper files do not alone require a new study. CI reads
+     actual committed blobs; known boundary owners, dependencies/runtime/exports, install/publish
+     hooks, schemas, permissions and CI/instruction policy still need targeted evidence in the full
+     form. Cite existing decisions where valid. A passing format check cannot establish unchanged
+     authority/protocol/persistence/architecture: independent source review and required tests must
+     confirm that claim in every directory. Skills/prompts/AGENTS are not pure prose.
  For ordinary Markdown spelling, faithful translation, or prose formatting
      with unchanged behavior/claims and unchanged commands, code, links and markup, replace ALL
      seven fields below with:

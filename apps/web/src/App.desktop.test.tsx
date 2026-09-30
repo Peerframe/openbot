@@ -10,6 +10,73 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe("App logout ownership", () => {
+  it.each(["", "#/tasks"])(
+    "keeps the session on failure and exits after success from %s",
+    async (hash) => {
+      const previousHash = window.location.hash;
+      window.location.hash = hash;
+      let rejectLogout = true;
+      const fetcher = vi.fn(async (url: string) => {
+        if (url === "/api/v1/auth/session")
+          return Response.json({
+            authenticated: true,
+            expiresAt: "2999-01-01T00:00:00Z",
+            owner: { id: "owner", name: "Owner" },
+          });
+        if (url === "/api/v1/auth/logout")
+          return new Response(null, { status: rejectLogout ? 503 : 204 });
+        if (url === "/api/v1/workspace")
+          return Response.json({
+            channels: [],
+            bots: [],
+            nodes: [],
+            runs: [],
+            approvals: [],
+            artifacts: [],
+            progress: [],
+            counts: { channels: 0, bots: 0, connectedNodes: 0, activeRuns: 0 },
+          });
+        if (url === "/api/v1/bots") return Response.json({ bots: [] });
+        if (url.startsWith("/api/v1/work/tasks")) return Response.json({ tasks: [] });
+        throw new Error(`Unexpected fixture request: ${url}`);
+      });
+      vi.stubGlobal("fetch", fetcher);
+      vi.stubGlobal("matchMedia", () => ({ matches: false }));
+      vi.stubGlobal(
+        "EventSource",
+        class extends EventTarget {
+          close() {}
+        },
+      );
+      const rendered = await renderComponent(<App />);
+      try {
+        await settleEffects();
+        const menu = rendered.container.querySelector(".owner-menu summary");
+        if (menu instanceof HTMLElement) await interact(() => menu.click());
+        const button = Array.from(rendered.container.querySelectorAll("button")).find(
+          (item) => item.textContent === "退出登录",
+        );
+        if (!button) throw new Error("Logout control is missing.");
+        await interact(() => button.click());
+        await settleEffects();
+        expect(rendered.container.textContent).toContain("退出失败，请重试");
+        expect(rendered.container.querySelector("#owner-password")).toBeNull();
+        rejectLogout = false;
+        await interact(() => button.click());
+        await settleEffects();
+        expect(rendered.container.querySelector("#owner-password")).toBeInstanceOf(
+          HTMLInputElement,
+        );
+        expect(fetcher.mock.calls.filter(([url]) => url === "/api/v1/auth/logout")).toHaveLength(2);
+      } finally {
+        await rendered.unmount();
+        window.location.hash = previousHash;
+      }
+    },
+  );
+});
+
 describe("Desktop application connection gate", () => {
   it("does not call the Server until first-run setup has completed", async () => {
     const fetcher = vi.fn(async () => Response.json({ authenticated: false }));
@@ -154,7 +221,12 @@ describe("Desktop application connection gate", () => {
       ),
     );
     window.openbotDesktop = {
-      getRuntimeInfo: () => ({ kind: "desktop", platform: "darwin", arch: "arm64", shellVersion: "44.3.0" }),
+      getRuntimeInfo: () => ({
+        kind: "desktop",
+        platform: "darwin",
+        arch: "arm64",
+        shellVersion: "44.3.0",
+      }),
       getConnectionState: vi.fn(async () => ({
         status: "configured",
         serverUrl: "http://127.0.0.1:45678",

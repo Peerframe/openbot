@@ -1,6 +1,6 @@
 # Python control contributor rules
 
-This is the active product authority. `scripts/dev-python.mjs` starts `scripts/serve.py` in explicit
+This is the active product authority. `scripts/dev-python.ts` starts `scripts/serve.py` in explicit
 product mode; direct `serve.py` stays read-only by default. See the
 [control route](../../docs/REPOSITORY_MAP.md#control-and-persistence) and [README](README.md).
 

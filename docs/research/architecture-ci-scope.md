@@ -78,3 +78,15 @@ private remote replay, live migration and release/signing remain separately boun
 acceptance items. Current npm advisory scanning does not imply Python advisory coverage; exact
 Python locks and `pip check` establish a different property. None of these gaps can be closed by
 making legacy jobs green.
+
+## Typed cleanup — 2026-09-29
+
+Reuse the same CI selection and fixed-revision contract. Pure workspace dependency/policy logic
+now lives in `scripts/ci-selection.ts`; Git/event input, aggregate and actual check invocation have
+separate typed consumers. All four manual MJS implementations exit together with package/workflow
+and guard updates. Existing supported Node executes erasable TS directly; no loader, dependency,
+new graph authority or prebuild is added. Malformed present PR events remain fail-closed. Original
+assertions remain in `scripts/ci-scope.test.ts`; revision-specific differential and hosted results
+are recorded in [PR104](https://github.com/Peerframe/openbot/pull/104).
+No upstream source copied or dependency/pin changed. Local gate success and hosted qualification
+are reported separately against the revision each actually tested.

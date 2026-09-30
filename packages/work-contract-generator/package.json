@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate": "node generate.mjs",
-    "check": "node generate.mjs --check"
+    "generate": "node generate.ts",
+    "check": "node generate.ts --check",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "openapi-typescript": "7.13.0",

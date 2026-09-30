@@ -12,4 +12,8 @@ This derivative is prepared by OpenBot for a separately authorized bounded compa
 
 ## CDP diagnosis candidate
 
+The maintained entry is `probe.ts`; `probe-transport.ts` owns the adapted pipe code, and
+`probe-artifacts.ts` owns bounded evidence. The old manual `probe.mjs` exits; the Python
+qualifier pins every imported TS source and launches them with the existing guest Node.
+
 This candidate keeps the b2 profile byte-identical. The new bounded CDP ASCII-NUL transport narrowly adapts Playwright v1.62.1 pipeTransport.ts behavior, originally copyright2018 Google Inc.; modifications copyright Microsoft Corporation, Apache2.0. See playwright-LICENSE and playwright-NOTICE. OpenBot adds the closed qualification sequence, resource/output bounds and stage observations. No new upstream runtime source/package is installed; only existing image Chromium and Node built-ins are used. The candidate does not certify Linux/runsc compatibility before its separate actual run.

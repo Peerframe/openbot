@@ -2,77 +2,83 @@
 
 [English](TECHNOLOGY.md) · [简体中文](TECHNOLOGY.zh-CN.md)
 
-Reviewed on 2026-09-04. Exact versions are review snapshots and must be updated through a focused,
-tested dependency change rather than silently floated.
+Reviewed on 2026-09-28 against this checkout's lockfiles and manifests. Exact versions are review
+snapshots and must be updated through a focused, tested dependency change rather than silently
+floated. For live layout and setup, prefer [the repository map](REPOSITORY_MAP.md),
+[CONTRIBUTING](../CONTRIBUTING.md), and the linked surface READMEs over restating install or
+platform status here.
 
 ## One-sentence decision
 
-OpenBot uses TypeScript for its shared product code, Electron for the installable Desktop client,
-React and Vite for the shared interface, Node.js for Server and portable Worker logic, PostgreSQL
-for authoritative state, and narrow Swift or C# adapters only where the operating system requires
-them.
+OpenBot uses Python for the product Server control plane and the bounded Agent harness, TypeScript
+for Web, the Electron Desktop shell, retained Node helpers, React and
+Vite for the shared interface, PostgreSQL for authoritative state, and narrow Swift or C# adapters
+only where the operating system requires them.
+
+## Current stack vs historical decisions
+
+| Concern | Current product default | Notes |
+| --- | --- | --- |
+| Business Server | Python in `apps/server-python` (FastAPI/Starlette/Uvicorn) | `apps/server` is retired; see its README. |
+| Agent execution harness | Python package `packages/harness` (`openbot-agent-runtime`) | Proposes work; control retains authority and durable facts. |
+| Shared UI | TypeScript, React, Vite in `apps/web` | Also the Desktop renderer. |
+| Desktop shell | Electron main/preload around the shared Web UI | Supervises the Python product payload where that Desktop path is supported. |
+| Retained Node surfaces | Node Worker Host, Providers, protocol helpers, tooling | Not a second business Server. |
+| Frozen TypeScript Server | `tests/oracles/legacy-server` | Comparison input only; never a product fallback. |
+| Persistence | PostgreSQL with migrations under `packages/db` | Unchanged authority for durable state. |
+| Optional durable Work engine | Explicit Temporal composition when configured | Not created by ordinary API startup. |
+
+Historical Desktop foundation ADRs and research remain the record of those decisions; they are not
+a claim that the Node/Hono Server is still the live control plane. Migration evidence is historical
+in [MIGRATION_HANDOFF](MIGRATION_HANDOFF.md). Longer-term TypeScript consolidation remains a
+direction, starting with useful peripheral replacements. A core replacement needs its own verified
+cutover; this cleanup does not migrate the Python Server or harness core.
 
 ## Product surfaces
 
 | Surface | What the user installs or opens | Role |
 | --- | --- | --- |
-| OpenBot Desktop | The same OpenBot product, installed from the package for each Windows, macOS, or Linux platform | Always a Client; may also configure this computer as a Server, Worker Host, or both |
+| OpenBot Desktop | The same OpenBot product, installed from the package for each Windows, macOS, or Linux platform | Always a Client; may also configure this computer as a Server, Worker Host, or both where supported |
 | OpenBot Web | The Server-hosted responsive web application | A full remote Client and the primary Client for modular self-hosters who do not install Desktop |
 | OpenBot Server | A service installed by Desktop onboarding or deployed independently | The only authority for identity, channels, routing, policy, approvals, audit, and durable state |
 | OpenBot Worker Host | A service installed by Desktop onboarding or deployed independently | Supplies declared computer capabilities to the Server; it never becomes a second authority |
 | Agent adapters | Server-managed connections to OpenBot, Hermes, Pi, OpenClaw, or later agents | Perform bounded delegated work; they cannot grant themselves a channel, computer, credential, or approval |
-| Plugins | Reviewed packages installed through a future capability-scoped plugin system | May extend UI, themes, channels, agents, tools, providers, and automation without bypassing Server policy |
+| Plugins | Server-managed MCP connections with explicit grants | Current tools, resources, prompts and isolated Apps follow [PLUGINS](PLUGINS.md); future extension directions are not current capabilities |
 
-Desktop onboarding presents four compositions of the same product:
-
-1. **Use OpenBot:** Client only, connected to an existing Server.
-2. **Use and work:** Client plus Worker Host on this computer.
-3. **Host OpenBot:** Client plus Server, with Worker Host optional.
-4. **Advanced self-host:** install Server and Worker services independently, then use Web or Desktop.
-
-An onboarding answer such as “I will add five computers” creates a five-device setup checklist. It
-is not a license limit and it does not produce a different application. Every Worker computer can
-still be used as a normal OpenBot Client.
-
-The implemented Desktop onboarding now records all four compositions as a strict local setup plan.
-It derives a visible checklist, supports a bounded total of up to 100 planned Worker computers, and
-restores the plan after restart. The number is a user-interface safety bound, not a license limit.
-The next screen accepts one existing Server origin, verifies `/health`, presents a native
-confirmation, stores only that public origin, and then opens the shared sign-in and channel UI.
-Remote Servers require HTTPS; loopback development may use HTTP. Changing the Server clears the
-dedicated Desktop browser session. Saving a plan still performs no side effect. After an Owner
-signs in and explicitly starts local-Worker setup, the implemented macOS adapter preflights the
-fixed nested companion, obtains a ten-minute single-use token inside the main process, and lets the
-Swift component redeem it, store the Server-bound identity in Keychain, and register its
-LaunchAgent. The renderer receives only actual allowlisted state. Signed distribution and
-controlled-device evidence remain pending, and Windows/Linux Desktop service adapters are not yet
-implemented.
+Desktop onboarding still presents four compositions of the same product (Client only; Client plus
+Worker Host; Client plus Server with Worker Host optional; advanced self-host). Checklist bounds,
+Server origin confirmation, and native Worker enrollment details live in the current Desktop docs
+rather than this baseline: start from [Desktop contributor rules](../apps/desktop/AGENTS.md),
+[Desktop installation](DESKTOP_INSTALLATION.md), and [Desktop onboarding](DESKTOP_ONBOARDING.md).
+Python product packaging for Desktop is summarized in
+[DESKTOP_PYTHON_CANDIDATE](DESKTOP_PYTHON_CANDIDATE.md).
 
 ## Selected languages and runtimes
 
+Versions below match this checkout unless a surface README states a narrower attested release.
+
 | Boundary | Selection | Why |
 | --- | --- | --- |
-| Shared domain, protocol, Server, Worker, adapters, and tooling | TypeScript `7.0.2` | One typed language already covers the repository and is the lowest-friction contribution path. |
-| Standalone development runtime | Node.js `24.20.0` LTS | It is the current LTS reviewed on 2026-09-04; Current releases are not the production default. |
-| Desktop shell | Electron `44.2.0` | It reuses the existing web stack and ships one tested Chromium/Node baseline across desktop systems. |
-| Desktop packaging and hardening | `@electron/packager` `20.3.0` and `@electron/fuses` `2.1.3` | Current stable Electron packages provide the narrow package/ASAR and strict fuse APIs OpenBot needs without Forge 7's incompatible and vulnerable development graph. Installers, signing, and publishing remain separately reviewed release adapters. |
-| Desktop Server transport and configuration | Electron `44.2.0` custom protocol, dedicated `Session.fetch`, typed IPC, `write-file-atomic` `8.0.0`, and `@electron/asar` `4.3.0` for build-time inventory validation | The packaged renderer stays same-origin while the main process connects only to one verified and confirmed Server. The archive contains exactly the reviewed runtime dependency closure. |
-| Desktop setup planning | React `19.2.8` native form controls, typed Electron IPC, and the existing restricted `write-file-atomic` store | Four role compositions and the Worker checklist need one discriminated plan, not another form or state-machine dependency. The main process validates and persists public intent; the renderer cannot turn it into service authority. |
-| Desktop-guided macOS Worker setup | Existing Swift Worker Host, Apple `SMAppService` and Security, a bounded private stdin/stdout envelope, and the authenticated Electron Session | One top-level Desktop installation can guide setup while the independently signed native companion still owns Keychain and service lifecycle. Node ids enter through typed IPC; enrollment tokens never enter renderer state, argv, environment, files, or logs. |
-| Shared UI | React `19.2.8` and Vite `8.2.2` | These exact versions are already locked, built, and tested in this repository. |
-| Server HTTP runtime | Hono on Node.js | The current Server, security middleware, SSE, and shutdown behavior already use and test this boundary. |
-| Authoritative persistence | PostgreSQL 17 | Existing migrations, conditional transitions, scheduling, approvals, and audit require one transactional source of truth. |
-| macOS-only service integration | Swift | Use only for Keychain, Service Management, signing-aware registration, and other Apple-only contracts. |
-| Windows-only service integration | C# on .NET | Use only for SCM, Credential Manager, Job Objects, installer integration, and other Windows-only contracts. |
+| Product Server / control plane | Python `>=3.12` with FastAPI `0.141.1`, Starlette `1.6.0`, Uvicorn `0.53.0` (`apps/server-python`) | Active trusted business control layer; Owner identity, routing, policy, approvals, audit, and product HTTP. |
+| Bounded Agent harness | Python `>=3.12` package `openbot-agent-runtime` `0.1.0` (`packages/harness`) | Existing bounded execution loop and optional Temporal composition; control keeps authority. |
+| Shared domain, protocol, Web, Desktop, Node helpers, and tooling | TypeScript `7.0.2` | Typed contribution path for UI, Electron, retained Node wire, and repository tooling. |
+| Standalone JavaScript development runtime | Node.js `24.20.0` (pinned in `.nvmrc`; root `engines` also allow the attested `^22.22.2` line) | Current repository development baseline. Attested Worker Host release runtimes upgrade only through a separate release migration with hashes, SBOMs, and rollback evidence. |
+| Desktop shell | Electron `44.3.0` | Reuses the Web stack and ships one tested Chromium/Node baseline across desktop systems. |
+| Desktop packaging and hardening | `@electron/packager` `20.3.0` and `@electron/fuses` `2.1.3` | Narrow package/ASAR and strict fuse APIs without Forge 7's incompatible development graph. Installers, signing, and publishing remain separately reviewed release adapters. |
+| Desktop Server transport and configuration | Electron `44.3.0` custom protocol, dedicated `Session.fetch`, typed IPC, `write-file-atomic` `8.0.0`, and `@electron/asar` `4.3.0` for build-time inventory validation | Packaged renderer stays same-origin; main process connects only to one verified Server. Archive carries the reviewed runtime dependency closure. |
+| Shared UI | React `19.3.0` and Vite `8.3.0` | Locked, built, and tested in `apps/web` for Web and the Desktop renderer. |
+| Authoritative persistence | PostgreSQL 17 | Migrations, conditional transitions, scheduling, approvals, and audit need one transactional source of truth. |
+| macOS-only service integration | Swift | Keychain, Service Management, signing-aware registration, and other Apple-only contracts. |
+| Windows-only service integration | C# on .NET | SCM, Credential Manager, Job Objects, installer integration, and other Windows-only contracts. |
 | External agent internals | Upstream language | Hermes may remain Python and another agent may use Rust, Go, or TypeScript; OpenBot integrates through a typed process or network adapter. |
 
-Python, Rust, and Go are not OpenBot core languages. A future dependency may introduce one only
-after research proves that a maintained upstream closes a concrete gap better than the selected
+Rust and Go are not OpenBot product core languages. Python is core for Server and harness. TypeScript
+remains core for Web, Desktop, and retained Node helpers. A future dependency in another language
+needs research that proves a maintained upstream closes a concrete gap better than the selected
 stack.
 
-The already attested Worker Host release runtime remains Node.js `22.22.2` until a separate release
-migration regenerates hashes, SBOMs, notices, packages, conformance evidence, and rollback data.
-Choosing Node.js 24 for new development does not silently rewrite existing release evidence.
+Retired Node/Hono Server implementation details stay in the frozen oracle and historical research;
+do not treat them as the live Server HTTP runtime.
 
 ## Desktop security contract
 
@@ -111,15 +117,19 @@ prerelease or changing every dependency on publication day.
 - Re-run packaging, IPC-negative, update, rollback, and real-device checks after a runtime change.
 - Reconsider the shell only if measured package size, memory, accessibility, security maintenance,
   or platform behavior fails an accepted requirement.
+- Treat Python Server and harness pin bumps the same way: focused PRs, lockfile evidence, and the
+  existing control/harness checks—not silent float.
 
 ## Contributor impact
 
-Most contributors need only the Node.js LTS pinned in `.nvmrc` and npm. Desktop contributors also need the
-platform packaging toolchain. Swift is required only for macOS adapter work, and .NET only for
-Windows adapter work. External Agent adapters do not require contributors to rewrite those agents
-in TypeScript.
+Most contributors need the Node.js version pinned in `.nvmrc`, npm, and Python 3.12+ for Server or
+harness work. Follow [CONTRIBUTING](../CONTRIBUTING.md), [apps/server-python/README.md](../apps/server-python/README.md),
+and [packages/harness/README.md](../packages/harness/README.md). Desktop contributors also need the
+platform packaging toolchain; see [Desktop contributor rules](../apps/desktop/AGENTS.md). Swift is
+required only for macOS adapter work, and .NET only for Windows adapter work. External Agent
+adapters do not require contributors to rewrite those agents in TypeScript.
 
-The durable decision and candidate evidence are recorded in
+The durable Desktop foundation decision and candidate evidence remain in
 [ADR-0041](decisions/0041-desktop-application-foundation.md) and the
 [Desktop foundation research](research/desktop-application-foundation.md). The implemented Server
 connection boundary is recorded in [ADR-0042](decisions/0042-desktop-server-connection.md) and its

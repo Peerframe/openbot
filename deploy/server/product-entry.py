@@ -49,7 +49,7 @@ def preflight(env):
         from openbot_server.work_product_service import configuration
         configuration(engine)  # Local strict mTLS files only; connection belongs to the existing service.
     if env.get('OPENBOT_CONTROL_COMMAND_CONFIG_PATH') and not engine:raise ValueError('command_engine_required')
-    subprocess.run([NODE,str(ROOT/'deploy/server/product-preflight.mjs')],env={'PATH':env['PATH']},
+    subprocess.run([NODE,str(ROOT/'deploy/server/product-preflight.ts')],env={'PATH':env['PATH']},
         stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=True,timeout=20)
 
 
@@ -61,7 +61,7 @@ def main():
     except Exception:
         raise SystemExit('Python product preflight failed; no migration was started.') from None
     try:
-        subprocess.run([NODE,str(ROOT/'deploy/server/product-migrate.mjs')],
+        subprocess.run([NODE,str(ROOT/'deploy/server/product-migrate.ts')],
             env={'PATH':env['PATH'],'OPENBOT_DATABASE_URL':env['OPENBOT_CONTROL_DATABASE_URL']},
             stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=True,timeout=60)
     except Exception:

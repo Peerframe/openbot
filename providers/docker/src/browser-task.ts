@@ -18,30 +18,17 @@
  * (no human/*, take/release, shell, evaluate, selectors or file endpoints).
  */
 import { createHash } from "node:crypto";
-import { browserTaskActionSchema } from "@openbot/protocol";
+import {
+  type BrowserFrame as ProtocolBrowserFrame,
+  type BrowserPage as ProtocolBrowserPage,
+  type BrowserTaskAction,
+  browserTaskActionSchema,
+} from "@openbot/protocol";
 
 // --- public types ---------------------------------------------------------
 
 /** Frozen evidence a mutation must still match when it is dispatched. */
-export interface Expected {
-  readonly url: string;
-  readonly snapshotId: number;
-  readonly frameSha256: string;
-}
-
-/** The only actions this adapter will perform. */
-export type TaskAction =
-  | { readonly kind: "read" }
-  | { readonly kind: "navigate"; readonly url: string }
-  | { readonly kind: "click"; readonly ref: string; readonly expected: Expected }
-  | {
-      readonly kind: "type";
-      readonly ref: string;
-      readonly text: string;
-      readonly expected: Expected;
-    }
-  | { readonly kind: "key"; readonly key: string; readonly expected: Expected }
-  | { readonly kind: "scroll"; readonly deltaY: number; readonly expected: Expected };
+type Expected = Readonly<Extract<BrowserTaskAction, { kind: "click" }>["expected"]>;
 
 export interface BrowserTaskOptions {
   /** Transport owned by the caller; path is relative to the computer base URL. */
@@ -50,59 +37,18 @@ export interface BrowserTaskOptions {
   readonly checkUrl: (url: string) => Promise<void>;
   /** Exact HTTP(S) origins allowed for this task. */
   readonly origins: readonly string[];
-  readonly action: TaskAction;
+  readonly action: BrowserTaskAction;
   readonly signal: AbortSignal;
 }
 
-/** Validated payload of GET /read. */
-export interface BrowserRead {
-  readonly url: string;
-  readonly title: string;
-  readonly text: string;
-  readonly truncated: boolean;
-}
-
-/** Validated element of POST /snapshot. */
-export interface BrowserElement {
-  readonly ref: string;
-  readonly role: string;
-  readonly name: string;
-  readonly value?: string;
-  readonly disabled?: boolean;
-  readonly checked?: boolean;
-}
-
-/** Validated payload of POST /snapshot. */
-export interface BrowserSnapshot {
-  readonly url: string;
-  readonly snapshotId: number;
+// Protocol owns field shapes; upstream transport validation remains independent below.
+type BrowserElement = Readonly<ProtocolBrowserPage["elements"][number]>;
+type BrowserPage = Omit<Readonly<ProtocolBrowserPage>, "elements"> & {
   readonly elements: readonly BrowserElement[];
-  readonly truncated: boolean;
-}
-
-/** Page view assembled from /read and /snapshot. */
-export interface BrowserPage {
-  readonly url: string;
-  readonly title: string;
-  readonly text: string;
-  readonly truncated: boolean;
-  readonly snapshotId: number;
-  readonly elements: readonly BrowserElement[];
-}
-
-/** Validated PNG frame captured from /screenshot. */
-export interface BrowserFrame {
-  readonly base64: string;
-  readonly width: number;
-  readonly height: number;
-  readonly capturedAt: string;
-  readonly url: string;
-}
-
-export interface BrowserTaskResult {
-  readonly frame: unknown;
-  readonly page: unknown;
-}
+};
+type BrowserRead = Pick<BrowserPage, "url" | "title" | "text" | "truncated">;
+type BrowserSnapshot = Pick<BrowserPage, "url" | "snapshotId" | "elements" | "truncated">;
+type BrowserFrame = Readonly<ProtocolBrowserFrame>;
 
 /** The single fixed, content-free failure message. */
 export const BROWSER_TASK_ERROR = "Browser task failed.";
@@ -267,14 +213,7 @@ function parseElement(value: unknown): BrowserElement {
   const ref = requireRef(raw.ref);
   const role = boundedString(raw.role, MAX_ROLE_LENGTH, 1);
   const name = boundedString(raw.name, MAX_NAME_LENGTH);
-  const element: {
-    ref: string;
-    role: string;
-    name: string;
-    value?: string;
-    disabled?: boolean;
-    checked?: boolean;
-  } = { ref, role, name };
+  const element: ProtocolBrowserPage["elements"][number] = { ref, role, name };
   if (Object.prototype.hasOwnProperty.call(raw, "value")) {
     element.value = boundedString(raw.value, MAX_VALUE_LENGTH);
   }

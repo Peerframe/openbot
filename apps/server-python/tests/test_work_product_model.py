@@ -1,6 +1,5 @@
 """Real SQL/settings/provider SDK; synthetic HTTP and the current engine's SDK/history seam."""
 import asyncio
-from contextlib import contextmanager
 from dataclasses import replace
 from datetime import datetime, timezone
 import json
@@ -12,7 +11,6 @@ from uuid import uuid4
 
 import httpx2
 import psycopg
-from psycopg.types.json import Jsonb
 import pytest
 pytest.importorskip('pydantic_ai',reason='Optional Worker SDK profile is required')
 from pydantic_ai.messages import ModelRequest, UserPromptPart
@@ -22,18 +20,14 @@ from openbot_server.model_connections import ModelConnectionsService
 from openbot_server.model_connections_cipher import ModelCredentialCipher
 from openbot_server.model_settings import ModelSettingsService
 from openbot_server.product_model import ProductModelError
-from openbot_server.task_inputs import CreateMessageInput
-from openbot_server.task_store import PostgresTaskStore
-from openbot_server.work_corrections import CorrectionStore
 from openbot_server.work_files import LocalWorkFiles
-from openbot_server.work_engine_binding import EngineActivityFacts
-from openbot_server.work_handoff import HandoffStore
 from openbot_server.work_model_receipts import ModelReceipts
 from openbot_server.work_product_model import ProductWorkModel
 from openbot_server.work_sources import WorkSourceAdmission
 from openbot_server.work_store import PostgresWorkStore
-from openbot_server.work_temporal_start import WorkRuntimeContext
 from openbot_server.work_values import InvalidWork, WorkConflict
+
+from product_model_fixtures import binding, bound, response
 
 KEY='synthetic-product-key-never-real'
 SCOPE=dict(expected_namespace='default',expected_queue='fixture-queue',expected_workflow_type='fixture-workflow')
@@ -74,48 +68,12 @@ async def selected(f):
     f.ids.append(item['id'])
     return item
 
-async def bound(f,profile='none',connection=None):
-    with psycopg.connect(f.dsn) as db:
-        db.execute('UPDATE bots SET computer_profile=%s,configuration=%s WHERE id=%s',(profile,Jsonb({'model':{'connectionId':connection['id'],'modelId':'queued-model'}} if connection else {}),f.bot))
-    result=await PostgresTaskStore(f.dsn,model_connections=f.connections,work_sources=f.sources).submit(f.token,f.channel,
-        CreateMessageInput(content='Synthetic model task',botId=f.bot))
-    async with f.store._transaction(trusted=True) as db:
-        row=await (await db.execute('SELECT task_id FROM work_sources WHERE legacy_run_id=%s',(result.run.id,))).fetchone()
-    task=await f.store.snapshot(f.token,row['task_id'])
-    rid=task['runs'][0]['id']
-    correction=await CorrectionStore(f.store).freeze(task['id'],rid,'initial')
-    context=WorkRuntimeContext(task['id'],rid,f.bot,task['objective'],task['usage']['tokenLimit'],correction['id'])
-    accepted=SimpleNamespace(task_id=task['id'],run_id=rid,namespace='default',workflow_id='openbot-work-v1-'+rid,
-        engine_run_id='synthetic-engine',first_run_id='synthetic-engine')
-    handoff=HandoffStore(f.store);reference='temporal:default:'+accepted.workflow_id
-    reservation=await handoff.reserve_submission(task['id'],rid,reference)
-    await handoff.acknowledge(task['id'],rid,reference,reservation.attempt_id,'synthetic-engine')
-    facts=EngineActivityFacts(namespace='default',queue=SCOPE['expected_queue'],start_queue=SCOPE['expected_queue'],
-        workflow_id=accepted.workflow_id,workflow_type=SCOPE['expected_workflow_type'],engine_run_id='synthetic-engine',
-        first_run_id='synthetic-engine',start_input=dict(taskId=task['id'],runId=rid,attemptId=reservation.attempt_id))
-    return SimpleNamespace(context=context,accepted=accepted,facts=facts,source=result.run,activity='model-1')
 
-@contextmanager
-def binding(b):
-    async def inspect(*args,**kwargs): return b.facts
-    with patch('openbot_server.work_temporal_activity.activity_info',lambda:SimpleNamespace(activity_id=b.activity)), \
-            patch('openbot_server.work_temporal_activity.inspect_activity_start',inspect):
-        yield
 
 def request(text='Synthetic prompt',step=1):
     return ModelStepRequest(step=step,messages=[ModelRequest(parts=[UserPromptPart(
         text,timestamp=datetime(2026,9,25,tzinfo=timezone.utc))])],tools=())
 
-def response(req):
-    body=json.loads(req.content);model=body['model']
-    if req.url.path.endswith('/responses'):
-        return {'id':'response-fixture','object':'response','created_at':1,'model':model,'status':'completed',
-            'output':[{'id':'message-fixture','type':'message','role':'assistant','status':'completed',
-                'content':[{'type':'output_text','text':'Checked answer','annotations':[]}]}],
-            'usage':{'input_tokens':10,'output_tokens':4,'total_tokens':14}}
-    return {'id':'chat-fixture','object':'chat.completion','created':1,'model':model,
-        'choices':[{'index':0,'finish_reason':'stop','message':{'role':'assistant','content':'Checked answer'}}],
-        'usage':{'prompt_tokens':10,'completion_tokens':4,'total_tokens':14}}
 
 def product(f,handler=None,**options):
     def send(req):
@@ -129,7 +87,7 @@ def test_real_product_sdk_protocol_and_private_provenance(setup,profile):
     async def check():
         f=setup;connection=await selected(f) if profile=='model' else None
         if profile=='none': await f.settings.save(CONFIG)
-        b=await bound(f,profile,connection)
+        b=await bound(f,profile,connection,scope=SCOPE)
         calls=[]
         async def admission(db,task,action):
             assert task['id']==b.context.task_id and action['status']=='proposed'
@@ -150,7 +108,7 @@ def test_real_product_sdk_protocol_and_private_provenance(setup,profile):
 
 def test_queued_model_selection_ignores_later_bot_change(setup):
     async def check():
-        f=setup;first=await selected(f);second=await selected(f);b=await bound(f,'model',first)
+        f=setup;first=await selected(f);second=await selected(f);b=await bound(f,'model',first,scope=SCOPE)
         await f.connections.update_employee_model(f.token,f.bot,dict(expectedRevision=1,model={'connectionId':second['id'],'modelId':'later-model'}))
         with binding(b): await product(f).call(b.context,request())
         assert json.loads(f.calls[0].content)['model']=='queued-model'
@@ -163,11 +121,11 @@ def test_missing_or_disabled_refuses_without_fallback_or_action(setup,profile,mo
     async def check():
         f=setup
         monkeypatch.setenv('OPENAI_API_KEY','synthetic-ambient-must-not-use')
-        b=await bound(f,profile)
+        b=await bound(f,profile,scope=SCOPE)
         with binding(b),pytest.raises(ProductModelError): await product(f).call(b.context,request())
         assert not f.calls and (await f.store.snapshot(f.token,b.context.task_id))['actions']==[]
         if profile=='model':
-            conn=await selected(f);b=await bound(f,profile,conn)
+            conn=await selected(f);b=await bound(f,profile,conn,scope=SCOPE)
             await f.connections.update(f.token,conn['id'],dict(expectedRevision=1,enabled=False))
             with binding(b),pytest.raises(ControlError): await product(f).call(b.context,request())
         else:
@@ -182,7 +140,7 @@ def test_actual_send_rechecks_configuration_after_awaited_root_callback(setup,pr
     async def check():
         f=setup;conn=await selected(f) if profile=='model' else None
         saved=await f.settings.save(CONFIG) if profile=='none' else None
-        b=await bound(f,profile,conn)
+        b=await bound(f,profile,conn,scope=SCOPE)
         async def before():
             if profile=='none': await f.settings.save({**CONFIG,'revision':saved['revision'],**({'agentEnabled':False} if change=='disable' else {'apiKey':'synthetic-rotated-key'})})
             else: await f.connections.update(f.token,conn['id'],dict(expectedRevision=1,**({'enabled':False} if change=='disable' else {'apiKey':'synthetic-rotated-key'})))
@@ -198,7 +156,7 @@ def test_receipt_retry_after_config_change_uses_original_without_new_send(setup,
     async def check():
         f=setup;conn=await selected(f) if profile=='model' else None
         saved=await f.settings.save(CONFIG) if profile=='none' else None
-        b=await bound(f,profile,conn)
+        b=await bound(f,profile,conn,scope=SCOPE)
         with binding(b): first=await product(f).call(b.context,request())
         if profile=='none': await f.settings.save({**CONFIG,'revision':saved['revision'],**({'agentEnabled':False} if change=='disable' else {'apiKey':'synthetic-rotated-key'})})
         else: await f.connections.update(f.token,conn['id'],dict(expectedRevision=1,**({'enabled':False} if change=='disable' else {'apiKey':'synthetic-rotated-key'})))
@@ -220,7 +178,7 @@ def test_receipt_retry_after_config_change_uses_original_without_new_send(setup,
 
 def test_committed_receipt_lost_ack_recovered_and_unknown_never_resent(setup):
     async def check():
-        f=setup;await f.settings.save(CONFIG);b=await bound(f)
+        f=setup;await f.settings.save(CONFIG);b=await bound(f,scope=SCOPE)
         original=f.receipts.save
         async def interrupted(*args,**kwargs):
             await original(*args,**kwargs);raise asyncio.CancelledError()
@@ -240,7 +198,7 @@ def test_committed_receipt_lost_ack_recovered_and_unknown_never_resent(setup):
 
 def test_binding_and_admission_callback_cannot_be_bypassed(setup):
     async def check():
-        f=setup;await f.settings.save(CONFIG);b=await bound(f)
+        f=setup;await f.settings.save(CONFIG);b=await bound(f,scope=SCOPE)
         with binding(b),pytest.raises(WorkConflict,match='scope_changed'):
             await product(f).call(replace(b.context,task_id=str(uuid4())),request())
         async def refuse(db,task,action): return False
@@ -254,7 +212,7 @@ def test_binding_and_admission_callback_cannot_be_bypassed(setup):
 
 def test_changed_request_or_pending_configuration_never_replans(setup):
     async def check():
-        f=setup;saved=await f.settings.save(CONFIG);b=await bound(f)
+        f=setup;saved=await f.settings.save(CONFIG);b=await bound(f,scope=SCOPE)
         async def refuse(db,task,action): return False
         with binding(b),pytest.raises(WorkConflict): await product(f).call(b.context,request(),admission_check=refuse)
         await f.settings.save({**CONFIG,'revision':saved['revision'],'apiKey':'synthetic-new-key'})
@@ -269,7 +227,7 @@ def test_changed_request_or_pending_configuration_never_replans(setup):
 
 def test_reservation_policy_bound_and_no_configuration_cache(setup):
     async def check():
-        f=setup;await f.settings.save(CONFIG);b=await bound(f)
+        f=setup;await f.settings.save(CONFIG);b=await bound(f,scope=SCOPE)
         for value in (True,-1,1,1_000_000_001):
             with binding(b),pytest.raises(InvalidWork):
                 await product(f,reserve_policy=lambda req,out:value).call(b.context,request())
@@ -284,7 +242,7 @@ def test_same_service_resolves_fresh_configuration_for_next_activity(setup,profi
     async def check():
         f=setup;conn=await selected(f) if profile=='model' else None
         saved=await f.settings.save(CONFIG) if profile=='none' else None
-        b=await bound(f,profile,conn);service=product(f)
+        b=await bound(f,profile,conn,scope=SCOPE);service=product(f)
         with binding(b): await service.call(b.context,request())
         if profile=='none':
             await f.settings.save({**CONFIG,'revision':saved['revision'],'apiKey':'synthetic-rotated-key'})
@@ -301,7 +259,7 @@ def test_same_service_resolves_fresh_configuration_for_next_activity(setup,profi
 @pytest.mark.parametrize('change',['activity','claim','membership'])
 def test_final_send_gate_rejects_changed_binding_or_fence_or_membership(setup,change):
     async def check():
-        f=setup;await f.settings.save(CONFIG);b=await bound(f)
+        f=setup;await f.settings.save(CONFIG);b=await bound(f,scope=SCOPE)
         async def before():
             if change=='activity': b.activity='another-activity'
             elif change=='claim': await f.store.claim(b.context.task_id,b.context.run_id,'replacement-claim')
@@ -316,7 +274,7 @@ def test_final_send_gate_rejects_changed_binding_or_fence_or_membership(setup,ch
 
 def test_admission_rechecks_singleton_changed_during_callback(setup):
     async def check():
-        f=setup;saved=await f.settings.save(CONFIG);b=await bound(f)
+        f=setup;saved=await f.settings.save(CONFIG);b=await bound(f,scope=SCOPE)
         async def admission(db,task,action):
             await f.settings.save({**CONFIG,'revision':saved['revision'],'apiKey':'synthetic-rotated-key'})
             return True
@@ -330,7 +288,7 @@ def test_admission_rechecks_singleton_changed_during_callback(setup):
 
 def test_missing_work_source_never_uses_singleton(setup):
     async def check():
-        f=setup;await f.settings.save(CONFIG);b=await bound(f)
+        f=setup;await f.settings.save(CONFIG);b=await bound(f,scope=SCOPE)
         with psycopg.connect(f.dsn) as db:
             db.execute('DELETE FROM work_sources WHERE task_id=%s',(b.context.task_id,))
         with binding(b),pytest.raises(WorkConflict,match='source_changed'):
@@ -341,7 +299,7 @@ def test_missing_work_source_never_uses_singleton(setup):
 
 def test_admission_rechecks_actual_sdk_acceptance_in_the_same_transaction(setup):
     async def check():
-        f=setup;await f.settings.save(CONFIG);b=await bound(f)
+        f=setup;await f.settings.save(CONFIG);b=await bound(f,scope=SCOPE)
         async def changed(db,task,action):
             await db.execute('UPDATE work_admissions SET submission_attempt_id=%s WHERE run_id=%s',
                 (uuid4().hex,b.context.run_id))

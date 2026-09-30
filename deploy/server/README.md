@@ -61,9 +61,9 @@ The retained ProductWorkService reads/validates them and starts its existing Wor
 embedded engine, plaintext fallback or automatic command/browser capability. Other trusted
 optional Control settings remain explicit runtime composition; no credentials are baked in.
 
-Dependencies are the existing63-distribution Worker profile (including pytest/dev helpers) and
-43 locked Node parser/DB entries before platform filtering. This is not a newly minimized Python
-profile. Node24.21.0 and Python3.12.13 use existing exact official Bookworm image digests;
+Python uses the58 external runtime pins in `requirements-product.lock` plus the locally built
+harness wheel; pytest and other Worker development helpers are excluded. Node uses43 locked
+parser/DB entries before platform filtering. Node24.21.0 and Python3.12.13 use existing exact official Bookworm image digests;
 build-only Web/TypeScript dependencies never enter the final image. Package notices, Node license,
 Python/component notices and THIRD_PARTY_NOTICES remain included. Build uses wheels only and
 fails when a pinned architecture lacks one. Local Linux arm64 and native Linux amd64/arm64 CI image smoke passed at their recorded commits.
@@ -71,7 +71,7 @@ fails when a pinned architecture lacks one. Local Linux arm64 and native Linux a
 Local focused checks (no Docker or provider):
 
 ```sh
-node --test deploy/server/product-container.test.mjs
+node --test deploy/server/product-container.test.ts
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=apps/server-python/src:packages/harness/src apps/server-python/.worker-venv/bin/python -m pytest -p no:cacheprovider -q deploy/server/test_product_container.py apps/server-python/tests/test_entry.py
 ```
 

@@ -193,7 +193,7 @@ def test_real_jose_python_cross_language_sign_and_verify(keys, purpose):
     token = signer(keys, purpose).sign(value, purpose=purpose, now_ms=NOW)
     kid = "key-1" if purpose in ("work_command_dispatch", "work_command_permit") else "enforcement-key"
     result = subprocess.run([os.getenv("OPENBOT_COMMAND_NODE", "node"),
-        str(Path(__file__).with_name("command_node_vectors.mjs"))], check=True, capture_output=True,
+        str(Path(__file__).with_name("command_node_vectors.ts"))], check=True, capture_output=True,
         input=json.dumps({"mode": "interop", "privatePem": keys[0].decode(), "publicPem": keys[1].decode(),
             "token": token, "claims": value, "nowMs": NOW,
             "header": {"alg": "Ed25519", "typ": TOKEN_TYPES[purpose], "kid": kid}}),
@@ -202,6 +202,27 @@ def test_real_jose_python_cross_language_sign_and_verify(keys, purpose):
     assert result["payload"] == value
     assert result["header"] == {"alg": "Ed25519", "typ": TOKEN_TYPES[purpose], "kid": kid}
     assert verify(keys, result["token"], value).model_dump() == value
+
+
+@pytest.mark.parametrize("value,header", [
+    ({"iss": "fixture", "aud": ["first", "second"], "custom": {"x": "测试"}},
+     {"alg": "Ed25519", "typ": "JWT", "kid": "fixture-key", "cty": "application/json"}),
+    ({"custom": [1, True, None]}, {"alg": "Ed25519", "cty": "application/json"}),
+])
+def test_node_library_probe_keeps_extensions_and_optional_jwt_constraints(keys, value, header):
+    # This generic library probe is not the product token verifier, whose refusals stay separate.
+    token = jws.serialize_compact(header, json.dumps(value).encode(),
+                                  OKPKey.import_key(keys[0]), algorithms=["Ed25519"])
+    output = subprocess.run([os.getenv("OPENBOT_COMMAND_NODE", "node"),
+        str(Path(__file__).with_name("command_node_vectors.ts"))], check=True, capture_output=True,
+        input=json.dumps({"mode": "interop", "privatePem": keys[0].decode(), "publicPem": keys[1].decode(),
+                         "token": token, "claims": value, "nowMs": NOW, "header": header}),
+        text=True, timeout=10)
+    result = json.loads(output.stdout)
+    assert result["payload"] == value
+    assert result["header"] == header
+    decoded = jws.deserialize_compact(result["token"], OKPKey.import_key(keys[1]), algorithms=["Ed25519"])
+    assert json.loads(decoded.payload) == value
 
 
 @pytest.mark.parametrize("change", [
@@ -311,7 +332,7 @@ def test_python_node_jcs_agree_on_real_operation_and_unicode_order():
     values = [operation(), {"\U0001f600": "unicode", "\ue000": 1, "z": 0, "a": [True, None, "测试"]}]
     for value in values:
         output = subprocess.run([os.getenv("OPENBOT_COMMAND_NODE", "node"),
-            str(Path(__file__).with_name("command_node_vectors.mjs"))], input=json.dumps({"mode": "jcs", "operation": value}),
+            str(Path(__file__).with_name("command_node_vectors.ts"))], input=json.dumps({"mode": "jcs", "operation": value}),
             check=True, capture_output=True, text=True, timeout=10)
         result = json.loads(output.stdout)
         assert result["canonical"].encode() == rfc8785.dumps(value)
@@ -367,7 +388,7 @@ def test_frozen_public_vectors_are_verified_with_both_libraries():
         assert operation_fingerprint(vector["operation"]) == vector["fingerprint"]
         if os.getenv("OPENBOT_COMMAND_JCS_MODULE") and os.getenv("OPENBOT_COMMAND_JOSE_MODULE"):
             process = subprocess.run([os.getenv("OPENBOT_COMMAND_NODE", "node"),
-                str(Path(__file__).with_name("command_node_vectors.mjs"))],
+                str(Path(__file__).with_name("command_node_vectors.ts"))],
                 input=json.dumps({"mode": "jcs", "operation": vector["operation"]}),
                 check=True, capture_output=True, text=True, timeout=10)
             assert json.loads(process.stdout) == {

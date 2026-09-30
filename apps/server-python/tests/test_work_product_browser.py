@@ -35,7 +35,8 @@ from openbot_server.work_temporal_effect import ToolRequest
 from openbot_server.work_values import WorkConflict, InvalidWork, canonical
 from test_browser_sessions import server, worker, opened, command, enroll_worker, FRAME
 from test_work_task_profiles import setup, bound, profile
-from test_work_product_model import binding, selected, product, request, response, SCOPE
+from test_work_product_model import selected, product, request, SCOPE
+from product_model_fixtures import binding, response
 
 # An actual small PNG, while page contents and browser behavior remain synthetic.
 PNG = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aQf8AAAAASUVORK5CYII=')
@@ -385,7 +386,7 @@ def test_actual_node_provider_and_work_share_the_same_capture(configured):
     async def check():
         async with server(f.seed,configured=False) as (service,registry,http,url):
             credential=await enroll_worker(f.seed,http)
-            script=Path(__file__).parent/'fixtures/work-browser-node.mjs'
+            script=Path(__file__).parent/'fixtures/work-browser-node.ts'
             child=await asyncio.create_subprocess_exec('node','--import','tsx',str(script),
                 cwd=Path(__file__).resolve().parents[3],stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE)
