@@ -50,6 +50,8 @@ describe("Workspace preference storage", () => {
         sendShortcut: "modifier",
         reduceMotion: true,
         hour12: true,
+        notifyApprovals: true,
+        notifyMessages: "yes",
         apiKey: "never-store-this",
         futureSetting: 7,
       }),
@@ -63,6 +65,8 @@ describe("Workspace preference storage", () => {
       sendShortcut: "modifier",
       reduceMotion: true,
       hour12: true,
+      notifyApprovals: true,
+      notifyMessages: false,
     });
     expect(Object.isFrozen(parsed)).toBe(true);
     expect(

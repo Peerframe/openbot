@@ -77,6 +77,12 @@ import {
   getOpenBotDesktopBridge,
 } from "./desktop-runtime";
 import { shortcutLabel } from "./desktop-shortcuts";
+import {
+  NotificationTracker,
+  type SystemNotice,
+  showSystemNotification,
+  windowIsAttended,
+} from "./system-notifications";
 import { useDesktopNavigation } from "./use-desktop-navigation";
 import { useEmployeeProfile } from "./use-employee-profile";
 import { useWorkspaceAppearance } from "./use-workspace-appearance";
@@ -628,19 +634,41 @@ export function AuthenticatedWorkspace({
   } = useWorkspaceState(setError);
   const [notice, setNotice] = useState<string>();
   const [unreadByChannel, setUnreadByChannel] = useState<Record<string, number>>({});
+  const [attention, setAttention] = useState(0);
+  const notifications = useRef(new NotificationTracker());
+  const notifyRef = useRef({ approvals: false, messages: false });
+  notifyRef.current = {
+    approvals: preferences.notifyApprovals,
+    messages: preferences.notifyMessages,
+  };
+  // Returning to the window re-reads unread so the open channel is marked read on arrival.
+  useEffect(() => {
+    const attend = () => setAttention((value) => value + 1);
+    window.addEventListener("focus", attend);
+    document.addEventListener("visibilitychange", attend);
+    return () => {
+      window.removeEventListener("focus", attend);
+      document.removeEventListener("visibilitychange", attend);
+    };
+  }, []);
   // Unread counts are Server facts (ADR-0047). Re-read them after workspace changes, debounced so
-  // run progress bursts cost one request; the open channel is marked read as soon as it has any.
+  // run progress bursts cost one request. The open channel is marked read only while the window
+  // is attended; otherwise its new replies stay unread and may raise an opt-in notification.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: attention only re-triggers the read.
   useEffect(() => {
     if (workspace === undefined) return;
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
         const counts = await getUnreadCounts(controller.signal);
-        if (selectedChannelId && counts[selectedChannelId]) {
+        const notices = notifications.current.messages(counts, workspace.bots, workspace.channels);
+        if (selectedChannelId && counts[selectedChannelId] && windowIsAttended()) {
           delete counts[selectedChannelId];
           void markChannelRead(selectedChannelId).catch(() => undefined);
         }
         setUnreadByChannel(counts);
+        if (notifyRef.current.messages && !windowIsAttended())
+          for (const notice of notices) announce(notice);
       } catch {
         // Unread is advisory presentation; a failed read keeps the previous counts.
       }
@@ -649,7 +677,24 @@ export function AuthenticatedWorkspace({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [workspace, selectedChannelId]);
+  }, [workspace, selectedChannelId, attention]);
+  // New pending approvals are compared with the previous snapshot; the first one is a baseline.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: announce reads only refs and navigation.
+  useEffect(() => {
+    if (workspace === undefined) return;
+    const notices = notifications.current.approvals(
+      workspace.approvals,
+      workspace.bots,
+      workspace.channels,
+    );
+    if (notifyRef.current.approvals && !windowIsAttended())
+      for (const notice of notices) announce(notice);
+  }, [workspace]);
+  function announce(notice: SystemNotice) {
+    void showSystemNotification(notice, () =>
+      navigation.navigate({ kind: "channel", id: notice.channelId }),
+    );
+  }
   const [sharing, setSharing] = useState(false);
   const [sharedBotId, setSharedBotId] = useState<string>();
   const directRequest = useRef(0);
@@ -834,10 +879,9 @@ export function AuthenticatedWorkspace({
       target.kind === "bot"
         ? workspace?.channels.find((channel) => channel.directBotId === target.id)?.id
         : undefined;
-    const result =
-      target.kind === "bot"
-        ? await deleteBot(target.id)
-        : (await deleteChannel(target.id), undefined);
+    let result: { pluginGrantsRemoved: boolean } | undefined;
+    if (target.kind === "bot") result = await deleteBot(target.id);
+    else await deleteChannel(target.id);
     const selectedDeleted =
       (target.kind === "channel" && selectedChannelId === target.id) ||
       (target.kind === "bot" &&

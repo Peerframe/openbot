@@ -147,3 +147,37 @@ deleted channel stay on disk but unreachable; physical retention cleanup is sepa
   rename success and in-place conflict, delete refusal while work is active, successful Bot delete
   removing its row and channel avatar, open-to-read, Web settings sections, approval policy, audit
   list with tombstone labels, black switches, and no horizontal overflow on phones.
+
+## Continuation — notifications and deleted-channel files
+
+Closes the two items the lifecycle section left open.
+
+- Deleting a channel (or a Bot's direct conversation) now removes its attachment files after the
+  tombstone commits, under the attachment lock and in a transaction that re-proves the tombstone;
+  responses report `attachmentsRemoved` (ADR-0047 updated).
+- Settings → 通知 adds opt-in, per-device system notifications for new pending approvals and new Bot
+  replies while OpenBot is in the background ([ADR-0048](../decisions/0048-owner-system-notifications.md)).
+  Desktop shows them through a new trusted-frame bridge to Electron's main-process `Notification`
+  with exact bounded `{title, body}`; renderer permissions stay denied. The Web entry uses the
+  browser Notifications API after a permission prompt from the switch. Notices contain only Bot and
+  channel names and a count, a click opens the related channel, and the first snapshot never
+  replays a backlog. The open channel is now marked read only while the window is attended, and on
+  returning focus, so a background reply there can still notify.
+- Fixed a Biome warning (comma operator) introduced by the lifecycle Web commit.
+
+Not claimed: display on packaged or signed Desktop builds on any platform (unsigned macOS builds
+report `failed`), or delivery while OpenBot is closed.
+
+### Notification and cleanup verification
+
+- `node scripts/test-python-control.mjs` (disposable PostgreSQL): 873 passed, 2 skipped; the HTTP
+  lifecycle case uploads real files and proves the deleted channel's and direct conversation's
+  files are removed, a live channel's file survives and the purge refuses a live channel.
+- Desktop: notifier and preload tests (bounds, unsupported, click-only focus, failure, expiry,
+  four-pending cap). Web: tracker/delivery tests (baseline, no approval details, per-channel
+  throttle, browser permission and Desktop bridge paths) and notification settings tests.
+- `npm run check`: exit 0 before this commit. Web 77 files / 559 tests; Desktop 45 files / 520 passed, 3
+  existing skips; Node 129 passed, 3 skipped; Protocol 430 passed.
+- Rendered the settings page against the disposable loopback API: 通知 section, and with the
+  browser pane's notifications denied the switches and test button are disabled with the reason
+  shown.

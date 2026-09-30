@@ -8,6 +8,12 @@ import {
 } from "../desktop-runtime";
 import { shortcutLabel } from "../desktop-shortcuts";
 import {
+  type NotificationSupport,
+  notificationSupport,
+  requestNotificationPermission,
+  showSystemNotification,
+} from "../system-notifications";
+import {
   defaultPreferences,
   updatePreferences,
   useWorkspacePreferences,
@@ -16,6 +22,7 @@ import {
   ApprovalIcon,
   AuditIcon,
   AutomationIcon,
+  BellIcon,
   BotIcon,
   CloseIcon,
   NodeIcon,
@@ -37,6 +44,7 @@ export type DesktopSettingsSection =
   | "models"
   | "connection"
   | "automations"
+  | "notifications"
   | "approvals"
   | "audit"
   | "privacy"
@@ -66,6 +74,12 @@ const sections: Array<{ id: Section; label: string; icon: ReactNode; description
     label: "自动任务",
     icon: <AutomationIcon />,
     description: "让 Bot 按计划在频道中完成工作。",
+  },
+  {
+    id: "notifications",
+    label: "通知",
+    icon: <BellIcon />,
+    description: "OpenBot 不在前台时，用系统通知提醒你。",
   },
   {
     id: "approvals",
@@ -134,6 +148,7 @@ export function DesktopSettingsScreen({
     models: "API Kimi DeepSeek OpenAI Anthropic 模型 密钥 服务",
     connection: "连接 设备 绑定 权限 服务地址 工作组件",
     automations: "定时 计划 调度 自动 任务",
+    notifications: "通知 提醒 系统 消息 回复 审批",
     approvals: "审批 批准 权限 插件 浏览器 确认 授权",
     audit: "审计 记录 日志 历史 删除 重命名",
     privacy: "隐私 数据 保存 恢复 默认 权限",
@@ -165,7 +180,7 @@ export function DesktopSettingsScreen({
         <nav aria-label="设置分类">
           {(
             [
-              { label: "应用", ids: ["general", "about"] },
+              { label: "应用", ids: ["general", "notifications", "about"] },
               { label: "工作空间", ids: ["models", "connection", "automations"] },
               { label: "安全与记录", ids: ["approvals", "audit", "privacy"] },
             ] as const
@@ -345,6 +360,7 @@ export function DesktopSettingsScreen({
           )}
           {section === "models" && <ModelSettingsScreen embedded onDone={() => {}} />}
           {section === "automations" && <SettingsAutomations onOpen={onAutomations} />}
+          {section === "notifications" && <NotificationSettings />}
           {section === "approvals" && <ApprovalPolicySettings />}
           {section === "audit" && <AuditLogSettings />}
           {section === "connection" && plan && (
@@ -476,6 +492,83 @@ export function DesktopSettingsScreen({
     </div>
   );
 }
+const supportText: Record<NotificationSupport, string> = {
+  desktop: "由系统通知中心显示。macOS 未签名的开发版可能无法显示。",
+  granted: "浏览器已允许 OpenBot 显示通知。",
+  default: "打开任一提醒时，浏览器会询问是否允许通知。",
+  denied: "浏览器已阻止通知。请在浏览器的网站设置中允许后再试。",
+  unsupported: "当前浏览器不支持系统通知。",
+};
+
+function NotificationSettings() {
+  const { values } = useWorkspacePreferences();
+  const [support, setSupport] = useState<NotificationSupport>(notificationSupport);
+  const [testResult, setTestResult] = useState<string>();
+  const blocked = support === "denied" || support === "unsupported";
+
+  async function enable(key: "notifyApprovals" | "notifyMessages", checked: boolean) {
+    if (checked) {
+      // Runs inside the switch click, which is the user gesture browsers require.
+      const next = await requestNotificationPermission();
+      setSupport(next);
+      if (next !== "desktop" && next !== "granted") return;
+    }
+    updatePreferences({ [key]: checked });
+  }
+
+  return (
+    <>
+      <SettingsGroup title="提醒我" description="只在 OpenBot 窗口不在前台时提醒。">
+        <SettingRow title="有操作等待批准" description="Bot 请求你批准一个操作时。">
+          <Switch
+            label="有操作等待批准"
+            checked={values.notifyApprovals && !blocked}
+            disabled={blocked}
+            onChange={(checked) => void enable("notifyApprovals", checked)}
+          />
+        </SettingRow>
+        <SettingRow title="Bot 发来新消息" description="频道或单独对话出现新的未读回复时。">
+          <Switch
+            label="Bot 发来新消息"
+            checked={values.notifyMessages && !blocked}
+            disabled={blocked}
+            onChange={(checked) => void enable("notifyMessages", checked)}
+          />
+        </SettingRow>
+      </SettingsGroup>
+      <SettingsGroup title="系统通知">
+        <SettingRow title="状态" description={supportText[support]}>
+          <button
+            className="secondary-button"
+            type="button"
+            disabled={blocked}
+            onClick={async () => {
+              const next = await requestNotificationPermission();
+              setSupport(next);
+              const shown = await showSystemNotification(
+                { title: "OpenBot 通知测试", body: "通知已可以正常显示。" },
+                () => undefined,
+              );
+              setTestResult(shown ? "已发送测试通知。" : "无法显示通知。");
+            }}
+          >
+            发送测试通知
+          </button>
+        </SettingRow>
+        {testResult && (
+          <p className="settings-success" role="status">
+            {testResult}
+          </p>
+        )}
+      </SettingsGroup>
+      <p className="settings-footnote">
+        通知只包含 Bot
+        和频道名称，不含消息正文或操作详情，因为它可能出现在锁屏上。偏好保存在这台设备。
+      </p>
+    </>
+  );
+}
+
 function Switch({
   label,
   checked,

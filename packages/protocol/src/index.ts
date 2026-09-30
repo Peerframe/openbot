@@ -34,6 +34,8 @@ export type {
   DesktopSidebarMaterialState,
   DesktopNavigationCommand,
   DesktopNavigationMenuState,
+  DesktopNotificationInput,
+  DesktopNotificationResult,
   EmployeeTemplateSaveInput,
   EmployeeTemplateSaveResult,
   OpenBotDesktopBridge,

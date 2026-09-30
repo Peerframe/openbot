@@ -9,6 +9,9 @@ export interface WorkspacePreferences {
   sendShortcut: "enter" | "modifier";
   reduceMotion: boolean;
   hour12: boolean;
+  /** Opt-in system notifications; presentation only, they grant and decide nothing. */
+  notifyApprovals: boolean;
+  notifyMessages: boolean;
 }
 
 export const defaultPreferences: Readonly<WorkspacePreferences> = Object.freeze({
@@ -20,6 +23,8 @@ export const defaultPreferences: Readonly<WorkspacePreferences> = Object.freeze(
   sendShortcut: "enter",
   reduceMotion: false,
   hour12: false,
+  notifyApprovals: false,
+  notifyMessages: false,
 });
 export const preferencesKey = "openbot.workspace-preferences.v1";
 
@@ -39,6 +44,8 @@ export function parsePreferences(raw: string | null): Readonly<WorkspacePreferen
       sendShortcut: input.sendShortcut === "modifier" ? "modifier" : "enter",
       reduceMotion: input.reduceMotion === true,
       hour12: input.hour12 === true,
+      notifyApprovals: input.notifyApprovals === true,
+      notifyMessages: input.notifyMessages === true,
     });
   } catch {
     return defaultPreferences;

@@ -72,3 +72,21 @@ describe("sandboxed sidebar material preload", () => {
     expect(changed).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("sandboxed notification preload", () => {
+  it("forwards only the two bounded strings on the fixed channel", async () => {
+    const { bridge, ipcRenderer } = preload();
+    await bridge.showNotification?.({
+      title: "需要你批准",
+      body: "研究助理",
+      extra: "dropped",
+    } as never);
+    expect(ipcRenderer.invoke).toHaveBeenCalledExactlyOnceWith("openbot:show-notification", {
+      title: "需要你批准",
+      body: "研究助理",
+    });
+    for (const value of [null, {}, { title: 1, body: "" }, { title: "a", body: "b".repeat(81) }])
+      expect(await bridge.showNotification?.(value as never)).toEqual({ status: "failed" });
+    expect(ipcRenderer.invoke).toHaveBeenCalledTimes(1);
+  });
+});

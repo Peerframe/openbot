@@ -78,6 +78,8 @@ describe("Desktop settings interactions", () => {
         sendShortcut: "modifier",
         reduceMotion: true,
         hour12: true,
+        notifyApprovals: false,
+        notifyMessages: false,
       });
       await interact(() => button(rendered.container, "隐私与数据").click());
       await interact(() => button(rendered.container, "恢复默认").click());
@@ -316,6 +318,43 @@ describe("Web settings entry", () => {
       await interact(() => button(rendered.container, "审计记录").click());
       await interact(() => undefined);
       expect(rendered.container.textContent).toContain("暂无记录");
+    } finally {
+      await rendered.unmount();
+    }
+  });
+});
+
+describe("Notification settings", () => {
+  it("asks the browser for permission from the switch and stores the opt-in only when granted", async () => {
+    const requestPermission = vi.fn(async () => "denied" as NotificationPermission);
+    // The global must be a constructor; only its static permission surface is exercised here.
+    const FakeNotification = Object.assign(function Notification() {}, {
+      permission: "default" as NotificationPermission,
+      requestPermission,
+    });
+    vi.stubGlobal("Notification", FakeNotification);
+    const rendered = await renderComponent(
+      <Settings onBack={vi.fn()} initialSection="notifications" />,
+    );
+    try {
+      const approvals = () =>
+        rendered.container.querySelector<HTMLInputElement>('[aria-label="有操作等待批准"]');
+      expect(approvals()?.checked).toBe(false);
+      await interact(() => approvals()?.click());
+      await interact(() => undefined);
+      expect(requestPermission).toHaveBeenCalledOnce();
+      expect(stored()?.notifyApprovals ?? false).toBe(false);
+      expect(rendered.container.textContent).toContain("浏览器已阻止通知");
+      expect(approvals()?.disabled).toBe(true);
+
+      FakeNotification.permission = "default";
+      requestPermission.mockResolvedValueOnce("granted");
+      await interact(() => button(rendered.container, "常规").click());
+      await interact(() => button(rendered.container, "通知").click());
+      await interact(() => approvals()?.click());
+      await interact(() => undefined);
+      expect(stored()?.notifyApprovals).toBe(true);
+      expect(stored()?.notifyMessages).toBe(false);
     } finally {
       await rendered.unmount();
     }

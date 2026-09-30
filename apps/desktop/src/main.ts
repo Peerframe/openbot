@@ -6,6 +6,7 @@ import {
   dialog,
   ipcMain,
   Menu,
+  Notification,
   nativeTheme,
   net,
   protocol,
@@ -21,6 +22,7 @@ import { discardBody } from "./bounded-response.js";
 import { FileDesktopConnectionStore } from "./connection-config.js";
 import { DesktopConnectionController } from "./connection-controller.js";
 import { desktopWindowIconPath } from "./desktop-icon.js";
+import { DesktopNotifier } from "./desktop-notifications.js";
 import {
   isDesktopSessionAuthenticated,
   issueDesktopNodeEnrollmentToken,
@@ -52,6 +54,7 @@ import {
   DESKTOP_SET_SIDEBAR_TRANSLUCENCY_CHANNEL,
   DESKTOP_SETUP_LOCAL_WORKER_CHANNEL,
   DESKTOP_SETUP_PLAN_STATE_CHANNEL,
+  DESKTOP_SHOW_NOTIFICATION_CHANNEL,
   DESKTOP_SIDEBAR_MATERIAL_CHANGED_CHANNEL,
   DESKTOP_SIDEBAR_MATERIAL_STATE_CHANNEL,
 } from "./runtime-contract.js";
@@ -102,6 +105,18 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 const eventStreams = new DesktopEventStreamLifecycle();
+// Presentation only: the renderer chooses content, the main process bounds it and a click only
+// focuses the existing window. Nothing here reads Server data or grants anything.
+const notifier = new DesktopNotifier({
+  isSupported: () => Notification.isSupported(),
+  create: (input) => new Notification({ title: input.title, body: input.body }),
+  focus: () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  },
+});
 const microphonePolicy = new DesktopMicrophonePolicy();
 
 function lockDownSession(desktopSession: Session): void {
@@ -241,6 +256,13 @@ function registerDesktopIpc(
     }
     if (!navigationMenu) throw new Error("Desktop navigation menu is unavailable.");
     navigationMenu.update(value);
+  });
+  ipcMain.removeHandler(DESKTOP_SHOW_NOTIFICATION_CHANNEL);
+  ipcMain.handle(DESKTOP_SHOW_NOTIFICATION_CHANNEL, (event, input: unknown) => {
+    if (!isTrustedDesktopIpcSender(event, mainWindow?.webContents)) {
+      throw new Error("Desktop IPC sender is not allowed.");
+    }
+    return notifier.show(input);
   });
   ipcMain.removeHandler(DESKTOP_SET_SIDEBAR_TRANSLUCENCY_CHANNEL);
   ipcMain.removeHandler(DESKTOP_SIDEBAR_MATERIAL_STATE_CHANNEL);
@@ -595,6 +617,7 @@ app.on("activate", () => {
 
 app.on("before-quit", (event) => {
   eventStreams.clear();
+  notifier.closeAll();
   if (quitting || nativeServer === undefined) return;
   event.preventDefault();
   quitting = true;

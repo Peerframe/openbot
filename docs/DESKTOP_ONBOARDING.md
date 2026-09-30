@@ -110,16 +110,19 @@ command bridge, Reload menu or Developer Tools menu is added. See
 
 Open **Owner → Settings**. Settings replaces the workspace across the whole application window;
 its own vertical category navigation, search and **Back to app** control replace the channel/Bot
-sidebar. Categories are grouped under Application and Workspace:
+sidebar. Categories are grouped under Application, Workspace and Security & records:
 
 | Category | Available controls and information |
 | --- | --- |
 | General | Sidebar translucency, independent panel visibility, comfortable/compact spacing, 14/16 px chat text, reduced motion, send shortcut and 12/24-hour timestamps |
+| Notifications | Opt-in system notifications for pending approvals and new Bot replies while OpenBot is in the background; names only, no message text ([ADR-0048](decisions/0048-owner-system-notifications.md)) |
 | About OpenBot | Version/platform/runtime information, model-interface choices and Hermes Agent attribution |
 | Privacy & Data | Data/credential storage, Server authorization, available usage and reset local interface preferences |
 | Model services | Validate and save the Server's **one default model configuration**, replace its key and explicitly enable or disable the native Agent |
 | Work computers | Current role and Server address, change role/remote connection, manage devices and inspect local Worker status |
 | Automatic tasks | Create and manage persistent schedules through the existing Server API |
+| Approvals & permissions | Read-only summary of which actions the Server requires approval for |
+| Audit log | Paged Owner audit events with deleted channels and Bots labelled |
 
 Provider presets are choices for the single default configuration, not independently saved
 connections or per-Bot model assignments.
