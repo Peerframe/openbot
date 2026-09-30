@@ -214,12 +214,11 @@
   background: #9aa4b3;
 }
 .sidebar-footer {
-  border-top: 1px solid #dde3eb;
-  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
   position: relative;
 }
-.sidebar-plugin,
-.desktop-workspace .owner-menu > summary {
+.sidebar-plugin {
   width: 100%;
   display: flex;
   align-items: center;
@@ -231,38 +230,75 @@
   cursor: pointer;
   font-size: 14px;
 }
-.sidebar-plugin:hover,
-.owner-menu > summary:hover {
+.sidebar-plugin:hover {
   background: var(--fill-strong);
 }
+/* Account avatar and the plugins pill share one row, as in the approved layout. */
+.sidebar-footer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 2px 2px;
+}
 .desktop-workspace .owner-menu > summary {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #e3e3e6;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
   list-style: none;
+}
+.owner-menu > summary:hover,
+.owner-menu[open] > summary {
+  background: var(--fill-strong);
 }
 .owner-menu > summary::-webkit-details-marker {
   display: none;
 }
 .owner-avatar {
-  width: 32px;
-  height: 32px;
-  background: var(--fill-strong);
-  color: var(--ink);
   display: grid;
+  width: 100%;
+  height: 100%;
   place-items: center;
   border-radius: 50%;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 600;
 }
-.owner-chevron {
-  margin-left: auto;
-  color: #68758a;
+.sidebar-plugin-pill {
+  display: flex;
+  min-width: 0;
+  height: 44px;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px solid #e3e3e6;
+  border-radius: 22px;
+  color: var(--ink);
+  background: #fff;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+}
+.sidebar-plugin-pill:hover {
+  background: var(--fill-strong);
 }
 .sidebar-popover {
   position: absolute;
   z-index: 30;
   min-width: 210px;
-  padding: 8px;
-  background: #fcfdfe;
-  border: 1px solid #dde2ea;
-  border-radius: 14px;
-  box-shadow: 0 8px 25px #25374c25;
+  padding: 5px;
+  background: #fdfdfd;
+  border: 1px solid #e5e5e8;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
 }
 .create-popover {
   right: 0;
@@ -280,26 +316,27 @@
   gap: 12px;
   text-align: left;
   width: 100%;
-  padding: 10px 12px;
+  min-height: 34px;
+  padding: 0 10px;
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: #202b3c;
+  color: var(--ink);
   text-decoration: none;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
 }
 .sidebar-popover button:hover,
 .sidebar-popover a:hover {
-  background: var(--fill);
+  background: #ececee;
 }
 .sidebar-popover a span {
   margin-left: auto;
 }
 .sidebar-popover hr {
   border: 0;
-  border-top: 1px solid #e2e7ed;
-  margin: 6px;
+  border-top: 1px solid #e8e8ea;
+  margin: 4px 8px;
 }
 .sidebar-empty {
   font-size: 12px;

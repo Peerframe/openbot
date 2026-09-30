@@ -235,77 +235,77 @@ export function Sidebar({
             <span>任务监督</span>
           </button>
         )}
-        {onSkills && (
-          <button className="sidebar-plugin" type="button" onClick={onSkills}>
-            <SkillIcon />
-            <span>插件</span>
-          </button>
-        )}
-        <details className="owner-menu">
-          <summary>
-            <span className="owner-avatar">{ownerName.slice(0, 1).toUpperCase()}</span>
-            <span>{ownerName}</span>
-            <span className="owner-chevron" aria-hidden="true">
-              ⌄
-            </span>
-          </summary>
-          <div className="sidebar-popover owner-popover">
-            {onSettings && (
-              <>
+        <div className="sidebar-footer-row">
+          <details className="owner-menu">
+            <summary aria-label={`${ownerName}：账户与设置`} title={ownerName}>
+              <span className="owner-avatar" aria-hidden="true">
+                {ownerName.slice(0, 1).toUpperCase()}
+              </span>
+            </summary>
+            <div className="sidebar-popover owner-popover">
+              {onSettings && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      dismiss();
+                      onSettings();
+                    }}
+                  >
+                    <SettingsIcon />
+                    设置
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      dismiss();
+                      onSettings("about");
+                    }}
+                  >
+                    <span aria-hidden="true">ⓘ</span>关于 OpenBot
+                  </button>
+                </>
+              )}
+              {onManageModels ? (
                 <button
                   type="button"
                   onClick={() => {
                     dismiss();
-                    onSettings();
+                    onManageModels();
                   }}
                 >
                   <SettingsIcon />
-                  设置
+                  模型服务
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    dismiss();
-                    onSettings("about");
-                  }}
-                >
-                  <span aria-hidden="true">ⓘ</span>关于 OpenBot
-                </button>
-              </>
-            )}
-            {onManageModels ? (
-              <button
-                type="button"
-                onClick={() => {
-                  dismiss();
-                  onManageModels();
-                }}
+              ) : null}
+              <a href="https://github.com/yxflc11/openbot#readme" target="_blank" rel="noreferrer">
+                帮助中心<span aria-hidden="true">↗</span>
+              </a>
+              <a
+                href="https://github.com/yxflc11/openbot/issues/new"
+                target="_blank"
+                rel="noreferrer"
               >
-                <SettingsIcon />
-                模型服务
+                发送反馈<span aria-hidden="true">↗</span>
+              </a>
+              <hr />
+              <button type="button" disabled={loggingOut} onClick={() => void handleLogout()}>
+                {loggingOut ? "退出中…" : "退出登录"}
               </button>
-            ) : null}
-            <a href="https://github.com/yxflc11/openbot#readme" target="_blank" rel="noreferrer">
-              帮助中心<span aria-hidden="true">↗</span>
-            </a>
-            <a
-              href="https://github.com/yxflc11/openbot/issues/new"
-              target="_blank"
-              rel="noreferrer"
-            >
-              发送反馈<span aria-hidden="true">↗</span>
-            </a>
-            <hr />
-            <button type="button" disabled={loggingOut} onClick={() => void handleLogout()}>
-              {loggingOut ? "退出中…" : "退出登录"}
+              {logoutError && (
+                <p className="warning" role="alert">
+                  退出失败，请重试
+                </p>
+              )}
+            </div>
+          </details>
+          {onSkills && (
+            <button className="sidebar-plugin-pill" type="button" onClick={onSkills}>
+              <SkillIcon />
+              <span>插件</span>
             </button>
-            {logoutError && (
-              <p className="warning" role="alert">
-                退出失败，请重试
-              </p>
-            )}
-          </div>
-        </details>
+          )}
+        </div>
       </footer>
     </aside>
   );
