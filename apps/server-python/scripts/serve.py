@@ -109,7 +109,7 @@ def main():
         product = OwnerProduct(dsn, object_root=object_root, model_settings=model,
             knowledge=PostgresEmployeeKnowledge(dsn), interactions=PostgresConversationInteractions(dsn),
             plugins=plugins,model_connections=connections,worker_identity=worker_identity,
-            worker_registry=worker_registry,browser=browser,nodes=worker_registry.list)
+            worker_registry=worker_registry,browser=browser,plugin_catalog_path=os.environ.get("OPENBOT_PLUGIN_CATALOG_PATH"),nodes=worker_registry.list)
         product.automations = PostgresAutomations(dsn, files=product.files,model_connections=connections)
         from openbot_server.employee_portability import PostgresEmployeePortability
         publisher = None

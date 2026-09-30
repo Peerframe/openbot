@@ -1,43 +1,39 @@
+export * from "./attachments.js";
+export * from "./automations.js";
 export * from "./browser.js";
-
 export {
   browserClickApprovalMatches,
   hasBrowserClickIntent,
   parseBrowserClickInstruction,
 } from "./browser-click.js";
-export * from "./model-services.js";
-
-export * from "./node-metadata.js";
-export * from "./node.js";
-export * from "./employee.js";
 export * from "./channel-inputs.js";
-
-export * from "./attachments.js";
-export * from "./automations.js";
 export * from "./channel-interactions.js";
-export * from "./plugins.js";
-export * from "./provider-conformance.js";
-
-export * from "./work-command.js";
-
 export type {
-  DesktopSetupMode,
-  DesktopSetupPlanInput,
-  DesktopRuntimeInfo,
-  DesktopConnectionState,
   ConfigureDesktopServerResult,
-  DesktopSetupPlanState,
-  SaveDesktopSetupPlanResult,
-  DesktopLocalWorkerState,
+  DesktopConnectionState,
   DesktopLocalWorkerFailureCode,
   DesktopLocalWorkerOperationResult,
-  DesktopSidebarMaterialState,
+  DesktopLocalWorkerState,
   DesktopNavigationCommand,
   DesktopNavigationMenuState,
   DesktopNotificationInput,
   DesktopNotificationResult,
+  DesktopRuntimeInfo,
+  DesktopSetupMode,
+  DesktopSetupPlanInput,
+  DesktopSetupPlanState,
+  DesktopSidebarMaterialState,
   EmployeeTemplateSaveInput,
   EmployeeTemplateSaveResult,
-  OpenBotDesktopBridge,
   NativeServerState,
+  OpenBotDesktopBridge,
+  SaveDesktopSetupPlanResult,
 } from "./desktop.js";
+export * from "./employee.js";
+export * from "./model-services.js";
+export * from "./node.js";
+export * from "./node-metadata.js";
+export * from "./plugin-catalog.js";
+export * from "./plugins.js";
+export * from "./provider-conformance.js";
+export * from "./work-command.js";

@@ -67,6 +67,7 @@ const controlTests = [
   "tests/test_identity_lifecycle.py",
   "tests/test_attachment_processing.py",
   "tests/test_plugin_service.py",
+  "tests/test_plugin_catalog.py",
   "tests/test_plugin_transport.py",
   "tests/test_worker_host_identity.py",
   "tests/test_worker_host_protocol.py",

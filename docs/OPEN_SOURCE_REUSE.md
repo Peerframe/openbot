@@ -980,3 +980,11 @@ subprocess, with [targeted security-update evidence](research/python-work-produc
 C3 复用现有 npm/Turbo 图和已固定的 Actions。YAML 2.9.0 从已有依赖提升为显式根工具，
 pip-audit 2.10.1 在隔离工具环境审计实际 Python 生产锁；不复制上游源码。Soup Sieve 2.9.2
 修复该门发现的安全公告，保留原 HTML 提取契约和有界子进程；固定版本与针对性证据见上方链接。
+
+## Reviewed plugin catalog source (2026-10-01)
+
+The [catalog decision](research/desktop-reviewed-plugin-catalog.md) reuses the MIT first-party
+notebook template at main57341154b19d45686b2f71bce96fca38e1f07310, pinned MCP SDK1.30.0/Zod4.6.2,
+existing Owner transactions and bounded owned-file loading. Explicit commit/file/review records form
+the curated source; registry publication is not treated as review. No new dependency or copied source.
+The attempted public Docs MCP review failed its real DNS boundary and is not included as a reviewed service.

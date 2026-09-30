@@ -27,7 +27,7 @@ class AutomationEnabled(BaseModel):
 
 
 class OwnerProduct:
-    def __init__(self, dsn, *, object_root, model_settings=None, knowledge=None, automations=None, interactions=None, portability=None, processing=None, plugins=None, model_connections=None, worker_identity=None, worker_registry=None, browser=None, nodes=lambda: []):
+    def __init__(self, dsn, *, object_root, model_settings=None, knowledge=None, automations=None, interactions=None, portability=None, processing=None, plugins=None, model_connections=None, worker_identity=None, worker_registry=None, browser=None, plugin_catalog_path=None, nodes=lambda: []):
         self.transactions = OwnerTransactions(dsn)
         self.workspace = PostgresWorkspace(dsn,nodes=nodes)
         self.files = OwnerFiles(Path(object_root)/'attachments')
@@ -36,6 +36,8 @@ class OwnerProduct:
         self.portability, self.processing = portability, processing
         self.plugins, self.model_connections = plugins, model_connections
         self.worker_identity, self.worker_registry = worker_identity, worker_registry
+        from .plugin_catalog import ReviewedPluginCatalog
+        self.plugin_catalog = ReviewedPluginCatalog(dsn,plugin_catalog_path)
         self.browser = browser
         self.work_runtime = None
         self.write_routes = []
@@ -170,6 +172,11 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         row,data=await product.artifact_content(value,path['artifact_id'])
         return download_response(data,name=row['name'],media_type=row['media_type'])
     route('/api/v1/artifacts/{artifact_id}/content','GET',artifact)
+
+    async def plugin_catalog(value,_path,_body,request):
+        if request.query_params: raise HTTPException(422,'Catalog query parameters are not accepted.')
+        return await product.plugin_catalog.snapshot(value)
+    route('/api/v1/plugins/catalog','GET',plugin_catalog)
 
     async def model_summary(value,*_):
         if product.model is None: return {'status':'unavailable'}
