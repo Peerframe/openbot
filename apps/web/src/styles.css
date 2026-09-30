@@ -1461,37 +1461,37 @@ select:focus-visible {
   gap: 9px;
   width: 158px;
 }
+/* Profile sections switch with pills, matching the plugin and settings destinations. */
 .employee-tabs {
   display: flex;
-  gap: clamp(12px, 2.2vw, 30px);
+  gap: 8px;
   overflow-x: auto;
-  border-bottom: 1px solid var(--line);
+  padding: 4px 0 2px;
 }
 .employee-tabs button {
-  min-height: 48px;
+  min-height: 34px;
   flex: 0 0 auto;
-  padding: 0 2px;
+  padding: 0 16px;
   border: 0;
-  border-bottom: 2px solid transparent;
-  color: #4f565f;
-  background: transparent;
+  border-radius: 17px;
+  color: #3a3a3c;
+  background: var(--fill);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
 }
 .employee-tabs button:hover {
-  color: #111419;
+  background: var(--fill-strong);
 }
 .employee-tabs button.selected {
-  border-bottom-color: var(--blue);
-  color: var(--blue);
-  font-weight: 680;
+  color: #fff;
+  background: var(--ink-strong);
+  font-weight: 600;
 }
 .employee-profile-body {
   padding-top: 22px;
 }
 .employee-about {
-  padding: 0 6px 20px;
-  border-bottom: 1px solid var(--line);
+  padding: 0 4px 18px;
 }
 .employee-about h2,
 .employee-section-heading h2 {
@@ -1503,16 +1503,17 @@ select:focus-visible {
 .employee-about p {
   max-width: 780px;
   margin: 8px 0 0;
-  color: #525962;
-  font-size: 12px;
+  color: var(--muted);
+  font-size: 14px;
   line-height: 1.65;
 }
 .employee-stat-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  margin: 0;
-  padding: 20px 0;
-  border-bottom: 1px solid var(--line);
+  margin: 0 0 20px;
+  padding: 18px 0;
+  border-radius: 18px;
+  background: var(--fill);
 }
 .employee-stat-row > div {
   min-width: 0;
@@ -1520,11 +1521,11 @@ select:focus-visible {
   text-align: center;
 }
 .employee-stat-row > div + div {
-  border-left: 1px solid var(--line);
+  border-left: 1px solid #e3e3e6;
 }
 .employee-stat-row dt {
-  color: #747b84;
-  font-size: 10px;
+  color: var(--muted);
+  font-size: 13px;
 }
 .employee-stat-row dd {
   margin: 7px 0 0;
@@ -1536,24 +1537,22 @@ select:focus-visible {
 .employee-overview-split {
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  border-bottom: 1px solid var(--line);
+  gap: 16px;
+  margin-bottom: 20px;
 }
 .employee-overview-split > section {
   min-width: 0;
-  padding: 20px 20px 24px 6px;
-}
-.employee-overview-split > section + section {
-  padding-right: 6px;
-  padding-left: 24px;
-  border-left: 1px solid var(--line);
+  padding: 18px 20px 20px;
+  border-radius: 18px;
+  background: var(--fill);
 }
 .employee-section-heading {
   margin-bottom: 18px;
 }
 .employee-section-heading p {
   margin: 5px 0 0;
-  color: #8a9097;
-  font-size: 10px;
+  color: #8e8e93;
+  font-size: 12px;
   line-height: 1.5;
 }
 .employee-evolution-timeline {
@@ -2588,18 +2587,10 @@ select:focus-visible {
     border-left: 0;
   }
   .employee-stat-row > div:nth-child(n + 3) {
-    border-top: 1px solid var(--line);
+    border-top: 1px solid #e3e3e6;
   }
   .employee-overview-split {
     grid-template-columns: 1fr;
-  }
-  .employee-overview-split > section,
-  .employee-overview-split > section + section {
-    padding: 20px 0;
-    border-left: 0;
-  }
-  .employee-overview-split > section + section {
-    border-top: 1px solid var(--line);
   }
   .employee-skill-graph {
     grid-template-columns: 48px minmax(0, 1fr);
