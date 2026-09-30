@@ -458,3 +458,28 @@ internal non-secret-reference entries may be enabled. Updates require the usual 
 
 Models only prepare a proposal in the bounded native loop; they do not call these Owner endpoints.
 Successful Run completion publishes the candidate atomically. See [Native Agent](NATIVE_AGENT.md).
+
+## Audit categories and CSV (C3)
+
+`GET /api/v1/audit` additionally accepts `category`: `authentication`, `settings`, `hosts`,
+`approvals`, `channels`, `bots`, `runs`, `plugins`, or `other`. Omit it for all categories.
+Every event includes its Server-assigned category. Filtering happens in SQL before the existing
+exact-time/ID keyset pagination; unknown/duplicate query keys, categories and malformed bounds
+return 422. JSON pages remain limited to 1–100 events.
+
+`GET /api/v1/audit/export` accepts the same category/cursor and `limit=1..1000` (default 1000).
+It downloads UTF-8/BOM CSV (`openbot-audit.csv`), quoted with CRLF rows. Columns are `id`,
+`createdAt`, `category`, `type`, channel/Bot IDs and names, `runId`, and allowlisted `details`.
+Formula-like cell prefixes are escaped with an apostrophe. Owner authentication and no-store
+apply; raw prompts, keys, tool arguments and network digests never enter the export. Each page
+is bounded to 4 MiB. A non-final page exposes `X-OpenBot-Next-Before` (also exposed via CORS);
+pass it as `before` and concatenate parsed rows to export a larger history. Do not repeat CSV
+headers/BOM when assembling pages. The export is paginated history, not a transaction-wide archive.
+
+Login success/failure and logout append `AUTH_LOGIN_SUCCEEDED`, `AUTH_LOGIN_FAILED`, `AUTH_LOGOUT`
+without secrets; rejected, already-throttled attempts do not create unbounded audit rows.
+Final legacy model-setting publication audits `SETTINGS_MODEL_UPDATED` in its authority
+transaction; audit failure restores the private file. Existing model-connection events remain.
+Worker enrollment/revocation and real connection/disconnection append `WORKER_HOST_*`; private
+identity digests stay in the identity ledger. Connected-event failure refuses availability;
+physical disconnect cleanup still completes if audit persistence fails and logs a fixed error.

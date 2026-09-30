@@ -758,3 +758,5 @@ export type ReviewKnowledgeProposalInput =
     };
 
 export * from "./channel-interactions.js";
+
+export type { AuditCategory, AuditEvent, AuditPage } from "@openbot/protocol";

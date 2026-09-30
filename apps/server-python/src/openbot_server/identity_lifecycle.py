@@ -13,6 +13,7 @@ import psycopg
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ConfigDict, ValidationError
 
+from .audit_records import AUDIT_PAYLOAD_KEYS, audit_records
 from .authority import OwnerTransactions
 from .control_errors import ControlError
 from .database import StoreUnavailable
@@ -25,8 +26,7 @@ UNREAD_CAP = 99
 AUDIT_LIMIT = 100
 # Only these payload keys are copied into the audit view; everything else (message text, prompts,
 # tool arguments) stays in storage and is never re-exposed through this read.
-AUDIT_PAYLOAD_KEYS = ("name", "from", "to", "actor", "reason", "emoji", "active", "decision",
-                      "removedBotId", "deletedMessages", "redactedMessages", "directBotId")
+
 
 
 class RenameBotInput(BaseModel):
@@ -237,47 +237,7 @@ class PostgresIdentityLifecycle:
                 raise ControlError(503, "identity_lifecycle_projection_limit")
             return {row["id"]: int(row["unread"]) for row in rows if row["unread"]}
 
-    async def audit(self, token, *, before=None, limit=50):
-        if not isinstance(limit, int) or not 1 <= limit <= AUDIT_LIMIT:
-            raise ControlError(422, "invalid_audit_limit")
-        # Keyset cursor "<exact created_at>|<event id>". One transaction writes several events with the
-        # same timestamp, so time alone would skip events at a page boundary.
-        cursor = cursor_id = None
-        if before is not None:
-            try:
-                instant, cursor_id = before.split("|", 1)
-                cursor = datetime.fromisoformat(instant)
-            except (AttributeError, ValueError):
-                raise ControlError(422, "invalid_audit_cursor") from None
-            if cursor.tzinfo is None or not 1 <= len(cursor_id) <= 128:
-                raise ControlError(422, "invalid_audit_cursor")
-        async with _storage_errors(), self._transactions.transaction(token) as db:
-            rows = await (await db.execute(
-                "SELECT e.id,e.type,e.created_at,e.channel_id,e.bot_id,e.run_id,e.payload,"
-                "left(c.name,81) AS channel_name,c.deleted_at IS NOT NULL AS channel_deleted,"
-                "left(b.name,65) AS bot_name,b.deleted_at IS NOT NULL AS bot_deleted "
-                "FROM run_events e LEFT JOIN channels c ON c.id=e.channel_id LEFT JOIN bots b ON b.id=e.bot_id "
-                "WHERE (%s::timestamptz IS NULL OR (e.created_at,e.id) < (%s::timestamptz,%s::text)) "
-                "ORDER BY e.created_at DESC,e.id DESC LIMIT %s",
-                (cursor, cursor, cursor_id, limit + 1))).fetchall()
-            events = []
-            for row in rows[:limit]:
-                payload = row["payload"] if isinstance(row["payload"], dict) else {}
-                details = {key: payload[key] for key in AUDIT_PAYLOAD_KEYS
-                           if isinstance(payload.get(key), (str, int, bool)) and not isinstance(payload.get(key), float)}
-                details = {key: (value[:120] if isinstance(value, str) else value) for key, value in details.items()}
-                event = {"id": row["id"], "type": str(row["type"])[:64], "createdAt": iso_timestamp(row["created_at"]),
-                         "details": details}
-                for key, column in (("channelId", "channel_id"), ("botId", "bot_id"), ("runId", "run_id")):
-                    if row[column] is not None:
-                        event[key] = row[column]
-                if row["channel_name"] is not None:
-                    event["channelName"] = row["channel_name"]
-                    event["channelDeleted"] = bool(row["channel_deleted"])
-                if row["bot_name"] is not None:
-                    event["botName"] = row["bot_name"]
-                    event["botDeleted"] = bool(row["bot_deleted"])
-                events.append(event)
-            last = rows[limit - 1] if len(rows) > limit else None
-            next_before = last["created_at"].isoformat() + "|" + last["id"] if last else None
-            return {"events": events, **({"nextBefore": next_before} if next_before else {})}
+    async def audit(self, token, *, before=None, limit=50, category=None, maximum=100):
+        async with _storage_errors():
+            return await audit_records(self._transactions,token,before=before,limit=limit,
+                                       category=category,maximum=maximum)

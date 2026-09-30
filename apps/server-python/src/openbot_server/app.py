@@ -77,7 +77,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     app = FastAPI(title="OpenBot control-plane reference", version="0.0.0",
                   docs_url=None, redoc_url=None, lifespan=lifespan)
     app.add_middleware(CORSMiddleware, allow_origins=list(allowed_origins),
-                       allow_credentials=True, allow_methods=(["GET", "POST", "PATCH", "PUT", "DELETE"] if product else ["GET", "POST", "PATCH"] if profiles else
+                       allow_credentials=True, expose_headers=["X-OpenBot-Next-Before"], allow_methods=(["GET", "POST", "PATCH", "PUT", "DELETE"] if product else ["GET", "POST", "PATCH"] if profiles else
                                       ["GET", "POST"] if auth or identity or conversations or tasks or run_commands or work else ["GET"]),
                        allow_headers=(["Content-Type", "X-OpenBot-Filename", "If-Match"] if product else ["Content-Type"] if auth or identity or conversations or profiles or tasks or run_commands or work else []))
 
