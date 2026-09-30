@@ -11,6 +11,10 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 import { createDatabase } from "../../packages/db/dist/index.js";
 import { FileArtifactStorage } from "../../tests/oracles/legacy-server/dist/artifact-storage.js";
+import {
+  allowlistedEnvironment,
+  OwnedDockerFixture,
+} from "../../scripts/python-acceptance-fixture.ts";
 import { materializeHistory, readJson, root, sha256, verifySources } from "./sources.ts";
 
 // This entry point has no database URL or input-archive option: it owns every tested destination.
@@ -25,6 +29,20 @@ const clients = [];
 const cases = [];
 let port;
 let databaseIndex = 0;
+// The shared fixture owns the container lifetime: exact name and label reserved before creation,
+// removal only by the uniquely discovered and inspected full ID.
+const fixture = new OwnedDockerFixture(
+  temporary,
+  allowlistedEnvironment([
+    "PATH",
+    "HOME",
+    "DOCKER_HOST",
+    "DOCKER_CONFIG",
+    "DOCKER_CONTEXT",
+    "DOCKER_CERT_PATH",
+    "DOCKER_TLS_VERIFY",
+  ]),
+);
 
 function docker(args, input) {
   return execFileSync("docker", args, {
@@ -37,41 +55,6 @@ function docker(args, input) {
 
 function pgTool(command, args, input) {
   return docker(["exec", "-i", container, command, ...args], input);
-}
-
-function removeOwnedContainer() {
-  // A failed run response does not prove the daemon failed to create the container. Discover
-  // ownership even after an unknown outcome, then remove by ID so a reused name cannot redirect it.
-  const ids = docker([
-    "container",
-    "ls",
-    "--all",
-    "--no-trunc",
-    "--filter",
-    `name=${container}`,
-    "--filter",
-    "label=openbot.fixture=s7",
-    "--format",
-    "{{.ID}}",
-  ])
-    .toString()
-    .trim()
-    .split("\n")
-    .filter(Boolean);
-  if (ids.length === 0) return;
-  assert.equal(ids.length, 1, "Refusing ambiguous S7 container cleanup");
-  const [id] = ids;
-  assert.match(id, /^[a-f0-9]{64}$/, "Refusing invalid S7 container ID");
-  const inspected = JSON.parse(docker(["container", "inspect", id]).toString());
-  assert.equal(inspected.length, 1, "Refusing ambiguous S7 container inspection");
-  assert.equal(inspected[0].Id, id, "Refusing changed S7 container identity");
-  assert.equal(inspected[0].Name, `/${container}`, "Refusing unowned S7 container name");
-  assert.equal(
-    inspected[0].Config?.Labels?.["openbot.fixture"],
-    "s7",
-    "Refusing unowned S7 container label",
-  );
-  docker(["container", "rm", "--force", id]);
 }
 
 async function check(name, action) {
@@ -345,24 +328,34 @@ async function rejectedMutation(source, target, objects, mutate, expected) {
 }
 
 try {
-  docker([
-    "run",
-    "--detach",
-    "--rm",
-    "--name",
+  // Synthetic-only S7 surfaces the daemon's own cleanup diagnostics; the root default withholds.
+  const ownershipLabel = fixture.reserveContainer(
     container,
-    "--label",
-    "openbot.fixture=s7",
-    "--memory",
-    "1g",
-    "--tmpfs",
-    "/var/lib/postgresql/data:rw,size=512m",
-    "--env",
-    "POSTGRES_PASSWORD=s7-synthetic-only",
-    "--publish",
-    "127.0.0.1::5432",
-    image,
-  ]);
+    { key: "openbot.fixture", value: "s7" },
+    "S7",
+    "daemon",
+  );
+  fixture.run(
+    [
+      "run",
+      "--detach",
+      "--rm",
+      "--name",
+      container,
+      "--label",
+      ownershipLabel,
+      "--memory",
+      "1g",
+      "--tmpfs",
+      "/var/lib/postgresql/data:rw,size=512m",
+      "--env",
+      "POSTGRES_PASSWORD=s7-synthetic-only",
+      "--publish",
+      "127.0.0.1::5432",
+      image,
+    ],
+    60_000,
+  );
   const inspection = JSON.parse(docker(["inspect", container]).toString())[0];
   port = inspection.NetworkSettings.Ports["5432/tcp"][0].HostPort;
   let ready = false;
@@ -680,7 +673,7 @@ try {
 } finally {
   await Promise.allSettled(clients.map((sql) => sql.end({ timeout: 2 })));
   try {
-    removeOwnedContainer();
+    fixture.cleanup();
   } finally {
     await rm(temporary, { recursive: true, force: true });
   }

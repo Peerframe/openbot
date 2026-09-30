@@ -61,11 +61,19 @@ try {
   ]);
   fixture.own("image", image);
   console.log("Starting owned Linux/amd64 Python runtime acceptance fixture.");
+  // Reserved before create: a lost create reply is still discovered and removed by inspected ID.
+  const ownershipLabel = fixture.reserveContainer(
+    runnerName,
+    { key: "openbot.fixture", value: `linux-runtime-${suffix}` },
+    "Linux runtime acceptance",
+  );
   docker(
     [
       "create",
       "--name",
       runnerName,
+      "--label",
+      ownershipLabel,
       "--init",
       "--platform",
       "linux/amd64",
@@ -79,7 +87,6 @@ try {
     ],
     { capture: true },
   );
-  fixture.own("container", runnerName);
   docker(["start", "--attach", runnerName]);
   const exit = docker(["inspect", "--format", "{{.State.ExitCode}}", runnerName], {
     capture: true,
