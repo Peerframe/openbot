@@ -48,6 +48,7 @@ import type {
 } from "@openbot/domain";
 import { reactionEmojis } from "@openbot/domain";
 import { openEventStream, type RealtimeConnectionState } from "./event-stream";
+
 export type { RealtimeConnectionState };
 
 interface ErrorPayload {
@@ -162,6 +163,109 @@ export async function removeChannelMember(
     { method: "DELETE" },
   );
 }
+// ADR-0047 identity lifecycle. The Server owns names, tombstones, read cursors and audit; these
+// helpers only validate the bounded response shape before the UI trusts it.
+export async function renameChannel(channelId: string, name: string): Promise<string> {
+  const result = await request<{ channel?: { channelId?: unknown; name?: unknown } }>(
+    `/api/v1/channels/${encodeURIComponent(channelId)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    },
+  );
+  if (result.channel?.channelId !== channelId || typeof result.channel.name !== "string")
+    throw new Error("重命名结果无效。");
+  return result.channel.name;
+}
+export async function renameBot(botId: string, name: string): Promise<string> {
+  const result = await request<{ bot?: { botId?: unknown; name?: unknown } }>(
+    `/api/v1/bots/${encodeURIComponent(botId)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    },
+  );
+  if (result.bot?.botId !== botId || typeof result.bot.name !== "string")
+    throw new Error("重命名结果无效。");
+  return result.bot.name;
+}
+export async function deleteChannel(channelId: string): Promise<void> {
+  await request(`/api/v1/channels/${encodeURIComponent(channelId)}`, { method: "DELETE" });
+}
+export async function deleteBot(botId: string): Promise<{ pluginGrantsRemoved: boolean }> {
+  const result = await request<{ pluginGrantsRemoved?: unknown }>(
+    `/api/v1/bots/${encodeURIComponent(botId)}`,
+    { method: "DELETE" },
+  );
+  return { pluginGrantsRemoved: result.pluginGrantsRemoved !== false };
+}
+export async function markChannelRead(channelId: string): Promise<void> {
+  await request(`/api/v1/channels/${encodeURIComponent(channelId)}/read`, { method: "POST" });
+}
+export async function getUnreadCounts(signal?: AbortSignal): Promise<Record<string, number>> {
+  const result = await request<{ unread?: unknown }>(
+    "/api/v1/channels/unread",
+    signal ? { signal } : undefined,
+  );
+  const unread = result.unread;
+  if (typeof unread !== "object" || unread === null || Array.isArray(unread))
+    throw new Error("未读数量无效。");
+  const counts: Record<string, number> = {};
+  for (const [channelId, count] of Object.entries(unread).slice(0, 10_000)) {
+    if (Number.isInteger(count) && (count as number) > 0 && (count as number) <= 99)
+      counts[channelId] = count as number;
+  }
+  return counts;
+}
+
+export interface AuditEvent {
+  id: string;
+  type: string;
+  createdAt: string;
+  channelId?: string;
+  channelName?: string;
+  channelDeleted?: boolean;
+  botId?: string;
+  botName?: string;
+  botDeleted?: boolean;
+  runId?: string;
+  details: Record<string, string | number | boolean>;
+}
+export async function listAuditEvents(
+  options: { before?: string; signal?: AbortSignal } = {},
+): Promise<{ events: AuditEvent[]; nextBefore?: string }> {
+  const query = options.before ? `?before=${encodeURIComponent(options.before)}` : "";
+  const result = await request<{ events?: unknown; nextBefore?: unknown }>(
+    `/api/v1/audit${query}`,
+    options.signal ? { signal: options.signal } : undefined,
+  );
+  if (
+    !Array.isArray(result.events) ||
+    result.events.length > 100 ||
+    !result.events.every(isAuditEvent)
+  )
+    throw new Error("审计记录无效。");
+  return {
+    events: result.events,
+    ...(typeof result.nextBefore === "string" ? { nextBefore: result.nextBefore } : {}),
+  };
+}
+function isAuditEvent(value: unknown): value is AuditEvent {
+  if (typeof value !== "object" || value === null) return false;
+  const event = value as Record<string, unknown>;
+  const optionalText = (key: string) => event[key] === undefined || typeof event[key] === "string";
+  return (
+    typeof event.id === "string" &&
+    typeof event.type === "string" &&
+    typeof event.createdAt === "string" &&
+    typeof event.details === "object" &&
+    event.details !== null &&
+    ["channelId", "channelName", "botId", "botName", "runId"].every(optionalText)
+  );
+}
+
 function isMessageReactions(value: unknown): value is MessageReaction[] {
   return (
     Array.isArray(value) &&

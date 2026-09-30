@@ -11,24 +11,46 @@ export type SidebarMenuTarget =
   | { kind: "item"; key: SidebarItemKey; label: string; x: number; y: number }
   | { kind: "group"; group: SidebarGroup; x: number; y: number };
 
+export interface SidebarIdentityActions {
+  kind: "channel" | "bot";
+  maxLength: number;
+  onRename(name: string): Promise<void>;
+  onDelete(): void;
+}
+
+const renameErrors: Record<string, string> = {
+  name_already_exists: "已有同名的对象，请换一个名字。",
+  invalid_rename_input: "名字不能为空，且不能超过长度限制。",
+};
+
 /**
- * Native-sized context menu for sidebar rows and group headers. Every action only changes the
- * per-device sidebar arrangement; identity changes such as renaming stay with the Server.
+ * Native-sized context menu for sidebar rows and group headers. Pin, group, hide and the manual
+ * unread mark only change the per-device arrangement. Rename and delete are Server identity writes
+ * (ADR-0047) supplied by the caller; delete always goes through a separate confirmation dialog.
  */
 export function SidebarItemMenu({
   target,
   organization,
   onOpenProfile,
+  identity,
+  serverUnread = false,
+  onMarkRead,
   onClose,
 }: {
   target: SidebarMenuTarget;
   organization: Readonly<SidebarOrganization>;
   onOpenProfile?: (() => void) | undefined;
+  identity?: SidebarIdentityActions | undefined;
+  serverUnread?: boolean;
+  onMarkRead?: (() => void) | undefined;
   onClose(): void;
 }) {
   const menu = useRef<HTMLDivElement>(null);
-  const [mode, setMode] = useState<"menu" | "move" | "new-group" | "rename">("menu");
+  const [mode, setMode] = useState<"menu" | "move" | "new-group" | "rename" | "identity">("menu");
   const [name, setName] = useState(target.kind === "group" ? target.group.name : "");
+  const [identityName, setIdentityName] = useState(target.kind === "item" ? target.label : "");
+  const [identityBusy, setIdentityBusy] = useState(false);
+  const [identityError, setIdentityError] = useState<string>();
   const [position, setPosition] = useState({ left: target.x, top: target.y });
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-measure when the menu switches content.
@@ -133,7 +155,7 @@ export function SidebarItemMenu({
   const { key } = target;
   const pinned = organization.pinned.includes(key);
   const hidden = organization.hidden.includes(key);
-  const unread = organization.unread.includes(key);
+  const unread = organization.unread.includes(key) || serverUnread;
   const currentGroup = organization.membership[key];
 
   return (
@@ -173,11 +195,21 @@ export function SidebarItemMenu({
           <button
             type="button"
             role="menuitem"
-            onClick={() => run(() => sidebarOrganization.setUnread(key, !unread))}
+            onClick={() =>
+              run(() => {
+                sidebarOrganization.setUnread(key, !unread);
+                if (unread) onMarkRead?.();
+              })
+            }
           >
             {unread ? "标为已读" : "标为未读"}
           </button>
           <span className="sidebar-context-separator" aria-hidden="true" />
+          {identity ? (
+            <button type="button" role="menuitem" onClick={() => setMode("identity")}>
+              重命名…
+            </button>
+          ) : null}
           <button
             type="button"
             role="menuitem"
@@ -185,7 +217,49 @@ export function SidebarItemMenu({
           >
             {hidden ? "在侧栏显示" : "从侧栏隐藏"}
           </button>
+          {identity ? (
+            <>
+              <span className="sidebar-context-separator" aria-hidden="true" />
+              <button
+                type="button"
+                role="menuitem"
+                className="danger"
+                onClick={() => run(identity.onDelete)}
+              >
+                {identity.kind === "channel" ? "删除频道…" : "删除 Bot…"}
+              </button>
+            </>
+          ) : null}
         </>
+      ) : mode === "identity" && identity ? (
+        <GroupNameForm
+          label={identity.kind === "channel" ? "频道名称" : "Bot 名称"}
+          value={identityName}
+          maxLength={identity.maxLength}
+          placeholder={target.label}
+          submitLabel={identityBusy ? "正在保存…" : "保存"}
+          busy={identityBusy}
+          error={identityError}
+          onChange={(value) => {
+            setIdentityName(value);
+            setIdentityError(undefined);
+          }}
+          onSubmit={async () => {
+            const next = identityName.trim();
+            if (next === target.label) return onClose();
+            setIdentityBusy(true);
+            try {
+              await identity.onRename(next);
+              onClose();
+            } catch (cause) {
+              setIdentityError(
+                (cause instanceof Error && renameErrors[cause.message]) ||
+                  "无法重命名，请稍后重试。",
+              );
+              setIdentityBusy(false);
+            }
+          }}
+        />
       ) : mode === "move" ? (
         <>
           {organization.groups.map((group) => (
@@ -233,33 +307,47 @@ function GroupNameForm({
   label,
   value,
   submitLabel,
+  maxLength = maxGroupNameLength,
+  placeholder = "例如 市场团队",
+  busy = false,
+  error,
   onChange,
   onSubmit,
 }: {
   label: string;
   value: string;
   submitLabel: string;
+  maxLength?: number;
+  placeholder?: string;
+  busy?: boolean;
+  error?: string | undefined;
   onChange(value: string): void;
-  onSubmit(): void;
+  onSubmit(): void | Promise<void>;
 }) {
   return (
     <form
       className="sidebar-context-form"
       onSubmit={(event) => {
         event.preventDefault();
-        onSubmit();
+        if (!busy) void onSubmit();
       }}
     >
       <label>
         <span>{label}</span>
         <input
           value={value}
-          maxLength={maxGroupNameLength}
-          placeholder="例如 市场团队"
+          maxLength={maxLength}
+          placeholder={placeholder}
+          aria-invalid={error ? true : undefined}
           onChange={(event) => onChange(event.target.value)}
         />
       </label>
-      <button type="submit" disabled={value.trim().length === 0}>
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <button type="submit" disabled={busy || value.trim().length === 0}>
         {submitLabel}
       </button>
     </form>

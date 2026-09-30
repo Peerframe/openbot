@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace", "@openbot/web", "--", "--port", "5181", "--host", "127.0.0.1", "--strictPort"],
+      "port": 5181
+    },
+    {
+      "name": "web-loopback-3101",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "OPENBOT_DEV_API_URL=http://127.0.0.1:3101 npm run dev --workspace @openbot/web -- --port 5182 --host 127.0.0.1 --strictPort"],
+      "port": 5182
+    }
+  ]
+}

@@ -367,9 +367,6 @@
   --blue: #1f6fd6;
   --accent: var(--ink-strong);
 }
-.settings-refresh .settings-switch :where(input:checked) + span {
-  background: var(--ink-strong);
-}
 .model-settings-screen .model-config-group,
 .model-settings-screen .model-config-row,
 .model-settings-screen .model-config-control,
@@ -580,5 +577,81 @@
   }
   .settings-refresh .model-config-row > label {
     padding-top: 0;
+  }
+}
+
+/* ADR-0047 audit view: compact rows inside the shared grey settings card. */
+.settings-refresh .audit-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.settings-refresh .audit-list li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 24px;
+}
+.settings-refresh .audit-list li + li {
+  border-top: 1px solid #e3e3e6;
+}
+.settings-refresh .audit-list strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.settings-refresh .audit-list p {
+  margin: 2px 0 0;
+  color: #717b8a;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.settings-refresh .audit-list li > div {
+  flex: 1;
+  min-width: 0;
+}
+.settings-refresh .audit-list time {
+  flex: none;
+  color: #717b8a;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.settings-refresh .audit-more {
+  margin-top: 12px;
+}
+
+/* Must outrank workspace-preferences.css `.settings-switch input:checked + span`. */
+.settings-refresh .settings-switch input:checked + span {
+  background: var(--ink-strong);
+}
+
+/* Phones (Web entry): stack the section list above the page as a scrolling pill row. */
+@media (max-width: 560px) {
+  .settings-refresh {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .settings-refresh .settings-navigation {
+    padding: 12px 16px 10px;
+    border-right: 0;
+    border-bottom: 1px solid #e3e3e6;
+  }
+  .settings-refresh .settings-navigation nav {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+  }
+  .settings-refresh .settings-nav-group {
+    display: contents;
+  }
+  .settings-refresh .settings-nav-group > p,
+  .settings-refresh .settings-brand {
+    display: none;
+  }
+  .settings-refresh .settings-navigation nav button {
+    flex: none;
+    white-space: nowrap;
   }
 }

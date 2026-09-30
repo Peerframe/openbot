@@ -79,3 +79,41 @@ Server 权限边界均保留。
   溢出。
 
 合成 API 不能证明 Python/Temporal 执行、真实模型、Desktop 打包行为或更多平台支持。
+
+## 续作 — 身份生命周期、未读与设置
+
+本段补上前一记录中缺少的 Server 契约，见 [ADR-0047](../decisions/0047-identity-lifecycle-and-read-state.md)。
+Owner 选择“永久删除并弹出确认、删除内容但保留审计墓碑”，审批策略页只读展示。
+
+- 迁移 `0045_identity_lifecycle` 为 `bots` 和 `channels` 增加 `deleted_at` 墓碑，名称唯一性只作用于
+  现存行，并新增 `channel_read_states`；已有频道在迁移时视为已读。
+- Python 路由：`PATCH`/`DELETE /api/v1/channels/:id`、`PATCH`/`DELETE /api/v1/bots/:id`、
+  `POST /api/v1/channels/:id/read`、`GET /api/v1/channels/unread` 和 `GET /api/v1/audit`。重命名和删除
+  在同一个 Owner 事务中写入审计事件。有进行中的任务时拒绝删除；删除未被引用的消息，被 Work 引用的消息
+  替换为占位内容，移除成员、自动任务、学习记录，Bot 的插件授权在墓碑提交后移除。工作区、列表、消息/任务
+  读取、成员、单独对话、档案、任务提交、自动任务、附件、模型选择、浏览器和插件授权入口都排除墓碑。
+- Zod `renameBotInputSchema`/`renameChannelInputSchema` 与 Pydantic 模型一致，并加入身份差分用例。
+- Web：侧栏菜单新增“重命名…”（就地编辑，Server 错误就地显示）和“删除频道…/删除 Bot…”，确认框写明
+  对象和删除范围。Server 未读数显示为角标，打开频道即标为已读。设置新增“审批与权限”（依据插件、受控
+  浏览器、原生 Agent 和技能文档的只读说明）与“审计记录”（分页、白名单字段）。非 Desktop 的 Web 入口
+  现在打开同一套分区设置，隐藏仅限 Desktop 的连接与材质项，手机上分区列表改为顶部横排。顺带修复本分支
+  早先的两个问题：频道行的尾部标记会换行；设置开关的黑色覆盖因优先级不足没有生效。
+- `.claude/launch.json` 记录渲染检查用的 Web 开发服务器入口。
+
+未交付：通知设置页（Desktop 和 Server 都没有可配置的通知能力）；审批策略编辑（按 Owner 选择只读）。
+已删除频道的附件文件仍在磁盘上但无法访问，物理清理属于单独的保留策略任务。
+
+### 生命周期验证
+
+- `apps/server-python/scripts/check.sh -q`：1344 通过，477 跳过（无夹具时数据库用例跳过）。
+- `node scripts/test-python-control.mjs`（自有的一次性 PostgreSQL 容器）：871 通过、2 跳过，包括新增的
+  7 个 `test_identity_lifecycle.py` 用例（重名与审计、单独对话拒绝、进行中任务拒绝、内容删除与 Work
+  引用消息占位、墓碑排除、未读上限与游标、审计白名单与分页、HTTP Origin 与 404）以及新的插件授权用例。
+  Worker/Temporal 检查未运行（未设置 `OPENBOT_TEMPORAL_TEST_PYTHON`）。
+- `compare-identity-inputs.ts`：Zod 与 Python 在 149 个用例上一致。
+- Web：新增侧栏身份操作、设置分区和 Web 设置测试；完整 Vitest 见下方 `npm run check`。
+- `npm run check`：在本段提交前 exit 0。Web：76 个文件 / 554 个测试通过。Desktop：44 个文件 / 514 通过、3 个既有跳过。
+  Node：129 通过、3 跳过。Protocol 430 通过。Turbo 复用了未变更任务的缓存，变更的包实际执行。
+- 通过一次性回环合成 API 在 1440×900 和 390×844 渲染真实 App：未读角标、重命名成功与就地冲突提示、
+  有进行中任务时拒绝删除、成功删除 Bot 后其行和频道头像消失、打开即已读、Web 设置分区、审批策略、
+  带墓碑标记的审计列表、黑色开关，手机宽度无横向溢出。

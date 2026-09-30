@@ -96,3 +96,54 @@ Web entry, which still opens the model form.
 
 The synthetic API does not prove Python/Temporal execution, a live model, packaged Desktop
 behaviour or additional platform support.
+
+## Continuation — identity lifecycle, unread and settings
+
+This slice adds the Server contract the previous record listed as missing, under
+[ADR-0047](../decisions/0047-identity-lifecycle-and-read-state.md). The Owner chose permanent
+deletion with confirmation that removes content and keeps an audit tombstone, and a read-only
+approval-policy page.
+
+- Migration `0045_identity_lifecycle` adds `deleted_at` tombstones to `bots` and `channels`, scopes
+  name uniqueness to live rows and adds `channel_read_states`; existing channels start as read.
+- Python routes: `PATCH`/`DELETE /api/v1/channels/:id`, `PATCH`/`DELETE /api/v1/bots/:id`,
+  `POST /api/v1/channels/:id/read`, `GET /api/v1/channels/unread` and `GET /api/v1/audit`. Rename
+  and delete write audit events in the same Owner transaction. Delete refuses while any Run is
+  active, deletes unreferenced messages, redacts Work-referenced ones and removes membership,
+  automations, learning rows and (for Bots) plugin grants after the tombstone commits.
+  Workspace, list, message/run reads, membership, direct conversation, profile, task submission,
+  automation, attachment, model-selection, browser and plugin-grant entry points exclude tombstones.
+- Zod `renameBotInputSchema`/`renameChannelInputSchema` mirror the Pydantic models and join the
+  identity differential fixture.
+- Web: the sidebar menu adds 重命名… (inline, Server errors in place) and 删除频道…/删除 Bot… with a
+  confirmation dialog naming the target and scope. Server unread counts show as badges; opening a
+  channel marks it read. Settings gain 审批与权限 (read-only facts from the plugin, browser,
+  native-agent and skill documents) and 审计记录 (paged, allowlisted). The non-Desktop Web entry
+  now opens the same sectioned settings without Desktop-only connection and material rows, and
+  stacks the section list on phones. Fixed two earlier regressions from this branch: channel rows
+  wrapped trailing marks onto a new line, and the settings switch override lost on specificity.
+- `.claude/launch.json` records the Web dev server entries used for rendered review.
+
+Not delivered: a notification settings page (neither Desktop nor Server has a notification facility
+to configure) and approval-policy editing (read-only by the Owner's choice). Attachment blobs of a
+deleted channel stay on disk but unreachable; physical retention cleanup is separate.
+
+### Lifecycle verification
+
+- `apps/server-python/scripts/check.sh -q`: 1344 passed, 477 skipped (database cases skip without
+  the fixture).
+- `node scripts/test-python-control.mjs` on its own disposable PostgreSQL container: 871 passed,
+  2 skipped, including 7 new `test_identity_lifecycle.py` cases (rename conflicts and audit,
+  direct-channel refusal, active-work refusal, content removal with Work-referenced redaction,
+  tombstone exclusion, unread cap and cursor, audit allowlist/paging, HTTP Origin and 404s) and the
+  new plugin-grant case. Worker/Temporal checks were not run (`OPENBOT_TEMPORAL_TEST_PYTHON` unset).
+- `compare-identity-inputs.ts`: 149 cases agreed between Zod and Python.
+- Web: new Sidebar identity, settings-section and Web settings tests; full Vitest suite in
+  `npm run check` below.
+- `npm run check`: exit 0 before the commit of this slice. Web: 76 files / 554 tests passed. Desktop: 44 files /
+  514 passed and 3 existing skips. Node: 129 passed, 3 skipped. Protocol 430 passed. Turbo reused
+  cached unchanged tasks; changed packages executed.
+- Rendered the real App against the disposable loopback API at 1440×900 and 390×844: unread badges,
+  rename success and in-place conflict, delete refusal while work is active, successful Bot delete
+  removing its row and channel avatar, open-to-read, Web settings sections, approval policy, audit
+  list with tombstone labels, black switches, and no horizontal overflow on phones.

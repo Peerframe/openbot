@@ -763,3 +763,67 @@
 .desktop-workspace .sidebar-row-trailing .bot-state {
   margin-left: 0;
 }
+.app-shell .channel-list-row:has(> .sidebar-row-trailing) {
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+}
+
+/* ADR-0047 permanent delete confirmation: names the target and the irreversible scope. */
+.delete-identity-dialog {
+  width: min(440px, 100%);
+}
+.delete-identity-body {
+  padding: 16px 26px 0;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.delete-identity-body ul {
+  margin: 0 0 10px;
+  padding-left: 18px;
+}
+.delete-identity-body > p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.delete-identity-dialog .dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 16px 26px 22px;
+}
+.delete-identity-dialog .danger-button {
+  min-height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--danger);
+  border-radius: 999px;
+  color: #fff;
+  background: var(--danger);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.delete-identity-dialog .danger-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.sidebar-context-menu button.danger {
+  color: var(--danger);
+}
+.sidebar-context-form .form-error {
+  margin: 0;
+  font-size: 12px;
+}
+.sidebar-unread-count {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--danger);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}

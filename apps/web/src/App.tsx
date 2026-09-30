@@ -1,6 +1,7 @@
 import type {
   ApprovalDecision,
   AuthSessionSnapshot,
+  Channel,
   CreateBotInput,
   CreateChannelInput,
   RunFrame,
@@ -11,15 +12,21 @@ import {
   createBot,
   createChannel,
   decideApproval,
+  deleteBot,
+  deleteChannel,
   getAuthSession,
   getModelSettings,
+  getUnreadCounts,
   getWorkspace,
   joinBotToChannel,
   login,
   logout,
+  markChannelRead,
   openBotConversation,
   type RealtimeConnectionState,
   removeChannelMember,
+  renameBot,
+  renameChannel,
   subscribeToUnauthorized,
   subscribeToWorkspaceEvents,
 } from "./api";
@@ -498,7 +505,10 @@ export function App() {
         ) : null}
       </>
     ) : showSettings && !desktopBridge ? (
-      <ModelSettingsScreen onDone={() => setShowSettings(false)} />
+      <DesktopSettingsScreen
+        initialSection={settingsSection}
+        onBack={() => setShowSettings(false)}
+      />
     ) : null;
 
   if (
@@ -617,6 +627,29 @@ export function AuthenticatedWorkspace({
     projectApproval,
   } = useWorkspaceState(setError);
   const [notice, setNotice] = useState<string>();
+  const [unreadByChannel, setUnreadByChannel] = useState<Record<string, number>>({});
+  // Unread counts are Server facts (ADR-0047). Re-read them after workspace changes, debounced so
+  // run progress bursts cost one request; the open channel is marked read as soon as it has any.
+  useEffect(() => {
+    if (workspace === undefined) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const counts = await getUnreadCounts(controller.signal);
+        if (selectedChannelId && counts[selectedChannelId]) {
+          delete counts[selectedChannelId];
+          void markChannelRead(selectedChannelId).catch(() => undefined);
+        }
+        setUnreadByChannel(counts);
+      } catch {
+        // Unread is advisory presentation; a failed read keeps the previous counts.
+      }
+    }, 600);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [workspace, selectedChannelId]);
   const [sharing, setSharing] = useState(false);
   const [sharedBotId, setSharedBotId] = useState<string>();
   const directRequest = useRef(0);
@@ -771,6 +804,53 @@ export function AuthenticatedWorkspace({
     projectChannel(channel);
     await refresh();
     showNotice("Bot 已加入频道。");
+  }
+
+  function markRead(channelId: string | undefined) {
+    if (!channelId) return;
+    setUnreadByChannel((current) => {
+      if (!current[channelId]) return current;
+      const { [channelId]: _read, ...rest } = current;
+      return rest;
+    });
+    void markChannelRead(channelId).catch(() => undefined);
+  }
+
+  function channelForSidebarKey(key: string) {
+    if (key.startsWith("channel:")) return key.slice(8);
+    const botId = key.slice(4);
+    return workspace?.channels.find((channel) => channel.directBotId === botId)?.id;
+  }
+
+  async function handleRenameItem(key: string, name: string) {
+    if (key.startsWith("bot:")) await renameBot(key.slice(4), name);
+    else await renameChannel(key.slice(8), name);
+    await refresh();
+    showNotice("已重命名。");
+  }
+
+  async function handleDeleteItem(target: { kind: "channel" | "bot"; id: string }) {
+    const directChannel =
+      target.kind === "bot"
+        ? workspace?.channels.find((channel) => channel.directBotId === target.id)?.id
+        : undefined;
+    const result =
+      target.kind === "bot"
+        ? await deleteBot(target.id)
+        : (await deleteChannel(target.id), undefined);
+    const selectedDeleted =
+      (target.kind === "channel" && selectedChannelId === target.id) ||
+      (target.kind === "bot" &&
+        (selectedEmployeeId === target.id || selectedChannelId === directChannel));
+    if (selectedDeleted) navigation.navigate({ kind: "home" });
+    await refresh();
+    showNotice(
+      result && !result.pluginGrantsRemoved
+        ? "Bot 已删除。插件授权未能自动移除，请在插件页检查。"
+        : target.kind === "bot"
+          ? "Bot 已删除，任务与审计记录已保留。"
+          : "频道已删除，任务与审计记录已保留。",
+    );
   }
 
   async function handleRemoveBot(botId: string) {
@@ -1002,6 +1082,10 @@ export function AuthenticatedWorkspace({
           onSelectChannel={selectChannel}
           onSelectBot={(botId) => void openDirectConversation(botId)}
           onOpenBotProfile={openEmployee}
+          unreadCounts={sidebarUnread(workspace.channels, unreadByChannel)}
+          onMarkRead={(key) => markRead(channelForSidebarKey(key))}
+          onRenameItem={handleRenameItem}
+          onDeleteItem={handleDeleteItem}
           onCreateBot={() => setDialog("bot")}
           onCreateChannel={() => setDialog("channel")}
           onManageNodes={() => setDialog("node")}
@@ -1280,4 +1364,15 @@ function ChannelEmptyState({
       </section>
     </main>
   );
+}
+
+function sidebarUnread(channels: Channel[], counts: Record<string, number>) {
+  const result: Partial<Record<`channel:${string}` | `bot:${string}`, number>> = {};
+  for (const channel of channels) {
+    const count = counts[channel.id];
+    if (!count) continue;
+    if (channel.directBotId) result[`bot:${channel.directBotId}`] = count;
+    else result[`channel:${channel.id}`] = count;
+  }
+  return result;
 }

@@ -55,6 +55,18 @@ export function ApprovalIcon() {
   );
 }
 
+export function AuditIcon() {
+  return (
+    <Icon>
+      <path
+        d="M7 4.5h10a1.5 1.5 0 0 1 1.5 1.5v12A1.5 1.5 0 0 1 17 19.5H7A1.5 1.5 0 0 1 5.5 18V6A1.5 1.5 0 0 1 7 4.5Z"
+        {...strokeProps}
+      />
+      <path d="M9 9h6M9 12.5h6M9 16h3.5" {...strokeProps} />
+    </Icon>
+  );
+}
+
 export function PlusIcon() {
   return (
     <Icon size={16}>

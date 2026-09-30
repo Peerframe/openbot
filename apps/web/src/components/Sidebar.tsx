@@ -18,6 +18,7 @@ import {
   sidebarOrganization,
   useSidebarOrganization,
 } from "../sidebar-organization";
+import { DeleteIdentityDialog, type DeleteIdentityTarget } from "./DeleteIdentityDialog";
 import { BotIcon, HashIcon, PlusIcon, SearchIcon, SettingsIcon, SkillIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
 import { SidebarItemMenu, type SidebarMenuTarget } from "./SidebarItemMenu";
@@ -40,6 +41,11 @@ interface SidebarProps {
   onSelectChannel(channelId: string): void;
   onSelectBot(botId: string): void;
   onOpenBotProfile?: ((botId: string) => void) | undefined;
+  /** Server unread counts keyed by sidebar row (ADR-0047); the manual mark stays per device. */
+  unreadCounts?: Partial<Record<SidebarItemKey, number>> | undefined;
+  onMarkRead?: ((key: SidebarItemKey) => void) | undefined;
+  onRenameItem?: ((key: SidebarItemKey, name: string) => Promise<void>) | undefined;
+  onDeleteItem?: ((target: DeleteIdentityTarget) => Promise<void>) | undefined;
   onCreateBot(): void;
   onCreateChannel(): void;
   onManageNodes(): void;
@@ -61,6 +67,10 @@ export function Sidebar({
   onSelectChannel,
   onSelectBot,
   onOpenBotProfile,
+  unreadCounts,
+  onMarkRead,
+  onRenameItem,
+  onDeleteItem,
   onCreateBot,
   onCreateChannel,
   onManageModels,
@@ -70,6 +80,7 @@ export function Sidebar({
   const term = query.trim().toLocaleLowerCase();
   const { values: organization } = useSidebarOrganization();
   const [menuTarget, setMenuTarget] = useState<SidebarMenuTarget>();
+  const [deleteTarget, setDeleteTarget] = useState<DeleteIdentityTarget>();
   const closeMenu = useCallback(() => {
     const opener = menuOpener.current;
     setMenuTarget(undefined);
@@ -156,6 +167,18 @@ export function Sidebar({
     };
   }
 
+  function identityActions(key: SidebarItemKey, label: string) {
+    if (!onRenameItem) return undefined;
+    const kind = key.startsWith("bot:") ? ("bot" as const) : ("channel" as const);
+    const id = key.slice(kind === "bot" ? 4 : 8);
+    return {
+      kind,
+      maxLength: kind === "bot" ? 64 : 80,
+      onRename: (name: string) => onRenameItem(key, name),
+      onDelete: () => setDeleteTarget({ kind, id, name: label }),
+    };
+  }
+
   function rowTrailing(key: SidebarItemKey, state?: ReactNode) {
     const marks = [
       pinned.has(key) ? (
@@ -168,7 +191,12 @@ export function Sidebar({
           已隐藏
         </span>
       ) : null,
-      unread.has(key) ? (
+      unreadCounts?.[key] ? (
+        <span className="sidebar-unread-count" key="unread-count">
+          {unreadCounts[key]}
+          <span className="visually-hidden"> 条未读</span>
+        </span>
+      ) : unread.has(key) ? (
         <span className="sidebar-unread-dot" role="img" aria-label="未读" key="unread" />
       ) : null,
     ].filter(Boolean);
@@ -183,7 +211,7 @@ export function Sidebar({
 
   function renderEntry(entry: SidebarEntry<SidebarItem>) {
     const { key, item } = entry;
-    const isUnread = unread.has(key);
+    const isUnread = unread.has(key) || Boolean(unreadCounts?.[key]);
     if (item.kind === "channel") {
       const { channel } = item;
       const selected = selectedChannelId === channel.id;
@@ -355,7 +383,26 @@ export function Sidebar({
               ? () => onOpenBotProfile(menuTarget.key.slice(4))
               : undefined
           }
+          identity={
+            menuTarget.kind === "item" && onRenameItem && onDeleteItem
+              ? identityActions(menuTarget.key, menuTarget.label)
+              : undefined
+          }
+          serverUnread={menuTarget.kind === "item" && Boolean(unreadCounts?.[menuTarget.key])}
+          onMarkRead={
+            menuTarget.kind === "item" && onMarkRead ? () => onMarkRead(menuTarget.key) : undefined
+          }
           onClose={closeMenu}
+        />
+      ) : null}
+      {deleteTarget && onDeleteItem ? (
+        <DeleteIdentityDialog
+          target={deleteTarget}
+          onClose={() => setDeleteTarget(undefined)}
+          onDelete={async (target) => {
+            await onDeleteItem(target);
+            setDeleteTarget(undefined);
+          }}
         />
       ) : null}
       <footer className="sidebar-footer">
