@@ -404,3 +404,154 @@
   padding: 14px;
   border-radius: 16px;
 }
+
+/* Main artboard "频道信息": identity, grouped grey cards and the notification switch. */
+.rail-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 14px 0 4px;
+  padding: 6px 0 4px;
+  text-align: center;
+}
+.rail-identity-avatars {
+  display: flex;
+  justify-content: center;
+}
+.rail-identity-avatars .robot-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #ececee;
+  box-shadow: 0 0 0 3px #fafafa;
+}
+.rail-identity-avatars .robot-avatar + .robot-avatar {
+  margin-left: -12px;
+}
+.rail-identity strong {
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.rail-identity span {
+  color: #6e6e73;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.rail-identity small {
+  color: #8e8e93;
+  font-size: 12px;
+}
+.rail-card {
+  padding: 0 14px;
+  border-radius: 16px;
+  background: #f0f0f2;
+}
+.rail-member {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.rail-member:disabled {
+  cursor: default;
+}
+.rail-member + .rail-member,
+.rail-card > .usage-rail-computer + .usage-rail-computer {
+  border-top: 1px solid #e3e3e6;
+}
+.rail-member .robot-avatar {
+  width: 28px;
+  height: 28px;
+}
+.rail-member > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rail-member small {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #6e6e73;
+  font-size: 12px;
+}
+.rail-member small i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34c759;
+}
+.rail-member small.active {
+  color: #1f6fd6;
+}
+.rail-member small.active i {
+  background: #1f6fd6;
+}
+.rail-notify {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f0f0f2;
+}
+.rail-notify > span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.rail-notify strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.rail-notify small {
+  color: #6e6e73;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.rail-switch {
+  position: relative;
+  width: 44px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 13px;
+  background: #d1d1d6;
+  cursor: pointer;
+}
+.rail-switch[aria-checked="true"] {
+  background: #111;
+}
+.rail-switch i {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 120ms ease-out;
+}
+.rail-switch[aria-checked="true"] i {
+  transform: translateX(18px);
+}
+.rail-switch:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}

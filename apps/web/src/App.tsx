@@ -1218,6 +1218,7 @@ export function AuthenticatedWorkspace({
               workspace={workspace}
               onDecideApproval={handleDecideApproval}
               onInspectRun={setSelectedRunId}
+              onOpenBot={openEmployee}
             />
           ))}
       </div>

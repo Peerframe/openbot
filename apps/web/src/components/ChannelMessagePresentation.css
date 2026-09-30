@@ -3,8 +3,9 @@
   --workspace-toolbar-height: 44px;
 }
 .app-shell .channel-workspace.channel-native {
-  --channel-body: #fafafa;
-  --channel-bubble: #ededed;
+  /* Values follow the approved Main artboard (canvas Main.dc.html). */
+  --channel-body: #fcfcfc;
+  --channel-bubble: #f0f0f2;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -48,59 +49,68 @@
 .app-shell .channel-workspace.channel-native .message-list {
   flex: 1;
   min-height: 0;
-  padding: 14px 16px 26px;
+  padding: 4px 28px 26px;
   overflow-y: auto;
   overscroll-behavior: contain;
   background: transparent;
   scrollbar-width: thin;
 }
 .app-shell .channel-workspace.channel-native .message-time-divider {
-  margin: 12px 0 20px;
+  margin: 10px 0 6px;
+  padding: 6px 0;
   text-align: center;
-  font-size: 11px;
-  color: #888;
+  font-size: 13px;
+  color: #8e8e93;
 }
 .app-shell .channel-workspace.channel-native .message-row {
   position: relative;
   display: flex;
   gap: 10px;
-  align-items: flex-end;
+  align-items: flex-start;
   width: 100%;
   max-width: none;
-  margin: 0 0 5px;
+  margin: 0 0 6px;
   padding: 0;
   border: 0;
   background: transparent;
 }
 .app-shell .channel-workspace.channel-native .message-row.group-start {
-  margin-top: 18px;
+  margin-top: 14px;
 }
 .app-shell .channel-workspace.channel-native .message-row.human {
   justify-content: flex-end;
 }
 .app-shell .channel-workspace.channel-native .message-avatar {
-  flex: 0 0 20px;
-  width: 20px;
-  margin: 0 0 2px;
+  flex: 0 0 32px;
+  width: 32px;
+  margin: 0;
 }
 .app-shell .channel-workspace.channel-native .message-avatar button {
-  width: 20px;
-  height: 20px;
+  display: grid;
+  width: 32px;
+  height: 32px;
   padding: 0;
+  place-items: center;
   border: 0;
-  background: none;
+  border-radius: 10px;
+  background: #ececee;
+  cursor: pointer;
 }
-.app-shell .channel-workspace.channel-native .message-avatar .robot-avatar,
+.app-shell .channel-workspace.channel-native .message-avatar .robot-avatar {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+}
 .app-shell .channel-workspace.channel-native .message-avatar .openbot-mark {
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
 }
-.app-shell .channel-workspace.channel-native .message-row:not(.group-end) .message-avatar {
+/* Like the artboard, only the first message of a Bot's run of messages shows the avatar. */
+.app-shell .channel-workspace.channel-native .message-row.group-continuation .message-avatar {
   visibility: hidden;
 }
-.app-shell .channel-workspace.channel-native .message-row.human .message-avatar,
-.app-shell .channel-workspace.channel-native .direct-message .message-avatar {
+.app-shell .channel-workspace.channel-native .message-row.human .message-avatar {
   display: none;
 }
 .app-shell .channel-workspace.channel-native .message-content,
@@ -109,37 +119,65 @@
   flex: 0 1 auto;
   width: fit-content;
   min-width: 0;
-  max-width: min(calc(100% - 124px), 960px);
+  max-width: min(76%, 860px);
   padding: 0;
   border: 0;
   border-radius: 0;
   box-shadow: none;
   background: transparent;
 }
+.app-shell .channel-workspace.channel-native .message-row.human .message-content {
+  max-width: min(68%, 760px);
+}
 .app-shell .channel-workspace.channel-native .message-content > .message-sender {
-  margin: 0 12px 4px;
+  display: flex;
+  gap: 0;
+  margin: 0 0 6px 4px;
+  font-size: 12px;
+  line-height: 16px;
+  color: #8e8e93;
 }
 .app-shell .channel-workspace.channel-native .message-sender strong {
   font-size: 12px;
-  font-weight: 450;
-  color: #757575;
+  font-weight: 400;
+  color: #8e8e93;
 }
-.app-shell .channel-workspace.channel-native .message-sender time,
+.app-shell .channel-workspace.channel-native .message-sender time {
+  font-size: 12px;
+  color: #8e8e93;
+}
+.app-shell .channel-workspace.channel-native .message-sender time::before {
+  content: " · ";
+  white-space: pre;
+}
 .app-shell .channel-workspace.channel-native .group-continuation .message-sender,
-.app-shell .channel-workspace.channel-native .direct-message .message-sender,
 .app-shell .channel-workspace.channel-native .message-row.human .message-sender {
   display: none;
 }
 .app-shell .channel-workspace.channel-native .rich-message {
   width: fit-content;
   max-width: 100%;
-  padding: 8px 12px;
-  border-radius: 18px;
+  padding: 12px 18px;
+  border-radius: 22px;
   background: var(--channel-bubble);
-  color: #222;
-  font-size: var(--chat-font-size, 14px);
-  line-height: 1.55;
+  color: #1d1d1f;
+  font-size: var(--chat-font-size, 15px);
+  line-height: 1.7;
   overflow-wrap: anywhere;
+}
+.app-shell .channel-workspace.channel-native .rich-message :not(pre) > code {
+  padding: 1px 6px;
+  border: 1px solid #dcdcdf;
+  border-radius: 6px;
+  background: #e6e6e8;
+  color: #c4302b;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.93em;
+}
+.app-shell .channel-workspace.channel-native .message-row.human .rich-message :not(pre) > code {
+  border-color: transparent;
+  background: rgb(255 255 255 / 16%);
+  color: #fff;
 }
 .app-shell .channel-workspace.channel-native .rich-message p {
   margin: 0 0 10px;
@@ -183,6 +221,7 @@
   margin-left: auto;
   background: #111;
   color: #fff;
+  line-height: 1.6;
 }
 .app-shell .channel-workspace.channel-native .message-row.human .message-attachments {
   justify-content: flex-end;
@@ -202,15 +241,22 @@
   cursor: pointer;
 }
 .app-shell .channel-workspace.channel-native .message-quote blockquote {
-  margin: 0 0 4px;
-  padding: 7px 10px;
-  max-height: 56px;
+  margin: 0 0 6px 4px;
+  padding: 0;
   overflow: hidden;
-  border-left: 2px solid #aaa;
-  border-radius: 7px;
-  background: #efefef;
-  color: #777;
+  border: 0;
+  background: transparent;
+  color: #8e8e93;
   font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.app-shell .channel-workspace.channel-native .message-quote blockquote::before {
+  content: "↩ 回复 ";
+}
+.app-shell .channel-workspace.channel-native .message-quote:hover blockquote {
+  color: #3a3a3c;
 }
 .app-shell .channel-workspace.channel-native .message-row:focus {
   outline: none;
@@ -234,24 +280,25 @@
   color: #888;
 }
 .app-shell .channel-workspace.channel-native .channel-work-activity {
-  margin: 18px 0 0 30px;
+  margin: 14px 0 0 42px;
   display: grid;
-  gap: 7px;
-  max-width: 86%;
+  gap: 8px;
+  max-width: 76%;
 }
 .app-shell .channel-workspace.channel-native .channel-work-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 12px;
-  border-radius: 14px;
-  background: #eeeeee80;
-  color: #777;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid #ececee;
+  border-radius: 18px;
+  background: #fff;
+  color: #6e6e73;
   min-width: 0;
 }
 .app-shell .channel-workspace.channel-native .channel-work-item > .robot-avatar {
-  width: 18px;
-  height: 18px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
 }
 .app-shell .channel-workspace.channel-native .channel-work-item > div {
@@ -262,19 +309,20 @@
   border: 0;
   padding: 0;
   background: transparent;
-  font-size: 12px;
-  color: inherit;
+  font-size: 14px;
+  color: #1d1d1f;
 }
 .app-shell .channel-workspace.channel-native .channel-work-item button strong {
   margin-right: 8px;
-  font-weight: 500;
+  font-weight: 600;
 }
 .app-shell .channel-workspace.channel-native .channel-work-item p {
   margin: 3px 0 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 12px;
+  font-size: 13px;
+  color: #6e6e73;
 }
 .app-shell .channel-workspace.channel-native .channel-work-item.failed {
   background: #fff1e9;
@@ -316,7 +364,7 @@
 .app-shell .channel-workspace.channel-native .conversation-latest {
   position: absolute;
   z-index: 8;
-  bottom: 72px;
+  bottom: 96px;
   left: 50%;
   transform: translateX(-50%);
   margin: 0;
@@ -332,25 +380,26 @@
   position: relative;
   flex-shrink: 0;
   display: block;
-  width: calc(100% - 32px);
+  width: calc(100% - 48px);
   max-width: none;
-  min-height: 44px;
-  margin: 0 16px 16px;
-  padding: 5px 43px;
-  border: 1px solid #d9d9d9;
-  border-radius: 24px;
-  background: #fafafa;
-  box-shadow: 0 1px 4px #0000000d;
+  min-height: 56px;
+  margin: 12px 24px 22px;
+  /* One row: 38px + button on the left; microphone and 40px send button on the right. */
+  padding: 8px 104px 8px 58px;
+  border: 1px solid #e3e3e6;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 4%);
 }
 .app-shell .channel-workspace.channel-native .message-composer:focus-within {
-  border-color: #bcbcbc;
+  border-color: #c7c7cc;
 }
 .app-shell .channel-workspace.channel-native .composer-writing-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
+  gap: 4px;
   align-items: center;
-  min-height: 32px;
+  min-height: 38px;
 }
 .app-shell .channel-workspace.channel-native .message-composer textarea {
   flex: 1;
@@ -358,16 +407,16 @@
   width: auto;
   min-width: 110px;
   max-width: 100%;
-  min-height: 32px;
+  min-height: 38px;
   max-height: 200px;
   border: 0;
-  padding: 5px 0;
+  padding: 7px 0;
   background: transparent;
   resize: none;
   font-family: inherit;
-  font-size: var(--chat-font-size, 14px);
-  line-height: 22px;
-  color: #222;
+  font-size: var(--chat-font-size, 15px);
+  line-height: 24px;
+  color: #1d1d1f;
   box-shadow: none;
 }
 .app-shell .channel-workspace.channel-native .message-composer textarea:focus {
@@ -382,42 +431,49 @@
 }
 .app-shell .channel-workspace.channel-native .composer-add-menu {
   position: absolute;
-  left: 6px;
-  bottom: 6px;
+  left: 10px;
+  bottom: 8px;
 }
 .app-shell .channel-workspace.channel-native .composer-add {
-  width: 30px;
-  height: 30px;
-  padding: 5px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
   display: grid;
   place-items: center;
-  background: #ededed;
+  background: #f0f0f2;
   border-radius: 50%;
-  color: #777;
+  color: #3a3a3c;
   list-style: none;
   cursor: pointer;
 }
 .app-shell .channel-workspace.channel-native .composer-add svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
+}
+.app-shell .channel-workspace.channel-native .voice-recorder {
+  position: absolute;
+  right: 56px;
+  bottom: 8px;
 }
 .app-shell .channel-workspace.channel-native .composer-send {
   position: absolute;
-  right: 6px;
-  bottom: 6px;
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
-  min-height: 30px;
-  padding: 6px;
+  right: 8px;
+  bottom: 7px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  display: grid;
+  place-items: center;
   border: 0;
   border-radius: 50%;
   background: #111;
   color: #fff;
 }
 .app-shell .channel-workspace.channel-native .composer-send:disabled {
-  background: #eee;
-  color: #aaa;
+  background: #d1d1d6;
+  color: #fff;
 }
 .app-shell .channel-workspace.channel-native .composer-send svg {
   width: 18px;
@@ -552,11 +608,11 @@
   }
   .app-shell .channel-workspace.channel-native .message-content,
   .app-shell .channel-workspace.channel-native .message-row.human .message-content {
-    max-width: calc(100% - 114px);
+    max-width: calc(100% - 52px);
   }
   .app-shell .channel-workspace.channel-native .message-composer {
     width: calc(100% - 20px);
-    margin: 0 10px 10px;
+    margin: 8px 10px 10px;
   }
   .app-shell .channel-workspace.channel-native .channel-work-activity {
     max-width: calc(100% - 30px);
