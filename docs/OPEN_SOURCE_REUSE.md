@@ -980,3 +980,11 @@ subprocess, with [targeted security-update evidence](research/python-work-produc
 C3 复用现有 npm/Turbo 图和已固定的 Actions。YAML 2.9.0 从已有依赖提升为显式根工具，
 pip-audit 2.10.1 在隔离工具环境审计实际 Python 生产锁；不复制上游源码。Soup Sieve 2.9.2
 修复该门发现的安全公告，保留原 HTML 提取契约和有界子进程；固定版本与针对性证据见上方链接。
+
+## Desktop platform preferences and signed update bridge (2026-10-01)
+
+Reuse Electron 44.3.0 native startup/tray/shortcut/badge APIs, the existing restricted atomic JSON
+file, and released electron-updater 6.8.9 (MIT) for macOS/NSIS update verification. Exact source,
+configuration trust checks, alternative comparison and outstanding signed release qualification
+are recorded in [the review](research/desktop-platform-settings.md). No upstream code was copied
+or substantially adapted. Unsigned packages fail closed before updater construction.

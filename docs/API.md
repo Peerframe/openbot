@@ -458,3 +458,42 @@ internal non-secret-reference entries may be enabled. Updates require the usual 
 
 Models only prepare a proposal in the bounded native loop; they do not call these Owner endpoints.
 Successful Run completion publishes the candidate atomically. See [Native Agent](NATIVE_AGENT.md).
+
+## Desktop platform settings and updates (C5)
+
+The sandboxed `openbotDesktop` bridge adds `getPlatformState()`,
+`setPlatformPreferences(preferences)`, `setUnreadBadge(count)`, `getUpdateState()`,
+`checkForUpdates()`, `downloadUpdate()` and `installUpdate()`. These are native Desktop methods;
+Web has no corresponding authority or HTTP endpoints. Types are exported by protocol and domain.
+
+`DesktopPlatformPreferences` is an exact DTO: `launchAtLogin`, `runInBackground`,
+`showDockBadge`, `automaticUpdates` (booleans) and `globalShortcut` (empty to disable, or a bounded
+accelerator containing a command/control modifier). Defaults are false except `showDockBadge=true`.
+The main process stores the versioned DTO in a private atomic file under its own userData directory.
+Unknown fields, unsafe files and malformed shortcuts fail closed. Shortcut conflicts retain the old
+shortcut; failed persistence rolls back startup, tray, shortcut and badge effects.
+
+`DesktopPlatformState` reports `status`, `preferences`, native `capabilities`, and an optional fixed
+`code`. Startup is available only in packaged macOS/Windows apps; Linux startup and Windows Dock
+badges are unavailable. Background mode requires a tray; closing the last window hides it while
+retaining the local Server, and the tray offers show/quit. A global shortcut reveals that same window.
+Badges accept safe integers 0–99999, display at most 99, and clear when disabled or quitting.
+Preference writes, downloads and installs require isolated-preload user activation and a focused
+trusted top frame. IPC never accepts a command, executable path or update URL from the renderer.
+
+`DesktopUpdateState.status` is `unavailable|idle|checking|available|downloading|downloaded|installing|failed`,
+with an optional bounded `version`, `percent` and fixed error `code`. Automatic mode checks every
+six hours and downloads verified updates; installation always needs native confirmation and a clean
+local Server shutdown. Downgrades and automatic install on quit are disabled.
+
+Executable updates use electron-updater 6.8.9 only in a signed packaged macOS/Windows app with a
+regular bundled `resources/app-update.yml` (canonical JSON, a YAML subset, maximum 4 KiB). Its exact
+fields are `openbotFormat="openbot.signed-updates/v1"`, `provider="github"`, `owner="Peerframe"`,
+`repo="openbot"`, `channel="alpha"|"latest"` and either `macTeamIdentifier` (10 uppercase letters/digits)
+or `publisherName` (1–8 Windows signer names). Unknown fields, custom feeds and missing signers are
+rejected before constructing the updater. The running app must have a valid matching Developer ID
+or Authenticode signature; the updater retains its download checksum and native signature checks.
+Development, unsigned packages and missing configuration expose `unavailable`; Linux updates are
+unsupported. Existing unsigned releases lack update metadata, so production download/install
+qualification remains blocked on signed releases and metadata. This contract does not declare that
+those releases have been produced or installed.

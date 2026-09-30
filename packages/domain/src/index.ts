@@ -757,4 +757,9 @@ export type ReviewKnowledgeProposalInput =
       modelUseEnabled: boolean;
     };
 
+export type {
+  DesktopPlatformPreferences,
+  DesktopPlatformState,
+  DesktopUpdateState,
+} from "@openbot/protocol";
 export * from "./channel-interactions.js";
