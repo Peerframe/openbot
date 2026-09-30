@@ -87,6 +87,20 @@ describe("sidebarOrganization actions", () => {
       hidden: ["channel:c"],
     });
   });
+
+  it("forgets every mark and group membership of a deleted item only", () => {
+    const actions = organization.sidebarOrganization;
+    actions.setPinned("bot:a", true);
+    actions.setUnread("bot:a", true);
+    actions.setHidden("bot:a", true);
+    actions.moveToNewGroup("bot:a", "市场团队");
+    actions.moveToNewGroup("channel:c", "市场团队");
+    actions.forget("bot:a");
+    const values = stored();
+    expect(values).toMatchObject({ pinned: [], unread: [], hidden: [] });
+    expect(Object.keys(values.membership)).toEqual(["channel:c"]);
+    expect(values.groups).toHaveLength(1);
+  });
 });
 
 describe("arrangeSidebar", () => {

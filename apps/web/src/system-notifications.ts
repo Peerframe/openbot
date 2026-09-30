@@ -49,9 +49,13 @@ export async function showSystemNotification(
     try {
       const pending = bridge.showNotification({ title, body });
       // The Desktop promise settles on click/close, so do not wait for it to report "shown".
-      void pending.then((result) => {
-        if (result.status === "clicked") onClick();
-      });
+      // The IPC call can reject (window closing, handler gone); a lost notice is not an error.
+      pending.then(
+        (result) => {
+          if (result.status === "clicked") onClick();
+        },
+        () => undefined,
+      );
       return true;
     } catch {
       return false;

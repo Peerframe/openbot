@@ -77,6 +77,7 @@ import {
   getOpenBotDesktopBridge,
 } from "./desktop-runtime";
 import { shortcutLabel } from "./desktop-shortcuts";
+import { sidebarOrganization } from "./sidebar-organization";
 import {
   NotificationTracker,
   type SystemNotice,
@@ -886,6 +887,7 @@ export function AuthenticatedWorkspace({
       (target.kind === "channel" && selectedChannelId === target.id) ||
       (target.kind === "bot" &&
         (selectedEmployeeId === target.id || selectedChannelId === directChannel));
+    sidebarOrganization.forget(`${target.kind}:${target.id}`);
     if (selectedDeleted) navigation.navigate({ kind: "home" });
     await refresh();
     showNotice(

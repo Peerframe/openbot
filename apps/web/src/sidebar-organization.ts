@@ -195,6 +195,19 @@ export const sidebarOrganization = {
     });
     return true;
   },
+  /** Drops every arrangement entry for an item the Server deleted, freeing its bounded slots. */
+  forget(key: SidebarItemKey) {
+    const current = getSnapshot().values;
+    const membership = { ...current.membership };
+    delete membership[key];
+    commit({
+      ...current,
+      pinned: toggle(current.pinned, key, false),
+      hidden: toggle(current.hidden, key, false),
+      unread: toggle(current.unread, key, false),
+      membership,
+    });
+  },
   /** Removes the group only; its conversations fall back to "未分组" and are never deleted. */
   dissolveGroup(groupId: string) {
     const current = getSnapshot().values;

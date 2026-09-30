@@ -328,8 +328,8 @@ Server 会对 `package` 重复执行同一套严格解析、签名验证、校�
 入口返回 `404`，名称可以重新使用。
 
 `GET /api/v1/channels/unread` 返回 `{ "unread": { channelId: count } }`，只包含 Owner 最后一次
-`POST .../read` 之后有 Bot 或系统消息的频道。`GET /api/v1/audit?limit=1..100&before=ISO` 返回
-`{ events, nextBefore? }`；每条事件包含类型、时间、各 id、当前或已删除的名称，以及白名单内的标量字段，
+`POST .../read` 之后有 Bot 或系统消息的频道。`GET /api/v1/audit?limit=1..100&before=<nextBefore>` 返回
+`{ events, nextBefore? }`；`nextBefore` 是不透明的键集游标（精确时间加事件 id，同一事务写入的事件不会被跳过）；每条事件包含类型、时间、各 id、当前或已删除的名称，以及白名单内的标量字段，
 从不包含消息正文。
 
 ## 创建频道

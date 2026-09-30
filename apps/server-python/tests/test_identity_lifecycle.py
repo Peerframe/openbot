@@ -181,22 +181,41 @@ def test_unread_counts_only_bot_and_system_messages_after_the_read_cursor(world)
     assert asyncio.run(store.unread(world["token"]))[world["channel"]] == 99
 
 
-def test_audit_view_projects_allowlisted_fields_and_pages_by_time(world):
+def test_audit_view_projects_allowlisted_fields_and_pages_through_equal_timestamps(world):
     store = PostgresIdentityLifecycle(world["dsn"])
+    identities = sorted(str(uuid4()) for _ in range(3))
     with psycopg.connect(world["dsn"]) as db:
-        for index in range(3):
-            db.execute("INSERT INTO run_events(id,channel_id,bot_id,type,payload,created_at) VALUES (%s,%s,%s,'MESSAGE_POSTED',%s,clock_timestamp()+(%s||' minutes')::interval)",
-                       (str(uuid4()), world["channel"], world["bot"], psycopg.types.json.Jsonb({"content": "secret text", "actor": "owner", "size": 1.5}), 60 + index))
-    page = asyncio.run(store.audit(world["token"], limit=2))
-    assert len(page["events"]) == 2 and page["nextBefore"] == page["events"][1]["createdAt"]
+        # One future instant for all three, as a single transaction writes them; they must all page.
+        instant = db.execute("SELECT clock_timestamp() + interval '1 hour'").fetchone()[0]
+        for identity in identities:
+            db.execute("INSERT INTO run_events(id,channel_id,bot_id,type,payload,created_at) VALUES (%s,%s,%s,'MESSAGE_POSTED',%s,%s)",
+                       (identity, world["channel"], world["bot"], psycopg.types.json.Jsonb({"content": "secret text", "actor": "owner", "size": 1.5}), instant))
+    page = asyncio.run(store.audit(world["token"], limit=1))
     event = page["events"][0]
     assert event["type"] == "MESSAGE_POSTED" and event["details"] == {"actor": "owner"}
     assert event["channelName"] == "Group " + world["suffix"] and event["channelDeleted"] is False
     assert event["botName"] == "Lifecycle " + world["suffix"]
-    rest = asyncio.run(store.audit(world["token"], before=page["nextBefore"], limit=1))
-    assert rest["events"][0]["createdAt"] < page["nextBefore"]
-    for arguments in ({"limit": 0}, {"limit": 101}, {"before": "yesterday"}, {"before": "2026-01-01T00:00:00"}):
+    seen = [event["id"]]
+    for _ in range(2):
+        page = asyncio.run(store.audit(world["token"], before=page["nextBefore"], limit=1))
+        seen.append(page["events"][0]["id"])
+    assert seen == list(reversed(identities))
+    for arguments in ({"limit": 0}, {"limit": 101}, {"before": "yesterday"}, {"before": "2026-01-01T00:00:00+00:00"},
+                      {"before": "2026-01-01T00:00:00|x"}, {"before": "2026-01-01T00:00:00+00:00|"}):
         assert code(store.audit(world["token"], **arguments))[0] == 422
+
+
+def test_bot_delete_refuses_open_standalone_work(world):
+    store = PostgresIdentityLifecycle(world["dsn"])
+    task = str(uuid4())
+    with psycopg.connect(world["dsn"]) as db:
+        db.execute("INSERT INTO work_tasks(id,owner_id,bot_id,request_key,request_digest,objective,token_limit,status) "
+                   "VALUES (%s,'owner',%s,%s,%s,'Objective',0,'open')",
+                   (task, world["bot"], task, hashlib.sha256(task.encode()).hexdigest()))
+    assert code(store.delete_bot(world["token"], world["bot"])) == (409, "active_work_blocks_delete")
+    with psycopg.connect(world["dsn"]) as db:
+        db.execute("UPDATE work_tasks SET status='completed' WHERE id=%s", (task,))
+    assert asyncio.run(store.delete_bot(world["token"], world["bot"]))["deleted"] is True
 
 
 def test_http_routes_require_origin_and_hide_tombstones(world, tmp_path):

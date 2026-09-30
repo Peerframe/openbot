@@ -284,7 +284,7 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         limit=query.get('limit','50')
         if not limit.isdigit() or len(limit)>3: raise ControlError(422,'invalid_audit_limit')
         before=query.get('before')
-        if before is not None and len(before)>40: raise ControlError(422,'invalid_audit_cursor')
+        if before is not None and len(before)>200: raise ControlError(422,'invalid_audit_cursor')
         return await product.lifecycle.audit(value,before=before,limit=int(limit))
     route('/api/v1/audit','GET',audit_list)
 

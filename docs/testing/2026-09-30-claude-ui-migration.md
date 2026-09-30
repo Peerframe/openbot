@@ -181,3 +181,20 @@ report `failed`), or delivery while OpenBot is closed.
 - Rendered the settings page against the disposable loopback API: 通知 section, and with the
   browser pane's notifications denied the switches and test button are disabled with the reason
   shown.
+
+## Fixes after review
+
+- Audit paging used a time-only cursor, but one transaction writes several events with the same
+  timestamp (a Bot delete writes one per channel plus `BOT_DELETED`), so a page boundary could skip
+  events. `nextBefore` is now an opaque `(exact time, event id)` keyset cursor.
+- Bot delete checked only legacy Runs; an open standalone Work task (`POST /api/v1/tasks`) has no
+  Run and did not block deletion. Queued/open Work tasks for the Bot now refuse with
+  `409 active_work_blocks_delete`.
+- A rejected Desktop notification IPC call became an unhandled promise rejection; it is now ignored.
+- Deleting a channel or Bot left its pin/hidden/unread marks and group membership in the per-device
+  sidebar arrangement, consuming bounded slots; they are now removed.
+
+Verification: new Python cases for equal-timestamp paging and standalone Work refusal on the
+disposable PostgreSQL fixture (874 passed, 2 skipped), Web tests for arrangement cleanup and the
+rejected bridge call, and `npm run check`: exit 0; Web 77 files / 560 tests, Desktop 520
+passed with 3 existing skips, Node 129 passed with 3 skipped, Protocol 430 passed.

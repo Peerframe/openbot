@@ -179,6 +179,11 @@ class PostgresIdentityLifecycle:
                 "SELECT 1 FROM runs WHERE (bot_id=%s OR delegated_by_bot_id=%s) AND id IN "
                 "(SELECT id FROM runs_work_projection WHERE status=ANY(%s)) LIMIT 1",
                 (bot_id, bot_id, list(ACTIVE_STATUSES)))).fetchone()
+            if active is None:
+                # Standalone Work tasks (POST /api/v1/tasks) reference the Bot without a legacy Run.
+                active = await (await db.execute(
+                    "SELECT 1 FROM work_tasks WHERE bot_id=%s AND status IN ('queued','open') LIMIT 1",
+                    (bot_id,))).fetchone()
             if active is not None:
                 raise ControlError(409, "active_work_blocks_delete")
             direct = await (await db.execute(
@@ -235,13 +240,16 @@ class PostgresIdentityLifecycle:
     async def audit(self, token, *, before=None, limit=50):
         if not isinstance(limit, int) or not 1 <= limit <= AUDIT_LIMIT:
             raise ControlError(422, "invalid_audit_limit")
-        cursor = None
+        # Keyset cursor "<exact created_at>|<event id>". One transaction writes several events with the
+        # same timestamp, so time alone would skip events at a page boundary.
+        cursor = cursor_id = None
         if before is not None:
             try:
-                cursor = datetime.fromisoformat(before.replace("Z", "+00:00"))
+                instant, cursor_id = before.split("|", 1)
+                cursor = datetime.fromisoformat(instant)
             except (AttributeError, ValueError):
                 raise ControlError(422, "invalid_audit_cursor") from None
-            if cursor.tzinfo is None:
+            if cursor.tzinfo is None or not 1 <= len(cursor_id) <= 128:
                 raise ControlError(422, "invalid_audit_cursor")
         async with _storage_errors(), self._transactions.transaction(token) as db:
             rows = await (await db.execute(
@@ -249,9 +257,9 @@ class PostgresIdentityLifecycle:
                 "left(c.name,81) AS channel_name,c.deleted_at IS NOT NULL AS channel_deleted,"
                 "left(b.name,65) AS bot_name,b.deleted_at IS NOT NULL AS bot_deleted "
                 "FROM run_events e LEFT JOIN channels c ON c.id=e.channel_id LEFT JOIN bots b ON b.id=e.bot_id "
-                "WHERE (%s::timestamptz IS NULL OR e.created_at < %s::timestamptz) "
+                "WHERE (%s::timestamptz IS NULL OR (e.created_at,e.id) < (%s::timestamptz,%s::text)) "
                 "ORDER BY e.created_at DESC,e.id DESC LIMIT %s",
-                (cursor, cursor, limit + 1))).fetchall()
+                (cursor, cursor, cursor_id, limit + 1))).fetchall()
             events = []
             for row in rows[:limit]:
                 payload = row["payload"] if isinstance(row["payload"], dict) else {}
@@ -270,5 +278,6 @@ class PostgresIdentityLifecycle:
                     event["botName"] = row["bot_name"]
                     event["botDeleted"] = bool(row["bot_deleted"])
                 events.append(event)
-            next_before = events[-1]["createdAt"] if len(rows) > limit and events else None
+            last = rows[limit - 1] if len(rows) > limit else None
+            next_before = last["created_at"].isoformat() + "|" + last["id"] if last else None
             return {"events": events, **({"nextBefore": next_before} if next_before else {})}

@@ -331,8 +331,9 @@ remain on disk, unreadable through any live route. Tombstones answer `404`
 at every live entry point and their names can be reused.
 
 `GET /api/v1/channels/unread` returns `{ "unread": { channelId: count } }` for channels with Bot or
-system messages after the Owner's last `POST .../read`. `GET /api/v1/audit?limit=1..100&before=ISO`
-returns `{ events, nextBefore? }`; each event carries type, time, ids, current or tombstoned names,
+system messages after the Owner's last `POST .../read`. `GET /api/v1/audit?limit=1..100&before=<nextBefore>`
+returns `{ events, nextBefore? }`; `nextBefore` is an opaque keyset cursor (exact time and event id,
+so events written in one transaction are never skipped); each event carries type, time, ids, current or tombstoned names,
 and only allowlisted scalar payload keys (never message text).
 
 ## Channels, Runs, and approvals

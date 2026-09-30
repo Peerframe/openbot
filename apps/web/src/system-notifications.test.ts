@@ -121,5 +121,15 @@ describe("notification delivery", () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(click).toHaveBeenCalledOnce();
+    showNotification.mockImplementationOnce(() => Promise.reject(new Error("closing")));
+    const unhandled = vi.fn();
+    process.on("unhandledRejection", unhandled);
+    try {
+      expect(await showSystemNotification({ title: "a", body: "" }, click)).toBe(true);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(unhandled).not.toHaveBeenCalled();
+    } finally {
+      process.off("unhandledRejection", unhandled);
+    }
   });
 });
