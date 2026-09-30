@@ -49,6 +49,7 @@ export type DesktopSettingsSection =
   | "hosts"
   | "approvals"
   | "audit"
+  | "account"
   | "transfer"
   | "about";
 type Section = DesktopSettingsSection;
@@ -66,6 +67,7 @@ const iconPaths: Record<Section, string> = {
   hosts: "M5 4h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM8 20h8M12 16v4",
   approvals: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4",
   audit: "M9 5h11M9 12h11M9 19h11M4 5h.01M4 12h.01M4 19h.01",
+  account: "M12 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6",
   transfer: "M7 10l5-5 5 5M12 5v10M5 19h14",
   about: "M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 11v5M12 8h.01",
 };
@@ -101,6 +103,11 @@ const sections: Record<Section, { label: string; description: string; keywords: 
     description: "Bot 长期记住的东西。由你查看和维护，模型不能直接写入。",
     keywords: "记忆 知识 经历 做法",
   },
+  account: {
+    label: "账户与安全",
+    description: "你的 Owner 账户和 Bot 的权限边界。",
+    keywords: "账户 密码 登录 退出 安全 Owner",
+  },
   transfer: {
     label: "导入与导出",
     description: "把 Bot 做成员工模板带到另一台 OpenBot，或者导入别人分享的模板。",
@@ -133,15 +140,32 @@ const sections: Record<Section, { label: string; description: string; keywords: 
   },
 };
 
+/** 关于 resources (SettingsAbout artboard); the same public repository as 帮助与反馈. */
+const repository = "https://github.com/yxflc11/openbot";
+const aboutLinks = [
+  { title: "更新日志", description: "每个版本改了什么", href: `${repository}/releases` },
+  { title: "源代码", description: "OpenBot 是开源项目", href: repository },
+  {
+    title: "开源许可与致谢",
+    description: "使用到的开源组件和它们的许可证",
+    href: `${repository}/blob/main/THIRD_PARTY_NOTICES.zh-CN.md`,
+  },
+  {
+    title: "安全说明",
+    description: "各平台实际支持到什么程度",
+    href: `${repository}/blob/main/docs/CROSS_PLATFORM.zh-CN.md`,
+  },
+];
+
 /**
- * SettingsNav artboard groups. Sections without a working implementation yet (员工浏览器,
- * 账户与安全) are added as they land instead of showing empty pages.
+ * SettingsNav artboard groups. 员工浏览器 is added when its Server controls land (backlog C6)
+ * instead of showing an empty page.
  */
 const groups: ReadonlyArray<{ title: string; items: readonly Section[] }> = [
   { title: "", items: ["general", "notify"] },
   { title: "Bot 能力", items: ["model", "skills", "plugins", "routines", "memory"] },
   { title: "执行与安全", items: ["hosts", "approvals"] },
-  { title: "账户", items: ["audit", "transfer", "about"] },
+  { title: "账户", items: ["account", "audit", "transfer", "about"] },
 ];
 
 export function DesktopSettingsScreen({
@@ -156,6 +180,8 @@ export function DesktopSettingsScreen({
   initialSection = "general",
   onAutomations,
   counts,
+  ownerName,
+  onLogout,
 }: {
   error?: string | undefined;
   /** Absent in the plain Web entry, which has no Desktop plan, material or local worker. */
@@ -170,6 +196,8 @@ export function DesktopSettingsScreen({
   onAutomations?(): void;
   /** Navigation badges, read by the owner from the Server; a missing count shows no badge. */
   counts?: Partial<Record<Section, number>> | undefined;
+  ownerName?: string | undefined;
+  onLogout?: (() => Promise<void>) | undefined;
 }) {
   const [section, setSection] = useState<Section>(initialSection);
   const [search, setSearch] = useState("");
@@ -185,6 +213,7 @@ export function DesktopSettingsScreen({
   }, [section]);
   const { values, saved } = useWorkspacePreferences();
   const [resetNotice, setResetNotice] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const runtime = getOpenBotDesktopBridge()?.getRuntimeInfo?.();
   const selected = sections[section];
   const term = search.trim().toLocaleLowerCase();
@@ -498,32 +527,86 @@ export function DesktopSettingsScreen({
                   ) : null}
                 </SettingsHosts>
               )}
+              {section === "account" && (
+                <>
+                  <SettingsGroup title="账户">
+                    <SettingRow
+                      title={ownerName ?? "我"}
+                      description="本地 Owner · 管理这台 OpenBot 的账户"
+                    >
+                      {onLogout ? (
+                        <button
+                          className="secondary-button"
+                          type="button"
+                          disabled={loggingOut}
+                          onClick={async () => {
+                            setLoggingOut(true);
+                            try {
+                              await onLogout();
+                            } finally {
+                              setLoggingOut(false);
+                            }
+                          }}
+                        >
+                          {loggingOut ? "正在退出…" : "退出登录"}
+                        </button>
+                      ) : null}
+                    </SettingRow>
+                  </SettingsGroup>
+                  <SettingsGroup title="安全">
+                    <SettingRow
+                      title="审计记录"
+                      description="频道、Bot 和任务的关键操作都有记录，只能查看。"
+                    >
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={() => setSection("audit")}
+                      >
+                        查看
+                      </button>
+                    </SettingRow>
+                  </SettingsGroup>
+                  <SettingsGroup title="Bot 的权限边界">
+                    <SettingRow
+                      title="敏感操作先问我"
+                      description="会改动外部系统的操作，按「审批与权限」里的规则先请你批准。"
+                    >
+                      <span className="settings-tag">始终开启</span>
+                    </SettingRow>
+                  </SettingsGroup>
+                  <p className="settings-footnote">凭证只发送给你自己的 OpenBot。</p>
+                </>
+              )}
               {section === "about" && (
                 <>
                   <div className="settings-about">
                     <OpenBotMark />
                     <h3>{desktop ? "OpenBot Desktop" : "OpenBot"}</h3>
-                    <p>连接你的 Bot，让工作在频道中展开。</p>
+                    <p>
+                      {runtime
+                        ? `${runtime.platform === "darwin" ? "macOS" : runtime.platform} · Electron ${runtime.shellVersion}`
+                        : "Web"}
+                    </p>
                   </div>
-                  <SettingsGroup title="应用信息">
-                    <SettingRow
-                      title="运行平台"
-                      description={
-                        runtime?.platform === "darwin" ? "macOS" : (runtime?.platform ?? "浏览器")
-                      }
-                    />
-                    <SettingRow
-                      title="桌面运行时"
-                      description={runtime ? `Electron ${runtime.shellVersion}` : "Web"}
-                    />
-                    <SettingRow
-                      title="模型服务"
-                      description="在模型服务中查看支持的提供商与当前连接。"
-                    />
-                    <SettingRow
-                      title="员工进化"
-                      description="员工的持续学习与进化方向受到 Hermes Agent 启发。"
-                    />
+                  <SettingsGroup title="资料">
+                    {aboutLinks.map((link) => (
+                      <SettingRow
+                        key={link.title}
+                        title={link.title}
+                        description={link.description}
+                      >
+                        <a
+                          className="secondary-button"
+                          href={link.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`打开${link.title}`}
+                        >
+                          打开 ↗
+                        </a>
+                      </SettingRow>
+                    ))}
                   </SettingsGroup>
                   <SettingsGroup title="数据保存位置">
                     <SettingRow
@@ -543,6 +626,7 @@ export function DesktopSettingsScreen({
                       description="只有服务端记录的用量才会显示；没有记录时显示暂无数据。"
                     />
                   </SettingsGroup>
+                  <p className="settings-footnote">Bot 的成长与学习方向受 Hermes Agent 启发。</p>
                 </>
               )}
             </div>
@@ -578,10 +662,10 @@ function NotificationSettings() {
 
   return (
     <>
-      <SettingsGroup title="提醒我" description="只在 OpenBot 窗口不在前台时提醒。">
-        <SettingRow title="有操作等待批准" description="Bot 请求你批准一个操作时。">
+      <SettingsGroup title="什么时候通知你" description="只在 OpenBot 窗口不在前台时提醒。">
+        <SettingRow title="需要你批准" description="Bot 请求你批准一个操作时。">
           <Switch
-            label="有操作等待批准"
+            label="需要你批准"
             checked={values.notifyApprovals && !blocked}
             disabled={blocked}
             onChange={(checked) => void enable("notifyApprovals", checked)}

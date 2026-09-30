@@ -815,3 +815,28 @@
 .settings-dialog .settings-memory .employee-memory-list > article + article {
   border-top: 1px solid var(--ob-divider);
 }
+
+/* 关于 (SettingsAbout artboard). */
+.settings-dialog .setting-control a.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ob-text);
+  text-decoration: none;
+}
+.settings-dialog .settings-about {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0 4px;
+  text-align: center;
+}
+.settings-dialog .settings-dialog-body .settings-about h3 {
+  margin: 6px 0 0;
+  font-size: 22px;
+}
+.settings-dialog .settings-dialog-body .settings-about p {
+  margin: 0;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}

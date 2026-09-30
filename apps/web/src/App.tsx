@@ -488,6 +488,8 @@ export function App() {
       <DesktopSettingsScreen
         initialSection={settingsSection}
         counts={settingsCounts}
+        ownerName={session.owner.name}
+        onLogout={logoutWorkspace}
         plan={desktopSetupPlan.plan}
         material={material}
         connection={desktopConnection}
@@ -500,6 +502,8 @@ export function App() {
       <DesktopSettingsScreen
         initialSection={settingsSection}
         counts={settingsCounts}
+        ownerName={session.owner.name}
+        onLogout={logoutWorkspace}
         onBack={() => setShowSettings(false)}
       />
     ) : null;

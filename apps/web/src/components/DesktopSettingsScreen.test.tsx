@@ -346,7 +346,7 @@ describe("Notification settings", () => {
     const rendered = await renderComponent(<Settings onBack={vi.fn()} initialSection="notify" />);
     try {
       const approvals = () =>
-        rendered.container.querySelector<HTMLInputElement>('[aria-label="有操作等待批准"]');
+        rendered.container.querySelector<HTMLInputElement>('[aria-label="需要你批准"]');
       expect(approvals()?.checked).toBe(false);
       await interact(() => approvals()?.click());
       await interact(() => undefined);
@@ -401,6 +401,44 @@ describe("Settings dialog", () => {
           ?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })),
       );
       expect(onBack).toHaveBeenCalledTimes(2);
+    } finally {
+      await rendered.unmount();
+    }
+  });
+});
+
+describe("Account and about sections", () => {
+  it("shows the Owner, signs out, links to the audit log and lists public resources", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ events: [] })));
+    const onLogout = vi.fn(async () => undefined);
+    const rendered = await renderComponent(
+      <Settings onBack={vi.fn()} initialSection="account" ownerName="雨贺" onLogout={onLogout} />,
+    );
+    try {
+      expect(rendered.container.querySelector("#settings-section-title")?.textContent).toBe(
+        "账户与安全",
+      );
+      expect(rendered.container.textContent).toContain("雨贺");
+      // Password and session actions stay hidden until the Server supports them (backlog C2).
+      expect(rendered.container.textContent).not.toContain("修改密码");
+      await interact(() => button(rendered.container, "退出登录").click());
+      expect(onLogout).toHaveBeenCalledOnce();
+      await interact(() => button(rendered.container, "查看").click());
+      expect(rendered.container.querySelector("#settings-section-title")?.textContent).toBe(
+        "审计记录",
+      );
+      await interact(() => button(rendered.container, "关于 OpenBot").click());
+      const links = Array.from(
+        rendered.container.querySelectorAll<HTMLAnchorElement>(".settings-dialog-body a"),
+        (link) => [link.getAttribute("aria-label"), link.target, link.rel],
+      );
+      expect(links).toEqual([
+        ["打开更新日志", "_blank", "noreferrer"],
+        ["打开源代码", "_blank", "noreferrer"],
+        ["打开开源许可与致谢", "_blank", "noreferrer"],
+        ["打开安全说明", "_blank", "noreferrer"],
+      ]);
+      expect(rendered.container.textContent).toContain("Hermes Agent");
     } finally {
       await rendered.unmount();
     }
