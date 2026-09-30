@@ -1,8 +1,28 @@
 import type { Bot, Channel, Run } from "@openbot/domain";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { indexActiveRunsByBot, runStatusLabel } from "../run-state";
+import {
+  arrangeSidebar,
+  type SidebarEntry,
+  type SidebarGroup,
+  type SidebarItemKey,
+  sidebarOrganization,
+  useSidebarOrganization,
+} from "../sidebar-organization";
 import { BotIcon, HashIcon, PlusIcon, SearchIcon, SettingsIcon, SkillIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
+import { SidebarItemMenu, type SidebarMenuTarget } from "./SidebarItemMenu";
+
+type SidebarItem = { kind: "channel"; channel: Channel } | { kind: "bot"; bot: Bot };
 
 interface SidebarProps {
   destination?: "chat" | "automations" | "skills" | "work";
@@ -48,6 +68,15 @@ export function Sidebar({
 }: SidebarProps) {
   const [query, setQuery] = useState("");
   const term = query.trim().toLocaleLowerCase();
+  const { values: organization } = useSidebarOrganization();
+  const [menuTarget, setMenuTarget] = useState<SidebarMenuTarget>();
+  const closeMenu = useCallback(() => {
+    const opener = menuOpener.current;
+    setMenuTarget(undefined);
+    // Return focus to the row or heading that opened the menu, as native menus do.
+    requestAnimationFrame(() => opener?.focus());
+  }, []);
+  const menuOpener = useRef<HTMLElement | null>(null);
   const botById = useMemo(() => new Map(bots.map((bot) => [bot.id, bot])), [bots]);
   const activeRunByBot = indexActiveRunsByBot(runs);
   const [logoutError, setLogoutError] = useState(false);
@@ -78,6 +107,144 @@ export function Sidebar({
       setLoggingOut(false);
     }
   }
+  const entries: SidebarEntry<SidebarItem>[] = [
+    ...channels.map((channel) => ({
+      key: `channel:${channel.id}` as const,
+      item: { kind: "channel" as const, channel },
+      name: channel.name,
+      searchText: `${channel.name} ${channel.description}`,
+    })),
+    ...bots.map((bot) => ({
+      key: `bot:${bot.id}` as const,
+      item: { kind: "bot" as const, bot },
+      name: bot.name,
+      searchText: `${bot.name} ${bot.role}`,
+    })),
+  ];
+  const sections = arrangeSidebar(entries, organization, query);
+  const shown = sections.flatMap((section) => section.entries);
+  const visibleChannels = shown.filter((entry) => entry.item.kind === "channel").length;
+  const visibleBots = shown.filter((entry) => entry.item.kind === "bot").length;
+  const pinned = new Set(organization.pinned);
+  const hidden = new Set(organization.hidden);
+  const unread = new Set(organization.unread);
+
+  function openItemMenu(
+    key: SidebarItemKey,
+    label: string,
+    x: number,
+    y: number,
+    opener: HTMLElement,
+  ) {
+    menuOpener.current = opener;
+    setMenuTarget({ kind: "item", key, label, x, y });
+  }
+
+  function menuHandlers(key: SidebarItemKey, label: string) {
+    return {
+      onContextMenu(event: MouseEvent<HTMLButtonElement>) {
+        event.preventDefault();
+        openItemMenu(key, label, event.clientX, event.clientY, event.currentTarget);
+      },
+      onKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+        if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") {
+          event.preventDefault();
+          const rect = event.currentTarget.getBoundingClientRect();
+          openItemMenu(key, label, rect.left + 24, rect.bottom - 6, event.currentTarget);
+        }
+      },
+    };
+  }
+
+  function rowTrailing(key: SidebarItemKey, state?: ReactNode) {
+    const marks = [
+      pinned.has(key) ? (
+        <span className="sidebar-row-pin" role="img" aria-label="已置顶" key="pin">
+          <PinIcon />
+        </span>
+      ) : null,
+      term && hidden.has(key) ? (
+        <span className="sidebar-row-hidden" key="hidden">
+          已隐藏
+        </span>
+      ) : null,
+      unread.has(key) ? (
+        <span className="sidebar-unread-dot" role="img" aria-label="未读" key="unread" />
+      ) : null,
+    ].filter(Boolean);
+    if (marks.length === 0 && state === undefined) return null;
+    return (
+      <span className="sidebar-row-trailing">
+        {marks}
+        {state}
+      </span>
+    );
+  }
+
+  function renderEntry(entry: SidebarEntry<SidebarItem>) {
+    const { key, item } = entry;
+    const isUnread = unread.has(key);
+    if (item.kind === "channel") {
+      const { channel } = item;
+      const selected = selectedChannelId === channel.id;
+      return (
+        <button
+          aria-current={selected ? "page" : undefined}
+          className={`sidebar-row channel-list-row ${selected ? "selected" : ""} ${isUnread ? "unread" : ""}`}
+          key={key}
+          onClick={() => {
+            sidebarOrganization.setUnread(key, false);
+            onSelectChannel(channel.id);
+          }}
+          type="button"
+          {...menuHandlers(key, channel.name)}
+        >
+          <ChannelAvatar
+            members={channel.botIds.flatMap((id) => {
+              const bot = botById.get(id);
+              return bot ? [bot] : [];
+            })}
+          />
+          <span className="channel-list-copy">
+            <strong>{channel.name}</strong>
+            <small>{channel.description || `${channel.botIds.length} 名 Bot`}</small>
+          </span>
+          {rowTrailing(key)}
+        </button>
+      );
+    }
+    const { bot } = item;
+    const run = activeRunByBot.get(bot.id);
+    const selected = selectedBotId === bot.id;
+    return (
+      <button
+        className={`sidebar-row bot-row ${selected ? "selected" : ""} ${isUnread ? "unread" : ""}`}
+        type="button"
+        key={key}
+        aria-current={selected ? "page" : undefined}
+        title={`${bot.name} · 点击对话，右键查看更多操作`}
+        onClick={() => {
+          sidebarOrganization.setUnread(key, false);
+          onSelectBot(bot.id);
+        }}
+        {...menuHandlers(key, bot.name)}
+      >
+        <RobotAvatar bot={bot} compact status={run?.status ?? bot.status} />
+        <span className="sidebar-bot-copy">
+          <strong>{bot.name}</strong>
+          {bot.role ? <small>{bot.role}</small> : null}
+        </span>
+        {rowTrailing(
+          key,
+          <small className="bot-state">
+            <span className={`status-dot ${run ? "active" : "idle"}`} aria-hidden="true" />
+            {run ? runStatusLabel(run.status) : "待命"}
+          </small>,
+        )}
+      </button>
+    );
+  }
+
   return (
     <aside
       className="sidebar"
@@ -150,84 +317,47 @@ export function Sidebar({
       </search>
       <div className="sidebar-body">
         <section className="sidebar-section">
-          <div className="sidebar-heading">
-            <h2>频道和 Bots</h2>
-          </div>
+          {organization.groups.length === 0 ? (
+            <div className="sidebar-heading">
+              <h2>频道和 Bots</h2>
+            </div>
+          ) : null}
           <div className="sidebar-list">
-            {channels
-              .filter((channel) =>
-                `${channel.name} ${channel.description}`.toLocaleLowerCase().includes(term),
-              )
-              .map((channel) => (
-                <button
-                  aria-current={selectedChannelId === channel.id ? "page" : undefined}
-                  className={`sidebar-row channel-list-row ${selectedChannelId === channel.id ? "selected" : ""}`}
-                  key={channel.id}
-                  onClick={() => onSelectChannel(channel.id)}
-                  type="button"
-                >
-                  <ChannelAvatar
-                    members={channel.botIds.flatMap((id) => {
-                      const bot = botById.get(id);
-                      return bot ? [bot] : [];
-                    })}
+            {sections.map((section) => (
+              <div className="sidebar-group" key={section.group?.id ?? "ungrouped"}>
+                {organization.groups.length > 0 ? (
+                  <SectionHeading
+                    group={section.group}
+                    onMenu={(target, opener) => {
+                      menuOpener.current = opener;
+                      setMenuTarget(target);
+                    }}
                   />
-                  <span className="channel-list-copy">
-                    <strong>{channel.name}</strong>
-                    <small>{channel.description || `${channel.botIds.length} 名 Bot`}</small>
-                  </span>
-                </button>
-              ))}
-            {!channels.some((channel) =>
-              `${channel.name} ${channel.description}`.toLocaleLowerCase().includes(term),
-            ) && <p className="sidebar-empty">{term ? "没有匹配的频道" : "点击顶部 + 创建频道"}</p>}
-
-            {bots
-              .filter((bot) => `${bot.name} ${bot.role}`.toLocaleLowerCase().includes(term))
-              .map((bot) => {
-                const run = activeRunByBot.get(bot.id);
-                return (
-                  <button
-                    className={`sidebar-row bot-row ${selectedBotId === bot.id ? "selected" : ""}`}
-                    type="button"
-                    key={bot.id}
-                    aria-current={selectedBotId === bot.id ? "page" : undefined}
-                    title={`${bot.name} · 点击对话，右键打开档案`}
-                    onClick={() => onSelectBot(bot.id)}
-                    onContextMenu={(event) => {
-                      if (onOpenBotProfile) {
-                        event.preventDefault();
-                        onOpenBotProfile(bot.id);
-                      }
-                    }}
-                    onKeyDown={(event) => {
-                      if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") {
-                        event.preventDefault();
-                        onOpenBotProfile?.(bot.id);
-                      }
-                    }}
-                  >
-                    <RobotAvatar bot={bot} compact status={run?.status ?? bot.status} />
-                    <span className="sidebar-bot-copy">
-                      <strong>{bot.name}</strong>
-                      {bot.role ? <small>{bot.role}</small> : null}
-                    </span>
-                    <small className="bot-state">
-                      <span
-                        className={`status-dot ${run ? "active" : "idle"}`}
-                        aria-hidden="true"
-                      />
-                      {run ? runStatusLabel(run.status) : "待命"}
-                    </small>
-                  </button>
-                );
-              })}
-            {!bots.some((bot) => `${bot.name} ${bot.role}`.toLocaleLowerCase().includes(term)) && (
+                ) : null}
+                {section.entries.map((entry) => renderEntry(entry))}
+              </div>
+            ))}
+            {visibleChannels === 0 && (
+              <p className="sidebar-empty">{term ? "没有匹配的频道" : "点击顶部 + 创建频道"}</p>
+            )}
+            {visibleBots === 0 && (
               <p className="sidebar-empty">{term ? "没有匹配的 Bot" : "点击顶部 + 创建 Bot"}</p>
             )}
           </div>
         </section>
       </div>
+      {menuTarget ? (
+        <SidebarItemMenu
+          target={menuTarget}
+          organization={organization}
+          onOpenProfile={
+            menuTarget.kind === "item" && menuTarget.key.startsWith("bot:") && onOpenBotProfile
+              ? () => onOpenBotProfile(menuTarget.key.slice(4))
+              : undefined
+          }
+          onClose={closeMenu}
+        />
+      ) : null}
       <footer className="sidebar-footer">
         {onWork && (
           <button className="sidebar-plugin" type="button" onClick={onWork}>
@@ -321,5 +451,65 @@ function ChannelAvatar({ members }: { members: Bot[] }) {
       {first ? <RobotAvatar bot={first} compact /> : <HashIcon />}
       {second ? <RobotAvatar bot={second} compact /> : null}
     </span>
+  );
+}
+
+function SectionHeading({
+  group,
+  onMenu,
+}: {
+  group: SidebarGroup | undefined;
+  onMenu(target: SidebarMenuTarget, opener: HTMLElement): void;
+}) {
+  if (!group) {
+    return (
+      <div className="sidebar-heading sidebar-group-heading">
+        <h2>未分组</h2>
+      </div>
+    );
+  }
+  return (
+    <div className="sidebar-heading sidebar-group-heading">
+      <h2>
+        <button
+          type="button"
+          className="sidebar-group-name"
+          title="右键或按 Shift+F10 管理分组"
+          onContextMenu={(event) => {
+            event.preventDefault();
+            onMenu(
+              { kind: "group", group, x: event.clientX, y: event.clientY },
+              event.currentTarget,
+            );
+          }}
+          onKeyDown={(event) => {
+            if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") {
+              event.preventDefault();
+              const rect = event.currentTarget.getBoundingClientRect();
+              onMenu(
+                { kind: "group", group, x: rect.left, y: rect.bottom + 4 },
+                event.currentTarget,
+              );
+            }
+          }}
+        >
+          {group.name}
+        </button>
+      </h2>
+    </div>
+  );
+}
+
+function PinIcon() {
+  return (
+    <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 17v5M9 3h6l-1 6 4 4H6l4-4Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

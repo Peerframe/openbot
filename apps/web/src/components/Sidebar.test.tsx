@@ -93,15 +93,27 @@ it("filters authorized channels and Bots, restores selection and keeps actions f
     await interact(() => botRow?.click());
     expect(direct).toHaveBeenCalledWith("reviewer");
     expect(profile).not.toHaveBeenCalled();
+    const openProfileFromMenu = async () => {
+      const item = Array.from(
+        view.container.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
+      ).find((button) => button.textContent?.trim() === "打开档案");
+      expect(item).toBeDefined();
+      await interact(() => item?.click());
+    };
     await interact(() =>
       botRow?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })),
     );
+    // Right-click opens the row menu; the profile is one explicit choice inside it.
+    expect(profile).not.toHaveBeenCalled();
+    await openProfileFromMenu();
     expect(profile).toHaveBeenCalledWith("reviewer");
+    expect(view.container.querySelector('[role="menu"]')).toBeNull();
     await interact(() =>
       botRow?.dispatchEvent(
         new KeyboardEvent("keydown", { key: "F10", shiftKey: true, bubbles: true }),
       ),
     );
+    await openProfileFromMenu();
     expect(profile).toHaveBeenCalledTimes(2);
     expect(direct).toHaveBeenCalledTimes(1);
     expect(create).toHaveBeenCalledOnce();
