@@ -37,3 +37,31 @@ describe("browser protocol", () => {
     ).toBe(false);
   });
 });
+
+it("keeps lifecycle actions off the public input command and requires separate clear confirmation", async () => {
+  const { browserMaintenanceInputSchema, browserRuntimeStateSchema } = await import("./browser.js");
+  expect(browserActionSchema.safeParse({ kind: "maintenance", operation: "clear" }).success).toBe(
+    false,
+  );
+  expect(browserMaintenanceInputSchema.safeParse({ operation: "clear" }).success).toBe(false);
+  expect(
+    browserMaintenanceInputSchema.safeParse({
+      operation: "clear",
+      confirmation: "clear-browser-data",
+    }).success,
+  ).toBe(true);
+  expect(
+    browserMaintenanceInputSchema.safeParse({
+      operation: "restart",
+      confirmation: "clear-browser-data",
+    }).success,
+  ).toBe(false);
+  expect(
+    browserMaintenanceInputSchema.safeParse({
+      operation: "clear",
+      confirmation: "clear-browser-data",
+      path: "/private",
+    }).success,
+  ).toBe(false);
+  expect(browserRuntimeStateSchema.safeParse({ running: "true" }).success).toBe(false);
+});

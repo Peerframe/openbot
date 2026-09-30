@@ -980,3 +980,11 @@ subprocess, with [targeted security-update evidence](research/python-work-produc
 C3 复用现有 npm/Turbo 图和已固定的 Actions。YAML 2.9.0 从已有依赖提升为显式根工具，
 pip-audit 2.10.1 在隔离工具环境审计实际 Python 生产锁；不复制上游源码。Soup Sieve 2.9.2
 修复该门发现的安全公告，保留原 HTML 提取契约和有界子进程；固定版本与针对性证据见上方链接。
+
+## Employee browser lifecycle adapter (2026-10-01)
+
+The [C6 review](research/desktop-browser-management.md) extends the already pinned MIT
+agent-computer `257c1280d684089be9adb0b35cce262efc7064bf` health/stop/reset surface through the
+original Server/Worker/Docker path. Reuse the durable human/agent gate and exact Host binding;
+no new browser manager or copied upstream source. Download/screenshot retention data scope is an
+explicit unresolved dependency, not a claimed setting implementation.

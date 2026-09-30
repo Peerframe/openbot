@@ -343,6 +343,10 @@ class WorkerHostRegistry:
                 cap['id'] == 'browser.page' and cap['version'] == 1 and cap['providerId'] == 'docker'
                 for cap in connection.node['capabilityManifest']))):
             raise RuntimeError('Browser page Host unavailable.')
+        if frame['action']['kind'] == 'maintenance' and (connection is None or not any(
+                cap['id'] == 'browser.maintenance' and cap['version'] == 1 and cap['providerId'] == 'docker'
+                for cap in connection.node['capabilityManifest'])):
+            raise RuntimeError('Browser maintenance Host unavailable.')
         if (self._closed or connection is None or len(self._browser_pending) >= 64
                 or frame["requestId"] in self._browser_pending
                 or not any(cap["id"] == "browser.session" and cap["version"] == 1 and cap["providerId"] == "docker"

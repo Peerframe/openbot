@@ -425,3 +425,24 @@ Artifact 与临时画面内容接口使用同一个 Owner Session，响应为 `p
 
 模型只能在有界原生循环中准备候选，不能调用 Owner 接口；成功任务与候选一起提交。
 参见[原生 Agent](NATIVE_AGENT.zh-CN.md)。
+
+## 员工浏览器生命周期（C6 候选）
+
+`POST /api/v1/bots/{botId}/browser/maintenance` 要求 Owner cookie、严格允许的 Origin 和最多 1 KiB
+严格 JSON：`{operation:"status"|"restart"|"clear",confirmation?:"clear-browser-data"}`。
+只有 `clear` 必须附确认字段，其余操作拒绝该字段；拒绝未知字段、路径、URL 或命令。
+返回 `{botId,nodeId,running:boolean,paused:boolean}`。
+
+Server 要求已绑定原浏览器身份或运维明确配置的 Bot→Node 路由，禁止选择替代主机。
+原 Worker 必须声明 Docker Provider 的 `browser.maintenance@1` 与 `browser.session@1`。
+在既有会话配置之外，明确设置 `OPENBOT_DOCKER_BROWSER_MAINTENANCE=true`；默认关闭。
+状态读取上游 health，不启动浏览器；重启正常停止原浏览器，再通过既有截图路径启动，不返回截图；
+清理仅删除该 Bot 的上游浏览器独立档案，并保持浏览器停止。
+
+重启/清理在派发前持久化意图并使旧查看会话与 Work 观察失效；确认成功或结果不确定都保持
+Server 暂停与 Provider 锁，Agent 恢复必须由 Owner 重新接管并明确交回。
+派发与完成均复查 Origin、Owner 有效期、路由、凭据和当前精确 socket 身份。
+事件只记操作、阶段与身份；不返回档案路径、cookie、页面内容或网络详情，不重试不确定操作。
+此直接 Owner 清理操作永远不能成为审批例外。
+
+保留设置仍待确定 Server 交付物或 Desktop 本地文件的数据范围；本候选不提供缺少实际执行路径的设置。
