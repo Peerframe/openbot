@@ -4,9 +4,12 @@ import { useState } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 import { interact, renderComponent, setInputValue } from "../test/render-component";
 import { AutomationsScreen } from "./AutomationsScreen";
+import { PluginManager } from "./PluginManagerPanel";
 import { SettingsActionSlot } from "./SettingsHeaderAction";
 import { SettingsHosts } from "./SettingsHosts";
 import { SettingsModelServices } from "./SettingsModelServices";
+import { SettingsSkills } from "./SettingsSkills";
+import { SettingsTransfer } from "./SettingsTransfer";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -201,6 +204,152 @@ it("renders routines as the settings list with a switch and confirmed delete", a
     await interact(() => buttonNamed(view.container, "确认删除")?.click());
     expect(fetch.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(true);
     expect(view.container.querySelector(".settings-routine")).toBeNull();
+  } finally {
+    await view.unmount();
+  }
+});
+
+const bot = (id: string, name: string): Bot => ({
+  id,
+  name,
+  role: "研究",
+  status: "idle",
+  computerProfile: "none",
+  createdAt: t,
+});
+const skill = (id: string, name: string, state: string) => ({
+  id,
+  slug: id,
+  name,
+  description: "",
+  version: "1.0.0",
+  source: "learned",
+  state,
+  confidence: 80,
+  requiredCapabilities: state === "candidate" ? ["浏览器"] : [],
+  dependencyIds: [],
+  evidence: [],
+  acquiredAt: t,
+  updatedAt: t,
+});
+const profileOf = (id: string, skills: unknown[]) => ({
+  profile: {
+    employee: bot(id, id),
+    details: { description: "", revision: 1, updatedAt: t },
+    evolution: [],
+    skills,
+    memories: [],
+    memoryEvents: [],
+    records: { runs: [], approvals: [], artifacts: [], decisions: [] },
+    statistics: { totalRuns: 0, completedRuns: 0, failedRuns: 0, verifiedSkills: 0 },
+    configuration: { executionProfile: "none", portabilityFormat: "openbot.employee/v1" },
+  },
+});
+
+it("groups every Bot's skills into 待你审核 and 已安装 with counted filters", async () => {
+  server({
+    "GET /api/v1/bots/a/profile": () =>
+      profileOf("a", [
+        skill("s1", "读取更新日志", "verified"),
+        skill("s2", "社交媒体监控", "candidate"),
+      ]),
+    "GET /api/v1/bots/b/profile": () => profileOf("b", [skill("s3", "批量重命名", "suspended")]),
+  });
+  const view = await renderComponent(
+    <Slot>
+      <SettingsSkills bots={[bot("a", "研究助理"), bot("b", "发布助手")]} />
+    </Slot>,
+  );
+  try {
+    await interact(() => undefined);
+    await interact(() => undefined);
+    const chips = Array.from(
+      view.container.querySelectorAll<HTMLButtonElement>(".settings-filters button"),
+      (chip) => chip.textContent,
+    );
+    expect(chips).toEqual(["全部 3", "已验证 1", "待审核 1", "已停用 1"]);
+    expect(view.container.querySelector(".slot button")?.textContent).toBe("安装技能");
+    const groups = Array.from(
+      view.container.querySelectorAll(".settings-group > h3"),
+      (h) => h.textContent,
+    );
+    expect(groups).toEqual(["待你审核", "已安装"]);
+    expect(view.container.textContent).toContain("研究助理 · 在工作中学会 · 需要：浏览器");
+    await interact(() =>
+      view.container.querySelectorAll<HTMLButtonElement>(".settings-filters button")[3]?.click(),
+    );
+    expect(view.container.querySelectorAll(".settings-skill")).toHaveLength(1);
+    expect(view.container.querySelector(".settings-skill .ob-tag")?.textContent).toBe("已暂停");
+    await interact(() =>
+      view.container.querySelectorAll<HTMLButtonElement>(".settings-filters button")[0]?.click(),
+    );
+    await interact(() => buttonNamed(view.container, "审核 社交媒体监控")?.click());
+    await interact(() => undefined);
+    expect(view.container.querySelector(".settings-subpage-title")?.textContent).toBe(
+      "审核 研究助理 的技能",
+    );
+  } finally {
+    await view.unmount();
+  }
+});
+
+it("lists plugins with granted Bots, toggles them and expands 管理", async () => {
+  const plugin = {
+    id: "gmail",
+    name: "Gmail",
+    endpoint: "https://mcp.example.test/gmail",
+    transport: "streamable-http",
+    tools: [{ name: "search", description: "搜索", inputSchema: {}, mode: "read" }],
+    revision: "r1",
+    enabled: true,
+    createdAt: t,
+    grants: [{ botId: "a", tools: [] }],
+  };
+  const fetch = server({
+    "GET /api/v1/plugins": () => ({ plugins: [plugin], pendingCalls: [] }),
+    "PATCH /api/v1/plugins/gmail": () => ({}),
+  });
+  const view = await renderComponent(
+    <Slot>
+      <PluginManager bots={[bot("a", "研究助理")]} variant="settings" />
+    </Slot>,
+  );
+  try {
+    await interact(() => undefined);
+    expect(view.container.querySelector(".slot button")?.textContent).toBe("添加插件");
+    expect(view.container.querySelector(".settings-plugin small")?.textContent).toBe(
+      "1 个工具 · 研究助理",
+    );
+    await interact(() => buttonNamed(view.container, "启用 Gmail")?.click());
+    const patch = fetch.mock.calls.find(([, init]) => init?.method === "PATCH");
+    expect(JSON.parse(String(patch?.[1]?.body))).toEqual({ revision: "r1", enabled: false });
+    expect(view.container.querySelector(".settings-plugin-detail")).toBeNull();
+    await interact(() => buttonNamed(view.container, "管理 Gmail")?.click());
+    expect(view.container.querySelector(".settings-plugin-detail")?.textContent).toContain(
+      "https://mcp.example.test/gmail",
+    );
+  } finally {
+    await view.unmount();
+  }
+});
+
+it("offers import and a per-Bot export with skill counts", async () => {
+  HTMLDialogElement.prototype.showModal = vi.fn(function (this: HTMLDialogElement) {
+    this.setAttribute("open", "");
+  });
+  HTMLDialogElement.prototype.close = vi.fn(function (this: HTMLDialogElement) {
+    this.removeAttribute("open");
+  });
+  server({
+    "GET /api/v1/bots/a/profile": () => profileOf("a", [skill("s1", "读取更新日志", "verified")]),
+  });
+  const view = await renderComponent(<SettingsTransfer bots={[bot("a", "研究助理")]} />);
+  try {
+    await interact(() => undefined);
+    await interact(() => undefined);
+    expect(view.container.querySelector(".settings-item small")?.textContent).toBe("1 项技能");
+    await interact(() => buttonNamed(view.container, "导出 研究助理")?.click());
+    expect(view.container.querySelector("dialog")).not.toBeNull();
   } finally {
     await view.unmount();
   }

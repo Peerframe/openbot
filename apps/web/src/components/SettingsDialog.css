@@ -716,3 +716,102 @@
 .settings-dialog .audit-more {
   align-self: flex-start;
 }
+
+/* 技能, 插件, 记忆, 导入与导出 (SettingsSkills, SettingsPlugins, SettingsMemory, SettingsTransfer). */
+.settings-dialog .settings-skill {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+.settings-dialog .ob-tag.is-verified {
+  background: #e3f4e8;
+  color: #1c7c3c;
+}
+.settings-dialog .ob-tag.is-pending {
+  background: #fdf0dc;
+  color: #a35a00;
+}
+.settings-dialog .settings-subpage-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.settings-dialog .settings-bot-field {
+  max-width: 320px;
+}
+.settings-dialog .settings-bot-picker {
+  align-self: flex-start;
+}
+.settings-dialog .settings-bot-picker select {
+  height: 34px;
+  padding: 0 32px 0 16px;
+  border: 0;
+  border-radius: 17px;
+  background-color: var(--ob-primary);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+.settings-dialog .settings-plugin + .settings-plugin {
+  border-top: 1px solid var(--ob-divider);
+}
+.settings-dialog .settings-plugin-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.settings-dialog .settings-plugin-detail {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+}
+.settings-dialog .settings-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 28px 16px;
+  border: 1.5px dashed #d1d1d6;
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ob-text);
+  font: inherit;
+  cursor: pointer;
+}
+.settings-dialog .settings-dropzone:hover {
+  background: var(--ob-fill);
+}
+.settings-dialog .settings-dialog-body .settings-dropzone strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.settings-dialog .settings-dialog-body .settings-dropzone small {
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}
+/* 记忆 reuses the profile's memory panel; the dialog header already names the section. */
+.settings-dialog .settings-memory .employee-tab-panel {
+  padding: 0;
+}
+.settings-dialog .settings-memory .employee-tab-panel > .employee-section-heading {
+  display: none;
+}
+.settings-dialog .settings-memory .employee-memory-list {
+  display: block;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.settings-dialog .settings-memory .employee-memory-list > article {
+  padding: 14px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.settings-dialog .settings-memory .employee-memory-list > article + article {
+  border-top: 1px solid var(--ob-divider);
+}

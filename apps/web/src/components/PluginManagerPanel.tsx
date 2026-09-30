@@ -17,6 +17,7 @@ import {
   PluginUpdatePanel,
 } from "./PluginPlatformPanels";
 import { PluginToolList } from "./PluginToolList";
+import { SettingsHeaderAction } from "./SettingsHeaderAction";
 
 /** SPA-session sticky Bot selection per plugin (survives Skills remount / details keep-alive). */
 const grantBotSelectionByPlugin = new Map<string, string>();
@@ -28,6 +29,8 @@ export function resetGrantBotSelectionForTests(): void {
 
 export interface PluginManagerProps {
   bots: Bot[];
+  /** "settings" renders Settings → 插件 (SettingsPlugins artboard) over the same state. */
+  variant?: "panel" | "settings" | undefined;
   scope?: PluginContentScope | undefined;
   onInsertMaterial?: ((text: string) => void) | undefined;
 }
@@ -65,6 +68,7 @@ export function PluginManager({
   scope,
   onInsertMaterial,
   grantBotSelectionRef,
+  variant = "panel",
 }: PluginManagerProps & {
   grantBotSelectionRef?: MutableRefObject<Map<string, string>>;
 }) {
@@ -75,6 +79,7 @@ export function PluginManager({
   const [attempt, setAttempt] = useState(0);
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState<string>();
+  const [managing, setManaging] = useState<string>();
   const localGrantBotSelectionRef = useRef(grantBotSelectionByPlugin);
   const botSelectionRef = grantBotSelectionRef ?? localGrantBotSelectionRef;
   async function reloadPlugins(signal?: AbortSignal) {
@@ -120,6 +125,189 @@ export function PluginManager({
       setBusy(false);
     }
   }
+  const botNames = new Map(bots.map((bot) => [bot.id, bot.name]));
+  function toggle(plugin: Plugin) {
+    void mutate(`plugins/${encodeURIComponent(plugin.id)}`, "PATCH", {
+      revision: plugin.revision,
+      enabled: !plugin.enabled,
+    }).catch(() => undefined);
+  }
+  function details(plugin: Plugin) {
+    return (
+      <>
+        <div className="plugin-manager-actions">
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={busy || loading}
+            onClick={() =>
+              void mutate(`plugins/${encodeURIComponent(plugin.id)}`, "PATCH", {
+                revision: plugin.revision,
+                enabled: !plugin.enabled,
+              }).catch(() => undefined)
+            }
+          >
+            {plugin.enabled ? "停用" : "启用"}
+          </button>
+          {removing === plugin.id ? (
+            <>
+              <span>移除后将撤销此插件的 Bot 授权。</span>
+              <button
+                className="secondary-button"
+                type="button"
+                disabled={busy}
+                onClick={() =>
+                  void mutate(`plugins/${encodeURIComponent(plugin.id)}`, "DELETE", {
+                    revision: plugin.revision,
+                  }).catch(() => undefined)
+                }
+              >
+                确认移除
+              </button>
+              <button type="button" disabled={busy} onClick={() => setRemoving(undefined)}>
+                取消
+              </button>
+            </>
+          ) : (
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={busy}
+              onClick={() => setRemoving(plugin.id)}
+            >
+              移除
+            </button>
+          )}
+        </div>
+        <PluginToolList tools={plugin.tools} />
+        <PluginContentDeclarations manifest={plugin} />
+        <PluginUpdatePanel
+          key={`update:${plugin.id}:${plugin.revision}`}
+          plugin={plugin}
+          onApplied={() => setAttempt((value) => value + 1)}
+        />
+        <PluginContentPanel plugin={plugin} scope={scope} onInsertMaterial={onInsertMaterial} />
+        <PluginGrantEditor
+          key={plugin.id}
+          plugin={plugin}
+          bots={bots}
+          disabled={busy || loading}
+          selectedBotId={botSelectionRef.current.get(plugin.id)}
+          onSelectedBotIdChange={(botId) => {
+            if (botId) botSelectionRef.current.set(plugin.id, botId);
+            else botSelectionRef.current.delete(plugin.id);
+          }}
+          onSave={(botId, tools, content) =>
+            mutate(
+              `plugins/${encodeURIComponent(plugin.id)}/grants/${encodeURIComponent(botId)}`,
+              "PUT",
+              { revision: plugin.revision, tools, ...content },
+            )
+          }
+        />
+      </>
+    );
+  }
+
+  if (variant === "settings")
+    return (
+      <>
+        <SettingsHeaderAction>
+          <button
+            type="button"
+            className="ob-pill is-primary"
+            aria-expanded={adding}
+            onClick={() => setAdding(!adding)}
+          >
+            添加插件
+          </button>
+        </SettingsHeaderAction>
+        {adding ? (
+          <section className="settings-group">
+            <h3>添加工具插件</h3>
+            <div className="settings-card">
+              <PluginInstallForm
+                onInstalled={() => {
+                  setAdding(false);
+                  setAttempt((value) => value + 1);
+                }}
+              />
+            </div>
+          </section>
+        ) : null}
+        {error ? (
+          <p role="alert" className="form-error">
+            {error}
+          </p>
+        ) : null}
+        {loading && !plugins.length ? (
+          <p className="settings-empty" role="status">
+            正在读取插件…
+          </p>
+        ) : null}
+        {!loading && !error && !plugins.length ? (
+          <p className="settings-empty">还没有插件。添加一个 MCP 服务，审核工具后分配给 Bot。</p>
+        ) : null}
+        {plugins.length ? (
+          <div className="settings-group-rows settings-plugins">
+            {plugins.map((plugin) => (
+              <div className="settings-plugin" key={plugin.id}>
+                <div className="settings-item">
+                  <span className="settings-tile" aria-hidden="true">
+                    {Array.from(plugin.name.trim())[0]?.toLocaleUpperCase() ?? "?"}
+                  </span>
+                  <span className="settings-item-text">
+                    <strong>{plugin.name}</strong>
+                    <small>
+                      {plugin.enabled ? `${plugin.tools.length} 个工具` : "已停用"}
+                      {plugin.grants.length > 0 ? " · " : ""}
+                      {plugin.grants
+                        .map((grant) => botNames.get(grant.botId))
+                        .filter(Boolean)
+                        .join("、")}
+                    </small>
+                  </span>
+                  <span className="settings-plugin-actions">
+                    <button
+                      type="button"
+                      className="ob-pill is-small"
+                      aria-expanded={managing === plugin.id}
+                      aria-label={`管理 ${plugin.name}`}
+                      onClick={() => setManaging(managing === plugin.id ? undefined : plugin.id)}
+                    >
+                      管理
+                    </button>
+                    <button
+                      type="button"
+                      role="switch"
+                      className="ob-switch"
+                      aria-checked={plugin.enabled}
+                      aria-label={`启用 ${plugin.name}`}
+                      disabled={busy || loading}
+                      onClick={() => toggle(plugin)}
+                    />
+                  </span>
+                </div>
+                {managing === plugin.id ? (
+                  <section
+                    className="installed-plugin settings-plugin-detail"
+                    aria-label={`工具插件 ${plugin.name}`}
+                  >
+                    <p className="plugin-endpoint">{plugin.endpoint}</p>
+                    {details(plugin)}
+                  </section>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <PluginCatalogLinks />
+        <p className="settings-footnote">
+          插件带来的是能力，不是权限：写入、发送这类操作仍按「审批与权限」里的规则先问你。
+        </p>
+      </>
+    );
+
   return (
     <div className="plugin-manager-body">
       <div className="plugin-manager-toolbar">
@@ -167,76 +355,7 @@ export function PluginManager({
             </div>
             <span>{plugin.enabled ? "已启用" : "已停用"}</span>
           </header>
-          <div className="plugin-manager-actions">
-            <button
-              type="button"
-              className="secondary-button"
-              disabled={busy || loading}
-              onClick={() =>
-                void mutate(`plugins/${encodeURIComponent(plugin.id)}`, "PATCH", {
-                  revision: plugin.revision,
-                  enabled: !plugin.enabled,
-                }).catch(() => undefined)
-              }
-            >
-              {plugin.enabled ? "停用" : "启用"}
-            </button>
-            {removing === plugin.id ? (
-              <>
-                <span>移除后将撤销此插件的 Bot 授权。</span>
-                <button
-                  className="secondary-button"
-                  type="button"
-                  disabled={busy}
-                  onClick={() =>
-                    void mutate(`plugins/${encodeURIComponent(plugin.id)}`, "DELETE", {
-                      revision: plugin.revision,
-                    }).catch(() => undefined)
-                  }
-                >
-                  确认移除
-                </button>
-                <button type="button" disabled={busy} onClick={() => setRemoving(undefined)}>
-                  取消
-                </button>
-              </>
-            ) : (
-              <button
-                className="secondary-button"
-                type="button"
-                disabled={busy}
-                onClick={() => setRemoving(plugin.id)}
-              >
-                移除
-              </button>
-            )}
-          </div>
-          <PluginToolList tools={plugin.tools} />
-          <PluginContentDeclarations manifest={plugin} />
-          <PluginUpdatePanel
-            key={`update:${plugin.id}:${plugin.revision}`}
-            plugin={plugin}
-            onApplied={() => setAttempt((value) => value + 1)}
-          />
-          <PluginContentPanel plugin={plugin} scope={scope} onInsertMaterial={onInsertMaterial} />
-          <PluginGrantEditor
-            key={plugin.id}
-            plugin={plugin}
-            bots={bots}
-            disabled={busy || loading}
-            selectedBotId={botSelectionRef.current.get(plugin.id)}
-            onSelectedBotIdChange={(botId) => {
-              if (botId) botSelectionRef.current.set(plugin.id, botId);
-              else botSelectionRef.current.delete(plugin.id);
-            }}
-            onSave={(botId, tools, content) =>
-              mutate(
-                `plugins/${encodeURIComponent(plugin.id)}/grants/${encodeURIComponent(botId)}`,
-                "PUT",
-                { revision: plugin.revision, tools, ...content },
-              )
-            }
-          />
+          {details(plugin)}
         </section>
       ))}
     </div>

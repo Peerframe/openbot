@@ -21,8 +21,10 @@ import {
 import { CloseIcon, SearchIcon } from "./Icons";
 import "./SettingsDialog.css";
 import { OpenBotMark } from "./OpenBotMark";
+import { PluginManager } from "./PluginManagerPanel";
 import { SettingsActionSlot } from "./SettingsHeaderAction";
 import { SettingsHosts } from "./SettingsHosts";
+import { SettingsMemory } from "./SettingsMemory";
 import { SettingsModelServices } from "./SettingsModelServices";
 import {
   ApprovalPolicySettings,
@@ -30,17 +32,24 @@ import {
   SettingRow,
   SettingsAutomations,
   SettingsGroup,
+  SettingsWorkspaceGate,
 } from "./SettingsSections";
+import { SettingsSkills } from "./SettingsSkills";
+import { SettingsTransfer } from "./SettingsTransfer";
 import { useModalDialog } from "./useModalDialog";
 
 export type DesktopSettingsSection =
   | "general"
   | "notify"
   | "model"
+  | "skills"
+  | "plugins"
   | "routines"
+  | "memory"
   | "hosts"
   | "approvals"
   | "audit"
+  | "transfer"
   | "about";
 type Section = DesktopSettingsSection;
 
@@ -50,10 +59,14 @@ const iconPaths: Record<Section, string> = {
     "M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1",
   notify: "M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0",
   model: "M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5",
+  skills: "M13 2L4 14h7l-1 8 9-12h-7z",
+  plugins: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
   routines: "M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 7v5l3 2",
+  memory: "M4 19V5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2zM18 19v2H6",
   hosts: "M5 4h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM8 20h8M12 16v4",
   approvals: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4",
   audit: "M9 5h11M9 12h11M9 19h11M4 5h.01M4 12h.01M4 19h.01",
+  transfer: "M7 10l5-5 5 5M12 5v10M5 19h14",
   about: "M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 11v5M12 8h.01",
 };
 
@@ -72,6 +85,26 @@ const sections: Record<Section, { label: string; description: string; keywords: 
     label: "模型服务",
     description: "连接常用厂商和 API 平台，再为每个 Bot 选择模型。",
     keywords: "API Kimi DeepSeek OpenAI Anthropic 模型 密钥 服务",
+  },
+  skills: {
+    label: "技能",
+    description: "Bot 会做的事。新技能要通过测试或你审核后才能用。",
+    keywords: "技能 审核 安装 验证 候选",
+  },
+  plugins: {
+    label: "插件",
+    description: "连接外部应用，并决定哪些 Bot 可以用。",
+    keywords: "插件 MCP 工具 授权 应用",
+  },
+  memory: {
+    label: "记忆",
+    description: "Bot 长期记住的东西。由你查看和维护，模型不能直接写入。",
+    keywords: "记忆 知识 经历 做法",
+  },
+  transfer: {
+    label: "导入与导出",
+    description: "把 Bot 做成员工模板带到另一台 OpenBot，或者导入别人分享的模板。",
+    keywords: "导入 导出 模板 迁移 员工",
   },
   routines: {
     label: "例行任务",
@@ -101,14 +134,14 @@ const sections: Record<Section, { label: string; description: string; keywords: 
 };
 
 /**
- * SettingsNav artboard groups. Sections without a working implementation yet (技能, 插件, 记忆,
- * 员工浏览器, 账户与安全, 导入与导出) are added as they land instead of showing empty pages.
+ * SettingsNav artboard groups. Sections without a working implementation yet (员工浏览器,
+ * 账户与安全) are added as they land instead of showing empty pages.
  */
 const groups: ReadonlyArray<{ title: string; items: readonly Section[] }> = [
   { title: "", items: ["general", "notify"] },
-  { title: "Bot 能力", items: ["model", "routines"] },
+  { title: "Bot 能力", items: ["model", "skills", "plugins", "routines", "memory"] },
   { title: "执行与安全", items: ["hosts", "approvals"] },
-  { title: "账户", items: ["audit", "about"] },
+  { title: "账户", items: ["audit", "transfer", "about"] },
 ];
 
 export function DesktopSettingsScreen({
@@ -396,6 +429,26 @@ export function DesktopSettingsScreen({
               )}
               {section === "model" && <SettingsModelServices />}
               {section === "routines" && <SettingsAutomations onOpen={onAutomations} />}
+              {section === "skills" && (
+                <SettingsWorkspaceGate label="技能">
+                  {(workspace) => <SettingsSkills bots={workspace.bots} />}
+                </SettingsWorkspaceGate>
+              )}
+              {section === "plugins" && (
+                <SettingsWorkspaceGate label="插件">
+                  {(workspace) => <PluginManager bots={workspace.bots} variant="settings" />}
+                </SettingsWorkspaceGate>
+              )}
+              {section === "memory" && (
+                <SettingsWorkspaceGate label="记忆">
+                  {(workspace) => <SettingsMemory bots={workspace.bots} />}
+                </SettingsWorkspaceGate>
+              )}
+              {section === "transfer" && (
+                <SettingsWorkspaceGate label="Bot">
+                  {(workspace) => <SettingsTransfer bots={workspace.bots} />}
+                </SettingsWorkspaceGate>
+              )}
               {section === "notify" && <NotificationSettings />}
               {section === "approvals" && <ApprovalPolicySettings />}
               {section === "audit" && <AuditLogSettings />}

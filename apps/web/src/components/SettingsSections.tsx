@@ -1,6 +1,5 @@
 import type { WorkspaceSnapshot } from "@openbot/domain";
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { type AuditEvent, getWorkspace, listAuditEvents } from "../api";
 import { AutomationsScreen } from "./AutomationsScreen";
 
@@ -306,7 +305,8 @@ function groupByDay(events: AuditEvent[]) {
   return days;
 }
 
-export function SettingsAutomations({ onOpen }: { onOpen?: (() => void) | undefined }) {
+/** One bounded workspace read for settings sections that need the Bot and channel lists. */
+export function useSettingsWorkspace() {
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>();
   const [error, setError] = useState(false);
   const [revision, setRevision] = useState(0);
@@ -324,33 +324,54 @@ export function SettingsAutomations({ onOpen }: { onOpen?: (() => void) | undefi
       });
     return () => controller.abort();
   }, [revision]);
+  return { workspace, error, retry: () => setRevision((value) => value + 1) };
+}
+
+/** Loading and failure states shared by workspace-backed settings sections. */
+export function SettingsWorkspaceGate({
+  label,
+  children,
+  extra,
+}: {
+  label: string;
+  children(workspace: WorkspaceSnapshot): ReactNode;
+  extra?: ReactNode;
+}) {
+  const { workspace, error, retry } = useSettingsWorkspace();
   if (error)
     return (
       <div className="settings-load-notice" role="alert">
         <p>无法读取工作空间，请重试。</p>
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={() => setRevision((value) => value + 1)}
-        >
+        <button type="button" className="secondary-button" onClick={retry}>
           重试
         </button>
-        {onOpen && (
-          <button type="button" className="secondary-button" onClick={onOpen}>
-            打开自动任务
-          </button>
-        )}
+        {extra}
       </div>
     );
   if (!workspace)
     return (
       <p className="settings-load-notice" role="status">
-        正在读取例行任务…
+        正在读取{label}…
       </p>
     );
+  return <>{children(workspace)}</>;
+}
+
+export function SettingsAutomations({ onOpen }: { onOpen?: (() => void) | undefined }) {
   return (
-    <div className="settings-automations">
-      <AutomationsScreen bots={workspace.bots} channels={workspace.channels} variant="settings" />
-    </div>
+    <SettingsWorkspaceGate
+      label="例行任务"
+      extra={
+        onOpen ? (
+          <button type="button" className="secondary-button" onClick={onOpen}>
+            打开自动任务
+          </button>
+        ) : null
+      }
+    >
+      {(workspace) => (
+        <AutomationsScreen bots={workspace.bots} channels={workspace.channels} variant="settings" />
+      )}
+    </SettingsWorkspaceGate>
   );
 }
