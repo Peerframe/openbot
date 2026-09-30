@@ -151,7 +151,7 @@ class PostgresWorkStore:
             _, digest = canonical(payload)
         # Unique-key insertion below serializes same-key concurrent submissions. No workflow
         # can exist without its Task/Run/handoff record committing in this transaction.
-        cursor = await connection.execute('SELECT id FROM bots WHERE id=%s FOR SHARE', (bot_id,))
+        cursor = await connection.execute('SELECT id FROM bots WHERE id=%s AND deleted_at IS NULL FOR SHARE', (bot_id,))
         if await cursor.fetchone() is None:
             raise WorkNotFound()
         task_id, run_id = str(uuid4()), str(uuid4())

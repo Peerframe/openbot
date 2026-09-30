@@ -1,8 +1,29 @@
 import type { Bot, Channel, Run } from "@openbot/domain";
-import { useEffect, useRef, useState } from "react";
+import {
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { indexActiveRunsByBot, runStatusLabel } from "../run-state";
+import {
+  arrangeSidebar,
+  type SidebarEntry,
+  type SidebarGroup,
+  type SidebarItemKey,
+  sidebarOrganization,
+  useSidebarOrganization,
+} from "../sidebar-organization";
+import { DeleteIdentityDialog, type DeleteIdentityTarget } from "./DeleteIdentityDialog";
 import { BotIcon, HashIcon, PlusIcon, SearchIcon, SettingsIcon, SkillIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
+import { SidebarItemMenu, type SidebarMenuTarget } from "./SidebarItemMenu";
+
+type SidebarItem = { kind: "channel"; channel: Channel } | { kind: "bot"; bot: Bot };
 
 interface SidebarProps {
   destination?: "chat" | "automations" | "skills" | "work";
@@ -20,6 +41,11 @@ interface SidebarProps {
   onSelectChannel(channelId: string): void;
   onSelectBot(botId: string): void;
   onOpenBotProfile?: ((botId: string) => void) | undefined;
+  /** Server unread counts keyed by sidebar row (ADR-0047); the manual mark stays per device. */
+  unreadCounts?: Partial<Record<SidebarItemKey, number>> | undefined;
+  onMarkRead?: ((key: SidebarItemKey) => void) | undefined;
+  onRenameItem?: ((key: SidebarItemKey, name: string) => Promise<void>) | undefined;
+  onDeleteItem?: ((target: DeleteIdentityTarget) => Promise<void>) | undefined;
   onCreateBot(): void;
   onCreateChannel(): void;
   onManageNodes(): void;
@@ -41,6 +67,10 @@ export function Sidebar({
   onSelectChannel,
   onSelectBot,
   onOpenBotProfile,
+  unreadCounts,
+  onMarkRead,
+  onRenameItem,
+  onDeleteItem,
   onCreateBot,
   onCreateChannel,
   onManageModels,
@@ -48,6 +78,17 @@ export function Sidebar({
 }: SidebarProps) {
   const [query, setQuery] = useState("");
   const term = query.trim().toLocaleLowerCase();
+  const { values: organization } = useSidebarOrganization();
+  const [menuTarget, setMenuTarget] = useState<SidebarMenuTarget>();
+  const [deleteTarget, setDeleteTarget] = useState<DeleteIdentityTarget>();
+  const closeMenu = useCallback(() => {
+    const opener = menuOpener.current;
+    setMenuTarget(undefined);
+    // Return focus to the row or heading that opened the menu, as native menus do.
+    requestAnimationFrame(() => opener?.focus());
+  }, []);
+  const menuOpener = useRef<HTMLElement | null>(null);
+  const botById = useMemo(() => new Map(bots.map((bot) => [bot.id, bot])), [bots]);
   const activeRunByBot = indexActiveRunsByBot(runs);
   const [logoutError, setLogoutError] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -77,6 +118,161 @@ export function Sidebar({
       setLoggingOut(false);
     }
   }
+  const entries: SidebarEntry<SidebarItem>[] = [
+    ...channels.map((channel) => ({
+      key: `channel:${channel.id}` as const,
+      item: { kind: "channel" as const, channel },
+      name: channel.name,
+      searchText: `${channel.name} ${channel.description}`,
+    })),
+    ...bots.map((bot) => ({
+      key: `bot:${bot.id}` as const,
+      item: { kind: "bot" as const, bot },
+      name: bot.name,
+      searchText: `${bot.name} ${bot.role}`,
+    })),
+  ];
+  const sections = arrangeSidebar(entries, organization, query);
+  const shown = sections.flatMap((section) => section.entries);
+  const visibleChannels = shown.filter((entry) => entry.item.kind === "channel").length;
+  const visibleBots = shown.filter((entry) => entry.item.kind === "bot").length;
+  const pinned = new Set(organization.pinned);
+  const hidden = new Set(organization.hidden);
+  const unread = new Set(organization.unread);
+
+  function openItemMenu(
+    key: SidebarItemKey,
+    label: string,
+    x: number,
+    y: number,
+    opener: HTMLElement,
+  ) {
+    menuOpener.current = opener;
+    setMenuTarget({ kind: "item", key, label, x, y });
+  }
+
+  function menuHandlers(key: SidebarItemKey, label: string) {
+    return {
+      onContextMenu(event: MouseEvent<HTMLButtonElement>) {
+        event.preventDefault();
+        openItemMenu(key, label, event.clientX, event.clientY, event.currentTarget);
+      },
+      onKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+        if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") {
+          event.preventDefault();
+          const rect = event.currentTarget.getBoundingClientRect();
+          openItemMenu(key, label, rect.left + 24, rect.bottom - 6, event.currentTarget);
+        }
+      },
+    };
+  }
+
+  function identityActions(key: SidebarItemKey, label: string) {
+    if (!onRenameItem) return undefined;
+    const kind = key.startsWith("bot:") ? ("bot" as const) : ("channel" as const);
+    const id = key.slice(kind === "bot" ? 4 : 8);
+    return {
+      kind,
+      maxLength: kind === "bot" ? 64 : 80,
+      onRename: (name: string) => onRenameItem(key, name),
+      onDelete: () => setDeleteTarget({ kind, id, name: label }),
+    };
+  }
+
+  function rowTrailing(key: SidebarItemKey, state?: ReactNode) {
+    const marks = [
+      pinned.has(key) ? (
+        <span className="sidebar-row-pin" role="img" aria-label="已置顶" key="pin">
+          <PinIcon />
+        </span>
+      ) : null,
+      term && hidden.has(key) ? (
+        <span className="sidebar-row-hidden" key="hidden">
+          已隐藏
+        </span>
+      ) : null,
+      unreadCounts?.[key] ? (
+        <span className="sidebar-unread-count" key="unread-count">
+          {unreadCounts[key]}
+          <span className="visually-hidden"> 条未读</span>
+        </span>
+      ) : unread.has(key) ? (
+        <span className="sidebar-unread-dot" role="img" aria-label="未读" key="unread" />
+      ) : null,
+    ].filter(Boolean);
+    if (marks.length === 0 && state === undefined) return null;
+    return (
+      <span className="sidebar-row-trailing">
+        {marks}
+        {state}
+      </span>
+    );
+  }
+
+  function renderEntry(entry: SidebarEntry<SidebarItem>) {
+    const { key, item } = entry;
+    const isUnread = unread.has(key) || Boolean(unreadCounts?.[key]);
+    if (item.kind === "channel") {
+      const { channel } = item;
+      const selected = selectedChannelId === channel.id;
+      return (
+        <button
+          aria-current={selected ? "page" : undefined}
+          className={`sidebar-row channel-list-row ${selected ? "selected" : ""} ${isUnread ? "unread" : ""}`}
+          key={key}
+          onClick={() => {
+            sidebarOrganization.setUnread(key, false);
+            onSelectChannel(channel.id);
+          }}
+          type="button"
+          {...menuHandlers(key, channel.name)}
+        >
+          <ChannelAvatar
+            members={channel.botIds.flatMap((id) => {
+              const bot = botById.get(id);
+              return bot ? [bot] : [];
+            })}
+          />
+          <span className="channel-list-copy">
+            <strong>{channel.name}</strong>
+            <small>{channel.description || `${channel.botIds.length} 名 Bot`}</small>
+          </span>
+          {rowTrailing(key)}
+        </button>
+      );
+    }
+    const { bot } = item;
+    const run = activeRunByBot.get(bot.id);
+    const selected = selectedBotId === bot.id;
+    return (
+      <button
+        className={`sidebar-row bot-row ${selected ? "selected" : ""} ${isUnread ? "unread" : ""}`}
+        type="button"
+        key={key}
+        aria-current={selected ? "page" : undefined}
+        title={`${bot.name} · 点击对话，右键查看更多操作`}
+        onClick={() => {
+          sidebarOrganization.setUnread(key, false);
+          onSelectBot(bot.id);
+        }}
+        {...menuHandlers(key, bot.name)}
+      >
+        <RobotAvatar bot={bot} compact status={run?.status ?? bot.status} />
+        <span className="sidebar-bot-copy">
+          <strong>{bot.name}</strong>
+          {bot.role ? <small>{bot.role}</small> : null}
+        </span>
+        {rowTrailing(
+          key,
+          <small className="bot-state">
+            <span className={`status-dot ${run ? "active" : "idle"}`} aria-hidden="true" />
+            {run ? runStatusLabel(run.status) : "待命"}
+          </small>,
+        )}
+      </button>
+    );
+  }
+
   return (
     <aside
       className="sidebar"
@@ -142,87 +338,73 @@ export function Sidebar({
           placeholder="搜索频道或 Bot"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setQuery("");
+          }}
         />
       </search>
       <div className="sidebar-body">
         <section className="sidebar-section">
-          <div className="sidebar-heading">
-            <h2>频道</h2>
-          </div>
+          {organization.groups.length === 0 ? (
+            <div className="sidebar-heading">
+              <h2>频道和 Bots</h2>
+            </div>
+          ) : null}
           <div className="sidebar-list">
-            {channels
-              .filter((channel) =>
-                `${channel.name} ${channel.description}`.toLocaleLowerCase().includes(term),
-              )
-              .map((channel) => (
-                <button
-                  aria-current={selectedChannelId === channel.id ? "page" : undefined}
-                  className={`sidebar-row channel-list-row ${selectedChannelId === channel.id ? "selected" : ""}`}
-                  key={channel.id}
-                  onClick={() => onSelectChannel(channel.id)}
-                  type="button"
-                >
-                  <span className="channel-list-avatar">
-                    <HashIcon />
-                  </span>
-                  <span className="channel-list-copy">
-                    <strong>{channel.name}</strong>
-                  </span>
-                </button>
-              ))}
-            {!channels.some((channel) =>
-              `${channel.name} ${channel.description}`.toLocaleLowerCase().includes(term),
-            ) && <p className="sidebar-empty">{term ? "没有匹配的频道" : "点击顶部 + 创建频道"}</p>}
-          </div>
-        </section>
-        <section className="sidebar-section">
-          <div className="sidebar-heading">
-            <h2>Bots</h2>
-          </div>
-          <div className="sidebar-list">
-            {bots
-              .filter((bot) => bot.name.toLocaleLowerCase().includes(term))
-              .map((bot) => {
-                const run = activeRunByBot.get(bot.id);
-                return (
-                  <button
-                    className={`sidebar-row bot-row ${selectedBotId === bot.id ? "selected" : ""}`}
-                    type="button"
-                    key={bot.id}
-                    aria-current={selectedBotId === bot.id ? "page" : undefined}
-                    title={`${bot.name} · 点击对话，右键打开档案`}
-                    onClick={() => onSelectBot(bot.id)}
-                    onContextMenu={(event) => {
-                      if (onOpenBotProfile) {
-                        event.preventDefault();
-                        onOpenBotProfile(bot.id);
-                      }
+            {sections.map((section) => (
+              <div className="sidebar-group" key={section.group?.id ?? "ungrouped"}>
+                {organization.groups.length > 0 ? (
+                  <SectionHeading
+                    group={section.group}
+                    onMenu={(target, opener) => {
+                      menuOpener.current = opener;
+                      setMenuTarget(target);
                     }}
-                    onKeyDown={(event) => {
-                      if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") {
-                        event.preventDefault();
-                        onOpenBotProfile?.(bot.id);
-                      }
-                    }}
-                  >
-                    <RobotAvatar bot={bot} compact status={run?.status ?? bot.status} />
-                    <span>{bot.name}</span>
-                    <small className="bot-state">
-                      <span
-                        className={`status-dot ${run ? "active" : "idle"}`}
-                        aria-hidden="true"
-                      />
-                      {run ? runStatusLabel(run.status) : "待命"}
-                    </small>
-                  </button>
-                );
-              })}
-            {!bots.some((bot) => bot.name.toLocaleLowerCase().includes(term)) && (
+                  />
+                ) : null}
+                {section.entries.map((entry) => renderEntry(entry))}
+              </div>
+            ))}
+            {visibleChannels === 0 && (
+              <p className="sidebar-empty">{term ? "没有匹配的频道" : "点击顶部 + 创建频道"}</p>
+            )}
+            {visibleBots === 0 && (
               <p className="sidebar-empty">{term ? "没有匹配的 Bot" : "点击顶部 + 创建 Bot"}</p>
             )}
           </div>
         </section>
       </div>
+      {menuTarget ? (
+        <SidebarItemMenu
+          target={menuTarget}
+          organization={organization}
+          onOpenProfile={
+            menuTarget.kind === "item" && menuTarget.key.startsWith("bot:") && onOpenBotProfile
+              ? () => onOpenBotProfile(menuTarget.key.slice(4))
+              : undefined
+          }
+          identity={
+            menuTarget.kind === "item" && onRenameItem && onDeleteItem
+              ? identityActions(menuTarget.key, menuTarget.label)
+              : undefined
+          }
+          serverUnread={menuTarget.kind === "item" && Boolean(unreadCounts?.[menuTarget.key])}
+          onMarkRead={
+            menuTarget.kind === "item" && onMarkRead ? () => onMarkRead(menuTarget.key) : undefined
+          }
+          onClose={closeMenu}
+        />
+      ) : null}
+      {deleteTarget && onDeleteItem ? (
+        <DeleteIdentityDialog
+          target={deleteTarget}
+          onClose={() => setDeleteTarget(undefined)}
+          onDelete={async (target) => {
+            await onDeleteItem(target);
+            setDeleteTarget(undefined);
+          }}
+        />
+      ) : null}
       <footer className="sidebar-footer">
         {onWork && (
           <button className="sidebar-plugin" type="button" onClick={onWork}>
@@ -230,78 +412,151 @@ export function Sidebar({
             <span>任务监督</span>
           </button>
         )}
-        {onSkills && (
-          <button className="sidebar-plugin" type="button" onClick={onSkills}>
-            <SkillIcon />
-            <span>插件</span>
-          </button>
-        )}
-        <details className="owner-menu">
-          <summary>
-            <span className="owner-avatar">{ownerName.slice(0, 1).toUpperCase()}</span>
-            <span>{ownerName}</span>
-            <span className="owner-chevron" aria-hidden="true">
-              ⌄
-            </span>
-          </summary>
-          <div className="sidebar-popover owner-popover">
-            {onSettings && (
-              <>
+        <div className="sidebar-footer-row">
+          <details className="owner-menu">
+            <summary aria-label={`${ownerName}：账户与设置`} title={ownerName}>
+              <span className="owner-avatar" aria-hidden="true">
+                {ownerName.slice(0, 1).toUpperCase()}
+              </span>
+            </summary>
+            <div className="sidebar-popover owner-popover">
+              {onSettings && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      dismiss();
+                      onSettings();
+                    }}
+                  >
+                    <SettingsIcon />
+                    设置
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      dismiss();
+                      onSettings("about");
+                    }}
+                  >
+                    <span aria-hidden="true">ⓘ</span>关于 OpenBot
+                  </button>
+                </>
+              )}
+              {onManageModels ? (
                 <button
                   type="button"
                   onClick={() => {
                     dismiss();
-                    onSettings();
+                    onManageModels();
                   }}
                 >
                   <SettingsIcon />
-                  设置
+                  模型服务
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    dismiss();
-                    onSettings("about");
-                  }}
-                >
-                  <span aria-hidden="true">ⓘ</span>关于 OpenBot
-                </button>
-              </>
-            )}
-            {onManageModels ? (
-              <button
-                type="button"
-                onClick={() => {
-                  dismiss();
-                  onManageModels();
-                }}
+              ) : null}
+              <a href="https://github.com/yxflc11/openbot#readme" target="_blank" rel="noreferrer">
+                帮助中心<span aria-hidden="true">↗</span>
+              </a>
+              <a
+                href="https://github.com/yxflc11/openbot/issues/new"
+                target="_blank"
+                rel="noreferrer"
               >
-                <SettingsIcon />
-                模型服务
+                发送反馈<span aria-hidden="true">↗</span>
+              </a>
+              <hr />
+              <button type="button" disabled={loggingOut} onClick={() => void handleLogout()}>
+                {loggingOut ? "退出中…" : "退出登录"}
               </button>
-            ) : null}
-            <a href="https://github.com/yxflc11/openbot#readme" target="_blank" rel="noreferrer">
-              帮助中心<span aria-hidden="true">↗</span>
-            </a>
-            <a
-              href="https://github.com/yxflc11/openbot/issues/new"
-              target="_blank"
-              rel="noreferrer"
-            >
-              发送反馈<span aria-hidden="true">↗</span>
-            </a>
-            <hr />
-            <button type="button" disabled={loggingOut} onClick={() => void handleLogout()}>
-              {loggingOut ? "退出中…" : "退出登录"}
+              {logoutError && (
+                <p className="warning" role="alert">
+                  退出失败，请重试
+                </p>
+              )}
+            </div>
+          </details>
+          {onSkills && (
+            <button className="sidebar-plugin-pill" type="button" onClick={onSkills}>
+              <SkillIcon />
+              <span>插件</span>
             </button>
-            {logoutError && (
-              <p className="warning" role="alert">
-                退出失败，请重试
-              </p>
-            )}
-          </div>
-        </details>
+          )}
+        </div>
       </footer>
     </aside>
+  );
+}
+
+function ChannelAvatar({ members }: { members: Bot[] }) {
+  const [first, second] = members;
+  return (
+    <span
+      className={`channel-list-avatar${first ? " has-members" : ""}${second ? " is-pair" : ""}`}
+      aria-hidden="true"
+    >
+      {first ? <RobotAvatar bot={first} compact /> : <HashIcon />}
+      {second ? <RobotAvatar bot={second} compact /> : null}
+    </span>
+  );
+}
+
+function SectionHeading({
+  group,
+  onMenu,
+}: {
+  group: SidebarGroup | undefined;
+  onMenu(target: SidebarMenuTarget, opener: HTMLElement): void;
+}) {
+  if (!group) {
+    return (
+      <div className="sidebar-heading sidebar-group-heading">
+        <h2>未分组</h2>
+      </div>
+    );
+  }
+  return (
+    <div className="sidebar-heading sidebar-group-heading">
+      <h2>
+        <button
+          type="button"
+          className="sidebar-group-name"
+          title="右键或按 Shift+F10 管理分组"
+          onContextMenu={(event) => {
+            event.preventDefault();
+            onMenu(
+              { kind: "group", group, x: event.clientX, y: event.clientY },
+              event.currentTarget,
+            );
+          }}
+          onKeyDown={(event) => {
+            if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") {
+              event.preventDefault();
+              const rect = event.currentTarget.getBoundingClientRect();
+              onMenu(
+                { kind: "group", group, x: rect.left, y: rect.bottom + 4 },
+                event.currentTarget,
+              );
+            }
+          }}
+        >
+          {group.name}
+        </button>
+      </h2>
+    </div>
+  );
+}
+
+function PinIcon() {
+  return (
+    <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 17v5M9 3h6l-1 6 4 4H6l4-4Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

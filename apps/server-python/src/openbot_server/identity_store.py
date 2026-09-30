@@ -64,7 +64,7 @@ class PostgresIdentityStore:
             async with self._transactions.transaction(token) as connection:
                 if value.botIds:
                     cursor = await connection.execute(
-                        "SELECT id FROM bots WHERE id=ANY(%s) ORDER BY id FOR KEY SHARE", (value.botIds,))
+                        "SELECT id FROM bots WHERE id=ANY(%s) AND deleted_at IS NULL ORDER BY id FOR KEY SHARE", (value.botIds,))
                     if len(await cursor.fetchall()) != len(value.botIds):
                         raise UnknownMembers()
                 cursor = await connection.execute(

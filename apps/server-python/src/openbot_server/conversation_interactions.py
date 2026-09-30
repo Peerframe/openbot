@@ -74,7 +74,7 @@ class PostgresConversationInteractions:
     async def list_reactions(self, token, channel_id):
         _identity(channel_id)
         async with _storage_errors(), self._transactions.transaction(token) as db:
-            channel = await (await db.execute("SELECT id FROM channels WHERE id=%s", (channel_id,))).fetchone()
+            channel = await (await db.execute("SELECT id FROM channels WHERE id=%s AND deleted_at IS NULL", (channel_id,))).fetchone()
             if channel is None:
                 raise ControlError(404, "channel_not_found")
             rows = await (await db.execute(
@@ -113,7 +113,7 @@ class PostgresConversationInteractions:
             await db.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,731))", (channel_id,))
             channel = await (await db.execute(
                 "SELECT id,left(name,81) AS name,left(description,501) AS description,direct_bot_id,created_at "
-                "FROM channels WHERE id=%s FOR UPDATE", (channel_id,))).fetchone()
+                "FROM channels WHERE id=%s AND deleted_at IS NULL FOR UPDATE", (channel_id,))).fetchone()
             if channel is None:
                 raise ControlError(404, "channel_not_found")
             if channel["direct_bot_id"]:

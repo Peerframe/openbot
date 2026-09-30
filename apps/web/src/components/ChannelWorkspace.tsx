@@ -36,6 +36,7 @@ import {
 import { composeTaskText } from "../composer-context";
 import { type ConversationSession, createConversationSession } from "../conversation-session";
 import { shortcutLabel } from "../desktop-shortcuts";
+import { findMentionQuery, type MentionQuery, removeMentionQuery } from "../mention-query";
 import {
   addRecipient,
   removeRecipient,
@@ -44,6 +45,7 @@ import {
 } from "../recipient-utils";
 import { mergeRunOutput } from "../run-output-state";
 import { isActiveRun, runStatusLabel } from "../run-state";
+import { findSlashQuery, removeSlashQuery, type SlashQuery } from "../slash-query";
 import { useWorkspacePreferences } from "../workspace-preferences";
 import { AttachmentsManagerDialog } from "./AttachmentsManager";
 import { MessageActionBar } from "./MessageActionBar";
@@ -156,8 +158,19 @@ export function ChannelWorkspace({
   const mounted = useRef(false);
   const recipientIds = selectedRecipientIds(draft);
   const targetBot = recipientIds.length === 1 ? botsById.get(recipientIds[0] ?? "") : undefined;
-  const [mentionQuery, setMentionQuery] = useState<string>();
+  const [mention, setMention] = useState<MentionQuery>();
+  const mentionQuery = mention?.query;
+  const mentionCaret = useRef<number | undefined>(undefined);
+  useLayoutEffect(() => {
+    if (mentionCaret.current === undefined) return;
+    const caret = Math.min(mentionCaret.current, draft.text.length);
+    textarea.current?.focus();
+    textarea.current?.setSelectionRange(caret, caret);
+    mentionCaret.current = undefined;
+  }, [draft.text]);
   const [mentionIndex, setMentionIndex] = useState(0);
+  const [slash, setSlash] = useState<SlashQuery>();
+  const [slashIndex, setSlashIndex] = useState(0);
   const [contextError, setContextError] = useState<string>();
   const [skillChoices, setSkillChoices] = useState<
     Array<{ id: string; name: string; version: string }>
@@ -180,16 +193,69 @@ export function ChannelWorkspace({
       "everyone".startsWith(mentionQuery.toLowerCase()));
   const mentionCount = matchingMembers.length + (showEveryone ? 1 : 0);
   const skillBotId = targetBot?.id;
+  const slashActive = slash !== undefined;
+  const slashTerm = slash?.query.toLocaleLowerCase() ?? "";
+  const slashSkills = slashActive
+    ? skillChoices.filter((skill) => skill.name.toLocaleLowerCase().includes(slashTerm))
+    : [];
+  const slashActions = slashActive
+    ? composerActions.filter((action) => action.label.toLocaleLowerCase().includes(slashTerm))
+    : [];
+  const slashCount = slashSkills.length + slashActions.length;
+  const activeSlashIndex = Math.min(slashIndex, Math.max(slashCount - 1, 0));
+  function closeSlash(keepText = true) {
+    if (!keepText && slash) {
+      mentionCaret.current = draft.text.slice(0, slash.start).trimEnd().length;
+      conversation.edit({ text: removeSlashQuery(draft.text, slash) });
+    }
+    setSlash(undefined);
+    setSlashIndex(0);
+  }
+  function chooseSlashSkill(skill: { id: string; name: string; version: string }) {
+    const attached = draft.skills ?? [];
+    if (attached.some((item) => item.id === skill.id)) {
+      closeSlash(false);
+      return;
+    }
+    if (attached.length >= 2) {
+      setContextError("一条消息最多使用 2 个技能。");
+      return;
+    }
+    mentionCaret.current = slash ? draft.text.slice(0, slash.start).trimEnd().length : undefined;
+    conversation.edit({
+      text: removeSlashQuery(draft.text, slash),
+      skills: [...attached, { id: skill.id, name: skill.name, version: skill.version }],
+    });
+    setContextError(undefined);
+    setSlash(undefined);
+    setSlashIndex(0);
+  }
+  function chooseSlashAction(id: ComposerAction["id"]) {
+    closeSlash(false);
+    if (id === "attach") fileInput.current?.click();
+    else setFilesOpen(true);
+  }
+  function chooseSlashOption(index: number) {
+    const skill = slashSkills[index];
+    if (skill) chooseSlashSkill(skill);
+    else {
+      const action = slashActions[index - slashSkills.length];
+      if (action) chooseSlashAction(action.id);
+    }
+  }
   const invalidRecipient = recipientIds.some(
     (id) => !channel.botIds.includes(id) || !botsById.has(id),
   );
   function chooseEveryone() {
     try {
+      mentionCaret.current = mention
+        ? draft.text.slice(0, mention.start).trimEnd().length
+        : undefined;
       conversation.edit({
         ...selectEveryone(channel.botIds),
-        text: draft.text.replace(/(?:^|\s)@[^@\n]*$/, "").trimEnd(),
+        text: removeMentionQuery(draft.text, mention),
       });
-      setMentionQuery(undefined);
+      setMention(undefined);
       setMentionIndex(0);
       setContextError(undefined);
       textarea.current?.focus();
@@ -201,16 +267,19 @@ export function ChannelWorkspace({
   const contextLength = composeTaskText(draft.text, draft.attachments, draft.skills).length;
   function chooseMention(bot: Bot) {
     try {
+      mentionCaret.current = mention
+        ? draft.text.slice(0, mention.start).trimEnd().length
+        : undefined;
       conversation.edit({
         ...addRecipient(draft, bot.id, channel.botIds),
-        text: draft.text.replace(/(?:^|\s)@[^@\n]*$/, "").trimEnd(),
+        text: removeMentionQuery(draft.text, mention),
       });
       setContextError(undefined);
     } catch (cause) {
       setContextError(cause instanceof Error ? cause.message : "无法添加接收者。");
       return;
     }
-    setMentionQuery(undefined);
+    setMention(undefined);
     setMentionIndex(0);
     textarea.current?.focus();
   }
@@ -220,7 +289,7 @@ export function ChannelWorkspace({
     setSkillChoices([]);
   }, [skillBotId]);
   useEffect(() => {
-    if (!skillsOpen || !skillBotId) return;
+    if (!(skillsOpen || slashActive) || !skillBotId) return;
     const controller = new AbortController();
     setSkillsLoading(true);
     setContextError(undefined);
@@ -236,7 +305,7 @@ export function ChannelWorkspace({
         if (!controller.signal.aborted) setSkillsLoading(false);
       });
     return () => controller.abort();
-  }, [skillsOpen, skillBotId]);
+  }, [skillsOpen, slashActive, skillBotId]);
   const artifactsByRun = useMemo(() => {
     const result = new Map<string, Artifact[]>();
     for (const artifact of artifacts) {
@@ -439,6 +508,30 @@ export function ChannelWorkspace({
   }
   function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (
+      slashActive &&
+      !event.nativeEvent.isComposing &&
+      event.keyCode !== 229 &&
+      !event.shiftKey &&
+      !event.altKey
+    ) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeSlash();
+        return;
+      }
+      if ((event.key === "ArrowDown" || event.key === "ArrowUp") && slashCount > 0) {
+        event.preventDefault();
+        const step = event.key === "ArrowDown" ? 1 : -1;
+        setSlashIndex((activeSlashIndex + step + slashCount) % slashCount);
+        return;
+      }
+      if ((event.key === "Enter" || event.key === "Tab") && slashCount > 0) {
+        event.preventDefault();
+        chooseSlashOption(activeSlashIndex);
+        return;
+      }
+    }
+    if (
       !event.nativeEvent.isComposing &&
       event.keyCode !== 229 &&
       !event.shiftKey &&
@@ -447,7 +540,7 @@ export function ChannelWorkspace({
     ) {
       if (event.key === "Escape") {
         event.preventDefault();
-        setMentionQuery(undefined);
+        setMention(undefined);
         return;
       }
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -768,6 +861,63 @@ export function ChannelWorkspace({
                 ))}
               </div>
             )}
+            {slashActive && (
+              <div
+                className="mention-options slash-options"
+                role="listbox"
+                id={`slash-${channel.id}`}
+                aria-label="技能与操作"
+              >
+                {!targetBot ? (
+                  <p>先 @ 提及一名 Bot，才能使用它的技能</p>
+                ) : skillsLoading ? (
+                  <p role="status">正在读取 {targetBot.name} 的技能…</p>
+                ) : null}
+                {slashSkills.map((skill, index) => (
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={index === activeSlashIndex}
+                    id={`slash-${channel.id}-${index}`}
+                    key={skill.id}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => chooseSlashSkill(skill)}
+                  >
+                    <SkillIcon />
+                    <span>
+                      {skill.name}
+                      <small>v{skill.version}</small>
+                    </span>
+                    <em>技能</em>
+                  </button>
+                ))}
+                {slashSkills.length > 0 && slashActions.length > 0 ? (
+                  <span className="slash-separator" aria-hidden="true" />
+                ) : null}
+                {slashActions.map((action, index) => (
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={index + slashSkills.length === activeSlashIndex}
+                    id={`slash-${channel.id}-${index + slashSkills.length}`}
+                    key={action.id}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => chooseSlashAction(action.id)}
+                  >
+                    <PlusIcon />
+                    <span>
+                      {action.label}
+                      <small>{action.detail}</small>
+                    </span>
+                    <em>操作</em>
+                  </button>
+                ))}
+                {slashCount === 0 && targetBot && !skillsLoading ? (
+                  <p>没有匹配的技能或操作</p>
+                ) : null}
+                <p className="slash-hint">↑ ↓ 选择 · 回车确认 · Esc 关闭</p>
+              </div>
+            )}
             {mentionQuery !== undefined && (
               <div
                 className="mention-options"
@@ -826,22 +976,49 @@ export function ChannelWorkspace({
                     ? `给 ${targetBot?.name ?? "Bot"} 发消息`
                     : `给 ${channel.name} 发消息`
               }
-              aria-controls={mentionQuery !== undefined ? `mentions-${channel.id}` : undefined}
+              aria-controls={
+                slashActive
+                  ? `slash-${channel.id}`
+                  : mentionQuery !== undefined
+                    ? `mentions-${channel.id}`
+                    : undefined
+              }
               aria-activedescendant={
-                mentionQuery === undefined
-                  ? undefined
-                  : showEveryone && mentionIndex === 0
-                    ? `mention-everyone-${channel.id}`
-                    : matchingMembers[mentionIndex - (showEveryone ? 1 : 0)]
-                      ? `mention-${matchingMembers[mentionIndex - (showEveryone ? 1 : 0)]?.id}`
-                      : undefined
+                slashActive
+                  ? slashCount > 0
+                    ? `slash-${channel.id}-${activeSlashIndex}`
+                    : undefined
+                  : mentionQuery === undefined
+                    ? undefined
+                    : showEveryone && mentionIndex === 0
+                      ? `mention-everyone-${channel.id}`
+                      : matchingMembers[mentionIndex - (showEveryone ? 1 : 0)]
+                        ? `mention-${matchingMembers[mentionIndex - (showEveryone ? 1 : 0)]?.id}`
+                        : undefined
               }
               onChange={(event) => {
                 conversation.edit({ text: event.target.value });
-                const query = channel.directBotId
-                  ? undefined
-                  : /(?:^|\s)@([^@\n]*)$/.exec(event.target.value)?.[1];
-                setMentionQuery(query);
+                setSlash(findSlashQuery(event.target.value, event.target.selectionStart));
+                setSlashIndex(0);
+                setMention(
+                  channel.directBotId
+                    ? undefined
+                    : findMentionQuery(event.target.value, event.target.selectionStart),
+                );
+                setMentionIndex(0);
+              }}
+              onSelect={(event) => {
+                setSlash(
+                  findSlashQuery(event.currentTarget.value, event.currentTarget.selectionStart),
+                );
+                setMention(
+                  channel.directBotId
+                    ? undefined
+                    : findMentionQuery(
+                        event.currentTarget.value,
+                        event.currentTarget.selectionStart,
+                      ),
+                );
                 setMentionIndex(0);
               }}
               onKeyDown={handleComposerKeyDown}
@@ -1214,3 +1391,15 @@ function realtimeLabel(state: RealtimeConnectionState) {
   };
   return labels[state];
 }
+
+interface ComposerAction {
+  id: "attach" | "files";
+  label: string;
+  detail: string;
+}
+
+/** Existing composer actions reachable from the `/` menu; they open the same pickers as `+`. */
+const composerActions: ComposerAction[] = [
+  { id: "attach", label: "添加附件", detail: "文本、图片、Office、PDF、音频和视频" },
+  { id: "files", label: "频道文件", detail: "下载、提取文字、转写和管理回收站" },
+];

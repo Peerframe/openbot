@@ -1,15 +1,22 @@
 :root {
-  color: #17191c;
-  background: #ffffff;
+  color: #1d1d1f;
+  background: #fcfcfc;
   font-family:
-    Inter, "SF Pro Text", "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei",
+    ui-sans-serif, system-ui, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   --blue: #1267ed;
   --blue-soft: #edf4ff;
-  --line: #e4e7eb;
-  --muted: #707780;
-  --panel: #f7f8fa;
+  --line: #e6e6e8;
+  --muted: #6e6e73;
+  --panel: #f0f0f2;
+  --ink: #1d1d1f;
+  --ink-strong: #111;
+  --fill: #f0f0f2;
+  --fill-strong: #e6e6e8;
+  --sidebar: #f5f5f6;
+  --danger: #b3261e;
   --green: #27a45b;
   --orange: #e87922;
 }
@@ -208,23 +215,23 @@ select:focus-visible {
   justify-content: center;
   gap: 7px;
   padding: 0 17px;
-  border-radius: 8px;
+  border-radius: 999px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 650;
 }
 .primary-button {
-  border: 1px solid var(--blue);
+  border: 1px solid var(--ink-strong);
   color: #fff;
-  background: var(--blue);
+  background: var(--ink-strong);
 }
 .primary-button:hover {
-  border-color: #0c58d2;
-  background: #0c58d2;
+  border-color: #333;
+  background: #333;
 }
 .secondary-button {
-  border: 1px solid #d2d7dd;
-  background: #fff;
+  border: 1px solid var(--line);
+  background: var(--fill);
 }
 .secondary-button:hover {
   border-color: #aeb6bf;
@@ -254,99 +261,98 @@ select:focus-visible {
 }
 .approval-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
+/* Attention is signalled by the label colour, not by tinting the whole card. */
 .approval-card {
   padding: 14px;
-  border: 1px solid #e5c28d;
-  border-left: 3px solid var(--orange);
-  border-radius: 9px;
-  background: #fffaf3;
-}
-.approval-card.risk-destructive,
-.approval-card.risk-privileged {
-  border-color: #e2aaa5;
-  border-left-color: #c94b43;
-  background: #fff8f7;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
 }
 .approval-card header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 9px;
+  margin-bottom: 8px;
 }
 .approval-card header span {
-  color: #a85319;
-  font-size: 10px;
-  font-weight: 750;
+  color: #94480b;
+  font-size: 12px;
+  font-weight: 600;
 }
 .approval-card.risk-destructive header span,
 .approval-card.risk-privileged header span {
-  color: #a13731;
+  color: var(--danger);
 }
 .approval-card time {
-  color: #8b7c6e;
-  font-size: 9px;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 .approval-card > strong {
   display: block;
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 600;
   line-height: 1.45;
 }
 .approval-card > p {
   overflow: hidden;
   margin: 6px 0;
-  color: #6e6258;
-  font-size: 10px;
+  color: var(--muted);
+  font-size: 12px;
   line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .approval-card > small {
-  color: #8b8177;
-  font-size: 9px;
+  color: #8e8e93;
+  font-size: 12px;
 }
 .approval-actions {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 7px;
+  gap: 8px;
   margin-top: 12px;
 }
 .approval-actions button {
-  min-height: 34px;
-  padding: 0 10px;
-  border-radius: 7px;
+  min-height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
   cursor: pointer;
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
 }
 .approval-actions button:disabled {
   cursor: wait;
   opacity: 0.6;
 }
 .approval-reject {
-  border: 1px solid #d8cfc6;
-  background: #fff;
+  border: 1px solid #ececee;
+  background: #ececee;
+}
+.approval-reject:hover {
+  background: #dedee1;
 }
 .approval-approve {
   overflow: hidden;
-  border: 1px solid #b85e1e;
+  border: 1px solid var(--ink-strong);
   color: #fff;
-  background: #c96722;
+  background: var(--ink-strong);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .risk-destructive .approval-approve,
 .risk-privileged .approval-approve {
-  border-color: #a33b35;
-  background: #b8463f;
+  border-color: var(--danger);
+  background: var(--danger);
 }
 .approval-card > em {
   display: block;
   margin-top: 8px;
-  color: #a13731;
-  font-size: 9px;
+  color: var(--danger);
+  font-size: 12px;
   font-style: normal;
   line-height: 1.4;
 }
@@ -1455,37 +1461,37 @@ select:focus-visible {
   gap: 9px;
   width: 158px;
 }
+/* Profile sections switch with pills, matching the plugin and settings destinations. */
 .employee-tabs {
   display: flex;
-  gap: clamp(12px, 2.2vw, 30px);
+  gap: 8px;
   overflow-x: auto;
-  border-bottom: 1px solid var(--line);
+  padding: 4px 0 2px;
 }
 .employee-tabs button {
-  min-height: 48px;
+  min-height: 34px;
   flex: 0 0 auto;
-  padding: 0 2px;
+  padding: 0 16px;
   border: 0;
-  border-bottom: 2px solid transparent;
-  color: #4f565f;
-  background: transparent;
+  border-radius: 17px;
+  color: #3a3a3c;
+  background: var(--fill);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
 }
 .employee-tabs button:hover {
-  color: #111419;
+  background: var(--fill-strong);
 }
 .employee-tabs button.selected {
-  border-bottom-color: var(--blue);
-  color: var(--blue);
-  font-weight: 680;
+  color: #fff;
+  background: var(--ink-strong);
+  font-weight: 600;
 }
 .employee-profile-body {
   padding-top: 22px;
 }
 .employee-about {
-  padding: 0 6px 20px;
-  border-bottom: 1px solid var(--line);
+  padding: 0 4px 18px;
 }
 .employee-about h2,
 .employee-section-heading h2 {
@@ -1497,16 +1503,17 @@ select:focus-visible {
 .employee-about p {
   max-width: 780px;
   margin: 8px 0 0;
-  color: #525962;
-  font-size: 12px;
+  color: var(--muted);
+  font-size: 14px;
   line-height: 1.65;
 }
 .employee-stat-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  margin: 0;
-  padding: 20px 0;
-  border-bottom: 1px solid var(--line);
+  margin: 0 0 20px;
+  padding: 18px 0;
+  border-radius: 18px;
+  background: var(--fill);
 }
 .employee-stat-row > div {
   min-width: 0;
@@ -1514,11 +1521,11 @@ select:focus-visible {
   text-align: center;
 }
 .employee-stat-row > div + div {
-  border-left: 1px solid var(--line);
+  border-left: 1px solid #e3e3e6;
 }
 .employee-stat-row dt {
-  color: #747b84;
-  font-size: 10px;
+  color: var(--muted);
+  font-size: 13px;
 }
 .employee-stat-row dd {
   margin: 7px 0 0;
@@ -1530,24 +1537,22 @@ select:focus-visible {
 .employee-overview-split {
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  border-bottom: 1px solid var(--line);
+  gap: 16px;
+  margin-bottom: 20px;
 }
 .employee-overview-split > section {
   min-width: 0;
-  padding: 20px 20px 24px 6px;
-}
-.employee-overview-split > section + section {
-  padding-right: 6px;
-  padding-left: 24px;
-  border-left: 1px solid var(--line);
+  padding: 18px 20px 20px;
+  border-radius: 18px;
+  background: var(--fill);
 }
 .employee-section-heading {
   margin-bottom: 18px;
 }
 .employee-section-heading p {
   margin: 5px 0 0;
-  color: #8a9097;
-  font-size: 10px;
+  color: #8e8e93;
+  font-size: 12px;
   line-height: 1.5;
 }
 .employee-evolution-timeline {
@@ -2582,18 +2587,10 @@ select:focus-visible {
     border-left: 0;
   }
   .employee-stat-row > div:nth-child(n + 3) {
-    border-top: 1px solid var(--line);
+    border-top: 1px solid #e3e3e6;
   }
   .employee-overview-split {
     grid-template-columns: 1fr;
-  }
-  .employee-overview-split > section,
-  .employee-overview-split > section + section {
-    padding: 20px 0;
-    border-left: 0;
-  }
-  .employee-overview-split > section + section {
-    border-top: 1px solid var(--line);
   }
   .employee-skill-graph {
     grid-template-columns: 48px minmax(0, 1fr);
@@ -2812,7 +2809,7 @@ select:focus-visible {
   }
   .mobile-approval-list .approval-actions button {
     min-height: 40px;
-    font-size: 11px;
+    font-size: 14px;
   }
   .mobile-sheet-header button {
     border: 0;

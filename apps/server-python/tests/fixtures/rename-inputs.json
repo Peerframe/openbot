@@ -1,0 +1,141 @@
+{
+  "comment": "Inputs and case labels only. The differential runner derives the expected behaviour from the installed compiled Zod schemas; this file must not carry expected outputs.",
+  "cases": [
+    {
+      "id": "botRename-trimmed",
+      "schema": "botRename",
+      "input": {
+        "name": "  名字 　"
+      }
+    },
+    {
+      "id": "botRename-unknown-keys-stripped",
+      "schema": "botRename",
+      "input": {
+        "name": "a",
+        "id": "x",
+        "deletedAt": "now"
+      }
+    },
+    {
+      "id": "botRename-at-limit",
+      "schema": "botRename",
+      "input": {
+        "name": "界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界"
+      }
+    },
+    {
+      "id": "botRename-over-limit",
+      "schema": "botRename",
+      "input": {
+        "name": "界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界"
+      }
+    },
+    {
+      "id": "botRename-emoji-utf16",
+      "schema": "botRename",
+      "input": {
+        "name": "🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪"
+      }
+    },
+    {
+      "id": "botRename-emoji-over-utf16",
+      "schema": "botRename",
+      "input": {
+        "name": "🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪"
+      }
+    },
+    {
+      "id": "botRename-blank",
+      "schema": "botRename",
+      "input": {
+        "name": " \t"
+      }
+    },
+    {
+      "id": "botRename-missing",
+      "schema": "botRename",
+      "input": {}
+    },
+    {
+      "id": "botRename-number",
+      "schema": "botRename",
+      "input": {
+        "name": 5
+      }
+    },
+    {
+      "id": "botRename-null",
+      "schema": "botRename",
+      "input": null
+    },
+    {
+      "id": "channelRename-trimmed",
+      "schema": "channelRename",
+      "input": {
+        "name": "  名字 　"
+      }
+    },
+    {
+      "id": "channelRename-unknown-keys-stripped",
+      "schema": "channelRename",
+      "input": {
+        "name": "a",
+        "id": "x",
+        "deletedAt": "now"
+      }
+    },
+    {
+      "id": "channelRename-at-limit",
+      "schema": "channelRename",
+      "input": {
+        "name": "界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界"
+      }
+    },
+    {
+      "id": "channelRename-over-limit",
+      "schema": "channelRename",
+      "input": {
+        "name": "界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界"
+      }
+    },
+    {
+      "id": "channelRename-emoji-utf16",
+      "schema": "channelRename",
+      "input": {
+        "name": "🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪"
+      }
+    },
+    {
+      "id": "channelRename-emoji-over-utf16",
+      "schema": "channelRename",
+      "input": {
+        "name": "🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪"
+      }
+    },
+    {
+      "id": "channelRename-blank",
+      "schema": "channelRename",
+      "input": {
+        "name": " \t"
+      }
+    },
+    {
+      "id": "channelRename-missing",
+      "schema": "channelRename",
+      "input": {}
+    },
+    {
+      "id": "channelRename-number",
+      "schema": "channelRename",
+      "input": {
+        "name": 5
+      }
+    },
+    {
+      "id": "channelRename-null",
+      "schema": "channelRename",
+      "input": null
+    }
+  ]
+}

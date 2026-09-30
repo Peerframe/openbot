@@ -132,13 +132,13 @@ class PostgresReadStore:
                         cursor = await connection.execute(
                             "SELECT id, name, role, status, computer_profile, "
                             "jsonb_build_object('appearance', configuration->'appearance', 'model', configuration->'model') AS configuration, created_at "
-                            "FROM bots ORDER BY created_at DESC, id LIMIT 1001"
+                            "FROM bots WHERE deleted_at IS NULL ORDER BY created_at DESC, id LIMIT 1001"
                         )
                     elif projection == "channels":
                         cursor = await connection.execute(
                             "SELECT c.id, c.name, c.description, c.direct_bot_id, c.created_at, cb.bot_id "
                             "FROM channels c LEFT JOIN channel_bots cb ON cb.channel_id=c.id "
-                            "ORDER BY c.created_at DESC, c.id, cb.bot_id LIMIT 10001"
+                            "WHERE c.deleted_at IS NULL ORDER BY c.created_at DESC, c.id, cb.bot_id LIMIT 10001"
                         )
                     elif projection in ("messages", "runs"):
                         cursor = await connection.execute(MESSAGE_QUERY if projection == "messages" else RUN_QUERY,

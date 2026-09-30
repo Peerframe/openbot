@@ -1,6 +1,7 @@
 import type {
   DesktopNavigationCommand,
   DesktopNavigationMenuState,
+  DesktopNotificationInput,
   DesktopSidebarMaterialState,
   EmployeeTemplateSaveInput,
   OpenBotDesktopBridge,
@@ -30,6 +31,8 @@ const DESKTOP_SIDEBAR_MATERIAL_STATE_CHANNEL: typeof import("./runtime-contract.
   "openbot:sidebar-material-state";
 const DESKTOP_SIDEBAR_MATERIAL_CHANGED_CHANNEL: typeof import("./runtime-contract.js").DESKTOP_SIDEBAR_MATERIAL_CHANGED_CHANNEL =
   "openbot:sidebar-material-changed";
+const DESKTOP_SHOW_NOTIFICATION_CHANNEL: typeof import("./runtime-contract.js").DESKTOP_SHOW_NOTIFICATION_CHANNEL =
+  "openbot:show-notification";
 const DESKTOP_NAVIGATION_COMMAND_CHANNEL: typeof import("./runtime-contract.js").DESKTOP_NAVIGATION_COMMAND_CHANNEL =
   "openbot:navigation-command";
 const DESKTOP_NAVIGATION_MENU_STATE_CHANNEL: typeof import("./runtime-contract.js").DESKTOP_NAVIGATION_MENU_STATE_CHANNEL =
@@ -108,6 +111,22 @@ const bridge: OpenBotDesktopBridge = Object.freeze({
     return ipcRenderer.invoke(DESKTOP_SET_SIDEBAR_TRANSLUCENCY_CHANNEL, enabled);
   },
   getSidebarMaterialState: () => ipcRenderer.invoke(DESKTOP_SIDEBAR_MATERIAL_STATE_CHANNEL),
+  showNotification: (input: DesktopNotificationInput) => {
+    // Copy only the two bounded strings; the main process validates them again.
+    if (
+      input === null ||
+      typeof input !== "object" ||
+      typeof input.title !== "string" ||
+      typeof input.body !== "string" ||
+      input.title.length > 40 ||
+      input.body.length > 80
+    )
+      return Promise.resolve({ status: "failed" });
+    return ipcRenderer.invoke(DESKTOP_SHOW_NOTIFICATION_CHANNEL, {
+      title: input.title,
+      body: input.body,
+    });
+  },
   onSidebarMaterialChanged: (listener: (state: DesktopSidebarMaterialState) => void) => {
     if (typeof listener !== "function") return () => {};
     const handleChange = (_event: Electron.IpcRendererEvent, value: unknown) => {

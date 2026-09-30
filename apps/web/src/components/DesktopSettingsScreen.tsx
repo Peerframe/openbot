@@ -1,6 +1,4 @@
-import type { WorkspaceSnapshot } from "@openbot/domain";
 import { type ReactNode, useEffect, useState } from "react";
-import { getWorkspace } from "../api";
 import {
   type DesktopConnectionState,
   type DesktopLocalWorkerState,
@@ -10,14 +8,21 @@ import {
 } from "../desktop-runtime";
 import { shortcutLabel } from "../desktop-shortcuts";
 import {
+  type NotificationSupport,
+  notificationSupport,
+  requestNotificationPermission,
+  showSystemNotification,
+} from "../system-notifications";
+import {
   defaultPreferences,
   updatePreferences,
   useWorkspacePreferences,
 } from "../workspace-preferences";
-import { AutomationsScreen } from "./AutomationsScreen";
 import {
   ApprovalIcon,
+  AuditIcon,
   AutomationIcon,
+  BellIcon,
   BotIcon,
   CloseIcon,
   NodeIcon,
@@ -26,12 +31,22 @@ import {
 } from "./Icons";
 import { ModelSettingsScreen } from "./ModelSettingsScreen";
 import { OpenBotMark } from "./OpenBotMark";
+import {
+  ApprovalPolicySettings,
+  AuditLogSettings,
+  SettingRow,
+  SettingsAutomations,
+  SettingsGroup,
+} from "./SettingsSections";
 
 export type DesktopSettingsSection =
   | "general"
   | "models"
   | "connection"
   | "automations"
+  | "notifications"
+  | "approvals"
+  | "audit"
   | "privacy"
   | "about";
 type Section = DesktopSettingsSection;
@@ -61,6 +76,24 @@ const sections: Array<{ id: Section; label: string; icon: ReactNode; description
     description: "让 Bot 按计划在频道中完成工作。",
   },
   {
+    id: "notifications",
+    label: "通知",
+    icon: <BellIcon />,
+    description: "OpenBot 不在前台时，用系统通知提醒你。",
+  },
+  {
+    id: "approvals",
+    label: "审批与权限",
+    icon: <ApprovalIcon />,
+    description: "哪些操作需要你批准。规则由服务端执行，这里只能查看。",
+  },
+  {
+    id: "audit",
+    label: "审计记录",
+    icon: <AuditIcon />,
+    description: "查看频道、Bot 与任务的关键操作记录。",
+  },
+  {
     id: "privacy",
     label: "隐私与数据",
     icon: <ApprovalIcon />,
@@ -83,13 +116,14 @@ export function DesktopSettingsScreen({
   onAutomations,
 }: {
   error?: string | undefined;
-  plan: DesktopSetupPlanInput;
+  /** Absent in the plain Web entry, which has no Desktop plan, material or local worker. */
+  plan?: DesktopSetupPlanInput | undefined;
   connection?: DesktopConnectionState | null | undefined;
   localWorker?: DesktopLocalWorkerState | null | undefined;
-  material: DesktopSidebarMaterialState;
-  onConnection(): void;
-  onRole(): void;
-  onWorker(): void;
+  material?: DesktopSidebarMaterialState | undefined;
+  onConnection?(): void;
+  onRole?(): void;
+  onWorker?(): void;
   onBack(): void;
   initialSection?: DesktopSettingsSection;
   onAutomations?(): void;
@@ -97,6 +131,13 @@ export function DesktopSettingsScreen({
   const [section, setSection] = useState<Section>(initialSection);
   const [search, setSearch] = useState("");
   useEffect(() => setSection(initialSection), [initialSection]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run only when the section changes.
+  useEffect(() => {
+    // On phones the section list is a horizontal pill row; keep the current one visible.
+    document
+      .querySelector(".settings-navigation nav [aria-current='page']")
+      ?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  }, [section]);
   const { values, saved } = useWorkspacePreferences();
   const [resetNotice, setResetNotice] = useState(false);
   const runtime = getOpenBotDesktopBridge()?.getRuntimeInfo?.();
@@ -107,11 +148,17 @@ export function DesktopSettingsScreen({
     models: "API Kimi DeepSeek OpenAI Anthropic 模型 密钥 服务",
     connection: "连接 设备 绑定 权限 服务地址 工作组件",
     automations: "定时 计划 调度 自动 任务",
+    notifications: "通知 提醒 系统 消息 回复 审批",
+    approvals: "审批 批准 权限 插件 浏览器 确认 授权",
+    audit: "审计 记录 日志 历史 删除 重命名",
     privacy: "隐私 数据 保存 恢复 默认 权限",
     about: "版本 平台 Electron Hermes 关于",
   };
-  const matching = sections.filter((item) =>
-    `${item.label} ${item.description} ${keywords[item.id]}`.toLocaleLowerCase().includes(term),
+  const desktop = plan !== undefined;
+  const matching = sections.filter(
+    (item) =>
+      (desktop || item.id !== "connection") &&
+      `${item.label} ${item.description} ${keywords[item.id]}`.toLocaleLowerCase().includes(term),
   );
   return (
     <div className="desktop-settings-layout settings-refresh">
@@ -133,8 +180,9 @@ export function DesktopSettingsScreen({
         <nav aria-label="设置分类">
           {(
             [
-              { label: "应用", ids: ["general", "about", "privacy"] },
+              { label: "应用", ids: ["general", "notifications", "about"] },
               { label: "工作空间", ids: ["models", "connection", "automations"] },
+              { label: "安全与记录", ids: ["approvals", "audit", "privacy"] },
             ] as const
           ).map((group) => {
             const items = group.ids.flatMap((id) => matching.filter((item) => item.id === id));
@@ -166,7 +214,8 @@ export function DesktopSettingsScreen({
         )}
         <div className="settings-brand">
           <span>
-            OpenBot Desktop<small>此设备的设置</small>
+            {desktop ? "OpenBot Desktop" : "OpenBot"}
+            <small>此设备的设置</small>
           </span>
         </div>
       </aside>
@@ -194,29 +243,31 @@ export function DesktopSettingsScreen({
           {section === "general" && (
             <>
               <SettingsGroup title="外观" description="更少的干扰，刚好的信息。">
-                <SettingRow
-                  title="半透明侧栏"
-                  description={
-                    material.status === "reduced"
-                      ? "系统已启用减少透明度或高对比度，当前使用不透明背景。"
-                      : material.status === "unsupported" || material.status === "unavailable"
-                        ? "当前运行环境使用不透明背景；macOS 桌面应用支持原生材质。"
-                        : "让 macOS 原生材质融入左侧导航。"
-                  }
-                >
-                  <Switch
-                    label="半透明侧栏"
-                    checked={
-                      values.sidebarTranslucent &&
-                      material.status !== "unsupported" &&
-                      material.status !== "unavailable"
+                {material ? (
+                  <SettingRow
+                    title="半透明侧栏"
+                    description={
+                      material.status === "reduced"
+                        ? "系统已启用减少透明度或高对比度，当前使用不透明背景。"
+                        : material.status === "unsupported" || material.status === "unavailable"
+                          ? "当前运行环境使用不透明背景；macOS 桌面应用支持原生材质。"
+                          : "让 macOS 原生材质融入左侧导航。"
                     }
-                    disabled={
-                      material.status === "unsupported" || material.status === "unavailable"
-                    }
-                    onChange={(checked) => updatePreferences({ sidebarTranslucent: checked })}
-                  />
-                </SettingRow>
+                  >
+                    <Switch
+                      label="半透明侧栏"
+                      checked={
+                        values.sidebarTranslucent &&
+                        material.status !== "unsupported" &&
+                        material.status !== "unavailable"
+                      }
+                      disabled={
+                        material.status === "unsupported" || material.status === "unavailable"
+                      }
+                      onChange={(checked) => updatePreferences({ sidebarTranslucent: checked })}
+                    />
+                  </SettingRow>
+                ) : null}
                 <SettingRow
                   title="显示左侧导航"
                   description="查看频道、Bot 和工作空间入口，也可从顶部工具栏切换。"
@@ -309,7 +360,10 @@ export function DesktopSettingsScreen({
           )}
           {section === "models" && <ModelSettingsScreen embedded onDone={() => {}} />}
           {section === "automations" && <SettingsAutomations onOpen={onAutomations} />}
-          {section === "connection" && (
+          {section === "notifications" && <NotificationSettings />}
+          {section === "approvals" && <ApprovalPolicySettings />}
+          {section === "audit" && <AuditLogSettings />}
+          {section === "connection" && plan && (
             <>
               <SettingsGroup title="当前连接">
                 <SettingRow
@@ -408,7 +462,7 @@ export function DesktopSettingsScreen({
             <>
               <div className="settings-about">
                 <OpenBotMark />
-                <h3>OpenBot Desktop</h3>
+                <h3>{desktop ? "OpenBot Desktop" : "OpenBot"}</h3>
                 <p>连接你的 Bot，让工作在频道中展开。</p>
               </div>
               <SettingsGroup title="应用信息">
@@ -438,90 +492,83 @@ export function DesktopSettingsScreen({
     </div>
   );
 }
-function SettingsAutomations({ onOpen }: { onOpen?: (() => void) | undefined }) {
-  const [workspace, setWorkspace] = useState<WorkspaceSnapshot>();
-  const [error, setError] = useState(false);
-  const [revision, setRevision] = useState(0);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: A user retry must restart the bounded workspace read.
-  useEffect(() => {
-    const controller = new AbortController();
-    setError(false);
-    setWorkspace(undefined);
-    void getWorkspace(AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]))
-      .then((value) => {
-        if (!controller.signal.aborted) setWorkspace(value);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setError(true);
-      });
-    return () => controller.abort();
-  }, [revision]);
-  if (error)
-    return (
-      <div className="settings-load-notice" role="alert">
-        <p>无法读取工作空间，请重试。</p>
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={() => setRevision((value) => value + 1)}
-        >
-          重试
-        </button>
-        {onOpen && (
-          <button type="button" className="secondary-button" onClick={onOpen}>
-            打开自动任务
+const supportText: Record<NotificationSupport, string> = {
+  desktop: "由系统通知中心显示。macOS 未签名的开发版可能无法显示。",
+  granted: "浏览器已允许 OpenBot 显示通知。",
+  default: "打开任一提醒时，浏览器会询问是否允许通知。",
+  denied: "浏览器已阻止通知。请在浏览器的网站设置中允许后再试。",
+  unsupported: "当前浏览器不支持系统通知。",
+};
+
+function NotificationSettings() {
+  const { values } = useWorkspacePreferences();
+  const [support, setSupport] = useState<NotificationSupport>(notificationSupport);
+  const [testResult, setTestResult] = useState<string>();
+  const blocked = support === "denied" || support === "unsupported";
+
+  async function enable(key: "notifyApprovals" | "notifyMessages", checked: boolean) {
+    if (checked) {
+      // Runs inside the switch click, which is the user gesture browsers require.
+      const next = await requestNotificationPermission();
+      setSupport(next);
+      if (next !== "desktop" && next !== "granted") return;
+    }
+    updatePreferences({ [key]: checked });
+  }
+
+  return (
+    <>
+      <SettingsGroup title="提醒我" description="只在 OpenBot 窗口不在前台时提醒。">
+        <SettingRow title="有操作等待批准" description="Bot 请求你批准一个操作时。">
+          <Switch
+            label="有操作等待批准"
+            checked={values.notifyApprovals && !blocked}
+            disabled={blocked}
+            onChange={(checked) => void enable("notifyApprovals", checked)}
+          />
+        </SettingRow>
+        <SettingRow title="Bot 发来新消息" description="频道或单独对话出现新的未读回复时。">
+          <Switch
+            label="Bot 发来新消息"
+            checked={values.notifyMessages && !blocked}
+            disabled={blocked}
+            onChange={(checked) => void enable("notifyMessages", checked)}
+          />
+        </SettingRow>
+      </SettingsGroup>
+      <SettingsGroup title="系统通知">
+        <SettingRow title="状态" description={supportText[support]}>
+          <button
+            className="secondary-button"
+            type="button"
+            disabled={blocked}
+            onClick={async () => {
+              const next = await requestNotificationPermission();
+              setSupport(next);
+              const shown = await showSystemNotification(
+                { title: "OpenBot 通知测试", body: "通知已可以正常显示。" },
+                () => undefined,
+              );
+              setTestResult(shown ? "已发送测试通知。" : "无法显示通知。");
+            }}
+          >
+            发送测试通知
           </button>
+        </SettingRow>
+        {testResult && (
+          <p className="settings-success" role="status">
+            {testResult}
+          </p>
         )}
-      </div>
-    );
-  if (!workspace)
-    return (
-      <p className="settings-load-notice" role="status">
-        正在读取自动任务…
+      </SettingsGroup>
+      <p className="settings-footnote">
+        通知只包含 Bot
+        和频道名称，不含消息正文或操作详情，因为它可能出现在锁屏上。偏好保存在这台设备。
       </p>
-    );
-  return (
-    <div className="settings-automations">
-      <AutomationsScreen bots={workspace.bots} channels={workspace.channels} />
-    </div>
+    </>
   );
 }
-function SettingsGroup({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="settings-group">
-      <h3>{title}</h3>
-      {description && <p>{description}</p>}
-      <div className="settings-group-rows">{children}</div>
-    </section>
-  );
-}
-function SettingRow({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children?: ReactNode;
-}) {
-  return (
-    <div className="setting-row">
-      <div>
-        <strong>{title}</strong>
-        <p>{description}</p>
-      </div>
-      {children && <div className="setting-control">{children}</div>}
-    </div>
-  );
-}
+
 function Switch({
   label,
   checked,

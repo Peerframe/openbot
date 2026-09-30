@@ -70,6 +70,15 @@ export type DesktopSidebarMaterialState = Readonly<{
   status: "enabled" | "disabled" | "reduced" | "unsupported" | "unavailable";
 }>;
 
+/**
+ * A native notification request. Callers keep private content out: the text can appear on a
+ * locked screen and in the OS notification history. Bounds follow the macOS body limit.
+ */
+export type DesktopNotificationInput = Readonly<{ title: string; body: string }>;
+export type DesktopNotificationResult = Readonly<{
+  status: "clicked" | "closed" | "expired" | "failed" | "unsupported";
+}>;
+
 export type DesktopNavigationCommand =
   | "new-conversation"
   | "open-settings"
@@ -112,6 +121,7 @@ export interface OpenBotDesktopBridge {
   updateNavigationMenuState?(state: DesktopNavigationMenuState): Promise<void>;
   setSidebarTranslucency?(enabled: boolean): Promise<DesktopSidebarMaterialState>;
   getSidebarMaterialState?(): Promise<DesktopSidebarMaterialState>;
+  showNotification?(input: DesktopNotificationInput): Promise<DesktopNotificationResult>;
   onSidebarMaterialChanged?(listener: (state: DesktopSidebarMaterialState) => void): () => void;
   getNativeServerState?(): Promise<NativeServerState>;
   installNativeServer?(): Promise<NativeServerState>;

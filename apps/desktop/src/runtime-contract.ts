@@ -10,6 +10,8 @@ export type {
   DesktopSidebarMaterialState,
   DesktopNavigationCommand,
   DesktopNavigationMenuState,
+  DesktopNotificationInput,
+  DesktopNotificationResult,
   EmployeeTemplateSaveInput,
   EmployeeTemplateSaveResult,
   OpenBotDesktopBridge,
@@ -30,3 +32,4 @@ export const DESKTOP_SIDEBAR_MATERIAL_STATE_CHANNEL = "openbot:sidebar-material-
 export const DESKTOP_SIDEBAR_MATERIAL_CHANGED_CHANNEL = "openbot:sidebar-material-changed";
 export const DESKTOP_NAVIGATION_COMMAND_CHANNEL = "openbot:navigation-command";
 export const DESKTOP_NAVIGATION_MENU_STATE_CHANNEL = "openbot:navigation-menu-state";
+export const DESKTOP_SHOW_NOTIFICATION_CHANNEL = "openbot:show-notification";

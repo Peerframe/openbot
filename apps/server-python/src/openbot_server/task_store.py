@@ -73,7 +73,7 @@ class PostgresTaskStore:
                 except UnicodeError:
                     raise TaskValidation("Task text must contain valid Unicode.") from None
                 cursor = await connection.execute(
-                    "SELECT id,direct_bot_id FROM channels WHERE id=%s FOR UPDATE", (channel_id,))
+                    "SELECT id,direct_bot_id FROM channels WHERE id=%s AND deleted_at IS NULL FOR UPDATE", (channel_id,))
                 channel = await cursor.fetchone()
                 if channel is None:
                     raise TaskChannelNotFound()

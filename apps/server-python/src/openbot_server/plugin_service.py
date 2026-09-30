@@ -51,7 +51,7 @@ class PluginService:
                 cursor=await connection.execute('SELECT bot_id FROM channel_bots WHERE channel_id=%s AND bot_id=%s FOR SHARE',(channel,bot))
                 if await cursor.fetchone() is None:raise PluginError('forbidden')
             if bot_id is not None:
-                cursor=await connection.execute('SELECT id FROM bots WHERE id=%s FOR SHARE',(bot_id,))
+                cursor=await connection.execute('SELECT id FROM bots WHERE id=%s AND deleted_at IS NULL FOR SHARE',(bot_id,))
                 if await cursor.fetchone() is None:raise PluginError('not_found')
             yield
 
@@ -213,6 +213,30 @@ class PluginService:
             return public(plugin)
         result=await self.store.transaction(change,authority=lambda:self._owner_guard(token,bot_id=bot_id))
         self._revoke(identity)
+        return result
+
+    async def forget_bot(self,token,bot_id):
+        """Drop every grant held by a Bot the Owner already deleted (ADR-0047).
+
+        The grant file is outside PostgreSQL, so this runs after the tombstone commits. The authority
+        check requires the tombstone, so a live Bot's grants can never be removed through this path.
+        """
+        @asynccontextmanager
+        async def deleted_bot():
+            async with self.owners.transaction(token) as connection:
+                cursor=await connection.execute('SELECT id FROM bots WHERE id=%s AND deleted_at IS NOT NULL FOR SHARE',(bot_id,))
+                if await cursor.fetchone() is None:raise PluginError('not_found')
+                yield
+        changed=[]
+        def change(state):
+            for plugin in state['plugins']:
+                kept=[g for g in plugin['grants'] if g['botId']!=bot_id]
+                if len(kept)!=len(plugin['grants']):
+                    plugin['grants']=kept;plugin['revision']=str(uuid4());changed.append(plugin['id'])
+                    audit(state,'grants_changed',plugin['id'],botId=bot_id)
+            return {'removed':len(changed)}
+        result=await self.store.transaction(change,authority=deleted_bot)
+        for identity in changed:self._revoke(identity)
         return result
 
     async def remove(self,token,identity,value):

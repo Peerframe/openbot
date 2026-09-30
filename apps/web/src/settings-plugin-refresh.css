@@ -6,8 +6,8 @@
 .settings-refresh .settings-navigation {
   overflow: auto;
   padding: 24px 16px;
-  background: #f1f3f6;
-  border-color: #e5e8ed;
+  background: #f6f6f7;
+  border-color: #ececee;
 }
 :root[data-desktop="darwin"] .settings-refresh .settings-navigation {
   padding-top: 64px;
@@ -48,10 +48,10 @@
   flex-shrink: 0;
   padding: 0 10px;
   margin: 20px 0 24px;
-  border: 1px solid #e0e4ea;
+  border: 1px solid #e0e0e3;
   border-radius: 10px;
-  background: #ffffffb8;
-  color: #758194;
+  background: #eaeaec;
+  color: #8e8e93;
 }
 .settings-search input {
   width: 100%;
@@ -64,7 +64,7 @@
   font-size: 13px;
 }
 .settings-search:focus-within {
-  outline: 2px solid #007aff;
+  outline: 2px solid var(--blue);
   outline-offset: 2px;
 }
 .settings-search input:focus-visible {
@@ -77,13 +77,18 @@
   font-size: 13px;
 }
 .settings-refresh .settings-navigation :where(nav) button {
-  min-height: 44px;
-  color: #3e4859;
+  min-height: 40px;
+  border-radius: 10px;
+  color: var(--ink);
   font-size: 14px;
 }
+.settings-refresh .settings-navigation :where(nav) button:hover {
+  background: #ececee;
+}
 .settings-refresh .settings-navigation nav button[aria-current="page"] {
-  background: #dce8f9;
-  color: #125dbb;
+  background: #e3e3e6;
+  color: var(--ink);
+  font-weight: 600;
 }
 .settings-refresh .settings-page-header {
   border: 0;
@@ -101,12 +106,19 @@
   margin-bottom: 36px;
 }
 .settings-refresh .settings-group > h3 {
-  margin-bottom: 12px;
-  font-size: 15px;
+  margin: 0 4px 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
 }
+/* Grouped cards: filled neutral surface instead of an outlined box. */
 .settings-refresh .settings-group-rows {
   border-radius: 16px;
-  border-color: #e5e8ed;
+  border-color: transparent;
+  background: var(--fill);
+}
+.settings-refresh .setting-row + .setting-row {
+  border-top-color: #e3e3e6;
 }
 .settings-refresh .setting-row {
   min-height: 86px;
@@ -196,26 +208,30 @@
 }
 .plugin-refresh .destination-primary {
   color: #fff;
-  background: #007aff;
+  background: var(--ink-strong);
 }
+/* Tabs read as pills: black when selected, light grey otherwise. */
 .plugin-tabs {
   display: flex;
-  gap: 28px;
-  border-bottom: 1px solid #e7eaf0;
+  gap: 8px;
   margin-bottom: 24px;
 }
 .plugin-refresh .plugin-tabs button {
-  padding: 14px 3px;
+  min-height: 36px;
+  padding: 0 18px;
   border: 0;
-  border-bottom: 3px solid transparent;
-  color: #707b8c;
-  background: transparent;
+  border-radius: 18px;
+  color: #3a3a3c;
+  background: var(--fill);
   font-size: 14px;
   cursor: pointer;
 }
+.plugin-refresh .plugin-tabs button:hover {
+  background: #e6e6e8;
+}
 .plugin-refresh .plugin-tabs button[aria-selected="true"] {
-  border-bottom-color: #007aff;
-  color: #006be6;
+  color: #fff;
+  background: var(--ink-strong);
   font-weight: 600;
 }
 .plugin-refresh .destination-skill-list {
@@ -229,9 +245,9 @@
 .plugin-import-panel {
   padding: 22px 24px;
   margin-bottom: 26px;
-  border: 1px solid #cbdcf3;
-  border-radius: 14px;
-  background: #f7faff;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  background: var(--fill);
 }
 .plugin-import-heading {
   display: flex;
@@ -298,7 +314,7 @@
 .settings-refresh button:focus-visible,
 .plugin-refresh button:focus-visible,
 .plugin-target select:focus-visible {
-  outline: 2px solid #007aff;
+  outline: 2px solid var(--blue);
   outline-offset: 3px;
 }
 @media (max-width: 1000px) {
@@ -348,11 +364,8 @@
 
 .settings-refresh,
 .plugin-refresh {
-  --blue: #007aff;
-  --accent: #007aff;
-}
-.settings-refresh .settings-switch :where(input:checked) + span {
-  background: #007aff;
+  --blue: #1f6fd6;
+  --accent: var(--ink-strong);
 }
 .model-settings-screen .model-config-group,
 .model-settings-screen .model-config-row,
@@ -396,16 +409,16 @@
   cursor: pointer;
 }
 .settings-refresh .model-settings-embedded .model-provider-card:hover {
-  border-color: #a4caff;
-  background: #f7faff;
+  border-color: #d1d1d6;
+  background: #f7f7f8;
 }
 .settings-refresh .model-settings-embedded .model-provider-card:has(input:checked) {
-  border-color: #86b9ff;
-  background: #eaf3ff;
-  color: #075cc0;
+  border-color: var(--ink-strong);
+  background: var(--fill);
+  color: var(--ink);
 }
 .settings-refresh .model-settings-embedded .model-provider-card:has(input:focus-visible) {
-  outline: 2px solid #007aff;
+  outline: 2px solid var(--blue);
   outline-offset: 3px;
 }
 .settings-refresh .model-settings-embedded .model-provider-card:has(input:disabled) {
@@ -414,7 +427,7 @@
 }
 .settings-refresh .model-settings-embedded .model-provider-card input {
   flex-shrink: 0;
-  accent-color: #007aff;
+  accent-color: var(--ink-strong);
 }
 .settings-refresh .model-config-group {
   border: 1px solid #e3e7ee;
@@ -455,7 +468,7 @@
   font-size: 13px;
 }
 .settings-refresh .model-config-control :is(input, select):focus-visible {
-  outline: 2px solid #007aff;
+  outline: 2px solid var(--blue);
   outline-offset: 2px;
 }
 .settings-refresh .model-settings-embedded .connection-hint {
@@ -520,13 +533,13 @@
   box-shadow: 0 1px 3px #26314226;
 }
 .settings-refresh .model-agent-toggle input:checked + span {
-  background: #007aff;
+  background: var(--ink-strong);
 }
 .settings-refresh .model-agent-toggle input:checked + span::after {
   transform: translateX(14px);
 }
 .settings-refresh .model-agent-toggle input:focus-visible + span {
-  outline: 2px solid #007aff;
+  outline: 2px solid var(--blue);
   outline-offset: 3px;
 }
 .settings-refresh .model-agent-toggle input:disabled + span {
@@ -537,11 +550,12 @@
   justify-self: end;
   min-width: 132px;
   margin-top: 10px;
-  border-color: #007aff;
-  background: #007aff;
+  border-color: var(--ink-strong);
+  border-radius: 999px;
+  background: var(--ink-strong);
 }
 .settings-refresh .model-settings-embedded form .model-save-button:hover:not(:disabled) {
-  background: #0065da;
+  background: #2c2c2e;
 }
 @media (max-width: 1100px) {
   .settings-refresh .model-settings-embedded .model-provider-options {
@@ -563,5 +577,81 @@
   }
   .settings-refresh .model-config-row > label {
     padding-top: 0;
+  }
+}
+
+/* ADR-0047 audit view: compact rows inside the shared grey settings card. */
+.settings-refresh .audit-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.settings-refresh .audit-list li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 24px;
+}
+.settings-refresh .audit-list li + li {
+  border-top: 1px solid #e3e3e6;
+}
+.settings-refresh .audit-list strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.settings-refresh .audit-list p {
+  margin: 2px 0 0;
+  color: #717b8a;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.settings-refresh .audit-list li > div {
+  flex: 1;
+  min-width: 0;
+}
+.settings-refresh .audit-list time {
+  flex: none;
+  color: #717b8a;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.settings-refresh .audit-more {
+  margin-top: 12px;
+}
+
+/* Must outrank workspace-preferences.css `.settings-switch input:checked + span`. */
+.settings-refresh .settings-switch input:checked + span {
+  background: var(--ink-strong);
+}
+
+/* Phones (Web entry): stack the section list above the page as a scrolling pill row. */
+@media (max-width: 560px) {
+  .settings-refresh {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .settings-refresh .settings-navigation {
+    padding: 12px 16px 10px;
+    border-right: 0;
+    border-bottom: 1px solid #e3e3e6;
+  }
+  .settings-refresh .settings-navigation nav {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+  }
+  .settings-refresh .settings-nav-group {
+    display: contents;
+  }
+  .settings-refresh .settings-nav-group > p,
+  .settings-refresh .settings-brand {
+    display: none;
+  }
+  .settings-refresh .settings-navigation nav button {
+    flex: none;
+    white-space: nowrap;
   }
 }

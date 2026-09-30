@@ -25,10 +25,14 @@ export const channels = pgTable(
     name: text("name").notNull(),
     description: text("description").notNull().default(""),
     directBotId: text("direct_bot_id").references(() => bots.id, { onDelete: "restrict" }),
+    /** ADR-0047 tombstone: content removed, row retained for Work and audit references. */
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("channels_name_idx").on(table.name).where(sql`${table.directBotId} is null`),
+    uniqueIndex("channels_name_idx")
+      .on(table.name)
+      .where(sql`${table.directBotId} is null and ${table.deletedAt} is null`),
     uniqueIndex("channels_direct_bot_idx").on(table.directBotId),
     check("channels_name_not_blank", sql`length(btrim(${table.name})) > 0`),
   ],
@@ -45,10 +49,12 @@ export const bots = pgTable(
     status: text("status").notNull().default("idle"),
     computerProfile: text("computer_profile").notNull().default("none"),
     configuration: jsonb("configuration").notNull().default({}),
+    /** ADR-0047 tombstone: content removed, row retained for Work and audit references. */
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("bots_name_idx").on(table.name),
+    uniqueIndex("bots_name_idx").on(table.name).where(sql`${table.deletedAt} is null`),
     check("bots_name_not_blank", sql`length(btrim(${table.name})) > 0`),
     check("bots_role_not_blank", sql`length(btrim(${table.role})) > 0`),
     check("bots_role_length_valid", sql`length(${table.role}) <= 160`),
@@ -373,6 +379,14 @@ export const nodeIdentityEvents = pgTable(
     check("node_identity_events_node_id_not_blank", sql`length(btrim(${table.nodeId})) > 0`),
   ],
 );
+
+/** Single-Owner read cursor per channel (ADR-0047); unread is derived, never stored. */
+export const channelReadStates = pgTable("channel_read_states", {
+  channelId: text("channel_id")
+    .primaryKey()
+    .references(() => channels.id, { onDelete: "cascade" }),
+  lastReadAt: timestamp("last_read_at", { withTimezone: true }).notNull(),
+});
 
 export const messages = pgTable(
   "messages",

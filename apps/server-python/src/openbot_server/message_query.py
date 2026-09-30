@@ -14,6 +14,6 @@ MESSAGE_QUERY = (
     "FROM messages WHERE channel_id=%s ORDER BY created_at DESC, id COLLATE \"C\" DESC LIMIT 100), "
     f"sized AS (SELECT recent.*, sum({_BYTE_SIZE}) OVER () AS byte_count FROM recent) "
     f"SELECT true AS channel_exists, s.created_at, s.byte_count > 4194304 AS oversized, {_BOUNDED_TEXT} "
-    "FROM channels c LEFT JOIN sized s ON true WHERE c.id=%s "
+    "FROM channels c LEFT JOIN sized s ON true WHERE c.id=%s AND c.deleted_at IS NULL "
     "ORDER BY s.created_at, s.id COLLATE \"C\""
 )

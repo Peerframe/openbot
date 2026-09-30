@@ -10,6 +10,15 @@ export const createChannelInputSchema = z.object({
     .transform((ids) => [...new Set(ids)]),
 });
 
+/** ADR-0047: same trimmed name limits as creation; unknown keys are stripped. */
+export const renameChannelInputSchema = z.object({
+  name: z.string().trim().min(1, "Channel name is required.").max(80),
+});
+
+export const renameBotInputSchema = z.object({
+  name: z.string().trim().min(1, "Bot name is required.").max(64),
+});
+
 export const joinChannelBotInputSchema = z.object({
   botId: z.string().uuid(),
 });

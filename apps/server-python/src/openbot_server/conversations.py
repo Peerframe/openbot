@@ -27,7 +27,7 @@ _MEMBER_LIMIT = 10000
 _CHANNEL_READ = (
     "SELECT c.id, c.name, c.description, c.direct_bot_id, c.created_at, cb.bot_id "
     "FROM channels c LEFT JOIN channel_bots cb ON cb.channel_id=c.id "
-    "WHERE c.id=%s ORDER BY cb.joined_at, cb.bot_id LIMIT " + str(_MEMBER_LIMIT + 1)
+    "WHERE c.id=%s AND c.deleted_at IS NULL ORDER BY cb.joined_at, cb.bot_id LIMIT " + str(_MEMBER_LIMIT + 1)
 )
 
 
@@ -63,7 +63,7 @@ class PostgresConversationStore:
         try:
             async with self._transactions.transaction(token) as connection:
                 cursor = await connection.execute(
-                    "SELECT id, name FROM bots WHERE id=%s FOR UPDATE", (bot_id,))
+                    "SELECT id, name FROM bots WHERE id=%s AND deleted_at IS NULL FOR UPDATE", (bot_id,))
                 bot = await cursor.fetchone()
                 if bot is None:
                     raise ConversationNotFound(_NOT_FOUND)
@@ -102,14 +102,14 @@ class PostgresConversationStore:
         try:
             async with self._transactions.transaction(token) as connection:
                 cursor = await connection.execute(
-                    "SELECT direct_bot_id FROM channels WHERE id=%s FOR UPDATE", (channel_id,))
+                    "SELECT direct_bot_id FROM channels WHERE id=%s AND deleted_at IS NULL FOR UPDATE", (channel_id,))
                 channel = await cursor.fetchone()
                 if channel is None:
                     raise ConversationNotFound(_NOT_FOUND)
                 if channel["direct_bot_id"] is not None:
                     raise DirectMembershipLocked(_MEMBERSHIP_LOCKED)
                 cursor = await connection.execute(
-                    "SELECT id FROM bots WHERE id=%s FOR KEY SHARE", (bot_id,))
+                    "SELECT id FROM bots WHERE id=%s AND deleted_at IS NULL FOR KEY SHARE", (bot_id,))
                 if await cursor.fetchone() is None:
                     raise ConversationNotFound(_NOT_FOUND)
                 cursor = await connection.execute(

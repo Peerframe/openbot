@@ -386,11 +386,18 @@ function employeeProfile(botId: string, name: string): EmployeeProfile {
   };
 }
 async function openProfile(name = "Alpha") {
-  const button = rendered?.container.querySelector(`[title="${name} · 点击对话，右键打开档案"]`);
+  const button = rendered?.container.querySelector(
+    `[title="${name} · 点击对话，右键查看更多操作"]`,
+  );
   if (!button) throw new Error(`Missing profile entry: ${name}`);
   await interact(() =>
     button.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })),
   );
+  const item = Array.from(
+    rendered?.container.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [],
+  ).find((candidate) => candidate.textContent?.trim() === "打开档案");
+  if (!item) throw new Error(`Missing profile menu item: ${name}`);
+  await interact(() => item.click());
 }
 async function completeProfile(index: number, name: string) {
   const request = profiles[index];

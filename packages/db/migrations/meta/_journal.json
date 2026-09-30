@@ -316,6 +316,13 @@
       "when": 1790208000014,
       "tag": "0044_work_browser_page_scopes",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1790770270643,
+      "tag": "0045_identity_lifecycle",
+      "breakpoints": true
     }
   ]
 }

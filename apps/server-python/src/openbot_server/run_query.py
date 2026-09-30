@@ -13,7 +13,7 @@ RUN_QUERY = (
     f"SELECT true AS channel_exists,s.created_at,s.updated_at,s.byte_count>4194304 AS oversized,{_BOUNDED_TEXT}, "
     "CASE WHEN s.byte_count<=4194304 THEN s.model_selection ELSE NULL END AS model_selection, "
     "CASE WHEN s.byte_count<=4194304 THEN s.model_usage ELSE NULL END AS model_usage "
-    "FROM channels c LEFT JOIN sized s ON true WHERE c.id=%s "
+    "FROM channels c LEFT JOIN sized s ON true WHERE c.id=%s AND c.deleted_at IS NULL "
     "ORDER BY s.created_at DESC,s.id COLLATE \"C\" DESC"
 )
 

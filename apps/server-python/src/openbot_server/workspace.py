@@ -56,10 +56,10 @@ class PostgresWorkspace:
             # A single snapshot prevents counts/relationships from crossing concurrent commits.
             bots = await (await db.execute("SELECT id,name,role,status,computer_profile,"
                 "jsonb_build_object('appearance',configuration->'appearance','model',configuration->'model') AS configuration,created_at "
-                "FROM bots ORDER BY created_at DESC,id LIMIT 1001")).fetchall()
+                "FROM bots WHERE deleted_at IS NULL ORDER BY created_at DESC,id LIMIT 1001")).fetchall()
             channels = await (await db.execute('SELECT c.id,c.name,c.description,c.direct_bot_id,c.created_at,'
                 'cb.bot_id FROM channels c LEFT JOIN channel_bots cb ON cb.channel_id=c.id '
-                'ORDER BY c.created_at DESC,c.id,cb.bot_id LIMIT 10001')).fetchall()
+                'WHERE c.deleted_at IS NULL ORDER BY c.created_at DESC,c.id,cb.bot_id LIMIT 10001')).fetchall()
             if len(bots)>1000 or len(channels)>10000:
                 raise StoreUnavailable('workspace_projection_limit')
             ids = [r['id'] for r in await (await db.execute('SELECT id FROM runs ORDER BY created_at DESC,id DESC LIMIT 50')).fetchall()]
@@ -69,8 +69,8 @@ class PostgresWorkspace:
             artifacts = await bounded_rows(db, 'SELECT * FROM artifacts ORDER BY created_at DESC,id LIMIT 100')
             progress_rows = await bounded_rows(db, "SELECT id,run_id,channel_id,node_id,payload,created_at "
                 "FROM run_events WHERE type='RUN_PROGRESS' ORDER BY created_at DESC,id LIMIT 200")
-            counts = await (await db.execute("SELECT (SELECT count(*) FROM channels) AS channels, "
-                "(SELECT count(*) FROM bots) AS bots, (SELECT count(*) FROM runs_work_projection WHERE status IN "
+            counts = await (await db.execute("SELECT (SELECT count(*) FROM channels WHERE deleted_at IS NULL) AS channels, "
+                "(SELECT count(*) FROM bots WHERE deleted_at IS NULL) AS bots, (SELECT count(*) FROM runs_work_projection WHERE status IN "
                 "('queued','assigned','running','waiting_approval','blocked')) AS active_runs")).fetchone()
             nodes = self.nodes()
             progress = []

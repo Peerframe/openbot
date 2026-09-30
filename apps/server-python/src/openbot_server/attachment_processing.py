@@ -236,7 +236,7 @@ class AttachmentProcessingService:
 
     async def _snapshot(self, token, channel_id, identity, *, owner=False):
         async with self.files.lock(), self._transactions.transaction(token) as db:
-            if not owner and not await (await db.execute('SELECT id FROM channels WHERE id=%s FOR SHARE', (channel_id,))).fetchone():
+            if not owner and not await (await db.execute('SELECT id FROM channels WHERE id=%s AND deleted_at IS NULL FOR SHARE', (channel_id,))).fetchone():
                 raise ControlError(404, 'channel_not_found')
             item, data = self.files.owner_read(identity) if owner else self.files.read(channel_id, identity)
             if item.get('deletedAt'):
@@ -303,7 +303,7 @@ class AttachmentProcessingService:
                 if cancelled is not None and cancelled.is_set():
                     raise ControlError(400, 'attachment_processing_cancelled')
                 async with self._transactions.transaction(token) as db:
-                    if not owner and not await (await db.execute('SELECT id FROM channels WHERE id=%s FOR SHARE', (channel_id,))).fetchone():
+                    if not owner and not await (await db.execute('SELECT id FROM channels WHERE id=%s AND deleted_at IS NULL FOR SHARE', (channel_id,))).fetchone():
                         raise ControlError(404, 'channel_not_found')
                     current, _ = self.files.owner_read(identity) if owner else self.files.read(channel_id, identity)
                     if current.get('deletedAt') or current['sha256'] != derived['sha256']:

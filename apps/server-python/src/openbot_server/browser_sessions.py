@@ -73,7 +73,7 @@ class BrowserSessionsService:
 
     @staticmethod
     async def _authority(db, token, bot_id):
-        bot = await (await db.execute("SELECT computer_profile FROM bots WHERE id=%s FOR SHARE", (bot_id,))).fetchone()
+        bot = await (await db.execute("SELECT computer_profile FROM bots WHERE id=%s AND deleted_at IS NULL FOR SHARE", (bot_id,))).fetchone()
         if bot is None:
             raise ControlError(404, "browser_employee_not_found")
         if bot["computer_profile"] != "docker-linux":

@@ -197,7 +197,7 @@ class PostgresEmployeeKnowledge:
     @_guard
     async def profile(self, token, bot_id):
         async with self._transactions.transaction(token) as connection:
-            bot = await _one(connection, "SELECT * FROM bots WHERE id=%s", (bot_id,))
+            bot = await _one(connection, "SELECT * FROM bots WHERE id=%s AND deleted_at IS NULL", (bot_id,))
             evolution = await _rows(connection, "SELECT * FROM employee_evolution_events WHERE bot_id=%s ORDER BY created_at DESC,id DESC LIMIT 100", (bot_id,))
             skills = await _rows(connection, "SELECT to_jsonb(s) AS skill,to_jsonb(e) AS assignment FROM employee_skills e JOIN skills s ON s.id=e.skill_id WHERE e.bot_id=%s ORDER BY e.updated_at DESC,s.id DESC LIMIT 100", (bot_id,))
             # At most 100 selected assignments with 64 dependencies each; no omitted assignment
@@ -239,7 +239,7 @@ class PostgresEmployeeKnowledge:
         if document and (document["name"] != value["slug"] or document["description"] != value["description"] or value["requiredCapabilities"] or value["dependencySkillIds"]):
             raise ControlError(422, "skill_content_metadata_mismatch")
         async with self._transactions.transaction(token) as connection:
-            await _one(connection, "SELECT id FROM bots WHERE id=%s FOR UPDATE", (bot_id,))
+            await _one(connection, "SELECT id FROM bots WHERE id=%s AND deleted_at IS NULL FOR UPDATE", (bot_id,))
             dependencies = value["dependencySkillIds"]
             if dependencies:
                 assigned = await _rows(connection, "SELECT skill_id,state FROM employee_skills WHERE bot_id=%s AND skill_id=ANY(%s) ORDER BY skill_id FOR SHARE", (bot_id, dependencies))
@@ -286,7 +286,7 @@ class PostgresEmployeeKnowledge:
     async def set_skill_state(self, token, bot_id, skill_id, value):
         value = parse_skill_state(_input(value)).model_dump(exclude_none=True)
         async with self._transactions.transaction(token) as connection:
-            await _one(connection, "SELECT id FROM bots WHERE id=%s FOR UPDATE", (bot_id,))
+            await _one(connection, "SELECT id FROM bots WHERE id=%s AND deleted_at IS NULL FOR UPDATE", (bot_id,))
             record = await _one(connection, "SELECT to_jsonb(s) AS skill,to_jsonb(e) AS assignment FROM employee_skills e JOIN skills s ON s.id=e.skill_id WHERE e.bot_id=%s AND e.skill_id=%s FOR UPDATE OF e FOR SHARE OF s", (bot_id, skill_id), missing="employee_skill_not_found")
             skill, current = record["skill"], record["assignment"]
             state = value["state"]
@@ -319,7 +319,7 @@ class PostgresEmployeeKnowledge:
     async def create_memory(self, token, bot_id, value):
         value = parse_memory_create(_input(value)).model_dump(exclude_none=True)
         async with self._transactions.transaction(token) as connection:
-            await _one(connection, "SELECT id FROM bots WHERE id=%s FOR SHARE", (bot_id,))
+            await _one(connection, "SELECT id FROM bots WHERE id=%s AND deleted_at IS NULL FOR SHARE", (bot_id,))
             now = await _now(connection)
             memory = await _insert_memory(connection, bot_id, value, {"source": "owner", "actor": "owner"}, now)
             event = await _write_memory_event(connection, bot_id, memory["id"], "created", 1,
@@ -369,7 +369,7 @@ class PostgresEmployeeKnowledge:
     @_guard
     async def proposals(self, token, bot_id):
         async with self._transactions.transaction(token) as connection:
-            await _one(connection, "SELECT id FROM bots WHERE id=%s", (bot_id,))
+            await _one(connection, "SELECT id FROM bots WHERE id=%s AND deleted_at IS NULL", (bot_id,))
             rows = await _rows(connection, "SELECT * FROM knowledge_proposals WHERE bot_id=%s AND status='pending' ORDER BY created_at ASC,id ASC LIMIT 50", (bot_id,))
             return [{**KnowledgeProposalInput.model_validate({key: row[key] for key in ("kind", "title", "content")}).model_dump(),
                      "id": row["id"], "botId": row["bot_id"], **(await _proposal_source(connection,row)), "createdAt": _iso(row["created_at"])} for row in rows]
