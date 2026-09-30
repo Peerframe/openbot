@@ -33,3 +33,12 @@ current prepare-release workflow explicitly has no automatic updater. This is a 
 prerequisite: no signed download/install claim until the selected signing configuration, metadata
 and next signed artifact are available. Native preference tests use disposable profile files;
 startup OS changes are not enabled against the user's installed app during implementation.
+
+## Candidate verification
+
+`npm run check` passed and the Desktop suite passed530 cases with3 existing skips. An isolated
+real macOS Electron44.3.0 temporary profile exercised trusted IPC/preload, private persistence,
+tray creation/cleanup, global shortcut registration/cleanup, Dock badge cap/cleanup and missing
+user-gesture update-install rejection. It never enabled OS startup or installed an update.
+Unsigned/missing-config refusal is verified; signed artifact download/install remains dependent
+on the distribution prerequisites above. No production signed-update claim or release.

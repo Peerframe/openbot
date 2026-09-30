@@ -27,6 +27,44 @@ interface FindingEvidence {
 const MAX_BYTES = 16 * 1024 * 1024;
 const REVIEWED_FIXTURES: readonly ReviewedFixture[] = Object.freeze([
   {
+    detectorType: 87,
+    detectorName: "SentryToken",
+    commit: "2512a615dde281c6157ecb21c9d72e85ef4674d7",
+    file: "docs/research/credential-scan-fixture-triage.md",
+    line: 237,
+    raw: "3beed73bbc0415306f2d1a0cab1efdeea0d18a4c42fff3677d9389798b06e9d9",
+    rawV2: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  },
+
+  {
+    detectorType: 17,
+    detectorName: "URI",
+    commit: "e836e82f61cbb780a1976ed57c9f96a21a991df3",
+    file: "packages/protocol/src/plugin-catalog.test.ts",
+    line: 27,
+    raw: "c2b2b094ff135feebbb6610aa157e80dd3af69d5c0e1c6d2723d8b04f93b0b5c",
+    rawV2: "c2b2b094ff135feebbb6610aa157e80dd3af69d5c0e1c6d2723d8b04f93b0b5c",
+  },
+  {
+    detectorType: 87,
+    detectorName: "SentryToken",
+    commit: "0a9fc212737f0f795999685d96b3d39efc2bf784",
+    file: "docs/research/s2-work-supervision.md",
+    line: 73,
+    raw: "5fb64d41242d2546f1713381ae57f7ea5b8e8e1e2f17023d63c7d3cc3c2e5de6",
+    rawV2: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  },
+  {
+    detectorType: 968,
+    detectorName: "Postgres",
+    commit: "b19a017e35e53855649e1c87ab31cf0f63d85974",
+    file: "scripts/smoke-dev-fixture.test.mjs",
+    line: 31,
+    raw: "a0010550bccff9bf7c0aa79e783a4e21558de033364bf51b00eea5d850faa23f",
+    rawV2: "a0010550bccff9bf7c0aa79e783a4e21558de033364bf51b00eea5d850faa23f",
+  },
+
+  {
     detectorType: 968,
     detectorName: "Postgres",
     commit: "ed33238f866b52508bcce939e1f62fe2ad2faed4",
