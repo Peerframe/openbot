@@ -35,7 +35,7 @@
       ],
       "review": {
         "status": "reviewed",
-        "reviewedAt": "2026-10-01T00:00:00Z",
+        "reviewedAt": "2026-09-30T21:19:45Z",
         "reviewedBy": "Codex source review",
         "record": "docs/research/desktop-reviewed-plugin-catalog.md",
         "scope": "Source, bounded MCP lifecycle, grants and isolated App; self-hosted development template."

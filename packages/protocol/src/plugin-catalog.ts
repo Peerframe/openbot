@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+const boundedText = (maximum: number) =>
+  z
+    .string()
+    .min(1)
+    .refine((v) => Array.from(v).length <= maximum);
+
 const sourceFileSchema = z
   .object({
     path: z
@@ -15,12 +21,12 @@ const reviewSchema = z
   .object({
     status: z.literal("reviewed"),
     reviewedAt: z.string().datetime(),
-    reviewedBy: z.string().min(1).max(80),
+    reviewedBy: boundedText(80),
     record: z
       .string()
       .regex(/^docs\/research\/[a-z0-9-]+\.md$/)
       .max(256),
-    scope: z.string().min(1).max(500),
+    scope: boundedText(500),
   })
   .strict();
 export const reviewedPluginEntrySchema = z
@@ -30,8 +36,8 @@ export const reviewedPluginEntrySchema = z
       .min(1)
       .max(64)
       .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-    name: z.string().min(1).max(80),
-    description: z.string().min(1).max(500),
+    name: boundedText(80),
+    description: boundedText(500),
     distribution: z.enum(["self-hosted-template", "self-hosted"]),
     version: z
       .string()
@@ -43,28 +49,25 @@ export const reviewedPluginEntrySchema = z
       .min(1)
       .max(64)
       .regex(/^[A-Za-z0-9.-]+$/),
-    sourceUrl: z
-      .string()
-      .max(2048)
-      .refine((value) => {
-        try {
-          const url = new URL(value);
-          return (
-            url.protocol === "https:" &&
-            !!url.hostname &&
-            !url.username &&
-            !url.password &&
-            !url.search &&
-            !url.hash &&
-            !url.port &&
-            !Array.from(value).some(
-              (char) => /\s/u.test(char) || char === "\\" || char.charCodeAt(0) < 32,
-            )
-          );
-        } catch {
-          return false;
-        }
-      }),
+    sourceUrl: boundedText(2048).refine((value) => {
+      try {
+        const url = new URL(value);
+        return (
+          url.protocol === "https:" &&
+          !!url.hostname &&
+          !url.username &&
+          !url.password &&
+          !url.search &&
+          !url.hash &&
+          !url.port &&
+          !Array.from(value).some(
+            (char) => /\s/u.test(char) || char === "\\" || char.charCodeAt(0) < 32,
+          )
+        );
+      } catch {
+        return false;
+      }
+    }),
     sourceCommit: z.string().regex(/^[0-9a-f]{40}$/),
     files: z.array(sourceFileSchema).min(1).max(16),
     review: reviewSchema,

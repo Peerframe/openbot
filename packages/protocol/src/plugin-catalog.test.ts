@@ -36,3 +36,16 @@ describe("reviewed plugin catalog", () => {
     }
   });
 });
+
+it("matches Python scalar bounds for operator catalog names", () => {
+  const entry = { ...catalog.entries[0], name: "😀".repeat(80) };
+  expect(reviewedPluginCatalogSchema.safeParse({ ...catalog, entries: [entry] }).success).toBe(
+    true,
+  );
+  expect(
+    reviewedPluginCatalogSchema.safeParse({
+      ...catalog,
+      entries: [{ ...entry, name: "😀".repeat(81) }],
+    }).success,
+  ).toBe(false);
+});
