@@ -198,3 +198,31 @@ Verification: new Python cases for equal-timestamp paging and standalone Work re
 disposable PostgreSQL fixture (874 passed, 2 skipped), Web tests for arrangement cleanup and the
 rejected bridge call, and `npm run check`: exit 0; Web 77 files / 560 tests, Desktop 520
 passed with 3 existing skips, Node 129 passed with 3 skipped, Protocol 430 passed.
+
+## Channel page aligned to the Main artboard
+
+The installed Desktop build already carried the earlier slices, but the channel page was only
+restyled, not rebuilt to the approved Main and Sidebar artboards. This slice rebuilds the layout
+with the existing components and data; no Server contract changed.
+
+- Messages: Bot messages show a 32px avatar tile and `name · time`; 22px-radius bubbles
+  (Bot `#f0f0f2`, owner `#111`) at 76%/68% width; time dividers at 13px. A reply to the message
+  directly above no longer repeats a quote block; other replies show a one-line "↩ 回复" link that
+  still jumps to the source. Inline `code` now renders as the artboard's mono chip (text nodes only).
+- Title: the conversation name sits in the artboard's grey pill with member avatars first.
+- Composer: one 56px row with the `+` button, text, microphone and a 40px send button.
+- Right rail: 频道信息 / Bot 信息 with identity, members and status, 需要处理, 进行中, 工作电脑 and
+  a notifications switch using the ADR-0048 opt-in; recent results, token usage and workspace
+  counts moved into a collapsed 任务记录与用量 section.
+- Sidebar: 40px avatar tiles (two-tile composite for channels), 15/13px two-line rows, quiet
+  section titles, active-only status, blue unread badges and 44px footer controls. The macOS
+  translucent material is unchanged.
+
+Not matched: the artboard's last-message preview and time per sidebar row (the workspace snapshot
+has no per-channel latest message; that needs a Server projection), and the per-message 回复/任务详情
+pills (the existing hover action bar is kept).
+
+Verification: new RichMessage and adjacent-reply tests; updated quote-navigation and rail tests;
+rendered against the disposable loopback API at 1440×900 (group channel, direct conversation) and
+390×844 with no horizontal overflow; `npm run check`: exit 0 (Web 77 files / 562 tests;
+Desktop 520 passed with 3 existing skips; Node 129 passed with 3 skipped; Protocol 430 passed).

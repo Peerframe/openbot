@@ -699,7 +699,9 @@ export function ChannelWorkspace({
                     message.authorId === undefined ? undefined : botsById.get(message.authorId)
                   }
                   replyTarget={
-                    message.replyToMessageId === undefined
+                    // A reply to the message directly above needs no quote; the design shows none.
+                    message.replyToMessageId === undefined ||
+                    messages[index - 1]?.id === message.replyToMessageId
                       ? undefined
                       : messageById.get(message.replyToMessageId)
                   }

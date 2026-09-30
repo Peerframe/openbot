@@ -468,8 +468,10 @@ describe("ChannelWorkspace recipient and attachment interactions", () => {
       authorType: "bot",
       authorId: secondBot.id,
     };
+    // A message in between keeps the quote: replies to the message directly above show none.
+    const between = message("a", "Unrelated note");
     const quoted: Message = { ...message("a", "Follow-up"), replyToMessageId: source.id };
-    vi.mocked(listMessages).mockResolvedValue([source, quoted]);
+    vi.mocked(listMessages).mockResolvedValue([source, between, quoted]);
     vi.mocked(createMessage).mockResolvedValue(result("a"));
     const session = createConversationSession();
     const rendered = await renderComponent(multi(session));
@@ -501,6 +503,24 @@ describe("ChannelWorkspace recipient and attachment interactions", () => {
       expect(scrollIntoView).toHaveBeenCalledWith({ block: "center", behavior: "auto" });
       expect(document.activeElement).toBe(sourceRow);
       expect(session.channel("a").scroll.atBottom).toBe(false);
+    } finally {
+      await rendered.unmount();
+    }
+  });
+  it("does not quote a reply to the message directly above it", async () => {
+    const asked = message("a", "Sum 7 and 13");
+    const reply: Message = {
+      ...message("a", "SUM: 20"),
+      authorType: "bot",
+      authorId: secondBot.id,
+      replyToMessageId: asked.id,
+    };
+    vi.mocked(listMessages).mockResolvedValue([asked, reply]);
+    const rendered = await renderComponent(multi(createConversationSession()));
+    try {
+      await interact(() => undefined);
+      expect(rendered.container.textContent).toContain("SUM: 20");
+      expect(rendered.container.querySelector(".message-quote")).toBeNull();
     } finally {
       await rendered.unmount();
     }

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>设置 · 通用</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.row{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:60px;padding:10px 0;box-sizing:border-box}
+.row + .row{border-top:1px solid #e3e3e6}
+.select{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;border:1px solid #e3e3e6;border-radius:10px;background:#ffffff;font-size:15px;font-weight:500;cursor:pointer}
+.sec{margin:0 4px;font-size:13px;font-weight:500;color:#6e6e73}
+.card{border-radius:16px;background:#f0f0f2;padding:0 18px}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #ffffff; display: grid; grid-template-columns: 300px minmax(0, 1fr)">
+<dc-import name="Sidebar" active="channel" hint-size="300px,900px"></dc-import>
+<div style="background: #fcfcfc"></div>
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; background: rgba(0,0,0,0.34)"></div>
+
+<div role="dialog" aria-modal="true" aria-label="设置" style="position: absolute; left: 190px; top: 80px; width: 1060px; height: 740px; border-radius: 20px; background: #fdfdfd; box-shadow: 0 30px 80px rgba(0,0,0,0.25); display: grid; grid-template-columns: 250px minmax(0, 1fr); overflow: hidden">
+<dc-import name="SettingsNav" section="general" hint-size="250px,740px"></dc-import>
+<div style="position: relative; overflow: hidden; padding: 40px 44px; display: flex; flex-direction: column; gap: 20px">
+<button type="button" aria-label="关闭设置" style="position: absolute; right: 18px; top: 18px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; cursor: pointer; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
+<h1 style="margin: 0; font-size: 24px; font-weight: 700">通用</h1>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h2 class="sec">外观</h2>
+<div class="card">
+<div class="row"><span style="font-size: 15px; font-weight: 500">主题</span><button type="button" class="select">跟随系统<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>
+<div class="row"><span style="font-size: 15px; font-weight: 500">语言</span><button type="button" class="select">跟随系统<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h2 class="sec">启动</h2>
+<div class="card">
+<div class="row"><span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 500">开机时启动 OpenBot</span><span style="font-size: 13px; color: #6e6e73">登录电脑后自动打开，例行任务不会错过</span></span><button type="button" role="switch" aria-checked="true" aria-label="开机时启动 OpenBot" style="width: 44px; height: 26px; flex-shrink: 0; border: 0; padding: 0; border-radius: 13px; background: #111111; position: relative; cursor: pointer"><span style="position: absolute; right: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #ffffff; display: block"></span></button></div>
+<div class="row"><span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 500">关闭窗口后在后台运行</span><span style="font-size: 13px; color: #6e6e73">Bot 继续工作，菜单栏保留图标</span></span><button type="button" role="switch" aria-checked="true" aria-label="关闭窗口后在后台运行" style="width: 44px; height: 26px; flex-shrink: 0; border: 0; padding: 0; border-radius: 13px; background: #111111; position: relative; cursor: pointer"><span style="position: absolute; right: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #ffffff; display: block"></span></button></div>
+<div class="row"><span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 500">全局快捷键</span><span style="font-size: 13px; color: #6e6e73">⌘ ⇧ O 随时唤出 OpenBot</span></span><button type="button" role="switch" aria-checked="false" aria-label="全局快捷键" style="width: 44px; height: 26px; flex-shrink: 0; border: 0; padding: 0; border-radius: 13px; background: #d1d1d6; position: relative; cursor: pointer"><span style="position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #ffffff; display: block"></span></button></div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h2 class="sec">Bot</h2>
+<div class="card">
+<div class="row"><span style="font-size: 15px; font-weight: 500">时区</span><button type="button" class="select">自动检测（Asia/Shanghai）<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>
+<div class="row"><span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 500">新 Bot 默认模型</span><span style="font-size: 13px; color: #6e6e73">创建 Bot 时预先选好，之后可以单独改</span></span><button type="button" class="select">Claude Sonnet<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

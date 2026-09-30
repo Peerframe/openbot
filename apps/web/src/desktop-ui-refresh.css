@@ -21,15 +21,16 @@
   gap: 0;
 }
 .desktop-workspace .channel-members-menu > summary {
+  /* Main artboard: a grey pill holding the member avatars and the conversation name. */
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 8px;
   width: auto;
-  min-height: 38px;
-  padding: 4px 8px;
+  min-height: 34px;
+  padding: 0 12px 0 6px;
   border: 0;
-  background: transparent;
-  border-radius: 8px;
+  background: #f0f0f2;
+  border-radius: 10px;
 }
 .channel-members-menu > summary::marker {
   content: "";
@@ -38,7 +39,7 @@
   display: none;
 }
 .channel-members-menu > summary:hover {
-  background: #f1f4f8;
+  background: #e6e6e8;
 }
 .channel-heading {
   display: flex;
@@ -48,7 +49,8 @@
   color: #172031;
 }
 .channel-heading strong {
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -65,10 +67,10 @@
 }
 .channel-avatar-stack > * {
   margin-left: -7px;
-  width: 29px;
-  height: 32px;
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px #fff;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  box-shadow: 0 0 0 1.5px #f0f0f2;
   background: #fff;
 }
 .channel-avatar-stack > span {
@@ -826,4 +828,140 @@
   font-weight: 600;
   line-height: 18px;
   text-align: center;
+}
+
+/* Sidebar artboard (Sidebar.dc.html): 40px avatar tiles, 15/13px two-line rows, quiet sections. */
+.desktop-workspace .sidebar .sidebar-brand-row {
+  min-height: 40px;
+  padding-bottom: 6px;
+}
+.desktop-workspace .sidebar .brand {
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.desktop-workspace .sidebar .sidebar-search {
+  height: 34px;
+  margin: 0 4px 6px;
+  border: 1px solid #e0e0e3;
+  border-radius: 10px;
+  background: #eaeaec;
+}
+.desktop-workspace .sidebar .sidebar-search:focus-within {
+  border-color: #c7c7cc;
+  background: #fff;
+}
+.desktop-workspace .sidebar .sidebar-heading h2 {
+  padding: 14px 12px 6px;
+  color: var(--ob-text-tertiary);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.desktop-workspace .sidebar .sidebar-list .sidebar-row {
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 12px;
+  min-height: 60px;
+  padding: 10px;
+  border-radius: 14px;
+}
+.desktop-workspace .sidebar .sidebar-list .sidebar-row:hover {
+  background: var(--ob-fill-hover);
+}
+.desktop-workspace .sidebar .sidebar-list .sidebar-row.selected {
+  background: var(--ob-selected);
+}
+.desktop-workspace .sidebar .sidebar-list .sidebar-row strong {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ob-text);
+}
+.desktop-workspace .sidebar .sidebar-list .sidebar-row small {
+  font-size: 13px;
+  color: #8a8a8e;
+}
+.desktop-workspace .sidebar .sidebar-list .bot-row > .robot-avatar {
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--ob-selected);
+}
+.desktop-workspace .sidebar .sidebar-list .channel-list-avatar {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--ob-selected);
+}
+.desktop-workspace .sidebar .sidebar-list .channel-list-avatar.has-members {
+  background: transparent;
+}
+.desktop-workspace .sidebar .sidebar-list .channel-list-avatar.has-members > .robot-avatar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  width: 27px;
+  height: 27px;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--ob-selected);
+}
+.desktop-workspace
+  .sidebar
+  .sidebar-list
+  .channel-list-avatar.is-pair
+  > .robot-avatar
+  + .robot-avatar {
+  inset: auto 0 0 auto;
+  border-radius: 50%;
+  background: #dadadd;
+  box-shadow: 0 0 0 2px #f5f5f6;
+}
+.desktop-workspace
+  .sidebar
+  .sidebar-list
+  .sidebar-row.selected
+  .channel-list-avatar.is-pair
+  > .robot-avatar
+  + .robot-avatar {
+  box-shadow: 0 0 0 2px var(--ob-selected);
+}
+/* Idle is the default; only active work earns a label, as in the artboard. */
+.desktop-workspace .sidebar .sidebar-list .bot-state:has(.status-dot.idle) {
+  display: none;
+}
+.desktop-workspace .sidebar .sidebar-list .bot-state {
+  color: var(--ob-active);
+  font-size: 12px;
+}
+.desktop-workspace .sidebar .sidebar-unread-count {
+  background: var(--ob-active);
+}
+.desktop-workspace .sidebar .sidebar-unread-dot {
+  width: 9px;
+  height: 9px;
+  background: var(--ob-active);
+}
+.desktop-workspace .sidebar .sidebar-footer-row {
+  gap: 10px;
+}
+.desktop-workspace .sidebar .owner-menu > summary .owner-avatar {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--ob-divider);
+  background: #fff;
+  color: var(--ob-text-secondary);
+  font-size: 14px;
+}
+.desktop-workspace .sidebar .sidebar-plugin-pill {
+  height: 44px;
+  border: 1px solid var(--ob-divider);
+  border-radius: 22px;
+  background: #fff;
+  font-size: 15px;
+  font-weight: 600;
 }

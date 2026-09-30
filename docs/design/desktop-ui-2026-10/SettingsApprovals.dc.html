@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>设置 · 审批与权限</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.sec{margin:0 4px;font-size:13px;font-weight:500;color:#6e6e73}
+.card{border-radius:16px;background:#f0f0f2;padding:0 18px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:58px;padding:9px 0;box-sizing:border-box}
+.row + .row{border-top:1px solid #e3e3e6}
+.select{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border:1px solid #e3e3e6;border-radius:10px;background:#ffffff;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
+.lock{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#6e6e73;white-space:nowrap}
+.pill{height:32px;padding:0 14px;border-radius:16px;border:0;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #ffffff; display: grid; grid-template-columns: 300px minmax(0, 1fr)">
+<dc-import name="Sidebar" active="channel" hint-size="300px,900px"></dc-import>
+<div style="background: #fcfcfc"></div>
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; background: rgba(0,0,0,0.34)"></div>
+
+<div role="dialog" aria-modal="true" aria-label="设置" style="position: absolute; left: 190px; top: 80px; width: 1060px; height: 740px; border-radius: 20px; background: #fdfdfd; box-shadow: 0 30px 80px rgba(0,0,0,0.25); display: grid; grid-template-columns: 250px minmax(0, 1fr); overflow: hidden">
+<dc-import name="SettingsNav" section="approvals" hint-size="250px,740px"></dc-import>
+<div style="position: relative; overflow: hidden; padding: 36px 44px; display: flex; flex-direction: column; gap: 18px">
+<button type="button" aria-label="关闭设置" style="position: absolute; right: 18px; top: 18px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; cursor: pointer; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
+<header style="display: flex; flex-direction: column; gap: 6px; padding-right: 40px">
+<h1 style="margin: 0; font-size: 24px; font-weight: 700">审批与权限</h1>
+<p style="margin: 0; font-size: 14px; color: #6e6e73; line-height: 1.55">Bot 做下面这些事之前要先问你。每项请求 5 分钟内有效，过期后对应的任务会停下。</p>
+</header>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h2 class="sec">需要你批准的操作</h2>
+<div class="card">
+<div class="row"><span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 500">发送消息和邮件</span><span style="font-size: 13px; color: #6e6e73">发给真实的人，发出后无法撤回</span></span><button type="button" class="select">每次都问<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>
+<div class="row"><span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 500">提交网页表单</span><span style="font-size: 13px; color: #6e6e73">在员工浏览器里点提交、下单、报名</span></span><button type="button" class="select">每次都问<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>
+<div class="row"><span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 500">删除数据</span><span style="font-size: 13px; color: #6e6e73">删除文件、记录或云端内容</span></span><span class="lock"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>始终需要批准</span></div>
+<div class="row"><span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 500">安装软件</span><span style="font-size: 13px; color: #6e6e73">在工作主机上安装程序或软件包</span></span><span class="lock"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>始终需要批准</span></div>
+<div class="row"><span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 500">修改权限</span><span style="font-size: 13px; color: #6e6e73">改共享范围、账户权限或系统设置</span></span><span class="lock"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>始终需要批准</span></div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 4px">
+<h2 class="sec" style="margin: 0">例外 · 可以不问的目标</h2>
+<button type="button" class="pill" style="background: #ececee">添加例外</button>
+</div>
+<div class="card">
+<div class="row"><span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 500">研究助理 发邮件到 team@example.com</span><span style="font-size: 13px; color: #6e6e73">只限这个收件人 · 你在 9/25 添加</span></span><button type="button" class="pill" style="background: transparent; color: #b3261e; padding: 0 8px">移除</button></div>
+</div>
+<span style="margin: 2px 4px 0; font-size: 12px; color: #8e8e93">例外只能放宽一般操作；删除、安装、改权限不能加例外。</span>
+</section>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

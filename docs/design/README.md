@@ -5,6 +5,8 @@
 - [Office concept](m0-office-concept.png): historical M0 exploration only. It is not an implementation contract; the office plugin remains deferred.
 - [Avatar system](openbot-avatar-system.png): reference for the currently running modular RobotAvatar. This refactor preserves its controls and stored appearance compatibility; it does not approve a new redesign.
 - [README banner](openbot-readme-banner.png) and [channel demonstration](openbot-channel-demo.png): current README illustrations.
+- [Desktop UI design contract (2026-10)](desktop-ui-2026-10/README.md): the owner-approved artboards every
+  screen is being rebuilt to, with the [implementation plan and division of work](desktop-ui-2026-10/IMPLEMENTATION.md).
 
 The retired public pixel-bot PNG/SVG and unused login/member selectors were removed from application assets. Git history retains their earlier use; they should not be restored into the runtime bundle as historical documentation.
 
@@ -12,10 +14,12 @@ The retired public pixel-bot PNG/SVG and unused login/member selectors were remo
 
 Read the relevant section of [INTERFACE](../INTERFACE.md), then the actual component and its test via
 [the UI route](../REPOSITORY_MAP.md#ui-interaction). INTERFACE mixes existing behavior and future
-intent; current code/tests and the accepted task define scope. Keep the existing layout and assets.
+intent; current code/tests and the accepted task define scope. Layout and visual decisions follow the
+[2026-10 design contract](desktop-ui-2026-10/README.md); keep assets such as the RobotAvatar.
 [styles.css](../../apps/web/src/styles.css) owns base tokens (`--blue`, `--line`, `--muted`, `--panel`),
 focus rings and global primitives. Component CSS owns local layout; reuse nearby native buttons,
-forms and dialogs. Do not add an overlapping theme or infer a redesign from the historical office image.
+forms and dialogs. Do not add a theme that overlaps the contract's tokens or infer a redesign from the
+historical office image.
 
 | State / term | Actual reading owner | Meaning to preserve |
 | --- | --- | --- |

@@ -133,13 +133,13 @@ function tableCells(line: string) {
 }
 
 function renderInline(text: string): ReactNode {
-  return text
-    .split(/(\*\*[^*]+\*\*)/g)
-    .map((part) =>
-      part.startsWith("**") && part.endsWith("**") ? (
-        <strong key={part}>{part.slice(2, -2)}</strong>
-      ) : (
-        part
-      ),
-    );
+  // Model text stays React text nodes; only `code` and **bold** spans get elements.
+  return text.split(/(`[^`\n]+`|\*\*[^*]+\*\*)/g).map((part, index) => {
+    const key = `${index}:${part}`;
+    if (part.length > 2 && part.startsWith("`") && part.endsWith("`"))
+      return <code key={key}>{part.slice(1, -1)}</code>;
+    if (part.length > 4 && part.startsWith("**") && part.endsWith("**"))
+      return <strong key={key}>{part.slice(2, -2)}</strong>;
+    return part;
+  });
 }

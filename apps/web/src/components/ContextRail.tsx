@@ -6,13 +6,17 @@ import type {
   RunProgress,
   WorkspaceSnapshot,
 } from "@openbot/domain";
+import { useState } from "react";
 import type { RealtimeConnectionState } from "../api";
 import { runStatusSummary } from "../run-state";
+import { requestNotificationPermission } from "../system-notifications";
+import { updatePreferences, useWorkspacePreferences } from "../workspace-preferences";
 import { ArtifactDownloadLink } from "./ArtifactCard";
 import "../context-rail.css";
 import { isActiveRun, runStatusLabel } from "../run-state";
 import { ApprovalCard } from "./ApprovalCard";
 import { CheckIcon, NodeIcon } from "./Icons";
+import { RobotAvatar } from "./RobotAvatar";
 
 export function ContextRail({
   realtimeState,
@@ -20,12 +24,14 @@ export function ContextRail({
   workspace,
   onDecideApproval,
   onInspectRun,
+  onOpenBot,
 }: {
   realtimeState: RealtimeConnectionState;
   selectedChannelId?: string | undefined;
   workspace: WorkspaceSnapshot;
   onDecideApproval(approvalId: string, decision: ApprovalDecision): Promise<void>;
   onInspectRun(runId: string): void;
+  onOpenBot?: ((botId: string) => void) | undefined;
 }) {
   const scopedRuns = workspace.runs.filter(
     (run) => selectedChannelId === undefined || run.channelId === selectedChannelId,
@@ -72,13 +78,28 @@ export function ContextRail({
   const knownOutput = observed.filter((usage) => usage.outputTokens !== null);
   const hasActivity = pendingApprovals.length > 0 || scopedRuns.length > 0;
 
+  const channel = selectedChannelId === undefined ? undefined : channelById.get(selectedChannelId);
+  const members = channel
+    ? channel.botIds.flatMap((id) => {
+        const bot = botById.get(id);
+        return bot ? [bot] : [];
+      })
+    : [];
+  const activeBotIds = new Set(activeRuns.map((run) => run.botId));
+
   return (
     <aside
       className="context-rail usage-rail"
       aria-label={selectedChannelId === undefined ? "工作区任务与详情" : "频道任务与详情"}
     >
       <header className="usage-rail-header">
-        <h2>{selectedChannelId === undefined ? "工作区动态" : "频道动态"}</h2>
+        <h2>
+          {selectedChannelId === undefined
+            ? "工作区动态"
+            : channel?.directBotId
+              ? "Bot 信息"
+              : "频道信息"}
+        </h2>
         <span className={`usage-rail-connection ${realtimeState}`}>
           <i aria-hidden="true" />
           {realtimeState === "live"
@@ -89,17 +110,54 @@ export function ContextRail({
         </span>
       </header>
       {selectedChannelId !== undefined ? (
-        <p className="usage-rail-scope" title={channelById.get(selectedChannelId)?.name}>
-          {channelById.get(selectedChannelId)?.name ?? "当前频道"}
-          <span>{scopedRuns.length} 条最近任务记录</span>
-        </p>
+        <div className="rail-identity">
+          <span className="rail-identity-avatars" aria-hidden="true">
+            {members.slice(0, 2).map((bot) => (
+              <RobotAvatar bot={bot} compact key={bot.id} />
+            ))}
+          </span>
+          <strong>{channel?.name ?? "当前频道"}</strong>
+          {channel ? (
+            <span>
+              {channel.description ||
+                (channel.directBotId ? members[0]?.role : `${members.length} 名 Bot`)}
+            </span>
+          ) : null}
+          <small>{scopedRuns.length} 条最近任务记录</small>
+        </div>
+      ) : null}
+
+      {channel && members.length > 0 ? (
+        <section className="usage-rail-section" aria-label="频道成员">
+          <div className="usage-rail-section-heading">
+            <h3>成员 · {members.length}</h3>
+          </div>
+          <div className="rail-card">
+            {members.map((bot) => (
+              <button
+                type="button"
+                className="rail-member"
+                key={bot.id}
+                disabled={!onOpenBot}
+                onClick={() => onOpenBot?.(bot.id)}
+                aria-label={`打开 ${bot.name} 的员工档案`}
+              >
+                <RobotAvatar bot={bot} compact />
+                <span>{bot.name}</span>
+                <small className={activeBotIds.has(bot.id) ? "active" : "idle"}>
+                  <i aria-hidden="true" />
+                  {activeBotIds.has(bot.id) ? "执行中" : "待命"}
+                </small>
+              </button>
+            ))}
+          </div>
+        </section>
       ) : null}
 
       {pendingApprovals.length > 0 ? (
         <section className="usage-rail-section" aria-label="需要确认的操作">
           <div className="usage-rail-section-heading">
-            <h3>需要确认</h3>
-            <span className="usage-rail-attention-count">{pendingApprovals.length}</span>
+            <h3>需要处理 · {pendingApprovals.length}</h3>
           </div>
           <div className="approval-list">
             {pendingApprovals.map((approval) => (
@@ -141,34 +199,6 @@ export function ContextRail({
         </section>
       ) : null}
 
-      {recentResults.length > 0 ? (
-        <section className="usage-rail-section" aria-label="最近结果">
-          <div className="usage-rail-section-heading">
-            <h3>最近结果</h3>
-          </div>
-          <div className="usage-rail-run-list">
-            {recentResults.map((run) => {
-              const artifact = latestArtifact.get(run.id);
-              return (
-                <div className="usage-rail-result" key={run.id}>
-                  <RunRow
-                    run={run}
-                    detail={runStatusSummary(run) ?? botById.get(run.botId)?.name}
-                    onInspect={onInspectRun}
-                  />
-                  {artifact ? (
-                    <ArtifactDownloadLink artifact={artifact}>
-                      {artifact.mediaType === "text/markdown" ? "下载报告" : "查看附件"}：
-                      {artifact.name} <span aria-hidden="true">↗</span>
-                    </ArtifactDownloadLink>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
-
       {!hasActivity ? (
         <div className="usage-rail-empty-state">
           <CheckIcon />
@@ -177,38 +207,29 @@ export function ContextRail({
         </div>
       ) : null}
 
-      <section className="usage-rail-tokens" aria-label="Token 用量">
-        <h3>Token 用量</h3>
-        {observed.length ? (
-          <>
-            <p className="usage-rail-unavailable">
-              输入{" "}
-              {knownInput.length
-                ? knownInput
-                    .reduce((sum, usage) => sum + (usage.inputTokens ?? 0), 0)
-                    .toLocaleString()
-                : "未知"}{" "}
-              · 输出{" "}
-              {knownOutput.length
-                ? knownOutput
-                    .reduce((sum, usage) => sum + (usage.outputTokens ?? 0), 0)
-                    .toLocaleString()
-                : "未知"}
-            </p>
-            <p className="usage-rail-caption">
-              已加载范围内 {observed.length} 个任务的已知记录；未记录部分不计入，不代表账单。
-            </p>
-          </>
+      <section className="usage-rail-section usage-rail-computers" aria-label="工作电脑">
+        <div className="usage-rail-section-heading">
+          <h3>工作电脑</h3>
+          <span>{workspace.nodes.length} 台已连接</span>
+        </div>
+        {workspace.nodes.length === 0 ? (
+          <div className="usage-rail-no-computer">
+            <NodeIcon />
+            <p>尚未连接工作电脑</p>
+          </div>
         ) : (
-          <>
-            <p className="usage-rail-unavailable">暂无用量记录</p>
-            <p className="usage-rail-caption">当前范围没有已记录的模型用量</p>
-          </>
+          <div className="rail-card">
+            {workspace.nodes.map((node) => (
+              <NodeRow node={node} key={node.id} />
+            ))}
+          </div>
         )}
       </section>
 
+      <NotificationToggle />
+
       <details className="usage-rail-workspace-overview">
-        <summary>工作区概览</summary>
+        <summary>任务记录与用量</summary>
         <section className="usage-rail-section" aria-label="最近任务统计">
           <div className="usage-rail-section-heading">
             <h3>最近任务</h3>
@@ -221,22 +242,103 @@ export function ContextRail({
           </dl>
           <p className="usage-rail-caption">统计范围为当前已加载的工作区任务记录</p>
         </section>
-        <section className="usage-rail-section usage-rail-computers" aria-label="工作电脑">
-          <div className="usage-rail-section-heading">
-            <h3>工作电脑</h3>
-            <span>{workspace.nodes.length} 台已连接</span>
-          </div>
-          {workspace.nodes.length === 0 ? (
-            <div className="usage-rail-no-computer">
-              <NodeIcon />
-              <p>尚未连接工作电脑</p>
+        {recentResults.length > 0 ? (
+          <section className="usage-rail-section" aria-label="最近结果">
+            <div className="usage-rail-section-heading">
+              <h3>最近结果</h3>
             </div>
+            <div className="usage-rail-run-list">
+              {recentResults.map((run) => {
+                const artifact = latestArtifact.get(run.id);
+                return (
+                  <div className="usage-rail-result" key={run.id}>
+                    <RunRow
+                      run={run}
+                      detail={runStatusSummary(run) ?? botById.get(run.botId)?.name}
+                      onInspect={onInspectRun}
+                    />
+                    {artifact ? (
+                      <ArtifactDownloadLink artifact={artifact}>
+                        {artifact.mediaType === "text/markdown" ? "下载报告" : "查看附件"}：
+                        {artifact.name} <span aria-hidden="true">↗</span>
+                      </ArtifactDownloadLink>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+        <section className="usage-rail-tokens" aria-label="Token 用量">
+          <h3>Token 用量</h3>
+          {observed.length ? (
+            <>
+              <p className="usage-rail-unavailable">
+                输入{" "}
+                {knownInput.length
+                  ? knownInput
+                      .reduce((sum, usage) => sum + (usage.inputTokens ?? 0), 0)
+                      .toLocaleString()
+                  : "未知"}{" "}
+                · 输出{" "}
+                {knownOutput.length
+                  ? knownOutput
+                      .reduce((sum, usage) => sum + (usage.outputTokens ?? 0), 0)
+                      .toLocaleString()
+                  : "未知"}
+              </p>
+              <p className="usage-rail-caption">
+                已加载范围内 {observed.length} 个任务的已知记录；未记录部分不计入，不代表账单。
+              </p>
+            </>
           ) : (
-            workspace.nodes.map((node) => <NodeRow node={node} key={node.id} />)
+            <>
+              <p className="usage-rail-unavailable">暂无用量记录</p>
+              <p className="usage-rail-caption">当前范围没有已记录的模型用量</p>
+            </>
           )}
         </section>
       </details>
     </aside>
+  );
+}
+
+/** Same opt-in as Settings → 通知 (ADR-0048); enabling asks the browser once when needed. */
+function NotificationToggle() {
+  const { values } = useWorkspacePreferences();
+  const [blocked, setBlocked] = useState(false);
+  const enabled = values.notifyApprovals || values.notifyMessages;
+  return (
+    <div className="rail-notify">
+      <span>
+        <strong>通知</strong>
+        <small>
+          {blocked
+            ? "浏览器已阻止通知，可在设置中查看原因。"
+            : "OpenBot 在后台时，有操作待批准或 Bot 回复会提醒你"}
+        </small>
+      </span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={enabled}
+        aria-label="通知"
+        className="ob-switch"
+        onClick={async () => {
+          if (enabled) {
+            updatePreferences({ notifyApprovals: false, notifyMessages: false });
+            return;
+          }
+          const support = await requestNotificationPermission();
+          if (support !== "desktop" && support !== "granted") {
+            setBlocked(true);
+            return;
+          }
+          setBlocked(false);
+          updatePreferences({ notifyApprovals: true, notifyMessages: true });
+        }}
+      />
+    </div>
   );
 }
 

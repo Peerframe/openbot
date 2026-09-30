@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>设置 · 通知</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.sec{margin:0 4px;font-size:13px;font-weight:500;color:#6e6e73}
+.card{border-radius:16px;background:#f0f0f2;padding:0 18px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:56px;padding:9px 0;box-sizing:border-box}
+.row + .row{border-top:1px solid #e3e3e6}
+.t{display:flex;flex-direction:column;gap:3px}.t b{font-size:15px;font-weight:500}.t i{font-style:normal;font-size:13px;color:#6e6e73}
+.select{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border:1px solid #e3e3e6;border-radius:10px;background:#ffffff;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
+.sw{width:44px;height:26px;border:0;padding:0;border-radius:13px;position:relative;cursor:pointer;flex-shrink:0}.sw.on{background:#111111}.sw.off{background:#d1d1d6}
+.sw span{position:absolute;top:3px;width:20px;height:20px;border-radius:50%;background:#ffffff;display:block}.sw.on span{right:3px}.sw.off span{left:3px}
+.x{position:absolute;right:18px;top:18px;width:34px;height:34px;border:0;border-radius:50%;background:transparent;cursor:pointer;display:inline-grid;place-items:center}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #ffffff; display: grid; grid-template-columns: 300px minmax(0, 1fr)">
+<dc-import name="Sidebar" active="channel" hint-size="300px,900px"></dc-import>
+<div style="background: #fcfcfc"></div>
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; background: rgba(0,0,0,0.34)"></div>
+<div role="dialog" aria-modal="true" aria-label="设置" style="position: absolute; left: 190px; top: 80px; width: 1060px; height: 740px; border-radius: 20px; background: #fdfdfd; box-shadow: 0 30px 80px rgba(0,0,0,0.25); display: grid; grid-template-columns: 250px minmax(0, 1fr); overflow: hidden">
+<dc-import name="SettingsNav" section="notify" hint-size="250px,740px"></dc-import>
+<div style="position: relative; overflow: hidden; padding: 36px 44px; display: flex; flex-direction: column; gap: 18px">
+<button type="button" class="x" aria-label="关闭设置"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
+<h1 style="margin: 0; font-size: 24px; font-weight: 700">通知</h1>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h2 class="sec">什么时候通知你</h2>
+<div class="card">
+<div class="row"><span class="t"><b>需要你批准</b><i>还剩 1 分钟时再提醒一次</i></span><button type="button" role="switch" aria-checked="true" aria-label="需要你批准" class="sw on"><span></span></button></div>
+<div class="row"><span class="t"><b>任务完成</b><i>Bot 把结果发回频道时</i></span><button type="button" role="switch" aria-checked="true" aria-label="任务完成" class="sw on"><span></span></button></div>
+<div class="row"><span class="t"><b>任务失败或卡住</b><i>需要你看一下才能继续</i></span><button type="button" role="switch" aria-checked="true" aria-label="任务失败或卡住" class="sw on"><span></span></button></div>
+<div class="row"><span class="t"><b>频道里的新消息</b><i>Bot 之间的对话也算</i></span><button type="button" class="select">只在提到我时<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h2 class="sec">通知的样子</h2>
+<div class="card">
+<div class="row"><span class="t"><b>通知里显示内容</b><i>关掉后只显示 Bot 名字和「有新动态」</i></span><button type="button" role="switch" aria-checked="true" aria-label="通知里显示内容" class="sw on"><span></span></button></div>
+<div class="row"><span class="t"><b>提示音</b></span><button type="button" role="switch" aria-checked="false" aria-label="提示音" class="sw off"><span></span></button></div>
+<div class="row"><span class="t"><b>程序坞角标</b><i>显示待批准和未读的数量</i></span><button type="button" role="switch" aria-checked="true" aria-label="程序坞角标" class="sw on"><span></span></button></div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h2 class="sec">勿扰</h2>
+<div class="card">
+<div class="row"><span class="t"><b>勿扰时段</b><i>这段时间只保留「需要你批准」</i></span><button type="button" class="select">22:00 – 08:00<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

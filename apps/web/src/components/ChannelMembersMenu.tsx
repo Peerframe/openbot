@@ -1,7 +1,6 @@
 import type { Bot, Channel } from "@openbot/domain";
 import { useEffect, useRef, useState } from "react";
 import "./ChannelMembersMenu.css";
-import { HashIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
 
 export function ChannelMembersMenu({
@@ -52,19 +51,20 @@ export function ChannelMembersMenu({
       }}
     >
       <summary aria-label="频道成员" title={channel.directBotId ? "Bot 档案" : "频道详情与成员"}>
+        <span className="channel-avatar-stack" aria-hidden="true">
+          {members.slice(0, showTitle ? 2 : 4).map((bot) => (
+            <RobotAvatar key={bot.id} bot={bot} compact />
+          ))}
+          {members.length > (showTitle ? 2 : 4) && (
+            <span>+{members.length - (showTitle ? 2 : 4)}</span>
+          )}
+          {members.length === 0 && <span>添加 Bot</span>}
+        </span>
         {showTitle && (
           <span className="channel-heading">
-            {!channel.directBotId && <HashIcon />}
             <strong>{channel.name}</strong>
           </span>
         )}
-        <span className="channel-avatar-stack" aria-hidden="true">
-          {members.slice(0, 4).map((bot) => (
-            <RobotAvatar key={bot.id} bot={bot} compact />
-          ))}
-          {members.length > 4 && <span>+{members.length - 4}</span>}
-          {members.length === 0 && <span>添加 Bot</span>}
-        </span>
       </summary>
       <div className="channel-members-popover">
         <h2>

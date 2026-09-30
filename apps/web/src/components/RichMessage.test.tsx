@@ -28,4 +28,13 @@ describe("RichMessage", () => {
     expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
     expect(html).not.toContain("<script>");
   });
+
+  it("renders inline code as escaped text without touching bold or HTML", () => {
+    const html = renderToStaticMarkup(
+      <RichMessage content={"读 `weekly/<b>x</b>.md` 后 **汇总**，单个 ` 不算"} />,
+    );
+    expect(html).toContain("<code>weekly/&lt;b&gt;x&lt;/b&gt;.md</code>");
+    expect(html).toContain("<strong>汇总</strong>");
+    expect(html).toContain("单个 ` 不算");
+  });
 });

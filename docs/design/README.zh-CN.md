@@ -5,6 +5,8 @@
 - [办公室概念图](m0-office-concept.png)：仅作 M0 历史探索留档，不是当前实施要求；办公室插件继续延后。
 - [组合头像参考图](openbot-avatar-system.png)：对应当前运行的 RobotAvatar。本轮保留控件和已有外观数据兼容，不代表批准新一轮重设计。
 - [README 横幅](openbot-readme-banner.png)和[频道示意图](openbot-channel-demo.png)：当前 README 展示素材。
+- [Desktop 界面设计契约（2026-10）](desktop-ui-2026-10/README.zh-CN.md)：所有者确认的画板，所有界面都按它重建；
+  另见[实施计划与分工](desktop-ui-2026-10/IMPLEMENTATION.zh-CN.md)。
 
 旧 public 像素机器人 PNG/SVG 及无使用方的登录/成员样式已从应用资源移除。旧用途保留在 Git 历史，不应为了历史留档重新放进运行时资源包。
 
@@ -12,9 +14,9 @@
 
 先读 [INTERFACE](../INTERFACE.zh-CN.md) 的相关段落，再按[UI 路线](../REPOSITORY_MAP.zh-CN.md#ui-交互)
 阅读实际组件和测试。INTERFACE 同时包含现状和未来意图，范围以当前实现、测试及本次任务为准。
-保留现有布局和资产；[styles.css](../../apps/web/src/styles.css)拥有基础 tokens（`--blue`、`--line`、
+布局与视觉以 [2026-10 设计契约](desktop-ui-2026-10/README.zh-CN.md)为准，保留 RobotAvatar 等资产；[styles.css](../../apps/web/src/styles.css)拥有基础 tokens（`--blue`、`--line`、
 `--muted`、`--panel`）、焦点和全局基础样式，局部布局属于组件 CSS。复用附近原生按钮、表单和
-对话框，不新建重叠主题，不把历史 office 图当作重设计要求。
+对话框，不新建与契约 tokens 重叠的主题，不把历史 office 图当作重设计要求。
 
 | 状态/术语 | 实际阅读入口 | 应保留的含义 |
 | --- | --- | --- |
