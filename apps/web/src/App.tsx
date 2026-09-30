@@ -42,7 +42,10 @@ import { CreateChannelDialog } from "./components/CreateChannelDialog";
 import { DesktopConnectionScreen } from "./components/DesktopConnectionScreen";
 import { DesktopInstallScreen } from "./components/DesktopInstallScreen";
 import { DesktopLocalWorkerScreen } from "./components/DesktopLocalWorkerScreen";
-import { DesktopSettingsScreen } from "./components/DesktopSettingsScreen";
+import {
+  DesktopSettingsScreen,
+  type DesktopSettingsSection,
+} from "./components/DesktopSettingsScreen";
 import { DesktopSetupScreen } from "./components/DesktopSetupScreen";
 import { EmployeeBrowser } from "./components/EmployeeBrowser";
 import { EmployeeProfileRail } from "./components/EmployeeProfileRail";
@@ -90,6 +93,7 @@ import {
 } from "./system-notifications";
 import { useDesktopNavigation } from "./use-desktop-navigation";
 import { useEmployeeProfile } from "./use-employee-profile";
+import { useSettingsCounts } from "./use-settings-counts";
 import { useWorkspaceAppearance } from "./use-workspace-appearance";
 import { useWorkspaceState } from "./use-workspace-state";
 import { useWorkspaceNavigation } from "./workspace-navigation";
@@ -116,9 +120,8 @@ export function App() {
   const [modelChecked, setModelChecked] = useState(false);
   const [showModelSetup, setShowModelSetup] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [settingsSection, setSettingsSection] = useState<"general" | "about" | "automations">(
-    "general",
-  );
+  const [settingsSection, setSettingsSection] = useState<DesktopSettingsSection>("general");
+  const settingsCounts = useSettingsCounts(showSettings);
   const [settingsError, setSettingsError] = useState<string>();
   const [showNodeSettings, setShowNodeSettings] = useState(false);
   const [settingsNodes, setSettingsNodes] = useState<WorkspaceSnapshot["nodes"]>([]);
@@ -490,6 +493,7 @@ export function App() {
       <>
         <DesktopSettingsScreen
           initialSection={settingsSection}
+          counts={settingsCounts}
           error={settingsError}
           plan={desktopSetupPlan.plan}
           material={material}
@@ -518,6 +522,7 @@ export function App() {
     ) : showSettings && !desktopBridge ? (
       <DesktopSettingsScreen
         initialSection={settingsSection}
+        counts={settingsCounts}
         onBack={() => setShowSettings(false)}
       />
     ) : null;
@@ -569,7 +574,8 @@ export function App() {
 
   return (
     <>
-      <div className="workspace-preserved" hidden={showSettings} inert={showSettings}>
+      {/* Settings is a modal over the workspace (Settings artboard); the workspace stays visible. */}
+      <div className="workspace-preserved" inert={showSettings}>
         <AuthenticatedWorkspace
           key={`${session.owner.id}:${desktopConnection?.status === "configured" ? desktopConnection.serverUrl : "web"}`}
           active={!showSettings}
@@ -594,7 +600,7 @@ export function AuthenticatedWorkspace({
 }: {
   active?: boolean;
   ownerName: string;
-  onSettings?: ((section?: "general" | "about" | "automations") => void) | undefined;
+  onSettings?: ((section?: DesktopSettingsSection) => void) | undefined;
   onLogout(): Promise<void>;
 }) {
   const { values: preferences } = useWorkspacePreferences();
@@ -1174,7 +1180,7 @@ export function AuthenticatedWorkspace({
           ownerName={ownerName}
           destination={destination}
           onAutomations={() =>
-            onSettings ? onSettings("automations") : navigation.navigate({ kind: "automations" })
+            onSettings ? onSettings("routines") : navigation.navigate({ kind: "automations" })
           }
           onWork={() => navigation.navigate({ kind: "work" })}
           onSkills={() => navigation.navigate({ kind: "skills" })}
@@ -1272,7 +1278,7 @@ export function AuthenticatedWorkspace({
             members.querySelector<HTMLElement>("summary")?.focus();
           }}
           onNewRoutine={() =>
-            onSettings ? onSettings("automations") : navigation.navigate({ kind: "automations" })
+            onSettings ? onSettings("routines") : navigation.navigate({ kind: "automations" })
           }
           onOpenSettings={onSettings ? (section) => onSettings(section) : undefined}
           onOpenHosts={() => setDialog("node")}

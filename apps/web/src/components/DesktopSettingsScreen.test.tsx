@@ -14,6 +14,12 @@ beforeEach(async () => {
   vi.stubGlobal("localStorage", storageWindow.localStorage);
   vi.stubGlobal("sessionStorage", storageWindow.sessionStorage);
   localStorage.clear();
+  HTMLDialogElement.prototype.showModal = vi.fn(function (this: HTMLDialogElement) {
+    this.setAttribute("open", "");
+  });
+  HTMLDialogElement.prototype.close = vi.fn(function (this: HTMLDialogElement) {
+    this.removeAttribute("open");
+  });
   preferences = await import("../workspace-preferences");
   Settings = (await import("./DesktopSettingsScreen")).DesktopSettingsScreen;
 });
@@ -81,13 +87,11 @@ describe("Desktop settings interactions", () => {
         notifyApprovals: false,
         notifyMessages: false,
       });
-      await interact(() => button(rendered.container, "隐私与数据").click());
       await interact(() => button(rendered.container, "恢复默认").click());
       expect(stored()).toEqual(preferences.defaultPreferences);
       expect(rendered.container.querySelector('[role="status"]')?.textContent).toContain(
         "已恢复默认",
       );
-      await interact(() => button(rendered.container, "常规").click());
       expect(
         (rendered.container.querySelector('[aria-label="半透明侧栏"]') as HTMLInputElement).checked,
       ).toBe(true);
@@ -136,7 +140,7 @@ describe("Desktop settings interactions", () => {
         />,
       );
       try {
-        await interact(() => button(rendered.container, "工作电脑").click());
+        await interact(() => button(rendered.container, "工作主机").click());
         expect(rendered.container.textContent).toContain("https://server.example.test");
         expect(rendered.container.textContent).toContain("等待你在系统中批准");
         await interact(() => button(rendered.container, "更改用途").click());
@@ -241,17 +245,17 @@ it("opens an initial category and searches settings without changing preferences
     );
     if (!search) throw new Error("Settings search is missing");
     await setInputValue(search, "字号");
-    expect(rendered.container.querySelectorAll('nav[aria-label="设置分类"] button')).toHaveLength(
+    expect(rendered.container.querySelectorAll('nav[aria-label="设置分区"] button')).toHaveLength(
       1,
     );
-    await interact(() => button(rendered.container, "常规").click());
+    await interact(() => button(rendered.container, "通用").click());
     expect(rendered.container.querySelector('[aria-label="聊天字号"]')).not.toBeNull();
     expect(search.value).toBe("");
     await setInputValue(search, "missing-category");
     expect(rendered.container.querySelector('[role="status"]')?.textContent).toContain(
       "没有匹配的设置",
     );
-    await interact(() => button(rendered.container, "← 返回应用").click());
+    await interact(() => button(rendered.container, "关闭设置").click());
     expect(actions.onBack).toHaveBeenCalledOnce();
     expect(localStorage.getItem(preferences.preferencesKey)).toBeNull();
   } finally {
@@ -274,7 +278,7 @@ it("retries a failed automation workspace load and keeps its manager inside sett
     <Settings
       plan={hostPlan}
       material={{ status: "enabled" }}
-      initialSection="automations"
+      initialSection="routines"
       {...callbacks()}
     />,
   );
@@ -284,7 +288,7 @@ it("retries a failed automation workspace load and keeps its manager inside sett
     );
     failed = false;
     await interact(() => button(rendered.container, "重试").click());
-    expect(rendered.container.querySelector('nav[aria-label="设置分类"]')).not.toBeNull();
+    expect(rendered.container.querySelector('nav[aria-label="设置分区"]')).not.toBeNull();
     expect(rendered.container.querySelector('[role="alert"]')).toBeNull();
     expect(rendered.container.textContent).toContain("先创建 Bot，并将它加入一个频道");
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
@@ -302,14 +306,14 @@ describe("Web settings entry", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ events: [] }))));
     const rendered = await renderComponent(<Settings onBack={vi.fn()} />);
     try {
-      const navigation = rendered.container.querySelector('nav[aria-label="设置分类"]');
+      const navigation = rendered.container.querySelector('nav[aria-label="设置分区"]');
       const labels = Array.from(navigation?.querySelectorAll("button") ?? []).map((item) =>
         item.textContent?.trim(),
       );
       expect(labels).toEqual(
-        expect.arrayContaining(["常规", "模型服务", "自动任务", "审批与权限", "审计记录"]),
+        expect.arrayContaining(["通用", "模型服务", "例行任务", "审批与权限", "审计记录"]),
       );
-      expect(labels).not.toContain("工作电脑");
+      expect(labels).not.toContain("工作主机");
       expect(rendered.container.textContent).not.toContain("半透明侧栏");
       await interact(() => button(rendered.container, "审批与权限").click());
       expect(rendered.container.querySelector("#settings-section-title")?.textContent).toBe(
@@ -333,9 +337,7 @@ describe("Notification settings", () => {
       requestPermission,
     });
     vi.stubGlobal("Notification", FakeNotification);
-    const rendered = await renderComponent(
-      <Settings onBack={vi.fn()} initialSection="notifications" />,
-    );
+    const rendered = await renderComponent(<Settings onBack={vi.fn()} initialSection="notify" />);
     try {
       const approvals = () =>
         rendered.container.querySelector<HTMLInputElement>('[aria-label="有操作等待批准"]');
@@ -349,12 +351,50 @@ describe("Notification settings", () => {
 
       FakeNotification.permission = "default";
       requestPermission.mockResolvedValueOnce("granted");
-      await interact(() => button(rendered.container, "常规").click());
+      await interact(() => button(rendered.container, "通用").click());
       await interact(() => button(rendered.container, "通知").click());
       await interact(() => approvals()?.click());
       await interact(() => undefined);
       expect(stored()?.notifyApprovals).toBe(true);
       expect(stored()?.notifyMessages).toBe(false);
+    } finally {
+      await rendered.unmount();
+    }
+  });
+});
+
+describe("Settings dialog", () => {
+  it("opens as a modal with the artboard's groups and counts, and closes from Esc or the backdrop", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ events: [] })));
+    const onBack = vi.fn();
+    const rendered = await renderComponent(
+      <Settings onBack={onBack} counts={{ model: 3, routines: 0 }} />,
+    );
+    try {
+      const dialog = rendered.container.querySelector<HTMLDialogElement>("dialog.settings-dialog");
+      expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalledOnce();
+      expect(dialog?.open).toBe(true);
+      expect(dialog?.getAttribute("aria-labelledby")).toBe("settings-section-title");
+      const titles = Array.from(
+        rendered.container.querySelectorAll(".settings-nav-group > p"),
+        (item) => item.textContent,
+      );
+      expect(titles).toEqual(["Bot 能力", "执行与安全", "账户"]);
+      expect(button(rendered.container, "模型服务3")).toBeDefined();
+      expect(button(rendered.container, "例行任务0")).toBeDefined();
+      expect(button(rendered.container, "审批与权限").querySelector("small")).toBeNull();
+
+      await interact(() => dialog?.dispatchEvent(new Event("cancel", { cancelable: true })));
+      expect(onBack).toHaveBeenCalledOnce();
+      await interact(() => dialog?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })));
+      expect(onBack).toHaveBeenCalledTimes(2);
+      // A press inside the frame does not close it.
+      await interact(() =>
+        rendered.container
+          .querySelector(".settings-dialog-body")
+          ?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })),
+      );
+      expect(onBack).toHaveBeenCalledTimes(2);
     } finally {
       await rendered.unmount();
     }

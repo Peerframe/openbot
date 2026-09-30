@@ -1,0 +1,297 @@
+/* Settings and SettingsNav artboards: a 1060×740 modal over the dimmed workspace. */
+.settings-dialog {
+  box-sizing: border-box;
+  width: min(1060px, calc(100vw - 40px));
+  max-width: none;
+  height: min(740px, calc(100dvh - 40px));
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 20px;
+  background: #fdfdfd;
+  box-shadow: 0 30px 80px rgb(0 0 0 / 25%);
+  color: var(--ob-text);
+}
+.settings-dialog::backdrop {
+  background: rgb(0 0 0 / 34%);
+}
+.settings-dialog-frame {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  height: 100%;
+}
+.settings-dialog-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  box-sizing: border-box;
+  min-height: 0;
+  padding: 16px 12px;
+  overflow-y: auto;
+  border-right: 1px solid #ececee;
+  background: #f6f6f7;
+}
+.settings-dialog-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  margin: 0 0 8px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: #ececee;
+  color: var(--ob-text-tertiary);
+}
+.settings-dialog-search svg {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+}
+.settings-dialog-search input {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+.settings-dialog-nav .settings-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.settings-dialog-nav .settings-nav-group > p {
+  margin: 0;
+  padding: 12px 12px 4px;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+  font-weight: 600;
+}
+.settings-dialog-nav button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.settings-dialog-nav button:hover {
+  background: #ececee;
+}
+.settings-dialog-nav button[aria-current="page"] {
+  background: #e3e3e6;
+  font-weight: 600;
+}
+.settings-dialog-nav button > span {
+  flex: 1;
+  min-width: 0;
+}
+.settings-dialog-nav button > small {
+  color: var(--ob-text-tertiary);
+  font-size: 11px;
+  font-weight: 400;
+}
+.settings-dialog-nav .settings-search-empty {
+  margin: 8px 12px;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+}
+.settings-dialog-content {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+.settings-dialog-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #3a3a3c;
+  cursor: pointer;
+}
+.settings-dialog-close:hover {
+  background: var(--ob-fill);
+}
+.settings-dialog-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 40px 88px 0 44px;
+}
+.settings-dialog-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+.settings-dialog-header p {
+  margin: 0;
+  color: var(--ob-text-secondary);
+  font-size: 14px;
+}
+.settings-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 22px 44px 40px;
+}
+
+/* Grouped rows: a grey section label above a filled card with hairline dividers. */
+.settings-dialog .settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+.settings-dialog .settings-group > h3 {
+  margin: 0 4px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+.settings-dialog .settings-group > p {
+  margin: 0 4px;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+}
+.settings-dialog .settings-group-rows {
+  padding: 0 18px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.settings-dialog .setting-row {
+  min-height: 0;
+  padding: 14px 0;
+  background: transparent;
+}
+.settings-dialog .setting-row + .setting-row {
+  border-top: 1px solid var(--ob-divider);
+}
+.settings-dialog .setting-row strong {
+  font-size: 15px;
+  font-weight: 500;
+}
+.settings-dialog .setting-row p {
+  margin-top: 3px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.settings-dialog .setting-control select {
+  height: 32px;
+  padding: 0 28px 0 14px;
+  border: 0;
+  border-radius: 16px;
+  background-color: #e3e3e6;
+  color: var(--ob-text);
+  font-size: 13px;
+}
+.settings-dialog .setting-control .secondary-button {
+  height: 32px;
+  min-height: 0;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 16px;
+  background: #e3e3e6;
+  font-size: 13px;
+  font-weight: 600;
+}
+/* The artboard's 44×26 switch. */
+.settings-dialog .settings-switch,
+.settings-dialog .settings-switch span {
+  width: 44px;
+  height: 26px;
+}
+.settings-dialog .settings-switch span {
+  border-radius: 13px;
+  background: #d1d1d6;
+}
+.settings-dialog .settings-switch span::after {
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  box-shadow: none;
+}
+.settings-dialog .settings-switch input:checked + span {
+  background: var(--ob-primary);
+}
+.settings-dialog .settings-switch input:checked + span::after {
+  transform: translateX(18px);
+}
+.settings-dialog .settings-footnote {
+  margin: 0 4px;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+}
+.settings-dialog .settings-success {
+  margin: 0 4px;
+}
+
+@media (max-width: 760px) {
+  .settings-dialog {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+  }
+  .settings-dialog-frame {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .settings-dialog-nav {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid #ececee;
+  }
+  .settings-dialog-search,
+  .settings-dialog-nav .settings-nav-group > p {
+    display: none;
+  }
+  .settings-dialog-nav .settings-nav-group {
+    flex-direction: row;
+    gap: 4px;
+  }
+  .settings-dialog-nav button {
+    width: auto;
+    white-space: nowrap;
+  }
+  .settings-dialog-close {
+    top: 10px;
+    right: 10px;
+  }
+  .settings-dialog-header {
+    padding: 20px 16px 0;
+  }
+  .settings-dialog-body {
+    padding: 16px 16px 28px;
+  }
+  .settings-dialog .setting-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}

@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   type DesktopConnectionState,
   type DesktopLocalWorkerState,
@@ -18,18 +18,9 @@ import {
   updatePreferences,
   useWorkspacePreferences,
 } from "../workspace-preferences";
-import {
-  ApprovalIcon,
-  AuditIcon,
-  AutomationIcon,
-  BellIcon,
-  BotIcon,
-  CloseIcon,
-  NodeIcon,
-  SearchIcon,
-  SettingsIcon,
-} from "./Icons";
+import { CloseIcon, SearchIcon } from "./Icons";
 import { ModelSettingsScreen } from "./ModelSettingsScreen";
+import "./SettingsDialog.css";
 import { OpenBotMark } from "./OpenBotMark";
 import {
   ApprovalPolicySettings,
@@ -38,68 +29,84 @@ import {
   SettingsAutomations,
   SettingsGroup,
 } from "./SettingsSections";
+import { useModalDialog } from "./useModalDialog";
 
 export type DesktopSettingsSection =
   | "general"
-  | "models"
-  | "connection"
-  | "automations"
-  | "notifications"
+  | "notify"
+  | "model"
+  | "routines"
+  | "hosts"
   | "approvals"
   | "audit"
-  | "privacy"
   | "about";
 type Section = DesktopSettingsSection;
-const sections: Array<{ id: Section; label: string; icon: ReactNode; description: string }> = [
-  {
-    id: "general",
-    label: "常规",
-    icon: <SettingsIcon />,
+
+/** SettingsNav artboard icons (17px, 1.7 stroke). */
+const iconPaths: Record<Section, string> = {
+  general:
+    "M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1",
+  notify: "M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0",
+  model: "M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5",
+  routines: "M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 7v5l3 2",
+  hosts: "M5 4h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM8 20h8M12 16v4",
+  approvals: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4",
+  audit: "M9 5h11M9 12h11M9 19h11M4 5h.01M4 12h.01M4 19h.01",
+  about: "M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 11v5M12 8h.01",
+};
+
+const sections: Record<Section, { label: string; description: string; keywords: string }> = {
+  general: {
+    label: "通用",
     description: "让 OpenBot 按照你的习惯工作。",
+    keywords: "外观 字号 透明 密度 聊天 快捷键 动效 时间 侧栏 导航 恢复 默认",
   },
-  {
-    id: "models",
-    label: "模型服务",
-    icon: <BotIcon />,
-    description: "管理 Bot 使用的默认模型服务。",
-  },
-  {
-    id: "connection",
-    label: "工作电脑",
-    icon: <NodeIcon />,
-    description: "管理这台电脑的角色、连接与工作设备。",
-  },
-  {
-    id: "automations",
-    label: "自动任务",
-    icon: <AutomationIcon />,
-    description: "让 Bot 按计划在频道中完成工作。",
-  },
-  {
-    id: "notifications",
+  notify: {
     label: "通知",
-    icon: <BellIcon />,
     description: "OpenBot 不在前台时，用系统通知提醒你。",
+    keywords: "通知 提醒 系统 消息 回复 审批",
   },
-  {
-    id: "approvals",
+  model: {
+    label: "模型服务",
+    description: "管理 Bot 使用的默认模型服务。",
+    keywords: "API Kimi DeepSeek OpenAI Anthropic 模型 密钥 服务",
+  },
+  routines: {
+    label: "例行任务",
+    description: "让 Bot 按时间表自动做事，结果发到指定频道。",
+    keywords: "定时 计划 调度 自动 任务 例行",
+  },
+  hosts: {
+    label: "工作主机",
+    description: "管理这台电脑的角色、连接与工作主机。",
+    keywords: "连接 设备 绑定 权限 服务地址 工作组件 电脑 主机",
+  },
+  approvals: {
     label: "审批与权限",
-    icon: <ApprovalIcon />,
     description: "哪些操作需要你批准。规则由服务端执行，这里只能查看。",
+    keywords: "审批 批准 权限 插件 浏览器 确认 授权",
   },
-  {
-    id: "audit",
+  audit: {
     label: "审计记录",
-    icon: <AuditIcon />,
-    description: "查看频道、Bot 与任务的关键操作记录。",
+    description: "谁在什么时候做了什么。记录只能查看，不能修改或删除。",
+    keywords: "审计 记录 日志 历史 删除 重命名",
   },
-  {
-    id: "privacy",
-    label: "隐私与数据",
-    icon: <ApprovalIcon />,
-    description: "了解数据保存在哪里，以及操作由谁授权。",
+  about: {
+    label: "关于 OpenBot",
+    description: "你的 Bot 工作空间。",
+    keywords: "版本 平台 Electron Hermes 关于 隐私 数据 保存",
   },
-  { id: "about", label: "关于 OpenBot", icon: <OpenBotMark />, description: "你的 Bot 工作空间。" },
+};
+
+/**
+ * SettingsNav artboard groups. Sections without a working implementation yet (技能, 插件, 记忆,
+ * 员工浏览器, 账户与安全, 导入与导出) are added as they land instead of showing empty pages.
+ */
+const groups: ReadonlyArray<{ title: string; items: readonly Section[] }> = [
+  { title: "", items: ["general", "notify"] },
+  { title: "Bot 能力", items: ["model", "routines"] },
+  { title: "执行与安全", items: ["hosts", "approvals"] },
+  { title: "账户", items: ["audit", "about"] },
 ];
 
 export function DesktopSettingsScreen({
@@ -114,6 +121,7 @@ export function DesktopSettingsScreen({
   onBack,
   initialSection = "general",
   onAutomations,
+  counts,
 }: {
   error?: string | undefined;
   /** Absent in the plain Web entry, which has no Desktop plan, material or local worker. */
@@ -127,369 +135,368 @@ export function DesktopSettingsScreen({
   onBack(): void;
   initialSection?: DesktopSettingsSection;
   onAutomations?(): void;
+  /** Navigation badges, read by the owner from the Server; a missing count shows no badge. */
+  counts?: Partial<Record<Section, number>> | undefined;
 }) {
   const [section, setSection] = useState<Section>(initialSection);
   const [search, setSearch] = useState("");
+  const { dialogRef, closeDialog } = useModalDialog(onBack);
   useEffect(() => setSection(initialSection), [initialSection]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-run only when the section changes.
   useEffect(() => {
-    // On phones the section list is a horizontal pill row; keep the current one visible.
-    document
-      .querySelector(".settings-navigation nav [aria-current='page']")
+    // On phones the section list is a horizontal row; keep the current one visible.
+    dialogRef.current
+      ?.querySelector(".settings-dialog-nav [aria-current='page']")
       ?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
   }, [section]);
   const { values, saved } = useWorkspacePreferences();
   const [resetNotice, setResetNotice] = useState(false);
   const runtime = getOpenBotDesktopBridge()?.getRuntimeInfo?.();
-  const selected = sections.find((item) => item.id === section) ?? sections[0];
+  const selected = sections[section];
   const term = search.trim().toLocaleLowerCase();
-  const keywords: Record<Section, string> = {
-    general: "外观 字号 透明 密度 聊天 快捷键 动效 时间 侧栏 导航",
-    models: "API Kimi DeepSeek OpenAI Anthropic 模型 密钥 服务",
-    connection: "连接 设备 绑定 权限 服务地址 工作组件",
-    automations: "定时 计划 调度 自动 任务",
-    notifications: "通知 提醒 系统 消息 回复 审批",
-    approvals: "审批 批准 权限 插件 浏览器 确认 授权",
-    audit: "审计 记录 日志 历史 删除 重命名",
-    privacy: "隐私 数据 保存 恢复 默认 权限",
-    about: "版本 平台 Electron Hermes 关于",
-  };
   const desktop = plan !== undefined;
-  const matching = sections.filter(
-    (item) =>
-      (desktop || item.id !== "connection") &&
-      `${item.label} ${item.description} ${keywords[item.id]}`.toLocaleLowerCase().includes(term),
-  );
+  const available = (id: Section) =>
+    (desktop || id !== "hosts") &&
+    `${sections[id].label} ${sections[id].description} ${sections[id].keywords}`
+      .toLocaleLowerCase()
+      .includes(term);
+  const anyMatch = groups.some((group) => group.items.some(available));
   return (
-    <div className="desktop-settings-layout settings-refresh">
-      <aside className="settings-navigation">
-        <button className="settings-back" type="button" onClick={onBack}>
-          <span aria-hidden="true">←</span> 返回应用
-        </button>
-        <h1 className="settings-nav-title">设置</h1>
-        <search className="settings-search" aria-label="搜索设置">
-          <SearchIcon />
-          <input
-            aria-label="搜索设置"
-            type="search"
-            placeholder="搜索设置…"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </search>
-        <nav aria-label="设置分类">
-          {(
-            [
-              { label: "应用", ids: ["general", "notifications", "about"] },
-              { label: "工作空间", ids: ["models", "connection", "automations"] },
-              { label: "安全与记录", ids: ["approvals", "audit", "privacy"] },
-            ] as const
-          ).map((group) => {
-            const items = group.ids.flatMap((id) => matching.filter((item) => item.id === id));
+    <dialog
+      ref={dialogRef}
+      className="settings-dialog"
+      aria-labelledby="settings-section-title"
+      onMouseDown={(event) => {
+        // A press on the dimmed backdrop (the dialog element itself) closes settings.
+        if (event.target === event.currentTarget) closeDialog();
+      }}
+    >
+      <div className="settings-dialog-frame">
+        <nav className="settings-dialog-nav" aria-label="设置分区">
+          <label className="settings-dialog-search">
+            <SearchIcon />
+            <input
+              aria-label="搜索设置"
+              type="search"
+              placeholder="搜索设置"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </label>
+          {groups.map((group) => {
+            const items = group.items.filter(available);
             return items.length > 0 ? (
-              <div className="settings-nav-group" key={group.label}>
-                <p>{group.label}</p>
-                {items.map((item) => (
+              <div className="settings-nav-group" key={group.title || "app"}>
+                {group.title ? <p>{group.title}</p> : null}
+                {items.map((id) => (
                   <button
                     type="button"
-                    key={item.id}
-                    aria-current={section === item.id ? "page" : undefined}
+                    key={id}
+                    aria-current={section === id ? "page" : undefined}
                     onClick={() => {
-                      setSection(item.id);
+                      setSection(id);
                       setSearch("");
                     }}
                   >
-                    {item.icon}
-                    <span>{item.label}</span>
+                    <svg
+                      aria-hidden="true"
+                      width="17"
+                      height="17"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d={iconPaths[id]} />
+                    </svg>
+                    <span>{sections[id].label}</span>
+                    {counts?.[id] !== undefined ? <small>{counts[id]}</small> : null}
                   </button>
                 ))}
               </div>
             ) : null;
           })}
+          {!anyMatch && (
+            <p className="settings-search-empty" role="status">
+              没有匹配的设置，试试“模型”或“字号”。
+            </p>
+          )}
         </nav>
-        {matching.length === 0 && (
-          <p className="settings-search-empty" role="status">
-            没有匹配的设置，试试“模型”或“外观”。
-          </p>
-        )}
-        <div className="settings-brand">
-          <span>
-            {desktop ? "OpenBot Desktop" : "OpenBot"}
-            <small>此设备的设置</small>
-          </span>
-        </div>
-      </aside>
-      <section className="settings-content" aria-labelledby="settings-section-title">
-        <header className="settings-page-header">
-          <div>
-            <h2 id="settings-section-title">{selected?.label}</h2>
-            <p>{selected?.description}</p>
-          </div>
-          <button className="icon-button" aria-label="关闭设置" type="button" onClick={onBack}>
+        <section className="settings-dialog-content" aria-labelledby="settings-section-title">
+          <button
+            className="settings-dialog-close"
+            aria-label="关闭设置"
+            type="button"
+            onClick={closeDialog}
+          >
             <CloseIcon />
           </button>
-        </header>
-        <div className="settings-page-body">
-          {error && (
-            <p className="login-error" role="alert">
-              {error}
-            </p>
-          )}
-          {!saved && (
-            <p className="connection-warning" role="status">
-              当前偏好仅在本次打开期间有效，无法保存到此设备。
-            </p>
-          )}
-          {section === "general" && (
-            <>
-              <SettingsGroup title="外观" description="更少的干扰，刚好的信息。">
-                {material ? (
+          <header className="settings-dialog-header">
+            <h1 id="settings-section-title">{selected.label}</h1>
+            <p>{selected.description}</p>
+          </header>
+          <div className="settings-dialog-body">
+            {error && (
+              <p className="login-error" role="alert">
+                {error}
+              </p>
+            )}
+            {!saved && (
+              <p className="connection-warning" role="status">
+                当前偏好仅在本次打开期间有效，无法保存到此设备。
+              </p>
+            )}
+            {section === "general" && (
+              <>
+                <SettingsGroup title="外观" description="更少的干扰，刚好的信息。">
+                  {material ? (
+                    <SettingRow
+                      title="半透明侧栏"
+                      description={
+                        material.status === "reduced"
+                          ? "系统已启用减少透明度或高对比度，当前使用不透明背景。"
+                          : material.status === "unsupported" || material.status === "unavailable"
+                            ? "当前运行环境使用不透明背景；macOS 桌面应用支持原生材质。"
+                            : "让 macOS 原生材质融入左侧导航。"
+                      }
+                    >
+                      <Switch
+                        label="半透明侧栏"
+                        checked={
+                          values.sidebarTranslucent &&
+                          material.status !== "unsupported" &&
+                          material.status !== "unavailable"
+                        }
+                        disabled={
+                          material.status === "unsupported" || material.status === "unavailable"
+                        }
+                        onChange={(checked) => updatePreferences({ sidebarTranslucent: checked })}
+                      />
+                    </SettingRow>
+                  ) : null}
                   <SettingRow
-                    title="半透明侧栏"
-                    description={
-                      material.status === "reduced"
-                        ? "系统已启用减少透明度或高对比度，当前使用不透明背景。"
-                        : material.status === "unsupported" || material.status === "unavailable"
-                          ? "当前运行环境使用不透明背景；macOS 桌面应用支持原生材质。"
-                          : "让 macOS 原生材质融入左侧导航。"
-                    }
+                    title="显示左侧导航"
+                    description="查看频道、Bot 和工作空间入口，也可从顶部工具栏切换。"
                   >
                     <Switch
-                      label="半透明侧栏"
-                      checked={
-                        values.sidebarTranslucent &&
-                        material.status !== "unsupported" &&
-                        material.status !== "unavailable"
-                      }
-                      disabled={
-                        material.status === "unsupported" || material.status === "unavailable"
-                      }
-                      onChange={(checked) => updatePreferences({ sidebarTranslucent: checked })}
+                      label="显示左侧导航"
+                      checked={values.leftPanelOpen}
+                      onChange={(checked) => updatePreferences({ leftPanelOpen: checked })}
                     />
                   </SettingRow>
-                ) : null}
-                <SettingRow
-                  title="显示左侧导航"
-                  description="查看频道、Bot 和工作空间入口，也可从顶部工具栏切换。"
-                >
-                  <Switch
-                    label="显示左侧导航"
-                    checked={values.leftPanelOpen}
-                    onChange={(checked) => updatePreferences({ leftPanelOpen: checked })}
-                  />
-                </SettingRow>
-                <SettingRow
-                  title="显示右侧信息栏"
-                  description="查看用量、任务状态和待处理事项，也可从顶部工具栏切换。"
-                >
-                  <Switch
-                    label="显示右侧信息栏"
-                    checked={values.rightPanelOpen}
-                    onChange={(checked) => updatePreferences({ rightPanelOpen: checked })}
-                  />
-                </SettingRow>
-                <SettingRow title="界面密度" description="调整侧栏列表和消息之间的间距。">
-                  <select
-                    aria-label="界面密度"
-                    value={values.density}
-                    onChange={(event) =>
-                      updatePreferences({
-                        density: event.target.value === "compact" ? "compact" : "comfortable",
-                      })
-                    }
+                  <SettingRow
+                    title="显示右侧信息栏"
+                    description="查看用量、任务状态和待处理事项，也可从顶部工具栏切换。"
                   >
-                    <option value="comfortable">舒适</option>
-                    <option value="compact">紧凑</option>
-                  </select>
-                </SettingRow>
-                <SettingRow title="聊天字号" description="调整消息正文和输入区的文字大小。">
-                  <select
-                    aria-label="聊天字号"
-                    value={values.fontSize}
-                    onChange={(event) =>
-                      updatePreferences({
-                        fontSize: event.target.value === "large" ? "large" : "normal",
-                      })
-                    }
+                    <Switch
+                      label="显示右侧信息栏"
+                      checked={values.rightPanelOpen}
+                      onChange={(checked) => updatePreferences({ rightPanelOpen: checked })}
+                    />
+                  </SettingRow>
+                  <SettingRow title="界面密度" description="调整侧栏列表和消息之间的间距。">
+                    <select
+                      aria-label="界面密度"
+                      value={values.density}
+                      onChange={(event) =>
+                        updatePreferences({
+                          density: event.target.value === "compact" ? "compact" : "comfortable",
+                        })
+                      }
+                    >
+                      <option value="comfortable">舒适</option>
+                      <option value="compact">紧凑</option>
+                    </select>
+                  </SettingRow>
+                  <SettingRow title="聊天字号" description="调整消息正文和输入区的文字大小。">
+                    <select
+                      aria-label="聊天字号"
+                      value={values.fontSize}
+                      onChange={(event) =>
+                        updatePreferences({
+                          fontSize: event.target.value === "large" ? "large" : "normal",
+                        })
+                      }
+                    >
+                      <option value="normal">标准 · 14 px</option>
+                      <option value="large">较大 · 16 px</option>
+                    </select>
+                  </SettingRow>
+                  <SettingRow
+                    title="减少动态效果"
+                    description="关闭平滑滚动与界面动效。系统的减少动态效果设置始终优先。"
                   >
-                    <option value="normal">标准 · 14 px</option>
-                    <option value="large">较大 · 16 px</option>
-                  </select>
-                </SettingRow>
-                <SettingRow
-                  title="减少动态效果"
-                  description="关闭平滑滚动与界面动效。系统的减少动态效果设置始终优先。"
-                >
-                  <Switch
-                    label="减少动态效果"
-                    checked={values.reduceMotion}
-                    onChange={(checked) => updatePreferences({ reduceMotion: checked })}
-                  />
-                </SettingRow>
-              </SettingsGroup>
-              <SettingsGroup title="聊天" description="让输入与阅读符合你的习惯。">
-                <SettingRow title="发送消息" description="Shift + Enter 始终换行。">
-                  <select
-                    aria-label="发送消息快捷键"
-                    value={values.sendShortcut}
-                    onChange={(event) =>
-                      updatePreferences({
-                        sendShortcut: event.target.value === "modifier" ? "modifier" : "enter",
-                      })
-                    }
+                    <Switch
+                      label="减少动态效果"
+                      checked={values.reduceMotion}
+                      onChange={(checked) => updatePreferences({ reduceMotion: checked })}
+                    />
+                  </SettingRow>
+                </SettingsGroup>
+                <SettingsGroup title="聊天" description="让输入与阅读符合你的习惯。">
+                  <SettingRow title="发送消息" description="Shift + Enter 始终换行。">
+                    <select
+                      aria-label="发送消息快捷键"
+                      value={values.sendShortcut}
+                      onChange={(event) =>
+                        updatePreferences({
+                          sendShortcut: event.target.value === "modifier" ? "modifier" : "enter",
+                        })
+                      }
+                    >
+                      <option value="enter">Enter 发送</option>
+                      <option value="modifier">{shortcutLabel("Enter")} 发送</option>
+                    </select>
+                  </SettingRow>
+                  <SettingRow title="消息时间格式" description="用于频道消息的时间显示。">
+                    <select
+                      aria-label="消息时间格式"
+                      value={values.hour12 ? "12" : "24"}
+                      onChange={(event) =>
+                        updatePreferences({ hour12: event.target.value === "12" })
+                      }
+                    >
+                      <option value="24">24 小时制</option>
+                      <option value="12">12 小时制</option>
+                    </select>
+                  </SettingRow>
+                </SettingsGroup>
+                <SettingsGroup title="此设备的偏好">
+                  <SettingRow
+                    title="恢复界面默认设置"
+                    description="恢复侧栏、信息栏、字号、间距和聊天习惯。"
                   >
-                    <option value="enter">Enter 发送</option>
-                    <option value="modifier">{shortcutLabel("Enter")} 发送</option>
-                  </select>
-                </SettingRow>
-                <SettingRow title="消息时间格式" description="用于频道消息的时间显示。">
-                  <select
-                    aria-label="消息时间格式"
-                    value={values.hour12 ? "12" : "24"}
-                    onChange={(event) => updatePreferences({ hour12: event.target.value === "12" })}
-                  >
-                    <option value="24">24 小时制</option>
-                    <option value="12">12 小时制</option>
-                  </select>
-                </SettingRow>
-              </SettingsGroup>
-              <p className="settings-footnote">
-                偏好自动保存在这台设备。模型与服务配置由你的服务电脑管理。
-              </p>
-            </>
-          )}
-          {section === "models" && <ModelSettingsScreen embedded onDone={() => {}} />}
-          {section === "automations" && <SettingsAutomations onOpen={onAutomations} />}
-          {section === "notifications" && <NotificationSettings />}
-          {section === "approvals" && <ApprovalPolicySettings />}
-          {section === "audit" && <AuditLogSettings />}
-          {section === "connection" && plan && (
-            <>
-              <SettingsGroup title="当前连接">
-                <SettingRow
-                  title="这台电脑的用途"
-                  description={
-                    plan.mode === "host"
-                      ? "服务电脑 · 在本机保存数据并运行 OpenBot 服务"
-                      : "本地客户端 · 连接已有 OpenBot 服务"
-                  }
-                >
-                  <button className="secondary-button" type="button" onClick={onRole}>
-                    更改用途
-                  </button>
-                </SettingRow>
-                <SettingRow
-                  title="服务地址"
-                  description={
-                    connection?.status === "configured" ? connection.serverUrl : "尚未连接"
-                  }
-                >
-                  {plan.mode !== "host" ? (
-                    <button type="button" className="secondary-button" onClick={onConnection}>
-                      更改连接
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() => {
+                        updatePreferences(defaultPreferences);
+                        setResetNotice(true);
+                      }}
+                    >
+                      恢复默认
                     </button>
-                  ) : (
-                    <span className="settings-tag">仅本机</span>
+                  </SettingRow>
+                  {resetNotice && (
+                    <p className="settings-success" role="status">
+                      已恢复默认界面偏好。
+                    </p>
                   )}
-                </SettingRow>
-                <SettingRow
-                  title="服务运行"
-                  description={
-                    plan.mode === "host"
-                      ? "退出 OpenBot 会停止本机服务。重新打开后继续使用已保存的数据；自动任务需要服务保持运行。"
-                      : "自动任务在服务电脑上调度，客户端无需一直打开。"
-                  }
-                />
-              </SettingsGroup>
-              <SettingsGroup title="工作电脑" description="为 Bot 提供执行任务的设备。">
-                <SettingRow
-                  title="设备、绑定与权限"
-                  description="查看在线设备、绑定状态与待批准的权限。"
-                >
-                  <button className="secondary-button" type="button" onClick={onWorker}>
-                    管理工作电脑
-                  </button>
-                </SettingRow>
-                <SettingRow title="本机工作组件" description={workerDescription(localWorker)} />
-              </SettingsGroup>
-            </>
-          )}
-          {section === "privacy" && (
-            <>
-              <SettingsGroup title="数据保存位置">
-                <SettingRow
-                  title="模型密钥"
-                  description="在服务电脑上加密保存。界面只显示配置状态，不会读取已保存的明文密钥。"
-                />
-                <SettingRow
-                  title="频道、Bot 与任务"
-                  description="由你连接的 OpenBot 服务保存和管理。客户端显示当前账户有权访问的数据。"
-                />
-                <SettingRow
-                  title="操作与权限"
-                  description="技能需要审核，设备需要绑定；任务仍遵守服务端的路由和审批规则。"
-                />
-                <SettingRow
-                  title="用量统计"
-                  description="只有服务端记录的用量才会显示；没有记录时显示暂无数据。"
-                />
-              </SettingsGroup>
-              <SettingsGroup title="此设备的偏好">
-                <SettingRow
-                  title="恢复界面默认设置"
-                  description="恢复侧栏、信息栏、字号、间距和聊天习惯。"
-                >
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => {
-                      updatePreferences(defaultPreferences);
-                      setResetNotice(true);
-                    }}
+                </SettingsGroup>
+                <p className="settings-footnote">
+                  偏好自动保存在这台设备。模型与服务配置由你的服务电脑管理。
+                </p>
+              </>
+            )}
+            {section === "model" && <ModelSettingsScreen embedded onDone={() => {}} />}
+            {section === "routines" && <SettingsAutomations onOpen={onAutomations} />}
+            {section === "notify" && <NotificationSettings />}
+            {section === "approvals" && <ApprovalPolicySettings />}
+            {section === "audit" && <AuditLogSettings />}
+            {section === "hosts" && plan && (
+              <>
+                <SettingsGroup title="当前连接">
+                  <SettingRow
+                    title="这台电脑的用途"
+                    description={
+                      plan.mode === "host"
+                        ? "服务电脑 · 在本机保存数据并运行 OpenBot 服务"
+                        : "本地客户端 · 连接已有 OpenBot 服务"
+                    }
                   >
-                    恢复默认
-                  </button>
-                </SettingRow>
-                {resetNotice && (
-                  <p className="settings-success" role="status">
-                    已恢复默认界面偏好。
-                  </p>
-                )}
-              </SettingsGroup>
-            </>
-          )}
-          {section === "about" && (
-            <>
-              <div className="settings-about">
-                <OpenBotMark />
-                <h3>{desktop ? "OpenBot Desktop" : "OpenBot"}</h3>
-                <p>连接你的 Bot，让工作在频道中展开。</p>
-              </div>
-              <SettingsGroup title="应用信息">
-                <SettingRow
-                  title="运行平台"
-                  description={
-                    runtime?.platform === "darwin" ? "macOS" : (runtime?.platform ?? "浏览器")
-                  }
-                />
-                <SettingRow
-                  title="桌面运行时"
-                  description={runtime ? `Electron ${runtime.shellVersion}` : "Web"}
-                />
-                <SettingRow
-                  title="模型服务"
-                  description="在模型服务中查看支持的提供商与当前连接。"
-                />
-                <SettingRow
-                  title="员工进化"
-                  description="员工的持续学习与进化方向受到 Hermes Agent 启发。"
-                />
-              </SettingsGroup>
-            </>
-          )}
-        </div>
-      </section>
-    </div>
+                    <button className="secondary-button" type="button" onClick={onRole}>
+                      更改用途
+                    </button>
+                  </SettingRow>
+                  <SettingRow
+                    title="服务地址"
+                    description={
+                      connection?.status === "configured" ? connection.serverUrl : "尚未连接"
+                    }
+                  >
+                    {plan.mode !== "host" ? (
+                      <button type="button" className="secondary-button" onClick={onConnection}>
+                        更改连接
+                      </button>
+                    ) : (
+                      <span className="settings-tag">仅本机</span>
+                    )}
+                  </SettingRow>
+                  <SettingRow
+                    title="服务运行"
+                    description={
+                      plan.mode === "host"
+                        ? "退出 OpenBot 会停止本机服务。重新打开后继续使用已保存的数据；自动任务需要服务保持运行。"
+                        : "自动任务在服务电脑上调度，客户端无需一直打开。"
+                    }
+                  />
+                </SettingsGroup>
+                <SettingsGroup title="工作电脑" description="为 Bot 提供执行任务的设备。">
+                  <SettingRow
+                    title="设备、绑定与权限"
+                    description="查看在线设备、绑定状态与待批准的权限。"
+                  >
+                    <button className="secondary-button" type="button" onClick={onWorker}>
+                      管理工作电脑
+                    </button>
+                  </SettingRow>
+                  <SettingRow title="本机工作组件" description={workerDescription(localWorker)} />
+                </SettingsGroup>
+              </>
+            )}
+            {section === "about" && (
+              <>
+                <div className="settings-about">
+                  <OpenBotMark />
+                  <h3>{desktop ? "OpenBot Desktop" : "OpenBot"}</h3>
+                  <p>连接你的 Bot，让工作在频道中展开。</p>
+                </div>
+                <SettingsGroup title="应用信息">
+                  <SettingRow
+                    title="运行平台"
+                    description={
+                      runtime?.platform === "darwin" ? "macOS" : (runtime?.platform ?? "浏览器")
+                    }
+                  />
+                  <SettingRow
+                    title="桌面运行时"
+                    description={runtime ? `Electron ${runtime.shellVersion}` : "Web"}
+                  />
+                  <SettingRow
+                    title="模型服务"
+                    description="在模型服务中查看支持的提供商与当前连接。"
+                  />
+                  <SettingRow
+                    title="员工进化"
+                    description="员工的持续学习与进化方向受到 Hermes Agent 启发。"
+                  />
+                </SettingsGroup>
+                <SettingsGroup title="数据保存位置">
+                  <SettingRow
+                    title="模型密钥"
+                    description="在服务电脑上加密保存。界面只显示配置状态，不会读取已保存的明文密钥。"
+                  />
+                  <SettingRow
+                    title="频道、Bot 与任务"
+                    description="由你连接的 OpenBot 服务保存和管理。客户端显示当前账户有权访问的数据。"
+                  />
+                  <SettingRow
+                    title="操作与权限"
+                    description="技能需要审核，设备需要绑定；任务仍遵守服务端的路由和审批规则。"
+                  />
+                  <SettingRow
+                    title="用量统计"
+                    description="只有服务端记录的用量才会显示；没有记录时显示暂无数据。"
+                  />
+                </SettingsGroup>
+              </>
+            )}
+          </div>
+        </section>
+      </div>
+    </dialog>
   );
 }
 const supportText: Record<NotificationSupport, string> = {

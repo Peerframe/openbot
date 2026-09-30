@@ -175,7 +175,7 @@ afterEach(() => {
 });
 
 describe("Desktop workspace navigation continuity", () => {
-  it("hides and inerts the existing workspace during settings, retaining draft and scroll", async () => {
+  it("keeps the workspace visible but inert behind the settings dialog, retaining draft and scroll", async () => {
     const rendered = await renderComponent(<App />);
     try {
       await settleEffects();
@@ -190,10 +190,12 @@ describe("Desktop workspace navigation continuity", () => {
         rendered.container.querySelector<HTMLElement>(".sb-account summary")?.click(),
       );
       await interact(() => buttonByText(rendered.container, "设置").click());
-      expect(workspace.hidden).toBe(true);
+      expect(workspace.hidden).toBe(false);
       expect(workspace.hasAttribute("inert")).toBe(true);
       expect(rendered.container.querySelector(".app-shell")).toBe(shell);
-      expect(rendered.container.querySelector(".desktop-settings-layout")).not.toBeNull();
+      expect(rendered.container.querySelector("dialog.settings-dialog")?.hasAttribute("open")).toBe(
+        true,
+      );
       expect(api.subscribeToWorkspaceEvents).toHaveBeenCalledTimes(1);
       expect(api.subscribeToChannelEvents).toHaveBeenCalledTimes(1);
 

@@ -21,6 +21,7 @@ import {
   useSidebarOrganization,
 } from "../sidebar-organization";
 import { DeleteIdentityDialog, type DeleteIdentityTarget } from "./DeleteIdentityDialog";
+import type { DesktopSettingsSection } from "./DesktopSettingsScreen";
 import { BotIcon, HashIcon, PlusIcon, SearchIcon, SettingsIcon, SkillIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
 import { SidebarItemMenu, type SidebarMenuTarget } from "./SidebarItemMenu";
@@ -38,7 +39,7 @@ interface SidebarProps {
   runs: Run[];
   ownerName: string;
   onHome?: (() => void) | undefined;
-  onSettings?: ((section?: "general" | "about" | "automations") => void) | undefined;
+  onSettings?: ((section?: DesktopSettingsSection) => void) | undefined;
   selectedChannelId?: string | undefined;
   selectedBotId?: string | undefined;
   onSelectChannel(channelId: string): void;
@@ -557,7 +558,7 @@ function AccountMenu({
 }: {
   ownerName: string;
   onWork?: (() => void) | undefined;
-  onSettings?: ((section?: "general" | "about" | "automations") => void) | undefined;
+  onSettings?: ((section?: DesktopSettingsSection) => void) | undefined;
   onManageModels?: (() => void) | undefined;
   onLogout(): Promise<void>;
 }) {
