@@ -1356,40 +1356,11 @@ select:focus-visible {
 }
 
 /* Employee profile: the employee persists while Worker Hosts remain replaceable. */
-.employee-profile {
-  height: 100vh;
-  overflow-y: auto;
-  padding: 26px clamp(26px, 3.4vw, 50px) 52px;
-}
-.employee-profile-header {
-  display: grid;
-  grid-template-columns: 128px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 26px;
-  min-height: 142px;
-}
-.employee-profile-identity h1 {
-  margin: 0;
-  font-size: clamp(30px, 3vw, 42px);
-  font-weight: 740;
-  letter-spacing: -0.045em;
-}
-.employee-profile-identity > p {
-  margin: 7px 0 12px;
-  color: #535a63;
-  font-size: 15px;
-}
-.employee-status,
 .employee-run-state {
   display: inline-flex;
   align-items: center;
   gap: 7px;
 }
-.employee-status {
-  color: #4e555d;
-  font-size: 12px;
-}
-.employee-status i,
 .employee-run-state i {
   width: 7px;
   height: 7px;
@@ -1397,117 +1368,31 @@ select:focus-visible {
   border-radius: 50%;
   background: #9ca2aa;
 }
-.employee-status.idle i,
-.employee-status.completed i,
 .employee-run-state.completed i {
   background: var(--green);
 }
-.employee-status.running i,
 .employee-run-state.running i,
 .employee-run-state.assigned i,
 .employee-run-state.queued i {
   background: var(--blue);
 }
-.employee-status.failed i,
-.employee-status.blocked i,
 .employee-run-state.failed i,
 .employee-run-state.blocked i,
 .employee-run-state.cancelled i {
   background: #c94b43;
 }
-.employee-status.waiting_approval i,
 .employee-run-state.waiting_approval i {
   background: var(--orange);
 }
-.employee-profile-actions {
-  display: grid;
-  gap: 9px;
-  width: 158px;
-}
 /* Profile sections switch with pills, matching the plugin and settings destinations. */
-.employee-tabs {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 4px 0 2px;
-}
-.employee-tabs button {
-  min-height: 34px;
-  flex: 0 0 auto;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 17px;
-  color: #3a3a3c;
-  background: var(--fill);
-  cursor: pointer;
-  font-size: 14px;
-}
-.employee-tabs button:hover {
-  background: var(--fill-strong);
-}
-.employee-tabs button.selected {
-  color: #fff;
-  background: var(--ink-strong);
-  font-weight: 600;
-}
 .employee-profile-body {
   padding-top: 22px;
 }
-.employee-about {
-  padding: 0 4px 18px;
-}
-.employee-about h2,
 .employee-section-heading h2 {
   margin: 0;
   color: #111419;
   font-size: 15px;
   letter-spacing: -0.015em;
-}
-.employee-about p {
-  max-width: 780px;
-  margin: 8px 0 0;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.65;
-}
-.employee-stat-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  margin: 0 0 20px;
-  padding: 18px 0;
-  border-radius: 18px;
-  background: var(--fill);
-}
-.employee-stat-row > div {
-  min-width: 0;
-  padding: 0 20px;
-  text-align: center;
-}
-.employee-stat-row > div + div {
-  border-left: 1px solid #e3e3e6;
-}
-.employee-stat-row dt {
-  color: var(--muted);
-  font-size: 13px;
-}
-.employee-stat-row dd {
-  margin: 7px 0 0;
-  color: #111419;
-  font-size: 24px;
-  font-weight: 720;
-  letter-spacing: -0.03em;
-}
-.employee-overview-split {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: 16px;
-  margin-bottom: 20px;
-}
-.employee-overview-split > section {
-  min-width: 0;
-  padding: 18px 20px 20px;
-  border-radius: 18px;
-  background: var(--fill);
 }
 .employee-section-heading {
   margin-bottom: 18px;
@@ -1705,35 +1590,6 @@ select:focus-visible {
   padding-top: 12px;
   border-top: 1px solid #eceeef;
 }
-.employee-skill-graph {
-  display: grid;
-  grid-template-columns: 54px minmax(0, 1fr);
-  align-items: center;
-  gap: 14px;
-  min-height: 148px;
-}
-.employee-skill-graph > div {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-.employee-skill-graph article {
-  position: relative;
-  min-width: 0;
-  padding: 9px 10px 9px 20px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: #fff;
-}
-.employee-skill-graph article::before {
-  position: absolute;
-  top: 50%;
-  right: 100%;
-  width: 15px;
-  height: 1px;
-  background: #d8dde2;
-  content: "";
-}
 .skill-state {
   position: absolute;
   top: 13px;
@@ -1751,21 +1607,6 @@ select:focus-visible {
 }
 .skill-state.revoked {
   background: #c94b43;
-}
-.employee-skill-graph strong,
-.employee-skill-graph small {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.employee-skill-graph strong {
-  font-size: 10px;
-}
-.employee-skill-graph small {
-  margin-top: 4px;
-  color: #8a9199;
-  font-size: 8px;
 }
 .employee-skill-review-list {
   border-top: 1px solid var(--line);
@@ -1962,9 +1803,6 @@ select:focus-visible {
   color: #944038;
   font-size: 9px;
   line-height: 1.5;
-}
-.employee-recent-work {
-  padding: 20px 6px 0;
 }
 .employee-run-table {
   min-width: 0;
@@ -2212,98 +2050,6 @@ select:focus-visible {
   color: #69717a;
   font-size: 10px;
 }
-.employee-profile-details-form {
-  display: grid;
-  gap: 15px;
-  max-width: 760px;
-  margin-bottom: 24px;
-  padding: 18px;
-  border: 1px solid #dfe3e8;
-  border-radius: 8px;
-  background: #fbfbfc;
-}
-.employee-profile-details-form > header,
-.employee-profile-details-actions {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-}
-.employee-profile-details-form h3 {
-  margin: 0;
-  font-size: 13px;
-}
-.employee-profile-details-form header p {
-  margin: 5px 0 0;
-  color: #747b84;
-  font-size: 9px;
-  line-height: 1.5;
-}
-.employee-profile-details-form header > span,
-.employee-profile-details-form label small {
-  color: #8e949b;
-  font-size: 9px;
-}
-.employee-profile-details-form label {
-  display: grid;
-  grid-template-columns: 110px minmax(0, 1fr) 60px;
-  align-items: start;
-  gap: 12px;
-  color: #515860;
-  font-size: 10px;
-  font-weight: 650;
-}
-.employee-profile-details-form input,
-.employee-profile-details-form textarea {
-  width: 100%;
-  border: 1px solid #d6dbe1;
-  border-radius: 7px;
-  color: #24282d;
-  background: #fff;
-}
-.employee-profile-details-form input {
-  min-height: 36px;
-  padding: 0 10px;
-}
-.employee-profile-details-form textarea {
-  min-height: 108px;
-  padding: 9px 10px;
-  resize: vertical;
-}
-.employee-profile-details-form label small {
-  padding-top: 9px;
-  text-align: right;
-}
-.employee-profile-details-actions {
-  justify-content: flex-end;
-}
-.employee-profile-stale {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 11px 12px;
-  border: 1px solid #e4c69d;
-  border-radius: 7px;
-  color: #775127;
-  background: #fff9f0;
-}
-.employee-profile-stale p {
-  margin: 0;
-  font-size: 9px;
-  line-height: 1.5;
-}
-.employee-profile-stale button {
-  flex: 0 0 auto;
-  min-height: 30px;
-  padding: 0 10px;
-  font-size: 9px;
-}
-.employee-profile-details-actions button {
-  min-height: 34px;
-  padding: 0 13px;
-  font-size: 10px;
-}
 .employee-config-list {
   margin: 0;
   border-top: 1px solid var(--line);
@@ -2358,76 +2104,6 @@ select:focus-visible {
   color: var(--muted);
   font-size: 11px;
 }
-.employee-profile-rail > section {
-  padding: 0 0 28px;
-  border-bottom: 1px solid var(--line);
-}
-.employee-profile-rail > section + section {
-  padding-top: 28px;
-}
-.employee-profile-rail h2 {
-  margin: 0 0 18px;
-  font-size: 14px;
-}
-.employee-current-run {
-  display: grid;
-  grid-template-columns: 9px minmax(0, 1fr);
-  align-items: center;
-  gap: 12px;
-}
-.employee-current-run.empty {
-  grid-template-columns: 42px minmax(0, 1fr);
-}
-.employee-current-run.empty > span {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border: 1px dashed #cfd4da;
-  border-radius: 7px;
-  color: #676f78;
-}
-.employee-current-run strong,
-.employee-current-run small {
-  display: block;
-}
-.employee-current-run strong {
-  font-size: 11px;
-}
-.employee-current-run small {
-  margin-top: 4px;
-  color: #8e949b;
-  font-size: 9px;
-}
-.employee-host-facts {
-  display: grid;
-  gap: 16px;
-  margin: 0;
-}
-.employee-host-facts dt {
-  color: #858c94;
-  font-size: 9px;
-}
-.employee-host-facts dd {
-  margin: 5px 0 0;
-  color: #20252b;
-  font-size: 12px;
-  line-height: 1.45;
-}
-.employee-safety-note header {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-.employee-safety-note header h2 {
-  margin: 0;
-}
-.employee-safety-note p {
-  margin: 12px 0 0;
-  color: #5e666f;
-  font-size: 10px;
-  line-height: 1.6;
-}
 .message-avatar button {
   display: inline-grid;
   padding: 0;
@@ -2454,13 +2130,6 @@ select:focus-visible {
   .context-rail {
     padding-inline: 20px;
   }
-  .employee-profile {
-    padding-inline: 28px;
-  }
-  .employee-profile-header {
-    grid-template-columns: 104px minmax(0, 1fr) 140px;
-    gap: 20px;
-  }
 }
 
 @media (max-width: 960px) {
@@ -2477,14 +2146,6 @@ select:focus-visible {
   }
   .context-rail .attention {
     display: none;
-  }
-  .employee-profile {
-    height: auto;
-    min-height: 100vh;
-  }
-  .employee-profile-rail {
-    padding-top: 28px;
-    border-top: 1px solid var(--line);
   }
 }
 
@@ -2512,48 +2173,6 @@ select:focus-visible {
   }
   .workspace-main {
     padding: 24px 18px 28px;
-  }
-  .employee-profile {
-    padding-top: 18px;
-  }
-  .employee-profile-header {
-    grid-template-columns: 80px minmax(0, 1fr);
-    gap: 14px;
-    min-height: 116px;
-  }
-  .employee-profile-identity h1 {
-    font-size: 28px;
-  }
-  .employee-profile-identity > p {
-    margin-top: 4px;
-    font-size: 12px;
-  }
-  .employee-profile-actions {
-    grid-column: 1 / -1;
-    grid-template-columns: 1fr 1fr;
-    width: 100%;
-    padding-bottom: 12px;
-  }
-  .employee-tabs {
-    gap: 20px;
-  }
-  .employee-stat-row {
-    grid-template-columns: 1fr 1fr;
-  }
-  .employee-stat-row > div {
-    padding: 14px;
-  }
-  .employee-stat-row > div:nth-child(3) {
-    border-left: 0;
-  }
-  .employee-stat-row > div:nth-child(n + 3) {
-    border-top: 1px solid #e3e3e6;
-  }
-  .employee-overview-split {
-    grid-template-columns: 1fr;
-  }
-  .employee-skill-graph {
-    grid-template-columns: 48px minmax(0, 1fr);
   }
   .employee-skill-facts,
   .employee-skill-metadata-grid {
@@ -2595,14 +2214,6 @@ select:focus-visible {
   .employee-config-list > div {
     grid-template-columns: 1fr;
     gap: 7px;
-  }
-  .employee-profile-details-form label {
-    grid-template-columns: 1fr auto;
-  }
-  .employee-profile-details-form input,
-  .employee-profile-details-form textarea {
-    grid-column: 1 / -1;
-    grid-row: 2;
   }
   .employee-memory-fields,
   .employee-memory-list article {
@@ -3232,14 +2843,6 @@ select:focus-visible {
   width: 30px;
   height: 30px;
 }
-.robot-avatar.employee-profile-avatar {
-  width: 118px;
-  height: 118px;
-}
-.robot-avatar.employee-skill-avatar {
-  width: 54px;
-  height: 54px;
-}
 .modular-robot {
   display: block;
   width: 100%;
@@ -3318,20 +2921,6 @@ select:focus-visible {
 .robot-state-running .robot-signal,
 .robot-state-queued .robot-accent-band {
   animation: modular-robot-signal 1.2s ease-in-out infinite alternate;
-}
-
-@media (max-width: 1250px) {
-  .robot-avatar.employee-profile-avatar {
-    width: 96px;
-    height: 96px;
-  }
-}
-
-@media (max-width: 720px) {
-  .robot-avatar.employee-profile-avatar {
-    width: 76px;
-    height: 76px;
-  }
 }
 @keyframes modular-robot-signal {
   to {

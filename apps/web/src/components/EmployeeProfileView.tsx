@@ -1,18 +1,20 @@
-import type { CreateEmployeeMemoryInput, EmployeeMemory, EmployeeProfile } from "@openbot/domain";
+import type {
+  Channel,
+  CreateEmployeeMemoryInput,
+  EmployeeMemory,
+  EmployeeProfile,
+} from "@openbot/domain";
 import { type FormEvent, type ReactNode, useId, useRef, useState } from "react";
-import {
-  createEmployeeMemory,
-  deleteEmployeeMemory,
-  updateEmployeeMemory,
-  updateEmployeeProfileDetails,
-} from "../api";
+import { createEmployeeMemory, deleteEmployeeMemory, updateEmployeeMemory } from "../api";
 import { isActiveRun, runStatusLabel, runStatusSummary } from "../run-state";
 import { EmployeeEvolutionArchive } from "./EmployeeEvolutionArchive";
 import { EmployeeModelEditor } from "./EmployeeModelEditor";
+import { EmployeeSettingsForm } from "./EmployeeProfileRail";
 import { EmployeeSkillReview } from "./EmployeeSkillReview";
 import { KnowledgeReviewPanel } from "./KnowledgeReviewPanel";
 import { OpenBotMark } from "./OpenBotMark";
 import { RobotAvatar } from "./RobotAvatar";
+import "./EmployeeProfile.css";
 
 export type ProfileTab =
   | "overview"
@@ -58,6 +60,8 @@ export function EmployeeProfileView({
   onOpenBrowser,
   onManageModels,
   modelServicesVersion,
+  channels = [],
+  onRename,
 }: {
   headerAction?: ReactNode;
   initialTab?: ProfileTab;
@@ -71,6 +75,10 @@ export function EmployeeProfileView({
   onOpenBrowser?: (() => void) | undefined;
   onManageModels?: (() => void) | undefined;
   modelServicesVersion?: number | undefined;
+  /** Used only to name the channel of each recent run. */
+  channels?: readonly Channel[];
+  /** Enables the identity editor in 配置 for layouts where the settings rail is not shown. */
+  onRename?: ((name: string) => Promise<void>) | undefined;
 }) {
   const [tab, setTab] = useState<ProfileTab>(initialTab);
   const tabButtons = useRef<Array<HTMLButtonElement | null>>([]);
@@ -95,125 +103,230 @@ export function EmployeeProfileView({
   const { employee } = profile;
   return (
     <main className="workspace-main employee-profile">
-      <header className="employee-profile-header">
-        <RobotAvatar bot={employee} status={employee.status} className="employee-profile-avatar" />
-        <div className="employee-profile-identity">
-          <h1>{employee.name}</h1>
-          <p>{employee.role}</p>
-          <span className={`employee-status ${employee.status}`}>
-            <i />
-            {employeeStatusLabel(employee.status)}
+      <div className="ep-scroll">
+        <header className="ep-hero">
+          <span className="ep-avatar">
+            <RobotAvatar bot={employee} status={employee.status} />
           </span>
-        </div>
-        <div className="employee-profile-actions">
-          {employee.computerProfile === "docker-linux" && onOpenBrowser ? (
-            <button className="secondary-button" type="button" onClick={onOpenBrowser}>
-              打开浏览器
-            </button>
-          ) : null}
-          <button className="primary-button" type="button" onClick={onAssign}>
-            分配任务
-          </button>
-          <button className="secondary-button" type="button" onClick={onExport}>
-            导出模板
-          </button>
-          {headerAction}
-        </div>
-      </header>
-
-      <div className="employee-tabs" role="tablist" aria-label="员工档案页面">
-        {tabs.map((item, index) => (
-          <button
-            className={tab === item.id ? "selected" : ""}
-            type="button"
-            role="tab"
-            id={`${tabSetId}-${item.id}-tab`}
-            aria-controls={`${tabSetId}-${item.id}-panel`}
-            aria-selected={tab === item.id}
-            tabIndex={tab === item.id ? 0 : -1}
-            ref={(node) => {
-              tabButtons.current[index] = node;
-            }}
-            onClick={() => setTab(item.id)}
-            onKeyDown={(event) => {
-              const nextTab = profileTabForNavigationKey(item.id, event.key);
-              if (nextTab === undefined) return;
-              event.preventDefault();
-              setTab(nextTab);
-              tabButtons.current[tabs.findIndex((candidate) => candidate.id === nextTab)]?.focus();
-            }}
-            key={item.id}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-
-      <section
-        className="employee-tab-content"
-        role="tabpanel"
-        id={`${tabSetId}-${tab}-panel`}
-        aria-labelledby={`${tabSetId}-${tab}-tab`}
-      >
-        {tab === "overview" ? <Overview profile={profile} /> : null}
-        {tab === "evolution" ? <Evolution profile={profile} /> : null}
-        {tab === "skills" ? <Skills profile={profile} onProfileChanged={onProfileChanged} /> : null}
-        {tab === "live" ? <LiveWork profile={profile} /> : null}
-        {tab === "memory" ? (
-          <EmployeeMemoryPanel profile={profile} onProfileChanged={onProfileChanged} />
-        ) : null}
-        {tab === "records" ? <Records profile={profile} /> : null}
-        {tab === "configuration" ? (
-          <>
-            <EmployeeProfileDetailsEditor profile={profile} onProfileChanged={onProfileChanged} />
-            {["model", "docker-linux"].includes(profile.employee.computerProfile) ? (
-              <EmployeeModelEditor
-                key={profile.employee.id}
-                profile={profile}
-                onProfileChanged={onProfileChanged}
-                onManageModels={onManageModels}
-                modelServicesVersion={modelServicesVersion}
-              />
+          <div className="ep-identity">
+            <div className="ep-name">
+              <h1>{employee.name}</h1>
+              {employee.role ? <span className="ob-tag">{employee.role}</span> : null}
+            </div>
+            <p className={profile.details.description ? undefined : "is-empty"}>
+              {profile.details.description ||
+                "还没有描述。可以在右侧设置里补充这个 Bot 适合做什么。"}
+            </p>
+          </div>
+          <div className="ep-actions">
+            {employee.computerProfile === "docker-linux" && onOpenBrowser ? (
+              <button className="ob-pill" type="button" onClick={onOpenBrowser}>
+                打开浏览器
+              </button>
             ) : null}
-          </>
-        ) : null}
-      </section>
+            <button className="ob-pill is-primary" type="button" onClick={onAssign}>
+              分配工作
+            </button>
+            {headerAction}
+          </div>
+        </header>
+
+        <div className="ep-tabs" role="tablist" aria-label="档案分区">
+          {tabs.map((item, index) => (
+            <button
+              className="ob-filter"
+              type="button"
+              role="tab"
+              id={`${tabSetId}-${item.id}-tab`}
+              aria-controls={`${tabSetId}-${item.id}-panel`}
+              aria-selected={tab === item.id}
+              tabIndex={tab === item.id ? 0 : -1}
+              ref={(node) => {
+                tabButtons.current[index] = node;
+              }}
+              onClick={() => setTab(item.id)}
+              onKeyDown={(event) => {
+                const nextTab = profileTabForNavigationKey(item.id, event.key);
+                if (nextTab === undefined) return;
+                event.preventDefault();
+                setTab(nextTab);
+                tabButtons.current[
+                  tabs.findIndex((candidate) => candidate.id === nextTab)
+                ]?.focus();
+              }}
+              key={item.id}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        <section
+          className="employee-tab-content"
+          role="tabpanel"
+          id={`${tabSetId}-${tab}-panel`}
+          aria-labelledby={`${tabSetId}-${tab}-tab`}
+        >
+          {tab === "overview" ? (
+            <Overview profile={profile} channels={channels} onShowTab={setTab} />
+          ) : null}
+          {tab === "evolution" ? <Evolution profile={profile} /> : null}
+          {tab === "skills" ? (
+            <Skills profile={profile} onProfileChanged={onProfileChanged} />
+          ) : null}
+          {tab === "live" ? <LiveWork profile={profile} /> : null}
+          {tab === "memory" ? (
+            <EmployeeMemoryPanel profile={profile} onProfileChanged={onProfileChanged} />
+          ) : null}
+          {tab === "records" ? <Records profile={profile} /> : null}
+          {tab === "configuration" ? (
+            <ProfileSection
+              title="配置"
+              description="名称、标签和描述只用于说明，不授予权限；电脑权限与执行配置由 Server 单独管理。"
+            >
+              {onRename ? (
+                <div className="ep-config-identity">
+                  <EmployeeSettingsForm
+                    key={profile.employee.id}
+                    profile={profile}
+                    onRename={onRename}
+                    onProfileChanged={onProfileChanged}
+                  />
+                </div>
+              ) : null}
+              {["model", "docker-linux"].includes(profile.employee.computerProfile) ? (
+                <EmployeeModelEditor
+                  key={profile.employee.id}
+                  profile={profile}
+                  onProfileChanged={onProfileChanged}
+                  onManageModels={onManageModels}
+                  modelServicesVersion={modelServicesVersion}
+                />
+              ) : null}
+              <dl className="employee-config-list">
+                <div>
+                  <dt>固定执行配置</dt>
+                  <dd>{profile.configuration.executionProfile}</dd>
+                </div>
+                <div>
+                  <dt>可移植格式</dt>
+                  <dd>{profile.configuration.portabilityFormat}</dd>
+                </div>
+                <div>
+                  <dt>电脑权限</dt>
+                  <dd>不随员工模板导出，接收者必须在自己的 Server 重新授权</dd>
+                </div>
+              </dl>
+              <div className="ep-export">
+                <span>
+                  <strong>导出为模板</strong>
+                  <small>生成可分享的 Bot 模板；记忆和电脑权限不会随模板导出。</small>
+                </span>
+                <button className="ob-pill" type="button" onClick={onExport}>
+                  导出模板
+                </button>
+              </div>
+            </ProfileSection>
+          ) : null}
+        </section>
+      </div>
     </main>
   );
 }
 
-function Overview({ profile }: { profile: EmployeeProfile }) {
+function Overview({
+  profile,
+  channels,
+  onShowTab,
+}: {
+  profile: EmployeeProfile;
+  channels: readonly Channel[];
+  onShowTab(tab: ProfileTab): void;
+}) {
+  const channelNames = new Map(
+    channels.map((channel) => [channel.id, channel.directBotId ? "单独对话" : `# ${channel.name}`]),
+  );
+  const evolution = profile.evolution.slice(0, 3);
+  const runs = profile.records.runs.slice(0, 3);
   return (
-    <div className="employee-profile-body">
-      <section className="employee-about">
-        <h2>关于</h2>
-        <p>
-          {profile.details.description ||
-            `${profile.employee.name} 的职责是${profile.employee.role}。员工身份、技能和工作记录保存在 OpenBot Server；执行电脑可以更换，不会改变员工本身。`}
-        </p>
-      </section>
-
-      <dl className="employee-stat-row">
+    <div className="ep-overview">
+      <dl className="ep-stats">
         <EmployeeStat label="任务" value={profile.statistics.totalRuns} />
         <EmployeeStat label="已完成" value={profile.statistics.completedRuns} />
         <EmployeeStat label="失败" value={profile.statistics.failedRuns} />
         <EmployeeStat label="已验证技能" value={profile.statistics.verifiedSkills} />
       </dl>
 
-      <div className="employee-overview-split">
-        <section>
-          <SectionHeading title="最近进化" description="每一次变化都有来源和证据。" />
-          <EvolutionTimeline events={profile.evolution.slice(0, 4)} />
+      <div className="ep-split">
+        <section className="ep-card-section" aria-labelledby="ep-evolution-heading">
+          <header>
+            <h2 id="ep-evolution-heading">最近进化</h2>
+            <button type="button" onClick={() => onShowTab("evolution")}>
+              查看全部
+            </button>
+          </header>
+          <ul className="ep-list">
+            {evolution.map((event) => (
+              <li key={event.id}>
+                <strong>{event.title}</strong>
+                <small>
+                  {event.summary ? `${event.summary} · ` : ""}
+                  {formatShortDate(event.createdAt)}
+                </small>
+              </li>
+            ))}
+            {evolution.length === 0 ? (
+              <li className="is-empty">真实能力变化会在这里留下可追溯的记录。</li>
+            ) : null}
+          </ul>
         </section>
-        <section>
-          <SectionHeading title="技能图谱" description="技能不会自动获得电脑权限。" />
-          <SkillGraph profile={profile} />
+        <section className="ep-card-section" aria-labelledby="ep-work-heading">
+          <header>
+            <h2 id="ep-work-heading">最近工作</h2>
+            <button type="button" onClick={() => onShowTab("records")}>
+              查看全部
+            </button>
+          </header>
+          <ul className="ep-list">
+            {runs.map((run) => (
+              <li key={run.id} className="has-status">
+                <span>
+                  <strong>{run.title}</strong>
+                  <small>
+                    {channelNames.get(run.channelId) ?? "频道"} · {formatShortDate(run.createdAt)}
+                  </small>
+                </span>
+                <span className={`ep-run-status ${run.status}`}>{runStatusLabel(run.status)}</span>
+              </li>
+            ))}
+            {runs.length === 0 ? (
+              <li className="is-empty">分配第一项工作后，任务会出现在这里。</li>
+            ) : null}
+          </ul>
         </section>
       </div>
 
-      <section className="employee-recent-work">
-        <SectionHeading title="最近工作" description="来自 Server 的可审计任务记录。" />
-        <RunTable runs={profile.records.runs.slice(0, 5)} />
+      <section className="ep-skills" aria-labelledby="ep-skills-heading">
+        <h2 id="ep-skills-heading">技能</h2>
+        {profile.skills.length === 0 ? (
+          <p className="ep-muted">还没有技能。学习到的技能会先以候选状态出现，审核后才会使用。</p>
+        ) : (
+          <ul>
+            {profile.skills.map((skill) => (
+              <li key={skill.id} className={`ep-skill ${skill.state}`}>
+                {skill.state === "candidate" ? (
+                  `候选：${skill.name} · 待审核`
+                ) : (
+                  <>
+                    <i aria-hidden="true" />
+                    {skill.name}
+                    {skill.state === "verified" ? null : ` · ${skillStateLabel(skill.state)}`}
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );
@@ -649,144 +762,6 @@ function Records({ profile }: { profile: EmployeeProfile }) {
   );
 }
 
-export function EmployeeProfileDetailsEditor({
-  profile,
-  onProfileChanged,
-}: {
-  profile: EmployeeProfile;
-  onProfileChanged(): Promise<void>;
-}) {
-  const initialDetails = {
-    role: profile.employee.role,
-    description: profile.details.description,
-    revision: profile.details.revision,
-  };
-  const [baseline, setBaseline] = useState(initialDetails);
-  const [role, setRole] = useState(initialDetails.role);
-  const [description, setDescription] = useState(initialDetails.description);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string>();
-  const formId = useId();
-  const changed = role.trim() !== baseline.role || description.trim() !== baseline.description;
-  const serverChanged = profile.details.revision !== baseline.revision;
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSaving(true);
-    setError(undefined);
-    try {
-      const result = await updateEmployeeProfileDetails(profile.employee.id, {
-        role,
-        description,
-        expectedRevision: baseline.revision,
-      });
-      const nextBaseline = {
-        role: result.employee.role,
-        description: result.details.description,
-        revision: result.details.revision,
-      };
-      setBaseline(nextBaseline);
-      setRole(nextBaseline.role);
-      setDescription(nextBaseline.description);
-      await onProfileChanged();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "无法保存员工主页。请重新加载后再试。");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <ProfileSection
-      title="配置"
-      description="编辑员工的说明性主页；电脑权限与执行配置仍由 Server 单独管理。"
-    >
-      <form className="employee-profile-details-form" onSubmit={(event) => void submit(event)}>
-        <header>
-          <div>
-            <h3>个人主页</h3>
-            <p>职责和简介可帮助人类与总管正确分派工作，但不会授予技能或电脑权限。</p>
-          </div>
-          <span>修订 {baseline.revision}</span>
-        </header>
-        <label htmlFor={`${formId}-role`}>
-          <span>职责</span>
-          <input
-            id={`${formId}-role`}
-            value={role}
-            maxLength={160}
-            required
-            onChange={(event) => setRole(event.target.value)}
-          />
-          <small>{role.length}/160</small>
-        </label>
-        <label htmlFor={`${formId}-description`}>
-          <span>简介</span>
-          <textarea
-            id={`${formId}-description`}
-            value={description}
-            maxLength={2000}
-            placeholder="描述适合交给这名员工的工作，以及应当遵守的协作边界。"
-            onChange={(event) => setDescription(event.target.value)}
-          />
-          <small>{description.length}/2000</small>
-        </label>
-        {error ? (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        {serverChanged ? (
-          <div className="employee-profile-stale" role="status">
-            <p>这名员工已在另一台设备更新。请加载 Server 最新值后再继续。</p>
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={() => {
-                const latest = {
-                  role: profile.employee.role,
-                  description: profile.details.description,
-                  revision: profile.details.revision,
-                };
-                setBaseline(latest);
-                setRole(latest.role);
-                setDescription(latest.description);
-                setError(undefined);
-              }}
-            >
-              加载最新值
-            </button>
-          </div>
-        ) : null}
-        <footer className="employee-profile-details-actions">
-          <button
-            className="primary-button"
-            type="submit"
-            disabled={saving || !changed || serverChanged}
-          >
-            {saving ? "保存中…" : "保存主页"}
-          </button>
-        </footer>
-      </form>
-
-      <dl className="employee-config-list">
-        <div>
-          <dt>固定执行配置</dt>
-          <dd>{profile.configuration.executionProfile}</dd>
-        </div>
-        <div>
-          <dt>可移植格式</dt>
-          <dd>{profile.configuration.portabilityFormat}</dd>
-        </div>
-        <div>
-          <dt>电脑权限</dt>
-          <dd>不随员工模板导出，接收者必须在自己的 Server 重新授权</dd>
-        </div>
-      </dl>
-    </ProfileSection>
-  );
-}
-
 function EmployeeStat({ label, value }: { label: string; value: number }) {
   return (
     <div>
@@ -819,53 +794,6 @@ function ProfileSection({
       <SectionHeading title={title} description={description} />
       {children}
     </section>
-  );
-}
-
-function EvolutionTimeline({ events }: { events: EmployeeProfile["evolution"] }) {
-  if (events.length === 0) {
-    return <EmployeeEmpty title="暂无进化记录" copy="真实能力变化会形成可追溯事件。" />;
-  }
-  return (
-    <ol className="employee-evolution-timeline">
-      {events.map((event) => (
-        <li key={event.id}>
-          <time dateTime={event.createdAt}>{formatDate(event.createdAt)}</time>
-          <span aria-hidden="true" />
-          <div>
-            <strong>{event.title}</strong>
-            <p>{event.summary}</p>
-            <small>
-              来源：{event.source}
-              {event.evidence.length > 0 ? ` · ${event.evidence.length} 条证据` : ""}
-            </small>
-          </div>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-function SkillGraph({ profile }: { profile: EmployeeProfile }) {
-  if (profile.skills.length === 0) {
-    return <EmployeeEmpty title="还没有技能" copy="学习到的技能会先以候选状态出现。" />;
-  }
-  const skills = profile.skills.slice(0, 6);
-  return (
-    <div className="employee-skill-graph">
-      <RobotAvatar bot={profile.employee} compact className="employee-skill-avatar" />
-      <div>
-        {skills.map((skill) => (
-          <article key={skill.id}>
-            <span className={`skill-state ${skill.state}`} aria-hidden="true" />
-            <strong>{skill.name}</strong>
-            <small>
-              v{skill.version} · {skill.confidence}% · {skillStateLabel(skill.state)}
-            </small>
-          </article>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -937,20 +865,6 @@ function EmployeeEmpty({ title, copy }: { title: string; copy: string }) {
   );
 }
 
-function employeeStatusLabel(status: EmployeeProfile["employee"]["status"]) {
-  const labels: Record<EmployeeProfile["employee"]["status"], string> = {
-    idle: "待命",
-    running: "工作中",
-    waiting_approval: "等待审批",
-    blocked: "已阻塞",
-    human_takeover: "人工接管",
-    offline: "离线",
-    completed: "已完成",
-    failed: "失败",
-  };
-  return labels[status];
-}
-
 function skillStateLabel(state: EmployeeProfile["skills"][number]["state"]) {
   return state === "candidate"
     ? "候选"
@@ -1010,6 +924,15 @@ function formatDate(value: string) {
     day: "numeric",
     year: "numeric",
   }).format(new Date(value));
+}
+
+/** 「今天 10:24」 for today, otherwise 「9/27」, as in the artboard. */
+function formatShortDate(value: string) {
+  const date = new Date(value);
+  const now = new Date();
+  if (date.toDateString() === now.toDateString())
+    return `今天 ${new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit" }).format(date)}`;
+  return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
 function formatDateTime(value: string) {

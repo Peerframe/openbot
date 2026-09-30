@@ -65,6 +65,7 @@ import { ModelSettingsScreen } from "./components/ModelSettingsScreen";
 import { NewChatScreen, type NewChatStart } from "./components/NewChatScreen";
 import { NodeManagerDialog } from "./components/NodeManagerDialog";
 import { OpenBotMark } from "./components/OpenBotMark";
+import { RobotAvatar } from "./components/RobotAvatar";
 import { indexRunCollaboration } from "./components/RunCollaboration";
 import { RunInspector } from "./components/RunInspector";
 import { ShareConversationDialog } from "./components/ShareConversationDialog";
@@ -915,6 +916,11 @@ export function AuthenticatedWorkspace({
     return workspace?.channels.find((channel) => channel.directBotId === botId)?.id;
   }
 
+  async function renameEmployee(botId: string, name: string) {
+    await renameBot(botId, name);
+    await refresh();
+  }
+
   async function handleRenameItem(key: string, name: string) {
     if (key.startsWith("bot:")) await renameBot(key.slice(4), name);
     else await renameChannel(key.slice(8), name);
@@ -1029,6 +1035,8 @@ export function AuthenticatedWorkspace({
     ? workspace.bots.find((bot) => bot.id === browserBotId)
     : undefined;
   const sharedBot = sharedBotId ? workspace.bots.find((bot) => bot.id === sharedBotId) : undefined;
+  const profileTitle =
+    destination === "chat" && selectedEmployeeId ? employeeProfile?.employee : undefined;
   const panelToggle = (
     <button
       className="icon-button panel-toggle"
@@ -1093,8 +1101,8 @@ export function AuthenticatedWorkspace({
               showTitle
             />
           ) : (
-            <div className="toolbar-title">
-              <HashIcon />
+            <div className={profileTitle ? "toolbar-title toolbar-title-pill" : "toolbar-title"}>
+              {profileTitle ? <RobotAvatar bot={profileTitle} compact /> : <HashIcon />}
               <h1
                 title={
                   destination === "work"
@@ -1234,6 +1242,8 @@ export function AuthenticatedWorkspace({
           onManageModels={() => setModelServicesOpen(true)}
           modelServicesVersion={modelServicesVersion}
           onOpenBrowser={() => setBrowserBotId(selectedEmployeeId)}
+          channels={workspace.channels}
+          onRename={(name) => renameEmployee(selectedEmployeeId, name)}
         />
       ) : selectedChannel ? (
         <ChannelWorkspace
@@ -1284,7 +1294,14 @@ export function AuthenticatedWorkspace({
       <div id="workspace-details" className="workspace-details" hidden={!showDetails}>
         {showDetails &&
           (destination === "chat" && selectedEmployeeId ? (
-            <EmployeeProfileRail profile={employeeProfile} nodes={workspace.nodes} />
+            <EmployeeProfileRail
+              profile={employeeProfile}
+              nodes={workspace.nodes}
+              onBack={() => void openDirectConversation(selectedEmployeeId)}
+              onCollapse={() => updatePreferences({ rightPanelOpen: false })}
+              onRename={(name) => renameEmployee(selectedEmployeeId, name)}
+              onProfileChanged={() => refreshEmployeeProfile(selectedEmployeeId)}
+            />
           ) : (
             <ContextRail
               selectedChannelId={destination === "chat" ? selectedChannel?.id : undefined}

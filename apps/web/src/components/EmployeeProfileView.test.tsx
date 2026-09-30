@@ -1,11 +1,10 @@
 // @vitest-environment jsdom
 import type { EmployeeProfile } from "@openbot/domain";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it } from "vitest";
-import { interact, renderComponent, type RenderedComponent } from "../test/render-component";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { interact, type RenderedComponent, renderComponent } from "../test/render-component";
 import {
   EmployeeMemoryPanel,
-  EmployeeProfileDetailsEditor,
   EmployeeProfileView,
   profileTabForNavigationKey,
 } from "./EmployeeProfileView";
@@ -32,6 +31,28 @@ const profile: EmployeeProfile = {
   statistics: { totalRuns: 0, completedRuns: 0, failedRuns: 0, verifiedSkills: 0 },
   configuration: { executionProfile: "coder", portabilityFormat: "openbot.employee/v1" },
 };
+
+function skill(
+  id: string,
+  name: string,
+  state: EmployeeProfile["skills"][number]["state"],
+): EmployeeProfile["skills"][number] {
+  return {
+    id,
+    slug: id,
+    name,
+    description: "",
+    version: "1.0.0",
+    source: "learned",
+    state,
+    confidence: 80,
+    requiredCapabilities: [],
+    dependencyIds: [],
+    evidence: [],
+    acquiredAt: "2026-09-20T00:00:00.000Z",
+    updatedAt: "2026-09-20T00:00:00.000Z",
+  } as EmployeeProfile["skills"][number];
+}
 
 describe("EmployeeProfileView", () => {
   it("connects the active tab to a single labelled tab panel", () => {
@@ -73,16 +94,81 @@ describe("EmployeeProfileView", () => {
     expect(html).toContain("不会进入当前员工模板");
   });
 
-  it("renders a revision-bound descriptive profile editor without authority controls", () => {
-    const html = renderToStaticMarkup(
-      <EmployeeProfileDetailsEditor profile={profile} onProfileChanged={async () => undefined} />,
+  it("renders the artboard overview from Server records", async () => {
+    const onExport = vi.fn();
+    const detailed: EmployeeProfile = {
+      ...profile,
+      evolution: [
+        {
+          id: "e1",
+          botId: "employee-1",
+          type: "skill_verified",
+          title: "新增技能「读取更新日志」",
+          summary: "通过确定性测试",
+          source: "run",
+          evidence: [],
+          createdAt: "2026-09-28T12:00:00.000Z",
+        },
+      ],
+      skills: [skill("s1", "读取更新日志", "verified"), skill("s2", "社交媒体监控", "candidate")],
+      records: {
+        ...profile.records,
+        runs: [
+          {
+            id: "r1",
+            channelId: "c1",
+            botId: "employee-1",
+            instruction: "",
+            title: "整理本周竞品动态",
+            status: "failed",
+            executionProfile: "coder",
+            createdAt: "2026-09-26T12:00:00.000Z",
+          } as EmployeeProfile["records"]["runs"][number],
+        ],
+      },
+    };
+    const view = await renderComponent(
+      <EmployeeProfileView
+        profile={detailed}
+        channels={[
+          { id: "c1", name: "市场周报", botIds: [], createdAt: "2026-09-01T00:00:00.000Z" },
+        ]}
+        loading={false}
+        error={undefined}
+        onRetry={() => undefined}
+        onAssign={() => undefined}
+        onExport={onExport}
+        onProfileChanged={async () => undefined}
+      />,
     );
-
-    expect(html).toContain("个人主页");
-    expect(html).toContain("修订 1");
-    expect(html).toContain("Build and verify changes within the assigned repository.");
-    expect(html).toContain("不会授予技能或电脑权限");
-    expect(html).not.toContain('name="computerProfile"');
+    interactiveViews.push(view);
+    const text = view.container.textContent ?? "";
+    expect(view.container.querySelector(".ep-name .ob-tag")?.textContent).toBe("代码开发与验证");
+    expect(text).toContain("Build and verify changes within the assigned repository.");
+    expect(text).toContain("通过确定性测试 · 9/28");
+    expect(text).toContain("# 市场周报 · 9/26");
+    expect(view.container.querySelector(".ep-run-status.failed")?.textContent).toBe("失败");
+    expect(view.container.querySelector(".ep-skill.verified")?.textContent).toBe("读取更新日志");
+    expect(view.container.querySelector(".ep-skill.candidate")?.textContent).toBe(
+      "候选：社交媒体监控 · 待审核",
+    );
+    const all = view.container.querySelectorAll<HTMLButtonElement>(
+      ".ep-card-section header button",
+    );
+    await interact(() => all[1]?.click());
+    expect(view.container.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe(
+      "工作记录",
+    );
+    const configuration = [
+      ...view.container.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+    ].at(-1);
+    await interact(() => configuration?.click());
+    await interact(() =>
+      [...view.container.querySelectorAll("button")]
+        .find((button) => button.textContent === "导出模板")
+        ?.click(),
+    );
+    expect(onExport).toHaveBeenCalledOnce();
   });
 });
 
