@@ -625,3 +625,49 @@
   font-size: 11px;
   line-height: 1.5;
 }
+/* `/` menu: skills attached through the existing composer skill mechanism, then composer actions. */
+.app-shell .channel-workspace.channel-native .slash-options {
+  width: 360px;
+}
+.app-shell .channel-workspace.channel-native .slash-options > button > span {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: baseline;
+  gap: 8px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.app-shell .channel-workspace.channel-native .slash-options > button > span small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-shell .channel-workspace.channel-native .slash-options > button > em {
+  flex: 0 0 auto;
+  color: #8e8e93;
+  font-size: 12px;
+  font-style: normal;
+}
+.app-shell .channel-workspace.channel-native .slash-options > button > svg {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  color: #6e6e73;
+}
+.app-shell .channel-workspace.channel-native .slash-options > p {
+  margin: 0;
+  padding: 8px 9px;
+  color: #6e6e73;
+  font-size: 13px;
+}
+.app-shell .channel-workspace.channel-native .slash-options > .slash-hint {
+  padding: 4px 9px 2px;
+  color: #aeaeb2;
+  font-size: 11px;
+}
+.app-shell .channel-workspace.channel-native .slash-separator {
+  display: block;
+  height: 1px;
+  margin: 3px 8px;
+  background: #e8e8ea;
+}

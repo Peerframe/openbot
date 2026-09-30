@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 import type { Bot, Channel, Message, Run, SubmitTaskResult } from "@openbot/domain";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createMessage, listMessages, listRuns, subscribeToChannelEvents } from "../api";
+import {
+  createMessage,
+  getEmployeeProfile,
+  listMessages,
+  listRuns,
+  subscribeToChannelEvents,
+} from "../api";
 import { createConversationSession } from "../conversation-session";
 import { deferred, interact, renderComponent } from "../test/render-component";
 import { ChannelWorkspace } from "./ChannelWorkspace";
@@ -13,6 +19,7 @@ vi.mock("../plugin-api", () => ({
 
 vi.mock("../api", () => ({
   createMessage: vi.fn(),
+  getEmployeeProfile: vi.fn(),
   getRunOutput: vi.fn(async () => null),
   steerRun: vi.fn(),
   listMessages: vi.fn(),
@@ -520,6 +527,55 @@ describe("ChannelWorkspace recipient and attachment interactions", () => {
       expect(rendered.container.querySelector(".message-composer select")).toBeNull();
       await submit(rendered.container);
       expect(createMessage).toHaveBeenCalledWith("a", { content: "Review", botId: "bot-b" });
+    } finally {
+      await rendered.unmount();
+    }
+  });
+  it("attaches a reviewed skill from the / menu without leaving the command in the text", async () => {
+    const skill = (id: string, name: string, state: "verified" | "candidate") => ({
+      id,
+      slug: id,
+      name,
+      description: "",
+      version: "1.0.0",
+      source: "learned" as const,
+      state,
+      confidence: 1,
+      requiredCapabilities: [],
+      dependencyIds: [],
+      evidence: [],
+      acquiredAt: bot.createdAt,
+      updatedAt: bot.createdAt,
+    });
+    vi.mocked(getEmployeeProfile).mockResolvedValue({
+      skills: [skill("s-ok", "周报整理", "verified"), skill("s-new", "未审核技能", "candidate")],
+    } as unknown as Awaited<ReturnType<typeof getEmployeeProfile>>);
+    const session = createConversationSession();
+    const rendered = await renderComponent(multi(session));
+    try {
+      await typeText(rendered.container, "/");
+      const listbox = () => rendered.container.querySelector(".slash-options");
+      // Without a single @ recipient only the composer actions are offered.
+      expect(listbox()?.textContent).toContain("先 @ 提及一名 Bot");
+      expect(listbox()?.querySelectorAll('[role="option"]')).toHaveLength(2);
+      expect(getEmployeeProfile).not.toHaveBeenCalled();
+
+      await typeText(rendered.container, "Review @Coder");
+      await interact(() =>
+        rendered.container.querySelector<HTMLButtonElement>("#mention-bot-b")?.click(),
+      );
+      await typeText(rendered.container, "Review /周报");
+      expect(getEmployeeProfile).toHaveBeenCalledWith("bot-b", expect.any(AbortSignal));
+      const options = Array.from(listbox()?.querySelectorAll('[role="option"]') ?? []);
+      expect(options.map((option) => option.textContent)).toEqual([
+        expect.stringContaining("周报整理"),
+      ]);
+      await interact(() => (options[0] as HTMLButtonElement).click());
+      expect(listbox()).toBeNull();
+      expect(session.channel("a").getSnapshot().draft).toMatchObject({
+        text: "Review",
+        skills: [{ id: "s-ok", name: "周报整理", version: "1.0.0" }],
+      });
     } finally {
       await rendered.unmount();
     }
