@@ -323,7 +323,7 @@ function NotificationToggle() {
         role="switch"
         aria-checked={enabled}
         aria-label="通知"
-        className="rail-switch"
+        className="ob-switch"
         onClick={async () => {
           if (enabled) {
             updatePreferences({ notifyApprovals: false, notifyMessages: false });
@@ -337,9 +337,7 @@ function NotificationToggle() {
           setBlocked(false);
           updatePreferences({ notifyApprovals: true, notifyMessages: true });
         }}
-      >
-        <i aria-hidden="true" />
-      </button>
+      />
     </div>
   );
 }

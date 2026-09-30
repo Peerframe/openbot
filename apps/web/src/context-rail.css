@@ -63,7 +63,7 @@
 
 .usage-rail-connection.live i,
 .usage-rail-online {
-  background: #34c759;
+  background: var(--ob-online);
 }
 
 .usage-rail-connection.retrying i {
@@ -95,7 +95,7 @@
 
 .usage-rail-caption {
   margin: 6px 0 0;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -120,7 +120,7 @@
 }
 
 .usage-rail-workspace-overview > summary::marker {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 11px;
 }
 
@@ -131,7 +131,7 @@
   margin-top: 22px;
   padding: 22px 16px;
   border-radius: 16px;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   background: var(--fill);
   text-align: center;
 }
@@ -139,7 +139,7 @@
 .usage-rail-empty-state > svg {
   width: 20px;
   height: 20px;
-  color: #6e6e73;
+  color: var(--ob-text-secondary);
 }
 
 .usage-rail-empty-state p {
@@ -163,7 +163,7 @@
 }
 
 .usage-rail-section-heading > span {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
@@ -186,7 +186,7 @@
 }
 
 .usage-rail-task-metrics > div + div {
-  border-left: 1px solid #e3e3e6;
+  border-left: 1px solid var(--ob-divider);
 }
 
 .usage-rail-task-metrics dt {
@@ -238,7 +238,7 @@
 
 .usage-rail-run-list > .usage-rail-run + .usage-rail-run,
 .usage-rail-run-list > .usage-rail-result + .usage-rail-result {
-  border-top: 1px solid #e3e3e6;
+  border-top: 1px solid var(--ob-divider);
 }
 
 .usage-rail-run:hover {
@@ -298,16 +298,16 @@
 
 .usage-rail-run-dot.running,
 .usage-rail-run-dot.assigned {
-  background: #1f6fd6;
+  background: var(--ob-active);
 }
 
 .usage-rail-run-status.running,
 .usage-rail-run-status.assigned {
-  color: #1f6fd6;
+  color: var(--ob-active);
 }
 
 .usage-rail-run-dot.completed {
-  background: #34c759;
+  background: var(--ob-online);
 }
 
 .usage-rail-run-dot.waiting_approval,
@@ -423,7 +423,7 @@
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: #ececee;
+  background: var(--ob-fill-hover);
   box-shadow: 0 0 0 3px #fafafa;
 }
 .rail-identity-avatars .robot-avatar + .robot-avatar {
@@ -437,18 +437,18 @@
   overflow-wrap: anywhere;
 }
 .rail-identity span {
-  color: #6e6e73;
+  color: var(--ob-text-secondary);
   font-size: 13px;
   line-height: 1.5;
 }
 .rail-identity small {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
 }
 .rail-card {
   padding: 0 14px;
   border-radius: 16px;
-  background: #f0f0f2;
+  background: var(--ob-fill);
 }
 .rail-member {
   display: grid;
@@ -470,7 +470,7 @@
 }
 .rail-member + .rail-member,
 .rail-card > .usage-rail-computer + .usage-rail-computer {
-  border-top: 1px solid #e3e3e6;
+  border-top: 1px solid var(--ob-divider);
 }
 .rail-member .robot-avatar {
   width: 28px;
@@ -485,20 +485,20 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #6e6e73;
+  color: var(--ob-text-secondary);
   font-size: 12px;
 }
 .rail-member small i {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #34c759;
+  background: var(--ob-online);
 }
 .rail-member small.active {
-  color: #1f6fd6;
+  color: var(--ob-active);
 }
 .rail-member small.active i {
-  background: #1f6fd6;
+  background: var(--ob-active);
 }
 .rail-notify {
   display: grid;
@@ -508,7 +508,7 @@
   margin-top: 18px;
   padding: 14px 16px;
   border-radius: 16px;
-  background: #f0f0f2;
+  background: var(--ob-fill);
 }
 .rail-notify > span {
   display: flex;
@@ -521,37 +521,7 @@
   color: var(--ink);
 }
 .rail-notify small {
-  color: #6e6e73;
+  color: var(--ob-text-secondary);
   font-size: 12px;
   line-height: 1.45;
-}
-.rail-switch {
-  position: relative;
-  width: 44px;
-  height: 26px;
-  padding: 0;
-  border: 0;
-  border-radius: 13px;
-  background: #d1d1d6;
-  cursor: pointer;
-}
-.rail-switch[aria-checked="true"] {
-  background: #111;
-}
-.rail-switch i {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #fff;
-  transition: transform 120ms ease-out;
-}
-.rail-switch[aria-checked="true"] i {
-  transform: translateX(18px);
-}
-.rail-switch:focus-visible {
-  outline: 2px solid var(--blue);
-  outline-offset: 2px;
 }

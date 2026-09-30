@@ -4,8 +4,8 @@
 }
 .app-shell .channel-workspace.channel-native {
   /* Values follow the approved Main artboard (canvas Main.dc.html). */
-  --channel-body: #fcfcfc;
-  --channel-bubble: #f0f0f2;
+  --channel-body: var(--ob-page);
+  --channel-bubble: var(--ob-fill);
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -60,7 +60,7 @@
   padding: 6px 0;
   text-align: center;
   font-size: 13px;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
 }
 .app-shell .channel-workspace.channel-native .message-row {
   position: relative;
@@ -93,7 +93,7 @@
   place-items: center;
   border: 0;
   border-radius: 10px;
-  background: #ececee;
+  background: var(--ob-fill-hover);
   cursor: pointer;
 }
 .app-shell .channel-workspace.channel-native .message-avatar .robot-avatar {
@@ -135,16 +135,16 @@
   margin: 0 0 6px 4px;
   font-size: 12px;
   line-height: 16px;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
 }
 .app-shell .channel-workspace.channel-native .message-sender strong {
   font-size: 12px;
   font-weight: 400;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
 }
 .app-shell .channel-workspace.channel-native .message-sender time {
   font-size: 12px;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
 }
 .app-shell .channel-workspace.channel-native .message-sender time::before {
   content: " · ";
@@ -160,7 +160,7 @@
   padding: 12px 18px;
   border-radius: 22px;
   background: var(--channel-bubble);
-  color: #1d1d1f;
+  color: var(--ob-text);
   font-size: var(--chat-font-size, 15px);
   line-height: 1.7;
   overflow-wrap: anywhere;
@@ -169,8 +169,8 @@
   padding: 1px 6px;
   border: 1px solid #dcdcdf;
   border-radius: 6px;
-  background: #e6e6e8;
-  color: #c4302b;
+  background: var(--ob-selected);
+  color: var(--ob-code);
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 0.93em;
 }
@@ -219,7 +219,7 @@
 }
 .app-shell .channel-workspace.channel-native .message-row.human .rich-message {
   margin-left: auto;
-  background: #111;
+  background: var(--ob-primary);
   color: #fff;
   line-height: 1.6;
 }
@@ -246,7 +246,7 @@
   overflow: hidden;
   border: 0;
   background: transparent;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
   line-height: 16px;
   white-space: nowrap;
@@ -290,10 +290,10 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border: 1px solid #ececee;
+  border: 1px solid var(--ob-fill-hover);
   border-radius: 18px;
   background: #fff;
-  color: #6e6e73;
+  color: var(--ob-text-secondary);
   min-width: 0;
 }
 .app-shell .channel-workspace.channel-native .channel-work-item > .robot-avatar {
@@ -310,7 +310,7 @@
   padding: 0;
   background: transparent;
   font-size: 14px;
-  color: #1d1d1f;
+  color: var(--ob-text);
 }
 .app-shell .channel-workspace.channel-native .channel-work-item button strong {
   margin-right: 8px;
@@ -322,7 +322,7 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   font-size: 13px;
-  color: #6e6e73;
+  color: var(--ob-text-secondary);
 }
 .app-shell .channel-workspace.channel-native .channel-work-item.failed {
   background: #fff1e9;
@@ -386,7 +386,7 @@
   margin: 12px 24px 22px;
   /* One row: 38px + button on the left; microphone and 40px send button on the right. */
   padding: 8px 104px 8px 58px;
-  border: 1px solid #e3e3e6;
+  border: 1px solid var(--ob-divider);
   border-radius: 28px;
   background: #fff;
   box-shadow: 0 2px 10px rgb(0 0 0 / 4%);
@@ -416,7 +416,7 @@
   font-family: inherit;
   font-size: var(--chat-font-size, 15px);
   line-height: 24px;
-  color: #1d1d1f;
+  color: var(--ob-text);
   box-shadow: none;
 }
 .app-shell .channel-workspace.channel-native .message-composer textarea:focus {
@@ -440,7 +440,7 @@
   padding: 0;
   display: grid;
   place-items: center;
-  background: #f0f0f2;
+  background: var(--ob-fill);
   border-radius: 50%;
   color: #3a3a3c;
   list-style: none;
@@ -468,11 +468,11 @@
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: #111;
+  background: var(--ob-primary);
   color: #fff;
 }
 .app-shell .channel-workspace.channel-native .composer-send:disabled {
-  background: #d1d1d6;
+  background: var(--ob-switch-off);
   color: #fff;
 }
 .app-shell .channel-workspace.channel-native .composer-send svg {
@@ -700,7 +700,7 @@
 }
 .app-shell .channel-workspace.channel-native .slash-options > button > em {
   flex: 0 0 auto;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
   font-style: normal;
 }
@@ -708,12 +708,12 @@
   flex: 0 0 auto;
   width: 16px;
   height: 16px;
-  color: #6e6e73;
+  color: var(--ob-text-secondary);
 }
 .app-shell .channel-workspace.channel-native .slash-options > p {
   margin: 0;
   padding: 8px 9px;
-  color: #6e6e73;
+  color: var(--ob-text-secondary);
   font-size: 13px;
 }
 .app-shell .channel-workspace.channel-native .slash-options > .slash-hint {

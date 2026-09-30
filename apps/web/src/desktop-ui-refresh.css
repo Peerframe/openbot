@@ -853,7 +853,7 @@
 }
 .desktop-workspace .sidebar .sidebar-heading h2 {
   padding: 14px 12px 6px;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 14px;
   font-weight: 400;
   letter-spacing: 0;
@@ -867,15 +867,15 @@
   border-radius: 14px;
 }
 .desktop-workspace .sidebar .sidebar-list .sidebar-row:hover {
-  background: #ececee;
+  background: var(--ob-fill-hover);
 }
 .desktop-workspace .sidebar .sidebar-list .sidebar-row.selected {
-  background: #e6e6e8;
+  background: var(--ob-selected);
 }
 .desktop-workspace .sidebar .sidebar-list .sidebar-row strong {
   font-size: 15px;
   font-weight: 500;
-  color: #1d1d1f;
+  color: var(--ob-text);
 }
 .desktop-workspace .sidebar .sidebar-list .sidebar-row small {
   font-size: 13px;
@@ -887,14 +887,14 @@
   height: 40px;
   padding: 6px;
   border-radius: 12px;
-  background: #e6e6e8;
+  background: var(--ob-selected);
 }
 .desktop-workspace .sidebar .sidebar-list .channel-list-avatar {
   position: relative;
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: #e6e6e8;
+  background: var(--ob-selected);
 }
 .desktop-workspace .sidebar .sidebar-list .channel-list-avatar.has-members {
   background: transparent;
@@ -908,7 +908,7 @@
   height: 27px;
   padding: 3px;
   border-radius: 8px;
-  background: #e6e6e8;
+  background: var(--ob-selected);
 }
 .desktop-workspace
   .sidebar
@@ -928,23 +928,23 @@
   .channel-list-avatar.is-pair
   > .robot-avatar
   + .robot-avatar {
-  box-shadow: 0 0 0 2px #e6e6e8;
+  box-shadow: 0 0 0 2px var(--ob-selected);
 }
 /* Idle is the default; only active work earns a label, as in the artboard. */
 .desktop-workspace .sidebar .sidebar-list .bot-state:has(.status-dot.idle) {
   display: none;
 }
 .desktop-workspace .sidebar .sidebar-list .bot-state {
-  color: #1f6fd6;
+  color: var(--ob-active);
   font-size: 12px;
 }
 .desktop-workspace .sidebar .sidebar-unread-count {
-  background: #1f6fd6;
+  background: var(--ob-active);
 }
 .desktop-workspace .sidebar .sidebar-unread-dot {
   width: 9px;
   height: 9px;
-  background: #1f6fd6;
+  background: var(--ob-active);
 }
 .desktop-workspace .sidebar .sidebar-footer-row {
   gap: 10px;
@@ -952,14 +952,14 @@
 .desktop-workspace .sidebar .owner-menu > summary .owner-avatar {
   width: 44px;
   height: 44px;
-  border: 1px solid #e3e3e6;
+  border: 1px solid var(--ob-divider);
   background: #fff;
-  color: #6e6e73;
+  color: var(--ob-text-secondary);
   font-size: 14px;
 }
 .desktop-workspace .sidebar .sidebar-plugin-pill {
   height: 44px;
-  border: 1px solid #e3e3e6;
+  border: 1px solid var(--ob-divider);
   border-radius: 22px;
   background: #fff;
   font-size: 15px;
