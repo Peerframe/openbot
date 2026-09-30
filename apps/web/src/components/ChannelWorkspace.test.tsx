@@ -378,6 +378,32 @@ describe("ChannelWorkspace recipient and attachment interactions", () => {
       await rendered.unmount();
     }
   });
+  it("selects a recipient at the caret without losing the remaining draft", async () => {
+    vi.mocked(createMessage).mockResolvedValue(result("a"));
+    const rendered = await renderComponent(multi());
+    try {
+      await typeText(rendered.container, "Review @Coder carefully");
+      const input = rendered.container.querySelector("textarea") as HTMLTextAreaElement;
+      await interact(() => {
+        input.focus();
+        input.setSelectionRange(10, 10);
+        document.dispatchEvent(new Event("selectionchange", { bubbles: true }));
+      });
+      expect(rendered.container.querySelector("#mention-bot-b")).not.toBeNull();
+      await interact(() =>
+        rendered.container.querySelector<HTMLButtonElement>("#mention-bot-b")?.click(),
+      );
+      expect(input.value).toBe("Review carefully");
+      expect(input.selectionStart).toBe(6);
+      await submit(rendered.container);
+      expect(createMessage).toHaveBeenCalledWith("a", {
+        content: "Review carefully",
+        botId: "bot-b",
+      });
+    } finally {
+      await rendered.unmount();
+    }
+  });
   it("sends a group message without @ for Server-owned routing", async () => {
     vi.mocked(createMessage).mockResolvedValue(result("a"));
     const rendered = await renderComponent(multi());

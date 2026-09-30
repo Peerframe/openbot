@@ -36,6 +36,7 @@ import {
 import { composeTaskText } from "../composer-context";
 import { type ConversationSession, createConversationSession } from "../conversation-session";
 import { shortcutLabel } from "../desktop-shortcuts";
+import { findMentionQuery, type MentionQuery, removeMentionQuery } from "../mention-query";
 import {
   addRecipient,
   removeRecipient,
@@ -156,7 +157,16 @@ export function ChannelWorkspace({
   const mounted = useRef(false);
   const recipientIds = selectedRecipientIds(draft);
   const targetBot = recipientIds.length === 1 ? botsById.get(recipientIds[0] ?? "") : undefined;
-  const [mentionQuery, setMentionQuery] = useState<string>();
+  const [mention, setMention] = useState<MentionQuery>();
+  const mentionQuery = mention?.query;
+  const mentionCaret = useRef<number | undefined>(undefined);
+  useLayoutEffect(() => {
+    if (mentionCaret.current === undefined) return;
+    const caret = Math.min(mentionCaret.current, draft.text.length);
+    textarea.current?.focus();
+    textarea.current?.setSelectionRange(caret, caret);
+    mentionCaret.current = undefined;
+  }, [draft.text]);
   const [mentionIndex, setMentionIndex] = useState(0);
   const [contextError, setContextError] = useState<string>();
   const [skillChoices, setSkillChoices] = useState<
@@ -185,11 +195,14 @@ export function ChannelWorkspace({
   );
   function chooseEveryone() {
     try {
+      mentionCaret.current = mention
+        ? draft.text.slice(0, mention.start).trimEnd().length
+        : undefined;
       conversation.edit({
         ...selectEveryone(channel.botIds),
-        text: draft.text.replace(/(?:^|\s)@[^@\n]*$/, "").trimEnd(),
+        text: removeMentionQuery(draft.text, mention),
       });
-      setMentionQuery(undefined);
+      setMention(undefined);
       setMentionIndex(0);
       setContextError(undefined);
       textarea.current?.focus();
@@ -201,16 +214,19 @@ export function ChannelWorkspace({
   const contextLength = composeTaskText(draft.text, draft.attachments, draft.skills).length;
   function chooseMention(bot: Bot) {
     try {
+      mentionCaret.current = mention
+        ? draft.text.slice(0, mention.start).trimEnd().length
+        : undefined;
       conversation.edit({
         ...addRecipient(draft, bot.id, channel.botIds),
-        text: draft.text.replace(/(?:^|\s)@[^@\n]*$/, "").trimEnd(),
+        text: removeMentionQuery(draft.text, mention),
       });
       setContextError(undefined);
     } catch (cause) {
       setContextError(cause instanceof Error ? cause.message : "无法添加接收者。");
       return;
     }
-    setMentionQuery(undefined);
+    setMention(undefined);
     setMentionIndex(0);
     textarea.current?.focus();
   }
@@ -447,7 +463,7 @@ export function ChannelWorkspace({
     ) {
       if (event.key === "Escape") {
         event.preventDefault();
-        setMentionQuery(undefined);
+        setMention(undefined);
         return;
       }
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -838,10 +854,22 @@ export function ChannelWorkspace({
               }
               onChange={(event) => {
                 conversation.edit({ text: event.target.value });
-                const query = channel.directBotId
-                  ? undefined
-                  : /(?:^|\s)@([^@\n]*)$/.exec(event.target.value)?.[1];
-                setMentionQuery(query);
+                setMention(
+                  channel.directBotId
+                    ? undefined
+                    : findMentionQuery(event.target.value, event.target.selectionStart),
+                );
+                setMentionIndex(0);
+              }}
+              onSelect={(event) => {
+                setMention(
+                  channel.directBotId
+                    ? undefined
+                    : findMentionQuery(
+                        event.currentTarget.value,
+                        event.currentTarget.selectionStart,
+                      ),
+                );
                 setMentionIndex(0);
               }}
               onKeyDown={handleComposerKeyDown}

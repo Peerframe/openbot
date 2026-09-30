@@ -1,5 +1,5 @@
 import type { Bot, Channel, Run } from "@openbot/domain";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { indexActiveRunsByBot, runStatusLabel } from "../run-state";
 import { BotIcon, HashIcon, PlusIcon, SearchIcon, SettingsIcon, SkillIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
@@ -48,6 +48,7 @@ export function Sidebar({
 }: SidebarProps) {
   const [query, setQuery] = useState("");
   const term = query.trim().toLocaleLowerCase();
+  const botById = useMemo(() => new Map(bots.map((bot) => [bot.id, bot])), [bots]);
   const activeRunByBot = indexActiveRunsByBot(runs);
   const [logoutError, setLogoutError] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -142,12 +143,15 @@ export function Sidebar({
           placeholder="搜索频道或 Bot"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setQuery("");
+          }}
         />
       </search>
       <div className="sidebar-body">
         <section className="sidebar-section">
           <div className="sidebar-heading">
-            <h2>频道</h2>
+            <h2>频道和 Bots</h2>
           </div>
           <div className="sidebar-list">
             {channels
@@ -162,26 +166,24 @@ export function Sidebar({
                   onClick={() => onSelectChannel(channel.id)}
                   type="button"
                 >
-                  <span className="channel-list-avatar">
-                    <HashIcon />
-                  </span>
+                  <ChannelAvatar
+                    members={channel.botIds.flatMap((id) => {
+                      const bot = botById.get(id);
+                      return bot ? [bot] : [];
+                    })}
+                  />
                   <span className="channel-list-copy">
                     <strong>{channel.name}</strong>
+                    <small>{channel.description || `${channel.botIds.length} 名 Bot`}</small>
                   </span>
                 </button>
               ))}
             {!channels.some((channel) =>
               `${channel.name} ${channel.description}`.toLocaleLowerCase().includes(term),
             ) && <p className="sidebar-empty">{term ? "没有匹配的频道" : "点击顶部 + 创建频道"}</p>}
-          </div>
-        </section>
-        <section className="sidebar-section">
-          <div className="sidebar-heading">
-            <h2>Bots</h2>
-          </div>
-          <div className="sidebar-list">
+
             {bots
-              .filter((bot) => bot.name.toLocaleLowerCase().includes(term))
+              .filter((bot) => `${bot.name} ${bot.role}`.toLocaleLowerCase().includes(term))
               .map((bot) => {
                 const run = activeRunByBot.get(bot.id);
                 return (
@@ -206,7 +208,10 @@ export function Sidebar({
                     }}
                   >
                     <RobotAvatar bot={bot} compact status={run?.status ?? bot.status} />
-                    <span>{bot.name}</span>
+                    <span className="sidebar-bot-copy">
+                      <strong>{bot.name}</strong>
+                      {bot.role ? <small>{bot.role}</small> : null}
+                    </span>
                     <small className="bot-state">
                       <span
                         className={`status-dot ${run ? "active" : "idle"}`}
@@ -217,7 +222,7 @@ export function Sidebar({
                   </button>
                 );
               })}
-            {!bots.some((bot) => bot.name.toLocaleLowerCase().includes(term)) && (
+            {!bots.some((bot) => `${bot.name} ${bot.role}`.toLocaleLowerCase().includes(term)) && (
               <p className="sidebar-empty">{term ? "没有匹配的 Bot" : "点击顶部 + 创建 Bot"}</p>
             )}
           </div>
@@ -303,5 +308,18 @@ export function Sidebar({
         </details>
       </footer>
     </aside>
+  );
+}
+
+function ChannelAvatar({ members }: { members: Bot[] }) {
+  const [first, second] = members;
+  return (
+    <span
+      className={`channel-list-avatar${first ? " has-members" : ""}${second ? " is-pair" : ""}`}
+      aria-hidden="true"
+    >
+      {first ? <RobotAvatar bot={first} compact /> : <HashIcon />}
+      {second ? <RobotAvatar bot={second} compact /> : null}
+    </span>
   );
 }

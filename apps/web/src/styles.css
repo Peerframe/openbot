@@ -1,15 +1,22 @@
 :root {
-  color: #17191c;
-  background: #ffffff;
+  color: #1d1d1f;
+  background: #fcfcfc;
   font-family:
-    Inter, "SF Pro Text", "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei",
+    ui-sans-serif, system-ui, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   --blue: #1267ed;
   --blue-soft: #edf4ff;
-  --line: #e4e7eb;
-  --muted: #707780;
-  --panel: #f7f8fa;
+  --line: #e6e6e8;
+  --muted: #6e6e73;
+  --panel: #f0f0f2;
+  --ink: #1d1d1f;
+  --ink-strong: #111;
+  --fill: #f0f0f2;
+  --fill-strong: #e6e6e8;
+  --sidebar: #f5f5f6;
+  --danger: #b3261e;
   --green: #27a45b;
   --orange: #e87922;
 }
@@ -208,23 +215,23 @@ select:focus-visible {
   justify-content: center;
   gap: 7px;
   padding: 0 17px;
-  border-radius: 8px;
+  border-radius: 999px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 650;
 }
 .primary-button {
-  border: 1px solid var(--blue);
+  border: 1px solid var(--ink-strong);
   color: #fff;
-  background: var(--blue);
+  background: var(--ink-strong);
 }
 .primary-button:hover {
-  border-color: #0c58d2;
-  background: #0c58d2;
+  border-color: #333;
+  background: #333;
 }
 .secondary-button {
-  border: 1px solid #d2d7dd;
-  background: #fff;
+  border: 1px solid var(--line);
+  background: var(--fill);
 }
 .secondary-button:hover {
   border-color: #aeb6bf;
@@ -258,10 +265,10 @@ select:focus-visible {
 }
 .approval-card {
   padding: 14px;
-  border: 1px solid #e5c28d;
+  border: 1px solid var(--line);
   border-left: 3px solid var(--orange);
-  border-radius: 9px;
-  background: #fffaf3;
+  border-radius: 16px;
+  background: var(--panel);
 }
 .approval-card.risk-destructive,
 .approval-card.risk-privileged {
@@ -326,14 +333,14 @@ select:focus-visible {
   opacity: 0.6;
 }
 .approval-reject {
-  border: 1px solid #d8cfc6;
-  background: #fff;
+  border: 1px solid var(--line);
+  background: var(--fill-strong);
 }
 .approval-approve {
   overflow: hidden;
-  border: 1px solid #b85e1e;
+  border: 1px solid var(--ink-strong);
   color: #fff;
-  background: #c96722;
+  background: var(--ink-strong);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
