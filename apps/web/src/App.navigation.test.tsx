@@ -33,6 +33,8 @@ vi.mock("./api", async (importOriginal) => {
     listMessages: vi.fn(),
     listRuns: vi.fn(),
     createChannel: vi.fn(),
+    openBotConversation: vi.fn(),
+    createMessage: vi.fn(),
     subscribeToWorkspaceEvents: vi.fn(() => vi.fn()),
     subscribeToChannelEvents: vi.fn(() => vi.fn()),
   };
@@ -95,6 +97,21 @@ beforeEach(() => {
   vi.mocked(api.listRuns).mockResolvedValue([]);
   vi.mocked(api.getEmployeeProfile).mockRejectedValue(
     new Error("No skill profile in routing fixture"),
+  );
+  vi.mocked(api.openBotConversation).mockImplementation(async (botId) => {
+    const direct: Channel = {
+      ...channelA,
+      id: `direct-${botId}`,
+      name: bot.name,
+      description: "",
+      directBotId: botId,
+      botIds: [botId],
+    };
+    snapshot = { ...snapshot, channels: [...snapshot.channels, direct] };
+    return direct;
+  });
+  vi.mocked(api.createMessage).mockResolvedValue(
+    {} as Awaited<ReturnType<typeof api.createMessage>>,
   );
   vi.mocked(api.createChannel).mockImplementation(async (input) => {
     const channel = { ...channelA, ...input, id: "created-channel" };
@@ -238,7 +255,7 @@ describe("Desktop workspace navigation continuity", () => {
     }
   });
 
-  it("returns from the full-page plugin library and creates a channel through the single creation menu", async () => {
+  it("returns from the full-page plugin library and starts a conversation from 新建聊天", async () => {
     const rendered = await renderComponent(<App />);
     try {
       await settleEffects();
@@ -253,31 +270,33 @@ describe("Desktop workspace navigation continuity", () => {
       );
       await settleEffects();
       expect(composer(rendered.container).value).toBe("保留这个草稿");
+      // New artboard: 「+」 opens 新建聊天; the first message opens the Bot's conversation.
+      await interact(() => buttonByLabel(rendered.container, "新建聊天").click());
+      expect(title(rendered.container)).toBe("新建聊天");
       await interact(() =>
-        rendered.container.querySelector<HTMLElement>(".create-menu summary")?.click(),
+        Array.from(rendered.container.querySelectorAll<HTMLButtonElement>(".new-chat-option"))
+          .find((option) => option.textContent?.includes(bot.name))
+          ?.click(),
       );
-      await interact(() => buttonByText(rendered.container, "创建频道").click());
-      const dialog = rendered.container.querySelector("dialog");
-      const name = dialog?.querySelector("input");
-      if (!(name instanceof HTMLInputElement)) throw new Error("Create channel dialog missing");
-      await setInputValue(name, "新的频道");
-      const checkbox = dialog?.querySelector<HTMLInputElement>('input[type="checkbox"]');
-      await interact(() => checkbox?.click());
+      const message = rendered.container.querySelector<HTMLTextAreaElement>(
+        ".new-chat-composer textarea",
+      );
+      if (!message) throw new Error("New chat composer missing");
+      await enterDraft(message, "开始本周工作");
       await interact(() =>
-        dialog
-          ?.querySelector("form")
+        rendered.container
+          .querySelector(".new-chat-composer")
           ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
       );
       await settleEffects();
-      expect(api.createChannel).toHaveBeenCalledWith({
-        name: "新的频道",
-        description: "",
-        botIds: [bot.id],
+      expect(api.openBotConversation).toHaveBeenCalledWith(bot.id);
+      expect(api.createMessage).toHaveBeenCalledWith(`direct-${bot.id}`, {
+        content: "开始本周工作",
+        botId: bot.id,
       });
-      expect(title(rendered.container)).toBe("新的频道");
-      expect(rendered.container.querySelector("dialog")).toBeNull();
-      expect(composer(rendered.container).id).toBe("message-created-channel");
-      expect(document.activeElement).toBe(composer(rendered.container));
+      expect(api.createChannel).not.toHaveBeenCalled();
+      expect(title(rendered.container)).toBe(bot.name);
+      await interact(() => buttonByLabel(rendered.container, "后退").click());
       await interact(() => buttonByLabel(rendered.container, "后退").click());
       await settleEffects();
       expect(composer(rendered.container).value).toBe("保留这个草稿");
@@ -385,9 +404,9 @@ function title(container: HTMLElement) {
 }
 
 function channelButton(container: HTMLElement, name: string): HTMLButtonElement {
-  const button = Array.from(
-    container.querySelectorAll<HTMLButtonElement>(".sb-row"),
-  ).find((item) => item.querySelector("strong")?.textContent === name);
+  const button = Array.from(container.querySelectorAll<HTMLButtonElement>(".sb-row")).find(
+    (item) => item.querySelector("strong")?.textContent === name,
+  );
   if (!button) throw new Error(`Channel button missing: ${name}`);
   return button;
 }
@@ -482,10 +501,10 @@ it("keeps the creation draft mounted while configuring model services", async ()
   const rendered = await renderComponent(<App />);
   try {
     await settleEffects();
+    await interact(() => buttonByLabel(rendered.container, "新建聊天").click());
     await interact(() =>
-      rendered.container.querySelector<HTMLElement>(".create-menu summary")?.click(),
+      rendered.container.querySelector<HTMLButtonElement>("#new-chat-option-0")?.click(),
     );
-    await interact(() => buttonByText(rendered.container, "创建 Bot").click());
     const creation = rendered.container.querySelector(".create-dialog");
     const name = creation?.querySelector<HTMLInputElement>("input");
     if (!name) throw new Error("Create Bot name input missing");

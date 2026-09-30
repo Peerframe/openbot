@@ -27,7 +27,7 @@ data (hidden, disabled or read-only) and never fakes it.
 | 1 | Channel conversation, title pill, composer, right rail | Main | In review: PR #109 |
 | 2 | Shared sidebar, account menu, context menus, groups and search | Sidebar, Menu, ContextMenu, Search | In review (stacked on PR #109) |
 | 3 | `/` menu: skill descriptions and the design's actions (members, new routine, settings sections) | Slash | In review (stacked) |
-| 4 | New chat: recipient chips, Bot picker with ⌘1–9, channel created on first message | New | Planned |
+| 4 | New chat: recipient chips, Bot picker with ⌘1–9, channel created on first message | New | In review (stacked) |
 | 5 | Bot profile: header, pill tabs, stats card, recent evolution/work, skills; settings rail (name, tag, description, notifications, runtime) | Profile | Planned |
 | 6 | Settings dialog shell and grouped navigation with counts | Settings, SettingsNav | Planned |
 | 7 | Settings sections with existing data: 模型服务, 技能, 插件, 例行任务, 记忆, 工作主机, 导入与导出, 审计记录 | Settings* | Planned |

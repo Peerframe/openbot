@@ -50,6 +50,9 @@ interface SidebarProps {
   onRenameItem?: ((key: SidebarItemKey, name: string) => Promise<void>) | undefined;
   onDeleteItem?: ((target: DeleteIdentityTarget) => Promise<void>) | undefined;
   onAddBotToChannel?: ((channelId: string, botId: string) => Promise<void>) | undefined;
+  /** New artboard: 「+」 opens a new chat instead of the create menu. */
+  onNewChat?: (() => void) | undefined;
+  newChatActive?: boolean;
   onCreateBot(): void;
   onCreateChannel(): void;
   onManageNodes(): void;
@@ -76,6 +79,8 @@ export function Sidebar({
   onRenameItem,
   onDeleteItem,
   onAddBotToChannel,
+  onNewChat,
+  newChatActive = false,
   onCreateBot,
   onCreateChannel,
   onManageModels,
@@ -407,37 +412,50 @@ export function Sidebar({
       }}
     >
       <div className="sb-top">
-        <details className="sb-create">
-          <summary aria-label="新建" title="新建">
+        {onNewChat ? (
+          <button
+            type="button"
+            className="sb-new"
+            aria-label="新建聊天"
+            title="新建聊天"
+            aria-pressed={newChatActive}
+            onClick={onNewChat}
+          >
             <PlusIcon />
-          </summary>
-          <div className="ob-menu sb-popover" role="menu">
-            <button
-              type="button"
-              role="menuitem"
-              className="ob-menu-item"
-              onClick={() => {
-                dismiss();
-                onCreateChannel();
-              }}
-            >
-              <HashIcon />
-              创建频道
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className="ob-menu-item"
-              onClick={() => {
-                dismiss();
-                onCreateBot();
-              }}
-            >
-              <BotIcon />
-              创建 Bot
-            </button>
-          </div>
-        </details>
+          </button>
+        ) : (
+          <details className="sb-create">
+            <summary aria-label="新建" title="新建">
+              <PlusIcon />
+            </summary>
+            <div className="ob-menu sb-popover" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                className="ob-menu-item"
+                onClick={() => {
+                  dismiss();
+                  onCreateChannel();
+                }}
+              >
+                <HashIcon />
+                创建频道
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="ob-menu-item"
+                onClick={() => {
+                  dismiss();
+                  onCreateBot();
+                }}
+              >
+                <BotIcon />
+                创建 Bot
+              </button>
+            </div>
+          </details>
+        )}
       </div>
       <search className={`ob-search sb-search${term ? " is-active" : ""}`}>
         <SearchIcon />
@@ -459,6 +477,16 @@ export function Sidebar({
         ) : null}
       </search>
       <nav className="sb-list" aria-label="对话列表">
+        {newChatActive ? (
+          <div className="sb-row is-selected sb-new-row" aria-current="page">
+            <span className="sb-avatar is-new" aria-hidden="true">
+              <PlusIcon />
+            </span>
+            <span className="sb-text">
+              <strong className="sb-name">新建聊天</strong>
+            </span>
+          </div>
+        ) : null}
         {body}
       </nav>
       {menuTarget ? (

@@ -9,8 +9,10 @@ import type {
 } from "@openbot/domain";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import {
+  ApiError,
   createBot,
   createChannel,
+  createMessage,
   decideApproval,
   deleteBot,
   deleteChannel,
@@ -60,6 +62,7 @@ import { LoginScreen } from "./components/LoginScreen";
 import { MobileNavigation, type MobilePanel } from "./components/MobileNavigation";
 import { ModelConnectionsDialog } from "./components/ModelConnectionsDialog";
 import { ModelSettingsScreen } from "./components/ModelSettingsScreen";
+import { NewChatScreen, type NewChatStart } from "./components/NewChatScreen";
 import { NodeManagerDialog } from "./components/NodeManagerDialog";
 import { OpenBotMark } from "./components/OpenBotMark";
 import { indexRunCollaboration } from "./components/RunCollaboration";
@@ -594,9 +597,10 @@ export function AuthenticatedWorkspace({
   onLogout(): Promise<void>;
 }) {
   const { values: preferences } = useWorkspacePreferences();
-  const showDetails = preferences.rightPanelOpen;
   const navigation = useWorkspaceNavigation();
   const location = navigation.location;
+  // The New artboard has no right rail; everywhere else it follows the Owner's preference.
+  const showDetails = preferences.rightPanelOpen && location.kind !== "new";
   const destination =
     location.kind === "automations" || location.kind === "skills" || location.kind === "work"
       ? location.kind
@@ -784,7 +788,7 @@ export function AuthenticatedWorkspace({
     canGoForward: navigation.canGoForward,
     onBack: navigation.back,
     onForward: navigation.forward,
-    onNewConversation: () => setDialog("channel"),
+    onNewConversation: () => navigation.navigate({ kind: "new" }),
     onSettings,
   });
 
@@ -851,6 +855,41 @@ export function AuthenticatedWorkspace({
   async function handleJoinBot(botId: string) {
     if (selectedChannelId === undefined) return;
     await handleAddBotToChannel(selectedChannelId, botId);
+  }
+
+  /** New artboard: the first message opens a direct conversation or creates the channel. */
+  async function handleStartChat({ botIds, channelName, text }: NewChatStart) {
+    let channel: Channel;
+    if (botIds.length === 1) {
+      channel = await openBotConversation(botIds[0] ?? "");
+    } else {
+      const base = (
+        channelName ??
+        botIds.map((id) => workspace?.bots.find((bot) => bot.id === id)?.name ?? "Bot").join("、")
+      ).slice(0, 76);
+      let created: Channel | undefined;
+      for (let attempt = 1; !created; attempt += 1) {
+        try {
+          created = await createChannel({
+            name: attempt === 1 ? base : `${base} ${attempt}`,
+            description: "",
+            botIds,
+          });
+        } catch (cause) {
+          // An auto-generated name may already exist; a chosen name is the Owner's to change.
+          if (channelName || attempt >= 5 || !(cause instanceof ApiError) || cause.status !== 409)
+            throw cause;
+        }
+      }
+      channel = created;
+    }
+    projectChannel(channel);
+    await createMessage(
+      channel.id,
+      botIds.length === 1 ? { content: text, botId: botIds[0] } : { content: text, botIds },
+    );
+    selectChannel(channel.id);
+    await refresh();
   }
 
   async function handleAddBotToChannel(channelId: string, botId: string) {
@@ -998,7 +1037,7 @@ export function AuthenticatedWorkspace({
       title={showDetails ? "收起信息栏" : "打开信息栏"}
       aria-expanded={showDetails}
       aria-controls="workspace-details"
-      onClick={() => updatePreferences({ rightPanelOpen: !showDetails })}
+      onClick={() => updatePreferences({ rightPanelOpen: !preferences.rightPanelOpen })}
     >
       <PanelRightIcon />
     </button>
@@ -1066,7 +1105,9 @@ export function AuthenticatedWorkspace({
                         ? "技能广场"
                         : selectedEmployeeId
                           ? (employeeProfile?.employee.name ?? "Bot 档案")
-                          : "频道聊天"
+                          : location.kind === "new"
+                            ? "新建聊天"
+                            : "频道聊天"
                 }
               >
                 {destination === "work"
@@ -1077,7 +1118,9 @@ export function AuthenticatedWorkspace({
                       ? "技能广场"
                       : selectedEmployeeId
                         ? (employeeProfile?.employee.name ?? "Bot 档案")
-                        : "频道聊天"}
+                        : location.kind === "new"
+                          ? "新建聊天"
+                          : "频道聊天"}
               </h1>
             </div>
           )}
@@ -1141,6 +1184,8 @@ export function AuthenticatedWorkspace({
           onRenameItem={handleRenameItem}
           onDeleteItem={handleDeleteItem}
           onAddBotToChannel={handleAddBotToChannel}
+          onNewChat={() => navigation.navigate({ kind: "new" })}
+          newChatActive={location.kind === "new"}
           onCreateBot={() => setDialog("bot")}
           onCreateChannel={() => setDialog("channel")}
           onManageNodes={() => setDialog("node")}
@@ -1221,6 +1266,12 @@ export function AuthenticatedWorkspace({
           }
           onOpenSettings={onSettings ? (section) => onSettings(section) : undefined}
           onOpenHosts={() => setDialog("node")}
+        />
+      ) : location.kind === "new" ? (
+        <NewChatScreen
+          bots={workspace.bots}
+          onCreateBot={() => setDialog("bot")}
+          onStart={handleStartChat}
         />
       ) : (
         <ChannelEmptyState

@@ -51,6 +51,26 @@
 .sb .sb-create[open] > summary {
   background: var(--ob-fill-hover);
 }
+.sb .sb-new {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  cursor: pointer;
+}
+.sb .sb-new:hover,
+.sb .sb-new[aria-pressed="true"] {
+  background: var(--ob-fill-hover);
+}
+.sb .sb-new:focus-visible {
+  outline: 2px solid var(--ob-active);
+  outline-offset: 2px;
+}
 .sb .sb-popover {
   position: absolute;
   z-index: 30;
@@ -177,6 +197,14 @@
 .sb .sb-avatar .robot-avatar {
   width: 28px;
   height: 28px;
+}
+.sb .sb-avatar.is-new {
+  padding: 0;
+  border-radius: 50%;
+  background: #dadadd;
+}
+.sb .sb-new-row {
+  cursor: default;
 }
 .sb .sb-avatar.is-folder {
   padding: 0;
