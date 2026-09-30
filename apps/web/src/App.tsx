@@ -1207,6 +1207,20 @@ export function AuthenticatedWorkspace({
           onFrame={projectFrame}
           onProgress={projectProgress}
           onRun={projectRun}
+          onOpenMembers={() => {
+            // The members popover lives in the toolbar title pill.
+            const members = document.querySelector<HTMLDetailsElement>(
+              ".workspace-toolbar .channel-members-menu",
+            );
+            if (!members) return;
+            members.open = true;
+            members.querySelector<HTMLElement>("summary")?.focus();
+          }}
+          onNewRoutine={() =>
+            onSettings ? onSettings("automations") : navigation.navigate({ kind: "automations" })
+          }
+          onOpenSettings={onSettings ? (section) => onSettings(section) : undefined}
+          onOpenHosts={() => setDialog("node")}
         />
       ) : (
         <ChannelEmptyState

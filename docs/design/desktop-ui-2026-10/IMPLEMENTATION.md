@@ -26,7 +26,7 @@ data (hidden, disabled or read-only) and never fakes it.
 | 0 | Design tokens and shared primitives (colors, type, radii, pill buttons, chips, inputs, switches, menus) as one token layer | Components | In review: PR #109 (`--ob-*` tokens and `.ob-*` primitives in `styles.css`) |
 | 1 | Channel conversation, title pill, composer, right rail | Main | In review: PR #109 |
 | 2 | Shared sidebar, account menu, context menus, groups and search | Sidebar, Menu, ContextMenu, Search | In review (stacked on PR #109) |
-| 3 | `/` menu: skill descriptions and the design's actions (members, new routine, settings sections) | Slash | Planned |
+| 3 | `/` menu: skill descriptions and the design's actions (members, new routine, settings sections) | Slash | In review (stacked) |
 | 4 | New chat: recipient chips, Bot picker with ⌘1–9, channel created on first message | New | Planned |
 | 5 | Bot profile: header, pill tabs, stats card, recent evolution/work, skills; settings rail (name, tag, description, notifications, runtime) | Profile | Planned |
 | 6 | Settings dialog shell and grouped navigation with counts | Settings, SettingsNav | Planned |
