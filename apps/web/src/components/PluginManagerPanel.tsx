@@ -8,6 +8,7 @@ import {
   pluginRequest,
 } from "../plugin-api";
 import "./PluginManagerPanel.css";
+import { SearchIcon } from "./Icons";
 import { PluginGrantEditor } from "./PluginGrantEditor";
 import { PluginInstallForm } from "./PluginInstallForm";
 import {
@@ -17,6 +18,7 @@ import {
   PluginUpdatePanel,
 } from "./PluginPlatformPanels";
 import { PluginToolList } from "./PluginToolList";
+import { RobotAvatar } from "./RobotAvatar";
 import { SettingsHeaderAction } from "./SettingsHeaderAction";
 
 /** SPA-session sticky Bot selection per plugin (survives Skills remount / details keep-alive). */
@@ -29,8 +31,13 @@ export function resetGrantBotSelectionForTests(): void {
 
 export interface PluginManagerProps {
   bots: Bot[];
-  /** "settings" renders Settings → 插件 (SettingsPlugins artboard) over the same state. */
-  variant?: "panel" | "settings" | undefined;
+  /**
+   * "settings" renders Settings → 插件 (SettingsPlugins artboard); "catalog" renders the Plugins
+   * artboard's dialog body. Both share this component's state and Server mutations.
+   */
+  variant?: "panel" | "settings" | "catalog" | undefined;
+  /** Catalog: opens Settings → 插件 from 「已安装 N 个」. */
+  onManage?: (() => void) | undefined;
   scope?: PluginContentScope | undefined;
   onInsertMaterial?: ((text: string) => void) | undefined;
 }
@@ -69,6 +76,7 @@ export function PluginManager({
   onInsertMaterial,
   grantBotSelectionRef,
   variant = "panel",
+  onManage,
 }: PluginManagerProps & {
   grantBotSelectionRef?: MutableRefObject<Map<string, string>>;
 }) {
@@ -80,6 +88,7 @@ export function PluginManager({
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState<string>();
   const [managing, setManaging] = useState<string>();
+  const [query, setQuery] = useState("");
   const localGrantBotSelectionRef = useRef(grantBotSelectionByPlugin);
   const botSelectionRef = grantBotSelectionRef ?? localGrantBotSelectionRef;
   async function reloadPlugins(signal?: AbortSignal) {
@@ -206,6 +215,159 @@ export function PluginManager({
           }
         />
       </>
+    );
+  }
+
+  if (variant === "catalog") {
+    const term = query.trim().toLocaleLowerCase();
+    const shown = plugins.filter((plugin) =>
+      `${plugin.name} ${plugin.tools.map((tool) => `${tool.name} ${tool.description}`).join(" ")}`
+        .toLocaleLowerCase()
+        .includes(term),
+    );
+    const botById = new Map(bots.map((bot) => [bot.id, bot]));
+    return (
+      <div className="plugins-catalog">
+        <header className="plugins-catalog-header">
+          <h1 id="plugins-dialog-title">插件</h1>
+          {plugins.length > 0 ? (
+            <button type="button" className="plugins-installed" onClick={onManage}>
+              <span aria-hidden="true">
+                {plugins.slice(0, 4).map((plugin) => (
+                  <i key={plugin.id}>{Array.from(plugin.name.trim())[0]?.toLocaleUpperCase()}</i>
+                ))}
+              </span>
+              已安装 {plugins.length} 个
+            </button>
+          ) : null}
+        </header>
+        <label className="plugins-search">
+          <SearchIcon />
+          <input
+            type="search"
+            aria-label="搜索插件"
+            placeholder="搜索插件"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </label>
+        {error ? (
+          <p role="alert" className="form-error">
+            {error}
+          </p>
+        ) : null}
+        <section className="plugins-section" aria-labelledby="plugins-mine">
+          <div className="plugins-section-heading">
+            <h2 id="plugins-mine">我的插件</h2>
+            <span>给哪个 Bot 用，在这里决定</span>
+          </div>
+          {loading && !plugins.length ? (
+            <p className="plugins-empty" role="status">
+              正在读取插件…
+            </p>
+          ) : shown.length === 0 ? (
+            <p className="plugins-empty">
+              {plugins.length
+                ? "没有匹配的插件。"
+                : "还没有插件。添加一个 MCP 服务，审核工具后分配给 Bot。"}
+            </p>
+          ) : (
+            <div className="plugins-card">
+              {shown.map((plugin) => {
+                const granted = plugin.grants.flatMap((grant) => {
+                  const bot = botById.get(grant.botId);
+                  return bot ? [bot] : [];
+                });
+                return (
+                  <div className="plugins-row" key={plugin.id}>
+                    <div className="plugins-row-main">
+                      <span className="plugins-tile" aria-hidden="true">
+                        {Array.from(plugin.name.trim())[0]?.toLocaleUpperCase() ?? "?"}
+                      </span>
+                      <span className="plugins-row-text">
+                        <strong>{plugin.name}</strong>
+                        <small>
+                          {plugin.enabled
+                            ? plugin.tools
+                                .map((tool) => tool.description || tool.name)
+                                .join("、") || "没有声明工具"
+                            : "已停用"}
+                        </small>
+                      </span>
+                      <span
+                        className="plugins-bots"
+                        title={`已授权：${granted.map((bot) => bot.name).join("、") || "无"}`}
+                      >
+                        {granted.slice(0, 4).map((bot) => (
+                          <RobotAvatar key={bot.id} bot={bot} compact />
+                        ))}
+                      </span>
+                      <button
+                        type="button"
+                        className="ob-pill is-outline"
+                        aria-expanded={managing === plugin.id}
+                        onClick={() => setManaging(managing === plugin.id ? undefined : plugin.id)}
+                      >
+                        选择 Bot
+                      </button>
+                    </div>
+                    {managing === plugin.id ? (
+                      <div className="plugins-row-detail">
+                        <PluginGrantEditor
+                          key={plugin.id}
+                          plugin={plugin}
+                          bots={bots}
+                          disabled={busy || loading}
+                          selectedBotId={botSelectionRef.current.get(plugin.id)}
+                          onSelectedBotIdChange={(botId) => {
+                            if (botId) botSelectionRef.current.set(plugin.id, botId);
+                            else botSelectionRef.current.delete(plugin.id);
+                          }}
+                          onSave={(botId, tools, content) =>
+                            mutate(
+                              `plugins/${encodeURIComponent(plugin.id)}/grants/${encodeURIComponent(botId)}`,
+                              "PUT",
+                              { revision: plugin.revision, tools, ...content },
+                            )
+                          }
+                        />
+                        <PluginContentPanel
+                          plugin={plugin}
+                          scope={scope}
+                          onInsertMaterial={onInsertMaterial}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+        <section className="plugins-section" aria-labelledby="plugins-more">
+          <div className="plugins-section-heading">
+            <h2 id="plugins-more">添加插件</h2>
+            <span>连接 MCP 服务，审核工具后再分配给 Bot</span>
+          </div>
+          {adding ? (
+            <div className="plugins-card plugins-install">
+              <PluginInstallForm
+                onInstalled={() => {
+                  setAdding(false);
+                  setAttempt((value) => value + 1);
+                }}
+              />
+            </div>
+          ) : (
+            <div className="plugins-add">
+              <button type="button" className="ob-pill" onClick={() => setAdding(true)}>
+                连接 MCP 服务
+              </button>
+              <PluginCatalogLinks />
+            </div>
+          )}
+        </section>
+      </div>
     );
   }
 

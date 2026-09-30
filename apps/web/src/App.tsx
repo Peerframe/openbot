@@ -66,6 +66,7 @@ import { ModelSettingsScreen } from "./components/ModelSettingsScreen";
 import { NewChatScreen, type NewChatStart } from "./components/NewChatScreen";
 import { NodeManagerDialog } from "./components/NodeManagerDialog";
 import { OpenBotMark } from "./components/OpenBotMark";
+import { PluginsDialog } from "./components/PluginsDialog";
 import { RobotAvatar } from "./components/RobotAvatar";
 import { indexRunCollaboration } from "./components/RunCollaboration";
 import { RunInspector } from "./components/RunInspector";
@@ -610,6 +611,7 @@ export function AuthenticatedWorkspace({
   const [dialog, setDialog] = useState<Dialog>();
   const [browserBotId, setBrowserBotId] = useState<string>();
   const [modelServicesOpen, setModelServicesOpen] = useState(false);
+  const [pluginsOpen, setPluginsOpen] = useState(false);
   const [modelServicesVersion, setModelServicesVersion] = useState(0);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>();
   const [error, setError] = useState<string>();
@@ -903,6 +905,16 @@ export function AuthenticatedWorkspace({
     return workspace?.channels.find((channel) => channel.directBotId === botId)?.id;
   }
 
+  /** Appends plugin material to a channel draft addressed to one Bot, within the draft limit. */
+  function insertPluginMaterial(channelId: string, botId: string, text: string) {
+    const conversation = conversationSession.channel(channelId, botId);
+    const draft = conversation.getSnapshot().draft;
+    const next = [draft.text, text].filter(Boolean).join("\n\n");
+    if (next.length > 8000) throw new Error("资料超过草稿剩余容量，请先缩短草稿或复制需要的片段。");
+    conversation.edit({ text: next, targetBotId: botId, targetBotIds: [botId] });
+    selectChannel(channelId);
+  }
+
   async function renameEmployee(botId: string, name: string) {
     await renameBot(botId, name);
     await refresh();
@@ -1022,6 +1034,12 @@ export function AuthenticatedWorkspace({
     ? workspace.bots.find((bot) => bot.id === browserBotId)
     : undefined;
   const sharedBot = sharedBotId ? workspace.bots.find((bot) => bot.id === sharedBotId) : undefined;
+  // Plugin material goes to the open channel's first Bot, as the former library screen did.
+  const pluginBotId = selectedChannel?.botIds[0];
+  const pluginScope =
+    selectedChannel && pluginBotId
+      ? { channelId: selectedChannel.id, botId: pluginBotId }
+      : undefined;
   const profileTitle =
     destination === "chat" && selectedEmployeeId ? employeeProfile?.employee : undefined;
   const panelToggle = (
@@ -1164,7 +1182,7 @@ export function AuthenticatedWorkspace({
             onSettings ? onSettings("routines") : navigation.navigate({ kind: "automations" })
           }
           onWork={() => navigation.navigate({ kind: "work" })}
-          onSkills={() => navigation.navigate({ kind: "skills" })}
+          onSkills={() => setPluginsOpen(true)}
           selectedChannelId={destination === "chat" ? selectedChannel?.id : undefined}
           selectedBotId={
             destination === "chat"
@@ -1200,15 +1218,7 @@ export function AuthenticatedWorkspace({
       ) : destination === "skills" ? (
         <SkillLibraryScreen
           channels={workspace.channels}
-          onInsertMaterial={(channelId, botId, text) => {
-            const conversation = conversationSession.channel(channelId, botId);
-            const draft = conversation.getSnapshot().draft;
-            const next = [draft.text, text].filter(Boolean).join("\n\n");
-            if (next.length > 8000)
-              throw new Error("资料超过草稿剩余容量，请先缩短草稿或复制需要的片段。");
-            conversation.edit({ text: next, targetBotId: botId, targetBotIds: [botId] });
-            selectChannel(channelId);
-          }}
+          onInsertMaterial={insertPluginMaterial}
           onBack={navigation.back}
           onCreateBot={() => setDialog("bot")}
           onImportBot={() => setEmployeeImportOpen(true)}
@@ -1396,6 +1406,22 @@ export function AuthenticatedWorkspace({
       ) : null}
       {browserBot ? (
         <EmployeeBrowser bot={browserBot} onClose={() => setBrowserBotId(undefined)} />
+      ) : null}
+      {pluginsOpen ? (
+        <PluginsDialog
+          bots={workspace.bots}
+          scope={pluginScope}
+          onInsertMaterial={
+            pluginScope
+              ? (text) => {
+                  insertPluginMaterial(pluginScope.channelId, pluginScope.botId, text);
+                  setPluginsOpen(false);
+                }
+              : undefined
+          }
+          onManage={onSettings ? () => onSettings("plugins") : undefined}
+          onClose={() => setPluginsOpen(false)}
+        />
       ) : null}
       {modelServicesOpen ? (
         <ModelConnectionsDialog

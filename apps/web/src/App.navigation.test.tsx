@@ -257,19 +257,19 @@ describe("Desktop workspace navigation continuity", () => {
     }
   });
 
-  it("returns from the full-page plugin library and starts a conversation from 新建聊天", async () => {
+  it("opens the plugins dialog over the conversation and starts a conversation from 新建聊天", async () => {
     const rendered = await renderComponent(<App />);
     try {
       await settleEffects();
       await enterDraft(composer(rendered.container), "保留这个草稿");
+      // Plugins artboard: the sidebar 插件 pill opens a modal; the conversation stays mounted.
       await interact(() => buttonByText(rendered.container, "插件").click());
       await settleEffects();
-      expect(rendered.container.querySelector(".full-page-destination")).not.toBeNull();
-      await interact(() =>
-        rendered.container
-          .querySelector<HTMLButtonElement>(".plugin-refresh .settings-back")
-          ?.click(),
+      expect(rendered.container.querySelector("dialog.plugins-dialog")?.hasAttribute("open")).toBe(
+        true,
       );
+      await interact(() => buttonByLabel(rendered.container, "关闭插件").click());
+      expect(rendered.container.querySelector("dialog.plugins-dialog")).toBeNull();
       await settleEffects();
       expect(composer(rendered.container).value).toBe("保留这个草稿");
       // New artboard: 「+」 opens 新建聊天; the first message opens the Bot's conversation.
