@@ -11,16 +11,6 @@ from .work_corrections import CorrectionStore
 from .work_values import WorkConflict, tokens
 
 
-async def lock_source(db, task_id):
-    source = await (await db.execute('SELECT channel_id,legacy_run_id FROM work_sources WHERE task_id=%s',
-                                    (task_id,))).fetchone()
-    if source:
-        # Publication inserts a message referencing this channel. Take its FK-compatible lock
-        # before Task, so membership revocation cannot hold channel and wait for our Task.
-        await db.execute('SELECT id FROM channels WHERE id=%s FOR KEY SHARE', (source['channel_id'],))
-        await db.execute('SELECT id FROM runs WHERE id=%s FOR KEY SHARE', (source['legacy_run_id'],))
-
-
 class WorkSourceAdmission:
     def __init__(self, store, *, token_limit, command_route=None, command_policy_id=None):
         self.store = store

@@ -262,16 +262,9 @@ class PluginService:
                 items.append(entry)
         return {'items':items,'truncated':truncated}
 
-    async def content_catalog(self,run):
-        await self._run(run)
-        return await self._content_catalog(field(run,'botId'))
-
     async def owner_content_catalog(self,token,scope):
         async with self._owner_guard(token,scope):
             return await self._content_catalog(field(scope,'botId'))
-
-    async def read_content(self,run,value,*,signal=None):
-        return await self._read_content(run,value,lambda:self._run_guard(run),signal)
 
     async def owner_read_content(self,token,scope,value,*,signal=None):
         return await self._read_content(scope,value,lambda:self._owner_guard(token,scope),signal)

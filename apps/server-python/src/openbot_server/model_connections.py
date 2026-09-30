@@ -242,10 +242,6 @@ class ModelConnectionsService:
         async with self._transactions.transaction(token) as db:
             return await self.resolve_in_transaction(db, selection, expected_revision=expected_revision)
 
-    async def validate_selection(self, token, selection):
-        parsed = ModelSelection.model_validate(selection)
-        await self.resolve(token, parsed.model_dump())
-
     @_guard
     async def update_employee_model(self, token, bot_id, value):
         value = UpdateEmployeeModelInput.model_validate(value)
