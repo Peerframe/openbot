@@ -325,7 +325,9 @@ delete also removes its direct conversation, memberships, automations, memories,
 proposals, evolution rows, and plugin grants. Any active Run returns `409 active_work_blocks_delete`;
 the Server never cancels work on a delete's behalf. The Bot response includes
 `pluginGrantsRemoved`; `false` means the encrypted grant file could not be updated after the
-tombstone committed, leaving inert grants for a Bot that can no longer run. Tombstones answer `404`
+tombstone committed, leaving inert grants for a Bot that can no longer run. Both delete responses
+include `attachmentsRemoved`; `false` means the channel's attachment files could not be removed and
+remain on disk, unreadable through any live route. Tombstones answer `404`
 at every live entry point and their names can be reused.
 
 `GET /api/v1/channels/unread` returns `{ "unread": { channelId: count } }` for channels with Bot or

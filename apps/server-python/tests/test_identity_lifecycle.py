@@ -140,7 +140,8 @@ def test_bot_delete_removes_conversation_and_learning_but_keeps_runs(world):
     assert code(store.delete_bot(world["token"], world["bot"])) == (409, "active_work_blocks_delete")
     with psycopg.connect(world["dsn"]) as db:
         db.execute("UPDATE runs SET status='failed' WHERE id=%s", (active,))
-    assert asyncio.run(store.delete_bot(world["token"], world["bot"])) == {"deleted": True, "botId": world["bot"]}
+    assert asyncio.run(store.delete_bot(world["token"], world["bot"])) == {
+        "deleted": True, "botId": world["bot"], "directChannelId": world["direct"]}
     with psycopg.connect(world["dsn"]) as db:
         assert db.execute("SELECT deleted_at IS NOT NULL,configuration FROM bots WHERE id=%s", (world["bot"],)).fetchone() == (True, {})
         assert db.execute("SELECT count(*) FROM channel_bots WHERE bot_id=%s", (world["bot"],)).fetchone() == (0,)
@@ -225,10 +226,27 @@ def test_http_routes_require_origin_and_hide_tombstones(world, tmp_path):
         assert api.get("/api/v1/audit?limit=abc").status_code == 422
         assert api.get("/api/v1/audit?limit=5&extra=1").status_code == 422
         assert api.get("/api/v1/audit?limit=5").json()["events"][0]["type"]
+        def upload(channel):
+            response = api.post(f"/api/v1/channels/{channel}/attachments", content=b"synthetic notes\n",
+                                headers={**headers, "Content-Type": "application/octet-stream", "X-OpenBot-Filename": "notes.txt"})
+            assert response.status_code == 201, response.text
+            return response.json()["attachment"]["id"]
+        survivor_channel = str(uuid4())
+        world["channels"].append(survivor_channel)
+        with psycopg.connect(world["dsn"]) as db:
+            db.execute("INSERT INTO channels(id,name) VALUES (%s,%s)", (survivor_channel, "Survivor " + world["suffix"]))
+        direct_file, group_file, survivor = upload(world["direct"]), upload(world["channel"]), upload(survivor_channel)
+        files = tmp_path / "attachments"
+        # The purge path proves the tombstone first, so a live channel's files are never removed.
+        assert code(service.purge_deleted_channel_files(world["token"], [survivor_channel])) == (404, "channel_not_found")
+        assert list(files.glob(survivor + ".*"))
         deleted = api.delete("/api/v1/bots/" + world["bot"], headers=headers)
-        assert deleted.json() == {"deleted": True, "botId": world["bot"], "pluginGrantsRemoved": True}
+        assert deleted.json() == {"deleted": True, "botId": world["bot"], "pluginGrantsRemoved": True, "attachmentsRemoved": True}
+        assert not list(files.glob(direct_file + ".*")) and list(files.glob(group_file + ".*"))
         assert api.get("/api/v1/bots/" + world["bot"] + "/profile").status_code == 404
         assert world["bot"] not in [bot["id"] for bot in api.get("/api/v1/bots").json()["bots"]]
-        assert api.delete(path, headers=headers).status_code == 200
+        assert api.delete(path, headers=headers).json() == {"deleted": True, "channelId": world["channel"], "attachmentsRemoved": True}
+        assert not list(files.glob(group_file + ".*"))
+        assert api.get(f"/api/v1/channels/{survivor_channel}/attachments/{survivor}/content").content == b"synthetic notes\n"
         assert api.get(path + "/messages").status_code == 404
         assert world["channel"] not in [channel["id"] for channel in api.get("/api/v1/channels").json()["channels"]]

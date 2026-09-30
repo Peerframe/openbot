@@ -110,6 +110,19 @@ class OwnerProduct:
                     self.files._remove(created+'.json');self.files._remove(created+'.bin')
                 raise
 
+    async def purge_deleted_channel_files(self,token,channel_ids):
+        """Remove attachment files of tombstoned channels after the delete committed (ADR-0047).
+
+        Same lock order as uploads: files lock, then an Owner transaction that proves every
+        channel is already a tombstone, so a live channel's files can never be removed here.
+        """
+        async with self.files.lock(), self.transactions.transaction(token) as db:
+            rows=await (await db.execute('SELECT id FROM channels WHERE id=ANY(%s) AND deleted_at IS NOT NULL',
+                                         (list(channel_ids),))).fetchall()
+            if len(rows)!=len(set(channel_ids)): raise ControlError(404,'channel_not_found')
+            return sum(self.files.purge_channel(channel_id) for channel_id in channel_ids)
+
+
 
 def register_product_routes(app,product,read_store,*,secure_cookies,allowed_origins):
     if product.browser is not None:
@@ -235,8 +248,16 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
     async def channel_rename(value,path,body,_request):
         return {'channel':await product.lifecycle.rename_channel(value,path['channel_id'],body)}
     route('/api/v1/channels/{channel_id}','PATCH',channel_rename,limit=1024)
+    async def cleanup(value,channel_ids):
+        # File cleanup follows the committed tombstone. A failure leaves files that no live route can
+        # read (every attachment route checks a live channel) and is reported, not hidden.
+        if not channel_ids: return True
+        try: await product.purge_deleted_channel_files(value,channel_ids)
+        except (ControlError,AuthenticationRequired,OSError,TimeoutError): return False
+        return True
     async def channel_delete(value,path,*_):
-        return await product.lifecycle.delete_channel(value,path['channel_id'])
+        result=await product.lifecycle.delete_channel(value,path['channel_id'])
+        return {**result,'attachmentsRemoved':await cleanup(value,[path['channel_id']])}
     route('/api/v1/channels/{channel_id}','DELETE',channel_delete,limit=1024)
     async def channel_read(value,path,*_):
         return await product.lifecycle.mark_read(value,path['channel_id'])
@@ -246,13 +267,15 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
     route('/api/v1/bots/{bot_id}','PATCH',bot_rename,limit=1024)
     async def bot_delete(value,path,*_):
         result=await product.lifecycle.delete_bot(value,path['bot_id'])
+        direct=result.pop('directChannelId',None)
+        attachments=await cleanup(value,[direct] if direct else [])
         # Grants live in the encrypted plugin file, so they are removed after the tombstone commits.
         # A failure leaves inert grants (a tombstoned Bot cannot run) and is reported, not hidden.
         removed=True
         if product.plugins is not None:
             try: await product.plugins.forget_bot(value,path['bot_id'])
             except (ControlError,AuthenticationRequired): removed=False
-        return {**result,'pluginGrantsRemoved':removed}
+        return {**result,'pluginGrantsRemoved':removed,'attachmentsRemoved':attachments}
     route('/api/v1/bots/{bot_id}','DELETE',bot_delete,limit=1024)
     async def audit_list(value,_path,_body,request):
         query=request.query_params

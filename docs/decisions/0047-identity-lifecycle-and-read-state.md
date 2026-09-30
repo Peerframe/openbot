@@ -57,8 +57,10 @@ without content removal (does not meet "permanent delete"). No upstream source w
 ## Consequences and verification
 
 Content deletion is irreversible; the UI requires an explicit confirmation that names the target.
-Attachment blobs stored under the channel remain on disk but become unreachable because every file
-route checks the live channel; physical cleanup is a separate retention task. Read state is
+After the tombstone commits, the route removes the channel's attachment files (and a deleted Bot's
+direct-conversation files) under the attachment lock in a transaction that re-proves the tombstone,
+so live channels' files can never be removed; the response reports `attachmentsRemoved`, and a
+failure leaves files that no live route can read. Read state is
 single-Owner, matching the current single-Owner model. Verification: Python store/route tests on
 the disposable PostgreSQL fixture (rename conflicts, direct-channel refusal, active-work refusal,
 content removal with Work-referenced message redaction, tombstone exclusion, read/unread counts,

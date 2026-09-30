@@ -202,7 +202,8 @@ class PostgresIdentityLifecycle:
             await _audit(db, "BOT_DELETED", {"actor": "owner", "name": row["name"], "deletedMessages": deleted,
                                              "redactedMessages": redacted, "memberships": len(memberships)},
                          bot_id=bot_id)
-            return {"deleted": True, "botId": bot_id}
+            # directChannelId is internal: the route uses it for post-commit file cleanup.
+            return {"deleted": True, "botId": bot_id, "directChannelId": direct["id"] if direct else None}
 
     async def mark_read(self, token, channel_id):
         _identity(channel_id)

@@ -207,6 +207,25 @@ class OwnerFiles:
             self._remove(identity+'.bin');raise
         return value
 
+    def purge_channel(self,channel_id):
+        """Remove every attachment scoped to one channel (ADR-0047 tombstone cleanup).
+
+        Callers hold lock() and have verified the channel tombstone; nothing here re-authorizes.
+        """
+        if type(channel_id) is not str or not UUID.fullmatch(channel_id): raise ControlError(400,'invalid_channel')
+        directory=self._directory()
+        try: names=os.listdir(directory)
+        finally: os.close(directory)
+        removed=0
+        for name in names:
+            if not name.endswith('.json') or name.endswith('.text.json') or not UUID.fullmatch(name[:-5]): continue
+            identity=name[:-5]
+            try: self._metadata(channel_id,identity)
+            except ControlError: continue
+            for suffix in ('.text.json','.bin','.json'): self._remove(identity+suffix)
+            removed+=1
+        return removed
+
     def set_deleted(self,channel_id,identity,deleted):
         return self._set_deleted(channel_id,identity,deleted)
 
