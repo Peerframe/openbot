@@ -39,11 +39,18 @@ export type ApprovalStatus = "pending" | "approved" | "rejected" | "expired";
 export type ApprovalRisk = "write" | "destructive" | "privileged";
 export type ApprovalDecision = "approve" | "reject";
 
+export type { ChannelMessagePreview } from "@openbot/protocol";
+
+import type { ChannelMessagePreview } from "@openbot/protocol";
+
 export interface Channel {
   id: EntityId;
   name: string;
   description: string;
   botIds: EntityId[];
+  /** Owner-only list/workspace activity; absent on mutation responses. */
+  lastActivityAt?: string;
+  latestMessage?: ChannelMessagePreview;
   /** Server-owned fixed participant for a direct conversation. */
   directBotId?: EntityId;
   createdAt: string;

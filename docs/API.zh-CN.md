@@ -425,3 +425,14 @@ Artifact 与临时画面内容接口使用同一个 Owner Session，响应为 `p
 
 模型只能在有界原生循环中准备候选，不能调用 Owner 接口；成功任务与候选一起提交。
 参见[原生 Agent](NATIVE_AGENT.zh-CN.md)。
+
+## 频道最近动态（C1）
+
+`GET /api/v1/channels` 与 `GET /api/v1/workspace` 的每个频道包含 `lastActivityAt`，
+以及可选的 `latestMessage: { id, authorType, preview, createdAt }`。
+仅已登录 Owner 能读取这些字段；频道修改响应不包含它们。`preview` 是纯文本，
+在 SQL 中截取最多 160 个 Unicode 码点（640 UTF-8 字节），不包含附件、凭据、
+元数据或其他消息字段。客户端必须按文本渲染，不能当作 HTML。
+空频道省略 `latestMessage`，以创建时间作为最近活动时间。
+列表按最近活动倒序，时间相同时按频道 ID 的 C 排序规则升序；最新消息时间相同则按消息 ID 的 C 排序规则倒序。
+删除的频道不返回。沿用会话复查、行数和响应字节上限。

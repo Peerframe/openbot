@@ -458,3 +458,15 @@ internal non-secret-reference entries may be enabled. Updates require the usual 
 
 Models only prepare a proposal in the bounded native loop; they do not call these Owner endpoints.
 Successful Run completion publishes the candidate atomically. See [Native Agent](NATIVE_AGENT.md).
+
+## Channel activity (C1)
+
+`GET /api/v1/channels` and `GET /api/v1/workspace` return `lastActivityAt` on each
+Channel and optional `latestMessage: { id, authorType, preview, createdAt }`.
+These fields are Owner-only and absent on channel mutation responses. `preview` is plain text,
+at most 160 Unicode code points (640 UTF-8 bytes), truncated in SQL; no attachments, credentials,
+metadata or extra message fields are projected. Clients must render it as text, never HTML.
+An empty channel omits `latestMessage` and uses `createdAt` for `lastActivityAt`.
+The list is ordered by activity descending, then channel ID in C collation ascending;
+latest messages break equal timestamps by message ID in C collation descending.
+Deleted channels are excluded. Existing session revalidation, row and response-byte limits apply.
