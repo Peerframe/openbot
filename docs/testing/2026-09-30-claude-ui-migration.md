@@ -47,3 +47,52 @@ of introducing the draft's parallel popover hook.
 Browser API/EventSource fixtures replace the backend for this UI check. They do not prove a
 live Python/Temporal/model run, paid-provider behavior, packaged installation or additional
 platform support. The installed alpha.9 application was retained, not upgraded by this change.
+
+## Continuation — remaining approved design
+
+Commits after `0df5c33` on this branch: `ca6aaaf`, `4827c34`, `694d0ad`, `2cba593`, plus this
+record. Scope stays in `apps/web`; no dependency, Server route, persistence schema, permission or
+Electron bridge changed, and no upstream source was copied.
+
+- Right rail and approval cards use neutral grouped cards with 12–14px text. Attention is a
+  coloured label with pill actions; destructive/privileged approval keeps a red primary action.
+- The sidebar footer places the account avatar (existing account menu) and the plugins pill on one
+  row. The Owner name moves into the avatar's accessible label.
+- Plugins/skills, Desktop settings and the Bot profile replace the macOS-blue accents with black
+  primary pills, pill tabs/filters and the shared grey cards. Focus rings keep `--blue`.
+- Sidebar context menu (right-click, Shift+F10 or the context-menu key): open profile, pin, move to
+  a group (inline new group), mark unread and hide. Groups render as sections with rename/dissolve;
+  search matches group names and still finds hidden rows. Right-click no longer opens the profile
+  directly; the profile is the first menu item.
+- The arrangement lives in `sidebar-organization.ts` under the per-device `localStorage` key
+  `openbot.sidebar-organization.v1`, with the same bounded allowlist parsing as workspace
+  preferences. It is presentation only: it grants nothing, renames nothing and deletes nothing.
+  Unread is a manual mark cleared when the row is opened; automatic unread counts would need
+  Server read state and are not claimed.
+- Typing `/` at the start of a word lists the single @ recipient's reviewed skills, attached
+  through the existing draft skill list, followed by the existing attach and channel-file actions.
+  Paths and URLs do not open it; candidate skills stay hidden.
+
+Not delivered: renaming or deleting channels and Bots (no Server route; this needs a contract and
+persistence change), settings sections without Server data (approval-policy editing, audit viewer,
+notification and per-design routine pages), and a sectioned settings screen for the non-Desktop
+Web entry, which still opens the model form.
+
+### Continuation verification
+
+- Focused Vitest: Sidebar, sidebar arrangement, slash query, ChannelWorkspace (including the new
+  `/` menu case), ChannelWorkspace integration, mention query, App workspace-state/navigation,
+  ContextRail, ApprovalCard, EmployeeProfileView, SkillLibraryScreen, DesktopSettingsScreen,
+  ModelSettingsScreen and PluginManagerPanel passed; Web typecheck passed. Biome reported no new
+  warnings on the touched files compared with their base versions.
+- `npm run check`: exit 0 on commit `2cba593`. Web: 74 files / 546 tests passed. Desktop: 44 files /
+  514 passed and 3 existing platform/environment skips. Node: 129 passed, 3 skipped. Turbo reused
+  12 cached tasks; the changed Web tests and builds executed.
+- Rendered the real App through the Vite dev server with `OPENBOT_DEV_API_URL` pointing at a
+  disposable synthetic loopback API (outside the repository) at 1440×900 and 390×844: rail and
+  footer, account menu, plugins page, Bot profile, context-menu group creation, pin, manual unread,
+  group-name search, `/` menu with and without a recipient (skill chip attached, command text
+  removed, Escape closes), the mobile approval sheet, and no horizontal page overflow.
+
+The synthetic API does not prove Python/Temporal execution, a live model, packaged Desktop
+behaviour or additional platform support.

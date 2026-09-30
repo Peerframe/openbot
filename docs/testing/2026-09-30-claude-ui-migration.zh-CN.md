@@ -39,3 +39,43 @@ Server 权限边界均保留。
 
 浏览器 API 与 EventSource 夹具替代了本次界面检查的后端，不证明真实 Python、Temporal、
 模型执行、付费 Provider、打包安装或更多平台支持。本次保留已安装的 alpha.9 应用，未升级安装。
+
+## 续作 — 已确认设计的剩余部分
+
+本分支在 `0df5c33` 之后的提交：`ca6aaaf`、`4827c34`、`694d0ad`、`2cba593` 及本记录。范围仍限于
+`apps/web`；没有改动依赖、Server 路由、持久化结构、权限或 Electron 桥接，也没有复制上游源码。
+
+- 右侧栏与审批卡片改为中性分组卡片，正文 12–14px。需要注意的状态用彩色标签和胶囊按钮表达；
+  破坏性或提权审批的主按钮保持红色。
+- 侧栏底部把账户头像（沿用现有账户菜单）和插件胶囊放在同一行，Owner 名称移入头像的无障碍标签。
+- 插件/技能、Desktop 设置和 Bot 档案去掉 macOS 蓝色强调，改用黑色主按钮、胶囊分页/筛选和共用的灰色
+  卡片；焦点环保留 `--blue`。
+- 侧栏右键菜单（右键、Shift+F10 或菜单键）：打开档案、置顶、移至分组（可就地新建）、标为未读、从侧栏
+  隐藏。分组按段显示，可重命名或解散；搜索会匹配分组名，也能找到已隐藏的对话。右键不再直接打开档案，
+  档案是菜单第一项。
+- 排列状态保存在 `sidebar-organization.ts`，使用本机 `localStorage` 键
+  `openbot.sidebar-organization.v1`，与工作区偏好相同的有界白名单解析。它只影响显示，不授予权限、
+  不重命名、不删除。未读是手动标记，打开该对话时清除；自动未读计数需要 Server 的已读状态，不在本次声明
+  范围内。
+- 在词首输入 `/` 会列出当前唯一 @ 接收者已审核的技能（通过现有草稿技能列表附加），以及现有的添加附件、
+  频道文件操作。路径和 URL 不会触发；候选技能不显示。
+
+未交付：重命名或删除频道与 Bot（Server 没有对应路由，需要契约与持久化变更）；没有 Server 数据支撑的
+设置分区（审批策略编辑、审计查看、通知及设计稿中的例行任务页）；非 Desktop 的 Web 入口仍打开模型表单，
+尚无分区设置页。
+
+### 续作验证
+
+- 定向 Vitest：Sidebar、侧栏排列、slash 解析、ChannelWorkspace（含新增 `/` 菜单用例）、
+  ChannelWorkspace 集成、mention 解析、App 工作区状态/导航、ContextRail、ApprovalCard、
+  EmployeeProfileView、SkillLibraryScreen、DesktopSettingsScreen、ModelSettingsScreen、
+  PluginManagerPanel 全部通过；Web typecheck 通过。与基线版本相比，改动文件没有新增 Biome 警告。
+- `npm run check`：在提交 `2cba593` 上退出码 0。Web：74 个文件、546 项测试通过。Desktop：44 个文件、
+  514 项通过、3 项既有平台或环境跳过。Node：129 项通过、3 项跳过。Turbo 复用 12 个缓存任务；改动过的
+  Web 测试与构建实际执行。
+- 通过 Vite 开发服务器渲染真实 App，`OPENBOT_DEV_API_URL` 指向仓库外的一次性回环合成 API，视口
+  1440×900 与 390×844：右侧栏与底部、账户菜单、插件页、Bot 档案、右键新建分组、置顶、手动未读、按分组名
+  搜索、有/无接收者时的 `/` 菜单（附加技能标签、移除命令文本、Escape 关闭）、移动端审批面板，且页面无横向
+  溢出。
+
+合成 API 不能证明 Python/Temporal 执行、真实模型、Desktop 打包行为或更多平台支持。
