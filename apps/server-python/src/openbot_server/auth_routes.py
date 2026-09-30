@@ -16,6 +16,34 @@ class LoginInput(BaseModel):
     password: SecretStr = Field(min_length=1, max_length=1024)
 
 
+class PasswordChangeInput(BaseModel):
+    model_config = ConfigDict(strict=True,extra="forbid")
+    currentPassword: SecretStr = Field(min_length=1,max_length=1024)
+    newPassword: SecretStr = Field(min_length=15,max_length=1024)
+
+
+class OwnerSessionDevice(BaseModel):
+    model_config = ConfigDict(strict=True,extra="forbid")
+    id: str
+    userAgent: str
+    current: bool
+    createdAt: str
+    expiresAt: str
+
+
+class OwnerSessionsResponse(BaseModel):
+    sessions: list[OwnerSessionDevice]
+
+
+class RevokeSessionsResponse(BaseModel):
+    revoked: int
+
+
+class PasswordChangeResponse(BaseModel):
+    changed: bool
+    reauthenticationRequired: bool
+
+
 class LoginResponse(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
     session: AuthenticatedSession
@@ -67,7 +95,8 @@ def register_auth_routes(app: FastAPI, auth: OwnerAuthentication, *, secure_cook
         require_origin(request)
         password = await login_payload(request)
         try:
-            result = await auth.login(password, request.client.host if request.client else None)
+            result = await auth.login(password, request.client.host if request.client else None,
+                                      user_agent=request.headers.get("user-agent", "")[:256])
         except InvalidClientIdentity:
             raise HTTPException(400, "Client network identity is unavailable.") from None
         except InvalidCredentials:
@@ -89,4 +118,37 @@ def register_auth_routes(app: FastAPI, auth: OwnerAuthentication, *, secure_cook
             raise HTTPException(401, "Authentication required.")
         response = Response(status_code=204)
         response.delete_cookie(cookie_name, path="/", secure=secure_cookies, httponly=True, samesite="strict")
+        return response
+
+    @app.get("/api/v1/auth/sessions",response_model=OwnerSessionsResponse,operation_id="listOwnerSessions")
+    async def sessions(request: Request):
+        return {"sessions":await auth.sessions(request.cookies.get(cookie_name))}
+
+    @app.post("/api/v1/auth/sessions/revoke-others",response_model=RevokeSessionsResponse,operation_id="revokeOtherOwnerSessions")
+    async def revoke_others(request: Request):
+        require_origin(request)
+        return {"revoked":await auth.revoke_other_sessions(request.cookies.get(cookie_name))}
+
+    @app.post("/api/v1/auth/password",response_model=PasswordChangeResponse,operation_id="changeOwnerPassword",
+              openapi_extra={"requestBody":{"required":True,"content":{"application/json":{"schema":PasswordChangeInput.model_json_schema()}}}})
+    async def change_password(request: Request):
+        require_origin(request)
+        try:
+            value=PasswordChangeInput.model_validate(await read_json(request))
+            current=value.currentPassword.get_secret_value();new=value.newPassword.get_secret_value()
+            current.encode("utf-8");new.encode("utf-8")
+            if new=="replace-with-a-long-random-owner-password":raise ValueError()
+        except (ValidationError,ValueError):
+            raise HTTPException(422,"Invalid password change input.") from None
+        try:
+            await auth.change_password(request.cookies.get(cookie_name),current,new,
+                                       request.client.host if request.client else None)
+        except InvalidCredentials:
+            raise HTTPException(401,"Password is incorrect.") from None
+        except InvalidClientIdentity:
+            raise HTTPException(400,"Client network identity is unavailable.") from None
+        except RateLimited as error:
+            return JSONResponse({"error":str(error)},status_code=429,headers={"Retry-After":str(error.retry_after)})
+        response=JSONResponse({"changed":True,"reauthenticationRequired":True})
+        response.delete_cookie(cookie_name,path="/",secure=secure_cookies,httponly=True,samesite="strict")
         return response

@@ -35,6 +35,7 @@ const workerTests = await readWorkerTests(root);
 const controlTests = [
   "tests/test_postgres_integration.py",
   "tests/test_auth_postgres.py",
+  "tests/test_owner_security.py",
   "tests/test_identity_postgres.py",
   "tests/test_conversation_postgres.py",
   "tests/test_message_postgres.py",

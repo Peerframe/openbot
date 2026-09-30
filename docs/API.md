@@ -458,3 +458,26 @@ internal non-secret-reference entries may be enabled. Updates require the usual 
 
 Models only prepare a proposal in the bounded native loop; they do not call these Owner endpoints.
 Successful Run completion publishes the candidate atomically. See [Native Agent](NATIVE_AGENT.md).
+
+## Owner password and sessions (C2)
+
+- `GET /api/v1/auth/sessions` returns `{ sessions: [{ id, userAgent, current, createdAt, expiresAt }] }`
+  for active Owner sessions, newest first (maximum 100). IDs are non-bearer session IDs; no tokens,
+  digests or IP addresses are returned. `userAgent` is an untrusted hint bounded to 256 code points;
+  old sessions have an empty hint. Login refuses issuance above 100 active sessions.
+- `POST /api/v1/auth/sessions/revoke-others` requires the current cookie and exact allowed Origin.
+  Returns `{ revoked: number }`, keeps the initiating session, and atomically audits
+  `OWNER_SESSIONS_REVOKED` with the count. No body is required.
+- `POST /api/v1/auth/password` requires the cookie, exact Origin and JSON
+  `{ currentPassword, newPassword }`. No unknown fields; no whitespace trimming. Current password:
+  1–1024 code points; new password: 15–1024, excluding the example password. The existing 8192-byte
+  request bound applies. Success returns `{ changed: true, reauthenticationRequired: true }`,
+  clears the cookie, atomically revokes **all** sessions and records `OWNER_PASSWORD_CHANGED`.
+  Wrong current password is 401, throttled attempts 429 (`Retry-After`), invalid input 422,
+  unknown/revoked session 401 and storage/audit failure 503 without mutation or cookie clearing.
+
+Rotated credentials use salted stdlib scrypt (N=32768, r=8, p=3) in PostgreSQL. The environment
+password is bootstrap-only once a stored credential exists; restart never restores it. Credential
+revision and a shared transaction lock reject a login proof computed before password rotation.
+Back up `owner_credentials` together with the existing database. No password recovery or device
+identity verification is implied; an Owner locked out of a deployment must use its administration path.

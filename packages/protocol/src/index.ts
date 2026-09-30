@@ -41,3 +41,5 @@ export type {
   OpenBotDesktopBridge,
   NativeServerState,
 } from "./desktop.js";
+
+export * from "./owner-security.js";
