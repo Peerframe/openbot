@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>侧栏</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<nav aria-label="对话列表" style="position: relative; width: 300px; height: 900px; box-sizing: border-box; display: flex; flex-direction: column; padding: 14px 10px 12px; background: #f5f5f6; border-right: 1px solid #e7e7e9; color: #1d1d1f; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', system-ui, sans-serif">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 8px 14px 10px">
+<div style="display: flex; gap: 8px" aria-hidden="true">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; display: block"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e; display: block"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840; display: block"></span>
+</div>
+<button type="button" aria-label="新建" style="width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; cursor: pointer; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+</div>
+
+<label style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 11px; margin: 0 4px 6px; border-radius: 10px; background: {{searchBg}}; border: 1px solid {{searchBorder}}">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+<input type="search" placeholder="搜索对话、Bot 和分组" aria-label="搜索对话、Bot 和分组" value="{{query}}" style="border: 0; background: transparent; outline: none; font: inherit; font-size: 14px; color: #1d1d1f; width: 100%">
+<sc-if value="{{isSearch}}" hint-placeholder-val="{{false}}"><button type="button" aria-label="清除搜索" style="width: 18px; height: 18px; flex-shrink: 0; border: 0; padding: 0; border-radius: 50%; background: #aeaeb2; cursor: pointer; display: inline-grid; place-items: center"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button></sc-if>
+</label>
+
+<div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-height: 0; overflow: hidden">
+<sc-if value="{{showNew}}" hint-placeholder-val="{{false}}">
+<div style="display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: center; gap: 12px; padding: 10px; border-radius: 14px; background: #e6e6e8">
+<span style="width: 40px; height: 40px; border-radius: 50%; background: #dadadd; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></span>
+<span style="font-size: 15px; font-weight: 500">新建聊天</span>
+</div>
+</sc-if>
+<sc-for list="{{sections}}" as="sec" hint-placeholder-count="2">
+<div role="group" aria-label="{{sec.title}}" style="display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 12px 6px">
+<span style="font-size: 14px; color: #8e8e93">{{sec.title}}</span>
+<span style="font-size: 12px; color: #aeaeb2">{{sec.count}}</span>
+</div>
+<sc-for list="{{sec.groups}}" as="g" hint-placeholder-count="0">
+<button type="button" style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; padding: 10px; border: 0; border-radius: 14px; background: {{g.bg}}; text-align: left; cursor: pointer; font: inherit; color: inherit">
+<span style="width: 40px; height: 40px; border-radius: 12px; background: #e6e6e8; display: inline-grid; place-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+<span style="font-size: 15px; font-weight: 500; white-space: nowrap">{{g.pre}}<mark style="background: #fde68a; color: inherit; border-radius: 3px; padding: 0">{{g.hit}}</mark>{{g.post}}</span>
+<span style="font-size: 13px; color: #8a8a8e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{g.sub}}</span>
+</span>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+</button>
+<sc-for list="{{g.children}}" as="r" hint-placeholder-count="0">
+<div style="display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 7px 10px 7px 34px; font-size: 14px; color: #3a3a3c">
+<span style="width: 26px; height: 26px; border-radius: {{r.radius}}; background: {{r.colorA}}; display: block"></span>
+<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.name}}</span>
+<span style="font-size: 12px; color: #8e8e93">{{r.time}}</span>
+</div>
+</sc-for>
+</sc-for>
+<sc-for list="{{sec.rows}}" as="r" hint-placeholder-count="3">
+<button type="button" style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; padding: 10px; border: 0; border-radius: 14px; background: {{r.bg}}; text-align: left; cursor: pointer; font: inherit; color: inherit">
+<sc-if value="{{r.isGroup}}" hint-placeholder-val="{{false}}">
+<span style="position: relative; width: 40px; height: 40px; display: block">
+<span style="position: absolute; left: 0; top: 0; width: 25px; height: 25px; border-radius: 8px; background: {{r.colorA}}; display: flex; align-items: center; justify-content: center; gap: 4px"><span style="width: 3px; height: 5px; border-radius: 2px; background: #ffffff"></span><span style="width: 3px; height: 5px; border-radius: 2px; background: #ffffff"></span></span>
+<span style="position: absolute; right: 0; bottom: 0; width: 25px; height: 25px; border-radius: 50%; background: {{r.colorB}}; border: 2px solid {{r.ring}}; box-sizing: content-box; display: flex; align-items: center; justify-content: center; gap: 4px"><span style="width: 3px; height: 5px; border-radius: 2px; background: #ffffff"></span><span style="width: 3px; height: 5px; border-radius: 2px; background: #ffffff"></span></span>
+</span>
+</sc-if>
+<sc-if value="{{r.isBot}}" hint-placeholder-val="{{true}}">
+<span style="width: 40px; height: 40px; border-radius: {{r.radius}}; background: {{r.colorA}}; display: flex; align-items: center; justify-content: center; gap: 6px"><span style="width: 4px; height: 7px; border-radius: 2px; background: #ffffff"></span><span style="width: 4px; height: 7px; border-radius: 2px; background: #ffffff"></span></span>
+</sc-if>
+<span style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+<span style="display: flex; align-items: center; gap: 6px; min-width: 0">
+<span style="font-size: 15px; font-weight: 500; white-space: nowrap">{{r.pre}}<mark style="background: #fde68a; color: inherit; border-radius: 3px; padding: 0">{{r.hit}}</mark>{{r.post}}</span>
+<sc-if value="{{r.hasTag}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; color: #6e6e73; background: #e7e7e9; border-radius: 5px; padding: 1px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.tag}}</span></sc-if>
+</span>
+<span style="font-size: 13px; color: #8a8a8e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{r.preview}}</span>
+</span>
+<span style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px; align-self: flex-start; padding-top: 2px">
+<span style="font-size: 12px; color: #8e8e93">{{r.time}}</span>
+<sc-if value="{{r.unread}}" hint-placeholder-val="{{false}}"><span aria-label="未读" style="width: 9px; height: 9px; border-radius: 50%; background: #1f6fd6; display: block"></span></sc-if>
+</span>
+</button>
+</sc-for>
+</div>
+</sc-for>
+<sc-if value="{{isSearch}}" hint-placeholder-val="{{false}}"><span style="padding: 14px 12px 0; font-size: 12px; color: #aeaeb2; line-height: 1.5">按回车打开第一个结果 · Esc 清除</span></sc-if>
+</div>
+
+<sc-if value="{{showMenu}}" hint-placeholder-val="{{false}}">
+<div role="menu" aria-label="我的账户与设置" style="position: absolute; left: 12px; bottom: 72px; width: 276px; box-sizing: border-box; padding: 10px; border-radius: 20px; background: #fdfdfd; border: 1px solid #e5e5e8; box-shadow: 0 16px 40px rgba(0,0,0,0.14); display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 10px 12px 16px; margin-bottom: 6px; border-radius: 14px; background: #e6f0fc">
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 600; color: #1a5fb4">发现新版本</span><span style="font-size: 12px; color: #4f6f95">[版本号] · 重启后生效</span></span>
+<button type="button" style="height: 34px; padding: 0 14px; border: 0; border-radius: 10px; background: #111111; color: #ffffff; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer">安装</button>
+</div>
+<button type="button" role="menuitem" style="display: flex; align-items: center; gap: 12px; width: 100%; height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; font: inherit; font-size: 16px; color: #1d1d1f; cursor: pointer; text-align: left"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1d1d1f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"></path><path d="M18 19v2H6"></path></svg><span style="flex-grow: 1">帮助与反馈</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+<button type="button" role="menuitem" style="display: flex; align-items: center; gap: 12px; width: 100%; height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; font: inherit; font-size: 16px; color: #1d1d1f; cursor: pointer; text-align: left"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1d1d1f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="11" x2="12" y2="16"></line><line x1="12" y1="8" x2="12" y2="8"></line></svg><span style="flex-grow: 1">关于 OpenBot</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+<button type="button" role="menuitem" style="display: flex; align-items: center; gap: 12px; width: 100%; height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; font: inherit; font-size: 16px; color: #1d1d1f; cursor: pointer; text-align: left"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1d1d1f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg><span style="flex-grow: 1">设置</span></button>
+<span style="height: 1px; background: #ececee; margin: 6px 10px; display: block"></span>
+<button type="button" role="menuitem" style="display: flex; align-items: center; gap: 12px; width: 100%; height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; font: inherit; font-size: 16px; color: #1d1d1f; cursor: pointer; text-align: left"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1d1d1f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21h4a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4"></path><polyline points="8 17 3 12 8 7"></polyline><line x1="3" y1="12" x2="15" y2="12"></line></svg><span style="flex-grow: 1">退出登录</span></button>
+</div>
+</sc-if>
+
+<div style="display: flex; align-items: center; gap: 10px; padding: 10px 2px 2px">
+<button type="button" aria-label="我的账户与设置" aria-haspopup="menu" aria-expanded="{{menuExpanded}}" style="width: 44px; height: 44px; flex-shrink: 0; border: 1px solid #e3e3e6; padding: 0; border-radius: 50%; background: {{meBg}}; color: #6e6e73; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-grid; place-items: center">我</button>
+<button type="button" style="flex-grow: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 10px; height: 44px; border: 1px solid #e3e3e6; border-radius: 22px; background: {{pluginBg}}; font: inherit; font-size: 15px; font-weight: 600; color: #1d1d1f; cursor: pointer">插件<span style="display: inline-flex; padding-left: 5px"><span style="width: 22px; height: 22px; margin-left: -5px; border-radius: 6px; background: #ffffff; border: 1.5px solid #f0f0f2; box-sizing: border-box; color: #1a73e8; font-size: 11px; font-weight: 700; display: inline-grid; place-items: center">G</span><span style="width: 22px; height: 22px; margin-left: -5px; border-radius: 6px; background: #ffffff; border: 1.5px solid #f0f0f2; box-sizing: border-box; color: #1c7c3c; font-size: 11px; font-weight: 700; display: inline-grid; place-items: center">D</span><span style="width: 22px; height: 22px; margin-left: -5px; border-radius: 6px; background: #ffffff; border: 1.5px solid #f0f0f2; box-sizing: border-box; color: #111111; font-size: 11px; font-weight: 700; display: inline-grid; place-items: center">H</span></span></button>
+<button type="button" aria-label="安装新版本" style="width: 44px; height: 44px; flex-shrink: 0; border: 0; padding: 0; border-radius: 50%; background: #111111; cursor: pointer; display: inline-grid; place-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 16.6A5 5 0 0 0 18 7h-1.3A8 8 0 1 0 4 15.3"></path><polyline points="8 17 12 21 16 17"></polyline><line x1="12" y1="12" x2="12" y2="21"></line></svg></button>
+</div>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["channel","bot","new","plugins","menu","search","none"],"default":"channel"},"$preview":{"width":300,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const active = this.props.active ?? 'channel';
+    const defs = [
+      { key: 'channel', group: true, name: '市场周报', a: '#8b7cf6', b: '#f0a43a', preview: '研究助理：周报初稿好了，等你看一下', time: '10:24', folder: 'mkt' },
+      { key: 'bot', group: false, name: '研究助理', a: '#8b7cf6', radius: '12px', tag: '信息 · 竞品研究', preview: '本周素材已整理完，稍后发你汇总。', time: '09:40', folder: 'mkt' },
+      { key: 'cs', group: false, name: '客服小橙', a: '#f0a43a', radius: '50%', tag: '客服 · 工单', preview: '今天的 12 个工单都回复了。', time: '昨天', unread: true, folder: 'mkt' },
+      { key: 'release', group: true, name: '发布协作', a: '#4a8ff7', b: '#9a9aa0', preview: '发布助手：2.4 发布说明已更新', time: '09:12', unread: true },
+      { key: 'design', group: false, name: '设计评审', a: '#ec6aa8', radius: '12px', tag: '设计 · 走查', preview: '首页改版的走查意见已发到频道。', time: '9/28' },
+      { key: 'product', group: true, name: '产品讨论', a: '#34c07a', b: '#4a8ff7', preview: '你：下周一再过一遍需求', time: '9/27' },
+      { key: 'ops', group: false, name: '运维值班', a: '#8e8e93', radius: '50%', tag: '运维 · 巡检', preview: '凌晨巡检一切正常。', time: '9/26' }
+    ];
+    const folders = [{ id: 'mkt', name: '市场团队' }];
+    const query = active === 'search' ? '市场' : '';
+    const split = (text) => {
+      const i = query ? text.indexOf(query) : -1;
+      return i < 0 ? { pre: text, hit: '', post: '' } : { pre: text.slice(0, i), hit: query, post: text.slice(i + query.length) };
+    };
+    const toRow = (d) => {
+      const on = d.key === active;
+      return Object.assign({
+        name: d.name, isGroup: d.group, isBot: !d.group,
+        colorA: d.a, colorB: d.b || d.a, radius: d.radius || '12px',
+        tag: d.tag || '', hasTag: !!d.tag,
+        preview: d.preview, time: d.time, unread: !!d.unread && !on,
+        bg: on ? '#e6e6e8' : 'transparent',
+        ring: on ? '#e6e6e8' : '#f5f5f6'
+      }, split(d.name));
+    };
+    let sections;
+    if (query) {
+      const groupHits = folders.filter((f) => f.name.includes(query)).map((f) => {
+        const members = defs.filter((d) => d.folder === f.id);
+        return Object.assign({ sub: members.length + ' 个对话', bg: '#e6e6e8', children: members.map(toRow) }, split(f.name));
+      });
+      const chatHits = defs.filter((d) => d.name.includes(query) || (d.tag || '').includes(query)).map(toRow);
+      sections = [
+        { title: '分组', count: String(groupHits.length), groups: groupHits, rows: [] },
+        { title: '对话', count: String(chatHits.length), groups: [], rows: chatHits }
+      ];
+    } else {
+      sections = folders.map((f) => ({ title: f.name, count: '', groups: [], rows: defs.filter((d) => d.folder === f.id).map(toRow) }))
+        .concat([{ title: '未分组', count: '', groups: [], rows: defs.filter((d) => !d.folder).map(toRow) }]);
+    }
+    return { sections, query, isSearch: !!query, searchBg: query ? '#ffffff' : '#eaeaec', searchBorder: query ? '#c7c7cc' : '#e0e0e3', showNew: active === 'new', pluginBg: active === 'plugins' ? '#e6e6e8' : '#ffffff', showMenu: active === 'menu', menuExpanded: active === 'menu' ? 'true' : 'false', meBg: active === 'menu' ? '#e3e3e6' : '#ffffff' };
+  }
+}
+</script>
+</body>
+</html>

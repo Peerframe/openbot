@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>设置 · 关于 OpenBot</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+a{color:#1d1d1f;text-decoration:none}
+.card{border-radius:16px;background:#f0f0f2;padding:0 18px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:52px;padding:9px 0;box-sizing:border-box}
+.row + .row{border-top:1px solid #e3e3e6}
+.t{display:flex;flex-direction:column;gap:3px}.t b{font-size:15px;font-weight:500}.t i{font-style:normal;font-size:13px;color:#6e6e73}
+.sw{width:44px;height:26px;border:0;padding:0;border-radius:13px;position:relative;cursor:pointer;flex-shrink:0}.sw.on{background:#111111}.sw.off{background:#d1d1d6}
+.sw span{position:absolute;top:3px;width:20px;height:20px;border-radius:50%;background:#ffffff;display:block}.sw.on span{right:3px}.sw.off span{left:3px}
+.pill{height:32px;padding:0 14px;border-radius:16px;border:0;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.x{position:absolute;right:18px;top:18px;width:34px;height:34px;border:0;border-radius:50%;background:transparent;cursor:pointer;display:inline-grid;place-items:center}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #ffffff; display: grid; grid-template-columns: 300px minmax(0, 1fr)">
+<dc-import name="Sidebar" active="channel" hint-size="300px,900px"></dc-import>
+<div style="background: #fcfcfc"></div>
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; background: rgba(0,0,0,0.34)"></div>
+<div role="dialog" aria-modal="true" aria-label="设置" style="position: absolute; left: 190px; top: 80px; width: 1060px; height: 740px; border-radius: 20px; background: #fdfdfd; box-shadow: 0 30px 80px rgba(0,0,0,0.25); display: grid; grid-template-columns: 250px minmax(0, 1fr); overflow: hidden">
+<dc-import name="SettingsNav" section="about" hint-size="250px,740px"></dc-import>
+<div style="position: relative; overflow: hidden; padding: 36px 44px; display: flex; flex-direction: column; gap: 20px">
+<button type="button" class="x" aria-label="关闭设置"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 0 4px">
+<span style="width: 72px; height: 72px; border-radius: 20px; background: #1d1d1f; display: flex; align-items: center; justify-content: center; gap: 10px"><span style="width: 7px; height: 12px; border-radius: 4px; background: #ffffff; display: block"></span><span style="width: 7px; height: 12px; border-radius: 4px; background: #ffffff; display: block"></span></span>
+<strong style="font-size: 22px; font-weight: 700; margin-top: 6px">OpenBot</strong>
+<span style="font-size: 14px; color: #6e6e73">版本 [版本号]</span>
+</div>
+
+<div class="card">
+<div class="row"><span class="t"><b>有新版本可以安装</b><i>[新版本号] · 重启后生效</i></span><button type="button" class="pill" style="background: #111111; color: #ffffff">安装并重启</button></div>
+<div class="row"><span class="t"><b>自动下载更新</b></span><button type="button" role="switch" aria-checked="true" aria-label="自动下载更新" class="sw on"><span></span></button></div>
+</div>
+
+<div class="card">
+<a class="row" href="#"><span class="t"><b>更新日志</b></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></a>
+<a class="row" href="#"><span class="t"><b>源代码</b><i>OpenBot 是开源项目</i></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></a>
+<a class="row" href="#"><span class="t"><b>开源许可与致谢</b><i>使用到的开源组件和它们的许可证</i></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></a>
+<a class="row" href="#"><span class="t"><b>安全说明</b><i>各平台实际支持到什么程度</i></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a1a1a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></a>
+</div>
+<span style="margin: -6px 4px 0; font-size: 12px; color: #8e8e93; line-height: 1.6">Bot 的成长与学习方向受 Hermes Agent 启发。</span>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

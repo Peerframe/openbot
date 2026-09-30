@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>设置 · 插件</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.card{border-radius:16px;background:#f0f0f2;padding:0 18px}
+.pl{display:grid;grid-template-columns:44px minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:14px 0}
+.pl + .pl{border-top:1px solid #e3e3e6}
+.tile{width:44px;height:44px;border-radius:12px;border:1px solid #e5e5e8;background:#ffffff;box-sizing:border-box;display:inline-grid;place-items:center;font-size:17px;font-weight:700}
+.t{display:flex;flex-direction:column;gap:4px;min-width:0}.t b{font-size:15px;font-weight:600}.t i{font-style:normal;font-size:13px;color:#6e6e73}
+.bots{display:flex;gap:6px;flex-wrap:wrap}.bots span{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px 0 3px;border-radius:11px;background:#ffffff;font-size:12px;color:#3a3a3c}
+.bots span::before{content:"";width:16px;height:16px;border-radius:5px;background:var(--c)}
+.sw{width:44px;height:26px;border:0;padding:0;border-radius:13px;position:relative;cursor:pointer;flex-shrink:0}.sw.on{background:#111111}.sw.off{background:#d1d1d6}
+.sw span{position:absolute;top:3px;width:20px;height:20px;border-radius:50%;background:#ffffff;display:block}.sw.on span{right:3px}.sw.off span{left:3px}
+.pill{height:32px;padding:0 14px;border-radius:16px;border:0;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.x{position:absolute;right:18px;top:18px;width:34px;height:34px;border:0;border-radius:50%;background:transparent;cursor:pointer;display:inline-grid;place-items:center}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #ffffff; display: grid; grid-template-columns: 300px minmax(0, 1fr)">
+<dc-import name="Sidebar" active="channel" hint-size="300px,900px"></dc-import>
+<div style="background: #fcfcfc"></div>
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; background: rgba(0,0,0,0.34)"></div>
+<div role="dialog" aria-modal="true" aria-label="设置" style="position: absolute; left: 190px; top: 80px; width: 1060px; height: 740px; border-radius: 20px; background: #fdfdfd; box-shadow: 0 30px 80px rgba(0,0,0,0.25); display: grid; grid-template-columns: 250px minmax(0, 1fr); overflow: hidden">
+<dc-import name="SettingsNav" section="plugins" hint-size="250px,740px"></dc-import>
+<div style="position: relative; overflow: hidden; padding: 36px 44px; display: flex; flex-direction: column; gap: 18px">
+<button type="button" class="x" aria-label="关闭设置"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
+<header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding-right: 40px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-size: 24px; font-weight: 700">插件</h1>
+<p style="margin: 0; font-size: 14px; color: #6e6e73">连接外部应用，并决定哪些 Bot 可以用。</p>
+</div>
+<button type="button" class="pill" style="background: #111111; color: #ffffff">打开插件市场</button>
+</header>
+
+<div class="card">
+<div class="pl">
+<span class="tile" style="color: #1a73e8">G</span>
+<span class="t"><b>Gmail</b><i>读邮件、写草稿；发送要你批准</i><span class="bots"><span style="--c: #8b7cf6">研究助理</span><span style="--c: #f0a43a">客服小橙</span></span></span>
+<button type="button" class="pill" style="background: #ffffff; border: 1px solid #e3e3e6">管理</button>
+<button type="button" role="switch" aria-checked="true" aria-label="启用 Gmail" class="sw on"><span></span></button>
+</div>
+<div class="pl">
+<span class="tile" style="color: #1c7c3c">D</span>
+<span class="t"><b>Google Drive</b><i>搜索、读取和创建文件</i><span class="bots"><span style="--c: #8b7cf6">研究助理</span></span></span>
+<button type="button" class="pill" style="background: #ffffff; border: 1px solid #e3e3e6">管理</button>
+<button type="button" role="switch" aria-checked="true" aria-label="启用 Google Drive" class="sw on"><span></span></button>
+</div>
+<div class="pl">
+<span class="tile" style="color: #111111">H</span>
+<span class="t"><b>GitHub</b><i>读仓库、开 PR；合并要你批准</i><span class="bots"><span style="--c: #4a8ff7">发布助手</span></span></span>
+<button type="button" class="pill" style="background: #ffffff; border: 1px solid #e3e3e6">管理</button>
+<button type="button" role="switch" aria-checked="true" aria-label="启用 GitHub" class="sw on"><span></span></button>
+</div>
+<div class="pl" style="opacity: 0.6">
+<span class="tile" style="color: #111111">X</span>
+<span class="t"><b>X</b><i>已停用 · 授权已过期，需要重新登录</i></span>
+<button type="button" class="pill" style="background: #ffffff; border: 1px solid #e3e3e6">重新授权</button>
+<button type="button" role="switch" aria-checked="false" aria-label="启用 X" class="sw off"><span></span></button>
+</div>
+</div>
+<span style="margin: -8px 4px 0; font-size: 12px; color: #8e8e93">插件带来的是能力，不是权限：发送、删除这类操作仍按「审批与权限」里的规则先问你。</span>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

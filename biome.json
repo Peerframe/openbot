@@ -15,6 +15,7 @@
       "!**/.quality-venv",
       "!package-lock.json",
       "!apps/web/dist-demo",
+      "!docs/design/desktop-ui-2026-10",
       "!tests/oracles/legacy-server/src"
     ]
   },

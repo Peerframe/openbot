@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>分组与搜索</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; display: grid; grid-template-columns: 300px 300px minmax(0, 1fr); gap: 0; background: #fcfcfc; overflow: hidden">
+<dc-import name="Sidebar" active="channel" hint-size="300px,900px"></dc-import>
+<dc-import name="Sidebar" active="search" hint-size="300px,900px"></dc-import>
+<div style="padding: 64px 64px 0 56px; display: flex; flex-direction: column; gap: 22px">
+<header style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em">分组与搜索</h1>
+<p style="margin: 0; font-size: 15px; color: #6e6e73; line-height: 1.6">左：平时的侧栏。右：在搜索框输入「市场」。</p>
+</header>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">分组</h2>
+<ul style="margin: 0; padding-left: 18px; font-size: 14px; color: #3a3a3c; line-height: 1.8">
+<li>有分组时，侧栏按分组分段：每个分组一个灰色小标题，没有分组的对话收在最下面的「未分组」。</li>
+<li>组内按最近活动排序；置顶的对话排在所属分段最上面。</li>
+<li>右键对话选「移至新分组」会新建分组，也可以选已有分组。</li>
+<li>右键分组标题：重命名分组、折叠、解散分组（解散后对话回到「未分组」，不会删除）。</li>
+<li>一个分组都没有时，不显示「未分组」标题，列表和现在一样。</li>
+</ul>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">搜索</h2>
+<ul style="margin: 0; padding-left: 18px; font-size: 14px; color: #3a3a3c; line-height: 1.8">
+<li>一个搜索框同时搜分组、频道和 Bot（名字和标签），结果分成「分组」「对话」两段，右侧显示条数。</li>
+<li>命中的文字用浅黄色标出。</li>
+<li>命中分组时直接展开组里的对话，点分组行只显示这个分组，点组里的对话直接打开。</li>
+<li>被「从侧栏隐藏」的对话也能搜到。</li>
+<li>回车打开第一个结果，Esc 或点叉号清除搜索、回到分组列表。</li>
+</ul>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

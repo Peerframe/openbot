@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>设置 · 工作主机</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.sec{margin:0 4px;font-size:13px;font-weight:500;color:#6e6e73}
+.card{border-radius:16px;background:#f0f0f2;padding:0 18px}
+.host{display:grid;grid-template-columns:44px minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:14px 0}
+.host + .host{border-top:1px solid #e3e3e6}
+.tile{width:44px;height:44px;border-radius:12px;border:1px solid #e5e5e8;background:#ffffff;box-sizing:border-box;display:inline-grid;place-items:center}
+.pill{height:32px;padding:0 14px;border-radius:16px;border:0;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #ffffff; display: grid; grid-template-columns: 300px minmax(0, 1fr)">
+<dc-import name="Sidebar" active="channel" hint-size="300px,900px"></dc-import>
+<div style="background: #fcfcfc"></div>
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; background: rgba(0,0,0,0.34)"></div>
+
+<div role="dialog" aria-modal="true" aria-label="设置" style="position: absolute; left: 190px; top: 80px; width: 1060px; height: 740px; border-radius: 20px; background: #fdfdfd; box-shadow: 0 30px 80px rgba(0,0,0,0.25); display: grid; grid-template-columns: 250px minmax(0, 1fr); overflow: hidden">
+<dc-import name="SettingsNav" section="hosts" hint-size="250px,740px"></dc-import>
+<div style="position: relative; overflow: hidden; padding: 40px 44px; display: flex; flex-direction: column; gap: 20px">
+<button type="button" aria-label="关闭设置" style="position: absolute; right: 18px; top: 18px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; cursor: pointer; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
+<header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding-right: 40px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-size: 24px; font-weight: 700">工作主机</h1>
+<p style="margin: 0; font-size: 14px; color: #6e6e73">连接 Windows、macOS 或 Linux 电脑，让 Bot 在专用环境里执行任务。</p>
+</div>
+<button type="button" class="pill" style="background: #111111; color: #ffffff; height: 36px; padding: 0 16px">配对新主机</button>
+</header>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h2 class="sec">已登记 · 3 台</h2>
+<div class="card">
+<div class="host">
+<span class="tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1d1d1f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"></rect><line x1="2" y1="20" x2="22" y2="20"></line></svg></span>
+<span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="font-size: 15px; font-weight: 600">我的 MacBook Pro</span><span style="font-size: 13px; color: #6e6e73">macOS · arm64 · 正在执行 1/2 个任务</span></span>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #1c7c3c"><span style="width: 7px; height: 7px; border-radius: 50%; background: #34c759; display: block"></span>在线</span>
+<button type="button" class="pill" style="background: transparent; color: #b3261e; padding: 0 10px">吊销</button>
+</div>
+<div class="host">
+<span class="tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1d1d1f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="7" rx="2"></rect><rect x="3" y="14" width="18" height="7" rx="2"></rect><line x1="7" y1="6.5" x2="7" y2="6.5"></line><line x1="7" y1="17.5" x2="7" y2="17.5"></line></svg></span>
+<span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="font-size: 15px; font-weight: 600">构建机</span><span style="font-size: 13px; color: #6e6e73">Linux · x86_64 · 空闲</span></span>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #1c7c3c"><span style="width: 7px; height: 7px; border-radius: 50%; background: #34c759; display: block"></span>在线</span>
+<button type="button" class="pill" style="background: transparent; color: #b3261e; padding: 0 10px">吊销</button>
+</div>
+<div class="host">
+<span class="tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"></rect><line x1="8" y1="20" x2="16" y2="20"></line><line x1="12" y1="16" x2="12" y2="20"></line></svg></span>
+<span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="font-size: 15px; font-weight: 600; color: #6e6e73">办公室 PC</span><span style="font-size: 13px; color: #8e8e93">Windows · 上次在线 9/20</span></span>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #8e8e93"><span style="width: 7px; height: 7px; border-radius: 50%; background: #c7c7cc; display: block"></span>离线</span>
+<button type="button" class="pill" style="background: transparent; color: #b3261e; padding: 0 10px">吊销</button>
+</div>
+</div>
+<span style="margin: 2px 4px 0; font-size: 12px; color: #8e8e93">在线状态来自实时连接。吊销后旧凭证立即失效，正在执行的任务会停止。</span>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h2 class="sec">刚创建的配对令牌</h2>
+<div style="border-radius: 16px; background: #ffffff; border: 1px solid #e3e3e6; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 600">只显示这一次</span><span style="font-size: 13px; color: #6e6e73">十分钟后过期。不要通过公开聊天或 Git 传递。</span></span>
+<button type="button" class="pill" style="background: #111111; color: #ffffff">复制启动配置</button>
+</div>
+<code style="display: block; padding: 12px 14px; border-radius: 12px; background: #f0f0f2; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 13px; line-height: 1.7; color: #3a3a3c; white-space: pre">OPENBOT_NODE_ID=[节点 ID]
+OPENBOT_NODE_ENROLLMENT_TOKEN=••••••••••••••••</code>
+<span style="font-size: 12px; color: #8e8e93">在目标主机的配置里加入这两行，首次启动成功后立即删除令牌。</span>
+</div>
+</section>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

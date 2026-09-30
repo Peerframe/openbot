@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>我的账户与设置菜单</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; display: grid; grid-template-columns: 300px minmax(0, 1fr); background: #fcfcfc; overflow: hidden">
+<dc-import name="Sidebar" active="menu" hint-size="300px,900px"></dc-import>
+<div style="display: flex; align-items: center; justify-content: center; padding: 40px">
+<div style="max-width: 520px; display: flex; flex-direction: column; gap: 10px; color: #6e6e73; font-size: 15px; line-height: 1.7">
+<strong style="font-size: 20px; color: #1d1d1f">点击左下角「我」</strong>
+<span>弹出菜单：最上面是新版本提示和「安装」按钮（有新版本时才出现），下面是帮助与反馈、关于 OpenBot、设置，最后是退出登录。</span>
+<span>「设置」打开设置弹窗，里面分四个分区：通用、模型服务、工作主机、账户与安全。</span>
+<span>底部一排：「我」、插件胶囊按钮、黑色的更新按钮（有新版本时才出现）。</span>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

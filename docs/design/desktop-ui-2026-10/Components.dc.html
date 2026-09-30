@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>组件与规范</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.label{font-size:12px;font-weight:600;color:#8e8e93;letter-spacing:0.02em}
+.pill{height:34px;padding:0 16px;border-radius:17px;border:0;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.sw{display:flex;flex-direction:column;gap:6px;font-size:12px;color:#6e6e73}
+.chip{width:100%;height:44px;border-radius:12px;border:1px solid #e3e3e6;display:block}
+.menu-item{display:flex;align-items:center;gap:12px;height:40px;padding:0 14px;border:0;border-radius:10px;background:transparent;font-size:15px;cursor:pointer;width:100%;text-align:left}
+.menu-item:hover{background:#ececee}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; padding: 40px 44px; background: #ffffff; display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 44px">
+
+<div style="display: flex; flex-direction: column; gap: 28px">
+<header style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em">组件与规范</h1>
+<p style="margin: 0; font-size: 14px; color: #6e6e73; line-height: 1.55">中性灰底、黑色主按钮、胶囊形控件、大圆角分组卡片，系统字体。颜色只用在状态上。</p>
+</header>
+<section style="display: flex; flex-direction: column; gap: 12px">
+<span class="label">颜色</span>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+<div class="sw"><span class="chip" style="background: #fcfcfc"></span>页面 #FCFCFC</div>
+<div class="sw"><span class="chip" style="background: #f5f5f6"></span>侧栏 #F5F5F6</div>
+<div class="sw"><span class="chip" style="background: #f0f0f2"></span>填充 #F0F0F2</div>
+<div class="sw"><span class="chip" style="background: #e6e6e8"></span>选中 #E6E6E8</div>
+<div class="sw"><span class="chip" style="background: #111111"></span>主按钮 #111111</div>
+<div class="sw"><span class="chip" style="background: #1d1d1f"></span>正文 #1D1D1F</div>
+<div class="sw"><span class="chip" style="background: #6e6e73"></span>次要 #6E6E73</div>
+<div class="sw"><span class="chip" style="background: #e3e3e6"></span>分隔线 #E3E3E6</div>
+<div class="sw"><span class="chip" style="background: #1f6fd6"></span>未读/执行中</div>
+<div class="sw"><span class="chip" style="background: #34c759"></span>在线/待命</div>
+<div class="sw"><span class="chip" style="background: #b3261e"></span>需确认/失败</div>
+<div class="sw"><span class="chip" style="background: #c4302b; opacity: 0.85"></span>行内代码</div>
+</div>
+</section>
+<section style="display: flex; flex-direction: column; gap: 10px">
+<span class="label">文字</span>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-radius: 16px; background: #f0f0f2">
+<span style="font-size: 28px; font-weight: 700; letter-spacing: -0.02em">页面标题 28</span>
+<span style="font-size: 17px; font-weight: 600">分区标题 17</span>
+<span style="font-size: 15px">正文与气泡 15 · 行高 1.6</span>
+<span style="font-size: 13px; color: #6e6e73">预览与说明 13</span>
+<span style="font-size: 12px; color: #8e8e93">时间与标签 12</span>
+</div>
+</section>
+<section style="display: flex; flex-direction: column; gap: 10px">
+<span class="label">圆角</span>
+<div style="display: flex; gap: 14px; align-items: flex-end; font-size: 12px; color: #6e6e73">
+<span style="display: flex; flex-direction: column; gap: 6px; align-items: center"><span style="width: 56px; height: 40px; border-radius: 10px; background: #f0f0f2; display: block"></span>输入 10</span>
+<span style="display: flex; flex-direction: column; gap: 6px; align-items: center"><span style="width: 56px; height: 40px; border-radius: 14px; background: #f0f0f2; display: block"></span>列表行 14</span>
+<span style="display: flex; flex-direction: column; gap: 6px; align-items: center"><span style="width: 56px; height: 40px; border-radius: 18px; background: #f0f0f2; display: block"></span>卡片 18</span>
+<span style="display: flex; flex-direction: column; gap: 6px; align-items: center"><span style="width: 56px; height: 40px; border-radius: 20px; background: #f0f0f2; display: block"></span>弹窗 20</span>
+<span style="display: flex; flex-direction: column; gap: 6px; align-items: center"><span style="width: 72px; height: 40px; border-radius: 22px; background: #f0f0f2; display: block"></span>气泡 22</span>
+<span style="display: flex; flex-direction: column; gap: 6px; align-items: center"><span style="width: 72px; height: 32px; border-radius: 16px; background: #f0f0f2; display: block"></span>胶囊</span>
+</div>
+</section>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 26px">
+<section style="display: flex; flex-direction: column; gap: 12px">
+<span class="label">按钮</span>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+<button type="button" class="pill" style="background: #111111; color: #ffffff">分配工作</button>
+<button type="button" class="pill" style="background: #ececee">添加</button>
+<button type="button" class="pill" style="background: #ffffff; border: 1px solid #e3e3e6">编辑头像</button>
+<button type="button" class="pill" style="background: transparent; color: #b3261e">删除</button>
+<button type="button" class="pill" disabled style="background: #111111; color: #ffffff; opacity: 0.35; cursor: default">创建中…</button>
+</div>
+<div style="display: flex; gap: 12px; align-items: center">
+<button type="button" aria-label="新建" style="width: 38px; height: 38px; border: 0; border-radius: 50%; background: #f0f0f2; display: inline-grid; place-items: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+<button type="button" aria-label="发送" style="width: 40px; height: 40px; border: 0; border-radius: 50%; background: #111111; display: inline-grid; place-items: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></button>
+<button type="button" aria-label="关闭" style="width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; display: inline-grid; place-items: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
+<button type="button" role="switch" aria-checked="true" aria-label="开" style="width: 44px; height: 26px; border: 0; padding: 0; border-radius: 13px; background: #111111; position: relative; cursor: pointer"><span style="position: absolute; right: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #ffffff; display: block"></span></button>
+<button type="button" role="switch" aria-checked="false" aria-label="关" style="width: 44px; height: 26px; border: 0; padding: 0; border-radius: 13px; background: #d1d1d6; position: relative; cursor: pointer"><span style="position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #ffffff; display: block"></span></button>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<span class="label">标签与筛选</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<span style="height: 34px; padding: 0 16px; border-radius: 17px; background: #111111; color: #ffffff; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center">全部</span>
+<span style="height: 34px; padding: 0 16px; border-radius: 17px; background: #f0f0f2; font-size: 14px; display: inline-flex; align-items: center">频道</span>
+<span style="height: 34px; padding: 0 16px; border-radius: 17px; background: #f0f0f2; font-size: 14px; display: inline-flex; align-items: center">Bot</span>
+<span style="font-size: 12px; color: #6e6e73; background: #ececee; border-radius: 6px; padding: 2px 8px">信息 · 竞品研究</span>
+</div>
+<div style="display: flex; gap: 16px; font-size: 12px">
+<span style="display: inline-flex; align-items: center; gap: 5px; color: #1f6fd6"><span style="width: 7px; height: 7px; border-radius: 50%; background: #1f6fd6; display: block"></span>执行中</span>
+<span style="display: inline-flex; align-items: center; gap: 5px; color: #6e6e73"><span style="width: 7px; height: 7px; border-radius: 50%; background: #34c759; display: block"></span>待命</span>
+<span style="display: inline-flex; align-items: center; gap: 5px; color: #b3261e"><span style="width: 7px; height: 7px; border-radius: 50%; background: #b3261e; display: block"></span>需要确认</span>
+<span style="display: inline-flex; align-items: center; gap: 5px; color: #8e8e93"><span style="width: 7px; height: 7px; border-radius: 50%; background: #c7c7cc; display: block"></span>离线</span>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<span class="label">输入</span>
+<label style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 11px; border-radius: 10px; background: #eaeaec; border: 1px solid #e0e0e3; font-size: 14px; color: #8e8e93"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>搜索</label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #6e6e73">名称<input type="text" value="研究助理" style="box-sizing: border-box; border: 1px solid #e3e3e6; border-radius: 12px; background: #ffffff; padding: 10px 14px; font: inherit; font-size: 14px; color: #1d1d1f; outline: none"></label>
+<div style="display: flex; align-items: center; gap: 10px; height: 52px; padding: 6px 6px 6px 8px; box-sizing: border-box; border-radius: 26px; background: #ffffff; border: 1px solid #e3e3e6">
+<span style="width: 36px; height: 36px; border-radius: 50%; background: #f0f0f2; display: block"></span>
+<span style="flex-grow: 1; font-size: 15px; color: #a1a1a6">给 研究助理 发消息</span>
+<span style="width: 38px; height: 38px; border-radius: 50%; background: #111111; display: block"></span>
+</div>
+</section>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 26px">
+<section style="display: flex; flex-direction: column; gap: 10px">
+<span class="label">列表行 · 默认 / 选中 / 未读</span>
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 8px; border-radius: 16px; background: #f5f5f6">
+<div style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px; border-radius: 14px"><span style="width: 40px; height: 40px; border-radius: 12px; background: #ec6aa8; display: block"></span><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="font-size: 15px; font-weight: 500">设计评审</span><span style="font-size: 13px; color: #8a8a8e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">走查意见已发到频道。</span></span><span style="font-size: 12px; color: #8e8e93; align-self: flex-start">9/28</span></div>
+<div style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px; border-radius: 14px; background: #e6e6e8"><span style="width: 40px; height: 40px; border-radius: 12px; background: #8b7cf6; display: block"></span><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="font-size: 15px; font-weight: 500">研究助理</span><span style="font-size: 13px; color: #8a8a8e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">本周素材已整理完。</span></span><span style="font-size: 12px; color: #8e8e93; align-self: flex-start">09:40</span></div>
+<div style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px; border-radius: 14px"><span style="width: 40px; height: 40px; border-radius: 50%; background: #f0a43a; display: block"></span><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="font-size: 15px; font-weight: 500">客服小橙</span><span style="font-size: 13px; color: #8a8a8e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">12 个工单都回复了。</span></span><span style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px; align-self: flex-start"><span style="font-size: 12px; color: #8e8e93">昨天</span><span style="width: 9px; height: 9px; border-radius: 50%; background: #1f6fd6; display: block"></span></span></div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<span class="label">气泡</span>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 16px; background: #fcfcfc; border: 1px solid #ececee">
+<div style="align-self: flex-start; max-width: 82%; padding: 11px 16px; border-radius: 22px; background: #f0f0f2; font-size: 14px; line-height: 1.6">草稿在 <span style="font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 13px; color: #c4302b; background: #e6e6e8; border: 1px solid #dcdcdf; border-radius: 6px; padding: 1px 5px">weekly/w40.md</span></div>
+<div style="align-self: flex-end; max-width: 82%; padding: 11px 16px; border-radius: 22px; background: #111111; color: #ffffff; font-size: 14px; line-height: 1.6">再展开一点。</div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<span class="label">右键菜单</span>
+<div role="menu" aria-label="Bot 操作" style="width: 260px; padding: 6px; border-radius: 16px; background: #fdfdfd; border: 1px solid #e5e5e8; box-shadow: 0 16px 40px rgba(0,0,0,0.12); display: flex; flex-direction: column">
+<button type="button" role="menuitem" class="menu-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1d1d1f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5M9 3h6l-1 6 4 4H6l4-4z"></path></svg>置顶</button>
+<button type="button" role="menuitem" class="menu-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1d1d1f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>编辑资料</button>
+<button type="button" role="menuitem" class="menu-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1d1d1f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>导出员工模板</button>
+<span style="height: 1px; background: #e8e8ea; margin: 6px 10px; display: block"></span>
+<button type="button" role="menuitem" class="menu-item" style="color: #b3261e"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b3261e" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path></svg>删除</button>
+</div>
+</section>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

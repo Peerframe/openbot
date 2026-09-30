@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>设置 · 模型服务</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.nav{display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;border:0;border-radius:10px;background:transparent;font-size:15px;cursor:pointer;text-align:left;width:100%}
+.nav:hover{background:#ececee}
+.pill{height:32px;padding:0 16px;border-radius:16px;border:0;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.tile{width:44px;height:44px;border-radius:12px;border:1px solid #e5e5e8;background:#ffffff;display:inline-grid;place-items:center;font-size:17px;font-weight:700;flex-shrink:0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #ffffff; display: grid; grid-template-columns: 300px minmax(0, 1fr)">
+<dc-import name="Sidebar" active="channel" hint-size="300px,900px"></dc-import>
+<div style="background: #fcfcfc"></div>
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; background: rgba(0,0,0,0.34)"></div>
+
+<div role="dialog" aria-modal="true" aria-label="设置" style="position: absolute; left: 190px; top: 80px; width: 1060px; height: 740px; border-radius: 20px; background: #fdfdfd; box-shadow: 0 30px 80px rgba(0,0,0,0.25); display: grid; grid-template-columns: 250px minmax(0, 1fr); overflow: hidden">
+<dc-import name="SettingsNav" section="model" hint-size="250px,740px"></dc-import>
+
+<div style="position: relative; overflow: hidden; padding: 40px 44px; display: flex; flex-direction: column; gap: 22px">
+<button type="button" aria-label="关闭设置" style="position: absolute; right: 18px; top: 18px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; cursor: pointer; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
+<header style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-size: 24px; font-weight: 700">模型服务</h1>
+<p style="margin: 0; font-size: 14px; color: #6e6e73">连接常用厂商和 API 平台，再为每个 Bot 选择模型。</p>
+</header>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0 4px; font-size: 13px; font-weight: 500; color: #6e6e73">已连接</h2>
+<div style="border-radius: 16px; background: #f0f0f2; padding: 0 18px">
+<div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0">
+<span class="tile"><img src="/_blob/8cd7d82699e07284b17981c1181952f1" alt="" style="width: 26px; height: 26px; display: block"></span>
+<span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 600">Anthropic</span><span style="font-size: 13px; color: #6e6e73">3 个模型 · 2 个 Bot 在用</span></span>
+<button type="button" role="switch" aria-checked="true" aria-label="启用 Anthropic" style="width: 44px; height: 26px; border: 0; padding: 0; border-radius: 13px; background: #111111; position: relative; cursor: pointer"><span style="position: absolute; right: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #ffffff; display: block"></span></button>
+</div>
+<div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0; border-top: 1px solid #e3e3e6">
+<span class="tile"><img src="/_blob/7868d131f2431dc29a2375eb5389784c" alt="" style="width: 26px; height: 26px; display: block"></span>
+<span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 600">DeepSeek</span><span style="font-size: 13px; color: #6e6e73">2 个模型 · 1 个 Bot 在用</span></span>
+<button type="button" role="switch" aria-checked="true" aria-label="启用 DeepSeek" style="width: 44px; height: 26px; border: 0; padding: 0; border-radius: 13px; background: #111111; position: relative; cursor: pointer"><span style="position: absolute; right: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #ffffff; display: block"></span></button>
+</div>
+<div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0; border-top: 1px solid #e3e3e6">
+<span class="tile"><img src="/_blob/b575dbc52775628b2ef374a2d4ca808a" alt="" style="width: 26px; height: 26px; display: block"></span>
+<span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 600">硅基流动</span><span style="font-size: 13px; color: #6e6e73">已停用</span></span>
+<button type="button" role="switch" aria-checked="false" aria-label="启用 硅基流动" style="width: 44px; height: 26px; border: 0; padding: 0; border-radius: 13px; background: #d1d1d6; position: relative; cursor: pointer"><span style="position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #ffffff; display: block"></span></button>
+</div>
+</div>
+<span style="margin: 2px 4px 0; font-size: 12px; color: #8e8e93">API Key 加密保存在你的 OpenBot 里，浏览器不会保存密钥。</span>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 4px">
+<h2 style="margin: 0; font-size: 13px; font-weight: 500; color: #6e6e73">添加服务</h2>
+<span style="font-size: 13px; color: #8e8e93">自定义兼容 API</span>
+</div>
+<label style="display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 16px; border-radius: 21px; background: #f0f0f2">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+<input type="search" placeholder="搜索服务商" aria-label="搜索服务商" style="border: 0; background: transparent; outline: none; font: inherit; font-size: 15px; width: 100%">
+</label>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 36px; row-gap: 6px">
+<div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 10px 0"><span class="tile"><img src="/_blob/27cd3f02b7644a7ba8687d3b10716004" alt="" style="width: 26px; height: 26px; display: block"></span><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="font-size: 15px; font-weight: 600">OpenAI</span><span style="font-size: 13px; color: #6e6e73; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">连接 OpenAI 的 GPT 系列模型。</span></span><button type="button" class="pill" style="background: #ececee">添加</button></div>
+<div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 10px 0"><span class="tile"><img src="/_blob/70cd40d3c95a37b8352901654409606f" alt="" style="width: 26px; height: 26px; display: block"></span><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="font-size: 15px; font-weight: 600">Google Gemini</span><span style="font-size: 13px; color: #6e6e73; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">连接 Google 的 Gemini 系列模型。</span></span><button type="button" class="pill" style="background: #ececee">添加</button></div>
+<div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 10px 0"><span class="tile"><img src="/_blob/5d31835411788eef16526d85bd7b8d22" alt="" style="width: 26px; height: 26px; display: block"></span><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="font-size: 15px; font-weight: 600">Kimi</span><span style="font-size: 13px; color: #6e6e73; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">选择与你的 API Key 对应的站点。</span></span><button type="button" class="pill" style="background: #ececee">添加</button></div>
+<div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 10px 0"><span class="tile"><img src="/_blob/dac2d39f43cac2defeaaf09261cea02e" alt="" style="width: 26px; height: 26px; display: block"></span><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="font-size: 15px; font-weight: 600">智谱 / Z.AI</span><span style="font-size: 13px; color: #6e6e73; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">连接 GLM 系列模型。</span></span><button type="button" class="pill" style="background: #ececee">添加</button></div>
+<div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 10px 0"><span class="tile"><img src="/_blob/1ce25abdacec081682ff4aa0d16d3ea6" alt="" style="width: 26px; height: 26px; display: block"></span><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="font-size: 15px; font-weight: 600">阿里云百炼</span><span style="font-size: 13px; color: #6e6e73; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">选择 API Key 所在区域和模型。</span></span><button type="button" class="pill" style="background: #ececee">添加</button></div>
+<div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 10px 0"><span class="tile"><img src="/_blob/f3334002375e60ab11b000c224a45af7" alt="" style="width: 26px; height: 26px; display: block"></span><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="font-size: 15px; font-weight: 600">火山方舟</span><span style="font-size: 13px; color: #6e6e73; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">填写已开通的模型或接入点。</span></span><button type="button" class="pill" style="background: #ececee">添加</button></div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Components.dc.html": {
+      "h": 900,
+      "title": "⑤ 组件与规范",
+      "w": 1440,
+      "x": 0,
+      "y": 2040
+    },
+    "Main.dc.html": {
+      "h": 900,
+      "title": "① 频道对话",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "Menu.dc.html": {
+      "h": 900,
+      "title": "⑦ 点「我」：账户与设置菜单",
+      "w": 1440,
+      "x": 3040,
+      "y": 0
+    },
+    "New.dc.html": {
+      "h": 900,
+      "title": "③ 新建聊天 / 选择 Bot",
+      "w": 1440,
+      "x": 0,
+      "y": 1020
+    },
+    "Plugins.dc.html": {
+      "h": 900,
+      "title": "⑥ 插件",
+      "w": 1440,
+      "x": 3040,
+      "y": 1020
+    },
+    "Profile.dc.html": {
+      "h": 900,
+      "title": "② Bot 档案",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
+    },
+    "Settings.dc.html": {
+      "h": 900,
+      "title": "④ 设置 · 模型服务",
+      "w": 1440,
+      "x": 1520,
+      "y": 1020
+    },
+    "Sidebar.dc.html": {
+      "h": 900,
+      "title": "共享侧栏组件",
+      "w": 300,
+      "x": 1520,
+      "y": 2040
+    },
+    "SettingsGeneral.dc.html": {
+      "x": 0,
+      "y": 3060,
+      "w": 1440,
+      "h": 900,
+      "title": "④ 设置 · 通用"
+    },
+    "SettingsHosts.dc.html": {
+      "x": 1520,
+      "y": 3060,
+      "w": 1440,
+      "h": 900,
+      "title": "④ 设置 · 工作主机"
+    },
+    "SettingsAccount.dc.html": {
+      "x": 3040,
+      "y": 3060,
+      "w": 1440,
+      "h": 900,
+      "title": "④ 设置 · 账户与安全"
+    },
+    "SettingsApprovals.dc.html": {
+      "x": 4560,
+      "y": 3060,
+      "w": 1440,
+      "h": 900,
+      "title": "④ 设置 · 审批与权限"
+    },
+    "Slash.dc.html": { "x": 3040, "y": 2040, "w": 1440, "h": 900, "title": "⑩ 输入框：/ 技能与操作" },
+    "SettingsNotify.dc.html": { "x": 0, "y": 4080, "w": 1440, "h": 900, "title": "④ 设置 · 通知" },
+    "SettingsSkills.dc.html": { "x": 1520, "y": 4080, "w": 1440, "h": 900, "title": "④ 设置 · 技能" },
+    "SettingsPlugins.dc.html": { "x": 3040, "y": 4080, "w": 1440, "h": 900, "title": "④ 设置 · 插件" },
+    "SettingsRoutines.dc.html": { "x": 4560, "y": 4080, "w": 1440, "h": 900, "title": "④ 设置 · 例行任务" },
+    "SettingsMemory.dc.html": { "x": 0, "y": 5100, "w": 1440, "h": 900, "title": "④ 设置 · 记忆" },
+    "SettingsBrowser.dc.html": { "x": 1520, "y": 5100, "w": 1440, "h": 900, "title": "④ 设置 · 员工浏览器" },
+    "SettingsAudit.dc.html": { "x": 3040, "y": 5100, "w": 1440, "h": 900, "title": "④ 设置 · 审计记录" },
+    "SettingsTransfer.dc.html": { "x": 4560, "y": 5100, "w": 1440, "h": 900, "title": "④ 设置 · 导入与导出" },
+    "SettingsAbout.dc.html": { "x": 0, "y": 6120, "w": 1440, "h": 900, "title": "④ 设置 · 关于 OpenBot" },
+    "SettingsNav.dc.html": {
+      "x": 1900,
+      "y": 2040,
+      "w": 250,
+      "h": 740,
+      "title": "共享设置导航组件"
+    },
+    "ContextMenu.dc.html": {
+      "x": 4560,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "⑧ 右键对话：Bot 与频道菜单"
+    },
+    "Search.dc.html": {
+      "x": 4560,
+      "y": 1020,
+      "w": 1440,
+      "h": 900,
+      "title": "⑨ 分组与搜索"
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-09-30T10:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "title": {
+      "kind": "title1",
+      "maxW": 6000,
+      "text": "OpenBot Desktop · 界面优化",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Profile.dc.html",
+    "New.dc.html",
+    "Menu.dc.html",
+    "ContextMenu.dc.html",
+    "Search.dc.html",
+    "Slash.dc.html",
+    "Settings.dc.html",
+    "SettingsGeneral.dc.html",
+    "SettingsHosts.dc.html",
+    "SettingsAccount.dc.html",
+    "SettingsApprovals.dc.html",
+    "SettingsNotify.dc.html",
+    "SettingsSkills.dc.html",
+    "SettingsPlugins.dc.html",
+    "SettingsRoutines.dc.html",
+    "SettingsMemory.dc.html",
+    "SettingsBrowser.dc.html",
+    "SettingsAudit.dc.html",
+    "SettingsTransfer.dc.html",
+    "SettingsAbout.dc.html",
+    "Plugins.dc.html",
+    "Components.dc.html",
+    "Sidebar.dc.html",
+    "SettingsNav.dc.html"
+  ],
+  "pages": [],
+  "title": "OpenBot Desktop 界面优化"
+}

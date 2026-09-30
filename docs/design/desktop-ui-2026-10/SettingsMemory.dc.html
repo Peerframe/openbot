@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>设置 · 记忆</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.card{border-radius:16px;background:#f0f0f2;padding:0 18px}
+.mm{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:start;padding:14px 0}
+.mm + .mm{border-top:1px solid #e3e3e6}
+.t{display:flex;flex-direction:column;gap:6px;min-width:0}.t b{font-size:15px;font-weight:500;line-height:1.5}
+.meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:#8e8e93}
+.tag{font-size:11px;font-weight:600;padding:1px 7px;border-radius:5px;background:#ffffff;color:#3a3a3c}
+.chip{height:32px;padding:0 14px;border-radius:16px;border:0;font-size:14px;cursor:pointer;white-space:nowrap;background:#f0f0f2}
+.chip.on{background:#111111;color:#ffffff;font-weight:600}
+.select{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px 0 6px;border:1px solid #e3e3e6;border-radius:10px;background:#ffffff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.del{height:28px;padding:0 10px;border:0;border-radius:14px;background:transparent;color:#b3261e;font-size:13px;cursor:pointer}
+.x{position:absolute;right:18px;top:18px;width:34px;height:34px;border:0;border-radius:50%;background:transparent;cursor:pointer;display:inline-grid;place-items:center}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #ffffff; display: grid; grid-template-columns: 300px minmax(0, 1fr)">
+<dc-import name="Sidebar" active="channel" hint-size="300px,900px"></dc-import>
+<div style="background: #fcfcfc"></div>
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; background: rgba(0,0,0,0.34)"></div>
+<div role="dialog" aria-modal="true" aria-label="设置" style="position: absolute; left: 190px; top: 80px; width: 1060px; height: 740px; border-radius: 20px; background: #fdfdfd; box-shadow: 0 30px 80px rgba(0,0,0,0.25); display: grid; grid-template-columns: 250px minmax(0, 1fr); overflow: hidden">
+<dc-import name="SettingsNav" section="memory" hint-size="250px,740px"></dc-import>
+<div style="position: relative; overflow: hidden; padding: 36px 44px; display: flex; flex-direction: column; gap: 16px">
+<button type="button" class="x" aria-label="关闭设置"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
+<header style="display: flex; flex-direction: column; gap: 6px; padding-right: 40px">
+<h1 style="margin: 0; font-size: 24px; font-weight: 700">记忆</h1>
+<p style="margin: 0; font-size: 14px; color: #6e6e73">Bot 长期记住的东西。由你查看和维护，模型不能直接写入。</p>
+</header>
+
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<button type="button" class="select" aria-label="选择 Bot"><span style="width: 22px; height: 22px; border-radius: 7px; background: #8b7cf6; display: block"></span>研究助理<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+<div role="tablist" aria-label="记忆类型" style="display: flex; gap: 8px">
+<button type="button" role="tab" aria-selected="true" class="chip on">全部 4</button>
+<button type="button" role="tab" aria-selected="false" class="chip">知识</button>
+<button type="button" role="tab" aria-selected="false" class="chip">经历</button>
+<button type="button" role="tab" aria-selected="false" class="chip">做法</button>
+</div>
+</div>
+
+<div class="card">
+<div class="mm"><span class="t"><b>团队周报固定在周五上午发，收件人是 team@example.com。</b><span class="meta"><span class="tag">做法</span><span class="tag">内部</span>来自 # 市场周报 · 你在 9/25 确认</span></span><button type="button" class="del">删除</button></div>
+<div class="mm"><span class="t"><b>重点跟踪的三家竞品：A 公司、B 公司、C 公司。</b><span class="meta"><span class="tag">知识</span><span class="tag">内部</span>来自 # 市场周报 · 9/18</span></span><button type="button" class="del">删除</button></div>
+<div class="mm"><span class="t"><b>B 公司的定价页需要登录才能看到团队版价格，上次抓取失败。</b><span class="meta"><span class="tag">经历</span><span class="tag">内部</span>来自任务「抓取 B 公司定价页」· 9/26</span></span><button type="button" class="del">删除</button></div>
+<div class="mm"><span class="t"><b>竞品追踪表的链接</b><span class="meta"><span class="tag">知识</span><span class="tag" style="background: #fdecea; color: #a13731">机密</span>只保存引用，不保存内容 · 导出模板时不带</span></span><button type="button" class="del">删除</button></div>
+</div>
+<span style="margin: -6px 4px 0; font-size: 12px; color: #8e8e93">任务进行中的临时内容不会自动变成记忆；删除后无法恢复。</span>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
