@@ -247,7 +247,7 @@ class ModelConnectionsService:
         value = UpdateEmployeeModelInput.model_validate(value)
         selection = None if value.model is None else value.model.model_dump()
         async with self._transactions.transaction(token) as db:
-            current = await (await db.execute("SELECT * FROM bots WHERE id=%s FOR UPDATE", (bot_id,))).fetchone()
+            current = await (await db.execute("SELECT * FROM bots WHERE id=%s AND deleted_at IS NULL FOR UPDATE", (bot_id,))).fetchone()
             if current is None:
                 raise ControlError(404, "bot_not_found")
             if current["computer_profile"] not in ("model", "docker-linux"):

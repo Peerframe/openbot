@@ -188,6 +188,35 @@ async def test_approval_never_dispatches_after_denial(fixture,tmp_path,remote,ac
 
 
 @pytest.mark.anyio
+async def test_deleted_bot_grants_are_removed_only_after_the_tombstone(fixture,tmp_path,remote):
+    instance=await service(fixture,tmp_path,remote)
+    plugin=await installed(instance,fixture,remote)
+    other=str(uuid4())
+    with psycopg.connect(fixture['dsn']) as connection:
+        connection.execute("INSERT INTO bots(id,name,role,computer_profile) VALUES (%s,%s,'Assistant','none')",(other,'Grant '+other))
+    try:
+        plugin=await instance.grant(fixture['token'],plugin['id'],other,{'revision':plugin['revision'],
+            'tools':[{'name':'read_value','mode':'read'}],'resources':[],'prompts':[]})
+        # A live Bot's grants can never be dropped through the deletion path.
+        with pytest.raises(PluginError) as live:await instance.forget_bot(fixture['token'],other)
+        assert live.value.code=='not_found'
+        with psycopg.connect(fixture['dsn']) as connection:
+            connection.execute('UPDATE bots SET deleted_at=now() WHERE id=%s',(other,))
+        with pytest.raises(AuthenticationRequired):await instance.forget_bot('x'*43,other)
+        assert await instance.forget_bot(fixture['token'],other)=={'removed':1}
+        current=next(p for p in (await instance.snapshot(fixture['token']))['plugins'] if p['id']==plugin['id'])
+        assert [g['botId'] for g in current['grants']]==[fixture['botId']]
+        with pytest.raises(PluginError) as tombstoned:
+            await instance.grant(fixture['token'],plugin['id'],other,{'revision':current['revision'],
+                'tools':[{'name':'read_value','mode':'read'}],'resources':[],'prompts':[]})
+        assert tombstoned.value.code=='not_found'
+    finally:
+        await instance.close()
+        with psycopg.connect(fixture['dsn']) as connection:
+            connection.execute('DELETE FROM bots WHERE id=%s',(other,))
+
+
+@pytest.mark.anyio
 async def test_owner_scope_stale_revision_update_and_real_catalog_change(fixture,tmp_path,remote):
     instance=await service(fixture,tmp_path,remote)
     plugin=await installed(instance,fixture,remote)

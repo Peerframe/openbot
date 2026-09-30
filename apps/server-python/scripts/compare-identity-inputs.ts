@@ -31,10 +31,11 @@ const fixturePaths = [
   new URL("tests/fixtures/identity-inputs.json", packageDirectory),
   new URL("tests/fixtures/profile-inputs.json", packageDirectory),
   new URL("tests/fixtures/task-inputs.json", packageDirectory),
+  new URL("tests/fixtures/rename-inputs.json", packageDirectory),
 ];
 const pythonPath = comparatorPaths(packageDirectory).interpreter;
 
-type SchemaName = "bot" | "channel" | "profile" | "task";
+type SchemaName = "bot" | "channel" | "profile" | "task" | "botRename" | "channelRename";
 interface IdentityCase {
   readonly id: string;
   readonly schema: SchemaName;
@@ -56,7 +57,12 @@ const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 const isList = (value: unknown): value is readonly unknown[] => Array.isArray(value);
 const isSchemaName = (value: unknown): value is SchemaName =>
-  value === "bot" || value === "channel" || value === "profile" || value === "task";
+  value === "bot" ||
+  value === "channel" ||
+  value === "profile" ||
+  value === "task" ||
+  value === "botRename" ||
+  value === "channelRename";
 
 if (!existsSync(compiledSchemas)) {
   fail(
@@ -80,6 +86,8 @@ const schemas = {
   channel: protocol.createChannelInputSchema,
   profile: protocol.updateEmployeeProfileDetailsInputSchema,
   task: protocol.createMessageInputSchema,
+  botRename: protocol.renameBotInputSchema,
+  channelRename: protocol.renameChannelInputSchema,
 };
 
 function readCases(path: URL): IdentityCase[] {
@@ -106,8 +114,10 @@ from pydantic import ValidationError
 from openbot_server.identity_inputs import parse_bot_create, parse_channel_create
 from openbot_server.profile_details import parse_profile_details
 from openbot_server.task_inputs import parse_message
+from openbot_server.identity_lifecycle import RenameBotInput, RenameChannelInput
 
-parsers = {"bot": parse_bot_create, "channel": parse_channel_create, "profile": parse_profile_details, "task": parse_message}
+parsers = {"bot": parse_bot_create, "channel": parse_channel_create, "profile": parse_profile_details, "task": parse_message,
+           "botRename": RenameBotInput.model_validate, "channelRename": RenameChannelInput.model_validate}
 fixture = {"cases": []}
 for path in sys.argv[2:]:
     with open(path, encoding="utf-8") as handle:

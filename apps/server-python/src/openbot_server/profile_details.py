@@ -124,7 +124,7 @@ class PostgresProfileStore:
         try:
             async with self._transactions.transaction(token) as connection:
                 cursor = await connection.execute(
-                    "SELECT role, description, profile_revision FROM bots WHERE id=%s FOR UPDATE",
+                    "SELECT role, description, profile_revision FROM bots WHERE id=%s AND deleted_at IS NULL FOR UPDATE",
                     (bot_id,))
                 current = await cursor.fetchone()
                 if current is None:

@@ -16,6 +16,11 @@
 | `GET` | `/api/v1/channels` | 频道与 Bot roster |
 | `POST` | `/api/v1/channels` | 创建频道并原子加入初始 Bot |
 | `POST` | `/api/v1/channels/:channelId/bots` | 把已有 Bot 加入频道 |
+| `PATCH` | `/api/v1/channels/:channelId` | 重命名群组频道（记入审计） |
+| `DELETE` | `/api/v1/channels/:channelId` | 永久删除频道内容并保留墓碑 |
+| `POST` | `/api/v1/channels/:channelId/read` | 把频道标为 Owner 已读 |
+| `GET` | `/api/v1/channels/unread` | 各频道未读的 Bot/系统消息数（上限 99） |
+| `GET` | `/api/v1/audit` | 最新审计事件，字段按白名单投影 |
 | `GET` | `/api/v1/channels/:channelId/messages` | 读取最近 100 条本地频道消息与 Bot 回复关系 |
 | `POST` | `/api/v1/channels/:channelId/messages` | 原子保存用户消息并创建排队任务 |
 | `GET` | `/api/v1/channels/:channelId/runs` | 读取频道最近 50 个任务 |
@@ -25,6 +30,8 @@
 | `GET` | `/api/v1/runs/:runId/frame` | 鉴权读取任务最新临时画面；不持久化 |
 | `GET` | `/api/v1/bots` | Bot 名册 |
 | `POST` | `/api/v1/bots` | 创建 Bot |
+| `PATCH` | `/api/v1/bots/:botId` | 重命名 Bot 及其单独对话（记入审计） |
+| `DELETE` | `/api/v1/bots/:botId` | 永久删除 Bot 的内容与授权并保留墓碑 |
 | `GET` | `/api/v1/bots/:botId/profile` | 读取数字员工档案、进化、技能、记忆与工作记录 |
 | `PATCH` | `/api/v1/bots/:botId/profile` | 按预期 revision 修改职责与简介 |
 | `POST` | `/api/v1/bots/:botId/memories` | 新增一条有界 Owner 记忆 |
@@ -304,6 +311,25 @@ Server 会对 `package` 重复执行同一套严格解析、签名验证、校�
 
 同一个幂等键和同一请求可以安全重试并返回原收据；同一键对应不同请求或同一 `packageId` 再次
 激活会返回 `409`。若要在同一 Server 再复制一次，来源端必须导出带新 `packageId` 的新模板。
+
+## 重命名、删除、已读状态与审计
+
+这些 Owner 接口由 [ADR-0047](decisions/0047-identity-lifecycle-and-read-state.md) 定义。重命名请求体为
+`{ "name": string }`，沿用创建时的限制（去除首尾空白后 Bot 1–64、频道 1–80 个 UTF-16 单元），未知字段
+会被丢弃。与现存对象重名返回 `409 name_already_exists`；单独对话跟随其 Bot，返回
+`409 direct_channel_identity_follows_bot`。
+
+删除会移除内容，但保留行作为墓碑，使任务、Work、审批和审计仍能解析。删除频道会移除没有被持久 Work
+引用的消息（被引用的消息保留行并替换为固定占位内容）、回应、成员、自动任务和已读状态。删除 Bot 还会移除
+它的单独对话、频道成员身份、自动任务、记忆、技能、知识提议、进化记录和插件授权。只要有进行中的任务就返回
+`409 active_work_blocks_delete`，Server 不会替删除操作取消任务。Bot 删除响应包含 `pluginGrantsRemoved`；
+为 `false` 表示墓碑提交后未能更新加密的授权文件，残留授权对已无法运行的 Bot 不起作用。墓碑在所有现行
+入口返回 `404`，名称可以重新使用。
+
+`GET /api/v1/channels/unread` 返回 `{ "unread": { channelId: count } }`，只包含 Owner 最后一次
+`POST .../read` 之后有 Bot 或系统消息的频道。`GET /api/v1/audit?limit=1..100&before=ISO` 返回
+`{ events, nextBefore? }`；每条事件包含类型、时间、各 id、当前或已删除的名称，以及白名单内的标量字段，
+从不包含消息正文。
 
 ## 创建频道
 

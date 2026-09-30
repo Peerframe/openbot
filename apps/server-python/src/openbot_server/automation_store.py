@@ -279,7 +279,7 @@ class PostgresAutomations:
     async def _submit(self, db, schedule):
         """The schedule claim owns this transaction; reuse routing/projections, not an Owner API."""
         channel_id = schedule["channel_id"]
-        channel = await (await db.execute("SELECT id,direct_bot_id FROM channels WHERE id=%s FOR UPDATE", (channel_id,))).fetchone()
+        channel = await (await db.execute("SELECT id,direct_bot_id FROM channels WHERE id=%s AND deleted_at IS NULL FOR UPDATE", (channel_id,))).fetchone()
         if channel is None:
             raise ControlError(404, "channel_not_found")
         value = CreateMessageInput(content=schedule["prompt"], botId=schedule["bot_id"])

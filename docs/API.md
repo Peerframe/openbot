@@ -22,6 +22,11 @@ HTTPS for remote access.
 | `GET` | `/api/v1/channels` | List channels and Bot rosters |
 | `POST` | `/api/v1/channels` | Create a channel and atomically add its initial Bots |
 | `POST` | `/api/v1/channels/:channelId/bots` | Add an existing Bot to a channel |
+| `PATCH` | `/api/v1/channels/:channelId` | Rename a group channel (audited) |
+| `DELETE` | `/api/v1/channels/:channelId` | Permanently delete a channel's content and keep a tombstone |
+| `POST` | `/api/v1/channels/:channelId/read` | Mark a channel read for the Owner |
+| `GET` | `/api/v1/channels/unread` | Unread Bot/system message counts per channel (capped at 99) |
+| `GET` | `/api/v1/audit` | Newest audit events with an allowlisted projection |
 | `GET` | `/api/v1/channels/:channelId/messages` | Read the latest 100 messages and reply relationships |
 | `POST` | `/api/v1/channels/:channelId/messages` | Persist an Owner message and create a queued Run atomically |
 | `GET` | `/api/v1/channels/:channelId/runs` | Read the latest 50 channel Runs |
@@ -31,6 +36,8 @@ HTTPS for remote access.
 | `GET` | `/api/v1/runs/:runId/frame` | Read a Run's latest short-lived frame |
 | `GET` | `/api/v1/bots` | List Bots |
 | `POST` | `/api/v1/bots` | Create a Bot and its initial evolution event |
+| `PATCH` | `/api/v1/bots/:botId` | Rename a Bot and its direct conversation (audited) |
+| `DELETE` | `/api/v1/bots/:botId` | Permanently delete a Bot's content and grants and keep a tombstone |
 | `GET` | `/api/v1/bots/:botId/profile` | Read the complete Employee profile projection |
 | `PATCH` | `/api/v1/bots/:botId/profile` | Update role and biography at an expected revision |
 | `POST` | `/api/v1/bots/:botId/memories` | Create one bounded Owner memory |
@@ -303,6 +310,28 @@ skills as `candidate` with confidence `0`, appends an `imported` evolution event
 immutable receipt. It imports no memory, history, credential, session, Node binding, capability, or
 authority. An exact idempotent retry returns the original receipt; changed reuse or a duplicate
 package id returns `409`.
+
+## Rename, delete, read state, and audit
+
+[ADR-0047](decisions/0047-identity-lifecycle-and-read-state.md) defines these Owner routes. Rename
+bodies are `{ "name": string }` with the create limits (Bot 1–64, channel 1–80 UTF-16 units after
+trimming); unknown keys are stripped. A live duplicate returns `409 name_already_exists`; direct
+conversations follow their Bot and return `409 direct_channel_identity_follows_bot`.
+
+Delete removes content but keeps the row as a tombstone so Runs, Work, approvals, and audit still
+resolve it. A channel delete removes messages that no durable Work references (referenced messages
+keep their row with a fixed placeholder), reactions, membership, automations, and read state. A Bot
+delete also removes its direct conversation, memberships, automations, memories, skills, knowledge
+proposals, evolution rows, and plugin grants. Any active Run returns `409 active_work_blocks_delete`;
+the Server never cancels work on a delete's behalf. The Bot response includes
+`pluginGrantsRemoved`; `false` means the encrypted grant file could not be updated after the
+tombstone committed, leaving inert grants for a Bot that can no longer run. Tombstones answer `404`
+at every live entry point and their names can be reused.
+
+`GET /api/v1/channels/unread` returns `{ "unread": { channelId: count } }` for channels with Bot or
+system messages after the Owner's last `POST .../read`. `GET /api/v1/audit?limit=1..100&before=ISO`
+returns `{ events, nextBefore? }`; each event carries type, time, ids, current or tombstoned names,
+and only allowlisted scalar payload keys (never message text).
 
 ## Channels, Runs, and approvals
 
