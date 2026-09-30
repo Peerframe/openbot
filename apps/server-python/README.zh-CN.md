@@ -135,7 +135,10 @@ Bot 行锁保证并发只创建一个私聊，重复加入不重复写审计。�
 用量仅是报告的证据，不代表权限或账单。标题保留原 80 个 UTF-16 单位上限和 77 单位前缀加省略号，截断不切开 Unicode 字符，修复旧实现的孤立代理项边界。
 详见[任务研究](../../docs/research/python-task-authority.md)。
 
-## 控制层执行适配器（S2b-2 内部边界）
+## 保留的进程协议兼容接口
+
+早期 S2b-2 适配器保留给显式兼容与已安装 SDK 的进程监督检查。当前产品 Work 派发使用
+`work_product_service`／`work_product_runtime` 和 Temporal；下文历史集成缺项仅针对这条独立接口。
 
 独立的 `runtime_host`、`runtime_ports`、`runtime_executor` 模块把权限、模型选择、工具执行器、预算、用量和最终结果校验保留在控制层。
 SDK Worker 只接收既有进程协议。这些模块尚未接入任务 HTTP 派发：公开队列执行和审批集成仍未完成；内部数据库生命周期见下文。
