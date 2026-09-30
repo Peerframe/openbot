@@ -27,6 +27,16 @@ interface FindingEvidence {
 const MAX_BYTES = 16 * 1024 * 1024;
 const REVIEWED_FIXTURES: readonly ReviewedFixture[] = Object.freeze([
   {
+    detectorType: 87,
+    detectorName: "SentryToken",
+    commit: "2512a615dde281c6157ecb21c9d72e85ef4674d7",
+    file: "docs/research/credential-scan-fixture-triage.md",
+    line: 237,
+    raw: "3beed73bbc0415306f2d1a0cab1efdeea0d18a4c42fff3677d9389798b06e9d9",
+    rawV2: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  },
+
+  {
     detectorType: 17,
     detectorName: "URI",
     commit: "e836e82f61cbb780a1976ed57c9f96a21a991df3",

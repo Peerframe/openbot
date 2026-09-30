@@ -12,6 +12,16 @@ interface Finding {
 }
 
 function fixture(index = 0): Finding {
+  if (index === 21) {
+    const value = fixture(19);
+    value.Raw = "5fb64d41242d2546f1713381ae57f7ea5" + "b8e8e1e2f17023d63c7d3cc3c2e5de6";
+    value.SourceMetadata.Data.Git = {
+      commit: "2512a615dde281c6157ecb21c9d72e85ef4674d7",
+      file: "docs/research/credential-scan-fixture-triage.md",
+      line: 237,
+    };
+    return value;
+  }
   if (index === 18) {
     const raw = syntheticUrl("https://github.com", "user", "token");
     return {
@@ -321,14 +331,14 @@ function migrationFixture(index: number): Finding {
   return finding;
 }
 
-test("accepts clean scans and only the twenty-one exact reviewed historical findings", () => {
+test("accepts clean scans and only the twenty-two exact reviewed historical findings", () => {
   assert.deepEqual(checkCredentialFindings("", 0), { reviewedFixtures: 0 });
-  const findings = Array.from({ length: 21 }, (_, index) => index).map((index) =>
+  const findings = Array.from({ length: 22 }, (_, index) => index).map((index) =>
     JSON.stringify(fixture(index)),
   );
   for (const finding of findings)
     assert.deepEqual(checkCredentialFindings(finding, 183), { reviewedFixtures: 1 });
-  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 21 });
+  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 22 });
 });
 
 test("does not exempt another value, detector, verified result, or source location", () => {
@@ -366,7 +376,7 @@ test("does not exempt another value, detector, verified result, or source locati
       value.SourceMetadata.Data.Git.line += 1;
     },
   ];
-  for (const index of Array.from({ length: 21 }, (_, index) => index))
+  for (const index of Array.from({ length: 22 }, (_, index) => index))
     for (const mutate of mutations) {
       const value = fixture(index);
       mutate(value);

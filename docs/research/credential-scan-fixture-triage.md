@@ -234,7 +234,7 @@ rewrite, verification, dependency change or copied upstream source.
 | Commit | File:line | Detector | Raw SHA-256 | RawV2 SHA-256 |
 | --- | --- | --- | --- | --- |
 | `e836e82f61cbb780a1976ed57c9f96a21a991df3` | `packages/protocol/src/plugin-catalog.test.ts:27` | `17` / URI | `c2b2b094ff135feebbb6610aa157e80dd3af69d5c0e1c6d2723d8b04f93b0b5c` | `c2b2b094ff135feebbb6610aa157e80dd3af69d5c0e1c6d2723d8b04f93b0b5c` |
-| `0a9fc212737f0f795999685d96b3d39efc2bf784` | `docs/research/s2-work-supervision.md:73` | `87` / SentryToken | `5fb64d41242d2546f1713381ae57f7ea5b8e8e1e2f17023d63c7d3cc3c2e5de6` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `0a9fc212737f0f795999685d96b3d39efc2bf784` | `docs/research/s2-work-supervision.md:73` | `87` / content digest | `5fb64d41242d2546f1713381ae57f7ea5b8e8e1e2f17023d63c7d3cc3c2e5de6` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
 | `b19a017e35e53855649e1c87ab31cf0f63d85974` | `scripts/smoke-dev-fixture.test.mjs:31` | `968` / Postgres | `a0010550bccff9bf7c0aa79e783a4e21558de033364bf51b00eea5d850faa23f` | `a0010550bccff9bf7c0aa79e783a4e21558de033364bf51b00eea5d850faa23f` |
 
 Add only these three immutable tuples. Verified findings and any changed candidate, commit,
@@ -242,3 +242,16 @@ path, line or detector remain rejected. Regression tests mutate every field of a
 tuples, mix unknown findings, and refuse scanner errors/malformed/inconsistent output. Replay
 the completed private scan through the strict adapter. Hosted CI on each final PR head remains
 the Linux/full-history gate; this local macOS Docker replay is not a production credential claim.
+
+The first C6 follow-up itself exposed one new content-digest false positive: its table placed the
+text detector label next to the already reviewed source-digest hash. The unchanged pinned offline
+scanner reproduces that exact unverified result at commit
+`2512a615dde281c6157ecb21c9d72e85ef4674d7`, this document line237, detector87. Source inspection
+and hashing bind it to the table's public source-hash field, with Raw SHA-256
+`3beed73bbc0415306f2d1a0cab1efdeea0d18a4c42fff3677d9389798b06e9d9` and empty RawV2 SHA-256
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`. Retain this single exact
+historical tuple; use only the numeric detector/content-digest label in the current table to avoid
+creating another such context. The current code regression set has22 exact tuples and continues
+mutating all fields and refusing every unknown/verified finding or scanner error. A disposable
+clone must have matching HEAD/index to avoid synthetic staged-index findings; CI checks committed
+Git history without staging a different tree. No staged-finding exemption is accepted.
