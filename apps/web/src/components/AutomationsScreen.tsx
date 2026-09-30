@@ -10,6 +10,8 @@ import {
   setAutomationEnabled,
 } from "../destination-api";
 import { PlusIcon, SearchIcon } from "./Icons";
+import { RobotAvatar } from "./RobotAvatar";
+import { SettingsHeaderAction } from "./SettingsHeaderAction";
 import "./destinations.css";
 
 type LoadState = "loading" | "ready" | "unavailable" | "failed";
@@ -18,10 +20,13 @@ export function AutomationsScreen({
   bots,
   channels,
   headerAction,
+  variant = "page",
 }: {
   bots: Bot[];
   channels: Channel[];
   headerAction?: ReactNode;
+  /** "settings" renders Settings → 例行任务 (SettingsRoutines artboard) with the same state. */
+  variant?: "page" | "settings";
 }) {
   const [items, setItems] = useState<Automation[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("loading");
@@ -136,6 +141,157 @@ export function AutomationsScreen({
     bots.some((bot) => channel.botIds.includes(bot.id)),
   );
 
+  const canCreate =
+    loadState === "ready" &&
+    availableTargets &&
+    items.length < 50 &&
+    busyId === undefined &&
+    !showForm;
+
+  if (variant === "settings")
+    return (
+      <>
+        <SettingsHeaderAction>
+          <button
+            className="ob-pill is-primary"
+            type="button"
+            disabled={!canCreate}
+            onClick={() => setShowForm(true)}
+          >
+            新建例行任务
+          </button>
+        </SettingsHeaderAction>
+        {showForm ? (
+          <section className="settings-group">
+            <h3>新建时填写</h3>
+            <div className="settings-card settings-routine-form">
+              <AutomationForm
+                bots={bots}
+                channels={channels}
+                busy={busyId === "create"}
+                onCreate={handleCreate}
+                onCancel={() => setShowForm(false)}
+              />
+            </div>
+          </section>
+        ) : null}
+        {notice ? (
+          <p className="settings-success" role="status">
+            {notice}
+          </p>
+        ) : null}
+        {error ? (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        {loadState === "loading" ? (
+          <p className="settings-empty" role="status">
+            正在读取例行任务…
+          </p>
+        ) : loadState === "unavailable" ? (
+          <p className="settings-empty" role="status">
+            服务电脑暂不支持例行任务。请更新并启用服务电脑的自动任务服务。
+          </p>
+        ) : loadState === "failed" ? (
+          <div className="settings-load-notice" role="alert">
+            <p>无法读取例行任务，请检查服务电脑的连接。</p>
+            <button type="button" className="secondary-button" onClick={() => void refresh()}>
+              重试
+            </button>
+          </div>
+        ) : items.length === 0 ? (
+          <p className="settings-empty">
+            {availableTargets
+              ? "还没有例行任务。点「新建例行任务」，设定首次时间和重复间隔。"
+              : "先创建 Bot，并将它加入一个频道，即可安排任务。"}
+          </p>
+        ) : (
+          <div className="settings-group-rows settings-routines">
+            {items.map((item) => {
+              const bot = bots.find((entry) => entry.id === item.botId);
+              const channel = channels.find((entry) => entry.id === item.channelId);
+              return (
+                <div
+                  className={`settings-item settings-routine${item.enabled ? "" : " is-paused"}`}
+                  key={item.id}
+                >
+                  <span className="settings-tile settings-routine-avatar" aria-hidden="true">
+                    {bot ? <RobotAvatar bot={bot} compact /> : "?"}
+                  </span>
+                  <span className="settings-item-text">
+                    <strong>{item.name}</strong>
+                    <small>
+                      {bot?.name ?? "Bot 已不可用"} · 发到 # {channel?.name ?? "频道已不可用"} ·{" "}
+                      {intervalLabel(item.intervalMinutes)}
+                    </small>
+                  </span>
+                  <span className="settings-routine-when">
+                    {item.enabled ? `下次：${dateLabel(item.nextRunAt)}` : "已暂停"}
+                    <small
+                      className={
+                        item.lastOutcome && item.lastOutcome !== "submitted"
+                          ? "is-attention"
+                          : undefined
+                      }
+                      title={item.lastOutcome ? outcomeLabel(item.lastOutcome) : undefined}
+                    >
+                      {item.lastRunAt
+                        ? `上次：${item.lastOutcome === "submitted" || !item.lastOutcome ? "已提交" : "未提交"} · ${dateLabel(item.lastRunAt)}`
+                        : "尚未执行"}
+                    </small>
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    className="ob-switch"
+                    aria-checked={item.enabled}
+                    aria-label={`启用 ${item.name}`}
+                    disabled={busyId !== undefined}
+                    onClick={() => void toggle(item)}
+                  />
+                  {deleteId === item.id ? (
+                    <span className="settings-routine-delete">
+                      <button
+                        type="button"
+                        className="ob-pill is-small is-danger"
+                        disabled={busyId !== undefined}
+                        onClick={() => void remove(item)}
+                      >
+                        确认删除
+                      </button>
+                      <button
+                        type="button"
+                        className="ob-pill is-small"
+                        disabled={busyId !== undefined}
+                        onClick={() => setDeleteId(undefined)}
+                      >
+                        取消
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="settings-routine-remove"
+                      aria-label={`删除 ${item.name}`}
+                      disabled={busyId !== undefined}
+                      onClick={() => setDeleteId(item.id)}
+                    >
+                      删除
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <p className="settings-footnote">
+          服务电脑需要保持运行。例行任务沿用 Bot
+          的权限与审批；上次任务仍在进行时，本次会跳过。每个工作空间最多 50 个。
+        </p>
+      </>
+    );
+
   return (
     <main className="workspace-destination" aria-labelledby="automations-title">
       <header className="destination-header">
@@ -151,13 +307,7 @@ export function AutomationsScreen({
           <button
             className="destination-primary"
             type="button"
-            disabled={
-              loadState !== "ready" ||
-              !availableTargets ||
-              items.length >= 50 ||
-              busyId !== undefined ||
-              showForm
-            }
+            disabled={!canCreate}
             onClick={() => setShowForm(true)}
           >
             <PlusIcon />

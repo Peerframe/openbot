@@ -1,5 +1,6 @@
 import type { WorkspaceSnapshot } from "@openbot/domain";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { type AuditEvent, getWorkspace, listAuditEvents } from "../api";
 import { AutomationsScreen } from "./AutomationsScreen";
 
@@ -132,19 +133,13 @@ function auditSubject(event: AuditEvent) {
   return parts.join(" · ");
 }
 
-const timeFormat = new Intl.DateTimeFormat("zh-CN", {
-  month: "numeric",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
 /** Owner audit trail from GET /api/v1/audit; the Server allowlists every projected field. */
 export function AuditLogSettings() {
   const [events, setEvents] = useState<AuditEvent[]>();
   const [nextBefore, setNextBefore] = useState<string>();
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [category, setCategory] = useState<string>();
 
   const load = useCallback(async (before?: string, signal?: AbortSignal) => {
     setLoading(true);
@@ -184,30 +179,69 @@ export function AuditLogSettings() {
       </p>
     );
 
+  const present = auditCategories.filter((category) =>
+    events.some((event) => category.match(event.type)),
+  );
+  const shown = category
+    ? events.filter((event) =>
+        auditCategories.find((item) => item.id === category)?.match(event.type),
+      )
+    : events;
+  const days = groupByDay(shown);
+
   return (
     <>
-      <SettingsGroup
-        title="最近的操作"
-        description="按时间倒序显示，只包含名称、对象和时间，不含消息正文。"
-      >
-        {events.length === 0 ? (
+      {present.length > 1 ? (
+        <fieldset className="settings-filters" aria-label="按类别筛选">
+          <button
+            type="button"
+            className="ob-filter"
+            aria-pressed={category === undefined}
+            onClick={() => setCategory(undefined)}
+          >
+            全部
+          </button>
+          {present.map((item) => (
+            <button
+              type="button"
+              key={item.id}
+              className="ob-filter"
+              aria-pressed={category === item.id}
+              onClick={() => setCategory(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </fieldset>
+      ) : null}
+      {events.length === 0 ? (
+        <SettingsGroup title="最近的操作">
           <SettingRow title="暂无记录" description="创建、重命名、删除和任务处理都会记录在这里。" />
-        ) : (
-          <ol className="audit-list">
-            {events.map((event) => (
-              <li key={event.id}>
-                <div>
-                  <strong>{auditTitle(event)}</strong>
-                  {auditSubject(event) ? <p>{auditSubject(event)}</p> : null}
-                </div>
-                <time dateTime={event.createdAt}>
-                  {timeFormat.format(new Date(event.createdAt))}
-                </time>
-              </li>
-            ))}
-          </ol>
-        )}
-      </SettingsGroup>
+        </SettingsGroup>
+      ) : (
+        days.map((day) => (
+          <section className="settings-group" key={day.label}>
+            <h3>{day.label}</h3>
+            <ol className="settings-group-rows audit-list">
+              {day.events.map((event) => {
+                const kind = auditCategories.find((item) => item.match(event.type));
+                return (
+                  <li key={event.id}>
+                    <time dateTime={event.createdAt}>
+                      {clockFormat.format(new Date(event.createdAt))}
+                    </time>
+                    <div>
+                      <strong>{auditTitle(event)}</strong>
+                      {auditSubject(event) ? <p>{auditSubject(event)}</p> : null}
+                    </div>
+                    {kind ? <span className="ob-tag">{kind.label}</span> : <span />}
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        ))
+      )}
       {error ? (
         <p className="form-error" role="alert">
           无法读取更多记录，请重试。
@@ -216,15 +250,60 @@ export function AuditLogSettings() {
       {nextBefore ? (
         <button
           type="button"
-          className="secondary-button audit-more"
+          className="ob-pill audit-more"
           disabled={loading}
           onClick={() => void load(nextBefore)}
         >
           {loading ? "正在读取…" : "显示更早的记录"}
         </button>
       ) : null}
+      <p className="settings-footnote">
+        只包含名称、对象和时间，不含消息正文。筛选只作用于已读取的记录。
+      </p>
     </>
   );
+}
+
+/**
+ * Client-side categories over loaded events (backlog C3 adds Server-side filters and export).
+ * A category chip appears only when a loaded event belongs to it.
+ */
+const auditCategories: ReadonlyArray<{ id: string; label: string; match(type: string): boolean }> =
+  [
+    { id: "approval", label: "审批", match: (type) => type.includes("APPROVAL") },
+    { id: "settings", label: "设置变更", match: (type) => type.startsWith("SETTINGS_") },
+    { id: "login", label: "登录", match: (type) => /LOGIN|SESSION/.test(type) },
+    { id: "host", label: "主机", match: (type) => type.startsWith("NODE_") },
+    { id: "channel", label: "频道", match: (type) => type.startsWith("CHANNEL_") },
+    { id: "bot", label: "Bot", match: (type) => /^(BOT_|EMPLOYEE_)/.test(type) },
+    { id: "task", label: "任务", match: (type) => /^(RUN_|TASK_)/.test(type) },
+    {
+      id: "knowledge",
+      label: "知识与技能",
+      match: (type) => /^(KNOWLEDGE_|SKILL_)/.test(type),
+    },
+  ];
+
+const clockFormat = new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit" });
+
+function groupByDay(events: AuditEvent[]) {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const days: Array<{ label: string; events: AuditEvent[] }> = [];
+  for (const event of events) {
+    const date = new Date(event.createdAt);
+    const label =
+      date.toDateString() === today.toDateString()
+        ? "今天"
+        : date.toDateString() === yesterday.toDateString()
+          ? "昨天"
+          : `${date.getMonth() + 1} 月 ${date.getDate()} 日`;
+    const last = days.at(-1);
+    if (last?.label === label) last.events.push(event);
+    else days.push({ label, events: [event] });
+  }
+  return days;
 }
 
 export function SettingsAutomations({ onOpen }: { onOpen?: (() => void) | undefined }) {
@@ -266,12 +345,12 @@ export function SettingsAutomations({ onOpen }: { onOpen?: (() => void) | undefi
   if (!workspace)
     return (
       <p className="settings-load-notice" role="status">
-        正在读取自动任务…
+        正在读取例行任务…
       </p>
     );
   return (
     <div className="settings-automations">
-      <AutomationsScreen bots={workspace.bots} channels={workspace.channels} />
+      <AutomationsScreen bots={workspace.bots} channels={workspace.channels} variant="settings" />
     </div>
   );
 }

@@ -31,7 +31,7 @@ afterEach(() => {
 
 const hostPlan: DesktopSetupPlanInput = { mode: "host", localWorker: false, plannedWorkerCount: 0 };
 function callbacks() {
-  return { onBack: vi.fn(), onConnection: vi.fn(), onRole: vi.fn(), onWorker: vi.fn() };
+  return { onBack: vi.fn(), onConnection: vi.fn(), onRole: vi.fn() };
 }
 function button(container: HTMLElement, name: string): HTMLButtonElement {
   const result = Array.from(container.querySelectorAll("button")).find(
@@ -144,9 +144,7 @@ describe("Desktop settings interactions", () => {
         expect(rendered.container.textContent).toContain("https://server.example.test");
         expect(rendered.container.textContent).toContain("等待你在系统中批准");
         await interact(() => button(rendered.container, "更改用途").click());
-        await interact(() => button(rendered.container, "管理工作电脑").click());
         expect(actions.onRole).toHaveBeenCalledOnce();
-        expect(actions.onWorker).toHaveBeenCalledOnce();
         if (mode === "client") {
           await interact(() => button(rendered.container, "更改连接").click());
           expect(actions.onConnection).toHaveBeenCalledOnce();
@@ -168,15 +166,17 @@ describe("Desktop settings interactions", () => {
   );
 
   it("loads and saves the model section through the Server rather than local preferences", async () => {
-    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
-      init?.method === "POST"
-        ? Response.json({
-            status: "configured",
-            provider: "anthropic",
-            model: "available-model",
-            revision: "revision-2",
-          })
-        : Response.json({ status: "unconfigured", revision: null }),
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) =>
+      url === "/api/v1/model-services"
+        ? Response.json({ presets: [], connections: [], customBaseUrls: [] })
+        : init?.method === "POST"
+          ? Response.json({
+              status: "configured",
+              provider: "anthropic",
+              model: "available-model",
+              revision: "revision-2",
+            })
+          : Response.json({ status: "unconfigured", revision: null }),
     );
     vi.stubGlobal("fetch", fetchMock);
     const rendered = await renderComponent(
@@ -302,7 +302,7 @@ it("retries a failed automation workspace load and keeps its manager inside sett
 });
 
 describe("Web settings entry", () => {
-  it("offers sectioned settings without Desktop-only connection or material rows", async () => {
+  it("offers sectioned settings without Desktop-only connection or material rows (hosts via the Server)", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ events: [] }))));
     const rendered = await renderComponent(<Settings onBack={vi.fn()} />);
     try {
@@ -311,9 +311,15 @@ describe("Web settings entry", () => {
         item.textContent?.trim(),
       );
       expect(labels).toEqual(
-        expect.arrayContaining(["通用", "模型服务", "例行任务", "审批与权限", "审计记录"]),
+        expect.arrayContaining([
+          "通用",
+          "模型服务",
+          "例行任务",
+          "工作主机",
+          "审批与权限",
+          "审计记录",
+        ]),
       );
-      expect(labels).not.toContain("工作主机");
       expect(rendered.container.textContent).not.toContain("半透明侧栏");
       await interact(() => button(rendered.container, "审批与权限").click());
       expect(rendered.container.querySelector("#settings-section-title")?.textContent).toBe(

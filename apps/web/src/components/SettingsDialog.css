@@ -135,16 +135,31 @@
 }
 .settings-dialog-header {
   display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 40px 84px 0 44px;
+}
+.settings-dialog-header > div:first-child {
+  display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 40px 88px 0 44px;
+  min-width: 0;
+}
+.settings-dialog-action {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.settings-dialog-action:empty {
+  display: none;
 }
 .settings-dialog-header h1 {
   margin: 0;
   font-size: 24px;
   font-weight: 700;
 }
-.settings-dialog-header p {
+.settings-dialog .settings-dialog-header p {
   margin: 0;
   color: var(--ob-text-secondary);
   font-size: 14px;
@@ -294,4 +309,410 @@
     flex-wrap: wrap;
     gap: 10px;
   }
+}
+
+/* Shared list rows for data sections (模型服务, 工作主机, 例行任务, …). */
+.settings-dialog .settings-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+.settings-dialog .settings-group-heading > h3 {
+  margin: 0;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+.settings-dialog .settings-group-heading > button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text-tertiary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.settings-dialog .settings-group-heading > button:hover {
+  color: var(--ob-text);
+}
+.settings-dialog .settings-item {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+}
+.settings-dialog .settings-catalogue > .settings-item {
+  padding: 10px 0;
+}
+.settings-dialog .settings-group-rows > .settings-item + .settings-item {
+  border-top: 1px solid var(--ob-divider);
+}
+.settings-dialog .settings-item > .ob-switch,
+.settings-dialog .settings-item > .ob-pill {
+  justify-self: end;
+}
+.settings-dialog .settings-tile {
+  display: inline-grid;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid #e5e5e8;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 17px;
+  font-weight: 700;
+}
+.settings-dialog .settings-item-open,
+.settings-dialog .settings-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.settings-dialog .settings-item-open {
+  cursor: pointer;
+}
+.settings-dialog .settings-item-open strong,
+.settings-dialog .settings-item-text strong {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-dialog .settings-item-open:hover strong {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.settings-dialog .settings-item-open small,
+.settings-dialog .settings-item-text small {
+  overflow: hidden;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-dialog .settings-search-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 21px;
+  background: var(--ob-fill);
+  color: var(--ob-text-tertiary);
+}
+.settings-dialog .settings-search-field svg {
+  width: 16px;
+  height: 16px;
+}
+.settings-dialog .settings-search-field input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+}
+.settings-dialog .settings-catalogue {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 36px;
+  row-gap: 6px;
+}
+.settings-dialog .settings-empty {
+  margin: 0 4px;
+  color: var(--ob-text-tertiary);
+  font-size: 13px;
+}
+.settings-dialog .settings-disclosure {
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.settings-dialog .settings-disclosure > summary {
+  padding: 14px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.settings-dialog .settings-disclosure[open] > summary {
+  border-bottom: 1px solid var(--ob-divider);
+}
+.settings-dialog .settings-disclosure > :not(summary) {
+  padding: 16px 18px;
+}
+.settings-dialog .settings-subpage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.settings-dialog .settings-subpage-back {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.settings-dialog .settings-subpage-back:hover {
+  color: var(--ob-text);
+}
+@media (max-width: 760px) {
+  .settings-dialog .settings-catalogue {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 工作主机: the shared host list restyled to the SettingsHosts artboard. */
+.settings-dialog .settings-card {
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.settings-dialog .settings-pairing-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+.settings-dialog .settings-pairing-form .ob-field {
+  flex: 1;
+}
+.settings-dialog .settings-token {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.settings-dialog .settings-token-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.settings-dialog .settings-token-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.settings-dialog .settings-dialog-body .settings-token strong {
+  font-size: 15px;
+}
+.settings-dialog .settings-dialog-body .settings-token small {
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+}
+.settings-dialog .settings-token pre {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre;
+}
+.settings-dialog .node-identity-list {
+  border-top: 0;
+}
+.settings-dialog .node-identity-item {
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 14px;
+  min-height: 0;
+  padding: 14px 0;
+  border-bottom: 0;
+}
+.settings-dialog .node-identity-item + .node-identity-item {
+  border-top: 1px solid var(--ob-divider);
+}
+.settings-dialog .node-identity-icon {
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #e5e5e8;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ob-text);
+}
+.settings-dialog .node-identity-item.online .node-identity-icon {
+  background: #fff;
+  color: var(--ob-text);
+}
+.settings-dialog .settings-dialog-body .node-identity-copy strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.settings-dialog .settings-dialog-body .node-identity-copy code {
+  display: none;
+}
+.settings-dialog .settings-dialog-body .node-identity-copy small {
+  margin-top: 3px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}
+.settings-dialog .node-status {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #e3e3e6;
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+}
+.settings-dialog .node-status::before {
+  display: none;
+}
+.settings-dialog .node-status.online {
+  background: #e3f4e8;
+  color: #1c7c3c;
+}
+.settings-dialog .node-revoke-warning {
+  font-size: 12px;
+}
+.settings-dialog .node-identity-actions button {
+  height: 32px;
+  min-height: 0;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 16px;
+  background: #e3e3e6;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+.settings-dialog .node-identity-actions .node-danger-button {
+  background: #fde8e6;
+  color: #b3261e;
+}
+.settings-dialog .node-revoked-at {
+  font-size: 12px;
+}
+
+/* 例行任务 (SettingsRoutines artboard). */
+.settings-dialog .settings-routine {
+  grid-template-columns: 44px minmax(0, 1fr) auto auto auto;
+}
+.settings-dialog .settings-routine.is-paused > :not(.ob-switch, .settings-routine-remove) {
+  opacity: 0.6;
+}
+.settings-dialog .settings-routine-avatar {
+  padding: 6px;
+}
+.settings-dialog .settings-routine-avatar .robot-avatar {
+  width: 30px;
+  height: 30px;
+}
+.settings-dialog .settings-routine-when {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.settings-dialog .settings-dialog-body .settings-routine-when small {
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+}
+.settings-dialog .settings-dialog-body .settings-routine-when small.is-attention {
+  color: #b3261e;
+}
+.settings-dialog .settings-routine-remove {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text-tertiary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.settings-dialog .settings-routine-remove:hover {
+  color: #b3261e;
+}
+.settings-dialog .settings-routine-delete {
+  display: flex;
+  gap: 6px;
+}
+.settings-dialog .settings-routine-form .destination-automation-form {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+@media (max-width: 760px) {
+  .settings-dialog .settings-routine {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+  }
+  .settings-dialog .settings-routine > .ob-switch {
+    grid-row: 1;
+    grid-column: 3;
+  }
+  .settings-dialog .settings-routine-when {
+    grid-row: 2;
+    grid-column: 2;
+    align-items: flex-start;
+  }
+  .settings-dialog .settings-routine > :last-child {
+    grid-row: 2;
+    grid-column: 3;
+    justify-self: end;
+  }
+}
+.settings-dialog .settings-routine-form .destination-automation-form > h3 {
+  display: none;
+}
+
+/* 审计记录 (SettingsAudit artboard). */
+.settings-dialog .settings-filters {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.settings-dialog .audit-list {
+  margin: 0;
+  list-style: none;
+}
+.settings-dialog .audit-list > li {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+.settings-dialog .audit-list > li + li {
+  border-top: 1px solid var(--ob-divider);
+}
+.settings-dialog .audit-list time {
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.settings-dialog .settings-dialog-body .audit-list strong {
+  display: block;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-dialog .settings-dialog-body .audit-list p {
+  margin: 3px 0 0;
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+}
+.settings-dialog .audit-more {
+  align-self: flex-start;
 }

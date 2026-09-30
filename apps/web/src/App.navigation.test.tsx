@@ -478,7 +478,7 @@ it("preserves the work draft when navigating away through the shared sidebar", a
   }
 });
 
-it("opens model services from the owner menu without discarding the conversation draft", async () => {
+it("opens model services in settings without discarding the conversation draft", async () => {
   const rendered = await renderComponent(<App />);
   try {
     await settleEffects();
@@ -486,14 +486,28 @@ it("opens model services from the owner menu without discarding the conversation
     await interact(() =>
       rendered.container.querySelector<HTMLElement>(".sb-account summary")?.click(),
     );
-    await interact(() => buttonByText(rendered.container, "模型服务").click());
+    // The temporary account-menu entry is gone; 模型服务 lives in the settings dialog.
+    expect(
+      Array.from(rendered.container.querySelectorAll(".sb-account [role=menuitem]"), (item) =>
+        item.textContent?.trim(),
+      ),
+    ).not.toContain("模型服务");
+    await interact(() => buttonByText(rendered.container, "设置").click());
+    const models = Array.from(
+      rendered.container.querySelectorAll<HTMLButtonElement>(".settings-dialog-nav button"),
+    ).find((item) => item.textContent?.startsWith("模型服务"));
+    await interact(() => models?.click());
     await settleEffects();
-    expect(api.getModelServices).toHaveBeenCalledTimes(1);
-    expect(rendered.container.querySelector(".model-services-dialog")).not.toBeNull();
-    await interact(() => buttonByLabel(rendered.container, "关闭模型服务").click());
-    expect(rendered.container.querySelector(".model-services-dialog")).toBeNull();
+    expect(api.getModelServices).toHaveBeenCalled();
+    expect(rendered.container.querySelector("#settings-section-title")?.textContent).toBe(
+      "模型服务",
+    );
+    await interact(() => buttonByLabel(rendered.container, "关闭设置").click());
+    expect(rendered.container.querySelector(".settings-dialog")).toBeNull();
     expect(composer(rendered.container).value).toBe("保留对话草稿");
-    expect(api.getWorkspace).toHaveBeenCalledTimes(1);
+    // One extra read by 模型服务 for its 「N 个 Bot 在用」 hint; the workspace is not remounted.
+    expect(api.getWorkspace).toHaveBeenCalledTimes(2);
+    expect(api.subscribeToWorkspaceEvents).toHaveBeenCalledTimes(1);
   } finally {
     await rendered.unmount();
   }

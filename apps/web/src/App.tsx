@@ -5,7 +5,6 @@ import type {
   CreateBotInput,
   CreateChannelInput,
   RunFrame,
-  WorkspaceSnapshot,
 } from "@openbot/domain";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -19,7 +18,6 @@ import {
   getAuthSession,
   getModelSettings,
   getUnreadCounts,
-  getWorkspace,
   joinBotToChannel,
   login,
   logout,
@@ -122,9 +120,6 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [settingsSection, setSettingsSection] = useState<DesktopSettingsSection>("general");
   const settingsCounts = useSettingsCounts(showSettings);
-  const [settingsError, setSettingsError] = useState<string>();
-  const [showNodeSettings, setShowNodeSettings] = useState(false);
-  const [settingsNodes, setSettingsNodes] = useState<WorkspaceSnapshot["nodes"]>([]);
   const [showConnectionSetup, setShowConnectionSetup] = useState(false);
   const [showSetupPlan, setShowSetupPlan] = useState(false);
   const [desktopLocalWorker, setDesktopLocalWorker] = useState<
@@ -490,35 +485,17 @@ export function App() {
 
   const settingsPanel =
     showSettings && desktopSetupPlan?.status === "configured" ? (
-      <>
-        <DesktopSettingsScreen
-          initialSection={settingsSection}
-          counts={settingsCounts}
-          error={settingsError}
-          plan={desktopSetupPlan.plan}
-          material={material}
-          connection={desktopConnection}
-          localWorker={desktopLocalWorker}
-          onConnection={() => setShowConnectionSetup(true)}
-          onRole={() => setShowSetupPlan(true)}
-          onBack={() => setShowSettings(false)}
-          onWorker={() => {
-            void getWorkspace()
-              .then((workspace) => {
-                setSettingsNodes(workspace.nodes);
-                setShowNodeSettings(true);
-                setSettingsError(undefined);
-              })
-              .catch(() => setSettingsError("无法读取工作电脑，请检查连接后重试。"));
-          }}
-        />
-        {showNodeSettings ? (
-          <NodeManagerDialog
-            onlineNodes={settingsNodes}
-            onClose={() => setShowNodeSettings(false)}
-          />
-        ) : null}
-      </>
+      <DesktopSettingsScreen
+        initialSection={settingsSection}
+        counts={settingsCounts}
+        plan={desktopSetupPlan.plan}
+        material={material}
+        connection={desktopConnection}
+        localWorker={desktopLocalWorker}
+        onConnection={() => setShowConnectionSetup(true)}
+        onRole={() => setShowSetupPlan(true)}
+        onBack={() => setShowSettings(false)}
+      />
     ) : showSettings && !desktopBridge ? (
       <DesktopSettingsScreen
         initialSection={settingsSection}

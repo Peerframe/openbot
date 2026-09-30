@@ -91,3 +91,47 @@ it("rejects a malformed audit page instead of rendering it", async () => {
     await view.unmount();
   }
 });
+
+it("groups audit events by day and filters loaded events by category", async () => {
+  const today = new Date();
+  today.setHours(10, 31, 0, 0);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      respond({
+        events: [
+          {
+            id: "1",
+            type: "CHANNEL_CREATED",
+            createdAt: today.toISOString(),
+            channelName: "市场周报",
+            details: {},
+          },
+          { id: "2", type: "RUN_FAILED", createdAt: today.toISOString(), details: {} },
+          { id: "3", type: "BOT_CREATED", createdAt: "2026-09-01T07:00:00.000Z", details: {} },
+        ],
+      }),
+    ),
+  );
+  const view = await renderComponent(<AuditLogSettings />);
+  try {
+    await interact(() => undefined);
+    const headings = Array.from(
+      view.container.querySelectorAll(".settings-group > h3"),
+      (item) => item.textContent,
+    );
+    expect(headings).toEqual(["今天", "9 月 1 日"]);
+    const chips = Array.from(
+      view.container.querySelectorAll<HTMLButtonElement>(".settings-filters button"),
+    );
+    // Only categories present in the loaded events are offered.
+    expect(chips.map((chip) => chip.textContent)).toEqual(["全部", "频道", "Bot", "任务"]);
+    await interact(() => chips[3]?.click());
+    expect(view.container.querySelectorAll(".audit-list li")).toHaveLength(1);
+    expect(view.container.querySelector(".audit-list .ob-tag")?.textContent).toBe("任务");
+    await interact(() => chips[0]?.click());
+    expect(view.container.querySelectorAll(".audit-list li")).toHaveLength(3);
+  } finally {
+    await view.unmount();
+  }
+});

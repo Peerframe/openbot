@@ -681,8 +681,8 @@ function AccountMenu({
                 </button>
               </>
             ) : null}
-            {onManageModels ? (
-              // Temporary: model connections move into the Settings 模型服务 section in plan step 7.
+            {onManageModels && !onSettings ? (
+              // Only without a settings dialog (embedded workspace); otherwise 设置 → 模型服务.
               <button
                 type="button"
                 role="menuitem"
