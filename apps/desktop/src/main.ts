@@ -4,9 +4,11 @@ import {
   app,
   BrowserWindow,
   dialog,
+  globalShortcut,
   ipcMain,
   Menu,
   Notification,
+  nativeImage,
   nativeTheme,
   net,
   protocol,
@@ -15,6 +17,7 @@ import {
   session,
   shell,
   systemPreferences,
+  Tray,
   type WebContents,
 } from "electron";
 import { originalAttachmentSaveDialog } from "./attachment-save-dialog.js";
@@ -28,6 +31,7 @@ import {
   issueDesktopNodeEnrollmentToken,
 } from "./desktop-server-actions.js";
 import { openDesktopSupportLink } from "./desktop-support-links.js";
+import { DesktopUpdateController } from "./desktop-updates.js";
 import { isTrustedDesktopIpcSender } from "./ipc-security.js";
 import {
   DESKTOP_ENTRY_URL,
@@ -40,6 +44,8 @@ import { MacOSWorkerCompanion } from "./macos-worker-companion.js";
 import { DesktopMicrophonePolicy } from "./microphone-policy.js";
 import { NativeServerController } from "./native-server.js";
 import { DesktopNavigationMenuController } from "./navigation-menu.js";
+import { registerPlatformIpc } from "./platform-ipc.js";
+import { DesktopPlatformController, FilePlatformPreferenceStore } from "./platform-preferences.js";
 import { desktopProfileCompatibility } from "./profile-compatibility.js";
 import { launchPythonProductServer } from "./python-server.js";
 import { DesktopReportSaver } from "./report-save.js";
@@ -63,12 +69,16 @@ import { DesktopEventStreamLifecycle } from "./server-proxy.js";
 import { FileDesktopSetupPlanStore } from "./setup-plan.js";
 import { DesktopSetupPlanController } from "./setup-plan-controller.js";
 import { SidebarMaterialController } from "./sidebar-material.js";
+import { createSignedUpdaterPort } from "./signed-update-port.js";
 
 let nativeServer: NativeServerController | undefined;
 let quitting = false;
 let mainWindow: BrowserWindow | undefined;
 let desktopSession: Session | undefined;
 let sidebarMaterial: SidebarMaterialController | undefined;
+let platformController: DesktopPlatformController | undefined;
+let updateController: DesktopUpdateController | undefined;
+let tray: Tray | undefined;
 let navigationMenu: DesktopNavigationMenuController | undefined;
 
 const compatibleProfile = desktopProfileCompatibility(
@@ -118,6 +128,95 @@ const notifier = new DesktopNotifier({
   },
 });
 const microphonePolicy = new DesktopMicrophonePolicy();
+
+function focusMainWindow(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+}
+async function initializePlatform(): Promise<void> {
+  const update = await createSignedUpdaterPort({
+    packaged: app.isPackaged,
+    platform: process.platform,
+    resources: process.resourcesPath,
+    executable: process.execPath,
+  });
+  updateController = new DesktopUpdateController(
+    update.port,
+    update.code,
+    async (version) => {
+      if (!mainWindow || mainWindow.isDestroyed()) return false;
+      const answer = await dialog.showMessageBox(mainWindow, {
+        type: "question",
+        buttons: ["取消", "安装并重启"],
+        defaultId: 0,
+        cancelId: 0,
+        message: "安装已验证的 OpenBot 更新？",
+        detail: `版本 ${version}。本地服务将先正常停止。`,
+      });
+      return answer.response === 1;
+    },
+    async () => {
+      await nativeServer?.stop();
+      updateController?.close();
+      platformController?.close();
+      quitting = true;
+    },
+  );
+  platformController = new DesktopPlatformController(
+    new FilePlatformPreferenceStore(join(app.getPath("userData"), "platform-preferences.json")),
+    {
+      capabilities: {
+        launchAtLogin: app.isPackaged && ["darwin", "win32"].includes(process.platform),
+        tray: true,
+        badge: process.platform !== "win32",
+        updates: !!update.port,
+      },
+      currentLaunchAtLogin: () => app.getLoginItemSettings().openAtLogin,
+      setLaunchAtLogin: (openAtLogin) => app.setLoginItemSettings({ openAtLogin }),
+      setTray: (enabled) => {
+        if (enabled && !tray) {
+          const image = nativeImage
+            .createFromPath(
+              desktopWindowIconPath({
+                resourcesPath: process.resourcesPath,
+                packaged: app.isPackaged,
+                appPath: app.getAppPath(),
+              }),
+            )
+            .resize({ width: 18, height: 18 });
+          if (image.isEmpty()) throw new Error("Desktop tray icon unavailable.");
+          tray = new Tray(image);
+          tray.setToolTip("OpenBot");
+          tray.on("click", focusMainWindow);
+          tray.setContextMenu(
+            Menu.buildFromTemplate([
+              { label: "显示 OpenBot", click: focusMainWindow },
+              { label: "退出 OpenBot", click: () => app.quit() },
+            ]),
+          );
+        } else if (!enabled && tray) {
+          tray.destroy();
+          tray = undefined;
+          focusMainWindow();
+        }
+      },
+      registerShortcut: (value) => globalShortcut.register(value, focusMainWindow),
+      unregisterShortcut: (value) => globalShortcut.unregister(value),
+      setBadge: (count) => app.setBadgeCount(count),
+      changed: (preferences) => updateController?.automatic(preferences.automaticUpdates),
+    },
+  );
+  await platformController.initialize();
+  registerPlatformIpc(
+    ipcMain,
+    platformController,
+    updateController,
+    () => mainWindow?.webContents,
+    () => mainWindow?.isFocused() === true,
+  );
+}
 
 function lockDownSession(desktopSession: Session): void {
   desktopSession.setPermissionCheckHandler((contents, permission, _origin, details) =>
@@ -375,6 +474,12 @@ async function createMainWindow(activeSession: Session): Promise<void> {
   });
 
   mainWindow = window;
+  window.on("close", (event) => {
+    if (!quitting && tray && platformController?.state().preferences.runInBackground) {
+      event.preventDefault();
+      window.hide();
+    }
+  });
   navigationMenu?.reset();
   window.on("focus", () => navigationMenu?.refresh());
   window.on("blur", () => navigationMenu?.refresh());
@@ -422,6 +527,7 @@ async function createMainWindow(activeSession: Session): Promise<void> {
 
 async function startDesktop(): Promise<void> {
   if (compatibleProfile) app.setName("OpenBot");
+  await initializePlatform();
   const activeSession = session.fromPartition("persist:openbot-desktop", { cache: true });
   const rendererRoot = join(app.getAppPath(), "dist", "renderer");
   const connectionController = new DesktopConnectionController({
@@ -602,6 +708,10 @@ async function startDesktop(): Promise<void> {
 app.on("web-contents-created", (_event, contents) => lockDownWebContents(contents));
 
 app.on("activate", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    focusMainWindow();
+    return;
+  }
   if (BrowserWindow.getAllWindows().length === 0) {
     if (!desktopSession) {
       console.error("OpenBot Desktop session is unavailable during activation.");
@@ -618,14 +728,18 @@ app.on("activate", () => {
 app.on("before-quit", (event) => {
   eventStreams.clear();
   notifier.closeAll();
-  if (quitting || nativeServer === undefined) return;
-  event.preventDefault();
+  if (quitting) return;
   quitting = true;
+  updateController?.close();
+  platformController?.close();
+  if (nativeServer === undefined) return;
+  event.preventDefault();
   void nativeServer.stop().finally(() => app.quit());
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
+  if (process.platform !== "darwin" && !platformController?.state().preferences.runInBackground)
+    app.quit();
 });
 
 void app

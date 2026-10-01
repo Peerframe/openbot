@@ -86,6 +86,26 @@ secret，不等于生产级持有证明身份。能力声明本身仍不授予�
 频道与工作区 SSE 每个订阅最多保留 128 个待发送投影。慢客户端达到上限后连接会被关闭，Web
 客户端重连并重新读取数据库权威快照；Server 不会静默丢弃某个事件后继续伪装为连续流。
 
+## Owner 密码与登录会话（C2）
+
+- `GET /api/v1/auth/sessions` 返回 `{ sessions: [{ id, userAgent, current, createdAt, expiresAt }] }`，
+  按创建时间倒序列出有效会话，最多 100 个。ID 不是登录凭据，不返回 token、摘要或 IP。
+  `userAgent` 是最多 256 个码点的不可信提示，旧会话为空；登录不会创建超过上限的有效会话。
+- `POST /api/v1/auth/sessions/revoke-others` 需要当前 cookie 与精确匹配的 Origin，无需正文。
+  返回 `{ revoked: number }`，保留发起会话，在同一事务记录 `OWNER_SESSIONS_REVOKED` 和撤销数量。
+- `POST /api/v1/auth/password` 需要 cookie、精确 Origin 和 `{ currentPassword, newPassword }`，
+  拒绝多余字段，不裁剪空格。旧密码为 1–1024 个码点，新密码为 15–1024 个码点，拒绝示例密码，
+  沿用 8192 字节请求上限。成功返回 `{ changed: true, reauthenticationRequired: true }`，
+  清除 cookie、撤销全部会话并原子记录 `OWNER_PASSWORD_CHANGED`。
+  旧密码错误或会话无效为 401，限流为 429（含 `Retry-After`），输入错误为 422；
+  存储或审计失败为 503，不修改密码、撤销会话或清除 cookie。
+
+修改后的密码以带随机盐的标准库 scrypt（N=32768、r=8、p=3）哈希保存在 PostgreSQL。
+已有保存的凭据后，环境密码只作为初始配置，重启不会覆盖修改结果。
+凭据版本和共享事务锁拒绝在密码修改前生成的登录校验证明。
+备份数据库时同时保留 `owner_credentials`。此功能不提供密码找回或可信设备身份；
+失去 Owner 登录凭据时仍需通过部署管理路径处理。
+
 ## 创建 Bot
 
 ```json
@@ -134,6 +154,28 @@ Server 会去除两端空白，要求职责非空且最多 160 字符，简介�
 `409`；没有实际变化或夹带权限字段返回 `422`。成功事务会增加 revision，并追加只记录变更字段名、
 不保存简介正文的进化事件；Workspace SSE 也只发送员工 id 与受影响分区。显示名、模型策略、工作
 主机、外观、技能状态和授权明确不属于这个命令。
+
+## Server 通用偏好（C7）
+
+`GET /api/v1/settings/general` 向已登录 Owner 返回 `{revision,timezone,defaultModel,updatedAt}`。
+`PUT /api/v1/settings/general` 要求精确允许的 Origin 和最多 2 KiB 严格 JSON：
+`{expectedRevision,timezone,defaultModel}`。修订号为 1–2147483647 整数，旧修订写入返回
+`409 owner_preferences_revision_conflict`。时区为有界 IANA 标识，由 Server ZoneInfo 验证，默认 `UTC`；
+未知或非法时区返回 422。默认模型必须显式为 null 或既有 `{connectionId,modelId}` 选择，
+拒绝密钥、地址、命令和未知字段。读取保留已失效的选择，便于 Owner 清除或替换。
+
+单例设置与 `SETTINGS_OWNER_UPDATED` 审计在同一 Owner 事务提交。无变化不增加修订号，
+审计只记变更字段名与修订，不含凭据。时区供 Owner 展示使用，由调用端格式化既有 UTC 时间；
+不重新解释历史时间或既有例行任务。
+
+新建 `model` 或 `docker-linux` Bot 且省略模型时，在身份事务内读取当前默认模型；显式选择优先。
+`none` 等计算机类型不继承模型能力，既有 Bot 不变。发布 Bot、进化记录与审计前解析当前启用连接、
+地址策略及凭据；默认连接缺失、禁用或不可用时失败关闭，不发布 Bot、不改用其他模型。
+设置默认值不会请求供应商、发现模型、推理或产生费用。
+
+`0046_owner_preferences` 迁移建立初值为修订 1、UTC、null 模型的单例。
+本独立 PR 与 C2 都追加当前迁移历史；合并第二个迁移 PR 前，必须基于先合并的迁移重新 rebase/编号，
+禁止替换已提交历史。
 
 ## Owner 管理员工记忆
 
@@ -350,6 +392,29 @@ Server 会对 `package` 重复执行同一套严格解析、签名验证、校�
 `{ events, nextBefore? }`；`nextBefore` 是不透明的键集游标（精确时间加事件 id，同一事务写入的事件不会被跳过）；每条事件包含类型、时间、各 id、当前或已删除的名称，以及白名单内的标量字段，
 从不包含消息正文。
 
+## 审计分类与 CSV（C3）
+
+`GET /api/v1/audit` 新增可选 `category`：`authentication`、`settings`、`hosts`、`approvals`、
+`channels`、`bots`、`runs`、`plugins`、`other`。省略时返回全部类别，每条事件包含服务端分类。
+分类在 SQL 中先于精确时间/ID 游标分页执行。未知或重复查询参数、未知类别和错误上限为 422；
+JSON 每页仍为 1–100 条。
+
+`GET /api/v1/audit/export` 接受同样的类别和游标，`limit=1..1000`，默认 1000。
+下载带 BOM 的 UTF-8 CSV（`openbot-audit.csv`），完整引用单元格并使用 CRLF。
+列为事件 ID、时间、类别、类型、频道/Bot ID 与名称、Run ID 和白名单详情。
+可能触发公式的单元格以单引号转义。沿用 Owner 鉴权和 no-store，不导出提示词、密钥、
+工具参数或网络摘要，每页最多 4 MiB。未结束时返回可跨域读取的 `X-OpenBot-Next-Before`；
+将其作为下页 `before`，解析并拼接数据行即可导出更长历史，拼接时不重复标题和 BOM。
+这是分页历史导出，不是单一事务的全库归档。
+
+登录成功、密码错误和退出登录分别写入 `AUTH_LOGIN_SUCCEEDED`、`AUTH_LOGIN_FAILED`、`AUTH_LOGOUT`，
+不记录秘密；已限流请求不重复生成无界事件。登录审计与 C2 的凭据 revision 校验和会话写入
+属于同一事务，并保留有长度上限的 user-agent 提示。审计存储失败返回 503，不发出 cookie，
+也不提交会话或限流变更。旧模型设置最终发布在授权事务内记录
+`SETTINGS_MODEL_UPDATED`，审计失败恢复旧文件；保留已有模型连接事件。
+主机注册、撤销、实际连接与断开记录 `WORKER_HOST_*`；私有网络摘要留在身份账本。
+连接事件持久化失败不提供主机可用性；物理断开时仍完成清理，审计失败记录固定错误。
+
 ## 创建频道
 
 ```json
@@ -388,6 +453,29 @@ Run 会把接单 Bot 当时的 `computerProfile` 固化为 `executionProfile`，
 都不属于公开错误契约。被捕获的后台调度失败会另写一条有界 `DISPATCH_FAILED` 审计，只包含
 Run、已权威分配的 Node、阶段和公开代码；若该二次写入本身失败，只记录一次日志，不递归审计。
 
+## Owner 额外审批设置（C4）
+
+`GET /api/v1/settings/approvals` 返回 `{revision,productRead,publicWeb,exceptions,
+protectedExceptionCategories}`。`PUT` 要求 Owner Cookie、精确 Origin 和 ≤16KiB 严格 JSON：
+`{expectedRevision,productRead,publicWeb,exceptions}`。内置产品读取/公网读取两类 Work 操作支持
+`inherit`（适配器最低要求）与 `required`（增加确认）。版本冲突409
+`approval_policy_revision_changed`；策略缺失/损坏503。同值不增加版本，变更与
+`SETTINGS_APPROVAL_UPDATED` 审计原子提交，仅记录模式/数量/版本，不复制私有目标。
+protocol/domain 提供严格类型与 schema。
+
+最多64个精确例外：`{botId,category:"product_read"|"public_web",target:{kind,value}}`。
+频道/附件为规范 UUID，网页为无查询、片段、凭据、通配符和字面 IP 的规范 HTTPS URL。
+保存时验证存活 Bot 与未删除本地目标；执行时继续检查任务/原来源/身份和公网 DNS、重定向、
+字节上限。搜索、域名范围、前缀与文件路径不能例外。
+
+**删除、安装、改权限永远不能例外。** 返回的受保护类别还包括命令、浏览器、插件与未知操作。
+例外只取消 Owner 增加的确认，不能降低适配器强制审批或改变权限；直接 Owner 操作保留现有门禁。
+提案、准入和读取/网页执行前复查策略；撤销/收紧后未批准的旧自动 Action 返回409
+`approval_policy_changed`，需新提案；放宽不会改已有待审决定。已有精确批准与历史回执核对保持
+有效。已发出的网页请求可能在策略提交后结束，不声称可取消远程效果，也不允许重发。
+详见 [ADR-0049](decisions/0049-owner-approval-policy.zh-CN.md)。独立 C2/C7/C4 迁移在先合并项后
+必须重新基于 main 编号，不能覆盖已提交历史。
+
 ## 订阅频道事件
 
 `GET /api/v1/channels/:channelId/events` 返回 `text/event-stream`，当前事件如下：
@@ -412,6 +500,30 @@ Server 每 15 秒发送一次心跳。Web 超过 35 秒未收到任何帧会主�
 
 Artifact 与临时画面内容接口使用同一个 Owner Session，响应为 `private, no-store` 并带 `X-Content-Type-Options: nosniff`。Web 不接收或暴露实际 `storage_key`；没有登录的浏览器不能读取截图。临时画面限制为 PNG 和 2 MiB，Server 最多保留 16 个 Run 的最新帧，每帧默认 2 分钟后过期；SSE 只发送元数据，图片由浏览器按 revision 单独读取。
 
+## 员工浏览器生命周期（C6 候选）
+
+`POST /api/v1/bots/{botId}/browser/maintenance` 要求 Owner cookie、严格允许的 Origin 和最多 1 KiB
+严格 JSON：`{operation:"status"|"restart"|"clear",confirmation?:"clear-browser-data"}`。
+只有 `clear` 必须附确认字段，其余操作拒绝该字段；拒绝未知字段、路径、URL 或命令。
+返回 `{botId,nodeId,running:boolean,paused:boolean}`。
+
+Server 要求已绑定原浏览器身份或运维明确配置的 Bot→Node 路由，禁止选择替代主机。
+原 Worker 必须声明 Docker Provider 的 `browser.maintenance@1` 与 `browser.session@1`。
+在既有会话配置之外，明确设置 `OPENBOT_DOCKER_BROWSER_MAINTENANCE=true`；默认关闭。
+状态读取上游 health，不启动浏览器；重启正常停止原浏览器，再通过既有截图路径启动，不返回截图；
+清理仅删除该 Bot 的上游浏览器独立档案，并保持浏览器停止。
+
+重启/清理在派发前持久化意图并使旧查看会话与 Work 观察失效；确认成功或结果不确定都保持
+Server 暂停与 Provider 锁，Agent 恢复必须由 Owner 重新接管并明确交回。
+派发与完成均复查 Origin、Owner 有效期、路由、凭据和当前精确 socket 身份。
+事件只记操作、阶段与身份；不返回档案路径、cookie、页面内容或网络详情，不重试不确定操作。
+此直接 Owner 清理操作永远不能成为审批例外。
+
+保留设置仍待确定 Server 交付物或 Desktop 本地文件的数据范围；本候选不提供缺少实际执行路径的设置。
+
+
+本次集成按 Owner 决定暂缓下载/截图保留设置；这些生命周期接口不启用保留策略或自动删除。
+
 ## 错误约定
 
 - `401`：未登录、会话已过期或登录密码错误；
@@ -426,6 +538,40 @@ Artifact 与临时画面内容接口使用同一个 Owner Session，响应为 `p
 还返回 `code: "internal_error"` 与该 request id，但不返回异常原文。Server 和 Node 的运行日志为
 结构化 JSON，遵循 `OPENBOT_LOG_LEVEL`，且只接受白名单 request/Run/Node 关联字段。HTTP 日志只记
 不含 query 的路由路径，不记录 header、Cookie、正文、凭证、任意异常对象或 stack。
+
+## Desktop 平台设置与更新（C5）
+
+沙箱 `openbotDesktop` 桥接新增 `getPlatformState()`、`setPlatformPreferences(preferences)`、
+`setUnreadBadge(count)`、`getUpdateState()`、`checkForUpdates()`、`downloadUpdate()` 和
+`installUpdate()`。仅 Desktop 原生可用，Web 无对应 HTTP 权限。protocol/domain 导出类型。
+
+设置为严格 DTO：`launchAtLogin`、`runInBackground`、`showDockBadge`、`automaticUpdates` 为布尔值，
+`globalShortcut` 为空表示禁用，否则为有长度上限、含 Command/Control 修饰键的快捷键。
+默认只有角标开启。主进程在自身 userData 私有文件中原子保存版本化设置；未知字段、不安全文件和
+非法快捷键失败关闭。快捷键冲突保留原快捷键，保存失败恢复启动、托盘、快捷键与角标状态。
+
+状态返回 `status`、`preferences`、平台 `capabilities` 和可选固定 `code`。
+开机启动仅支持已打包的 macOS/Windows；Linux 开机启动、Windows 程序坞角标不可用。
+后台运行依赖托盘，关闭最后窗口时隐藏窗口并保留本地服务；托盘提供显示与退出。
+全局快捷键唤回同一窗口。角标接受 0–99999 安全整数，最多显示 99，关闭该设置或退出时清空。
+设置写入、下载与安装要求隔离 preload 中的真实用户操作、聚焦窗口和可信顶层 frame。
+IPC 不接受渲染层传入的命令、程序路径或更新地址。
+
+更新状态为 `unavailable|idle|checking|available|downloading|downloaded|installing|failed`，
+附可选有界版本、进度及固定错误代码。自动模式每六小时检查并下载已验证更新，安装始终要求
+原生确认及本地 Server 正常停止。禁止降级与退出时自动安装。
+
+更新复用 electron-updater 6.8.9，仅在签名 macOS/Windows 安装包中启用。
+包内 `resources/app-update.yml` 必须是普通文件，内容为最多 4 KiB 的严格 JSON（YAML 子集）：
+`openbotFormat="openbot.signed-updates/v1"`、`provider="github"`、`owner="Peerframe"`、
+`repo="openbot"`、`channel="alpha"|"latest"`，以及 macOS 的 `macTeamIdentifier`（10 位大写字母/数字）
+或 Windows 的 `publisherName`（1–8 个签名者名称）。拒绝未知字段、自定义源或缺失签名者；
+创建 updater 前验证当前应用的 Developer ID/Authenticode 签名和签名者，保留 updater 原有下载校验及
+原生签名验证。开发版、未签名或缺配置时返回不可用，Linux 更新不支持。
+现有未签名发布缺少更新元数据，生产下载安装验收仍依赖签名发布产物与元数据；本契约不表示已完成发布或安装。
+
+
+本次集成按 Owner 决定暂缓生产签名自动更新。未签名包继续返回不可用；原生偏好功能可独立使用。
 
 ## 任务经验审阅
 
