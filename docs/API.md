@@ -232,6 +232,28 @@ transitions valid from the current state. Permanent revocation uses a separate c
 These endpoints manage profile metadata only. They do not install or execute `SKILL.md`, change a
 Node, route work, alter approval policy, or grant tools.
 
+## Reviewed plugin catalog (C8)
+
+`GET /api/v1/plugins/catalog` authenticates the Owner and returns the bounded versioned catalog:
+`{format:"openbot.reviewed-plugin-catalog/v1",revision,entries}`. It accepts no query parameters and
+performs no remote discovery or installation. Each entry has a slug `id`, bounded `name`/`description`,
+`distribution` (`self-hosted-template|self-hosted`), exact `version`, SPDX-style `license`, HTTPS
+`sourceUrl` containing its 40-character `sourceCommit`, 1–16 source `files` with SHA-256, and
+`review:{status:"reviewed",reviewedAt,reviewedBy,record,scope}`. Protocol/domain export schemas/types.
+
+Only explicit reviewed records enter the response. Maximum source size is 64 KiB, maximum entries
+32; duplicate JSON keys, IDs or paths, unreviewed/rejected records, unknown credentials/endpoint fields,
+unsafe source URLs and malformed digests fail the whole source with `503 plugin_catalog_unavailable`.
+The bundled source contains the actually reviewed OpenBot notebook developer template, including
+its exact main source commit and hashes. It requires separate hosting/endpoint setup and explicit
+live manifest review/grants; a catalog entry grants no permission and is not an installation.
+
+An operator may set `OPENBOT_PLUGIN_CATALOG_PATH` to an exact absolute private owner-controlled
+regular file in the same format. It is read with the existing bounded owned-file helper; renderer,
+Worker, model and imported plugin content cannot choose that source. A broken source is not presented
+as a successful empty catalog. No remote third-party service is claimed reviewed: the attempted
+public documentation MCP review was refused by the retained non-public-DNS boundary in this environment.
+
 ## Employee export, import, and activation
 
 Export preview is generated from the same canonical package preparation path that download uses.
@@ -459,24 +481,14 @@ internal non-secret-reference entries may be enabled. Updates require the usual 
 Models only prepare a proposal in the bounded native loop; they do not call these Owner endpoints.
 Successful Run completion publishes the candidate atomically. See [Native Agent](NATIVE_AGENT.md).
 
-## Reviewed plugin catalog (C8)
+## Channel activity (C1)
 
-`GET /api/v1/plugins/catalog` authenticates the Owner and returns the bounded versioned catalog:
-`{format:"openbot.reviewed-plugin-catalog/v1",revision,entries}`. It accepts no query parameters and
-performs no remote discovery or installation. Each entry has a slug `id`, bounded `name`/`description`,
-`distribution` (`self-hosted-template|self-hosted`), exact `version`, SPDX-style `license`, HTTPS
-`sourceUrl` containing its 40-character `sourceCommit`, 1–16 source `files` with SHA-256, and
-`review:{status:"reviewed",reviewedAt,reviewedBy,record,scope}`. Protocol/domain export schemas/types.
-
-Only explicit reviewed records enter the response. Maximum source size is 64 KiB, maximum entries
-32; duplicate JSON keys, IDs or paths, unreviewed/rejected records, unknown credentials/endpoint fields,
-unsafe source URLs and malformed digests fail the whole source with `503 plugin_catalog_unavailable`.
-The bundled source contains the actually reviewed OpenBot notebook developer template, including
-its exact main source commit and hashes. It requires separate hosting/endpoint setup and explicit
-live manifest review/grants; a catalog entry grants no permission and is not an installation.
-
-An operator may set `OPENBOT_PLUGIN_CATALOG_PATH` to an exact absolute private owner-controlled
-regular file in the same format. It is read with the existing bounded owned-file helper; renderer,
-Worker, model and imported plugin content cannot choose that source. A broken source is not presented
-as a successful empty catalog. No remote third-party service is claimed reviewed: the attempted
-public documentation MCP review was refused by the retained non-public-DNS boundary in this environment.
+`GET /api/v1/channels` and `GET /api/v1/workspace` return `lastActivityAt` on each
+Channel and optional `latestMessage: { id, authorType, preview, createdAt }`.
+These fields are Owner-only and absent on channel mutation responses. `preview` is plain text,
+at most 160 Unicode code points (640 UTF-8 bytes), truncated in SQL; no attachments, credentials,
+metadata or extra message fields are projected. Clients must render it as text, never HTML.
+An empty channel omits `latestMessage` and uses `createdAt` for `lastActivityAt`.
+The list is ordered by activity descending, then channel ID in C collation ascending;
+latest messages break equal timestamps by message ID in C collation descending.
+Deleted channels are excluded. Existing session revalidation, row and response-byte limits apply.

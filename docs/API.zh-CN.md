@@ -224,6 +224,24 @@ Owner。验证还需要 1–100 的 `confidence`，并再次确认全部依赖�
 Node、Provider、路由、审批策略或主机授权。完整技能目录将在后续隔离导入时采用开放的
 [Agent Skills](https://github.com/agentskills/agentskills) 规范和官方 `skills-ref` 校验器。
 
+## 已审核插件目录（C8）
+
+`GET /api/v1/plugins/catalog` 验证 Owner 后返回有界版本化目录：
+`{format:"openbot.reviewed-plugin-catalog/v1",revision,entries}`。拒绝查询参数，不远程发现或安装。
+条目包含 slug `id`、有界名称/说明、`distribution`（`self-hosted-template|self-hosted`）、准确版本、
+许可证、包含 40 位 `sourceCommit` 的 HTTPS `sourceUrl`、1–16 个附 SHA-256 的源文件，及
+`review:{status:"reviewed",reviewedAt,reviewedBy,record,scope}`。protocol/domain 导出 schema 与类型。
+
+只发布明确审核记录。源最多 64 KiB、32 条；重复 JSON 键/条目/路径、待审核或拒绝记录、
+未知凭据或 endpoint 字段、不安全地址、非法摘要使整个源返回 `503 plugin_catalog_unavailable`。
+内置目录收录已实际审核的 OpenBot 笔记本开发模板，附 main 准确提交及源码哈希。
+该模板需要另行部署与配置地址，并沿用实时清单审核和显式授权；目录条目本身不授予权限或代表安装。
+
+运维可设置 `OPENBOT_PLUGIN_CATALOG_PATH`，指向同格式、绝对规范路径的 Owner 私有普通文件，
+通过既有有界 owned-file 读取。渲染层、Worker、模型及导入插件内容均不能选择源。
+损坏目录不冒充成功的空目录。未宣称任何远程第三方服务已完成审核：本环境公共文档 MCP 的
+实际审核被现有非公网 DNS 边界拒绝。
+
 ## 导出安全员工模板
 
 `GET /api/v1/bots/:botId/export/preview` 与下载共用同一条规范包准备路径。每次预览会生成新的
@@ -426,20 +444,13 @@ Artifact 与临时画面内容接口使用同一个 Owner Session，响应为 `p
 模型只能在有界原生循环中准备候选，不能调用 Owner 接口；成功任务与候选一起提交。
 参见[原生 Agent](NATIVE_AGENT.zh-CN.md)。
 
-## 已审核插件目录（C8）
+## 频道最近动态（C1）
 
-`GET /api/v1/plugins/catalog` 验证 Owner 后返回有界版本化目录：
-`{format:"openbot.reviewed-plugin-catalog/v1",revision,entries}`。拒绝查询参数，不远程发现或安装。
-条目包含 slug `id`、有界名称/说明、`distribution`（`self-hosted-template|self-hosted`）、准确版本、
-许可证、包含 40 位 `sourceCommit` 的 HTTPS `sourceUrl`、1–16 个附 SHA-256 的源文件，及
-`review:{status:"reviewed",reviewedAt,reviewedBy,record,scope}`。protocol/domain 导出 schema 与类型。
-
-只发布明确审核记录。源最多 64 KiB、32 条；重复 JSON 键/条目/路径、待审核或拒绝记录、
-未知凭据或 endpoint 字段、不安全地址、非法摘要使整个源返回 `503 plugin_catalog_unavailable`。
-内置目录收录已实际审核的 OpenBot 笔记本开发模板，附 main 准确提交及源码哈希。
-该模板需要另行部署与配置地址，并沿用实时清单审核和显式授权；目录条目本身不授予权限或代表安装。
-
-运维可设置 `OPENBOT_PLUGIN_CATALOG_PATH`，指向同格式、绝对规范路径的 Owner 私有普通文件，
-通过既有有界 owned-file 读取。渲染层、Worker、模型及导入插件内容均不能选择源。
-损坏目录不冒充成功的空目录。未宣称任何远程第三方服务已完成审核：本环境公共文档 MCP 的
-实际审核被现有非公网 DNS 边界拒绝。
+`GET /api/v1/channels` 与 `GET /api/v1/workspace` 的每个频道包含 `lastActivityAt`，
+以及可选的 `latestMessage: { id, authorType, preview, createdAt }`。
+仅已登录 Owner 能读取这些字段；频道修改响应不包含它们。`preview` 是纯文本，
+在 SQL 中截取最多 160 个 Unicode 码点（640 UTF-8 字节），不包含附件、凭据、
+元数据或其他消息字段。客户端必须按文本渲染，不能当作 HTML。
+空频道省略 `latestMessage`，以创建时间作为最近活动时间。
+列表按最近活动倒序，时间相同时按频道 ID 的 C 排序规则升序；最新消息时间相同则按消息 ID 的 C 排序规则倒序。
+删除的频道不返回。沿用会话复查、行数和响应字节上限。

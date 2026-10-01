@@ -622,7 +622,7 @@ def test_model_enum_literals_match_the_typescript_unions_exactly():
 def test_public_models_declare_exactly_the_public_fields():
     """Current public contracts still exclude description, configuration and revision fields."""
     assert set(models.Bot.model_fields) == BOT_PUBLIC_FIELDS
-    assert set(models.Channel.model_fields) == CHANNEL_PUBLIC_FIELDS
+    assert set(models.Channel.model_fields) == CHANNEL_PUBLIC_FIELDS | {"lastActivityAt", "latestMessage"}
     assert set(models.BotAppearance.model_fields) == {
         "head",
         "body",
