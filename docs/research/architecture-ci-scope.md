@@ -90,3 +90,18 @@ assertions remain in `scripts/ci-scope.test.ts`; revision-specific differential 
 are recorded in [PR104](https://github.com/Peerframe/openbot/pull/104).
 No upstream source copied or dependency/pin changed. Local gate success and hosted qualification
 are reported separately against the revision each actually tested.
+
+## Cancellation diagnostics — 2026-10-01
+
+Reuse the existing dependency-result contract and action pins. The aggregate reads job results
+before parsing the scope plan: a cancelled selector may publish no plan. Cancellation reports
+`CI cancelled` with the affected job names and exits nonzero; real job failures remain visible
+even when other jobs were cancelled. Missing or malformed inputs still fail closed with a named
+input diagnostic. Required success, complete job reporting and explicit non-applicability are
+unchanged. No dependency, workflow policy or upstream source was added.
+
+The [GitHub needs context](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#needs-context)
+defines dependency results including `cancelled`; absent context properties evaluate to an empty
+string. CLI regressions reproduce an empty plan and cover cancellation, concurrent real failure,
+scope failure/skipping, malformed input and normal success. Local CLI evidence does not claim a
+new hosted cancellation run.
