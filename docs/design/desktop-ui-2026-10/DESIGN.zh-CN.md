@@ -131,7 +131,7 @@
 | ChannelInfo、AddMember | `ContextRail.tsx` | 已实现；第 18 步加添加成员弹窗 |
 | BotInfo | 新的 `BotInfoRail.tsx`（取代 `EmployeeProfileRail` 与单聊右栏） | 第 17 步 |
 | Profile | `EmployeeProfileView.tsx` | 头部与概览已实现；其他分页待设计（第 22 步） |
-| New、NewGroup、NewBotChat | `NewChatScreen.tsx`、新的 `NewBotSetupCard.tsx` | 第 16 步 |
+| New、NewGroup、NewBotChat | `NewChatScreen.tsx`、`NewBotSetupCard.tsx` | 已完成；开场白等 C11 |
 | Slash | `ChannelWorkspace.tsx` 输入框菜单 | 已实现 |
 | Settings、SettingsNav、Settings* | `DesktopSettingsScreen.tsx`、`Settings*.tsx` | 已实现 |
 | Plugins | `PluginsDialog.tsx`、`PluginManagerPanel.tsx` | 已实现 |
@@ -166,8 +166,7 @@
 旧样式表：`styles.css` 的大部分、`workspace-shell.css`、`desktop-workspace.css`、`desktop-ui-refresh.css`、
 `settings-plugin-refresh.css`、`workspace-preferences.css`、`components/destinations.css`。
 
-计划中退役的界面：`CreateBotDialog` 和 `CreateChannelDialog`（由新建流程取代）；独立的「例行任务」和
-「技能库」页面 `AutomationsScreen`、`SkillLibraryScreen`（由「设置 › 例行任务」和「设置 › 技能」取代）；
+第 16 步已删除 `CreateBotDialog` 和 `CreateChannelDialog`。计划中退役的界面：独立的「例行任务」和「技能库」页面 `AutomationsScreen`、`SkillLibraryScreen`（由「设置 › 例行任务」和「设置 › 技能」取代）；
 以及旧的位图标志 `OpenBotMark`。
 
 已完成：窗口外壳与右栏、启动与首次设置。其余按计划逐步进行，每一步在同一个拉取请求里删除它所替换的旧规则。

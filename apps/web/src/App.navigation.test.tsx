@@ -33,6 +33,7 @@ vi.mock("./api", async (importOriginal) => {
     listMessages: vi.fn(),
     listRuns: vi.fn(),
     createChannel: vi.fn(),
+    createBot: vi.fn(),
     openBotConversation: vi.fn(),
     createMessage: vi.fn(),
     subscribeToWorkspaceEvents: vi.fn(() => vi.fn()),
@@ -519,7 +520,19 @@ it("opens model services in settings without discarding the conversation draft",
   }
 });
 
-it("keeps the creation draft mounted while configuring model services", async () => {
+it("creates a random Bot from 创建新 Bot and opens its 单聊 with the role card", async () => {
+  vi.mocked(api.createBot).mockImplementation(async (input) => {
+    const created: Bot = {
+      ...bot,
+      id: "bot-new",
+      name: input.name,
+      role: input.role,
+      computerProfile: input.computerProfile,
+      ...(input.appearance ? { appearance: input.appearance } : {}),
+    };
+    snapshot = { ...snapshot, bots: [...snapshot.bots, created] };
+    return created;
+  });
   const rendered = await renderComponent(<App />);
   try {
     await settleEffects();
@@ -527,28 +540,13 @@ it("keeps the creation draft mounted while configuring model services", async ()
     await interact(() =>
       rendered.container.querySelector<HTMLButtonElement>("#new-chat-option-0")?.click(),
     );
-    const creation = rendered.container.querySelector(".create-dialog");
-    const name = creation?.querySelector<HTMLInputElement>("input");
-    if (!name) throw new Error("Create Bot name input missing");
-    await setInputValue(name, "Draft model Bot");
-    const mode = Array.from(creation?.querySelectorAll("select") ?? []).find((select) =>
-      Array.from(select.options).some((option) => option.value === "model"),
+    await settleEffects();
+    expect(api.createBot).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "新建 Bot", role: "还没有分工", computerProfile: "model" }),
     );
-    if (!mode) throw new Error("Computer profile select missing");
-    expect(mode.value).toBe("none");
-    await interact(() => {
-      mode.value = "model";
-      mode.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-    await settleEffects();
-    await interact(() => buttonByText(rendered.container, "管理模型服务").click());
-    await settleEffects();
-    expect(rendered.container.querySelectorAll("dialog")).toHaveLength(2);
-    await interact(() => buttonByLabel(rendered.container, "关闭模型服务").click());
-    expect(rendered.container.querySelectorAll("dialog")).toHaveLength(1);
-    expect(rendered.container.querySelector(".create-dialog")).toBe(creation);
-    expect(name.value).toBe("Draft model Bot");
-    expect(mode.value).toBe("model");
+    expect(api.openBotConversation).toHaveBeenCalledWith("bot-new");
+    expect(rendered.container.querySelector(".create-dialog")).toBeNull();
+    expect(rendered.container.textContent).toContain("你最想让我先帮你做什么？");
   } finally {
     await rendered.unmount();
   }

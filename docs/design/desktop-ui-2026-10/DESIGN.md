@@ -153,7 +153,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | ChannelInfo, AddMember | `ContextRail.tsx` | Built; add-member popover in step 18 |
 | BotInfo | new `BotInfoRail.tsx` (replaces `EmployeeProfileRail` and the 单聊 rail) | Step 17 |
 | Profile | `EmployeeProfileView.tsx` | Header and 概览 built; other tabs need design (step 22) |
-| New, NewGroup, NewBotChat | `NewChatScreen.tsx`, new `NewBotSetupCard.tsx` | Step 16 |
+| New, NewGroup, NewBotChat | `NewChatScreen.tsx`, `NewBotSetupCard.tsx` | Built; the greeting waits for C11 |
 | Slash | `ChannelWorkspace.tsx` composer menus | Built |
 | Settings, SettingsNav, Settings* | `DesktopSettingsScreen.tsx`, `Settings*.tsx` | Built |
 | Plugins | `PluginsDialog.tsx`, `PluginManagerPanel.tsx` | Built |
@@ -189,8 +189,8 @@ Legacy stylesheets: most of `styles.css`, `workspace-shell.css`, `desktop-worksp
 `desktop-ui-refresh.css`, `settings-plugin-refresh.css`, `workspace-preferences.css`,
 `components/destinations.css`.
 
-Screens retired by the plan: `CreateBotDialog` and `CreateChannelDialog` (replaced by the creation
-flow); the standalone 例行任务 and 技能库 pages, `AutomationsScreen` and `SkillLibraryScreen`
+`CreateBotDialog` and `CreateChannelDialog` were removed in step 16. Screens retired by the plan:
+the standalone 例行任务 and 技能库 pages, `AutomationsScreen` and `SkillLibraryScreen`
 (replaced by 设置 › 例行任务 and 设置 › 技能); and the old raster mark `OpenBotMark`.
 
 Done so far: the window shell and rail, and launch and setup. The rest follow the steps in the

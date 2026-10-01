@@ -62,7 +62,7 @@ Then verify the browser behavior:
 Deterministic Starter DOM regressions (jsdom; not real-browser AT evidence):
 
 ```bash
-npm exec --workspace @openbot/web -- vitest run src/components/CreateBotDialog.test.tsx
+npm exec --workspace @openbot/web -- vitest run src/components/Dialog.test.tsx
 npm exec --workspace @openbot/web -- vitest run src/components/EmployeeProfileView.test.tsx
 npm exec --workspace @openbot/web -- vitest run src/components/RunInspector.integration.test.tsx
 npm exec --workspace @openbot/web -- vitest run src/components/NodeManagerDialog.test.tsx

@@ -53,32 +53,10 @@ Owner 和鉴权工作区访问，Linux Python CI 已运行此检查。开发 Nod
 
 ## 入门：创建 Bot 对话框模态生命周期回归
 
-- **状态：**已交付（D4）。`CreateBotDialog.test.tsx` 覆盖 showModal、标注、cancel/关闭卸载与创建失败 `role="alert"`。autofocus 后 opener 焦点恢复仍为已知产品后续项；见 `docs/research/starter-dom-regressions.zh-CN.md`。
-
-- **目标：**证明现有「创建 Bot」原生模态符合无障碍基线中对 Owner 创建对话框的声明。
-- **已有行为：**`CreateBotDialog` 通过 `useModalDialog` 打开，使用 `aria-labelledby` 标注对话框，
-  图标关闭按钮名为 `关闭`，创建失败以 `role="alert"` 提示，关闭后尝试恢复 opener 焦点；
-  autofocus 顺序问题仍未解决。
-- **已覆盖：**`CreateBotDialog.test.tsx` 挂载对话框，检查标注、cancel/关闭卸载及创建失败提示。
-  `docs/ACCESSIBILITY.zh-CN.md` 已列出这些回归命令。
-- **仍缺：**autofocus 前捕获真实 opener，并向手工浏览器清单添加创建 Bot 路径；已有 jsdom
-  测试不能证明浏览器焦点恢复。
-- **入口文件：**`apps/web/src/components/CreateBotDialog.tsx`、
-  `apps/web/src/components/useModalDialog.ts`、`apps/web/src/test/render-component.tsx`、
-  `docs/ACCESSIBILITY.md`（若改检查清单则同步 `.zh-CN.md`）。
-- **前置条件：**根目录 `package.json` 的 Node 引擎；`npm ci`；不需要 PostgreSQL、付费模型或
-  Desktop。
-- **命令：**
-  ```bash
-  npm exec --workspace @openbot/web -- vitest run src/components/CreateBotDialog.test.tsx
-  npm --workspace @openbot/web run typecheck
-  npm run docs:check
-  ```
-- **验收反例：**Escape / `cancel` 后对话框仍挂载；关闭后焦点未回到 opener；图标关闭缺少
-  `aria-label`；`onCreate` 失败未以 `role="alert"` 呈现。
-- **不包含：**axe/Playwright CI 门禁；创建频道或导入/导出对话框；WCAG 合规声明。
-- **依赖：**仅现有 Web Vitest/jsdom。调研：
-  [contributor-starter-slices](research/contributor-starter-slices.zh-CN.md)。
+- **状态：**已退役。界面第 16 步用一键创建取代了「创建 Bot」对话框
+  （`docs/design/desktop-ui-2026-10/IMPLEMENTATION.zh-CN.md`），`CreateBotDialog.tsx` 及其测试已删除。
+  其余对话框的模态回归由共用框架的测试 `apps/web/src/components/Dialog.test.tsx` 覆盖；
+  `docs/research/starter-dom-regressions.zh-CN.md` 里的 opener 焦点后续项改为针对第 20 步的对话框。
 
 ## 入门：员工主页 Tab 键盘 DOM 回归
 

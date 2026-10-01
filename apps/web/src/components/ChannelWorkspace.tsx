@@ -32,11 +32,13 @@ import {
   type RealtimeConnectionState,
   setMessageReaction,
   subscribeToChannelEvents,
+  updateEmployeeProfileDetails,
 } from "../api";
 import { composeTaskText } from "../composer-context";
 import { type ConversationSession, createConversationSession } from "../conversation-session";
 import { shortcutLabel } from "../desktop-shortcuts";
 import { findMentionQuery, type MentionQuery, removeMentionQuery } from "../mention-query";
+import { needsRoleSetup } from "../quick-bot";
 import {
   addRecipient,
   removeRecipient,
@@ -50,6 +52,7 @@ import { useWorkspacePreferences } from "../workspace-preferences";
 import { AttachmentsManagerDialog } from "./AttachmentsManager";
 import { MessageActionBar } from "./MessageActionBar";
 import { MessageReactions } from "./MessageReactions";
+import { NewBotSetupCard } from "./NewBotSetupCard";
 import { RichMessage } from "./RichMessage";
 import { RunSteering } from "./RunSteering";
 import { VoiceRecorder } from "./VoiceRecorder";
@@ -92,6 +95,7 @@ export function ChannelWorkspace({
   onNewRoutine,
   onOpenSettings,
   onOpenHosts,
+  onBotChanged,
 }: {
   headerAction?: ReactNode;
   globalHeader?: boolean;
@@ -113,6 +117,8 @@ export function ChannelWorkspace({
   onNewRoutine?: (() => void) | undefined;
   onOpenSettings?: ((section: "general") => void) | undefined;
   onOpenHosts?: (() => void) | undefined;
+  /** Called after the 定分工 card changes the Bot's role, so the host can refresh its lists. */
+  onBotChanged?: (() => void | Promise<void>) | undefined;
 }) {
   const { values: preferences } = useWorkspacePreferences();
   const [ownSession] = useState(createConversationSession);
@@ -130,6 +136,10 @@ export function ChannelWorkspace({
   );
   const { messages, runs, draft, loading, loadError, sendError, sending, capacityError } = state;
   const members = bots.filter((bot) => channel.botIds.includes(bot.id));
+  const directBot = channel.directBotId
+    ? members.find((bot) => bot.id === channel.directBotId)
+    : undefined;
+  const [setupSkipped, setSetupSkipped] = useState(false);
   const botsById = useMemo(() => new Map(bots.map((bot) => [bot.id, bot])), [bots]);
   const messageById = useMemo(
     () => new Map(messages.map((message) => [message.id, message])),
@@ -727,6 +737,25 @@ export function ChannelWorkspace({
         >
           {loading && messages.length === 0 ? (
             <p className="conversation-status">正在读取频道消息…</p>
+          ) : messages.length === 0 && directBot && needsRoleSetup(directBot) && !setupSkipped ? (
+            <NewBotSetupCard
+              bot={directBot}
+              onSkip={() => setSetupSkipped(true)}
+              onChoose={async ({ role, description, message }) => {
+                // The Server keeps role and description under a revision; read it, then write.
+                const profile = await getEmployeeProfile(directBot.id);
+                await updateEmployeeProfileDetails(directBot.id, {
+                  role,
+                  description,
+                  expectedRevision: profile.details.revision,
+                });
+                await onBotChanged?.();
+                conversation.edit({ text: message });
+                const result = await conversation.send((input) => createMessage(channel.id, input));
+                if (result && mounted.current)
+                  for (const run of result.runs ?? [result.run]) onRun(run);
+              }}
+            />
           ) : messages.length === 0 ? (
             <div className="conversation-empty">
               <span className="conversation-icon">

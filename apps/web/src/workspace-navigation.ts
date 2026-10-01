@@ -3,7 +3,7 @@ import type { ProfileTab } from "./components/EmployeeProfileView";
 
 export type WorkspaceLocation =
   | Readonly<{ kind: "home" }>
-  | Readonly<{ kind: "new" }>
+  | Readonly<{ kind: "new"; channel?: true }>
   | Readonly<{ kind: "channel"; id: string }>
   | Readonly<{ kind: "employee"; id: string; tab: ProfileTab }>
   | Readonly<{ kind: "automations" | "skills" | "work" }>;

@@ -13,10 +13,10 @@ type AppScene = {
   kind: "app";
   title: string;
   artboard: string;
-  world?: "full" | "empty";
+  world?: "full" | "empty" | "new-bot";
   start?:
     | { kind: "home" }
-    | { kind: "new" }
+    | { kind: "new"; channel?: true }
     | { kind: "work" }
     | { kind: "channel"; id: string }
     | { kind: "employee"; id: string; tab: "overview" };
@@ -54,6 +54,20 @@ export const scenes: Record<string, AppScene | ComponentScene> = {
     rail: true,
   },
   new: { kind: "app", title: "新建聊天", artboard: "New", start: { kind: "new" } },
+  "new-channel": {
+    kind: "app",
+    title: "创建频道",
+    artboard: "NewGroup",
+    start: { kind: "new", channel: true },
+  },
+  "new-bot": {
+    kind: "app",
+    title: "新 Bot 的单聊（定分工）",
+    artboard: "NewBotChat",
+    world: "new-bot",
+    start: { kind: "channel", id: "direct-b-new" },
+    rail: true,
+  },
   work: { kind: "app", title: "任务监督", artboard: "WorkSupervision", start: { kind: "work" } },
   empty: {
     kind: "app",

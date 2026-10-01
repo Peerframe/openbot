@@ -41,13 +41,14 @@ it("picks Bots with the list, search and ⌘ shortcuts, and names the channel", 
     const search = view.container.querySelector<HTMLInputElement>('input[role="combobox"]');
     expect(options(view.container).map((option) => option.textContent)).toEqual([
       expect.stringContaining("创建新 Bot"),
+      expect.stringContaining("创建频道"),
       expect.stringContaining("研究助理"),
       expect.stringContaining("客服小橙"),
       expect.stringContaining("设计评审"),
     ]);
     await key(search, { key: "1", metaKey: true });
     expect(create).toHaveBeenCalledOnce();
-    await key(search, { key: "3", metaKey: true });
+    await key(search, { key: "4", metaKey: true });
     expect(view.container.querySelector(".new-chat-chip")?.textContent).toContain("客服小橙");
     // While searching, Enter chooses the first matching Bot, not 「创建新 Bot」.
     if (!search) throw Error("search missing");
@@ -56,7 +57,7 @@ it("picks Bots with the list, search and ⌘ shortcuts, and names the channel", 
     await key(search, { key: "Enter" });
     expect(view.container.querySelectorAll(".new-chat-chip")).toHaveLength(2);
     expect(create).toHaveBeenCalledOnce();
-    expect(view.container.textContent).toContain("选了 2 个 Bot，发出第一条消息后会建成一个频道");
+    expect(view.container.textContent).toContain("选了 2 个 Bot，发出第一条消息后建成频道");
     await interact(() =>
       Array.from(view.container.querySelectorAll("button"))
         .find((button) => button.textContent === "命名频道")
@@ -73,6 +74,7 @@ it("picks Bots with the list, search and ⌘ shortcuts, and names the channel", 
     );
     expect(start).toHaveBeenCalledWith({
       botIds: ["b", "a"],
+      asChannel: true,
       channelName: "市场周报",
       text: "开始吧",
     });
@@ -90,19 +92,27 @@ it("removes the last chip with Backspace, sends one Bot without a channel name a
   );
   try {
     const search = view.container.querySelector<HTMLInputElement>('input[role="combobox"]');
-    await interact(() => options(view.container)[1]?.click());
-    await interact(() => options(view.container)[1]?.click());
+    // Before anything is chosen the two actions lead the list; afterwards only Bots remain.
+    await interact(() => options(view.container)[2]?.click());
+    await interact(() => options(view.container)[0]?.click());
     expect(view.container.querySelectorAll(".new-chat-chip")).toHaveLength(2);
     await key(search, { key: "Backspace" });
     expect(view.container.querySelectorAll(".new-chat-chip")).toHaveLength(1);
-    expect(view.container.textContent).toContain("会打开和 研究助理 的单独对话");
+    expect(view.container.textContent).toContain("发出第一条消息后会打开和 研究助理 的单聊");
     const send = view.container.querySelector<HTMLButtonElement>('button[type="submit"]');
     expect(send?.disabled).toBe(true);
     await typeMessage(view.container, "你好");
     expect(send?.disabled).toBe(false);
     await interact(() => send?.click());
-    expect(start).toHaveBeenCalledWith({ botIds: ["a"], channelName: undefined, text: "你好" });
-    expect(view.container.querySelector('[role="alert"]')?.textContent).toBe("已有同名的频道，请换一个名字。");
+    expect(start).toHaveBeenCalledWith({
+      botIds: ["a"],
+      asChannel: false,
+      channelName: undefined,
+      text: "你好",
+    });
+    expect(view.container.querySelector('[role="alert"]')?.textContent).toBe(
+      "已有同名的频道，请换一个名字。",
+    );
   } finally {
     await view.unmount();
   }
@@ -115,9 +125,39 @@ it("stops at the Server's six-recipient limit", async () => {
   );
   try {
     for (let index = 0; index < 7; index += 1)
-      await interact(() => options(view.container)[1]?.click());
+      await interact(() => options(view.container)[index === 0 ? 2 : 0]?.click());
     expect(view.container.querySelectorAll(".new-chat-chip")).toHaveLength(6);
     expect(view.container.querySelector('[role="alert"]')?.textContent).toContain("最多选择 6 个");
+  } finally {
+    await view.unmount();
+  }
+});
+
+it("makes one Bot a 频道 after 创建频道", async () => {
+  const start = vi.fn(async () => undefined);
+  const view = await renderComponent(
+    <NewChatScreen bots={bots} onCreateBot={vi.fn()} onStart={start} />,
+  );
+  try {
+    const search = view.container.querySelector<HTMLInputElement>('input[role="combobox"]');
+    await key(search, { key: "2", metaKey: true });
+    expect(options(view.container).map((option) => option.textContent)).toEqual([
+      expect.stringContaining("研究助理"),
+      expect.stringContaining("客服小橙"),
+      expect.stringContaining("设计评审"),
+    ]);
+    await key(search, { key: "1", metaKey: true });
+    expect(view.container.textContent).toContain("选了 1 个 Bot，发出第一条消息后建成频道");
+    await typeMessage(view.container, "开始吧");
+    await interact(() =>
+      view.container.querySelector<HTMLButtonElement>('button[type="submit"]')?.click(),
+    );
+    expect(start).toHaveBeenCalledWith({
+      botIds: ["a"],
+      asChannel: true,
+      channelName: undefined,
+      text: "开始吧",
+    });
   } finally {
     await view.unmount();
   }

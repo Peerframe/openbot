@@ -62,35 +62,11 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
 
 ## Starter: Create Bot dialog modal lifecycle regression
 
-- **Status:** Delivered (D4). Regression coverage in `CreateBotDialog.test.tsx` (showModal, labelling, cancel/close unmount, create `role="alert"`). Opener focus restore after autofocus remains a known product follow-up; see `docs/research/starter-dom-regressions.md`.
-
-- **Goal:** prove the existing Create Bot native modal matches the accessibility baseline already
-  claimed for Owner create dialogs.
-- **Existing behavior:** `CreateBotDialog` opens through `useModalDialog`, labels the dialog with
-  `aria-labelledby`, exposes an icon close control named `关闭`, surfaces create failures with
-  `role="alert"`, and attempts to restore the opener when the dialog closes; autofocus ordering
-  remains unresolved.
-- **Covered:** `CreateBotDialog.test.tsx` now mounts the dialog and checks its labels, cancel/close
-  unmount and failed-create alert. `docs/ACCESSIBILITY.md` lists these regression commands.
-- **Remaining:** capture the true opener before autofocus and add the Create Bot path to the
-  manual browser checklist; the delivered jsdom tests do not prove browser focus restoration.
-- **Entry files:** `apps/web/src/components/CreateBotDialog.tsx`,
-  `apps/web/src/components/useModalDialog.ts`, `apps/web/src/test/render-component.tsx`,
-  `docs/ACCESSIBILITY.md` (+ `.zh-CN.md` if the checklist text changes).
-- **Prerequisites:** Node engine from root `package.json`; `npm ci`; no PostgreSQL, paid model, or
-  Desktop app required.
-- **Commands:**
-  ```bash
-  npm exec --workspace @openbot/web -- vitest run src/components/CreateBotDialog.test.tsx
-  npm --workspace @openbot/web run typecheck
-  npm run docs:check
-  ```
-- **Acceptance counter-examples:** Escape / `cancel` leaves the dialog mounted; opener does not
-  regain focus after close; missing `aria-label` on the icon close; failed `onCreate` rejection is
-  rendered without `role="alert"`.
-- **Non-goals:** axe/Playwright CI gates; Create Channel or export/import dialogs; WCAG claims.
-- **Dependencies:** none beyond the existing Web Vitest/jsdom harness. Research note:
-  [contributor-starter-slices](research/contributor-starter-slices.md).
+- **Status:** Retired. UI step 16 replaced the Create Bot dialog with one-click creation
+  (`docs/design/desktop-ui-2026-10/IMPLEMENTATION.md`), and `CreateBotDialog.tsx` and its test
+  were removed. Modal regressions for the remaining dialogs are covered by the shared frame test
+  `apps/web/src/components/Dialog.test.tsx`; the opener-focus follow-up in
+  `docs/research/starter-dom-regressions.md` now applies to the step-20 dialogs.
 
 ## Starter: Employee profile tab keyboard DOM regression
 

@@ -1,9 +1,9 @@
 import type {
   ApprovalDecision,
   AuthSessionSnapshot,
+  Bot,
   Channel,
-  CreateBotInput,
-  CreateChannelInput,
+  ModelSelection,
   RunFrame,
 } from "@openbot/domain";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
@@ -16,6 +16,7 @@ import {
   deleteBot,
   deleteChannel,
   getAuthSession,
+  getOwnerPreferences,
   getModelSettings,
   getUnreadCounts,
   joinBotToChannel,
@@ -34,8 +35,6 @@ import { resolveAuthSession } from "./auth-session-recovery";
 import { AutomationsScreen } from "./components/AutomationsScreen";
 import { ChannelWorkspace } from "./components/ChannelWorkspace";
 import { ContextRail } from "./components/ContextRail";
-import { CreateBotDialog } from "./components/CreateBotDialog";
-import { CreateChannelDialog } from "./components/CreateChannelDialog";
 import { DesktopConnectionScreen } from "./components/DesktopConnectionScreen";
 import { DesktopInstallScreen } from "./components/DesktopInstallScreen";
 import { DesktopLocalWorkerScreen } from "./components/DesktopLocalWorkerScreen";
@@ -85,10 +84,11 @@ import { useEmployeeProfile } from "./use-employee-profile";
 import { useSettingsCounts } from "./use-settings-counts";
 import { useWorkspaceAppearance } from "./use-workspace-appearance";
 import { useWorkspaceState } from "./use-workspace-state";
+import { freshAppearance, nextBotName, QUICK_BOT_ROLE } from "./quick-bot";
 import { useWorkspaceNavigation } from "./workspace-navigation";
 import { updatePreferences, useWorkspacePreferences } from "./workspace-preferences";
 
-type Dialog = "bot" | "channel" | "node" | undefined;
+type Dialog = "node" | undefined;
 
 export function App() {
   const [workEntry, setWorkEntry] = useState(() => parseWorkEntry(window.location.hash));
@@ -824,23 +824,47 @@ export function AuthenticatedWorkspace({
     workspaceReady,
   ]);
 
-  async function handleCreateBot(input: CreateBotInput) {
-    const bot = await createBot(input);
+  /** 创建新 Bot: create immediately with a free name and fresh look, then open its 单聊. */
+  async function handleQuickCreateBot() {
+    if (!workspace) return;
+    let model: ModelSelection | undefined;
+    try {
+      model = (await getOwnerPreferences()).defaultModel ?? undefined;
+    } catch {
+      // Without a readable default the 服务电脑 applies its own; creation does not depend on it.
+    }
+    let bot: Bot | undefined;
+    for (let attempt = 0; !bot; attempt += 1) {
+      try {
+        bot = await createBot({
+          name: nextBotName(workspace.bots, attempt),
+          role: QUICK_BOT_ROLE,
+          computerProfile: "model",
+          appearance: freshAppearance(workspace.bots),
+          ...(model ? { model } : {}),
+        });
+      } catch (cause) {
+        // Another client may take the same default name first; try the next free one twice.
+        if (attempt >= 2 || !(cause instanceof ApiError) || cause.status !== 409) throw cause;
+      }
+    }
     projectBot(bot);
+    const channel = await openBotConversation(bot.id);
+    projectChannel(channel);
+    setMobilePanel(undefined);
+    updatePreferences({ rightPanelOpen: true });
+    selectChannel(channel.id);
     await refresh();
-    setDialog(undefined);
-    showNotice(`${bot.name} 已创建。`);
   }
 
-  async function handleCreateChannel(input: CreateChannelInput) {
-    const channel = await createChannel(input);
-    projectChannel(channel);
-    await refresh();
-    selectChannel(channel.id);
-    setFocusRequest((value) => value + 1);
-    setDialog(undefined);
+  /** Entry points outside the New screen have no error line of their own; a notice reports it. */
+  function quickCreateBot() {
+    void handleQuickCreateBot().catch(() => showNotice("没能创建 Bot，请稍后重试。"));
+  }
+
+  function openNewChannel() {
     setMobilePanel(undefined);
-    showNotice(`${channel.name} 已创建。`);
+    navigation.navigate({ kind: "new", channel: true });
   }
 
   async function handleJoinBot(botId: string) {
@@ -849,9 +873,9 @@ export function AuthenticatedWorkspace({
   }
 
   /** New artboard: the first message opens a direct conversation or creates the channel. */
-  async function handleStartChat({ botIds, channelName, text }: NewChatStart) {
+  async function handleStartChat({ botIds, asChannel, channelName, text }: NewChatStart) {
     let channel: Channel;
-    if (botIds.length === 1) {
+    if (botIds.length === 1 && !asChannel) {
       channel = await openBotConversation(botIds[0] ?? "");
     } else {
       const base = (
@@ -1127,8 +1151,8 @@ export function AuthenticatedWorkspace({
           onAddBotToChannel={handleAddBotToChannel}
           onNewChat={() => navigation.navigate({ kind: "new" })}
           newChatActive={location.kind === "new"}
-          onCreateBot={() => setDialog("bot")}
-          onCreateChannel={() => setDialog("channel")}
+          onCreateBot={quickCreateBot}
+          onCreateChannel={openNewChannel}
           onManageNodes={() => setDialog("node")}
           onManageModels={() => setModelServicesOpen(true)}
           onLogout={onLogout}
@@ -1148,7 +1172,7 @@ export function AuthenticatedWorkspace({
           channels={workspace.channels}
           onInsertMaterial={insertPluginMaterial}
           onBack={navigation.back}
-          onCreateBot={() => setDialog("bot")}
+          onCreateBot={quickCreateBot}
           onImportBot={() => setEmployeeImportOpen(true)}
           bots={workspace.bots}
           onOpenBot={(botId) => openEmployee(botId, "skills")}
@@ -1175,6 +1199,7 @@ export function AuthenticatedWorkspace({
           key={selectedChannel.id}
           session={conversationSession}
           globalHeader
+          onBotChanged={refresh}
           channel={selectedChannel}
           bots={workspace.bots}
           artifacts={workspace.artifacts}
@@ -1196,15 +1221,20 @@ export function AuthenticatedWorkspace({
         />
       ) : location.kind === "new" ? (
         <NewChatScreen
+          key={location.channel ? "new-channel" : "new-chat"}
           bots={workspace.bots}
-          onCreateBot={() => setDialog("bot")}
+          initialChannelMode={location.channel === true}
+          onCreateBot={handleQuickCreateBot}
           onStart={handleStartChat}
+          onClose={
+            navigation.canGoBack ? navigation.back : () => navigation.navigate({ kind: "home" })
+          }
         />
       ) : (
         <ChannelEmptyState
           hasBots={workspace.bots.length > 0}
-          onCreateBot={() => setDialog("bot")}
-          onCreateChannel={() => setDialog("channel")}
+          onCreateBot={quickCreateBot}
+          onCreateChannel={openNewChannel}
         />
       )}
 
@@ -1241,14 +1271,8 @@ export function AuthenticatedWorkspace({
         approvals={workspace.approvals}
         onPanel={setMobilePanel}
         onDecideApproval={handleDecideApproval}
-        onCreateBot={() => {
-          setMobilePanel(undefined);
-          setDialog("bot");
-        }}
-        onCreateChannel={() => {
-          setMobilePanel(undefined);
-          setDialog("channel");
-        }}
+        onCreateBot={quickCreateBot}
+        onCreateChannel={openNewChannel}
         onManageNodes={() => {
           setMobilePanel(undefined);
           setDialog("node");
@@ -1304,25 +1328,6 @@ export function AuthenticatedWorkspace({
         />
       ) : null}
 
-      {dialog === "bot" ? (
-        <CreateBotDialog
-          onClose={() => setDialog(undefined)}
-          onCreate={handleCreateBot}
-          onManageModels={() => setModelServicesOpen(true)}
-          modelServicesVersion={modelServicesVersion}
-          onImport={() => {
-            setDialog(undefined);
-            setEmployeeImportOpen(true);
-          }}
-        />
-      ) : null}
-      {dialog === "channel" ? (
-        <CreateChannelDialog
-          bots={workspace.bots}
-          onClose={() => setDialog(undefined)}
-          onCreate={handleCreateChannel}
-        />
-      ) : null}
       {dialog === "node" ? (
         <NodeManagerDialog onlineNodes={workspace.nodes} onClose={() => setDialog(undefined)} />
       ) : null}

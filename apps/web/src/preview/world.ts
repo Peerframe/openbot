@@ -36,7 +36,7 @@ const bot = (
   createdAt: T,
 });
 
-export function createWorld(kind: "full" | "empty" = "full"): PreviewWorld {
+export function createWorld(kind: "full" | "empty" | "new-bot" = "full"): PreviewWorld {
   if (kind === "empty")
     return {
       bots: [],
@@ -48,6 +48,22 @@ export function createWorld(kind: "full" | "empty" = "full"): PreviewWorld {
       messages: {},
       unread: {},
     };
+  if (kind === "new-bot") {
+    // NewBotChat artboard: a quick-created Bot whose empty 单聊 shows the role card.
+    const world = createWorld("full");
+    const fresh = bot("b-new", "新建 Bot", "还没有分工", "cat", "blue");
+    world.bots.push({ ...fresh, computerProfile: "model", createdAt: minutesAgo(0) });
+    world.channels.push({
+      id: "direct-b-new",
+      name: "新建 Bot",
+      description: "",
+      directBotId: "b-new",
+      botIds: ["b-new"],
+      createdAt: minutesAgo(0),
+      lastActivityAt: minutesAgo(0),
+    });
+    return world;
+  }
   const bots = [
     bot("b-research", "研究助理", "信息 · 竞品研究", "round", "green", "running"),
     bot("b-cs", "客服小橙", "客服 · 工单", "cat", "yellow"),

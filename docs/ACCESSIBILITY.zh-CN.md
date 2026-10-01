@@ -53,7 +53,7 @@ npm run lint
 确定性入门级 DOM 回归（jsdom；不是真实浏览器或辅助技术证据）：
 
 ```bash
-npm exec --workspace @openbot/web -- vitest run src/components/CreateBotDialog.test.tsx
+npm exec --workspace @openbot/web -- vitest run src/components/Dialog.test.tsx
 npm exec --workspace @openbot/web -- vitest run src/components/EmployeeProfileView.test.tsx
 npm exec --workspace @openbot/web -- vitest run src/components/RunInspector.integration.test.tsx
 npm exec --workspace @openbot/web -- vitest run src/components/NodeManagerDialog.test.tsx

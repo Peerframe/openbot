@@ -1,0 +1,141 @@
+/* 「你最想让我先帮你做什么？」 (NewBotChat artboard). */
+.new-bot-setup {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 8px 0;
+}
+.new-bot-setup .new-bot-setup-avatar {
+  width: 32px;
+  height: 32px;
+}
+.new-bot-setup-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 560px;
+}
+.new-bot-setup-card {
+  overflow: hidden;
+  border: 1px solid #ececee;
+  border-radius: 20px;
+  background: var(--ob-surface);
+}
+.new-bot-setup-card > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 10px;
+}
+.new-bot-setup-card > header > span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.new-bot-setup-card > header strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.new-bot-setup-card > header small {
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}
+.new-bot-setup-card > header button {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ob-text-tertiary);
+  cursor: pointer;
+}
+.new-bot-setup-card > header button:hover {
+  background: var(--ob-fill);
+}
+.new-bot-setup-choice {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-top: 1px solid #ececee;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.new-bot-setup-choice:hover {
+  background: #f6f6f7;
+}
+.new-bot-setup-choice:disabled {
+  cursor: default;
+}
+.new-bot-setup-choice > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.new-bot-setup-choice strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.new-bot-setup-choice small {
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}
+.new-bot-setup-key {
+  display: inline-grid;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid var(--ob-divider);
+  border-radius: 7px;
+  background: var(--ob-surface);
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+}
+.new-bot-setup-card form {
+  padding: 10px 14px 14px;
+}
+.new-bot-setup-card input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--ob-divider);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+.new-bot-setup-card input:focus {
+  border-color: #c7c7cc;
+}
+.new-bot-setup-note,
+.new-bot-setup-error {
+  margin: 0;
+  padding-left: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.new-bot-setup-note {
+  color: var(--ob-text-tertiary);
+}
+.new-bot-setup-error {
+  color: var(--ob-attention);
+}
+.new-bot-setup :is(button, input):focus-visible {
+  outline: 2px solid var(--ob-active);
+  outline-offset: 2px;
+}
