@@ -987,3 +987,10 @@ Reuse CPython 3.12.13 scrypt (PSF), PostgreSQL 17.11 transactions/locks and Psyc
 OWASP-aligned fixed KDF parameters, singleton persisted credential revisions and atomic session
 revocation retain Server authority. No dependency or upstream source copied. See the
 [security decision](research/desktop-owner-security.md); current-platform acceptance remains in its PR.
+
+## Desktop audit export (2026-10-01, C3)
+
+Reuse CPython 3.12.13 csv (PSF), RFC 4180 formatting and OWASP CSV-injection guidance with
+existing PostgreSQL 17.11/Psycopg 3.3.6 audit authority. Bounded SQL allowlists, keyset categories,
+spreadsheet-safe text and transactional event supplementation add no dependency or copied source.
+See [export research](research/desktop-audit-export.md).

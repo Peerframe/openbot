@@ -6,6 +6,7 @@ import re
 
 import psycopg
 from psycopg.rows import dict_row
+from uuid import uuid4
 
 from .auth import AttemptResult
 from .database import PostgresReadStore, StoreUnavailable
@@ -56,6 +57,7 @@ class PostgresAuthStore(OwnerSecurityMixin):
                     now = (await (await connection.execute("SELECT date_trunc('milliseconds',clock_timestamp()) AS now")).fetchone())["now"]
                     if not valid_password:
                         # Normal context exit commits an invalid attempt. Raising here would erase it.
+                        await connection.execute("INSERT INTO run_events(id,type,payload) VALUES (%s,'AUTH_LOGIN_FAILED','{}'::jsonb)",(str(uuid4()),))
                         return AttemptResult("invalid")
                     await connection.execute("DELETE FROM request_throttle_buckets WHERE scope='owner-login' AND client_digest=%s",
                                              (client_digest,))
@@ -67,6 +69,7 @@ class PostgresAuthStore(OwnerSecurityMixin):
                     await connection.execute(
                         "INSERT INTO auth_sessions (id, owner_id, token_digest, expires_at, created_at, user_agent) "
                         "VALUES (%s, 'owner', %s, %s, %s, %s)", (session_id, token_digest, expires, now, user_agent))
+                    await connection.execute("INSERT INTO run_events(id,type,payload) VALUES (%s,'AUTH_LOGIN_SUCCEEDED','{\"actor\":\"owner\"}'::jsonb)",(str(uuid4()),))
                     # The connection context commits before this result reaches the caller.
                     return AttemptResult("issued", expires_at=expires)
         except (psycopg.Error, TimeoutError, ValueError, KeyError):
@@ -110,6 +113,9 @@ class PostgresAuthStore(OwnerSecurityMixin):
                         "UPDATE auth_sessions SET revoked_at=clock_timestamp() "
                         "WHERE token_digest=%s AND owner_id='owner' AND revoked_at IS NULL "
                         "AND expires_at > clock_timestamp() RETURNING id", (token_digest,))
-                    return await cursor.fetchone() is not None
+                    revoked=await cursor.fetchone() is not None
+                    if revoked:
+                        await connection.execute("INSERT INTO run_events(id,type,payload) VALUES (%s,'AUTH_LOGOUT','{\"actor\":\"owner\"}'::jsonb)",(str(uuid4()),))
+                    return revoked
         except (psycopg.Error, TimeoutError):
             raise StoreUnavailable("auth_storage_unavailable") from None

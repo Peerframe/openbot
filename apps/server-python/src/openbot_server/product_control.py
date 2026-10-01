@@ -1,4 +1,5 @@
 """Explicit Python product composition for the retained Owner API; no implicit service selection."""
+from contextlib import asynccontextmanager
 from pathlib import Path
 import hashlib
 import json
@@ -191,8 +192,14 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         for path in ('/api/v1/nodes/enrollment-tokens','/api/v1/nodes/enroll','/api/v1/nodes/[^/]+/revoke'):
             product.write_routes.append(('POST',re.compile(path)))
 
+    @asynccontextmanager
+    async def model_commit(value):
+        async with product.transactions.transaction(value) as db:
+            yield
+            await db.execute("INSERT INTO run_events(id,type,payload) VALUES (gen_random_uuid()::text,'SETTINGS_MODEL_UPDATED','{\"actor\":\"owner\"}'::jsonb)")
+
     async def model_save(value,_path,body,_request):
-        return await service('model').save(body,authority=lambda:product.transactions.transaction(value))
+        return await service('model').save(body,authority=lambda:product.transactions.transaction(value),commit_authority=lambda:model_commit(value))
     route('/api/v1/settings/model','POST',model_save,limit=4096)
     async def model_discover(value,_path,body,_request):
         return {'models':await service('model').discover(body,authority=lambda:product.transactions.transaction(value))}
@@ -278,15 +285,16 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         return {**result,'pluginGrantsRemoved':removed,'attachmentsRemoved':attachments}
     route('/api/v1/bots/{bot_id}','DELETE',bot_delete,limit=1024)
     async def audit_list(value,_path,_body,request):
-        query=request.query_params
-        if set(query)-{'before','limit'} or any(len(query.getlist(key))>1 for key in query):
-            raise ControlError(422,'invalid_audit_query')
-        limit=query.get('limit','50')
-        if not limit.isdigit() or len(limit)>3: raise ControlError(422,'invalid_audit_limit')
-        before=query.get('before')
-        if before is not None and len(before)>200: raise ControlError(422,'invalid_audit_cursor')
-        return await product.lifecycle.audit(value,before=before,limit=int(limit))
+        from .audit_records import parse_query
+        return await product.lifecycle.audit(value,**parse_query(request.query_params))
     route('/api/v1/audit','GET',audit_list)
+    async def audit_export(value,_path,_body,request):
+        from .audit_records import export_csv,parse_query
+        page=await product.lifecycle.audit(value,maximum=1000,**parse_query(request.query_params,export=True))
+        return Response(export_csv(page['events']),media_type='text/csv; charset=utf-8',headers={
+            'Content-Disposition':'attachment; filename="openbot-audit.csv"',
+            **({'X-OpenBot-Next-Before':page['nextBefore']} if page.get('nextBefore') else {})})
+    route('/api/v1/audit/export','GET',audit_export)
 
     def export_selection(request):
         values=request.query_params.getlist('includeSkillContent')

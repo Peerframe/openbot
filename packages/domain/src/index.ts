@@ -764,10 +764,12 @@ export type ReviewKnowledgeProposalInput =
       modelUseEnabled: boolean;
     };
 
-export * from "./channel-interactions.js";
-
 export type {
+  AuditCategory,
+  AuditEvent,
+  AuditPage,
   OwnerPasswordChangeInput,
-  OwnerSessionDevice,
   OwnerPasswordChangeResponse,
+  OwnerSessionDevice,
 } from "@openbot/protocol";
+export * from "./channel-interactions.js";
