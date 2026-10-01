@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>导入 Bot</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.pill{height:40px;padding:0 20px;border-radius:20px;border:0;font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap;background:#ececee}
+.pill.primary{background:#111111;color:#ffffff}
+.pill.danger{background:#b3261e;color:#ffffff}
+.pill.small{height:32px;padding:0 14px;border-radius:16px;font-size:13px}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#6e6e73}
+.field input,.field textarea,.field select{box-sizing:border-box;width:100%;padding:0 14px;height:42px;border:1px solid #e3e3e6;border-radius:12px;background:#ffffff;font:inherit;font-size:15px;color:#1d1d1f;outline:none}
+.field textarea{height:84px;padding:10px 14px;resize:none;line-height:1.5}
+.h2{margin:0 4px;font-size:13px;font-weight:500;color:#6e6e73}
+.card{border-radius:16px;background:#f0f0f2;padding:0 16px}
+.row{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 0}
+.row + .row{border-top:1px solid #e3e3e6}
+.sub{font-size:12px;color:#8e8e93}
+.ok{color:#1c7c3c}
+.warn{color:#94480b}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+.seg{display:flex;gap:4px;padding:4px;border-radius:12px;background:#f0f0f2}
+.seg button{flex:1;height:32px;border:0;border-radius:9px;background:transparent;font-size:14px;font-weight:500;color:#6e6e73;cursor:pointer}
+.seg button[aria-selected="true"]{background:#ffffff;color:#1d1d1f;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.check{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;flex-shrink:0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #ffffff; display: grid; grid-template-columns: 300px minmax(0, 1fr)">
+<dc-import name="Sidebar" active="channel" hint-size="300px,900px"></dc-import>
+<div style="background: #fcfcfc"></div>
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(0,0,0,0.34)"></div>
+<div role="dialog" aria-modal="true" aria-label="导入 Bot" style="position: absolute; left: 520px; top: 50px; width: 700px; max-height: 820px; box-sizing: border-box; border-radius: 22px; background: #fdfdfd; box-shadow: 0 30px 80px rgba(0,0,0,0.25); padding: 30px 32px 24px; display: flex; flex-direction: column; gap: 20px; overflow: hidden">
+<button type="button" aria-label="关闭" style="position: absolute; right: 18px; top: 18px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; cursor: pointer; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
+<header style="display: flex; flex-direction: column; gap: 6px; padding-right: 40px">
+<h1 style="margin: 0; font-size: 22px; font-weight: 700">导入 Bot 模板</h1>
+<p style="margin: 0; font-size: 14px; color: #6e6e73; line-height: 1.55">先在隔离区检查，再由你确认创建一个没有电脑权限的新 Bot。</p>
+</header>
+<ol aria-label="导入步骤" style="margin: 0; padding: 0; list-style: none; display: flex; gap: 8px; font-size: 13px; color: #8e8e93"><li>1 选择文件</li><li aria-hidden="true">—</li><li style="color: #1d1d1f; font-weight: 600">2 检查</li><li aria-hidden="true">—</li><li>3 激活</li></ol>
+<div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px; border: 1px dashed #c7c7cc">
+<span style="width: 40px; height: 40px; border-radius: 11px; border: 1px solid #e3e3e6; background: #ffffff; box-sizing: border-box; display: inline-grid; place-items: center; font-size: 11px; font-weight: 700; color: #6e6e73">JSON</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><span style="font-size: 15px">研究助理.openbot.json</span><span class="sub">38 KB · 在隔离区检查，不会改动你的工作区</span></span>
+<button type="button" class="pill small">换一个</button>
+</div>
+<div style="display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="h2">检查结果</span><div class="card"><div class="row" style="grid-template-columns: 22px minmax(0, 1fr)"><span class="check" style="background: #111111"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 12 10 17 19 7"></polyline></svg></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">格式与字段</span><span class="sub ">openbot.employee/v2 · 无未声明字段</span></span></div><div class="row" style="grid-template-columns: 22px minmax(0, 1fr)"><span class="check" style="background: #111111"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 12 10 17 19 7"></polyline></svg></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">完整性</span><span class="sub ">校验和一致</span></span></div><div class="row" style="grid-template-columns: 22px minmax(0, 1fr)"><span class="check" style="background: #fdf0e1"><span style="font-size: 13px; font-weight: 800; color: #94480b">!</span></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">签名</span><span class="sub warn">未签名，发布者身份无法验证</span></span></div><div class="row" style="grid-template-columns: 22px minmax(0, 1fr)"><span class="check" style="background: #111111"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 12 10 17 19 7"></polyline></svg></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">技能 · 3</span><span class="sub ">导入后先禁用，等你审核</span></span></div><div class="row" style="grid-template-columns: 22px minmax(0, 1fr)"><span class="check" style="background: #111111"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 12 10 17 19 7"></polyline></svg></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">电脑权限</span><span class="sub ">零权限：不绑定主机、不带凭证</span></span></div></div></div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span class="h2">激活为</span>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; border-radius: 16px; background: #f0f0f2"><dc-import name="Avatar" character="round" accent="green" size="64" mark="dot" hint-size="64px,64px"></dc-import><span class="sub">新身份 · 零权限</span></div>
+<label class="field">新 Bot 名称<input type="text" value="研究助理 2"></label>
+</div>
+</div>
+<label style="display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; font-size: 13px; color: #3a3a3c; line-height: 1.5; cursor: pointer"><span class="check" style="border: 2px solid #c7c7cc; box-sizing: border-box; border-radius: 6px"></span>我知道发布者身份无法验证，已核对资料、技能和零权限边界，仍要激活。</label>
+<footer style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 4px"><span><span class="sub">激活只创建新身份和待审核技能</span></span><span style="display: flex; gap: 10px"><button type="button" class="pill">取消</button><button type="button" class="pill primary" style="opacity: 0.45">激活 Bot</button></span></footer>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>任务详情</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.h3{margin:0 4px;font-size:13px;font-weight:500;color:#6e6e73}
+.card{border-radius:16px;background:#f0f0f2;padding:0 14px}
+.kv{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;padding:10px 0;font-size:14px}
+.kv + .kv{border-top:1px solid #e3e3e6}
+.kv span:first-child{color:#6e6e73}
+.step{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:10px;align-items:start;padding:9px 0}
+.dot{width:10px;height:10px;border-radius:50%;margin:4px;display:block}
+.pill{height:36px;padding:0 16px;border-radius:18px;border:0;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;background:#ececee}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; overflow: hidden">
+<dc-import name="Main" hint-size="1440px,900px"></dc-import>
+<aside role="dialog" aria-label="任务详情" style="position: absolute; right: 0; top: 0; width: 460px; height: 900px; box-sizing: border-box; background: #fdfdfd; border-left: 1px solid #ececee; box-shadow: -18px 0 40px rgba(0,0,0,0.08); display: flex; flex-direction: column">
+<header style="height: 56px; flex-shrink: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 0 12px 0 22px">
+<span style="font-size: 13px; color: #8e8e93">任务详情</span>
+<button type="button" aria-label="关闭任务详情" style="width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; cursor: pointer; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
+</header>
+<div style="flex-grow: 1; min-height: 0; overflow: hidden; padding: 0 22px 16px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 12px; background: #eaf2fd; color: #1f6fd6; font-size: 12px; font-weight: 600"><span style="width: 6px; height: 6px; border-radius: 50%; background: #1f6fd6; display: block"></span>执行中</span>
+<strong style="font-size: 20px; font-weight: 700; line-height: 1.35">抓取竞品更新日志</strong>
+<span style="font-size: 13px; color: #6e6e73">市场周报 · 今天 09:33 开始</span>
+</div>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h3 class="h3">电脑画面</h3>
+<div style="height: 170px; border-radius: 14px; background: #e3e5ea; display: grid; place-items: center; color: #8e8e93; font-size: 13px">[实时画面 · 1440 × 900]</div>
+<span style="font-size: 12px; color: #8e8e93; padding: 0 4px">我的 MacBook Pro · 4 秒前 · 画面只在内存里保留</span>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h3 class="h3">分工</h3>
+<div class="card">
+<div style="display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0"><dc-import name="Avatar" character="round" accent="green" size="32" hint-size="32px,32px"></dc-import><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">研究助理</span><span style="font-size: 12px; color: #8e8e93">负责 · 信息 · 竞品研究</span></span><span style="font-size: 12px; color: #1f6fd6">执行中</span></div>
+<div style="display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid #e3e3e6"><dc-import name="Avatar" character="scout" accent="yellow" size="32" hint-size="32px,32px"></dc-import><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">客服小橙</span><span style="font-size: 12px; color: #8e8e93">协作 · 统计工单提及</span></span><span style="font-size: 12px; color: #1c7c3c">已完成</span></div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h3 class="h3">进度</h3>
+<div class="card">
+<div class="step"><span class="dot" style="background: #34c759"></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px">读取员工资料</span><span style="font-size: 12px; color: #8e8e93">weekly/competitors.md · 3 家公司</span></span><span style="font-size: 12px; color: #8e8e93">09:33</span></div>
+<div class="step" style="border-top: 1px solid #e3e3e6"><span class="dot" style="background: #34c759"></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px">打开网页</span><span style="font-size: 12px; color: #8e8e93">a-company.com/changelog</span></span><span style="font-size: 12px; color: #8e8e93">09:34</span></div>
+<div class="step" style="border-top: 1px solid #e3e3e6"><span class="dot" style="background: #34c759"></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px">截取画面</span><span style="font-size: 12px; color: #8e8e93">定价页对比</span></span><span style="font-size: 12px; color: #8e8e93">09:36</span></div>
+<div class="step" style="border-top: 1px solid #e3e3e6"><span class="dot" style="background: #ffffff; border: 2px solid #1f6fd6; box-sizing: border-box"></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600">打开网页 · 进行中</span><span style="font-size: 12px; color: #8e8e93">b-company.com/changelog</span></span><span style="font-size: 12px; color: #8e8e93">09:38</span></div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h3 class="h3">任务信息</h3>
+<div class="card">
+<div class="kv"><span>模型</span><span>Anthropic · claude-sonnet <span style="color: #8e8e93">（创建时选定）</span></span></div>
+<div class="kv"><span>模型用量</span><span>输入 18,240 · 输出 2,106 <span style="color: #8e8e93">· 不代表账单</span></span></div>
+</div>
+</section>
+</div>
+<footer style="flex-shrink: 0; display: flex; gap: 10px; padding: 14px 22px 20px; border-top: 1px solid #ececee">
+<button type="button" class="pill" style="flex: 1">补充指令</button>
+<button type="button" class="pill" style="flex: 1; color: #b3261e">停止任务</button>
+</footer>
+</aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -2,62 +2,120 @@
 
 [English](IMPLEMENTATION.md) · [简体中文](IMPLEMENTATION.zh-CN.md)
 
-Goal: every screen matches the [approved artboards](README.md). The owner decided on 2026-10-01
-that the UI follows this design only; earlier restyle work is not a reference. Work proceeds one
-step at a time, each step one pull request with a rendered comparison against its artboard.
+## In one minute
+
+- **What we are building:** the Desktop and Web app exactly as drawn on the owner's canvas (the
+  [artboards](README.md)). The rules are in [DESIGN.md](DESIGN.md); the canvas wins over any older
+  screen or copy.
+- **Who does what:** Claude builds everything you see and touch (screens, layout, motion, copy,
+  keyboard use). Codex builds what is behind it (服务电脑, data, Desktop main process, CI). They meet
+  at written contracts: the backlog items C1–C16 below.
+- **How you review:** every step is one pull request with screenshots of the built screen next to
+  its artboard. You check the pictures and click through the listed behaviours. You do not need to
+  read code.
+- **What you decide:** the open questions at the end of this file, and the step-22 designs before
+  they are built.
 
 ## Division of work
 
-One implementer per file scope (root `AGENTS.md`). Cross-scope needs go through the backlog below.
+One implementer per file scope (root `AGENTS.md`). Cross-scope needs go through the backlog.
 
 | Owner | Scope |
 | --- | --- |
-| Claude | UI: `apps/web/src/**` (components, styles, the Web API client `api.ts`), UI tests, `docs/design/**` |
-| Codex | Server and platform: `apps/server-python/**`, `packages/db/**`, `packages/protocol/**`, `packages/domain/**`, `apps/desktop/src/**` (main process and preload), CI and scripts |
+| Claude | UI and UX: `apps/web/src/**` (components, styles, the Web API client `api.ts`), UI tests, the design preview harness, `docs/design/**`, the canvas |
+| Codex | Backend and platform: `apps/server-python/**`, `packages/db/**`, `packages/protocol/**`, `packages/domain/**`, `apps/desktop/src/**` (main process and preload), desktop packaging and icons, CI and scripts |
 
-A backend item is ready for UI when its route or bridge method, domain/protocol types and tests are
-merged and documented in `docs/API.md`. Until then the UI shows the design without the missing
-data (hidden, disabled or read-only) and never fakes it.
+A backlog item is ready for UI when its route or bridge method, domain/protocol types and tests are
+merged and documented in `docs/API.md`. Until then the UI hides the design element that needs it
+and never fakes it (DESIGN.md rule 4).
 
-## UI steps (Claude)
+## How every step is delivered
 
-| # | Step | Artboards | Status |
-| --- | --- | --- | --- |
-| 0 | Design tokens and shared primitives (colors, type, radii, pill buttons, chips, inputs, switches, menus) as one token layer | Components | In review: PR #109 (`--ob-*` tokens and `.ob-*` primitives in `styles.css`) |
-| 1 | Channel conversation, title pill, composer, right rail | Main | In review: PR #109 |
-| 2 | Shared sidebar, account menu, context menus, groups and search | Sidebar, Menu, ContextMenu, Search | In review (stacked on PR #109) |
-| 3 | `/` menu: skill descriptions and the design's actions (members, new routine, settings sections) | Slash | In review (stacked) |
-| 4 | New chat: recipient chips, Bot picker with ⌘1–9, channel created on first message | New | In review (stacked) |
-| 5 | Bot profile: header, pill tabs, stats card, recent evolution/work, skills; settings rail (name, tag, description, notifications, runtime) | Profile | In review (stacked) |
-| 6 | Settings dialog shell and grouped navigation with counts | Settings, SettingsNav | In review (stacked) |
-| 7 | Settings sections with existing data: 模型服务, 技能, 插件, 例行任务, 记忆, 工作主机, 导入与导出, 审计记录 | Settings* | In review (stacked, two parts) |
-| 8 | Settings sections needing backlog items: 通用, 通知, 账户与安全, 审批与权限, 员工浏览器, 关于 | Settings* | In review (stacked): 账户与安全, 关于 and 通知 with what exists; C2/C5/C6/C7 rows stay hidden until those land |
-| 9 | Plugins page with the curated catalog | Plugins | In review (stacked): 我的插件 and adding by MCP; 精选 and categories after C8 |
-| 10 | Window shell: no global toolbar; sidebar row shares the traffic-light line; title pill opens the 频道信息 rail with member management | Main, Sidebar, Profile | In review (stacked) |
-| 11 | Bot avatars: the owner's Round / Relay / Scout heads, frameless everywhere, micro drawing below 32px | Avatars, Avatar | In review (stacked) |
-| 12 | 频道信息 rail tabs: 详情, 资料库 (task outputs and channel files), 成员; centred title pill | ChannelInfo, Main | In review (stacked) |
-| 13 | Launch, opening animation and first-run setup | Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | In review (stacked) |
+1. Claude builds the step on a branch stacked on the previous step and keeps the app usable.
+2. The pull request holds before/after screenshots at 1440×900 from the design preview harness
+   (step 14), the behaviours to click through, and `npm run check` evidence.
+3. The step deletes the legacy code and styles it replaces and updates DESIGN.md.
+4. The owner merges. Claude never enables auto-merge.
+
+**Definition of done:** pixel layout, sizes, colours and copy match the artboard; every state drawn
+on the artboard is reachable; safety behaviour (approvals, Owner-only actions, audit, fail-closed
+checks) is unchanged; tests updated; `npm run check` passes with no new Biome errors; DESIGN.md
+updated.
+
+## Done
+
+| # | Step | Status |
+| --- | --- | --- |
+| 0–9 | Tokens and primitives, conversation, sidebar, `/` menu, new chat, Bot profile, settings dialog and all sections, plugins | Merged |
+| 10 | Window shell without a global toolbar; title pill opens the rail | In review: #132 |
+| 11 | Avatars v2: frameless Round / Relay / Scout heads | In review: #133 |
+| 12 | 频道信息 rail tabs 详情 / 资料库 / 成员; centred title pill | In review: #134 |
+| 13 | Launch, opening animation and first-run setup | In review: #135 |
+
+## Plan (Claude, UI)
+
+| # | Step | Artboards | Needs | What changes |
+| --- | --- | --- | --- | --- |
+| 14 | Foundations for 1:1 work | Components | — | Move tokens and primitives out of `styles.css` into `tokens.css` and `primitives.css`; add `.ob-seg` and the dialog frame; a **design preview harness** built on the existing demo adapter (`apps/web/src/demo`) that renders every artboard state with synthetic data at 1440×900 for screenshots; a copy sweep to the glossary (服务电脑, 工作电脑, 任务, 频道) |
+| 15 | Avatars v3 and group avatars | Avatar, Avatars, GroupAvatar, GroupAvatars | C10 for the extra colours and marks | v3 geometry and micro drawing; silhouette cut-out; new `GroupAvatar` in the sidebar, title pill, rail, new chat and mentions; the avatar source SVGs committed under `docs/design/avatars/` |
+| 16 | Creating Bots and 频道 | New, NewGroup, NewBotChat | C12; C11 optional | 「+」 recipients list with 创建新 Bot ⌘1 and 创建频道 ⌘2; one-click random Bot that opens its 单聊; the 「你最想让我先帮你做什么？」 card; delete `CreateBotDialog` and `CreateChannelDialog` |
+| 17 | Bot 信息 rail | BotInfo | C9 for 编辑头像 | New `BotInfoRail` for 单聊 and the Bot profile: in-place name, 添加标签, 详情 / 资料库 / 电脑, 编辑头像 popover; replaces `EmployeeProfileRail` |
+| 18 | Adding members to a 频道 | AddMember, ChannelInfo | — | 添加成员 popover with 搜索 Bot; light-red 移除 pill; group avatar in the rail |
+| 19 | Tasks in a conversation | TaskCards, TaskInspector | C13 | One `TaskCard` per task with every state, approval on the card, collaboration notice; `TaskSheet` replaces the task inspector modal; delete `channel-work-item`, `native-run-controls`, `run-inspector` styles |
+| 20 | Dialogs | Dialog* | — | One `Dialog` frame; rebuild 分享, 分享 Bot 模板, 导入 Bot 模板, 删除确认, 配对工作电脑, 连接模型服务 |
+| 21 | 任务监督 and the empty workspace | WorkSupervision, EmptyWorkspace | — | Rebuild `WorkTasksScreen`; new `EmptyWorkspace`; retire the standalone 例行任务 and 技能库 pages (their links open the settings sections) |
+| 22 | Design the remaining screens (canvas, then owner approval) | new | — | Message actions and reactions, attachments and voice, 补充指令 input, 频道文件 recycle bin inside 资料库, Bot 档案 tabs (进化档案 credits Hermes Agent), 员工浏览器 view, notices and toasts, app icon and README images |
+| 23 | Build step 22 and retire the legacy layer | step 22 boards | C16 for the icon | Build the approved designs; delete the legacy stylesheets and classes listed in DESIGN.md and `OpenBotMark`; refresh the website demo fixtures |
+
+Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 
 ## Backend and platform backlog (Codex)
 
+Done (merged into main 40cb3d2):
+
+| ID | Contract | UI |
+| --- | --- | --- |
+| C1 | Latest activity per conversation: preview, time, ordering | Integrated |
+| C2 | Change Owner password; list and revoke other sessions (audited) | Integrated |
+| C3 | Audit categories, filters and CSV export | Integrated |
+| C4 | Approval policy per action class with protected categories | Integrated |
+| C5 | Desktop launch at login, background, global shortcut, Dock badge | Integrated; signed updates deferred |
+| C6 | 员工浏览器 status, restart and confirmed clear | Integrated; retention deferred |
+| C7 | Owner time zone and default model for new Bots | Integrated |
+| C8 | Curated plugin catalog | Integrated |
+
+Open — in the order the UI needs them:
+
 | ID | Needed by | Contract to add | UI until ready |
 | --- | --- | --- | --- |
-| C1 | Sidebar, Search | Per-conversation latest activity: last message preview (bounded, owner-visible), its time, and ordering by recent activity | Integrated: preview, time and recent-activity order |
-| C2 | 账户与安全 | Change the Owner password; list signed-in sessions and revoke other sessions (audited) | Integrated: password change and signing out other devices |
-| C3 | 审计记录 | Record login, settings-change and host events; filter by category; CSV export | Integrated: Server categories and CSV export |
-| C4 | 审批与权限 | Server approval policy per action class and per-Bot/target exceptions (security boundary: ADR and fail-closed tests first; delete/install/permission changes can never be excepted) | Integrated: two policy levels, exact exceptions, protected categories |
-| C5 | 通用, 关于, Menu | Desktop main process: launch at login, keep running in background with a menu-bar icon, global shortcut, Dock badge count, update check/download/install | Partly integrated: launch at login, background, global shortcut, Dock badge; signed updates deferred |
-| C6 | 员工浏览器 | Browser runtime status, restart, clear browsing data, download/screenshot retention settings | Integrated: per-Bot status, view, restart and confirmed clear; retention deferred |
-| C7 | 通用 | Owner time zone and default model for new Bots as Server settings | Integrated: time zone and the default model preselected for new Bots |
-| C8 | 插件 page | Curated plugin catalog source (reviewed entries only) | Integrated: 精选 lists reviewed templates with pinned source links |
-| C9 | Profile rail | Change a Bot's appearance after creation (owner-only, audited) | 编辑头像 hidden |
+| C12 | Step 16 | **Quick-create a Bot**: create with defaults in one call — the next free name (新建 Bot, 新建 Bot 2 …) allocated atomically (names are unique among active Bots), the C7 default model, no computer, a requested appearance; returns the Bot and its 单聊 | Client tries the next free name and retries once on conflict |
+| C13 | Step 19 | **Task progress projection**: per task the number of completed steps, the current step label, start and end time, and a bounded user-readable failure reason code, independent of the bounded progress list | Cards show only what the snapshot proves; no step count when unknown |
+| C10 | Step 15 | **Avatar v3 data**: four more accents (violet, teal, pink, slate) and a `mark` field (none, dot, bar, chevron, spark) in `BotAppearance`; migration defaults to none; unknown values rejected; Bot templates keep importing old appearances and carry the new fields | Only the four existing colours; no marks |
+| C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked | Pencil button hidden |
+| C11 | Step 16 (optional) | **New-Bot greeting**: when a model is configured, the 服务电脑 writes a short greeting as the Bot's first message, using only other Bots' names and tags; no model or any failure means no greeting | The setup card shows without a greeting |
+| C14 | All PRs | **CI robustness**: the aggregate `check` job must not fail with a JSON parse error when its run is cancelled; retry or extend the browser-fixture download step that timed out after 5 minutes | Re-run by hand |
+| C15 | Step 23 | **Retire unused routes** only if the 例行任务 and 技能库 page removal leaves a Server endpoint without a caller (to be confirmed; settings use the same APIs) | — |
+| C16 | Step 23 | **App icon and bundle assets** from the step-22 icon design: macOS, Windows and Linux icon sets, the Web favicon | Current icon |
 
-Client-only design items that need no backlog: theme, language, notification options (the ADR-0048
-preference store), per-conversation mute, sidebar pin/group/hide and unread marks.
+## Repository housekeeping (proposals)
 
-## Per-step definition of done
+| ID | Proposal | Who | Needs owner decision |
+| --- | --- | --- | --- |
+| H1 | The main checkout `/Users/yxflc/Project/openbot` sits on the old branch `feat/desktop-ui-refresh` with uncommitted UI edits that this plan supersedes, plus untracked `AGENTS.zh-CN.md`, a Codex image, `output/` and `nft_like/`. Archive or drop the old edits, move `nft_like` into the repo (H2), delete the stray image and `output/` | Owner, with Claude | Yes |
+| H2 | Commit the avatar source (the 12 SVGs, manifest and README from `nft_like/03_avatar_svg`) to `docs/design/avatars/` so the design source is versioned with the code | Claude (step 15) | Yes — it is your artwork |
+| H3 | Codex's finished worktrees live inside the repo (`.worktrees/c1`–`c8`); their nested Biome configs break `biome lint .` locally. Remove the merged ones and keep future worktrees outside the repo | Codex | No |
+| H4 | Merge the open stack #132–#135 (and this plan) soon; every stacked branch has to be re-merged when main moves | Owner | Yes |
+| H5 | `styles.css` is 3,900 lines of mostly legacy rules; split tokens and primitives out first (step 14), delete the rest by step 23 | Claude | No |
+| H6 | `docs/INTERFACE.md` still documents the five-layer robot identity and older pictures (`openbot-avatar-system.png`, the channel demo, the README banner); rewrite after C10 and replace the pictures in step 23 | Claude | No |
+| H7 | The website demo (`apps/web/src/demo`) renders real product components; its fixtures must follow each step, and it becomes the base of the design preview harness | Claude | No |
+| H8 | Many UI tests find elements by Chinese copy, so every copy change breaks them; move to roles and accessible names as screens are rebuilt | Claude | No |
+| H9 | Delete the remaining dead UI after each step (`CreateBotDialog`, `CreateChannelDialog`, `AutomationsScreen`, `SkillLibraryScreen`, `OpenBotMark`, legacy dialog classes) instead of leaving them unreachable | Claude | No |
 
-1. Layout, sizes, colors and copy match the artboard at 1440×900; phone width has no overflow.
-2. Existing behaviour and data paths are kept; nothing the Server does not provide is invented.
-3. Component tests updated or added; `npm run check` passes; no new Biome warnings.
-4. Rendered comparison against the artboard recorded in the pull request.
+## Open questions for the owner
+
+1. **Avatar upload or generation** (as in your reference) is not designed; the editor offers our
+   three heads, eight colours and five marks. Add it later as a new backlog item, or never?
+2. **New-Bot greeting (C11)** costs one model call per new Bot. Keep it optional as planned?
+3. **Retire the standalone 例行任务 and 技能库 pages** in favour of the settings sections (planned in
+   step 21)?
+4. **H1 and H2**: may Claude commit `nft_like` into the repo and clean the main checkout?

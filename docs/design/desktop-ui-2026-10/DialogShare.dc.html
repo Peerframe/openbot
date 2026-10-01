@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>分享</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.pill{height:40px;padding:0 20px;border-radius:20px;border:0;font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap;background:#ececee}
+.pill.primary{background:#111111;color:#ffffff}
+.pill.danger{background:#b3261e;color:#ffffff}
+.pill.small{height:32px;padding:0 14px;border-radius:16px;font-size:13px}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#6e6e73}
+.field input,.field textarea,.field select{box-sizing:border-box;width:100%;padding:0 14px;height:42px;border:1px solid #e3e3e6;border-radius:12px;background:#ffffff;font:inherit;font-size:15px;color:#1d1d1f;outline:none}
+.field textarea{height:84px;padding:10px 14px;resize:none;line-height:1.5}
+.h2{margin:0 4px;font-size:13px;font-weight:500;color:#6e6e73}
+.card{border-radius:16px;background:#f0f0f2;padding:0 16px}
+.row{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 0}
+.row + .row{border-top:1px solid #e3e3e6}
+.sub{font-size:12px;color:#8e8e93}
+.ok{color:#1c7c3c}
+.warn{color:#94480b}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+.seg{display:flex;gap:4px;padding:4px;border-radius:12px;background:#f0f0f2}
+.seg button{flex:1;height:32px;border:0;border-radius:9px;background:transparent;font-size:14px;font-weight:500;color:#6e6e73;cursor:pointer}
+.seg button[aria-selected="true"]{background:#ffffff;color:#1d1d1f;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.check{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;flex-shrink:0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #ffffff; display: grid; grid-template-columns: 300px minmax(0, 1fr)">
+<dc-import name="Sidebar" active="channel" hint-size="300px,900px"></dc-import>
+<div style="background: #fcfcfc"></div>
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(0,0,0,0.34)"></div>
+<div role="dialog" aria-modal="true" aria-label="分享" style="position: absolute; left: 550px; top: 90px; width: 640px; max-height: 820px; box-sizing: border-box; border-radius: 22px; background: #fdfdfd; box-shadow: 0 30px 80px rgba(0,0,0,0.25); padding: 30px 32px 24px; display: flex; flex-direction: column; gap: 20px; overflow: hidden">
+<button type="button" aria-label="关闭" style="position: absolute; right: 18px; top: 18px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; cursor: pointer; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
+<header style="display: flex; flex-direction: column; gap: 6px; padding-right: 40px">
+<h1 style="margin: 0; font-size: 22px; font-weight: 700">分享</h1>
+<p style="margin: 0; font-size: 14px; color: #6e6e73; line-height: 1.55">保存频道里的产出，或把一个 Bot 打包成模板给别人导入。</p>
+</header>
+<div class="seg" role="tablist" aria-label="分享内容"><button type="button" role="tab" aria-selected="true">产出文件</button><button type="button" role="tab" aria-selected="false">Bot 模板</button></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="h2">这个频道最近的产出 · 2</span><div class="card"><div class="row" style="grid-template-columns: 40px minmax(0, 1fr) auto"><span style="width: 40px; height: 40px; border-radius: 11px; border: 1px solid #e3e3e6; background: #ffffff; box-sizing: border-box; display: inline-grid; place-items: center; font-size: 11px; font-weight: 700; color: #6e6e73">MD</span><span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 15px">weekly-2026-w40.md</span><span class="sub">研究助理 · 今天 10:24 · 5 KB</span></span><span style="display: flex; gap: 6px"><button type="button" class="pill small" style="background: #ffffff">预览</button><button type="button" class="pill small" style="background: #ffffff">保存</button></span></div><div class="row" style="grid-template-columns: 40px minmax(0, 1fr) auto"><span style="width: 40px; height: 40px; border-radius: 11px; border: 1px solid #e3e3e6; background: #ffffff; box-sizing: border-box; display: inline-grid; place-items: center; font-size: 11px; font-weight: 700; color: #6e6e73">PNG</span><span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 15px">竞品定价对比.png</span><span class="sub">研究助理 · 今天 10:24 · 248 KB</span></span><span style="display: flex; gap: 6px"><button type="button" class="pill small" style="background: #ffffff">预览</button><button type="button" class="pill small" style="background: #ffffff">保存</button></span></div></div></div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 16px; align-items: stretch">
+<div style="border-radius: 16px; border: 1px solid #ececee; background: #ffffff; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-height: 150px">
+<span class="sub">预览 · weekly-2026-w40.md</span>
+<strong style="font-size: 15px">2026 第 40 周 · 竞品周报</strong>
+<span style="font-size: 13px; color: #3a3a3c; line-height: 1.6">A 公司上线团队版定价，个人版功能不变；B 公司更新了导出格式；C 公司本周无产品变化……</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-end">
+<button type="button" class="pill">复制内容</button>
+<button type="button" class="pill primary">保存为 Markdown</button>
+</div>
+</div>
+<span class="sub">分享只会生成你能保存的文件，不会发给任何人，也不会公开链接。</span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

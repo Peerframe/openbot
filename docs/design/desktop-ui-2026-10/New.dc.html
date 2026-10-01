@@ -14,44 +14,81 @@ button{font:inherit;color:inherit}
 .kbd{min-width:26px;height:26px;padding:0 6px;box-sizing:border-box;border-radius:6px;background:#f0f0f2;border:1px solid #e3e3e6;font-size:13px;color:#6e6e73;display:inline-flex;align-items:center;justify-content:center}
 .opt{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:14px;align-items:center;width:100%;padding:10px 14px;border:0;border-radius:12px;background:transparent;cursor:pointer;text-align:left;font-size:15px}
 .opt:hover{background:#ececee}
+.ico{width:32px;height:32px;border-radius:50%;background:#f0f0f2;display:inline-grid;place-items:center}
 </style>
 </helmet>
 <div style="width: 1440px; height: 900px; display: grid; grid-template-columns: 300px minmax(0, 1fr); background: #ffffff; overflow: hidden">
 <dc-import name="Sidebar" active="new" hint-size="300px,900px"></dc-import>
 
 <main style="height: 900px; display: flex; flex-direction: column; min-width: 0; background: #fcfcfc; position: relative">
-<div style="flex-shrink: 0; display: flex; align-items: center; gap: 10px; min-height: 60px; padding: 10px 24px; box-sizing: border-box; border-bottom: 1px solid #ececee; flex-wrap: wrap">
+<div style="flex-shrink: 0; display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 10px 56px 10px 24px; box-sizing: border-box; border-bottom: 1px solid #ececee; flex-wrap: wrap; position: relative">
 <span style="font-size: 15px; color: #6e6e73">收件人：</span>
-<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px 0 5px; border-radius: 16px; background: #ececee; font-size: 14px; font-weight: 500"><span style="width: 22px; height: 22px; border-radius: 7px; background: #8b7cf6; display: block"></span>研究助理<button type="button" aria-label="移除研究助理" style="width: 20px; height: 20px; border: 0; background: transparent; cursor: pointer; display: inline-grid; place-items: center; padding: 0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button></span>
-<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px 0 5px; border-radius: 16px; background: #ececee; font-size: 14px; font-weight: 500"><span style="width: 22px; height: 22px; border-radius: 50%; background: #f0a43a; display: block"></span>客服小橙<button type="button" aria-label="移除客服小橙" style="width: 20px; height: 20px; border: 0; background: transparent; cursor: pointer; display: inline-grid; place-items: center; padding: 0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button></span>
-<input type="text" placeholder="搜索或创建 Bot" aria-label="搜索或创建 Bot" style="flex-grow: 1; min-width: 160px; border: 0; outline: none; background: transparent; font: inherit; font-size: 15px; color: #1d1d1f">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="0">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 8px 0 6px; border-radius: 17px; background: #ececee; font-size: 14px; font-weight: 500"><dc-import name="Avatar" character="{{c.character}}" accent="{{c.accent}}" size="22" hint-size="22px,22px"></dc-import>{{c.name}}<button type="button" aria-label="移除{{c.name}}" style="width: 20px; height: 20px; border: 0; background: transparent; cursor: pointer; display: inline-grid; place-items: center; padding: 0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button></span>
+</sc-for>
+<input type="text" placeholder="{{placeholder}}" aria-label="收件人" aria-expanded="true" aria-controls="recipients" style="flex-grow: 1; min-width: 160px; border: 0; outline: none; background: transparent; font: inherit; font-size: 15px; color: #1d1d1f">
+<button type="button" aria-label="关闭新建聊天" style="position: absolute; right: 16px; top: 14px; width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; cursor: pointer; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
 </div>
 
-<div role="listbox" aria-label="选择 Bot" style="position: absolute; left: 90px; top: 64px; width: 620px; box-sizing: border-box; padding: 8px; border-radius: 18px; background: #fdfdfd; border: 1px solid #e5e5e8; box-shadow: 0 16px 40px rgba(0,0,0,0.10); display: flex; flex-direction: column; gap: 2px">
-<button type="button" class="opt"><span style="width: 32px; height: 32px; border-radius: 50%; background: #f0f0f2; display: inline-grid; place-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></span>创建新 Bot<span style="display: inline-flex; gap: 4px"><span class="kbd">⌘</span><span class="kbd">1</span></span></button>
-<button type="button" class="opt"><span style="width: 32px; height: 32px; border-radius: 9px; background: #4a8ff7; display: block"></span>发布助手<span style="display: inline-flex; gap: 4px"><span class="kbd">⌘</span><span class="kbd">2</span></span></button>
-<button type="button" class="opt" style="background: #ececee"><span style="width: 32px; height: 32px; border-radius: 9px; background: #ec6aa8; display: block"></span>设计评审<span style="display: inline-flex; gap: 4px"><span class="kbd">⌘</span><span class="kbd">3</span></span></button>
-<button type="button" class="opt"><span style="width: 32px; height: 32px; border-radius: 50%; background: #8e8e93; display: block"></span>运维值班<span style="display: inline-flex; gap: 4px"><span class="kbd">⌘</span><span class="kbd">4</span></span></button>
+<div id="recipients" role="listbox" aria-label="选择收件人" style="position: absolute; left: 64px; top: {{listTop}}px; width: 640px; box-sizing: border-box; padding: 8px; border-radius: 18px; background: #fdfdfd; border: 1px solid #e5e5e8; box-shadow: 0 16px 40px rgba(0,0,0,0.10); display: flex; flex-direction: column; gap: 2px">
+<sc-if value="{{isStart}}" hint-placeholder-val="{{true}}">
+<button type="button" role="option" aria-selected="true" class="opt" style="background: #ececee"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></span><span style="display: flex; align-items: baseline; gap: 10px">创建新 Bot<small style="font-size: 12px; color: #8e8e93">马上得到一个，外观和分工之后再改</small></span><span style="display: inline-flex; gap: 4px"><span class="kbd">⌘</span><span class="kbd">1</span></span></button>
+<button type="button" role="option" aria-selected="false" class="opt"><span class="ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"></circle><path d="M3.5 19c.6-3.1 2.8-5 5.5-5s4.9 1.9 5.5 5"></path><path d="M15.5 5.2a3 3 0 0 1 0 5.6"></path><path d="M17.5 14.3c1.6.6 2.7 2.2 3 4.7"></path></svg></span><span style="display: flex; align-items: baseline; gap: 10px">创建频道<small style="font-size: 12px; color: #8e8e93">选几个 Bot 组成频道</small></span><span style="display: inline-flex; gap: 4px"><span class="kbd">⌘</span><span class="kbd">2</span></span></button>
+<span style="height: 1px; background: #ececee; margin: 4px 10px; display: block"></span>
+</sc-if>
+<sc-for list="{{bots}}" as="b" hint-placeholder-count="5">
+<button type="button" role="option" aria-selected="{{b.selected}}" class="opt" style="background: {{b.bg}}"><dc-import name="Avatar" character="{{b.character}}" accent="{{b.accent}}" size="32" hint-size="32px,32px"></dc-import><span style="display: flex; align-items: baseline; gap: 10px">{{b.name}}<small style="font-size: 12px; color: #8e8e93">{{b.tag}}</small></span><span style="display: inline-flex; gap: 4px"><span class="kbd">⌘</span><span class="kbd">{{b.key}}</span></span></button>
+</sc-for>
+<span style="padding: 6px 14px 2px; font-size: 11px; color: #aeaeb2">{{hint}}</span>
 </div>
 
 <div style="flex-grow: 1; display: flex; align-items: flex-end; justify-content: center; padding: 0 24px 12px">
-<span style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 16px; background: #f0f0f2; font-size: 13px; color: #3a3a3c">选了 2 个 Bot，发出第一条消息后会建成一个频道 · <span style="text-decoration: underline; text-underline-offset: 3px">命名频道</span></span>
+<sc-if value="{{isGroup}}" hint-placeholder-val="{{false}}">
+<span style="display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px 8px 10px; border-radius: 18px; background: #f0f0f2; font-size: 13px; color: #3a3a3c"><dc-import name="GroupAvatar" members="relay:violet,scout:yellow,round:teal" size="26" surface="#f0f0f2" hint-size="26px,26px"></dc-import>选了 3 个 Bot，发出第一条消息后建成频道 · <span style="text-decoration: underline; text-underline-offset: 3px; cursor: pointer">命名频道</span></span>
+</sc-if>
 </div>
 
 <form style="flex-shrink: 0; padding: 8px 24px 22px">
 <div style="display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 8px 8px 8px 10px; box-sizing: border-box; border-radius: 28px; background: #ffffff; border: 1px solid #e3e3e6; box-shadow: 0 2px 10px rgba(0,0,0,0.04)">
 <button type="button" aria-label="添加附件" style="width: 38px; height: 38px; flex-shrink: 0; border: 0; border-radius: 50%; background: #f0f0f2; cursor: pointer; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
-<input type="text" placeholder="发消息给 研究助理、客服小橙" aria-label="消息内容" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 15px; color: #1d1d1f">
+<input type="text" placeholder="{{composer}}" aria-label="消息内容" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 15px; color: #1d1d1f">
 <button type="submit" aria-label="发送消息" style="width: 40px; height: 40px; flex-shrink: 0; border: 0; border-radius: 50%; background: #d1d1d6; cursor: default; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></button>
 </div>
 </form>
 </main>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["start","group"],"default":"start"},"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
   renderVals() {
-    return {};
+    const mode = this.props.mode ?? 'start';
+    const all = [
+      { name: '研究助理', tag: '信息 · 竞品研究', character: 'round', accent: 'green' },
+      { name: '新建 Bot', tag: '还没有分工', character: 'relay', accent: 'violet' },
+      { name: '客服小橙', tag: '客服 · 工单', character: 'scout', accent: 'yellow' },
+      { name: '发布助手', tag: '开发 · 发布说明', character: 'relay', accent: 'blue' },
+      { name: '设计评审', tag: '设计 · 走查', character: 'relay', accent: 'red' },
+      { name: '数据助理', tag: '数据 · 对账', character: 'round', accent: 'teal' }
+    ];
+    const chosen = mode === 'group' ? ['新建 Bot', '客服小橙', '数据助理'] : [];
+    const remaining = all.filter((b) => !chosen.includes(b.name));
+    // ⌘1 and ⌘2 are the two create actions; Bots continue the numbering, up to ⌘9.
+    const offset = mode === 'start' ? 3 : 1;
+    const highlight = mode === 'start' ? -1 : remaining.length - 1;
+    return {
+      isStart: mode === 'start',
+      isGroup: mode === 'group',
+      listTop: mode === 'group' ? 66 : 64,
+      placeholder: mode === 'group' ? '继续添加 Bot…' : '和谁聊？输入名字搜索',
+      composer: mode === 'group' ? '发消息给 新建 Bot、客服小橙、数据助理' : '先选收件人',
+      chips: all.filter((b) => chosen.includes(b.name)),
+      bots: remaining.map((b, i) => Object.assign({}, b, {
+        key: String(i + offset),
+        selected: i === highlight ? 'true' : 'false',
+        bg: i === highlight ? '#ececee' : 'transparent'
+      })),
+      hint: mode === 'group' ? '↑ ↓ 选择 · 回车加入 · 删除键移除最后一个' : '选一个 Bot 是单聊；选多个就建成频道'
+    };
   }
 }
 </script>

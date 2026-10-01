@@ -2,94 +2,165 @@
 
 [English](DESIGN.md) · [简体中文](DESIGN.zh-CN.md)
 
-这是 Desktop 与 Web 客户端必须遵守的设计参考。来源是 Owner 的设计画布；本文件旁边的
-`.dc.html` 是它的只读快照（见 [README.zh-CN.md](README.zh-CN.md)）。交付计划见
-[IMPLEMENTATION.zh-CN.md](IMPLEMENTATION.zh-CN.md)。
+这是 Desktop 与 Web 客户端必须遵守的设计依据。源头是所有者的设计画布；本文件旁的 `.dc.html` 是它的只读
+快照（见 [README.zh-CN.md](README.zh-CN.md)）。交付计划与分工见 [IMPLEMENTATION.zh-CN.md](IMPLEMENTATION.zh-CN.md)。
 
 ## 规则
 
-1. **界面上的每个元素都能对应到画板。** 代码复现画布，不自创布局。没有画板的界面、对话框、
-   卡片或状态，先在画布上设计并经 Owner 确认，再实现。
-2. **旧设计不保留。** 之前的界面是退役，不是换皮。还在渲染旧样式类（见[旧设计清单](#旧设计清单)）
-   的组件属于未完成的工作，不是可接受的变体。新代码不得使用这些类。
-3. **只有一层设计令牌。** 颜色、字号、圆角和间距来自 `--ob-*` 令牌和
-   `apps/web/src/styles.css` 中的共享基础组件。组件样式放在组件旁边。
-4. **数据如实。** 数据或能力还不存在的设计元素隐藏或只读，绝不伪造。
-5. **每个 PR 都更新本文件**：设计、实现或退役的范围有变化时同步修改。
+1. **以画布为准。** 代码按画板一比一还原：布局、尺寸、文案、状态和交互。之前的界面、之前的文案以及
+   没有画板的行为都不作参考。界面上任何没有画板的东西，先在画布上设计、所有者确认，再实现。
+2. **不保留旧样子。** 旧界面是退役，不是换皮。还在渲染旧样式类（见[旧设计清单](#旧设计清单)）的组件
+   算未完成。
+3. **只有一层令牌。** 颜色、字号、圆角、间距来自 `--ob-*` 令牌和共享基础组件；组件样式放在组件旁边。
+4. **数据要诚实。** 数据或能力还不存在的元素先隐藏，绝不造假。画板画的是完成后的样子；计划里写明哪些
+   元素要等对应的后端事项完成才显示。
+5. **安全不是设计选项。** 审批、仅 Owner 可做的操作、失败即关闭的检查和审计，画板上没画也必须保留；
+   设计只决定它们长什么样。
+6. **用同一套说法。** 界面文案按[用语表](#用语表)。
+7. **看图验收。** 每一步用 1440×900 下实现界面与画板的并排截图，加上列出的交互来验收。
+8. **每个拉取请求** 只要改变了设计、实现或退役状态，就同时更新本文件。
+
+## 用语表
+
+| 用 | 指 | 界面上不用 |
+| --- | --- | --- |
+| Bot | 长期的数字员工 | 员工（「员工浏览器」除外）、Agent |
+| 频道 | 有多个 Bot 的对话 | 群聊、群组、Channel |
+| 单聊 | 和一个 Bot 的对话 | DM、私聊 |
+| 服务电脑 | OpenBot Server | Server、服务器、服务端 |
+| 工作电脑 | 运行 Bot 任务的电脑 | Worker、节点（设置分区可继续叫「工作主机」） |
+| 任务 | Bot 的一次工作 | Run |
+| 例行任务 | 按计划重复的任务 | 自动化、Automation |
+| 产出 | 任务生成的文件 | Artifact、产物 |
+| 需要你确认 | 等待 Owner 批准的操作 | Approval |
 
 ## 基础
 
 | 方面 | 取值 |
 | --- | --- |
-| 颜色 | 正文 `#1d1d1f`，次要 `#6e6e73`，三级 `#8e8e93`；页面 `#fcfcfc`；填充 `#f0f0f2`；悬停 `#e6e6e8`；分隔 `#e3e3e6`；主色 `#111111`；蓝 `#1f6fd6`；在线 `#34c759`；危险 `#b3261e`（令牌 `--ob-*`） |
-| 字体 | 系统 UI / PingFang SC；正文 15px，说明 13px，元信息 12px，分区标题 13px/500，页面标题 24–28px/700 |
-| 圆角 | 胶囊按钮 17px（高 34px），卡片 16–18px，气泡 22px，对话框 20–22px；Bot 头像没有外框，因此没有圆角 |
-| 基础组件 | `.ob-pill`（`is-primary`、`is-outline`、`is-danger`、`is-small`）、`.ob-round`（`is-send`、`is-close`）、`.ob-switch`（44×26）、`.ob-filter`、`.ob-tag`、`.ob-field`、`.ob-search`、`.ob-card`、`.ob-menu`、`.ob-menu-item` |
+| 颜色 | 正文 `#1d1d1f`，次要 `#6e6e73`，三级 `#8e8e93`；页面 `#fcfcfc`；填充 `#f0f0f2`；悬停 `#e6e6e8`；分隔 `#e3e3e6`；主色 `#111111`；蓝 `#1f6fd6`；在线 `#34c759`；危险 `#b3261e`，底 `#fbe9e7`；提醒 `#b5651d`，底 `#fdf0e1`（令牌 `--ob-*`） |
+| 字体 | 系统 UI / PingFang SC；正文 15px，说明 13px，元信息 12px，分区标题 13px/500，页面标题 24–28px/700，对话框标题 22px/700 |
+| 圆角 | 胶囊按钮 17px（高 34px）或 20px（高 40px，用于对话框），卡片 16–18px，任务卡 18px，气泡 22px，对话框 22px；Bot 头像没有外框，因此没有圆角 |
+| 基础组件 | `.ob-pill`（`is-primary`、`is-outline`、`is-danger`、`is-small`）、`.ob-round`、`.ob-switch`（44×26）、`.ob-filter`、`.ob-tag`、`.ob-field`、`.ob-search`、`.ob-card`、`.ob-menu`、`.ob-menu-item`、`.ob-seg`（分段控件） |
 
 ## 窗口外壳
 
 - 三栏：侧栏 300px、主区、右栏 340px（1280/1100px 宽时为 264/300、236/264）。
-- **没有通栏工具栏。** 侧栏第一行放 macOS 红绿灯（桌面端位于 x 20、y 20）和「新建」按钮，二者在同一条
-  30px 高的行内居中对齐，下面是搜索。
-- 主区有自己的 56px 标题行：中间是对话标题胶囊；右侧是「实时」状态和「分享」。
-- **标题胶囊居中**，点击打开右栏（频道信息 / Bot 信息），与 Main 画板一致；右栏的「收起」关闭它。
-  手机上胶囊靠左，因为手机布局尚未设计。
-- 右栏依次是身份信息和「详情 / 资料库 / 成员」分段控件（ChannelInfo 画板）。默认打开「成员」；
-  对话中有待批准的操作时打开「详情」，并在「详情」上显示数量。成员在「成员」里添加和移除，不再用
-  弹窗。「资料库」列出任务产物和频道文件；「上传文件」打开输入框的文件选择，因此每次上传都附在一条
-  消息上。
-- 后退、前进和两侧栏的开关是快捷键与菜单命令（⌘[ ⌘] ⌘B ⌘⇧B），不是工具栏按钮。侧栏隐藏时，
-  主区标题行给红绿灯留出位置，并显示一个重新打开侧栏的按钮。
+- **没有通栏工具栏。** 侧栏第一行是 macOS 红绿灯（x 20、y 20）和「+」按钮，同在一条 30px 高的行里，
+  下面是搜索。
+- 主区有自己的 56px 标题行：标题胶囊居中；右侧是「实时」状态和「分享」。
+- **点标题胶囊打开右栏**：频道里是「频道信息」（ChannelInfo），单聊里是「Bot 信息」（BotInfo）；右栏的
+  「收起」关闭它。
+- 后退、前进和两侧栏开关是快捷键与菜单命令（⌘[ ⌘] ⌘B ⌘⇧B）。侧栏隐藏时，标题行给红绿灯留出位置，
+  并显示一个重新打开侧栏的按钮。
+- 手机布局暂不考虑；窄窗口保持可用，但不做新设计。
 
-## Bot 头像
+## 新建 Bot 与频道
 
-- 三种头型来自所有者的头像方案（`nft_like/03_avatar_svg` v2，不在本仓库中），96 单位网格：**Round**（天线）、
-  **Relay**（耳朵）、**Scout**（猫耳）。保存的头型决定用哪一种（round → Round、square → Relay、
-  cat → Scout）；Bot 的强调色填充下颌（绿 `#91CF4B`、蓝 `#5F7CDE`、黄 `#DFAD4F`、红 `#E0785C`）。
-  身体、移动方式和配件仍保存在外观数据里，但不再绘制。
-- **没有外框。** 任何地方的头像后面都不加底板、描边、边框或背景。频道用两个头像斜向重叠表示。
-- 尺寸：档案 96，启动与设置 80/64，侧栏行与右栏成员 40，消息 32，标题胶囊 24，菜单与提及 16–20。
-  32px 以下自动换用小尺寸稿（眼睛加大、天线加粗）。
-- 状态不画进头像，而是旁边单独的圆点或文字。
-- 代码在 `RobotAvatar.tsx` / `RobotAvatar.css`（Avatar、Avatars 画板）。
+- **「+」打开「新建聊天」**（New）：「收件人」输入框和一个列表。前两行是操作——「创建新 Bot ⌘1」和
+  「创建频道 ⌘2」——后面接着列已有 Bot，编号排到 ⌘9。
+- **选一个 Bot 是单聊，选多个是频道。** 选中的 Bot 变成标签，列表里只剩其余的；选了多个时出现「命名频道」
+  提示，发出第一条消息时建成频道（NewGroup）。
+- **「创建新 Bot」立即创建，没有对话框**（NewBotChat）。新 Bot 名叫「新建 Bot」（重名时自动编号），随机选
+  一个团队里还没用过的头型、颜色和额饰，不绑定电脑，用默认模型；随后打开它的单聊并展开右栏。
+- 对话里出现 **「你最想让我先帮你做什么？」**：三个分工选项加一个自由回答。选择后把它设为 Bot 的标签和
+  职责，并作为 Owner 的第一条消息发出。上面那句 Bot 自己的开场白，只有后端能生成时才显示（C11）。
+- **Bot 信息右栏**：88px 头像带铅笔按钮，名字可以直接改，「添加标签」，然后是「详情 / 资料库 / 电脑」。
+  铅笔打开 **「编辑头像」**：头型、下颌色、额饰、「随机」和「重置」，改动立即生效（需要 C9）。
+- **给已有频道加 Bot**（AddMember）：「成员」→「添加成员」弹出带「搜索 Bot」的列表，只列还不在频道里的
+  Bot；鼠标移到成员上出现浅红色「移除」。
+
+## Bot 头像（v3）
+
+- 三种头型来自所有者的头像方案（`nft_like/03_avatar_svg` v2），96 单位网格：**Round**（天线）、
+  **Relay**（耳罩）、**Scout**（猫耳）。保存的头型 round → Round、square → Relay、cat → Scout。v3 把
+  Relay 的脸宽从 62 调到 66。
+- **下颌色**，八种明度对齐的颜色：绿 `#91CF4B`、蓝 `#5F7CDE`、琥珀 `#DFAD4F`、珊瑚 `#E0785C`、紫
+  `#9C7FE3`、青 `#3FB4A6`、粉 `#E57BA8`、灰 `#8C98A8`。后四种需要 C10，在那之前只提供前四种。
+- **额饰**，用下颌色：无、圆点、短横、折角、星芒。24px 及以上显示。需要 C10。
+- **没有外框。** 任何地方的头像后面都不加底板、描边、边框或背景。
+- 尺寸：档案 96，右栏 88，启动 72，侧栏行与成员 40，消息 32，标题胶囊 24，菜单与提及 16–20。32px 以下
+  用小尺寸稿：眼睛和天线球加大、猫耳圆钝、去掉耳罩彩条。
+- 状态不画进头像；颜色和额饰不代表任何含义（不是角色、权限或进度）。
+- 已有深色界面版（暖白头），留给以后的深色模式。
+
+## 群组头像
+
+- 频道最多画三个头。**第一位成员在前**，顺序不随状态变化。
+- 前面的头沿自己的轮廓挖出约 2px 的背景色缝隙，叠在一起的深色头也分得开。
+- 0 个 Bot：灰色方块加 #。1 个：头像加一个小 # 角标，频道永远不会像单聊。2 个：对角叠放，各 66%。
+  3 个：两个在后，一个在前。4 个及以上：只画前两个头，加黑色计数圆标（+N）。
+- 无障碍名称：「市场周报，3 名 Bot：研究助理、客服小橙、发布助手」。
+
+## 对话里的任务
+
+- **一个任务一张卡，原地更新**（TaskCards）：排队 → 执行中 → 需要你确认 → 完成或失败，结束后收成一行
+  摘要。白底、1px `#ececee` 描边、圆角 18，放在 Bot 头像列下方，宽度不超过消息列的 76%。
+- 颜色只标状态：蓝 = 执行中，橙 = 等你，红 = 失败，绿 = 完成。
+- 执行中显示服务电脑报告的步数（「已完成 3 步」）和当前步骤，绝不编造总步数；有电脑画面时显示画面，
+  另有「补充指令」和「停止」。
+- 审批直接在卡上完成；右栏里同一条审批同步更新。
+- 失败显示服务电脑给出的用户可读原因；原始报错留在「任务详情」。
+- **「任务详情」** 是从右侧滑出的 460px 面板（TaskInspector）：状态、电脑画面、分工、进度、任务信息
+  （模型和用量），以及「补充指令 / 停止任务」。
+
+## 对话框
+
+- 所有对话框共用一个框架：背后是 `rgba(0,0,0,0.34)` 遮罩，`#fdfdfd` 面板、圆角 22、内边距 30/32/24，
+  右上角关闭按钮，22px/700 标题加 14px 说明，操作按钮在右下（灰色「取消」，然后是黑色主按钮或红色危险
+  按钮）。
+- 已设计：分享、分享 Bot 模板、导入 Bot 模板、删除确认（Bot 与频道）、配对工作电脑、连接模型服务。
+  新建 Bot 和新建频道**没有对话框**（见上文）。
 
 ## 画板与代码对应
 
-| 画板 | 实现位置 |
-| --- | --- |
-| Sidebar、Search、Menu、ContextMenu | `Sidebar.tsx`、`SidebarItemMenu.tsx` |
-| Main | `App.tsx`（外壳标题行）、`ChannelWorkspace.tsx`、`ChannelMessagePresentation.css`、`ContextRail.tsx` |
-| Profile | `EmployeeProfileView.tsx`、`EmployeeProfileRail.tsx` |
-| New | `NewChatScreen.tsx` |
-| Slash | `ChannelWorkspace.tsx`（输入框菜单） |
-| Settings、SettingsNav、Settings* | `DesktopSettingsScreen.tsx`、`Settings*.tsx`、`SettingsDialog.css` |
-| Plugins | `PluginsDialog.tsx`、`PluginManagerPanel.tsx`（catalog 变体） |
-| Components | `styles.css` 中的令牌与基础组件 |
-| Avatar、Avatars | `RobotAvatar.tsx`、`RobotAvatar.css` |
-| ChannelInfo | `ContextRail.tsx`、`ContextRail.css`（详情 / 资料库 / 成员；单聊只有详情和资料库） |
-| Launch、LaunchMotion | `Onboarding.tsx`（`LaunchScreen`、`LaunchMark`、`LaunchExit`）、`Onboarding.css`；`App.tsx` 与 `DesktopInstallScreen.tsx` 中所有加载与启动出错状态 |
-| Welcome、Install、Connect、Login、ModelSetup、WorkerSetup | `DesktopSetupScreen`、`DesktopInstallScreen`、`DesktopConnectionScreen`、`LoginScreen`、`ModelSettingsScreen`（也嵌在 设置 › 模型服务 中）、`DesktopLocalWorkerScreen`，共用 `OnboardingFrame` |
+**已实现** = 与画板一致；**第 N 步** = 见 [IMPLEMENTATION.zh-CN.md](IMPLEMENTATION.zh-CN.md) 的计划。
+
+| 画板 | 实现位置 | 状态 |
+| --- | --- | --- |
+| Components | 令牌与基础组件 | 已实现；第 14 步拆到 `tokens.css` / `primitives.css` |
+| Sidebar、Search、Menu、ContextMenu | `Sidebar.tsx`、`SidebarItemMenu.tsx` | 已实现；第 15 步换群组头像 |
+| Main | `App.tsx`、`WorkspaceHeader.tsx`、`ChannelWorkspace.tsx` | 已实现；第 19 步换任务卡 |
+| ChannelInfo、AddMember | `ContextRail.tsx` | 已实现；第 18 步加添加成员弹窗 |
+| BotInfo | 新的 `BotInfoRail.tsx`（取代 `EmployeeProfileRail` 与单聊右栏） | 第 17 步 |
+| Profile | `EmployeeProfileView.tsx` | 头部与概览已实现；其他分页待设计（第 22 步） |
+| New、NewGroup、NewBotChat | `NewChatScreen.tsx`、新的 `NewBotSetupCard.tsx` | 第 16 步 |
+| Slash | `ChannelWorkspace.tsx` 输入框菜单 | 已实现 |
+| Settings、SettingsNav、Settings* | `DesktopSettingsScreen.tsx`、`Settings*.tsx` | 已实现 |
+| Plugins | `PluginsDialog.tsx`、`PluginManagerPanel.tsx` | 已实现 |
+| Avatar、Avatars、GroupAvatar、GroupAvatars | `RobotAvatar.tsx`、新的 `GroupAvatar.tsx` | v2 已实现；v3 在第 15 步 |
+| Launch、LaunchMotion、Welcome、Install、Connect、Login、ModelSetup、WorkerSetup | `Onboarding.tsx` 与各设置页面 | 已实现 |
+| TaskCards、TaskInspector | 新的 `TaskCard.tsx`、`TaskSheet.tsx` | 第 19 步 |
+| Dialog* | 新的 `Dialog.tsx` 框架与各对话框 | 第 20 步 |
+| WorkSupervision、EmptyWorkspace | `WorkTasksScreen.tsx`、新的 `EmptyWorkspace.tsx` | 第 21 步 |
 
 ## 尚未设计
 
-以下内容需要先有画板再重做；在此之前保持现有行为。
+这些先在画布上设计（第 22 步）再重做；在那之前保持现有功能。
 
-| 方面 | 现在的代码 | 备注 |
-| --- | --- | --- |
-| 空工作区（还没有频道） | `App.tsx` 中的 `ChannelEmptyState` | 仍使用旧标志与旧按钮 |
-| 对话中的任务卡、协作与失败状态；任务详情 | `NativeRunControls`、`RunCollaboration`、`RunInspector` | |
-| 对话框：新建 Bot、新建频道、分享、删除、导入导出、主机配对、模型连接 | `CreateBotDialog`、`CreateChannelDialog`、`ShareConversationDialog`、`DeleteIdentityDialog`、`Import/ExportEmployeeDialog`、`NodeManagerDialog`、`ModelConnectionsDialog` | |
-| 任务监督 | `WorkTasksScreen` | |
-| 手机布局 | `MobileNavigation` | |
-| 档案分页内容（进化、技能图谱、记忆、记录） | `EmployeeEvolutionArchive`、`EmployeeSkillReview`、`KnowledgeReviewPanel` | |
+| 方面 | 现在的代码 |
+| --- | --- |
+| 消息悬停操作、表情回应、引用回复 | `MessageActionBar`、`MessageReactions` |
+| 消息与输入框里的附件、语音输入 | `MessageAttachments`、`AttachmentPreview`、`ComposerAttachmentPicker`、`VoiceRecorder` |
+| 「补充指令」输入框与技能选择 | `RunSteering`、输入框技能菜单 |
+| 频道文件管理（回收站），并入「资料库」 | `AttachmentsManager` |
+| Bot 档案分页：进化档案（受 Hermes Agent 启发）、技能图谱、运行中、记忆、工作记录、配置 | `EmployeeEvolutionArchive`、`EmployeeSkillReview`、`KnowledgeReviewPanel`、`EmployeeModelEditor` |
+| 员工浏览器实时画面 | `EmployeeBrowser` |
+| 提示、浮动通知、离线横幅 | `App.tsx` 中的提示 |
+| 应用图标与 README 图片 | `apps/desktop/resources`、`docs/design/*.png` |
 
 ## 旧设计清单
 
 必须消失的旧样式类：`primary-button`、`secondary-button`、`icon-button`、`create-dialog`、
-`dialog-header`、`dialog-backdrop`、`onboarding-mark`、`destination-*`、
-`workspace-toolbar`/`toolbar-*`、`channel-members-*`。旧样式表：`styles.css` 的大部分、
-`workspace-shell.css`、`desktop-workspace.css`、`workspace-preferences.css`、
-`components/destinations.css`。
+`dialog-header`、`dialog-backdrop`、`onboarding-mark`、`destination-*`、`workspace-toolbar`/`toolbar-*`、
+`channel-members-*`、`channel-work-item`、`run-inspector`、`native-run-controls`、`bot-identity-builder`、
+`appearance-grid`、`workspace-welcome`。
 
-退役顺序：(1) 窗口外壳与频道右栏——已完成；(2) 对话中的任务卡；(3) 对话框；(4) 启动、登录与设置——
-已完成；(5) 任务监督与手机布局；(6) 删除旧样式表与旧样式类。每一步在同一个 PR 中删除它所替换的旧规则。
+旧样式表：`styles.css` 的大部分、`workspace-shell.css`、`desktop-workspace.css`、`desktop-ui-refresh.css`、
+`settings-plugin-refresh.css`、`workspace-preferences.css`、`components/destinations.css`。
+
+计划中退役的界面：`CreateBotDialog` 和 `CreateChannelDialog`（由新建流程取代）；独立的「例行任务」和
+「技能库」页面 `AutomationsScreen`、`SkillLibraryScreen`（由「设置 › 例行任务」和「设置 › 技能」取代）；
+以及旧的位图标志 `OpenBotMark`。
+
+已完成：窗口外壳与右栏、启动与首次设置。其余按计划逐步进行，每一步在同一个拉取请求里删除它所替换的旧规则。
