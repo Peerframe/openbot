@@ -1,15 +1,15 @@
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import {
-  parseBrowserClickInstruction,
   browserFrameSchema,
   browserPageSchema,
+  parseBrowserClickInstruction,
 } from "@openbot/protocol";
 import type { ComputerProvider, ProviderArtifact, ProviderRunInput } from "@openbot/provider-sdk";
 import { BrowserCoordinator } from "./browser.js";
+import { runBrowserTask } from "./browser-task.js";
 import { computerRequest } from "./computer-request.js";
 import { commitReviewedClick, prepareReviewedClick } from "./reviewed-click.js";
-import { runBrowserTask } from "./browser-task.js";
 
 const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024;
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -19,6 +19,7 @@ export interface DockerProviderOptions {
   computerToken: string;
   enableBrowserSessions?: boolean;
   enableBrowserTasks?: boolean;
+  enableBrowserMaintenance?: boolean;
   allowPrivateHosts?: boolean;
   inputOrigins?: string[];
   fetcher?: typeof fetch;
@@ -42,6 +43,8 @@ export function createDockerProvider(options: DockerProviderOptions): ComputerPr
   const activeBots = new Set<string>();
   if (options.enableBrowserTasks && (!options.enableBrowserSessions || !inputOrigins.size))
     throw new Error("Browser tasks require sessions and explicit trusted origins.");
+  if (options.enableBrowserMaintenance && !options.enableBrowserSessions)
+    throw new Error("Browser maintenance requires sessions.");
   const computerUrl = options.computerUrl.replace(/\/$/, "");
 
   const browser = new BrowserCoordinator(
@@ -64,6 +67,9 @@ export function createDockerProvider(options: DockerProviderOptions): ComputerPr
     },
   );
   return {
+    ...(options.enableBrowserMaintenance === true
+      ? { browserMaintenance: (command, signal) => browser.maintenance(command, signal) }
+      : {}),
     ...(options.enableBrowserSessions === true
       ? { browser: (command, signal) => browser.command(command, signal) }
       : {}),
@@ -92,6 +98,16 @@ export function createDockerProvider(options: DockerProviderOptions): ComputerPr
     platforms: ["linux", "windows", "macos"],
     capabilities: ["browser", "screenshot"],
     capabilityManifest: [
+      ...(options.enableBrowserMaintenance === true
+        ? [
+            {
+              id: "browser.maintenance" as const,
+              version: 1,
+              providerId: "docker",
+              constraints: {},
+            },
+          ]
+        : []),
       ...(options.enableBrowserSessions === true
         ? [{ id: "browser.session" as const, version: 1, providerId: "docker", constraints: {} }]
         : []),
