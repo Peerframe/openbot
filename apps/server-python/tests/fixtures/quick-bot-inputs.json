@@ -1,0 +1,121 @@
+{
+  "cases": [
+    {
+      "id": "quick-valid",
+      "schema": "quickBot",
+      "input": {
+        "appearance": {
+          "head": "round",
+          "body": "classic",
+          "mobility": "feet",
+          "accessory": "none",
+          "accent": "green"
+        }
+      }
+    },
+    {
+      "id": "quick-missing",
+      "schema": "quickBot",
+      "input": {}
+    },
+    {
+      "id": "quick-null",
+      "schema": "quickBot",
+      "input": {
+        "appearance": null
+      }
+    },
+    {
+      "id": "quick-incomplete",
+      "schema": "quickBot",
+      "input": {
+        "appearance": {
+          "head": "round"
+        }
+      }
+    },
+    {
+      "id": "quick-unknown-accent",
+      "schema": "quickBot",
+      "input": {
+        "appearance": {
+          "head": "round",
+          "body": "classic",
+          "mobility": "feet",
+          "accessory": "none",
+          "accent": "unknown"
+        }
+      }
+    },
+    {
+      "id": "quick-extra-appearance",
+      "schema": "quickBot",
+      "input": {
+        "appearance": {
+          "head": "round",
+          "body": "classic",
+          "mobility": "feet",
+          "accessory": "none",
+          "accent": "green",
+          "grant": "admin"
+        }
+      }
+    },
+    {
+      "id": "quick-override-name",
+      "schema": "quickBot",
+      "input": {
+        "appearance": {
+          "head": "round",
+          "body": "classic",
+          "mobility": "feet",
+          "accessory": "none",
+          "accent": "green"
+        },
+        "name": "untrusted"
+      }
+    },
+    {
+      "id": "quick-override-role",
+      "schema": "quickBot",
+      "input": {
+        "appearance": {
+          "head": "round",
+          "body": "classic",
+          "mobility": "feet",
+          "accessory": "none",
+          "accent": "green"
+        },
+        "role": "admin"
+      }
+    },
+    {
+      "id": "quick-override-model",
+      "schema": "quickBot",
+      "input": {
+        "appearance": {
+          "head": "round",
+          "body": "classic",
+          "mobility": "feet",
+          "accessory": "none",
+          "accent": "green"
+        },
+        "model": {}
+      }
+    },
+    {
+      "id": "quick-override-computer",
+      "schema": "quickBot",
+      "input": {
+        "appearance": {
+          "head": "round",
+          "body": "classic",
+          "mobility": "feet",
+          "accessory": "none",
+          "accent": "green"
+        },
+        "computerProfile": "docker-linux"
+      }
+    }
+  ]
+}

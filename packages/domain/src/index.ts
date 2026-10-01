@@ -62,6 +62,15 @@ export type BotMobility = "feet" | "single-wheel" | "dual-wheel" | "hover" | "fo
 export type BotAccessory = "none" | "headphones" | "backpack" | "trench" | "arm" | "toolbox";
 export type BotAccent = "green" | "yellow" | "red" | "blue";
 
+export interface QuickCreateBotInput {
+  appearance: BotAppearance;
+}
+
+export interface QuickCreateBotResponse {
+  bot: Bot;
+  channel: Channel;
+}
+
 export interface BotAppearance {
   head: BotHeadShape;
   body: BotBodyShape;

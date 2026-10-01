@@ -67,33 +67,7 @@ class PostgresConversationStore:
                 bot = await cursor.fetchone()
                 if bot is None:
                     raise ConversationNotFound(_NOT_FOUND)
-                cursor = await connection.execute(
-                    "SELECT id FROM channels WHERE direct_bot_id=%s", (bot_id,))
-                existing = await cursor.fetchone()
-                channel_id = existing["id"] if existing is not None else str(uuid4())
-                if existing is None:
-                    cursor = await connection.execute(
-                        "INSERT INTO channels (id, name, description, direct_bot_id, created_at, updated_at) "
-                        "VALUES (%s, %s, '', %s, date_trunc('milliseconds', statement_timestamp()), "
-                        "date_trunc('milliseconds', statement_timestamp())) RETURNING created_at",
-                        (channel_id, bot["name"], bot_id))
-                    created_at = (await cursor.fetchone())["created_at"]
-                    await connection.execute(
-                        "INSERT INTO channel_bots (channel_id, bot_id, joined_at) VALUES (%s, %s, %s)",
-                        (channel_id, bot_id, created_at))
-                    await connection.execute(
-                        "INSERT INTO run_events (id, channel_id, type, payload) "
-                        "VALUES (%s, %s, 'CHANNEL_CREATED', %s)",
-                        (str(uuid4()), channel_id, Jsonb({"name": bot["name"], "directBotId": bot_id})))
-                    await connection.execute(
-                        "INSERT INTO run_events (id, channel_id, bot_id, type, payload) "
-                        "VALUES (%s, %s, %s, 'BOT_JOINED_CHANNEL', '{}'::jsonb)",
-                        (str(uuid4()), channel_id, bot_id))
-                channel = await self._read(connection, channel_id)
-                if channel.botIds != [bot_id]:
-                    # An existing direct row must be its own Bot's singleton membership; never repair it.
-                    raise StoreUnavailable(_STORAGE_UNAVAILABLE)
-                return channel
+                return await open_direct_in_transaction(connection, bot)
         except (psycopg.Error, TimeoutError, ValueError, KeyError):
             raise StoreUnavailable(_STORAGE_UNAVAILABLE) from None
 
@@ -137,3 +111,35 @@ class PostgresConversationStore:
         if len(channels) != 1:
             raise StoreUnavailable(_STORAGE_UNAVAILABLE)
         return channels[0]
+
+
+async def open_direct_in_transaction(connection, bot) -> Channel:
+    """Caller owns the Owner transaction and holds the active Bot row lock."""
+    bot_id = bot["id"]
+    cursor = await connection.execute(
+        "SELECT id FROM channels WHERE direct_bot_id=%s", (bot_id,))
+    existing = await cursor.fetchone()
+    channel_id = existing["id"] if existing is not None else str(uuid4())
+    if existing is None:
+        cursor = await connection.execute(
+            "INSERT INTO channels (id, name, description, direct_bot_id, created_at, updated_at) "
+            "VALUES (%s, %s, '', %s, date_trunc('milliseconds', statement_timestamp()), "
+            "date_trunc('milliseconds', statement_timestamp())) RETURNING created_at",
+            (channel_id, bot["name"], bot_id))
+        created_at = (await cursor.fetchone())["created_at"]
+        await connection.execute(
+            "INSERT INTO channel_bots (channel_id, bot_id, joined_at) VALUES (%s, %s, %s)",
+            (channel_id, bot_id, created_at))
+        await connection.execute(
+            "INSERT INTO run_events (id, channel_id, type, payload) "
+            "VALUES (%s, %s, 'CHANNEL_CREATED', %s)",
+            (str(uuid4()), channel_id, Jsonb({"name": bot["name"], "directBotId": bot_id})))
+        await connection.execute(
+            "INSERT INTO run_events (id, channel_id, bot_id, type, payload) "
+            "VALUES (%s, %s, %s, 'BOT_JOINED_CHANNEL', '{}'::jsonb)",
+            (str(uuid4()), channel_id, bot_id))
+    channel = await PostgresConversationStore._read(connection, channel_id)
+    if channel.botIds != [bot_id]:
+        # An existing direct row must be its own Bot's singleton membership; never repair it.
+        raise StoreUnavailable(_STORAGE_UNAVAILABLE)
+    return channel

@@ -87,7 +87,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
             "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/auth/password",
             "/api/v1/auth/sessions/revoke-others")
         identity_write = identity is not None and request.method == "POST" and request.url.path in (
-            "/api/v1/bots", "/api/v1/channels")
+            "/api/v1/bots", "/api/v1/bots/quick", "/api/v1/channels")
         conversation_write = conversations is not None and request.method == "POST" and (
             re.fullmatch(r"/api/v1/bots/[^/]+/conversation", request.url.path) is not None
             or re.fullmatch(r"/api/v1/channels/[^/]+/bots", request.url.path) is not None)
@@ -254,7 +254,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         schema["paths"]["/api/v1/auth/logout"]["post"]["security"] = [{"OwnerSession": []}]
         schema["paths"]["/api/v1/auth/login"]["post"]["security"] = []
     if identity is not None:
-        for path in ("/api/v1/bots", "/api/v1/channels"):
+        for path in ("/api/v1/bots", "/api/v1/bots/quick", "/api/v1/channels"):
             schema["paths"][path]["post"]["security"] = [{"OwnerSession": []}]
     if conversations is not None:
         for path in ("/api/v1/bots/{bot_id}/conversation", "/api/v1/channels/{channel_id}/bots"):

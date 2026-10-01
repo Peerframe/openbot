@@ -215,6 +215,10 @@ export const deleteEmployeeMemoryInputSchema = z
   })
   .strict();
 
+export const quickCreateBotInputSchema = z
+  .object({ appearance: botAppearanceSchema.strict() })
+  .strict();
+
 export const createBotInputSchema = z
   .object({
     name: z.string().trim().min(1, "Bot name is required.").max(64),

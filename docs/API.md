@@ -36,6 +36,7 @@ HTTPS for remote access.
 | `GET` | `/api/v1/runs/:runId/frame` | Read a Run's latest short-lived frame |
 | `GET` | `/api/v1/bots` | List Bots |
 | `POST` | `/api/v1/bots` | Create a Bot and its initial evolution event |
+| `POST` | `/api/v1/bots/quick` | Atomically create a default Bot and its direct conversation |
 | `PATCH` | `/api/v1/bots/:botId` | Rename a Bot and its direct conversation (audited) |
 | `DELETE` | `/api/v1/bots/:botId` | Permanently delete a Bot's content and grants and keep a tombstone |
 | `GET` | `/api/v1/bots/:botId/profile` | Read the complete Employee profile projection |
@@ -670,3 +671,20 @@ An empty channel omits `latestMessage` and uses `createdAt` for `lastActivityAt`
 The list is ordered by activity descending, then channel ID in C collation ascending;
 latest messages break equal timestamps by message ID in C collation descending.
 Deleted channels are excluded. Existing session revalidation, row and response-byte limits apply.
+
+## Quick Bot creation (C12)
+
+`POST /api/v1/bots/quick` is Owner-only and requires a trusted Origin. Input is exactly
+`{ "appearance": { "head": "round", "body": "classic", "mobility": "feet", "accessory": "none", "accent": "green" } }`.
+Unknown keys, null and incomplete appearances return 422. It returns 201 `{bot, channel}` with
+existing Bot/Channel shapes. The channel has `directBotId=bot.id` and `botIds=[bot.id]`.
+Names are allocated among active Bots as `新建 Bot`, `新建 Bot 2`, … using the smallest free suffix;
+deleted names are reusable. The fixed role is `通用助手`, status `idle`, computer profile `none`.
+The C7 default model is copied into `bot.model` when configured and currently usable; no default
+means the field is omitted. This selection is metadata; creation starts no host, work or inference.
+A stale/disabled model default is rejected, with no partial identity. Identity, evolution, direct
+conversation, membership and their three audit events commit together. This command creates a new
+Bot on each successful request; clients must not retry an ambiguous network result automatically.
+Name allocation examines suffixes 1–10001 and retries at most three conflicts with ordinary name
+writes. Exhaustion/contention returns 409 `quick_bot_name_exhausted`/`quick_bot_name_contention`.
+Existing session, Origin, body limits and sanitized storage/model errors still apply.

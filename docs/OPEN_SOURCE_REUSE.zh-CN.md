@@ -566,3 +566,10 @@ pipe 协议、Playwright1.62.1 ASCII-NUL framing 窄适配（Apache-2.0）及 No
 pip-audit 2.10.1（Apache-2.0）通过隔离、精确锁定的工具闭包审计实际 Python 生产锁；无上游源码复制。
 精确提交和有界取舍见 [CI 决定](research/windows-ci-merge-gate.md)。Soup Sieve 2.9.2（MIT）
 修复新安全门发现的公告，保留 Beautiful Soup 和有界子进程，见[针对性升级证据](research/python-work-product-web.md#c3-advisory-driven-soup-sieve-update-2026-09-27)。
+
+## C12 快速身份创建（2026-10-02）
+
+[快速创建研究](research/quick-bot-creation.md) 延续已审核的 Python 身份、单聊事务和 C7 默认设置，
+使用 PostgreSQL17 / psycopg3.3.6 / Pydantic2.13.5。同一 Owner 事务分配活跃名称并提交 Bot、
+单聊、成员关系和审计；现有部分唯一索引仍约束普通名称写入。没有新增数据库结构、依赖、
+外部模型调用或第三方源码。

@@ -1035,3 +1035,11 @@ notebook template at main57341154b19d45686b2f71bce96fca38e1f07310, pinned MCP SD
 existing Owner transactions and bounded owned-file loading. Explicit commit/file/review records form
 the curated source; registry publication is not treated as review. No new dependency or copied source.
 The attempted public Docs MCP review failed its real DNS boundary and is not included as a reviewed service.
+
+## C12 quick identity composition (2026-10-02)
+
+[Quick creation](research/quick-bot-creation.md) extends the reviewed Python identity/direct
+conversation transactions and C7 defaults on PostgreSQL17 / psycopg3.3.6 / Pydantic2.13.5.
+One Owner transaction allocates an active-name slot and commits Bot, direct conversation,
+membership and audit. Existing partial uniqueness remains authoritative for ordinary name writes.
+No schema, dependency, external model call or upstream source incorporation is added.

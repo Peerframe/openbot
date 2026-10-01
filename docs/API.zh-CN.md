@@ -30,6 +30,7 @@
 | `GET` | `/api/v1/runs/:runId/frame` | 鉴权读取任务最新临时画面；不持久化 |
 | `GET` | `/api/v1/bots` | Bot 名册 |
 | `POST` | `/api/v1/bots` | 创建 Bot |
+| `POST` | `/api/v1/bots/quick` | 原子创建默认 Bot 及其单聊 |
 | `PATCH` | `/api/v1/bots/:botId` | 重命名 Bot 及其单独对话（记入审计） |
 | `DELETE` | `/api/v1/bots/:botId` | 永久删除 Bot 的内容与授权并保留墓碑 |
 | `GET` | `/api/v1/bots/:botId/profile` | 读取数字员工档案、进化、技能、记忆与工作记录 |
@@ -600,3 +601,20 @@ IPC 不接受渲染层传入的命令、程序路径或更新地址。
 空频道省略 `latestMessage`，以创建时间作为最近活动时间。
 列表按最近活动倒序，时间相同时按频道 ID 的 C 排序规则升序；最新消息时间相同则按消息 ID 的 C 排序规则倒序。
 删除的频道不返回。沿用会话复查、行数和响应字节上限。
+
+## 快速创建 Bot（C12）
+
+`POST /api/v1/bots/quick` 仅 Owner 可用，要求可信 Origin。请求只能包含完整 `appearance`，
+字段为 `head`、`body`、`mobility`、`accessory`、`accent`，取值沿用 BotAppearance 契约。
+未知字段、null 或不完整外观返回 422。成功返回 201 `{bot, channel}`，使用已有 Bot/Channel
+结构，单聊满足 `directBotId=bot.id`、`botIds=[bot.id]`。
+
+服务端在活跃 Bot 中原子分配最小空闲名称：`新建 Bot`、`新建 Bot 2`……，已删除名称可复用。
+角色固定为 `通用助手`、状态 `idle`、电脑配置 `none`。C7 默认模型在当前连接可用时复制到
+`bot.model`；未配置则省略。模型选择仅是配置元数据，创建不启动电脑、任务或模型调用。
+失效或停用的默认模型会拒绝整个创建。Bot、进化事件、单聊、成员关系及三条审计一起提交。
+每次成功请求都会新建 Bot；网络结果不明确时，客户端不得自动重试。
+
+检查序号 1–10001，最多重试三次与普通创建或重命名的冲突。名称耗尽或持续冲突返回
+409 `quick_bot_name_exhausted` / `quick_bot_name_contention`。保留已有会话、Origin、请求体
+限制和脱敏的存储及模型错误。
