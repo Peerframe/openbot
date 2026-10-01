@@ -25,8 +25,10 @@ from openbot_server.database import PostgresReadStore, StoreUnavailable
 def equivalent_response(path, response):
     if path == "/api/v1/channels":
         # Membership is a set in the legacy contract; its SQL query has no member order.
-        return {"channels": [{**channel, "botIds": sorted(channel["botIds"])}
-                             for channel in response["channels"]]}
+        # C1 adds activity fields and ordering; the frozen oracle pins only original fields.
+        return {"channels": sorted([{**{k: v for k, v in channel.items()
+            if k not in ("lastActivityAt", "latestMessage")}, "botIds": sorted(channel["botIds"])}
+            for channel in response["channels"]], key=lambda channel: channel["id"])}
     return response
 
 
