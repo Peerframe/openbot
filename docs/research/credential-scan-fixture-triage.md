@@ -213,3 +213,45 @@ commit/path/line, unverified state and both exact Raw/RawV2 SHA256 values
 `e58bc479a694bb81fb43e7765c5d9171bfdb60acd80d816b1a3f69a8fee5f4e8`.
 No network verification, scanner exclusion, history rewrite or result upload is introduced. Extend
 all-field mutation tests to this eighteenth tuple and replay the actual private offline result.
+
+## C1–C8 full-history qualification (2026-10-01)
+
+The unchanged digest-pinned TruffleHog3.97.1 image replayed all fetched Git history in a
+read-only, disposable local clone, offline with verification and updates disabled. It returned
+183 and nineteen unverified findings. Sixteen match the prior exact review; the remaining three
+are recorded below. No raw candidate or diagnostic is uploaded or logged. Reuse the reviewed
+URI/Postgres/Sentry detector source and exact-tuple adapter; no detector/path exclusion, history
+rewrite, verification, dependency change or copied upstream source.
+
+- C8 protocol source at the exact commit/line is a deliberate credential-URL rejection fixture:
+  a cloned catalog fails schema validation without any network operation. Construct the current
+  negative URL via setters, preserving the same rejection without a new literal scanner match.
+- The second tuple is the already reviewed WorkTasksEntry content digest at line73 in another
+  immutable commit; its adjacent source labels establish that it is a source hash, not a token.
+- The third is the already reviewed synthetic external PostgreSQL URL rejection fixture in
+  another immutable commit. The URL validator rejects it without creating a database connection.
+
+| Commit | File:line | Detector | Raw SHA-256 | RawV2 SHA-256 |
+| --- | --- | --- | --- | --- |
+| `e836e82f61cbb780a1976ed57c9f96a21a991df3` | `packages/protocol/src/plugin-catalog.test.ts:27` | `17` / URI | `c2b2b094ff135feebbb6610aa157e80dd3af69d5c0e1c6d2723d8b04f93b0b5c` | `c2b2b094ff135feebbb6610aa157e80dd3af69d5c0e1c6d2723d8b04f93b0b5c` |
+| `0a9fc212737f0f795999685d96b3d39efc2bf784` | `docs/research/s2-work-supervision.md:73` | `87` / content digest | `5fb64d41242d2546f1713381ae57f7ea5b8e8e1e2f17023d63c7d3cc3c2e5de6` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `b19a017e35e53855649e1c87ab31cf0f63d85974` | `scripts/smoke-dev-fixture.test.mjs:31` | `968` / Postgres | `a0010550bccff9bf7c0aa79e783a4e21558de033364bf51b00eea5d850faa23f` | `a0010550bccff9bf7c0aa79e783a4e21558de033364bf51b00eea5d850faa23f` |
+
+Add only these three immutable tuples. Verified findings and any changed candidate, commit,
+path, line or detector remain rejected. Regression tests mutate every field of all21 reviewed
+tuples, mix unknown findings, and refuse scanner errors/malformed/inconsistent output. Replay
+the completed private scan through the strict adapter. Hosted CI on each final PR head remains
+the Linux/full-history gate; this local macOS Docker replay is not a production credential claim.
+
+The first C6 follow-up itself exposed one new content-digest false positive: its table placed the
+text detector label next to the already reviewed source-digest hash. The unchanged pinned offline
+scanner reproduces that exact unverified result at commit
+`2512a615dde281c6157ecb21c9d72e85ef4674d7`, this document line237, detector87. Source inspection
+and hashing bind it to the table's public source-hash field, with Raw SHA-256
+`3beed73bbc0415306f2d1a0cab1efdeea0d18a4c42fff3677d9389798b06e9d9` and empty RawV2 SHA-256
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`. Retain this single exact
+historical tuple; use only the numeric detector/content-digest label in the current table to avoid
+creating another such context. The current code regression set has22 exact tuples and continues
+mutating all fields and refusing every unknown/verified finding or scanner error. A disposable
+clone must have matching HEAD/index to avoid synthetic staged-index findings; CI checks committed
+Git history without staging a different tree. No staged-finding exemption is accepted.

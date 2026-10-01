@@ -1,4 +1,5 @@
 """Explicit Python product composition for the retained Owner API; no implicit service selection."""
+from contextlib import asynccontextmanager
 from pathlib import Path
 import hashlib
 import json
@@ -27,7 +28,7 @@ class AutomationEnabled(BaseModel):
 
 
 class OwnerProduct:
-    def __init__(self, dsn, *, object_root, model_settings=None, knowledge=None, automations=None, interactions=None, portability=None, processing=None, plugins=None, model_connections=None, worker_identity=None, worker_registry=None, browser=None, nodes=lambda: []):
+    def __init__(self, dsn, *, object_root, model_settings=None, knowledge=None, automations=None, interactions=None, portability=None, processing=None, plugins=None, model_connections=None, worker_identity=None, worker_registry=None, browser=None, plugin_catalog_path=None, nodes=lambda: []):
         self.transactions = OwnerTransactions(dsn)
         self.workspace = PostgresWorkspace(dsn,nodes=nodes)
         self.files = OwnerFiles(Path(object_root)/'attachments')
@@ -36,6 +37,14 @@ class OwnerProduct:
         self.portability, self.processing = portability, processing
         self.plugins, self.model_connections = plugins, model_connections
         self.worker_identity, self.worker_registry = worker_identity, worker_registry
+        from .approval_settings import OwnerApprovalSettings
+        self.approval_settings=OwnerApprovalSettings(dsn,self.files)
+
+        from .owner_preferences import OwnerPreferences
+        self.preferences = OwnerPreferences(dsn,model_connections=model_connections)
+
+        from .plugin_catalog import ReviewedPluginCatalog
+        self.plugin_catalog = ReviewedPluginCatalog(dsn,plugin_catalog_path)
         self.browser = browser
         self.work_runtime = None
         self.write_routes = []
@@ -171,6 +180,21 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         return download_response(data,name=row['name'],media_type=row['media_type'])
     route('/api/v1/artifacts/{artifact_id}/content','GET',artifact)
 
+    async def approval_settings(value,*_):return await product.approval_settings.snapshot(value)
+    async def approval_save(value,_path,body,_request):return await product.approval_settings.save(value,body)
+    route('/api/v1/settings/approvals','GET',approval_settings)
+    route('/api/v1/settings/approvals','PUT',approval_save,limit=16384)
+
+    async def owner_preferences(value,*_): return await product.preferences.get(value)
+    route('/api/v1/settings/general','GET',owner_preferences)
+    async def owner_preferences_save(value,_path,body,_request): return await product.preferences.update(value,body)
+    route('/api/v1/settings/general','PUT',owner_preferences_save,limit=2048)
+
+    async def plugin_catalog(value,_path,_body,request):
+        if request.query_params: raise HTTPException(422,'Catalog query parameters are not accepted.')
+        return await product.plugin_catalog.snapshot(value)
+    route('/api/v1/plugins/catalog','GET',plugin_catalog)
+
     async def model_summary(value,*_):
         if product.model is None: return {'status':'unavailable'}
         async with product.transactions.transaction(value): return await product.model.summary()
@@ -191,8 +215,14 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         for path in ('/api/v1/nodes/enrollment-tokens','/api/v1/nodes/enroll','/api/v1/nodes/[^/]+/revoke'):
             product.write_routes.append(('POST',re.compile(path)))
 
+    @asynccontextmanager
+    async def model_commit(value):
+        async with product.transactions.transaction(value) as db:
+            yield
+            await db.execute("INSERT INTO run_events(id,type,payload) VALUES (gen_random_uuid()::text,'SETTINGS_MODEL_UPDATED','{\"actor\":\"owner\"}'::jsonb)")
+
     async def model_save(value,_path,body,_request):
-        return await service('model').save(body,authority=lambda:product.transactions.transaction(value))
+        return await service('model').save(body,authority=lambda:product.transactions.transaction(value),commit_authority=lambda:model_commit(value))
     route('/api/v1/settings/model','POST',model_save,limit=4096)
     async def model_discover(value,_path,body,_request):
         return {'models':await service('model').discover(body,authority=lambda:product.transactions.transaction(value))}
@@ -278,15 +308,16 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         return {**result,'pluginGrantsRemoved':removed,'attachmentsRemoved':attachments}
     route('/api/v1/bots/{bot_id}','DELETE',bot_delete,limit=1024)
     async def audit_list(value,_path,_body,request):
-        query=request.query_params
-        if set(query)-{'before','limit'} or any(len(query.getlist(key))>1 for key in query):
-            raise ControlError(422,'invalid_audit_query')
-        limit=query.get('limit','50')
-        if not limit.isdigit() or len(limit)>3: raise ControlError(422,'invalid_audit_limit')
-        before=query.get('before')
-        if before is not None and len(before)>200: raise ControlError(422,'invalid_audit_cursor')
-        return await product.lifecycle.audit(value,before=before,limit=int(limit))
+        from .audit_records import parse_query
+        return await product.lifecycle.audit(value,**parse_query(request.query_params))
     route('/api/v1/audit','GET',audit_list)
+    async def audit_export(value,_path,_body,request):
+        from .audit_records import export_csv,parse_query
+        page=await product.lifecycle.audit(value,maximum=1000,**parse_query(request.query_params,export=True))
+        return Response(export_csv(page['events']),media_type='text/csv; charset=utf-8',headers={
+            'Content-Disposition':'attachment; filename="openbot-audit.csv"',
+            **({'X-OpenBot-Next-Before':page['nextBefore']} if page.get('nextBefore') else {})})
+    route('/api/v1/audit/export','GET',audit_export)
 
     def export_selection(request):
         values=request.query_params.getlist('includeSkillContent')

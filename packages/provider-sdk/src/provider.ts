@@ -2,6 +2,7 @@ import type {
   BrowserCommand,
   BrowserFrame,
   BrowserPage,
+  BrowserRuntimeState,
   NodeCapability,
   NodeCapabilityDescriptor,
   NodePlatform,
@@ -72,6 +73,7 @@ export interface ProviderFrame {
  * never authorize a Run or bypass Server policy.
  */
 export interface ComputerProvider {
+  browserMaintenance?(command: BrowserCommand, signal: AbortSignal): Promise<BrowserRuntimeState>;
   browser?(command: BrowserCommand, signal: AbortSignal): Promise<BrowserFrame>;
   browserTask?(
     command: BrowserCommand,
