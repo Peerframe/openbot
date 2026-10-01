@@ -34,7 +34,9 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const workerTests = await readWorkerTests(root);
 const controlTests = [
   "tests/test_postgres_integration.py",
+  "tests/test_channel_activity.py",
   "tests/test_auth_postgres.py",
+  "tests/test_owner_security.py",
   "tests/test_identity_postgres.py",
   "tests/test_conversation_postgres.py",
   "tests/test_message_postgres.py",
@@ -53,6 +55,9 @@ const controlTests = [
   "tests/test_work_corrections_postgres.py",
   "tests/test_execution_sdk_postgres.py",
   "tests/test_product_control.py",
+  "tests/test_approval_settings.py",
+
+  "tests/test_owner_preferences.py",
   "tests/test_http_input_lifecycle.py",
   "tests/test_work_sources_postgres.py",
   "tests/test_work_command_codec.py",
@@ -65,8 +70,10 @@ const controlTests = [
   "tests/test_automation_store.py",
   "tests/test_conversation_interactions.py",
   "tests/test_identity_lifecycle.py",
+  "tests/test_audit_records.py",
   "tests/test_attachment_processing.py",
   "tests/test_plugin_service.py",
+  "tests/test_plugin_catalog.py",
   "tests/test_plugin_transport.py",
   "tests/test_worker_host_identity.py",
   "tests/test_worker_host_protocol.py",

@@ -495,11 +495,26 @@ export const runEvents = pgTable(
   ],
 );
 
+export const ownerCredentials = pgTable(
+  "owner_credentials",
+  {
+    ownerId: text("owner_id").primaryKey().default("owner"),
+    passwordHash: text("password_hash").notNull(),
+    revision: integer("revision").notNull().default(1),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("owner_credentials_owner_valid", sql`${table.ownerId} = 'owner'`),
+    check("owner_credentials_revision_valid", sql`${table.revision} > 0`),
+  ],
+);
+
 export const authSessions = pgTable(
   "auth_sessions",
   {
     id: text("id").primaryKey(),
     tokenDigest: text("token_digest").notNull(),
+    userAgent: text("user_agent").notNull().default(""),
     ownerId: text("owner_id").notNull().default("owner"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
@@ -510,6 +525,7 @@ export const authSessions = pgTable(
     index("auth_sessions_active_expiry_idx")
       .on(table.expiresAt)
       .where(sql`${table.revokedAt} IS NULL`),
+    check("auth_sessions_user_agent_bound", sql`length(${table.userAgent}) <= 256`),
     check("auth_sessions_owner_valid", sql`${table.ownerId} = 'owner'`),
     check("auth_sessions_token_digest_valid", sql`length(${table.tokenDigest}) = 64`),
   ],
@@ -686,6 +702,46 @@ export const messageReactions = pgTable(
     check(
       "message_reactions_emoji_valid",
       sql`${table.emoji} IN ('👍', '❤️', '😂', '🎉', '🤔', '👀')`,
+    ),
+  ],
+);
+
+export const ownerApprovalSettings = pgTable(
+  "owner_approval_settings",
+  {
+    ownerId: text("owner_id").primaryKey(),
+    revision: integer("revision").notNull().default(1),
+    configuration: jsonb("configuration").notNull(),
+  },
+  (t) => [
+    check("owner_approval_settings_owner", sql`${t.ownerId} = 'owner'`),
+    check("owner_approval_settings_revision", sql`${t.revision} between 1 and 2147483647`),
+  ],
+);
+
+export const ownerPreferences = pgTable(
+  "owner_preferences",
+  {
+    ownerId: text("owner_id").primaryKey(),
+    timezone: text("timezone").notNull().default("UTC"),
+    defaultModel: jsonb("default_model"),
+    revision: integer("revision").notNull().default(1),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("owner_preferences_owner_id_check", sql`${table.ownerId} = 'owner'`),
+    check(
+      "owner_preferences_timezone_check",
+      sql`length(${table.timezone}) BETWEEN 1 AND 64 AND ${table.timezone} ~ '^[A-Za-z_]+(/[A-Za-z0-9_+.-]+)*$'`,
+    ),
+    check("owner_preferences_revision_check", sql`${table.revision} BETWEEN 1 AND 2147483647`),
+    check(
+      "owner_preferences_model_valid",
+      sql`${table.defaultModel} IS NULL OR CASE WHEN jsonb_typeof(${table.defaultModel}) = 'object' THEN
+ ${table.defaultModel} ?& ARRAY['connectionId','modelId'] AND ${table.defaultModel} - 'connectionId' - 'modelId' = '{}'::jsonb
+ AND jsonb_typeof(${table.defaultModel}->'connectionId') = 'string' AND (${table.defaultModel}->>'connectionId') ~ '^[A-Za-z0-9_-]{1,64}$'
+ AND jsonb_typeof(${table.defaultModel}->'modelId') = 'string' AND length(${table.defaultModel}->>'modelId') BETWEEN 1 AND 256
+ AND (${table.defaultModel}->>'modelId') ~ '^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$' ELSE false END`,
     ),
   ],
 );

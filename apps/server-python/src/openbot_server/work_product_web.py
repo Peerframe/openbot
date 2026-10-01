@@ -15,6 +15,7 @@ from .work_temporal_effect import ToolRequest
 from .work_temporal_start import WorkRuntimeContext
 from .work_tool_results import ToolResults, ToolResponseAdapter, ToolResponseVerifier
 from pydantic import JsonValue
+from .approval_settings import assert_current,read_decision
 from .work_values import InvalidWork, WorkConflict, canonical, text
 
 _SCOPE={'expected_namespace','expected_queue','expected_workflow_type'}
@@ -160,10 +161,10 @@ class WorkWebAdapter:
                 or canonical(intent)[1]!=action['intent_digest'] or action['intent']!=intent
                 or not action['action_key'].startswith('tool-activity-v1-')
                 or action['correction_context_id']!=context.correction_token or effect['source']!=source
-                or selection!=effect['selection'] or action['requires_approval'] is not False
-                or action['decision']!='not_required'):
+                or selection!=effect['selection'] or not read_decision(action)):
             raise WorkConflict('work_web_intent_changed')
         if phase is not None:
+            await assert_current(db,task,action)
             if (action['status']!='admitted' or not action['unexpired'] or run['status']!='running'
                     or action['authority_generation']!=task['authority_generation']):
                 raise WorkConflict('work_web_not_admitted')
@@ -257,7 +258,7 @@ class WorkWebAdapter:
             effect=self._intent(row['intent'])
             selection,_=await self._selection(db,context,row['intent']['tool'],row['intent']['arguments'],task)
             if (effect['source']!=source or effect['selection']!=selection or canonical(row['intent'])[1]!=row['intent_digest']
-                    or row['requires_approval'] is not False or row['decision']!='not_required'
+                    or not read_decision(row)
                     or not row['action_key'].startswith('tool-activity-v1-')):
                 raise WorkConflict('work_web_result_authority_changed')
             observed=await self.results.load_in_transaction(db,row['id'],task_id=context.task_id,run_id=context.run_id,intent_digest=row['intent_digest'])
