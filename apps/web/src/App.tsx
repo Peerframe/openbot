@@ -71,7 +71,7 @@ import { RobotAvatar } from "./components/RobotAvatar";
 import { indexRunCollaboration } from "./components/RunCollaboration";
 import { RunInspector } from "./components/RunInspector";
 import { ShareConversationDialog } from "./components/ShareConversationDialog";
-import { Sidebar } from "./components/Sidebar";
+import { Sidebar, type SidebarActivity } from "./components/Sidebar";
 import { SkillLibraryScreen } from "./components/SkillLibraryScreen";
 import { parseWorkEntry, WorkTasksEntry } from "./components/WorkTasksEntry";
 import { WorkTasksScreen } from "./components/WorkTasksScreen";
@@ -83,7 +83,7 @@ import {
   getOpenBotDesktopBridge,
 } from "./desktop-runtime";
 import { shortcutLabel } from "./desktop-shortcuts";
-import { sidebarOrganization } from "./sidebar-organization";
+import { type SidebarItemKey, sidebarOrganization } from "./sidebar-organization";
 import {
   NotificationTracker,
   type SystemNotice,
@@ -629,6 +629,8 @@ export function AuthenticatedWorkspace({
   } = useWorkspaceState(setError);
   const [notice, setNotice] = useState<string>();
   const [unreadByChannel, setUnreadByChannel] = useState<Record<string, number>>({});
+  // undefined until the first read, which is a baseline rather than "new messages".
+  const previousUnread = useRef<Record<string, number>>(undefined);
   const [attention, setAttention] = useState(0);
   const notifications = useRef(new NotificationTracker());
   const notifyRef = useRef({ approvals: false, messages: false });
@@ -662,6 +664,14 @@ export function AuthenticatedWorkspace({
           void markChannelRead(selectedChannelId).catch(() => undefined);
         }
         setUnreadByChannel(counts);
+        // New messages elsewhere change the sidebar's previews and order (backlog C1); re-read
+        // the workspace once. The next pass sees equal counts, so this cannot loop.
+        const previous = previousUnread.current;
+        const grew =
+          previous !== undefined &&
+          Object.entries(counts).some(([id, count]) => count > (previous[id] ?? 0));
+        previousUnread.current = counts;
+        if (grew) void refresh();
         if (notifyRef.current.messages && !windowIsAttended())
           for (const notice of notices) announce(notice);
       } catch {
@@ -1175,6 +1185,7 @@ export function AuthenticatedWorkspace({
           onHome={() => navigation.navigate({ kind: "home" })}
           bots={workspace.bots}
           channels={workspace.channels.filter((channel) => !channel.directBotId)}
+          activity={sidebarActivity(workspace.channels)}
           runs={workspace.runs}
           ownerName={ownerName}
           destination={destination}
@@ -1515,6 +1526,20 @@ function ChannelEmptyState({
       </section>
     </main>
   );
+}
+
+/** Row activity for the sidebar: a direct conversation's activity belongs to its Bot. */
+function sidebarActivity(channels: Channel[]): Record<SidebarItemKey, SidebarActivity> {
+  const result: Record<SidebarItemKey, SidebarActivity> = {};
+  for (const channel of channels) {
+    if (!channel.lastActivityAt && !channel.latestMessage) continue;
+    const value = { lastActivityAt: channel.lastActivityAt, latestMessage: channel.latestMessage };
+    const key: SidebarItemKey = channel.directBotId
+      ? `bot:${channel.directBotId}`
+      : `channel:${channel.id}`;
+    result[key] = value;
+  }
+  return result;
 }
 
 function sidebarUnread(channels: Channel[], counts: Record<string, number>) {

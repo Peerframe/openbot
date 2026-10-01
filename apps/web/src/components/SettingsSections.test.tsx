@@ -92,27 +92,41 @@ it("rejects a malformed audit page instead of rendering it", async () => {
   }
 });
 
-it("groups audit events by day and filters loaded events by category", async () => {
+it("groups audit events by day, filters by Server category and exports the same filter", async () => {
   const today = new Date();
   today.setHours(10, 31, 0, 0);
-  vi.stubGlobal(
-    "fetch",
-    vi.fn().mockResolvedValue(
-      respond({
-        events: [
-          {
-            id: "1",
-            type: "CHANNEL_CREATED",
-            createdAt: today.toISOString(),
-            channelName: "市场周报",
-            details: {},
-          },
-          { id: "2", type: "RUN_FAILED", createdAt: today.toISOString(), details: {} },
-          { id: "3", type: "BOT_CREATED", createdAt: "2026-09-01T07:00:00.000Z", details: {} },
-        ],
-      }),
-    ),
+  const fetch = vi.fn(async (url: string) =>
+    respond({
+      events: url.includes("category=runs")
+        ? [
+            {
+              id: "2",
+              type: "RUN_FAILED",
+              category: "runs",
+              createdAt: today.toISOString(),
+              details: {},
+            },
+          ]
+        : [
+            {
+              id: "1",
+              type: "CHANNEL_CREATED",
+              category: "channels",
+              createdAt: today.toISOString(),
+              channelName: "市场周报",
+              details: {},
+            },
+            {
+              id: "3",
+              type: "BOT_CREATED",
+              category: "bots",
+              createdAt: "2026-09-01T07:00:00.000Z",
+              details: {},
+            },
+          ],
+    }),
   );
+  vi.stubGlobal("fetch", fetch);
   const view = await renderComponent(<AuditLogSettings />);
   try {
     await interact(() => undefined);
@@ -121,17 +135,35 @@ it("groups audit events by day and filters loaded events by category", async () 
       (item) => item.textContent,
     );
     expect(headings).toEqual(["今天", "9 月 1 日"]);
-    const chips = Array.from(
-      view.container.querySelectorAll<HTMLButtonElement>(".settings-filters button"),
-    );
-    // Only categories present in the loaded events are offered.
-    expect(chips.map((chip) => chip.textContent)).toEqual(["全部", "频道", "Bot", "任务"]);
-    await interact(() => chips[3]?.click());
+    const chips = () =>
+      Array.from(view.container.querySelectorAll<HTMLButtonElement>(".settings-filters button"));
+    expect(chips().map((chip) => chip.textContent)).toEqual([
+      "全部",
+      "审批",
+      "设置变更",
+      "登录",
+      "主机",
+      "频道",
+      "Bot",
+      "任务",
+      "插件",
+    ]);
+    expect(view.container.querySelector(".audit-list .ob-tag")?.textContent).toBe("频道");
+    await interact(() => chips()[7]?.click());
+    await interact(() => undefined);
+    expect(fetch).toHaveBeenLastCalledWith("/api/v1/audit?category=runs", expect.anything());
     expect(view.container.querySelectorAll(".audit-list li")).toHaveLength(1);
-    expect(view.container.querySelector(".audit-list .ob-tag")?.textContent).toBe("任务");
-    await interact(() => chips[0]?.click());
-    expect(view.container.querySelectorAll(".audit-list li")).toHaveLength(3);
   } finally {
     await view.unmount();
   }
+});
+
+it("links CSV export to the active category", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => respond({ events: [] })),
+  );
+  const { auditExportUrl } = await import("../api");
+  expect(auditExportUrl()).toBe("/api/v1/audit/export");
+  expect(auditExportUrl("hosts")).toBe("/api/v1/audit/export?category=hosts");
 });

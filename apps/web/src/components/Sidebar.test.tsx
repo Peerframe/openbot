@@ -218,3 +218,47 @@ it("folds groups, brings hidden rows back when unread and mutes a channel", asyn
     await revealed.unmount();
   }
 });
+
+it("shows the latest message preview and time, with a running task taking precedence", async () => {
+  const now = new Date();
+  const today = new Date(now);
+  today.setHours(10, 24, 0, 0);
+  const view = await renderComponent(
+    <Sidebar
+      bots={bots}
+      channels={channels}
+      runs={[]}
+      ownerName="Owner"
+      onSelectChannel={vi.fn()}
+      onSelectBot={vi.fn()}
+      onCreateBot={vi.fn()}
+      onCreateChannel={vi.fn()}
+      activity={{
+        [`channel:${channels[0]?.id}`]: {
+          lastActivityAt: today.toISOString(),
+          latestMessage: {
+            id: "m",
+            authorType: "human",
+            preview: "下周一再过一遍需求",
+            createdAt: today.toISOString(),
+          },
+        },
+      }}
+    />,
+  );
+  try {
+    const row = view.container.querySelector(`.sb-row[data-kind="channel"]`);
+    expect(row?.querySelector(".sb-sub")?.textContent).toBe("你：下周一再过一遍需求");
+    expect(row?.querySelector(".sb-time")?.textContent).toBe("10:24");
+  } finally {
+    await view.unmount();
+  }
+});
+
+it("formats row times like the artboard", async () => {
+  const { sidebarTime } = await import("./Sidebar");
+  const now = new Date(2026, 8, 30, 12, 0);
+  expect(sidebarTime(new Date(2026, 8, 30, 9, 5).toISOString(), now)).toBe("09:05");
+  expect(sidebarTime(new Date(2026, 8, 29, 23, 0).toISOString(), now)).toBe("昨天");
+  expect(sidebarTime(new Date(2026, 8, 27, 8, 0).toISOString(), now)).toBe("9/27");
+});

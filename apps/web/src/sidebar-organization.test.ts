@@ -197,3 +197,24 @@ describe("mute and fold", () => {
     ).toMatchObject({ collapsed: [], muted: [] });
   });
 });
+
+describe("activity ordering (backlog C1)", () => {
+  it("keeps pinned rows first, then newest activity, then rows without activity", () => {
+    organization.sidebarOrganization.setPinned("bot:quiet", true);
+    const rows = [
+      { ...entry("channel:old", "Old"), activityAt: "2026-09-28T01:00:00.000Z" },
+      entry("bot:none", "None"),
+      { ...entry("channel:new", "New"), activityAt: "2026-09-30T01:00:00.000Z" },
+      entry("bot:quiet", "Quiet"),
+    ];
+    const [section] = organization.arrangeSidebar(rows, stored(), "");
+    expect(section?.entries.map((row) => row.key)).toEqual([
+      "bot:quiet",
+      "channel:new",
+      "channel:old",
+      "bot:none",
+    ]);
+    const search = organization.searchSidebar(rows, stored(), "o");
+    expect(search.conversations.map((row) => row.key)).toEqual(["channel:old", "bot:none"]);
+  });
+});

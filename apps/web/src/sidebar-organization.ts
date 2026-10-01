@@ -271,6 +271,24 @@ export interface SidebarEntry<T> {
   item: T;
   name: string;
   searchText: string;
+  /** Server-reported latest activity (ISO time); orders unpinned rows newest first. */
+  activityAt?: string | undefined;
+}
+
+/** Pinned rows first in pin order, then the most recent activity, then the original order. */
+function sidebarOrder<T>(pinnedRank: ReadonlyMap<SidebarItemKey, number>) {
+  return (left: SidebarEntry<T>, right: SidebarEntry<T>) => {
+    const a = pinnedRank.get(left.key);
+    const b = pinnedRank.get(right.key);
+    if (a !== undefined || b !== undefined)
+      return a === undefined ? 1 : b === undefined ? -1 : a - b;
+    const at = (entry: SidebarEntry<T>) => (entry.activityAt ? Date.parse(entry.activityAt) : NaN);
+    const x = at(left);
+    const y = at(right);
+    if (Number.isNaN(x) || Number.isNaN(y))
+      return Number.isNaN(x) === Number.isNaN(y) ? 0 : Number.isNaN(x) ? 1 : -1;
+    return y - x;
+  };
 }
 
 export interface SidebarSection<T> {
@@ -318,14 +336,7 @@ export function arrangeSidebar<T>(
       : !hidden.has(entry.key) || revealed.has(entry.key);
     if (visible) section.entries.push(entry);
   }
-  for (const section of [...sections, ungrouped]) {
-    section.entries.sort((left, right) => {
-      const a = pinnedRank.get(left.key);
-      const b = pinnedRank.get(right.key);
-      if (a === undefined || b === undefined) return a === b ? 0 : a === undefined ? 1 : -1;
-      return a - b;
-    });
-  }
+  for (const section of [...sections, ungrouped]) section.entries.sort(sidebarOrder(pinnedRank));
   return [...sections, ungrouped].filter(
     (section) =>
       section.entries.length > 0 ||
@@ -341,7 +352,7 @@ export interface SidebarSearchResult<T> {
   conversations: SidebarEntry<T>[];
 }
 
-/** The design's search: a 分组 section and a 对话 section, pinned first within each. */
+/** The design's search: a 分组 section and a 对话 section, ordered like the sidebar. */
 export function searchSidebar<T>(
   entries: SidebarEntry<T>[],
   organization: Readonly<SidebarOrganization>,
@@ -350,9 +361,7 @@ export function searchSidebar<T>(
   const term = query.trim().toLocaleLowerCase();
   if (!term) return { groups: [], conversations: [] };
   const pinnedRank = new Map(organization.pinned.map((key, index) => [key, index]));
-  const byPin = (left: SidebarEntry<T>, right: SidebarEntry<T>) =>
-    (pinnedRank.get(left.key) ?? Number.MAX_SAFE_INTEGER) -
-    (pinnedRank.get(right.key) ?? Number.MAX_SAFE_INTEGER);
+  const byPin = sidebarOrder<T>(pinnedRank);
   const groups = organization.groups
     .filter((group) => group.name.toLocaleLowerCase().includes(term))
     .map((group) => ({

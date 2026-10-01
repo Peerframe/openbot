@@ -840,3 +840,9 @@
   color: var(--ob-text-secondary);
   font-size: 13px;
 }
+.settings-dialog-action a.ob-pill {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ob-text);
+  text-decoration: none;
+}

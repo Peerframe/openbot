@@ -1,7 +1,15 @@
 import type { WorkspaceSnapshot } from "@openbot/domain";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { type AuditEvent, getWorkspace, listAuditEvents } from "../api";
+import {
+  type AuditCategory,
+  type AuditEvent,
+  auditCategories,
+  auditExportUrl,
+  getWorkspace,
+  listAuditEvents,
+} from "../api";
 import { AutomationsScreen } from "./AutomationsScreen";
+import { SettingsHeaderAction } from "./SettingsHeaderAction";
 
 export function SettingsGroup({
   title,
@@ -133,30 +141,51 @@ function auditSubject(event: AuditEvent) {
 }
 
 /** Owner audit trail from GET /api/v1/audit; the Server allowlists every projected field. */
+/** Labels for the Server's audit categories, in the artboard's chip order. */
+const auditCategoryLabels: Record<AuditCategory, string> = {
+  approvals: "审批",
+  settings: "设置变更",
+  authentication: "登录",
+  hosts: "主机",
+  channels: "频道",
+  bots: "Bot",
+  runs: "任务",
+  plugins: "插件",
+  other: "其他",
+};
+
+/**
+ * Owner audit trail from GET /api/v1/audit; the Server allowlists every projected field and
+ * filters by category (backlog C3). CSV export downloads the same filter, up to 1000 events.
+ */
 export function AuditLogSettings() {
   const [events, setEvents] = useState<AuditEvent[]>();
   const [nextBefore, setNextBefore] = useState<string>();
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [category, setCategory] = useState<string>();
+  const [category, setCategory] = useState<AuditCategory>();
 
-  const load = useCallback(async (before?: string, signal?: AbortSignal) => {
-    setLoading(true);
-    setError(false);
-    try {
-      const page = await listAuditEvents({
-        ...(before ? { before } : {}),
-        ...(signal ? { signal } : {}),
-      });
-      if (signal?.aborted) return;
-      setEvents((current) => (before ? [...(current ?? []), ...page.events] : page.events));
-      setNextBefore(page.nextBefore);
-    } catch {
-      if (!signal?.aborted) setError(true);
-    } finally {
-      if (!signal?.aborted) setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (before?: string, signal?: AbortSignal) => {
+      setLoading(true);
+      setError(false);
+      try {
+        const page = await listAuditEvents({
+          ...(before ? { before } : {}),
+          ...(category ? { category } : {}),
+          ...(signal ? { signal } : {}),
+        });
+        if (signal?.aborted) return;
+        setEvents((current) => (before ? [...(current ?? []), ...page.events] : page.events));
+        setNextBefore(page.nextBefore);
+      } catch {
+        if (!signal?.aborted) setError(true);
+      } finally {
+        if (!signal?.aborted) setLoading(false);
+      }
+    },
+    [category],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -164,79 +193,89 @@ export function AuditLogSettings() {
     return () => controller.abort();
   }, [load]);
 
-  if (events === undefined)
-    return error ? (
-      <div className="settings-load-notice" role="alert">
-        <p>无法读取审计记录，请重试。</p>
-        <button type="button" className="secondary-button" onClick={() => void load()}>
-          重试
+  const filters = (
+    <fieldset className="settings-filters" aria-label="按类别筛选">
+      {([undefined, ...auditCategories.filter((item) => item !== "other")] as const).map((item) => (
+        <button
+          type="button"
+          key={item ?? "all"}
+          className="ob-filter"
+          aria-pressed={category === item}
+          onClick={() => {
+            setCategory(item);
+            setEvents(undefined);
+          }}
+        >
+          {item ? auditCategoryLabels[item] : "全部"}
         </button>
-      </div>
-    ) : (
-      <p className="settings-load-notice" role="status">
-        正在读取审计记录…
-      </p>
+      ))}
+    </fieldset>
+  );
+  const exportAction = (
+    <SettingsHeaderAction>
+      <a className="ob-pill" href={auditExportUrl(category)} download="openbot-audit.csv">
+        导出 CSV
+      </a>
+    </SettingsHeaderAction>
+  );
+
+  if (events === undefined)
+    return (
+      <>
+        {exportAction}
+        {filters}
+        {error ? (
+          <div className="settings-load-notice" role="alert">
+            <p>无法读取审计记录，请重试。</p>
+            <button type="button" className="secondary-button" onClick={() => void load()}>
+              重试
+            </button>
+          </div>
+        ) : (
+          <p className="settings-load-notice" role="status">
+            正在读取审计记录…
+          </p>
+        )}
+      </>
     );
 
-  const present = auditCategories.filter((category) =>
-    events.some((event) => category.match(event.type)),
-  );
-  const shown = category
-    ? events.filter((event) =>
-        auditCategories.find((item) => item.id === category)?.match(event.type),
-      )
-    : events;
-  const days = groupByDay(shown);
-
+  const days = groupByDay(events);
   return (
     <>
-      {present.length > 1 ? (
-        <fieldset className="settings-filters" aria-label="按类别筛选">
-          <button
-            type="button"
-            className="ob-filter"
-            aria-pressed={category === undefined}
-            onClick={() => setCategory(undefined)}
-          >
-            全部
-          </button>
-          {present.map((item) => (
-            <button
-              type="button"
-              key={item.id}
-              className="ob-filter"
-              aria-pressed={category === item.id}
-              onClick={() => setCategory(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </fieldset>
-      ) : null}
+      {exportAction}
+      {filters}
       {events.length === 0 ? (
         <SettingsGroup title="最近的操作">
-          <SettingRow title="暂无记录" description="创建、重命名、删除和任务处理都会记录在这里。" />
+          <SettingRow
+            title="暂无记录"
+            description={
+              category
+                ? "这个类别还没有记录。"
+                : "登录、设置变更、审批、主机和任务处理都会记录在这里。"
+            }
+          />
         </SettingsGroup>
       ) : (
         days.map((day) => (
           <section className="settings-group" key={day.label}>
             <h3>{day.label}</h3>
             <ol className="settings-group-rows audit-list">
-              {day.events.map((event) => {
-                const kind = auditCategories.find((item) => item.match(event.type));
-                return (
-                  <li key={event.id}>
-                    <time dateTime={event.createdAt}>
-                      {clockFormat.format(new Date(event.createdAt))}
-                    </time>
-                    <div>
-                      <strong>{auditTitle(event)}</strong>
-                      {auditSubject(event) ? <p>{auditSubject(event)}</p> : null}
-                    </div>
-                    {kind ? <span className="ob-tag">{kind.label}</span> : <span />}
-                  </li>
-                );
-              })}
+              {day.events.map((event) => (
+                <li key={event.id}>
+                  <time dateTime={event.createdAt}>
+                    {clockFormat.format(new Date(event.createdAt))}
+                  </time>
+                  <div>
+                    <strong>{auditTitle(event)}</strong>
+                    {auditSubject(event) ? <p>{auditSubject(event)}</p> : null}
+                  </div>
+                  {event.category && event.category !== "other" ? (
+                    <span className="ob-tag">{auditCategoryLabels[event.category]}</span>
+                  ) : (
+                    <span />
+                  )}
+                </li>
+              ))}
             </ol>
           </section>
         ))
@@ -257,31 +296,11 @@ export function AuditLogSettings() {
         </button>
       ) : null}
       <p className="settings-footnote">
-        只包含名称、对象和时间，不含消息正文。筛选只作用于已读取的记录。
+        记录只能查看，不能修改或删除；只包含名称、对象和时间，不含消息正文。
       </p>
     </>
   );
 }
-
-/**
- * Client-side categories over loaded events (backlog C3 adds Server-side filters and export).
- * A category chip appears only when a loaded event belongs to it.
- */
-const auditCategories: ReadonlyArray<{ id: string; label: string; match(type: string): boolean }> =
-  [
-    { id: "approval", label: "审批", match: (type) => type.includes("APPROVAL") },
-    { id: "settings", label: "设置变更", match: (type) => type.startsWith("SETTINGS_") },
-    { id: "login", label: "登录", match: (type) => /LOGIN|SESSION/.test(type) },
-    { id: "host", label: "主机", match: (type) => type.startsWith("NODE_") },
-    { id: "channel", label: "频道", match: (type) => type.startsWith("CHANNEL_") },
-    { id: "bot", label: "Bot", match: (type) => /^(BOT_|EMPLOYEE_)/.test(type) },
-    { id: "task", label: "任务", match: (type) => /^(RUN_|TASK_)/.test(type) },
-    {
-      id: "knowledge",
-      label: "知识与技能",
-      match: (type) => /^(KNOWLEDGE_|SKILL_)/.test(type),
-    },
-  ];
 
 const clockFormat = new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit" });
 

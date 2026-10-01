@@ -449,3 +449,8 @@
     transition: none;
   }
 }
+.sb .sb-time {
+  color: var(--ob-text-tertiary);
+  font-size: var(--ob-font-meta);
+  white-space: nowrap;
+}

@@ -1,4 +1,4 @@
-import type { Bot, Channel, Run } from "@openbot/domain";
+import type { Bot, Channel, ChannelMessagePreview, Run } from "@openbot/domain";
 import {
   type KeyboardEvent,
   type MouseEvent,
@@ -34,6 +34,11 @@ interface SidebarProps {
   onWork?: (() => void) | undefined;
   onAutomations?: (() => void) | undefined;
   onSkills?: (() => void) | undefined;
+  /**
+   * Latest Server-reported activity per row (backlog C1); a Bot's row uses its direct
+   * conversation. Rows without it fall back to the description or role.
+   */
+  activity?: Readonly<Record<SidebarItemKey, SidebarActivity>> | undefined;
   bots: Bot[];
   channels: Channel[];
   runs: Run[];
@@ -65,6 +70,7 @@ interface SidebarProps {
 export function Sidebar({
   onWork,
   onSkills,
+  activity,
   bots,
   channels,
   runs,
@@ -129,12 +135,14 @@ export function Sidebar({
       item: { kind: "channel" as const, channel },
       name: channel.name,
       searchText: `${channel.name} ${channel.description}`,
+      activityAt: activity?.[`channel:${channel.id}`]?.lastActivityAt,
     })),
     ...bots.map((bot) => ({
       key: `bot:${bot.id}` as const,
       item: { kind: "bot" as const, bot },
       name: bot.name,
       searchText: `${bot.name} ${bot.role}`,
+      activityAt: activity?.[`bot:${bot.id}`]?.lastActivityAt,
     })),
   ];
   const pinned = new Set(organization.pinned);
@@ -207,12 +215,18 @@ export function Sidebar({
         ? selectedChannelId === item.channel.id
         : selectedBotId === item.bot.id;
     const run = item.kind === "bot" ? activeRunByBot.get(item.bot.id) : undefined;
-    const sub =
-      item.kind === "channel"
-        ? item.channel.description || `${item.channel.botIds.length} 名 Bot`
-        : run
-          ? `${runStatusLabel(run.status)} · ${run.title}`
-          : "待命";
+    const latest = activity?.[key];
+    const preview = latest?.latestMessage
+      ? `${latest.latestMessage.authorType === "human" ? "你：" : ""}${latest.latestMessage.preview}`
+      : undefined;
+    // A running task outranks the preview: it is what the Bot is doing now.
+    const sub = run
+      ? `${runStatusLabel(run.status)} · ${run.title}`
+      : (preview ??
+        (item.kind === "channel"
+          ? item.channel.description || `${item.channel.botIds.length} 名 Bot`
+          : "待命"));
+    const time = latest?.latestMessage?.createdAt ?? latest?.lastActivityAt;
     const count = unreadCounts?.[key];
     return (
       <button
@@ -255,6 +269,11 @@ export function Sidebar({
           <small className={`sb-sub${run ? " is-active" : ""}`}>{sub}</small>
         </span>
         <span className="sb-meta">
+          {time ? (
+            <time className="sb-time" dateTime={time}>
+              {sidebarTime(time)}
+            </time>
+          ) : null}
           {pinned.has(key) ? (
             <span className="sb-pin" role="img" aria-label="已置顶">
               <PinGlyph />
@@ -850,3 +869,20 @@ const LogoutGlyph = () => (
     <path d="M15 21h4a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4M8 17l-5-5 5-5M3 12h12" />
   </Glyph>
 );
+
+export interface SidebarActivity {
+  lastActivityAt?: string | undefined;
+  latestMessage?: ChannelMessagePreview | undefined;
+}
+
+/** 「10:24」 today, 「昨天」, then 「9/28」, as in the Sidebar artboard. */
+export function sidebarTime(value: string, now = new Date()): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  if (date.toDateString() === now.toDateString())
+    return date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false });
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) return "昨天";
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
