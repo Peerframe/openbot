@@ -683,6 +683,16 @@ export function AuthenticatedWorkspace({
       controller.abort();
     };
   }, [workspace, selectedChannelId, attention]);
+  // Desktop Dock badge (backlog C5): pending approvals plus unread; the main process applies the
+  // Owner's 程序坞角标 preference and ignores this in the plain Web entry.
+  const badgeCount =
+    (workspace?.approvals.filter((approval) => approval.status === "pending").length ?? 0) +
+    Object.values(unreadByChannel).reduce((total, count) => total + count, 0);
+  useEffect(() => {
+    void getOpenBotDesktopBridge()
+      ?.setUnreadBadge?.(badgeCount)
+      .catch(() => undefined);
+  }, [badgeCount]);
   // New pending approvals are compared with the previous snapshot; the first one is a baseline.
   // biome-ignore lint/correctness/useExhaustiveDependencies: announce reads only refs and navigation.
   useEffect(() => {

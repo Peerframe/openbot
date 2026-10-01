@@ -39,12 +39,12 @@ data (hidden, disabled or read-only) and never fakes it.
 | ID | Needed by | Contract to add | UI until ready |
 | --- | --- | --- | --- |
 | C1 | Sidebar, Search | Per-conversation latest activity: last message preview (bounded, owner-visible), its time, and ordering by recent activity | Integrated: preview, time and recent-activity order |
-| C2 | 账户与安全 | Change the Owner password; list signed-in sessions and revoke other sessions (audited) | Rows shown read-only; actions hidden |
+| C2 | 账户与安全 | Change the Owner password; list signed-in sessions and revoke other sessions (audited) | Integrated: password change and signing out other devices |
 | C3 | 审计记录 | Record login, settings-change and host events; filter by category; CSV export | Integrated: Server categories and CSV export |
-| C4 | 审批与权限 | Server approval policy per action class and per-Bot/target exceptions (security boundary: ADR and fail-closed tests first; delete/install/permission changes can never be excepted) | Read-only policy list (current behaviour) |
-| C5 | 通用, 关于, Menu | Desktop main process: launch at login, keep running in background with a menu-bar icon, global shortcut, Dock badge count, update check/download/install | Rows hidden on Desktop until the bridge exists; Web shows none |
+| C4 | 审批与权限 | Server approval policy per action class and per-Bot/target exceptions (security boundary: ADR and fail-closed tests first; delete/install/permission changes can never be excepted) | Integrated: two policy levels, exact exceptions, protected categories |
+| C5 | 通用, 关于, Menu | Desktop main process: launch at login, keep running in background with a menu-bar icon, global shortcut, Dock badge count, update check/download/install | Partly integrated: launch at login, background, global shortcut, Dock badge; signed updates deferred |
 | C6 | 员工浏览器 | Browser runtime status, restart, clear browsing data, download/screenshot retention settings | Status from existing sessions only; actions hidden |
-| C7 | 通用 | Owner time zone and default model for new Bots as Server settings | Hidden |
+| C7 | 通用 | Owner time zone and default model for new Bots as Server settings | Integrated: time zone and the default model preselected for new Bots |
 | C8 | 插件 page | Curated plugin catalog source (reviewed entries only) | "我的插件" only |
 | C9 | Profile rail | Change a Bot's appearance after creation (owner-only, audited) | 编辑头像 hidden |
 

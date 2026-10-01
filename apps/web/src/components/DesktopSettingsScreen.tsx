@@ -22,12 +22,18 @@ import { CloseIcon, SearchIcon } from "./Icons";
 import "./SettingsDialog.css";
 import { OpenBotMark } from "./OpenBotMark";
 import { PluginManager } from "./PluginManagerPanel";
+import { SettingsAccount } from "./SettingsAccount";
+import { SettingsApprovals } from "./SettingsApprovals";
+import {
+  DesktopStartupSettings,
+  DockBadgeSetting,
+  OwnerPreferenceSettings,
+} from "./SettingsGeneral";
 import { SettingsActionSlot } from "./SettingsHeaderAction";
 import { SettingsHosts } from "./SettingsHosts";
 import { SettingsMemory } from "./SettingsMemory";
 import { SettingsModelServices } from "./SettingsModelServices";
 import {
-  ApprovalPolicySettings,
   AuditLogSettings,
   SettingRow,
   SettingsAutomations,
@@ -76,7 +82,7 @@ const sections: Record<Section, { label: string; description: string; keywords: 
   general: {
     label: "通用",
     description: "让 OpenBot 按照你的习惯工作。",
-    keywords: "外观 字号 透明 密度 聊天 快捷键 动效 时间 侧栏 导航 恢复 默认",
+    keywords: "外观 字号 透明 密度 聊天 快捷键 动效 时间 侧栏 导航 恢复 默认 时区 模型 启动 后台",
   },
   notify: {
     label: "通知",
@@ -125,7 +131,7 @@ const sections: Record<Section, { label: string; description: string; keywords: 
   },
   approvals: {
     label: "审批与权限",
-    description: "哪些操作需要你批准。规则由服务端执行，这里只能查看。",
+    description: "Bot 做哪些事之前要先问你。规则由 Server 执行，过期的请求不会执行。",
     keywords: "审批 批准 权限 插件 浏览器 确认 授权",
   },
   audit: {
@@ -213,7 +219,6 @@ export function DesktopSettingsScreen({
   }, [section]);
   const { values, saved } = useWorkspacePreferences();
   const [resetNotice, setResetNotice] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
   const runtime = getOpenBotDesktopBridge()?.getRuntimeInfo?.();
   const selected = sections[section];
   const term = search.trim().toLocaleLowerCase();
@@ -401,6 +406,8 @@ export function DesktopSettingsScreen({
                       />
                     </SettingRow>
                   </SettingsGroup>
+                  <DesktopStartupSettings />
+                  <OwnerPreferenceSettings />
                   <SettingsGroup title="聊天" description="让输入与阅读符合你的习惯。">
                     <SettingRow title="发送消息" description="Shift + Enter 始终换行。">
                       <select
@@ -452,7 +459,7 @@ export function DesktopSettingsScreen({
                     )}
                   </SettingsGroup>
                   <p className="settings-footnote">
-                    偏好自动保存在这台设备。模型与服务配置由你的服务电脑管理。
+                    外观和聊天偏好保存在这台设备；时区、默认模型和模型服务保存在你的 OpenBot。
                   </p>
                 </>
               )}
@@ -478,8 +485,19 @@ export function DesktopSettingsScreen({
                   {(workspace) => <SettingsTransfer bots={workspace.bots} />}
                 </SettingsWorkspaceGate>
               )}
-              {section === "notify" && <NotificationSettings />}
-              {section === "approvals" && <ApprovalPolicySettings />}
+              {section === "notify" && (
+                <>
+                  <NotificationSettings />
+                  <DockBadgeSetting />
+                </>
+              )}
+              {section === "approvals" && (
+                <SettingsWorkspaceGate label="审批规则">
+                  {(workspace) => (
+                    <SettingsApprovals bots={workspace.bots} channels={workspace.channels} />
+                  )}
+                </SettingsWorkspaceGate>
+              )}
               {section === "audit" && <AuditLogSettings />}
               {section === "hosts" && (
                 <SettingsHosts>
@@ -528,55 +546,11 @@ export function DesktopSettingsScreen({
                 </SettingsHosts>
               )}
               {section === "account" && (
-                <>
-                  <SettingsGroup title="账户">
-                    <SettingRow
-                      title={ownerName ?? "我"}
-                      description="本地 Owner · 管理这台 OpenBot 的账户"
-                    >
-                      {onLogout ? (
-                        <button
-                          className="secondary-button"
-                          type="button"
-                          disabled={loggingOut}
-                          onClick={async () => {
-                            setLoggingOut(true);
-                            try {
-                              await onLogout();
-                            } finally {
-                              setLoggingOut(false);
-                            }
-                          }}
-                        >
-                          {loggingOut ? "正在退出…" : "退出登录"}
-                        </button>
-                      ) : null}
-                    </SettingRow>
-                  </SettingsGroup>
-                  <SettingsGroup title="安全">
-                    <SettingRow
-                      title="审计记录"
-                      description="频道、Bot 和任务的关键操作都有记录，只能查看。"
-                    >
-                      <button
-                        className="secondary-button"
-                        type="button"
-                        onClick={() => setSection("audit")}
-                      >
-                        查看
-                      </button>
-                    </SettingRow>
-                  </SettingsGroup>
-                  <SettingsGroup title="Bot 的权限边界">
-                    <SettingRow
-                      title="敏感操作先问我"
-                      description="会改动外部系统的操作，按「审批与权限」里的规则先请你批准。"
-                    >
-                      <span className="settings-tag">始终开启</span>
-                    </SettingRow>
-                  </SettingsGroup>
-                  <p className="settings-footnote">凭证只发送给你自己的 OpenBot。</p>
-                </>
+                <SettingsAccount
+                  ownerName={ownerName}
+                  onLogout={onLogout}
+                  onShowAudit={() => setSection("audit")}
+                />
               )}
               {section === "about" && (
                 <>

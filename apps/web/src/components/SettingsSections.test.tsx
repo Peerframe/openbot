@@ -13,7 +13,7 @@ it("presents the approval policy as read-only facts without controls", async () 
   const view = await renderComponent(<ApprovalPolicySettings />);
   try {
     expect(view.container.textContent).toContain("每次确认");
-    expect(view.container.textContent).toContain("仅供查看");
+    expect(view.container.textContent).toContain("以上规则由 OpenBot 服务执行");
     expect(view.container.querySelectorAll("input, select, button")).toHaveLength(0);
   } finally {
     await view.unmount();

@@ -47,6 +47,17 @@ import type {
   WorkspaceSnapshot,
 } from "@openbot/domain";
 import { reactionEmojis } from "@openbot/domain";
+import {
+  type ApprovalSettings,
+  type ApprovalSettingsInput,
+  approvalSettingsSchema,
+  type OwnerPreferences,
+  type OwnerPreferencesInput,
+  type OwnerSessionDevice,
+  ownerPreferencesSchema,
+  ownerSessionRevocationResponseSchema,
+  ownerSessionsResponseSchema,
+} from "@openbot/protocol";
 import { openEventStream, type RealtimeConnectionState } from "./event-stream";
 
 export type { RealtimeConnectionState };
@@ -111,6 +122,76 @@ export async function login(
 
 export async function logout(): Promise<void> {
   await request<void>("/api/v1/auth/logout", { method: "POST" });
+}
+
+/**
+ * Changes the Owner password (backlog C2). Uses its own fetch: a 401 here means the current
+ * password is wrong and must not sign the Owner out. On success the Server clears this
+ * session's cookie, so the caller returns to the login screen.
+ */
+export async function changeOwnerPassword(currentPassword: string, newPassword: string) {
+  const response = await fetch("/api/v1/auth/password", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as ErrorPayload;
+    throw new ApiError(
+      payload.error ?? `OpenBot Server returned ${response.status}.`,
+      response.status,
+    );
+  }
+}
+
+export async function listOwnerSessions(signal?: AbortSignal): Promise<OwnerSessionDevice[]> {
+  const result = await request<unknown>("/api/v1/auth/sessions", signal ? { signal } : undefined);
+  return ownerSessionsResponseSchema.parse(result).sessions;
+}
+
+/** Signs out every other device; returns how many sessions the Server revoked. */
+export async function revokeOtherOwnerSessions(): Promise<number> {
+  const result = await request<unknown>("/api/v1/auth/sessions/revoke-others", { method: "POST" });
+  return ownerSessionRevocationResponseSchema.parse(result).revoked;
+}
+
+export async function getApprovalSettings(signal?: AbortSignal): Promise<ApprovalSettings> {
+  const result = await request<unknown>(
+    "/api/v1/settings/approvals",
+    signal ? { signal } : undefined,
+  );
+  return approvalSettingsSchema.parse(result);
+}
+
+export async function saveApprovalSettings(
+  input: ApprovalSettingsInput,
+): Promise<ApprovalSettings> {
+  const result = await request<unknown>("/api/v1/settings/approvals", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return approvalSettingsSchema.parse(result);
+}
+
+export async function getOwnerPreferences(signal?: AbortSignal): Promise<OwnerPreferences> {
+  const result = await request<unknown>(
+    "/api/v1/settings/general",
+    signal ? { signal } : undefined,
+  );
+  return ownerPreferencesSchema.parse(result);
+}
+
+export async function saveOwnerPreferences(
+  input: OwnerPreferencesInput,
+): Promise<OwnerPreferences> {
+  const result = await request<unknown>("/api/v1/settings/general", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return ownerPreferencesSchema.parse(result);
 }
 
 export async function cancelNativeRun(runId: string): Promise<Run> {

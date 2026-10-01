@@ -183,7 +183,8 @@ describe("Desktop settings interactions", () => {
       <Settings plan={hostPlan} material={{ status: "enabled" }} {...callbacks()} />,
     );
     try {
-      expect(fetchMock).not.toHaveBeenCalled();
+      // 通用 reads only the Owner preferences; the model section loads on demand.
+      expect(fetchMock.mock.calls.map(([url]) => url)).not.toContain("/api/v1/settings/model");
       await interact(() => button(rendered.container, "模型服务").click());
       await interact(() =>
         Array.from(
@@ -303,7 +304,7 @@ it("retries a failed automation workspace load and keeps its manager inside sett
 
 describe("Web settings entry", () => {
   it("offers sectioned settings without Desktop-only connection or material rows (hosts via the Server)", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ events: [] }))));
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ events: [] })));
     const rendered = await renderComponent(<Settings onBack={vi.fn()} />);
     try {
       const navigation = rendered.container.querySelector('nav[aria-label="设置分区"]');
@@ -409,7 +410,14 @@ describe("Settings dialog", () => {
 
 describe("Account and about sections", () => {
   it("shows the Owner, signs out, links to the audit log and lists public resources", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ events: [] })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url === "/api/v1/auth/sessions"
+          ? Response.json({ sessions: [] })
+          : Response.json({ events: [] }),
+      ),
+    );
     const onLogout = vi.fn(async () => undefined);
     const rendered = await renderComponent(
       <Settings onBack={vi.fn()} initialSection="account" ownerName="雨贺" onLogout={onLogout} />,
@@ -419,8 +427,6 @@ describe("Account and about sections", () => {
         "账户与安全",
       );
       expect(rendered.container.textContent).toContain("雨贺");
-      // Password and session actions stay hidden until the Server supports them (backlog C2).
-      expect(rendered.container.textContent).not.toContain("修改密码");
       await interact(() => button(rendered.container, "退出登录").click());
       expect(onLogout).toHaveBeenCalledOnce();
       await interact(() => button(rendered.container, "查看").click());
@@ -440,6 +446,78 @@ describe("Account and about sections", () => {
       ]);
       expect(rendered.container.textContent).toContain("Hermes Agent");
     } finally {
+      await rendered.unmount();
+    }
+  });
+
+  it("changes the password without signing out on a wrong current password, and revokes other devices", async () => {
+    const unauthorized = vi.fn();
+    window.addEventListener("openbot:unauthorized", unauthorized);
+    let passwordStatus = 401;
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url === "/api/v1/auth/sessions")
+        return Response.json({
+          sessions: [
+            {
+              id: "s1",
+              userAgent: "this",
+              current: true,
+              createdAt: "2026-10-01T00:00:00.000Z",
+              expiresAt: "2026-10-02T00:00:00.000Z",
+            },
+            {
+              id: "s2",
+              userAgent: "other",
+              current: false,
+              createdAt: "2026-10-01T00:00:00.000Z",
+              expiresAt: "2026-10-02T00:00:00.000Z",
+            },
+          ],
+        });
+      if (url === "/api/v1/auth/sessions/revoke-others") return Response.json({ revoked: 1 });
+      if (url === "/api/v1/auth/password" && init?.method === "POST")
+        return passwordStatus === 200
+          ? Response.json({ changed: true, reauthenticationRequired: true })
+          : Response.json({ error: "Password is incorrect." }, { status: passwordStatus });
+      throw new Error(`Unexpected ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const rendered = await renderComponent(<Settings onBack={vi.fn()} initialSection="account" />);
+    try {
+      await interact(() => undefined);
+      expect(rendered.container.textContent).toContain("本机（当前）· 另外 1 台设备");
+      await interact(() => button(rendered.container, "退出其他设备").click());
+      expect(rendered.container.textContent).toContain("已退出 1 台其他设备。");
+
+      await interact(() => button(rendered.container, "修改密码").click());
+      const [current, next, confirm] = Array.from(
+        rendered.container.querySelectorAll<HTMLInputElement>(".settings-password-form input"),
+      );
+      if (!current || !next || !confirm) throw new Error("password fields missing");
+      await setInputValue(current, "test-current-value");
+      await setInputValue(next, "short");
+      await setInputValue(confirm, "short");
+      const submit = () =>
+        rendered.container
+          .querySelector(".settings-password-form")
+          ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      await interact(submit);
+      expect(rendered.container.querySelector('[role="alert"]')?.textContent).toBe(
+        "新密码至少 15 个字符。",
+      );
+      expect(fetchMock.mock.calls.some(([url]) => url === "/api/v1/auth/password")).toBe(false);
+      await setInputValue(next, "test-new-value-long-enough");
+      await setInputValue(confirm, "test-new-value-long-enough");
+      await interact(submit);
+      expect(rendered.container.querySelector('[role="alert"]')?.textContent).toBe(
+        "当前密码不正确。",
+      );
+      expect(unauthorized).not.toHaveBeenCalled();
+      passwordStatus = 200;
+      await interact(submit);
+      expect(unauthorized).toHaveBeenCalledOnce();
+    } finally {
+      window.removeEventListener("openbot:unauthorized", unauthorized);
       await rendered.unmount();
     }
   });
