@@ -1,0 +1,423 @@
+/*
+ * Shared sidebar from the design contract (docs/design/desktop-ui-2026-10/Sidebar.dc.html,
+ * Search.dc.html, Menu.dc.html). Only `sb-*` content lives here; the `.sidebar` container keeps
+ * its platform layout rules (macOS title-bar drag area and material) from the shell styles.
+ */
+.app-shell.desktop-workspace .sidebar.sb {
+  display: flex;
+  flex-direction: column;
+  padding-right: 10px;
+  padding-bottom: 12px;
+  padding-left: 10px;
+  color: var(--ob-text);
+}
+
+.sb .sb-top {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 4px 10px;
+}
+.sb .sb-create {
+  position: relative;
+}
+.sb .sb-create > summary {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--ob-text-secondary);
+  list-style: none;
+  cursor: pointer;
+}
+.sb .sb-create > summary::-webkit-details-marker {
+  display: none;
+}
+.sb .sb-account > summary {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid var(--ob-divider);
+  border-radius: 50%;
+  background: var(--ob-surface);
+  color: var(--ob-text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+.sb .sb-create > summary:hover,
+.sb .sb-create[open] > summary {
+  background: var(--ob-fill-hover);
+}
+.sb .sb-popover {
+  position: absolute;
+  z-index: 30;
+  top: 34px;
+  right: 0;
+  width: 180px;
+}
+
+.sb .sb-search {
+  margin: 0 4px 6px;
+}
+.sb .sb-search > svg {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+}
+.sb .sb-search input::-webkit-search-cancel-button {
+  display: none;
+}
+.sb .sb-clear {
+  display: grid;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #aeaeb2;
+  color: #fff;
+  cursor: pointer;
+}
+
+.sb .sb-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.sb .sb-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sb .sb-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 12px 6px;
+  color: var(--ob-text-tertiary);
+  font-size: 14px;
+}
+.sb .sb-count {
+  color: #aeaeb2;
+  font-size: var(--ob-font-meta);
+}
+.sb .sb-group-name,
+.sb .sb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.sb .sb-link {
+  color: var(--ob-active);
+  font-size: var(--ob-font-meta);
+}
+.sb .sb-fold {
+  display: inline-grid;
+  transform: rotate(90deg);
+  transition: transform 120ms ease-out;
+}
+.sb .sb-fold.is-collapsed {
+  transform: none;
+}
+
+/* Rows: 40px avatar, 15/13px text, time/unread column. */
+.sb .sb-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px;
+  border: 0;
+  border-radius: var(--ob-radius-row);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sb .sb-row:hover {
+  background: var(--ob-fill-hover);
+}
+.sb .sb-row.is-selected,
+.sb .sb-row.is-group-hit {
+  background: var(--ob-selected);
+}
+.sb .sb-row:focus-visible,
+.sb .sb-child:focus-visible {
+  outline: 2px solid var(--ob-active);
+  outline-offset: -2px;
+}
+.sb .sb-avatar {
+  display: grid;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  padding: 6px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--ob-selected);
+  color: var(--ob-text-secondary);
+}
+.sb .sb-avatar .robot-avatar {
+  width: 28px;
+  height: 28px;
+}
+.sb .sb-avatar.is-folder {
+  padding: 0;
+  color: #3a3a3c;
+}
+.sb .sb-child .robot-avatar,
+.sb .sb-child-hash {
+  width: 26px;
+  height: 26px;
+}
+.sidebar-context-menu .sidebar-context-icon .robot-avatar {
+  width: 18px;
+  height: 18px;
+}
+.sb .sb-avatar-pair {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+.sb .sb-avatar-pair > .robot-avatar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  width: 27px;
+  height: 27px;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--ob-selected);
+}
+.sb .sb-avatar-pair.is-pair > .robot-avatar + .robot-avatar {
+  inset: auto 0 0 auto;
+  border-radius: 50%;
+  background: #dadadd;
+  box-shadow: 0 0 0 2px var(--ob-sidebar);
+}
+.sb .sb-row.is-selected .sb-avatar-pair.is-pair > .robot-avatar + .robot-avatar {
+  box-shadow: 0 0 0 2px var(--ob-selected);
+}
+.sb .sb-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.sb .sb-title-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.sb .sb-name {
+  flex: 0 1 auto;
+  min-width: 3em;
+  overflow: hidden;
+  font-size: var(--ob-font-body);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sb .sb-title-line .ob-tag {
+  /* The tag gives way long before the name does. */
+  flex: 0 100 auto;
+  min-width: 0;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: #e7e7e9;
+  font-size: 11px;
+}
+.sb .sb-sub {
+  overflow: hidden;
+  color: #8a8a8e;
+  font-size: var(--ob-font-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sb .sb-sub.is-active {
+  color: var(--ob-active);
+}
+.sb .sb-row.is-unread .sb-name {
+  font-weight: 600;
+}
+.sb .sb-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: flex-start;
+  gap: 8px;
+  padding-top: 2px;
+  color: var(--ob-text-tertiary);
+  font-size: var(--ob-font-meta);
+}
+.sb .sb-unread {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ob-active);
+}
+.sb .sb-pin {
+  display: inline-grid;
+}
+.sb .sb-hidden {
+  font-size: 11px;
+}
+.sb mark {
+  padding: 0;
+  border-radius: 3px;
+  background: #fde68a;
+  color: inherit;
+}
+
+/* Search: group hits expand into indented conversation rows. */
+.sb .sb-child {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 10px 7px 34px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #3a3a3c;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.sb .sb-child:hover {
+  background: var(--ob-fill-hover);
+}
+.sb .sb-child-hash {
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--ob-selected);
+}
+.sb .sb-child > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sb .sb-hint,
+.sb .sb-empty {
+  margin: 0;
+  padding: 14px 12px 0;
+  color: #aeaeb2;
+  font-size: var(--ob-font-meta);
+  line-height: 1.5;
+}
+
+/* Footer: 「我」, the plugins pill (and, with C5, the update button). */
+.sb .sb-footer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 2px 2px;
+}
+.sb .sb-account > summary::-webkit-details-marker {
+  display: none;
+}
+.sb .sb-account[open] > summary {
+  background: var(--ob-divider);
+}
+.sb .sb-account-menu {
+  position: absolute;
+  z-index: 30;
+  bottom: 60px;
+  left: 2px;
+  width: 276px;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 14%);
+}
+.sb .sb-account-menu .ob-menu-item {
+  text-decoration: none;
+}
+.sb .sb-account-menu .ob-menu-item > svg {
+  flex-shrink: 0;
+}
+.sb .sb-grow,
+.sidebar-context-menu .sidebar-context-grow {
+  flex: 1;
+  min-width: 0;
+}
+.sb .sb-plugins {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+  height: 44px;
+  border: 1px solid var(--ob-divider);
+  border-radius: 22px;
+  background: var(--ob-surface);
+  color: var(--ob-text);
+  font: inherit;
+  font-size: var(--ob-font-body);
+  font-weight: 600;
+  cursor: pointer;
+}
+.sb .sb-plugins:hover {
+  background: var(--ob-fill-hover);
+}
+.sb :is(.sb-account > summary, .sb-plugins, .sb-create > summary):focus-visible {
+  outline: 2px solid var(--ob-active);
+  outline-offset: 2px;
+}
+
+/* Context menus (ContextMenu artboard). */
+.sidebar-context-menu {
+  position: fixed;
+  z-index: 60;
+  width: 200px;
+}
+.sidebar-context-menu .sidebar-context-icon {
+  display: inline-grid;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+}
+.sidebar-context-menu .sidebar-context-note {
+  margin: 4px 10px 6px;
+  color: var(--ob-text-tertiary);
+  font-size: var(--ob-font-meta);
+  line-height: 1.45;
+}
+.sidebar-context-menu .sidebar-context-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px;
+}
+.sidebar-context-menu .sidebar-context-form .form-error {
+  margin: 0;
+  font-size: var(--ob-font-meta);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb .sb-fold {
+    transition: none;
+  }
+}

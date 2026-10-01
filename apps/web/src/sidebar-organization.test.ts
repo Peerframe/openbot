@@ -119,6 +119,8 @@ describe("arrangeSidebar", () => {
       unread: [] as const,
       groups: [{ id: "g1", name: "市场团队" }],
       membership: { "bot:a": "g1" } as Record<`bot:${string}`, string>,
+      collapsed: [] as string[],
+      muted: [] as const,
     };
   }
 
@@ -140,5 +142,58 @@ describe("arrangeSidebar", () => {
       "channel:c",
     ]);
     expect(organization.arrangeSidebar(entries, arrangement, "不存在")).toEqual([]);
+  });
+
+  it("keeps a folded group's heading, and hidden rows with activity reappear", () => {
+    const folded = { ...arrangement, collapsed: ["g1"] };
+    const sections = organization.arrangeSidebar(entries, folded, "", new Set(["channel:c"]));
+    expect(sections[0]?.collapsed).toBe(true);
+    expect(sections[1]?.entries.map((item) => item.key)).toContain("channel:c");
+    // Search ignores folding.
+    expect(organization.arrangeSidebar(entries, folded, "研究")[0]?.collapsed).toBe(false);
+  });
+
+  it("splits search into matching groups with all members and matching conversations", () => {
+    const result = organization.searchSidebar(entries, arrangement, "市场");
+    expect(
+      result.groups.map(({ group, entries: members }) => [group.name, members.length]),
+    ).toEqual([["市场团队", 1]]);
+    // Hidden conversations are still found.
+    expect(result.conversations.map((item) => item.key)).toEqual(["channel:c"]);
+    expect(organization.searchSidebar(entries, arrangement, "  ")).toEqual({
+      groups: [],
+      conversations: [],
+    });
+  });
+});
+
+describe("highlightMatch", () => {
+  it("marks the first case-insensitive hit only", () => {
+    expect(organization.highlightMatch("Weekly Review", "review")).toEqual({
+      before: "Weekly ",
+      hit: "Review",
+      after: "",
+    });
+    expect(organization.highlightMatch("市场周报", "发布")).toEqual({
+      before: "市场周报",
+      hit: "",
+      after: "",
+    });
+  });
+});
+
+describe("mute and fold", () => {
+  it("stores only known groups as folded and forgets muted keys with the item", () => {
+    organization.sidebarOrganization.moveToNewGroup("bot:a", "市场团队");
+    const group = stored().groups[0];
+    organization.sidebarOrganization.setCollapsed(group?.id ?? "", true);
+    organization.sidebarOrganization.setMuted("channel:c", true);
+    expect(stored()).toMatchObject({ collapsed: [group?.id], muted: ["channel:c"] });
+    organization.sidebarOrganization.forget("channel:c");
+    organization.sidebarOrganization.dissolveGroup(group?.id ?? "");
+    expect(stored()).toMatchObject({ collapsed: [], muted: [] });
+    expect(
+      organization.parseOrganization(JSON.stringify({ collapsed: ["unknown"], muted: ["x"] })),
+    ).toMatchObject({ collapsed: [], muted: [] });
   });
 });

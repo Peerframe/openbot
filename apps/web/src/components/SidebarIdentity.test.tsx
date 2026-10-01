@@ -70,8 +70,8 @@ it("renames through the Server and shows its conflict message in place", async (
     .mockResolvedValueOnce(undefined);
   const view = await renderSidebar({ onRenameItem: rename });
   try {
-    await openMenu(view.container, ".channel-list-row");
-    await interact(() => menuItem(view.container, "重命名…")?.click());
+    await openMenu(view.container, '.sb-row[data-kind="channel"]');
+    await interact(() => menuItem(view.container, "重命名频道")?.click());
     const input = view.container.querySelector<HTMLInputElement>(".sidebar-context-form input");
     if (!input) throw Error("Rename input missing");
     expect(input.value).toBe("Design");
@@ -87,7 +87,7 @@ it("renames through the Server and shows its conflict message in place", async (
       form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
     );
     expect(rename).toHaveBeenCalledTimes(2);
-    expect(view.container.querySelector('[role="menu"]')).toBeNull();
+    expect(view.container.querySelector(".sidebar-context-menu")).toBeNull();
   } finally {
     await view.unmount();
   }
@@ -100,7 +100,7 @@ it("confirms a permanent Bot delete that names the target and reports active wor
     .mockResolvedValueOnce(undefined);
   const view = await renderSidebar({ onDeleteItem: remove });
   try {
-    await openMenu(view.container, ".bot-row");
+    await openMenu(view.container, '.sb-row[data-kind="bot"]');
     await interact(() => menuItem(view.container, "删除 Bot…")?.click());
     // Choosing the menu item never deletes; only the dialog's explicit action does.
     expect(remove).not.toHaveBeenCalled();
@@ -120,19 +120,31 @@ it("confirms a permanent Bot delete that names the target and reports active wor
   }
 });
 
-it("shows Server unread counts and marks read from the menu", async () => {
+it("shows Server unread as the design's dot and marks read from the Bot menu", async () => {
   const markRead = vi.fn();
-  const view = await renderSidebar({
-    unreadCounts: { "channel:design": 3 },
-    onMarkRead: markRead,
-  });
+  const view = await renderComponent(
+    <Sidebar
+      bots={bots}
+      channels={channels}
+      runs={[]}
+      ownerName="Owner"
+      onSelectChannel={vi.fn()}
+      onSelectBot={vi.fn()}
+      onCreateBot={vi.fn()}
+      onCreateChannel={vi.fn()}
+      onManageNodes={vi.fn()}
+      onLogout={vi.fn()}
+      unreadCounts={{ "bot:reviewer": 3 }}
+      onMarkRead={markRead}
+    />,
+  );
   try {
-    const row = view.container.querySelector(".channel-list-row");
-    expect(row?.classList.contains("unread")).toBe(true);
-    expect(row?.querySelector(".sidebar-unread-count")?.textContent).toBe("3 条未读");
-    await openMenu(view.container, ".channel-list-row");
+    const row = view.container.querySelector('.sb-row[data-kind="bot"]');
+    expect(row?.classList.contains("is-unread")).toBe(true);
+    expect(row?.querySelector(".sb-unread")?.getAttribute("aria-label")).toBe("3 条未读");
+    await openMenu(view.container, '.sb-row[data-kind="bot"]');
     await interact(() => menuItem(view.container, "标为已读")?.click());
-    expect(markRead).toHaveBeenCalledWith("channel:design");
+    expect(markRead).toHaveBeenCalledWith("bot:reviewer");
   } finally {
     await view.unmount();
   }
@@ -141,8 +153,8 @@ it("shows Server unread counts and marks read from the menu", async () => {
 it("omits identity actions when the host supplies no Server writes", async () => {
   const view = await renderSidebar({ onRenameItem: undefined, onDeleteItem: undefined });
   try {
-    await openMenu(view.container, ".channel-list-row");
-    expect(menuItem(view.container, "重命名…")).toBeUndefined();
+    await openMenu(view.container, '.sb-row[data-kind="channel"]');
+    expect(menuItem(view.container, "重命名频道")).toBeUndefined();
     expect(menuItem(view.container, "删除频道…")).toBeUndefined();
   } finally {
     await view.unmount();

@@ -692,6 +692,10 @@ export function AuthenticatedWorkspace({
       for (const notice of notices) announce(notice);
   }, [workspace]);
   function announce(notice: SystemNotice) {
+    // A conversation muted from its context menu raises no system notification on this device.
+    const channel = workspace?.channels.find((item) => item.id === notice.channelId);
+    const key = channel?.directBotId ? `bot:${channel.directBotId}` : `channel:${notice.channelId}`;
+    if (sidebarOrganization.snapshot().muted.includes(key as `channel:${string}`)) return;
     void showSystemNotification(notice, () =>
       navigation.navigate({ kind: "channel", id: notice.channelId }),
     );
@@ -846,7 +850,11 @@ export function AuthenticatedWorkspace({
 
   async function handleJoinBot(botId: string) {
     if (selectedChannelId === undefined) return;
-    const channel = await joinBotToChannel(selectedChannelId, botId);
+    await handleAddBotToChannel(selectedChannelId, botId);
+  }
+
+  async function handleAddBotToChannel(channelId: string, botId: string) {
+    const channel = await joinBotToChannel(channelId, botId);
     projectChannel(channel);
     await refresh();
     showNotice("Bot 已加入频道。");
@@ -1132,6 +1140,7 @@ export function AuthenticatedWorkspace({
           onMarkRead={(key) => markRead(channelForSidebarKey(key))}
           onRenameItem={handleRenameItem}
           onDeleteItem={handleDeleteItem}
+          onAddBotToChannel={handleAddBotToChannel}
           onCreateBot={() => setDialog("bot")}
           onCreateChannel={() => setDialog("channel")}
           onManageNodes={() => setDialog("node")}
