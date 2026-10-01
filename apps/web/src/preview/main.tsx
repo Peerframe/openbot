@@ -62,6 +62,8 @@ export const scenes: Record<string, AppScene | ComponentScene> = {
     world: "empty",
     start: { kind: "home" },
   },
+  avatars: { kind: "component", title: "头像系统 v3", artboard: "Avatars" },
+  groups: { kind: "component", title: "群组头像", artboard: "GroupAvatars" },
   launch: { kind: "component", title: "启动画面", artboard: "Launch" },
   "launch-error": { kind: "component", title: "启动出错", artboard: "Launch" },
   welcome: { kind: "component", title: "首次使用", artboard: "Welcome" },

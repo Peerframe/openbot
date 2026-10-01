@@ -79,7 +79,7 @@ select:focus-visible {
   background: var(--orange);
 }
 .status-dot.active {
-  background: var(--blue);
+  background: var(--ob-working);
 }
 
 .workspace-main {
@@ -1077,7 +1077,7 @@ select:focus-visible {
 .employee-run-state.running i,
 .employee-run-state.assigned i,
 .employee-run-state.queued i {
-  background: var(--blue);
+  background: var(--ob-working);
 }
 .employee-run-state.failed i,
 .employee-run-state.blocked i,

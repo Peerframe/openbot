@@ -126,7 +126,7 @@
 | 画板 | 实现位置 | 状态 |
 | --- | --- | --- |
 | Components | `tokens.css`、`primitives.css`、`Dialog.tsx` | 已实现 |
-| Sidebar、Search、Menu、ContextMenu | `Sidebar.tsx`、`SidebarItemMenu.tsx` | 已实现；第 15 步换群组头像 |
+| Sidebar、Search、Menu、ContextMenu | `Sidebar.tsx`、`SidebarItemMenu.tsx` | 已实现（含群组头像与状态圆点） |
 | Main | `App.tsx`、`WorkspaceHeader.tsx`、`ChannelWorkspace.tsx` | 已实现；第 19 步换任务卡 |
 | ChannelInfo、AddMember | `ContextRail.tsx` | 已实现；第 18 步加添加成员弹窗 |
 | BotInfo | 新的 `BotInfoRail.tsx`（取代 `EmployeeProfileRail` 与单聊右栏） | 第 17 步 |
@@ -135,7 +135,7 @@
 | Slash | `ChannelWorkspace.tsx` 输入框菜单 | 已实现 |
 | Settings、SettingsNav、Settings* | `DesktopSettingsScreen.tsx`、`Settings*.tsx` | 已实现 |
 | Plugins | `PluginsDialog.tsx`、`PluginManagerPanel.tsx` | 已实现 |
-| Avatar、Avatars、GroupAvatar、GroupAvatars | `RobotAvatar.tsx`、新的 `GroupAvatar.tsx` | v2 已实现；v3 在第 15 步 |
+| Avatar、Avatars、GroupAvatar、GroupAvatars | `RobotAvatar.tsx`、`GroupAvatar.tsx` | 已实现；紫、青、粉、灰等 C10 |
 | Launch、LaunchMotion、Welcome、Install、Connect、Login、ModelSetup、WorkerSetup | `Onboarding.tsx` 与各设置页面 | 已实现 |
 | TaskCards、TaskInspector | 新的 `TaskCard.tsx`、`TaskSheet.tsx` | 第 19 步 |
 | Dialog* | 新的 `Dialog.tsx` 框架与各对话框 | 第 20 步 |

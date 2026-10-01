@@ -106,7 +106,7 @@ export function EmployeeProfileView({
       <div className="ep-scroll">
         <header className="ep-hero">
           <span className="ep-avatar">
-            <RobotAvatar bot={employee} status={employee.status} />
+            <RobotAvatar bot={employee} status={employee.status} presence="dot" />
           </span>
           <div className="ep-identity">
             <div className="ep-name">

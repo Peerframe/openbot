@@ -168,11 +168,12 @@
   border-radius: 50%;
   background: var(--ob-online);
 }
+/* 工作中 is green (DESIGN.md › Foundations); blue is for unread only. */
 .ob-status.is-active {
-  color: var(--ob-active);
+  color: var(--ob-online-text);
 }
 .ob-status.is-active::before {
-  background: var(--ob-active);
+  background: var(--ob-working);
 }
 .ob-status.is-attention {
   color: var(--ob-attention);

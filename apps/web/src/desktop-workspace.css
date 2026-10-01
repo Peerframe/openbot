@@ -49,10 +49,11 @@
   background: #fff;
 }
 .app-shell.desktop-workspace .workspace-details {
+  --avatar-surface: #fafafa;
   height: 100%;
   overflow: auto;
-  background: #fbfcfd;
-  border-left: 1px solid #eef0f2;
+  background: #fafafa;
+  border-left: 1px solid #ececee;
 }
 .app-shell.desktop-workspace .workspace-details .context-rail {
   height: auto;

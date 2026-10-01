@@ -90,7 +90,7 @@
 }
 
 .run-progress-panel__steps li[data-state="current"] {
-  border-left-color: #2563eb;
+  border-left-color: var(--ob-working);
 }
 
 .run-progress-panel__steps li[data-state="failed"] {
