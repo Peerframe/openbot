@@ -23,7 +23,7 @@ historical office image.
 
 | State / term | Actual reading owner | Meaning to preserve |
 | --- | --- | --- |
-| Loading / empty | [ChannelMembersMenu.tsx](../../apps/web/src/components/ChannelMembersMenu.tsx), [WorkTasksScreen.tsx](../../apps/web/src/components/WorkTasksScreen.tsx) | Pending UI is not completed work; empty data is distinct from failed retrieval |
+| Loading / empty | [ContextRail.tsx](../../apps/web/src/components/ContextRail.tsx), [WorkTasksScreen.tsx](../../apps/web/src/components/WorkTasksScreen.tsx) | Pending UI is not completed work; empty data is distinct from failed retrieval |
 | Waiting / approval | [WorkTasksScreen.tsx](../../apps/web/src/components/WorkTasksScreen.tsx), [ApprovalCard.tsx](../../apps/web/src/components/ApprovalCard.tsx) | Control reports attention; a visible approval request grants nothing |
 | Failure / unknown | [WorkTasksScreen.tsx](../../apps/web/src/components/WorkTasksScreen.tsx), [work-api.ts](../../apps/web/src/work-api.ts) | Known rejection differs from an unconfirmed external result; do not blindly resubmit |
 | Disconnected / stale | [WorkTasksScreen.tsx](../../apps/web/src/components/WorkTasksScreen.tsx), workspace hooks | Invalidate freshness and unsafe controls; losing observation does not cancel the task |

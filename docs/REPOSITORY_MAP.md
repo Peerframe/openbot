@@ -16,18 +16,16 @@ source is `packages/harness`; core checks and product consumers install its type
 ## UI interaction
 
 - Rules/design: [Web AGENTS](../apps/web/AGENTS.md), [design reading entry](design/README.md).
-- Representative interaction: [ChannelMembersMenu](../apps/web/src/components/ChannelMembersMenu.tsx),
-  its [CSS](../apps/web/src/components/ChannelMembersMenu.css) and
-  [test](../apps/web/src/components/ChannelMembersMenu.test.tsx). The current product parent is the
-  toolbar in [App](../apps/web/src/App.tsx), which binds join/remove/profile navigation.
-  [ChannelWorkspace](../apps/web/src/components/ChannelWorkspace.tsx) renders an embedded menu only
-  without `globalHeader`; the current App supplies `globalHeader`. Read both when changing focus/navigation.
+- Representative interaction: the channel rail [ContextRail](../apps/web/src/components/ContextRail.tsx)
+  and its [test](../apps/web/src/components/ContextRail.test.tsx), opened from the title pill in
+  [WorkspaceHeader](../apps/web/src/components/WorkspaceHeader.tsx). [App](../apps/web/src/App.tsx)
+  binds join/remove/profile navigation; read both when changing focus/navigation.
 - State/consumers: [workspace hook](../apps/web/src/use-workspace-state.ts) and
   [API](../apps/web/src/api.ts) project Server facts into Web and the shared Desktop renderer.
   Work uses [work-api](../apps/web/src/work-api.ts) and
   [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx).
 - Checks: `npm exec -- turbo run build --filter=@openbot/web^...`, then
-  `npm exec --workspace @openbot/web -- vitest run src/components/ChannelMembersMenu.test.tsx` and
+  `npm exec --workspace @openbot/web -- vitest run src/components/ContextRail.test.tsx` and
   `npm run typecheck --workspace @openbot/web`. Choose the affected component's test, not a fixed demo.
 - Environment: locked `npm ci`; actual page via the documented Python Server/Web dev loop, synthetic
   Owner/database, wide/narrow viewport and affected states. No paid model needed. Component tests
