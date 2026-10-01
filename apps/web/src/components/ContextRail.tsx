@@ -19,20 +19,29 @@ import { CheckIcon, NodeIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
 
 export function ContextRail({
-  realtimeState,
   selectedChannelId,
   workspace,
   onDecideApproval,
   onInspectRun,
   onOpenBot,
+  onJoin,
+  onRemove,
+  onCollapse,
 }: {
-  realtimeState: RealtimeConnectionState;
   selectedChannelId?: string | undefined;
   workspace: WorkspaceSnapshot;
   onDecideApproval(approvalId: string, decision: ApprovalDecision): Promise<void>;
   onInspectRun(runId: string): void;
   onOpenBot?: ((botId: string) => void) | undefined;
+  /** Member management (Main artboard: 成员 · N with 添加 Bot); absent for direct conversations. */
+  onJoin?: ((botId: string) => Promise<void>) | undefined;
+  onRemove?: ((botId: string) => Promise<void>) | undefined;
+  onCollapse?: (() => void) | undefined;
 }) {
+  const [adding, setAdding] = useState(false);
+  const [candidate, setCandidate] = useState("");
+  const [memberBusy, setMemberBusy] = useState<string>();
+  const [memberError, setMemberError] = useState<string>();
   const scopedRuns = workspace.runs.filter(
     (run) => selectedChannelId === undefined || run.channelId === selectedChannelId,
   );
@@ -86,13 +95,15 @@ export function ContextRail({
       })
     : [];
   const activeBotIds = new Set(activeRuns.map((run) => run.botId));
+  const available = channel ? workspace.bots.filter((bot) => !channel.botIds.includes(bot.id)) : [];
 
   return (
     <aside
       className="context-rail usage-rail"
       aria-label={selectedChannelId === undefined ? "工作区任务与详情" : "频道任务与详情"}
     >
-      <header className="usage-rail-header">
+      <header className="rail-header">
+        <span aria-hidden="true" />
         <h2>
           {selectedChannelId === undefined
             ? "工作区动态"
@@ -100,14 +111,32 @@ export function ContextRail({
               ? "Bot 信息"
               : "频道信息"}
         </h2>
-        <span className={`usage-rail-connection ${realtimeState}`}>
-          <i aria-hidden="true" />
-          {realtimeState === "live"
-            ? "已同步"
-            : realtimeState === "retrying"
-              ? "重新连接中"
-              : "连接中"}
-        </span>
+        {onCollapse ? (
+          <button
+            type="button"
+            className="rail-icon"
+            aria-label="收起"
+            title="收起"
+            onClick={onCollapse}
+          >
+            <svg
+              aria-hidden="true"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="6 17 11 12 6 7" />
+              <polyline points="13 17 18 12 13 7" />
+            </svg>
+          </button>
+        ) : (
+          <span aria-hidden="true" />
+        )}
       </header>
       {selectedChannelId !== undefined ? (
         <div className="rail-identity">
@@ -127,30 +156,115 @@ export function ContextRail({
         </div>
       ) : null}
 
-      {channel && members.length > 0 ? (
+      {channel ? (
         <section className="usage-rail-section" aria-label="频道成员">
           <div className="usage-rail-section-heading">
             <h3>成员 · {members.length}</h3>
-          </div>
-          <div className="rail-card">
-            {members.map((bot) => (
+            {onJoin && !channel.directBotId && available.length > 0 ? (
               <button
                 type="button"
-                className="rail-member"
-                key={bot.id}
-                disabled={!onOpenBot}
-                onClick={() => onOpenBot?.(bot.id)}
-                aria-label={`打开 ${bot.name} 的员工档案`}
+                className="ob-pill is-small"
+                aria-expanded={adding}
+                onClick={() => {
+                  setAdding((open) => !open);
+                  setMemberError(undefined);
+                }}
               >
-                <RobotAvatar bot={bot} compact />
-                <span>{bot.name}</span>
-                <small className={activeBotIds.has(bot.id) ? "active" : "idle"}>
-                  <i aria-hidden="true" />
-                  {activeBotIds.has(bot.id) ? "执行中" : "待命"}
-                </small>
+                添加 Bot
               </button>
-            ))}
+            ) : null}
           </div>
+          {adding ? (
+            <form
+              className="rail-add-member"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                const botId = available.some((bot) => bot.id === candidate)
+                  ? candidate
+                  : available[0]?.id;
+                if (!botId || !onJoin) return;
+                setMemberBusy(botId);
+                setMemberError(undefined);
+                try {
+                  await onJoin(botId);
+                  setAdding(false);
+                } catch {
+                  setMemberError("无法添加这个 Bot，请重试。");
+                } finally {
+                  setMemberBusy(undefined);
+                }
+              }}
+            >
+              <select
+                aria-label="选择要添加的 Bot"
+                value={candidate}
+                onChange={(event) => setCandidate(event.target.value)}
+              >
+                {available.map((bot) => (
+                  <option key={bot.id} value={bot.id}>
+                    {bot.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="submit"
+                className="ob-pill is-small is-primary"
+                disabled={memberBusy !== undefined}
+              >
+                添加
+              </button>
+            </form>
+          ) : null}
+          {memberError ? (
+            <p className="form-error" role="alert">
+              {memberError}
+            </p>
+          ) : null}
+          {members.length > 0 ? (
+            <div className="rail-card">
+              {members.map((bot) => (
+                <div className="rail-member-row" key={bot.id}>
+                  <button
+                    type="button"
+                    className="rail-member"
+                    disabled={!onOpenBot}
+                    onClick={() => onOpenBot?.(bot.id)}
+                    aria-label={`打开 ${bot.name} 的员工档案`}
+                  >
+                    <RobotAvatar bot={bot} compact />
+                    <span>{bot.name}</span>
+                    <small className={activeBotIds.has(bot.id) ? "active" : "idle"}>
+                      <i aria-hidden="true" />
+                      {activeBotIds.has(bot.id) ? "执行中" : "待命"}
+                    </small>
+                  </button>
+                  {onRemove && !channel.directBotId ? (
+                    <button
+                      type="button"
+                      className="rail-member-remove"
+                      aria-label={`将 ${bot.name} 移出频道`}
+                      disabled={memberBusy !== undefined}
+                      onClick={async () => {
+                        setMemberBusy(bot.id);
+                        setMemberError(undefined);
+                        try {
+                          await onRemove(bot.id);
+                        } catch {
+                          setMemberError("无法移除这个 Bot，请重试。");
+                        } finally {
+                          setMemberBusy(undefined);
+                        }
+                      }}
+                    >
+                      移除
+                    </button>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="rail-empty">还没有 Bot。添加后，频道里的消息会交给它们处理。</p>
+          )}
         </section>
       ) : null}
 

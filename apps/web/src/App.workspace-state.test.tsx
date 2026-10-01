@@ -177,7 +177,11 @@ function stream(url = "/api/v1/workspace/events") {
   return result;
 }
 function memberCount() {
-  return rendered?.container.querySelector(".channel-members-popover h2")?.textContent;
+  // The rail's 成员 heading (Main artboard) replaced the members popover.
+  const heading = rendered?.container.querySelector(
+    '.usage-rail-section[aria-label="频道成员"] h3',
+  )?.textContent;
+  return heading?.replace(/^成员 · /, "频道成员 ");
 }
 async function ready() {
   await interact(() => stream().emit("workspace.ready", { type: "workspace.ready", nodes: [] }));
@@ -230,8 +234,15 @@ describe("Authenticated workspace snapshot and realtime ordering", () => {
       await ready();
       await interact(() => {
         if (operation === "join") {
+          Array.from(container.querySelectorAll("button"))
+            .find((button) => button.textContent === "添加 Bot")
+            ?.click();
+        }
+      });
+      await interact(() => {
+        if (operation === "join") {
           container
-            .querySelector(".channel-members-popover form")
+            .querySelector(".rail-add-member")
             ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
         } else {
           container.querySelector<HTMLButtonElement>('[aria-label="将 Beta 移出频道"]')?.click();

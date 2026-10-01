@@ -425,22 +425,6 @@
 }
 
 /* Title pill in the window toolbar, as in the artboard. */
-.toolbar-title.toolbar-title-pill {
-  gap: 8px;
-  height: 34px;
-  padding: 0 12px 0 6px;
-  border-radius: 10px;
-  background: #f0f0f2;
-}
-.toolbar-title.toolbar-title-pill .robot-avatar {
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
-}
-.toolbar-title.toolbar-title-pill h1 {
-  font-size: 15px;
-  font-weight: 600;
-}
 
 @media (max-width: 1100px) {
   .employee-profile .ep-scroll {

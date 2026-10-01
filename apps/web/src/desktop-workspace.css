@@ -6,7 +6,6 @@
   --workspace-toolbar-height: 56px;
   display: grid;
   grid-template-columns: var(--workspace-sidebar-size) minmax(0, 1fr) var(--workspace-details-size);
-  grid-template-rows: var(--workspace-toolbar-height) minmax(0, 1fr);
   padding: 0;
   gap: 0;
   height: 100dvh;
@@ -23,97 +22,7 @@
 .workspace-preserved[hidden] {
   display: none;
 }
-.desktop-workspace .workspace-toolbar {
-  grid-area: 1 / 1 / 2 / -1;
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  height: var(--workspace-toolbar-height);
-  border-bottom: 1px solid #e9ebee;
-  z-index: 5;
-  -webkit-app-region: drag;
-  app-region: drag;
-}
-.toolbar-navigation {
-  width: var(--workspace-navigation-size);
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0 14px;
-}
-:root[data-desktop="darwin"] .toolbar-navigation {
-  padding-left: 104px;
-}
-.workspace-toolbar .icon-button {
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
-  padding: 5px;
-  border: 0;
-  border-radius: 7px;
-  color: #737b83;
-  background: transparent;
-}
-.workspace-toolbar .icon-button:hover {
-  background: #e9edf1;
-  color: #242c35;
-}
-.workspace-toolbar .icon-button:disabled {
-  opacity: 0.35;
-  background: transparent;
-}
-.workspace-toolbar .icon-button svg {
-  width: 19px;
-  height: 19px;
-}
-.workspace-toolbar .icon-button[aria-expanded="true"] {
-  color: #394550;
-  background: transparent;
-}
-.workspace-toolbar button,
-.workspace-toolbar summary,
-.workspace-toolbar select,
-.workspace-toolbar input {
-  -webkit-app-region: no-drag;
-  app-region: no-drag;
-}
-.toolbar-context {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  min-width: 0;
-  gap: 16px;
-  padding: 0 18px;
-}
-.toolbar-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-.toolbar-title > svg {
-  flex-shrink: 0;
-  color: #4d5964;
-}
-.toolbar-title h1 {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 620;
-  margin: 0;
-}
-.toolbar-layout {
-  margin-left: auto;
-  flex: 0 0 52px;
-  padding-right: 14px;
-  display: flex;
-  justify-content: flex-end;
-}
 .desktop-workspace .workspace-sidebar {
-  grid-area: 2 / 1;
   min-height: 0;
   min-width: 0;
   border-right: 1px solid #e9ebee;
@@ -129,22 +38,17 @@
   border-radius: 0;
   background: #f8f9fb;
 }
-:root[data-desktop="darwin"] .app-shell.desktop-workspace .sidebar {
-  padding-top: 22px;
-}
 :root[data-desktop="darwin"] .app-shell.desktop-workspace .sidebar::before {
   display: none;
 }
 .app-shell.desktop-workspace > .workspace-main,
 .app-shell.desktop-workspace > .workspace-destination {
-  grid-area: 2 / 2;
   height: 100%;
   min-height: 0;
   border-radius: 0;
   background: #fff;
 }
 .app-shell.desktop-workspace .workspace-details {
-  grid-area: 2 / 3;
   height: 100%;
   overflow: auto;
   background: #fbfcfd;
@@ -226,9 +130,6 @@
 :root[data-sidebar-material="enabled"] .app-shell.desktop-workspace .sidebar {
   background: #ffffff40;
 }
-:root[data-sidebar-material="enabled"] .desktop-workspace .toolbar-navigation {
-  background: transparent;
-}
 @media (max-width: 1100px) and (min-width: 761px) {
   .app-shell.desktop-workspace {
     --workspace-sidebar-size: 220px;
@@ -241,10 +142,6 @@
   .app-shell.desktop-workspace.without-sidebar {
     --workspace-sidebar-size: 0px;
     --workspace-navigation-size: 216px;
-  }
-  .toolbar-context {
-    padding-inline: 14px;
-    gap: 10px;
   }
   .app-shell.desktop-workspace .message-list {
     padding: 24px 20px;
@@ -264,17 +161,9 @@
     --workspace-toolbar-height: 52px;
     grid-template-columns: 0 minmax(0, 1fr) 0;
   }
-  .desktop-workspace .channel-members-popover {
-    position: fixed;
-    top: 60px;
-    left: 14px;
-    right: auto;
-  }
   .desktop-workspace .mobile-nav {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-  .desktop-workspace .toolbar-navigation,
-  .desktop-workspace .toolbar-layout,
   .desktop-workspace .workspace-sidebar,
   .desktop-workspace .workspace-details {
     display: none;
@@ -290,8 +179,5 @@
     width: calc(100% - 24px);
     margin-bottom: 12px;
     padding: 12px;
-  }
-  .toolbar-title h1 {
-    font-size: 14px;
   }
 }

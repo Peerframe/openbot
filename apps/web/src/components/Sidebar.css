@@ -12,10 +12,26 @@
   color: var(--ob-text);
 }
 
+/*
+ * First row (Sidebar artboard): the traffic lights and 新建 share one 30px row. macOS draws the
+ * lights at y 20 (12px tall, centre y 26), so this row starts at y 11 and is a window drag area.
+ */
+.app-shell.desktop-workspace .sidebar.sb {
+  padding-top: 11px;
+}
 .sb .sb-top {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  padding: 0 4px 10px;
+  height: 30px;
+  margin-bottom: 14px;
+  padding: 0 4px 0 0;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+.sb .sb-top > * {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
 }
 .sb .sb-create {
   position: relative;

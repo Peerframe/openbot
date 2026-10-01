@@ -47,7 +47,6 @@ describe("ContextRail", () => {
     const rendered = await renderComponent(
       <ContextRail
         selectedChannelId="channel-1"
-        realtimeState="live"
         workspace={workspace({
           runs: [blocked, failed, completed],
           progress: [blocked, failed].map((task) => ({
@@ -76,12 +75,7 @@ describe("ContextRail", () => {
 
   it("distinguishes absent token usage from observed zero task records", async () => {
     const rendered = await renderComponent(
-      <ContextRail
-        realtimeState="live"
-        workspace={workspace()}
-        onDecideApproval={vi.fn()}
-        onInspectRun={vi.fn()}
-      />,
+      <ContextRail workspace={workspace()} onDecideApproval={vi.fn()} onInspectRun={vi.fn()} />,
     );
     try {
       const tokens = rendered.container.querySelector('[aria-label="Token 用量"]');
@@ -92,7 +86,6 @@ describe("ContextRail", () => {
       expect(metric(rendered.container, "已完成")).toBe("0");
       expect(metric(rendered.container, "记录数")).toBe("0");
       expect(rendered.container.textContent).toContain("尚未连接工作电脑");
-      expect(rendered.container.textContent).toContain("已同步");
       expect(rendered.container.textContent).not.toContain("节省");
       const overview = rendered.container.querySelector("details");
       expect(overview?.open).toBe(false);
@@ -125,7 +118,6 @@ describe("ContextRail", () => {
     const view = await renderComponent(
       <ContextRail
         selectedChannelId="channel-1"
-        realtimeState="live"
         workspace={workspace({ runs: [measured, elsewhere] })}
         onDecideApproval={vi.fn()}
         onInspectRun={vi.fn()}
@@ -153,7 +145,6 @@ describe("ContextRail", () => {
     const onInspectRun = vi.fn();
     const rendered = await renderComponent(
       <ContextRail
-        realtimeState="retrying"
         workspace={workspace({ runs })}
         onDecideApproval={vi.fn()}
         onInspectRun={onInspectRun}
@@ -164,7 +155,6 @@ describe("ContextRail", () => {
       expect(metric(rendered.container, "已完成")).toBe("1");
       expect(metric(rendered.container, "记录数")).toBe("6");
       expect(rendered.container.textContent).toContain("最近任务6 条记录");
-      expect(rendered.container.textContent).toContain("重新连接中");
       const results = rendered.container.querySelector('[aria-label="最近结果"]');
       expect(
         Array.from(results?.querySelectorAll("button") ?? [], (item) => item.ariaLabel),
@@ -215,7 +205,6 @@ describe("ContextRail", () => {
     const onDecideApproval = vi.fn(async () => undefined);
     const rendered = await renderComponent(
       <ContextRail
-        realtimeState="live"
         workspace={workspace({
           nodes: [node],
           approvals: [approval, { ...approval, id: "approved-2", status: "approved" }],
@@ -303,7 +292,6 @@ describe("ContextRail", () => {
     const rendered = await renderComponent(
       <ContextRail
         selectedChannelId="channel-1"
-        realtimeState="live"
         workspace={snapshot}
         onDecideApproval={vi.fn()}
         onInspectRun={vi.fn()}
@@ -348,7 +336,6 @@ describe("ContextRail", () => {
     const rendered = await renderComponent(
       <ContextRail
         selectedChannelId="channel-1"
-        realtimeState="live"
         workspace={workspace({
           runs: [{ ...run("other-run", "waiting_approval"), channelId: "channel-2" }],
           approvals: [
@@ -396,7 +383,6 @@ describe("ContextRail", () => {
           </button>
           <ContextRail
             selectedChannelId={selectedChannelId}
-            realtimeState="connecting"
             workspace={workspace({ runs: [run("selected", "running")] })}
             onDecideApproval={vi.fn()}
             onInspectRun={vi.fn()}
@@ -411,7 +397,6 @@ describe("ContextRail", () => {
       expect(rendered.container.textContent).not.toContain("Task selected");
       expect(rendered.container.textContent).toContain("这个频道暂无任务动态");
       expect(rendered.container.textContent).toContain("0 条最近任务记录");
-      expect(rendered.container.textContent).toContain("连接中");
       expect(rendered.container.querySelector('[aria-label="当前任务"]')).toBeNull();
       expect(rendered.container.querySelector('[aria-label="最近结果"]')).toBeNull();
       expect(rendered.container.querySelector('[aria-label="需要确认的操作"]')).toBeNull();
@@ -436,3 +421,58 @@ function getButton(container: HTMLElement, label: string): HTMLButtonElement {
   if (button === undefined) throw new Error(`Button missing: ${label}`);
   return button;
 }
+
+it("adds and removes channel members from the rail and collapses it", async () => {
+  const onJoin = vi.fn(async () => undefined);
+  const onRemove = vi.fn(async () => undefined);
+  const onCollapse = vi.fn();
+  const bot = (id: string, name: string) => ({
+    id,
+    name,
+    role: "",
+    status: "idle" as const,
+    computerProfile: "none" as const,
+    createdAt: "2026-10-01T00:00:00.000Z",
+  });
+  const channel = {
+    id: "c",
+    name: "频道",
+    description: "",
+    botIds: ["alpha"],
+    createdAt: "2026-10-01T00:00:00.000Z",
+  };
+  const rendered = await renderComponent(
+    <ContextRail
+      selectedChannelId="c"
+      workspace={workspace({
+        bots: [bot("alpha", "Alpha"), bot("beta", "Beta")],
+        channels: [channel],
+      })}
+      onDecideApproval={vi.fn()}
+      onInspectRun={vi.fn()}
+      onJoin={onJoin}
+      onRemove={onRemove}
+      onCollapse={onCollapse}
+    />,
+  );
+  try {
+    expect(rendered.container.querySelector(".rail-header h2")?.textContent).toBe("频道信息");
+    await interact(() =>
+      Array.from(rendered.container.querySelectorAll("button"))
+        .find((item) => item.textContent === "添加 Bot")
+        ?.click(),
+    );
+    await interact(() =>
+      rendered.container
+        .querySelector(".rail-add-member")
+        ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
+    );
+    expect(onJoin).toHaveBeenCalledWith("beta");
+    await interact(() => getButton(rendered.container, "将 Alpha 移出频道").click());
+    expect(onRemove).toHaveBeenCalledWith("alpha");
+    await interact(() => getButton(rendered.container, "收起").click());
+    expect(onCollapse).toHaveBeenCalledOnce();
+  } finally {
+    await rendered.unmount();
+  }
+});

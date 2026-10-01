@@ -33,6 +33,7 @@ data (hidden, disabled or read-only) and never fakes it.
 | 7 | Settings sections with existing data: 模型服务, 技能, 插件, 例行任务, 记忆, 工作主机, 导入与导出, 审计记录 | Settings* | In review (stacked, two parts) |
 | 8 | Settings sections needing backlog items: 通用, 通知, 账户与安全, 审批与权限, 员工浏览器, 关于 | Settings* | In review (stacked): 账户与安全, 关于 and 通知 with what exists; C2/C5/C6/C7 rows stay hidden until those land |
 | 9 | Plugins page with the curated catalog | Plugins | In review (stacked): 我的插件 and adding by MCP; 精选 and categories after C8 |
+| 10 | Window shell: no global toolbar; sidebar row shares the traffic-light line; title pill opens the 频道信息 rail with member management | Main, Sidebar, Profile | In review (stacked) |
 
 ## Backend and platform backlog (Codex)
 

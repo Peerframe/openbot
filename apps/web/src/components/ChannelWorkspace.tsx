@@ -56,7 +56,6 @@ import { VoiceRecorder } from "./VoiceRecorder";
 import "./ChannelMessagePresentation.css";
 import { runStatusSummary } from "../run-state";
 import { ArtifactCard } from "./ArtifactCard";
-import { ChannelMembersMenu } from "./ChannelMembersMenu";
 import { ComposerAttachmentPicker } from "./ComposerAttachmentPicker";
 import { HashIcon, PlusIcon, SendIcon, SkillIcon } from "./Icons";
 import { MessageAttachments } from "./MessageAttachments";
@@ -679,29 +678,6 @@ export function ChannelWorkspace({
     <main
       className={`workspace-main channel-workspace channel-native${globalHeader ? " has-global-header" : ""}`}
     >
-      {!globalHeader ? (
-        <header className="channel-conversation-header">
-          <div className="channel-identity">
-            <span className="channel-title-icon">
-              <HashIcon />
-            </span>
-            <div>
-              <h1>{channel.name}</h1>
-              <p>{channel.description || "长期任务与 Bot 对话"}</p>
-            </div>
-          </div>
-          <div className="channel-team-summary">
-            <ChannelMembersMenu
-              channel={channel}
-              bots={bots}
-              onJoin={onJoin}
-              {...(onRemove ? { onRemove } : {})}
-              onOpenBot={onOpenBot}
-            />
-            {headerAction}
-          </div>
-        </header>
-      ) : null}
       {filesOpen && (
         <AttachmentsManagerDialog channelId={channel.id} onClose={() => setFilesOpen(false)} />
       )}
