@@ -26,7 +26,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | --- | --- |
 | Colors | Text `#1d1d1f`, secondary `#6e6e73`, tertiary `#8e8e93`; page `#fcfcfc`; fill `#f0f0f2`; hover `#e6e6e8`; divider `#e3e3e6`; primary `#111111`; blue `#1f6fd6`; online `#34c759`; danger `#b3261e` (tokens `--ob-*`) |
 | Type | System UI / PingFang SC; body 15px, caption 13px, meta 12px, section label 13px/500, page title 24–28px/700 |
-| Radii | Pills 17px (34px high), cards 16–18px, bubbles 22px, avatars 12px (square) or 50% (round), dialogs 20–22px |
+| Radii | Pills 17px (34px high), cards 16–18px, bubbles 22px, dialogs 20–22px; Bot avatars have no radius because they have no frame |
 | Primitives | `.ob-pill` (`is-primary`, `is-outline`, `is-danger`, `is-small`), `.ob-round` (`is-send`, `is-close`), `.ob-switch` (44×26), `.ob-filter`, `.ob-tag`, `.ob-field`, `.ob-search`, `.ob-card`, `.ob-menu`, `.ob-menu-item` |
 
 ## Window shell
@@ -42,6 +42,22 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
   toolbar buttons. When the sidebar is hidden, the main header leaves room for the traffic lights
   and shows one button to reopen it.
 
+## Bot avatars
+
+- Three head characters from the owner's avatar system (`nft_like/03_avatar_svg` v2, kept outside
+  this repository) on a 96-unit grid: **Round** (antenna), **Relay** (ears) and **Scout** (cat
+  ears). The stored head shape
+  selects one (round → Round, square → Relay, cat → Scout); the Bot's accent colours the jaw
+  (green `#91CF4B`, blue `#5F7CDE`, yellow `#DFAD4F`, red `#E0785C`). Body, mobility and accessory
+  remain in the appearance data but are not drawn.
+- **No frame.** No tile, ring, border or background behind an avatar anywhere. A channel shows two
+  heads overlapping diagonally.
+- Sizes: 96 profile, 80/64 launch and setup, 40 sidebar rows and rail members, 32 messages, 24
+  title pill, 16–20 menus and mentions. Below 32px the micro drawing (larger eyes, heavier antenna)
+  is used automatically.
+- Status is never drawn into the head: it is a separate dot or label beside it.
+- Built in `RobotAvatar.tsx` / `RobotAvatar.css` (Avatar, Avatars artboards).
+
 ## Screen map
 
 | Artboard | Built in |
@@ -54,6 +70,9 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Settings, SettingsNav, Settings* | `DesktopSettingsScreen.tsx`, `Settings*.tsx`, `SettingsDialog.css` |
 | Plugins | `PluginsDialog.tsx`, `PluginManagerPanel.tsx` (catalog variant) |
 | Components | `styles.css` tokens and primitives |
+| Avatar, Avatars | `RobotAvatar.tsx`, `RobotAvatar.css` |
+| ChannelInfo | `ContextRail.tsx` (designed with 详情 / 资料库 / 成员 tabs; tabs not built yet) |
+| Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | Designed; not built yet (see below) |
 
 ## Not designed yet
 
@@ -61,8 +80,7 @@ These need artboards before they are rebuilt; until then they keep their current
 
 | Area | Code today | Note |
 | --- | --- | --- |
-| Launch, login and first-run setup, with the opening animation | `DesktopInstallScreen`, `LoginScreen`, `DesktopSetupScreen`, `DesktopConnectionScreen`, `DesktopLocalWorkerScreen`, `ModelSettingsScreen` (onboarding) | Owner is redesigning |
-| Bot avatars | `RobotAvatar` | Owner supplies the earlier avatar design |
+| Launch, login and first-run setup, with the opening animation | `DesktopInstallScreen`, `LoginScreen`, `DesktopSetupScreen`, `DesktopConnectionScreen`, `DesktopLocalWorkerScreen`, `ModelSettingsScreen` (onboarding) | Artboards ready (Launch … WorkerSetup); rebuild pending |
 | Task cards, collaboration and failures in a conversation; task inspector | `NativeRunControls`, `RunCollaboration`, `RunInspector` | |
 | Dialogs: create Bot, create channel, share, delete, import/export, host pairing, model connections | `CreateBotDialog`, `CreateChannelDialog`, `ShareConversationDialog`, `DeleteIdentityDialog`, `Import/ExportEmployeeDialog`, `NodeManagerDialog`, `ModelConnectionsDialog` | |
 | 任务监督 (work supervision) | `WorkTasksScreen` | |
@@ -78,6 +96,6 @@ Legacy classes that must disappear: `primary-button`, `secondary-button`, `icon-
 `desktop-workspace.css`, `workspace-preferences.css`, `components/destinations.css`.
 
 Retirement order: (1) window shell and channel rail; (2) conversation task cards; (3) dialogs;
-(4) launch, login and setup with the new avatars; (5) 任务监督 and phone layout; (6) delete the
+(4) launch, login and setup; (5) 任务监督 and phone layout; (6) delete the
 legacy stylesheets and classes. Each step removes the legacy rules it replaces in the same pull
 request.

@@ -210,9 +210,13 @@
   background: var(--ob-selected);
   color: var(--ob-text-secondary);
 }
+.sb .sb-avatar:has(> .robot-avatar) {
+  padding: 0;
+  background: transparent;
+}
 .sb .sb-avatar .robot-avatar {
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
 }
 .sb .sb-avatar.is-new {
   padding: 0;
@@ -244,21 +248,15 @@
   position: absolute;
   top: 0;
   left: 0;
-  box-sizing: border-box;
-  width: 27px;
-  height: 27px;
-  padding: 3px;
-  border-radius: 8px;
-  background: var(--ob-selected);
+  width: 40px;
+  height: 40px;
+}
+.sb .sb-avatar-pair.is-pair > .robot-avatar {
+  width: 25px;
+  height: 25px;
 }
 .sb .sb-avatar-pair.is-pair > .robot-avatar + .robot-avatar {
   inset: auto 0 0 auto;
-  border-radius: 50%;
-  background: #dadadd;
-  box-shadow: 0 0 0 2px var(--ob-sidebar);
-}
-.sb .sb-row.is-selected .sb-avatar-pair.is-pair > .robot-avatar + .robot-avatar {
-  box-shadow: 0 0 0 2px var(--ob-selected);
 }
 .sb .sb-text {
   display: flex;

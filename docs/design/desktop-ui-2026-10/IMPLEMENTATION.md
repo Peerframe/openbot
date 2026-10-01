@@ -34,6 +34,9 @@ data (hidden, disabled or read-only) and never fakes it.
 | 8 | Settings sections needing backlog items: 通用, 通知, 账户与安全, 审批与权限, 员工浏览器, 关于 | Settings* | In review (stacked): 账户与安全, 关于 and 通知 with what exists; C2/C5/C6/C7 rows stay hidden until those land |
 | 9 | Plugins page with the curated catalog | Plugins | In review (stacked): 我的插件 and adding by MCP; 精选 and categories after C8 |
 | 10 | Window shell: no global toolbar; sidebar row shares the traffic-light line; title pill opens the 频道信息 rail with member management | Main, Sidebar, Profile | In review (stacked) |
+| 11 | Bot avatars: the owner's Round / Relay / Scout heads, frameless everywhere, micro drawing below 32px | Avatars, Avatar | In review (stacked) |
+| 12 | 频道信息 rail tabs: 详情, 资料库 (task outputs and channel files), 成员 | ChannelInfo, Main | Next |
+| 13 | Launch, opening animation and first-run setup | Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | Planned |
 
 ## Backend and platform backlog (Codex)
 

@@ -605,11 +605,12 @@
   opacity: 0.6;
 }
 .settings-dialog .settings-routine-avatar {
-  padding: 6px;
+  border: 0;
+  background: transparent;
 }
 .settings-dialog .settings-routine-avatar .robot-avatar {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
 }
 .settings-dialog .settings-routine-when {
   display: flex;

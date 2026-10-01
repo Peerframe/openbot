@@ -123,9 +123,12 @@
 .new-chat .new-chat-create {
   border-radius: 50%;
 }
+.new-chat .new-chat-avatar:has(> .robot-avatar) {
+  background: transparent;
+}
 .new-chat .new-chat-avatar .robot-avatar {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
 }
 .new-chat .new-chat-keys {
   display: inline-flex;

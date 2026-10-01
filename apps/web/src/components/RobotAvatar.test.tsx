@@ -13,10 +13,10 @@ const bot: Bot = {
 };
 
 describe("RobotAvatar", () => {
-  it("renders the composable Bot identity with an accessible state", () => {
+  it("renders a frameless head with an accessible state", () => {
     const html = renderToStaticMarkup(<RobotAvatar bot={bot} status="waiting_approval" />);
 
-    expect(html).toContain('viewBox="0 0 64 64"');
+    expect(html).toContain('viewBox="0 0 96 96"');
     expect(html).toContain("robot-state-approval");
     expect(html).toContain('aria-label="Ops，待批准"');
     expect(html).toContain('data-head="');
@@ -25,7 +25,36 @@ describe("RobotAvatar", () => {
     expect(html).not.toMatch(/<(?:linearGradient|image)\b/);
   });
 
-  it("uses explicitly selected NFT-like layers", () => {
+  it("maps the stored head shape to Round, Relay and Scout with the accent on the jaw", () => {
+    const heads = (["round", "square", "cat"] as const).map((head) =>
+      renderToStaticMarkup(
+        <RobotAvatar
+          bot={{
+            ...bot,
+            appearance: {
+              head,
+              body: "classic",
+              mobility: "feet",
+              accessory: "none",
+              accent: "blue",
+            },
+          }}
+        />,
+      ),
+    );
+    const [round, relay, scout] = heads;
+
+    expect(round).toContain("robot-antenna");
+    expect(relay).toContain('d="M11 52v9m74-9v9"');
+    expect(scout).toContain('transform="rotate(-9 60 52.5)"');
+    for (const html of heads) {
+      expect(html).toMatch(/class="robot-jaw"[^>]*fill="#5F7CDE"/);
+      expect(html).toContain("robot-eyes is-standard");
+      expect(html).toContain("robot-eyes is-micro");
+    }
+  });
+
+  it("keeps the stored appearance data that is no longer drawn", () => {
     const html = renderToStaticMarkup(
       <RobotAvatar
         bot={{

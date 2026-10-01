@@ -89,7 +89,10 @@ The user-provided robot design is represented by five composable layers:
 ![OpenBot composable Bot identity visual reference](design/openbot-avatar-system.png)
 
 This reference defines the NFT-like visual language of composition. At runtime, the structured
-selections below are stored instead of repeatedly saving the entire image as avatar data.
+selections below are stored instead of repeatedly saving the entire image as avatar data. Since the
+2026-10 Desktop design, the client draws only the head: the head option selects one of three
+frameless characters and the accent colours its jaw; the other layers stay stored but are not drawn
+(see [DESIGN.md](design/desktop-ui-2026-10/DESIGN.md#bot-avatars)).
 
 | Layer | Current options |
 | --- | --- |

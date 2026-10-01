@@ -32,6 +32,9 @@
 | 8 | 依赖待办的设置分区：通用、通知、账户与安全、审批与权限、员工浏览器、关于 | Settings* | 审核中（叠加）：账户与安全、关于、通知先用现有能力；C2/C5/C6/C7 相关的行在落地前保持隐藏 |
 | 9 | 插件页与精选目录 | Plugins | 审核中（叠加）：我的插件与通过 MCP 添加；精选与分类在 C8 之后 |
 | 10 | 窗口外壳：去掉通栏工具栏；侧栏首行与红绿灯同一水平线；标题胶囊打开「频道信息」右栏并在其中管理成员 | Main、Sidebar、Profile | 审核中（叠加） |
+| 11 | Bot 头像：所有者的 Round / Relay / Scout 三种头型，所有位置去掉外框，32px 以下用小尺寸稿 | Avatars、Avatar | 审核中（叠加） |
+| 12 | 「频道信息」右栏分页：详情、资料库（任务产物与频道文件）、成员 | ChannelInfo、Main | 下一步 |
+| 13 | 启动画面、开场动画与首次设置 | Launch、LaunchMotion、Welcome、Install、Connect、Login、ModelSetup、WorkerSetup | 计划中 |
 
 ## 后端与平台待办（Codex）
 

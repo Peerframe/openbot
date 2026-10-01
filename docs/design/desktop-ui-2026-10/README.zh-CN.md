@@ -23,6 +23,10 @@
 | [ContextMenu](ContextMenu.dc.html) | ⑧ Bot 与频道右键菜单 |
 | [Search](Search.dc.html) | ⑨ 分组与搜索 |
 | [Slash](Slash.dc.html) | ⑩ `/` 技能与操作 |
+| [Avatars](Avatars.dc.html)、[Avatar](Avatar.dc.html) | ⑪ Bot 头像系统（三种头型 × 四种下颌色，无外框）及其组件 |
+| [ChannelInfo](ChannelInfo.dc.html) | 「频道信息」右栏，含 详情 / 资料库 / 成员 分页（由 Main 引用） |
+| [Launch](Launch.dc.html)、[LaunchMotion](LaunchMotion.dc.html) | 启动画面的各状态与 900 毫秒开场动画 |
+| [Welcome](Welcome.dc.html)、[Install](Install.dc.html)、[Connect](Connect.dc.html)、[Login](Login.dc.html)、[ModelSetup](ModelSetup.dc.html)、[WorkerSetup](WorkerSetup.dc.html) | 首次设置：选择用法、准备这台电脑、连接、登录、选择模型、把这台电脑设为工作电脑 |
 
 修改设计时先改画布，并在同一个拉取请求中刷新这份快照。交付计划与分工见
 [IMPLEMENTATION.zh-CN.md](IMPLEMENTATION.zh-CN.md)。

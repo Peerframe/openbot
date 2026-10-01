@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>头像系统</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#fcfcfc;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; padding: 56px 72px; background: #fcfcfc; display: flex; flex-direction: column; gap: 36px; overflow: hidden">
+<header style="display: flex; align-items: flex-end; justify-content: space-between">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">头像系统</h1>
+<p style="margin: 0; font-size: 15px; color: #6e6e73">三种轮廓 × 四种下颌色，无外框、透明底。来源：nft_like / 03_avatar_svg v2。</p>
+</div>
+<span style="font-size: 13px; color: #8e8e93">96 × 96 网格 · 标准稿 ≥ 32px · 小尺寸稿 < 32px</span>
+</header>
+
+<section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+<sc-for list="{{characters}}" as="c" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 16px; padding: 24px; border-radius: 18px; background: #f0f0f2">
+<div style="display: flex; align-items: baseline; justify-content: space-between">
+<strong style="font-size: 17px; font-weight: 600">{{c.title}}</strong>
+<span style="font-size: 13px; color: #6e6e73">{{c.note}}</span>
+</div>
+<div style="display: flex; align-items: flex-end; gap: 14px">
+<dc-import name="Avatar" character="{{c.id}}" accent="green" size="96" hint-size="96px,96px"></dc-import>
+<dc-import name="Avatar" character="{{c.id}}" accent="blue" size="56" hint-size="56px,56px"></dc-import>
+<dc-import name="Avatar" character="{{c.id}}" accent="yellow" size="56" hint-size="56px,56px"></dc-import>
+<dc-import name="Avatar" character="{{c.id}}" accent="red" size="56" hint-size="56px,56px"></dc-import>
+</div>
+<span style="font-size: 12px; color: #6e6e73">外观数据：头型 {{c.head}} → {{c.title}}；下颌色 = Bot 的强调色</span>
+</div>
+</sc-for>
+</section>
+
+<section style="display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 18px; background: #f0f0f2">
+<h2 style="margin: 0; font-size: 13px; font-weight: 500; color: #6e6e73">尺寸</h2>
+<div style="display: flex; align-items: flex-end; gap: 28px">
+<sc-for list="{{sizes}}" as="s" hint-placeholder-count="6">
+<span style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<dc-import name="Avatar" character="round" accent="green" size="{{s.px}}" hint-size="48px,48px"></dc-import>
+<span style="font-size: 12px; color: #6e6e73">{{s.label}}</span>
+</span>
+</sc-for>
+</div>
+<span style="font-size: 12px; color: #6e6e73">96 档案 · 64 启动 · 40 侧栏 · 32 消息 · 24 标题胶囊 · 16 菜单；32 以下自动换小尺寸稿（眼睛加大、天线加粗）</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 18px; background: #f0f0f2">
+<h2 style="margin: 0; font-size: 13px; font-weight: 500; color: #6e6e73">组合与状态</h2>
+<div style="display: flex; align-items: center; gap: 36px">
+<span style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<span style="position: relative; width: 48px; height: 48px; display: block">
+<span style="position: absolute; left: 0; top: 0; display: block"><dc-import name="Avatar" character="round" accent="green" size="30" hint-size="30px,30px"></dc-import></span>
+<span style="position: absolute; right: 0; bottom: 0; display: block"><dc-import name="Avatar" character="scout" accent="yellow" size="30" hint-size="30px,30px"></dc-import></span>
+</span>
+<span style="font-size: 12px; color: #6e6e73">频道：两个头像错位叠放</span>
+</span>
+<span style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<span style="position: relative; width: 48px; height: 48px; display: block">
+<dc-import name="Avatar" character="relay" accent="blue" size="48" hint-size="48px,48px"></dc-import>
+<span style="position: absolute; right: 0; bottom: 2px; width: 10px; height: 10px; border-radius: 50%; background: #1f6fd6; border: 2px solid #f0f0f2; display: block"></span>
+</span>
+<span style="font-size: 12px; color: #6e6e73">状态：独立圆点，执行中蓝</span>
+</span>
+<span style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 14px; background: #20251f">
+<dc-import name="Avatar" character="round" accent="green" size="48" surface="dark" hint-size="48px,48px"></dc-import>
+<span style="font-size: 12px; color: #c9cdbf">深色界面：暖白头</span>
+</span>
+</div>
+</div>
+</section>
+
+<section style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+<sc-for list="{{rules}}" as="r" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee">
+<strong style="font-size: 14px; font-weight: 600">{{r.title}}</strong>
+<span style="font-size: 13px; color: #6e6e73; line-height: 1.5">{{r.text}}</span>
+</div>
+</sc-for>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      characters: [
+        { id: 'round', title: '圆顶 Round', note: '默认', head: 'round' },
+        { id: 'relay', title: '耳罩 Relay', note: '变体', head: 'square' },
+        { id: 'scout', title: '猫耳 Scout', note: '变体', head: 'cat' }
+      ],
+      sizes: [
+        { px: 96, label: '96' }, { px: 64, label: '64' }, { px: 40, label: '40' },
+        { px: 32, label: '32' }, { px: 24, label: '24 小' }, { px: 16, label: '16 小' }
+      ],
+      rules: [
+        { title: '不加底框', text: '头像直接放在背景上，不再套方形或圆形色块；点击区域由外层按钮扩大。' },
+        { title: '轮廓表身份，颜色辅助', text: '同一频道里靠轮廓和名字区分 Bot；下颌色帮助扫视，不单独承担含义。' },
+        { title: '状态不画进头像', text: '执行中、待命、离线用旁边的圆点和文字表达，头像本身保持不变。' },
+        { title: '旧外观数据保留', text: '身体、移动方式、配件仍保存在 Bot 资料里，只是不再绘制。' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

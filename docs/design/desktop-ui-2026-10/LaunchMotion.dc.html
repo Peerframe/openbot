@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>开场动画</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#fcfcfc;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; padding: 56px 72px; background: #fcfcfc; display: flex; flex-direction: column; gap: 32px; overflow: hidden">
+<header style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">开场动画 · 圆顶醒来</h1>
+<p style="margin: 0; font-size: 15px; color: #6e6e73">启动画面里的头像按下面的顺序出现，总长 900ms；之后在等待时轻轻眨眼和摆动天线。</p>
+</header>
+
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px">
+<sc-for list="{{frames}}" as="f" hint-placeholder-count="6">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="height: 180px; border-radius: 18px; background: #f0f0f2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px">
+<svg viewBox="0 0 96 96" width="104" height="104" aria-hidden="true" style="display: block; opacity: {{f.opacity}}; transform: translateY({{f.lift}}px) scale({{f.scale}})">
+<defs><clipPath id="{{f.clipId}}"><rect x="0" y="0" width="{{f.fill}}" height="96"></rect></clipPath></defs>
+<path d="m39 30-4-10" fill="none" stroke="#20251F" stroke-width="4" stroke-linecap="round" opacity="{{f.stem}}"></path>
+<circle cx="33" cy="16" r="{{f.ball}}" fill="#20251F"></circle>
+<path d="M12 61C12 41 27 26 47 26C68 26 83 41 83 61V71C83 83 69 89 48 89C26 89 12 83 12 71Z" fill="#20251F"></path>
+<path d="M12 69C29 76 66 76 83 69V72C83 83 69 89 48 89C26 89 12 83 12 72Z" fill="#91CF4B" clip-path="url(#{{f.clipId}})"></path>
+<rect x="29" y="{{f.eyeY}}" width="10" height="{{f.eyeH}}" rx="{{f.eyeR}}" fill="#FAFBF7"></rect>
+<rect x="55" y="{{f.eyeY2}}" width="10" height="{{f.eyeH}}" rx="{{f.eyeR}}" fill="#FAFBF7"></rect>
+</svg>
+<span style="font-size: 15px; font-weight: 700; opacity: {{f.word}}">OpenBot</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 0 4px">
+<strong style="font-size: 14px; font-weight: 600">{{f.time}} · {{f.title}}</strong>
+<span style="font-size: 12px; color: #6e6e73; line-height: 1.5">{{f.spec}}</span>
+</div>
+</div>
+</sc-for>
+</div>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 13px; font-weight: 500; color: #6e6e73">时间轴（ms）</h2>
+<div style="position: relative; height: 112px; border-radius: 16px; background: #f0f0f2; padding: 16px 20px; box-sizing: border-box">
+<sc-for list="{{tracks}}" as="t" hint-placeholder-count="5">
+<div style="position: absolute; left: {{t.left}}; top: {{t.top}}px; width: {{t.width}}; height: 14px; border-radius: 7px; background: {{t.color}}; display: flex; align-items: center; padding-left: 8px; box-sizing: border-box; font-size: 11px; color: #ffffff; white-space: nowrap">{{t.label}}</div>
+</sc-for>
+</div>
+<div style="display: flex; justify-content: space-between; font-size: 12px; color: #8e8e93; padding: 0 20px"><span>0</span><span>200</span><span>400</span><span>600</span><span>800</span><span>1000</span></div>
+</section>
+
+<section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee">
+<strong style="font-size: 14px; font-weight: 600">等待时</strong>
+<span style="font-size: 13px; color: #6e6e73; line-height: 1.5">每 4–6 秒眨一次眼（120ms）；天线以底部为轴 ±4° 摆动，周期 2.4s。加载完成后停止。</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee">
+<strong style="font-size: 14px; font-weight: 600">进入工作区</strong>
+<span style="font-size: 13px; color: #6e6e73; line-height: 1.5">整个启动画面 200ms 淡出，工作区直接出现，不做飞入或缩放。</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee">
+<strong style="font-size: 14px; font-weight: 600">减少动态效果</strong>
+<span style="font-size: 13px; color: #6e6e73; line-height: 1.5">系统或 OpenBot 设置开启时：只做 200ms 淡入，不眨眼、不摆动。</span>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const base = { opacity: 1, lift: 0, scale: 1, stem: 1, ball: 4.3, fill: 96, eyeY: 44, eyeY2: 43, eyeH: 19, eyeR: 5, word: 0 };
+    const closed = { eyeY: 53, eyeY2: 52, eyeH: 2, eyeR: 1 };
+    const frames = [
+      Object.assign({}, base, closed, { opacity: 0.35, lift: 8, scale: 0.92, stem: 0, ball: 0, fill: 0, time: '0', title: '浮现', spec: '头部淡入并上浮 8px，缩放 0.92→1；280ms，ease-out' }),
+      Object.assign({}, base, closed, { ball: 0, fill: 0, time: '280', title: '天线升起', spec: '天线杆从根部画出；120ms' }),
+      Object.assign({}, base, closed, { ball: 5.4, fill: 0, time: '400', title: '天线球弹出', spec: '缩放 0→1.25→1；160ms，回弹' }),
+      Object.assign({}, base, { fill: 0, time: '560', title: '睁眼', spec: '两只眼睛从中线张开；140ms；右眼晚 30ms' }),
+      Object.assign({}, base, { fill: 48, time: '700', title: '下颌上色', spec: '强调色从左到右填满；200ms，ease-in-out' }),
+      Object.assign({}, base, { word: 1, time: '900', title: '文字出现', spec: '名字与状态行淡入并上移 6px；200ms' })
+    ].map((f, i) => Object.assign(f, { clipId: 'motion-clip-' + i }));
+    const at = (ms) => (20 + (ms / 1000) * 1120) + 'px';
+    const span = (from, to) => ((to - from) / 1000 * 1120) + 'px';
+    const tracks = [
+      { label: '浮现', from: 0, to: 280, row: 0, color: '#3a3a3c' },
+      { label: '天线', from: 280, to: 560, row: 1, color: '#6e6e73' },
+      { label: '睁眼', from: 560, to: 700, row: 2, color: '#1f6fd6' },
+      { label: '下颌上色', from: 700, to: 900, row: 3, color: '#5f9e2b' },
+      { label: '文字', from: 760, to: 960, row: 4, color: '#8e8e93' }
+    ].map((t) => ({ label: t.label, left: at(t.from), width: span(t.from, t.to), top: 12 + t.row * 18, color: t.color }));
+    return { frames, tracks };
+  }
+}
+</script>
+</body>
+</html>

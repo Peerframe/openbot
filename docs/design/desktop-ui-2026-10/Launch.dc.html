@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>启动</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#fcfcfc;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; background: #fcfcfc; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden">
+<div aria-hidden="true" style="position: absolute; left: 20px; top: 20px; display: flex; gap: 8px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; display: block"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e; display: block"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840; display: block"></span>
+</div>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 18px; width: 400px; text-align: center">
+<dc-import name="Avatar" character="round" accent="green" size="96" hint-size="96px,96px"></dc-import>
+<h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.01em">{{title}}</h1>
+
+<sc-if value="{{isWorking}}" hint-placeholder-val="{{true}}">
+<span style="display: inline-flex; align-items: center; gap: 10px; font-size: 15px; color: #6e6e73">
+<span style="display: inline-flex; gap: 4px" aria-hidden="true"><span style="width: 6px; height: 6px; border-radius: 50%; background: #1d1d1f; display: block"></span><span style="width: 6px; height: 6px; border-radius: 50%; background: #aeaeb2; display: block"></span><span style="width: 6px; height: 6px; border-radius: 50%; background: #d1d1d6; display: block"></span></span>
+{{status}}</span>
+</sc-if>
+
+<sc-if value="{{isKeychain}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 6px; width: 100%; box-sizing: border-box; margin-top: 6px; padding: 16px 18px; border-radius: 16px; background: #f0f0f2; text-align: left">
+<strong style="font-size: 14px; font-weight: 600">系统可能会请求钥匙串密码</strong>
+<span style="font-size: 13px; color: #6e6e73; line-height: 1.55">那是这台电脑的登录密码，不是 OpenBot 密码。确认是你安装的 OpenBot 后，可以选「始终允许」，以后打开就不会再问。</span>
+</div>
+</sc-if>
+
+<sc-if value="{{isError}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0; font-size: 15px; color: #6e6e73; line-height: 1.6">没能启动本机服务。请确认钥匙串可以访问后重试；已有的 Bot、对话和设置都不会丢。</p>
+<div style="display: flex; gap: 8px; margin-top: 8px">
+<button type="button" style="height: 44px; padding: 0 28px; border: 0; border-radius: 22px; background: #111111; color: #ffffff; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer">重试</button>
+<button type="button" style="height: 44px; padding: 0 22px; border: 0; border-radius: 22px; background: #ececee; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer">查看原因</button>
+</div>
+</sc-if>
+</div>
+
+<span style="position: absolute; bottom: 40px; font-size: 12px; color: #8e8e93">模型设置与已有对话会自动恢复</span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"state":{"editor":"enum","options":["opening","keychain","error"],"default":"opening"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const state = this.props.state ?? 'opening';
+    return {
+      title: state === 'error' ? '启动需要处理' : 'OpenBot',
+      status: state === 'keychain' ? '正在读取系统保存的凭据' : '正在打开你的工作区',
+      isWorking: state !== 'error',
+      isKeychain: state === 'keychain',
+      isError: state === 'error'
+    };
+  }
+}
+</script>
+</body>
+</html>

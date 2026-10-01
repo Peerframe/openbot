@@ -1,0 +1,42 @@
+/*
+ * Frameless head avatar (Avatars artboard). No tile, ring or background: containers only size it,
+ * and status is a separate dot beside it. The 96-unit art leaves room for the antenna and ears, so
+ * it is never cropped. The span is a size container so the micro optical size (larger eyes,
+ * heavier antenna) is chosen by the rendered size, not by each caller.
+ */
+.robot-avatar {
+  display: inline-block;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 96px;
+  height: 96px;
+  line-height: 0;
+  container-type: size;
+}
+.robot-avatar.compact {
+  width: 24px;
+  height: 24px;
+}
+.robot-avatar > .robot-head-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.robot-avatar .robot-antenna {
+  stroke-width: 4;
+}
+.robot-avatar .robot-eyes.is-micro {
+  display: none;
+}
+@container (width < 32px) {
+  .robot-head-art .robot-antenna {
+    stroke-width: 6;
+  }
+  .robot-head-art .robot-eyes.is-standard {
+    display: none;
+  }
+  .robot-head-art .robot-eyes.is-micro {
+    display: inline;
+  }
+}

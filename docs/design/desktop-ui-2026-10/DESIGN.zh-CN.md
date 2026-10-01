@@ -23,7 +23,7 @@
 | --- | --- |
 | 颜色 | 正文 `#1d1d1f`，次要 `#6e6e73`，三级 `#8e8e93`；页面 `#fcfcfc`；填充 `#f0f0f2`；悬停 `#e6e6e8`；分隔 `#e3e3e6`；主色 `#111111`；蓝 `#1f6fd6`；在线 `#34c759`；危险 `#b3261e`（令牌 `--ob-*`） |
 | 字体 | 系统 UI / PingFang SC；正文 15px，说明 13px，元信息 12px，分区标题 13px/500，页面标题 24–28px/700 |
-| 圆角 | 胶囊按钮 17px（高 34px），卡片 16–18px，气泡 22px，头像 12px（方）或 50%（圆），对话框 20–22px |
+| 圆角 | 胶囊按钮 17px（高 34px），卡片 16–18px，气泡 22px，对话框 20–22px；Bot 头像没有外框，因此没有圆角 |
 | 基础组件 | `.ob-pill`（`is-primary`、`is-outline`、`is-danger`、`is-small`）、`.ob-round`（`is-send`、`is-close`）、`.ob-switch`（44×26）、`.ob-filter`、`.ob-tag`、`.ob-field`、`.ob-search`、`.ob-card`、`.ob-menu`、`.ob-menu-item` |
 
 ## 窗口外壳
@@ -37,6 +37,18 @@
 - 后退、前进和两侧栏的开关是快捷键与菜单命令（⌘[ ⌘] ⌘B ⌘⇧B），不是工具栏按钮。侧栏隐藏时，
   主区标题行给红绿灯留出位置，并显示一个重新打开侧栏的按钮。
 
+## Bot 头像
+
+- 三种头型来自所有者的头像方案（`nft_like/03_avatar_svg` v2，不在本仓库中），96 单位网格：**Round**（天线）、
+  **Relay**（耳朵）、**Scout**（猫耳）。保存的头型决定用哪一种（round → Round、square → Relay、
+  cat → Scout）；Bot 的强调色填充下颌（绿 `#91CF4B`、蓝 `#5F7CDE`、黄 `#DFAD4F`、红 `#E0785C`）。
+  身体、移动方式和配件仍保存在外观数据里，但不再绘制。
+- **没有外框。** 任何地方的头像后面都不加底板、描边、边框或背景。频道用两个头像斜向重叠表示。
+- 尺寸：档案 96，启动与设置 80/64，侧栏行与右栏成员 40，消息 32，标题胶囊 24，菜单与提及 16–20。
+  32px 以下自动换用小尺寸稿（眼睛加大、天线加粗）。
+- 状态不画进头像，而是旁边单独的圆点或文字。
+- 代码在 `RobotAvatar.tsx` / `RobotAvatar.css`（Avatar、Avatars 画板）。
+
 ## 画板与代码对应
 
 | 画板 | 实现位置 |
@@ -49,6 +61,9 @@
 | Settings、SettingsNav、Settings* | `DesktopSettingsScreen.tsx`、`Settings*.tsx`、`SettingsDialog.css` |
 | Plugins | `PluginsDialog.tsx`、`PluginManagerPanel.tsx`（catalog 变体） |
 | Components | `styles.css` 中的令牌与基础组件 |
+| Avatar、Avatars | `RobotAvatar.tsx`、`RobotAvatar.css` |
+| ChannelInfo | `ContextRail.tsx`（已设计「详情 / 资料库 / 成员」分页，分页尚未实现） |
+| Launch、LaunchMotion、Welcome、Install、Connect、Login、ModelSetup、WorkerSetup | 已设计，尚未实现（见下文） |
 
 ## 尚未设计
 
@@ -56,8 +71,7 @@
 
 | 方面 | 现在的代码 | 备注 |
 | --- | --- | --- |
-| 启动、登录与首次设置，以及开场动画 | `DesktopInstallScreen`、`LoginScreen`、`DesktopSetupScreen`、`DesktopConnectionScreen`、`DesktopLocalWorkerScreen`、`ModelSettingsScreen`（引导） | Owner 正在重新设计 |
-| Bot 头像 | `RobotAvatar` | Owner 提供之前的头像方案 |
+| 启动、登录与首次设置，以及开场动画 | `DesktopInstallScreen`、`LoginScreen`、`DesktopSetupScreen`、`DesktopConnectionScreen`、`DesktopLocalWorkerScreen`、`ModelSettingsScreen`（引导） | 画板已完成（Launch … WorkerSetup），待重做 |
 | 对话中的任务卡、协作与失败状态；任务详情 | `NativeRunControls`、`RunCollaboration`、`RunInspector` | |
 | 对话框：新建 Bot、新建频道、分享、删除、导入导出、主机配对、模型连接 | `CreateBotDialog`、`CreateChannelDialog`、`ShareConversationDialog`、`DeleteIdentityDialog`、`Import/ExportEmployeeDialog`、`NodeManagerDialog`、`ModelConnectionsDialog` | |
 | 任务监督 | `WorkTasksScreen` | |
@@ -72,5 +86,5 @@
 `styles.css` 的大部分、`workspace-shell.css`、`desktop-workspace.css`、`workspace-preferences.css`、
 `components/destinations.css`。
 
-退役顺序：(1) 窗口外壳与频道右栏；(2) 对话中的任务卡；(3) 对话框；(4) 启动、登录与设置，以及新头像；
+退役顺序：(1) 窗口外壳与频道右栏；(2) 对话中的任务卡；(3) 对话框；(4) 启动、登录与设置；
 (5) 任务监督与手机布局；(6) 删除旧样式表与旧样式类。每一步在同一个 PR 中删除它所替换的旧规则。

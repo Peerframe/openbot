@@ -181,9 +181,6 @@
   width: 26px;
   height: 26px;
   margin-left: -6px;
-  border: 2px solid var(--ob-fill);
-  border-radius: 8px;
-  background: #fff;
 }
 .plugins-row-main .ob-pill.is-outline {
   background: #fff;

@@ -8,6 +8,7 @@ import type {
   BotStatus,
   RunStatus,
 } from "@openbot/domain";
+import "./RobotAvatar.css";
 
 type RobotStatus = BotStatus | RunStatus;
 
@@ -19,6 +20,27 @@ export const defaultBotAppearance: BotAppearance = {
   accent: "green",
 };
 
+/**
+ * Light-surface jaw colours from the owner's avatar system (nft_like/03_avatar_svg v2); red is the
+ * fourth accent the stored appearance data allows, drawn in the same family.
+ */
+const accentColors: Record<BotAppearance["accent"], string> = {
+  green: "#91CF4B",
+  blue: "#5F7CDE",
+  yellow: "#DFAD4F",
+  red: "#E0785C",
+};
+const BODY = "#20251F";
+const EYE = "#FAFBF7";
+
+/**
+ * Frameless head-only Bot avatar (Avatars artboard). The stored head shape selects the character —
+ * round → Round, square → Relay, cat → Scout — and the accent colours the jaw. Body, mobility and
+ * accessory stay in the appearance data but are no longer drawn, and status is shown beside the
+ * avatar, not inside it. Below 32px a container query swaps in the micro optical size (larger
+ * eyes, heavier antenna), as the asset notes advise, so callers only set the rendered size;
+ * `compact` sets a 24px default.
+ */
 export function RobotAvatar({
   bot,
   className,
@@ -32,6 +54,7 @@ export function RobotAvatar({
 }) {
   const appearance = bot.appearance ?? appearanceForBot(bot);
   const visualState = robotVisualState(status);
+  const accent = accentColors[appearance.accent] ?? accentColors.green;
 
   return (
     <span
@@ -51,167 +74,100 @@ export function RobotAvatar({
       data-mobility={appearance.mobility}
       data-accessory={appearance.accessory}
     >
-      <svg className="modular-robot" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-        <MobilityLayer mobility={appearance.mobility} body={appearance.body} />
-        <BodyLayer body={appearance.body} />
-        <AccessoryBackLayer accessory={appearance.accessory} />
-        <HeadLayer head={appearance.head} />
-        <FaceLayer state={visualState} />
-        <AccessoryFrontLayer accessory={appearance.accessory} />
+      <svg className="robot-head-art" viewBox="0 0 96 96" aria-hidden="true" focusable="false">
+        {appearance.head === "square" ? (
+          <RelayHead accent={accent} />
+        ) : appearance.head === "cat" ? (
+          <ScoutHead accent={accent} />
+        ) : (
+          <RoundHead accent={accent} />
+        )}
       </svg>
     </span>
   );
 }
 
-function HeadLayer({ head }: { head: BotHeadShape }) {
+function RoundHead({ accent }: { accent: string }) {
   return (
-    <g className="robot-head">
-      <line className="robot-antenna" x1="32" y1="15" x2="32" y2="8" />
-      <circle className="robot-shell" cx="32" cy="6" r="3.2" />
-      {head === "cat" ? (
-        <path className="robot-shell" d="M19 29V15l6-6 4 5h8l4-5 5 6v14z" />
-      ) : head === "square" ? (
-        <rect className="robot-shell" x="18" y="14" width="28" height="18" rx="3" />
-      ) : (
-        <path className="robot-shell" d="M18 29v-3c0-9 5-14 14-14s14 5 14 14v3z" />
-      )}
-      <rect className="robot-accent-band" x="16" y="27" width="32" height="5" rx="1" />
-    </g>
-  );
-}
-
-function FaceLayer({ state }: { state: RobotVisualState }) {
-  const failed = state === "failed" || state === "blocked";
-  return (
-    <g className="robot-face">
-      <rect x="24" y={failed ? 20 : 19} width={failed ? 5 : 4} height={failed ? 3 : 7} rx="2" />
-      <rect
-        x={failed ? 35 : 36}
-        y={failed ? 20 : 19}
-        width={failed ? 5 : 4}
-        height={failed ? 3 : 7}
-        rx="2"
+    <>
+      <path
+        className="robot-antenna"
+        d="m39 30-4-10"
+        fill="none"
+        stroke={BODY}
+        strokeLinecap="round"
       />
-    </g>
-  );
-}
-
-function BodyLayer({ body }: { body: BotBodyShape }) {
-  if (body === "quadruped") return <path className="robot-shell" d="M14 34h37v14H14z" />;
-  if (body === "tall") return <path className="robot-shell" d="M20 31h24l3 27H17z" />;
-  if (body === "cape") {
-    return <path className="robot-shell" d="M19 31h26l8 25c-7 3-14 1-21 1s-14 2-21-1z" />;
-  }
-  if (body === "armor") {
-    return (
-      <g className="robot-shell">
-        <path d="M18 33h28l3 23H15z" />
-        <rect x="11" y="35" width="8" height="16" rx="3" />
-        <rect x="45" y="35" width="8" height="16" rx="3" />
-      </g>
-    );
-  }
-  if (body === "storage") {
-    return (
-      <g>
-        <path className="robot-shell" d="M20 31h24l6 25H14z" />
-        <rect className="robot-pocket" x="22" y="42" width="20" height="13" rx="4" />
-      </g>
-    );
-  }
-  return <path className="robot-shell" d="M20 31h24l6 25H14z" />;
-}
-
-function MobilityLayer({ mobility, body }: { mobility: BotMobility; body: BotBodyShape }) {
-  if (body === "quadruped" || mobility === "four-legs") {
-    return (
-      <g className="robot-shell">
-        <rect x="16" y="46" width="5" height="13" rx="2" />
-        <rect x="26" y="46" width="5" height="13" rx="2" />
-        <rect x="38" y="46" width="5" height="13" rx="2" />
-        <rect x="48" y="46" width="5" height="13" rx="2" />
-        <path className="robot-stroke" d="M51 36l7-5 2 7" />
-      </g>
-    );
-  }
-  if (mobility === "single-wheel") return <circle className="robot-wheel" cx="32" cy="56" r="7" />;
-  if (mobility === "dual-wheel") {
-    return (
-      <g className="robot-wheel">
-        <circle cx="23" cy="56" r="6" />
-        <circle cx="41" cy="56" r="6" />
-      </g>
-    );
-  }
-  if (mobility === "hover") {
-    return (
-      <g>
-        <path className="robot-hover-base" d="M17 53h30l-4 5H21z" />
-        <circle className="robot-accent-fill robot-signal" cx="23" cy="61" r="1.8" />
-        <circle className="robot-accent-fill robot-signal" cx="32" cy="61" r="1.8" />
-        <circle className="robot-accent-fill robot-signal" cx="41" cy="61" r="1.8" />
-      </g>
-    );
-  }
-  return (
-    <g className="robot-shell">
-      <rect x="20" y="52" width="10" height="8" rx="3" />
-      <rect x="34" y="52" width="10" height="8" rx="3" />
-    </g>
-  );
-}
-
-function AccessoryBackLayer({ accessory }: { accessory: BotAccessory }) {
-  if (accessory === "backpack") {
-    return (
-      <rect
-        className="robot-shell robot-accessory-outline"
-        x="43"
-        y="34"
-        width="12"
-        height="18"
-        rx="3"
+      <circle className="robot-antenna-ball" cx="33" cy="16" r="4.3" fill={BODY} />
+      <path
+        d="M12 61C12 41 27 26 47 26C68 26 83 41 83 61V71C83 83 69 89 48 89C26 89 12 83 12 71Z"
+        fill={BODY}
       />
-    );
-  }
-  if (accessory === "headphones") {
-    return (
-      <g>
-        <path className="robot-stroke robot-accent-stroke" d="M17 25c0-12 30-12 30 0" />
-        <circle className="robot-accent-fill" cx="17" cy="25" r="4" />
-        <circle className="robot-accent-fill" cx="47" cy="25" r="4" />
+      <path
+        className="robot-jaw"
+        d="M12 69C29 76 66 76 83 69V72C83 83 69 89 48 89C26 89 12 83 12 72Z"
+        fill={accent}
+      />
+      <g className="robot-eyes is-standard" fill={EYE}>
+        <rect x="29" y="44" width="10" height="19" rx="5" />
+        <rect x="55" y="43" width="10" height="19" rx="5" />
       </g>
-    );
-  }
-  return null;
+      <g className="robot-eyes is-micro" fill={EYE}>
+        <rect x="28" y="43" width="12" height="21" rx="6" />
+        <rect x="54" y="43" width="12" height="21" rx="6" />
+      </g>
+    </>
+  );
 }
 
-function AccessoryFrontLayer({ accessory }: { accessory: BotAccessory }) {
-  if (accessory === "trench") {
-    return (
-      <g className="robot-detail">
-        <path d="M32 34v19" />
-        <circle className="robot-accent-fill" cx="41" cy="38" r="2" />
+function RelayHead({ accent }: { accent: string }) {
+  return (
+    <>
+      <rect x="6" y="44" width="13" height="25" rx="6.5" fill={BODY} />
+      <rect x="77" y="44" width="13" height="25" rx="6.5" fill={BODY} />
+      <path d="M11 52v9m74-9v9" stroke={accent} strokeWidth="4" strokeLinecap="round" />
+      <path
+        d="M17 45C17 33 25 26 38 26H58C71 26 79 33 79 45V72C79 83 69 88 48 88C27 88 17 83 17 72Z"
+        fill={BODY}
+      />
+      <path
+        className="robot-jaw"
+        d="M17 70C33 74 63 74 79 70V73C79 83 68 88 48 88C28 88 17 83 17 73Z"
+        fill={accent}
+      />
+      <g className="robot-eyes is-standard" fill={EYE}>
+        <rect x="31" y="46" width="10" height="16" rx="5" />
+        <rect x="55" y="46" width="10" height="16" rx="5" />
       </g>
-    );
-  }
-  if (accessory === "arm") {
-    return (
-      <g>
-        <path className="robot-stroke" d="M45 39h9v8h5" />
-        <path className="robot-stroke" d="M59 43l4-3m-4 3 4 3" />
+      <g className="robot-eyes is-micro" fill={EYE}>
+        <rect x="30" y="44" width="12" height="20" rx="6" />
+        <rect x="54" y="44" width="12" height="20" rx="6" />
       </g>
-    );
-  }
-  if (accessory === "toolbox") {
-    return (
-      <g>
-        <rect className="robot-toolbox" x="17" y="43" width="30" height="14" rx="3" />
-        <path className="robot-detail robot-accent-stroke" d="M27 43v-4h10v4m-5 4v7m-4-4h8" />
+    </>
+  );
+}
+
+function ScoutHead({ accent }: { accent: string }) {
+  return (
+    <>
+      <path
+        d="M14 61L17 22C17 18 20 17 23 20L36 32C43 30 53 30 60 32L73 20C76 17 79 18 79 22L82 61V72C82 83 68 89 48 89C28 89 14 83 14 72Z"
+        fill={BODY}
+      />
+      <path
+        className="robot-jaw"
+        d="M14 70C29 76 67 76 82 70V73C82 83 68 89 48 89C28 89 14 83 14 73Z"
+        fill={accent}
+      />
+      <g className="robot-eyes is-standard" fill={EYE}>
+        <rect x="29" y="47" width="10" height="18" rx="5" />
+        <rect x="55" y="43" width="10" height="19" rx="5" transform="rotate(-9 60 52.5)" />
       </g>
-    );
-  }
-  return null;
+      <g className="robot-eyes is-micro" fill={EYE}>
+        <rect x="28" y="46" width="12" height="19" rx="6" />
+        <rect x="54" y="42" width="12" height="20" rx="6" />
+      </g>
+    </>
+  );
 }
 
 function appearanceForBot(bot: Bot): BotAppearance {

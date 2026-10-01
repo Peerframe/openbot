@@ -78,7 +78,7 @@ sequenceDiagram
 
 ![OpenBot 组合式 Bot 身份视觉母版](design/openbot-avatar-system.png)
 
-这张母版是 NFT-like 组合语言的视觉依据；运行时保存下面的结构化选择，而不是把整张图片作为头像数据重复保存。
+这张母版是 NFT-like 组合语言的视觉依据；运行时保存下面的结构化选择，而不是把整张图片作为头像数据重复保存。自 2026-10 Desktop 设计起，客户端只绘制头部：头型选项决定三种无外框角色之一，强调色填充下颌；其余各层仍然保存，但不再绘制（见 [DESIGN.zh-CN.md](design/desktop-ui-2026-10/DESIGN.zh-CN.md#bot-头像)）。
 
 | 层 | 当前选项 |
 | --- | --- |

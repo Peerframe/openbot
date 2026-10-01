@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>首次准备</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#fcfcfc;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; background: #fcfcfc; display: flex; flex-direction: column; align-items: center; overflow: hidden">
+<div aria-hidden="true" style="position: absolute; left: 20px; top: 20px; display: flex; gap: 8px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; display: block"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e; display: block"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840; display: block"></span>
+</div>
+<ol aria-label="设置进度" style="margin: 0; padding: 0; list-style: none; display: flex; gap: 8px; align-items: center; height: 56px; font-size: 13px; color: #8e8e93">
+<li style="color: #1d1d1f; font-weight: 600">1 这台电脑</li><li aria-hidden="true">—</li><li>2 登录</li><li aria-hidden="true">—</li><li>3 模型</li>
+</ol>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 24px; width: 440px; margin-top: 96px">
+<dc-import name="Avatar" character="round" accent="green" size="80" hint-size="80px,80px"></dc-import>
+<div style="display: flex; flex-direction: column; gap: 8px; text-align: center">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">正在准备你的 OpenBot</h1>
+<p style="margin: 0; font-size: 15px; color: #6e6e73">第一次需要在这台电脑上准备服务和数据库，大约一分钟。</p>
+</div>
+
+<ol aria-label="准备进度" style="margin: 0; padding: 0 18px; list-style: none; width: 100%; box-sizing: border-box; border-radius: 18px; background: #f0f0f2">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="5">
+<li style="display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 13px 0; border-top: {{s.divider}}">
+<sc-if value="{{s.done}}" hint-placeholder-val="{{true}}"><span style="width: 22px; height: 22px; border-radius: 50%; background: #111111; display: inline-grid; place-items: center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 12 10 17 19 7"></polyline></svg></span></sc-if>
+<sc-if value="{{s.current}}" hint-placeholder-val="{{false}}"><span style="width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; border: 2.5px solid #d1d1d6; border-top-color: #111111; display: block"></span></sc-if>
+<sc-if value="{{s.waiting}}" hint-placeholder-val="{{false}}"><span style="width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; border: 2px solid #d1d1d6; display: block"></span></sc-if>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: {{s.weight}}; color: {{s.color}}">{{s.label}}</span><sc-if value="{{s.hasHint}}" hint-placeholder-val="{{false}}"><span style="font-size: 12px; color: #6e6e73; line-height: 1.5">{{s.hint}}</span></sc-if></span>
+<span style="font-size: 12px; color: #8e8e93">{{s.state}}</span>
+</li>
+</sc-for>
+</ol>
+<span style="font-size: 12px; color: #8e8e93">准备完成后，以后打开会直接回到工作区。</span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const current = 1;
+    const steps = [
+      ['检查安装环境', ''],
+      ['读取系统保存的凭据', '如果系统弹出钥匙串窗口，请在那里输入电脑登录密码。'],
+      ['准备本地数据库', ''],
+      ['启动 OpenBot 服务', ''],
+      ['完成连接与配置', '']
+    ].map(([label, hint], i) => ({
+      label,
+      hint,
+      hasHint: i === current && Boolean(hint),
+      done: i < current,
+      current: i === current,
+      waiting: i > current,
+      state: i < current ? '已完成' : i === current ? '进行中' : '',
+      weight: i === current ? '600' : '400',
+      color: i > current ? '#8e8e93' : '#1d1d1f',
+      divider: i === 0 ? 'none' : '1px solid #e3e3e6'
+    }));
+    return { steps };
+  }
+}
+</script>
+</body>
+</html>

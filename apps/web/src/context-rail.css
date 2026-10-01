@@ -399,12 +399,9 @@
 .rail-identity-avatars .robot-avatar {
   width: 48px;
   height: 48px;
-  border-radius: 14px;
-  background: var(--ob-fill-hover);
-  box-shadow: 0 0 0 3px #fafafa;
 }
 .rail-identity-avatars .robot-avatar + .robot-avatar {
-  margin-left: -12px;
+  margin-left: -8px;
 }
 .rail-identity strong {
   margin-top: 4px;

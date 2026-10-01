@@ -26,6 +26,10 @@ equivalents. Bracketed values such as `[128]` and `[版本号]` are placeholders
 | [ContextMenu](ContextMenu.dc.html) | ⑧ Bot and channel context menus |
 | [Search](Search.dc.html) | ⑨ Groups and search |
 | [Slash](Slash.dc.html) | ⑩ `/` skills and actions |
+| [Avatars](Avatars.dc.html), [Avatar](Avatar.dc.html) | ⑪ Bot avatar system (three heads × four jaw colours, frameless) and its component |
+| [ChannelInfo](ChannelInfo.dc.html) | 频道信息 rail with 详情 / 资料库 / 成员 tabs (imported by Main) |
+| [Launch](Launch.dc.html), [LaunchMotion](LaunchMotion.dc.html) | Opening screen states and the 900 ms opening animation |
+| [Welcome](Welcome.dc.html), [Install](Install.dc.html), [Connect](Connect.dc.html), [Login](Login.dc.html), [ModelSetup](ModelSetup.dc.html), [WorkerSetup](WorkerSetup.dc.html) | First-run setup: choose a role, prepare this computer, connect, sign in, choose a model, enable this computer as a worker |
 
 The binding rules, the screen map, what is not designed yet and the legacy inventory are in
 [DESIGN.md](DESIGN.md).

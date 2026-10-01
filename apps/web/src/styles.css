@@ -2740,111 +2740,6 @@ select:focus-visible {
   font-size: 16px;
 }
 
-/* Modular Bot identity */
-.robot-avatar {
-  position: relative;
-  z-index: 0;
-  right: auto;
-  bottom: auto;
-  display: inline-grid;
-  width: 104px;
-  height: 104px;
-  flex: 0 0 auto;
-  place-items: center;
-  overflow: visible;
-  --robot-accent: #5ab64a;
-  --robot-shell: #090a0b;
-  --robot-eye: #fff;
-}
-.robot-avatar.compact {
-  width: 30px;
-  height: 30px;
-}
-.modular-robot {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-.robot-shell,
-.robot-wheel,
-.robot-hover-base {
-  fill: var(--robot-shell);
-}
-.robot-face {
-  fill: var(--robot-eye);
-}
-.robot-accent-band,
-.robot-accent-fill {
-  fill: var(--robot-accent);
-}
-.robot-antenna,
-.robot-stroke,
-.robot-detail,
-.robot-accent-stroke {
-  fill: none;
-  stroke: var(--robot-shell);
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.robot-detail {
-  stroke-width: 1.3;
-}
-.robot-accent-stroke {
-  stroke: var(--robot-accent);
-}
-.robot-toolbox,
-.robot-pocket {
-  fill: var(--robot-shell);
-  stroke: #f2f3f4;
-  stroke-width: 1;
-}
-.robot-accessory-outline {
-  stroke: #f2f3f4;
-  stroke-width: 1;
-}
-.robot-accent-yellow {
-  --robot-accent: #f2c318;
-}
-.robot-accent-red {
-  --robot-accent: #e84c3d;
-}
-.robot-accent-blue {
-  --robot-accent: #3d6fc4;
-}
-.robot-accent-green {
-  --robot-accent: #5ab64a;
-}
-.robot-state-approval {
-  --robot-accent: #e87922;
-}
-.robot-state-blocked,
-.robot-state-failed {
-  --robot-accent: #c94b43;
-}
-.robot-state-takeover {
-  --robot-accent: #7659d6;
-}
-.robot-state-completed {
-  --robot-accent: #27a45b;
-}
-.robot-state-offline {
-  --robot-accent: #90969e;
-  --robot-shell: #676d74;
-  opacity: 0.7;
-}
-.robot-state-running .robot-accent-band,
-.robot-state-running .robot-signal,
-.robot-state-queued .robot-accent-band {
-  animation: modular-robot-signal 1.2s ease-in-out infinite alternate;
-}
-@keyframes modular-robot-signal {
-  to {
-    opacity: 0.5;
-  }
-}
-
 .bot-identity-builder {
   display: grid;
   grid-template-columns: 124px minmax(0, 1fr);
@@ -2883,9 +2778,6 @@ select:focus-visible {
 .appearance-grid label {
   display: grid;
   gap: 5px;
-}
-.appearance-grid label:last-child {
-  grid-column: 1 / -1;
 }
 .appearance-grid span {
   color: #646b74;
