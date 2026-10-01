@@ -349,6 +349,9 @@ class ProductWorkReads:
                         or action['authority_generation'] != task['authority_generation']
                         or source != intent['effect']['source'] or run['status'] != 'running'):
                     raise WorkConflict('read_admission_changed')
+                from .approval_settings import assert_current,read_decision
+                if not read_decision(action):raise WorkConflict('read_approval_required')
+                await assert_current(db,task,action)
                 claim = binding.derive_claim_id(accepted.namespace,accepted.workflow_id,accepted.engine_run_id,activity)
                 fence = WorkFence(context.run_id,claim,run['execution_epoch'])
                 await check_fence(db, context.run_id, fence)

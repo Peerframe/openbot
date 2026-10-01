@@ -382,7 +382,8 @@ class ModelSettingsService:
         self._listeners.add(listener)
         return lambda: self._listeners.discard(listener)
 
-    async def save(self, value: object, *, authority: AuthorityGuard | None = None) -> dict[str, Any]:
+    async def save(self, value: object, *, authority: AuthorityGuard | None = None,
+                   commit_authority: AuthorityGuard | None = None) -> dict[str, Any]:
         parsed = parse_model_settings(value)
         guard = authority or _trusted_internal_guard
         if self._busy:
@@ -398,7 +399,7 @@ class ModelSettingsService:
                 previous: bytes | None = None
                 journal_written = False
                 try:
-                    async with guard():
+                    async with (commit_authority or guard)():
                         current = self._read(root)
                         if (current["revision"] if current else None) != parsed.revision:
                             raise ModelSettingsError("conflict")
