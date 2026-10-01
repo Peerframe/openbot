@@ -139,6 +139,32 @@ and appends an evolution event that stores changed field names, not biography te
 then publishes only the Employee id and affected sections. Name, model policy, Worker Host,
 appearance, skill state, and permission grants are deliberately outside this command.
 
+## Server general preferences (C7)
+
+`GET /api/v1/settings/general` returns `{revision,timezone,defaultModel,updatedAt}` to the authenticated
+Owner. `PUT /api/v1/settings/general` requires the exact allowed Origin and a strict JSON body up to
+2 KiB: `{expectedRevision,timezone,defaultModel}`. Revision is an integer 1–2147483647; stale writes
+return `409 owner_preferences_revision_conflict`. Timezone is a bounded IANA key validated against
+Server ZoneInfo, with default `UTC`; a malformed/unknown zone returns 422. Default model is explicitly
+null or the existing `{connectionId,modelId}` selection. No key, endpoint, command or unknown field is
+accepted. The getter deliberately retains a stale selection so the Owner can clear or replace it.
+
+The singleton and `SETTINGS_OWNER_UPDATED` audit publication share one Owner transaction. No-op writes
+retain their revision. Audit records only changed field names and revision, not credentials. Timezone
+supplies the Owner display default; existing API instants remain UTC and existing schedules are not
+reinterpreted. The caller formats those instants using the returned timezone.
+
+Creation of a new Bot with profile `model` or `docker-linux` and an omitted model reads this default
+in the identity transaction. An explicit model wins. A profile such as `none` never inherits model
+capability; existing Bots are unchanged. Resolve the current enabled connection, endpoint policy and
+credential before creation/evolution/audit commit. A missing, disabled or unavailable default fails
+closed without publishing a Bot; it never falls back to another model. Setting a default performs no
+provider network request, discovery, inference or billing operation.
+
+Migration `0046_owner_preferences` introduces the seeded singleton (revision 1, UTC, null model).
+Its independent PR and C2 both append to the current migration journal; rebase/re-index the second
+migration PR against the first merged migration before merging it. Never replace committed history.
+
 ## Owner-managed memory
 
 The first memory lifecycle is manual and Owner-only. Models, Providers, and Worker Hosts do not
@@ -459,28 +485,14 @@ internal non-secret-reference entries may be enabled. Updates require the usual 
 Models only prepare a proposal in the bounded native loop; they do not call these Owner endpoints.
 Successful Run completion publishes the candidate atomically. See [Native Agent](NATIVE_AGENT.md).
 
-## Server general preferences (C7)
+## Channel activity (C1)
 
-`GET /api/v1/settings/general` returns `{revision,timezone,defaultModel,updatedAt}` to the authenticated
-Owner. `PUT /api/v1/settings/general` requires the exact allowed Origin and a strict JSON body up to
-2 KiB: `{expectedRevision,timezone,defaultModel}`. Revision is an integer 1–2147483647; stale writes
-return `409 owner_preferences_revision_conflict`. Timezone is a bounded IANA key validated against
-Server ZoneInfo, with default `UTC`; a malformed/unknown zone returns 422. Default model is explicitly
-null or the existing `{connectionId,modelId}` selection. No key, endpoint, command or unknown field is
-accepted. The getter deliberately retains a stale selection so the Owner can clear or replace it.
-
-The singleton and `SETTINGS_OWNER_UPDATED` audit publication share one Owner transaction. No-op writes
-retain their revision. Audit records only changed field names and revision, not credentials. Timezone
-supplies the Owner display default; existing API instants remain UTC and existing schedules are not
-reinterpreted. The caller formats those instants using the returned timezone.
-
-Creation of a new Bot with profile `model` or `docker-linux` and an omitted model reads this default
-in the identity transaction. An explicit model wins. A profile such as `none` never inherits model
-capability; existing Bots are unchanged. Resolve the current enabled connection, endpoint policy and
-credential before creation/evolution/audit commit. A missing, disabled or unavailable default fails
-closed without publishing a Bot; it never falls back to another model. Setting a default performs no
-provider network request, discovery, inference or billing operation.
-
-Migration `0046_owner_preferences` introduces the seeded singleton (revision 1, UTC, null model).
-Its independent PR and C2 both append to the current migration journal; rebase/re-index the second
-migration PR against the first merged migration before merging it. Never replace committed history.
+`GET /api/v1/channels` and `GET /api/v1/workspace` return `lastActivityAt` on each
+Channel and optional `latestMessage: { id, authorType, preview, createdAt }`.
+These fields are Owner-only and absent on channel mutation responses. `preview` is plain text,
+at most 160 Unicode code points (640 UTF-8 bytes), truncated in SQL; no attachments, credentials,
+metadata or extra message fields are projected. Clients must render it as text, never HTML.
+An empty channel omits `latestMessage` and uses `createdAt` for `lastActivityAt`.
+The list is ordered by activity descending, then channel ID in C collation ascending;
+latest messages break equal timestamps by message ID in C collation descending.
+Deleted channels are excluded. Existing session revalidation, row and response-byte limits apply.

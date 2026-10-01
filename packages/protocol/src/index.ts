@@ -6,6 +6,7 @@ export {
   hasBrowserClickIntent,
   parseBrowserClickInstruction,
 } from "./browser-click.js";
+export * from "./channel-activity.js";
 export * from "./channel-inputs.js";
 export * from "./channel-interactions.js";
 export type {

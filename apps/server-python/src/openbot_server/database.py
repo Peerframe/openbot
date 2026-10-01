@@ -14,6 +14,7 @@ from typing import Literal
 import psycopg
 from psycopg.rows import dict_row
 
+from .channel_query import CHANNEL_QUERY
 from .message_query import MESSAGE_QUERY
 from .run_query import RUN_QUERY
 
@@ -135,11 +136,7 @@ class PostgresReadStore:
                             "FROM bots WHERE deleted_at IS NULL ORDER BY created_at DESC, id LIMIT 1001"
                         )
                     elif projection == "channels":
-                        cursor = await connection.execute(
-                            "SELECT c.id, c.name, c.description, c.direct_bot_id, c.created_at, cb.bot_id "
-                            "FROM channels c LEFT JOIN channel_bots cb ON cb.channel_id=c.id "
-                            "WHERE c.deleted_at IS NULL ORDER BY c.created_at DESC, c.id, cb.bot_id LIMIT 10001"
-                        )
+                        cursor = await connection.execute(CHANNEL_QUERY)
                     elif projection in ("messages", "runs"):
                         cursor = await connection.execute(MESSAGE_QUERY if projection == "messages" else RUN_QUERY,
                                                           (channel_id, channel_id))

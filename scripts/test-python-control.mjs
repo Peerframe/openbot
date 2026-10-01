@@ -34,6 +34,7 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const workerTests = await readWorkerTests(root);
 const controlTests = [
   "tests/test_postgres_integration.py",
+  "tests/test_channel_activity.py",
   "tests/test_auth_postgres.py",
   "tests/test_identity_postgres.py",
   "tests/test_conversation_postgres.py",
