@@ -618,3 +618,11 @@ IPC 不接受渲染层传入的命令、程序路径或更新地址。
 检查序号 1–10001，最多重试三次与普通创建或重命名的冲突。名称耗尽或持续冲突返回
 409 `quick_bot_name_exhausted` / `quick_bot_name_contention`。保留已有会话、Origin、请求体
 限制和脱敏的存储及模型错误。
+
+## Bot 外观颜色（C10）
+
+`BotAppearance.accent` 只接受 `green`、`yellow`、`red`、`blue`、`violet`、`teal`、
+`pink`、`slate`。普通创建、快速创建、身份/档案投影和 Employee v1/v2 模板使用同一组
+取值。已有外观字段及旧模板仍然有效；未知颜色、大小写变体、任意 CSS 字符串、数字和
+null 均拒绝。模板导入在新身份下保留外观，审核隔离与摘要校验保持不变。
+此契约提供颜色数据，头像绘制及界面选择器由第 15 步设计实现。

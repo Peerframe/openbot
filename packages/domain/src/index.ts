@@ -60,7 +60,7 @@ export type BotHeadShape = "round" | "square" | "cat";
 export type BotBodyShape = "classic" | "tall" | "cape" | "armor" | "storage" | "quadruped";
 export type BotMobility = "feet" | "single-wheel" | "dual-wheel" | "hover" | "four-legs";
 export type BotAccessory = "none" | "headphones" | "backpack" | "trench" | "arm" | "toolbox";
-export type BotAccent = "green" | "yellow" | "red" | "blue";
+export type BotAccent = "green" | "yellow" | "red" | "blue" | "violet" | "teal" | "pink" | "slate";
 
 export interface QuickCreateBotInput {
   appearance: BotAppearance;

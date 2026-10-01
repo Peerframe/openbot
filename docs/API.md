@@ -688,3 +688,13 @@ Bot on each successful request; clients must not retry an ambiguous network resu
 Name allocation examines suffixes 1–10001 and retries at most three conflicts with ordinary name
 writes. Exhaustion/contention returns 409 `quick_bot_name_exhausted`/`quick_bot_name_contention`.
 Existing session, Origin, body limits and sanitized storage/model errors still apply.
+
+## Bot appearance accents (C10)
+
+`BotAppearance.accent` accepts exactly `green`, `yellow`, `red`, `blue`, `violet`, `teal`,
+`pink`, `slate`. Ordinary creation, quick creation, public identity/profile projection and
+Employee template v1/v2 use this same set. Existing appearance fields and old templates remain
+valid. Unknown/case-variant colours, arbitrary CSS strings, numbers and null are rejected.
+Template import preserves the appearance under a new identity with unchanged quarantine/review
+and digest validation. This contract adds colour data; avatar drawing and UI selectors follow
+the separate step-15 design implementation.

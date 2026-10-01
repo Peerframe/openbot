@@ -116,6 +116,58 @@
         },
         "computerProfile": "docker-linux"
       }
+    },
+    {
+      "id": "quick-c10-violet",
+      "schema": "quickBot",
+      "input": {
+        "appearance": {
+          "head": "cat",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "none",
+          "accent": "violet"
+        }
+      }
+    },
+    {
+      "id": "quick-c10-teal",
+      "schema": "quickBot",
+      "input": {
+        "appearance": {
+          "head": "cat",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "none",
+          "accent": "teal"
+        }
+      }
+    },
+    {
+      "id": "quick-c10-pink",
+      "schema": "quickBot",
+      "input": {
+        "appearance": {
+          "head": "cat",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "none",
+          "accent": "pink"
+        }
+      }
+    },
+    {
+      "id": "quick-c10-slate",
+      "schema": "quickBot",
+      "input": {
+        "appearance": {
+          "head": "cat",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "none",
+          "accent": "slate"
+        }
+      }
     }
   ]
 }
