@@ -475,6 +475,40 @@ Artifact 与临时画面内容接口使用同一个 Owner Session，响应为 `p
 结构化 JSON，遵循 `OPENBOT_LOG_LEVEL`，且只接受白名单 request/Run/Node 关联字段。HTTP 日志只记
 不含 query 的路由路径，不记录 header、Cookie、正文、凭证、任意异常对象或 stack。
 
+## Desktop 平台设置与更新（C5）
+
+沙箱 `openbotDesktop` 桥接新增 `getPlatformState()`、`setPlatformPreferences(preferences)`、
+`setUnreadBadge(count)`、`getUpdateState()`、`checkForUpdates()`、`downloadUpdate()` 和
+`installUpdate()`。仅 Desktop 原生可用，Web 无对应 HTTP 权限。protocol/domain 导出类型。
+
+设置为严格 DTO：`launchAtLogin`、`runInBackground`、`showDockBadge`、`automaticUpdates` 为布尔值，
+`globalShortcut` 为空表示禁用，否则为有长度上限、含 Command/Control 修饰键的快捷键。
+默认只有角标开启。主进程在自身 userData 私有文件中原子保存版本化设置；未知字段、不安全文件和
+非法快捷键失败关闭。快捷键冲突保留原快捷键，保存失败恢复启动、托盘、快捷键与角标状态。
+
+状态返回 `status`、`preferences`、平台 `capabilities` 和可选固定 `code`。
+开机启动仅支持已打包的 macOS/Windows；Linux 开机启动、Windows 程序坞角标不可用。
+后台运行依赖托盘，关闭最后窗口时隐藏窗口并保留本地服务；托盘提供显示与退出。
+全局快捷键唤回同一窗口。角标接受 0–99999 安全整数，最多显示 99，关闭该设置或退出时清空。
+设置写入、下载与安装要求隔离 preload 中的真实用户操作、聚焦窗口和可信顶层 frame。
+IPC 不接受渲染层传入的命令、程序路径或更新地址。
+
+更新状态为 `unavailable|idle|checking|available|downloading|downloaded|installing|failed`，
+附可选有界版本、进度及固定错误代码。自动模式每六小时检查并下载已验证更新，安装始终要求
+原生确认及本地 Server 正常停止。禁止降级与退出时自动安装。
+
+更新复用 electron-updater 6.8.9，仅在签名 macOS/Windows 安装包中启用。
+包内 `resources/app-update.yml` 必须是普通文件，内容为最多 4 KiB 的严格 JSON（YAML 子集）：
+`openbotFormat="openbot.signed-updates/v1"`、`provider="github"`、`owner="Peerframe"`、
+`repo="openbot"`、`channel="alpha"|"latest"`，以及 macOS 的 `macTeamIdentifier`（10 位大写字母/数字）
+或 Windows 的 `publisherName`（1–8 个签名者名称）。拒绝未知字段、自定义源或缺失签名者；
+创建 updater 前验证当前应用的 Developer ID/Authenticode 签名和签名者，保留 updater 原有下载校验及
+原生签名验证。开发版、未签名或缺配置时返回不可用，Linux 更新不支持。
+现有未签名发布缺少更新元数据，生产下载安装验收仍依赖签名发布产物与元数据；本契约不表示已完成发布或安装。
+
+
+本次集成按 Owner 决定暂缓生产签名自动更新。未签名包继续返回不可用；原生偏好功能可独立使用。
+
 ## 任务经验审阅
 
 记忆新增/更新可携带 `modelUseEnabled` 布尔值，存储后的记录会返回它。新增与迁移旧记录默认

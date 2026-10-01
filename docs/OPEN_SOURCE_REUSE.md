@@ -1003,3 +1003,11 @@ research at OpenBot57341154b19d45686b2f71bce96fca38e1f07310. Compare Cedar4.13.0
 thin PostgreSQL guard for additional confirmation only. No source copied/dependency added; exact
 read exceptions never override baseline approval or permit delete/install/permission changes. See
 [research](research/desktop-approval-settings.md) and [ADR](decisions/0049-owner-approval-policy.md).
+
+## Desktop platform preferences and signed update bridge (2026-10-01)
+
+Reuse Electron 44.3.0 native startup/tray/shortcut/badge APIs, the existing restricted atomic JSON
+file, and released electron-updater 6.8.9 (MIT) for macOS/NSIS update verification. Exact source,
+configuration trust checks, alternative comparison and outstanding signed release qualification
+are recorded in [the review](research/desktop-platform-settings.md). No upstream code was copied
+or substantially adapted. Unsigned packages fail closed before updater construction.
