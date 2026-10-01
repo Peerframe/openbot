@@ -31,9 +31,13 @@
 - 三栏：侧栏 300px、主区、右栏 340px（1280/1100px 宽时为 264/300、236/264）。
 - **没有通栏工具栏。** 侧栏第一行放 macOS 红绿灯（桌面端位于 x 20、y 20）和「新建」按钮，二者在同一条
   30px 高的行内居中对齐，下面是搜索。
-- 主区有自己的 56px 标题行：左侧是对话标题胶囊；右侧是「实时」状态和「分享」。
-- **点击标题胶囊打开右栏**（频道信息 / Bot 信息），与 Main 画板一致；右栏的「收起」关闭它。成员的
-  添加与移除在右栏完成，不再用弹窗。
+- 主区有自己的 56px 标题行：中间是对话标题胶囊；右侧是「实时」状态和「分享」。
+- **标题胶囊居中**，点击打开右栏（频道信息 / Bot 信息），与 Main 画板一致；右栏的「收起」关闭它。
+  手机上胶囊靠左，因为手机布局尚未设计。
+- 右栏依次是身份信息和「详情 / 资料库 / 成员」分段控件（ChannelInfo 画板）。默认打开「成员」；
+  对话中有待批准的操作时打开「详情」，并在「详情」上显示数量。成员在「成员」里添加和移除，不再用
+  弹窗。「资料库」列出任务产物和频道文件；「上传文件」打开输入框的文件选择，因此每次上传都附在一条
+  消息上。
 - 后退、前进和两侧栏的开关是快捷键与菜单命令（⌘[ ⌘] ⌘B ⌘⇧B），不是工具栏按钮。侧栏隐藏时，
   主区标题行给红绿灯留出位置，并显示一个重新打开侧栏的按钮。
 
@@ -62,7 +66,7 @@
 | Plugins | `PluginsDialog.tsx`、`PluginManagerPanel.tsx`（catalog 变体） |
 | Components | `styles.css` 中的令牌与基础组件 |
 | Avatar、Avatars | `RobotAvatar.tsx`、`RobotAvatar.css` |
-| ChannelInfo | `ContextRail.tsx`（已设计「详情 / 资料库 / 成员」分页，分页尚未实现） |
+| ChannelInfo | `ContextRail.tsx`、`ContextRail.css`（详情 / 资料库 / 成员；单聊只有详情和资料库） |
 | Launch、LaunchMotion、Welcome、Install、Connect、Login、ModelSetup、WorkerSetup | 已设计，尚未实现（见下文） |
 
 ## 尚未设计
@@ -82,7 +86,7 @@
 
 必须消失的旧样式类：`primary-button`、`secondary-button`、`icon-button`、`create-dialog`、
 `dialog-header`、`dialog-backdrop`、`login-card`、`onboarding-mark`、`loading-screen`、
-`destination-*`、`workspace-toolbar`/`toolbar-*`、`channel-members-*`、`usage-rail-*`。旧样式表：
+`destination-*`、`workspace-toolbar`/`toolbar-*`、`channel-members-*`。旧样式表：
 `styles.css` 的大部分、`workspace-shell.css`、`desktop-workspace.css`、`workspace-preferences.css`、
 `components/destinations.css`。
 

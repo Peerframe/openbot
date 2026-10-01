@@ -34,10 +34,16 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 - Three columns: sidebar 300px, main, rail 340px (264/300 and 236/264 at 1280/1100px).
 - **No global toolbar.** The sidebar's top row holds the macOS traffic lights (Desktop places them
   at x 20, y 20) and the 新建 button on one 30px row centred on them. Search follows.
-- The main column has its own 56px header: the conversation title pill on the left; 实时 status
+- The main column has its own 56px header: the conversation title pill in the centre; 实时 status
   and 分享 on the right.
-- **The title pill opens the right rail** (频道信息 / Bot 信息), as in the Main artboard; the
-  rail's 收起 closes it. Members are added and removed in the rail, not in a popover.
+- **The title pill is centred** and opens the right rail (频道信息 / Bot 信息), as in the Main
+  artboard; the rail's 收起 closes it. On a phone the pill leads, because the phone layout is not
+  designed yet.
+- The rail shows the identity, then a segmented 详情 / 资料库 / 成员 control (ChannelInfo
+  artboard). It opens on 成员, or on 详情 while an approval in the conversation is pending; 详情
+  then shows a count. Members are added and removed in 成员, not in a popover. 资料库 lists task
+  outputs and the channel's files; 上传文件 opens the composer's picker, so every upload stays
+  tied to a message.
 - Back, forward and the panel toggles are keyboard and menu commands (⌘[ ⌘] ⌘B ⌘⇧B), not
   toolbar buttons. When the sidebar is hidden, the main header leaves room for the traffic lights
   and shows one button to reopen it.
@@ -71,7 +77,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Plugins | `PluginsDialog.tsx`, `PluginManagerPanel.tsx` (catalog variant) |
 | Components | `styles.css` tokens and primitives |
 | Avatar, Avatars | `RobotAvatar.tsx`, `RobotAvatar.css` |
-| ChannelInfo | `ContextRail.tsx` (designed with 详情 / 资料库 / 成员 tabs; tabs not built yet) |
+| ChannelInfo | `ContextRail.tsx`, `ContextRail.css` (详情 / 资料库 / 成员; a direct conversation has 详情 and 资料库) |
 | Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | Designed; not built yet (see below) |
 
 ## Not designed yet
@@ -91,8 +97,7 @@ These need artboards before they are rebuilt; until then they keep their current
 
 Legacy classes that must disappear: `primary-button`, `secondary-button`, `icon-button`,
 `create-dialog`, `dialog-header`, `dialog-backdrop`, `login-card`, `onboarding-mark`,
-`loading-screen`, `destination-*`, `workspace-toolbar`/`toolbar-*`, `channel-members-*`,
-`usage-rail-*`. Legacy stylesheets: most of `styles.css`, `workspace-shell.css`,
+`loading-screen`, `destination-*`, `workspace-toolbar`/`toolbar-*`, `channel-members-*`. Legacy stylesheets: most of `styles.css`, `workspace-shell.css`,
 `desktop-workspace.css`, `workspace-preferences.css`, `components/destinations.css`.
 
 Retirement order: (1) window shell and channel rail; (2) conversation task cards; (3) dialogs;

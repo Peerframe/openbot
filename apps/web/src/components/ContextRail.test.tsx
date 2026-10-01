@@ -215,7 +215,7 @@ describe("ContextRail", () => {
     );
     try {
       expect(rendered.container.querySelectorAll(".approval-card")).toHaveLength(1);
-      expect(rendered.container.textContent).toContain("工作电脑1 台已连接");
+      expect(rendered.container.textContent).toContain("电脑1 台已连接");
       expect(rendered.container.textContent).toContain("Design Mac");
       expect(rendered.container.textContent).toContain("macos · 1/2 任务");
       const reject = Array.from(rendered.container.querySelectorAll("button")).find(
@@ -304,7 +304,6 @@ describe("ContextRail", () => {
       expect(rendered.container.textContent).not.toContain("Task elsewhere");
       expect(rendered.container.textContent).not.toContain("Task other-result");
       expect(rendered.container.textContent).not.toContain("另一个频道的截图");
-      expect(rendered.container.textContent).toContain("2 条最近任务记录");
       expect(rendered.container.querySelector("a")?.getAttribute("href")).toBe(
         "/api/v1/artifacts/artifact-current/content",
       );
@@ -363,7 +362,7 @@ describe("ContextRail", () => {
       expect(rendered.container.textContent).toContain("本频道仍需确认");
       expect(rendered.container.textContent).not.toContain("已知关联冲突");
       expect(rendered.container.textContent).not.toContain("其他频道的确认");
-      const firstSection = rendered.container.querySelector("aside > section");
+      const firstSection = rendered.container.querySelector(".ci-body > section");
       expect(firstSection?.getAttribute("aria-label")).toBe("需要确认的操作");
       const approve = rendered.container.querySelector<HTMLButtonElement>(".approval-approve");
       await interact(() => approve?.click());
@@ -396,7 +395,6 @@ describe("ContextRail", () => {
       await interact(() => rendered.container.querySelector("button")?.click());
       expect(rendered.container.textContent).not.toContain("Task selected");
       expect(rendered.container.textContent).toContain("这个频道暂无任务动态");
-      expect(rendered.container.textContent).toContain("0 条最近任务记录");
       expect(rendered.container.querySelector('[aria-label="当前任务"]')).toBeNull();
       expect(rendered.container.querySelector('[aria-label="最近结果"]')).toBeNull();
       expect(rendered.container.querySelector('[aria-label="需要确认的操作"]')).toBeNull();
@@ -412,6 +410,14 @@ function metric(container: HTMLElement, label: string): string | null {
     (item) => item.textContent === label,
   );
   return term?.nextElementSibling?.textContent ?? null;
+}
+
+function tab(container: HTMLElement, label: string): HTMLButtonElement {
+  const button = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]')).find(
+    (candidate) => candidate.textContent?.startsWith(label),
+  );
+  if (button === undefined) throw new Error(`Tab missing: ${label}`);
+  return button;
 }
 
 function getButton(container: HTMLElement, label: string): HTMLButtonElement {
@@ -456,15 +462,16 @@ it("adds and removes channel members from the rail and collapses it", async () =
     />,
   );
   try {
-    expect(rendered.container.querySelector(".rail-header h2")?.textContent).toBe("频道信息");
+    expect(rendered.container.querySelector(".ci-header h2")?.textContent).toBe("频道信息");
+    expect(tab(rendered.container, "成员").ariaSelected).toBe("true");
     await interact(() =>
       Array.from(rendered.container.querySelectorAll("button"))
-        .find((item) => item.textContent === "添加 Bot")
+        .find((item) => item.textContent === "添加成员")
         ?.click(),
     );
     await interact(() =>
       rendered.container
-        .querySelector(".rail-add-member")
+        .querySelector(".ci-add-form")
         ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
     );
     expect(onJoin).toHaveBeenCalledWith("beta");
@@ -473,6 +480,119 @@ it("adds and removes channel members from the rail and collapses it", async () =
     await interact(() => getButton(rendered.container, "收起").click());
     expect(onCollapse).toHaveBeenCalledOnce();
   } finally {
+    await rendered.unmount();
+  }
+});
+
+it("opens 详情 for pending approvals and lists task outputs and channel files in 资料库", async () => {
+  const fetchMock = vi.fn(async () =>
+    Response.json({
+      attachments: [
+        {
+          id: "00000000-0000-4000-8000-000000000001",
+          channelId: "c",
+          name: "brief.pdf",
+          mediaType: "application/pdf",
+          sizeBytes: 2048,
+          sha256: "a".repeat(64),
+          createdAt: "2026-09-25T00:00:00Z",
+        },
+        {
+          id: "00000000-0000-4000-8000-000000000002",
+          channelId: "c",
+          name: "old.txt",
+          mediaType: "text/plain",
+          sizeBytes: 10,
+          sha256: "b".repeat(64),
+          createdAt: "2026-09-20T00:00:00Z",
+          deletedAt: "2026-09-21T00:00:00Z",
+        },
+      ],
+    }),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const composerAttach = vi.fn();
+  window.addEventListener("openbot:composer-attach", composerAttach);
+  const channel = {
+    id: "c",
+    name: "频道",
+    description: "",
+    botIds: ["bot-1"],
+    createdAt: "2026-10-01T00:00:00.000Z",
+  };
+  const finished = { ...run("finished", "completed"), channelId: "c" };
+  const rendered = await renderComponent(
+    <ContextRail
+      selectedChannelId="c"
+      workspace={workspace({
+        channels: [channel],
+        bots: [
+          {
+            id: "bot-1",
+            name: "研究助理",
+            role: "研究",
+            status: "idle",
+            computerProfile: "none",
+            createdAt: "2026-10-01T00:00:00.000Z",
+          },
+        ],
+        runs: [finished],
+        approvals: [
+          {
+            id: "approval-1",
+            runId: "finished",
+            channelId: "c",
+            botId: "bot-1",
+            nodeId: "node-1",
+            action: "form.submit",
+            target: "https://example.test/form",
+            summary: "提交登记表",
+            risk: "write",
+            targetFingerprint: "0".repeat(64),
+            beforeState: {},
+            status: "pending",
+            expiresAt: "2999-01-01T00:00:00Z",
+            createdAt: "2026-09-05T00:00:00Z",
+          },
+        ],
+        artifacts: [
+          {
+            id: "artifact-1",
+            runId: "finished",
+            name: "weekly.md",
+            mediaType: "text/markdown",
+            sha256: "0".repeat(64),
+            sizeBytes: 2048,
+            createdAt: "2026-09-05T01:00:00Z",
+          },
+        ],
+      })}
+      onDecideApproval={vi.fn()}
+      onInspectRun={vi.fn()}
+    />,
+  );
+  try {
+    expect(tab(rendered.container, "详情").ariaSelected).toBe("true");
+    expect(rendered.container.querySelectorAll(".approval-card")).toHaveLength(1);
+    await interact(() => tab(rendered.container, "资料库").click());
+    expect(rendered.container.querySelector(".approval-card")).toBeNull();
+    expect(tab(rendered.container, "详情").textContent).toBe("详情1");
+    const output = rendered.container.querySelector<HTMLAnchorElement>("a.ci-file");
+    expect(output?.getAttribute("href")).toBe("/api/v1/artifacts/artifact-1/content");
+    expect(output?.textContent).toContain("研究助理");
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/channels/c/attachments", expect.anything());
+    expect(rendered.container.textContent).toContain("频道文件 · 1");
+    expect(rendered.container.textContent).toContain("brief.pdf");
+    expect(rendered.container.textContent).not.toContain("old.txt");
+    await interact(() =>
+      Array.from(rendered.container.querySelectorAll("button"))
+        .find((item) => item.textContent === "上传文件")
+        ?.click(),
+    );
+    expect(composerAttach).toHaveBeenCalledOnce();
+  } finally {
+    window.removeEventListener("openbot:composer-attach", composerAttach);
+    vi.unstubAllGlobals();
     await rendered.unmount();
   }
 });

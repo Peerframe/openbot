@@ -49,18 +49,20 @@ export function WorkspaceHeader({
   );
   return (
     <header className={`shell-header${sidebarOpen ? "" : " without-sidebar"}`}>
-      {sidebarOpen ? null : (
-        <button
-          type="button"
-          className="shell-icon"
-          aria-label="打开侧栏"
-          title={`打开侧栏 · ${shortcutLabel("B")}`}
-          aria-controls="workspace-sidebar"
-          onClick={onOpenSidebar}
-        >
-          <PanelLeftIcon />
-        </button>
-      )}
+      <div className="shell-leading">
+        {sidebarOpen ? null : (
+          <button
+            type="button"
+            className="shell-icon"
+            aria-label="打开侧栏"
+            title={`打开侧栏 · ${shortcutLabel("B")}`}
+            aria-controls="workspace-sidebar"
+            onClick={onOpenSidebar}
+          >
+            <PanelLeftIcon />
+          </button>
+        )}
+      </div>
       {onToggleRail ? (
         <button
           type="button"

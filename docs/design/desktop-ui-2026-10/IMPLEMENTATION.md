@@ -35,7 +35,7 @@ data (hidden, disabled or read-only) and never fakes it.
 | 9 | Plugins page with the curated catalog | Plugins | In review (stacked): 我的插件 and adding by MCP; 精选 and categories after C8 |
 | 10 | Window shell: no global toolbar; sidebar row shares the traffic-light line; title pill opens the 频道信息 rail with member management | Main, Sidebar, Profile | In review (stacked) |
 | 11 | Bot avatars: the owner's Round / Relay / Scout heads, frameless everywhere, micro drawing below 32px | Avatars, Avatar | In review (stacked) |
-| 12 | 频道信息 rail tabs: 详情, 资料库 (task outputs and channel files), 成员 | ChannelInfo, Main | Next |
+| 12 | 频道信息 rail tabs: 详情, 资料库 (task outputs and channel files), 成员; centred title pill | ChannelInfo, Main | In review (stacked) |
 | 13 | Launch, opening animation and first-run setup | Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | Planned |
 
 ## Backend and platform backlog (Codex)

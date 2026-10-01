@@ -6,17 +6,20 @@ import type {
   RunProgress,
   WorkspaceSnapshot,
 } from "@openbot/domain";
-import { useState } from "react";
-import type { RealtimeConnectionState } from "../api";
+import { useId, useState } from "react";
+import { formatAttachmentSize } from "../channel-attachment-client";
+import { composerAttachEvent } from "../composer-events";
 import { runStatusSummary } from "../run-state";
 import { requestNotificationPermission } from "../system-notifications";
 import { updatePreferences, useWorkspacePreferences } from "../workspace-preferences";
 import { ArtifactDownloadLink } from "./ArtifactCard";
-import "../context-rail.css";
+import { AttachmentsManagerDialog, useChannelAttachments } from "./AttachmentsManager";
+import "./ContextRail.css";
 import { isActiveRun, runStatusLabel } from "../run-state";
 import { ApprovalCard } from "./ApprovalCard";
-import { CheckIcon, NodeIcon } from "./Icons";
+import { CheckIcon, NodeIcon, PlusIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
+import { sidebarTime } from "./Sidebar";
 
 export function ContextRail({
   selectedChannelId,
@@ -42,6 +45,8 @@ export function ContextRail({
   const [candidate, setCandidate] = useState("");
   const [memberBusy, setMemberBusy] = useState<string>();
   const [memberError, setMemberError] = useState<string>();
+  const [picked, setPicked] = useState<{ channelId: string | undefined; tab: RailTab }>();
+  const tabId = useId();
   const scopedRuns = workspace.runs.filter(
     (run) => selectedChannelId === undefined || run.channelId === selectedChannelId,
   );
@@ -97,24 +102,37 @@ export function ContextRail({
   const activeBotIds = new Set(activeRuns.map((run) => run.botId));
   const available = channel ? workspace.bots.filter((bot) => !channel.botIds.includes(bot.id)) : [];
 
+  const tabs: RailTab[] = channel
+    ? channel.directBotId
+      ? ["details", "library"]
+      : ["details", "library", "members"]
+    : [];
+  // Until the Owner picks a tab for this conversation, open where attention is needed.
+  const defaultTab: RailTab =
+    tabs.includes("members") && pendingApprovals.length === 0 ? "members" : "details";
+  const tab: RailTab =
+    tabs.length === 0
+      ? "details"
+      : picked !== undefined && picked.channelId === selectedChannelId && tabs.includes(picked.tab)
+        ? picked.tab
+        : defaultTab;
+  const title =
+    selectedChannelId === undefined ? "工作区动态" : channel?.directBotId ? "Bot 信息" : "频道信息";
+  const channelArtifacts = workspace.artifacts
+    .filter((artifact) => {
+      const run = runById.get(artifact.runId);
+      return run !== undefined && run.channelId === selectedChannelId;
+    })
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+
   return (
-    <aside
-      className="context-rail usage-rail"
-      aria-label={selectedChannelId === undefined ? "工作区任务与详情" : "频道任务与详情"}
-    >
-      <header className="rail-header">
-        <span aria-hidden="true" />
-        <h2>
-          {selectedChannelId === undefined
-            ? "工作区动态"
-            : channel?.directBotId
-              ? "Bot 信息"
-              : "频道信息"}
-        </h2>
+    <aside className="context-rail channel-info" aria-label={title}>
+      <header className="ci-header">
+        <h2 className="visually-hidden">{title}</h2>
         {onCollapse ? (
           <button
             type="button"
-            className="rail-icon"
+            className="ci-icon"
             aria-label="收起"
             title="收起"
             onClick={onCollapse}
@@ -134,286 +152,446 @@ export function ContextRail({
               <polyline points="13 17 18 12 13 7" />
             </svg>
           </button>
-        ) : (
-          <span aria-hidden="true" />
-        )}
+        ) : null}
       </header>
-      {selectedChannelId !== undefined ? (
-        <div className="rail-identity">
-          <span className="rail-identity-avatars" aria-hidden="true">
+
+      <div className="ci-identity">
+        {members.length > 0 ? (
+          <span className={`ci-identity-avatars${members.length > 1 ? " is-pair" : ""}`}>
             {members.slice(0, 2).map((bot) => (
-              <RobotAvatar bot={bot} compact key={bot.id} />
+              <RobotAvatar bot={bot} className="ci-identity-avatar" key={bot.id} />
             ))}
           </span>
-          <strong>{channel?.name ?? "当前频道"}</strong>
-          {channel ? (
-            <span>
-              {channel.description ||
-                (channel.directBotId ? members[0]?.role : `${members.length} 名 Bot`)}
-            </span>
-          ) : null}
-          <small>{scopedRuns.length} 条最近任务记录</small>
+        ) : null}
+        <strong>{selectedChannelId === undefined ? title : (channel?.name ?? "当前频道")}</strong>
+        {channel ? (
+          <span>
+            {channel.description ||
+              (channel.directBotId ? members[0]?.role : `${members.length} 名 Bot`)}
+          </span>
+        ) : null}
+      </div>
+
+      {tabs.length > 0 ? (
+        <div
+          className="ci-tabs"
+          role="tablist"
+          aria-label={`${title}分页`}
+          onKeyDown={(event) => {
+            if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+            event.preventDefault();
+            const next =
+              tabs[
+                (tabs.indexOf(tab) + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) %
+                  tabs.length
+              ] ?? tab;
+            setPicked({ channelId: selectedChannelId, tab: next });
+            event.currentTarget.querySelector<HTMLButtonElement>(`[data-tab="${next}"]`)?.focus();
+          }}
+        >
+          {tabs.map((id) => (
+            <button
+              type="button"
+              role="tab"
+              id={`${tabId}-${id}`}
+              aria-controls={`${tabId}-panel`}
+              aria-selected={tab === id}
+              tabIndex={tab === id ? 0 : -1}
+              data-tab={id}
+              key={id}
+              onClick={() => setPicked({ channelId: selectedChannelId, tab: id })}
+            >
+              {tabLabels[id]}
+              {id === "details" && pendingApprovals.length > 0 && tab !== "details" ? (
+                <span className="ci-tab-count">{pendingApprovals.length}</span>
+              ) : null}
+            </button>
+          ))}
         </div>
       ) : null}
 
-      {channel ? (
-        <section className="usage-rail-section" aria-label="频道成员">
-          <div className="usage-rail-section-heading">
-            <h3>成员 · {members.length}</h3>
+      <div
+        className="ci-body"
+        id={`${tabId}-panel`}
+        {...(tabs.length > 0
+          ? { role: "tabpanel", "aria-labelledby": `${tabId}-${tab}` }
+          : undefined)}
+      >
+        {channel && tab === "members" ? (
+          <section className="ci-members" aria-label="频道成员">
+            {members.map((bot) => (
+              <div className="ci-member" key={bot.id}>
+                <button
+                  type="button"
+                  className="ci-member-open"
+                  disabled={!onOpenBot}
+                  onClick={() => onOpenBot?.(bot.id)}
+                  aria-label={`打开 ${bot.name} 的员工档案`}
+                >
+                  <RobotAvatar bot={bot} className="ci-member-avatar" />
+                  <span className="ci-member-text">
+                    <strong className="ci-member-name">{bot.name}</strong>
+                    {bot.role ? <small className="ci-member-role">{bot.role}</small> : null}
+                  </span>
+                </button>
+                <span className={`ci-status ${activeBotIds.has(bot.id) ? "is-active" : "is-idle"}`}>
+                  <i aria-hidden="true" />
+                  {activeBotIds.has(bot.id) ? "执行中" : "待命"}
+                </span>
+                {onRemove && !channel.directBotId ? (
+                  <button
+                    type="button"
+                    className="ci-member-remove"
+                    aria-label={`将 ${bot.name} 移出频道`}
+                    disabled={memberBusy !== undefined}
+                    onClick={async () => {
+                      setMemberBusy(bot.id);
+                      setMemberError(undefined);
+                      try {
+                        await onRemove(bot.id);
+                      } catch {
+                        setMemberError("无法移除这个 Bot，请重试。");
+                      } finally {
+                        setMemberBusy(undefined);
+                      }
+                    }}
+                  >
+                    移除
+                  </button>
+                ) : null}
+              </div>
+            ))}
+            {members.length === 0 ? (
+              <p className="ci-empty">还没有 Bot。添加后，频道里的消息会交给它们处理。</p>
+            ) : null}
             {onJoin && !channel.directBotId && available.length > 0 ? (
               <button
                 type="button"
-                className="ob-pill is-small"
+                className="ci-member-add"
                 aria-expanded={adding}
                 onClick={() => {
                   setAdding((open) => !open);
                   setMemberError(undefined);
                 }}
               >
-                添加 Bot
+                <span className="ci-member-add-icon" aria-hidden="true">
+                  <PlusIcon />
+                </span>
+                添加成员
               </button>
             ) : null}
-          </div>
-          {adding ? (
-            <form
-              className="rail-add-member"
-              onSubmit={async (event) => {
-                event.preventDefault();
-                const botId = available.some((bot) => bot.id === candidate)
-                  ? candidate
-                  : available[0]?.id;
-                if (!botId || !onJoin) return;
-                setMemberBusy(botId);
-                setMemberError(undefined);
-                try {
-                  await onJoin(botId);
-                  setAdding(false);
-                } catch {
-                  setMemberError("无法添加这个 Bot，请重试。");
-                } finally {
-                  setMemberBusy(undefined);
-                }
-              }}
-            >
-              <select
-                aria-label="选择要添加的 Bot"
-                value={candidate}
-                onChange={(event) => setCandidate(event.target.value)}
-              >
-                {available.map((bot) => (
-                  <option key={bot.id} value={bot.id}>
-                    {bot.name}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="submit"
-                className="ob-pill is-small is-primary"
-                disabled={memberBusy !== undefined}
-              >
-                添加
-              </button>
-            </form>
-          ) : null}
-          {memberError ? (
-            <p className="form-error" role="alert">
-              {memberError}
-            </p>
-          ) : null}
-          {members.length > 0 ? (
-            <div className="rail-card">
-              {members.map((bot) => (
-                <div className="rail-member-row" key={bot.id}>
-                  <button
-                    type="button"
-                    className="rail-member"
-                    disabled={!onOpenBot}
-                    onClick={() => onOpenBot?.(bot.id)}
-                    aria-label={`打开 ${bot.name} 的员工档案`}
-                  >
-                    <RobotAvatar bot={bot} compact />
-                    <span>{bot.name}</span>
-                    <small className={activeBotIds.has(bot.id) ? "active" : "idle"}>
-                      <i aria-hidden="true" />
-                      {activeBotIds.has(bot.id) ? "执行中" : "待命"}
-                    </small>
-                  </button>
-                  {onRemove && !channel.directBotId ? (
-                    <button
-                      type="button"
-                      className="rail-member-remove"
-                      aria-label={`将 ${bot.name} 移出频道`}
-                      disabled={memberBusy !== undefined}
-                      onClick={async () => {
-                        setMemberBusy(bot.id);
-                        setMemberError(undefined);
-                        try {
-                          await onRemove(bot.id);
-                        } catch {
-                          setMemberError("无法移除这个 Bot，请重试。");
-                        } finally {
-                          setMemberBusy(undefined);
-                        }
-                      }}
-                    >
-                      移除
-                    </button>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="rail-empty">还没有 Bot。添加后，频道里的消息会交给它们处理。</p>
-          )}
-        </section>
-      ) : null}
-
-      {pendingApprovals.length > 0 ? (
-        <section className="usage-rail-section" aria-label="需要确认的操作">
-          <div className="usage-rail-section-heading">
-            <h3>需要处理 · {pendingApprovals.length}</h3>
-          </div>
-          <div className="approval-list">
-            {pendingApprovals.map((approval) => (
-              <ApprovalCard
-                approval={approval}
-                bot={botById.get(approval.botId)}
-                channel={channelById.get(approval.channelId)}
-                onDecide={onDecideApproval}
-                key={approval.id}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {activeRuns.length > 0 ? (
-        <section className="usage-rail-section" aria-label="当前任务">
-          <div className="usage-rail-section-heading">
-            <h3>进行中</h3>
-            {activeRuns.length > 4 ? <span>显示最近 4 条</span> : null}
-          </div>
-          <div className="usage-rail-run-list">
-            {activeRuns.slice(0, 4).map((run) => {
-              const bot = botById.get(run.botId);
-              const node = run.nodeId === undefined ? undefined : nodeById.get(run.nodeId);
-              return (
-                <RunRow
-                  run={run}
-                  detail={
-                    runStatusSummary(run, latestProgress.get(run.id)?.message) ??
-                    `${bot?.name ?? "未知 Bot"} · ${run.executionProfile === "none" || run.executionProfile === "model" ? "正在处理" : (node?.name ?? "等待分配电脑")}`
+            {adding ? (
+              <form
+                className="ci-add-form"
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  const botId = available.some((bot) => bot.id === candidate)
+                    ? candidate
+                    : available[0]?.id;
+                  if (!botId || !onJoin) return;
+                  setMemberBusy(botId);
+                  setMemberError(undefined);
+                  try {
+                    await onJoin(botId);
+                    setAdding(false);
+                  } catch {
+                    setMemberError("无法添加这个 Bot，请重试。");
+                  } finally {
+                    setMemberBusy(undefined);
                   }
-                  onInspect={onInspectRun}
-                  key={run.id}
-                />
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
-
-      {!hasActivity ? (
-        <div className="usage-rail-empty-state">
-          <CheckIcon />
-          <p>{selectedChannelId === undefined ? "暂无任务动态" : "这个频道暂无任务动态"}</p>
-          <span>任务进度与需要确认的操作会显示在这里。</span>
-        </div>
-      ) : null}
-
-      <section className="usage-rail-section usage-rail-computers" aria-label="工作电脑">
-        <div className="usage-rail-section-heading">
-          <h3>工作电脑</h3>
-          <span>{workspace.nodes.length} 台已连接</span>
-        </div>
-        {workspace.nodes.length === 0 ? (
-          <div className="usage-rail-no-computer">
-            <NodeIcon />
-            <p>尚未连接工作电脑</p>
-          </div>
-        ) : (
-          <div className="rail-card">
-            {workspace.nodes.map((node) => (
-              <NodeRow node={node} key={node.id} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <NotificationToggle />
-
-      <details className="usage-rail-workspace-overview">
-        <summary>任务记录与用量</summary>
-        <section className="usage-rail-section" aria-label="最近任务统计">
-          <div className="usage-rail-section-heading">
-            <h3>最近任务</h3>
-            <span>{workspace.runs.length} 条记录</span>
-          </div>
-          <dl className="usage-rail-task-metrics">
-            <Metric label="进行中" value={workspaceActiveCount} />
-            <Metric label="已完成" value={completedCount} />
-            <Metric label="记录数" value={workspace.runs.length} />
-          </dl>
-          <p className="usage-rail-caption">统计范围为当前已加载的工作区任务记录</p>
-        </section>
-        {recentResults.length > 0 ? (
-          <section className="usage-rail-section" aria-label="最近结果">
-            <div className="usage-rail-section-heading">
-              <h3>最近结果</h3>
-            </div>
-            <div className="usage-rail-run-list">
-              {recentResults.map((run) => {
-                const artifact = latestArtifact.get(run.id);
-                return (
-                  <div className="usage-rail-result" key={run.id}>
-                    <RunRow
-                      run={run}
-                      detail={runStatusSummary(run) ?? botById.get(run.botId)?.name}
-                      onInspect={onInspectRun}
-                    />
-                    {artifact ? (
-                      <ArtifactDownloadLink artifact={artifact}>
-                        {artifact.mediaType === "text/markdown" ? "下载报告" : "查看附件"}：
-                        {artifact.name} <span aria-hidden="true">↗</span>
-                      </ArtifactDownloadLink>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
+                }}
+              >
+                <select
+                  aria-label="选择要添加的 Bot"
+                  value={candidate}
+                  onChange={(event) => setCandidate(event.target.value)}
+                >
+                  {available.map((bot) => (
+                    <option key={bot.id} value={bot.id}>
+                      {bot.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="submit"
+                  className="ob-pill is-small is-primary"
+                  disabled={memberBusy !== undefined}
+                >
+                  添加
+                </button>
+              </form>
+            ) : null}
+            {memberError ? (
+              <p className="form-error" role="alert">
+                {memberError}
+              </p>
+            ) : null}
           </section>
         ) : null}
-        <section className="usage-rail-tokens" aria-label="Token 用量">
-          <h3>Token 用量</h3>
-          {observed.length ? (
-            <>
-              <p className="usage-rail-unavailable">
-                输入{" "}
-                {knownInput.length
-                  ? knownInput
-                      .reduce((sum, usage) => sum + (usage.inputTokens ?? 0), 0)
-                      .toLocaleString()
-                  : "未知"}{" "}
-                · 输出{" "}
-                {knownOutput.length
-                  ? knownOutput
-                      .reduce((sum, usage) => sum + (usage.outputTokens ?? 0), 0)
-                      .toLocaleString()
-                  : "未知"}
-              </p>
-              <p className="usage-rail-caption">
-                已加载范围内 {observed.length} 个任务的已知记录；未记录部分不计入，不代表账单。
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="usage-rail-unavailable">暂无用量记录</p>
-              <p className="usage-rail-caption">当前范围没有已记录的模型用量</p>
-            </>
-          )}
-        </section>
-      </details>
+
+        {channel && tab === "library" ? (
+          <ChannelLibrary
+            channelId={channel.id}
+            artifacts={channelArtifacts}
+            botNameForRun={(runId) => {
+              const run = runById.get(runId);
+              return run ? botById.get(run.botId)?.name : undefined;
+            }}
+          />
+        ) : null}
+
+        {tab === "details" ? (
+          <>
+            {pendingApprovals.length > 0 ? (
+              <section className="ci-section" aria-label="需要确认的操作">
+                <h3>需要处理 · {pendingApprovals.length}</h3>
+                <div className="ci-approvals">
+                  {pendingApprovals.map((approval) => (
+                    <ApprovalCard
+                      approval={approval}
+                      bot={botById.get(approval.botId)}
+                      channel={channelById.get(approval.channelId)}
+                      onDecide={onDecideApproval}
+                      key={approval.id}
+                    />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {activeRuns.length > 0 ? (
+              <section className="ci-section" aria-label="当前任务">
+                <h3>
+                  进行中
+                  {activeRuns.length > 4 ? (
+                    <span className="ci-section-meta">显示最近 4 条</span>
+                  ) : null}
+                </h3>
+                <div className="ci-card">
+                  {activeRuns.slice(0, 4).map((run) => {
+                    const bot = botById.get(run.botId);
+                    const node = run.nodeId === undefined ? undefined : nodeById.get(run.nodeId);
+                    return (
+                      <RunRow
+                        run={run}
+                        detail={
+                          runStatusSummary(run, latestProgress.get(run.id)?.message) ??
+                          `${bot?.name ?? "未知 Bot"} · ${run.executionProfile === "none" || run.executionProfile === "model" ? "正在处理" : (node?.name ?? "等待分配电脑")}`
+                        }
+                        onInspect={onInspectRun}
+                        key={run.id}
+                      />
+                    );
+                  })}
+                </div>
+              </section>
+            ) : null}
+
+            {!hasActivity ? (
+              <div className="ci-empty-state">
+                <CheckIcon />
+                <p>{selectedChannelId === undefined ? "暂无任务动态" : "这个频道暂无任务动态"}</p>
+                <span className="ci-empty-hint">任务进度与需要确认的操作会显示在这里。</span>
+              </div>
+            ) : null}
+
+            <section className="ci-section" aria-label="工作电脑">
+              <h3>
+                电脑<span className="ci-section-meta">{workspace.nodes.length} 台已连接</span>
+              </h3>
+              {workspace.nodes.length === 0 ? (
+                <div className="ci-card ci-no-computer">
+                  <NodeIcon />
+                  <p>尚未连接工作电脑</p>
+                </div>
+              ) : (
+                <div className="ci-card">
+                  {workspace.nodes.map((node) => (
+                    <NodeRow node={node} key={node.id} />
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <NotificationToggle />
+
+            <details className="ci-overview">
+              <summary>任务记录与用量</summary>
+              <section className="ci-section" aria-label="最近任务统计">
+                <h3>
+                  最近任务<span className="ci-section-meta">{workspace.runs.length} 条记录</span>
+                </h3>
+                <dl className="ci-metrics">
+                  <Metric label="进行中" value={workspaceActiveCount} />
+                  <Metric label="已完成" value={completedCount} />
+                  <Metric label="记录数" value={workspace.runs.length} />
+                </dl>
+                <p className="ci-caption">统计范围为当前已加载的工作区任务记录</p>
+              </section>
+              {recentResults.length > 0 ? (
+                <section className="ci-section" aria-label="最近结果">
+                  <h3>最近结果</h3>
+                  <div className="ci-card">
+                    {recentResults.map((run) => {
+                      const artifact = latestArtifact.get(run.id);
+                      return (
+                        <div className="ci-result" key={run.id}>
+                          <RunRow
+                            run={run}
+                            detail={runStatusSummary(run) ?? botById.get(run.botId)?.name}
+                            onInspect={onInspectRun}
+                          />
+                          {artifact ? (
+                            <ArtifactDownloadLink artifact={artifact}>
+                              {artifact.mediaType === "text/markdown" ? "下载报告" : "查看附件"}：
+                              {artifact.name} <span aria-hidden="true">↗</span>
+                            </ArtifactDownloadLink>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              ) : null}
+              <section className="ci-section ci-tokens" aria-label="Token 用量">
+                <h3>Token 用量</h3>
+                {observed.length ? (
+                  <>
+                    <p>
+                      输入{" "}
+                      {knownInput.length
+                        ? knownInput
+                            .reduce((sum, usage) => sum + (usage.inputTokens ?? 0), 0)
+                            .toLocaleString()
+                        : "未知"}{" "}
+                      · 输出{" "}
+                      {knownOutput.length
+                        ? knownOutput
+                            .reduce((sum, usage) => sum + (usage.outputTokens ?? 0), 0)
+                            .toLocaleString()
+                        : "未知"}
+                    </p>
+                    <p className="ci-caption">
+                      已加载范围内 {observed.length}{" "}
+                      个任务的已知记录；未记录部分不计入，不代表账单。
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p>暂无用量记录</p>
+                    <p className="ci-caption">当前范围没有已记录的模型用量</p>
+                  </>
+                )}
+              </section>
+            </details>
+          </>
+        ) : null}
+      </div>
     </aside>
+  );
+}
+
+type RailTab = "details" | "library" | "members";
+const tabLabels: Record<RailTab, string> = { details: "详情", library: "资料库", members: "成员" };
+
+/**
+ * 资料库 (ChannelInfo artboard): task outputs from the loaded snapshot and the channel's uploaded
+ * files. Uploading goes through the composer, so a file is always tied to a message the Owner
+ * sends; 管理 opens the existing file manager for download, extraction and the recycle bin.
+ */
+function ChannelLibrary({
+  channelId,
+  artifacts,
+  botNameForRun,
+}: {
+  channelId: string;
+  artifacts: Artifact[];
+  botNameForRun(runId: string): string | undefined;
+}) {
+  const { files, status } = useChannelAttachments(channelId);
+  const [managing, setManaging] = useState(false);
+  const available = files
+    .filter((file) => !file.deletedAt)
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  return (
+    <>
+      <section className="ci-section" aria-label="任务产物">
+        <h3>任务产物 · {artifacts.length}</h3>
+        {artifacts.length > 0 ? (
+          <div className="ci-card">
+            {artifacts.map((artifact) => (
+              <ArtifactDownloadLink artifact={artifact} className="ci-file" key={artifact.id}>
+                <FileTile name={artifact.name} />
+                <span>
+                  <strong>{artifact.name}</strong>
+                  <small>
+                    {[
+                      botNameForRun(artifact.runId),
+                      sidebarTime(artifact.createdAt),
+                      formatAttachmentSize(artifact.sizeBytes),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </small>
+                </span>
+              </ArtifactDownloadLink>
+            ))}
+          </div>
+        ) : (
+          <p className="ci-empty">Bot 完成任务后，报告和图片会出现在这里。</p>
+        )}
+      </section>
+      <section className="ci-section" aria-label="频道文件">
+        <h3>频道文件 · {available.length}</h3>
+        {available.length > 0 ? (
+          <div className="ci-card">
+            {available.map((file) => (
+              <div className="ci-file" key={file.id}>
+                <FileTile name={file.name} />
+                <span>
+                  <strong>{file.name}</strong>
+                  <small>
+                    {sidebarTime(file.createdAt)} · {formatAttachmentSize(file.sizeBytes)}
+                  </small>
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="ci-empty" role={status ? "status" : undefined}>
+            {status || "在消息里添加的附件会保存在这里。"}
+          </p>
+        )}
+      </section>
+      <div className="ci-library-actions">
+        <button
+          type="button"
+          className="ob-pill is-small"
+          onClick={() => window.dispatchEvent(new CustomEvent(composerAttachEvent))}
+        >
+          上传文件
+        </button>
+        <button
+          type="button"
+          className="ob-pill is-small is-outline"
+          onClick={() => setManaging(true)}
+        >
+          管理
+        </button>
+      </div>
+      {managing ? (
+        <AttachmentsManagerDialog channelId={channelId} onClose={() => setManaging(false)} />
+      ) : null}
+    </>
+  );
+}
+
+function FileTile({ name }: { name: string }) {
+  const extension = /\.([a-z0-9]{1,4})$/iu.exec(name)?.[1]?.toUpperCase() ?? "FILE";
+  return (
+    <span className="ci-file-tile" aria-hidden="true">
+      {extension}
+    </span>
   );
 }
 
@@ -423,10 +601,10 @@ function NotificationToggle() {
   const [blocked, setBlocked] = useState(false);
   const enabled = values.notifyApprovals || values.notifyMessages;
   return (
-    <div className="rail-notify">
-      <span>
-        <strong>通知</strong>
-        <small>
+    <div className="ci-notify">
+      <span className="ci-notify-text">
+        <strong className="ci-notify-title">通知</strong>
+        <small className="ci-notify-hint">
           {blocked
             ? "浏览器已阻止通知，可在设置中查看原因。"
             : "OpenBot 在后台时，有操作待批准或 Bot 回复会提醒你"}
@@ -476,25 +654,25 @@ function RunRow({
 }) {
   return (
     <button
-      className="usage-rail-run"
+      className="ci-run"
       type="button"
       onClick={() => onInspect(run.id)}
       aria-label={`查看任务：${run.title}`}
     >
-      <span className={`usage-rail-run-dot ${run.status}`} aria-hidden="true" />
-      <span className="usage-rail-run-copy">
+      <span className={`ci-run-dot ${run.status}`} aria-hidden="true" />
+      <span className="ci-run-copy">
         <strong>{run.title}</strong>
         {detail ? <small>{detail}</small> : null}
       </span>
-      <span className={`usage-rail-run-status ${run.status}`}>{runStatusLabel(run.status)}</span>
+      <span className={`ci-run-status ${run.status}`}>{runStatusLabel(run.status)}</span>
     </button>
   );
 }
 
 function NodeRow({ node }: { node: ExecutionNode }) {
   return (
-    <div className="usage-rail-computer">
-      <span className="usage-rail-computer-icon">
+    <div className="ci-computer">
+      <span className="ci-computer-icon">
         <NodeIcon />
       </span>
       <div>
@@ -503,7 +681,7 @@ function NodeRow({ node }: { node: ExecutionNode }) {
           {node.platform} · {node.activeRunIds.length}/{node.maxConcurrentRuns} 任务
         </small>
       </div>
-      <span className="usage-rail-online" role="img" aria-label="在线" />
+      <span className="ci-online" role="img" aria-label="在线" />
     </div>
   );
 }
