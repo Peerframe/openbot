@@ -765,3 +765,9 @@ export type ReviewKnowledgeProposalInput =
     };
 
 export * from "./channel-interactions.js";
+
+export type {
+  OwnerPasswordChangeInput,
+  OwnerSessionDevice,
+  OwnerPasswordChangeResponse,
+} from "@openbot/protocol";
