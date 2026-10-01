@@ -6,7 +6,7 @@ import math
 import re
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, AnyUrl, BaseModel, BeforeValidator, ConfigDict, Field, TypeAdapter
+from pydantic import AfterValidator, AnyUrl, BaseModel, BeforeValidator, ConfigDict, Field, TypeAdapter, model_validator
 from .identity_inputs import ChannelBotId as Id
 
 
@@ -162,6 +162,26 @@ def validate_page(value):
     return page
 
 
+class Maintenance(Strict):
+    kind: Literal["maintenance"]
+    operation: Literal["status", "restart", "clear"]
+
+
+class RuntimeState(Strict):
+    running: bool
+
+
+class MaintenanceInput(Strict):
+    operation: Literal["status", "restart", "clear"]
+    confirmation: Literal["clear-browser-data"] = None
+
+    @model_validator(mode="after")
+    def confirmed_clear(self):
+        if (self.operation == "clear") != (self.confirmation is not None):
+            raise ValueError("Clear requires explicit confirmation.")
+        return self
+
+
 class BrowserCommand(Strict):
     type: Literal["browser.command"]
     protocolVersion: Literal["0.9.0"]
@@ -171,7 +191,7 @@ class BrowserCommand(Strict):
     botId: Id
     expiresAt: Timestamp
     controlExpiresAt: Timestamp = None
-    action: Annotated[Observe | Take | Release | Navigate | Click | Type | Key | Scroll | AgentPage,
+    action: Annotated[Observe | Take | Release | Navigate | Click | Type | Key | Scroll | AgentPage | Maintenance,
                       Field(discriminator="kind")]
 
 
@@ -182,6 +202,7 @@ class BrowserResult(Strict):
     requestId: Id
     sessionId: Id
     ok: bool
+    runtime: RuntimeState = None
     frame: BrowserFrame = None
     page: Annotated[BrowserPage, BeforeValidator(validate_page)] = None
     error: Literal["unavailable", "busy", "expired", "control_required", "invalid_response", "action_failed"] = None
