@@ -65,3 +65,7 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=apps/server-python/src:packages/harness/src
 ```
 
 见[研究与准确边界](../../docs/research/python-product-container.md)。
+
+Desktop C4 在已合并的 C2 后追加 `0047_owner_approval_settings`（共48条迁移），
+构建和 smoke 要求完整历史。上方镜像证据保留原有范围；本 PR 的原生容器/迁移资格
+必须基于当前 head 运行，不修改已应用 SQL。

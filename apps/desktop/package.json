@@ -22,6 +22,7 @@
     "prepare:native": "turbo run build --filter=@openbot/python-node-runtime && node scripts/prepare-native-server.ts"
   },
   "dependencies": {
+    "electron-updater": "6.8.9",
     "postgres": "3.4.9",
     "write-file-atomic": "8.0.0"
   },

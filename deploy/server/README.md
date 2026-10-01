@@ -76,3 +76,8 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=apps/server-python/src:packages/harness/src
 ```
 
 See [research and exact boundary](../../docs/research/python-product-container.md).
+
+The Desktop C4 candidate now follows merged C2 with migration `0047_owner_approval_settings`
+(48 total). Build and smoke require this complete lineage. Historical image evidence above keeps
+its original scope; native container/migration qualification must run against this PR head.
+Preserve all already-applied SQL history.

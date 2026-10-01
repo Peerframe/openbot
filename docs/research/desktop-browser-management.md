@@ -40,3 +40,12 @@ restart passed. Temporary upstream/browser files and the owned profile/process w
 No navigation/account or Linux-sandbox claim. This control run did not execute Worker Temporal
 qualification; final hosted PR-head jobs provide that separate evidence. Download/screenshot
 retention awaits Owner data-scope clarification and is not simulated or represented complete.
+
+
+## Owner merge scope (2026-10-01)
+
+The Owner deferred download/screenshot retention during integration. Merge the implemented
+status/restart/explicit profile-clear contract after its checks; retain the fixed original-browser
+identity, opt-in capability and shared pause gate. Do not add retention settings or remove Server
+observations/Desktop saved files. All storage/evidence scope decisions above remain future work.
+This scope adjustment adds no dependency, upstream source copy or changed authority boundary.

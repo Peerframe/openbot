@@ -765,8 +765,20 @@ export type ReviewKnowledgeProposalInput =
     };
 
 export type {
+  ApprovalException,
+  ApprovalSettings,
+  ApprovalSettingsInput,
+  AuditCategory,
+  AuditEvent,
+  AuditPage,
   BrowserMaintenanceInput,
   BrowserMaintenanceResult,
   BrowserRuntimeState,
+  DesktopPlatformPreferences,
+  DesktopPlatformState,
+  DesktopUpdateState,
+  OwnerPasswordChangeInput,
+  OwnerPasswordChangeResponse,
+  OwnerSessionDevice,
 } from "@openbot/protocol";
 export * from "./channel-interactions.js";

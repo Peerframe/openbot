@@ -40,6 +40,7 @@ class _Connection:
     node: dict | None = None
     send_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     connection_id: str | None = None
+    audit_connected: bool = False
     credential_digest: str | None = None
     command_enabled: bool = False
 
@@ -61,10 +62,11 @@ class BrowserHostBinding:
 
 class WorkerHostRegistry:
     def __init__(self, identity, *, offer_timeout=10.0, enrollment_timeout=10.0,
-                 on_available=None, on_updated=None, on_unavailable=None, on_run_message=None, command_channel=None):
+                 on_available=None, on_updated=None, on_unavailable=None, on_run_message=None, command_channel=None, audit=None):
         if not 0 < offer_timeout <= 60 or not 0 < enrollment_timeout <= 60:
             raise ValueError("Invalid Worker connection deadline.")
         self._identity = identity
+        self._audit = audit
         self._offer_timeout, self._enrollment_timeout = offer_timeout, enrollment_timeout
         self._handlers = {"available": on_available, "updated": on_updated, "unavailable": on_unavailable, "run": on_run_message}
         if any(handler is not None and (not callable(handler) or inspect.iscoroutinefunction(handler)) for handler in self._handlers.values()):
@@ -255,6 +257,9 @@ class WorkerHostRegistry:
                     connection.node = {"id": hello["nodeId"], **{key: hello[key] for key in (
                         "name", "platform", "osVersion", "architecture", "deviceClass", "isolation", "trustTier",
                         "capabilities", "capabilityManifest", "maxConcurrentRuns")}, "activeRunIds": [], "connectedAt": stamp, "lastSeenAt": stamp}
+                    if self._audit is not None:
+                        await self._audit(hello["nodeId"],"connected")
+                        connection.audit_connected=True
                     self._nodes[hello["nodeId"]] = connection
                     if not await self._ack(connection, True, initial=True):
                         return
@@ -318,6 +323,9 @@ class WorkerHostRegistry:
         finally:
             self._detach(connection, "Node disconnected before accepting the run.")
             self._connections.discard(connection)
+            if connection.audit_connected:
+                try: await self._audit(connection.node["id"],"disconnected")
+                except Exception: _LOG.error("Worker disconnect audit unavailable.")
 
     def browser_binding(self, node_id):
         """Internal metadata for the current compatible browser.session@1/docker connection."""

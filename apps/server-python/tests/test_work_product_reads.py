@@ -621,3 +621,29 @@ def test_late_bot_context_is_bounded_by_run_and_root_source_time(setup):
             ids={r['id'] for r in data}
             assert allowed in ids and not ids.intersection({too_late,future_source,wrong_source})
     asyncio.run(check())
+
+
+def test_owner_policy_builtin_read_approval_and_post_admission_revocation(setup):
+    from test_approval_settings import restored
+    from openbot_server.approval_settings import OwnerApprovalSettings
+    f=setup
+    async def check():
+        b=await bound(f);policy=OwnerApprovalSettings(f.dsn,f.files)
+        async def save(mode):
+            current=await policy.snapshot(f.token)
+            return await policy.save(f.token,dict(expectedRevision=current['revision'],productRead=mode,publicWeb='inherit',exceptions=[]))
+        with activity(b):
+            intent=await planned(f,b,'read_channel_context');await save('required')
+            fence=await f.store.claim(b.context.task_id,b.context.run_id,derive_claim_id('default',b.facts.workflow_id,b.facts.engine_run_id,b.activity))
+            identity=await f.store.propose(b.context.task_id,b.context.run_id,fence=fence,action_key='policy-approved',intent=intent,reserved_tokens=0,requires_approval=False,correction_context=b.context.correction_token)
+            with pytest.raises(WorkConflict):await f.store.admit(identity,fence=fence)
+            await f.store.decide(f.token,identity,intent_digest=canonical(intent)[1],approved=True)
+            services=await f.reads.load(b.context,intent)
+            outcome=await execute_action(f.store,task_id=b.context.task_id,run_id=b.context.run_id,fence=fence,action_key='policy-approved',intent=intent,reserved_tokens=0,requires_approval=False,adapter=services.adapter,verifier=services.verifier,correction_context=b.context.correction_token)
+            assert outcome.status=='applied'
+            await save('inherit')
+            second=await f.store.propose(b.context.task_id,b.context.run_id,fence=fence,action_key='policy-revoked',intent=intent,reserved_tokens=0,requires_approval=False,correction_context=b.context.correction_token)
+            assert await f.store.admit(second,fence=fence)
+            await save('required')
+            with pytest.raises(WorkConflict,match='approval_policy_changed'):await f.reads._invoke(b.context,second,intent)
+    with restored({'dsn':f.dsn}):asyncio.run(check())
