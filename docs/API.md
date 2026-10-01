@@ -418,6 +418,31 @@ per-Node credential once. The current credential is still a copyable bearer secr
 proof-of-possession identity—so non-loopback Node connections require `wss:` and a trusted private
 network. See [Node enrollment](NODE_ENROLLMENT.md).
 
+## Employee browser lifecycle (C6 candidate)
+
+`POST /api/v1/bots/{botId}/browser/maintenance` requires Owner cookie and exact allowed Origin,
+and a strict JSON body up to 1 KiB: `{operation:"status"|"restart"|"clear",confirmation?:"clear-browser-data"}`.
+Only `clear` requires the confirmation, and other operations reject it. Unknown fields and any path,
+URL or command are rejected. Response: `{botId,nodeId,running:boolean,paused:boolean}`.
+
+The Server requires an already bound original browser identity or an explicit operator Bot-to-Node
+route; it never selects a replacement Host for maintenance. The original Worker must advertise
+`browser.maintenance@1` and `browser.session@1` from the Docker Provider. Enable explicitly with
+`OPENBOT_DOCKER_BROWSER_MAINTENANCE=true` plus existing sessions configuration. Default is off.
+Status queries upstream health without starting a browser. Restart gracefully stops the original
+browser, then starts it through the existing screenshot path without exposing its screenshot.
+Clear deletes only that Bot's upstream browser profile and leaves the browser stopped.
+
+Restart/clear persist an intent and invalidate all old viewer/Work observations before dispatch,
+retain the Server pause and Provider latch on both success and uncertainty, and require a fresh Owner
+takeover and explicit release before Agent work resumes. Origin, Owner expiry, route, credential and
+exact socket identity are rechecked at dispatch and completion. Events record only operation/phase
+and identity; no profile paths, cookies, page content or network details are returned. There is no
+retry of uncertain effects. This direct Owner clear operation can never become an approval exception.
+
+Retention settings are pending an explicit Server-deliverable versus Desktop-local data scope;
+this candidate does not advertise or accept a setting that lacks actual enforcement.
+
 ## Error contract
 
 | Status | Meaning |
@@ -459,27 +484,14 @@ internal non-secret-reference entries may be enabled. Updates require the usual 
 Models only prepare a proposal in the bounded native loop; they do not call these Owner endpoints.
 Successful Run completion publishes the candidate atomically. See [Native Agent](NATIVE_AGENT.md).
 
-## Employee browser lifecycle (C6 candidate)
+## Channel activity (C1)
 
-`POST /api/v1/bots/{botId}/browser/maintenance` requires Owner cookie and exact allowed Origin,
-and a strict JSON body up to 1 KiB: `{operation:"status"|"restart"|"clear",confirmation?:"clear-browser-data"}`.
-Only `clear` requires the confirmation, and other operations reject it. Unknown fields and any path,
-URL or command are rejected. Response: `{botId,nodeId,running:boolean,paused:boolean}`.
-
-The Server requires an already bound original browser identity or an explicit operator Bot-to-Node
-route; it never selects a replacement Host for maintenance. The original Worker must advertise
-`browser.maintenance@1` and `browser.session@1` from the Docker Provider. Enable explicitly with
-`OPENBOT_DOCKER_BROWSER_MAINTENANCE=true` plus existing sessions configuration. Default is off.
-Status queries upstream health without starting a browser. Restart gracefully stops the original
-browser, then starts it through the existing screenshot path without exposing its screenshot.
-Clear deletes only that Bot's upstream browser profile and leaves the browser stopped.
-
-Restart/clear persist an intent and invalidate all old viewer/Work observations before dispatch,
-retain the Server pause and Provider latch on both success and uncertainty, and require a fresh Owner
-takeover and explicit release before Agent work resumes. Origin, Owner expiry, route, credential and
-exact socket identity are rechecked at dispatch and completion. Events record only operation/phase
-and identity; no profile paths, cookies, page content or network details are returned. There is no
-retry of uncertain effects. This direct Owner clear operation can never become an approval exception.
-
-Retention settings are pending an explicit Server-deliverable versus Desktop-local data scope;
-this candidate does not advertise or accept a setting that lacks actual enforcement.
+`GET /api/v1/channels` and `GET /api/v1/workspace` return `lastActivityAt` on each
+Channel and optional `latestMessage: { id, authorType, preview, createdAt }`.
+These fields are Owner-only and absent on channel mutation responses. `preview` is plain text,
+at most 160 Unicode code points (640 UTF-8 bytes), truncated in SQL; no attachments, credentials,
+metadata or extra message fields are projected. Clients must render it as text, never HTML.
+An empty channel omits `latestMessage` and uses `createdAt` for `lastActivityAt`.
+The list is ordered by activity descending, then channel ID in C collation ascending;
+latest messages break equal timestamps by message ID in C collation descending.
+Deleted channels are excluded. Existing session revalidation, row and response-byte limits apply.
