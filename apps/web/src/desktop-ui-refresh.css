@@ -25,74 +25,6 @@
 .app-shell.desktop-workspace.without-context {
   --workspace-details-size: 0px;
 }
-.desktop-workspace .toolbar-layout {
-  flex: 0 0 auto;
-  gap: 10px;
-  align-items: center;
-  padding-right: 18px;
-}
-.toolbar-context {
-  gap: 0;
-}
-.desktop-workspace .channel-members-menu > summary {
-  /* Main artboard: a grey pill holding the member avatars and the conversation name. */
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: auto;
-  min-height: 34px;
-  padding: 0 12px 0 6px;
-  border: 0;
-  background: #f0f0f2;
-  border-radius: 10px;
-}
-.channel-members-menu > summary::marker {
-  content: "";
-}
-.channel-members-menu > summary::-webkit-details-marker {
-  display: none;
-}
-.channel-members-menu > summary:hover {
-  background: #e6e6e8;
-}
-.channel-heading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  color: #172031;
-}
-.channel-heading strong {
-  font-size: 15px;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 32vw;
-}
-.channel-heading svg {
-  color: #69778b;
-  flex-shrink: 0;
-}
-.channel-avatar-stack {
-  display: flex;
-  align-items: center;
-  padding-left: 6px;
-}
-.channel-avatar-stack > * {
-  margin-left: -7px;
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
-  box-shadow: 0 0 0 1.5px #f0f0f2;
-  background: #fff;
-}
-.channel-avatar-stack > span {
-  display: grid;
-  place-content: center;
-  font-size: 10px;
-  white-space: nowrap;
-}
 .desktop-workspace .sidebar {
   display: flex;
   flex-direction: column;
@@ -293,7 +225,6 @@
 .desktop-workspace.full-page-destination {
   display: block;
 }
-.full-page-destination > .workspace-toolbar,
 .full-page-destination > .workspace-sidebar,
 .full-page-destination > .workspace-details {
   display: none;
@@ -307,24 +238,10 @@
     --workspace-navigation-size: 210px;
     --workspace-details-size: 255px;
   }
-  .toolbar-navigation {
-    gap: 0;
-  }
-  .toolbar-context {
-    padding: 0 10px;
-  }
   .desktop-workspace .message-list {
     padding-left: 18px;
     padding-right: 18px;
   }
-  .channel-avatar-stack > * {
-    width: 25px;
-    height: 29px;
-  }
-}
-.app-shell .usage-rail-header h2 {
-  font-size: 16px;
-  color: #1a2435;
 }
 .app-shell .usage-rail-section-heading h3 {
   font-size: 14px;

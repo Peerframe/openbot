@@ -85,9 +85,7 @@ export function ApprovalPolicySettings() {
         <SettingRow title="技能" description="导入的技能需要审核后才能被 Bot 使用。" />
         <SettingRow title="工作设备" description="设备完成绑定后，才能接收任务。" />
       </SettingsGroup>
-      <p className="settings-footnote">
-        这些规则由 OpenBot 服务执行，此处仅供查看。批准记录不会在重启后重放。
-      </p>
+      <p className="settings-footnote">以上规则由 OpenBot 服务执行。批准记录不会在重启后重放。</p>
     </>
   );
 }

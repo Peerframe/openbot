@@ -354,3 +354,116 @@ it("offers import and a per-Bot export with skill counts", async () => {
     await view.unmount();
   }
 });
+
+it("edits approval levels and exact exceptions with the expected revision", async () => {
+  const { SettingsApprovals } = await import("./SettingsApprovals");
+  const botId = "11111111-1111-4111-8111-111111111111";
+  const channelId = "22222222-2222-4222-8222-222222222222";
+  const protectedExceptionCategories = [
+    "delete",
+    "install",
+    "permission_change",
+    "command",
+    "browser",
+    "plugin",
+    "unknown",
+  ];
+  let state = {
+    revision: 1,
+    productRead: "inherit",
+    publicWeb: "inherit",
+    exceptions: [] as unknown[],
+    protectedExceptionCategories,
+  };
+  const fetch = server({
+    "GET /api/v1/settings/approvals": () => state,
+    "PUT /api/v1/settings/approvals": (init) => {
+      const body = JSON.parse(String(init?.body));
+      state = { ...body, revision: state.revision + 1, protectedExceptionCategories };
+      delete (state as { expectedRevision?: number }).expectedRevision;
+      return state;
+    },
+  });
+  const view = await renderComponent(
+    <Slot>
+      <SettingsApprovals
+        bots={[{ ...bot(botId, "研究助理") }]}
+        channels={[{ id: channelId, name: "市场周报", botIds: [botId], createdAt: t }]}
+      />
+    </Slot>,
+  );
+  try {
+    await interact(() => undefined);
+    expect(view.container.textContent).toContain("删除数据");
+    const read = view.container.querySelector<HTMLSelectElement>(
+      'select[aria-label="读取频道和附件"]',
+    );
+    await interact(() => {
+      if (!read) throw Error("select missing");
+      read.value = "required";
+      read.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await interact(() => undefined);
+    const firstPut = fetch.mock.calls.find(([, init]) => init?.method === "PUT");
+    expect(JSON.parse(String(firstPut?.[1]?.body))).toEqual({
+      expectedRevision: 1,
+      productRead: "required",
+      publicWeb: "inherit",
+      exceptions: [],
+    });
+    await interact(() => view.container.querySelector<HTMLButtonElement>(".slot button")?.click());
+    await interact(() => buttonNamed(view.container, "添加")?.click());
+    await interact(() => undefined);
+    const lastPut = fetch.mock.calls.filter(([, init]) => init?.method === "PUT").at(-1);
+    expect(JSON.parse(String(lastPut?.[1]?.body))).toMatchObject({
+      expectedRevision: 2,
+      exceptions: [
+        { botId, category: "product_read", target: { kind: "channel", value: channelId } },
+      ],
+    });
+    expect(view.container.querySelector(".settings-exception small")?.textContent).toBe(
+      "读取频道 · # 市场周报",
+    );
+    await interact(() => buttonNamed(view.container, "移除 研究助理 的例外")?.click());
+    await interact(() => undefined);
+    expect(view.container.querySelector(".settings-exception")).toBeNull();
+  } finally {
+    await view.unmount();
+  }
+});
+
+it("checks, restarts and (after confirmation) clears one Bot's employee browser", async () => {
+  const { SettingsBrowser } = await import("./SettingsBrowser");
+  const botId = "33333333-3333-4333-8333-333333333333";
+  const fetch = server({
+    [`POST /api/v1/bots/${botId}/browser/maintenance`]: (init) => {
+      const body = JSON.parse(String(init?.body));
+      return { botId, nodeId: "docker-1", running: body.operation !== "clear", paused: false };
+    },
+  });
+  const view = await renderComponent(
+    <SettingsBrowser
+      bots={[{ ...bot(botId, "研究助理"), computerProfile: "docker-linux" }, bot("plain", "客服")]}
+    />,
+  );
+  try {
+    // Only Docker Bots have an employee browser; nothing runs until asked.
+    expect(view.container.querySelectorAll(".settings-browser-bot")).toHaveLength(1);
+    expect(fetch).not.toHaveBeenCalled();
+    await interact(() => buttonNamed(view.container, "检查状态")?.click());
+    expect(view.container.querySelector(".settings-browser-row small")?.textContent).toBe(
+      "运行中 · 主机 docker-1",
+    );
+    await interact(() => buttonNamed(view.container, "清除浏览数据…")?.click());
+    expect(view.container.querySelector('[role="alertdialog"]')).not.toBeNull();
+    await interact(() => buttonNamed(view.container, "清除")?.click());
+    const bodies = fetch.mock.calls.map(([, init]) => JSON.parse(String(init?.body)));
+    expect(bodies).toEqual([
+      { operation: "status" },
+      { operation: "clear", confirmation: "clear-browser-data" },
+    ]);
+    expect(view.container.querySelector('[role="alertdialog"]')).toBeNull();
+  } finally {
+    await view.unmount();
+  }
+});

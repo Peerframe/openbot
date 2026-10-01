@@ -20,7 +20,7 @@
 
 | 状态/术语 | 实际阅读入口 | 应保留的含义 |
 | --- | --- | --- |
-| 加载/空 | [ChannelMembersMenu.tsx](../../apps/web/src/components/ChannelMembersMenu.tsx)、[WorkTasksScreen.tsx](../../apps/web/src/components/WorkTasksScreen.tsx) | 等待不代表任务完成；空数据不等于读取失败 |
+| 加载/空 | [ContextRail.tsx](../../apps/web/src/components/ContextRail.tsx)、[WorkTasksScreen.tsx](../../apps/web/src/components/WorkTasksScreen.tsx) | 等待不代表任务完成；空数据不等于读取失败 |
 | 等待/审批 | [WorkTasksScreen.tsx](../../apps/web/src/components/WorkTasksScreen.tsx)、[ApprovalCard.tsx](../../apps/web/src/components/ApprovalCard.tsx) | attention 由控制层报告；看到审批不代表获得权限 |
 | 失败/未知 | [WorkTasksScreen.tsx](../../apps/web/src/components/WorkTasksScreen.tsx)、[work-api.ts](../../apps/web/src/work-api.ts) | 明确拒绝与结果未确认分开，不盲目重提 |
 | 断线/过期 | [WorkTasksScreen.tsx](../../apps/web/src/components/WorkTasksScreen.tsx)、workspace hooks | 清除 freshness 并禁用危险操作；停止观察不取消任务 |

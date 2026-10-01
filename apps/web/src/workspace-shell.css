@@ -22,9 +22,6 @@
   border-radius: 22px;
   background: #fcfcfd;
 }
-:root[data-desktop="darwin"] .app-shell .sidebar {
-  padding-top: 58px;
-}
 :root[data-desktop="darwin"] .app-shell .sidebar::before {
   position: fixed;
   top: 0;
@@ -73,40 +70,6 @@
 .app-shell .channel-workspace {
   overflow: hidden;
   background: #f6f7f8;
-}
-.app-shell .channel-conversation-header {
-  min-height: 82px;
-  flex: 0 0 auto;
-  gap: 12px;
-  padding: 10px 18px 18px;
-  border: 0;
-  background: transparent;
-}
-.app-shell .channel-identity {
-  gap: 10px;
-}
-.app-shell .channel-identity .channel-title-icon {
-  height: 38px;
-  width: 38px;
-  border-radius: 13px;
-  color: #506a87;
-  background: #e8edf3;
-}
-.app-shell .channel-identity h1 {
-  font-size: 17px;
-  font-weight: 650;
-}
-.app-shell .channel-identity p {
-  max-width: 240px;
-  font-size: 11px;
-  color: #657080;
-}
-.app-shell .channel-team-summary {
-  gap: 8px;
-}
-.app-shell .channel-team-summary .realtime-state {
-  font-size: 10px;
-  color: #62717c;
 }
 .app-shell .channel-conversation {
   border-radius: 16px;
@@ -305,19 +268,6 @@
   .app-shell .workspace-main {
     height: calc(100dvh - 20px);
   }
-  .app-shell .channel-conversation-header {
-    padding-inline: 10px;
-    flex-wrap: wrap;
-    gap: 7px;
-    min-height: 100px;
-  }
-  .app-shell .channel-team-summary {
-    gap: 8px;
-    margin-left: auto;
-  }
-  .app-shell .channel-identity p {
-    max-width: 180px;
-  }
   .app-shell .message-list {
     padding: 18px 12px;
   }
@@ -338,19 +288,9 @@
     height: calc(100dvh - 62px);
     padding: 0;
   }
-  .app-shell .channel-conversation-header {
-    padding: 14px 16px;
-    gap: 10px;
-    min-height: 86px;
-    flex-wrap: wrap;
-  }
   .app-shell .channel-conversation,
   .workspace-welcome {
     border-radius: 0;
-  }
-  .app-shell .channel-team-summary {
-    margin-left: auto;
-    gap: 9px;
   }
   .app-shell .message-list {
     padding: 20px 12px;
@@ -373,15 +313,9 @@
   }
 }
 
-:root[data-desktop="darwin"] .channel-conversation-header,
 :root[data-desktop="darwin"] .empty-workspace-header {
   -webkit-app-region: drag;
   app-region: drag;
-}
-:root[data-desktop="darwin"] .channel-conversation-header button,
-:root[data-desktop="darwin"] .channel-conversation-header select {
-  -webkit-app-region: no-drag;
-  app-region: no-drag;
 }
 
 .app-shell .message-composer .composer-send {
