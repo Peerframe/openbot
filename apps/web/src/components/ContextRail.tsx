@@ -37,7 +37,7 @@ export function ContextRail({
   onDecideApproval(approvalId: string, decision: ApprovalDecision): Promise<void>;
   onInspectRun(runId: string): void;
   onOpenBot?: ((botId: string) => void) | undefined;
-  /** Member management (Main artboard: 成员 · N with 添加 Bot); absent for direct conversations. */
+  /** Member management (Main artboard: 成员 · N with 添加 Bot). */
   onJoin?: ((botId: string) => Promise<void>) | undefined;
   onRemove?: ((botId: string) => Promise<void>) | undefined;
   onCollapse?: (() => void) | undefined;
@@ -103,11 +103,8 @@ export function ContextRail({
   const activeBotIds = new Set(activeRuns.map((run) => run.botId));
   const available = channel ? workspace.bots.filter((bot) => !channel.botIds.includes(bot.id)) : [];
 
-  const tabs: RailTab[] = channel
-    ? channel.directBotId
-      ? ["details", "library"]
-      : ["details", "library", "members"]
-    : [];
+  // A 单聊 uses the Bot 信息 rail instead (BotInfoRail).
+  const tabs: RailTab[] = channel ? ["details", "library", "members"] : [];
   // Until the Owner picks a tab for this conversation, open where attention is needed.
   const defaultTab: RailTab =
     tabs.includes("members") && pendingApprovals.length === 0 ? "members" : "details";
@@ -117,8 +114,7 @@ export function ContextRail({
       : picked !== undefined && picked.channelId === selectedChannelId && tabs.includes(picked.tab)
         ? picked.tab
         : defaultTab;
-  const title =
-    selectedChannelId === undefined ? "工作区动态" : channel?.directBotId ? "Bot 信息" : "频道信息";
+  const title = selectedChannelId === undefined ? "工作区动态" : "频道信息";
   const channelArtifacts = workspace.artifacts
     .filter((artifact) => {
       const run = runById.get(artifact.runId);
@@ -157,23 +153,16 @@ export function ContextRail({
       </header>
 
       <div className="ci-identity">
-        {channel && !channel.directBotId ? (
+        {channel ? (
           <GroupAvatar
             name={channel.name}
             members={members}
             size={84}
             statusOf={(bot) => (activeBotIds.has(bot.id) ? "running" : "idle")}
           />
-        ) : members[0] ? (
-          <RobotAvatar bot={members[0]} className="ci-identity-avatar" />
         ) : null}
         <strong>{selectedChannelId === undefined ? title : (channel?.name ?? "当前频道")}</strong>
-        {channel ? (
-          <span>
-            {channel.description ||
-              (channel.directBotId ? members[0]?.role : `${members.length} 名 Bot`)}
-          </span>
-        ) : null}
+        {channel ? <span>{channel.description || `${members.length} 名 Bot`}</span> : null}
       </div>
 
       {tabs.length > 0 ? (
@@ -247,7 +236,7 @@ export function ContextRail({
                   <i aria-hidden="true" />
                   {activeBotIds.has(bot.id) ? "工作中" : "待命"}
                 </span>
-                {onRemove && !channel.directBotId ? (
+                {onRemove ? (
                   <button
                     type="button"
                     className="ci-member-remove"
@@ -273,7 +262,7 @@ export function ContextRail({
             {members.length === 0 ? (
               <p className="ci-empty">还没有 Bot。添加后，频道里的消息会交给它们处理。</p>
             ) : null}
-            {onJoin && !channel.directBotId && available.length > 0 ? (
+            {onJoin && available.length > 0 ? (
               <button
                 type="button"
                 className="ci-member-add"
@@ -508,7 +497,7 @@ const tabLabels: Record<RailTab, string> = { details: "详情", library: "资料
  * files. Uploading goes through the composer, so a file is always tied to a message the Owner
  * sends; 管理 opens the existing file manager for download, extraction and the recycle bin.
  */
-function ChannelLibrary({
+export function ChannelLibrary({
   channelId,
   artifacts,
   botNameForRun,
@@ -678,7 +667,7 @@ function RunRow({
   );
 }
 
-function NodeRow({ node }: { node: ExecutionNode }) {
+export function NodeRow({ node }: { node: ExecutionNode }) {
   return (
     <div className="ci-computer">
       <span className="ci-computer-icon">

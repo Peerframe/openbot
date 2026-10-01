@@ -9,7 +9,7 @@ import { createEmployeeMemory, deleteEmployeeMemory, updateEmployeeMemory } from
 import { isActiveRun, runStatusLabel, runStatusSummary } from "../run-state";
 import { EmployeeEvolutionArchive } from "./EmployeeEvolutionArchive";
 import { EmployeeModelEditor } from "./EmployeeModelEditor";
-import { EmployeeSettingsForm } from "./EmployeeProfileRail";
+import { EmployeeSettingsForm } from "./EmployeeSettingsForm";
 import { EmployeeSkillReview } from "./EmployeeSkillReview";
 import { KnowledgeReviewPanel } from "./KnowledgeReviewPanel";
 import { OpenBotMark } from "./OpenBotMark";

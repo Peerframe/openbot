@@ -49,10 +49,6 @@
   padding: 0 24px 18px;
   text-align: center;
 }
-.channel-info .ci-identity-avatar {
-  width: 72px;
-  height: 72px;
-}
 .channel-info .ci-identity > strong {
   margin-top: 8px;
   font-size: 20px;

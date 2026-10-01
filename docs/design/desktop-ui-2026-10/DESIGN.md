@@ -151,7 +151,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Sidebar, Search, Menu, ContextMenu | `Sidebar.tsx`, `SidebarItemMenu.tsx` | Built (group avatars and status dots included) |
 | Main | `App.tsx`, `WorkspaceHeader.tsx`, `ChannelWorkspace.tsx` | Built; task cards in step 19 |
 | ChannelInfo, AddMember | `ContextRail.tsx` | Built; add-member popover in step 18 |
-| BotInfo | new `BotInfoRail.tsx` (replaces `EmployeeProfileRail` and the 单聊 rail) | Step 17 |
+| BotInfo | `BotInfoRail.tsx` (单聊 and the Bot profile) | Built; 编辑头像 waits for C9 |
 | Profile | `EmployeeProfileView.tsx` | Header and 概览 built; other tabs need design (step 22) |
 | New, NewGroup, NewBotChat | `NewChatScreen.tsx`, `NewBotSetupCard.tsx` | Built; the greeting waits for C11 |
 | Slash | `ChannelWorkspace.tsx` composer menus | Built |
