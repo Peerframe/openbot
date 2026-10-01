@@ -779,6 +779,8 @@ export type {
   DesktopUpdateState,
   OwnerPasswordChangeInput,
   OwnerPasswordChangeResponse,
+  OwnerPreferences,
+  OwnerPreferencesInput,
   OwnerSessionDevice,
 } from "@openbot/protocol";
 export * from "./channel-interactions.js";

@@ -39,6 +39,7 @@ export * from "./employee.js";
 export * from "./model-services.js";
 export * from "./node.js";
 export * from "./node-metadata.js";
+export * from "./owner-preferences.js";
 export * from "./owner-security.js";
 export * from "./plugins.js";
 export * from "./provider-conformance.js";

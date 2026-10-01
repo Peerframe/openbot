@@ -30,10 +30,13 @@ class PostgresIdentityStore:
         try:
             async with self._transactions.transaction(token) as connection:
                 configuration = {} if value.appearance is None else {"appearance": value.appearance.model_dump(mode="json")}
-                if value.model is not None:
+                selection = value.model
+                if selection is None and value.computerProfile in ('model', 'docker-linux'):
+                    from .owner_preferences import current_preferences
+                    selection = (await current_preferences(connection))['defaultModel']
+                if selection is not None:
                     if value.computerProfile not in ('model', 'docker-linux') or self.model_connections is None:
                         raise ValueError('model_selection_unavailable')
-                    selection = value.model
                     await self.model_connections.resolve_in_transaction(connection, selection)
                     configuration['model'] = selection
                 cursor = await connection.execute(

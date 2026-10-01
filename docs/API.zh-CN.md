@@ -155,6 +155,28 @@ Server 会去除两端空白，要求职责非空且最多 160 字符，简介�
 不保存简介正文的进化事件；Workspace SSE 也只发送员工 id 与受影响分区。显示名、模型策略、工作
 主机、外观、技能状态和授权明确不属于这个命令。
 
+## Server 通用偏好（C7）
+
+`GET /api/v1/settings/general` 向已登录 Owner 返回 `{revision,timezone,defaultModel,updatedAt}`。
+`PUT /api/v1/settings/general` 要求精确允许的 Origin 和最多 2 KiB 严格 JSON：
+`{expectedRevision,timezone,defaultModel}`。修订号为 1–2147483647 整数，旧修订写入返回
+`409 owner_preferences_revision_conflict`。时区为有界 IANA 标识，由 Server ZoneInfo 验证，默认 `UTC`；
+未知或非法时区返回 422。默认模型必须显式为 null 或既有 `{connectionId,modelId}` 选择，
+拒绝密钥、地址、命令和未知字段。读取保留已失效的选择，便于 Owner 清除或替换。
+
+单例设置与 `SETTINGS_OWNER_UPDATED` 审计在同一 Owner 事务提交。无变化不增加修订号，
+审计只记变更字段名与修订，不含凭据。时区供 Owner 展示使用，由调用端格式化既有 UTC 时间；
+不重新解释历史时间或既有例行任务。
+
+新建 `model` 或 `docker-linux` Bot 且省略模型时，在身份事务内读取当前默认模型；显式选择优先。
+`none` 等计算机类型不继承模型能力，既有 Bot 不变。发布 Bot、进化记录与审计前解析当前启用连接、
+地址策略及凭据；默认连接缺失、禁用或不可用时失败关闭，不发布 Bot、不改用其他模型。
+设置默认值不会请求供应商、发现模型、推理或产生费用。
+
+`0046_owner_preferences` 迁移建立初值为修订 1、UTC、null 模型的单例。
+本独立 PR 与 C2 都追加当前迁移历史；合并第二个迁移 PR 前，必须基于先合并的迁移重新 rebase/编号，
+禁止替换已提交历史。
+
 ## Owner 管理员工记忆
 
 当前记忆生命周期只允许登录 Owner 手动使用，模型、Provider 与工作主机都没有这些命令。标题

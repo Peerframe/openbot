@@ -718,3 +718,30 @@ export const ownerApprovalSettings = pgTable(
     check("owner_approval_settings_revision", sql`${t.revision} between 1 and 2147483647`),
   ],
 );
+
+export const ownerPreferences = pgTable(
+  "owner_preferences",
+  {
+    ownerId: text("owner_id").primaryKey(),
+    timezone: text("timezone").notNull().default("UTC"),
+    defaultModel: jsonb("default_model"),
+    revision: integer("revision").notNull().default(1),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("owner_preferences_owner_id_check", sql`${table.ownerId} = 'owner'`),
+    check(
+      "owner_preferences_timezone_check",
+      sql`length(${table.timezone}) BETWEEN 1 AND 64 AND ${table.timezone} ~ '^[A-Za-z_]+(/[A-Za-z0-9_+.-]+)*$'`,
+    ),
+    check("owner_preferences_revision_check", sql`${table.revision} BETWEEN 1 AND 2147483647`),
+    check(
+      "owner_preferences_model_valid",
+      sql`${table.defaultModel} IS NULL OR CASE WHEN jsonb_typeof(${table.defaultModel}) = 'object' THEN
+ ${table.defaultModel} ?& ARRAY['connectionId','modelId'] AND ${table.defaultModel} - 'connectionId' - 'modelId' = '{}'::jsonb
+ AND jsonb_typeof(${table.defaultModel}->'connectionId') = 'string' AND (${table.defaultModel}->>'connectionId') ~ '^[A-Za-z0-9_-]{1,64}$'
+ AND jsonb_typeof(${table.defaultModel}->'modelId') = 'string' AND length(${table.defaultModel}->>'modelId') BETWEEN 1 AND 256
+ AND (${table.defaultModel}->>'modelId') ~ '^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$' ELSE false END`,
+    ),
+  ],
+);

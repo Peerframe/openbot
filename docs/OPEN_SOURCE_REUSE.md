@@ -1019,3 +1019,11 @@ agent-computer `257c1280d684089be9adb0b35cce262efc7064bf` health/stop/reset surf
 original Server/Worker/Docker path. Reuse the durable human/agent gate and exact Host binding;
 no new browser manager or copied upstream source. Download/screenshot retention data scope is an
 explicit Owner-deferred follow-up, not a claimed setting implementation.
+
+## Server Owner display timezone and model defaults (2026-10-01)
+
+Reuse Python3.12 ZoneInfo/IANA validation, PostgreSQL17 row/revision/Owner transaction contracts,
+and existing identity/model connection resolution. The [C7 decision](research/desktop-owner-preferences.md)
+compares persistence alternatives and records exact reviewed main, fail-closed default inheritance
+and independent migration integration. No new dependency or copied source; credentials remain in the
+existing model service and no network call is performed by preferences publication.
