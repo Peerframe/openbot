@@ -1,0 +1,179 @@
+/*
+ * Window shell (Main, Profile and Sidebar artboards; DESIGN.md "Window shell"). No window-wide
+ * toolbar: the sidebar and the rail run the full window height, and the main column owns a 56px
+ * header. macOS draws the traffic lights at x 20, y 20 (12px), so their centre line is y 26; the
+ * sidebar's first row is 30px tall starting at y 11 to share that line.
+ */
+.app-shell.desktop-workspace {
+  grid-template-rows: 56px minmax(0, 1fr);
+}
+.app-shell.desktop-workspace > .workspace-sidebar {
+  grid-area: 1 / 1 / -1 / 2;
+}
+.app-shell.desktop-workspace > .shell-header {
+  grid-area: 1 / 2;
+}
+.app-shell.desktop-workspace > .workspace-main,
+.app-shell.desktop-workspace > .workspace-destination {
+  grid-area: 2 / 2;
+}
+.app-shell.desktop-workspace > .workspace-details {
+  grid-area: 1 / 3 / -1 / 4;
+}
+.app-shell.desktop-workspace.workspace-refresh-failed {
+  grid-template-rows: 56px auto minmax(0, 1fr);
+}
+.app-shell.desktop-workspace.workspace-refresh-failed > .workspace-refresh-error {
+  grid-area: 2 / 2;
+}
+.app-shell.desktop-workspace.workspace-refresh-failed
+  > :is(.workspace-main, .workspace-destination) {
+  grid-area: 3 / 2;
+}
+.app-shell.desktop-workspace.workspace-refresh-failed
+  > :is(.workspace-sidebar, .workspace-details) {
+  grid-row: 1 / -1;
+}
+
+.app-shell.desktop-workspace .shell-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 56px;
+  box-sizing: border-box;
+  padding: 0 16px 0 20px;
+  background: var(--ob-page);
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+:root[data-desktop="darwin"] .app-shell.desktop-workspace .shell-header.without-sidebar {
+  /* The traffic lights sit over this header while the sidebar is hidden. */
+  padding-left: 84px;
+}
+.app-shell.desktop-workspace .shell-header :is(button, a) {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+.app-shell.desktop-workspace .shell-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: min(520px, 60%);
+  height: 34px;
+  margin: 0;
+  padding: 0 12px 0 6px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--ob-fill);
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.app-shell.desktop-workspace .shell-pill:hover,
+.app-shell.desktop-workspace .shell-pill[aria-expanded="true"] {
+  background: var(--ob-fill-hover);
+}
+.app-shell.desktop-workspace .shell-pill.is-static {
+  padding-left: 12px;
+  cursor: default;
+}
+.app-shell.desktop-workspace .shell-pill:focus-visible {
+  outline: 2px solid var(--ob-active);
+  outline-offset: 2px;
+}
+.app-shell.desktop-workspace .shell-pill-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-shell.desktop-workspace .shell-pill-avatars {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+}
+.app-shell.desktop-workspace .shell-pill-avatars .robot-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+}
+.app-shell.desktop-workspace .shell-pill-avatars.is-pair .robot-avatar {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+}
+.app-shell.desktop-workspace .shell-pill-avatars.is-pair .robot-avatar:first-child {
+  top: 0;
+  left: 0;
+  border-radius: 5px;
+}
+.app-shell.desktop-workspace .shell-pill-avatars.is-pair .robot-avatar:last-child {
+  right: 0;
+  bottom: 0;
+  border: 1.5px solid var(--ob-fill);
+  border-radius: 50%;
+}
+.app-shell.desktop-workspace .shell-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.app-shell.desktop-workspace .shell-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.app-shell.desktop-workspace .shell-live i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f0a43a;
+}
+.app-shell.desktop-workspace .shell-live.live i {
+  background: var(--ob-online);
+}
+.app-shell.desktop-workspace .shell-icon {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  cursor: pointer;
+}
+.app-shell.desktop-workspace .shell-icon:hover {
+  background: var(--ob-fill);
+}
+.app-shell.desktop-workspace .shell-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 760px) {
+  .app-shell.desktop-workspace {
+    grid-template-rows: 52px minmax(0, 1fr);
+  }
+  .app-shell.desktop-workspace .shell-header {
+    height: 52px;
+    padding: 0 12px;
+  }
+  .app-shell.desktop-workspace .shell-header > .shell-icon:first-child {
+    display: none;
+  }
+  .app-shell.desktop-workspace .shell-pill {
+    max-width: 70%;
+  }
+}

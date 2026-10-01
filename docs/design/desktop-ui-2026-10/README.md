@@ -27,6 +27,9 @@ equivalents. Bracketed values such as `[128]` and `[版本号]` are placeholders
 | [Search](Search.dc.html) | ⑨ Groups and search |
 | [Slash](Slash.dc.html) | ⑩ `/` skills and actions |
 
+The binding rules, the screen map, what is not designed yet and the legacy inventory are in
+[DESIGN.md](DESIGN.md).
+
 Changing the design means changing the canvas first and refreshing this snapshot in the same pull
 request. The delivery plan and the division of work are in
 [IMPLEMENTATION.md](IMPLEMENTATION.md).

@@ -33,19 +33,20 @@ data (hidden, disabled or read-only) and never fakes it.
 | 7 | Settings sections with existing data: 模型服务, 技能, 插件, 例行任务, 记忆, 工作主机, 导入与导出, 审计记录 | Settings* | In review (stacked, two parts) |
 | 8 | Settings sections needing backlog items: 通用, 通知, 账户与安全, 审批与权限, 员工浏览器, 关于 | Settings* | In review (stacked): 账户与安全, 关于 and 通知 with what exists; C2/C5/C6/C7 rows stay hidden until those land |
 | 9 | Plugins page with the curated catalog | Plugins | In review (stacked): 我的插件 and adding by MCP; 精选 and categories after C8 |
+| 10 | Window shell: no global toolbar; sidebar row shares the traffic-light line; title pill opens the 频道信息 rail with member management | Main, Sidebar, Profile | In review (stacked) |
 
 ## Backend and platform backlog (Codex)
 
 | ID | Needed by | Contract to add | UI until ready |
 | --- | --- | --- | --- |
 | C1 | Sidebar, Search | Per-conversation latest activity: last message preview (bounded, owner-visible), its time, and ordering by recent activity | Integrated: preview, time and recent-activity order |
-| C2 | 账户与安全 | Change the Owner password; list signed-in sessions and revoke other sessions (audited) | Rows shown read-only; actions hidden |
+| C2 | 账户与安全 | Change the Owner password; list signed-in sessions and revoke other sessions (audited) | Integrated: password change and signing out other devices |
 | C3 | 审计记录 | Record login, settings-change and host events; filter by category; CSV export | Integrated: Server categories and CSV export |
-| C4 | 审批与权限 | Server approval policy per action class and per-Bot/target exceptions (security boundary: ADR and fail-closed tests first; delete/install/permission changes can never be excepted) | Read-only policy list (current behaviour) |
-| C5 | 通用, 关于, Menu | Desktop main process: launch at login, keep running in background with a menu-bar icon, global shortcut, Dock badge count, update check/download/install | Rows hidden on Desktop until the bridge exists; Web shows none |
-| C6 | 员工浏览器 | Browser runtime status, restart, clear browsing data, download/screenshot retention settings | Status from existing sessions only; actions hidden |
-| C7 | 通用 | Owner time zone and default model for new Bots as Server settings | Hidden |
-| C8 | 插件 page | Curated plugin catalog source (reviewed entries only) | "我的插件" only |
+| C4 | 审批与权限 | Server approval policy per action class and per-Bot/target exceptions (security boundary: ADR and fail-closed tests first; delete/install/permission changes can never be excepted) | Integrated: two policy levels, exact exceptions, protected categories |
+| C5 | 通用, 关于, Menu | Desktop main process: launch at login, keep running in background with a menu-bar icon, global shortcut, Dock badge count, update check/download/install | Partly integrated: launch at login, background, global shortcut, Dock badge; signed updates deferred |
+| C6 | 员工浏览器 | Browser runtime status, restart, clear browsing data, download/screenshot retention settings | Integrated: per-Bot status, view, restart and confirmed clear; retention deferred |
+| C7 | 通用 | Owner time zone and default model for new Bots as Server settings | Integrated: time zone and the default model preselected for new Bots |
+| C8 | 插件 page | Curated plugin catalog source (reviewed entries only) | Integrated: 精选 lists reviewed templates with pinned source links |
 | C9 | Profile rail | Change a Bot's appearance after creation (owner-only, audited) | 编辑头像 hidden |
 
 Client-only design items that need no backlog: theme, language, notification options (the ADR-0048

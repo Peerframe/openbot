@@ -14,16 +14,14 @@ Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README�
 ## UI 交互
 
 - 规则：[Web AGENTS](../apps/web/AGENTS.md)、[设计入口](design/README.zh-CN.md)。
-- 实现：[ChannelMembersMenu](../apps/web/src/components/ChannelMembersMenu.tsx)、
-  [CSS](../apps/web/src/components/ChannelMembersMenu.css)、[测试](../apps/web/src/components/ChannelMembersMenu.test.tsx)，
-  当前产品父级是 [App](../apps/web/src/App.tsx) 工具栏，绑定加入/移除/打开档案。
-  [ChannelWorkspace](../apps/web/src/components/ChannelWorkspace.tsx) 仅在无 `globalHeader` 时内嵌菜单，
-  当前 App 传入 `globalHeader`。焦点/导航修改需读取两处。
+- 实现：频道右栏 [ContextRail](../apps/web/src/components/ContextRail.tsx) 及其
+  [测试](../apps/web/src/components/ContextRail.test.tsx)，由 [WorkspaceHeader](../apps/web/src/components/WorkspaceHeader.tsx)
+  的标题胶囊打开；[App](../apps/web/src/App.tsx) 绑定加入/移除/打开档案。焦点/导航修改需读取两处。
 - 状态/消费者：[workspace hook](../apps/web/src/use-workspace-state.ts)、[API](../apps/web/src/api.ts)
   把 Server 事实投影到 Web 和 Desktop 共用 renderer；Work 使用
   [work-api](../apps/web/src/work-api.ts) 和 [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx)。
 - 检查：`npm exec -- turbo run build --filter=@openbot/web^...`，然后
-  `npm exec --workspace @openbot/web -- vitest run src/components/ChannelMembersMenu.test.tsx`、
+  `npm exec --workspace @openbot/web -- vitest run src/components/ContextRail.test.tsx`、
   `npm run typecheck --workspace @openbot/web`；按改动选择真实组件测试。
 - 环境：`npm ci`；真实页面使用文档中的 Python Server/Web 开发入口和临时 Owner/数据库，
   检查宽窄视口及受影响状态，不需要付费模型。组件测试不等于渲染验收。桥接改动另读

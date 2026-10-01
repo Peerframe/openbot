@@ -32,7 +32,6 @@ import {
 } from "./api";
 import { resolveAuthSession } from "./auth-session-recovery";
 import { AutomationsScreen } from "./components/AutomationsScreen";
-import { ChannelMembersMenu } from "./components/ChannelMembersMenu";
 import { ChannelWorkspace } from "./components/ChannelWorkspace";
 import { ContextRail } from "./components/ContextRail";
 import { CreateBotDialog } from "./components/CreateBotDialog";
@@ -49,15 +48,6 @@ import { EmployeeBrowser } from "./components/EmployeeBrowser";
 import { EmployeeProfileRail } from "./components/EmployeeProfileRail";
 import { EmployeeProfileView, type ProfileTab } from "./components/EmployeeProfileView";
 import { ExportEmployeeDialog } from "./components/ExportEmployeeDialog";
-import {
-  BackIcon,
-  ForwardIcon,
-  HashIcon,
-  NodeIcon,
-  PanelLeftIcon,
-  PanelRightIcon,
-  ShareIcon,
-} from "./components/Icons";
 import { ImportEmployeeDialog } from "./components/ImportEmployeeDialog";
 import { LoginScreen } from "./components/LoginScreen";
 import { MobileNavigation, type MobilePanel } from "./components/MobileNavigation";
@@ -67,12 +57,12 @@ import { NewChatScreen, type NewChatStart } from "./components/NewChatScreen";
 import { NodeManagerDialog } from "./components/NodeManagerDialog";
 import { OpenBotMark } from "./components/OpenBotMark";
 import { PluginsDialog } from "./components/PluginsDialog";
-import { RobotAvatar } from "./components/RobotAvatar";
 import { indexRunCollaboration } from "./components/RunCollaboration";
 import { RunInspector } from "./components/RunInspector";
 import { ShareConversationDialog } from "./components/ShareConversationDialog";
 import { Sidebar, type SidebarActivity } from "./components/Sidebar";
 import { SkillLibraryScreen } from "./components/SkillLibraryScreen";
+import { WorkspaceHeader } from "./components/WorkspaceHeader";
 import { parseWorkEntry, WorkTasksEntry } from "./components/WorkTasksEntry";
 import { WorkTasksScreen } from "./components/WorkTasksScreen";
 import { createConversationSession } from "./conversation-session";
@@ -82,7 +72,6 @@ import {
   type DesktopSetupPlanState,
   getOpenBotDesktopBridge,
 } from "./desktop-runtime";
-import { shortcutLabel } from "./desktop-shortcuts";
 import { type SidebarItemKey, sidebarOrganization } from "./sidebar-organization";
 import {
   NotificationTracker,
@@ -683,6 +672,16 @@ export function AuthenticatedWorkspace({
       controller.abort();
     };
   }, [workspace, selectedChannelId, attention]);
+  // Desktop Dock badge (backlog C5): pending approvals plus unread; the main process applies the
+  // Owner's 程序坞角标 preference and ignores this in the plain Web entry.
+  const badgeCount =
+    (workspace?.approvals.filter((approval) => approval.status === "pending").length ?? 0) +
+    Object.values(unreadByChannel).reduce((total, count) => total + count, 0);
+  useEffect(() => {
+    void getOpenBotDesktopBridge()
+      ?.setUnreadBadge?.(badgeCount)
+      .catch(() => undefined);
+  }, [badgeCount]);
   // New pending approvals are compared with the previous snapshot; the first one is a baseline.
   // biome-ignore lint/correctness/useExhaustiveDependencies: announce reads only refs and navigation.
   useEffect(() => {
@@ -1052,126 +1051,45 @@ export function AuthenticatedWorkspace({
       : undefined;
   const profileTitle =
     destination === "chat" && selectedEmployeeId ? employeeProfile?.employee : undefined;
-  const panelToggle = (
-    <button
-      className="icon-button panel-toggle"
-      type="button"
-      aria-label={showDetails ? "收起信息栏" : "打开信息栏"}
-      title={showDetails ? "收起信息栏" : "打开信息栏"}
-      aria-expanded={showDetails}
-      aria-controls="workspace-details"
-      onClick={() => updatePreferences({ rightPanelOpen: !preferences.rightPanelOpen })}
-    >
-      <PanelRightIcon />
-    </button>
-  );
+  const headerAvatars = profileTitle
+    ? [profileTitle]
+    : (selectedChannel?.botIds.flatMap((id) => {
+        const bot = workspace.bots.find((item) => item.id === id);
+        return bot ? [bot] : [];
+      }) ?? []);
+  const headerTitle =
+    destination === "work"
+      ? "任务监督"
+      : destination === "automations"
+        ? "自动任务"
+        : destination === "skills"
+          ? "技能广场"
+          : selectedEmployeeId
+            ? (employeeProfile?.employee.name ?? "Bot 档案")
+            : location.kind === "new"
+              ? "新建聊天"
+              : (selectedChannel?.name ?? "OpenBot");
+  // The title pill opens the rail for a conversation or a Bot profile (Main/Profile artboards).
+  const railAvailable = destination === "chat" && Boolean(selectedChannel || selectedEmployeeId);
 
   return (
     <div
       className={`app-shell desktop-workspace ${error ? "workspace-refresh-failed" : ""} ${destination === "chat" && selectedChannel ? "channel-view" : ""} ${fullPage ? "full-page-destination" : ""} ${showDetails ? "" : "without-context"} ${preferences.leftPanelOpen ? "" : "without-sidebar"}`}
     >
-      <header className="workspace-toolbar">
-        <nav className="toolbar-navigation" aria-label="页面与侧栏导航">
-          <button
-            type="button"
-            className="icon-button"
-            aria-label={preferences.leftPanelOpen ? "收起侧栏" : "打开侧栏"}
-            aria-expanded={preferences.leftPanelOpen}
-            aria-controls="workspace-sidebar"
-            title={`切换侧栏 · ${shortcutLabel("B")}`}
-            onClick={() => updatePreferences({ leftPanelOpen: !preferences.leftPanelOpen })}
-          >
-            <PanelLeftIcon />
-          </button>
-          <button
-            type="button"
-            className="icon-button"
-            aria-label="后退"
-            title={`后退 · ${shortcutLabel("[")}`}
-            disabled={!navigation.canGoBack}
-            onClick={navigation.back}
-          >
-            <BackIcon />
-          </button>
-          <button
-            type="button"
-            className="icon-button"
-            aria-label="前进"
-            title={`前进 · ${shortcutLabel("]")}`}
-            disabled={!navigation.canGoForward}
-            onClick={navigation.forward}
-          >
-            <ForwardIcon />
-          </button>
-        </nav>
-        <div className="toolbar-context">
-          {selectedChannel ? (
-            <ChannelMembersMenu
-              key={selectedChannel.id}
-              channel={selectedChannel}
-              bots={workspace.bots}
-              onJoin={handleJoinBot}
-              onRemove={handleRemoveBot}
-              onOpenBot={openEmployee}
-              showTitle
-            />
-          ) : (
-            <div className={profileTitle ? "toolbar-title toolbar-title-pill" : "toolbar-title"}>
-              {profileTitle ? <RobotAvatar bot={profileTitle} compact /> : <HashIcon />}
-              <h1
-                title={
-                  destination === "work"
-                    ? "任务监督"
-                    : destination === "automations"
-                      ? "自动任务"
-                      : destination === "skills"
-                        ? "技能广场"
-                        : selectedEmployeeId
-                          ? (employeeProfile?.employee.name ?? "Bot 档案")
-                          : location.kind === "new"
-                            ? "新建聊天"
-                            : "频道聊天"
-                }
-              >
-                {destination === "work"
-                  ? "任务监督"
-                  : destination === "automations"
-                    ? "自动任务"
-                    : destination === "skills"
-                      ? "技能广场"
-                      : selectedEmployeeId
-                        ? (employeeProfile?.employee.name ?? "Bot 档案")
-                        : location.kind === "new"
-                          ? "新建聊天"
-                          : "频道聊天"}
-              </h1>
-            </div>
-          )}
-        </div>
-        <div className="toolbar-layout">
-          {selectedChannel && (
-            <button
-              className="icon-button"
-              type="button"
-              aria-label="分享"
-              title="分享"
-              onClick={() => setSharing(true)}
-            >
-              <ShareIcon />
-            </button>
-          )}
-          <button
-            className="icon-button"
-            type="button"
-            aria-label="工作电脑"
-            title="工作电脑"
-            onClick={() => setDialog("node")}
-          >
-            <NodeIcon />
-          </button>
-          {panelToggle}
-        </div>
-      </header>
+      <WorkspaceHeader
+        title={headerTitle}
+        avatars={headerAvatars}
+        railOpen={showDetails}
+        onToggleRail={
+          railAvailable
+            ? () => updatePreferences({ rightPanelOpen: !preferences.rightPanelOpen })
+            : undefined
+        }
+        realtimeState={workspaceRealtimeState}
+        sidebarOpen={preferences.leftPanelOpen}
+        onOpenSidebar={() => updatePreferences({ leftPanelOpen: true })}
+        onShare={selectedChannel ? () => setSharing(true) : undefined}
+      />
       {error ? (
         <div className="workspace-refresh-error" role="alert">
           <span>{error}</span>
@@ -1270,15 +1188,7 @@ export function AuthenticatedWorkspace({
           onFrame={projectFrame}
           onProgress={projectProgress}
           onRun={projectRun}
-          onOpenMembers={() => {
-            // The members popover lives in the toolbar title pill.
-            const members = document.querySelector<HTMLDetailsElement>(
-              ".workspace-toolbar .channel-members-menu",
-            );
-            if (!members) return;
-            members.open = true;
-            members.querySelector<HTMLElement>("summary")?.focus();
-          }}
+          onOpenMembers={() => updatePreferences({ rightPanelOpen: true })}
           onNewRoutine={() =>
             onSettings ? onSettings("routines") : navigation.navigate({ kind: "automations" })
           }
@@ -1313,11 +1223,13 @@ export function AuthenticatedWorkspace({
           ) : (
             <ContextRail
               selectedChannelId={destination === "chat" ? selectedChannel?.id : undefined}
-              realtimeState={workspaceRealtimeState}
               workspace={workspace}
               onDecideApproval={handleDecideApproval}
               onInspectRun={setSelectedRunId}
               onOpenBot={openEmployee}
+              onJoin={handleJoinBot}
+              onRemove={handleRemoveBot}
+              onCollapse={() => updatePreferences({ rightPanelOpen: false })}
             />
           ))}
       </div>

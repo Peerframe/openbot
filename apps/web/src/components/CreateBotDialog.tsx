@@ -1,6 +1,6 @@
 import type { Bot, BotAppearance, CreateBotInput, ModelSelection } from "@openbot/domain";
-import { useState } from "react";
-import type { ApiError } from "../api";
+import { useEffect, useRef, useState } from "react";
+import { type ApiError, getOwnerPreferences } from "../api";
 import { CloseIcon } from "./Icons";
 import { ModelSelector } from "./ModelSelector";
 import { defaultBotAppearance, RobotAvatar } from "./RobotAvatar";
@@ -72,6 +72,19 @@ export function CreateBotDialog({
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [model, setModel] = useState<ModelSelection | null>(null);
+  const modelTouched = useRef(false);
+  // Preselect the Owner's default model for new Bots (backlog C7); a choice already made wins.
+  useEffect(() => {
+    const controller = new AbortController();
+    void Promise.resolve()
+      .then(() => getOwnerPreferences(controller.signal))
+      .then((preferences) => {
+        if (!controller.signal.aborted && !modelTouched.current && preferences.defaultModel)
+          setModel(preferences.defaultModel);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
   const [modelValid, setModelValid] = useState(false);
   const selectsModel = computerProfile === "model" || computerProfile === "docker-linux";
   const { dialogRef, closeDialog } = useModalDialog(onClose);
@@ -205,7 +218,10 @@ export function CreateBotDialog({
               <ModelSelector
                 value={model}
                 allowDefault={computerProfile !== "docker-linux"}
-                onChange={setModel}
+                onChange={(value) => {
+                  modelTouched.current = true;
+                  setModel(value);
+                }}
                 onManageModels={onManageModels}
                 refreshKey={modelServicesVersion}
                 onValidityChange={setModelValid}

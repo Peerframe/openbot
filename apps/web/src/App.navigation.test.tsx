@@ -219,7 +219,8 @@ describe("Desktop workspace navigation continuity", () => {
     try {
       await settleEffects();
       expect(title(rendered.container)).toBe(channelA.name);
-      expect(buttonByLabel(rendered.container, "后退").disabled).toBe(true);
+      // Back and forward are keyboard and menu commands (DESIGN.md: no window toolbar).
+      expect(rendered.container.querySelector('[aria-label="后退"]')).toBeNull();
       await enterDraft(composer(rendered.container), "产品频道草稿");
       await interact(() => channelButton(rendered.container, channelB.name).click());
       await settleEffects();
@@ -235,23 +236,21 @@ describe("Desktop workspace navigation continuity", () => {
       expect(title(rendered.container)).toBe(channelB.name);
       expect(composer(rendered.container).value).toBe("设计频道草稿");
 
-      await interact(() => buttonByLabel(rendered.container, "后退").click());
+      await interact(() => navigationShortcut("["));
       await settleEffects();
       expect(title(rendered.container)).toBe(channelA.name);
       expect(composer(rendered.container).value).toBe("产品频道草稿");
       expect(channelButton(rendered.container, channelA.name).getAttribute("aria-current")).toBe(
         "page",
       );
-      expect(buttonByLabel(rendered.container, "前进").disabled).toBe(false);
 
-      await interact(() => buttonByLabel(rendered.container, "前进").click());
+      await interact(() => navigationShortcut("]"));
       await settleEffects();
       expect(title(rendered.container)).toBe(channelB.name);
       expect(composer(rendered.container).value).toBe("设计频道草稿");
       expect(channelButton(rendered.container, channelB.name).getAttribute("aria-current")).toBe(
         "page",
       );
-      expect(buttonByLabel(rendered.container, "前进").disabled).toBe(true);
     } finally {
       await rendered.unmount();
     }
@@ -298,8 +297,8 @@ describe("Desktop workspace navigation continuity", () => {
       });
       expect(api.createChannel).not.toHaveBeenCalled();
       expect(title(rendered.container)).toBe(bot.name);
-      await interact(() => buttonByLabel(rendered.container, "后退").click());
-      await interact(() => buttonByLabel(rendered.container, "后退").click());
+      await interact(() => navigationShortcut("["));
+      await interact(() => navigationShortcut("["));
       await settleEffects();
       expect(composer(rendered.container).value).toBe("保留这个草稿");
     } finally {
@@ -399,10 +398,12 @@ async function enterDraft(input: HTMLTextAreaElement, value: string) {
   });
 }
 
+function navigationShortcut(key: "[" | "]") {
+  window.dispatchEvent(new KeyboardEvent("keydown", { key, ctrlKey: true, bubbles: true }));
+}
+
 function title(container: HTMLElement) {
-  return container.querySelector(
-    ".workspace-toolbar .channel-heading strong, .workspace-toolbar h1",
-  )?.textContent;
+  return container.querySelector(".shell-header .shell-pill-name")?.textContent;
 }
 
 function channelButton(container: HTMLElement, name: string): HTMLButtonElement {

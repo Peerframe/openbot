@@ -26,3 +26,5 @@
 
 修改设计时先改画布，并在同一个拉取请求中刷新这份快照。交付计划与分工见
 [IMPLEMENTATION.zh-CN.md](IMPLEMENTATION.zh-CN.md)。
+
+必须遵守的规则、画板与代码的对应、尚未设计的部分以及旧设计清单见 [DESIGN.zh-CN.md](DESIGN.zh-CN.md)。

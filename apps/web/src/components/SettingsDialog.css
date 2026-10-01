@@ -846,3 +846,117 @@
   color: var(--ob-text);
   text-decoration: none;
 }
+
+/* 账户与安全: the password form opens inside the 安全 card. */
+.settings-dialog .settings-password-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 4px 0 16px;
+}
+.settings-dialog .settings-password-form > :is(p, footer) {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.settings-dialog .settings-password-hint {
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+}
+.settings-dialog .settings-password-form footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.settings-dialog .settings-inline-notice {
+  padding: 0 0 12px;
+}
+@media (max-width: 760px) {
+  .settings-dialog .settings-password-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.settings-dialog .settings-exception {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.settings-dialog .settings-exception-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.settings-dialog .settings-exception-form > :is(p, footer) {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.settings-dialog .settings-exception-form footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+@media (max-width: 760px) {
+  .settings-dialog .settings-exception-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.settings-dialog .settings-default-model {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 0 14px;
+}
+.settings-dialog .settings-default-model footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* 员工浏览器 (SettingsBrowser artboard). */
+.settings-dialog .settings-browser-bot + .settings-browser-bot {
+  border-top: 1px solid var(--ob-divider);
+}
+.settings-dialog .settings-browser-row {
+  padding-bottom: 6px;
+}
+.settings-dialog .settings-browser-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.settings-dialog .settings-browser-clear {
+  margin: 0 0 12px 58px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #b3261e;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.settings-dialog .settings-browser-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px 58px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fde8e6;
+  font-size: 13px;
+}
+.settings-dialog .settings-dialog-body .settings-browser-confirm p {
+  margin: 0;
+}
+.settings-dialog .settings-browser-confirm-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
+@media (max-width: 760px) {
+  .settings-dialog .settings-browser-row {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+  .settings-dialog .settings-browser-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
