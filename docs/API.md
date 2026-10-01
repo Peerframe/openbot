@@ -86,6 +86,29 @@ Channel and workspace SSE subscribers each have a 128-event pending bound. The S
 an overloaded subscriber; the Client reconnects and reloads the authoritative database snapshot
 instead of pretending a dropped stream is continuous.
 
+## Owner password and sessions (C2)
+
+- `GET /api/v1/auth/sessions` returns `{ sessions: [{ id, userAgent, current, createdAt, expiresAt }] }`
+  for active Owner sessions, newest first (maximum 100). IDs are non-bearer session IDs; no tokens,
+  digests or IP addresses are returned. `userAgent` is an untrusted hint bounded to 256 code points;
+  old sessions have an empty hint. Login refuses issuance above 100 active sessions.
+- `POST /api/v1/auth/sessions/revoke-others` requires the current cookie and exact allowed Origin.
+  Returns `{ revoked: number }`, keeps the initiating session, and atomically audits
+  `OWNER_SESSIONS_REVOKED` with the count. No body is required.
+- `POST /api/v1/auth/password` requires the cookie, exact Origin and JSON
+  `{ currentPassword, newPassword }`. No unknown fields; no whitespace trimming. Current password:
+  1–1024 code points; new password: 15–1024, excluding the example password. The existing 8192-byte
+  request bound applies. Success returns `{ changed: true, reauthenticationRequired: true }`,
+  clears the cookie, atomically revokes **all** sessions and records `OWNER_PASSWORD_CHANGED`.
+  Wrong current password is 401, throttled attempts 429 (`Retry-After`), invalid input 422,
+  unknown/revoked session 401 and storage/audit failure 503 without mutation or cookie clearing.
+
+Rotated credentials use salted stdlib scrypt (N=32768, r=8, p=3) in PostgreSQL. The environment
+password is bootstrap-only once a stored credential exists; restart never restores it. Credential
+revision and a shared transaction lock reject a login proof computed before password rotation.
+Back up `owner_credentials` together with the existing database. No password recovery or device
+identity verification is implied; an Owner locked out of a deployment must use its administration path.
+
 ## Bots and Employee profiles
 
 Create a Bot:
@@ -138,6 +161,32 @@ authority-bearing extra field returns `422`. The successful transaction incremen
 and appends an evolution event that stores changed field names, not biography text. Workspace SSE
 then publishes only the Employee id and affected sections. Name, model policy, Worker Host,
 appearance, skill state, and permission grants are deliberately outside this command.
+
+## Server general preferences (C7)
+
+`GET /api/v1/settings/general` returns `{revision,timezone,defaultModel,updatedAt}` to the authenticated
+Owner. `PUT /api/v1/settings/general` requires the exact allowed Origin and a strict JSON body up to
+2 KiB: `{expectedRevision,timezone,defaultModel}`. Revision is an integer 1–2147483647; stale writes
+return `409 owner_preferences_revision_conflict`. Timezone is a bounded IANA key validated against
+Server ZoneInfo, with default `UTC`; a malformed/unknown zone returns 422. Default model is explicitly
+null or the existing `{connectionId,modelId}` selection. No key, endpoint, command or unknown field is
+accepted. The getter deliberately retains a stale selection so the Owner can clear or replace it.
+
+The singleton and `SETTINGS_OWNER_UPDATED` audit publication share one Owner transaction. No-op writes
+retain their revision. Audit records only changed field names and revision, not credentials. Timezone
+supplies the Owner display default; existing API instants remain UTC and existing schedules are not
+reinterpreted. The caller formats those instants using the returned timezone.
+
+Creation of a new Bot with profile `model` or `docker-linux` and an omitted model reads this default
+in the identity transaction. An explicit model wins. A profile such as `none` never inherits model
+capability; existing Bots are unchanged. Resolve the current enabled connection, endpoint policy and
+credential before creation/evolution/audit commit. A missing, disabled or unavailable default fails
+closed without publishing a Bot; it never falls back to another model. Setting a default performs no
+provider network request, discovery, inference or billing operation.
+
+Migration `0046_owner_preferences` introduces the seeded singleton (revision 1, UTC, null model).
+Its independent PR and C2 both append to the current migration journal; rebase/re-index the second
+migration PR against the first merged migration before merging it. Never replace committed history.
 
 ## Owner-managed memory
 
@@ -231,6 +280,28 @@ transitions valid from the current state. Permanent revocation uses a separate c
 
 These endpoints manage profile metadata only. They do not install or execute `SKILL.md`, change a
 Node, route work, alter approval policy, or grant tools.
+
+## Reviewed plugin catalog (C8)
+
+`GET /api/v1/plugins/catalog` authenticates the Owner and returns the bounded versioned catalog:
+`{format:"openbot.reviewed-plugin-catalog/v1",revision,entries}`. It accepts no query parameters and
+performs no remote discovery or installation. Each entry has a slug `id`, bounded `name`/`description`,
+`distribution` (`self-hosted-template|self-hosted`), exact `version`, SPDX-style `license`, HTTPS
+`sourceUrl` containing its 40-character `sourceCommit`, 1–16 source `files` with SHA-256, and
+`review:{status:"reviewed",reviewedAt,reviewedBy,record,scope}`. Protocol/domain export schemas/types.
+
+Only explicit reviewed records enter the response. Maximum source size is 64 KiB, maximum entries
+32; duplicate JSON keys, IDs or paths, unreviewed/rejected records, unknown credentials/endpoint fields,
+unsafe source URLs and malformed digests fail the whole source with `503 plugin_catalog_unavailable`.
+The bundled source contains the actually reviewed OpenBot notebook developer template, including
+its exact main source commit and hashes. It requires separate hosting/endpoint setup and explicit
+live manifest review/grants; a catalog entry grants no permission and is not an installation.
+
+An operator may set `OPENBOT_PLUGIN_CATALOG_PATH` to an exact absolute private owner-controlled
+regular file in the same format. It is read with the existing bounded owned-file helper; renderer,
+Worker, model and imported plugin content cannot choose that source. A broken source is not presented
+as a successful empty catalog. No remote third-party service is claimed reviewed: the attempted
+public documentation MCP review was refused by the retained non-public-DNS boundary in this environment.
 
 ## Employee export, import, and activation
 
@@ -336,6 +407,34 @@ returns `{ events, nextBefore? }`; `nextBefore` is an opaque keyset cursor (exac
 so events written in one transaction are never skipped); each event carries type, time, ids, current or tombstoned names,
 and only allowlisted scalar payload keys (never message text).
 
+## Audit categories and CSV (C3)
+
+`GET /api/v1/audit` additionally accepts `category`: `authentication`, `settings`, `hosts`,
+`approvals`, `channels`, `bots`, `runs`, `plugins`, or `other`. Omit it for all categories.
+Every event includes its Server-assigned category. Filtering happens in SQL before the existing
+exact-time/ID keyset pagination; unknown/duplicate query keys, categories and malformed bounds
+return 422. JSON pages remain limited to 1–100 events.
+
+`GET /api/v1/audit/export` accepts the same category/cursor and `limit=1..1000` (default 1000).
+It downloads UTF-8/BOM CSV (`openbot-audit.csv`), quoted with CRLF rows. Columns are `id`,
+`createdAt`, `category`, `type`, channel/Bot IDs and names, `runId`, and allowlisted `details`.
+Formula-like cell prefixes are escaped with an apostrophe. Owner authentication and no-store
+apply; raw prompts, keys, tool arguments and network digests never enter the export. Each page
+is bounded to 4 MiB. A non-final page exposes `X-OpenBot-Next-Before` (also exposed via CORS);
+pass it as `before` and concatenate parsed rows to export a larger history. Do not repeat CSV
+headers/BOM when assembling pages. The export is paginated history, not a transaction-wide archive.
+
+Login success/failure and logout append `AUTH_LOGIN_SUCCEEDED`, `AUTH_LOGIN_FAILED`, `AUTH_LOGOUT`
+without secrets; rejected, already-throttled attempts do not create unbounded audit rows.
+Login auditing shares the C2 credential-revision check and session transaction, retaining the bounded
+user-agent hint. Audit storage failure returns 503 without issuing a cookie or committing a session
+or throttle mutation.
+Final legacy model-setting publication audits `SETTINGS_MODEL_UPDATED` in its authority
+transaction; audit failure restores the private file. Existing model-connection events remain.
+Worker enrollment/revocation and real connection/disconnection append `WORKER_HOST_*`; private
+identity digests stay in the identity ledger. Connected-event failure refuses availability;
+physical disconnect cleanup still completes if audit persistence fails and logs a fixed error.
+
 ## Channels, Runs, and approvals
 
 Create a channel:
@@ -385,6 +484,35 @@ unexpired approval may be decided, and only once. Approval resumes a Run; reject
 blocks it. The current handshake does not yet issue a separately verifiable single-use capability
 lease, so only trusted-private-network test Providers are appropriate.
 
+## Owner additional approval settings (C4)
+
+`GET /api/v1/settings/approvals` returns `{revision,productRead,publicWeb,exceptions,
+protectedExceptionCategories}`. `PUT` requires Owner Cookie and exact Origin, a strict JSON body
+≤16KiB `{expectedRevision,productRead,publicWeb,exceptions}`. Modes: `inherit` (adapter minimum)
+and `required` (additional confirmation) for the two built-in Work categories. Revision conflicts
+return409 `approval_policy_revision_changed`; missing/corrupt storage returns503. Same-value writes
+keep the revision; changes atomically audit `SETTINGS_APPROVAL_UPDATED` with mode/count/revision,
+without copying target URLs or attachment IDs. Types/schemas exported by protocol/domain.
+
+Exceptions (≤64) are exact `{botId,category:"product_read"|"public_web",target:{kind,value}}`.
+`channel`/`attachment` use canonical UUIDs; `page` uses an exact canonical HTTPS URL without query,
+fragment, credentials, wildcards or literal IP addresses. Save validates live Bot and existing
+non-deleted local target. Runtime still validates task access, original source, live identities,
+public DNS/redirect/byte gates and exact immutable intent. No search/domain/prefix/file exception.
+
+**Delete, installation and permission changes never allow exceptions.** `protectedExceptionCategories`
+also includes command, browser, plugin and unknown, whose current minima are unchanged. An exception
+only removes extra Owner confirmation; adapter mandatory approval can never be removed. There is
+no global auto-approve or grant-changing endpoint. Direct Owner operations keep their existing gates.
+
+Proposal computes added approval transactionally; admission and built-in read/web dispatch recheck
+current settings. Revocation/tightening refuses unapproved auto Actions with409
+`approval_policy_changed`, requiring a fresh proposal; relaxing settings preserves pending decisions.
+Already approved exact Actions and historical receipt recovery remain valid. A web request already
+sent before a policy commit may finish; policy does not cancel remote effects or authorize replay.
+See [ADR-0049](decisions/0049-owner-approval-policy.md). Independent C2/C7/C4 migrations must be
+rebased/reindexed after the first merges; no committed migration history is overwritten.
+
 ## Realtime and private media
 
 Channel SSE emits `channel.ready`, `message.created`, `run.created`, `run.updated`, `run.progress`,
@@ -418,6 +546,35 @@ per-Node credential once. The current credential is still a copyable bearer secr
 proof-of-possession identity—so non-loopback Node connections require `wss:` and a trusted private
 network. See [Node enrollment](NODE_ENROLLMENT.md).
 
+## Employee browser lifecycle (C6 candidate)
+
+`POST /api/v1/bots/{botId}/browser/maintenance` requires Owner cookie and exact allowed Origin,
+and a strict JSON body up to 1 KiB: `{operation:"status"|"restart"|"clear",confirmation?:"clear-browser-data"}`.
+Only `clear` requires the confirmation, and other operations reject it. Unknown fields and any path,
+URL or command are rejected. Response: `{botId,nodeId,running:boolean,paused:boolean}`.
+
+The Server requires an already bound original browser identity or an explicit operator Bot-to-Node
+route; it never selects a replacement Host for maintenance. The original Worker must advertise
+`browser.maintenance@1` and `browser.session@1` from the Docker Provider. Enable explicitly with
+`OPENBOT_DOCKER_BROWSER_MAINTENANCE=true` plus existing sessions configuration. Default is off.
+Status queries upstream health without starting a browser. Restart gracefully stops the original
+browser, then starts it through the existing screenshot path without exposing its screenshot.
+Clear deletes only that Bot's upstream browser profile and leaves the browser stopped.
+
+Restart/clear persist an intent and invalidate all old viewer/Work observations before dispatch,
+retain the Server pause and Provider latch on both success and uncertainty, and require a fresh Owner
+takeover and explicit release before Agent work resumes. Origin, Owner expiry, route, credential and
+exact socket identity are rechecked at dispatch and completion. Events record only operation/phase
+and identity; no profile paths, cookies, page content or network details are returned. There is no
+retry of uncertain effects. This direct Owner clear operation can never become an approval exception.
+
+Retention settings are pending an explicit Server-deliverable versus Desktop-local data scope;
+this candidate does not advertise or accept a setting that lacks actual enforcement.
+
+
+The Owner deferred download/screenshot retention for this integration. No retention policy or
+automatic deletion is enabled by these lifecycle methods.
+
 ## Error contract
 
 | Status | Meaning |
@@ -441,6 +598,49 @@ exception message. Server and Node operational logs are structured JSON, honor
 without its query and never record headers, cookies, bodies, credentials, arbitrary error objects,
 or stacks.
 
+## Desktop platform settings and updates (C5)
+
+The sandboxed `openbotDesktop` bridge adds `getPlatformState()`,
+`setPlatformPreferences(preferences)`, `setUnreadBadge(count)`, `getUpdateState()`,
+`checkForUpdates()`, `downloadUpdate()` and `installUpdate()`. These are native Desktop methods;
+Web has no corresponding authority or HTTP endpoints. Types are exported by protocol and domain.
+
+`DesktopPlatformPreferences` is an exact DTO: `launchAtLogin`, `runInBackground`,
+`showDockBadge`, `automaticUpdates` (booleans) and `globalShortcut` (empty to disable, or a bounded
+accelerator containing a command/control modifier). Defaults are false except `showDockBadge=true`.
+The main process stores the versioned DTO in a private atomic file under its own userData directory.
+Unknown fields, unsafe files and malformed shortcuts fail closed. Shortcut conflicts retain the old
+shortcut; failed persistence rolls back startup, tray, shortcut and badge effects.
+
+`DesktopPlatformState` reports `status`, `preferences`, native `capabilities`, and an optional fixed
+`code`. Startup is available only in packaged macOS/Windows apps; Linux startup and Windows Dock
+badges are unavailable. Background mode requires a tray; closing the last window hides it while
+retaining the local Server, and the tray offers show/quit. A global shortcut reveals that same window.
+Badges accept safe integers 0–99999, display at most 99, and clear when disabled or quitting.
+Preference writes, downloads and installs require isolated-preload user activation and a focused
+trusted top frame. IPC never accepts a command, executable path or update URL from the renderer.
+
+`DesktopUpdateState.status` is `unavailable|idle|checking|available|downloading|downloaded|installing|failed`,
+with an optional bounded `version`, `percent` and fixed error `code`. Automatic mode checks every
+six hours and downloads verified updates; installation always needs native confirmation and a clean
+local Server shutdown. Downgrades and automatic install on quit are disabled.
+
+Executable updates use electron-updater 6.8.9 only in a signed packaged macOS/Windows app with a
+regular bundled `resources/app-update.yml` (canonical JSON, a YAML subset, maximum 4 KiB). Its exact
+fields are `openbotFormat="openbot.signed-updates/v1"`, `provider="github"`, `owner="Peerframe"`,
+`repo="openbot"`, `channel="alpha"|"latest"` and either `macTeamIdentifier` (10 uppercase letters/digits)
+or `publisherName` (1–8 Windows signer names). Unknown fields, custom feeds and missing signers are
+rejected before constructing the updater. The running app must have a valid matching Developer ID
+or Authenticode signature; the updater retains its download checksum and native signature checks.
+Development, unsigned packages and missing configuration expose `unavailable`; Linux updates are
+unsupported. Existing unsigned releases lack update metadata, so production download/install
+qualification remains blocked on signed releases and metadata. This contract does not declare that
+those releases have been produced or installed.
+
+
+The Owner deferred production signed automatic updates for this integration. Unsigned packages
+continue to report unavailable; native preferences can be used independently.
+
 ## Reviewed task knowledge
 
 `modelUseEnabled` is an optional boolean on memory create/update and is returned on stored memory.
@@ -458,3 +658,15 @@ internal non-secret-reference entries may be enabled. Updates require the usual 
 
 Models only prepare a proposal in the bounded native loop; they do not call these Owner endpoints.
 Successful Run completion publishes the candidate atomically. See [Native Agent](NATIVE_AGENT.md).
+
+## Channel activity (C1)
+
+`GET /api/v1/channels` and `GET /api/v1/workspace` return `lastActivityAt` on each
+Channel and optional `latestMessage: { id, authorType, preview, createdAt }`.
+These fields are Owner-only and absent on channel mutation responses. `preview` is plain text,
+at most 160 Unicode code points (640 UTF-8 bytes), truncated in SQL; no attachments, credentials,
+metadata or extra message fields are projected. Clients must render it as text, never HTML.
+An empty channel omits `latestMessage` and uses `createdAt` for `lastActivityAt`.
+The list is ordered by activity descending, then channel ID in C collation ascending;
+latest messages break equal timestamps by message ID in C collation descending.
+Deleted channels are excluded. Existing session revalidation, row and response-byte limits apply.

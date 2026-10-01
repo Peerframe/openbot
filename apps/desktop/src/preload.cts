@@ -2,6 +2,7 @@ import type {
   DesktopNavigationCommand,
   DesktopNavigationMenuState,
   DesktopNotificationInput,
+  DesktopPlatformPreferences,
   DesktopSidebarMaterialState,
   EmployeeTemplateSaveInput,
   OpenBotDesktopBridge,
@@ -50,6 +51,40 @@ const runtimeInfo = Object.freeze({
   shellVersion,
 });
 const bridge: OpenBotDesktopBridge = Object.freeze({
+  getPlatformState: () => ipcRenderer.invoke("openbot:get-platform-state"),
+  setPlatformPreferences: (value: DesktopPlatformPreferences) => {
+    if (
+      !(navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation
+        ?.isActive
+    )
+      return Promise.reject(new Error("Desktop preferences require a user gesture."));
+    return ipcRenderer.invoke("openbot:set-platform-preferences", {
+      launchAtLogin: value.launchAtLogin,
+      runInBackground: value.runInBackground,
+      globalShortcut: value.globalShortcut,
+      showDockBadge: value.showDockBadge,
+      automaticUpdates: value.automaticUpdates,
+    });
+  },
+  setUnreadBadge: (count: number) => ipcRenderer.invoke("openbot:set-unread-badge", count),
+  getUpdateState: () => ipcRenderer.invoke("openbot:get-update-state"),
+  checkForUpdates: () => ipcRenderer.invoke("openbot:check-for-updates"),
+  downloadUpdate: () => {
+    if (
+      !(navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation
+        ?.isActive
+    )
+      return Promise.reject(new Error("Download requires a user gesture."));
+    return ipcRenderer.invoke("openbot:download-update");
+  },
+  installUpdate: () => {
+    if (
+      !(navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation
+        ?.isActive
+    )
+      return Promise.reject(new Error("Installation requires a user gesture."));
+    return ipcRenderer.invoke("openbot:install-update");
+  },
   beginVoiceCapture: () => {
     // This check runs in the isolated preload, not in renderer-supplied JavaScript.
     if (

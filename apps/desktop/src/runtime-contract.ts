@@ -1,5 +1,8 @@
 export type {
   DesktopRuntimeInfo,
+  DesktopPlatformPreferences,
+  DesktopPlatformState,
+  DesktopUpdateState,
   DesktopConnectionState,
   ConfigureDesktopServerResult,
   DesktopSetupPlanState,

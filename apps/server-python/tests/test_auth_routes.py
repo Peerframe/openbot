@@ -15,6 +15,7 @@ ORIGIN = "https://control.test"
 @pytest.fixture
 def api():
     persistence = AsyncMock()
+    persistence.credentials.return_value = None
     persistence.attempt.return_value = AttemptResult("issued", datetime.now(timezone.utc) + timedelta(hours=12))
     persistence.revoke.return_value = True
     reader = AsyncMock()

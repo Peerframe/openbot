@@ -68,6 +68,7 @@ export const nodeEnvSchema = z
     OPENBOT_DOCKER_ALLOW_PRIVATE_HOSTS: booleanSchema,
     OPENBOT_DOCKER_BROWSER_SESSIONS: booleanSchema,
     OPENBOT_DOCKER_BROWSER_TASKS: booleanSchema,
+    OPENBOT_DOCKER_BROWSER_MAINTENANCE: booleanSchema,
     OPENBOT_DOCKER_INPUT_ORIGINS: z
       .string()
       .default("")
@@ -106,6 +107,12 @@ export const nodeEnvSchema = z
         code: "custom",
         message: "Browser tasks require sessions and explicit trusted origins.",
         path: ["OPENBOT_DOCKER_BROWSER_TASKS"],
+      });
+    if (value.OPENBOT_DOCKER_BROWSER_MAINTENANCE && !value.OPENBOT_DOCKER_BROWSER_SESSIONS)
+      context.addIssue({
+        code: "custom",
+        message: "Browser maintenance requires sessions.",
+        path: ["OPENBOT_DOCKER_BROWSER_MAINTENANCE"],
       });
     if (value.OPENBOT_DOCKER_BROWSER_SESSIONS && !value.OPENBOT_DOCKER_COMPUTER_URL)
       context.addIssue({
