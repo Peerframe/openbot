@@ -11,7 +11,7 @@ from .database import StoreUnavailable
 from .http_input import read_json
 
 
-BROWSER_WRITE_ROUTES = (("POST", r"/api/v1/bots/[^/]+/browser"),
+BROWSER_WRITE_ROUTES = (("POST", r"/api/v1/bots/[^/]+/browser/maintenance"),("POST", r"/api/v1/bots/[^/]+/browser"),
                         ("POST", r"/api/v1/browser-sessions/[^/]+/commands"),
                         ("DELETE", r"/api/v1/browser-sessions/[^/]+"))
 
@@ -41,6 +41,12 @@ def register_browser_routes(app, service, *, secure_cookies, allowed_origins):
             raise HTTPException(422, "Invalid browser input.") from None
         except (StoreUnavailable, RuntimeError, ValueError, TimeoutError, OSError):
             raise HTTPException(503, "Browser operation was not confirmed; input is never retried automatically.") from None
+
+    @app.post("/api/v1/bots/{bot_id}/browser/maintenance", operation_id="maintainEmployeeBrowser")
+    async def maintenance(request: Request, bot_id: str):
+        owner = await token(request)
+        value = await read_json(request, max_bytes=1024)
+        return await guarded(service.maintenance(owner, bot_id, value))
 
     @app.post("/api/v1/bots/{bot_id}/browser", status_code=201, operation_id="openEmployeeBrowser")
     async def open_browser(request: Request, bot_id: str):
