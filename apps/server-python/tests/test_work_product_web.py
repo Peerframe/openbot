@@ -290,3 +290,19 @@ async def test_mutated_receipt_refuses_revalidation(seed,tmp_path,web_remote):
     with psycopg.connect(seed['dsn']) as db:db.execute('UPDATE work_tool_results SET sha256=%s WHERE action_id=%s',('a'*64,h.identity))
     with pytest.raises(WorkConflict):await h.env.run(h.adapter.revalidate,h.context)
     assert len(web_remote['requests'])==1
+
+
+@pytest.mark.anyio
+async def test_owner_policy_public_web_approved_exact_action_executes(seed,tmp_path,web_remote):
+    from test_approval_settings import restored
+    from openbot_server.approval_settings import OwnerApprovalSettings
+    from openbot_server.owner_files import OwnerFiles
+    with restored(seed):
+        policy=OwnerApprovalSettings(seed['dsn'],OwnerFiles(tmp_path.resolve()/'policy-files'))
+        current=await policy.snapshot(seed['token'])
+        await policy.save(seed['token'],dict(expectedRevision=current['revision'],productRead='inherit',publicWeb='required',exceptions=[]))
+        h=await harness(seed,tmp_path,web_remote)
+        row=await h.row();assert row['requires_approval'] and not row['baseline_requires_approval'] and row['decision']=='pending'
+        await h.store.decide(seed['token'],h.identity,intent_digest=row['intent_digest'],approved=True)
+        assert (await h.execute())['status']=='applied'
+        assert (await h.execute())['status']=='applied'

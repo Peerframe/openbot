@@ -994,3 +994,12 @@ Reuse CPython 3.12.13 csv (PSF), RFC 4180 formatting and OWASP CSV-injection gui
 existing PostgreSQL 17.11/Psycopg 3.3.6 audit authority. Bounded SQL allowlists, keyset categories,
 spreadsheet-safe text and transactional event supplementation add no dependency or copied source.
 See [export research](research/desktop-audit-export.md).
+
+## Owner additional approval settings (2026-10-01)
+
+Reuse the existing Work exact-intent approval, product reads/web guards and retained Server policy
+research at OpenBot57341154b19d45686b2f71bce96fca38e1f07310. Compare Cedar4.13.0 and OPA1.21.1
+(versions, source pins, Apache-2.0 licenses and bounded integration decision in ADR-0049); retain a
+thin PostgreSQL guard for additional confirmation only. No source copied/dependency added; exact
+read exceptions never override baseline approval or permit delete/install/permission changes. See
+[research](research/desktop-approval-settings.md) and [ADR](decisions/0049-owner-approval-policy.md).

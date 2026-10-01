@@ -765,6 +765,9 @@ export type ReviewKnowledgeProposalInput =
     };
 
 export type {
+  ApprovalException,
+  ApprovalSettings,
+  ApprovalSettingsInput,
   AuditCategory,
   AuditEvent,
   AuditPage,

@@ -37,6 +37,8 @@ class OwnerProduct:
         self.portability, self.processing = portability, processing
         self.plugins, self.model_connections = plugins, model_connections
         self.worker_identity, self.worker_registry = worker_identity, worker_registry
+        from .approval_settings import OwnerApprovalSettings
+        self.approval_settings=OwnerApprovalSettings(dsn,self.files)
         self.browser = browser
         self.work_runtime = None
         self.write_routes = []
@@ -171,6 +173,11 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         row,data=await product.artifact_content(value,path['artifact_id'])
         return download_response(data,name=row['name'],media_type=row['media_type'])
     route('/api/v1/artifacts/{artifact_id}/content','GET',artifact)
+
+    async def approval_settings(value,*_):return await product.approval_settings.snapshot(value)
+    async def approval_save(value,_path,body,_request):return await product.approval_settings.save(value,body)
+    route('/api/v1/settings/approvals','GET',approval_settings)
+    route('/api/v1/settings/approvals','PUT',approval_save,limit=16384)
 
     async def model_summary(value,*_):
         if product.model is None: return {'status':'unavailable'}
