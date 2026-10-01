@@ -19,13 +19,8 @@ export function nodeIdentityDisplayState(
   return onlineNodes.some((node) => node.id === identity.nodeId) ? "online" : "offline";
 }
 
-export function NodeManagerDialog({
-  onlineNodes,
-  onClose,
-}: {
-  onlineNodes: ExecutionNode[];
-  onClose(): void;
-}) {
+/** Server-backed host enrollment state shared by the dialog and Settings → 工作主机. */
+export function useNodeManager() {
   const [identities, setIdentities] = useState<NodeIdentitySummary[]>();
   const [error, setError] = useState<string>();
   const [nodeId, setNodeId] = useState("");
@@ -34,7 +29,6 @@ export function NodeManagerDialog({
   const [copied, setCopied] = useState(false);
   const [confirmingNodeId, setConfirmingNodeId] = useState<string>();
   const [revokingNodeId, setRevokingNodeId] = useState<string>();
-  const { dialogRef, closeDialog } = useModalDialog(onClose);
 
   const refresh = useCallback(async (signal?: AbortSignal) => {
     setError(undefined);
@@ -101,6 +95,49 @@ export function NodeManagerDialog({
       setRevokingNodeId(undefined);
     }
   }
+
+  return {
+    identities,
+    error,
+    nodeId,
+    setNodeId,
+    issuing,
+    issued,
+    copied,
+    confirmingNodeId,
+    setConfirmingNodeId,
+    revokingNodeId,
+    refresh,
+    issue,
+    copyEnrollment,
+    revoke,
+  };
+}
+
+export function NodeManagerDialog({
+  onlineNodes,
+  onClose,
+}: {
+  onlineNodes: ExecutionNode[];
+  onClose(): void;
+}) {
+  const {
+    identities,
+    error,
+    nodeId,
+    setNodeId,
+    issuing,
+    issued,
+    copied,
+    confirmingNodeId,
+    setConfirmingNodeId,
+    revokingNodeId,
+    refresh,
+    issue,
+    copyEnrollment,
+    revoke,
+  } = useNodeManager();
+  const { dialogRef, closeDialog } = useModalDialog(onClose);
 
   return (
     <div className="dialog-backdrop">
@@ -256,7 +293,15 @@ export function NodeIdentityList({
               <code>{identity.nodeId}</code>
               <small>
                 {liveNode
-                  ? `${platformLabel(liveNode.platform)} · ${liveNode.architecture}`
+                  ? [
+                      platformLabel(liveNode.platform),
+                      liveNode.architecture,
+                      state === "online"
+                        ? liveNode.activeRunIds.length > 0
+                          ? `正在执行 ${liveNode.activeRunIds.length}/${liveNode.maxConcurrentRuns} 个任务`
+                          : "空闲"
+                        : `上次在线 ${formatNodeDate(liveNode.lastSeenAt)}`,
+                    ].join(" · ")
                   : `登记于 ${formatNodeDate(identity.enrolledAt)}`}
               </small>
             </div>
@@ -264,7 +309,7 @@ export function NodeIdentityList({
               <div className="node-identity-actions">
                 {confirming ? (
                   <>
-                    <span>旧凭证将立即失效</span>
+                    <span className="node-revoke-warning">旧凭证将立即失效</span>
                     <button
                       className="node-danger-button"
                       type="button"
@@ -293,7 +338,7 @@ export function NodeIdentityList({
   );
 }
 
-function enrollmentEnvironment(issued: NodeEnrollmentToken): string {
+export function enrollmentEnvironment(issued: NodeEnrollmentToken): string {
   return `OPENBOT_NODE_ID=${issued.nodeId}\nOPENBOT_NODE_ENROLLMENT_TOKEN=${issued.token}`;
 }
 
@@ -310,7 +355,7 @@ function platformLabel(platform: ExecutionNode["platform"]): string {
   return platform;
 }
 
-function formatNodeDate(value: string | undefined): string {
+export function formatNodeDate(value: string | undefined): string {
   if (value === undefined) return "时间未知";
   return new Intl.DateTimeFormat("zh-CN", {
     month: "short",

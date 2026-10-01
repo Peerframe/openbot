@@ -1,4 +1,4 @@
-import type { Bot, Channel, Run } from "@openbot/domain";
+import type { Bot, Channel, ChannelMessagePreview, Run } from "@openbot/domain";
 import {
   type KeyboardEvent,
   type MouseEvent,
@@ -21,6 +21,7 @@ import {
   useSidebarOrganization,
 } from "../sidebar-organization";
 import { DeleteIdentityDialog, type DeleteIdentityTarget } from "./DeleteIdentityDialog";
+import type { DesktopSettingsSection } from "./DesktopSettingsScreen";
 import { BotIcon, HashIcon, PlusIcon, SearchIcon, SettingsIcon, SkillIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
 import { SidebarItemMenu, type SidebarMenuTarget } from "./SidebarItemMenu";
@@ -33,12 +34,17 @@ interface SidebarProps {
   onWork?: (() => void) | undefined;
   onAutomations?: (() => void) | undefined;
   onSkills?: (() => void) | undefined;
+  /**
+   * Latest Server-reported activity per row (backlog C1); a Bot's row uses its direct
+   * conversation. Rows without it fall back to the description or role.
+   */
+  activity?: Readonly<Record<SidebarItemKey, SidebarActivity>> | undefined;
   bots: Bot[];
   channels: Channel[];
   runs: Run[];
   ownerName: string;
   onHome?: (() => void) | undefined;
-  onSettings?: ((section?: "general" | "about" | "automations") => void) | undefined;
+  onSettings?: ((section?: DesktopSettingsSection) => void) | undefined;
   selectedChannelId?: string | undefined;
   selectedBotId?: string | undefined;
   onSelectChannel(channelId: string): void;
@@ -50,6 +56,9 @@ interface SidebarProps {
   onRenameItem?: ((key: SidebarItemKey, name: string) => Promise<void>) | undefined;
   onDeleteItem?: ((target: DeleteIdentityTarget) => Promise<void>) | undefined;
   onAddBotToChannel?: ((channelId: string, botId: string) => Promise<void>) | undefined;
+  /** New artboard: 「+」 opens a new chat instead of the create menu. */
+  onNewChat?: (() => void) | undefined;
+  newChatActive?: boolean;
   onCreateBot(): void;
   onCreateChannel(): void;
   onManageNodes(): void;
@@ -61,6 +70,7 @@ interface SidebarProps {
 export function Sidebar({
   onWork,
   onSkills,
+  activity,
   bots,
   channels,
   runs,
@@ -76,6 +86,8 @@ export function Sidebar({
   onRenameItem,
   onDeleteItem,
   onAddBotToChannel,
+  onNewChat,
+  newChatActive = false,
   onCreateBot,
   onCreateChannel,
   onManageModels,
@@ -123,12 +135,14 @@ export function Sidebar({
       item: { kind: "channel" as const, channel },
       name: channel.name,
       searchText: `${channel.name} ${channel.description}`,
+      activityAt: activity?.[`channel:${channel.id}`]?.lastActivityAt,
     })),
     ...bots.map((bot) => ({
       key: `bot:${bot.id}` as const,
       item: { kind: "bot" as const, bot },
       name: bot.name,
       searchText: `${bot.name} ${bot.role}`,
+      activityAt: activity?.[`bot:${bot.id}`]?.lastActivityAt,
     })),
   ];
   const pinned = new Set(organization.pinned);
@@ -201,12 +215,18 @@ export function Sidebar({
         ? selectedChannelId === item.channel.id
         : selectedBotId === item.bot.id;
     const run = item.kind === "bot" ? activeRunByBot.get(item.bot.id) : undefined;
-    const sub =
-      item.kind === "channel"
-        ? item.channel.description || `${item.channel.botIds.length} 名 Bot`
-        : run
-          ? `${runStatusLabel(run.status)} · ${run.title}`
-          : "待命";
+    const latest = activity?.[key];
+    const preview = latest?.latestMessage
+      ? `${latest.latestMessage.authorType === "human" ? "你：" : ""}${latest.latestMessage.preview}`
+      : undefined;
+    // A running task outranks the preview: it is what the Bot is doing now.
+    const sub = run
+      ? `${runStatusLabel(run.status)} · ${run.title}`
+      : (preview ??
+        (item.kind === "channel"
+          ? item.channel.description || `${item.channel.botIds.length} 名 Bot`
+          : "待命"));
+    const time = latest?.latestMessage?.createdAt ?? latest?.lastActivityAt;
     const count = unreadCounts?.[key];
     return (
       <button
@@ -249,6 +269,11 @@ export function Sidebar({
           <small className={`sb-sub${run ? " is-active" : ""}`}>{sub}</small>
         </span>
         <span className="sb-meta">
+          {time ? (
+            <time className="sb-time" dateTime={time}>
+              {sidebarTime(time)}
+            </time>
+          ) : null}
           {pinned.has(key) ? (
             <span className="sb-pin" role="img" aria-label="已置顶">
               <PinGlyph />
@@ -407,37 +432,50 @@ export function Sidebar({
       }}
     >
       <div className="sb-top">
-        <details className="sb-create">
-          <summary aria-label="新建" title="新建">
+        {onNewChat ? (
+          <button
+            type="button"
+            className="sb-new"
+            aria-label="新建聊天"
+            title="新建聊天"
+            aria-pressed={newChatActive}
+            onClick={onNewChat}
+          >
             <PlusIcon />
-          </summary>
-          <div className="ob-menu sb-popover" role="menu">
-            <button
-              type="button"
-              role="menuitem"
-              className="ob-menu-item"
-              onClick={() => {
-                dismiss();
-                onCreateChannel();
-              }}
-            >
-              <HashIcon />
-              创建频道
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className="ob-menu-item"
-              onClick={() => {
-                dismiss();
-                onCreateBot();
-              }}
-            >
-              <BotIcon />
-              创建 Bot
-            </button>
-          </div>
-        </details>
+          </button>
+        ) : (
+          <details className="sb-create">
+            <summary aria-label="新建" title="新建">
+              <PlusIcon />
+            </summary>
+            <div className="ob-menu sb-popover" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                className="ob-menu-item"
+                onClick={() => {
+                  dismiss();
+                  onCreateChannel();
+                }}
+              >
+                <HashIcon />
+                创建频道
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="ob-menu-item"
+                onClick={() => {
+                  dismiss();
+                  onCreateBot();
+                }}
+              >
+                <BotIcon />
+                创建 Bot
+              </button>
+            </div>
+          </details>
+        )}
       </div>
       <search className={`ob-search sb-search${term ? " is-active" : ""}`}>
         <SearchIcon />
@@ -459,6 +497,16 @@ export function Sidebar({
         ) : null}
       </search>
       <nav className="sb-list" aria-label="对话列表">
+        {newChatActive ? (
+          <div className="sb-row is-selected sb-new-row" aria-current="page">
+            <span className="sb-avatar is-new" aria-hidden="true">
+              <PlusIcon />
+            </span>
+            <span className="sb-text">
+              <strong className="sb-name">新建聊天</strong>
+            </span>
+          </div>
+        ) : null}
         {body}
       </nav>
       {menuTarget ? (
@@ -529,7 +577,7 @@ function AccountMenu({
 }: {
   ownerName: string;
   onWork?: (() => void) | undefined;
-  onSettings?: ((section?: "general" | "about" | "automations") => void) | undefined;
+  onSettings?: ((section?: DesktopSettingsSection) => void) | undefined;
   onManageModels?: (() => void) | undefined;
   onLogout(): Promise<void>;
 }) {
@@ -652,8 +700,8 @@ function AccountMenu({
                 </button>
               </>
             ) : null}
-            {onManageModels ? (
-              // Temporary: model connections move into the Settings 模型服务 section in plan step 7.
+            {onManageModels && !onSettings ? (
+              // Only without a settings dialog (embedded workspace); otherwise 设置 → 模型服务.
               <button
                 type="button"
                 role="menuitem"
@@ -821,3 +869,20 @@ const LogoutGlyph = () => (
     <path d="M15 21h4a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4M8 17l-5-5 5-5M3 12h12" />
   </Glyph>
 );
+
+export interface SidebarActivity {
+  lastActivityAt?: string | undefined;
+  latestMessage?: ChannelMessagePreview | undefined;
+}
+
+/** 「10:24」 today, 「昨天」, then 「9/28」, as in the Sidebar artboard. */
+export function sidebarTime(value: string, now = new Date()): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  if (date.toDateString() === now.toDateString())
+    return date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false });
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) return "昨天";
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}

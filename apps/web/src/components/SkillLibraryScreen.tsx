@@ -1,6 +1,6 @@
 import type { Bot, Channel, EmployeeSkill, EmployeeSkillState } from "@openbot/domain";
-import { type ReactNode, useEffect, useState } from "react";
-import { getEmployeeProfile } from "../api";
+import { type ReactNode, useState } from "react";
+import { useEmployeeProfiles } from "../use-employee-profiles";
 import { EmployeeSkillImport } from "./EmployeeSkillImport";
 import { BotIcon, CloseIcon, PlusIcon, SearchIcon } from "./Icons";
 import "./destinations.css";
@@ -65,49 +65,16 @@ export function SkillLibraryScreen({
   const [adding, setAdding] = useState(false);
   const [importBotId, setImportBotId] = useState(bots[0]?.id ?? "");
   const [importedBotId, setImportedBotId] = useState<string>();
-  const [entries, setEntries] = useState<SkillEntry[]>([]);
-  const [failedIds, setFailedIds] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
   const [query, setQuery] = useState("");
   const [state, setState] = useState<EmployeeSkillState | "all">("all");
-  const requestKey = JSON.stringify({ ids: bots.map((bot) => bot.id).sort(), revision });
-
-  useEffect(() => {
-    const controller = new AbortController();
-    const { ids } = JSON.parse(requestKey) as { ids: string[] };
-    const nextEntries: SkillEntry[] = [];
-    const failed: string[] = [];
-    let cursor = 0;
-    setLoading(true);
-    setEntries([]);
-    setFailedIds([]);
-    // Bound parallel reads so a large workspace cannot flood the authenticated Server.
-    const readers = Array.from({ length: Math.min(4, ids.length) }, async () => {
-      while (cursor < ids.length && !controller.signal.aborted) {
-        const id = ids[cursor++];
-        if (id === undefined) break;
-        try {
-          const profile = await getEmployeeProfile(
-            id,
-            AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]),
-          );
-          nextEntries.push(...profile.skills.map((skill) => ({ botId: id, skill })));
-        } catch {
-          failed.push(id);
-        }
-      }
-    });
-    void Promise.all(readers).then(() => {
-      if (controller.signal.aborted) return;
-      setEntries(
-        nextEntries.sort((left, right) => left.skill.name.localeCompare(right.skill.name)),
-      );
-      setFailedIds(failed);
-      setLoading(false);
-    });
-    return () => controller.abort();
-  }, [requestKey]);
+  const { profiles, failedIds, loading } = useEmployeeProfiles(
+    bots.map((bot) => bot.id),
+    revision,
+  );
+  const entries: SkillEntry[] = [...profiles]
+    .flatMap(([botId, profile]) => profile.skills.map((skill) => ({ botId, skill })))
+    .sort((left, right) => left.skill.name.localeCompare(right.skill.name));
 
   const names = new Map(bots.map((bot) => [bot.id, bot.name]));
   const term = query.trim().toLocaleLowerCase();

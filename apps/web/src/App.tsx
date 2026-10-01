@@ -5,19 +5,19 @@ import type {
   CreateBotInput,
   CreateChannelInput,
   RunFrame,
-  WorkspaceSnapshot,
 } from "@openbot/domain";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import {
+  ApiError,
   createBot,
   createChannel,
+  createMessage,
   decideApproval,
   deleteBot,
   deleteChannel,
   getAuthSession,
   getModelSettings,
   getUnreadCounts,
-  getWorkspace,
   joinBotToChannel,
   login,
   logout,
@@ -40,7 +40,10 @@ import { CreateChannelDialog } from "./components/CreateChannelDialog";
 import { DesktopConnectionScreen } from "./components/DesktopConnectionScreen";
 import { DesktopInstallScreen } from "./components/DesktopInstallScreen";
 import { DesktopLocalWorkerScreen } from "./components/DesktopLocalWorkerScreen";
-import { DesktopSettingsScreen } from "./components/DesktopSettingsScreen";
+import {
+  DesktopSettingsScreen,
+  type DesktopSettingsSection,
+} from "./components/DesktopSettingsScreen";
 import { DesktopSetupScreen } from "./components/DesktopSetupScreen";
 import { EmployeeBrowser } from "./components/EmployeeBrowser";
 import { EmployeeProfileRail } from "./components/EmployeeProfileRail";
@@ -60,12 +63,15 @@ import { LoginScreen } from "./components/LoginScreen";
 import { MobileNavigation, type MobilePanel } from "./components/MobileNavigation";
 import { ModelConnectionsDialog } from "./components/ModelConnectionsDialog";
 import { ModelSettingsScreen } from "./components/ModelSettingsScreen";
+import { NewChatScreen, type NewChatStart } from "./components/NewChatScreen";
 import { NodeManagerDialog } from "./components/NodeManagerDialog";
 import { OpenBotMark } from "./components/OpenBotMark";
+import { PluginsDialog } from "./components/PluginsDialog";
+import { RobotAvatar } from "./components/RobotAvatar";
 import { indexRunCollaboration } from "./components/RunCollaboration";
 import { RunInspector } from "./components/RunInspector";
 import { ShareConversationDialog } from "./components/ShareConversationDialog";
-import { Sidebar } from "./components/Sidebar";
+import { Sidebar, type SidebarActivity } from "./components/Sidebar";
 import { SkillLibraryScreen } from "./components/SkillLibraryScreen";
 import { parseWorkEntry, WorkTasksEntry } from "./components/WorkTasksEntry";
 import { WorkTasksScreen } from "./components/WorkTasksScreen";
@@ -77,7 +83,7 @@ import {
   getOpenBotDesktopBridge,
 } from "./desktop-runtime";
 import { shortcutLabel } from "./desktop-shortcuts";
-import { sidebarOrganization } from "./sidebar-organization";
+import { type SidebarItemKey, sidebarOrganization } from "./sidebar-organization";
 import {
   NotificationTracker,
   type SystemNotice,
@@ -86,6 +92,7 @@ import {
 } from "./system-notifications";
 import { useDesktopNavigation } from "./use-desktop-navigation";
 import { useEmployeeProfile } from "./use-employee-profile";
+import { useSettingsCounts } from "./use-settings-counts";
 import { useWorkspaceAppearance } from "./use-workspace-appearance";
 import { useWorkspaceState } from "./use-workspace-state";
 import { useWorkspaceNavigation } from "./workspace-navigation";
@@ -112,12 +119,8 @@ export function App() {
   const [modelChecked, setModelChecked] = useState(false);
   const [showModelSetup, setShowModelSetup] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [settingsSection, setSettingsSection] = useState<"general" | "about" | "automations">(
-    "general",
-  );
-  const [settingsError, setSettingsError] = useState<string>();
-  const [showNodeSettings, setShowNodeSettings] = useState(false);
-  const [settingsNodes, setSettingsNodes] = useState<WorkspaceSnapshot["nodes"]>([]);
+  const [settingsSection, setSettingsSection] = useState<DesktopSettingsSection>("general");
+  const settingsCounts = useSettingsCounts(showSettings);
   const [showConnectionSetup, setShowConnectionSetup] = useState(false);
   const [showSetupPlan, setShowSetupPlan] = useState(false);
   const [desktopLocalWorker, setDesktopLocalWorker] = useState<
@@ -483,37 +486,25 @@ export function App() {
 
   const settingsPanel =
     showSettings && desktopSetupPlan?.status === "configured" ? (
-      <>
-        <DesktopSettingsScreen
-          initialSection={settingsSection}
-          error={settingsError}
-          plan={desktopSetupPlan.plan}
-          material={material}
-          connection={desktopConnection}
-          localWorker={desktopLocalWorker}
-          onConnection={() => setShowConnectionSetup(true)}
-          onRole={() => setShowSetupPlan(true)}
-          onBack={() => setShowSettings(false)}
-          onWorker={() => {
-            void getWorkspace()
-              .then((workspace) => {
-                setSettingsNodes(workspace.nodes);
-                setShowNodeSettings(true);
-                setSettingsError(undefined);
-              })
-              .catch(() => setSettingsError("无法读取工作电脑，请检查连接后重试。"));
-          }}
-        />
-        {showNodeSettings ? (
-          <NodeManagerDialog
-            onlineNodes={settingsNodes}
-            onClose={() => setShowNodeSettings(false)}
-          />
-        ) : null}
-      </>
+      <DesktopSettingsScreen
+        initialSection={settingsSection}
+        counts={settingsCounts}
+        ownerName={session.owner.name}
+        onLogout={logoutWorkspace}
+        plan={desktopSetupPlan.plan}
+        material={material}
+        connection={desktopConnection}
+        localWorker={desktopLocalWorker}
+        onConnection={() => setShowConnectionSetup(true)}
+        onRole={() => setShowSetupPlan(true)}
+        onBack={() => setShowSettings(false)}
+      />
     ) : showSettings && !desktopBridge ? (
       <DesktopSettingsScreen
         initialSection={settingsSection}
+        counts={settingsCounts}
+        ownerName={session.owner.name}
+        onLogout={logoutWorkspace}
         onBack={() => setShowSettings(false)}
       />
     ) : null;
@@ -565,7 +556,8 @@ export function App() {
 
   return (
     <>
-      <div className="workspace-preserved" hidden={showSettings} inert={showSettings}>
+      {/* Settings is a modal over the workspace (Settings artboard); the workspace stays visible. */}
+      <div className="workspace-preserved" inert={showSettings}>
         <AuthenticatedWorkspace
           key={`${session.owner.id}:${desktopConnection?.status === "configured" ? desktopConnection.serverUrl : "web"}`}
           active={!showSettings}
@@ -590,13 +582,14 @@ export function AuthenticatedWorkspace({
 }: {
   active?: boolean;
   ownerName: string;
-  onSettings?: ((section?: "general" | "about" | "automations") => void) | undefined;
+  onSettings?: ((section?: DesktopSettingsSection) => void) | undefined;
   onLogout(): Promise<void>;
 }) {
   const { values: preferences } = useWorkspacePreferences();
-  const showDetails = preferences.rightPanelOpen;
   const navigation = useWorkspaceNavigation();
   const location = navigation.location;
+  // The New artboard has no right rail; everywhere else it follows the Owner's preference.
+  const showDetails = preferences.rightPanelOpen && location.kind !== "new";
   const destination =
     location.kind === "automations" || location.kind === "skills" || location.kind === "work"
       ? location.kind
@@ -618,6 +611,7 @@ export function AuthenticatedWorkspace({
   const [dialog, setDialog] = useState<Dialog>();
   const [browserBotId, setBrowserBotId] = useState<string>();
   const [modelServicesOpen, setModelServicesOpen] = useState(false);
+  const [pluginsOpen, setPluginsOpen] = useState(false);
   const [modelServicesVersion, setModelServicesVersion] = useState(0);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>();
   const [error, setError] = useState<string>();
@@ -635,6 +629,8 @@ export function AuthenticatedWorkspace({
   } = useWorkspaceState(setError);
   const [notice, setNotice] = useState<string>();
   const [unreadByChannel, setUnreadByChannel] = useState<Record<string, number>>({});
+  // undefined until the first read, which is a baseline rather than "new messages".
+  const previousUnread = useRef<Record<string, number>>(undefined);
   const [attention, setAttention] = useState(0);
   const notifications = useRef(new NotificationTracker());
   const notifyRef = useRef({ approvals: false, messages: false });
@@ -668,6 +664,14 @@ export function AuthenticatedWorkspace({
           void markChannelRead(selectedChannelId).catch(() => undefined);
         }
         setUnreadByChannel(counts);
+        // New messages elsewhere change the sidebar's previews and order (backlog C1); re-read
+        // the workspace once. The next pass sees equal counts, so this cannot loop.
+        const previous = previousUnread.current;
+        const grew =
+          previous !== undefined &&
+          Object.entries(counts).some(([id, count]) => count > (previous[id] ?? 0));
+        previousUnread.current = counts;
+        if (grew) void refresh();
         if (notifyRef.current.messages && !windowIsAttended())
           for (const notice of notices) announce(notice);
       } catch {
@@ -784,7 +788,7 @@ export function AuthenticatedWorkspace({
     canGoForward: navigation.canGoForward,
     onBack: navigation.back,
     onForward: navigation.forward,
-    onNewConversation: () => setDialog("channel"),
+    onNewConversation: () => navigation.navigate({ kind: "new" }),
     onSettings,
   });
 
@@ -853,6 +857,41 @@ export function AuthenticatedWorkspace({
     await handleAddBotToChannel(selectedChannelId, botId);
   }
 
+  /** New artboard: the first message opens a direct conversation or creates the channel. */
+  async function handleStartChat({ botIds, channelName, text }: NewChatStart) {
+    let channel: Channel;
+    if (botIds.length === 1) {
+      channel = await openBotConversation(botIds[0] ?? "");
+    } else {
+      const base = (
+        channelName ??
+        botIds.map((id) => workspace?.bots.find((bot) => bot.id === id)?.name ?? "Bot").join("、")
+      ).slice(0, 76);
+      let created: Channel | undefined;
+      for (let attempt = 1; !created; attempt += 1) {
+        try {
+          created = await createChannel({
+            name: attempt === 1 ? base : `${base} ${attempt}`,
+            description: "",
+            botIds,
+          });
+        } catch (cause) {
+          // An auto-generated name may already exist; a chosen name is the Owner's to change.
+          if (channelName || attempt >= 5 || !(cause instanceof ApiError) || cause.status !== 409)
+            throw cause;
+        }
+      }
+      channel = created;
+    }
+    projectChannel(channel);
+    await createMessage(
+      channel.id,
+      botIds.length === 1 ? { content: text, botId: botIds[0] } : { content: text, botIds },
+    );
+    selectChannel(channel.id);
+    await refresh();
+  }
+
   async function handleAddBotToChannel(channelId: string, botId: string) {
     const channel = await joinBotToChannel(channelId, botId);
     projectChannel(channel);
@@ -874,6 +913,21 @@ export function AuthenticatedWorkspace({
     if (key.startsWith("channel:")) return key.slice(8);
     const botId = key.slice(4);
     return workspace?.channels.find((channel) => channel.directBotId === botId)?.id;
+  }
+
+  /** Appends plugin material to a channel draft addressed to one Bot, within the draft limit. */
+  function insertPluginMaterial(channelId: string, botId: string, text: string) {
+    const conversation = conversationSession.channel(channelId, botId);
+    const draft = conversation.getSnapshot().draft;
+    const next = [draft.text, text].filter(Boolean).join("\n\n");
+    if (next.length > 8000) throw new Error("资料超过草稿剩余容量，请先缩短草稿或复制需要的片段。");
+    conversation.edit({ text: next, targetBotId: botId, targetBotIds: [botId] });
+    selectChannel(channelId);
+  }
+
+  async function renameEmployee(botId: string, name: string) {
+    await renameBot(botId, name);
+    await refresh();
   }
 
   async function handleRenameItem(key: string, name: string) {
@@ -990,6 +1044,14 @@ export function AuthenticatedWorkspace({
     ? workspace.bots.find((bot) => bot.id === browserBotId)
     : undefined;
   const sharedBot = sharedBotId ? workspace.bots.find((bot) => bot.id === sharedBotId) : undefined;
+  // Plugin material goes to the open channel's first Bot, as the former library screen did.
+  const pluginBotId = selectedChannel?.botIds[0];
+  const pluginScope =
+    selectedChannel && pluginBotId
+      ? { channelId: selectedChannel.id, botId: pluginBotId }
+      : undefined;
+  const profileTitle =
+    destination === "chat" && selectedEmployeeId ? employeeProfile?.employee : undefined;
   const panelToggle = (
     <button
       className="icon-button panel-toggle"
@@ -998,7 +1060,7 @@ export function AuthenticatedWorkspace({
       title={showDetails ? "收起信息栏" : "打开信息栏"}
       aria-expanded={showDetails}
       aria-controls="workspace-details"
-      onClick={() => updatePreferences({ rightPanelOpen: !showDetails })}
+      onClick={() => updatePreferences({ rightPanelOpen: !preferences.rightPanelOpen })}
     >
       <PanelRightIcon />
     </button>
@@ -1054,8 +1116,8 @@ export function AuthenticatedWorkspace({
               showTitle
             />
           ) : (
-            <div className="toolbar-title">
-              <HashIcon />
+            <div className={profileTitle ? "toolbar-title toolbar-title-pill" : "toolbar-title"}>
+              {profileTitle ? <RobotAvatar bot={profileTitle} compact /> : <HashIcon />}
               <h1
                 title={
                   destination === "work"
@@ -1066,7 +1128,9 @@ export function AuthenticatedWorkspace({
                         ? "技能广场"
                         : selectedEmployeeId
                           ? (employeeProfile?.employee.name ?? "Bot 档案")
-                          : "频道聊天"
+                          : location.kind === "new"
+                            ? "新建聊天"
+                            : "频道聊天"
                 }
               >
                 {destination === "work"
@@ -1077,7 +1141,9 @@ export function AuthenticatedWorkspace({
                       ? "技能广场"
                       : selectedEmployeeId
                         ? (employeeProfile?.employee.name ?? "Bot 档案")
-                        : "频道聊天"}
+                        : location.kind === "new"
+                          ? "新建聊天"
+                          : "频道聊天"}
               </h1>
             </div>
           )}
@@ -1119,14 +1185,15 @@ export function AuthenticatedWorkspace({
           onHome={() => navigation.navigate({ kind: "home" })}
           bots={workspace.bots}
           channels={workspace.channels.filter((channel) => !channel.directBotId)}
+          activity={sidebarActivity(workspace.channels)}
           runs={workspace.runs}
           ownerName={ownerName}
           destination={destination}
           onAutomations={() =>
-            onSettings ? onSettings("automations") : navigation.navigate({ kind: "automations" })
+            onSettings ? onSettings("routines") : navigation.navigate({ kind: "automations" })
           }
           onWork={() => navigation.navigate({ kind: "work" })}
-          onSkills={() => navigation.navigate({ kind: "skills" })}
+          onSkills={() => setPluginsOpen(true)}
           selectedChannelId={destination === "chat" ? selectedChannel?.id : undefined}
           selectedBotId={
             destination === "chat"
@@ -1141,6 +1208,8 @@ export function AuthenticatedWorkspace({
           onRenameItem={handleRenameItem}
           onDeleteItem={handleDeleteItem}
           onAddBotToChannel={handleAddBotToChannel}
+          onNewChat={() => navigation.navigate({ kind: "new" })}
+          newChatActive={location.kind === "new"}
           onCreateBot={() => setDialog("bot")}
           onCreateChannel={() => setDialog("channel")}
           onManageNodes={() => setDialog("node")}
@@ -1160,15 +1229,7 @@ export function AuthenticatedWorkspace({
       ) : destination === "skills" ? (
         <SkillLibraryScreen
           channels={workspace.channels}
-          onInsertMaterial={(channelId, botId, text) => {
-            const conversation = conversationSession.channel(channelId, botId);
-            const draft = conversation.getSnapshot().draft;
-            const next = [draft.text, text].filter(Boolean).join("\n\n");
-            if (next.length > 8000)
-              throw new Error("资料超过草稿剩余容量，请先缩短草稿或复制需要的片段。");
-            conversation.edit({ text: next, targetBotId: botId, targetBotIds: [botId] });
-            selectChannel(channelId);
-          }}
+          onInsertMaterial={insertPluginMaterial}
           onBack={navigation.back}
           onCreateBot={() => setDialog("bot")}
           onImportBot={() => setEmployeeImportOpen(true)}
@@ -1189,6 +1250,8 @@ export function AuthenticatedWorkspace({
           onManageModels={() => setModelServicesOpen(true)}
           modelServicesVersion={modelServicesVersion}
           onOpenBrowser={() => setBrowserBotId(selectedEmployeeId)}
+          channels={workspace.channels}
+          onRename={(name) => renameEmployee(selectedEmployeeId, name)}
         />
       ) : selectedChannel ? (
         <ChannelWorkspace
@@ -1207,6 +1270,26 @@ export function AuthenticatedWorkspace({
           onFrame={projectFrame}
           onProgress={projectProgress}
           onRun={projectRun}
+          onOpenMembers={() => {
+            // The members popover lives in the toolbar title pill.
+            const members = document.querySelector<HTMLDetailsElement>(
+              ".workspace-toolbar .channel-members-menu",
+            );
+            if (!members) return;
+            members.open = true;
+            members.querySelector<HTMLElement>("summary")?.focus();
+          }}
+          onNewRoutine={() =>
+            onSettings ? onSettings("routines") : navigation.navigate({ kind: "automations" })
+          }
+          onOpenSettings={onSettings ? (section) => onSettings(section) : undefined}
+          onOpenHosts={() => setDialog("node")}
+        />
+      ) : location.kind === "new" ? (
+        <NewChatScreen
+          bots={workspace.bots}
+          onCreateBot={() => setDialog("bot")}
+          onStart={handleStartChat}
         />
       ) : (
         <ChannelEmptyState
@@ -1219,7 +1302,14 @@ export function AuthenticatedWorkspace({
       <div id="workspace-details" className="workspace-details" hidden={!showDetails}>
         {showDetails &&
           (destination === "chat" && selectedEmployeeId ? (
-            <EmployeeProfileRail profile={employeeProfile} nodes={workspace.nodes} />
+            <EmployeeProfileRail
+              profile={employeeProfile}
+              nodes={workspace.nodes}
+              onBack={() => void openDirectConversation(selectedEmployeeId)}
+              onCollapse={() => updatePreferences({ rightPanelOpen: false })}
+              onRename={(name) => renameEmployee(selectedEmployeeId, name)}
+              onProfileChanged={() => refreshEmployeeProfile(selectedEmployeeId)}
+            />
           ) : (
             <ContextRail
               selectedChannelId={destination === "chat" ? selectedChannel?.id : undefined}
@@ -1328,6 +1418,22 @@ export function AuthenticatedWorkspace({
       {browserBot ? (
         <EmployeeBrowser bot={browserBot} onClose={() => setBrowserBotId(undefined)} />
       ) : null}
+      {pluginsOpen ? (
+        <PluginsDialog
+          bots={workspace.bots}
+          scope={pluginScope}
+          onInsertMaterial={
+            pluginScope
+              ? (text) => {
+                  insertPluginMaterial(pluginScope.channelId, pluginScope.botId, text);
+                  setPluginsOpen(false);
+                }
+              : undefined
+          }
+          onManage={onSettings ? () => onSettings("plugins") : undefined}
+          onClose={() => setPluginsOpen(false)}
+        />
+      ) : null}
       {modelServicesOpen ? (
         <ModelConnectionsDialog
           onClose={() => setModelServicesOpen(false)}
@@ -1420,6 +1526,20 @@ function ChannelEmptyState({
       </section>
     </main>
   );
+}
+
+/** Row activity for the sidebar: a direct conversation's activity belongs to its Bot. */
+function sidebarActivity(channels: Channel[]): Record<SidebarItemKey, SidebarActivity> {
+  const result: Record<SidebarItemKey, SidebarActivity> = {};
+  for (const channel of channels) {
+    if (!channel.lastActivityAt && !channel.latestMessage) continue;
+    const value = { lastActivityAt: channel.lastActivityAt, latestMessage: channel.latestMessage };
+    const key: SidebarItemKey = channel.directBotId
+      ? `bot:${channel.directBotId}`
+      : `channel:${channel.id}`;
+    result[key] = value;
+  }
+  return result;
 }
 
 function sidebarUnread(channels: Channel[], counts: Record<string, number>) {

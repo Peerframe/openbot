@@ -15,7 +15,7 @@ import { CloseIcon, PlusIcon } from "./Icons";
 import { ModelIdField, useModelServices } from "./ModelSelector";
 import { useModalDialog } from "./useModalDialog";
 
-function providerLabel(preset: ModelConnectionPreset): string {
+export function providerLabel(preset: ModelConnectionPreset): string {
   const labels: Record<string, string> = {
     siliconflow: "硅基流动 / SiliconFlow",
     dashscope: "阿里云百炼",
@@ -26,7 +26,7 @@ function providerLabel(preset: ModelConnectionPreset): string {
   return labels[preset.id] ?? preset.name;
 }
 
-function providerDescription(preset: ModelConnectionPreset): string {
+export function providerDescription(preset: ModelConnectionPreset): string {
   const descriptions: Record<string, string> = {
     openai: "连接 OpenAI 的 GPT 系列模型。",
     anthropic: "连接 Anthropic 的 Claude 系列模型。",
@@ -203,18 +203,25 @@ export function ModelConnectionEditor({
   connection,
   onSaved,
   onReload,
+  initialPresetId,
 }: {
   snapshot: ModelServicesSnapshot;
   connection: ModelConnection | undefined;
+  /** Provider to start a new connection with (settings 添加服务 rows). */
+  initialPresetId?: string | undefined;
   onSaved(connection: ModelConnection, selectEditor: boolean): void;
   onReload(): void;
 }) {
   const initialPreset =
-    snapshot.presets.find((item) => item.id === (connection?.presetId ?? "deepseek")) ??
-    snapshot.presets[0];
+    snapshot.presets.find(
+      (item) => item.id === (connection?.presetId ?? initialPresetId ?? "deepseek"),
+    ) ?? snapshot.presets[0];
   const [presetId, setPresetId] = useState(initialPreset?.id ?? "");
   const [baseUrl, setBaseUrl] = useState(
-    connection?.baseUrl ?? initialPreset?.endpoints[0]?.baseUrl ?? "",
+    connection?.baseUrl ??
+      (initialPreset?.id === "custom"
+        ? (snapshot.customBaseUrls[0] ?? "")
+        : (initialPreset?.endpoints[0]?.baseUrl ?? "")),
   );
   const [name, setName] = useState(
     connection?.name ?? (initialPreset ? providerLabel(initialPreset) : ""),

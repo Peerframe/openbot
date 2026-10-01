@@ -220,9 +220,24 @@ export async function getUnreadCounts(signal?: AbortSignal): Promise<Record<stri
   return counts;
 }
 
+/** Server-assigned audit categories (backlog C3, packages/protocol/src/audit.ts). */
+export const auditCategories = [
+  "approvals",
+  "settings",
+  "authentication",
+  "hosts",
+  "channels",
+  "bots",
+  "runs",
+  "plugins",
+  "other",
+] as const;
+export type AuditCategory = (typeof auditCategories)[number];
 export interface AuditEvent {
   id: string;
   type: string;
+  /** Absent only from Servers that predate categories. */
+  category?: AuditCategory;
   createdAt: string;
   channelId?: string;
   channelName?: string;
@@ -234,9 +249,12 @@ export interface AuditEvent {
   details: Record<string, string | number | boolean>;
 }
 export async function listAuditEvents(
-  options: { before?: string; signal?: AbortSignal } = {},
+  options: { before?: string; category?: AuditCategory; signal?: AbortSignal } = {},
 ): Promise<{ events: AuditEvent[]; nextBefore?: string }> {
-  const query = options.before ? `?before=${encodeURIComponent(options.before)}` : "";
+  const params = new URLSearchParams();
+  if (options.category) params.set("category", options.category);
+  if (options.before) params.set("before", options.before);
+  const query = params.size ? `?${params}` : "";
   const result = await request<{ events?: unknown; nextBefore?: unknown }>(
     `/api/v1/audit${query}`,
     options.signal ? { signal: options.signal } : undefined,
@@ -262,8 +280,17 @@ function isAuditEvent(value: unknown): value is AuditEvent {
     typeof event.createdAt === "string" &&
     typeof event.details === "object" &&
     event.details !== null &&
-    ["channelId", "channelName", "botId", "botName", "runId"].every(optionalText)
+    ["channelId", "channelName", "botId", "botName", "runId"].every(optionalText) &&
+    (event.category === undefined ||
+      (auditCategories as readonly unknown[]).includes(event.category))
   );
+}
+
+/** Same-origin CSV download of up to 1000 events; the session cookie authorizes it. */
+export function auditExportUrl(category?: AuditCategory): string {
+  return category
+    ? `/api/v1/audit/export?category=${encodeURIComponent(category)}`
+    : "/api/v1/audit/export";
 }
 
 function isMessageReactions(value: unknown): value is MessageReaction[] {

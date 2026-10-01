@@ -551,12 +551,12 @@ describe("ChannelWorkspace recipient and attachment interactions", () => {
       await rendered.unmount();
     }
   });
-  it("attaches a reviewed skill from the / menu without leaving the command in the text", async () => {
+  it("lists channel Bots' reviewed skills under / and addresses the chosen skill's Bot", async () => {
     const skill = (id: string, name: string, state: "verified" | "candidate") => ({
       id,
       slug: id,
       name,
-      description: "",
+      description: `${name} 的说明`,
       version: "1.0.0",
       source: "learned" as const,
       state,
@@ -567,35 +567,92 @@ describe("ChannelWorkspace recipient and attachment interactions", () => {
       acquiredAt: bot.createdAt,
       updatedAt: bot.createdAt,
     });
-    vi.mocked(getEmployeeProfile).mockResolvedValue({
-      skills: [skill("s-ok", "周报整理", "verified"), skill("s-new", "未审核技能", "candidate")],
-    } as unknown as Awaited<ReturnType<typeof getEmployeeProfile>>);
+    vi.mocked(getEmployeeProfile).mockImplementation(async (id: string) => {
+      const owner = id === secondBot.id ? secondBot : bot;
+      return {
+        employee: owner,
+        skills: [
+          skill(`${id}-ok`, id === secondBot.id ? "周报整理" : "资料检索", "verified"),
+          skill(`${id}-new`, "未审核技能", "candidate"),
+        ],
+      } as unknown as Awaited<ReturnType<typeof getEmployeeProfile>>;
+    });
     const session = createConversationSession();
     const rendered = await renderComponent(multi(session));
     try {
       await typeText(rendered.container, "/");
+      await interact(() => undefined);
       const listbox = () => rendered.container.querySelector(".slash-options");
-      // Without a single @ recipient only the composer actions are offered.
-      expect(listbox()?.textContent).toContain("先 @ 提及一名 Bot");
-      expect(listbox()?.querySelectorAll('[role="option"]')).toHaveLength(2);
-      expect(getEmployeeProfile).not.toHaveBeenCalled();
-
-      await typeText(rendered.container, "Review @Coder");
-      await interact(() =>
-        rendered.container.querySelector<HTMLButtonElement>("#mention-bot-b")?.click(),
-      );
-      await typeText(rendered.container, "Review /周报");
+      // Without a recipient every channel Bot's verified skills are offered, candidates never.
+      expect(getEmployeeProfile).toHaveBeenCalledWith("bot-a", expect.any(AbortSignal));
       expect(getEmployeeProfile).toHaveBeenCalledWith("bot-b", expect.any(AbortSignal));
-      const options = Array.from(listbox()?.querySelectorAll('[role="option"]') ?? []);
-      expect(options.map((option) => option.textContent)).toEqual([
+      const options = () => Array.from(listbox()?.querySelectorAll('[role="option"]') ?? []);
+      expect(options().map((option) => option.textContent)).toEqual([
+        expect.stringContaining("资料检索"),
         expect.stringContaining("周报整理"),
       ]);
-      await interact(() => (options[0] as HTMLButtonElement).click());
+      expect(listbox()?.textContent).toContain("Coder · 周报整理 的说明");
+      expect(listbox()?.textContent).not.toContain("未审核技能");
+      // No slash actions are listed when the host supplies none.
+      expect(listbox()?.textContent).not.toContain("操作");
+
+      await typeText(rendered.container, "Review /周报");
+      await interact(() => undefined);
+      expect(options()).toHaveLength(1);
+      await interact(() => (options()[0] as HTMLButtonElement).click());
       expect(listbox()).toBeNull();
       expect(session.channel("a").getSnapshot().draft).toMatchObject({
         text: "Review",
-        skills: [{ id: "s-ok", name: "周报整理", version: "1.0.0" }],
+        targetBotIds: [secondBot.id],
+        skills: [{ id: "bot-b-ok", name: "周报整理", version: "1.0.0" }],
       });
+    } finally {
+      await rendered.unmount();
+    }
+  });
+  it("offers the design's slash actions when the host supplies them", async () => {
+    vi.mocked(getEmployeeProfile).mockResolvedValue({
+      employee: bot,
+      skills: [],
+    } as unknown as Awaited<ReturnType<typeof getEmployeeProfile>>);
+    const members = vi.fn();
+    const routine = vi.fn();
+    const settings = vi.fn();
+    const hosts = vi.fn();
+    const rendered = await renderComponent(
+      <ChannelWorkspace
+        globalHeader
+        channel={{ ...channel("a"), botIds: [bot.id, secondBot.id] }}
+        bots={[bot, secondBot]}
+        artifacts={[]}
+        progress={[]}
+        {...callbacks}
+        onOpenMembers={members}
+        onNewRoutine={routine}
+        onOpenSettings={settings}
+        onOpenHosts={hosts}
+      />,
+    );
+    try {
+      await typeText(rendered.container, "/");
+      await interact(() => undefined);
+      const labels = Array.from(
+        rendered.container.querySelectorAll('.slash-options [role="option"]'),
+      ).map((option) => option.textContent);
+      expect(labels).toEqual([
+        expect.stringContaining("成员"),
+        expect.stringContaining("新建例行任务"),
+        expect.stringContaining("设置：通用"),
+        expect.stringContaining("设置：工作主机"),
+      ]);
+      await typeText(rendered.container, "/设置：通");
+      await interact(() =>
+        rendered.container
+          .querySelector<HTMLButtonElement>('.slash-options [role="option"]')
+          ?.click(),
+      );
+      expect(settings).toHaveBeenCalledWith("general");
+      expect(rendered.container.querySelector("textarea")?.value).toBe("");
     } finally {
       await rendered.unmount();
     }
