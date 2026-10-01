@@ -103,13 +103,13 @@ async def enroll_worker(seed, http):
 
 
 @asynccontextmanager
-async def worker(seed, http, url, *, capability=True, hook=None, credential=None, page_hook=None):
+async def worker(seed, http, url, *, capability=True, hook=None, credential=None, page_hook=None, maintenance=False):
     credential = credential or await enroll_worker(seed, http)
     async with connect(url, proxy=None, compression=None, open_timeout=3, close_timeout=1) as ws:
         await ws.send(json.dumps(dict(type="node.hello", protocolVersion="0.9.0", nodeId=seed["node"],
             name="Synthetic Browser Host", platform="linux", capabilities=["browser"],
             capabilityManifest=([CAP]+([dict(id='browser.page',version=1,providerId='docker',constraints={})]
-                if page_hook is not None else [])) if capability else [], maxConcurrentRuns=1, sentAt=now(),
+                if page_hook is not None else [])+([dict(id="browser.maintenance",version=1,providerId="docker",constraints={})] if maintenance else [])) if capability else [], maxConcurrentRuns=1, sentAt=now(),
             credential=credential)))
         assert json.loads(await ws.recv())["accepted"] is True
         calls = []
@@ -126,7 +126,7 @@ async def worker(seed, http, url, *, capability=True, hook=None, credential=None
                     if isinstance(override, dict): frame = override
                 extra = await page_hook(command) if page_hook is not None and command['action']['kind']=='agent' else {}
                 await ws.send(json.dumps(dict(type="browser.result", protocolVersion="0.9.0", nodeId=seed["node"],
-                    sessionId=command["sessionId"], requestId=command["requestId"], ok=True, **({"frame":frame}|extra))))
+                    sessionId=command["sessionId"], requestId=command["requestId"], ok=True, **({"runtime":{"running":command["action"]["operation"]!="clear"}} if command["action"]["kind"]=="maintenance" else {"frame":frame}|extra))))
         task = asyncio.create_task(reply())
         try:
             yield calls, ws
@@ -499,3 +499,43 @@ def test_nonfinite_numbers_and_unicode_timestamps_fail_validation():
             Action.validate_python(dict(kind="scroll", deltaY=number))
     with pytest.raises(ValidationError):
         BrowserFrame.model_validate({**FRAME, "capturedAt": "٢٠٢٦-٠٩-٢٥T٠٠:٠٠:٠٠Z"})
+
+
+def test_maintenance_requires_original_identity_capability_and_exact_clear_confirmation(seed):
+    async def run():
+        async with server(seed) as (service,registry,http,url):
+            path=f'/api/v1/bots/{seed["botId"]}/browser/maintenance'
+            assert (await http.post(path,json={"operation":"restart"})).status_code==503
+            async with worker(seed,http,url,maintenance=True) as (calls,ws):
+                old=await opened(http,seed)
+                assert (await http.post(path,json={"operation":"clear"})).status_code==422
+                assert (await http.post(path,json={"operation":"status","path":"/personal"})).status_code==422
+                assert not calls
+                assert (await http.post(path,json={"operation":"status"},headers={"Origin":"https://wrong.invalid"})).status_code==403
+                status=await http.post(path,json={"operation":"status"});assert status.status_code==200,status.text
+                assert status.json()==dict(botId=seed['botId'],nodeId=seed['node'],running=True,paused=False)
+                restarted=await http.post(path,json={"operation":"restart"});assert restarted.status_code==200,restarted.text
+                assert restarted.json()['paused'] is True
+                assert (await command(http,old,'observe')).status_code==404
+                with pytest.raises(ControlError,match='browser_paused_for_human'):
+                    async with service.gate.agent(seed['botId']):pass
+                cleared=await http.post(path,json={"operation":"clear","confirmation":"clear-browser-data"})
+                assert cleared.status_code==200,cleared.text
+                assert cleared.json()['running'] is False and cleared.json()['paused'] is True
+                assert [c['action']['operation'] for c in calls]==['status','restart','clear']
+                fresh=await opened(http,seed);assert (await command(http,fresh,'take')).status_code==200
+                assert (await command(http,fresh,'release')).status_code==200
+                with psycopg.connect(seed['dsn']) as db:
+                    rows=db.execute("SELECT payload FROM run_events WHERE bot_id=%s AND type='BROWSER_COMMAND' AND payload->>'action' IN ('restart','clear')",(seed['botId'],)).fetchall()
+                    assert sorted((r[0]['action'],r[0]['phase']) for r in rows)==[('clear','completed'),('clear','intent'),('restart','completed'),('restart','intent')]
+    asyncio.run(run())
+
+
+def test_maintenance_capability_absence_never_dispatches(seed):
+    async def run():
+        async with server(seed) as (service,registry,http,url):
+            async with worker(seed,http,url) as (calls,ws):
+                await opened(http,seed)
+                response=await http.post(f'/api/v1/bots/{seed["botId"]}/browser/maintenance',json={"operation":"restart"})
+                assert response.status_code==503 and not calls
+    asyncio.run(run())

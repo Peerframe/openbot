@@ -52,6 +52,19 @@ export class BrowserCommandHost {
     ]);
     this.#active.set(command.requestId, controller);
     try {
+      if (command.action.kind === "maintenance") {
+        if (
+          !provider.browserMaintenance ||
+          !provider.capabilityManifest.some(
+            (cap) =>
+              cap.id === "browser.maintenance" && cap.version === 1 && cap.providerId === "docker",
+          )
+        )
+          return { ...response, ok: false, error: "unavailable" };
+        const runtime = await provider.browserMaintenance(command, signal);
+        signal.throwIfAborted();
+        return browserResultSchema.parse({ ...response, ok: true, runtime });
+      }
       if (command.action.kind === "agent") {
         if (
           !provider.browserTask ||
