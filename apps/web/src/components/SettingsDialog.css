@@ -908,3 +908,55 @@
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* 员工浏览器 (SettingsBrowser artboard). */
+.settings-dialog .settings-browser-bot + .settings-browser-bot {
+  border-top: 1px solid var(--ob-divider);
+}
+.settings-dialog .settings-browser-row {
+  padding-bottom: 6px;
+}
+.settings-dialog .settings-browser-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.settings-dialog .settings-browser-clear {
+  margin: 0 0 12px 58px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #b3261e;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.settings-dialog .settings-browser-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px 58px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fde8e6;
+  font-size: 13px;
+}
+.settings-dialog .settings-dialog-body .settings-browser-confirm p {
+  margin: 0;
+}
+.settings-dialog .settings-browser-confirm-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
+@media (max-width: 760px) {
+  .settings-dialog .settings-browser-row {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+  .settings-dialog .settings-browser-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}

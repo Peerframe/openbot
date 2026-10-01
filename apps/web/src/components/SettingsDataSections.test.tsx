@@ -431,3 +431,39 @@ it("edits approval levels and exact exceptions with the expected revision", asyn
     await view.unmount();
   }
 });
+
+it("checks, restarts and (after confirmation) clears one Bot's employee browser", async () => {
+  const { SettingsBrowser } = await import("./SettingsBrowser");
+  const botId = "33333333-3333-4333-8333-333333333333";
+  const fetch = server({
+    [`POST /api/v1/bots/${botId}/browser/maintenance`]: (init) => {
+      const body = JSON.parse(String(init?.body));
+      return { botId, nodeId: "docker-1", running: body.operation !== "clear", paused: false };
+    },
+  });
+  const view = await renderComponent(
+    <SettingsBrowser
+      bots={[{ ...bot(botId, "研究助理"), computerProfile: "docker-linux" }, bot("plain", "客服")]}
+    />,
+  );
+  try {
+    // Only Docker Bots have an employee browser; nothing runs until asked.
+    expect(view.container.querySelectorAll(".settings-browser-bot")).toHaveLength(1);
+    expect(fetch).not.toHaveBeenCalled();
+    await interact(() => buttonNamed(view.container, "检查状态")?.click());
+    expect(view.container.querySelector(".settings-browser-row small")?.textContent).toBe(
+      "运行中 · 主机 docker-1",
+    );
+    await interact(() => buttonNamed(view.container, "清除浏览数据…")?.click());
+    expect(view.container.querySelector('[role="alertdialog"]')).not.toBeNull();
+    await interact(() => buttonNamed(view.container, "清除")?.click());
+    const bodies = fetch.mock.calls.map(([, init]) => JSON.parse(String(init?.body)));
+    expect(bodies).toEqual([
+      { operation: "status" },
+      { operation: "clear", confirmation: "clear-browser-data" },
+    ]);
+    expect(view.container.querySelector('[role="alertdialog"]')).toBeNull();
+  } finally {
+    await view.unmount();
+  }
+});

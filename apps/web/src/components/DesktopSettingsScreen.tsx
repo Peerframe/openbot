@@ -24,6 +24,7 @@ import { OpenBotMark } from "./OpenBotMark";
 import { PluginManager } from "./PluginManagerPanel";
 import { SettingsAccount } from "./SettingsAccount";
 import { SettingsApprovals } from "./SettingsApprovals";
+import { SettingsBrowser } from "./SettingsBrowser";
 import {
   DesktopStartupSettings,
   DockBadgeSetting,
@@ -54,6 +55,7 @@ export type DesktopSettingsSection =
   | "memory"
   | "hosts"
   | "approvals"
+  | "browser"
   | "audit"
   | "account"
   | "transfer"
@@ -72,6 +74,8 @@ const iconPaths: Record<Section, string> = {
   memory: "M4 19V5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2zM18 19v2H6",
   hosts: "M5 4h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM8 20h8M12 16v4",
   approvals: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4",
+  browser:
+    "M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20zM2 12h20M12 2a15 15 0 0 1 4 10a15 15 0 0 1-4 10a15 15 0 0 1-4-10a15 15 0 0 1 4-10z",
   audit: "M9 5h11M9 12h11M9 19h11M4 5h.01M4 12h.01M4 19h.01",
   account: "M12 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6",
   transfer: "M7 10l5-5 5 5M12 5v10M5 19h14",
@@ -134,6 +138,11 @@ const sections: Record<Section, { label: string; description: string; keywords: 
     description: "Bot 做哪些事之前要先问你。规则由 Server 执行，过期的请求不会执行。",
     keywords: "审批 批准 权限 插件 浏览器 确认 授权",
   },
+  browser: {
+    label: "员工浏览器",
+    description: "Bot 上网用的独立浏览器，跑在隔离的容器里，和你自己的浏览器互不影响。",
+    keywords: "浏览器 重启 清除 Cookie 登录 容器",
+  },
   audit: {
     label: "审计记录",
     description: "谁在什么时候做了什么。记录只能查看，不能修改或删除。",
@@ -163,14 +172,11 @@ const aboutLinks = [
   },
 ];
 
-/**
- * SettingsNav artboard groups. 员工浏览器 is added when its Server controls land (backlog C6)
- * instead of showing an empty page.
- */
+/** SettingsNav artboard groups, in the artboard's order. */
 const groups: ReadonlyArray<{ title: string; items: readonly Section[] }> = [
   { title: "", items: ["general", "notify"] },
   { title: "Bot 能力", items: ["model", "skills", "plugins", "routines", "memory"] },
-  { title: "执行与安全", items: ["hosts", "approvals"] },
+  { title: "执行与安全", items: ["hosts", "approvals", "browser"] },
   { title: "账户", items: ["account", "audit", "transfer", "about"] },
 ];
 
@@ -499,6 +505,11 @@ export function DesktopSettingsScreen({
                 </SettingsWorkspaceGate>
               )}
               {section === "audit" && <AuditLogSettings />}
+              {section === "browser" && (
+                <SettingsWorkspaceGate label="员工浏览器">
+                  {(workspace) => <SettingsBrowser bots={workspace.bots} />}
+                </SettingsWorkspaceGate>
+              )}
               {section === "hosts" && (
                 <SettingsHosts>
                   {plan ? (

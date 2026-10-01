@@ -1,5 +1,6 @@
-import type { Bot } from "@openbot/domain";
+import type { Bot, ReviewedPluginCatalog } from "@openbot/domain";
 import { type MutableRefObject, useEffect, useRef, useState } from "react";
+import { getPluginCatalog } from "../api";
 import {
   listPlugins,
   type Plugin,
@@ -89,6 +90,19 @@ export function PluginManager({
   const [removing, setRemoving] = useState<string>();
   const [managing, setManaging] = useState<string>();
   const [query, setQuery] = useState("");
+  const [catalog, setCatalog] = useState<ReviewedPluginCatalog>();
+  // The reviewed catalogue (backlog C8) is metadata only; a failed read just hides 精选.
+  useEffect(() => {
+    if (variant !== "catalog") return;
+    const controller = new AbortController();
+    void Promise.resolve()
+      .then(() => getPluginCatalog(controller.signal))
+      .then((value) => {
+        if (!controller.signal.aborted) setCatalog(value);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [variant]);
   const localGrantBotSelectionRef = useRef(grantBotSelectionByPlugin);
   const botSelectionRef = grantBotSelectionRef ?? localGrantBotSelectionRef;
   async function reloadPlugins(signal?: AbortSignal) {
@@ -344,6 +358,44 @@ export function PluginManager({
             </div>
           )}
         </section>
+        {catalog && catalog.entries.length > 0 ? (
+          <section className="plugins-section" aria-labelledby="plugins-featured">
+            <div className="plugins-section-heading">
+              <h2 id="plugins-featured">精选</h2>
+              <span>经过审核的模板，需要自行部署后再连接</span>
+            </div>
+            <div className="plugins-featured">
+              {catalog.entries
+                .filter((entry) =>
+                  `${entry.name} ${entry.description}`.toLocaleLowerCase().includes(term),
+                )
+                .map((entry) => (
+                  <div className="plugins-featured-row" key={entry.id}>
+                    <span className="plugins-tile is-large" aria-hidden="true">
+                      {Array.from(entry.name.trim())[0]?.toLocaleUpperCase() ?? "?"}
+                    </span>
+                    <span className="plugins-row-text">
+                      <strong>{entry.name}</strong>
+                      <small title={entry.description}>{entry.description}</small>
+                      <small>
+                        v{entry.version} · {entry.license} ·{" "}
+                        {entry.distribution === "self-hosted-template" ? "部署模板" : "自行部署"}
+                      </small>
+                    </span>
+                    <a
+                      className="ob-pill"
+                      href={entry.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`查看 ${entry.name} 的源码`}
+                    >
+                      查看源码 ↗
+                    </a>
+                  </div>
+                ))}
+            </div>
+          </section>
+        ) : null}
         <section className="plugins-section" aria-labelledby="plugins-more">
           <div className="plugins-section-heading">
             <h2 id="plugins-more">添加插件</h2>

@@ -51,12 +51,16 @@ import {
   type ApprovalSettings,
   type ApprovalSettingsInput,
   approvalSettingsSchema,
+  type BrowserMaintenanceResult,
+  browserMaintenanceResultSchema,
   type OwnerPreferences,
   type OwnerPreferencesInput,
   type OwnerSessionDevice,
   ownerPreferencesSchema,
   ownerSessionRevocationResponseSchema,
   ownerSessionsResponseSchema,
+  type ReviewedPluginCatalog,
+  reviewedPluginCatalogSchema,
 } from "@openbot/protocol";
 import { openEventStream, type RealtimeConnectionState } from "./event-stream";
 
@@ -192,6 +196,33 @@ export async function saveOwnerPreferences(
     body: JSON.stringify(input),
   });
   return ownerPreferencesSchema.parse(result);
+}
+
+/**
+ * Employee browser maintenance for one Bot (backlog C6). `clear` deletes the browser profile and
+ * requires the explicit confirmation token; the Server pauses the browser while it runs.
+ */
+export async function maintainEmployeeBrowser(
+  botId: string,
+  operation: "status" | "restart" | "clear",
+): Promise<BrowserMaintenanceResult> {
+  const result = await request<unknown>(
+    `/api/v1/bots/${encodeURIComponent(botId)}/browser/maintenance`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        operation === "clear" ? { operation, confirmation: "clear-browser-data" } : { operation },
+      ),
+    },
+  );
+  return browserMaintenanceResultSchema.parse(result);
+}
+
+/** Reviewed plugin catalogue metadata (backlog C8); listing an entry grants nothing. */
+export async function getPluginCatalog(signal?: AbortSignal): Promise<ReviewedPluginCatalog> {
+  const result = await request<unknown>("/api/v1/plugins/catalog", signal ? { signal } : undefined);
+  return reviewedPluginCatalogSchema.parse(result);
 }
 
 export async function cancelNativeRun(runId: string): Promise<Run> {
