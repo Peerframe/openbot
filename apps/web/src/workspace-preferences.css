@@ -66,13 +66,11 @@
   /* biome-ignore lint/complexity/noImportantStyles: explicit reduced motion overrides smooth scrolling. */
   scroll-behavior: auto !important;
 }
-:root[data-desktop="darwin"] .destination-header,
-:root[data-desktop="darwin"] .settings-page-header {
+:root[data-desktop="darwin"] .destination-header {
   -webkit-app-region: drag;
   app-region: drag;
 }
 :root[data-desktop="darwin"] .destination-header button,
-:root[data-desktop="darwin"] .settings-page-header button,
 :root[data-desktop="darwin"] .empty-workspace-header button {
   -webkit-app-region: no-drag;
   app-region: no-drag;
@@ -109,35 +107,6 @@
 :root[data-sidebar-material="enabled"] .loading-screen {
   background: #f6f7f8;
 }
-
-.desktop-settings-layout {
-  display: grid;
-  grid-template-columns: 238px minmax(0, 1fr);
-  height: 100dvh;
-  min-height: 0;
-  background: #f6f7f8;
-  color: #262d37;
-}
-.settings-navigation {
-  display: flex;
-  flex-direction: column;
-  padding: 30px 16px 20px;
-  border-right: 1px solid #e6e8ec;
-  background: #f1f3f5;
-  min-height: 0;
-}
-:root[data-desktop="darwin"] .settings-navigation {
-  padding-top: 60px;
-}
-:root[data-desktop="darwin"] .settings-navigation::before {
-  content: "";
-  position: fixed;
-  inset: 0 auto auto 0;
-  width: 238px;
-  height: 54px;
-  -webkit-app-region: drag;
-  app-region: drag;
-}
 .settings-back {
   display: flex;
   align-items: center;
@@ -152,95 +121,6 @@
 }
 .settings-back:hover {
   background: #e5e8ed;
-}
-.settings-navigation h1 {
-  margin: 28px 12px 20px;
-  font-size: 26px;
-  font-weight: 650;
-  letter-spacing: -0.7px;
-}
-.settings-navigation nav {
-  display: grid;
-  gap: 5px;
-}
-.settings-navigation nav button {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  text-align: left;
-  background: transparent;
-  border: 0;
-  border-radius: 9px;
-  padding: 12px;
-  font-size: 13px;
-  color: #5e6672;
-}
-.settings-navigation nav button:hover {
-  background: #e9ecf0;
-}
-.settings-navigation nav button[aria-current="page"] {
-  background: #e0e6ed;
-  color: #1f2c3c;
-  font-weight: 600;
-}
-.settings-navigation nav svg,
-.settings-navigation nav img {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-.settings-brand {
-  display: flex;
-  gap: 10px;
-  margin: auto 12px 0;
-  padding-top: 30px;
-  align-items: center;
-  color: #596674;
-  font-size: 11px;
-}
-.settings-brand img {
-  width: 29px;
-  height: 29px;
-  border-radius: 8px;
-}
-.settings-brand small {
-  display: block;
-  margin-top: 4px;
-  font-size: 10px;
-  color: #74808b;
-}
-.settings-content {
-  min-width: 0;
-  min-height: 0;
-  overflow: auto;
-  background: #fff;
-}
-.settings-page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 40px clamp(24px, 5vw, 76px) 24px;
-  border-bottom: 1px solid #eef0f2;
-}
-.settings-page-header h2 {
-  margin: 0 0 10px;
-  font-size: 24px;
-  font-weight: 630;
-  letter-spacing: -0.6px;
-}
-.settings-page-header p {
-  margin: 0;
-  color: #76808b;
-  font-size: 13px;
-}
-.settings-page-header .icon-button {
-  margin-right: -10px;
-}
-.settings-page-body {
-  max-width: 1040px;
-  padding: 30px clamp(24px, 5vw, 76px) 60px;
 }
 .settings-group {
   margin-bottom: 32px;
@@ -413,12 +293,6 @@
   font-size: 13px;
   color: #75808b;
 }
-:root[data-sidebar-material="enabled"] .desktop-settings-layout {
-  background: linear-gradient(to right, transparent 238px, #fff 238px);
-}
-:root[data-sidebar-material="enabled"] .settings-navigation {
-  background: #ffffff48;
-}
 @media (prefers-reduced-motion: reduce) {
   .settings-switch span::after {
     transition: none;
@@ -428,12 +302,6 @@
   .app-shell {
     --sidebar-width: 208px;
     --shell-inset: 10px;
-  }
-  .desktop-settings-layout {
-    grid-template-columns: 210px minmax(0, 1fr);
-  }
-  :root[data-sidebar-material="enabled"] .desktop-settings-layout {
-    background: linear-gradient(to right, transparent 210px, #fff 210px);
   }
   .setting-row {
     gap: 16px;
@@ -450,47 +318,6 @@
   }
   :root[data-sidebar-material="enabled"] .app-shell {
     background: #f6f7f8;
-  }
-  .desktop-settings-layout {
-    display: flex;
-    flex-direction: column;
-  }
-  .settings-navigation,
-  :root[data-desktop="darwin"] .settings-navigation {
-    padding: 14px 16px 10px;
-    border-right: 0;
-    flex-shrink: 0;
-  }
-  .settings-navigation h1 {
-    margin: 12px 10px;
-    font-size: 22px;
-  }
-  .settings-navigation nav {
-    display: flex;
-    overflow: auto;
-    gap: 4px;
-    padding: 2px;
-  }
-  .settings-navigation nav button {
-    white-space: nowrap;
-    padding: 9px;
-    gap: 6px;
-    font-size: 12px;
-  }
-  .settings-brand {
-    display: none;
-  }
-  .settings-content {
-    flex: 1;
-  }
-  .settings-page-header {
-    padding: 24px 20px 20px;
-  }
-  .settings-page-header h2 {
-    font-size: 21px;
-  }
-  .settings-page-body {
-    padding: 24px 20px 36px;
   }
   .setting-row {
     gap: 14px;

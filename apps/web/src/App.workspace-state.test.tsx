@@ -407,7 +407,7 @@ async function completeProfile(index: number, name: string) {
   );
 }
 function displayedProfile() {
-  return rendered?.container.querySelector(".employee-profile-identity h1")?.textContent;
+  return rendered?.container.querySelector(".employee-profile .ep-name h1")?.textContent;
 }
 describe("Employee profile read ownership in the real workspace", () => {
   it.each(["success", "failure"])(

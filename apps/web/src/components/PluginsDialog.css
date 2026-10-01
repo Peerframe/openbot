@@ -1,0 +1,229 @@
+/* Plugins artboard (docs/design/desktop-ui-2026-10/Plugins.dc.html): 1100×780 modal. */
+.plugins-dialog {
+  box-sizing: border-box;
+  width: min(1100px, calc(100vw - 40px));
+  max-width: none;
+  height: min(780px, calc(100dvh - 40px));
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 22px;
+  background: #fdfdfd;
+  box-shadow: 0 30px 80px rgb(0 0 0 / 25%);
+  color: var(--ob-text);
+}
+.plugins-dialog::backdrop {
+  background: rgb(0 0 0 / 34%);
+}
+.plugins-dialog-close {
+  position: absolute;
+  z-index: 1;
+  top: 22px;
+  right: 22px;
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #3a3a3c;
+  cursor: pointer;
+}
+.plugins-dialog-close:hover {
+  background: var(--ob-fill);
+}
+.plugins-catalog {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  box-sizing: border-box;
+  height: 100%;
+  padding: 36px 48px 28px;
+  overflow-y: auto;
+}
+.plugins-catalog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 56px;
+}
+.plugins-catalog-header h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+}
+.plugins-installed {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.plugins-installed > span {
+  display: flex;
+  padding-left: 6px;
+}
+.plugins-installed i {
+  display: inline-grid;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  margin-left: -6px;
+  place-items: center;
+  border: 2px solid #fdfdfd;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #e3e3e6;
+  color: var(--ob-text);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+}
+.plugins-search {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding: 0 18px;
+  border: 1px solid #e7e7e9;
+  border-radius: 23px;
+  background: var(--ob-fill);
+  color: var(--ob-text-tertiary);
+}
+.plugins-search input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 16px;
+  outline: none;
+}
+.plugins-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.plugins-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.plugins-section-heading h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+.plugins-section-heading span {
+  color: var(--ob-text-tertiary);
+  font-size: 14px;
+}
+.plugins-card {
+  padding: 0 20px;
+  border-radius: 18px;
+  background: var(--ob-fill);
+}
+.plugins-row + .plugins-row {
+  border-top: 1px solid var(--ob-divider);
+}
+.plugins-row-main {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+}
+.plugins-tile {
+  display: inline-grid;
+  box-sizing: border-box;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid #e3e3e6;
+  border-radius: 13px;
+  background: #fff;
+  font-size: 18px;
+  font-weight: 700;
+}
+.plugins-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.plugins-row-text strong {
+  font-size: 16px;
+  font-weight: 600;
+}
+.plugins-row-text small {
+  overflow: hidden;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.plugins-bots {
+  display: flex;
+  padding-left: 6px;
+}
+.plugins-bots .robot-avatar {
+  width: 26px;
+  height: 26px;
+  margin-left: -6px;
+  border: 2px solid var(--ob-fill);
+  border-radius: 8px;
+  background: #fff;
+}
+.plugins-row-main .ob-pill.is-outline {
+  background: #fff;
+}
+.plugins-row-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fff;
+}
+.plugins-install {
+  padding: 16px 20px;
+}
+.plugins-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.plugins-empty {
+  margin: 0;
+  color: var(--ob-text-tertiary);
+  font-size: 14px;
+}
+@media (max-width: 760px) {
+  .plugins-dialog {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+  }
+  .plugins-catalog {
+    padding: 20px 16px;
+  }
+  .plugins-row-main {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+  }
+  .plugins-bots {
+    display: none;
+  }
+}

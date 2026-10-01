@@ -88,6 +88,10 @@ export function ChannelWorkspace({
   onFrame,
   onProgress,
   onRun,
+  onOpenMembers,
+  onNewRoutine,
+  onOpenSettings,
+  onOpenHosts,
 }: {
   headerAction?: ReactNode;
   globalHeader?: boolean;
@@ -104,6 +108,11 @@ export function ChannelWorkspace({
   onFrame(frame: RunFrame): void;
   onProgress(progress: RunProgress): void;
   onRun(run: Run, artifacts?: Artifact[]): void;
+  /** Slash-menu actions from the Slash artboard; each is listed only when the host supplies it. */
+  onOpenMembers?: (() => void) | undefined;
+  onNewRoutine?: (() => void) | undefined;
+  onOpenSettings?: ((section: "general") => void) | undefined;
+  onOpenHosts?: (() => void) | undefined;
 }) {
   const { values: preferences } = useWorkspacePreferences();
   const [ownSession] = useState(createConversationSession);
@@ -175,6 +184,10 @@ export function ChannelWorkspace({
   const [skillChoices, setSkillChoices] = useState<
     Array<{ id: string; name: string; version: string }>
   >([]);
+  // The `/` menu lists the reviewed skills of the @ recipient, or of the channel's Bots when no
+  // single recipient is chosen; picking one then addresses that Bot (Slash artboard).
+  const [slashCatalog, setSlashCatalog] = useState<SlashSkill[]>([]);
+  const [slashLoading, setSlashLoading] = useState(false);
   const [skillsOpen, setSkillsOpen] = useState(false);
   const [skillsLoading, setSkillsLoading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -196,10 +209,26 @@ export function ChannelWorkspace({
   const slashActive = slash !== undefined;
   const slashTerm = slash?.query.toLocaleLowerCase() ?? "";
   const slashSkills = slashActive
-    ? skillChoices.filter((skill) => skill.name.toLocaleLowerCase().includes(slashTerm))
+    ? slashCatalog.filter((skill) =>
+        `${skill.name} ${skill.description}`.toLocaleLowerCase().includes(slashTerm),
+      )
     : [];
+  const availableActions: ComposerAction[] = [
+    ...(onOpenMembers && !channel.directBotId
+      ? [{ id: "members" as const, label: "成员", detail: "当前频道" }]
+      : []),
+    ...(onNewRoutine
+      ? [{ id: "routine" as const, label: "新建例行任务", detail: "当前频道" }]
+      : []),
+    ...(onOpenSettings
+      ? [{ id: "settings-general" as const, label: "设置：通用", detail: "设置" }]
+      : []),
+    ...(onOpenHosts
+      ? [{ id: "settings-hosts" as const, label: "设置：工作主机", detail: "设置" }]
+      : []),
+  ];
   const slashActions = slashActive
-    ? composerActions.filter((action) => action.label.toLocaleLowerCase().includes(slashTerm))
+    ? availableActions.filter((action) => action.label.toLocaleLowerCase().includes(slashTerm))
     : [];
   const slashCount = slashSkills.length + slashActions.length;
   const activeSlashIndex = Math.min(slashIndex, Math.max(slashCount - 1, 0));
@@ -211,7 +240,7 @@ export function ChannelWorkspace({
     setSlash(undefined);
     setSlashIndex(0);
   }
-  function chooseSlashSkill(skill: { id: string; name: string; version: string }) {
+  function chooseSlashSkill(skill: SlashSkill) {
     const attached = draft.skills ?? [];
     if (attached.some((item) => item.id === skill.id)) {
       closeSlash(false);
@@ -221,7 +250,23 @@ export function ChannelWorkspace({
       setContextError("一条消息最多使用 2 个技能。");
       return;
     }
+    let recipients = {};
+    if (targetBot?.id !== skill.botId && !channel.directBotId) {
+      if (attached.length > 0) {
+        setContextError("已选的技能属于另一个 Bot，请先移除再选择。");
+        return;
+      }
+      try {
+        // The skill runs on its own Bot, so that Bot becomes the recipient.
+        recipients = addRecipient({ ...draft, targetBotIds: [] }, skill.botId, channel.botIds);
+      } catch (cause) {
+        setContextError(cause instanceof Error ? cause.message : "无法选择这个 Bot。");
+        return;
+      }
+    }
     mentionCaret.current = slash ? draft.text.slice(0, slash.start).trimEnd().length : undefined;
+    // Changing recipients clears attached skills in the session, so address the Bot first.
+    if (Object.keys(recipients).length > 0) conversation.edit(recipients);
     conversation.edit({
       text: removeSlashQuery(draft.text, slash),
       skills: [...attached, { id: skill.id, name: skill.name, version: skill.version }],
@@ -232,8 +277,10 @@ export function ChannelWorkspace({
   }
   function chooseSlashAction(id: ComposerAction["id"]) {
     closeSlash(false);
-    if (id === "attach") fileInput.current?.click();
-    else setFilesOpen(true);
+    if (id === "members") onOpenMembers?.();
+    else if (id === "routine") onNewRoutine?.();
+    else if (id === "settings-general") onOpenSettings?.("general");
+    else onOpenHosts?.();
   }
   function chooseSlashOption(index: number) {
     const skill = slashSkills[index];
@@ -288,8 +335,46 @@ export function ChannelWorkspace({
     setSkillsOpen(false);
     setSkillChoices([]);
   }, [skillBotId]);
+  const slashBotIds = (targetBot ? [targetBot.id] : channel.botIds.filter((id) => botsById.has(id)))
+    .slice(0, 4)
+    .join(",");
   useEffect(() => {
-    if (!(skillsOpen || slashActive) || !skillBotId) return;
+    if (!slashActive || !slashBotIds) {
+      setSlashCatalog([]);
+      return;
+    }
+    const controller = new AbortController();
+    const ids = slashBotIds.split(",");
+    setSlashLoading(true);
+    void Promise.all(
+      ids.map((id) =>
+        getEmployeeProfile(id, controller.signal).then((profile) =>
+          profile.skills
+            .filter((skill) => skill.state === "verified")
+            .map((skill) => ({
+              id: skill.id,
+              name: skill.name,
+              version: skill.version,
+              description: skill.description,
+              botId: id,
+              botName: profile.employee.name,
+            })),
+        ),
+      ),
+    )
+      .then((lists) => {
+        if (!controller.signal.aborted) setSlashCatalog(lists.flat());
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setContextError("无法读取技能，请重试。");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setSlashLoading(false);
+      });
+    return () => controller.abort();
+  }, [slashActive, slashBotIds]);
+  useEffect(() => {
+    if (!skillsOpen || !skillBotId) return;
     const controller = new AbortController();
     setSkillsLoading(true);
     setContextError(undefined);
@@ -305,7 +390,7 @@ export function ChannelWorkspace({
         if (!controller.signal.aborted) setSkillsLoading(false);
       });
     return () => controller.abort();
-  }, [skillsOpen, slashActive, skillBotId]);
+  }, [skillsOpen, skillBotId]);
   const artifactsByRun = useMemo(() => {
     const result = new Map<string, Artifact[]>();
     for (const artifact of artifacts) {
@@ -870,10 +955,8 @@ export function ChannelWorkspace({
                 id={`slash-${channel.id}`}
                 aria-label="技能与操作"
               >
-                {!targetBot ? (
-                  <p>先 @ 提及一名 Bot，才能使用它的技能</p>
-                ) : skillsLoading ? (
-                  <p role="status">正在读取 {targetBot.name} 的技能…</p>
+                {slashLoading && slashSkills.length === 0 ? (
+                  <p role="status">正在读取技能…</p>
                 ) : null}
                 {slashSkills.map((skill, index) => (
                   <button
@@ -885,10 +968,13 @@ export function ChannelWorkspace({
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => chooseSlashSkill(skill)}
                   >
-                    <SkillIcon />
+                    <SlashSkillGlyph />
                     <span>
                       {skill.name}
-                      <small>v{skill.version}</small>
+                      <small>
+                        {!targetBot && !channel.directBotId ? `${skill.botName} · ` : ""}
+                        {skill.description || `v${skill.version}`}
+                      </small>
                     </span>
                     <em>技能</em>
                   </button>
@@ -906,7 +992,7 @@ export function ChannelWorkspace({
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => chooseSlashAction(action.id)}
                   >
-                    <PlusIcon />
+                    <SlashActionGlyph />
                     <span>
                       {action.label}
                       <small>{action.detail}</small>
@@ -914,10 +1000,8 @@ export function ChannelWorkspace({
                     <em>操作</em>
                   </button>
                 ))}
-                {slashCount === 0 && targetBot && !skillsLoading ? (
-                  <p>没有匹配的技能或操作</p>
-                ) : null}
-                <p className="slash-hint">↑ ↓ 选择 · 回车确认 · Esc 关闭</p>
+                {slashCount === 0 && !slashLoading ? <p>没有匹配的技能或操作</p> : null}
+                <p className="slash-hint">继续输入可筛选 · ↑ ↓ 选择 · 回车确认 · Esc 关闭</p>
               </div>
             )}
             {mentionQuery !== undefined && (
@@ -1395,13 +1479,52 @@ function realtimeLabel(state: RealtimeConnectionState) {
 }
 
 interface ComposerAction {
-  id: "attach" | "files";
+  id: "members" | "routine" | "settings-general" | "settings-hosts";
   label: string;
   detail: string;
 }
 
-/** Existing composer actions reachable from the `/` menu; they open the same pickers as `+`. */
-const composerActions: ComposerAction[] = [
-  { id: "attach", label: "添加附件", detail: "文本、图片、Office、PDF、音频和视频" },
-  { id: "files", label: "频道文件", detail: "下载、提取文字、转写和管理回收站" },
-];
+interface SlashSkill {
+  id: string;
+  name: string;
+  version: string;
+  description: string;
+  botId: string;
+  botName: string;
+}
+
+function SlashSkillGlyph() {
+  return (
+    <svg
+      aria-hidden="true"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" />
+      <path d="M12 12l8-4.5M12 12v9M12 12L4 7.5" />
+    </svg>
+  );
+}
+
+function SlashActionGlyph() {
+  return (
+    <svg
+      aria-hidden="true"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M9 6H6.5a2.5 2.5 0 1 1 2.5-2.5V18a2.5 2.5 0 1 1-2.5-2.5H18a2.5 2.5 0 1 1-2.5 2.5V6a2.5 2.5 0 1 1 2.5 2.5H6" />
+    </svg>
+  );
+}

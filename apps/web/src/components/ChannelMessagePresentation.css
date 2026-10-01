@@ -548,24 +548,29 @@
   color: #888;
 }
 .app-shell .channel-workspace.channel-native .mention-options {
+  /* Main/Slash artboards: 12px popover, 32px rows. */
   left: 0;
-  bottom: calc(100% + 8px);
-  width: 290px;
+  bottom: calc(100% + 10px);
+  width: 340px;
   max-width: 100%;
   padding: 5px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--ob-popover-border);
   border-radius: 12px;
-  background: #fafafa;
-  box-shadow: 0 8px 24px #00000014;
+  background: var(--ob-popover);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 12%);
 }
 .app-shell .channel-workspace.channel-native .mention-options button {
-  min-height: 40px;
-  padding: 7px 9px;
+  min-height: 32px;
+  padding: 0 10px;
+  gap: 9px;
   border-radius: 7px;
-  font-size: 13px;
+  font-size: 14px;
+}
+.app-shell .channel-workspace.channel-native .mention-options button:hover {
+  background: var(--ob-fill-hover);
 }
 .app-shell .channel-workspace.channel-native .mention-options button[aria-selected="true"] {
-  background: #e9e9e9;
+  background: #e8e8ea;
 }
 .app-shell .channel-workspace.channel-native .mention-options .robot-avatar {
   width: 24px;
@@ -683,7 +688,7 @@
 }
 /* `/` menu: skills attached through the existing composer skill mechanism, then composer actions. */
 .app-shell .channel-workspace.channel-native .slash-options {
-  width: 360px;
+  width: 460px;
 }
 .app-shell .channel-workspace.channel-native .slash-options > button > span {
   display: flex;

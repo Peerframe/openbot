@@ -1,7 +1,15 @@
 import type { WorkspaceSnapshot } from "@openbot/domain";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { type AuditEvent, getWorkspace, listAuditEvents } from "../api";
+import {
+  type AuditCategory,
+  type AuditEvent,
+  auditCategories,
+  auditExportUrl,
+  getWorkspace,
+  listAuditEvents,
+} from "../api";
 import { AutomationsScreen } from "./AutomationsScreen";
+import { SettingsHeaderAction } from "./SettingsHeaderAction";
 
 export function SettingsGroup({
   title,
@@ -132,37 +140,52 @@ function auditSubject(event: AuditEvent) {
   return parts.join(" · ");
 }
 
-const timeFormat = new Intl.DateTimeFormat("zh-CN", {
-  month: "numeric",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
 /** Owner audit trail from GET /api/v1/audit; the Server allowlists every projected field. */
+/** Labels for the Server's audit categories, in the artboard's chip order. */
+const auditCategoryLabels: Record<AuditCategory, string> = {
+  approvals: "审批",
+  settings: "设置变更",
+  authentication: "登录",
+  hosts: "主机",
+  channels: "频道",
+  bots: "Bot",
+  runs: "任务",
+  plugins: "插件",
+  other: "其他",
+};
+
+/**
+ * Owner audit trail from GET /api/v1/audit; the Server allowlists every projected field and
+ * filters by category (backlog C3). CSV export downloads the same filter, up to 1000 events.
+ */
 export function AuditLogSettings() {
   const [events, setEvents] = useState<AuditEvent[]>();
   const [nextBefore, setNextBefore] = useState<string>();
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [category, setCategory] = useState<AuditCategory>();
 
-  const load = useCallback(async (before?: string, signal?: AbortSignal) => {
-    setLoading(true);
-    setError(false);
-    try {
-      const page = await listAuditEvents({
-        ...(before ? { before } : {}),
-        ...(signal ? { signal } : {}),
-      });
-      if (signal?.aborted) return;
-      setEvents((current) => (before ? [...(current ?? []), ...page.events] : page.events));
-      setNextBefore(page.nextBefore);
-    } catch {
-      if (!signal?.aborted) setError(true);
-    } finally {
-      if (!signal?.aborted) setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (before?: string, signal?: AbortSignal) => {
+      setLoading(true);
+      setError(false);
+      try {
+        const page = await listAuditEvents({
+          ...(before ? { before } : {}),
+          ...(category ? { category } : {}),
+          ...(signal ? { signal } : {}),
+        });
+        if (signal?.aborted) return;
+        setEvents((current) => (before ? [...(current ?? []), ...page.events] : page.events));
+        setNextBefore(page.nextBefore);
+      } catch {
+        if (!signal?.aborted) setError(true);
+      } finally {
+        if (!signal?.aborted) setLoading(false);
+      }
+    },
+    [category],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -170,44 +193,93 @@ export function AuditLogSettings() {
     return () => controller.abort();
   }, [load]);
 
-  if (events === undefined)
-    return error ? (
-      <div className="settings-load-notice" role="alert">
-        <p>无法读取审计记录，请重试。</p>
-        <button type="button" className="secondary-button" onClick={() => void load()}>
-          重试
+  const filters = (
+    <fieldset className="settings-filters" aria-label="按类别筛选">
+      {([undefined, ...auditCategories.filter((item) => item !== "other")] as const).map((item) => (
+        <button
+          type="button"
+          key={item ?? "all"}
+          className="ob-filter"
+          aria-pressed={category === item}
+          onClick={() => {
+            setCategory(item);
+            setEvents(undefined);
+          }}
+        >
+          {item ? auditCategoryLabels[item] : "全部"}
         </button>
-      </div>
-    ) : (
-      <p className="settings-load-notice" role="status">
-        正在读取审计记录…
-      </p>
+      ))}
+    </fieldset>
+  );
+  const exportAction = (
+    <SettingsHeaderAction>
+      <a className="ob-pill" href={auditExportUrl(category)} download="openbot-audit.csv">
+        导出 CSV
+      </a>
+    </SettingsHeaderAction>
+  );
+
+  if (events === undefined)
+    return (
+      <>
+        {exportAction}
+        {filters}
+        {error ? (
+          <div className="settings-load-notice" role="alert">
+            <p>无法读取审计记录，请重试。</p>
+            <button type="button" className="secondary-button" onClick={() => void load()}>
+              重试
+            </button>
+          </div>
+        ) : (
+          <p className="settings-load-notice" role="status">
+            正在读取审计记录…
+          </p>
+        )}
+      </>
     );
 
+  const days = groupByDay(events);
   return (
     <>
-      <SettingsGroup
-        title="最近的操作"
-        description="按时间倒序显示，只包含名称、对象和时间，不含消息正文。"
-      >
-        {events.length === 0 ? (
-          <SettingRow title="暂无记录" description="创建、重命名、删除和任务处理都会记录在这里。" />
-        ) : (
-          <ol className="audit-list">
-            {events.map((event) => (
-              <li key={event.id}>
-                <div>
-                  <strong>{auditTitle(event)}</strong>
-                  {auditSubject(event) ? <p>{auditSubject(event)}</p> : null}
-                </div>
-                <time dateTime={event.createdAt}>
-                  {timeFormat.format(new Date(event.createdAt))}
-                </time>
-              </li>
-            ))}
-          </ol>
-        )}
-      </SettingsGroup>
+      {exportAction}
+      {filters}
+      {events.length === 0 ? (
+        <SettingsGroup title="最近的操作">
+          <SettingRow
+            title="暂无记录"
+            description={
+              category
+                ? "这个类别还没有记录。"
+                : "登录、设置变更、审批、主机和任务处理都会记录在这里。"
+            }
+          />
+        </SettingsGroup>
+      ) : (
+        days.map((day) => (
+          <section className="settings-group" key={day.label}>
+            <h3>{day.label}</h3>
+            <ol className="settings-group-rows audit-list">
+              {day.events.map((event) => (
+                <li key={event.id}>
+                  <time dateTime={event.createdAt}>
+                    {clockFormat.format(new Date(event.createdAt))}
+                  </time>
+                  <div>
+                    <strong>{auditTitle(event)}</strong>
+                    {auditSubject(event) ? <p>{auditSubject(event)}</p> : null}
+                  </div>
+                  {event.category && event.category !== "other" ? (
+                    <span className="ob-tag">{auditCategoryLabels[event.category]}</span>
+                  ) : (
+                    <span />
+                  )}
+                </li>
+              ))}
+            </ol>
+          </section>
+        ))
+      )}
       {error ? (
         <p className="form-error" role="alert">
           无法读取更多记录，请重试。
@@ -216,18 +288,44 @@ export function AuditLogSettings() {
       {nextBefore ? (
         <button
           type="button"
-          className="secondary-button audit-more"
+          className="ob-pill audit-more"
           disabled={loading}
           onClick={() => void load(nextBefore)}
         >
           {loading ? "正在读取…" : "显示更早的记录"}
         </button>
       ) : null}
+      <p className="settings-footnote">
+        记录只能查看，不能修改或删除；只包含名称、对象和时间，不含消息正文。
+      </p>
     </>
   );
 }
 
-export function SettingsAutomations({ onOpen }: { onOpen?: (() => void) | undefined }) {
+const clockFormat = new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit" });
+
+function groupByDay(events: AuditEvent[]) {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const days: Array<{ label: string; events: AuditEvent[] }> = [];
+  for (const event of events) {
+    const date = new Date(event.createdAt);
+    const label =
+      date.toDateString() === today.toDateString()
+        ? "今天"
+        : date.toDateString() === yesterday.toDateString()
+          ? "昨天"
+          : `${date.getMonth() + 1} 月 ${date.getDate()} 日`;
+    const last = days.at(-1);
+    if (last?.label === label) last.events.push(event);
+    else days.push({ label, events: [event] });
+  }
+  return days;
+}
+
+/** One bounded workspace read for settings sections that need the Bot and channel lists. */
+export function useSettingsWorkspace() {
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>();
   const [error, setError] = useState(false);
   const [revision, setRevision] = useState(0);
@@ -245,33 +343,54 @@ export function SettingsAutomations({ onOpen }: { onOpen?: (() => void) | undefi
       });
     return () => controller.abort();
   }, [revision]);
+  return { workspace, error, retry: () => setRevision((value) => value + 1) };
+}
+
+/** Loading and failure states shared by workspace-backed settings sections. */
+export function SettingsWorkspaceGate({
+  label,
+  children,
+  extra,
+}: {
+  label: string;
+  children(workspace: WorkspaceSnapshot): ReactNode;
+  extra?: ReactNode;
+}) {
+  const { workspace, error, retry } = useSettingsWorkspace();
   if (error)
     return (
       <div className="settings-load-notice" role="alert">
         <p>无法读取工作空间，请重试。</p>
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={() => setRevision((value) => value + 1)}
-        >
+        <button type="button" className="secondary-button" onClick={retry}>
           重试
         </button>
-        {onOpen && (
-          <button type="button" className="secondary-button" onClick={onOpen}>
-            打开自动任务
-          </button>
-        )}
+        {extra}
       </div>
     );
   if (!workspace)
     return (
       <p className="settings-load-notice" role="status">
-        正在读取自动任务…
+        正在读取{label}…
       </p>
     );
+  return <>{children(workspace)}</>;
+}
+
+export function SettingsAutomations({ onOpen }: { onOpen?: (() => void) | undefined }) {
   return (
-    <div className="settings-automations">
-      <AutomationsScreen bots={workspace.bots} channels={workspace.channels} />
-    </div>
+    <SettingsWorkspaceGate
+      label="例行任务"
+      extra={
+        onOpen ? (
+          <button type="button" className="secondary-button" onClick={onOpen}>
+            打开自动任务
+          </button>
+        ) : null
+      }
+    >
+      {(workspace) => (
+        <AutomationsScreen bots={workspace.bots} channels={workspace.channels} variant="settings" />
+      )}
+    </SettingsWorkspaceGate>
   );
 }

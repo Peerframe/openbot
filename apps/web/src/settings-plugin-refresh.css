@@ -1,36 +1,3 @@
-.settings-refresh {
-  --settings-nav-width: 250px;
-  grid-template-columns: var(--settings-nav-width) minmax(0, 1fr);
-  background: #fff;
-}
-.settings-refresh .settings-navigation {
-  overflow: auto;
-  padding: 24px 16px;
-  background: #f6f6f7;
-  border-color: #ececee;
-}
-:root[data-desktop="darwin"] .settings-refresh .settings-navigation {
-  padding-top: 64px;
-}
-:root[data-desktop="darwin"] .settings-refresh .settings-navigation::before {
-  width: var(--settings-nav-width);
-  height: 50px;
-}
-.settings-refresh .settings-back {
-  color: #303b4a;
-  font-size: 14px;
-  padding: 9px 10px;
-}
-.settings-refresh .settings-navigation .settings-nav-title {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
 .settings-nav-group {
   display: grid;
   gap: 3px;
@@ -41,108 +8,18 @@
   font-size: 12px;
   color: #8590a1;
 }
-.settings-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-  padding: 0 10px;
-  margin: 20px 0 24px;
-  border: 1px solid #e0e0e3;
-  border-radius: 10px;
-  background: #eaeaec;
-  color: #8e8e93;
-}
-.settings-search input {
-  width: 100%;
-  min-width: 0;
-  height: 40px;
-  border: 0;
-  background: transparent;
-  color: #253143;
-  font: inherit;
-  font-size: 13px;
-}
-.settings-search:focus-within {
-  outline: 2px solid var(--blue);
-  outline-offset: 2px;
-}
-.settings-search input:focus-visible {
-  outline: none;
-}
 .settings-search-empty {
   padding: 8px 10px;
   color: #687487;
   line-height: 1.7;
   font-size: 13px;
 }
-.settings-refresh .settings-navigation :where(nav) button {
-  min-height: 40px;
-  border-radius: 10px;
-  color: var(--ink);
-  font-size: 14px;
-}
-.settings-refresh .settings-navigation :where(nav) button:hover {
-  background: #ececee;
-}
-.settings-refresh .settings-navigation nav button[aria-current="page"] {
-  background: #e3e3e6;
-  color: var(--ink);
-  font-weight: 600;
-}
-.settings-refresh .settings-page-header {
-  border: 0;
-  padding: 64px clamp(28px, 5vw, 80px) 20px;
-}
-.settings-refresh .settings-page-header h2 {
-  font-size: 30px;
-  color: #171f2c;
-}
-.settings-refresh .settings-page-body {
-  max-width: 1280px;
-  padding: 20px clamp(28px, 5vw, 80px) 64px;
-}
-.settings-refresh .settings-group {
-  margin-bottom: 36px;
-}
-.settings-refresh .settings-group > h3 {
-  margin: 0 4px 8px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 500;
-}
 /* Grouped cards: filled neutral surface instead of an outlined box. */
-.settings-refresh .settings-group-rows {
-  border-radius: 16px;
-  border-color: transparent;
-  background: var(--fill);
-}
-.settings-refresh .setting-row + .setting-row {
-  border-top-color: #e3e3e6;
-}
-.settings-refresh .setting-row {
-  min-height: 86px;
-  padding: 20px 24px;
-}
-.settings-refresh .setting-row strong {
-  font-size: 14px;
-}
-.settings-refresh .setting-row p {
-  font-size: 13px;
-  color: #717b8a;
-}
-.settings-refresh .settings-brand {
-  padding-top: 32px;
-  font-size: 13px;
-}
 .settings-load-notice {
   padding: 26px;
   border: 1px solid #e5e8ed;
   border-radius: 14px;
   color: #657184;
-}
-.settings-refresh .settings-load-notice :where(button) + button {
-  margin-left: 10px;
 }
 .settings-automations .workspace-destination {
   height: auto;
@@ -311,22 +188,12 @@
   font: inherit;
 }
 
-.settings-refresh button:focus-visible,
 .plugin-refresh button:focus-visible,
 .plugin-target select:focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 3px;
 }
 @media (max-width: 1000px) {
-  .settings-refresh {
-    --settings-nav-width: 220px;
-  }
-  .settings-refresh .settings-page-header {
-    padding: 48px 28px 16px;
-  }
-  .settings-refresh .settings-page-body {
-    padding: 20px 28px 48px;
-  }
   .plugin-intro {
     align-items: flex-start;
   }
@@ -335,34 +202,11 @@
   }
 }
 @media (max-width: 760px) {
-  .settings-refresh {
-    display: grid;
-    --settings-nav-width: 190px;
-    grid-template-columns: var(--settings-nav-width) minmax(0, 1fr);
-  }
-  .settings-refresh .settings-navigation nav {
-    display: grid;
-    overflow: visible;
-  }
-  .settings-refresh .settings-navigation :where(nav) button {
-    white-space: normal;
-    text-align: left;
-    font-size: 13px;
-  }
-  .settings-refresh .setting-row {
-    flex-wrap: wrap;
-    gap: 14px;
-    padding: 18px;
-  }
-  .settings-refresh .setting-control {
-    max-width: 100%;
-  }
   .plugin-intro {
     flex-direction: column;
   }
 }
 
-.settings-refresh,
 .plugin-refresh {
   --blue: #1f6fd6;
   --accent: var(--ink-strong);
@@ -374,284 +218,9 @@
   display: grid;
   gap: 9px;
 }
-.settings-refresh .model-settings-embedded .login-card {
-  max-width: 980px;
-}
-.settings-refresh .model-settings-embedded .login-copy {
-  text-align: left;
-  color: #727e8f;
-  margin-bottom: 24px;
-}
-.settings-refresh .model-settings-embedded form {
-  gap: 14px;
-}
-.settings-refresh .model-settings-embedded .model-provider-options {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 8px;
-}
-.settings-refresh .model-settings-embedded .model-provider-options legend {
-  font-size: 15px;
-  color: #2a3443;
-  margin-bottom: 16px;
-}
-.settings-refresh .model-settings-embedded .model-provider-card {
-  min-height: 48px;
-  padding: 12px 14px;
-  border: 1px solid #e1e6ee;
-  border-radius: 10px;
-  background: #fff;
-  gap: 10px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #445164;
-  cursor: pointer;
-}
-.settings-refresh .model-settings-embedded .model-provider-card:hover {
-  border-color: #d1d1d6;
-  background: #f7f7f8;
-}
-.settings-refresh .model-settings-embedded .model-provider-card:has(input:checked) {
-  border-color: var(--ink-strong);
-  background: var(--fill);
-  color: var(--ink);
-}
-.settings-refresh .model-settings-embedded .model-provider-card:has(input:focus-visible) {
-  outline: 2px solid var(--blue);
-  outline-offset: 3px;
-}
-.settings-refresh .model-settings-embedded .model-provider-card:has(input:disabled) {
-  opacity: 0.55;
-  cursor: default;
-}
-.settings-refresh .model-settings-embedded .model-provider-card input {
-  flex-shrink: 0;
-  accent-color: var(--ink-strong);
-}
-.settings-refresh .model-config-group {
-  border: 1px solid #e3e7ee;
-  border-radius: 15px;
-  overflow: hidden;
-  margin-top: 10px;
-}
-.settings-refresh .model-config-row {
-  display: grid;
-  grid-template-columns: minmax(105px, 0.3fr) minmax(0, 1fr);
-  align-items: start;
-  gap: 20px;
-  padding: 20px 24px;
-}
-.settings-refresh .model-config-row + .model-config-row {
-  border-top: 1px solid #edf0f4;
-}
-.settings-refresh .model-config-row > label {
-  padding-top: 11px;
-  color: #49586b;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.6;
-}
-.settings-refresh .model-config-control {
-  min-width: 0;
-}
-.settings-refresh .model-config-control :is(input, select) {
-  width: 100%;
-  min-width: 0;
-  min-height: 42px;
-  border: 1px solid #d6dde8;
-  border-radius: 8px;
-  padding: 9px 12px;
-  background: #fff;
-  color: #233044;
-  font: inherit;
-  font-size: 13px;
-}
-.settings-refresh .model-config-control :is(input, select):focus-visible {
-  outline: 2px solid var(--blue);
-  outline-offset: 2px;
-}
-.settings-refresh .model-settings-embedded .connection-hint {
-  font-size: 12px;
-  line-height: 1.7;
-  color: #748094;
-  overflow-wrap: anywhere;
-}
-.settings-refresh .model-config-control .connection-hint {
-  margin-top: 8px;
-}
-.settings-refresh .model-settings-embedded form > .secondary-button {
-  justify-self: start;
-  min-height: 38px;
-  padding-inline: 17px;
-  font-size: 13px;
-}
-.settings-refresh .model-agent-group {
-  border: 1px solid #e3e7ee;
-  border-radius: 15px;
-  padding: 20px 24px;
-  margin-top: 12px;
-}
-.settings-refresh .model-settings-embedded .model-agent-option {
-  justify-content: space-between;
-  margin-bottom: 10px;
-  color: #2f3c4e;
-  font-size: 14px;
-  font-weight: 550;
-}
-.settings-refresh .model-agent-toggle {
-  position: relative;
-  display: block;
-  flex-shrink: 0;
-  width: 36px;
-  height: 22px;
-}
-.settings-refresh .model-settings-embedded .model-agent-toggle input {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  inset: 0;
-  opacity: 0;
-  z-index: 1;
-  cursor: pointer;
-}
-.settings-refresh .model-agent-toggle > span {
-  position: absolute;
-  inset: 0;
-  border-radius: 20px;
-  background: #cbd2dc;
-  pointer-events: none;
-}
-.settings-refresh .model-agent-toggle > span::after {
-  content: "";
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  inset: 2px auto auto 2px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 3px #26314226;
-}
-.settings-refresh .model-agent-toggle input:checked + span {
-  background: var(--ink-strong);
-}
-.settings-refresh .model-agent-toggle input:checked + span::after {
-  transform: translateX(14px);
-}
-.settings-refresh .model-agent-toggle input:focus-visible + span {
-  outline: 2px solid var(--blue);
-  outline-offset: 3px;
-}
-.settings-refresh .model-agent-toggle input:disabled + span {
-  opacity: 0.55;
-}
-.settings-refresh .model-settings-embedded form .model-save-button {
-  width: auto;
-  justify-self: end;
-  min-width: 132px;
-  margin-top: 10px;
-  border-color: var(--ink-strong);
-  border-radius: 999px;
-  background: var(--ink-strong);
-}
-.settings-refresh .model-settings-embedded form .model-save-button:hover:not(:disabled) {
-  background: #2c2c2e;
-}
-@media (max-width: 1100px) {
-  .settings-refresh .model-settings-embedded .model-provider-options {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .settings-refresh .model-config-row {
-    grid-template-columns: minmax(95px, 0.35fr) minmax(0, 1fr);
-    padding: 18px;
-    gap: 15px;
-  }
-}
-@media (max-width: 760px) {
-  .settings-refresh .model-settings-embedded .model-provider-options {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .settings-refresh .model-config-row {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
-  }
-  .settings-refresh .model-config-row > label {
-    padding-top: 0;
-  }
-}
 
 /* ADR-0047 audit view: compact rows inside the shared grey settings card. */
-.settings-refresh .audit-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.settings-refresh .audit-list li {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 24px;
-}
-.settings-refresh .audit-list li + li {
-  border-top: 1px solid #e3e3e6;
-}
-.settings-refresh .audit-list strong {
-  display: block;
-  font-size: 14px;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-.settings-refresh .audit-list p {
-  margin: 2px 0 0;
-  color: #717b8a;
-  font-size: 12px;
-  overflow-wrap: anywhere;
-}
-.settings-refresh .audit-list li > div {
-  flex: 1;
-  min-width: 0;
-}
-.settings-refresh .audit-list time {
-  flex: none;
-  color: #717b8a;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-.settings-refresh .audit-more {
-  margin-top: 12px;
-}
 
 /* Must outrank workspace-preferences.css `.settings-switch input:checked + span`. */
-.settings-refresh .settings-switch input:checked + span {
-  background: var(--ink-strong);
-}
 
 /* Phones (Web entry): stack the section list above the page as a scrolling pill row. */
-@media (max-width: 560px) {
-  .settings-refresh {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
-  }
-  .settings-refresh .settings-navigation {
-    padding: 12px 16px 10px;
-    border-right: 0;
-    border-bottom: 1px solid #e3e3e6;
-  }
-  .settings-refresh .settings-navigation nav {
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-  }
-  .settings-refresh .settings-nav-group {
-    display: contents;
-  }
-  .settings-refresh .settings-nav-group > p,
-  .settings-refresh .settings-brand {
-    display: none;
-  }
-  .settings-refresh .settings-navigation nav button {
-    flex: none;
-    white-space: nowrap;
-  }
-}

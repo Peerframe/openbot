@@ -1,0 +1,848 @@
+/* Settings and SettingsNav artboards: a 1060×740 modal over the dimmed workspace. */
+.settings-dialog {
+  box-sizing: border-box;
+  width: min(1060px, calc(100vw - 40px));
+  max-width: none;
+  height: min(740px, calc(100dvh - 40px));
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 20px;
+  background: #fdfdfd;
+  box-shadow: 0 30px 80px rgb(0 0 0 / 25%);
+  color: var(--ob-text);
+}
+.settings-dialog::backdrop {
+  background: rgb(0 0 0 / 34%);
+}
+.settings-dialog-frame {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  height: 100%;
+}
+.settings-dialog-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  box-sizing: border-box;
+  min-height: 0;
+  padding: 16px 12px;
+  overflow-y: auto;
+  border-right: 1px solid #ececee;
+  background: #f6f6f7;
+}
+.settings-dialog-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  margin: 0 0 8px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: #ececee;
+  color: var(--ob-text-tertiary);
+}
+.settings-dialog-search svg {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+}
+.settings-dialog-search input {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+.settings-dialog-nav .settings-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.settings-dialog-nav .settings-nav-group > p {
+  margin: 0;
+  padding: 12px 12px 4px;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+  font-weight: 600;
+}
+.settings-dialog-nav button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.settings-dialog-nav button:hover {
+  background: #ececee;
+}
+.settings-dialog-nav button[aria-current="page"] {
+  background: #e3e3e6;
+  font-weight: 600;
+}
+.settings-dialog-nav button > span {
+  flex: 1;
+  min-width: 0;
+}
+.settings-dialog-nav button > small {
+  color: var(--ob-text-tertiary);
+  font-size: 11px;
+  font-weight: 400;
+}
+.settings-dialog-nav .settings-search-empty {
+  margin: 8px 12px;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+}
+.settings-dialog-content {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+.settings-dialog-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #3a3a3c;
+  cursor: pointer;
+}
+.settings-dialog-close:hover {
+  background: var(--ob-fill);
+}
+.settings-dialog-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 40px 84px 0 44px;
+}
+.settings-dialog-header > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.settings-dialog-action {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.settings-dialog-action:empty {
+  display: none;
+}
+.settings-dialog-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+.settings-dialog .settings-dialog-header p {
+  margin: 0;
+  color: var(--ob-text-secondary);
+  font-size: 14px;
+}
+.settings-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 22px 44px 40px;
+}
+
+/* Grouped rows: a grey section label above a filled card with hairline dividers. */
+.settings-dialog .settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+.settings-dialog .settings-group > h3 {
+  margin: 0 4px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+.settings-dialog .settings-group > p {
+  margin: 0 4px;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+}
+.settings-dialog .settings-group-rows {
+  padding: 0 18px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.settings-dialog .setting-row {
+  min-height: 0;
+  padding: 14px 0;
+  background: transparent;
+}
+.settings-dialog .setting-row + .setting-row {
+  border-top: 1px solid var(--ob-divider);
+}
+.settings-dialog .setting-row strong {
+  font-size: 15px;
+  font-weight: 500;
+}
+.settings-dialog .setting-row p {
+  margin-top: 3px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.settings-dialog .setting-control select {
+  height: 32px;
+  padding: 0 28px 0 14px;
+  border: 0;
+  border-radius: 16px;
+  background-color: #e3e3e6;
+  color: var(--ob-text);
+  font-size: 13px;
+}
+.settings-dialog .setting-control .secondary-button {
+  height: 32px;
+  min-height: 0;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 16px;
+  background: #e3e3e6;
+  font-size: 13px;
+  font-weight: 600;
+}
+/* The artboard's 44×26 switch. */
+.settings-dialog .settings-switch,
+.settings-dialog .settings-switch span {
+  width: 44px;
+  height: 26px;
+}
+.settings-dialog .settings-switch span {
+  border-radius: 13px;
+  background: #d1d1d6;
+}
+.settings-dialog .settings-switch span::after {
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  box-shadow: none;
+}
+.settings-dialog .settings-switch input:checked + span {
+  background: var(--ob-primary);
+}
+.settings-dialog .settings-switch input:checked + span::after {
+  transform: translateX(18px);
+}
+.settings-dialog .settings-footnote {
+  margin: 0 4px;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+}
+.settings-dialog .settings-success {
+  margin: 0 4px;
+}
+
+@media (max-width: 760px) {
+  .settings-dialog {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+  }
+  .settings-dialog-frame {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .settings-dialog-nav {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid #ececee;
+  }
+  .settings-dialog-search,
+  .settings-dialog-nav .settings-nav-group > p {
+    display: none;
+  }
+  .settings-dialog-nav .settings-nav-group {
+    flex-direction: row;
+    gap: 4px;
+  }
+  .settings-dialog-nav button {
+    width: auto;
+    white-space: nowrap;
+  }
+  .settings-dialog-close {
+    top: 10px;
+    right: 10px;
+  }
+  .settings-dialog-header {
+    padding: 20px 16px 0;
+  }
+  .settings-dialog-body {
+    padding: 16px 16px 28px;
+  }
+  .settings-dialog .setting-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
+/* Shared list rows for data sections (模型服务, 工作主机, 例行任务, …). */
+.settings-dialog .settings-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+.settings-dialog .settings-group-heading > h3 {
+  margin: 0;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+.settings-dialog .settings-group-heading > button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text-tertiary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.settings-dialog .settings-group-heading > button:hover {
+  color: var(--ob-text);
+}
+.settings-dialog .settings-item {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+}
+.settings-dialog .settings-catalogue > .settings-item {
+  padding: 10px 0;
+}
+.settings-dialog .settings-group-rows > .settings-item + .settings-item {
+  border-top: 1px solid var(--ob-divider);
+}
+.settings-dialog .settings-item > .ob-switch,
+.settings-dialog .settings-item > .ob-pill {
+  justify-self: end;
+}
+.settings-dialog .settings-tile {
+  display: inline-grid;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid #e5e5e8;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 17px;
+  font-weight: 700;
+}
+.settings-dialog .settings-item-open,
+.settings-dialog .settings-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.settings-dialog .settings-item-open {
+  cursor: pointer;
+}
+.settings-dialog .settings-item-open strong,
+.settings-dialog .settings-item-text strong {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-dialog .settings-item-open:hover strong {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.settings-dialog .settings-item-open small,
+.settings-dialog .settings-item-text small {
+  overflow: hidden;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-dialog .settings-search-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 21px;
+  background: var(--ob-fill);
+  color: var(--ob-text-tertiary);
+}
+.settings-dialog .settings-search-field svg {
+  width: 16px;
+  height: 16px;
+}
+.settings-dialog .settings-search-field input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+}
+.settings-dialog .settings-catalogue {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 36px;
+  row-gap: 6px;
+}
+.settings-dialog .settings-empty {
+  margin: 0 4px;
+  color: var(--ob-text-tertiary);
+  font-size: 13px;
+}
+.settings-dialog .settings-disclosure {
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.settings-dialog .settings-disclosure > summary {
+  padding: 14px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.settings-dialog .settings-disclosure[open] > summary {
+  border-bottom: 1px solid var(--ob-divider);
+}
+.settings-dialog .settings-disclosure > :not(summary) {
+  padding: 16px 18px;
+}
+.settings-dialog .settings-subpage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.settings-dialog .settings-subpage-back {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.settings-dialog .settings-subpage-back:hover {
+  color: var(--ob-text);
+}
+@media (max-width: 760px) {
+  .settings-dialog .settings-catalogue {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 工作主机: the shared host list restyled to the SettingsHosts artboard. */
+.settings-dialog .settings-card {
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.settings-dialog .settings-pairing-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+.settings-dialog .settings-pairing-form .ob-field {
+  flex: 1;
+}
+.settings-dialog .settings-token {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.settings-dialog .settings-token-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.settings-dialog .settings-token-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.settings-dialog .settings-dialog-body .settings-token strong {
+  font-size: 15px;
+}
+.settings-dialog .settings-dialog-body .settings-token small {
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+}
+.settings-dialog .settings-token pre {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre;
+}
+.settings-dialog .node-identity-list {
+  border-top: 0;
+}
+.settings-dialog .node-identity-item {
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 14px;
+  min-height: 0;
+  padding: 14px 0;
+  border-bottom: 0;
+}
+.settings-dialog .node-identity-item + .node-identity-item {
+  border-top: 1px solid var(--ob-divider);
+}
+.settings-dialog .node-identity-icon {
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #e5e5e8;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ob-text);
+}
+.settings-dialog .node-identity-item.online .node-identity-icon {
+  background: #fff;
+  color: var(--ob-text);
+}
+.settings-dialog .settings-dialog-body .node-identity-copy strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.settings-dialog .settings-dialog-body .node-identity-copy code {
+  display: none;
+}
+.settings-dialog .settings-dialog-body .node-identity-copy small {
+  margin-top: 3px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}
+.settings-dialog .node-status {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #e3e3e6;
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+}
+.settings-dialog .node-status::before {
+  display: none;
+}
+.settings-dialog .node-status.online {
+  background: #e3f4e8;
+  color: #1c7c3c;
+}
+.settings-dialog .node-revoke-warning {
+  font-size: 12px;
+}
+.settings-dialog .node-identity-actions button {
+  height: 32px;
+  min-height: 0;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 16px;
+  background: #e3e3e6;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+.settings-dialog .node-identity-actions .node-danger-button {
+  background: #fde8e6;
+  color: #b3261e;
+}
+.settings-dialog .node-revoked-at {
+  font-size: 12px;
+}
+
+/* 例行任务 (SettingsRoutines artboard). */
+.settings-dialog .settings-routine {
+  grid-template-columns: 44px minmax(0, 1fr) auto auto auto;
+}
+.settings-dialog .settings-routine.is-paused > :not(.ob-switch, .settings-routine-remove) {
+  opacity: 0.6;
+}
+.settings-dialog .settings-routine-avatar {
+  padding: 6px;
+}
+.settings-dialog .settings-routine-avatar .robot-avatar {
+  width: 30px;
+  height: 30px;
+}
+.settings-dialog .settings-routine-when {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.settings-dialog .settings-dialog-body .settings-routine-when small {
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+}
+.settings-dialog .settings-dialog-body .settings-routine-when small.is-attention {
+  color: #b3261e;
+}
+.settings-dialog .settings-routine-remove {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text-tertiary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.settings-dialog .settings-routine-remove:hover {
+  color: #b3261e;
+}
+.settings-dialog .settings-routine-delete {
+  display: flex;
+  gap: 6px;
+}
+.settings-dialog .settings-routine-form .destination-automation-form {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+@media (max-width: 760px) {
+  .settings-dialog .settings-routine {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+  }
+  .settings-dialog .settings-routine > .ob-switch {
+    grid-row: 1;
+    grid-column: 3;
+  }
+  .settings-dialog .settings-routine-when {
+    grid-row: 2;
+    grid-column: 2;
+    align-items: flex-start;
+  }
+  .settings-dialog .settings-routine > :last-child {
+    grid-row: 2;
+    grid-column: 3;
+    justify-self: end;
+  }
+}
+.settings-dialog .settings-routine-form .destination-automation-form > h3 {
+  display: none;
+}
+
+/* 审计记录 (SettingsAudit artboard). */
+.settings-dialog .settings-filters {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.settings-dialog .audit-list {
+  margin: 0;
+  list-style: none;
+}
+.settings-dialog .audit-list > li {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+.settings-dialog .audit-list > li + li {
+  border-top: 1px solid var(--ob-divider);
+}
+.settings-dialog .audit-list time {
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.settings-dialog .settings-dialog-body .audit-list strong {
+  display: block;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-dialog .settings-dialog-body .audit-list p {
+  margin: 3px 0 0;
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+}
+.settings-dialog .audit-more {
+  align-self: flex-start;
+}
+
+/* 技能, 插件, 记忆, 导入与导出 (SettingsSkills, SettingsPlugins, SettingsMemory, SettingsTransfer). */
+.settings-dialog .settings-skill {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+.settings-dialog .ob-tag.is-verified {
+  background: #e3f4e8;
+  color: #1c7c3c;
+}
+.settings-dialog .ob-tag.is-pending {
+  background: #fdf0dc;
+  color: #a35a00;
+}
+.settings-dialog .settings-subpage-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.settings-dialog .settings-bot-field {
+  max-width: 320px;
+}
+.settings-dialog .settings-bot-picker {
+  align-self: flex-start;
+}
+.settings-dialog .settings-bot-picker select {
+  height: 34px;
+  padding: 0 32px 0 16px;
+  border: 0;
+  border-radius: 17px;
+  background-color: var(--ob-primary);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+.settings-dialog .settings-plugin + .settings-plugin {
+  border-top: 1px solid var(--ob-divider);
+}
+.settings-dialog .settings-plugin-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.settings-dialog .settings-plugin-detail {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+}
+.settings-dialog .settings-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 28px 16px;
+  border: 1.5px dashed #d1d1d6;
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ob-text);
+  font: inherit;
+  cursor: pointer;
+}
+.settings-dialog .settings-dropzone:hover {
+  background: var(--ob-fill);
+}
+.settings-dialog .settings-dialog-body .settings-dropzone strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.settings-dialog .settings-dialog-body .settings-dropzone small {
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}
+/* 记忆 reuses the profile's memory panel; the dialog header already names the section. */
+.settings-dialog .settings-memory .employee-tab-panel {
+  padding: 0;
+}
+.settings-dialog .settings-memory .employee-tab-panel > .employee-section-heading {
+  display: none;
+}
+.settings-dialog .settings-memory .employee-memory-list {
+  display: block;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.settings-dialog .settings-memory .employee-memory-list > article {
+  padding: 14px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.settings-dialog .settings-memory .employee-memory-list > article + article {
+  border-top: 1px solid var(--ob-divider);
+}
+
+/* 关于 (SettingsAbout artboard). */
+.settings-dialog .setting-control a.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ob-text);
+  text-decoration: none;
+}
+.settings-dialog .settings-about {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0 4px;
+  text-align: center;
+}
+.settings-dialog .settings-dialog-body .settings-about h3 {
+  margin: 6px 0 0;
+  font-size: 22px;
+}
+.settings-dialog .settings-dialog-body .settings-about p {
+  margin: 0;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}
+.settings-dialog-action a.ob-pill {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ob-text);
+  text-decoration: none;
+}
