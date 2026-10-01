@@ -86,6 +86,26 @@ secret，不等于生产级持有证明身份。能力声明本身仍不授予�
 频道与工作区 SSE 每个订阅最多保留 128 个待发送投影。慢客户端达到上限后连接会被关闭，Web
 客户端重连并重新读取数据库权威快照；Server 不会静默丢弃某个事件后继续伪装为连续流。
 
+## Owner 密码与登录会话（C2）
+
+- `GET /api/v1/auth/sessions` 返回 `{ sessions: [{ id, userAgent, current, createdAt, expiresAt }] }`，
+  按创建时间倒序列出有效会话，最多 100 个。ID 不是登录凭据，不返回 token、摘要或 IP。
+  `userAgent` 是最多 256 个码点的不可信提示，旧会话为空；登录不会创建超过上限的有效会话。
+- `POST /api/v1/auth/sessions/revoke-others` 需要当前 cookie 与精确匹配的 Origin，无需正文。
+  返回 `{ revoked: number }`，保留发起会话，在同一事务记录 `OWNER_SESSIONS_REVOKED` 和撤销数量。
+- `POST /api/v1/auth/password` 需要 cookie、精确 Origin 和 `{ currentPassword, newPassword }`，
+  拒绝多余字段，不裁剪空格。旧密码为 1–1024 个码点，新密码为 15–1024 个码点，拒绝示例密码，
+  沿用 8192 字节请求上限。成功返回 `{ changed: true, reauthenticationRequired: true }`，
+  清除 cookie、撤销全部会话并原子记录 `OWNER_PASSWORD_CHANGED`。
+  旧密码错误或会话无效为 401，限流为 429（含 `Retry-After`），输入错误为 422；
+  存储或审计失败为 503，不修改密码、撤销会话或清除 cookie。
+
+修改后的密码以带随机盐的标准库 scrypt（N=32768、r=8、p=3）哈希保存在 PostgreSQL。
+已有保存的凭据后，环境密码只作为初始配置，重启不会覆盖修改结果。
+凭据版本和共享事务锁拒绝在密码修改前生成的登录校验证明。
+备份数据库时同时保留 `owner_credentials`。此功能不提供密码找回或可信设备身份；
+失去 Owner 登录凭据时仍需通过部署管理路径处理。
+
 ## 创建 Bot
 
 ```json
@@ -426,22 +446,13 @@ Artifact 与临时画面内容接口使用同一个 Owner Session，响应为 `p
 模型只能在有界原生循环中准备候选，不能调用 Owner 接口；成功任务与候选一起提交。
 参见[原生 Agent](NATIVE_AGENT.zh-CN.md)。
 
-## Owner 密码与登录会话（C2）
+## 频道最近动态（C1）
 
-- `GET /api/v1/auth/sessions` 返回 `{ sessions: [{ id, userAgent, current, createdAt, expiresAt }] }`，
-  按创建时间倒序列出有效会话，最多 100 个。ID 不是登录凭据，不返回 token、摘要或 IP。
-  `userAgent` 是最多 256 个码点的不可信提示，旧会话为空；登录不会创建超过上限的有效会话。
-- `POST /api/v1/auth/sessions/revoke-others` 需要当前 cookie 与精确匹配的 Origin，无需正文。
-  返回 `{ revoked: number }`，保留发起会话，在同一事务记录 `OWNER_SESSIONS_REVOKED` 和撤销数量。
-- `POST /api/v1/auth/password` 需要 cookie、精确 Origin 和 `{ currentPassword, newPassword }`，
-  拒绝多余字段，不裁剪空格。旧密码为 1–1024 个码点，新密码为 15–1024 个码点，拒绝示例密码，
-  沿用 8192 字节请求上限。成功返回 `{ changed: true, reauthenticationRequired: true }`，
-  清除 cookie、撤销全部会话并原子记录 `OWNER_PASSWORD_CHANGED`。
-  旧密码错误或会话无效为 401，限流为 429（含 `Retry-After`），输入错误为 422；
-  存储或审计失败为 503，不修改密码、撤销会话或清除 cookie。
-
-修改后的密码以带随机盐的标准库 scrypt（N=32768、r=8、p=3）哈希保存在 PostgreSQL。
-已有保存的凭据后，环境密码只作为初始配置，重启不会覆盖修改结果。
-凭据版本和共享事务锁拒绝在密码修改前生成的登录校验证明。
-备份数据库时同时保留 `owner_credentials`。此功能不提供密码找回或可信设备身份；
-失去 Owner 登录凭据时仍需通过部署管理路径处理。
+`GET /api/v1/channels` 与 `GET /api/v1/workspace` 的每个频道包含 `lastActivityAt`，
+以及可选的 `latestMessage: { id, authorType, preview, createdAt }`。
+仅已登录 Owner 能读取这些字段；频道修改响应不包含它们。`preview` 是纯文本，
+在 SQL 中截取最多 160 个 Unicode 码点（640 UTF-8 字节），不包含附件、凭据、
+元数据或其他消息字段。客户端必须按文本渲染，不能当作 HTML。
+空频道省略 `latestMessage`，以创建时间作为最近活动时间。
+列表按最近活动倒序，时间相同时按频道 ID 的 C 排序规则升序；最新消息时间相同则按消息 ID 的 C 排序规则倒序。
+删除的频道不返回。沿用会话复查、行数和响应字节上限。
