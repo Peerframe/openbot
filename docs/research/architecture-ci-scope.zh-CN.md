@@ -40,3 +40,15 @@ Git/事件输入、结果汇总和实际运行各有明确的类型化消费者�
 依赖、图权威或预构建。损坏的 PR 输入保持拒绝。旧断言保留在 `scripts/ci-scope.test.ts`；
 逐路径对照及托管结果按实际提交记录于 [PR104](https://github.com/Peerframe/openbot/pull/104)。
 没有复制上游源码或改版本；本地检查与托管验收分别绑定各自实际测试的提交。
+
+## 取消原因提示 — 2026-10-01
+
+复用既有依赖结果契约与 action 版本。汇总先读取 job 结果，再解析 scope 计划，避免选择任务
+被取消且未输出计划时误报 JSON 解析错误。取消会明确输出 `CI cancelled` 与对应 job 名称，
+仍返回非零退出码；如果其他 job 真正失败，会同时保留失败原因。输入缺失或损坏仍拒绝，并
+指出对应输入。必需成功、完整结果与显式不适用规则保持不变；未新增依赖、工作流策略或上游源码。
+
+[GitHub needs 文档](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#needs-context)
+定义了包含 `cancelled` 的依赖结果；不存在的上下文属性会返回空字符串。命令行回归复现空计划，
+覆盖取消、并存真实失败、scope 失败/跳过、损坏输入与正常成功。本地命令行证据不代表新增的
+托管取消流程已验证。
