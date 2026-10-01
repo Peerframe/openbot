@@ -26,7 +26,7 @@ equivalents. Bracketed values such as `[128]` and `[版本号]` are placeholders
 | [ContextMenu](ContextMenu.dc.html) | ⑧ Bot and channel context menus |
 | [Search](Search.dc.html) | ⑨ Groups and search |
 | [Slash](Slash.dc.html) | ⑩ `/` skills and actions |
-| [Avatars](Avatars.dc.html), [Avatar](Avatar.dc.html) | ⑪ Bot avatar system v3 (three heads × eight jaw colours × five marks, frameless) and its component |
+| [Avatars](Avatars.dc.html), [Avatar](Avatar.dc.html) | ⑪ Bot avatar system v3 (three heads × eight jaw colours, frameless, status dot and working motion) and its component |
 | [GroupAvatars](GroupAvatars.dc.html), [GroupAvatar](GroupAvatar.dc.html) | ⑪ Group avatars for 0, 1, 2, 3 and 4+ Bots with the silhouette cut-out, and the component |
 | [BotInfo](BotInfo.dc.html) | Bot 信息 rail with the 编辑头像 popover (component) |
 | [NewGroup](NewGroup.dc.html), [NewBotChat](NewBotChat.dc.html) | ③ 创建频道 from recipients; 创建新 Bot — a random Bot opens straight into its 单聊 |

@@ -4,6 +4,7 @@
 
 - [办公室概念图](m0-office-concept.png)：仅作 M0 历史探索留档，不是当前实施要求；办公室插件继续延后。
 - [组合头像参考图](openbot-avatar-system.png)：之前的组合式机器人参考图，已被 [Avatars 画板](desktop-ui-2026-10/Avatars.dc.html) 中无外框的头像取代；它引入的外观分层数据仍然兼容。
+- [头像源文件](avatars/README.zh-CN.md)：所有者的无框头像作品（v2 SVG），应用里的 v3 头像据此绘制。
 - [README 横幅](openbot-readme-banner.png)和[频道示意图](openbot-channel-demo.png)：当前 README 展示素材。
 - [Desktop 界面设计契约（2026-10）](desktop-ui-2026-10/README.zh-CN.md)：所有者确认的画板，所有界面都按它重建；
   另见[实施计划与分工](desktop-ui-2026-10/IMPLEMENTATION.zh-CN.md)。

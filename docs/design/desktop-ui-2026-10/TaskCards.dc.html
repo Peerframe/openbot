@@ -25,7 +25,7 @@ button{font:inherit;color:inherit}
 .actions{display:flex;gap:8px;align-items:center;padding-left:48px}
 .file{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 8px;border-radius:12px;background:#f0f0f2}
 .ext{width:32px;height:32px;border-radius:9px;background:#ffffff;border:1px solid #e3e3e6;box-sizing:border-box;display:inline-grid;place-items:center;font-size:10px;font-weight:700;color:#6e6e73}
-.spin{width:14px;height:14px;border:2px solid #d1d1d6;border-top-color:#1f6fd6;border-radius:50%;display:block}
+.spin{width:14px;height:14px;border:2px solid #cfe9d6;border-top-color:#34c759;border-radius:50%;display:block}
 </style>
 </helmet>
 <div style="width: 1440px; height: 1100px; box-sizing: border-box; padding: 48px 64px; background: #fcfcfc; display: flex; flex-direction: column; gap: 26px; overflow: hidden">
@@ -40,13 +40,13 @@ button{font:inherit;color:inherit}
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 48px">
 
 <div style="display: flex; flex-direction: column; gap: 8px">
-<span class="label">执行中</span>
+<span class="label">工作中</span>
 <div class="thread">
 <dc-import name="Avatar" character="round" accent="green" size="32" hint-size="32px,32px"></dc-import>
 <div class="task">
 <div class="top">
-<span class="glyph" style="background: #eaf2fd"><span class="spin"></span></span>
-<span class="t"><strong>正在执行 · 抓取竞品更新日志</strong><span>已完成 3 步 · 现在：打开网页 b-company.com/changelog</span></span>
+<span class="glyph" style="background: #e8f6ec"><span class="spin"></span></span>
+<span class="t"><strong>正在工作 · 抓取竞品更新日志</strong><span>已完成 3 步 · 现在：打开网页 b-company.com/changelog</span></span>
 <button type="button" class="link">任务详情 ›</button>
 </div>
 <div style="display: grid; grid-template-columns: 136px minmax(0, 1fr); gap: 12px; padding-left: 48px; align-items: center">
@@ -85,7 +85,7 @@ button{font:inherit;color:inherit}
 </div>
 <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; background: #f6f6f7">
 <span class="t"><strong style="font-weight: 500">统计本周工单里提到 A 公司的次数</strong><span>客服小橙 · 已完成 1 步</span></span>
-<span style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #1f6fd6"><span style="width: 6px; height: 6px; border-radius: 50%; background: #1f6fd6; display: block"></span>执行中</span>
+<span style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #1c7c3c"><span style="width: 6px; height: 6px; border-radius: 50%; background: #34c759; display: block"></span>工作中</span>
 </div>
 <span style="font-size: 12px; color: #8e8e93; padding-left: 2px">协作结果回到研究助理的任务里，再由它回复你。</span>
 </div>
@@ -98,7 +98,7 @@ button{font:inherit;color:inherit}
 <dc-import name="Avatar" character="round" accent="green" size="32" hint-size="32px,32px"></dc-import>
 <div class="task">
 <div class="top">
-<span class="glyph" style="background: #e8f6ec"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1c7c3c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 12 10 17 19 7"></polyline></svg></span>
+<span class="glyph" style="background: #f0f0f2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d1d1f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 12 10 17 19 7"></polyline></svg></span>
 <span class="t"><strong>已完成 · 整理本周周报</strong><span>用时 4 分 12 秒 · 2 个产出</span></span>
 <button type="button" class="link">任务详情 ›</button>
 </div>
@@ -140,7 +140,7 @@ button{font:inherit;color:inherit}
 
 <section style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: auto">
 <div style="display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee"><strong style="font-size: 14px">一张卡走完全程</strong><span style="font-size: 13px; color: #6e6e73; line-height: 1.5">排队 → 执行 → 确认 → 完成都在同一张卡上变化，结束后收成一行摘要。</span></div>
-<div style="display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee"><strong style="font-size: 14px">颜色只标状态</strong><span style="font-size: 13px; color: #6e6e73; line-height: 1.5">蓝 = 执行中，橙 = 等你，红 = 失败，绿 = 完成；其余都是中性灰。</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee"><strong style="font-size: 14px">颜色只标状态</strong><span style="font-size: 13px; color: #6e6e73; line-height: 1.5">绿 = 工作中，橙 = 等你，红 = 失败；完成用中性的黑色对勾，其余都是中性灰。</span></div>
 <div style="display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee"><strong style="font-size: 14px">错误说人话</strong><span style="font-size: 13px; color: #6e6e73; line-height: 1.5">只显示服务电脑给出的用户可读原因，原始报错留在任务详情里。</span></div>
 <div style="display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee"><strong style="font-size: 14px">审批在卡上</strong><span style="font-size: 13px; color: #6e6e73; line-height: 1.5">和右栏「需要处理」是同一条审批，任一处处理后两边同时更新。</span></div>
 </section>

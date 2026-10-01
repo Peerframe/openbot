@@ -23,7 +23,7 @@
 | [ContextMenu](ContextMenu.dc.html) | ⑧ Bot 与频道右键菜单 |
 | [Search](Search.dc.html) | ⑨ 分组与搜索 |
 | [Slash](Slash.dc.html) | ⑩ `/` 技能与操作 |
-| [Avatars](Avatars.dc.html)、[Avatar](Avatar.dc.html) | ⑪ Bot 头像系统 v3（三种头型 × 八种下颌色 × 五种额饰，无外框）及其组件 |
+| [Avatars](Avatars.dc.html)、[Avatar](Avatar.dc.html) | ⑪ Bot 头像系统 v3（三种头型 × 八种下颌色，无外框，状态圆点与工作动画）及其组件 |
 | [GroupAvatars](GroupAvatars.dc.html)、[GroupAvatar](GroupAvatar.dc.html) | ⑪ 0、1、2、3、4 个及以上 Bot 的群组头像（沿轮廓挖缝）及其组件 |
 | [BotInfo](BotInfo.dc.html) | 「Bot 信息」右栏与「编辑头像」弹窗（组件） |
 | [NewGroup](NewGroup.dc.html)、[NewBotChat](NewBotChat.dc.html) | ③ 从收件人创建频道；创建新 Bot——随机生成后直接进入单聊 |

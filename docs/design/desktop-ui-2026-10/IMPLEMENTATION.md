@@ -57,7 +57,7 @@ updated.
 | # | Step | Artboards | Needs | What changes |
 | --- | --- | --- | --- | --- |
 | 14 | Foundations for 1:1 work | Components | — | Move tokens and primitives out of `styles.css` into `tokens.css` and `primitives.css`; add `.ob-seg` and the dialog frame; a **design preview harness** built on the existing demo adapter (`apps/web/src/demo`) that renders every artboard state with synthetic data at 1440×900 for screenshots; a copy sweep to the glossary (服务电脑, 工作电脑, 任务, 频道) |
-| 15 | Avatars v3 and group avatars | Avatar, Avatars, GroupAvatar, GroupAvatars | C10 for the extra colours and marks | v3 geometry and micro drawing; silhouette cut-out; new `GroupAvatar` in the sidebar, title pill, rail, new chat and mentions; the avatar source SVGs committed under `docs/design/avatars/` |
+| 15 | Avatars v3, group avatars and the 工作中 status | Avatar, Avatars, GroupAvatar, GroupAvatars, Sidebar, Profile | C10 for the extra colours | v3 geometry and micro drawing; silhouette cut-out; new `GroupAvatar` in the sidebar, title pill, rail, new chat and mentions; status dot (工作中 / 需要你确认 / 离线) and the working motion with reduced-motion fallback; green replaces blue for 工作中 everywhere |
 | 16 | Creating Bots and 频道 | New, NewGroup, NewBotChat | C12; C11 optional | 「+」 recipients list with 创建新 Bot ⌘1 and 创建频道 ⌘2; one-click random Bot that opens its 单聊; the 「你最想让我先帮你做什么？」 card; delete `CreateBotDialog` and `CreateChannelDialog` |
 | 17 | Bot 信息 rail | BotInfo | C9 for 编辑头像 | New `BotInfoRail` for 单聊 and the Bot profile: in-place name, 添加标签, 详情 / 资料库 / 电脑, 编辑头像 popover; replaces `EmployeeProfileRail` |
 | 18 | Adding members to a 频道 | AddMember, ChannelInfo | — | 添加成员 popover with 搜索 Bot; light-red 移除 pill; group avatar in the rail |
@@ -90,10 +90,10 @@ Open — in the order the UI needs them:
 | --- | --- | --- | --- |
 | C12 | Step 16 | **Quick-create a Bot**: create with defaults in one call — the next free name (新建 Bot, 新建 Bot 2 …) allocated atomically (names are unique among active Bots), the C7 default model, no computer, a requested appearance; returns the Bot and its 单聊 | Client tries the next free name and retries once on conflict |
 | C13 | Step 19 | **Task progress projection**: per task the number of completed steps, the current step label, start and end time, and a bounded user-readable failure reason code, independent of the bounded progress list | Cards show only what the snapshot proves; no step count when unknown |
-| C10 | Step 15 | **Avatar v3 data**: four more accents (violet, teal, pink, slate) and a `mark` field (none, dot, bar, chevron, spark) in `BotAppearance`; migration defaults to none; unknown values rejected; Bot templates keep importing old appearances and carry the new fields | Only the four existing colours; no marks |
+| C10 | Step 15 | **Avatar v3 data**: four more accents (violet, teal, pink, slate) in `BotAppearance`; unknown values rejected; Bot templates keep importing old appearances and carry the new colours | Only the four existing colours |
 | C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked | Pencil button hidden |
 | C11 | Step 16 (optional) | **New-Bot greeting**: when a model is configured, the 服务电脑 writes a short greeting as the Bot's first message, using only other Bots' names and tags; no model or any failure means no greeting | The setup card shows without a greeting |
-| C14 | All PRs | **CI robustness**: the aggregate `check` job must not fail with a JSON parse error when its run is cancelled; retry or extend the browser-fixture download step that timed out after 5 minutes | Re-run by hand |
+| C14 | All PRs | **CI robustness**: retry or extend the browser-fixture download step in 「Python product browser recovery」 that times out after 5 minutes (seen on #133 and #136). The cancellation half is done in #131 | Re-run by hand |
 | C15 | Step 23 | **Retire unused routes** only if the 例行任务 and 技能库 page removal leaves a Server endpoint without a caller (to be confirmed; settings use the same APIs) | — |
 | C16 | Step 23 | **App icon and bundle assets** from the step-22 icon design: macOS, Windows and Linux icon sets, the Web favicon | Current icon |
 
@@ -101,8 +101,8 @@ Open — in the order the UI needs them:
 
 | ID | Proposal | Who | Needs owner decision |
 | --- | --- | --- | --- |
-| H1 | The main checkout `/Users/yxflc/Project/openbot` sits on the old branch `feat/desktop-ui-refresh` with uncommitted UI edits that this plan supersedes, plus untracked `AGENTS.zh-CN.md`, a Codex image, `output/` and `nft_like/`. Archive or drop the old edits, move `nft_like` into the repo (H2), delete the stray image and `output/` | Owner, with Claude | Yes |
-| H2 | Commit the avatar source (the 12 SVGs, manifest and README from `nft_like/03_avatar_svg`) to `docs/design/avatars/` so the design source is versioned with the code | Claude (step 15) | Yes — it is your artwork |
+| H1 | **Done 2026-10-02.** The main checkout `/Users/yxflc/Project/openbot` was on the old branch `feat/desktop-ui-refresh` with superseded edits and stray files. They are archived in a stash (recoverable with `git stash list`), and the checkout now tracks main | Claude | Approved |
+| H2 | **Done 2026-10-02.** The avatar source (12 SVGs, manifest, README) is in [`docs/design/avatars/`](../avatars/README.md) | Claude | Approved |
 | H3 | Codex's finished worktrees live inside the repo (`.worktrees/c1`–`c8`); their nested Biome configs break `biome lint .` locally. Remove the merged ones and keep future worktrees outside the repo | Codex | No |
 | H4 | Merge the open stack #132–#135 (and this plan) soon; every stacked branch has to be re-merged when main moves | Owner | Yes |
 | H5 | `styles.css` is 3,900 lines of mostly legacy rules; split tokens and primitives out first (step 14), delete the rest by step 23 | Claude | No |
@@ -111,11 +111,11 @@ Open — in the order the UI needs them:
 | H8 | Many UI tests find elements by Chinese copy, so every copy change breaks them; move to roles and accessible names as screens are rebuilt | Claude | No |
 | H9 | Delete the remaining dead UI after each step (`CreateBotDialog`, `CreateChannelDialog`, `AutomationsScreen`, `SkillLibraryScreen`, `OpenBotMark`, legacy dialog classes) instead of leaving them unreachable | Claude | No |
 
-## Open questions for the owner
+## Owner decisions (2026-10-02)
 
-1. **Avatar upload or generation** (as in your reference) is not designed; the editor offers our
-   three heads, eight colours and five marks. Add it later as a new backlog item, or never?
-2. **New-Bot greeting (C11)** costs one model call per new Bot. Keep it optional as planned?
-3. **Retire the standalone 例行任务 and 技能库 pages** in favour of the settings sections (planned in
-   step 21)?
-4. **H1 and H2**: may Claude commit `nft_like` into the repo and clean the main checkout?
+1. Avatar upload and AI generation: **not now**. Forehead marks are **dropped** (too subtle in the
+   avatar); identity is the head, the jaw colour and the name.
+2. New-Bot greeting (C11): **yes**, optional, one model call per new Bot.
+3. Retire the standalone 例行任务 and 技能库 pages: **yes** (step 21).
+4. Commit `nft_like` and clean the main checkout: **yes**, done (H1, H2).
+5. Added: a **工作中** status dot with working motion on avatars (step 15).

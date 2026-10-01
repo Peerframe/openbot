@@ -40,12 +40,13 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | 例行任务 | A scheduled, repeating task | 自动化, Automation |
 | 产出 | Files a task produced | Artifact, 产物 |
 | 需要你确认 | An action waiting for the Owner's approval | Approval |
+| 工作中 | A Bot or task that is working right now | 执行中, Running |
 
 ## Foundations
 
 | Area | Values |
 | --- | --- |
-| Colours | Text `#1d1d1f`, secondary `#6e6e73`, tertiary `#8e8e93`; page `#fcfcfc`; fill `#f0f0f2`; hover `#e6e6e8`; divider `#e3e3e6`; primary `#111111`; blue `#1f6fd6`; online `#34c759`; danger `#b3261e` on `#fbe9e7`; attention `#b5651d` on `#fdf0e1` (tokens `--ob-*`) |
+| Colours | Text `#1d1d1f`, secondary `#6e6e73`, tertiary `#8e8e93`; page `#fcfcfc`; fill `#f0f0f2`; hover `#e6e6e8`; divider `#e3e3e6`; primary `#111111`; blue `#1f6fd6` (unread only); green `#34c759` (工作中 and online), text `#1c7c3c`; danger `#b3261e` on `#fbe9e7`; attention `#b5651d` on `#fdf0e1` (tokens `--ob-*`) |
 | Type | System UI / PingFang SC; body 15px, caption 13px, meta 12px, section label 13px/500, page title 24–28px/700, dialog title 22px/700 |
 | Radii | Pills 17px (34px high) or 20px (40px high, dialogs), cards 16–18px, task cards 18px, bubbles 22px, dialogs 22px; Bot avatars have no radius because they have no frame |
 | Primitives | `.ob-pill` (`is-primary`, `is-outline`, `is-danger`, `is-small`), `.ob-round`, `.ob-switch` (44×26), `.ob-filter`, `.ob-tag`, `.ob-field`, `.ob-search`, `.ob-card`, `.ob-menu`, `.ob-menu-item`, `.ob-seg` (segmented control) |
@@ -72,14 +73,14 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
   With several chips a hint offers 命名频道, and the 频道 is created when the first message is sent
   (NewGroup).
 - **创建新 Bot creates immediately — no dialog** (NewBotChat). The new Bot gets the name 新建 Bot
-  (numbered when the name is taken), a random head, colour and mark that the team is not using yet,
+  (numbered when the name is taken), a random head and colour the team is not using yet,
   no computer, and the default model. The app opens its 单聊 with the rail open.
 - The conversation shows **「你最想让我先帮你做什么？」**: three role choices and a free answer.
   Choosing sets the Bot's tag and role and sends the choice as the Owner's first message. The
   Bot's own greeting above it appears only when the backend can generate it (C11).
 - **BotInfo rail**: the 88px avatar with a pencil button, the name edited in place, 添加标签, then
-  详情 / 资料库 / 电脑. The pencil opens **编辑头像**: 头型, 下颌色, 额饰, 随机 and 重置; changes apply at
-  once (needs C9).
+  详情 / 资料库 / 电脑. The pencil opens **编辑头像**: 头型, 下颌色, 随机 and 重置; changes apply at once
+  (needs C9). Upload and AI generation are not planned (owner decision, 2026-10-02).
 - **Adding to an existing 频道** (AddMember): 成员 → 添加成员 opens a popover with 搜索 Bot and the
   Bots not yet in it. Hovering a member shows a light-red 移除 pill.
 
@@ -91,14 +92,16 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 - **Jaw colour**, eight accents of matched lightness: green `#91CF4B`, blue `#5F7CDE`, amber
   `#DFAD4F`, coral `#E0785C`, violet `#9C7FE3`, teal `#3FB4A6`, pink `#E57BA8`, slate `#8C98A8`.
   The last four need C10; until then only the first four are offered.
-- **Forehead mark** in the jaw colour: none, dot, bar, chevron, spark. Shown at 24px and above.
-  Needs C10.
 - **No frame.** No tile, ring, border or background behind an avatar anywhere.
 - Sizes: 96 profile, 88 rail, 72 launch, 40 sidebar rows and members, 32 messages, 24 title pill,
   16–20 menus and mentions. Below 32px the micro drawing is used: larger eyes and antenna ball,
   rounder cat ears, no ear stripes.
-- Status is never drawn into the head; colour and mark carry no meaning (no role, permission or
-  progress).
+- **Status dot and motion.** A dot at the lower right with a ring of the surface colour: green
+  and pulsing = 工作中, orange = 需要你确认, grey ring = 离线; idle shows nothing. While working the
+  head also moves: a gentle bob, the eyes look left and right, Round's antenna wiggles, Relay's ear
+  lights blink, Scout's ears twitch. Reduced motion keeps only the static dot. The dot is shown in
+  the sidebar and the Bot profile; rail members show the motion next to their status label.
+  Shape and colour never change with status, and colour carries no meaning.
 - A dark-surface edition exists (ivory head) for a future dark mode.
 
 ## Group avatars
@@ -110,6 +113,8 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 - 0 Bots: a grey tile with #. 1 Bot: the head plus a small # badge, so a 频道 never looks like a
   单聊. 2: a diagonal pair at 66%. 3: two behind, one in front. 4 or more: the first two heads plus
   a black count badge (+N).
+- One status dot for the whole 频道 (any member working or waiting), lower right, or upper right
+  when the # or +N badge holds that corner.
 - Accessible name: 「市场周报，3 名 Bot：研究助理、客服小橙、发布助手」.
 
 ## Tasks in a conversation
@@ -117,7 +122,8 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 - **One task card per task, updated in place** (TaskCards): queued → running → needs you → done
   or failed, then it collapses to a one-line summary. White card, 1px `#ececee` border, radius 18,
   under the Bot's avatar column, at most 76% of the message column.
-- Colour marks state only: blue running, orange needs you, red failed, green done.
+- Colour marks state only: green 工作中, orange needs you, red failed; done uses a neutral black
+  check.
 - Running shows the reported step count (「已完成 3 步」) and the current step, never an invented
   total, plus the live computer frame when there is one, 补充指令 and 停止.
 - Approvals are decided on the card; the same approval in the rail updates with it.

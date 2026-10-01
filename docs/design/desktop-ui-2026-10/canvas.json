@@ -2,6 +2,14 @@
   "v": 3,
   "attachments": {},
   "boards": {
+    "AddMember.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "① 频道添加成员",
+      "w": 1440,
+      "x": 0,
+      "y": 3260
+    },
     "Avatar.dc.html": {
       "h": 96,
       "page": "app",
@@ -16,6 +24,14 @@
       "title": "⑪ 头像系统 v3",
       "w": 1440,
       "x": 1520,
+      "y": 6120
+    },
+    "BotInfo.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "共享 Bot 信息组件（编辑头像 / 详情 / 资料库 / 电脑）",
+      "w": 340,
+      "x": 3700,
       "y": 6120
     },
     "ChannelInfo.dc.html": {
@@ -50,6 +66,78 @@
       "w": 1440,
       "x": 4560,
       "y": 0
+    },
+    "DialogDelete.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "⑮ 删除确认",
+      "w": 1440,
+      "x": 1520,
+      "y": 2240
+    },
+    "DialogExport.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "⑮ 分享 Bot 模板",
+      "w": 1440,
+      "x": 4560,
+      "y": 1220
+    },
+    "DialogImport.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "⑮ 导入 Bot 模板",
+      "w": 1440,
+      "x": 0,
+      "y": 2240
+    },
+    "DialogModel.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "⑮ 连接模型服务",
+      "w": 1440,
+      "x": 4560,
+      "y": 2240
+    },
+    "DialogPairHost.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "⑮ 配对工作电脑",
+      "w": 1440,
+      "x": 3040,
+      "y": 2240
+    },
+    "DialogShare.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "⑮ 分享",
+      "w": 1440,
+      "x": 3040,
+      "y": 1220
+    },
+    "EmptyWorkspace.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "⑰ 第一次进入 · 空工作区",
+      "w": 1440,
+      "x": 4560,
+      "y": 0
+    },
+    "GroupAvatar.dc.html": {
+      "h": 40,
+      "page": "app",
+      "title": "共享群组头像组件",
+      "w": 40,
+      "x": 3460,
+      "y": 6260
+    },
+    "GroupAvatars.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "⑪ 群组头像",
+      "w": 1440,
+      "x": 1520,
+      "y": 7420
     },
     "Install.dc.html": {
       "h": 900,
@@ -114,6 +202,22 @@
       "w": 1440,
       "x": 0,
       "y": 1020
+    },
+    "NewBotChat.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "③ 创建新 Bot · 随机生成后直接对话",
+      "w": 1440,
+      "x": 1520,
+      "y": 1220
+    },
+    "NewGroup.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "③ 创建频道 · 选几个 Bot",
+      "w": 1440,
+      "x": 0,
+      "y": 1220
     },
     "Plugins.dc.html": {
       "h": 900,
@@ -275,38 +379,6 @@
       "x": 3040,
       "y": 2040
     },
-    "Welcome.dc.html": {
-      "h": 900,
-      "page": "launch",
-      "title": "⑬ 首次使用 · 这台电脑的用途",
-      "w": 1440,
-      "x": 0,
-      "y": 1020
-    },
-    "WorkerSetup.dc.html": {
-      "h": 900,
-      "page": "launch",
-      "title": "⑬ 这台电脑也能工作（可选）",
-      "w": 1440,
-      "x": 3040,
-      "y": 2040
-    },
-    "GroupAvatars.dc.html": {
-      "h": 900,
-      "page": "app",
-      "title": "⑪ 群组头像",
-      "w": 1440,
-      "x": 1520,
-      "y": 7420
-    },
-    "GroupAvatar.dc.html": {
-      "h": 40,
-      "page": "app",
-      "title": "共享群组头像组件",
-      "w": 40,
-      "x": 3460,
-      "y": 6260
-    },
     "TaskCards.dc.html": {
       "h": 1100,
       "page": "flows",
@@ -323,6 +395,14 @@
       "x": 1520,
       "y": 0
     },
+    "Welcome.dc.html": {
+      "h": 900,
+      "page": "launch",
+      "title": "⑬ 首次使用 · 这台电脑的用途",
+      "w": 1440,
+      "x": 0,
+      "y": 1020
+    },
     "WorkSupervision.dc.html": {
       "h": 900,
       "page": "flows",
@@ -331,94 +411,13 @@
       "x": 3040,
       "y": 0
     },
-    "EmptyWorkspace.dc.html": {
+    "WorkerSetup.dc.html": {
       "h": 900,
-      "page": "flows",
-      "title": "⑰ 第一次进入 · 空工作区",
-      "w": 1440,
-      "x": 4560,
-      "y": 0
-    },
-    "DialogShare.dc.html": {
-      "h": 900,
-      "page": "flows",
-      "title": "⑮ 分享",
+      "page": "launch",
+      "title": "⑬ 这台电脑也能工作（可选）",
       "w": 1440,
       "x": 3040,
-      "y": 1220
-    },
-    "DialogExport.dc.html": {
-      "h": 900,
-      "page": "flows",
-      "title": "⑮ 分享 Bot 模板",
-      "w": 1440,
-      "x": 4560,
-      "y": 1220
-    },
-    "DialogImport.dc.html": {
-      "h": 900,
-      "page": "flows",
-      "title": "⑮ 导入 Bot 模板",
-      "w": 1440,
-      "x": 0,
-      "y": 2240
-    },
-    "DialogDelete.dc.html": {
-      "h": 900,
-      "page": "flows",
-      "title": "⑮ 删除确认",
-      "w": 1440,
-      "x": 1520,
-      "y": 2240
-    },
-    "DialogPairHost.dc.html": {
-      "h": 900,
-      "page": "flows",
-      "title": "⑮ 配对工作电脑",
-      "w": 1440,
-      "x": 3040,
-      "y": 2240
-    },
-    "DialogModel.dc.html": {
-      "h": 900,
-      "page": "flows",
-      "title": "⑮ 连接模型服务",
-      "w": 1440,
-      "x": 4560,
-      "y": 2240
-    },
-    "NewGroup.dc.html": {
-      "h": 900,
-      "page": "flows",
-      "title": "③ 创建频道 · 选几个 Bot",
-      "w": 1440,
-      "x": 0,
-      "y": 1220
-    },
-    "NewBotChat.dc.html": {
-      "h": 900,
-      "page": "flows",
-      "title": "③ 创建新 Bot · 随机生成后直接对话",
-      "w": 1440,
-      "x": 1520,
-      "y": 1220
-    },
-    "AddMember.dc.html": {
-      "h": 900,
-      "page": "flows",
-      "title": "① 频道添加成员",
-      "w": 1440,
-      "x": 0,
-      "y": 3260
-    },
-    "BotInfo.dc.html": {
-      "h": 900,
-      "is_interactive": false,
-      "page": "app",
-      "title": "共享 Bot 信息组件（编辑头像 / 详情 / 资料库 / 电脑）",
-      "w": 340,
-      "x": 3700,
-      "y": 6120
+      "y": 2040
     }
   },
   "createdOnFiles": {
@@ -430,6 +429,15 @@
     "view": "canvas"
   },
   "notes": {
+    "flowsTitle": {
+      "kind": "title1",
+      "maxW": 6000,
+      "page": "flows",
+      "text": "OpenBot Desktop · 任务与对话框",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
     "launchTitle": {
       "kind": "title1",
       "maxW": 4480,
@@ -444,15 +452,6 @@
       "maxW": 6000,
       "page": "app",
       "text": "OpenBot Desktop · 界面优化",
-      "w": 240,
-      "x": 0,
-      "y": -320
-    },
-    "flowsTitle": {
-      "kind": "title1",
-      "maxW": 6000,
-      "page": "flows",
-      "text": "OpenBot Desktop · 任务与对话框",
       "w": 240,
       "x": 0,
       "y": -320
