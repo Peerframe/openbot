@@ -305,6 +305,71 @@ test("actual aggregate command fails closed with missing input and accepts a val
   assert.notEqual(run({}).status, 0);
 });
 
+const aggregate = (env: NodeJS.ProcessEnv) =>
+  spawnSync(process.execPath, [new URL("./ci-results.ts", import.meta.url).pathname], {
+    env,
+    encoding: "utf8",
+  });
+
+test("aggregate CLI explains cancellation before parsing an unavailable scope plan", () => {
+  const plan = select("scripts/ci-results.ts");
+  for (const job of ["scope", ...JOBS]) {
+    const needs = results(plan);
+    needs[job] = { result: "cancelled" };
+    for (const source of [undefined, "", " \n", "{", JSON.stringify(plan)]) {
+      const result = aggregate({
+        OPENBOT_CI_PLAN: source,
+        OPENBOT_CI_NEEDS: JSON.stringify(needs),
+      });
+      assert.equal(result.status, 1, `${job}: ${source}`);
+      assert.match(result.stderr, /CI cancelled:/);
+      assert(result.stderr.includes(job), result.stderr);
+      assert.doesNotMatch(result.stderr, /SyntaxError|AssertionError|JSON|satisfied/);
+      assert.equal(result.stdout, "");
+    }
+    assert.throws(() => checkResults(null, needs), /CI cancelled:/);
+  }
+});
+
+test("aggregate CLI keeps real failures visible when another job was cancelled", () => {
+  const plan = select("scripts/ci-results.ts");
+  const needs = results(plan);
+  needs.scope = { result: "cancelled" };
+  needs.security = { result: "failure" };
+  const result = aggregate({ OPENBOT_CI_PLAN: "", OPENBOT_CI_NEEDS: JSON.stringify(needs) });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /CI failed:.*security.*cancelled.*scope/);
+  assert.doesNotMatch(result.stderr, /SyntaxError|AssertionError/);
+});
+
+test("aggregate CLI explains scope failure, missing plans and malformed inputs", () => {
+  const plan = select("README.md");
+  const needs = results(plan);
+  needs.scope = { result: "failure" };
+  const failed = aggregate({ OPENBOT_CI_PLAN: "", OPENBOT_CI_NEEDS: JSON.stringify(needs) });
+  assert.equal(failed.status, 1);
+  assert.match(failed.stderr, /CI failed:.*scope/);
+
+  needs.scope = { result: "skipped" };
+  const skipped = aggregate({ OPENBOT_CI_PLAN: "", OPENBOT_CI_NEEDS: JSON.stringify(needs) });
+  assert.equal(skipped.status, 1);
+  assert.match(skipped.stderr, /scope.*skipped/);
+
+  needs.scope = { result: "success" };
+  for (const source of [undefined, "", " \n", "{", "null", "[]", "{}"]) {
+    const result = aggregate({ OPENBOT_CI_PLAN: source, OPENBOT_CI_NEEDS: JSON.stringify(needs) });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /CI scope|OPENBOT_CI_PLAN/);
+    assert.doesNotMatch(result.stderr, /SyntaxError|AssertionError|cancelled|satisfied/);
+  }
+  for (const source of [undefined, "", "{", "null", "[]", "{}"]) {
+    const result = aggregate({ OPENBOT_CI_PLAN: JSON.stringify(plan), OPENBOT_CI_NEEDS: source });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /job must report|OPENBOT_CI_NEEDS/);
+    assert.doesNotMatch(result.stderr, /SyntaxError|AssertionError|cancelled|satisfied/);
+  }
+});
+
 test("transitive runtime consumers keep platform, browser and Python qualifications", () => {
   for (const path of ["packages/config/src/index.ts", "packages/logging/src/index.ts"]) {
     const plan = select(path);
