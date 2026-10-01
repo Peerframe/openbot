@@ -1,6 +1,6 @@
 {
-  "commit": "e57967fcbc11daaf94563c1d8f018e1790da2b71",
-  "commitRole": "working-tree-parent",
+  "commit": "47f5b7b714d5595dcaaf0283dcc4f7a5cb2f576f",
+  "commitRole": "committed-migration-source",
   "migrations": [
     {
       "index": 0,
@@ -277,19 +277,45 @@
       "tag": "0045_identity_lifecycle",
       "timestamp": 1790770270643,
       "sha256": "893c5edd184b6767e6d2b9a1ca0d36a743f802db8d171e9f177d13ffa1c77652"
+    },
+    {
+      "index": 46,
+      "tag": "0046_owner_security",
+      "timestamp": 1790793114690,
+      "sha256": "197557b80e588769e2d6caee93fd6e44f5ef6fe07e14d09b7684fd9d1fffcd5b"
+    },
+    {
+      "index": 47,
+      "tag": "0047_owner_approval_settings",
+      "timestamp": 1790820667047,
+      "sha256": "cd9079606c16af9319055a5ff12fcc7fa0942978c23b44d1857130f58fb8c6bd"
+    },
+    {
+      "index": 48,
+      "tag": "0048_owner_preferences",
+      "timestamp": 1790821392428,
+      "sha256": "c7a6ed0f4631c9e8a2f6507a3b0697b16fb963ff67a2d00e79ea1275b34d9644"
     }
   ],
   "qualificationInput": {
     "state": "working-tree-requalification",
-    "previousQualifiedTarget": "63242fc06d9ba3efe018509f7e0868ac293ea7f7",
+    "previousQualifiedTarget": "e57967fcbc11daaf94563c1d8f018e1790da2b71",
     "journal": {
       "path": "packages/db/migrations/meta/_journal.json",
-      "sha256": "1a6b4bb17595c00fb5daa7b7ea73fda7c028c31d01463370beed79c76035efa0"
+      "sha256": "a508215ac392aa0474e2cfd3e5d7189527c7c295ba136b701ad5c5e2740d6269"
     },
     "changedSql": [
       {
-        "path": "packages/db/migrations/0045_identity_lifecycle.sql",
-        "sha256": "893c5edd184b6767e6d2b9a1ca0d36a743f802db8d171e9f177d13ffa1c77652"
+        "path": "packages/db/migrations/0046_owner_security.sql",
+        "sha256": "197557b80e588769e2d6caee93fd6e44f5ef6fe07e14d09b7684fd9d1fffcd5b"
+      },
+      {
+        "path": "packages/db/migrations/0047_owner_approval_settings.sql",
+        "sha256": "cd9079606c16af9319055a5ff12fcc7fa0942978c23b44d1857130f58fb8c6bd"
+      },
+      {
+        "path": "packages/db/migrations/0048_owner_preferences.sql",
+        "sha256": "c7a6ed0f4631c9e8a2f6507a3b0697b16fb963ff67a2d00e79ea1275b34d9644"
       }
     ]
   }

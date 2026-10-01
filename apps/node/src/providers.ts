@@ -1,7 +1,7 @@
 import type { NodeEnv } from "@openbot/config";
+import type { NodeCapability, NodeCapabilityDescriptor } from "@openbot/protocol";
 import { createDockerProvider } from "@openbot/provider-docker";
 import type { ComputerProvider } from "@openbot/provider-sdk";
-import type { NodeCapability, NodeCapabilityDescriptor } from "@openbot/protocol";
 import { detectWorkerHost } from "./host.js";
 
 export function configuredProviders(env: NodeEnv): ComputerProvider[] {
@@ -18,6 +18,7 @@ export function configuredProviders(env: NodeEnv): ComputerProvider[] {
         inputOrigins: env.OPENBOT_DOCKER_INPUT_ORIGINS,
         enableBrowserSessions: env.OPENBOT_DOCKER_BROWSER_SESSIONS,
         enableBrowserTasks: env.OPENBOT_DOCKER_BROWSER_TASKS,
+        enableBrowserMaintenance: env.OPENBOT_DOCKER_BROWSER_MAINTENANCE,
       }),
     );
   }

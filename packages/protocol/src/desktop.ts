@@ -105,7 +105,58 @@ export type EmployeeTemplateSaveResult = Readonly<{
   status: "saved" | "cancelled" | "busy" | "unavailable" | "exists" | "changed";
 }>;
 
+export interface DesktopPlatformPreferences {
+  launchAtLogin: boolean;
+  runInBackground: boolean;
+  globalShortcut: string;
+  showDockBadge: boolean;
+  automaticUpdates: boolean;
+}
+export interface DesktopPlatformState {
+  status: "ready" | "invalid" | "failed";
+  preferences: Readonly<DesktopPlatformPreferences>;
+  capabilities: Readonly<{
+    launchAtLogin: boolean;
+    tray: boolean;
+    badge: boolean;
+    updates: boolean;
+  }>;
+  code?:
+    | "unsupported"
+    | "shortcut_unavailable"
+    | "native_unavailable"
+    | "storage_unavailable"
+    | "rollback_unavailable";
+}
+export interface DesktopUpdateState {
+  status:
+    | "unavailable"
+    | "idle"
+    | "checking"
+    | "available"
+    | "downloading"
+    | "downloaded"
+    | "installing"
+    | "failed";
+  version?: string;
+  percent?: number;
+  code?:
+    | "not_packaged"
+    | "unsupported_platform"
+    | "signing_unavailable"
+    | "configuration_unavailable"
+    | "update_failed"
+    | "shutdown_failed";
+}
+
 export interface OpenBotDesktopBridge {
+  getPlatformState?(): Promise<DesktopPlatformState>;
+  setPlatformPreferences?(value: DesktopPlatformPreferences): Promise<DesktopPlatformState>;
+  setUnreadBadge?(count: number): Promise<boolean>;
+  getUpdateState?(): Promise<DesktopUpdateState>;
+  checkForUpdates?(): Promise<DesktopUpdateState>;
+  downloadUpdate?(): Promise<DesktopUpdateState>;
+  installUpdate?(): Promise<DesktopUpdateState>;
   beginVoiceCapture?(): Promise<boolean>;
   endVoiceCapture?(): Promise<void>;
   saveAttachment?(input: {

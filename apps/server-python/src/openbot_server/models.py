@@ -57,11 +57,20 @@ class Bot(PublicModel):
     createdAt: str
 
 
+class ChannelMessagePreview(PublicModel):
+    id: str
+    authorType: Literal["human", "bot", "system"]
+    preview: str = Field(max_length=160)
+    createdAt: str
+
+
 class Channel(PublicModel):
     id: str
     name: str
     description: str
     botIds: list[str]
+    lastActivityAt: str | None = None
+    latestMessage: ChannelMessagePreview | None = None
     directBotId: str | None = None
     createdAt: str
 
@@ -106,6 +115,12 @@ def project_channels(rows: Sequence[Mapping[str, object]]) -> list[Channel]:
             result[identity] = Channel(id=identity, name=row["name"], description=row["description"],
                                        botIds=[], directBotId=row["direct_bot_id"],
                                        createdAt=iso_timestamp(row["created_at"]))
+        if row.get("last_activity_at") is not None:
+            result[identity].lastActivityAt = iso_timestamp(row["last_activity_at"])
+        if row.get("latest_message_id") is not None:
+            result[identity].latestMessage = ChannelMessagePreview(
+                id=row["latest_message_id"], authorType=row["latest_author_type"],
+                preview=row["latest_preview"], createdAt=iso_timestamp(row["latest_message_at"]))
         if row["bot_id"] is not None:
             if not isinstance(row["bot_id"], str):
                 raise ValueError("Invalid channel membership.")

@@ -209,7 +209,7 @@ class DeferredActivities:
             else:
                 outcome = await execute_action(self.store, task_id=context.task_id, run_id=context.run_id,
                     fence=fence, action_key=row['action_key'], intent=row['intent'],
-                    reserved_tokens=row['reserved_tokens'], requires_approval=row['requires_approval'],
+                    reserved_tokens=row['reserved_tokens'], requires_approval=row['baseline_requires_approval'],
                     adapter=services.adapter, verifier=services.verifier,
                     correction_context=row.get("correction_context_id"))
         return dict(actionId=action_id, status=outcome.status)

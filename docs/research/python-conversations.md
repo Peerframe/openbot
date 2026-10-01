@@ -39,3 +39,17 @@ PostgreSQL/HTTP checks pass. The five new database cases exercise concurrent cre
 revocation/rejection, audit rollback and refusal to repair malformed direct membership; the existing
 explicit-process test now includes both conversation routes over loopback HTTP. TypeScript reads
 the Python-created private channel identically. Hosted CI and production selection remain separate.
+
+## Owner sidebar activity extension (2026-10-01, C1)
+
+Keep the pinned PostgreSQL 17.11 / Psycopg 3.3.6 stack and existing session authority.
+Reviewed [PostgreSQL 17 LATERAL](https://www.postgresql.org/docs/17/queries-table-expressions.html#QUERIES-LATERAL),
+[ordering](https://www.postgresql.org/docs/17/queries-order.html), and
+[REL_17_11 source](https://github.com/postgres/postgres/tree/REL_17_11).
+Compared a separate per-channel message HTTP fetch, maintained preview columns, and a lateral
+latest-one query using the existing channel/time index. The lateral query gives one authorized
+snapshot without a new migration, write cache or request fan-out; retain SQL timeouts and row limits.
+This additive read contract exposes only 160 code points of Owner-visible content, message identity,
+author type and timestamp. Empty channels use creation time; rename/member changes do not create
+message activity. Deterministic C-collation IDs break ties. SQL bounds precede driver transfer.
+No dependency changes or upstream source copied; no additional authorization or persistence boundary.
