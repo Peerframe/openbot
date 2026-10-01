@@ -441,24 +441,6 @@ exception message. Server and Node operational logs are structured JSON, honor
 without its query and never record headers, cookies, bodies, credentials, arbitrary error objects,
 or stacks.
 
-## Reviewed task knowledge
-
-`modelUseEnabled` is an optional boolean on memory create/update and is returned on stored memory.
-It defaults to false for new and migrated entries. It is independent of portability; only public or
-internal non-secret-reference entries may be enabled. Updates require the usual expected revision.
-
-- `GET /api/v1/bots/:botId/knowledge-proposals`: Owner-only pending list, at most 50, including
-  Server-generated proposal ID, source Run ID, kind, title, content and timestamp.
-- `POST /api/v1/bots/:botId/knowledge-proposals/:proposalId/review`: strict 16 KiB maximum body.
-  Accept: `{decision:"accept", ownerReviewed:true, title, content, modelUseEnabled:boolean}`.
-  Reject: `{decision:"reject", ownerReviewed:true}`. Titles 160 characters; content 2,000 characters
-  and 8,000 UTF-8 bytes; credential values/private keys rejected. Cross-Bot or missing IDs return
-  404; previously reviewed proposals return 409. Acceptance, new memory, provenance and audit commit
-  together; review removes candidate text. The result has proposalId, decision and memoryId/null.
-
-Models only prepare a proposal in the bounded native loop; they do not call these Owner endpoints.
-Successful Run completion publishes the candidate atomically. See [Native Agent](NATIVE_AGENT.md).
-
 ## Desktop platform settings and updates (C5)
 
 The sandboxed `openbotDesktop` bridge adds `getPlatformState()`,
@@ -497,3 +479,33 @@ Development, unsigned packages and missing configuration expose `unavailable`; L
 unsupported. Existing unsigned releases lack update metadata, so production download/install
 qualification remains blocked on signed releases and metadata. This contract does not declare that
 those releases have been produced or installed.
+
+## Reviewed task knowledge
+
+`modelUseEnabled` is an optional boolean on memory create/update and is returned on stored memory.
+It defaults to false for new and migrated entries. It is independent of portability; only public or
+internal non-secret-reference entries may be enabled. Updates require the usual expected revision.
+
+- `GET /api/v1/bots/:botId/knowledge-proposals`: Owner-only pending list, at most 50, including
+  Server-generated proposal ID, source Run ID, kind, title, content and timestamp.
+- `POST /api/v1/bots/:botId/knowledge-proposals/:proposalId/review`: strict 16 KiB maximum body.
+  Accept: `{decision:"accept", ownerReviewed:true, title, content, modelUseEnabled:boolean}`.
+  Reject: `{decision:"reject", ownerReviewed:true}`. Titles 160 characters; content 2,000 characters
+  and 8,000 UTF-8 bytes; credential values/private keys rejected. Cross-Bot or missing IDs return
+  404; previously reviewed proposals return 409. Acceptance, new memory, provenance and audit commit
+  together; review removes candidate text. The result has proposalId, decision and memoryId/null.
+
+Models only prepare a proposal in the bounded native loop; they do not call these Owner endpoints.
+Successful Run completion publishes the candidate atomically. See [Native Agent](NATIVE_AGENT.md).
+
+## Channel activity (C1)
+
+`GET /api/v1/channels` and `GET /api/v1/workspace` return `lastActivityAt` on each
+Channel and optional `latestMessage: { id, authorType, preview, createdAt }`.
+These fields are Owner-only and absent on channel mutation responses. `preview` is plain text,
+at most 160 Unicode code points (640 UTF-8 bytes), truncated in SQL; no attachments, credentials,
+metadata or extra message fields are projected. Clients must render it as text, never HTML.
+An empty channel omits `latestMessage` and uses `createdAt` for `lastActivityAt`.
+The list is ordered by activity descending, then channel ID in C collation ascending;
+latest messages break equal timestamps by message ID in C collation descending.
+Deleted channels are excluded. Existing session revalidation, row and response-byte limits apply.
