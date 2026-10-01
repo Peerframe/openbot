@@ -1,5 +1,6 @@
 export * from "./approval-settings.js";
 export * from "./attachments.js";
+export * from "./audit.js";
 export * from "./automations.js";
 export * from "./browser.js";
 export {

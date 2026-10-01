@@ -68,6 +68,7 @@ const controlTests = [
   "tests/test_automation_store.py",
   "tests/test_conversation_interactions.py",
   "tests/test_identity_lifecycle.py",
+  "tests/test_audit_records.py",
   "tests/test_attachment_processing.py",
   "tests/test_plugin_service.py",
   "tests/test_plugin_transport.py",

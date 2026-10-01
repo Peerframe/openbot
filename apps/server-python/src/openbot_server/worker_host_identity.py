@@ -75,6 +75,9 @@ class PostgresWorkerHostIdentity:
         await connection.execute(
             "INSERT INTO node_identity_events(id,node_id,type,details,created_at) VALUES(%s,%s,%s,%s,%s)",
             (str(uuid4()), node_id, kind, Jsonb(details), now))
+        # Only fixed identity/event fields enter the general Owner audit; network digests stay private.
+        await connection.execute("INSERT INTO run_events(id,type,payload,created_at) VALUES (%s,%s,%s,%s)",
+            (str(uuid4()),"WORKER_HOST_"+kind.upper(),Jsonb({"nodeId":node_id}),now))
 
     async def issue(self, token, value):
         value = EnrollmentInput.model_validate(value)
@@ -163,3 +166,10 @@ class PostgresWorkerHostIdentity:
             if await cursor.fetchone() is None:
                 raise ControlError(404, "Active Node identity not found.")
             await self._event(connection, node_id, "revoked", {}, now)
+
+    async def connection_event(self,node_id,kind):
+        if kind not in ("connected","disconnected"):raise ValueError("Invalid Host event.")
+        node_id=TypeAdapter(NodeId).validate_python(node_id,strict=True)
+        async with self._transaction() as db:
+            await db.execute("INSERT INTO run_events(id,type,payload,created_at) VALUES (%s,%s,%s,%s)",
+                (str(uuid4()),"WORKER_HOST_"+kind.upper(),Jsonb({"nodeId":node_id}),await self._now(db)))

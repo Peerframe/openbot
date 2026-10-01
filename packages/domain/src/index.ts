@@ -764,11 +764,15 @@ export type ReviewKnowledgeProposalInput =
       modelUseEnabled: boolean;
     };
 
-export type { ApprovalException, ApprovalSettings, ApprovalSettingsInput } from "@openbot/protocol";
-export * from "./channel-interactions.js";
-
 export type {
+  ApprovalException,
+  ApprovalSettings,
+  ApprovalSettingsInput,
+  AuditCategory,
+  AuditEvent,
+  AuditPage,
   OwnerPasswordChangeInput,
-  OwnerSessionDevice,
   OwnerPasswordChangeResponse,
+  OwnerSessionDevice,
 } from "@openbot/protocol";
+export * from "./channel-interactions.js";

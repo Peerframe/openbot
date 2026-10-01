@@ -91,7 +91,7 @@ def main():
         from openbot_server.worker_host_identity import PostgresWorkerHostIdentity
         from openbot_server.worker_host_registry import WorkerHostRegistry
         worker_identity = PostgresWorkerHostIdentity(dsn)
-        worker_registry = WorkerHostRegistry(worker_identity,
+        worker_registry = WorkerHostRegistry(worker_identity,audit=worker_identity.connection_event,
             command_channel=command_installation.channel_configuration if command_installation else None)
         if command_installation:
             command_installation.attach(worker_registry.commands)

@@ -352,6 +352,29 @@ Server 会对 `package` 重复执行同一套严格解析、签名验证、校�
 `{ events, nextBefore? }`；`nextBefore` 是不透明的键集游标（精确时间加事件 id，同一事务写入的事件不会被跳过）；每条事件包含类型、时间、各 id、当前或已删除的名称，以及白名单内的标量字段，
 从不包含消息正文。
 
+## 审计分类与 CSV（C3）
+
+`GET /api/v1/audit` 新增可选 `category`：`authentication`、`settings`、`hosts`、`approvals`、
+`channels`、`bots`、`runs`、`plugins`、`other`。省略时返回全部类别，每条事件包含服务端分类。
+分类在 SQL 中先于精确时间/ID 游标分页执行。未知或重复查询参数、未知类别和错误上限为 422；
+JSON 每页仍为 1–100 条。
+
+`GET /api/v1/audit/export` 接受同样的类别和游标，`limit=1..1000`，默认 1000。
+下载带 BOM 的 UTF-8 CSV（`openbot-audit.csv`），完整引用单元格并使用 CRLF。
+列为事件 ID、时间、类别、类型、频道/Bot ID 与名称、Run ID 和白名单详情。
+可能触发公式的单元格以单引号转义。沿用 Owner 鉴权和 no-store，不导出提示词、密钥、
+工具参数或网络摘要，每页最多 4 MiB。未结束时返回可跨域读取的 `X-OpenBot-Next-Before`；
+将其作为下页 `before`，解析并拼接数据行即可导出更长历史，拼接时不重复标题和 BOM。
+这是分页历史导出，不是单一事务的全库归档。
+
+登录成功、密码错误和退出登录分别写入 `AUTH_LOGIN_SUCCEEDED`、`AUTH_LOGIN_FAILED`、`AUTH_LOGOUT`，
+不记录秘密；已限流请求不重复生成无界事件。登录审计与 C2 的凭据 revision 校验和会话写入
+属于同一事务，并保留有长度上限的 user-agent 提示。审计存储失败返回 503，不发出 cookie，
+也不提交会话或限流变更。旧模型设置最终发布在授权事务内记录
+`SETTINGS_MODEL_UPDATED`，审计失败恢复旧文件；保留已有模型连接事件。
+主机注册、撤销、实际连接与断开记录 `WORKER_HOST_*`；私有网络摘要留在身份账本。
+连接事件持久化失败不提供主机可用性；物理断开时仍完成清理，审计失败记录固定错误。
+
 ## 创建频道
 
 ```json
