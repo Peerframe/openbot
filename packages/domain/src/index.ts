@@ -766,3 +766,9 @@ export type ReviewKnowledgeProposalInput =
 
 export type { ApprovalException, ApprovalSettings, ApprovalSettingsInput } from "@openbot/protocol";
 export * from "./channel-interactions.js";
+
+export type {
+  OwnerPasswordChangeInput,
+  OwnerSessionDevice,
+  OwnerPasswordChangeResponse,
+} from "@openbot/protocol";

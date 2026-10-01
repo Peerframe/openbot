@@ -981,6 +981,13 @@ C3 复用现有 npm/Turbo 图和已固定的 Actions。YAML 2.9.0 从已有依�
 pip-audit 2.10.1 在隔离工具环境审计实际 Python 生产锁；不复制上游源码。Soup Sieve 2.9.2
 修复该门发现的安全公告，保留原 HTML 提取契约和有界子进程；固定版本与针对性证据见上方链接。
 
+## Desktop Owner security (2026-10-01, C2)
+
+Reuse CPython 3.12.13 scrypt (PSF), PostgreSQL 17.11 transactions/locks and Psycopg 3.3.6.
+OWASP-aligned fixed KDF parameters, singleton persisted credential revisions and atomic session
+revocation retain Server authority. No dependency or upstream source copied. See the
+[security decision](research/desktop-owner-security.md); current-platform acceptance remains in its PR.
+
 ## Owner additional approval settings (2026-10-01)
 
 Reuse the existing Work exact-intent approval, product reads/web guards and retained Server policy
