@@ -67,7 +67,8 @@
 | Components | `styles.css` 中的令牌与基础组件 |
 | Avatar、Avatars | `RobotAvatar.tsx`、`RobotAvatar.css` |
 | ChannelInfo | `ContextRail.tsx`、`ContextRail.css`（详情 / 资料库 / 成员；单聊只有详情和资料库） |
-| Launch、LaunchMotion、Welcome、Install、Connect、Login、ModelSetup、WorkerSetup | 已设计，尚未实现（见下文） |
+| Launch、LaunchMotion | `Onboarding.tsx`（`LaunchScreen`、`LaunchMark`、`LaunchExit`）、`Onboarding.css`；`App.tsx` 与 `DesktopInstallScreen.tsx` 中所有加载与启动出错状态 |
+| Welcome、Install、Connect、Login、ModelSetup、WorkerSetup | `DesktopSetupScreen`、`DesktopInstallScreen`、`DesktopConnectionScreen`、`LoginScreen`、`ModelSettingsScreen`（也嵌在 设置 › 模型服务 中）、`DesktopLocalWorkerScreen`，共用 `OnboardingFrame` |
 
 ## 尚未设计
 
@@ -75,7 +76,7 @@
 
 | 方面 | 现在的代码 | 备注 |
 | --- | --- | --- |
-| 启动、登录与首次设置，以及开场动画 | `DesktopInstallScreen`、`LoginScreen`、`DesktopSetupScreen`、`DesktopConnectionScreen`、`DesktopLocalWorkerScreen`、`ModelSettingsScreen`（引导） | 画板已完成（Launch … WorkerSetup），待重做 |
+| 空工作区（还没有频道） | `App.tsx` 中的 `ChannelEmptyState` | 仍使用旧标志与旧按钮 |
 | 对话中的任务卡、协作与失败状态；任务详情 | `NativeRunControls`、`RunCollaboration`、`RunInspector` | |
 | 对话框：新建 Bot、新建频道、分享、删除、导入导出、主机配对、模型连接 | `CreateBotDialog`、`CreateChannelDialog`、`ShareConversationDialog`、`DeleteIdentityDialog`、`Import/ExportEmployeeDialog`、`NodeManagerDialog`、`ModelConnectionsDialog` | |
 | 任务监督 | `WorkTasksScreen` | |
@@ -85,10 +86,10 @@
 ## 旧设计清单
 
 必须消失的旧样式类：`primary-button`、`secondary-button`、`icon-button`、`create-dialog`、
-`dialog-header`、`dialog-backdrop`、`login-card`、`onboarding-mark`、`loading-screen`、
-`destination-*`、`workspace-toolbar`/`toolbar-*`、`channel-members-*`。旧样式表：
-`styles.css` 的大部分、`workspace-shell.css`、`desktop-workspace.css`、`workspace-preferences.css`、
+`dialog-header`、`dialog-backdrop`、`onboarding-mark`、`destination-*`、
+`workspace-toolbar`/`toolbar-*`、`channel-members-*`。旧样式表：`styles.css` 的大部分、
+`workspace-shell.css`、`desktop-workspace.css`、`workspace-preferences.css`、
 `components/destinations.css`。
 
-退役顺序：(1) 窗口外壳与频道右栏；(2) 对话中的任务卡；(3) 对话框；(4) 启动、登录与设置；
-(5) 任务监督与手机布局；(6) 删除旧样式表与旧样式类。每一步在同一个 PR 中删除它所替换的旧规则。
+退役顺序：(1) 窗口外壳与频道右栏——已完成；(2) 对话中的任务卡；(3) 对话框；(4) 启动、登录与设置——
+已完成；(5) 任务监督与手机布局；(6) 删除旧样式表与旧样式类。每一步在同一个 PR 中删除它所替换的旧规则。

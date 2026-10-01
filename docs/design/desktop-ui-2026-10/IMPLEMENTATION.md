@@ -36,7 +36,7 @@ data (hidden, disabled or read-only) and never fakes it.
 | 10 | Window shell: no global toolbar; sidebar row shares the traffic-light line; title pill opens the 频道信息 rail with member management | Main, Sidebar, Profile | In review (stacked) |
 | 11 | Bot avatars: the owner's Round / Relay / Scout heads, frameless everywhere, micro drawing below 32px | Avatars, Avatar | In review (stacked) |
 | 12 | 频道信息 rail tabs: 详情, 资料库 (task outputs and channel files), 成员; centred title pill | ChannelInfo, Main | In review (stacked) |
-| 13 | Launch, opening animation and first-run setup | Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | Planned |
+| 13 | Launch, opening animation and first-run setup | Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | In review (stacked) |
 
 ## Backend and platform backlog (Codex)
 

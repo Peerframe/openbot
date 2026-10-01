@@ -27,7 +27,7 @@ describe("model Agent opt-in", () => {
       if (!key || !model) throw new Error("Missing inputs");
       await setInputValue(key, "fixture-key-123456789");
       const router = [...view.container.querySelectorAll("label")]
-        .find((label) => label.textContent === "OpenRouter")
+        .find((label) => label.querySelector(".ob-provider-name")?.textContent === "OpenRouter")
         ?.querySelector("input");
       await interact(() => router?.click());
       expect(key.value).toBe("");
@@ -113,7 +113,7 @@ it("offers eleven providers, fills the selected common model and clears keys on 
   try {
     expect(view.container.querySelectorAll('input[name="model-provider"]')).toHaveLength(11);
     const radio = [...view.container.querySelectorAll("label")]
-      .find((label) => label.textContent === "DeepSeek")
+      .find((label) => label.querySelector(".ob-provider-name")?.textContent === "DeepSeek")
       ?.querySelector("input");
     await interact(() => radio?.click());
     expect((view.container.querySelector("#model-name") as HTMLInputElement).value).toBe(
@@ -121,7 +121,7 @@ it("offers eleven providers, fills the selected common model and clears keys on 
     );
     expect(view.container.querySelectorAll("datalist option")).toHaveLength(2);
     const kimi = [...view.container.querySelectorAll("label")]
-      .find((label) => label.textContent === "Kimi（月之暗面）")
+      .find((label) => label.querySelector(".ob-provider-name")?.textContent === "Kimi（月之暗面）")
       ?.querySelector("input");
     await interact(() => kimi?.click());
     const key = view.container.querySelector("#model-api-key") as HTMLInputElement;

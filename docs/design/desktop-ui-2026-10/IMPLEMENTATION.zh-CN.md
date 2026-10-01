@@ -34,7 +34,7 @@
 | 10 | 窗口外壳：去掉通栏工具栏；侧栏首行与红绿灯同一水平线；标题胶囊打开「频道信息」右栏并在其中管理成员 | Main、Sidebar、Profile | 审核中（叠加） |
 | 11 | Bot 头像：所有者的 Round / Relay / Scout 三种头型，所有位置去掉外框，32px 以下用小尺寸稿 | Avatars、Avatar | 审核中（叠加） |
 | 12 | 「频道信息」右栏分页：详情、资料库（任务产物与频道文件）、成员；标题胶囊居中 | ChannelInfo、Main | 审核中（叠加） |
-| 13 | 启动画面、开场动画与首次设置 | Launch、LaunchMotion、Welcome、Install、Connect、Login、ModelSetup、WorkerSetup | 计划中 |
+| 13 | 启动画面、开场动画与首次设置 | Launch、LaunchMotion、Welcome、Install、Connect、Login、ModelSetup、WorkerSetup | 审核中（叠加） |
 
 ## 后端与平台待办（Codex）
 

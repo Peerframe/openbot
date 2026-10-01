@@ -4,7 +4,7 @@ import type {
   DesktopConnectionState,
   DesktopSetupPlanInput,
 } from "../desktop-runtime";
-import { OpenBotMark } from "./OpenBotMark";
+import { OnboardingFrame } from "./Onboarding";
 
 export function DesktopConnectionScreen({
   canCancel = false,
@@ -43,32 +43,25 @@ export function DesktopConnectionScreen({
   }
 
   return (
-    <main className="login-screen desktop-connection-screen">
-      <section className="login-card desktop-connection-card" aria-labelledby="connection-title">
-        <OpenBotMark className="onboarding-mark" />
-
-        <h1 id="connection-title">连接服务电脑</h1>
-        <p className="login-copy">{desktopConnectionCopy(setupPlan)}</p>
-        {onChangePlan ? (
-          <button
-            className="setup-change-role"
-            type="button"
-            disabled={submitting}
-            onClick={onChangePlan}
-          >
-            更改这台电脑的用途
-          </button>
-        ) : null}
-        {connection.status === "invalid" ? (
-          <p className="connection-warning" role="alert">
-            已保存的连接配置无效，请重新选择 Server。
-          </p>
-        ) : null}
-        <form onSubmit={handleSubmit}>
-          <label htmlFor="desktop-server-url">服务地址</label>
+    <OnboardingFrame
+      step={1}
+      avatar={{ character: "relay", accent: "blue" }}
+      title="连接服务电脑"
+      description={desktopConnectionCopy(setupPlan)}
+      titleId="connection-title"
+    >
+      {connection.status === "invalid" ? (
+        <p className="ob-setup-warning" role="alert">
+          已保存的连接配置无效，请重新填写服务地址。
+        </p>
+      ) : null}
+      <form className="ob-setup-form" onSubmit={handleSubmit}>
+        <label className="ob-setup-field">
+          服务地址
           <input
             id="desktop-server-url"
             type="url"
+            inputMode="url"
             autoCapitalize="none"
             autoComplete="url"
             spellCheck={false}
@@ -76,40 +69,47 @@ export function DesktopConnectionScreen({
             onChange={(event) => setServerUrl(event.target.value)}
             placeholder="https://openbot.example.com"
           />
-          <p className="connection-hint">远程地址必须使用 HTTPS；本机可使用 localhost HTTP。</p>
-          {error ? (
-            <p className="login-error" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <div className="connection-actions">
-            {canCancel ? (
-              <button
-                className="secondary-button"
-                type="button"
-                onClick={onCancel}
-                disabled={submitting}
-              >
-                返回
-              </button>
-            ) : null}
-            <button
-              className="primary-button"
-              type="submit"
-              disabled={submitting || !serverUrl.trim()}
-            >
-              {submitting ? "正在检查…" : "检查并连接"}
-            </button>
-          </div>
-        </form>
-        <p className="login-note">这里只保存 Server 地址；登录凭证保留在独立的 Desktop 会话中。</p>
-      </section>
-    </main>
+        </label>
+        <p className="ob-setup-hint">
+          远程地址必须是 HTTPS；同一台电脑上可以用
+          http://localhost。这里只保存地址，登录凭证另外保存。
+        </p>
+        {error ? (
+          <p className="ob-setup-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <button
+          className="ob-setup-primary"
+          type="submit"
+          disabled={submitting || !serverUrl.trim()}
+        >
+          {submitting ? "正在检查…" : "检查并连接"}
+        </button>
+      </form>
+      <div className="ob-setup-row">
+        {canCancel ? (
+          <button className="ob-setup-link" type="button" onClick={onCancel} disabled={submitting}>
+            返回
+          </button>
+        ) : null}
+        {onChangePlan ? (
+          <button
+            className="ob-setup-link"
+            type="button"
+            disabled={submitting}
+            onClick={onChangePlan}
+          >
+            换一种方式
+          </button>
+        ) : null}
+      </div>
+    </OnboardingFrame>
   );
 }
 
 function desktopConnectionCopy(_plan?: DesktopSetupPlanInput): string {
-  return "输入服务电脑的 OpenBot 地址，连接后使用同一套 Bot 和工作记录。";
+  return "输入服务电脑上 OpenBot 的地址。连接后用同一套 Bot 和工作记录。";
 }
 
 export function desktopConnectionErrorMessage(

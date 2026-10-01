@@ -18,10 +18,10 @@ describe("LoginScreen", () => {
       const form = rendered.container.querySelector("form");
       if (form === null) throw new Error("Login form not found.");
 
-      expect(rendered.container.querySelector("section")?.getAttribute("aria-labelledby")).toBe(
+      expect(rendered.container.querySelector("main")?.getAttribute("aria-labelledby")).toBe(
         "login-title",
       );
-      expect(label?.htmlFor).toBe(input.id);
+      expect(input.labels?.[0]).toBe(label);
       expect(input.autocomplete).toBe("current-password");
       expect(button.disabled).toBe(true);
 

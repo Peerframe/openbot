@@ -1,9 +1,9 @@
-import { OpenBotMark } from "./OpenBotMark";
 import { type FormEvent, useState } from "react";
 import type {
   DesktopLocalWorkerOperationResult,
   DesktopLocalWorkerState,
 } from "../desktop-runtime";
+import { OnboardingFrame } from "./Onboarding";
 
 export function DesktopLocalWorkerScreen({
   onContinue,
@@ -45,107 +45,115 @@ export function DesktopLocalWorkerScreen({
   }
 
   return (
-    <main className="login-screen desktop-worker-screen">
-      <section className="login-card desktop-worker-card" aria-labelledby="desktop-worker-title">
-        <OpenBotMark className="onboarding-mark" />
+    <OnboardingFrame
+      label="可选步骤"
+      avatar={{ character: "relay", accent: "blue" }}
+      title="让这台电脑也能干活"
+      description="设为工作电脑后，Bot 可以在这里执行任务。每一步改动仍按审批规则先问你。"
+      width={440}
+      offset={110}
+      titleId="desktop-worker-title"
+    >
+      <WorkerStateSummary state={state} />
 
-        <h1 id="desktop-worker-title">配置这台工作电脑</h1>
-        <p className="login-copy">Desktop 仍然可以正常使用；这里只为这台电脑增加任务执行能力。</p>
-
-        <WorkerStateSummary state={state} />
-
-        {state.status === "not-configured" ? (
-          <form onSubmit={submit}>
-            <label htmlFor="desktop-worker-node-id">电脑名称</label>
+      {state.status === "not-configured" ? (
+        <form className="ob-setup-form" onSubmit={submit}>
+          <label className="ob-setup-field">
+            电脑名称
             <input
               id="desktop-worker-node-id"
               autoCapitalize="none"
               autoComplete="off"
               maxLength={128}
               pattern="[A-Za-z0-9][A-Za-z0-9._:-]*"
-              placeholder="例如 mac-studio-1"
+              placeholder="mac-studio-1"
               spellCheck={false}
               value={nodeId}
               onChange={(event) => setNodeId(event.target.value)}
             />
-            <p className="connection-hint">
-              Server 会签发一次性绑定凭证；凭证不会进入页面、文件、命令参数或日志。
-            </p>
-            <button className="primary-button" disabled={busy || !nodeId.trim()} type="submit">
-              {busy ? "正在配置…" : "配置并启用 Worker"}
-            </button>
-          </form>
-        ) : null}
+          </label>
+          <p className="ob-setup-hint">
+            服务会签发一次性绑定凭证；凭证不会出现在页面、文件、命令参数或日志里。
+          </p>
+          <button className="ob-setup-primary" disabled={busy || !nodeId.trim()} type="submit">
+            {busy ? "正在配置…" : "配置并启用"}
+          </button>
+        </form>
+      ) : null}
 
-        {state.status === "disabled" ? (
+      {state.status === "disabled" ? (
+        <button
+          className="ob-setup-primary"
+          disabled={busy}
+          type="button"
+          onClick={() => run(onEnable)}
+        >
+          {busy ? "正在启用…" : "启用这台工作电脑"}
+        </button>
+      ) : null}
+
+      {state.status === "requires-approval" ? (
+        <div className="ob-setup-row">
           <button
-            className="primary-button"
+            className="ob-setup-primary"
             disabled={busy}
             type="button"
-            onClick={() => run(onEnable)}
+            onClick={() => run(onOpenSettings)}
           >
-            {busy ? "正在启用…" : "启用本机 Worker"}
+            打开「登录项」设置
           </button>
-        ) : null}
-
-        {state.status === "requires-approval" ? (
-          <div className="desktop-worker-actions">
-            <button
-              className="primary-button"
-              disabled={busy}
-              type="button"
-              onClick={() => run(onOpenSettings)}
-            >
-              打开“登录项”设置
-            </button>
-            <button
-              className="secondary-button"
-              disabled={busy}
-              type="button"
-              onClick={() => run(async () => ({ status: "succeeded", state: await onRefresh() }))}
-            >
-              刷新状态
-            </button>
-          </div>
-        ) : null}
-
-        {error ? (
-          <p className="login-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-
-        <div className="desktop-worker-footer">
-          <button className="secondary-button" disabled={busy} type="button" onClick={onContinue}>
-            稍后配置，先进入 OpenBot
+          <button
+            className="ob-setup-secondary"
+            disabled={busy}
+            type="button"
+            onClick={() => run(async () => ({ status: "succeeded", state: await onRefresh() }))}
+          >
+            刷新状态
           </button>
-          <span>稍后可以从设备管理再次完成这一步。</span>
         </div>
-      </section>
-    </main>
+      ) : null}
+
+      {error ? (
+        <p className="ob-setup-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      <button className="ob-setup-link" disabled={busy} type="button" onClick={onContinue}>
+        先跳过，以后在设置 › 工作主机里配置
+      </button>
+    </OnboardingFrame>
   );
 }
 
 function WorkerStateSummary({ state }: { state: DesktopLocalWorkerState }) {
   const content = {
     disabled: ["已绑定，尚未启用", "本机身份有效；启用后台项目后才能接收任务。"],
-    enabled: ["Worker 已启用", "这台电脑已经可以作为 OpenBot 工作电脑。"],
-    invalid: ["本机 Worker 状态无效", "组件、配置或系统凭证未通过校验；不会自动放宽安全检查。"],
-    "not-configured": ["等待配置", "为这台电脑命名后，Desktop 将通过已登录的 Server 完成绑定。"],
-    "not-selected": ["当前计划未选择 Worker", "你可以返回安装计划后重新选择。"],
+    enabled: ["已启用", "这台电脑已经可以作为 OpenBot 工作电脑。"],
+    invalid: ["这台电脑的工作状态无效", "组件、配置或系统凭证未通过校验；不会自动放宽安全检查。"],
+    "not-configured": ["等待配置", "给这台电脑起个名字，OpenBot 会通过已登录的服务完成绑定。"],
+    "not-selected": ["当前计划未选择这一步", "你可以返回安装计划后重新选择。"],
     "requires-approval": [
       "等待 macOS 批准",
-      "绑定已完成，但必须在“系统设置 > 通用 > 登录项与扩展”允许后台运行。",
+      "在「系统设置 › 通用 › 登录项与扩展」里允许 OpenBot 在后台运行。",
     ],
     unavailable: [
-      "当前安装包不可配置 Worker",
-      "本平台适配器或经过授权的 companion 未包含在此包中；Desktop 客户端仍可使用。",
+      "这个安装包不能配置工作电脑",
+      "本平台的适配器或经过授权的组件不在这个安装包里；OpenBot 仍可正常使用。",
     ],
   }[state.status];
+  const waiting = state.status === "requires-approval";
   return (
-    <section className={`desktop-worker-status is-${state.status}`} aria-live="polite">
-      <strong>{content[0]}</strong>
-      <p>{content[1]}</p>
+    <section className={`ob-worker-status is-${state.status}`} aria-live="polite">
+      {waiting ? (
+        <span className="ob-spinner" aria-hidden="true" />
+      ) : (
+        <span className="ob-step-icon" aria-hidden="true" />
+      )}
+      <span>
+        <strong>{content[0]}</strong>
+        <small>{content[1]}</small>
+      </span>
     </section>
   );
 }

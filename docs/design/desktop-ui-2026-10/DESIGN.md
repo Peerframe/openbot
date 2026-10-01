@@ -78,7 +78,8 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Components | `styles.css` tokens and primitives |
 | Avatar, Avatars | `RobotAvatar.tsx`, `RobotAvatar.css` |
 | ChannelInfo | `ContextRail.tsx`, `ContextRail.css` (详情 / 资料库 / 成员; a direct conversation has 详情 and 资料库) |
-| Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | Designed; not built yet (see below) |
+| Launch, LaunchMotion | `Onboarding.tsx` (`LaunchScreen`, `LaunchMark`, `LaunchExit`), `Onboarding.css`; every loading and start-up error state in `App.tsx` and `DesktopInstallScreen.tsx` |
+| Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | `DesktopSetupScreen`, `DesktopInstallScreen`, `DesktopConnectionScreen`, `LoginScreen`, `ModelSettingsScreen` (also embedded in 设置 › 模型服务), `DesktopLocalWorkerScreen`, on the shared `OnboardingFrame` |
 
 ## Not designed yet
 
@@ -86,7 +87,7 @@ These need artboards before they are rebuilt; until then they keep their current
 
 | Area | Code today | Note |
 | --- | --- | --- |
-| Launch, login and first-run setup, with the opening animation | `DesktopInstallScreen`, `LoginScreen`, `DesktopSetupScreen`, `DesktopConnectionScreen`, `DesktopLocalWorkerScreen`, `ModelSettingsScreen` (onboarding) | Artboards ready (Launch … WorkerSetup); rebuild pending |
+| Empty workspace (no channels yet) | `ChannelEmptyState` in `App.tsx` | Still uses the legacy mark and buttons |
 | Task cards, collaboration and failures in a conversation; task inspector | `NativeRunControls`, `RunCollaboration`, `RunInspector` | |
 | Dialogs: create Bot, create channel, share, delete, import/export, host pairing, model connections | `CreateBotDialog`, `CreateChannelDialog`, `ShareConversationDialog`, `DeleteIdentityDialog`, `Import/ExportEmployeeDialog`, `NodeManagerDialog`, `ModelConnectionsDialog` | |
 | 任务监督 (work supervision) | `WorkTasksScreen` | |
@@ -96,11 +97,12 @@ These need artboards before they are rebuilt; until then they keep their current
 ## Legacy inventory
 
 Legacy classes that must disappear: `primary-button`, `secondary-button`, `icon-button`,
-`create-dialog`, `dialog-header`, `dialog-backdrop`, `login-card`, `onboarding-mark`,
-`loading-screen`, `destination-*`, `workspace-toolbar`/`toolbar-*`, `channel-members-*`. Legacy stylesheets: most of `styles.css`, `workspace-shell.css`,
-`desktop-workspace.css`, `workspace-preferences.css`, `components/destinations.css`.
+`create-dialog`, `dialog-header`, `dialog-backdrop`, `onboarding-mark`, `destination-*`,
+`workspace-toolbar`/`toolbar-*`, `channel-members-*`. Legacy stylesheets: most of `styles.css`,
+`workspace-shell.css`, `desktop-workspace.css`, `workspace-preferences.css`,
+`components/destinations.css`.
 
-Retirement order: (1) window shell and channel rail; (2) conversation task cards; (3) dialogs;
-(4) launch, login and setup; (5) 任务监督 and phone layout; (6) delete the
+Retirement order: (1) window shell and channel rail — done; (2) conversation task cards;
+(3) dialogs; (4) launch, login and setup — done; (5) 任务监督 and phone layout; (6) delete the
 legacy stylesheets and classes. Each step removes the legacy rules it replaces in the same pull
 request.

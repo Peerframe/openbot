@@ -1089,14 +1089,6 @@ select:focus-visible {
   box-shadow: 0 8px 24px rgba(25, 50, 30, 0.12);
   font-size: 12px;
 }
-.loading-screen {
-  display: grid;
-  min-height: 100vh;
-  place-items: center;
-  align-content: center;
-  padding: 30px;
-  text-align: center;
-}
 .loading-mark {
   display: grid;
   width: 48px;
@@ -1109,201 +1101,10 @@ select:focus-visible {
   font-size: 24px;
   font-weight: 750;
 }
-.loading-screen h1 {
-  margin: 0 0 8px;
-  font-size: 23px;
-}
-.loading-screen p {
-  max-width: 440px;
-  margin: 0 0 20px;
-  color: var(--muted);
-  font-size: 13px;
-}
-.loading-actions,
-.connection-actions {
-  display: flex;
-  justify-content: center;
-  gap: 9px;
-}
-.login-screen {
-  display: grid;
-  min-height: 100vh;
-  place-items: center;
-  padding: 28px;
-  background: #f3f5f7;
-}
-.login-card {
-  width: min(100%, 420px);
-  padding: 38px 40px 34px;
-  border: 1px solid #dce1e6;
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 18px 48px rgba(28, 35, 44, 0.08);
-}
-.login-card h1 {
-  margin: 0;
-  font-size: 27px;
-  letter-spacing: -0.035em;
-  text-align: center;
-}
-.login-copy {
-  margin: 9px 0 26px;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.55;
-  text-align: center;
-}
-.login-card form {
-  display: grid;
-  gap: 9px;
-}
-.login-card label {
-  color: #464c53;
-  font-size: 11px;
-  font-weight: 650;
-}
-.login-card input {
-  width: 100%;
-  height: 44px;
-  padding: 0 13px;
-  border: 1px solid #cfd5db;
-  border-radius: 8px;
-  color: #17191c;
-  background: #fff;
-}
-.login-card input::placeholder {
-  color: #a1a7ae;
-}
-.login-card form .primary-button {
-  width: 100%;
-  margin-top: 5px;
-}
 .login-error {
   margin: 2px 0 0;
   color: #a1342c;
   font-size: 11px;
-}
-.login-note {
-  margin: 17px 0 0;
-  color: #969ca3;
-  font-size: 10px;
-  text-align: center;
-}
-.desktop-connection-card {
-  width: min(100%, 470px);
-}
-.desktop-worker-screen {
-  place-items: center;
-  overflow-y: auto;
-}
-.desktop-worker-card {
-  width: min(100%, 520px);
-}
-.desktop-worker-status {
-  display: grid;
-  gap: 6px;
-  margin: 18px 0;
-  padding: 14px 15px;
-  border: 1px solid #d9dee3;
-  border-radius: 10px;
-  background: #f7f8f9;
-}
-.desktop-worker-status strong {
-  color: #202429;
-  font-size: 12px;
-}
-.desktop-worker-status p {
-  margin: 0;
-  color: #6d747d;
-  font-size: 10px;
-  line-height: 1.6;
-}
-.desktop-worker-status.is-requires-approval {
-  border-color: #dfc27c;
-  background: #fffaf0;
-}
-.desktop-worker-status.is-invalid,
-.desktop-worker-status.is-unavailable {
-  border-color: #ddb8b4;
-  background: #fff7f6;
-}
-.desktop-worker-actions {
-  display: flex;
-  gap: 9px;
-}
-.desktop-worker-actions button {
-  flex: 1;
-}
-.desktop-worker-footer {
-  display: grid;
-  gap: 8px;
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid #e3e6e9;
-  text-align: center;
-}
-.desktop-worker-footer span {
-  color: #969ca3;
-  font-size: 10px;
-}
-.desktop-setup-screen {
-  place-items: start center;
-  overflow-y: auto;
-}
-.desktop-setup-card {
-  width: min(100%, 760px);
-  margin: 24px 0;
-}
-.login-card .setup-mode {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
-  align-items: start;
-  gap: 10px;
-  min-height: 94px;
-  padding: 14px;
-  border: 1px solid #d9dee3;
-  border-radius: 10px;
-  background: #fff;
-  cursor: pointer;
-  transition:
-    border-color 140ms ease,
-    box-shadow 140ms ease,
-    background 140ms ease;
-}
-.login-card .setup-mode:hover {
-  border-color: #adb6bf;
-}
-.login-card .setup-mode.selected {
-  border-color: #3974c4;
-  background: #f5f9ff;
-  box-shadow: 0 0 0 2px rgba(57, 116, 196, 0.12);
-}
-.login-card .setup-mode input {
-  width: 18px;
-  height: 18px;
-  margin: 1px 0 0;
-  padding: 0;
-  accent-color: #3974c4;
-}
-.setup-mode span {
-  display: grid;
-  gap: 5px;
-}
-.setup-mode strong {
-  color: #202429;
-  font-size: 13px;
-}
-.setup-mode small {
-  color: #737b84;
-  font-size: 10px;
-  font-weight: 450;
-  line-height: 1.5;
-}
-.connection-hint {
-  margin: 0 0 2px;
-  color: #878e96;
-  font-size: 10px;
-  line-height: 1.45;
 }
 .connection-warning {
   margin: -12px 0 18px;
@@ -1314,15 +1115,6 @@ select:focus-visible {
   background: #fffaf0;
   font-size: 11px;
   line-height: 1.45;
-}
-.connection-actions {
-  margin-top: 5px;
-}
-.connection-actions .primary-button,
-.connection-actions .secondary-button {
-  flex: 1;
-  width: auto;
-  margin-top: 0;
 }
 
 /* Employee profile: the employee persists while Worker Hosts remain replaceable. */
@@ -2313,16 +2105,6 @@ select:focus-visible {
     border-radius: 16px 16px 0 0;
     background: #fff;
     box-shadow: 0 -18px 40px rgba(20, 25, 32, 0.13);
-  }
-  .login-screen {
-    padding: 18px;
-  }
-  .login-card {
-    padding: 30px 24px 27px;
-    box-shadow: none;
-  }
-  .desktop-setup-card {
-    margin: 0;
   }
   .mobile-sheet-header {
     display: flex;
@@ -3593,17 +3375,6 @@ select:focus-visible {
   -webkit-app-region: drag;
   user-select: none;
 }
-:root[data-desktop="darwin"] :is(.login-screen, .loading-screen)::before {
-  content: "";
-  position: fixed;
-  inset: 0 0 auto;
-  height: 56px;
-  -webkit-app-region: drag;
-  user-select: none;
-}
-:root[data-desktop="darwin"] :is(.login-screen, .loading-screen) {
-  padding-top: 72px;
-}
 :root[data-desktop="darwin"] :is(button, a, input, select, textarea, summary) {
   -webkit-app-region: no-drag;
 }
@@ -3627,115 +3398,6 @@ select:focus-visible {
   border-radius: 14px;
   margin: 0 auto 24px;
 }
-:root[data-desktop] .login-screen {
-  background: #fff;
-}
-:root[data-desktop] .login-card {
-  border: 0;
-  box-shadow: none;
-  padding: 24px;
-}
-:root[data-desktop] .login-card h1 {
-  font-size: 26px;
-  letter-spacing: -0.03em;
-}
-:root[data-desktop] .login-copy {
-  color: #59616b;
-  font-size: 14px;
-  margin: 12px 0 28px;
-}
-:root[data-desktop] .login-card input::placeholder {
-  color: #686f78;
-}
-:root[data-desktop] :is(.login-note, .connection-hint, .desktop-worker-footer span) {
-  color: #606873;
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.desktop-setup-screen {
-  place-items: center;
-}
-.desktop-setup-card {
-  width: min(100%, 520px);
-  margin: 0;
-}
-.setup-role-options {
-  display: grid;
-  gap: 12px;
-  padding: 0;
-  margin: 0;
-  border: 0;
-  min-width: 0;
-}
-.setup-role-options .setup-mode {
-  min-height: 92px;
-  padding: 18px;
-  align-items: center;
-}
-.setup-role-options .setup-mode strong {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 15px;
-}
-.setup-role-options .setup-mode small {
-  color: #59616b;
-  font-size: 13px;
-  line-height: 1.55;
-}
-.setup-mode em {
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 500;
-  color: #52606f;
-}
-.setup-next-step {
-  margin: 12px 0;
-  font-size: 12px;
-  color: #59616b;
-  line-height: 1.6;
-  text-align: center;
-}
-.desktop-install-card {
-  width: min(100%, 480px);
-}
-.installation-steps {
-  padding: 0;
-  margin: 28px 0;
-  list-style: none;
-  display: grid;
-  gap: 22px;
-}
-.installation-steps li {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-}
-.installation-steps li > span {
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #f1f2f4;
-  color: #59616b;
-  font-size: 12px;
-}
-.installation-steps .step-done {
-  background: #eaf5ed;
-  color: #23793d;
-}
-.installation-steps .step-running {
-  background: var(--blue);
-  color: white;
-}
-.installation-steps small {
-  margin-left: auto;
-  color: #59616b;
-  font-size: 12px;
-}
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -3744,61 +3406,6 @@ select:focus-visible {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
-}
-.model-provider-options {
-  flex-wrap: wrap;
-  border: 0;
-  padding: 0;
-  margin: 0 0 12px;
-  display: flex;
-  gap: 24px;
-}
-.model-provider-options legend {
-  font-size: 12px;
-  font-weight: 650;
-  margin-bottom: 12px;
-}
-.login-card .model-agent-option,
-.login-card .model-provider-options label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-}
-.login-card .model-agent-option input,
-.login-card .model-provider-options input {
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  margin: 0;
-  accent-color: var(--blue);
-}
-.setup-skip {
-  display: block;
-  margin: 22px auto 0;
-  padding: 8px;
-  background: transparent;
-  border: 0;
-  color: #59616b;
-  font-size: 13px;
-  cursor: pointer;
-}
-.setup-skip:hover {
-  color: #17191c;
-  text-decoration: underline;
-}
-.setup-change-role {
-  display: block;
-  margin: -12px auto 24px;
-  padding: 4px;
-  border: 0;
-  background: transparent;
-  color: #59616b;
-  font-size: 12px;
-  cursor: pointer;
-}
-.setup-change-role:hover {
-  color: var(--blue);
 }
 .app-shell.without-context {
   grid-template-columns: 264px minmax(0, 1fr);

@@ -103,10 +103,6 @@
 :root[data-sidebar-material="enabled"] .app-shell .sidebar-search {
   background: #ffffff60;
 }
-:root[data-sidebar-material="enabled"] .login-screen,
-:root[data-sidebar-material="enabled"] .loading-screen {
-  background: #f6f7f8;
-}
 .settings-back {
   display: flex;
   align-items: center;
@@ -249,33 +245,6 @@
   margin: 16px 20px;
   font-size: 12px;
   color: #267151;
-}
-.model-settings-embedded .login-card {
-  max-width: 620px;
-  width: 100%;
-  border: 0;
-  box-shadow: none;
-  background: #fff;
-  padding: 0;
-  border-radius: 0;
-  text-align: left;
-}
-.model-settings-embedded .login-copy {
-  font-size: 13px;
-  margin: 0 0 24px;
-  line-height: 1.7;
-}
-.model-settings-embedded .login-note {
-  font-size: 11px;
-  margin-top: 20px;
-  text-align: left;
-}
-.model-settings-embedded input {
-  font-size: 14px;
-}
-.model-settings-embedded .primary-button {
-  font-size: 13px;
-  min-height: 40px;
 }
 .settings-about {
   padding: 5px 0 35px;
