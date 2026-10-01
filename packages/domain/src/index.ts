@@ -782,5 +782,7 @@ export type {
   OwnerPreferences,
   OwnerPreferencesInput,
   OwnerSessionDevice,
+  ReviewedPluginCatalog,
+  ReviewedPluginEntry,
 } from "@openbot/protocol";
 export * from "./channel-interactions.js";

@@ -266,6 +266,24 @@ Owner。验证还需要 1–100 的 `confidence`，并再次确认全部依赖�
 Node、Provider、路由、审批策略或主机授权。完整技能目录将在后续隔离导入时采用开放的
 [Agent Skills](https://github.com/agentskills/agentskills) 规范和官方 `skills-ref` 校验器。
 
+## 已审核插件目录（C8）
+
+`GET /api/v1/plugins/catalog` 验证 Owner 后返回有界版本化目录：
+`{format:"openbot.reviewed-plugin-catalog/v1",revision,entries}`。拒绝查询参数，不远程发现或安装。
+条目包含 slug `id`、有界名称/说明、`distribution`（`self-hosted-template|self-hosted`）、准确版本、
+许可证、包含 40 位 `sourceCommit` 的 HTTPS `sourceUrl`、1–16 个附 SHA-256 的源文件，及
+`review:{status:"reviewed",reviewedAt,reviewedBy,record,scope}`。protocol/domain 导出 schema 与类型。
+
+只发布明确审核记录。源最多 64 KiB、32 条；重复 JSON 键/条目/路径、待审核或拒绝记录、
+未知凭据或 endpoint 字段、不安全地址、非法摘要使整个源返回 `503 plugin_catalog_unavailable`。
+内置目录收录已实际审核的 OpenBot 笔记本开发模板，附 main 准确提交及源码哈希。
+该模板需要另行部署与配置地址，并沿用实时清单审核和显式授权；目录条目本身不授予权限或代表安装。
+
+运维可设置 `OPENBOT_PLUGIN_CATALOG_PATH`，指向同格式、绝对规范路径的 Owner 私有普通文件，
+通过既有有界 owned-file 读取。渲染层、Worker、模型及导入插件内容均不能选择源。
+损坏目录不冒充成功的空目录。未宣称任何远程第三方服务已完成审核：本环境公共文档 MCP 的
+实际审核被现有非公网 DNS 边界拒绝。
+
 ## 导出安全员工模板
 
 `GET /api/v1/bots/:botId/export/preview` 与下载共用同一条规范包准备路径。每次预览会生成新的

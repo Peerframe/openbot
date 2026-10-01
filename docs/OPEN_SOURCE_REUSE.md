@@ -1027,3 +1027,11 @@ and existing identity/model connection resolution. The [C7 decision](research/de
 compares persistence alternatives and records exact reviewed main, fail-closed default inheritance
 and independent migration integration. No new dependency or copied source; credentials remain in the
 existing model service and no network call is performed by preferences publication.
+
+## Reviewed plugin catalog source (2026-10-01)
+
+The [catalog decision](research/desktop-reviewed-plugin-catalog.md) reuses the MIT first-party
+notebook template at main57341154b19d45686b2f71bce96fca38e1f07310, pinned MCP SDK1.30.0/Zod4.6.2,
+existing Owner transactions and bounded owned-file loading. Explicit commit/file/review records form
+the curated source; registry publication is not treated as review. No new dependency or copied source.
+The attempted public Docs MCP review failed its real DNS boundary and is not included as a reviewed service.
