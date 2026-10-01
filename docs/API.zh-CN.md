@@ -86,6 +86,26 @@ secret，不等于生产级持有证明身份。能力声明本身仍不授予�
 频道与工作区 SSE 每个订阅最多保留 128 个待发送投影。慢客户端达到上限后连接会被关闭，Web
 客户端重连并重新读取数据库权威快照；Server 不会静默丢弃某个事件后继续伪装为连续流。
 
+## Owner 密码与登录会话（C2）
+
+- `GET /api/v1/auth/sessions` 返回 `{ sessions: [{ id, userAgent, current, createdAt, expiresAt }] }`，
+  按创建时间倒序列出有效会话，最多 100 个。ID 不是登录凭据，不返回 token、摘要或 IP。
+  `userAgent` 是最多 256 个码点的不可信提示，旧会话为空；登录不会创建超过上限的有效会话。
+- `POST /api/v1/auth/sessions/revoke-others` 需要当前 cookie 与精确匹配的 Origin，无需正文。
+  返回 `{ revoked: number }`，保留发起会话，在同一事务记录 `OWNER_SESSIONS_REVOKED` 和撤销数量。
+- `POST /api/v1/auth/password` 需要 cookie、精确 Origin 和 `{ currentPassword, newPassword }`，
+  拒绝多余字段，不裁剪空格。旧密码为 1–1024 个码点，新密码为 15–1024 个码点，拒绝示例密码，
+  沿用 8192 字节请求上限。成功返回 `{ changed: true, reauthenticationRequired: true }`，
+  清除 cookie、撤销全部会话并原子记录 `OWNER_PASSWORD_CHANGED`。
+  旧密码错误或会话无效为 401，限流为 429（含 `Retry-After`），输入错误为 422；
+  存储或审计失败为 503，不修改密码、撤销会话或清除 cookie。
+
+修改后的密码以带随机盐的标准库 scrypt（N=32768、r=8、p=3）哈希保存在 PostgreSQL。
+已有保存的凭据后，环境密码只作为初始配置，重启不会覆盖修改结果。
+凭据版本和共享事务锁拒绝在密码修改前生成的登录校验证明。
+备份数据库时同时保留 `owner_credentials`。此功能不提供密码找回或可信设备身份；
+失去 Owner 登录凭据时仍需通过部署管理路径处理。
+
 ## 创建 Bot
 
 ```json
@@ -332,6 +352,29 @@ Server 会对 `package` 重复执行同一套严格解析、签名验证、校�
 `{ events, nextBefore? }`；`nextBefore` 是不透明的键集游标（精确时间加事件 id，同一事务写入的事件不会被跳过）；每条事件包含类型、时间、各 id、当前或已删除的名称，以及白名单内的标量字段，
 从不包含消息正文。
 
+## 审计分类与 CSV（C3）
+
+`GET /api/v1/audit` 新增可选 `category`：`authentication`、`settings`、`hosts`、`approvals`、
+`channels`、`bots`、`runs`、`plugins`、`other`。省略时返回全部类别，每条事件包含服务端分类。
+分类在 SQL 中先于精确时间/ID 游标分页执行。未知或重复查询参数、未知类别和错误上限为 422；
+JSON 每页仍为 1–100 条。
+
+`GET /api/v1/audit/export` 接受同样的类别和游标，`limit=1..1000`，默认 1000。
+下载带 BOM 的 UTF-8 CSV（`openbot-audit.csv`），完整引用单元格并使用 CRLF。
+列为事件 ID、时间、类别、类型、频道/Bot ID 与名称、Run ID 和白名单详情。
+可能触发公式的单元格以单引号转义。沿用 Owner 鉴权和 no-store，不导出提示词、密钥、
+工具参数或网络摘要，每页最多 4 MiB。未结束时返回可跨域读取的 `X-OpenBot-Next-Before`；
+将其作为下页 `before`，解析并拼接数据行即可导出更长历史，拼接时不重复标题和 BOM。
+这是分页历史导出，不是单一事务的全库归档。
+
+登录成功、密码错误和退出登录分别写入 `AUTH_LOGIN_SUCCEEDED`、`AUTH_LOGIN_FAILED`、`AUTH_LOGOUT`，
+不记录秘密；已限流请求不重复生成无界事件。登录审计与 C2 的凭据 revision 校验和会话写入
+属于同一事务，并保留有长度上限的 user-agent 提示。审计存储失败返回 503，不发出 cookie，
+也不提交会话或限流变更。旧模型设置最终发布在授权事务内记录
+`SETTINGS_MODEL_UPDATED`，审计失败恢复旧文件；保留已有模型连接事件。
+主机注册、撤销、实际连接与断开记录 `WORKER_HOST_*`；私有网络摘要留在身份账本。
+连接事件持久化失败不提供主机可用性；物理断开时仍完成清理，审计失败记录固定错误。
+
 ## 创建频道
 
 ```json
@@ -369,6 +412,29 @@ Run 会把接单 Bot 当时的 `computerProfile` 固化为 `executionProfile`，
 说明，并在写入 Run 或事件前丢弃 Node 提供的失败文本；Provider 异常、stack、token 与本地路径
 都不属于公开错误契约。被捕获的后台调度失败会另写一条有界 `DISPATCH_FAILED` 审计，只包含
 Run、已权威分配的 Node、阶段和公开代码；若该二次写入本身失败，只记录一次日志，不递归审计。
+
+## Owner 额外审批设置（C4）
+
+`GET /api/v1/settings/approvals` 返回 `{revision,productRead,publicWeb,exceptions,
+protectedExceptionCategories}`。`PUT` 要求 Owner Cookie、精确 Origin 和 ≤16KiB 严格 JSON：
+`{expectedRevision,productRead,publicWeb,exceptions}`。内置产品读取/公网读取两类 Work 操作支持
+`inherit`（适配器最低要求）与 `required`（增加确认）。版本冲突409
+`approval_policy_revision_changed`；策略缺失/损坏503。同值不增加版本，变更与
+`SETTINGS_APPROVAL_UPDATED` 审计原子提交，仅记录模式/数量/版本，不复制私有目标。
+protocol/domain 提供严格类型与 schema。
+
+最多64个精确例外：`{botId,category:"product_read"|"public_web",target:{kind,value}}`。
+频道/附件为规范 UUID，网页为无查询、片段、凭据、通配符和字面 IP 的规范 HTTPS URL。
+保存时验证存活 Bot 与未删除本地目标；执行时继续检查任务/原来源/身份和公网 DNS、重定向、
+字节上限。搜索、域名范围、前缀与文件路径不能例外。
+
+**删除、安装、改权限永远不能例外。** 返回的受保护类别还包括命令、浏览器、插件与未知操作。
+例外只取消 Owner 增加的确认，不能降低适配器强制审批或改变权限；直接 Owner 操作保留现有门禁。
+提案、准入和读取/网页执行前复查策略；撤销/收紧后未批准的旧自动 Action 返回409
+`approval_policy_changed`，需新提案；放宽不会改已有待审决定。已有精确批准与历史回执核对保持
+有效。已发出的网页请求可能在策略提交后结束，不声称可取消远程效果，也不允许重发。
+详见 [ADR-0049](decisions/0049-owner-approval-policy.zh-CN.md)。独立 C2/C7/C4 迁移在先合并项后
+必须重新基于 main 编号，不能覆盖已提交历史。
 
 ## 订阅频道事件
 
@@ -439,6 +505,9 @@ IPC 不接受渲染层传入的命令、程序路径或更新地址。
 创建 updater 前验证当前应用的 Developer ID/Authenticode 签名和签名者，保留 updater 原有下载校验及
 原生签名验证。开发版、未签名或缺配置时返回不可用，Linux 更新不支持。
 现有未签名发布缺少更新元数据，生产下载安装验收仍依赖签名发布产物与元数据；本契约不表示已完成发布或安装。
+
+
+本次集成按 Owner 决定暂缓生产签名自动更新。未签名包继续返回不可用；原生偏好功能可独立使用。
 
 ## 任务经验审阅
 

@@ -86,6 +86,29 @@ Channel and workspace SSE subscribers each have a 128-event pending bound. The S
 an overloaded subscriber; the Client reconnects and reloads the authoritative database snapshot
 instead of pretending a dropped stream is continuous.
 
+## Owner password and sessions (C2)
+
+- `GET /api/v1/auth/sessions` returns `{ sessions: [{ id, userAgent, current, createdAt, expiresAt }] }`
+  for active Owner sessions, newest first (maximum 100). IDs are non-bearer session IDs; no tokens,
+  digests or IP addresses are returned. `userAgent` is an untrusted hint bounded to 256 code points;
+  old sessions have an empty hint. Login refuses issuance above 100 active sessions.
+- `POST /api/v1/auth/sessions/revoke-others` requires the current cookie and exact allowed Origin.
+  Returns `{ revoked: number }`, keeps the initiating session, and atomically audits
+  `OWNER_SESSIONS_REVOKED` with the count. No body is required.
+- `POST /api/v1/auth/password` requires the cookie, exact Origin and JSON
+  `{ currentPassword, newPassword }`. No unknown fields; no whitespace trimming. Current password:
+  1–1024 code points; new password: 15–1024, excluding the example password. The existing 8192-byte
+  request bound applies. Success returns `{ changed: true, reauthenticationRequired: true }`,
+  clears the cookie, atomically revokes **all** sessions and records `OWNER_PASSWORD_CHANGED`.
+  Wrong current password is 401, throttled attempts 429 (`Retry-After`), invalid input 422,
+  unknown/revoked session 401 and storage/audit failure 503 without mutation or cookie clearing.
+
+Rotated credentials use salted stdlib scrypt (N=32768, r=8, p=3) in PostgreSQL. The environment
+password is bootstrap-only once a stored credential exists; restart never restores it. Credential
+revision and a shared transaction lock reject a login proof computed before password rotation.
+Back up `owner_credentials` together with the existing database. No password recovery or device
+identity verification is implied; an Owner locked out of a deployment must use its administration path.
+
 ## Bots and Employee profiles
 
 Create a Bot:
@@ -336,6 +359,34 @@ returns `{ events, nextBefore? }`; `nextBefore` is an opaque keyset cursor (exac
 so events written in one transaction are never skipped); each event carries type, time, ids, current or tombstoned names,
 and only allowlisted scalar payload keys (never message text).
 
+## Audit categories and CSV (C3)
+
+`GET /api/v1/audit` additionally accepts `category`: `authentication`, `settings`, `hosts`,
+`approvals`, `channels`, `bots`, `runs`, `plugins`, or `other`. Omit it for all categories.
+Every event includes its Server-assigned category. Filtering happens in SQL before the existing
+exact-time/ID keyset pagination; unknown/duplicate query keys, categories and malformed bounds
+return 422. JSON pages remain limited to 1–100 events.
+
+`GET /api/v1/audit/export` accepts the same category/cursor and `limit=1..1000` (default 1000).
+It downloads UTF-8/BOM CSV (`openbot-audit.csv`), quoted with CRLF rows. Columns are `id`,
+`createdAt`, `category`, `type`, channel/Bot IDs and names, `runId`, and allowlisted `details`.
+Formula-like cell prefixes are escaped with an apostrophe. Owner authentication and no-store
+apply; raw prompts, keys, tool arguments and network digests never enter the export. Each page
+is bounded to 4 MiB. A non-final page exposes `X-OpenBot-Next-Before` (also exposed via CORS);
+pass it as `before` and concatenate parsed rows to export a larger history. Do not repeat CSV
+headers/BOM when assembling pages. The export is paginated history, not a transaction-wide archive.
+
+Login success/failure and logout append `AUTH_LOGIN_SUCCEEDED`, `AUTH_LOGIN_FAILED`, `AUTH_LOGOUT`
+without secrets; rejected, already-throttled attempts do not create unbounded audit rows.
+Login auditing shares the C2 credential-revision check and session transaction, retaining the bounded
+user-agent hint. Audit storage failure returns 503 without issuing a cookie or committing a session
+or throttle mutation.
+Final legacy model-setting publication audits `SETTINGS_MODEL_UPDATED` in its authority
+transaction; audit failure restores the private file. Existing model-connection events remain.
+Worker enrollment/revocation and real connection/disconnection append `WORKER_HOST_*`; private
+identity digests stay in the identity ledger. Connected-event failure refuses availability;
+physical disconnect cleanup still completes if audit persistence fails and logs a fixed error.
+
 ## Channels, Runs, and approvals
 
 Create a channel:
@@ -384,6 +435,35 @@ Approval decisions use `{ "decision": "approve" }` or `{ "decision": "reject" }`
 unexpired approval may be decided, and only once. Approval resumes a Run; rejection or expiry
 blocks it. The current handshake does not yet issue a separately verifiable single-use capability
 lease, so only trusted-private-network test Providers are appropriate.
+
+## Owner additional approval settings (C4)
+
+`GET /api/v1/settings/approvals` returns `{revision,productRead,publicWeb,exceptions,
+protectedExceptionCategories}`. `PUT` requires Owner Cookie and exact Origin, a strict JSON body
+≤16KiB `{expectedRevision,productRead,publicWeb,exceptions}`. Modes: `inherit` (adapter minimum)
+and `required` (additional confirmation) for the two built-in Work categories. Revision conflicts
+return409 `approval_policy_revision_changed`; missing/corrupt storage returns503. Same-value writes
+keep the revision; changes atomically audit `SETTINGS_APPROVAL_UPDATED` with mode/count/revision,
+without copying target URLs or attachment IDs. Types/schemas exported by protocol/domain.
+
+Exceptions (≤64) are exact `{botId,category:"product_read"|"public_web",target:{kind,value}}`.
+`channel`/`attachment` use canonical UUIDs; `page` uses an exact canonical HTTPS URL without query,
+fragment, credentials, wildcards or literal IP addresses. Save validates live Bot and existing
+non-deleted local target. Runtime still validates task access, original source, live identities,
+public DNS/redirect/byte gates and exact immutable intent. No search/domain/prefix/file exception.
+
+**Delete, installation and permission changes never allow exceptions.** `protectedExceptionCategories`
+also includes command, browser, plugin and unknown, whose current minima are unchanged. An exception
+only removes extra Owner confirmation; adapter mandatory approval can never be removed. There is
+no global auto-approve or grant-changing endpoint. Direct Owner operations keep their existing gates.
+
+Proposal computes added approval transactionally; admission and built-in read/web dispatch recheck
+current settings. Revocation/tightening refuses unapproved auto Actions with409
+`approval_policy_changed`, requiring a fresh proposal; relaxing settings preserves pending decisions.
+Already approved exact Actions and historical receipt recovery remain valid. A web request already
+sent before a policy commit may finish; policy does not cancel remote effects or authorize replay.
+See [ADR-0049](decisions/0049-owner-approval-policy.md). Independent C2/C7/C4 migrations must be
+rebased/reindexed after the first merges; no committed migration history is overwritten.
 
 ## Realtime and private media
 
@@ -479,6 +559,10 @@ Development, unsigned packages and missing configuration expose `unavailable`; L
 unsupported. Existing unsigned releases lack update metadata, so production download/install
 qualification remains blocked on signed releases and metadata. This contract does not declare that
 those releases have been produced or installed.
+
+
+The Owner deferred production signed automatic updates for this integration. Unsigned packages
+continue to report unavailable; native preferences can be used independently.
 
 ## Reviewed task knowledge
 

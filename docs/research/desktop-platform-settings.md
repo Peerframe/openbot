@@ -42,3 +42,13 @@ tray creation/cleanup, global shortcut registration/cleanup, Dock badge cap/clea
 user-gesture update-install rejection. It never enabled OS startup or installed an update.
 Unsigned/missing-config refusal is verified; signed artifact download/install remains dependent
 on the distribution prerequisites above. No production signed-update claim or release.
+
+
+## Owner merge scope (2026-10-01)
+
+The Owner explicitly deferred production signed automatic updates and authorized merging the
+implemented native preference/bridge scope. Current Keychain discovery found no valid signing
+identity; no repository signing secrets are configured. Keep unsigned/missing-config refusal and
+all signer/checksum guards. Signed artifact creation, metadata publishing and real installation
+remain a future acceptance dependency; this merge neither publishes a release nor enables an
+unsigned installer. Existing research decisions, pins and native probe evidence remain unchanged.
