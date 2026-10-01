@@ -293,7 +293,51 @@ removed its owned resources. The target pin and product container preflight/smok
 new hosted container qualification must run on the updated source. The browser profile table is
 empty here; active browser continuation is not established by this legacy-data fixture.
 
-## Desktop C7 additive target (2026-10-01)
+## Desktop C2 additive target (2026-10-01)
+
+Retain all feature/architecture source snapshots and the existing PostgreSQL17.11 dump/restore
+contract. Advance only the canonical target pin to migration `0046_owner_security` (47 entries), SHA-256
+`197557b80e588769e2d6caee93fd6e44f5ef6fe07e14d09b7684fd9d1fffcd5b`; raw journal digest `424c5fc33a89c75edab128324f5e7fad52b62971ffd4deb1ff5dce286026fa42`. Source revision/working-tree
+role is explicit in target-history.json; no earlier SQL bytes changed. Rerun the same synthetic
+paired SQL/blob backup/restore and divergent-lineage refusal gates before delivery. Independent
+C2/C7/C4 PRs must rebase/reindex after another migration merges; this is not a production upgrade.
+
+Candidate validation: the real disposable PostgreSQL17.11 paired SQL/blob backup/restore runner
+completed all40 lineage/refusal/retained-data checks against this target. Previous qualification
+evidence remains historical. Final PR-head native product-container CI is still the packaging
+gate; no production conversion or cross-PR migration merge is claimed.
+
+## Desktop C4 independent target (historical, before C2 merged)
+
+
+Retain all feature/architecture source snapshots and the existing PostgreSQL17.11 dump/restore
+contract. Advance only the canonical target pin to migration `0046_owner_approval_settings` (47 entries), SHA-256
+`cd9079606c16af9319055a5ff12fcc7fa0942978c23b44d1857130f58fb8c6bd`; raw journal digest `b301740a8dea389eb30a7feb1037d97da5b5cdcc21fdaea3c8713d87e215ffcc`. Source revision/working-tree
+role is explicit in target-history.json; no earlier SQL bytes changed. Rerun the same synthetic
+paired SQL/blob backup/restore and divergent-lineage refusal gates before delivery. Independent
+C2/C7/C4 PRs must rebase/reindex after another migration merges; this is not a production upgrade.
+
+The migration seeds an Owner preference row. Feature-transfer targets record the exact freshly
+migrated snapshot before any import, including ledger and seed data, and reject every later
+difference. This preserves defaults rather than treating a seeded database as user-populated;
+source settings are never imported and duplicate/changed-target transfers still fail closed.
+
+Candidate validation: the real disposable PostgreSQL17.11 paired SQL/blob backup/restore runner
+completed all40 lineage/refusal/retained-data checks against this target. Previous qualification
+evidence remains historical. Final PR-head native product-container CI is still the packaging
+gate; no production conversion or cross-PR migration merge is claimed.
+
+## Desktop C4 after C2 merged (2026-10-01)
+
+Preserve merged migration `0046_owner_security` byte-for-byte. Reindex only the unapplied C4
+SQL to `0047_owner_approval_settings` (48 entries); its SQL SHA-256 remains
+`cd9079606c16af9319055a5ff12fcc7fa0942978c23b44d1857130f58fb8c6bd`. The new raw journal SHA-256 is
+`9e0c20ac79810ee0d763c1618b96ae267e7ba9f393deb7b590818582c777ad4a`. Retain the seeded-target exact snapshot guard and all source
+lineage snapshots. This target requires a new disposable paired SQL/blob qualification and
+current-head native product container checks; earlier40-case results remain historical.
+
+## Desktop C7 independent target (historical, before C2/C4 integrated)
+
 
 Retain all feature/architecture source snapshots and the existing PostgreSQL17.11 dump/restore
 contract. Advance only the canonical target pin to migration `0046_owner_preferences` (47 entries), SHA-256
@@ -311,3 +355,12 @@ Candidate validation: the real disposable PostgreSQL17.11 paired SQL/blob backup
 completed all40 lineage/refusal/retained-data checks against this target. Previous qualification
 evidence remains historical. Final PR-head native product-container CI is still the packaging
 gate; no production conversion or cross-PR migration merge is claimed.
+
+## Desktop C7 after C2/C4 integration (2026-10-01)
+
+Preserve all existing SQL, including `0046_owner_security` and `0047_owner_approval_settings`.
+Reindex only the unapplied C7 SQL to `0048_owner_preferences` (49 entries), retaining SHA-256
+`c7a6ed0f4631c9e8a2f6507a3b0697b16fb963ff67a2d00e79ea1275b34d9644`. The new raw journal SHA-256 is
+`a508215ac392aa0474e2cfd3e5d7189527c7c295ba136b701ad5c5e2740d6269`. The seeded-target exact snapshot guard and source histories stay unchanged.
+This updated target requires new disposable migration/paired SQL/blob checks and current-head
+container qualification; earlier results remain historical.

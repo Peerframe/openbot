@@ -206,7 +206,7 @@ class PostgresWorkStore:
             cursor = await connection.execute('SELECT * FROM work_actions WHERE run_id=%s AND action_key=%s', (run_id, action_key))
             existing = await cursor.fetchone()
             if existing is not None:
-                if (existing['intent_digest'], existing['reserved_tokens'], existing['requires_approval']) != (digest, reserved_tokens, requires_approval):
+                if (existing['intent_digest'], existing['reserved_tokens'], existing['baseline_requires_approval']) != (digest, reserved_tokens, requires_approval):
                     raise WorkConflict('action_content_changed')
                 if existing['correction_context_id'] != correction_context:
                     raise WorkConflict('action_context_changed')
@@ -225,10 +225,13 @@ class PostgresWorkStore:
             cursor = await connection.execute('SELECT count(*) AS n FROM work_actions WHERE task_id=%s', (task_id,))
             if (await cursor.fetchone())['n'] >= 256:
                 raise WorkConflict('action_limit')
+            from .approval_settings import required_in_transaction
+            minimum=requires_approval
+            requires_approval=await required_in_transaction(connection,task,intent,minimum)
             action_id = str(uuid4())
             await connection.execute('INSERT INTO work_actions(id,task_id,run_id,action_key,intent,intent_digest,authority_generation,'
-                'requires_approval,decision,expires_at,reserved_tokens,correction_context_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,clock_timestamp()+%s*interval \'1 second\',%s,%s)',
-                (action_id, task_id, run_id, action_key, Jsonb(intent), digest, task['authority_generation'], requires_approval,
+                'requires_approval,baseline_requires_approval,decision,expires_at,reserved_tokens,correction_context_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,clock_timestamp()+%s*interval \'1 second\',%s,%s)',
+                (action_id, task_id, run_id, action_key, Jsonb(intent), digest, task['authority_generation'], requires_approval, minimum,
                  'pending' if requires_approval else 'not_required', expires_seconds, reserved_tokens, correction_context))
             await connection.execute("UPDATE work_tasks SET status='open' WHERE id=%s", (task_id,))
             await connection.execute("UPDATE work_runs SET status='running' WHERE id=%s", (run_id,))
@@ -269,6 +272,8 @@ class PostgresWorkStore:
                 return False
             if not action['unexpired'] or action['authority_generation'] != task['authority_generation'] or action['decision'] not in ('approved', 'not_required'):
                 raise WorkConflict('action_not_authorized')
+            from .approval_settings import assert_current
+            await assert_current(connection,task,action)
             usage = await self._usage(connection, task['id'])
             if usage['reservedTokens'] + usage['spentTokens'] + action['reserved_tokens'] > task['token_limit']:
                 raise WorkConflict('token_budget_exhausted')

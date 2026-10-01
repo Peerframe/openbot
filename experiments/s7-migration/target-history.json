@@ -1,5 +1,5 @@
 {
-  "commit": "4522153601f61e4310bc50ba28cd9acbdc75bac4",
+  "commit": "6aae6eafa1b0a9e671b3806f6f39a9f4dffb202e",
   "commitRole": "committed-migration-source",
   "migrations": [
     {
@@ -280,8 +280,20 @@
     },
     {
       "index": 46,
-      "tag": "0046_owner_preferences",
-      "timestamp": 1790770270645,
+      "tag": "0046_owner_security",
+      "timestamp": 1790793114690,
+      "sha256": "197557b80e588769e2d6caee93fd6e44f5ef6fe07e14d09b7684fd9d1fffcd5b"
+    },
+    {
+      "index": 47,
+      "tag": "0047_owner_approval_settings",
+      "timestamp": 1790820667047,
+      "sha256": "cd9079606c16af9319055a5ff12fcc7fa0942978c23b44d1857130f58fb8c6bd"
+    },
+    {
+      "index": 48,
+      "tag": "0048_owner_preferences",
+      "timestamp": 1790821392428,
       "sha256": "c7a6ed0f4631c9e8a2f6507a3b0697b16fb963ff67a2d00e79ea1275b34d9644"
     }
   ],
@@ -290,11 +302,19 @@
     "previousQualifiedTarget": "e57967fcbc11daaf94563c1d8f018e1790da2b71",
     "journal": {
       "path": "packages/db/migrations/meta/_journal.json",
-      "sha256": "347b69dbcaf15589fefb2e3184e5be1facfb3fc68ec32b49de79bd5a897b4caf"
+      "sha256": "a508215ac392aa0474e2cfd3e5d7189527c7c295ba136b701ad5c5e2740d6269"
     },
     "changedSql": [
       {
-        "path": "packages/db/migrations/0046_owner_preferences.sql",
+        "path": "packages/db/migrations/0046_owner_security.sql",
+        "sha256": "197557b80e588769e2d6caee93fd6e44f5ef6fe07e14d09b7684fd9d1fffcd5b"
+      },
+      {
+        "path": "packages/db/migrations/0047_owner_approval_settings.sql",
+        "sha256": "cd9079606c16af9319055a5ff12fcc7fa0942978c23b44d1857130f58fb8c6bd"
+      },
+      {
+        "path": "packages/db/migrations/0048_owner_preferences.sql",
         "sha256": "c7a6ed0f4631c9e8a2f6507a3b0697b16fb963ff67a2d00e79ea1275b34d9644"
       }
     ]

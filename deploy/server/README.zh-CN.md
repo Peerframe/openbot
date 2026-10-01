@@ -66,6 +66,6 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=apps/server-python/src:packages/harness/src
 
 见[研究与准确边界](../../docs/research/python-product-container.md)。
 
-独立 Desktop C7 候选增加一条 canonical 迁移（共47条），构建和 smoke 门槛包含它。
-上方历史镜像证据保留原有范围；本 PR 的原生容器/迁移资格须基于当前 head 运行。先合并的
-迁移 PR 完成后再重新基于 main 编号，不修改已应用 SQL。
+Desktop C7 在 C2 和 C4 后追加 `0048_owner_preferences`（共49条迁移），构建和 smoke
+要求完整历史。上方镜像证据保留原有范围；本 PR 的原生容器/迁移资格必须基于当前 head
+运行，不修改已应用 SQL。

@@ -17,6 +17,7 @@ EXPIRES = datetime(2030, 1, 1, tzinfo=timezone.utc)
 
 def service(outcome):
     persistence = AsyncMock()
+    persistence.credentials.return_value = None
     persistence.attempt.return_value = outcome
     return OwnerAuthentication(persistence, owner_name="Owner", password=PASSWORD), persistence
 
@@ -80,6 +81,7 @@ def test_invalid_ttl_is_not_coerced(ttl):
 @pytest.mark.parametrize("count", [15, 513, 1024])
 def test_astral_passwords_use_retained_zod_codepoint_bound(count):
     persistence = AsyncMock()
+    persistence.credentials.return_value = None
     persistence.attempt.return_value = AttemptResult("issued", EXPIRES)
     password = "🙂" * count
     auth = OwnerAuthentication(persistence, owner_name="Owner", password=password)

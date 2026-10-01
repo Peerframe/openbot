@@ -764,5 +764,23 @@ export type ReviewKnowledgeProposalInput =
       modelUseEnabled: boolean;
     };
 
-export type { OwnerPreferences, OwnerPreferencesInput } from "@openbot/protocol";
+export type {
+  ApprovalException,
+  ApprovalSettings,
+  ApprovalSettingsInput,
+  AuditCategory,
+  AuditEvent,
+  AuditPage,
+  BrowserMaintenanceInput,
+  BrowserMaintenanceResult,
+  BrowserRuntimeState,
+  DesktopPlatformPreferences,
+  DesktopPlatformState,
+  DesktopUpdateState,
+  OwnerPasswordChangeInput,
+  OwnerPasswordChangeResponse,
+  OwnerPreferences,
+  OwnerPreferencesInput,
+  OwnerSessionDevice,
+} from "@openbot/protocol";
 export * from "./channel-interactions.js";
