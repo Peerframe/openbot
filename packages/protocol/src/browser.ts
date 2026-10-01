@@ -122,6 +122,20 @@ export const browserFrameSchema = z
   .strict();
 export type BrowserFrame = z.infer<typeof browserFrameSchema>;
 
+export const browserMaintenanceInputSchema = z
+  .object({
+    operation: z.enum(["status", "restart", "clear"]),
+    confirmation: z.literal("clear-browser-data").optional(),
+  })
+  .strict()
+  .refine((value) => (value.operation === "clear") === (value.confirmation !== undefined));
+export type BrowserMaintenanceInput = z.infer<typeof browserMaintenanceInputSchema>;
+export const browserRuntimeStateSchema = z.object({ running: z.boolean() }).strict();
+export type BrowserRuntimeState = z.infer<typeof browserRuntimeStateSchema>;
+export const browserMaintenanceActionSchema = z
+  .object({ kind: z.literal("maintenance"), operation: z.enum(["status", "restart", "clear"]) })
+  .strict();
+
 export const browserCommandSchema = z
   .object({
     type: z.literal("browser.command"),
@@ -134,6 +148,7 @@ export const browserCommandSchema = z
     controlExpiresAt: z.string().datetime().optional(),
     action: z.union([
       browserActionSchema,
+      browserMaintenanceActionSchema,
       z.object({ kind: z.literal("agent"), operation: browserTaskActionSchema }).strict(),
     ]),
   })
@@ -150,6 +165,7 @@ export const browserResultSchema = z
     ok: z.boolean(),
     frame: browserFrameSchema.optional(),
     page: browserPageSchema.optional(),
+    runtime: browserRuntimeStateSchema.optional(),
     error: z
       .enum([
         "unavailable",
@@ -174,3 +190,13 @@ export interface BrowserSessionView {
   controlExpiresAt?: string;
   frame?: BrowserFrame;
 }
+
+export const browserMaintenanceResultSchema = z
+  .object({
+    botId: z.string().uuid(),
+    nodeId: z.string().min(1).max(128),
+    running: z.boolean(),
+    paused: z.boolean(),
+  })
+  .strict();
+export type BrowserMaintenanceResult = z.infer<typeof browserMaintenanceResultSchema>;

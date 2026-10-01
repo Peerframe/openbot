@@ -4,6 +4,7 @@ from datetime import datetime
 import psycopg
 from .authority import OwnerTransactions
 from .database import StoreUnavailable
+from .channel_query import CHANNEL_QUERY
 from .models import project_bot, project_channels, iso_timestamp
 from .run_query import read_run_records
 
@@ -57,9 +58,7 @@ class PostgresWorkspace:
             bots = await (await db.execute("SELECT id,name,role,status,computer_profile,"
                 "jsonb_build_object('appearance',configuration->'appearance','model',configuration->'model') AS configuration,created_at "
                 "FROM bots WHERE deleted_at IS NULL ORDER BY created_at DESC,id LIMIT 1001")).fetchall()
-            channels = await (await db.execute('SELECT c.id,c.name,c.description,c.direct_bot_id,c.created_at,'
-                'cb.bot_id FROM channels c LEFT JOIN channel_bots cb ON cb.channel_id=c.id '
-                'WHERE c.deleted_at IS NULL ORDER BY c.created_at DESC,c.id,cb.bot_id LIMIT 10001')).fetchall()
+            channels = await (await db.execute(CHANNEL_QUERY)).fetchall()
             if len(bots)>1000 or len(channels)>10000:
                 raise StoreUnavailable('workspace_projection_limit')
             ids = [r['id'] for r in await (await db.execute('SELECT id FROM runs ORDER BY created_at DESC,id DESC LIMIT 50')).fetchall()]

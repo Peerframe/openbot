@@ -91,7 +91,7 @@ def main():
         from openbot_server.worker_host_identity import PostgresWorkerHostIdentity
         from openbot_server.worker_host_registry import WorkerHostRegistry
         worker_identity = PostgresWorkerHostIdentity(dsn)
-        worker_registry = WorkerHostRegistry(worker_identity,
+        worker_registry = WorkerHostRegistry(worker_identity,audit=worker_identity.connection_event,
             command_channel=command_installation.channel_configuration if command_installation else None)
         if command_installation:
             command_installation.attach(worker_registry.commands)
@@ -109,7 +109,7 @@ def main():
         product = OwnerProduct(dsn, object_root=object_root, model_settings=model,
             knowledge=PostgresEmployeeKnowledge(dsn), interactions=PostgresConversationInteractions(dsn),
             plugins=plugins,model_connections=connections,worker_identity=worker_identity,
-            worker_registry=worker_registry,browser=browser,nodes=worker_registry.list)
+            worker_registry=worker_registry,browser=browser,plugin_catalog_path=os.environ.get("OPENBOT_PLUGIN_CATALOG_PATH"),nodes=worker_registry.list)
         product.automations = PostgresAutomations(dsn, files=product.files,model_connections=connections)
         from openbot_server.employee_portability import PostgresEmployeePortability
         publisher = None

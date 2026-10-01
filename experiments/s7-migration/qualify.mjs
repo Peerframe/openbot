@@ -225,10 +225,9 @@ async function transferFeature(source, target, objects) {
   // Only this disposable target is written. Its current ledger was produced by the real migrator.
   await target.sql.begin(async (sql) => {
     const destination = await snapshot(sql);
-    assert.ok(
-      Object.values(destination.tables).every((rows) => rows.length === 0),
-      "Target is not empty",
-    );
+    // A newly migrated target can contain exact Owner default rows. Record its pristine
+    // snapshot before any transfer; reject every later change, including changed settings.
+    assert.deepEqual(destination, target.pristine, "Target is not empty");
     for (const name of tables) {
       const columns = await sql`
         SELECT column_name FROM information_schema.columns
@@ -428,6 +427,7 @@ try {
       });
       target = await newDatabase(admin);
       await upgrade(target);
+      target.pristine = await snapshot(target.sql);
       await check("feature: unknown nonempty table rejected", () =>
         rejectedMutation(
           restored,

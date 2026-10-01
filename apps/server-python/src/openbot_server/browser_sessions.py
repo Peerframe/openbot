@@ -11,7 +11,7 @@ from pydantic import TypeAdapter
 
 from .authority import OwnerTransactions, PostgresTransactions
 from .browser_gate import BrowserPauseGate
-from .browser_protocol import Action, Id, validate_frame
+from .browser_protocol import Action, Id, MaintenanceInput, RuntimeState, validate_frame
 from .control_errors import ControlError
 from .models import iso_timestamp
 from .worker_host_registry import BrowserHostBinding
@@ -286,6 +286,69 @@ class BrowserSessionsService:
                             await self._state(db, session, dict(paused=True, sessionId=identity,
                                                                expiresAt=iso_timestamp(now())))
                 raise
+
+    async def maintenance(self, token, bot_id, value):
+        await self.authorize(token)
+        bot_id = TypeAdapter(Id).validate_python(bot_id)
+        command = MaintenanceInput.model_validate(value)
+        # Destructive maintenance may only touch the original identity or an explicit operator route.
+        async with self.owner.transaction(token) as db:
+            await self._authority(db, token, bot_id)
+            bound = await (await db.execute("SELECT 1 FROM run_events WHERE bot_id=%s AND type='BROWSER_HOST_BOUND' LIMIT 1", (bot_id,))).fetchone()
+            if bound is None and self._route(bot_id) is None:
+                raise ControlError(503, "browser_original_host_required")
+        view = await self.open(token, bot_id)
+        session = self._session(view['id'], token)
+        request_id = str(uuid4())
+        operation = command.operation
+        try:
+            async with self.gate.human(bot_id):
+                async with self.owner.transaction(token) as db:
+                    stamp, expiry = await self._authority(db, token, bot_id)
+                    await self._host_identity(db, session.binding)
+                    self._check_route(session, 'observe')
+                    node = next((item for item in self.registry.list() if item['id'] == session.node_id), None)
+                    if node is None or not any(cap['id'] == 'browser.maintenance' and cap['version'] == 1 and cap['providerId'] == 'docker' for cap in node['capabilityManifest']):
+                        raise ControlError(503, "browser_maintenance_unavailable")
+                    if operation != 'status':
+                        await self._state(db, session, dict(paused=True))
+                        await self._event(db, session, request_id, operation, 'intent')
+                    state = await self.gate.state(db, bot_id)
+                if operation != 'status':
+                    # Every existing view/observation is stale after a profile lifecycle operation.
+                    for identity, existing in list(self._sessions.items()):
+                        if existing.bot_id == bot_id and identity != session.id: self._sessions.pop(identity, None)
+                frame = dict(type='browser.command', protocolVersion='0.9.0', nodeId=session.node_id,
+                    botId=bot_id, sessionId=session.id, requestId=request_id,
+                    expiresAt=iso_timestamp(min(stamp+timedelta(seconds=25), expiry)),
+                    action=dict(kind='maintenance', operation=operation))
+                @asynccontextmanager
+                async def dispatch_guard(message):
+                    async with self.owner.transaction(token) as db:
+                        current, expiry = await self._authority(db, token, bot_id)
+                        await self._host_identity(db, session.binding)
+                        self._check_route(session, 'observe')
+                        message['expiresAt'] = iso_timestamp(min(current+timedelta(seconds=25), expiry, datetime.fromisoformat(message['expiresAt'])))
+                        yield
+                try:
+                    result = await self.registry.browser_command(frame, binding=session.binding, dispatch_guard=dispatch_guard)
+                    if not result.get('ok') or 'runtime' not in result: raise ValueError('Unconfirmed browser maintenance.')
+                    runtime = RuntimeState.model_validate(result['runtime']).model_dump()
+                    if operation == 'restart' and not runtime['running'] or operation == 'clear' and runtime['running']:
+                        raise ValueError('Unexpected browser runtime state.')
+                    async with self.owner.transaction(token) as db:
+                        await self._authority(db, token, bot_id)
+                        await self._host_identity(db, session.binding)
+                        self._check_route(session, 'observe')
+                        if operation != 'status': await self._event(db, session, request_id, operation, 'completed')
+                    return dict(botId=bot_id, nodeId=session.node_id, **runtime, paused=state.get('paused') is True)
+                except BaseException:
+                    if operation != 'status':
+                        async with self.trusted.transaction() as db:
+                            await self._event(db, session, request_id, operation, 'uncertain')
+                    raise
+        finally:
+            self._sessions.pop(session.id, None)
 
     async def close(self, token, identity):
         await self.authorize(token)
