@@ -1011,3 +1011,11 @@ file, and released electron-updater 6.8.9 (MIT) for macOS/NSIS update verificati
 configuration trust checks, alternative comparison and outstanding signed release qualification
 are recorded in [the review](research/desktop-platform-settings.md). No upstream code was copied
 or substantially adapted. Unsigned packages fail closed before updater construction.
+
+## Employee browser lifecycle adapter (2026-10-01)
+
+The [C6 review](research/desktop-browser-management.md) extends the already pinned MIT
+agent-computer `257c1280d684089be9adb0b35cce262efc7064bf` health/stop/reset surface through the
+original Server/Worker/Docker path. Reuse the durable human/agent gate and exact Host binding;
+no new browser manager or copied upstream source. Download/screenshot retention data scope is an
+explicit Owner-deferred follow-up, not a claimed setting implementation.

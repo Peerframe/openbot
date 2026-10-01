@@ -1,4 +1,9 @@
-import { type BrowserCommand, type BrowserFrame, browserFrameSchema } from "@openbot/protocol";
+import {
+  type BrowserCommand,
+  type BrowserFrame,
+  type BrowserRuntimeState,
+  browserFrameSchema,
+} from "@openbot/protocol";
 
 type Request = (
   botId: string,
@@ -50,12 +55,14 @@ export class BrowserCoordinator {
   }
 
   async command(command: BrowserCommand, signal: AbortSignal): Promise<BrowserFrame> {
-    if (command.action.kind === "agent") throw new Error("Work browser composition required.");
+    if (command.action.kind === "agent" || command.action.kind === "maintenance")
+      throw new Error("Work browser composition required.");
     return this.#serial(command.botId, async () => {
       signal.throwIfAborted();
       if (Date.parse(command.expiresAt) <= Date.now()) throw new Error("Expired browser command.");
       const { botId, sessionId, action } = command;
-      if (action.kind === "agent") throw new Error("Work browser composition required.");
+      if (action.kind === "agent" || action.kind === "maintenance")
+        throw new Error("Work browser composition required.");
       const call = (path: string, body?: unknown, requestSignal = signal) =>
         this.request(botId, path, requestSignal, body);
       const held = this.#control.get(botId);
@@ -113,6 +120,52 @@ export class BrowserCoordinator {
       signal.throwIfAborted();
       if (action.kind === "release") this.#control.delete(botId);
       return frame;
+    });
+  }
+
+  async maintenance(command: BrowserCommand, signal: AbortSignal): Promise<BrowserRuntimeState> {
+    if (command.action.kind !== "maintenance") throw new Error("Invalid maintenance command.");
+    const operation = command.action.operation;
+    return this.#serial(command.botId, async () => {
+      signal.throwIfAborted();
+      if (Date.parse(command.expiresAt) <= Date.now())
+        throw new Error("Expired maintenance command.");
+      const call = (path: string, body?: unknown) =>
+        this.request(command.botId, path, signal, body);
+      if (operation !== "status") {
+        // A failed response is an uncertain effect. Keep the local latch until explicit takeover/release.
+        this.#generations.set(command.botId, Symbol());
+        this.#control.set(command.botId, { sessionId: command.sessionId, expiresAt: 0 });
+        const value = await call(
+          operation === "clear" ? "/computers/reset" : "/computers/stop",
+          {},
+        );
+        if (
+          !value ||
+          typeof value !== "object" ||
+          (operation === "clear"
+            ? (value as { reset?: unknown }).reset !== true ||
+              (value as { botId?: unknown }).botId !== command.botId
+            : (value as { stopped?: unknown }).stopped !== true)
+        )
+          throw new Error("Maintenance effect unconfirmed.");
+        if (operation === "restart") {
+          // Capture starts through the same upstream path; never navigate to or expose its content.
+          browserFrameSchema.parse(await call("/screenshot"));
+        }
+      }
+      const value = await call("/health");
+      if (
+        !value ||
+        typeof value !== "object" ||
+        (value as { status?: unknown }).status !== "ok" ||
+        typeof (value as { browser?: unknown }).browser !== "boolean"
+      )
+        throw new Error("Invalid browser health.");
+      const running = (value as { browser: boolean }).browser;
+      if ((operation === "restart" && !running) || (operation === "clear" && running))
+        throw new Error("Unexpected browser state.");
+      return { running };
     });
   }
 
