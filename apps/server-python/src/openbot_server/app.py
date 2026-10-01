@@ -84,7 +84,8 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     @app.middleware("http")
     async def private_response(request: Request, call_next):
         auth_write = auth is not None and request.method == "POST" and request.url.path in (
-            "/api/v1/auth/login", "/api/v1/auth/logout")
+            "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/auth/password",
+            "/api/v1/auth/sessions/revoke-others")
         identity_write = identity is not None and request.method == "POST" and request.url.path in (
             "/api/v1/bots", "/api/v1/channels")
         conversation_write = conversations is not None and request.method == "POST" and (
@@ -262,6 +263,11 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         schema["paths"]["/api/v1/bots/{bot_id}/profile"]["patch"]["security"] = [{"OwnerSession": []}]
     if tasks is not None:
         schema["paths"]["/api/v1/channels/{channel_id}/messages"]["post"]["security"] = [{"OwnerSession": []}]
+    if auth is not None:
+        for path, method in (("/api/v1/auth/sessions","get"),
+                             ("/api/v1/auth/password","post"),
+                             ("/api/v1/auth/sessions/revoke-others","post")):
+            schema["paths"][path][method]["security"] = [{"OwnerSession": []}]
     if run_commands is not None:
         for path in ("/api/v1/runs/{run_id}/cancel", "/api/v1/runs/{run_id}/steer"):
             schema["paths"][path]["post"]["security"] = [{"OwnerSession": []}]

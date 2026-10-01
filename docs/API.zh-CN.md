@@ -86,6 +86,26 @@ secret，不等于生产级持有证明身份。能力声明本身仍不授予�
 频道与工作区 SSE 每个订阅最多保留 128 个待发送投影。慢客户端达到上限后连接会被关闭，Web
 客户端重连并重新读取数据库权威快照；Server 不会静默丢弃某个事件后继续伪装为连续流。
 
+## Owner 密码与登录会话（C2）
+
+- `GET /api/v1/auth/sessions` 返回 `{ sessions: [{ id, userAgent, current, createdAt, expiresAt }] }`，
+  按创建时间倒序列出有效会话，最多 100 个。ID 不是登录凭据，不返回 token、摘要或 IP。
+  `userAgent` 是最多 256 个码点的不可信提示，旧会话为空；登录不会创建超过上限的有效会话。
+- `POST /api/v1/auth/sessions/revoke-others` 需要当前 cookie 与精确匹配的 Origin，无需正文。
+  返回 `{ revoked: number }`，保留发起会话，在同一事务记录 `OWNER_SESSIONS_REVOKED` 和撤销数量。
+- `POST /api/v1/auth/password` 需要 cookie、精确 Origin 和 `{ currentPassword, newPassword }`，
+  拒绝多余字段，不裁剪空格。旧密码为 1–1024 个码点，新密码为 15–1024 个码点，拒绝示例密码，
+  沿用 8192 字节请求上限。成功返回 `{ changed: true, reauthenticationRequired: true }`，
+  清除 cookie、撤销全部会话并原子记录 `OWNER_PASSWORD_CHANGED`。
+  旧密码错误或会话无效为 401，限流为 429（含 `Retry-After`），输入错误为 422；
+  存储或审计失败为 503，不修改密码、撤销会话或清除 cookie。
+
+修改后的密码以带随机盐的标准库 scrypt（N=32768、r=8、p=3）哈希保存在 PostgreSQL。
+已有保存的凭据后，环境密码只作为初始配置，重启不会覆盖修改结果。
+凭据版本和共享事务锁拒绝在密码修改前生成的登录校验证明。
+备份数据库时同时保留 `owner_credentials`。此功能不提供密码找回或可信设备身份；
+失去 Owner 登录凭据时仍需通过部署管理路径处理。
+
 ## 创建 Bot
 
 ```json
@@ -348,7 +368,9 @@ JSON 每页仍为 1–100 条。
 这是分页历史导出，不是单一事务的全库归档。
 
 登录成功、密码错误和退出登录分别写入 `AUTH_LOGIN_SUCCEEDED`、`AUTH_LOGIN_FAILED`、`AUTH_LOGOUT`，
-不记录秘密；已限流请求不重复生成无界事件。旧模型设置最终发布在授权事务内记录
+不记录秘密；已限流请求不重复生成无界事件。登录审计与 C2 的凭据 revision 校验和会话写入
+属于同一事务，并保留有长度上限的 user-agent 提示。审计存储失败返回 503，不发出 cookie，
+也不提交会话或限流变更。旧模型设置最终发布在授权事务内记录
 `SETTINGS_MODEL_UPDATED`，审计失败恢复旧文件；保留已有模型连接事件。
 主机注册、撤销、实际连接与断开记录 `WORKER_HOST_*`；私有网络摘要留在身份账本。
 连接事件持久化失败不提供主机可用性；物理断开时仍完成清理，审计失败记录固定错误。

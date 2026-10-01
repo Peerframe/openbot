@@ -86,6 +86,29 @@ Channel and workspace SSE subscribers each have a 128-event pending bound. The S
 an overloaded subscriber; the Client reconnects and reloads the authoritative database snapshot
 instead of pretending a dropped stream is continuous.
 
+## Owner password and sessions (C2)
+
+- `GET /api/v1/auth/sessions` returns `{ sessions: [{ id, userAgent, current, createdAt, expiresAt }] }`
+  for active Owner sessions, newest first (maximum 100). IDs are non-bearer session IDs; no tokens,
+  digests or IP addresses are returned. `userAgent` is an untrusted hint bounded to 256 code points;
+  old sessions have an empty hint. Login refuses issuance above 100 active sessions.
+- `POST /api/v1/auth/sessions/revoke-others` requires the current cookie and exact allowed Origin.
+  Returns `{ revoked: number }`, keeps the initiating session, and atomically audits
+  `OWNER_SESSIONS_REVOKED` with the count. No body is required.
+- `POST /api/v1/auth/password` requires the cookie, exact Origin and JSON
+  `{ currentPassword, newPassword }`. No unknown fields; no whitespace trimming. Current password:
+  1–1024 code points; new password: 15–1024, excluding the example password. The existing 8192-byte
+  request bound applies. Success returns `{ changed: true, reauthenticationRequired: true }`,
+  clears the cookie, atomically revokes **all** sessions and records `OWNER_PASSWORD_CHANGED`.
+  Wrong current password is 401, throttled attempts 429 (`Retry-After`), invalid input 422,
+  unknown/revoked session 401 and storage/audit failure 503 without mutation or cookie clearing.
+
+Rotated credentials use salted stdlib scrypt (N=32768, r=8, p=3) in PostgreSQL. The environment
+password is bootstrap-only once a stored credential exists; restart never restores it. Credential
+revision and a shared transaction lock reject a login proof computed before password rotation.
+Back up `owner_credentials` together with the existing database. No password recovery or device
+identity verification is implied; an Owner locked out of a deployment must use its administration path.
+
 ## Bots and Employee profiles
 
 Create a Bot:
@@ -355,6 +378,9 @@ headers/BOM when assembling pages. The export is paginated history, not a transa
 
 Login success/failure and logout append `AUTH_LOGIN_SUCCEEDED`, `AUTH_LOGIN_FAILED`, `AUTH_LOGOUT`
 without secrets; rejected, already-throttled attempts do not create unbounded audit rows.
+Login auditing shares the C2 credential-revision check and session transaction, retaining the bounded
+user-agent hint. Audit storage failure returns 503 without issuing a cookie or committing a session
+or throttle mutation.
 Final legacy model-setting publication audits `SETTINGS_MODEL_UPDATED` in its authority
 transaction; audit failure restores the private file. Existing model-connection events remain.
 Worker enrollment/revocation and real connection/disconnection append `WORKER_HOST_*`; private

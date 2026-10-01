@@ -1,6 +1,6 @@
 {
-  "commit": "e57967fcbc11daaf94563c1d8f018e1790da2b71",
-  "commitRole": "working-tree-parent",
+  "commit": "3fbdcb274176d42d793ae50380055db32d40052a",
+  "commitRole": "committed-migration-source",
   "migrations": [
     {
       "index": 0,
@@ -277,19 +277,25 @@
       "tag": "0045_identity_lifecycle",
       "timestamp": 1790770270643,
       "sha256": "893c5edd184b6767e6d2b9a1ca0d36a743f802db8d171e9f177d13ffa1c77652"
+    },
+    {
+      "index": 46,
+      "tag": "0046_owner_security",
+      "timestamp": 1790793114690,
+      "sha256": "197557b80e588769e2d6caee93fd6e44f5ef6fe07e14d09b7684fd9d1fffcd5b"
     }
   ],
   "qualificationInput": {
     "state": "working-tree-requalification",
-    "previousQualifiedTarget": "63242fc06d9ba3efe018509f7e0868ac293ea7f7",
+    "previousQualifiedTarget": "e57967fcbc11daaf94563c1d8f018e1790da2b71",
     "journal": {
       "path": "packages/db/migrations/meta/_journal.json",
-      "sha256": "1a6b4bb17595c00fb5daa7b7ea73fda7c028c31d01463370beed79c76035efa0"
+      "sha256": "424c5fc33a89c75edab128324f5e7fad52b62971ffd4deb1ff5dce286026fa42"
     },
     "changedSql": [
       {
-        "path": "packages/db/migrations/0045_identity_lifecycle.sql",
-        "sha256": "893c5edd184b6767e6d2b9a1ca0d36a743f802db8d171e9f177d13ffa1c77652"
+        "path": "packages/db/migrations/0046_owner_security.sql",
+        "sha256": "197557b80e588769e2d6caee93fd6e44f5ef6fe07e14d09b7684fd9d1fffcd5b"
       }
     ]
   }

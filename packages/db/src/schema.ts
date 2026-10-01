@@ -495,11 +495,26 @@ export const runEvents = pgTable(
   ],
 );
 
+export const ownerCredentials = pgTable(
+  "owner_credentials",
+  {
+    ownerId: text("owner_id").primaryKey().default("owner"),
+    passwordHash: text("password_hash").notNull(),
+    revision: integer("revision").notNull().default(1),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("owner_credentials_owner_valid", sql`${table.ownerId} = 'owner'`),
+    check("owner_credentials_revision_valid", sql`${table.revision} > 0`),
+  ],
+);
+
 export const authSessions = pgTable(
   "auth_sessions",
   {
     id: text("id").primaryKey(),
     tokenDigest: text("token_digest").notNull(),
+    userAgent: text("user_agent").notNull().default(""),
     ownerId: text("owner_id").notNull().default("owner"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
@@ -510,6 +525,7 @@ export const authSessions = pgTable(
     index("auth_sessions_active_expiry_idx")
       .on(table.expiresAt)
       .where(sql`${table.revokedAt} IS NULL`),
+    check("auth_sessions_user_agent_bound", sql`length(${table.userAgent}) <= 256`),
     check("auth_sessions_owner_valid", sql`${table.ownerId} = 'owner'`),
     check("auth_sessions_token_digest_valid", sql`length(${table.tokenDigest}) = 64`),
   ],

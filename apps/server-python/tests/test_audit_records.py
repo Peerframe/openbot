@@ -70,7 +70,11 @@ def test_auth_and_worker_lifecycle_events_enter_the_existing_audit(fixture):
     async def check():
         from openbot_server.auth import InvalidCredentials
         with pytest.raises(InvalidCredentials):await auth.login("wrong","192.0.2.181")
-        issued=await auth.login(fixture["ownerPassword"],"192.0.2.181")
+        issued=await auth.login(fixture["ownerPassword"],"192.0.2.181",user_agent="Synthetic C3 Desktop")
+        sessions=await auth.sessions(issued.token)
+        current=next(row for row in sessions if row["current"])
+        assert current["userAgent"]=="Synthetic C3 Desktop"
+        assert issued.token not in str(sessions)
         assert await auth.logout(issued.token)
         identity=PostgresWorkerHostIdentity(fixture["dsn"])
         await identity.connection_event("c3-audit-host","connected")
@@ -126,3 +130,32 @@ def test_live_registry_connection_audit_and_failed_audit_refuse_availability(fix
     with psycopg.connect(fixture['dsn']) as db:
         events=db.execute("SELECT type FROM run_events WHERE payload->>'nodeId'='c3-audit-live-host'").fetchall()
         assert {row[0] for row in events}=={'WORKER_HOST_CONNECTED','WORKER_HOST_DISCONNECTED'}
+
+
+@pytest.mark.parametrize("valid_password",[False,True])
+def test_login_audit_failure_cannot_publish_session_cookie_or_throttle(fixture,valid_password):
+    from openbot_server.auth import client_digest
+    auth=OwnerAuthentication(PostgresAuthStore(fixture["dsn"]),owner_name="Owner",password=fixture["ownerPassword"])
+    app=create_app(PostgresReadStore(fixture["dsn"]),owner_name="Owner",secure_cookies=False,
+                   allowed_origins=("http://testserver",),auth=auth)
+    digest=client_digest("192.0.2.182")
+    with psycopg.connect(fixture["dsn"]) as db:
+        sessions_before=db.execute("SELECT count(*) FROM auth_sessions").fetchone()
+        assert db.execute("SELECT attempt_count FROM request_throttle_buckets WHERE scope='owner-login' AND client_digest=%s",(digest,)).fetchone() is None
+        events_before=db.execute("SELECT count(*) FROM run_events WHERE type IN ('AUTH_LOGIN_FAILED','AUTH_LOGIN_SUCCEEDED')").fetchone()
+        db.execute("CREATE FUNCTION c3_reject_login_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN "
+            "IF NEW.type IN ('AUTH_LOGIN_FAILED','AUTH_LOGIN_SUCCEEDED') THEN RAISE EXCEPTION 'synthetic audit failure'; END IF; RETURN NEW; END $$")
+        db.execute("CREATE TRIGGER c3_reject_login BEFORE INSERT ON run_events FOR EACH ROW EXECUTE FUNCTION c3_reject_login_audit()")
+    try:
+        with TestClient(app,client=("192.0.2.182",1)) as api:
+            response=api.post('/api/v1/auth/login',headers={'Origin':'http://testserver','User-Agent':'Synthetic C3 Desktop'},
+                              json={'password':fixture['ownerPassword'] if valid_password else 'wrong'})
+            assert response.status_code==503,response.text
+            assert 'set-cookie' not in response.headers and not api.cookies
+            with psycopg.connect(fixture["dsn"]) as db:
+                assert db.execute("SELECT count(*) FROM auth_sessions").fetchone()==sessions_before
+                assert db.execute("SELECT attempt_count FROM request_throttle_buckets WHERE scope='owner-login' AND client_digest=%s",(digest,)).fetchone() is None
+                assert db.execute("SELECT count(*) FROM run_events WHERE type IN ('AUTH_LOGIN_FAILED','AUTH_LOGIN_SUCCEEDED')").fetchone()==events_before
+    finally:
+        with psycopg.connect(fixture["dsn"]) as db:
+            db.execute('DROP TRIGGER c3_reject_login ON run_events');db.execute('DROP FUNCTION c3_reject_login_audit()')
