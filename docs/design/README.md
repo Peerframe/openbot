@@ -17,8 +17,8 @@ Read the relevant section of [INTERFACE](../INTERFACE.md), then the actual compo
 [the UI route](../REPOSITORY_MAP.md#ui-interaction). INTERFACE mixes existing behavior and future
 intent; current code/tests and the accepted task define scope. Layout and visual decisions follow the
 [2026-10 design contract](desktop-ui-2026-10/README.md); keep assets such as the RobotAvatar.
-[styles.css](../../apps/web/src/styles.css) owns base tokens (`--blue`, `--line`, `--muted`, `--panel`),
-focus rings and global primitives. Component CSS owns local layout; reuse nearby native buttons,
+[tokens.css](../../apps/web/src/tokens.css) owns the `--ob-*` tokens and
+[primitives.css](../../apps/web/src/primitives.css) the focus rings and global primitives. Component CSS owns local layout; reuse nearby native buttons,
 forms and dialogs. Do not add a theme that overlaps the contract's tokens or infer a redesign from the
 historical office image.
 

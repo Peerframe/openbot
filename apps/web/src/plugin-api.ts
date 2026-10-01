@@ -36,7 +36,7 @@ export function pluginError(cause: unknown): string {
   if (cause instanceof ApiError && cause.status === 409)
     return "配置或工具声明已改变，请重新读取并审核。";
   if (cause instanceof ApiError && cause.status === 400)
-    return "插件地址、声明或参数未通过检查。请核对协议要求；本机地址须先加入 Server 的精确白名单。";
+    return "插件地址、声明或参数未通过检查。请核对协议要求；本机地址须先加入服务电脑的精确白名单。";
   if (cause instanceof ApiError && cause.status === 403)
     return "此 Bot 尚未获得所选插件能力，或权限已被撤销。请核对频道成员与插件授权。";
   if (cause instanceof ApiError && cause.status === 404)

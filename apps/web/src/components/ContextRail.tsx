@@ -236,7 +236,7 @@ export function ContextRail({
                 </button>
                 <span className={`ci-status ${activeBotIds.has(bot.id) ? "is-active" : "is-idle"}`}>
                   <i aria-hidden="true" />
-                  {activeBotIds.has(bot.id) ? "执行中" : "待命"}
+                  {activeBotIds.has(bot.id) ? "工作中" : "待命"}
                 </span>
                 {onRemove && !channel.directBotId ? (
                   <button
@@ -515,7 +515,7 @@ function ChannelLibrary({
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   return (
     <>
-      <section className="ci-section" aria-label="任务产物">
+      <section className="ci-section" aria-label="任务产出">
         <h3>任务产物 · {artifacts.length}</h3>
         {artifacts.length > 0 ? (
           <div className="ci-card">

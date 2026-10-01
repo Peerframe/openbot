@@ -149,7 +149,7 @@ export function App() {
         if (signal?.aborted || requestId !== authRequest.current) return;
         setSession(undefined);
         setSessionError(
-          cause instanceof Error ? cause.message : "无法连接 OpenBot Server。请确认服务已启动。",
+          cause instanceof Error ? cause.message : "无法连接 OpenBot 服务电脑。请确认服务已启动。",
         );
       }
     },

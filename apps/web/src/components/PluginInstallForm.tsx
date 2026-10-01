@@ -109,7 +109,7 @@ export function PluginInstallForm({ onInstalled }: { onInstalled(): void }) {
             }}
           />
         </label>
-        <p>预览会连接服务并读取工具声明，不调用工具。令牌由 Server 加密保存，不会提供给模型。</p>
+        <p>预览会连接服务并读取工具声明，不调用工具。令牌由服务电脑加密保存，不会提供给模型。</p>
         <button className="secondary-button" disabled={busy} type="submit">
           {busy ? "正在处理…" : "连接并预览工具"}
         </button>

@@ -117,13 +117,13 @@ export function desktopConnectionErrorMessage(
 ): string {
   switch (code) {
     case "invalid_url":
-      return "地址无效：远程 Server 使用 HTTPS，本机可使用 localhost HTTP。";
+      return "地址无效：远程服务电脑使用 HTTPS，本机可使用 localhost HTTP。";
     case "server_unreachable":
-      return "无法连接该地址，请检查 Server、网络和证书。";
+      return "无法连接该地址，请检查服务电脑、网络和证书。";
     case "server_redirected":
-      return "该地址发生了重定向，请填写最终的 Server 地址。";
+      return "该地址发生了重定向，请填写最终的服务电脑地址。";
     case "not_openbot_server":
-      return "该地址没有返回可识别的 OpenBot Server。";
+      return "该地址没有返回可识别的 OpenBot 服务电脑。";
     case "confirmation_unavailable":
       return "系统确认窗口不可用，请重试。";
     case "storage_unavailable":

@@ -75,7 +75,7 @@ describe("RunInspector production collaboration wiring", () => {
       const roles = view.container.querySelector('[aria-label="分工"]');
       expect(roles).not.toBeNull();
       const statusButton = [...roles!.querySelectorAll("button")].find(
-        (node) => node.textContent?.includes("执行中") || node.textContent?.includes("运行"),
+        (node) => node.textContent?.includes("工作中") || node.textContent?.includes("运行"),
       );
       expect(statusButton).toBeTruthy();
       await interact(() => {

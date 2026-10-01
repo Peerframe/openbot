@@ -182,7 +182,7 @@ export function EmployeeProfileView({
           {tab === "configuration" ? (
             <ProfileSection
               title="配置"
-              description="名称、标签和描述只用于说明，不授予权限；电脑权限与执行配置由 Server 单独管理。"
+              description="名称、标签和描述只用于说明，不授予权限；电脑权限与执行配置由服务电脑单独管理。"
             >
               {onRename ? (
                 <div className="ep-config-identity">
@@ -214,7 +214,7 @@ export function EmployeeProfileView({
                 </div>
                 <div>
                   <dt>电脑权限</dt>
-                  <dd>不随员工模板导出，接收者必须在自己的 Server 重新授权</dd>
+                  <dd>不随员工模板导出，接收者必须在自己的服务电脑重新授权</dd>
                 </div>
               </dl>
               <div className="ep-export">
@@ -750,7 +750,7 @@ function Records({ profile }: { profile: EmployeeProfile }) {
   return (
     <ProfileSection
       title="工作记录"
-      description="任务、审批、产物与结构化进度都保留对原始记录的引用。"
+      description="任务、审批、产出与结构化进度都保留对原始记录的引用。"
     >
       <RunTable runs={profile.records.runs} />
       <div className="employee-record-counts">

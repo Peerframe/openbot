@@ -50,7 +50,7 @@
 
 | # | 步骤 | 画板 | 依赖 | 改什么 |
 | --- | --- | --- | --- | --- |
-| 14 | 一比一还原的基础 | Components | — | 把令牌和基础组件从 `styles.css` 拆到 `tokens.css` 和 `primitives.css`；新增 `.ob-seg` 和对话框框架；基于现有演示适配器（`apps/web/src/demo`）做**设计预览工具**，用模拟数据按 1440×900 渲染每个画板状态，用来截图对比；按用语表统一文案（服务电脑、工作电脑、任务、频道） |
+| 14 | 一比一还原的基础——**审核中** | Components | — | 令牌和基础组件已从 `styles.css` 拆到 `tokens.css` 和 `primitives.css`，由 `global-styles.ts` 统一加载；新增 `.ob-seg`、大号胶囊按钮和 `Dialog` 框架；**设计预览**（`preview.html`，用与网站演示相同的隔离方式做的模拟传输层），按场景用 1440×900 渲染真实界面；按用语表统一文案（服务电脑、工作电脑、工作中、产出、任务） |
 | 15 | 头像 v3、群组头像与「工作中」状态 | Avatar、Avatars、GroupAvatar、GroupAvatars、Sidebar、Profile | 额外颜色需要 C10 | v3 几何与小尺寸稿；沿轮廓挖缝；新的 `GroupAvatar` 用在侧栏、标题胶囊、右栏、新建聊天和提及；状态圆点（工作中 / 需要你确认 / 离线）和工作动画，带「减少动态效果」降级；「工作中」全部从蓝色改为绿色 |
 | 16 | 新建 Bot 与频道 | New、NewGroup、NewBotChat | C12；C11 可选 | 「+」收件人列表里加「创建新 Bot ⌘1」「创建频道 ⌘2」；一键生成随机 Bot 并打开单聊；「你最想让我先帮你做什么？」卡片；删除 `CreateBotDialog` 和 `CreateChannelDialog` |
 | 17 | Bot 信息右栏 | BotInfo | 编辑头像需要 C9 | 新的 `BotInfoRail` 用于单聊和 Bot 档案：原地改名、添加标签、「详情 / 资料库 / 电脑」、编辑头像弹窗；取代 `EmployeeProfileRail` |

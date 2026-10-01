@@ -102,8 +102,8 @@ export function RunInspector({
                 <small>执行电脑</small>
                 <strong>
                   {serverExecuted
-                    ? "由 Server 执行"
-                    : (node?.name ?? (run.nodeId ? "节点已离线" : "等待分配"))}
+                    ? "由服务电脑执行"
+                    : (node?.name ?? (run.nodeId ? "工作电脑已离线" : "等待分配"))}
                 </strong>
               </span>
             </div>

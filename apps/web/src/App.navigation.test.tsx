@@ -373,7 +373,7 @@ describe("Desktop workspace navigation continuity", () => {
       const roles = inspector!.querySelector('[aria-label="分工"]');
       expect(roles).not.toBeNull();
       const childStatus = [...roles!.querySelectorAll("button")].find((node) =>
-        node.textContent?.includes("执行中"),
+        node.textContent?.includes("工作中"),
       );
       expect(childStatus).toBeTruthy();
       await interact(() => childStatus!.click());

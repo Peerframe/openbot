@@ -196,7 +196,7 @@ describe("RunProgressPanel", () => {
     );
     try {
       expect(view.container.textContent).toContain("任务已结束");
-      expect(view.container.textContent).not.toContain("等待 Server 报告下一步");
+      expect(view.container.textContent).not.toContain("等待服务电脑报告下一步");
     } finally {
       await view.unmount();
     }
@@ -237,7 +237,7 @@ describe("RunProgressPanel", () => {
       />,
     );
     try {
-      expect(empty.container.textContent).toContain("暂无产物");
+      expect(empty.container.textContent).toContain("暂无产出");
     } finally {
       await empty.unmount();
     }

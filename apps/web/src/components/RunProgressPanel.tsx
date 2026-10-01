@@ -36,7 +36,7 @@ export function currentStepLabel(run: Run, progress: readonly RunProgress[]): st
 }
 
 export function currentStatusDetail(run: Run, progress: readonly RunProgress[]): string {
-  return latestProgressMessage(run, progress) ?? "等待 Server 报告下一步。";
+  return latestProgressMessage(run, progress) ?? "等待服务电脑报告下一步。";
 }
 
 /** Real Server projections only: computer preview, roles, step, approval, terminal, artifacts. */
@@ -162,7 +162,7 @@ export function RunProgressPanel({
           <p>{run.resultSummary}</p>
         ) : (
           <p className="run-progress-panel__empty-preview">
-            暂无产物。任务产生附件或摘要后会出现在这里。
+            暂无产出。任务产生附件或摘要后会出现在这里。
           </p>
         )}
       </section>

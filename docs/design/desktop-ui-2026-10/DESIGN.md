@@ -15,8 +15,9 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
    owner, then built.
 2. **No legacy look survives.** The earlier interface is retired, not restyled. A component that
    still renders a legacy class (see [Legacy inventory](#legacy-inventory)) is unfinished work.
-3. **One token layer.** Colours, type, radii and spacing come from the `--ob-*` tokens and shared
-   primitives. Component CSS lives beside its component.
+3. **One token layer.** Colours, type, radii and spacing come from the `--ob-*` tokens in
+   `tokens.css` and the shared primitives in `primitives.css` (pills, `.ob-seg`, the `Dialog`
+   frame). Component CSS lives beside its component.
 4. **Data honesty.** An element whose data or capability does not exist yet is hidden, never faked.
    The artboard shows the finished product; the plan says what stays hidden until its backend item
    lands.
@@ -24,7 +25,8 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
    stay even when an artboard does not draw them; the design decides only how they look.
 6. **One vocabulary.** User-facing copy uses the [glossary](#glossary).
 7. **Accepted by picture.** Each step is accepted by screenshots of the built screen next to its
-   artboard at 1440×900, plus the listed behaviours.
+   artboard at 1440×900, plus the listed behaviours. Screens are captured from the design preview
+   (`npm run design:preview -w @openbot/web`, synthetic data, dev only).
 8. **Each pull request updates this file** when it changes what is designed, built or retired.
 
 ## Glossary
@@ -145,7 +147,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 
 | Artboard | Built in | Status |
 | --- | --- | --- |
-| Components | tokens and primitives | Built; moved to `tokens.css` / `primitives.css` in step 14 |
+| Components | `tokens.css`, `primitives.css`, `Dialog.tsx` | Built |
 | Sidebar, Search, Menu, ContextMenu | `Sidebar.tsx`, `SidebarItemMenu.tsx` | Built; group avatars in step 15 |
 | Main | `App.tsx`, `WorkspaceHeader.tsx`, `ChannelWorkspace.tsx` | Built; task cards in step 19 |
 | ChannelInfo, AddMember | `ContextRail.tsx` | Built; add-member popover in step 18 |

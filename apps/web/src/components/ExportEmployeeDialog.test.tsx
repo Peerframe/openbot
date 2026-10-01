@@ -58,7 +58,7 @@ describe("ExportPreviewDetails", () => {
     expect(html).toContain("已验证，将包含");
     expect(html).toContain("明确排除");
     expect(html).toContain("不会携带来源身份或电脑权限");
-    expect(html).toContain("当前 Server 未配置发布密钥");
+    expect(html).toContain("当前服务电脑未配置发布密钥");
   });
 
   it("renders truthful empty states for an older profile with no biography or verified skills", () => {

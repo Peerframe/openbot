@@ -252,7 +252,7 @@ export function ComposerAttachmentPicker(props: ComposerAttachmentPickerProps) {
                 setUploadName(undefined);
                 latest.current.onUploadingChange?.(false);
                 setError(
-                  "已取消剩余上传。已加入草稿的附件会保留；服务器已收到的原件可在附件管理中查看。",
+                  "已取消剩余上传。已加入草稿的附件会保留；服务电脑已收到的原件可在附件管理中查看。",
                 );
               }}
             >

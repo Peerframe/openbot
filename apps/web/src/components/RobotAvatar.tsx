@@ -229,7 +229,7 @@ function robotStatusLabel(status: RobotStatus): string {
     idle: "待命",
     queued: "已接单",
     assigned: "已分配",
-    running: "执行中",
+    running: "工作中",
     waiting_approval: "待批准",
     blocked: "已阻塞",
     human_takeover: "人工接管中",

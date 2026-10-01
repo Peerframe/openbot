@@ -1,0 +1,39 @@
+/* Scene index of the design preview (dev only). */
+.design-preview-index {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 56px 24px;
+  color: var(--ob-text);
+}
+.design-preview-index h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+}
+.design-preview-index p {
+  margin: 0 0 24px;
+  color: var(--ob-text-secondary);
+  line-height: 1.6;
+}
+.design-preview-index ul {
+  margin: 0;
+  padding: 0 16px;
+  border-radius: 16px;
+  background: var(--ob-fill);
+  list-style: none;
+}
+.design-preview-index li {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+}
+.design-preview-index li + li {
+  border-top: 1px solid var(--ob-divider);
+}
+.design-preview-index a {
+  color: var(--ob-text);
+  font-weight: 500;
+}
+.design-preview-index span {
+  color: var(--ob-text-tertiary);
+  font-size: 13px;
+}

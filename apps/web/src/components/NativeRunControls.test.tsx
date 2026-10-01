@@ -114,7 +114,7 @@ describe("native task execution controls", () => {
       />,
     );
     try {
-      expect(view.container.textContent).toContain("由 Server 执行");
+      expect(view.container.textContent).toContain("由服务电脑执行");
       expect(view.container.textContent).toContain("Owner 已停止");
       expect(view.container.textContent).toContain("输入 0 · 输出 未知");
       expect(view.container.textContent).not.toContain("等待可用节点");

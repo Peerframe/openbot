@@ -127,7 +127,7 @@ export function SettingsHosts({ children }: { children?: ReactNode }) {
           </p>
         ) : null}
         <p className="settings-footnote">
-          在线状态来自实时连接，登记与吊销状态来自 Server。吊销后旧凭证立即失效。
+          在线状态来自实时连接，登记与吊销状态来自服务电脑。吊销后旧凭证立即失效。
         </p>
       </section>
       {children}

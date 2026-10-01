@@ -222,7 +222,7 @@ export function VoiceRecorder({
                       controller.current = undefined;
                       setState("review");
                       setError(
-                        "已取消添加，录音仍保留在本地供试听或重试。服务器已收到的原件可在附件管理中查看。",
+                        "已取消添加，录音仍保留在本地供试听或重试。服务电脑已收到的原件可在附件管理中查看。",
                       );
                     }}
                   >
