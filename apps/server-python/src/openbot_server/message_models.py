@@ -40,6 +40,8 @@ class MessagesResponse(PublicModel):
     """Body of ``GET /api/v1/channels/{channelId}/messages``."""
 
     messages: list[Message]
+    hasMore: bool = False
+    nextCursor: str | None = None
 
 
 def _project_message(row: Mapping[str, object]) -> Message:

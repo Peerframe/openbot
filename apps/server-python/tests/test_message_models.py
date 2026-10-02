@@ -69,7 +69,7 @@ def test_projects_every_field_for_every_author_type_with_unicode_and_utc_millis(
                     "runId": "run-7", "content": "emoji 😀 astral 𠮷 \"quoted\"\nline",
                     "createdAt": "2026-01-02T03:04:05.999Z"}
         payload = public_json(message_models.project_messages(rows))
-        assert payload == {"messages": [expected]}, author_type
+        assert payload == {"messages": [expected], "hasMore": False}, author_type
         assert json.loads(json.dumps(payload, ensure_ascii=False))["messages"][0] == expected
 
 
@@ -80,12 +80,12 @@ def test_public_field_set_is_exactly_the_domain_message_contract():
     assert {name for name, field in fields.items() if field.is_required()} == MESSAGE_REQUIRED_FIELDS
     assert list(fields) == ["id", "channelId", "authorType", "authorId", "replyToMessageId",
                             "runId", "content", "createdAt"]
-    assert set(message_models.MessagesResponse.model_fields) == {"messages"}
+    assert set(message_models.MessagesResponse.model_fields) == {"messages", "hasMore", "nextCursor"}
     assert message_models.MAX_PROJECTED_MESSAGES == 100
 
 
 def test_empty_rows_project_to_an_empty_envelope():
-    assert public_json(message_models.project_messages([])) == {"messages": []}
+    assert public_json(message_models.project_messages([])) == {"messages": [], "hasMore": False}
 
 
 # ---------------------------------------------------------------------------
@@ -211,3 +211,21 @@ def test_exactly_one_hundred_rows_are_projected_and_one_hundred_and_one_raise():
     assert len(message_models.project_messages(rows)) == 100
     with pytest.raises(ValueError, match="At most 100 messages"):
         message_models.project_messages(rows + [message_row(id="m100")])
+
+
+def test_c18_cursor_rejects_changed_shape_version_precision_and_duplicate_keys():
+    import base64
+    from openbot_server.control_errors import ControlError
+    from openbot_server.message_pagination import decode_cursor,encode_cursor
+    row=message_row();valid=encode_cursor('chan-1',row)
+    assert decode_cursor(valid,'chan-1')==(row['created_at'],row['id'])
+    value=dict(v=1,c='chan-1',t='2026-01-02T03:04:05.123456Z',i='msg-1')
+    invalid=[{**value,'v':True},{**value,'v':2},{**value,'private':'content'},
+             {**value,'t':'2026-02-30T03:04:05.123456Z'},{**value,'t':'2026-01-02T03:04:05.123Z'},
+             {**value,'i':'x'*129},{**value,'i':None},{**value,'c':'other'}]
+    for item in invalid:
+        encoded=base64.urlsafe_b64encode(json.dumps(item).encode()).decode().rstrip('=')
+        with pytest.raises(ControlError,match='invalid_message_pagination'):decode_cursor(encoded,'chan-1')
+    duplicate='{"v":1,"v":1,"c":"chan-1","t":"2026-01-02T03:04:05.123456Z","i":"msg-1"}'
+    encoded=base64.urlsafe_b64encode(duplicate.encode()).decode().rstrip('=')
+    with pytest.raises(ControlError):decode_cursor(encoded,'chan-1')

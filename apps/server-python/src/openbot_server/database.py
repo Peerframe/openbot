@@ -14,8 +14,10 @@ from typing import Literal
 import psycopg
 from psycopg.rows import dict_row
 
+from .control_errors import ControlError
 from .channel_query import CHANNEL_QUERY
-from .message_query import MESSAGE_QUERY
+from .message_query import message_page_query
+from .message_pagination import decode_cursor, encode_cursor
 from .run_query import RUN_QUERY
 
 Projection = Literal["session", "bots", "channels", "messages", "runs"]
@@ -31,6 +33,8 @@ class ReadResult:
     expires_at: datetime | None
     rows: tuple[dict, ...] = ()
     found: bool = True
+    has_more: bool = False
+    next_cursor: str | None = None
 
 
 def expected_history() -> tuple[tuple[int, str], ...]:
@@ -115,11 +119,15 @@ class PostgresReadStore:
         except (psycopg.Error, TimeoutError, ValueError, KeyError):
             raise StoreUnavailable("storage_unavailable") from None
 
-    async def read(self, token: str | None, projection: Projection, *, channel_id: str | None = None) -> ReadResult:
+    async def read(self, token: str | None, projection: Projection, *, channel_id: str | None = None,
+                   before: str | None = None, limit: int = 100) -> ReadResult:
         if projection not in ("session", "bots", "channels", "messages", "runs"):
             raise ValueError("Unknown read projection.")
         if projection in ("messages", "runs") and (not isinstance(channel_id, str) or not 1 <= len(channel_id) <= 128):
             raise ValueError("A bounded channel identity is required.")
+        if type(limit) is not int or not 1 <= limit <= 100 or (projection != 'messages' and (before is not None or limit != 100)):
+            raise ValueError('Invalid message pagination.')
+        boundary = None if before is None else decode_cursor(before, channel_id)
         if not isinstance(token, str) or re.fullmatch(r"[A-Za-z0-9_-]{43}", token) is None:
             return ReadResult(None)
         digest = hashlib.sha256(token.encode("ascii")).hexdigest()
@@ -138,8 +146,8 @@ class PostgresReadStore:
                     elif projection == "channels":
                         cursor = await connection.execute(CHANNEL_QUERY)
                     elif projection in ("messages", "runs"):
-                        cursor = await connection.execute(MESSAGE_QUERY if projection == "messages" else RUN_QUERY,
-                                                          (channel_id, channel_id))
+                        query, params = message_page_query(channel_id, limit, boundary) if projection == 'messages' else (RUN_QUERY, (channel_id, channel_id))
+                        cursor = await connection.execute(query, params)
                     else:
                         cursor = None
                     rows = tuple(await cursor.fetchall()) if cursor is not None else ()
@@ -149,15 +157,20 @@ class PostgresReadStore:
                     if expires is None:
                         return ReadResult(None)
                     found = bool(rows) if projection in ("messages", "runs") else True
+                    has_more = bool(rows and rows[0]['has_more']) if projection == 'messages' else False
                     if projection in ("messages", "runs"):
                         if any(row["oversized"] for row in rows):
                             raise StoreUnavailable("projection_limit")
                         # The LEFT JOIN sentinel distinguishes an empty channel from a missing one.
                         rows = tuple(row for row in rows if row["id"] is not None)
-                    ceiling = {"messages": 100, "runs": 50, "bots": 1000}.get(projection, 10000)
+                    ceiling = {"messages": limit, "runs": 50, "bots": 1000}.get(projection, 10000)
                     if len(rows) > ceiling:
                         raise StoreUnavailable("projection_limit")
-                    return ReadResult(expires, rows, found)
+                    try:
+                        next_cursor = encode_cursor(channel_id, rows[0]) if has_more and rows else None
+                    except ControlError:
+                        raise StoreUnavailable('invalid_projection') from None
+                    return ReadResult(expires, rows, found, has_more, next_cursor)
         except (psycopg.Error, TimeoutError, ValueError, KeyError):
             raise StoreUnavailable("storage_unavailable") from None
 

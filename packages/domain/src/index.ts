@@ -630,6 +630,18 @@ export interface Message {
   createdAt: string;
 }
 
+/** Newest bounded page, chronological within the page; nextCursor reads older messages. */
+export interface MessagesResponse {
+  messages: Message[];
+  hasMore: boolean;
+  nextCursor?: string | undefined;
+}
+
+export interface MessagePaginationInput {
+  before?: string | undefined;
+  limit?: number | undefined;
+}
+
 export interface OwnerIdentity {
   id: "owner";
   name: string;

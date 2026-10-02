@@ -21,7 +21,7 @@
 | `POST` | `/api/v1/channels/:channelId/read` | 把频道标为 Owner 已读 |
 | `GET` | `/api/v1/channels/unread` | 各频道未读的 Bot/系统消息数（上限 99） |
 | `GET` | `/api/v1/audit` | 最新审计事件，字段按白名单投影 |
-| `GET` | `/api/v1/channels/:channelId/messages` | 读取最近 100 条本地频道消息与 Bot 回复关系 |
+| `GET` | `/api/v1/channels/:channelId/messages` | 分页读取本地频道消息（before/limit，最多100条）与 Bot 回复关系 |
 | `POST` | `/api/v1/channels/:channelId/messages` | 原子保存用户消息并创建排队任务 |
 | `GET` | `/api/v1/channels/:channelId/runs` | 读取频道最近 50 个任务 |
 | `GET` | `/api/v1/channels/:channelId/events` | 订阅频道实时事件（SSE） |
@@ -679,3 +679,18 @@ run 的开始、结束时间只来自真实生命周期审计事件。历史检�
 
 界面先 verify，再由 Owner 明确调用已有创建接口保存；验证不会保存或授予执行权。
 验收只使用假 provider，不调用会产生推理费用的 `/test` 接口。
+
+### C18：读取更早的消息页
+
+`GET /api/v1/channels/:channelId/messages?limit=100&before=<不透明游标>` 沿用现有 Owner 会话权限。
+`limit` 默认100，必须是1–100的十进制整数；`before` 可省略。未知或重复参数、空／格式错误／超长游标、
+其他频道的游标返回422。不存在或已删除的频道在授权检查后返回404。
+
+响应为 `{ "messages": [...], "hasMore": true, "nextCursor": "..." }`。没有游标时返回最新一页；
+每页按数据库时间、id（C 排序规则）升序排列。把 nextCursor 作为 before 获取严格更早的一页，并将该页
+放到当前消息前面。没有更早消息时 hasMore 为 false，省略 nextCursor；空页为
+`{ "messages": [], "hasMore": false }`。现有默认窗口仍是100条。
+
+游标记录返回页最早一条消息的位置，保留数据库时间精度和 id；客户端应原样传递，不能依赖其内部格式。
+即使这条消息被删除，游标仍可用。游标不授予权限，也不包含消息正文。每次请求读取当前事实，跨页请求
+不保证历史冻结；每页保留会话二次检查、选中正文／响应大小限制和 no-store，不产生消息写入或模型调用。
