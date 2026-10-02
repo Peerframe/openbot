@@ -635,6 +635,13 @@
   border-radius: 12px;
   background: var(--ob-popover);
   box-shadow: 0 10px 30px rgb(0 0 0 / 12%);
+  /* LongLists: at most eight 32px rows, then the list scrolls inside itself. */
+  max-height: calc(8 * 32px + 10px);
+  overflow-y: auto;
+}
+.app-shell .channel-workspace.channel-native .slash-options {
+  /* Skills and actions have two lines (about 44px); eight of them, plus the hint. */
+  max-height: calc(8 * 44px + 40px);
 }
 .app-shell .channel-workspace.channel-native .mention-options button {
   min-height: 32px;

@@ -5,6 +5,7 @@ import { useEmployeeProfiles } from "../use-employee-profiles";
 import { EmployeeSkillImport } from "./EmployeeSkillImport";
 import { EmployeeSkillReview } from "./EmployeeSkillReview";
 import { SettingsHeaderAction } from "./SettingsHeaderAction";
+import { SettingsSearch, useSettingsSearch } from "./SettingsSearch";
 
 type Filter = "all" | "verified" | "candidate" | "off";
 
@@ -38,16 +39,20 @@ export function SettingsSkills({ bots }: { bots: Bot[] }) {
   const entries = [...profiles]
     .flatMap(([botId, profile]) => profile.skills.map((skill) => ({ botId, skill })))
     .sort((left, right) => left.skill.name.localeCompare(right.skill.name));
+  const search = useSettingsSearch(entries.length);
   const off = (skill: EmployeeSkill) => skill.state === "suspended" || skill.state === "revoked";
+  const found = (entry: (typeof entries)[number]) =>
+    search.matches(`${entry.skill.name} ${names.get(entry.botId) ?? ""}`);
   const counts: Record<Filter, number> = {
     all: entries.length,
     verified: entries.filter(({ skill }) => skill.state === "verified").length,
     candidate: entries.filter(({ skill }) => skill.state === "candidate").length,
     off: entries.filter(({ skill }) => off(skill)).length,
   };
-  const pending = entries.filter(({ skill }) => skill.state === "candidate");
+  const pending = entries.filter((entry) => entry.skill.state === "candidate" && found(entry));
   const installed = entries.filter(
-    ({ skill }) =>
+    ({ skill, botId }) =>
+      found({ skill, botId }) &&
       skill.state !== "candidate" &&
       (filter === "all" ||
         (filter === "verified" && skill.state === "verified") ||
@@ -99,6 +104,10 @@ export function SettingsSkills({ bots }: { bots: Bot[] }) {
           </button>
         ))}
       </div>
+      <SettingsSearch search={search} count={entries.length} noun="技能" />
+      {search.active && pending.length === 0 && installed.length === 0 ? (
+        <p className="settings-empty">没有匹配的技能。</p>
+      ) : null}
       {loading ? (
         <p className="settings-empty" role="status">
           正在读取技能…

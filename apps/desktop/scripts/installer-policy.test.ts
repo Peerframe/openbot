@@ -16,6 +16,16 @@ afterEach(async () =>
 );
 
 describe("Desktop installer boundary", () => {
+  it("uses baseline resources until export, then the generated Linux icon set", () => {
+    const input = { appRoot: "/app", outputDirectory: "/out", version: "0.1.0-alpha.2",
+      platform: "linux", arch: "x64", electronVersion: "44.3.0" };
+    const baseline = installerConfig(input);
+    expect(baseline.directories.buildResources).toBe(join("/app", "resources"));
+    expect(baseline.linux.icon).toBe("openbot-icon.png");
+    const generated = installerConfig({ ...input, generatedIcons: true });
+    expect(generated.directories.buildResources).toBe(join("/app", "out", "icons"));
+    expect(generated.linux.icon).toBe("icons");
+  });
   it("rejects unreviewed targets and filenames that could escape a release directory", () => {
     for (const version of ["0.0.0", "../1.0.0", "1.0.0;echo", "latest", "1.0.0\n", "1.0.0+local"]) {
       expect(() => validateInstallerVersion(version)).toThrow();

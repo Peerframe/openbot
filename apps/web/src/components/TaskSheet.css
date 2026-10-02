@@ -322,3 +322,9 @@ button.task-sheet-person:not(:disabled) {
   outline: 2px solid var(--ob-active);
   outline-offset: 2px;
 }
+/* LongLists: the folded middle of a long step list. */
+.task-sheet .task-sheet-steps > li.task-sheet-fold {
+  display: flex;
+  justify-content: center;
+  padding: 6px 0;
+}
