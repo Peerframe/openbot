@@ -59,8 +59,8 @@ only on Linux; Windows keeps the master artwork. Final affected checks: 43 passe
 zero skips. Final full `npm run check` passed (18 build tasks successful, 17 cached); its Desktop
 suite ran 532 tests with three existing platform-guard skips, not counted as passes. Initial
 sandbox runs failed at loopback listen with EPERM; rerun with the authorized local test
-environment passed. Hosted [validate passed](https://github.com/Peerframe/openbot/actions/runs/37039027532/job/110944356974)
-on `29451ed`. No SVG source exists on the
+environment passed. Hosted [validate passed](https://github.com/Peerframe/openbot/actions/runs/37042084211/job/110954997244)
+on `9737c1c`, the final three-source implementation. This evidence-only update reuses that check. No SVG source exists on the
 baseline, so native package/Dock/taskbar/menu screenshots remain blocked on Claude's export;
 this item is not complete. Keep the current tracked binaries until replacement artwork is verified.
 PR: [#158](https://github.com/Peerframe/openbot/pull/158), draft; source/native screenshots remain

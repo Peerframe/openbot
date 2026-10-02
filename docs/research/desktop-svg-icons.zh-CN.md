@@ -21,3 +21,7 @@ ICNS 覆盖 16–1024px 和 Retina，小尺寸逻辑 16/32pt 使用小图；ICO 
 避免 Windows 窗口意外使用 Linux 圆形图。深色和启动图为 1024px。脚本测试 6 项通过，无跳过；
 这不等于批准图形或原生系统显示验收。源文件未提交前 C16 保持未完成，
 三个平台截图缺项明确保留，不用模拟系统截图代替。C9/C11 保持不动，不自动合并或发布。
+
+最终三源实现 `9737c1c` 的[托管 validate 已通过](https://github.com/Peerframe/openbot/actions/runs/37042084211/job/110954997244)。
+PR：[草稿 #158](https://github.com/Peerframe/openbot/pull/158)。打包仍因批准源图缺失而拒绝，
+不能把 validate 通过视为原生显示验收。本文仅补充证据，复用上述检查。
