@@ -338,7 +338,8 @@ def test_attachment_families_keep_distinct_delete_lock_and_header_semantics(fixt
         assert api.get(owner_base + '/' + shared_id + '/content').status_code == 404
         order.clear()
         assert_download(api.get(channel_base + '/' + shared_id + '/content'), b'channel facts\n')
-        assert order == ['transaction']
+        # Channel reads now share purge staging/recovery's file -> Owner lock order.
+        assert order == ['lock', 'transaction']
         order.clear()
         assert_download(api.get(owner_base + '/' + private_id + '/content'), b'owner facts\n')
         assert order == ['lock', 'transaction']

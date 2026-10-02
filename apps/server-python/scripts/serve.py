@@ -150,6 +150,7 @@ def main():
                                  command_profiles=command_installation.profiles if command_installation else None,
                                  browser_profiles=browser_profiles)
     if product is not None:
+        product.storage.artifact_root = work.files.directory if work.files is not None else None
         from openbot_server.work_sources import WorkSourceAdmission
         budget_text = os.environ.get('OPENBOT_CONTROL_WORK_TOKEN_LIMIT', '100000')
         if not budget_text.isascii() or not budget_text.isdigit() or len(budget_text) > 10:

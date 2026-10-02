@@ -351,6 +351,13 @@
       "when": 1790942274484,
       "tag": "0049_model_connection_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1791057600000,
+      "tag": "0050_channel_storage_purge",
+      "breakpoints": true
     }
   ]
 }
