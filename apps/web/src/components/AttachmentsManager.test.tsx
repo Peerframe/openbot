@@ -1,9 +1,41 @@
 // @vitest-environment jsdom
+import type { Artifact } from "@openbot/domain";
 import { useState } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { interact, renderComponent, type RenderedComponent } from "../test/render-component";
+import { updateAttachment } from "../channel-attachment-client";
+import type { UploadedComposerAttachment } from "../composer-context";
+import { interact, type RenderedComponent, renderComponent } from "../test/render-component";
 import { AttachmentsManagerDialog } from "./AttachmentsManager";
+
+vi.mock("../channel-attachment-client", async (original) => ({
+  ...(await original<typeof import("../channel-attachment-client")>()),
+  updateAttachment: vi.fn(),
+  downloadAttachment: vi.fn(async () => undefined),
+}));
+
 const views: RenderedComponent[] = [];
+const upload = (id: string, name: string, deletedAt?: string): UploadedComposerAttachment =>
+  ({
+    id,
+    channelId: "channel",
+    name,
+    mediaType: "text/markdown",
+    sizeBytes: 2048,
+    sha256: "a".repeat(64),
+    createdAt: `2026-09-2${id.length}T00:00:00.000Z`,
+    ...(deletedAt ? { deletedAt } : {}),
+  }) as UploadedComposerAttachment;
+const output: Artifact = {
+  id: "art-1",
+  runId: "run-1",
+  name: "竞品定价对比.png",
+  mediaType: "image/png",
+  sha256: "b".repeat(64),
+  sizeBytes: 248 * 1024,
+  createdAt: "2026-09-29T00:00:00.000Z",
+};
+let listed: UploadedComposerAttachment[] = [];
+
 function Harness() {
   const [open, setOpen] = useState(false);
   return (
@@ -11,14 +43,37 @@ function Harness() {
       <button type="button" onClick={() => setOpen(true)}>
         打开频道文件
       </button>
-      {open && <AttachmentsManagerDialog channelId="channel" onClose={() => setOpen(false)} />}
+      {open && (
+        <AttachmentsManagerDialog
+          channelId="channel"
+          channelName="市场周报"
+          outputs={[output]}
+          botNameForRun={() => "研究助理"}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </>
   );
 }
+function button(label: string) {
+  const found = [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+    (item) => item.textContent === label || item.getAttribute("aria-label") === label,
+  );
+  if (!found) throw new Error(`Missing ${label}`);
+  return found;
+}
 beforeEach(() => {
+  listed = [
+    upload("u1", "competitors.md"),
+    upload("u22", "旧版需求.docx", "2026-09-20T00:00:00.000Z"),
+  ];
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () => Response.json({ attachments: [] })),
+    vi.fn(async (url: string) =>
+      url.endsWith("/cleanup")
+        ? Response.json({ removed: 1, retained: 0 })
+        : Response.json({ attachments: listed }),
+    ),
   );
   HTMLDialogElement.prototype.showModal = vi.fn(function (this: HTMLDialogElement) {
     this.setAttribute("open", "");
@@ -45,44 +100,54 @@ async function open() {
   if (!dialog) throw new Error("No dialog");
   return { view, dialog, opener };
 }
-it("uses real modal lifecycle, focuses its heading and restores the opener on Escape", async () => {
+
+it("opens as a modal and closes on Escape, restoring the opener", async () => {
   const { view, dialog, opener } = await open();
   expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalledOnce();
-  expect(dialog.open).toBe(true);
-  expect(document.activeElement).toBe(dialog.querySelector("h2"));
-  expect(dialog.getAttribute("aria-labelledby")).toBe(dialog.querySelector("h2")?.id);
+  expect(dialog.querySelector("h2")?.textContent).toBe("市场周报 的文件");
   await interact(() => dialog.dispatchEvent(new Event("cancel", { cancelable: true })));
   expect(view.container.querySelector("dialog")).toBeNull();
   expect(document.activeElement).toBe(opener);
 });
-it("closes explicitly and aborts the attachment list request on unmount", async () => {
-  const pending = new Promise<Response>(() => {});
-  vi.mocked(fetch).mockReturnValue(pending);
-  const { view, dialog, opener } = await open();
+
+it("aborts the file list request when closed", async () => {
+  const { view } = await open();
   const signal = vi.mocked(fetch).mock.calls[0]?.[1]?.signal;
   expect(signal?.aborted).toBe(false);
-  await interact(() =>
-    dialog.querySelector<HTMLButtonElement>('[aria-label="关闭频道文件"]')?.click(),
-  );
+  await interact(() => button("关闭").click());
   expect(view.container.querySelector("dialog")).toBeNull();
   expect(signal?.aborted).toBe(true);
-  expect(document.activeElement).toBe(opener);
 });
-it("ignores content clicks and closes only outside the dialog bounds", async () => {
-  const { view, dialog, opener } = await open();
-  vi.spyOn(dialog, "getBoundingClientRect").mockReturnValue({
-    left: 20,
-    top: 20,
-    right: 400,
-    bottom: 400,
-  } as DOMRect);
-  await interact(() =>
-    dialog.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 30, clientY: 30 })),
-  );
-  expect(view.container.querySelector("dialog")).not.toBeNull();
-  await interact(() =>
-    dialog.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 10, clientY: 10 })),
-  );
-  expect(view.container.querySelector("dialog")).toBeNull();
-  expect(document.activeElement).toBe(opener);
+
+it("lists uploads and outputs with counts; only uploads can go to the 回收站", async () => {
+  await open();
+  expect(button("文件 · 2").getAttribute("aria-selected")).toBe("true");
+  expect(button("回收站 · 1")).toBeTruthy();
+  expect(
+    [...document.querySelectorAll(".channel-files-filters button")].map((item) => item.textContent),
+  ).toEqual(["全部 2", "你上传 1", "Bot 产出 1"]);
+  const rows = [...document.querySelectorAll(".channel-files-list li")];
+  expect(rows.map((row) => row.querySelector("small")?.textContent?.split(" · ")[0])).toEqual([
+    "研究助理 产出",
+    "你上传",
+  ]);
+  expect(rows[0]?.textContent).not.toContain("移到回收站");
+  vi.mocked(updateAttachment).mockResolvedValue({
+    ...listed[0],
+    deletedAt: "2026-10-02T00:00:00.000Z",
+  } as UploadedComposerAttachment);
+  await interact(() => button("移到回收站").click());
+  expect(updateAttachment).toHaveBeenCalledWith(listed[0], "delete");
+  expect(button("回收站 · 2")).toBeTruthy();
+  await interact(() => button("Bot 产出 1").click());
+  expect(document.querySelectorAll(".channel-files-list li")).toHaveLength(1);
+});
+
+it("清理回收站 needs a second click before the 服务电脑 is asked", async () => {
+  await open();
+  await interact(() => button("清理回收站").click());
+  expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith("/cleanup"))).toBe(false);
+  await interact(() => button("再点一次确认清理").click());
+  expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith("/cleanup"))).toBe(true);
+  expect(document.querySelector(".channel-files-status")?.textContent).toContain("已清理 1 个文件");
 });

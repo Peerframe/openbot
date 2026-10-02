@@ -276,6 +276,48 @@ function memory(
   };
 }
 
+/** 频道文件 for one channel, shaped like `GET /api/v1/channels/:id/attachments`. */
+export function attachmentsFor(channelId: string): Json[] {
+  const file = (
+    id: string,
+    name: string,
+    mediaType: string,
+    kb: number,
+    day: number,
+    deleted = false,
+  ) => ({
+    id: `00000000-0000-4000-8000-0000000000${id}`,
+    channelId,
+    name,
+    mediaType,
+    sizeBytes: kb * 1024,
+    sha256: "0".repeat(64),
+    createdAt: `2026-09-${day}T02:00:00.000Z`,
+    ...(deleted ? { deletedAt: "2026-09-30T02:00:00.000Z" } : {}),
+  });
+  return [
+    file("11", "weekly/competitors.md", "text/markdown", 2, 26),
+    file("12", "A 公司团队版说明.pdf", "application/pdf", 1229, 25),
+    file(
+      "13",
+      "渠道数据-9月.xlsx",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      2150,
+      24,
+    ),
+    file("14", "会议录音.m4a", "audio/mp4", 8192, 23),
+    file("15", "截图 2.png", "image/png", 310, 22),
+    file(
+      "16",
+      "旧版需求.docx",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      86,
+      20,
+      true,
+    ),
+  ];
+}
+
 /** 候选经验 for the 记忆 tab, shaped like `GET /api/v1/bots/:id/knowledge-proposals`. */
 export function knowledgeProposalsFor(botId: string): Json[] {
   const proposal = (id: string, title: string, content: string) => ({

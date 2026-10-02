@@ -1,4 +1,10 @@
-import { createWorld, knowledgeProposalsFor, type PreviewWorld, profileFor } from "./world";
+import {
+  attachmentsFor,
+  createWorld,
+  knowledgeProposalsFor,
+  type PreviewWorld,
+  profileFor,
+} from "./world";
 
 /*
  * Design preview transport (dev only, never in a product build). It replaces `fetch`,
@@ -109,7 +115,11 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
       (m) => json({ runs: world.runs.filter((run) => run.channelId === m[1]) }),
     ],
     ["GET", /^\/api\/v1\/channels\/([^/]+)\/reactions$/, () => json({ reactions: [] })],
-    ["GET", /^\/api\/v1\/channels\/([^/]+)\/attachments$/, () => json({ attachments: [] })],
+    [
+      "GET",
+      /^\/api\/v1\/channels\/([^/]+)\/attachments$/,
+      (m) => json({ attachments: attachmentsFor(m[1] ?? "") }),
+    ],
     ["POST", /^\/api\/v1\/bots\/([^/]+)\/browser$/, (m) => json(browserView(m[1] ?? ""))],
     [
       "POST",

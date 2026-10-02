@@ -1,51 +1,323 @@
-import { useEffect, useId, useRef, useState } from "react";
-import { formatAttachmentSize } from "../channel-attachment-client";
+import type { Artifact } from "@openbot/domain";
+import { useEffect, useState } from "react";
+import {
+  downloadAttachment,
+  extensionOf,
+  formatAttachmentSize,
+  updateAttachment,
+} from "../channel-attachment-client";
 import type { UploadedComposerAttachment } from "../composer-context";
-import { AttachmentActions } from "./AttachmentActions";
-import { useModalDialog } from "./useModalDialog";
+import { ArtifactDownloadLink } from "./ArtifactCard";
+import { Dialog } from "./Dialog";
+import { sidebarTime } from "./Sidebar";
 import "./AttachmentsManager.css";
 
+const PAGE = 20;
+type Source = "all" | "upload" | "output";
+
+interface FileRow {
+  key: string;
+  name: string;
+  meta: string;
+  createdAt: string;
+  upload?: UploadedComposerAttachment;
+  output?: Artifact;
+}
+
+function processedLabel(file: UploadedComposerAttachment) {
+  if (!file.processing) return undefined;
+  return file.processing.operation === "transcribe" ? "已转写" : "已提取文字";
+}
+
+/**
+ * 频道文件 (ChannelFiles artboard): the Owner's uploads and the Bots' outputs in one list, with a
+ * 回收站 for uploads. Moving to the 回收站 stops sending a file to Bots; only the 服务电脑 decides
+ * what cleanup may delete, and it keeps anything a message or task still references.
+ */
 export function AttachmentsManagerDialog({
   channelId,
+  channelName,
+  outputs = [],
+  botNameForRun = () => undefined,
   onClose,
 }: {
   channelId: string;
+  channelName?: string | undefined;
+  /** This channel's task outputs; they can be downloaded but not moved to the 回收站. */
+  outputs?: Artifact[];
+  botNameForRun?(runId: string): string | undefined;
   onClose(): void;
 }) {
-  const { dialogRef, closeDialog } = useModalDialog(onClose);
-  const titleId = useId();
-  const title = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    title.current?.focus();
-  }, []);
+  const [revision, setRevision] = useState(0);
+  const { files, setFiles, status } = useChannelAttachments(channelId, revision);
+  // Results of the Owner's own actions; kept apart from loading so a reload does not erase them.
+  const [notice, setNotice] = useState("");
+  const [tab, setTab] = useState<"files" | "trash">("files");
+  const [source, setSource] = useState<Source>("all");
+  const [query, setQuery] = useState("");
+  const [limit, setLimit] = useState(PAGE);
+  const [busyId, setBusyId] = useState<string>();
+  const [confirmingCleanup, setConfirmingCleanup] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
+
+  const uploads = files.filter((file) => !file.deletedAt);
+  const trash = files.filter((file) => file.deletedAt);
+  const rows: FileRow[] = [
+    ...uploads.map((file) => ({
+      key: `upload:${file.id}`,
+      name: file.name,
+      createdAt: file.createdAt,
+      meta: [
+        "你上传",
+        sidebarTime(file.createdAt),
+        formatAttachmentSize(file.sizeBytes),
+        processedLabel(file),
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      upload: file,
+    })),
+    ...outputs.map((artifact) => ({
+      key: `output:${artifact.id}`,
+      name: artifact.name,
+      createdAt: artifact.createdAt,
+      meta: [
+        `${botNameForRun(artifact.runId) ?? "Bot"} 产出`,
+        sidebarTime(artifact.createdAt),
+        formatAttachmentSize(artifact.sizeBytes),
+      ].join(" · "),
+      output: artifact,
+    })),
+  ].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  const counts = {
+    all: rows.length,
+    upload: rows.filter((row) => row.upload).length,
+    output: rows.filter((row) => row.output).length,
+  };
+  const needle = query.trim().toLocaleLowerCase();
+  const matching = rows
+    .filter((row) => source === "all" || (source === "upload" ? row.upload : row.output))
+    .filter((row) => !needle || row.name.toLocaleLowerCase().includes(needle));
+  const visible = matching.slice(0, limit);
+
+  async function change(file: UploadedComposerAttachment, action: "delete" | "restore") {
+    setBusyId(file.id);
+    setNotice("");
+    try {
+      const next = await updateAttachment(file, action);
+      setFiles((values) => values.map((item) => (item.id === next.id ? next : item)));
+    } catch {
+      setNotice(action === "delete" ? "没能移到回收站，请重试。" : "没能恢复，请重试。");
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function download(file: UploadedComposerAttachment) {
+    setNotice("");
+    try {
+      await downloadAttachment(file);
+    } catch {
+      setNotice("下载失败，请重试。");
+    }
+  }
+
+  async function cleanup() {
+    if (cleaning) return;
+    setCleaning(true);
+    try {
+      const response = await fetch(
+        `/api/v1/channels/${encodeURIComponent(channelId)}/attachments/cleanup`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ olderThanDays: 7 }),
+        },
+      );
+      if (!response.ok) throw new Error("清理未完成：服务电脑暂时无法确认文件是否还被引用。");
+      const result = (await response.json()) as { removed: number; retained: number };
+      setNotice(
+        `已清理 ${result.removed} 个文件；${result.retained} 个仍被消息或任务引用，已保留。`,
+      );
+      setRevision((value) => value + 1);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "清理失败。");
+    } finally {
+      setCleaning(false);
+      setConfirmingCleanup(false);
+    }
+  }
+
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: the shared native-dialog cancel handler supplies the Escape equivalent for backdrop dismissal.
-    <dialog
-      ref={dialogRef}
+    <Dialog
+      title={channelName ? `${channelName} 的文件` : "频道文件"}
+      intro="你上传的文件和 Bot 的产出。"
+      width={640}
       className="channel-files-dialog"
-      aria-labelledby={titleId}
-      onClick={(event) => {
-        if (event.target !== event.currentTarget) return;
-        const rect = event.currentTarget.getBoundingClientRect();
-        if (
-          event.clientX < rect.left ||
-          event.clientX > rect.right ||
-          event.clientY < rect.top ||
-          event.clientY > rect.bottom
-        )
-          closeDialog();
-      }}
-    >
-      <header>
-        <h2 id={titleId} ref={title} tabIndex={-1}>
-          频道文件
-        </h2>
-        <button type="button" onClick={closeDialog} aria-label="关闭频道文件">
-          关闭
+      onClose={onClose}
+      footerStart={
+        <small className="channel-files-note">
+          移到回收站的文件不再发给 Bot；清理只删除进回收站满 7 天、且没有消息或任务还在引用的文件。
+        </small>
+      }
+      footer={
+        <button
+          type="button"
+          className="ob-pill is-danger"
+          disabled={trash.length === 0 || cleaning}
+          onClick={() => (confirmingCleanup ? void cleanup() : setConfirmingCleanup(true))}
+        >
+          {cleaning ? "正在清理…" : confirmingCleanup ? "再点一次确认清理" : "清理回收站"}
         </button>
-      </header>
-      <AttachmentsManager channelId={channelId} />
-    </dialog>
+      }
+    >
+      <div className="ob-seg" role="tablist" aria-label="文件分区">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "files"}
+          onClick={() => {
+            setTab("files");
+            setConfirmingCleanup(false);
+          }}
+        >
+          文件 · {rows.length}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "trash"}
+          onClick={() => setTab("trash")}
+        >
+          回收站 · {trash.length}
+        </button>
+      </div>
+      {tab === "files" ? (
+        <div className="channel-files-tools">
+          <fieldset className="channel-files-filters" aria-label="来源">
+            {(
+              [
+                ["all", "全部"],
+                ["upload", "你上传"],
+                ["output", "Bot 产出"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                type="button"
+                key={id}
+                aria-pressed={source === id}
+                onClick={() => {
+                  setSource(id);
+                  setLimit(PAGE);
+                }}
+              >
+                {label} {counts[id]}
+              </button>
+            ))}
+          </fieldset>
+          <input
+            type="search"
+            className="channel-files-search"
+            placeholder="搜索文件名"
+            aria-label="搜索文件名"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setLimit(PAGE);
+            }}
+          />
+        </div>
+      ) : null}
+      {notice || status ? (
+        <p className="channel-files-status" role="status">
+          {notice || status}
+        </p>
+      ) : null}
+      {tab === "files" ? (
+        visible.length > 0 ? (
+          <ul className="channel-files-list">
+            {visible.map((row) => (
+              <li key={row.key}>
+                <span className="channel-files-badge" aria-hidden="true">
+                  {extensionOf(row.name)}
+                </span>
+                <span className="channel-files-text">
+                  <strong title={row.name}>{row.name}</strong>
+                  <small>{row.meta}</small>
+                </span>
+                <span className="channel-files-actions">
+                  {row.upload ? (
+                    <>
+                      <button
+                        type="button"
+                        className="ob-pill is-small"
+                        onClick={() => row.upload && void download(row.upload)}
+                      >
+                        下载
+                      </button>
+                      <button
+                        type="button"
+                        className="ob-pill is-small"
+                        disabled={busyId === row.upload.id}
+                        onClick={() => row.upload && void change(row.upload, "delete")}
+                      >
+                        移到回收站
+                      </button>
+                    </>
+                  ) : row.output ? (
+                    <ArtifactDownloadLink
+                      artifact={row.output}
+                      className="ob-pill is-small"
+                      downloadImage
+                    >
+                      下载
+                    </ArtifactDownloadLink>
+                  ) : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="channel-files-empty">
+            {rows.length === 0
+              ? "还没有文件。在消息里添加的附件和 Bot 的产出会出现在这里。"
+              : "没有符合条件的文件。"}
+          </p>
+        )
+      ) : trash.length > 0 ? (
+        <ul className="channel-files-list is-trash">
+          {trash.map((file) => (
+            <li key={file.id}>
+              <span className="channel-files-badge" aria-hidden="true">
+                {extensionOf(file.name)}
+              </span>
+              <span className="channel-files-text">
+                <strong title={file.name}>{file.name}</strong>
+                <small>{file.deletedAt ? `${sidebarTime(file.deletedAt)} 移到回收站` : ""}</small>
+              </span>
+              <span className="channel-files-actions">
+                <button
+                  type="button"
+                  className="ob-pill is-small"
+                  disabled={busyId === file.id}
+                  onClick={() => void change(file, "restore")}
+                >
+                  恢复
+                </button>
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="channel-files-empty">回收站是空的。</p>
+      )}
+      {tab === "files" && matching.length > visible.length ? (
+        <button type="button" className="channel-files-more" onClick={() => setLimit(limit + PAGE)}>
+          显示更多（还有 {matching.length - visible.length} 个）
+        </button>
+      ) : null}
+    </Dialog>
   );
 }
 
@@ -86,76 +358,4 @@ export function useChannelAttachments(channelId: string, revision = 0) {
     return () => controller.abort();
   }, [channelId, revision]);
   return { files, setFiles, status, setStatus };
-}
-
-export function AttachmentsManager({ channelId }: { channelId: string }) {
-  const [trash, setTrash] = useState(false);
-  const [revision, setRevision] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const { files, setFiles, status, setStatus } = useChannelAttachments(channelId, revision);
-  async function cleanup() {
-    if (busy) return;
-    setBusy(true);
-    try {
-      const response = await fetch(
-        `/api/v1/channels/${encodeURIComponent(channelId)}/attachments/cleanup`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ olderThanDays: 7 }),
-        },
-      );
-      if (!response.ok) throw new Error("清理未完成：服务暂不可用或无法确认附件引用。");
-      const result = (await response.json()) as { removed: number; retained: number };
-      setStatus(`已清理 ${result.removed} 个附件，${result.retained} 个仍被任务或消息引用。`);
-      setRevision((value) => value + 1);
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "清理失败。");
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <section aria-label="频道文件" className="channel-files-manager">
-      <div>
-        <button type="button" aria-pressed={!trash} onClick={() => setTrash(false)}>
-          可用附件
-        </button>
-        <button type="button" aria-pressed={trash} onClick={() => setTrash(true)}>
-          回收站
-        </button>
-      </div>
-      {trash ? (
-        <>
-          <p>
-            回收站中的附件仍为已有任务保留原文件。永久清理只删除移入回收站超过 7
-            天、且不再被任务或消息引用的附件。
-          </p>
-          <button type="button" disabled={busy} onClick={() => void cleanup()}>
-            清理符合条件的附件
-          </button>
-        </>
-      ) : null}
-      <p role="status">{status}</p>
-      {files
-        .filter((file) => Boolean(file.deletedAt) === trash)
-        .map((file) => (
-          <article key={file.id}>
-            <strong>{file.name}</strong>
-            <small>{formatAttachmentSize(file.sizeBytes)}</small>
-            <AttachmentActions
-              attachment={file}
-              lifecycle
-              onChange={(next) =>
-                setFiles((values) => values.map((item) => (item.id === next.id ? next : item)))
-              }
-            />
-          </article>
-        ))}
-      {!status && !files.some((file) => Boolean(file.deletedAt) === trash) ? (
-        <p>这里还没有附件。</p>
-      ) : null}
-    </section>
-  );
 }

@@ -200,6 +200,7 @@ export function BotInfoRail({
                 )
                 .sort((left, right) => right.createdAt.localeCompare(left.createdAt))}
               botNameForRun={() => bot.name}
+              channelName={bot.name}
             />
           ) : (
             <p className="ci-empty">和它单聊后，你们的文件和它的产出会放在这里。</p>

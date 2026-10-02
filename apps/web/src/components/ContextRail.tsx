@@ -312,6 +312,7 @@ export function ContextRail({
           <ChannelLibrary
             channelId={channel.id}
             artifacts={channelArtifacts}
+            channelName={channel.name}
             botNameForRun={(runId) => {
               const run = runById.get(runId);
               return run ? botById.get(run.botId)?.name : undefined;
@@ -478,12 +479,17 @@ const tabLabels: Record<RailTab, string> = { details: "详情", library: "资料
  * files. Uploading goes through the composer, so a file is always tied to a message the Owner
  * sends; 管理 opens the existing file manager for download, extraction and the recycle bin.
  */
+/** ChannelInfo LongLists rule: each section shows at most four, then 「全部 N 个 ›」. */
+const LIBRARY_PREVIEW = 4;
+
 export function ChannelLibrary({
   channelId,
+  channelName,
   artifacts,
   botNameForRun,
 }: {
   channelId: string;
+  channelName?: string | undefined;
   artifacts: Artifact[];
   botNameForRun(runId: string): string | undefined;
 }) {
@@ -492,13 +498,19 @@ export function ChannelLibrary({
   const available = files
     .filter((file) => !file.deletedAt)
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  const more = (count: number) =>
+    count > LIBRARY_PREVIEW ? (
+      <button type="button" className="ci-more" onClick={() => setManaging(true)}>
+        全部 {count} 个 ›
+      </button>
+    ) : null;
   return (
     <>
       <section className="ci-section" aria-label="任务产出">
-        <h3>任务产物 · {artifacts.length}</h3>
+        <h3>任务产出 · {artifacts.length}</h3>
         {artifacts.length > 0 ? (
           <div className="ci-card">
-            {artifacts.map((artifact) => (
+            {artifacts.slice(0, LIBRARY_PREVIEW).map((artifact) => (
               <ArtifactDownloadLink artifact={artifact} className="ci-file" key={artifact.id}>
                 <FileTile name={artifact.name} />
                 <span>
@@ -519,12 +531,13 @@ export function ChannelLibrary({
         ) : (
           <p className="ci-empty">Bot 完成任务后，报告和图片会出现在这里。</p>
         )}
+        {more(artifacts.length)}
       </section>
       <section className="ci-section" aria-label="频道文件">
         <h3>频道文件 · {available.length}</h3>
         {available.length > 0 ? (
           <div className="ci-card">
-            {available.map((file) => (
+            {available.slice(0, LIBRARY_PREVIEW).map((file) => (
               <div className="ci-file" key={file.id}>
                 <FileTile name={file.name} />
                 <span>
@@ -541,6 +554,7 @@ export function ChannelLibrary({
             {status || "在消息里添加的附件会保存在这里。"}
           </p>
         )}
+        {more(available.length)}
       </section>
       <div className="ci-library-actions">
         <button
@@ -559,7 +573,13 @@ export function ChannelLibrary({
         </button>
       </div>
       {managing ? (
-        <AttachmentsManagerDialog channelId={channelId} onClose={() => setManaging(false)} />
+        <AttachmentsManagerDialog
+          channelId={channelId}
+          channelName={channelName}
+          outputs={artifacts}
+          botNameForRun={botNameForRun}
+          onClose={() => setManaging(false)}
+        />
       ) : null}
     </>
   );

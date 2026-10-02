@@ -660,6 +660,22 @@
 .channel-info a.ci-file:hover strong {
   text-decoration: underline;
 }
+/* LongLists: 「全部 N 个 ›」 under a capped section opens 频道文件. */
+.channel-info .ci-more {
+  align-self: flex-start;
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.channel-info .ci-more:hover {
+  background: var(--ob-fill);
+}
 .channel-info .ci-library-actions {
   display: flex;
   gap: 8px;

@@ -1,38 +1,137 @@
-.channel-files-dialog {
-  width: min(760px, calc(100vw - 48px));
-  max-height: min(85vh, calc(100dvh - 48px));
-  margin: auto;
-  padding: 22px;
-  overflow: auto;
-  border: 1px solid #ddd;
-  border-radius: 14px;
-  background: #fff;
-  color: inherit;
-  box-shadow: 0 20px 70px #0002;
+/* ChannelFiles artboard: one Dialog frame, 文件 / 回收站, filters with counts, grey file card. */
+.channel-files-dialog .ob-seg {
+  margin-top: 4px;
 }
-.channel-files-dialog::backdrop {
-  background: #0003;
-}
-.channel-files-dialog > header {
+.channel-files-tools {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 20px;
+  justify-content: space-between;
+  gap: 12px;
 }
-.channel-files-dialog h2 {
-  font-size: 20px;
+.channel-files-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
   margin: 0;
+  padding: 0;
+  border: 0;
 }
-.channel-files-dialog > header > button {
-  border: 1px solid #ddd;
-  border-radius: 7px;
-  padding: 7px 12px;
-  background: #fff;
-  color: inherit;
+.channel-files-filters > button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text-tertiary);
+  font: inherit;
+  font-size: 13px;
   cursor: pointer;
 }
-.channel-files-dialog :focus-visible {
-  outline: 2px solid #53689e;
-  outline-offset: 3px;
+.channel-files-filters > button[aria-pressed="true"] {
+  color: var(--ob-text);
+  font-weight: 600;
+}
+.channel-files-search {
+  box-sizing: border-box;
+  width: 200px;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--ob-divider);
+  border-radius: 16px;
+  background: var(--ob-surface);
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.channel-files-search:focus {
+  border-color: var(--ob-text-tertiary);
+}
+.channel-files-list {
+  max-height: min(46vh, 420px);
+  margin: 0;
+  padding: 0 16px;
+  overflow-y: auto;
+  border-radius: 18px;
+  background: var(--ob-fill);
+  list-style: none;
+}
+.channel-files-list.is-trash {
+  background: color-mix(in srgb, var(--ob-fill) 50%, var(--ob-surface));
+}
+.channel-files-list > li {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+}
+.channel-files-list > li + li {
+  border-top: 1px solid var(--ob-divider);
+}
+.channel-files-badge {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  box-sizing: border-box;
+  place-items: center;
+  border: 1px solid var(--ob-divider);
+  border-radius: 10px;
+  background: var(--ob-surface);
+  color: var(--ob-text-secondary);
+  font-size: 9px;
+  font-weight: 700;
+}
+.channel-files-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.channel-files-text strong {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.channel-files-text small {
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+}
+.channel-files-actions {
+  display: flex;
+  gap: 6px;
+}
+.channel-files-actions a.ob-pill {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ob-text);
+  text-decoration: none;
+}
+.channel-files-more {
+  align-self: flex-start;
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 15px;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.channel-files-more:hover {
+  background: var(--ob-fill);
+}
+.channel-files-empty,
+.channel-files-status {
+  margin: 0;
+  padding: 0 4px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}
+.channel-files-note {
+  max-width: 360px;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+  line-height: 1.5;
 }
