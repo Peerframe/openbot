@@ -727,3 +727,34 @@ action ended. `plannedTotalSteps` is null because dynamic execution has no promi
 `completedSteps` is null because checkpoint events do not prove completion. Do not display
 `totalSteps` as a promised plan or treat every observed checkpoint as an action successfully completed.
 Missing timestamps and failure codes are explicit nulls; never substitute creation/update times.
+
+## Model connection dialog commands (C17)
+
+All three commands retain Owner session, exact Origin and bounded JSON guards. API keys never
+appear in public connection DTOs. Canonical migration `0049_model_connection_defaults` adds a
+nullable default without rewriting old connections, ciphertext or Bot selections.
+
+- `POST /api/v1/model-connections/verify`: `{presetId, baseUrl, apiKey}` → 200 `{models: string[]}`.
+  The unsaved key exists only in this request. Reuse the existing exact endpoint allowlist and
+  discovery-capable preset check; issue one bounded GET to the provider's models resource, never
+  chat/inference. No connection, file, cipher envelope or audit event is created. No request key or
+  upstream error body is logged/returned. Recheck Owner authority before send and before return;
+  disconnect/deadline closes the request. Unsupported discovery/invalid credentials/redirects or
+  invalid provider response fail with fixed 422 errors. At most 256 IDs / 2 MiB; no redirects or retries.
+- `PATCH /api/v1/model-connections/:id`: `{expectedRevision, defaultModel: "model-id"}` sets the
+  connection's public default; `defaultModel: null` clears it. Omitting defaultModel preserves it.
+  Existing name/key/enabled patches remain compatible. Successful changes increment revision;
+  stale revision or exhausted integer revision returns 409. Unchanged metadata preserves revision.
+  Creation also accepts optional defaultModel. This metadata does not silently change existing
+  Bots or the Owner's global default. Audit contains only changed field names and revision.
+- `DELETE /api/v1/model-connections/:id`: JSON `{expectedRevision}` → 200 `{deleted: true, connectionId}`.
+  Missing/invalid body returns 422; stale revision returns 409; absent connection returns 404.
+  Environment-provided legacy connection remains read-only (422). If any active Bot, unfinished
+  Run snapshot or Owner default refers to it, return 409
+  `{error: "model_connection_in_use", bots: [{id,name}], runIds: [...], ownerDefault: boolean}`.
+  A dependency read/validation/limit failure refuses deletion; no partial list authorizes it.
+  The connection row lock serializes validated new selections against delete. Removing an unused
+  saved connection and `MODEL_CONNECTION_DELETED` audit commit together; history/receipts remain.
+
+Verify first, then explicitly save with the existing create command; verification does not save
+or grant authority. Use fake providers for tests, never the paid `/test` inference endpoint.

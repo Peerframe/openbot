@@ -652,3 +652,30 @@ run 的开始、结束时间只来自真实生命周期审计事件。历史检�
 故历史 run 的 `completedSteps` 为 null。不要把检查点总数当作
 计划进度，也不要把每个检查点当作成功完成的动作。缺失的时间和失败码返回明确
 的 null，不以创建或更新时间替代。
+
+## 模型服务对话框接口（C17）
+
+三项接口沿用 Owner 会话、准确 Origin 和有界 JSON 检查。公开连接信息不包含密钥。
+规范迁移 `0049_model_connection_defaults` 追加可空默认模型，不改写旧连接、密文或 Bot 选择。
+
+- `POST /api/v1/model-connections/verify`：请求 `{presetId, baseUrl, apiKey}`，成功返回
+  200 `{models: string[]}`。尚未保存的密钥只在本次请求内使用；沿用准确端点白名单和支持
+  模型列表读取的预设，只发一次有界 GET，不发对话或推理。不创建连接、文件、密文或审计
+  事件，不记录密钥或返回上游错误正文。发送和返回前重新核对 Owner；断开、超时会关闭请求。
+  不支持列表读取、密钥无效、重定向或上游格式错误返回固定 422 类别。最多 256 个模型 ID、
+  2 MiB，不跟随重定向、不重试。
+- `PATCH /api/v1/model-connections/:id`：`{expectedRevision, defaultModel: "model-id"}`
+  设置连接默认模型；`defaultModel: null` 清除；不传则保留。原有名称、密钥、启用状态修改
+  兼容。实际变更递增 revision；旧 revision 或整数版本耗尽返回 409；无变化保留版本。
+  创建连接也可带 defaultModel。这只是元数据，不自动改已有 Bot 或 Owner 全局默认选择。
+  审计仅记录变更字段名和版本。
+- `DELETE /api/v1/model-connections/:id`：必须带 JSON `{expectedRevision}`，成功返回
+  200 `{deleted: true, connectionId}`。请求缺失或无效返回 422，旧版本 409，不存在 404；
+  环境提供的 legacy 连接仍只读（422）。活跃 Bot、未结束 run 的选择快照或 Owner 默认
+  仍引用它时，返回 409 `{error: "model_connection_in_use", bots: [{id,name}],
+  runIds: [...], ownerDefault: boolean}`。依赖读取、校验或数量上限失败都拒绝删除，不能
+  用不完整列表批准删除。连接行锁把新选择与删除串行化；删除闲置连接及
+  `MODEL_CONNECTION_DELETED` 审计一起提交，历史与回执保留。
+
+界面先 verify，再由 Owner 明确调用已有创建接口保存；验证不会保存或授予执行权。
+验收只使用假 provider，不调用会产生推理费用的 `/test` 接口。
