@@ -58,6 +58,7 @@
   app-region: no-drag;
 }
 .app-shell.desktop-workspace .shell-pill {
+  --avatar-surface: var(--ob-fill);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -78,6 +79,7 @@
 }
 .app-shell.desktop-workspace .shell-pill:hover,
 .app-shell.desktop-workspace .shell-pill[aria-expanded="true"] {
+  --avatar-surface: var(--ob-fill-hover);
   background: var(--ob-fill-hover);
 }
 .app-shell.desktop-workspace .shell-pill.is-static {
@@ -94,28 +96,15 @@
   white-space: nowrap;
 }
 .app-shell.desktop-workspace .shell-pill-avatars {
-  position: relative;
   display: block;
   flex-shrink: 0;
   width: 26px;
   height: 26px;
 }
-.app-shell.desktop-workspace .shell-pill-avatars .robot-avatar {
-  width: 26px;
-  height: 26px;
-}
-.app-shell.desktop-workspace .shell-pill-avatars.is-pair .robot-avatar {
-  position: absolute;
-  width: 17px;
-  height: 17px;
-}
-.app-shell.desktop-workspace .shell-pill-avatars.is-pair .robot-avatar:first-child {
-  top: 0;
-  left: 0;
-}
-.app-shell.desktop-workspace .shell-pill-avatars.is-pair .robot-avatar:last-child {
-  right: 0;
-  bottom: 0;
+.app-shell.desktop-workspace .shell-pill-avatars > .robot-avatar {
+  width: 24px;
+  height: 24px;
+  margin: 1px;
 }
 .app-shell.desktop-workspace .shell-leading {
   display: flex;

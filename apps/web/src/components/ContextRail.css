@@ -49,32 +49,9 @@
   padding: 0 24px 18px;
   text-align: center;
 }
-.channel-info .ci-identity-avatars {
-  position: relative;
-  display: block;
-  width: 72px;
-  height: 72px;
-}
 .channel-info .ci-identity-avatar {
   width: 72px;
   height: 72px;
-}
-.channel-info .ci-identity-avatars.is-pair {
-  width: 84px;
-  height: 84px;
-}
-.channel-info .ci-identity-avatars.is-pair .ci-identity-avatar {
-  position: absolute;
-  width: 54px;
-  height: 54px;
-}
-.channel-info .ci-identity-avatars.is-pair .ci-identity-avatar:first-child {
-  top: 0;
-  left: 0;
-}
-.channel-info .ci-identity-avatars.is-pair .ci-identity-avatar:last-child {
-  right: 0;
-  bottom: 0;
 }
 .channel-info .ci-identity > strong {
   margin-top: 8px;
@@ -262,10 +239,10 @@
   background: var(--ob-online);
 }
 .channel-info .ci-status.is-active {
-  color: var(--ob-active);
+  color: var(--ob-online-text);
 }
 .channel-info .ci-status.is-active i {
-  background: var(--ob-active);
+  background: var(--ob-working);
 }
 .channel-info .ci-member-remove {
   height: 26px;
@@ -408,11 +385,11 @@
 }
 .channel-info .ci-run-dot.running,
 .channel-info .ci-run-dot.assigned {
-  background: var(--ob-active);
+  background: var(--ob-working);
 }
 .channel-info .ci-run-status.running,
 .channel-info .ci-run-status.assigned {
-  color: var(--ob-active);
+  color: var(--ob-online-text);
 }
 .channel-info .ci-run-dot.completed {
   background: var(--ob-online);

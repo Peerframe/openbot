@@ -1,0 +1,75 @@
+/* 频道 avatar (GroupAvatars artboard). Positions come from the component; colours from tokens. */
+.group-avatar {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  font-family: inherit;
+  line-height: 0;
+}
+.group-avatar-head {
+  position: absolute;
+  display: block;
+}
+.group-avatar-head > .robot-avatar {
+  width: 100%;
+  height: 100%;
+}
+.group-avatar-tile {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 30%;
+  background: var(--ob-selected);
+  color: var(--ob-text-secondary);
+  font-weight: 600;
+  line-height: 1;
+}
+.group-avatar-badge {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  box-sizing: border-box;
+  place-items: center;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--avatar-surface, var(--ob-page));
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.group-avatar-badge.is-hash {
+  background: #dadadd;
+  color: #3a3a3c;
+}
+.group-avatar-badge.is-count {
+  background: #20251f;
+  color: #fafbf7;
+}
+.group-avatar-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  z-index: 2;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--avatar-surface, var(--ob-page));
+}
+.group-avatar-dot.is-top {
+  top: -1px;
+  bottom: auto;
+}
+.group-avatar-dot.is-working {
+  background: var(--ob-working);
+  animation: robot-dot-pulse 1.6s ease-out infinite;
+}
+.group-avatar-dot.is-attention {
+  background: #e08a00;
+}
+@media (prefers-reduced-motion: reduce) {
+  .group-avatar-dot.is-working {
+    animation: none;
+  }
+}
+:root[data-reduced-motion="true"] .group-avatar-dot.is-working {
+  animation: none;
+}

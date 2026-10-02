@@ -1,6 +1,7 @@
 import type { Bot } from "@openbot/domain";
 import type { RealtimeConnectionState } from "../api";
 import { shortcutLabel } from "../desktop-shortcuts";
+import { GroupAvatar } from "./GroupAvatar";
 import { PanelLeftIcon, ShareIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
 import "./WorkspaceShell.css";
@@ -14,6 +15,7 @@ import "./WorkspaceShell.css";
 export function WorkspaceHeader({
   title,
   avatars = [],
+  group = false,
   railOpen,
   onToggleRail,
   realtimeState,
@@ -22,8 +24,10 @@ export function WorkspaceHeader({
   onShare,
 }: {
   title: string;
-  /** Up to two Bots shown in the pill (Main artboard: overlapping tiles). */
+  /** The 单聊 Bot, or the 频道's members in order. */
   avatars?: Bot[];
+  /** A 频道 shows its group avatar (GroupAvatars artboard); a 单聊 or profile shows one head. */
+  group?: boolean;
   railOpen: boolean;
   /** Present when this view has a rail (a conversation or a Bot profile). */
   onToggleRail?: (() => void) | undefined;
@@ -34,14 +38,13 @@ export function WorkspaceHeader({
 }) {
   const pill = (
     <>
-      {avatars.length > 0 ? (
-        <span
-          className={`shell-pill-avatars${avatars.length > 1 ? " is-pair" : ""}`}
-          aria-hidden="true"
-        >
-          {avatars.slice(0, 2).map((bot) => (
-            <RobotAvatar key={bot.id} bot={bot} compact />
-          ))}
+      {group ? (
+        <span className="shell-pill-avatars" aria-hidden="true">
+          <GroupAvatar name={title} members={avatars} size={26} />
+        </span>
+      ) : avatars[0] ? (
+        <span className="shell-pill-avatars" aria-hidden="true">
+          <RobotAvatar bot={avatars[0]} compact />
         </span>
       ) : null}
       <span className="shell-pill-name">{title}</span>

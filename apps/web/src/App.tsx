@@ -1058,9 +1058,9 @@ export function AuthenticatedWorkspace({
     destination === "work"
       ? "任务监督"
       : destination === "automations"
-        ? "自动任务"
+        ? "例行任务"
         : destination === "skills"
-          ? "技能广场"
+          ? "技能"
           : selectedEmployeeId
             ? (employeeProfile?.employee.name ?? "Bot 档案")
             : location.kind === "new"
@@ -1077,6 +1077,7 @@ export function AuthenticatedWorkspace({
       <WorkspaceHeader
         title={headerTitle}
         avatars={headerAvatars}
+        group={!profileTitle && Boolean(selectedChannel) && !selectedChannel?.directBotId}
         railOpen={showDetails}
         onToggleRail={
           railAvailable

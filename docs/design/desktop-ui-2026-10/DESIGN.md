@@ -148,7 +148,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Artboard | Built in | Status |
 | --- | --- | --- |
 | Components | `tokens.css`, `primitives.css`, `Dialog.tsx` | Built |
-| Sidebar, Search, Menu, ContextMenu | `Sidebar.tsx`, `SidebarItemMenu.tsx` | Built; group avatars in step 15 |
+| Sidebar, Search, Menu, ContextMenu | `Sidebar.tsx`, `SidebarItemMenu.tsx` | Built (group avatars and status dots included) |
 | Main | `App.tsx`, `WorkspaceHeader.tsx`, `ChannelWorkspace.tsx` | Built; task cards in step 19 |
 | ChannelInfo, AddMember | `ContextRail.tsx` | Built; add-member popover in step 18 |
 | BotInfo | new `BotInfoRail.tsx` (replaces `EmployeeProfileRail` and the 单聊 rail) | Step 17 |
@@ -157,7 +157,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Slash | `ChannelWorkspace.tsx` composer menus | Built |
 | Settings, SettingsNav, Settings* | `DesktopSettingsScreen.tsx`, `Settings*.tsx` | Built |
 | Plugins | `PluginsDialog.tsx`, `PluginManagerPanel.tsx` | Built |
-| Avatar, Avatars, GroupAvatar, GroupAvatars | `RobotAvatar.tsx`, new `GroupAvatar.tsx` | v2 built; v3 in step 15 |
+| Avatar, Avatars, GroupAvatar, GroupAvatars | `RobotAvatar.tsx`, `GroupAvatar.tsx` | Built; violet, teal, pink and slate wait for C10 |
 | Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | `Onboarding.tsx` and the setup screens | Built |
 | TaskCards, TaskInspector | new `TaskCard.tsx`, `TaskSheet.tsx` | Step 19 |
 | Dialog* | new `Dialog.tsx` frame and the dialogs | Step 20 |

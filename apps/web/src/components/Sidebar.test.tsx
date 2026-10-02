@@ -155,7 +155,9 @@ it("shows only known channel member avatars and retains workspace destinations",
     />,
   );
   try {
-    expect(view.container.querySelectorAll(".sb-avatar-pair .robot-avatar")).toHaveLength(1);
+    const group = view.container.querySelector(".group-avatar");
+    expect(group?.querySelectorAll(".robot-avatar")).toHaveLength(1);
+    expect(group?.getAttribute("aria-label")).toMatch(/1 名 Bot/);
     const buttons = [...view.container.querySelectorAll("button")];
     // 任务监督 lives in the account menu; 插件 is the footer pill.
     await interact(() =>
