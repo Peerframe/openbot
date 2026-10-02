@@ -12,6 +12,7 @@ import { highlightMatch } from "../sidebar-organization";
 import { GroupAvatar } from "./GroupAvatar";
 import { PlusIcon, SendIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
+import { useListScroll } from "./useListScroll";
 import "./NewChatScreen.css";
 
 /** The Server accepts at most six recipients per message (createMessageInputSchema). */
@@ -73,6 +74,7 @@ export function NewChatScreen({
     ...candidates.map((bot): Option => ({ kind: "bot", bot })),
   ];
   const activeIndex = Math.min(active, Math.max(0, options.length - 1));
+  const optionsRef = useListScroll(activeIndex);
   const chosen = selected.flatMap((id) => {
     const bot = botById.get(id);
     return bot ? [bot] : [];
@@ -244,6 +246,7 @@ export function NewChatScreen({
           className="new-chat-options"
           role="listbox"
           id="new-chat-options"
+          ref={optionsRef}
           aria-label="选择收件人"
         >
           {options.map((option, index) => {

@@ -11,6 +11,7 @@ import {
 } from "../destination-api";
 import { RobotAvatar } from "./RobotAvatar";
 import { SettingsHeaderAction } from "./SettingsHeaderAction";
+import { SettingsSearch, useSettingsSearch } from "./SettingsSearch";
 import "./destinations.css";
 
 type LoadState = "loading" | "ready" | "unavailable" | "failed";
@@ -18,6 +19,12 @@ type LoadState = "loading" | "ready" | "unavailable" | "failed";
 /** Settings → 例行任务 (SettingsRoutines artboard): the Server's schedules for the workspace. */
 export function AutomationsScreen({ bots, channels }: { bots: Bot[]; channels: Channel[] }) {
   const [items, setItems] = useState<Automation[]>([]);
+  const search = useSettingsSearch(items.length);
+  const shownItems = items.filter((item) =>
+    search.matches(
+      `${item.name} ${bots.find((bot) => bot.id === item.botId)?.name ?? ""} ${channels.find((channel) => channel.id === item.channelId)?.name ?? ""}`,
+    ),
+  );
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [showForm, setShowForm] = useState(false);
   const [busyId, setBusyId] = useState<string>();
@@ -186,7 +193,9 @@ export function AutomationsScreen({ bots, channels }: { bots: Bot[]; channels: C
         </p>
       ) : (
         <div className="settings-group-rows settings-routines">
-          {items.map((item) => {
+          <SettingsSearch search={search} count={items.length} noun="例行任务" />
+          {shownItems.length === 0 ? <p className="settings-empty">没有匹配的例行任务。</p> : null}
+          {shownItems.map((item) => {
             const bot = bots.find((entry) => entry.id === item.botId);
             const channel = channels.find((entry) => entry.id === item.channelId);
             return (

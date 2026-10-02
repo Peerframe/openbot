@@ -329,7 +329,8 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 280px;
+  /* LongLists: eight rows (32px avatar + 8px padding each side), then scroll inside. */
+  max-height: calc(8 * 48px + 7 * 2px + 12px);
   padding: 6px;
   overflow-y: auto;
 }
@@ -679,4 +680,33 @@
 .channel-info .ci-library-actions {
   display: flex;
   gap: 8px;
+}
+
+/* LongLists: 需要处理 shows the soonest-expiring card with the others stacked behind it. */
+.channel-info .ci-approvals.is-stacked {
+  position: relative;
+  isolation: isolate;
+  padding-bottom: 12px;
+}
+.channel-info .ci-approvals.is-stacked::after,
+.channel-info .ci-approvals.is-stacked[data-behind="2"]::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  height: 28px;
+  box-sizing: border-box;
+  border: 1px solid var(--ob-divider);
+  border-radius: 14px;
+}
+.channel-info .ci-approvals.is-stacked::after {
+  right: 6px;
+  bottom: 6px;
+  left: 6px;
+  background: color-mix(in srgb, var(--ob-fill) 50%, var(--ob-surface));
+}
+.channel-info .ci-approvals.is-stacked[data-behind="2"]::before {
+  right: 12px;
+  bottom: 0;
+  left: 12px;
+  background: var(--ob-fill);
 }

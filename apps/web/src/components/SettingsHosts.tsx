@@ -8,6 +8,7 @@ import {
   useNodeManager,
 } from "./NodeManagerDialog";
 import { SettingsHeaderAction } from "./SettingsHeaderAction";
+import { SettingsSearch, useSettingsSearch } from "./SettingsSearch";
 
 /**
  * Settings → 工作主机 (SettingsHosts artboard). Enrollment and revocation stay Server-owned;
@@ -28,6 +29,10 @@ export function SettingsHosts({ children }: { children?: ReactNode }) {
   }, []);
 
   const active = manager.identities?.filter((identity) => identity.status === "active").length;
+  const search = useSettingsSearch(manager.identities?.length ?? 0);
+  const shownIdentities = manager.identities?.filter((identity) =>
+    search.matches(`${identity.node?.name ?? ""} ${identity.nodeId}`),
+  );
 
   return (
     <>
@@ -108,10 +113,14 @@ export function SettingsHosts({ children }: { children?: ReactNode }) {
             还没有登记主机。点「配对新主机」创建令牌，再在目标电脑启动 Node。
           </p>
         ) : null}
-        {manager.identities && manager.identities.length > 0 ? (
+        <SettingsSearch search={search} count={manager.identities?.length ?? 0} noun="主机" />
+        {search.active && shownIdentities?.length === 0 ? (
+          <p className="settings-empty">没有匹配的主机。</p>
+        ) : null}
+        {shownIdentities && shownIdentities.length > 0 ? (
           <div className="settings-group-rows">
             <NodeIdentityList
-              identities={manager.identities}
+              identities={shownIdentities}
               onlineNodes={onlineNodes}
               confirmingNodeId={manager.confirmingNodeId}
               revokingNodeId={manager.revokingNodeId}
