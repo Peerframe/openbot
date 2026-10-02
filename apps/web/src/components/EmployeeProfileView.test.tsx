@@ -3,6 +3,13 @@ import type { EmployeeProfile } from "@openbot/domain";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { interact, type RenderedComponent, renderComponent } from "../test/render-component";
+
+const api = vi.hoisted(() => ({
+  updateEmployeeMemory: vi.fn(async () => ({})),
+  getKnowledgeProposals: vi.fn(async () => []),
+}));
+vi.mock("../api", async (original) => ({ ...(await original<typeof import("../api")>()), ...api }));
+
 import {
   EmployeeMemoryPanel,
   EmployeeProfileView,
@@ -69,7 +76,7 @@ describe("EmployeeProfileView", () => {
     );
 
     expect(html).toContain('role="tablist"');
-    expect(html.match(/role="tab"/g)).toHaveLength(7);
+    expect(html.match(/role="tab"/g)).toHaveLength(6);
     expect(html).toContain('aria-selected="true"');
     expect(html).toContain('role="tabpanel"');
     expect(html).toMatch(/aria-controls="[^"]+-overview-panel"/);
@@ -90,8 +97,8 @@ describe("EmployeeProfileView", () => {
     );
 
     expect(html).toContain("添加记忆");
-    expect(html).toContain("候选经验须经你审阅");
-    expect(html).toContain("不会进入当前员工模板");
+    expect(html).toContain("审阅前不会成为记忆");
+    expect(html).toContain("记忆不会进入 Bot 模板");
   });
 
   it("renders the artboard overview from Server records", async () => {
@@ -192,14 +199,14 @@ async function renderProfile() {
   );
   interactiveViews.push(view);
   const tabs = [...view.container.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
-  if (tabs.length !== 7) throw new Error(`Expected 7 tabs, found ${tabs.length}`);
+  if (tabs.length !== 6) throw new Error(`Expected 6 tabs, found ${tabs.length}`);
   return { view, tabs };
 }
 
 describe("EmployeeProfileView keyboard DOM regression", () => {
   it("moves aria-selected and focus together for ArrowRight, Home, and End", async () => {
     const { tabs } = await renderProfile();
-    const [overview, evolution, , , , , configuration] = tabs;
+    const [overview, evolution, , , , configuration] = tabs;
     await interact(() => overview.focus());
     expect(document.activeElement).toBe(overview);
     expect(overview.getAttribute("aria-selected")).toBe("true");
@@ -228,7 +235,7 @@ describe("EmployeeProfileView keyboard DOM regression", () => {
 
   it("wraps ArrowLeft from overview and ignores ArrowDown", async () => {
     const { tabs } = await renderProfile();
-    const [overview, , , , , , configuration] = tabs;
+    const [overview, , , , , configuration] = tabs;
     await interact(() => overview.focus());
 
     await interact(() =>
@@ -285,7 +292,7 @@ describe("reviewed knowledge memory provenance", () => {
     expect(html).toContain('href="#/tasks?task=native-task"');
     expect(html).toContain("native-work-run");
     expect(html).toContain("Work Run");
-    expect(html).toContain("仅供你查看");
+    expect(html).toContain('aria-checked="false"');
     expect(html).not.toContain("来源频道 Run");
   });
   it("retains legacy channel Run provenance without granting a native Task identity", () => {
@@ -322,5 +329,140 @@ describe("reviewed knowledge memory provenance", () => {
     );
     expect(html).not.toContain("#/tasks?task=");
     expect(html).not.toContain("来源频道 Run");
+  });
+});
+
+describe("工作记录", () => {
+  const run = (id: string, status: string, createdAt: string, title = id) =>
+    ({
+      id,
+      channelId: "c1",
+      botId: "employee-1",
+      instruction: "",
+      title,
+      status,
+      executionProfile: "coder",
+      createdAt,
+    }) as EmployeeProfile["records"]["runs"][number];
+  const records: EmployeeProfile["records"] = {
+    runs: [
+      run("done", "completed", "2026-09-29T10:00:00.000Z", "整理本周周报"),
+      run("live", "running", "2026-09-30T10:00:00.000Z", "抓取竞品更新日志"),
+      run("wait", "waiting_approval", "2026-09-30T09:00:00.000Z", "发送周报"),
+    ],
+    approvals: [
+      {
+        id: "a1",
+        runId: "wait",
+        channelId: "c1",
+        botId: "employee-1",
+        nodeId: "n1",
+        action: "email.send",
+        target: "team@example.com",
+        summary: "发送邮件给 team@example.com",
+        risk: "write",
+        targetFingerprint: "f",
+        beforeState: {},
+        status: "pending",
+        expiresAt: "2099-01-01T00:00:00.000Z",
+        createdAt: "2026-09-30T09:01:00.000Z",
+      },
+    ],
+    artifacts: [
+      {
+        id: "o1",
+        runId: "done",
+        name: "weekly.md",
+        mediaType: "text/markdown",
+        sha256: "x",
+        sizeBytes: 5120,
+        createdAt: "2026-09-29T10:05:00.000Z",
+      },
+    ],
+    decisions: [],
+  };
+
+  it("opens from the retired 运行中 link and lists waiting work first", async () => {
+    const onOpenRun = vi.fn();
+    const view = await renderComponent(
+      <EmployeeProfileView
+        initialTab="live"
+        profile={{ ...profile, records }}
+        loading={false}
+        error={undefined}
+        onRetry={() => undefined}
+        onAssign={() => undefined}
+        onExport={() => undefined}
+        onProfileChanged={async () => undefined}
+        onOpenRun={onOpenRun}
+      />,
+    );
+    interactiveViews.push(view);
+    expect(view.container.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe(
+      "工作记录",
+    );
+    const live = [...view.container.querySelectorAll(".ep-live-list strong")].map(
+      (item) => item.textContent,
+    );
+    // The waiting run shows once, as its approval.
+    expect(live).toEqual(["等你确认 · 发送邮件给 team@example.com", "正在工作 · 抓取竞品更新日志"]);
+    const filters = [...view.container.querySelectorAll(".ep-text-filters button")];
+    expect(filters.map((item) => item.textContent)).toEqual([
+      "全部 5",
+      "任务 3",
+      "确认 1",
+      "产出 1",
+      "决策 0",
+    ]);
+    await interact(() => (filters[3] as HTMLButtonElement).click());
+    const rows = [
+      ...view.container.querySelectorAll<HTMLButtonElement>(".ep-record-list .ep-record"),
+    ];
+    expect(rows.map((row) => row.textContent)).toEqual(["产出weekly.md整理本周周报 · 5 KB已保存"]);
+    await interact(() => rows[0]?.click());
+    expect(onOpenRun).toHaveBeenCalledWith("done");
+  });
+});
+
+describe("记忆 · 模型可用", () => {
+  const memory = (
+    id: string,
+    sensitivity: EmployeeProfile["memories"][number]["sensitivity"],
+  ): EmployeeProfile["memories"][number] => ({
+    id,
+    botId: "employee-1",
+    kind: "semantic",
+    title: id,
+    content: "Synthetic fact",
+    sensitivity,
+    portability: "never",
+    provenance: { source: "owner" },
+    modelUseEnabled: false,
+    revision: 3,
+    createdAt: "2026-09-25T00:00:00Z",
+    updatedAt: "2026-09-25T00:00:00Z",
+  });
+
+  it("sends only the switch with the revision and keeps confidential memory off", async () => {
+    api.updateEmployeeMemory.mockClear();
+    const changed = vi.fn(async () => undefined);
+    const view = await renderComponent(
+      <EmployeeMemoryPanel
+        profile={{
+          ...profile,
+          memories: [memory("open", "internal"), memory("secret", "confidential")],
+        }}
+        onProfileChanged={changed}
+      />,
+    );
+    interactiveViews.push(view);
+    const switches = [...view.container.querySelectorAll<HTMLButtonElement>('[role="switch"]')];
+    expect(switches.map((item) => item.disabled)).toEqual([false, true]);
+    await interact(() => switches[0]?.click());
+    expect(api.updateEmployeeMemory).toHaveBeenCalledWith("employee-1", "open", {
+      expectedRevision: 3,
+      modelUseEnabled: true,
+    });
+    expect(changed).toHaveBeenCalledOnce();
   });
 });

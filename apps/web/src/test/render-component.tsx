@@ -29,9 +29,16 @@ export async function interact(action: () => void): Promise<void> {
   });
 }
 
-export async function setInputValue(input: HTMLInputElement, value: string): Promise<void> {
+export async function setInputValue(
+  input: HTMLInputElement | HTMLTextAreaElement,
+  value: string,
+): Promise<void> {
   await interact(() => {
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    const prototype =
+      input instanceof HTMLTextAreaElement
+        ? HTMLTextAreaElement.prototype
+        : HTMLInputElement.prototype;
+    const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
     if (setter === undefined) throw new Error("Input value setter is unavailable.");
     setter.call(input, value);
     input.dispatchEvent(new Event("input", { bubbles: true }));

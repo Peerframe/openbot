@@ -252,6 +252,57 @@ export function createWorld(kind: "full" | "empty" | "new-bot" = "full"): Previe
   };
 }
 
+function memory(
+  id: string,
+  title: string,
+  content: string,
+  kind: string,
+  modelUseEnabled: boolean,
+  sensitivity = "internal",
+): Json {
+  return {
+    id,
+    botId: "b-research",
+    kind,
+    title,
+    content,
+    sensitivity,
+    portability: "never",
+    provenance: { source: "owner" },
+    modelUseEnabled,
+    revision: 1,
+    createdAt: T,
+    updatedAt: T,
+  };
+}
+
+/** 候选经验 for the 记忆 tab, shaped like `GET /api/v1/bots/:id/knowledge-proposals`. */
+export function knowledgeProposalsFor(botId: string): Json[] {
+  const proposal = (id: string, title: string, content: string) => ({
+    id,
+    botId,
+    kind: "procedural",
+    title,
+    content,
+    sourceRunId: "r-done",
+    createdAt: T,
+  });
+  return [
+    proposal(
+      "kp-1",
+      "B 公司定价页需要登录",
+      "没有账号时改看它的更新日志页，那里同样列出价格变化。",
+    ),
+    proposal(
+      "kp-2",
+      "周报用三段式",
+      "你两次把周报改成「变化 · 影响 · 建议」三段，以后直接按这个结构写。",
+    ),
+    proposal("kp-3", "截图前关闭弹窗", "C 公司官网首次访问会弹出订阅框，先关闭再截图。"),
+    proposal("kp-4", "价格统一换算成人民币", "表格里的价格都按当天汇率换算，并注明原币种。"),
+  ];
+}
+
 /** Bot 档案 projection for one Bot, shaped like `GET /api/v1/bots/:id/profile`. */
 export function profileFor(world: PreviewWorld, botId: string): Json | undefined {
   const employee = world.bots.find((item) => item.id === botId);
@@ -280,6 +331,26 @@ export function profileFor(world: PreviewWorld, botId: string): Json | undefined
     },
     evolution: [
       {
+        id: "ev-2",
+        botId,
+        type: "skill_discovered",
+        title: "发现候选技能「社交媒体监控」",
+        summary: "来自 3 次任务，等你审核",
+        source: "run",
+        evidence: [],
+        createdAt: "2026-09-30T02:10:00.000Z",
+      },
+      {
+        id: "ev-3",
+        botId,
+        type: "configuration_changed",
+        title: "模型改为 claude-sonnet",
+        summary: "你在 配置 里修改",
+        source: "manual",
+        evidence: [],
+        createdAt: "2026-09-29T08:00:00.000Z",
+      },
+      {
         id: "ev-1",
         botId,
         type: "skill_verified",
@@ -290,10 +361,47 @@ export function profileFor(world: PreviewWorld, botId: string): Json | undefined
         createdAt: "2026-09-28T03:00:00.000Z",
       },
     ],
-    skills: [skill("s1", "读取更新日志", "verified"), skill("s2", "网页截图对比", "verified")],
-    memories: [],
+    skills: [
+      skill("s3", "社交媒体监控", "candidate"),
+      skill("s1", "读取更新日志", "verified"),
+      skill("s2", "网页截图对比", "verified"),
+    ],
+    memories: [
+      memory(
+        "m1",
+        "竞品名单",
+        "A 公司、B 公司、C 公司；名单在 weekly/competitors.md。",
+        "semantic",
+        true,
+      ),
+      memory("m2", "周报发送时间", "每周五上午 10 点前发到 # 市场周报。", "procedural", true),
+      memory(
+        "m3",
+        "B 公司销售联系人",
+        "只记录在密码管理器里的条目名称。",
+        "semantic",
+        false,
+        "confidential",
+      ),
+      memory("m4", "九月发布会", "B 公司在 9/18 发布会上公布了新的定价档位。", "episodic", false),
+    ],
     memoryEvents: [],
-    records: { runs: world.runs, approvals: [], artifacts: [], decisions: [] },
+    records: {
+      runs: world.runs.filter((run) => run.botId === botId),
+      approvals: world.approvals.filter((approval) => approval.botId === botId),
+      artifacts: world.artifacts,
+      decisions: [
+        {
+          id: "d-1",
+          runId: "r-done",
+          channelId: "c-market",
+          stage: "planning",
+          message: "只保留三家竞品的官方更新",
+          summary: "只保留三家竞品的官方更新",
+          createdAt: "2026-09-29T02:05:00.000Z",
+        },
+      ],
+    },
     statistics: { totalRuns: 12, completedRuns: 10, failedRuns: 1, verifiedSkills: 2 },
     configuration: {
       executionProfile: "none",

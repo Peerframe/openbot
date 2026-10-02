@@ -32,21 +32,24 @@ export function KnowledgeReviewPanel({
       active = false;
     };
   }, [botId, revision]);
+  const [showAll, setShowAll] = useState(false);
+  const [reviewingId, setReviewingId] = useState<string>();
+  const shown = showAll ? proposals : proposals.slice(0, 2);
   return (
     <section className="knowledge-review-panel" aria-label="候选经验审阅">
-      <header>
-        <div>
-          <h3>候选经验</h3>
-          <p>来自已完成任务。审阅前不会成为记忆，也不会用于后续任务。</p>
-        </div>
-        <button
-          className="secondary-button"
-          type="button"
-          disabled={loading}
-          onClick={() => setRevision((value) => value + 1)}
-        >
-          刷新候选经验
-        </button>
+      <header className="ep-section-head">
+        <h2>候选经验{proposals.length > 0 ? ` · ${proposals.length} 待你审阅` : ""}</h2>
+        <span>
+          <small>最新的在前；审阅前不会成为记忆，也不会用于后续任务</small>
+          <button
+            className="ep-text-button"
+            type="button"
+            disabled={loading}
+            onClick={() => setRevision((value) => value + 1)}
+          >
+            刷新
+          </button>
+        </span>
       </header>
       {error ? (
         <p role="alert" className="form-error">
@@ -54,30 +57,129 @@ export function KnowledgeReviewPanel({
         </p>
       ) : null}
       {loading ? (
-        <p role="status">正在读取候选经验…</p>
+        <p role="status" className="ep-note">
+          正在读取候选经验…
+        </p>
       ) : proposals.length === 0 && !error ? (
-        <p>没有待审阅的候选经验。</p>
+        <p className="ep-note">没有待审阅的候选经验。</p>
       ) : null}
-      {proposals.map((proposal) => (
-        <KnowledgeProposalReview
-          key={proposal.id}
-          proposal={proposal}
-          onReviewed={async () => {
-            setProposals((items) => items.filter((item) => item.id !== proposal.id));
-            await onChanged();
-          }}
-        />
-      ))}
+      {proposals.length > 0 ? (
+        <div className={`knowledge-grid${showAll ? " is-all" : ""}`}>
+          {shown.map((proposal) =>
+            reviewingId === proposal.id ? (
+              <div className="knowledge-card is-open" key={proposal.id}>
+                <KnowledgeProposalReview
+                  proposal={proposal}
+                  onCancel={() => setReviewingId(undefined)}
+                  onReviewed={async () => {
+                    setReviewingId(undefined);
+                    setProposals((items) => items.filter((item) => item.id !== proposal.id));
+                    await onChanged();
+                  }}
+                />
+              </div>
+            ) : (
+              <KnowledgeProposalCard
+                key={proposal.id}
+                proposal={proposal}
+                onReview={() => setReviewingId(proposal.id)}
+                onDismissed={async () => {
+                  setProposals((items) => items.filter((item) => item.id !== proposal.id));
+                  await onChanged();
+                }}
+              />
+            ),
+          )}
+          {!showAll && proposals.length > 2 ? (
+            <button type="button" className="knowledge-more" onClick={() => setShowAll(true)}>
+              <strong>+{proposals.length - 2}</strong>
+              查看全部
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </section>
+  );
+}
+
+function ProposalSource({ proposal }: { proposal: KnowledgeProposal }) {
+  return proposal.source?.kind === "task" ? (
+    <>
+      来源 Task：
+      <a href={`#/tasks?task=${encodeURIComponent(proposal.source.taskId)}`}>
+        {proposal.source.taskId}
+      </a>
+      {" · "}Work Run：<code>{proposal.source.runId}</code>
+    </>
+  ) : (
+    <>
+      来源频道 Run：<code>{proposal.sourceRunId}</code>
+    </>
+  );
+}
+
+/** A candidate at a glance. 忽略 rejects it without sending its content anywhere. */
+function KnowledgeProposalCard({
+  proposal,
+  onReview,
+  onDismissed,
+}: {
+  proposal: KnowledgeProposal;
+  onReview(): void;
+  onDismissed(): Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+  return (
+    <article className="knowledge-card">
+      <strong>{proposal.title}</strong>
+      <p>{proposal.content}</p>
+      {error ? (
+        <p role="alert" className="form-error">
+          {error}
+        </p>
+      ) : null}
+      <footer>
+        <small className="knowledge-source">
+          <ProposalSource proposal={proposal} />
+        </small>
+        <button
+          type="button"
+          className="ob-pill is-small"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            setError(undefined);
+            try {
+              await reviewKnowledgeProposal(proposal.botId, proposal.id, {
+                decision: "reject",
+                ownerReviewed: true,
+              });
+              await onDismissed();
+            } catch {
+              setError("没能确认已忽略，请刷新后再操作。");
+              setBusy(false);
+            }
+          }}
+        >
+          忽略
+        </button>
+        <button type="button" className="ob-pill is-small is-primary" onClick={onReview}>
+          审阅并保存
+        </button>
+      </footer>
+    </article>
   );
 }
 
 export function KnowledgeProposalReview({
   proposal,
   onReviewed,
+  onCancel,
 }: {
   proposal: KnowledgeProposal;
   onReviewed(): Promise<void>;
+  onCancel?: (() => void) | undefined;
 }) {
   const [title, setTitle] = useState(proposal.title);
   const [content, setContent] = useState(proposal.content);
@@ -106,31 +208,19 @@ export function KnowledgeProposalReview({
   }
   return (
     <form
-      className="form-grid knowledge-proposal"
+      className="knowledge-proposal"
       onSubmit={(event) => {
         event.preventDefault();
         void decide("accept");
       }}
     >
       <p className="knowledge-source">
-        {proposal.source?.kind === "task" ? (
-          <>
-            来源 Task：
-            <a href={`#/tasks?task=${encodeURIComponent(proposal.source.taskId)}`}>
-              {proposal.source.taskId}
-            </a>
-            {" · "}Work Run：<code>{proposal.source.runId}</code>
-          </>
-        ) : (
-          <>
-            来源频道 Run：<code>{proposal.sourceRunId}</code>
-          </>
-        )}
+        <ProposalSource proposal={proposal} />
         {" · "}
         {new Date(proposal.createdAt).toLocaleString()}
       </p>
-      <label htmlFor={`${id}-title`}>
-        <span>经验标题</span>
+      <label className="ob-field" htmlFor={`${id}-title`}>
+        经验标题
         <input
           id={`${id}-title`}
           required
@@ -140,8 +230,8 @@ export function KnowledgeProposalReview({
           onChange={(event) => setTitle(event.target.value)}
         />
       </label>
-      <label htmlFor={`${id}-content`}>
-        <span>审阅并修改内容</span>
+      <label className="ob-field" htmlFor={`${id}-content`}>
+        审阅并修改内容
         <textarea
           id={`${id}-content`}
           required
@@ -151,7 +241,7 @@ export function KnowledgeProposalReview({
           onChange={(event) => setContent(event.target.value)}
         />
       </label>
-      <label className="memory-model-use">
+      <label className="ep-checkbox">
         <input
           type="checkbox"
           checked={modelUseEnabled}
@@ -167,16 +257,21 @@ export function KnowledgeProposalReview({
         </p>
       ) : null}
       <footer className="knowledge-proposal-actions">
-        <button className="primary-button" type="submit" disabled={busy}>
-          {busy ? "处理中…" : "批准并保存记忆"}
-        </button>
+        {onCancel ? (
+          <button className="ob-pill is-small" type="button" disabled={busy} onClick={onCancel}>
+            收起
+          </button>
+        ) : null}
         <button
-          className="secondary-button"
+          className="ob-pill is-small"
           type="button"
           disabled={busy}
           onClick={() => void decide("reject")}
         >
           拒绝并删除候选内容
+        </button>
+        <button className="ob-pill is-small is-primary" type="submit" disabled={busy}>
+          {busy ? "处理中…" : "批准并保存记忆"}
         </button>
       </footer>
     </form>

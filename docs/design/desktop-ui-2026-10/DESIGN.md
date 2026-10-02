@@ -170,20 +170,23 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Dialog* | `Dialog.tsx` frame; Share, Export, Import, DeleteIdentity, NodeManager and ModelConnections dialogs | Built; 连接模型服务 keeps its list and editor until C17 |
 | WorkSupervision, EmptyWorkspace | `WorkTasksScreen.tsx`, `EmptyWorkspace.tsx` | Built; step counts wait for C13 |
 
-## Not designed yet
+## Designed in step 22 (approved 2026-10-02)
 
-These are designed on the canvas (step 22) before they are rebuilt; until then they keep working.
+These areas now have artboards; step 23 rebuilds them, and until then the current code keeps
+working. [LongLists](LongLists.dc.html) sets the rules for long content everywhere: counts after
+titles, at most four items per card with 「全部 N 个 ›」, search above 20 items, an overlay scrollbar
+that shows while scrolling, and the date cue with 「回到最新」 in conversations.
 
-| Area | Code today |
+| Area and artboard | Code today |
 | --- | --- |
-| Message hover actions, reactions, reply quote | `MessageActionBar`, `MessageReactions` |
-| Attachments in messages and the composer, voice input | `MessageAttachments`, `AttachmentPreview`, `ComposerAttachmentPicker`, `VoiceRecorder` |
-| 补充指令 input and the skill picker | `SteerForm` in `TaskActions.tsx`, composer skill menu |
-| 频道文件 management (recycle bin), to fold into 资料库 | `AttachmentsManager` |
-| Bot 档案 tabs: 进化档案 (inspired by Hermes Agent), 技能图谱, 运行中, 记忆, 工作记录, 配置 | `EmployeeEvolutionArchive`, `EmployeeSkillReview`, `KnowledgeReviewPanel`, `EmployeeModelEditor` |
-| 员工浏览器 live view | `EmployeeBrowser` |
-| Notices, toasts, offline banner | `App.tsx` notices |
-| App icon and README images | `apps/desktop/resources`, `docs/design/*.png` |
+| Message hover actions, reactions, reply quote (MessageActions) | `MessageActionBar`, `MessageReactions` |
+| Attachments in messages and the composer, voice input (Composer) | `MessageAttachments`, `AttachmentPreview`, `ComposerAttachmentPicker`, `VoiceRecorder` |
+| 补充指令 input and the skill picker (Composer, TaskCards) | `SteerForm` in `TaskActions.tsx`, composer skill menu |
+| 频道文件 management with the recycle bin (ChannelFiles) | `AttachmentsManager` |
+| Bot 档案 tabs: 进化档案 (inspired by Hermes Agent), 技能, 记忆, 工作记录 (with 进行中), 配置 (Profile*) | `EmployeeEvolutionArchive`, `EmployeeSkillReview`, `KnowledgeReviewPanel`, `EmployeeModelEditor` |
+| The Bot's browser (EmployeeBrowser) | `EmployeeBrowser` |
+| Notices, toasts, banners, scrolling and long lists (Notices, LongLists) | `App.tsx` notices |
+| App icon (AppIcon) | `apps/desktop/resources`, `docs/design/*.png` |
 
 ## Legacy inventory
 
