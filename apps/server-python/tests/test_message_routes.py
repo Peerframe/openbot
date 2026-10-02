@@ -19,7 +19,7 @@ def test_message_route_authority_existence_schema_and_response_boundaries():
         store.read.assert_awaited_with(TOKEN, "messages", channel_id="absent")
         store.read.return_value = ReadResult(EXPIRES)
         response = client.get("/api/v1/channels/empty/messages")
-        assert response.json() == {"messages": []}
+        assert response.json() == {"messages": [], "hasMore": False}
         assert response.headers["cache-control"] == "no-store"
         assert client.post("/api/v1/channels/empty/messages", json={"content": "do work"}).status_code == 405
         schema = client.get("/openapi.json").json()
@@ -34,3 +34,16 @@ def test_message_route_authority_existence_schema_and_response_boundaries():
         assert client.get("/api/v1/channels/encoded/messages").status_code == 503
         response = client.get("/api/v1/channels/" + "x" * 129 + "/messages")
         assert response.status_code == 422 and "x" * 129 not in response.text
+
+
+
+def test_c18_page_arguments_and_openapi_are_explicit():
+    store=AsyncMock();store.read.return_value=ReadResult(EXPIRES)
+    with TestClient(create_app(store,owner_name='Owner')) as api:
+        api.cookies.set('__Host-openbot_session',TOKEN)
+        assert api.get('/api/v1/channels/empty/messages?limit=2').json()=={'messages':[],'hasMore':False}
+        store.read.assert_awaited_with(TOKEN,'messages',channel_id='empty',before=None,limit=2)
+        operation=api.get('/openapi.json').json()['paths']['/api/v1/channels/{channel_id}/messages']['get']
+        params={p['name']:p for p in operation['parameters']}
+        assert params['limit']['schema']['maximum']==100 and params['limit']['schema']['minimum']==1
+        assert params['before']['schema']['anyOf'][0]['maxLength']==2048

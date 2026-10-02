@@ -1,5 +1,6 @@
 """Retained plugin and model-connection HTTP composition; authority stays in the services."""
 import asyncio
+from fastapi.responses import JSONResponse
 
 from .control_errors import ControlError
 from .http_input import request_signal
@@ -72,9 +73,20 @@ def register_extensions(route, service):
         return await connected_request(request,lambda:service('model_connections').test(token,params['connection_id'],body))
     async def employee(token,params,body,_request):
         return await service('model_connections').update_employee_model(token,params['bot_id'],body)
+    async def verify(token,_params,body,request):
+        result=await connected_request(request,lambda:service('model_connections').verify(token,body))
+        return {'models':result}
+    async def delete(token,params,body,_request):
+        from .model_connections import ModelConnectionInUse
+        try:
+            return await service('model_connections').delete(token,params['connection_id'],body)
+        except ModelConnectionInUse as error:
+            return JSONResponse(error.public,status_code=409)
     route('/api/v1/model-services','GET',models)
     route('/api/v1/model-connections','POST',create,limit=8192,status=201)
+    route('/api/v1/model-connections/verify','POST',verify,limit=8192)
     route('/api/v1/model-connections/{connection_id}','PATCH',update,limit=4096)
+    route('/api/v1/model-connections/{connection_id}','DELETE',delete,limit=1024)
     route('/api/v1/model-connections/{connection_id}/models','POST',discover,limit=1024)
     route('/api/v1/model-connections/{connection_id}/test','POST',test,limit=1024)
     route('/api/v1/bots/{bot_id}/model','PATCH',employee,limit=2048)

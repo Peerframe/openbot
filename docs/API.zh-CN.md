@@ -21,7 +21,7 @@
 | `POST` | `/api/v1/channels/:channelId/read` | 把频道标为 Owner 已读 |
 | `GET` | `/api/v1/channels/unread` | 各频道未读的 Bot/系统消息数（上限 99） |
 | `GET` | `/api/v1/audit` | 最新审计事件，字段按白名单投影 |
-| `GET` | `/api/v1/channels/:channelId/messages` | 读取最近 100 条本地频道消息与 Bot 回复关系 |
+| `GET` | `/api/v1/channels/:channelId/messages` | 分页读取本地频道消息（before/limit，最多100条）与 Bot 回复关系 |
 | `POST` | `/api/v1/channels/:channelId/messages` | 原子保存用户消息并创建排队任务 |
 | `GET` | `/api/v1/channels/:channelId/runs` | 读取频道最近 50 个任务 |
 | `GET` | `/api/v1/channels/:channelId/events` | 订阅频道实时事件（SSE） |
@@ -626,3 +626,71 @@ IPC 不接受渲染层传入的命令、程序路径或更新地址。
 取值。已有外观字段及旧模板仍然有效；未知颜色、大小写变体、任意 CSS 字符串、数字和
 null 均拒绝。模板导入在新身份下保留外观，审核隔离与摘要校验保持不变。
 此契约提供颜色数据，头像绘制及界面选择器由第 15 步设计实现。
+
+## Run 进度检查点（C13）
+
+`GET /api/v1/runs/:runId/progress` 由 Owner 会话读取活跃频道中的 run，返回
+`packages/domain` 的 `RunProgressDetails`。`totalSteps` 是该 run 持久化
+真实步骤的准确总数：当前产品 run 读取已有 Work 动作；未映射的历史 run 读取
+`RUN_PROGRESS` 公开检查点。**不是未来计划总步数，也不是模型用量**。
+`currentStepNumber` 是最近已记录的序号；零条时为 null。工作区新增
+`runProgress[runId]` 汇总，不受工作区最近 200 条事件窗口的截断影响。
+
+不传 `steps` 时，12 条以内全部返回；超过 12 条返回最早 3 条和最近 6 条。
+`?steps=4,5,6` 按序号取至多 12 个不重复的正整数（1–9999999），结果升序；
+不存在的序号不返回条目。重复、未知参数和无效序号返回 422。按 `created_at`、
+C 排序规则下的 id 排序，先对该 run 的全部检查点编号，再筛选；汇总与步骤使用
+同一个可重复读快照。run 不存在或频道已删除返回 404。
+
+`stageName` 和 `description` 只使用服务电脑固定的有界阶段字典；未知阶段为 null。
+本接口不读取模型原文、工具结果或原始思维链。审批等待明确显示 approval 阶段；
+终态没有当前阶段。Work 动作返回真实接纳、核验结束时间；`completedSteps` 只计已核验的 applied
+动作。审批前没有开始时间，未核验动作没有结束时间；不读取请求、参数或回执正文。
+run 的开始、结束时间只来自真实生命周期审计事件。历史检查点的
+`startedAt` 是记录时间；已有事件不能证明动作何时结束，故 `endedAt` 为 null。
+动态运行没有未来计划，故 `plannedTotalSteps` 为 null；历史检查点不能证明完成，
+故历史 run 的 `completedSteps` 为 null。不要把检查点总数当作
+计划进度，也不要把每个检查点当作成功完成的动作。缺失的时间和失败码返回明确
+的 null，不以创建或更新时间替代。
+
+## 模型服务对话框接口（C17）
+
+三项接口沿用 Owner 会话、准确 Origin 和有界 JSON 检查。公开连接信息不包含密钥。
+规范迁移 `0049_model_connection_defaults` 追加可空默认模型，不改写旧连接、密文或 Bot 选择。
+
+- `POST /api/v1/model-connections/verify`：请求 `{presetId, baseUrl, apiKey}`，成功返回
+  200 `{models: string[]}`。尚未保存的密钥只在本次请求内使用；沿用准确端点白名单和支持
+  模型列表读取的预设，只发一次有界 GET，不发对话或推理。不创建连接、文件、密文或审计
+  事件，不记录密钥或返回上游错误正文。发送和返回前重新核对 Owner；断开、超时会关闭请求。
+  不支持列表读取、密钥无效、重定向或上游格式错误返回固定 422 类别。最多 256 个模型 ID、
+  2 MiB，不跟随重定向、不重试。
+- `PATCH /api/v1/model-connections/:id`：`{expectedRevision, defaultModel: "model-id"}`
+  设置连接默认模型；`defaultModel: null` 清除；不传则保留。原有名称、密钥、启用状态修改
+  兼容。实际变更递增 revision；旧 revision 或整数版本耗尽返回 409；无变化保留版本。
+  创建连接也可带 defaultModel。这只是元数据，不自动改已有 Bot 或 Owner 全局默认选择。
+  审计仅记录变更字段名和版本。
+- `DELETE /api/v1/model-connections/:id`：必须带 JSON `{expectedRevision}`，成功返回
+  200 `{deleted: true, connectionId}`。请求缺失或无效返回 422，旧版本 409，不存在 404；
+  环境提供的 legacy 连接仍只读（422）。活跃 Bot、未结束 run 的选择快照或 Owner 默认
+  仍引用它时，返回 409 `{error: "model_connection_in_use", bots: [{id,name}],
+  runIds: [...], ownerDefault: boolean}`。依赖读取、校验或数量上限失败都拒绝删除，不能
+  用不完整列表批准删除。连接行锁把新选择与删除串行化；删除闲置连接及
+  `MODEL_CONNECTION_DELETED` 审计一起提交，历史与回执保留。
+
+界面先 verify，再由 Owner 明确调用已有创建接口保存；验证不会保存或授予执行权。
+验收只使用假 provider，不调用会产生推理费用的 `/test` 接口。
+
+### C18：读取更早的消息页
+
+`GET /api/v1/channels/:channelId/messages?limit=100&before=<不透明游标>` 沿用现有 Owner 会话权限。
+`limit` 默认100，必须是1–100的十进制整数；`before` 可省略。未知或重复参数、空／格式错误／超长游标、
+其他频道的游标返回422。不存在或已删除的频道在授权检查后返回404。
+
+响应为 `{ "messages": [...], "hasMore": true, "nextCursor": "..." }`。没有游标时返回最新一页；
+每页按数据库时间、id（C 排序规则）升序排列。把 nextCursor 作为 before 获取严格更早的一页，并将该页
+放到当前消息前面。没有更早消息时 hasMore 为 false，省略 nextCursor；空页为
+`{ "messages": [], "hasMore": false }`。现有默认窗口仍是100条。
+
+游标记录返回页最早一条消息的位置，保留数据库时间精度和 id；客户端应原样传递，不能依赖其内部格式。
+即使这条消息被删除，游标仍可用。游标不授予权限，也不包含消息正文。每次请求读取当前事实，跨页请求
+不保证历史冻结；每页保留会话二次检查、选中正文／响应大小限制和 no-store，不产生消息写入或模型调用。
