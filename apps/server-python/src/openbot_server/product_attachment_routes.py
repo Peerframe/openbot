@@ -13,6 +13,7 @@ from urllib.parse import quote
 
 from fastapi.responses import Response
 
+from .attachment_references import with_reference_counts
 from .control_errors import ControlError
 from .http_input import read_attachment_upload, request_signal
 from .owner_files import MAX_BYTES
@@ -75,9 +76,10 @@ def _register_owner(route,product,service):
 
 def _register_channel(route,product,service):
     async def listing(token,path,*_):
-        async with product.transactions.transaction(token) as db:
+        # Match the file -> Owner lock order used by reference admission and deletion.
+        async with product.files.lock(),product.transactions.transaction(token) as db:
             await product.channel(db,path['channel_id'])
-            return {'attachments':product.files.list(path['channel_id'])}
+            return {'attachments':await with_reference_counts(db,path['channel_id'],product.files.list(path['channel_id']))}
     route(CHANNEL_BASE,'GET',listing)
 
     async def upload(token,path,_body,request):
