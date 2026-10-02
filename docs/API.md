@@ -28,7 +28,7 @@ HTTPS for remote access.
 | `POST` | `/api/v1/channels/:channelId/read` | Mark a channel read for the Owner |
 | `GET` | `/api/v1/channels/unread` | Unread Bot/system message counts per channel (capped at 99) |
 | `GET` | `/api/v1/audit` | Newest audit events with an allowlisted projection |
-| `GET` | `/api/v1/channels/:channelId/messages` | Read the latest 100 messages and reply relationships |
+| `GET` | `/api/v1/channels/:channelId/messages` | Read message pages (before/limit, max 100) and reply relationships |
 | `POST` | `/api/v1/channels/:channelId/messages` | Persist an Owner message and create a queued Run atomically |
 | `GET` | `/api/v1/channels/:channelId/runs` | Read the latest 50 channel Runs |
 | `GET` | `/api/v1/channels/:channelId/events` | Subscribe to channel events over SSE |
@@ -758,3 +758,22 @@ nullable default without rewriting old connections, ciphertext or Bot selections
 
 Verify first, then explicitly save with the existing create command; verification does not save
 or grant authority. Use fake providers for tests, never the paid `/test` inference endpoint.
+
+### C18: older message pages
+
+`GET /api/v1/channels/:channelId/messages?limit=100&before=<opaque-cursor>` retains the
+existing Owner-session authorization. `limit` defaults to100 and must be a decimal integer1–100;
+`before` is optional. Unknown or repeated query fields, empty/malformed/oversized cursors, and
+cursors for another channel return422. Missing or deleted channels return404 after authorization.
+
+Response: `{ "messages": [...], "hasMore": true, "nextCursor": "..." }`. With no cursor,
+return the newest page. Each page is ascending by stored timestamp then ID with C collation.
+Pass nextCursor as before to fetch strictly older messages and prepend that page. When no older
+messages remain, hasMore is false and nextCursor is omitted; an empty page is
+`{ "messages": [], "hasMore": false }`. The existing default window stays100.
+
+The cursor carries the oldest returned position with full database timestamp precision and ID;
+clients must treat it as opaque. It still works if that message is deleted. It grants no authority
+and contains no message content. Each request reads current facts, so concurrent history changes
+are not a frozen multi-request snapshot. Every page keeps the existing session recheck, selected
+text/body byte bounds and no-store response. No message write or model invocation is performed.

@@ -17,3 +17,22 @@ MESSAGE_QUERY = (
     "FROM channels c LEFT JOIN sized s ON true WHERE c.id=%s AND c.deleted_at IS NULL "
     "ORDER BY s.created_at, s.id COLLATE \"C\""
 )
+
+
+def message_page_query(channel_id, limit, boundary):
+    # Only fixed SQL is assembled. Values, including the cursor boundary, remain parameters.
+    where = '' if boundary is None else 'AND (created_at,id COLLATE "C") < (%s::timestamptz,%s::text COLLATE "C") '
+    params = (channel_id,) + (() if boundary is None else boundary) + (limit + 1, limit, limit, channel_id)
+    query = (
+        'WITH candidates AS MATERIALIZED (SELECT id,created_at FROM messages WHERE channel_id=%s '
+        + where + 'ORDER BY created_at DESC,id COLLATE "C" DESC LIMIT %s), '
+        'recent AS MATERIALIZED (SELECT m.id,m.channel_id,m.author_type,m.author_id,m.reply_to_message_id,'
+        'm.run_id,m.content,m.created_at FROM messages m JOIN candidates p ON p.id=m.id '
+        'ORDER BY p.created_at DESC,p.id COLLATE "C" DESC LIMIT %s), '
+        f'sized AS (SELECT recent.*,sum({_BYTE_SIZE}) OVER () AS byte_count FROM recent) '
+        'SELECT true AS channel_exists,(SELECT count(*) > %s FROM candidates) AS has_more,'
+        f's.created_at,s.byte_count > 4194304 AS oversized,{_BOUNDED_TEXT} '
+        'FROM channels c LEFT JOIN sized s ON true WHERE c.id=%s AND c.deleted_at IS NULL '
+        'ORDER BY s.created_at,s.id COLLATE "C"'
+    )
+    return query, params

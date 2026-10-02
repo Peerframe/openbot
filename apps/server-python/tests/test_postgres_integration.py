@@ -29,6 +29,9 @@ def equivalent_response(path, response):
         return {"channels": sorted([{**{k: v for k, v in channel.items()
             if k not in ("lastActivityAt", "latestMessage")}, "botIds": sorted(channel["botIds"])}
             for channel in response["channels"]], key=lambda channel: channel["id"])}
+    if path.endswith('/messages'):
+        # C18 adds pagination metadata; the frozen oracle still pins every Message field/order.
+        return {'messages': response['messages']}
     return response
 
 
