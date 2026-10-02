@@ -558,6 +558,8 @@ export function Sidebar({
       {deleteTarget && onDeleteItem ? (
         <DeleteIdentityDialog
           target={deleteTarget}
+          bots={bots}
+          channels={channels}
           onClose={() => setDeleteTarget(undefined)}
           onDelete={async (target) => {
             await onDeleteItem(target);

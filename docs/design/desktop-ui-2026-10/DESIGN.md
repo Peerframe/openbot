@@ -144,6 +144,9 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
   intro, and actions at the bottom right (grey 取消, then a black primary or red danger pill).
 - Designed: 分享, 分享 Bot 模板, 导入 Bot 模板, 删除确认 (Bot and 频道), 配对工作电脑, 连接模型服务.
   New Bot and new 频道 have **no dialog** (see above).
+- Two safety details beyond the artboards: 分享 Bot 模板 and 导入 Bot 模板 keep the exact content
+  under a quiet 「查看将分享的内容」 / 「查看模板内容」 disclosure, and 配对工作电脑 masks the pairing
+  token on screen while 复制启动配置 copies it in full.
 
 ## Screen map
 
@@ -153,7 +156,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | --- | --- | --- |
 | Components | `tokens.css`, `primitives.css`, `Dialog.tsx` | Built |
 | Sidebar, Search, Menu, ContextMenu | `Sidebar.tsx`, `SidebarItemMenu.tsx` | Built (group avatars and status dots included) |
-| Main | `App.tsx`, `WorkspaceHeader.tsx`, `ChannelWorkspace.tsx` | Built; task cards in step 19 |
+| Main | `App.tsx`, `WorkspaceHeader.tsx`, `ChannelWorkspace.tsx`, `TaskCard.tsx` | Built |
 | ChannelInfo, AddMember | `ContextRail.tsx`, `AddMemberPopover.tsx` | Built |
 | BotInfo | `BotInfoRail.tsx` (单聊 and the Bot profile) | Built; 编辑头像 waits for C9 |
 | Profile | `EmployeeProfileView.tsx` | Header and 概览 built; other tabs need design (step 22) |
@@ -164,7 +167,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Avatar, Avatars, GroupAvatar, GroupAvatars | `RobotAvatar.tsx`, `GroupAvatar.tsx` | Built; violet, teal, pink and slate wait for C10 |
 | Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | `Onboarding.tsx` and the setup screens | Built |
 | TaskCards, TaskInspector | `TaskCard.tsx`, `TaskSheet.tsx` | Built; step counts wait for C13 |
-| Dialog* | new `Dialog.tsx` frame and the dialogs | Step 20 |
+| Dialog* | `Dialog.tsx` frame; Share, Export, Import, DeleteIdentity, NodeManager and ModelConnections dialogs | Built; 连接模型服务 keeps its list and editor until C17 |
 | WorkSupervision, EmptyWorkspace | `WorkTasksScreen.tsx`, new `EmptyWorkspace.tsx` | Step 21 |
 
 ## Not designed yet
@@ -185,15 +188,17 @@ These are designed on the canvas (step 22) before they are rebuilt; until then t
 ## Legacy inventory
 
 Legacy classes that must disappear: `primary-button`, `secondary-button`, `icon-button`,
-`create-dialog`, `dialog-header`, `dialog-backdrop`, `onboarding-mark`, `destination-*`,
-`workspace-toolbar`/`toolbar-*`, `channel-members-*`, `channel-work-item`, `run-inspector`,
-`native-run-controls`, `bot-identity-builder`, `appearance-grid`, `workspace-welcome`.
+`onboarding-mark`, `destination-*`, `workspace-toolbar`/`toolbar-*`, `channel-members-*`,
+`workspace-welcome`. Already removed: `create-dialog`, `dialog-header`, `dialog-backdrop` (step 20),
+`channel-work-item`, `run-inspector`, `native-run-controls` (step 19), `bot-identity-builder`,
+`appearance-grid` (step 16).
 
 Legacy stylesheets: most of `styles.css`, `workspace-shell.css`, `desktop-workspace.css`,
 `desktop-ui-refresh.css`, `settings-plugin-refresh.css`, `workspace-preferences.css`,
 `components/destinations.css`.
 
-`CreateBotDialog` and `CreateChannelDialog` were removed in step 16. Screens retired by the plan:
+`CreateBotDialog` and `CreateChannelDialog` were removed in step 16; `EmployeeProfileRail` in step
+17; `RunInspector`, `RunProgressPanel`, `NativeRunControls` and `RunSteering` in step 19. Screens retired by the plan:
 the standalone 例行任务 and 技能库 pages, `AutomationsScreen` and `SkillLibraryScreen`
 (replaced by 设置 › 例行任务 and 设置 › 技能); and the old raster mark `OpenBotMark`.
 

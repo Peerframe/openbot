@@ -193,35 +193,6 @@
   background: transparent;
   cursor: pointer;
 }
-.share-dialog {
-  width: min(700px, 90vw);
-  border: 1px solid #dce3ec;
-  padding: 24px;
-  border-radius: 14px;
-  max-height: 85vh;
-  overflow: auto;
-}
-.share-dialog header,
-.share-dialog footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-.app-shell .share-dialog textarea {
-  width: 100%;
-  resize: vertical;
-  min-height: 160px;
-  max-height: 55vh;
-  padding: 12px;
-  margin: 12px 0;
-  border: 1px solid #dce3ec;
-  border-radius: 9px;
-}
-.share-dialog p {
-  font-size: 13px;
-  color: #596476;
-}
 .desktop-workspace.full-page-destination {
   display: block;
 }
@@ -251,98 +222,6 @@
 :root[data-desktop="win32"] .desktop-workspace .sidebar,
 :root[data-desktop="linux"] .desktop-workspace .sidebar {
   background: var(--sidebar);
-}
-
-.share-dialog section + section {
-  border-top: 1px solid #e1e6ed;
-  margin-top: 20px;
-  padding-top: 16px;
-}
-.share-dialog h3 {
-  margin: 0 0 10px;
-  font-size: 15px;
-  overflow-wrap: anywhere;
-}
-.share-file-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  max-height: 240px;
-  overflow: auto;
-}
-.share-file-list li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 0;
-  border-bottom: 1px solid #e1e6ed;
-  flex-wrap: wrap;
-}
-.share-file-list li > div {
-  flex: 1 1 200px;
-  min-width: 0;
-}
-.share-file-list strong {
-  display: block;
-  overflow-wrap: anywhere;
-}
-.share-file-list small {
-  display: block;
-  margin-top: 4px;
-  color: #596476;
-}
-.share-template-actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.share-template-actions select {
-  flex: 1 1 160px;
-  min-width: 0;
-}
-
-/* Sidebar arrangement: group headings, pinned/unread/hidden marks and the row context menu. */
-
-/* ADR-0047 permanent delete confirmation: names the target and the irreversible scope. */
-.delete-identity-dialog {
-  width: min(440px, 100%);
-}
-.delete-identity-body {
-  padding: 16px 26px 0;
-  color: var(--ink);
-  font-size: 14px;
-  line-height: 1.55;
-}
-.delete-identity-body ul {
-  margin: 0 0 10px;
-  padding-left: 18px;
-}
-.delete-identity-body > p {
-  margin: 0 0 8px;
-  color: var(--muted);
-  font-size: 13px;
-}
-.delete-identity-dialog .dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 9px;
-  padding: 16px 26px 22px;
-}
-.delete-identity-dialog .danger-button {
-  min-height: 36px;
-  padding: 0 16px;
-  border: 1px solid var(--danger);
-  border-radius: 999px;
-  color: #fff;
-  background: var(--danger);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.delete-identity-dialog .danger-button:disabled {
-  opacity: 0.6;
-  cursor: default;
 }
 
 /* Sidebar artboard (Sidebar.dc.html): 40px avatar tiles, 15/13px two-line rows, quiet sections. */

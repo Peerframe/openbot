@@ -165,7 +165,7 @@ it("mutes on this device, shares the template and confirms before deleting", asy
     expect(props.onShare).toHaveBeenCalledOnce();
     await interact(() => buttonByText(view.container, "删除这个 Bot…").click());
     expect(props.onDelete).not.toHaveBeenCalled();
-    await interact(() => buttonByText(view.container, "永久删除 Bot").click());
+    await interact(() => buttonByText(view.container, "永久删除").click());
     expect(props.onDelete).toHaveBeenCalledOnce();
   } finally {
     await view.unmount();

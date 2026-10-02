@@ -15,6 +15,12 @@ const artifact = {
   sizeBytes: 120,
 } as Artifact;
 
+function buttonText(container: HTMLElement, text: string) {
+  return Array.from(container.querySelectorAll("button")).find(
+    (button) => button.textContent === text,
+  );
+}
+
 beforeEach(() => {
   HTMLDialogElement.prototype.showModal = vi.fn();
   HTMLDialogElement.prototype.close = vi.fn();
@@ -61,9 +67,9 @@ describe("deliverable and Bot sharing", () => {
       />,
     );
     try {
-      await interact(() =>
-        (view.container.querySelector("button.primary-button") as HTMLButtonElement).click(),
-      );
+      expect(share).not.toHaveBeenCalled();
+      await interact(() => buttonText(view.container, "Bot 模板")?.click());
+      await interact(() => buttonText(view.container, "打包模板")?.click());
       expect(share).toHaveBeenCalledExactlyOnceWith(bot.id);
     } finally {
       await view.unmount();
@@ -81,9 +87,8 @@ describe("deliverable and Bot sharing", () => {
       />,
     );
     try {
-      expect(
-        (view.container.querySelector("button.primary-button") as HTMLButtonElement).disabled,
-      ).toBe(true);
+      await interact(() => buttonText(view.container, "Bot 模板")?.click());
+      expect(buttonText(view.container, "打包模板")).toBeUndefined();
       expect(view.container.textContent).toContain("先在这个频道加入一个 Bot");
     } finally {
       await view.unmount();

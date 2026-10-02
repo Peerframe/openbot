@@ -211,6 +211,8 @@ export function BotInfoRail({
       {deleting ? (
         <DeleteIdentityDialog
           target={{ kind: "bot", id: bot.id, name: bot.name }}
+          bots={workspace.bots}
+          channels={workspace.channels}
           onClose={() => setDeleting(false)}
           onDelete={onDelete}
         />

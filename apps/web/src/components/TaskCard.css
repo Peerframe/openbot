@@ -261,7 +261,7 @@
   align-items: center;
   gap: 8px;
 }
-.task-collab-avatar {
+.task-card .task-collab-avatar {
   width: 20px;
   height: 20px;
 }

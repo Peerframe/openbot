@@ -1,7 +1,10 @@
+// @vitest-environment jsdom
 import type { EmployeeImportPreview } from "@openbot/domain";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
-import { ImportPreviewDetails } from "./ImportEmployeeDialog";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { activateEmployeeImport, previewEmployeeImport } from "../api";
+import { interact, renderComponent } from "../test/render-component";
+import { ImportEmployeeDialog, ImportPreviewDetails } from "./ImportEmployeeDialog";
 
 const preview: EmployeeImportPreview = {
   format: "openbot.employee/v1",
@@ -60,13 +63,10 @@ describe("ImportPreviewDetails", () => {
     const html = renderToStaticMarkup(
       <ImportPreviewDetails
         preview={preview}
-        fileName="researcher.openbot.employee.json"
         employeeName="Researcher"
-        ownerReviewed={false}
-        allowUnsigned={false}
+        confirmed={false}
         onEmployeeNameChange={() => undefined}
-        onOwnerReviewedChange={() => undefined}
-        onAllowUnsignedChange={() => undefined}
+        onConfirmedChange={() => undefined}
       />,
     );
 
@@ -76,7 +76,8 @@ describe("ImportPreviewDetails", () => {
     expect(html).toContain("browser");
     expect(html).toContain("检查多个独立来源，并保留可以复核的引用。");
     expect(html).toContain("evidence-core");
-    expect(html).toContain("未签名 / 不受信任");
+    expect(html).toContain("未签名，发布者身份无法验证");
+    expect(html).toContain("我知道发布者身份无法验证");
     expect(html).toContain("不会授予技能、电脑或账号权限");
     expect(html).toContain("禁用，等待审核");
   });
@@ -85,16 +86,71 @@ describe("ImportPreviewDetails", () => {
     const html = renderToStaticMarkup(
       <ImportPreviewDetails
         preview={{ ...preview, employee: { name: "Legacy", role: "旧模板" } }}
-        fileName="legacy.json"
         employeeName="Legacy"
-        ownerReviewed={false}
-        allowUnsigned={false}
+        confirmed={false}
         onEmployeeNameChange={() => undefined}
-        onOwnerReviewedChange={() => undefined}
-        onAllowUnsignedChange={() => undefined}
+        onConfirmedChange={() => undefined}
       />,
     );
 
     expect(html).toContain("模板未提供简介。");
   });
+});
+
+vi.mock("../api", () => ({
+  previewEmployeeImport: vi.fn(),
+  activateEmployeeImport: vi.fn(),
+}));
+
+describe("ImportEmployeeDialog activation", () => {
+  beforeEach(() => {
+    HTMLDialogElement.prototype.showModal = vi.fn();
+    HTMLDialogElement.prototype.close = vi.fn();
+  });
+
+  it.each([
+    ["unsigned", preview, true],
+    [
+      "signed",
+      { ...preview, signature: { status: "dsse", trusted: true, keyid: "key-1" } } as const,
+      false,
+    ],
+  ] as const)(
+    "activates a %s package only after the explicit confirmation",
+    async (_, shown, risk) => {
+      vi.mocked(previewEmployeeImport).mockResolvedValue(shown as EmployeeImportPreview);
+      vi.mocked(activateEmployeeImport).mockResolvedValue(
+        {} as Awaited<ReturnType<typeof activateEmployeeImport>>,
+      );
+      const onActivated = vi.fn();
+      const view = await renderComponent(
+        <ImportEmployeeDialog onClose={vi.fn()} onActivated={onActivated} />,
+      );
+      try {
+        const input = view.container.querySelector<HTMLInputElement>('input[type="file"]');
+        const file = new File(["{}"], "researcher.openbot.json", { type: "application/json" });
+        await interact(() => {
+          Object.defineProperty(input, "files", { configurable: true, value: [file] });
+          input?.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        const activate = Array.from(view.container.querySelectorAll("button")).find(
+          (button) => button.textContent === "激活 Bot",
+        );
+        expect(activate?.disabled).toBe(true);
+        await interact(() =>
+          view.container.querySelector<HTMLInputElement>(".ob-dialog-confirm input")?.click(),
+        );
+        expect(activate?.disabled).toBe(false);
+        await interact(() => activate?.click());
+        expect(activateEmployeeImport).toHaveBeenCalledWith(
+          file,
+          shown,
+          expect.objectContaining({ employeeName: "Researcher", allowUnsigned: risk }),
+        );
+        expect(onActivated).toHaveBeenCalledOnce();
+      } finally {
+        await view.unmount();
+      }
+    },
+  );
 });

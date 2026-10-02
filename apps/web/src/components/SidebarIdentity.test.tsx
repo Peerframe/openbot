@@ -105,10 +105,11 @@ it("confirms a permanent Bot delete that names the target and reports active wor
     // Choosing the menu item never deletes; only the dialog's explicit action does.
     expect(remove).not.toHaveBeenCalled();
     const dialog = view.container.querySelector("dialog.delete-identity-dialog");
-    expect(dialog?.textContent).toContain("永久删除 Bot「Reviewer」？");
+    expect(dialog?.textContent).toContain("永久删除这个 Bot？");
+    expect(dialog?.querySelector(".ob-dialog-identity")?.textContent).toContain("Reviewer");
     expect(dialog?.textContent).toContain("无法撤销");
     const confirm = Array.from(dialog?.querySelectorAll("button") ?? []).find(
-      (button) => button.textContent === "永久删除 Bot",
+      (button) => button.textContent === "永久删除",
     );
     await interact(() => confirm?.click());
     expect(remove).toHaveBeenCalledWith({ kind: "bot", id: "reviewer", name: "Reviewer" });
