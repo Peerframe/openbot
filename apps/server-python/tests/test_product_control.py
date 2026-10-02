@@ -355,3 +355,83 @@ def test_attachment_families_keep_distinct_delete_lock_and_header_semantics(fixt
         assert_download(api.get(owner_base + '/' + private_id + '/content'), b'owner facts\n')
         assert [item['id'] for item in api.get(owner_base).json()['attachments']] == [private_id]
         assert [item['id'] for item in api.get(channel_base).json()['attachments']] == [shared_id]
+
+
+@pytest.mark.parametrize('count', [0, 1, 13, 30])
+def test_run_progress_exact_ordinals_and_bounded_window(fixture, tmp_path, count):
+    from datetime import datetime, timezone
+    from psycopg.types.json import Jsonb
+    from test_task_postgres import prepare
+    from openbot_server.task_inputs import parse_message
+    first, _, channel = prepare(fixture, 'Progress ' + str(uuid4()))
+    run = asyncio.run(PostgresTaskStore(fixture['dsn']).submit(fixture['token'], channel.id,
+        parse_message({'content': 'Check progress', 'botId': first.id}))).run
+    instant = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    with psycopg.connect(fixture['dsn']) as db:
+        for number in range(1, count + 1):
+            db.execute("INSERT INTO run_events(id,run_id,channel_id,bot_id,type,payload,created_at) "
+                "VALUES(%s,%s,%s,%s,'RUN_PROGRESS',%s,%s)",
+                (f'progress-{run.id}-{number:03}', run.id, channel.id, first.id,
+                 Jsonb({'stage': 'planning', 'message': 'PRIVATE CHAIN OF THOUGHT'}), instant))
+    with client(fixture, product(fixture, tmp_path)) as api:
+        base = f'/api/v1/runs/{run.id}/progress'
+        response = api.get(base)
+        assert response.status_code == 200, response.text
+        value = response.json()
+        assert value['totalSteps'] == count
+        assert value['currentStepNumber'] == (count or None)
+        expected = list(range(1, count + 1)) if count <= 12 else [1, 2, 3, *range(count-5, count+1)]
+        assert [s['stepNumber'] for s in value['steps']] == expected
+        assert value['startedAt'] is None and value['endedAt'] is None
+        assert value['completedSteps'] is None and value['plannedTotalSteps'] is None
+        assert all(s['endedAt'] is None for s in value['steps'])
+        assert 'PRIVATE' not in response.text
+        selected = api.get(base + '?steps=13,1,4').json()
+        assert [s['stepNumber'] for s in selected['steps']] == [n for n in [1,4,13] if n <= count]
+        for query in ['steps=0', 'steps=1,1', 'steps=-1', 'steps=1&steps=2', 'other=1']:
+            assert api.get(base + '?' + query).status_code == 422
+        snapshot = api.get('/api/v1/workspace').json()
+        assert snapshot['runProgress'][run.id]['totalSteps'] == count
+        api.cookies.clear()
+        assert api.get(base).status_code == 401
+
+
+@pytest.mark.parametrize('status', ['failed', 'waiting_approval', 'completed'])
+def test_run_progress_lifecycle_and_untrusted_stage(fixture, tmp_path, status):
+    from datetime import datetime, timezone
+    from psycopg.types.json import Jsonb
+    from test_task_postgres import prepare
+    from openbot_server.task_inputs import parse_message
+    first, _, channel = prepare(fixture, 'Progress status ' + str(uuid4()))
+    run = asyncio.run(PostgresTaskStore(fixture['dsn']).submit(fixture['token'], channel.id,
+        parse_message({'content': 'Observe interruption', 'botId': first.id}))).run
+    start = datetime(2026,1,1,tzinfo=timezone.utc)
+    end = datetime(2026,1,2,tzinfo=timezone.utc)
+    with psycopg.connect(fixture['dsn']) as db:
+        db.execute("UPDATE runs SET status=%s,error_code=%s WHERE id=%s",
+            (status, 'execution_failed' if status == 'failed' else None, run.id))
+        for kind, instant, payload in [('RUN_STARTED',start,{}),
+            ('RUN_PROGRESS',start,{'stage':'PRIVATE THINKING', 'message':'PRIVATE THINKING'}),
+            *(([('RUN_FAILED' if status=='failed' else 'RUN_COMPLETED',end,{})]) if status!='waiting_approval' else [])]:
+            db.execute('INSERT INTO run_events(id,run_id,channel_id,bot_id,type,payload,created_at) VALUES(%s,%s,%s,%s,%s,%s,%s)',
+                (str(uuid4()),run.id,channel.id,first.id,kind,Jsonb(payload),instant))
+    with client(fixture, product(fixture,tmp_path)) as api:
+        response = api.get(f'/api/v1/runs/{run.id}/progress')
+        assert response.status_code == 200, response.text
+        value = response.json()
+        assert value['startedAt'] == '2026-01-01T00:00:00.000Z'
+        assert value['endedAt'] == (None if status=='waiting_approval' else '2026-01-02T00:00:00.000Z')
+        assert value['stageName'] == ('approval' if status=='waiting_approval' else None)
+        assert value['failureReasonCode'] == ('execution_failed' if status=='failed' else None)
+        assert value['steps'][0]['stageName'] is None and value['steps'][0]['description'] is None
+        assert 'PRIVATE' not in response.text
+        with psycopg.connect(fixture['dsn']) as db:
+            db.execute('UPDATE channels SET deleted_at=now() WHERE id=%s',(channel.id,))
+        assert api.get(f'/api/v1/runs/{run.id}/progress').status_code == 404
+
+
+def test_progress_summary_does_not_disclose_an_unknown_failure_code():
+    from openbot_server.run_progress import summary
+    value = summary(dict(id='fixture',status='failed',error_code='PRIVATE REASONING'),
+        dict(total_steps=0,stage=None,started_at=None,ended_at=None))
+    assert value['failureReasonCode'] is None and 'PRIVATE' not in json.dumps(value)

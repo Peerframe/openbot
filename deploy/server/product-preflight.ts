@@ -9,7 +9,7 @@ const RUNTIME_MODULES = [
   "@tesseract.js-data/eng",
   "@tesseract.js-data/chi_sim",
 ] as const;
-const MIGRATION_COUNT = 49;
+const MIGRATION_COUNT = 50;
 if (process.versions.node !== PRODUCT_NODE_VERSION)
   throw new Error("Product Node version mismatch.");
 const require = createRequire(new URL("../../package.json", import.meta.url));

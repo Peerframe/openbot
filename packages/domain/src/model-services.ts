@@ -43,6 +43,7 @@ export interface CreateModelConnectionInput {
   presetId: string;
   baseUrl: string;
   apiKey: string;
+  defaultModel?: string | null | undefined;
 }
 
 export interface UpdateModelConnectionInput {
@@ -50,6 +51,27 @@ export interface UpdateModelConnectionInput {
   name?: string | undefined;
   apiKey?: string | undefined;
   enabled?: boolean | undefined;
+  defaultModel?: string | null | undefined;
+}
+
+export interface VerifyModelConnectionInput {
+  presetId: string;
+  baseUrl: string;
+  apiKey: string;
+}
+
+export interface DeleteModelConnectionInput {
+  expectedRevision: number;
+}
+
+export interface ModelConnectionDependencies {
+  bots: Array<{ id: string; name: string }>;
+  runIds: string[];
+  ownerDefault: boolean;
+}
+
+export interface ModelConnectionDeletionConflict extends ModelConnectionDependencies {
+  error: "model_connection_in_use";
 }
 
 export interface UpdateEmployeeModelInput {

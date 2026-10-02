@@ -180,3 +180,16 @@ Temporal matrix. Actual step times were16m50s through SQL parity,5m32s browser s
 27m50s of still-running recovery. Move that unchanged long recovery/upgrade step to its own required
 job as well, with the same Control/Runtime bootstraps, full Worker lock and canonical DB build.
 No timeout, per-probe deadline, matrix case or expected failure changes.
+
+## C14 fixture installation budget (2026-10-02)
+
+The existing Playwright1.62.1 fixture and pinned upstream hashes remain unchanged. The five-minute
+CI installation budget could expire while fetching Chromium and installing Linux dependencies,
+before product recovery tests ran. Extend only fixture preparation to fifteen minutes and the
+whole job to forty-five minutes, preserving the eight- and fifteen-minute product probe budgets.
+Use the documented `PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT=120000` for slow connections; see
+[official browser installation](https://playwright.dev/docs/browsers#install-behind-a-firewall-or-a-proxy).
+The released installer already owns its download retries; no new retry wrapper, dependency,
+cache, source incorporation or weakened qualification is introduced. Local CI selection and full
+repository checks validate workflow integration; an actual hosted Linux run is still required
+to establish download/recovery success on this revision.

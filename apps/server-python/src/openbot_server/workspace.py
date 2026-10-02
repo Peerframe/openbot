@@ -63,6 +63,9 @@ class PostgresWorkspace:
                 raise StoreUnavailable('workspace_projection_limit')
             ids = [r['id'] for r in await (await db.execute('SELECT id FROM runs ORDER BY created_at DESC,id DESC LIMIT 50')).fetchall()]
             records = await read_run_records(db, ids)
+            from .run_progress import summaries
+            run_progress = await summaries(db, [dict(id=records[i].id, status=records[i].status,
+                error_code=records[i].errorCode) for i in ids])
             approvals = await bounded_rows(db, 'SELECT a.*,r.channel_id,r.bot_id FROM approvals a '
                 'JOIN runs r ON r.id=a.run_id ORDER BY a.created_at DESC,a.id LIMIT 100')
             artifacts = await bounded_rows(db, 'SELECT * FROM artifacts ORDER BY created_at DESC,id LIMIT 100')
@@ -87,7 +90,7 @@ class PostgresWorkspace:
             for row in artifacts: row['created_at'] = datetime.fromisoformat(row['created_at'])
             result = dict(bots=[public(project_bot(r)) for r in bots], channels=[public(c) for c in project_channels(tuple(channels))],
                 nodes=nodes, runs=[public(records[i]) for i in ids], approvals=[approval(r) for r in approvals],
-                artifacts=[artifact(r) for r in artifacts], progress=progress,
+                artifacts=[artifact(r) for r in artifacts], progress=progress, runProgress=run_progress,
                 counts=dict(channels=counts['channels'],bots=counts['bots'],activeRuns=counts['active_runs'],connectedNodes=len(nodes)))
             if len(json.dumps(result,ensure_ascii=False).encode())>4*1024*1024:
                 raise StoreUnavailable('workspace_projection_limit')

@@ -29,13 +29,21 @@ const repositoryRoot = new URL("../../../", import.meta.url);
 const compiledSchemas = new URL("packages/protocol/dist/index.js", repositoryRoot);
 const fixturePaths = [
   new URL("tests/fixtures/identity-inputs.json", packageDirectory),
+  new URL("tests/fixtures/quick-bot-inputs.json", packageDirectory),
   new URL("tests/fixtures/profile-inputs.json", packageDirectory),
   new URL("tests/fixtures/task-inputs.json", packageDirectory),
   new URL("tests/fixtures/rename-inputs.json", packageDirectory),
 ];
 const pythonPath = comparatorPaths(packageDirectory).interpreter;
 
-type SchemaName = "bot" | "channel" | "profile" | "task" | "botRename" | "channelRename";
+type SchemaName =
+  | "quickBot"
+  | "bot"
+  | "channel"
+  | "profile"
+  | "task"
+  | "botRename"
+  | "channelRename";
 interface IdentityCase {
   readonly id: string;
   readonly schema: SchemaName;
@@ -57,6 +65,7 @@ const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 const isList = (value: unknown): value is readonly unknown[] => Array.isArray(value);
 const isSchemaName = (value: unknown): value is SchemaName =>
+  value === "quickBot" ||
   value === "bot" ||
   value === "channel" ||
   value === "profile" ||
@@ -82,6 +91,7 @@ if (!existsSync(pythonPath)) {
 // Imported only after the existence check, so a missing build keeps the targeted diagnostic.
 const protocol = await import("../../../packages/protocol/dist/index.js");
 const schemas = {
+  quickBot: protocol.quickCreateBotInputSchema,
   bot: protocol.createBotInputSchema,
   channel: protocol.createChannelInputSchema,
   profile: protocol.updateEmployeeProfileDetailsInputSchema,
@@ -111,12 +121,12 @@ import sys
 
 sys.path.insert(0, sys.argv[1])
 from pydantic import ValidationError
-from openbot_server.identity_inputs import parse_bot_create, parse_channel_create
+from openbot_server.identity_inputs import parse_bot_create, parse_channel_create, parse_quick_bot_create
 from openbot_server.profile_details import parse_profile_details
 from openbot_server.task_inputs import parse_message
 from openbot_server.identity_lifecycle import RenameBotInput, RenameChannelInput
 
-parsers = {"bot": parse_bot_create, "channel": parse_channel_create, "profile": parse_profile_details, "task": parse_message,
+parsers = {"quickBot": parse_quick_bot_create, "bot": parse_bot_create, "channel": parse_channel_create, "profile": parse_profile_details, "task": parse_message,
            "botRename": RenameBotInput.model_validate, "channelRename": RenameChannelInput.model_validate}
 fixture = {"cases": []}
 for path in sys.argv[2:]:

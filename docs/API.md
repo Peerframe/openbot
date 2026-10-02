@@ -18,6 +18,7 @@ HTTPS for remote access.
 | `POST` | `/api/v1/auth/logout` | Revoke the Session and clear its cookie |
 | `GET` | `/api/v1/bootstrap` | Lightweight counts and phase information |
 | `GET` | `/api/v1/workspace` | Project channels, Bots, Nodes, Runs, approvals, progress, artifacts, and counts |
+| `GET` | `/api/v1/runs/:runId/progress` | Exact public checkpoint count and ordinal-selected steps |
 | `GET` | `/api/v1/workspace/events` | Subscribe to global Node, Run, and approval changes over SSE |
 | `GET` | `/api/v1/channels` | List channels and Bot rosters |
 | `POST` | `/api/v1/channels` | Create a channel and atomically add its initial Bots |
@@ -27,7 +28,7 @@ HTTPS for remote access.
 | `POST` | `/api/v1/channels/:channelId/read` | Mark a channel read for the Owner |
 | `GET` | `/api/v1/channels/unread` | Unread Bot/system message counts per channel (capped at 99) |
 | `GET` | `/api/v1/audit` | Newest audit events with an allowlisted projection |
-| `GET` | `/api/v1/channels/:channelId/messages` | Read the latest 100 messages and reply relationships |
+| `GET` | `/api/v1/channels/:channelId/messages` | Read message pages (before/limit, max 100) and reply relationships |
 | `POST` | `/api/v1/channels/:channelId/messages` | Persist an Owner message and create a queued Run atomically |
 | `GET` | `/api/v1/channels/:channelId/runs` | Read the latest 50 channel Runs |
 | `GET` | `/api/v1/channels/:channelId/events` | Subscribe to channel events over SSE |
@@ -36,6 +37,7 @@ HTTPS for remote access.
 | `GET` | `/api/v1/runs/:runId/frame` | Read a Run's latest short-lived frame |
 | `GET` | `/api/v1/bots` | List Bots |
 | `POST` | `/api/v1/bots` | Create a Bot and its initial evolution event |
+| `POST` | `/api/v1/bots/quick` | Atomically create a default Bot and its direct conversation |
 | `PATCH` | `/api/v1/bots/:botId` | Rename a Bot and its direct conversation (audited) |
 | `DELETE` | `/api/v1/bots/:botId` | Permanently delete a Bot's content and grants and keep a tombstone |
 | `GET` | `/api/v1/bots/:botId/profile` | Read the complete Employee profile projection |
@@ -670,3 +672,108 @@ An empty channel omits `latestMessage` and uses `createdAt` for `lastActivityAt`
 The list is ordered by activity descending, then channel ID in C collation ascending;
 latest messages break equal timestamps by message ID in C collation descending.
 Deleted channels are excluded. Existing session revalidation, row and response-byte limits apply.
+
+## Quick Bot creation (C12)
+
+`POST /api/v1/bots/quick` is Owner-only and requires a trusted Origin. Input is exactly
+`{ "appearance": { "head": "round", "body": "classic", "mobility": "feet", "accessory": "none", "accent": "green" } }`.
+Unknown keys, null and incomplete appearances return 422. It returns 201 `{bot, channel}` with
+existing Bot/Channel shapes. The channel has `directBotId=bot.id` and `botIds=[bot.id]`.
+Names are allocated among active Bots as `新建 Bot`, `新建 Bot 2`, … using the smallest free suffix;
+deleted names are reusable. The fixed role is `通用助手`, status `idle`, computer profile `none`.
+The C7 default model is copied into `bot.model` when configured and currently usable; no default
+means the field is omitted. This selection is metadata; creation starts no host, work or inference.
+A stale/disabled model default is rejected, with no partial identity. Identity, evolution, direct
+conversation, membership and their three audit events commit together. This command creates a new
+Bot on each successful request; clients must not retry an ambiguous network result automatically.
+Name allocation examines suffixes 1–10001 and retries at most three conflicts with ordinary name
+writes. Exhaustion/contention returns 409 `quick_bot_name_exhausted`/`quick_bot_name_contention`.
+Existing session, Origin, body limits and sanitized storage/model errors still apply.
+
+## Bot appearance accents (C10)
+
+`BotAppearance.accent` accepts exactly `green`, `yellow`, `red`, `blue`, `violet`, `teal`,
+`pink`, `slate`. Ordinary creation, quick creation, public identity/profile projection and
+Employee template v1/v2 use this same set. Existing appearance fields and old templates remain
+valid. Unknown/case-variant colours, arbitrary CSS strings, numbers and null are rejected.
+Template import preserves the appearance under a new identity with unchanged quarantine/review
+and digest validation. This contract adds colour data; avatar drawing and UI selectors follow
+the separate step-15 design implementation.
+
+## Run progress checkpoints (C13)
+
+`GET /api/v1/runs/:runId/progress` is an Owner-session read of a run in an active channel.
+It returns `RunProgressDetails` from `packages/domain`. Current product Runs count their existing
+durable Work actions; historical unmapped Runs count persisted `RUN_PROGRESS` checkpoints.
+`totalSteps` is the exact observed count, **not a planned future total or a model-token count**.
+`currentStepNumber` is the latest recorded ordinal, or null for zero checkpoints. The workspace
+adds `runProgress[runId]` summaries for its latest runs independently of its 200-event progress window.
+
+Without `steps`, return all checkpoints up to 12; above 12 return ordinals 1–3 and the latest 6.
+`?steps=4,5,6` selects up to 12 unique positive ordinals (1–9999999), sorted ascending. Missing
+ordinals return no entry. Query duplicates, unknown parameters and invalid ordinals return 422.
+Ordering is `created_at`, then ID with C collation; SQL numbers the entire run before selecting.
+Summary and steps use one repeatable-read snapshot. A missing run/deleted channel returns 404.
+
+`stageName` and `description` use only a bounded control-authored stage dictionary. Unknown stages
+are null; provider messages, tool results and raw chain-of-thought are never read into this endpoint.
+`waiting_approval` explicitly projects the approval stage; terminal runs have no current stage.
+Work actions expose admission/resolution timestamps and `completedSteps` counts verified `applied`
+outcomes; pending approval has no start/end timestamp and unresolved actions have no end. No model
+request, action arguments or receipt bodies are read.
+Run `startedAt`/`endedAt` come only from actual lifecycle audit events. A historical checkpoint's `startedAt`
+is its observation time; `endedAt` is null because existing progress events do not prove when its
+action ended. `plannedTotalSteps` is null because dynamic execution has no promised plan. Historical
+`completedSteps` is null because checkpoint events do not prove completion. Do not display
+`totalSteps` as a promised plan or treat every observed checkpoint as an action successfully completed.
+Missing timestamps and failure codes are explicit nulls; never substitute creation/update times.
+
+## Model connection dialog commands (C17)
+
+All three commands retain Owner session, exact Origin and bounded JSON guards. API keys never
+appear in public connection DTOs. Canonical migration `0049_model_connection_defaults` adds a
+nullable default without rewriting old connections, ciphertext or Bot selections.
+
+- `POST /api/v1/model-connections/verify`: `{presetId, baseUrl, apiKey}` → 200 `{models: string[]}`.
+  The unsaved key exists only in this request. Reuse the existing exact endpoint allowlist and
+  discovery-capable preset check; issue one bounded GET to the provider's models resource, never
+  chat/inference. No connection, file, cipher envelope or audit event is created. No request key or
+  upstream error body is logged/returned. Recheck Owner authority before send and before return;
+  disconnect/deadline closes the request. Unsupported discovery/invalid credentials/redirects or
+  invalid provider response fail with fixed 422 errors. At most 256 IDs / 2 MiB; no redirects or retries.
+- `PATCH /api/v1/model-connections/:id`: `{expectedRevision, defaultModel: "model-id"}` sets the
+  connection's public default; `defaultModel: null` clears it. Omitting defaultModel preserves it.
+  Existing name/key/enabled patches remain compatible. Successful changes increment revision;
+  stale revision or exhausted integer revision returns 409. Unchanged metadata preserves revision.
+  Creation also accepts optional defaultModel. This metadata does not silently change existing
+  Bots or the Owner's global default. Audit contains only changed field names and revision.
+- `DELETE /api/v1/model-connections/:id`: JSON `{expectedRevision}` → 200 `{deleted: true, connectionId}`.
+  Missing/invalid body returns 422; stale revision returns 409; absent connection returns 404.
+  Environment-provided legacy connection remains read-only (422). If any active Bot, unfinished
+  Run snapshot or Owner default refers to it, return 409
+  `{error: "model_connection_in_use", bots: [{id,name}], runIds: [...], ownerDefault: boolean}`.
+  A dependency read/validation/limit failure refuses deletion; no partial list authorizes it.
+  The connection row lock serializes validated new selections against delete. Removing an unused
+  saved connection and `MODEL_CONNECTION_DELETED` audit commit together; history/receipts remain.
+
+Verify first, then explicitly save with the existing create command; verification does not save
+or grant authority. Use fake providers for tests, never the paid `/test` inference endpoint.
+
+### C18: older message pages
+
+`GET /api/v1/channels/:channelId/messages?limit=100&before=<opaque-cursor>` retains the
+existing Owner-session authorization. `limit` defaults to100 and must be a decimal integer1–100;
+`before` is optional. Unknown or repeated query fields, empty/malformed/oversized cursors, and
+cursors for another channel return422. Missing or deleted channels return404 after authorization.
+
+Response: `{ "messages": [...], "hasMore": true, "nextCursor": "..." }`. With no cursor,
+return the newest page. Each page is ascending by stored timestamp then ID with C collation.
+Pass nextCursor as before to fetch strictly older messages and prepend that page. When no older
+messages remain, hasMore is false and nextCursor is omitted; an empty page is
+`{ "messages": [], "hasMore": false }`. The existing default window stays100.
+
+The cursor carries the oldest returned position with full database timestamp precision and ID;
+clients must treat it as opaque. It still works if that message is deleted. It grants no authority
+and contains no message content. Each request reads current facts, so concurrent history changes
+are not a frozen multi-request snapshot. Every page keeps the existing session recheck, selected
+text/body byte bounds and no-store response. No message write or model invocation is performed.

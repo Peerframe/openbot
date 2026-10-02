@@ -16,7 +16,7 @@ export const botAppearanceSchema = z.object({
   body: z.enum(["classic", "tall", "cape", "armor", "storage", "quadruped"]),
   mobility: z.enum(["feet", "single-wheel", "dual-wheel", "hover", "four-legs"]),
   accessory: z.enum(["none", "headphones", "backpack", "trench", "arm", "toolbox"]),
-  accent: z.enum(["green", "yellow", "red", "blue"]),
+  accent: z.enum(["green", "yellow", "red", "blue", "violet", "teal", "pink", "slate"]),
 });
 
 export const employeeEvidenceReferenceSchema = z
@@ -213,6 +213,10 @@ export const deleteEmployeeMemoryInputSchema = z
     expectedRevision: z.number().int().min(1),
     ownerReviewed: z.literal(true),
   })
+  .strict();
+
+export const quickCreateBotInputSchema = z
+  .object({ appearance: botAppearanceSchema.strict() })
   .strict();
 
 export const createBotInputSchema = z

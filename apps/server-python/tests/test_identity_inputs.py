@@ -37,7 +37,7 @@ APPEARANCE_UNIONS = {
     "body": ["classic", "tall", "cape", "armor", "storage", "quadruped"],
     "mobility": ["feet", "single-wheel", "dual-wheel", "hover", "four-legs"],
     "accessory": ["none", "headphones", "backpack", "trench", "arm", "toolbox"],
-    "accent": ["green", "yellow", "red", "blue"],
+    "accent": ["green", "yellow", "red", "blue", "violet", "teal", "pink", "slate"],
 }
 
 # ECMAScript String.prototype.trim removes exactly these; Python's str.strip() does not agree.

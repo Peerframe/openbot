@@ -60,7 +60,16 @@ export type BotHeadShape = "round" | "square" | "cat";
 export type BotBodyShape = "classic" | "tall" | "cape" | "armor" | "storage" | "quadruped";
 export type BotMobility = "feet" | "single-wheel" | "dual-wheel" | "hover" | "four-legs";
 export type BotAccessory = "none" | "headphones" | "backpack" | "trench" | "arm" | "toolbox";
-export type BotAccent = "green" | "yellow" | "red" | "blue";
+export type BotAccent = "green" | "yellow" | "red" | "blue" | "violet" | "teal" | "pink" | "slate";
+
+export interface QuickCreateBotInput {
+  appearance: BotAppearance;
+}
+
+export interface QuickCreateBotResponse {
+  bot: Bot;
+  channel: Channel;
+}
 
 export interface BotAppearance {
   head: BotHeadShape;
@@ -567,6 +576,35 @@ export interface RunProgress {
   createdAt: string;
 }
 
+/** A persisted public checkpoint; never model reasoning or provider/tool output. */
+export interface RunProgressStep {
+  id: EntityId;
+  stepNumber: number;
+  stageName: string | null;
+  description: string | null;
+  startedAt: string | null;
+  endedAt: string | null;
+}
+
+export interface RunProgressSummary {
+  runId: EntityId;
+  status: RunStatus;
+  /** Exact number of persisted Work actions or historical public checkpoints, independent of the snapshot window. */
+  totalSteps: number;
+  currentStepNumber: number | null;
+  plannedTotalSteps: number | null;
+  completedSteps: number | null;
+  stageName: string | null;
+  description: string | null;
+  startedAt: string | null;
+  endedAt: string | null;
+  failureReasonCode: string | null;
+}
+
+export interface RunProgressDetails extends RunProgressSummary {
+  steps: RunProgressStep[];
+}
+
 export interface RunFrame {
   runId: EntityId;
   channelId: EntityId;
@@ -590,6 +628,18 @@ export interface Message {
   runId?: EntityId;
   content: string;
   createdAt: string;
+}
+
+/** Newest bounded page, chronological within the page; nextCursor reads older messages. */
+export interface MessagesResponse {
+  messages: Message[];
+  hasMore: boolean;
+  nextCursor?: string | undefined;
+}
+
+export interface MessagePaginationInput {
+  before?: string | undefined;
+  limit?: number | undefined;
 }
 
 export interface OwnerIdentity {
@@ -707,6 +757,8 @@ export interface WorkspaceSnapshot {
   approvals: Approval[];
   artifacts: Artifact[];
   progress: RunProgress[];
+  /** Additive Server projection; optional for older Server versions and synthetic fixtures. */
+  runProgress?: Record<EntityId, RunProgressSummary>;
   counts: BootstrapSummary["counts"];
 }
 

@@ -8,7 +8,7 @@ import re
 from datetime import datetime, timezone
 from typing import Protocol, TYPE_CHECKING
 
-from fastapi import FastAPI, HTTPException, Path, Request
+from fastapi import FastAPI, HTTPException, Path, Query, Request
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyCookie
@@ -19,6 +19,7 @@ from .auth_routes import register_auth_routes
 from .identity_routes import IdentityStore, register_identity_routes
 from .database import ReadResult, StoreUnavailable
 from .message_models import MessagesResponse, project_messages
+from .message_pagination import pagination_query
 from .task_models import RunsResponse, project_runs
 from .models import (
     AuthSession, BotsResponse, ChannelsResponse, iso_timestamp, project_bot, project_channels,
@@ -34,7 +35,7 @@ if TYPE_CHECKING:
 
 class ReadStore(Protocol):
     async def verify_schema(self) -> None: ...
-    async def read(self, token: str | None, projection: str, *, channel_id: str | None = None) -> ReadResult: ...
+    async def read(self, token: str | None, projection: str, *, channel_id: str | None = None, before: str | None = None, limit: int = 100) -> ReadResult: ...
 
 
 def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True,
@@ -87,7 +88,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
             "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/auth/password",
             "/api/v1/auth/sessions/revoke-others")
         identity_write = identity is not None and request.method == "POST" and request.url.path in (
-            "/api/v1/bots", "/api/v1/channels")
+            "/api/v1/bots", "/api/v1/bots/quick", "/api/v1/channels")
         conversation_write = conversations is not None and request.method == "POST" and (
             re.fullmatch(r"/api/v1/bots/[^/]+/conversation", request.url.path) is not None
             or re.fullmatch(r"/api/v1/channels/[^/]+/bots", request.url.path) is not None)
@@ -178,14 +179,17 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
 
     @app.get("/api/v1/channels/{channel_id}/messages", response_model=MessagesResponse,
              response_model_exclude_none=True, operation_id="listMessages")
-    async def messages(request: Request, channel_id: str = Path(min_length=1, max_length=128)):
-        result = await store.read(await cookie(request), "messages", channel_id=channel_id)
+    async def messages(request: Request, channel_id: str = Path(min_length=1, max_length=128),
+                       before: str | None = Query(None, max_length=2048), limit: int = Query(100, ge=1, le=100)):
+        before, limit = pagination_query(request.query_params.multi_items())
+        options = {} if before is None and limit == 100 else dict(before=before, limit=limit)
+        result = await store.read(await cookie(request), "messages", channel_id=channel_id, **options)
         if result.expires_at is None:
             raise HTTPException(401, "Authentication required.")
         if not result.found:
             raise HTTPException(404, "Channel not found.")
         try:
-            return bounded_response(MessagesResponse(messages=project_messages(result.rows)))
+            return bounded_response(MessagesResponse(messages=project_messages(result.rows),hasMore=result.has_more,nextCursor=result.next_cursor))
         except (ValueError, TypeError, KeyError):
             raise StoreUnavailable("invalid_projection") from None
 
@@ -254,7 +258,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         schema["paths"]["/api/v1/auth/logout"]["post"]["security"] = [{"OwnerSession": []}]
         schema["paths"]["/api/v1/auth/login"]["post"]["security"] = []
     if identity is not None:
-        for path in ("/api/v1/bots", "/api/v1/channels"):
+        for path in ("/api/v1/bots", "/api/v1/bots/quick", "/api/v1/channels"):
             schema["paths"][path]["post"]["security"] = [{"OwnerSession": []}]
     if conversations is not None:
         for path in ("/api/v1/bots/{bot_id}/conversation", "/api/v1/channels/{channel_id}/bots"):
