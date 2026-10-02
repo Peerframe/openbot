@@ -773,7 +773,16 @@ export function ChannelWorkspace({
       className={`workspace-main channel-workspace channel-native${globalHeader ? " has-global-header" : ""}`}
     >
       {filesOpen && (
-        <AttachmentsManagerDialog channelId={channel.id} onClose={() => setFilesOpen(false)} />
+        <AttachmentsManagerDialog
+          channelId={channel.id}
+          channelName={channel.directBotId ? botsById.get(channel.directBotId)?.name : channel.name}
+          outputs={runs.flatMap((run) => artifactsByRun.get(run.id) ?? [])}
+          botNameForRun={(runId) => {
+            const run = runs.find((item) => item.id === runId);
+            return run ? botsById.get(run.botId)?.name : undefined;
+          }}
+          onClose={() => setFilesOpen(false)}
+        />
       )}
       <PluginCallApprovals channelId={channel.id} bots={bots} onInspectRun={onInspectRun} />
       <section
