@@ -25,12 +25,13 @@ import {
   verifyDesktopFuses,
 } from "./package-policy.ts";
 
-import { generateIcons } from "./generate-icons.ts";
+import { preparePackageIcons } from "./generate-icons.ts";
 
 const run = promisify(execFile);
 const appRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 type InstallerRun = {
+  readonly generatedIcons: boolean;
   readonly version: string;
   readonly electronVersion: string;
   readonly platform: string;
@@ -78,7 +79,7 @@ function builderArch(arch: string): Arch {
 }
 
 async function prepareInstallerRun(): Promise<InstallerRun> {
-  await generateIcons();
+  const generatedIcons = await preparePackageIcons();
   const manifest: unknown = JSON.parse(await readFile(join(appRoot, "package.json"), "utf8"));
   const { version, electronVersion } = readDesktopManifest(manifest);
   const { platform, arch } = process;
@@ -89,6 +90,7 @@ async function prepareInstallerRun(): Promise<InstallerRun> {
   const sourceCommit = installerSourceCommit(process.env);
   await mkdir(outputDirectory, { recursive: true });
   return {
+    generatedIcons,
     version,
     electronVersion,
     platform,
@@ -222,6 +224,7 @@ export async function makeInstallers(argv: readonly string[]): Promise<void> {
       platform,
       arch,
       electronVersion,
+      generatedIcons: installer.generatedIcons,
     }),
   });
   await verifyDesktopFuses(binary, platform, arch);

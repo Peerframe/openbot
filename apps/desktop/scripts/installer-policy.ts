@@ -51,6 +51,7 @@ type InstallerConfigInput = {
   readonly platform: string;
   readonly arch: string;
   readonly electronVersion: string;
+  readonly generatedIcons?: boolean;
 };
 export function installerConfig(input: InstallerConfigInput) {
   const { appRoot, outputDirectory, version, platform, arch, electronVersion } = input;
@@ -66,7 +67,7 @@ export function installerConfig(input: InstallerConfigInput) {
     artifactName: `openbot-desktop-${version}-${platform}-${arch}.\${ext}`,
     directories: {
       app: appRoot,
-      buildResources: join(appRoot, "out", "icons"),
+      buildResources: input.generatedIcons ? join(appRoot, "out", "icons") : join(appRoot, "resources"),
       output: outputDirectory,
     },
     extraMetadata: { version, productName: "OpenBot" },
@@ -93,7 +94,7 @@ export function installerConfig(input: InstallerConfigInput) {
     },
     linux: {
       executableName: "openbot",
-      icon: "icons",
+      icon: input.generatedIcons ? "icons" : "openbot-icon.png",
       category: "Office",
       maintainer: "OpenBot contributors",
       synopsis: "Self-hosted digital employee workspace",

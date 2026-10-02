@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
-import { copyFile, mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { copyFile, lstat, mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -100,6 +100,31 @@ function circularSvg(svg: string): string {
   const box = /\bviewBox\s*=\s*["']([^"']+)["']/u.exec(svg)![1]!;
   const [x, y, size] = box.trim().split(/\s+/u).map(Number) as [number, number, number];
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box}"><defs><clipPath id="linuxIconClip"><circle cx="${x + size / 2}" cy="${y + size / 2}" r="${size / 2}"/></clipPath></defs><g clip-path="url(#linuxIconClip)">${svg.replace(/^[\s\S]*?<svg[^>]*>/u, "").replace(/<\/svg>\s*$/u, "")}</g></svg>`;
+}
+
+export async function preparePackageIcons(
+  sourceDirectory = join(root, "docs/design/app-icon"),
+  outputDirectory = join(root, "apps/desktop/out/icons"),
+): Promise<boolean> {
+  // Preserve the existing package until the artwork handoff begins. Once any source is present,
+  // missing/invalid sources or conversion failures must never select the old binary artwork.
+  const present = await Promise.all(
+    [...ICON_SOURCES, "app-icon-linux.svg", "app-icon-splash.svg"].map(async (name) => {
+      try {
+        await lstat(join(sourceDirectory, name));
+        return true;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+        return false;
+      }
+    }),
+  );
+  if (!present.some(Boolean)) {
+    console.warn("C16 SVG export pending: packaging with existing resources/openbot-icon assets; new icon acceptance remains pending.");
+    return false;
+  }
+  await generateIcons(sourceDirectory, outputDirectory);
+  return true;
 }
 
 export async function generateIcons(

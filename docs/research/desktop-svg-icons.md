@@ -26,8 +26,12 @@ this toolset found no pending icon issue (open Wine/NSIS issues are unrelated).
 The local gap is using a separate micro drawing in the small container entries. Merge the already
 converted ICNS/ICO frames, preserving original encoding and metadata. No renderer network, model,
 remote publishing or new product authority. SVGs are bounded and reject external references,
-active content and fonts. Missing sources fail before replacing generated output; no old binary
-is silently substituted. Generation is sequential per output directory.
+active content and fonts. The explicit generation command refuses missing sources before replacing output. Packaging keeps
+the existing resource assets with an explicit warning only when all five known SVG paths are absent.
+Once any SVG is present, incomplete/invalid exports and conversion failures refuse packaging.
+Stale generated outputs cannot select the new icon without sources. This preserves the baseline
+while Claude exports the artwork; the transitional selection ends automatically when the three
+required sources arrive. Generation is sequential per output directory.
 
 ## Export contract
 
@@ -37,7 +41,7 @@ master and dark icon artwork. Three sources suffice for platform icons; without 
 source its PNG is only the dark icon artwork, not the full approved startup composition.
 Claude owns the startup screen layout; native/artboard visual acceptance remains pending. No third-party logo.
 Run `npm run icons:generate --workspace @openbot/desktop`. Both package and installer entry points
-regenerate in `apps/desktop/out/icons/`; generated images are ignored, never committed.
+regenerate in `apps/desktop/out/icons/` when the export exists; generated images are ignored, never committed.
 
 - ICNS: 16/32/64/128/256/512/1024px including Retina frames. Small logical 16/32pt use the micro source.
 - ICO: 16/24/32/48/64/128/256px; <=32px use the micro source.
@@ -61,7 +65,27 @@ suite ran 532 tests with three existing platform-guard skips, not counted as pas
 sandbox runs failed at loopback listen with EPERM; rerun with the authorized local test
 environment passed. Hosted [validate passed](https://github.com/Peerframe/openbot/actions/runs/37042084211/job/110954997244)
 on `9737c1c`, the final three-source implementation. This evidence-only update reuses that check. No SVG source exists on the
-baseline, so native package/Dock/taskbar/menu screenshots remain blocked on Claude's export;
+baseline, so new-icon package/Dock/taskbar/menu screenshots remain blocked on Claude's export;
 this item is not complete. Keep the current tracked binaries until replacement artwork is verified.
 PR: [#158](https://github.com/Peerframe/openbot/pull/158), draft; source/native screenshots remain
 required. C9/C11 remain deferred; no auto-merge or release.
+
+## Packaging regression correction (2026-10-03)
+
+The initial `99a8afb` candidate's validate passed, but [Linux packaging](https://github.com/Peerframe/openbot/actions/runs/37042661317/job/110956804440),
+[Windows packaging](https://github.com/Peerframe/openbot/actions/runs/37042661317/job/110956804175),
+[macOS packaging](https://github.com/Peerframe/openbot/actions/runs/37042661317/job/110956804296),
+and the Python Preview failed at the unconditional SVG generation entry. The required final check
+also failed. This was a packaging integration regression, not native icon acceptance.
+
+Reuse the same pinned converter and existing installer contracts; no dependency, runtime, CI gate,
+or new binary change. Package and installer entries now select baseline `resources/openbot-icon`
+only before any known source is exported, reporting pending C16 acceptance. Any partial export,
+invalid SVG or conversion error still refuses; direct `icons:generate` always requires all sources.
+Both entries select generated resources once all three sources are valid. Tests exercise absent and
+stale output, each partial/optional export, invalid complete export, actual complete conversion and
+Linux installer asset selection. Approved artwork/native screenshots remain required, PR stays draft.
+
+Correction validation: 45 focused cases passed, zero skips; full `npm run check` passed
+(18 build tasks successful, 17 cached); final docs check passed (12 tests, 564 Markdown files).
+No local writers or test processes remain after the check. Hosted package/validate rerun follows.
