@@ -91,6 +91,15 @@ time (later than 0049). SQL bytes are unchanged. The final committed migration s
 `38c10b39ffa91ab4746da6d35ddf77505106ac33`; focused PostgreSQL/HTTP **26/26** and retained-history **40/40**
 were re-executed successfully against its exact journal pin. No applied production history changed.
 
+Hosted validate and paired restore passed on `be4f246`; the product images built and started
+but the smoke runner retained a second hardcoded 50-count assertion/report. Update both to 51;
+the complete non-root/read-only, Owner, parser, state/restart and cleanup qualification is retained.
+
+Local Linux arm64 product image build and complete `deploy/server/smoke-product.py` passed after
+that fix: 51 migrations; non-root/read-only startup; Owner HTTP; DOCX/PDF/OCR; persistent key/files;
+restart; clean SIGTERM; all owned containers/network/volume/image removed; no real model call.
+The final script-change `npm run check` passed again (18 successful build tasks, all cached).
+
 Hosted results and immutable run/job links are maintained in the PR's Verification section and
 [current-head checks](https://github.com/Peerframe/openbot/pull/164/checks). Required hosted results
 remain the source of truth for CI completion. Claude owns ChannelFilesTrash/SettingsStorage wiring;

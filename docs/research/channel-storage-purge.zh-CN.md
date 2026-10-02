@@ -61,6 +61,15 @@ null／30 天清理设置，详见 [API.zh-CN.md](../API.zh-CN.md#c21频道回�
 最终已提交迁移来源 `38c10b39ffa91ab4746da6d35ddf77505106ac33`，真实 PostgreSQL／HTTP 26／26、
 保留历史迁移／恢复 40／40 已针对其准确 journal pin 重新执行通过，不改生产已应用历史。
 
+提交 `be4f246` 的托管 validate 与配对恢复通过；产品镜像构建、启动通过，但完整 smoke 脚本
+另有一处 50 条断言及报告值，现一并更新为 51。保留非 root／只读、Owner、解析、持久化、
+重启和清理的完整资格检查，不缩小验收。
+
+修正后本机 Linux arm64 产品镜像构建及完整 `deploy/server/smoke-product.py` 通过：51 条迁移、
+非 root／只读启动、Owner HTTP、DOCX／PDF／OCR、持久化密钥与文件、重启、正常 SIGTERM，
+本次容器／网络／卷／镜像全部清理，不调用真实模型。脚本修正后的 `npm run check` 再次通过，
+18 个构建任务成功、全部缓存。
+
 托管结果和不可变运行／任务链接维护在 PR 的 Verification 栏及
 [当前版本检查](https://github.com/Peerframe/openbot/pull/164/checks)，以托管实际结果为准。
 上述基础解释器与托管 Worker 的证据分开标明，不把跳过记为通过。
