@@ -50,4 +50,6 @@ Worktree `/private/tmp/openbot-c15-inventory`, branch `codex/c15-route-caller-in
 Confirmation requested: delete only **POST `/api/v1/bots/:botId/skills`**, or keep its public
 manual-candidate creation capability. All other listed routes have live consumers and stay.
 No deletion without the Owner's answer; no auto-merge. `npm run docs:check`: 12 tests passed, 564 Markdown files. `npm run research:check`: 27 local
-tests passed; hosted PR body gate pending. `git diff --check` passed. PR link follows after creation.
+tests passed; hosted PR body gate pending. `git diff --check` passed. PR: [#160](https://github.com/Peerframe/openbot/pull/160).
+Hosted [validate passed](https://github.com/Peerframe/openbot/actions/runs/37040623556/job/110949649742)
+on `cb507da`; this handoff-only update reuses the same inventory evidence.
