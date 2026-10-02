@@ -3,6 +3,8 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from time import sleep
+from urllib.error import HTTPError
 from urllib.request import urlopen
 
 HERE=Path(__file__).resolve().parent
@@ -29,7 +31,18 @@ def prepare(root):
     for entry in MANIFEST['files']:
         relative=entry['path'] if entry['path']=='LICENSE' else 'agent-computer/'+entry['path']
         url='https://raw.githubusercontent.com/CopilotKit/openbot/'+MANIFEST['commit']+'/'+relative
-        with urlopen(url,timeout=30) as response:content=response.read(entry['bytes']+1)
+        for attempt in range(3):
+            try:
+                with urlopen(url,timeout=30) as response:content=response.read(entry['bytes']+1)
+            except HTTPError as error:
+                if not 500 <= error.code < 600 or attempt == 2:raise
+                if error.fp is not None:error.close()
+            except OSError:
+                if attempt == 2:raise
+            else:
+                break
+            sleep(attempt+1)
+        # Integrity failures must never trigger another download.
         if len(content)!=entry['bytes'] or hashlib.sha256(content).hexdigest()!=entry['sha256']:
             raise ValueError('Public upstream hash mismatch: '+entry['path'])
         if entry['path']=='src/index.ts':
