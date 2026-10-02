@@ -193,3 +193,36 @@ The released installer already owns its download retries; no new retry wrapper, 
 cache, source incorporation or weakened qualification is introduced. Local CI selection and full
 repository checks validate workflow integration; an actual hosted Linux run is still required
 to establish download/recovery success on this revision.
+
+
+### C14 / C18 closeout handoff (2026-10-03)
+
+Baseline: `cbf1700bf596f8f06f202005123e6d92cf7d59a1`. Worktree: outside the repository,
+`/private/tmp/openbot-platform-closeout`; branch `codex/platform-closeout-c14-c18`.
+Only API wording and this evidence record change; no Web, runtime, CI policy or binary change.
+
+Two consecutive completed hosted browser-product jobs passed fixture preparation and both product
+recovery steps, with deterministic local pages/providers and no paid model:
+
+- [Run 37025426857, browser job 110904492401](https://github.com/Peerframe/openbot/actions/runs/37025426857/job/110904492401),
+  main `719485800f43046c2f258c83de06be593ee38b3d`.
+- [Run 37030141750, browser job 110915830971](https://github.com/Peerframe/openbot/actions/runs/37030141750/job/110915830971),
+  main `5c50177df9c5535f8e219fe36da7eaae307462a1`.
+
+The next main run 37031660444 was cancelled without executing this job; it is not counted as a
+pass. A later [browser job 110928206040](https://github.com/Peerframe/openbot/actions/runs/37032835759/job/110928206040)
+also passed. Browser-skipped UI PR runs are not browser evidence. C14 is closed.
+
+C18 already returned `{messages, hasMore, nextCursor?}` on this baseline. `docs/API.md` and its
+Chinese translation now explicitly state oldest-first messages and the opaque channel-bound cursor.
+No endpoint or response behavior changes; last/empty pages omit nextCursor. Evidence owners:
+`message_models.py`, `message_cursor.py`, `message_query.py`, `test_message_models.py`,
+`test_message_routes.py`, `test_message_postgres.py`, and the actual consumer `apps/web/src/api.ts`
+(`loadMessagePage`, PR #155). Reuse `python-message-reads.md`, C18 section, unchanged dependencies,
+authority and persistence; no upstream source incorporation.
+
+Validation: `npm run docs:check` passed (562 Markdown files); `npm run research:check` passed
+its local tests (PR body gate runs on hosted CI). Focused message models/routes: 15 passed,
+zero skipped, using the existing locked Python environment against this checkout. No database or
+model request was made. `git diff --check` passed. PR link follows after creation. C16 follows; Claude owns its SVG source export.
+C20, C19 and the C15 caller inventory remain; C9/C11 are deferred. No automatic merge or release.
