@@ -27,6 +27,7 @@ import {
   verifyDesktopFuses,
 } from "./package-policy.ts";
 import { copyContainedResource } from "./package-resources.ts";
+import { generateIcons } from "./generate-icons.ts";
 import { PYTHON_CANDIDATE } from "./python-runtime.ts";
 
 const appRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -62,7 +63,8 @@ export async function packageDesktop(
     process.platform === "darwin" && process.arch === "arm64"
       ? join(appRoot, pythonProduct ? "out/python-product-runtime" : "native-runtime")
       : undefined;
-  const desktopIconBase = join(appRoot, "resources", "openbot-icon");
+  await generateIcons();
+  const desktopIconBase = join(appRoot, "out", "icons", "openbot-icon");
   const desktopIconPng = `${desktopIconBase}.png`;
   const packageManifest = await readManifest(join(appRoot, "package.json"));
   const version = packageManifest.version;

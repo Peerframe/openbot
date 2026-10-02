@@ -25,6 +25,8 @@ import {
   verifyDesktopFuses,
 } from "./package-policy.ts";
 
+import { generateIcons } from "./generate-icons.ts";
+
 const run = promisify(execFile);
 const appRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -76,6 +78,7 @@ function builderArch(arch: string): Arch {
 }
 
 async function prepareInstallerRun(): Promise<InstallerRun> {
+  await generateIcons();
   const manifest: unknown = JSON.parse(await readFile(join(appRoot, "package.json"), "utf8"));
   const { version, electronVersion } = readDesktopManifest(manifest);
   const { platform, arch } = process;

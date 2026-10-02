@@ -66,7 +66,7 @@ export function installerConfig(input: InstallerConfigInput) {
     artifactName: `openbot-desktop-${version}-${platform}-${arch}.\${ext}`,
     directories: {
       app: appRoot,
-      buildResources: join(appRoot, "resources"),
+      buildResources: join(appRoot, "out", "icons"),
       output: outputDirectory,
     },
     extraMetadata: { version, productName: "OpenBot" },
@@ -93,7 +93,7 @@ export function installerConfig(input: InstallerConfigInput) {
     },
     linux: {
       executableName: "openbot",
-      icon: "openbot-icon.png",
+      icon: "icons",
       category: "Office",
       maintainer: "OpenBot contributors",
       synopsis: "Self-hosted digital employee workspace",
