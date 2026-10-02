@@ -123,13 +123,17 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 
 - **One task card per task, updated in place** (TaskCards): queued → running → needs you → done
   or failed, then it collapses to a one-line summary. White card, 1px `#ececee` border, radius 18,
-  under the Bot's avatar column, at most 76% of the message column.
+  under the Bot's avatar column, at most 76% of the message column. The card sits after the
+  Bot's latest message for the task, else after the message that started it. A finished task the
+  Bot answered needs no card: its reply carries the outputs and 任务详情 (Main). Delegated tasks
+  show inside the lead task's card.
 - Colour marks state only: green 工作中, orange needs you, red failed; done uses a neutral black
   check.
 - Running shows the reported step count (「已完成 3 步」) and the current step, never an invented
   total, plus the live computer frame when there is one, 补充指令 and 停止.
 - Approvals are decided on the card; the same approval in the rail updates with it.
-- Failures show the user-readable reason from the 服务电脑; raw errors stay in 任务详情.
+- Failures show the user-readable reason from the 服务电脑; 任务详情 adds the error code. The raw
+  Server message is never shown, because it can quote upstream text.
 - **任务详情** is a 460px sheet from the right (TaskInspector): status, computer frame, 分工, 进度,
   任务信息 (model and usage), and 补充指令 / 停止任务.
 
@@ -159,7 +163,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Plugins | `PluginsDialog.tsx`, `PluginManagerPanel.tsx` | Built |
 | Avatar, Avatars, GroupAvatar, GroupAvatars | `RobotAvatar.tsx`, `GroupAvatar.tsx` | Built; violet, teal, pink and slate wait for C10 |
 | Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | `Onboarding.tsx` and the setup screens | Built |
-| TaskCards, TaskInspector | new `TaskCard.tsx`, `TaskSheet.tsx` | Step 19 |
+| TaskCards, TaskInspector | `TaskCard.tsx`, `TaskSheet.tsx` | Built; step counts wait for C13 |
 | Dialog* | new `Dialog.tsx` frame and the dialogs | Step 20 |
 | WorkSupervision, EmptyWorkspace | `WorkTasksScreen.tsx`, new `EmptyWorkspace.tsx` | Step 21 |
 
@@ -171,7 +175,7 @@ These are designed on the canvas (step 22) before they are rebuilt; until then t
 | --- | --- |
 | Message hover actions, reactions, reply quote | `MessageActionBar`, `MessageReactions` |
 | Attachments in messages and the composer, voice input | `MessageAttachments`, `AttachmentPreview`, `ComposerAttachmentPicker`, `VoiceRecorder` |
-| 补充指令 input and the skill picker | `RunSteering`, composer skill menu |
+| 补充指令 input and the skill picker | `SteerForm` in `TaskActions.tsx`, composer skill menu |
 | 频道文件 management (recycle bin), to fold into 资料库 | `AttachmentsManager` |
 | Bot 档案 tabs: 进化档案 (inspired by Hermes Agent), 技能图谱, 运行中, 记忆, 工作记录, 配置 | `EmployeeEvolutionArchive`, `EmployeeSkillReview`, `KnowledgeReviewPanel`, `EmployeeModelEditor` |
 | 员工浏览器 live view | `EmployeeBrowser` |

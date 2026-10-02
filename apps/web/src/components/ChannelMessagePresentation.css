@@ -278,78 +278,6 @@
   font-size: 11px;
   color: #888;
 }
-.app-shell .channel-workspace.channel-native .channel-work-activity {
-  margin: 14px 0 0 42px;
-  display: grid;
-  gap: 8px;
-  max-width: 76%;
-}
-.app-shell .channel-workspace.channel-native .channel-work-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border: 1px solid var(--ob-fill-hover);
-  border-radius: 18px;
-  background: #fff;
-  color: var(--ob-text-secondary);
-  min-width: 0;
-}
-.app-shell .channel-workspace.channel-native .channel-work-item > .robot-avatar {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-}
-.app-shell .channel-workspace.channel-native .channel-work-item > div {
-  min-width: 0;
-  flex: 1;
-}
-.app-shell .channel-workspace.channel-native .channel-work-item button {
-  border: 0;
-  padding: 0;
-  background: transparent;
-  font-size: 14px;
-  color: var(--ob-text);
-}
-.app-shell .channel-workspace.channel-native .channel-work-item button strong {
-  margin-right: 8px;
-  font-weight: 600;
-}
-.app-shell .channel-workspace.channel-native .channel-work-item p {
-  margin: 3px 0 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-size: 13px;
-  color: var(--ob-text-secondary);
-}
-.app-shell .channel-workspace.channel-native .channel-work-item.failed {
-  background: #fff1e9;
-  color: #996340;
-}
-.app-shell .channel-workspace.channel-native .channel-work-item .native-run-controls {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  flex-shrink: 0;
-}
-.app-shell .channel-workspace.channel-native .work-ellipsis {
-  display: flex;
-  gap: 3px;
-}
-.app-shell .channel-workspace.channel-native .work-ellipsis i {
-  width: 4px;
-  height: 4px;
-  background: #999;
-  border-radius: 50%;
-  animation: channel-work-pulse 1.4s ease-in-out infinite;
-}
-.app-shell .channel-workspace.channel-native .work-ellipsis i:nth-child(2) {
-  animation-delay: 160ms;
-}
-.app-shell .channel-workspace.channel-native .work-ellipsis i:nth-child(3) {
-  animation-delay: 320ms;
-}
 @keyframes channel-work-pulse {
   0%,
   80%,
@@ -618,17 +546,6 @@
     width: calc(100% - 20px);
     margin: 8px 10px 10px;
   }
-  .app-shell .channel-workspace.channel-native .channel-work-activity {
-    max-width: calc(100% - 30px);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .app-shell .channel-workspace.channel-native .work-ellipsis i {
-    animation: none;
-  }
-}
-:root[data-reduced-motion="true"] .app-shell .channel-workspace.channel-native .work-ellipsis i {
-  animation: none;
 }
 
 .app-shell .channel-native .streaming-message .rich-message::after {
@@ -640,50 +557,6 @@
   vertical-align: baseline;
   background: currentColor;
   opacity: 0.35;
-}
-.app-shell .channel-native .run-steering {
-  position: relative;
-  flex: 0 0 auto;
-  font-size: 11px;
-}
-.app-shell .channel-native .run-steering > button {
-  padding: 5px 7px;
-  border: 1px solid #ddd;
-  border-radius: 7px;
-  background: transparent;
-  color: #666;
-}
-.app-shell .channel-native .run-steering form {
-  position: absolute;
-  z-index: 6;
-  right: 0;
-  bottom: calc(100% + 8px);
-  display: grid;
-  gap: 8px;
-  width: min(320px, calc(100vw - 70px));
-  padding: 14px;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 8px 28px #00000012;
-}
-.app-shell .channel-native .run-steering textarea {
-  min-height: 72px;
-  resize: vertical;
-  width: 100%;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 8px;
-  color: #222;
-  font: inherit;
-  font-size: 13px;
-}
-.app-shell .channel-native .run-steering small,
-.app-shell .channel-native .run-steering p {
-  max-width: 220px;
-  color: #777;
-  font-size: 11px;
-  line-height: 1.5;
 }
 /* `/` menu: skills attached through the existing composer skill mechanism, then composer actions. */
 .app-shell .channel-workspace.channel-native .slash-options {

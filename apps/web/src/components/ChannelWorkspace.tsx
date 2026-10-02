@@ -1,7 +1,10 @@
 import type {
+  Approval,
+  ApprovalDecision,
   Artifact,
   Bot,
   Channel,
+  ExecutionNode,
   Message,
   MessageReaction,
   ReactionEmoji,
@@ -54,7 +57,6 @@ import { MessageActionBar } from "./MessageActionBar";
 import { MessageReactions } from "./MessageReactions";
 import { NewBotSetupCard } from "./NewBotSetupCard";
 import { RichMessage } from "./RichMessage";
-import { RunSteering } from "./RunSteering";
 import { VoiceRecorder } from "./VoiceRecorder";
 import "./ChannelMessagePresentation.css";
 import { composerAttachEvent } from "../composer-events";
@@ -63,10 +65,10 @@ import { ArtifactCard } from "./ArtifactCard";
 import { ComposerAttachmentPicker } from "./ComposerAttachmentPicker";
 import { HashIcon, PlusIcon, SendIcon, SkillIcon } from "./Icons";
 import { MessageAttachments } from "./MessageAttachments";
-import { NativeRunControls } from "./NativeRunControls";
 import { OpenBotMark } from "./OpenBotMark";
 import { PluginCallApprovals } from "./PluginCallApprovals";
 import { RobotAvatar } from "./RobotAvatar";
+import { TaskCard } from "./TaskCard";
 import {
   type CollaborationRun,
   DelegatedReplyContext,
@@ -96,6 +98,10 @@ export function ChannelWorkspace({
   onOpenSettings,
   onOpenHosts,
   onBotChanged,
+  approvals = [],
+  nodes = [],
+  frames,
+  onDecideApproval,
 }: {
   headerAction?: ReactNode;
   globalHeader?: boolean;
@@ -119,6 +125,14 @@ export function ChannelWorkspace({
   onOpenHosts?: (() => void) | undefined;
   /** Called after the 定分工 card changes the Bot's role, so the host can refresh its lists. */
   onBotChanged?: (() => void | Promise<void>) | undefined;
+  /** Workspace approvals; the pending ones for this 频道's tasks are decided on their cards. */
+  approvals?: readonly Approval[];
+  nodes?: readonly ExecutionNode[];
+  /** Latest live computer frame per task, kept by the host from frame events. */
+  frames?: ReadonlyMap<string, RunFrame> | undefined;
+  onDecideApproval?:
+    | ((approvalId: string, decision: ApprovalDecision) => Promise<void>)
+    | undefined;
 }) {
   const { values: preferences } = useWorkspacePreferences();
   const [ownSession] = useState(createConversationSession);
@@ -430,11 +444,62 @@ export function ChannelWorkspace({
         : latest,
     0,
   );
-  const visibleWork = runs.filter(
-    (run) =>
-      isActiveRun(run) ||
-      ((run.status === "failed" || run.status === "cancelled") &&
-        Date.parse(run.createdAt) >= latestCompletedRequest),
+  // One card per top-level task, in place (TaskCards artboard): after the Bot's latest message
+  // for it, else after the message that started it, else at the end. A finished task the Bot
+  // already answered needs no card — its reply carries the outputs and 任务详情. Delegated tasks
+  // appear inside their lead task's card.
+  const taskCards = useMemo(() => {
+    const messageIds = new Set(messages.map((message) => message.id));
+    const replied = new Map<string, Message>();
+    for (const message of messages)
+      if (message.runId && message.authorType === "bot") replied.set(message.runId, message);
+    const shown = runs
+      .filter((run) => {
+        if (run.parentRunId && runsById.has(run.parentRunId)) return false;
+        if (run.status === "completed") return !replied.has(run.id);
+        if (run.status === "failed" || run.status === "cancelled")
+          return Date.parse(run.createdAt) >= latestCompletedRequest;
+        return true;
+      })
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+    const newest = shown.at(-1)?.id;
+    const byAnchor = new Map<string, Run[]>();
+    const trailing: Run[] = [];
+    for (const run of shown) {
+      const anchor =
+        replied.get(run.id)?.id ??
+        (run.sourceMessageId && messageIds.has(run.sourceMessageId)
+          ? run.sourceMessageId
+          : undefined);
+      if (anchor === undefined) trailing.push(run);
+      else byAnchor.set(anchor, [...(byAnchor.get(anchor) ?? []), run]);
+    }
+    return { byAnchor, trailing, newest, ids: new Set(shown.map((run) => run.id)) };
+  }, [messages, runs, runsById, latestCompletedRequest]);
+  const renderTask = (run: Run, after?: Message) => (
+    <TaskCard
+      key={`task-${run.id}`}
+      run={run}
+      bot={botsById.get(run.botId)}
+      botsById={botsById}
+      progress={latestProgressByRun.get(run.id)}
+      artifacts={artifactsByRun.get(run.id) ?? []}
+      approvals={approvals.filter(
+        (approval) => approval.runId === run.id && approval.status === "pending",
+      )}
+      frame={frames?.get(run.id)}
+      node={nodes.find((node) => node.id === run.nodeId)}
+      childRuns={collaboration.childrenByParent.get(run.id) ?? []}
+      waiting={run.status === "queued" && activeRun?.id !== run.id}
+      collapsed={run.status === "completed" && run.id !== taskCards.newest}
+      showAvatar={!(after?.authorType === "bot" && after.authorId === run.botId)}
+      onInspect={onInspectRun}
+      onRun={(next) => {
+        conversation.merge([], [next]);
+        onRun(next);
+      }}
+      onDecideApproval={onDecideApproval ?? (async () => undefined)}
+    />
   );
 
   useEffect(() => {
@@ -825,7 +890,9 @@ export function ChannelWorkspace({
                       : undefined
                   }
                   childRuns={
-                    message.runId && runsById.get(message.runId)?.sourceMessageId === message.id
+                    message.runId &&
+                    !taskCards.ids.has(message.runId) &&
+                    runsById.get(message.runId)?.sourceMessageId === message.id
                       ? (collaboration.childrenByParent.get(message.runId) ?? [])
                       : []
                   }
@@ -844,6 +911,7 @@ export function ChannelWorkspace({
                   onInspectRun={onInspectRun}
                   onOpenBot={onOpenBot}
                 />
+                {taskCards.byAnchor.get(message.id)?.map((run) => renderTask(run, message))}
               </Fragment>
             ))
           )}
@@ -873,46 +941,7 @@ export function ChannelWorkspace({
                 </div>
               </article>
             ))}
-          {visibleWork.length > 0 ? (
-            <section className="channel-work-activity" aria-label="频道任务动态">
-              {visibleWork.map((run) => (
-                <div className={`channel-work-item ${run.status}`} key={run.id}>
-                  {botsById.get(run.botId) ? (
-                    <RobotAvatar bot={botsById.get(run.botId) as Bot} compact />
-                  ) : null}
-                  <div>
-                    <button type="button" onClick={() => onInspectRun(run.id)}>
-                      <strong>{botsById.get(run.botId)?.name ?? "Bot"}</strong>
-                      <span>
-                        {run.status === "queued" && activeRun?.id !== run.id
-                          ? "等待接续"
-                          : runStatusLabel(run.status)}
-                      </span>
-                    </button>
-                    <p>
-                      {runStatusSummary(run, latestProgressByRun.get(run.id)?.message) ?? run.title}
-                    </p>
-                  </div>
-                  {run.status === "running" ? (
-                    <span className="work-ellipsis" aria-hidden="true">
-                      <i />
-                      <i />
-                      <i />
-                    </span>
-                  ) : null}
-                  <RunSteering run={run} botName={botsById.get(run.botId)?.name ?? "Bot"} />
-                  <NativeRunControls
-                    compact
-                    run={run}
-                    onRun={(next) => {
-                      conversation.merge([], [next]);
-                      onRun(next);
-                    }}
-                  />
-                </div>
-              ))}
-            </section>
-          ) : null}
+          {taskCards.trailing.map((run) => renderTask(run))}
         </div>
         {awayFromLatest ? (
           <button type="button" className="conversation-latest" onClick={showLatest}>

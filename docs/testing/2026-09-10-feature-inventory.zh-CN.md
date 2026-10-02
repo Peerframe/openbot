@@ -44,7 +44,7 @@
 | 信息栏 | 当前频道审批、进行中、最近结果，可展开工作区和主机概览。 | 限于已加载记录，不是无限历史分析。 |
 | Token 用量 | 汇总范围内已知输入/输出，保留未知/无数据状态。 | 不是供应商额度、余额、费用或账单；不推算缺失用量。 |
 
-证据：[Agent 工具](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts)、[运行时接线](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/index.ts)、[有界上下文](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-agent-store.ts)、[详情](../../apps/web/src/components/RunInspector.tsx)、[控制](../../apps/web/src/components/NativeRunControls.tsx)、[产物](../../apps/web/src/components/ArtifactCard.tsx)、[审批](../../apps/web/src/components/ApprovalCard.tsx)、[信息栏](../../apps/web/src/components/ContextRail.tsx)。
+证据：[Agent 工具](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts)、[运行时接线](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/index.ts)、[有界上下文](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-agent-store.ts)、[详情](https://github.com/Peerframe/openbot/blob/a99918176ee42e45d7a909853a0db1dc5b884d38/apps/web/src/components/RunInspector.tsx)、[控制](https://github.com/Peerframe/openbot/blob/a99918176ee42e45d7a909853a0db1dc5b884d38/apps/web/src/components/NativeRunControls.tsx)、[产物](../../apps/web/src/components/ArtifactCard.tsx)、[审批](../../apps/web/src/components/ApprovalCard.tsx)、[信息栏](../../apps/web/src/components/ContextRail.tsx)。
 
 ## 员工档案与审核式学习
 

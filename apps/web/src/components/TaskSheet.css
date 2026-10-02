@@ -1,0 +1,324 @@
+/* 任务详情 sheet (TaskInspector artboard): 460px from the right, over the conversation. */
+.task-sheet {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: min(460px, 100vw);
+  border-left: 1px solid #ececee;
+  background: #fdfdfd;
+  box-shadow: -18px 0 40px rgba(0, 0, 0, 0.08);
+  color: var(--ob-text);
+}
+.task-sheet-header {
+  display: grid;
+  flex-shrink: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  height: 56px;
+  padding: 0 12px 0 22px;
+  color: #8e8e93;
+  font-size: 13px;
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+.task-sheet-close {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+.task-sheet-close:hover {
+  background: var(--ob-fill);
+}
+.task-sheet-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+  padding: 0 22px 16px;
+  overflow-y: auto;
+}
+.task-sheet-title {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.task-sheet-title h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.task-sheet-title > span:last-child {
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}
+.task-sheet-status {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 12px;
+  background: var(--ob-fill);
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+.task-sheet-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ob-working);
+}
+.task-sheet-status.is-working {
+  background: #e8f6ec;
+  color: #1c7c3c;
+}
+.task-sheet-status.is-attention {
+  background: #fdf0e1;
+  color: #b5651d;
+}
+.task-sheet-status.is-failed {
+  background: #fbeceb;
+  color: #b3261e;
+}
+.task-sheet-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.task-sheet-section h3 {
+  margin: 0 4px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+.task-sheet-section > small {
+  padding: 0 4px;
+  color: #8e8e93;
+  font-size: 12px;
+}
+.task-sheet-instruction {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  border-radius: 16px;
+  background: var(--ob-fill);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.task-sheet-frame {
+  display: grid;
+  height: 170px;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 14px;
+  background: #e3e5ea;
+  color: #8e8e93;
+  font-size: 13px;
+}
+.task-sheet-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.task-sheet-link {
+  align-self: flex-start;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.task-sheet-card {
+  margin: 0;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: var(--ob-fill);
+  list-style: none;
+}
+.task-sheet-card > * + * {
+  border-top: 1px solid #e3e3e6;
+}
+.task-sheet-person {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 10px 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.task-sheet-card > .task-sheet-person:first-child {
+  border-top: 0;
+}
+button.task-sheet-person:not(:disabled) {
+  cursor: pointer;
+}
+.task-sheet-avatar {
+  width: 32px;
+  height: 32px;
+}
+.task-sheet-person > span:nth-child(2),
+.task-sheet-steps li > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.task-sheet-person strong,
+.task-sheet-steps strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.task-sheet-steps strong.is-current {
+  font-weight: 600;
+}
+.task-sheet-person small,
+.task-sheet-steps small {
+  overflow-wrap: anywhere;
+  color: #8e8e93;
+  font-size: 12px;
+}
+.task-sheet-state {
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+}
+.task-sheet-state.is-working {
+  color: #1c7c3c;
+}
+.task-sheet-state.is-attention {
+  color: #b5651d;
+}
+.task-sheet-state.is-failed {
+  color: #b3261e;
+}
+.task-sheet-steps li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  padding: 9px 0;
+}
+.task-sheet-steps li > i {
+  display: block;
+  box-sizing: border-box;
+  width: 10px;
+  height: 10px;
+  margin: 4px;
+  border-radius: 50%;
+}
+.task-sheet-steps i.is-done {
+  background: var(--ob-working);
+}
+.task-sheet-steps i.is-current {
+  border: 2px solid var(--ob-working);
+  background: #fff;
+}
+.task-sheet-steps i.is-failed {
+  background: #b3261e;
+}
+.task-sheet-steps time {
+  color: #8e8e93;
+  font-size: 12px;
+}
+.task-sheet-outputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.task-sheet-facts > div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px 0;
+  font-size: 14px;
+}
+.task-sheet-facts dt {
+  color: var(--ob-text-secondary);
+}
+.task-sheet-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.task-sheet-facts small {
+  color: #8e8e93;
+}
+.task-sheet-facts a {
+  color: inherit;
+}
+.task-sheet .task-steer {
+  padding-left: 0;
+}
+.task-sheet .task-steer p {
+  margin-left: 0;
+}
+.task-sheet-note,
+.task-sheet-error {
+  margin: 0 4px;
+  font-size: 12px;
+}
+.task-sheet-note {
+  color: var(--ob-text-secondary);
+}
+.task-sheet-error {
+  color: #b3261e;
+}
+.task-sheet-footer {
+  display: flex;
+  flex-shrink: 0;
+  gap: 10px;
+  padding: 14px 22px 20px;
+  border-top: 1px solid #ececee;
+}
+.task-sheet-pill {
+  flex: 1;
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 18px;
+  background: #ececee;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.task-sheet-pill.is-danger {
+  color: #b3261e;
+}
+.task-sheet-pill:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+.task-sheet :is(button, a, summary):focus-visible {
+  outline: 2px solid var(--ob-active);
+  outline-offset: 2px;
+}

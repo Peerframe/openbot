@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ModelConnectionEditor } from "./ModelConnectionsDialog";
 import { ModelSelectionFields } from "./ModelSelector";
-import { RunInspector } from "./RunInspector";
+import { TaskSheet } from "./TaskSheet";
 
 const connection: ModelConnection = {
   id: "connection-1",
@@ -146,8 +146,9 @@ it("shows a queued model Run's immutable selection rather than its Bot's current
     updatedAt: "2026-09-25T00:00:00Z",
   } satisfies Run;
   const html = renderToStaticMarkup(
-    <RunInspector
+    <TaskSheet
       artifacts={[]}
+      botsById={new Map()}
       bot={{
         id: "bot-one",
         name: "Model Bot",
@@ -168,7 +169,6 @@ it("shows a queued model Run's immutable selection rather than its Bot's current
   expect(html).toContain("queued-model");
   expect(html).toContain('href="#/tasks?task=mapped-task"');
   expect(html).toContain("查看任务");
-  expect(html).toContain("queued-connection");
   expect(html).not.toContain("new-model");
   expect(html).toContain("由服务电脑执行");
   expect(html).not.toContain("等待分配");

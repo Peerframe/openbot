@@ -307,7 +307,7 @@ describe("Desktop workspace navigation continuity", () => {
     }
   });
 
-  it("wires AuthenticatedWorkspace RunInspector with childRuns botsById and onInspectRun", async () => {
+  it("wires AuthenticatedWorkspace TaskSheet with childRuns botsById and onInspectRun", async () => {
     const chief: Bot = {
       id: "chief",
       name: "总管",
@@ -364,12 +364,12 @@ describe("Desktop workspace navigation continuity", () => {
       await interact(() => buttonByLabel(rendered.container, "查看任务：Prepare a report").click());
       await settleEffects();
 
-      const inspector = rendered.container.querySelector(".run-inspector");
+      const inspector = rendered.container.querySelector(".task-sheet");
       expect(inspector).not.toBeNull();
       expect(inspector?.textContent).toContain("分工");
       expect(inspector?.textContent).toContain("研究员");
-      expect(inspector?.textContent).toContain("Research");
-      expect(inspector?.querySelector("#run-title")?.textContent).toBe("Prepare a report");
+      expect(inspector?.textContent).toContain("协作 · Check sources");
+      expect(inspector?.querySelector("#task-title")?.textContent).toBe("Prepare a report");
 
       const roles = inspector!.querySelector('[aria-label="分工"]');
       expect(roles).not.toBeNull();
@@ -380,7 +380,7 @@ describe("Desktop workspace navigation continuity", () => {
       await interact(() => childStatus!.click());
       await settleEffects();
 
-      expect(rendered.container.querySelector(".run-inspector #run-title")?.textContent).toBe(
+      expect(rendered.container.querySelector(".task-sheet #task-title")?.textContent).toBe(
         "Check sources",
       );
     } finally {

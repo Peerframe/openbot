@@ -55,7 +55,7 @@
 | 16 | 新建 Bot 与频道——**审核中** | New、NewGroup、NewBotChat | C12；C11 可选 | 「+」收件人列表里加「创建新 Bot ⌘1」「创建频道 ⌘2」；一键生成随机 Bot 并打开单聊；「你最想让我先帮你做什么？」卡片；删除 `CreateBotDialog` 和 `CreateChannelDialog` |
 | 17 | Bot 信息右栏——**审核中** | BotInfo | 编辑头像需要 C9 | 新的 `BotInfoRail` 用于单聊和 Bot 档案：原地改名、添加标签、「详情 / 资料库 / 电脑」、编辑头像弹窗；取代 `EmployeeProfileRail` |
 | 18 | 给频道加成员——**审核中** | AddMember、ChannelInfo | — | 带「搜索 Bot」的添加成员弹窗；浅红色「移除」；右栏群组头像 |
-| 19 | 对话里的任务 | TaskCards、TaskInspector | C13 | 每个任务一张 `TaskCard`，含全部状态、卡上审批、协作提示；`TaskSheet` 取代任务详情弹窗；删除 `channel-work-item`、`native-run-controls`、`run-inspector` 样式 |
+| 19 | 对话里的任务——**审核中** | TaskCards、TaskInspector | C13 | 每个任务一张 `TaskCard`，含全部状态、卡上审批、协作提示；`TaskSheet` 取代任务详情弹窗；删除 `channel-work-item`、`native-run-controls`、`run-inspector` 样式 |
 | 20 | 对话框 | Dialog* | — | 统一的 `Dialog` 框架；重做分享、分享 Bot 模板、导入 Bot 模板、删除确认、配对工作电脑、连接模型服务 |
 | 21 | 任务监督与空工作区 | WorkSupervision、EmptyWorkspace | — | 重做 `WorkTasksScreen`；新的 `EmptyWorkspace`；退役独立的「例行任务」和「技能库」页面（入口改到设置分区） |
 | 22 | 设计剩余界面（先画布，再由所有者确认） | 新画板 | — | 消息操作与表情回应、附件与语音、「补充指令」输入、「资料库」里的频道文件回收站、Bot 档案各分页（进化档案注明受 Hermes Agent 启发）、员工浏览器画面、提示与浮动通知、应用图标与 README 图片 |

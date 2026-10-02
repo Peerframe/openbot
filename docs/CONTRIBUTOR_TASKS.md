@@ -94,26 +94,26 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
 - **Dependencies:** none. Research:
   [contributor-starter-slices](research/contributor-starter-slices.md).
 
-## Starter: RunInspector Escape and focus-restore regression
+## Starter: TaskSheet Escape and focus-restore regression
 
-- **Status:** Delivered (D4). `RunInspector.integration.test.tsx` now locks Escape→`onClose`, labelled close control, and prior-focus restore on unmount.
+- **Status:** Delivered (D4). UI step 19 replaced `RunInspector` with `TaskSheet` (任务详情) and moved the regression with it: `TaskSheet.test.tsx` now locks Escape→`onClose`, labelled close control, and prior-focus restore on unmount.
 
-- **Goal:** lock the Escape-close and opener focus restoration that `RunInspector` already
+- **Goal:** lock the Escape-close and opener focus restoration that `TaskSheet` already
   implements for its custom overlay.
-- **Existing behavior:** on mount, `RunInspector` focuses the labelled close control, listens for
+- **Existing behavior:** on mount, `TaskSheet` focuses the labelled close control, listens for
   Escape to call `onClose`, and restores the previous focus on unmount (`role="dialog"`,
   `aria-modal="true"`).
-- **Covered:** `RunInspector.integration.test.tsx` covers child-run wiring, Escape, the labelled
+- **Covered:** `TaskSheet.test.tsx` covers child-run wiring, Escape, the labelled
   close control and prior-focus restore on unmount.
 - **Remaining:** `docs/ACCESSIBILITY.md` still calls for a fuller native-dialog/focus-trap review;
   that product change is separate from the delivered regression.
-- **Entry files:** `apps/web/src/components/RunInspector.tsx`,
-  `apps/web/src/components/RunInspector.integration.test.tsx` (or a sibling focused test),
+- **Entry files:** `apps/web/src/components/TaskSheet.tsx`,
+  `apps/web/src/components/TaskSheet.test.tsx` (or a sibling focused test),
   `docs/ACCESSIBILITY.md`.
 - **Prerequisites:** `npm ci`; no Server process required for the jsdom regression.
 - **Commands:**
   ```bash
-  npm exec --workspace @openbot/web -- vitest run src/components/RunInspector.integration.test.tsx
+  npm exec --workspace @openbot/web -- vitest run src/components/TaskSheet.test.tsx
   npm --workspace @openbot/web run typecheck
   ```
 - **Acceptance counter-examples:** Escape does not invoke `onClose`; unmount leaves focus on an

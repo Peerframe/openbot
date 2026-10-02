@@ -102,12 +102,15 @@
 ## 对话里的任务
 
 - **一个任务一张卡，原地更新**（TaskCards）：排队 → 执行中 → 需要你确认 → 完成或失败，结束后收成一行
-  摘要。白底、1px `#ececee` 描边、圆角 18，放在 Bot 头像列下方，宽度不超过消息列的 76%。
+  摘要。白底、1px `#ececee` 描边、圆角 18，放在 Bot 头像列下方，宽度不超过消息列的 76%。卡片放在
+  Bot 关于这个任务的最新一条消息之后，没有则放在发起它的消息之后。Bot 已经回复过的已完成任务不再
+  显示卡片：回复本身带着产出和「任务详情」（Main）。被委派的任务显示在主任务卡里。
 - 颜色只标状态：绿 = 工作中，橙 = 等你，红 = 失败；完成用中性的黑色对勾。
 - 执行中显示服务电脑报告的步数（「已完成 3 步」）和当前步骤，绝不编造总步数；有电脑画面时显示画面，
   另有「补充指令」和「停止」。
 - 审批直接在卡上完成；右栏里同一条审批同步更新。
-- 失败显示服务电脑给出的用户可读原因；原始报错留在「任务详情」。
+- 失败显示服务电脑给出的用户可读原因；「任务详情」再补充错误代码。服务电脑的原始报错从不显示，
+  因为里面可能引用上游的原文。
 - **「任务详情」** 是从右侧滑出的 460px 面板（TaskInspector）：状态、电脑画面、分工、进度、任务信息
   （模型和用量），以及「补充指令 / 停止任务」。
 
@@ -137,7 +140,7 @@
 | Plugins | `PluginsDialog.tsx`、`PluginManagerPanel.tsx` | 已实现 |
 | Avatar、Avatars、GroupAvatar、GroupAvatars | `RobotAvatar.tsx`、`GroupAvatar.tsx` | 已实现；紫、青、粉、灰等 C10 |
 | Launch、LaunchMotion、Welcome、Install、Connect、Login、ModelSetup、WorkerSetup | `Onboarding.tsx` 与各设置页面 | 已实现 |
-| TaskCards、TaskInspector | 新的 `TaskCard.tsx`、`TaskSheet.tsx` | 第 19 步 |
+| TaskCards、TaskInspector | `TaskCard.tsx`、`TaskSheet.tsx` | 已完成；步数等 C13 |
 | Dialog* | 新的 `Dialog.tsx` 框架与各对话框 | 第 20 步 |
 | WorkSupervision、EmptyWorkspace | `WorkTasksScreen.tsx`、新的 `EmptyWorkspace.tsx` | 第 21 步 |
 
@@ -149,7 +152,7 @@
 | --- | --- |
 | 消息悬停操作、表情回应、引用回复 | `MessageActionBar`、`MessageReactions` |
 | 消息与输入框里的附件、语音输入 | `MessageAttachments`、`AttachmentPreview`、`ComposerAttachmentPicker`、`VoiceRecorder` |
-| 「补充指令」输入框与技能选择 | `RunSteering`、输入框技能菜单 |
+| 「补充指令」输入框与技能选择 | `TaskActions.tsx` 里的 `SteerForm`、输入框技能菜单 |
 | 频道文件管理（回收站），并入「资料库」 | `AttachmentsManager` |
 | Bot 档案分页：进化档案（受 Hermes Agent 启发）、技能图谱、运行中、记忆、工作记录、配置 | `EmployeeEvolutionArchive`、`EmployeeSkillReview`、`KnowledgeReviewPanel`、`EmployeeModelEditor` |
 | 员工浏览器实时画面 | `EmployeeBrowser` |

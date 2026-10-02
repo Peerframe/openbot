@@ -1,0 +1,357 @@
+/* Task cards in a conversation (TaskCards artboard). Colour marks state only. */
+.task-thread {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 2px 0;
+}
+.task-thread .task-avatar {
+  display: block;
+  width: 32px;
+  height: 32px;
+}
+.task-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  max-width: 76%;
+  padding: 14px 16px;
+  border: 1px solid #ececee;
+  border-radius: 18px;
+  background: #fff;
+  color: var(--ob-text);
+}
+.task-card.is-attention {
+  border-color: #f3d9b8;
+}
+.task-card:has(> .task-top.is-line:only-child) {
+  padding: 10px 14px;
+}
+.task-top {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+.task-top.is-line {
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+}
+.task-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.task-text strong {
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  font-weight: 600;
+}
+.task-top.is-line .task-text strong {
+  font-weight: 500;
+}
+.task-text strong.is-muted {
+  color: var(--ob-text-secondary);
+}
+.task-text span {
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.task-glyph {
+  display: inline-grid;
+  box-sizing: border-box;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ob-fill);
+  color: var(--ob-text);
+  font-size: 17px;
+  font-weight: 800;
+}
+.task-glyph.is-small {
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+}
+.task-glyph.is-running,
+.task-glyph.is-assigned {
+  background: #e8f6ec;
+}
+.task-glyph.is-waiting_approval,
+.task-glyph.is-blocked {
+  background: #fdf0e1;
+  color: #b5651d;
+}
+.task-glyph.is-failed {
+  background: #fbeceb;
+  color: #b3261e;
+}
+.task-glyph.is-queued {
+  border: 2px dashed #c7c7cc;
+  background: transparent;
+}
+.task-spin {
+  display: block;
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border: 2px solid #cfe9d6;
+  border-top-color: var(--ob-working);
+  border-radius: 50%;
+  animation: task-spin 0.9s linear infinite;
+}
+@keyframes task-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .task-spin {
+    animation: none;
+  }
+}
+:root[data-reduced-motion="true"] .task-spin {
+  animation: none;
+}
+.task-stop {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: #8e8e93;
+}
+.task-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.task-link:hover {
+  color: var(--ob-text);
+}
+.task-pill {
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 15px;
+  background: #ececee;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.task-top.is-line .task-pill {
+  height: 28px;
+}
+.task-pill.is-primary {
+  background: #111;
+  color: #fff;
+}
+.task-pill:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+.task-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 48px;
+}
+.task-actions small,
+.task-collab small {
+  color: #8e8e93;
+  font-size: 12px;
+}
+.task-frame {
+  display: grid;
+  grid-template-columns: 136px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding-left: 48px;
+}
+.task-frame button {
+  height: 84px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 10px;
+  background: #e3e5ea;
+  cursor: zoom-in;
+}
+.task-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.task-frame > span {
+  color: #8e8e93;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.task-quote {
+  margin: 0 0 0 48px;
+  padding: 10px 12px;
+  overflow-wrap: anywhere;
+  border-radius: 12px;
+  background: #f6f6f7;
+  color: #3a3a3c;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.task-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-left: 48px;
+}
+.task-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 12px;
+  background: var(--ob-fill);
+  color: var(--ob-text);
+  font-size: 13px;
+  text-decoration: none;
+}
+.task-ext {
+  display: inline-grid;
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid #e3e3e6;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--ob-text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+}
+.task-collab {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.task-collab-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}
+.task-collab-head strong {
+  color: var(--ob-text);
+  font-weight: 600;
+}
+.task-collab-helper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.task-collab-avatar {
+  width: 20px;
+  height: 20px;
+}
+.task-collab-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: #f6f6f7;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.task-collab-row .task-text strong {
+  font-weight: 500;
+}
+.task-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+}
+.task-state.is-running::before,
+.task-state.is-assigned::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ob-working);
+  content: "";
+}
+.task-state.is-running,
+.task-state.is-assigned {
+  color: #1c7c3c;
+}
+.task-state.is-failed {
+  color: #b3261e;
+}
+.task-steer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 48px;
+}
+.task-steer label {
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+}
+.task-steer textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--ob-divider);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.task-steer-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.task-steer-foot small {
+  color: #8e8e93;
+  font-size: 12px;
+}
+.task-steer p,
+.task-note,
+.task-error {
+  margin: 0 0 0 48px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.task-note {
+  color: var(--ob-text-secondary);
+}
+.task-error,
+.task-steer p {
+  color: #b3261e;
+}
+.task-card :is(button, a, textarea):focus-visible {
+  outline: 2px solid var(--ob-active);
+  outline-offset: 2px;
+}

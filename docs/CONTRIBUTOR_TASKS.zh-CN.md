@@ -82,23 +82,23 @@ Owner 和鉴权工作区访问，Linux Python CI 已运行此检查。开发 Nod
 - **不包含：**屏幕阅读器矩阵；强制色/重排证据；新的主页 Tab 或编辑器。
 - **依赖：**无。调研：[contributor-starter-slices](research/contributor-starter-slices.zh-CN.md)。
 
-## 入门：RunInspector Escape 与焦点恢复回归
+## 入门：TaskSheet Escape 与焦点恢复回归
 
-- **状态：**已交付（D4）。`RunInspector.integration.test.tsx` 锁定 Escape→`onClose`、带名称的关闭按钮，以及卸载时恢复先前焦点。
+- **状态：**已交付（D4）。界面第 19 步用 `TaskSheet`（任务详情）取代了 `RunInspector`，回归测试随之迁移：`TaskSheet.test.tsx` 锁定 Escape→`onClose`、带名称的关闭按钮，以及卸载时恢复先前焦点。
 
-- **目标：**锁住 `RunInspector` 自定义浮层已经实现的 Escape 关闭与 opener 焦点恢复。
+- **目标：**锁住 `TaskSheet` 自定义浮层已经实现的 Escape 关闭与 opener 焦点恢复。
 - **已有行为：**挂载时聚焦带标签的关闭按钮，监听 Escape 调用 `onClose`，卸载时恢复先前焦点
   （`role="dialog"`、`aria-modal="true"`）。
-- **已覆盖：**`RunInspector.integration.test.tsx` 覆盖子 Run 接线、Escape、具名关闭控件与
+- **已覆盖：**`TaskSheet.test.tsx` 覆盖子 Run 接线、Escape、具名关闭控件与
   卸载后的先前焦点恢复。
 - **仍缺：**`docs/ACCESSIBILITY.zh-CN.md` 中原生 dialog/焦点陷阱的完整审查；与已交付回归分开。
-- **入口文件：**`apps/web/src/components/RunInspector.tsx`、
-  `apps/web/src/components/RunInspector.integration.test.tsx`（或同级聚焦测试）、
+- **入口文件：**`apps/web/src/components/TaskSheet.tsx`、
+  `apps/web/src/components/TaskSheet.test.tsx`（或同级聚焦测试）、
   `docs/ACCESSIBILITY.md`。
 - **前置条件：**`npm ci`；jsdom 回归不需要 Server 进程。
 - **命令：**
   ```bash
-  npm exec --workspace @openbot/web -- vitest run src/components/RunInspector.integration.test.tsx
+  npm exec --workspace @openbot/web -- vitest run src/components/TaskSheet.test.tsx
   npm --workspace @openbot/web run typecheck
   ```
 - **验收反例：**Escape 未调用 `onClose`；卸载后焦点落在无关节点；关闭按钮没有可访问名称。

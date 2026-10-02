@@ -58,7 +58,7 @@ import { LaunchExit, LaunchScreen, OnboardingFrame } from "./components/Onboardi
 import { OpenBotMark } from "./components/OpenBotMark";
 import { PluginsDialog } from "./components/PluginsDialog";
 import { indexRunCollaboration } from "./components/RunCollaboration";
-import { RunInspector } from "./components/RunInspector";
+import { TaskSheet } from "./components/TaskSheet";
 import { ShareConversationDialog } from "./components/ShareConversationDialog";
 import { Sidebar, type SidebarActivity } from "./components/Sidebar";
 import { SkillLibraryScreen } from "./components/SkillLibraryScreen";
@@ -1207,6 +1207,10 @@ export function AuthenticatedWorkspace({
           session={conversationSession}
           globalHeader
           onBotChanged={refresh}
+          approvals={workspace.approvals}
+          nodes={workspace.nodes}
+          frames={framesByRun}
+          onDecideApproval={handleDecideApproval}
           channel={selectedChannel}
           bots={workspace.bots}
           artifacts={workspace.artifacts}
@@ -1316,7 +1320,11 @@ export function AuthenticatedWorkspace({
         />
       )}
       {selectedRun ? (
-        <RunInspector
+        <TaskSheet
+          key={selectedRun.id}
+          channelName={
+            workspace.channels.find((channel) => channel.id === selectedRun.channelId)?.name
+          }
           artifacts={workspace.artifacts.filter((artifact) => artifact.runId === selectedRun.id)}
           bot={workspace.bots.find((bot) => bot.id === selectedRun.botId)}
           botsById={new Map(workspace.bots.map((bot) => [bot.id, bot]))}
