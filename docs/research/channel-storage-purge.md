@@ -80,6 +80,12 @@ Initial check lacked sandbox loopback permission; authorized local execution pas
 suite found one obsolete channel-content lock-order assertion; the corrected file-before-Owner
 order is required to recover staging before reads, and the final full SQL suite passed.
 
+The first hosted run passed validate but found stale migration consumers: the S7 current-target
+pin and product container preflight still expected 50 migrations. Update only the current pin and
+preflight to 51; sealed historical SQL stays unchanged. The final pin/preflight `npm run check`
+passed again (18 successful build tasks, all cached). Real S7 requalification passed 40 restore/
+migration cases plus eight cleanup cases; [content-free report](../../experiments/s7-migration/evidence/channel-storage-result.json).
+
 Hosted results and immutable run/job links are maintained in the PR's Verification section and
 [current-head checks](https://github.com/Peerframe/openbot/pull/164/checks). Required hosted results
 remain the source of truth for CI completion. Claude owns ChannelFilesTrash/SettingsStorage wiring;

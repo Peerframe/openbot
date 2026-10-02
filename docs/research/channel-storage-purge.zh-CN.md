@@ -52,6 +52,11 @@ null／30 天清理设置，详见 [API.zh-CN.md](../API.zh-CN.md#c21频道回�
 初次沙箱拒绝回环监听，授权本机隔离检查已通过；初次 SQL 检查发现一项旧频道读取锁顺序断言，
 为暂存恢复改成先文件锁、再 Owner 事务后，完整 SQL 检查通过。
 
+首轮托管 validate 通过，但 S7 当前目标 pin 与产品容器预检仍固定 50 条迁移，导致资格检查失败。
+只更新当前目标 pin 和预检为 51 条，历史封存 SQL 不动；修正后的 `npm run check` 再次通过，
+18 个构建任务全部缓存。真实 S7 重新验证通过 40 项迁移／恢复及
+8 项清理检查；[无内容报告](../../experiments/s7-migration/evidence/channel-storage-result.json)。
+
 托管结果和不可变运行／任务链接维护在 PR 的 Verification 栏及
 [当前版本检查](https://github.com/Peerframe/openbot/pull/164/checks)，以托管实际结果为准。
 上述基础解释器与托管 Worker 的证据分开标明，不把跳过记为通过。
