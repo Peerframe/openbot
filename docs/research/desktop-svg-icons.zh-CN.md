@@ -34,7 +34,12 @@ PR：[草稿 #158](https://github.com/Peerframe/openbot/pull/158)。初版打包
 任意源图已出现后，源图不齐、无效或转换失败仍拒绝打包；旧生成输出不能改变选择。
 显式 `icons:generate` 命令始终要求完整源图。三份有效源图到位后，两个入口自动切换生成图标，
 Linux installer 使用多尺寸 PNG 集合。不改 CI 门禁、不提交新二进制、不改 Web；
-批准源图和实际截图仍待交付，#158 保持草稿。转换器、依赖和许可沿用原决定。
+批准源图和实际截图仍待交付，#158 的批准图形验收仍未完成。转换器、依赖和许可沿用原决定。
 
 修正验证：45 项定向测试通过、无跳过；完整 `npm run check` 通过（18 个构建任务成功，
 17 个缓存）；文档门禁 12 项通过、564 个 Markdown 文件。正在同一 PR 复验托管打包。
+
+修复提交 `2f593fc` 的 validate、Windows、Linux、Python Preview 已通过，
+[托管运行](https://github.com/Peerframe/openbot/actions/runs/37055900204)。macOS 完成安装包验证后，
+在原生 LaunchAgent 检查期间因新提交取消，不能计为通过。另一写入者合入 main 为
+`69e38b0` 并将 PR 标为 ready；保留这些改动，按最新集成复验。合并未带入批准 SVG。

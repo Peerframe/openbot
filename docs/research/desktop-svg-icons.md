@@ -67,7 +67,7 @@ environment passed. Hosted [validate passed](https://github.com/Peerframe/openbo
 on `9737c1c`, the final three-source implementation. This evidence-only update reuses that check. No SVG source exists on the
 baseline, so new-icon package/Dock/taskbar/menu screenshots remain blocked on Claude's export;
 this item is not complete. Keep the current tracked binaries until replacement artwork is verified.
-PR: [#158](https://github.com/Peerframe/openbot/pull/158), draft; source/native screenshots remain
+PR: [#158](https://github.com/Peerframe/openbot/pull/158); source/native screenshots remain
 required. C9/C11 remain deferred; no auto-merge or release.
 
 ## Packaging regression correction (2026-10-03)
@@ -84,8 +84,14 @@ only before any known source is exported, reporting pending C16 acceptance. Any 
 invalid SVG or conversion error still refuses; direct `icons:generate` always requires all sources.
 Both entries select generated resources once all three sources are valid. Tests exercise absent and
 stale output, each partial/optional export, invalid complete export, actual complete conversion and
-Linux installer asset selection. Approved artwork/native screenshots remain required, PR stays draft.
+Linux installer asset selection. Approved artwork/native screenshots remain required, Approved artwork acceptance remains open.
 
 Correction validation: 45 focused cases passed, zero skips; full `npm run check` passed
 (18 build tasks successful, 17 cached); final docs check passed (12 tests, 564 Markdown files).
 No local writers or test processes remain after the check. Hosted package/validate rerun follows.
+
+Hosted correction evidence on `2f593fc`: validate, Windows, Linux and Python Preview passed
+([run](https://github.com/Peerframe/openbot/actions/runs/37055900204)). macOS reached the native
+LaunchAgent check after installer verification, then was cancelled by the next branch update; it is
+not counted as a pass. Another writer merged main as `69e38b0` and marked the PR ready. Preserve
+that merge/state and validate the latest integration; no approved SVG source arrived in the merge.

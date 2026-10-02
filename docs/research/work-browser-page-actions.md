@@ -239,8 +239,18 @@ Current platform backlog handoff (all worktrees outside the repository, same bas
 | C19 | `codex/c19-attachment-reference-count`, `/private/tmp/openbot-c19-references` | [#161](https://github.com/Peerframe/openbot/pull/161); Owner-only bounded metadata, five real SQL/HTTP cases and full check passed; [validate](https://github.com/Peerframe/openbot/actions/runs/37042098568/job/110954806783) passed |
 | C15 | `codex/c15-route-caller-inventory`, `/private/tmp/openbot-c15-inventory` | [#160](https://github.com/Peerframe/openbot/pull/160); caller inventory complete, only manual skill-candidate POST is a removal candidate; [validate](https://github.com/Peerframe/openbot/actions/runs/37041093500/job/110951195802) passed; deletion awaits user confirmation |
 
-Each PR's research/review record owns detailed interface changes and executed evidence. C16 refuses
-packaging without approved SVGs; its validate success is not native icon acceptance. C15 makes no
+Each PR's research/review record owns detailed interface changes and executed evidence. C16's
+unconditional generation initially broke all Desktop packaging despite validate success. Correction
+`2f593fc` preserves existing resource icons with an explicit warning before any source is exported;
+partial/invalid exports still refuse. The source generator and approved/native icon acceptance remain
+strict. Correction checks: 45 focused cases and full `npm run check` passed. On that revision,
+[validate](https://github.com/Peerframe/openbot/actions/runs/37055900204/job/111000500118),
+[Windows](https://github.com/Peerframe/openbot/actions/runs/37055900204/job/111000499881),
+[Linux](https://github.com/Peerframe/openbot/actions/runs/37055900204/job/111000500022), and
+[Python Preview](https://github.com/Peerframe/openbot/actions/runs/37055900204/job/111000499830)
+passed; macOS was cancelled after installer verification when another writer merged main as
+`69e38b0`. That merge is preserved; the latest hosted rerun owns final integration evidence.
+Packaging success with baseline icons is not native acceptance of the approved design. C15 makes no
 route deletion, and its underlying skill creation service still has an import caller. C20 found no
 seven-day unreferenced-file cleanup implementation; corrected Chinese copy is in its review record.
 C19 does not grant cleanup authority. All local writers have finished; only hosted checks run.
