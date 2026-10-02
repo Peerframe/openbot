@@ -3,7 +3,8 @@
 [English](README.md) · [简体中文](README.zh-CN.md)
 
 - [Office concept](m0-office-concept.png): historical M0 exploration only. It is not an implementation contract; the office plugin remains deferred.
-- [Avatar system](openbot-avatar-system.png): reference for the currently running modular RobotAvatar. This refactor preserves its controls and stored appearance compatibility; it does not approve a new redesign.
+- [Avatar system](openbot-avatar-system.png): the earlier modular robot reference. It is superseded by the frameless head avatars in the [Avatars artboard](desktop-ui-2026-10/Avatars.dc.html); the stored appearance layers it introduced remain compatible.
+- [Avatar source](avatars/README.md): the owner's frameless avatar artwork (v2 SVGs) that the app's v3 avatars are drawn from.
 - [README banner](openbot-readme-banner.png) and [channel demonstration](openbot-channel-demo.png): current README illustrations.
 - [Desktop UI design contract (2026-10)](desktop-ui-2026-10/README.md): the owner-approved artboards every
   screen is being rebuilt to, with the [implementation plan and division of work](desktop-ui-2026-10/IMPLEMENTATION.md).
@@ -16,8 +17,8 @@ Read the relevant section of [INTERFACE](../INTERFACE.md), then the actual compo
 [the UI route](../REPOSITORY_MAP.md#ui-interaction). INTERFACE mixes existing behavior and future
 intent; current code/tests and the accepted task define scope. Layout and visual decisions follow the
 [2026-10 design contract](desktop-ui-2026-10/README.md); keep assets such as the RobotAvatar.
-[styles.css](../../apps/web/src/styles.css) owns base tokens (`--blue`, `--line`, `--muted`, `--panel`),
-focus rings and global primitives. Component CSS owns local layout; reuse nearby native buttons,
+[tokens.css](../../apps/web/src/tokens.css) owns the `--ob-*` tokens and
+[primitives.css](../../apps/web/src/primitives.css) the focus rings and global primitives. Component CSS owns local layout; reuse nearby native buttons,
 forms and dialogs. Do not add a theme that overlaps the contract's tokens or infer a redesign from the
 historical office image.
 

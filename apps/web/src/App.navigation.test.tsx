@@ -355,6 +355,11 @@ describe("Desktop workspace navigation continuity", () => {
     const rendered = await renderComponent(<App />);
     try {
       await settleEffects();
+      await interact(() =>
+        Array.from(rendered.container.querySelectorAll<HTMLButtonElement>('[role="tab"]'))
+          .find((tab) => tab.textContent === "详情")
+          ?.click(),
+      );
       await interact(() => buttonByLabel(rendered.container, "查看任务：Prepare a report").click());
       await settleEffects();
 
@@ -368,7 +373,7 @@ describe("Desktop workspace navigation continuity", () => {
       const roles = inspector!.querySelector('[aria-label="分工"]');
       expect(roles).not.toBeNull();
       const childStatus = [...roles!.querySelectorAll("button")].find((node) =>
-        node.textContent?.includes("执行中"),
+        node.textContent?.includes("工作中"),
       );
       expect(childStatus).toBeTruthy();
       await interact(() => childStatus!.click());

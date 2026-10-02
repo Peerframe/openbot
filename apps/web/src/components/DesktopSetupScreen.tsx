@@ -4,7 +4,7 @@ import type {
   DesktopSetupPlanState,
   SaveDesktopSetupPlanResult,
 } from "../desktop-runtime";
-import { OpenBotMark } from "./OpenBotMark";
+import { SetupAvatar } from "./Onboarding";
 
 export function DesktopSetupScreen({
   state,
@@ -46,36 +46,50 @@ export function DesktopSetupScreen({
     }
   }
   return (
-    <main className="login-screen desktop-setup-screen">
-      <section className="login-card desktop-setup-card" aria-labelledby="desktop-setup-title">
-        <OpenBotMark className="onboarding-mark" />
-        <h1 id="desktop-setup-title">开始使用 OpenBot</h1>
-        <p className="login-copy">选择这台电脑的用途，其余配置交给 OpenBot。</p>
+    <main className="ob-onboarding" aria-labelledby="desktop-setup-title">
+      <div className="ob-onboarding-top">
+        <ol className="ob-steps" aria-label="设置进度">
+          <li className="is-current" aria-current="step">
+            1 这台电脑
+          </li>
+          <li>2 登录</li>
+          <li>3 模型</li>
+        </ol>
+      </div>
+      <div
+        className="ob-onboarding-body"
+        style={{ width: "min(480px, 100%)", marginTop: "min(76px, 6vh)" }}
+      >
+        <div className="ob-setup-avatars">
+          <SetupAvatar character="relay" accent="blue" size={64} />
+          <SetupAvatar character="round" accent="green" size={96} />
+          <SetupAvatar character="scout" accent="yellow" size={64} />
+        </div>
+        <div className="ob-onboarding-heading">
+          <h1 id="desktop-setup-title">欢迎使用 OpenBot</h1>
+          <p>先决定这台电脑的用途，其余交给 OpenBot。</p>
+        </div>
         {state.status === "invalid" ? (
-          <p role="alert" className="connection-warning">
+          <p role="alert" className="ob-setup-warning">
             已保存的安装计划无效，请重新选择。
           </p>
         ) : null}
-        <form onSubmit={submit}>
-          <fieldset disabled={busy} className="setup-role-options">
+        <form className="ob-setup-form" onSubmit={submit}>
+          <fieldset disabled={busy} className="ob-roles">
             <legend className="visually-hidden">这台电脑的用途</legend>
             {(
               [
                 [
                   "host",
                   "作为服务电脑",
-                  "在本机保存数据、运行 OpenBot 服务。自动安装，无需 Docker。",
+                  "数据保存在这台电脑，OpenBot 服务在这里运行。自动安装，无需 Docker。",
                 ],
-                [
-                  "client",
-                  "连接服务电脑",
-                  "连接已经部署的 OpenBot，在这里管理工作区和已授权的工作电脑。",
-                ],
+                ["client", "连接服务电脑", "连接已经部署好的 OpenBot，用同一套 Bot 和工作记录。"],
               ] as const
             )
               .filter(([value]) => value !== "host" || canHost)
               .map(([value, title, description]) => (
-                <label className={`setup-mode ${mode === value ? "selected" : ""}`} key={value}>
+                <label className={`ob-role${mode === value ? " is-selected" : ""}`} key={value}>
                   <input
                     id={`desktop-mode-${value}`}
                     type="radio"
@@ -84,41 +98,39 @@ export function DesktopSetupScreen({
                     checked={mode === value}
                     onChange={() => setMode(value)}
                   />
-                  <span>
-                    <strong>
-                      {title}
-                      {value === "host" ? <em>首次使用</em> : null}
-                    </strong>
+                  <span className="ob-role-text">
+                    <strong>{title}</strong>
                     <small>{description}</small>
                   </span>
+                  <span className="ob-radio-dot" aria-hidden="true" />
                 </label>
               ))}
           </fieldset>
-          <p className="setup-next-step">
-            {mode === "host"
-              ? "接下来：安装本地服务 → 配置 Bot 模型 → 开始使用"
-              : "接下来：连接服务电脑 → 登录 → 开始使用"}
-          </p>
           {error ? (
-            <p className="login-error" role="alert">
+            <p className="ob-setup-error" role="alert">
               {error}
             </p>
           ) : null}
-          <button className="primary-button" type="submit" disabled={busy}>
+          <button className="ob-setup-primary" type="submit" disabled={busy}>
             {busy ? "正在准备…" : mode === "host" ? "安装并继续" : "继续连接"}
           </button>
+          <span className="ob-setup-footnote">
+            {mode === "host"
+              ? "接下来：准备本机服务 → 登录 → 选一个模型。都可以随时在设置里改。"
+              : "接下来：连接服务电脑 → 登录 → 开始使用。"}
+          </span>
+          {!canHost ? (
+            <span className="ob-setup-footnote">
+              这台电脑连接远程 OpenBot 服务；本机服务适用于 Apple Silicon Mac。已有本地数据会保留。
+            </span>
+          ) : null}
           {onCancel ? (
-            <button type="button" className="secondary-button" disabled={busy} onClick={onCancel}>
+            <button type="button" className="ob-setup-link" disabled={busy} onClick={onCancel}>
               返回设置
             </button>
           ) : null}
         </form>
-        <p className="login-note">
-          {canHost
-            ? "模型和工作电脑可以随时在设置中调整。"
-            : "本版本在这台电脑上连接远程 Python 服务。本地服务适用于 Apple Silicon Mac；已有本地数据会保留。"}
-        </p>
-      </section>
+      </div>
     </main>
   );
 }

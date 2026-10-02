@@ -135,7 +135,7 @@ const sections: Record<Section, { label: string; description: string; keywords: 
   },
   approvals: {
     label: "审批与权限",
-    description: "Bot 做哪些事之前要先问你。规则由 Server 执行，过期的请求不会执行。",
+    description: "Bot 做哪些事之前要先问你。规则由服务电脑执行，过期的请求不会执行。",
     keywords: "审批 批准 权限 插件 浏览器 确认 授权",
   },
   browser: {
@@ -604,11 +604,11 @@ export function DesktopSettingsScreen({
                     />
                     <SettingRow
                       title="操作与权限"
-                      description="技能需要审核，设备需要绑定；任务仍遵守服务端的路由和审批规则。"
+                      description="技能需要审核，设备需要绑定；任务仍遵守服务电脑的路由和审批规则。"
                     />
                     <SettingRow
                       title="用量统计"
-                      description="只有服务端记录的用量才会显示；没有记录时显示暂无数据。"
+                      description="只有服务电脑记录的用量才会显示；没有记录时显示暂无数据。"
                     />
                   </SettingsGroup>
                   <p className="settings-footnote">Bot 的成长与学习方向受 Hermes Agent 启发。</p>

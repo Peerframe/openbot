@@ -11,15 +11,18 @@ import {
   type ModelSettingsSummary,
   saveModelSettings,
 } from "../api";
-import { OpenBotMark } from "./OpenBotMark";
+import { OnboardingFrame } from "./Onboarding";
 
 export function ModelSettingsScreen({
   onboarding = false,
   embedded = false,
+  progress = false,
   onDone,
 }: {
   onboarding?: boolean;
   embedded?: boolean;
+  /** Show the first-run progress (Desktop onboarding). */
+  progress?: boolean;
   onDone(): void;
 }) {
   const [snapshot, setSnapshot] = useState<ModelSettingsSummary>();
@@ -80,132 +83,113 @@ export function ModelSettingsScreen({
       setBusy(false);
     }
   }
-  const Container = embedded ? "div" : "main";
-  return (
-    <Container
-      className={embedded ? "model-settings-embedded" : "login-screen model-settings-screen"}
-    >
-      <section
-        className="login-card"
-        aria-label={embedded ? "模型 API 配置" : undefined}
-        aria-labelledby={embedded ? undefined : "model-title"}
-      >
-        {!embedded && <OpenBotMark className="onboarding-mark" />}
-        {!embedded && <h1 id="model-title">{onboarding ? "为 Bot 配置模型" : "模型 API"}</h1>}
-        <p className="login-copy">选择模型服务，设置 Bot 的默认模型。以后可以在设置中更改。</p>
-        {snapshot?.status === "unavailable" ? (
-          <p className="connection-warning" role="status">
-            这台服务电脑尚未启用模型配置。请更新服务端，或按 GitHub 自部署文档启用。
+  const content = (
+    <>
+      {snapshot?.status === "unavailable" ? (
+        <p className="ob-setup-warning" role="status">
+          这台服务电脑尚未启用模型配置。请更新服务电脑，或按 GitHub 自部署文档启用。
+        </p>
+      ) : (
+        <form className="ob-setup-form" onSubmit={submit}>
+          <fieldset className="ob-providers" disabled={busy || !snapshot}>
+            <legend>模型服务</legend>
+            {modelProviderPresets.map((item) => (
+              <label
+                key={item.id}
+                className={`ob-provider${provider === item.id ? " is-selected" : ""}`}
+              >
+                <input
+                  type="radio"
+                  name="model-provider"
+                  checked={provider === item.id}
+                  onChange={() => {
+                    setProvider(item.id);
+                    setBaseUrl(modelProviderBaseUrl(item.id));
+                    setModel(item.id === "moonshot" ? "kimi-k3" : (item.suggestedModels[0] ?? ""));
+                    setModels(undefined);
+                    setSaved(false);
+                    setError(undefined);
+                    setApiKey("");
+                  }}
+                />
+                <span className="ob-provider-letter" aria-hidden="true">
+                  {Array.from(providerLabel(item.id))[0]?.toLocaleUpperCase()}
+                </span>
+                <span className="ob-provider-name">{providerLabel(item.id)}</span>
+              </label>
+            ))}
+          </fieldset>
+          <div className="ob-model-fields">
+            <label className="ob-setup-field">
+              API Key{snapshot?.status === "configured" ? "（重新输入以更新）" : ""}
+              <input
+                id="model-api-key"
+                type="password"
+                value={apiKey}
+                onChange={(event) => setApiKey(event.target.value)}
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                minLength={16}
+                maxLength={512}
+                placeholder="粘贴 API Key"
+                disabled={busy || !snapshot}
+                required
+              />
+            </label>
+            <label className="ob-setup-field">
+              模型
+              <input
+                id="model-name"
+                list="model-suggestions"
+                value={model}
+                onChange={(event) => setModel(event.target.value)}
+                maxLength={128}
+                autoCapitalize="none"
+                spellCheck={false}
+                placeholder={
+                  provider === "openrouter" ? "author/model 格式的模型 ID" : "账户中可用的模型 ID"
+                }
+                disabled={busy || !snapshot}
+                required
+              />
+              <datalist id="model-suggestions">
+                {(models ?? preset.suggestedModels).map((id) => (
+                  <option key={id} value={id} />
+                ))}
+              </datalist>
+            </label>
+            <label className="ob-setup-field is-wide">
+              API 地址与区域
+              <select
+                id="model-region"
+                value={baseUrl}
+                disabled={busy || !snapshot}
+                onChange={(event) => {
+                  setBaseUrl(event.target.value);
+                  setApiKey("");
+                  setModels(undefined);
+                  setSaved(false);
+                  setError(undefined);
+                }}
+              >
+                {preset.endpoints.map((endpoint) => (
+                  <option key={endpoint.baseUrl} value={endpoint.baseUrl}>
+                    {regionLabel(endpoint.name)} · {endpoint.baseUrl}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <p className="ob-setup-hint">
+            API Key 加密保存在你的服务电脑上，切换服务或区域后需要重新输入。可选常用模型或手填模型
+            ID，实际可用性以你的账户为准。
+            {provider === "ark" ? "火山方舟支持填写已开通的推理接入点 ID。" : ""}
           </p>
-        ) : (
-          <form onSubmit={submit}>
-            <fieldset className="model-provider-options" disabled={busy || !snapshot}>
-              <legend>模型服务</legend>
-              {modelProviderPresets.map((item) => (
-                <label key={item.id} className="model-provider-card">
-                  <input
-                    type="radio"
-                    name="model-provider"
-                    checked={provider === item.id}
-                    onChange={() => {
-                      setProvider(item.id);
-                      setBaseUrl(modelProviderBaseUrl(item.id));
-                      setModel(
-                        item.id === "moonshot" ? "kimi-k3" : (item.suggestedModels[0] ?? ""),
-                      );
-                      setModels(undefined);
-                      setSaved(false);
-                      setError(undefined);
-                      setApiKey("");
-                    }}
-                  />
-                  {providerLabel(item.id)}
-                </label>
-              ))}
-            </fieldset>
-            <div className="model-config-group">
-              <div className="model-config-row">
-                <label htmlFor="model-region">API 地址与区域</label>
-                <div className="model-config-control">
-                  <select
-                    id="model-region"
-                    value={baseUrl}
-                    disabled={busy || !snapshot}
-                    onChange={(event) => {
-                      setBaseUrl(event.target.value);
-                      setApiKey("");
-                      setModels(undefined);
-                      setSaved(false);
-                      setError(undefined);
-                    }}
-                  >
-                    {preset.endpoints.map((endpoint) => (
-                      <option key={endpoint.baseUrl} value={endpoint.baseUrl}>
-                        {regionLabel(endpoint.name)}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="connection-hint">{baseUrl}</p>
-                </div>
-              </div>
-              <div className="model-config-row">
-                <label htmlFor="model-name">模型名称</label>
-                <div className="model-config-control">
-                  <input
-                    id="model-name"
-                    list="model-suggestions"
-                    value={model}
-                    onChange={(event) => setModel(event.target.value)}
-                    maxLength={128}
-                    autoCapitalize="none"
-                    spellCheck={false}
-                    placeholder={
-                      provider === "openrouter"
-                        ? "填写 author/model 格式的模型 ID"
-                        : "填写账户中可用的模型 ID"
-                    }
-                    disabled={busy || !snapshot}
-                    required
-                  />
-                  <datalist id="model-suggestions">
-                    {(models ?? preset.suggestedModels).map((id) => (
-                      <option key={id} value={id} />
-                    ))}
-                  </datalist>
-                  <p className="connection-hint">
-                    可选择常用模型或手填模型 ID，实际可用性以你的账户为准。
-                    {provider === "ark" ? "火山方舟支持填写已开通的推理接入点 ID。" : ""}
-                  </p>
-                </div>
-              </div>
-              <div className="model-config-row">
-                <label htmlFor="model-api-key">
-                  API Key{snapshot?.status === "configured" ? "（重新输入以更新）" : ""}
-                </label>
-                <div className="model-config-control">
-                  <input
-                    id="model-api-key"
-                    type="password"
-                    value={apiKey}
-                    onChange={(event) => setApiKey(event.target.value)}
-                    autoComplete="off"
-                    autoCapitalize="none"
-                    spellCheck={false}
-                    minLength={16}
-                    maxLength={512}
-                    placeholder="粘贴 API Key"
-                    disabled={busy || !snapshot}
-                    required
-                  />
-                  <p className="connection-hint">
-                    密钥加密保存在你的服务电脑上，切换厂商或区域后需要重新输入。
-                  </p>
-                </div>
-              </div>
-            </div>
-            {preset.discovery ? (
+          {preset.discovery ? (
+            <div className="ob-setup-row">
               <button
-                className="secondary-button"
+                className="ob-setup-secondary"
                 type="button"
                 disabled={busy || !snapshot || apiKey.length < 16}
                 onClick={async () => {
@@ -230,82 +214,98 @@ export function ModelSettingsScreen({
               >
                 获取模型列表
               </button>
-            ) : (
-              <p className="connection-hint">
-                此服务暂不支持模型列表验证。保存只检查配置格式，密钥与模型是否可调用将在任务运行时确认。
-              </p>
-            )}
-            {models ? (
-              <p className="connection-hint" role="status">
-                已读取 {models.length} 个模型，可在模型名称中选择。
-              </p>
-            ) : null}
-            {provider === "openrouter" ? (
-              <p className="connection-hint">
-                OpenRouter
-                会将任务交给其模型提供商。请选择支持工具调用的具体模型；验证只检查密钥和模型元数据，不生成付费回复。当前关闭自动回退，并要求路由满足工具参数和数据收集限制。
-              </p>
-            ) : null}
-            <div className="model-agent-group">
-              <label className="model-agent-option">
-                <span>启用原生 Agent</span>
-                <span className="model-agent-toggle">
-                  <input
-                    type="checkbox"
-                    role="switch"
-                    aria-checked={agentEnabled}
-                    aria-label="启用原生 Agent"
-                    checked={agentEnabled}
-                    onChange={(event) => setAgentEnabled(event.target.checked)}
-                    disabled={busy || !snapshot}
-                  />
-                  <span aria-hidden="true" />
-                </span>
-              </label>
-              <p className="connection-hint">
-                启用后，新建的无电脑任务会将任务内容和按需读取的当前频道上下文发送给所选模型， 由
-                Bot 读取有界资料、准备报告或待审经验并回复，可能产生 API 费用。
-              </p>
             </div>
-            <button
-              type="submit"
-              className="primary-button model-save-button"
-              disabled={busy || !snapshot || apiKey.length < 16 || !model.trim()}
-            >
-              {busy ? "正在处理…" : preset.discovery ? "验证并保存" : "保存配置"}
-            </button>
-          </form>
-        )}
-        {error ? (
-          <>
-            <p className="login-error" role="alert">
-              {error}
+          ) : (
+            <p className="ob-setup-hint">
+              此服务暂不支持模型列表验证。保存只检查配置格式，密钥与模型是否可调用将在任务运行时确认。
             </p>
-            <button
-              className="secondary-button"
-              type="button"
-              disabled={busy}
-              onClick={() => void load()}
-            >
-              重新读取设置
-            </button>
-          </>
-        ) : null}
-        {saved && (
-          <p className="settings-success" role="status">
-            {snapshot?.status === "configured" && snapshot.verification === "not_checked"
-              ? "模型配置已保存，尚未在线验证。"
-              : "模型配置已验证并保存。"}
-          </p>
-        )}
-        {!embedded && (
-          <button className="setup-skip" type="button" disabled={busy} onClick={onDone}>
-            {onboarding ? "稍后在设置中配置" : "返回设置"}
+          )}
+          {models ? (
+            <p className="ob-setup-hint" role="status">
+              已读取 {models.length} 个模型，可在「模型」中选择。
+            </p>
+          ) : null}
+          {provider === "openrouter" ? (
+            <p className="ob-setup-hint">
+              OpenRouter
+              会将任务交给其模型提供商。请选择支持工具调用的具体模型；验证只检查密钥和模型元数据，不生成付费回复。当前关闭自动回退，并要求路由满足工具参数和数据收集限制。
+            </p>
+          ) : null}
+          <label className="ob-model-agent">
+            <span>
+              <strong>启用原生 Agent</strong>
+              <small>
+                启用后，新建的无电脑任务会把任务内容和按需读取的当前频道上下文发给所选模型，由 Bot
+                读取有界资料、准备报告或待审经验并回复，可能产生 API 费用。
+              </small>
+            </span>
+            <input
+              type="checkbox"
+              role="switch"
+              className="ob-switch"
+              aria-checked={agentEnabled}
+              aria-label="启用原生 Agent"
+              checked={agentEnabled}
+              onChange={(event) => setAgentEnabled(event.target.checked)}
+              disabled={busy || !snapshot}
+            />
+          </label>
+          <button
+            type="submit"
+            className="ob-setup-primary"
+            disabled={busy || !snapshot || apiKey.length < 16 || !model.trim()}
+          >
+            {busy ? "正在处理…" : preset.discovery ? "测试并开始使用" : "保存配置"}
           </button>
-        )}
-        <p className="login-note">获取列表与保存不会发送对话或生成内容。</p>
+        </form>
+      )}
+      {error ? (
+        <>
+          <p className="ob-setup-error" role="alert">
+            {error}
+          </p>
+          <button
+            className="ob-setup-link"
+            type="button"
+            disabled={busy}
+            onClick={() => void load()}
+          >
+            重新读取设置
+          </button>
+        </>
+      ) : null}
+      {saved && (
+        <p className="ob-setup-success" role="status">
+          {snapshot?.status === "configured" && snapshot.verification === "not_checked"
+            ? "模型配置已保存，尚未在线验证。"
+            : "模型配置已验证并保存。"}
+        </p>
+      )}
+    </>
+  );
+  if (embedded)
+    return (
+      <section className="ob-model-embedded" aria-label="模型 API 配置">
+        {content}
+        <p className="ob-setup-hint">获取列表与保存不会发送对话或生成内容。</p>
       </section>
-    </Container>
+    );
+  return (
+    <OnboardingFrame
+      step={progress ? 3 : undefined}
+      avatar={{ character: "round", accent: "green", size: 64 }}
+      title={onboarding ? "给 Bot 选一个模型" : "模型 API"}
+      description="连接一个模型服务，Bot 就能开始工作。以后可以在设置里增加或更换。"
+      width={560}
+      offset={56}
+      titleId="model-title"
+    >
+      {content}
+      <button className="ob-setup-link" type="button" disabled={busy} onClick={onDone}>
+        {onboarding ? "稍后再设置" : "返回设置"}
+      </button>
+      <span className="ob-setup-footnote">获取列表与保存不会发送对话或生成内容。</span>
+    </OnboardingFrame>
   );
 }
 function modelError(code: string): string {

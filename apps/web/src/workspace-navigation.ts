@@ -27,8 +27,18 @@ export function moveLocation(history: NavigationHistory, delta: -1 | 1): Navigat
   const index = Math.max(0, Math.min(history.entries.length - 1, history.index + delta));
   return index === history.index ? history : { ...history, index };
 }
+let previewStart: WorkspaceLocation | undefined;
+/**
+ * Design preview seam (`apps/web/preview.html`, dev only): the first location of the next
+ * workspace, so a scene opens directly on its artboard. Product entries never call it.
+ */
+export function setPreviewStartLocation(location: WorkspaceLocation | undefined) {
+  previewStart = location;
+}
 export function useWorkspaceNavigation() {
-  const [history, setHistory] = useState(initialNavigation);
+  const [history, setHistory] = useState<NavigationHistory>(() =>
+    previewStart ? { entries: [previewStart], index: 0 } : initialNavigation,
+  );
   const navigate = useCallback(
     (next: WorkspaceLocation) => setHistory((current) => pushLocation(current, next)),
     [],

@@ -15,7 +15,7 @@ describe("DesktopConnectionScreen", () => {
       const input = getServerInput(rendered.container);
       const form = rendered.container.querySelector("form");
       if (form === null) throw new Error("Connection form not found.");
-      expect(rendered.container.querySelector("label")?.htmlFor).toBe(input.id);
+      expect(input.labels?.[0]).toBe(rendered.container.querySelector("label"));
       expect(input.autocomplete).toBe("url");
       expect(input.getAttribute("spellcheck")).toBe("false");
       expect(getSubmitButton(rendered.container).disabled).toBe(true);
@@ -100,7 +100,7 @@ describe("DesktopConnectionScreen", () => {
     try {
       expect(rendered.container.textContent).toContain("连接服务电脑");
       const changeButton = [...rendered.container.querySelectorAll("button")].find(
-        (button) => button.textContent === "更改这台电脑的用途",
+        (button) => button.textContent === "换一种方式",
       );
       if (changeButton === undefined) throw new Error("Change plan button not found.");
       await interact(() => changeButton.click());

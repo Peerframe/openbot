@@ -5,6 +5,7 @@ import { isActiveRun } from "../run-state";
 import { sidebarOrganization, useSidebarOrganization } from "../sidebar-organization";
 import { useWorkspacePreferences } from "../workspace-preferences";
 import { RobotAvatar } from "./RobotAvatar";
+import "./ContextRail.css";
 
 /** Bot settings rail from the Profile artboard: identity fields, notifications and runtime. */
 export function EmployeeProfileRail({
@@ -239,10 +240,10 @@ function BotNotificationToggle({ bot }: { bot: Bot }) {
   const enabled = !values.muted.includes(key);
   const systemOn = preferences.notifyApprovals || preferences.notifyMessages;
   return (
-    <div className="rail-notify">
-      <span>
-        <strong>通知</strong>
-        <small>
+    <div className="ci-notify">
+      <span className="ci-notify-text">
+        <strong className="ci-notify-title">通知</strong>
+        <small className="ci-notify-hint">
           {systemOn || !enabled
             ? "完成任务或需要回应时通知你"
             : "还需要在 设置 → 通知 中开启系统通知"}

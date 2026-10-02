@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>这台电脑也能工作</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#fcfcfc;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+input::placeholder{color:#a1a1a6}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; background: #fcfcfc; display: flex; flex-direction: column; align-items: center; overflow: hidden">
+<div aria-hidden="true" style="position: absolute; left: 20px; top: 20px; display: flex; gap: 8px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; display: block"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e; display: block"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840; display: block"></span>
+</div>
+<span style="height: 56px; display: flex; align-items: center; font-size: 13px; color: #8e8e93">可选步骤</span>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 24px; width: 440px; margin-top: 110px">
+<dc-import name="Avatar" character="relay" accent="blue" size="80" hint-size="80px,80px"></dc-import>
+<div style="display: flex; flex-direction: column; gap: 8px; text-align: center">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">让这台电脑也能干活</h1>
+<p style="margin: 0; font-size: 15px; color: #6e6e73; line-height: 1.6">设为工作电脑后，Bot 可以在这里执行任务。每一步改动仍按审批规则先问你。</p>
+</div>
+<form style="display: flex; flex-direction: column; gap: 14px; width: 100%">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #6e6e73">电脑名称
+<input type="text" placeholder="mac-studio-1" style="height: 46px; box-sizing: border-box; padding: 0 16px; border: 1px solid #e3e3e6; border-radius: 14px; background: #ffffff; font: inherit; font-size: 15px; color: #1d1d1f; outline: none">
+</label>
+<div style="display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; padding: 14px 16px; border-radius: 16px; background: #f0f0f2">
+<span style="width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; border: 2.5px solid #d1d1d6; border-top-color: #111111; display: block"></span>
+<span style="display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 14px; font-weight: 600">等待 macOS 批准</strong><span style="font-size: 13px; color: #6e6e73; line-height: 1.5">在「系统设置 › 通用 › 登录项与扩展」里允许 OpenBot 在后台运行。</span></span>
+</div>
+<button type="submit" style="height: 48px; border: 0; border-radius: 24px; background: #111111; color: #ffffff; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer">配置并启用</button>
+</form>
+<button type="button" style="border: 0; background: transparent; font: inherit; font-size: 14px; color: #6e6e73; cursor: pointer">先跳过，以后在设置 › 工作主机里配置</button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

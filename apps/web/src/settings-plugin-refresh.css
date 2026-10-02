@@ -211,13 +211,6 @@
   --blue: #1f6fd6;
   --accent: var(--ink-strong);
 }
-.model-settings-screen .model-config-group,
-.model-settings-screen .model-config-row,
-.model-settings-screen .model-config-control,
-.model-settings-screen .model-agent-group {
-  display: grid;
-  gap: 9px;
-}
 
 /* ADR-0047 audit view: compact rows inside the shared grey settings card. */
 

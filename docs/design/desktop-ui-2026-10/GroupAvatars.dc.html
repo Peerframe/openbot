@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>群组头像</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#fcfcfc;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.h2{margin:0;font-size:13px;font-weight:500;color:#6e6e73}
+.cap{font-size:12px;color:#6e6e73;line-height:1.5}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; padding: 52px 72px; background: #fcfcfc; display: grid; grid-template-columns: minmax(0, 1fr) 320px; grid-template-rows: auto minmax(0, 1fr); gap: 26px 32px; overflow: hidden">
+<header style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">群组头像</h1>
+<p style="margin: 0; font-size: 15px; color: #6e6e73">按人数换构图，最多画 3 个头；第一位成员在前，前面的头沿轮廓挖出背景色缝隙，叠在一起也分得清。</p>
+</header>
+
+<div style="display: flex; flex-direction: column; gap: 22px; min-width: 0">
+<section style="display: grid; grid-template-columns: 132px repeat(5, minmax(0, 1fr)); border-radius: 18px; background: #f0f0f2; overflow: hidden">
+<span style="padding: 14px 16px; font-size: 12px; color: #8e8e93">场景 \ 人数</span>
+<sc-for list="{{counts}}" as="c" hint-placeholder-count="5">
+<span style="padding: 14px 8px; font-size: 13px; font-weight: 600; text-align: center">{{c.label}}</span>
+</sc-for>
+<sc-for list="{{contexts}}" as="ctx" hint-placeholder-count="4">
+<span style="display: flex; flex-direction: column; gap: 2px; padding: 0 16px; justify-content: center; border-top: 1px solid #e3e3e6"><strong style="font-size: 13px; font-weight: 600">{{ctx.title}}</strong><span style="font-size: 12px; color: #8e8e93">{{ctx.note}}</span></span>
+<sc-for list="{{ctx.cells}}" as="cell" hint-placeholder-count="5">
+<span style="display: grid; place-items: center; height: {{ctx.cellH}}px; border-top: 1px solid #e3e3e6; border-left: 1px solid #e3e3e6; background: {{ctx.surface}}">
+<dc-import name="GroupAvatar" members="{{cell.members}}" count="{{cell.count}}" size="{{ctx.size}}" surface="{{ctx.surface}}" hint-size="40px,40px"></dc-import>
+</span>
+</sc-for>
+</sc-for>
+</section>
+
+<section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; align-items: center; gap: 22px; padding: 18px 22px; border-radius: 18px; background: #ffffff; border: 1px solid #ececee">
+<span style="position: relative; width: 64px; height: 64px; display: block; flex-shrink: 0">
+<span style="position: absolute; left: 0; top: 0; display: block"><dc-import name="Avatar" character="round" accent="green" size="40" hint-size="40px,40px"></dc-import></span>
+<span style="position: absolute; right: 0; bottom: 0; display: block"><dc-import name="Avatar" character="relay" accent="blue" size="40" hint-size="40px,40px"></dc-import></span>
+</span>
+<span style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 14px; font-weight: 600">之前：深色叠深色</strong><span class="cap">两个炭黑头的重叠处连成一片，耳朵和下颌分不出属于谁。</span></span>
+</div>
+<div style="display: flex; align-items: center; gap: 22px; padding: 18px 22px; border-radius: 18px; background: #ffffff; border: 1px solid #ececee">
+<dc-import name="GroupAvatar" members="relay:blue,round:green" size="64" surface="#ffffff" hint-size="64px,64px"></dc-import>
+<span style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 14px; font-weight: 600">现在：沿轮廓挖缝</strong><span class="cap">缝隙跟着头的形状走，不是圆形描边；背景是什么颜色，缝就是什么颜色。</span></span>
+</div>
+</section>
+
+<section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<sc-for list="{{rules}}" as="r" hint-placeholder-count="6">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee">
+<strong style="font-size: 14px; font-weight: 600">{{r.title}}</strong>
+<span style="font-size: 13px; color: #6e6e73; line-height: 1.5">{{r.text}}</span>
+</div>
+</sc-for>
+</section>
+</div>
+
+<aside style="display: flex; flex-direction: column; gap: 10px; min-height: 0">
+<h2 class="h2">侧栏里</h2>
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 10px; border-radius: 18px; background: #f5f5f6; border: 1px solid #e7e7e9">
+<sc-for list="{{sidebar}}" as="row" hint-placeholder-count="5">
+<div style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px; border-radius: 14px; background: {{row.bg}}">
+<dc-import name="GroupAvatar" members="{{row.members}}" count="{{row.count}}" size="40" surface="{{row.bg2}}" hint-size="40px,40px"></dc-import>
+<span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="font-size: 15px; font-weight: 500; white-space: nowrap">{{row.name}}</span><span style="font-size: 13px; color: #8a8a8e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{row.preview}}</span></span>
+<span style="font-size: 12px; color: #8e8e93; align-self: flex-start; padding-top: 2px">{{row.time}}</span>
+</div>
+</sc-for>
+</div>
+<h2 class="h2" style="margin-top: 10px">标题胶囊与右栏</h2>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 18px; border-radius: 18px; background: #fafafa; border: 1px solid #ececee">
+<span style="display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px 0 5px; border-radius: 10px; background: #e6e6e8; font-size: 15px; font-weight: 600"><dc-import name="GroupAvatar" members="round:green,scout:yellow,relay:blue" size="26" surface="#e6e6e8" hint-size="26px,26px"></dc-import>市场周报</span>
+<span style="display: flex; flex-direction: column; align-items: center; gap: 8px"><dc-import name="GroupAvatar" members="round:green,scout:yellow,relay:blue" size="84" surface="#fafafa" hint-size="84px,84px"></dc-import><strong style="font-size: 18px; font-weight: 700">市场周报</strong><span class="cap">3 名 Bot</span></span>
+</div>
+</aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const sets = [
+      { label: '0 · 空频道', members: '', count: 0 },
+      { label: '1 名 Bot', members: 'round:green', count: 1 },
+      { label: '2 名', members: 'round:green,scout:yellow', count: 2 },
+      { label: '3 名', members: 'round:green,scout:yellow,relay:blue', count: 3 },
+      { label: '4 名及以上', members: 'relay:violet,round:teal', count: 6 }
+    ];
+    const ctx = (title, note, size, surface, cellH) => ({ title, note, size, surface, cellH, cells: sets.map((s) => ({ members: s.members, count: s.count })) });
+    return {
+      counts: sets,
+      contexts: [
+        ctx('侧栏 40', '背景 #f5f5f6', 40, '#f5f5f6', 76),
+        ctx('选中行 40', '背景 #e6e6e8', 40, '#e6e6e8', 76),
+        ctx('标题胶囊 26', '背景 #e6e6e8', 26, '#e6e6e8', 56),
+        ctx('右栏身份 84', '背景 #fafafa', 84, '#fafafa', 120)
+      ],
+      sidebar: [
+        { name: '市场周报', members: 'round:green,scout:yellow,relay:blue', count: 3, preview: '研究助理：周报初稿好了', time: '10:24', bg: '#e6e6e8', bg2: '#e6e6e8' },
+        { name: '发布协作', members: 'relay:blue,relay:red', count: 2, preview: '发布助手：2.4 发布说明已更新', time: '09:12', bg: 'transparent', bg2: '#f5f5f6' },
+        { name: '全员周会', members: 'scout:pink,round:green', count: 7, preview: '你：下周一 10 点照常', time: '昨天', bg: 'transparent', bg2: '#f5f5f6' },
+        { name: '数据核对', members: 'round:teal', count: 1, preview: '数据助理：对账完成', time: '9/28', bg: 'transparent', bg2: '#f5f5f6' },
+        { name: '产品讨论', members: '', count: 0, preview: '还没有 Bot', time: '9/27', bg: 'transparent', bg2: '#f5f5f6' }
+      ],
+      rules: [
+        { title: '1 名：头 + #', text: '频道只有一个 Bot 时，右下角加一个 #，和单聊区分开。' },
+        { title: '2 名：对角叠放', text: '左上在后，右下在前，各占 66%。' },
+        { title: '3 名：三角', text: '两个在后，一个居中在前；每个后面的头也挖缝。' },
+        { title: '4 名及以上：2 头 + 计数', text: '只画前两位，右下角黑色圆标写剩余人数，如 +4。' },
+        { title: '顺序', text: '按频道成员顺序，第一位在前；顺序不随状态变化，避免列表跳动。' },
+        { title: '无障碍', text: '整体是一张图，名称写成「市场周报，3 名 Bot：研究助理、客服小橙、发布助手」。' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

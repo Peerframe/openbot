@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>任务监督</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.h2{margin:0 4px;font-size:13px;font-weight:500;color:#6e6e73}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#6e6e73}
+.field input,.field textarea,.field select{box-sizing:border-box;width:100%;height:42px;padding:0 14px;border:1px solid #e3e3e6;border-radius:12px;background:#ffffff;font:inherit;font-size:15px;color:#1d1d1f;outline:none}
+.field textarea{height:96px;padding:10px 14px;resize:none;line-height:1.5}
+.pill{height:40px;padding:0 20px;border-radius:20px;border:0;font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap;background:#ececee}
+.pill.primary{background:#111111;color:#ffffff}
+.pill.small{height:32px;padding:0 14px;border-radius:16px;font-size:13px}
+.card{border-radius:16px;background:#f0f0f2;padding:0 16px}
+.kv{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;font-size:14px}
+.kv + .kv{border-top:1px solid #e3e3e6}
+.kv > span:first-child{color:#6e6e73}
+.seg{display:flex;gap:4px;padding:4px;border-radius:12px;background:#f0f0f2;width:260px}
+.seg button{flex:1;height:32px;border:0;border-radius:9px;background:transparent;font-size:14px;font-weight:500;color:#6e6e73;cursor:pointer}
+.seg button[aria-selected="true"]{background:#ffffff;color:#1d1d1f;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.stage{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:#8e8e93;flex:1}
+.stage i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; display: grid; grid-template-columns: 300px minmax(0, 1fr); background: #ffffff; overflow: hidden">
+<dc-import name="Sidebar" active="none" hint-size="300px,900px"></dc-import>
+<main style="display: flex; flex-direction: column; background: #fcfcfc; min-width: 0">
+<header style="height: 56px; flex-shrink: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; padding: 0 16px 0 20px">
+<span></span>
+<span style="display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 10px; background: #e6e6e8; font-size: 15px; font-weight: 600">任务监督</span>
+<span style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #6e6e73"><span style="width: 7px; height: 7px; border-radius: 50%; background: #34c759; display: block"></span>已同步 · 10:41</span>
+</header>
+<div style="flex-grow: 1; min-height: 0; padding: 18px 48px 32px; display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 36px">
+
+<section style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-size: 24px; font-weight: 700">交给 Bot 一个任务</h1>
+<p style="margin: 0; font-size: 14px; color: #6e6e73; line-height: 1.55">不在聊天里，也能下达和追踪任务。服务电脑保存状态，关掉窗口不会取消。</p>
+</div>
+<div class="seg" role="tablist" aria-label="方式"><button type="button" role="tab" aria-selected="true">新建任务</button><button type="button" role="tab" aria-selected="false">按 ID 查找</button></div>
+<label class="field">交给<select><option>研究助理 · 只用模型回复</option></select></label>
+<label class="field">要做什么<textarea>汇总 A 公司本周发布会的要点，列出与我们产品的三处差异。</textarea></label>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<label class="field">附件<span style="display: flex; align-items: center; justify-content: space-between; height: 42px; padding: 0 14px; border: 1px dashed #c7c7cc; border-radius: 12px; font-size: 14px; color: #3a3a3c">发布会纪要.pdf<span style="color: #8e8e93">×</span></span></label>
+<label class="field">用量上限<input type="text" value="50,000 tokens"></label>
+</div>
+<span style="font-size: 12px; color: #8e8e93; line-height: 1.5; padding: 0 4px">这里只能交给不需要电脑的 Bot；要用电脑的任务请在频道里发。</span>
+<button type="button" class="pill primary" style="align-self: flex-start">提交任务</button>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 14px; min-width: 0">
+<div style="display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">汇总 A 公司发布会要点</h2>
+<span class="mono" style="font-size: 12px; color: #8e8e93">task_7f3a…c912</span>
+</div>
+<div style="display: flex; align-items: flex-start; gap: 4px; padding: 16px 18px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee">
+<span class="stage"><i style="background: #111111; color: #ffffff">✓</i>已提交</span>
+<span style="flex: 0.6; height: 2px; background: #111111; margin-top: 10px"></span>
+<span class="stage"><i style="background: #111111; color: #ffffff">✓</i>服务电脑已保存</span>
+<span style="flex: 0.6; height: 2px; background: #111111; margin-top: 10px"></span>
+<span class="stage" style="color: #1c7c3c; font-weight: 600"><i style="border: 2.5px solid #d1d1d6; border-top-color: #1c7c3c; box-sizing: border-box"></i>工作中</span>
+<span style="flex: 0.6; height: 2px; background: #e3e3e6; margin-top: 10px"></span>
+<span class="stage"><i style="border: 2px solid #d1d1d6; box-sizing: border-box"></i>结果核验</span>
+</div>
+<div class="card">
+<div class="kv"><span>执行状态</span><span>工作中 · 第 2 步：读取附件</span><span style="font-size: 12px; color: #8e8e93">10:40</span></div>
+<div class="kv"><span>结果核验</span><span>尚无结果</span><span style="font-size: 12px; color: #8e8e93">完成后核对</span></div>
+<div class="kv"><span>用量</span><span>12,400 / 50,000 tokens</span><span style="width: 120px; height: 6px; border-radius: 3px; background: #e3e3e6; display: block; overflow: hidden"><span style="width: 25%; height: 6px; background: #3a3a3c; display: block"></span></span></div>
+<div class="kv"><span>取消</span><span>未请求</span><button type="button" class="pill small" style="background: #ffffff; color: #b3261e">取消任务</button></div>
+</div>
+<div style="display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; padding: 14px 16px; border-radius: 16px; background: #fdf6ec">
+<span style="width: 22px; height: 22px; border-radius: 50%; background: #fdf0e1; display: grid; place-items: center; font-size: 13px; font-weight: 800; color: #94480b">!</span>
+<span style="display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 14px">结果「未知」不算成功</strong><span style="font-size: 13px; color: #6e6e73; line-height: 1.5">网络断开时显示「状态待同步」，连接变化不会取消任务；恢复后点「刷新」以服务电脑为准。</span></span>
+</div>
+<div style="display: flex; gap: 10px"><button type="button" class="pill">刷新</button></div>
+</section>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>欢迎使用</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#fcfcfc;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; background: #fcfcfc; display: flex; flex-direction: column; align-items: center; overflow: hidden">
+<div aria-hidden="true" style="position: absolute; left: 20px; top: 20px; display: flex; gap: 8px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; display: block"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e; display: block"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840; display: block"></span>
+</div>
+<ol aria-label="设置进度" style="margin: 0; padding: 0; list-style: none; display: flex; gap: 8px; align-items: center; height: 56px; font-size: 13px; color: #8e8e93">
+<li style="color: #1d1d1f; font-weight: 600">1 这台电脑</li><li aria-hidden="true">—</li><li>2 登录</li><li aria-hidden="true">—</li><li>3 模型</li>
+</ol>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 28px; width: 480px; margin-top: 76px">
+<div style="display: flex; align-items: flex-end; gap: 10px" aria-hidden="true">
+<dc-import name="Avatar" character="relay" accent="blue" size="64" hint-size="64px,64px"></dc-import>
+<dc-import name="Avatar" character="round" accent="green" size="96" hint-size="96px,96px"></dc-import>
+<dc-import name="Avatar" character="scout" accent="yellow" size="64" hint-size="64px,64px"></dc-import>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; text-align: center">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">欢迎使用 OpenBot</h1>
+<p style="margin: 0; font-size: 15px; color: #6e6e73">先决定这台电脑的用途，其余交给 OpenBot。</p>
+</div>
+
+<div role="radiogroup" aria-label="这台电脑的用途" style="display: flex; flex-direction: column; gap: 10px; width: 100%">
+<button type="button" role="radio" aria-checked="true" style="display: grid; grid-template-columns: minmax(0, 1fr) 22px; gap: 14px; align-items: center; padding: 18px 20px; border: 2px solid #111111; border-radius: 18px; background: #ffffff; font: inherit; color: inherit; text-align: left; cursor: pointer">
+<span style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 16px; font-weight: 600">作为服务电脑</strong><span style="font-size: 13px; color: #6e6e73; line-height: 1.5">数据保存在这台电脑，OpenBot 服务在这里运行。自动安装，无需 Docker。</span></span>
+<span style="width: 22px; height: 22px; border-radius: 50%; background: #111111; display: inline-grid; place-items: center"><span style="width: 8px; height: 8px; border-radius: 50%; background: #ffffff; display: block"></span></span>
+</button>
+<button type="button" role="radio" aria-checked="false" style="display: grid; grid-template-columns: minmax(0, 1fr) 22px; gap: 14px; align-items: center; padding: 18px 20px; border: 2px solid transparent; border-radius: 18px; background: #f0f0f2; font: inherit; color: inherit; text-align: left; cursor: pointer">
+<span style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 16px; font-weight: 600">连接服务电脑</strong><span style="font-size: 13px; color: #6e6e73; line-height: 1.5">连接已经部署好的 OpenBot，用同一套 Bot 和工作记录。</span></span>
+<span style="width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; border: 2px solid #c7c7cc; display: block"></span>
+</button>
+</div>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%">
+<button type="button" style="width: 100%; height: 48px; border: 0; border-radius: 24px; background: #111111; color: #ffffff; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer">安装并继续</button>
+<span style="font-size: 12px; color: #8e8e93">接下来：准备本机服务 → 登录 → 选一个模型。都可以随时在设置里改。</span>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

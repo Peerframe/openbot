@@ -34,7 +34,7 @@ export function NativeTaskScopeView({
     <section className="native-task-scope-readonly" aria-label="已提交的任务范围">
       <h3>已提交的任务范围（只读）</h3>
       <p>
-        范围在创建时固定，不能通过纠正或重试增加权限；当前执行授权与操作审批另以 Server 状态为准。
+        范围在创建时固定，不能通过纠正或重试增加权限；当前执行授权与操作审批另以服务电脑状态为准。
       </p>
       {!fresh && <p>当前离线或快照待同步；下列范围可能为上次读取结果。</p>}
       {error && <p role="alert">未能读取已提交范围，不能据此判断任务没有额外权限。</p>}

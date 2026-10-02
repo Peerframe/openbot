@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96" role="img" aria-labelledby="title desc">
+  <title id="title">Scout — OpenBot cat-ear avatar</title>
+  <desc id="desc">Frameless, transparent, original vector artwork. Light surface edition; micro optical size.</desc>
+  <g id="silhouette"><path d="M14 61L17 22C17 18 20 17 23 20L36 32C43 30 53 30 60 32L73 20C76 17 79 18 79 22L82 61V72C82 83 68 89 48 89C28 89 14 83 14 72Z" fill="#20251F"/></g>
+  <path id="accent" d="M14 70C29 76 67 76 82 70V73C82 83 68 89 48 89C28 89 14 83 14 73Z" fill="#DFAD4F"/>
+  <g id="eyes" fill="#FAFBF7"><rect x="28" y="46" width="12" height="19" rx="6"/><rect x="54" y="42" width="12" height="20" rx="6"/></g>
+</svg>

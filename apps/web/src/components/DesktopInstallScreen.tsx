@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { NativeServerState, OpenBotDesktopBridge } from "../desktop-runtime";
-import { OpenBotMark } from "./OpenBotMark";
+import { LaunchScreen, OnboardingFrame } from "./Onboarding";
 
 const steps = [
   ["checking", "检查安装环境"],
@@ -71,68 +71,94 @@ export function DesktopInstallScreen({
   const resume = retained.current || (state.status === "installing" && state.mode === "resume");
   const preparing = state.status === "idle";
   const current = state.status === "installing" ? steps.findIndex(([id]) => id === state.step) : -1;
-  return (
-    <main className="login-screen desktop-install-screen">
-      <section className="login-card desktop-install-card" aria-labelledby="install-title">
-        <OpenBotMark className="onboarding-mark" />
-        <h1 id="install-title">
-          {state.status === "failed"
-            ? "启动需要处理"
-            : resume || preparing
-              ? "正在打开 OpenBot"
-              : "正在准备你的 OpenBot"}
-        </h1>
-        <p className="login-copy">
-          {state.status === "installing" && state.step === "credentials"
-            ? "正在读取系统保存的凭据。如有系统授权窗口，请在那里完成解锁。"
-            : resume || preparing
-              ? "正在连接你的工作区…"
-              : "首次使用：准备本地服务与数据库。"}
-        </p>
-        {!resume && !preparing && (
-          <ol className="installation-steps" aria-label="安装进度" aria-live="polite">
-            {steps.map(([id, label], index) => (
-              <li key={id} aria-current={index === current ? "step" : undefined}>
-                <span
-                  className={
-                    index < current ? "step-done" : index === current ? "step-running" : ""
-                  }
-                  aria-hidden="true"
-                >
-                  {index < current ? "✓" : index + 1}
-                </span>
-                {label}
-                <small>{index < current ? "已完成" : index === current ? "进行中" : "等待"}</small>
-              </li>
-            ))}
-          </ol>
-        )}
-        {state.status === "failed" ? (
+  if (state.status === "failed") {
+    return (
+      <LaunchScreen
+        error={
+          state.code === "unsupported_platform"
+            ? "此安装包尚不支持本机服务，请使用 Windows 或 macOS 原生安装包，或连接已有服务。"
+            : state.code === "credential_unavailable"
+              ? "系统未允许读取已保存的凭据。请解锁钥匙串后重试，无需重新输入模型密钥。弹窗里的密码是这台电脑的登录密码；确认是你安装的 OpenBot 后，可以选「始终允许」。"
+              : "没能启动本机服务。请确认安装包完整、钥匙串可以访问后重试；已有的 Bot、对话和设置都不会丢。"
+        }
+        actions={
           <>
-            <p className="login-error" role="alert">
-              {state.code === "unsupported_platform"
-                ? "此安装包尚不支持本机服务，请使用 Windows 或 macOS 原生安装包，或连接已有服务。"
-                : state.code === "credential_unavailable"
-                  ? "系统未允许读取已保存的凭据。请解锁系统钥匙串或凭据存储后重试，无需重新输入模型密钥。macOS 弹窗中的密码是系统登录密码；确认是你安装的 OpenBot 后，可选择“始终允许”。"
-                  : "未能完成本地服务启动。请检查安装包是否完整、钥匙串是否可用，或重试。OpenBot 不会清空已有数据库。"}
-            </p>
-            <div className="connection-actions">
-              <button className="secondary-button" type="button" onClick={onBack}>
-                更改连接方式
-              </button>
-              <button className="primary-button" type="button" onClick={() => void install()}>
-                重试
-              </button>
-            </div>
+            <button className="ob-setup-primary" type="button" onClick={() => void install()}>
+              重试
+            </button>
+            <button className="ob-setup-secondary" type="button" onClick={onBack}>
+              更改连接方式
+            </button>
           </>
-        ) : (
-          <p className="login-note" role="status">
-            {resume || preparing
-              ? "模型设置与已有对话会自动恢复。"
-              : "首次准备完成后，日常打开将直接恢复工作区。"}
-          </p>
-        )}
-      </section>
-    </main>
+        }
+      />
+    );
+  }
+  if (resume || preparing) {
+    return (
+      <LaunchScreen
+        status={
+          state.status === "installing" && state.step === "credentials"
+            ? "正在读取系统保存的凭据"
+            : "正在打开你的工作区"
+        }
+        keychain={state.status === "installing" && state.step === "credentials"}
+      />
+    );
+  }
+  return (
+    <OnboardingFrame
+      step={1}
+      avatar={{ character: "round", accent: "green" }}
+      title="正在准备你的 OpenBot"
+      description="第一次需要在这台电脑上准备服务和数据库，大约一分钟。"
+      width={440}
+      offset={96}
+      titleId="install-title"
+    >
+      <ol className="ob-install-steps" aria-label="准备进度" aria-live="polite">
+        {steps.map(([id, label], index) => (
+          <li
+            key={id}
+            aria-current={index === current ? "step" : undefined}
+            className={
+              index === current ? "is-current" : index > current ? "is-waiting" : undefined
+            }
+          >
+            {index < current ? (
+              <span className="ob-step-icon is-done" aria-hidden="true">
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="5 12 10 17 19 7" />
+                </svg>
+              </span>
+            ) : index === current ? (
+              <span className="ob-spinner" aria-hidden="true" />
+            ) : (
+              <span className="ob-step-icon" aria-hidden="true" />
+            )}
+            <span className="ob-role-text">
+              <span className="ob-install-label">{label}</span>
+              {index === current && id === "credentials" ? (
+                <small>如果系统弹出钥匙串窗口，请在那里输入电脑登录密码。</small>
+              ) : null}
+            </span>
+            <span className="ob-install-state">
+              {index < current ? "已完成" : index === current ? "进行中" : ""}
+            </span>
+          </li>
+        ))}
+      </ol>
+      <span className="ob-setup-footnote" role="status">
+        准备完成后，以后打开会直接回到工作区。
+      </span>
+    </OnboardingFrame>
   );
 }

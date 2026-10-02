@@ -176,12 +176,17 @@ function stream(url = "/api/v1/workspace/events") {
   if (!result) throw new Error(`Missing stream: ${url}`);
   return result;
 }
-function memberCount() {
-  // The rail's 成员 heading (Main artboard) replaced the members popover.
-  const heading = rendered?.container.querySelector(
-    '.usage-rail-section[aria-label="频道成员"] h3',
-  )?.textContent;
-  return heading?.replace(/^成员 · /, "频道成员 ");
+async function railTab(label: string) {
+  const tab = Array.from(
+    rendered?.container.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? [],
+  ).find((item) => item.textContent?.startsWith(label));
+  if (tab && tab.ariaSelected !== "true") await interact(() => tab.click());
+}
+async function memberCount() {
+  // The 频道信息 rail's 成员 tab (ChannelInfo artboard) replaced the members popover.
+  await railTab("成员");
+  const rows = rendered?.container.querySelectorAll(".ci-members .ci-member");
+  return rows === undefined ? undefined : `频道成员 ${rows.length}`;
 }
 async function ready() {
   await interact(() => stream().emit("workspace.ready", { type: "workspace.ready", nodes: [] }));
@@ -203,9 +208,9 @@ describe("Authenticated workspace snapshot and realtime ordering", () => {
     await identityChanged();
     expect(reads).toHaveLength(3);
     await interact(() => reads[2]?.resolve(Response.json(snapshot(["alpha", "beta"]))));
-    expect(memberCount()).toBe("频道成员 2");
+    expect(await memberCount()).toBe("频道成员 2");
     await interact(() => reads[1]?.resolve(Response.json(snapshot())));
-    expect(memberCount()).toBe("频道成员 2");
+    expect(await memberCount()).toBe("频道成员 2");
     expect(reads[1]?.signal?.aborted).toBe(true);
   });
   it("replays channel events over a pending snapshot while recovering unrelated missed channels", async () => {
@@ -218,12 +223,12 @@ describe("Authenticated workspace snapshot and realtime ordering", () => {
         channel: { ...channel, botIds: ["alpha", "beta"] },
       }),
     );
-    expect(memberCount()).toBe("频道成员 2");
+    expect(await memberCount()).toBe("频道成员 2");
     const recovery = snapshot();
     recovery.channels.push({ ...channel, id: "missed-channel", name: "断线期间的新频道" });
     recovery.counts.channels = 2;
     await interact(() => reads[1]?.resolve(Response.json(recovery)));
-    expect(memberCount()).toBe("频道成员 2");
+    expect(await memberCount()).toBe("频道成员 2");
     expect(rendered?.container.textContent).toContain("断线期间的新频道");
     expect(reads).toHaveLength(2);
   });
@@ -235,14 +240,14 @@ describe("Authenticated workspace snapshot and realtime ordering", () => {
       await interact(() => {
         if (operation === "join") {
           Array.from(container.querySelectorAll("button"))
-            .find((button) => button.textContent === "添加 Bot")
+            .find((button) => button.textContent === "添加成员")
             ?.click();
         }
       });
       await interact(() => {
         if (operation === "join") {
           container
-            .querySelector(".rail-add-member")
+            .querySelector(".ci-add-form")
             ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
         } else {
           container.querySelector<HTMLButtonElement>('[aria-label="将 Beta 移出频道"]')?.click();
@@ -257,12 +262,12 @@ describe("Authenticated workspace snapshot and realtime ordering", () => {
           ),
         ),
       );
-      expect(memberCount()).toBe(operation === "join" ? "频道成员 2" : "频道成员 1");
+      expect(await memberCount()).toBe(operation === "join" ? "频道成员 2" : "频道成员 1");
       expect(reads).toHaveLength(3);
       await interact(() => reads[2]?.reject(new Error("reconciliation unavailable")));
-      expect(memberCount()).toBe(operation === "join" ? "频道成员 2" : "频道成员 1");
+      expect(await memberCount()).toBe(operation === "join" ? "频道成员 2" : "频道成员 1");
       await interact(() => reads[1]?.resolve(Response.json(snapshot())));
-      expect(memberCount()).toBe(operation === "join" ? "频道成员 2" : "频道成员 1");
+      expect(await memberCount()).toBe(operation === "join" ? "频道成员 2" : "频道成员 1");
       expect(container.textContent).toContain("reconciliation unavailable");
     },
   );
@@ -290,7 +295,8 @@ describe("Authenticated workspace snapshot and realtime ordering", () => {
     recovery.nodes = [worker, { ...worker, id: "missed", name: "Missed Worker" }];
     recovery.counts.connectedNodes = 2;
     await interact(() => reads[1]?.resolve(Response.json(recovery)));
-    const workers = rendered?.container.querySelectorAll(".usage-rail-computer");
+    await railTab("详情");
+    const workers = rendered?.container.querySelectorAll(".ci-computer");
     expect(workers?.length).toBe(2);
     expect(rendered?.container.textContent).toContain("Latest Worker");
     expect(rendered?.container.textContent).toContain("Missed Worker");
@@ -332,14 +338,11 @@ describe("Authenticated workspace snapshot and realtime ordering", () => {
       });
       stream().emit("run.updated", { type: "run.updated", run: running });
     });
-    expect(rendered?.container.querySelector(".usage-rail-computer")?.textContent).toContain(
-      "0/2 任务",
-    );
+    await railTab("详情");
+    expect(rendered?.container.querySelector(".ci-computer")?.textContent).toContain("0/2 任务");
     await interact(() => reads[1]?.resolve(Response.json(initial)));
-    expect(rendered?.container.querySelector(".usage-rail-computer")?.textContent).toContain(
-      "0/2 任务",
-    );
-    expect(rendered?.container.querySelector(".usage-rail-run-status.completed")).not.toBeNull();
+    expect(rendered?.container.querySelector(".ci-computer")?.textContent).toContain("0/2 任务");
+    expect(rendered?.container.querySelector(".ci-run-status.completed")).not.toBeNull();
     expect(rendered?.container.textContent).not.toContain(pendingApproval.summary);
     expect(reads).toHaveLength(2);
   });
@@ -349,7 +352,7 @@ describe("Authenticated workspace snapshot and realtime ordering", () => {
     await identityChanged();
     await interact(() => reads[2]?.resolve(Response.json(snapshot(["alpha", "beta"]))));
     await interact(() => reads[1]?.reject(new Error("stale failure")));
-    expect(memberCount()).toBe("频道成员 2");
+    expect(await memberCount()).toBe("频道成员 2");
     expect(rendered?.container.textContent).not.toContain("stale failure");
   });
   it("reconciles missed membership through the real EventSource reconnect handler", async () => {
@@ -361,7 +364,7 @@ describe("Authenticated workspace snapshot and realtime ordering", () => {
     expect(stream()).not.toBe(disconnected);
     await ready();
     await interact(() => reads[1]?.resolve(Response.json(snapshot(["alpha", "beta"]))));
-    expect(memberCount()).toBe("频道成员 2");
+    expect(await memberCount()).toBe("频道成员 2");
     expect(reads).toHaveLength(2);
   });
   it("invalidates StrictMode's first request and releases pending reads and streams on unmount", async () => {
@@ -369,7 +372,7 @@ describe("Authenticated workspace snapshot and realtime ordering", () => {
     expect(reads).toHaveLength(2);
     expect(reads[0]?.signal?.aborted).toBe(true);
     await interact(() => reads[0]?.resolve(Response.json(snapshot())));
-    expect(memberCount()).toBe("频道成员 2");
+    expect(await memberCount()).toBe("频道成员 2");
     await ready();
     const pending = reads.at(-1);
     await rendered?.unmount();

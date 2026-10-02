@@ -1,12 +1,15 @@
 import { type FormEvent, useState } from "react";
 import { ApiError } from "../api";
-import { OpenBotMark } from "./OpenBotMark";
+import { OnboardingFrame } from "./Onboarding";
 
 export function LoginScreen({
   ownerName,
+  progress = false,
   onLogin,
 }: {
   ownerName?: string;
+  /** Show the first-run progress (Desktop); the Web sign-in has no setup steps. */
+  progress?: boolean;
   onLogin(password: string): Promise<void>;
 }) {
   const [password, setPassword] = useState("");
@@ -27,36 +30,38 @@ export function LoginScreen({
   }
 
   return (
-    <main className="login-screen">
-      <section className="login-card" aria-labelledby="login-title">
-        <OpenBotMark className="onboarding-mark" />
-
-        <h1 id="login-title">进入 OpenBot</h1>
-        <p className="login-copy">
-          {ownerName ? `${ownerName}，` : ""}使用部署时设置的 Owner 密码继续。
-        </p>
-        <form onSubmit={handleSubmit}>
-          <label htmlFor="owner-password">Owner 密码</label>
+    <OnboardingFrame
+      step={progress ? 2 : undefined}
+      avatar={{ character: "round", accent: "green" }}
+      title="进入 OpenBot"
+      description={`${ownerName ? `${ownerName}，` : ""}输入 Owner 密码。`}
+      width={380}
+      offset={140}
+      titleId="login-title"
+    >
+      <form className="ob-setup-form" onSubmit={handleSubmit}>
+        <label className="ob-setup-field">
+          Owner 密码
           <input
             id="owner-password"
             type="password"
             autoComplete="current-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="输入本地密码"
+            placeholder="输入密码"
           />
-          {error ? (
-            <p className="login-error" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <button className="primary-button" type="submit" disabled={submitting || !password}>
-            {submitting ? "正在验证…" : "登录"}
-          </button>
-        </form>
-        <p className="login-note">凭证只发送给你自己的 OpenBot Server。</p>
-      </section>
-    </main>
+        </label>
+        {error ? (
+          <p className="ob-setup-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <button className="ob-setup-primary" type="submit" disabled={submitting || !password}>
+          {submitting ? "正在验证…" : "登录"}
+        </button>
+      </form>
+      <span className="ob-setup-footnote">密码只发送给你自己的 OpenBot。</span>
+    </OnboardingFrame>
   );
 }
 

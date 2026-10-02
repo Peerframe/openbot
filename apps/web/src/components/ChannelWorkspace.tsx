@@ -54,6 +54,7 @@ import { RichMessage } from "./RichMessage";
 import { RunSteering } from "./RunSteering";
 import { VoiceRecorder } from "./VoiceRecorder";
 import "./ChannelMessagePresentation.css";
+import { composerAttachEvent } from "../composer-events";
 import { runStatusSummary } from "../run-state";
 import { ArtifactCard } from "./ArtifactCard";
 import { ComposerAttachmentPicker } from "./ComposerAttachmentPicker";
@@ -192,6 +193,14 @@ export function ChannelWorkspace({
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploadingAttachments, setUploadingAttachments] = useState(false);
   const addMenu = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    // 频道信息 › 资料库 › 上传文件 reuses this composer's picker and upload checks.
+    const open = () => {
+      if (!sending) fileInput.current?.click();
+    };
+    window.addEventListener(composerAttachEvent, open);
+    return () => window.removeEventListener(composerAttachEvent, open);
+  }, [sending]);
   const matchingMembers = members.filter(
     (bot) =>
       mentionQuery !== undefined &&

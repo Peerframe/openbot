@@ -243,10 +243,6 @@
     padding-right: 18px;
   }
 }
-.app-shell .usage-rail-section-heading h3 {
-  font-size: 14px;
-  color: #202b3c;
-}
 
 :root[data-desktop="win32"] .desktop-workspace.without-sidebar,
 :root[data-desktop="linux"] .desktop-workspace.without-sidebar {

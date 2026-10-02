@@ -49,12 +49,13 @@ export function AttachmentsManagerDialog({
   );
 }
 
-export function AttachmentsManager({ channelId }: { channelId: string }) {
+/**
+ * The channel's uploaded files from the Server's bounded listing. Entries that claim another channel
+ * reject the whole response rather than being filtered, because the Server scopes the listing.
+ */
+export function useChannelAttachments(channelId: string, revision = 0) {
   const [files, setFiles] = useState<UploadedComposerAttachment[]>([]);
-  const [trash, setTrash] = useState(false);
   const [status, setStatus] = useState("");
-  const [revision, setRevision] = useState(0);
-  const [busy, setBusy] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     setStatus("正在加载…");
@@ -84,6 +85,14 @@ export function AttachmentsManager({ channelId }: { channelId: string }) {
       });
     return () => controller.abort();
   }, [channelId, revision]);
+  return { files, setFiles, status, setStatus };
+}
+
+export function AttachmentsManager({ channelId }: { channelId: string }) {
+  const [trash, setTrash] = useState(false);
+  const [revision, setRevision] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const { files, setFiles, status, setStatus } = useChannelAttachments(channelId, revision);
   async function cleanup() {
     if (busy) return;
     setBusy(true);

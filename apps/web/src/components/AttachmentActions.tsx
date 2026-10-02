@@ -92,7 +92,7 @@ export function AttachmentActions({
               </label>
             ) : null}
             {media ? (
-              <small>点击转写会将此媒体发送给已配置的 OpenAI；原文件仍保留在当前 Server。</small>
+              <small>点击转写会将此媒体发送给已配置的 OpenAI；原文件仍保留在当前服务电脑。</small>
             ) : null}
             <button type="button" disabled={busy} onClick={() => void run(operation)}>
               {busy

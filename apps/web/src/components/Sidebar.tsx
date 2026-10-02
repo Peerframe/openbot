@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { indexActiveRunsByBot, runStatusLabel } from "../run-state";
+import { indexActiveRunsByBot, isActiveRun, runStatusLabel } from "../run-state";
 import {
   arrangeSidebar,
   highlightMatch,
@@ -22,6 +22,7 @@ import {
 } from "../sidebar-organization";
 import { DeleteIdentityDialog, type DeleteIdentityTarget } from "./DeleteIdentityDialog";
 import type { DesktopSettingsSection } from "./DesktopSettingsScreen";
+import { GroupAvatar } from "./GroupAvatar";
 import { BotIcon, HashIcon, PlusIcon, SearchIcon, SettingsIcon, SkillIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
 import { SidebarItemMenu, type SidebarMenuTarget } from "./SidebarItemMenu";
@@ -112,6 +113,15 @@ export function Sidebar({
     [channels],
   );
   const activeRunByBot = indexActiveRunsByBot(runs);
+  const membersOf = (channel: Channel) =>
+    channel.botIds.flatMap((id) => {
+      const bot = botById.get(id);
+      return bot ? [bot] : [];
+    });
+  // A 频道's dot reflects work in that 频道 only, not the Bots' work elsewhere.
+  const channelStatus = (channelId: string) => (bot: Bot) =>
+    runs.find((run) => run.channelId === channelId && run.botId === bot.id && isActiveRun(run))
+      ?.status ?? "idle";
   const root = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -244,15 +254,20 @@ export function Sidebar({
         {...menuHandlers(key, entry.name)}
       >
         {item.kind === "channel" ? (
-          <ChannelAvatar
-            members={item.channel.botIds.flatMap((id) => {
-              const bot = botById.get(id);
-              return bot ? [bot] : [];
-            })}
+          <GroupAvatar
+            name={item.channel.name}
+            size={40}
+            members={membersOf(item.channel)}
+            statusOf={channelStatus(item.channel.id)}
           />
         ) : (
           <span className="sb-avatar" aria-hidden="true">
-            <RobotAvatar bot={item.bot} compact status={run?.status ?? item.bot.status} />
+            <RobotAvatar
+              bot={item.bot}
+              compact
+              status={run?.status ?? item.bot.status}
+              presence="dot"
+            />
           </span>
         )}
         <span className="sb-text">
@@ -366,9 +381,11 @@ export function Sidebar({
                     {entry.item.kind === "bot" ? (
                       <RobotAvatar bot={entry.item.bot} compact />
                     ) : (
-                      <span className="sb-child-hash" aria-hidden="true">
-                        <HashIcon />
-                      </span>
+                      <GroupAvatar
+                        name={entry.item.channel.name}
+                        size={26}
+                        members={membersOf(entry.item.channel)}
+                      />
                     )}
                     <span>{entry.name}</span>
                   </button>
@@ -747,22 +764,6 @@ function Highlighted({ text, query }: { text: string; query: string }) {
       <mark>{hit}</mark>
       {after}
     </>
-  );
-}
-
-function ChannelAvatar({ members }: { members: Bot[] }) {
-  const [first, second] = members;
-  if (!first)
-    return (
-      <span className="sb-avatar is-empty" aria-hidden="true">
-        <HashIcon />
-      </span>
-    );
-  return (
-    <span className={`sb-avatar-pair${second ? " is-pair" : ""}`} aria-hidden="true">
-      <RobotAvatar bot={first} compact />
-      {second ? <RobotAvatar bot={second} compact /> : null}
-    </span>
   );
 }
 

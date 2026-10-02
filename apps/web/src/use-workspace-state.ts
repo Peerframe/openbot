@@ -72,7 +72,7 @@ export function useWorkspaceState(onError: (message: string | undefined) => void
     } catch (cause) {
       if (request.generation !== generation.current || request.controller.signal.aborted) return;
       onError(
-        cause instanceof Error ? cause.message : "无法连接 OpenBot Server。请确认服务已启动。",
+        cause instanceof Error ? cause.message : "无法连接 OpenBot 服务电脑。请确认服务已启动。",
       );
     } finally {
       request.projections.clear();

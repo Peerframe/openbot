@@ -99,7 +99,7 @@ describe("Desktop application connection gate", () => {
 
     try {
       await settleEffects();
-      expect(rendered.container.textContent).toContain("开始使用 OpenBot");
+      expect(rendered.container.textContent).toContain("欢迎使用 OpenBot");
       expect(fetcher).not.toHaveBeenCalled();
       const mode = rendered.container.querySelector("#desktop-mode-client");
       const setupForm = rendered.container.querySelector("form");
@@ -191,7 +191,7 @@ describe("Desktop application connection gate", () => {
       expect(rendered.container.textContent).toContain("正在准备你的 OpenBot");
       await interact(() => complete?.({ status: "ready", serverUrl: "http://127.0.0.1:45678" }));
       await settleEffects();
-      expect(rendered.container.textContent).toContain("为 Bot 配置模型");
+      expect(rendered.container.textContent).toContain("给 Bot 选一个模型");
       expect(window.openbotDesktop.configureServer).not.toHaveBeenCalled();
     } finally {
       await rendered.unmount();
@@ -256,7 +256,7 @@ describe("Desktop application connection gate", () => {
       await settleEffects();
       expect(restoreLocalSession).toHaveBeenCalledOnce();
       expect(rendered.container.querySelector("#owner-password")).toBeNull();
-      expect(rendered.container.textContent).toContain("为 Bot 配置模型");
+      expect(rendered.container.textContent).toContain("给 Bot 选一个模型");
     } finally {
       await rendered.unmount();
     }
@@ -287,9 +287,9 @@ describe("Desktop application connection gate", () => {
 
     try {
       await settleEffects();
-      expect(rendered.container.textContent).toContain("无法打开 OpenBot");
+      expect(rendered.container.textContent).toContain("启动需要处理");
       const changeButton = [...rendered.container.querySelectorAll("button")].find(
-        (button) => button.textContent === "更换 Server",
+        (button) => button.textContent === "更换服务电脑",
       );
       if (changeButton === undefined) throw new Error("Change Server button not found.");
       await interact(() => changeButton.click());
@@ -343,7 +343,7 @@ describe("Desktop application connection gate", () => {
     try {
       await settleEffects();
       await settleEffects();
-      expect(rendered.container.textContent).toContain("配置这台工作电脑");
+      expect(rendered.container.textContent).toContain("让这台电脑也能干活");
       expect(rendered.container.textContent).not.toContain("obenr_");
       const input = rendered.container.querySelector("#desktop-worker-node-id");
       const form = rendered.container.querySelector("form");
@@ -358,7 +358,7 @@ describe("Desktop application connection gate", () => {
       expect(setupLocalWorker).toHaveBeenCalledWith("mac-studio-1");
       expect(rendered.container.textContent).toContain("等待 macOS 批准");
       const settings = [...rendered.container.querySelectorAll("button")].find(
-        (button) => button.textContent === "打开“登录项”设置",
+        (button) => button.textContent === "打开「登录项」设置",
       );
       if (settings === undefined) throw new Error("Login Items button not found.");
       await interact(() => settings.click());

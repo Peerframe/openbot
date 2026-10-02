@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>对话中的任务</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#fcfcfc;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.label{font-size:12px;font-weight:600;color:#8e8e93;letter-spacing:0.02em;padding-left:42px}
+.thread{display:grid;grid-template-columns:32px minmax(0,1fr);gap:10px;align-items:start}
+.task{display:flex;flex-direction:column;gap:12px;padding:14px 16px;border:1px solid #ececee;border-radius:18px;background:#ffffff}
+.top{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:center}
+.glyph{width:36px;height:36px;border-radius:50%;display:inline-grid;place-items:center}
+.t{display:flex;flex-direction:column;gap:3px;min-width:0}
+.t strong{font-size:14px;font-weight:600}
+.t span{font-size:13px;color:#6e6e73;line-height:1.45}
+.link{border:0;background:transparent;font-size:13px;color:#6e6e73;cursor:pointer;white-space:nowrap}
+.pill{height:30px;padding:0 14px;border-radius:15px;border:0;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;background:#ececee}
+.pill.primary{background:#111111;color:#ffffff}
+.actions{display:flex;gap:8px;align-items:center;padding-left:48px}
+.file{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 8px;border-radius:12px;background:#f0f0f2}
+.ext{width:32px;height:32px;border-radius:9px;background:#ffffff;border:1px solid #e3e3e6;box-sizing:border-box;display:inline-grid;place-items:center;font-size:10px;font-weight:700;color:#6e6e73}
+.spin{width:14px;height:14px;border:2px solid #cfe9d6;border-top-color:#34c759;border-radius:50%;display:block}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1100px; box-sizing: border-box; padding: 48px 64px; background: #fcfcfc; display: flex; flex-direction: column; gap: 26px; overflow: hidden">
+<header style="display: flex; align-items: flex-end; justify-content: space-between">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">对话中的任务</h1>
+<p style="margin: 0; font-size: 15px; color: #6e6e73">任务卡跟在 Bot 的消息后面，一张卡从排队到结束原地更新，不刷屏。只显示服务电脑真实报告的步骤，不编造总步数。</p>
+</div>
+<span style="font-size: 13px; color: #8e8e93">卡片宽度 ≤ 消息列 76% · 白底 + 1px 描边 · 圆角 18</span>
+</header>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 48px">
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span class="label">工作中</span>
+<div class="thread">
+<dc-import name="Avatar" character="round" accent="green" size="32" hint-size="32px,32px"></dc-import>
+<div class="task">
+<div class="top">
+<span class="glyph" style="background: #e8f6ec"><span class="spin"></span></span>
+<span class="t"><strong>正在工作 · 抓取竞品更新日志</strong><span>已完成 3 步 · 现在：打开网页 b-company.com/changelog</span></span>
+<button type="button" class="link">任务详情 ›</button>
+</div>
+<div style="display: grid; grid-template-columns: 136px minmax(0, 1fr); gap: 12px; padding-left: 48px; align-items: center">
+<span style="height: 84px; border-radius: 10px; background: #e3e5ea; display: grid; place-items: center; font-size: 12px; color: #8e8e93">[电脑画面]</span>
+<span style="font-size: 12px; color: #8e8e93; line-height: 1.6">我的 MacBook Pro · 员工浏览器<br>画面 4 秒前 · 只在内存里保留</span>
+</div>
+<div class="actions"><button type="button" class="pill">补充指令</button><button type="button" class="pill">停止</button></div>
+</div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span class="label">需要你确认（审批就在卡上完成）</span>
+<div class="thread">
+<dc-import name="Avatar" character="scout" accent="yellow" size="32" hint-size="32px,32px"></dc-import>
+<div class="task" style="border-color: #f3d9b8">
+<div class="top">
+<span class="glyph" style="background: #fdf0e1"><span style="font-size: 17px; font-weight: 800; color: #b5651d">!</span></span>
+<span class="t"><strong>发送邮件给 team@example.com</strong><span>写入动作 · 使用插件 Gmail · 4 分钟内有效</span></span>
+<button type="button" class="link">看内容 ›</button>
+</div>
+<div style="margin-left: 48px; padding: 10px 12px; border-radius: 12px; background: #f6f6f7; font-size: 13px; color: #3a3a3c; line-height: 1.55">主题：本周竞品周报（2026 W40）<br>附件：weekly-2026-w40.md</div>
+<div class="actions"><button type="button" class="pill">拒绝</button><button type="button" class="pill primary">批准并发送</button></div>
+</div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span class="label">协作：一个 Bot 请另一个帮忙</span>
+<div class="thread">
+<dc-import name="Avatar" character="round" accent="green" size="32" hint-size="32px,32px"></dc-import>
+<div class="task">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #6e6e73">
+<dc-import name="Avatar" character="round" accent="green" size="20" hint-size="20px,20px"></dc-import><strong style="color: #1d1d1f; font-weight: 600">研究助理</strong>请
+<dc-import name="Avatar" character="scout" accent="yellow" size="20" hint-size="20px,20px"></dc-import><strong style="color: #1d1d1f; font-weight: 600">客服小橙</strong>协作
+</div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; background: #f6f6f7">
+<span class="t"><strong style="font-weight: 500">统计本周工单里提到 A 公司的次数</strong><span>客服小橙 · 已完成 1 步</span></span>
+<span style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #1c7c3c"><span style="width: 6px; height: 6px; border-radius: 50%; background: #34c759; display: block"></span>工作中</span>
+</div>
+<span style="font-size: 12px; color: #8e8e93; padding-left: 2px">协作结果回到研究助理的任务里，再由它回复你。</span>
+</div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span class="label">完成</span>
+<div class="thread">
+<dc-import name="Avatar" character="round" accent="green" size="32" hint-size="32px,32px"></dc-import>
+<div class="task">
+<div class="top">
+<span class="glyph" style="background: #f0f0f2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d1d1f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 12 10 17 19 7"></polyline></svg></span>
+<span class="t"><strong>已完成 · 整理本周周报</strong><span>用时 4 分 12 秒 · 2 个产出</span></span>
+<button type="button" class="link">任务详情 ›</button>
+</div>
+<div style="display: flex; gap: 8px; padding-left: 48px">
+<span class="file"><span class="ext">MD</span><span style="font-size: 13px">weekly-2026-w40.md</span></span>
+<span class="file"><span class="ext">PNG</span><span style="font-size: 13px">竞品定价对比.png</span></span>
+</div>
+</div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span class="label">没能完成</span>
+<div class="thread">
+<dc-import name="Avatar" character="relay" accent="blue" size="32" hint-size="32px,32px"></dc-import>
+<div class="task">
+<div class="top">
+<span class="glyph" style="background: #fbeceb"><span style="font-size: 17px; font-weight: 800; color: #b3261e">!</span></span>
+<span class="t"><strong>没能完成 · 抓取 B 公司定价页</strong><span>网页需要登录，这个 Bot 没有该网站的账号。</span></span>
+<button type="button" class="link">任务详情 ›</button>
+</div>
+<div class="actions"><button type="button" class="pill">重新提交</button><span style="font-size: 12px; color: #8e8e93">会新建一个任务，原记录保留</span></div>
+</div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span class="label">排队 · 需要接手 · 已停止（一行收起）</span>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div class="thread"><dc-import name="Avatar" character="round" accent="green" size="32" hint-size="32px,32px"></dc-import>
+<div class="task" style="padding: 10px 14px"><div class="top" style="grid-template-columns: 28px minmax(0, 1fr) auto"><span class="glyph" style="width: 28px; height: 28px; border: 2px dashed #c7c7cc; box-sizing: border-box"></span><span class="t"><strong style="font-weight: 500">等待接续 · 汇总 A 公司发布会要点</strong></span><button type="button" class="link">取消</button></div></div></div>
+<div class="thread"><dc-import name="Avatar" character="scout" accent="yellow" size="32" hint-size="32px,32px"></dc-import>
+<div class="task" style="padding: 10px 14px; border-color: #f3d9b8"><div class="top" style="grid-template-columns: 28px minmax(0, 1fr) auto"><span class="glyph" style="width: 28px; height: 28px; background: #fdf0e1"><span style="font-size: 14px; font-weight: 800; color: #b5651d">!</span></span><span class="t"><strong style="font-weight: 500">需要你接手 · 网站要求人机验证</strong></span><button type="button" class="pill primary" style="height: 28px">打开电脑画面</button></div></div></div>
+<div class="thread"><dc-import name="Avatar" character="relay" accent="blue" size="32" hint-size="32px,32px"></dc-import>
+<div class="task" style="padding: 10px 14px"><div class="top" style="grid-template-columns: 28px minmax(0, 1fr) auto"><span class="glyph" style="width: 28px; height: 28px; background: #f0f0f2"><span style="width: 9px; height: 9px; border-radius: 2px; background: #8e8e93; display: block"></span></span><span class="t"><strong style="font-weight: 500; color: #6e6e73">已停止 · 整理发布说明</strong></span><button type="button" class="link">重新提交</button></div></div></div>
+</div>
+</div>
+</div>
+
+<section style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: auto">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee"><strong style="font-size: 14px">一张卡走完全程</strong><span style="font-size: 13px; color: #6e6e73; line-height: 1.5">排队 → 执行 → 确认 → 完成都在同一张卡上变化，结束后收成一行摘要。</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee"><strong style="font-size: 14px">颜色只标状态</strong><span style="font-size: 13px; color: #6e6e73; line-height: 1.5">绿 = 工作中，橙 = 等你，红 = 失败；完成用中性的黑色对勾，其余都是中性灰。</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee"><strong style="font-size: 14px">错误说人话</strong><span style="font-size: 13px; color: #6e6e73; line-height: 1.5">只显示服务电脑给出的用户可读原因，原始报错留在任务详情里。</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee"><strong style="font-size: 14px">审批在卡上</strong><span style="font-size: 13px; color: #6e6e73; line-height: 1.5">和右栏「需要处理」是同一条审批，任一处处理后两边同时更新。</span></div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

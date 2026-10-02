@@ -1,0 +1,103 @@
+{
+  "version": 2,
+  "viewBox": "0 0 96 96",
+  "format": "SVG; original paths; no raster images or external resources",
+  "assets": [
+    {
+      "file": "openbot-round-light.svg",
+      "character": "round",
+      "surface": "light",
+      "opticalSize": "regular",
+      "usage": "32 CSS px and above",
+      "accent": "#91CF4B"
+    },
+    {
+      "file": "openbot-round-light-micro.svg",
+      "character": "round",
+      "surface": "light",
+      "opticalSize": "micro",
+      "usage": "16\u201324 CSS px",
+      "accent": "#91CF4B"
+    },
+    {
+      "file": "openbot-round-dark.svg",
+      "character": "round",
+      "surface": "dark",
+      "opticalSize": "regular",
+      "usage": "32 CSS px and above",
+      "accent": "#ADF16A"
+    },
+    {
+      "file": "openbot-round-dark-micro.svg",
+      "character": "round",
+      "surface": "dark",
+      "opticalSize": "micro",
+      "usage": "16\u201324 CSS px",
+      "accent": "#ADF16A"
+    },
+    {
+      "file": "openbot-relay-light.svg",
+      "character": "relay",
+      "surface": "light",
+      "opticalSize": "regular",
+      "usage": "32 CSS px and above",
+      "accent": "#5F7CDE"
+    },
+    {
+      "file": "openbot-relay-light-micro.svg",
+      "character": "relay",
+      "surface": "light",
+      "opticalSize": "micro",
+      "usage": "16\u201324 CSS px",
+      "accent": "#5F7CDE"
+    },
+    {
+      "file": "openbot-relay-dark.svg",
+      "character": "relay",
+      "surface": "dark",
+      "opticalSize": "regular",
+      "usage": "32 CSS px and above",
+      "accent": "#92ACFF"
+    },
+    {
+      "file": "openbot-relay-dark-micro.svg",
+      "character": "relay",
+      "surface": "dark",
+      "opticalSize": "micro",
+      "usage": "16\u201324 CSS px",
+      "accent": "#92ACFF"
+    },
+    {
+      "file": "openbot-scout-light.svg",
+      "character": "scout",
+      "surface": "light",
+      "opticalSize": "regular",
+      "usage": "32 CSS px and above",
+      "accent": "#DFAD4F"
+    },
+    {
+      "file": "openbot-scout-light-micro.svg",
+      "character": "scout",
+      "surface": "light",
+      "opticalSize": "micro",
+      "usage": "16\u201324 CSS px",
+      "accent": "#DFAD4F"
+    },
+    {
+      "file": "openbot-scout-dark.svg",
+      "character": "scout",
+      "surface": "dark",
+      "opticalSize": "regular",
+      "usage": "32 CSS px and above",
+      "accent": "#F2C777"
+    },
+    {
+      "file": "openbot-scout-dark-micro.svg",
+      "character": "scout",
+      "surface": "dark",
+      "opticalSize": "micro",
+      "usage": "16\u201324 CSS px",
+      "accent": "#F2C777"
+    }
+  ]
+}

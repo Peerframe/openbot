@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>头像系统</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#fcfcfc;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.card{display:flex;flex-direction:column;gap:14px;padding:22px 24px;border-radius:18px;background:#f0f0f2}
+.h2{margin:0;font-size:13px;font-weight:500;color:#6e6e73}
+.cap{font-size:12px;color:#6e6e73;line-height:1.5}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1180px; box-sizing: border-box; padding: 52px 72px; background: #fcfcfc; display: flex; flex-direction: column; gap: 26px; overflow: hidden">
+<header style="display: flex; align-items: flex-end; justify-content: space-between">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">头像系统 v3</h1>
+<p style="margin: 0; font-size: 15px; color: #6e6e73">以 nft_like v2 为母版：三种轮廓不推翻，补上团队里的辨识度、小尺寸的干净度和群组表达。</p>
+</div>
+<span style="font-size: 13px; color: #8e8e93">96 × 96 网格 · 标准稿 ≥ 32px · 小尺寸稿 < 32px · 无外框</span>
+</header>
+
+<section style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+<sc-for list="{{changes}}" as="ch" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee">
+<span style="font-size: 12px; font-weight: 600; color: #8e8e93">{{ch.no}}</span>
+<strong style="font-size: 15px; font-weight: 600">{{ch.title}}</strong>
+<span style="font-size: 13px; color: #6e6e73; line-height: 1.55">{{ch.text}}</span>
+</div>
+</sc-for>
+</section>
+
+<section class="card">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<h2 class="h2">三种轮廓 × 八种下颌色</h2>
+<span class="cap">原有绿、蓝、琥珀、珊瑚 + 新增紫、青、粉、灰，明度对齐，彼此不抢</span>
+</div>
+<div style="display: grid; grid-template-columns: 120px repeat(8, minmax(0, 1fr)); gap: 10px 8px; align-items: center">
+<span></span>
+<sc-for list="{{palette}}" as="p" hint-placeholder-count="8">
+<span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6e6e73"><span style="width: 10px; height: 10px; border-radius: 50%; background: {{p.hex}}; display: block"></span>{{p.label}}</span>
+</sc-for>
+<sc-for list="{{rows}}" as="row" hint-placeholder-count="3">
+<span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 14px; font-weight: 600">{{row.title}}</strong><span style="font-size: 12px; color: #8e8e93">{{row.note}}</span></span>
+<sc-for list="{{row.cells}}" as="cell" hint-placeholder-count="8">
+<span style="display: block"><dc-import name="Avatar" character="{{cell.character}}" accent="{{cell.accent}}" size="56" hint-size="56px,56px"></dc-import></span>
+</sc-for>
+</sc-for>
+</div>
+</section>
+
+<section style="display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px">
+<div class="card">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<h2 class="h2">状态：工作中会动起来</h2>
+<span class="cap">圆点在右下，带一圈背景色；待命不显示</span>
+</div>
+<div style="display: flex; align-items: flex-end; gap: 26px">
+<sc-for list="{{states}}" as="m" hint-placeholder-count="4">
+<span style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<dc-import name="Avatar" character="{{m.character}}" accent="{{m.accent}}" size="64" state="{{m.state}}" dot="true" ring="#f0f0f2" hint-size="64px,64px"></dc-import>
+<span style="font-size: 12px; color: #6e6e73">{{m.label}}</span>
+</span>
+</sc-for>
+</div>
+<span class="cap">工作中：绿点呼吸，头轻轻上下浮动、眼睛左右看；圆顶天线摆动、耳罩灯闪、猫耳抖动。系统或 OpenBot 开启「减少动态效果」时只留静态圆点。</span>
+</div>
+
+<div class="card">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<h2 class="h2">尺寸阶梯</h2>
+<span class="cap">32 以下换小尺寸稿</span>
+</div>
+<div style="display: flex; align-items: flex-end; gap: 22px">
+<sc-for list="{{sizes}}" as="s" hint-placeholder-count="7">
+<span style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<dc-import name="Avatar" character="{{s.character}}" accent="{{s.accent}}" size="{{s.px}}" hint-size="40px,40px"></dc-import>
+<span style="font-size: 12px; color: #6e6e73">{{s.label}}</span>
+</span>
+</sc-for>
+</div>
+<span class="cap">96 档案 · 72 启动 · 40 侧栏和成员 · 32 消息 · 24 标题胶囊 · 20 提及 · 16 菜单。小尺寸稿：眼睛加大、天线球加大、猫耳圆钝、去掉耳罩彩条。</span>
+</div>
+</section>
+
+<section style="display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<sc-for list="{{rules}}" as="r" hint-placeholder-count="6">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee">
+<strong style="font-size: 14px; font-weight: 600">{{r.title}}</strong>
+<span style="font-size: 13px; color: #6e6e73; line-height: 1.5">{{r.text}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 20px 22px; border-radius: 18px; background: #20251f; color: #e8ebdd">
+<span style="font-size: 13px; color: #c9cdbf">深色界面 · 暖白版（同一几何）</span>
+<div style="display: flex; align-items: flex-end; gap: 14px">
+<dc-import name="Avatar" character="round" accent="green" surface="dark" size="64" hint-size="64px,64px"></dc-import>
+<dc-import name="Avatar" character="relay" accent="violet" surface="dark" size="48" hint-size="48px,48px"></dc-import>
+<dc-import name="Avatar" character="scout" accent="teal" surface="dark" size="48" hint-size="48px,48px"></dc-import>
+</div>
+<span style="font-size: 12px; color: #a6ab9b; line-height: 1.5">现在没有深色模式；做深色模式时直接用这一版，不另画。</span>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const palette = [
+      { id: 'green', label: '绿', hex: '#91CF4B' }, { id: 'blue', label: '蓝', hex: '#5F7CDE' },
+      { id: 'yellow', label: '琥珀', hex: '#DFAD4F' }, { id: 'red', label: '珊瑚', hex: '#E0785C' },
+      { id: 'violet', label: '紫', hex: '#9C7FE3' }, { id: 'teal', label: '青', hex: '#3FB4A6' },
+      { id: 'pink', label: '粉', hex: '#E57BA8' }, { id: 'slate', label: '灰', hex: '#8C98A8' }
+    ];
+    const characters = [
+      { id: 'round', title: '圆顶 Round', note: '默认 · 头型 round' },
+      { id: 'relay', title: '耳罩 Relay', note: '头型 square' },
+      { id: 'scout', title: '猫耳 Scout', note: '头型 cat' }
+    ];
+    return {
+      palette,
+      rows: characters.map((c) => ({ title: c.title, note: c.note, cells: palette.map((p) => ({ character: c.id, accent: p.id })) })),
+      changes: [
+        { no: '01 群组', title: '叠放时不再糊成一团', text: '前面的头沿自己的轮廓挖出 2px 背景色缝隙，两个深色头一眼分开；3 个及以上有固定构图，见「群组头像」。' },
+        { no: '02 状态', title: '工作中一眼可见', text: '头像右下角的绿点表示正在工作，头像本身也会轻轻动起来；等你确认是橙点，离线是灰圈。' },
+        { no: '03 小尺寸', title: '16–24px 更干净', text: '天线球加大、猫耳圆钝、去掉耳罩上的细彩条；侧栏子项、菜单和提及里不再发虚。' },
+        { no: '04 平衡', title: '耳罩款不再显小', text: '耳罩款脸宽从 62 调到 66，与圆顶、猫耳的视觉重量对齐；眼睛位置不变。' }
+      ],
+      states: [
+        { state: 'idle', label: '待命 · 无圆点', character: 'round', accent: 'green' },
+        { state: 'working', label: '工作中', character: 'round', accent: 'green' },
+        { state: 'working', label: '工作中', character: 'relay', accent: 'blue' },
+        { state: 'working', label: '工作中', character: 'scout', accent: 'yellow' },
+        { state: 'attention', label: '需要你确认', character: 'relay', accent: 'violet' },
+        { state: 'offline', label: '离线', character: 'scout', accent: 'slate' }
+      ],
+      sizes: [
+        { px: 96, label: '96', character: 'scout', accent: 'yellow' },
+        { px: 72, label: '72', character: 'round', accent: 'green' },
+        { px: 40, label: '40', character: 'relay', accent: 'blue' },
+        { px: 32, label: '32', character: 'round', accent: 'teal' },
+        { px: 24, label: '24 小', character: 'scout', accent: 'pink' },
+        { px: 20, label: '20 小', character: 'relay', accent: 'violet' },
+        { px: 16, label: '16 小', character: 'round', accent: 'green' }
+      ],
+      rules: [
+        { title: '不加底框', text: '头像直接放在背景上，不套方形或圆形色块；点击区域由外层按钮扩大。' },
+        { title: '轮廓 + 颜色 + 名字', text: '先看轮廓，再看下颌色；3 × 8 = 24 种组合，新建 Bot 时优先推荐团队里还没用的；名字始终在旁边。' },
+        { title: '状态靠圆点和动作', text: '工作中、需要你确认、离线用右下圆点表达，工作中头像会动；形状和颜色永远不变。' },
+        { title: '颜色不代表权限', text: '下颌色只是身份，不表示角色、权限、审批或进度；状态只看圆点和动作。' },
+        { title: '需要后端补字段', text: '新增 4 色要扩展 Bot 外观数据（待办 C10）；在那之前只提供原有 4 色。' },
+        { title: '旧外观数据保留', text: '身体、移动方式、配件仍保存在 Bot 资料里，只是不再绘制。' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

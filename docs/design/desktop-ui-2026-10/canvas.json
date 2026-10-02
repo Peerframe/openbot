@@ -2,15 +2,178 @@
   "v": 3,
   "attachments": {},
   "boards": {
+    "AddMember.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "① 频道添加成员",
+      "w": 1440,
+      "x": 0,
+      "y": 3260
+    },
+    "Avatar.dc.html": {
+      "h": 96,
+      "page": "app",
+      "title": "共享头像组件",
+      "w": 96,
+      "x": 3460,
+      "y": 6120
+    },
+    "Avatars.dc.html": {
+      "h": 1180,
+      "page": "app",
+      "title": "⑪ 头像系统 v3",
+      "w": 1440,
+      "x": 1520,
+      "y": 6120
+    },
+    "BotInfo.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "共享 Bot 信息组件（编辑头像 / 详情 / 资料库 / 电脑）",
+      "w": 340,
+      "x": 3700,
+      "y": 6120
+    },
+    "ChannelInfo.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "page": "app",
+      "title": "共享频道信息组件（详情 / 资料库 / 成员）",
+      "w": 340,
+      "x": 3040,
+      "y": 6120
+    },
     "Components.dc.html": {
       "h": 900,
+      "page": "app",
       "title": "⑤ 组件与规范",
+      "w": 1440,
+      "x": 0,
+      "y": 2040
+    },
+    "Connect.dc.html": {
+      "h": 900,
+      "page": "launch",
+      "title": "⑬ 连接服务电脑",
+      "w": 1440,
+      "x": 3040,
+      "y": 1020
+    },
+    "ContextMenu.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "⑧ 右键对话：Bot 与频道菜单",
+      "w": 1440,
+      "x": 4560,
+      "y": 0
+    },
+    "DialogDelete.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "⑮ 删除确认",
+      "w": 1440,
+      "x": 1520,
+      "y": 2240
+    },
+    "DialogExport.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "⑮ 分享 Bot 模板",
+      "w": 1440,
+      "x": 4560,
+      "y": 1220
+    },
+    "DialogImport.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "⑮ 导入 Bot 模板",
+      "w": 1440,
+      "x": 0,
+      "y": 2240
+    },
+    "DialogModel.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "⑮ 连接模型服务",
+      "w": 1440,
+      "x": 4560,
+      "y": 2240
+    },
+    "DialogPairHost.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "⑮ 配对工作电脑",
+      "w": 1440,
+      "x": 3040,
+      "y": 2240
+    },
+    "DialogShare.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "⑮ 分享",
+      "w": 1440,
+      "x": 3040,
+      "y": 1220
+    },
+    "EmptyWorkspace.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "⑰ 第一次进入 · 空工作区",
+      "w": 1440,
+      "x": 4560,
+      "y": 0
+    },
+    "GroupAvatar.dc.html": {
+      "h": 40,
+      "page": "app",
+      "title": "共享群组头像组件",
+      "w": 40,
+      "x": 3460,
+      "y": 6260
+    },
+    "GroupAvatars.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "⑪ 群组头像",
+      "w": 1440,
+      "x": 1520,
+      "y": 7420
+    },
+    "Install.dc.html": {
+      "h": 900,
+      "page": "launch",
+      "title": "⑬ 首次准备",
+      "w": 1440,
+      "x": 1520,
+      "y": 1020
+    },
+    "Launch.dc.html": {
+      "h": 900,
+      "page": "launch",
+      "title": "⑫ 启动 · 日常打开",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "LaunchMotion.dc.html": {
+      "h": 900,
+      "page": "launch",
+      "title": "⑫ 开场动画",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
+    },
+    "Login.dc.html": {
+      "h": 900,
+      "page": "launch",
+      "title": "⑬ 登录",
       "w": 1440,
       "x": 0,
       "y": 2040
     },
     "Main.dc.html": {
       "h": 900,
+      "page": "app",
       "title": "① 频道对话",
       "w": 1440,
       "x": 0,
@@ -18,20 +181,47 @@
     },
     "Menu.dc.html": {
       "h": 900,
+      "page": "app",
       "title": "⑦ 点「我」：账户与设置菜单",
       "w": 1440,
       "x": 3040,
       "y": 0
     },
+    "ModelSetup.dc.html": {
+      "h": 900,
+      "page": "launch",
+      "title": "⑬ 选择模型",
+      "w": 1440,
+      "x": 1520,
+      "y": 2040
+    },
     "New.dc.html": {
       "h": 900,
-      "title": "③ 新建聊天 / 选择 Bot",
+      "page": "app",
+      "title": "③ 新建聊天 · 收件人（+ 打开）",
       "w": 1440,
       "x": 0,
       "y": 1020
     },
+    "NewBotChat.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "③ 创建新 Bot · 随机生成后直接对话",
+      "w": 1440,
+      "x": 1520,
+      "y": 1220
+    },
+    "NewGroup.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "③ 创建频道 · 选几个 Bot",
+      "w": 1440,
+      "x": 0,
+      "y": 1220
+    },
     "Plugins.dc.html": {
       "h": 900,
+      "page": "app",
       "title": "⑥ 插件",
       "w": 1440,
       "x": 3040,
@@ -39,83 +229,195 @@
     },
     "Profile.dc.html": {
       "h": 900,
+      "page": "app",
       "title": "② Bot 档案",
       "w": 1440,
       "x": 1520,
       "y": 0
     },
+    "Search.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "⑨ 分组与搜索",
+      "w": 1440,
+      "x": 4560,
+      "y": 1020
+    },
     "Settings.dc.html": {
       "h": 900,
+      "page": "app",
       "title": "④ 设置 · 模型服务",
       "w": 1440,
       "x": 1520,
       "y": 1020
     },
+    "SettingsAbout.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "④ 设置 · 关于 OpenBot",
+      "w": 1440,
+      "x": 0,
+      "y": 6120
+    },
+    "SettingsAccount.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "④ 设置 · 账户与安全",
+      "w": 1440,
+      "x": 3040,
+      "y": 3060
+    },
+    "SettingsApprovals.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "④ 设置 · 审批与权限",
+      "w": 1440,
+      "x": 4560,
+      "y": 3060
+    },
+    "SettingsAudit.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "④ 设置 · 审计记录",
+      "w": 1440,
+      "x": 3040,
+      "y": 5100
+    },
+    "SettingsBrowser.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "④ 设置 · 员工浏览器",
+      "w": 1440,
+      "x": 1520,
+      "y": 5100
+    },
+    "SettingsGeneral.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "④ 设置 · 通用",
+      "w": 1440,
+      "x": 0,
+      "y": 3060
+    },
+    "SettingsHosts.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "④ 设置 · 工作主机",
+      "w": 1440,
+      "x": 1520,
+      "y": 3060
+    },
+    "SettingsMemory.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "④ 设置 · 记忆",
+      "w": 1440,
+      "x": 0,
+      "y": 5100
+    },
+    "SettingsNav.dc.html": {
+      "h": 740,
+      "page": "app",
+      "title": "共享设置导航组件",
+      "w": 250,
+      "x": 1900,
+      "y": 2040
+    },
+    "SettingsNotify.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "④ 设置 · 通知",
+      "w": 1440,
+      "x": 0,
+      "y": 4080
+    },
+    "SettingsPlugins.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "④ 设置 · 插件",
+      "w": 1440,
+      "x": 3040,
+      "y": 4080
+    },
+    "SettingsRoutines.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "④ 设置 · 例行任务",
+      "w": 1440,
+      "x": 4560,
+      "y": 4080
+    },
+    "SettingsSkills.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "④ 设置 · 技能",
+      "w": 1440,
+      "x": 1520,
+      "y": 4080
+    },
+    "SettingsTransfer.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "④ 设置 · 导入与导出",
+      "w": 1440,
+      "x": 4560,
+      "y": 5100
+    },
     "Sidebar.dc.html": {
       "h": 900,
+      "page": "app",
       "title": "共享侧栏组件",
       "w": 300,
       "x": 1520,
       "y": 2040
     },
-    "SettingsGeneral.dc.html": {
-      "x": 0,
-      "y": 3060,
-      "w": 1440,
+    "Slash.dc.html": {
       "h": 900,
-      "title": "④ 设置 · 通用"
-    },
-    "SettingsHosts.dc.html": {
-      "x": 1520,
-      "y": 3060,
+      "page": "app",
+      "title": "⑩ 输入框：/ 技能与操作",
       "w": 1440,
-      "h": 900,
-      "title": "④ 设置 · 工作主机"
-    },
-    "SettingsAccount.dc.html": {
       "x": 3040,
-      "y": 3060,
-      "w": 1440,
-      "h": 900,
-      "title": "④ 设置 · 账户与安全"
+      "y": 2040
     },
-    "SettingsApprovals.dc.html": {
-      "x": 4560,
-      "y": 3060,
+    "TaskCards.dc.html": {
+      "h": 1100,
+      "page": "flows",
+      "title": "⑭ 对话中的任务卡",
       "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "TaskInspector.dc.html": {
       "h": 900,
-      "title": "④ 设置 · 审批与权限"
-    },
-    "Slash.dc.html": { "x": 3040, "y": 2040, "w": 1440, "h": 900, "title": "⑩ 输入框：/ 技能与操作" },
-    "SettingsNotify.dc.html": { "x": 0, "y": 4080, "w": 1440, "h": 900, "title": "④ 设置 · 通知" },
-    "SettingsSkills.dc.html": { "x": 1520, "y": 4080, "w": 1440, "h": 900, "title": "④ 设置 · 技能" },
-    "SettingsPlugins.dc.html": { "x": 3040, "y": 4080, "w": 1440, "h": 900, "title": "④ 设置 · 插件" },
-    "SettingsRoutines.dc.html": { "x": 4560, "y": 4080, "w": 1440, "h": 900, "title": "④ 设置 · 例行任务" },
-    "SettingsMemory.dc.html": { "x": 0, "y": 5100, "w": 1440, "h": 900, "title": "④ 设置 · 记忆" },
-    "SettingsBrowser.dc.html": { "x": 1520, "y": 5100, "w": 1440, "h": 900, "title": "④ 设置 · 员工浏览器" },
-    "SettingsAudit.dc.html": { "x": 3040, "y": 5100, "w": 1440, "h": 900, "title": "④ 设置 · 审计记录" },
-    "SettingsTransfer.dc.html": { "x": 4560, "y": 5100, "w": 1440, "h": 900, "title": "④ 设置 · 导入与导出" },
-    "SettingsAbout.dc.html": { "x": 0, "y": 6120, "w": 1440, "h": 900, "title": "④ 设置 · 关于 OpenBot" },
-    "SettingsNav.dc.html": {
-      "x": 1900,
-      "y": 2040,
-      "w": 250,
-      "h": 740,
-      "title": "共享设置导航组件"
-    },
-    "ContextMenu.dc.html": {
-      "x": 4560,
-      "y": 0,
+      "page": "flows",
+      "title": "⑭ 任务详情",
       "w": 1440,
-      "h": 900,
-      "title": "⑧ 右键对话：Bot 与频道菜单"
+      "x": 1520,
+      "y": 0
     },
-    "Search.dc.html": {
-      "x": 4560,
-      "y": 1020,
-      "w": 1440,
+    "Welcome.dc.html": {
       "h": 900,
-      "title": "⑨ 分组与搜索"
+      "page": "launch",
+      "title": "⑬ 首次使用 · 这台电脑的用途",
+      "w": 1440,
+      "x": 0,
+      "y": 1020
+    },
+    "WorkSupervision.dc.html": {
+      "h": 900,
+      "page": "flows",
+      "title": "⑯ 任务监督",
+      "w": 1440,
+      "x": 3040,
+      "y": 0
+    },
+    "WorkerSetup.dc.html": {
+      "h": 900,
+      "page": "launch",
+      "title": "⑬ 这台电脑也能工作（可选）",
+      "w": 1440,
+      "x": 3040,
+      "y": 2040
     }
   },
   "createdOnFiles": {
@@ -127,9 +429,28 @@
     "view": "canvas"
   },
   "notes": {
+    "flowsTitle": {
+      "kind": "title1",
+      "maxW": 6000,
+      "page": "flows",
+      "text": "OpenBot Desktop · 任务与对话框",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
+    "launchTitle": {
+      "kind": "title1",
+      "maxW": 4480,
+      "page": "launch",
+      "text": "OpenBot Desktop · 启动与引导",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
     "title": {
       "kind": "title1",
       "maxW": 6000,
+      "page": "app",
       "text": "OpenBot Desktop · 界面优化",
       "w": 240,
       "x": 0,
@@ -161,8 +482,48 @@
     "Plugins.dc.html",
     "Components.dc.html",
     "Sidebar.dc.html",
-    "SettingsNav.dc.html"
+    "SettingsNav.dc.html",
+    "Avatars.dc.html",
+    "ChannelInfo.dc.html",
+    "Avatar.dc.html",
+    "GroupAvatar.dc.html",
+    "GroupAvatars.dc.html",
+    "Launch.dc.html",
+    "LaunchMotion.dc.html",
+    "Welcome.dc.html",
+    "Install.dc.html",
+    "Connect.dc.html",
+    "Login.dc.html",
+    "ModelSetup.dc.html",
+    "WorkerSetup.dc.html",
+    "TaskCards.dc.html",
+    "TaskInspector.dc.html",
+    "WorkSupervision.dc.html",
+    "EmptyWorkspace.dc.html",
+    "DialogShare.dc.html",
+    "DialogExport.dc.html",
+    "DialogImport.dc.html",
+    "DialogDelete.dc.html",
+    "DialogPairHost.dc.html",
+    "DialogModel.dc.html",
+    "NewGroup.dc.html",
+    "NewBotChat.dc.html",
+    "AddMember.dc.html",
+    "BotInfo.dc.html"
   ],
-  "pages": [],
+  "pages": [
+    {
+      "id": "app",
+      "name": "应用界面"
+    },
+    {
+      "id": "launch",
+      "name": "启动与引导"
+    },
+    {
+      "id": "flows",
+      "name": "任务与对话框"
+    }
+  ],
   "title": "OpenBot Desktop 界面优化"
 }

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>连接服务电脑</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#fcfcfc;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+input::placeholder{color:#a1a1a6}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; background: #fcfcfc; display: flex; flex-direction: column; align-items: center; overflow: hidden">
+<div aria-hidden="true" style="position: absolute; left: 20px; top: 20px; display: flex; gap: 8px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; display: block"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e; display: block"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840; display: block"></span>
+</div>
+<ol aria-label="设置进度" style="margin: 0; padding: 0; list-style: none; display: flex; gap: 8px; align-items: center; height: 56px; font-size: 13px; color: #8e8e93">
+<li style="color: #1d1d1f; font-weight: 600">1 这台电脑</li><li aria-hidden="true">—</li><li>2 登录</li><li aria-hidden="true">—</li><li>3 模型</li>
+</ol>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 24px; width: 420px; margin-top: 120px">
+<dc-import name="Avatar" character="relay" accent="blue" size="80" hint-size="80px,80px"></dc-import>
+<div style="display: flex; flex-direction: column; gap: 8px; text-align: center">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">连接服务电脑</h1>
+<p style="margin: 0; font-size: 15px; color: #6e6e73; line-height: 1.6">输入服务电脑上 OpenBot 的地址。连接后用同一套 Bot 和工作记录。</p>
+</div>
+<form style="display: flex; flex-direction: column; gap: 14px; width: 100%">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #6e6e73">服务地址
+<input type="url" inputmode="url" placeholder="https://openbot.example.com" style="height: 46px; box-sizing: border-box; padding: 0 16px; border: 1px solid #e3e3e6; border-radius: 14px; background: #ffffff; font: inherit; font-size: 15px; color: #1d1d1f; outline: none">
+</label>
+<span style="font-size: 12px; color: #8e8e93; line-height: 1.5; padding: 0 4px">远程地址必须是 HTTPS；同一台电脑上可以用 http://localhost。这里只保存地址，登录凭证另外保存。</span>
+<button type="submit" style="height: 48px; border: 0; border-radius: 24px; background: #111111; color: #ffffff; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer">检查并连接</button>
+</form>
+<a href="Welcome.dc.html" style="font-size: 14px; color: #6e6e73; text-decoration: none">换一种方式</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

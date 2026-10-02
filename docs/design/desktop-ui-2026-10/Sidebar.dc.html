@@ -52,7 +52,7 @@ body{margin:0}
 </button>
 <sc-for list="{{g.children}}" as="r" hint-placeholder-count="0">
 <div style="display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 7px 10px 7px 34px; font-size: 14px; color: #3a3a3c">
-<span style="width: 26px; height: 26px; border-radius: {{r.radius}}; background: {{r.colorA}}; display: block"></span>
+<dc-import name="Avatar" character="{{r.charA}}" accent="{{r.accentA}}" size="26" hint-size="26px,26px"></dc-import>
 <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.name}}</span>
 <span style="font-size: 12px; color: #8e8e93">{{r.time}}</span>
 </div>
@@ -61,13 +61,10 @@ body{margin:0}
 <sc-for list="{{sec.rows}}" as="r" hint-placeholder-count="3">
 <button type="button" style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; padding: 10px; border: 0; border-radius: 14px; background: {{r.bg}}; text-align: left; cursor: pointer; font: inherit; color: inherit">
 <sc-if value="{{r.isGroup}}" hint-placeholder-val="{{false}}">
-<span style="position: relative; width: 40px; height: 40px; display: block">
-<span style="position: absolute; left: 0; top: 0; width: 25px; height: 25px; border-radius: 8px; background: {{r.colorA}}; display: flex; align-items: center; justify-content: center; gap: 4px"><span style="width: 3px; height: 5px; border-radius: 2px; background: #ffffff"></span><span style="width: 3px; height: 5px; border-radius: 2px; background: #ffffff"></span></span>
-<span style="position: absolute; right: 0; bottom: 0; width: 25px; height: 25px; border-radius: 50%; background: {{r.colorB}}; border: 2px solid {{r.ring}}; box-sizing: content-box; display: flex; align-items: center; justify-content: center; gap: 4px"><span style="width: 3px; height: 5px; border-radius: 2px; background: #ffffff"></span><span style="width: 3px; height: 5px; border-radius: 2px; background: #ffffff"></span></span>
-</span>
+<dc-import name="GroupAvatar" members="{{r.members}}" count="{{r.count}}" size="40" surface="{{r.ring}}" state="{{r.state}}" hint-size="40px,40px"></dc-import>
 </sc-if>
 <sc-if value="{{r.isBot}}" hint-placeholder-val="{{true}}">
-<span style="width: 40px; height: 40px; border-radius: {{r.radius}}; background: {{r.colorA}}; display: flex; align-items: center; justify-content: center; gap: 6px"><span style="width: 4px; height: 7px; border-radius: 2px; background: #ffffff"></span><span style="width: 4px; height: 7px; border-radius: 2px; background: #ffffff"></span></span>
+<dc-import name="Avatar" character="{{r.charA}}" accent="{{r.accentA}}" size="40" state="{{r.state}}" dot="true" ring="{{r.ring}}" hint-size="40px,40px"></dc-import>
 </sc-if>
 <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
 <span style="display: flex; align-items: center; gap: 6px; min-width: 0">
@@ -108,19 +105,22 @@ body{margin:0}
 </div>
 </nav>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["channel","bot","new","plugins","menu","search","none"],"default":"channel"},"$preview":{"width":300,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["channel","bot","new","newbot","plugins","menu","search","none"],"default":"channel"},"$preview":{"width":300,"height":900}}'>
 class Component extends DCLogic {
   renderVals() {
     const active = this.props.active ?? 'channel';
     const defs = [
-      { key: 'channel', group: true, name: '市场周报', a: '#8b7cf6', b: '#f0a43a', preview: '研究助理：周报初稿好了，等你看一下', time: '10:24', folder: 'mkt' },
-      { key: 'bot', group: false, name: '研究助理', a: '#8b7cf6', radius: '12px', tag: '信息 · 竞品研究', preview: '本周素材已整理完，稍后发你汇总。', time: '09:40', folder: 'mkt' },
-      { key: 'cs', group: false, name: '客服小橙', a: '#f0a43a', radius: '50%', tag: '客服 · 工单', preview: '今天的 12 个工单都回复了。', time: '昨天', unread: true, folder: 'mkt' },
-      { key: 'release', group: true, name: '发布协作', a: '#4a8ff7', b: '#9a9aa0', preview: '发布助手：2.4 发布说明已更新', time: '09:12', unread: true },
-      { key: 'design', group: false, name: '设计评审', a: '#ec6aa8', radius: '12px', tag: '设计 · 走查', preview: '首页改版的走查意见已发到频道。', time: '9/28' },
-      { key: 'product', group: true, name: '产品讨论', a: '#34c07a', b: '#4a8ff7', preview: '你：下周一再过一遍需求', time: '9/27' },
-      { key: 'ops', group: false, name: '运维值班', a: '#8e8e93', radius: '50%', tag: '运维 · 巡检', preview: '凌晨巡检一切正常。', time: '9/26' }
+      { key: 'channel', group: true, state: 'working', name: '市场周报', ca: 'round', aa: 'green', cb: 'scout', ab: 'yellow', preview: '研究助理：周报初稿好了，等你看一下', time: '10:24', folder: 'mkt' },
+      { key: 'bot', group: false, state: 'working', name: '研究助理', ca: 'round', aa: 'green', tag: '信息 · 竞品研究', preview: '本周素材已整理完，稍后发你汇总。', time: '09:40', folder: 'mkt' },
+      { key: 'cs', group: false, name: '客服小橙', ca: 'scout', aa: 'yellow', tag: '客服 · 工单', preview: '今天的 12 个工单都回复了。', time: '昨天', unread: true, folder: 'mkt' },
+      { key: 'release', group: true, name: '发布协作', ca: 'relay', aa: 'blue', cb: 'relay', ab: 'red', members: 'relay:blue,relay:red,round:violet', preview: '发布助手：2.4 发布说明已更新', time: '09:12', unread: true },
+      { key: 'design', group: false, name: '设计评审', ca: 'relay', aa: 'red', tag: '设计 · 走查', preview: '首页改版的走查意见已发到频道。', time: '9/28' },
+      { key: 'product', group: true, name: '产品讨论', ca: 'round', aa: 'green', cb: 'relay', ab: 'blue', members: 'round:green,relay:blue', count: 5, preview: '你：下周一再过一遍需求', time: '9/27' },
+      { key: 'ops', group: false, state: 'offline', name: '运维值班', ca: 'round', aa: 'blue', tag: '运维 · 巡检', preview: '凌晨巡检一切正常。', time: '9/26' }
     ];
+    if (active === 'newbot') {
+      defs.unshift({ key: 'newbot', group: false, name: '新建 Bot', ca: 'relay', aa: 'violet', preview: '给我定个分工吧', time: '刚刚' });
+    }
     const folders = [{ id: 'mkt', name: '市场团队' }];
     const query = active === 'search' ? '市场' : '';
     const split = (text) => {
@@ -131,7 +131,8 @@ class Component extends DCLogic {
       const on = d.key === active;
       return Object.assign({
         name: d.name, isGroup: d.group, isBot: !d.group,
-        colorA: d.a, colorB: d.b || d.a, radius: d.radius || '12px',
+        charA: d.ca, accentA: d.aa, charB: d.cb || d.ca, accentB: d.ab || d.aa,
+        state: d.state || 'idle', members: d.members || (d.ca + ':' + d.aa + ',' + (d.cb || d.ca) + ':' + (d.ab || d.aa)), count: d.count ?? -1,
         tag: d.tag || '', hasTag: !!d.tag,
         preview: d.preview, time: d.time, unread: !!d.unread && !on,
         bg: on ? '#e6e6e8' : 'transparent',

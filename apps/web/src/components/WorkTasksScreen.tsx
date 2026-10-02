@@ -33,12 +33,12 @@ const statusLabels = {
 function failure(cause: unknown) {
   if (cause instanceof ApiError) {
     if (cause.status === 401) return "登录已失效，请重新登录。";
-    if (cause.status === 403) return "Server 拒绝了此请求，请检查权限与连接来源。";
-    if ([404, 405].includes(cause.status)) return "未找到任务或当前 Server 未启用任务接口。";
-    if (cause.status === 409) return "请求与 Server 当前状态冲突，请刷新任务。";
+    if (cause.status === 403) return "服务电脑拒绝了此请求，请检查权限与连接来源。";
+    if ([404, 405].includes(cause.status)) return "未找到任务或当前服务电脑未启用任务接口。";
+    if (cause.status === 409) return "请求与服务电脑当前状态冲突，请刷新任务。";
     if (cause.status === 413)
-      return "请求内容过大，Server 未接受此请求。请缩短任务目标后重新提交。";
-    if (cause.status === 422) return "Server 未接受请求参数，请检查输入。";
+      return "请求内容过大，服务电脑未接受此请求。请缩短任务目标后重新提交。";
+    if (cause.status === 422) return "服务电脑未接受请求参数，请检查输入。";
   }
   return "未能确认请求结果，请检查连接后刷新。";
 }
@@ -232,7 +232,7 @@ export function WorkTasksScreen({
       setTaskId(next.id);
       setLookup(next.id);
       setCreated(true);
-      setNotice("Server 已持久化任务；执行状态以快照为准。");
+      setNotice("服务电脑已持久化任务；执行状态以快照为准。");
     } catch (cause) {
       if (!controller.signal.aborted) {
         if (cause instanceof ApiError && [401, 403, 404, 405, 413, 422].includes(cause.status)) {
@@ -257,7 +257,7 @@ export function WorkTasksScreen({
       );
       if (controller.signal.aborted) return;
       accept(next);
-      setNotice(next.cancelRequested ? "Server 已记录取消请求。" : "已读取 Server 返回状态。");
+      setNotice(next.cancelRequested ? "服务电脑已记录取消请求。" : "已读取服务电脑返回状态。");
     } catch (cause) {
       if (!controller.signal.aborted) {
         setFresh(false);
@@ -292,7 +292,7 @@ export function WorkTasksScreen({
         <h1 id="work-tasks-title">任务监督</h1>
       </header>
       <div className="destination-scroll">
-        <p>创建任务或输入任务 ID，查看 Server 保存的最新状态。</p>
+        <p>创建任务或输入任务 ID，查看服务电脑保存的最新状态。</p>
         <form className="work-form" onSubmit={(event) => void create(event)}>
           <h2>{created ? "已提交任务" : "创建任务"}</h2>
           <fieldset hidden={created} disabled={busy || !!attempt || resourcesBusy}>
@@ -421,7 +421,7 @@ export function WorkTasksScreen({
               {busy ? "正在同步…" : "刷新快照"}
             </button>
             <span role="status">
-              {fresh ? "已同步 Server 快照" : "状态待同步；连接变化不会取消任务"}
+              {fresh ? "已同步服务电脑快照" : "状态待同步；连接变化不会取消任务"}
             </span>
           </div>
         )}
@@ -439,11 +439,11 @@ export function WorkTasksScreen({
               <dt>执行授权</dt>
               <dd>{snapshot.authorityActive ? "有效" : "已关闭"}</dd>
               <dt>取消请求</dt>
-              <dd>{snapshot.cancelRequested ? "Server 已持久化" : "未记录"}</dd>
+              <dd>{snapshot.cancelRequested ? "服务电脑已持久化" : "未记录"}</dd>
               {snapshot.cancelRequested && (
                 <>
                   <dt>取消送达</dt>
-                  <dd>Server 未提供独立送达回执；请查看 Run 状态</dd>
+                  <dd>服务电脑未提供独立送达回执；请查看 任务状态</dd>
                 </>
               )}
               <dt>Token 用量</dt>

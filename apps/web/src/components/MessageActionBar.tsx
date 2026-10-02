@@ -13,7 +13,7 @@ import "./MessageActionBar.css";
 const statusLabels: Record<Run["status"], string> = {
   queued: "排队中",
   assigned: "已分派",
-  running: "执行中",
+  running: "工作中",
   waiting_approval: "等待批准",
   blocked: "受阻",
   completed: "已完成",

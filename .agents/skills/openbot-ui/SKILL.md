@@ -14,7 +14,8 @@ Use the affected user action/page, expected result, current reference and suppor
 1. Read [Web rules](../../../apps/web/AGENTS.md), [design entry](../../../docs/design/README.md) and
    the matching [map route](../../../docs/REPOSITORY_MAP.md#ui-interaction). Read only the relevant
    `INTERFACE.md` section and actual component/CSS/test; the historical office image is not a brief.
-2. Reuse `apps/web/src/styles.css` tokens, native controls and the nearest component pattern.
+2. Reuse `apps/web/src/tokens.css` tokens, `primitives.css` primitives (including the `Dialog`
+   frame), native controls and the nearest component pattern.
    Confirm who owns data in `api.ts`, `work-api.ts` or the workspace hooks before changing callbacks.
    Client state never grants authority. Read Desktop rules when crossing preload/main.
 3. Cover applicable loading, empty, pending approval, failure, offline/stale, read-only and delivery

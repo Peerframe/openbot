@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Bot 头像</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+/* 工作中: the head bobs, the eyes look around, Round's antenna wiggles, Relay's ear lights blink,
+   Scout's ears twitch. Idle heads stay still. Reduced motion keeps only the static dot. */
+@keyframes av-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes av-look{0%,18%{transform:translateX(0)}28%,46%{transform:translateX(4px)}56%,74%{transform:translateX(-4px)}84%,100%{transform:translateX(0)}}
+@keyframes av-wiggle{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(9deg)}}
+@keyframes av-blink-light{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes av-twitch{0%,82%,100%{transform:rotate(0)}88%{transform:rotate(-4deg)}94%{transform:rotate(3deg)}}
+@keyframes av-pulse{0%{box-shadow:0 0 0 var(--ring-w) var(--ring),0 0 0 var(--ring-w) rgba(52,199,89,.45)}70%,100%{box-shadow:0 0 0 var(--ring-w) var(--ring),0 0 0 calc(var(--ring-w) + 6px) rgba(52,199,89,0)}}
+.av-working .av-head{animation:av-bob 1.4s ease-in-out infinite;transform-box:view-box}
+.av-working .av-eyes{animation:av-look 3.2s ease-in-out infinite}
+.av-working .av-antenna{animation:av-wiggle .7s ease-in-out infinite;transform-origin:39px 30px}
+.av-working .av-ear-light{animation:av-blink-light 1s ease-in-out infinite}
+.av-working .av-scout{animation:av-twitch 2.6s ease-in-out infinite;transform-origin:48px 70px}
+.av-dot-working{animation:av-pulse 1.6s ease-out infinite}
+@media (prefers-reduced-motion: reduce){.av-working *,.av-dot-working{animation:none !important}}
+</style>
+</helmet>
+<span class="{{stateClass}}" style="position: relative; display: block; width: {{size}}px; height: {{size}}px; flex-shrink: 0">
+<svg viewBox="0 0 96 96" width="{{size}}" height="{{size}}" aria-hidden="true" style="display: block; overflow: visible">
+<sc-if value="{{hasCutout}}" hint-placeholder-val="{{false}}">
+<g fill="{{cutout}}" stroke="{{cutout}}" stroke-width="{{cutoutWidth}}" stroke-linejoin="round" stroke-linecap="round">
+<sc-if value="{{isRound}}" hint-placeholder-val="{{true}}"><path d="M12 61C12 41 27 26 47 26C68 26 83 41 83 61V71C83 83 69 89 48 89C26 89 12 83 12 71Z"></path><path d="m39 30-4-10" fill="none"></path><circle cx="33" cy="16" r="{{ballR}}"></circle></sc-if>
+<sc-if value="{{isRelay}}" hint-placeholder-val="{{false}}"><path d="M15 45C15 33 24 26 37 26H59C72 26 81 33 81 45V72C81 83 70 88 48 88C26 88 15 83 15 72Z"></path><rect x="5" y="44" width="12" height="25" rx="6"></rect><rect x="79" y="44" width="12" height="25" rx="6"></rect></sc-if>
+<sc-if value="{{isScout}}" hint-placeholder-val="{{false}}"><path d="M14 61L17 22C17 18 20 17 23 20L36 32C43 30 53 30 60 32L73 20C76 17 79 18 79 22L82 61V72C82 83 68 89 48 89C28 89 14 83 14 72Z"></path></sc-if>
+</g>
+</sc-if>
+
+<g class="av-head">
+<sc-if value="{{isRound}}" hint-placeholder-val="{{true}}">
+<g class="av-antenna">
+<path d="m39 30-4-10" fill="none" stroke="{{body}}" stroke-width="{{antennaWidth}}" stroke-linecap="round"></path>
+<circle cx="33" cy="16" r="{{ballR}}" fill="{{body}}"></circle>
+</g>
+<path d="M12 61C12 41 27 26 47 26C68 26 83 41 83 61V71C83 83 69 89 48 89C26 89 12 83 12 71Z" fill="{{body}}"></path>
+<path d="M12 69C29 76 66 76 83 69V72C83 83 69 89 48 89C26 89 12 83 12 72Z" fill="{{accent}}"></path>
+<g class="av-eyes">
+<rect x="{{roundEyeL}}" y="{{roundEyeY}}" width="{{eyeW}}" height="{{roundEyeH}}" rx="{{eyeR}}" fill="{{eye}}"></rect>
+<rect x="{{roundEyeR}}" y="{{roundEyeY2}}" width="{{eyeW}}" height="{{roundEyeH}}" rx="{{eyeR}}" fill="{{eye}}"></rect>
+</g>
+</sc-if>
+<sc-if value="{{isRelay}}" hint-placeholder-val="{{false}}">
+<rect x="5" y="44" width="12" height="25" rx="6" fill="{{body}}"></rect>
+<rect x="79" y="44" width="12" height="25" rx="6" fill="{{body}}"></rect>
+<sc-if value="{{showStripes}}" hint-placeholder-val="{{true}}"><path class="av-ear-light" d="M11 52v9M85 52v9" stroke="{{accent}}" stroke-width="4" stroke-linecap="round"></path></sc-if>
+<path d="M15 45C15 33 24 26 37 26H59C72 26 81 33 81 45V72C81 83 70 88 48 88C26 88 15 83 15 72Z" fill="{{body}}"></path>
+<path d="M15 70C32 74 64 74 81 70V73C81 83 70 88 48 88C26 88 15 83 15 73Z" fill="{{accent}}"></path>
+<g class="av-eyes">
+<rect x="{{relayEyeL}}" y="{{relayEyeY}}" width="{{eyeW}}" height="{{relayEyeH}}" rx="{{eyeR}}" fill="{{eye}}"></rect>
+<rect x="{{relayEyeR}}" y="{{relayEyeY}}" width="{{eyeW}}" height="{{relayEyeH}}" rx="{{eyeR}}" fill="{{eye}}"></rect>
+</g>
+</sc-if>
+<sc-if value="{{isScout}}" hint-placeholder-val="{{false}}">
+<g class="av-scout">
+<path d="M14 61L17 22C17 18 20 17 23 20L36 32C43 30 53 30 60 32L73 20C76 17 79 18 79 22L82 61V72C82 83 68 89 48 89C28 89 14 83 14 72Z" fill="{{body}}" stroke="{{body}}" stroke-width="{{earSoften}}" stroke-linejoin="round"></path>
+<path d="M14 70C29 76 67 76 82 70V73C82 83 68 89 48 89C28 89 14 83 14 73Z" fill="{{accent}}"></path>
+<g class="av-eyes">
+<rect x="{{scoutEyeL}}" y="{{scoutEyeY}}" width="{{eyeW}}" height="{{scoutEyeH}}" rx="{{eyeR}}" fill="{{eye}}"></rect>
+<rect x="{{scoutEyeR}}" y="{{scoutEyeY2}}" width="{{eyeW}}" height="{{scoutEyeH2}}" rx="{{eyeR}}" fill="{{eye}}" transform="{{scoutTilt}}"></rect>
+</g>
+</g>
+</sc-if>
+</g>
+</svg>
+<sc-if value="{{hasDot}}" hint-placeholder-val="{{false}}">
+<span class="{{dotClass}}" aria-hidden="true" style="--ring: {{ring}}; --ring-w: {{ringW}}px; position: absolute; right: {{dotInset}}px; bottom: {{dotInset}}px; width: {{dotSize}}px; height: {{dotSize}}px; box-sizing: border-box; border-radius: 50%; background: {{dotColor}}; border: {{dotBorder}}; box-shadow: 0 0 0 {{ringW}}px {{ring}}; display: block"></span>
+</sc-if>
+</span>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"character":{"editor":"enum","options":["round","relay","scout"],"default":"round"},"accent":{"editor":"enum","options":["green","blue","yellow","red","violet","teal","pink","slate"],"default":"green"},"size":{"editor":"int","min":16,"max":160,"default":96},"state":{"editor":"enum","options":["idle","working","attention","offline"],"default":"idle"},"dot":{"editor":"boolean","default":false},"ring":{"editor":"text","default":"#f5f5f6"},"surface":{"editor":"enum","options":["light","dark"],"default":"light"},"cutout":{"editor":"text","default":""},"$preview":{"width":96,"height":96}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const character = this.props.character ?? 'round';
+    const size = Number(this.props.size ?? 96);
+    const dark = (this.props.surface ?? 'light') === 'dark';
+    const state = this.props.state ?? 'idle';
+    // Eight jaw colours of matched lightness; dark surfaces use the lighter edition.
+    const accents = {
+      light: { green: '#91CF4B', blue: '#5F7CDE', yellow: '#DFAD4F', red: '#E0785C', violet: '#9C7FE3', teal: '#3FB4A6', pink: '#E57BA8', slate: '#8C98A8' },
+      dark: { green: '#ADF16A', blue: '#92ACFF', yellow: '#F2C777', red: '#F59C82', violet: '#BBA4FF', teal: '#6FD9CB', pink: '#FFA3C9', slate: '#B4BFCC' }
+    };
+    const accent = accents[dark ? 'dark' : 'light'][this.props.accent ?? 'green'] ?? '#91CF4B';
+    // Micro drawing below 32px: larger eyes, heavier antenna and ball, rounder cat ears, no ear stripes.
+    const micro = size < 32;
+    const cutout = this.props.cutout ?? '';
+    // The status dot sits on the lower right, outside the head; shown only when asked for and the
+    // state is not idle. Working pulses green, needs-you is orange, offline is a grey ring.
+    const showDot = (this.props.dot === true || this.props.dot === 'true') && state !== 'idle';
+    const dotSize = Math.max(8, Math.round(size * 0.3));
+    const dotColors = { working: '#34c759', attention: '#e08a00', offline: '#ffffff' };
+    return {
+      size,
+      stateClass: state === 'working' ? 'av-working' : '',
+      isRound: character === 'round',
+      isRelay: character === 'relay',
+      isScout: character === 'scout',
+      body: dark ? '#E8EBDD' : '#20251F',
+      eye: dark ? '#20251F' : '#FAFBF7',
+      accent,
+      hasCutout: cutout !== '',
+      cutout,
+      cutoutWidth: Math.max(6, Math.round(384 / size)),
+      antennaWidth: micro ? 6 : 4,
+      ballR: micro ? 5.6 : 4.3,
+      showStripes: !micro,
+      earSoften: micro ? 4 : 0,
+      eyeW: micro ? 12 : 10,
+      eyeR: micro ? 6 : 5,
+      roundEyeL: micro ? 28 : 29, roundEyeR: micro ? 54 : 55,
+      roundEyeY: micro ? 43 : 44, roundEyeY2: 43, roundEyeH: micro ? 21 : 19,
+      relayEyeL: micro ? 30 : 31, relayEyeR: micro ? 54 : 55,
+      relayEyeY: micro ? 44 : 46, relayEyeH: micro ? 20 : 16,
+      scoutEyeL: micro ? 28 : 29, scoutEyeR: micro ? 54 : 55,
+      scoutEyeY: micro ? 46 : 47, scoutEyeH: micro ? 19 : 18,
+      scoutEyeY2: micro ? 42 : 43, scoutEyeH2: micro ? 20 : 19,
+      scoutTilt: micro ? '' : 'rotate(-9 60 52.5)',
+      hasDot: showDot,
+      dotClass: state === 'working' ? 'av-dot-working' : '',
+      dotSize,
+      dotInset: Math.round(-size * 0.02),
+      ringW: size >= 64 ? 3 : 2,
+      ring: this.props.ring || '#f5f5f6',
+      dotColor: dotColors[state] ?? '#34c759',
+      dotBorder: state === 'offline' ? '2px solid #c7c7cc' : '0'
+    };
+  }
+}
+</script>
+</body>
+</html>

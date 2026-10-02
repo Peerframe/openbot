@@ -35,8 +35,10 @@
   grid-row: 1 / -1;
 }
 
+/* Main artboard: the title pill is centred between equal leading and trailing columns. */
 .app-shell.desktop-workspace .shell-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, max-content) minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -56,11 +58,13 @@
   app-region: no-drag;
 }
 .app-shell.desktop-workspace .shell-pill {
+  --avatar-surface: var(--ob-fill);
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  justify-self: center;
   min-width: 0;
-  max-width: min(520px, 60%);
+  max-width: min(520px, 100%);
   height: 34px;
   margin: 0;
   padding: 0 12px 0 6px;
@@ -75,6 +79,7 @@
 }
 .app-shell.desktop-workspace .shell-pill:hover,
 .app-shell.desktop-workspace .shell-pill[aria-expanded="true"] {
+  --avatar-surface: var(--ob-fill-hover);
   background: var(--ob-fill-hover);
 }
 .app-shell.desktop-workspace .shell-pill.is-static {
@@ -91,38 +96,27 @@
   white-space: nowrap;
 }
 .app-shell.desktop-workspace .shell-pill-avatars {
-  position: relative;
   display: block;
   flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+}
+.app-shell.desktop-workspace .shell-pill-avatars > .robot-avatar {
   width: 24px;
   height: 24px;
+  margin: 1px;
 }
-.app-shell.desktop-workspace .shell-pill-avatars .robot-avatar {
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
-}
-.app-shell.desktop-workspace .shell-pill-avatars.is-pair .robot-avatar {
-  position: absolute;
-  width: 15px;
-  height: 15px;
-}
-.app-shell.desktop-workspace .shell-pill-avatars.is-pair .robot-avatar:first-child {
-  top: 0;
-  left: 0;
-  border-radius: 5px;
-}
-.app-shell.desktop-workspace .shell-pill-avatars.is-pair .robot-avatar:last-child {
-  right: 0;
-  bottom: 0;
-  border: 1.5px solid var(--ob-fill);
-  border-radius: 50%;
+.app-shell.desktop-workspace .shell-leading {
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
 .app-shell.desktop-workspace .shell-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
-  margin-left: auto;
+  min-width: 0;
 }
 .app-shell.desktop-workspace .shell-live {
   display: inline-flex;
@@ -166,14 +160,16 @@
   .app-shell.desktop-workspace {
     grid-template-rows: 52px minmax(0, 1fr);
   }
+  /* Phone layout is not designed yet: keep the title leading so it has room. */
   .app-shell.desktop-workspace .shell-header {
+    grid-template-columns: minmax(0, 1fr) auto;
     height: 52px;
     padding: 0 12px;
   }
-  .app-shell.desktop-workspace .shell-header > .shell-icon:first-child {
+  .app-shell.desktop-workspace .shell-leading {
     display: none;
   }
   .app-shell.desktop-workspace .shell-pill {
-    max-width: 70%;
+    justify-self: start;
   }
 }

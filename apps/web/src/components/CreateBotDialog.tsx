@@ -15,34 +15,15 @@ const computerOptions: Array<{ value: Bot["computerProfile"]; label: string }> =
   { value: "coder", label: "Coder runtime" },
 ];
 
+/**
+ * Only the head and the accent are drawn (DESIGN.md, Bot avatars); body, mobility and accessory keep
+ * their stored defaults so existing appearance data stays valid.
+ */
 const appearanceOptions = {
   head: [
-    { value: "round", label: "圆角头盔" },
-    { value: "square", label: "方形头盔" },
-    { value: "cat", label: "猫耳头盔" },
-  ],
-  body: [
-    { value: "classic", label: "基础款" },
-    { value: "tall", label: "长身款" },
-    { value: "cape", label: "披风款" },
-    { value: "armor", label: "装甲款" },
-    { value: "storage", label: "收纳款" },
-    { value: "quadruped", label: "四足款" },
-  ],
-  mobility: [
-    { value: "feet", label: "双脚" },
-    { value: "single-wheel", label: "单轮" },
-    { value: "dual-wheel", label: "双轮" },
-    { value: "hover", label: "悬浮" },
-    { value: "four-legs", label: "四足" },
-  ],
-  accessory: [
-    { value: "none", label: "无配件" },
-    { value: "headphones", label: "耳机" },
-    { value: "backpack", label: "背包" },
-    { value: "trench", label: "斗篷" },
-    { value: "arm", label: "机械臂" },
-    { value: "toolbox", label: "工具箱" },
+    { value: "round", label: "Round · 天线" },
+    { value: "square", label: "Relay · 耳朵" },
+    { value: "cat", label: "Scout · 猫耳" },
   ],
   accent: [
     { value: "green", label: "绿色" },
@@ -121,7 +102,7 @@ export function CreateBotDialog({
               <CloseIcon />
             </button>
           </header>
-          <section className="bot-identity-builder" aria-label="Bot 外观组合">
+          <section className="bot-identity-builder" aria-label="Bot 外观">
             <div className="bot-preview">
               <RobotAvatar
                 bot={{
@@ -136,33 +117,15 @@ export function CreateBotDialog({
               />
               <div>
                 <strong>{name.trim() || "新 Bot"}</strong>
-                <span>五层组合身份</span>
+                <span>头型与颜色</span>
               </div>
             </div>
             <div className="appearance-grid">
               <AppearanceSelect
-                label="头部"
+                label="头型"
                 value={appearance.head}
                 options={appearanceOptions.head}
                 onChange={(head) => setAppearance((current) => ({ ...current, head }))}
-              />
-              <AppearanceSelect
-                label="身体"
-                value={appearance.body}
-                options={appearanceOptions.body}
-                onChange={(body) => setAppearance((current) => ({ ...current, body }))}
-              />
-              <AppearanceSelect
-                label="移动"
-                value={appearance.mobility}
-                options={appearanceOptions.mobility}
-                onChange={(mobility) => setAppearance((current) => ({ ...current, mobility }))}
-              />
-              <AppearanceSelect
-                label="配件"
-                value={appearance.accessory}
-                options={appearanceOptions.accessory}
-                onChange={(accessory) => setAppearance((current) => ({ ...current, accessory }))}
               />
               <AppearanceSelect
                 label="颜色"
@@ -211,7 +174,7 @@ export function CreateBotDialog({
               <small>
                 {computerProfile === "model"
                   ? "选择模型服务回复消息，无需连接电脑。"
-                  : "Bot 是员工，电脑只是可以替换的执行节点。"}
+                  : "Bot 是员工，电脑只是可以替换的执行环境。"}
               </small>
             </label>
             {selectsModel ? (

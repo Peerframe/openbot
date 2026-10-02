@@ -29,10 +29,12 @@
   box-sizing: border-box;
   width: 84px;
   height: 84px;
-  padding: 12px;
   place-items: center;
-  border-radius: 24px;
-  background: var(--ob-selected);
+}
+.employee-profile .ep-avatar {
+  --avatar-surface: var(--ob-page);
+  width: 96px;
+  height: 96px;
 }
 .employee-profile .ep-avatar .robot-avatar,
 .employee-profile-rail .ep-rail-avatar .robot-avatar {
@@ -214,7 +216,7 @@
   font-size: var(--ob-font-meta);
 }
 .employee-profile .ep-run-status:is(.running, .assigned, .queued) {
-  color: #1f6fd6;
+  color: var(--ob-online-text);
 }
 .employee-profile .ep-run-status.completed {
   color: #1c7c3c;
@@ -354,7 +356,6 @@
   width: 88px;
   height: 88px;
   margin: 4px 0 6px;
-  border-radius: 26px;
 }
 .ep-settings-form {
   display: flex;
@@ -447,8 +448,6 @@
   .employee-profile .ep-avatar {
     width: 64px;
     height: 64px;
-    padding: 9px;
-    border-radius: 18px;
   }
   .employee-profile .ep-actions {
     width: 100%;

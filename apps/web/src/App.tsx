@@ -55,6 +55,7 @@ import { ModelConnectionsDialog } from "./components/ModelConnectionsDialog";
 import { ModelSettingsScreen } from "./components/ModelSettingsScreen";
 import { NewChatScreen, type NewChatStart } from "./components/NewChatScreen";
 import { NodeManagerDialog } from "./components/NodeManagerDialog";
+import { LaunchExit, LaunchScreen, OnboardingFrame } from "./components/Onboarding";
 import { OpenBotMark } from "./components/OpenBotMark";
 import { PluginsDialog } from "./components/PluginsDialog";
 import { indexRunCollaboration } from "./components/RunCollaboration";
@@ -148,7 +149,7 @@ export function App() {
         if (signal?.aborted || requestId !== authRequest.current) return;
         setSession(undefined);
         setSessionError(
-          cause instanceof Error ? cause.message : "无法连接 OpenBot Server。请确认服务已启动。",
+          cause instanceof Error ? cause.message : "无法连接 OpenBot 服务电脑。请确认服务已启动。",
         );
       }
     },
@@ -291,13 +292,7 @@ export function App() {
     desktopBridge !== undefined &&
     (desktopConnection === undefined || desktopSetupPlan === undefined)
   ) {
-    return (
-      <main className="loading-screen">
-        <OpenBotMark className="onboarding-mark" />
-        <h1>正在读取 Desktop 配置</h1>
-        <p>正在打开你的本地安装计划和连接设置…</p>
-      </main>
-    );
+    return <LaunchScreen status="正在读取这台电脑的设置" />;
   }
 
   if (
@@ -394,55 +389,63 @@ export function App() {
 
   if (session === undefined) {
     return (
-      <main className="loading-screen">
-        <OpenBotMark className="onboarding-mark" />
-        <h1>{sessionError ? "无法打开 OpenBot" : "正在验证本地会话"}</h1>
-        <p>{sessionError ?? "正在安全连接你的 OpenBot Server…"}</p>
-        {sessionError ? (
-          <div className="loading-actions">
-            <button className="primary-button" type="button" onClick={() => refreshSession()}>
-              重新连接
-            </button>
-            {desktopBridge !== undefined ? (
-              <button
-                className="secondary-button"
-                type="button"
-                onClick={() => setShowConnectionSetup(true)}
-              >
-                更换 Server
+      <LaunchScreen
+        status="正在打开你的工作区"
+        error={sessionError}
+        actions={
+          sessionError ? (
+            <>
+              <button className="ob-setup-primary" type="button" onClick={() => refreshSession()}>
+                重新连接
               </button>
-            ) : null}
-          </div>
-        ) : null}
-      </main>
+              {desktopBridge !== undefined ? (
+                <button
+                  className="ob-setup-secondary"
+                  type="button"
+                  onClick={() => setShowConnectionSetup(true)}
+                >
+                  更换服务电脑
+                </button>
+              ) : null}
+            </>
+          ) : undefined
+        }
+      />
     );
   }
 
   if (!session.authenticated && localHost) {
     return (
-      <main className="login-screen">
-        <section className="login-card" aria-labelledby="local-session-title">
-          <OpenBotMark />
-          <h1 id="local-session-title">已退出本机工作区</h1>
-          <p className="login-copy">由这台电脑验证身份，无需输入密码。</p>
-          <button
-            className="primary-button"
-            type="button"
-            onClick={() => {
-              explicitlyLoggedOut.current = false;
-              setSession(undefined);
-              void refreshSession();
-            }}
-          >
-            重新进入
-          </button>
-        </section>
-      </main>
+      <OnboardingFrame
+        avatar={{ character: "round", accent: "green" }}
+        title="已退出本机工作区"
+        description="由这台电脑验证身份，无需输入密码。"
+        width={380}
+        offset={140}
+        titleId="local-session-title"
+      >
+        <button
+          className="ob-setup-primary"
+          type="button"
+          onClick={() => {
+            explicitlyLoggedOut.current = false;
+            setSession(undefined);
+            void refreshSession();
+          }}
+        >
+          重新进入
+        </button>
+      </OnboardingFrame>
     );
   }
 
   if (!session.authenticated) {
-    return <LoginScreen onLogin={async (password) => setSession(await login(password))} />;
+    return (
+      <LoginScreen
+        progress={desktopBridge !== undefined}
+        onLogin={async (password) => setSession(await login(password))}
+      />
+    );
   }
 
   if (workEntry)
@@ -454,18 +457,13 @@ export function App() {
       />
     );
 
-  if (nativeReady && !modelChecked)
-    return (
-      <main className="loading-screen">
-        <OpenBotMark className="onboarding-mark" />
-        <h1>正在读取模型配置</h1>
-      </main>
-    );
+  if (nativeReady && !modelChecked) return <LaunchScreen status="正在读取模型设置" />;
 
   if (showModelSetup)
     return (
       <ModelSettingsScreen
         onboarding={!showSettings}
+        progress={desktopBridge !== undefined && !showSettings}
         onDone={() => {
           setShowModelSetup(false);
           setModelChecked(true);
@@ -505,13 +503,7 @@ export function App() {
     !skipLocalWorkerSetup
   ) {
     if (desktopLocalWorker === undefined || desktopLocalWorker === null) {
-      return (
-        <main className="loading-screen">
-          <OpenBotMark className="onboarding-mark" />
-          <h1>正在检查本机 Worker</h1>
-          <p>正在读取原生组件、身份与 macOS 后台项目的真实状态…</p>
-        </main>
-      );
+      return <LaunchScreen status="正在检查这台电脑的工作状态" />;
     }
     if (desktopLocalWorker.status !== "enabled") {
       return (
@@ -1022,17 +1014,22 @@ export function AuthenticatedWorkspace({
 
   if (workspace === undefined) {
     return (
-      <main className="loading-screen">
-        <OpenBotMark className="onboarding-mark" />
-        <h1>{error ? "无法打开 OpenBot" : "正在连接 OpenBot"}</h1>
-        <p>{error ?? "正在读取本地频道、Bots 与节点状态…"}</p>
-        {error ? (
-          <button className="primary-button" type="button" onClick={() => refresh()}>
-            重新连接
-          </button>
-        ) : null}
-        <a href="#/tasks">打开任务监督</a>
-      </main>
+      <LaunchScreen
+        status="正在读取频道、Bot 和工作电脑"
+        error={error}
+        actions={
+          <>
+            {error ? (
+              <button className="ob-setup-primary" type="button" onClick={() => refresh()}>
+                重新连接
+              </button>
+            ) : null}
+            <a className="ob-setup-link" href="#/tasks">
+              打开任务监督
+            </a>
+          </>
+        }
+      />
     );
   }
 
@@ -1061,9 +1058,9 @@ export function AuthenticatedWorkspace({
     destination === "work"
       ? "任务监督"
       : destination === "automations"
-        ? "自动任务"
+        ? "例行任务"
         : destination === "skills"
-          ? "技能广场"
+          ? "技能"
           : selectedEmployeeId
             ? (employeeProfile?.employee.name ?? "Bot 档案")
             : location.kind === "new"
@@ -1076,9 +1073,11 @@ export function AuthenticatedWorkspace({
     <div
       className={`app-shell desktop-workspace ${error ? "workspace-refresh-failed" : ""} ${destination === "chat" && selectedChannel ? "channel-view" : ""} ${fullPage ? "full-page-destination" : ""} ${showDetails ? "" : "without-context"} ${preferences.leftPanelOpen ? "" : "without-sidebar"}`}
     >
+      <LaunchExit />
       <WorkspaceHeader
         title={headerTitle}
         avatars={headerAvatars}
+        group={!profileTitle && Boolean(selectedChannel) && !selectedChannel?.directBotId}
         railOpen={showDetails}
         onToggleRail={
           railAvailable

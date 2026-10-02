@@ -174,7 +174,7 @@ export function EmployeeEvolutionArchive({ events }: { events: EmployeeEvolution
         </ol>
       )}
       <p className="employee-evolution-credit">
-        进化档案的可视化方向参考 Hermes Agent Learning Journey；事件与权限仍由 OpenBot Server
+        进化档案的可视化方向参考 Hermes Agent Learning Journey；事件与权限仍由 OpenBot 服务电脑
         独立管理。
       </p>
     </div>
@@ -187,7 +187,7 @@ function eventTypeLabel(type: EmployeeEvolutionEventType): string {
 
 function evidenceKindLabel(kind: EmployeeEvidenceKind): string {
   if (kind === "run") return "任务";
-  if (kind === "artifact") return "产物";
+  if (kind === "artifact") return "产出";
   if (kind === "approval") return "审批";
   if (kind === "manual") return "Owner 手动记录";
   return "员工包导入";
