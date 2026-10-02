@@ -37,3 +37,8 @@ same row. Read Bots without reverse-order row locks to avoid Bot→connection de
 409 plus bounded Bot IDs/names, active Run IDs and Owner-default flag. Missing/corrupt/oversized
 dependency data or a database failure cannot authorize deletion. Preserve historical receipts and
 run/audit history; only the unused encrypted connection row is removed, with content-free audit.
+
+Qualification pins must advance with0049: the product preflight/smoke expect exactly50 entries,
+and the S7 target journal/SQL snapshot is repinned to committed migration source ce46574. The
+first hosted run correctly refused the old49-entry target. Retain exact-history, repeat-startup,
+paired restore and container checks; this is a new qualification, not a relaxed migration guard.
