@@ -38,7 +38,7 @@ HEAD_SHAPES = ["round", "square", "cat"]
 BODY_SHAPES = ["classic", "tall", "cape", "armor", "storage", "quadruped"]
 MOBILITIES = ["feet", "single-wheel", "dual-wheel", "hover", "four-legs"]
 ACCESSORIES = ["none", "headphones", "backpack", "trench", "arm", "toolbox"]
-ACCENTS = ["green", "yellow", "red", "blue"]
+ACCENTS = ["green", "yellow", "red", "blue", "violet", "teal", "pink", "slate"]
 
 BOT_PUBLIC_FIELDS = {"id", "name", "role", "status", "computerProfile", "model", "appearance", "createdAt"}
 BOT_REQUIRED_FIELDS = BOT_PUBLIC_FIELDS - {"appearance", "model"}
@@ -616,6 +616,13 @@ def test_model_enum_literals_match_the_typescript_unions_exactly():
     assert list(get_args(models.BotAppearance.model_fields["mobility"].annotation)) == MOBILITIES
     assert list(get_args(models.BotAppearance.model_fields["accessory"].annotation)) == ACCESSORIES
     assert list(get_args(models.BotAppearance.model_fields["accent"].annotation)) == ACCENTS
+    # The current domain owns additive accents; the frozen oracle intentionally keeps four.
+    from pathlib import Path
+    import re
+    source = (Path(__file__).resolve().parents[3] / 'packages/domain/src/index.ts').read_text()
+    union = re.search(r'export type BotAccent\s*=([^;]+);', source)
+    assert union is not None
+    assert re.findall(r'"([a-z]+)"', union.group(1)) == ACCENTS
     assert len(BOT_STATUSES) == 8 and len(COMPUTER_PROFILES) == 6
 
 
