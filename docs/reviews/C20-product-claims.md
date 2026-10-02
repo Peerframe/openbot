@@ -62,5 +62,6 @@ against a new owned PostgreSQL17.11 Docker fixture, actual loopback HTTP/WS and 
 transport. Initial audit harness lacked the unrelated-channel field and Node module resolution;
 2 fixture failures were corrected and the full 51 reran. No production data, paid model or real
 credentials. Previous hosted browser links are reused evidence, not a new hosted execution.
-No API behavior changes; bilingual API notes explain the actual limits. PR: [#159](https://github.com/Peerframe/openbot/pull/159); hosted validate pending.
+No API behavior changes; bilingual API notes explain the actual limits. PR: [#159](https://github.com/Peerframe/openbot/pull/159); hosted [validate passed](https://github.com/Peerframe/openbot/actions/runs/37040157029/job/110948189456)
+on `29eb5c1`. This evidence-only update reuses the unchanged executed test evidence.
 No auto-merge; C9/C11 and the missing cleanup implementation remain outside this task.
