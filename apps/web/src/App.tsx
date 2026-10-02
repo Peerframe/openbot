@@ -1,12 +1,12 @@
 import type {
   ApprovalDecision,
   AuthSessionSnapshot,
+  Bot,
   Channel,
-  CreateBotInput,
-  CreateChannelInput,
+  ModelSelection,
   RunFrame,
 } from "@openbot/domain";
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ApiError,
   createBot,
@@ -17,6 +17,7 @@ import {
   deleteChannel,
   getAuthSession,
   getModelSettings,
+  getOwnerPreferences,
   getUnreadCounts,
   joinBotToChannel,
   login,
@@ -31,11 +32,9 @@ import {
   subscribeToWorkspaceEvents,
 } from "./api";
 import { resolveAuthSession } from "./auth-session-recovery";
-import { AutomationsScreen } from "./components/AutomationsScreen";
+import { BotInfoRail } from "./components/BotInfoRail";
 import { ChannelWorkspace } from "./components/ChannelWorkspace";
 import { ContextRail } from "./components/ContextRail";
-import { CreateBotDialog } from "./components/CreateBotDialog";
-import { CreateChannelDialog } from "./components/CreateChannelDialog";
 import { DesktopConnectionScreen } from "./components/DesktopConnectionScreen";
 import { DesktopInstallScreen } from "./components/DesktopInstallScreen";
 import { DesktopLocalWorkerScreen } from "./components/DesktopLocalWorkerScreen";
@@ -45,8 +44,8 @@ import {
 } from "./components/DesktopSettingsScreen";
 import { DesktopSetupScreen } from "./components/DesktopSetupScreen";
 import { EmployeeBrowser } from "./components/EmployeeBrowser";
-import { EmployeeProfileRail } from "./components/EmployeeProfileRail";
 import { EmployeeProfileView, type ProfileTab } from "./components/EmployeeProfileView";
+import { EmptyWorkspace } from "./components/EmptyWorkspace";
 import { ExportEmployeeDialog } from "./components/ExportEmployeeDialog";
 import { ImportEmployeeDialog } from "./components/ImportEmployeeDialog";
 import { LoginScreen } from "./components/LoginScreen";
@@ -56,13 +55,11 @@ import { ModelSettingsScreen } from "./components/ModelSettingsScreen";
 import { NewChatScreen, type NewChatStart } from "./components/NewChatScreen";
 import { NodeManagerDialog } from "./components/NodeManagerDialog";
 import { LaunchExit, LaunchScreen, OnboardingFrame } from "./components/Onboarding";
-import { OpenBotMark } from "./components/OpenBotMark";
 import { PluginsDialog } from "./components/PluginsDialog";
 import { indexRunCollaboration } from "./components/RunCollaboration";
-import { RunInspector } from "./components/RunInspector";
 import { ShareConversationDialog } from "./components/ShareConversationDialog";
 import { Sidebar, type SidebarActivity } from "./components/Sidebar";
-import { SkillLibraryScreen } from "./components/SkillLibraryScreen";
+import { TaskSheet } from "./components/TaskSheet";
 import { WorkspaceHeader } from "./components/WorkspaceHeader";
 import { parseWorkEntry, WorkTasksEntry } from "./components/WorkTasksEntry";
 import { WorkTasksScreen } from "./components/WorkTasksScreen";
@@ -73,6 +70,7 @@ import {
   type DesktopSetupPlanState,
   getOpenBotDesktopBridge,
 } from "./desktop-runtime";
+import { freshAppearance, nextBotName, QUICK_BOT_ROLE } from "./quick-bot";
 import { type SidebarItemKey, sidebarOrganization } from "./sidebar-organization";
 import {
   NotificationTracker,
@@ -88,7 +86,7 @@ import { useWorkspaceState } from "./use-workspace-state";
 import { useWorkspaceNavigation } from "./workspace-navigation";
 import { updatePreferences, useWorkspacePreferences } from "./workspace-preferences";
 
-type Dialog = "bot" | "channel" | "node" | undefined;
+type Dialog = "node" | undefined;
 
 export function App() {
   const [workEntry, setWorkEntry] = useState(() => parseWorkEntry(window.location.hash));
@@ -569,12 +567,14 @@ export function AuthenticatedWorkspace({
   const { values: preferences } = useWorkspacePreferences();
   const navigation = useWorkspaceNavigation();
   const location = navigation.location;
-  // The New artboard has no right rail; everywhere else it follows the Owner's preference.
-  const showDetails = preferences.rightPanelOpen && location.kind !== "new";
-  const destination =
-    location.kind === "automations" || location.kind === "skills" || location.kind === "work"
-      ? location.kind
-      : "chat";
+  // The New, EmptyWorkspace and WorkSupervision artboards have no right rail; elsewhere it
+  // follows the Owner's preference. Home is only shown while the workspace has no conversation.
+  const showDetails =
+    preferences.rightPanelOpen &&
+    location.kind !== "new" &&
+    location.kind !== "home" &&
+    location.kind !== "work";
+  const destination = location.kind === "work" ? "work" : "chat";
   const selectedChannelId = location.kind === "channel" ? location.id : undefined;
   const selectedEmployeeId = location.kind === "employee" ? location.id : undefined;
   const employeeInitialTab = location.kind === "employee" ? location.tab : "overview";
@@ -697,6 +697,11 @@ export function AuthenticatedWorkspace({
   }
   const [sharing, setSharing] = useState(false);
   const [sharedBotId, setSharedBotId] = useState<string>();
+  // A 单聊's rail is the Bot 信息 rail, which reads the same profile as the Bot page.
+  const railBotId =
+    showDetails && destination === "chat"
+      ? workspace?.channels.find((channel) => channel.id === selectedChannelId)?.directBotId
+      : undefined;
   const directRequest = useRef(0);
   // biome-ignore lint/correctness/useExhaustiveDependencies: leaving a view invalidates an in-flight direct-conversation open.
   useEffect(
@@ -711,7 +716,7 @@ export function AuthenticatedWorkspace({
     loading: employeeProfileLoading,
     error: employeeProfileError,
     refresh: refreshEmployeeProfile,
-  } = useEmployeeProfile(selectedEmployeeId);
+  } = useEmployeeProfile(selectedEmployeeId ?? railBotId);
   const [employeeExportOpen, setEmployeeExportOpen] = useState(false);
   const [employeeImportOpen, setEmployeeImportOpen] = useState(false);
   const [framesByRun, setFramesByRun] = useState<Map<string, RunFrame>>(() => new Map());
@@ -824,23 +829,47 @@ export function AuthenticatedWorkspace({
     workspaceReady,
   ]);
 
-  async function handleCreateBot(input: CreateBotInput) {
-    const bot = await createBot(input);
+  /** 创建新 Bot: create immediately with a free name and fresh look, then open its 单聊. */
+  async function handleQuickCreateBot() {
+    if (!workspace) return;
+    let model: ModelSelection | undefined;
+    try {
+      model = (await getOwnerPreferences()).defaultModel ?? undefined;
+    } catch {
+      // Without a readable default the 服务电脑 applies its own; creation does not depend on it.
+    }
+    let bot: Bot | undefined;
+    for (let attempt = 0; !bot; attempt += 1) {
+      try {
+        bot = await createBot({
+          name: nextBotName(workspace.bots, attempt),
+          role: QUICK_BOT_ROLE,
+          computerProfile: "model",
+          appearance: freshAppearance(workspace.bots),
+          ...(model ? { model } : {}),
+        });
+      } catch (cause) {
+        // Another client may take the same default name first; try the next free one twice.
+        if (attempt >= 2 || !(cause instanceof ApiError) || cause.status !== 409) throw cause;
+      }
+    }
     projectBot(bot);
+    const channel = await openBotConversation(bot.id);
+    projectChannel(channel);
+    setMobilePanel(undefined);
+    updatePreferences({ rightPanelOpen: true });
+    selectChannel(channel.id);
     await refresh();
-    setDialog(undefined);
-    showNotice(`${bot.name} 已创建。`);
   }
 
-  async function handleCreateChannel(input: CreateChannelInput) {
-    const channel = await createChannel(input);
-    projectChannel(channel);
-    await refresh();
-    selectChannel(channel.id);
-    setFocusRequest((value) => value + 1);
-    setDialog(undefined);
+  /** Entry points outside the New screen have no error line of their own; a notice reports it. */
+  function quickCreateBot() {
+    void handleQuickCreateBot().catch(() => showNotice("没能创建 Bot，请稍后重试。"));
+  }
+
+  function openNewChannel() {
     setMobilePanel(undefined);
-    showNotice(`${channel.name} 已创建。`);
+    navigation.navigate({ kind: "new", channel: true });
   }
 
   async function handleJoinBot(botId: string) {
@@ -849,9 +878,9 @@ export function AuthenticatedWorkspace({
   }
 
   /** New artboard: the first message opens a direct conversation or creates the channel. */
-  async function handleStartChat({ botIds, channelName, text }: NewChatStart) {
+  async function handleStartChat({ botIds, asChannel, channelName, text }: NewChatStart) {
     let channel: Channel;
-    if (botIds.length === 1) {
+    if (botIds.length === 1 && !asChannel) {
       channel = await openBotConversation(botIds[0] ?? "");
     } else {
       const base = (
@@ -1034,7 +1063,6 @@ export function AuthenticatedWorkspace({
   }
 
   const selectedChannel = workspace.channels.find((channel) => channel.id === selectedChannelId);
-  const fullPage = destination !== "chat";
   const selectedRun = workspace.runs.find((run) => run.id === selectedRunId);
   const browserBot = browserBotId
     ? workspace.bots.find((bot) => bot.id === browserBotId)
@@ -1046,6 +1074,8 @@ export function AuthenticatedWorkspace({
     selectedChannel && pluginBotId
       ? { channelId: selectedChannel.id, botId: pluginBotId }
       : undefined;
+  const railBotKey = selectedEmployeeId ?? railBotId;
+  const railBot = railBotKey ? workspace.bots.find((bot) => bot.id === railBotKey) : undefined;
   const profileTitle =
     destination === "chat" && selectedEmployeeId ? employeeProfile?.employee : undefined;
   const headerAvatars = profileTitle
@@ -1057,21 +1087,17 @@ export function AuthenticatedWorkspace({
   const headerTitle =
     destination === "work"
       ? "任务监督"
-      : destination === "automations"
-        ? "例行任务"
-        : destination === "skills"
-          ? "技能"
-          : selectedEmployeeId
-            ? (employeeProfile?.employee.name ?? "Bot 档案")
-            : location.kind === "new"
-              ? "新建聊天"
-              : (selectedChannel?.name ?? "OpenBot");
+      : selectedEmployeeId
+        ? (employeeProfile?.employee.name ?? "Bot 档案")
+        : location.kind === "new"
+          ? "新建聊天"
+          : (selectedChannel?.name ?? "");
   // The title pill opens the rail for a conversation or a Bot profile (Main/Profile artboards).
   const railAvailable = destination === "chat" && Boolean(selectedChannel || selectedEmployeeId);
 
   return (
     <div
-      className={`app-shell desktop-workspace ${error ? "workspace-refresh-failed" : ""} ${destination === "chat" && selectedChannel ? "channel-view" : ""} ${fullPage ? "full-page-destination" : ""} ${showDetails ? "" : "without-context"} ${preferences.leftPanelOpen ? "" : "without-sidebar"}`}
+      className={`app-shell desktop-workspace ${error ? "workspace-refresh-failed" : ""} ${destination === "chat" && selectedChannel ? "channel-view" : ""} ${showDetails ? "" : "without-context"} ${preferences.leftPanelOpen ? "" : "without-sidebar"}`}
     >
       <LaunchExit />
       <WorkspaceHeader
@@ -1106,9 +1132,7 @@ export function AuthenticatedWorkspace({
           runs={workspace.runs}
           ownerName={ownerName}
           destination={destination}
-          onAutomations={() =>
-            onSettings ? onSettings("routines") : navigation.navigate({ kind: "automations" })
-          }
+          onAutomations={() => onSettings?.("routines")}
           onWork={() => navigation.navigate({ kind: "work" })}
           onSkills={() => setPluginsOpen(true)}
           selectedChannelId={destination === "chat" ? selectedChannel?.id : undefined}
@@ -1127,8 +1151,8 @@ export function AuthenticatedWorkspace({
           onAddBotToChannel={handleAddBotToChannel}
           onNewChat={() => navigation.navigate({ kind: "new" })}
           newChatActive={location.kind === "new"}
-          onCreateBot={() => setDialog("bot")}
-          onCreateChannel={() => setDialog("channel")}
+          onCreateBot={quickCreateBot}
+          onCreateChannel={openNewChannel}
           onManageNodes={() => setDialog("node")}
           onManageModels={() => setModelServicesOpen(true)}
           onLogout={onLogout}
@@ -1141,19 +1165,7 @@ export function AuthenticatedWorkspace({
         active={destination === "work" && active}
         nativeCapabilitiesEnabled
       />
-      {destination === "work" ? null : destination === "automations" ? (
-        <AutomationsScreen bots={workspace.bots} channels={workspace.channels} />
-      ) : destination === "skills" ? (
-        <SkillLibraryScreen
-          channels={workspace.channels}
-          onInsertMaterial={insertPluginMaterial}
-          onBack={navigation.back}
-          onCreateBot={() => setDialog("bot")}
-          onImportBot={() => setEmployeeImportOpen(true)}
-          bots={workspace.bots}
-          onOpenBot={(botId) => openEmployee(botId, "skills")}
-        />
-      ) : selectedEmployeeId ? (
+      {destination === "work" ? null : selectedEmployeeId ? (
         <EmployeeProfileView
           key={`${selectedEmployeeId}:${employeeInitialTab}`}
           initialTab={employeeInitialTab}
@@ -1168,13 +1180,22 @@ export function AuthenticatedWorkspace({
           modelServicesVersion={modelServicesVersion}
           onOpenBrowser={() => setBrowserBotId(selectedEmployeeId)}
           channels={workspace.channels}
-          onRename={(name) => renameEmployee(selectedEmployeeId, name)}
+          onOpenRun={(runId) => {
+            // The sheet reads the workspace projection; an older run may not be loaded there.
+            if (workspace.runs.some((run) => run.id === runId)) setSelectedRunId(runId);
+            else showNotice("这项任务较早，暂时无法在这里打开详情。");
+          }}
         />
       ) : selectedChannel ? (
         <ChannelWorkspace
           key={selectedChannel.id}
           session={conversationSession}
           globalHeader
+          onBotChanged={refresh}
+          approvals={workspace.approvals}
+          nodes={workspace.nodes}
+          frames={framesByRun}
+          onDecideApproval={handleDecideApproval}
           channel={selectedChannel}
           bots={workspace.bots}
           artifacts={workspace.artifacts}
@@ -1188,36 +1209,51 @@ export function AuthenticatedWorkspace({
           onProgress={projectProgress}
           onRun={projectRun}
           onOpenMembers={() => updatePreferences({ rightPanelOpen: true })}
-          onNewRoutine={() =>
-            onSettings ? onSettings("routines") : navigation.navigate({ kind: "automations" })
-          }
+          onNewRoutine={() => onSettings?.("routines")}
           onOpenSettings={onSettings ? (section) => onSettings(section) : undefined}
           onOpenHosts={() => setDialog("node")}
         />
       ) : location.kind === "new" ? (
         <NewChatScreen
+          key={location.channel ? "new-channel" : "new-chat"}
           bots={workspace.bots}
-          onCreateBot={() => setDialog("bot")}
+          initialChannelMode={location.channel === true}
+          onCreateBot={handleQuickCreateBot}
           onStart={handleStartChat}
+          onClose={
+            navigation.canGoBack ? navigation.back : () => navigation.navigate({ kind: "home" })
+          }
         />
       ) : (
-        <ChannelEmptyState
-          hasBots={workspace.bots.length > 0}
-          onCreateBot={() => setDialog("bot")}
-          onCreateChannel={() => setDialog("channel")}
+        <EmptyWorkspace
+          computers={workspace.nodes.length}
+          onCreateBot={quickCreateBot}
+          onCreateChannel={openNewChannel}
+          onImportBot={() => setEmployeeImportOpen(true)}
+          onManageModels={() => setModelServicesOpen(true)}
+          onManageComputers={() => setDialog("node")}
         />
       )}
 
       <div id="workspace-details" className="workspace-details" hidden={!showDetails}>
         {showDetails &&
-          (destination === "chat" && selectedEmployeeId ? (
-            <EmployeeProfileRail
-              profile={employeeProfile}
-              nodes={workspace.nodes}
-              onBack={() => void openDirectConversation(selectedEmployeeId)}
+          (destination === "chat" && railBot ? (
+            <BotInfoRail
+              key={railBot.id}
+              bot={railBot}
+              profile={employeeProfile?.employee.id === railBot.id ? employeeProfile : undefined}
+              workspace={workspace}
               onCollapse={() => updatePreferences({ rightPanelOpen: false })}
-              onRename={(name) => renameEmployee(selectedEmployeeId, name)}
-              onProfileChanged={() => refreshEmployeeProfile(selectedEmployeeId)}
+              onShare={() => setSharedBotId(railBot.id)}
+              onRename={(name) => renameEmployee(railBot.id, name)}
+              onProfileChanged={async () => {
+                await refreshEmployeeProfile(railBot.id);
+                await refresh();
+              }}
+              onDelete={() => handleDeleteItem({ kind: "bot", id: railBot.id })}
+              onDecideApproval={handleDecideApproval}
+              onManageModels={() => setModelServicesOpen(true)}
+              modelServicesVersion={modelServicesVersion}
             />
           ) : (
             <ContextRail
@@ -1241,14 +1277,8 @@ export function AuthenticatedWorkspace({
         approvals={workspace.approvals}
         onPanel={setMobilePanel}
         onDecideApproval={handleDecideApproval}
-        onCreateBot={() => {
-          setMobilePanel(undefined);
-          setDialog("bot");
-        }}
-        onCreateChannel={() => {
-          setMobilePanel(undefined);
-          setDialog("channel");
-        }}
+        onCreateBot={quickCreateBot}
+        onCreateChannel={openNewChannel}
         onManageNodes={() => {
           setMobilePanel(undefined);
           setDialog("node");
@@ -1276,7 +1306,11 @@ export function AuthenticatedWorkspace({
         />
       )}
       {selectedRun ? (
-        <RunInspector
+        <TaskSheet
+          key={selectedRun.id}
+          channelName={
+            workspace.channels.find((channel) => channel.id === selectedRun.channelId)?.name
+          }
           artifacts={workspace.artifacts.filter((artifact) => artifact.runId === selectedRun.id)}
           bot={workspace.bots.find((bot) => bot.id === selectedRun.botId)}
           botsById={new Map(workspace.bots.map((bot) => [bot.id, bot]))}
@@ -1304,25 +1338,6 @@ export function AuthenticatedWorkspace({
         />
       ) : null}
 
-      {dialog === "bot" ? (
-        <CreateBotDialog
-          onClose={() => setDialog(undefined)}
-          onCreate={handleCreateBot}
-          onManageModels={() => setModelServicesOpen(true)}
-          modelServicesVersion={modelServicesVersion}
-          onImport={() => {
-            setDialog(undefined);
-            setEmployeeImportOpen(true);
-          }}
-        />
-      ) : null}
-      {dialog === "channel" ? (
-        <CreateChannelDialog
-          bots={workspace.bots}
-          onClose={() => setDialog(undefined)}
-          onCreate={handleCreateChannel}
-        />
-      ) : null}
       {dialog === "node" ? (
         <NodeManagerDialog onlineNodes={workspace.nodes} onClose={() => setDialog(undefined)} />
       ) : null}
@@ -1392,50 +1407,6 @@ export function AuthenticatedWorkspace({
         </div>
       ) : null}
     </div>
-  );
-}
-
-function ChannelEmptyState({
-  headerAction,
-  hasBots,
-  onCreateBot,
-  onCreateChannel,
-}: {
-  headerAction?: ReactNode;
-  hasBots: boolean;
-  onCreateBot(): void;
-  onCreateChannel(): void;
-}) {
-  return (
-    <main className="workspace-main channel-first-empty">
-      <header className="empty-workspace-header">
-        <span>频道聊天</span>
-        <div className="workspace-header-actions">
-          <span>OpenBot 工作空间</span>
-          {headerAction}
-        </div>
-      </header>
-      <section className="workspace-welcome" aria-labelledby="workspace-welcome-title">
-        <OpenBotMark className="welcome-mark" />
-        <h1 id="workspace-welcome-title">你的工作，从这里开始</h1>
-        <p>
-          为一件事建一个频道，和 Bot 一起完成。
-          <br />
-          对话、任务和结果，都留在这里。
-        </p>
-        <div>
-          <button className="primary-button" type="button" onClick={onCreateChannel}>
-            创建第一个频道
-          </button>
-          {!hasBots ? (
-            <button className="secondary-button" type="button" onClick={onCreateBot}>
-              先创建 Bot
-            </button>
-          ) : null}
-        </div>
-        <small className="welcome-note">从左侧选择频道，随时继续之前的工作。</small>
-      </section>
-    </main>
   );
 }
 

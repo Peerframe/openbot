@@ -6,8 +6,8 @@ import {
   listNodeIdentities,
   revokeNodeIdentity,
 } from "../api";
-import { CloseIcon, NodeIcon } from "./Icons";
-import { useModalDialog } from "./useModalDialog";
+import { Dialog } from "./Dialog";
+import { NodeIcon } from "./Icons";
 
 export type NodeDisplayState = "online" | "offline" | "revoked";
 
@@ -114,6 +114,11 @@ export function useNodeManager() {
   };
 }
 
+/**
+ * 配对一台工作电脑 (DialogPairHost artboard). The pairing token is issued by the 服务电脑, valid
+ * for ten minutes and shown once; the screen masks it and 复制启动配置 copies it in full. Online
+ * state comes from the live connection; enrollment and revocation are the Server's records.
+ */
 export function NodeManagerDialog({
   onlineNodes,
   onClose,
@@ -132,127 +137,185 @@ export function NodeManagerDialog({
     confirmingNodeId,
     setConfirmingNodeId,
     revokingNodeId,
-    refresh,
     issue,
     copyEnrollment,
     revoke,
   } = useNodeManager();
-  const { dialogRef, closeDialog } = useModalDialog(onClose);
+  const [reveal, setReveal] = useState(false);
+  const remaining = useCountdown(issued?.expiresAt);
+  const onlineById = new Map(onlineNodes.map((node) => [node.id, node]));
 
   return (
-    <div className="dialog-backdrop">
-      <dialog
-        ref={dialogRef}
-        className="create-dialog node-manager-dialog"
-        aria-labelledby="node-manager-title"
-      >
-        <header className="dialog-header">
+    <Dialog
+      title="配对一台工作电脑"
+      intro="让 Bot 在一台专用电脑上执行任务。配对令牌十分钟内有效。"
+      width={600}
+      className="node-manager-dialog"
+      onClose={onClose}
+      footer={
+        <button type="button" className="ob-pill is-large" onClick={onClose}>
+          完成
+        </button>
+      }
+    >
+      {issued ? (
+        <section className="ob-dialog-config" aria-live="polite">
+          <header>
+            <strong>启动配置 · 只显示这一次</strong>
+            <small className="is-warning">
+              {remaining === undefined || remaining > 0
+                ? `${formatCountdown(remaining ?? 0)} 后过期`
+                : "已过期，请重新创建"}
+            </small>
+          </header>
+          <pre>{reveal ? enrollmentEnvironment(issued) : maskedEnvironment(issued)}</pre>
           <div>
-            <h2 id="node-manager-title">工作主机</h2>
-            <p>连接 Windows、macOS 或 Linux 电脑，让员工在专用工作环境中执行任务。</p>
+            <button
+              type="button"
+              className="ob-pill is-small is-primary"
+              onClick={async () => {
+                await copyEnrollment();
+              }}
+            >
+              {copied ? "已复制" : "复制启动配置"}
+            </button>
+            <small>
+              在目标电脑上加入这两行再启动；首次连上后立刻删掉令牌。不要通过聊天或 Git 传递。
+            </small>
           </div>
-          <button className="icon-button" type="button" aria-label="关闭" onClick={closeDialog}>
-            <CloseIcon />
+          {!reveal && error ? (
+            <button type="button" className="ob-dialog-text-button" onClick={() => setReveal(true)}>
+              显示完整内容以便手动复制
+            </button>
+          ) : null}
+        </section>
+      ) : (
+        <form className="ob-dialog-pair" onSubmit={issue}>
+          <label className="ob-field">
+            给这台电脑起个编号
+            <input
+              // biome-ignore lint/a11y/noAutofocus: the dialog opens to pair a computer.
+              autoFocus
+              maxLength={128}
+              pattern="[A-Za-z0-9][A-Za-z0-9._:-]*"
+              placeholder="office-linux-01"
+              required
+              value={nodeId}
+              onChange={(event) => setNodeId(event.target.value)}
+            />
+          </label>
+          <button type="submit" className="ob-pill is-large is-primary" disabled={issuing}>
+            {issuing ? "正在创建…" : "创建配对令牌"}
           </button>
-        </header>
+        </form>
+      )}
 
-        <div className="node-manager-body">
-          <section className="node-enrollment-section" aria-labelledby="node-enrollment-title">
-            <div className="node-manager-section-heading">
-              <div>
-                <h3 id="node-enrollment-title">配对新主机</h3>
-                <p>令牌十分钟后过期，只显示一次。不要通过公开聊天或 Git 传递。</p>
-              </div>
-            </div>
-            <form className="node-enrollment-form" onSubmit={issue}>
-              <label>
-                <span>Node ID</span>
-                <input
-                  autoFocus
-                  maxLength={128}
-                  pattern="[A-Za-z0-9][A-Za-z0-9._:-]*"
-                  placeholder="office-linux-01"
-                  required
-                  value={nodeId}
-                  onChange={(event) => setNodeId(event.target.value)}
-                />
-              </label>
-              <button className="primary-button" type="submit" disabled={issuing}>
-                {issuing ? "创建中…" : "创建配对令牌"}
-              </button>
-            </form>
-
-            {issued ? (
-              <section className="node-enrollment-result" aria-live="polite">
-                <div>
-                  <strong>仅显示这一次</strong>
-                  <span>有效至 {formatNodeDate(issued.expiresAt)}</span>
-                </div>
-                <pre>{enrollmentEnvironment(issued)}</pre>
-                <button className="secondary-button" type="button" onClick={copyEnrollment}>
-                  {copied ? "已复制" : "复制启动配置"}
-                </button>
-                <p>在目标主机配置服务电脑地址后加入以上两行，首次启动成功后立即删除令牌。</p>
-              </section>
-            ) : null}
-          </section>
-
-          <section className="node-identity-section" aria-labelledby="node-identities-title">
-            <div className="node-manager-section-heading">
-              <div>
-                <h3 id="node-identities-title">已登记主机</h3>
-                <p>在线状态来自实时连接；登记与吊销状态来自服务电脑数据库。</p>
-              </div>
-              <button
-                className="secondary-button node-refresh-button"
-                type="button"
-                disabled={identities === undefined}
-                onClick={() => void refresh()}
-              >
-                刷新
-              </button>
-            </div>
-
-            {identities === undefined && error === undefined ? (
-              <p className="node-manager-empty" aria-live="polite">
-                正在读取工作主机…
-              </p>
-            ) : null}
-            {identities?.length === 0 ? (
-              <p className="node-manager-empty">
-                还没有登记主机。创建配对令牌后，在目标电脑启动 Node。
-              </p>
-            ) : null}
-            {identities && identities.length > 0 ? (
-              <NodeIdentityList
-                identities={identities}
-                onlineNodes={onlineNodes}
-                confirmingNodeId={confirmingNodeId}
-                revokingNodeId={revokingNodeId}
-                onConfirm={setConfirmingNodeId}
-                onCancel={() => setConfirmingNodeId(undefined)}
-                onRevoke={(value) => void revoke(value)}
-              />
-            ) : null}
-          </section>
-        </div>
-
-        {error ? (
-          <p className="form-error node-manager-error" role="alert">
-            {error}
+      <section className="ob-dialog-section" aria-labelledby="node-identities-title">
+        <h3 id="node-identities-title">已登记的电脑 · {identities?.length ?? 0}</h3>
+        {identities === undefined && error === undefined ? (
+          <p className="ob-dialog-empty" aria-live="polite">
+            正在读取工作电脑…
           </p>
         ) : null}
-        <footer className="node-manager-footer">
-          <span>
-            完整说明：<code>docs/NODE_ENROLLMENT.md</code>
-          </span>
-          <button className="secondary-button" type="button" onClick={closeDialog}>
-            完成
-          </button>
-        </footer>
-      </dialog>
-    </div>
+        {identities?.length === 0 ? (
+          <p className="ob-dialog-empty">还没有登记的电脑。创建配对令牌后，在目标电脑上启动。</p>
+        ) : null}
+        {identities && identities.length > 0 ? (
+          <ul className="ob-dialog-rows">
+            {identities.map((identity) => {
+              const live = onlineById.get(identity.nodeId) ?? identity.node;
+              const state = nodeIdentityDisplayState(identity, onlineNodes);
+              const confirming = confirmingNodeId === identity.nodeId;
+              const revoking = revokingNodeId === identity.nodeId;
+              return (
+                <li key={identity.nodeId}>
+                  <span className="ob-dialog-file-type" aria-hidden="true">
+                    <NodeIcon />
+                  </span>
+                  <span>
+                    <strong>{live?.name ?? identity.nodeId}</strong>
+                    <small>
+                      {live
+                        ? [
+                            platformLabel(live.platform),
+                            `${live.activeRunIds.length}/${live.maxConcurrentRuns} 个任务`,
+                            state === "online" ? "刚刚" : formatNodeDate(live.lastSeenAt),
+                          ].join(" · ")
+                        : `登记于 ${formatNodeDate(identity.enrolledAt)}`}
+                    </small>
+                  </span>
+                  <span className="ob-dialog-row-actions">
+                    <span className={`ob-dialog-state is-${state}`}>{nodeStateLabel(state)}</span>
+                    {identity.status !== "active" ? null : confirming ? (
+                      <>
+                        <small className="is-danger">旧凭证将立即失效</small>
+                        <button
+                          type="button"
+                          className="ob-pill is-small is-danger"
+                          disabled={revoking}
+                          onClick={() => void revoke(identity.nodeId)}
+                        >
+                          {revoking ? "正在吊销…" : "确认吊销"}
+                        </button>
+                        <button
+                          type="button"
+                          className="ob-pill is-small"
+                          disabled={revoking}
+                          onClick={() => setConfirmingNodeId(undefined)}
+                        >
+                          取消
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        className="ob-pill is-small"
+                        onClick={() => setConfirmingNodeId(identity.nodeId)}
+                      >
+                        吊销
+                      </button>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
+      </section>
+
+      {error ? (
+        <p className="ob-dialog-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <small className="ob-dialog-foot-note">
+        在线状态来自实时连接；登记与吊销记录在服务电脑上。吊销后旧凭证立即失效。
+      </small>
+    </Dialog>
   );
+}
+
+function useCountdown(until: string | undefined) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (until === undefined) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [until]);
+  return until === undefined ? undefined : Math.max(0, Date.parse(until) - now);
+}
+
+function formatCountdown(ms: number) {
+  const seconds = Math.ceil(ms / 1000);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+/** The token on screen keeps only its last four characters; copying uses the full value. */
+function maskedEnvironment(issued: NodeEnrollmentToken): string {
+  const token = issued.token;
+  const masked =
+    token.length > 8 ? `${token.slice(0, 5)}${"•".repeat(16)}${token.slice(-4)}` : "••••";
+  return `OPENBOT_NODE_ID=${issued.nodeId}\nOPENBOT_NODE_ENROLLMENT_TOKEN=${masked}`;
 }
 
 export function NodeIdentityList({

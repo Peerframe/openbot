@@ -1,8 +1,28 @@
 import type { Artifact, Bot, Channel, Run } from "@openbot/domain";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArtifactDownloadLink } from "./ArtifactCard";
-import { useModalDialog } from "./useModalDialog";
+import { Dialog } from "./Dialog";
+import { RobotAvatar } from "./RobotAvatar";
+import { extensionOf } from "./TaskCard";
 
+type Tab = "files" | "bots";
+
+const timeFormatter = new Intl.DateTimeFormat("zh-CN", {
+  month: "numeric",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+function formatSize(bytes: number) {
+  return bytes < 1024 ? `${bytes} B` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+/**
+ * 分享 (DialogShare artboard): save this 频道's outputs, or pack one of its Bots as a template.
+ * Sharing only produces files the Owner saves; nothing is sent to anyone or published. Only
+ * outputs of tasks in this 频道 and its own Bots are listed; transcripts are never loaded.
+ */
 export function ShareConversationDialog({
   channel,
   bots,
@@ -18,22 +38,18 @@ export function ShareConversationDialog({
   onShareBot(botId: string): void;
   onClose(): void;
 }) {
-  const { dialogRef: dialog } = useModalDialog(onClose);
-  const members = bots.filter((bot) => channel.botIds.includes(bot.id));
-  const [botId, setBotId] = useState(members[0]?.id ?? "");
+  const [tab, setTab] = useState<Tab>("files");
   const [preview, setPreview] = useState<Artifact>();
   const [text, setText] = useState("");
   const [previewState, setPreviewState] = useState("");
-  const channelRuns = new Set(
-    runs.filter((run) => run.channelId === channel.id).map((run) => run.id),
+  const textarea = useRef<HTMLTextAreaElement>(null);
+  const members = bots.filter((bot) => channel.botIds.includes(bot.id));
+  const runById = new Map(
+    runs.filter((run) => run.channelId === channel.id).map((run) => [run.id, run]),
   );
-  const files = artifacts.filter((artifact) => channelRuns.has(artifact.runId));
-  const validBot = members.some((bot) => bot.id === botId);
-
-  useEffect(() => {
-    if (validBot) return;
-    setBotId(members[0]?.id ?? "");
-  }, [validBot, members]);
+  const files = artifacts
+    .filter((artifact) => runById.has(artifact.runId))
+    .sort((left, right) => (right.createdAt ?? "").localeCompare(left.createdAt ?? ""));
 
   useEffect(() => {
     setText("");
@@ -51,120 +67,163 @@ export function ShareConversationDialog({
         const content = await response.text();
         if (controller.signal.aborted) return;
         setText(content);
-        setPreviewState("请检查内容后再分享。");
+        setPreviewState("");
       })
       .catch(() => {
-        if (!controller.signal.aborted) setPreviewState("无法读取文件，请重新打开预览。");
+        if (!controller.signal.aborted) setPreviewState("无法读取文件，请重新预览。");
       });
     return () => controller.abort();
   }, [preview]);
 
   return (
-    <dialog ref={dialog} className="modal share-dialog" aria-labelledby="share-title">
-      <header>
-        <h2 id="share-title">分享</h2>
-        <button className="icon-button" type="button" aria-label="关闭分享" onClick={onClose}>
-          ×
-        </button>
-      </header>
-      <section aria-labelledby="share-files-title">
-        <h3 id="share-files-title">最近产出文件</h3>
-        <p>显示当前已加载任务的文件。</p>
-        {files.length === 0 ? (
-          <p>当前没有已加载的产出文件。Bot 完成新任务后会显示在这里。</p>
-        ) : (
-          <ul className="share-file-list">
-            {files.map((artifact) => (
-              <li key={artifact.id}>
-                <div>
-                  <strong>{artifact.name}</strong>
-                  <small>
-                    {artifact.mediaType === "image/png" ? "PNG 图片" : "Markdown 文件"} ·{" "}
-                    {(artifact.sizeBytes / 1024).toFixed(1)} KB
-                  </small>
-                </div>
-                {artifact.mediaType === "text/markdown" ? (
+    <Dialog
+      title="分享"
+      intro="保存频道里的产出，或把一个 Bot 打包成模板给别人导入。"
+      width={640}
+      className="share-dialog"
+      onClose={onClose}
+    >
+      <div className="ob-seg" role="tablist" aria-label="分享内容">
+        {(
+          [
+            ["files", "产出文件"],
+            ["bots", "Bot 模板"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            type="button"
+            role="tab"
+            key={id}
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "files" ? (
+        <>
+          <section className="ob-dialog-section" aria-labelledby="share-files-title">
+            <h3 id="share-files-title">这个频道最近的产出 · {files.length}</h3>
+            {files.length === 0 ? (
+              <p className="ob-dialog-empty">还没有产出。Bot 完成任务后，文件会出现在这里。</p>
+            ) : (
+              <ul className="ob-dialog-rows">
+                {files.map((artifact) => {
+                  const run = runById.get(artifact.runId);
+                  const author = bots.find((bot) => bot.id === run?.botId)?.name;
+                  return (
+                    <li key={artifact.id}>
+                      <span className="ob-dialog-file-type" aria-hidden="true">
+                        {extensionOf(artifact.name)}
+                      </span>
+                      <span>
+                        <strong>{artifact.name}</strong>
+                        <small>
+                          {[
+                            author,
+                            artifact.createdAt
+                              ? timeFormatter.format(new Date(artifact.createdAt))
+                              : undefined,
+                            formatSize(artifact.sizeBytes),
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </small>
+                      </span>
+                      <span className="ob-dialog-row-actions">
+                        {artifact.mediaType === "text/markdown" ? (
+                          <button
+                            type="button"
+                            className="ob-pill is-small"
+                            onClick={() => setPreview({ ...artifact })}
+                          >
+                            预览
+                          </button>
+                        ) : null}
+                        <ArtifactDownloadLink
+                          artifact={artifact}
+                          downloadImage
+                          className="ob-pill is-small"
+                        >
+                          保存
+                        </ArtifactDownloadLink>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          {preview ? (
+            <section className="ob-dialog-preview" aria-label="文件预览">
+              <small>预览 · {preview.name}</small>
+              {previewState ? (
+                <p role="status" className="ob-dialog-loading">
+                  {previewState}
+                </p>
+              ) : null}
+              <textarea ref={textarea} aria-label="文件内容预览" value={text} readOnly rows={8} />
+              <span className="ob-dialog-row-actions">
+                <button
+                  type="button"
+                  className="ob-pill"
+                  disabled={!text}
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(text);
+                      setPreviewState("已复制文件内容。");
+                    } catch {
+                      textarea.current?.select();
+                      setPreviewState("请用系统复制快捷键复制已选中的内容。");
+                    }
+                  }}
+                >
+                  复制内容
+                </button>
+                <ArtifactDownloadLink artifact={preview} className="ob-pill is-primary">
+                  保存为 Markdown
+                </ArtifactDownloadLink>
+              </span>
+            </section>
+          ) : null}
+        </>
+      ) : (
+        <section className="ob-dialog-section" aria-labelledby="share-bots-title">
+          <h3 id="share-bots-title">这个频道的 Bot · {members.length}</h3>
+          {members.length === 0 ? (
+            <p className="ob-dialog-empty">先在这个频道加入一个 Bot。</p>
+          ) : (
+            <ul className="ob-dialog-rows">
+              {members.map((bot) => (
+                <li key={bot.id}>
+                  <RobotAvatar bot={bot} className="ob-dialog-row-avatar" />
+                  <span>
+                    <strong>{bot.name}</strong>
+                    <small>{bot.role || "还没有分工"}</small>
+                  </span>
                   <button
                     type="button"
-                    className="secondary-button"
-                    onClick={() => setPreview({ ...artifact })}
+                    className="ob-pill is-small"
+                    onClick={() => onShareBot(bot.id)}
                   >
-                    预览
+                    打包模板
                   </button>
-                ) : null}
-                <ArtifactDownloadLink
-                  artifact={artifact}
-                  downloadImage
-                  className="secondary-button"
-                >
-                  下载
-                </ArtifactDownloadLink>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-      <section aria-labelledby="share-template-title">
-        <h3 id="share-template-title">分享 Bot</h3>
-        <p>将 Bot 导出为员工模板，其他人可以导入自己的 OpenBot。</p>
-        <div className="share-template-actions">
-          <select
-            aria-label="要分享的 Bot"
-            value={botId}
-            disabled={!members.length}
-            onChange={(event) => setBotId(event.target.value)}
-          >
-            {members.map((bot) => (
-              <option key={bot.id} value={bot.id}>
-                {bot.name}
-              </option>
-            ))}
-          </select>
-          <button
-            className="primary-button"
-            type="button"
-            disabled={!validBot}
-            onClick={() => {
-              if (validBot) onShareBot(botId);
-            }}
-          >
-            预览 Bot 模板
-          </button>
-        </div>
-        <p>
-          {members.length === 0
-            ? "请先在这个频道加入一个 Bot。"
-            : "包含角色、外观和已验证技能；可选择分享已审核的技能正文，记忆、密钥与电脑权限不会随包分享。"}
-        </p>
-      </section>
-      {preview ? (
-        <section aria-label="文件预览">
-          <h3>{preview.name}</h3>
-          <p role="status">{previewState}</p>
-          <textarea aria-label="文件内容预览" value={text} readOnly rows={10} />
-          <button
-            type="button"
-            className="secondary-button"
-            disabled={!text}
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(text);
-                setPreviewState("已复制文件内容。");
-              } catch {
-                dialog.current?.querySelector("textarea")?.select();
-                setPreviewState("请使用系统复制快捷键复制已选中的内容。");
-              }
-            }}
-          >
-            复制内容
-          </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="ob-dialog-empty">
+            包含角色、外观和已验证技能；记忆、密钥与电脑权限不会打包。
+          </p>
         </section>
-      ) : null}
-      <footer>
-        <button className="secondary-button" type="button" onClick={onClose}>
-          关闭
-        </button>
-      </footer>
-    </dialog>
+      )}
+
+      <small className="ob-dialog-foot-note">
+        分享只会生成你能保存的文件，不会发给任何人，也不会公开链接。
+      </small>
+    </Dialog>
   );
 }

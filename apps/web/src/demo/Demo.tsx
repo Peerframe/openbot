@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ChannelWorkspace } from "../components/ChannelWorkspace";
 import { RobotAvatar } from "../components/RobotAvatar";
-import { RunInspector } from "../components/RunInspector";
 import { Sidebar } from "../components/Sidebar";
+import { TaskSheet } from "../components/TaskSheet";
 import { createConversationSession } from "../conversation-session";
 import type { DemoAdapter } from "./adapter";
 import { demoBots, demoChannel } from "./fixtures";
@@ -149,9 +149,11 @@ export function Demo({ adapter }: { adapter: DemoAdapter }) {
         />
       </div>
       {run ? (
-        <RunInspector
+        <TaskSheet
           run={run}
           bot={demoBots.find((item) => item.id === run.botId)}
+          botsById={new Map(demoBots.map((item) => [item.id, item]))}
+          channelName={demoChannel.name}
           artifacts={state.artifacts.filter((item) => item.runId === run.id)}
           liveFrame={undefined}
           node={undefined}

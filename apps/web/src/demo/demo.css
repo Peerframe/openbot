@@ -196,12 +196,12 @@ body,
 }
 
 /* Keep the example-data disclosure visible even while actual product dialogs are open. */
-.demo-root .inspector-backdrop,
+.demo-root .task-sheet,
 .demo-dialog-backdrop {
   top: 90px;
 }
 @media (max-width: 700px) {
-  .demo-root .inspector-backdrop,
+  .demo-root .task-sheet,
   .demo-dialog-backdrop {
     top: 110px;
   }

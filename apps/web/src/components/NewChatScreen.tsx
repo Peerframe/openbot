@@ -1,6 +1,15 @@
 import type { Bot } from "@openbot/domain";
-import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  type KeyboardEvent,
+  type MouseEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { highlightMatch } from "../sidebar-organization";
+import { GroupAvatar } from "./GroupAvatar";
 import { PlusIcon, SendIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
 import "./NewChatScreen.css";
@@ -10,25 +19,34 @@ const MAX_RECIPIENTS = 6;
 
 export interface NewChatStart {
   botIds: string[];
-  /** Only for two or more Bots; a channel is created on the first message. */
+  /** True when the Owner chose 创建频道 or picked several Bots; one Bot otherwise opens a 单聊. */
+  asChannel: boolean;
   channelName?: string | undefined;
   text: string;
 }
 
+type Option = { kind: "create-bot" } | { kind: "create-channel" } | { kind: "bot"; bot: Bot };
+
 /**
- * New artboard: pick recipients, then the first message opens the direct conversation (one Bot)
- * or creates a channel with the chosen Bots. Nothing is created until the message is sent.
+ * 新建聊天 (New and NewGroup artboards). 「+」 opens this recipients list: 创建新 Bot ⌘1 creates one
+ * immediately; 创建频道 ⌘2 switches to 频道 mode. One Bot is a 单聊; several — or any number after
+ * 创建频道 — become a 频道 when the first message is sent. Nothing is created before that.
  */
 export function NewChatScreen({
   bots,
+  initialChannelMode = false,
   onCreateBot,
   onStart,
+  onClose,
 }: {
   bots: Bot[];
-  onCreateBot(): void;
+  initialChannelMode?: boolean;
+  onCreateBot(): void | Promise<void>;
   onStart(start: NewChatStart): Promise<void>;
+  onClose?: (() => void) | undefined;
 }) {
   const [selected, setSelected] = useState<string[]>([]);
+  const [channelMode, setChannelMode] = useState(initialChannelMode);
   const [query, setQuery] = useState("");
   const [pickerOpen, setPickerOpen] = useState(true);
   const [active, setActive] = useState(0);
@@ -36,6 +54,7 @@ export function NewChatScreen({
   const [channelName, setChannelName] = useState("");
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string>();
   const search = useRef<HTMLInputElement>(null);
   const message = useRef<HTMLTextAreaElement>(null);
@@ -46,14 +65,20 @@ export function NewChatScreen({
       !selected.includes(bot.id) &&
       (!term || `${bot.name} ${bot.role}`.toLocaleLowerCase().includes(term)),
   );
-  // Option 0 is 「创建新 Bot」; Bots follow, the first eight reachable with ⌘2–⌘9.
-  const optionCount = candidates.length + 1;
-  const activeIndex = Math.min(active, optionCount - 1);
+  // The two actions lead the list only before anything is chosen (New artboard); afterwards the
+  // list holds the remaining Bots, numbered from ⌘1 (NewGroup artboard).
+  const showActions = selected.length === 0 && !channelMode && !term;
+  const options: Option[] = [
+    ...(showActions ? ([{ kind: "create-bot" }, { kind: "create-channel" }] as Option[]) : []),
+    ...candidates.map((bot): Option => ({ kind: "bot", bot })),
+  ];
+  const activeIndex = Math.min(active, Math.max(0, options.length - 1));
   const chosen = selected.flatMap((id) => {
     const bot = botById.get(id);
     return bot ? [bot] : [];
   });
   const names = chosen.map((bot) => bot.name).join("、");
+  const asChannel = channelMode || chosen.length > 1;
 
   useEffect(() => {
     search.current?.focus();
@@ -71,13 +96,27 @@ export function NewChatScreen({
     search.current?.focus();
   }
 
-  function pick(index: number) {
-    if (index === 0) {
-      onCreateBot();
-      return;
+  async function createBot() {
+    if (creating) return;
+    setCreating(true);
+    setError(undefined);
+    try {
+      await onCreateBot();
+    } catch {
+      setError("没能创建 Bot，请稍后重试。");
+      setCreating(false);
     }
-    const bot = candidates[index - 1];
-    if (bot) choose(bot);
+  }
+
+  function pick(index: number) {
+    const option = options[index];
+    if (!option) return;
+    if (option.kind === "create-bot") void createBot();
+    else if (option.kind === "create-channel") {
+      setChannelMode(true);
+      setActive(0);
+      search.current?.focus();
+    } else choose(option.bot);
   }
 
   function onShortcut(event: KeyboardEvent<HTMLElement>) {
@@ -92,9 +131,8 @@ export function NewChatScreen({
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       setPickerOpen(true);
-      setActive(
-        (index) => (index + (event.key === "ArrowDown" ? 1 : -1) + optionCount) % optionCount,
-      );
+      const count = Math.max(1, options.length);
+      setActive((index) => (index + (event.key === "ArrowDown" ? 1 : -1) + count) % count);
     } else if (event.key === "Enter") {
       event.preventDefault();
       if (pickerOpen) pick(activeIndex);
@@ -115,7 +153,8 @@ export function NewChatScreen({
     try {
       await onStart({
         botIds: selected,
-        channelName: selected.length > 1 ? channelName.trim() || undefined : undefined,
+        asChannel,
+        channelName: asChannel ? channelName.trim() || undefined : undefined,
         text: content,
       });
     } catch (cause) {
@@ -163,21 +202,41 @@ export function NewChatScreen({
           ref={search}
           type="text"
           role="combobox"
-          aria-label="搜索或创建 Bot"
+          aria-label="收件人"
           aria-expanded={pickerOpen}
           aria-controls="new-chat-options"
           aria-activedescendant={pickerOpen ? `new-chat-option-${activeIndex}` : undefined}
-          placeholder="搜索或创建 Bot"
+          placeholder={chosen.length > 0 || channelMode ? "继续添加 Bot…" : "和谁聊？输入名字搜索"}
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
-            // While searching, Enter picks the first matching Bot rather than 「创建新 Bot」.
-            setActive(event.target.value.trim() ? 1 : 0);
+            setActive(0);
             setPickerOpen(true);
           }}
           onFocus={() => setPickerOpen(true)}
           onKeyDown={onSearchKeyDown}
         />
+        {onClose ? (
+          <button
+            type="button"
+            className="new-chat-close"
+            aria-label="关闭新建聊天"
+            onClick={onClose}
+          >
+            <svg
+              aria-hidden="true"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        ) : null}
       </div>
 
       {pickerOpen ? (
@@ -185,58 +244,77 @@ export function NewChatScreen({
           className="new-chat-options"
           role="listbox"
           id="new-chat-options"
-          aria-label="选择 Bot"
+          aria-label="选择收件人"
         >
-          <button
-            type="button"
-            role="option"
-            id="new-chat-option-0"
-            aria-selected={activeIndex === 0}
-            aria-keyshortcuts="Meta+1 Control+1"
-            className="new-chat-option"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => pick(0)}
-          >
-            <span className="new-chat-create" aria-hidden="true">
-              <PlusIcon />
-            </span>
-            <span>创建新 Bot</span>
-            <Keys index={0} />
-          </button>
-          {candidates.map((bot, index) => (
-            <button
-              type="button"
-              role="option"
-              id={`new-chat-option-${index + 1}`}
-              key={bot.id}
-              aria-selected={activeIndex === index + 1}
-              aria-keyshortcuts={index < 8 ? `Meta+${index + 2} Control+${index + 2}` : undefined}
-              className="new-chat-option"
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => choose(bot)}
-            >
-              <span className="new-chat-avatar" aria-hidden="true">
-                <RobotAvatar bot={bot} compact />
-              </span>
-              <span>
-                <span className="new-chat-bot-name">
-                  <Match text={bot.name} query={query} />
+          {options.map((option, index) => {
+            const shortcut = index < 9 ? <Keys index={index} /> : <span />;
+            const common = {
+              type: "button" as const,
+              role: "option",
+              id: `new-chat-option-${index}`,
+              "aria-selected": activeIndex === index,
+              "aria-keyshortcuts": index < 9 ? `Meta+${index + 1} Control+${index + 1}` : undefined,
+              className: "new-chat-option",
+              onMouseDown: (event: MouseEvent) => event.preventDefault(),
+              onClick: () => pick(index),
+            };
+            if (option.kind === "create-bot")
+              return (
+                <button {...common} key="create-bot" disabled={creating}>
+                  <span className="new-chat-create" aria-hidden="true">
+                    <PlusIcon />
+                  </span>
+                  <span>
+                    {creating ? "正在创建…" : "创建新 Bot"}
+                    <small>马上得到一个，外观和分工之后再改</small>
+                  </span>
+                  {shortcut}
+                </button>
+              );
+            if (option.kind === "create-channel")
+              return (
+                <Fragment key="create-channel">
+                  <button {...common}>
+                    <span className="new-chat-create" aria-hidden="true">
+                      <PeopleIcon />
+                    </span>
+                    <span>
+                      创建频道
+                      <small>选几个 Bot 组成频道</small>
+                    </span>
+                    {shortcut}
+                  </button>
+                  <span className="new-chat-divider" aria-hidden="true" />
+                </Fragment>
+              );
+            return (
+              <button {...common} key={option.bot.id}>
+                <RobotAvatar bot={option.bot} className="new-chat-option-avatar" />
+                <span>
+                  <span className="new-chat-bot-name">
+                    <Match text={option.bot.name} query={query} />
+                  </span>
+                  {option.bot.role ? <small>{option.bot.role}</small> : null}
                 </span>
-                {bot.role ? <small>{bot.role}</small> : null}
-              </span>
-              {index < 8 ? <Keys index={index + 1} /> : <span />}
-            </button>
-          ))}
-          {candidates.length === 0 ? (
+                {shortcut}
+              </button>
+            );
+          })}
+          {candidates.length === 0 && !showActions ? (
             <p className="new-chat-empty">
               {bots.length === 0 ? "还没有 Bot，先创建一个。" : "没有匹配的 Bot"}
             </p>
           ) : null}
+          <p className="new-chat-options-hint">
+            {chosen.length > 0 || channelMode
+              ? "↑ ↓ 选择 · 回车加入 · 删除键移除最后一个"
+              : "选一个 Bot 是单聊；选多个就建成频道"}
+          </p>
         </div>
       ) : null}
 
       <div className="new-chat-space">
-        {chosen.length > 1 ? (
+        {asChannel && chosen.length > 0 ? (
           naming ? (
             <label className="new-chat-name">
               <span className="visually-hidden">频道名称</span>
@@ -258,8 +336,9 @@ export function NewChatScreen({
               </button>
             </label>
           ) : (
-            <p className="new-chat-hint">
-              选了 {chosen.length} 个 Bot，发出第一条消息后会建成一个频道
+            <p className="new-chat-hint is-channel">
+              <GroupAvatar name={channelName.trim() || names} members={chosen} size={26} />
+              选了 {chosen.length} 个 Bot，发出第一条消息后建成频道
               {channelName.trim() ? `「${channelName.trim()}」` : ""} ·{" "}
               <button type="button" onClick={() => setNaming(true)}>
                 命名频道
@@ -267,7 +346,7 @@ export function NewChatScreen({
             </p>
           )
         ) : chosen.length === 1 ? (
-          <p className="new-chat-hint">发出第一条消息后会打开和 {chosen[0]?.name} 的单独对话</p>
+          <p className="new-chat-hint">发出第一条消息后会打开和 {chosen[0]?.name} 的单聊</p>
         ) : null}
         {error ? (
           <p className="form-error" role="alert">
@@ -300,7 +379,7 @@ export function NewChatScreen({
             maxLength={8000}
             value={text}
             disabled={chosen.length === 0}
-            placeholder={chosen.length ? `发消息给 ${names}` : "先选择收件人"}
+            placeholder={chosen.length ? `发消息给 ${names}` : "先选收件人"}
             onChange={(event) => setText(event.target.value)}
             onKeyDown={(event) => {
               if (onShortcut(event)) return;
@@ -321,6 +400,27 @@ export function NewChatScreen({
         </div>
       </form>
     </main>
+  );
+}
+
+function PeopleIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3.5 19c.6-3.1 2.8-5 5.5-5s4.9 1.9 5.5 5" />
+      <path d="M15.5 5.2a3 3 0 0 1 0 5.6" />
+      <path d="M17.5 14.3c1.6.6 2.7 2.2 3 4.7" />
+    </svg>
   );
 }
 

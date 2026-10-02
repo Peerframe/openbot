@@ -62,14 +62,14 @@ Then verify the browser behavior:
 Deterministic Starter DOM regressions (jsdom; not real-browser AT evidence):
 
 ```bash
-npm exec --workspace @openbot/web -- vitest run src/components/CreateBotDialog.test.tsx
+npm exec --workspace @openbot/web -- vitest run src/components/Dialog.test.tsx
 npm exec --workspace @openbot/web -- vitest run src/components/EmployeeProfileView.test.tsx
-npm exec --workspace @openbot/web -- vitest run src/components/RunInspector.integration.test.tsx
+npm exec --workspace @openbot/web -- vitest run src/components/TaskSheet.test.tsx
 npm exec --workspace @openbot/web -- vitest run src/components/NodeManagerDialog.test.tsx
 ```
 
 These cover Create Bot dialog labelling / cancel unmount / create `role="alert"`, profile tab
-keyboard focus+`aria-selected` coupling, RunInspector Escape/focus restore, and Node manager dialog
+keyboard focus+`aria-selected` coupling, TaskSheet (任务详情) Escape/focus restore, and Node manager dialog
 `showModal` / cancel unmount (including revoke confirmation copy).
 
 ## Known gaps

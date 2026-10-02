@@ -18,7 +18,6 @@ import {
   renderComponent,
   setInputValue,
 } from "../test/render-component";
-import { CreateBotDialog } from "./CreateBotDialog";
 import { EmployeeModelEditor } from "./EmployeeModelEditor";
 import { EmployeeProfileView } from "./EmployeeProfileView";
 import { ModelConnectionEditor } from "./ModelConnectionsDialog";
@@ -312,67 +311,6 @@ describe("model connection user flows", () => {
     );
   });
 
-  it.each(["model", "docker-linux"])(
-    "preserves default none and adds explicit %s creation",
-    async (computerProfile) => {
-      const onCreate = vi.fn().mockResolvedValue(undefined);
-      view = await renderComponent(
-        <CreateBotDialog onClose={vi.fn()} onImport={vi.fn()} onCreate={onCreate} />,
-      );
-      const mode = Array.from(view.container.querySelectorAll("select")).find((select) =>
-        Array.from(select.options).some((option) => option.value === "model"),
-      )!;
-      expect(mode.value).toBe("none");
-      expect(getModelServices).not.toHaveBeenCalled();
-      await interact(() => {
-        mode.value = computerProfile;
-        mode.dispatchEvent(new Event("change", { bubbles: true }));
-      });
-      expect(button("创建 Bot").disabled).toBe(true);
-      const connections = Array.from(view.container.querySelectorAll("select")).find((select) =>
-        Array.from(select.options).some((option) => option.value === connection.id),
-      )!;
-      await interact(() => {
-        connections.value = connection.id;
-        connections.dispatchEvent(new Event("change", { bubbles: true }));
-      });
-      expect(button("创建 Bot").disabled).toBe(false);
-      await submit();
-      expect(onCreate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          computerProfile,
-          model: { connectionId: connection.id, modelId: "fixture-model" },
-        }),
-      );
-    },
-  );
-  it("requires an explicit Docker selection even when a Server default exists", async () => {
-    vi.mocked(getModelServices).mockResolvedValue({
-      ...snapshot,
-      connections: [{ ...connection, source: "environment", defaultModel: "fixture-model" }],
-    });
-    view = await renderComponent(
-      <CreateBotDialog onClose={vi.fn()} onImport={vi.fn()} onCreate={vi.fn()} />,
-    );
-    const mode = Array.from(view.container.querySelectorAll("select")).find((s) =>
-      Array.from(s.options).some((o) => o.value === "docker-linux"),
-    )!;
-    await interact(() => {
-      mode.value = "docker-linux";
-      mode.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-    expect(button("创建 Bot").disabled).toBe(true);
-    expect(view.container.textContent).not.toContain("Server 默认");
-    const services = Array.from(view.container.querySelectorAll("select")).find((s) =>
-      Array.from(s.options).some((o) => o.value === connection.id),
-    )!;
-    await interact(() => {
-      services.value = connection.id;
-      services.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-    expect(button("创建 Bot").disabled).toBe(false);
-  });
-
   it.each(["docker-linux", "none", "macos-cua", "lume-vm", "coder"] as const)(
     "shows model editor only for the allowed %s profile",
     async (computerProfile) => {
@@ -407,6 +345,11 @@ describe("model connection user flows", () => {
         />,
       );
       await interact(() => button("配置").click());
+      const change = [...view.container.querySelectorAll("button")].find(
+        (item) => item.textContent === "更改",
+      );
+      expect(Boolean(change)).toBe(computerProfile === "docker-linux");
+      await interact(() => change?.click());
       const form = view.container.querySelector<HTMLFormElement>(".employee-model-form");
       expect(Boolean(form)).toBe(computerProfile === "docker-linux");
       if (form) {

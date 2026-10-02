@@ -56,9 +56,9 @@ describe("ExportPreviewDetails", () => {
     expect(html).toContain("检查多个独立来源，并保留可以复核的引用。");
     expect(html).toContain("evidence-core");
     expect(html).toContain("已验证，将包含");
-    expect(html).toContain("明确排除");
-    expect(html).toContain("不会携带来源身份或电脑权限");
-    expect(html).toContain("当前服务电脑未配置发布密钥");
+    expect(html).toContain("不会包含");
+    expect(html).toContain("不会带上来源身份或电脑权限");
+    expect(html).toContain("还没有发布密钥");
   });
 
   it("renders truthful empty states for an older profile with no biography or verified skills", () => {
@@ -102,7 +102,7 @@ describe("Employee export native save outcomes", () => {
       );
       try {
         await interact(() =>
-          view.container.querySelector<HTMLButtonElement>(".primary-button")?.click(),
+          view.container.querySelector<HTMLButtonElement>(".ob-pill.is-primary")?.click(),
         );
         expect(downloadEmployeeTemplate).toHaveBeenCalledExactlyOnceWith(employee.id, preview);
         if (status === "saved")
@@ -125,13 +125,13 @@ describe("Employee export native save outcomes", () => {
     );
     try {
       await interact(() =>
-        view.container.querySelector<HTMLButtonElement>(".primary-button")?.click(),
+        view.container.querySelector<HTMLButtonElement>(".ob-pill.is-primary")?.click(),
       );
       expect(getEmployeeExportPreview).toHaveBeenCalledTimes(2);
       expect(downloadEmployeeTemplate).toHaveBeenCalledTimes(1);
       expect(onDownloaded).not.toHaveBeenCalled();
       expect(view.container.querySelector('[role="alert"]')?.textContent).toContain("预览已刷新");
-      expect(view.container.querySelector<HTMLButtonElement>(".primary-button")?.disabled).toBe(
+      expect(view.container.querySelector<HTMLButtonElement>(".ob-pill.is-primary")?.disabled).toBe(
         false,
       );
     } finally {

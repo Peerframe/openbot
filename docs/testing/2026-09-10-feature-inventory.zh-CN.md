@@ -26,7 +26,7 @@
 | 使用技能 | 请求所选 Bot 最多 2 个已审核技能，可从草稿移除。 | 运行时重查分配、状态和内容身份；请求技能不能增加工具或外部操作权限。 |
 | 时间线与实时更新 | 保存消息、引用、Markdown/表格、产物、任务链接，接收 Server 事件更新。 | 有连续上下文；没有不限范围的历史搜索或离线编辑。 |
 
-证据：[引导](../../apps/web/src/components/DesktopSetupScreen.tsx)、[安装](../../apps/web/src/components/DesktopInstallScreen.tsx)、[连接](../../apps/web/src/components/DesktopConnectionScreen.tsx)、[应用导航](../../apps/web/src/App.tsx)、[左栏](../../apps/web/src/components/Sidebar.tsx)、[创建频道](../../apps/web/src/components/CreateChannelDialog.tsx)、[成员](../../apps/web/src/components/ContextRail.tsx)、[创建 Bot](../../apps/web/src/components/CreateBotDialog.tsx)、[对话](../../apps/web/src/components/ChannelWorkspace.tsx)、[附件组合](../../apps/web/src/composer-context.ts)、[Server 路由](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/app.ts)。
+证据：[引导](../../apps/web/src/components/DesktopSetupScreen.tsx)、[安装](../../apps/web/src/components/DesktopInstallScreen.tsx)、[连接](../../apps/web/src/components/DesktopConnectionScreen.tsx)、[应用导航](../../apps/web/src/App.tsx)、[左栏](../../apps/web/src/components/Sidebar.tsx)、[创建频道](https://github.com/Peerframe/openbot/blob/a99918176ee42e45d7a909853a0db1dc5b884d38/apps/web/src/components/CreateChannelDialog.tsx)、[成员](../../apps/web/src/components/ContextRail.tsx)、[创建 Bot](https://github.com/Peerframe/openbot/blob/a99918176ee42e45d7a909853a0db1dc5b884d38/apps/web/src/components/CreateBotDialog.tsx)、[对话](../../apps/web/src/components/ChannelWorkspace.tsx)、[附件组合](../../apps/web/src/composer-context.ts)、[Server 路由](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/app.ts)。
 
 ## Agent 执行、产出与监督
 
@@ -44,7 +44,7 @@
 | 信息栏 | 当前频道审批、进行中、最近结果，可展开工作区和主机概览。 | 限于已加载记录，不是无限历史分析。 |
 | Token 用量 | 汇总范围内已知输入/输出，保留未知/无数据状态。 | 不是供应商额度、余额、费用或账单；不推算缺失用量。 |
 
-证据：[Agent 工具](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts)、[运行时接线](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/index.ts)、[有界上下文](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-agent-store.ts)、[详情](../../apps/web/src/components/RunInspector.tsx)、[控制](../../apps/web/src/components/NativeRunControls.tsx)、[产物](../../apps/web/src/components/ArtifactCard.tsx)、[审批](../../apps/web/src/components/ApprovalCard.tsx)、[信息栏](../../apps/web/src/components/ContextRail.tsx)。
+证据：[Agent 工具](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts)、[运行时接线](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/index.ts)、[有界上下文](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/postgres-agent-store.ts)、[详情](https://github.com/Peerframe/openbot/blob/a99918176ee42e45d7a909853a0db1dc5b884d38/apps/web/src/components/RunInspector.tsx)、[控制](https://github.com/Peerframe/openbot/blob/a99918176ee42e45d7a909853a0db1dc5b884d38/apps/web/src/components/NativeRunControls.tsx)、[产物](../../apps/web/src/components/ArtifactCard.tsx)、[审批](../../apps/web/src/components/ApprovalCard.tsx)、[信息栏](../../apps/web/src/components/ContextRail.tsx)。
 
 ## 员工档案与审核式学习
 
@@ -70,7 +70,7 @@ SKILL.md 导入接受一个不超过 12 KiB 的 Markdown 文档及版本号，�
 
 员工导出先预览包含/排除项、阻止原因与签名状态，再下载与审核绑定的 JSON。导入先检查结构、完整性、适用签名及兼容性，再由 Owner 单独激活为新的本地身份；导入技能初始禁用。凭证、主机权限、私人记忆和工作历史不会随包迁移。这不是认证所有权转移，也不是完整复制原员工掌握的一切。
 
-证据：[插件页](../../apps/web/src/components/SkillLibraryScreen.tsx)、[技能导入](../../apps/web/src/components/EmployeeSkillImport.tsx)、[员工导出](../../apps/web/src/components/ExportEmployeeDialog.tsx)、[员工导入](../../apps/web/src/components/ImportEmployeeDialog.tsx)、[员工模型](../EMPLOYEE.zh-CN.md)。
+证据：[插件页](https://github.com/Peerframe/openbot/blob/a99918176ee42e45d7a909853a0db1dc5b884d38/apps/web/src/components/SkillLibraryScreen.tsx)、[技能导入](../../apps/web/src/components/EmployeeSkillImport.tsx)、[员工导出](../../apps/web/src/components/ExportEmployeeDialog.tsx)、[员工导入](../../apps/web/src/components/ImportEmployeeDialog.tsx)、[员工模型](../EMPLOYEE.zh-CN.md)。
 
 ## 自动任务、工作电脑与设置
 

@@ -31,7 +31,7 @@ import "./Sidebar.css";
 type SidebarItem = { kind: "channel"; channel: Channel } | { kind: "bot"; bot: Bot };
 
 interface SidebarProps {
-  destination?: "chat" | "automations" | "skills" | "work";
+  destination?: "chat" | "work";
   onWork?: (() => void) | undefined;
   onAutomations?: (() => void) | undefined;
   onSkills?: (() => void) | undefined;
@@ -425,7 +425,7 @@ export function Sidebar({
             {section.collapsed ? null : section.entries.map((entry) => renderRow(entry, ""))}
           </div>
         ))}
-        {nothing ? <p className="sb-empty">点击上方 + 创建频道或 Bot</p> : null}
+        {nothing ? <p className="sb-empty">对话会出现在这里。</p> : null}
       </>
     );
   }
@@ -558,6 +558,8 @@ export function Sidebar({
       {deleteTarget && onDeleteItem ? (
         <DeleteIdentityDialog
           target={deleteTarget}
+          bots={bots}
+          channels={channels}
           onClose={() => setDeleteTarget(undefined)}
           onDelete={async (target) => {
             await onDeleteItem(target);

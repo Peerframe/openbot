@@ -53,14 +53,14 @@ npm run lint
 确定性入门级 DOM 回归（jsdom；不是真实浏览器或辅助技术证据）：
 
 ```bash
-npm exec --workspace @openbot/web -- vitest run src/components/CreateBotDialog.test.tsx
+npm exec --workspace @openbot/web -- vitest run src/components/Dialog.test.tsx
 npm exec --workspace @openbot/web -- vitest run src/components/EmployeeProfileView.test.tsx
-npm exec --workspace @openbot/web -- vitest run src/components/RunInspector.integration.test.tsx
+npm exec --workspace @openbot/web -- vitest run src/components/TaskSheet.test.tsx
 npm exec --workspace @openbot/web -- vitest run src/components/NodeManagerDialog.test.tsx
 ```
 
 分别覆盖：创建 Bot 对话框标注 / cancel 卸载 / 创建失败 `role="alert"`；员工主页 Tab 键盘焦点与
-`aria-selected` 同步；RunInspector Escape/焦点恢复；Node 管理对话框 `showModal` / cancel 卸载
+`aria-selected` 同步；TaskSheet（任务详情）Escape/焦点恢复；Node 管理对话框 `showModal` / cancel 卸载
 （含吊销确认文案）。
 
 ## 已知缺口

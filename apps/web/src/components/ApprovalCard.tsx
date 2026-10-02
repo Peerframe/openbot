@@ -61,11 +61,11 @@ export function ApprovalCard({
   );
 }
 
-function riskLabel(risk: Approval["risk"]): string {
+export function riskLabel(risk: Approval["risk"]): string {
   return risk === "privileged" ? "高风险权限" : risk === "destructive" ? "不可逆动作" : "写入动作";
 }
 
-function actionLabel(action: string): string {
+export function actionLabel(action: string): string {
   const labels: Record<string, string> = {
     "browser.click": "点击这个按钮",
     "email.send": "发送这封邮件",
@@ -78,7 +78,7 @@ function actionLabel(action: string): string {
   return labels[action] ?? `批准：${action}`;
 }
 
-function expiryLabel(value: string): string {
+export function expiryLabel(value: string): string {
   const remainingMs = new Date(value).getTime() - Date.now();
   if (remainingMs <= 0) return "已过期";
   const minutes = Math.max(1, Math.ceil(remainingMs / 60_000));

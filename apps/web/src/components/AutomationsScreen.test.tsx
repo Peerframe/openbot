@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 import type { Bot, Channel } from "@openbot/domain";
+import { type ReactNode, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Automation } from "../destination-api";
 import { deferred, interact, renderComponent, setInputValue } from "../test/render-component";
 import { AutomationsScreen } from "./AutomationsScreen";
+import { SettingsActionSlot } from "./SettingsHeaderAction";
 
 const bots: Bot[] = [
   {
@@ -49,9 +51,27 @@ const automation: Automation = {
 
 afterEach(() => vi.unstubAllGlobals());
 
+/** Settings renders 新建例行任务 into the page header through this slot. */
+function Slot({ children }: { children: ReactNode }) {
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  return (
+    <>
+      <div className="slot" ref={setSlot} />
+      <SettingsActionSlot.Provider value={slot}>{children}</SettingsActionSlot.Provider>
+    </>
+  );
+}
+function screen(props: { bots: Bot[]; channels: Channel[] }) {
+  return renderComponent(
+    <Slot>
+      <AutomationsScreen {...props} />
+    </Slot>,
+  );
+}
+
 function button(container: HTMLElement, name: string): HTMLButtonElement {
   const result = Array.from(container.querySelectorAll("button")).find(
-    (item) => item.textContent === name,
+    (item) => item.textContent === name || item.getAttribute("aria-label") === name,
   );
   if (!result) throw new Error(`Missing button ${name}`);
   return result;
@@ -76,9 +96,9 @@ describe("AutomationsScreen", () => {
         }),
       ),
     );
-    const rendered = await renderComponent(<AutomationsScreen bots={bots} channels={channels} />);
+    const rendered = await screen({ bots, channels });
     try {
-      expect(rendered.container.textContent).toContain("附件已删除、损坏或不可用，自动任务已暂停");
+      expect(rendered.container.textContent).toContain("附件已删除、损坏或不可用，例行任务已暂停");
       expect(rendered.container.textContent).toContain("恢复原附件后重新启用");
     } finally {
       await rendered.unmount();
@@ -89,10 +109,10 @@ describe("AutomationsScreen", () => {
       init?.method === "POST" ? Response.json({ automation }) : Response.json({ automations: [] }),
     );
     vi.stubGlobal("fetch", fetchMock);
-    const rendered = await renderComponent(<AutomationsScreen bots={bots} channels={channels} />);
+    const rendered = await screen({ bots, channels });
     try {
       expect(fetchMock).toHaveBeenCalledTimes(1);
-      await interact(() => button(rendered.container, "新建任务").click());
+      await interact(() => button(rendered.container, "新建例行任务").click());
       const form = rendered.container.querySelector("form") as HTMLFormElement;
       expect(Array.from(form.querySelectorAll("select"))[1]?.textContent).not.toContain(
         "Unassigned",
@@ -120,7 +140,9 @@ describe("AutomationsScreen", () => {
         firstRunAt: new Date(localDate).toISOString(),
       });
       expect(rendered.container.querySelector("form")).toBeNull();
-      expect(rendered.container.querySelector("article")?.textContent).toContain("站点检查");
+      expect(rendered.container.querySelector(".settings-routine")?.textContent).toContain(
+        "站点检查",
+      );
     } finally {
       await rendered.unmount();
     }
@@ -137,22 +159,24 @@ describe("AutomationsScreen", () => {
       return Response.json({ automations: [automation] });
     });
     vi.stubGlobal("fetch", fetchMock);
-    const rendered = await renderComponent(<AutomationsScreen bots={bots} channels={channels} />);
+    const rendered = await screen({ bots, channels });
     try {
-      await interact(() => button(rendered.container, "暂停").click());
+      const toggle = () => button(rendered.container, "启用 站点检查");
+      await interact(() => toggle().click());
       expect(rendered.container.querySelector('[role="alert"]')?.textContent).toContain("无法更新");
-      expect(button(rendered.container, "暂停").disabled).toBe(false);
+      expect(toggle().disabled).toBe(false);
+      expect(toggle().getAttribute("aria-checked")).toBe("true");
       failPatch = false;
-      await interact(() => button(rendered.container, "暂停").click());
-      expect(button(rendered.container, "恢复").disabled).toBe(false);
-      await interact(() => button(rendered.container, "删除").click());
+      await interact(() => toggle().click());
+      expect(toggle().getAttribute("aria-checked")).toBe("false");
+      await interact(() => button(rendered.container, "删除 站点检查").click());
       expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
       await interact(() => button(rendered.container, "确认删除").click());
       expect(fetchMock).toHaveBeenLastCalledWith(
         "/api/v1/automations/automation-1",
         expect.objectContaining({ credentials: "include", method: "DELETE" }),
       );
-      expect(rendered.container.querySelector("article")).toBeNull();
+      expect(rendered.container.querySelector(".settings-routine")).toBeNull();
     } finally {
       await rendered.unmount();
     }
@@ -163,10 +187,10 @@ describe("AutomationsScreen", () => {
       "fetch",
       vi.fn(async () => Response.json({}, { status: 404 })),
     );
-    const rendered = await renderComponent(<AutomationsScreen bots={bots} channels={channels} />);
+    const rendered = await screen({ bots, channels });
     try {
-      expect(rendered.container.textContent).toContain("服务电脑暂不支持自动任务");
-      expect(button(rendered.container, "新建任务").disabled).toBe(true);
+      expect(rendered.container.textContent).toContain("服务电脑暂不支持例行任务");
+      expect(button(rendered.container, "新建例行任务").disabled).toBe(true);
     } finally {
       await rendered.unmount();
     }
@@ -181,9 +205,9 @@ describe("AutomationsScreen", () => {
           : Response.json({ automations: [] }),
       ),
     );
-    const rendered = await renderComponent(<AutomationsScreen bots={bots} channels={channels} />);
+    const rendered = await screen({ bots, channels });
     try {
-      await interact(() => button(rendered.container, "新建任务").click());
+      await interact(() => button(rendered.container, "新建例行任务").click());
       const form = rendered.container.querySelector("form") as HTMLFormElement;
       await setInputValue(
         form.querySelector('input:not([type="datetime-local"])') as HTMLInputElement,
@@ -198,8 +222,8 @@ describe("AutomationsScreen", () => {
       );
       expect(form.querySelector('[role="alert"]')?.textContent).toContain("未能确认");
       expect(form.querySelector("textarea")?.value).toBe("Keep this instruction");
-      expect(rendered.container.querySelector("article")).toBeNull();
-      expect(button(rendered.container, "创建自动任务").disabled).toBe(false);
+      expect(rendered.container.querySelector(".settings-routine")).toBeNull();
+      expect(button(rendered.container, "创建例行任务").disabled).toBe(false);
     } finally {
       await rendered.unmount();
     }
@@ -210,16 +234,15 @@ describe("AutomationsScreen", () => {
       init?.method === "PATCH" ? pending.promise : Response.json({ automations: [automation] }),
     );
     vi.stubGlobal("fetch", fetchMock);
-    const rendered = await renderComponent(<AutomationsScreen bots={bots} channels={channels} />);
+    const rendered = await screen({ bots, channels });
     try {
-      await interact(() => button(rendered.container, "暂停").click());
-      expect(button(rendered.container, "保存中…").disabled).toBe(true);
-      expect(button(rendered.container, "删除").disabled).toBe(true);
-      expect(button(rendered.container, "刷新").disabled).toBe(true);
+      await interact(() => button(rendered.container, "启用 站点检查").click());
+      expect(button(rendered.container, "启用 站点检查").disabled).toBe(true);
+      expect(button(rendered.container, "删除 站点检查").disabled).toBe(true);
       await interact(() =>
         pending.resolve(Response.json({ automation: { ...automation, enabled: false } })),
       );
-      expect(button(rendered.container, "恢复").disabled).toBe(false);
+      expect(button(rendered.container, "启用 站点检查").disabled).toBe(false);
       expect(fetchMock.mock.calls.filter(([, init]) => init?.method === "PATCH")).toHaveLength(1);
     } finally {
       await rendered.unmount();
@@ -231,9 +254,9 @@ describe("AutomationsScreen", () => {
       "fetch",
       vi.fn(async () => Response.json({ automations: [] })),
     );
-    const rendered = await renderComponent(<AutomationsScreen bots={[]} channels={[]} />);
+    const rendered = await screen({ bots: [], channels: [] });
     try {
-      expect(button(rendered.container, "新建任务").disabled).toBe(true);
+      expect(button(rendered.container, "新建例行任务").disabled).toBe(true);
       expect(rendered.container.textContent).toContain("先创建 Bot");
       expect(rendered.container.querySelector("form")).toBeNull();
     } finally {

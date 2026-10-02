@@ -61,7 +61,6 @@ describe("NodeManagerDialog", () => {
   });
 });
 
-
 vi.mock("../api", () => ({
   listNodeIdentities: vi.fn(),
   createNodeEnrollmentToken: vi.fn(),
@@ -97,7 +96,6 @@ afterEach(async () => {
   vi.clearAllMocks();
 });
 
-
 describe("NodeManagerDialog modal lifecycle", () => {
   it("calls showModal, keeps revoke confirmation copy, and unmounts on cancel", async () => {
     const view = await renderComponent(<NodeManagerHarness />);
@@ -118,7 +116,8 @@ describe("NodeManagerDialog modal lifecycle", () => {
 
     expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalledOnce();
     expect(dialog.open).toBe(true);
-    expect(dialog.getAttribute("aria-labelledby")).toBe("node-manager-title");
+    const title = dialog.getAttribute("aria-labelledby");
+    expect(title && dialog.querySelector(`[id="${title}"]`)?.textContent).toBe("配对一台工作电脑");
     expect(dialog.querySelector('[aria-label="关闭"]')).not.toBeNull();
     expect(api.listNodeIdentities).toHaveBeenCalled();
     expect(view.container.textContent).toContain("Office Linux");
@@ -133,5 +132,45 @@ describe("NodeManagerDialog modal lifecycle", () => {
 
     await interact(() => dialog.dispatchEvent(new Event("cancel", { cancelable: true })));
     expect(view.container.querySelector("dialog")).toBeNull();
+  });
+});
+
+describe("NodeManagerDialog pairing token", () => {
+  it("masks the token on screen and copies the full start configuration", async () => {
+    const token = "obpt_synthetic_fixture_value_4f2a";
+    vi.mocked(api.createNodeEnrollmentToken).mockResolvedValue({
+      nodeId: "office-linux-02",
+      token,
+      expiresAt: new Date(Date.now() + 600_000).toISOString(),
+    } as Awaited<ReturnType<typeof api.createNodeEnrollmentToken>>);
+    const writeText = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    const view = await renderComponent(
+      <NodeManagerDialog onlineNodes={[node]} onClose={vi.fn()} />,
+    );
+    modalViews.push(view);
+    const input = view.container.querySelector<HTMLInputElement>(".ob-dialog-pair input");
+    await interact(() => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setter?.call(input, "office-linux-02");
+      input?.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await interact(() =>
+      view.container
+        .querySelector("form.ob-dialog-pair")
+        ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
+    );
+    const config = view.container.querySelector(".ob-dialog-config pre")?.textContent ?? "";
+    expect(config).toContain("OPENBOT_NODE_ID=office-linux-02");
+    expect(config).not.toContain(token);
+    expect(config).toContain("4f2a");
+    await interact(() =>
+      [...view.container.querySelectorAll("button")]
+        .find((button) => button.textContent === "复制启动配置")
+        ?.click(),
+    );
+    expect(writeText).toHaveBeenCalledWith(
+      `OPENBOT_NODE_ID=office-linux-02\nOPENBOT_NODE_ENROLLMENT_TOKEN=${token}`,
+    );
   });
 });

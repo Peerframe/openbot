@@ -9,7 +9,7 @@
   screen or copy.
 - **Who does what:** Claude builds everything you see and touch (screens, layout, motion, copy,
   keyboard use). Codex builds what is behind it (服务电脑, data, Desktop main process, CI). They meet
-  at written contracts: the backlog items C1–C16 below.
+  at written contracts: the backlog items C1–C18 below.
 - **How you review:** every step is one pull request with screenshots of the built screen next to
   its artboard. You check the pictures and click through the listed behaviours. You do not need to
   read code.
@@ -58,14 +58,19 @@ updated.
 | --- | --- | --- | --- | --- |
 | 14 | Foundations for 1:1 work — **in review** | Components | — | Tokens and primitives moved out of `styles.css` into `tokens.css` and `primitives.css`, loaded once from `global-styles.ts`; `.ob-seg`, large pills and the `Dialog` frame; a **design preview** (`preview.html`, a synthetic transport using the same isolation as the website demo) that renders the real UI per scene at 1440×900; a copy sweep to the glossary (服务电脑, 工作电脑, 工作中, 产出, 任务) |
 | 15 | Avatars v3, group avatars and the 工作中 status — **in review** | Avatar, Avatars, GroupAvatar, GroupAvatars, Sidebar, Profile | C10 for the extra colours | v3 geometry and micro drawing; silhouette cut-out; new `GroupAvatar` in the sidebar, title pill, rail, new chat and mentions; status dot (工作中 / 需要你确认 / 离线) and the working motion with reduced-motion fallback; green replaces blue for 工作中 everywhere |
-| 16 | Creating Bots and 频道 | New, NewGroup, NewBotChat | C12; C11 optional | 「+」 recipients list with 创建新 Bot ⌘1 and 创建频道 ⌘2; one-click random Bot that opens its 单聊; the 「你最想让我先帮你做什么？」 card; delete `CreateBotDialog` and `CreateChannelDialog` |
-| 17 | Bot 信息 rail | BotInfo | C9 for 编辑头像 | New `BotInfoRail` for 单聊 and the Bot profile: in-place name, 添加标签, 详情 / 资料库 / 电脑, 编辑头像 popover; replaces `EmployeeProfileRail` |
-| 18 | Adding members to a 频道 | AddMember, ChannelInfo | — | 添加成员 popover with 搜索 Bot; light-red 移除 pill; group avatar in the rail |
-| 19 | Tasks in a conversation | TaskCards, TaskInspector | C13 | One `TaskCard` per task with every state, approval on the card, collaboration notice; `TaskSheet` replaces the task inspector modal; delete `channel-work-item`, `native-run-controls`, `run-inspector` styles |
-| 20 | Dialogs | Dialog* | — | One `Dialog` frame; rebuild 分享, 分享 Bot 模板, 导入 Bot 模板, 删除确认, 配对工作电脑, 连接模型服务 |
-| 21 | 任务监督 and the empty workspace | WorkSupervision, EmptyWorkspace | — | Rebuild `WorkTasksScreen`; new `EmptyWorkspace`; retire the standalone 例行任务 and 技能库 pages (their links open the settings sections) |
-| 22 | Design the remaining screens (canvas, then owner approval) | new | — | Message actions and reactions, attachments and voice, 补充指令 input, 频道文件 recycle bin inside 资料库, Bot 档案 tabs (进化档案 credits Hermes Agent), 员工浏览器 view, notices and toasts, app icon and README images |
-| 23 | Build step 22 and retire the legacy layer | step 22 boards | C16 for the icon | Build the approved designs; delete the legacy stylesheets and classes listed in DESIGN.md and `OpenBotMark`; refresh the website demo fixtures |
+| 16 | Creating Bots and 频道 — **in review** | New, NewGroup, NewBotChat | C12; C11 optional | 「+」 recipients list with 创建新 Bot ⌘1 and 创建频道 ⌘2; one-click random Bot that opens its 单聊; the 「你最想让我先帮你做什么？」 card; delete `CreateBotDialog` and `CreateChannelDialog` |
+| 17 | Bot 信息 rail — **in review** | BotInfo | C9 for 编辑头像 | New `BotInfoRail` for 单聊 and the Bot profile: in-place name, 添加标签, 详情 / 资料库 / 电脑, 编辑头像 popover; replaces `EmployeeProfileRail` |
+| 18 | Adding members to a 频道 — **in review** | AddMember, ChannelInfo | — | 添加成员 popover with 搜索 Bot; light-red 移除 pill; group avatar in the rail |
+| 19 | Tasks in a conversation — **in review** | TaskCards, TaskInspector | C13 | One `TaskCard` per task with every state, approval on the card, collaboration notice; `TaskSheet` replaces the task inspector modal; delete `channel-work-item`, `native-run-controls`, `run-inspector` styles |
+| 20 | Dialogs — **in review** | Dialog* | C17 for 连接模型服务 | One `Dialog` frame; rebuild 分享, 分享 Bot 模板, 导入 Bot 模板, 删除确认, 配对工作电脑, 连接模型服务 |
+| 21 | 任务监督 and the empty workspace — **in review** | WorkSupervision, EmptyWorkspace | — | Rebuild `WorkTasksScreen`; new `EmptyWorkspace`; retire the standalone 例行任务 and 技能库 pages (their links open the settings sections) |
+| 22 | Design the remaining screens (canvas, then owner approval) — **approved 2026-10-02** | new | — | Message actions and reactions, attachments and voice, 补充指令 input, 频道文件 recycle bin inside 资料库, Bot 档案 tabs (进化档案 credits Hermes Agent), 员工浏览器 view, notices and toasts, app icon and README images |
+| 23a | Bot 档案 tabs | Profile, ProfileEvolution, ProfileSkills, ProfileMemory, ProfileWork, ProfileConfig | — | Six tabs on a segmented control (运行中 joins 工作记录, 技能图谱 becomes 技能); text filters with counts; long lists per LongLists |
+| 23b | Messages and the composer | MessageActions, Composer | — | Icon actions beside the bubble, reaction picker, Owner reactions without counts, attachment chips at the 8 / 20 MB limit, recording states, attachment actions |
+| 23c | Channel files | ChannelFiles, ChannelInfo | — | 频道文件 dialog with 回收站, search and source filter; 资料库 「全部 N 个 ›」 |
+| 23d | The Bot's browser | EmployeeBrowser | — | Window with take-over and 交还 Bot |
+| 23e | Notices, scrolling and long lists | Notices, LongLists | C18 for older messages | Toast stack, one banner by severity, the overlay scrollbar, the date cue and 回到最新, per-area long-list rules |
+| 23f | App icon and the legacy layer | AppIcon | C16 | Icon sets from the AppIcon board; delete the legacy stylesheets and classes listed in DESIGN.md and `OpenBotMark`; refresh the website demo fixtures |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 
@@ -96,6 +101,8 @@ Open — in the order the UI needs them:
 | C14 | All PRs | **CI robustness**: retry or extend the browser-fixture download step in 「Python product browser recovery」 that times out after 5 minutes (seen on #133 and #136). The cancellation half is done in #131 | Re-run by hand |
 | C15 | Step 23 | **Retire unused routes** only if the 例行任务 and 技能库 page removal leaves a Server endpoint without a caller (to be confirmed; settings use the same APIs) | — |
 | C16 | Step 23 | **App icon and bundle assets** from the step-22 icon design: macOS, Windows and Linux icon sets, the Web favicon | Current icon |
+| C17 | Step 20 follow-up | **Model connection for the DialogModel artboard**: read the model list with an unsaved key (no chat, no cost) so a connection is verified before it is saved; a per-connection default model; 断开这个服务 that deletes a connection Bots no longer use, refused while a Bot depends on it | The dialog keeps the connection list and the paid 测试模型 call inside the new frame |
+| C18 | Step 23e | **Older messages on demand**: a cursor for `GET /channels/{id}/messages` (`before`, bounded page) so a conversation loads the latest page first and earlier ones as the Owner scrolls up | The conversation shows the bounded latest set the Server returns today |
 
 ## Repository housekeeping (proposals)
 
@@ -119,3 +126,6 @@ Open — in the order the UI needs them:
 3. Retire the standalone 例行任务 and 技能库 pages: **yes** (step 21).
 4. Commit `nft_like` and clean the main checkout: **yes**, done (H1, H2).
 5. Added: a **工作中** status dot with working motion on avatars (step 15).
+6. Step 22 boards **approved** (2026-10-02). Bot 档案 uses six tabs on a segmented control with the
+   content unframed (option C); 运行中 joins 工作记录 and 技能图谱 becomes 技能. Message actions are
+   icons beside the bubble without a bar. Reactions stay the Owner's own six marks.

@@ -61,10 +61,6 @@
   background: transparent;
   padding-top: 24px;
 }
-.desktop-workspace .destination-header,
-.desktop-workspace .empty-workspace-header {
-  display: none;
-}
 .app-shell.desktop-workspace .channel-workspace {
   display: flex;
   flex-direction: column;
@@ -75,11 +71,6 @@
   flex: 1;
   min-height: 0;
   border-radius: 0;
-  background: #fff;
-}
-.app-shell.desktop-workspace .workspace-welcome {
-  flex: 1;
-  border: 0;
   background: #fff;
 }
 .app-shell.desktop-workspace .message-list {

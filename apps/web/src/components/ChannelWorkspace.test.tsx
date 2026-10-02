@@ -380,7 +380,7 @@ describe("ChannelWorkspace recipient and attachment interactions", () => {
         primary.run.id,
         secondRun.id,
       ]);
-      expect(rendered.container.querySelectorAll(".channel-work-item")).toHaveLength(2);
+      expect(rendered.container.querySelectorAll(".task-card")).toHaveLength(2);
     } finally {
       await rendered.unmount();
     }
@@ -829,24 +829,19 @@ describe("ChannelWorkspace delegated identities", () => {
     const rendered = await renderComponent(view("a"));
     try {
       expect(rendered.container.querySelector(".active-task-strip")).toBeNull();
-      expect(
-        rendered.container.querySelector('[role="log"] .channel-work-activity'),
-      ).not.toBeNull();
-      expect(rendered.container.querySelectorAll(".channel-work-item")).toHaveLength(3);
-      expect(rendered.container.querySelector(".channel-work-item.running")?.textContent).toContain(
-        "Researching",
+      const log = rendered.container.querySelector('[role="log"]');
+      // A finished task without a reply keeps its card; the others are live or failed.
+      expect(log?.querySelectorAll(".task-card")).toHaveLength(4);
+      expect(log?.querySelector(".task-card.is-running")?.textContent).toContain("Researching");
+      expect(log?.querySelector(".task-card.is-queued")?.textContent).toContain(
+        "等待接续 · Supplementary task",
       );
-      expect(rendered.container.querySelector(".channel-work-item.queued")?.textContent).toContain(
-        "Supplementary task",
-      );
-      expect(rendered.container.querySelector(".channel-work-item.failed")?.textContent).toContain(
-        "模型密钥被拒绝",
-      );
+      expect(log?.querySelector(".task-card.is-failed")?.textContent).toContain("模型密钥被拒绝");
       expect(rendered.container.textContent).not.toContain("synthetic-provider-raw-error");
-      expect(rendered.container.querySelectorAll(".work-ellipsis")).toHaveLength(1);
+      expect(rendered.container.querySelectorAll(".task-spin")).toHaveLength(1);
       await interact(() =>
         rendered.container
-          .querySelector<HTMLButtonElement>(".channel-work-item.failed > div > button")
+          .querySelector<HTMLButtonElement>(".task-card.is-failed .task-link")
           ?.click(),
       );
       expect(callbacks.onInspectRun).toHaveBeenCalledWith(failed.id);
@@ -878,7 +873,8 @@ describe("ChannelWorkspace delegated identities", () => {
     ]);
     const rendered = await renderComponent(view("a"));
     try {
-      expect(rendered.container.querySelector(".channel-work-activity")).toBeNull();
+      expect(rendered.container.querySelector(".task-card.is-failed")).toBeNull();
+      expect(rendered.container.querySelector(".task-card.is-cancelled")).toBeNull();
     } finally {
       await rendered.unmount();
     }

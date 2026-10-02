@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>长列表与滚动</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.icon-btn{width:32px;height:32px;border:0;border-radius:8px;background:transparent;cursor:pointer;display:inline-grid;place-items:center}
+.pill{height:34px;padding:0 16px;border-radius:17px;border:0;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;background:#ececee}
+.pill.small{height:28px;padding:0 12px;border-radius:14px;font-size:13px}
+.pill.primary{background:#111111;color:#ffffff}
+.pill.danger{background:#fbe9e7;color:#b3261e}
+.tab{height:34px;padding:0 16px;border-radius:17px;border:0;font-size:14px;cursor:pointer;white-space:nowrap;background:#f0f0f2;font-weight:500}
+.tab[aria-selected="true"]{background:#111111;color:#ffffff;font-weight:600}
+.chip{height:28px;padding:0 12px;border-radius:14px;border:0;font-size:13px;cursor:pointer;background:#f0f0f2;color:#3a3a3c;white-space:nowrap}
+.chip[aria-pressed="true"]{background:#111111;color:#ffffff}
+.card{border-radius:18px;background:#f0f0f2;padding:0 18px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 0}
+.row + .row{border-top:1px solid #e3e3e6}
+.t{display:flex;flex-direction:column;gap:3px;min-width:0}
+.t strong{font-size:14px;font-weight:500}
+.sub{font-size:12px;color:#8e8e93}
+.h2{margin:0;font-size:17px;font-weight:600}
+.h3{margin:0 4px;font-size:13px;font-weight:500;color:#6e6e73}
+.tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;background:#ffffff;font-size:12px;color:#6e6e73}
+.field{width:100%;box-sizing:border-box;border:1px solid #e3e3e6;border-radius:12px;background:#ffffff;padding:10px 14px;font:inherit;font-size:14px;color:#1d1d1f;outline:none}
+.label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#6e6e73}
+.switch{width:40px;height:24px;border:0;padding:0;border-radius:12px;background:#d1d1d6;position:relative;cursor:pointer;flex-shrink:0}
+.switch[aria-checked="true"]{background:#111111}
+.switch span{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#ffffff;display:block}
+.switch[aria-checked="true"] span{left:19px}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+.ok{color:#1c7c3c}.warn{color:#94480b}.bad{color:#b3261e}
+.spec{display:flex;flex-direction:column;gap:10px}
+.lab{font-size:12px;font-weight:600;color:#8e8e93}
+.pane{position:relative;overflow:hidden;border:1px solid #ececee;border-radius:18px;background:#ffffff}
+.thumb{position:absolute;right:3px;width:6px;border-radius:3px;background:rgba(0,0,0,0.22)}
+.thumb.hover{width:10px;right:2px;border-radius:5px;background:rgba(0,0,0,0.38)}
+.li{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 12px;font-size:14px}
+.dot{width:32px;height:32px;border-radius:50%;background:#e6e6e8;display:block}
+.fade-top{position:absolute;left:0;right:0;top:0;height:28px;background:linear-gradient(#ffffff,rgba(255,255,255,0))}
+.fade-bot{position:absolute;left:0;right:0;bottom:0;height:28px;background:linear-gradient(rgba(255,255,255,0),#ffffff)}
+.more{align-self:flex-start;height:28px;padding:0 12px;border:0;border-radius:14px;background:transparent;color:#6e6e73;font:inherit;font-size:13px;cursor:pointer}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:9px 12px;border-top:1px solid #ececee;vertical-align:top;line-height:1.5}
+th{font-weight:600;color:#6e6e73;background:#f6f6f7;border-top:0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1480px; box-sizing: border-box; padding: 56px 64px; background: #fcfcfc; display: flex; flex-direction: column; gap: 32px">
+<header style="display: flex; flex-direction: column; gap: 8px"><h1 style="margin: 0; font-size: 28px; font-weight: 700">长列表与滚动</h1><p style="margin: 0; font-size: 15px; color: #6e6e73">内容多的时候：计数写在标题后，卡片只放前几条，长列表加搜索，滚动条平时隐藏。适用于全部画板。</p></header>
+<div style="display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 40px">
+<div class="spec"><span class="lab">滚动条：平时不占地方，滚动时出现</span>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 6px"><div class="pane" style="height: 220px"><div class="li"><span class="dot"></span><span>研究助理</span><span class="sub">工作中</span></div>
+<div class="li"><span class="dot"></span><span>客服小橙</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>发布助手</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>设计评审</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>运维值班</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>数据助理</span><span class="sub"></span></div></div><span class="sub">静止：不显示</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div class="pane" style="height: 220px"><div class="li"><span class="dot"></span><span>设计评审</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>运维值班</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>数据助理</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>法务助理</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>翻译助理</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>招聘助理</span><span class="sub"></span></div><span class="thumb" style="top: 46px; height: 64px"></span></div><span class="sub">滚动中：6px 细条，停下 1 秒后淡出</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div class="pane" style="height: 220px"><div class="li"><span class="dot"></span><span>数据助理</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>法务助理</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>翻译助理</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>招聘助理</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>财务助理</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>内容审核</span><span class="sub"></span></div><span class="thumb hover" style="top: 92px; height: 64px"></span></div><span class="sub">鼠标移到右边缘：变粗到 10px，可以拖</span></div>
+</div>
+<span class="sub">没有轨道底色，离边 2–3px；系统设成「始终显示滚动条」时跟随系统。侧栏、对话、右栏、弹出列表和设置都用同一种。</span>
+</div>
+<div class="spec"><span class="lab">卡片里还能往下滚：上下边缘渐隐提示</span>
+<div class="pane" style="height: 236px; border-radius: 16px; background: #fdfdfd; box-shadow: 0 14px 34px rgba(0,0,0,0.12)">
+<input type="search" class="field" placeholder="搜索 Bot" aria-label="搜索 Bot" style="border: 0; border-bottom: 1px solid #ececee; border-radius: 0; height: 42px">
+<div style="position: relative; height: 194px; overflow: hidden"><div class="li"><span class="dot"></span><span>发布助手</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>设计评审</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>运维值班</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>数据助理</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>法务助理</span><span class="sub"></span></div>
+<div class="li"><span class="dot"></span><span>翻译助理</span><span class="sub"></span></div><span class="fade-top"></span><span class="fade-bot"></span><span class="thumb" style="top: 40px; height: 54px"></span></div>
+</div>
+<span class="sub">弹出列表（@ 提及、收件人、添加成员、/ 技能）最高 8 行，超出在里面滚；用 ↑ ↓ 选择时自动把选中项滚进视野。</span>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 40px">
+<div class="spec"><span class="lab">长对话：滚动时顶部浮出日期，离开底部出现「回到最新」</span>
+<div class="pane" style="height: 300px; background: #fcfcfc">
+<div style="position: absolute; left: 0; right: 0; top: 10px; display: flex; justify-content: center"><span style="height: 26px; padding: 0 12px; border-radius: 13px; background: rgba(255,255,255,0.92); border: 1px solid #ececee; box-shadow: 0 2px 8px rgba(0,0,0,0.06); font-size: 12px; color: #3a3a3c; display: inline-flex; align-items: center">9 月 25 日 · 周四</span></div>
+<div style="padding: 52px 26px 0 26px; display: flex; flex-direction: column; gap: 12px">
+<div style="align-self: flex-end; max-width: 60%; padding: 10px 16px; border-radius: 20px; background: #111111; color: #ffffff; font-size: 14px">周报改成周五上午发。</div>
+<div style="align-self: flex-start; max-width: 66%; padding: 10px 16px; border-radius: 20px; background: #f0f0f2; font-size: 14px">好的，从下周开始周五 10 点前发到这里。</div>
+<div style="align-self: flex-end; max-width: 60%; padding: 10px 16px; border-radius: 20px; background: #111111; color: #ffffff; font-size: 14px">再把 C 公司加进名单。</div>
+</div>
+<span class="thumb" style="top: 60px; height: 40px"></span>
+<div style="position: absolute; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center"><button type="button" class="pill small" style="background: #ffffff; border: 1px solid #e3e3e6; box-shadow: 0 6px 18px rgba(0,0,0,0.10)">↓ 回到最新 · 3 条新消息</button></div>
+</div>
+<span class="sub">往上翻到顶时加载更早的消息，顶部显示「正在加载更早的消息…」（要等服务电脑支持分页，C18）。不另加阅读进度条：日期浮标就是位置提示。</span>
+</div>
+<div class="spec"><span class="lab">右栏里的长列表（以频道信息为例）</span>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 16px; background: #fafafa; border: 1px solid #ececee"><span class="h3" style="margin: 0">成员 · 12</span>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div class="li" style="padding: 6px 4px"><span class="dot"></span><span>研究助理</span><span class="sub ok">工作中</span></div>
+<div class="li" style="padding: 6px 4px"><span class="dot"></span><span>客服小橙</span><span></span></div>
+<div class="li" style="padding: 6px 4px"><span class="dot"></span><span>发布助手</span><span></span></div>
+</div><span class="sub">工作中的排前面；整栏一起滚，「添加成员」固定在列表底部</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 16px; background: #fafafa; border: 1px solid #ececee"><span class="h3" style="margin: 0">任务产出 · 23</span>
+<div class="card" style="padding: 0 12px; border-radius: 12px"><div class="row" style="padding: 9px 0"><span class="t"><strong>weekly-2026-w40.md</strong></span></div><div class="row" style="padding: 9px 0"><span class="t"><strong>竞品定价对比.png</strong></span></div></div>
+<button type="button" class="more">全部 23 个 ›</button><span class="sub">每类最多 4 条；「全部」打开频道文件</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 16px; background: #fafafa; border: 1px solid #ececee"><span class="h3" style="margin: 0">需要处理 · 3</span>
+<div style="position: relative; height: 86px">
+<div style="position: absolute; left: 12px; right: 12px; top: 0; height: 70px; border-radius: 14px; background: #f0f0f2; border: 1px solid #ececee"></div>
+<div style="position: absolute; left: 6px; right: 6px; top: 6px; height: 70px; border-radius: 14px; background: #f6f6f7; border: 1px solid #ececee"></div>
+<div style="position: absolute; left: 0; right: 0; top: 12px; height: 70px; box-sizing: border-box; padding: 10px 12px; border-radius: 14px; background: #ffffff; border: 1px solid #ececee; font-size: 13px"><strong>发送邮件给 team@…</strong><br><span class="sub">研究助理 · 4 分钟内有效</span></div>
+</div>
+<button type="button" class="more">展开另外 2 个 ›</button><span class="sub">先到期的在最上面</span></div>
+</div>
+</div>
+</div>
+<div class="spec"><span class="lab">每个地方内容多了怎么办</span><div style="border: 1px solid #ececee; border-radius: 16px; overflow: hidden; background: #ffffff"><table><thead><tr><th>位置</th><th>规则</th></tr></thead><tbody><tr><td style="white-space: nowrap; font-weight: 500">侧栏</td><td>按分组分段，分组可以折叠；置顶在段首；整栏滚动，标题栏和底部按钮固定。</td></tr><tr><td style="white-space: nowrap; font-weight: 500">对话</td><td>先载入最近的一批，往上翻再加载更早的（C18）；结束的任务收成一行，进行中的任务卡保持展开。</td></tr><tr><td style="white-space: nowrap; font-weight: 500">任务卡 · 协作</td><td>最多显示 3 个协作 Bot，其余写「还有 N 个」，在任务详情里看全部。</td></tr><tr><td style="white-space: nowrap; font-weight: 500">任务详情 · 进度</td><td>超过 12 步时只显示最早 3 步和最近 6 步，中间折成「展开 N 步」。</td></tr><tr><td style="white-space: nowrap; font-weight: 500">右栏（频道信息 / Bot 信息）</td><td>每类最多 4 条加「全部 N 个 ›」：产出和文件去频道文件，例行任务去「设置 › 例行任务」，电脑去「设置 › 工作主机」；需要处理叠起来，先到期的在最上面。</td></tr><tr><td style="white-space: nowrap; font-weight: 500">新建聊天 · 收件人</td><td>列表最高 8 行；⌘1–9 只给前 9 个；输入名字搜索。</td></tr><tr><td style="white-space: nowrap; font-weight: 500">弹出列表（@、/、添加成员）</td><td>最高 8 行，里面滚，上下渐隐；键盘选择时自动滚到选中项。</td></tr><tr><td style="white-space: nowrap; font-weight: 500">设置的长清单</td><td>超过 20 条加搜索框（工作主机、技能、插件、例行任务、记忆）；审计记录按天分组，一次最多 100 条，底部「加载更早」（服务电脑已支持）。</td></tr><tr><td style="white-space: nowrap; font-weight: 500">Bot 档案</td><td>见第 22 步各分页：筛选带数量，列表一次 20 条，往下加载。</td></tr></tbody></table></div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1480}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
