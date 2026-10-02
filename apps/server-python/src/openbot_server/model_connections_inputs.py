@@ -78,6 +78,17 @@ class CreateModelConnectionInput(Input):
     presetId: str = Field(min_length=1, max_length=64, pattern=r"^[a-z0-9-]+$")
     baseUrl: BaseUrl
     apiKey: ApiKey = Field(repr=False)
+    defaultModel: ModelId | None = None
+
+
+class VerifyModelConnectionInput(Input):
+    presetId: str = Field(min_length=1, max_length=64, pattern=r"^[a-z0-9-]+$")
+    baseUrl: BaseUrl
+    apiKey: ApiKey = Field(repr=False)
+
+
+class DeleteModelConnectionInput(Input):
+    expectedRevision: ExpectedRevision
 
 
 class UpdateModelConnectionInput(Input):
@@ -85,6 +96,7 @@ class UpdateModelConnectionInput(Input):
     name: Annotated[str, BeforeValidator(_name)] | None = None
     apiKey: ApiKey | None = Field(default=None, repr=False)
     enabled: bool | None = None
+    defaultModel: ModelId | None = None
 
     @field_validator("name", "apiKey", "enabled", mode="before")
     @classmethod
@@ -95,7 +107,7 @@ class UpdateModelConnectionInput(Input):
 
     @model_validator(mode="after")
     def changed(self):
-        if not {"name", "apiKey", "enabled"}.intersection(self.model_fields_set):
+        if not {"name", "apiKey", "enabled", "defaultModel"}.intersection(self.model_fields_set):
             raise ValueError("Change at least one connection field.")
         return self
 

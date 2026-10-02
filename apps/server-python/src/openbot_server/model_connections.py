@@ -27,7 +27,7 @@ from .model_connections_cipher import ModelCredentialCipher
 from .model_connections_inputs import (
     ConnectionPolicy, CreateModelConnectionInput, LegacyKimiConfiguration, ModelSelection,
     ResolvedModelConnection, TestModelConnectionInput, UpdateEmployeeModelInput,
-    UpdateModelConnectionInput, connection_presets, model_id,
+    UpdateModelConnectionInput, VerifyModelConnectionInput, DeleteModelConnectionInput, connection_presets, model_id,
 )
 from .models import BotAppearance, iso_timestamp
 
@@ -46,10 +46,13 @@ def _guard(function):
 
 
 def _public(row):
-    return {"id": row["id"], "name": row["name"], "presetId": row["preset_id"],
+    result = {"id": row["id"], "name": row["name"], "presetId": row["preset_id"],
             "baseUrl": row["base_url"], "protocol": row["protocol"], "enabled": row["enabled"],
             "hasApiKey": bool(row["encrypted_api_key"]), "revision": row["revision"], "source": "saved",
             "createdAt": iso_timestamp(row["created_at"]), "updatedAt": iso_timestamp(row["updated_at"])}
+    if row["default_model"] is not None:
+        result["defaultModel"] = model_id(row["default_model"])
+    return result
 
 
 def _context(row):
@@ -63,6 +66,16 @@ def _selection(value):
         return ModelSelection.model_validate(value).model_dump()
     except ValidationError:
         raise ControlError(422, "stored_model_selection_invalid") from None
+
+
+def _dependency_selection(value):
+    # Missing/oversized/corrupt references cannot prove that a connection is unused.
+    if value is None:
+        raise ControlError(503, 'model_dependencies_unavailable')
+    try:
+        return ModelSelection.model_validate(value).model_dump()
+    except ValidationError:
+        raise ControlError(503, 'model_dependencies_unavailable') from None
 
 
 def _employee(row):
@@ -99,7 +112,7 @@ class PostgresModelConnectionStore:
         # Trusted startup check, not an Owner-facing read or an authority substitute.
         async with PostgresTransactions(self._transactions._dsn).transaction() as db:
             await db.execute("SELECT id,name,preset_id,base_url,protocol,encrypted_api_key,enabled,"
-                             "revision,created_at,updated_at FROM model_connections LIMIT 0")
+                             "revision,default_model,created_at,updated_at FROM model_connections LIMIT 0")
             await db.execute("SELECT model_selection FROM runs LIMIT 0")
 
     @staticmethod
@@ -132,8 +145,8 @@ class PostgresModelConnectionStore:
             count = (await (await db.execute("SELECT count(*) AS total FROM model_connections")).fetchone())["total"]
             if count >= 32:
                 raise ControlError(422, "model_connection_limit")
-            row = await (await db.execute("INSERT INTO model_connections(id,name,preset_id,base_url,protocol,encrypted_api_key) "
-                "VALUES (%s,%s,%s,%s,%s,%s) RETURNING *", (identity["id"],value.name,value.presetId,url,protocol,encrypted))).fetchone()
+            row = await (await db.execute("INSERT INTO model_connections(id,name,preset_id,base_url,protocol,encrypted_api_key,default_model) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING *", (identity["id"],value.name,value.presetId,url,protocol,encrypted,value.defaultModel))).fetchone()
             await _audit(db, "MODEL_CONNECTION_CREATED", {"id": row["id"], "presetId": row["preset_id"], "revision": row["revision"]})
             return _public(row)
 
@@ -151,16 +164,62 @@ class PostgresModelConnectionStore:
             name = current["name"] if value.name is None else value.name
             enabled = current["enabled"] if value.enabled is None else value.enabled
             changed = (["name"] if name != current["name"] else []) + (["apiKey"] if value.apiKey is not None else []) + (["enabled"] if enabled != current["enabled"] else [])
+            default_model = value.defaultModel if 'defaultModel' in value.model_fields_set else current['default_model']
+            if default_model != current['default_model']:
+                changed.append('defaultModel')
+            if current['revision'] == 2147483647 and changed:
+                raise ControlError(409, 'model_connection_revision_exhausted')
             if not changed:
                 return _public(current)
             encrypted = current["encrypted_api_key"] if value.apiKey is None else self.cipher.encrypt(value.apiKey, _context(current))
-            row = await (await db.execute("UPDATE model_connections SET name=%s,enabled=%s,encrypted_api_key=%s,"
+            row = await (await db.execute("UPDATE model_connections SET name=%s,enabled=%s,encrypted_api_key=%s,default_model=%s,"
                 "revision=revision+1,updated_at=clock_timestamp() WHERE id=%s AND revision=%s RETURNING *",
-                (name,enabled,encrypted,connection_id,value.expectedRevision))).fetchone()
+                (name,enabled,encrypted,default_model,connection_id,value.expectedRevision))).fetchone()
             if row is None:
                 raise ControlError(409, "model_connection_revision_conflict")
             await _audit(db, "MODEL_CONNECTION_UPDATED", {"id": connection_id, "presetId": row["preset_id"], "changedFields": changed, "revision": row["revision"]})
             return _public(row)
+
+
+    @_guard
+    async def delete(self, token, connection_id, value):
+        async with self._transactions.transaction(token) as db:
+            value = DeleteModelConnectionInput.model_validate(value)
+            if connection_id == 'legacy-kimi':
+                raise ControlError(422,'environment_model_connection_read_only')
+            row = await (await db.execute('SELECT * FROM model_connections WHERE id=%s FOR UPDATE', (connection_id,))).fetchone()
+            if row is None:
+                raise ControlError(404,'model_connection_not_found')
+            if row['revision'] != value.expectedRevision:
+                raise ControlError(409,'model_connection_revision_conflict')
+            # Do not lock Bots after the connection: Bot writers hold Bot then FOR SHARE here.
+            # The connection lock serializes validated new selections with deletion.
+            bots = await (await db.execute("SELECT id,name,CASE WHEN octet_length((configuration->'model')::text)<=1024 THEN configuration->'model' END AS model FROM bots "
+                "WHERE deleted_at IS NULL AND configuration->'model' IS NOT NULL "
+                "AND configuration->'model'<>'null'::jsonb ORDER BY id COLLATE \"C\" LIMIT 1001")).fetchall()
+            runs = await (await db.execute("SELECT id,CASE WHEN octet_length(model_selection::text)<=1024 THEN model_selection END AS model_selection FROM runs_work_projection WHERE "
+                "status IN ('queued','assigned','running','waiting_approval','blocked') "
+                "AND model_selection IS NOT NULL ORDER BY id COLLATE \"C\" LIMIT 1001")).fetchall()
+            if max(len(bots),len(runs)) > 1000:
+                raise ControlError(503,'model_dependency_limit')
+            dependents = [dict(id=b['id'],name=b['name']) for b in bots if _dependency_selection(b['model'])['connectionId']==connection_id]
+            run_ids = [r['id'] for r in runs if _dependency_selection(r['model_selection'])['connectionId']==connection_id]
+            preferences = await (await db.execute("SELECT default_model FROM owner_preferences WHERE owner_id='owner'")).fetchone()
+            if preferences is None:
+                raise ControlError(503,'owner_preferences_unavailable')
+            default = _selection(preferences['default_model'])
+            owner_default = default is not None and default['connectionId']==connection_id
+            if dependents or run_ids or owner_default:
+                raise ModelConnectionInUse(dependents,run_ids,owner_default)
+            await db.execute('DELETE FROM model_connections WHERE id=%s', (connection_id,))
+            await _audit(db,'MODEL_CONNECTION_DELETED',dict(id=connection_id,revision=row['revision']))
+            return dict(deleted=True,connectionId=connection_id)
+
+
+class ModelConnectionInUse(ControlError):
+    def __init__(self, bots, run_ids, owner_default):
+        super().__init__(409,'model_connection_in_use')
+        self.public = dict(error=self.code,bots=bots,runIds=run_ids,ownerDefault=owner_default)
 
 
 class ModelConnectionsService:
@@ -206,6 +265,9 @@ class ModelConnectionsService:
 
     async def update(self, token, connection_id, value):
         return await self.store.update(token, connection_id, value)
+
+    async def delete(self, token, connection_id, value):
+        return await self.store.delete(token,connection_id,value)
 
     async def resolve_in_transaction(self, db, selection, *, expected_revision=None):
         """Internal Activity seam: caller owns authority/transaction; no network or history writes."""
@@ -311,8 +373,26 @@ class ModelConnectionsService:
         return result
 
     async def discover(self, token, connection_id):
+        selected = await self.resolve(token, {"connectionId": connection_id, "modelId": "unused"})
+        return await self._discover(selected,lambda: self._live(token,selected))
+
+    async def verify(self, token, value):
+        async with self._transactions.transaction(token):
+            value = VerifyModelConnectionInput.model_validate(value)
+            try:
+                url = self.policy.endpoint(value.presetId,value.baseUrl)
+                protocol = self.policy.preset(value.presetId)['protocol']
+            except ValueError:
+                raise ControlError(422,'model_endpoint_not_authorized') from None
+        # Request-local credentials: no cipher, connection row, file, audit or inference call.
+        selected = ResolvedModelConnection('unsaved',0,value.presetId,protocol,url,'unused',value.apiKey)
+        async def live():
+            async with self._transactions.transaction(token):
+                pass
+        return await self._discover(selected,live)
+
+    async def _discover(self, selected, live):
         async with self._bounded():
-            selected = await self.resolve(token, {"connectionId": connection_id, "modelId": "unused"})
             if not self.policy.preset(selected.preset_id)["discovery"]:
                 raise ControlError(422, "model_discovery_not_supported")
             query = "?limit=256" if selected.protocol == "anthropic-messages" else "?output_modalities=text" if selected.preset_id == "openrouter" else "?type=text&sub_type=chat" if selected.preset_id == "siliconflow" else ""
@@ -322,7 +402,7 @@ class ModelConnectionsService:
             try:
                 async with asyncio.timeout(self._deadline), httpx2.AsyncClient(transport=self._transport(), trust_env=False,
                         follow_redirects=False, timeout=self._deadline) as client:
-                    await self._live(token, selected)
+                    await live()
                     async with client.stream("GET", selected.base_url + suffix + query, headers=headers) as response:
                         if response.status_code in (401,403):
                             raise ControlError(422, "model_credentials_invalid")
@@ -356,7 +436,7 @@ class ModelConnectionsService:
                             continue
                         if selected.api_key not in identity:
                             found[identity] = None
-                    await self._live(token, selected)
+                    await live()
                     return list(found)
             except (httpx2.HTTPError, TimeoutError, ValueError, UnicodeError):
                 raise ControlError(422, "model_provider_unavailable") from None

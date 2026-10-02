@@ -170,6 +170,13 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
 
     async def workspace(value,_path,_body,_request): return await product.workspace.snapshot(value)
     route('/api/v1/workspace','GET',workspace)
+    from .run_progress import PostgresRunProgress, selected_steps
+    progress_store = PostgresRunProgress(product.transactions._dsn)
+    async def run_progress(value,path,_body,request):
+        if set(request.query_params) - {'steps'} or len(request.query_params.getlist('steps')) > 1:
+            raise ControlError(422,'invalid_progress_steps')
+        return await progress_store.read(value,path['run_id'],selected_steps(request.query_params.get('steps')))
+    route('/api/v1/runs/{run_id}/progress','GET',run_progress)
     async def bootstrap(value,*_):
         result=await product.workspace.snapshot(value)
         return dict(project='openbot',phase='m1',counts=result['counts'])

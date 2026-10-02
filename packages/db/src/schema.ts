@@ -745,3 +745,27 @@ export const ownerPreferences = pgTable(
     ),
   ],
 );
+
+/** Current control-owned model connections; encrypted credentials are never public DTOs. */
+export const modelConnections = pgTable(
+  "model_connections",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    presetId: text("preset_id").notNull(),
+    baseUrl: text("base_url").notNull(),
+    protocol: text("protocol").notNull(),
+    encryptedApiKey: text("encrypted_api_key").notNull(),
+    enabled: boolean("enabled").notNull().default(true),
+    revision: integer("revision").notNull().default(1),
+    defaultModel: text("default_model"),
+    ...timestamps,
+  },
+  (table) => [
+    check(
+      "model_connections_default_model_valid",
+      sql`${table.defaultModel} IS NULL OR (length(${table.defaultModel}) BETWEEN 1 AND 256
+        AND ${table.defaultModel} ~ '^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$')`,
+    ),
+  ],
+);
