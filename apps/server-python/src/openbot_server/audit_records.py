@@ -9,7 +9,8 @@ from .models import iso_timestamp
 
 AUDIT_CATEGORIES=("authentication","settings","hosts","approvals","channels","bots","runs","plugins","other")
 AUDIT_PAYLOAD_KEYS=("name","from","to","actor","reason","emoji","active","decision",
-    "removedBotId","deletedMessages","redactedMessages","directBotId","revokedSessions","nodeId","revision")
+    "removedBotId","deletedMessages","redactedMessages","directBotId","revokedSessions","nodeId","revision",
+    "operationId","attachmentId","fileName","sizeBytes","freedBytes","removed","retainedCount","trashAutoPurgeDays","outcome")
 _CATEGORY_SQL=r"""CASE
  WHEN e.type LIKE 'AUTH\_%' ESCAPE '\' OR e.type LIKE 'OWNER\_%' ESCAPE '\' THEN 'authentication'
  WHEN e.type LIKE 'MODEL\_%' ESCAPE '\' OR e.type LIKE 'SETTINGS\_%' ESCAPE '\' OR e.type='EMPLOYEE_MODEL_UPDATED' THEN 'settings'
@@ -22,7 +23,7 @@ _CATEGORY_SQL=r"""CASE
  ELSE 'other' END""".replace("%","%%")
 # Do not transfer whole event payloads (which can contain prompts/keys) to the driver.
 _PAYLOAD_SQL="jsonb_strip_nulls(jsonb_build_object("+",".join(
-    f"'{key}',CASE WHEN jsonb_typeof(e.payload->'{key}')='string' THEN to_jsonb(left(e.payload->>'{key}',120)) "
+    f"'{key}',CASE WHEN jsonb_typeof(e.payload->'{key}')='string' THEN to_jsonb(left(e.payload->>'{key}',{160 if key == 'fileName' else 120})) "
     f"WHEN jsonb_typeof(e.payload->'{key}') IN ('number','boolean') AND octet_length((e.payload->'{key}')::text)<=40 "
     f"THEN e.payload->'{key}' ELSE NULL END" for key in AUDIT_PAYLOAD_KEYS)+"))"
 

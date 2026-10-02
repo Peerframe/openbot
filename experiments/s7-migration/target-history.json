@@ -1,5 +1,5 @@
 {
-  "commit": "ce46574be1ff8189d12c027df78a6534783c8704",
+  "commit": "38c10b39ffa91ab4746da6d35ddf77505106ac33",
   "commitRole": "committed-migration-source",
   "migrations": [
     {
@@ -301,19 +301,25 @@
       "tag": "0049_model_connection_defaults",
       "timestamp": 1790942274484,
       "sha256": "e6f172f676ca7afa38b7bffd0595793629096ada504e4cbba67219be2e6a89d0"
+    },
+    {
+      "index": 50,
+      "tag": "0050_channel_storage_purge",
+      "timestamp": 1790975448593,
+      "sha256": "ccfe9031645f9228ab1a5ca5c102df61983f61fc679ef4d4e07c7e7be9557704"
     }
   ],
   "qualificationInput": {
-    "state": "working-tree-requalification",
-    "previousQualifiedTarget": "47f5b7b714d5595dcaaf0283dcc4f7a5cb2f576f",
+    "state": "committed-source-requalification",
+    "previousQualifiedTarget": "ce46574be1ff8189d12c027df78a6534783c8704",
     "journal": {
       "path": "packages/db/migrations/meta/_journal.json",
-      "sha256": "4a02223dbaf31c1b3b01199b15c4be7e77303fdc56259629b54bb81471b92b76"
+      "sha256": "3708bf44582d0c060823e7426f72a0d00aa9cc728f89d4b0035321443e0e4e46"
     },
     "changedSql": [
       {
-        "path": "packages/db/migrations/0049_model_connection_defaults.sql",
-        "sha256": "e6f172f676ca7afa38b7bffd0595793629096ada504e4cbba67219be2e6a89d0"
+        "path": "packages/db/migrations/0050_channel_storage_purge.sql",
+        "sha256": "ccfe9031645f9228ab1a5ca5c102df61983f61fc679ef4d4e07c7e7be9557704"
       }
     ]
   }

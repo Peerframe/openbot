@@ -62,6 +62,7 @@ class OwnerFiles:
         self.root = Path(directory)
         if not self.root.is_absolute(): raise ValueError('absolute_attachment_root_required')
         self._lock = asyncio.Lock()
+        self.recover_pending = None
 
     def _directory(self):
         fd = os.open(self.root, os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW|os.O_CLOEXEC)
@@ -80,6 +81,7 @@ class OwnerFiles:
                 while True:
                     try: fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB); break
                     except BlockingIOError: await asyncio.sleep(.05)
+                if self.recover_pending is not None: await self.recover_pending()
                 yield
             finally:
                 if fd is not None: os.close(fd)
@@ -88,7 +90,7 @@ class OwnerFiles:
     @staticmethod
     def _name(name):
         base, dot, extension = name.partition('.')
-        if not dot or not UUID.fullmatch(base) or extension not in ('json','bin','text.json'):
+        if not dot or not UUID.fullmatch(base) or extension not in ('json','bin','text.json','purged.json'):
             raise ControlError(400,'invalid_attachment_identity')
 
     def _read(self, name, maximum):
@@ -136,6 +138,12 @@ class OwnerFiles:
     def _metadata(self,channel_id,identity,*,owner=False):
         if ((not owner and (type(channel_id) is not str or not UUID.fullmatch(channel_id)))
                 or type(identity) is not str or not UUID.fullmatch(identity)): raise ControlError(404,'attachment_not_found')
+        if not owner:
+            try: receipt=json.loads(self._read(identity+'.purged.json',256))
+            except FileNotFoundError: receipt=None
+            except Exception: raise ControlError(503,'purged_attachment_receipt_unavailable') from None
+            if receipt == dict(id=identity,channelId=channel_id,purged=True):
+                raise ControlError(410,'attachment_purged')
         try:
             value=json.loads(self._read(identity+'.json',4096))
             required={'id','name','mediaType','sizeBytes','sha256','createdAt'} | ({'scopeKind','ownerId'} if owner else {'channelId'})

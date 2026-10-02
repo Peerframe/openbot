@@ -808,7 +808,84 @@ the original working host; clearing browser data removes login state. Closing th
 holds control keeps the Bot paused until explicit take/release; observation-only close does not
 pause it. Soft-deleted channel files reject new references and subsequent Bot reads, while
 retained Owner downloads remain available; already transferred model input cannot be recalled.
-There is currently **no** `/channels/:id/attachments/cleanup` endpoint or seven-day unreferenced
-recycle-bin collector. Entire-channel deletion has its separate tombstone-authorized purge.
+Permanent trash cleanup and default-off 30-day automation are provided by C21 below; there
+is no fixed seven-day collector. Entire-channel deletion has its separate tombstone-authorized purge.
 Explicit transcription requires enabled OpenAI settings and the official endpoint, and retains
 original bytes plus derived text on the Server. See the [claim audit](reviews/C20-product-claims.md).
+
+### C21: permanent channel trash deletion and measured storage
+
+All routes below require a current Owner session. Writes retain the existing Origin/body limits
+and final session recheck; missing authority is 401, refused Origin is 403. No model is invoked.
+Owner-native Task attachments are outside these channel deletion commands.
+
+- `DELETE /api/v1/channels/:channelId/attachments/:id/purge`, empty body or `{}` →
+  `{id, purged: true, freedBytes}`. Only a recycled attachment in an active channel is eligible;
+  an active file returns 409 `attachment_not_in_trash`. C19 reference counts are checked in the
+  deletion transaction and recounted after staging. Referenced files, including references committed
+  during deletion, return 409 `{error: "attachment_referenced", referenceCount: {messages, tasks}}`.
+  Unknown/overflowing reference checks refuse the entire operation (503). Final SQL table locks
+  prevent new message/task writes from slipping between the recount and commit. Normal reference
+  admission shares the private file lock and cannot admit a purged attachment after commit.
+  Database guards also reject message/Run references to purge receipts, including SQL writers
+  released after those locks; a delayed write cannot create a dangling reference.
+- Original bytes, file metadata and derived text are physically removed after the SQL deletion
+  receipt and per-file audit commit. Reversible same-filesystem staging recovers on every file-lock
+  acquisition. A lost commit reply requires SQL lookup; unavailable lookup leaves recovery pending,
+  never blindly restores a committed deletion or reports success. Retrying a completed single purge
+  returns its saved result. Each removed file audits filename (up to 160 code points), original size,
+  channel, actor (`owner` or `server`), reason, attachment ID and freed bytes; no content is recorded.
+- Metadata/content reads of a purged attachment in its original active channel return 410
+  `{error: "attachment_purged", purged: true}`. Unknown/wrong-channel files return 404; unauthorized
+  callers still receive 401. Minimal deletion receipts remain; lists omit purged attachments.
+  Deleted channels retain their existing 404 behavior and whole-channel cleanup policy.
+- `POST /api/v1/channels/:channelId/attachments/cleanup`,
+  `{requestKey: "<UUID>"}` → `{removed, retained, retainedCount, retainedHasMore, freedBytes}`.
+  `removed` is the deleted file count; each retained item is `{id, name, referenceCount: {messages, tasks}}`.
+  Retained items are ordered by ID, at most 100; `retainedCount` is the full count and `retainedHasMore`
+  signals truncation. Existing 1,024-file / 10,000-per-count limits apply and refuse overflow rather
+  than authorize deletion from a partial count. No referencing content/IDs are returned.
+  Reuse the **same channel and requestKey** on transport retry: the persisted response is identical,
+  no audit is repeated, and files recycled afterward are untouched. Generate a fresh UUID for a new
+  cleanup operation. Missing/extra/malformed fields return 422 `invalid_cleanup_request`.
+
+`GET /api/v1/storage` → `{totalBytes, measuredAt, categories, trash, topChannels, topChannelsLimit: 20}`.
+No query fields are accepted. Categories are disjoint measured logical bytes (`sizeBytes`), with
+`fileCount` when applicable: `channelFiles` (active channel attachments), `trash`, `ownerTaskFiles`,
+`taskOutputs` (retained Run outputs plus configured native Work content-addressed files), `other`
+(other files under managed roots, including minimal deletion receipts), and `database` (the configured
+PostgreSQL database's actual `pg_database_size`). Attachment categories include originals, metadata
+and derived text; file counts count attachments, whereas output/other counts count stored files.
+
+When the native Work artifact root is not configured, `taskOutputs` is `null` and the measurable
+retained files appear as `retainedRunOutputs`; otherwise `retainedRunOutputs` is `null`.
+`workingComputerBrowserData` is always `null`: remote Worker profiles cannot be measured here.
+`totalBytes` is the sum of measured categories, not an estimate of unknown roots, OS allocation,
+backups, WAL or physical disk free space. Content-addressed output counts reflect stored unique
+files, not logical task references. `freedBytes` measures removed attachment file bytes minus the
+minimal gone marker, excluding PostgreSQL receipts/audit growth and physical disk allocation.
+
+`trash` is `{fileCount, sizeBytes, referencedFileCount}`; the last count is files with any retained
+message/task reference. `topChannels` contains at most 20 `{id, name, deleted, sizeBytes, fileCount}`,
+including active and recycled attachments, sorted by size descending then ID. Traversal refuses
+symlinks, hardlinks, foreign ownership, more than 10,000 entries, depth above 8, unavailable/corrupt
+catalogs, or unknown references; no partial/estimated success is returned. No paths or file contents
+are exposed. SQL/file locks retain their existing bounded deadlines.
+
+- `GET /api/v1/settings/storage` → `{revision, trashAutoPurgeDays, updatedAt, lastAutoPurgeAt}`.
+- `PUT /api/v1/settings/storage`, `{expectedRevision, trashAutoPurgeDays: null | 30}` → same shape.
+  Default is `null` (disabled). Other values/extra fields return 422; stale revisions return 409
+  `storage_settings_revision_conflict`. Changes increment revision and audit; same-value writes do
+  neither. A changed setting clears the daily claim and wakes maintenance. `lastAutoPurgeAt` is the
+  last due-attempt claim, not proof that files were removed.
+
+The Server maintenance task checks at startup, on settings changes and hourly; while enabled it
+claims at most one pass per day across Server processes. Only active-channel trash at least 30 days
+old at the database claim time, with zero confirmed C19 references, is removed. Young/active/Owner
+Task files and referenced trash stay. Any catalog/reference/locking failure rolls back **all** removals
+in that pass. Each claimed run appends a `SETTINGS_TRASH_AUTO_PURGE_RUN` started audit before effects
+and a terminal audit (`completed`, `failed`, `cancelled`, or `policy_changed`) with the same operation ID;
+a started-only run indicates interrupted/unknown completion. Per-file audits commit with deletion.
+A completed zero-file pass is audited too; disabled/not-yet-due checks make no purge audit.
+This policy replaces a fixed seven-day-cleanup claim: automatic permanent deletion is disabled until
+an Owner explicitly selects 30 days. Existing whole-channel deletion remains a separate lifecycle operation.

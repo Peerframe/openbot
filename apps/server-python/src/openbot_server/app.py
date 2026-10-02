@@ -110,7 +110,11 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     from .control_errors import ControlError
     @app.exception_handler(ControlError)
     async def control_error(request: Request, error: ControlError):
-        return JSONResponse({"error": error.code}, status_code=error.status)
+        from .control_errors import AttachmentReferenceConflict
+        content = {"error": error.code}
+        if isinstance(error, AttachmentReferenceConflict): content['referenceCount'] = error.reference_count
+        if error.code == 'attachment_purged': content['purged'] = True
+        return JSONResponse(content, status_code=error.status)
 
     @app.exception_handler(StoreUnavailable)
     async def unavailable(request: Request, error: StoreUnavailable):

@@ -719,7 +719,71 @@ Owner 原生 Task 的文件命名空间独立，不加入频道计数。引用�
 浏览器登录 profile 在原工作电脑持久保存，清除浏览数据会移除登录状态。
 关闭已接管的窗口会让 Bot 保持暂停，须明确接管／交还才恢复；纯查看关闭不会暂停。
 回收站文件拒绝新引用与后续 Bot 读取，Owner 历史下载保留，已发送给模型的内容不能撤回。
-目前**没有** `/channels/:id/attachments/cleanup` 或满 7 天且无引用的回收站清理器。
+下文 C21 提供永久清理及默认关闭的 30 天自动清理，不存在固定七天清理器。
 删除整个频道走独立的、频道墓碑授权的文件清理路径。
 明确转写要求当前启用的 OpenAI 配置及官方地址，原文件和转写结果保存在服务电脑。
 详见[逐条核实](reviews/C20-product-claims.zh-CN.md)。
+
+### C21：频道回收站永久删除与实测存储空间
+
+以下接口都要求有效 Owner 会话。写操作沿用 Origin、请求体限制和返回前会话复核；
+无权限返回 401，Origin 不符返回 403。不调用模型。Owner 原生任务附件不在这些频道删除命令的范围内。
+
+- `DELETE /api/v1/channels/:channelId/attachments/:id/purge`，空请求体或 `{}` →
+  `{id, purged: true, freedBytes}`。只允许删除有效频道中已经进入回收站的附件；正常文件返回
+  409 `attachment_not_in_trash`。删除事务中检查 C19 引用数，暂存文件后再次检查。
+  已有引用或删除过程中提交的新引用都返回 409
+  `{error: "attachment_referenced", referenceCount: {messages, tasks}}`。
+  无法确认引用或超限时整次拒绝（503）。最终 SQL 表锁覆盖复核至提交，防止消息或任务写入钻过间隙。
+  正常引用准入共用私有文件锁，提交后不能引用已经永久删除的附件。
+  数据库守卫也拒绝消息／Run 引用删除凭证，包括等锁释放后才执行的 SQL 写入，不能产生悬空引用。
+- SQL 删除凭证和逐文件审计提交后，物理删除原件、文件元数据及派生文本。同一文件系统中的可恢复
+  暂存操作在每次获取文件锁时恢复。提交回复丢失必须查询 SQL；查询不可用时保留待恢复状态，
+  不能盲目恢复已提交删除的文件或报告成功。重复永久删除已完成的文件返回保存的结果。
+  每个删除文件审计文件名（最多 160 个码点）、原件大小、频道、操作人（`owner` 或 `server`）、
+  原因、附件 ID 和释放字节数，不记录内容。
+- 在原有效频道读取已永久删除文件的元数据或内容返回 410
+  `{error: "attachment_purged", purged: true}`。不存在或频道不符返回 404；未授权仍返回 401。
+  保留最小删除凭证，列表不再包含该附件。已删除频道仍返回原有 404，原有整频道清理策略保持有效。
+- `POST /api/v1/channels/:channelId/attachments/cleanup`，
+  `{requestKey: "<UUID>"}` → `{removed, retained, retainedCount, retainedHasMore, freedBytes}`。
+  `removed` 是删除文件数；保留项为 `{id, name, referenceCount: {messages, tasks}}`。
+  按 ID 排序，最多返回 100 项；`retainedCount` 给出完整数量，`retainedHasMore` 表示是否截断。
+  沿用 1,024 个文件和每类引用数最多 10,000 的限制，超限时拒绝，不能用部分计数授权删除。
+  不返回引用它的消息或任务内容、ID。传输重试必须使用**同一频道和 requestKey**：保存的响应完全一致，
+  不重复审计，也不删除此后才进入回收站的文件。新的清空操作应生成新的 UUID。
+  缺字段、多字段或格式错误返回 422 `invalid_cleanup_request`。
+
+`GET /api/v1/storage` → `{totalBytes, measuredAt, categories, trash, topChannels, topChannelsLimit: 20}`。
+不接受查询参数。分类互不重叠，返回实测逻辑字节数 `sizeBytes`，适用时给出 `fileCount`：
+`channelFiles`（正常频道附件）、`trash`、`ownerTaskFiles`、`taskOutputs`（保留 Run 产出与已配置
+原生 Work 内容寻址文件）、`other`（受管目录其他文件，包括最小删除凭证）、`database`
+（配置的 PostgreSQL 数据库实际 `pg_database_size`）。附件大小包含原件、元数据和派生文本；
+附件类别按附件计数，产出及其他类别按存储文件计数。
+
+未配置原生 Work 产出目录时，`taskOutputs` 为 `null`，能统计到的保留产出放在 `retainedRunOutputs`；
+已配置时 `retainedRunOutputs` 为 `null`。`workingComputerBrowserData` 始终为 `null`，无法在此统计
+远端工作电脑的浏览器数据。`totalBytes` 是已测类别之和，不估算未知目录、操作系统实际分配、备份、
+WAL 或物理磁盘剩余空间。内容寻址产出统计实际存储的去重文件，不按逻辑任务引用重复计算。
+`freedBytes` 为删除的附件文件字节数减去最小删除标记大小，不含 SQL 凭证与审计增长，也不是物理磁盘分配量。
+
+`trash` 为 `{fileCount, sizeBytes, referencedFileCount}`，最后一项是仍有消息或任务引用的文件个数。
+`topChannels` 最多 20 个 `{id, name, deleted, sizeBytes, fileCount}`，包含正常及回收站附件，
+按大小降序、ID 升序。遍历拒绝符号链接、硬链接、非当前用户所有、超过 10,000 项或深度超过 8 的目录，
+目录损坏、不可用或引用不明也拒绝，不返回部分或估算成功。不会泄露路径或文件内容。
+SQL 与文件锁沿用有界超时。
+
+- `GET /api/v1/settings/storage` → `{revision, trashAutoPurgeDays, updatedAt, lastAutoPurgeAt}`。
+- `PUT /api/v1/settings/storage`，`{expectedRevision, trashAutoPurgeDays: null | 30}` → 同样格式。
+  默认 `null`（关闭）；其他取值或多字段返回 422，旧版本返回 409 `storage_settings_revision_conflict`。
+  变更增加版本并审计，相同值不增加版本、不重复审计。设置变更清除每日执行凭证并唤醒维护任务。
+  `lastAutoPurgeAt` 表示最近一次到期尝试的领取时间，不证明实际删除了文件。
+
+Server 维护任务在启动时、设置变更时及每小时检查；启用后跨 Server 进程每天最多领取一轮。
+只删除有效频道内、在数据库领取时间已进入回收站至少 30 天、且 C19 确认零引用的文件。
+未满天数、正常文件、Owner 任务文件和被引用文件都保留。目录、引用或锁检查失败时，该轮所有删除回滚。
+每轮先追加 `SETTINGS_TRASH_AUTO_PURGE_RUN` 的 started 审计，再追加相同操作 ID 的终态审计
+（`completed`、`failed`、`cancelled` 或 `policy_changed`）；只有 started 表示执行中断或完成情况未知。
+逐文件审计与删除一同提交，零删除的成功轮次也审计；关闭或尚未到期的检查不产生清理审计。
+该策略取代“固定七天清理”的承诺：只有 Owner 明确选择 30 天才启用自动永久删除。
+删除整个频道仍是独立的生命周期操作。
