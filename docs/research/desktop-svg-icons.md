@@ -53,7 +53,9 @@ Checkout `/private/tmp/openbot-c16-icons`, branch `codex/c16-icon-pipeline`. No 
 Synthetic vector conversion ran twice: 6 focused tests passed, no skips, including invalid SVG and
 missing-source preservation. This proves conversion, not the approved icon appearance. Full `npm run check` passed on this checkout (build: 18 successful, 17 cached). Initial
 sandbox runs failed at loopback listen with EPERM; rerun with the authorized local test
-environment passed. Hosted validate is pending. No SVG source exists on the
+environment passed. Hosted [validate passed](https://github.com/Peerframe/openbot/actions/runs/37039027532/job/110944356974)
+on `29451ed`. No SVG source exists on the
 baseline, so native package/Dock/taskbar/menu screenshots remain blocked on Claude's export;
 this item is not complete. Keep the current tracked binaries until replacement artwork is verified.
-PR link follows after creation. C9/C11 remain deferred; no auto-merge or release.
+PR: [#158](https://github.com/Peerframe/openbot/pull/158), draft; source/native screenshots remain
+required. C9/C11 remain deferred; no auto-merge or release.
