@@ -12,9 +12,10 @@ import { needsRoleSetup } from "../quick-bot";
 import { isActiveRun } from "../run-state";
 import { sidebarOrganization, useSidebarOrganization } from "../sidebar-organization";
 import { useWorkspacePreferences } from "../workspace-preferences";
-import { ApprovalCard } from "./ApprovalCard";
+import { ApprovalStack } from "./ApprovalStack";
 import { ChannelLibrary, NodeRow } from "./ContextRail";
 import { DeleteIdentityDialog } from "./DeleteIdentityDialog";
+import type { DesktopSettingsSection } from "./DesktopSettingsScreen";
 import { EmployeeModelEditor } from "./EmployeeModelEditor";
 import { NodeIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
@@ -24,6 +25,8 @@ import "./BotInfoRail.css";
 type Tab = "details" | "library" | "computer";
 const tabLabels: Record<Tab, string> = { details: "详情", library: "资料库", computer: "电脑" };
 const tabs: Tab[] = ["details", "library", "computer"];
+/** LongLists: a rail list shows at most four, then 「全部 N 个 ›」. */
+const RAIL_PREVIEW = 4;
 
 export const botComputerLabels: Record<Bot["computerProfile"], string> = {
   none: "不用电脑",
@@ -52,6 +55,7 @@ export function BotInfoRail({
   onDecideApproval,
   onManageModels,
   modelServicesVersion,
+  onOpenSettings,
 }: {
   bot: Bot;
   profile: EmployeeProfile | undefined;
@@ -64,6 +68,8 @@ export function BotInfoRail({
   onDecideApproval(approvalId: string, decision: ApprovalDecision): Promise<void>;
   onManageModels(): void;
   modelServicesVersion?: number | undefined;
+  /** 「全部 N 个 ›」 under a capped list opens its settings section. */
+  onOpenSettings?: ((section: DesktopSettingsSection) => void) | undefined;
 }) {
   const [tab, setTab] = useState<Tab>("details");
   const [deleting, setDeleting] = useState(false);
@@ -181,7 +187,7 @@ export function BotInfoRail({
               onManageModels={onManageModels}
               modelServicesVersion={modelServicesVersion}
             />
-            <Routines bot={bot} />
+            <Routines bot={bot} onOpenSettings={onOpenSettings} />
             <BotNotificationToggle bot={bot} />
             <button type="button" className="bi-delete" onClick={() => setDeleting(true)}>
               删除这个 Bot…
@@ -206,7 +212,9 @@ export function BotInfoRail({
             <p className="ci-empty">和它单聊后，你们的文件和它的产出会放在这里。</p>
           )
         ) : null}
-        {tab === "computer" ? <Computer bot={bot} workspace={workspace} /> : null}
+        {tab === "computer" ? (
+          <Computer bot={bot} workspace={workspace} onOpenSettings={onOpenSettings} />
+        ) : null}
       </div>
 
       {deleting ? (
@@ -380,17 +388,14 @@ function Approvals({
   return (
     <section className="ci-section" aria-label="需要确认的操作">
       <h3>需要处理 · {pending.length}</h3>
-      <div className="ci-approvals">
-        {pending.map((approval) => (
-          <ApprovalCard
-            approval={approval}
-            bot={bot}
-            channel={workspace.channels.find((channel) => channel.id === approval.channelId)}
-            onDecide={onDecideApproval}
-            key={approval.id}
-          />
-        ))}
-      </div>
+      <ApprovalStack
+        approvals={pending}
+        botFor={() => bot}
+        channelFor={(approval) =>
+          workspace.channels.find((channel) => channel.id === approval.channelId)
+        }
+        onDecide={onDecideApproval}
+      />
     </section>
   );
 }
@@ -484,7 +489,13 @@ function everyLabel(minutes: number) {
 }
 
 /** 例行任务 this Bot repeats on a schedule; they are set up by asking in the conversation. */
-function Routines({ bot }: { bot: Bot }) {
+function Routines({
+  bot,
+  onOpenSettings,
+}: {
+  bot: Bot;
+  onOpenSettings?: ((section: DesktopSettingsSection) => void) | undefined;
+}) {
   const [routines, setRoutines] = useState<Automation[]>();
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -504,7 +515,7 @@ function Routines({ bot }: { bot: Bot }) {
       <h3 id="bi-routines-heading">例行任务</h3>
       {routines && routines.length > 0 ? (
         <div className="bi-card">
-          {routines.map((routine) => (
+          {routines.slice(0, RAIL_PREVIEW).map((routine) => (
             <div className="bi-row is-static" key={routine.id}>
               <span>{routine.name}</span>
               <span className="bi-row-value">
@@ -513,7 +524,13 @@ function Routines({ bot }: { bot: Bot }) {
             </div>
           ))}
         </div>
-      ) : (
+      ) : null}
+      {routines && routines.length > RAIL_PREVIEW && onOpenSettings ? (
+        <button type="button" className="ci-more" onClick={() => onOpenSettings("routines")}>
+          全部 {routines.length} 个 ›
+        </button>
+      ) : null}
+      {routines && routines.length > 0 ? null : (
         <p className="bi-empty">
           {failed ? (
             "暂时读不到例行任务。"
@@ -563,7 +580,15 @@ function BotNotificationToggle({ bot }: { bot: Bot }) {
 }
 
 /** 电脑: how this Bot uses a computer, where it works now, and what is connected. */
-function Computer({ bot, workspace }: { bot: Bot; workspace: WorkspaceSnapshot }) {
+function Computer({
+  bot,
+  workspace,
+  onOpenSettings,
+}: {
+  bot: Bot;
+  workspace: WorkspaceSnapshot;
+  onOpenSettings?: ((section: DesktopSettingsSection) => void) | undefined;
+}) {
   const active = workspace.runs.find((run) => run.botId === bot.id && isActiveRun(run));
   const node = workspace.nodes.find((item) => item.id === active?.nodeId);
   const usesComputer = bot.computerProfile !== "none" && bot.computerProfile !== "model";
@@ -595,11 +620,16 @@ function Computer({ bot, workspace }: { bot: Bot; workspace: WorkspaceSnapshot }
           </div>
         ) : (
           <div className="ci-card">
-            {workspace.nodes.map((item) => (
+            {workspace.nodes.slice(0, RAIL_PREVIEW).map((item) => (
               <NodeRow node={item} key={item.id} />
             ))}
           </div>
         )}
+        {workspace.nodes.length > RAIL_PREVIEW && onOpenSettings ? (
+          <button type="button" className="ci-more" onClick={() => onOpenSettings("hosts")}>
+            全部 {workspace.nodes.length} 个 ›
+          </button>
+        ) : null}
       </section>
       <p className="bi-note">技能表示会做什么，不代表有权操作电脑。每台工作电脑单独授权。</p>
     </>

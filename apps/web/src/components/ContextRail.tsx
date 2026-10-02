@@ -12,12 +12,13 @@ import { composerAttachEvent } from "../composer-events";
 import { runStatusSummary } from "../run-state";
 import { requestNotificationPermission } from "../system-notifications";
 import { updatePreferences, useWorkspacePreferences } from "../workspace-preferences";
+import { ApprovalStack } from "./ApprovalStack";
 import { ArtifactDownloadLink } from "./ArtifactCard";
 import { AttachmentsManagerDialog, useChannelAttachments } from "./AttachmentsManager";
+import type { DesktopSettingsSection } from "./DesktopSettingsScreen";
 import "./ContextRail.css";
 import { isActiveRun, runStatusLabel } from "../run-state";
 import { AddMemberPopover } from "./AddMemberPopover";
-import { ApprovalCard } from "./ApprovalCard";
 import { GroupAvatar } from "./GroupAvatar";
 import { CheckIcon, NodeIcon, PlusIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
@@ -32,6 +33,7 @@ export function ContextRail({
   onJoin,
   onRemove,
   onCollapse,
+  onOpenSettings,
 }: {
   selectedChannelId?: string | undefined;
   workspace: WorkspaceSnapshot;
@@ -42,6 +44,8 @@ export function ContextRail({
   onJoin?: ((botId: string) => Promise<void>) | undefined;
   onRemove?: ((botId: string) => Promise<void>) | undefined;
   onCollapse?: (() => void) | undefined;
+  /** 「全部 N 个 ›」 under a capped list opens its settings section. */
+  onOpenSettings?: ((section: DesktopSettingsSection) => void) | undefined;
 }) {
   const [adding, setAdding] = useState(false);
   const [memberBusy, setMemberBusy] = useState<string>();
@@ -95,13 +99,16 @@ export function ContextRail({
   const hasActivity = pendingApprovals.length > 0 || scopedRuns.length > 0;
 
   const channel = selectedChannelId === undefined ? undefined : channelById.get(selectedChannelId);
-  const members = channel
-    ? channel.botIds.flatMap((id) => {
-        const bot = botById.get(id);
-        return bot ? [bot] : [];
-      })
-    : [];
   const activeBotIds = new Set(activeRuns.map((run) => run.botId));
+  // LongLists: members at work come first; otherwise the 频道's own order.
+  const members = (
+    channel
+      ? channel.botIds.flatMap((id) => {
+          const bot = botById.get(id);
+          return bot ? [bot] : [];
+        })
+      : []
+  ).sort((left, right) => Number(activeBotIds.has(right.id)) - Number(activeBotIds.has(left.id)));
   const available = channel ? workspace.bots.filter((bot) => !channel.botIds.includes(bot.id)) : [];
 
   // A 单聊 uses the Bot 信息 rail instead (BotInfoRail).
@@ -325,17 +332,12 @@ export function ContextRail({
             {pendingApprovals.length > 0 ? (
               <section className="ci-section" aria-label="需要确认的操作">
                 <h3>需要处理 · {pendingApprovals.length}</h3>
-                <div className="ci-approvals">
-                  {pendingApprovals.map((approval) => (
-                    <ApprovalCard
-                      approval={approval}
-                      bot={botById.get(approval.botId)}
-                      channel={channelById.get(approval.channelId)}
-                      onDecide={onDecideApproval}
-                      key={approval.id}
-                    />
-                  ))}
-                </div>
+                <ApprovalStack
+                  approvals={pendingApprovals}
+                  botFor={(approval) => botById.get(approval.botId)}
+                  channelFor={(approval) => channelById.get(approval.channelId)}
+                  onDecide={onDecideApproval}
+                />
               </section>
             ) : null}
 
@@ -386,11 +388,16 @@ export function ContextRail({
                 </div>
               ) : (
                 <div className="ci-card">
-                  {workspace.nodes.map((node) => (
+                  {workspace.nodes.slice(0, RAIL_PREVIEW).map((node) => (
                     <NodeRow node={node} key={node.id} />
                   ))}
                 </div>
               )}
+              {workspace.nodes.length > RAIL_PREVIEW && onOpenSettings ? (
+                <button type="button" className="ci-more" onClick={() => onOpenSettings("hosts")}>
+                  全部 {workspace.nodes.length} 个 ›
+                </button>
+              ) : null}
             </section>
 
             <NotificationToggle />
@@ -481,6 +488,7 @@ const tabLabels: Record<RailTab, string> = { details: "详情", library: "资料
  */
 /** ChannelInfo LongLists rule: each section shows at most four, then 「全部 N 个 ›」. */
 const LIBRARY_PREVIEW = 4;
+const RAIL_PREVIEW = LIBRARY_PREVIEW;
 
 export function ChannelLibrary({
   channelId,
