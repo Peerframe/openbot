@@ -353,7 +353,9 @@ export function EmployeeBrowser({ bot, onClose }: { bot: Bot; onClose(): void })
       </div>
       <footer className="browser-footer">
         <span>
-          在 {session?.nodeName ?? "工作电脑"} 上运行 · 登录状态留在工作电脑 · 画面只在内存里保留
+          {/* Wording verified against the 服务电脑 in C20 (#159). */}在{" "}
+          {session?.nodeName ?? "工作电脑"} 上运行 · 登录状态保存在这台工作电脑，清除浏览数据会移除
+          · 这个窗口的实时画面不保存为文件
           <span className="browser-updated" role="status">
             {busy
               ? " · 正在操作…"
@@ -364,7 +366,7 @@ export function EmployeeBrowser({ bot, onClose }: { bot: Bot; onClose(): void })
         </span>
         <span>
           {mine
-            ? "关闭窗口会暂停控制，完成后请点「交还 Bot」"
+            ? "接管后关闭窗口，Bot 会保持暂停；重新打开并点「交还 Bot」后才会继续"
             : session?.controlAvailable === false
               ? "这个浏览器只能查看，还没有开启接管"
               : "接管后可以点网页、输入文字和滚动"}

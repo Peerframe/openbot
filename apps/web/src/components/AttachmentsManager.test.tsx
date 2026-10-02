@@ -143,11 +143,24 @@ it("lists uploads and outputs with counts; only uploads can go to the 回收站"
   expect(document.querySelectorAll(".channel-files-list li")).toHaveLength(1);
 });
 
-it("清理回收站 needs a second click before the 服务电脑 is asked", async () => {
+it("offers no permanent cleanup and shows how many messages and tasks use a file", async () => {
+  listed = [
+    { ...upload("u1", "competitors.md"), referenceCount: { messages: 3, tasks: 1 } },
+    {
+      ...upload("u22", "旧版需求.docx", "2026-09-20T00:00:00.000Z"),
+      referenceCount: { messages: 0, tasks: 0 },
+    },
+  ];
   await open();
-  await interact(() => button("清理回收站").click());
-  expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith("/cleanup"))).toBe(false);
-  await interact(() => button("再点一次确认清理").click());
-  expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith("/cleanup"))).toBe(true);
-  expect(document.querySelector(".channel-files-status")?.textContent).toContain("已清理 1 个文件");
+  // C20 (#159): the 服务电脑 has no permanent cleanup route, so nothing offers one.
+  expect(
+    [...document.querySelectorAll("button")].some((item) => item.textContent?.includes("清理")),
+  ).toBe(false);
+  expect(document.querySelector(".channel-files-note")?.textContent).toContain("永久清理暂未提供");
+  expect(document.body.textContent).toContain("3 条消息引用、1 个任务引用");
+  await interact(() => button("回收站 · 1").click());
+  expect(document.querySelector(".channel-files-list small")?.textContent).toContain(
+    "没有消息或任务引用",
+  );
+  expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes("cleanup"))).toBe(false);
 });
