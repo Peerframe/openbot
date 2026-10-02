@@ -28,18 +28,21 @@ license notices are required. English/Chinese API documents define the additive 
 ## Current handoff
 
 Checkout `/private/tmp/openbot-c19-references`, branch `codex/c19-attachment-reference-count`.
-Only channel list projection changes, no Web or C9/C11 work. Executed: 4 real PostgreSQL/HTTP cases passed, zero skips (`test_attachment_references.py` plus
-`test_attachment_families_keep_distinct_delete_lock_and_header_semantics`). Full `npm run check`
-passed (18 build tasks successful, 12 cached). Docs gate: 12 passed, 563 Markdown files before the
-translation was added; recheck follows. Initial synthetic child lacked its delegation fields, then
-a foreign-channel test name collided; fixtures were corrected before the passing run. Initial full
-check used a shared dependency link that lacked workspace nested dependencies; the independent
-locked install passed. New tests are included in `scripts/test-python-control.mjs` for actual hosted
-SQL execution, not just the base suite's skipped database collection. PR: [#161](https://github.com/Peerframe/openbot/pull/161); hosted validate pending.
-Final fixture teardown also removes the foreign-channel records; affected four cases reran and
-passed, zero skips. Final docs gate includes the translation: 12 passed, 564 Markdown files.
-The existing uploaded-item equality assertion now includes the additive zero referenceCount;
-upload/reference/delete/restore plus all new cases reran: 5 passed, zero skips.
-Acceptance: real PostgreSQL/HTTP exact counts, duplicate marker, case, unreferenced file, same-ID
-foreign channel exclusion, terminal/delegated/mapped task identity, recycled file, Owner/refused
-scope and overflow with no partial content. No paid model. No automatic merge or release.
+PR: [#161](https://github.com/Peerframe/openbot/pull/161). Implementation/test revision `f86e28f`:
+[hosted validate passed](https://github.com/Peerframe/openbot/actions/runs/37042098568/job/110954806783).
+This evidence-only update reuses that run. Only channel list projection changes; no Web or C9/C11.
+
+Executed: five real PostgreSQL/HTTP cases passed, zero skips: `test_attachment_references.py`,
+`test_attachment_families_keep_distinct_delete_lock_and_header_semantics`, and
+`test_real_owner_workspace_and_attachment_task_lifecycle`. Acceptance covers exact counts,
+duplicate/case markers, unreferenced files, same-ID foreign channel exclusion, terminal/delegated/
+mapped task identity, recycled files, Owner/refused scope, final authority recheck, bounded overflow
+without partial content, and upload/reference/delete/restore. The existing uploaded-item equality
+assertion includes additive zero referenceCount. New tests are in `scripts/test-python-control.mjs`
+for the actual hosted SQL lane, not only the base suite's skipped database collection.
+
+Full `npm run check` passed (18 build tasks successful, 12 cached). Final docs gate passed: 12 tests,
+564 Markdown files. The implementation full-check evidence is reused for the later test/record-only
+updates. Initial synthetic child delegation fields and foreign-channel uniqueness/teardown were
+corrected before the final passing run. Initial shared dependency link lacked nested workspace
+versions; an independent locked install passed. No paid model, real data, automatic merge or release.

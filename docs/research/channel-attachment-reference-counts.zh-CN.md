@@ -15,3 +15,7 @@ PostgreSQL 在一次语句快照内分别统计消息和频道 Run 冻结指令�
 返回前撤权及现有附件命名空间、下载语义、上传→引用→回收→恢复流程。CI 的真实 SQL lane 已加入新测试文件。
 `npm run check` 通过（18 个构建任务成功，12 个缓存）；文档门禁 12 项通过。
 首次共享依赖链接缺少 workspace 嵌套版本，换成独立锁定安装后通过。无付费模型或真实数据。
+
+实现及最终测试版本 `f86e28f` 的[托管 validate 已通过](https://github.com/Peerframe/openbot/actions/runs/37042098568/job/110954806783)。
+PR：[#161](https://github.com/Peerframe/openbot/pull/161)。工作树 `/private/tmp/openbot-c19-references`，
+分支 `codex/c19-attachment-reference-count`；本文仅补充交接证据，复用上述检查。
