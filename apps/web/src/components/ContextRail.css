@@ -49,10 +49,6 @@
   padding: 0 24px 18px;
   text-align: center;
 }
-.channel-info .ci-identity-avatar {
-  width: 72px;
-  height: 72px;
-}
 .channel-info .ci-identity > strong {
   margin-top: 8px;
   font-size: 20px;
@@ -245,17 +241,22 @@
   background: var(--ob-working);
 }
 .channel-info .ci-member-remove {
-  height: 26px;
-  padding: 0 10px;
+  height: 28px;
+  padding: 0 12px;
   border: 0;
-  border-radius: 13px;
-  background: #fff;
-  color: var(--ob-attention);
+  border-radius: 14px;
+  background: #fbe9e7;
+  color: #b3261e;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   visibility: hidden;
 }
+.channel-info .ci-member-remove:hover {
+  background: #f8d9d5;
+}
+/* 移除 shows on hover (AddMember artboard), on keyboard focus, and always without a pointer. */
 .channel-info .ci-member:hover .ci-member-remove,
 .channel-info .ci-member:focus-within .ci-member-remove {
   visibility: visible;
@@ -263,6 +264,14 @@
 .channel-info .ci-member:has(.ci-member-remove):hover .ci-status,
 .channel-info .ci-member:has(.ci-member-remove):focus-within .ci-status {
   visibility: hidden;
+}
+@media (hover: none) {
+  .channel-info .ci-member-remove {
+    visibility: visible;
+  }
+  .channel-info .ci-member:has(.ci-member-remove) .ci-status {
+    visibility: hidden;
+  }
 }
 .channel-info .ci-member-add {
   display: grid;
@@ -293,20 +302,66 @@
 .channel-info .ci-member-add:hover .ci-member-add-icon {
   background: #fff;
 }
-.channel-info .ci-add-form {
-  display: flex;
-  gap: 8px;
-  padding: 4px 8px;
+.channel-info .ci-add-popover {
+  box-sizing: border-box;
+  width: 270px;
+  margin: -4px 0 0 4px;
+  overflow: hidden;
+  border: 1px solid #e5e5e8;
+  border-radius: 18px;
+  background: #fdfdfd;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
 }
-.channel-info .ci-add-form select {
-  flex: 1;
-  min-width: 0;
-  height: 30px;
-  padding: 0 10px;
-  border: 1px solid var(--ob-divider);
-  border-radius: 10px;
-  background: #fff;
+.channel-info .ci-add-popover input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 1px solid #ececee;
+  background: transparent;
+  color: var(--ob-text);
   font: inherit;
+  font-size: 15px;
+  outline: none;
+}
+.channel-info .ci-add-options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 280px;
+  padding: 6px;
+  overflow-y: auto;
+}
+.channel-info .ci-add-options button {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.channel-info .ci-add-options button[aria-selected="true"] {
+  background: var(--ob-fill);
+}
+.channel-info .ci-add-options button:disabled {
+  cursor: progress;
+}
+.channel-info .ci-add-avatar {
+  width: 32px;
+  height: 32px;
+}
+.channel-info .ci-add-empty {
+  margin: 0;
+  padding: 10px;
+  color: var(--ob-text-tertiary);
   font-size: 13px;
 }
 

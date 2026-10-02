@@ -1,0 +1,159 @@
+/* Bot 信息 rail (BotInfo artboard). Shares the 频道信息 rail frame, tabs and cards. */
+.bot-info .ci-header {
+  gap: 4px;
+}
+.bot-info .bi-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0 24px 18px;
+  text-align: center;
+}
+.bot-info .bi-avatar {
+  width: 88px;
+  height: 88px;
+}
+.bot-info .bi-name {
+  box-sizing: border-box;
+  width: 220px;
+  margin-top: 8px;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+}
+.bot-info .bi-name:hover {
+  background: var(--ob-fill);
+}
+.bot-info .bi-name:focus {
+  background: var(--ob-surface);
+  box-shadow: 0 0 0 1px var(--ob-divider);
+}
+.bot-info .bi-tag {
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.bot-info .bi-tag.is-empty {
+  color: #1f6fd6;
+}
+.bot-info .bi-tag:hover:not(:disabled) {
+  background: var(--ob-fill);
+}
+.bot-info .bi-tag:disabled {
+  cursor: default;
+}
+.bot-info .bi-tag-input {
+  box-sizing: border-box;
+  width: 200px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--ob-divider);
+  border-radius: 8px;
+  background: var(--ob-surface);
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 13px;
+  text-align: center;
+  outline: none;
+}
+.bot-info .bi-identity .form-error {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+.bot-info .bi-body {
+  flex-grow: 1;
+}
+.bot-info .bi-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.bot-info .bi-card > * + * {
+  border-top: 1px solid var(--ob-divider);
+}
+.bot-info .bi-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 12px 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  background: transparent;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.bot-info .bi-card > .bi-row:first-child {
+  border-top: 0;
+}
+.bot-info .bi-row:disabled,
+.bot-info .bi-row.is-static {
+  cursor: default;
+}
+.bot-info .bi-row-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}
+.bot-info .bi-row:focus-visible {
+  outline: 2px solid var(--ob-active);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+.bot-info .bi-row-editor {
+  padding: 4px 0 12px;
+}
+.bot-info .bi-empty {
+  margin: 0;
+  padding: 18px 16px;
+  border-radius: 16px;
+  background: var(--ob-fill);
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+.bot-info .bi-note {
+  margin: 0 4px;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.bot-info .bi-delete {
+  align-self: center;
+  margin-top: auto;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #b3261e;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.bot-info .bi-delete:hover {
+  background: #fdeceb;
+}

@@ -1,10 +1,9 @@
 // @vitest-environment jsdom
 import type { EmployeeProfile } from "@openbot/domain";
 import { useState } from "react";
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { sidebarOrganization } from "../sidebar-organization";
+import { beforeEach, expect, it, vi } from "vitest";
 import { interact, renderComponent, setInputValue } from "../test/render-component";
-import { EmployeeProfileRail } from "./EmployeeProfileRail";
+import { EmployeeSettingsForm } from "./EmployeeSettingsForm";
 
 const api = vi.hoisted(() => ({ updateEmployeeProfileDetails: vi.fn() }));
 vi.mock("../api", () => api);
@@ -37,17 +36,12 @@ let setShown: (value: EmployeeProfile) => void = () => undefined;
 function Harness(props: {
   onRename(name: string): Promise<void>;
   onProfileChanged(): Promise<void>;
-  onBack?(): void;
-  onCollapse?(): void;
 }) {
   const [shown, setShownState] = useState(profile);
   setShown = setShownState;
   return (
-    <EmployeeProfileRail
+    <EmployeeSettingsForm
       profile={shown}
-      nodes={[]}
-      onBack={props.onBack ?? (() => undefined)}
-      onCollapse={props.onCollapse ?? (() => undefined)}
       onRename={props.onRename}
       onProfileChanged={props.onProfileChanged}
     />
@@ -69,9 +63,6 @@ function button(container: HTMLElement, text: string) {
 beforeEach(() => {
   api.updateEmployeeProfileDetails.mockReset();
 });
-afterEach(() => {
-  sidebarOrganization.setMuted("bot:bot-1", false);
-});
 
 it("saves the name through rename and the tag and description with the revision", async () => {
   const rename = vi.fn(async () => undefined);
@@ -80,16 +71,8 @@ it("saves the name through rename and the tag and description with the revision"
     employee: { ...profile.employee, role: "市场" },
     details: { ...profile.details, revision: 2 },
   });
-  const back = vi.fn();
-  const collapse = vi.fn();
-  const view = await renderComponent(
-    <Harness onRename={rename} onProfileChanged={changed} onBack={back} onCollapse={collapse} />,
-  );
+  const view = await renderComponent(<Harness onRename={rename} onProfileChanged={changed} />);
   try {
-    const text = view.container.textContent ?? "";
-    expect(text).toContain("claude-sonnet");
-    expect(text).toContain("员工浏览器 · Docker");
-    expect(text).toContain("不代表有权操作电脑");
     // Nothing to save until a field changes.
     expect(button(view.container, "保存")).toBeUndefined();
     const name = field(view.container, "名称");
@@ -107,14 +90,6 @@ it("saves the name through rename and the tag and description with the revision"
     });
     expect(changed).toHaveBeenCalledOnce();
     expect(button(view.container, "保存")).toBeUndefined();
-    await interact(() =>
-      view.container.querySelector<HTMLButtonElement>('[aria-label="返回"]')?.click(),
-    );
-    await interact(() =>
-      view.container.querySelector<HTMLButtonElement>('[aria-label="收起"]')?.click(),
-    );
-    expect(back).toHaveBeenCalledOnce();
-    expect(collapse).toHaveBeenCalledOnce();
   } finally {
     await view.unmount();
   }
@@ -143,24 +118,6 @@ it("does not overwrite an edit made on another device", async () => {
     await interact(() => button(view.container, "加载最新值")?.click());
     expect(field(view.container, "标签")?.value).toBe("行政");
     expect(api.updateEmployeeProfileDetails).not.toHaveBeenCalled();
-  } finally {
-    await view.unmount();
-  }
-});
-
-it("mutes the Bot's notifications on this device, shared with the sidebar", async () => {
-  const view = await renderComponent(
-    <Harness
-      onRename={vi.fn(async () => undefined)}
-      onProfileChanged={vi.fn(async () => undefined)}
-    />,
-  );
-  try {
-    const toggle = view.container.querySelector<HTMLButtonElement>('[role="switch"]');
-    expect(toggle?.getAttribute("aria-checked")).toBe("true");
-    await interact(() => toggle?.click());
-    expect(sidebarOrganization.snapshot().muted).toContain("bot:bot-1");
-    expect(toggle?.getAttribute("aria-checked")).toBe("false");
   } finally {
     await view.unmount();
   }

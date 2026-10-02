@@ -128,8 +128,8 @@
 | Components | `tokens.css`、`primitives.css`、`Dialog.tsx` | 已实现 |
 | Sidebar、Search、Menu、ContextMenu | `Sidebar.tsx`、`SidebarItemMenu.tsx` | 已实现（含群组头像与状态圆点） |
 | Main | `App.tsx`、`WorkspaceHeader.tsx`、`ChannelWorkspace.tsx` | 已实现；第 19 步换任务卡 |
-| ChannelInfo、AddMember | `ContextRail.tsx` | 已实现；第 18 步加添加成员弹窗 |
-| BotInfo | 新的 `BotInfoRail.tsx`（取代 `EmployeeProfileRail` 与单聊右栏） | 第 17 步 |
+| ChannelInfo、AddMember | `ContextRail.tsx`、`AddMemberPopover.tsx` | 已完成 |
+| BotInfo | `BotInfoRail.tsx`（单聊和 Bot 档案） | 已完成；编辑头像等 C9 |
 | Profile | `EmployeeProfileView.tsx` | 头部与概览已实现；其他分页待设计（第 22 步） |
 | New、NewGroup、NewBotChat | `NewChatScreen.tsx`、`NewBotSetupCard.tsx` | 已完成；开场白等 C11 |
 | Slash | `ChannelWorkspace.tsx` 输入框菜单 | 已实现 |

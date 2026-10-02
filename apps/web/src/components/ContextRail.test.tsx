@@ -3,7 +3,7 @@
 import type { Approval, ExecutionNode, Run, WorkspaceSnapshot } from "@openbot/domain";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { interact, renderComponent } from "../test/render-component";
+import { interact, renderComponent, setInputValue } from "../test/render-component";
 import { ContextRail } from "./ContextRail";
 
 function workspace(overrides: Partial<WorkspaceSnapshot> = {}): WorkspaceSnapshot {
@@ -469,12 +469,22 @@ it("adds and removes channel members from the rail and collapses it", async () =
         .find((item) => item.textContent === "添加成员")
         ?.click(),
     );
+    const search = rendered.container.querySelector<HTMLInputElement>(
+      'input[aria-label="搜索 Bot"]',
+    );
+    if (!search) throw Error("search missing");
+    await setInputValue(search, "zzz");
+    expect(rendered.container.textContent).toContain("没有找到这个 Bot");
+    await setInputValue(search, "be");
     await interact(() =>
-      rendered.container
-        .querySelector(".ci-add-form")
-        ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
+      search.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })),
     );
     expect(onJoin).toHaveBeenCalledWith("beta");
+    // Escape closes the picker.
+    await interact(() =>
+      search.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
+    );
+    expect(rendered.container.querySelector(".ci-add-popover")).toBeNull();
     await interact(() => getButton(rendered.container, "将 Alpha 移出频道").click());
     expect(onRemove).toHaveBeenCalledWith("alpha");
     await interact(() => getButton(rendered.container, "收起").click());

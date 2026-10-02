@@ -6,7 +6,7 @@ import type {
   RunProgress,
   WorkspaceSnapshot,
 } from "@openbot/domain";
-import { useId, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { formatAttachmentSize } from "../channel-attachment-client";
 import { composerAttachEvent } from "../composer-events";
 import { runStatusSummary } from "../run-state";
@@ -16,6 +16,7 @@ import { ArtifactDownloadLink } from "./ArtifactCard";
 import { AttachmentsManagerDialog, useChannelAttachments } from "./AttachmentsManager";
 import "./ContextRail.css";
 import { isActiveRun, runStatusLabel } from "../run-state";
+import { AddMemberPopover } from "./AddMemberPopover";
 import { ApprovalCard } from "./ApprovalCard";
 import { GroupAvatar } from "./GroupAvatar";
 import { CheckIcon, NodeIcon, PlusIcon } from "./Icons";
@@ -37,15 +38,15 @@ export function ContextRail({
   onDecideApproval(approvalId: string, decision: ApprovalDecision): Promise<void>;
   onInspectRun(runId: string): void;
   onOpenBot?: ((botId: string) => void) | undefined;
-  /** Member management (Main artboard: 成员 · N with 添加 Bot); absent for direct conversations. */
+  /** Member management (Main artboard: 成员 · N with 添加 Bot). */
   onJoin?: ((botId: string) => Promise<void>) | undefined;
   onRemove?: ((botId: string) => Promise<void>) | undefined;
   onCollapse?: (() => void) | undefined;
 }) {
   const [adding, setAdding] = useState(false);
-  const [candidate, setCandidate] = useState("");
   const [memberBusy, setMemberBusy] = useState<string>();
   const [memberError, setMemberError] = useState<string>();
+  const closeAdding = useCallback(() => setAdding(false), []);
   const [picked, setPicked] = useState<{ channelId: string | undefined; tab: RailTab }>();
   const tabId = useId();
   const scopedRuns = workspace.runs.filter(
@@ -103,11 +104,8 @@ export function ContextRail({
   const activeBotIds = new Set(activeRuns.map((run) => run.botId));
   const available = channel ? workspace.bots.filter((bot) => !channel.botIds.includes(bot.id)) : [];
 
-  const tabs: RailTab[] = channel
-    ? channel.directBotId
-      ? ["details", "library"]
-      : ["details", "library", "members"]
-    : [];
+  // A 单聊 uses the Bot 信息 rail instead (BotInfoRail).
+  const tabs: RailTab[] = channel ? ["details", "library", "members"] : [];
   // Until the Owner picks a tab for this conversation, open where attention is needed.
   const defaultTab: RailTab =
     tabs.includes("members") && pendingApprovals.length === 0 ? "members" : "details";
@@ -117,8 +115,7 @@ export function ContextRail({
       : picked !== undefined && picked.channelId === selectedChannelId && tabs.includes(picked.tab)
         ? picked.tab
         : defaultTab;
-  const title =
-    selectedChannelId === undefined ? "工作区动态" : channel?.directBotId ? "Bot 信息" : "频道信息";
+  const title = selectedChannelId === undefined ? "工作区动态" : "频道信息";
   const channelArtifacts = workspace.artifacts
     .filter((artifact) => {
       const run = runById.get(artifact.runId);
@@ -157,23 +154,16 @@ export function ContextRail({
       </header>
 
       <div className="ci-identity">
-        {channel && !channel.directBotId ? (
+        {channel ? (
           <GroupAvatar
             name={channel.name}
             members={members}
             size={84}
             statusOf={(bot) => (activeBotIds.has(bot.id) ? "running" : "idle")}
           />
-        ) : members[0] ? (
-          <RobotAvatar bot={members[0]} className="ci-identity-avatar" />
         ) : null}
         <strong>{selectedChannelId === undefined ? title : (channel?.name ?? "当前频道")}</strong>
-        {channel ? (
-          <span>
-            {channel.description ||
-              (channel.directBotId ? members[0]?.role : `${members.length} 名 Bot`)}
-          </span>
-        ) : null}
+        {channel ? <span>{channel.description || `${members.length} 名 Bot`}</span> : null}
       </div>
 
       {tabs.length > 0 ? (
@@ -243,11 +233,13 @@ export function ContextRail({
                     {bot.role ? <small className="ci-member-role">{bot.role}</small> : null}
                   </span>
                 </button>
-                <span className={`ci-status ${activeBotIds.has(bot.id) ? "is-active" : "is-idle"}`}>
-                  <i aria-hidden="true" />
-                  {activeBotIds.has(bot.id) ? "工作中" : "待命"}
-                </span>
-                {onRemove && !channel.directBotId ? (
+                {activeBotIds.has(bot.id) ? (
+                  <span className="ci-status is-active">
+                    <i aria-hidden="true" />
+                    工作中
+                  </span>
+                ) : null}
+                {onRemove ? (
                   <button
                     type="button"
                     className="ci-member-remove"
@@ -273,7 +265,7 @@ export function ContextRail({
             {members.length === 0 ? (
               <p className="ci-empty">还没有 Bot。添加后，频道里的消息会交给它们处理。</p>
             ) : null}
-            {onJoin && !channel.directBotId && available.length > 0 ? (
+            {onJoin && available.length > 0 ? (
               <button
                 type="button"
                 className="ci-member-add"
@@ -289,46 +281,24 @@ export function ContextRail({
                 添加成员
               </button>
             ) : null}
-            {adding ? (
-              <form
-                className="ci-add-form"
-                onSubmit={async (event) => {
-                  event.preventDefault();
-                  const botId = available.some((bot) => bot.id === candidate)
-                    ? candidate
-                    : available[0]?.id;
-                  if (!botId || !onJoin) return;
-                  setMemberBusy(botId);
+            {adding && available.length > 0 ? (
+              <AddMemberPopover
+                candidates={available}
+                busy={memberBusy !== undefined}
+                onClose={closeAdding}
+                onAdd={async (bot) => {
+                  if (!onJoin) return;
+                  setMemberBusy(bot.id);
                   setMemberError(undefined);
                   try {
-                    await onJoin(botId);
-                    setAdding(false);
+                    await onJoin(bot.id);
                   } catch {
                     setMemberError("无法添加这个 Bot，请重试。");
                   } finally {
                     setMemberBusy(undefined);
                   }
                 }}
-              >
-                <select
-                  aria-label="选择要添加的 Bot"
-                  value={candidate}
-                  onChange={(event) => setCandidate(event.target.value)}
-                >
-                  {available.map((bot) => (
-                    <option key={bot.id} value={bot.id}>
-                      {bot.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="submit"
-                  className="ob-pill is-small is-primary"
-                  disabled={memberBusy !== undefined}
-                >
-                  添加
-                </button>
-              </form>
+              />
             ) : null}
             {memberError ? (
               <p className="form-error" role="alert">
@@ -508,7 +478,7 @@ const tabLabels: Record<RailTab, string> = { details: "详情", library: "资料
  * files. Uploading goes through the composer, so a file is always tied to a message the Owner
  * sends; 管理 opens the existing file manager for download, extraction and the recycle bin.
  */
-function ChannelLibrary({
+export function ChannelLibrary({
   channelId,
   artifacts,
   botNameForRun,
@@ -678,7 +648,7 @@ function RunRow({
   );
 }
 
-function NodeRow({ node }: { node: ExecutionNode }) {
+export function NodeRow({ node }: { node: ExecutionNode }) {
   return (
     <div className="ci-computer">
       <span className="ci-computer-icon">

@@ -34,6 +34,7 @@ import {
 import { resolveAuthSession } from "./auth-session-recovery";
 import { AutomationsScreen } from "./components/AutomationsScreen";
 import { ChannelWorkspace } from "./components/ChannelWorkspace";
+import { BotInfoRail } from "./components/BotInfoRail";
 import { ContextRail } from "./components/ContextRail";
 import { DesktopConnectionScreen } from "./components/DesktopConnectionScreen";
 import { DesktopInstallScreen } from "./components/DesktopInstallScreen";
@@ -44,7 +45,6 @@ import {
 } from "./components/DesktopSettingsScreen";
 import { DesktopSetupScreen } from "./components/DesktopSetupScreen";
 import { EmployeeBrowser } from "./components/EmployeeBrowser";
-import { EmployeeProfileRail } from "./components/EmployeeProfileRail";
 import { EmployeeProfileView, type ProfileTab } from "./components/EmployeeProfileView";
 import { ExportEmployeeDialog } from "./components/ExportEmployeeDialog";
 import { ImportEmployeeDialog } from "./components/ImportEmployeeDialog";
@@ -697,6 +697,11 @@ export function AuthenticatedWorkspace({
   }
   const [sharing, setSharing] = useState(false);
   const [sharedBotId, setSharedBotId] = useState<string>();
+  // A 单聊's rail is the Bot 信息 rail, which reads the same profile as the Bot page.
+  const railBotId =
+    showDetails && destination === "chat"
+      ? workspace?.channels.find((channel) => channel.id === selectedChannelId)?.directBotId
+      : undefined;
   const directRequest = useRef(0);
   // biome-ignore lint/correctness/useExhaustiveDependencies: leaving a view invalidates an in-flight direct-conversation open.
   useEffect(
@@ -711,7 +716,7 @@ export function AuthenticatedWorkspace({
     loading: employeeProfileLoading,
     error: employeeProfileError,
     refresh: refreshEmployeeProfile,
-  } = useEmployeeProfile(selectedEmployeeId);
+  } = useEmployeeProfile(selectedEmployeeId ?? railBotId);
   const [employeeExportOpen, setEmployeeExportOpen] = useState(false);
   const [employeeImportOpen, setEmployeeImportOpen] = useState(false);
   const [framesByRun, setFramesByRun] = useState<Map<string, RunFrame>>(() => new Map());
@@ -1070,6 +1075,8 @@ export function AuthenticatedWorkspace({
     selectedChannel && pluginBotId
       ? { channelId: selectedChannel.id, botId: pluginBotId }
       : undefined;
+  const railBotKey = selectedEmployeeId ?? railBotId;
+  const railBot = railBotKey ? workspace.bots.find((bot) => bot.id === railBotKey) : undefined;
   const profileTitle =
     destination === "chat" && selectedEmployeeId ? employeeProfile?.employee : undefined;
   const headerAvatars = profileTitle
@@ -1240,14 +1247,23 @@ export function AuthenticatedWorkspace({
 
       <div id="workspace-details" className="workspace-details" hidden={!showDetails}>
         {showDetails &&
-          (destination === "chat" && selectedEmployeeId ? (
-            <EmployeeProfileRail
-              profile={employeeProfile}
-              nodes={workspace.nodes}
-              onBack={() => void openDirectConversation(selectedEmployeeId)}
+          (destination === "chat" && railBot ? (
+            <BotInfoRail
+              key={railBot.id}
+              bot={railBot}
+              profile={employeeProfile?.employee.id === railBot.id ? employeeProfile : undefined}
+              workspace={workspace}
               onCollapse={() => updatePreferences({ rightPanelOpen: false })}
-              onRename={(name) => renameEmployee(selectedEmployeeId, name)}
-              onProfileChanged={() => refreshEmployeeProfile(selectedEmployeeId)}
+              onShare={() => setSharedBotId(railBot.id)}
+              onRename={(name) => renameEmployee(railBot.id, name)}
+              onProfileChanged={async () => {
+                await refreshEmployeeProfile(railBot.id);
+                await refresh();
+              }}
+              onDelete={() => handleDeleteItem({ kind: "bot", id: railBot.id })}
+              onDecideApproval={handleDecideApproval}
+              onManageModels={() => setModelServicesOpen(true)}
+              modelServicesVersion={modelServicesVersion}
             />
           ) : (
             <ContextRail
