@@ -386,9 +386,7 @@ export function SettingsAutomations({ onOpen }: { onOpen?: (() => void) | undefi
         ) : null
       }
     >
-      {(workspace) => (
-        <AutomationsScreen bots={workspace.bots} channels={workspace.channels} variant="settings" />
-      )}
+      {(workspace) => <AutomationsScreen bots={workspace.bots} channels={workspace.channels} />}
     </SettingsWorkspaceGate>
   );
 }

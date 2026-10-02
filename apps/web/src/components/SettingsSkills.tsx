@@ -265,6 +265,7 @@ function SkillInstallPage({
         <EmployeeSkillImport
           key={botId}
           employeeId={botId}
+          onClose={onBack}
           onProfileChanged={async () => onChanged()}
         />
       ) : null}

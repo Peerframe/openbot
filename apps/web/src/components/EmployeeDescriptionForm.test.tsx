@@ -3,7 +3,7 @@ import type { EmployeeProfile } from "@openbot/domain";
 import { useState } from "react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { interact, renderComponent, setInputValue } from "../test/render-component";
-import { EmployeeSettingsForm } from "./EmployeeSettingsForm";
+import { EmployeeDescriptionForm } from "./EmployeeDescriptionForm";
 
 const api = vi.hoisted(() => ({ updateEmployeeProfileDetails: vi.fn() }));
 vi.mock("../api", () => api);
@@ -33,19 +33,10 @@ const profile: EmployeeProfile = {
 };
 
 let setShown: (value: EmployeeProfile) => void = () => undefined;
-function Harness(props: {
-  onRename(name: string): Promise<void>;
-  onProfileChanged(): Promise<void>;
-}) {
+function Harness(props: { onProfileChanged(): Promise<void> }) {
   const [shown, setShownState] = useState(profile);
   setShown = setShownState;
-  return (
-    <EmployeeSettingsForm
-      profile={shown}
-      onRename={props.onRename}
-      onProfileChanged={props.onProfileChanged}
-    />
-  );
+  return <EmployeeDescriptionForm profile={shown} onProfileChanged={props.onProfileChanged} />;
 }
 
 function field(container: HTMLElement, label: string) {
@@ -64,59 +55,49 @@ beforeEach(() => {
   api.updateEmployeeProfileDetails.mockReset();
 });
 
-it("saves the name through rename and the tag and description with the revision", async () => {
-  const rename = vi.fn(async () => undefined);
+it("saves the description with the revision and keeps the tag", async () => {
   const changed = vi.fn(async () => undefined);
   api.updateEmployeeProfileDetails.mockResolvedValue({
-    employee: { ...profile.employee, role: "市场" },
-    details: { ...profile.details, revision: 2 },
+    employee: profile.employee,
+    details: { ...profile.details, description: "跟踪竞品和价格。", revision: 2 },
   });
-  const view = await renderComponent(<Harness onRename={rename} onProfileChanged={changed} />);
+  const view = await renderComponent(<Harness onProfileChanged={changed} />);
   try {
-    // Nothing to save until a field changes.
-    expect(button(view.container, "保存")).toBeUndefined();
-    const name = field(view.container, "名称");
-    const role = field(view.container, "标签");
-    if (!(name instanceof HTMLInputElement) || !(role instanceof HTMLInputElement))
-      throw Error("fields missing");
-    await setInputValue(name, " 研究员 ");
-    await setInputValue(role, "市场");
+    // Name and tag live in the Bot 信息 rail.
+    expect(field(view.container, "名称")).toBeUndefined();
+    expect(button(view.container, "保存")?.disabled).toBe(true);
+    const description = field(view.container, "描述");
+    if (!(description instanceof HTMLTextAreaElement)) throw Error("description missing");
+    await setInputValue(description, "跟踪竞品和价格。");
     await interact(() => button(view.container, "保存")?.click());
-    expect(rename).toHaveBeenCalledWith("研究员");
     expect(api.updateEmployeeProfileDetails).toHaveBeenCalledWith("bot-1", {
-      role: "市场",
-      description: "跟踪竞品官网。",
+      role: "信息 · 竞品研究",
+      description: "跟踪竞品和价格。",
       expectedRevision: 1,
     });
     expect(changed).toHaveBeenCalledOnce();
-    expect(button(view.container, "保存")).toBeUndefined();
+    expect(button(view.container, "保存")?.disabled).toBe(true);
   } finally {
     await view.unmount();
   }
 });
 
 it("does not overwrite an edit made on another device", async () => {
-  const view = await renderComponent(
-    <Harness
-      onRename={vi.fn(async () => undefined)}
-      onProfileChanged={vi.fn(async () => undefined)}
-    />,
-  );
+  const view = await renderComponent(<Harness onProfileChanged={vi.fn(async () => undefined)} />);
   try {
-    const role = field(view.container, "标签");
-    if (!(role instanceof HTMLInputElement)) throw Error("role missing");
-    await setInputValue(role, "市场");
+    const description = field(view.container, "描述");
+    if (!(description instanceof HTMLTextAreaElement)) throw Error("description missing");
+    await setInputValue(description, "只看价格。");
     await interact(() =>
       setShown({
         ...profile,
-        employee: { ...profile.employee, role: "行政" },
-        details: { ...profile.details, revision: 2 },
+        details: { ...profile.details, description: "跟踪竞品官网和博客。", revision: 2 },
       }),
     );
     expect(view.container.textContent).toContain("已在另一台设备更新");
     expect(button(view.container, "保存")?.disabled).toBe(true);
     await interact(() => button(view.container, "加载最新值")?.click());
-    expect(field(view.container, "标签")?.value).toBe("行政");
+    expect(field(view.container, "描述")?.value).toBe("跟踪竞品官网和博客。");
     expect(api.updateEmployeeProfileDetails).not.toHaveBeenCalled();
   } finally {
     await view.unmount();

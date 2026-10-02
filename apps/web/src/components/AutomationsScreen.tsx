@@ -1,5 +1,5 @@
 import type { Bot, Channel } from "@openbot/domain";
-import { type FormEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "../api";
 import {
   type Automation,
@@ -9,29 +9,16 @@ import {
   listAutomations,
   setAutomationEnabled,
 } from "../destination-api";
-import { PlusIcon, SearchIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
 import { SettingsHeaderAction } from "./SettingsHeaderAction";
 import "./destinations.css";
 
 type LoadState = "loading" | "ready" | "unavailable" | "failed";
 
-export function AutomationsScreen({
-  bots,
-  channels,
-  headerAction,
-  variant = "page",
-}: {
-  bots: Bot[];
-  channels: Channel[];
-  headerAction?: ReactNode;
-  /** "settings" renders Settings → 例行任务 (SettingsRoutines artboard) with the same state. */
-  variant?: "page" | "settings";
-}) {
+/** Settings → 例行任务 (SettingsRoutines artboard): the Server's schedules for the workspace. */
+export function AutomationsScreen({ bots, channels }: { bots: Bot[]; channels: Channel[] }) {
   const [items, setItems] = useState<Automation[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("loading");
-  const [refreshing, setRefreshing] = useState(false);
-  const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [busyId, setBusyId] = useState<string>();
   const [deleteId, setDeleteId] = useState<string>();
@@ -45,7 +32,6 @@ export function AutomationsScreen({
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
-    setRefreshing(true);
     try {
       const result = await listAutomations(
         AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]),
@@ -59,8 +45,6 @@ export function AutomationsScreen({
       setLoadState(
         cause instanceof ApiError && [404, 503].includes(cause.status) ? "unavailable" : "failed",
       );
-    } finally {
-      if (!controller.signal.aborted) setRefreshing(false);
     }
   }, []);
 
@@ -82,7 +66,6 @@ export function AutomationsScreen({
     if (mutationRef.current) return false;
     mutationRef.current = true;
     requestRef.current?.abort();
-    setRefreshing(false);
     setBusyId(id);
     setError(undefined);
     setNotice("");
@@ -100,7 +83,7 @@ export function AutomationsScreen({
       const created = await createAutomation(input);
       setItems((current) => [created, ...current]);
       setShowForm(false);
-      setNotice("自动任务已创建，将由服务电脑按计划提交。");
+      setNotice("例行任务已创建，将由服务电脑按计划提交。");
     } finally {
       endMutation();
     }
@@ -111,9 +94,9 @@ export function AutomationsScreen({
     try {
       const updated = await setAutomationEnabled(item.id, !item.enabled);
       setItems((current) => current.map((entry) => (entry.id === updated.id ? updated : entry)));
-      setNotice(updated.enabled ? "自动任务已恢复。" : "自动任务已暂停；已提交的任务会继续执行。");
+      setNotice(updated.enabled ? "例行任务已恢复。" : "例行任务已暂停；已提交的任务会继续执行。");
     } catch {
-      setError("无法更新自动任务。请刷新确认当前状态后重试。");
+      setError("无法更新例行任务。请刷新确认当前状态后重试。");
     } finally {
       endMutation();
     }
@@ -125,18 +108,14 @@ export function AutomationsScreen({
       await deleteAutomation(item.id);
       setItems((current) => current.filter((entry) => entry.id !== item.id));
       setDeleteId(undefined);
-      setNotice("自动任务已删除，已有对话和执行记录保留。");
+      setNotice("例行任务已删除，已有对话和执行记录保留。");
     } catch {
-      setError("无法删除自动任务。请刷新确认当前状态后重试。");
+      setError("无法删除例行任务。请刷新确认当前状态后重试。");
     } finally {
       endMutation();
     }
   }
 
-  const term = query.trim().toLocaleLowerCase();
-  const filtered = items.filter((item) =>
-    `${item.name} ${item.prompt}`.toLocaleLowerCase().includes(term),
-  );
   const availableTargets = channels.some((channel) =>
     bots.some((bot) => channel.botIds.includes(bot.id)),
   );
@@ -148,322 +127,152 @@ export function AutomationsScreen({
     busyId === undefined &&
     !showForm;
 
-  if (variant === "settings")
-    return (
-      <>
-        <SettingsHeaderAction>
-          <button
-            className="ob-pill is-primary"
-            type="button"
-            disabled={!canCreate}
-            onClick={() => setShowForm(true)}
-          >
-            新建例行任务
-          </button>
-        </SettingsHeaderAction>
-        {showForm ? (
-          <section className="settings-group">
-            <h3>新建时填写</h3>
-            <div className="settings-card settings-routine-form">
-              <AutomationForm
-                bots={bots}
-                channels={channels}
-                busy={busyId === "create"}
-                onCreate={handleCreate}
-                onCancel={() => setShowForm(false)}
-              />
-            </div>
-          </section>
-        ) : null}
-        {notice ? (
-          <p className="settings-success" role="status">
-            {notice}
-          </p>
-        ) : null}
-        {error ? (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        {loadState === "loading" ? (
-          <p className="settings-empty" role="status">
-            正在读取例行任务…
-          </p>
-        ) : loadState === "unavailable" ? (
-          <p className="settings-empty" role="status">
-            服务电脑暂不支持例行任务。请更新并启用服务电脑的自动任务服务。
-          </p>
-        ) : loadState === "failed" ? (
-          <div className="settings-load-notice" role="alert">
-            <p>无法读取例行任务，请检查服务电脑的连接。</p>
-            <button type="button" className="secondary-button" onClick={() => void refresh()}>
-              重试
-            </button>
-          </div>
-        ) : items.length === 0 ? (
-          <p className="settings-empty">
-            {availableTargets
-              ? "还没有例行任务。点「新建例行任务」，设定首次时间和重复间隔。"
-              : "先创建 Bot，并将它加入一个频道，即可安排任务。"}
-          </p>
-        ) : (
-          <div className="settings-group-rows settings-routines">
-            {items.map((item) => {
-              const bot = bots.find((entry) => entry.id === item.botId);
-              const channel = channels.find((entry) => entry.id === item.channelId);
-              return (
-                <div
-                  className={`settings-item settings-routine${item.enabled ? "" : " is-paused"}`}
-                  key={item.id}
-                >
-                  <span className="settings-tile settings-routine-avatar" aria-hidden="true">
-                    {bot ? <RobotAvatar bot={bot} compact /> : "?"}
-                  </span>
-                  <span className="settings-item-text">
-                    <strong>{item.name}</strong>
-                    <small>
-                      {bot?.name ?? "Bot 已不可用"} · 发到 # {channel?.name ?? "频道已不可用"} ·{" "}
-                      {intervalLabel(item.intervalMinutes)}
-                    </small>
-                  </span>
-                  <span className="settings-routine-when">
-                    {item.enabled ? `下次：${dateLabel(item.nextRunAt)}` : "已暂停"}
-                    <small
-                      className={
-                        item.lastOutcome && item.lastOutcome !== "submitted"
-                          ? "is-attention"
-                          : undefined
-                      }
-                      title={item.lastOutcome ? outcomeLabel(item.lastOutcome) : undefined}
-                    >
-                      {item.lastRunAt
-                        ? `上次：${item.lastOutcome === "submitted" || !item.lastOutcome ? "已提交" : "未提交"} · ${dateLabel(item.lastRunAt)}`
-                        : "尚未执行"}
-                    </small>
-                  </span>
-                  <button
-                    type="button"
-                    role="switch"
-                    className="ob-switch"
-                    aria-checked={item.enabled}
-                    aria-label={`启用 ${item.name}`}
-                    disabled={busyId !== undefined}
-                    onClick={() => void toggle(item)}
-                  />
-                  {deleteId === item.id ? (
-                    <span className="settings-routine-delete">
-                      <button
-                        type="button"
-                        className="ob-pill is-small is-danger"
-                        disabled={busyId !== undefined}
-                        onClick={() => void remove(item)}
-                      >
-                        确认删除
-                      </button>
-                      <button
-                        type="button"
-                        className="ob-pill is-small"
-                        disabled={busyId !== undefined}
-                        onClick={() => setDeleteId(undefined)}
-                      >
-                        取消
-                      </button>
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      className="settings-routine-remove"
-                      aria-label={`删除 ${item.name}`}
-                      disabled={busyId !== undefined}
-                      onClick={() => setDeleteId(item.id)}
-                    >
-                      删除
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-        <p className="settings-footnote">
-          服务电脑需要保持运行。例行任务沿用 Bot
-          的权限与审批；上次任务仍在进行时，本次会跳过。每个工作空间最多 50 个。
-        </p>
-      </>
-    );
-
   return (
-    <main className="workspace-destination" aria-labelledby="automations-title">
-      <header className="destination-header">
-        <h1 id="automations-title">自动任务</h1>
-        <div className="destination-header-actions">{headerAction}</div>
-      </header>
-      <div className="destination-scroll">
-        <section className="destination-intro destination-intro-action">
-          <div>
-            <h2>把重复的工作安排好</h2>
-            <p>选择频道、Bot 和执行频率，结果回到对应的对话。</p>
-          </div>
-          <button
-            className="destination-primary"
-            type="button"
-            disabled={!canCreate}
-            onClick={() => setShowForm(true)}
-          >
-            <PlusIcon />
-            新建任务
-          </button>
-        </section>
-        {showForm ? (
-          <AutomationForm
-            bots={bots}
-            channels={channels}
-            busy={busyId === "create"}
-            onCreate={handleCreate}
-            onCancel={() => setShowForm(false)}
-          />
-        ) : null}
-        {notice ? (
-          <p className="destination-notice success" role="status">
-            {notice}
-          </p>
-        ) : null}
-        {error ? (
-          <p className="destination-notice" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <div className="destination-toolbar">
-          <search className="destination-search" aria-label="搜索自动任务">
-            <SearchIcon />
-            <input
-              type="search"
-              aria-label="搜索任务名称或指令"
-              placeholder="搜索任务名称或指令"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
+    <>
+      <SettingsHeaderAction>
+        <button
+          className="ob-pill is-primary"
+          type="button"
+          disabled={!canCreate}
+          onClick={() => setShowForm(true)}
+        >
+          新建例行任务
+        </button>
+      </SettingsHeaderAction>
+      {showForm ? (
+        <section className="settings-group">
+          <h3>新建时填写</h3>
+          <div className="settings-card settings-routine-form">
+            <AutomationForm
+              bots={bots}
+              channels={channels}
+              busy={busyId === "create"}
+              onCreate={handleCreate}
+              onCancel={() => setShowForm(false)}
             />
-          </search>
-          <button
-            className="destination-secondary"
-            disabled={refreshing || busyId !== undefined}
-            type="button"
-            onClick={() => void refresh()}
-          >
-            {refreshing ? "刷新中…" : "刷新"}
+          </div>
+        </section>
+      ) : null}
+      {notice ? (
+        <p className="settings-success" role="status">
+          {notice}
+        </p>
+      ) : null}
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {loadState === "loading" ? (
+        <p className="settings-empty" role="status">
+          正在读取例行任务…
+        </p>
+      ) : loadState === "unavailable" ? (
+        <p className="settings-empty" role="status">
+          服务电脑暂不支持例行任务。请更新并启用服务电脑的例行任务服务。
+        </p>
+      ) : loadState === "failed" ? (
+        <div className="settings-load-notice" role="alert">
+          <p>无法读取例行任务，请检查服务电脑的连接。</p>
+          <button type="button" className="secondary-button" onClick={() => void refresh()}>
+            重试
           </button>
         </div>
-        {loadState === "loading" ? (
-          <p className="destination-empty" role="status">
-            正在读取自动任务…
-          </p>
-        ) : loadState === "unavailable" ? (
-          <div className="destination-empty" role="status">
-            <h3>服务电脑暂不支持自动任务</h3>
-            <p>请更新并启用服务电脑的自动任务服务，然后刷新。</p>
-          </div>
-        ) : loadState === "failed" ? (
-          <div className="destination-empty" role="alert">
-            <h3>无法读取自动任务</h3>
-            <p>请检查服务电脑的连接，再刷新重试。</p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="destination-empty">
-            <h3>{term ? "没有匹配的任务" : "让下一次工作按时开始"}</h3>
-            <p>
-              {term
-                ? "试试其他关键词。"
-                : availableTargets
-                  ? "新建一个自动任务，设定首次时间和重复间隔。"
-                  : "先创建 Bot，并将它加入一个频道，即可安排任务。"}
-            </p>
-          </div>
-        ) : (
-          <div className="destination-automation-list">
-            {filtered.map((item) => (
-              <article className="destination-automation" key={item.id}>
-                <div className="destination-automation-heading">
-                  <h3>{item.name}</h3>
-                  <span className={`destination-state ${item.enabled ? "verified" : "suspended"}`}>
-                    {item.enabled ? "已启用" : "已暂停"}
-                  </span>
-                </div>
-                <p className="destination-automation-prompt">{item.prompt}</p>
-                <p className="destination-automation-target">
-                  #
-                  {channels.find((channel) => channel.id === item.channelId)?.name ??
-                    "频道已不可用"}{" "}
-                  <span aria-hidden="true">·</span>{" "}
-                  {bots.find((bot) => bot.id === item.botId)?.name ?? "Bot 已不可用"}{" "}
-                  <span aria-hidden="true">·</span> {intervalLabel(item.intervalMinutes)}
-                </p>
-                <dl className="destination-automation-times">
-                  <div>
-                    <dt>下次提交</dt>
-                    <dd>{item.enabled ? dateLabel(item.nextRunAt) : "恢复后继续"}</dd>
-                  </div>
-                  <div>
-                    <dt>上次调度</dt>
-                    <dd>{item.lastRunAt ? dateLabel(item.lastRunAt) : "尚未执行"}</dd>
-                  </div>
-                </dl>
-                {item.lastOutcome ? (
-                  <p
-                    className={`destination-outcome ${item.lastOutcome === "submitted" ? "" : "attention"}`}
-                  >
-                    {outcomeLabel(item.lastOutcome)}
-                  </p>
-                ) : null}
-                <div className="destination-automation-actions">
-                  <button
-                    className="destination-secondary"
-                    type="button"
-                    disabled={busyId !== undefined}
-                    onClick={() => void toggle(item)}
-                  >
-                    {busyId === item.id ? "保存中…" : item.enabled ? "暂停" : "恢复"}
-                  </button>
-                  {deleteId === item.id ? (
-                    <>
-                      <span>删除此计划？</span>
-                      <button
-                        className="destination-text-button danger"
-                        disabled={busyId !== undefined}
-                        type="button"
-                        onClick={() => void remove(item)}
-                      >
-                        确认删除
-                      </button>
-                      <button
-                        className="destination-text-button"
-                        disabled={busyId !== undefined}
-                        type="button"
-                        onClick={() => setDeleteId(undefined)}
-                      >
-                        取消
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      className="destination-text-button"
-                      disabled={busyId !== undefined}
-                      type="button"
-                      onClick={() => setDeleteId(item.id)}
-                    >
-                      删除
-                    </button>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-        <p className="destination-footnote">
-          服务电脑需要保持运行。任务沿用 Bot
-          的权限与审批；上次任务仍在进行时，本次会跳过。每个工作空间最多 50 个计划。
+      ) : items.length === 0 ? (
+        <p className="settings-empty">
+          {availableTargets
+            ? "还没有例行任务。点「新建例行任务」，设定首次时间和重复间隔。"
+            : "先创建 Bot，并将它加入一个频道，即可安排任务。"}
         </p>
-      </div>
-    </main>
+      ) : (
+        <div className="settings-group-rows settings-routines">
+          {items.map((item) => {
+            const bot = bots.find((entry) => entry.id === item.botId);
+            const channel = channels.find((entry) => entry.id === item.channelId);
+            return (
+              <div
+                className={`settings-item settings-routine${item.enabled ? "" : " is-paused"}`}
+                key={item.id}
+              >
+                <span className="settings-tile settings-routine-avatar" aria-hidden="true">
+                  {bot ? <RobotAvatar bot={bot} compact /> : "?"}
+                </span>
+                <span className="settings-item-text">
+                  <strong>{item.name}</strong>
+                  <small>
+                    {bot?.name ?? "Bot 已不可用"} · 发到 # {channel?.name ?? "频道已不可用"} ·{" "}
+                    {intervalLabel(item.intervalMinutes)}
+                  </small>
+                  {item.lastOutcome && item.lastOutcome !== "submitted" ? (
+                    <small className="settings-routine-reason is-attention">
+                      {outcomeLabel(item.lastOutcome)}
+                    </small>
+                  ) : null}
+                </span>
+                <span className="settings-routine-when">
+                  {item.enabled ? `下次：${dateLabel(item.nextRunAt)}` : "已暂停"}
+                  <small
+                    className={
+                      item.lastOutcome && item.lastOutcome !== "submitted"
+                        ? "is-attention"
+                        : undefined
+                    }
+                    title={item.lastOutcome ? outcomeLabel(item.lastOutcome) : undefined}
+                  >
+                    {item.lastRunAt
+                      ? `上次：${item.lastOutcome === "submitted" || !item.lastOutcome ? "已提交" : "未提交"} · ${dateLabel(item.lastRunAt)}`
+                      : "尚未执行"}
+                  </small>
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  className="ob-switch"
+                  aria-checked={item.enabled}
+                  aria-label={`启用 ${item.name}`}
+                  disabled={busyId !== undefined}
+                  onClick={() => void toggle(item)}
+                />
+                {deleteId === item.id ? (
+                  <span className="settings-routine-delete">
+                    <button
+                      type="button"
+                      className="ob-pill is-small is-danger"
+                      disabled={busyId !== undefined}
+                      onClick={() => void remove(item)}
+                    >
+                      确认删除
+                    </button>
+                    <button
+                      type="button"
+                      className="ob-pill is-small"
+                      disabled={busyId !== undefined}
+                      onClick={() => setDeleteId(undefined)}
+                    >
+                      取消
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="settings-routine-remove"
+                    aria-label={`删除 ${item.name}`}
+                    disabled={busyId !== undefined}
+                    onClick={() => setDeleteId(item.id)}
+                  >
+                    删除
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <p className="settings-footnote">
+        服务电脑需要保持运行。例行任务沿用 Bot
+        的权限与审批；上次任务仍在进行时，本次会跳过。每个工作空间最多 50 个。
+      </p>
+    </>
   );
 }
 
@@ -530,8 +339,8 @@ function AutomationForm({
   }
 
   return (
-    <form className="destination-automation-form" aria-label="新建自动任务" onSubmit={submit}>
-      <h3>新建自动任务</h3>
+    <form className="destination-automation-form" aria-label="新建例行任务" onSubmit={submit}>
+      <h3>新建例行任务</h3>
       <label>
         任务名称
         <input
@@ -639,7 +448,7 @@ function AutomationForm({
           type="submit"
           disabled={busy || eligibleBots.length === 0}
         >
-          {busy ? "创建中…" : "创建自动任务"}
+          {busy ? "正在创建…" : "创建例行任务"}
         </button>
       </footer>
     </form>
@@ -670,7 +479,7 @@ function intervalLabel(minutes: number): string {
 }
 function outcomeLabel(outcome: NonNullable<Automation["lastOutcome"]>): string {
   if (outcome === "attachment_unavailable")
-    return "附件已删除、损坏或不可用，自动任务已暂停。请恢复原附件后重新启用，或删除任务并重新创建。";
+    return "附件已删除、损坏或不可用，例行任务已暂停。请恢复原附件后重新启用，或删除任务并重新创建。";
   if (outcome === "submitted") return "已提交到频道，执行结果请查看对话。";
   if (outcome === "skipped_active") return "上次任务仍在进行，已跳过本次。";
   return "频道或 Bot 暂不可用，本次未提交。";

@@ -66,7 +66,10 @@ export function WorkspaceHeader({
           </button>
         )}
       </div>
-      {onToggleRail ? (
+      {!title ? (
+        // The empty workspace names itself in its own heading (EmptyWorkspace artboard).
+        <span />
+      ) : onToggleRail ? (
         <button
           type="button"
           className="shell-pill"

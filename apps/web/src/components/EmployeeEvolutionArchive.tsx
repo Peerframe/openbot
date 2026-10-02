@@ -1,196 +1,218 @@
 import type {
+  EmployeeEvidenceKind,
   EmployeeEvolutionEvent,
   EmployeeEvolutionEventType,
-  EmployeeEvidenceKind,
 } from "@openbot/domain";
 import { useMemo, useState } from "react";
 
-export type EvolutionArchiveFilter = "all" | EmployeeEvolutionEventType;
+/** Filters of the ProfileEvolution artboard; each groups one or more stored event types. */
+export type EvolutionArchiveFilter = "all" | "role" | "skills" | "configuration" | "imported";
 
-const filterOptions: Array<{ id: EvolutionArchiveFilter; label: string }> = [
-  { id: "all", label: "全部变化" },
-  { id: "created", label: "员工创建" },
-  { id: "role_changed", label: "职责变化" },
-  { id: "skill_discovered", label: "发现技能" },
-  { id: "skill_verified", label: "验证技能" },
-  { id: "skill_suspended", label: "暂停技能" },
-  { id: "skill_revoked", label: "撤销技能" },
-  { id: "configuration_changed", label: "配置变化" },
-  { id: "imported", label: "员工导入" },
+const filterGroups: Array<{
+  id: EvolutionArchiveFilter;
+  label: string;
+  types: EmployeeEvolutionEventType[] | "all";
+}> = [
+  { id: "all", label: "全部", types: "all" },
+  { id: "role", label: "职责", types: ["created", "role_changed"] },
+  {
+    id: "skills",
+    label: "技能",
+    types: ["skill_discovered", "skill_verified", "skill_suspended", "skill_revoked"],
+  },
+  { id: "configuration", label: "配置", types: ["configuration_changed"] },
+  { id: "imported", label: "导入", types: ["imported"] },
 ];
 
-const validFilters = new Set<EvolutionArchiveFilter>(filterOptions.map((option) => option.id));
+const PAGE = 20;
 
+function matches(event: EmployeeEvolutionEvent, filter: EvolutionArchiveFilter) {
+  const group = filterGroups.find((item) => item.id === filter);
+  return !group || group.types === "all" || group.types.includes(event.type);
+}
+
+/**
+ * Newest first, filtered, at most `limit`. The Server event is the only source of meaning and
+ * authority: the archive shows dated facts, never a score or an inferred level.
+ */
 export function selectEvolutionArchiveEvents(
   events: EmployeeEvolutionEvent[],
   filter: EvolutionArchiveFilter,
-  visibleCount = Number.POSITIVE_INFINITY,
+  limit = Number.POSITIVE_INFINITY,
 ): EmployeeEvolutionEvent[] {
-  // Keep the Hermes-inspired journey truthful: reveal a dated history prefix, never a score or
-  // inferred level. The Server event remains the only source of meaning and authority.
-  const matching = events
-    .filter((event) => filter === "all" || event.type === filter)
+  return events
+    .filter((event) => matches(event, filter))
     .sort((left, right) => {
-      const byTime = Date.parse(left.createdAt) - Date.parse(right.createdAt);
-      return byTime === 0 ? left.id.localeCompare(right.id) : byTime;
-    });
-  const boundedCount = Math.max(0, Math.min(Math.floor(visibleCount), matching.length));
-  return matching.slice(0, boundedCount).reverse();
+      const byTime = Date.parse(right.createdAt) - Date.parse(left.createdAt);
+      return byTime === 0 ? right.id.localeCompare(left.id) : byTime;
+    })
+    .slice(0, Math.max(0, Math.floor(limit)));
 }
 
+const dayFormatter = new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric" });
+const timeFormatter = new Intl.DateTimeFormat("zh-CN", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+function dayLabel(value: string) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return value;
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (date.toDateString() === today.toDateString()) return "今天";
+  if (date.toDateString() === yesterday.toDateString()) return "昨天";
+  return dayFormatter.format(date);
+}
+
+/** Dot colour marks state only: green for a verified skill, grey for a candidate. */
+function markClass(type: EmployeeEvolutionEventType) {
+  if (type === "skill_verified") return "is-verified";
+  if (type === "skill_discovered") return "is-candidate";
+  return "";
+}
+
+/**
+ * 进化档案 (ProfileEvolution artboard). The direction is inspired by Hermes Agent's Learning
+ * Journey; events and authority stay with the OpenBot 服务电脑.
+ */
 export function EmployeeEvolutionArchive({ events }: { events: EmployeeEvolutionEvent[] }) {
   const [filter, setFilter] = useState<EvolutionArchiveFilter>("all");
-  const [visibleCount, setVisibleCount] = useState<number>();
-  const matchingEvents = useMemo(
-    () => selectEvolutionArchiveEvents(events, filter),
-    [events, filter],
+  const [limit, setLimit] = useState(PAGE);
+  const counts = useMemo(
+    () =>
+      Object.fromEntries(
+        filterGroups.map((group) => [
+          group.id,
+          events.filter((event) => matches(event, group.id)).length,
+        ]),
+      ) as Record<EvolutionArchiveFilter, number>,
+    [events],
   );
-  const boundedVisibleCount =
-    visibleCount === undefined
-      ? matchingEvents.length
-      : Math.min(visibleCount, matchingEvents.length);
-  const visibleEvents = useMemo(
-    () => selectEvolutionArchiveEvents(events, filter, boundedVisibleCount),
-    [boundedVisibleCount, events, filter],
+  const visible = useMemo(
+    () => selectEvolutionArchiveEvents(events, filter, limit),
+    [events, filter, limit],
   );
-
-  if (events.length === 0) {
-    return (
-      <div className="employee-empty">
-        <strong>暂无进化记录</strong>
-        <p>真实能力变化会形成可追溯事件。</p>
-      </div>
-    );
+  const remaining = counts[filter] - visible.length;
+  const days: Array<{ label: string; items: EmployeeEvolutionEvent[] }> = [];
+  for (const event of visible) {
+    const label = dayLabel(event.createdAt);
+    const day = days.at(-1);
+    if (day?.label === label) day.items.push(event);
+    else days.push({ label, items: [event] });
   }
 
-  const cutoff = visibleEvents[0];
   return (
-    <div className="employee-evolution-archive">
-      <div className="employee-evolution-controls">
-        <label>
-          <span>变化类型</span>
-          <select
-            value={filter}
-            onChange={(event) => {
-              const next = event.target.value;
-              if (!validFilters.has(next as EvolutionArchiveFilter)) return;
-              setFilter(next as EvolutionArchiveFilter);
-              setVisibleCount(undefined);
-            }}
-          >
-            {filterOptions.map((option) => (
-              <option value={option.id} key={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="employee-evolution-range">
-          <span>时间范围</span>
-          <input
-            type="range"
-            min={matchingEvents.length === 0 ? 0 : 1}
-            max={Math.max(1, matchingEvents.length)}
-            value={boundedVisibleCount}
-            disabled={matchingEvents.length < 2}
-            aria-valuetext={cutoff ? `截至 ${formatDateTime(cutoff.createdAt)}` : "没有匹配记录"}
-            onChange={(event) => setVisibleCount(Number(event.target.value))}
-          />
-        </label>
-        <p aria-live="polite">
-          {matchingEvents.length === 0
-            ? "没有匹配记录"
-            : `显示 ${visibleEvents.length}/${matchingEvents.length} · 截至 ${
-                cutoff ? formatDateTime(cutoff.createdAt) : "—"
-              }`}
-        </p>
+    <div className="ep-evolution">
+      <div className="ep-filter-row">
+        <fieldset className="ep-text-filters" aria-label="变化类型">
+          {filterGroups.map((group) => (
+            <button
+              type="button"
+              key={group.id}
+              aria-pressed={filter === group.id}
+              onClick={() => {
+                setFilter(group.id);
+                setLimit(PAGE);
+              }}
+            >
+              {group.label} {counts[group.id]}
+            </button>
+          ))}
+        </fieldset>
       </div>
-
-      {visibleEvents.length === 0 ? (
-        <div className="employee-empty">
-          <strong>没有匹配的变化</strong>
-          <p>选择其他类型即可继续查看这名员工的进化档案。</p>
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={() => {
-              setFilter("all");
-              setVisibleCount(undefined);
-            }}
-          >
-            查看全部
-          </button>
+      <div className="ep-evolution-grid">
+        <div className="ep-evolution-list">
+          {events.length === 0 ? (
+            <p className="ep-empty">暂无进化记录。真实能力变化会形成可追溯事件。</p>
+          ) : visible.length === 0 ? (
+            <p className="ep-empty">没有这类变化。</p>
+          ) : (
+            days.map((day) => (
+              <section key={day.label} aria-label={day.label}>
+                <h3 className="ep-day">{day.label}</h3>
+                <ol className="ep-card ep-events">
+                  {day.items.map((event) => (
+                    <EvolutionEvent event={event} key={event.id} />
+                  ))}
+                </ol>
+              </section>
+            ))
+          )}
+          {remaining > 0 ? (
+            <button type="button" className="ep-more" onClick={() => setLimit(limit + PAGE)}>
+              显示更早的 {Math.min(PAGE, remaining)} 条 ›
+            </button>
+          ) : null}
         </div>
-      ) : (
-        <ol className="employee-evolution-timeline employee-evolution-archive-list">
-          {visibleEvents.map((event) => {
-            const evidence = uniqueEvidenceReferences(event.evidence);
-            return (
-              <li key={event.id}>
-                <time dateTime={event.createdAt}>{formatDateTime(event.createdAt)}</time>
-                <span aria-hidden="true" />
-                <article>
-                  <header>
-                    <strong>{event.title}</strong>
-                    <span className="employee-evolution-type">{eventTypeLabel(event.type)}</span>
-                  </header>
-                  <p>{event.summary}</p>
-                  <details>
-                    <summary>
-                      来源：{evidenceKindLabel(event.source)}
-                      {evidence.length > 0 ? ` · ${evidence.length} 条证据` : " · 无附加证据"}
-                    </summary>
-                    <dl className="employee-evolution-provenance">
-                      <div>
-                        <dt>事件标识</dt>
-                        <dd>{event.id}</dd>
-                      </div>
-                      <div>
-                        <dt>来源标识</dt>
-                        <dd>{event.sourceId ?? "未提供"}</dd>
-                      </div>
-                    </dl>
-                    {evidence.length > 0 ? (
-                      <ul className="employee-evolution-evidence">
-                        {evidence.map((reference) => (
-                          <li key={`${reference.kind}:${reference.id}`}>
-                            <strong>{reference.label ?? reference.id}</strong>
-                            <small>
-                              {evidenceKindLabel(reference.kind)} · {reference.id}
-                            </small>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="employee-evolution-no-evidence">
-                        此事件没有附加证据引用；档案不会据此推断技能或权限。
-                      </p>
-                    )}
-                  </details>
-                </article>
-              </li>
-            );
-          })}
-        </ol>
-      )}
-      <p className="employee-evolution-credit">
-        进化档案的可视化方向参考 Hermes Agent Learning Journey；事件与权限仍由 OpenBot 服务电脑
-        独立管理。
-      </p>
+        <aside className="ep-aside">
+          <h3 className="ep-day">关于这份档案</h3>
+          <div className="ep-card ep-aside-card">
+            <span>只记录真实发生、能追溯来源的变化：职责、配置和技能。</span>
+            <span>不展示模型的原始思维链；等级和外观也不代表权限。</span>
+            <span>记录按天分组，一次显示 {PAGE} 条，往下再加载。</span>
+            <small>成长方向受 Hermes Agent 的 Learning Journey 启发。</small>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }
 
-function eventTypeLabel(type: EmployeeEvolutionEventType): string {
-  return filterOptions.find((option) => option.id === type)?.label ?? type;
+function EvolutionEvent({ event }: { event: EmployeeEvolutionEvent }) {
+  const evidence = uniqueEvidenceReferences(event.evidence);
+  return (
+    <li className="ep-event">
+      <i className={markClass(event.type)} aria-hidden="true" />
+      <div>
+        <strong>{event.title}</strong>
+        {event.summary ? <small>{event.summary}</small> : null}
+        <details>
+          <summary>
+            <span className="ob-tag">
+              {evidenceKindLabel(event.source)}
+              {evidence.length > 0 ? ` · ${evidence.length} 条证据` : ""}
+            </span>
+          </summary>
+          <dl className="ep-provenance">
+            <div>
+              <dt>事件标识</dt>
+              <dd>{event.id}</dd>
+            </div>
+            <div>
+              <dt>来源标识</dt>
+              <dd>{event.sourceId ?? "未提供"}</dd>
+            </div>
+          </dl>
+          {evidence.length > 0 ? (
+            <ul className="ep-evidence">
+              {evidence.map((reference) => (
+                <li key={`${reference.kind}:${reference.id}`}>
+                  {reference.label ?? reference.id}
+                  <small>
+                    {evidenceKindLabel(reference.kind)} · {reference.id}
+                  </small>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <small>没有附加证据；档案不会据此推断技能或权限。</small>
+          )}
+        </details>
+      </div>
+      <time dateTime={event.createdAt}>{timeFormatter.format(new Date(event.createdAt))}</time>
+    </li>
+  );
 }
 
 function evidenceKindLabel(kind: EmployeeEvidenceKind): string {
-  if (kind === "run") return "任务";
-  if (kind === "artifact") return "产出";
-  if (kind === "approval") return "审批";
-  if (kind === "manual") return "Owner 手动记录";
-  return "员工包导入";
+  if (kind === "run") return "来自任务";
+  if (kind === "artifact") return "来自产出";
+  if (kind === "approval") return "来自确认";
+  if (kind === "manual") return "你手动记录";
+  return "Bot 模板导入";
 }
 
 function uniqueEvidenceReferences(
@@ -201,17 +223,4 @@ function uniqueEvidenceReferences(
       references.map((reference) => [`${reference.kind}:${reference.id}`, reference]),
     ).values(),
   ];
-}
-
-function formatDateTime(value: string): string {
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return value;
-  return new Intl.DateTimeFormat("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(date);
 }

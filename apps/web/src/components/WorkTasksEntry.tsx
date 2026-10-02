@@ -38,6 +38,7 @@ export function WorkTasksEntry({
   return (
     <div className="work-entry">
       <nav aria-label="任务监督导航">
+        <strong className="work-entry-title">任务监督</strong>
         <button
           type="button"
           onClick={() => {
@@ -71,7 +72,13 @@ export function WorkTasksEntry({
           </button>
         </p>
       )}
-      <WorkTasksScreen key={initialTaskId} bots={bots} active initialTaskId={initialTaskId} nativeCapabilitiesEnabled />
+      <WorkTasksScreen
+        key={initialTaskId}
+        bots={bots}
+        active
+        initialTaskId={initialTaskId}
+        nativeCapabilitiesEnabled
+      />
     </div>
   );
 }

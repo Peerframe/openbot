@@ -1,11 +1,14 @@
 import { type FormEvent, useState } from "react";
 import { importEmployeeSkill } from "../api";
 
+/** 导入 SKILL.md: one immutable file becomes a candidate; it is used only after review. */
 export function EmployeeSkillImport({
   employeeId,
+  onClose,
   onProfileChanged,
 }: {
   employeeId: string;
+  onClose(): void;
   onProfileChanged(): Promise<void>;
 }) {
   const [markdown, setMarkdown] = useState("");
@@ -34,15 +37,22 @@ export function EmployeeSkillImport({
     }
   }
   return (
-    <details className="employee-skill-import">
-      <summary>导入 SKILL.md</summary>
-      <form className="employee-skill-review-form" onSubmit={(event) => void submit(event)}>
-        <p>
+    <section className="ep-skill-detail ep-skill-import" aria-label="导入 SKILL.md">
+      <header>
+        <span>
+          <strong>导入 SKILL.md</strong>
+        </span>
+        <button type="button" className="ob-pill is-small" onClick={onClose}>
+          完成
+        </button>
+      </header>
+      <form className="ep-skill-import-form" onSubmit={(event) => void submit(event)}>
+        <p className="ep-note">
           导入后先作为候选技能。展开全文并审核后，Agent
           才能使用。每个版本的正文固定，修改内容请导入新版本。
         </p>
-        <label>
-          <span>选择文件（最多 12 KiB）</span>
+        <label className="ob-field">
+          选择文件（最多 12 KiB）
           <input
             type="file"
             accept=".md,text/markdown"
@@ -65,8 +75,8 @@ export function EmployeeSkillImport({
             }}
           />
         </label>
-        <label>
-          <span>版本</span>
+        <label className="ob-field">
+          版本
           <input
             value={version}
             onChange={(event) => setVersion(event.target.value)}
@@ -75,8 +85,8 @@ export function EmployeeSkillImport({
             disabled={saving}
           />
         </label>
-        <label>
-          <span>SKILL.md 全文</span>
+        <label className="ob-field">
+          SKILL.md 全文
           <textarea
             rows={12}
             value={markdown}
@@ -92,7 +102,7 @@ export function EmployeeSkillImport({
             }
           />
         </label>
-        <p>
+        <p className="ep-note">
           当前支持单文件指令流程，使用任务已有工具；不加载附属文件或运行脚本。分享 Bot
           时可选择包含已审核且许可允许分发的正文，导入后需重新审核。
         </p>
@@ -101,11 +111,15 @@ export function EmployeeSkillImport({
             {error}
           </p>
         ) : null}
-        {saved ? <p role="status">已导入候选技能，请在下方展开全文并审核。</p> : null}
-        <button type="submit" className="primary-button" disabled={saving || !markdown.trim()}>
+        {saved ? <p role="status">已导入为候选技能，在左侧「候选」里审核。</p> : null}
+        <button
+          type="submit"
+          className="ob-pill is-small is-primary"
+          disabled={saving || !markdown.trim()}
+        >
           {saving ? "导入中…" : "导入为候选技能"}
         </button>
       </form>
-    </details>
+    </section>
   );
 }

@@ -1,0 +1,130 @@
+/* EmptyWorkspace artboard: centred heads, title, two starts and a status line. */
+.app-shell .workspace-main.empty-workspace {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  min-height: 0;
+  padding: 48px 24px;
+  background: var(--ob-page);
+  color: var(--ob-text);
+}
+.empty-workspace-heads {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+.empty-workspace .empty-workspace-side {
+  width: 64px;
+  height: 64px;
+}
+.empty-workspace .empty-workspace-center {
+  width: 96px;
+  height: 96px;
+}
+.empty-workspace-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.empty-workspace-title h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+.empty-workspace-title p {
+  margin: 0;
+  color: var(--ob-text-secondary);
+  font-size: 15px;
+}
+.empty-workspace-starts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: min(520px, 100%);
+}
+.empty-workspace-start {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 16px;
+  gap: 16px;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 16px 18px;
+  border: 1px solid #ececee;
+  border-radius: 20px;
+  background: #fff;
+  color: var(--ob-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.empty-workspace-start:hover {
+  border-color: #d9d9dd;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 6%);
+}
+.empty-workspace .empty-workspace-start-avatar {
+  width: 56px;
+  height: 56px;
+}
+.empty-workspace-start > span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.empty-workspace-start strong {
+  font-size: 16px;
+  font-weight: 600;
+}
+.empty-workspace-start > span > span {
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.empty-workspace-start > svg {
+  color: #8e8e93;
+}
+.empty-workspace-import,
+.empty-workspace-status button {
+  border: 0;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.empty-workspace-import:hover {
+  color: var(--ob-text);
+}
+.empty-workspace-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+}
+.empty-workspace-status button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.empty-workspace-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c7c7cc;
+}
+.empty-workspace-status i.is-on {
+  background: var(--ob-online);
+}
+.empty-workspace-status i.is-attention {
+  background: #e08a00;
+}
+.empty-workspace :is(button):focus-visible {
+  outline: 2px solid var(--ob-active);
+  outline-offset: 2px;
+}

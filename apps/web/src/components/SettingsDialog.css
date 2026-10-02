@@ -627,6 +627,13 @@
 .settings-dialog .settings-dialog-body .settings-routine-when small.is-attention {
   color: #b3261e;
 }
+.settings-dialog .settings-dialog-body .settings-routine-reason {
+  display: block;
+  margin-top: 2px;
+  color: #b3261e;
+  line-height: 1.45;
+  white-space: normal;
+}
 .settings-dialog .settings-routine-remove {
   padding: 0;
   border: 0;
@@ -791,30 +798,6 @@
 .settings-dialog .settings-dialog-body .settings-dropzone small {
   color: var(--ob-text-secondary);
   font-size: 13px;
-}
-/* 记忆 reuses the profile's memory panel; the dialog header already names the section. */
-.settings-dialog .settings-memory .employee-tab-panel {
-  padding: 0;
-}
-.settings-dialog .settings-memory .employee-tab-panel > .employee-section-heading {
-  display: none;
-}
-.settings-dialog .settings-memory .employee-memory-list {
-  display: block;
-  padding: 0 18px;
-  border: 0;
-  border-radius: 16px;
-  background: var(--ob-fill);
-}
-.settings-dialog .settings-memory .employee-memory-list > article {
-  padding: 14px 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-.settings-dialog .settings-memory .employee-memory-list > article + article {
-  border-top: 1px solid var(--ob-divider);
 }
 
 /* 关于 (SettingsAbout artboard). */

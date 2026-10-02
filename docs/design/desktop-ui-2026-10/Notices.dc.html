@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>提示与连接状态</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.icon-btn{width:32px;height:32px;border:0;border-radius:8px;background:transparent;cursor:pointer;display:inline-grid;place-items:center}
+.pill{height:34px;padding:0 16px;border-radius:17px;border:0;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;background:#ececee}
+.pill.small{height:28px;padding:0 12px;border-radius:14px;font-size:13px}
+.pill.primary{background:#111111;color:#ffffff}
+.pill.danger{background:#fbe9e7;color:#b3261e}
+.tab{height:34px;padding:0 16px;border-radius:17px;border:0;font-size:14px;cursor:pointer;white-space:nowrap;background:#f0f0f2;font-weight:500}
+.tab[aria-selected="true"]{background:#111111;color:#ffffff;font-weight:600}
+.chip{height:28px;padding:0 12px;border-radius:14px;border:0;font-size:13px;cursor:pointer;background:#f0f0f2;color:#3a3a3c;white-space:nowrap}
+.chip[aria-pressed="true"]{background:#111111;color:#ffffff}
+.card{border-radius:18px;background:#f0f0f2;padding:0 18px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 0}
+.row + .row{border-top:1px solid #e3e3e6}
+.t{display:flex;flex-direction:column;gap:3px;min-width:0}
+.t strong{font-size:14px;font-weight:500}
+.sub{font-size:12px;color:#8e8e93}
+.h2{margin:0;font-size:17px;font-weight:600}
+.h3{margin:0 4px;font-size:13px;font-weight:500;color:#6e6e73}
+.tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;background:#ffffff;font-size:12px;color:#6e6e73}
+.field{width:100%;box-sizing:border-box;border:1px solid #e3e3e6;border-radius:12px;background:#ffffff;padding:10px 14px;font:inherit;font-size:14px;color:#1d1d1f;outline:none}
+.label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#6e6e73}
+.switch{width:40px;height:24px;border:0;padding:0;border-radius:12px;background:#d1d1d6;position:relative;cursor:pointer;flex-shrink:0}
+.switch[aria-checked="true"]{background:#111111}
+.switch span{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#ffffff;display:block}
+.switch[aria-checked="true"] span{left:19px}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+.ok{color:#1c7c3c}.warn{color:#94480b}.bad{color:#b3261e}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1180px; box-sizing: border-box; padding: 56px 64px; background: #fcfcfc; display: flex; flex-direction: column; gap: 28px">
+<header style="display: flex; flex-direction: column; gap: 8px"><h1 style="margin: 0; font-size: 28px; font-weight: 700">提示与连接状态</h1><p style="margin: 0; font-size: 15px; color: #6e6e73">短提示自己消失；会影响工作的状态一直显示，直到恢复。颜色只标状态。</p></header>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 48px">
+<div style="display: flex; flex-direction: column; gap: 10px"><span style="font-size: 12px; font-weight: 600; color: #8e8e93">操作完成：底部居中，3 秒后消失</span><div style="align-self: flex-start; display: inline-flex; align-items: center; gap: 12px; height: 44px; padding: 0 8px 0 18px; border-radius: 22px; background: #1d1d1f; color: #ffffff; font-size: 14px; box-shadow: 0 10px 28px rgba(0,0,0,0.18)">Bot 已删除，任务与审计记录已保留。<button type="button" aria-label="关闭提示" style="width: 28px; height: 28px; border: 0; border-radius: 50%; background: transparent; color: #c7c7cc; cursor: pointer">×</button></div></div>
+<div style="display: flex; flex-direction: column; gap: 10px"><span style="font-size: 12px; font-weight: 600; color: #8e8e93">需要你处理：同一位置，不自动消失</span><div style="align-self: flex-start; display: inline-flex; align-items: center; gap: 12px; height: 44px; padding: 0 6px 0 18px; border-radius: 22px; background: #1d1d1f; color: #ffffff; font-size: 14px">研究助理 需要你确认一封邮件<button type="button" style="height: 32px; padding: 0 14px; border: 0; border-radius: 16px; background: #ffffff; color: #1d1d1f; font-weight: 600; cursor: pointer">去确认</button></div></div>
+<div style="display: flex; flex-direction: column; gap: 10px"><span style="font-size: 12px; font-weight: 600; color: #8e8e93">连接断开：对话顶部的横条，输入框保留草稿</span><div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px 10px 18px; border-radius: 14px; background: #fdf0e1; color: #94480b; font-size: 14px"><span style="display: flex; align-items: center; gap: 8px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #e08a00; display: block"></span>和服务电脑的连接断了，正在重新连接…草稿不会丢。</span><button type="button" class="pill small" style="background: #ffffff">立即重连</button></div></div>
+<div style="display: flex; flex-direction: column; gap: 10px"><span style="font-size: 12px; font-weight: 600; color: #8e8e93">读取失败：横条说清原因和下一步</span><div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px 10px 18px; border-radius: 14px; background: #fbeceb; color: #b3261e; font-size: 14px"><span>没能读取工作区：登录已过期。</span><button type="button" class="pill small" style="background: #ffffff">重新登录</button></div></div>
+<div style="display: flex; flex-direction: column; gap: 10px"><span style="font-size: 12px; font-weight: 600; color: #8e8e93">标题栏右侧的实时状态</span><div style="display: flex; gap: 20px; font-size: 12px"><span style="display: inline-flex; align-items: center; gap: 6px; color: #1c7c3c"><span style="width: 6px; height: 6px; border-radius: 50%; background: #34c759; display: block"></span>实时</span><span style="display: inline-flex; align-items: center; gap: 6px; color: #94480b"><span style="width: 6px; height: 6px; border-radius: 50%; background: #e08a00; display: block"></span>重新连接中</span><span style="display: inline-flex; align-items: center; gap: 6px; color: #6e6e73"><span style="width: 6px; height: 6px; border-radius: 50%; background: #c7c7cc; display: block"></span>连接中</span></div></div>
+<div style="display: flex; flex-direction: column; gap: 10px"><span style="font-size: 12px; font-weight: 600; color: #8e8e93">系统通知（窗口在后台时，需在 设置 › 通知 中打开）</span><div style="align-self: flex-start; width: 360px; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding: 12px 14px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee; box-shadow: 0 10px 28px rgba(0,0,0,0.10)"><span style="width: 40px; height: 40px; border-radius: 10px; background: #f5f5f2; display: grid; place-items: center"><dc-import name="Avatar" character="round" accent="green" size="30" hint-size="30px,30px"></dc-import></span><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 13px">OpenBot · 市场周报</strong><span style="font-size: 13px; color: #3a3a3c">研究助理：周报初稿好了</span></span></div></div>
+<div style="display: flex; flex-direction: column; gap: 10px"><span style="font-size: 12px; font-weight: 600; color: #8e8e93">同时来了好几条：最多叠 3 条，新的在下面，更早的收成一行</span>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="align-self: flex-start; font-size: 12px; color: #8e8e93; padding-left: 18px">还有 2 条 · 展开</div>
+<div style="align-self: flex-start; display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 20px; background: #1d1d1f; color: #ffffff; font-size: 14px; opacity: 0.6">已重命名。</div>
+<div style="align-self: flex-start; display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 20px; background: #1d1d1f; color: #ffffff; font-size: 14px; opacity: 0.8">已批准一次。</div>
+<div style="align-self: flex-start; display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 20px; background: #1d1d1f; color: #ffffff; font-size: 14px; opacity: 1">Bot 已删除，任务与审计记录已保留。</div>
+</div></div>
+<div style="display: flex; flex-direction: column; gap: 10px"><span style="font-size: 12px; font-weight: 600; color: #8e8e93">好几个问题同时出现：横条只显示最要紧的一条</span>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px 10px 18px; border-radius: 14px; background: #fbeceb; color: #b3261e; font-size: 14px"><span>登录已过期，重新登录后会自动重连。</span><span style="display: flex; gap: 10px; align-items: center"><span style="font-size: 12px; color: #6e6e73">另有 1 个问题</span><button type="button" class="pill small" style="background: #ffffff">重新登录</button></span></div>
+<span class="sub">顺序：登录过期 › 读取失败 › 连接断开。需要你确认的事不进横条，留在任务卡和右栏。</span>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,17 +1,31 @@
+/* 任务监督 (WorkSupervision artboard): the task form on the left, its live status on the right. */
+.work-tasks {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  background: var(--ob-page);
+  color: var(--ob-text);
+}
 .work-tasks[hidden] {
   display: none;
 }
 .work-entry {
-  height: 100dvh;
   display: flex;
   flex-direction: column;
+  height: 100dvh;
   min-width: 0;
 }
 .work-entry > nav {
   display: flex;
-  gap: 20px;
   align-items: center;
+  gap: 20px;
   padding: 12px 24px;
+}
+.work-entry-title {
+  margin-right: auto;
+  font-size: 15px;
 }
 .work-entry > p {
   padding: 0 24px;
@@ -19,94 +33,285 @@
 .work-entry > .work-tasks {
   flex: 1;
 }
-.work-tasks .destination-scroll {
-  max-width: 960px;
-  width: 100%;
+.work-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 520px) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
   box-sizing: border-box;
+  min-height: 0;
+  padding: 28px 32px 40px;
+  overflow-y: auto;
 }
-.work-tasks h2 {
-  font-size: 18px;
+.work-compose,
+.work-status {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid #ececee;
+  border-radius: 20px;
+  background: #fff;
 }
-.work-tasks h3 {
-  font-size: 15px;
+.work-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.work-heading h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+.work-heading p {
+  margin: 0;
+  color: var(--ob-text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
 }
 .work-form,
-.work-snapshot {
-  padding: 20px 0;
-  border-bottom: 1px solid var(--destination-line);
+.work-lookup {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
-.work-form fieldset {
-  border: 0;
-  padding: 0;
-  margin: 0 0 16px;
-  display: grid;
-  gap: 12px;
-}
+.work-form[hidden],
+.work-lookup[hidden],
 .work-form fieldset[hidden] {
   display: none;
 }
-.work-tasks label {
+.work-form h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.work-form fieldset {
   display: grid;
-  gap: 6px;
-  font-size: 13px;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
-.work-tasks input,
-.work-tasks textarea,
-.work-tasks select {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 10px;
-  color: inherit;
-  background: var(--destination-bg);
-  border: 1px solid var(--destination-line);
-  border-radius: 6px;
-  font: inherit;
-}
-.work-tasks textarea {
+.work-tasks .ob-field textarea {
+  min-height: 96px;
+  line-height: 1.5;
   resize: vertical;
 }
-.work-form small {
-  display: block;
-  margin-top: 12px;
+.work-form > .ob-pill,
+.work-lookup > .ob-pill {
+  align-self: flex-start;
 }
-.work-lookup,
-.work-controls {
-  display: flex;
-  gap: 12px;
-  align-items: end;
-  margin-top: 20px;
-  flex-wrap: wrap;
+.work-note {
+  margin: 0;
+  color: #8e8e93;
+  font-size: 12px;
+  line-height: 1.5;
 }
-.work-lookup label {
-  flex: 1;
-  min-width: 160px;
+.work-note.is-warning {
+  color: #94480b;
 }
-.work-tasks code,
-.work-snapshot h2,
-.work-result,
-.work-snapshot li {
+.work-note.is-danger {
+  color: #b3261e;
+}
+.work-tasks code {
   overflow-wrap: anywhere;
-  white-space: pre-wrap;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
 }
-.work-snapshot dl {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 10px 20px;
+.work-empty {
+  margin: 0;
+  padding: 32px 0;
+  color: var(--ob-text-secondary);
+  font-size: 14px;
+  text-align: center;
+}
+.work-snapshot {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.work-snapshot-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.work-snapshot-title h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.work-snapshot-title code {
+  color: #8e8e93;
+}
+.work-stages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: #8e8e93;
   font-size: 13px;
 }
-.work-snapshot dd {
+.work-stages > li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.work-stages > li + li::before {
+  width: 20px;
+  height: 1px;
+  margin-right: 2px;
+  background: var(--ob-divider);
+  content: "";
+}
+.work-stages i {
+  display: inline-grid;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 2px solid #d1d1d6;
+  border-radius: 50%;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+.work-stages .is-done {
+  color: var(--ob-text);
+}
+.work-stages .is-done i {
+  border-color: var(--ob-working);
+  background: var(--ob-working);
+  color: #fff;
+}
+.work-stages .is-current {
+  color: #1c7c3c;
+  font-weight: 600;
+}
+.work-stages .is-current i {
+  border-color: var(--ob-working);
+}
+.work-card {
+  margin: 0;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.work-card > div {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 0;
+  font-size: 14px;
+}
+.work-card > div + div {
+  border-top: 1px solid #e3e3e6;
+}
+.work-card dt {
+  color: var(--ob-text-secondary);
+}
+.work-card dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.work-card small {
+  color: #8e8e93;
+  font-size: 12px;
+}
+.work-meter {
+  display: block;
+  width: 72px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #e3e3e6;
+}
+.work-meter i {
+  display: block;
+  height: 100%;
+  background: var(--ob-working);
+}
+.work-result {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.work-warning {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #fdf6ec;
+}
+.work-warning > span:first-child {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: #fdf0e1;
+  color: #94480b;
+  font-size: 13px;
+  font-weight: 800;
+}
+.work-warning > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.work-warning > span:last-child > span {
+  color: var(--ob-text-secondary);
+}
+.work-details {
+  font-size: 13px;
+}
+.work-details > summary {
+  color: var(--ob-text-secondary);
+  cursor: pointer;
+}
+.work-details dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 16px;
+}
+.work-details dd {
   margin: 0;
 }
-.work-snapshot li {
-  margin: 10px 0;
+.work-details li,
+.work-details p {
+  overflow-wrap: anywhere;
+}
+.work-details h3 {
+  margin: 14px 0 6px;
+  font-size: 13px;
+}
+.work-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  color: var(--ob-text-secondary);
+  font-size: 12px;
 }
 
+/* The task scope (attachments and extra capabilities) inside the form. */
 .native-task-scope,
 .native-task-scope-readonly {
-  border-top: 1px solid var(--destination-line);
-  padding-top: 12px;
-  margin-top: 12px;
+  display: grid;
+  gap: 10px;
   overflow-wrap: anywhere;
+  font-size: 13px;
 }
 .work-tasks .native-task-checkbox {
   display: flex;
@@ -114,35 +319,73 @@
   gap: 8px;
 }
 .work-tasks .native-task-checkbox input {
-  width: auto;
   flex: 0 0 auto;
+  width: auto;
 }
 .native-task-file-controls {
   display: flex;
-  align-items: end;
   flex-wrap: wrap;
+  align-items: end;
   gap: 12px;
 }
 .native-task-files {
-  list-style: none;
+  margin: 0;
   padding: 0;
+  list-style: none;
 }
 .native-task-files > li {
-  border: 1px solid var(--destination-line);
-  border-radius: 6px;
-  margin: 12px 0;
-  padding: 12px;
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--ob-fill);
 }
 .native-task-files details {
-  margin-top: 12px;
+  margin-top: 10px;
 }
 .native-task-files summary {
   cursor: pointer;
 }
-.native-task-files details button {
-  margin-top: 8px;
+.native-task-capabilities {
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 .native-task-capabilities legend {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   font-weight: 600;
+}
+@media (max-width: 960px) {
+  .work-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.work-tasks .native-task-scope :is(h2, h3, legend) {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.work-tasks .native-task-scope p {
+  margin: 0;
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.work-tasks .native-task-scope button {
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 15px;
+  background: #ececee;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.work-tasks .native-task-scope button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.work-tasks .native-task-scope input[type="file"] {
+  font-size: 12px;
 }

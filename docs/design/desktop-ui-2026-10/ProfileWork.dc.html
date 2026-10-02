@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Bot 档案 · 工作记录</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.icon-btn{width:32px;height:32px;border:0;border-radius:8px;background:transparent;cursor:pointer;display:inline-grid;place-items:center}
+.pill{height:34px;padding:0 16px;border-radius:17px;border:0;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;background:#ececee}
+.pill.small{height:28px;padding:0 12px;border-radius:14px;font-size:13px}
+.pill.primary{background:#111111;color:#ffffff}
+.pill.danger{background:#fbe9e7;color:#b3261e}
+.tab{height:34px;padding:0 16px;border-radius:17px;border:0;font-size:14px;cursor:pointer;white-space:nowrap;background:#f0f0f2;font-weight:500}
+.tab[aria-selected="true"]{background:#111111;color:#ffffff;font-weight:600}
+.chip{height:28px;padding:0 12px;border-radius:14px;border:0;font-size:13px;cursor:pointer;background:#f0f0f2;color:#3a3a3c;white-space:nowrap}
+.chip[aria-pressed="true"]{background:#111111;color:#ffffff}
+.card{border-radius:18px;background:#f0f0f2;padding:0 18px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 0}
+.row + .row{border-top:1px solid #e3e3e6}
+.t{display:flex;flex-direction:column;gap:3px;min-width:0}
+.t strong{font-size:14px;font-weight:500}
+.sub{font-size:12px;color:#8e8e93}
+.h2{margin:0;font-size:17px;font-weight:600}
+.h3{margin:0 4px;font-size:13px;font-weight:500;color:#6e6e73}
+.tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;background:#ffffff;font-size:12px;color:#6e6e73}
+.field{width:100%;box-sizing:border-box;border:1px solid #e3e3e6;border-radius:12px;background:#ffffff;padding:10px 14px;font:inherit;font-size:14px;color:#1d1d1f;outline:none}
+.label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#6e6e73}
+.switch{width:40px;height:24px;border:0;padding:0;border-radius:12px;background:#d1d1d6;position:relative;cursor:pointer;flex-shrink:0}
+.switch[aria-checked="true"]{background:#111111}
+.switch span{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#ffffff;display:block}
+.switch[aria-checked="true"] span{left:19px}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+.ok{color:#1c7c3c}.warn{color:#94480b}.bad{color:#b3261e}
+.seg{display:inline-flex;gap:2px;padding:3px;border-radius:12px;background:#f0f0f2}
+.seg button{height:30px;padding:0 14px;border:0;border-radius:9px;background:transparent;font-size:14px;color:#6e6e73;cursor:pointer;white-space:nowrap}
+.seg button[aria-selected="true"]{background:#ffffff;color:#1d1d1f;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.tlink{border:0;background:transparent;padding:0;font-size:13px;color:#8e8e93;cursor:pointer}
+.tlink[aria-pressed="true"]{color:#1d1d1f;font-weight:600}
+.select{height:30px;padding:0 12px;border-radius:15px;border:1px solid #e3e3e6;font-size:13px;cursor:pointer;background:#ffffff;color:#3a3a3c;white-space:nowrap}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; display: grid; grid-template-columns: 300px minmax(0, 1fr) 340px; background: #ffffff; overflow: hidden">
+<dc-import name="Sidebar" active="bot" hint-size="300px,900px"></dc-import>
+<main style="height: 900px; display: flex; flex-direction: column; min-width: 0; background: #fcfcfc">
+<header style="height: 56px; flex-shrink: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; padding: 0 16px 0 20px">
+<span></span>
+<span style="display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px 0 5px; border-radius: 10px; background: #e6e6e8; font-size: 15px; font-weight: 600"><dc-import name="Avatar" character="round" accent="green" size="24" hint-size="24px,24px"></dc-import>研究助理</span>
+<button type="button" class="icon-btn" aria-label="分享" style="justify-self: end"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg></button>
+</header>
+<div style="flex-grow: 1; min-height: 0; overflow: hidden; padding: 12px 44px 32px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: center; gap: 16px">
+<dc-import name="Avatar" character="round" accent="green" size="56" state="working" dot="true" ring="#fcfcfc" hint-size="56px,56px"></dc-import>
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0">
+<div style="display: flex; align-items: center; gap: 8px"><h1 style="margin: 0; font-size: 22px; font-weight: 700">研究助理</h1><span style="font-size: 12px; color: #6e6e73; background: #ececee; border-radius: 6px; padding: 2px 8px">信息 · 竞品研究</span></div>
+<span style="font-size: 13px; color: #6e6e73">跟踪竞品官网、更新日志和社交媒体，整理成周报发到频道。</span>
+</div>
+</div>
+<div role="tablist" aria-label="档案分区" class="seg" style="align-self: flex-start">
+<button type="button" role="tab" aria-selected="false">概览</button>
+<button type="button" role="tab" aria-selected="false">进化档案</button>
+<button type="button" role="tab" aria-selected="false">技能</button>
+<button type="button" role="tab" aria-selected="false">记忆</button>
+<button type="button" role="tab" aria-selected="true">工作记录</button>
+<button type="button" role="tab" aria-selected="false">配置</button>
+</div>
+<div style="flex-grow: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 22px">
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 class="h2" style="margin-left: 4px">进行中 · 3</h2>
+<div style="border: 1px solid #ececee; border-radius: 18px; background: #ffffff; padding: 0 16px">
+<div style="display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 0"><span style="width: 28px; height: 28px; border-radius: 50%; background: #fdf0e1; color: #94480b; display: inline-grid; place-items: center; font-weight: 800; font-size: 14px">!</span><span class="t"><strong>等你确认 · 发送邮件给 team@example.com</strong><span class="sub"># 市场周报 · 4 分钟内有效</span></span><span style="font-size: 13px; color: #6e6e73">任务详情 ›</span></div>
+<div style="border-top: 1px solid #e3e3e6; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 0"><span style="width: 28px; height: 28px; border-radius: 50%; background: #e8f6ec; display: inline-grid; place-items: center"><span style="width: 12px; height: 12px; border: 2px solid #cfe9d6; border-top-color: #34c759; border-radius: 50%; display: block"></span></span><span class="t"><strong>正在工作 · 抓取竞品更新日志</strong><span class="sub"># 市场周报 · 现在：打开网页 b-company.com/changelog</span></span><span style="font-size: 13px; color: #6e6e73">任务详情 ›</span></div>
+<div style="border-top: 1px solid #e3e3e6; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 0"><span style="width: 28px; height: 28px; border-radius: 50%; background: #e8f6ec; display: inline-grid; place-items: center"><span style="width: 12px; height: 12px; border: 2px solid #cfe9d6; border-top-color: #34c759; border-radius: 50%; display: block"></span></span><span class="t"><strong>正在工作 · 汇总发布会要点</strong><span class="sub"># 产品讨论 · 现在：读取附件</span></span><span style="font-size: 13px; color: #6e6e73">任务详情 ›</span></div>
+</div>
+<span class="sub" style="padding: 0 4px">等你确认的排在最前；同时进行超过 5 个时，其余的收进「还有 N 个」。</span>
+</section>
+<section style="display: flex; flex-direction: column; gap: 10px; min-height: 0">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<h2 class="h2" style="margin-left: 4px">工作记录</h2>
+<div role="group" aria-label="记录类型" style="display: flex; gap: 14px"><button type="button" class="tlink" aria-pressed="true">全部 128</button><button type="button" class="tlink" aria-pressed="false">任务 64</button><button type="button" class="tlink" aria-pressed="false">确认 18</button><button type="button" class="tlink" aria-pressed="false">产出 31</button><button type="button" class="tlink" aria-pressed="false">决策 15</button></div>
+</div>
+<div class="card">
+<div style="display: grid; grid-template-columns: 52px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 13px 0">
+<span class="tag" style="justify-content: center">任务</span>
+<span class="t"><strong>整理本周周报</strong><span class="sub"># 市场周报 · 9/29 · 用时 4 分钟</span></span>
+<span class="sub ok">已完成</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+</div>
+<div style="border-top: 1px solid #e3e3e6; display: grid; grid-template-columns: 52px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 13px 0">
+<span class="tag" style="justify-content: center">产出</span>
+<span class="t"><strong>weekly-2026-w40.md</strong><span class="sub">整理本周周报 · 5 KB</span></span>
+<span class="sub ">已保存</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+</div>
+<div style="border-top: 1px solid #e3e3e6; display: grid; grid-template-columns: 52px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 13px 0">
+<span class="tag" style="justify-content: center">确认</span>
+<span class="t"><strong>发送邮件给 team@example.com</strong><span class="sub">你批准 · 9/29 10:31</span></span>
+<span class="sub ">已批准</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+</div>
+<div style="border-top: 1px solid #e3e3e6; display: grid; grid-template-columns: 52px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 13px 0">
+<span class="tag" style="justify-content: center">决策</span>
+<span class="t"><strong>只保留三家竞品的官方更新</strong><span class="sub">阶段说明 · 9/29 10:05</span></span>
+<span class="sub ">可审计</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+</div>
+<div style="border-top: 1px solid #e3e3e6; display: grid; grid-template-columns: 52px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 13px 0">
+<span class="tag" style="justify-content: center">任务</span>
+<span class="t"><strong>抓取 B 公司定价页</strong><span class="sub"># 市场周报 · 9/26</span></span>
+<span class="sub bad">没能完成</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+</div>
+</div>
+<button type="button" style="align-self: flex-start; height: 30px; padding: 0 14px; border: 0; border-radius: 15px; background: transparent; color: #6e6e73; font: inherit; font-size: 13px; cursor: pointer">加载更早的记录 ›</button>
+<span class="sub" style="padding: 0 4px">决策只记录可审计的阶段说明，不记录模型的原始思维链。每条记录都能回到原来的对话和任务。</span>
+</section>
+</div>
+</div>
+</main>
+<dc-import name="BotInfo" editing="false" character="round" accent="green" tag="信息 · 竞品研究" hint-size="340px,900px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

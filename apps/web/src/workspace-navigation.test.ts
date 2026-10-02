@@ -29,21 +29,21 @@ describe("workspace navigation history", () => {
 
   it("discards only forward history when opening a different destination after back", () => {
     const channel = pushLocation(initialNavigation, { kind: "channel", id: "channel-a" });
-    const skills = pushLocation(channel, { kind: "skills" });
-    const automations = pushLocation(skills, { kind: "automations" });
-    const back = moveLocation(automations, -1);
+    const work = pushLocation(channel, { kind: "work" });
+    const profile = pushLocation(work, { kind: "employee", id: "bot-a", tab: "overview" });
+    const back = moveLocation(profile, -1);
     const next = pushLocation(back, { kind: "channel", id: "channel-b" });
     expect(next).toEqual({
       entries: [
         { kind: "home" },
         { kind: "channel", id: "channel-a" },
-        { kind: "skills" },
+        { kind: "work" },
         { kind: "channel", id: "channel-b" },
       ],
       index: 3,
     });
     expect(moveLocation(next, 1)).toBe(next);
-    expect(automations.entries[3]).toEqual({ kind: "automations" });
+    expect(profile.entries[3]).toEqual({ kind: "employee", id: "bot-a", tab: "overview" });
   });
 
   it("retains at most 50 locations with a reachable oldest and newest entry", () => {

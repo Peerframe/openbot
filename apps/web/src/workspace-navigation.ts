@@ -6,7 +6,7 @@ export type WorkspaceLocation =
   | Readonly<{ kind: "new"; channel?: true }>
   | Readonly<{ kind: "channel"; id: string }>
   | Readonly<{ kind: "employee"; id: string; tab: ProfileTab }>
-  | Readonly<{ kind: "automations" | "skills" | "work" }>;
+  | Readonly<{ kind: "work" }>;
 export interface NavigationHistory {
   entries: readonly WorkspaceLocation[];
   index: number;

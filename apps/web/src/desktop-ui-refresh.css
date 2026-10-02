@@ -193,16 +193,6 @@
   background: transparent;
   cursor: pointer;
 }
-.desktop-workspace.full-page-destination {
-  display: block;
-}
-.full-page-destination > .workspace-sidebar,
-.full-page-destination > .workspace-details {
-  display: none;
-}
-.full-page-destination > .workspace-destination {
-  height: 100dvh;
-}
 @media (max-width: 1080px) {
   .app-shell.desktop-workspace {
     --workspace-sidebar-size: 210px;

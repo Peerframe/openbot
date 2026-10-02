@@ -1,4 +1,4 @@
-import { createWorld, type PreviewWorld, profileFor } from "./world";
+import { createWorld, knowledgeProposalsFor, type PreviewWorld, profileFor } from "./world";
 
 /*
  * Design preview transport (dev only, never in a product build). It replaces `fetch`,
@@ -144,6 +144,11 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
         const profile = profileFor(world, m[1] ?? "");
         return profile ? json({ profile }) : json({ error: "not_found" }, 404);
       },
+    ],
+    [
+      "GET",
+      /^\/api\/v1\/bots\/([^/]+)\/knowledge-proposals$/,
+      (m) => json({ proposals: knowledgeProposalsFor(m[1] ?? "") }),
     ],
     ["GET", /^\/api\/v1\/runs\/([^/]+)\/output$/, () => json({ output: null })],
     ["GET", /^\/api\/v1\/plugins$/, () => json({ plugins: [], pendingCalls: [] })],

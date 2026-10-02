@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>频道文件</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.icon-btn{width:32px;height:32px;border:0;border-radius:8px;background:transparent;cursor:pointer;display:inline-grid;place-items:center}
+.pill{height:34px;padding:0 16px;border-radius:17px;border:0;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;background:#ececee}
+.pill.small{height:28px;padding:0 12px;border-radius:14px;font-size:13px}
+.pill.primary{background:#111111;color:#ffffff}
+.pill.danger{background:#fbe9e7;color:#b3261e}
+.tab{height:34px;padding:0 16px;border-radius:17px;border:0;font-size:14px;cursor:pointer;white-space:nowrap;background:#f0f0f2;font-weight:500}
+.tab[aria-selected="true"]{background:#111111;color:#ffffff;font-weight:600}
+.chip{height:28px;padding:0 12px;border-radius:14px;border:0;font-size:13px;cursor:pointer;background:#f0f0f2;color:#3a3a3c;white-space:nowrap}
+.chip[aria-pressed="true"]{background:#111111;color:#ffffff}
+.card{border-radius:18px;background:#f0f0f2;padding:0 18px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 0}
+.row + .row{border-top:1px solid #e3e3e6}
+.t{display:flex;flex-direction:column;gap:3px;min-width:0}
+.t strong{font-size:14px;font-weight:500}
+.sub{font-size:12px;color:#8e8e93}
+.h2{margin:0;font-size:17px;font-weight:600}
+.h3{margin:0 4px;font-size:13px;font-weight:500;color:#6e6e73}
+.tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;background:#ffffff;font-size:12px;color:#6e6e73}
+.field{width:100%;box-sizing:border-box;border:1px solid #e3e3e6;border-radius:12px;background:#ffffff;padding:10px 14px;font:inherit;font-size:14px;color:#1d1d1f;outline:none}
+.label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#6e6e73}
+.switch{width:40px;height:24px;border:0;padding:0;border-radius:12px;background:#d1d1d6;position:relative;cursor:pointer;flex-shrink:0}
+.switch[aria-checked="true"]{background:#111111}
+.switch span{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#ffffff;display:block}
+.switch[aria-checked="true"] span{left:19px}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+.ok{color:#1c7c3c}.warn{color:#94480b}.bad{color:#b3261e}
+.me{align-self:flex-end;max-width:68%;padding:12px 18px;border-radius:22px;background:#111111;color:#ffffff;font-size:15px;line-height:1.6}
+.bot{padding:12px 18px;border-radius:22px;background:#f0f0f2;font-size:15px;line-height:1.7}
+.who{font-size:12px;color:#8e8e93;padding-left:4px}
+.thread{display:grid;grid-template-columns:32px minmax(0,1fr);gap:10px;align-items:start}
+.col{display:flex;flex-direction:column;gap:6px;max-width:76%}
+.bar{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:12px;background:#ffffff;border:1px solid #ececee;box-shadow:0 6px 18px rgba(0,0,0,0.08)}
+.bar button{height:28px;padding:0 10px;border:0;border-radius:9px;background:transparent;font-size:13px;color:#3a3a3c;cursor:pointer}
+.bar button:hover{background:#f0f0f2}
+.react{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;border-radius:13px;border:1px solid #e3e3e6;background:#ffffff;font-size:13px;color:#3a3a3c;cursor:pointer}
+.react[aria-pressed="true"]{border-color:#111111;background:#f6f6f7}
+.label-note{font-size:12px;font-weight:600;color:#8e8e93;letter-spacing:0.02em}
+.composer{display:flex;flex-direction:column;gap:10px;padding:12px 14px;border:1px solid #e3e3e6;border-radius:24px;background:#ffffff}
+.att{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 10px 0 6px;border-radius:12px;background:#f0f0f2;font-size:13px}
+.ext{width:28px;height:28px;border-radius:8px;background:#ffffff;border:1px solid #e3e3e6;box-sizing:border-box;display:inline-grid;place-items:center;font-size:9px;font-weight:700;color:#6e6e73}
+.x{width:20px;height:20px;border:0;border-radius:50%;background:transparent;color:#8e8e93;cursor:pointer;font-size:14px;line-height:1}
+.menu{display:flex;flex-direction:column;padding:6px;border-radius:14px;background:#ffffff;border:1px solid #e5e5e8;box-shadow:0 14px 34px rgba(0,0,0,0.12)}
+.menu button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:8px 12px;border:0;border-radius:9px;background:transparent;text-align:left;cursor:pointer;font-size:14px}
+.menu button:hover{background:#f0f0f2}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #ffffff; display: grid; grid-template-columns: 300px minmax(0, 1fr)">
+<dc-import name="Sidebar" active="channel" hint-size="300px,900px"></dc-import>
+<div style="background: #fcfcfc"></div>
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(0,0,0,0.34)"></div>
+<div role="dialog" aria-modal="true" aria-label="频道文件" style="position: absolute; left: 500px; top: 90px; width: 640px; box-sizing: border-box; border-radius: 22px; background: #fdfdfd; box-shadow: 0 30px 80px rgba(0,0,0,0.25); padding: 30px 32px 24px; display: flex; flex-direction: column; gap: 18px">
+<button type="button" aria-label="关闭" style="position: absolute; right: 18px; top: 18px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; cursor: pointer; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a3a3c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
+<header style="display: flex; flex-direction: column; gap: 6px; padding-right: 40px">
+<h1 style="margin: 0; font-size: 22px; font-weight: 700">市场周报 的文件</h1>
+<p style="margin: 0; font-size: 14px; color: #6e6e73; line-height: 1.55">你上传的文件和 Bot 的产出。从「资料库 › 管理」打开。</p>
+</header>
+<div role="tablist" aria-label="文件分区" style="display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: #f0f0f2">
+<button type="button" role="tab" aria-selected="true" style="flex: 1; height: 32px; border: 0; border-radius: 9px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.08); font-weight: 600; cursor: pointer">文件 · 46</button>
+<button type="button" role="tab" aria-selected="false" style="flex: 1; height: 32px; border: 0; border-radius: 9px; background: transparent; color: #6e6e73; cursor: pointer">回收站 · 4</button>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<div role="group" aria-label="来源" style="display: flex; gap: 14px; font-size: 13px"><button type="button" style="border: 0; background: transparent; padding: 0; font: inherit; color: #1d1d1f; font-weight: 600; cursor: pointer">全部 46</button><button type="button" style="border: 0; background: transparent; padding: 0; font: inherit; color: #8e8e93; cursor: pointer">你上传 19</button><button type="button" style="border: 0; background: transparent; padding: 0; font: inherit; color: #8e8e93; cursor: pointer">Bot 产出 27</button></div>
+<input type="search" class="field" placeholder="搜索文件名" aria-label="搜索文件名" style="width: 200px; height: 32px; padding: 0 14px; border-radius: 16px; font-size: 13px">
+</div>
+<div class="card" style="padding: 0 16px">
+<div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 0">
+<span class="ext" style="width: 36px; height: 36px; border-radius: 10px">MD</span>
+<span class="t"><strong>weekly/competitors.md</strong><span class="sub">你上传 · 9/26 · 2 KB · 3 条消息引用</span></span>
+<span style="display: flex; gap: 6px"><button type="button" class="pill small">下载</button><button type="button" class="pill small">移到回收站</button></span>
+</div>
+<div style="border-top: 1px solid #e3e3e6; display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 0">
+<span class="ext" style="width: 36px; height: 36px; border-radius: 10px">PDF</span>
+<span class="t"><strong>A 公司团队版说明.pdf</strong><span class="sub">你上传 · 9/25 · 1.2 MB · 已提取文字</span></span>
+<span style="display: flex; gap: 6px"><button type="button" class="pill small">下载</button><button type="button" class="pill small">移到回收站</button></span>
+</div>
+<div style="border-top: 1px solid #e3e3e6; display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 0">
+<span class="ext" style="width: 36px; height: 36px; border-radius: 10px">PNG</span>
+<span class="t"><strong>竞品定价对比.png</strong><span class="sub">研究助理 产出 · 今天 10:24 · 248 KB</span></span>
+<span style="display: flex; gap: 6px"><button type="button" class="pill small">下载</button></span>
+</div>
+</div>
+<button type="button" style="align-self: flex-start; height: 30px; padding: 0 14px; border: 0; border-radius: 15px; background: transparent; color: #6e6e73; font: inherit; font-size: 13px; cursor: pointer">显示更多（还有 43 个）</button>
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="h3">回收站预览 · 4</span>
+<div class="card" style="padding: 0 16px; background: #f6f6f7">
+<div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 0">
+<span class="ext" style="width: 36px; height: 36px; border-radius: 10px">DOCX</span>
+<span class="t"><strong>旧版需求.docx</strong><span class="sub">9/20 移到回收站 · 没有消息引用</span></span>
+<span style="display: flex; gap: 6px"><button type="button" class="pill small">恢复</button></span>
+</div>
+</div></div>
+<footer style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span class="sub">移到回收站的文件不再发给 Bot；清理前会确认没有消息还在引用它。</span>
+<button type="button" class="pill danger">清理回收站</button>
+</footer>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
