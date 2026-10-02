@@ -31,17 +31,18 @@ is silently substituted. Generation is sequential per output directory.
 
 ## Export contract
 
-Claude owns `docs/design/app-icon/`: `app-icon.svg`, `app-icon-dark.svg`, `app-icon-small.svg`,
-`app-icon-linux.svg`, `app-icon-splash.svg`. All are square viewBox, self-contained vector paths.
-Linux and splash are distinct board compositions; the pipeline does not redraw them from the Dock
-artwork. The splash PNG is artwork only; Claude owns the startup screen layout. No third-party logo.
+Claude owns `docs/design/app-icon/`: `app-icon.svg`, `app-icon-dark.svg`, `app-icon-small.svg`. All are square viewBox, self-contained
+vector paths. Optional `app-icon-linux.svg` and `app-icon-splash.svg` override the circularly clipped
+master and dark icon artwork. Three sources suffice for platform icons; without an explicit splash
+source its PNG is only the dark icon artwork, not the full approved startup composition.
+Claude owns the startup screen layout; native/artboard visual acceptance remains pending. No third-party logo.
 Run `npm run icons:generate --workspace @openbot/desktop`. Both package and installer entry points
 regenerate in `apps/desktop/out/icons/`; generated images are ignored, never committed.
 
 - ICNS: 16/32/64/128/256/512/1024px including Retina frames. Small logical 16/32pt use the micro source.
 - ICO: 16/24/32/48/64/128/256px; <=32px use the micro source.
 - Linux `icons/NxN.png`: 16/24/32/48/64/128/256/512px; <=32px use a circularly clipped micro source.
-- `openbot-icon.png`: Linux 512px; `openbot-icon-dark.png` and `openbot-icon-splash.png`: 1024px.
+- `openbot-icon.png`: master 512px; `linux/openbot-icon.png`: circular Linux 512px; `openbot-icon-dark.png` and `openbot-icon-splash.png`: 1024px.
 - `sources.json`: exact input SHA256 and converter identity.
 
 Source copied or substantially adapted: no. Existing MIT tool and bundled WASM remain supplied by
@@ -51,7 +52,12 @@ builder; no upstream code is vendored. Standard container headers are assembled 
 
 Checkout `/private/tmp/openbot-c16-icons`, branch `codex/c16-icon-pipeline`. No `apps/web` changes.
 Synthetic vector conversion ran twice: 6 focused tests passed, no skips, including invalid SVG and
-missing-source preservation. This proves conversion, not the approved icon appearance. Full `npm run check` passed on this checkout (build: 18 successful, 17 cached). Initial
+missing-source preservation. This proves conversion, not the approved icon appearance. Full `npm run check` passed on the initial and three-source revisions (build: 18 successful, 17 cached).
+An intermediate micro-source wrapper had an invalid regex escape; fixed and the six focused
+cases plus full check passed again. Platform window PNG now selects the circular Linux asset
+only on Linux; Windows keeps the master artwork. Final affected checks: 43 passed across icon generation, installer policy and package policy,
+zero skips. Final full `npm run check` passed (18 build tasks successful, 17 cached); its Desktop
+suite ran 532 tests with three existing platform-guard skips, not counted as passes. Initial
 sandbox runs failed at loopback listen with EPERM; rerun with the authorized local test
 environment passed. Hosted [validate passed](https://github.com/Peerframe/openbot/actions/runs/37039027532/job/110944356974)
 on `29451ed`. No SVG source exists on the

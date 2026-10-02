@@ -23,7 +23,7 @@ describe("C16 source-derived icon pipeline", () => {
       for (const name of ICON_SOURCES)
         await writeFile(
           join(temp, name),
-          `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><circle cx="64" cy="64" r="60" fill="${name.includes("small") ? "#00ff00" : "#ff0000"}"/></svg>`,
+          `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" fill="${name.includes("small") ? "#00ff00" : "#ff0000"}"/></svg>`,
         );
       const out = join(temp, "result");
       await generateIcons(temp, out);
@@ -31,6 +31,7 @@ describe("C16 source-derived icon pipeline", () => {
         "openbot-icon.icns",
         "openbot-icon.ico",
         "openbot-icon.png",
+        "linux/openbot-icon.png",
         "openbot-icon-dark.png",
         "openbot-icon-splash.png",
         "sources.json",
@@ -40,6 +41,9 @@ describe("C16 source-derived icon pipeline", () => {
       await generateIcons(temp, out);
       for (const [i, name] of names.entries())
         expect(await readFile(join(out, name))).toEqual(first[i]);
+      expect(await readFile(join(out, "openbot-icon.png"))).not.toEqual(
+        await readFile(join(out, "linux/openbot-icon.png")),
+      );
       const ico = await readFile(join(out, "openbot-icon.ico"));
       expect(ico.readUInt16LE(4)).toBe(7);
       const icns = await readFile(join(out, "openbot-icon.icns"));

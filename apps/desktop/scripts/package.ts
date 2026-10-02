@@ -65,7 +65,10 @@ export async function packageDesktop(
       : undefined;
   await generateIcons();
   const desktopIconBase = join(appRoot, "out", "icons", "openbot-icon");
-  const desktopIconPng = `${desktopIconBase}.png`;
+  const desktopIconPng =
+    platform === "linux"
+      ? join(appRoot, "out", "icons", "linux", "openbot-icon.png")
+      : `${desktopIconBase}.png`;
   const packageManifest = await readManifest(join(appRoot, "package.json"));
   const version = packageManifest.version;
   const dependencies = packageManifest.devDependencies;

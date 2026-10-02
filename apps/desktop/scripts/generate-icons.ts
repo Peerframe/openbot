@@ -8,13 +8,7 @@ const require = createRequire(import.meta.url);
 const { runIconsTool } = require("app-builder-lib/out/toolsets/icons.js") as {
   runIconsTool(input: { inputFile: string; outputFormat: string; outDir: string }): Promise<void>;
 };
-export const ICON_SOURCES = [
-  "app-icon.svg",
-  "app-icon-dark.svg",
-  "app-icon-small.svg",
-  "app-icon-linux.svg",
-  "app-icon-splash.svg",
-] as const;
+export const ICON_SOURCES = ["app-icon.svg", "app-icon-dark.svg", "app-icon-small.svg"] as const;
 export const PNG_SIZES = [16, 24, 32, 48, 64, 128, 256, 512] as const;
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -102,11 +96,17 @@ export function mergeIco(large: Buffer, small: Buffer): Buffer {
   ]);
 }
 
+function circularSvg(svg: string): string {
+  const box = /\bviewBox\s*=\s*["']([^"']+)["']/u.exec(svg)![1]!;
+  const [x, y, size] = box.trim().split(/\s+/u).map(Number) as [number, number, number];
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box}"><defs><clipPath id="linuxIconClip"><circle cx="${x + size / 2}" cy="${y + size / 2}" r="${size / 2}"/></clipPath></defs><g clip-path="url(#linuxIconClip)">${svg.replace(/^[\s\S]*?<svg[^>]*>/u, "").replace(/<\/svg>\s*$/u, "")}</g></svg>`;
+}
+
 export async function generateIcons(
   sourceDirectory = join(root, "docs/design/app-icon"),
   outputDirectory = join(root, "apps/desktop/out/icons"),
 ): Promise<void> {
-  const sources = await Promise.all(
+  const sources: { name: string; content: string }[] = await Promise.all(
     ICON_SOURCES.map(async (name) => {
       let content: string;
       try {
@@ -118,6 +118,21 @@ export async function generateIcons(
       return { name, content };
     }),
   );
+  const artwork = new Map(sources.map((source) => [source.name, source.content]));
+  for (const name of ["app-icon-linux.svg", "app-icon-splash.svg"]) {
+    try {
+      const content = await readFile(join(sourceDirectory, name), "utf8");
+      validateIconSvg(content);
+      sources.push({ name, content });
+      artwork.set(name, content);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+  }
+  // Three master sources are sufficient; optional artboard-specific compositions override these.
+  const linuxSource =
+    artwork.get("app-icon-linux.svg") ?? circularSvg(artwork.get("app-icon.svg")!);
+  const splashSource = artwork.get("app-icon-splash.svg") ?? artwork.get("app-icon-dark.svg")!;
   await mkdir(dirname(outputDirectory), { recursive: true });
   const staging = await mkdtemp(join(dirname(outputDirectory), ".icons-"));
   try {
@@ -148,22 +163,22 @@ export async function generateIcons(
         await readFile(join(smallIco, "icon.ico")),
       ),
     );
+    await writeFile(join(staging, "app-icon-linux.svg"), linuxSource);
+    await writeFile(join(staging, "app-icon-splash.svg"), splashSource);
     const linux = await convert("app-icon-linux.svg", "set", "linux");
     // A circular clip preserves the micro drawing while using the approved Linux silhouette.
     const small = sources.find((source) => source.name === "app-icon-small.svg")!.content;
-    const box = /\bviewBox\s*=\s*["']([^"']+)["']/u.exec(small)![1]!;
-    const [x, y, size] = box.trim().split(/\s+/u).map(Number) as [number, number, number];
-    await writeFile(
-      join(staging, "linux-small.svg"),
-      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box}"><defs><clipPath id="linuxIconClip"><circle cx="${x + size / 2}" cy="${y + size / 2}" r="${size / 2}"/></clipPath></defs><g clip-path="url(#linuxIconClip)">${small.replace(/^[\s\S]*?<svg[^>]*>/u, "").replace(/<\/svg>\s*$/u, "")}</g></svg>`,
-    );
+    await writeFile(join(staging, "linux-small.svg"), circularSvg(small));
     const microLinux = await convert("linux-small.svg", "set", "linux-micro");
     for (const size of PNG_SIZES)
       await copyFile(
         join(size <= 32 ? microLinux : linux, `${size}x${size}.png`),
         join(result, "icons", `${size}x${size}.png`),
       );
-    await copyFile(join(linux, "512x512.png"), join(result, "openbot-icon.png"));
+    const master = await convert("app-icon.svg", "set", "master-png");
+    await copyFile(join(master, "512x512.png"), join(result, "openbot-icon.png"));
+    await mkdir(join(result, "linux"));
+    await copyFile(join(linux, "512x512.png"), join(result, "linux", "openbot-icon.png"));
     for (const [name, label] of [
       ["app-icon-dark.svg", "dark"],
       ["app-icon-splash.svg", "splash"],
@@ -180,7 +195,7 @@ export async function generateIcons(
     }
     await writeFile(
       join(result, "sources.json"),
-      `${JSON.stringify({ tool: "electron-builder 26.16.1 / icons@1.2.3", sources: sources.map(({ name, content }) => ({ name, sha256: createHash("sha256").update(content).digest("hex") })) }, null, 2)}\n`,
+      `${JSON.stringify({ tool: "electron-builder 26.16.1 / icons@1.2.3", linux: artwork.has("app-icon-linux.svg") ? "explicit" : "circular-master", splash: artwork.has("app-icon-splash.svg") ? "explicit" : "dark-icon-artwork-only", sources: sources.map(({ name, content }) => ({ name, sha256: createHash("sha256").update(content).digest("hex") })) }, null, 2)}\n`,
     );
     await rm(outputDirectory, { recursive: true, force: true });
     await rename(result, outputDirectory);
