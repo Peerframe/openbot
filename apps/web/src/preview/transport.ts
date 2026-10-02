@@ -14,7 +14,7 @@ import {
  */
 
 type Json = Record<string, unknown>;
-type Handler = (match: RegExpMatchArray, body: Json) => Response | Promise<Response>;
+type Handler = (match: RegExpMatchArray, body: Json, url: URL) => Response | Promise<Response>;
 
 const json = (value: unknown, status = 200) => Response.json(value, { status });
 
@@ -107,7 +107,19 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
     [
       "GET",
       /^\/api\/v1\/channels\/([^/]+)\/messages$/,
-      (m) => json({ messages: world.messages[m[1] ?? ""] ?? [] }),
+      (m, _body, url) => {
+        // C18 pages of 100, oldest first; the preview cursor is simply the oldest message's id.
+        const all = world.messages[m[1] ?? ""] ?? [];
+        const before = url.searchParams.get("before");
+        const end = before ? all.findIndex((item) => item.id === before) : all.length;
+        const page = all.slice(Math.max(0, end - 100), Math.max(0, end));
+        const hasMore = end - page.length > 0;
+        return json({
+          messages: page,
+          hasMore,
+          ...(hasMore && page[0] ? { nextCursor: page[0].id } : {}),
+        });
+      },
     ],
     [
       "GET",
@@ -336,7 +348,7 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
     for (const [verb, pattern, handler] of routes) {
       if (verb !== method) continue;
       const match = url.pathname.match(pattern);
-      if (match) return handler(match, body);
+      if (match) return handler(match, body, url);
     }
     console.warn(`[design preview] no synthetic route for ${method} ${url.pathname}`);
     return json({ error: "preview_unsupported" }, 404);

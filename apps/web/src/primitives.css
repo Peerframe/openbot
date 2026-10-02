@@ -963,3 +963,54 @@
 .ob-dialog-actions .ob-pill.is-danger:hover {
   background: #9c2019;
 }
+
+/* Toast (Notices artboard): a dark pill at the bottom centre; short ones leave after 3 s. */
+.ob-toast {
+  position: fixed;
+  z-index: 1100;
+  bottom: 28px;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(560px, calc(100vw - 32px));
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 0 8px 0 18px;
+  border-radius: 22px;
+  background: #1d1d1f;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 18%);
+  color: #fff;
+  font-size: 14px;
+  transform: translateX(-50%);
+}
+.ob-toast > button {
+  display: grid;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #c7c7cc;
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+.ob-toast > button:hover {
+  background: rgb(255 255 255 / 12%);
+  color: #fff;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ob-toast {
+    animation: ob-toast-in 0.2s ease-out;
+  }
+}
+@keyframes ob-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}

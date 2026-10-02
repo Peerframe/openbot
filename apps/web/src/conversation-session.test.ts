@@ -1,6 +1,6 @@
 import type { Message, Run, SubmitTaskResult } from "@openbot/domain";
 import { describe, expect, it, vi } from "vitest";
-import { createConversationSession } from "./conversation-session";
+import { CONVERSATION_MESSAGE_LIMIT, createConversationSession } from "./conversation-session";
 import { deferred } from "./test/render-component";
 
 function result(channelId = "a"): SubmitTaskResult {
@@ -207,12 +207,28 @@ describe("workspace conversation session", () => {
     expect(a.getSnapshot().messages).toHaveLength(0);
     expect(a.getSnapshot().sendError).toContain("不匹配");
     a.merge(
-      Array.from({ length: 250 }, (_, index) => ({
+      Array.from({ length: CONVERSATION_MESSAGE_LIMIT + 50 }, (_, index) => ({
         ...result().message,
         id: `m${index}`,
-        createdAt: String(index).padStart(4, "0"),
+        createdAt: String(index).padStart(5, "0"),
       })),
     );
-    expect(a.getSnapshot().messages).toHaveLength(200);
+    expect(a.getSnapshot().messages).toHaveLength(CONVERSATION_MESSAGE_LIMIT);
+    expect(a.getSnapshot().messages[0]?.id).toBe("m50");
+  });
+  it("adds older pages in time order and keeps them when the live page arrives again", () => {
+    const a = createConversationSession().channel("a", "bot-a");
+    const message = (id: string, createdAt: string) => ({ ...result().message, id, createdAt });
+    a.merge([message("new", "2026-10-02"), message("newer", "2026-10-03")]);
+    expect(a.getSnapshot().history).toEqual({ exhausted: false, loading: false });
+    a.prepend(
+      [message("old", "2026-09-01"), message("other", "2026-09-02")].map((item, index) =>
+        index === 1 ? { ...item, channelId: "b" } : item,
+      ),
+    );
+    a.setHistory({ cursor: "c1", exhausted: true });
+    a.merge([message("new", "2026-10-02"), message("newer", "2026-10-03")]);
+    expect(a.getSnapshot().messages.map((item) => item.id)).toEqual(["old", "new", "newer"]);
+    expect(a.getSnapshot().history).toEqual({ cursor: "c1", exhausted: true, loading: false });
   });
 });

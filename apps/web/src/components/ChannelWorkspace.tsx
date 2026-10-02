@@ -30,6 +30,7 @@ import {
   getEmployeeProfile,
   getRunOutput,
   listChannelReactions,
+  listMessagePage,
   listMessages,
   listRuns,
   type RealtimeConnectionState,
@@ -149,7 +150,8 @@ export function ChannelWorkspace({
     conversation.getSnapshot,
     conversation.getSnapshot,
   );
-  const { messages, runs, draft, loading, loadError, sendError, sending, capacityError } = state;
+  const { messages, runs, draft, loading, loadError, sendError, sending, capacityError, history } =
+    state;
   const members = bots.filter((bot) => channel.botIds.includes(bot.id));
   const directBot = channel.directBotId
     ? members.find((bot) => bot.id === channel.directBotId)
@@ -180,6 +182,12 @@ export function ChannelWorkspace({
   }, [messages, runsById, collaboration]);
   const [realtimeState, setRealtimeState] = useState<RealtimeConnectionState>("connecting");
   const [readAttempt, setReadAttempt] = useState(0);
+  const olderAnchor = useRef<{ height: number; top: number } | undefined>(undefined);
+  const [dateCue, setDateCue] = useState<string>();
+  const dateCueTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(dateCueTimer.current), []);
+  // The newest message when the Owner scrolled away; later ones count as new in 回到最新.
+  const awayFrom = useRef<string | undefined>(undefined);
   const [reactions, setReactions] = useState<MessageReaction[]>([]);
   const [filesOpen, setFilesOpen] = useState(false);
   const [outputs, setOutputs] = useState<ReadonlyMap<string, RunOutput>>(new Map());
@@ -535,6 +543,9 @@ export function ChannelWorkspace({
         ]);
         if (controller.signal.aborted || requestedRevision !== revision) return;
         conversation.merge(messageItems, runItems);
+        // The latest page holds up to 100; fewer means the whole history is already here.
+        if (messageItems.length < 100 && conversation.getSnapshot().history.cursor === undefined)
+          conversation.setHistory({ exhausted: true });
         conversation.loaded();
         for (const run of runItems) if (run.channelId === channel.id) onRun(run);
         void listChannelReactions(channel.id, controller.signal)
@@ -612,6 +623,14 @@ export function ChannelWorkspace({
   useLayoutEffect(() => {
     const list = messageList.current;
     if (!list || loading || list.clientHeight === 0) return;
+    const anchor = olderAnchor.current;
+    if (anchor) {
+      // Older messages were added above: keep what the Owner was reading in place.
+      olderAnchor.current = undefined;
+      list.scrollTop = anchor.top + (list.scrollHeight - anchor.height);
+      conversation.scroll.top = list.scrollTop;
+      return;
+    }
     if (!restored.current) {
       list.scrollTop = conversation.scroll.atBottom ? list.scrollHeight : conversation.scroll.top;
       restored.current = true;
@@ -753,6 +772,64 @@ export function ChannelWorkspace({
     event.preventDefault();
     event.currentTarget.form?.requestSubmit();
   }
+  if (!awayFromLatest) awayFrom.current = undefined;
+  else if (awayFrom.current === undefined) awayFrom.current = messages.at(-1)?.id ?? "";
+  const awayIndex = awayFrom.current
+    ? messages.findIndex((item) => item.id === awayFrom.current)
+    : -1;
+  const unseen =
+    awayFromLatest && awayIndex >= 0
+      ? messages.slice(awayIndex + 1).filter((item) => item.authorType !== "human").length
+      : 0;
+  /** C18: read the page before the oldest message loaded; the latest page has no cursor yet. */
+  async function loadOlder() {
+    const current = conversation.getSnapshot().history;
+    if (current.loading || current.exhausted) return;
+    conversation.setHistory({ loading: true, error: undefined });
+    try {
+      let cursor = current.cursor;
+      if (!cursor) {
+        const latest = await listMessagePage(channel.id);
+        if (!latest.hasMore || !latest.nextCursor) {
+          conversation.setHistory({ loading: false, exhausted: true });
+          return;
+        }
+        cursor = latest.nextCursor;
+      }
+      const page = await listMessagePage(channel.id, cursor);
+      const list = messageList.current;
+      if (list && page.messages.length > 0)
+        olderAnchor.current = { height: list.scrollHeight, top: list.scrollTop };
+      conversation.prepend(page.messages);
+      conversation.setHistory({
+        loading: false,
+        cursor: page.nextCursor ?? cursor,
+        exhausted: !page.hasMore,
+      });
+    } catch {
+      conversation.setHistory({ loading: false, error: "没能加载更早的消息。" });
+    }
+  }
+  /** LongLists: while scrolling, the date of the topmost visible message floats at the top. */
+  function showDateCue(list: HTMLElement) {
+    window.clearTimeout(dateCueTimer.current);
+    if (list.scrollTop < 40) {
+      setDateCue(undefined);
+      return;
+    }
+    const rows = Array.from(list.querySelectorAll<HTMLElement>("[data-time]"));
+    const top = list.getBoundingClientRect().top + 8;
+    let low = 0;
+    let high = rows.length - 1;
+    while (low < high) {
+      const middle = (low + high) >> 1;
+      if ((rows[middle]?.getBoundingClientRect().bottom ?? 0) > top) high = middle;
+      else low = middle + 1;
+    }
+    const time = rows[low]?.dataset.time;
+    setDateCue(time ? dateCueLabel(time) : undefined);
+    dateCueTimer.current = window.setTimeout(() => setDateCue(undefined), 1200);
+  }
   function showLatest() {
     conversation.scroll.atBottom = true;
     const list = messageList.current;
@@ -792,11 +869,30 @@ export function ChannelWorkspace({
         className="conversation-panel channel-conversation"
         aria-label={`${channel.name} 消息`}
       >
+        {/* Notices artboard: one banner at a time, the more serious first. */}
         {loadError ? (
-          <div className="conversation-load-error" role="alert">
-            <span>{loadError}</span>
-            <button type="button" onClick={() => setReadAttempt((value) => value + 1)}>
+          <div className="conversation-load-error conversation-banner is-error" role="alert">
+            <span>没能读取消息：{loadError}</span>
+            <button
+              type="button"
+              className="ob-pill is-small"
+              onClick={() => setReadAttempt((value) => value + 1)}
+            >
               重新读取
+            </button>
+          </div>
+        ) : realtimeState === "retrying" ? (
+          <div className="conversation-banner is-warning" role="status">
+            <span>
+              <i aria-hidden="true" />
+              和服务电脑的连接断了，正在重新连接…草稿不会丢。
+            </span>
+            <button
+              type="button"
+              className="ob-pill is-small"
+              onClick={() => setReadAttempt((value) => value + 1)}
+            >
+              立即重连
             </button>
           </div>
         ) : null}
@@ -817,11 +913,34 @@ export function ChannelWorkspace({
             conversation.scroll.atBottom =
               list.scrollHeight - list.scrollTop - list.clientHeight < 80;
             setAwayFromLatest(!conversation.scroll.atBottom);
+            showDateCue(list);
+            const older = conversation.getSnapshot().history;
+            if (list.scrollTop < 120 && !older.exhausted && !older.loading && !older.error)
+              void loadOlder();
           }}
           role="log"
           aria-label="频道消息记录"
           aria-live="polite"
         >
+          {history.loading ? (
+            <p className="conversation-older" role="status">
+              正在加载更早的消息…
+            </p>
+          ) : history.error ? (
+            <p className="conversation-older" role="alert">
+              {history.error}
+              <button
+                type="button"
+                className="ob-pill is-small"
+                onClick={() => {
+                  conversation.setHistory({ error: undefined });
+                  void loadOlder();
+                }}
+              >
+                重试
+              </button>
+            </p>
+          ) : null}
           {loading && messages.length === 0 ? (
             <p className="conversation-status">正在读取频道消息…</p>
           ) : messages.length === 0 && directBot && needsRoleSetup(directBot) && !setupSkipped ? (
@@ -965,9 +1084,14 @@ export function ChannelWorkspace({
             ))}
           {taskCards.trailing.map((run) => renderTask(run))}
         </div>
+        {dateCue ? (
+          <span className="conversation-date-cue" aria-hidden="true">
+            {dateCue}
+          </span>
+        ) : null}
         {awayFromLatest ? (
           <button type="button" className="conversation-latest" onClick={showLatest}>
-            ↓ 回到最新
+            ↓ 回到最新{unseen > 0 ? ` · ${unseen} 条新消息` : ""}
           </button>
         ) : null}
         {capacityError ? (
@@ -1420,6 +1544,7 @@ function MessageRow({
   return (
     <article
       id={`channel-message-${message.id}`}
+      data-time={message.createdAt}
       tabIndex={-1}
       aria-label={`${name} 的消息`}
       className={`message-row ${message.authorType}${groupStart ? " group-start" : " group-continuation"}${groupEnd ? " group-end" : ""}${direct ? " direct-message" : ""}`}
@@ -1544,6 +1669,18 @@ function formatDivider(value: string, hour12: boolean) {
       ? "今天"
       : new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric" }).format(date);
   return `${day} ${formatMessageTime(value, hour12)}`;
+}
+
+/** 「今天」, 「昨天」 or 「9 月 25 日 · 周四」 (LongLists date cue). */
+export function dateCueLabel(value: string, now = new Date()): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === now.toDateString()) return "今天";
+  if (date.toDateString() === yesterday.toDateString()) return "昨天";
+  const weekday = new Intl.DateTimeFormat("zh-CN", { weekday: "short" }).format(date);
+  return `${date.getMonth() + 1} 月 ${date.getDate()} 日 · ${weekday}`;
 }
 
 function realtimeLabel(state: RealtimeConnectionState) {
