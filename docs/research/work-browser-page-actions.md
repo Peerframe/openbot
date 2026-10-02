@@ -193,3 +193,66 @@ The released installer already owns its download retries; no new retry wrapper, 
 cache, source incorporation or weakened qualification is introduced. Local CI selection and full
 repository checks validate workflow integration; an actual hosted Linux run is still required
 to establish download/recovery success on this revision.
+
+
+### C14 / C18 closeout handoff (2026-10-03)
+
+Baseline: `cbf1700bf596f8f06f202005123e6d92cf7d59a1`. Worktree: outside the repository,
+`/private/tmp/openbot-platform-closeout`; branch `codex/platform-closeout-c14-c18`.
+Only API wording and this evidence record change; no Web, runtime, CI policy or binary change.
+
+Two consecutive completed hosted browser-product jobs passed fixture preparation and both product
+recovery steps, with deterministic local pages/providers and no paid model:
+
+- [Run 37025426857, browser job 110904492401](https://github.com/Peerframe/openbot/actions/runs/37025426857/job/110904492401),
+  main `719485800f43046c2f258c83de06be593ee38b3d`.
+- [Run 37030141750, browser job 110915830971](https://github.com/Peerframe/openbot/actions/runs/37030141750/job/110915830971),
+  main `5c50177df9c5535f8e219fe36da7eaae307462a1`.
+
+The next main run 37031660444 was cancelled without executing this job; it is not counted as a
+pass. A later [browser job 110928206040](https://github.com/Peerframe/openbot/actions/runs/37032835759/job/110928206040)
+also passed. Browser-skipped UI PR runs are not browser evidence. C14 is closed.
+
+C18 already returned `{messages, hasMore, nextCursor?}` on this baseline. `docs/API.md` and its
+Chinese translation now explicitly state oldest-first messages and the opaque channel-bound cursor.
+No endpoint or response behavior changes; last/empty pages omit nextCursor. Evidence owners:
+`message_models.py`, `message_cursor.py`, `message_query.py`, `test_message_models.py`,
+`test_message_routes.py`, `test_message_postgres.py`, and the actual consumer `apps/web/src/api.ts`
+(`loadMessagePage`, PR #155). Reuse `python-message-reads.md`, C18 section, unchanged dependencies,
+authority and persistence; no upstream source incorporation.
+
+Validation: `npm run docs:check` passed (562 Markdown files); `npm run research:check` passed
+its local tests (PR body gate runs on hosted CI). Focused message models/routes: 15 passed,
+zero skipped, using the existing locked Python environment against this checkout. No database or
+model request was made. `git diff --check` passed. PR: [#157](https://github.com/Peerframe/openbot/pull/157). Initial hosted validate rejected
+the unlinked research paths in the PR body; corrected the field to one exact decision path, as required by the validator. The 15 focused
+Python cases, 12 documentation tests and 27 research tests passed locally; hosted [validate passed](https://github.com/Peerframe/openbot/actions/runs/37038379903/job/110942214096)
+on `da13b06`. This handoff-only evidence update reuses the same unchanged API/test evidence.
+
+Current platform backlog handoff (all worktrees outside the repository, same baseline above):
+
+| Item | Branch / checkout | PR and acceptance |
+| --- | --- | --- |
+| C14 / C18 | `codex/platform-closeout-c14-c18`, `/private/tmp/openbot-platform-closeout` | [#157](https://github.com/Peerframe/openbot/pull/157); browser evidence closed, paging documentation complete |
+| C16 | `codex/c16-icon-pipeline`, `/private/tmp/openbot-c16-icons` | [Draft #158](https://github.com/Peerframe/openbot/pull/158); generator and package wiring complete, [validate](https://github.com/Peerframe/openbot/actions/runs/37042084211/job/110954997244) passed; approved SVG export and native screenshots still required |
+| C20 | `codex/c20-product-claims`, `/private/tmp/openbot-c20-claims` | [#159](https://github.com/Peerframe/openbot/pull/159); six claims audited, 51 real SQL/HTTP/WS tests passed; [validate](https://github.com/Peerframe/openbot/actions/runs/37040899163/job/110950567989) passed |
+| C19 | `codex/c19-attachment-reference-count`, `/private/tmp/openbot-c19-references` | [#161](https://github.com/Peerframe/openbot/pull/161); Owner-only bounded metadata, five real SQL/HTTP cases and full check passed; [validate](https://github.com/Peerframe/openbot/actions/runs/37042098568/job/110954806783) passed |
+| C15 | `codex/c15-route-caller-inventory`, `/private/tmp/openbot-c15-inventory` | [#160](https://github.com/Peerframe/openbot/pull/160); caller inventory complete, only manual skill-candidate POST is a removal candidate; [validate](https://github.com/Peerframe/openbot/actions/runs/37041093500/job/110951195802) passed; deletion awaits user confirmation |
+
+Each PR's research/review record owns detailed interface changes and executed evidence. C16's
+unconditional generation initially broke all Desktop packaging despite validate success. Correction
+`2f593fc` preserves existing resource icons with an explicit warning before any source is exported;
+partial/invalid exports still refuse. The source generator and approved/native icon acceptance remain
+strict. Correction checks: 45 focused cases and full `npm run check` passed. On that revision,
+[validate](https://github.com/Peerframe/openbot/actions/runs/37055900204/job/111000500118),
+[Windows](https://github.com/Peerframe/openbot/actions/runs/37055900204/job/111000499881),
+[Linux](https://github.com/Peerframe/openbot/actions/runs/37055900204/job/111000500022), and
+[Python Preview](https://github.com/Peerframe/openbot/actions/runs/37055900204/job/111000499830)
+passed; macOS was cancelled after installer verification when another writer merged main as
+`69e38b0`. That merge is preserved; the latest hosted rerun owns final integration evidence.
+Packaging success with baseline icons is not native acceptance of the approved design. C15 makes no
+route deletion, and its underlying skill creation service still has an import caller. C20 found no
+seven-day unreferenced-file cleanup implementation; corrected Chinese copy is in its review record.
+C19 does not grant cleanup authority. All local writers have finished; only hosted checks run.
+The root checkout's unrelated untracked `output/` remains untouched. No Web, C9/C11, paid model,
+auto-merge, release or production-data changes. No merge is authorized by this handoff.

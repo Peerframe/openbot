@@ -1258,6 +1258,7 @@ export function AuthenticatedWorkspace({
               onDelete={() => handleDeleteItem({ kind: "bot", id: railBot.id })}
               onDecideApproval={handleDecideApproval}
               onManageModels={() => setModelServicesOpen(true)}
+              onOpenSettings={onSettings}
               modelServicesVersion={modelServicesVersion}
             />
           ) : (
@@ -1270,6 +1271,7 @@ export function AuthenticatedWorkspace({
               onJoin={handleJoinBot}
               onRemove={handleRemoveBot}
               onCollapse={() => updatePreferences({ rightPanelOpen: false })}
+              onOpenSettings={onSettings}
             />
           ))}
       </div>
