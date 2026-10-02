@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   activateEmployeeImportInputSchema,
+  botAppearanceSchema,
   createBotInputSchema,
   createChannelInputSchema,
   createEmployeeMemoryInputSchema,
@@ -15,6 +16,7 @@ import {
   nodeEnrollmentResultSchema,
   nodeMessageSchema,
   protocolVersion,
+  quickCreateBotInputSchema,
   providerConformanceReportSchema,
   runEventSchema,
   runOfferSchema,
@@ -322,6 +324,39 @@ describe("control plane inputs", () => {
       role: "Browser operations",
       computerProfile: "docker-linux",
     });
+  });
+
+  it("quick creation accepts only a complete appearance and cannot override Server defaults", () => {
+    const appearance = {
+      head: "round",
+      body: "classic",
+      mobility: "feet",
+      accessory: "none",
+      accent: "green",
+    };
+    expect(quickCreateBotInputSchema.parse({ appearance })).toEqual({ appearance });
+    for (const input of [
+      {},
+      { appearance: null },
+      { appearance: { head: "round" } },
+      { appearance, name: "override" },
+      { appearance, computerProfile: "docker-linux" },
+      { appearance: { ...appearance, grant: "admin" } },
+    ])
+      expect(quickCreateBotInputSchema.safeParse(input).success).toBe(false);
+  });
+
+  it("retains old avatar accents and accepts only the four additional C10 accents", () => {
+    const appearance = { head: "round", body: "classic", mobility: "feet", accessory: "none" };
+    for (const accent of ["green", "yellow", "red", "blue", "violet", "teal", "pink", "slate"]) {
+      expect(botAppearanceSchema.parse({ ...appearance, accent }).accent).toBe(accent);
+      expect(
+        quickCreateBotInputSchema.parse({ appearance: { ...appearance, accent } }).appearance
+          .accent,
+      ).toBe(accent);
+    }
+    for (const accent of ["purple", "Violet", "#ff00ff", "", null, 42])
+      expect(botAppearanceSchema.safeParse({ ...appearance, accent }).success).toBe(false);
   });
 
   it("validates the five composable Bot appearance layers", () => {

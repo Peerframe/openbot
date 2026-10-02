@@ -184,6 +184,20 @@ def test_explicit_identity_entry_creates_over_real_http(fixture):
         with urlopen(request, timeout=5) as response:
             assert response.status == 201
             bot = json.load(response)["bot"]
+        appearance = dict(head="round", body="classic", mobility="feet", accessory="none", accent="green")
+        request = Request(base + "/api/v1/bots/quick", data=json.dumps({"appearance": appearance}).encode(), headers=headers, method="POST")
+        with urlopen(request, timeout=5) as response:
+            assert response.status == 201
+            result = json.load(response)
+            assert result["channel"]["directBotId"] == result["bot"]["id"]
+            assert result["bot"]["computerProfile"] == "none" and result["bot"]["appearance"] == appearance
+        with psycopg.connect(fixture["dsn"]) as connection:
+            quick_bot, quick_channel = result["bot"]["id"], result["channel"]["id"]
+            connection.execute("DELETE FROM run_events WHERE bot_id=%s OR channel_id=%s", (quick_bot, quick_channel))
+            connection.execute("DELETE FROM employee_evolution_events WHERE bot_id=%s", (quick_bot,))
+            connection.execute("DELETE FROM channel_bots WHERE channel_id=%s", (quick_channel,))
+            connection.execute("DELETE FROM channels WHERE id=%s", (quick_channel,))
+            connection.execute("DELETE FROM bots WHERE id=%s", (quick_bot,))
         request = Request(base + "/api/v1/channels", data=json.dumps({"name": "Python HTTP channel", "botIds": [bot["id"]]}).encode(), headers=headers, method="POST")
         with urlopen(request, timeout=5) as response:
             assert response.status == 201

@@ -147,6 +147,17 @@ class CreateBotInput(BaseModel):
         return value
 
 
+class QuickCreateBotInput(BaseModel):
+    """Server defaults cannot be overridden by a quick-create request."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    appearance: BotAppearance
+
+
+def parse_quick_bot_create(value: object) -> QuickCreateBotInput:
+    return QuickCreateBotInput.model_validate(value)
+
+
 class CreateChannelInput(BaseModel):
     """``createChannelInputSchema``: name, description (default ''), botIds (default [])."""
 

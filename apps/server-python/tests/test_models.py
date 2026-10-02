@@ -38,7 +38,7 @@ HEAD_SHAPES = ["round", "square", "cat"]
 BODY_SHAPES = ["classic", "tall", "cape", "armor", "storage", "quadruped"]
 MOBILITIES = ["feet", "single-wheel", "dual-wheel", "hover", "four-legs"]
 ACCESSORIES = ["none", "headphones", "backpack", "trench", "arm", "toolbox"]
-ACCENTS = ["green", "yellow", "red", "blue"]
+ACCENTS = ["green", "yellow", "red", "blue", "violet", "teal", "pink", "slate"]
 
 BOT_PUBLIC_FIELDS = {"id", "name", "role", "status", "computerProfile", "model", "appearance", "createdAt"}
 BOT_REQUIRED_FIELDS = BOT_PUBLIC_FIELDS - {"appearance", "model"}
@@ -407,7 +407,7 @@ def test_project_bot_covers_every_appearance_combination():
                         )
                         assert projected["appearance"] == candidate
                         combinations += 1
-    assert combinations == 3 * 6 * 5 * 6 * 4 == 2160
+    assert combinations == 3 * 6 * 5 * 6 * 8 == 4320
 
 
 @pytest.mark.parametrize("status", ["thinking", "idle ", "IDLE", "waiting-approval", ""])
@@ -616,6 +616,13 @@ def test_model_enum_literals_match_the_typescript_unions_exactly():
     assert list(get_args(models.BotAppearance.model_fields["mobility"].annotation)) == MOBILITIES
     assert list(get_args(models.BotAppearance.model_fields["accessory"].annotation)) == ACCESSORIES
     assert list(get_args(models.BotAppearance.model_fields["accent"].annotation)) == ACCENTS
+    # The current domain owns additive accents; the frozen oracle intentionally keeps four.
+    from pathlib import Path
+    import re
+    source = (Path(__file__).resolve().parents[3] / 'packages/domain/src/index.ts').read_text()
+    union = re.search(r'export type BotAccent\s*=([^;]+);', source)
+    assert union is not None
+    assert re.findall(r'"([a-z]+)"', union.group(1)) == ACCENTS
     assert len(BOT_STATUSES) == 8 and len(COMPUTER_PROFILES) == 6
 
 
