@@ -799,3 +799,16 @@ It is bound to the channel; clients must treat it as opaque and pass it unchange
 and contains no message content. Each request reads current facts, so concurrent history changes
 are not a frozen multi-request snapshot. Every page keeps the existing session recheck, selected
 text/body byte bounds and no-store response. No message write or model invocation is performed.
+
+### C20: browser and attachment claim boundaries
+
+Browser-view frames are returned transiently and are not persisted by the viewer/audit path;
+explicit task screenshots may separately become retained artifacts. Browser profiles persist on
+the original working host; clearing browser data removes login state. Closing the viewer that
+holds control keeps the Bot paused until explicit take/release; observation-only close does not
+pause it. Soft-deleted channel files reject new references and subsequent Bot reads, while
+retained Owner downloads remain available; already transferred model input cannot be recalled.
+There is currently **no** `/channels/:id/attachments/cleanup` endpoint or seven-day unreferenced
+recycle-bin collector. Entire-channel deletion has its separate tombstone-authorized purge.
+Explicit transcription requires enabled OpenAI settings and the official endpoint, and retains
+original bytes plus derived text on the Server. See the [claim audit](reviews/C20-product-claims.md).
