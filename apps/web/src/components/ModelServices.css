@@ -49,11 +49,11 @@
   border-color: #c9dafa;
 }
 .model-connection-row strong {
-  font-size: 12px;
+  font-size: 14px;
 }
 .model-connection-row small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 .model-add-connection {
   flex-direction: row;
@@ -118,26 +118,33 @@
   color: var(--muted);
   font-family: monospace;
   overflow-wrap: anywhere;
-  font-size: 10px;
+  font-size: 12px;
 }
 .model-help {
   display: block;
   margin: 0;
-  color: var(--muted);
-  font-size: 11px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
+/* Text actions read as the artboards' grey links, not the old blue. */
 .model-help a,
 .model-text-button {
-  color: #285db0;
+  color: var(--ob-text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.model-help a:hover,
+.model-text-button:hover:not(:disabled) {
+  color: var(--ob-text);
 }
 .model-text-button {
   padding: 3px 0;
   border: 0;
   background: transparent;
   font: inherit;
-  font-size: 11px;
+  font-size: 13px;
   cursor: pointer;
 }
 .model-text-button:disabled {
@@ -149,7 +156,7 @@
   margin: 0;
   padding: 10px 12px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
   overflow-wrap: anywhere;
 }

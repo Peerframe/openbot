@@ -1,8 +1,9 @@
+/* Composer artboard: a file chip is a 40px grey pill with a type badge, name, size and ×. */
 .message-attachments,
 .composer-attachment-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 .message-attachments {
@@ -10,40 +11,60 @@
 }
 .message-attachment-card,
 .composer-attachment-card {
-  display: flex;
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   max-width: 100%;
   min-width: 0;
-  border: 1px solid #e5e5e5;
+  height: 40px;
+  padding: 0 8px 0 6px;
+  box-sizing: border-box;
   border-radius: 12px;
-  background: #fff;
-  color: #242424;
-  padding: 7px 10px 7px 7px;
+  background: var(--ob-fill);
+  color: var(--ob-text);
+  font-size: 13px;
 }
-.attachment-card-caption {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-  font-size: 12px;
+.message-attachment-card {
+  height: 48px;
+  padding-right: 6px;
 }
+.attachment-card-name,
 .attachment-card-caption strong {
-  max-width: 220px;
   overflow: hidden;
+  max-width: 150px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.attachment-card-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.attachment-card-caption strong {
+  max-width: 200px;
+  font-size: 13px;
   font-weight: 500;
 }
+.composer-attachment-card > small,
 .attachment-card-caption small {
-  color: #888;
-  font-size: 10px;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+  white-space: nowrap;
 }
 .attachment-thumbnail,
 .attachment-file-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 7px;
-  flex: 0 0 38px;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  border-radius: 8px;
+}
+.message-attachment-card :is(.attachment-thumbnail, .attachment-file-icon) {
+  flex-basis: 34px;
+  width: 34px;
+  height: 34px;
 }
 .attachment-thumbnail {
   object-fit: cover;
@@ -51,27 +72,30 @@
 .attachment-file-icon {
   display: grid;
   place-items: center;
-  background: #f0f0f0;
-  color: #7b7b7b;
+  border: 1px solid var(--ob-divider);
+  background: var(--ob-surface);
+  color: var(--ob-text-secondary);
   font-size: 9px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .composer-attachment-card > .attachment-remove-button {
+  width: 20px;
+  height: 20px;
+  padding: 0;
   border: 0;
   border-radius: 50%;
-  width: 22px;
-  height: 22px;
-  padding: 0;
   background: transparent;
-  color: #888;
+  color: var(--ob-text-tertiary);
+  font-size: 14px;
+  line-height: 1;
   cursor: pointer;
 }
 .composer-attachment-card > .attachment-remove-button:hover {
-  background: #eee;
-  color: #222;
+  background: var(--ob-fill-hover);
+  color: var(--ob-text);
 }
 .composer-attachment-card > .attachment-remove-button:focus-visible {
-  outline: 2px solid #888;
+  outline: 2px solid var(--ob-text-tertiary);
   outline-offset: 2px;
 }
 .attachment-drop-active {
@@ -132,37 +156,100 @@
   object-fit: contain;
 }
 
+/* The ⋯ on a file opens a small menu (Composer artboard). */
 .attachment-actions {
-  font-size: 12px;
+  position: static;
   min-width: 0;
 }
-.attachment-actions summary {
+.attachment-actions > summary {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--ob-text-secondary);
+  font-size: 16px;
+  line-height: 1;
+  list-style: none;
   cursor: pointer;
-  color: #666;
+}
+.attachment-actions > summary::-webkit-details-marker {
+  display: none;
+}
+.attachment-actions > summary:hover,
+.attachment-actions[open] > summary {
+  background: var(--ob-fill-hover);
+  color: var(--ob-text);
 }
 .attachment-actions-body {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px 0;
-  max-width: 320px;
+  width: 250px;
+  padding: 6px;
+  border: 1px solid var(--ob-popover-border);
+  border-radius: 14px;
+  background: var(--ob-popover);
+  box-shadow: var(--ob-shadow-menu);
+  font-size: 14px;
+}
+.composer-attachment-card .attachment-actions-body {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+.attachment-actions-body > small {
+  padding: 6px 12px;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
 }
 .attachment-actions-body label {
   display: grid;
   gap: 4px;
+  padding: 6px 12px;
+  color: var(--ob-text-secondary);
+  font-size: 12px;
 }
 .attachment-actions-body input {
-  min-width: 0;
   width: 100%;
+  min-width: 0;
 }
 .attachment-actions-body button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.attachment-actions-body button:hover {
+  background: var(--ob-fill);
+}
+.attachment-actions-body button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.attachment-actions-body button small {
+  color: var(--ob-text-tertiary);
   font-size: 12px;
-  min-height: 28px;
 }
-.message-attachment-card:has(.attachment-actions[open]),
-.composer-attachment-card:has(.attachment-actions[open]) {
-  flex-wrap: wrap;
+.attachment-actions-body button small.is-warning {
+  color: var(--ob-attention-ink);
 }
-.attachment-actions[open] {
-  flex-basis: 100%;
+.attachment-actions-body button.is-danger {
+  color: #b3261e;
+}
+.attachment-actions-body [role="alert"] {
+  padding: 6px 12px;
+  color: #b3261e;
+  font-size: 12px;
 }

@@ -1,9 +1,9 @@
 import type { Artifact, Bot, Channel, Run } from "@openbot/domain";
 import { useEffect, useRef, useState } from "react";
+import { extensionOf } from "../channel-attachment-client";
 import { ArtifactDownloadLink } from "./ArtifactCard";
 import { Dialog } from "./Dialog";
 import { RobotAvatar } from "./RobotAvatar";
-import { extensionOf } from "./TaskCard";
 
 type Tab = "files" | "bots";
 

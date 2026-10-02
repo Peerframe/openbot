@@ -10,16 +10,10 @@ import { createPortal } from "react-dom";
 import { reactionLabels } from "./MessageReactions";
 import "./MessageActionBar.css";
 
-const statusLabels: Record<Run["status"], string> = {
-  queued: "排队中",
-  assigned: "已分派",
-  running: "工作中",
-  waiting_approval: "等待批准",
-  blocked: "受阻",
-  completed: "已完成",
-  failed: "失败",
-  cancelled: "已停止",
-};
+/**
+ * Three bare icons beside the bubble (MessageActions artboard): 回应, 回复 and 更多. Reactions
+ * are the Owner's own marks, so the picker shows which are on and never a count.
+ */
 export function MessageActionBar({
   message,
   onReply,
@@ -58,10 +52,10 @@ export function MessageActionBar({
         )?.getBoundingClientRect(),
         panel = popup.current?.getBoundingClientRect();
       if (!rect || !panel) return;
-      const left = Math.max(
-        8,
-        Math.min(rect.right - panel.width, window.innerWidth - panel.width - 8),
-      );
+      // The artboard opens the picker below the icons, flush with their left edge; the menu
+      // lines up with 更多. Both stay inside the window.
+      const anchor = open === "emoji" ? rect.left - 6 : rect.right - panel.width;
+      const left = Math.max(8, Math.min(anchor, window.innerWidth - panel.width - 8));
       const below = rect.bottom + 6;
       const top =
         below + panel.height <= window.innerHeight - 8
@@ -223,7 +217,7 @@ export function MessageActionBar({
                         .catch(() => setError("复制失败，请重试。"));
                     }}
                   >
-                    {copied ? "已复制" : "复制"}
+                    {copied ? "已复制" : "复制文字"}
                   </button>
                   {run && onInspectRun ? (
                     <button
@@ -234,12 +228,10 @@ export function MessageActionBar({
                         close();
                       }}
                     >
-                      任务详情 · {statusLabels[run.status]}
+                      任务详情
+                      <small>这条回复来自「{run.title}」</small>
                     </button>
                   ) : null}
-                  <time dateTime={message.createdAt}>
-                    {new Date(message.createdAt).toLocaleString()}
-                  </time>
                 </>
               )}
               {error ? <p role="alert">{error}</p> : null}

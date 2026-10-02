@@ -1,21 +1,22 @@
+/* MessageActions artboard: three bare 32px icons beside the bubble, no bar behind them. */
 .message-action-bar {
   position: absolute;
   top: 50%;
-  transform: translateY(-50%);
+  z-index: 3;
   display: flex;
-  gap: 3px;
   align-items: center;
-  width: 84px;
-  height: 28px;
+  gap: 4px;
   opacity: 0;
   pointer-events: none;
-  z-index: 3;
+  transform: translateY(-50%);
 }
 .message-action-bar.for-bot {
-  left: calc(100% + 8px);
+  left: calc(100% + 10px);
 }
+/* The Owner's own messages show the icons on the bubble's left. */
 .message-action-bar.for-human {
-  right: calc(100% + 8px);
+  right: calc(100% + 10px);
+  flex-direction: row-reverse;
 }
 .message-row:hover .message-action-bar,
 .message-row:focus-within .message-action-bar,
@@ -23,88 +24,109 @@
   opacity: 1;
   pointer-events: auto;
 }
+@media (hover: none) {
+  .message-action-bar {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
 .message-action-bar > button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  min-width: 26px;
-  height: 28px;
+  display: grid;
+  width: 32px;
+  height: 32px;
   padding: 0;
+  place-items: center;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
-  color: #8b8d91;
+  color: var(--ob-text-secondary);
   cursor: pointer;
 }
 .message-action-bar > button:hover,
 .message-action-bar > button[aria-expanded="true"] {
-  background: #e9e9e9;
-  color: #45484e;
+  background: var(--ob-fill);
+  color: var(--ob-text);
 }
-.message-action-bar > button:focus-visible {
-  outline: 2px solid #6b8bbb;
+.message-action-bar > button:focus-visible,
+.message-action-popover > button:focus-visible {
+  outline: 2px solid var(--ob-text-tertiary);
   outline-offset: 1px;
 }
 .message-action-popover {
   position: fixed;
-  margin: 0;
   z-index: 1000;
-  border: 1px solid #dedede;
-  border-radius: 12px;
-  padding: 5px;
-  background: #fff;
-  color: #31343a;
-  box-shadow: 0 6px 24px #0002;
   max-width: calc(100vw - 16px);
   max-height: calc(100vh - 16px);
+  margin: 0;
+  padding: 6px;
   overflow: auto;
+  border: 1px solid var(--ob-popover-border);
+  border-radius: 14px;
+  background: var(--ob-popover);
+  box-shadow: var(--ob-shadow-menu);
+  color: var(--ob-text);
 }
+/* Six fixed marks in one row; the ones already on are shaded. */
 .message-action-popover.emoji-picker {
-  display: flex;
-  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
   gap: 2px;
-}
-.message-action-popover > button {
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: inherit;
-  min-height: 30px;
-  padding: 6px 10px;
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
+  padding: 8px;
+  border-radius: 22px;
 }
 .message-action-popover.emoji-picker > button {
-  font-size: 20px;
-  padding: 5px;
-  width: 34px;
-  height: 34px;
-  text-align: center;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  font-size: 24px;
+  cursor: pointer;
+}
+.message-action-popover.emoji-picker > button:hover {
+  background: var(--ob-fill);
+}
+.message-action-popover.emoji-picker > button[aria-checked="true"] {
+  background: var(--ob-fill);
 }
 .message-action-popover.more-menu {
-  min-width: 170px;
   display: flex;
   flex-direction: column;
+  width: 220px;
 }
-.message-action-popover > button:hover,
-.message-action-popover > button:focus-visible,
-.message-action-popover > button[aria-checked="true"] {
-  background: #edf1f7;
-  outline: none;
+.message-action-popover.more-menu > button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
 }
-.message-action-popover time {
-  color: #8d9096;
-  font-size: 11px;
-  padding: 7px 10px 4px;
+.message-action-popover.more-menu > button:hover {
+  background: var(--ob-fill);
+}
+.message-action-popover.more-menu small {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .message-action-popover p {
-  font-size: 12px;
-  color: #9a322c;
+  flex-basis: 100%;
+  max-width: 260px;
   margin: 6px;
-  max-width: 200px;
-}
-.message-action-popover.emoji-picker:has([role="alert"]) {
-  flex-wrap: wrap;
+  color: #b3261e;
+  font-size: 12px;
 }

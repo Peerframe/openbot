@@ -62,13 +62,12 @@ import "./ChannelMessagePresentation.css";
 import { composerAttachEvent } from "../composer-events";
 import { runStatusSummary } from "../run-state";
 import { ArtifactCard } from "./ArtifactCard";
-import { ComposerAttachmentPicker } from "./ComposerAttachmentPicker";
-import { HashIcon, PlusIcon, SendIcon, SkillIcon } from "./Icons";
+import { ComposerAttachmentPicker, composerAttachmentsFull } from "./ComposerAttachmentPicker";
+import { HashIcon, PlusIcon, SendIcon } from "./Icons";
 import { MessageAttachments } from "./MessageAttachments";
 import { OpenBotMark } from "./OpenBotMark";
 import { PluginCallApprovals } from "./PluginCallApprovals";
 import { RobotAvatar } from "./RobotAvatar";
-import { TaskCard } from "./TaskCard";
 import {
   type CollaborationRun,
   DelegatedReplyContext,
@@ -76,6 +75,7 @@ import {
   indexRunCollaboration,
   RunCollaboration,
 } from "./RunCollaboration";
+import { TaskCard } from "./TaskCard";
 
 export function ChannelWorkspace({
   headerAction,
@@ -216,6 +216,16 @@ export function ChannelWorkspace({
   const [skillsLoading, setSkillsLoading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploadingAttachments, setUploadingAttachments] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const attachmentsFull = composerAttachmentsFull(draft.attachments ?? []);
+  // Composer artboard: with attachments, skills, recipients or a reply, the buttons move to a
+  // bottom row; an empty draft keeps the one-row composer of the Main artboard.
+  const composerExpanded =
+    (draft.attachments?.length ?? 0) > 0 ||
+    (draft.skills?.length ?? 0) > 0 ||
+    (recipientIds.length > 0 && !channel.directBotId) ||
+    draft.replyTo !== undefined ||
+    uploadingAttachments;
   const addMenu = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
     // 频道信息 › 资料库 › 上传文件 reuses this composer's picker and upload checks.
@@ -953,11 +963,16 @@ export function ChannelWorkspace({
             {capacityError}
           </p>
         ) : null}
-        <form className="message-composer" ref={composer} onSubmit={sendMessage}>
+        <form
+          className={`message-composer${composerExpanded ? " is-expanded" : ""}${recording ? " is-recording" : ""}`}
+          ref={composer}
+          onSubmit={sendMessage}
+        >
           {draft.replyTo ? (
             <div className="composer-reply">
-              <span>回复 {messageAuthorName(draft.replyTo, botsById)}</span>
-              <p>{draft.replyTo.content}</p>
+              <span>
+                回复 {messageAuthorName(draft.replyTo, botsById)}：{draft.replyTo.content}
+              </span>
               <button
                 type="button"
                 onClick={() => conversation.edit({ replyTo: undefined })}
@@ -972,10 +987,7 @@ export function ChannelWorkspace({
               <div className="composer-recipients">
                 {recipientIds.map((id) => (
                   <span className="composer-mention" key={id}>
-                    {botsById.get(id) ? (
-                      <RobotAvatar bot={botsById.get(id) as Bot} compact />
-                    ) : null}
-                    <span>{botsById.get(id)?.name ?? "已离开的 Bot"}</span>
+                    <span>@ {botsById.get(id)?.name ?? "已离开的 Bot"}</span>
                     <button
                       type="button"
                       aria-label={`移除接收 Bot ${botsById.get(id)?.name ?? id}`}
@@ -991,6 +1003,26 @@ export function ChannelWorkspace({
                 ))}
               </div>
             )}
+            {draft.skills?.length ? (
+              <div className="composer-chips">
+                {draft.skills?.map((skill) => (
+                  <span className="context-chip" key={skill.id}>
+                    <span>/ {skill.name}</span>
+                    <button
+                      type="button"
+                      aria-label={`移除技能 ${skill.name}`}
+                      onClick={() =>
+                        conversation.edit({
+                          skills: draft.skills?.filter((item) => item.id !== skill.id) ?? [],
+                        })
+                      }
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : null}
             {slashActive && (
               <div
                 className="mention-options slash-options"
@@ -1171,12 +1203,18 @@ export function ChannelWorkspace({
                 <div className="composer-add-popover">
                   <button
                     type="button"
+                    disabled={attachmentsFull}
                     onClick={() => {
                       if (addMenu.current) addMenu.current.open = false;
                       fileInput.current?.click();
                     }}
                   >
-                    添加附件<small>文本、图片、Office、PDF、音频和视频</small>
+                    添加附件
+                    <small>
+                      {attachmentsFull
+                        ? "已到上限：每条最多 8 个、合计 20 MB"
+                        : "文本、图片、Office、PDF、音频和视频"}
+                    </small>
                   </button>
                   <button
                     type="button"
@@ -1207,6 +1245,7 @@ export function ChannelWorkspace({
                 disabled={sending || uploadingAttachments}
                 getAttachments={() => conversation.getSnapshot().draft.attachments ?? []}
                 onChange={(attachments) => conversation.edit({ attachments })}
+                onActiveChange={setRecording}
               />
               <ComposerAttachmentPicker
                 channelId={channel.id}
@@ -1218,25 +1257,6 @@ export function ChannelWorkspace({
                 disabled={sending}
                 onUploadingChange={setUploadingAttachments}
               />
-              <div className="composer-chips">
-                {draft.skills?.map((skill) => (
-                  <span className="context-chip" key={skill.id}>
-                    <SkillIcon />
-                    <span>{skill.name}</span>
-                    <button
-                      type="button"
-                      aria-label={`移除技能 ${skill.name}`}
-                      onClick={() =>
-                        conversation.edit({
-                          skills: draft.skills?.filter((item) => item.id !== skill.id) ?? [],
-                        })
-                      }
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
             </div>
             <button
               className="composer-send"

@@ -1,8 +1,10 @@
 import { type RefObject, useEffect, useRef, useState } from "react";
-import { formatAttachmentSize } from "../channel-attachment-client";
+import { extensionOf, formatAttachmentSize, middleEllipsis } from "../channel-attachment-client";
 import {
   COMPOSER_ATTACHMENT_ACCEPT,
   type ComposerAttachment,
+  MAX_COMPOSER_ATTACHMENT_BYTES,
+  MAX_COMPOSER_ATTACHMENTS,
   uploadComposerAttachment,
   validateComposerAttachmentBatch,
 } from "../composer-context";
@@ -19,6 +21,19 @@ export interface ComposerAttachmentPickerProps {
   disabled?: boolean;
   dropTargetRef?: RefObject<HTMLElement | null>;
   onUploadingChange?(busy: boolean): void;
+}
+
+function attachmentBytes(attachment: ComposerAttachment) {
+  return attachment.sizeBytes ?? new TextEncoder().encode(attachment.text).byteLength;
+}
+
+/** Whether the draft has reached the per-message limits (8 attachments, 20 MB in total). */
+export function composerAttachmentsFull(attachments: ComposerAttachment[]) {
+  return (
+    attachments.length >= MAX_COMPOSER_ATTACHMENTS ||
+    attachments.reduce((sum, item) => sum + attachmentBytes(item), 0) >=
+      MAX_COMPOSER_ATTACHMENT_BYTES
+  );
 }
 
 export function ComposerAttachmentPicker(props: ComposerAttachmentPickerProps) {
@@ -191,76 +206,98 @@ export function ComposerAttachmentPicker(props: ComposerAttachmentPickerProps) {
           松开以添加附件
         </div>
       ) : null}
-      <div className="composer-attachment-list">
-        {props.attachments.map((attachment, index) => (
-          <span
-            className="composer-attachment-card"
-            key={attachment.id ?? `${attachment.name}-${index}`}
-          >
-            {attachment.id ? (
-              <AttachmentPreview attachment={attachment} />
-            ) : (
-              <span className="attachment-file-icon" aria-hidden="true">
-                TXT
+      {props.attachments.length > 0 || uploading ? (
+        <div className="composer-attachment-list">
+          {props.attachments.map((attachment, index) => (
+            <span
+              className="composer-attachment-card"
+              key={attachment.id ?? `${attachment.name}-${index}`}
+            >
+              {attachment.id ? (
+                <AttachmentPreview attachment={attachment} />
+              ) : (
+                <span className="attachment-file-icon" aria-hidden="true">
+                  {extensionOf(attachment.name)}
+                </span>
+              )}
+              <span className="attachment-card-name" title={attachment.name}>
+                {middleEllipsis(attachment.name)}
               </span>
-            )}
-            <span className="attachment-card-caption">
-              <strong title={attachment.name}>{attachment.name}</strong>
-              <small>
-                {formatAttachmentSize(
-                  attachment.sizeBytes ?? new TextEncoder().encode(attachment.text).byteLength,
-                )}{" "}
-                · {attachment.id ? "已上传" : "文本附件"}
-              </small>
-            </span>
-            {attachment.id ? (
-              <AttachmentActions
-                attachment={attachment}
-                onChange={(next) =>
+              <small>{formatAttachmentSize(attachmentBytes(attachment))}</small>
+              {attachment.id ? (
+                <AttachmentActions
+                  attachment={attachment}
+                  onChange={(next) =>
+                    latest.current.onChange(
+                      latest.current
+                        .getAttachments()
+                        .map((item) => (item.id === next.id ? next : item)),
+                    )
+                  }
+                />
+              ) : null}
+              <button
+                type="button"
+                className="attachment-remove-button"
+                aria-label={`移除附件 ${attachment.name}`}
+                disabled={props.disabled}
+                onClick={() =>
                   latest.current.onChange(
-                    latest.current
-                      .getAttachments()
-                      .map((item) => (item.id === next.id ? next : item)),
+                    latest.current.getAttachments().filter((item) => item !== attachment),
                   )
                 }
-              />
-            ) : null}
-            <button
-              type="button"
-              className="attachment-remove-button"
-              aria-label={`移除附件 ${attachment.name}`}
-              disabled={props.disabled}
-              onClick={() =>
-                latest.current.onChange(
-                  latest.current.getAttachments().filter((item) => item !== attachment),
-                )
-              }
-            >
-              ×
-            </button>
-          </span>
-        ))}
-        {uploading ? (
-          <span>
-            <small role="status">正在上传{uploadName ? ` ${uploadName}` : "附件"}…</small>
-            <button
-              type="button"
-              onClick={() => {
-                pending.current?.abort();
-                pending.current = undefined;
-                setUploading(false);
-                setUploadName(undefined);
-                latest.current.onUploadingChange?.(false);
-                setError(
-                  "已取消剩余上传。已加入草稿的附件会保留；服务电脑已收到的原件可在附件管理中查看。",
-                );
-              }}
-            >
-              取消上传
-            </button>
-          </span>
-        ) : null}
-      </div>
+              >
+                ×
+              </button>
+            </span>
+          ))}
+          {uploading ? (
+            <span className="composer-attachment-card is-uploading">
+              <span className="attachment-file-icon" aria-hidden="true">
+                {uploadName ? extensionOf(uploadName) : "…"}
+              </span>
+              {uploadName ? (
+                <span className="attachment-card-name" title={uploadName}>
+                  {middleEllipsis(uploadName)}
+                </span>
+              ) : null}
+              <small role="status">
+                <span className="visually-hidden">
+                  正在上传{uploadName ? ` ${uploadName}` : "附件"}
+                </span>
+                上传中…
+              </small>
+              <button
+                type="button"
+                className="attachment-remove-button"
+                aria-label="取消上传"
+                onClick={() => {
+                  pending.current?.abort();
+                  pending.current = undefined;
+                  setUploading(false);
+                  setUploadName(undefined);
+                  latest.current.onUploadingChange?.(false);
+                  setError(
+                    "已取消剩余上传。已加入草稿的附件会保留；服务电脑已收到的原件可在附件管理中查看。",
+                  );
+                }}
+              >
+                ×
+              </button>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+      {props.attachments.length > 0 ? (
+        <small className="composer-attachment-count">
+          {props.attachments.length} / {MAX_COMPOSER_ATTACHMENTS} 个附件 · 合计{" "}
+          {formatAttachmentSize(
+            props.attachments.reduce((sum, item) => sum + attachmentBytes(item), 0),
+          )}{" "}
+          / 20 MB
+          {composerAttachmentsFull(props.attachments) ? " · 已到上限" : ""}
+        </small>
+      ) : null}
       {error ? (
         <p className="form-error" role="alert">
           {error}

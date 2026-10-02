@@ -46,7 +46,7 @@ export function MessageReactions({
           }}
         >
           {item.emoji}
-          <span className="sr-only">我的回应</span>
+          <span className="visually-hidden">我的回应</span>
         </button>
       ))}
       {error ? (

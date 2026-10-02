@@ -9,6 +9,7 @@ import type {
   RunProgress,
 } from "@openbot/domain";
 import { type ReactNode, useState } from "react";
+import { extensionOf } from "../channel-attachment-client";
 import { runStatusLabel, runStatusSummary } from "../run-state";
 import { actionLabel, expiryLabel, riskLabel } from "./ApprovalCard";
 import { ArtifactDownloadLink } from "./ArtifactCard";
@@ -24,12 +25,6 @@ export const computerLabels: Record<Run["executionProfile"], string> = {
   "lume-vm": "Lume 虚拟机",
   coder: "代码工作区",
 };
-
-/** File-type badge for an output: the extension, else the media type's family. */
-export function extensionOf(name: string): string {
-  const dot = name.lastIndexOf(".");
-  return dot > 0 && dot > name.length - 6 ? name.slice(dot + 1).toUpperCase() : "文件";
-}
 
 export function secondsAgo(value: string, now = Date.now()): string {
   const seconds = Math.max(0, Math.round((now - Date.parse(value)) / 1000));
@@ -265,6 +260,7 @@ export function TaskCard({
               setSteering(false);
               setNotice(text);
             }}
+            onClose={() => setSteering(false)}
           />
         ) : null}
       </>

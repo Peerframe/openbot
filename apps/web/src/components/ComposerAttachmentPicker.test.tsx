@@ -3,7 +3,7 @@ import { createRef, useRef, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { type ComposerAttachment, uploadComposerAttachment } from "../composer-context";
 import { deferred, interact, renderComponent } from "../test/render-component";
-import { ComposerAttachmentPicker } from "./ComposerAttachmentPicker";
+import { ComposerAttachmentPicker, composerAttachmentsFull } from "./ComposerAttachmentPicker";
 
 vi.mock("../composer-context", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../composer-context")>()),
@@ -54,7 +54,7 @@ describe("persistent composer attachment selection", () => {
       await pick(inputRef.current, [new File(["data"], "cancelled.txt")]);
       const signal = vi.mocked(uploadComposerAttachment).mock.calls[0]?.[2];
       const cancel = Array.from(view.container.querySelectorAll("button")).find(
-        (button) => button.textContent === "取消上传",
+        (button) => button.getAttribute("aria-label") === "取消上传",
       );
       if (!cancel) throw new Error("Missing upload cancellation.");
       await interact(() => cancel.click());
@@ -364,6 +364,39 @@ describe("direct attachment input", () => {
     expect(view.container.querySelector('[role="alert"]')?.textContent).toContain(
       "bad.md：offline",
     );
+    await view.unmount();
+  });
+});
+
+describe("attachment limits (Composer artboard)", () => {
+  it("counts attachments and size and says when the draft is full", async () => {
+    const eight = Array.from({ length: 8 }, (_, index) =>
+      uploaded(
+        `第 ${index + 1} 份很长的渠道数据汇总表-九月.xlsx`,
+        `00000000-0000-4000-8000-00000000002${index}`,
+      ),
+    );
+    expect(composerAttachmentsFull(eight.slice(0, 7))).toBe(false);
+    expect(composerAttachmentsFull(eight)).toBe(true);
+    expect(
+      composerAttachmentsFull([{ ...eight[0], sizeBytes: 20 * 1024 * 1024 } as ComposerAttachment]),
+    ).toBe(true);
+    const view = await renderComponent(
+      <ComposerAttachmentPicker
+        channelId={channelId}
+        attachments={eight}
+        getAttachments={() => eight}
+        onChange={vi.fn()}
+        inputRef={createRef()}
+      />,
+    );
+    expect(view.container.querySelector(".composer-attachment-count")?.textContent).toBe(
+      "8 / 8 个附件 · 合计 32 B / 20 MB · 已到上限",
+    );
+    // Long names keep their extension; the full name stays available on hover.
+    const name = view.container.querySelector(".attachment-card-name");
+    expect(name?.textContent).toMatch(/…总表-九月\.xlsx$/);
+    expect(name?.getAttribute("title")).toBe("第 1 份很长的渠道数据汇总表-九月.xlsx");
     await view.unmount();
   });
 });

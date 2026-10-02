@@ -1,7 +1,8 @@
 .app-shell {
   --sidebar-width: 236px;
   --shell-inset: 12px;
-  --chat-font-size: 14px;
+  /* 15px in the Main and MessageActions artboards; 设置 › 外观 can make it 16px. */
+  --chat-font-size: 15px;
 }
 .app-shell.without-context {
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
@@ -13,30 +14,6 @@
 }
 .workspace-details[hidden] {
   display: none;
-}
-.workspace-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.app-shell .panel-toggle {
-  flex: 0 0 34px;
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  color: #656f7c;
-}
-.app-shell .panel-toggle:hover {
-  background: #e6e9ed;
-  color: #252b34;
-}
-.app-shell .panel-toggle[aria-expanded="true"] {
-  background: #e9edf1;
-  color: #303943;
-}
-.panel-toggle svg {
-  width: 20px;
-  height: 20px;
 }
 .app-shell .rich-message,
 .app-shell .message-content p,
@@ -52,10 +29,6 @@
 :root[data-density="compact"] .app-shell .message-content {
   padding: 8px 12px 6px;
 }
-:root[data-density="compact"] .app-shell .sidebar-row {
-  min-height: 34px;
-  padding-block: 5px;
-}
 :root[data-reduced-motion="true"] *,
 :root[data-reduced-motion="true"] *::before,
 :root[data-reduced-motion="true"] *::after {
@@ -65,14 +38,6 @@
   transition: none !important;
   /* biome-ignore lint/complexity/noImportantStyles: explicit reduced motion overrides smooth scrolling. */
   scroll-behavior: auto !important;
-}
-:root[data-desktop="darwin"] .destination-header {
-  -webkit-app-region: drag;
-  app-region: drag;
-}
-:root[data-desktop="darwin"] .destination-header button {
-  -webkit-app-region: no-drag;
-  app-region: no-drag;
 }
 .loading-header-action {
   position: absolute;
@@ -98,24 +63,6 @@
 :root[data-sidebar-material="enabled"] .app-shell .sidebar {
   background: #ffffff48;
   border-color: #ffffff6b;
-}
-:root[data-sidebar-material="enabled"] .app-shell .sidebar-search {
-  background: #ffffff60;
-}
-.settings-back {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  width: fit-content;
-  padding: 8px 10px;
-  color: #646e7b;
-  font-size: 12px;
-  background: transparent;
-  border: 0;
-  border-radius: 8px;
-}
-.settings-back:hover {
-  background: #e5e8ed;
 }
 .settings-group {
   margin-bottom: 32px;
@@ -280,8 +227,7 @@
   .app-shell.without-context {
     grid-template-columns: minmax(0, 1fr);
   }
-  .workspace-details,
-  .app-shell .panel-toggle {
+  .workspace-details {
     display: none;
   }
   :root[data-sidebar-material="enabled"] .app-shell {

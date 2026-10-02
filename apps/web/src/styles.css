@@ -65,22 +65,6 @@ select:focus-visible {
   border-color: #b7bec7;
   background: #f5f6f8;
 }
-.status-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #a8adb3;
-}
-.status-dot.online {
-  background: var(--green);
-}
-.status-dot.warning {
-  background: var(--orange);
-}
-.status-dot.active {
-  background: var(--ob-working);
-}
 
 .workspace-main {
   min-width: 0;
@@ -135,13 +119,6 @@ select:focus-visible {
   padding: 38px 28px;
   border-left: 1px solid var(--line);
   background: #fcfcfd;
-}
-.rail-section {
-  margin-top: 28px;
-}
-.rail-section h3 {
-  margin: 0 0 13px;
-  font-size: 15px;
 }
 .approval-list {
   display: grid;
@@ -240,82 +217,6 @@ select:focus-visible {
   font-style: normal;
   line-height: 1.4;
 }
-.rail-empty {
-  margin: 0;
-  padding: 14px 0;
-  border-top: 1px solid var(--line);
-  color: #959ba2;
-  font-size: 11px;
-}
-.rail-run {
-  display: grid;
-  width: 100%;
-  grid-template-columns: 1fr auto;
-  gap: 5px 10px;
-  padding: 12px 0;
-  border-top: 1px solid var(--line);
-  border-right: 0;
-  border-bottom: 0;
-  border-left: 0;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-}
-.rail-run:hover strong,
-.rail-result > button:hover strong {
-  color: var(--blue);
-}
-.rail-run strong {
-  overflow: hidden;
-  font-size: 12px;
-  line-height: 1.4;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.rail-run small {
-  grid-column: 1;
-  color: #8b929a;
-  font-size: 10px;
-}
-.rail-result {
-  display: grid;
-  gap: 6px;
-  padding: 12px 0;
-  border-top: 1px solid var(--line);
-}
-.rail-result > button {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 6px 10px;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  text-align: left;
-}
-.rail-result > button strong {
-  overflow: hidden;
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.rail-result > button p {
-  grid-column: 1 / -1;
-  display: -webkit-box;
-  overflow: hidden;
-  margin: 0;
-  color: #737b84;
-  font-size: 10px;
-  line-height: 1.45;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-.rail-result a {
-  color: #2468a8;
-  font-size: 10px;
-  text-decoration: none;
-}
 .conversation-empty h2 {
   margin: 0 0 5px;
   font-size: 17px;
@@ -405,35 +306,6 @@ select:focus-visible {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.message-composer > label {
-  display: block;
-  margin-bottom: 8px;
-  color: #5f6670;
-  font-size: 11px;
-  font-weight: 700;
-}
-.message-composer > div {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: end;
-  gap: 10px;
-}
-.message-composer textarea {
-  width: 100%;
-  border-radius: 8px;
-  color: var(--text);
-  font: inherit;
-  font-size: 13px;
-  line-height: 1.5;
-}
-.message-composer textarea:disabled {
-  color: #8b929a;
-  background: #f0f2f4;
-  cursor: not-allowed;
-}
-.message-composer button {
-  min-width: 76px;
-}
 .composer-error {
   margin: 8px 0 0;
   color: #b54535;
@@ -448,111 +320,6 @@ select:focus-visible {
   border-radius: 50%;
   color: #727983;
   background: #eef0f3;
-}
-.form-grid {
-  display: grid;
-  gap: 19px;
-  padding: 24px 26px;
-}
-.form-grid label > span:first-child,
-.form-grid legend {
-  display: block;
-  margin-bottom: 8px;
-  color: #373b41;
-  font-size: 12px;
-  font-weight: 650;
-}
-.form-grid input:not([type="checkbox"]),
-.form-grid textarea,
-.form-grid select {
-  width: 100%;
-  border: 1px solid #d5dae0;
-  border-radius: 8px;
-  background: #fff;
-  color: #191c20;
-  font-size: 13px;
-}
-.form-grid input:not([type="checkbox"]),
-.form-grid select {
-  min-height: 42px;
-  padding: 0 12px;
-}
-.form-grid textarea {
-  min-height: 88px;
-  padding: 11px 12px;
-  resize: vertical;
-  line-height: 1.5;
-}
-.form-grid input::placeholder,
-.form-grid textarea::placeholder {
-  color: #a8adb3;
-}
-.form-grid label > small {
-  display: block;
-  margin-top: 7px;
-  color: #90969d;
-  font-size: 10px;
-  line-height: 1.5;
-}
-.form-grid fieldset {
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-.bot-options {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.bot-option {
-  display: grid;
-  grid-template-columns: 20px 32px minmax(0, 1fr);
-  align-items: center;
-  gap: 9px;
-  min-height: 58px;
-  padding: 8px 10px;
-  border: 1px solid #dfe3e8;
-  border-radius: 8px;
-  cursor: pointer;
-}
-.bot-option.selected {
-  border-color: #9bc0fa;
-  background: #f5f9ff;
-}
-.bot-option input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-.custom-check {
-  display: grid;
-  width: 18px;
-  height: 18px;
-  place-items: center;
-  border: 1px solid #cbd1d8;
-  border-radius: 4px;
-  color: #fff;
-  background: #fff;
-}
-.bot-option.selected .custom-check {
-  border-color: var(--blue);
-  background: var(--blue);
-}
-.bot-option strong,
-.bot-option small {
-  display: block;
-}
-.bot-option strong {
-  font-size: 12px;
-}
-.bot-option small {
-  overflow: hidden;
-  margin-top: 3px;
-  color: #888f97;
-  font-size: 9px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .field-empty {
   margin: 0;
@@ -708,18 +475,6 @@ select:focus-visible {
   box-shadow: 0 8px 24px rgba(25, 50, 30, 0.12);
   font-size: 12px;
 }
-.loading-mark {
-  display: grid;
-  width: 48px;
-  height: 48px;
-  place-items: center;
-  margin-bottom: 18px;
-  border-radius: 12px;
-  color: #fff;
-  background: var(--blue);
-  font-size: 24px;
-  font-weight: 750;
-}
 .login-error {
   margin: 2px 0 0;
   color: #a1342c;
@@ -851,12 +606,6 @@ select:focus-visible {
   .message-list {
     max-height: 340px;
   }
-  .message-composer > div {
-    grid-template-columns: 1fr;
-  }
-  .message-composer button {
-    width: 100%;
-  }
   .node-identity-item {
     grid-template-columns: 32px minmax(0, 1fr);
   }
@@ -867,9 +616,6 @@ select:focus-visible {
   }
   .node-identity-actions {
     flex-wrap: wrap;
-  }
-  .bot-options {
-    grid-template-columns: 1fr;
   }
   .mobile-nav {
     position: fixed;
@@ -1107,19 +853,6 @@ select:focus-visible {
   color: #989ea5;
   font-size: 9px;
 }
-.message-content blockquote {
-  max-width: 640px;
-  overflow: hidden;
-  margin: 8px 0;
-  padding: 7px 9px;
-  border-left: 2px solid #9ebcea;
-  color: #737b84;
-  background: rgba(237, 242, 248, 0.75);
-  font-size: 10px;
-  line-height: 1.45;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .rich-message {
   color: #30353b;
   font-size: 13px;
@@ -1234,28 +967,6 @@ select:focus-visible {
   color: var(--text-muted, #637082);
   font-size: 10px;
 }
-.message-composer {
-  width: calc(100% - clamp(44px, 6vw, 84px));
-  max-width: 880px;
-  margin: 0 auto 22px;
-  padding: 9px 11px 10px;
-  border: 1px solid #d9dde2;
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 9px 24px rgba(24, 31, 40, 0.07);
-}
-.message-composer textarea {
-  min-height: 38px;
-  max-height: 160px;
-  padding: 9px 8px;
-  resize: vertical;
-  border: 0;
-  background: transparent;
-}
-.message-composer textarea:focus {
-  border: 0;
-  outline: 0;
-}
 .composer-send {
   display: grid;
   width: 34px;
@@ -1273,43 +984,6 @@ select:focus-visible {
   color: #a8adb3;
   background: #eceef1;
   cursor: default;
-}
-.composer-reply {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 2px 12px;
-  margin: -1px -1px 7px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: #f1f4f7;
-}
-.composer-reply span {
-  color: #52606e;
-  font-size: 9px;
-  font-weight: 700;
-}
-.composer-reply p {
-  grid-column: 1;
-  overflow: hidden;
-  margin: 0;
-  color: #7b838c;
-  font-size: 9px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.composer-reply button {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  padding: 0 3px;
-  border: 0;
-  color: #858c94;
-  background: transparent;
-  cursor: pointer;
-  font-size: 16px;
-}
-.dialog-import-action {
-  margin-right: auto;
 }
 .portable-skill-list {
   display: grid;
@@ -1478,10 +1152,6 @@ select:focus-visible {
 }
 
 @media (max-width: 720px) {
-  .dialog-import-action {
-    width: 100%;
-    margin-right: 0;
-  }
   .channel-workspace {
     height: calc(100vh - 70px - 68px);
     min-height: 520px;
@@ -1505,17 +1175,6 @@ select:focus-visible {
   }
   .rich-table-wrap {
     max-width: calc(100vw - 94px);
-  }
-
-  .message-composer {
-    width: calc(100% - 24px);
-    margin-bottom: 10px;
-  }
-  .message-composer > div {
-    grid-template-columns: initial;
-  }
-  .message-composer button {
-    width: 34px;
   }
   .mobile-nav {
     grid-template-columns: repeat(3, 1fr);

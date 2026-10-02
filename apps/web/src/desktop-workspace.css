@@ -98,20 +98,6 @@
   color: #3a4753;
   font-size: 12px;
 }
-.app-shell.desktop-workspace .message-composer {
-  max-width: 840px;
-  width: calc(100% - 48px);
-  margin: 0 auto 22px;
-  border-radius: 20px;
-  border: 1px solid #e0e4e8;
-  padding: 14px 16px 12px;
-  background: #fff;
-  box-shadow: 0 3px 18px #15273b08;
-}
-.app-shell.desktop-workspace .message-composer:focus-within {
-  border-color: #aab7c4;
-  box-shadow: 0 3px 18px #15273b08;
-}
 :root[data-sidebar-material="enabled"] .app-shell.desktop-workspace {
   background: linear-gradient(
     to right,
@@ -138,10 +124,6 @@
   .app-shell.desktop-workspace .message-list {
     padding: 24px 20px;
   }
-  .app-shell.desktop-workspace .message-composer {
-    width: calc(100% - 32px);
-    margin-bottom: 16px;
-  }
 }
 @media (max-width: 760px) {
   .app-shell.desktop-workspace,
@@ -166,10 +148,5 @@
   }
   .app-shell.desktop-workspace .message-list {
     padding: 20px 14px;
-  }
-  .app-shell.desktop-workspace .message-composer {
-    width: calc(100% - 24px);
-    margin-bottom: 12px;
-    padding: 12px;
   }
 }

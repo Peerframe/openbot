@@ -47,26 +47,27 @@ updated.
 | # | Step | Status |
 | --- | --- | --- |
 | 0–9 | Tokens and primitives, conversation, sidebar, `/` menu, new chat, Bot profile, settings dialog and all sections, plugins | Merged |
-| 10 | Window shell without a global toolbar; title pill opens the rail | In review: #132 |
-| 11 | Avatars v2: frameless Round / Relay / Scout heads | In review: #133 |
-| 12 | 频道信息 rail tabs 详情 / 资料库 / 成员; centred title pill | In review: #134 |
-| 13 | Launch, opening animation and first-run setup | In review: #135 |
+| 10 | Window shell without a global toolbar; title pill opens the rail | Merged: #132 |
+| 11 | Avatars v2: frameless Round / Relay / Scout heads | Merged: #133 |
+| 12 | 频道信息 rail tabs 详情 / 资料库 / 成员; centred title pill | Merged: #134 |
+| 13 | Launch, opening animation and first-run setup | Merged: #135 |
+| 14–21, 23a | Foundations, avatars v3, creating Bots and 频道, Bot 信息, 添加成员, task cards, dialogs, 任务监督, Bot 档案 tabs | Merged 2026-10-02: #137–#139, then #151 for steps 16–23a |
 
 ## Plan (Claude, UI)
 
 | # | Step | Artboards | Needs | What changes |
 | --- | --- | --- | --- | --- |
-| 14 | Foundations for 1:1 work — **in review** | Components | — | Tokens and primitives moved out of `styles.css` into `tokens.css` and `primitives.css`, loaded once from `global-styles.ts`; `.ob-seg`, large pills and the `Dialog` frame; a **design preview** (`preview.html`, a synthetic transport using the same isolation as the website demo) that renders the real UI per scene at 1440×900; a copy sweep to the glossary (服务电脑, 工作电脑, 工作中, 产出, 任务) |
-| 15 | Avatars v3, group avatars and the 工作中 status — **in review** | Avatar, Avatars, GroupAvatar, GroupAvatars, Sidebar, Profile | C10 for the extra colours | v3 geometry and micro drawing; silhouette cut-out; new `GroupAvatar` in the sidebar, title pill, rail, new chat and mentions; status dot (工作中 / 需要你确认 / 离线) and the working motion with reduced-motion fallback; green replaces blue for 工作中 everywhere |
-| 16 | Creating Bots and 频道 — **in review** | New, NewGroup, NewBotChat | C12; C11 optional | 「+」 recipients list with 创建新 Bot ⌘1 and 创建频道 ⌘2; one-click random Bot that opens its 单聊; the 「你最想让我先帮你做什么？」 card; delete `CreateBotDialog` and `CreateChannelDialog` |
-| 17 | Bot 信息 rail — **in review** | BotInfo | C9 for 编辑头像 | New `BotInfoRail` for 单聊 and the Bot profile: in-place name, 添加标签, 详情 / 资料库 / 电脑, 编辑头像 popover; replaces `EmployeeProfileRail` |
-| 18 | Adding members to a 频道 — **in review** | AddMember, ChannelInfo | — | 添加成员 popover with 搜索 Bot; light-red 移除 pill; group avatar in the rail |
-| 19 | Tasks in a conversation — **in review** | TaskCards, TaskInspector | C13 | One `TaskCard` per task with every state, approval on the card, collaboration notice; `TaskSheet` replaces the task inspector modal; delete `channel-work-item`, `native-run-controls`, `run-inspector` styles |
-| 20 | Dialogs — **in review** | Dialog* | C17 for 连接模型服务 | One `Dialog` frame; rebuild 分享, 分享 Bot 模板, 导入 Bot 模板, 删除确认, 配对工作电脑, 连接模型服务 |
-| 21 | 任务监督 and the empty workspace — **in review** | WorkSupervision, EmptyWorkspace | — | Rebuild `WorkTasksScreen`; new `EmptyWorkspace`; retire the standalone 例行任务 and 技能库 pages (their links open the settings sections) |
+| 14 | Foundations for 1:1 work — **merged** | Components | — | Tokens and primitives moved out of `styles.css` into `tokens.css` and `primitives.css`, loaded once from `global-styles.ts`; `.ob-seg`, large pills and the `Dialog` frame; a **design preview** (`preview.html`, a synthetic transport using the same isolation as the website demo) that renders the real UI per scene at 1440×900; a copy sweep to the glossary (服务电脑, 工作电脑, 工作中, 产出, 任务) |
+| 15 | Avatars v3, group avatars and the 工作中 status — **merged** | Avatar, Avatars, GroupAvatar, GroupAvatars, Sidebar, Profile | C10 for the extra colours | v3 geometry and micro drawing; silhouette cut-out; new `GroupAvatar` in the sidebar, title pill, rail, new chat and mentions; status dot (工作中 / 需要你确认 / 离线) and the working motion with reduced-motion fallback; green replaces blue for 工作中 everywhere |
+| 16 | Creating Bots and 频道 — **merged** | New, NewGroup, NewBotChat | C12; C11 optional | 「+」 recipients list with 创建新 Bot ⌘1 and 创建频道 ⌘2; one-click random Bot that opens its 单聊; the 「你最想让我先帮你做什么？」 card; delete `CreateBotDialog` and `CreateChannelDialog` |
+| 17 | Bot 信息 rail — **merged** | BotInfo | C9 for 编辑头像 | New `BotInfoRail` for 单聊 and the Bot profile: in-place name, 添加标签, 详情 / 资料库 / 电脑, 编辑头像 popover; replaces `EmployeeProfileRail` |
+| 18 | Adding members to a 频道 — **merged** | AddMember, ChannelInfo | — | 添加成员 popover with 搜索 Bot; light-red 移除 pill; group avatar in the rail |
+| 19 | Tasks in a conversation — **merged** | TaskCards, TaskInspector | C13 | One `TaskCard` per task with every state, approval on the card, collaboration notice; `TaskSheet` replaces the task inspector modal; delete `channel-work-item`, `native-run-controls`, `run-inspector` styles |
+| 20 | Dialogs — **merged** | Dialog* | C17 for 连接模型服务 | One `Dialog` frame; rebuild 分享, 分享 Bot 模板, 导入 Bot 模板, 删除确认, 配对工作电脑, 连接模型服务 |
+| 21 | 任务监督 and the empty workspace — **merged** | WorkSupervision, EmptyWorkspace | — | Rebuild `WorkTasksScreen`; new `EmptyWorkspace`; retire the standalone 例行任务 and 技能库 pages (their links open the settings sections) |
 | 22 | Design the remaining screens (canvas, then owner approval) — **approved 2026-10-02** | new | — | Message actions and reactions, attachments and voice, 补充指令 input, 频道文件 recycle bin inside 资料库, Bot 档案 tabs (进化档案 credits Hermes Agent), 员工浏览器 view, notices and toasts, app icon and README images |
-| 23a | Bot 档案 tabs | Profile, ProfileEvolution, ProfileSkills, ProfileMemory, ProfileWork, ProfileConfig | — | Six tabs on a segmented control (运行中 joins 工作记录, 技能图谱 becomes 技能); text filters with counts; long lists per LongLists |
-| 23b | Messages and the composer | MessageActions, Composer | — | Icon actions beside the bubble, reaction picker, Owner reactions without counts, attachment chips at the 8 / 20 MB limit, recording states, attachment actions |
+| 23a | Bot 档案 tabs — **merged** | Profile, ProfileEvolution, ProfileSkills, ProfileMemory, ProfileWork, ProfileConfig | — | Six tabs on a segmented control (运行中 joins 工作记录, 技能图谱 becomes 技能); text filters with counts; long lists per LongLists |
+| 23b | Messages and the composer — **in review** | MessageActions, Composer | — | Icon actions beside the bubble, reaction picker, Owner reactions without counts, attachment chips at the 8 / 20 MB limit, recording states, attachment actions |
 | 23c | Channel files | ChannelFiles, ChannelInfo | — | 频道文件 dialog with 回收站, search and source filter; 资料库 「全部 N 个 ›」 |
 | 23d | The Bot's browser | EmployeeBrowser | — | Window with take-over and 交还 Bot |
 | 23e | Notices, scrolling and long lists | Notices, LongLists | C18 for older messages | Toast stack, one banner by severity, the overlay scrollbar, the date cue and 回到最新, per-area long-list rules |
@@ -89,20 +90,25 @@ Done (merged into main 40cb3d2):
 | C7 | Owner time zone and default model for new Bots | Integrated |
 | C8 | Curated plugin catalog | Integrated |
 
+Done 2026-10-02 (#147, #149, #150), not yet wired into the UI:
+
+| ID | Contract | UI |
+| --- | --- | --- |
+| C10 | Four more avatar accents (violet, teal, pink, slate); older Bot templates still import | Follow-up to step 15 |
+| C12 | Quick-create a Bot and its 单聊 in one atomic call | Follow-up to step 16 |
+| C13 | Task progress projection: step counts, the current step, start and end time, a bounded failure code | Follow-up to step 19 |
+| C14 | CI: the browser-fixture install step has a longer budget | Confirm on hosted CI |
+| C17 | Model dialog: list models with an unsaved key, a per-connection default model, disconnect refused while a Bot depends on it | Follow-up to step 20 |
+| C18 | Message pages: a `before` cursor and a bounded page for `GET /channels/{id}/messages` | Step 23e |
+
 Open — in the order the UI needs them:
 
 | ID | Needed by | Contract to add | UI until ready |
 | --- | --- | --- | --- |
-| C12 | Step 16 | **Quick-create a Bot**: create with defaults in one call — the next free name (新建 Bot, 新建 Bot 2 …) allocated atomically (names are unique among active Bots), the C7 default model, no computer, a requested appearance; returns the Bot and its 单聊 | Client tries the next free name and retries once on conflict |
-| C13 | Step 19 | **Task progress projection**: per task the number of completed steps, the current step label, start and end time, and a bounded user-readable failure reason code, independent of the bounded progress list | Cards show only what the snapshot proves; no step count when unknown |
-| C10 | Step 15 | **Avatar v3 data**: four more accents (violet, teal, pink, slate) in `BotAppearance`; unknown values rejected; Bot templates keep importing old appearances and carry the new colours | Only the four existing colours |
 | C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked | Pencil button hidden |
 | C11 | Step 16 (optional) | **New-Bot greeting**: when a model is configured, the 服务电脑 writes a short greeting as the Bot's first message, using only other Bots' names and tags; no model or any failure means no greeting | The setup card shows without a greeting |
-| C14 | All PRs | **CI robustness**: retry or extend the browser-fixture download step in 「Python product browser recovery」 that times out after 5 minutes (seen on #133 and #136). The cancellation half is done in #131 | Re-run by hand |
 | C15 | Step 23 | **Retire unused routes** only if the 例行任务 and 技能库 page removal leaves a Server endpoint without a caller (to be confirmed; settings use the same APIs) | — |
 | C16 | Step 23 | **App icon and bundle assets** from the step-22 icon design: macOS, Windows and Linux icon sets, the Web favicon | Current icon |
-| C17 | Step 20 follow-up | **Model connection for the DialogModel artboard**: read the model list with an unsaved key (no chat, no cost) so a connection is verified before it is saved; a per-connection default model; 断开这个服务 that deletes a connection Bots no longer use, refused while a Bot depends on it | The dialog keeps the connection list and the paid 测试模型 call inside the new frame |
-| C18 | Step 23e | **Older messages on demand**: a cursor for `GET /channels/{id}/messages` (`before`, bounded page) so a conversation loads the latest page first and earlier ones as the Owner scrolls up | The conversation shows the bounded latest set the Server returns today |
 
 ## Repository housekeeping (proposals)
 
@@ -110,8 +116,8 @@ Open — in the order the UI needs them:
 | --- | --- | --- | --- |
 | H1 | **Done 2026-10-02.** The main checkout `/Users/yxflc/Project/openbot` was on the old branch `feat/desktop-ui-refresh` with superseded edits and stray files. They are archived in a stash (recoverable with `git stash list`), and the checkout now tracks main | Claude | Approved |
 | H2 | **Done 2026-10-02.** The avatar source (12 SVGs, manifest, README) is in [`docs/design/avatars/`](../avatars/README.md) | Claude | Approved |
-| H3 | Codex's finished worktrees live inside the repo (`.worktrees/c1`–`c8`); their nested Biome configs break `biome lint .` locally. Remove the merged ones and keep future worktrees outside the repo | Codex | No |
-| H4 | Merge the open stack #132–#135 (and this plan) soon; every stacked branch has to be re-merged when main moves | Owner | Yes |
+| H3 | **Done 2026-10-02.** Codex moved its eight finished worktrees out of the repository, keeping their environments and records | Codex | No |
+| H4 | **Done 2026-10-02.** The stacked pull requests are merged (#132–#151) and the 29 merged `codex/claude-ui-*` branches are deleted | Owner | Yes |
 | H5 | `styles.css` is 3,900 lines of mostly legacy rules; split tokens and primitives out first (step 14), delete the rest by step 23 | Claude | No |
 | H6 | `docs/INTERFACE.md` still documents the five-layer robot identity and older pictures (`openbot-avatar-system.png`, the channel demo, the README banner); rewrite after C10 and replace the pictures in step 23 | Claude | No |
 | H7 | The website demo (`apps/web/src/demo`) renders real product components; its fixtures must follow each step, and it becomes the base of the design preview harness | Claude | No |

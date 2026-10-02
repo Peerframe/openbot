@@ -106,6 +106,19 @@ export function formatAttachmentSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/** File-type badge: the extension, else 「文件」 (Composer and task-card artboards). */
+export function extensionOf(name: string): string {
+  const dot = name.lastIndexOf(".");
+  return dot > 0 && dot > name.length - 6 ? name.slice(dot + 1).toUpperCase() : "文件";
+}
+
+/** Long names are shortened in the middle so the extension stays visible; hover shows all. */
+export function middleEllipsis(name: string, max = 22): string {
+  if (name.length <= max) return name;
+  const tail = Math.min(10, Math.floor(max / 2));
+  return `${name.slice(0, max - tail - 1)}…${name.slice(-tail)}`;
+}
+
 export function splitMessageAttachments(content: string): { text: string; ids: string[] } {
   const ids: string[] = [];
   // Strip only the machine-generated description immediately preceding its marker.

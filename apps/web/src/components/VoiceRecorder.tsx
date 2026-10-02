@@ -1,10 +1,10 @@
-import { getOpenBotDesktopBridge } from "../desktop-runtime";
 import { useEffect, useRef, useState } from "react";
 import {
   type ComposerAttachment,
   uploadComposerAttachment,
   validateComposerAttachmentBatch,
 } from "../composer-context";
+import { getOpenBotDesktopBridge } from "../desktop-runtime";
 import "./VoiceRecorder.css";
 
 const LIMIT_BYTES = 10 * 1024 * 1024;
@@ -16,18 +16,25 @@ export function VoiceRecorder({
   getAttachments,
   onChange,
   disabled,
+  onActiveChange,
 }: {
   channelId: string;
   getAttachments(): ComposerAttachment[];
   onChange(attachments: ComposerAttachment[]): void;
   disabled?: boolean;
+  /** The recorder takes over the whole composer while it is not idle (Composer artboard). */
+  onActiveChange?(active: boolean): void;
 }) {
   const [state, setState] = useState<"idle" | "requesting" | "recording" | "review" | "uploading">(
     "idle",
   );
   const [error, setError] = useState("");
   const [seconds, setSeconds] = useState(0);
-  const [recording, setRecording] = useState<{ file: File; url: string }>();
+  const [recording, setRecording] = useState<{ file: File; url: string; seconds: number }>();
+  const [playing, setPlaying] = useState(false);
+  const player = useRef<HTMLAudioElement>(null);
+  // 取消 while recording: the recorder still fires onstop, which then discards the audio.
+  const cancelled = useRef(false);
   const recorder = useRef<MediaRecorder | undefined>(undefined);
   const stream = useRef<MediaStream | undefined>(undefined);
   const controller = useRef<AbortController | undefined>(undefined);
@@ -48,6 +55,12 @@ export function VoiceRecorder({
       if (preview.current) URL.revokeObjectURL(preview.current);
     };
   }, []);
+  const active = state !== "idle";
+  const activeChange = useRef(onActiveChange);
+  activeChange.current = onActiveChange;
+  useEffect(() => {
+    activeChange.current?.(active);
+  }, [active]);
   useEffect(() => {
     if (state !== "recording") return;
     const start = Date.now();
@@ -58,8 +71,9 @@ export function VoiceRecorder({
     }, 500);
     return () => window.clearInterval(timer);
   }, [state]);
-  async function start() {
-    if (state !== "idle" || disabled) return;
+  /** `again` is 重录: the review being discarded in the same click has not re-rendered yet. */
+  async function start(again = false) {
+    if ((state !== "idle" && !again) || disabled) return;
     setError("");
     setState("requesting");
     try {
@@ -102,6 +116,11 @@ export function VoiceRecorder({
       next.onstop = () => {
         for (const track of media.getTracks()) track.stop();
         if (!live.current) return;
+        if (cancelled.current) {
+          cancelled.current = false;
+          setState("idle");
+          return;
+        }
         const blob = new Blob(chunks, { type: mime.split(";")[0] ?? "audio/webm" });
         if (!blob.size) {
           setState("idle");
@@ -112,10 +131,12 @@ export function VoiceRecorder({
         const file = new File([blob], `voice-${Date.now()}.${extension}`, { type: blob.type });
         const url = URL.createObjectURL(blob);
         preview.current = url;
-        setRecording({ file, url });
+        setRecording({ file, url, seconds: Math.round((Date.now() - startedAt) / 1000) });
         setState("review");
       };
       setSeconds(0);
+      const startedAt = Date.now();
+      cancelled.current = false;
       next.start(1000);
       setState("recording");
     } catch (cause) {
@@ -133,6 +154,8 @@ export function VoiceRecorder({
     }
   }
   function discard() {
+    player.current?.pause();
+    setPlaying(false);
     if (preview.current) URL.revokeObjectURL(preview.current);
     preview.current = undefined;
     setRecording(undefined);
@@ -161,6 +184,8 @@ export function VoiceRecorder({
       }
     }
   }
+  const clock = (value: number) =>
+    `${Math.floor(value / 60)}:${String(value % 60).padStart(2, "0")}`;
   return (
     <div className="voice-recorder">
       <button
@@ -184,60 +209,124 @@ export function VoiceRecorder({
           <path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8" />
         </svg>
       </button>
-      {state !== "idle" && (
+      {state === "requesting" ? (
         <div className="voice-panel">
-          {state === "requesting" ? (
-            <p role="status">正在请求麦克风权限…</p>
-          ) : state === "recording" ? (
+          <p role="status">正在请求麦克风权限…</p>
+        </div>
+      ) : state === "recording" ? (
+        <div className="voice-panel is-recording">
+          <i className="voice-dot" aria-hidden="true" />
+          <span role="status">
+            <span className="visually-hidden">录音中 </span>
+            <strong>{clock(seconds)}</strong>
+          </span>
+          <span className="voice-wave" aria-hidden="true" />
+          <button
+            type="button"
+            className="ob-pill is-small"
+            onClick={() => {
+              cancelled.current = true;
+              recorder.current?.stop();
+            }}
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            className="ob-pill is-small is-primary"
+            aria-label="结束录音"
+            onClick={() => recorder.current?.stop()}
+          >
+            停止
+          </button>
+        </div>
+      ) : state === "review" || state === "uploading" ? (
+        <div className="voice-panel is-review">
+          {recording ? (
             <>
-              <p role="status">
-                录音中 · {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")} / 5:00
-              </p>
-              <button type="button" onClick={() => recorder.current?.stop()}>
-                结束录音
+              {/* biome-ignore lint/a11y/useMediaCaption: This is the Owner's unsent local recording; transcription requires a separate explicit action. */}
+              <audio
+                ref={player}
+                src={recording.url}
+                onEnded={() => setPlaying(false)}
+                onPause={() => setPlaying(false)}
+              >
+                音频预览
+              </audio>
+              <button
+                type="button"
+                className="voice-play"
+                aria-label={playing ? "暂停试听" : "试听"}
+                onClick={() => {
+                  const audio = player.current;
+                  if (!audio) return;
+                  if (audio.paused) {
+                    void audio.play().then(
+                      () => setPlaying(true),
+                      () => setError("无法播放这段录音。"),
+                    );
+                  } else audio.pause();
+                }}
+              >
+                {playing ? "❚❚" : "▶"}
+              </button>
+            </>
+          ) : null}
+          <span className="voice-text">
+            <strong>语音 {clock(recording?.seconds ?? seconds)}</strong>
+            <small>添加后可以选择转写；发送前可以检查或移除</small>
+          </span>
+          {state === "uploading" ? (
+            <>
+              <button type="button" className="ob-pill is-small is-primary" disabled>
+                正在添加…
+              </button>
+              <button
+                type="button"
+                className="ob-pill is-small"
+                onClick={() => {
+                  controller.current?.abort();
+                  controller.current = undefined;
+                  setState("review");
+                  setError(
+                    "已取消添加，录音仍保留在本地供试听或重试。服务电脑已收到的原件可在附件管理中查看。",
+                  );
+                }}
+              >
+                取消添加
               </button>
             </>
           ) : (
             <>
-              {recording && (
-                // biome-ignore lint/a11y/useMediaCaption: This is the Owner's unsent local recording; transcription requires a separate explicit action.
-                <audio controls src={recording.url}>
-                  音频预览
-                </audio>
-              )}
-              <small>添加到草稿后，可在附件操作中选择转写；发送前可以检查或移除。</small>
-              <div>
-                <button
-                  type="button"
-                  disabled={state === "uploading"}
-                  onClick={() => void attach()}
-                >
-                  {state === "uploading" ? "正在添加…" : "添加到草稿"}
-                </button>
-                {state === "uploading" ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      controller.current?.abort();
-                      controller.current = undefined;
-                      setState("review");
-                      setError(
-                        "已取消添加，录音仍保留在本地供试听或重试。服务电脑已收到的原件可在附件管理中查看。",
-                      );
-                    }}
-                  >
-                    取消添加
-                  </button>
-                ) : (
-                  <button type="button" onClick={discard}>
-                    丢弃
-                  </button>
-                )}
-              </div>
+              <button
+                type="button"
+                className="ob-pill is-small"
+                onClick={() => {
+                  discard();
+                  void start(true);
+                }}
+              >
+                重录
+              </button>
+              <button
+                type="button"
+                className="ob-pill is-small"
+                aria-label="丢弃录音"
+                onClick={discard}
+              >
+                丢弃
+              </button>
+              <button
+                type="button"
+                className="ob-pill is-small is-primary"
+                onClick={() => void attach()}
+              >
+                添加到草稿
+              </button>
             </>
           )}
         </div>
-      )}
+      ) : null}
       {error && (
         <p className="voice-error" role="alert">
           {error}

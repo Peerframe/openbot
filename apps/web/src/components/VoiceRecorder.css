@@ -1,69 +1,118 @@
+/* Composer artboard: recording and review take over the composer as one row. */
 .voice-recorder {
-  position: relative;
-  display: flex;
-  align-items: center;
+  display: contents;
 }
 .voice-start {
   display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
   place-items: center;
   border: 0;
+  border-radius: 50%;
   background: transparent;
-  color: #85888d;
-  padding: 7px;
+  color: var(--ob-text-secondary);
   cursor: pointer;
+}
+.voice-start:hover {
+  background: var(--ob-fill);
+  color: var(--ob-text);
 }
 .voice-start:disabled {
   opacity: 0.4;
+  cursor: default;
 }
 .voice-panel {
   position: absolute;
-  z-index: 9;
-  bottom: calc(100% + 12px);
-  left: 0;
-  width: min(300px, calc(100vw - 54px));
-  padding: 14px;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 6px 22px #0002;
-  display: grid;
-  gap: 10px;
-  font-size: 13px;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  border-radius: inherit;
+  background: var(--ob-surface);
+  font-size: 14px;
 }
 .voice-panel p {
   margin: 0;
+  color: var(--ob-text-secondary);
 }
-.voice-panel small {
-  font-size: 11px;
-  color: #777;
-  line-height: 1.6;
+.voice-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e5484d;
+  animation: voice-blink 1.2s ease-in-out infinite;
+}
+@keyframes voice-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .voice-dot {
+    animation: none;
+  }
+}
+.voice-panel strong {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 14px;
+}
+.voice-wave {
+  flex: 1;
+  height: 24px;
+  border-radius: 6px;
+  background: repeating-linear-gradient(90deg, var(--ob-switch-off) 0 3px, transparent 3px 7px);
 }
 .voice-panel audio {
-  width: 100%;
-  height: 34px;
+  display: none;
 }
-.voice-panel button {
-  background: #f2f2f2;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font: inherit;
-  padding: 7px 10px;
+.voice-play {
+  display: grid;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ob-fill);
+  color: var(--ob-text);
+  font-size: 12px;
   cursor: pointer;
 }
-.voice-panel > div {
+.voice-text {
   display: flex;
-  gap: 8px;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.voice-text strong {
+  font-family: inherit;
+  font-weight: 500;
+}
+.voice-text small {
+  overflow: hidden;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .voice-error {
   position: absolute;
+  bottom: calc(100% + 8px);
   left: 0;
-  bottom: 100%;
-  padding: 10px;
-  width: 260px;
-  background: #fff;
-  border: 1px solid #e5d5d5;
-  border-radius: 8px;
-  font-size: 12px;
-  color: #a44336;
   z-index: 10;
+  width: min(360px, 100%);
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ob-popover-border);
+  border-radius: 12px;
+  background: var(--ob-popover);
+  box-shadow: var(--ob-shadow-menu);
+  color: #b3261e;
+  font-size: 13px;
 }

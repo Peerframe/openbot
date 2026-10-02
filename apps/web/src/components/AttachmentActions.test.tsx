@@ -28,7 +28,8 @@ const attachment = {
 };
 function button(container: HTMLElement, label: string) {
   const match = Array.from(container.querySelectorAll("button")).find(
-    (item) => item.textContent === label,
+    // Menu items carry a hint line; match the label before it.
+    (item) => (item.firstChild?.textContent ?? item.textContent) === label,
   );
   if (!match) throw new Error("Button missing");
   return match;
@@ -58,8 +59,8 @@ it("keeps transcription explicit and sends no media on mount", async () => {
   vi.mocked(updateAttachment).mockResolvedValue(media);
   const view = await renderComponent(<AttachmentActions attachment={media} onChange={() => {}} />);
   expect(updateAttachment).not.toHaveBeenCalled();
-  expect(view.container.textContent).toContain("点击转写会将此媒体发送");
-  await interact(() => button(view.container, "发送至 OpenAI 转写").click());
+  expect(view.container.textContent).toContain("会把这段音频发给已配置的 OpenAI");
+  await interact(() => button(view.container, "转写").click());
   expect(updateAttachment).toHaveBeenCalledWith(
     media,
     "transcribe",
@@ -73,7 +74,7 @@ it("uses the controlled original downloader", async () => {
   const view = await renderComponent(
     <AttachmentActions attachment={attachment} onChange={() => {}} />,
   );
-  await interact(() => button(view.container, "下载原文件").click());
+  await interact(() => button(view.container, "下载").click());
   expect(downloadAttachment).toHaveBeenCalledWith(attachment);
   await view.unmount();
 });
