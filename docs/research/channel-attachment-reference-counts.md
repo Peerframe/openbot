@@ -38,6 +38,8 @@ locked install passed. New tests are included in `scripts/test-python-control.mj
 SQL execution, not just the base suite's skipped database collection. PR: [#161](https://github.com/Peerframe/openbot/pull/161); hosted validate pending.
 Final fixture teardown also removes the foreign-channel records; affected four cases reran and
 passed, zero skips. Final docs gate includes the translation: 12 passed, 564 Markdown files.
+The existing uploaded-item equality assertion now includes the additive zero referenceCount;
+upload/reference/delete/restore plus all new cases reran: 5 passed, zero skips.
 Acceptance: real PostgreSQL/HTTP exact counts, duplicate marker, case, unreferenced file, same-ID
 foreign channel exclusion, terminal/delegated/mapped task identity, recycled file, Owner/refused
 scope and overflow with no partial content. No paid model. No automatic merge or release.
