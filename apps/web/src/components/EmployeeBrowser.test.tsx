@@ -53,7 +53,7 @@ afterEach(async () => {
 });
 function button(text: string) {
   const result = [...view!.container.querySelectorAll("button")].find(
-    (item) => item.textContent?.trim() === text,
+    (item) => item.textContent?.trim() === text || item.getAttribute("aria-label") === text,
   );
   if (!result) throw new Error(`Missing ${text}`);
   return result;
@@ -106,7 +106,7 @@ it("clears typed input before dispatch, never retries uncertainty, and only clos
   expect(view.container.textContent).toContain("Unconfirmed input");
   expect(input.disabled).toBe(true);
   expect(view.container.querySelector(".browser-screen")).toBeNull();
-  expect(view.container.textContent).not.toContain("交还员工");
+  expect(view.container.textContent).not.toContain("交还 Bot");
   await view.unmount();
   view = undefined;
   expect(closeBrowser).toHaveBeenCalledExactlyOnceWith("view");
@@ -162,7 +162,7 @@ it.each([
   expect(view.container.querySelector(".browser-screen")).toBeNull();
   expect(input.value).toBe("");
   expect(input.disabled).toBe(true);
-  expect(view.container.textContent).not.toContain("交还员工");
+  expect(view.container.textContent).not.toContain("交还 Bot");
   expect(button("重新连接")).toBeDefined();
   if (code === "browser_host_identity_changed") {
     expect(view.container.textContent).toContain("设备身份已变化");
