@@ -70,8 +70,8 @@ updated.
 | 23b | Messages and the composer — **merged** | MessageActions, Composer | — | Icon actions beside the bubble, reaction picker, Owner reactions without counts, attachment chips at the 8 / 20 MB limit, recording states, attachment actions |
 | 23c | Channel files — **in review** | ChannelFiles, ChannelInfo | — | 频道文件 dialog with 回收站, search and source filter; 资料库 「全部 N 个 ›」 |
 | 23d | The Bot's browser — **merged** | EmployeeBrowser | — | Window with take-over and 交还 Bot |
-| 23e | Notices and scrolling — **in review** | Notices, LongLists | C18 (merged) | Toast, one banner by severity, the date cue, 回到最新 with a count, older messages on scroll; the scrollbar follows the system overlay |
-| 23e-2 | Long lists | LongLists | C13 for step counts | Popover lists capped at 8 rows with edge fades, stacked 需要处理, working members first, three collaborators then 「还有 N 个」, long progress collapsed, search in long settings lists |
+| 23e | Notices and scrolling — **merged** | Notices, LongLists | C18 (merged) | Toast, one banner by severity, the date cue, 回到最新 with a count, older messages on scroll; the scrollbar follows the system overlay |
+| 23e-2 | Long lists — **in review** | LongLists | C13 for step counts | Popover lists capped at 8 rows with edge fades, stacked 需要处理, working members first, three collaborators then 「还有 N 个」, long progress collapsed, search in long settings lists |
 | 23f | App icon and the legacy layer | AppIcon | C16 | Icon sets from the AppIcon board; delete the legacy stylesheets and classes listed in DESIGN.md and `OpenBotMark`; refresh the website demo fixtures |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
@@ -109,7 +109,9 @@ Open — in the order the UI needs them:
 | C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked | Pencil button hidden |
 | C11 | Step 16 (optional) | **New-Bot greeting**: when a model is configured, the 服务电脑 writes a short greeting as the Bot's first message, using only other Bots' names and tags; no model or any failure means no greeting | The setup card shows without a greeting |
 | C15 | Step 23 | **Retire unused routes** only if the 例行任务 and 技能库 page removal leaves a Server endpoint without a caller (to be confirmed; settings use the same APIs) | — |
-| C16 | Step 23 | **App icon and bundle assets** from the step-22 icon design: macOS, Windows and Linux icon sets, the Web favicon | Current icon |
+| C16 | Step 23f | **App icon and bundle assets** from the step-22 icon design: a repeatable script that builds the macOS, Windows and Linux icon sets from the SVG sources Claude exports to `docs/design/app-icon/`, wired into packaging. Claude owns the Web favicon | Current icon |
+| C20 | Shown since 23b–23d | **Confirm on-screen claims** with code and test references, or give the correct wording: the browser footer (「画面只在内存里保留」「登录状态留在工作电脑」「关闭窗口会暂停控制」), the 回收站 rules (no longer sent to Bots; cleanup removes only files in the 回收站 for 7 days and no longer referenced), and transcription sending audio to the configured OpenAI | Wording stays as shipped until confirmed |
+| C19 | 23c follow-up | **File reference counts**: each channel attachment carries how many messages and tasks reference it, Owner-only and bounded, without message content | 「N 条消息引用」 hidden |
 
 ## Repository housekeeping (proposals)
 
