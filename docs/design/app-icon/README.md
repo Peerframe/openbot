@@ -16,7 +16,8 @@ the macOS, Windows and Linux icon sets (`npm run icons:generate --workspace @ope
 ## How they are built
 
 All three use a 1024-unit square viewBox and contain only paths, circles and rectangles with
-fill and stroke attributes: no styles, text, images or external references.
+fill and stroke attributes, plus a `<title>` for assistive technology: no styles, text,
+images or external references.
 
 - The tile matches the artboard's 256px icon with 58px corners: radius 230 at 1024.
 - The head is the 96-unit avatar drawing, scaled to 784 units (196 of 256) and centred, so it
