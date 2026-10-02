@@ -36,7 +36,7 @@ changes. The Owner will revise UI copy; suggested Chinese copy below is ready to
 - Closing: `browser_sessions.py` `close` updates `paused=True` only for the matching control
   session; `BrowserCoordinator.run` refuses an expired latch until explicit take/release.
   `EmployeeBrowser.tsx` shows the promise only when `mine` and cleanup invokes close, never release.
-  Existing UI test `clears typed input before dispatch, never retries uncertainty, and only closes the view` and Server `test_owner_browser_view_control_pause_audit_and_revocation` cover
+  Existing UI test `clears typed input before dispatch, never retries uncertainty, and only closes the view` and Server `test_real_enrollment_view_exclusive_control_input_release_and_restart_pause` cover
   the distinction. Provider `browser.test.ts` covers expired lease and explicit release.
 - Recycle bin: `owner_files.py` `_validate_references`, `work_product_attachment_reads.py`
   `read_attachment`, `work_product_media.py` `_manifest`, `attachment_processing.py` `_snapshot`
@@ -62,5 +62,5 @@ against a new owned PostgreSQL17.11 Docker fixture, actual loopback HTTP/WS and 
 transport. Initial audit harness lacked the unrelated-channel field and Node module resolution;
 2 fixture failures were corrected and the full 51 reran. No production data, paid model or real
 credentials. Previous hosted browser links are reused evidence, not a new hosted execution.
-No API behavior changes; bilingual API notes explain the actual limits. PR/validate links follow.
+No API behavior changes; bilingual API notes explain the actual limits. PR: [#159](https://github.com/Peerframe/openbot/pull/159); hosted validate pending.
 No auto-merge; C9/C11 and the missing cleanup implementation remain outside this task.
