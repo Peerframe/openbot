@@ -9,7 +9,7 @@
 | --- | --- | --- |
 | 架构历史，27 条迁移 | `c33e03f1a14de739196113769c59fdaace9029e7` | 恢复旧数据，再通过现有生产启动守卫执行增量迁移。 |
 | 功能历史，19 条迁移 | `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` | 直接升级必须在索引 17 失败；专用实验随后将有限兼容记录转入新建目标库。 |
-| 已验证目标，51 条迁移 | 已提交 SQL 来源 `8209bf92ebdc1cfd34c3c35f48c5c482ba2be752`，附当前 SQL／journal 准确哈希 | SQL 与 journal 必须匹配 `target-history.json`；变化后重新验证。 |
+| 已验证目标，51 条迁移 | 已提交 SQL 来源 `38c10b39ffa91ab4746da6d35ddf77505106ac33`，附当前 SQL／journal 准确哈希 | SQL 与 journal 必须匹配 `target-history.json`；变化后重新验证。 |
 
 51 条迁移的 C21 目标在 2026-10-03 通过全部 40 项保留数据迁移／恢复检查，以及 8 项清理检查。
 [当前证据](evidence/channel-storage-result.json)保存精确哈希和实际结果。迁移 0050 增加最小删除／重试

@@ -9,7 +9,7 @@ preparation for S7, not a production migration utility or evidence that S7 is co
 | --- | --- | --- |
 | Architecture, 27 migrations | `c33e03f1a14de739196113769c59fdaace9029e7` | Restore old data, then apply current migrations with the existing production startup guard. |
 | Feature, 19 migrations | `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` | Direct upgrade fails at index 17. A separate fixture-only transfer copies a bounded compatible record set into a freshly migrated target. |
-| Qualified target, 51 migrations | Committed SQL source `8209bf92ebdc1cfd34c3c35f48c5c482ba2be752`, with exact current SQL/journal hashes | SQL bytes and journal entries must match `target-history.json`; changes require an explicit requalification. |
+| Qualified target, 51 migrations | Committed SQL source `38c10b39ffa91ab4746da6d35ddf77505106ac33`, with exact current SQL/journal hashes | SQL bytes and journal entries must match `target-history.json`; changes require an explicit requalification. |
 
 The 51-entry C21 target passed all 40 retained migration/restore cases on 2026-10-03; the eight
 cleanup cases passed too. Exact current hashes and actual results are in

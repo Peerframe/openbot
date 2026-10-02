@@ -57,6 +57,10 @@ null／30 天清理设置，详见 [API.zh-CN.md](../API.zh-CN.md#c21频道回�
 18 个构建任务全部缓存。真实 S7 重新验证通过 40 项迁移／恢复及
 8 项清理检查；[无内容报告](../../experiments/s7-migration/evidence/channel-storage-result.json)。
 
+0050 尚未合并的 journal 误写未来时间，已按实际作者时间及前一条单调规则校正；SQL 字节不变。
+最终已提交迁移来源 `38c10b39ffa91ab4746da6d35ddf77505106ac33`，真实 PostgreSQL／HTTP 26／26、
+保留历史迁移／恢复 40／40 已针对其准确 journal pin 重新执行通过，不改生产已应用历史。
+
 托管结果和不可变运行／任务链接维护在 PR 的 Verification 栏及
 [当前版本检查](https://github.com/Peerframe/openbot/pull/164/checks)，以托管实际结果为准。
 上述基础解释器与托管 Worker 的证据分开标明，不把跳过记为通过。

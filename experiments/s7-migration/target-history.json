@@ -1,5 +1,5 @@
 {
-  "commit": "8209bf92ebdc1cfd34c3c35f48c5c482ba2be752",
+  "commit": "38c10b39ffa91ab4746da6d35ddf77505106ac33",
   "commitRole": "committed-migration-source",
   "migrations": [
     {
@@ -305,7 +305,7 @@
     {
       "index": 50,
       "tag": "0050_channel_storage_purge",
-      "timestamp": 1791057600000,
+      "timestamp": 1790975448593,
       "sha256": "ccfe9031645f9228ab1a5ca5c102df61983f61fc679ef4d4e07c7e7be9557704"
     }
   ],
@@ -314,7 +314,7 @@
     "previousQualifiedTarget": "ce46574be1ff8189d12c027df78a6534783c8704",
     "journal": {
       "path": "packages/db/migrations/meta/_journal.json",
-      "sha256": "70a27ecdea9a34257226f1ddac253e60a76068f54e7be7fa647e0196462f8786"
+      "sha256": "3708bf44582d0c060823e7426f72a0d00aa9cc728f89d4b0035321443e0e4e46"
     },
     "changedSql": [
       {

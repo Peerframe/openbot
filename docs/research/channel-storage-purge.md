@@ -86,6 +86,11 @@ preflight to 51; sealed historical SQL stays unchanged. The final pin/preflight 
 passed again (18 successful build tasks, all cached). Real S7 requalification passed 40 restore/
 migration cases plus eight cleanup cases; [content-free report](../../experiments/s7-migration/evidence/channel-storage-result.json).
 
+The unpublished 0050 journal timestamp was corrected from a future value to actual authoring
+time (later than 0049). SQL bytes are unchanged. The final committed migration source is
+`38c10b39ffa91ab4746da6d35ddf77505106ac33`; focused PostgreSQL/HTTP **26/26** and retained-history **40/40**
+were re-executed successfully against its exact journal pin. No applied production history changed.
+
 Hosted results and immutable run/job links are maintained in the PR's Verification section and
 [current-head checks](https://github.com/Peerframe/openbot/pull/164/checks). Required hosted results
 remain the source of truth for CI completion. Claude owns ChannelFilesTrash/SettingsStorage wiring;
