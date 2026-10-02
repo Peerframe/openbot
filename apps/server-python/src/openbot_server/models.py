@@ -42,7 +42,7 @@ class BotAppearance(PublicModel):
     body: Literal["classic", "tall", "cape", "armor", "storage", "quadruped"]
     mobility: Literal["feet", "single-wheel", "dual-wheel", "hover", "four-legs"]
     accessory: Literal["none", "headphones", "backpack", "trench", "arm", "toolbox"]
-    accent: Literal["green", "yellow", "red", "blue"]
+    accent: Literal["green", "yellow", "red", "blue", "violet", "teal", "pink", "slate"]
 
 
 class Bot(PublicModel):

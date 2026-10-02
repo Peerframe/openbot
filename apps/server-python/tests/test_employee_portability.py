@@ -514,3 +514,58 @@ def test_real_session_expiry_during_import_audit_prevents_commit(db_fixture):
         with psycopg.connect(f["dsn"]) as connection:
             connection.execute("DROP TRIGGER portability_test_delay ON run_events")
             connection.execute("DROP FUNCTION portability_test_delay()")
+
+
+@pytest.mark.parametrize('accent', ['green', 'yellow', 'red', 'blue', 'violet', 'teal', 'pink', 'slate'])
+@pytest.mark.parametrize('content', [False, True], ids=['v1', 'v2'])
+def test_all_avatar_accents_preserve_template_bytes_and_integrity(accent, content):
+    source = profile(content=content)
+    appearance = dict(head='cat', body='cape', mobility='hover', accessory='none', accent=accent)
+    source['employee']['appearance'] = appearance
+    result = prepare_export(source, include_skill_content=content)
+    doc = json.loads(result['body'])
+    assert doc['payload']['employee']['appearance'] == appearance
+    assert doc['payload']['format'] == ('openbot.employee/v2' if content else 'openbot.employee/v1')
+    assert checksum_valid(doc) and not result['preview']['blocked']
+    assert not inspect_template(doc, [])['blocked']
+
+
+@pytest.mark.parametrize('accent', ['purple', 'Violet', '#ff00ff', '', None, 42])
+def test_unknown_template_accent_is_rejected_even_with_a_recomputed_digest(accent):
+    from openbot_server.employee_portability_inputs import EmployeePackage
+    doc = document()
+    doc['payload']['employee']['appearance'] = dict(head='round', body='classic', mobility='feet', accessory='none', accent=accent)
+    doc['integrity']['digest'] = digest(doc['payload'])
+    with pytest.raises(ValidationError):
+        EmployeePackage.model_validate(doc)
+
+
+@pytest.mark.parametrize('accent', ['green', 'yellow', 'red', 'blue', 'violet', 'teal', 'pink', 'slate'])
+@pytest.mark.parametrize('content', [False, True], ids=['v1', 'v2'])
+def test_real_avatar_import_and_reviewed_reexport_preserve_all_accents(db_fixture, accent, content):
+    world, store = db_fixture, service(db_fixture)
+    source = profile('C10 '+uuid4().hex)
+    source['skills'] = []
+    appearance = dict(head='cat', body='classic', mobility='feet', accessory='none', accent=accent)
+    source['employee']['appearance'] = appearance
+    doc = build_template(source, include_skill_content=content)['document']
+    assert not asyncio.run(store.import_preview(world['token'], doc))['blocked']
+    created = asyncio.run(store.activate(world['token'], request(doc)))
+    bot_id = created['employee']['id']
+    assert created['employee']['appearance'] == appearance
+    try:
+        with psycopg.connect(world['dsn']) as db:
+            assert db.execute('SELECT configuration FROM bots WHERE id=%s', (bot_id,)).fetchone()[0]['appearance'] == appearance
+        preview = asyncio.run(store.export_preview(world['token'], bot_id, include_skill_content=content))
+        exported = asyncio.run(store.export(world['token'], bot_id, package_id=preview['packageId'],
+            generated_at=preview['generatedAt'], if_match='"'+preview['downloadReviewToken']+'"', include_skill_content=content))
+        exported_doc = json.loads(exported['body'])
+        assert exported_doc['payload']['employee']['appearance'] == appearance
+        assert checksum_valid(exported_doc)
+        assert exported_doc['payload']['format'] == doc['payload']['format']
+    finally:
+        with psycopg.connect(world['dsn']) as db:
+            db.execute('DELETE FROM employee_import_receipts WHERE employee_id=%s', (bot_id,))
+            db.execute('DELETE FROM run_events WHERE bot_id=%s', (bot_id,))
+            db.execute('DELETE FROM employee_evolution_events WHERE bot_id=%s', (bot_id,))
+            db.execute('DELETE FROM bots WHERE id=%s', (bot_id,))

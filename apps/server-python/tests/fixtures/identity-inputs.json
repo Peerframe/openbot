@@ -849,6 +849,126 @@
       "id": "channel-input-string",
       "schema": "channel",
       "input": "not an object"
+    },
+    {
+      "id": "bot-c10-accent-violet",
+      "schema": "bot",
+      "input": {
+        "name": "Fixture",
+        "role": "Assistant",
+        "appearance": {
+          "head": "cat",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "none",
+          "accent": "violet"
+        }
+      }
+    },
+    {
+      "id": "bot-c10-accent-teal",
+      "schema": "bot",
+      "input": {
+        "name": "Fixture",
+        "role": "Assistant",
+        "appearance": {
+          "head": "cat",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "none",
+          "accent": "teal"
+        }
+      }
+    },
+    {
+      "id": "bot-c10-accent-pink",
+      "schema": "bot",
+      "input": {
+        "name": "Fixture",
+        "role": "Assistant",
+        "appearance": {
+          "head": "cat",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "none",
+          "accent": "pink"
+        }
+      }
+    },
+    {
+      "id": "bot-c10-accent-slate",
+      "schema": "bot",
+      "input": {
+        "name": "Fixture",
+        "role": "Assistant",
+        "appearance": {
+          "head": "cat",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "none",
+          "accent": "slate"
+        }
+      }
+    },
+    {
+      "id": "bot-c10-accent-purple",
+      "schema": "bot",
+      "input": {
+        "name": "Fixture",
+        "role": "Assistant",
+        "appearance": {
+          "head": "cat",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "none",
+          "accent": "purple"
+        }
+      }
+    },
+    {
+      "id": "bot-c10-accent-Violet",
+      "schema": "bot",
+      "input": {
+        "name": "Fixture",
+        "role": "Assistant",
+        "appearance": {
+          "head": "cat",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "none",
+          "accent": "Violet"
+        }
+      }
+    },
+    {
+      "id": "bot-c10-accent-None",
+      "schema": "bot",
+      "input": {
+        "name": "Fixture",
+        "role": "Assistant",
+        "appearance": {
+          "head": "cat",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "none",
+          "accent": null
+        }
+      }
+    },
+    {
+      "id": "bot-c10-accent-42",
+      "schema": "bot",
+      "input": {
+        "name": "Fixture",
+        "role": "Assistant",
+        "appearance": {
+          "head": "cat",
+          "body": "cape",
+          "mobility": "hover",
+          "accessory": "none",
+          "accent": 42
+        }
+      }
     }
   ]
 }

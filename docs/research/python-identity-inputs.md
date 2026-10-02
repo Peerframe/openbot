@@ -81,3 +81,26 @@ SkipJsonSchema annotation for its internal None sentinel, so OpenAPI no longer a
 input that the runtime rejects. The exact omitted/null distinction is regression-tested. The
 differential subprocess has a 30-second/2-MiB limit and decoded filesystem paths (including spaces),
 with fixed paths, isolated Python and an explicit minimal environment.
+
+## C10 additive avatar accents (2026-10-02)
+
+The C10 contract adds exactly `violet`, `teal`, `pink`, `slate` beside the existing four accents.
+This supersedes the historical frozen-output assumption above only for that enum. Python public
+DTOs remain the creation-input enum owner; retained current Zod and domain types match the same
+closed set. Existing head/body/mobility/accessory values and template v1/v2 formats are unchanged.
+
+Rechecked the reviewed Zod4.6.2 commit `e359f7378fe56d695134701cda1e9055a08892dc` (MIT) and
+Pydantic2.13.5 (MIT), their existing repository tests and original source review. Targeted primary
+queries `Zod enum fixed allowable values` and `Pydantic standard library Literal validation`
+confirm the selected mechanisms: [Zod enum](https://zod.dev/api#enums),
+[Pydantic literals](https://docs.pydantic.dev/latest/api/standard_library_types/#literals).
+A closed enum on the existing validators is the first viable option. Free-form CSS colours would
+broaden untrusted input and break the named-palette contract; a second colour registry or library
+adds no missing capability. No new dependency, storage shape, migration, source copy or notice is
+needed. Old appearances remain accepted; unknown strings, case variants, numbers and null fail.
+
+The existing portable package already embeds BotAppearance and retains the appearance through
+new-identity activation. Extend that same enum; do not add a format version or rewrite old package
+digests. Validate ordinary and quick creation against the compiled current TypeScript schema,
+real PostgreSQL v1/v2 import/re-export for all eight accents, unchanged checksum validation and
+invalid-colour rejection. UI geometry, CSS colours and selectors remain Claude's step-15 scope.

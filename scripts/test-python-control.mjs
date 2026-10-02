@@ -38,6 +38,7 @@ const controlTests = [
   "tests/test_auth_postgres.py",
   "tests/test_owner_security.py",
   "tests/test_identity_postgres.py",
+  "tests/test_quick_bot_creation.py",
   "tests/test_conversation_postgres.py",
   "tests/test_message_postgres.py",
   "tests/test_profile_postgres.py",

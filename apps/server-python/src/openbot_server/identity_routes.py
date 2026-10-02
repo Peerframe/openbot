@@ -1,4 +1,4 @@
-"""Two explicitly selected Owner identity writes; no task or executor privileges."""
+"""Explicitly selected Owner identity writes; no task or executor privileges."""
 from typing import Protocol
 
 from fastapi import FastAPI, HTTPException, Request
@@ -6,13 +6,18 @@ from pydantic import ValidationError
 
 from .auth_routes import validate_origins
 from .http_input import authorize_owner, read_json
-from .identity_inputs import CreateBotInput, CreateChannelInput, parse_bot_create, parse_channel_create
+from .identity_inputs import CreateBotInput, CreateChannelInput, QuickCreateBotInput, parse_bot_create, parse_channel_create, parse_quick_bot_create
 from .identity_store import AuthenticationRequired, IdentityConflict, UnknownMembers
 from .models import Bot, Channel, PublicModel
 
 
 class BotResponse(PublicModel):
     bot: Bot
+
+
+class QuickBotResponse(PublicModel):
+    bot: Bot
+    channel: Channel
 
 
 class ChannelResponse(PublicModel):
@@ -22,6 +27,7 @@ class ChannelResponse(PublicModel):
 class IdentityStore(Protocol):
     async def verify_schema(self) -> None: ...
     async def create_bot(self, token: str | None, value: CreateBotInput) -> Bot: ...
+    async def quick_create_bot(self, token: str | None, value: QuickCreateBotInput) -> dict: ...
     async def create_channel(self, token: str | None, value: CreateChannelInput) -> Channel: ...
 
 
@@ -62,6 +68,13 @@ def register_identity_routes(app: FastAPI, writer: IdentityStore, read_store, *,
                   "application/json": {"schema": input_schema(CreateBotInput)}}}})
     async def create_bot(request: Request):
         return BotResponse(bot=await create(request, parse_bot_create, writer.create_bot))
+
+    @app.post("/api/v1/bots/quick", status_code=201, response_model=QuickBotResponse,
+              response_model_exclude_none=True, operation_id="quickCreateBot",
+              openapi_extra={"requestBody": {"required": True, "content": {
+                  "application/json": {"schema": input_schema(QuickCreateBotInput)}}}})
+    async def quick_create_bot(request: Request):
+        return await create(request, parse_quick_bot_create, writer.quick_create_bot)
 
     @app.post("/api/v1/channels", status_code=201, response_model=ChannelResponse,
               response_model_exclude_none=True, operation_id="createChannel",

@@ -219,10 +219,15 @@ test("an untyped caller cannot choose another deadline or output bound", async (
   );
 });
 
-test("the identity comparator's unchanged fixtures keep unique ids and known schemas", () => {
+test("the identity comparator's fixtures keep unique ids and known schemas", () => {
   // The Python results are keyed by id, so a duplicate id would hide a case from the comparison.
   const ids = new Set<string>();
-  for (const name of ["identity-inputs.json", "profile-inputs.json", "task-inputs.json"]) {
+  for (const name of [
+    "identity-inputs.json",
+    "quick-bot-inputs.json",
+    "profile-inputs.json",
+    "task-inputs.json",
+  ]) {
     const path = new URL(`../tests/fixtures/${name}`, import.meta.url);
     const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
     const cases = isRecord(parsed) ? parsed.cases : undefined;
@@ -233,7 +238,11 @@ test("the identity comparator's unchanged fixtures keep unique ids and known sch
       const { id, schema } = entry;
       if (typeof id !== "string") assert.fail(`${name} has a case without an id`);
       assert.ok(
-        schema === "bot" || schema === "channel" || schema === "profile" || schema === "task",
+        schema === "quickBot" ||
+          schema === "bot" ||
+          schema === "channel" ||
+          schema === "profile" ||
+          schema === "task",
         `${id} names an unknown schema`,
       );
       assert.ok(!ids.has(id), `${id} is duplicated`);
