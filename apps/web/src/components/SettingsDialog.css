@@ -944,3 +944,22 @@
     justify-content: flex-start;
   }
 }
+
+/* LongLists: settings lists over 20 entries get a search box. */
+.settings-dialog .settings-search {
+  box-sizing: border-box;
+  width: 100%;
+  height: 36px;
+  margin: 0 0 4px;
+  padding: 0 14px;
+  border: 1px solid var(--ob-divider);
+  border-radius: 18px;
+  background: var(--ob-surface);
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+.settings-dialog .settings-search:focus {
+  border-color: var(--ob-text-tertiary);
+}
