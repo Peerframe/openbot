@@ -407,7 +407,7 @@ def test_project_bot_covers_every_appearance_combination():
                         )
                         assert projected["appearance"] == candidate
                         combinations += 1
-    assert combinations == 3 * 6 * 5 * 6 * 4 == 2160
+    assert combinations == 3 * 6 * 5 * 6 * 8 == 4320
 
 
 @pytest.mark.parametrize("status", ["thinking", "idle ", "IDLE", "waiting-approval", ""])
