@@ -227,5 +227,22 @@ zero skipped, using the existing locked Python environment against this checkout
 model request was made. `git diff --check` passed. PR: [#157](https://github.com/Peerframe/openbot/pull/157). Initial hosted validate rejected
 the unlinked research paths in the PR body; corrected the field to one exact decision path, as required by the validator. The 15 focused
 Python cases, 12 documentation tests and 27 research tests passed locally; hosted [validate passed](https://github.com/Peerframe/openbot/actions/runs/37038379903/job/110942214096)
-on `da13b06`. This handoff-only evidence update reuses the same unchanged API/test evidence. C16 follows; Claude owns its SVG source export.
-C20, C19 and the C15 caller inventory remain; C9/C11 are deferred. No automatic merge or release.
+on `da13b06`. This handoff-only evidence update reuses the same unchanged API/test evidence.
+
+Current platform backlog handoff (all worktrees outside the repository, same baseline above):
+
+| Item | Branch / checkout | PR and acceptance |
+| --- | --- | --- |
+| C14 / C18 | `codex/platform-closeout-c14-c18`, `/private/tmp/openbot-platform-closeout` | [#157](https://github.com/Peerframe/openbot/pull/157); browser evidence closed, paging documentation complete |
+| C16 | `codex/c16-icon-pipeline`, `/private/tmp/openbot-c16-icons` | [Draft #158](https://github.com/Peerframe/openbot/pull/158); generator and package wiring complete, [validate](https://github.com/Peerframe/openbot/actions/runs/37042084211/job/110954997244) passed; approved SVG export and native screenshots still required |
+| C20 | `codex/c20-product-claims`, `/private/tmp/openbot-c20-claims` | [#159](https://github.com/Peerframe/openbot/pull/159); six claims audited, 51 real SQL/HTTP/WS tests passed; [validate](https://github.com/Peerframe/openbot/actions/runs/37040899163/job/110950567989) passed |
+| C19 | `codex/c19-attachment-reference-count`, `/private/tmp/openbot-c19-references` | [#161](https://github.com/Peerframe/openbot/pull/161); Owner-only bounded metadata, five real SQL/HTTP cases and full check passed; [validate](https://github.com/Peerframe/openbot/actions/runs/37042098568/job/110954806783) passed |
+| C15 | `codex/c15-route-caller-inventory`, `/private/tmp/openbot-c15-inventory` | [#160](https://github.com/Peerframe/openbot/pull/160); caller inventory complete, only manual skill-candidate POST is a removal candidate; [validate](https://github.com/Peerframe/openbot/actions/runs/37041093500/job/110951195802) passed; deletion awaits user confirmation |
+
+Each PR's research/review record owns detailed interface changes and executed evidence. C16 refuses
+packaging without approved SVGs; its validate success is not native icon acceptance. C15 makes no
+route deletion, and its underlying skill creation service still has an import caller. C20 found no
+seven-day unreferenced-file cleanup implementation; corrected Chinese copy is in its review record.
+C19 does not grant cleanup authority. All local writers have finished; only hosted checks run.
+The root checkout's unrelated untracked `output/` remains untouched. No Web, C9/C11, paid model,
+auto-merge, release or production-data changes. No merge is authorized by this handoff.
