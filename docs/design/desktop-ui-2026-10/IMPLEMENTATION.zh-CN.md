@@ -61,9 +61,9 @@
 | 21 | 任务监督与空工作区——**已合并** | WorkSupervision、EmptyWorkspace | — | 重做 `WorkTasksScreen`；新的 `EmptyWorkspace`；退役独立的「例行任务」和「技能库」页面（入口改到设置分区） |
 | 22 | 设计剩余界面（先画布，再由所有者确认）——**2026-10-02 已通过** | 新画板 | — | 消息操作与表情回应、附件与语音、「补充指令」输入、「资料库」里的频道文件回收站、Bot 档案各分页（进化档案注明受 Hermes Agent 启发）、员工浏览器画面、提示与浮动通知、应用图标与 README 图片 |
 | 23a | Bot 档案分页——**已合并** | Profile、ProfileEvolution、ProfileSkills、ProfileMemory、ProfileWork、ProfileConfig | — | 六个分页用分段控件（「运行中」并入「工作记录」，「技能图谱」改为「技能」）；带数量的文字筛选；长列表按 LongLists |
-| 23b | 消息与输入框——**审核中** | MessageActions、Composer | — | 气泡旁的图标操作、回应面板、不计数的回应、附件到 8 个 / 20 MB 上限时的样子、录音状态、附件操作 |
+| 23b | 消息与输入框——**已合并** | MessageActions、Composer | — | 气泡旁的图标操作、回应面板、不计数的回应、附件到 8 个 / 20 MB 上限时的样子、录音状态、附件操作 |
 | 23c | 频道文件——**审核中** | ChannelFiles、ChannelInfo | — | 带回收站、搜索和来源筛选的「频道文件」对话框；资料库的「全部 N 个 ›」 |
-| 23d | Bot 的浏览器 | EmployeeBrowser | — | 接管与「交还 Bot」的窗口 |
+| 23d | Bot 的浏览器——**已合并** | EmployeeBrowser | — | 接管与「交还 Bot」的窗口 |
 | 23e | 提示、滚动与长列表 | Notices、LongLists | 更早的消息需要 C18 | 提示叠放、按严重程度只显示一条横条、悬浮滚动条、日期浮标与「回到最新」、各处长列表规则 |
 | 23f | 应用图标与退役旧层 | AppIcon | C16 | 按 AppIcon 画板导出图标；删除 DESIGN.md 列出的旧样式表、旧样式类和 `OpenBotMark`；更新网站演示的模拟数据 |
 
