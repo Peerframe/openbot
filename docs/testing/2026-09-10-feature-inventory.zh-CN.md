@@ -26,7 +26,7 @@
 | 使用技能 | 请求所选 Bot 最多 2 个已审核技能，可从草稿移除。 | 运行时重查分配、状态和内容身份；请求技能不能增加工具或外部操作权限。 |
 | 时间线与实时更新 | 保存消息、引用、Markdown/表格、产物、任务链接，接收 Server 事件更新。 | 有连续上下文；没有不限范围的历史搜索或离线编辑。 |
 
-证据：[引导](../../apps/web/src/components/DesktopSetupScreen.tsx)、[安装](../../apps/web/src/components/DesktopInstallScreen.tsx)、[连接](../../apps/web/src/components/DesktopConnectionScreen.tsx)、[应用导航](../../apps/web/src/App.tsx)、[左栏](../../apps/web/src/components/Sidebar.tsx)、[创建频道](../../apps/web/src/components/CreateChannelDialog.tsx)、[成员](../../apps/web/src/components/ContextRail.tsx)、[创建 Bot](../../apps/web/src/components/CreateBotDialog.tsx)、[对话](../../apps/web/src/components/ChannelWorkspace.tsx)、[附件组合](../../apps/web/src/composer-context.ts)、[Server 路由](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/app.ts)。
+证据：[引导](../../apps/web/src/components/DesktopSetupScreen.tsx)、[安装](../../apps/web/src/components/DesktopInstallScreen.tsx)、[连接](../../apps/web/src/components/DesktopConnectionScreen.tsx)、[应用导航](../../apps/web/src/App.tsx)、[左栏](../../apps/web/src/components/Sidebar.tsx)、[创建频道](https://github.com/Peerframe/openbot/blob/a99918176ee42e45d7a909853a0db1dc5b884d38/apps/web/src/components/CreateChannelDialog.tsx)、[成员](../../apps/web/src/components/ContextRail.tsx)、[创建 Bot](https://github.com/Peerframe/openbot/blob/a99918176ee42e45d7a909853a0db1dc5b884d38/apps/web/src/components/CreateBotDialog.tsx)、[对话](../../apps/web/src/components/ChannelWorkspace.tsx)、[附件组合](../../apps/web/src/composer-context.ts)、[Server 路由](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/app.ts)。
 
 ## Agent 执行、产出与监督
 
