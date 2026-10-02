@@ -5,6 +5,7 @@ import { DeleteIdentityDialog } from "../components/DeleteIdentityDialog";
 import { DesktopConnectionScreen } from "../components/DesktopConnectionScreen";
 import { DesktopLocalWorkerScreen } from "../components/DesktopLocalWorkerScreen";
 import { DesktopSetupScreen } from "../components/DesktopSetupScreen";
+import { EmployeeBrowser } from "../components/EmployeeBrowser";
 import { ExportEmployeeDialog } from "../components/ExportEmployeeDialog";
 import { ImportEmployeeDialog } from "../components/ImportEmployeeDialog";
 import { LoginScreen } from "../components/LoginScreen";
@@ -60,6 +61,7 @@ const components: Record<string, () => ReactElement> = {
     />
   ),
   "dialog-pair": () => <NodeManagerDialog onlineNodes={world.nodes} onClose={close} />,
+  browser: () => <EmployeeBrowser bot={researcher} onClose={close} />,
   "dialog-model": () => <ModelConnectionsDialog onClose={close} onChanged={close} />,
   avatars: () => <AvatarSpecimens />,
   groups: () => <GroupSpecimens />,
