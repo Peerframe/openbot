@@ -18,6 +18,58 @@ type Handler = (match: RegExpMatchArray, body: Json) => Response | Promise<Respo
 
 const json = (value: unknown, status = 200) => Response.json(value, { status });
 
+/**
+ * The EmployeeBrowser artboard's state: the Owner holds control of a page drawn here, so the
+ * preview shows a frame without any real browser, network or credentials.
+ */
+let browserFrame: string | undefined;
+function browserView(botId: string) {
+  browserFrame ??= drawPricingPage();
+  return {
+    id: "preview-browser",
+    botId,
+    nodeId: "n-1",
+    nodeName: "我的 MacBook Pro",
+    control: "mine",
+    controlAvailable: true,
+    controlExpiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+    frame: {
+      base64: browserFrame,
+      width: 1280,
+      height: 800,
+      capturedAt: new Date().toISOString(),
+      url: "https://b-company.com/pricing",
+    },
+  };
+}
+function drawPricingPage(): string {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1280;
+  canvas.height = 800;
+  const context = canvas.getContext("2d");
+  if (!context)
+    return "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=";
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, 1280, 800);
+  context.fillStyle = "#1d1d1f";
+  context.font = "600 40px -apple-system, sans-serif";
+  context.fillText("B Company · Pricing", 80, 120);
+  const plans = ["Starter", "Team", "Enterprise"];
+  plans.forEach((plan, index) => {
+    const x = 80 + index * 380;
+    context.fillStyle = "#f0f0f2";
+    context.fillRect(x, 190, 340, 460);
+    context.fillStyle = "#1d1d1f";
+    context.font = "600 28px -apple-system, sans-serif";
+    context.fillText(plan, x + 32, 250);
+    context.font = "700 44px -apple-system, sans-serif";
+    context.fillText(`$${(index + 1) * 12}`, x + 32, 320);
+    context.fillStyle = "#c7c7cc";
+    for (let line = 0; line < 5; line += 1) context.fillRect(x + 32, 370 + line * 44, 260, 14);
+  });
+  return canvas.toDataURL("image/png").split(",")[1] ?? "";
+}
+
 export function createPreviewFetch(origin: string, world: PreviewWorld = createWorld()) {
   const channel = (id: string) => world.channels.find((item) => item.id === id);
   const routes: Array<[string, RegExp, Handler]> = [
@@ -68,6 +120,13 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
       /^\/api\/v1\/channels\/([^/]+)\/attachments$/,
       (m) => json({ attachments: attachmentsFor(m[1] ?? "") }),
     ],
+    ["POST", /^\/api\/v1\/bots\/([^/]+)\/browser$/, (m) => json(browserView(m[1] ?? ""))],
+    [
+      "POST",
+      /^\/api\/v1\/browser-sessions\/([^/]+)\/commands$/,
+      () => json(browserView("b-research")),
+    ],
+    ["DELETE", /^\/api\/v1\/browser-sessions\/([^/]+)$/, () => new Response(null, { status: 204 })],
     [
       "POST",
       /^\/api\/v1\/channels\/([^/]+)\/read$/,

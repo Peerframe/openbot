@@ -3,6 +3,7 @@ import type { BrowserAction, BrowserSessionView } from "@openbot/protocol";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, browserCommand, closeBrowser, openBrowser } from "../api";
 import { CloseIcon } from "./Icons";
+import { RobotAvatar } from "./RobotAvatar";
 import { useModalDialog } from "./useModalDialog";
 import "./EmployeeBrowser.css";
 
@@ -143,224 +144,231 @@ export function EmployeeBrowser({ bot, onClose }: { bot: Bot; onClose(): void })
     session?.control === "mine" && Date.parse(session.controlExpiresAt ?? "") > Date.now();
   const controlLabel = mine
     ? "你正在控制"
-    : session?.control === "other"
-      ? "其他窗口正在控制"
-      : session?.control === "paused" || session?.control === "mine"
-        ? "已暂停，等待接管"
-        : "员工浏览器";
-
+    : session?.controlAvailable === false
+      ? "仅查看"
+      : session?.control === "other"
+        ? "其他窗口正在控制"
+        : session?.control === "paused" || session?.control === "mine"
+          ? "已暂停"
+          : "可以接管";
+  // 交还 Bot is always offered while the Owner holds control; 接管 only when nobody else does.
+  const takeable = mine || (session?.control !== "other" && session?.controlAvailable !== false);
+  const keys = [
+    ["ControlOrMeta+A", "全选"],
+    ["Backspace", "退格"],
+    ["Enter", "回车"],
+    ["Tab", "Tab"],
+  ] as const;
+  // EmployeeBrowser artboard: header with the address, the live frame on grey, a typing row,
+  // and a footer that says where the browser runs and what it keeps.
   return (
     <dialog ref={dialogRef} className="employee-browser" aria-labelledby="employee-browser-title">
       <header className="browser-header">
-        <div>
+        <span className="browser-title">
+          <RobotAvatar bot={bot} compact />
           <h2 id="employee-browser-title">{bot.name} 的浏览器</h2>
-          <p>
-            {session?.nodeName ?? "工作主机"} · {controlLabel}
-          </p>
-        </div>
-        <div className="browser-header-actions">
+          {session ? (
+            <span className={`browser-control${mine ? " is-mine" : ""}`}>{controlLabel}</span>
+          ) : null}
+        </span>
+        <form
+          className="browser-address"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const url = /^https?:\/\//i.test(address) ? address : `https://${address}`;
+            void send({ kind: "navigate", url });
+          }}
+        >
+          <label className="sr-only" htmlFor="browser-address-input">
+            网址
+          </label>
+          <input
+            id="browser-address-input"
+            type="text"
+            inputMode="url"
+            placeholder={
+              frame?.url && frame.url !== "about:blank" ? frame.url : "接管后输入网址，按回车前往"
+            }
+            value={address}
+            onChange={(event) => setAddress(event.target.value)}
+            disabled={!mine || busy}
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </form>
+        <span className="browser-header-actions">
           {session ? (
             <button
               type="button"
-              className={mine ? "secondary-button" : "primary-button"}
-              disabled={busy || session.control === "other" || session.controlAvailable === false}
+              className={`ob-pill${mine || takeable ? " is-primary" : ""}`}
+              disabled={busy || !takeable}
               onClick={() => void send({ kind: mine ? "release" : "take" })}
             >
-              {session.controlAvailable === false ? "仅查看" : mine ? "交还员工" : "接管浏览器"}
+              {session.controlAvailable === false ? "仅查看" : mine ? "交还 Bot" : "接管浏览器"}
             </button>
           ) : null}
           <button
             type="button"
-            className="icon-button"
+            className="browser-close"
             aria-label="关闭浏览器"
             onClick={closeDialog}
           >
             <CloseIcon />
           </button>
-        </div>
+        </span>
       </header>
-      <form
-        className="browser-address"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const url = /^https?:\/\//i.test(address) ? address : `https://${address}`;
-          void send({ kind: "navigate", url });
-        }}
-      >
-        <label className="sr-only" htmlFor="browser-address-input">
-          网页地址
-        </label>
-        <input
-          id="browser-address-input"
-          type="text"
-          inputMode="url"
-          placeholder={
-            frame?.url === "about:blank" ? "接管后输入网址" : (frame?.url ?? "https://example.com")
-          }
-          value={address}
-          onChange={(event) => setAddress(event.target.value)}
-          disabled={!mine || busy}
-          autoComplete="off"
-          spellCheck={false}
-        />
-        <button
-          className="secondary-button"
-          type="submit"
-          disabled={!mine || busy || !address.trim()}
-        >
-          前往
-        </button>
-        <button
-          className="secondary-button"
-          type="button"
-          disabled={!session || busy}
-          onClick={() => void send({ kind: "observe" })}
-        >
-          刷新画面
-        </button>
-      </form>
-      {error ? (
-        <div className="browser-error" role="alert">
-          {error}
-          {!session && !opening ? (
+      <div className="browser-body">
+        {error ? (
+          <div className="browser-error" role="alert">
+            <span>{error}</span>
+            {!session && !opening ? (
+              <button
+                type="button"
+                className="ob-pill is-small"
+                onClick={() => setAttempt((value) => value + 1)}
+              >
+                重新连接
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+        <div className="browser-viewport">
+          {frame ? (
             <button
+              className={`browser-screen ${mine ? "controlling" : ""}`}
               type="button"
-              className="secondary-button"
-              onClick={() => setAttempt((value) => value + 1)}
+              disabled={!mine || busy}
+              aria-label="浏览器画面，接管后点击网页"
+              onClick={(event) => {
+                const rect = imageRef.current?.getBoundingClientRect();
+                if (!rect) return;
+                const x = Math.max(
+                  0,
+                  Math.min(
+                    frame.width - 1,
+                    ((event.clientX - rect.left) * frame.width) / rect.width,
+                  ),
+                );
+                const y = Math.max(
+                  0,
+                  Math.min(
+                    frame.height - 1,
+                    ((event.clientY - rect.top) * frame.height) / rect.height,
+                  ),
+                );
+                void send({ kind: "click", x, y });
+              }}
             >
-              重新连接
+              <img
+                ref={imageRef}
+                src={`data:image/png;base64,${frame.base64}`}
+                alt={`网页：${frame.url}`}
+                draggable={false}
+              />
             </button>
-          ) : null}
+          ) : (
+            <div className="browser-empty">
+              <strong>{opening ? "正在连接浏览器…" : "还没有画面"}</strong>
+              <span>
+                {opening
+                  ? "浏览器在工作电脑上启动，第一次连接可能要等一会儿。"
+                  : "确认工作电脑在线后，点「重新连接」。"}
+              </span>
+            </div>
+          )}
         </div>
-      ) : null}
-      <div className="browser-viewport">
-        {frame ? (
-          <button
-            className={`browser-screen ${mine ? "controlling" : ""}`}
-            type="button"
-            disabled={!mine || busy}
-            aria-label="浏览器画面，接管后点击网页"
-            onClick={(event) => {
-              const rect = imageRef.current?.getBoundingClientRect();
-              if (!rect) return;
-              const x = Math.max(
-                0,
-                Math.min(frame.width - 1, ((event.clientX - rect.left) * frame.width) / rect.width),
-              );
-              const y = Math.max(
-                0,
-                Math.min(
-                  frame.height - 1,
-                  ((event.clientY - rect.top) * frame.height) / rect.height,
-                ),
-              );
-              void send({ kind: "click", x, y });
+        <div className="browser-controls">
+          <form
+            className="browser-input"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const value = text;
+              setText("");
+              void send({ kind: "type", text: value });
             }}
           >
-            <img
-              ref={imageRef}
-              src={`data:image/png;base64,${frame.base64}`}
-              alt={`员工网页：${frame.url}`}
-              draggable={false}
+            <label className="sr-only" htmlFor="browser-text-input">
+              输入到网页当前字段
+            </label>
+            <input
+              id="browser-text-input"
+              type={secret ? "password" : "text"}
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              placeholder="先点网页里的输入框，再在这里输入或粘贴，按回车发送"
+              autoComplete="off"
+              maxLength={4096}
+              disabled={!mine || busy}
             />
-          </button>
-        ) : (
-          <div className="browser-empty">
-            <span>◉</span>
-            <h3>{opening ? "正在连接员工浏览器…" : "等待浏览器画面"}</h3>
-            <p>
-              {opening
-                ? "浏览器在工作主机上启动，首次连接可能需要稍等。"
-                : "启动浏览器运行时和 Node 后，重新连接。"}
-            </p>
-          </div>
-        )}
+            <label className="browser-secret">
+              <input
+                type="checkbox"
+                checked={secret}
+                onChange={(event) => setSecret(event.target.checked)}
+              />
+              隐藏
+            </label>
+          </form>
+          <fieldset className="browser-keys" aria-label="浏览器键盘和滚动">
+            {keys.map(([key, label]) => (
+              <button
+                className="ob-pill is-small"
+                type="button"
+                key={key}
+                disabled={!mine || busy}
+                onClick={() => void send({ kind: "key", key })}
+              >
+                {label}
+              </button>
+            ))}
+            <button
+              className="ob-pill is-small"
+              type="button"
+              aria-label="向上滚动"
+              disabled={!mine || busy}
+              onClick={() => void send({ kind: "scroll", deltaY: -500 })}
+            >
+              ↑
+            </button>
+            <button
+              className="ob-pill is-small"
+              type="button"
+              aria-label="向下滚动"
+              disabled={!mine || busy}
+              onClick={() => void send({ kind: "scroll", deltaY: 500 })}
+            >
+              ↓
+            </button>
+            <button
+              className="ob-pill is-small"
+              type="button"
+              aria-label="刷新画面"
+              disabled={!session || busy}
+              onClick={() => void send({ kind: "observe" })}
+            >
+              刷新
+            </button>
+          </fieldset>
+        </div>
       </div>
       <footer className="browser-footer">
-        <form
-          className="browser-input"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const value = text;
-            setText("");
-            void send({ kind: "type", text: value });
-          }}
-        >
-          <label className="sr-only" htmlFor="browser-text-input">
-            输入到网页当前字段
-          </label>
-          <input
-            id="browser-text-input"
-            type={secret ? "password" : "text"}
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            placeholder="先点击网页字段，再输入或粘贴文本"
-            autoComplete="off"
-            maxLength={4096}
-            disabled={!mine || busy}
-          />
-          <label className="browser-secret">
-            <input
-              type="checkbox"
-              checked={secret}
-              onChange={(event) => setSecret(event.target.checked)}
-            />
-            隐藏
-          </label>
-          <button className="secondary-button" type="submit" disabled={!mine || busy || !text}>
-            输入
-          </button>
-        </form>
-        <fieldset className="browser-keys" aria-label="浏览器键盘和滚动">
-          {(
-            [
-              ["Tab", "Tab"],
-              ["Enter", "Enter"],
-              ["Backspace", "退格"],
-              ["ControlOrMeta+A", "全选"],
-            ] as const
-          ).map(([key, label]) => (
-            <button
-              className="secondary-button"
-              type="button"
-              key={key}
-              disabled={!mine || busy}
-              onClick={() => void send({ kind: "key", key })}
-            >
-              {label}
-            </button>
-          ))}
-          <button
-            className="secondary-button"
-            type="button"
-            disabled={!mine || busy}
-            onClick={() => void send({ kind: "scroll", deltaY: -500 })}
-          >
-            向上滚动
-          </button>
-          <button
-            className="secondary-button"
-            type="button"
-            disabled={!mine || busy}
-            onClick={() => void send({ kind: "scroll", deltaY: 500 })}
-          >
-            向下滚动
-          </button>
-          <span role="status">
+        <span>
+          在 {session?.nodeName ?? "工作电脑"} 上运行 · 登录状态留在工作电脑 · 画面只在内存里保留
+          <span className="browser-updated" role="status">
             {busy
-              ? "正在操作…"
+              ? " · 正在操作…"
               : frame
-                ? `画面更新于 ${new Date(frame.capturedAt).toLocaleTimeString()}`
-                : "尚无画面"}
+                ? ` · 画面更新于 ${new Date(frame.capturedAt).toLocaleTimeString()}`
+                : ""}
           </span>
-        </fieldset>
-        <p className="browser-hint">
+        </span>
+        <span>
           {mine
-            ? "关闭窗口会暂停控制。完成操作后，请点击“交还员工”。"
+            ? "关闭窗口会暂停控制，完成后请点「交还 Bot」"
             : session?.controlAvailable === false
-              ? "当前浏览器仅供查看，尚未启用人工接管。"
-              : "接管后可点击网页、输入文本和滚动。登录状态保留在员工工作主机。"}
-        </p>
+              ? "这个浏览器只能查看，还没有开启接管"
+              : "接管后可以点网页、输入文字和滚动"}
+        </span>
       </footer>
     </dialog>
   );
