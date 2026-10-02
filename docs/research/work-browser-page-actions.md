@@ -226,5 +226,6 @@ its local tests (PR body gate runs on hosted CI). Focused message models/routes:
 zero skipped, using the existing locked Python environment against this checkout. No database or
 model request was made. `git diff --check` passed. PR: [#157](https://github.com/Peerframe/openbot/pull/157). Initial hosted validate rejected
 the unlinked research paths in the PR body; corrected the field to one exact decision path, as required by the validator. The 15 focused
-Python cases, 12 documentation tests and 27 research tests passed locally; hosted validate is pending. C16 follows; Claude owns its SVG source export.
+Python cases, 12 documentation tests and 27 research tests passed locally; hosted [validate passed](https://github.com/Peerframe/openbot/actions/runs/37038379903/job/110942214096)
+on `da13b06`. This handoff-only evidence update reuses the same unchanged API/test evidence. C16 follows; Claude owns its SVG source export.
 C20, C19 and the C15 caller inventory remain; C9/C11 are deferred. No automatic merge or release.
