@@ -15,7 +15,7 @@
 | [Components](Components.dc.html) | 规范：颜色、字号、圆角、按钮、标签、输入框、列表行、气泡、菜单 |
 | [Sidebar](Sidebar.dc.html) | 共享侧栏：搜索、分组、列表行、账户菜单、底部 |
 | [Main](Main.dc.html) | ① 频道对话与右侧栏 |
-| [Profile](Profile.dc.html) | ② Bot 档案与设置栏 |
+| [Profile](Profile.dc.html) 与 [ProfileEvolution](ProfileEvolution.dc.html)、[ProfileSkills](ProfileSkills.dc.html)、[ProfileMemory](ProfileMemory.dc.html)、[ProfileWork](ProfileWork.dc.html)、[ProfileConfig](ProfileConfig.dc.html) | ② Bot 档案：概览和另外五个分页（分段控件切换） |
 | [New](New.dc.html) | ③ 新建聊天 / 选择 Bot |
 | [Settings](Settings.dc.html) 与 `Settings*.dc.html`、[SettingsNav](SettingsNav.dc.html) | ④ 设置弹窗及其 14 个分区 |
 | [Plugins](Plugins.dc.html) | ⑥ 插件 |
@@ -32,6 +32,9 @@
 | [WorkSupervision](WorkSupervision.dc.html) | ⑯ 任务监督 |
 | [EmptyWorkspace](EmptyWorkspace.dc.html) | ⑰ 还没有任何对话时的首次进入 |
 | [DialogShare](DialogShare.dc.html)、[DialogExport](DialogExport.dc.html)、[DialogImport](DialogImport.dc.html)、[DialogDelete](DialogDelete.dc.html)、[DialogPairHost](DialogPairHost.dc.html)、[DialogModel](DialogModel.dc.html) | ⑮ 对话框：分享、分享 Bot 模板、导入 Bot 模板、删除确认、配对工作电脑、连接模型服务 |
+| [MessageActions](MessageActions.dc.html)、[Composer](Composer.dc.html)、[ChannelFiles](ChannelFiles.dc.html) | ① 消息操作与回应；输入框的附件、语音和补充指令；带回收站的频道文件 |
+| [EmployeeBrowser](EmployeeBrowser.dc.html) | Bot 的浏览器：接管与交还 |
+| [Notices](Notices.dc.html)、[LongLists](LongLists.dc.html)、[AppIcon](AppIcon.dc.html) | 提示与连接状态；所有界面的长列表与滚动；应用图标 |
 | [ChannelInfo](ChannelInfo.dc.html) | 「频道信息」右栏，含 详情 / 资料库 / 成员 分页（由 Main 引用） |
 | [Launch](Launch.dc.html)、[LaunchMotion](LaunchMotion.dc.html) | 启动画面的各状态与 900 毫秒开场动画 |
 | [Welcome](Welcome.dc.html)、[Install](Install.dc.html)、[Connect](Connect.dc.html)、[Login](Login.dc.html)、[ModelSetup](ModelSetup.dc.html)、[WorkerSetup](WorkerSetup.dc.html) | 首次设置：选择用法、准备这台电脑、连接、登录、选择模型、把这台电脑设为工作电脑 |

@@ -1180,7 +1180,11 @@ export function AuthenticatedWorkspace({
           modelServicesVersion={modelServicesVersion}
           onOpenBrowser={() => setBrowserBotId(selectedEmployeeId)}
           channels={workspace.channels}
-          onRename={(name) => renameEmployee(selectedEmployeeId, name)}
+          onOpenRun={(runId) => {
+            // The sheet reads the workspace projection; an older run may not be loaded there.
+            if (workspace.runs.some((run) => run.id === runId)) setSelectedRunId(runId);
+            else showNotice("这项任务较早，暂时无法在这里打开详情。");
+          }}
         />
       ) : selectedChannel ? (
         <ChannelWorkspace

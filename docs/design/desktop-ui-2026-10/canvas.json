@@ -418,6 +418,102 @@
       "w": 1440,
       "x": 3040,
       "y": 2040
+    },
+    "ProfileEvolution.dc.html": {
+      "h": 900,
+      "page": "next",
+      "title": "② Bot 档案 · 进化档案",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "ProfileSkills.dc.html": {
+      "h": 900,
+      "page": "next",
+      "title": "② Bot 档案 · 技能",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
+    },
+    "ProfileMemory.dc.html": {
+      "h": 900,
+      "page": "next",
+      "title": "② Bot 档案 · 记忆",
+      "w": 1440,
+      "x": 3040,
+      "y": 0
+    },
+    "ProfileWork.dc.html": {
+      "h": 900,
+      "page": "next",
+      "title": "② Bot 档案 · 工作记录（含进行中）",
+      "w": 1440,
+      "x": 4560,
+      "y": 0
+    },
+    "ProfileConfig.dc.html": {
+      "h": 900,
+      "page": "next",
+      "title": "② Bot 档案 · 配置",
+      "w": 1440,
+      "x": 0,
+      "y": 1020
+    },
+    "MessageActions.dc.html": {
+      "h": 900,
+      "page": "next",
+      "title": "① 消息操作、回应与引用",
+      "w": 1440,
+      "x": 1520,
+      "y": 1020
+    },
+    "Composer.dc.html": {
+      "h": 900,
+      "page": "next",
+      "title": "① 输入框：附件、语音与补充指令",
+      "w": 1440,
+      "x": 3040,
+      "y": 1020
+    },
+    "ChannelFiles.dc.html": {
+      "h": 900,
+      "page": "next",
+      "title": "① 频道文件与回收站",
+      "w": 1440,
+      "x": 4560,
+      "y": 1020
+    },
+    "EmployeeBrowser.dc.html": {
+      "h": 900,
+      "page": "next",
+      "title": "⑥ Bot 的浏览器（接管与交还）",
+      "w": 1440,
+      "x": 0,
+      "y": 2040
+    },
+    "Notices.dc.html": {
+      "h": 1180,
+      "page": "next",
+      "title": "⑤ 提示与连接状态",
+      "w": 1440,
+      "x": 1520,
+      "y": 2040
+    },
+    "AppIcon.dc.html": {
+      "h": 900,
+      "page": "next",
+      "title": "⑤ 应用图标",
+      "w": 1440,
+      "x": 3040,
+      "y": 2040
+    },
+    "LongLists.dc.html": {
+      "h": 1480,
+      "page": "next",
+      "title": "⑤ 长列表与滚动（适用于全部画板）",
+      "w": 1440,
+      "x": 4560,
+      "y": 2040
     }
   },
   "createdOnFiles": {
@@ -452,6 +548,15 @@
       "maxW": 6000,
       "page": "app",
       "text": "OpenBot Desktop · 界面优化",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
+    "nextTitle": {
+      "kind": "title1",
+      "maxW": 6000,
+      "page": "next",
+      "text": "OpenBot Desktop · 第 22 步 · 待确认",
       "w": 240,
       "x": 0,
       "y": -320
@@ -509,7 +614,19 @@
     "NewGroup.dc.html",
     "NewBotChat.dc.html",
     "AddMember.dc.html",
-    "BotInfo.dc.html"
+    "BotInfo.dc.html",
+    "ProfileEvolution.dc.html",
+    "ProfileSkills.dc.html",
+    "ProfileMemory.dc.html",
+    "ProfileWork.dc.html",
+    "ProfileConfig.dc.html",
+    "MessageActions.dc.html",
+    "Composer.dc.html",
+    "ChannelFiles.dc.html",
+    "EmployeeBrowser.dc.html",
+    "Notices.dc.html",
+    "AppIcon.dc.html",
+    "LongLists.dc.html"
   ],
   "pages": [
     {
@@ -523,6 +640,10 @@
     {
       "id": "flows",
       "name": "任务与对话框"
+    },
+    {
+      "id": "next",
+      "name": "第 22 步 · 待确认"
     }
   ],
   "title": "OpenBot Desktop 界面优化"

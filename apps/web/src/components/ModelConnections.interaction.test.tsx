@@ -345,6 +345,11 @@ describe("model connection user flows", () => {
         />,
       );
       await interact(() => button("配置").click());
+      const change = [...view.container.querySelectorAll("button")].find(
+        (item) => item.textContent === "更改",
+      );
+      expect(Boolean(change)).toBe(computerProfile === "docker-linux");
+      await interact(() => change?.click());
       const form = view.container.querySelector<HTMLFormElement>(".employee-model-form");
       expect(Boolean(form)).toBe(computerProfile === "docker-linux");
       if (form) {

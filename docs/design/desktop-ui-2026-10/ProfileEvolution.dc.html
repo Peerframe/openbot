@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Bot 档案 · 进化档案</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.icon-btn{width:32px;height:32px;border:0;border-radius:8px;background:transparent;cursor:pointer;display:inline-grid;place-items:center}
+.pill{height:34px;padding:0 16px;border-radius:17px;border:0;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;background:#ececee}
+.pill.small{height:28px;padding:0 12px;border-radius:14px;font-size:13px}
+.pill.primary{background:#111111;color:#ffffff}
+.pill.danger{background:#fbe9e7;color:#b3261e}
+.tab{height:34px;padding:0 16px;border-radius:17px;border:0;font-size:14px;cursor:pointer;white-space:nowrap;background:#f0f0f2;font-weight:500}
+.tab[aria-selected="true"]{background:#111111;color:#ffffff;font-weight:600}
+.chip{height:28px;padding:0 12px;border-radius:14px;border:0;font-size:13px;cursor:pointer;background:#f0f0f2;color:#3a3a3c;white-space:nowrap}
+.chip[aria-pressed="true"]{background:#111111;color:#ffffff}
+.card{border-radius:18px;background:#f0f0f2;padding:0 18px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 0}
+.row + .row{border-top:1px solid #e3e3e6}
+.t{display:flex;flex-direction:column;gap:3px;min-width:0}
+.t strong{font-size:14px;font-weight:500}
+.sub{font-size:12px;color:#8e8e93}
+.h2{margin:0;font-size:17px;font-weight:600}
+.h3{margin:0 4px;font-size:13px;font-weight:500;color:#6e6e73}
+.tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;background:#ffffff;font-size:12px;color:#6e6e73}
+.field{width:100%;box-sizing:border-box;border:1px solid #e3e3e6;border-radius:12px;background:#ffffff;padding:10px 14px;font:inherit;font-size:14px;color:#1d1d1f;outline:none}
+.label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#6e6e73}
+.switch{width:40px;height:24px;border:0;padding:0;border-radius:12px;background:#d1d1d6;position:relative;cursor:pointer;flex-shrink:0}
+.switch[aria-checked="true"]{background:#111111}
+.switch span{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#ffffff;display:block}
+.switch[aria-checked="true"] span{left:19px}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+.ok{color:#1c7c3c}.warn{color:#94480b}.bad{color:#b3261e}
+.seg{display:inline-flex;gap:2px;padding:3px;border-radius:12px;background:#f0f0f2}
+.seg button{height:30px;padding:0 14px;border:0;border-radius:9px;background:transparent;font-size:14px;color:#6e6e73;cursor:pointer;white-space:nowrap}
+.seg button[aria-selected="true"]{background:#ffffff;color:#1d1d1f;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.tlink{border:0;background:transparent;padding:0;font-size:13px;color:#8e8e93;cursor:pointer}
+.tlink[aria-pressed="true"]{color:#1d1d1f;font-weight:600}
+.select{height:30px;padding:0 12px;border-radius:15px;border:1px solid #e3e3e6;font-size:13px;cursor:pointer;background:#ffffff;color:#3a3a3c;white-space:nowrap}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; display: grid; grid-template-columns: 300px minmax(0, 1fr) 340px; background: #ffffff; overflow: hidden">
+<dc-import name="Sidebar" active="bot" hint-size="300px,900px"></dc-import>
+<main style="height: 900px; display: flex; flex-direction: column; min-width: 0; background: #fcfcfc">
+<header style="height: 56px; flex-shrink: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; padding: 0 16px 0 20px">
+<span></span>
+<span style="display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px 0 5px; border-radius: 10px; background: #e6e6e8; font-size: 15px; font-weight: 600"><dc-import name="Avatar" character="round" accent="green" size="24" hint-size="24px,24px"></dc-import>研究助理</span>
+<button type="button" class="icon-btn" aria-label="分享" style="justify-self: end"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg></button>
+</header>
+<div style="flex-grow: 1; min-height: 0; overflow: hidden; padding: 12px 44px 32px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: center; gap: 16px">
+<dc-import name="Avatar" character="round" accent="green" size="56" state="working" dot="true" ring="#fcfcfc" hint-size="56px,56px"></dc-import>
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0">
+<div style="display: flex; align-items: center; gap: 8px"><h1 style="margin: 0; font-size: 22px; font-weight: 700">研究助理</h1><span style="font-size: 12px; color: #6e6e73; background: #ececee; border-radius: 6px; padding: 2px 8px">信息 · 竞品研究</span></div>
+<span style="font-size: 13px; color: #6e6e73">跟踪竞品官网、更新日志和社交媒体，整理成周报发到频道。</span>
+</div>
+</div>
+<div role="tablist" aria-label="档案分区" class="seg" style="align-self: flex-start">
+<button type="button" role="tab" aria-selected="false">概览</button>
+<button type="button" role="tab" aria-selected="true">进化档案</button>
+<button type="button" role="tab" aria-selected="false">技能</button>
+<button type="button" role="tab" aria-selected="false">记忆</button>
+<button type="button" role="tab" aria-selected="false">工作记录</button>
+<button type="button" role="tab" aria-selected="false">配置</button>
+</div>
+<div style="flex-grow: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<div role="group" aria-label="变化类型" style="display: flex; gap: 14px">
+<button type="button" class="tlink" aria-pressed="true">全部 24</button>
+<button type="button" class="tlink" aria-pressed="false">职责 3</button>
+<button type="button" class="tlink" aria-pressed="false">技能 9</button>
+<button type="button" class="tlink" aria-pressed="false">配置 6</button>
+<button type="button" class="tlink" aria-pressed="false">导入 6</button>
+</div>
+<button type="button" class="select">最近 30 天 ▾</button>
+</div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; min-height: 0">
+<div style="display: flex; flex-direction: column; gap: 10px; min-height: 0">
+<span class="h3">今天</span>
+<div class="card">
+<div style="display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 14px 0">
+<span style="width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: #34c759; display: block"></span>
+<span class="t"><strong>验证技能「读取更新日志」</strong><span class="sub">通过确定性测试：3 个样例页面都读出了正确的版本号。</span><span style="display: flex; gap: 6px; margin-top: 4px"><span class="tag">来自任务 · 抓取竞品更新日志 ›</span></span></span>
+<span class="sub" style="white-space: nowrap">10:24</span>
+</div>
+<div style="border-top: 1px solid #e3e3e6; display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 14px 0">
+<span style="width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: #c7c7cc; display: block"></span>
+<span class="t"><strong>发现候选技能「社交媒体监控」</strong><span class="sub">在 2 次任务里重复出现，等你审核后才会使用。</span><span style="display: flex; gap: 6px; margin-top: 4px"><span class="tag">来自任务 · 整理本周周报 ›</span></span></span>
+<span class="sub" style="white-space: nowrap">09:40</span>
+</div>
+</div>
+<span class="h3">9 月 25 日</span>
+<div class="card">
+<div style="display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 14px 0">
+<span style="width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: #111111; display: block"></span>
+<span class="t"><strong>职责更新：周报改为周五上午发</strong><span class="sub">你在 # 市场周报 中调整。</span><span style="display: flex; gap: 6px; margin-top: 4px"><span class="tag">你手动记录</span></span></span>
+<span class="sub" style="white-space: nowrap">15:02</span>
+</div>
+<div style="border-top: 1px solid #e3e3e6; display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 14px 0">
+<span style="width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: #111111; display: block"></span>
+<span class="t"><strong>模型改为 claude-sonnet</strong><span class="sub">新任务使用这个模型，已排队的任务保留原模型。</span><span style="display: flex; gap: 6px; margin-top: 4px"><span class="tag">配置变化</span></span></span>
+<span class="sub" style="white-space: nowrap">11:20</span>
+</div>
+</div>
+<button type="button" style="align-self: flex-start; height: 30px; padding: 0 14px; border: 0; border-radius: 15px; background: transparent; color: #6e6e73; font: inherit; font-size: 13px; cursor: pointer">显示更早的 20 条 ›</button>
+</div>
+<aside style="display: flex; flex-direction: column; gap: 10px">
+<span class="h3">关于这份档案</span>
+<div style="border-radius: 18px; background: #f0f0f2; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #3a3a3c; line-height: 1.55">
+<span>只记录真实发生、能追溯来源的变化：职责、配置和技能。</span>
+<span>不展示模型的原始思维链；等级和外观也不代表权限。</span>
+<span>记录按天分组，一次显示最近 20 条，往下再加载。</span>
+<span class="sub">成长方向受 Hermes Agent 启发。</span>
+</div>
+</aside>
+</div>
+</div>
+</div>
+</main>
+<dc-import name="BotInfo" editing="false" character="round" accent="green" tag="信息 · 竞品研究" hint-size="340px,900px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

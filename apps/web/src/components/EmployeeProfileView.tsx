@@ -4,12 +4,13 @@ import type {
   EmployeeMemory,
   EmployeeProfile,
 } from "@openbot/domain";
-import { type FormEvent, type ReactNode, useId, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, useId, useMemo, useRef, useState } from "react";
 import { createEmployeeMemory, deleteEmployeeMemory, updateEmployeeMemory } from "../api";
-import { isActiveRun, runStatusLabel, runStatusSummary } from "../run-state";
+import { isActiveRun, runStatusLabel } from "../run-state";
+import { botComputerLabels } from "./BotInfoRail";
+import { EmployeeDescriptionForm } from "./EmployeeDescriptionForm";
 import { EmployeeEvolutionArchive } from "./EmployeeEvolutionArchive";
 import { EmployeeModelEditor } from "./EmployeeModelEditor";
-import { EmployeeSettingsForm } from "./EmployeeSettingsForm";
 import { EmployeeSkillReview } from "./EmployeeSkillReview";
 import { KnowledgeReviewPanel } from "./KnowledgeReviewPanel";
 import { OpenBotMark } from "./OpenBotMark";
@@ -25,11 +26,11 @@ export type ProfileTab =
   | "records"
   | "configuration";
 
+// 「运行中」 joined 工作记录 (owner decision, step 22); "live" stays a valid link and opens it.
 const tabs: Array<{ id: ProfileTab; label: string }> = [
   { id: "overview", label: "概览" },
   { id: "evolution", label: "进化档案" },
-  { id: "skills", label: "技能图谱" },
-  { id: "live", label: "运行中" },
+  { id: "skills", label: "技能" },
   { id: "memory", label: "记忆" },
   { id: "records", label: "工作记录" },
   { id: "configuration", label: "配置" },
@@ -61,7 +62,7 @@ export function EmployeeProfileView({
   onManageModels,
   modelServicesVersion,
   channels = [],
-  onRename,
+  onOpenRun,
 }: {
   headerAction?: ReactNode;
   initialTab?: ProfileTab;
@@ -77,10 +78,10 @@ export function EmployeeProfileView({
   modelServicesVersion?: number | undefined;
   /** Used only to name the channel of each recent run. */
   channels?: readonly Channel[];
-  /** Enables the identity editor in 配置 for layouts where the settings rail is not shown. */
-  onRename?: ((name: string) => Promise<void>) | undefined;
+  /** Opens 任务详情 for a run, approval, output or decision in 工作记录. */
+  onOpenRun?: ((runId: string) => void) | undefined;
 }) {
-  const [tab, setTab] = useState<ProfileTab>(initialTab);
+  const [tab, setTab] = useState<ProfileTab>(initialTab === "live" ? "records" : initialTab);
   const tabButtons = useRef<Array<HTMLButtonElement | null>>([]);
   const tabSetId = useId();
 
@@ -104,7 +105,7 @@ export function EmployeeProfileView({
   return (
     <main className="workspace-main employee-profile">
       <div className="ep-scroll">
-        <header className="ep-hero">
+        <header className={`ep-hero${tab === "overview" ? "" : " is-compact"}`}>
           <span className="ep-avatar">
             <RobotAvatar bot={employee} status={employee.status} presence="dot" />
           </span>
@@ -118,7 +119,7 @@ export function EmployeeProfileView({
                 "还没有描述。可以在右侧设置里补充这个 Bot 适合做什么。"}
             </p>
           </div>
-          <div className="ep-actions">
+          <div className="ep-actions" hidden={tab !== "overview"}>
             {employee.computerProfile === "docker-linux" && onOpenBrowser ? (
               <button className="ob-pill" type="button" onClick={onOpenBrowser}>
                 打开浏览器
@@ -131,10 +132,9 @@ export function EmployeeProfileView({
           </div>
         </header>
 
-        <div className="ep-tabs" role="tablist" aria-label="档案分区">
+        <div className="ob-seg ep-tabs" role="tablist" aria-label="档案分区">
           {tabs.map((item, index) => (
             <button
-              className="ob-filter"
               type="button"
               role="tab"
               id={`${tabSetId}-${item.id}-tab`}
@@ -174,59 +174,20 @@ export function EmployeeProfileView({
           {tab === "skills" ? (
             <Skills profile={profile} onProfileChanged={onProfileChanged} />
           ) : null}
-          {tab === "live" ? <LiveWork profile={profile} /> : null}
           {tab === "memory" ? (
             <EmployeeMemoryPanel profile={profile} onProfileChanged={onProfileChanged} />
           ) : null}
-          {tab === "records" ? <Records profile={profile} /> : null}
+          {tab === "records" ? (
+            <Records profile={profile} channels={channels} onOpenRun={onOpenRun} />
+          ) : null}
           {tab === "configuration" ? (
-            <ProfileSection
-              title="配置"
-              description="名称、标签和描述只用于说明，不授予权限；电脑权限与执行配置由服务电脑单独管理。"
-            >
-              {onRename ? (
-                <div className="ep-config-identity">
-                  <EmployeeSettingsForm
-                    key={profile.employee.id}
-                    profile={profile}
-                    onRename={onRename}
-                    onProfileChanged={onProfileChanged}
-                  />
-                </div>
-              ) : null}
-              {["model", "docker-linux"].includes(profile.employee.computerProfile) ? (
-                <EmployeeModelEditor
-                  key={profile.employee.id}
-                  profile={profile}
-                  onProfileChanged={onProfileChanged}
-                  onManageModels={onManageModels}
-                  modelServicesVersion={modelServicesVersion}
-                />
-              ) : null}
-              <dl className="employee-config-list">
-                <div>
-                  <dt>固定执行配置</dt>
-                  <dd>{profile.configuration.executionProfile}</dd>
-                </div>
-                <div>
-                  <dt>可移植格式</dt>
-                  <dd>{profile.configuration.portabilityFormat}</dd>
-                </div>
-                <div>
-                  <dt>电脑权限</dt>
-                  <dd>不随员工模板导出，接收者必须在自己的服务电脑重新授权</dd>
-                </div>
-              </dl>
-              <div className="ep-export">
-                <span>
-                  <strong>导出为模板</strong>
-                  <small>生成可分享的 Bot 模板；记忆和电脑权限不会随模板导出。</small>
-                </span>
-                <button className="ob-pill" type="button" onClick={onExport}>
-                  导出模板
-                </button>
-              </div>
-            </ProfileSection>
+            <Configuration
+              profile={profile}
+              onExport={onExport}
+              onProfileChanged={onProfileChanged}
+              onManageModels={onManageModels}
+              modelServicesVersion={modelServicesVersion}
+            />
           ) : null}
         </section>
       </div>
@@ -334,10 +295,7 @@ function Overview({
 
 function Evolution({ profile }: { profile: EmployeeProfile }) {
   return (
-    <ProfileSection
-      title="进化档案"
-      description="按真实时间查看职责、配置和能力变化；原始思维链、等级和外观都不属于权限。"
-    >
+    <ProfileSection>
       <EmployeeEvolutionArchive events={profile.evolution} />
     </ProfileSection>
   );
@@ -351,34 +309,37 @@ function Skills({
   onProfileChanged(): Promise<void>;
 }) {
   return (
-    <ProfileSection
-      title="技能图谱"
-      description="候选技能必须通过确定性测试或人工审核，才能成为已验证技能。"
-    >
+    <ProfileSection description="候选技能要通过确定性测试或你的审核，才会成为已验证技能。">
       <EmployeeSkillReview profile={profile} onProfileChanged={onProfileChanged} />
     </ProfileSection>
   );
 }
 
-function LiveWork({ profile }: { profile: EmployeeProfile }) {
-  const activeRuns = profile.records.runs.filter(isActiveRun);
-  return (
-    <ProfileSection title="运行中" description="展示结构化阶段和决策摘要，不展示模型的原始思维链。">
-      {activeRuns.length === 0 && profile.records.decisions.length === 0 ? (
-        <EmployeeEmpty
-          title="当前没有运行中的任务"
-          copy="给这名员工分配工作后，进度会出现在这里。"
-        />
-      ) : (
-        <div className="employee-live-grid">
-          <RunTable runs={activeRuns} />
-          <DecisionTimeline decisions={profile.records.decisions} />
-        </div>
-      )}
-    </ProfileSection>
-  );
+const PAGE = 20;
+/** LongLists: settings-style lists get a search box once they pass 20 entries. */
+const SEARCH_AFTER = 20;
+
+type MemoryFilter = "all" | "semantic" | "episodic" | "procedural" | "other";
+const memoryFilters: Array<{ id: MemoryFilter; label: string }> = [
+  { id: "all", label: "全部" },
+  { id: "semantic", label: "事实" },
+  { id: "episodic", label: "经历" },
+  { id: "procedural", label: "流程" },
+  { id: "other", label: "其他" },
+];
+
+function memoryMatches(memory: EmployeeMemory, filter: MemoryFilter) {
+  if (filter === "all") return true;
+  if (filter === "other") return !["semantic", "episodic", "procedural"].includes(memory.kind);
+  return memory.kind === filter;
 }
 
+/** Model use is refused by the Server for these; the switch mirrors that and stays off. */
+function modelUseAllowed(memory: EmployeeMemory) {
+  return memory.kind !== "secret-reference" && ["public", "internal"].includes(memory.sensitivity);
+}
+
+/** 记忆 (ProfileMemory artboard): 候选经验 cards, then the Bot's long-term memories. */
 export function EmployeeMemoryPanel({
   profile,
   onProfileChanged,
@@ -388,12 +349,36 @@ export function EmployeeMemoryPanel({
 }) {
   const [editingMemoryId, setEditingMemoryId] = useState<string | "new">();
   const [confirmingMemoryId, setConfirmingMemoryId] = useState<string>();
-  const [deletingMemoryId, setDeletingMemoryId] = useState<string>();
+  const [busyMemoryId, setBusyMemoryId] = useState<string>();
   const [error, setError] = useState<string>();
+  const [filter, setFilter] = useState<MemoryFilter>("all");
+  const [query, setQuery] = useState("");
+  const [limit, setLimit] = useState(PAGE);
   const editingMemory = profile.memories.find((memory) => memory.id === editingMemoryId);
+  const counts = useMemo(
+    () =>
+      Object.fromEntries(
+        memoryFilters.map((item) => [
+          item.id,
+          profile.memories.filter((memory) => memoryMatches(memory, item.id)).length,
+        ]),
+      ) as Record<MemoryFilter, number>,
+    [profile.memories],
+  );
+  const needle = query.trim().toLocaleLowerCase();
+  const matching = profile.memories
+    .filter((memory) => memoryMatches(memory, filter))
+    .filter(
+      (memory) =>
+        !needle ||
+        memory.title.toLocaleLowerCase().includes(needle) ||
+        memory.content.toLocaleLowerCase().includes(needle),
+    )
+    .sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt));
+  const visible = matching.slice(0, limit);
 
   async function remove(memory: EmployeeMemory) {
-    setDeletingMemoryId(memory.id);
+    setBusyMemoryId(memory.id);
     setError(undefined);
     try {
       await deleteEmployeeMemory(profile.employee.id, memory.id, {
@@ -405,158 +390,238 @@ export function EmployeeMemoryPanel({
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "无法删除这条记忆。");
     } finally {
-      setDeletingMemoryId(undefined);
+      setBusyMemoryId(undefined);
+    }
+  }
+
+  async function setModelUse(memory: EmployeeMemory, enabled: boolean) {
+    setBusyMemoryId(memory.id);
+    setError(undefined);
+    try {
+      // Revision-checked, so a switch flipped on a stale copy fails instead of overwriting.
+      await updateEmployeeMemory(profile.employee.id, memory.id, {
+        expectedRevision: memory.revision,
+        modelUseEnabled: enabled,
+      });
+      await onProfileChanged();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "无法更改这条记忆。");
+    } finally {
+      setBusyMemoryId(undefined);
     }
   }
 
   return (
-    <ProfileSection
-      title="记忆"
-      description="只有明确允许的记忆才会用于模型任务；候选经验须经你审阅。记忆不会进入当前员工模板。"
-    >
+    <ProfileSection description="只有打开「模型可用」的记忆才会发给模型；机密内容只存名称，不存密钥。记忆不会进入 Bot 模板。">
       <KnowledgeReviewPanel
         key={profile.employee.id}
         botId={profile.employee.id}
         onChanged={onProfileChanged}
       />
-      <div className="employee-memory-toolbar">
-        <p>
-          共 {profile.memories.length} 条 · 生命周期记录 {profile.memoryEvents.length} 条
-        </p>
-        <button
-          className="secondary-button"
-          type="button"
-          onClick={() => {
-            setError(undefined);
-            setEditingMemoryId("new");
-          }}
-        >
-          添加记忆
-        </button>
-      </div>
+      <section className="ep-block" aria-labelledby="ep-memory-heading">
+        <div className="ep-block-head">
+          <div className="ep-block-title">
+            <h2 id="ep-memory-heading">记忆 · {profile.memories.length}</h2>
+            <fieldset className="ep-text-filters" aria-label="记忆类型">
+              {memoryFilters
+                .filter((item) => item.id !== "other" || counts.other > 0)
+                .map((item) => (
+                  <button
+                    type="button"
+                    key={item.id}
+                    aria-pressed={filter === item.id}
+                    onClick={() => {
+                      setFilter(item.id);
+                      setLimit(PAGE);
+                    }}
+                  >
+                    {item.label} {counts[item.id]}
+                  </button>
+                ))}
+            </fieldset>
+          </div>
+          <div className="ep-block-tools">
+            {profile.memories.length > SEARCH_AFTER ? (
+              <input
+                type="search"
+                className="ep-search"
+                placeholder="搜索记忆"
+                aria-label="搜索记忆"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setLimit(PAGE);
+                }}
+              />
+            ) : null}
+            <button
+              className="ob-pill is-small"
+              type="button"
+              onClick={() => {
+                setError(undefined);
+                setEditingMemoryId("new");
+              }}
+            >
+              添加记忆
+            </button>
+          </div>
+        </div>
 
-      {editingMemoryId ? (
-        <EmployeeMemoryEditor
-          key={editingMemory?.id ?? "new"}
-          employeeId={profile.employee.id}
-          memory={editingMemory}
-          onCancel={() => setEditingMemoryId(undefined)}
-          onSaved={async () => {
-            setEditingMemoryId(undefined);
-            await onProfileChanged();
-          }}
-        />
-      ) : null}
+        {editingMemoryId ? (
+          <EmployeeMemoryEditor
+            key={editingMemory?.id ?? "new"}
+            employeeId={profile.employee.id}
+            memory={editingMemory}
+            onCancel={() => setEditingMemoryId(undefined)}
+            onSaved={async () => {
+              setEditingMemoryId(undefined);
+              await onProfileChanged();
+            }}
+          />
+        ) : null}
 
-      {error ? (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      ) : null}
+        {error ? (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        ) : null}
 
-      {profile.memories.length === 0 ? (
-        <EmployeeEmpty title="还没有长期记忆" copy="运行中的临时状态不会自动进入员工模板。" />
-      ) : (
-        <div className="employee-record-list employee-memory-list">
-          {profile.memories.map((memory) => {
-            const confirming = confirmingMemoryId === memory.id;
-            const deleting = deletingMemoryId === memory.id;
-            return (
-              <article key={memory.id}>
-                <div>
-                  <strong>{memory.title}</strong>
-                  <p>{memory.content}</p>
-                  <small>
-                    {memoryKindLabel(memory.kind)} · {memorySensitivityLabel(memory.sensitivity)} ·{" "}
-                    {memoryPortabilityLabel(memory.portability)} · 修订 {memory.revision} ·{" "}
-                    {memory.modelUseEnabled ? "允许模型使用" : "仅供你查看"}
-                  </small>
-                  {memory.provenance.source === "reviewed-work-proposal" ? (
-                    <small className="knowledge-source">
-                      {typeof memory.provenance.sourceTaskId === "string" &&
-                      typeof memory.provenance.sourceWorkRunId === "string" ? (
+        {profile.memories.length === 0 ? (
+          <p className="ep-empty">还没有长期记忆。任务中的临时状态不会自动变成记忆。</p>
+        ) : visible.length === 0 ? (
+          <p className="ep-empty">没有符合条件的记忆。</p>
+        ) : (
+          <ul className="ep-card ep-memory-list">
+            {visible.map((memory) => {
+              const confirming = confirmingMemoryId === memory.id;
+              const busy = busyMemoryId === memory.id;
+              const allowed = modelUseAllowed(memory);
+              return (
+                <li key={memory.id}>
+                  <div className="ep-memory-text">
+                    <strong>{memory.title}</strong>
+                    <span>{memory.content}</span>
+                    <span className="ep-tags">
+                      <span className="ob-tag">{memoryKindLabel(memory.kind)}</span>
+                      <span className="ob-tag">{memorySensitivityLabel(memory.sensitivity)}</span>
+                    </span>
+                    <MemorySource memory={memory} />
+                  </div>
+                  <div className="ep-memory-side">
+                    <span className="ep-model-use">
+                      <span>模型可用</span>
+                      <button
+                        type="button"
+                        role="switch"
+                        className="ob-switch"
+                        aria-checked={allowed && memory.modelUseEnabled === true}
+                        aria-label={`允许模型使用 ${memory.title}`}
+                        title={allowed ? undefined : "机密、受限和密钥引用不能发给模型"}
+                        disabled={!allowed || busy}
+                        onClick={() => void setModelUse(memory, memory.modelUseEnabled !== true)}
+                      />
+                    </span>
+                    <div className="ep-row-actions">
+                      {confirming ? (
                         <>
-                          来源 Task：
-                          <a
-                            href={`#/tasks?task=${encodeURIComponent(memory.provenance.sourceTaskId)}`}
+                          <span>内容将永久删除</span>
+                          <button
+                            className="is-danger"
+                            type="button"
+                            disabled={busy}
+                            onClick={() => void remove(memory)}
                           >
-                            {memory.provenance.sourceTaskId}
-                          </a>
-                          {" · "}Work Run：<code>{memory.provenance.sourceWorkRunId}</code>
+                            {busy ? "删除中…" : "确认删除"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setConfirmingMemoryId(undefined)}
+                          >
+                            取消
+                          </button>
                         </>
                       ) : (
-                        "原生任务来源信息不完整。"
+                        <>
+                          <button
+                            type="button"
+                            aria-label={`编辑 ${memory.title}`}
+                            onClick={() => {
+                              setError(undefined);
+                              setEditingMemoryId(memory.id);
+                            }}
+                          >
+                            编辑
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`删除 ${memory.title}`}
+                            onClick={() => setConfirmingMemoryId(memory.id)}
+                          >
+                            删除
+                          </button>
+                        </>
                       )}
-                    </small>
-                  ) : typeof memory.provenance.sourceRunId === "string" ? (
-                    <small className="knowledge-source">
-                      来源频道 Run：{memory.provenance.sourceRunId}
-                    </small>
-                  ) : null}
-                </div>
-                <div className="employee-memory-actions">
-                  {confirming ? (
-                    <>
-                      <span>内容将永久删除</span>
-                      <button
-                        className="memory-danger-button"
-                        type="button"
-                        disabled={deleting}
-                        onClick={() => void remove(memory)}
-                      >
-                        {deleting ? "删除中…" : "确认删除"}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={deleting}
-                        onClick={() => setConfirmingMemoryId(undefined)}
-                      >
-                        取消
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setError(undefined);
-                          setEditingMemoryId(memory.id);
-                        }}
-                      >
-                        编辑
-                      </button>
-                      <button type="button" onClick={() => setConfirmingMemoryId(memory.id)}>
-                        删除
-                      </button>
-                    </>
-                  )}
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {matching.length > visible.length ? (
+          <button type="button" className="ep-more" onClick={() => setLimit(limit + PAGE)}>
+            显示更多（还有 {matching.length - visible.length} 条）
+          </button>
+        ) : null}
 
-      {profile.memoryEvents.length > 0 ? (
-        <details className="employee-memory-audit">
-          <summary>查看生命周期记录</summary>
-          <ol>
-            {profile.memoryEvents.map((event) => (
-              <li key={event.id}>
-                <time dateTime={event.createdAt}>{formatDate(event.createdAt)}</time>
-                <span>
-                  {memoryActionLabel(event.action)} · 修订 {event.revision}
-                  {event.changedFields.length > 0
-                    ? ` · ${event.changedFields.map(memoryFieldLabel).join("、")}`
-                    : ""}
-                </span>
-              </li>
-            ))}
-          </ol>
-        </details>
-      ) : null}
+        {profile.memoryEvents.length > 0 ? (
+          <details className="ep-memory-audit">
+            <summary>修改记录 · {profile.memoryEvents.length}</summary>
+            <ol>
+              {profile.memoryEvents.slice(0, 100).map((event) => (
+                <li key={event.id}>
+                  <time dateTime={event.createdAt}>{formatDate(event.createdAt)}</time>
+                  <span>
+                    {memoryActionLabel(event.action)} · 修订 {event.revision}
+                    {event.changedFields.length > 0
+                      ? ` · ${event.changedFields.map(memoryFieldLabel).join("、")}`
+                      : ""}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </details>
+        ) : null}
+      </section>
     </ProfileSection>
   );
+}
+
+/** Where a reviewed memory came from, with the stored identifiers for audit. */
+function MemorySource({ memory }: { memory: EmployeeMemory }) {
+  const { provenance } = memory;
+  if (provenance.source === "reviewed-work-proposal") {
+    return (
+      <small className="knowledge-source">
+        {typeof provenance.sourceTaskId === "string" &&
+        typeof provenance.sourceWorkRunId === "string" ? (
+          <>
+            来源 Task：
+            <a href={`#/tasks?task=${encodeURIComponent(provenance.sourceTaskId)}`}>
+              {provenance.sourceTaskId}
+            </a>
+            {" · "}Work Run：<code>{provenance.sourceWorkRunId}</code>
+          </>
+        ) : (
+          "原生任务来源信息不完整。"
+        )}
+      </small>
+    );
+  }
+  return typeof provenance.sourceRunId === "string" ? (
+    <small className="knowledge-source">来源频道 Run：{provenance.sourceRunId}</small>
+  ) : null;
 }
 
 const emptyMemoryDraft: CreateEmployeeMemoryInput = {
@@ -618,16 +683,16 @@ function EmployeeMemoryEditor({
   }
 
   return (
-    <form className="form-grid employee-memory-editor" onSubmit={(event) => void submit(event)}>
+    <form className="ep-memory-editor" onSubmit={(event) => void submit(event)}>
       <header>
-        <div>
-          <h3>{memory ? "编辑记忆" : "添加记忆"}</h3>
-          <p>只保存需要跨任务保留的信息。不要在这里粘贴密码或私钥。</p>
-        </div>
-        <span>{draft.content.length}/8000</span>
+        <span>
+          <strong>{memory ? "编辑记忆" : "添加记忆"}</strong>
+          <small>只保存需要跨任务保留的信息。不要在这里粘贴密码或私钥。</small>
+        </span>
+        <small>{draft.content.length}/8000</small>
       </header>
-      <div className="employee-memory-fields">
-        <label htmlFor={`${formId}-kind`}>
+      <div className="ep-memory-fields">
+        <label className="ob-field" htmlFor={`${formId}-kind`}>
           <span>类型</span>
           <select
             id={`${formId}-kind`}
@@ -645,12 +710,12 @@ function EmployeeMemoryEditor({
           >
             <option value="working">工作</option>
             <option value="episodic">经历</option>
-            <option value="semantic">知识</option>
+            <option value="semantic">事实</option>
             <option value="procedural">流程</option>
             <option value="secret-reference">密钥引用</option>
           </select>
         </label>
-        <label htmlFor={`${formId}-sensitivity`}>
+        <label className="ob-field" htmlFor={`${formId}-sensitivity`}>
           <span>敏感级别</span>
           <select
             id={`${formId}-sensitivity`}
@@ -672,7 +737,7 @@ function EmployeeMemoryEditor({
             <option value="restricted">受限</option>
           </select>
         </label>
-        <label htmlFor={`${formId}-portability`}>
+        <label className="ob-field" htmlFor={`${formId}-portability`}>
           <span>未来迁移策略</span>
           <select
             id={`${formId}-portability`}
@@ -690,7 +755,7 @@ function EmployeeMemoryEditor({
           </select>
         </label>
       </div>
-      <label htmlFor={`${formId}-title`}>
+      <label className="ob-field" htmlFor={`${formId}-title`}>
         <span>标题</span>
         <input
           id={`${formId}-title`}
@@ -700,7 +765,7 @@ function EmployeeMemoryEditor({
           onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))}
         />
       </label>
-      <label htmlFor={`${formId}-content`}>
+      <label className="ob-field" htmlFor={`${formId}-content`}>
         <span>{secretReference ? "引用位置" : "内容"}</span>
         <textarea
           id={`${formId}-content`}
@@ -720,7 +785,7 @@ function EmployeeMemoryEditor({
           {error}
         </p>
       ) : null}
-      <label className="memory-model-use">
+      <label className="ep-checkbox">
         <input
           type="checkbox"
           checked={draft.modelUseEnabled ?? false}
@@ -731,32 +796,357 @@ function EmployeeMemoryEditor({
             setDraft((current) => ({ ...current, modelUseEnabled: event.target.checked }))
           }
         />
-        <span>允许此员工后续任务将这条记忆发送给配置的模型</span>
+        <span>允许这个 Bot 之后的任务把这条记忆发给模型</span>
       </label>
-      <small>机密、受限和密钥引用不能启用。关闭后停止后续读取，已发送的内容无法撤回。</small>
-      <footer className="employee-memory-editor-actions">
-        <button className="primary-button" type="submit" disabled={saving}>
-          {saving ? "保存中…" : "保存记忆"}
-        </button>
-        <button className="secondary-button" type="button" disabled={saving} onClick={onCancel}>
+      <small className="ep-note">
+        机密、受限和密钥引用不能启用。关闭后停止后续读取，已发送的内容无法撤回。
+      </small>
+      <footer>
+        <button className="ob-pill is-small" type="button" disabled={saving} onClick={onCancel}>
           取消
+        </button>
+        <button className="ob-pill is-small is-primary" type="submit" disabled={saving}>
+          {saving ? "保存中…" : "保存记忆"}
         </button>
       </footer>
     </form>
   );
 }
 
-function Records({ profile }: { profile: EmployeeProfile }) {
+type RecordKind = "run" | "approval" | "artifact" | "decision";
+type RecordFilter = "all" | RecordKind;
+const recordFilters: Array<{ id: RecordFilter; label: string }> = [
+  { id: "all", label: "全部" },
+  { id: "run", label: "任务" },
+  { id: "approval", label: "确认" },
+  { id: "artifact", label: "产出" },
+  { id: "decision", label: "决策" },
+];
+const recordKindLabel: Record<RecordKind, string> = {
+  run: "任务",
+  approval: "确认",
+  artifact: "产出",
+  decision: "决策",
+};
+/** ProfileWork: past five in-progress items the rest fold into 「还有 N 个」. */
+const LIVE_LIMIT = 5;
+
+interface WorkRecord {
+  id: string;
+  kind: RecordKind;
+  runId: string;
+  title: string;
+  meta: string;
+  state: string;
+  tone?: "ok" | "bad" | undefined;
+  createdAt: string;
+}
+
+function approvalStateLabel(status: EmployeeProfile["records"]["approvals"][number]["status"]) {
+  return { pending: "等你确认", approved: "已批准", rejected: "已拒绝", expired: "已过期" }[status];
+}
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function minutesLeft(value: string) {
+  const minutes = Math.ceil((Date.parse(value) - Date.now()) / 60_000);
+  return minutes > 0 ? `${minutes} 分钟内有效` : "即将过期";
+}
+
+/** 工作记录 (ProfileWork artboard): 进行中 first, then every record newest first. */
+function Records({
+  profile,
+  channels,
+  onOpenRun,
+}: {
+  profile: EmployeeProfile;
+  channels: readonly Channel[];
+  onOpenRun?: ((runId: string) => void) | undefined;
+}) {
+  const [filter, setFilter] = useState<RecordFilter>("all");
+  const [limit, setLimit] = useState(PAGE);
+  const [showAllLive, setShowAllLive] = useState(false);
+  const { runs, approvals, artifacts, decisions } = profile.records;
+  const runsById = new Map(runs.map((run) => [run.id, run]));
+  const channelName = (channelId: string) => {
+    const channel = channels.find((item) => item.id === channelId);
+    return channel ? (channel.directBotId ? "单聊" : `# ${channel.name}`) : "频道";
+  };
+  const latestStep = (runId: string) =>
+    decisions
+      .filter((item) => item.runId === runId)
+      .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))[0];
+
+  // Waiting for the Owner comes first, soonest expiry on top (LongLists).
+  const pending = approvals
+    .filter((approval) => approval.status === "pending")
+    .sort((left, right) => Date.parse(left.expiresAt) - Date.parse(right.expiresAt));
+  const pendingRuns = new Set(pending.map((approval) => approval.runId));
+  const working = runs.filter((run) => isActiveRun(run) && !pendingRuns.has(run.id));
+  const live = [
+    ...pending.map((approval) => ({
+      id: approval.id,
+      runId: approval.runId,
+      waiting: true,
+      title: `等你确认 · ${approval.summary}`,
+      meta: `${channelName(approval.channelId)} · ${minutesLeft(approval.expiresAt)}`,
+    })),
+    ...working.map((run) => {
+      const step = latestStep(run.id);
+      return {
+        id: run.id,
+        runId: run.id,
+        waiting: false,
+        title: `正在工作 · ${run.title}`,
+        meta: `${channelName(run.channelId)}${step ? ` · 现在：${step.message}` : ""}`,
+      };
+    }),
+  ];
+  const shownLive = showAllLive ? live : live.slice(0, LIVE_LIMIT);
+
+  const all: WorkRecord[] = [
+    ...runs.map((run): WorkRecord => {
+      const done = run.status === "completed";
+      const failed = run.status === "failed" || run.status === "blocked";
+      return {
+        id: `run:${run.id}`,
+        kind: "run",
+        runId: run.id,
+        title: run.title,
+        meta: `${channelName(run.channelId)} · ${formatShortDate(run.createdAt)}`,
+        state: failed ? "没能完成" : runStatusLabel(run.status),
+        tone: done ? "ok" : failed ? "bad" : undefined,
+        createdAt: run.createdAt,
+      };
+    }),
+    ...approvals.map(
+      (approval): WorkRecord => ({
+        id: `approval:${approval.id}`,
+        kind: "approval",
+        runId: approval.runId,
+        title: approval.summary,
+        meta: `${approval.decidedAt ? "你处理 · " : ""}${formatDateTime(approval.decidedAt ?? approval.createdAt)}`,
+        state: approvalStateLabel(approval.status),
+        createdAt: approval.createdAt,
+      }),
+    ),
+    ...artifacts.map(
+      (artifact): WorkRecord => ({
+        id: `artifact:${artifact.id}`,
+        kind: "artifact",
+        runId: artifact.runId,
+        title: artifact.name,
+        meta: `${runsById.get(artifact.runId)?.title ?? "任务"} · ${formatBytes(artifact.sizeBytes)}`,
+        state: "已保存",
+        createdAt: artifact.createdAt,
+      }),
+    ),
+    ...decisions.map(
+      (decision): WorkRecord => ({
+        id: `decision:${decision.id}`,
+        kind: "decision",
+        runId: decision.runId,
+        title: decision.summary,
+        meta: `阶段说明 · ${formatDateTime(decision.createdAt)}`,
+        state: "可审计",
+        createdAt: decision.createdAt,
+      }),
+    ),
+  ].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
+  const counts = Object.fromEntries(
+    recordFilters.map((item) => [
+      item.id,
+      item.id === "all" ? all.length : all.filter((record) => record.kind === item.id).length,
+    ]),
+  ) as Record<RecordFilter, number>;
+  const matching = filter === "all" ? all : all.filter((record) => record.kind === filter);
+  const visible = matching.slice(0, limit);
+
   return (
-    <ProfileSection
-      title="工作记录"
-      description="任务、审批、产出与结构化进度都保留对原始记录的引用。"
-    >
-      <RunTable runs={profile.records.runs} />
-      <div className="employee-record-counts">
-        <span>审批 {profile.records.approvals.length}</span>
-        <span>产物 {profile.records.artifacts.length}</span>
-        <span>决策摘要 {profile.records.decisions.length}</span>
+    <ProfileSection description="决策只记录可审计的阶段说明，不记录模型的原始思维链。每条记录都能回到原来的对话和任务。">
+      {live.length > 0 ? (
+        <section className="ep-block" aria-labelledby="ep-live-heading">
+          <h2 id="ep-live-heading">进行中 · {live.length}</h2>
+          <ul className="ep-card ep-live-list">
+            {shownLive.map((item) => (
+              <li key={item.id}>
+                <RecordButton runId={item.runId} onOpenRun={onOpenRun}>
+                  <i className={item.waiting ? "is-waiting" : "is-working"} aria-hidden="true" />
+                  <span className="ep-record-text">
+                    <strong>{item.title}</strong>
+                    <small>{item.meta}</small>
+                  </span>
+                  {onOpenRun ? <span className="ep-record-link">任务详情 ›</span> : null}
+                </RecordButton>
+              </li>
+            ))}
+          </ul>
+          {live.length > shownLive.length ? (
+            <button type="button" className="ep-more" onClick={() => setShowAllLive(true)}>
+              还有 {live.length - shownLive.length} 个 ›
+            </button>
+          ) : null}
+        </section>
+      ) : null}
+      <section className="ep-block" aria-labelledby="ep-records-heading">
+        <div className="ep-block-title">
+          <h2 id="ep-records-heading">工作记录</h2>
+          <fieldset className="ep-text-filters" aria-label="记录类型">
+            {recordFilters.map((item) => (
+              <button
+                type="button"
+                key={item.id}
+                aria-pressed={filter === item.id}
+                onClick={() => {
+                  setFilter(item.id);
+                  setLimit(PAGE);
+                }}
+              >
+                {item.label} {counts[item.id]}
+              </button>
+            ))}
+          </fieldset>
+        </div>
+        {all.length === 0 ? (
+          <p className="ep-empty">还没有工作记录。分配第一项工作后会出现在这里。</p>
+        ) : visible.length === 0 ? (
+          <p className="ep-empty">没有这类记录。</p>
+        ) : (
+          <ul className="ep-card ep-record-list" aria-label="工作记录">
+            {visible.map((record) => (
+              <li key={record.id}>
+                <RecordButton runId={record.runId} onOpenRun={onOpenRun}>
+                  <span className="ob-tag">{recordKindLabel[record.kind]}</span>
+                  <span className="ep-record-text">
+                    <strong>{record.title}</strong>
+                    <small>{record.meta}</small>
+                  </span>
+                  <span className={`ep-record-state${record.tone ? ` is-${record.tone}` : ""}`}>
+                    {record.state}
+                  </span>
+                </RecordButton>
+              </li>
+            ))}
+          </ul>
+        )}
+        {matching.length > visible.length ? (
+          <button type="button" className="ep-more" onClick={() => setLimit(limit + PAGE)}>
+            加载更早的记录 ›
+          </button>
+        ) : null}
+      </section>
+    </ProfileSection>
+  );
+}
+
+/** A record row opens 任务详情 when the host can show it; otherwise it is plain text. */
+function RecordButton({
+  runId,
+  onOpenRun,
+  children,
+}: {
+  runId: string;
+  onOpenRun?: ((runId: string) => void) | undefined;
+  children: ReactNode;
+}) {
+  return onOpenRun ? (
+    <button type="button" className="ep-record" onClick={() => onOpenRun(runId)}>
+      {children}
+    </button>
+  ) : (
+    <div className="ep-record">{children}</div>
+  );
+}
+
+/** 配置 (ProfileConfig artboard): 介绍, then how the Bot works. */
+function Configuration({
+  profile,
+  onExport,
+  onProfileChanged,
+  onManageModels,
+  modelServicesVersion,
+}: {
+  profile: EmployeeProfile;
+  onExport(): void;
+  onProfileChanged(): Promise<void>;
+  onManageModels?: (() => void) | undefined;
+  modelServicesVersion?: number | undefined;
+}) {
+  const [editingModel, setEditingModel] = useState(false);
+  // Only these profiles may pick a model; the Server enforces the same rule.
+  const usesModel = ["model", "docker-linux"].includes(profile.employee.computerProfile);
+  const model = profile.configuration.model;
+  return (
+    <ProfileSection description="导出的 Bot 模板不含记忆和电脑权限；对方要在自己的服务电脑上重新授权。">
+      <div className="ep-config">
+        <section className="ep-block" aria-labelledby="ep-intro-heading">
+          <h2 id="ep-intro-heading">介绍</h2>
+          <EmployeeDescriptionForm
+            key={profile.employee.id}
+            profile={profile}
+            onProfileChanged={onProfileChanged}
+          />
+        </section>
+        <section className="ep-block" aria-labelledby="ep-how-heading">
+          <h2 id="ep-how-heading">怎么工作</h2>
+          <div className="ep-card ep-config-rows">
+            {usesModel ? (
+              <div className="ep-config-row">
+                <span className="ep-record-text">
+                  <strong>模型</strong>
+                  <small>新任务使用这里的选择；已排队的任务保留原模型</small>
+                </span>
+                <span className="ep-config-value">
+                  <span>{model ? model.modelId : "默认模型"}</span>
+                  <button
+                    type="button"
+                    className="ep-text-button"
+                    aria-expanded={editingModel}
+                    onClick={() => setEditingModel(!editingModel)}
+                  >
+                    {editingModel ? "收起" : "更改"}
+                  </button>
+                </span>
+              </div>
+            ) : null}
+            {usesModel && editingModel ? (
+              <div className="ep-config-editor">
+                <EmployeeModelEditor
+                  key={profile.employee.id}
+                  profile={profile}
+                  onProfileChanged={onProfileChanged}
+                  onManageModels={onManageModels}
+                  modelServicesVersion={modelServicesVersion}
+                />
+              </div>
+            ) : null}
+            <div className="ep-config-row">
+              <span className="ep-record-text">
+                <strong>电脑</strong>
+                <small>创建时决定；需要不同的方式请新建一个 Bot</small>
+              </span>
+              <span className="ep-config-value">
+                {botComputerLabels[profile.configuration.executionProfile]}
+              </span>
+            </div>
+            <div className="ep-config-row">
+              <span className="ep-record-text">
+                <strong>模板格式</strong>
+                <small>分享 Bot 模板时使用</small>
+              </span>
+              <span className="ep-config-value">
+                <code>{profile.configuration.portabilityFormat}</code>
+                <button type="button" className="ep-text-button" onClick={onExport}>
+                  导出模板
+                </button>
+              </span>
+            </div>
+          </div>
+        </section>
       </div>
     </ProfileSection>
   );
@@ -771,97 +1161,19 @@ function EmployeeStat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function SectionHeading({ title, description }: { title: string; description: string }) {
-  return (
-    <header className="employee-section-heading">
-      <h2>{title}</h2>
-      <p>{description}</p>
-    </header>
-  );
-}
-
+/** One tab's content, unframed (ProfileOptionC); the boundary note sits at the end. */
 function ProfileSection({
-  title,
   description,
   children,
 }: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
+  description?: string | undefined;
+  children: ReactNode;
 }) {
   return (
-    <section className="employee-profile-body employee-tab-panel">
-      <SectionHeading title={title} description={description} />
+    <section className="ep-panel">
       {children}
+      {description ? <p className="ep-note">{description}</p> : null}
     </section>
-  );
-}
-
-function DecisionTimeline({ decisions }: { decisions: EmployeeProfile["records"]["decisions"] }) {
-  if (decisions.length === 0) return null;
-  return (
-    <section>
-      <SectionHeading title="决策摘要" description="可审计的阶段说明，而非原始思维链。" />
-      <ol className="employee-decision-list">
-        {decisions.map((decision) => (
-          <li key={decision.id}>
-            <span>{decision.stage}</span>
-            <p>{decision.summary}</p>
-            <time dateTime={decision.createdAt}>{formatDateTime(decision.createdAt)}</time>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-function RunTable({ runs }: { runs: EmployeeProfile["records"]["runs"] }) {
-  if (runs.length === 0) {
-    return <EmployeeEmpty title="还没有工作记录" copy="完成第一项任务后会出现在这里。" />;
-  }
-  return (
-    <div className="employee-run-table">
-      <table aria-label="员工工作记录">
-        <thead>
-          <tr className="employee-run-table-header">
-            <th scope="col">时间</th>
-            <th scope="col">任务</th>
-            <th scope="col">状态</th>
-            <th scope="col">结果</th>
-          </tr>
-        </thead>
-        <tbody>
-          {runs.map((run) => (
-            <tr key={run.id}>
-              <td>
-                <time dateTime={run.createdAt}>{formatDateTime(run.createdAt)}</time>
-              </td>
-              <td>
-                <strong>{run.title}</strong>
-              </td>
-              <td>
-                <span className={`employee-run-state ${run.status}`}>
-                  <i />
-                  {runStatusLabel(run.status)}
-                </span>
-              </td>
-              <td>
-                <small>{runStatusSummary(run) ?? "—"}</small>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function EmployeeEmpty({ title, copy }: { title: string; copy: string }) {
-  return (
-    <div className="employee-empty">
-      <strong>{title}</strong>
-      <p>{copy}</p>
-    </div>
   );
 }
 
@@ -877,10 +1189,10 @@ function skillStateLabel(state: EmployeeProfile["skills"][number]["state"]) {
 
 function memoryKindLabel(kind: EmployeeProfile["memories"][number]["kind"]) {
   const labels: Record<EmployeeProfile["memories"][number]["kind"], string> = {
-    working: "工作记忆",
-    episodic: "情景记忆",
-    semantic: "语义记忆",
-    procedural: "流程记忆",
+    working: "工作",
+    episodic: "经历",
+    semantic: "事实",
+    procedural: "流程",
     "secret-reference": "密钥引用",
   };
   return labels[kind];
@@ -893,14 +1205,6 @@ function memorySensitivityLabel(sensitivity: EmployeeProfile["memories"][number]
     confidential: "机密",
     restricted: "受限",
   }[sensitivity];
-}
-
-function memoryPortabilityLabel(portability: EmployeeProfile["memories"][number]["portability"]) {
-  return portability === "never"
-    ? "永不迁移"
-    : portability === "owner-selectable"
-      ? "以后可由你选择"
-      : "已选择迁移";
 }
 
 function memoryActionLabel(action: EmployeeProfile["memoryEvents"][number]["action"]) {
