@@ -52,14 +52,35 @@ native task attachment storage remains a separate measured category and is not p
 
 ## Current handoff
 
-Checkout `/private/tmp/openbot-c21-storage`, branch `codex/c21-storage-purge`, rebased onto C19 `6dd5d32` after its main refresh.
-Scope: Python/storage migrations/audit/API documents; no Web, paid models, auto-merge or production
-mutation. Acceptance: real owned PostgreSQL/HTTP reference refusals, late reference, rollback/recovery,
-idempotent clear, existing whole-channel cleanup, measured usage and default-off/age/ref-safe auto
-purge. Final focused owned PostgreSQL/HTTP run: 26 passed, zero skips (15 C21, three C19,
-eight existing identity lifecycle cases), including waiting SQL writers and case-insensitive update
-refusals. Full `npm run check` passed (18/18 build tasks cached on the final run; the preceding
-implementation run built six tasks). Initial unprivileged check hit sandbox loopback EPERM; the
-authorized local test run passed. Full SQL/control acceptance is running; hosted validate and PR
-pending. Its first run had one outdated channel-read lock-order assertion (1,028 passed, two skips);
-the channel read now deliberately holds file lock before Owner transaction for staging recovery.
+Checkout `/private/tmp/openbot-c21-storage`, branch `codex/c21-storage-purge`, implementation
+`8209bf9`, based on C19 `6dd5d32` after its main refresh. PR [#164](https://github.com/Peerframe/openbot/pull/164)
+is stacked on [#161](https://github.com/Peerframe/openbot/pull/161); merge the dependency first.
+No Web changes, paid models, automatic merge, release or production-data mutation.
+
+Contracts: `DELETE .../attachments/:id/purge`, `POST .../attachments/cleanup` with UUID requestKey,
+Owner `GET /api/v1/storage`, `GET/PUT /api/v1/settings/storage` with expectedRevision and null/30
+policy. The [English API](../API.md#c21-permanent-channel-trash-deletion-and-measured-storage) and
+[Chinese API](../API.zh-CN.md#c21频道回收站永久删除与实测存储空间) cover responses, limits, 409/410,
+idempotency, measured-byte scope and audit. Migration 0050 adds minimal receipts/policy/late-reference
+guards; whole-channel tombstone cleanup retains its existing contract.
+
+Executed on owned PostgreSQL 17.11: focused `test_storage_purge.py`, `test_attachment_references.py`
+and `test_identity_lifecycle.py`: **26 passed, zero skips**, including all 15 C21 cases. Coverage:
+Owner/Origin/trash refusal; message and task references committed during deletion; waiting SQL
+writers and case-insensitive INSERT/UPDATE refusal; final Owner revocation rollback; same-key clear
+retry without new effects; 100 retained/20 channel bounds; unavailable SQL lookup and lost commit
+recovery; original whole-channel cleanup; default-off/31-day versus 29-day/ref-safe automatic purge;
+real maintenance start/stop; failed whole-pass rollback; measured storage and unknown/link refusal.
+
+`npm run test:control:python`: **1,031 passed, two skips**. The base interpreter skips the two
+Temporal activity/effect modules (`temporalio` absent); the hosted Worker lane executes them.
+No C21 skip. `npm run check` passed after the C19 refresh: 18 build tasks successful, 17 cached;
+focused SQL tests execute real transactions and synthetic filesystem effects, never paid providers.
+Initial check lacked sandbox loopback permission; authorized local execution passed. Initial SQL
+suite found one obsolete channel-content lock-order assertion; the corrected file-before-Owner
+order is required to recover staging before reads, and the final full SQL suite passed.
+
+Hosted results and immutable run/job links are maintained in the PR's Verification section and
+[current-head checks](https://github.com/Peerframe/openbot/pull/164/checks). Required hosted results
+remain the source of truth for CI completion. Claude owns ChannelFilesTrash/SettingsStorage wiring;
+C21 supplies the backend. Local base/Worker evidence is distinguished above, not silently combined.
