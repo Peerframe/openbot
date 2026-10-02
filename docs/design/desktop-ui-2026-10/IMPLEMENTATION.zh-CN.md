@@ -57,7 +57,7 @@
 | 18 | 给频道加成员——**审核中** | AddMember、ChannelInfo | — | 带「搜索 Bot」的添加成员弹窗；浅红色「移除」；右栏群组头像 |
 | 19 | 对话里的任务——**审核中** | TaskCards、TaskInspector | C13 | 每个任务一张 `TaskCard`，含全部状态、卡上审批、协作提示；`TaskSheet` 取代任务详情弹窗；删除 `channel-work-item`、`native-run-controls`、`run-inspector` 样式 |
 | 20 | 对话框——**审核中** | Dialog* | 连接模型服务需要 C17 | 统一的 `Dialog` 框架；重做分享、分享 Bot 模板、导入 Bot 模板、删除确认、配对工作电脑、连接模型服务 |
-| 21 | 任务监督与空工作区 | WorkSupervision、EmptyWorkspace | — | 重做 `WorkTasksScreen`；新的 `EmptyWorkspace`；退役独立的「例行任务」和「技能库」页面（入口改到设置分区） |
+| 21 | 任务监督与空工作区——**审核中** | WorkSupervision、EmptyWorkspace | — | 重做 `WorkTasksScreen`；新的 `EmptyWorkspace`；退役独立的「例行任务」和「技能库」页面（入口改到设置分区） |
 | 22 | 设计剩余界面（先画布，再由所有者确认） | 新画板 | — | 消息操作与表情回应、附件与语音、「补充指令」输入、「资料库」里的频道文件回收站、Bot 档案各分页（进化档案注明受 Hermes Agent 启发）、员工浏览器画面、提示与浮动通知、应用图标与 README 图片 |
 | 23 | 实现第 22 步并退役旧层 | 第 22 步画板 | 图标需要 C16 | 实现已确认的设计；删除 DESIGN.md 列出的旧样式表、旧样式类和 `OpenBotMark`；更新网站演示的模拟数据 |
 

@@ -70,7 +70,7 @@ SKILL.md 导入接受一个不超过 12 KiB 的 Markdown 文档及版本号，�
 
 员工导出先预览包含/排除项、阻止原因与签名状态，再下载与审核绑定的 JSON。导入先检查结构、完整性、适用签名及兼容性，再由 Owner 单独激活为新的本地身份；导入技能初始禁用。凭证、主机权限、私人记忆和工作历史不会随包迁移。这不是认证所有权转移，也不是完整复制原员工掌握的一切。
 
-证据：[插件页](../../apps/web/src/components/SkillLibraryScreen.tsx)、[技能导入](../../apps/web/src/components/EmployeeSkillImport.tsx)、[员工导出](../../apps/web/src/components/ExportEmployeeDialog.tsx)、[员工导入](../../apps/web/src/components/ImportEmployeeDialog.tsx)、[员工模型](../EMPLOYEE.zh-CN.md)。
+证据：[插件页](https://github.com/Peerframe/openbot/blob/a99918176ee42e45d7a909853a0db1dc5b884d38/apps/web/src/components/SkillLibraryScreen.tsx)、[技能导入](../../apps/web/src/components/EmployeeSkillImport.tsx)、[员工导出](../../apps/web/src/components/ExportEmployeeDialog.tsx)、[员工导入](../../apps/web/src/components/ImportEmployeeDialog.tsx)、[员工模型](../EMPLOYEE.zh-CN.md)。
 
 ## 自动任务、工作电脑与设置
 

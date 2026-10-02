@@ -627,6 +627,13 @@
 .settings-dialog .settings-dialog-body .settings-routine-when small.is-attention {
   color: #b3261e;
 }
+.settings-dialog .settings-dialog-body .settings-routine-reason {
+  display: block;
+  margin-top: 2px;
+  color: #b3261e;
+  line-height: 1.45;
+  white-space: normal;
+}
 .settings-dialog .settings-routine-remove {
   padding: 0;
   border: 0;

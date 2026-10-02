@@ -70,8 +70,7 @@
   -webkit-app-region: drag;
   app-region: drag;
 }
-:root[data-desktop="darwin"] .destination-header button,
-:root[data-desktop="darwin"] .empty-workspace-header button {
+:root[data-desktop="darwin"] .destination-header button {
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }

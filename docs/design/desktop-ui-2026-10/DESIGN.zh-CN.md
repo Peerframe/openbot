@@ -144,7 +144,7 @@
 | Launch、LaunchMotion、Welcome、Install、Connect、Login、ModelSetup、WorkerSetup | `Onboarding.tsx` 与各设置页面 | 已实现 |
 | TaskCards、TaskInspector | `TaskCard.tsx`、`TaskSheet.tsx` | 已完成；步数等 C13 |
 | Dialog* | `Dialog.tsx` 框架；分享、分享 Bot 模板、导入、删除、配对工作电脑、连接模型服务 | 已完成；连接模型服务在 C17 之前保留列表和编辑区 |
-| WorkSupervision、EmptyWorkspace | `WorkTasksScreen.tsx`、新的 `EmptyWorkspace.tsx` | 第 21 步 |
+| WorkSupervision、EmptyWorkspace | `WorkTasksScreen.tsx`、`EmptyWorkspace.tsx` | 已完成；步数等 C13 |
 
 ## 尚未设计
 
@@ -164,15 +164,16 @@
 ## 旧设计清单
 
 必须消失的旧样式类：`primary-button`、`secondary-button`、`icon-button`、`onboarding-mark`、
-`destination-*`、`workspace-toolbar`/`toolbar-*`、`channel-members-*`、`workspace-welcome`。已删除：
-`create-dialog`、`dialog-header`、`dialog-backdrop`（第 20 步），`channel-work-item`、`run-inspector`、
+剩下的 `destination-*`（例行任务表单）、`workspace-toolbar`/`toolbar-*`、`channel-members-*`。已删除：
+`workspace-welcome` 和大部分 `destination-*`（第 21 步），`create-dialog`、`dialog-header`、`dialog-backdrop`（第 20 步），`channel-work-item`、`run-inspector`、
 `native-run-controls`（第 19 步），`bot-identity-builder`、`appearance-grid`（第 16 步）。
 
 旧样式表：`styles.css` 的大部分、`workspace-shell.css`、`desktop-workspace.css`、`desktop-ui-refresh.css`、
 `settings-plugin-refresh.css`、`workspace-preferences.css`、`components/destinations.css`。
 
-第 16 步已删除 `CreateBotDialog` 和 `CreateChannelDialog`；第 17 步删除 `EmployeeProfileRail`；第 19 步删除
-`RunInspector`、`RunProgressPanel`、`NativeRunControls` 和 `RunSteering`。计划中退役的界面：独立的「例行任务」和「技能库」页面 `AutomationsScreen`、`SkillLibraryScreen`（由「设置 › 例行任务」和「设置 › 技能」取代）；
-以及旧的位图标志 `OpenBotMark`。
+已删除：`CreateBotDialog`、`CreateChannelDialog`（第 16 步）；`EmployeeProfileRail`（第 17 步）；
+`RunInspector`、`RunProgressPanel`、`NativeRunControls`、`RunSteering`（第 19 步）；独立的「例行任务」和
+「技能库」页面——`SkillLibraryScreen` 以及 `AutomationsScreen` 的页面形态（它现在只负责「设置 › 例行任务」）——
+和旧的欢迎页（第 21 步）。还要退役：旧的位图标志 `OpenBotMark`（第 23 步）。
 
-已完成：窗口外壳与右栏、启动与首次设置。其余按计划逐步进行，每一步在同一个拉取请求里删除它所替换的旧规则。
+已完成：窗口外壳与右栏、启动与首次设置，以及第 14–21 步。其余按计划逐步进行，每一步在同一个拉取请求里删除它所替换的旧规则。

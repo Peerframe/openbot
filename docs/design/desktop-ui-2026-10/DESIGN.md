@@ -168,7 +168,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | `Onboarding.tsx` and the setup screens | Built |
 | TaskCards, TaskInspector | `TaskCard.tsx`, `TaskSheet.tsx` | Built; step counts wait for C13 |
 | Dialog* | `Dialog.tsx` frame; Share, Export, Import, DeleteIdentity, NodeManager and ModelConnections dialogs | Built; 连接模型服务 keeps its list and editor until C17 |
-| WorkSupervision, EmptyWorkspace | `WorkTasksScreen.tsx`, new `EmptyWorkspace.tsx` | Step 21 |
+| WorkSupervision, EmptyWorkspace | `WorkTasksScreen.tsx`, `EmptyWorkspace.tsx` | Built; step counts wait for C13 |
 
 ## Not designed yet
 
@@ -188,8 +188,9 @@ These are designed on the canvas (step 22) before they are rebuilt; until then t
 ## Legacy inventory
 
 Legacy classes that must disappear: `primary-button`, `secondary-button`, `icon-button`,
-`onboarding-mark`, `destination-*`, `workspace-toolbar`/`toolbar-*`, `channel-members-*`,
-`workspace-welcome`. Already removed: `create-dialog`, `dialog-header`, `dialog-backdrop` (step 20),
+`onboarding-mark`, the remaining `destination-*` (the routine form), `workspace-toolbar`/`toolbar-*`,
+`channel-members-*`. Already removed: `workspace-welcome` and most `destination-*` (step 21),
+`create-dialog`, `dialog-header`, `dialog-backdrop` (step 20),
 `channel-work-item`, `run-inspector`, `native-run-controls` (step 19), `bot-identity-builder`,
 `appearance-grid` (step 16).
 
@@ -197,10 +198,11 @@ Legacy stylesheets: most of `styles.css`, `workspace-shell.css`, `desktop-worksp
 `desktop-ui-refresh.css`, `settings-plugin-refresh.css`, `workspace-preferences.css`,
 `components/destinations.css`.
 
-`CreateBotDialog` and `CreateChannelDialog` were removed in step 16; `EmployeeProfileRail` in step
-17; `RunInspector`, `RunProgressPanel`, `NativeRunControls` and `RunSteering` in step 19. Screens retired by the plan:
-the standalone 例行任务 and 技能库 pages, `AutomationsScreen` and `SkillLibraryScreen`
-(replaced by 设置 › 例行任务 and 设置 › 技能); and the old raster mark `OpenBotMark`.
+Removed so far: `CreateBotDialog` and `CreateChannelDialog` (step 16); `EmployeeProfileRail` (step
+17); `RunInspector`, `RunProgressPanel`, `NativeRunControls` and `RunSteering` (step 19); the
+standalone 例行任务 and 技能库 pages — `SkillLibraryScreen` and the page form of `AutomationsScreen`,
+which now only renders 设置 › 例行任务 — and the old welcome (step 21). Still to retire: the old
+raster mark `OpenBotMark` (step 23).
 
-Done so far: the window shell and rail, and launch and setup. The rest follow the steps in the
+Done so far: the window shell and rail, launch and setup, and steps 14–21. The rest follow the steps in the
 plan; each step deletes the legacy rules it replaces in the same pull request.

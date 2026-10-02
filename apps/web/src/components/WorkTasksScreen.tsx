@@ -19,7 +19,6 @@ import {
   taskBotSupported,
 } from "./NativeTaskScopeForm";
 import { NativeTaskScopeView } from "./NativeTaskScopeView";
-import "./destinations.css";
 import "./WorkTasksScreen.css";
 
 const statusLabels = {
@@ -80,6 +79,7 @@ export function WorkTasksScreen({
   const [notice, setNotice] = useState("");
   const [attempt, setAttempt] = useState<CreateWorkInput>();
   const [created, setCreated] = useState(false);
+  const [mode, setMode] = useState<"create" | "lookup">(initialTaskId ? "lookup" : "create");
   const request = useRef<AbortController | null>(null);
   const online = useRef(navigator.onLine);
   const mutating = useRef(false);
@@ -282,249 +282,383 @@ export function WorkTasksScreen({
     }
   }
 
+  const terminal = snapshot
+    ? ["completed", "failed", "cancelled"].includes(snapshot.status)
+    : false;
+  const unknownActions = snapshot?.actions.filter((action) => action.status === "unknown") ?? [];
+  const usage = snapshot?.usage;
+  const stages: Array<[string, "done" | "current" | ""]> = [
+    ["已提交", attempt || snapshot ? "done" : ""],
+    ["服务电脑已保存", snapshot ? "done" : attempt ? "current" : ""],
+    [
+      snapshot?.status === "cancelled"
+        ? "已取消"
+        : snapshot?.status === "failed"
+          ? "没能完成"
+          : "工作中",
+      terminal ? "done" : snapshot && snapshot.status !== "queued" ? "current" : "",
+    ],
+    [
+      "结果核验",
+      snapshot?.status === "completed" && unknownActions.length === 0
+        ? "done"
+        : unknownActions.length > 0
+          ? "current"
+          : "",
+    ],
+  ];
+
   return (
     <main
       className="workspace-destination work-tasks"
       hidden={!active}
       aria-labelledby="work-tasks-title"
     >
-      <header className="destination-header">
-        <h1 id="work-tasks-title">任务监督</h1>
-      </header>
-      <div className="destination-scroll">
-        <p>创建任务或输入任务 ID，查看服务电脑保存的最新状态。</p>
-        <form className="work-form" onSubmit={(event) => void create(event)}>
-          <h2>{created ? "已提交任务" : "创建任务"}</h2>
-          <fieldset hidden={created} disabled={busy || !!attempt || resourcesBusy}>
-            <label>
-              Bot
-              <select
-                value={selectedBotId}
-                onChange={(event) => {
-                  setBotId(event.target.value);
-                  setScope({
-                    ...scope,
-                    collaboratorBotIds: scope.collaboratorBotIds.filter(
-                      (id) => id !== event.target.value,
-                    ),
-                  });
-                }}
-                required
-              >
-                {eligibleBots.map((bot) => (
-                  <option value={bot.id} key={bot.id}>
-                    {bot.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              任务目标
-              <textarea
-                value={objective}
-                onChange={(event) => setObjective(event.target.value)}
-                required
-                maxLength={16384}
-                rows={3}
-              />
-            </label>
-            <label>
-              Token 上限
-              <input
-                type="number"
-                min="0"
-                max="1000000000"
-                step="1"
-                required
-                value={tokenLimit}
-                onChange={(event) => setTokenLimit(event.target.value)}
-              />
-            </label>
-            <NativeTaskScopeForm
-              key={formGeneration}
-              bots={eligibleBots}
-              botId={selectedBotId}
-              value={scope}
-              onChange={setScope}
-              files={files}
-              onFilesChange={setFiles}
-              onBusyChange={setResourcesBusy}
-              onFreshChange={setFilesFresh}
-              disabled={busy || !!attempt}
-              active={active && !created}
-              capabilitiesEnabled={nativeCapabilitiesEnabled}
-            />
-          </fieldset>
-          {resourcesInvalid && !attempt && (
-            <p>请刷新并完成所选附件的必要处理，或解除选择后再提交。</p>
-          )}
-          {!created ? (
-            <button
-              className="primary-button"
-              type="submit"
-              disabled={
-                busy ||
-                (!attempt && (eligibleBots.length === 0 || resourcesBusy || resourcesInvalid))
-              }
-            >
-              {attempt ? "重试同一创建请求" : "提交任务"}
-            </button>
-          ) : (
+      <div className="work-columns">
+        <section className="work-compose">
+          <div className="work-heading">
+            <h1 id="work-tasks-title">交给 Bot 一个任务</h1>
+            <p>不在聊天里，也能下达和追踪任务。服务电脑保存状态，关掉窗口不会取消。</p>
+          </div>
+          <div className="ob-seg" role="tablist" aria-label="方式">
             <button
               type="button"
-              disabled={busy}
-              onClick={(event) => {
-                // React reuses this node as the submit button after the state reset.
-                event.preventDefault();
-                setAttempt(undefined);
-                setCreated(false);
-                setObjective("");
-                setNotice("");
-                setScope(emptyNativeTaskScope());
-                setFiles([]);
-                setFilesFresh(true);
-                setFormGeneration((value) => value + 1);
-              }}
+              role="tab"
+              aria-selected={mode === "create"}
+              onClick={() => setMode("create")}
             >
-              创建另一个任务
+              新建任务
             </button>
-          )}
-          {attempt && (
-            <small>
-              创建请求 ID：<code>{attempt.requestKey}</code>
-              {!created && " · 请保留此页面，确认后再创建其他任务。"}
-            </small>
-          )}
-          {eligibleBots.length === 0 && (
-            <p>请先创建使用 none 或 model 配置的 Bot；此入口不支持计算机环境 Bot。</p>
-          )}
-        </form>
-        <form className="work-lookup" onSubmit={open}>
-          <label>
-            任务 ID
-            <input
-              required
-              maxLength={128}
-              value={lookup}
-              onChange={(event) => setLookup(event.target.value)}
-            />
-          </label>
-          <button type="submit" disabled={busy}>
-            读取任务
-          </button>
-        </form>
-        {error && <p role="alert">{error}</p>}
-        {notice && <p role="status">{notice}</p>}
-        {taskId && (
-          <div className="work-controls">
-            <button type="button" disabled={busy} onClick={() => void refresh()}>
-              {busy ? "正在同步…" : "刷新快照"}
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "lookup"}
+              onClick={() => setMode("lookup")}
+            >
+              按 ID 查找
             </button>
-            <span role="status">
-              {fresh ? "已同步服务电脑快照" : "状态待同步；连接变化不会取消任务"}
-            </span>
           </div>
-        )}
-        {snapshot && (
-          <section className="work-snapshot" aria-label="任务快照">
-            <h2>{snapshot.objective}</h2>
-            <p>
-              任务 ID：<code>{snapshot.id}</code> · 快照版本 {snapshot.revision}
-            </p>
-            <dl>
-              <dt>任务状态</dt>
-              <dd>
-                {statusLabels[snapshot.status]} ({snapshot.status})
-              </dd>
-              <dt>执行授权</dt>
-              <dd>{snapshot.authorityActive ? "有效" : "已关闭"}</dd>
-              <dt>取消请求</dt>
-              <dd>{snapshot.cancelRequested ? "服务电脑已持久化" : "未记录"}</dd>
-              {snapshot.cancelRequested && (
-                <>
-                  <dt>取消送达</dt>
-                  <dd>服务电脑未提供独立送达回执；请查看 任务状态</dd>
-                </>
-              )}
-              <dt>Token 用量</dt>
-              <dd>
-                已用 {snapshot.usage.spentTokens} / 预留 {snapshot.usage.reservedTokens} / 上限{" "}
-                {snapshot.usage.tokenLimit}
-              </dd>
-            </dl>
-            {snapshot.attention && (
-              <p>
-                需要处理：
-                {
-                  { approval: "审批", reconciliation: "未知结果核验", budget: "预算" }[
-                    snapshot.attention
-                  ]
-                }
-                。此入口当前支持创建、读取和取消。
+
+          <form
+            className="work-form"
+            hidden={mode !== "create"}
+            onSubmit={(event) => void create(event)}
+          >
+            {created ? <h2>已提交任务</h2> : null}
+            <fieldset hidden={created} disabled={busy || !!attempt || resourcesBusy}>
+              <label className="ob-field">
+                交给
+                <select
+                  value={selectedBotId}
+                  onChange={(event) => {
+                    setBotId(event.target.value);
+                    setScope({
+                      ...scope,
+                      collaboratorBotIds: scope.collaboratorBotIds.filter(
+                        (id) => id !== event.target.value,
+                      ),
+                    });
+                  }}
+                  required
+                >
+                  {eligibleBots.map((bot) => (
+                    <option value={bot.id} key={bot.id}>
+                      {bot.name} · {bot.computerProfile === "model" ? "只用模型回复" : "只对话"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="ob-field">
+                要做什么
+                <textarea
+                  value={objective}
+                  onChange={(event) => setObjective(event.target.value)}
+                  required
+                  maxLength={16384}
+                  rows={4}
+                />
+              </label>
+              <NativeTaskScopeForm
+                key={formGeneration}
+                bots={eligibleBots}
+                botId={selectedBotId}
+                value={scope}
+                onChange={setScope}
+                files={files}
+                onFilesChange={setFiles}
+                onBusyChange={setResourcesBusy}
+                onFreshChange={setFilesFresh}
+                disabled={busy || !!attempt}
+                active={active && !created}
+                capabilitiesEnabled={nativeCapabilitiesEnabled}
+              />
+              <label className="ob-field">
+                用量上限（tokens）
+                <input
+                  type="number"
+                  min="0"
+                  max="1000000000"
+                  step="1"
+                  required
+                  value={tokenLimit}
+                  onChange={(event) => setTokenLimit(event.target.value)}
+                />
+              </label>
+            </fieldset>
+            {resourcesInvalid && !attempt && (
+              <p className="work-note is-warning">
+                请刷新并完成所选附件的必要处理，或解除选择后再提交。
               </p>
             )}
-            <button
-              type="button"
-              disabled={
-                busy ||
-                !fresh ||
-                !snapshot.authorityActive ||
-                snapshot.cancelRequested ||
-                ["completed", "failed", "cancelled"].includes(snapshot.status)
-              }
-              onClick={() => void cancel()}
-            >
-              取消任务
+            <p className="work-note">
+              {eligibleBots.length === 0
+                ? "还没有不需要电脑的 Bot。要用电脑的任务请在频道里发。"
+                : "这里只能交给不需要电脑的 Bot；要用电脑的任务请在频道里发。"}
+            </p>
+            {!created ? (
+              <button
+                className="ob-pill is-large is-primary"
+                type="submit"
+                disabled={
+                  busy ||
+                  (!attempt && (eligibleBots.length === 0 || resourcesBusy || resourcesInvalid))
+                }
+              >
+                {attempt ? "重试同一创建请求" : "提交任务"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="ob-pill is-large"
+                disabled={busy}
+                onClick={(event) => {
+                  // React reuses this node as the submit button after the state reset.
+                  event.preventDefault();
+                  setAttempt(undefined);
+                  setCreated(false);
+                  setObjective("");
+                  setNotice("");
+                  setScope(emptyNativeTaskScope());
+                  setFiles([]);
+                  setFilesFresh(true);
+                  setFormGeneration((value) => value + 1);
+                }}
+              >
+                创建另一个任务
+              </button>
+            )}
+            {attempt && (
+              <small className="work-note">
+                创建请求 ID：<code>{attempt.requestKey}</code>
+                {!created && " · 请保留此页面，确认后再创建其他任务。"}
+              </small>
+            )}
+          </form>
+
+          <form className="work-lookup" hidden={mode !== "lookup"} onSubmit={open}>
+            <label className="ob-field">
+              任务 ID
+              <input
+                required
+                maxLength={128}
+                value={lookup}
+                onChange={(event) => setLookup(event.target.value)}
+              />
+            </label>
+            <button type="submit" className="ob-pill is-large is-primary" disabled={busy}>
+              读取任务
             </button>
-            <NativeTaskScopeView
-              key={snapshot.id}
-              taskId={snapshot.id}
-              active={active}
-              fresh={fresh}
-            />
-            <h3>Run 状态</h3>
-            <ul>
-              {snapshot.runs.map((run) => (
-                <li key={run.id}>
-                  Run {run.ordinal} · {statusLabels[run.status]} ({run.status}) ·{" "}
-                  <code>{run.id}</code>
-                </li>
-              ))}
-            </ul>
-            {snapshot.actions.length > 0 && (
-              <>
-                <h3>操作状态</h3>
+          </form>
+          {error && (
+            <p className="work-note is-danger" role="alert">
+              {error}
+            </p>
+          )}
+          {notice && (
+            <p className="work-note" role="status">
+              {notice}
+            </p>
+          )}
+        </section>
+
+        <section className="work-status" aria-label="任务状态">
+          {snapshot ? (
+            <section className="work-snapshot" aria-label="任务快照">
+              <div className="work-snapshot-title">
+                <h2>{snapshot.objective}</h2>
+                <code title={snapshot.id}>{shortId(snapshot.id)}</code>
+              </div>
+              <ol className="work-stages">
+                {stages.map(([label, state]) => (
+                  <li key={label} className={state ? `is-${state}` : ""}>
+                    <i aria-hidden="true">{state === "done" ? "✓" : ""}</i>
+                    {label}
+                  </li>
+                ))}
+              </ol>
+              <dl className="work-card">
+                <div>
+                  <dt>执行状态</dt>
+                  <dd>
+                    {statusLabels[snapshot.status]}
+                    {snapshot.attention
+                      ? ` · 需要处理：${{ approval: "审批", reconciliation: "未知结果核验", budget: "预算" }[snapshot.attention]}`
+                      : ""}
+                  </dd>
+                </div>
+                <div>
+                  <dt>结果核验</dt>
+                  <dd>
+                    {unknownActions.length > 0
+                      ? `${unknownActions.length} 个结果未知，正在核验`
+                      : snapshot.resultSummary
+                        ? "已有结果"
+                        : "尚无结果"}
+                  </dd>
+                  <small>完成后核对</small>
+                </div>
+                {usage ? (
+                  <div>
+                    <dt>用量</dt>
+                    <dd>
+                      {usage.spentTokens.toLocaleString()} / {usage.tokenLimit.toLocaleString()}{" "}
+                      tokens
+                    </dd>
+                    <span className="work-meter" aria-hidden="true">
+                      <i
+                        style={{
+                          width: `${usage.tokenLimit > 0 ? Math.min(100, (usage.spentTokens / usage.tokenLimit) * 100) : 0}%`,
+                        }}
+                      />
+                    </span>
+                  </div>
+                ) : null}
+                <div>
+                  <dt>取消</dt>
+                  <dd>{snapshot.cancelRequested ? "服务电脑已持久化取消请求" : "未请求"}</dd>
+                  <button
+                    type="button"
+                    className="ob-pill is-small"
+                    disabled={
+                      busy ||
+                      !fresh ||
+                      !snapshot.authorityActive ||
+                      snapshot.cancelRequested ||
+                      terminal
+                    }
+                    onClick={() => void cancel()}
+                  >
+                    取消任务
+                  </button>
+                </div>
+              </dl>
+              {snapshot.resultSummary && <p className="work-result">{snapshot.resultSummary}</p>}
+              <div className="work-warning">
+                <span aria-hidden="true">!</span>
+                <span>
+                  <strong>结果「未知」不算成功</strong>
+                  <span>
+                    网络断开时显示「状态待同步」，连接变化不会取消任务；恢复后点「刷新快照」以服务电脑为准。
+                  </span>
+                </span>
+              </div>
+              <details className="work-details">
+                <summary>技术细节</summary>
+                <p>
+                  任务 ID：<code>{snapshot.id}</code> · 快照版本 {snapshot.revision}
+                </p>
+                <dl>
+                  <dt>任务状态</dt>
+                  <dd>
+                    {statusLabels[snapshot.status]} ({snapshot.status})
+                  </dd>
+                  <dt>执行授权</dt>
+                  <dd>{snapshot.authorityActive ? "有效" : "已关闭"}</dd>
+                  {snapshot.cancelRequested && (
+                    <>
+                      <dt>取消送达</dt>
+                      <dd>服务电脑未提供独立送达回执；请查看 任务状态</dd>
+                    </>
+                  )}
+                  <dt>Token 用量</dt>
+                  <dd>
+                    已用 {snapshot.usage.spentTokens} / 预留 {snapshot.usage.reservedTokens} / 上限{" "}
+                    {snapshot.usage.tokenLimit}
+                  </dd>
+                </dl>
+                <NativeTaskScopeView
+                  key={snapshot.id}
+                  taskId={snapshot.id}
+                  active={active}
+                  fresh={fresh}
+                />
+                <h3>Run 状态</h3>
                 <ul>
-                  {snapshot.actions.map((action) => (
-                    <li key={action.id}>
-                      <code>{action.id}</code> ·{" "}
-                      {action.status === "unknown"
-                        ? "结果未知（unknown），不能视为成功"
-                        : action.status}{" "}
-                      · 审批 {action.decision}
-                      {action.reconciliation && (
-                        <p>
-                          核验命令已持久化 · {action.reconciliation.delivered ? "已送达" : "待送达"}{" "}
-                          ·{" "}
-                          {action.reconciliation.outcome === null
-                            ? "尚无核验结果"
-                            : action.reconciliation.outcome === "resolved"
-                              ? "已查明"
-                              : "仍未查明"}
-                        </p>
-                      )}
+                  {snapshot.runs.map((run) => (
+                    <li key={run.id}>
+                      Run {run.ordinal} · {statusLabels[run.status]} ({run.status}) ·{" "}
+                      <code>{run.id}</code>
                     </li>
                   ))}
                 </ul>
-              </>
-            )}
-            {snapshot.resultSummary && <p className="work-result">{snapshot.resultSummary}</p>}
-            {snapshot.artifacts.length > 0 && (
-              <p>Server 已登记 {snapshot.artifacts.length} 个产物；此入口的产物下载尚未接入。</p>
-            )}
-          </section>
-        )}
+                {snapshot.actions.length > 0 && (
+                  <>
+                    <h3>操作状态</h3>
+                    <ul>
+                      {snapshot.actions.map((action) => (
+                        <li key={action.id}>
+                          <code>{action.id}</code> ·{" "}
+                          {action.status === "unknown"
+                            ? "结果未知（unknown），不能视为成功"
+                            : action.status}{" "}
+                          · 审批 {action.decision}
+                          {action.reconciliation && (
+                            <p>
+                              核验命令已持久化 ·{" "}
+                              {action.reconciliation.delivered ? "已送达" : "待送达"} ·{" "}
+                              {action.reconciliation.outcome === null
+                                ? "尚无核验结果"
+                                : action.reconciliation.outcome === "resolved"
+                                  ? "已查明"
+                                  : "仍未查明"}
+                            </p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                {snapshot.artifacts.length > 0 && (
+                  <p>服务电脑已登记 {snapshot.artifacts.length} 个产出；这里还不能下载。</p>
+                )}
+              </details>
+            </section>
+          ) : (
+            <p className="work-empty">
+              {taskId ? "正在读取任务…" : "提交或查找一个任务后，状态会显示在这里。"}
+            </p>
+          )}
+          {taskId && (
+            <div className="work-controls">
+              <button
+                type="button"
+                className="ob-pill"
+                disabled={busy}
+                onClick={() => void refresh()}
+              >
+                {busy ? "正在同步…" : "刷新快照"}
+              </button>
+              <span role="status">
+                {fresh ? "已同步服务电脑快照" : "状态待同步；连接变化不会取消任务"}
+              </span>
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
+}
+
+function shortId(id: string) {
+  return id.length > 14 ? `${id.slice(0, 9)}…${id.slice(-4)}` : id;
 }

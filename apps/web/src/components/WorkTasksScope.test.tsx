@@ -100,7 +100,7 @@ it("starts with empty scope, no file network/processing, compatible Bots only an
   ).toBe(true);
   expect(
     [...ui.container.querySelectorAll("select option")].map((node) => node.textContent),
-  ).toEqual(["Self", "Peer"]);
+  ).toEqual(["Self · 只对话", "Peer · 只用模型回复"]);
   expect(checkbox("允许协作 Self")).toBeUndefined();
   expect(checkbox("允许协作 Browser")).toBeUndefined();
   expect(native.listOwnerAttachments).not.toHaveBeenCalled();
