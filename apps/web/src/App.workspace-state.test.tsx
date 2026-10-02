@@ -246,9 +246,7 @@ describe("Authenticated workspace snapshot and realtime ordering", () => {
       });
       await interact(() => {
         if (operation === "join") {
-          container
-            .querySelector(".ci-add-form")
-            ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+          container.querySelector<HTMLButtonElement>('.ci-add-popover [role="option"]')?.click();
         } else {
           container.querySelector<HTMLButtonElement>('[aria-label="将 Beta 移出频道"]')?.click();
         }

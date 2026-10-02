@@ -6,7 +6,7 @@ import type {
   RunProgress,
   WorkspaceSnapshot,
 } from "@openbot/domain";
-import { useId, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { formatAttachmentSize } from "../channel-attachment-client";
 import { composerAttachEvent } from "../composer-events";
 import { runStatusSummary } from "../run-state";
@@ -16,6 +16,7 @@ import { ArtifactDownloadLink } from "./ArtifactCard";
 import { AttachmentsManagerDialog, useChannelAttachments } from "./AttachmentsManager";
 import "./ContextRail.css";
 import { isActiveRun, runStatusLabel } from "../run-state";
+import { AddMemberPopover } from "./AddMemberPopover";
 import { ApprovalCard } from "./ApprovalCard";
 import { GroupAvatar } from "./GroupAvatar";
 import { CheckIcon, NodeIcon, PlusIcon } from "./Icons";
@@ -43,9 +44,9 @@ export function ContextRail({
   onCollapse?: (() => void) | undefined;
 }) {
   const [adding, setAdding] = useState(false);
-  const [candidate, setCandidate] = useState("");
   const [memberBusy, setMemberBusy] = useState<string>();
   const [memberError, setMemberError] = useState<string>();
+  const closeAdding = useCallback(() => setAdding(false), []);
   const [picked, setPicked] = useState<{ channelId: string | undefined; tab: RailTab }>();
   const tabId = useId();
   const scopedRuns = workspace.runs.filter(
@@ -232,10 +233,12 @@ export function ContextRail({
                     {bot.role ? <small className="ci-member-role">{bot.role}</small> : null}
                   </span>
                 </button>
-                <span className={`ci-status ${activeBotIds.has(bot.id) ? "is-active" : "is-idle"}`}>
-                  <i aria-hidden="true" />
-                  {activeBotIds.has(bot.id) ? "工作中" : "待命"}
-                </span>
+                {activeBotIds.has(bot.id) ? (
+                  <span className="ci-status is-active">
+                    <i aria-hidden="true" />
+                    工作中
+                  </span>
+                ) : null}
                 {onRemove ? (
                   <button
                     type="button"
@@ -278,46 +281,24 @@ export function ContextRail({
                 添加成员
               </button>
             ) : null}
-            {adding ? (
-              <form
-                className="ci-add-form"
-                onSubmit={async (event) => {
-                  event.preventDefault();
-                  const botId = available.some((bot) => bot.id === candidate)
-                    ? candidate
-                    : available[0]?.id;
-                  if (!botId || !onJoin) return;
-                  setMemberBusy(botId);
+            {adding && available.length > 0 ? (
+              <AddMemberPopover
+                candidates={available}
+                busy={memberBusy !== undefined}
+                onClose={closeAdding}
+                onAdd={async (bot) => {
+                  if (!onJoin) return;
+                  setMemberBusy(bot.id);
                   setMemberError(undefined);
                   try {
-                    await onJoin(botId);
-                    setAdding(false);
+                    await onJoin(bot.id);
                   } catch {
                     setMemberError("无法添加这个 Bot，请重试。");
                   } finally {
                     setMemberBusy(undefined);
                   }
                 }}
-              >
-                <select
-                  aria-label="选择要添加的 Bot"
-                  value={candidate}
-                  onChange={(event) => setCandidate(event.target.value)}
-                >
-                  {available.map((bot) => (
-                    <option key={bot.id} value={bot.id}>
-                      {bot.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="submit"
-                  className="ob-pill is-small is-primary"
-                  disabled={memberBusy !== undefined}
-                >
-                  添加
-                </button>
-              </form>
+              />
             ) : null}
             {memberError ? (
               <p className="form-error" role="alert">
