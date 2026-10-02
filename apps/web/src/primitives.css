@@ -946,3 +946,20 @@
 .ob-dialog-actions .ob-pill.is-danger:hover {
   background: #9c2019;
 }
+
+/* LongLists: a popover list fades at an edge only where more rows are hidden (useListScroll). */
+[data-more-above]:not([data-more-below]) {
+  mask-image: linear-gradient(to bottom, transparent, #000 28px);
+}
+[data-more-below]:not([data-more-above]) {
+  mask-image: linear-gradient(to top, transparent, #000 28px);
+}
+[data-more-above][data-more-below] {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 28px,
+    #000 calc(100% - 28px),
+    transparent
+  );
+}

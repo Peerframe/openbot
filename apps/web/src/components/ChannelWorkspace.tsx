@@ -57,6 +57,7 @@ import { MessageActionBar } from "./MessageActionBar";
 import { MessageReactions } from "./MessageReactions";
 import { NewBotSetupCard } from "./NewBotSetupCard";
 import { RichMessage } from "./RichMessage";
+import { useListScroll } from "./useListScroll";
 import { VoiceRecorder } from "./VoiceRecorder";
 import "./ChannelMessagePresentation.css";
 import { composerAttachEvent } from "../composer-events";
@@ -274,6 +275,8 @@ export function ChannelWorkspace({
     : [];
   const slashCount = slashSkills.length + slashActions.length;
   const activeSlashIndex = Math.min(slashIndex, Math.max(slashCount - 1, 0));
+  const slashListRef = useListScroll(activeSlashIndex);
+  const mentionListRef = useListScroll(mentionIndex);
   function closeSlash(keepText = true) {
     if (!keepText && slash) {
       mentionCaret.current = draft.text.slice(0, slash.start).trimEnd().length;
@@ -1035,6 +1038,7 @@ export function ChannelWorkspace({
             {slashActive && (
               <div
                 className="mention-options slash-options"
+                ref={slashListRef}
                 role="listbox"
                 id={`slash-${channel.id}`}
                 aria-label="技能与操作"
@@ -1091,6 +1095,7 @@ export function ChannelWorkspace({
             {mentionQuery !== undefined && (
               <div
                 className="mention-options"
+                ref={mentionListRef}
                 role="listbox"
                 id={`mentions-${channel.id}`}
                 aria-label="提及 Bot"

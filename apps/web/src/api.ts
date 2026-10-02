@@ -37,6 +37,7 @@ import type {
   RunFrame,
   RunOutput,
   RunProgress,
+  RunProgressDetails,
   SubmitTaskResult,
   UpdateEmployeeMemoryInput,
   UpdateEmployeeModelInput,
@@ -425,6 +426,22 @@ export async function steerRun(runId: string, instruction: string): Promise<void
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ instruction }),
   });
+}
+
+/**
+ * C13: exact step count and selected steps for one run. Without `steps` the Server returns all
+ * steps up to 12, else ordinals 1–3 and the latest 6; `steps` asks for up to 12 specific ordinals.
+ */
+export async function getRunProgress(
+  runId: string,
+  steps?: readonly number[],
+  signal?: AbortSignal,
+): Promise<RunProgressDetails> {
+  const query = steps?.length ? `?steps=${steps.join(",")}` : "";
+  return request<RunProgressDetails>(
+    `/api/v1/runs/${encodeURIComponent(runId)}/progress${query}`,
+    signal ? { signal } : undefined,
+  );
 }
 
 export async function getRunOutput(runId: string, signal?: AbortSignal): Promise<RunOutput | null> {

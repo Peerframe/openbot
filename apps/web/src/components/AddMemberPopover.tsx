@@ -1,6 +1,7 @@
 import type { Bot } from "@openbot/domain";
 import { type KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 import { RobotAvatar } from "./RobotAvatar";
+import { useListScroll } from "./useListScroll";
 
 /**
  * 添加成员 (AddMember artboard): a search field over the Bots not yet in the 频道. Choosing one
@@ -27,6 +28,7 @@ export function AddMemberPopover({
     (bot) => !term || `${bot.name} ${bot.role}`.toLocaleLowerCase().includes(term),
   );
   const activeIndex = Math.min(active, Math.max(0, matches.length - 1));
+  const listRef = useListScroll(activeIndex);
 
   useEffect(() => {
     function outside(event: PointerEvent) {
@@ -73,7 +75,13 @@ export function AddMemberPopover({
         }}
         onKeyDown={onKeyDown}
       />
-      <div className="ci-add-options" role="listbox" id={listId} aria-label="可添加的 Bot">
+      <div
+        className="ci-add-options"
+        role="listbox"
+        id={listId}
+        aria-label="可添加的 Bot"
+        ref={listRef}
+      >
         {matches.map((bot, index) => (
           <button
             type="button"
