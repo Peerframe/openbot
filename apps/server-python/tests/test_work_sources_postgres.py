@@ -164,3 +164,44 @@ def test_unmapped_historical_run_retains_original_read_and_cancel(setup):
         assert (await projected(store,run.id)).status=='queued'
         assert (await PostgresRunCommandStore(f['dsn']).cancel(f['token'],run.id)).run.status=='cancelled'
     asyncio.run(check())
+
+
+@pytest.mark.parametrize('count', [0, 1, 13, 25])
+def test_product_run_progress_uses_durable_actions_and_real_times(setup, count):
+    from openbot_server.run_progress import PostgresRunProgress
+    from test_work_postgres import evidence
+    async def check():
+        f,store,_ = setup
+        legacy,task = await submit(setup)
+        rid = task['runs'][0]['id']
+        fence = await store.claim(task['id'],rid,'progress-fixture')
+        context = await CorrectionStore(store).freeze(task['id'],rid,'progress-context')
+        for number in range(count):
+            aid = await store.propose(task['id'],rid,fence=fence,action_key=f'step-{number}',
+                intent={'kind':'model','private':'PRIVATE REASONING'}, reserved_tokens=0,
+                requires_approval=False, correction_context=context['id'])
+            await store.admit(aid,fence=fence)
+            if number < count-1:
+                await store.resolve(aid,applied=True,actual_tokens=0,evidence=evidence())
+        progress = PostgresRunProgress(f['dsn'])
+        value = await progress.read(f['token'],legacy.id)
+        assert value['totalSteps'] == count and value['completedSteps'] == max(0,count-1)
+        assert value['startedAt'] is not None and value['endedAt'] is None
+        expected = list(range(1,count+1)) if count<=12 else [1,2,3,*range(count-5,count+1)]
+        assert [s['stepNumber'] for s in value['steps']] == expected
+        assert 'PRIVATE' not in json.dumps(value)
+        if count:
+            assert value['steps'][-1]['startedAt'] is not None
+            assert value['steps'][-1]['endedAt'] is None
+            assert value['stageName'] == 'planning'
+            assert all(s['endedAt'] is not None for s in value['steps'][:-1])
+        # An Owner-approved dependency wait supersedes the last planning stage.
+        aid = await store.propose(task['id'],rid,fence=fence,action_key='approval',
+            intent={'kind':'tool'},reserved_tokens=0,requires_approval=True,correction_context=context['id'])
+        waiting = await progress.read(f['token'],legacy.id)
+        assert waiting['status']=='waiting_approval' and waiting['stageName']=='approval'
+        assert waiting['totalSteps']==count+1 and waiting['endedAt'] is None
+        exact = await progress.read(f['token'],legacy.id,[count+1])
+        assert exact['steps'][0]['startedAt'] is None and exact['steps'][0]['endedAt'] is None
+    import json
+    asyncio.run(check())

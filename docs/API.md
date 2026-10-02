@@ -18,6 +18,7 @@ HTTPS for remote access.
 | `POST` | `/api/v1/auth/logout` | Revoke the Session and clear its cookie |
 | `GET` | `/api/v1/bootstrap` | Lightweight counts and phase information |
 | `GET` | `/api/v1/workspace` | Project channels, Bots, Nodes, Runs, approvals, progress, artifacts, and counts |
+| `GET` | `/api/v1/runs/:runId/progress` | Exact public checkpoint count and ordinal-selected steps |
 | `GET` | `/api/v1/workspace/events` | Subscribe to global Node, Run, and approval changes over SSE |
 | `GET` | `/api/v1/channels` | List channels and Bot rosters |
 | `POST` | `/api/v1/channels` | Create a channel and atomically add its initial Bots |
@@ -698,3 +699,31 @@ valid. Unknown/case-variant colours, arbitrary CSS strings, numbers and null are
 Template import preserves the appearance under a new identity with unchanged quarantine/review
 and digest validation. This contract adds colour data; avatar drawing and UI selectors follow
 the separate step-15 design implementation.
+
+## Run progress checkpoints (C13)
+
+`GET /api/v1/runs/:runId/progress` is an Owner-session read of a run in an active channel.
+It returns `RunProgressDetails` from `packages/domain`. Current product Runs count their existing
+durable Work actions; historical unmapped Runs count persisted `RUN_PROGRESS` checkpoints.
+`totalSteps` is the exact observed count, **not a planned future total or a model-token count**.
+`currentStepNumber` is the latest recorded ordinal, or null for zero checkpoints. The workspace
+adds `runProgress[runId]` summaries for its latest runs independently of its 200-event progress window.
+
+Without `steps`, return all checkpoints up to 12; above 12 return ordinals 1–3 and the latest 6.
+`?steps=4,5,6` selects up to 12 unique positive ordinals (1–9999999), sorted ascending. Missing
+ordinals return no entry. Query duplicates, unknown parameters and invalid ordinals return 422.
+Ordering is `created_at`, then ID with C collation; SQL numbers the entire run before selecting.
+Summary and steps use one repeatable-read snapshot. A missing run/deleted channel returns 404.
+
+`stageName` and `description` use only a bounded control-authored stage dictionary. Unknown stages
+are null; provider messages, tool results and raw chain-of-thought are never read into this endpoint.
+`waiting_approval` explicitly projects the approval stage; terminal runs have no current stage.
+Work actions expose admission/resolution timestamps and `completedSteps` counts verified `applied`
+outcomes; pending approval has no start/end timestamp and unresolved actions have no end. No model
+request, action arguments or receipt bodies are read.
+Run `startedAt`/`endedAt` come only from actual lifecycle audit events. A historical checkpoint's `startedAt`
+is its observation time; `endedAt` is null because existing progress events do not prove when its
+action ended. `plannedTotalSteps` is null because dynamic execution has no promised plan. Historical
+`completedSteps` is null because checkpoint events do not prove completion. Do not display
+`totalSteps` as a promised plan or treat every observed checkpoint as an action successfully completed.
+Missing timestamps and failure codes are explicit nulls; never substitute creation/update times.
