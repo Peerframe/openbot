@@ -192,7 +192,7 @@ export function NodeManagerDialog({
                 <button className="secondary-button" type="button" onClick={copyEnrollment}>
                   {copied ? "已复制" : "复制启动配置"}
                 </button>
-                <p>在目标主机配置 Server 地址后加入以上两行，首次启动成功后立即删除令牌。</p>
+                <p>在目标主机配置服务电脑地址后加入以上两行，首次启动成功后立即删除令牌。</p>
               </section>
             ) : null}
           </section>
@@ -201,7 +201,7 @@ export function NodeManagerDialog({
             <div className="node-manager-section-heading">
               <div>
                 <h3 id="node-identities-title">已登记主机</h3>
-                <p>在线状态来自实时连接；登记与吊销状态来自 Server 数据库。</p>
+                <p>在线状态来自实时连接；登记与吊销状态来自服务电脑数据库。</p>
               </div>
               <button
                 className="secondary-button node-refresh-button"

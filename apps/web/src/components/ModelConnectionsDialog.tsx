@@ -188,7 +188,7 @@ export function ModelConnectionsDialog({
           </div>
         </div>
         <footer className="model-services-footer">
-          <span>API Key 由 Server 加密保存，浏览器不会保存密钥。</span>
+          <span>API Key 由服务电脑加密保存，浏览器不会保存密钥。</span>
           <button className="secondary-button" type="button" onClick={closeDialog}>
             完成
           </button>
@@ -348,7 +348,7 @@ export function ModelConnectionEditor({
         </label>
         {presetId === "custom" && endpoints.length === 0 ? (
           <p className="field-empty">
-            Server 尚未配置允许使用的自定义 API 地址，请管理员先添加授权地址。
+            服务电脑尚未配置允许使用的自定义 API 地址，请管理员先添加授权地址。
           </p>
         ) : null}
         <label htmlFor={`${formId}-name`}>
@@ -365,7 +365,7 @@ export function ModelConnectionEditor({
         </label>
         {environment ? (
           <p className="field-empty">
-            这是 Server 环境中的 Kimi 连接。可选择模型或测试调用；修改地址与密钥需要更新 Server
+            这是服务电脑环境中的 Kimi 连接。可选择模型或测试调用；修改地址与密钥需要更新服务电脑
             环境配置。
           </p>
         ) : (

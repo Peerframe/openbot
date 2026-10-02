@@ -232,7 +232,7 @@ export function ExportPreviewDetails({ preview }: { preview: EmployeeExportPrevi
         <p>
           {preview.signatureStatus === "dsse"
             ? `此模板将由发布密钥 ${preview.publisherKeyId ?? "未知"} 签名；接收端仍须显式信任并审核。`
-            : "当前 Server 未配置发布密钥，模板会明确标记为未签名；接收端必须单独接受风险。"}
+            : "当前服务电脑未配置发布密钥，模板会明确标记为未签名；接收端必须单独接受风险。"}
         </p>
       </section>
     </div>
@@ -254,7 +254,7 @@ function exclusionReason(category: EmployeeExportExclusion["category"]): string 
     identity: "来源员工 ID 与所有权不会进入模板。",
     authority: "不包含主机绑定、审批、凭证、会话或能力授权。",
     memory: "Bot 分享包不导出任何记忆。",
-    "work-history": "Run、决策、产物、审批和进化历史留在来源 Server。",
+    "work-history": "任务、决策、产出、审批和进化历史留在来源服务电脑。",
   };
   return reasons[category];
 }

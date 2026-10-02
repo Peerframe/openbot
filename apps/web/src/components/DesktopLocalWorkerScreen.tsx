@@ -32,7 +32,7 @@ export function DesktopLocalWorkerScreen({
       const result = await operation();
       if (result.status === "failed") setError(localWorkerErrorMessage(result.code));
     } catch {
-      setError("Desktop 暂时无法完成本机 Worker 配置，请重试。");
+      setError("Desktop 暂时无法完成这台工作电脑的配置，请重试。");
     } finally {
       setBusy(false);
     }
@@ -165,17 +165,17 @@ export function localWorkerErrorMessage(
     case "invalid_node_id":
       return "电脑名称只能使用字母、数字、点、下划线、冒号和连字符。";
     case "not_selected":
-      return "当前安装计划没有选择本机 Worker。";
+      return "当前安装计划没有选择这台工作电脑。";
     case "unavailable":
-      return "当前平台或安装包没有可用的本机 Worker 组件。";
+      return "当前平台或安装包没有可用的工作电脑组件。";
     case "authentication_required":
       return "登录会话已失效，请重新登录后再配置。";
     case "server_unavailable":
-      return "Server 暂时无法签发一次性绑定凭证。";
+      return "服务电脑暂时无法签发一次性绑定凭证。";
     case "already_configured":
-      return "本机已经存在 Worker 身份；请刷新后启用，避免静默覆盖。";
+      return "本机已经存在工作电脑身份；请刷新后启用，避免静默覆盖。";
     case "busy":
-      return "另一项本机 Worker 操作仍在进行。";
+      return "这台工作电脑的另一项操作仍在进行。";
     case "native_failed":
       return "原生组件未通过校验或系统操作失败，未授予新的执行权限。";
   }

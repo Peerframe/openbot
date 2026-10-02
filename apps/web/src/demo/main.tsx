@@ -1,12 +1,6 @@
 import { DemoAdapter } from "./adapter";
 import { installDemoTransport } from "./install";
-import "../styles.css";
-import "../workspace-shell.css";
-import "../workspace-preferences.css";
-import "../desktop-workspace.css";
-import "../conversation-feedback.css";
-import "../desktop-ui-refresh.css";
-import "../settings-plugin-refresh.css";
+import "../global-styles";
 import "./demo.css";
 
 const adapter = new DemoAdapter(location.origin);

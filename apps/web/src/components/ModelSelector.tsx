@@ -143,7 +143,7 @@ export function ModelSelectionFields({
           }}
         >
           <option value="" disabled={!legacy}>
-            {legacy ? `Server 默认 · ${legacy.defaultModel ?? legacy.name}` : "请选择已配置的服务"}
+            {legacy ? `服务电脑默认 · ${legacy.defaultModel ?? legacy.name}` : "请选择已配置的服务"}
           </option>
           {unavailable ? (
             <option value={value.connectionId} disabled>
@@ -172,7 +172,7 @@ export function ModelSelectionFields({
           disabled={disabled || unavailable}
         />
       ) : legacy ? (
-        <p className="model-help">使用 Server 环境配置的默认模型。</p>
+        <p className="model-help">使用服务电脑环境配置的默认模型。</p>
       ) : null}
       {unavailable ? (
         <p className="model-inline-error" role="alert">

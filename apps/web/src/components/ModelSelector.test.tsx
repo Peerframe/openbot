@@ -82,7 +82,7 @@ describe("model service selection", () => {
         onChange={() => undefined}
       />,
     );
-    expect(html).toContain("Server 默认 · kimi-k3");
+    expect(html).toContain("服务电脑默认 · kimi-k3");
     const empty = renderToStaticMarkup(
       <ModelSelectionFields
         snapshot={{ ...snapshot, connections: [] }}
@@ -91,7 +91,7 @@ describe("model service selection", () => {
       />,
     );
     expect(empty).toContain("还没有可用的模型服务");
-    expect(empty).not.toContain("Server 默认");
+    expect(empty).not.toContain("服务电脑默认");
   });
 
   it("explains an invalid manual model ID before a call can be submitted", () => {
@@ -123,7 +123,7 @@ describe("model service selection", () => {
         onReload={() => undefined}
       />,
     );
-    expect(html).toContain("Server 尚未配置允许使用的自定义 API 地址");
+    expect(html).toContain("服务电脑尚未配置允许使用的自定义 API 地址");
     expect(html).toContain('type="submit" disabled=""');
     expect(html).toContain('type="password" autoComplete="new-password"');
     expect(html).toContain('maxLength="2048"');
@@ -170,6 +170,6 @@ it("shows a queued model Run's immutable selection rather than its Bot's current
   expect(html).toContain("查看任务");
   expect(html).toContain("queued-connection");
   expect(html).not.toContain("new-model");
-  expect(html).toContain("由 Server 执行");
+  expect(html).toContain("由服务电脑执行");
   expect(html).not.toContain("等待分配");
 });

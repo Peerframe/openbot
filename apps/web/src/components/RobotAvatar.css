@@ -1,10 +1,12 @@
 /*
- * Frameless head avatar (Avatars artboard). No tile, ring or background: containers only size it,
- * and status is a separate dot beside it. The 96-unit art leaves room for the antenna and ears, so
- * it is never cropped. The span is a size container so the micro optical size (larger eyes,
- * heavier antenna) is chosen by the rendered size, not by each caller.
+ * Frameless head avatar v3 (Avatars artboard). No tile, ring or background: containers only size
+ * it. The 96-unit art leaves room for the antenna and ears, so it is never cropped. The span is a
+ * size container so the micro drawing is chosen by the rendered size, not by each caller.
+ * Containers set `--avatar-surface` to the colour behind the avatar; the silhouette cut-out and the
+ * status-dot ring use it.
  */
 .robot-avatar {
+  position: relative;
   display: inline-block;
   flex: 0 0 auto;
   box-sizing: border-box;
@@ -23,20 +25,169 @@
   height: 100%;
   overflow: visible;
 }
-.robot-avatar .robot-antenna {
+
+/* Standard drawing; the micro drawing replaces it below 32px. */
+.robot-avatar .robot-antenna-stem {
   stroke-width: 4;
 }
-.robot-avatar .robot-eyes.is-micro {
+.robot-avatar .robot-scout-head {
+  stroke-width: 0;
+  stroke-linejoin: round;
+}
+.robot-avatar :is(.robot-eyes, .robot-ball).is-micro {
   display: none;
 }
 @container (width < 32px) {
-  .robot-head-art .robot-antenna {
+  .robot-head-art .robot-antenna-stem {
     stroke-width: 6;
   }
-  .robot-head-art .robot-eyes.is-standard {
+  .robot-head-art .robot-scout-head {
+    stroke-width: 4;
+  }
+  .robot-head-art .robot-ear-light,
+  .robot-head-art :is(.robot-eyes, .robot-ball).is-standard {
     display: none;
   }
-  .robot-head-art .robot-eyes.is-micro {
+  .robot-head-art :is(.robot-eyes, .robot-ball).is-micro {
     display: inline;
   }
+}
+
+/* Silhouette cut-out: about 2px of the surface colour around the head, whatever its size. */
+.robot-avatar .robot-cutout,
+.robot-avatar .robot-cutout * {
+  fill: var(--avatar-surface, var(--ob-page));
+  stroke: var(--avatar-surface, var(--ob-page));
+  stroke-width: 4px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Status dot, lower right, ringed in the surface colour. Idle shows nothing. */
+.robot-avatar > .robot-dot {
+  position: absolute;
+  right: -2%;
+  bottom: -2%;
+  box-sizing: border-box;
+  width: max(8px, 30%);
+  height: max(8px, 30%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--avatar-surface, var(--ob-page));
+}
+.robot-avatar > .robot-dot.is-working {
+  background: var(--ob-working);
+  animation: robot-dot-pulse 1.6s ease-out infinite;
+}
+.robot-avatar > .robot-dot.is-attention {
+  background: #e08a00;
+}
+.robot-avatar > .robot-dot.is-offline {
+  border: 2px solid var(--ob-offline);
+  background: var(--ob-surface);
+}
+
+/* 工作中: the head bobs, the eyes look around, Round's antenna wiggles, Relay's ear lights blink,
+   Scout's ears twitch. */
+.robot-avatar.is-working .robot-head {
+  animation: robot-bob 1.4s ease-in-out infinite;
+}
+.robot-avatar.is-working .robot-eyes {
+  animation: robot-look 3.2s ease-in-out infinite;
+}
+.robot-avatar.is-working .robot-antenna {
+  transform-origin: 39px 30px;
+  animation: robot-wiggle 0.7s ease-in-out infinite;
+}
+.robot-avatar.is-working .robot-ear-light {
+  animation: robot-ear-blink 1s ease-in-out infinite;
+}
+.robot-avatar.is-working .robot-scout {
+  transform-origin: 48px 70px;
+  animation: robot-twitch 2.6s ease-in-out infinite;
+}
+
+@keyframes robot-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes robot-look {
+  0%,
+  18%,
+  84%,
+  100% {
+    transform: translateX(0);
+  }
+  28%,
+  46% {
+    transform: translateX(4px);
+  }
+  56%,
+  74% {
+    transform: translateX(-4px);
+  }
+}
+@keyframes robot-wiggle {
+  0%,
+  100% {
+    transform: rotate(-9deg);
+  }
+  50% {
+    transform: rotate(9deg);
+  }
+}
+@keyframes robot-ear-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes robot-twitch {
+  0%,
+  82%,
+  100% {
+    transform: rotate(0);
+  }
+  88% {
+    transform: rotate(-4deg);
+  }
+  94% {
+    transform: rotate(3deg);
+  }
+}
+@keyframes robot-dot-pulse {
+  0% {
+    box-shadow:
+      0 0 0 2px var(--avatar-surface, var(--ob-page)),
+      0 0 0 2px rgb(52 199 89 / 45%);
+  }
+  70%,
+  100% {
+    box-shadow:
+      0 0 0 2px var(--avatar-surface, var(--ob-page)),
+      0 0 0 8px rgb(52 199 89 / 0%);
+  }
+}
+
+/* Reduced motion (system or 减少动态效果) keeps the static dot only. */
+@media (prefers-reduced-motion: reduce) {
+  .robot-avatar.is-working
+    :is(.robot-head, .robot-eyes, .robot-antenna, .robot-ear-light, .robot-scout),
+  .robot-avatar > .robot-dot.is-working {
+    animation: none;
+  }
+}
+:root[data-reduced-motion="true"]
+  .robot-avatar.is-working
+  :is(.robot-head, .robot-eyes, .robot-antenna, .robot-ear-light, .robot-scout),
+:root[data-reduced-motion="true"] .robot-avatar > .robot-dot.is-working {
+  animation: none;
 }

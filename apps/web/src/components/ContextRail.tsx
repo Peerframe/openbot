@@ -17,6 +17,7 @@ import { AttachmentsManagerDialog, useChannelAttachments } from "./AttachmentsMa
 import "./ContextRail.css";
 import { isActiveRun, runStatusLabel } from "../run-state";
 import { ApprovalCard } from "./ApprovalCard";
+import { GroupAvatar } from "./GroupAvatar";
 import { CheckIcon, NodeIcon, PlusIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
 import { sidebarTime } from "./Sidebar";
@@ -156,12 +157,15 @@ export function ContextRail({
       </header>
 
       <div className="ci-identity">
-        {members.length > 0 ? (
-          <span className={`ci-identity-avatars${members.length > 1 ? " is-pair" : ""}`}>
-            {members.slice(0, 2).map((bot) => (
-              <RobotAvatar bot={bot} className="ci-identity-avatar" key={bot.id} />
-            ))}
-          </span>
+        {channel && !channel.directBotId ? (
+          <GroupAvatar
+            name={channel.name}
+            members={members}
+            size={84}
+            statusOf={(bot) => (activeBotIds.has(bot.id) ? "running" : "idle")}
+          />
+        ) : members[0] ? (
+          <RobotAvatar bot={members[0]} className="ci-identity-avatar" />
         ) : null}
         <strong>{selectedChannelId === undefined ? title : (channel?.name ?? "当前频道")}</strong>
         {channel ? (
@@ -228,7 +232,12 @@ export function ContextRail({
                   onClick={() => onOpenBot?.(bot.id)}
                   aria-label={`打开 ${bot.name} 的员工档案`}
                 >
-                  <RobotAvatar bot={bot} className="ci-member-avatar" />
+                  <RobotAvatar
+                    bot={bot}
+                    className="ci-member-avatar"
+                    status={activeBotIds.has(bot.id) ? "running" : "idle"}
+                    presence="motion"
+                  />
                   <span className="ci-member-text">
                     <strong className="ci-member-name">{bot.name}</strong>
                     {bot.role ? <small className="ci-member-role">{bot.role}</small> : null}
@@ -236,7 +245,7 @@ export function ContextRail({
                 </button>
                 <span className={`ci-status ${activeBotIds.has(bot.id) ? "is-active" : "is-idle"}`}>
                   <i aria-hidden="true" />
-                  {activeBotIds.has(bot.id) ? "执行中" : "待命"}
+                  {activeBotIds.has(bot.id) ? "工作中" : "待命"}
                 </span>
                 {onRemove && !channel.directBotId ? (
                   <button
@@ -515,7 +524,7 @@ function ChannelLibrary({
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   return (
     <>
-      <section className="ci-section" aria-label="任务产物">
+      <section className="ci-section" aria-label="任务产出">
         <h3>任务产物 · {artifacts.length}</h3>
         {artifacts.length > 0 ? (
           <div className="ci-card">

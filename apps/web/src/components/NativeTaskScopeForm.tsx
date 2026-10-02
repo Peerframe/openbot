@@ -32,10 +32,10 @@ export function attachmentNeedsProcessing(file: OwnerAttachment) {
 function attachmentFailure(error: unknown) {
   if (error instanceof ApiError) {
     if (error.status === 401) return "登录已失效，请重新登录。";
-    if (error.status === 403) return "Server 拒绝了附件操作，请检查权限与连接来源。";
-    if (error.status === 413) return "附件超过大小限制，Server 未接受此请求。";
-    if (error.status === 422) return "Server 未接受附件或处理参数，请检查格式与密码。";
-    if (error.status === 404 || error.status === 405) return "未找到附件或 Server 尚未启用此接口。";
+    if (error.status === 403) return "服务电脑拒绝了附件操作，请检查权限与连接来源。";
+    if (error.status === 413) return "附件超过大小限制，服务电脑未接受此请求。";
+    if (error.status === 422) return "服务电脑未接受附件或处理参数，请检查格式与密码。";
+    if (error.status === 404 || error.status === 405) return "未找到附件或服务电脑尚未启用此接口。";
   }
   return "未能确认附件操作结果，请刷新附件列表后再提交任务；操作不会自动重试。";
 }
@@ -250,7 +250,7 @@ export function NativeTaskScopeForm({
                       </label>
                     )}
                     {media && (
-                      <p>点击转写会将此媒体发送给已配置的 OpenAI；原文件保留在当前 Server。</p>
+                      <p>点击转写会将此媒体发送给已配置的 OpenAI；原文件保留在当前服务电脑。</p>
                     )}
                     <button
                       type="button"
@@ -294,7 +294,7 @@ export function NativeTaskScopeForm({
             }
           </label>
         ))}
-        <p>协作 Bot 范围（可选，最多 32 个；仅授予候选范围，实际委派仍由 Server 检查）</p>
+        <p>协作 Bot 范围（可选，最多 32 个；仅授予候选范围，实际委派仍由服务电脑检查）</p>
         {bots
           .filter((bot) => taskBotSupported(bot) && bot.id !== botId)
           .map((bot) => (

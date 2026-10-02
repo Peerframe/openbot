@@ -174,7 +174,7 @@ export function CreateBotDialog({
               <small>
                 {computerProfile === "model"
                   ? "选择模型服务回复消息，无需连接电脑。"
-                  : "Bot 是员工，电脑只是可以替换的执行节点。"}
+                  : "Bot 是员工，电脑只是可以替换的执行环境。"}
               </small>
             </label>
             {selectsModel ? (

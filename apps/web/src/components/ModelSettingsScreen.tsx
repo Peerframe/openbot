@@ -87,7 +87,7 @@ export function ModelSettingsScreen({
     <>
       {snapshot?.status === "unavailable" ? (
         <p className="ob-setup-warning" role="status">
-          这台服务电脑尚未启用模型配置。请更新服务端，或按 GitHub 自部署文档启用。
+          这台服务电脑尚未启用模型配置。请更新服务电脑，或按 GitHub 自部署文档启用。
         </p>
       ) : (
         <form className="ob-setup-form" onSubmit={submit}>

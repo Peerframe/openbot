@@ -98,7 +98,7 @@ export function runStatusLabel(status: Run["status"]): string {
   const labels: Record<Run["status"], string> = {
     queued: "已接单",
     assigned: "已分配",
-    running: "执行中",
+    running: "工作中",
     waiting_approval: "待批准",
     blocked: "已阻塞",
     completed: "已完成",
@@ -132,7 +132,7 @@ export function nativeRunFailure(run: Run): string {
     task_limit: "任务超过执行上限，请拆成更小的任务。",
     tool_unavailable: "工具未能完成，请检查任务中的公开网址和所需能力。",
     task_timeout: "任务超时，请缩小任务范围或检查模型连接。",
-    server_interrupted: "Server 中断了任务，服务恢复后可重新提交。",
+    server_interrupted: "服务电脑中断了任务，服务恢复后可重新提交。",
     execution_failed: "任务未能完成，请检查模型配置、频道权限和任务范围。",
   };
   return messages[run.errorCode ?? ""] ?? run.errorMessage ?? "任务已结束。";

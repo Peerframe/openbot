@@ -31,6 +31,11 @@
   height: 84px;
   place-items: center;
 }
+.employee-profile .ep-avatar {
+  --avatar-surface: var(--ob-page);
+  width: 96px;
+  height: 96px;
+}
 .employee-profile .ep-avatar .robot-avatar,
 .employee-profile-rail .ep-rail-avatar .robot-avatar {
   width: 100%;
@@ -211,7 +216,7 @@
   font-size: var(--ob-font-meta);
 }
 .employee-profile .ep-run-status:is(.running, .assigned, .queued) {
-  color: #1f6fd6;
+  color: var(--ob-online-text);
 }
 .employee-profile .ep-run-status.completed {
   color: #1c7c3c;

@@ -308,7 +308,7 @@ function skillSourceLabel(source: EmployeeSkill["source"]): string {
 
 function evidenceKindLabel(kind: EmployeeSkill["evidence"][number]["kind"]): string {
   if (kind === "run") return "任务";
-  if (kind === "artifact") return "产物";
+  if (kind === "artifact") return "产出";
   if (kind === "approval") return "审批";
   if (kind === "import") return "导入";
   return "人工记录";

@@ -122,7 +122,7 @@ it.each([
     expect(ui.container.querySelector("fieldset")?.disabled).toBe(true);
     await interact(() => button("重试同一创建请求").click());
     expect(vi.mocked(api.createWorkTask).mock.calls[1]![0]).toEqual(first);
-    expect(ui.container.textContent).toContain("Server 已持久化任务");
+    expect(ui.container.textContent).toContain("服务电脑已持久化任务");
   },
 );
 it("allows correcting an explicitly rejected creation", async () => {
@@ -131,7 +131,7 @@ it("allows correcting an explicitly rejected creation", async () => {
   await create();
   expect(ui.container.querySelector("fieldset")?.disabled).toBe(false);
   expect(button("提交任务")).toBeDefined();
-  expect(ui.container.textContent).toContain("Server 未接受请求参数");
+  expect(ui.container.textContent).toContain("服务电脑未接受请求参数");
 });
 it("keeps the last snapshot on disconnect, disables cancellation, and recovers on online", async () => {
   await mount();
@@ -290,7 +290,7 @@ it("invalidates a pending read on offline and waits for a new online response", 
   expect(ui.container.textContent).toContain("状态待同步");
   expect(button("取消任务").disabled).toBe(true);
   await interact(() => latest.resolve(workFixture({ revision: 3 })));
-  expect(ui.container.textContent).toContain("已同步 Server 快照");
+  expect(ui.container.textContent).toContain("已同步服务电脑快照");
   expect(ui.container.textContent).toContain("快照版本 3");
   expect(button("取消任务").disabled).toBe(false);
   expect(api.cancelWorkTask).not.toHaveBeenCalled();
@@ -309,7 +309,7 @@ it("allows correcting a multibyte request rejected with 413 using a new request 
   const corrected = vi.mocked(api.createWorkTask).mock.calls[1]![0];
   expect(corrected.objective).toBe("缩短后的任务");
   expect(corrected.requestKey).not.toBe(rejected.requestKey);
-  expect(ui.container.textContent).toContain("Server 已持久化任务");
+  expect(ui.container.textContent).toContain("服务电脑已持久化任务");
 });
 
 it("observes an existing task from a deep link without creating or cancelling it", async () => {
