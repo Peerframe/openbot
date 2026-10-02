@@ -59,7 +59,7 @@ it("keeps transcription explicit and sends no media on mount", async () => {
   vi.mocked(updateAttachment).mockResolvedValue(media);
   const view = await renderComponent(<AttachmentActions attachment={media} onChange={() => {}} />);
   expect(updateAttachment).not.toHaveBeenCalled();
-  expect(view.container.textContent).toContain("会把这段音频发给已配置的 OpenAI");
+  expect(view.container.textContent).toContain("把这段音频发送到 OpenAI 官方服务");
   await interact(() => button(view.container, "转写").click());
   expect(updateAttachment).toHaveBeenCalledWith(
     media,

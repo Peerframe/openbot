@@ -172,7 +172,8 @@ export function TaskSheet({
             </div>
             {liveFrame ? (
               <small>
-                {node?.name ?? "工作电脑"} · {secondsAgo(liveFrame.capturedAt)} · 画面只在内存里保留
+                {node?.name ?? "工作电脑"} · {secondsAgo(liveFrame.capturedAt)} ·
+                画面默认两分钟后失效
               </small>
             ) : null}
             {onOpenBrowser && run.executionProfile === "docker-linux" ? (

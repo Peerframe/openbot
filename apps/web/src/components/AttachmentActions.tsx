@@ -120,7 +120,7 @@ export function AttachmentActions({
               {/* Transcription sends the media to a third party; say so before the click. */}
               <small className={media ? "is-warning" : undefined}>
                 {media
-                  ? "会把这段音频发给已配置的 OpenAI；原文件留在服务电脑"
+                  ? "会用当前启用的 OpenAI 配置，把这段音频发送到 OpenAI 官方服务；原文件留在服务电脑"
                   : image
                     ? "截图、照片"
                     : "PDF、Word 等"}

@@ -24,6 +24,17 @@ interface FileRow {
   output?: Artifact;
 }
 
+/** C19: how many messages and tasks still point at a file; absent on an older 服务电脑. */
+export function referenceLabel(file: UploadedComposerAttachment): string | undefined {
+  const count = file.referenceCount;
+  if (!count) return undefined;
+  const parts = [
+    count.messages > 0 ? `${count.messages} 条消息引用` : "",
+    count.tasks > 0 ? `${count.tasks} 个任务引用` : "",
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join("、") : "没有消息或任务引用";
+}
+
 function processedLabel(file: UploadedComposerAttachment) {
   if (!file.processing) return undefined;
   return file.processing.operation === "transcribe" ? "已转写" : "已提取文字";
@@ -31,8 +42,8 @@ function processedLabel(file: UploadedComposerAttachment) {
 
 /**
  * 频道文件 (ChannelFiles artboard): the Owner's uploads and the Bots' outputs in one list, with a
- * 回收站 for uploads. Moving to the 回收站 stops sending a file to Bots; only the 服务电脑 decides
- * what cleanup may delete, and it keeps anything a message or task still references.
+ * 回收站 for uploads. In the 回收站 a file can no longer be read or newly referenced by Bots, and it
+ * can be restored; the 服务电脑 offers no permanent cleanup, so neither does this dialog.
  */
 export function AttachmentsManagerDialog({
   channelId,
@@ -48,8 +59,7 @@ export function AttachmentsManagerDialog({
   botNameForRun?(runId: string): string | undefined;
   onClose(): void;
 }) {
-  const [revision, setRevision] = useState(0);
-  const { files, setFiles, status } = useChannelAttachments(channelId, revision);
+  const { files, setFiles, status } = useChannelAttachments(channelId);
   // Results of the Owner's own actions; kept apart from loading so a reload does not erase them.
   const [notice, setNotice] = useState("");
   const [tab, setTab] = useState<"files" | "trash">("files");
@@ -57,8 +67,6 @@ export function AttachmentsManagerDialog({
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(PAGE);
   const [busyId, setBusyId] = useState<string>();
-  const [confirmingCleanup, setConfirmingCleanup] = useState(false);
-  const [cleaning, setCleaning] = useState(false);
 
   const uploads = files.filter((file) => !file.deletedAt);
   const trash = files.filter((file) => file.deletedAt);
@@ -72,6 +80,7 @@ export function AttachmentsManagerDialog({
         sidebarTime(file.createdAt),
         formatAttachmentSize(file.sizeBytes),
         processedLabel(file),
+        referenceLabel(file),
       ]
         .filter(Boolean)
         .join(" · "),
@@ -122,33 +131,6 @@ export function AttachmentsManagerDialog({
     }
   }
 
-  async function cleanup() {
-    if (cleaning) return;
-    setCleaning(true);
-    try {
-      const response = await fetch(
-        `/api/v1/channels/${encodeURIComponent(channelId)}/attachments/cleanup`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ olderThanDays: 7 }),
-        },
-      );
-      if (!response.ok) throw new Error("清理未完成：服务电脑暂时无法确认文件是否还被引用。");
-      const result = (await response.json()) as { removed: number; retained: number };
-      setNotice(
-        `已清理 ${result.removed} 个文件；${result.retained} 个仍被消息或任务引用，已保留。`,
-      );
-      setRevision((value) => value + 1);
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : "清理失败。");
-    } finally {
-      setCleaning(false);
-      setConfirmingCleanup(false);
-    }
-  }
-
   return (
     <Dialog
       title={channelName ? `${channelName} 的文件` : "频道文件"}
@@ -158,18 +140,10 @@ export function AttachmentsManagerDialog({
       onClose={onClose}
       footerStart={
         <small className="channel-files-note">
-          移到回收站的文件不再发给 Bot；清理只删除进回收站满 7 天、且没有消息或任务还在引用的文件。
+          {/* C20 (#159): the 服务电脑 has no permanent cleanup, so none is offered. */}
+          移到回收站后，Bot
+          不能再读取或新引用这个文件，已发送的内容无法撤回。可以随时恢复；永久清理暂未提供。
         </small>
-      }
-      footer={
-        <button
-          type="button"
-          className="ob-pill is-danger"
-          disabled={trash.length === 0 || cleaning}
-          onClick={() => (confirmingCleanup ? void cleanup() : setConfirmingCleanup(true))}
-        >
-          {cleaning ? "正在清理…" : confirmingCleanup ? "再点一次确认清理" : "清理回收站"}
-        </button>
       }
     >
       <div className="ob-seg" role="tablist" aria-label="文件分区">
@@ -177,10 +151,7 @@ export function AttachmentsManagerDialog({
           type="button"
           role="tab"
           aria-selected={tab === "files"}
-          onClick={() => {
-            setTab("files");
-            setConfirmingCleanup(false);
-          }}
+          onClick={() => setTab("files")}
         >
           文件 · {rows.length}
         </button>
@@ -294,7 +265,14 @@ export function AttachmentsManagerDialog({
               </span>
               <span className="channel-files-text">
                 <strong title={file.name}>{file.name}</strong>
-                <small>{file.deletedAt ? `${sidebarTime(file.deletedAt)} 移到回收站` : ""}</small>
+                <small>
+                  {[
+                    file.deletedAt ? `${sidebarTime(file.deletedAt)} 移到回收站` : "",
+                    referenceLabel(file),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </small>
               </span>
               <span className="channel-files-actions">
                 <button
