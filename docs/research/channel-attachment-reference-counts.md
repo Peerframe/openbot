@@ -35,7 +35,9 @@ translation was added; recheck follows. Initial synthetic child lacked its deleg
 a foreign-channel test name collided; fixtures were corrected before the passing run. Initial full
 check used a shared dependency link that lacked workspace nested dependencies; the independent
 locked install passed. New tests are included in `scripts/test-python-control.mjs` for actual hosted
-SQL execution, not just the base suite's skipped database collection. PR/hosted validate pending.
+SQL execution, not just the base suite's skipped database collection. PR: [#161](https://github.com/Peerframe/openbot/pull/161); hosted validate pending.
+Final fixture teardown also removes the foreign-channel records; affected four cases reran and
+passed, zero skips. Final docs gate includes the translation: 12 passed, 564 Markdown files.
 Acceptance: real PostgreSQL/HTTP exact counts, duplicate marker, case, unreferenced file, same-ID
 foreign channel exclusion, terminal/delegated/mapped task identity, recycled file, Owner/refused
 scope and overflow with no partial content. No paid model. No automatic merge or release.

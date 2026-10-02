@@ -18,7 +18,8 @@ def seed(synthetic_db):
         db.execute("INSERT INTO bots(id,name,role,computer_profile) VALUES (%s,%s,'Fixture','none'),(%s,%s,'Fixture','none')", (bot,"Count "+bot,peer,"Peer "+peer))
         db.execute("INSERT INTO channels(id,name) VALUES (%s,'Count fixture')",(channel,))
         db.execute("INSERT INTO channel_bots(channel_id,bot_id) VALUES (%s,%s),(%s,%s)",(channel,bot,channel,peer))
-    yield {**synthetic_db,"bot":bot,"peer":peer,"channel":channel}
+    value={**synthetic_db,"bot":bot,"peer":peer,"channel":channel}
+    yield value
     with psycopg.connect(synthetic_db["dsn"]) as db:
         db.execute("DELETE FROM work_sources WHERE channel_id=%s",(channel,))
         db.execute("DELETE FROM work_tasks WHERE bot_id=ANY(%s)",([bot,peer],))
@@ -27,6 +28,9 @@ def seed(synthetic_db):
         db.execute("DELETE FROM channel_bots WHERE channel_id=%s",(channel,))
         db.execute("DELETE FROM channels WHERE id=%s",(channel,))
         db.execute("DELETE FROM bots WHERE id=ANY(%s)",([bot,peer],))
+        if value.get('foreignChannel'):
+            db.execute("DELETE FROM messages WHERE channel_id=%s",(value['foreignChannel'],))
+            db.execute("DELETE FROM channels WHERE id=%s",(value['foreignChannel'],))
 
 
 def setup(seed, tmp_path):
@@ -36,6 +40,7 @@ def setup(seed, tmp_path):
     unused=product.files.persist(seed['channel'],'unused.txt',b'No refs')
     marker=f"[OpenBot attachment: {item['id']}]"
     first,second,other,run1,run2,child,task=[str(uuid4()) for _ in range(7)]
+    seed['foreignChannel']=other
     with psycopg.connect(seed['dsn']) as db:
         db.execute("INSERT INTO channels(id,name) VALUES (%s,%s)",(other,'Other '+other))
         for identity,channel,body in [(first,seed['channel'],'PRIVATE_BODY '+marker+' '+marker),
