@@ -759,6 +759,27 @@ nullable default without rewriting old connections, ciphertext or Bot selections
 Verify first, then explicitly save with the existing create command; verification does not save
 or grant authority. Use fake providers for tests, never the paid `/test` inference endpoint.
 
+### C19: channel attachment reference counts
+
+`GET /api/v1/channels/:channelId/attachments` adds `referenceCount` to **each** attachment,
+including recycled files: `{ "messages": 3, "tasks": 2 }`. Both are exact nonnegative integers.
+Only an authorized Owner session can read them, after checking the active channel; revocation is
+rechecked before returning. No referencing message/task IDs, titles, content, prompts or receipts
+are included. Metadata/content/mutation responses and Owner-native task attachments are unchanged.
+
+A reference is the canonical `[OpenBot attachment: <UUID>]` marker, case insensitive, within a
+retained same-channel message or a channel task's frozen instruction. Count each record once even
+if it repeats the marker; each assigned or delegated channel Run is a distinct task. A Run mapped
+to Work retains one identity for this count, not two. Terminal tasks and retained messages still
+count; a bare UUID does not. Owner-native Tasks use a different file namespace and never count here.
+Counts are not proof of model consumption and do not grant cleanup authority.
+
+The existing file list limit is 1,024. Each count is bounded at 10,000; an overflow returns
+503 `attachment_reference_limit`, **without partial or saturated counts**. Counts use one SQL
+snapshot with the existing 3-second statement/6-second Owner transaction budgets. A timeout/storage
+failure refuses the response. The private file lock spans metadata/count projection; the Owner
+transaction's final authority recheck remains in force. No persistence, mutation or model call is added.
+
 ### C18: older message pages
 
 `GET /api/v1/channels/:channelId/messages?limit=100&before=<opaque-cursor>` retains the
