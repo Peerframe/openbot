@@ -70,7 +70,8 @@
   gap: 2px;
   box-sizing: border-box;
   width: min(640px, calc(100% - 88px));
-  max-height: 60%;
+  /* LongLists: at most eight 52px rows; ⌘1–9 only cover the first nine. */
+  max-height: min(60%, calc(8 * 52px + 7 * 2px + 16px));
   padding: 8px;
   overflow-y: auto;
   border: 1px solid var(--ob-popover-border);

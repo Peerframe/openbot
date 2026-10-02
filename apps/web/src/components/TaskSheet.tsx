@@ -5,6 +5,7 @@ import { ArtifactCard } from "./ArtifactCard";
 import { RobotAvatar } from "./RobotAvatar";
 import { SteerForm, taskControls, useTaskAction } from "./TaskActions";
 import { computerLabels, secondsAgo } from "./TaskCard";
+import { TaskSteps } from "./TaskSteps";
 import "./TaskSheet.css";
 
 const stageLabels: Record<string, string> = {
@@ -226,18 +227,7 @@ export function TaskSheet({
         <section className="task-sheet-section" aria-label="进度">
           <h3>进度</h3>
           <ol className="task-sheet-card task-sheet-steps">
-            {progress.map((item) => (
-              <li key={item.id}>
-                <i className="is-done" aria-hidden="true" />
-                <span>
-                  <strong>{stageLabel(item.stage)}</strong>
-                  <small>{item.message}</small>
-                </span>
-                <time dateTime={item.createdAt}>
-                  {timeFormatter.format(new Date(item.createdAt))}
-                </time>
-              </li>
-            ))}
+            <TaskSteps run={run} progress={progress} stageLabel={stageLabel} />
             <li>
               <i
                 className={
