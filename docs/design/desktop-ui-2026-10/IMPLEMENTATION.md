@@ -70,7 +70,8 @@ updated.
 | 23b | Messages and the composer — **merged** | MessageActions, Composer | — | Icon actions beside the bubble, reaction picker, Owner reactions without counts, attachment chips at the 8 / 20 MB limit, recording states, attachment actions |
 | 23c | Channel files — **in review** | ChannelFiles, ChannelInfo | — | 频道文件 dialog with 回收站, search and source filter; 资料库 「全部 N 个 ›」 |
 | 23d | The Bot's browser — **merged** | EmployeeBrowser | — | Window with take-over and 交还 Bot |
-| 23e | Notices, scrolling and long lists | Notices, LongLists | C18 for older messages | Toast stack, one banner by severity, the overlay scrollbar, the date cue and 回到最新, per-area long-list rules |
+| 23e | Notices and scrolling — **in review** | Notices, LongLists | C18 (merged) | Toast, one banner by severity, the date cue, 回到最新 with a count, older messages on scroll; the scrollbar follows the system overlay |
+| 23e-2 | Long lists | LongLists | C13 for step counts | Popover lists capped at 8 rows with edge fades, stacked 需要处理, working members first, three collaborators then 「还有 N 个」, long progress collapsed, search in long settings lists |
 | 23f | App icon and the legacy layer | AppIcon | C16 | Icon sets from the AppIcon board; delete the legacy stylesheets and classes listed in DESIGN.md and `OpenBotMark`; refresh the website demo fixtures |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.

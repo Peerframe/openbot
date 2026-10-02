@@ -13,9 +13,24 @@ export interface ConversationDraft {
   revision: number;
 }
 
+/**
+ * Older pages (LongLists, C18). `cursor` points just before the oldest message loaded so far;
+ * `exhausted` means the Server has nothing older.
+ */
+export interface ConversationHistory {
+  cursor?: string | undefined;
+  exhausted: boolean;
+  loading: boolean;
+  error?: string | undefined;
+}
+
+/** Messages kept per channel in this session; older pages beyond it are read again on demand. */
+export const CONVERSATION_MESSAGE_LIMIT = 1000;
+
 export interface ConversationSnapshot {
   draft: ConversationDraft;
   messages: Message[];
+  history: ConversationHistory;
   runs: Run[];
   loading: boolean;
   loadError?: string | undefined;
@@ -41,6 +56,9 @@ export interface ConversationChannel {
     >,
   ): void;
   merge(messages: Message[], runs?: Run[]): void;
+  /** Older messages from a page; never trims the oldest ones away. */
+  prepend(messages: Message[]): void;
+  setHistory(update: Partial<ConversationHistory>): void;
   loaded(error?: string): void;
   scroll: ConversationScroll;
   send(
@@ -100,6 +118,7 @@ export function createConversationSession(): ConversationSession {
       let state: ConversationSnapshot = {
         draft: { text: "", targetBotId: defaultTarget, revision: 0 },
         messages: [],
+        history: { exhausted: false, loading: false },
         runs: [],
         loading: true,
         sending: false,
@@ -144,12 +163,28 @@ export function createConversationSession(): ConversationSession {
           publish({
             messages: Array.from(byId.values())
               .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-              .slice(-200),
+              .slice(-CONVERSATION_MESSAGE_LIMIT),
             runs: mergeRuns(
               state.runs,
               runs.filter((run) => run.channelId === id),
             ),
           });
+        },
+        prepend(messages) {
+          if (disposed || closed) return;
+          const byId = new Map(state.messages.map((message) => [message.id, message]));
+          for (const message of messages)
+            if (message.channelId === id) byId.set(message.id, message);
+          const sorted = Array.from(byId.values()).sort((a, b) =>
+            a.createdAt.localeCompare(b.createdAt),
+          );
+          // At the limit, the newest are dropped instead: the Owner is reading back in time, and
+          // the live sync brings the latest page again when they return.
+          publish({ messages: sorted.slice(0, CONVERSATION_MESSAGE_LIMIT) });
+        },
+        setHistory(update) {
+          if (disposed || closed) return;
+          publish({ history: { ...state.history, ...update } });
         },
         loaded(error) {
           publish({ loading: false, loadError: error });
@@ -238,6 +273,7 @@ export function createConversationSession(): ConversationSession {
           state = {
             draft: { text: "", targetBotId: "", revision: 0 },
             messages: [],
+            history: { exhausted: true, loading: false },
             runs: [],
             loading: false,
             sending: false,

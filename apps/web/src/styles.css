@@ -461,20 +461,6 @@ select:focus-visible {
   color: #969ca3;
   font-size: 9px;
 }
-
-.toast {
-  position: fixed;
-  z-index: 30;
-  right: 28px;
-  bottom: 28px;
-  padding: 12px 16px;
-  border: 1px solid #cbd8c8;
-  border-radius: 8px;
-  color: #245b30;
-  background: #f2fbf3;
-  box-shadow: 0 8px 24px rgba(25, 50, 30, 0.12);
-  font-size: 12px;
-}
 .login-error {
   margin: 2px 0 0;
   color: #a1342c;
@@ -724,18 +710,6 @@ select:focus-visible {
     color: #858c94;
     font-size: 12px;
   }
-  .toast {
-    right: 18px;
-    bottom: 84px;
-    left: 18px;
-    text-align: center;
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .toast {
-    animation: toast-in 0.2s ease-out;
-  }
 }
 
 @keyframes backdrop-in {
@@ -749,13 +723,6 @@ select:focus-visible {
     transform: translateY(8px) scale(0.99);
   }
 }
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-}
-
 .channel-workspace {
   display: flex;
   height: 100vh;
