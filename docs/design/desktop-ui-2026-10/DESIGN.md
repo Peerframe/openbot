@@ -144,6 +144,9 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
   intro, and actions at the bottom right (grey 取消, then a black primary or red danger pill).
 - Designed: 分享, 分享 Bot 模板, 导入 Bot 模板, 删除确认 (Bot and 频道), 配对工作电脑, 连接模型服务.
   New Bot and new 频道 have **no dialog** (see above).
+- Two safety details beyond the artboards: 分享 Bot 模板 and 导入 Bot 模板 keep the exact content
+  under a quiet 「查看将分享的内容」 / 「查看模板内容」 disclosure, and 配对工作电脑 masks the pairing
+  token on screen while 复制启动配置 copies it in full.
 
 ## Screen map
 
@@ -153,7 +156,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | --- | --- | --- |
 | Components | `tokens.css`, `primitives.css`, `Dialog.tsx` | Built |
 | Sidebar, Search, Menu, ContextMenu | `Sidebar.tsx`, `SidebarItemMenu.tsx` | Built (group avatars and status dots included) |
-| Main | `App.tsx`, `WorkspaceHeader.tsx`, `ChannelWorkspace.tsx` | Built; task cards in step 19 |
+| Main | `App.tsx`, `WorkspaceHeader.tsx`, `ChannelWorkspace.tsx`, `TaskCard.tsx` | Built |
 | ChannelInfo, AddMember | `ContextRail.tsx`, `AddMemberPopover.tsx` | Built |
 | BotInfo | `BotInfoRail.tsx` (单聊 and the Bot profile) | Built; 编辑头像 waits for C9 |
 | Profile | `EmployeeProfileView.tsx` | Header and 概览 built; other tabs need design (step 22) |
@@ -164,38 +167,45 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Avatar, Avatars, GroupAvatar, GroupAvatars | `RobotAvatar.tsx`, `GroupAvatar.tsx` | Built; violet, teal, pink and slate wait for C10 |
 | Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | `Onboarding.tsx` and the setup screens | Built |
 | TaskCards, TaskInspector | `TaskCard.tsx`, `TaskSheet.tsx` | Built; step counts wait for C13 |
-| Dialog* | new `Dialog.tsx` frame and the dialogs | Step 20 |
-| WorkSupervision, EmptyWorkspace | `WorkTasksScreen.tsx`, new `EmptyWorkspace.tsx` | Step 21 |
+| Dialog* | `Dialog.tsx` frame; Share, Export, Import, DeleteIdentity, NodeManager and ModelConnections dialogs | Built; 连接模型服务 keeps its list and editor until C17 |
+| WorkSupervision, EmptyWorkspace | `WorkTasksScreen.tsx`, `EmptyWorkspace.tsx` | Built; step counts wait for C13 |
 
-## Not designed yet
+## Designed in step 22 (approved 2026-10-02)
 
-These are designed on the canvas (step 22) before they are rebuilt; until then they keep working.
+These areas now have artboards; step 23 rebuilds them, and until then the current code keeps
+working. [LongLists](LongLists.dc.html) sets the rules for long content everywhere: counts after
+titles, at most four items per card with 「全部 N 个 ›」, search above 20 items, an overlay scrollbar
+that shows while scrolling, and the date cue with 「回到最新」 in conversations.
 
-| Area | Code today |
+| Area and artboard | Code today |
 | --- | --- |
-| Message hover actions, reactions, reply quote | `MessageActionBar`, `MessageReactions` |
-| Attachments in messages and the composer, voice input | `MessageAttachments`, `AttachmentPreview`, `ComposerAttachmentPicker`, `VoiceRecorder` |
-| 补充指令 input and the skill picker | `SteerForm` in `TaskActions.tsx`, composer skill menu |
-| 频道文件 management (recycle bin), to fold into 资料库 | `AttachmentsManager` |
-| Bot 档案 tabs: 进化档案 (inspired by Hermes Agent), 技能图谱, 运行中, 记忆, 工作记录, 配置 | `EmployeeEvolutionArchive`, `EmployeeSkillReview`, `KnowledgeReviewPanel`, `EmployeeModelEditor` |
-| 员工浏览器 live view | `EmployeeBrowser` |
-| Notices, toasts, offline banner | `App.tsx` notices |
-| App icon and README images | `apps/desktop/resources`, `docs/design/*.png` |
+| Message hover actions, reactions, reply quote (MessageActions) | `MessageActionBar`, `MessageReactions` |
+| Attachments in messages and the composer, voice input (Composer) | `MessageAttachments`, `AttachmentPreview`, `ComposerAttachmentPicker`, `VoiceRecorder` |
+| 补充指令 input and the skill picker (Composer, TaskCards) | `SteerForm` in `TaskActions.tsx`, composer skill menu |
+| 频道文件 management with the recycle bin (ChannelFiles) | `AttachmentsManager` |
+| Bot 档案 tabs: 进化档案 (inspired by Hermes Agent), 技能, 记忆, 工作记录 (with 进行中), 配置 (Profile*) | `EmployeeEvolutionArchive`, `EmployeeSkillReview`, `KnowledgeReviewPanel`, `EmployeeModelEditor` |
+| The Bot's browser (EmployeeBrowser) | `EmployeeBrowser` |
+| Notices, toasts, banners, scrolling and long lists (Notices, LongLists) | `App.tsx` notices |
+| App icon (AppIcon) | `apps/desktop/resources`, `docs/design/*.png` |
 
 ## Legacy inventory
 
 Legacy classes that must disappear: `primary-button`, `secondary-button`, `icon-button`,
-`create-dialog`, `dialog-header`, `dialog-backdrop`, `onboarding-mark`, `destination-*`,
-`workspace-toolbar`/`toolbar-*`, `channel-members-*`, `channel-work-item`, `run-inspector`,
-`native-run-controls`, `bot-identity-builder`, `appearance-grid`, `workspace-welcome`.
+`onboarding-mark`, the remaining `destination-*` (the routine form), `workspace-toolbar`/`toolbar-*`,
+`channel-members-*`. Already removed: `workspace-welcome` and most `destination-*` (step 21),
+`create-dialog`, `dialog-header`, `dialog-backdrop` (step 20),
+`channel-work-item`, `run-inspector`, `native-run-controls` (step 19), `bot-identity-builder`,
+`appearance-grid` (step 16).
 
 Legacy stylesheets: most of `styles.css`, `workspace-shell.css`, `desktop-workspace.css`,
 `desktop-ui-refresh.css`, `settings-plugin-refresh.css`, `workspace-preferences.css`,
 `components/destinations.css`.
 
-`CreateBotDialog` and `CreateChannelDialog` were removed in step 16. Screens retired by the plan:
-the standalone 例行任务 and 技能库 pages, `AutomationsScreen` and `SkillLibraryScreen`
-(replaced by 设置 › 例行任务 and 设置 › 技能); and the old raster mark `OpenBotMark`.
+Removed so far: `CreateBotDialog` and `CreateChannelDialog` (step 16); `EmployeeProfileRail` (step
+17); `RunInspector`, `RunProgressPanel`, `NativeRunControls` and `RunSteering` (step 19); the
+standalone 例行任务 and 技能库 pages — `SkillLibraryScreen` and the page form of `AutomationsScreen`,
+which now only renders 设置 › 例行任务 — and the old welcome (step 21). Still to retire: the old
+raster mark `OpenBotMark` (step 23).
 
-Done so far: the window shell and rail, and launch and setup. The rest follow the steps in the
+Done so far: the window shell and rail, launch and setup, and steps 14–21. The rest follow the steps in the
 plan; each step deletes the legacy rules it replaces in the same pull request.

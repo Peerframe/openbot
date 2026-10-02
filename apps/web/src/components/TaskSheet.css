@@ -182,7 +182,7 @@
 button.task-sheet-person:not(:disabled) {
   cursor: pointer;
 }
-.task-sheet-avatar {
+.task-sheet .task-sheet-avatar {
   width: 32px;
   height: 32px;
 }

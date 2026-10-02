@@ -1,4 +1,4 @@
-import { createWorld, type PreviewWorld, profileFor } from "./world";
+import { createWorld, knowledgeProposalsFor, type PreviewWorld, profileFor } from "./world";
 
 /*
  * Design preview transport (dev only, never in a product build). It replaces `fetch`,
@@ -145,6 +145,11 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
         return profile ? json({ profile }) : json({ error: "not_found" }, 404);
       },
     ],
+    [
+      "GET",
+      /^\/api\/v1\/bots\/([^/]+)\/knowledge-proposals$/,
+      (m) => json({ proposals: knowledgeProposalsFor(m[1] ?? "") }),
+    ],
     ["GET", /^\/api\/v1\/runs\/([^/]+)\/output$/, () => json({ output: null })],
     ["GET", /^\/api\/v1\/plugins$/, () => json({ plugins: [], pendingCalls: [] })],
     [
@@ -181,7 +186,66 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
         }),
     ],
     ["GET", /^\/api\/v1\/automations$/, () => json({ automations: [] })],
-    ["GET", /^\/api\/v1\/node-identities$/, () => json({ identities: [] })],
+    [
+      "GET",
+      /^\/api\/v1\/node-identities$/,
+      () =>
+        json({
+          identities: world.nodes.map((node) => ({
+            nodeId: node.id,
+            status: "active",
+            connected: true,
+            enrolledAt: "2026-09-20T01:00:00.000Z",
+          })),
+        }),
+    ],
+    [
+      "GET",
+      /^\/api\/v1\/bots\/([^/]+)\/export\/preview$/,
+      (m) => {
+        const bot = world.bots.find((item) => item.id === m[1]);
+        if (!bot) return json({ error: "not_found" }, 404);
+        return json({
+          preview: {
+            format: "openbot.employee/v2",
+            kind: "template",
+            packageId: "00000000-0000-4000-8000-000000000001",
+            fileName: `${bot.name}.openbot.json`,
+            generatedAt: "2026-09-30T01:30:00.000Z",
+            employee: { name: bot.name, role: bot.role, appearance: bot.appearance },
+            skills: [
+              ["changelog", "抓取更新日志"],
+              ["screenshot-diff", "网页截图对比"],
+              ["weekly", "周报模板"],
+            ].map(([slug, name]) => ({
+              slug,
+              name,
+              description: `${name}：示例技能说明。`,
+              version: "1.0.0",
+              requiredCapabilities: [],
+              dependencySlugs: [],
+            })),
+            employeeName: bot.name,
+            verifiedSkillCount: 3,
+            requestedCapabilities: [],
+            includedMemoryCount: 0,
+            exclusions: [
+              { category: "identity", count: 1, reason: "" },
+              { category: "authority", count: 1, reason: "" },
+              { category: "memory", count: 4, reason: "" },
+              { category: "work-history", count: 12, reason: "" },
+            ],
+            findings: [],
+            blocked: false,
+            checksum: "9e66cc207913b178" + "0".repeat(44) + "9e53a3",
+            downloadReviewToken: "0".repeat(64),
+            signatureStatus: "unsigned",
+            identityOnImport: "new",
+            hostAuthority: "none",
+          },
+        });
+      },
+    ],
     ["GET", /^\/api\/v1\/audit$/, () => json({ events: [] })],
   ];
 

@@ -70,7 +70,7 @@ SKILL.md import accepts one Markdown document up to 12 KiB plus a version. It be
 
 Employee export previews included/excluded data, blocking reasons and signature state before a review-bound JSON download. Import validates structure, integrity, applicable signatures and compatibility before separate Owner activation creates a new local identity. Imported skills start disabled. Credentials, host authority, private memory and work history do not travel. This is not authenticated ownership transfer or a complete replica of everything the original employee knows.
 
-Evidence: [plugin destination](../../apps/web/src/components/SkillLibraryScreen.tsx), [skill import](../../apps/web/src/components/EmployeeSkillImport.tsx), [employee export](../../apps/web/src/components/ExportEmployeeDialog.tsx), [employee import](../../apps/web/src/components/ImportEmployeeDialog.tsx), [employee model](../EMPLOYEE.md).
+Evidence: [plugin destination](https://github.com/Peerframe/openbot/blob/a99918176ee42e45d7a909853a0db1dc5b884d38/apps/web/src/components/SkillLibraryScreen.tsx), [skill import](../../apps/web/src/components/EmployeeSkillImport.tsx), [employee export](../../apps/web/src/components/ExportEmployeeDialog.tsx), [employee import](../../apps/web/src/components/ImportEmployeeDialog.tsx), [employee model](../EMPLOYEE.md).
 
 ## Schedules, workers, and settings
 

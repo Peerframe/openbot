@@ -1,22 +1,66 @@
+import type { Artifact, Bot, Channel, ExecutionNode, Run } from "@openbot/domain";
 import type { ReactElement } from "react";
 import { App } from "../App";
+import { DeleteIdentityDialog } from "../components/DeleteIdentityDialog";
 import { DesktopConnectionScreen } from "../components/DesktopConnectionScreen";
 import { DesktopLocalWorkerScreen } from "../components/DesktopLocalWorkerScreen";
 import { DesktopSetupScreen } from "../components/DesktopSetupScreen";
+import { ExportEmployeeDialog } from "../components/ExportEmployeeDialog";
+import { ImportEmployeeDialog } from "../components/ImportEmployeeDialog";
 import { LoginScreen } from "../components/LoginScreen";
+import { ModelConnectionsDialog } from "../components/ModelConnectionsDialog";
 import { ModelSettingsScreen } from "../components/ModelSettingsScreen";
+import { NodeManagerDialog } from "../components/NodeManagerDialog";
 import { LaunchScreen } from "../components/Onboarding";
+import { ShareConversationDialog } from "../components/ShareConversationDialog";
 import { setPreviewStartLocation, type WorkspaceLocation } from "../workspace-navigation";
 import { AvatarSpecimens, GroupSpecimens } from "./AvatarSpecimens";
 import type { scenes as sceneTable } from "./main";
+import { createWorld } from "./world";
 
 type Scenes = typeof sceneTable;
 type Scene = Scenes[string];
 
 // Actions in component scenes stay pending: the preview shows states, it never submits anything.
 const pending = () => new Promise<never>(() => undefined);
+const close = () => undefined;
+// Dialog scenes read the same synthetic world the transport serves.
+const world = createWorld() as unknown as {
+  bots: Bot[];
+  channels: Channel[];
+  runs: Run[];
+  artifacts: Artifact[];
+  nodes: ExecutionNode[];
+};
+const researcher = world.bots[0] as Bot;
+const market = world.channels[0] as Channel;
 
 const components: Record<string, () => ReactElement> = {
+  "dialog-share": () => (
+    <ShareConversationDialog
+      channel={market}
+      bots={world.bots}
+      artifacts={world.artifacts}
+      runs={world.runs}
+      onShareBot={close}
+      onClose={close}
+    />
+  ),
+  "dialog-export": () => (
+    <ExportEmployeeDialog employee={researcher} onClose={close} onDownloaded={close} />
+  ),
+  "dialog-import": () => <ImportEmployeeDialog onClose={close} onActivated={close} />,
+  "dialog-delete": () => (
+    <DeleteIdentityDialog
+      target={{ kind: "bot", id: researcher.id, name: researcher.name }}
+      bots={world.bots}
+      channels={world.channels}
+      onClose={close}
+      onDelete={pending}
+    />
+  ),
+  "dialog-pair": () => <NodeManagerDialog onlineNodes={world.nodes} onClose={close} />,
+  "dialog-model": () => <ModelConnectionsDialog onClose={close} onChanged={close} />,
   avatars: () => <AvatarSpecimens />,
   groups: () => <GroupSpecimens />,
   launch: () => <LaunchScreen status="正在打开你的工作区" />,

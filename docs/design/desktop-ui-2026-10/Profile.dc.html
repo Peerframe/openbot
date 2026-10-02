@@ -15,6 +15,12 @@ button{font:inherit;color:inherit}
 .pill{height:34px;padding:0 16px;border-radius:17px;border:0;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
 .field{width:100%;box-sizing:border-box;border:1px solid #e3e3e6;border-radius:12px;background:#ffffff;padding:10px 14px;font:inherit;font-size:14px;color:#1d1d1f;outline:none}
 .field::placeholder{color:#a1a1a6}
+.seg{display:inline-flex;gap:2px;padding:3px;border-radius:12px;background:#f0f0f2}
+.seg button{height:30px;padding:0 14px;border:0;border-radius:9px;background:transparent;font-size:14px;color:#6e6e73;cursor:pointer;white-space:nowrap}
+.seg button[aria-selected="true"]{background:#ffffff;color:#1d1d1f;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.tlink{border:0;background:transparent;padding:0;font-size:13px;color:#8e8e93;cursor:pointer}
+.tlink[aria-pressed="true"]{color:#1d1d1f;font-weight:600}
+.select{height:30px;padding:0 12px;border-radius:15px;border:1px solid #e3e3e6;font-size:13px;cursor:pointer;background:#ffffff;color:#3a3a3c;white-space:nowrap}
 </style>
 </helmet>
 <div style="width: 1440px; height: 900px; display: grid; grid-template-columns: 300px minmax(0, 1fr) 340px; background: #ffffff; overflow: hidden">
@@ -43,15 +49,15 @@ button{font:inherit;color:inherit}
 </div>
 </div>
 
-<div role="tablist" aria-label="档案分区" style="display: flex; gap: 8px; flex-wrap: wrap">
-<button type="button" role="tab" aria-selected="true" class="pill" style="background: #111111; color: #ffffff">概览</button>
-<button type="button" role="tab" aria-selected="false" class="pill" style="background: #f0f0f2; font-weight: 500">进化档案</button>
-<button type="button" role="tab" aria-selected="false" class="pill" style="background: #f0f0f2; font-weight: 500">技能图谱</button>
-<button type="button" role="tab" aria-selected="false" class="pill" style="background: #f0f0f2; font-weight: 500">运行中</button>
-<button type="button" role="tab" aria-selected="false" class="pill" style="background: #f0f0f2; font-weight: 500">记忆</button>
-<button type="button" role="tab" aria-selected="false" class="pill" style="background: #f0f0f2; font-weight: 500">工作记录</button>
-<button type="button" role="tab" aria-selected="false" class="pill" style="background: #f0f0f2; font-weight: 500">配置</button>
+<div role="tablist" aria-label="档案分区" class="seg" style="align-self: flex-start">
+<button type="button" role="tab" aria-selected="true">概览</button>
+<button type="button" role="tab" aria-selected="false">进化档案</button>
+<button type="button" role="tab" aria-selected="false">技能</button>
+<button type="button" role="tab" aria-selected="false">记忆</button>
+<button type="button" role="tab" aria-selected="false">工作记录</button>
+<button type="button" role="tab" aria-selected="false">配置</button>
 </div>
+<div style="flex-grow: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 22px">
 
 <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-radius: 18px; background: #f0f0f2">
 <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; color: #6e6e73">任务</span><strong style="font-size: 26px; font-weight: 700">[128]</strong></div>
@@ -94,6 +100,7 @@ button{font:inherit;color:inherit}
 <span style="height: 32px; padding: 0 14px; border-radius: 16px; background: #ffffff; border: 1px dashed #d1d1d6; font-size: 13px; color: #6e6e73; display: inline-flex; align-items: center; gap: 6px">候选：社交媒体监控 · 待审核</span>
 </div>
 </section>
+</div>
 </div>
 </main>
 

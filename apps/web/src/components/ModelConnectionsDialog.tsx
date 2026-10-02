@@ -11,9 +11,9 @@ import {
   testModelConnection,
   updateModelConnection,
 } from "../api";
-import { CloseIcon, PlusIcon } from "./Icons";
+import { Dialog } from "./Dialog";
+import { PlusIcon } from "./Icons";
 import { ModelIdField, useModelServices } from "./ModelSelector";
-import { useModalDialog } from "./useModalDialog";
 
 export function providerLabel(preset: ModelConnectionPreset): string {
   const labels: Record<string, string> = {
@@ -74,7 +74,6 @@ export function ModelConnectionsDialog({
   const { snapshot, setSnapshot, error, loading, refresh, cancelRefresh } = useModelServices();
   const [selectedId, setSelectedId] = useState<string>("new");
   const [notice, setNotice] = useState<string>();
-  const { dialogRef, closeDialog } = useModalDialog(onClose);
   const selected = snapshot?.connections.find((item) => item.id === selectedId);
   function saved(connection: ModelConnection, selectEditor: boolean) {
     cancelRefresh();
@@ -96,105 +95,98 @@ export function ModelConnectionsDialog({
     setNotice(`已保存 ${connection.name}。`);
     onChanged();
   }
+  // The DialogModel artboard edits one connection with a read-only model check; until the
+  // Server can verify before saving, set a default model and disconnect (C17), this keeps the
+  // list and editor inside the shared dialog frame.
   return (
-    <div className="dialog-backdrop model-services-backdrop">
-      <dialog
-        ref={dialogRef}
-        className="create-dialog model-services-dialog"
-        aria-labelledby="model-services-title"
-      >
-        <header className="dialog-header">
-          <div>
-            <h2 id="model-services-title">模型服务</h2>
-            <p>连接常用厂商和 API 平台，再为员工选择模型。</p>
+    <Dialog
+      title="连接模型服务"
+      intro="连接常用厂商和 API 平台，保存后 Bot 才能使用。"
+      width={860}
+      className="model-services-dialog"
+      onClose={onClose}
+      footerStart={
+        <small className="ob-dialog-foot-note">
+          API Key 加密保存在服务电脑上；保存后页面不再显示原文。
+        </small>
+      }
+      footer={
+        <button type="button" className="ob-pill is-large" onClick={onClose}>
+          完成
+        </button>
+      }
+    >
+      <div className="model-services-body">
+        <section className="model-connection-list" aria-label="已配置的模型服务">
+          <div className="model-section-heading">
+            <strong>已配置的服务</strong>
+            <button
+              className="model-text-button"
+              type="button"
+              onClick={() => void refresh()}
+              disabled={loading}
+            >
+              刷新
+            </button>
           </div>
           <button
-            className="icon-button"
+            className={`model-connection-row model-add-connection ${selectedId === "new" ? "selected" : ""}`}
             type="button"
-            aria-label="关闭模型服务"
-            onClick={closeDialog}
+            onClick={() => setSelectedId("new")}
           >
-            <CloseIcon />
+            <PlusIcon />
+            添加模型服务
           </button>
-        </header>
-        <div className="model-services-body">
-          <section className="model-connection-list" aria-label="已配置的模型服务">
-            <div className="model-section-heading">
-              <strong>已配置的服务</strong>
-              <button
-                className="model-text-button"
-                type="button"
-                onClick={() => void refresh()}
-                disabled={loading}
-              >
-                刷新
-              </button>
-            </div>
+          {loading ? (
+            <p className="model-help" role="status">
+              正在加载…
+            </p>
+          ) : null}
+          {snapshot?.connections.length === 0 ? (
+            <p className="model-help">先添加一个服务。同一个连接可以供多个 Bot 使用。</p>
+          ) : null}
+          {snapshot?.connections.map((connection) => (
             <button
-              className={`model-connection-row model-add-connection ${selectedId === "new" ? "selected" : ""}`}
               type="button"
-              onClick={() => setSelectedId("new")}
+              key={connection.id}
+              className={`model-connection-row ${selectedId === connection.id ? "selected" : ""}`}
+              onClick={() => setSelectedId(connection.id)}
+              aria-pressed={selectedId === connection.id}
             >
-              <PlusIcon />
-              添加模型服务
+              <strong>{connection.name}</strong>
+              <small>
+                {connection.source === "environment"
+                  ? "环境配置 · 只读"
+                  : connection.enabled
+                    ? "已启用"
+                    : "已停用"}
+              </small>
             </button>
-            {loading ? (
-              <p className="model-help" role="status">
-                正在加载…
-              </p>
-            ) : null}
-            {snapshot?.connections.length === 0 ? (
-              <p className="model-help">先添加一个服务。同一个连接可以供多个员工使用。</p>
-            ) : null}
-            {snapshot?.connections.map((connection) => (
-              <button
-                type="button"
-                key={connection.id}
-                className={`model-connection-row ${selectedId === connection.id ? "selected" : ""}`}
-                onClick={() => setSelectedId(connection.id)}
-                aria-pressed={selectedId === connection.id}
-              >
-                <strong>{connection.name}</strong>
-                <small>
-                  {connection.source === "environment"
-                    ? "环境配置 · 只读"
-                    : connection.enabled
-                      ? "已启用"
-                      : "已停用"}
-                </small>
-              </button>
-            ))}
-          </section>
-          <div className="model-connection-detail">
-            {notice ? (
-              <p className="model-success" role="status">
-                {notice}
-              </p>
-            ) : null}
-            {error ? (
-              <p className="model-inline-error" role="alert">
-                {error}
-              </p>
-            ) : null}
-            {snapshot ? (
-              <ModelConnectionEditor
-                key={`${selectedId}:${selected?.revision ?? 0}`}
-                snapshot={snapshot}
-                connection={selected}
-                onSaved={saved}
-                onReload={() => void refresh()}
-              />
-            ) : null}
-          </div>
+          ))}
+        </section>
+        <div className="model-connection-detail">
+          {notice ? (
+            <p className="model-success" role="status">
+              {notice}
+            </p>
+          ) : null}
+          {error ? (
+            <p className="model-inline-error" role="alert">
+              {error}
+            </p>
+          ) : null}
+          {snapshot ? (
+            <ModelConnectionEditor
+              key={`${selectedId}:${selected?.revision ?? 0}`}
+              snapshot={snapshot}
+              connection={selected}
+              onSaved={saved}
+              onReload={() => void refresh()}
+            />
+          ) : null}
         </div>
-        <footer className="model-services-footer">
-          <span>API Key 由服务电脑加密保存，浏览器不会保存密钥。</span>
-          <button className="secondary-button" type="button" onClick={closeDialog}>
-            完成
-          </button>
-        </footer>
-      </dialog>
-    </div>
+      </div>
+    </Dialog>
   );
 }
 

@@ -2,11 +2,15 @@ import type { Bot, EmployeeExportExclusion, EmployeeExportPreview } from "@openb
 import { useEffect, useState } from "react";
 import { type ApiError, getEmployeeExportPreview } from "../api";
 import { downloadEmployeeTemplate } from "../employee-template-delivery";
-import { CloseIcon } from "./Icons";
+import { Dialog } from "./Dialog";
 import { PortableProfileSummaryCard, PortableSkillList } from "./PortableEmployeeReview";
 import { RobotAvatar } from "./RobotAvatar";
-import { useModalDialog } from "./useModalDialog";
 
+/**
+ * 分享 Bot 模板 (DialogExport artboard). The 服务电脑 builds a redacted preview first; only that
+ * reviewed package can be downloaded, and a package that changed since review is refused (412)
+ * and re-previewed. Templates never carry identity, memory, authority or work history.
+ */
 export function ExportEmployeeDialog({
   employee,
   onClose,
@@ -20,7 +24,6 @@ export function ExportEmployeeDialog({
   const [preview, setPreview] = useState<EmployeeExportPreview>();
   const [error, setError] = useState<string>();
   const [downloading, setDownloading] = useState(false);
-  const { dialogRef, closeDialog } = useModalDialog(onClose);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -32,7 +35,7 @@ export function ExportEmployeeDialog({
       })
       .catch((cause: ApiError | DOMException) => {
         if (cause instanceof DOMException && cause.name === "AbortError") return;
-        setError(cause.message ?? "无法生成导出预览。");
+        setError(cause.message ?? "没能生成分享预览。");
       });
     return () => controller.abort();
   }, [employee.id, includeSkillContent]);
@@ -55,12 +58,12 @@ export function ExportEmployeeDialog({
             includeSkillContent,
           );
           setPreview(refreshed);
-          setError("员工内容在审核后发生变化，预览已刷新。请重新检查后再下载。");
+          setError("Bot 的内容在预览后变了，预览已刷新。请重新检查后再下载。");
         } catch (refreshCause) {
-          setError((refreshCause as ApiError).message ?? "无法刷新员工导出预览。");
+          setError((refreshCause as ApiError).message ?? "没能刷新分享预览。");
         }
       } else {
-        setError(apiError.message ?? "下载 Bot 失败。");
+        setError(apiError.message ?? "下载 Bot 模板失败。");
       }
     } finally {
       setDownloading(false);
@@ -68,31 +71,14 @@ export function ExportEmployeeDialog({
   }
 
   return (
-    <div className="dialog-backdrop">
-      <dialog
-        ref={dialogRef}
-        className="create-dialog export-employee-dialog"
-        aria-labelledby="export-title"
-      >
-        <header className="dialog-header">
-          <div>
-            <h2 id="export-title">分享 Bot</h2>
-            <p>分享角色、外观和经过审核的技能，让对方创建自己的 Bot。</p>
-          </div>
-          <button className="icon-button" type="button" aria-label="关闭" onClick={closeDialog}>
-            <CloseIcon />
-          </button>
-        </header>
-
-        <section className="export-employee-identity">
-          <RobotAvatar bot={employee} status={employee.status} />
-          <div>
-            <strong>{employee.name}</strong>
-            <span>{employee.role}</span>
-          </div>
-        </section>
-
-        <label className="export-content-choice">
+    <Dialog
+      title="分享 Bot 模板"
+      intro="只打包角色、外观和审核过的技能，别人导入后得到自己的 Bot。"
+      width={680}
+      className="export-employee-dialog"
+      onClose={onClose}
+      footerStart={
+        <label className="ob-dialog-option">
           <input
             type="checkbox"
             checked={includeSkillContent}
@@ -102,159 +88,203 @@ export function ExportEmployeeDialog({
               setIncludeSkillContent(event.target.checked);
             }}
           />
-          包含已审核的 SKILL.md 正文（需允许分发的许可；导入后重新审核）
+          包含技能正文
         </label>
-        {preview === undefined && error === undefined ? (
-          <section className="export-preview-loading" aria-live="polite">
-            <span className="loading-mark">O</span>
-            <p>正在生成脱敏预览…</p>
-          </section>
-        ) : null}
-
-        {preview ? <ExportPreviewDetails preview={preview} /> : null}
-
-        {error ? (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        ) : null}
-
-        <footer className="export-dialog-footer">
-          <div>
-            <strong>导入后会创建新员工</strong>
-            <span>模板不携带任何工作主机权限。</span>
-          </div>
-          <button className="secondary-button" type="button" onClick={closeDialog}>
+      }
+      footer={
+        <>
+          <button type="button" className="ob-pill is-large" onClick={onClose}>
             取消
           </button>
           <button
-            className="primary-button"
             type="button"
+            className="ob-pill is-large is-primary"
             disabled={preview === undefined || preview.blocked || downloading}
             onClick={() => void download()}
           >
-            {downloading ? "下载中…" : preview?.blocked ? "导出已阻止" : "下载 Bot"}
+            {downloading ? "正在下载…" : "下载 Bot 模板"}
           </button>
-        </footer>
-      </dialog>
-    </div>
+        </>
+      }
+    >
+      <div className="ob-dialog-identity">
+        <RobotAvatar bot={employee} className="ob-dialog-identity-avatar" />
+        <span>
+          <strong>{employee.name}</strong>
+          <small>导入后会在对方那里创建一个新 Bot，零权限开始</small>
+        </span>
+      </div>
+      {preview ? (
+        <ExportPreviewDetails preview={preview} />
+      ) : error === undefined ? (
+        <p className="ob-dialog-loading" aria-live="polite">
+          正在生成脱敏预览…
+        </p>
+      ) : null}
+      {error ? (
+        <p className="ob-dialog-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </Dialog>
   );
 }
 
-export function ExportPreviewDetails({ preview }: { preview: EmployeeExportPreview }) {
+export function DialogCheck({ on }: { on: boolean }) {
   return (
-    <div className="export-preview-body">
-      <section className={`export-safety-summary ${preview.blocked ? "blocked" : "safe"}`}>
-        <strong>{preview.blocked ? "分享内容需要处理" : "分享内容检查已通过"}</strong>
-        <span>
-          {preview.blocked
-            ? "OpenBot 已阻止下载，请先修正下列字段。"
-            : "可下载内容只包含角色、外观、执行偏好与已验证技能。"}
-        </span>
-      </section>
+    <span className={`ob-dialog-check${on ? " is-on" : ""}`} aria-hidden="true">
+      <svg
+        aria-hidden="true"
+        width="11"
+        height="11"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {on ? (
+          <polyline points="5 12 10 17 19 7" />
+        ) : (
+          <>
+            <line x1="6" y1="6" x2="18" y2="18" />
+            <line x1="18" y1="6" x2="6" y2="18" />
+          </>
+        )}
+      </svg>
+    </span>
+  );
+}
 
-      <PortableProfileSummaryCard
-        employee={preview.employee}
-        requestedCapabilities={preview.requestedCapabilities}
-        headingId="export-profile-summary-title"
-        note="这些说明性内容会写入模板，但不会携带来源身份或电脑权限。"
-      />
+export function shortChecksum(value: string) {
+  const groups = value.replace(/[^0-9a-f]/gi, "").match(/.{1,4}/g) ?? [];
+  return groups.length > 6
+    ? `${groups.slice(0, 4).join(" ")} … ${groups.slice(-2).join(" ")}`
+    : groups.join(" ");
+}
 
-      <div className="export-preview-columns">
+/** What the reviewed package contains and leaves out, its signature state and checksum. */
+export function ExportPreviewDetails({ preview }: { preview: EmployeeExportPreview }) {
+  const skillNames = preview.skills.map((skill) => skill.name);
+  return (
+    <>
+      <div className="ob-dialog-columns">
         <section>
-          <h3>将包含</h3>
-          <dl className="export-included-list">
-            <div>
-              <dt>员工模板</dt>
-              <dd>职责与外观</dd>
-            </div>
-            <div>
-              <dt>已验证技能</dt>
-              <dd>{preview.verifiedSkillCount}</dd>
-            </div>
-            <div>
-              <dt>记忆</dt>
-              <dd>{preview.includedMemoryCount}</dd>
-            </div>
-            <div>
-              <dt>请求能力</dt>
-              <dd>
-                {preview.requestedCapabilities.length > 0
-                  ? preview.requestedCapabilities.join("、")
-                  : "无"}
-              </dd>
-            </div>
-          </dl>
+          <h3>会包含</h3>
+          <ul className="ob-dialog-checks">
+            <li>
+              <DialogCheck on />
+              <span>
+                <strong>职责与外观</strong>
+                <small>
+                  {preview.employee.name} · {preview.employee.role}
+                </small>
+              </span>
+            </li>
+            <li>
+              <DialogCheck on />
+              <span>
+                <strong>已验证技能 · {preview.verifiedSkillCount}</strong>
+                <small>
+                  {skillNames.length > 0
+                    ? `${skillNames.slice(0, 3).join("、")}${skillNames.length > 3 ? " …" : ""}`
+                    : "没有已验证技能会进入模板"}
+                </small>
+              </span>
+            </li>
+            <li>
+              <DialogCheck on />
+              <span>
+                <strong>需要的能力</strong>
+                <small>
+                  {preview.requestedCapabilities.length > 0
+                    ? preview.requestedCapabilities.join("、")
+                    : "不需要额外能力"}
+                </small>
+              </span>
+            </li>
+          </ul>
         </section>
-
         <section>
-          <h3>明确排除</h3>
-          <ul className="export-exclusion-list">
+          <h3>不会包含</h3>
+          <ul className="ob-dialog-checks">
             {preview.exclusions.map((exclusion) => (
               <li key={exclusion.category}>
-                <strong>{exclusionLabel(exclusion)}</strong>
-                <span>{exclusionReason(exclusion.category)}</span>
+                <DialogCheck on={false} />
+                <span>
+                  <strong>{exclusionLabels[exclusion.category]}</strong>
+                  <small>{exclusionReasons[exclusion.category]}</small>
+                </span>
               </li>
             ))}
           </ul>
         </section>
       </div>
 
-      <section className="export-skill-review">
-        <h3>将包含的已验证技能</h3>
+      {/* The exact descriptive content leaving this 服务电脑, reviewable before download. */}
+      <details className="ob-dialog-review">
+        <summary>查看将分享的内容</summary>
+        <PortableProfileSummaryCard
+          employee={preview.employee}
+          requestedCapabilities={preview.requestedCapabilities}
+          headingId="export-profile-summary-title"
+          note="这些说明会写进模板，但不会带上来源身份或电脑权限。"
+        />
         <PortableSkillList
           skills={preview.skills}
           stateLabel="已验证，将包含"
           emptyLabel="没有已验证技能会进入模板。"
         />
-      </section>
+      </details>
 
       {preview.findings.length > 0 ? (
-        <section className="export-findings">
-          <h3>阻止原因</h3>
+        <section className="ob-dialog-notice is-danger" aria-label="阻止原因">
+          <strong>分享内容需要处理</strong>
+          <span>OpenBot 已阻止下载，请先修正下面的字段。</span>
           <ul>
             {preview.findings.map((finding) => (
               <li key={`${finding.code}:${finding.location}`}>
-                <code>{finding.location}</code>
-                <span>{finding.message}</span>
+                <code>{finding.location}</code> {finding.message}
               </li>
             ))}
           </ul>
         </section>
-      ) : null}
+      ) : preview.signatureStatus === "dsse" ? (
+        <section className="ob-dialog-notice">
+          <strong>已签名模板</strong>
+          <span>
+            由发布密钥 {preview.publisherKeyId ?? "未知"} 签名；对方仍需信任这个密钥并审核内容。
+          </span>
+        </section>
+      ) : (
+        <section className="ob-dialog-notice is-warning">
+          <strong>未签名模板</strong>
+          <span>这台服务电脑还没有发布密钥。对方导入时会看到「未签名」，需要自己确认来源。</span>
+        </section>
+      )}
 
-      <section className="export-integrity">
-        <div>
-          <span>完整性</span>
-          <strong>SHA-256 校验</strong>
-        </div>
-        <code title={preview.checksum}>{preview.checksum}</code>
-        <p>
-          {preview.signatureStatus === "dsse"
-            ? `此模板将由发布密钥 ${preview.publisherKeyId ?? "未知"} 签名；接收端仍须显式信任并审核。`
-            : "当前服务电脑未配置发布密钥，模板会明确标记为未签名；接收端必须单独接受风险。"}
-        </p>
-      </section>
-    </div>
+      <div className="ob-dialog-checksum">
+        <span>SHA-256</span>
+        <code title={preview.checksum}>{shortChecksum(preview.checksum)}</code>
+        <span className={preview.blocked ? "is-warning" : "is-ok"}>
+          {preview.blocked ? "分享内容需要处理" : "分享内容检查已通过"}
+        </span>
+      </div>
+    </>
   );
 }
 
-function exclusionLabel(exclusion: EmployeeExportExclusion): string {
-  const labels: Record<EmployeeExportExclusion["category"], string> = {
-    identity: "来源身份",
-    authority: "电脑权限与授权",
-    memory: "全部记忆",
-    "work-history": "工作与审计历史",
-  };
-  return `${labels[exclusion.category]} · ${exclusion.count}`;
-}
+const exclusionLabels: Record<EmployeeExportExclusion["category"], string> = {
+  identity: "来源身份",
+  authority: "电脑权限与授权",
+  memory: "记忆",
+  "work-history": "工作与审计历史",
+};
 
-function exclusionReason(category: EmployeeExportExclusion["category"]): string {
-  const reasons: Record<EmployeeExportExclusion["category"], string> = {
-    identity: "来源员工 ID 与所有权不会进入模板。",
-    authority: "不包含主机绑定、审批、凭证、会话或能力授权。",
-    memory: "Bot 分享包不导出任何记忆。",
-    "work-history": "任务、决策、产出、审批和进化历史留在来源服务电脑。",
-  };
-  return reasons[category];
-}
+const exclusionReasons: Record<EmployeeExportExclusion["category"], string> = {
+  identity: "来源 Bot 的编号和归属不会进入模板",
+  authority: "不含主机绑定、审批、凭证、会话",
+  memory: "不导出任何记忆",
+  "work-history": "任务、决策、产出留在这台服务电脑",
+};

@@ -25,7 +25,7 @@ type Tab = "details" | "library" | "computer";
 const tabLabels: Record<Tab, string> = { details: "详情", library: "资料库", computer: "电脑" };
 const tabs: Tab[] = ["details", "library", "computer"];
 
-const computerLabels: Record<Bot["computerProfile"], string> = {
+export const botComputerLabels: Record<Bot["computerProfile"], string> = {
   none: "不用电脑",
   model: "不用电脑",
   "docker-linux": "员工浏览器 · Docker",
@@ -211,6 +211,8 @@ export function BotInfoRail({
       {deleting ? (
         <DeleteIdentityDialog
           target={{ kind: "bot", id: bot.id, name: bot.name }}
+          bots={workspace.bots}
+          channels={workspace.channels}
           onClose={() => setDeleting(false)}
           onDelete={onDelete}
         />
@@ -465,7 +467,7 @@ function HowItWorks({
         <button type="button" className="bi-row" onClick={onComputer}>
           <span>电脑</span>
           <span className="bi-row-value">
-            {computerLabels[bot.computerProfile]}
+            {botComputerLabels[bot.computerProfile]}
             <Chevron />
           </span>
         </button>
@@ -571,7 +573,7 @@ function Computer({ bot, workspace }: { bot: Bot; workspace: WorkspaceSnapshot }
         <div className="bi-card">
           <div className="bi-row is-static">
             <span>方式</span>
-            <span className="bi-row-value">{computerLabels[bot.computerProfile]}</span>
+            <span className="bi-row-value">{botComputerLabels[bot.computerProfile]}</span>
           </div>
           {usesComputer ? (
             <div className="bi-row is-static">

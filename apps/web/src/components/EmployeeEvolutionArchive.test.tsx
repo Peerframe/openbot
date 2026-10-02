@@ -39,17 +39,29 @@ const events: EmployeeEvolutionEvent[] = [
 ];
 
 describe("EmployeeEvolutionArchive", () => {
-  it("orders the visible cutoff newest-first while preserving a truthful dated prefix", () => {
+  it("shows the newest page first", () => {
     expect(selectEvolutionArchiveEvents(events, "all", 2).map((event) => event.id)).toEqual([
+      "event-3",
       "event-2",
-      "event-1",
     ]);
   });
 
-  it("filters by the stored event type", () => {
-    expect(
-      selectEvolutionArchiveEvents(events, "skill_discovered").map((event) => event.id),
-    ).toEqual(["event-2"]);
+  it("groups stored event types under the artboard's filters", () => {
+    expect(selectEvolutionArchiveEvents(events, "skills").map((event) => event.id)).toEqual([
+      "event-3",
+      "event-2",
+    ]);
+    expect(selectEvolutionArchiveEvents(events, "role").map((event) => event.id)).toEqual([
+      "event-1",
+    ]);
+    expect(selectEvolutionArchiveEvents(events, "imported")).toEqual([]);
+  });
+
+  it("counts each filter", () => {
+    const html = renderToStaticMarkup(<EmployeeEvolutionArchive events={events} />);
+    expect(html).toContain("全部 3");
+    expect(html).toContain("技能 2");
+    expect(html).toContain("导入 0");
   });
 
   it("renders complete provenance without turning evidence references into implicit fetches", () => {
@@ -58,7 +70,7 @@ describe("EmployeeEvolutionArchive", () => {
     expect(html).toContain("Evaluation run");
     expect(html).toContain("run-3");
     expect(html).toContain("artifact-2");
-    expect(html).toContain("Hermes Agent Learning Journey");
+    expect(html).toContain("Hermes Agent");
     expect(html).not.toContain("href=");
   });
 });

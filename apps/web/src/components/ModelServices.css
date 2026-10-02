@@ -1,13 +1,10 @@
-.dialog-backdrop.model-services-backdrop {
-  z-index: 80;
-}
-.create-dialog.model-services-dialog {
-  width: min(880px, calc(100vw - 32px));
-}
 .model-services-body {
   display: grid;
   grid-template-columns: 230px minmax(0, 1fr);
   min-height: 410px;
+  overflow: hidden;
+  border: 1px solid #ececee;
+  border-radius: 16px;
 }
 .model-connection-list {
   padding: 20px 16px;
@@ -196,28 +193,12 @@
 .model-connection-form > button {
   justify-self: start;
 }
-.model-services-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 24px;
-  border-top: 1px solid var(--line);
-}
-.model-services-footer > span {
-  color: var(--muted);
-  font-size: 11px;
-}
 .model-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 @media (max-width: 640px) {
-  .create-dialog.model-services-dialog {
-    width: calc(100vw - 24px);
-    max-height: calc(100dvh - 24px);
-  }
   .model-services-body {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -229,8 +210,5 @@
   }
   .model-connection-detail {
     padding: 20px;
-  }
-  .model-services-footer {
-    padding: 16px 20px;
   }
 }

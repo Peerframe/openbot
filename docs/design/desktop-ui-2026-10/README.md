@@ -18,7 +18,7 @@ equivalents. Bracketed values such as `[128]` and `[版本号]` are placeholders
 | [Components](Components.dc.html) | Tokens: colors, type scale, radii, buttons, chips, inputs, rows, bubbles, menus |
 | [Sidebar](Sidebar.dc.html) | Shared sidebar: search, groups, rows, account menu, footer |
 | [Main](Main.dc.html) | ① Channel conversation with right rail |
-| [Profile](Profile.dc.html) | ② Bot profile with settings rail |
+| [Profile](Profile.dc.html) and [ProfileEvolution](ProfileEvolution.dc.html), [ProfileSkills](ProfileSkills.dc.html), [ProfileMemory](ProfileMemory.dc.html), [ProfileWork](ProfileWork.dc.html), [ProfileConfig](ProfileConfig.dc.html) | ② Bot 档案: 概览 and the five other tabs on a segmented control |
 | [New](New.dc.html) | ③ New chat / choose Bots |
 | [Settings](Settings.dc.html) and `Settings*.dc.html`, [SettingsNav](SettingsNav.dc.html) | ④ Settings dialog and its 14 sections |
 | [Plugins](Plugins.dc.html) | ⑥ Plugins |
@@ -35,6 +35,9 @@ equivalents. Bracketed values such as `[128]` and `[版本号]` are placeholders
 | [WorkSupervision](WorkSupervision.dc.html) | ⑯ 任务监督 |
 | [EmptyWorkspace](EmptyWorkspace.dc.html) | ⑰ First entry with no conversations |
 | [DialogShare](DialogShare.dc.html), [DialogExport](DialogExport.dc.html), [DialogImport](DialogImport.dc.html), [DialogDelete](DialogDelete.dc.html), [DialogPairHost](DialogPairHost.dc.html), [DialogModel](DialogModel.dc.html) | ⑮ Dialogs: 分享, 分享 Bot 模板, 导入 Bot 模板, 删除确认, 配对工作电脑, 连接模型服务 |
+| [MessageActions](MessageActions.dc.html), [Composer](Composer.dc.html), [ChannelFiles](ChannelFiles.dc.html) | ① Message actions and reactions; composer attachments, voice and 补充指令; 频道文件 with the recycle bin |
+| [EmployeeBrowser](EmployeeBrowser.dc.html) | The Bot's browser: take over and hand back |
+| [Notices](Notices.dc.html), [LongLists](LongLists.dc.html), [AppIcon](AppIcon.dc.html) | Notices and connection states; long lists and scrolling for every screen; app icon |
 | [ChannelInfo](ChannelInfo.dc.html) | 频道信息 rail with 详情 / 资料库 / 成员 tabs (imported by Main) |
 | [Launch](Launch.dc.html), [LaunchMotion](LaunchMotion.dc.html) | Opening screen states and the 900 ms opening animation |
 | [Welcome](Welcome.dc.html), [Install](Install.dc.html), [Connect](Connect.dc.html), [Login](Login.dc.html), [ModelSetup](ModelSetup.dc.html), [WorkerSetup](WorkerSetup.dc.html) | First-run setup: choose a role, prepare this computer, connect, sign in, choose a model, enable this computer as a worker |

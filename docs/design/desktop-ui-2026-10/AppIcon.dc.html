@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>应用图标</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.icon-btn{width:32px;height:32px;border:0;border-radius:8px;background:transparent;cursor:pointer;display:inline-grid;place-items:center}
+.pill{height:34px;padding:0 16px;border-radius:17px;border:0;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;background:#ececee}
+.pill.small{height:28px;padding:0 12px;border-radius:14px;font-size:13px}
+.pill.primary{background:#111111;color:#ffffff}
+.pill.danger{background:#fbe9e7;color:#b3261e}
+.tab{height:34px;padding:0 16px;border-radius:17px;border:0;font-size:14px;cursor:pointer;white-space:nowrap;background:#f0f0f2;font-weight:500}
+.tab[aria-selected="true"]{background:#111111;color:#ffffff;font-weight:600}
+.chip{height:28px;padding:0 12px;border-radius:14px;border:0;font-size:13px;cursor:pointer;background:#f0f0f2;color:#3a3a3c;white-space:nowrap}
+.chip[aria-pressed="true"]{background:#111111;color:#ffffff}
+.card{border-radius:18px;background:#f0f0f2;padding:0 18px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 0}
+.row + .row{border-top:1px solid #e3e3e6}
+.t{display:flex;flex-direction:column;gap:3px;min-width:0}
+.t strong{font-size:14px;font-weight:500}
+.sub{font-size:12px;color:#8e8e93}
+.h2{margin:0;font-size:17px;font-weight:600}
+.h3{margin:0 4px;font-size:13px;font-weight:500;color:#6e6e73}
+.tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;background:#ffffff;font-size:12px;color:#6e6e73}
+.field{width:100%;box-sizing:border-box;border:1px solid #e3e3e6;border-radius:12px;background:#ffffff;padding:10px 14px;font:inherit;font-size:14px;color:#1d1d1f;outline:none}
+.label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#6e6e73}
+.switch{width:40px;height:24px;border:0;padding:0;border-radius:12px;background:#d1d1d6;position:relative;cursor:pointer;flex-shrink:0}
+.switch[aria-checked="true"]{background:#111111}
+.switch span{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#ffffff;display:block}
+.switch[aria-checked="true"] span{left:19px}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+.ok{color:#1c7c3c}.warn{color:#94480b}.bad{color:#b3261e}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; padding: 56px 64px; background: #fcfcfc; display: flex; flex-direction: column; gap: 36px">
+<header style="display: flex; flex-direction: column; gap: 8px"><h1 style="margin: 0; font-size: 28px; font-weight: 700">应用图标</h1><p style="margin: 0; font-size: 15px; color: #6e6e73">用头像系统里的「圆顶」Bot：同一个形象从侧栏到 Dock 都认得出。浅色底，小尺寸换成小头像画法。</p></header>
+<div style="display: flex; align-items: flex-end; gap: 44px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px"><span style="width: 256px; height: 256px; border-radius: 58px; background: #f5f5f2; border: 1px solid #e3e3e6; box-sizing: border-box; display: grid; place-items: center; box-shadow: 0 6px 21px rgba(0,0,0,0.12)"><dc-import name="Avatar" character="round" accent="green" size="196" surface="#f5f5f2" hint-size="196px,196px"></dc-import></span><span style="font-size: 12px; color: #8e8e93">macOS 1024 · 显示为 256</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px"><span style="width: 128px; height: 128px; border-radius: 29px; background: #f5f5f2; border: 1px solid #e3e3e6; box-sizing: border-box; display: grid; place-items: center; box-shadow: 0 3px 10px rgba(0,0,0,0.12)"><dc-import name="Avatar" character="round" accent="green" size="98" surface="#f5f5f2" hint-size="98px,98px"></dc-import></span><span style="font-size: 12px; color: #8e8e93">128</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px"><span style="width: 64px; height: 64px; border-radius: 14px; background: #f5f5f2; border: 1px solid #e3e3e6; box-sizing: border-box; display: grid; place-items: center; box-shadow: 0 1px 5px rgba(0,0,0,0.12)"><dc-import name="Avatar" character="round" accent="green" size="48" surface="#f5f5f2" hint-size="48px,48px"></dc-import></span><span style="font-size: 12px; color: #8e8e93">64 · Windows 任务栏</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px"><span style="width: 32px; height: 32px; border-radius: 7px; background: #f5f5f2; border: 1px solid #e3e3e6; box-sizing: border-box; display: grid; place-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.12)"><dc-import name="Avatar" character="round" accent="green" size="24" surface="#f5f5f2" hint-size="24px,24px"></dc-import></span><span style="font-size: 12px; color: #8e8e93">32</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px"><span style="width: 16px; height: 16px; border-radius: 4px; background: #f5f5f2; border: 0; box-sizing: border-box; display: grid; place-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.12)"><dc-import name="Avatar" character="round" accent="green" size="12" surface="#f5f5f2" hint-size="12px,12px"></dc-import></span><span style="font-size: 12px; color: #8e8e93">16 · 网页标签</span></div>
+</div>
+<div style="display: flex; align-items: flex-end; gap: 44px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px"><span style="width: 128px; height: 128px; border-radius: 29px; background: #1d1d1f; border: 1px solid #2c2c2e; box-sizing: border-box; display: grid; place-items: center; box-shadow: 0 3px 10px rgba(0,0,0,0.12)"><dc-import name="Avatar" character="round" accent="green" size="98" surface="#1d1d1f" hint-size="98px,98px"></dc-import></span><span style="font-size: 12px; color: #8e8e93">深色 Dock</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px"><span style="width: 128px; height: 128px; border-radius: 64px; background: #f5f5f2; border: 1px solid #e3e3e6; box-sizing: border-box; display: grid; place-items: center"><dc-import name="Avatar" character="round" accent="green" size="98" surface="#f5f5f2" hint-size="98px,98px"></dc-import></span><span style="font-size: 12px; color: #8e8e93">Linux 圆形</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px"><span style="width: 220px; height: 128px; border-radius: 16px; background: #1d1d1f; display: flex; align-items: center; gap: 12px; padding: 0 20px; box-sizing: border-box"><dc-import name="Avatar" character="round" accent="green" size="56" surface="#1d1d1f" hint-size="56px,56px"></dc-import><strong style="color: #ffffff; font-size: 22px; font-weight: 700">OpenBot</strong></span><span style="font-size: 12px; color: #8e8e93">启动画面与 README 顶部</span></div>
+</div>
+<p style="margin: 0; font-size: 13px; color: #8e8e93">图标文件由第 23 步按这里导出（C16）；不使用其他产品的标志或吉祥物。</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

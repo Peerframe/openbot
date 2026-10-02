@@ -189,7 +189,7 @@ it("renders routines as the settings list with a switch and confirmed delete", a
   const channel: Channel = { id: "c", name: "市场周报", botIds: ["b"], createdAt: t };
   const view = await renderComponent(
     <Slot>
-      <AutomationsScreen bots={[bot]} channels={[channel]} variant="settings" />
+      <AutomationsScreen bots={[bot]} channels={[channel]} />
     </Slot>,
   );
   try {

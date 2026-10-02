@@ -433,3 +433,516 @@
     transition: none;
   }
 }
+
+/* Dialog content parts shared by the Dialog* artboards. */
+.ob-dialog-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.ob-dialog .ob-dialog-identity-avatar {
+  width: 56px;
+  height: 56px;
+}
+.ob-dialog-identity > span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.ob-dialog-identity strong {
+  overflow-wrap: anywhere;
+  font-size: 17px;
+}
+.ob-dialog-identity small {
+  color: #8e8e93;
+  font-size: 12px;
+}
+.ob-dialog-list {
+  margin: 0;
+  padding: 0 16px;
+  list-style: none;
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.ob-dialog-list > li {
+  padding: 12px 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ob-dialog-list > li + li {
+  border-top: 1px solid #e3e3e6;
+}
+.ob-dialog-list > li.is-danger,
+.ob-dialog-error {
+  color: #b3261e;
+}
+.ob-dialog-error {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ob-dialog-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.ob-dialog-columns > section,
+.ob-dialog-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.ob-dialog-columns h3,
+.ob-dialog-section > h3 {
+  margin: 0 4px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+.ob-dialog-checks {
+  margin: 0;
+  padding: 0 16px;
+  list-style: none;
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.ob-dialog-checks > li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 11px 0;
+}
+.ob-dialog-checks > li + li {
+  border-top: 1px solid #e3e3e6;
+}
+.ob-dialog-checks > li > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ob-dialog-checks strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.ob-dialog-checks small {
+  overflow-wrap: anywhere;
+  color: #8e8e93;
+  font-size: 12px;
+}
+.ob-dialog-check {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e6e6e8;
+  color: var(--ob-text-secondary);
+}
+.ob-dialog-check.is-on {
+  background: #111;
+  color: #fff;
+}
+.ob-dialog-review > summary {
+  padding: 0 4px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+.ob-dialog-review[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ob-dialog-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--ob-fill);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ob-dialog-notice strong {
+  font-size: 14px;
+}
+.ob-dialog-notice > span {
+  color: var(--ob-text-secondary);
+}
+.ob-dialog-notice.is-warning {
+  background: #fdf6ec;
+}
+.ob-dialog-notice.is-danger {
+  background: #fbeceb;
+}
+.ob-dialog-notice ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+.ob-dialog-checksum {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8e8e93;
+  font-size: 12px;
+}
+.ob-dialog-checksum code {
+  color: #3a3a3c;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.ob-dialog-checksum > span:last-child {
+  margin-left: auto;
+}
+.ob-dialog-checksum .is-ok {
+  color: #1c7c3c;
+}
+.ob-dialog-checksum .is-warning {
+  color: #94480b;
+}
+.ob-dialog-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}
+.ob-dialog-loading {
+  margin: 0;
+  color: var(--ob-text-secondary);
+  font-size: 14px;
+}
+@media (max-width: 640px) {
+  .ob-dialog-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.ob-dialog-checks small.is-warning {
+  color: #94480b;
+}
+.ob-dialog-checks .is-danger {
+  color: #b3261e;
+}
+.ob-dialog-check.is-warning {
+  background: #fdf0e1;
+  color: #94480b;
+  font-size: 13px;
+  font-weight: 800;
+}
+.ob-file-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+.ob-file-pill input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.ob-file-pill:focus-within {
+  outline: 2px solid var(--ob-active);
+  outline-offset: 2px;
+}
+.ob-dialog-steps {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: #8e8e93;
+  font-size: 13px;
+}
+.ob-dialog-steps > li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ob-dialog-steps > li + li::before {
+  width: 24px;
+  height: 1px;
+  margin-right: 4px;
+  background: var(--ob-divider);
+  content: "";
+}
+.ob-dialog-steps > li > span {
+  display: inline-grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ob-fill);
+  font-size: 12px;
+  font-weight: 600;
+}
+.ob-dialog-steps > li.is-current {
+  color: var(--ob-text);
+  font-weight: 600;
+}
+.ob-dialog-steps > li.is-current > span,
+.ob-dialog-steps > li.is-done > span {
+  background: #111;
+  color: #fff;
+}
+.ob-dialog-file {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.ob-dialog-file > span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ob-dialog-file strong {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ob-dialog-file small,
+.ob-dialog-drop small,
+.ob-dialog-activate small,
+.ob-dialog-foot-note {
+  color: #8e8e93;
+  font-size: 12px;
+}
+.ob-dialog-file-type {
+  display: inline-grid;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid #e3e3e6;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ob-text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+}
+.ob-dialog-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 20px;
+  border: 1px dashed #d1d1d6;
+  border-radius: 16px;
+  text-align: center;
+}
+.ob-dialog-drop strong {
+  font-size: 15px;
+}
+.ob-dialog-activate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.ob-dialog .ob-dialog-activate-avatar {
+  width: 64px;
+  height: 64px;
+}
+.ob-dialog-activate .ob-field {
+  align-self: stretch;
+}
+.ob-dialog-confirm {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ob-dialog-confirm input {
+  margin: 2px 0 0;
+}
+.ob-dialog-rows {
+  margin: 0;
+  padding: 0 16px;
+  list-style: none;
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.ob-dialog-rows > li {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 0;
+}
+.ob-dialog-rows > li + li {
+  border-top: 1px solid #e3e3e6;
+}
+.ob-dialog-rows > li > span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ob-dialog-rows strong {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ob-dialog-rows small {
+  color: #8e8e93;
+  font-size: 12px;
+}
+.ob-dialog .ob-dialog-row-avatar {
+  width: 40px;
+  height: 40px;
+}
+.ob-dialog-row-actions {
+  display: flex;
+  gap: 8px;
+}
+.ob-dialog-row-actions a.ob-pill {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+.ob-dialog-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid #ececee;
+  border-radius: 16px;
+}
+.ob-dialog-preview > small {
+  color: #8e8e93;
+  font-size: 12px;
+}
+.ob-dialog-preview textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+}
+.ob-dialog-preview .ob-dialog-row-actions {
+  justify-content: flex-end;
+}
+.ob-dialog-empty {
+  margin: 0 4px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ob-dialog-config {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--ob-fill);
+}
+.ob-dialog-config > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+.ob-dialog-config pre {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  border-radius: 12px;
+  background: #fff;
+  color: #3a3a3c;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre;
+}
+.ob-dialog-config > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ob-dialog-config small {
+  color: #8e8e93;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.ob-dialog small.is-warning {
+  color: #94480b;
+}
+.ob-dialog small.is-danger {
+  color: #b3261e;
+}
+.ob-dialog-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+.ob-dialog-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+}
+.ob-dialog-state.is-online {
+  color: #1c7c3c;
+}
+.ob-dialog-state.is-online::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ob-online);
+  content: "";
+}
+.ob-dialog-rows .ob-dialog-row-actions {
+  align-items: center;
+}
+.ob-dialog-file-type > svg {
+  width: 18px;
+  height: 18px;
+}
+.ob-dialog-text-button {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Dialog actions use the filled danger pill (DialogDelete); elsewhere is-danger is quiet text. */
+.ob-dialog-actions .ob-pill.is-danger {
+  background: #b3261e;
+  color: #fff;
+}
+.ob-dialog-actions .ob-pill.is-danger:hover {
+  background: #9c2019;
+}
