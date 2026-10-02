@@ -2,19 +2,20 @@ import type { Bot } from "@openbot/domain";
 import {
   ATTACHMENT_ACCEPT,
   ATTACHMENT_EXTENSIONS,
-  attachmentExtensionByteLimit,
   type AttachmentOperation,
+  attachmentExtensionByteLimit,
   MAX_TASK_ATTACHMENT_BYTES,
   MAX_TASK_ATTACHMENTS,
 } from "@openbot/protocol";
 import { useEffect, useRef, useState } from "react";
 import { ApiError } from "../api";
+import { formatAttachmentSize } from "../channel-attachment-client";
 import {
   listOwnerAttachments,
-  updateOwnerAttachment,
-  uploadOwnerAttachment,
   type NativeTaskScopeInput,
   type OwnerAttachment,
+  updateOwnerAttachment,
+  uploadOwnerAttachment,
 } from "../native-task-api";
 
 type ScopeBot = Pick<Bot, "id" | "name" | "computerProfile">;
@@ -192,8 +193,8 @@ export function NativeTaskScopeForm({
         </label>
       </div>
       <p>
-        上传后请勾选要交给本次任务的附件。已选择 {value.attachmentIds.length} / 8 个，
-        {selectedBytes} / 20971520 字节。
+        上传后请勾选要交给本次任务的附件。已选择 {value.attachmentIds.length} /{" "}
+        {MAX_TASK_ATTACHMENTS} 个 · 合计 {formatAttachmentSize(selectedBytes)} / 20 MB。
       </p>
       <small>
         文本 256 KiB、图片 5 MiB、其他支持格式 10 MiB。图片/PDF

@@ -313,6 +313,12 @@
   overflow-wrap: anywhere;
   font-size: 13px;
 }
+/* Notes under the form read as the artboard's 12px grey line, not the browser's <small>. */
+.native-task-scope small {
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+  line-height: 1.5;
+}
 .work-tasks .native-task-checkbox {
   display: flex;
   align-items: center;

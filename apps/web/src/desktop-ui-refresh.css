@@ -30,9 +30,6 @@
   flex-direction: column;
   background: var(--sidebar);
 }
-.status-dot.idle {
-  background: #9aa4b3;
-}
 /* Account avatar and the plugins pill share one row, as in the approved layout. */
 
 .desktop-workspace .channel-workspace {
