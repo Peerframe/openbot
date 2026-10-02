@@ -13,7 +13,7 @@ type AppScene = {
   kind: "app";
   title: string;
   artboard: string;
-  world?: "full" | "empty" | "new-bot";
+  world?: "full" | "empty" | "new-bot" | "long";
   start?:
     | { kind: "home" }
     | { kind: "new"; channel?: true }
@@ -31,6 +31,14 @@ export const scenes: Record<string, AppScene | ComponentScene> = {
     artboard: "Main",
     start: { kind: "channel", id: "c-market" },
     rail: true,
+  },
+  "channel-long": {
+    kind: "app",
+    title: "长对话（分页加载、日期浮标）",
+    artboard: "LongLists",
+    world: "long",
+    start: { kind: "channel", id: "c-market" },
+    rail: false,
   },
   "channel-closed": {
     kind: "app",

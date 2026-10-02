@@ -36,7 +36,27 @@ const bot = (
   createdAt: T,
 });
 
-export function createWorld(kind: "full" | "empty" | "new-bot" = "full"): PreviewWorld {
+export function createWorld(kind: "full" | "empty" | "new-bot" | "long" = "full"): PreviewWorld {
+  if (kind === "long") {
+    // LongLists artboard: 180 earlier messages over ten days, read 100 at a time (C18).
+    const world = createWorld("full");
+    const lines = [
+      "周报改成周五上午发。",
+      "好的，从下周开始周五 10 点前发到这里。",
+      "再把 C 公司加进名单。",
+      "已加入，名单在 weekly/competitors.md。",
+    ];
+    const earlier = Array.from({ length: 180 }, (_, index) => ({
+      id: `m-old-${String(index).padStart(3, "0")}`,
+      channelId: "c-market",
+      authorType: index % 2 === 0 ? "human" : "bot",
+      ...(index % 2 === 0 ? {} : { authorId: "b-research" }),
+      content: lines[index % lines.length] ?? "",
+      createdAt: minutesAgo(60 * 24 * 10 - index * 80),
+    }));
+    world.messages["c-market"] = [...earlier, ...(world.messages["c-market"] ?? [])];
+    return world;
+  }
   if (kind === "empty")
     return {
       bots: [],

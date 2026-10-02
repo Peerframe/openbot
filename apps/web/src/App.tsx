@@ -609,6 +609,8 @@ export function AuthenticatedWorkspace({
     projectApproval,
   } = useWorkspaceState(setError);
   const [notice, setNotice] = useState<string>();
+  const noticeTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(noticeTimer.current), []);
   const [unreadByChannel, setUnreadByChannel] = useState<Record<string, number>>({});
   // undefined until the first read, which is a baseline rather than "new messages".
   const previousUnread = useRef<Record<string, number>>(undefined);
@@ -996,9 +998,12 @@ export function AuthenticatedWorkspace({
     showNotice(decision === "approve" ? "已批准一次。" : "已拒绝该动作。");
   }
 
+  // Notices artboard: a short confirmation disappears after 3 seconds. Each new one restarts the
+  // timer, so an older timer never cuts a newer message short.
   function showNotice(message: string) {
+    window.clearTimeout(noticeTimer.current);
     setNotice(message);
-    window.setTimeout(() => setNotice(undefined), 3000);
+    noticeTimer.current = window.setTimeout(() => setNotice(undefined), 3000);
   }
 
   function selectChannel(channelId: string) {
@@ -1402,8 +1407,18 @@ export function AuthenticatedWorkspace({
         />
       ) : null}
       {!error && notice ? (
-        <div className="toast" role="status">
-          {notice}
+        <div className="ob-toast" role="status">
+          <span>{notice}</span>
+          <button
+            type="button"
+            aria-label="关闭提示"
+            onClick={() => {
+              window.clearTimeout(noticeTimer.current);
+              setNotice(undefined);
+            }}
+          >
+            ×
+          </button>
         </div>
       ) : null}
     </div>

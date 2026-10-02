@@ -793,6 +793,27 @@ export async function listMessages(channelId: string, signal?: AbortSignal): Pro
   return result.messages;
 }
 
+/**
+ * One page of a channel's messages, oldest first (C18). `nextCursor` is opaque and bound to the
+ * channel by the Server; pass it back as `before` for the page just older than this one.
+ */
+export async function listMessagePage(
+  channelId: string,
+  before?: string,
+  signal?: AbortSignal,
+): Promise<{ messages: Message[]; hasMore: boolean; nextCursor?: string }> {
+  const query = before ? `?before=${encodeURIComponent(before)}` : "";
+  const result = await request<{ messages: Message[]; hasMore?: boolean; nextCursor?: string }>(
+    `/api/v1/channels/${encodeURIComponent(channelId)}/messages${query}`,
+    signal ? { signal } : undefined,
+  );
+  return {
+    messages: result.messages,
+    hasMore: result.hasMore === true && typeof result.nextCursor === "string",
+    ...(typeof result.nextCursor === "string" ? { nextCursor: result.nextCursor } : {}),
+  };
+}
+
 export async function listRuns(channelId: string, signal?: AbortSignal): Promise<Run[]> {
   const result = await request<{ runs: Run[] }>(
     `/api/v1/channels/${channelId}/runs`,

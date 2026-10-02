@@ -4,13 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createMessage,
   getEmployeeProfile,
+  listMessagePage,
   listMessages,
   listRuns,
   subscribeToChannelEvents,
 } from "../api";
 import { createConversationSession } from "../conversation-session";
 import { deferred, interact, renderComponent } from "../test/render-component";
-import { ChannelWorkspace } from "./ChannelWorkspace";
+import { ChannelWorkspace, dateCueLabel } from "./ChannelWorkspace";
 
 vi.mock("../plugin-api", () => ({
   listPlugins: vi.fn(async () => ({ plugins: [], pendingCalls: [] })),
@@ -23,6 +24,7 @@ vi.mock("../api", () => ({
   getRunOutput: vi.fn(async () => null),
   steerRun: vi.fn(),
   listMessages: vi.fn(),
+  listMessagePage: vi.fn(),
   listChannelReactions: vi.fn(async () => []),
   setMessageReaction: vi.fn(async () => []),
   listRuns: vi.fn(),
@@ -220,10 +222,16 @@ describe("ChannelWorkspace continuity", () => {
       log.scrollTop = 140;
       log.dispatchEvent(new Event("scroll", { bubbles: true }));
     });
-    await interact(() => lastHandlers().onMessage(message("a", "new message")));
+    await interact(() =>
+      lastHandlers().onMessage({
+        ...message("a", "new message"),
+        authorType: "bot",
+        authorId: bot.id,
+      }),
+    );
     expect(log.scrollTop).toBe(140);
     const latest = rendered.container.querySelector(".conversation-latest") as HTMLButtonElement;
-    expect(latest).not.toBeNull();
+    expect(latest?.textContent).toBe("↓ 回到最新 · 1 条新消息");
     await interact(() => latest.click());
     expect(session.channel("a").scroll.atBottom).toBe(true);
     expect(log.scrollTop).toBe(1200);
@@ -941,5 +949,85 @@ describe("ChannelWorkspace delegated identities", () => {
     } finally {
       await rendered.unmount();
     }
+  });
+});
+
+describe("23e: older pages, banners and the date cue", () => {
+  const stamp = (index: number) => new Date(Date.UTC(2026, 8, 1, 0, index)).toISOString();
+  const numbered = (index: number): Message => ({
+    ...message("a", `m${index}`),
+    id: `m${String(index).padStart(3, "0")}`,
+    createdAt: stamp(index),
+  });
+
+  it("reads the page before the oldest message at the top and keeps the reading position", async () => {
+    const latest = Array.from({ length: 100 }, (_, index) => numbered(index + 50));
+    vi.mocked(listMessages).mockResolvedValue(latest);
+    vi.mocked(listMessagePage)
+      .mockResolvedValueOnce({ messages: latest, hasMore: true, nextCursor: "c-latest" })
+      .mockResolvedValueOnce({
+        messages: Array.from({ length: 50 }, (_, index) => numbered(index)),
+        hasMore: false,
+      });
+    const session = createConversationSession();
+    const rendered = await renderComponent(view("a", session));
+    const log = rendered.container.querySelector('[role="log"]') as HTMLDivElement;
+    let height = 5000;
+    Object.defineProperties(log, {
+      scrollHeight: { configurable: true, get: () => height },
+      clientHeight: { configurable: true, value: 400 },
+    });
+    await interact(async () => {
+      height = 7500;
+      log.scrollTop = 10;
+      log.dispatchEvent(new Event("scroll", { bubbles: true }));
+    });
+    await interact(async () => undefined);
+    expect(vi.mocked(listMessagePage).mock.calls.map((call) => call.slice(0, 2))).toEqual([
+      ["a"],
+      ["a", "c-latest"],
+    ]);
+    expect(session.channel("a").getSnapshot().messages).toHaveLength(150);
+    expect(session.channel("a").getSnapshot().history.exhausted).toBe(true);
+    await rendered.unmount();
+  });
+
+  it("does not ask for older pages when the latest page already holds everything", async () => {
+    vi.mocked(listMessages).mockResolvedValue([numbered(1), numbered(2)]);
+    const session = createConversationSession();
+    const rendered = await renderComponent(view("a", session));
+    const log = rendered.container.querySelector('[role="log"]') as HTMLDivElement;
+    Object.defineProperties(log, {
+      scrollHeight: { configurable: true, value: 1200 },
+      clientHeight: { configurable: true, value: 400 },
+    });
+    await interact(() => {
+      log.scrollTop = 0;
+      log.dispatchEvent(new Event("scroll", { bubbles: true }));
+    });
+    expect(listMessagePage).not.toHaveBeenCalled();
+    await rendered.unmount();
+  });
+
+  it("shows the reconnect banner while retrying, and 立即重连 restarts the connection", async () => {
+    const rendered = await renderComponent(view("a"));
+    await interact(() => lastHandlers().onState("retrying"));
+    const banner = rendered.container.querySelector(".conversation-banner.is-warning");
+    expect(banner?.textContent).toContain("草稿不会丢");
+    const calls = vi.mocked(subscribeToChannelEvents).mock.calls.length;
+    const reconnect = banner?.querySelector("button");
+    if (!reconnect) throw new Error("No 立即重连");
+    await interact(() => reconnect.click());
+    expect(vi.mocked(subscribeToChannelEvents).mock.calls.length).toBe(calls + 1);
+    await interact(() => lastHandlers().onState("live"));
+    expect(rendered.container.querySelector(".conversation-banner")).toBeNull();
+    await rendered.unmount();
+  });
+
+  it("labels the date cue as 今天, 昨天 or the day with its weekday", () => {
+    const now = new Date(2026, 9, 3, 12);
+    expect(dateCueLabel(new Date(2026, 9, 3, 8).toISOString(), now)).toBe("今天");
+    expect(dateCueLabel(new Date(2026, 9, 2, 8).toISOString(), now)).toBe("昨天");
+    expect(dateCueLabel(new Date(2026, 8, 25, 8).toISOString(), now)).toBe("9 月 25 日 · 周五");
   });
 });
