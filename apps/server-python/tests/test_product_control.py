@@ -51,7 +51,7 @@ def test_real_owner_workspace_and_attachment_task_lifecycle(fixture,tmp_path):
         uploaded=api.post(base,content='中文事实\n'.encode(),headers={'Origin':'http://testserver','Content-Type':'application/octet-stream','X-OpenBot-Filename':'brief.txt'})
         assert uploaded.status_code==201,uploaded.text
         item=uploaded.json()['attachment']
-        assert api.get(base).json()['attachments']==[item]
+        assert api.get(base).json()['attachments']==[{**item,'referenceCount':{'messages':0,'tasks':0}}]
         download=api.get(base+'/'+item['id']+'/content')
         assert download.content=='中文事实\n'.encode()
         assert download.headers['content-type']=='application/octet-stream'
