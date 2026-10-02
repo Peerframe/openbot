@@ -266,3 +266,37 @@ describe("补充指令 on a working card", () => {
     }
   });
 });
+
+describe("collaboration on a long task", () => {
+  it("names three collaborators and sends the rest to 任务详情", async () => {
+    const helpers = Array.from({ length: 5 }, (_, index) => ({
+      ...bot,
+      id: `helper-${index}`,
+      name: `助手 ${index + 1}`,
+    }));
+    const children = helpers.map((helperBot, index) => ({
+      ...run,
+      id: `child-${index}`,
+      botId: helperBot.id,
+      title: `子任务 ${index + 1}`,
+      parentRunId: run.id,
+    }));
+    const onInspect = vi.fn();
+    const view = await card({
+      childRuns: children,
+      botsById: new Map([bot, ...helpers].map((item) => [item.id, item])),
+      onInspect,
+    });
+    try {
+      expect(view.container.querySelectorAll(".task-collab-helper")).toHaveLength(3);
+      expect(view.container.querySelector(".task-collab-head")?.textContent).toContain(
+        "等 5 个 Bot",
+      );
+      expect(view.container.querySelectorAll(".task-collab-row")).toHaveLength(3);
+      await interact(() => button(view.container, "还有 2 个 ›")?.click());
+      expect(onInspect).toHaveBeenCalledWith(run.id);
+    } finally {
+      await view.unmount();
+    }
+  });
+});
