@@ -356,3 +356,18 @@
   outline: 2px solid var(--ob-active);
   outline-offset: 2px;
 }
+.task-collab-more {
+  align-self: flex-start;
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.task-collab-more:hover {
+  background: var(--ob-fill);
+}

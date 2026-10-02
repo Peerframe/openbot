@@ -279,6 +279,7 @@ export function TaskCard({
         {childRuns.length > 0 ? (
           <Collaboration
             lead={bot}
+            leadRunId={run.id}
             childRuns={childRuns}
             botsById={botsById}
             onInspect={onInspect}
@@ -366,13 +367,18 @@ function ApprovalBlock({
 }
 
 /** 「A 请 B 协作」: tasks one Bot handed to another; their results return to the lead task. */
+/** LongLists: the card names at most three collaborators; 任务详情 lists every one. */
+const COLLAB_LIMIT = 3;
+
 function Collaboration({
   lead,
+  leadRunId,
   childRuns,
   botsById,
   onInspect,
 }: {
   lead: Bot | undefined;
+  leadRunId: string;
   childRuns: Run[];
   botsById: Map<string, Bot>;
   onInspect(runId: string): void;
@@ -386,15 +392,16 @@ function Collaboration({
       <div className="task-collab-head">
         {lead ? <RobotAvatar bot={lead} className="task-collab-avatar" /> : null}
         <strong>{lead?.name ?? "Bot"}</strong>请
-        {helpers.map((helper) => (
+        {helpers.slice(0, COLLAB_LIMIT).map((helper) => (
           <span key={helper.id} className="task-collab-helper">
             <RobotAvatar bot={helper} className="task-collab-avatar" />
             <strong>{helper.name}</strong>
           </span>
         ))}
+        {helpers.length > COLLAB_LIMIT ? ` 等 ${helpers.length} 个 Bot ` : ""}
         协作
       </div>
-      {childRuns.map((child) => (
+      {childRuns.slice(0, COLLAB_LIMIT).map((child) => (
         <button
           type="button"
           className="task-collab-row"
@@ -408,6 +415,11 @@ function Collaboration({
           <span className={`task-state is-${child.status}`}>{runStatusLabel(child.status)}</span>
         </button>
       ))}
+      {childRuns.length > COLLAB_LIMIT ? (
+        <button type="button" className="task-collab-more" onClick={() => onInspect(leadRunId)}>
+          还有 {childRuns.length - COLLAB_LIMIT} 个 ›
+        </button>
+      ) : null}
       <small>协作结果回到{lead?.name ?? "它"}的任务里，再由它回复你。</small>
     </div>
   );
