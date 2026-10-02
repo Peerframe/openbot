@@ -48,7 +48,7 @@ describe("actual channel components in the static demo", () => {
       await interact(() =>
         message?.querySelector<HTMLButtonElement>('[aria-label="更多操作"]')?.click(),
       );
-      await interact(() => button("复制").click());
+      await interact(() => button("复制文字").click());
       expect(clipboard).toHaveBeenCalledWith(expect.stringContaining("已合并 Nova"));
       await interact(() =>
         document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })),

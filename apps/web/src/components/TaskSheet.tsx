@@ -329,6 +329,7 @@ export function TaskSheet({
               setSteering(false);
               setNotice(text);
             }}
+            onClose={() => setSteering(false)}
           />
         ) : null}
         {notice ? (

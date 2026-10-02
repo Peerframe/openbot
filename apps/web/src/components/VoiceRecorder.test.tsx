@@ -5,8 +5,8 @@ import { getOpenBotDesktopBridge } from "../desktop-runtime";
 import {
   deferred,
   interact,
-  renderComponent,
   type RenderedComponent,
+  renderComponent,
 } from "../test/render-component";
 import { VoiceRecorder } from "./VoiceRecorder";
 
@@ -174,4 +174,34 @@ it("cancels attachment upload without losing local review or appending a late re
   await interact(() => upload.resolve({ id: "late" } as never));
   expect(view.change).not.toHaveBeenCalled();
   expect(document.querySelector("audio")).not.toBeNull();
+});
+it("取消 while recording releases the microphone and keeps nothing", async () => {
+  const active = vi.fn();
+  const view = await renderComponent(
+    <VoiceRecorder
+      channelId="channel"
+      getAttachments={() => []}
+      onChange={vi.fn()}
+      onActiveChange={active}
+    />,
+  );
+  views.push(view);
+  await interact(() => button("录制语音附件").click());
+  expect(active).toHaveBeenLastCalledWith(true);
+  await interact(() => button("取消").click());
+  expect(stop).toHaveBeenCalled();
+  expect(document.querySelector("audio")).toBeNull();
+  expect(URL.createObjectURL).not.toHaveBeenCalled();
+  expect(active).toHaveBeenLastCalledWith(false);
+  expect(button("录制语音附件").disabled).toBe(false);
+});
+it("重录 discards the review and opens the microphone again", async () => {
+  await render();
+  await interact(() => button("录制语音附件").click());
+  await interact(() => button("结束录音").click());
+  expect(document.querySelector(".voice-text strong")?.textContent).toMatch(/^语音 0:0\d$/);
+  await interact(() => button("重录").click());
+  expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:voice-review");
+  expect(getUserMedia).toHaveBeenCalledTimes(2);
+  expect(document.querySelector('[role="status"]')?.textContent).toContain("录音中");
 });

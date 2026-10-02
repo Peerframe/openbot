@@ -122,27 +122,6 @@
   height: 30px;
   border-radius: 10px;
 }
-.app-shell .message-composer {
-  width: calc(100% - 28px);
-  max-width: none;
-  margin: 0 14px 14px;
-  border: 1px solid #dce2e9;
-  border-radius: 15px;
-  padding: 10px 12px;
-  box-shadow: 0 3px 12px #1a304408;
-}
-.app-shell .message-composer textarea {
-  padding: 9px 4px;
-  min-height: 43px;
-  font-size: 13px;
-  line-height: 1.5;
-}
-.app-shell .message-composer textarea::placeholder {
-  color: #657181;
-}
-.app-shell .message-composer:focus-within {
-  border-color: #819cba;
-}
 .app-shell .composer-send {
   width: 35px;
   height: 35px;
@@ -215,22 +194,9 @@
   .app-shell .message-list {
     padding: 20px 12px;
   }
-  .app-shell .message-composer {
-    margin: 0 10px 10px;
-    width: calc(100% - 20px);
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .app-shell * {
     scroll-behavior: auto;
   }
-}
-
-.app-shell .message-composer .composer-send {
-  min-width: 35px;
-  min-height: 35px;
-  width: 35px;
-  height: 35px;
-  justify-self: end;
-  align-self: end;
 }

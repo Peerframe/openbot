@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
+import { extensionOf, getAttachmentImage } from "../channel-attachment-client";
 import type { UploadedComposerAttachment } from "../composer-context";
-import { getAttachmentImage } from "../channel-attachment-client";
 import { useModalDialog } from "./useModalDialog";
 
 export function AttachmentPreview({ attachment }: { attachment: UploadedComposerAttachment }) {
@@ -46,11 +46,7 @@ export function AttachmentPreview({ attachment }: { attachment: UploadedComposer
     </>
   ) : (
     <span className="attachment-file-icon" aria-hidden="true">
-      {attachment.mediaType === "application/pdf"
-        ? "PDF"
-        : attachment.mediaType.startsWith("image/")
-          ? "IMG"
-          : "TXT"}
+      {extensionOf(attachment.name)}
     </span>
   );
 }

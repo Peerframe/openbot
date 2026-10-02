@@ -251,3 +251,18 @@ describe("native failure classification messages", () => {
     expect(nativeRunFailure({ ...base, errorCode: "memory_changed" })).toContain("记忆发生变化");
   });
 });
+
+describe("补充指令 on a working card", () => {
+  it("收起 closes the form without sending anything", async () => {
+    // A running 服务电脑 task (profile "none") accepts 补充指令.
+    const view = await card();
+    try {
+      await interact(() => button(view.container, "补充指令")?.click());
+      expect(view.container.querySelector(".task-steer textarea")).not.toBeNull();
+      await interact(() => button(view.container, "收起")?.click());
+      expect(view.container.querySelector(".task-steer textarea")).toBeNull();
+    } finally {
+      await view.unmount();
+    }
+  });
+});

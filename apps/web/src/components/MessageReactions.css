@@ -1,36 +1,36 @@
+/* The Owner's own marks below a bubble: no counts; tap one to take it back. */
 .message-reactions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
   position: relative;
-  margin-top: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.message-row.human .message-reactions {
+  justify-content: flex-end;
 }
 .message-reactions button {
-  min-width: 28px;
-  min-height: 26px;
-  padding: 2px 6px;
-  border: 1px solid #afc7ec;
-  border-radius: 12px;
-  background: #e6efff;
-  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--ob-primary);
+  border-radius: 13px;
+  /* #f6f6f7 on the artboard: halfway between the grey fill and white. */
+  background: color-mix(in srgb, var(--ob-fill) 50%, var(--ob-surface));
+  font-size: 13px;
   cursor: pointer;
 }
 .message-reactions button:disabled {
   cursor: wait;
   opacity: 0.65;
 }
-.message-reaction-error {
-  font-size: 12px;
-  color: #a62b23;
-  background: white;
-  position: absolute;
-  z-index: 21;
-  top: 26px;
-  padding: 4px 8px;
-  border-radius: 8px;
-  min-width: 160px;
-}
 .message-reactions :focus-visible {
-  outline: 2px solid #557cbb;
+  outline: 2px solid var(--ob-text-tertiary);
   outline-offset: 2px;
+}
+.message-reaction-error {
+  color: #b3261e;
+  font-size: 12px;
 }

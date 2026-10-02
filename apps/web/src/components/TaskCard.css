@@ -334,6 +334,7 @@
   gap: 8px;
 }
 .task-steer-foot small {
+  margin-right: auto;
   color: #8e8e93;
   font-size: 12px;
 }

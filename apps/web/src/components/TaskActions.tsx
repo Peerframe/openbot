@@ -56,10 +56,13 @@ export function SteerForm({
   run,
   botName,
   onDone,
+  onClose,
 }: {
   run: Run;
   botName: string;
   onDone(notice: string): void;
+  /** 收起 closes the form without sending (Composer artboard). */
+  onClose?(): void;
 }) {
   const [text, setText] = useState("");
   const [pending, setPending] = useState(false);
@@ -101,6 +104,11 @@ export function SteerForm({
       />
       <span className="task-steer-foot">
         <small>下一步生效；已经做完的操作不会撤回。</small>
+        {onClose ? (
+          <button type="button" className="ob-pill is-small" disabled={pending} onClick={onClose}>
+            收起
+          </button>
+        ) : null}
         <button
           type="submit"
           className="ob-pill is-small is-primary"

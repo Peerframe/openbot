@@ -1,7 +1,8 @@
 .app-shell {
   --sidebar-width: 236px;
   --shell-inset: 12px;
-  --chat-font-size: 14px;
+  /* 15px in the Main and MessageActions artboards; 设置 › 外观 can make it 16px. */
+  --chat-font-size: 15px;
 }
 .app-shell.without-context {
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);

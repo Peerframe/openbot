@@ -20,6 +20,7 @@ export function AttachmentActions({
   const [error, setError] = useState("");
   const [password, setPassword] = useState("");
   const pending = useRef<AbortController | undefined>(undefined);
+  const details = useRef<HTMLDetailsElement>(null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: Switching attachment identity must cancel pending work and clear its password.
   useEffect(() => {
     setBusy(false);
@@ -65,9 +66,32 @@ export function AttachmentActions({
       }
     }
   }
+  // A <details> menu does not close on its own; outside clicks and Esc close it.
+  useEffect(() => {
+    const menu = details.current;
+    if (!menu) return;
+    const outside = (event: PointerEvent) => {
+      if (menu.open && event.target instanceof Node && !menu.contains(event.target))
+        menu.open = false;
+    };
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
+  }, []);
   return (
-    <details className="attachment-actions">
-      <summary>附件操作</summary>
+    <details
+      className="attachment-actions"
+      ref={details}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && details.current?.open) {
+          event.preventDefault();
+          details.current.open = false;
+          details.current.querySelector("summary")?.focus();
+        }
+      }}
+    >
+      <summary aria-label="附件操作" title="附件操作">
+        ⋯
+      </summary>
       <div className="attachment-actions-body">
         {attachment.processing ? (
           <small>
@@ -91,26 +115,26 @@ export function AttachmentActions({
                 />
               </label>
             ) : null}
-            {media ? (
-              <small>点击转写会将此媒体发送给已配置的 OpenAI；原文件仍保留在当前服务电脑。</small>
-            ) : null}
             <button type="button" disabled={busy} onClick={() => void run(operation)}>
-              {busy
-                ? "正在处理…"
-                : media
-                  ? "发送至 OpenAI 转写"
+              {busy ? "正在处理…" : media ? "转写" : image ? "识别图片文字" : "提取文档文字"}
+              {/* Transcription sends the media to a third party; say so before the click. */}
+              <small className={media ? "is-warning" : undefined}>
+                {media
+                  ? "会把这段音频发给已配置的 OpenAI；原文件留在服务电脑"
                   : image
-                    ? "识别图片文字"
-                    : "提取文档文字"}
+                    ? "截图、照片"
+                    : "PDF、Word 等"}
+              </small>
             </button>
           </>
         ) : null}
         <button type="button" disabled={busy} onClick={() => void run("download")}>
-          下载原文件
+          下载
         </button>
         {lifecycle ? (
           <button
             type="button"
+            className={attachment.deletedAt ? undefined : "is-danger"}
             disabled={busy}
             onClick={() => void run(attachment.deletedAt ? "restore" : "delete")}
           >

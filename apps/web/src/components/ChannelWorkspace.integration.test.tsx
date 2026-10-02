@@ -217,7 +217,7 @@ it("wires side actions to reply targets, persistent emoji intent and overflow co
   expect(setMessageReaction).toHaveBeenCalledExactlyOnceWith(channel.id, final.id, "👍", true);
   await interact(() => button("更多操作").click());
   expect(document.querySelector('[role="menu"]')?.parentElement).toBe(document.body);
-  await interact(() => button("复制").click());
+  await interact(() => button("复制文字").click());
   expect(writeText).toHaveBeenCalledExactlyOnceWith(final.content);
   expect(createMessage).not.toHaveBeenCalled();
 });

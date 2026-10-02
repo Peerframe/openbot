@@ -143,4 +143,23 @@ describe("side-of-bubble action bar", () => {
     await view.unmount();
     vi.restoreAllMocks();
   });
+  it("names the task behind a reply in 更多 and shows no timestamp", async () => {
+    const view = await renderComponent(
+      <MessageActionBar
+        message={message}
+        onReply={vi.fn()}
+        onInspectRun={vi.fn()}
+        run={{ id: "run", title: "整理本周周报", status: "completed" } as never}
+        reactions={[]}
+        onReactionChange={vi.fn()}
+      />,
+    );
+    await interact(() => element<HTMLButtonElement>('[aria-label="更多操作"]').click());
+    const items = [...document.querySelectorAll('[role="menuitem"]')].map(
+      (item) => item.textContent,
+    );
+    expect(items).toEqual(["复制文字", "任务详情这条回复来自「整理本周周报」"]);
+    expect(document.querySelector('[role="menu"] time')).toBeNull();
+    await view.unmount();
+  });
 });

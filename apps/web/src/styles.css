@@ -405,35 +405,6 @@ select:focus-visible {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.message-composer > label {
-  display: block;
-  margin-bottom: 8px;
-  color: #5f6670;
-  font-size: 11px;
-  font-weight: 700;
-}
-.message-composer > div {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: end;
-  gap: 10px;
-}
-.message-composer textarea {
-  width: 100%;
-  border-radius: 8px;
-  color: var(--text);
-  font: inherit;
-  font-size: 13px;
-  line-height: 1.5;
-}
-.message-composer textarea:disabled {
-  color: #8b929a;
-  background: #f0f2f4;
-  cursor: not-allowed;
-}
-.message-composer button {
-  min-width: 76px;
-}
 .composer-error {
   margin: 8px 0 0;
   color: #b54535;
@@ -851,12 +822,6 @@ select:focus-visible {
   .message-list {
     max-height: 340px;
   }
-  .message-composer > div {
-    grid-template-columns: 1fr;
-  }
-  .message-composer button {
-    width: 100%;
-  }
   .node-identity-item {
     grid-template-columns: 32px minmax(0, 1fr);
   }
@@ -1107,19 +1072,6 @@ select:focus-visible {
   color: #989ea5;
   font-size: 9px;
 }
-.message-content blockquote {
-  max-width: 640px;
-  overflow: hidden;
-  margin: 8px 0;
-  padding: 7px 9px;
-  border-left: 2px solid #9ebcea;
-  color: #737b84;
-  background: rgba(237, 242, 248, 0.75);
-  font-size: 10px;
-  line-height: 1.45;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .rich-message {
   color: #30353b;
   font-size: 13px;
@@ -1234,28 +1186,6 @@ select:focus-visible {
   color: var(--text-muted, #637082);
   font-size: 10px;
 }
-.message-composer {
-  width: calc(100% - clamp(44px, 6vw, 84px));
-  max-width: 880px;
-  margin: 0 auto 22px;
-  padding: 9px 11px 10px;
-  border: 1px solid #d9dde2;
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 9px 24px rgba(24, 31, 40, 0.07);
-}
-.message-composer textarea {
-  min-height: 38px;
-  max-height: 160px;
-  padding: 9px 8px;
-  resize: vertical;
-  border: 0;
-  background: transparent;
-}
-.message-composer textarea:focus {
-  border: 0;
-  outline: 0;
-}
 .composer-send {
   display: grid;
   width: 34px;
@@ -1273,40 +1203,6 @@ select:focus-visible {
   color: #a8adb3;
   background: #eceef1;
   cursor: default;
-}
-.composer-reply {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 2px 12px;
-  margin: -1px -1px 7px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: #f1f4f7;
-}
-.composer-reply span {
-  color: #52606e;
-  font-size: 9px;
-  font-weight: 700;
-}
-.composer-reply p {
-  grid-column: 1;
-  overflow: hidden;
-  margin: 0;
-  color: #7b838c;
-  font-size: 9px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.composer-reply button {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  padding: 0 3px;
-  border: 0;
-  color: #858c94;
-  background: transparent;
-  cursor: pointer;
-  font-size: 16px;
 }
 .dialog-import-action {
   margin-right: auto;
@@ -1505,17 +1401,6 @@ select:focus-visible {
   }
   .rich-table-wrap {
     max-width: calc(100vw - 94px);
-  }
-
-  .message-composer {
-    width: calc(100% - 24px);
-    margin-bottom: 10px;
-  }
-  .message-composer > div {
-    grid-template-columns: initial;
-  }
-  .message-composer button {
-    width: 34px;
   }
   .mobile-nav {
     grid-template-columns: repeat(3, 1fr);

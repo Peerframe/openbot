@@ -207,6 +207,12 @@
   padding-left: 20px;
   margin: 6px 0;
 }
+.app-shell .channel-workspace.channel-native .rich-message blockquote {
+  margin: 6px 0;
+  padding: 0 0 0 12px;
+  border-left: 3px solid var(--ob-divider);
+  color: var(--ob-text-secondary);
+}
 .app-shell .channel-workspace.channel-native .rich-message pre {
   max-width: 100%;
   overflow: auto;
@@ -229,33 +235,39 @@
   color: inherit;
   text-decoration: underline;
 }
+/* MessageActions: a reply to an earlier message carries a grey quote; tapping it jumps back. */
 .app-shell .channel-workspace.channel-native .message-quote {
   display: block;
-  width: 100%;
+  width: fit-content;
   max-width: 100%;
-  padding: 0;
+  margin: 0 0 4px;
+  padding: 8px 12px;
   border: 0;
-  background: transparent;
+  border-radius: 14px;
+  background: var(--ob-fill);
+  color: var(--ob-text-secondary);
+  font: inherit;
+  font-size: 13px;
   text-align: left;
   cursor: pointer;
 }
+.app-shell .channel-workspace.channel-native .message-row.human .message-quote {
+  margin-left: auto;
+}
 .app-shell .channel-workspace.channel-native .message-quote blockquote {
-  margin: 0 0 6px 4px;
+  margin: 0;
   padding: 0;
   overflow: hidden;
   border: 0;
   background: transparent;
-  color: var(--ob-text-tertiary);
-  font-size: 12px;
-  line-height: 16px;
-  white-space: nowrap;
+  color: inherit;
+  font-size: inherit;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.app-shell .channel-workspace.channel-native .message-quote blockquote::before {
-  content: "↩ 回复 ";
-}
-.app-shell .channel-workspace.channel-native .message-quote:hover blockquote {
-  color: #3a3a3c;
+.app-shell .channel-workspace.channel-native .message-quote:hover {
+  background: var(--ob-fill-hover);
+  color: var(--ob-text);
 }
 .app-shell .channel-workspace.channel-native .message-row:focus {
   outline: none;
@@ -377,10 +389,10 @@
   width: 18px;
   height: 18px;
 }
-.app-shell .channel-workspace.channel-native .voice-recorder {
+.app-shell .channel-workspace.channel-native .voice-start {
   position: absolute;
   right: 56px;
-  bottom: 8px;
+  bottom: 10px;
 }
 .app-shell .channel-workspace.channel-native .composer-send {
   position: absolute;
@@ -406,73 +418,143 @@
   width: 18px;
   height: 18px;
 }
+/* Composer artboard: content stacks (reply, attachments, count, text) above a button row. */
+.app-shell .channel-workspace.channel-native .message-composer.is-expanded {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px 56px;
+  border-radius: 24px;
+}
+.app-shell .channel-workspace.channel-native .message-composer.is-expanded > .composer-reply {
+  order: 0;
+  margin: 0;
+}
+.app-shell
+  .channel-workspace.channel-native
+  .message-composer.is-expanded
+  :is(.composer-attachment-list, .attachment-drop-hint) {
+  order: 1;
+}
+.app-shell
+  .channel-workspace.channel-native
+  .message-composer.is-expanded
+  :is(.composer-attachment-count, .form-error) {
+  order: 2;
+}
+.app-shell .channel-workspace.channel-native .message-composer.is-expanded .composer-writing-row {
+  order: 3;
+  gap: 6px;
+}
+.app-shell .channel-workspace.channel-native .message-composer.is-expanded .composer-add-menu {
+  left: 14px;
+  bottom: 10px;
+}
+.app-shell .channel-workspace.channel-native .message-composer.is-expanded .composer-add {
+  width: 34px;
+  height: 34px;
+}
+.app-shell .channel-workspace.channel-native .message-composer.is-expanded .voice-start {
+  right: auto;
+  left: 56px;
+  background: var(--ob-fill);
+}
+.app-shell .channel-workspace.channel-native .message-composer.is-expanded .composer-send {
+  right: 14px;
+  bottom: 10px;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+}
+.app-shell .channel-workspace.channel-native .composer-attachment-count {
+  padding: 0 2px;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+}
+.app-shell .channel-workspace.channel-native .composer-add-popover button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 .app-shell .channel-workspace.channel-native .composer-recipients {
   display: contents;
 }
-.app-shell .channel-workspace.channel-native .composer-mention {
+/* Composer artboard: @ recipients in blue, / skills in grey, inline before the text. */
+.app-shell .channel-workspace.channel-native :is(.composer-mention, .context-chip) {
   display: inline-flex;
   flex: 0 1 auto;
   align-items: center;
   gap: 4px;
-  width: auto;
   max-width: 100%;
+  height: 30px;
   margin: 0;
-  padding: 2px 4px;
+  padding: 0 6px 0 10px;
   border: 0;
-  border-radius: 5px;
-  background: #e9e9e9;
-  color: #444;
-  font-size: 12px;
-  line-height: 18px;
+  border-radius: 12px;
+  background: var(--ob-fill);
+  color: var(--ob-text);
+  font-size: 13px;
 }
-.app-shell .channel-workspace.channel-native .composer-mention .robot-avatar {
-  width: 14px;
-  height: 14px;
+.app-shell .channel-workspace.channel-native .composer-mention {
+  background: #eef3fd;
+  color: #1f4fae;
 }
-.app-shell .channel-workspace.channel-native .composer-mention button {
+.app-shell .channel-workspace.channel-native :is(.composer-mention, .context-chip) > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-shell .channel-workspace.channel-native :is(.composer-mention, .context-chip) button {
   position: static;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
   padding: 0;
-  width: 14px;
-  height: 16px;
-  min-width: 14px;
-  min-height: 16px;
   border: 0;
+  border-radius: 50%;
   background: transparent;
-  color: #888;
+  color: inherit;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.6;
+  cursor: pointer;
 }
-.app-shell .channel-workspace.channel-native .composer-chips:empty {
-  display: none;
+.app-shell .channel-workspace.channel-native :is(.composer-mention, .context-chip) button:hover {
+  opacity: 1;
 }
 .app-shell .channel-workspace.channel-native .composer-chips {
-  margin: 4px 0;
+  display: contents;
 }
 .app-shell .channel-workspace.channel-native .composer-reply {
-  position: relative;
-  margin: 4px 0 6px;
-  padding: 4px 22px 4px 9px;
-  border-left: 2px solid #999;
-  background: #f0f0f0;
-  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ob-fill) 50%, var(--ob-surface));
+  color: var(--ob-text-secondary);
+  font-size: 13px;
 }
-.app-shell .channel-workspace.channel-native .composer-reply span {
-  color: #666;
-  font-size: 11px;
-}
-.app-shell .channel-workspace.channel-native .composer-reply p {
-  max-height: 36px;
+.app-shell .channel-workspace.channel-native .composer-reply > span {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
-  margin: 3px 0 0;
-  font-size: 12px;
-  line-height: 18px;
-  color: #888;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.app-shell .channel-workspace.channel-native .composer-reply button {
-  position: absolute;
-  right: 3px;
-  top: 3px;
-  background: none;
+.app-shell .channel-workspace.channel-native .composer-reply > button {
+  width: 20px;
+  height: 20px;
+  padding: 0;
   border: 0;
-  color: #888;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ob-text-tertiary);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
 }
 .app-shell .channel-workspace.channel-native .mention-options {
   /* Main/Slash artboards: 12px popover, 32px rows. */
