@@ -33,6 +33,8 @@ class OwnerProduct:
         self.workspace = PostgresWorkspace(dsn,nodes=nodes)
         self.files = OwnerFiles(Path(object_root)/'attachments')
         self.object_root = Path(object_root)
+        from .storage_service import StorageService
+        self.storage = StorageService(dsn, self.files, self.object_root)
         self.model, self.knowledge, self.automations, self.interactions = model_settings,knowledge,automations,interactions
         self.portability, self.processing = portability, processing
         self.plugins, self.model_connections = plugins, model_connections
@@ -63,12 +65,14 @@ class OwnerProduct:
             if service is not None: await service.verify_schema()
 
     async def close(self):
+        await self.storage.close()
         if self.work_runtime is not None: await self.work_runtime.close()
         if self.browser is not None: await self.browser.stop()
         for service in (self.worker_registry,self.plugins):
             if service is not None: await service.close()
 
     async def start(self):
+        await self.storage.start()
         if self.work_runtime is not None: await self.work_runtime.start()
 
     def permits_write(self,request):
@@ -149,7 +153,7 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
 
     async def guarded(operation):
         try: return await operation
-        except ControlError as error: raise HTTPException(error.status,error.code) from None
+        except ControlError: raise
         except AuthenticationRequired: raise HTTPException(401,'Authentication required.') from None
         except ValidationError: raise HTTPException(422,'Invalid request input.') from None
         except (psycopg.Error,OSError,ValueError,TypeError,KeyError):
@@ -181,6 +185,8 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         result=await product.workspace.snapshot(value)
         return dict(project='openbot',phase='m1',counts=result['counts'])
     route('/api/v1/bootstrap','GET',bootstrap)
+    from .storage_routes import register_storage_routes
+    register_storage_routes(route, product)
 
     async def artifact(value,path,*_):
         row,data=await product.artifact_content(value,path['artifact_id'])

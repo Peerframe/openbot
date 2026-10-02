@@ -8,6 +8,7 @@ import {
   jsonb,
   pgTable,
   primaryKey,
+  smallint,
   text,
   timestamp,
   uniqueIndex,
@@ -767,5 +768,69 @@ export const modelConnections = pgTable(
       sql`${table.defaultModel} IS NULL OR (length(${table.defaultModel}) BETWEEN 1 AND 256
         AND ${table.defaultModel} ~ '^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$')`,
     ),
+  ],
+);
+
+/** C21 deletion receipts carry no original file content; authority stays in Python. */
+export const attachmentPurges = pgTable(
+  "attachment_purges",
+  {
+    id: text("id").primaryKey(),
+    channelId: text("channel_id")
+      .notNull()
+      .references(() => channels.id, { onDelete: "cascade" }),
+    operationId: text("operation_id").notNull(),
+    freedBytes: integer("freed_bytes").notNull(),
+    purgedAt: timestamp("purged_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("attachment_purges_operation_idx").on(table.operationId),
+    check(
+      "attachment_purges_id_check",
+      sql`${table.id} ~ '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$'`,
+    ),
+    check("attachment_purges_freed_bytes_check", sql`${table.freedBytes} >= 0`),
+  ],
+);
+
+export const attachmentCleanupReceipts = pgTable(
+  "attachment_cleanup_receipts",
+  {
+    channelId: text("channel_id")
+      .notNull()
+      .references(() => channels.id, { onDelete: "cascade" }),
+    requestKey: text("request_key").notNull(),
+    response: jsonb("response").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.channelId, table.requestKey] }),
+    check(
+      "attachment_cleanup_receipts_request_key_check",
+      sql`${table.requestKey} ~ '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$'`,
+    ),
+    check(
+      "attachment_cleanup_receipts_response_check",
+      sql`jsonb_typeof(${table.response}) = 'object' AND octet_length(${table.response}::text) <= 262144`,
+    ),
+  ],
+);
+
+export const ownerStorageSettings = pgTable(
+  "owner_storage_settings",
+  {
+    ownerId: text("owner_id").primaryKey(),
+    trashAutoPurgeDays: smallint("trash_auto_purge_days"),
+    revision: integer("revision").notNull().default(1),
+    lastAutoPurgeAt: timestamp("last_auto_purge_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("owner_storage_settings_owner_id_check", sql`${table.ownerId} = 'owner'`),
+    check(
+      "owner_storage_settings_trash_auto_purge_days_check",
+      sql`${table.trashAutoPurgeDays} IS NULL OR ${table.trashAutoPurgeDays} = 30`,
+    ),
+    check("owner_storage_settings_revision_check", sql`${table.revision} BETWEEN 1 AND 2147483647`),
   ],
 );

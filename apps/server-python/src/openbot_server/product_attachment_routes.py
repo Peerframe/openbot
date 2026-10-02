@@ -89,13 +89,13 @@ def _register_channel(route,product,service):
     route(CHANNEL_BASE,'POST',upload,status=201)
 
     async def metadata(token,path,*_):
-        async with product.transactions.transaction(token) as db:
+        async with product.files.lock(),product.transactions.transaction(token) as db:
             await product.channel(db,path['channel_id'])
             return {'attachment':product.files.metadata(path['channel_id'],path['attachment_id'])}
     route(CHANNEL_BASE+'/{attachment_id}','GET',metadata)
 
     async def content(token,path,*_):
-        async with product.transactions.transaction(token) as db:
+        async with product.files.lock(),product.transactions.transaction(token) as db:
             await product.channel(db,path['channel_id'])
             # Soft deletion refuses new Task references, not retained channel history downloads.
             item,data=product.files.read(path['channel_id'],path['attachment_id'])
