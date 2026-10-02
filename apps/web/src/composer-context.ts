@@ -10,7 +10,11 @@ import {
 import { readBoundedResponse } from "./bounded-response";
 
 export { attachmentMediaTypes as ATTACHMENT_MEDIA_TYPES } from "@openbot/protocol";
-export type UploadedComposerAttachment = ChannelAttachment & { text?: undefined };
+export type UploadedComposerAttachment = ChannelAttachment & {
+  text?: undefined;
+  /** C19 (#161): references to this file, sent only by a 服务电脑 that counts them. */
+  referenceCount?: { messages: number; tasks: number } | undefined;
+};
 export type ComposerAttachment =
   | UploadedComposerAttachment
   | {
