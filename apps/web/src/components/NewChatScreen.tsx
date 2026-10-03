@@ -182,7 +182,7 @@ export function NewChatScreen({
             {bot.name}
             <button
               type="button"
-              aria-label={`移除${bot.name}`}
+              aria-label={`移除 ${bot.name}`}
               onClick={() => setSelected((current) => current.filter((id) => id !== bot.id))}
             >
               <svg
