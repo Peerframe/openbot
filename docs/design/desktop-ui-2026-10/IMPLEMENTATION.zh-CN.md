@@ -124,7 +124,7 @@
 | C9 | 第 17 步 | **创建后修改 Bot 外观**：仅 Owner、记审计、带版本检查；后端已实现，UI 待接线，约定见[研究记录](../../research/bot-appearance-and-greeting.zh-CN.md) | 隐藏铅笔按钮 |
 | C23 自有分支 | 第 29 步 | **本地验收通过的窄分支**：生产 257c1280 仅加贡献 46eb7af8；固定 29a83c1、验证镜像、保留 MIT；[证据与切回上游条件](../../research/storage-cleanup-follow-ups.zh-CN.md#c23-owner-批准的窄分支和镜像2026-10-03)。现有 Worker 部署单独完成 | runtime 更新后显示真实字节；量不出仍显示「量不出」 |
 | C25 | 第 36 步 | **桌面端配色**：`get/setColorScheme("system" \| "light" \| "dark")` 返回实际生效的配色，并有变化事件；选择由主进程保存，在窗口打开前生效；窗口底色 `#ffffff` / `#141414` | 桌面端保持浅色 |
-| C11 | 第 16 步（可选） | **新 Bot 开场白**：一键新建后做一次有上限、不能用工具的模型调用，只使用其他 Bot 的名字和分工；出任何错就不写；提议的约定见[研究记录](../../research/bot-appearance-and-greeting.zh-CN.md) | 只显示分工卡片，没有开场白 |
+| C11 | 第 16 步（可选） | **新 Bot 开场白**：后端已实现；一键创建后做一次可选、有界、不带工具的调用，写带标记的首条消息并走正常 SSE；失败不重试——[契约与证据](../../research/bot-appearance-and-greeting.zh-CN.md)。界面仍需单独验收 | 只显示分工卡片，没有开场白 |
 
 ## 仓库整理（建议）
 

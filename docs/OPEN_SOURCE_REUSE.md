@@ -1070,3 +1070,12 @@ Owner approved maintaining the narrow fork on 2026-10-03 instead of waiting: [yx
 Conflicts and image qualification are recorded in the research record. #730 remains open; after
 upstream merge, review and qualify the upstream pin, then switch back. CopilotKit attribution,
 the fork root LICENSE and the image MIT notice are retained.
+
+## Optional quick-create greeting (2026-10-03)
+
+Reuse the approved [C11 contract](research/bot-appearance-and-greeting.md#c11-implementation-checkpoint-2026-10-03),
+existing C7/C12 encrypted model resolver, pinned Pydantic AI 2.47.0 model messages and the existing
+retry-disabled transport (OpenAI 3.17.0 / Anthropic 1.8.0; existing notices and pins retained).
+One tool-less call uses no history and cannot acquire Agent capabilities. PostgreSQL 17 nullable
+message origin and partial unique indexes enforce the one-attempt/one-first-message boundary;
+existing Owner transactions and audit remain authoritative. No dependency or upstream source copy.
