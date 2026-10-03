@@ -75,9 +75,16 @@ test("native PowerShell bounds streamed downloads, redirects, cancellation and e
         "-TestDirectory",
         directory,
       ],
-      { encoding: "utf8", timeout: 30000 },
+      // Compiling the C# fixture with Add-Type dominates the run and has taken 10–32 s on hosted
+      // Windows runners; the cases themselves are bounded (two 1 s cancellations). The limit only
+      // stops a hung shell.
+      { encoding: "utf8", timeout: 120_000 },
     );
-    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.equal(
+      result.status,
+      0,
+      `${executable}: ${result.error?.message ?? `exit ${result.status} ${result.signal ?? ""}`}\n${result.stdout}${result.stderr}`,
+    );
     assert.match(result.stdout, /"cases":9/);
   }
 });
