@@ -319,8 +319,13 @@ describe("packaging execution boundaries", () => {
     "apps/desktop/scripts/package.ts",
   ];
   const env = { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot };
+  // Each child Node process has its own bound, and each test's budget covers every child it
+  // starts: in a full parallel `npm run test` one cold start can outlast Vitest's default 5 s.
+  const childTimeout = 15_000;
 
-  it("imports all packaging entries without starting a build, credential lookup or signing", () => {
+  it("imports all packaging entries without starting a build, credential lookup or signing", {
+    timeout: childTimeout + 5_000,
+  }, () => {
     const program =
       entries
         .map(
@@ -332,14 +337,16 @@ describe("packaging execution boundaries", () => {
       cwd: tmpdir(),
       env,
       encoding: "utf8",
-      timeout: 15_000,
+      timeout: childTimeout,
     });
     expect(result.error).toBeUndefined();
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toBe("imported");
   });
 
-  it("keeps direct CLI refusal active, including POSIX symlink invocation", async () => {
+  it("keeps direct CLI refusal active, including POSIX symlink invocation", {
+    timeout: entries.length * 2 * childTimeout + 5_000,
+  }, async () => {
     const directory = await mkdtemp(join(tmpdir(), "openbot-package-cli-"));
     try {
       for (const [index, entry] of entries.entries()) {
@@ -356,7 +363,7 @@ describe("packaging execution boundaries", () => {
             cwd: directory,
             env,
             encoding: "utf8",
-            timeout: 15_000,
+            timeout: childTimeout,
           });
           expect(result.error).toBeUndefined();
           expect(result.status).toBe(1);
