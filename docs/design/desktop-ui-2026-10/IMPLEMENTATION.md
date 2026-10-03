@@ -72,7 +72,7 @@ updated.
 | 23d | The Bot's browser — **merged** | EmployeeBrowser | — | Window with take-over and 交还 Bot |
 | 23e | Notices and scrolling — **merged** | Notices, LongLists | C18 (merged) | Toast, one banner by severity, the date cue, 回到最新 with a count, older messages on scroll; the scrollbar follows the system overlay |
 | 23e-2 | Long lists — **in review** | LongLists | C13 for step counts | Popover lists capped at 8 rows with edge fades, stacked 需要处理, working members first, three collaborators then 「还有 N 个」, long progress collapsed, search in long settings lists |
-| 23f | App icon and the legacy layer | AppIcon | C16 | Icon sets from the AppIcon board; delete the legacy stylesheets and classes listed in DESIGN.md and `OpenBotMark`; refresh the website demo fixtures |
+| 23f | App icon and the legacy layer — **in review** | AppIcon | C16 | Icon sets from the AppIcon board; delete the legacy stylesheets and classes listed in DESIGN.md and `OpenBotMark`; refresh the website demo fixtures |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 

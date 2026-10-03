@@ -86,7 +86,7 @@ export function ModelSelector(props: ModelSelectorProps) {
       {error ? (
         <div className="model-inline-error" role="alert">
           <p>{error}</p>
-          <button className="secondary-button" type="button" onClick={() => void refresh()}>
+          <button className="ob-pill" type="button" onClick={() => void refresh()}>
             重新加载
           </button>
         </div>
@@ -265,7 +265,7 @@ export function ModelIdField({
       ) : null}
       {discovery ? (
         <button
-          className="secondary-button model-discover-button"
+          className="ob-pill model-discover-button"
           type="button"
           disabled={disabled || loading}
           onClick={() => void discover()}

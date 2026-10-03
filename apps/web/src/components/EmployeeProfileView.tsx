@@ -7,13 +7,13 @@ import type {
 import { type FormEvent, type ReactNode, useId, useMemo, useRef, useState } from "react";
 import { createEmployeeMemory, deleteEmployeeMemory, updateEmployeeMemory } from "../api";
 import { isActiveRun, runStatusLabel } from "../run-state";
+import { AppIcon } from "./AppIcon";
 import { botComputerLabels } from "./BotInfoRail";
 import { EmployeeDescriptionForm } from "./EmployeeDescriptionForm";
 import { EmployeeEvolutionArchive } from "./EmployeeEvolutionArchive";
 import { EmployeeModelEditor } from "./EmployeeModelEditor";
 import { EmployeeSkillReview } from "./EmployeeSkillReview";
 import { KnowledgeReviewPanel } from "./KnowledgeReviewPanel";
-import { OpenBotMark } from "./OpenBotMark";
 import { RobotAvatar } from "./RobotAvatar";
 import "./EmployeeProfile.css";
 
@@ -89,11 +89,11 @@ export function EmployeeProfileView({
     return (
       <main className="workspace-main employee-profile-loading">
         <div className="loading-header-action">{headerAction}</div>
-        <OpenBotMark className="onboarding-mark" />
-        <h1>{error ? "无法读取员工档案" : "正在读取员工档案"}</h1>
+        <AppIcon size={64} className="ep-loading-icon" />
+        <h1>{error ? "没能读取 Bot 档案" : "正在读取 Bot 档案"}</h1>
         <p>{error ?? "正在汇总进化、技能、记忆和工作记录…"}</p>
         {error ? (
-          <button className="primary-button" type="button" onClick={onRetry}>
+          <button className="ob-pill is-primary" type="button" onClick={onRetry}>
             重新加载
           </button>
         ) : null}

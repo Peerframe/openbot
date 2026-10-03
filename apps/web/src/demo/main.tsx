@@ -2,6 +2,9 @@ import { DemoAdapter } from "./adapter";
 import { installDemoTransport } from "./install";
 import "../global-styles";
 import "./demo.css";
+import { installAppFavicon } from "../app-favicon";
+
+installAppFavicon();
 
 const adapter = new DemoAdapter(location.origin);
 installDemoTransport(adapter);

@@ -133,7 +133,7 @@ export function SettingsModelServices({ onChanged }: { onChanged?: (() => void) 
       {error ? (
         <div className="settings-load-notice" role="alert">
           <p>{error}</p>
-          <button type="button" className="secondary-button" onClick={() => void refresh()}>
+          <button type="button" className="ob-pill" onClick={() => void refresh()}>
             重试
           </button>
         </div>

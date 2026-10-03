@@ -165,17 +165,19 @@
 
 ## 旧设计清单
 
-必须消失的旧样式类：`primary-button`、`secondary-button`、`icon-button`、`onboarding-mark`、
-剩下的 `destination-*`（例行任务表单）、`workspace-toolbar`/`toolbar-*`、`channel-members-*`。已删除：
-`workspace-welcome` 和大部分 `destination-*`（第 21 步），`create-dialog`、`dialog-header`、`dialog-backdrop`（第 20 步），`channel-work-item`、`run-inspector`、
-`native-run-controls`（第 19 步），`bot-identity-builder`、`appearance-grid`（第 16 步）。
+现在没有组件再使用旧样式类。第 23f 步退役了最后几个：`primary-button` 和 `secondary-button`（33 个按钮改用
+`ob-pill`）、`icon-button`、`onboarding-mark`，以及例行任务表单的 `destination-*`。更早的步骤删除了
+`workspace-welcome` 和大部分 `destination-*`（第 21 步），`create-dialog`、`dialog-header`、`dialog-backdrop`（第 20 步），
+`channel-work-item`、`run-inspector`、`native-run-controls`（第 19 步），`bot-identity-builder`、`appearance-grid`（第 16 步）。
 
-旧样式表：`styles.css` 的大部分、`workspace-shell.css`、`desktop-workspace.css`、`desktop-ui-refresh.css`、
-`settings-plugin-refresh.css`、`workspace-preferences.css`、`components/destinations.css`。
+旧样式表：第 23f 步在 65 个设计预览状态里逐条测量了剩下的旧规则，删除了没有作用或被完全覆盖的规则（约 120 条），
+也删除了 `components/destinations.css`。`styles.css`、`workspace-shell.css`、`workspace-preferences.css`、
+`desktop-workspace.css`、`conversation-feedback.css`、`desktop-ui-refresh.css` 和 `settings-plugin-refresh.css`
+里剩下的约 1,600 行仍在为现有界面起作用，或者属于预览到达不了的状态（出错、读取中、Markdown 表格、窄窗口下的手机导航）。
+把它们搬进各组件自己的样式表是后续工作。
 
 已删除：`CreateBotDialog`、`CreateChannelDialog`（第 16 步）；`EmployeeProfileRail`（第 17 步）；
 `RunInspector`、`RunProgressPanel`、`NativeRunControls`、`RunSteering`（第 19 步）；独立的「例行任务」和
-「技能库」页面——`SkillLibraryScreen` 以及 `AutomationsScreen` 的页面形态（它现在只负责「设置 › 例行任务」）——
-和旧的欢迎页（第 21 步）。还要退役：旧的位图标志 `OpenBotMark`（第 23 步）。
+「技能库」页面以及旧的欢迎页（第 21 步）；位图标志 `OpenBotMark`，换成矢量的 `AppIcon`（第 23f 步）。
 
-已完成：窗口外壳与右栏、启动与首次设置，以及第 14–21 步。其余按计划逐步进行，每一步在同一个拉取请求里删除它所替换的旧规则。
+已完成：窗口外壳与右栏、启动与首次设置，以及第 14–23 步。其余按计划逐步进行，每一步在同一个拉取请求里删除它所替换的旧规则。

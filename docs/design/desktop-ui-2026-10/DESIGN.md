@@ -190,22 +190,24 @@ that shows while scrolling, and the date cue with 「回到最新」 in conversa
 
 ## Legacy inventory
 
-Legacy classes that must disappear: `primary-button`, `secondary-button`, `icon-button`,
-`onboarding-mark`, the remaining `destination-*` (the routine form), `workspace-toolbar`/`toolbar-*`,
-`channel-members-*`. Already removed: `workspace-welcome` and most `destination-*` (step 21),
-`create-dialog`, `dialog-header`, `dialog-backdrop` (step 20),
-`channel-work-item`, `run-inspector`, `native-run-controls` (step 19), `bot-identity-builder`,
-`appearance-grid` (step 16).
+No component renders a legacy class any more. Step 23f retired the last ones: `primary-button` and
+`secondary-button` (33 buttons moved to `ob-pill`), `icon-button`, `onboarding-mark` and the
+`destination-*` routine form. Earlier steps removed `workspace-welcome` and most `destination-*`
+(21), `create-dialog`, `dialog-header`, `dialog-backdrop` (20), `channel-work-item`,
+`run-inspector`, `native-run-controls` (19), `bot-identity-builder` and `appearance-grid` (16).
 
-Legacy stylesheets: most of `styles.css`, `workspace-shell.css`, `desktop-workspace.css`,
-`desktop-ui-refresh.css`, `settings-plugin-refresh.css`, `workspace-preferences.css`,
-`components/destinations.css`.
+Legacy stylesheets: step 23f measured every remaining legacy rule in 65 design-preview states.
+Rules that styled nothing or were fully overridden are deleted (about 120 rules), and so is
+`components/destinations.css`. What is left in `styles.css`, `workspace-shell.css`,
+`workspace-preferences.css`, `desktop-workspace.css`, `conversation-feedback.css`,
+`desktop-ui-refresh.css` and `settings-plugin-refresh.css` (about 1,600 lines) still styles live
+screens, or states the preview does not reach (errors, loading, Markdown tables, the narrow-window
+mobile navigation). Moving those rules into component stylesheets is follow-up work.
 
-Removed so far: `CreateBotDialog` and `CreateChannelDialog` (step 16); `EmployeeProfileRail` (step
-17); `RunInspector`, `RunProgressPanel`, `NativeRunControls` and `RunSteering` (step 19); the
-standalone 例行任务 and 技能库 pages — `SkillLibraryScreen` and the page form of `AutomationsScreen`,
-which now only renders 设置 › 例行任务 — and the old welcome (step 21). Still to retire: the old
-raster mark `OpenBotMark` (step 23).
+Removed: `CreateBotDialog` and `CreateChannelDialog` (step 16); `EmployeeProfileRail` (step 17);
+`RunInspector`, `RunProgressPanel`, `NativeRunControls` and `RunSteering` (step 19); the standalone
+例行任务 and 技能库 pages and the old welcome (step 21); the raster mark `OpenBotMark`, replaced by
+the vector `AppIcon` (step 23f).
 
-Done so far: the window shell and rail, launch and setup, and steps 14–21. The rest follow the steps in the
+Done so far: the window shell and rail, launch and setup, and steps 14–23. The rest follow the steps in the
 plan; each step deletes the legacy rules it replaces in the same pull request.

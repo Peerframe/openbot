@@ -1,0 +1,40 @@
+/* 新建例行任务 in 设置 › 例行任务 (SettingsRoutines artboard): fields in pairs, actions at the end. */
+.routine-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--ob-divider);
+  border-radius: 18px;
+  background: var(--ob-surface);
+}
+.routine-form h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.routine-form textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+.routine-form-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.routine-form-hint {
+  margin: 0;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.routine-form footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+@media (max-width: 720px) {
+  .routine-form-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

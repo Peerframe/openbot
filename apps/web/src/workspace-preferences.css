@@ -1,24 +1,7 @@
-.app-shell {
-  --sidebar-width: 236px;
-  --shell-inset: 12px;
-  /* 15px in the Main and MessageActions artboards; 设置 › 外观 can make it 16px. */
-  --chat-font-size: 15px;
-}
-.app-shell.without-context {
-  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
-}
 .workspace-details {
   min-width: 0;
   min-height: 0;
   background: #f6f7f8;
-}
-.workspace-details[hidden] {
-  display: none;
-}
-.app-shell .rich-message,
-.app-shell .message-content p,
-.app-shell .message-composer textarea {
-  font-size: var(--chat-font-size);
 }
 :root[data-font-size="large"] .app-shell {
   --chat-font-size: 16px;
@@ -29,29 +12,10 @@
 :root[data-density="compact"] .app-shell .message-content {
   padding: 8px 12px 6px;
 }
-:root[data-reduced-motion="true"] *,
-:root[data-reduced-motion="true"] *::before,
-:root[data-reduced-motion="true"] *::after {
-  /* biome-ignore lint/complexity/noImportantStyles: explicit reduced motion overrides all app animation. */
-  animation: none !important;
-  /* biome-ignore lint/complexity/noImportantStyles: explicit reduced motion overrides all app transition. */
-  transition: none !important;
-  /* biome-ignore lint/complexity/noImportantStyles: explicit reduced motion overrides smooth scrolling. */
-  scroll-behavior: auto !important;
-}
 .loading-header-action {
   position: absolute;
   top: 16px;
   right: 16px;
-}
-.employee-profile-loading {
-  position: relative;
-}
-/* The BrowserWindow hosts the native material; only the sidebar column exposes it. */
-:root[data-sidebar-material="enabled"],
-:root[data-sidebar-material="enabled"] body,
-:root[data-sidebar-material="enabled"] #root {
-  background: transparent;
 }
 :root[data-sidebar-material="enabled"] .app-shell {
   background: linear-gradient(
@@ -63,19 +27,6 @@
 :root[data-sidebar-material="enabled"] .app-shell .sidebar {
   background: #ffffff48;
   border-color: #ffffff6b;
-}
-.settings-group {
-  margin-bottom: 32px;
-}
-.settings-group > h3 {
-  margin: 0 0 8px;
-  font-size: 14px;
-  font-weight: 650;
-}
-.settings-group > p {
-  margin: 0 0 15px;
-  font-size: 12px;
-  color: #7b8490;
 }
 .settings-group-rows {
   border: 1px solid #e9ebef;
@@ -90,9 +41,6 @@
   min-height: 80px;
   padding: 18px 20px;
   background: #fff;
-}
-.setting-row + .setting-row {
-  border-top: 1px solid #eef0f2;
 }
 .setting-row > div:first-child {
   min-width: 0;
@@ -121,12 +69,6 @@
   border-radius: 8px;
   background-color: #f9fafb;
   color: #374553;
-}
-.setting-control .secondary-button {
-  min-height: 32px;
-  font-size: 12px;
-  padding: 7px 12px;
-  white-space: nowrap;
 }
 .settings-switch {
   position: relative;
@@ -192,21 +134,10 @@
   font-size: 12px;
   color: #267151;
 }
-.settings-about {
-  padding: 5px 0 35px;
-}
 .settings-about img {
   width: 64px;
   height: 64px;
   border-radius: 18px;
-}
-.settings-about h3 {
-  font-size: 22px;
-  margin: 14px 0 8px;
-}
-.settings-about p {
-  font-size: 13px;
-  color: #75808b;
 }
 @media (prefers-reduced-motion: reduce) {
   .settings-switch span::after {
@@ -214,22 +145,12 @@
   }
 }
 @media (max-width: 1100px) and (min-width: 761px) {
-  .app-shell {
-    --sidebar-width: 208px;
-    --shell-inset: 10px;
-  }
   .setting-row {
     gap: 16px;
     padding: 16px;
   }
 }
 @media (max-width: 760px) {
-  .app-shell.without-context {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .workspace-details {
-    display: none;
-  }
   :root[data-sidebar-material="enabled"] .app-shell {
     background: #f6f7f8;
   }
@@ -240,9 +161,5 @@
   }
   .setting-control {
     max-width: 46%;
-  }
-  .setting-control select {
-    width: 100%;
-    padding-right: 8px;
   }
 }

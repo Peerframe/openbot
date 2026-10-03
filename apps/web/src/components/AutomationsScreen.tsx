@@ -12,7 +12,7 @@ import {
 import { RobotAvatar } from "./RobotAvatar";
 import { SettingsHeaderAction } from "./SettingsHeaderAction";
 import { SettingsSearch, useSettingsSearch } from "./SettingsSearch";
-import "./destinations.css";
+import "./AutomationsScreen.css";
 
 type LoadState = "loading" | "ready" | "unavailable" | "failed";
 
@@ -181,7 +181,7 @@ export function AutomationsScreen({ bots, channels }: { bots: Bot[]; channels: C
       ) : loadState === "failed" ? (
         <div className="settings-load-notice" role="alert">
           <p>无法读取例行任务，请检查服务电脑的连接。</p>
-          <button type="button" className="secondary-button" onClick={() => void refresh()}>
+          <button type="button" className="ob-pill" onClick={() => void refresh()}>
             重试
           </button>
         </div>
@@ -348,9 +348,9 @@ function AutomationForm({
   }
 
   return (
-    <form className="destination-automation-form" aria-label="新建例行任务" onSubmit={submit}>
+    <form className="routine-form" aria-label="新建例行任务" onSubmit={submit}>
       <h3>新建例行任务</h3>
-      <label>
+      <label className="ob-field">
         任务名称
         <input
           ref={nameInput}
@@ -362,8 +362,8 @@ function AutomationForm({
           disabled={busy}
         />
       </label>
-      <div className="destination-form-pair">
-        <label>
+      <div className="routine-form-pair">
+        <label className="ob-field">
           发送到频道
           <select
             value={channelId}
@@ -385,7 +385,7 @@ function AutomationForm({
             ))}
           </select>
         </label>
-        <label>
+        <label className="ob-field">
           执行 Bot
           <select
             required
@@ -405,7 +405,7 @@ function AutomationForm({
           </select>
         </label>
       </div>
-      <label>
+      <label className="ob-field">
         任务指令
         <textarea
           rows={3}
@@ -417,8 +417,8 @@ function AutomationForm({
           placeholder="描述希望 Bot 定期完成的工作…"
         />
       </label>
-      <div className="destination-form-pair">
-        <label>
+      <div className="routine-form-pair">
+        <label className="ob-field">
           首次执行
           <input
             type="datetime-local"
@@ -428,7 +428,7 @@ function AutomationForm({
             disabled={busy}
           />
         </label>
-        <label>
+        <label className="ob-field">
           重复间隔
           <select
             value={intervalMinutes}
@@ -441,19 +441,19 @@ function AutomationForm({
           </select>
         </label>
       </div>
-      <p className="destination-form-hint">时间按 {zone} 显示，重复间隔按实际经过时间计算。</p>
-      <p className="destination-form-hint">创建后，服务电脑会自动向所选 Bot 提交这条指令。</p>
+      <p className="routine-form-hint">时间按 {zone} 显示，重复间隔按实际经过时间计算。</p>
+      <p className="routine-form-hint">创建后，服务电脑会自动向所选 Bot 提交这条指令。</p>
       {error ? (
-        <p className="destination-notice" role="alert">
+        <p className="form-error" role="alert">
           {error}
         </p>
       ) : null}
       <footer>
-        <button className="destination-secondary" type="button" disabled={busy} onClick={onCancel}>
+        <button className="ob-pill" type="button" disabled={busy} onClick={onCancel}>
           取消
         </button>
         <button
-          className="destination-primary"
+          className="ob-pill is-primary"
           type="submit"
           disabled={busy || eligibleBots.length === 0}
         >

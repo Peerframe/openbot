@@ -225,7 +225,7 @@ export function AuditLogSettings() {
         {error ? (
           <div className="settings-load-notice" role="alert">
             <p>无法读取审计记录，请重试。</p>
-            <button type="button" className="secondary-button" onClick={() => void load()}>
+            <button type="button" className="ob-pill" onClick={() => void load()}>
               重试
             </button>
           </div>
@@ -359,7 +359,7 @@ export function SettingsWorkspaceGate({
     return (
       <div className="settings-load-notice" role="alert">
         <p>无法读取工作空间，请重试。</p>
-        <button type="button" className="secondary-button" onClick={retry}>
+        <button type="button" className="ob-pill" onClick={retry}>
           重试
         </button>
         {extra}
@@ -380,7 +380,7 @@ export function SettingsAutomations({ onOpen }: { onOpen?: (() => void) | undefi
       label="例行任务"
       extra={
         onOpen ? (
-          <button type="button" className="secondary-button" onClick={onOpen}>
+          <button type="button" className="ob-pill" onClick={onOpen}>
             打开自动任务
           </button>
         ) : null

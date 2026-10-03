@@ -1222,3 +1222,26 @@
     border-top: 1px solid var(--ob-divider);
   }
 }
+
+/* Loading and read failure: the app icon over one line of status. */
+.app-shell .employee-profile-loading {
+  position: relative;
+  display: grid;
+  min-height: 100%;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  text-align: center;
+}
+.employee-profile-loading .ep-loading-icon {
+  margin: 0 auto 16px;
+}
+.employee-profile-loading h1 {
+  margin: 0;
+  font-size: 20px;
+}
+.employee-profile-loading p {
+  margin: 0 0 12px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}

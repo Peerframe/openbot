@@ -5,6 +5,10 @@ import { DeleteIdentityDialog } from "../components/DeleteIdentityDialog";
 import { DesktopConnectionScreen } from "../components/DesktopConnectionScreen";
 import { DesktopLocalWorkerScreen } from "../components/DesktopLocalWorkerScreen";
 import { DesktopSetupScreen } from "../components/DesktopSetupScreen";
+import {
+  DesktopSettingsScreen,
+  type DesktopSettingsSection,
+} from "../components/DesktopSettingsScreen";
 import { EmployeeBrowser } from "../components/EmployeeBrowser";
 import { ExportEmployeeDialog } from "../components/ExportEmployeeDialog";
 import { ImportEmployeeDialog } from "../components/ImportEmployeeDialog";
@@ -62,6 +66,16 @@ const components: Record<string, () => ReactElement> = {
   ),
   "dialog-pair": () => <NodeManagerDialog onlineNodes={world.nodes} onClose={close} />,
   browser: () => <EmployeeBrowser bot={researcher} onClose={close} />,
+  // ?scene=settings&section=hosts opens one section; the legacy-style sweep uses every section.
+  settings: () => (
+    <DesktopSettingsScreen
+      initialSection={
+        (new URLSearchParams(location.search).get("section") ?? "general") as DesktopSettingsSection
+      }
+      ownerName="Owner"
+      onBack={close}
+    />
+  ),
   "dialog-model": () => <ModelConnectionsDialog onClose={close} onChanged={close} />,
   avatars: () => <AvatarSpecimens />,
   groups: () => <GroupSpecimens />,
