@@ -8,6 +8,11 @@ def register_storage_routes(route, product):
         return await product.storage.usage(token)
     route('/api/v1/storage', 'GET', usage)
 
+    async def cleanup_all(token, _path, body, request):
+        if request.query_params: raise ControlError(422, 'invalid_storage_query')
+        return await product.storage.cleanup_all(token, body)
+    route('/api/v1/storage/trash/cleanup', 'POST', cleanup_all, limit=4096)
+
     async def settings(token, *_): return await product.storage.settings(token)
     async def save(token, _path, body, _request): return await product.storage.save_settings(token, body)
     route('/api/v1/settings/storage', 'GET', settings)

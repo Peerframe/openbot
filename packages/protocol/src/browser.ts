@@ -130,7 +130,12 @@ export const browserMaintenanceInputSchema = z
   .strict()
   .refine((value) => (value.operation === "clear") === (value.confirmation !== undefined));
 export type BrowserMaintenanceInput = z.infer<typeof browserMaintenanceInputSchema>;
-export const browserRuntimeStateSchema = z.object({ running: z.boolean() }).strict();
+export const browserRuntimeStateSchema = z
+  .object({
+    running: z.boolean(),
+    profileBytes: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).nullable().default(null),
+  })
+  .strict();
 export type BrowserRuntimeState = z.infer<typeof browserRuntimeStateSchema>;
 export const browserMaintenanceActionSchema = z
   .object({ kind: z.literal("maintenance"), operation: z.enum(["status", "restart", "clear"]) })
@@ -195,7 +200,7 @@ export const browserMaintenanceResultSchema = z
   .object({
     botId: z.string().uuid(),
     nodeId: z.string().min(1).max(128),
-    running: z.boolean(),
+    ...browserRuntimeStateSchema.shape,
     paused: z.boolean(),
   })
   .strict();

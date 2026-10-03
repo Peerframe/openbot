@@ -506,7 +506,7 @@ Artifact 与临时画面内容接口使用同一个 Owner Session，响应为 `p
 `POST /api/v1/bots/{botId}/browser/maintenance` 要求 Owner cookie、严格允许的 Origin 和最多 1 KiB
 严格 JSON：`{operation:"status"|"restart"|"clear",confirmation?:"clear-browser-data"}`。
 只有 `clear` 必须附确认字段，其余操作拒绝该字段；拒绝未知字段、路径、URL 或命令。
-返回 `{botId,nodeId,running:boolean,paused:boolean}`。
+返回 `{botId,nodeId,running:boolean,paused:boolean,profileBytes:number|null}`（详见下文 C23）。
 
 Server 要求已绑定原浏览器身份或运维明确配置的 Bot→Node 路由，禁止选择替代主机。
 原 Worker 必须声明 Docker Provider 的 `browser.maintenance@1` 与 `browser.session@1`。
@@ -767,7 +767,7 @@ Owner 原生 Task 的文件命名空间独立，不加入频道计数。引用�
 WAL 或物理磁盘剩余空间。内容寻址产出统计实际存储的去重文件，不按逻辑任务引用重复计算。
 `freedBytes` 为删除的附件文件字节数减去最小删除标记大小，不含 SQL 凭证与审计增长，也不是物理磁盘分配量。
 
-`trash` 为 `{fileCount, sizeBytes, referencedFileCount}`，最后一项是仍有消息或任务引用的文件个数。
+`trash` 为 `{fileCount, sizeBytes, referencedFileCount, referencedSizeBytes}`；后两项分别表示仍有消息或任务引用的文件个数，以及它们的实测原件、元数据和派生文本字节数。
 `topChannels` 最多 20 个 `{id, name, deleted, sizeBytes, fileCount}`，包含正常及回收站附件，
 按大小降序、ID 升序。遍历拒绝符号链接、硬链接、非当前用户所有、超过 10,000 项或深度超过 8 的目录，
 目录损坏、不可用或引用不明也拒绝，不返回部分或估算成功。不会泄露路径或文件内容。
@@ -787,3 +787,73 @@ Server 维护任务在启动时、设置变更时及每小时检查；启用后�
 逐文件审计与删除一同提交，零删除的成功轮次也审计；关闭或尚未到期的检查不产生清理审计。
 该策略取代“固定七天清理”的承诺：只有 Owner 明确选择 30 天才启用自动永久删除。
 删除整个频道仍是独立的生命周期操作。
+
+### C22：全局清空回收站
+
+`POST /api/v1/storage/trash/cleanup`，`{requestKey: "<UUID>"}` →
+`{removed, retained, retainedCount, retainedHasMore, freedBytes, channelCount}`。
+沿用有效 Owner 会话、允许的 Origin、返回前权限复核及 C21 删除规则。不接受查询参数，
+请求体最多 4 KiB，只接受 `requestKey`。
+
+一次事务处理所有有效频道的回收站附件，复用 C21 暂存与恢复、初始及加锁后的最终引用检查、
+防止迟到引用的 SQL 守卫和逐文件审计，原因为 `empty_trash_all`。正常文件、已删除频道和
+Owner 原生任务文件不在范围内。引用不明时整次拒绝。沿用目录最多 1,024 个附件、每类引用
+最多 10,000 条、保留列表最多 100 项的限制；保留项格式和 ID 排序同 C21。
+`channelCount` 是有候选回收站文件的有效频道数，包括所有文件都被保留的频道；无候选时为零。
+
+持久凭证**只按 requestKey 记**，不依赖频道生命周期。同一 UUID 重试原样返回已保存结果，
+不删除后来进入回收站的文件，也不重复审计；新的清空操作须使用新 UUID。
+`GET /api/v1/storage` 的 `trash.referencedSizeBytes` 统计被引用回收站文件的实测逻辑字节，
+包含原件、元数据及派生文本，与 `trash.sizeBytes` 共用实测文件树。两者之差表示测量时的
+未引用回收站字节，不保证并发变化及最小删除标记保留后的最终 `freedBytes`。
+
+### C23：浏览器资料字节数
+
+`POST /api/v1/bots/{botId}/browser/maintenance`，`{operation: "status"}`，现在返回
+`{botId, nodeId, running, paused, profileBytes: number | null}`。
+`browser.maintenance@1` 的 Worker 结果携带同一字段。数字是原工作电脑上该 Bot 的资料文件
+逻辑字节数，必须是非负安全整数。旧 Worker 缺字段时归一为 `null`；接口不支持、测量拒绝、
+格式异常或传输失败也返回 `null`，不能估算为零。Owner／Host 绑定、能力要求及取消行为保持不变。
+重启、清除操作的结果包含 `profileBytes: null`，需随后查询状态才能测量。
+
+Docker Provider 携带选定的 `Bot-Id` 调用已认证的 `GET /computers/profile-usage`。
+[上游贡献](https://github.com/CopilotKit/OpenBot/pull/730)只读取这个 Bot 的资料，不启动 Chromium，
+不返回路径或内容。Linux 遍历跳过符号链接，拒绝链接根目录、硬链接、特殊文件及跨设备目录；
+限制为 10,000 项、16 层、2 秒工作期限（在文件系统操作前后检查），同一进程同时最多一次测量。
+拒绝测量或根目录不可用时返回 `null`；确认该 Bot 目录不存在时返回零。
+这是实时逻辑字节观察，不是原子快照或磁盘分配量。
+
+上游贡献待处理期间，生产固定版本仍为 `257c1280d684089be9adb0b35cce262efc7064bf`，因此该版本
+返回 `null`。生产环境要得到数字，须在上游接受后部署已审阅接口；只有上游拒绝才另行记录窄分支。
+远端资料大小不加入服务电脑的 `/storage.totalBytes`，
+`categories.workingComputerBrowserData` 仍为 `null`。
+
+### C24：附件引用列表
+
+`GET /api/v1/channels/:channelId/attachments/:id/references?limit=20` 要求有效 Owner 会话和有效频道。
+响应为：
+
+```json
+{
+  "messages": [{"id": "<消息 ID>", "createdAt": "<ISO 时间>", "author": {"kind": "bot", "botId": "<Bot ID>"}, "preview": "简短文本"}],
+  "tasks": [{"runId": "<Run ID>", "title": "任务标题", "status": "completed", "createdAt": "<ISO 时间>"}],
+  "messageCount": 1,
+  "taskCount": 1,
+  "hasMore": false
+}
+```
+
+`author.kind` 为 `owner`、`bot` 或 `system`；只有 Bot 作者可在保留了身份时带 `botId`。
+系统消息保留其真实类型。预览去除规范附件标记，裁掉首尾空格，最多 120 个 Unicode 码点；
+任务标题最多 160 个码点。不返回完整消息正文或任务指令。
+
+`limit` 默认 20，必须是 1–100 的 ASCII 十进制整数，**分别限制两个列表**。
+空值、格式错误、重复或未知查询参数返回 422 `invalid_attachment_reference_query`。
+各列表按数据库时间降序，再按 ID（C 排序规则）降序。匹配规则、记录身份、频道范围与
+每类最多 10,000 的计数界限完全同 C19。两个列表和计数来自同一次 SQL 快照；
+任一计数大于返回列表长度时 `hasMore` 为 true。超限返回 503，不返回部分内容。
+该接口不提供游标或 offset。
+
+回收站文件仍可查询；已永久删除文件返回 410，不存在、频道不符或频道已删除返回 404。
+缺失或撤销 Owner 权限返回 401，返回前仍复核会话。沿用私有文件锁与有界 Owner 事务。
+不调用模型，不产生写操作。

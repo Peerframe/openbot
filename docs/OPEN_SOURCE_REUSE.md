@@ -1051,3 +1051,21 @@ extends the existing Zod4.6.2 / Pydantic2.13.5 closed appearance enum by four de
 The existing v1/v2 portable package carries them without another registry or format version.
 Old values, strict rejection, checksums and Owner import review remain intact. No new dependency,
 schema migration or source incorporation is added; geometry and UI selection remain separate.
+
+## C22–C24 storage and browser measurements (2026-10-03)
+
+The [follow-up decision](research/storage-cleanup-follow-ups.md) reuses C21's private file lock,
+`_remove`, staging/recovery, PostgreSQL reference guards and per-file audit for global cleanup;
+C19's canonical marker and retained Run identity for bounded Owner-only reference lists. Additive
+migration 0051 supplies global request-key receipts without changing channel-scoped C21 receipts.
+No external source was copied or substantially adapted for these extensions.
+
+C23 is an original MIT upstream contribution, [CopilotKit/OpenBot #730](https://github.com/CopilotKit/OpenBot/pull/730),
+reviewed base `cb5dc32a44517622c6db4e527e61d3abb389b43c`, contribution head
+`46eb7af817027c5de4202846c73c43bbb2fa67b7`. It adds only a bounded, no-follow, authenticated per-Bot
+profile-byte route and tests/docs. Linux directory descriptors anchor traversal; unknown/refused
+measurements are null. Provider and `browser.maintenance@1` carry safe-integer/null results.
+The deployed pin remains `257c1280d684089be9adb0b35cce262efc7064bf`, so existing images report null.
+The personal fork used to submit the PR is not a runtime fork adoption. Upstream review is pending:
+review/pin an accepted version before rollout; only rejection triggers a separately recorded narrow
+fork pin and qualification. Existing upstream attribution and MIT notices are retained.

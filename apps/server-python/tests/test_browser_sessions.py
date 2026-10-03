@@ -103,7 +103,7 @@ async def enroll_worker(seed, http):
 
 
 @asynccontextmanager
-async def worker(seed, http, url, *, capability=True, hook=None, credential=None, page_hook=None, maintenance=False):
+async def worker(seed, http, url, *, capability=True, hook=None, credential=None, page_hook=None, maintenance=False, profile_bytes=None):
     credential = credential or await enroll_worker(seed, http)
     async with connect(url, proxy=None, compression=None, open_timeout=3, close_timeout=1) as ws:
         await ws.send(json.dumps(dict(type="node.hello", protocolVersion="0.9.0", nodeId=seed["node"],
@@ -126,7 +126,7 @@ async def worker(seed, http, url, *, capability=True, hook=None, credential=None
                     if isinstance(override, dict): frame = override
                 extra = await page_hook(command) if page_hook is not None and command['action']['kind']=='agent' else {}
                 await ws.send(json.dumps(dict(type="browser.result", protocolVersion="0.9.0", nodeId=seed["node"],
-                    sessionId=command["sessionId"], requestId=command["requestId"], ok=True, **({"runtime":{"running":command["action"]["operation"]!="clear"}} if command["action"]["kind"]=="maintenance" else {"frame":frame}|extra))))
+                    sessionId=command["sessionId"], requestId=command["requestId"], ok=True, **({"runtime":{"running":command["action"]["operation"]!="clear", **({'profileBytes':profile_bytes} if profile_bytes is not None else {})}} if command["action"]["kind"]=="maintenance" else {"frame":frame}|extra))))
         task = asyncio.create_task(reply())
         try:
             yield calls, ws
@@ -513,7 +513,7 @@ def test_maintenance_requires_original_identity_capability_and_exact_clear_confi
                 assert not calls
                 assert (await http.post(path,json={"operation":"status"},headers={"Origin":"https://wrong.invalid"})).status_code==403
                 status=await http.post(path,json={"operation":"status"});assert status.status_code==200,status.text
-                assert status.json()==dict(botId=seed['botId'],nodeId=seed['node'],running=True,paused=False)
+                assert status.json()==dict(botId=seed['botId'],nodeId=seed['node'],running=True,paused=False,profileBytes=None)
                 restarted=await http.post(path,json={"operation":"restart"});assert restarted.status_code==200,restarted.text
                 assert restarted.json()['paused'] is True
                 assert (await command(http,old,'observe')).status_code==404
@@ -539,3 +539,26 @@ def test_maintenance_capability_absence_never_dispatches(seed):
                 response=await http.post(f'/api/v1/bots/{seed["botId"]}/browser/maintenance',json={"operation":"restart"})
                 assert response.status_code==503 and not calls
     asyncio.run(run())
+
+
+def test_maintenance_projects_measured_profile_bytes_from_original_worker(seed):
+    async def run():
+        async with server(seed) as (service,registry,http,url):
+            async with worker(seed,http,url,maintenance=True,profile_bytes=12345) as (calls,ws):
+                await opened(http,seed)
+                response=await http.post(f'/api/v1/bots/{seed["botId"]}/browser/maintenance',json={'operation':'status'})
+                assert response.status_code==200,response.text
+                assert response.json()==dict(botId=seed['botId'],nodeId=seed['node'],running=True,paused=False,profileBytes=12345)
+                assert len(calls)==1
+    asyncio.run(run())
+
+
+def test_profile_size_wire_matches_typescript_bounds_and_legacy_unknown():
+    from pydantic import ValidationError
+    from openbot_server.browser_protocol import RuntimeState
+    assert RuntimeState.model_validate({'running':True}).model_dump()=={'running':True,'profileBytes':None}
+    for value in (None,0,123,9007199254740991):
+        assert RuntimeState.model_validate({'running':True,'profileBytes':value}).profileBytes==value
+    for value in (True,'123',-1,1.5,9007199254740992,float('nan'),float('inf')):
+        with pytest.raises(ValidationError): RuntimeState.model_validate({'running':True,'profileBytes':value})
+    with pytest.raises(ValidationError): RuntimeState.model_validate({'running':True,'profileBytes':1,'path':'/private'})

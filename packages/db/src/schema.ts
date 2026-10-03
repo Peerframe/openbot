@@ -816,6 +816,26 @@ export const attachmentCleanupReceipts = pgTable(
   ],
 );
 
+/** Global cleanup replays across channel deletion; its request key alone is the identity. */
+export const storageCleanupReceipts = pgTable(
+  "storage_cleanup_receipts",
+  {
+    requestKey: text("request_key").primaryKey(),
+    response: jsonb("response").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check(
+      "storage_cleanup_receipts_request_key_check",
+      sql`${table.requestKey} ~ '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$'`,
+    ),
+    check(
+      "storage_cleanup_receipts_response_check",
+      sql`jsonb_typeof(${table.response}) = 'object' AND octet_length(${table.response}::text) <= 262144`,
+    ),
+  ],
+);
+
 export const ownerStorageSettings = pgTable(
   "owner_storage_settings",
   {

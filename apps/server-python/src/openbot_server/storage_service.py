@@ -172,6 +172,31 @@ class StorageService:
         async with self.transactions.transaction(token) as db:
             return settings_projection(await (await db.execute("SELECT * FROM owner_storage_settings WHERE owner_id='owner'")).fetchone())
 
+    async def cleanup_all(self, token, command):
+        async with self.files.lock():
+            try:
+                async with self.transactions.transaction(token) as db:
+                    if (type(command) is not dict or set(command) != {'requestKey'} or type(command['requestKey']) is not str
+                            or not UUID.fullmatch(command['requestKey'])): raise ControlError(422, 'invalid_cleanup_request')
+                    key = command['requestKey'].lower()
+                    prior = await (await db.execute('SELECT response FROM storage_cleanup_receipts WHERE request_key=%s', (key,))).fetchone()
+                    if prior: result = prior['response']
+                    else:
+                        items, _ = self.catalog()
+                        trash = [item for item in items if item.get('deletedAt')]
+                        active = await (await db.execute('SELECT id FROM channels WHERE id=ANY(%s) AND deleted_at IS NULL ORDER BY id FOR SHARE',
+                            (sorted({item['channelId'] for item in trash}),))).fetchall()
+                        allowed = {row['id'] for row in active}
+                        result = await self._remove(db, [item for item in trash if item['channelId'] in allowed],
+                            actor='owner', reason='empty_trash_all')
+                        result['channelCount'] = len(allowed)
+                        await db.execute('INSERT INTO storage_cleanup_receipts(request_key,response) VALUES(%s,%s)', (key, Jsonb(result)))
+                await self.recover_locked()
+                return result
+            except BaseException:
+                await self.recover_locked()
+                raise
+
     async def save_settings(self, token, command):
         async with self.transactions.transaction(token) as db:
             if (type(command) is not dict or set(command) != {'expectedRevision', 'trashAutoPurgeDays'}

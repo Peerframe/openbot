@@ -188,6 +188,80 @@ def test_empty_trash_idempotent_receipt_and_new_files_require_new_key(seed, tmp_
         assert api.get(base + '/' + doomed['id']).status_code == 410
 
 
+def test_global_cleanup_covers_active_channel_trash_with_one_replayable_receipt(seed, tmp_path, monkeypatch):
+    service, api, base = setup(seed, tmp_path, monkeypatch)
+    doomed = file(service, seed)
+    second = file(service, seed, 'second.txt', channel=seed['direct'])
+    blocked = file(service, seed, 'kept.txt', channel=seed['direct'])
+    reference(seed, blocked, task=True)
+    active = file(service, seed, 'active.txt', trash=False)
+    owner = service.files.owner_persist('owner.txt', b'Owner file')
+    service.files.owner_set_deleted(owner['id'], True)
+    route = '/api/v1/storage/trash/cleanup'
+    key = str(uuid4())
+    with api:
+        usage = api.get('/api/v1/storage').json()['trash']
+        expected_bytes = sum(path.stat().st_size for path in service.files.root.glob(blocked['id'] + '.*'))
+        assert usage['referencedSizeBytes'] == expected_bytes > blocked['sizeBytes']
+        assert usage['referencedFileCount'] == 1
+        first = api.post(route, headers=HEADERS, json={'requestKey': key})
+        assert first.status_code == 200, first.text
+        result = first.json()
+        assert result['removed'] == 2 and result['channelCount'] == 2
+        assert result['retained'] == [{'id': blocked['id'], 'name': blocked['name'], 'referenceCount': {'messages': 1, 'tasks': 1}}]
+        assert result['retainedCount'] == 1 and not result['retainedHasMore'] and result['freedBytes'] > 0
+        later = file(service, seed, 'later.txt', channel=seed['direct'])
+        assert api.post(route, headers=HEADERS, json={'requestKey': key.upper()}).json() == result
+        for item in (blocked, active, later): assert_original(service, item)
+        assert service.files.owner_metadata(owner['id'])['deletedAt']
+        with psycopg.connect(seed['dsn']) as db:
+            rows = db.execute("SELECT channel_id,payload FROM run_events WHERE type='CHANNEL_ATTACHMENT_PURGED' AND channel_id=ANY(%s)",
+                (seed['channels'],)).fetchall()
+            assert {(row[0], row[1]['attachmentId'], row[1]['reason']) for row in rows} == {
+                (seed['channel'], doomed['id'], 'empty_trash_all'), (seed['direct'], second['id'], 'empty_trash_all')}
+            assert db.execute('SELECT response FROM storage_cleanup_receipts WHERE request_key=%s', (key,)).fetchone()[0] == result
+            # Receipt identity/lifetime cannot depend on any surviving channel.
+            db.execute('UPDATE channels SET deleted_at=now() WHERE id=ANY(%s)', (seed['channels'],))
+        assert api.post(route, headers=HEADERS, json={'requestKey': key}).json() == result
+        empty = api.post(route, headers=HEADERS, json={'requestKey': str(uuid4())})
+        assert empty.json() == dict(removed=0, retained=[], retainedCount=0, retainedHasMore=False, freedBytes=0, channelCount=0)
+        assert_original(service, later)
+
+
+def test_global_cleanup_refuses_unknown_references_without_partial_deletion(seed, tmp_path, monkeypatch):
+    from openbot_server import attachment_references
+    service, api, _ = setup(seed, tmp_path, monkeypatch)
+    first = file(service, seed)
+    unknown = file(service, seed, 'unknown.txt', channel=seed['direct'])
+    reference(seed, unknown)
+    monkeypatch.setattr(attachment_references, 'REFERENCE_LIMIT', 0)
+    key = str(uuid4())
+    with api:
+        response = api.post('/api/v1/storage/trash/cleanup', headers=HEADERS, json={'requestKey': key})
+        assert response.status_code == 503 and response.json() == {'error': 'attachment_reference_limit'}
+        for item in (first, unknown): assert_original(service, item)
+        assert events(seed) == []
+        with psycopg.connect(seed['dsn']) as db:
+            assert db.execute('SELECT 1 FROM storage_cleanup_receipts WHERE request_key=%s', (key,)).fetchone() is None
+
+
+def test_global_cleanup_owner_origin_and_strict_request_bounds(seed, tmp_path, monkeypatch):
+    service, api, _ = setup(seed, tmp_path, monkeypatch)
+    item = file(service, seed)
+    route = '/api/v1/storage/trash/cleanup'
+    valid = {'requestKey': str(uuid4())}
+    with api:
+        for value in ({}, {'requestKey': 'bad'}, {'requestKey': 1}, {**valid, 'channelId': seed['channel']}, []):
+            assert api.post(route, headers=HEADERS, json=value).status_code == 422
+        assert api.post(route + '?channelId=' + seed['channel'], headers=HEADERS, json=valid).status_code == 422
+        assert api.post(route, headers={'Origin': 'https://wrong.invalid'}, json=valid).status_code == 403
+        api.cookies.set('openbot_session', 'stale')
+        assert api.post(route, headers=HEADERS, json=valid).status_code == 401
+        api.cookies.clear()
+        assert api.post(route, headers=HEADERS, json=valid).status_code == 401
+        assert_original(service, item)
+
+
 def test_clear_retained_list_and_usage_top_channels_have_real_bounds(seed, tmp_path, monkeypatch):
     service, api, base = setup(seed, tmp_path, monkeypatch)
     items = [file(service, seed, f'{index}.txt') for index in range(101)]
@@ -207,6 +281,8 @@ def test_clear_retained_list_and_usage_top_channels_have_real_bounds(seed, tmp_p
         assert usage.status_code == 200, usage.text
         assert len(usage.json()['topChannels']) == 20 and usage.json()['topChannelsLimit'] == 20
         assert usage.json()['trash']['referencedFileCount'] == 101
+        global_result = api.post('/api/v1/storage/trash/cleanup', headers=HEADERS, json={'requestKey': str(uuid4())}).json()
+        assert len(global_result['retained']) == 100 and global_result['retainedCount'] == 101 and global_result['retainedHasMore']
         assert events(seed) == []
         for item in items: assert_original(service, item)
 

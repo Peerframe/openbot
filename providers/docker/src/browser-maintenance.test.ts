@@ -65,6 +65,7 @@ describe("original browser lifecycle adapter", () => {
     const c = command("restart");
     expect(await coordinator.maintenance(c, new AbortController().signal)).toEqual({
       running: true,
+      profileBytes: null,
     });
     expect(paths).toEqual(["/computers/stop", "/screenshot", "/health"]);
     await expect(
@@ -83,7 +84,7 @@ describe("original browser lifecycle adapter", () => {
       coordinator.run(c.botId, new AbortController().signal, async () => true),
     ).rejects.toThrow("paused");
   });
-  it("projects only a boolean and observes health without starting a browser", async () => {
+  it("projects only health and bounded usage without starting a browser", async () => {
     const request = vi.fn(async () => ({
       status: "ok",
       browser: false,
@@ -93,12 +94,78 @@ describe("original browser lifecycle adapter", () => {
     const coordinator = new BrowserCoordinator(request, async () => {});
     expect(await coordinator.maintenance(command("status"), new AbortController().signal)).toEqual({
       running: false,
+      profileBytes: null,
     });
-    expect(request).toHaveBeenCalledExactlyOnceWith(
+    expect(request).toHaveBeenNthCalledWith(
+      1,
       expect.any(String),
       "/health",
       expect.any(AbortSignal),
       undefined,
     );
+    expect(request).toHaveBeenNthCalledWith(
+      2,
+      expect.any(String),
+      "/computers/profile-usage",
+      expect.any(AbortSignal),
+      undefined,
+    );
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    0,
+    12345,
+    Number.MAX_SAFE_INTEGER,
+    null,
+    -1,
+    1.5,
+    true,
+    "123",
+    Number.NaN,
+    Infinity,
+    Number.MAX_SAFE_INTEGER + 1,
+    undefined,
+  ])("reports only a safe measured byte count: %s", async (profileBytes) => {
+    const request = vi.fn(async (_bot: string, path: string) =>
+      path === "/health"
+        ? { status: "ok", browser: true }
+        : { profileBytes, path: "/private/profile", cookies: "private" },
+    );
+    const c = command("status");
+    const coordinator = new BrowserCoordinator(request, async () => {});
+    expect(await coordinator.maintenance(c, new AbortController().signal)).toEqual({
+      running: true,
+      profileBytes:
+        typeof profileBytes === "number" && Number.isSafeInteger(profileBytes) && profileBytes >= 0
+          ? profileBytes
+          : null,
+    });
+    expect(request).toHaveBeenNthCalledWith(
+      2,
+      c.botId,
+      "/computers/profile-usage",
+      expect.any(AbortSignal),
+      undefined,
+    );
+  });
+
+  it("keeps unavailable usage unknown while preserving cancellation", async () => {
+    const abort = new AbortController();
+    const request = vi.fn(async (_bot: string, path: string) => {
+      if (path === "/health") return { status: "ok", browser: false };
+      throw new Error("Older upstream returned 404");
+    });
+    const coordinator = new BrowserCoordinator(request, async () => {});
+    expect(await coordinator.maintenance(command("status"), abort.signal)).toEqual({
+      running: false,
+      profileBytes: null,
+    });
+    request.mockImplementation(async (_bot: string, path: string) => {
+      if (path === "/health") return { status: "ok", browser: false };
+      abort.abort();
+      throw new Error("Cancelled measurement");
+    });
+    await expect(coordinator.maintenance(command("status"), abort.signal)).rejects.toThrow();
   });
 });
