@@ -8,6 +8,7 @@ import {
 } from "../api";
 import { Dialog } from "./Dialog";
 import { NodeIcon } from "./Icons";
+import "./NodeManagerDialog.css";
 
 export type NodeDisplayState = "online" | "offline" | "revoked";
 

@@ -5,6 +5,10 @@ import { installerSourceCommit } from "./make-installers.ts";
 
 const script = fileURLToPath(new URL("./make-installers.ts", import.meta.url));
 
+// Each child Node process has its own bound; the test budget covers it, because in a full
+// parallel `npm run test` one cold start can outlast Vitest's default 5 s.
+const childTimeout = 10_000;
+
 test("source identity admits only the exact commit or an explicitly absent local identity", () => {
   expect(installerSourceCommit({})).toBeNull();
   const sha = "abcdef0123456789".repeat(2) + "abcdef01";
@@ -16,7 +20,9 @@ test("source identity admits only the exact commit or an explicitly absent local
   }
 });
 
-test("import does not start installer preparation or alter signing discovery", () => {
+test("import does not start installer preparation or alter signing discovery", {
+  timeout: childTimeout + 5_000,
+}, () => {
   const output = execFileSync(
     process.execPath,
     [
@@ -32,13 +38,15 @@ test("import does not start installer preparation or alter signing discovery", (
         OPENBOT_DESKTOP_MACOS_SIGNING_IDENTITY: "invalid",
       },
       encoding: "utf8",
-      timeout: 10000,
+      timeout: childTimeout,
     },
   );
   expect(output.trim()).toBe("sentinel");
 });
 
-test("the actual TypeScript CLI refuses arguments before signing or artifact access", () => {
+test("the actual TypeScript CLI refuses arguments before signing or artifact access", {
+  timeout: childTimeout + 5_000,
+}, () => {
   const result = spawnSync(process.execPath, [script, "--publish"], {
     env: {
       ...process.env,
@@ -46,7 +54,7 @@ test("the actual TypeScript CLI refuses arguments before signing or artifact acc
       OPENBOT_DESKTOP_MACOS_SIGNING_IDENTITY: "invalid",
     },
     encoding: "utf8",
-    timeout: 10000,
+    timeout: childTimeout,
   });
   expect(result.error).toBeUndefined();
   expect(result.status).toBe(1);

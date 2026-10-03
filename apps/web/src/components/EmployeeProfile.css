@@ -1,4 +1,9 @@
 /* Profile artboard (docs/design/desktop-ui-2026-10/Profile.dc.html). */
+.loading-header-action {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
 .app-shell .employee-profile {
   display: flex;
   flex-direction: column;

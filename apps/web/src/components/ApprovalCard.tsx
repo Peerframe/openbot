@@ -1,5 +1,6 @@
 import type { Approval, ApprovalDecision, Bot, Channel } from "@openbot/domain";
 import { useState } from "react";
+import "./ApprovalCard.css";
 
 export function ApprovalCard({
   approval,

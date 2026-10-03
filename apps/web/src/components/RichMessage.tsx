@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import "./RichMessage.css";
 
 type RichBlock =
   | { id: string; type: "paragraph"; text: string }

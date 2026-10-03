@@ -10,6 +10,7 @@ import {
 } from "../api";
 import { AutomationsScreen } from "./AutomationsScreen";
 import { SettingsHeaderAction } from "./SettingsHeaderAction";
+import "./SettingsSections.css";
 
 export function SettingsGroup({
   title,
