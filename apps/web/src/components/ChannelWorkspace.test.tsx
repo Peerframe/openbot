@@ -11,6 +11,7 @@ import {
 } from "../api";
 import { showMessageEvent } from "../composer-events";
 import { createConversationSession } from "../conversation-session";
+import { listPlugins } from "../plugin-api";
 import { deferred, interact, renderComponent } from "../test/render-component";
 import { ChannelWorkspace, dateCueLabel } from "./ChannelWorkspace";
 
@@ -1069,5 +1070,73 @@ describe("23e: older pages, banners and the date cue", () => {
     expect(dateCueLabel(new Date(2026, 9, 3, 8).toISOString(), now)).toBe("今天");
     expect(dateCueLabel(new Date(2026, 9, 2, 8).toISOString(), now)).toBe("昨天");
     expect(dateCueLabel(new Date(2026, 8, 25, 8).toISOString(), now)).toBe("9 月 25 日 · 周五");
+  });
+});
+
+describe("composer popovers (owner feedback 2026-10-03)", () => {
+  it("closes the 「+」 menu on a press outside it", async () => {
+    const rendered = await renderComponent(view("a"));
+    const menu = rendered.container.querySelector<HTMLDetailsElement>(".composer-add-menu");
+    if (!menu) throw new Error("No 「+」 menu");
+    await interact(() => {
+      menu.open = true;
+    });
+    await interact(() =>
+      document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })),
+    );
+    expect(menu.open).toBe(false);
+    await rendered.unmount();
+  });
+
+  it("lists plugins under @: a connected one is written in, an ungranted one opens the panel", async () => {
+    const plugin = (id: string, name: string, granted: boolean) => ({
+      id,
+      name,
+      endpoint: `https://plugins.example.test/${id}`,
+      tools: [{ name: "search", description: "Search", inputSchema: { type: "object" } }],
+      digest: "0".repeat(64),
+      revision: "00000000-0000-4000-8000-000000000001",
+      enabled: true,
+      createdAt: bot.createdAt,
+      grants: granted
+        ? [{ botId: bot.id, tools: [{ name: "search", mode: "read" as const }] }]
+        : [],
+    });
+    vi.mocked(listPlugins).mockResolvedValue({
+      plugins: [plugin("github", "GitHub", true), plugin("gmail", "Gmail", false)],
+      pendingCalls: [],
+    } as never);
+    const onOpenPlugins = vi.fn();
+    const rendered = await renderComponent(
+      <ChannelWorkspace
+        globalHeader
+        channel={channel("a")}
+        session={createConversationSession()}
+        bots={[bot]}
+        artifacts={[]}
+        progress={[]}
+        onOpenPlugins={onOpenPlugins}
+        {...callbacks}
+      />,
+    );
+    await typeText(rendered.container, "Check this @");
+    await interact(async () => undefined);
+    const github = rendered.container.querySelector<HTMLButtonElement>("#mention-plugin-github");
+    const gmail = rendered.container.querySelector<HTMLButtonElement>("#mention-plugin-gmail");
+    expect(github?.textContent).toContain("已连接");
+    expect(gmail?.textContent).toContain("需要授权");
+    // Rows are one line: no role text under the Bot's name.
+    expect(rendered.container.querySelector(`#mention-${bot.id} small`)).toBeNull();
+    await interact(() => github?.click());
+    const input = rendered.container.querySelector("textarea") as HTMLTextAreaElement;
+    expect(input.value).toBe("Check this @GitHub ");
+    await typeText(rendered.container, "Check this @GitHub and @Gm");
+    await interact(async () => undefined);
+    await interact(() =>
+      rendered.container.querySelector<HTMLButtonElement>("#mention-plugin-gmail")?.click(),
+    );
+    expect(onOpenPlugins).toHaveBeenCalledTimes(1);
+    expect(input.value).toBe("Check this @GitHub and @Gm");
+    await rendered.unmount();
   });
 });

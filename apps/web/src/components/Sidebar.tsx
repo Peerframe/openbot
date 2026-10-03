@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { listPlugins } from "../plugin-api";
 import { indexActiveRunsByBot, isActiveRun, runStatusLabel } from "../run-state";
 import {
   arrangeSidebar,
@@ -23,7 +24,7 @@ import {
 import { DeleteIdentityDialog, type DeleteIdentityTarget } from "./DeleteIdentityDialog";
 import type { DesktopSettingsSection } from "./DesktopSettingsScreen";
 import { GroupAvatar } from "./GroupAvatar";
-import { BotIcon, HashIcon, PlusIcon, SearchIcon, SettingsIcon, SkillIcon } from "./Icons";
+import { BotIcon, HashIcon, PlusIcon, SearchIcon, SettingsIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
 import { SidebarItemMenu, type SidebarMenuTarget } from "./SidebarItemMenu";
 import "./Sidebar.css";
@@ -577,12 +578,50 @@ export function Sidebar({
         />
         {onSkills ? (
           <button className="sb-plugins" type="button" onClick={onSkills}>
-            <SkillIcon />
             <span>插件</span>
+            <PluginTiles />
           </button>
         ) : null}
       </footer>
     </aside>
+  );
+}
+
+/**
+ * Sidebar artboard: up to three enabled plugins as overlapping letter tiles after 「插件」. Read
+ * on mount and when the window regains focus; a failed read just shows no tiles.
+ */
+function PluginTiles() {
+  const [names, setNames] = useState<string[]>([]);
+  useEffect(() => {
+    let controller = new AbortController();
+    const read = () => {
+      controller.abort();
+      controller = new AbortController();
+      const { signal } = controller;
+      listPlugins(signal)
+        .then((snapshot) => {
+          if (!signal.aborted)
+            setNames(
+              snapshot.plugins.filter((plugin) => plugin.enabled).map((plugin) => plugin.name),
+            );
+        })
+        .catch(() => undefined);
+    };
+    read();
+    window.addEventListener("focus", read);
+    return () => {
+      controller.abort();
+      window.removeEventListener("focus", read);
+    };
+  }, []);
+  if (names.length === 0) return null;
+  return (
+    <span className="sb-plugin-tiles" aria-hidden="true">
+      {names.slice(0, 3).map((name) => (
+        <i key={name}>{Array.from(name.trim())[0]?.toLocaleUpperCase() ?? "?"}</i>
+      ))}
+    </span>
   );
 }
 

@@ -63,7 +63,9 @@ import { useListScroll } from "./useListScroll";
 import { VoiceRecorder } from "./VoiceRecorder";
 import "./ChannelMessagePresentation.css";
 import { composerAttachEvent, type ShowMessageDetail, showMessageEvent } from "../composer-events";
+import { listPlugins, type Plugin } from "../plugin-api";
 import { runStatusSummary } from "../run-state";
+import { textareaCaretLeft } from "../textarea-caret";
 import { AppIcon } from "./AppIcon";
 import { ArtifactCard } from "./ArtifactCard";
 import { ComposerAttachmentPicker, composerAttachmentsFull } from "./ComposerAttachmentPicker";
@@ -104,6 +106,7 @@ export function ChannelWorkspace({
   onNewRoutine,
   onOpenSettings,
   onOpenHosts,
+  onOpenPlugins,
   onBotChanged,
   approvals = [],
   nodes = [],
@@ -132,6 +135,8 @@ export function ChannelWorkspace({
   onNewRoutine?: (() => void) | undefined;
   onOpenSettings?: ((section: "general") => void) | undefined;
   onOpenHosts?: (() => void) | undefined;
+  /** Opens the plugins panel, for a plugin chosen from @ that no member may use yet. */
+  onOpenPlugins?: (() => void) | undefined;
   /** Called after the 定分工 card changes the Bot's role, so the host can refresh its lists. */
   onBotChanged?: (() => void | Promise<void>) | undefined;
   /** Workspace approvals; the pending ones for this 频道's tasks are decided on their cards. */
@@ -244,6 +249,17 @@ export function ChannelWorkspace({
     draft.replyTo !== undefined ||
     uploadingAttachments;
   const addMenu = useRef<HTMLDetailsElement>(null);
+  // A <details> menu does not close on its own: a press anywhere outside it closes the 「+」 menu,
+  // so it never stays open under the @ or / list.
+  useEffect(() => {
+    const outside = (event: PointerEvent) => {
+      const menu = addMenu.current;
+      if (menu?.open && event.target instanceof Node && !menu.contains(event.target))
+        menu.open = false;
+    };
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
+  }, []);
   useEffect(() => {
     // 频道信息 › 资料库 › 上传文件 reuses this composer's picker and upload checks.
     const open = () => {
@@ -263,7 +279,29 @@ export function ChannelWorkspace({
     (!mentionQuery ||
       "所有人".includes(mentionQuery) ||
       "everyone".startsWith(mentionQuery.toLowerCase()));
-  const mentionCount = matchingMembers.length + (showEveryone ? 1 : 0);
+  const mentionOpen = mentionQuery !== undefined;
+  const [mentionPlugins, setMentionPlugins] = useState<Plugin[]>([]);
+  useEffect(() => {
+    // Slash artboard: @ names a Bot or a plugin. Plugins are read when the list opens.
+    if (!mentionOpen) return;
+    const controller = new AbortController();
+    listPlugins(controller.signal)
+      .then((snapshot) => {
+        if (!controller.signal.aborted)
+          setMentionPlugins(snapshot.plugins.filter((plugin) => plugin.enabled));
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [mentionOpen]);
+  const matchingPlugins = mentionOpen
+    ? mentionPlugins.filter((plugin) =>
+        plugin.name.toLocaleLowerCase().includes(mentionQuery.toLocaleLowerCase()),
+      )
+    : [];
+  /** A plugin a channel member may already use; others need a grant first. */
+  const pluginConnected = (plugin: Plugin) =>
+    plugin.grants.some((grant) => channel.botIds.includes(grant.botId) && grant.tools.length > 0);
+  const mentionCount = matchingMembers.length + (showEveryone ? 1 : 0) + matchingPlugins.length;
   const skillBotId = targetBot?.id;
   const slashActive = slash !== undefined;
   const slashTerm = slash?.query.toLocaleLowerCase() ?? "";
@@ -293,6 +331,26 @@ export function ChannelWorkspace({
   const activeSlashIndex = Math.min(slashIndex, Math.max(slashCount - 1, 0));
   const slashListRef = useListScroll(activeSlashIndex);
   const mentionListRef = useListScroll(mentionIndex);
+  // Typing @ or / closes the 「+」 menu, so two popovers never stack.
+  useEffect(() => {
+    if ((mentionOpen || slashActive) && addMenu.current?.open) addMenu.current.open = false;
+  }, [mentionOpen, slashActive]);
+  // Slash/@ lists open at the caret where the trigger was typed, kept inside the composer.
+  const anchorStart = slash?.start ?? mention?.start;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new trigger or list size moves it.
+  useLayoutEffect(() => {
+    const input = textarea.current;
+    const list = input?.closest("form")?.querySelector<HTMLElement>(".mention-options");
+    if (!input || !list || anchorStart === undefined) return;
+    const container = list.offsetParent as HTMLElement | null;
+    if (!container) return;
+    const caret =
+      input.getBoundingClientRect().left -
+      container.getBoundingClientRect().left +
+      textareaCaretLeft(input, anchorStart);
+    const maximum = Math.max(0, container.clientWidth - list.offsetWidth);
+    list.style.left = `${Math.round(Math.min(maximum, Math.max(0, caret - 12)))}px`;
+  }, [anchorStart, mentionCount, slashActive]);
   function closeSlash(keepText = true) {
     if (!keepText && slash) {
       mentionCaret.current = draft.text.slice(0, slash.start).trimEnd().length;
@@ -387,6 +445,26 @@ export function ChannelWorkspace({
       setContextError(cause instanceof Error ? cause.message : "无法添加接收者。");
       return;
     }
+    setMention(undefined);
+    setMentionIndex(0);
+    textarea.current?.focus();
+  }
+  /**
+   * An @ plugin is a hint to the Bot, never a grant: a connected one is written into the message;
+   * one no member may use yet opens the plugins panel to grant it.
+   */
+  function choosePlugin(plugin: Plugin) {
+    if (!pluginConnected(plugin)) {
+      setMention(undefined);
+      setMentionIndex(0);
+      onOpenPlugins?.();
+      return;
+    }
+    const text = removeMentionQuery(draft.text, mention);
+    const at = mention ? draft.text.slice(0, mention.start).trimEnd().length : text.length;
+    const inserted = `${text.slice(0, at)}${at > 0 ? " " : ""}@${plugin.name} ${text.slice(at).trimStart()}`;
+    mentionCaret.current = at + (at > 0 ? 1 : 0) + plugin.name.length + 2;
+    conversation.edit({ ...draft, text: inserted.slice(0, 8000) });
     setMention(undefined);
     setMentionIndex(0);
     textarea.current?.focus();
@@ -761,10 +839,14 @@ export function ChannelWorkspace({
       }
       if ((event.key === "Enter" || event.key === "Tab") && mentionCount > 0) {
         event.preventDefault();
+        const offset = mentionIndex - (showEveryone ? 1 : 0);
         if (showEveryone && mentionIndex === 0) chooseEveryone();
-        else {
-          const choice = matchingMembers[mentionIndex - (showEveryone ? 1 : 0)];
+        else if (offset < matchingMembers.length) {
+          const choice = matchingMembers[offset];
           if (choice) chooseMention(choice);
+        } else {
+          const plugin = matchingPlugins[offset - matchingMembers.length];
+          if (plugin) choosePlugin(plugin);
         }
         return;
       }
@@ -1281,7 +1363,7 @@ export function ChannelWorkspace({
                 ref={mentionListRef}
                 role="listbox"
                 id={`mentions-${channel.id}`}
-                aria-label="提及 Bot"
+                aria-label="提及 Bot 或插件"
               >
                 {showEveryone ? (
                   <button
@@ -1293,10 +1375,11 @@ export function ChannelWorkspace({
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={chooseEveryone}
                   >
-                    <HashIcon />
-                    <span>
-                      所有人<small>{members.length} 位频道成员</small>
-                    </span>
+                    <i className="mention-glyph" aria-hidden="true">
+                      @
+                    </i>
+                    <span>所有人</span>
+                    <em>{members.length} 个 Bot</em>
                   </button>
                 ) : null}
                 {matchingMembers.map((bot, index) => (
@@ -1310,13 +1393,37 @@ export function ChannelWorkspace({
                     onClick={() => chooseMention(bot)}
                   >
                     <RobotAvatar bot={bot} compact />
-                    <span>
-                      {bot.name}
-                      <small>{bot.role}</small>
-                    </span>
+                    <span>{bot.name}</span>
+                    <em>Bot</em>
                   </button>
                 ))}
-                {matchingMembers.length === 0 && <p>没有匹配的频道 Bot</p>}
+                {matchingPlugins.map((plugin, index) => {
+                  const position = index + matchingMembers.length + (showEveryone ? 1 : 0);
+                  const connected = pluginConnected(plugin);
+                  return (
+                    <button
+                      role="option"
+                      aria-selected={position === mentionIndex}
+                      id={`mention-plugin-${plugin.id}`}
+                      key={plugin.id}
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => choosePlugin(plugin)}
+                    >
+                      <i className="mention-glyph is-plugin" aria-hidden="true">
+                        {Array.from(plugin.name.trim())[0]?.toLocaleUpperCase() ?? "?"}
+                      </i>
+                      <span>
+                        {plugin.name}
+                        <small>{connected ? "已连接" : "需要授权"}</small>
+                      </span>
+                      <em>插件</em>
+                    </button>
+                  );
+                })}
+                {matchingMembers.length === 0 && matchingPlugins.length === 0 && (
+                  <p>没有匹配的 Bot 或插件</p>
+                )}
               </div>
             )}
             <textarea
@@ -1352,7 +1459,11 @@ export function ChannelWorkspace({
                       ? `mention-everyone-${channel.id}`
                       : matchingMembers[mentionIndex - (showEveryone ? 1 : 0)]
                         ? `mention-${matchingMembers[mentionIndex - (showEveryone ? 1 : 0)]?.id}`
-                        : undefined
+                        : matchingPlugins[
+                              mentionIndex - (showEveryone ? 1 : 0) - matchingMembers.length
+                            ]
+                          ? `mention-plugin-${matchingPlugins[mentionIndex - (showEveryone ? 1 : 0) - matchingMembers.length]?.id}`
+                          : undefined
               }
               onChange={(event) => {
                 conversation.edit({ text: event.target.value });

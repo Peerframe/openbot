@@ -45,6 +45,9 @@
 | 字体 | 系统 UI / PingFang SC；正文 15px，说明 13px，元信息 12px，分区标题 13px/500，页面标题 24–28px/700，对话框标题 22px/700 |
 | 圆角 | 胶囊按钮 17px（高 34px）或 20px（高 40px，用于对话框），卡片 16–18px，任务卡 18px，气泡 22px，对话框 22px；Bot 头像没有外框，因此没有圆角 |
 | 基础组件 | `.ob-pill`（`is-primary`、`is-outline`、`is-danger`、`is-small`）、`.ob-round`、`.ob-switch`（44×26）、`.ob-filter`、`.ob-tag`、`.ob-field`、`.ob-search`、`.ob-card`、`.ob-menu`、`.ob-menu-item`、`.ob-seg`（分段控件） |
+| 缩放 | 画板按 1440×900 绘制。桌面版默认打开 1200×780 的窗口，并把界面缩放到 90%（2026-10-03 按你的反馈调整）；「视图 › 实际大小 / 放大 / 缩小」可以改，红绿灯位置按 90% 的布局摆放 |
+| 动效（`motion.css`） | 按下和悬停：颜色在 120ms 内过渡，胶囊按钮按下时缩到 97%。对话框打开时 180ms 内淡入并上移 6px，关闭时淡出，背景遮罩同步。菜单和 @、/ 列表从锚点处 120ms 内展开。侧栏和右栏开合时滑动（220ms），内容保持完整宽度。系统设置了减少动态效果，或打开「通用 › 减少动态效果」时，以上全部关闭 |
+| 滚动条 | 没有轨道；区域滚动时出现 6px 的滑块，停下 1 秒后淡出，鼠标移上去变成 10px（LongLists）。由一个全局监听给正在滚动的元素加标记（`overlay-scrollbars.ts`） |
 
 ## 窗口外壳
 
@@ -52,6 +55,8 @@
 - **没有通栏工具栏。** 侧栏第一行是 macOS 红绿灯（x 20、y 20）和「+」按钮，同在一条 30px 高的行里，
   下面是搜索。
 - 主区有自己的 56px 标题行：标题胶囊居中；右侧是「实时」状态和「分享」。
+- 新建聊天页没有标题胶囊，页面最上方就是收件人一栏（2026-10-03 按你的反馈调整）。
+- 侧栏的「插件」按钮在文字后面显示最多三个已启用插件的首字母小方块（Sidebar 画板）。
 - **点标题胶囊打开右栏**：频道里是「频道信息」（ChannelInfo），单聊里是「Bot 信息」（BotInfo）；右栏的
   「收起」关闭它。
 - 后退、前进和两侧栏开关是快捷键与菜单命令（⌘[ ⌘] ⌘B ⌘⇧B）。侧栏隐藏时，标题行给红绿灯留出位置，
@@ -137,7 +142,7 @@
 | BotInfo | `BotInfoRail.tsx`（单聊和 Bot 档案） | 已完成；编辑头像等 C9 |
 | Profile | `EmployeeProfileView.tsx` | 头部与概览已实现；其他分页待设计（第 22 步） |
 | New、NewGroup、NewBotChat | `NewChatScreen.tsx`、`NewBotSetupCard.tsx` | 已完成；开场白等 C11 |
-| Slash | `ChannelWorkspace.tsx` 输入框菜单 | 已实现 |
+| Slash | `ChannelWorkspace.tsx` 输入框菜单 | 已实现。@ 和 / 列表在光标处弹出。@ 列出 Bot 和已启用的插件，每项一行，右侧标明类型；插件标明「已连接」或「需要授权」。选择已连接的插件会写入「@名称」提示 Bot 使用；选择未授权的插件会打开插件面板，所以 @ 不会授予任何权限。点其他地方或打开 @、/ 时，「+」菜单会自动收起 |
 | Settings、SettingsNav、Settings* | `DesktopSettingsScreen.tsx`、`Settings*.tsx` | 已实现 |
 | Plugins | `PluginsDialog.tsx`、`PluginManagerPanel.tsx` | 已实现 |
 | Avatar、Avatars、GroupAvatar、GroupAvatars | `RobotAvatar.tsx`、`GroupAvatar.tsx` | 已实现；八种颜色 |

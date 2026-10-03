@@ -1068,7 +1068,7 @@ export function AuthenticatedWorkspace({
       : selectedEmployeeId
         ? (employeeProfile?.employee.name ?? "Bot 档案")
         : location.kind === "new"
-          ? "新建聊天"
+          ? "" // New artboard: the recipients bar heads the page; no title pill above it.
           : (selectedChannel?.name ?? "");
   // The title pill opens the rail for a conversation or a Bot profile (Main/Profile artboards).
   const railAvailable = destination === "chat" && Boolean(selectedChannel || selectedEmployeeId);
@@ -1189,6 +1189,7 @@ export function AuthenticatedWorkspace({
           onRun={projectRun}
           onOpenMembers={() => updatePreferences({ rightPanelOpen: true })}
           onNewRoutine={() => onSettings?.("routines")}
+          onOpenPlugins={() => setPluginsOpen(true)}
           onOpenSettings={onSettings ? (section) => onSettings(section) : undefined}
           onOpenHosts={() => setDialog("node")}
         />

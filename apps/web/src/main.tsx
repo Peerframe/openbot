@@ -3,8 +3,10 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App.tsx";
 import "./global-styles";
 import { installAppFavicon } from "./app-favicon";
+import { installOverlayScrollbars } from "./overlay-scrollbars";
 
 installAppFavicon();
+installOverlayScrollbars();
 
 const runtime = window.openbotDesktop?.getRuntimeInfo?.();
 if (runtime?.kind === "desktop") {

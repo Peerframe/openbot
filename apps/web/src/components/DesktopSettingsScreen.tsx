@@ -305,15 +305,15 @@ export function DesktopSettingsScreen({
             </p>
           )}
         </nav>
+        <button
+          className="settings-dialog-close"
+          aria-label="关闭设置"
+          type="button"
+          onClick={closeDialog}
+        >
+          <CloseIcon />
+        </button>
         <section className="settings-dialog-content" aria-labelledby="settings-section-title">
-          <button
-            className="settings-dialog-close"
-            aria-label="关闭设置"
-            type="button"
-            onClick={closeDialog}
-          >
-            <CloseIcon />
-          </button>
           <header className="settings-dialog-header">
             <div>
               <h1 id="settings-section-title">{selected.label}</h1>

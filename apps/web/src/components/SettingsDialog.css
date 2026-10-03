@@ -100,6 +100,8 @@
   background: rgb(0 0 0 / 34%);
 }
 .settings-dialog-frame {
+  /* The close button sits on the frame, so it stays put while the section scrolls. */
+  position: relative;
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr);
   height: 100%;
@@ -142,10 +144,16 @@
   font-size: 14px;
   outline: none;
 }
+.settings-dialog-nav > * {
+  /* A tall list scrolls; it never squeezes the search field or the rows. */
+  flex-shrink: 0;
+}
 .settings-dialog-nav .settings-nav-group {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  /* SettingsNav artboard: group titles carry their own 12px top padding, no extra gap. */
+  margin-bottom: 0;
 }
 .settings-dialog-nav .settings-nav-group > p {
   margin: 0;
@@ -199,6 +207,7 @@
 }
 .settings-dialog-close {
   position: absolute;
+  z-index: 2;
   top: 18px;
   right: 18px;
   display: inline-grid;
@@ -208,7 +217,9 @@
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: transparent;
+  /* Content scrolls under it; a soft backing keeps the × readable. */
+  background: rgb(253 253 253 / 86%);
+  backdrop-filter: blur(8px);
   color: #3a3a3c;
   cursor: pointer;
 }
