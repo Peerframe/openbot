@@ -73,7 +73,8 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 - Back, forward and the panel toggles are keyboard and menu commands (⌘[ ⌘] ⌘B ⌘⇧B). When the
   sidebar is hidden, the header leaves room for the traffic lights and shows one button to reopen
   it.
-- The phone layout is out of scope for now; narrow windows keep working but get no new design.
+- There is no phone layout (Owner decision 2026-10-03). The window keeps its desktop layout down to
+  800px and scrolls below that.
 
 ## Creating Bots and 频道
 

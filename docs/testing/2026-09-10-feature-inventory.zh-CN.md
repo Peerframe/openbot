@@ -86,7 +86,7 @@ SKILL.md 导入接受一个不超过 12 KiB 的 Markdown 文档及版本号，�
 | 关于/帮助/反馈 | 平台/Electron、Hermes 归因、GitHub文档和问题链接。 | 不自动发送反馈，没有更新检查流程。 |
 | 移动端 | 响应式频道/Bot/审批/主机入口。 | 源码存在不构成移动端或所有平台验收。 |
 
-证据：[自动任务](../../apps/web/src/components/AutomationsScreen.tsx)、[页面 API](../../apps/web/src/destination-api.ts)、[Server](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/app.ts)、[主机](../../apps/web/src/components/NodeManagerDialog.tsx)、[本机 Worker](../../apps/web/src/components/DesktopLocalWorkerScreen.tsx)、[设置](../../apps/web/src/components/DesktopSettingsScreen.tsx)、[模型设置](../../apps/web/src/components/ModelSettingsScreen.tsx)、[偏好](../../apps/web/src/workspace-preferences.ts)、[移动端](../../apps/web/src/components/MobileNavigation.tsx)。
+证据：[自动任务](../../apps/web/src/components/AutomationsScreen.tsx)、[页面 API](../../apps/web/src/destination-api.ts)、[Server](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/app.ts)、[主机](../../apps/web/src/components/NodeManagerDialog.tsx)、[本机 Worker](../../apps/web/src/components/DesktopLocalWorkerScreen.tsx)、[设置](../../apps/web/src/components/DesktopSettingsScreen.tsx)、[模型设置](../../apps/web/src/components/ModelSettingsScreen.tsx)、[偏好](../../apps/web/src/workspace-preferences.ts)、[移动端](https://github.com/Peerframe/openbot/blob/8f6520ea417e1fac0f683b6c9ad6f8fcb08abb78/apps/web/src/components/MobileNavigation.tsx)。
 
 ## 本次分享调整
 
