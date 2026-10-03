@@ -620,6 +620,7 @@ export interface RunFrame {
 export type MessageAuthorType = "human" | "bot" | "system";
 
 export interface Message {
+  origin?: "greeting";
   id: EntityId;
   channelId: EntityId;
   authorType: MessageAuthorType;

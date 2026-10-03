@@ -48,6 +48,8 @@ class OwnerProduct:
         from .plugin_catalog import ReviewedPluginCatalog
         self.plugin_catalog = ReviewedPluginCatalog(dsn,plugin_catalog_path)
         self.browser = browser
+        from .bot_greeting import BotGreetings
+        self.greetings = BotGreetings(dsn, model_connections)
         self.work_runtime = None
         self.write_routes = []
         self.revision = 0
@@ -65,6 +67,7 @@ class OwnerProduct:
             if service is not None: await service.verify_schema()
 
     async def close(self):
+        await self.greetings.close()
         await self.storage.close()
         if self.work_runtime is not None: await self.work_runtime.close()
         if self.browser is not None: await self.browser.stop()
@@ -380,13 +383,30 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         value=await token(request)
         if not 1 <= len(channel_id) <= 128: raise HTTPException(422,'Invalid channel identifier.')
         async with product.transactions.transaction(value) as db: await product.channel(db,channel_id)
+        previous_ids = None
+        created = []
         async def observe():
+            nonlocal previous_ids
             # Messages first: a missing channel or lapsed session ends the stream before Runs are read.
             messages=await read_store.read(value,'messages',channel_id=channel_id)
             if messages.expires_at is None or not messages.found: return None
             runs=await read_store.read(value,'runs',channel_id=channel_id)
             if runs.expires_at is None: return None
+            current_ids = {row['id'] for row in messages.rows if row.get('id') is not None}
+            if previous_ids is not None:
+                from .message_models import project_messages
+                created.extend(dict(type='message.created', message=message.model_dump(mode='json',exclude_none=True))
+                    for message in project_messages([row for row in messages.rows
+                        if row.get('id') is not None and row['id'] not in previous_ids]))
+            previous_ids = current_ids
             return (json.dumps([messages.rows,runs.rows,product.revision],sort_keys=True,default=str),
                 {'type':'channel.ready','channelId':channel_id})
-        return event_stream(poll_events(request,'channel.ready',observe))
+        async def frames():
+            from .product_events import ready_event
+            async for frame in poll_events(request,'channel.ready',observe):
+                for payload in created:
+                    yield ready_event('message.created',payload)
+                created.clear()
+                yield frame
+        return event_stream(frames())
     app.add_api_route('/api/v1/channels/{channel_id}/events',channel_events,methods=['GET'])

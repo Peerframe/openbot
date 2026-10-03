@@ -691,6 +691,29 @@ Name allocation examines suffixes 1–10001 and retries at most three conflicts 
 writes. Exhaustion/contention returns 409 `quick_bot_name_exhausted`/`quick_bot_name_contention`.
 Existing session, Origin, body limits and sanitized storage/model errors still apply.
 
+## Optional new-Bot greeting (C11)
+
+After a successful `POST /api/v1/bots/quick`, the Server schedules one background greeting outside
+the creation transaction. Ordinary creation and import do not trigger it. Creation never waits for
+or fails because of greeting generation. Only the new Bot's committed, usable model selection is
+used; no fallback is selected. A durable `BOT_GREETING_STARTED` fact prevents another attempt,
+including after restart or deletion of the greeting message.
+
+The model receives only the new Bot's name and at most 12 other active Bots' names and roles.
+It makes one call through the existing model connection port, without tools or SDK retries, with
+256 output tokens, a 32 KiB response bound and a 15-second model deadline. Owner authority and
+model revision are checked before sending and before writing. Markers, links and Markdown are
+removed. The final Chinese plain text is at most 120 characters and ends with one question about
+responsibilities. Refusal, timeout, invalid output or any other failure produces no message and
+only a bounded `BOT_GREETING_FAILED` reason, never raw output or credentials. A database outage
+can prevent that audit write; it does not permit retries or another storage authority.
+
+The first message in the Bot's single-Bot channel has `origin: "greeting"`, a normal `MESSAGE_CREATED`
+audit and `message.created` SSE event. The optional read-only `origin` field is omitted for existing
+messages. Greeting insertion shares the channel lock with Owner message submission. Any earlier
+message, or retained audit of an Owner send, suppresses it. Partial unique indexes enforce at most
+one attempt and one greeting per Bot. Shutdown cancels and joins outstanding jobs.
+
 ## Bot appearance accents (C10)
 
 `BotAppearance.accent` accepts exactly `green`, `yellow`, `red`, `blue`, `violet`, `teal`,

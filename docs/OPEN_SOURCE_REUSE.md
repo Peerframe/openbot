@@ -1069,3 +1069,12 @@ The deployed pin remains `257c1280d684089be9adb0b35cce262efc7064bf`, so existing
 The personal fork used to submit the PR is not a runtime fork adoption. Upstream review is pending:
 review/pin an accepted version before rollout; only rejection triggers a separately recorded narrow
 fork pin and qualification. Existing upstream attribution and MIT notices are retained.
+
+## Optional quick-create greeting (2026-10-03)
+
+Reuse the approved [C11 contract](research/bot-appearance-and-greeting.md#c11-implementation-checkpoint-2026-10-03),
+existing C7/C12 encrypted model resolver, pinned Pydantic AI 2.47.0 model messages and the existing
+retry-disabled transport (OpenAI 3.17.0 / Anthropic 1.8.0; existing notices and pins retained).
+One tool-less call uses no history and cannot acquire Agent capabilities. PostgreSQL 17 nullable
+message origin and partial unique indexes enforce the one-attempt/one-first-message boundary;
+existing Owner transactions and audit remain authoritative. No dependency or upstream source copy.

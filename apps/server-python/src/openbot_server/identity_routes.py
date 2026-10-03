@@ -39,7 +39,7 @@ async def creation_payload(request: Request, parse):
 
 
 def register_identity_routes(app: FastAPI, writer: IdentityStore, read_store, *, secure_cookies: bool,
-                             allowed_origins: tuple[str, ...]) -> dict:
+                             allowed_origins: tuple[str, ...], greetings=None) -> dict:
     validate_origins(allowed_origins)
     cookie_name = "__Host-openbot_session" if secure_cookies else "openbot_session"
     definitions = {}
@@ -74,7 +74,10 @@ def register_identity_routes(app: FastAPI, writer: IdentityStore, read_store, *,
               openapi_extra={"requestBody": {"required": True, "content": {
                   "application/json": {"schema": input_schema(QuickCreateBotInput)}}}})
     async def quick_create_bot(request: Request):
-        return await create(request, parse_quick_bot_create, writer.quick_create_bot)
+        result = QuickBotResponse.model_validate(await create(request, parse_quick_bot_create, writer.quick_create_bot))
+        if greetings is not None:
+            greetings.schedule(request.cookies.get(cookie_name), result.bot.id, result.channel.id)
+        return result
 
     @app.post("/api/v1/channels", status_code=201, response_model=ChannelResponse,
               response_model_exclude_none=True, operation_id="createChannel",
