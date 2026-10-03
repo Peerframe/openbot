@@ -510,7 +510,9 @@ describe("ChannelWorkspace recipient and attachment interactions", () => {
       await interact(() =>
         rendered.container.querySelector<HTMLButtonElement>(".message-quote")?.click(),
       );
-      expect(scrollIntoView).toHaveBeenCalledWith({ block: "center", behavior: "auto" });
+      // Telegram-like: the quote glides to its source and flashes it once.
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: "center", behavior: "smooth" });
+      expect(sourceRow.classList.contains("is-flash")).toBe(true);
       expect(document.activeElement).toBe(sourceRow);
       expect(session.channel("a").scroll.atBottom).toBe(false);
     } finally {
@@ -1137,6 +1139,34 @@ describe("composer popovers (owner feedback 2026-10-03)", () => {
     );
     expect(onOpenPlugins).toHaveBeenCalledTimes(1);
     expect(input.value).toBe("Check this @GitHub and @Gm");
+    await rendered.unmount();
+  });
+});
+
+describe("Telegram-like arrival", () => {
+  it("slides in messages that arrive while open, not the history it opened with", async () => {
+    vi.mocked(listMessages).mockResolvedValue([message("a", "Earlier")]);
+    const rendered = await renderComponent(view("a"));
+    await interact(async () => undefined);
+    const rows = () => [...rendered.container.querySelectorAll(".message-row")];
+    expect(rows().some((row) => row.classList.contains("is-arriving"))).toBe(false);
+    await interact(() =>
+      lastHandlers().onMessage({
+        ...message("a", "Just now"),
+        id: "message-new",
+        authorType: "bot",
+        authorId: bot.id,
+        createdAt: new Date(Date.now() + 60_000).toISOString(),
+      }),
+    );
+    expect(document.getElementById("channel-message-message-new")?.classList).toContain(
+      "is-arriving",
+    );
+    expect(
+      document
+        .getElementById("channel-message-message-a-Earlier")
+        ?.classList.contains("is-arriving"),
+    ).toBe(false);
     await rendered.unmount();
   });
 });

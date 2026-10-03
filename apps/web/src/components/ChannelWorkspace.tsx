@@ -863,6 +863,26 @@ export function ChannelWorkspace({
     event.preventDefault();
     event.currentTarget.form?.requestSubmit();
   }
+  // Messages that arrive after the conversation opened slide in; history and older pages do not.
+  const seenMessages = useRef<{ ids: Set<string>; newest: number } | undefined>(undefined);
+  const arrived = useRef(new Set<string>());
+  if (!loading) {
+    if (!seenMessages.current)
+      seenMessages.current = {
+        ids: new Set(messages.map((item) => item.id)),
+        newest: Math.max(0, ...messages.map((item) => Date.parse(item.createdAt) || 0)),
+      };
+    else
+      for (const item of messages) {
+        if (seenMessages.current.ids.has(item.id)) continue;
+        seenMessages.current.ids.add(item.id);
+        const time = Date.parse(item.createdAt) || 0;
+        if (time >= seenMessages.current.newest) {
+          arrived.current.add(item.id);
+          seenMessages.current.newest = time;
+        }
+      }
+  }
   if (!awayFromLatest) awayFrom.current = undefined;
   else if (awayFrom.current === undefined) awayFrom.current = messages.at(-1)?.id ?? "";
   const awayIndex = awayFrom.current
@@ -957,12 +977,18 @@ export function ChannelWorkspace({
     setDateCue(time ? dateCueLabel(time) : undefined);
     dateCueTimer.current = window.setTimeout(() => setDateCue(undefined), 1200);
   }
+  /** Telegram-like: moves glide unless the Owner or the system asked for reduced motion. */
+  const scrollBehavior = (): ScrollBehavior =>
+    preferences.reduceMotion || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      ? "auto"
+      : "smooth";
   function showLatest() {
     conversation.scroll.atBottom = true;
     const list = messageList.current;
     if (list) {
-      list.scrollTop = list.scrollHeight;
-      conversation.scroll.top = list.scrollTop;
+      if (list.scrollTo) list.scrollTo({ top: list.scrollHeight, behavior: scrollBehavior() });
+      else list.scrollTop = list.scrollHeight;
+      conversation.scroll.top = list.scrollHeight;
     }
     setAwayFromLatest(false);
   }
@@ -970,8 +996,13 @@ export function ChannelWorkspace({
     const row = document.getElementById(`channel-message-${id}`);
     if (!row) return;
     conversation.scroll.atBottom = false;
-    row.scrollIntoView?.({ block: "center", behavior: "auto" });
+    row.scrollIntoView?.({ block: "center", behavior: scrollBehavior() });
     row.focus({ preventScroll: true });
+    // Briefly highlight the message that was jumped to, as Telegram does.
+    row.classList.remove("is-flash");
+    void row.offsetWidth;
+    row.classList.add("is-flash");
+    window.setTimeout(() => row.classList.remove("is-flash"), 1600);
     if (messageList.current) conversation.scroll.top = messageList.current.scrollTop;
     setAwayFromLatest(true);
   }
@@ -1129,6 +1160,7 @@ export function ChannelWorkspace({
                 ) : null}
                 <MessageRow
                   message={message}
+                  arriving={arrived.current.has(message.id)}
                   reactions={reactions.filter((item) => item.messageId === message.id)}
                   onReactionChange={async (emoji, active) => {
                     const items = await setMessageReaction(channel.id, message.id, emoji, active);
@@ -1670,6 +1702,7 @@ export function ChannelWorkspace({
 
 function MessageRow({
   message,
+  arriving,
   reactions,
   onReactionChange,
   groupStart,
@@ -1690,6 +1723,8 @@ function MessageRow({
   onOpenBot,
 }: {
   message: Message;
+  /** Arrived while the conversation was open: it slides in. */
+  arriving: boolean;
   reactions: MessageReaction[];
   onReactionChange(emoji: ReactionEmoji, active: boolean): Promise<void>;
   groupStart: boolean;
@@ -1717,7 +1752,7 @@ function MessageRow({
       data-time={message.createdAt}
       tabIndex={-1}
       aria-label={`${name} 的消息`}
-      className={`message-row ${message.authorType}${groupStart ? " group-start" : " group-continuation"}${groupEnd ? " group-end" : ""}${direct ? " direct-message" : ""}`}
+      className={`message-row ${message.authorType}${groupStart ? " group-start" : " group-continuation"}${groupEnd ? " group-end" : ""}${direct ? " direct-message" : ""}${arriving ? " is-arriving" : ""}`}
     >
       <div className="message-avatar">
         {author ? (
