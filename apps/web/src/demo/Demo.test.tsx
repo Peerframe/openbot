@@ -15,6 +15,8 @@ function button(name: string): HTMLButtonElement {
 }
 
 describe("actual channel components in the static demo", () => {
+  // The whole demo mounts with the real API module; under a loaded full check this exceeds the
+  // 5s default.
   it("renders native incremental output, task links, reaction state and restart using the real API module", async () => {
     const adapter = new DemoAdapter(location.origin);
     const originalFetch = window.fetch;
@@ -69,5 +71,5 @@ describe("actual channel components in the static demo", () => {
       if (originalLocal) Object.defineProperty(window, "localStorage", originalLocal);
       if (originalSession) Object.defineProperty(window, "sessionStorage", originalSession);
     }
-  });
+  }, 20_000);
 });
