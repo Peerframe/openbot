@@ -26,6 +26,7 @@ import { ShareConversationDialog } from "../components/ShareConversationDialog";
 import { setPreviewStartLocation, type WorkspaceLocation } from "../workspace-navigation";
 import { AvatarSpecimens, GroupSpecimens } from "./AvatarSpecimens";
 import type { scenes as sceneTable } from "./main";
+import { ReadmeBanner } from "./ReadmeBanner";
 import { createWorld } from "./world";
 
 type Scenes = typeof sceneTable;
@@ -98,6 +99,7 @@ const components: Record<string, () => ReactElement> = {
     />
   ),
   avatars: () => <AvatarSpecimens />,
+  banner: () => <ReadmeBanner />,
   groups: () => <GroupSpecimens />,
   launch: () => <LaunchScreen status="正在打开你的工作区" />,
   "launch-error": () => (

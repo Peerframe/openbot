@@ -88,6 +88,7 @@ export const scenes: Record<string, AppScene | ComponentScene> = {
     start: { kind: "home" },
   },
   avatars: { kind: "component", title: "头像系统 v3", artboard: "Avatars" },
+  banner: { kind: "component", title: "README 横幅（2172×724）", artboard: "AppIcon" },
   groups: { kind: "component", title: "群组头像", artboard: "GroupAvatars" },
   "dialog-share": { kind: "component", title: "分享", artboard: "DialogShare" },
   "dialog-export": { kind: "component", title: "分享 Bot 模板", artboard: "DialogExport" },
