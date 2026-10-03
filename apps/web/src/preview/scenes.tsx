@@ -4,16 +4,20 @@ import { App } from "../App";
 import { DeleteIdentityDialog } from "../components/DeleteIdentityDialog";
 import { DesktopConnectionScreen } from "../components/DesktopConnectionScreen";
 import { DesktopLocalWorkerScreen } from "../components/DesktopLocalWorkerScreen";
-import { DesktopSetupScreen } from "../components/DesktopSetupScreen";
 import {
   DesktopSettingsScreen,
   type DesktopSettingsSection,
 } from "../components/DesktopSettingsScreen";
+import { DesktopSetupScreen } from "../components/DesktopSetupScreen";
 import { EmployeeBrowser } from "../components/EmployeeBrowser";
 import { ExportEmployeeDialog } from "../components/ExportEmployeeDialog";
 import { ImportEmployeeDialog } from "../components/ImportEmployeeDialog";
 import { LoginScreen } from "../components/LoginScreen";
-import { ModelConnectionsDialog } from "../components/ModelConnectionsDialog";
+import {
+  AddModelConnectionDialog,
+  ModelConnectionDialog,
+} from "../components/ModelConnectionsDialog";
+import { useModelServices } from "../components/ModelSelector";
 import { ModelSettingsScreen } from "../components/ModelSettingsScreen";
 import { NodeManagerDialog } from "../components/NodeManagerDialog";
 import { LaunchScreen } from "../components/Onboarding";
@@ -76,7 +80,13 @@ const components: Record<string, () => ReactElement> = {
       onBack={close}
     />
   ),
-  "dialog-model": () => <ModelConnectionsDialog onClose={close} onChanged={close} />,
+  // ?scene=dialog-model edits the saved Anthropic connection (artboard); &add=1 adds a new one.
+  "dialog-model": () =>
+    new URLSearchParams(location.search).has("add") ? (
+      <AddModelConnectionDialog onClose={close} onChanged={close} />
+    ) : (
+      <EditModelConnectionScene />
+    ),
   avatars: () => <AvatarSpecimens />,
   groups: () => <GroupSpecimens />,
   launch: () => <LaunchScreen status="正在打开你的工作区" />,
@@ -148,5 +158,20 @@ function SceneIndex({ scenes }: { scenes: Scenes }) {
         ))}
       </ul>
     </main>
+  );
+}
+
+function EditModelConnectionScene() {
+  const { snapshot, refresh } = useModelServices();
+  if (!snapshot) return null;
+  return (
+    <ModelConnectionDialog
+      snapshot={snapshot}
+      connection={snapshot.connections[0]}
+      onClose={close}
+      onSaved={close}
+      onDeleted={close}
+      onReload={() => void refresh()}
+    />
   );
 }

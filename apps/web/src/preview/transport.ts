@@ -1,3 +1,4 @@
+import { modelProviderPresets } from "@openbot/domain";
 import {
   attachmentsFor,
   createWorld,
@@ -70,8 +71,34 @@ function drawPricingPage(): string {
   return canvas.toDataURL("image/png").split(",")[1] ?? "";
 }
 
+/** DialogModel artboard: the model list a verified Anthropic key returns (synthetic). */
+const previewModels = [
+  "claude-sonnet-5",
+  "claude-opus-5",
+  "claude-haiku-4-5-20251001",
+  "claude-sonnet-4-5",
+  "claude-opus-4-1",
+  "claude-3-7-sonnet",
+];
+
 export function createPreviewFetch(origin: string, world: PreviewWorld = createWorld()) {
   const channel = (id: string) => world.channels.find((item) => item.id === id);
+  const connections: Json[] = [
+    {
+      id: "conn-anthropic",
+      name: "Anthropic",
+      presetId: "anthropic",
+      baseUrl: "https://api.anthropic.com",
+      protocol: "anthropic-messages",
+      enabled: true,
+      hasApiKey: true,
+      revision: 3,
+      source: "saved",
+      defaultModel: "claude-sonnet-5",
+      createdAt: "2026-09-20T01:00:00.000Z",
+      updatedAt: "2026-09-30T01:30:00.000Z",
+    },
+  ];
   const routes: Array<[string, RegExp, Handler]> = [
     [
       "GET",
@@ -94,7 +121,24 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
           runs: world.runs,
           approvals: world.approvals,
           artifacts: world.artifacts,
-          progress: [],
+          progress: world.runs.some((run) => run.id === "r-1")
+            ? [
+                {
+                  id: "p-r-1",
+                  runId: "r-1",
+                  channelId: "c-market",
+                  stage: "browse",
+                  message: "打开网页 b-company.com/changelog",
+                  createdAt: new Date().toISOString(),
+                },
+              ]
+            : [],
+          runProgress: Object.fromEntries(
+            world.runs.map((run) => {
+              const { steps: _steps, ...summary } = runProgress(run);
+              return [run.id, summary];
+            }),
+          ),
           counts: {
             channels: world.channels.length,
             bots: world.bots.length,
@@ -102,6 +146,14 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
             activeRuns: world.runs.filter((run) => run.status === "running").length,
           },
         }),
+    ],
+    [
+      "GET",
+      /^\/api\/v1\/runs\/([^/]+)\/progress$/,
+      (m) => {
+        const run = world.runs.find((item) => item.id === m[1]);
+        return run ? json(runProgress(run)) : json({ error: "not_found" }, 404);
+      },
     ],
     ["GET", /^\/api\/v1\/channels\/unread$/, () => json({ unread: world.unread })],
     [
@@ -201,6 +253,37 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
     ],
     [
       "POST",
+      /^\/api\/v1\/bots\/quick$/,
+      (_m, body) => {
+        const taken = new Set(world.bots.map((item) => item.name));
+        let index = 1;
+        while (taken.has(index === 1 ? "新建 Bot" : `新建 Bot ${index}`)) index += 1;
+        const name = index === 1 ? "新建 Bot" : `新建 Bot ${index}`;
+        const id = `b-new-${Date.now()}`;
+        const created = {
+          id,
+          name,
+          role: "通用助手",
+          status: "idle",
+          computerProfile: "none",
+          appearance: body.appearance,
+          createdAt: new Date().toISOString(),
+        };
+        const direct = {
+          id: `direct-${id}`,
+          name,
+          description: "",
+          directBotId: id,
+          botIds: [id],
+          createdAt: created.createdAt,
+        };
+        world.bots.push(created);
+        world.channels.push(direct);
+        return json({ bot: created, channel: direct }, 201);
+      },
+    ],
+    [
+      "POST",
       /^\/api\/v1\/bots\/([^/]+)\/conversation$/,
       (m) => {
         const existing = world.channels.find((item) => item.directBotId === m[1]);
@@ -241,7 +324,70 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
     [
       "GET",
       /^\/api\/v1\/model-services$/,
-      () => json({ presets: [], connections: [], customBaseUrls: [] }),
+      () => json({ presets: modelProviderPresets, connections, customBaseUrls: [] }),
+    ],
+    ["POST", /^\/api\/v1\/model-connections\/verify$/, () => json({ models: previewModels })],
+    [
+      "POST",
+      /^\/api\/v1\/model-connections\/([^/]+)\/models$/,
+      () => json({ models: previewModels }),
+    ],
+    [
+      "POST",
+      /^\/api\/v1\/model-connections$/,
+      (_m, body) => {
+        const now = new Date().toISOString();
+        const created = {
+          id: `conn-${Date.now()}`,
+          name: body.name,
+          presetId: body.presetId,
+          baseUrl: body.baseUrl,
+          protocol: "openai-chat",
+          enabled: true,
+          hasApiKey: true,
+          revision: 1,
+          source: "saved",
+          ...(typeof body.defaultModel === "string" ? { defaultModel: body.defaultModel } : {}),
+          createdAt: now,
+          updatedAt: now,
+        };
+        connections.push(created);
+        return json({ connection: created }, 201);
+      },
+    ],
+    [
+      "PATCH",
+      /^\/api\/v1\/model-connections\/([^/]+)$/,
+      (m, body) => {
+        const target = connections.find((item) => item.id === m[1]);
+        if (!target) return json({ error: "model_connection_not_found" }, 404);
+        const { expectedRevision: _revision, apiKey: _key, defaultModel, ...rest } = body;
+        Object.assign(target, rest, { revision: Number(target.revision) + 1 });
+        if (defaultModel === null) delete target.defaultModel;
+        else if (typeof defaultModel === "string") target.defaultModel = defaultModel;
+        return json({ connection: target });
+      },
+    ],
+    [
+      "DELETE",
+      /^\/api\/v1\/model-connections\/([^/]+)$/,
+      (m) => {
+        // The artboard's refusal: a Bot and the owner default still use the only connection.
+        if (m[1] === "conn-anthropic")
+          return json(
+            {
+              error: "model_connection_in_use",
+              bots: [{ id: "b-research", name: "研究助理" }],
+              runIds: ["r-1"],
+              ownerDefault: true,
+            },
+            409,
+          );
+        const index = connections.findIndex((item) => item.id === m[1]);
+        if (index < 0) return json({ error: "model_connection_not_found" }, 404);
+        connections.splice(index, 1);
+        return json({ deleted: true, connectionId: m[1] });
+      },
     ],
     [
       "GET",
@@ -404,4 +550,32 @@ export function installPreviewTransport(world: PreviewWorld) {
   Object.defineProperty(window, "localStorage", { value: storage, configurable: true });
   Object.defineProperty(window, "sessionStorage", { value: storage, configurable: true });
   return storage;
+}
+
+/** C13 details for the synthetic runs: three verified steps, the fourth one in progress. */
+function runProgress(run: Record<string, unknown>) {
+  const finished = run.status === "completed";
+  const names = ["读取任务说明", "搜索竞品官网", "下载更新日志", "打开网页"];
+  const count = finished ? 3 : 4;
+  return {
+    runId: run.id,
+    status: run.status,
+    totalSteps: count,
+    currentStepNumber: count,
+    plannedTotalSteps: null,
+    completedSteps: 3,
+    stageName: finished ? null : "打开网页",
+    description: null,
+    startedAt: run.createdAt,
+    endedAt: null,
+    failureReasonCode: null,
+    steps: names.slice(0, count).map((name, index) => ({
+      id: `${run.id}-step-${index + 1}`,
+      stepNumber: index + 1,
+      stageName: name,
+      description: null,
+      startedAt: run.createdAt,
+      endedAt: index < 3 ? run.createdAt : null,
+    })),
+  };
 }

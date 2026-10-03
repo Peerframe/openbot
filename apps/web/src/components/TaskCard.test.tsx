@@ -1,16 +1,17 @@
 // @vitest-environment jsdom
-import type { Approval, Bot, Run } from "@openbot/domain";
+import type { Approval, Bot, Run, RunProgressSummary } from "@openbot/domain";
 import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { cancelNativeRun, createMessage } from "../api";
+import { cancelNativeRun, createMessage, getRunProgress } from "../api";
 import { nativeRunFailure } from "../run-state";
 import { deferred, interact, renderComponent } from "../test/render-component";
-import { TaskCard } from "./TaskCard";
+import { stepCountLabel, TaskCard } from "./TaskCard";
 
 vi.mock("../api", () => ({
   cancelNativeRun: vi.fn(),
   createMessage: vi.fn(),
   steerRun: vi.fn(),
+  getRunProgress: vi.fn(() => new Promise(() => undefined)),
   ApiError: class extends Error {
     status = 500;
   },
@@ -297,6 +298,76 @@ describe("collaboration on a long task", () => {
       expect(onInspect).toHaveBeenCalledWith(run.id);
     } finally {
       await view.unmount();
+    }
+  });
+});
+
+describe("C13 step counts", () => {
+  const summary = (patch: Partial<RunProgressSummary> = {}): RunProgressSummary => ({
+    runId: run.id,
+    status: "running",
+    totalSteps: 4,
+    currentStepNumber: 4,
+    plannedTotalSteps: null,
+    completedSteps: 3,
+    stageName: "打开网页",
+    description: null,
+    startedAt: null,
+    endedAt: null,
+    failureReasonCode: null,
+    ...patch,
+  });
+
+  it("prefers verified completed steps and never shows a planned total", () => {
+    expect(stepCountLabel(summary())).toBe("已完成 3 步");
+    expect(stepCountLabel(summary({ completedSteps: null }))).toBe("第 4 步");
+    expect(stepCountLabel(summary({ completedSteps: 0, currentStepNumber: null }))).toBeUndefined();
+    expect(stepCountLabel(undefined)).toBeUndefined();
+  });
+
+  it("puts the count before the latest progress line on a working card", async () => {
+    const rendered = await card({
+      stepSummaries: { [run.id]: summary() },
+      progress: {
+        id: "p-1",
+        runId: run.id,
+        channelId: run.channelId,
+        stage: "browse",
+        message: "打开网页 b-company.com/changelog",
+        createdAt: "2026-09-08T00:00:02Z",
+      },
+    });
+    try {
+      expect(rendered.container.textContent).toContain(
+        "已完成 3 步 · 现在：打开网页 b-company.com/changelog",
+      );
+      // The snapshot already covers this event, so nothing is re-read.
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      expect(getRunProgress).not.toHaveBeenCalled();
+    } finally {
+      await rendered.unmount();
+    }
+  });
+
+  it("shows a collaborator's count on its row", async () => {
+    const child: Run = {
+      ...run,
+      id: "run-2",
+      botId: helper.id,
+      title: "统计工单",
+      parentRunId: run.id,
+    };
+    const rendered = await card({
+      childRuns: [child],
+      stepSummaries: {
+        [run.id]: summary(),
+        [child.id]: summary({ runId: child.id, completedSteps: 1 }),
+      },
+    });
+    try {
+      expect(rendered.container.textContent).toContain("客服小橙 · 已完成 1 步");
+    } finally {
+      await rendered.unmount();
     }
   });
 });

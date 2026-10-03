@@ -33,7 +33,7 @@ vi.mock("./api", async (importOriginal) => {
     listMessages: vi.fn(),
     listRuns: vi.fn(),
     createChannel: vi.fn(),
-    createBot: vi.fn(),
+    quickCreateBot: vi.fn(),
     openBotConversation: vi.fn(),
     createMessage: vi.fn(),
     subscribeToWorkspaceEvents: vi.fn(() => vi.fn()),
@@ -521,17 +521,29 @@ it("opens model services in settings without discarding the conversation draft",
 });
 
 it("creates a random Bot from 创建新 Bot and opens its 单聊 with the role card", async () => {
-  vi.mocked(api.createBot).mockImplementation(async (input) => {
+  vi.mocked(api.quickCreateBot).mockImplementation(async (appearance) => {
     const created: Bot = {
       ...bot,
       id: "bot-new",
-      name: input.name,
-      role: input.role,
-      computerProfile: input.computerProfile,
-      ...(input.appearance ? { appearance: input.appearance } : {}),
+      name: "新建 Bot",
+      role: "通用助手",
+      computerProfile: "none",
+      appearance,
     };
-    snapshot = { ...snapshot, bots: [...snapshot.bots, created] };
-    return created;
+    const channel = {
+      id: "direct-bot-new",
+      name: "新建 Bot",
+      description: "",
+      directBotId: "bot-new",
+      botIds: ["bot-new"],
+      createdAt: "2026-10-03T00:00:00.000Z",
+    };
+    snapshot = {
+      ...snapshot,
+      bots: [...snapshot.bots, created],
+      channels: [...snapshot.channels, channel],
+    };
+    return { bot: created, channel };
   });
   const rendered = await renderComponent(<App />);
   try {
@@ -541,12 +553,32 @@ it("creates a random Bot from 创建新 Bot and opens its 单聊 with the role c
       rendered.container.querySelector<HTMLButtonElement>("#new-chat-option-0")?.click(),
     );
     await settleEffects();
-    expect(api.createBot).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "新建 Bot", role: "还没有分工", computerProfile: "model" }),
+    expect(api.quickCreateBot).toHaveBeenCalledTimes(1);
+    expect(api.quickCreateBot).toHaveBeenCalledWith(
+      expect.objectContaining({ head: expect.any(String), accent: expect.any(String) }),
     );
-    expect(api.openBotConversation).toHaveBeenCalledWith("bot-new");
+    expect(api.openBotConversation).not.toHaveBeenCalled();
     expect(rendered.container.querySelector(".create-dialog")).toBeNull();
     expect(rendered.container.textContent).toContain("你最想让我先帮你做什么？");
+  } finally {
+    await rendered.unmount();
+  }
+});
+
+it("reports a failed 创建新 Bot once and does not retry it", async () => {
+  vi.mocked(api.quickCreateBot).mockRejectedValue(
+    new api.ApiError("quick_bot_name_contention", 409),
+  );
+  const rendered = await renderComponent(<App />);
+  try {
+    await settleEffects();
+    await interact(() => buttonByLabel(rendered.container, "新建聊天").click());
+    await interact(() =>
+      rendered.container.querySelector<HTMLButtonElement>("#new-chat-option-0")?.click(),
+    );
+    await settleEffects();
+    expect(api.quickCreateBot).toHaveBeenCalledTimes(1);
+    expect(rendered.container.textContent).toContain("没能创建 Bot");
   } finally {
     await rendered.unmount();
   }

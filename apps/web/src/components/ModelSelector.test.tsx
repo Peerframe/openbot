@@ -1,7 +1,7 @@
 import type { ModelConnection, ModelServicesSnapshot, Run } from "@openbot/domain";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { ModelConnectionEditor } from "./ModelConnectionsDialog";
+import { ModelConnectionDialog } from "./ModelConnectionsDialog";
 import { ModelSelectionFields } from "./ModelSelector";
 import { TaskSheet } from "./TaskSheet";
 
@@ -110,7 +110,7 @@ describe("model service selection", () => {
     const preset = snapshot.presets[0];
     if (!preset) throw new Error("Missing test preset");
     const html = renderToStaticMarkup(
-      <ModelConnectionEditor
+      <ModelConnectionDialog
         snapshot={{
           ...snapshot,
           connections: [],
@@ -118,13 +118,13 @@ describe("model service selection", () => {
             { ...preset, id: "custom", name: "自定义 API", endpoints: [], discovery: true },
           ],
         }}
-        connection={undefined}
+        onClose={() => undefined}
         onSaved={() => undefined}
         onReload={() => undefined}
       />,
     );
-    expect(html).toContain("服务电脑尚未配置允许使用的自定义 API 地址");
-    expect(html).toContain('type="submit" disabled=""');
+    expect(html).toContain("服务电脑还没有允许任何自定义地址");
+    expect(html).toMatch(/type="submit"[^>]*disabled=""/);
     expect(html).toContain('type="password" autoComplete="new-password"');
     expect(html).toContain('maxLength="2048"');
     expect(html).not.toContain('type="url"');

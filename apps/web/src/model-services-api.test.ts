@@ -2,22 +2,23 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
   createModelConnection,
+  deleteModelConnection,
   discoverConnectionModels,
   getModelServices,
-  testModelConnection,
   updateEmployeeModel,
   updateModelConnection,
+  verifyModelConnection,
 } from "./api";
 
 afterEach(() => vi.restoreAllMocks());
 
 describe("retained feature model service API", () => {
-  it("separates explicit metadata discovery from a metered inference probe", async () => {
+  it("reads model lists for saved and unsaved keys without any inference route", async () => {
     const controller = new AbortController();
     const fetcher = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(new Response(JSON.stringify({ models: ["vendor/model:version"] })))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true })));
+      .mockResolvedValueOnce(new Response(JSON.stringify({ models: ["fixture"] })));
     expect(await discoverConnectionModels("connection/1", controller.signal)).toEqual([
       "vendor/model:version",
     ]);
@@ -29,14 +30,42 @@ describe("retained feature model service API", () => {
       signal: controller.signal,
     });
     expect(fetcher.mock.calls[0]?.[1]?.body).toBeUndefined();
-    await testModelConnection("connection/1", "vendor/model:version", controller.signal);
-    expect(fetcher.mock.calls[1]?.[0]).toBe("/api/v1/model-connections/connection%2F1/test");
-    expect(JSON.parse(String(fetcher.mock.calls[1]?.[1]?.body))).toEqual({
-      modelId: "vendor/model:version",
-    });
+    const unsaved = {
+      presetId: "kimi",
+      baseUrl: "https://api.moonshot.cn/v1",
+      apiKey: "synthetic",
+    };
+    expect(await verifyModelConnection(unsaved, controller.signal)).toEqual(["fixture"]);
+    expect(fetcher.mock.calls[1]?.[0]).toBe("/api/v1/model-connections/verify");
+    expect(fetcher.mock.calls[1]?.[1]).toMatchObject({ method: "POST", signal: controller.signal });
+    expect(JSON.parse(String(fetcher.mock.calls[1]?.[1]?.body))).toEqual(unsaved);
+    expect(fetcher.mock.calls.some(([url]) => String(url).endsWith("/test"))).toBe(false);
   });
 
-  it("uses the source snapshot/create/CAS routes without inventing a delete route", async () => {
+  it("deletes with the expected revision and keeps the in-use dependency list", async () => {
+    const dependencies = {
+      error: "model_connection_in_use",
+      bots: [{ id: "b", name: "研究助理" }],
+      runIds: ["r"],
+      ownerDefault: false,
+    };
+    const fetcher = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify(dependencies), { status: 409 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ deleted: true, connectionId: "a/1" })));
+    const refusal = await deleteModelConnection("a/1", { expectedRevision: 4 }).catch(
+      (cause: unknown) => cause,
+    );
+    expect(refusal).toBeInstanceOf(ApiError);
+    expect((refusal as ApiError).body).toEqual(dependencies);
+    expect(fetcher.mock.calls[0]?.[0]).toBe("/api/v1/model-connections/a%2F1");
+    expect(fetcher.mock.calls[0]?.[1]).toMatchObject({ method: "DELETE" });
+    expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toEqual({ expectedRevision: 4 });
+    await deleteModelConnection("a/1", { expectedRevision: 4 });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("uses the source snapshot/create/CAS routes", async () => {
     const snapshot = { presets: [], connections: [], customBaseUrls: [] };
     const fetcher = vi
       .spyOn(globalThis, "fetch")

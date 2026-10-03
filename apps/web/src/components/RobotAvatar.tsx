@@ -20,10 +20,7 @@ export const defaultBotAppearance: BotAppearance = {
   accent: "green",
 };
 
-/**
- * Jaw colours of matched lightness (DESIGN.md › Bot avatars v3). Stored appearances can hold the
- * first four today; violet, teal, pink and slate render once the Server accepts them (C10).
- */
+/** Jaw colours of matched lightness (DESIGN.md › Bot avatars v3); the Server accepts all eight (C10). */
 const accentColors: Record<string, string> = {
   green: "#91CF4B",
   blue: "#5F7CDE",
@@ -244,6 +241,7 @@ function appearanceForBot(bot: Bot): BotAppearance {
     "arm",
     "toolbox",
   ];
+  // Kept at the original four so a Bot without a stored look keeps the colour it always had.
   const accents: BotAppearance["accent"][] = ["green", "yellow", "red", "blue"];
   return {
     head: heads[seed % heads.length] ?? defaultBotAppearance.head,

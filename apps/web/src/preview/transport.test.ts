@@ -21,7 +21,11 @@ it("answers the synthetic workspace and keeps mutations in memory", async () => 
 it("fails closed for foreign origins and unknown routes", async () => {
   const fetchPreview = createPreviewFetch(origin, createWorld("empty"));
   await expect(fetchPreview("https://example.com/api/v1/workspace")).rejects.toThrow(TypeError);
-  const response = await fetchPreview("/api/v1/model-connections", { method: "POST", body: "{}" });
+  // The metered model test is never served: the preview answers only synthetic, free reads.
+  const response = await fetchPreview("/api/v1/model-connections/conn-anthropic/test", {
+    method: "POST",
+    body: "{}",
+  });
   expect(response.status).toBe(404);
   expect(await response.json()).toEqual({ error: "preview_unsupported" });
 });

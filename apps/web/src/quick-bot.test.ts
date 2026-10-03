@@ -1,39 +1,36 @@
-import type { Bot } from "@openbot/domain";
+import type { Bot, BotAccent } from "@openbot/domain";
 import { expect, it } from "vitest";
-import { freshAppearance, needsRoleSetup, nextBotName, QUICK_BOT_ROLE } from "./quick-bot";
+import {
+  BOT_ACCENTS,
+  freshAppearance,
+  needsRoleSetup,
+  QUICK_BOT_ROLE,
+  quickCreateFailure,
+} from "./quick-bot";
 
-const withLook = (head: "round" | "square" | "cat", accent: "green" | "blue" | "yellow" | "red") =>
+const withLook = (head: "round" | "square" | "cat", accent: BotAccent) =>
   ({ appearance: { head, accent, body: "classic", mobility: "feet", accessory: "none" } }) as Pick<
     Bot,
     "appearance"
   >;
 
-it("numbers the default name past the taken ones", () => {
-  expect(nextBotName([])).toBe("新建 Bot");
-  expect(nextBotName([{ name: "新建 Bot" }, { name: "新建 Bot 2" }])).toBe("新建 Bot 3");
-  expect(nextBotName([{ name: "新建 Bot" }], 1)).toBe("新建 Bot 3");
-});
-
 it("prefers a head and colour the team is not using yet", () => {
-  const team = [
-    withLook("round", "green"),
-    withLook("round", "blue"),
-    withLook("round", "yellow"),
-    withLook("round", "red"),
-    withLook("square", "green"),
-    withLook("square", "blue"),
-    withLook("square", "yellow"),
-    withLook("square", "red"),
-    withLook("cat", "green"),
-    withLook("cat", "blue"),
-    withLook("cat", "yellow"),
-  ];
-  expect(freshAppearance(team, () => 0)).toMatchObject({ head: "cat", accent: "red" });
-  expect(freshAppearance([], () => 0.99)).toMatchObject({ head: "cat", accent: "red" });
+  const heads = ["round", "square", "cat"] as const;
+  const team = heads.flatMap((head) => BOT_ACCENTS.map((accent) => withLook(head, accent)));
+  team.pop();
+  expect(freshAppearance(team, () => 0)).toMatchObject({ head: "cat", accent: "slate" });
+  expect(freshAppearance([], () => 0.99)).toMatchObject({ head: "cat", accent: "slate" });
 });
 
 it("recognises Bots that still need a role", () => {
   expect(needsRoleSetup({ role: QUICK_BOT_ROLE })).toBe(true);
+  expect(needsRoleSetup({ role: "还没有分工" })).toBe(true);
   expect(needsRoleSetup({ role: "信息 · 竞品研究" })).toBe(false);
   expect(needsRoleSetup(undefined)).toBe(false);
+});
+
+it("explains why 创建新 Bot failed without promising nothing was created", () => {
+  expect(quickCreateFailure(new Error("quick_bot_name_exhausted"))).toContain("都被占用");
+  expect(quickCreateFailure(new Error("model_connection_disabled"))).toContain("默认模型");
+  expect(quickCreateFailure(new TypeError("Failed to fetch"))).toContain("先看看侧栏");
 });

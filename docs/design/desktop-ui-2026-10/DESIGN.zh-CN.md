@@ -80,7 +80,7 @@
   **Relay**（耳罩）、**Scout**（猫耳）。保存的头型 round → Round、square → Relay、cat → Scout。v3 把
   Relay 的脸宽从 62 调到 66。
 - **下颌色**，八种明度对齐的颜色：绿 `#91CF4B`、蓝 `#5F7CDE`、琥珀 `#DFAD4F`、珊瑚 `#E0785C`、紫
-  `#9C7FE3`、青 `#3FB4A6`、粉 `#E57BA8`、灰 `#8C98A8`。后四种需要 C10，在那之前只提供前四种。
+  `#9C7FE3`、青 `#3FB4A6`、粉 `#E57BA8`、灰 `#8C98A8`。服务电脑接受全部八种（C10）；一键新建的 Bot 从八种里挑。
 - **没有外框。** 任何地方的头像后面都不加底板、描边、边框或背景。
 - 尺寸：档案 96，右栏 88，启动 72，侧栏行与成员 40，消息 32，标题胶囊 24，菜单与提及 16–20。32px 以下
   用小尺寸稿：眼睛和天线球加大、猫耳圆钝、去掉耳罩彩条。
@@ -140,11 +140,11 @@
 | Slash | `ChannelWorkspace.tsx` 输入框菜单 | 已实现 |
 | Settings、SettingsNav、Settings* | `DesktopSettingsScreen.tsx`、`Settings*.tsx` | 已实现 |
 | Plugins | `PluginsDialog.tsx`、`PluginManagerPanel.tsx` | 已实现 |
-| Avatar、Avatars、GroupAvatar、GroupAvatars | `RobotAvatar.tsx`、`GroupAvatar.tsx` | 已实现；紫、青、粉、灰等 C10 |
+| Avatar、Avatars、GroupAvatar、GroupAvatars | `RobotAvatar.tsx`、`GroupAvatar.tsx` | 已实现；八种颜色 |
 | Launch、LaunchMotion、Welcome、Install、Connect、Login、ModelSetup、WorkerSetup | `Onboarding.tsx` 与各设置页面 | 已实现 |
-| TaskCards、TaskInspector | `TaskCard.tsx`、`TaskSheet.tsx` | 已完成；步数等 C13 |
-| Dialog* | `Dialog.tsx` 框架；分享、分享 Bot 模板、导入、删除、配对工作电脑、连接模型服务 | 已完成；连接模型服务在 C17 之前保留列表和编辑区 |
-| WorkSupervision、EmptyWorkspace | `WorkTasksScreen.tsx`、`EmptyWorkspace.tsx` | 已完成；步数等 C13 |
+| TaskCards、TaskInspector | `TaskCard.tsx`、`TaskSheet.tsx` | 已完成；任务卡显示服务电脑报告的步数（C13） |
+| Dialog* | `Dialog.tsx` 框架；分享、分享 Bot 模板、导入、删除、配对工作电脑、连接模型服务 | 已完成；连接模型服务一次编辑一个连接：免费读取模型列表、默认模型、断开（C17） |
+| WorkSupervision、EmptyWorkspace | `WorkTasksScreen.tsx`、`EmptyWorkspace.tsx` | 已完成；任务监督的步数还没接（Work 任务报告的是动作，不是 Run 摘要） |
 
 ## 第 22 步设计（2026-10-02 已通过）
 
