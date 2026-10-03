@@ -1,4 +1,5 @@
 import type { PortableEmployeeProfileSummary, PortableEmployeeSkillSummary } from "@openbot/domain";
+import "./PortableEmployeeReview.css";
 
 export function PortableProfileSummaryCard({
   employee,

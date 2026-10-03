@@ -1,6 +1,7 @@
 import type { Artifact } from "@openbot/domain";
 import { type ReactNode, useState } from "react";
 import { getArtifactShellSaver } from "../artifact-shell-save";
+import "./ArtifactCard.css";
 
 export function ArtifactCard({
   artifact,

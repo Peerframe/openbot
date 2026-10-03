@@ -1,0 +1,36 @@
+/* ArtifactCard: a task output with its type icon and download link. */
+.artifact-document-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft, #f2f4f6);
+  color: var(--text-muted, #637082);
+  font-size: 11px;
+  font-weight: 600;
+}
+.artifact-card-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.artifact-card-label strong,
+.artifact-card-label small {
+  display: block;
+}
+.artifact-card-label strong {
+  font-size: 12px;
+}
+.artifact-card-label small {
+  margin-top: 5px;
+  color: var(--text-muted, #637082);
+  font-size: 10px;
+}
+.artifact-save-notice {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}

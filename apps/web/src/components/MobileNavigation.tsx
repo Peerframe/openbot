@@ -3,6 +3,7 @@ import { indexActiveRunsByBot, runStatusLabel } from "../run-state";
 import { ApprovalCard } from "./ApprovalCard";
 import { ApprovalIcon, BotIcon, HashIcon, NodeIcon, PlusIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
+import "./MobileNavigation.css";
 
 export type MobilePanel = "channels" | "bots" | "approvals" | undefined;
 

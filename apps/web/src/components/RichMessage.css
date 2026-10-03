@@ -1,0 +1,60 @@
+/* RichMessage: Markdown in messages — paragraphs, lists, code and tables. */
+.rich-message p {
+  white-space: pre-wrap;
+}
+.rich-message h3 {
+  font-size: 13px;
+}
+.rich-message ul {
+  padding-left: 20px;
+}
+.rich-table-wrap {
+  max-width: min(680px, calc(100vw - 470px));
+  overflow-x: auto;
+  margin-top: 10px;
+  border: 1px solid #e0e3e7;
+  border-radius: 7px;
+}
+.rich-message table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.rich-message th,
+.rich-message td {
+  min-width: 100px;
+  padding: 9px 11px;
+  border-right: 1px solid #e8eaed;
+  border-bottom: 1px solid #e8eaed;
+  text-align: left;
+  vertical-align: top;
+}
+.rich-message th {
+  color: #5c646d;
+  background: #f3f5f7;
+  font-size: 10px;
+}
+.rich-message tr:last-child td {
+  border-bottom: 0;
+}
+.rich-message th:last-child,
+.rich-message td:last-child {
+  border-right: 0;
+}
+@media (max-width: 1250px) {
+  .rich-table-wrap {
+    max-width: calc(100vw - 590px);
+  }
+}
+@media (max-width: 960px) {
+  .rich-table-wrap {
+    max-width: calc(100vw - 310px);
+  }
+}
+@media (max-width: 720px) {
+  .rich-table-wrap {
+    max-width: calc(100vw - 94px);
+  }
+}

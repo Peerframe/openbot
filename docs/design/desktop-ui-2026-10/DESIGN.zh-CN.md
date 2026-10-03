@@ -172,10 +172,17 @@
 `channel-work-item`、`run-inspector`、`native-run-controls`（第 19 步），`bot-identity-builder`、`appearance-grid`（第 16 步）。
 
 旧样式表：第 23f 步在 65 个设计预览状态里逐条测量了剩下的旧规则，删除了没有作用或被完全覆盖的规则（约 120 条），
-也删除了 `components/destinations.css`。`styles.css`、`workspace-shell.css`、`workspace-preferences.css`、
-`desktop-workspace.css`、`conversation-feedback.css`、`desktop-ui-refresh.css` 和 `settings-plugin-refresh.css`
-里剩下的约 1,600 行仍在为现有界面起作用，或者属于预览到达不了的状态（出错、读取中、Markdown 表格、窄窗口下的手机导航）。
-把它们搬进各组件自己的样式表是后续工作。
+也删除了 `components/destinations.css`。第 27 步又退役了 7 个旧样式表（`styles.css`、`workspace-shell.css`、
+`workspace-preferences.css`、`desktop-workspace.css`、`conversation-feedback.css`、`desktop-ui-refresh.css`、
+`settings-plugin-refresh.css`）。
+- 只被一个组件用到的规则，搬进了那个组件的样式表，放在它自己的规则前面。新增了 7 个组件样式表：
+  `ApprovalCard`、`ArtifactCard`、`MobileNavigation`、`NodeManagerDialog`、`PortableEmployeeReview`、
+  `RichMessage`、`SettingsSections`。
+- 元素样式和多个组件共用的规则（包括 `App.tsx` 自己的外壳布局）放进两个全局文件：`base.css` 在
+  `primitives.css` 之前加载，`shell.css` 在它之后加载，原来的先后顺序保持不变。
+- 删掉了一条已经不起作用的规则。
+- 在 68 个设计预览状态里做了计算样式扫描，搬之前和搬之后一致；差别只有时钟文字的宽度，以及已知的设置窗口
+  居中外边距波动。
 
 已删除：`CreateBotDialog`、`CreateChannelDialog`（第 16 步）；`EmployeeProfileRail`（第 17 步）；
 `RunInspector`、`RunProgressPanel`、`NativeRunControls`、`RunSteering`（第 19 步）；独立的「例行任务」和
