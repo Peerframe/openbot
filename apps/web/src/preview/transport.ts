@@ -396,7 +396,44 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
         const list = world.messages[m[1] ?? ""] ?? [];
         list.push(message);
         world.messages[m[1] ?? ""] = list;
-        return json({ message });
+        const target = channel(m[1] ?? "");
+        const botId = String(
+          body.botId ??
+            target?.directBotId ??
+            ((target?.botIds as string[]) ?? [])[0] ??
+            "b-research",
+        );
+        const run = {
+          id: `r-${Date.now()}`,
+          channelId: m[1],
+          botId,
+          title: message.content.slice(0, 40),
+          instruction: message.content,
+          sourceMessageId: message.id,
+          executionProfile: "none",
+          status: "completed",
+          createdAt: message.createdAt,
+          updatedAt: message.createdAt,
+        };
+        // A short synthetic reply, so the Telegram-like arrival can be seen in the preview.
+        setTimeout(() => {
+          const reply = {
+            id: `m-reply-${Date.now()}`,
+            channelId: m[1],
+            authorType: "bot",
+            authorId: botId,
+            runId: run.id,
+            content: "好的，已经记下了。",
+            createdAt: new Date().toISOString(),
+          };
+          list.push(reply);
+          emitChannelEvent(m[1] ?? "", {
+            type: "message.created",
+            channelId: m[1],
+            message: reply,
+          });
+        }, 1200);
+        return json({ message, run });
       },
     ],
     [
@@ -684,6 +721,14 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
   };
 }
 
+/** Open synthetic event streams, so preview routes can push channel events. */
+const previewSources = new Set<EventTarget & { url: string }>();
+function emitChannelEvent(channelId: string, event: { type: string } & Record<string, unknown>) {
+  for (const source of previewSources)
+    if (source.url.includes(`/channels/${channelId}/events`))
+      source.dispatchEvent(new MessageEvent(event.type, { data: JSON.stringify(event) }));
+}
+
 /** Install the preview transport. Call before importing any product module. */
 export function installPreviewTransport(world: PreviewWorld) {
   window.fetch = createPreviewFetch(location.origin, world);
@@ -701,6 +746,7 @@ export function installPreviewTransport(world: PreviewWorld) {
     onmessage: EventSource["onmessage"] = null;
     constructor(readonly url: string) {
       super();
+      previewSources.add(this);
       // A live stream that stays quiet: the header shows 实时 and nothing changes on its own.
       setTimeout(() => {
         if (this.readyState === 2) return;
@@ -712,6 +758,7 @@ export function installPreviewTransport(world: PreviewWorld) {
     }
     close() {
       this.readyState = 2;
+      previewSources.delete(this);
     }
   }
   window.EventSource = PreviewEventSource as unknown as typeof EventSource;

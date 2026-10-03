@@ -23,6 +23,29 @@
   }
 }
 
+@keyframes ob-message-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+}
+@keyframes ob-view-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes ob-message-flash {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  20%,
+  60% {
+    background-color: rgb(255 214 10 / 18%);
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   /* Press and hover feedback; :where() keeps component rules in charge of everything else. */
   :root:not([data-reduced-motion="true"])
@@ -88,5 +111,30 @@
   /* Sidebar and rail slide open and closed instead of jumping. */
   :root:not([data-reduced-motion="true"]) .app-shell.desktop-workspace {
     transition: grid-template-columns var(--ob-motion-panel) var(--ob-ease-out);
+  }
+
+  /* Conversation (Telegram-like): a new message rises from its own side; switching to another
+     conversation or page fades it in; a jumped-to message flashes once. */
+  :root:not([data-reduced-motion="true"]) .message-row.is-arriving .message-content {
+    transform-origin: bottom left;
+    animation: ob-message-in 220ms var(--ob-ease-out);
+  }
+  :root:not([data-reduced-motion="true"]) .message-row.human.is-arriving .message-content {
+    transform-origin: bottom right;
+  }
+  :root:not([data-reduced-motion="true"])
+    .app-shell
+    :is(.workspace-main, .workspace-destination, .workspace-details > *) {
+    animation: ob-view-in 160ms var(--ob-ease-out);
+  }
+  :root:not([data-reduced-motion="true"]) .message-row.is-flash {
+    border-radius: 14px;
+    animation: ob-message-flash 1.4s ease;
+  }
+  :root:not([data-reduced-motion="true"]) .message-action-bar {
+    transition: opacity var(--ob-motion-fast) ease;
+  }
+  :root:not([data-reduced-motion="true"]) .message-composer textarea {
+    transition: height var(--ob-motion-fast) ease;
   }
 }

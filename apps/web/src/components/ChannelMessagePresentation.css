@@ -717,12 +717,13 @@
   display: block;
   width: calc(100% - 48px);
   max-width: none;
-  min-height: 56px;
-  margin: 12px 24px 22px;
-  /* One row: 38px + button on the left; microphone and 40px send button on the right. */
-  padding: 8px 104px 8px 58px;
+  /* Compact, chat-app composer (owner feedback 2026-10-03): one 48px row with a 34px + button on
+     the left, the microphone and a 34px send button on the right. */
+  min-height: 48px;
+  margin: 10px 24px 18px;
+  padding: 6px 92px 6px 50px;
   border: 1px solid var(--ob-divider);
-  border-radius: 28px;
+  border-radius: 24px;
   background: #fff;
   box-shadow: 0 2px 10px rgb(0 0 0 / 4%);
 }
@@ -734,7 +735,7 @@
   flex-wrap: wrap;
   gap: 4px;
   align-items: center;
-  min-height: 38px;
+  min-height: 34px;
 }
 .app-shell .channel-workspace.channel-native .message-composer textarea {
   flex: 1;
@@ -742,10 +743,10 @@
   width: auto;
   min-width: 110px;
   max-width: 100%;
-  min-height: 38px;
+  min-height: 34px;
   max-height: 200px;
   border: 0;
-  padding: 7px 0;
+  padding: 5px 0;
   background: transparent;
   resize: none;
   font-family: inherit;
@@ -766,12 +767,12 @@
 }
 .app-shell .channel-workspace.channel-native .composer-add-menu {
   position: absolute;
-  left: 10px;
-  bottom: 8px;
+  left: 7px;
+  bottom: 6px;
 }
 .app-shell .channel-workspace.channel-native .composer-add {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   display: grid;
   place-items: center;
@@ -787,17 +788,17 @@
 }
 .app-shell .channel-workspace.channel-native .voice-start {
   position: absolute;
-  right: 56px;
-  bottom: 10px;
+  right: 48px;
+  bottom: 6px;
 }
 .app-shell .channel-workspace.channel-native .composer-send {
   position: absolute;
-  right: 8px;
-  bottom: 7px;
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  min-height: 40px;
+  right: 6px;
+  bottom: 6px;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
   padding: 0;
   display: grid;
   place-items: center;
@@ -811,8 +812,8 @@
   color: #fff;
 }
 .app-shell .channel-workspace.channel-native .composer-send svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 /* Composer artboard: content stacks (reply, attachments, count, text) above a button row. */
 .app-shell .channel-workspace.channel-native .message-composer.is-expanded {

@@ -80,7 +80,9 @@ updated.
 | 28 | README and interface pictures — **merged** | Avatars, AppIcon | C10 | New README banner (the Round head and a pixel wordmark, drawn by `?scene=banner`), a current channel picture, the avatar sheet, and `INTERFACE.md` §5 rewritten for the head-and-jaw identity |
 | 29 | Storage follow-ups — **merged** | ChannelFilesTrash, SettingsStorage | C22, C23, C24 | 清空回收站… in 存储空间 with the second confirmation and same-key retry; per-Bot browser data measured on request; 查看引用 › jumps to the message (reading older pages, bounded) or opens 任务详情 |
 | 30 | Website demo and dead code — **merged** | — | C13 | The demo's sidebar follows the product width and its fixed runs report step counts (H7); the last unreachable module is deleted (H9) |
-| 31 | Close-out — **in review** | — | — | Docs brought up to date with what is built, contracts for C9 and C11 recorded for Codex, H8 reviewed, CJK spacing around names, and the C16 icon test's budget |
+| 31 | Close-out — **merged** | — | — | Docs brought up to date with what is built, contracts for C9 and C11 recorded for Codex, H8 reviewed, CJK spacing around names, and the C16 icon test's budget |
+| 32 | Owner feedback: settings, popovers, scale and motion — **merged** | Settings, Sidebar, New, Slash | — | Settings search and close fixed, overlay scrollbars, plugin tiles, no title on New, 「+」 closes outside, @ with plugins at the caret, Desktop at 1200×780 and 90%, the motion layer |
+| 33 | Telegram-like conversation — **in review** | Main, Composer | — | Arriving messages rise in, views fade in, glide to latest and to quotes with a flash, compact 48px composer |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 
