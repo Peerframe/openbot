@@ -21,6 +21,7 @@ import {
   type WebContents,
 } from "electron";
 import { originalAttachmentSaveDialog } from "./attachment-save-dialog.js";
+import { colorSchemeBackground, DesktopColorSchemeController } from "./color-scheme.js";
 import { discardBody } from "./bounded-response.js";
 import { FileDesktopConnectionStore } from "./connection-config.js";
 import { DesktopConnectionController } from "./connection-controller.js";
@@ -50,6 +51,7 @@ import { desktopProfileCompatibility } from "./profile-compatibility.js";
 import { launchPythonProductServer } from "./python-server.js";
 import { DesktopReportSaver } from "./report-save.js";
 import {
+  DESKTOP_COLOR_SCHEME_CHANGED_CHANNEL,
   DESKTOP_CONFIGURE_SERVER_CHANNEL,
   DESKTOP_CONNECTION_STATE_CHANNEL,
   DESKTOP_ENABLE_LOCAL_WORKER_CHANNEL,
@@ -76,6 +78,7 @@ let quitting = false;
 let mainWindow: BrowserWindow | undefined;
 let desktopSession: Session | undefined;
 let sidebarMaterial: SidebarMaterialController | undefined;
+let colorScheme: DesktopColorSchemeController | undefined;
 let platformController: DesktopPlatformController | undefined;
 let updateController: DesktopUpdateController | undefined;
 let tray: Tray | undefined;
@@ -163,6 +166,7 @@ async function initializePlatform(): Promise<void> {
       await nativeServer?.stop();
       updateController?.close();
       platformController?.close();
+      colorScheme?.close();
       quitting = true;
     },
   );
@@ -207,16 +211,29 @@ async function initializePlatform(): Promise<void> {
       registerShortcut: (value) => globalShortcut.register(value, focusMainWindow),
       unregisterShortcut: (value) => globalShortcut.unregister(value),
       setBadge: (count) => app.setBadgeCount(count),
-      changed: (preferences) => updateController?.automatic(preferences.automaticUpdates),
+      changed: (preferences) => {
+        colorScheme?.apply();
+        updateController?.automatic(preferences.automaticUpdates);
+      },
     },
   );
+  colorScheme = new DesktopColorSchemeController(nativeTheme, platformController, (state) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setBackgroundColor(colorSchemeBackground(state));
+      sidebarMaterial?.refresh();
+      mainWindow.webContents.send(DESKTOP_COLOR_SCHEME_CHANGED_CHANNEL, state);
+    }
+  });
   await platformController.initialize();
+  // Load/apply before BrowserWindow construction so its first native paint uses the resolved color.
+  colorScheme.apply();
   registerPlatformIpc(
     ipcMain,
     platformController,
     updateController,
     () => mainWindow?.webContents,
     () => mainWindow?.isFocused() === true,
+    colorScheme,
   );
 }
 
@@ -448,8 +465,6 @@ function registerDesktopIpc(
 }
 
 async function createMainWindow(activeSession: Session): Promise<void> {
-  // Match the renderer's light palette; this is app-local and leaves macOS settings intact.
-  nativeTheme.themeSource = "light";
   const preloadPath = join(app.getAppPath(), "dist", "preload.cjs");
   const window = new BrowserWindow({
     // Preserve native macOS controls while letting the sidebar extend into window chrome.
@@ -465,7 +480,7 @@ async function createMainWindow(activeSession: Session): Promise<void> {
         }
       : {}),
     autoHideMenuBar: true,
-    backgroundColor: "#ffffff",
+    backgroundColor: colorSchemeBackground(colorScheme!.state()),
     // Owner feedback 2026-10-03: the artboards are drawn for a 1440×900 canvas, which felt too
     // large in a laptop window. Open smaller and draw at 90%; 视图 › 实际大小 restores 100%.
     height: 780,
@@ -512,6 +527,7 @@ async function createMainWindow(activeSession: Session): Promise<void> {
   const material = new SidebarMaterialController({
     platform: process.platform,
     window,
+    backgroundColor: () => colorSchemeBackground(colorScheme!.state()),
     accessibility: () => ({
       reducedTransparency: nativeTheme.prefersReducedTransparency,
       highContrast: nativeTheme.shouldUseHighContrastColors,
@@ -745,6 +761,7 @@ app.on("before-quit", (event) => {
   quitting = true;
   updateController?.close();
   platformController?.close();
+  colorScheme?.close();
   if (nativeServer === undefined) return;
   event.preventDefault();
   void nativeServer.stop().finally(() => app.quit());

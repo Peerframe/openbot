@@ -1,3 +1,4 @@
+import type { DesktopColorSchemeController } from "./color-scheme.js";
 import type { DesktopUpdateController } from "./desktop-updates.js";
 import {
   type DesktopIpcSender,
@@ -16,8 +17,15 @@ export function registerPlatformIpc(
   updates: DesktopUpdateController,
   contents: () => ExpectedDesktopContents | undefined,
   focused: () => boolean,
+  colorScheme?: DesktopColorSchemeController,
 ): void {
   const operations: Record<string, (...values: unknown[]) => unknown> = {
+    ...(colorScheme
+      ? {
+          "get-color-scheme": () => colorScheme.state(),
+          "set-color-scheme": (value: unknown) => colorScheme.set(value),
+        }
+      : {}),
     "get-platform-state": () => platform.state(),
     "set-platform-preferences": (value) => platform.update(value),
     "set-unread-badge": (value) => platform.badge(value),
@@ -32,11 +40,18 @@ export function registerPlatformIpc(
     ipc.handle(channel, (event, ...values) => {
       if (!isTrustedDesktopIpcSender(event, contents()))
         throw new Error("Desktop IPC sender is not allowed.");
-      const mutation = ["set-platform-preferences", "download-update", "install-update"].includes(
-        name,
-      );
+      const mutation = [
+        "set-platform-preferences",
+        "set-color-scheme",
+        "download-update",
+        "install-update",
+      ].includes(name);
       if (mutation && !focused()) throw new Error("Desktop window must be focused.");
-      const argumentsRequired = ["set-platform-preferences", "set-unread-badge"].includes(name)
+      const argumentsRequired = [
+        "set-platform-preferences",
+        "set-color-scheme",
+        "set-unread-badge",
+      ].includes(name)
         ? 1
         : 0;
       if (values.length !== argumentsRequired)

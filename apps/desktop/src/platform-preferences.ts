@@ -1,3 +1,4 @@
+import { parseColorScheme } from "./color-scheme.js";
 import { RestrictedJsonFile } from "./restricted-json-file.js";
 import type { DesktopPlatformPreferences, DesktopPlatformState } from "./runtime-contract.js";
 
@@ -8,6 +9,7 @@ export const DEFAULT_PLATFORM_PREFERENCES: Readonly<DesktopPlatformPreferences> 
   globalShortcut: "",
   showDockBadge: true,
   automaticUpdates: false,
+  colorScheme: "system",
 });
 
 export function parsePlatformPreferences(value: unknown): DesktopPlatformPreferences {
@@ -15,8 +17,10 @@ export function parsePlatformPreferences(value: unknown): DesktopPlatformPrefere
     throw new TypeError("Invalid Desktop preferences.");
   const candidate = value as Record<string, unknown>;
   if (
-    Object.keys(candidate).sort().join(",") !==
-    "automaticUpdates,globalShortcut,launchAtLogin,runInBackground,showDockBadge"
+    Object.keys(candidate)
+      .filter((key) => key !== "colorScheme")
+      .sort()
+      .join(",") !== "automaticUpdates,globalShortcut,launchAtLogin,runInBackground,showDockBadge"
   )
     throw new TypeError("Unknown Desktop preferences.");
   for (const key of ["launchAtLogin", "runInBackground", "showDockBadge", "automaticUpdates"]) {
@@ -45,12 +49,16 @@ export function parsePlatformPreferences(value: unknown): DesktopPlatformPrefere
     )
       throw new TypeError("Invalid Desktop shortcut.");
   }
+  const colorScheme = Object.hasOwn(candidate, "colorScheme")
+    ? parseColorScheme(candidate.colorScheme)
+    : "system";
   return Object.freeze({
     launchAtLogin: candidate.launchAtLogin as boolean,
     runInBackground: candidate.runInBackground as boolean,
     globalShortcut: shortcut,
     showDockBadge: candidate.showDockBadge as boolean,
     automaticUpdates: candidate.automaticUpdates as boolean,
+    colorScheme,
   });
 }
 
@@ -137,6 +145,9 @@ export class DesktopPlatformController {
     let next: DesktopPlatformPreferences;
     try {
       next = parsePlatformPreferences(value);
+      // Older renderer settings commands omit this field; they must not reset a saved theme.
+      if (!Object.hasOwn(value as object, "colorScheme"))
+        next = { ...next, colorScheme: this.preferences.colorScheme ?? "system" };
     } catch {
       return { ...this.state(), status: "invalid" };
     }

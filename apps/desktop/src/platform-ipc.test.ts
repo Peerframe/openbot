@@ -1,3 +1,5 @@
+import { EventEmitter } from "node:events";
+import { DesktopColorSchemeController } from "./color-scheme.js";
 import { describe, expect, it, vi } from "vitest";
 import { DesktopUpdateController } from "./desktop-updates.js";
 import type { DesktopIpcSender } from "./ipc-security.js";
@@ -27,6 +29,11 @@ describe("native platform IPC authority", () => {
         changed: vi.fn(),
       },
     );
+    const theme = Object.assign(new EventEmitter(), {
+      themeSource: "system" as const,
+      shouldUseDarkColors: false,
+    });
+    const color = new DesktopColorSchemeController(theme, platform, vi.fn());
     registerPlatformIpc(
       {
         handle: (name, fn) => {
@@ -43,7 +50,10 @@ describe("native platform IPC authority", () => {
       ),
       () => contents,
       () => focused,
+      color,
     );
+    const themeRead = handlers.get("openbot:get-color-scheme");
+    const themeSet = handlers.get("openbot:set-color-scheme");
     const read = handlers.get("openbot:get-platform-state");
     const change = handlers.get("openbot:set-platform-preferences");
     expect(() => read?.({ sender: {}, senderFrame: frame })).toThrow();
@@ -51,11 +61,20 @@ describe("native platform IPC authority", () => {
       read?.({ ...event, senderFrame: { top: frame, url: DESKTOP_ENTRY_URL } }),
     ).toThrow();
     expect(() => read?.(event, "https://attacker.example")).toThrow();
+    expect(themeRead?.(event)).toEqual({ scheme: "system", resolved: "light" });
+    expect(() => themeRead?.({ sender: {}, senderFrame: frame })).toThrow();
+    expect(() =>
+      themeSet?.({ ...event, senderFrame: { top: frame, url: DESKTOP_ENTRY_URL } }, "dark"),
+    ).toThrow();
+    expect(() => themeSet?.(event, "dark", "surplus")).toThrow();
+    await expect(themeSet?.(event, "auto")).rejects.toThrow("Invalid");
     focused = false;
     expect(() => change?.(event, DEFAULT_PLATFORM_PREFERENCES)).toThrow();
+    expect(() => themeSet?.(event, "dark")).toThrow("focused");
     expect(save).not.toHaveBeenCalled();
     focused = true;
     await change?.(event, DEFAULT_PLATFORM_PREFERENCES);
     expect(save).toHaveBeenCalledTimes(1);
+    color.close();
   });
 });

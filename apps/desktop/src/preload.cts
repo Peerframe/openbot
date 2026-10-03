@@ -1,4 +1,6 @@
 import type {
+  DesktopColorScheme,
+  DesktopColorSchemeState,
   DesktopNavigationCommand,
   DesktopNavigationMenuState,
   DesktopNotificationInput,
@@ -51,6 +53,25 @@ const runtimeInfo = Object.freeze({
   shellVersion,
 });
 const bridge: OpenBotDesktopBridge = Object.freeze({
+  getColorScheme: () => ipcRenderer.invoke("openbot:get-color-scheme"),
+  setColorScheme: (scheme: DesktopColorScheme) => {
+    if (!isColorScheme(scheme))
+      return Promise.reject(new TypeError("Invalid Desktop color scheme."));
+    if (
+      !(navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation
+        ?.isActive
+    )
+      return Promise.reject(new Error("Desktop color scheme requires a user gesture."));
+    return ipcRenderer.invoke("openbot:set-color-scheme", scheme);
+  },
+  onColorSchemeChanged: (listener: (state: DesktopColorSchemeState) => void) => {
+    if (typeof listener !== "function") return () => {};
+    const handleChange = (_event: Electron.IpcRendererEvent, value: unknown) => {
+      if (isColorSchemeState(value)) listener({ scheme: value.scheme, resolved: value.resolved });
+    };
+    ipcRenderer.on("openbot:color-scheme-changed", handleChange);
+    return () => ipcRenderer.removeListener("openbot:color-scheme-changed", handleChange);
+  },
   getPlatformState: () => ipcRenderer.invoke("openbot:get-platform-state"),
   setPlatformPreferences: (value: DesktopPlatformPreferences) => {
     if (
@@ -64,6 +85,7 @@ const bridge: OpenBotDesktopBridge = Object.freeze({
       globalShortcut: value.globalShortcut,
       showDockBadge: value.showDockBadge,
       automaticUpdates: value.automaticUpdates,
+      ...(value.colorScheme === undefined ? {} : { colorScheme: value.colorScheme }),
     });
   },
   setUnreadBadge: (count: number) => ipcRenderer.invoke("openbot:set-unread-badge", count),
@@ -288,5 +310,18 @@ function isEmployeeTemplateSaveInput(value: unknown): value is EmployeeTemplateS
     new Date(input.generatedAt).toISOString() === input.generatedAt &&
     typeof input.downloadReviewToken === "string" &&
     /^[a-f0-9]{64}$/u.test(input.downloadReviewToken)
+  );
+}
+
+function isColorScheme(value: unknown): value is DesktopColorScheme {
+  return value === "system" || value === "light" || value === "dark";
+}
+function isColorSchemeState(value: unknown): value is DesktopColorSchemeState {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const state = value as Record<string, unknown>;
+  return (
+    Object.keys(state).sort().join(",") === "resolved,scheme" &&
+    isColorScheme(state.scheme) &&
+    (state.resolved === "light" || state.resolved === "dark")
   );
 }
