@@ -513,7 +513,11 @@ export function DesktopSettingsScreen({
                 </SettingsWorkspaceGate>
               )}
               {section === "audit" && <AuditLogSettings />}
-              {section === "storage" && <SettingsStorage />}
+              {section === "storage" && (
+                <SettingsWorkspaceGate label="存储空间">
+                  {(workspace) => <SettingsStorage bots={workspace.bots} />}
+                </SettingsWorkspaceGate>
+              )}
               {section === "browser" && (
                 <SettingsWorkspaceGate label="员工浏览器">
                   {(workspace) => <SettingsBrowser bots={workspace.bots} />}

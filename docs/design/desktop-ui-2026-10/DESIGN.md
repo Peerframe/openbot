@@ -169,7 +169,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | TaskCards, TaskInspector | `TaskCard.tsx`, `TaskSheet.tsx` | Built; cards show the 服务电脑's step count (C13) |
 | Dialog* | `Dialog.tsx` frame; Share, Export, Import, DeleteIdentity, NodeManager and ModelConnections dialogs | Built; 连接模型服务 edits one connection with the free model-list check, a default model and 断开 (C17) |
 | WorkSupervision, EmptyWorkspace | `WorkTasksScreen.tsx`, `EmptyWorkspace.tsx` | Built; 任务监督 names the current step from the latest durable Work action |
-| ChannelFilesTrash, SettingsStorage | `AttachmentsManager.tsx`, `MessageAttachments.tsx`, `SettingsStorage.tsx` | Built (C21). The 服务电脑 cleans the 回收站 per channel, so 存储空间 links to each channel instead of a global 清空回收站…; browser data is not measured, so it is not a category; references are counts only, so there is no 查看引用. The fixes are C22–C24 ([research](../../research/storage-cleanup-follow-ups.md)) |
+| ChannelFilesTrash, SettingsStorage | `AttachmentsManager.tsx`, `MessageAttachments.tsx`, `SettingsStorage.tsx`, `SettingsBrowser.tsx` | Built (C21–C24). 存储空间 offers 清空回收站… for every channel, measures each Bot's browser data on request (shown apart from the 服务电脑 total; 「量不出」 when the working computer cannot measure), and 查看引用 › lists the referencing messages and tasks |
 
 ## Designed in step 22 (approved 2026-10-02)
 

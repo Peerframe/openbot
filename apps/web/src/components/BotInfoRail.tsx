@@ -206,6 +206,7 @@ export function BotInfoRail({
                 )
                 .sort((left, right) => right.createdAt.localeCompare(left.createdAt))}
               botNameForRun={() => bot.name}
+              botName={(botId) => (botId === bot.id ? bot.name : undefined)}
               channelName={bot.name}
             />
           ) : (

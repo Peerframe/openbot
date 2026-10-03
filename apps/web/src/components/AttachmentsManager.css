@@ -171,3 +171,61 @@
   color: #8e8e93;
   font-size: 12px;
 }
+/* C24 查看引用: the messages and tasks that keep a 回收站 file, under its row. */
+.channel-files-references-toggle {
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+.channel-files-references-toggle:hover {
+  color: var(--ob-text);
+}
+.channel-files-references {
+  grid-column: 2 / -1;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border-radius: 12px;
+  background: var(--ob-surface);
+}
+.channel-files-references.is-status,
+.channel-files-references .is-status {
+  padding: 8px 10px;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+}
+.channel-files-references button {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.channel-files-references button:hover:not(:disabled) {
+  background: var(--ob-fill);
+}
+.channel-files-references button:disabled {
+  cursor: default;
+}
+.channel-files-references strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+.channel-files-references small {
+  overflow: hidden;
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

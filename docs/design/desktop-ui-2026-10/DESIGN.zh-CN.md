@@ -145,7 +145,7 @@
 | TaskCards、TaskInspector | `TaskCard.tsx`、`TaskSheet.tsx` | 已完成；任务卡显示服务电脑报告的步数（C13） |
 | Dialog* | `Dialog.tsx` 框架；分享、分享 Bot 模板、导入、删除、配对工作电脑、连接模型服务 | 已完成；连接模型服务一次编辑一个连接：免费读取模型列表、默认模型、断开（C17） |
 | WorkSupervision、EmptyWorkspace | `WorkTasksScreen.tsx`、`EmptyWorkspace.tsx` | 已完成；任务监督按最新的 Work 动作显示当前步骤 |
-| ChannelFilesTrash、SettingsStorage | `AttachmentsManager.tsx`、`MessageAttachments.tsx`、`SettingsStorage.tsx` | 已完成（C21）。服务电脑按频道清空回收站，所以存储空间改为链接到各频道，不放全局的「清空回收站…」；浏览器数据量不到，所以不列这一类；引用只有次数，所以没有「查看引用」。修复见 C22–C24（[研究记录](../../research/storage-cleanup-follow-ups.zh-CN.md)） |
+| ChannelFilesTrash、SettingsStorage | `AttachmentsManager.tsx`、`MessageAttachments.tsx`、`SettingsStorage.tsx`、`SettingsBrowser.tsx` | 已完成（C21–C24）。存储空间可以一次「清空回收站…」；需要时按 Bot 测量浏览器数据（不计入服务电脑总量，量不出时显示「量不出」）；「查看引用 ›」列出引用文件的消息和任务 |
 
 ## 第 22 步设计（2026-10-02 已通过）
 

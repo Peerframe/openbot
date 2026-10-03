@@ -236,3 +236,73 @@ it("retries an unclear 清空回收站 with the same request key", async () => {
   expect(keys[1]).toBe(keys[0]);
   expect(document.body.textContent).toContain("已永久删除 1 个文件，释放 2 KB。");
 });
+
+it("lists who references a kept file and opens a message or task from it", async () => {
+  const kept = {
+    ...upload("u333", "渠道数据-8月.xlsx", "2026-09-18T00:00:00.000Z"),
+    id: "00000000-0000-4000-8000-000000000033",
+    referenceCount: { messages: 2, tasks: 1 },
+  };
+  listed = [kept];
+  vi.mocked(fetch).mockImplementation(async (url) =>
+    String(url).includes("/references")
+      ? Response.json({
+          messages: [
+            {
+              id: "m-1",
+              createdAt: "2026-09-18T02:10:00.000Z",
+              author: { kind: "bot", botId: "bot-1" },
+              preview: "整理好了",
+            },
+            {
+              id: "m-2",
+              createdAt: "2026-09-17T02:10:00.000Z",
+              author: { kind: "system" },
+              preview: "例行任务已开始",
+            },
+          ],
+          tasks: [
+            {
+              runId: "run-9",
+              title: "汇总渠道",
+              status: "completed",
+              createdAt: "2026-09-16T00:00:00.000Z",
+            },
+          ],
+          messageCount: 2,
+          taskCount: 1,
+          hasMore: false,
+        })
+      : Response.json({ attachments: listed }),
+  );
+  const showMessage = vi.fn();
+  const showTask = vi.fn();
+  const view = await renderComponent(
+    <AttachmentsManagerDialog
+      channelId="channel"
+      initialTab="trash"
+      botName={(id) => (id === "bot-1" ? "研究助理" : undefined)}
+      onShowMessage={showMessage}
+      onShowTask={showTask}
+      onClose={vi.fn()}
+    />,
+  );
+  views.push(view);
+  await interact(async () => undefined);
+  await interact(() => button("查看引用 ›").click());
+  await interact(async () => undefined);
+  const list = document.querySelector(".channel-files-references");
+  expect(
+    vi
+      .mocked(fetch)
+      .mock.calls.some(([url]) => String(url).endsWith(`${kept.id}/references?limit=20`)),
+  ).toBe(true);
+  expect(list?.textContent).toContain("研究助理");
+  expect(list?.textContent).toContain("系统消息");
+  expect(list?.textContent).toContain("汇总渠道");
+  const buttons = list?.querySelectorAll("button") ?? [];
+  await interact(() => (buttons[0] as HTMLButtonElement).click());
+  expect(showMessage).toHaveBeenCalledWith("m-1");
+  await interact(() => (buttons[2] as HTMLButtonElement).click());
+  expect(showTask).toHaveBeenCalledWith("run-9");
+});

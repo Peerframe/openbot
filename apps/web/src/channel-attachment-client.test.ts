@@ -6,6 +6,7 @@ import {
   EMPTY_DOCUMENT_EXTRACT_ERROR,
   EMPTY_PDF_EXTRACT_ERROR,
   getAttachmentImage,
+  getAttachmentReferences,
   getChannelAttachment,
   presentAttachmentProcessError,
   purgeAttachment,
@@ -147,6 +148,26 @@ describe("channel attachment display boundary", () => {
     expect(JSON.parse(String(fetchMock.mock.calls[2]?.[1]?.body))).toEqual({ requestKey: key });
     await expect(purgeAttachment(channel, "../escape")).rejects.toThrow("标识");
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+  it("reads a file's references from the scoped route and reports a purged file", async () => {
+    const references = { messages: [], tasks: [], messageCount: 0, taskCount: 0, hasMore: false };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json(references))
+      .mockResolvedValueOnce(
+        Response.json({ error: "attachment_purged", purged: true }, { status: 410 }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const signal = new AbortController().signal;
+    expect(await getAttachmentReferences(channel, id, signal)).toEqual(references);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      `/api/v1/channels/${channel}/attachments/${id}/references?limit=20`,
+    );
+    await expect(getAttachmentReferences(channel, id, signal)).rejects.toBeInstanceOf(
+      AttachmentPurgedError,
+    );
+    await expect(getAttachmentReferences(channel, "../x", signal)).rejects.toThrow("标识");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
   it("rejects denied metadata before locking or reading a hostile body", async () => {
     const pull = vi.fn(() => {

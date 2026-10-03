@@ -4,6 +4,7 @@ import { ApiError, maintainEmployeeBrowser } from "../api";
 import { EmployeeBrowser } from "./EmployeeBrowser";
 import { RobotAvatar } from "./RobotAvatar";
 import { SettingRow, SettingsGroup } from "./SettingsSections";
+import { formatStorageSize } from "./SettingsStorage";
 
 type Operation = "status" | "restart" | "clear";
 
@@ -63,7 +64,11 @@ export function SettingsBrowser({ bots }: { bots: Bot[] }) {
           {browserBots.map((bot) => {
             const result = results[bot.id];
             const state = result
-              ? `${result.paused ? "已暂停" : result.running ? "运行中" : "未运行"} · 主机 ${result.nodeId}`
+              ? `${result.paused ? "已暂停" : result.running ? "运行中" : "未运行"} · 主机 ${result.nodeId} · ${
+                  result.profileBytes === null
+                    ? "浏览器数据量不出"
+                    : `浏览器数据 ${formatStorageSize(result.profileBytes)}`
+                }`
               : "点「检查状态」查看";
             const working = busy?.startsWith(`${bot.id}:`) ?? false;
             return (

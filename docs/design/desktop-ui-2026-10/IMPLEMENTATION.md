@@ -77,6 +77,7 @@ updated.
 | 25 | Storage and cleanup — **merged** | ChannelFilesTrash, SettingsStorage | C21 | 永久删除 and 清空回收站 in 频道文件 with a second confirmation, referenced files kept, an unclear cleanup retried with the same request key; 「附件已永久删除」 in messages; 设置 › 存储空间 with measured categories, the 回收站, the opt-in 30-day purge and the largest channels |
 | 26 | Stage names and 任务监督 step counts — **merged** | TaskCards, TaskInspector, WorkSupervision | C13 | Chinese names for the 服务电脑's stage keys; 「第 N 步：…」 from the latest Work action |
 | 27 | Retire the legacy style layer — **in review** | — | — | The seven legacy sheets are gone: component rules beside their components, shared ones in `base.css` and `shell.css`, verified by a 68-state computed-style sweep |
+| 29 | Storage follow-ups — **in review** | ChannelFilesTrash, SettingsStorage | C22, C23, C24 | 清空回收站… in 存储空间 with the second confirmation and same-key retry; per-Bot browser data measured on request; 查看引用 › jumps to the message (reading older pages, bounded) or opens 任务详情 |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 
@@ -95,7 +96,7 @@ Done (merged into main 40cb3d2):
 | C7 | Owner time zone and default model for new Bots | Integrated |
 | C8 | Curated plugin catalog | Integrated |
 
-Done 2026-10-02 and 2026-10-03 (#147, #149, #150, #157–#161, #164, #165):
+Done 2026-10-02 and 2026-10-03 (#147, #149, #150, #157–#161, #164, #165) and C22–C24 (Codex branch `codex/c22-c24-storage-follow-ups`):
 
 | ID | Contract | UI |
 | --- | --- | --- |
@@ -110,6 +111,9 @@ Done 2026-10-02 and 2026-10-03 (#147, #149, #150, #157–#161, #164, #165):
 | C19 | File reference counts per channel attachment | Integrated (#163) |
 | C20 | On-screen claims confirmed or corrected | Wording corrected (#163) |
 | C21 | Permanent 回收站 deletion, a cleanup command, measured storage and an opt-in 30-day purge | Integrated (step 25) |
+| C22 | Global 清空回收站 with one replayable key, and `referencedSizeBytes` | Integrated (step 29) |
+| C23 | Browser profile bytes per Bot from browser status (upstream `agent-computer` contribution pending, so the deployed pin reports 「量不出」) | Integrated (step 29) |
+| C24 | Owner-only list of the messages and tasks that reference a file | Integrated (step 29) |
 
 Open — in the order the UI needs them:
 
@@ -117,9 +121,6 @@ Open — in the order the UI needs them:
 | --- | --- | --- | --- |
 | C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked | Pencil button hidden |
 | C11 | Step 16 (optional) | **New-Bot greeting**: when a model is configured, the 服务电脑 writes a short greeting as the Bot's first message, using only other Bots' names and tags; no model or any failure means no greeting | The setup card shows without a greeting |
-| C22 | Step 25 follow-up | **Global 清空回收站**: one confirmed cleanup across every active channel with one replayable `requestKey`, plus `referencedSizeBytes` in `/storage` ([research](../../research/storage-cleanup-follow-ups.md)) | 存储空间 links to each channel's 回收站 |
-| C23 | Step 25 follow-up | **Browser profile size per Bot**, measured on the working computer by `agent-computer` (upstream contribution first) and returned by browser status as `profileBytes` | No 浏览器数据 figure |
-| C24 | Step 25 follow-up | **Which messages and tasks reference a file**: an Owner-only, bounded list with a short preview | Counts only, no 查看引用 |
 
 ## Repository housekeeping (proposals)
 

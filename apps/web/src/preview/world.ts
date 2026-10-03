@@ -85,9 +85,16 @@ export function createWorld(kind: "full" | "empty" | "new-bot" | "long" = "full"
     return world;
   }
   const bots = [
-    bot("b-research", "研究助理", "信息 · 竞品研究", "round", "green", "running"),
+    // Two Bots use the 员工浏览器, so 设置 › 员工浏览器 and 存储空间 have browser data to show.
+    {
+      ...bot("b-research", "研究助理", "信息 · 竞品研究", "round", "green", "running"),
+      computerProfile: "docker-linux",
+    },
     bot("b-cs", "客服小橙", "客服 · 工单", "cat", "yellow"),
-    bot("b-release", "发布助手", "开发 · 发布说明", "square", "blue"),
+    {
+      ...bot("b-release", "发布助手", "开发 · 发布说明", "square", "blue"),
+      computerProfile: "docker-linux",
+    },
     bot("b-design", "设计评审", "设计 · 走查", "square", "red"),
     bot("b-ops", "运维值班", "运维 · 巡检", "round", "blue", "offline"),
   ];
