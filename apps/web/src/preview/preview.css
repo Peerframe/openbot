@@ -127,3 +127,32 @@
   font-size: 13px;
   text-align: center;
 }
+
+/* README banner scene (2172×724): one large Round head, the pixel wordmark, faint heads behind. */
+.readme-banner {
+  position: relative;
+  width: 2172px;
+  height: 724px;
+  overflow: hidden;
+  background: #f5f5f2;
+}
+.readme-banner .robot-avatar {
+  width: 100%;
+  height: 100%;
+}
+.readme-banner-ghost {
+  position: absolute;
+  opacity: 0.09;
+}
+.readme-banner-hero {
+  position: absolute;
+  top: 92px;
+  left: 190px;
+  width: 520px;
+  height: 520px;
+}
+.readme-banner-mark {
+  position: absolute;
+  top: 226px;
+  left: 800px;
+}

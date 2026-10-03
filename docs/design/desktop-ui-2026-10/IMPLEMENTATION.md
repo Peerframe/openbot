@@ -75,6 +75,9 @@ updated.
 | 23f | App icon and the legacy layer — **in review** | AppIcon | C16 | Icon sets from the AppIcon board; delete the legacy stylesheets and classes listed in DESIGN.md and `OpenBotMark`; refresh the website demo fixtures |
 | 24 | Backend wiring — **merged** | Avatars, New, TaskCards, DialogModel | C10, C12, C13, C17 | Eight accents for new Bots; 创建新 Bot is one atomic call that is never retried automatically; task cards show 「已完成 N 步 · 现在：…」; 连接模型服务 edits one connection: test reads only the model list, a new key is saved only after it passes, a default model per connection, 断开 lists what still uses it |
 | 25 | Storage and cleanup — **merged** | ChannelFilesTrash, SettingsStorage | C21 | 永久删除 and 清空回收站 in 频道文件 with a second confirmation, referenced files kept, an unclear cleanup retried with the same request key; 「附件已永久删除」 in messages; 设置 › 存储空间 with measured categories, the 回收站, the opt-in 30-day purge and the largest channels |
+| 26 | Stage names and 任务监督 step counts — **merged** | TaskCards, TaskInspector, WorkSupervision | C13 | Chinese names for the 服务电脑's stage keys; 「第 N 步：…」 from the latest Work action |
+| 27 | Retire the legacy style layer — **merged** | — | — | The seven legacy sheets are gone: component rules beside their components, shared ones in `base.css` and `shell.css`, verified by a 68-state computed-style sweep |
+| 28 | README and interface pictures — **in review** | Avatars, AppIcon | C10 | New README banner (the Round head and a pixel wordmark, drawn by `?scene=banner`), a current channel picture, the avatar sheet, and `INTERFACE.md` §5 rewritten for the head-and-jaw identity |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 
@@ -99,7 +102,7 @@ Done 2026-10-02 and 2026-10-03 (#147, #149, #150, #157–#161, #164, #165):
 | --- | --- | --- |
 | C10 | Four more avatar accents (violet, teal, pink, slate); older Bot templates still import | Integrated (step 24) |
 | C12 | Quick-create a Bot and its 单聊 in one atomic call | Integrated (step 24) |
-| C13 | Task progress projection: step counts, the current step, start and end time, a bounded failure code | Task cards and 任务详情 integrated (23e-2, step 24); 任务监督 not yet |
+| C13 | Task progress projection: step counts, the current step, start and end time, a bounded failure code | Task cards, 任务详情 and 任务监督 integrated (23e-2, steps 24 and 26); stage keys shown by their Chinese names |
 | C14 | CI: the browser-fixture install step has a longer budget and retries pinned downloads | CI only |
 | C15 | Route caller inventory after retiring the 例行任务 and 技能库 pages | No route retired; nothing to wire |
 | C16 | App icon sets built from `docs/design/app-icon/` | Packaging only |
@@ -127,8 +130,8 @@ Open — in the order the UI needs them:
 | H2 | **Done 2026-10-02.** The avatar source (12 SVGs, manifest, README) is in [`docs/design/avatars/`](../avatars/README.md) | Claude | Approved |
 | H3 | **Done 2026-10-02.** Codex moved its eight finished worktrees out of the repository, keeping their environments and records | Codex | No |
 | H4 | **Done 2026-10-02.** The stacked pull requests are merged (#132–#151) and the 29 merged `codex/claude-ui-*` branches are deleted | Owner | Yes |
-| H5 | `styles.css` is 3,900 lines of mostly legacy rules; split tokens and primitives out first (step 14), delete the rest by step 23 | Claude | No |
-| H6 | `docs/INTERFACE.md` still documents the five-layer robot identity and older pictures (`openbot-avatar-system.png`, the channel demo, the README banner); rewrite after C10 and replace the pictures in step 23 | Claude | No |
+| H5 | **Done 2026-10-03 (step 27).** The legacy `styles.css` and six other legacy sheets are gone; rules live beside their components, with shared ones in `base.css` and `shell.css` | Claude | No |
+| H6 | **Done 2026-10-03 (step 28).** `docs/INTERFACE.md` describes the head-and-jaw identity with the eight accents; the README banner, channel picture and avatar sheet are captured from the design preview | Claude | No |
 | H7 | The website demo (`apps/web/src/demo`) renders real product components; its fixtures must follow each step, and it becomes the base of the design preview harness | Claude | No |
 | H8 | Many UI tests find elements by Chinese copy, so every copy change breaks them; move to roles and accessible names as screens are rebuilt | Claude | No |
 | H9 | Delete the remaining dead UI after each step (`CreateBotDialog`, `CreateChannelDialog`, `AutomationsScreen`, `SkillLibraryScreen`, `OpenBotMark`, legacy dialog classes) instead of leaving them unreachable | Claude | No |

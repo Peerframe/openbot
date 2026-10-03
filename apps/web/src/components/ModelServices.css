@@ -1,3 +1,11 @@
+.field-empty {
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed #d9dde2;
+  border-radius: 8px;
+  color: #858c94;
+  font-size: 11px;
+}
 .model-section-heading {
   display: flex;
   align-items: center;

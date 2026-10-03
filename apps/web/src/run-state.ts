@@ -94,6 +94,27 @@ export function projectRunOnNodes(
   });
 }
 
+/**
+ * C13 stage names in Chinese. The 服务电脑 sends a bounded control-authored dictionary key (and an
+ * English description); Work action kinds map onto the same keys. Unknown keys show no name.
+ */
+const stageLabels: Record<string, string> = {
+  context: "读取员工资料",
+  planning: "想下一步",
+  model: "想下一步",
+  observation: "查看结果",
+  navigate: "打开网页",
+  screenshot: "截取画面",
+  action: "执行已授权的操作",
+  tool: "执行已授权的操作",
+  deferred_tool: "执行已授权的操作",
+  approval: "等你确认",
+};
+
+export function stageLabel(stage: string | null | undefined): string | undefined {
+  return stage ? stageLabels[stage] : undefined;
+}
+
 export function runStatusLabel(status: Run["status"]): string {
   const labels: Record<Run["status"], string> = {
     queued: "已接单",

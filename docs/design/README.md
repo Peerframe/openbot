@@ -5,7 +5,8 @@
 - [Office concept](m0-office-concept.png): historical M0 exploration only. It is not an implementation contract; the office plugin remains deferred.
 - [Avatar system](openbot-avatar-system.png): the earlier modular robot reference. It is superseded by the frameless head avatars in the [Avatars artboard](desktop-ui-2026-10/Avatars.dc.html); the stored appearance layers it introduced remain compatible.
 - [Avatar source](avatars/README.md): the owner's frameless avatar artwork (v2 SVGs) that the app's v3 avatars are drawn from.
-- [README banner](openbot-readme-banner.png) and [channel demonstration](openbot-channel-demo.png): current README illustrations.
+- [README banner](openbot-readme-banner.png) and [channel demonstration](openbot-channel-demo.png): current README illustrations, captured from the design preview (`?scene=banner` at 2172×724, `?scene=channel` at 1440×900 ×2) with synthetic data.
+- [Avatars](openbot-avatars.png): the three heads in the eight jaw colours, captured from `?scene=avatars`; used by `docs/INTERFACE.md`.
 - [Desktop UI design contract (2026-10)](desktop-ui-2026-10/README.md): the owner-approved artboards every
   screen is being rebuilt to, with the [implementation plan and division of work](desktop-ui-2026-10/IMPLEMENTATION.md).
 

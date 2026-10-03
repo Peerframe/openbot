@@ -1,0 +1,189 @@
+/* Global element rules and layout shared by several components; loaded before primitives.css. */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+button {
+  color: inherit;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.realtime-state.live i {
+  background: var(--green);
+}
+.realtime-state.retrying {
+  color: var(--orange);
+}
+.realtime-state.retrying i {
+  background: var(--orange);
+}
+.form-error {
+  margin: 0 26px;
+  padding: 10px 12px;
+  border-radius: 7px;
+  color: #9e2c24;
+  background: #fff0ef;
+  font-size: 11px;
+}
+.node-identity-item.revoked {
+  color: #8b929a;
+}
+.node-status.online::before {
+  background: var(--green);
+}
+.node-status.revoked {
+  color: #9d4039;
+}
+.node-status.revoked::before {
+  background: #c94b43;
+}
+.skill-state.verified {
+  background: var(--green);
+}
+.skill-state.suspended {
+  background: var(--orange);
+}
+.skill-state.revoked {
+  background: #c94b43;
+}
+@media (max-width: 960px) {
+  .context-rail .attention {
+    display: none;
+  }
+}
+@media (max-width: 720px) {
+  body {
+    padding-bottom: 68px;
+  }
+}
+@media (max-width: 720px) {
+  .sidebar {
+    position: static;
+    display: flex;
+    width: 100%;
+    height: auto;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 18px 15px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}
+@media (max-width: 720px) {
+  .mobile-approval-list .approval-card {
+    padding: 16px;
+  }
+}
+@media (max-width: 720px) {
+  .mobile-approval-list .approval-actions button {
+    min-height: 40px;
+    font-size: 14px;
+  }
+}
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+}
+.message-row.human .message-avatar > span {
+  color: #4d5865;
+  background: #e1e5ea;
+}
+.message-row.human {
+  grid-template-columns: minmax(0, 1fr) 34px;
+}
+.message-artifacts .artifact-card-document {
+  grid-template-columns: 42px minmax(0, 1fr);
+  max-width: 100%;
+  padding: 10px 12px;
+}
+@media (max-width: 720px) {
+  .message-row.human {
+    grid-template-columns: minmax(0, 1fr) 30px;
+  }
+}
+/* Native window controls remain above the sidebar; no second title strip is rendered. */
+:root[data-desktop="darwin"] .sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 64px;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+:root[data-desktop="darwin"] :is(button, a, input, select, textarea, summary) {
+  -webkit-app-region: no-drag;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* A failed workspace refresh reserves a row below the native-aligned toolbar. */
+.workspace-refresh-error {
+  position: relative;
+  z-index: 1;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 18px;
+  border-bottom: 1px solid #e8d8b5;
+  background: #fff8e9;
+  color: #705323;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.workspace-refresh-error > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.workspace-refresh-error > button {
+  flex-shrink: 0;
+  min-height: 30px;
+  padding: 4px 9px;
+  border: 1px solid #d8c39a;
+  border-radius: 6px;
+  background: #fffdf7;
+  color: inherit;
+  cursor: pointer;
+}
+.app-shell.desktop-workspace.workspace-refresh-failed
+  > :is(.workspace-sidebar, .workspace-main, .workspace-destination, .workspace-details) {
+  height: 100%;
+}
+@media (max-width: 760px) {
+  .workspace-refresh-error {
+    gap: 8px;
+    padding: 8px 14px;
+  }
+}

@@ -19,8 +19,8 @@ const event = (index: number): RunProgress => ({
 const step = (stepNumber: number) => ({
   id: `s${stepNumber}`,
   stepNumber,
-  stageName: "打开网页",
-  description: `步骤 ${stepNumber}`,
+  stageName: "navigate",
+  description: "Open a page.",
   startedAt: null,
   endedAt: null,
 });
@@ -41,7 +41,7 @@ const details = (total: number, numbers: number[]): RunProgressDetails => ({
 async function render(progress: RunProgress[]) {
   return renderComponent(
     <ol>
-      <TaskSteps run={run} progress={progress} stageLabel={(stage) => stage} />
+      <TaskSteps run={run} progress={progress} />
     </ol>,
   );
 }
@@ -67,7 +67,10 @@ it("folds the 服务电脑's long step list and reads the middle on 展开", asy
   const fold = view.container.querySelector(".task-sheet-fold button") as HTMLButtonElement;
   expect(fold.textContent).toBe("展开 11 步");
   // The fold sits between step 3 and step 15.
-  expect(fold.closest("li")?.previousElementSibling?.textContent).toContain("步骤 3");
+  expect(fold.closest("li")?.previousElementSibling?.textContent).toContain("第 3 步");
+  // The stage shows by its Chinese name, never the 服务电脑's English description.
+  expect(view.container.textContent).toContain("打开网页");
+  expect(view.container.textContent).not.toContain("Open a page.");
   await interact(() => fold.click());
   expect(getRunProgress).toHaveBeenLastCalledWith(run.id, [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
   expect(numbers(view.container)).toHaveLength(20);

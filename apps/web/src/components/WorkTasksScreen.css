@@ -1,4 +1,7 @@
 /* 任务监督 (WorkSupervision artboard): the task form on the left, its live status on the right. */
+.settings-automations .workspace-destination {
+  height: auto;
+}
 .work-tasks {
   display: flex;
   flex-direction: column;

@@ -1,0 +1,94 @@
+/* ApprovalCard: one pending approval with its risk, expiry and decision buttons. */
+/* Attention is signalled by the label colour, not by tinting the whole card. */
+.approval-card {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+}
+.approval-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.approval-card header span {
+  color: #94480b;
+  font-size: 12px;
+  font-weight: 600;
+}
+.approval-card.risk-destructive header span,
+.approval-card.risk-privileged header span {
+  color: var(--danger);
+}
+.approval-card time {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.approval-card > strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.approval-card > p {
+  overflow: hidden;
+  margin: 6px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.approval-card > small {
+  color: #8e8e93;
+  font-size: 12px;
+}
+.approval-actions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+.approval-actions button {
+  min-height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.approval-actions button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.approval-reject {
+  border: 1px solid #ececee;
+  background: #ececee;
+}
+.approval-reject:hover {
+  background: #dedee1;
+}
+.approval-approve {
+  overflow: hidden;
+  border: 1px solid var(--ink-strong);
+  color: #fff;
+  background: var(--ink-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.risk-destructive .approval-approve,
+.risk-privileged .approval-approve {
+  border-color: var(--danger);
+  background: var(--danger);
+}
+.approval-card > em {
+  display: block;
+  margin-top: 8px;
+  color: var(--danger);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.4;
+}

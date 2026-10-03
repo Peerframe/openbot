@@ -657,7 +657,8 @@ export function installPreviewTransport(world: PreviewWorld) {
 /** C13 details for the synthetic runs: three verified steps, the fourth one in progress. */
 function runProgress(run: Record<string, unknown>) {
   const finished = run.status === "completed";
-  const names = ["读取任务说明", "搜索竞品官网", "下载更新日志", "打开网页"];
+  // Stage keys from the 服务电脑's control-authored dictionary; the UI names them in Chinese.
+  const names = ["context", "planning", "navigate", "navigate"];
   const count = finished ? 3 : 4;
   return {
     runId: run.id,
@@ -666,8 +667,8 @@ function runProgress(run: Record<string, unknown>) {
     currentStepNumber: count,
     plannedTotalSteps: null,
     completedSteps: 3,
-    stageName: finished ? null : "打开网页",
-    description: null,
+    stageName: finished ? null : "navigate",
+    description: finished ? null : "Open a page.",
     startedAt: run.createdAt,
     endedAt: null,
     failureReasonCode: null,
@@ -675,7 +676,7 @@ function runProgress(run: Record<string, unknown>) {
       id: `${run.id}-step-${index + 1}`,
       stepNumber: index + 1,
       stageName: name,
-      description: null,
+      description: "Control-authored English description.",
       startedAt: run.createdAt,
       endedAt: index < 3 ? run.createdAt : null,
     })),

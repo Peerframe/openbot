@@ -3,6 +3,7 @@ vi.mock("../native-task-api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../native-task-api")>()),
   getNativeTaskScope: vi.fn(async () => null),
 }));
+
 import type { Bot } from "@openbot/domain";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ApiError } from "../api";
@@ -14,8 +15,9 @@ import {
   setInputValue,
 } from "../test/render-component";
 import { workFixture } from "../test/work-fixture";
+import type { WorkSnapshot } from "../work-api";
 import * as api from "../work-api";
-import { WorkTasksScreen } from "./WorkTasksScreen";
+import { WorkTasksScreen, workStepLabel } from "./WorkTasksScreen";
 
 vi.mock("../work-api", () => ({
   createWorkTask: vi.fn(),
@@ -323,4 +325,35 @@ it("observes an existing task from a deep link without creating or cancelling it
   expect(ui.container.querySelector(".work-snapshot")?.textContent).toContain(
     "Review the document",
   );
+});
+
+it("names the current step from the latest durable Work action", () => {
+  const action = (kind: string) =>
+    ({
+      id: kind,
+      runId: "run-one",
+      intent: { kind, arguments: { secret: "never shown" } },
+      intentDigest: "a".repeat(64),
+      decision: "not_required",
+      status: "applied",
+      expiresAt: "2026-10-03T00:00:00.000Z",
+      reservedTokens: 0,
+      actualTokens: 0,
+      evidence: null,
+      reconciliation: null,
+    }) as WorkSnapshot["actions"][number];
+  expect(workStepLabel(workFixture({ status: "open", actions: [action("model")] }))).toBe(
+    " · 第 1 步：想下一步",
+  );
+  expect(
+    workStepLabel(
+      workFixture({ status: "open", actions: [action("model"), action("deferred_tool")] }),
+    ),
+  ).toBe(" · 第 2 步：执行已授权的操作");
+  // Unknown kinds are not echoed; finished or empty tasks have no current step.
+  expect(workStepLabel(workFixture({ status: "open", actions: [action("x-unknown")] }))).toBe(
+    " · 第 1 步",
+  );
+  expect(workStepLabel(workFixture({ status: "completed", actions: [action("model")] }))).toBe("");
+  expect(workStepLabel(workFixture({ status: "open" }))).toBe("");
 });

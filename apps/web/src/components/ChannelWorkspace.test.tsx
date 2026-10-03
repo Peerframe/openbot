@@ -960,13 +960,17 @@ describe("23e: older pages, banners and the date cue", () => {
     createdAt: stamp(index),
   });
 
-  it("reads the page before the oldest message at the top and keeps the reading position", async () => {
-    const latest = Array.from({ length: 100 }, (_, index) => numbered(index + 50));
+  // A full latest page (100) is what makes the UI ask for older ones; rendering it in jsdom can
+  // pass Vitest's default 5 s when the whole suite runs in parallel.
+  it("reads the page before the oldest message at the top and keeps the reading position", {
+    timeout: 20_000,
+  }, async () => {
+    const latest = Array.from({ length: 100 }, (_, index) => numbered(index + 10));
     vi.mocked(listMessages).mockResolvedValue(latest);
     vi.mocked(listMessagePage)
       .mockResolvedValueOnce({ messages: latest, hasMore: true, nextCursor: "c-latest" })
       .mockResolvedValueOnce({
-        messages: Array.from({ length: 50 }, (_, index) => numbered(index)),
+        messages: Array.from({ length: 10 }, (_, index) => numbered(index)),
         hasMore: false,
       });
     const session = createConversationSession();
@@ -987,7 +991,7 @@ describe("23e: older pages, banners and the date cue", () => {
       ["a"],
       ["a", "c-latest"],
     ]);
-    expect(session.channel("a").getSnapshot().messages).toHaveLength(150);
+    expect(session.channel("a").getSnapshot().messages).toHaveLength(110);
     expect(session.channel("a").getSnapshot().history.exhausted).toBe(true);
     await rendered.unmount();
   });

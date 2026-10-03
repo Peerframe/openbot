@@ -1,14 +1,9 @@
 /*
  * Global stylesheets in cascade order, shared by every entry (app, website demo, design preview).
- * Tokens first; the shared primitives directly after the legacy `styles.css` so they keep winning
- * over legacy rules of equal specificity. The legacy sheets are removed in plan step 23.
+ * Tokens, then the element and shared base rules, then the primitives, then the shared workspace
+ * shell. Everything else lives beside its component.
  */
 import "./tokens.css";
-import "./styles.css";
+import "./base.css";
 import "./primitives.css";
-import "./workspace-shell.css";
-import "./workspace-preferences.css";
-import "./desktop-workspace.css";
-import "./conversation-feedback.css";
-import "./desktop-ui-refresh.css";
-import "./settings-plugin-refresh.css";
+import "./shell.css";
