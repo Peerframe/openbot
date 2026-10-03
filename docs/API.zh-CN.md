@@ -823,8 +823,9 @@ Docker Provider 携带选定的 `Bot-Id` 调用已认证的 `GET /computers/prof
 拒绝测量或根目录不可用时返回 `null`；确认该 Bot 目录不存在时返回零。
 这是实时逻辑字节观察，不是原子快照或磁盘分配量。
 
-上游贡献待处理期间，生产固定版本仍为 `257c1280d684089be9adb0b35cce262efc7064bf`，因此该版本
-返回 `null`。生产环境要得到数字，须在上游接受后部署已审阅接口；只有上游拒绝才另行记录窄分支。
+Owner 于 2026-10-03 批准的窄分支固定为 `29a83c1932fb67398dd7a36fa80c473e0230a637`，仓库
+[yxflc11/openbot-agent-computer-upstream](https://github.com/yxflc11/openbot-agent-computer-upstream)；只在原生产版本上移植大小接口。
+镜像与真实 Provider 已验证，#730 继续开放；上游合并并验证后切回上游。
 远端资料大小不加入服务电脑的 `/storage.totalBytes`，
 `categories.workingComputerBrowserData` 仍为 `null`。
 

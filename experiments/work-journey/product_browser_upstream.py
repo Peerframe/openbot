@@ -30,7 +30,7 @@ def prepare(root):
     root.mkdir(mode=0o700)
     for entry in MANIFEST['files']:
         relative=entry['path'] if entry['path']=='LICENSE' else 'agent-computer/'+entry['path']
-        url='https://raw.githubusercontent.com/CopilotKit/openbot/'+MANIFEST['commit']+'/'+relative
+        url='https://raw.githubusercontent.com/'+MANIFEST['repository']+'/'+MANIFEST['commit']+'/'+relative
         for attempt in range(3):
             try:
                 with urlopen(url,timeout=30) as response:content=response.read(entry['bytes']+1)
