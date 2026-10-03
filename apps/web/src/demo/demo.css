@@ -90,7 +90,8 @@ body,
   min-height: 0;
   height: auto;
   width: 100%;
-  grid-template-columns: 212px minmax(0, 1fr);
+  /* Narrow embeds keep 212px; at 1440px it matches the product's 300px sidebar (Main artboard). */
+  grid-template-columns: clamp(212px, 21vw, 300px) minmax(0, 1fr);
 }
 .demo-root .app-shell.desktop-workspace.demo-workspace > .workspace-main {
   grid-area: 1 / 2;

@@ -5,6 +5,8 @@ import {
   type MessageReaction,
   type Run,
   type RunOutput,
+  type RunProgressDetails,
+  type RunProgressSummary,
   reactionEmojis,
 } from "@openbot/domain";
 import {
@@ -26,6 +28,40 @@ export interface DemoSnapshot {
   messages: Message[];
   runs: Run[];
   artifacts: Artifact[];
+  /** C13 step summaries, as the workspace snapshot carries them. */
+  runProgress: Record<string, RunProgressSummary>;
+}
+
+const at = (tick: number) => new Date(Date.parse(demoTime) + tick * 1000).toISOString();
+
+/** The 服务电脑's C13 projection of the fixed steps: stage keys only, never a planned total. */
+function progressDetails(
+  run: Run,
+  steps: Array<{ stage: string; tick: number }>,
+): RunProgressDetails {
+  const running = run.status === "running";
+  return {
+    runId: run.id,
+    status: run.status,
+    totalSteps: steps.length,
+    currentStepNumber: steps.length || null,
+    plannedTotalSteps: null,
+    completedSteps: running ? Math.max(0, steps.length - 1) : steps.length,
+    stageName: running ? (steps.at(-1)?.stage ?? null) : null,
+    description: null,
+    startedAt: steps[0] ? at(steps[0].tick) : null,
+    endedAt: null,
+    failureReasonCode: null,
+    steps: steps.map((step, index) => ({
+      id: `${run.id}-step-${index + 1}`,
+      stepNumber: index + 1,
+      stageName: step.stage,
+      description: null,
+      startedAt: at(step.tick),
+      endedAt:
+        index < steps.length - 1 || !running ? at(steps[index + 1]?.tick ?? step.tick) : null,
+    })),
+  };
 }
 const replyText =
   "这是一条示例回复：正式工作区会把消息和引用关系交给所选 Bot。这里仅演示消息交互，内容不会发送到模型。";
@@ -44,6 +80,7 @@ export class DemoAdapter {
   private replies: Array<{ runId: string; text: string; part: number; replyTo: string }> = [];
   private reactions: MessageReaction[] = [];
   private outputs = new Map<string, RunOutput>();
+  private steps = new Map<string, Array<{ stage: string; tick: number }>>();
   private nextId = 0;
   private snapshot: DemoSnapshot = {
     revision: 0,
@@ -53,6 +90,7 @@ export class DemoAdapter {
     messages: [demoMessage("demo-request", demoPrompt)],
     runs: [],
     artifacts: [],
+    runProgress: {},
   };
   constructor(private readonly origin: string) {}
   getSnapshot = () => this.snapshot;
@@ -108,6 +146,7 @@ export class DemoAdapter {
     this.replies = [];
     this.reactions = [];
     this.outputs.clear();
+    this.steps.clear();
     this.publish({
       playing: false,
       stage: 0,
@@ -115,6 +154,7 @@ export class DemoAdapter {
       messages: [demoMessage("demo-request", demoPrompt)],
       runs: [],
       artifacts: [],
+      runProgress: {},
     });
   };
   finish = () => {
@@ -140,6 +180,18 @@ export class DemoAdapter {
     this.publish({ runs: [...this.snapshot.runs, run].slice(-100) });
     this.event({ type: "run.created", channelId: demoChannel.id, run });
   }
+  /** Records one step of a fixed run and republishes its summary. */
+  private step(runId: string, stage: string) {
+    const run = this.snapshot.runs.find((item) => item.id === runId);
+    if (run?.status !== "running") return;
+    const steps = [...(this.steps.get(runId) ?? []), { stage, tick: this.snapshot.tick }];
+    this.steps.set(runId, steps);
+    this.publishProgress(run);
+  }
+  private publishProgress(run: Run) {
+    const { steps: _steps, ...summary } = progressDetails(run, this.steps.get(run.id) ?? []);
+    this.publish({ runProgress: { ...this.snapshot.runProgress, [run.id]: summary } });
+  }
   private endRun(id: string, status: Run["status"] = "completed", artifacts: Artifact[] = []) {
     const current = this.snapshot.runs.find((run) => run.id === id);
     if (current?.status !== "running") return;
@@ -154,6 +206,7 @@ export class DemoAdapter {
       artifacts: [...this.snapshot.artifacts, ...artifacts],
     });
     this.event({ type: "run.updated", channelId: demoChannel.id, run, artifacts });
+    if (this.steps.has(id)) this.publishProgress(run);
   }
   private output(id: string, text: string) {
     const run = this.snapshot.runs.find((item) => item.id === id);
@@ -184,8 +237,10 @@ export class DemoAdapter {
   advance = () => {
     const tick = Math.min(32, this.snapshot.tick + 1);
     this.publish({ tick, stage: tick < 3 ? 0 : tick < 26 ? 1 : 2 });
-    if (tick === 1 && !this.snapshot.runs.some((run) => run.id === "demo-root"))
+    if (tick === 1 && !this.snapshot.runs.some((run) => run.id === "demo-root")) {
       this.addRun(demoRun("demo-root", "demo-editor", "整理 OpenBot 发布介绍", "demo-request"));
+      this.step("demo-root", "context");
+    }
     if (
       tick === 3 &&
       this.snapshot.runs.find((run) => run.id === "demo-root")?.status === "running"
@@ -208,6 +263,8 @@ export class DemoAdapter {
           "demo-root",
         ),
       );
+      this.step("demo-root", "action");
+      this.step("demo-research-task", "context");
     }
     if (
       tick === 5 &&
@@ -231,7 +288,12 @@ export class DemoAdapter {
           "demo-root",
         ),
       );
+      this.step("demo-root", "action");
+      this.step("demo-review-task", "context");
     }
+    if (tick === 7) this.step("demo-research-task", "planning");
+    if (tick === 12) this.step("demo-review-task", "planning");
+    if (tick === 25) this.step("demo-root", "planning");
     if (tick >= 7 && tick <= 16)
       this.output(
         "demo-research-task",
@@ -304,9 +366,12 @@ export class DemoAdapter {
       for (const bot of demoBots)
         if (path === `/api/v1/bots/${bot.id}/profile`)
           return json({ profile: { employee: bot, skills: [] } });
-      for (const run of this.snapshot.runs)
+      for (const run of this.snapshot.runs) {
         if (path === `/api/v1/runs/${run.id}/output`)
           return json({ output: this.outputs.get(run.id) ?? null });
+        if (path === `/api/v1/runs/${run.id}/progress`)
+          return json(progressDetails(run, this.steps.get(run.id) ?? []));
+      }
     }
     if (method === "PUT" && path.startsWith(`${prefix}/messages/`) && path.endsWith("/reactions")) {
       const id = path.slice(`${prefix}/messages/`.length, -"/reactions".length);

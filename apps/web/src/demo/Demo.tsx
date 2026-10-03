@@ -137,6 +137,7 @@ export function Demo({ adapter }: { adapter: DemoAdapter }) {
           bots={demoBots}
           artifacts={state.artifacts}
           progress={[]}
+          stepSummaries={state.runProgress}
           onJoin={async () => scope("成员管理")}
           onInspectRun={(id) => {
             adapter.pause();
