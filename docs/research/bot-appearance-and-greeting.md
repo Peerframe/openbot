@@ -136,3 +136,12 @@ Shutdown cancels and joins outstanding jobs. No paid model or production databas
 Backend qualification uses real disposable PostgreSQL and the pinned SDK with a synthetic HTTP
 transport, including actual 15-second timeout and channel SSE. Renderer integration remains Claude's
 separate acceptance scope; no live-provider or cross-platform support claim is added.
+
+C11 adds the 53rd canonical migration, so the existing product preflight/smoke count and synthetic
+paired-restore target explicitly advance from 52 to 53. No applied SQL or sealed source history
+changes. The current [40-case restore evidence](../../experiments/s7-migration/evidence/bot-greeting-result.json)
+preserves old messages and references; 20 delivery/cleanup checks pass. Product delivery count
+checks now compare both consumers with the verified target to catch stale qualification during
+`npm run check`. The initial hosted container/restore failures were stale 52-entry guards, not
+failures of the new SQL; this checkpoint records their correction, rather than claiming those
+failed hosted runs passed.
