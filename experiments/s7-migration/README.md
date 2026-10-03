@@ -9,13 +9,14 @@ preparation for S7, not a production migration utility or evidence that S7 is co
 | --- | --- | --- |
 | Architecture, 27 migrations | `c33e03f1a14de739196113769c59fdaace9029e7` | Restore old data, then apply current migrations with the existing production startup guard. |
 | Feature, 19 migrations | `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` | Direct upgrade fails at index 17. A separate fixture-only transfer copies a bounded compatible record set into a freshly migrated target. |
-| Qualified target, 51 migrations | Committed SQL source `38c10b39ffa91ab4746da6d35ddf77505106ac33`, with exact current SQL/journal hashes | SQL bytes and journal entries must match `target-history.json`; changes require an explicit requalification. |
+| Qualified target, 52 migrations | Committed SQL source `8946a480542683cb85bf1b6ebc7c4134a9b27630`, with exact current SQL/journal hashes | SQL bytes and journal entries must match `target-history.json`; changes require an explicit requalification. |
 
-The 51-entry C21 target passed all 40 retained migration/restore cases on 2026-10-03; the eight
+The 52-entry C22 target passed all 40 retained migration/restore cases on 2026-10-03; the eight
 cleanup cases passed too. Exact current hashes and actual results are in
-[the current evidence](evidence/channel-storage-result.json). Migration 0050 adds purge/retry
-receipts, default-off storage policy and late-reference guards; C21 product tests separately cover
-file staging/recovery and policy behavior. The sealed historical SQL/fixtures/assertions are unchanged.
+[the current evidence](evidence/global-trash-result.json). Migration 0051 adds globally keyed
+cleanup receipts; C22 product tests separately cover replay, scope, references and measured bytes.
+The sealed historical SQL/fixtures/assertions are unchanged. The
+[51-entry C21 evidence](evidence/channel-storage-result.json) remains historical.
 Earlier [46-entry identity evidence](evidence/identity-lifecycle-result.json),
 [45-entry evidence](evidence/browser-pages-result.json) and
 [44-entry evidence](evidence/browser-profiles-result.json) remain dated evidence.

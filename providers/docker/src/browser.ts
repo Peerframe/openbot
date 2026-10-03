@@ -165,7 +165,22 @@ export class BrowserCoordinator {
       const running = (value as { browser: boolean }).browser;
       if ((operation === "restart" && !running) || (operation === "clear" && running))
         throw new Error("Unexpected browser state.");
-      return { running };
+      let profileBytes: number | null = null;
+      if (operation === "status") {
+        try {
+          const usage = await call("/computers/profile-usage");
+          const measured =
+            usage && typeof usage === "object"
+              ? (usage as { profileBytes?: unknown }).profileBytes
+              : undefined;
+          if (typeof measured === "number" && Number.isSafeInteger(measured) && measured >= 0)
+            profileBytes = measured;
+        } catch {
+          // Older upstreams and refused measurements are unknown, never a zero-byte profile.
+        }
+        signal.throwIfAborted();
+      }
+      return { running, profileBytes };
     });
   }
 

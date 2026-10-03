@@ -13,7 +13,7 @@ from urllib.parse import quote
 
 from fastapi.responses import Response
 
-from .attachment_references import with_reference_counts
+from .attachment_references import LIST_LIMIT, reference_list, with_reference_counts
 from .control_errors import ControlError
 from .http_input import read_attachment_upload, request_signal
 from .owner_files import MAX_BYTES
@@ -93,6 +93,18 @@ def _register_channel(route,product,service):
             await product.channel(db,path['channel_id'])
             return {'attachment':product.files.metadata(path['channel_id'],path['attachment_id'])}
     route(CHANNEL_BASE+'/{attachment_id}','GET',metadata)
+
+    async def references(token,path,_body,request):
+        async with product.files.lock(),product.transactions.transaction(token) as db:
+            await product.channel(db,path['channel_id'])
+            item = product.files.metadata(path['channel_id'],path['attachment_id'])
+            query = list(request.query_params.multi_items())
+            limit = request.query_params.get('limit', '20')
+            if (len(query) > 1 or any(key != 'limit' for key, _ in query) or not limit.isascii()
+                    or not limit.isdecimal() or len(limit) > 3 or not 1 <= int(limit) <= LIST_LIMIT):
+                raise ControlError(422, 'invalid_attachment_reference_query')
+            return await reference_list(db,path['channel_id'],item['id'],int(limit))
+    route(CHANNEL_BASE+'/{attachment_id}/references','GET',references)
 
     async def content(token,path,*_):
         async with product.files.lock(),product.transactions.transaction(token) as db:

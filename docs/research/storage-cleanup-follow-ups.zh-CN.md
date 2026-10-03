@@ -2,7 +2,7 @@
 
 [English](storage-cleanup-follow-ups.md) · 简体中文
 
-- 状态：提议
+- 状态：接口已实现；C23 上游贡献待处理
 - 日期：2026-10-03
 - 负责人：@yxflc11
 - 相关：C21（#164）及其界面（#169）的后续
@@ -59,7 +59,8 @@
     `empty_trash_all`。
   - 幂等凭证只以 `requestKey` 为键：用同一个标识重试，会返回同样的结果，不会多删。上限沿用
     C21；只要有引用情况不明，就整次拒绝。
-  - `/storage` 的 `trash` 增加 `referencedSizeBytes`，让确认框能写出准确的删除大小。
+  - `/storage` 的 `trash` 增加 `referencedSizeBytes`，让确认框区分实测的被引用与未引用字节；
+    并发变化和最小删除标记会影响最终释放量。
 - **C23——浏览器资料大小。**
   - 上游 `agent-computer` 报告单个 Bot 的资料大小：遍历有上限、不跟随链接，返回内容里不出现
     路径；量不出来时返回 `null`。
@@ -67,7 +68,7 @@
   - 在 `OPEN_SOURCE_REUSE.md` 记录上游 PR 或窄分支的固定版本。
 - **C24——附件引用列表。**
   - `GET /api/v1/channels/:channelId/attachments/:id/references?limit=20`，只有 Owner 能读，返回：
-    - `messages: [{id, createdAt, author: {kind: "owner" | "bot", botId?}, preview}]`，其中
+    - `messages: [{id, createdAt, author: {kind: "owner" | "bot" | "system", botId?}, preview}]`，其中
       `preview` 最多 120 个字符，并去掉附件标记；
     - `tasks: [{runId, title, status, createdAt}]`；
     - `messageCount`、`taskCount`、`hasMore`。
@@ -108,3 +109,73 @@
 ## 未决问题
 
 - 上游 `agent-computer` 是否接受新增大小接口，这决定 C23 用上游版本还是窄分支。
+
+## 实现检查点（2026-10-03）
+
+C22、C24 后端接口基于 `dafc2e13` 实现在 `codex/c22-c24-storage-follow-ups`。
+迁移 `0051_global_trash_cleanup` 新增独立的 `storage_cleanup_receipts` 表，只按 UUID 为键，
+限制 JSON 响应大小，不设频道外键；C21 原凭证的命名空间和生命周期保持不变。
+`channelCount` 统计有候选回收站文件的有效频道，包括全部保留的频道。
+引用文件大小包含元数据及派生文本；所有暂存、引用复核、SQL 守卫、删除凭证和逐文件审计复用 `_remove`。
+测得大小不授予清理权限。
+
+C24 在同一 SQL 语句内获取有界计数和两个新到旧的列表。ASCII `limit` 默认 20、范围 1–100，
+分别限制各列表；同时间按 ID 的 C 排序规则降序。任务标题最多 160 个码点。
+Owner 已于 2026-10-03 同意增加 `author.kind: "system"`：C19 已经统计自动系统消息，不能冒充 Owner。
+这是上文作者类型的已批准补充。
+
+C23 已提交 [CopilotKit/OpenBot #730](https://github.com/CopilotKit/OpenBot/pull/730)，
+审阅上游版本 `cb5dc32a44517622c6db4e527e61d3abb389b43c`，贡献提交
+`46eb7af817027c5de4202846c73c43bbb2fa67b7`。MIT 贡献在创建会话前提供已认证的 `GET /computers/profile-usage`，只选择校验后的 `Bot-Id`。
+Linux 遍历使用 `/proc/self/fd` 锚定目录及 `O_NOFOLLOW`，跳过符号链接，拒绝硬链接、特殊文件、
+跨设备目录，并检查观察时目录被替换的情况。最多 10,000 项、16 层、2 秒协作式期限
+（在文件系统操作前后检查）、同时一次测量。确认 Bot 目录不存在返回零；错误、拒绝、不支持的平台
+或根目录缺失返回 null。普通文件在观察期间可能变化，不承诺原子快照。
+
+依据：[Node 文件系统接口](https://nodejs.org/api/fs.html)及
+[Linux open(2)](https://man7.org/linux/man-pages/man2/open.2.html)。`O_NOFOLLOW` 只保护最后一个
+路径分量，因此使用目录描述符锚定，不能直接递归拼接不可信路径。有限遍历和 Provider 请求期限
+限制通常的工作量；协作式期限不保证抢占阻塞中的内核文件系统操作。
+
+生产仍固定 `257c1280d684089be9adb0b35cce262efc7064bf`。Provider 和状态协议已接好，校验安全整数，
+旧版本、字段缺失或错误统一为 null。上游仍待审阅；PR 开放不代表接受或拒绝，因此没有采用运行时分支。
+接受后须审阅并固定上游版本、验证镜像；明确拒绝后才按约定记录窄分支。界面仍由上述 Claude 切片完成，
+在该切片落地前，DESIGN 中的差异仍有效。
+
+已执行证据：真实 PostgreSQL／HTTP 的存储清理、附件引用和浏览器会话共 52 项 Python 测试；
+3 项协议测试及 35 项 Docker 浏览器／维护测试通过。上游 Linux 测试 46 项通过、1 项非 Linux 测试跳过，
+包括不启动 Chromium 的真实认证 HTTP 接口，使用现有 `openbot-browser:257c1280` 镜像及 Bun 1.4.2。
+macOS Bun 1.3.14 的不支持平台用例通过，4 项 Linux 专用用例跳过。
+没有访问用户数据库、调用付费模型或修改生产数据。完整集成、迁移验证及限制记录在下方。
+
+迁移验证：已提交的 52 条 SQL 来源 `8946a480542683cb85bf1b6ebc7c4134a9b27630` 通过全部
+40 项历史升级／恢复及 8 项清理检查。[入库结果](../../experiments/s7-migration/evidence/global-trash-result.json)
+保存精确 SQL／journal 哈希，封存历史和测试逻辑未修改。
+
+实际 Linux arm64 产品镜像
+`sha256:059fef02e0a3ea0a9b599953c6df20d1612ea34f74358e91a86181914c8e04b8`
+通过 `deploy/server/smoke-product.py`：52 条迁移、真实 Owner HTTP、构建后的 Web、DOCX／PDF 与
+空白 OCR 初始化、错误启动在创建 schema 前拒绝、SIGTERM 和重启后原文件／密钥保留。
+所有专属容器、网络及卷已清理。这是本地 Docker VM 证据，不是托管平台资格验证；未配置 Temporal，
+未调用真实模型。
+
+集成结果：`npm run check` 完成此前各门槛及 lint／typecheck，随后在未修改的发布密钥 CLI
+30 秒超时处失败；该文件单独运行 3 项全过。串行 Turbo 补跑通过 Web 644 项、Docker Provider
+67 项及其他已完成包；Desktop 的三份未修改文件出现 4 项超时（530 项通过、3 项跳过）。
+这三份文件以 `--maxWorkers=1` 单独重跑，15 项全过。被中断的 Node 测试另以单 Worker 执行：
+Vitest 129 项通过、3 项跳过，另有 54 项有界传输 Node 测试全过。最终 `npm run build`
+18 个任务成功（5 个实际执行、13 个缓存）。复用已通过的前置门槛，原整套命令仍记录为失败，
+不改称一次全绿。
+
+`npm run test:control:python` 两次超过既定 300 秒套件期限。第一次并发负载下还出现 4 项 SDK
+失败，第二次这 4 项均通过；第二次完成 789 项且无测试失败，在员工导入导出模块超时
+（收集 1,039 项、另跳过 2 项）。被中断模块及之后所有模块另在专属 PostgreSQL 补测 301 项：
+初次 288 项通过，13 项因临时诊断夹具漏了原有基础 Bot／Channel 而失败；补齐原夹具格式后，
+这 13 项重跑全过。这些是补充证据，不代表默认完整命令及 pytest 之后的 TS 回读断言通过。
+独立 Worker／Temporal 和托管 CI 未执行。文档检查通过（12 项测试、576 份 Markdown）；
+研究检查的 27 项单元测试通过，PR 事件检查因不在 pull_request 事件内而跳过。
+
+交付状态：上述本地分支的后端、协议、中英文文档及测试可供审阅，迁移提交固定在验证清单中。
+本轮 C22–C24 未创建产品 PR 或部署；明确要求的上游 PR 已开放，尚无评审。
+原有无关 `output/` 目录未改动，没有仍在运行的测试或实现写入者。
+剩余外部依赖为上游 #730 接受／拒绝，界面保持为另一个计划切片；默认整套命令超时仍是明确的验收限制。

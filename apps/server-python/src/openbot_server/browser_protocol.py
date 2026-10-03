@@ -169,6 +169,7 @@ class Maintenance(Strict):
 
 class RuntimeState(Strict):
     running: bool
+    profileBytes: Annotated[int, BeforeValidator(integer), Field(ge=0, le=9007199254740991)] | None = None
 
 
 class MaintenanceInput(Strict):

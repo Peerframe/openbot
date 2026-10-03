@@ -2,7 +2,7 @@
 
 English · [简体中文](storage-cleanup-follow-ups.zh-CN.md)
 
-- Status: Proposed
+- Status: Contracts implemented; C23 upstream contribution pending
 - Date: 2026-10-03
 - Owner: @yxflc11
 - Related issue: follow-up to C21 (#164) and its UI (#169)
@@ -80,8 +80,8 @@ English · [简体中文](storage-cleanup-follow-ups.zh-CN.md)
   - The receipt is keyed by `requestKey` alone: a retry with the same key replays the result and
     touches nothing new. The same limits as C21 apply, and an unknown reference refuses the whole
     request.
-  - `/storage` `trash` adds `referencedSizeBytes`, so the confirmation can state the exact size to
-    be removed.
+  - `/storage` `trash` adds `referencedSizeBytes`, so the confirmation can distinguish measured referenced
+    and unreferenced trash bytes; concurrent changes and gone markers affect eventual freed bytes.
 - **C23 — browser profile size.**
   - Upstream `agent-computer` reports one Bot's profile bytes, measured with a bounded no-follow
     traversal. There is no path in the reply, and the size is `null` when the measurement is
@@ -90,7 +90,7 @@ English · [简体中文](storage-cleanup-follow-ups.zh-CN.md)
   - Record the upstream PR, or the narrow fork pin, in `OPEN_SOURCE_REUSE.md`.
 - **C24 — attachment references.**
   - `GET /api/v1/channels/:channelId/attachments/:id/references?limit=20`, Owner-only, returning:
-    - `messages: [{id, createdAt, author: {kind: "owner" | "bot", botId?}, preview}]`, where
+    - `messages: [{id, createdAt, author: {kind: "owner" | "bot" | "system", botId?}, preview}]`, where
       `preview` is at most 120 characters with attachment markers removed;
     - `tasks: [{runId, title, status, createdAt}]`;
     - `messageCount`, `taskCount` and `hasMore`.
@@ -135,3 +135,90 @@ English · [简体中文](storage-cleanup-follow-ups.zh-CN.md)
 
 - Whether `agent-computer` upstream accepts a usage route, which decides between an upstream
   pin and a narrow fork for C23.
+
+## Implementation checkpoint (2026-10-03)
+
+C22 and C24 backend contracts are implemented on `codex/c22-c24-storage-follow-ups` from
+`dafc2e13`. Migration `0051_global_trash_cleanup` adds a separate global `storage_cleanup_receipts`
+table keyed only by UUID, with a bounded JSON response and no channel foreign key; existing C21
+channel receipts keep their namespace/lifetime. `channelCount` counts active channels with candidate
+trash, including retained-only channels. Referenced trash bytes include metadata and derived text.
+The existing `_remove` owns all staging, reference rechecks, SQL guards, receipts and per-file audit.
+No cleanup authority is inferred from the measured size.
+
+C24 uses one SQL statement for bounded counts and both newest-first lists. The optional ASCII
+`limit` is 1–100 (default 20) per list; timestamp ties use descending C-collated ID. Task titles are
+bounded to 160 code points. The Owner approved `author.kind: "system"` on 2026-10-03 because C19
+already includes automatic system messages; labelling them as Owner would misrepresent authorship.
+This is an accepted addition to the proposed author union above.
+
+C23 is submitted as [CopilotKit/OpenBot #730](https://github.com/CopilotKit/OpenBot/pull/730),
+against reviewed upstream `cb5dc32a44517622c6db4e527e61d3abb389b43c`, contribution commit
+`46eb7af817027c5de4202846c73c43bbb2fa67b7`. The MIT contribution
+adds authenticated `GET /computers/profile-usage` before session creation, selecting only the
+validated `Bot-Id`. Linux descriptor-relative traversal anchors each directory via `/proc/self/fd`,
+opens directories with `O_NOFOLLOW`, skips symlinks, refuses hardlinks/special files/device changes,
+and detects directory replacement during observation. Bounds are 10,000 entries, depth 16, a
+2-second cooperative deadline around filesystem operations, and one concurrent measurement.
+Confirmed absent Bot directories return 0; errors, refusal, unsupported platforms or absent roots
+return null. Regular files may change during a live observation; no atomic snapshot is promised.
+
+Primary boundary evidence: [Node filesystem APIs](https://nodejs.org/api/fs.html) and
+[Linux open(2)](https://man7.org/linux/man-pages/man2/open.2.html). `O_NOFOLLOW` only protects the
+last path component, hence descriptor-anchored traversal instead of recursively joining untrusted
+paths. The finite traversal limits and Provider request deadline bound ordinary work; stalled
+kernel filesystem operations are not claimed to be preemptible by the cooperative deadline.
+
+Production remains pinned to `257c1280d684089be9adb0b35cce262efc7064bf`. Provider/status protocol
+wiring is ready, with safe-integer validation and legacy/missing/error measurements normalized to
+null. Upstream review is outstanding; an open PR is neither acceptance nor rejection, so no runtime
+fork is adopted. After acceptance, review and pin the upstream version and qualify its image; only
+explicit rejection permits the separately recorded narrow-fork path. UI work remains the separate
+Claude slice above, and the DESIGN deviations remain accurate until that slice lands.
+
+Focused acceptance evidence: 52 real PostgreSQL/HTTP Python tests across storage purge, attachment
+references and browser sessions; 3 protocol tests and 35 Docker browser/maintenance tests. Upstream
+Linux tests passed 46 cases (one non-Linux test skipped), including the real authenticated HTTP route
+without Chromium startup, using the existing `openbot-browser:257c1280` image with Bun 1.4.2.
+macOS Bun 1.3.14 passed the unsupported-platform case with four Linux-only cases skipped.
+No user database, paid model or production mutation was used. Integration and migration
+qualification results, including limitations, follow below.
+
+Migration qualification: the committed 52-entry SQL source `8946a480542683cb85bf1b6ebc7c4134a9b27630`
+passed all 40 retained upgrade/restore cases and 8 cleanup cases. The
+[checked-in result](../../experiments/s7-migration/evidence/global-trash-result.json) records exact
+SQL/journal hashes; sealed histories and test logic are unchanged.
+
+The actual Linux arm64 product image
+`sha256:059fef02e0a3ea0a9b599953c6df20d1612ea34f74358e91a86181914c8e04b8`
+passed `deploy/server/smoke-product.py`: all 52 migrations, real Owner HTTP, built Web, DOCX/PDF
+and blank OCR initialization, invalid startup before schema creation, SIGTERM and restart with
+original files/key retained. All owned containers/network/volume were removed. This was local
+Docker VM evidence, with no configured Temporal engine or real model call, not hosted qualification.
+
+Integration outcome: `npm run check` ran all preliminary gates through lint/typecheck, then failed
+on an unchanged publisher CLI 30-second timeout. Its three tests passed alone. A serial Turbo test
+retry passed Web (644), Docker Provider (67) and the other completed packages, but Desktop had
+four timeouts in three unchanged files (530 passed, three skipped). Those three files passed all
+15 tests with `--maxWorkers=1`. The interrupted Node suite was run separately with one Worker:
+129 Vitest tests passed, three skipped, plus all 54 bounded-transport Node tests passed. Final
+`npm run build` succeeded for all 18 tasks (five executed, 13 cached). Existing passing preliminary
+gates were reused; the original aggregate check is recorded as failed, not relabelled green.
+
+`npm run test:control:python` exceeded its existing 300-second suite deadline twice. The first run
+also hit four SDK failures under concurrent load; all four passed on the second run. The second
+completed 789 tests without a failed test before timing out in employee portability (1,039 collected,
+two skipped). The interrupted module and all following modules were checked separately in owned
+PostgreSQL: 301 tests completed, initially 288 passed and 13 failed because the temporary diagnostic
+fixture omitted the original base Bot/Channel. Supplying that original fixture shape made all
+13 reruns pass. These are supplemental results, not success of the default full command or its
+post-pytest TS read-back assertions. Dedicated Worker/Temporal and hosted CI qualification remain
+unrun. Documentation checks passed (12 tests and 576 Markdown files); research-check unit tests
+passed (27), while the PR-event check correctly skipped outside a pull-request event.
+
+Handoff: local backend/contracts, translations and tests are ready for review on the branch above;
+the migration source commit is fixed in the qualification manifest. No product PR or deployment
+was created in this C22–C24 slice; the explicitly requested upstream PR is open without reviews.
+The unrelated pre-existing `output/` directory is untouched. No test or implementation writer is
+left running. Remaining external dependency is acceptance/rejection of upstream #730; UI remains
+the separate planned slice. Default full-command timeouts remain visible acceptance limitations.

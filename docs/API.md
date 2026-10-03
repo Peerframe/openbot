@@ -553,7 +553,8 @@ network. See [Node enrollment](NODE_ENROLLMENT.md).
 `POST /api/v1/bots/{botId}/browser/maintenance` requires Owner cookie and exact allowed Origin,
 and a strict JSON body up to 1 KiB: `{operation:"status"|"restart"|"clear",confirmation?:"clear-browser-data"}`.
 Only `clear` requires the confirmation, and other operations reject it. Unknown fields and any path,
-URL or command are rejected. Response: `{botId,nodeId,running:boolean,paused:boolean}`.
+URL or command are rejected. Response: `{botId,nodeId,running:boolean,paused:boolean,profileBytes:number|null}`.
+See C23 below for measured profile size and compatibility with older Workers/upstreams.
 
 The Server requires an already bound original browser identity or an explicit operator Bot-to-Node
 route; it never selects a replacement Host for maintenance. The original Worker must advertise
@@ -865,8 +866,9 @@ backups, WAL or physical disk free space. Content-addressed output counts reflec
 files, not logical task references. `freedBytes` measures removed attachment file bytes minus the
 minimal gone marker, excluding PostgreSQL receipts/audit growth and physical disk allocation.
 
-`trash` is `{fileCount, sizeBytes, referencedFileCount}`; the last count is files with any retained
-message/task reference. `topChannels` contains at most 20 `{id, name, deleted, sizeBytes, fileCount}`,
+`trash` is `{fileCount, sizeBytes, referencedFileCount, referencedSizeBytes}`; the reference fields
+count files with any retained message/task reference and their measured original/metadata/derived
+bytes. `topChannels` contains at most 20 `{id, name, deleted, sizeBytes, fileCount}`,
 including active and recycled attachments, sorted by size descending then ID. Traversal refuses
 symlinks, hardlinks, foreign ownership, more than 10,000 entries, depth above 8, unavailable/corrupt
 catalogs, or unknown references; no partial/estimated success is returned. No paths or file contents
@@ -889,3 +891,81 @@ a started-only run indicates interrupted/unknown completion. Per-file audits com
 A completed zero-file pass is audited too; disabled/not-yet-due checks make no purge audit.
 This policy replaces a fixed seven-day-cleanup claim: automatic permanent deletion is disabled until
 an Owner explicitly selects 30 days. Existing whole-channel deletion remains a separate lifecycle operation.
+
+### C22: global trash cleanup
+
+`POST /api/v1/storage/trash/cleanup`, `{requestKey: "<UUID>"}` →
+`{removed, retained, retainedCount, retainedHasMore, freedBytes, channelCount}`.
+The current Owner session, allowed Origin, final authority recheck and C21 deletion rules apply.
+No query fields are accepted; the body is limited to 4 KiB and accepts only `requestKey`.
+
+This command considers recycled attachments of every active channel in one transaction. It reuses
+C21 staging/recovery, the initial and locked final reference checks, late-reference SQL guards and
+per-file audit, with `reason: "empty_trash_all"`. Active files, deleted channels and Owner-native
+Task files are excluded. Unknown references refuse the whole request. C21's 1,024-file catalog,
+10,000-reference bounds and first-100 retained list apply. Retained items keep the C21 shape and
+ID order. `channelCount` counts active channels with candidate trash, including channels whose
+files were all retained; it is zero for an empty candidate set.
+
+The persisted receipt is keyed by **requestKey alone**, independent of any channel's lifetime.
+Retrying the same UUID returns the saved response, without new deletion or duplicate audit; later
+trash requires a fresh key. `GET /api/v1/storage` adds `trash.referencedSizeBytes`: measured logical
+bytes of referenced trash, including originals, metadata and derived text. It uses the same measured
+file tree as `trash.sizeBytes`; their difference describes unreferenced trash at measurement
+time, not a promise of eventual `freedBytes` after concurrent changes and retained gone markers.
+
+### C23: browser profile bytes
+
+`POST /api/v1/bots/{botId}/browser/maintenance` with `{operation: "status"}` now returns
+`{botId, nodeId, running, paused, profileBytes: number | null}`. The `browser.maintenance@1`
+Worker result carries the same `profileBytes`. A value is a nonnegative safe integer of logical
+file bytes for this Bot on its original working computer. Missing legacy fields normalize to
+`null`; unsupported routes, rejected or malformed measurements and transport failures yield
+`null`, never an estimated zero. Owner/Host binding, capabilities and cancellation are unchanged.
+Restart and clear results include `profileBytes: null`; request status afterward to measure.
+
+The Docker Provider requests authenticated `GET /computers/profile-usage` with the selected
+`Bot-Id`. The [upstream contribution](https://github.com/CopilotKit/OpenBot/pull/730) reads only
+that Bot's profile, without starting Chromium or exposing paths/content. Its Linux traversal skips
+symlinks, rejects linked roots, hardlinks/special files and foreign devices, and bounds entries
+(10,000), depth (16), elapsed work (2 seconds checked around filesystem operations) and concurrent
+measurements (one). Refusal or an unavailable root returns `null`; a confirmed absent Bot directory
+returns zero. This is a live logical-byte observation, not an atomic snapshot or disk allocation.
+
+The deployed upstream pin remains `257c1280d684089be9adb0b35cce262efc7064bf` while the contribution
+is pending, so that version reports `null`. A numeric production result requires deploying the
+reviewed route after upstream acceptance (or a separately recorded narrow fork after rejection).
+Remote profile bytes are not included in the Server's `/storage.totalBytes`;
+`categories.workingComputerBrowserData` stays `null`.
+
+### C24: attachment reference lists
+
+`GET /api/v1/channels/:channelId/attachments/:id/references?limit=20` requires a current Owner
+session and an active channel. Response:
+
+```json
+{
+  "messages": [{"id": "<message-id>", "createdAt": "<ISO timestamp>", "author": {"kind": "bot", "botId": "<bot-id>"}, "preview": "Short text"}],
+  "tasks": [{"runId": "<run-id>", "title": "Task title", "status": "completed", "createdAt": "<ISO timestamp>"}],
+  "messageCount": 1,
+  "taskCount": 1,
+  "hasMore": false
+}
+```
+
+`author.kind` is `owner`, `bot` or `system`; only a Bot author can include `botId`, when retained.
+System messages keep their actual identity. Previews remove canonical attachment markers, trim
+surrounding spaces and contain at most 120 Unicode code points; task titles contain at most 160.
+No full message content or task instruction is returned.
+
+`limit` defaults to 20, is an ASCII decimal integer 1–100, and caps **each list separately**.
+Empty, malformed, repeated or unknown query fields return 422 `invalid_attachment_reference_query`.
+Each list is newest first by stored timestamp, then ID descending with C collation. Matching,
+record identity, channel scope and the 10,000-per-type count bound are exactly C19's. The counts
+and both pages share one SQL snapshot; `hasMore` is true if either count exceeds its returned list.
+Overflow returns 503 without partial content. There is no cursor or offset in this route.
+
+Recycled files remain readable; purged files return 410, missing/wrong-channel files and deleted
+channels return 404. Missing or revoked Owner authority returns 401, including at the final session
+recheck. The private file lock and bounded Owner transaction remain in force. No model or mutation
+is invoked.

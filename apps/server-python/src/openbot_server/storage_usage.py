@@ -45,6 +45,8 @@ async def measured_usage(db, files, object_root, artifact_root, channel, owner, 
     attachment_prefix = files.root.relative_to(object_root).parts
     claimed = set()
     channel_active = channel_trash = owner_bytes = 0
+    referenced_ids = {item['id'] for item in trash if any(item['referenceCount'].values())}
+    referenced_bytes = 0
     channels = defaultdict(lambda: dict(sizeBytes=0, fileCount=0))
     for item in [*channel, *owner]:
         total = 0
@@ -60,6 +62,7 @@ async def measured_usage(db, files, object_root, artifact_root, channel, owner, 
             channels[item['channelId']]['fileCount'] += 1
             if item.get('deletedAt'): channel_trash += total
             else: channel_active += total
+            if item['id'] in referenced_ids: referenced_bytes += total
     task_bytes = task_count = 0
     for key, size in objects.items():
         if key[0] == 'runs':
@@ -102,6 +105,6 @@ async def measured_usage(db, files, object_root, artifact_root, channel, owner, 
             other=dict(sizeBytes=other, fileCount=sum(key not in claimed for key in objects)+extra_other_count),
             database=dict(sizeBytes=observed['bytes']), workingComputerBrowserData=None),
         trash=dict(fileCount=len(trash), sizeBytes=channel_trash,
-            referencedFileCount=sum(any(item['referenceCount'].values()) for item in trash)),
+            referencedFileCount=len(referenced_ids), referencedSizeBytes=referenced_bytes),
         topChannels=[dict(id=identity, name=names[identity]['name'], deleted=names[identity]['deleted_at'] is not None,
             **channels[identity]) for identity in top], topChannelsLimit=TOP_CHANNEL_LIMIT)

@@ -64,4 +64,23 @@ it("keeps lifecycle actions off the public input command and requires separate c
     }).success,
   ).toBe(false);
   expect(browserRuntimeStateSchema.safeParse({ running: "true" }).success).toBe(false);
+  expect(browserRuntimeStateSchema.parse({ running: true })).toEqual({
+    running: true,
+    profileBytes: null,
+  });
+  for (const profileBytes of [null, 0, 123, Number.MAX_SAFE_INTEGER]) {
+    expect(browserRuntimeStateSchema.parse({ running: true, profileBytes })).toEqual({
+      running: true,
+      profileBytes,
+    });
+  }
+  for (const profileBytes of [true, "123", -1, 1.5, Number.MAX_SAFE_INTEGER + 1, NaN, Infinity]) {
+    expect(browserRuntimeStateSchema.safeParse({ running: true, profileBytes }).success).toBe(
+      false,
+    );
+  }
+  expect(
+    browserRuntimeStateSchema.safeParse({ running: true, profileBytes: 1, path: "/private" })
+      .success,
+  ).toBe(false);
 });

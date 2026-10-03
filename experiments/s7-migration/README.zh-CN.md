@@ -9,12 +9,13 @@
 | --- | --- | --- |
 | 架构历史，27 条迁移 | `c33e03f1a14de739196113769c59fdaace9029e7` | 恢复旧数据，再通过现有生产启动守卫执行增量迁移。 |
 | 功能历史，19 条迁移 | `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` | 直接升级必须在索引 17 失败；专用实验随后将有限兼容记录转入新建目标库。 |
-| 已验证目标，51 条迁移 | 已提交 SQL 来源 `38c10b39ffa91ab4746da6d35ddf77505106ac33`，附当前 SQL／journal 准确哈希 | SQL 与 journal 必须匹配 `target-history.json`；变化后重新验证。 |
+| 已验证目标，52 条迁移 | 已提交 SQL 来源 `8946a480542683cb85bf1b6ebc7c4134a9b27630`，附当前 SQL／journal 准确哈希 | SQL 与 journal 必须匹配 `target-history.json`；变化后重新验证。 |
 
-51 条迁移的 C21 目标在 2026-10-03 通过全部 40 项保留数据迁移／恢复检查，以及 8 项清理检查。
-[当前证据](evidence/channel-storage-result.json)保存精确哈希和实际结果。迁移 0050 增加最小删除／重试
-凭证、默认关闭的存储设置及迟到引用守卫；C21 产品测试另行覆盖文件暂存恢复与策略行为。
-历史 SQL、夹具和断言未改动。[46 条身份生命周期证据](evidence/identity-lifecycle-result.json)、
+52 条迁移的 C22 目标在 2026-10-03 通过全部 40 项保留数据迁移／恢复检查，以及 8 项清理检查。
+[当前证据](evidence/global-trash-result.json)保存精确哈希和实际结果。迁移 0051 增加全局请求标识
+凭证；C22 产品测试另行覆盖重放、清理范围、引用及实测字节数。历史 SQL、夹具和断言未改动。
+[51 条 C21 证据](evidence/channel-storage-result.json)仍作为历史记录。
+[46 条身份生命周期证据](evidence/identity-lifecycle-result.json)、
 [45 条证据](evidence/browser-pages-result.json)和[44 条证据](evidence/browser-profiles-result.json)
 仍作为有日期的历史证据。本轮不证明生产附件暂存日志恢复，也不表示 S7 完成。
 
