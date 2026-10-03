@@ -572,7 +572,7 @@
       "kind": "title1",
       "maxW": 6000,
       "page": "next",
-      "text": "OpenBot Desktop · 第 22 步 · 待确认",
+      "text": "OpenBot Desktop · 第 22 步",
       "w": 240,
       "x": 0,
       "y": -320
@@ -581,7 +581,7 @@
       "kind": "title1",
       "maxW": 3000,
       "page": "storage",
-      "text": "OpenBot Desktop · 存储与清理 · 待确认",
+      "text": "OpenBot Desktop · 存储与清理",
       "w": 240,
       "x": 0,
       "y": -320
@@ -670,11 +670,11 @@
     },
     {
       "id": "next",
-      "name": "第 22 步 · 待确认"
+      "name": "第 22 步"
     },
     {
       "id": "storage",
-      "name": "存储与清理 · 待确认"
+      "name": "存储与清理"
     }
   ],
   "title": "OpenBot Desktop 界面优化"
