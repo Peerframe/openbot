@@ -37,6 +37,8 @@ describe("isolated Desktop platform preload", () => {
     await expect(bridge?.setPlatformPreferences?.(DEFAULT_PLATFORM_PREFERENCES)).rejects.toThrow(
       "user gesture",
     );
+    await expect(bridge?.setColorScheme?.("dark")).rejects.toThrow("user gesture");
+    await expect(bridge?.setColorScheme?.("auto" as never)).rejects.toThrow("Invalid");
     await expect(bridge?.downloadUpdate?.()).rejects.toThrow("user gesture");
     await expect(bridge?.installUpdate?.()).rejects.toThrow("user gesture");
     expect(ipcRenderer.invoke).not.toHaveBeenCalled();
@@ -49,6 +51,29 @@ describe("isolated Desktop platform preload", () => {
       "openbot:set-platform-preferences",
       DEFAULT_PLATFORM_PREFERENCES,
     );
+    await bridge?.getColorScheme?.();
+    expect(ipcRenderer.invoke).toHaveBeenLastCalledWith("openbot:get-color-scheme");
+    await bridge?.setColorScheme?.("dark");
+    expect(ipcRenderer.invoke).toHaveBeenLastCalledWith("openbot:set-color-scheme", "dark");
+    const changed = vi.fn();
+    const unsubscribe = bridge?.onColorSchemeChanged?.(changed);
+    ipcRenderer.emit(
+      "openbot:color-scheme-changed",
+      { sender: "private native event" },
+      { scheme: "system", resolved: "dark" },
+    );
+    expect(changed).toHaveBeenCalledExactlyOnceWith({ scheme: "system", resolved: "dark" });
+    for (const value of [
+      null,
+      {},
+      { scheme: "auto", resolved: "dark" },
+      { scheme: "system", resolved: "system" },
+      { scheme: "dark", resolved: "dark", secret: "dropped" },
+    ])
+      ipcRenderer.emit("openbot:color-scheme-changed", {}, value);
+    expect(changed).toHaveBeenCalledTimes(1);
+    unsubscribe?.();
+    expect(ipcRenderer.listenerCount("openbot:color-scheme-changed")).toBe(0);
     await bridge?.downloadUpdate?.();
     expect(ipcRenderer.invoke).toHaveBeenLastCalledWith("openbot:download-update");
     await bridge?.installUpdate?.();

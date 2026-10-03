@@ -125,6 +125,10 @@ Done 2026-10-02 and 2026-10-03 (#147, #149, #150, #157–#161, #164, #165) and C
 
 Open — in the order the UI needs them:
 
+C25 platform implementation is complete: the optional color-scheme bridge persists system/light/dark
+and resolves native backgrounds and materials ([contract](../../API.md#desktop-color-scheme-c25)).
+Renderer dark styles and controls remain with Claude.
+
 | ID | Needed by | Contract to add | UI until ready |
 | --- | --- | --- | --- |
 | C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked — backend implemented; UI pending, contract in [the research record](../../research/bot-appearance-and-greeting.md) | Pencil button hidden |

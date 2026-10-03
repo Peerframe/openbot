@@ -24,6 +24,8 @@ export type {
   DesktopPlatformPreferences,
   DesktopPlatformState,
   DesktopRuntimeInfo,
+  DesktopColorScheme,
+  DesktopColorSchemeState,
   DesktopSetupMode,
   DesktopSetupPlanInput,
   DesktopSetupPlanState,

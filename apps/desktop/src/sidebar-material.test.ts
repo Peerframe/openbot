@@ -68,7 +68,7 @@ describe("native sidebar material", () => {
     expect(controller.setEnabled(true)).toEqual({ status: "unsupported" });
     expect(accessibility).not.toHaveBeenCalled();
     expect(window.setVibrancy).not.toHaveBeenCalled();
-    expect(window.setBackgroundColor).not.toHaveBeenCalled();
+    expect(window.setBackgroundColor).toHaveBeenLastCalledWith("#ffffff");
   });
 
   it("does not use a destroyed window", () => {
@@ -88,4 +88,33 @@ describe("native sidebar material", () => {
     expect(window.setVibrancy).toHaveBeenLastCalledWith(null);
     expect(controller.refresh()).toEqual({ status: "enabled" });
   });
+});
+
+describe("sidebar dark fallback", () => {
+  it.each(["reducedTransparency", "highContrast"] as const)(
+    "uses the current solid palette for %s and retains vibrancy",
+    (flag) => {
+      const f = harness();
+      let background = "#141414";
+      const controller = new SidebarMaterialController({
+        platform: "darwin",
+        window: f.window,
+        accessibility: () => f.flags,
+        changed: f.changed,
+        backgroundColor: () => background,
+      });
+      expect(controller.setEnabled(true).status).toBe("enabled");
+      expect(f.window.setBackgroundColor).toHaveBeenLastCalledWith("#00000000");
+      f.flags[flag] = true;
+      expect(controller.refresh().status).toBe("reduced");
+      expect(f.window.setBackgroundColor).toHaveBeenLastCalledWith("#141414");
+      background = "#ffffff";
+      expect(controller.refresh().status).toBe("reduced");
+      expect(f.window.setBackgroundColor).toHaveBeenLastCalledWith("#ffffff");
+      f.flags[flag] = false;
+      controller.refresh();
+      expect(f.window.setVibrancy).toHaveBeenLastCalledWith("sidebar");
+      expect(f.window.setBackgroundColor).toHaveBeenLastCalledWith("#00000000");
+    },
+  );
 });
