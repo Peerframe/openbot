@@ -1,0 +1,92 @@
+/*
+ * Motion (DESIGN.md › Motion). Short and quiet: feedback on press and hover, dialogs and popovers
+ * that grow from where they open, panels that slide instead of jumping. Everything here is off when
+ * the system asks for reduced motion or the Owner turns on 通用 › 减少动态效果.
+ */
+:root {
+  --ob-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ob-motion-fast: 120ms;
+  --ob-motion: 180ms;
+  --ob-motion-panel: 220ms;
+}
+
+@keyframes ob-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+@keyframes ob-pop-up {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Press and hover feedback; :where() keeps component rules in charge of everything else. */
+  :root:not([data-reduced-motion="true"])
+  :where(button, a, summary, [role="option"], [role="tab"], input, textarea, select) {
+    transition:
+      background-color var(--ob-motion-fast) ease,
+      border-color var(--ob-motion-fast) ease,
+      color var(--ob-motion-fast) ease,
+      box-shadow var(--ob-motion-fast) ease,
+      opacity var(--ob-motion-fast) ease;
+  }
+  :root:not([data-reduced-motion="true"]) :is(.ob-pill, .ob-round):active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  /* Dialogs fade and rise in, and fade out on close; the dimmed backdrop follows. */
+  :root:not([data-reduced-motion="true"]) dialog {
+    transition:
+      opacity var(--ob-motion) var(--ob-ease-out),
+      transform var(--ob-motion) var(--ob-ease-out),
+      overlay var(--ob-motion) allow-discrete,
+      display var(--ob-motion) allow-discrete;
+  }
+  :root:not([data-reduced-motion="true"]) dialog:not([open]) {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+  :root:not([data-reduced-motion="true"]) dialog::backdrop {
+    transition:
+      opacity var(--ob-motion) ease,
+      overlay var(--ob-motion) allow-discrete,
+      display var(--ob-motion) allow-discrete;
+  }
+  :root:not([data-reduced-motion="true"]) dialog:not([open])::backdrop {
+    opacity: 0;
+  }
+  @starting-style {
+    :root:not([data-reduced-motion="true"]) dialog[open] {
+      opacity: 0;
+      transform: translateY(6px) scale(0.985);
+    }
+    :root:not([data-reduced-motion="true"]) dialog[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  /* Popovers above the composer grow upward; menus below their button grow downward. */
+  :root:not([data-reduced-motion="true"])
+  :is(.composer-add-popover, .mention-options, .composer-skills-panel, .message-action-popover) {
+    transform-origin: bottom left;
+    animation: ob-pop-in var(--ob-motion-fast) var(--ob-ease-out);
+  }
+  :root:not([data-reduced-motion="true"])
+    :is(.ob-menu, .ci-add-popover, .attachment-actions-body, .sb-popover) {
+    transform-origin: top left;
+    animation: ob-pop-up var(--ob-motion-fast) var(--ob-ease-out);
+  }
+  :root:not([data-reduced-motion="true"]) .sb-account-menu {
+    transform-origin: bottom left;
+    animation: ob-pop-in var(--ob-motion-fast) var(--ob-ease-out);
+  }
+
+  /* Sidebar and rail slide open and closed instead of jumping. */
+  :root:not([data-reduced-motion="true"]) .app-shell.desktop-workspace {
+    transition: grid-template-columns var(--ob-motion-panel) var(--ob-ease-out);
+  }
+}

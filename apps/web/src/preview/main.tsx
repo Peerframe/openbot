@@ -3,8 +3,10 @@ import { createWorld } from "./world";
 import "../global-styles";
 import "./preview.css";
 import { installAppFavicon } from "../app-favicon";
+import { installOverlayScrollbars } from "../overlay-scrollbars";
 
 installAppFavicon();
+installOverlayScrollbars();
 
 /*
  * Design preview entry (dev only): `npm run design:preview -w @openbot/web`, then open

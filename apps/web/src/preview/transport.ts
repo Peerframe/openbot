@@ -71,6 +71,24 @@ function drawPricingPage(): string {
   return canvas.toDataURL("image/png").split(",")[1] ?? "";
 }
 
+/** Synthetic plugins: one granted to 研究助理 (已连接), two not yet granted (需要授权). */
+const plugin = (id: string, name: string, granted: boolean) => ({
+  id,
+  name,
+  endpoint: `https://plugins.example.test/${id}`,
+  tools: [{ name: "search", description: `${name} 搜索`, inputSchema: { type: "object" } }],
+  digest: "0".repeat(64),
+  revision: "00000000-0000-4000-8000-000000000001",
+  enabled: true,
+  createdAt: "2026-09-20T01:00:00.000Z",
+  grants: granted ? [{ botId: "b-research", tools: [{ name: "search", mode: "read" }] }] : [],
+});
+const previewPlugins = [
+  plugin("github", "GitHub", true),
+  plugin("gmail", "Gmail", false),
+  plugin("drive", "Google Drive", false),
+];
+
 /** DialogModel artboard: the model list a verified Anthropic key returns (synthetic). */
 const previewModels = [
   "claude-sonnet-5",
@@ -480,7 +498,7 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
       (m) => json({ proposals: knowledgeProposalsFor(m[1] ?? "") }),
     ],
     ["GET", /^\/api\/v1\/runs\/([^/]+)\/output$/, () => json({ output: null })],
-    ["GET", /^\/api\/v1\/plugins$/, () => json({ plugins: [], pendingCalls: [] })],
+    ["GET", /^\/api\/v1\/plugins$/, () => json({ plugins: previewPlugins, pendingCalls: [] })],
     [
       "GET",
       /^\/api\/v1\/plugins\/catalog$/,

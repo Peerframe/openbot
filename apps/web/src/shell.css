@@ -236,16 +236,31 @@
 }
 /* The approved desktop composition reuses the same native window and Server-backed views. */
 .app-shell.desktop-workspace {
-  /* Main artboard: 300px sidebar, fluid conversation, 340px rail. */
+  /* Main artboard: 300px sidebar, fluid conversation, 340px rail. The *-open widths stay put while
+     a panel is closed, so its content slides out of view instead of being squeezed. */
   --workspace-sidebar-size: 300px;
   --workspace-details-size: 340px;
+  --workspace-sidebar-open: 300px;
+  --workspace-details-open: 340px;
   --workspace-toolbar-height: 58px;
 }
 @media (max-width: 1100px) {
   .app-shell.desktop-workspace {
     --workspace-sidebar-size: 236px;
     --workspace-details-size: 264px;
+    --workspace-sidebar-open: 236px;
+    --workspace-details-open: 264px;
   }
+}
+.app-shell.desktop-workspace > :is(.workspace-sidebar, .workspace-details) {
+  overflow-x: hidden;
+}
+.app-shell.desktop-workspace > .workspace-sidebar > * {
+  min-width: var(--workspace-sidebar-open);
+}
+.app-shell.desktop-workspace > .workspace-details > * {
+  /* Less the rail's 1px left border. */
+  min-width: calc(var(--workspace-details-open) - 1px);
 }
 .app-shell.desktop-workspace.without-sidebar {
   --workspace-sidebar-size: 0px;

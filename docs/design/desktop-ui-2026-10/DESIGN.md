@@ -52,6 +52,9 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Type | System UI / PingFang SC; body 15px, caption 13px, meta 12px, section label 13px/500, page title 24–28px/700, dialog title 22px/700 |
 | Radii | Pills 17px (34px high) or 20px (40px high, dialogs), cards 16–18px, task cards 18px, bubbles 22px, dialogs 22px; Bot avatars have no radius because they have no frame |
 | Primitives | `.ob-pill` (`is-primary`, `is-outline`, `is-danger`, `is-small`), `.ob-round`, `.ob-switch` (44×26), `.ob-filter`, `.ob-tag`, `.ob-field`, `.ob-search`, `.ob-card`, `.ob-menu`, `.ob-menu-item`, `.ob-seg` (segmented control) |
+| Scale | The artboards are drawn at 1440×900. Desktop opens at 1200×780 and draws the page at 90% (owner feedback 2026-10-03); 视图 › 实际大小 / 放大 / 缩小 change it, and the traffic lights are placed for the 90% layout |
+| Motion (`motion.css`) | Press and hover: colours ease over 120ms, pills shrink to 97% while pressed. Dialogs fade and rise 6px in 180ms and fade out on close; the backdrop follows. Menus and @ / lists grow from their anchor in 120ms. The sidebar and rail slide open and closed (220ms) with their content at full width. All of it is off with the system's reduced motion or 通用 › 减少动态效果 |
+| Scrollbars | No track; a 6px thumb appears while an area scrolls and fades a second later, 10px under the pointer (LongLists). One listener marks the scrolling element (`overlay-scrollbars.ts`) |
 
 ## Window shell
 
@@ -60,6 +63,9 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
   「+」 button on one 30px row. Search follows.
 - The main column has its own 56px header: the title pill in the centre; 实时 status and 分享 on
   the right.
+- The New screen has no title pill: its recipients bar heads the page (owner feedback 2026-10-03).
+- The sidebar's 插件 button shows up to three enabled plugins as letter tiles after its label
+  (Sidebar artboard).
 - **The title pill opens the right rail**: 频道信息 (ChannelInfo) in a 频道, Bot 信息 (BotInfo) in a
   单聊. The rail's 收起 closes it.
 - Back, forward and the panel toggles are keyboard and menu commands (⌘[ ⌘] ⌘B ⌘⇧B). When the
@@ -161,7 +167,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | BotInfo | `BotInfoRail.tsx` (单聊 and the Bot profile) | Built; 编辑头像 waits for C9 |
 | Profile, ProfileEvolution, ProfileSkills, ProfileMemory, ProfileWork, ProfileConfig | `EmployeeProfileView.tsx` and its tabs | Built (23a) |
 | New, NewGroup, NewBotChat | `NewChatScreen.tsx`, `NewBotSetupCard.tsx` | Built; the greeting waits for C11 |
-| Slash | `ChannelWorkspace.tsx` composer menus | Built |
+| Slash | `ChannelWorkspace.tsx` composer menus | Built. @ and / lists open at the caret. @ lists Bots and enabled plugins one line each (kind on the right; a plugin shows 已连接 or 需要授权). Choosing a connected plugin writes 「@名称」 as a hint to the Bot; choosing an ungranted one opens the plugins panel, so @ never grants anything. The 「+」 menu closes on any outside press and when @ or / opens |
 | Settings, SettingsNav, Settings* | `DesktopSettingsScreen.tsx`, `Settings*.tsx` | Built |
 | Plugins | `PluginsDialog.tsx`, `PluginManagerPanel.tsx` | Built |
 | Avatar, Avatars, GroupAvatar, GroupAvatars | `RobotAvatar.tsx`, `GroupAvatar.tsx` | Built; all eight accents |

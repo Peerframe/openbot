@@ -382,7 +382,6 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   background: transparent;
-  scrollbar-width: thin;
 }
 .app-shell .channel-workspace.channel-native .message-time-divider {
   margin: 10px 0 6px;
@@ -988,6 +987,45 @@
 .app-shell .channel-workspace.channel-native .mention-options .robot-avatar {
   width: 24px;
   height: 24px;
+}
+/* Slash artboard: @ rows are one line — glyph, name (a plugin adds its state), kind on the right. */
+.app-shell .channel-workspace.channel-native .mention-options button > span:not(.robot-avatar) {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-shell .channel-workspace.channel-native .mention-options button > em {
+  flex: 0 0 auto;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+  font-style: normal;
+}
+.app-shell .channel-workspace.channel-native .mention-glyph {
+  display: inline-grid;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--ob-fill);
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 600;
+}
+.app-shell .channel-workspace.channel-native .mention-glyph.is-plugin {
+  border: 1px solid #ececee;
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ob-text);
+  font-size: 11px;
+  font-weight: 700;
 }
 .app-shell .channel-workspace.channel-native .mention-options small {
   color: #888;

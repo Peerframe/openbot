@@ -81,6 +81,8 @@ let updateController: DesktopUpdateController | undefined;
 let tray: Tray | undefined;
 let navigationMenu: DesktopNavigationMenuController | undefined;
 
+/** Default page scale of the Desktop window; the View menu can change it. */
+const DESKTOP_ZOOM_FACTOR = 0.9;
 const compatibleProfile = desktopProfileCompatibility(
   app.getPath("appData"),
   process.platform,
@@ -452,25 +454,36 @@ async function createMainWindow(activeSession: Session): Promise<void> {
   const window = new BrowserWindow({
     // Preserve native macOS controls while letting the sidebar extend into window chrome.
     ...(process.platform === "darwin"
-      ? { titleBarStyle: "hidden" as const, trafficLightPosition: { x: 20, y: 20 } }
+      ? {
+          titleBarStyle: "hidden" as const,
+          // The sidebar's first row (y 11, 30px) is drawn at the page scale; centre the 12px
+          // lights on it at the default scale (x 20, y 20 at 100%).
+          trafficLightPosition: {
+            x: Math.round(20 * DESKTOP_ZOOM_FACTOR),
+            y: Math.round((11 + 15) * DESKTOP_ZOOM_FACTOR - 6),
+          },
+        }
       : {}),
     autoHideMenuBar: true,
     backgroundColor: "#ffffff",
-    height: 840,
+    // Owner feedback 2026-10-03: the artboards are drawn for a 1440×900 canvas, which felt too
+    // large in a laptop window. Open smaller and draw at 90%; 视图 › 实际大小 restores 100%.
+    height: 780,
     icon: desktopWindowIconPath({
       appPath: app.getAppPath(),
       packaged: app.isPackaged,
       resourcesPath: process.resourcesPath,
     }),
-    minHeight: 640,
-    minWidth: 960,
+    minHeight: 600,
+    minWidth: 900,
     show: false,
     title: "OpenBot",
     webPreferences: {
       ...createDesktopWebPreferences(preloadPath, !app.isPackaged),
       session: activeSession,
+      zoomFactor: DESKTOP_ZOOM_FACTOR,
     },
-    width: 1280,
+    width: 1200,
   });
 
   mainWindow = window;

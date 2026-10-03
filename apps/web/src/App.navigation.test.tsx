@@ -274,7 +274,9 @@ describe("Desktop workspace navigation continuity", () => {
       expect(composer(rendered.container).value).toBe("保留这个草稿");
       // New artboard: 「+」 opens 新建聊天; the first message opens the Bot's conversation.
       await interact(() => buttonByLabel(rendered.container, "新建聊天").click());
-      expect(title(rendered.container)).toBe("新建聊天");
+      // The recipients bar heads the page; there is no title pill above it.
+      expect(rendered.container.querySelector('main[aria-label="新建聊天"]')).not.toBeNull();
+      expect(title(rendered.container)).toBeUndefined();
       await interact(() =>
         Array.from(rendered.container.querySelectorAll<HTMLButtonElement>(".new-chat-option"))
           .find((option) => option.textContent?.includes(bot.name))

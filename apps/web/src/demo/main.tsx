@@ -3,8 +3,10 @@ import { installDemoTransport } from "./install";
 import "../global-styles";
 import "./demo.css";
 import { installAppFavicon } from "../app-favicon";
+import { installOverlayScrollbars } from "../overlay-scrollbars";
 
 installAppFavicon();
+installOverlayScrollbars();
 
 const adapter = new DemoAdapter(location.origin);
 installDemoTransport(adapter);
