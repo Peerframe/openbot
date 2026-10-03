@@ -153,10 +153,10 @@ function RoundHead({ accent }: { accent: string }) {
           stroke={BODY}
           strokeLinecap="round"
         />
-        <circle className="robot-ball is-standard" cx="33" cy="16" r="4.3" fill={BODY} />
-        <circle className="robot-ball is-micro" cx="33" cy="16" r="5.6" fill={BODY} />
+        <circle className="robot-ball robot-body is-standard" cx="33" cy="16" r="4.3" fill={BODY} />
+        <circle className="robot-ball robot-body is-micro" cx="33" cy="16" r="5.6" fill={BODY} />
       </g>
-      <path d={ROUND_HEAD} fill={BODY} />
+      <path className="robot-body" d={ROUND_HEAD} fill={BODY} />
       <path
         className="robot-jaw"
         d="M12 69C29 76 66 76 83 69V72C83 83 69 89 48 89C26 89 12 83 12 72Z"
@@ -177,8 +177,8 @@ function RoundHead({ accent }: { accent: string }) {
 function RelayHead({ accent }: { accent: string }) {
   return (
     <>
-      <rect x="5" y="44" width="12" height="25" rx="6" fill={BODY} />
-      <rect x="79" y="44" width="12" height="25" rx="6" fill={BODY} />
+      <rect className="robot-body" x="5" y="44" width="12" height="25" rx="6" fill={BODY} />
+      <rect className="robot-body" x="79" y="44" width="12" height="25" rx="6" fill={BODY} />
       <path
         className="robot-ear-light"
         d="M11 52v9M85 52v9"
@@ -186,7 +186,7 @@ function RelayHead({ accent }: { accent: string }) {
         strokeWidth="4"
         strokeLinecap="round"
       />
-      <path d={RELAY_HEAD} fill={BODY} />
+      <path className="robot-body" d={RELAY_HEAD} fill={BODY} />
       <path
         className="robot-jaw"
         d="M15 70C32 74 64 74 81 70V73C81 83 70 88 48 88C26 88 15 83 15 73Z"
@@ -207,7 +207,7 @@ function RelayHead({ accent }: { accent: string }) {
 function ScoutHead({ accent }: { accent: string }) {
   return (
     <g className="robot-scout">
-      <path className="robot-scout-head" d={SCOUT_HEAD} fill={BODY} stroke={BODY} />
+      <path className="robot-scout-head robot-body" d={SCOUT_HEAD} fill={BODY} stroke={BODY} />
       <path
         className="robot-jaw"
         d="M14 70C29 76 67 76 82 70V73C82 83 68 89 48 89C28 89 14 83 14 73Z"

@@ -5,7 +5,7 @@
 The repository owner approved this design on 2026-10-01 as **the** UI contract for the Desktop and
 Web clients. It replaces the earlier restyle-only direction: every screen is rebuilt to these
 artboards, one step at a time. The editable source is the owner's private design canvas; the
-`.dc.html` files here are a read-only snapshot of it (markup and inline styles, last refreshed 2026-10-02)
+`.dc.html` files here are a read-only snapshot of it (markup and inline styles, last refreshed 2026-10-03)
 so that every contributor, including Codex, works from the same measurements.
 
 The files are Design Component pages. They need the canvas runtime to render, but their inline
@@ -38,6 +38,7 @@ equivalents. Bracketed values such as `[128]` and `[版本号]` are placeholders
 | [MessageActions](MessageActions.dc.html), [Composer](Composer.dc.html), [ChannelFiles](ChannelFiles.dc.html) | ① Message actions and reactions; composer attachments, voice and 补充指令; 频道文件 with the recycle bin |
 | [ChannelFilesTrash](ChannelFilesTrash.dc.html), [SettingsStorage](SettingsStorage.dc.html) | ① Permanent deletion from the 回收站 with a second confirmation, and the deleted-file placeholder; ④ 设置 › 存储空间 |
 | [EmployeeBrowser](EmployeeBrowser.dc.html) | The Bot's browser: take over and hand back |
+| [DarkTokens](DarkTokens.dc.html), [MainDark](MainDark.dc.html), [NewDark](NewDark.dc.html), [SettingsGeneralDark](SettingsGeneralDark.dc.html) and the components [SidebarDark](SidebarDark.dc.html), [ChannelInfoDark](ChannelInfoDark.dc.html), [SettingsNavDark](SettingsNavDark.dc.html) | Dark appearance: the light and dark value of every colour token, and three screens in dark |
 | [Notices](Notices.dc.html), [LongLists](LongLists.dc.html), [AppIcon](AppIcon.dc.html) | Notices and connection states; long lists and scrolling for every screen; app icon |
 | [ChannelInfo](ChannelInfo.dc.html) | 频道信息 rail with 详情 / 资料库 / 成员 tabs (imported by Main) |
 | [Launch](Launch.dc.html), [LaunchMotion](LaunchMotion.dc.html) | Opening screen states and the 900 ms opening animation |
