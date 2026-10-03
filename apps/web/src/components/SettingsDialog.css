@@ -1,4 +1,86 @@
 /* Settings and SettingsNav artboards: a 1060×740 modal over the dimmed workspace. */
+.login-error {
+  margin: 2px 0 0;
+  color: #a1342c;
+  font-size: 11px;
+}
+.connection-warning {
+  margin: -12px 0 18px;
+  padding: 10px 12px;
+  border: 1px solid #efd9a8;
+  border-radius: 8px;
+  color: #76571b;
+  background: #fffaf0;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.settings-switch {
+  position: relative;
+  display: block;
+  width: 34px;
+  height: 21px;
+  cursor: pointer;
+}
+.settings-switch input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+.settings-switch span {
+  display: block;
+  width: 34px;
+  height: 21px;
+  border-radius: 12px;
+  background: #cbd0d6;
+  pointer-events: none;
+}
+.settings-switch span::after {
+  content: "";
+  position: absolute;
+  width: 17px;
+  height: 17px;
+  top: 2px;
+  left: 2px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px #25304220;
+  transition: transform 120ms ease-out;
+}
+.settings-switch input:checked + span {
+  background: #328767;
+}
+.settings-switch input:checked + span::after {
+  transform: translateX(13px);
+}
+.settings-switch input:focus-visible + span {
+  outline: 2px solid #237ed8;
+  outline-offset: 3px;
+}
+.settings-about img {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .settings-switch span::after {
+    transition: none;
+  }
+}
+.settings-nav-group {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 20px;
+}
+.settings-search-empty {
+  padding: 8px 10px;
+  color: #687487;
+  line-height: 1.7;
+  font-size: 13px;
+}
 .settings-dialog {
   box-sizing: border-box;
   width: min(1060px, calc(100vw - 40px));

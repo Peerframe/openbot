@@ -168,7 +168,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | `Onboarding.tsx` and the setup screens | Built |
 | TaskCards, TaskInspector | `TaskCard.tsx`, `TaskSheet.tsx` | Built; cards show the 服务电脑's step count (C13) |
 | Dialog* | `Dialog.tsx` frame; Share, Export, Import, DeleteIdentity, NodeManager and ModelConnections dialogs | Built; 连接模型服务 edits one connection with the free model-list check, a default model and 断开 (C17) |
-| WorkSupervision, EmptyWorkspace | `WorkTasksScreen.tsx`, `EmptyWorkspace.tsx` | Built; 任务监督 step counts not wired yet (Work tasks report actions, not Run summaries) |
+| WorkSupervision, EmptyWorkspace | `WorkTasksScreen.tsx`, `EmptyWorkspace.tsx` | Built; 任务监督 names the current step from the latest durable Work action |
 | ChannelFilesTrash, SettingsStorage | `AttachmentsManager.tsx`, `MessageAttachments.tsx`, `SettingsStorage.tsx` | Built (C21). The 服务电脑 cleans the 回收站 per channel, so 存储空间 links to each channel instead of a global 清空回收站…; browser data is not measured, so it is not a category; references are counts only, so there is no 查看引用. The fixes are C22–C24 ([research](../../research/storage-cleanup-follow-ups.md)) |
 
 ## Designed in step 22 (approved 2026-10-02)
@@ -199,11 +199,19 @@ No component renders a legacy class any more. Step 23f retired the last ones: `p
 
 Legacy stylesheets: step 23f measured every remaining legacy rule in 65 design-preview states.
 Rules that styled nothing or were fully overridden are deleted (about 120 rules), and so is
-`components/destinations.css`. What is left in `styles.css`, `workspace-shell.css`,
-`workspace-preferences.css`, `desktop-workspace.css`, `conversation-feedback.css`,
-`desktop-ui-refresh.css` and `settings-plugin-refresh.css` (about 1,600 lines) still styles live
-screens, or states the preview does not reach (errors, loading, Markdown tables, the narrow-window
-mobile navigation). Moving those rules into component stylesheets is follow-up work.
+`components/destinations.css`. Step 27 then retired the seven legacy sheets (`styles.css`,
+`workspace-shell.css`, `workspace-preferences.css`, `desktop-workspace.css`,
+`conversation-feedback.css`, `desktop-ui-refresh.css`, `settings-plugin-refresh.css`).
+- A rule whose classes only one component renders moved into that component's stylesheet, ahead
+  of its own rules. Seven components gained a stylesheet: `ApprovalCard`, `ArtifactCard`,
+  `MobileNavigation`, `NodeManagerDialog`, `PortableEmployeeReview`, `RichMessage` and
+  `SettingsSections`.
+- Element rules and rules shared by several components (including `App.tsx`'s own shell layout)
+  are in `base.css`, loaded before `primitives.css`, and `shell.css`, loaded after it. Their old
+  relative order is kept.
+- One rule that styled nothing was dropped.
+- A computed-style sweep of 68 design-preview states matched the baseline before and after, apart
+  from clock text widths and the known settings-window centring flake.
 
 Removed: `CreateBotDialog` and `CreateChannelDialog` (step 16); `EmployeeProfileRail` (step 17);
 `RunInspector`, `RunProgressPanel`, `NativeRunControls` and `RunSteering` (step 19); the standalone

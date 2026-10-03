@@ -1,0 +1,271 @@
+/* Workspace shell rules shared by several components; loaded after primitives.css. */
+/* The three workspace columns share the native window instead of adding a title strip. */
+.app-shell,
+.app-shell.without-context {
+  grid-template-columns: 236px minmax(0, 1fr) 294px;
+  gap: 12px;
+  height: 100dvh;
+  min-height: 0;
+  padding: 12px;
+  overflow: hidden;
+  background: #f6f7f8;
+}
+.app-shell > * {
+  min-width: 0;
+}
+.app-shell .sidebar {
+  position: relative;
+  top: auto;
+  height: calc(100dvh - 24px);
+  min-height: 0;
+  padding: 22px 14px 12px;
+  border: 1px solid #fff;
+  border-radius: 22px;
+  background: #fcfcfd;
+}
+:root[data-desktop="darwin"] .app-shell .sidebar::before {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 248px;
+  height: 60px;
+}
+.app-shell .context-rail {
+  grid-column: auto;
+  height: calc(100dvh - 24px);
+  min-height: 0;
+  top: auto;
+  position: relative;
+  border: 0;
+  padding-top: 32px;
+  overflow-y: auto;
+  background: transparent;
+}
+.app-shell .context-rail .attention {
+  display: flex;
+}
+.app-shell .context-rail .attention {
+  flex-direction: column;
+}
+.app-shell .workspace-main {
+  height: calc(100dvh - 24px);
+  min-height: 0;
+  overflow: auto;
+  padding: 0;
+}
+.app-shell .conversation-empty h2 {
+  font-size: 18px;
+  font-weight: 620;
+  color: #2c3542;
+}
+.app-shell .conversation-empty p {
+  font-size: 12px;
+  color: #627181;
+}
+.app-shell .conversation-icon {
+  color: #627b98;
+  background: #e4eaf2;
+  border-radius: 18px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-shell * {
+    scroll-behavior: auto;
+  }
+}
+.workspace-details {
+  min-width: 0;
+  min-height: 0;
+  background: #f6f7f8;
+}
+:root[data-font-size="large"] .app-shell {
+  --chat-font-size: 16px;
+}
+:root[data-density="compact"] .app-shell .message-row {
+  margin-bottom: 10px;
+}
+:root[data-density="compact"] .app-shell .message-content {
+  padding: 8px 12px 6px;
+}
+:root[data-sidebar-material="enabled"] .app-shell {
+  background: linear-gradient(
+    to right,
+    transparent calc(var(--sidebar-width) + var(--shell-inset)),
+    #f6f7f8 calc(var(--sidebar-width) + var(--shell-inset))
+  );
+}
+:root[data-sidebar-material="enabled"] .app-shell .sidebar {
+  background: #ffffff48;
+  border-color: #ffffff6b;
+}
+.settings-group-rows {
+  border: 1px solid #e9ebef;
+  border-radius: 13px;
+  overflow: hidden;
+}
+.settings-tag {
+  font-size: 11px;
+  color: #567461;
+  background: #eaf2ed;
+  padding: 5px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.settings-footnote {
+  color: #7b8793;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.settings-success {
+  margin: 16px 20px;
+  font-size: 12px;
+  color: #267151;
+}
+@media (max-width: 760px) {
+  :root[data-sidebar-material="enabled"] .app-shell {
+    background: #f6f7f8;
+  }
+}
+/* One window-aligned toolbar owns navigation and inspector controls on every destination. */
+.app-shell.desktop-workspace {
+  --workspace-sidebar-size: 248px;
+  --workspace-details-size: 288px;
+  --workspace-navigation-size: 248px;
+  --workspace-toolbar-height: 56px;
+  display: grid;
+  grid-template-columns: var(--workspace-sidebar-size) minmax(0, 1fr) var(--workspace-details-size);
+  padding: 0;
+  gap: 0;
+  height: 100dvh;
+  min-height: 0;
+  background: #fff;
+}
+.workspace-preserved[hidden] {
+  display: none;
+}
+.desktop-workspace .workspace-sidebar {
+  min-height: 0;
+  min-width: 0;
+  border-right: 1px solid #e9ebee;
+}
+.app-shell.desktop-workspace .sidebar {
+  width: 100%;
+  height: 100%;
+  padding: 22px 14px 16px;
+  border: 0;
+  border-radius: 0;
+  background: #f8f9fb;
+}
+:root[data-desktop="darwin"] .app-shell.desktop-workspace .sidebar::before {
+  display: none;
+}
+.app-shell.desktop-workspace > .workspace-main,
+.app-shell.desktop-workspace > .workspace-destination {
+  height: 100%;
+  min-height: 0;
+  border-radius: 0;
+  background: #fff;
+}
+.app-shell.desktop-workspace .workspace-details {
+  --avatar-surface: #fafafa;
+  height: 100%;
+  overflow: auto;
+  background: #fafafa;
+  border-left: 1px solid #ececee;
+}
+.app-shell.desktop-workspace .workspace-details .context-rail {
+  height: auto;
+  min-height: 100%;
+  background: transparent;
+  padding-top: 24px;
+}
+.app-shell.desktop-workspace .channel-workspace {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+}
+.app-shell.desktop-workspace .message-row.bot .message-content,
+.app-shell.desktop-workspace .message-row.system .message-content {
+  background: transparent;
+  border-color: transparent;
+  border-radius: 0;
+}
+:root[data-sidebar-material="enabled"] .app-shell.desktop-workspace {
+  background: linear-gradient(
+    to right,
+    transparent var(--workspace-sidebar-size),
+    #fff var(--workspace-sidebar-size)
+  );
+}
+:root[data-sidebar-material="enabled"] .app-shell.desktop-workspace .sidebar {
+  background: #ffffff40;
+}
+@media (max-width: 1100px) and (min-width: 761px) {
+  .app-shell.desktop-workspace.without-sidebar {
+    --workspace-sidebar-size: 0px;
+    --workspace-navigation-size: 216px;
+  }
+}
+@media (max-width: 760px) {
+  .app-shell.desktop-workspace,
+  .app-shell.desktop-workspace.without-sidebar,
+  .app-shell.desktop-workspace.without-context {
+    --workspace-sidebar-size: 0px;
+    --workspace-details-size: 0px;
+    --workspace-navigation-size: 0px;
+    --workspace-toolbar-height: 52px;
+    grid-template-columns: 0 minmax(0, 1fr) 0;
+  }
+}
+@media (max-width: 760px) {
+  .desktop-workspace .mobile-nav {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .desktop-workspace .workspace-sidebar,
+  .desktop-workspace .workspace-details {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  .app-shell.desktop-workspace > .workspace-main,
+  .app-shell.desktop-workspace > .workspace-destination {
+    height: calc(100dvh - 114px);
+  }
+}
+/* The approved desktop composition reuses the same native window and Server-backed views. */
+.app-shell.desktop-workspace {
+  /* Main artboard: 300px sidebar, fluid conversation, 340px rail. */
+  --workspace-sidebar-size: 300px;
+  --workspace-details-size: 340px;
+  --workspace-toolbar-height: 58px;
+}
+@media (max-width: 1100px) {
+  .app-shell.desktop-workspace {
+    --workspace-sidebar-size: 236px;
+    --workspace-details-size: 264px;
+  }
+}
+.app-shell.desktop-workspace.without-sidebar {
+  --workspace-sidebar-size: 0px;
+  --workspace-navigation-size: 200px;
+}
+.app-shell.desktop-workspace.without-context {
+  --workspace-details-size: 0px;
+}
+:root[data-desktop="win32"] .desktop-workspace.without-sidebar,
+:root[data-desktop="linux"] .desktop-workspace.without-sidebar {
+  --workspace-navigation-size: 134px;
+}
+:root[data-desktop="win32"] .desktop-workspace .sidebar,
+:root[data-desktop="linux"] .desktop-workspace .sidebar {
+  background: var(--sidebar);
+}
+/* Grouped cards: filled neutral surface instead of an outlined box. */
+.settings-load-notice {
+  padding: 26px;
+  border: 1px solid #e5e8ed;
+  border-radius: 14px;
+  color: #657184;
+}

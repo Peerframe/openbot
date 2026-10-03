@@ -1,0 +1,110 @@
+/* NodeManagerDialog (DialogPairHost): enrolled 工作电脑 and the one-time pairing token. */
+.node-identity-list {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+.node-identity-item {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 82px;
+  padding: 14px 2px;
+  border-bottom: 1px solid var(--line);
+}
+.node-identity-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 8px;
+  color: #5e6874;
+  background: #f0f2f5;
+}
+.node-identity-copy {
+  min-width: 0;
+}
+.node-identity-copy > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.node-identity-copy strong,
+.node-identity-copy code,
+.node-identity-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.node-identity-copy code {
+  margin-top: 4px;
+  color: #646c75;
+  font-size: 9px;
+}
+.node-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #737b84;
+  font-size: 9px;
+}
+.node-status::before {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #a8adb3;
+  content: "";
+}
+.node-identity-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+.node-identity-actions > span {
+  color: #a1453d;
+  font-size: 9px;
+}
+.node-identity-actions button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #d5dae0;
+  border-radius: 7px;
+  color: #555c64;
+  background: #fff;
+  cursor: pointer;
+  font-size: 10px;
+}
+.node-identity-actions button:hover {
+  border-color: #aeb6bf;
+  background: #f8f9fa;
+}
+.node-identity-actions .node-danger-button {
+  border-color: #edc7c4;
+  color: #a23830;
+  background: #fff8f7;
+}
+.node-identity-actions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+.node-revoked-at {
+  color: #969ca3;
+  font-size: 9px;
+}
+@media (max-width: 720px) {
+  .node-identity-actions,
+  .node-revoked-at {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 720px) {
+  .node-identity-actions {
+    flex-wrap: wrap;
+  }
+}
