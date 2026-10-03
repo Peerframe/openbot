@@ -67,35 +67,6 @@ select:focus-visible {
     display: none;
   }
 }
-@media (max-width: 720px) {
-  body {
-    padding-bottom: 68px;
-  }
-}
-@media (max-width: 720px) {
-  .sidebar {
-    position: static;
-    display: flex;
-    width: 100%;
-    height: auto;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 18px 15px;
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-}
-@media (max-width: 720px) {
-  .mobile-approval-list .approval-card {
-    padding: 16px;
-  }
-}
-@media (max-width: 720px) {
-  .mobile-approval-list .approval-actions button {
-    min-height: 40px;
-    font-size: 14px;
-  }
-}
 @keyframes backdrop-in {
   from {
     opacity: 0;

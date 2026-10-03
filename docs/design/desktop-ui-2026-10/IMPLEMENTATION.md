@@ -83,6 +83,9 @@ updated.
 | 31 | Close-out — **merged** | — | — | Docs brought up to date with what is built, contracts for C9 and C11 recorded for Codex, H8 reviewed, CJK spacing around names, and the C16 icon test's budget |
 | 32 | Owner feedback: settings, popovers, scale and motion — **merged** | Settings, Sidebar, New, Slash | — | Settings search and close fixed, overlay scrollbars, plugin tiles, no title on New, 「+」 closes outside, @ with plugins at the caret, Desktop at 1200×780 and 90%, the motion layer |
 | 33 | Telegram-like conversation — **in review** | Main, Composer | — | Arriving messages rise in, views fade in, glide to latest and to quotes with a flash, compact 48px composer |
+| 34 | Retire the phone layout — **in review** | — | — | `MobileNavigation` and the phone-only layout rules deleted; the desktop layout holds down to 800px |
+| 35 | 新建聊天 recipients as a dropdown | New | — | The recipient list opens under the 收件人 field, as in the Owner's reference recording, instead of filling the page |
+| 36 | Dark appearance | All | C25 on Desktop | Dark artboards first; colour tokens with a dark set; 外观 › 跟随系统 / 浅色 / 深色; Web follows the system |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 
@@ -117,7 +120,7 @@ Done 2026-10-02 and 2026-10-03 (#147, #149, #150, #157–#161, #164, #165) and C
 | C20 | On-screen claims confirmed or corrected | Wording corrected (#163) |
 | C21 | Permanent 回收站 deletion, a cleanup command, measured storage and an opt-in 30-day purge | Integrated (step 25) |
 | C22 | Global 清空回收站 with one replayable key, and `referencedSizeBytes` | Integrated (step 29) |
-| C23 | Browser profile bytes per Bot from browser status (upstream `agent-computer` contribution pending, so the deployed pin reports 「量不出」) | Integrated (step 29) |
+| C23 | Browser profile bytes per Bot from browser status | Integrated (step 29); the deployed pin reports 「量不出」 until the fork below lands |
 | C24 | Owner-only list of the messages and tasks that reference a file | Integrated (step 29) |
 
 Open — in the order the UI needs them:
@@ -125,6 +128,8 @@ Open — in the order the UI needs them:
 | ID | Needed by | Contract to add | UI until ready |
 | --- | --- | --- | --- |
 | C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked — proposed contract in [the research record](../../research/bot-appearance-and-greeting.md) | Pencil button hidden |
+| C23 fork | Step 29 | **Own narrow fork of `agent-computer`** (Owner decision 2026-10-03: do not wait for upstream #730): the production pin plus only the `GET /computers/profile-usage` contribution, image qualified, `OPEN_SOURCE_REUSE.md` updated, back to upstream once it merges | 「量不出」 |
+| C25 | Step 36 | **Desktop colour scheme**: `get/setColorScheme("system" \| "light" \| "dark")` returning the resolved scheme, a change event, the choice kept by the main process and applied before the window opens, window background `#ffffff` / `#141414` | Desktop stays light |
 | C11 | Step 16 (optional) | **New-Bot greeting**: one bounded, tool-less model call after quick-create, using only other Bots' names and roles; any failure means no greeting — proposed contract in [the research record](../../research/bot-appearance-and-greeting.md) | The setup card shows without a greeting |
 
 ## Repository housekeeping (proposals)
@@ -140,6 +145,14 @@ Open — in the order the UI needs them:
 | H7 | **Updated 2026-10-03.** The website demo (`apps/web/src/demo`) renders the redesigned components; its sidebar follows the product width and its fixed runs report step counts. Keep its fixtures in step with each change | Claude | No |
 | H8 | **Reviewed 2026-10-03.** Tests mostly find elements by role, `aria-label` or class (about 620 and 420 uses); only 41 finds use visible text, mostly button names, which are the accessible names. Copy assertions stay on purpose: the copy is the behaviour under test | Claude | No |
 | H9 | **Done 2026-10-03.** No unreachable UI module is left; the last one, `desktop-setup.ts` (a stale copy of the Desktop setup plan), is deleted. Keep deleting replaced UI in the same step | Claude | No |
+
+## Owner decisions (2026-10-03)
+
+1. Delete the phone layout (`MobileNavigation`) rather than design it (step 34).
+2. 新建聊天 recipients become a dropdown under the field, as in the reference recording (step 35).
+3. Add a dark appearance (step 36), with dark artboards on the canvas first.
+4. Republish the design canvas without the 「待确认」 marks.
+5. C23: do not wait for upstream; run our own narrow `agent-computer` fork.
 
 ## Owner decisions (2026-10-02)
 

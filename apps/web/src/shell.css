@@ -120,13 +120,11 @@
   font-size: 12px;
   color: #267151;
 }
-@media (max-width: 760px) {
-  :root[data-sidebar-material="enabled"] .app-shell {
-    background: #f6f7f8;
-  }
-}
 /* One window-aligned toolbar owns navigation and inspector controls on every destination. */
 .app-shell.desktop-workspace {
+  /* There is no phone layout (Owner decision 2026-10-03): narrower windows scroll instead of
+     reflowing. 800px matches the Desktop window's 900px minimum at its 90% scale. */
+  min-width: 800px;
   --workspace-sidebar-size: 248px;
   --workspace-details-size: 288px;
   --workspace-navigation-size: 248px;
@@ -200,38 +198,10 @@
 :root[data-sidebar-material="enabled"] .app-shell.desktop-workspace .sidebar {
   background: #ffffff40;
 }
-@media (max-width: 1100px) and (min-width: 761px) {
+@media (max-width: 1100px) {
   .app-shell.desktop-workspace.without-sidebar {
     --workspace-sidebar-size: 0px;
     --workspace-navigation-size: 216px;
-  }
-}
-@media (max-width: 760px) {
-  .app-shell.desktop-workspace,
-  .app-shell.desktop-workspace.without-sidebar,
-  .app-shell.desktop-workspace.without-context {
-    --workspace-sidebar-size: 0px;
-    --workspace-details-size: 0px;
-    --workspace-navigation-size: 0px;
-    --workspace-toolbar-height: 52px;
-    grid-template-columns: 0 minmax(0, 1fr) 0;
-  }
-}
-@media (max-width: 760px) {
-  .desktop-workspace .mobile-nav {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-@media (max-width: 760px) {
-  .desktop-workspace .workspace-sidebar,
-  .desktop-workspace .workspace-details {
-    display: none;
-  }
-}
-@media (max-width: 760px) {
-  .app-shell.desktop-workspace > .workspace-main,
-  .app-shell.desktop-workspace > .workspace-destination {
-    height: calc(100dvh - 114px);
   }
 }
 /* The approved desktop composition reuses the same native window and Server-backed views. */

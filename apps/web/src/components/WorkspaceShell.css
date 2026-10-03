@@ -155,21 +155,3 @@
   width: 18px;
   height: 18px;
 }
-
-@media (max-width: 760px) {
-  .app-shell.desktop-workspace {
-    grid-template-rows: 52px minmax(0, 1fr);
-  }
-  /* Phone layout is not designed yet: keep the title leading so it has room. */
-  .app-shell.desktop-workspace .shell-header {
-    grid-template-columns: minmax(0, 1fr) auto;
-    height: 52px;
-    padding: 0 12px;
-  }
-  .app-shell.desktop-workspace .shell-leading {
-    display: none;
-  }
-  .app-shell.desktop-workspace .shell-pill {
-    justify-self: start;
-  }
-}

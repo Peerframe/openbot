@@ -41,7 +41,6 @@ import { EmptyWorkspace } from "./components/EmptyWorkspace";
 import { ExportEmployeeDialog } from "./components/ExportEmployeeDialog";
 import { ImportEmployeeDialog } from "./components/ImportEmployeeDialog";
 import { LoginScreen } from "./components/LoginScreen";
-import { MobileNavigation, type MobilePanel } from "./components/MobileNavigation";
 import { AddModelConnectionDialog } from "./components/ModelConnectionsDialog";
 import { ModelSettingsScreen } from "./components/ModelSettingsScreen";
 import { NewChatScreen, type NewChatStart } from "./components/NewChatScreen";
@@ -586,7 +585,6 @@ export function AuthenticatedWorkspace({
   const [modelServicesOpen, setModelServicesOpen] = useState(false);
   const [pluginsOpen, setPluginsOpen] = useState(false);
   const [modelServicesVersion, setModelServicesVersion] = useState(0);
-  const [mobilePanel, setMobilePanel] = useState<MobilePanel>();
   const [error, setError] = useState<string>();
   const {
     workspace,
@@ -831,7 +829,6 @@ export function AuthenticatedWorkspace({
     const { bot, channel } = await createQuickBot(freshAppearance(workspace.bots));
     projectBot(bot);
     projectChannel(channel);
-    setMobilePanel(undefined);
     updatePreferences({ rightPanelOpen: true });
     selectChannel(channel.id);
     await refresh();
@@ -843,7 +840,6 @@ export function AuthenticatedWorkspace({
   }
 
   function openNewChannel() {
-    setMobilePanel(undefined);
     navigation.navigate({ kind: "new", channel: true });
   }
 
@@ -985,7 +981,6 @@ export function AuthenticatedWorkspace({
     setEmployeeExportOpen(false);
     setEmployeeImportOpen(false);
     setSelectedRunId(undefined);
-    setMobilePanel(undefined);
   }
 
   function openEmployee(botId: string, initialTab: ProfileTab = "overview") {
@@ -994,7 +989,6 @@ export function AuthenticatedWorkspace({
     setEmployeeExportOpen(false);
     setEmployeeImportOpen(false);
     setSelectedRunId(undefined);
-    setMobilePanel(undefined);
   }
 
   async function openDirectConversation(botId: string) {
@@ -1250,28 +1244,6 @@ export function AuthenticatedWorkspace({
             />
           ))}
       </div>
-
-      <MobileNavigation
-        panel={mobilePanel}
-        bots={workspace.bots}
-        channels={workspace.channels}
-        runs={workspace.runs}
-        approvals={workspace.approvals}
-        onPanel={setMobilePanel}
-        onDecideApproval={handleDecideApproval}
-        onCreateBot={quickCreateBot}
-        onCreateChannel={openNewChannel}
-        onManageNodes={() => {
-          setMobilePanel(undefined);
-          setDialog("node");
-        }}
-        onManageModels={() => {
-          setMobilePanel(undefined);
-          setModelServicesOpen(true);
-        }}
-        onSelectChannel={selectChannel}
-        onSelectBot={openEmployee}
-      />
 
       {sharing && selectedChannel && (
         <ShareConversationDialog
