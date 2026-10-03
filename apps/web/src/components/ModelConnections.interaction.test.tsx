@@ -4,12 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
   createModelConnection,
+  deleteModelConnection,
   discoverConnectionModels,
   getEmployeeProfile,
   getModelServices,
-  testModelConnection,
   updateEmployeeModel,
   updateModelConnection,
+  verifyModelConnection,
 } from "../api";
 import {
   deferred,
@@ -20,18 +21,19 @@ import {
 } from "../test/render-component";
 import { EmployeeModelEditor } from "./EmployeeModelEditor";
 import { EmployeeProfileView } from "./EmployeeProfileView";
-import { ModelConnectionEditor } from "./ModelConnectionsDialog";
+import { ModelConnectionDialog } from "./ModelConnectionsDialog";
 import { ModelIdField, ModelSelector } from "./ModelSelector";
 
 vi.mock("../api", async (load) => ({
   ...(await load<typeof import("../api")>()),
   createModelConnection: vi.fn(),
+  deleteModelConnection: vi.fn(),
   discoverConnectionModels: vi.fn(),
   getEmployeeProfile: vi.fn(),
   getModelServices: vi.fn(),
-  testModelConnection: vi.fn(),
   updateEmployeeModel: vi.fn(),
   updateModelConnection: vi.fn(),
+  verifyModelConnection: vi.fn(),
 }));
 
 const connection: ModelConnection = {
@@ -113,102 +115,157 @@ async function submit() {
   );
 }
 
+function dialog(props: Partial<Parameters<typeof ModelConnectionDialog>[0]> = {}) {
+  return renderComponent(
+    <ModelConnectionDialog
+      snapshot={snapshot}
+      onClose={vi.fn()}
+      onSaved={vi.fn()}
+      onReload={vi.fn()}
+      {...props}
+    />,
+  );
+}
+function saveButton(): HTMLButtonElement {
+  return view!.container.ownerDocument.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+}
+
 describe("model connection user flows", () => {
-  it("saves a new credential once, clears the password field, and never probes automatically", async () => {
+  it("verifies a new key, picks a listed default model, then saves it once", async () => {
     const saved = vi.fn();
+    vi.mocked(verifyModelConnection).mockResolvedValue(["other-model", "fixture-model"]);
     vi.mocked(createModelConnection).mockResolvedValue(connection);
-    view = await renderComponent(
-      <ModelConnectionEditor
-        snapshot={snapshot}
-        connection={undefined}
-        onSaved={saved}
-        onReload={vi.fn()}
-      />,
-    );
+    view = await dialog({ onSaved: saved });
     const key = view.container.querySelector<HTMLInputElement>('input[type="password"]')!;
     await setInputValue(key, "synthetic-key");
+    // Unverified: a key never goes to the Server for saving before the free model-list check.
+    expect(saveButton().disabled).toBe(true);
+    await interact(() => button("测试").click());
+    expect(verifyModelConnection).toHaveBeenCalledWith(
+      { presetId: "deepseek", baseUrl: connection.baseUrl, apiKey: "synthetic-key" },
+      expect.any(AbortSignal),
+    );
+    expect(view.container.textContent).toContain("已验证 · 读到 2 个模型");
+    expect(view.container.querySelector<HTMLSelectElement>("select:not([required])")?.value).toBe(
+      "fixture-model",
+    );
     await submit();
+    expect(createModelConnection).toHaveBeenCalledTimes(1);
     expect(createModelConnection).toHaveBeenCalledWith({
       name: "DeepSeek",
       presetId: "deepseek",
       baseUrl: connection.baseUrl,
       apiKey: "synthetic-key",
+      defaultModel: "fixture-model",
     });
     expect(key.value).toBe("");
-    expect(saved).toHaveBeenCalledWith(connection, true);
+    expect(saved).toHaveBeenCalledWith(connection);
     expect(discoverConnectionModels).not.toHaveBeenCalled();
-    expect(testModelConnection).not.toHaveBeenCalled();
   });
 
-  it("disables a saved connection with its revision and keeps a conflict draft until reload", async () => {
-    const reload = vi.fn();
-    vi.mocked(updateModelConnection).mockRejectedValue(
-      new ApiError("model_connection_revision_conflict", 409),
+  it("needs a fresh check after the key changes", async () => {
+    vi.mocked(verifyModelConnection).mockResolvedValue(["fixture-model"]);
+    view = await dialog();
+    const key = view.container.querySelector<HTMLInputElement>('input[type="password"]')!;
+    await setInputValue(key, "first-key");
+    await interact(() => button("测试").click());
+    expect(saveButton().disabled).toBe(false);
+    await setInputValue(key, "second-key");
+    expect(saveButton().disabled).toBe(true);
+    expect(view.container.textContent).toContain("保存前先测试这个 API Key");
+  });
+
+  it("explains a refused key with the fixed reason and keeps save disabled", async () => {
+    vi.mocked(verifyModelConnection).mockRejectedValue(
+      new ApiError("model_credentials_invalid", 422),
     );
-    view = await renderComponent(
-      <ModelConnectionEditor
-        snapshot={snapshot}
-        connection={connection}
-        onSaved={vi.fn()}
-        onReload={reload}
-      />,
+    view = await dialog();
+    await setInputValue(
+      view.container.querySelector<HTMLInputElement>('input[type="password"]')!,
+      "bad-key",
     );
-    await interact(() =>
-      view!.container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click(),
-    );
+    await interact(() => button("测试").click());
+    expect(view.container.textContent).toContain("API Key 没有通过验证");
+    expect(saveButton().disabled).toBe(true);
+  });
+
+  it("sets and clears a saved connection's default model with its revision", async () => {
+    vi.mocked(updateModelConnection).mockResolvedValue({ ...connection, revision: 3 });
+    view = await dialog({ connection: { ...connection, defaultModel: "fixture-model" } });
+    const model = view.container.querySelector<HTMLInputElement>("input[list]")!;
+    await setInputValue(model, "");
     await submit();
     expect(updateModelConnection).toHaveBeenCalledWith(connection.id, {
       expectedRevision: 2,
       name: connection.name,
-      enabled: false,
+      defaultModel: null,
     });
-    expect(view.container.textContent).toContain("连接已在其他位置更新");
-    expect(view.container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.checked).toBe(
-      false,
+  });
+
+  it("checks a saved key through the model list, never the metered test", async () => {
+    vi.mocked(discoverConnectionModels).mockResolvedValue(["fixture-model"]);
+    view = await dialog({ connection });
+    await interact(() => button("测试").click());
+    expect(discoverConnectionModels).toHaveBeenCalledWith(connection.id, expect.any(AbortSignal));
+    expect(verifyModelConnection).not.toHaveBeenCalled();
+    expect(view.container.textContent).toContain("已验证 · 读到 1 个模型");
+  });
+
+  it("keeps a conflict draft until reload", async () => {
+    const reload = vi.fn();
+    vi.mocked(updateModelConnection).mockRejectedValue(
+      new ApiError("model_connection_revision_conflict", 409),
     );
+    view = await dialog({ connection, onReload: reload });
+    const name = view.container.querySelector<HTMLInputElement>("input:not([type])")!;
+    await setInputValue(name, "新名字");
+    await submit();
+    expect(view.container.textContent).toContain("这个连接刚在别处改过");
+    expect(name.value).toBe("新名字");
     expect(updateModelConnection).toHaveBeenCalledTimes(1);
-    await interact(() => button("重新加载连接").click());
+    await interact(() => button("重新加载").click());
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  it("only invokes a metered test after its labeled button, passing an abort signal", async () => {
-    const pending = deferred<void>();
-    vi.mocked(testModelConnection).mockReturnValue(pending.promise);
-    view = await renderComponent(
-      <ModelConnectionEditor
-        snapshot={snapshot}
-        connection={connection}
-        onSaved={vi.fn()}
-        onReload={vi.fn()}
-      />,
+  it("disconnects only after confirming, and lists what still uses it", async () => {
+    const deleted = vi.fn();
+    vi.mocked(deleteModelConnection).mockRejectedValueOnce(
+      new ApiError(
+        "model_connection_in_use",
+        409,
+        {},
+        {
+          error: "model_connection_in_use",
+          bots: [{ id: "bot-one", name: "Model Bot" }],
+          runIds: ["run-1", "run-2"],
+          ownerDefault: true,
+        },
+      ),
     );
-    expect(testModelConnection).not.toHaveBeenCalled();
-    expect(view.container.textContent).toContain("按提供商的 API 用量计费");
-    await interact(() => button("测试模型（会调用 API）").click());
-    const signal = vi.mocked(testModelConnection).mock.calls[0]?.[2];
-    expect(testModelConnection).toHaveBeenCalledWith(
-      connection.id,
-      "fixture-model",
-      expect.any(AbortSignal),
-    );
-    await view.unmount();
-    view = undefined;
-    expect(signal?.aborted).toBe(true);
-    pending.resolve();
+    view = await dialog({ connection, onDeleted: deleted });
+    await interact(() => button("断开这个服务").click());
+    expect(deleteModelConnection).not.toHaveBeenCalled();
+    await interact(() => button("断开").click());
+    expect(deleteModelConnection).toHaveBeenCalledWith(connection.id, { expectedRevision: 2 });
+    expect(view.container.textContent).toContain("Model Bot 用它作为模型");
+    expect(view.container.textContent).toContain("2 个没结束的任务正在用它");
+    expect(view.container.textContent).toContain("它是你的默认模型");
+    expect(deleted).not.toHaveBeenCalled();
+
+    vi.mocked(deleteModelConnection).mockResolvedValueOnce(undefined);
+    await interact(() => button("返回").click());
+    await interact(() => button("断开这个服务").click());
+    await interact(() => button("断开").click());
+    expect(deleted).toHaveBeenCalledWith(connection.id);
   });
 
   it("keeps environment connections read-only", async () => {
-    view = await renderComponent(
-      <ModelConnectionEditor
-        snapshot={snapshot}
-        connection={{ ...connection, id: "legacy-kimi", source: "environment" }}
-        onSaved={vi.fn()}
-        onReload={vi.fn()}
-      />,
-    );
+    view = await dialog({
+      connection: { ...connection, id: "legacy-kimi", source: "environment" },
+    });
     expect(view.container.querySelector('input[type="password"]')).toBeNull();
-    expect(view.container.querySelector('input[type="checkbox"]')).toBeNull();
-    expect(view.container.querySelector('button[type="submit"]')).toBeNull();
+    expect(view.container.ownerDocument.querySelector('button[type="submit"]')).toBeNull();
+    expect(view.container.textContent).not.toContain("断开这个服务");
     expect(updateModelConnection).not.toHaveBeenCalled();
   });
 
@@ -252,7 +309,6 @@ describe("model connection user flows", () => {
     await view.unmount();
     view = undefined;
     expect(signal?.aborted).toBe(true);
-    expect(testModelConnection).not.toHaveBeenCalled();
     pending.resolve(["late-model"]);
   });
 

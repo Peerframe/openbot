@@ -12,6 +12,7 @@ import type {
   RunFrame,
   RunOutput,
   RunProgress,
+  RunProgressSummary,
 } from "@openbot/domain";
 import {
   type FormEvent,
@@ -87,6 +88,7 @@ export function ChannelWorkspace({
   bots,
   artifacts,
   progress,
+  stepSummaries,
   onJoin,
   onRemove,
   onChannel,
@@ -112,6 +114,8 @@ export function ChannelWorkspace({
   bots: Bot[];
   artifacts: Artifact[];
   progress: RunProgress[];
+  /** C13 step summaries of recent runs (workspace `runProgress`), when the 服务电脑 sends them. */
+  stepSummaries?: Readonly<Record<string, RunProgressSummary>> | undefined;
   onJoin(botId: string): Promise<void>;
   onRemove?(botId: string): Promise<void>;
   onChannel?(channel: Channel): void;
@@ -504,6 +508,7 @@ export function ChannelWorkspace({
       bot={botsById.get(run.botId)}
       botsById={botsById}
       progress={latestProgressByRun.get(run.id)}
+      stepSummaries={stepSummaries}
       artifacts={artifactsByRun.get(run.id) ?? []}
       approvals={approvals.filter(
         (approval) => approval.runId === run.id && approval.status === "pending",

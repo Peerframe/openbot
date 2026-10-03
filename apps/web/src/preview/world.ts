@@ -71,8 +71,8 @@ export function createWorld(kind: "full" | "empty" | "new-bot" | "long" = "full"
   if (kind === "new-bot") {
     // NewBotChat artboard: a quick-created Bot whose empty 单聊 shows the role card.
     const world = createWorld("full");
-    const fresh = bot("b-new", "新建 Bot", "还没有分工", "cat", "blue");
-    world.bots.push({ ...fresh, computerProfile: "model", createdAt: minutesAgo(0) });
+    const fresh = bot("b-new", "新建 Bot", "通用助手", "cat", "blue");
+    world.bots.push({ ...fresh, computerProfile: "none", createdAt: minutesAgo(0) });
     world.channels.push({
       id: "direct-b-new",
       name: "新建 Bot",

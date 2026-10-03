@@ -5,6 +5,7 @@ import type {
   Artifact,
   AuthSessionSnapshot,
   Bot,
+  BotAppearance,
   Channel,
   ChannelRealtimeEvent,
   CreateBotInput,
@@ -13,6 +14,7 @@ import type {
   CreateMessageInput,
   CreateModelConnectionInput,
   DeleteEmployeeMemoryInput,
+  DeleteModelConnectionInput,
   EmployeeExportPreview,
   EmployeeImportActivationResult,
   EmployeeImportPreview,
@@ -31,6 +33,7 @@ import type {
   ModelServicesSnapshot,
   NodeEnrollmentToken,
   NodeIdentitySummary,
+  QuickCreateBotResponse,
   ReactionEmoji,
   ReviewKnowledgeProposalInput,
   Run,
@@ -44,6 +47,7 @@ import type {
   UpdateEmployeeProfileDetailsInput,
   UpdateEmployeeSkillStateInput,
   UpdateModelConnectionInput,
+  VerifyModelConnectionInput,
   WorkspaceRealtimeEvent,
   WorkspaceSnapshot,
 } from "@openbot/domain";
@@ -99,11 +103,19 @@ export async function closeBrowser(sessionId: string): Promise<void> {
 export class ApiError extends Error {
   readonly fields: Record<string, string[]>;
   readonly status: number;
+  /** The parsed error body, for commands whose refusal carries structured details. */
+  readonly body: Record<string, unknown>;
 
-  constructor(message: string, status: number, fields: Record<string, string[]> = {}) {
+  constructor(
+    message: string,
+    status: number,
+    fields: Record<string, string[]> = {},
+    body: Record<string, unknown> = {},
+  ) {
     super(message);
     this.status = status;
     this.fields = fields;
+    this.body = body;
   }
 }
 
@@ -491,6 +503,35 @@ export async function updateModelConnection(
   return result.connection;
 }
 
+/** Checks a key and lists its models without saving or auditing anything (C17). */
+export async function verifyModelConnection(
+  input: VerifyModelConnectionInput,
+  signal?: AbortSignal,
+): Promise<string[]> {
+  const result = await request<{ models: string[] }>("/api/v1/model-connections/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+    ...(signal ? { signal } : {}),
+  });
+  return result.models;
+}
+
+/** Refused with 409 `model_connection_in_use` while Bots, tasks or the owner default use it. */
+export async function deleteModelConnection(
+  connectionId: string,
+  input: DeleteModelConnectionInput,
+): Promise<void> {
+  await request<{ deleted: true; connectionId: string }>(
+    `/api/v1/model-connections/${encodeURIComponent(connectionId)}`,
+    {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+}
+
 export async function discoverConnectionModels(
   connectionId: string,
   signal?: AbortSignal,
@@ -500,22 +541,6 @@ export async function discoverConnectionModels(
     { method: "POST", ...(signal ? { signal } : {}) },
   );
   return result.models;
-}
-
-export async function testModelConnection(
-  connectionId: string,
-  modelId: string,
-  signal?: AbortSignal,
-): Promise<void> {
-  await request<{ ok: true }>(
-    `/api/v1/model-connections/${encodeURIComponent(connectionId)}/test`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ modelId }),
-      ...(signal ? { signal } : {}),
-    },
-  );
 }
 
 export async function updateEmployeeModel(
@@ -774,6 +799,18 @@ export async function createBot(input: CreateBotInput): Promise<Bot> {
     body: JSON.stringify(input),
   });
   return result.bot;
+}
+
+/**
+ * One atomic Bot + 单聊 creation (C12). Each success is a new Bot, so callers never retry an
+ * ambiguous failure automatically.
+ */
+export async function quickCreateBot(appearance: BotAppearance): Promise<QuickCreateBotResponse> {
+  return request<QuickCreateBotResponse>("/api/v1/bots/quick", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ appearance }),
+  });
 }
 
 export async function openBotConversation(botId: string): Promise<Channel> {
@@ -1049,6 +1086,7 @@ async function readApiError(response: Response, url: string): Promise<ApiError> 
     payload.error ?? `OpenBot Server returned ${response.status}.`,
     response.status,
     payload.fields,
+    typeof payload === "object" && payload !== null ? (payload as Record<string, unknown>) : {},
   );
 }
 

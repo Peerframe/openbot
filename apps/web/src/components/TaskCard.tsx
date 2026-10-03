@@ -7,8 +7,10 @@ import type {
   Run,
   RunFrame,
   RunProgress,
+  RunProgressSummary,
 } from "@openbot/domain";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { getRunProgress } from "../api";
 import { extensionOf } from "../channel-attachment-client";
 import { runStatusLabel, runStatusSummary } from "../run-state";
 import { actionLabel, expiryLabel, riskLabel } from "./ApprovalCard";
@@ -34,9 +36,55 @@ export function secondsAgo(value: string, now = Date.now()): string {
 }
 
 /**
+ * The step part of a task line (C13): verified completed actions when the 服务电脑 counts them,
+ * else the latest observed step. Never a planned total — the Server has none to give.
+ */
+export function stepCountLabel(summary: RunProgressSummary | undefined): string | undefined {
+  if (!summary) return undefined;
+  if (summary.completedSteps !== null && summary.completedSteps > 0)
+    return `已完成 ${summary.completedSteps} 步`;
+  if (summary.currentStepNumber !== null) return `第 ${summary.currentStepNumber} 步`;
+  return undefined;
+}
+
+const ACTIVE: ReadonlySet<Run["status"]> = new Set(["assigned", "running", "waiting_approval"]);
+
+/**
+ * The workspace snapshot carries a step summary per recent run; progress events arriving later do
+ * not, so an active card re-reads its own summary after each new event (debounced, one ordinal).
+ */
+function useStepSummary(
+  run: Run,
+  initial: RunProgressSummary | undefined,
+  progressId: string | undefined,
+): RunProgressSummary | undefined {
+  const [live, setLive] = useState<RunProgressSummary>();
+  const seen = useRef(progressId);
+  const active = ACTIVE.has(run.status);
+  useEffect(() => {
+    if (!active || (initial && seen.current === progressId)) return;
+    seen.current = progressId;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void getRunProgress(run.id, [1], controller.signal)
+        .then(({ steps: _steps, ...summary }) => {
+          if (!controller.signal.aborted && summary.runId === run.id) setLive(summary);
+        })
+        .catch(() => undefined);
+    }, 500);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [run.id, active, initial, progressId]);
+  // Counts only grow, so the larger of the snapshot and the live read is the newer one.
+  return live && (!initial || live.totalSteps >= initial.totalSteps) ? live : initial;
+}
+
+/**
  * One card per task in the conversation (TaskCards artboard), updated in place from queued to
- * done. It shows only what the 服务电脑 has reported: the latest progress line, never an invented
- * step total, and the user-readable failure reason; raw errors stay in 任务详情. Approvals are
+ * done. It shows only what the 服务电脑 has reported: the step count and latest progress line,
+ * never an invented step total, and the user-readable failure reason; raw errors stay in 任务详情. Approvals are
  * decided here and in the rail alike — both call the same Server decision.
  */
 export function TaskCard({
@@ -44,6 +92,7 @@ export function TaskCard({
   bot,
   botsById,
   progress,
+  stepSummaries,
   artifacts,
   approvals,
   frame,
@@ -61,6 +110,8 @@ export function TaskCard({
   botsById: Map<string, Bot>;
   /** The latest progress line for this task, if any. */
   progress: RunProgress | undefined;
+  /** C13 step summaries from the workspace, for this task and its collaborators. */
+  stepSummaries?: Readonly<Record<string, RunProgressSummary>> | undefined;
   artifacts: Artifact[];
   /** Pending approvals for this task. */
   approvals: Approval[];
@@ -76,6 +127,7 @@ export function TaskCard({
   onRun(run: Run): void;
   onDecideApproval(approvalId: string, decision: ApprovalDecision): Promise<void>;
 }) {
+  const steps = useStepSummary(run, stepSummaries?.[run.id], progress?.id);
   const controls = taskControls(run);
   const action = useTaskAction(run, onRun);
   const [steering, setSteering] = useState(false);
@@ -213,12 +265,12 @@ export function TaskCard({
     // assigned, running, or waiting for an approval that is not in this snapshot.
     tone = run.status === "waiting_approval" ? " is-attention" : "";
     const where = node ? `在 ${node.name} 上` : undefined;
+    const now = progress?.message ?? steps?.description ?? steps?.stageName;
     const detail =
       run.status === "waiting_approval"
         ? runStatusSummary(run)
-        : progress
-          ? `现在：${progress.message}`
-          : (where ?? "正在处理");
+        : [stepCountLabel(steps), now ? `现在：${now}` : undefined].filter(Boolean).join(" · ") ||
+          (where ?? "正在处理");
     body = (
       <>
         <div className="task-top">
@@ -281,6 +333,7 @@ export function TaskCard({
             lead={bot}
             leadRunId={run.id}
             childRuns={childRuns}
+            stepSummaries={stepSummaries}
             botsById={botsById}
             onInspect={onInspect}
           />
@@ -374,12 +427,14 @@ function Collaboration({
   lead,
   leadRunId,
   childRuns,
+  stepSummaries,
   botsById,
   onInspect,
 }: {
   lead: Bot | undefined;
   leadRunId: string;
   childRuns: Run[];
+  stepSummaries: Readonly<Record<string, RunProgressSummary>> | undefined;
   botsById: Map<string, Bot>;
   onInspect(runId: string): void;
 }) {
@@ -410,7 +465,14 @@ function Collaboration({
         >
           <span className="task-text">
             <strong>{child.title}</strong>
-            <span>{botsById.get(child.botId)?.name ?? "频道 Bot"}</span>
+            <span>
+              {[
+                botsById.get(child.botId)?.name ?? "频道 Bot",
+                stepCountLabel(stepSummaries?.[child.id]),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
           </span>
           <span className={`task-state is-${child.status}`}>{runStatusLabel(child.status)}</span>
         </button>

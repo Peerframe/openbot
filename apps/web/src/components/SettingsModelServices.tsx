@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { ApiError, getWorkspace, updateModelConnection } from "../api";
 import { SearchIcon } from "./Icons";
 import {
-  ModelConnectionEditor,
+  ModelConnectionDialog,
+  ProviderTile,
   providerDescription,
   providerLabel,
 } from "./ModelConnectionsDialog";
@@ -55,9 +56,24 @@ export function SettingsModelServices({ onChanged }: { onChanged?: (() => void) 
           }
         : current,
     );
-    // Stay in the editor so the connection can be tested right away.
-    setEditing({ connectionId: connection.id });
+    setEditing(undefined);
     setNotice(`已保存 ${connection.name}。`);
+    onChanged?.();
+  }
+
+  function deleted(connectionId: string) {
+    cancelRefresh();
+    const name = snapshot?.connections.find((item) => item.id === connectionId)?.name;
+    setSnapshot((current) =>
+      current
+        ? {
+            ...current,
+            connections: current.connections.filter((item) => item.id !== connectionId),
+          }
+        : current,
+    );
+    setEditing(undefined);
+    setNotice(`已断开 ${name ?? "这个服务"}。`);
     onChanged?.();
   }
 
@@ -73,7 +89,6 @@ export function SettingsModelServices({ onChanged }: { onChanged?: (() => void) 
           enabled: !connection.enabled,
         }),
       );
-      setEditing(undefined);
       setNotice(undefined);
     } catch (cause) {
       setToggleError(
@@ -85,37 +100,6 @@ export function SettingsModelServices({ onChanged }: { onChanged?: (() => void) 
     } finally {
       setBusyId(undefined);
     }
-  }
-
-  if (editing && snapshot) {
-    const connection = snapshot.connections.find((item) => item.id === editing.connectionId);
-    return (
-      <div className="settings-subpage">
-        <button
-          type="button"
-          className="settings-subpage-back"
-          onClick={() => {
-            setEditing(undefined);
-            setNotice(undefined);
-          }}
-        >
-          <span aria-hidden="true">‹</span> 模型服务
-        </button>
-        {notice ? (
-          <p className="model-success" role="status">
-            {notice}
-          </p>
-        ) : null}
-        <ModelConnectionEditor
-          key={`${editing.connectionId ?? editing.presetId}:${connection?.revision ?? 0}`}
-          snapshot={snapshot}
-          connection={connection}
-          initialPresetId={editing.presetId}
-          onSaved={saved}
-          onReload={() => void refresh()}
-        />
-      </div>
-    );
   }
 
   const term = query.trim().toLocaleLowerCase();
@@ -137,6 +121,11 @@ export function SettingsModelServices({ onChanged }: { onChanged?: (() => void) 
             重试
           </button>
         </div>
+      ) : null}
+      {notice ? (
+        <p className="settings-load-notice" role="status">
+          {notice}
+        </p>
       ) : null}
       {toggleError ? (
         <p className="form-error" role="alert">
@@ -243,19 +232,25 @@ export function SettingsModelServices({ onChanged }: { onChanged?: (() => void) 
         </>
       ) : null}
 
+      {editing && snapshot ? (
+        <ModelConnectionDialog
+          key={`${editing.connectionId ?? editing.presetId}:${
+            snapshot.connections.find((item) => item.id === editing.connectionId)?.revision ?? 0
+          }`}
+          snapshot={snapshot}
+          connection={snapshot.connections.find((item) => item.id === editing.connectionId)}
+          initialPresetId={editing.presetId}
+          onClose={() => setEditing(undefined)}
+          onSaved={saved}
+          onDeleted={deleted}
+          onReload={() => void refresh()}
+        />
+      ) : null}
+
       <details className="settings-disclosure">
         <summary>默认模型与原生 Agent</summary>
         <ModelSettingsScreen embedded onDone={() => {}} />
       </details>
     </>
-  );
-}
-
-/** Letter tile; OpenBot ships no third-party logos. */
-function ProviderTile({ label }: { label: string }) {
-  return (
-    <span className="settings-tile" aria-hidden="true">
-      {Array.from(label.trim())[0]?.toLocaleUpperCase() ?? "?"}
-    </span>
   );
 }

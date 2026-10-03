@@ -36,7 +36,7 @@ const model = { connectionId: "c1", modelId: "claude-sonnet" };
 const bot: Bot = {
   id: "bot-1",
   name: "新建 Bot",
-  role: "还没有分工",
+  role: "通用助手",
   status: "idle",
   computerProfile: "model",
   model,

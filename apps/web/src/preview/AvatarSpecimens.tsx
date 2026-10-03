@@ -1,6 +1,7 @@
 import type { Bot, BotAppearance, BotStatus, RunStatus } from "@openbot/domain";
 import { GroupAvatar } from "../components/GroupAvatar";
 import { RobotAvatar } from "../components/RobotAvatar";
+import { BOT_ACCENTS } from "../quick-bot";
 
 /*
  * Specimen sheets for the Avatars and GroupAvatars artboards (design preview only). They render the
@@ -12,7 +13,6 @@ const heads: Array<[BotAppearance["head"], string]> = [
   ["square", "耳罩 Relay"],
   ["cat", "猫耳 Scout"],
 ];
-const accents: BotAppearance["accent"][] = ["green", "blue", "yellow", "red"];
 
 const specimen = (
   id: string,
@@ -48,7 +48,7 @@ export function AvatarSpecimens() {
         {heads.map(([head, title]) => (
           <div className="design-preview-row" key={head}>
             <strong>{title}</strong>
-            {accents.map((accent) => (
+            {BOT_ACCENTS.map((accent) => (
               <RobotAvatar
                 key={accent}
                 bot={specimen(`${head}-${accent}`, title, head, accent)}

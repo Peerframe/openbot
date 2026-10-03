@@ -9,7 +9,7 @@
   screen or copy.
 - **Who does what:** Claude builds everything you see and touch (screens, layout, motion, copy,
   keyboard use). Codex builds what is behind it (服务电脑, data, Desktop main process, CI). They meet
-  at written contracts: the backlog items C1–C18 below.
+  at written contracts: the backlog items C1–C21 below.
 - **How you review:** every step is one pull request with screenshots of the built screen next to
   its artboard. You check the pictures and click through the listed behaviours. You do not need to
   read code.
@@ -68,11 +68,12 @@ updated.
 | 22 | Design the remaining screens (canvas, then owner approval) — **approved 2026-10-02** | new | — | Message actions and reactions, attachments and voice, 补充指令 input, 频道文件 recycle bin inside 资料库, Bot 档案 tabs (进化档案 credits Hermes Agent), 员工浏览器 view, notices and toasts, app icon and README images |
 | 23a | Bot 档案 tabs — **merged** | Profile, ProfileEvolution, ProfileSkills, ProfileMemory, ProfileWork, ProfileConfig | — | Six tabs on a segmented control (运行中 joins 工作记录, 技能图谱 becomes 技能); text filters with counts; long lists per LongLists |
 | 23b | Messages and the composer — **merged** | MessageActions, Composer | — | Icon actions beside the bubble, reaction picker, Owner reactions without counts, attachment chips at the 8 / 20 MB limit, recording states, attachment actions |
-| 23c | Channel files — **in review** | ChannelFiles, ChannelInfo | — | 频道文件 dialog with 回收站, search and source filter; 资料库 「全部 N 个 ›」 |
+| 23c | Channel files — **merged** | ChannelFiles, ChannelInfo | — | 频道文件 dialog with 回收站, search and source filter; 资料库 「全部 N 个 ›」 |
 | 23d | The Bot's browser — **merged** | EmployeeBrowser | — | Window with take-over and 交还 Bot |
 | 23e | Notices and scrolling — **merged** | Notices, LongLists | C18 (merged) | Toast, one banner by severity, the date cue, 回到最新 with a count, older messages on scroll; the scrollbar follows the system overlay |
-| 23e-2 | Long lists — **in review** | LongLists | C13 for step counts | Popover lists capped at 8 rows with edge fades, stacked 需要处理, working members first, three collaborators then 「还有 N 个」, long progress collapsed, search in long settings lists |
+| 23e-2 | Long lists — **merged** | LongLists | C13 for step counts | Popover lists capped at 8 rows with edge fades, stacked 需要处理, working members first, three collaborators then 「还有 N 个」, long progress collapsed, search in long settings lists |
 | 23f | App icon and the legacy layer — **in review** | AppIcon | C16 | Icon sets from the AppIcon board; delete the legacy stylesheets and classes listed in DESIGN.md and `OpenBotMark`; refresh the website demo fixtures |
+| 24 | Backend wiring — **in review** | Avatars, New, TaskCards, DialogModel | C10, C12, C13, C17 | Eight accents for new Bots; 创建新 Bot is one atomic call that is never retried automatically; task cards show 「已完成 N 步 · 现在：…」; 连接模型服务 edits one connection: test reads only the model list, a new key is saved only after it passes, a default model per connection, 断开 lists what still uses it |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 
@@ -91,16 +92,21 @@ Done (merged into main 40cb3d2):
 | C7 | Owner time zone and default model for new Bots | Integrated |
 | C8 | Curated plugin catalog | Integrated |
 
-Done 2026-10-02 (#147, #149, #150), not yet wired into the UI:
+Done 2026-10-02 and 2026-10-03 (#147, #149, #150, #157–#161, #164, #165):
 
 | ID | Contract | UI |
 | --- | --- | --- |
-| C10 | Four more avatar accents (violet, teal, pink, slate); older Bot templates still import | Follow-up to step 15 |
-| C12 | Quick-create a Bot and its 单聊 in one atomic call | Follow-up to step 16 |
-| C13 | Task progress projection: step counts, the current step, start and end time, a bounded failure code | Follow-up to step 19 |
-| C14 | CI: the browser-fixture install step has a longer budget | Confirm on hosted CI |
-| C17 | Model dialog: list models with an unsaved key, a per-connection default model, disconnect refused while a Bot depends on it | Follow-up to step 20 |
-| C18 | Message pages: a `before` cursor and a bounded page for `GET /channels/{id}/messages` | Step 23e |
+| C10 | Four more avatar accents (violet, teal, pink, slate); older Bot templates still import | Integrated (step 24) |
+| C12 | Quick-create a Bot and its 单聊 in one atomic call | Integrated (step 24) |
+| C13 | Task progress projection: step counts, the current step, start and end time, a bounded failure code | Task cards and 任务详情 integrated (23e-2, step 24); 任务监督 not yet |
+| C14 | CI: the browser-fixture install step has a longer budget and retries pinned downloads | CI only |
+| C15 | Route caller inventory after retiring the 例行任务 and 技能库 pages | No route retired; nothing to wire |
+| C16 | App icon sets built from `docs/design/app-icon/` | Packaging only |
+| C17 | Model dialog: list models with an unsaved key, a per-connection default model, disconnect refused while a Bot depends on it | Integrated (step 24) |
+| C18 | Message pages: a `before` cursor and a bounded page for `GET /channels/{id}/messages` | Integrated (23e) |
+| C19 | File reference counts per channel attachment | Integrated (#163) |
+| C20 | On-screen claims confirmed or corrected | Wording corrected (#163) |
+| C21 | Permanent 回收站 deletion, a cleanup command, measured storage and an opt-in 30-day purge | Waits for the owner's approval of the ChannelFilesTrash and SettingsStorage boards |
 
 Open — in the order the UI needs them:
 
@@ -108,10 +114,6 @@ Open — in the order the UI needs them:
 | --- | --- | --- | --- |
 | C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked | Pencil button hidden |
 | C11 | Step 16 (optional) | **New-Bot greeting**: when a model is configured, the 服务电脑 writes a short greeting as the Bot's first message, using only other Bots' names and tags; no model or any failure means no greeting | The setup card shows without a greeting |
-| C15 | Step 23 | **Retire unused routes** only if the 例行任务 and 技能库 page removal leaves a Server endpoint without a caller (to be confirmed; settings use the same APIs) | — |
-| C16 | Step 23f | **App icon and bundle assets** from the step-22 icon design: a repeatable script that builds the macOS, Windows and Linux icon sets from the SVG sources Claude exports to `docs/design/app-icon/`, wired into packaging. Claude owns the Web favicon | Current icon |
-| C20 | Shown since 23b–23d | **Confirm on-screen claims** with code and test references, or give the correct wording: the browser footer (「画面只在内存里保留」「登录状态留在工作电脑」「关闭窗口会暂停控制」), the 回收站 rules (no longer sent to Bots; cleanup removes only files in the 回收站 for 7 days and no longer referenced), and transcription sending audio to the configured OpenAI | Wording stays as shipped until confirmed |
-| C19 | 23c follow-up | **File reference counts**: each channel attachment carries how many messages and tasks reference it, Owner-only and bounded, without message content | 「N 条消息引用」 hidden |
 
 ## Repository housekeeping (proposals)
 

@@ -93,7 +93,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
   Round, square → Relay, cat → Scout. v3 widens Relay's face from 62 to 66 units.
 - **Jaw colour**, eight accents of matched lightness: green `#91CF4B`, blue `#5F7CDE`, amber
   `#DFAD4F`, coral `#E0785C`, violet `#9C7FE3`, teal `#3FB4A6`, pink `#E57BA8`, slate `#8C98A8`.
-  The last four need C10; until then only the first four are offered.
+  The Server accepts all eight (C10); a quick-created Bot picks from all eight.
 - **No frame.** No tile, ring, border or background behind an avatar anywhere.
 - Sizes: 96 profile, 88 rail, 72 launch, 40 sidebar rows and members, 32 messages, 24 title pill,
   16–20 menus and mentions. Below 32px the micro drawing is used: larger eyes and antenna ball,
@@ -164,11 +164,11 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Slash | `ChannelWorkspace.tsx` composer menus | Built |
 | Settings, SettingsNav, Settings* | `DesktopSettingsScreen.tsx`, `Settings*.tsx` | Built |
 | Plugins | `PluginsDialog.tsx`, `PluginManagerPanel.tsx` | Built |
-| Avatar, Avatars, GroupAvatar, GroupAvatars | `RobotAvatar.tsx`, `GroupAvatar.tsx` | Built; violet, teal, pink and slate wait for C10 |
+| Avatar, Avatars, GroupAvatar, GroupAvatars | `RobotAvatar.tsx`, `GroupAvatar.tsx` | Built; all eight accents |
 | Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | `Onboarding.tsx` and the setup screens | Built |
-| TaskCards, TaskInspector | `TaskCard.tsx`, `TaskSheet.tsx` | Built; step counts wait for C13 |
-| Dialog* | `Dialog.tsx` frame; Share, Export, Import, DeleteIdentity, NodeManager and ModelConnections dialogs | Built; 连接模型服务 keeps its list and editor until C17 |
-| WorkSupervision, EmptyWorkspace | `WorkTasksScreen.tsx`, `EmptyWorkspace.tsx` | Built; step counts wait for C13 |
+| TaskCards, TaskInspector | `TaskCard.tsx`, `TaskSheet.tsx` | Built; cards show the 服务电脑's step count (C13) |
+| Dialog* | `Dialog.tsx` frame; Share, Export, Import, DeleteIdentity, NodeManager and ModelConnections dialogs | Built; 连接模型服务 edits one connection with the free model-list check, a default model and 断开 (C17) |
+| WorkSupervision, EmptyWorkspace | `WorkTasksScreen.tsx`, `EmptyWorkspace.tsx` | Built; 任务监督 step counts not wired yet (Work tasks report actions, not Run summaries) |
 
 ## Designed in step 22 (approved 2026-10-02)
 

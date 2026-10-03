@@ -67,6 +67,13 @@ function buttonNamed(container: HTMLElement, name: string) {
 }
 
 it("lists connected model services with usage, toggles them and opens a provider", async () => {
+  HTMLDialogElement.prototype.showModal = vi.fn(function (this: HTMLDialogElement) {
+    this.setAttribute("open", "");
+  });
+  HTMLDialogElement.prototype.close = vi.fn(function (this: HTMLDialogElement) {
+    this.removeAttribute("open");
+    this.dispatchEvent(new Event("close"));
+  });
   const fetch = server({
     "GET /api/v1/model-services": () => ({
       presets: [
@@ -105,10 +112,10 @@ it("lists connected model services with usage, toggles them and opens a provider
     await setInputValue(search, "open");
     expect(view.container.querySelectorAll(".settings-catalogue .settings-item")).toHaveLength(1);
     await interact(() => buttonNamed(view.container, "添加 OpenAI")?.click());
-    expect(view.container.querySelector(".settings-subpage")).not.toBeNull();
-    expect(view.container.querySelector<HTMLSelectElement>("select")?.value).toBe("openai");
-    await interact(() => buttonNamed(view.container, "‹ 模型服务")?.click());
-    expect(view.container.querySelector(".settings-subpage")).toBeNull();
+    const dialog = view.container.querySelector(".model-connection-dialog");
+    expect(dialog?.querySelector(".model-provider strong")?.textContent).toBe("OpenAI");
+    await interact(() => buttonNamed(view.container, "取消")?.click());
+    expect(view.container.querySelector(".model-connection-dialog")).toBeNull();
   } finally {
     await view.unmount();
   }

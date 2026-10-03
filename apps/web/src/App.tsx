@@ -1,23 +1,15 @@
-import type {
-  ApprovalDecision,
-  AuthSessionSnapshot,
-  Bot,
-  Channel,
-  ModelSelection,
-  RunFrame,
-} from "@openbot/domain";
+import type { ApprovalDecision, AuthSessionSnapshot, Channel, RunFrame } from "@openbot/domain";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ApiError,
-  createBot,
   createChannel,
   createMessage,
+  quickCreateBot as createQuickBot,
   decideApproval,
   deleteBot,
   deleteChannel,
   getAuthSession,
   getModelSettings,
-  getOwnerPreferences,
   getUnreadCounts,
   joinBotToChannel,
   login,
@@ -50,7 +42,7 @@ import { ExportEmployeeDialog } from "./components/ExportEmployeeDialog";
 import { ImportEmployeeDialog } from "./components/ImportEmployeeDialog";
 import { LoginScreen } from "./components/LoginScreen";
 import { MobileNavigation, type MobilePanel } from "./components/MobileNavigation";
-import { ModelConnectionsDialog } from "./components/ModelConnectionsDialog";
+import { AddModelConnectionDialog } from "./components/ModelConnectionsDialog";
 import { ModelSettingsScreen } from "./components/ModelSettingsScreen";
 import { NewChatScreen, type NewChatStart } from "./components/NewChatScreen";
 import { NodeManagerDialog } from "./components/NodeManagerDialog";
@@ -70,7 +62,7 @@ import {
   type DesktopSetupPlanState,
   getOpenBotDesktopBridge,
 } from "./desktop-runtime";
-import { freshAppearance, nextBotName, QUICK_BOT_ROLE } from "./quick-bot";
+import { freshAppearance, quickCreateFailure } from "./quick-bot";
 import { type SidebarItemKey, sidebarOrganization } from "./sidebar-organization";
 import {
   NotificationTracker,
@@ -834,29 +826,10 @@ export function AuthenticatedWorkspace({
   /** 创建新 Bot: create immediately with a free name and fresh look, then open its 单聊. */
   async function handleQuickCreateBot() {
     if (!workspace) return;
-    let model: ModelSelection | undefined;
-    try {
-      model = (await getOwnerPreferences()).defaultModel ?? undefined;
-    } catch {
-      // Without a readable default the 服务电脑 applies its own; creation does not depend on it.
-    }
-    let bot: Bot | undefined;
-    for (let attempt = 0; !bot; attempt += 1) {
-      try {
-        bot = await createBot({
-          name: nextBotName(workspace.bots, attempt),
-          role: QUICK_BOT_ROLE,
-          computerProfile: "model",
-          appearance: freshAppearance(workspace.bots),
-          ...(model ? { model } : {}),
-        });
-      } catch (cause) {
-        // Another client may take the same default name first; try the next free one twice.
-        if (attempt >= 2 || !(cause instanceof ApiError) || cause.status !== 409) throw cause;
-      }
-    }
+    // One request creates the Bot and its 单聊 together; an unclear failure is never retried
+    // here, because a retry after a lost response would make a second Bot.
+    const { bot, channel } = await createQuickBot(freshAppearance(workspace.bots));
     projectBot(bot);
-    const channel = await openBotConversation(bot.id);
     projectChannel(channel);
     setMobilePanel(undefined);
     updatePreferences({ rightPanelOpen: true });
@@ -866,7 +839,7 @@ export function AuthenticatedWorkspace({
 
   /** Entry points outside the New screen have no error line of their own; a notice reports it. */
   function quickCreateBot() {
-    void handleQuickCreateBot().catch(() => showNotice("没能创建 Bot，请稍后重试。"));
+    void handleQuickCreateBot().catch((cause: unknown) => showNotice(quickCreateFailure(cause)));
   }
 
   function openNewChannel() {
@@ -1205,6 +1178,7 @@ export function AuthenticatedWorkspace({
           bots={workspace.bots}
           artifacts={workspace.artifacts}
           progress={workspace.progress}
+          stepSummaries={workspace.runProgress}
           onChannel={projectChannel}
           onJoin={handleJoinBot}
           onRemove={handleRemoveBot}
@@ -1368,9 +1342,12 @@ export function AuthenticatedWorkspace({
         />
       ) : null}
       {modelServicesOpen ? (
-        <ModelConnectionsDialog
+        <AddModelConnectionDialog
           onClose={() => setModelServicesOpen(false)}
-          onChanged={() => setModelServicesVersion((version) => version + 1)}
+          onChanged={(connection) => {
+            setModelServicesVersion((version) => version + 1);
+            showNotice(`已连接 ${connection.name}。`);
+          }}
         />
       ) : null}
       {sharedBot ? (
