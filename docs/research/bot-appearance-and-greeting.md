@@ -107,3 +107,13 @@ English · [简体中文](bot-appearance-and-greeting.zh-CN.md)
 ## Unresolved questions
 
 - None.
+
+## C9 implementation (2026-10-03)
+
+Owner approved the contract on 2026-10-03. C9 reuses `OwnerTransactions`, the profile row lock and
+revision, strict C10 `BotAppearance`, and the current Python workspace poll stream. The only new
+fact is the cosmetic PATCH: old/new values are audited atomically; evolution is unchanged. A
+no-op leaves revision/audit unchanged. Reconnect retains the existing `workspace.ready` recovery.
+Reviewed primary semantics: [RFC 9110 §15.5.10](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.10)
+(conflict with current state). No dependency or source incorporation; the approved body revision
+contract is retained rather than introducing an ETag protocol.

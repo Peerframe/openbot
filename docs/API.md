@@ -42,6 +42,7 @@ HTTPS for remote access.
 | `DELETE` | `/api/v1/bots/:botId` | Permanently delete a Bot's content and grants and keep a tombstone |
 | `GET` | `/api/v1/bots/:botId/profile` | Read the complete Employee profile projection |
 | `PATCH` | `/api/v1/bots/:botId/profile` | Update role and biography at an expected revision |
+| `PATCH` | `/api/v1/bots/:botId/appearance` | Update complete C10 appearance at an expected revision |
 | `POST` | `/api/v1/bots/:botId/memories` | Create one bounded Owner memory |
 | `PATCH` | `/api/v1/bots/:botId/memories/:memoryId` | Update one memory at an expected revision |
 | `DELETE` | `/api/v1/bots/:botId/memories/:memoryId` | Delete one reviewed memory at an expected revision |
@@ -163,6 +164,20 @@ authority-bearing extra field returns `422`. The successful transaction incremen
 and appends an evolution event that stores changed field names, not biography text. Workspace SSE
 then publishes only the Employee id and affected sections. Name, model policy, Worker Host,
 appearance, skill state, and permission grants are deliberately outside this command.
+
+### Update appearance (C9)
+
+`PATCH /api/v1/bots/:botId/appearance` requires an Owner session and allowed Origin. Its strict
+body is `{expectedRevision,appearance}`, where appearance contains all five C10 fields
+(`head`, `body`, `mobility`, `accessory`, `accent`). Unknown values, missing fields and extra fields
+return 422. The revision is the same profile-details revision; stale edits return 409 even if the
+look matches. Deleted Bots return 404. Response: `{bot,revision}`.
+
+An unchanged appearance returns 200 with the same revision and no audit/evolution write. A change
+increments the revision and atomically audits the old/new appearance as `EMPLOYEE_APPEARANCE_UPDATED`;
+it never creates an evolution event or changes other configuration. Workspace polling emits the
+existing content-free `employee.profile.changed` (`sections: ["identity"]`) for the changed Bot,
+followed by `workspace.ready`; reconnect re-reads authoritative state.
 
 ## Server general preferences (C7)
 

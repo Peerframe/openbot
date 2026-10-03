@@ -119,6 +119,10 @@ class PostgresProfileStore:
     async def verify_schema(self) -> None:
         await self._transactions.verify_schema()
 
+    async def update_appearance(self, token, bot_id, value):
+        from .bot_appearance import update_appearance
+        return await update_appearance(self._transactions, token, bot_id, value)
+
     async def update(self, token: str | None, bot_id: str,
                      value: ProfileDetailsInput) -> ProfileMutationResult:
         try:
