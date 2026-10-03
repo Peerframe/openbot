@@ -1013,11 +1013,15 @@ describe("23e: older pages, banners and the date cue", () => {
         new CustomEvent(showMessageEvent, { detail: { channelId: "a", messageId: "m003" } }),
       ),
     );
-    await interact(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    });
+    // Reading the older page and scrolling take a few ticks; wait for the result, not a fixed delay.
+    await vi.waitFor(
+      async () => {
+        await interact(async () => undefined);
+        expect(document.activeElement?.id).toBe("channel-message-m003");
+      },
+      { timeout: 5_000, interval: 20 },
+    );
     expect(listMessagePage).toHaveBeenCalledTimes(2);
-    expect(document.activeElement?.id).toBe("channel-message-m003");
     // Another channel's request is ignored.
     await interact(() =>
       window.dispatchEvent(
