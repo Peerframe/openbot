@@ -18,7 +18,7 @@
 }
 .new-bot-setup-card {
   overflow: hidden;
-  border: 1px solid #ececee;
+  border: 1px solid var(--ob-fill-hover);
   border-radius: 20px;
   background: var(--ob-surface);
 }
@@ -65,7 +65,7 @@
   width: 100%;
   padding: 12px 14px;
   border: 0;
-  border-top: 1px solid #ececee;
+  border-top: 1px solid var(--ob-fill-hover);
   background: transparent;
   color: inherit;
   font: inherit;
@@ -73,7 +73,7 @@
   cursor: pointer;
 }
 .new-bot-setup-choice:hover {
-  background: #f6f6f7;
+  background: light-dark(#f6f6f7, var(--ob-fill));
 }
 .new-bot-setup-choice:disabled {
   cursor: default;
@@ -120,7 +120,7 @@
   outline: none;
 }
 .new-bot-setup-card input:focus {
-  border-color: #c7c7cc;
+  border-color: var(--ob-offline);
 }
 .new-bot-setup-note,
 .new-bot-setup-error {

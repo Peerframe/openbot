@@ -18,7 +18,7 @@
   font-weight: 700;
 }
 .storage-total small {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
 }
 .storage-bar {
@@ -26,7 +26,7 @@
   height: 14px;
   overflow: hidden;
   border-radius: 7px;
-  background: #ececee;
+  background: var(--ob-fill-hover);
 }
 .storage-bar span {
   display: block;
@@ -44,7 +44,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  color: #6e6e73;
+  color: var(--ob-text-secondary);
   font-size: 12px;
 }
 .storage-legend b {
@@ -62,19 +62,19 @@
   border-radius: 50%;
 }
 .storage-swatch-channelFiles {
-  background: #3a3a3c;
+  background: var(--ob-text-strong);
 }
 .storage-swatch-taskOutputs {
-  background: #8e8e93;
+  background: var(--ob-text-tertiary);
 }
 .storage-swatch-ownerTaskFiles {
-  background: #aeaeb2;
+  background: light-dark(#aeaeb2, var(--ob-offline));
 }
 .storage-swatch-database {
-  background: #c7c7cc;
+  background: var(--ob-offline);
 }
 .storage-swatch-other {
-  background: #dcdce0;
+  background: light-dark(#dcdce0, var(--ob-fill-strong));
 }
 .storage-swatch-trash {
   background: #e08a00;
@@ -83,7 +83,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: #6e6e73;
+  color: var(--ob-text-secondary);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
@@ -99,8 +99,8 @@
 /* SettingsStorage: 清空回收站… is tinted red; its confirmation follows ChannelFilesTrash. */
 .settings-dialog .setting-control .ob-pill.storage-danger,
 .ob-pill.storage-danger {
-  background: #fbe9e7;
-  color: #b3261e;
+  background: var(--ob-danger-fill);
+  color: var(--ob-attention);
 }
 .storage-confirm .ob-dialog-sheet {
   gap: 12px;
@@ -111,11 +111,11 @@
 }
 .storage-confirm-text {
   margin: 0;
-  color: #3a3a3c;
+  color: var(--ob-text-strong);
   font-size: 14px;
   line-height: 1.55;
 }
 .storage-confirm-kept {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
 }

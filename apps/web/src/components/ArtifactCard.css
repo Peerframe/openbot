@@ -6,8 +6,8 @@
   height: 46px;
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: var(--surface-soft, #f2f4f6);
-  color: var(--text-muted, #637082);
+  background: var(--surface-soft, light-dark(#f2f4f6, var(--ob-fill)));
+  color: var(--text-muted, light-dark(#637082, var(--ob-text-secondary)));
   font-size: 11px;
   font-weight: 600;
 }
@@ -24,7 +24,7 @@
 }
 .artifact-card-label small {
   margin-top: 5px;
-  color: var(--text-muted, #637082);
+  color: var(--text-muted, light-dark(#637082, var(--ob-text-secondary)));
   font-size: 10px;
 }
 .artifact-save-notice {

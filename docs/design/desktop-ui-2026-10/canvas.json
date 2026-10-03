@@ -530,6 +530,63 @@
       "w": 1440,
       "x": 1520,
       "y": 0
+    },
+    "DarkTokens.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1180,
+      "title": "深色外观 · 颜色",
+      "page": "dark"
+    },
+    "MainDark.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "① 频道对话（深色）",
+      "page": "dark"
+    },
+    "NewDark.dc.html": {
+      "x": 3040,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "③ 新建聊天 · 收件人（深色）",
+      "page": "dark"
+    },
+    "SettingsGeneralDark.dc.html": {
+      "x": 4560,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "④ 设置 · 通用（深色）",
+      "page": "dark"
+    },
+    "SidebarDark.dc.html": {
+      "x": 0,
+      "y": 1300,
+      "w": 300,
+      "h": 900,
+      "title": "共享侧栏组件（深色）",
+      "page": "dark"
+    },
+    "ChannelInfoDark.dc.html": {
+      "x": 380,
+      "y": 1300,
+      "w": 340,
+      "h": 900,
+      "title": "共享频道信息组件（深色）",
+      "page": "dark",
+      "is_interactive": true
+    },
+    "SettingsNavDark.dc.html": {
+      "x": 800,
+      "y": 1300,
+      "w": 250,
+      "h": 740,
+      "title": "共享设置导航组件（深色）",
+      "page": "dark"
     }
   },
   "createdOnFiles": {
@@ -582,6 +639,15 @@
       "maxW": 3000,
       "page": "storage",
       "text": "OpenBot Desktop · 存储与清理",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
+    "darkTitle": {
+      "kind": "title1",
+      "maxW": 6000,
+      "page": "dark",
+      "text": "OpenBot Desktop · 深色外观",
       "w": 240,
       "x": 0,
       "y": -320
@@ -653,7 +719,14 @@
     "AppIcon.dc.html",
     "LongLists.dc.html",
     "ChannelFilesTrash.dc.html",
-    "SettingsStorage.dc.html"
+    "SettingsStorage.dc.html",
+    "DarkTokens.dc.html",
+    "MainDark.dc.html",
+    "NewDark.dc.html",
+    "SettingsGeneralDark.dc.html",
+    "SidebarDark.dc.html",
+    "ChannelInfoDark.dc.html",
+    "SettingsNavDark.dc.html"
   ],
   "pages": [
     {
@@ -675,6 +748,10 @@
     {
       "id": "storage",
       "name": "存储与清理"
+    },
+    {
+      "id": "dark",
+      "name": "深色外观"
     }
   ],
   "title": "OpenBot Desktop 界面优化"

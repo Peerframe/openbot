@@ -1,7 +1,7 @@
 .plugin-manager {
   margin: 20px 0;
-  border-block: 1px solid #e2e6eb;
-  color: #303b48;
+  border-block: 1px solid light-dark(#e2e6eb, var(--ob-divider));
+  color: light-dark(#303b48, var(--ob-text));
 }
 .plugin-manager > summary {
   cursor: pointer;
@@ -10,7 +10,7 @@
 .plugin-manager > summary > span {
   margin-left: 12px;
   font-size: 13px;
-  color: #526172;
+  color: light-dark(#526172, var(--ob-text-secondary));
 }
 .plugin-manager-body {
   padding: 0 0 16px;
@@ -30,7 +30,7 @@
 .installed-plugin {
   margin-top: 18px;
   padding: 18px 0;
-  border-top: 1px solid #e2e6eb;
+  border-top: 1px solid light-dark(#e2e6eb, var(--ob-divider));
 }
 .plugin-manager h3,
 .plugin-manager h4 {
@@ -68,10 +68,10 @@
   min-width: 0;
   box-sizing: border-box;
   padding: 8px 10px;
-  border: 1px solid #bdc6d0;
+  border: 1px solid light-dark(#bdc6d0, var(--ob-border-strong));
   border-radius: 6px;
-  background: #fff;
-  color: #2c3948;
+  background: var(--ob-surface);
+  color: light-dark(#2c3948, var(--ob-text));
   font: inherit;
 }
 .plugin-fields > button {
@@ -100,7 +100,7 @@
   max-width: 100%;
   padding: 12px;
   overflow: auto;
-  background: #f3f5f7;
+  background: light-dark(#f3f5f7, var(--ob-fill));
   font-size: 12px;
   line-height: 1.6;
   white-space: pre-wrap;
@@ -120,8 +120,8 @@
 }
 .plugin-call-approvals {
   padding: 14px 24px;
-  background: #fff9ed;
-  border-bottom: 1px solid #eadbbb;
+  background: light-dark(#fff9ed, var(--ob-attention-fill));
+  border-bottom: 1px solid light-dark(#eadbbb, var(--ob-attention-border));
   max-height: min(45vh, 460px);
   overflow: auto;
 }
@@ -132,7 +132,7 @@
 .plugin-call-approval + .plugin-call-approval {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid #dfd5c2;
+  border-top: 1px solid light-dark(#dfd5c2, var(--ob-attention-border));
 }
 .plugin-call-approval > header {
   display: flex;
@@ -140,12 +140,12 @@
   justify-content: space-between;
   gap: 8px;
   font-size: 13px;
-  color: #54442d;
+  color: light-dark(#54442d, var(--ob-attention-ink));
 }
 .plugin-call-approval p {
   overflow-wrap: anywhere;
   font-size: 13px;
-  color: #54442d;
+  color: light-dark(#54442d, var(--ob-attention-ink));
 }
 .plugin-call-actions {
   display: flex;
@@ -154,7 +154,7 @@
   gap: 8px;
 }
 .plugin-manager :focus-visible {
-  outline: 2px solid #496884;
+  outline: 2px solid light-dark(#496884, var(--ob-active));
   outline-offset: 3px;
 }
 @media (max-width: 480px) {
@@ -179,7 +179,7 @@
 .plugin-content-panel {
   margin-top: 20px;
   padding-top: 16px;
-  border-top: 1px solid #e2e6eb;
+  border-top: 1px solid light-dark(#e2e6eb, var(--ob-divider));
 }
 .plugin-update button,
 .plugin-content-panel button {
@@ -192,7 +192,7 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   padding: 12px;
-  background: #f3f5f7;
+  background: light-dark(#f3f5f7, var(--ob-fill));
 }
 .plugin-content-panel label {
   display: grid;
@@ -208,7 +208,7 @@
 .plugin-app-view iframe {
   width: 100%;
   height: 400px;
-  border: 1px solid #ddd;
+  border: 1px solid light-dark(#ddd, var(--ob-divider));
   border-radius: 8px;
   background: white;
 }
@@ -221,10 +221,10 @@
 }
 .plugin-update button,
 .plugin-content-panel button {
-  border: 1px solid #d5dbe2;
+  border: 1px solid light-dark(#d5dbe2, var(--ob-divider));
   border-radius: 8px;
-  background: #fff;
-  color: #303b48;
+  background: var(--ob-surface);
+  color: light-dark(#303b48, var(--ob-text));
   padding: 8px 12px;
   font: inherit;
   font-size: 13px;
@@ -237,8 +237,8 @@
 }
 .plugin-content-panel select,
 .plugin-content-panel input {
-  border: 1px solid #bdc6d0;
+  border: 1px solid light-dark(#bdc6d0, var(--ob-border-strong));
   border-radius: 6px;
   background: white;
-  color: #303b48;
+  color: light-dark(#303b48, var(--ob-text));
 }

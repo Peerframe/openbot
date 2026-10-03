@@ -75,6 +75,7 @@ export function LaunchMark() {
           <circle className="lm-ball" cx="33" cy="16" r="4.3" fill="#20251F" />
         </g>
         <path
+          className="lm-body"
           d="M12 61C12 41 27 26 47 26C68 26 83 41 83 61V71C83 83 69 89 48 89C26 89 12 83 12 71Z"
           fill="#20251F"
         />

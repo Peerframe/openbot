@@ -88,7 +88,7 @@
   cursor: pointer;
 }
 .channel-info .ci-tabs button[aria-selected="true"] {
-  background: #fff;
+  background: var(--ob-surface);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   color: var(--ob-text);
   font-weight: 600;
@@ -245,8 +245,8 @@
   padding: 0 12px;
   border: 0;
   border-radius: 14px;
-  background: #fbe9e7;
-  color: #b3261e;
+  background: var(--ob-danger-fill);
+  color: var(--ob-attention);
   font: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -254,7 +254,7 @@
   visibility: hidden;
 }
 .channel-info .ci-member-remove:hover {
-  background: #f8d9d5;
+  background: light-dark(#f8d9d5, var(--ob-danger-fill));
 }
 /* 移除 shows on hover (AddMember artboard), on keyboard focus, and always without a pointer. */
 .channel-info .ci-member:hover .ci-member-remove,
@@ -282,7 +282,7 @@
   border: 0;
   border-radius: 12px;
   background: transparent;
-  color: #3a3a3c;
+  color: var(--ob-text-strong);
   font: inherit;
   font-size: 15px;
   text-align: left;
@@ -300,16 +300,16 @@
   background: var(--ob-fill);
 }
 .channel-info .ci-member-add:hover .ci-member-add-icon {
-  background: #fff;
+  background: var(--ob-surface);
 }
 .channel-info .ci-add-popover {
   box-sizing: border-box;
   width: 270px;
   margin: -4px 0 0 4px;
   overflow: hidden;
-  border: 1px solid #e5e5e8;
+  border: 1px solid var(--ob-popover-border);
   border-radius: 18px;
-  background: #fdfdfd;
+  background: var(--ob-popover);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
 }
 .channel-info .ci-add-popover input {
@@ -318,7 +318,7 @@
   height: 44px;
   padding: 0 16px;
   border: 0;
-  border-bottom: 1px solid #ececee;
+  border-bottom: 1px solid var(--ob-fill-hover);
   background: transparent;
   color: var(--ob-text);
   font: inherit;
@@ -430,7 +430,7 @@
   height: 6px;
   margin-top: 8px;
   border-radius: 50%;
-  background: #aeaeb2;
+  background: light-dark(#aeaeb2, var(--ob-offline));
 }
 .channel-info .ci-run-status {
   flex-shrink: 0;
@@ -467,7 +467,7 @@
   color: var(--ob-text);
   font-size: 12px;
   text-decoration: underline;
-  text-decoration-color: #c7c7cc;
+  text-decoration-color: var(--ob-offline);
   text-overflow: ellipsis;
   text-underline-offset: 3px;
   white-space: nowrap;
@@ -485,7 +485,7 @@
   height: 32px;
   place-items: center;
   border-radius: 9px;
-  background: #fff;
+  background: var(--ob-surface);
   color: var(--ob-text-secondary);
 }
 .channel-info .ci-computer strong,
@@ -636,7 +636,7 @@
   place-items: center;
   border: 1px solid var(--ob-divider);
   border-radius: 10px;
-  background: #fff;
+  background: var(--ob-surface);
   color: var(--ob-text-secondary);
   font-size: 10px;
   font-weight: 700;

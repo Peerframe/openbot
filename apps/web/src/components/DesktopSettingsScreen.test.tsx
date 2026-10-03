@@ -68,6 +68,7 @@ describe("Desktop settings interactions", () => {
       await interact(() =>
         rendered.container.querySelector<HTMLInputElement>('[aria-label="显示左侧导航"]')?.click(),
       );
+      await select(rendered.container, "主题", "dark");
       await select(rendered.container, "界面密度", "compact");
       await select(rendered.container, "聊天字号", "large");
       await select(rendered.container, "发送消息快捷键", "modifier");
@@ -83,6 +84,7 @@ describe("Desktop settings interactions", () => {
         fontSize: "large",
         sendShortcut: "modifier",
         reduceMotion: true,
+        colorScheme: "dark",
         hour12: true,
         notifyApprovals: false,
         notifyMessages: false,
@@ -304,7 +306,10 @@ it("retries a failed automation workspace load and keeps its manager inside sett
 
 describe("Web settings entry", () => {
   it("offers sectioned settings without Desktop-only connection or material rows (hosts via the Server)", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ events: [] })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ events: [] })),
+    );
     const rendered = await renderComponent(<Settings onBack={vi.fn()} />);
     try {
       const navigation = rendered.container.querySelector('nav[aria-label="设置分区"]');

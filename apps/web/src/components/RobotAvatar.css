@@ -26,6 +26,17 @@
   overflow: visible;
 }
 
+/* Head colours come from tokens so the dark appearance can swap them (tokens.css). */
+.robot-avatar .robot-body {
+  fill: var(--ob-avatar-body);
+}
+.robot-avatar :is(.robot-antenna-stem, .robot-scout-head) {
+  stroke: var(--ob-avatar-body);
+}
+.robot-avatar .robot-eyes {
+  fill: var(--ob-avatar-eye);
+}
+
 /* Standard drawing; the micro drawing replaces it below 32px. */
 .robot-avatar .robot-antenna-stem {
   stroke-width: 4;
@@ -190,4 +201,37 @@
   :is(.robot-head, .robot-eyes, .robot-antenna, .robot-ear-light, .robot-scout),
 :root[data-reduced-motion="true"] .robot-avatar > .robot-dot.is-working {
   animation: none;
+}
+
+/* Dark appearance: the warm-white edition with the lighter jaw colours (Avatars artboard). The
+   light edition comes from the SVG attributes; these rules win over them. */
+:root[data-color-scheme="dark"] .robot-avatar {
+  --robot-jaw-dark: #adf16a;
+}
+:root[data-color-scheme="dark"] .robot-avatar.robot-accent-blue {
+  --robot-jaw-dark: #92acff;
+}
+:root[data-color-scheme="dark"] .robot-avatar.robot-accent-yellow {
+  --robot-jaw-dark: #f2c777;
+}
+:root[data-color-scheme="dark"] .robot-avatar.robot-accent-red {
+  --robot-jaw-dark: #f59c82;
+}
+:root[data-color-scheme="dark"] .robot-avatar.robot-accent-violet {
+  --robot-jaw-dark: #bba4ff;
+}
+:root[data-color-scheme="dark"] .robot-avatar.robot-accent-teal {
+  --robot-jaw-dark: #6fd9cb;
+}
+:root[data-color-scheme="dark"] .robot-avatar.robot-accent-pink {
+  --robot-jaw-dark: #ffa3c9;
+}
+:root[data-color-scheme="dark"] .robot-avatar.robot-accent-slate {
+  --robot-jaw-dark: #b4bfcc;
+}
+:root[data-color-scheme="dark"] .robot-avatar .robot-jaw {
+  fill: var(--robot-jaw-dark);
+}
+:root[data-color-scheme="dark"] .robot-avatar .robot-ear-light {
+  stroke: var(--robot-jaw-dark);
 }

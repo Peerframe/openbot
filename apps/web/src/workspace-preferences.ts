@@ -8,6 +8,8 @@ export interface WorkspacePreferences {
   fontSize: "normal" | "large";
   sendShortcut: "enter" | "modifier";
   reduceMotion: boolean;
+  /** 设置 › 通用 › 主题; Desktop stays light until its window follows the choice (C25). */
+  colorScheme: "system" | "light" | "dark";
   hour12: boolean;
   /** Opt-in system notifications; presentation only, they grant and decide nothing. */
   notifyApprovals: boolean;
@@ -22,6 +24,7 @@ export const defaultPreferences: Readonly<WorkspacePreferences> = Object.freeze(
   fontSize: "normal",
   sendShortcut: "enter",
   reduceMotion: false,
+  colorScheme: "system",
   hour12: false,
   notifyApprovals: false,
   notifyMessages: false,
@@ -43,6 +46,10 @@ export function parsePreferences(raw: string | null): Readonly<WorkspacePreferen
       fontSize: input.fontSize === "large" ? "large" : "normal",
       sendShortcut: input.sendShortcut === "modifier" ? "modifier" : "enter",
       reduceMotion: input.reduceMotion === true,
+      colorScheme:
+        input.colorScheme === "light" || input.colorScheme === "dark"
+          ? input.colorScheme
+          : "system",
       hour12: input.hour12 === true,
       notifyApprovals: input.notifyApprovals === true,
       notifyMessages: input.notifyMessages === true,
@@ -102,6 +109,11 @@ export function updatePreferences(update: Partial<WorkspacePreferences>) {
   }
   snapshot = { values, saved };
   for (const listener of listeners) listener();
+}
+
+/** The current values outside React, e.g. to apply the colour scheme before the first render. */
+export function readPreferences() {
+  return getSnapshot().values;
 }
 
 export function useWorkspacePreferences() {

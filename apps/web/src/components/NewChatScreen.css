@@ -78,7 +78,7 @@
   border: 1px solid var(--ob-popover-border);
   border-radius: 14px;
   background: var(--ob-popover);
-  box-shadow: 0 16px 40px rgb(0 0 0 / 10%);
+  box-shadow: var(--ob-shadow-popover);
 }
 .new-chat .new-chat-option {
   display: grid;
@@ -122,7 +122,7 @@
   place-items: center;
   border-radius: 50%;
   background: var(--ob-fill);
-  color: #3a3a3c;
+  color: var(--ob-text-strong);
 }
 .new-chat .new-chat-keys {
   display: inline-flex;
@@ -145,7 +145,7 @@
 }
 .new-chat mark {
   border-radius: 3px;
-  background: #fde68a;
+  background: var(--ob-highlight);
   color: inherit;
 }
 .new-chat .new-chat-option-avatar {
@@ -207,7 +207,7 @@
   padding: 8px 14px;
   border-radius: 16px;
   background: var(--ob-fill);
-  color: #3a3a3c;
+  color: var(--ob-text-strong);
   font-size: var(--ob-font-caption);
 }
 .new-chat .new-chat-hint.is-channel {

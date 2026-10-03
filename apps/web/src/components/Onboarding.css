@@ -38,6 +38,16 @@
   height: 96px;
   overflow: visible;
 }
+/* The mark's colours come from the avatar tokens, so the dark appearance can swap them. */
+.ob-launch-mark :is(.lm-body, .lm-ball) {
+  fill: var(--ob-avatar-body);
+}
+.ob-launch-mark .lm-stem {
+  stroke: var(--ob-avatar-body);
+}
+.ob-launch-mark .lm-blink {
+  fill: var(--ob-avatar-eye);
+}
 .ob-launch-copy {
   display: flex;
   flex-direction: column;
@@ -71,7 +81,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #1d1d1f;
+  background: var(--ob-text);
   animation: ob-launch-dot 1.2s ease-in-out infinite;
 }
 .ob-launch-dots i:nth-child(2) {
@@ -369,10 +379,10 @@
   outline: none;
 }
 .ob-setup-field :is(input, select):focus {
-  border-color: #c7c7cc;
+  border-color: var(--ob-offline);
 }
 .ob-setup-field :is(input, select)::placeholder {
-  color: #a1a1a6;
+  color: light-dark(#a1a1a6, var(--ob-text-tertiary));
 }
 .ob-setup-hint {
   margin: 0;
@@ -411,7 +421,7 @@
   border: 0;
   border-radius: 24px;
   background: var(--ob-primary);
-  color: #fff;
+  color: var(--ob-on-primary);
   font: inherit;
   font-size: 16px;
   font-weight: 600;
@@ -523,7 +533,7 @@
   width: 22px;
   height: 22px;
   place-items: center;
-  border: 2px solid #c7c7cc;
+  border: 2px solid var(--ob-offline);
   border-radius: 50%;
 }
 .is-selected > .ob-radio-dot {
@@ -535,7 +545,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--ob-surface);
   content: "";
 }
 
@@ -578,13 +588,13 @@
   width: 22px;
   height: 22px;
   place-items: center;
-  border: 2px solid #d1d1d6;
+  border: 2px solid var(--ob-switch-off);
   border-radius: 50%;
 }
 .ob-step-icon.is-done {
   border: 0;
   background: var(--ob-primary);
-  color: #fff;
+  color: var(--ob-on-primary);
 }
 .ob-step-icon.is-done svg {
   width: 12px;
@@ -595,7 +605,7 @@
   box-sizing: border-box;
   width: 22px;
   height: 22px;
-  border: 2.5px solid #d1d1d6;
+  border: 2.5px solid var(--ob-switch-off);
   border-top-color: var(--ob-primary);
   border-radius: 50%;
   animation: ob-spin 0.9s linear infinite;
@@ -632,7 +642,7 @@
   line-height: 1.5;
 }
 .ob-worker-status .ob-step-icon {
-  border-color: #d1d1d6;
+  border-color: var(--ob-switch-off);
 }
 
 /* ModelSetup: provider grid and fields */
@@ -679,7 +689,7 @@
   place-items: center;
   border: 1px solid var(--ob-divider);
   border-radius: 9px;
-  background: #fff;
+  background: var(--ob-surface);
   font-size: 13px;
   font-weight: 700;
 }
@@ -747,4 +757,9 @@
   margin: 0;
   -webkit-appearance: none;
   appearance: none;
+}
+
+/* Dark appearance: the launch mark uses the avatars' warm-white edition. */
+:root[data-color-scheme="dark"] .ob-launch-mark .lm-jaw {
+  fill: #adf16a;
 }
