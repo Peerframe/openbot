@@ -1,5 +1,5 @@
 {
-  "commit": "8946a480542683cb85bf1b6ebc7c4134a9b27630",
+  "commit": "aff05a7af4aca731537edba69b66d15ea030f8ef",
   "commitRole": "committed-migration-source",
   "migrations": [
     {
@@ -313,19 +313,25 @@
       "tag": "0051_global_trash_cleanup",
       "timestamp": 1791011308235,
       "sha256": "f00bc68a8e1c0a552fe51b2b736c76c36f48e4c1a678acde52d9bbf4831a950c"
+    },
+    {
+      "index": 52,
+      "tag": "0052_bot_greeting_origin",
+      "timestamp": 1791035792747,
+      "sha256": "dff793d028b3bcbfc43275dc2131c38a9c86557c76e2758c213a0441bcfedf47"
     }
   ],
   "qualificationInput": {
     "state": "committed-source-requalification",
-    "previousQualifiedTarget": "38c10b39ffa91ab4746da6d35ddf77505106ac33",
+    "previousQualifiedTarget": "8946a480542683cb85bf1b6ebc7c4134a9b27630",
     "journal": {
       "path": "packages/db/migrations/meta/_journal.json",
-      "sha256": "f9b0ea7bf64201e9ceccfbd5fb24e036175dbe14c4451d8523ce7f99a295eeac"
+      "sha256": "16269120ed2f82aae267c96978fa49bfa0f7c9a1cb6f12c0b9387492ed2a8a8e"
     },
     "changedSql": [
       {
-        "path": "packages/db/migrations/0051_global_trash_cleanup.sql",
-        "sha256": "f00bc68a8e1c0a552fe51b2b736c76c36f48e4c1a678acde52d9bbf4831a950c"
+        "path": "packages/db/migrations/0052_bot_greeting_origin.sql",
+        "sha256": "dff793d028b3bcbfc43275dc2131c38a9c86557c76e2758c213a0441bcfedf47"
       }
     ]
   }
