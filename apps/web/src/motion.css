@@ -5,9 +5,11 @@
  */
 :root {
   --ob-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --ob-motion-fast: 120ms;
-  --ob-motion: 180ms;
-  --ob-motion-panel: 220ms;
+  /* Tuned to the owner's reference recording (2026-10-03): quick and light, never lingering. */
+  --ob-motion-fast: 100ms;
+  --ob-motion: 140ms;
+  --ob-motion-panel: 160ms;
+  --ob-motion-message: 180ms;
 }
 
 @keyframes ob-pop-in {
@@ -26,13 +28,12 @@
 @keyframes ob-message-in {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.97);
+    transform: translateY(8px) scale(0.98);
   }
 }
 @keyframes ob-view-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
   }
 }
 @keyframes ob-message-flash {
@@ -71,7 +72,7 @@
   }
   :root:not([data-reduced-motion="true"]) dialog:not([open]) {
     opacity: 0;
-    transform: translateY(6px) scale(0.985);
+    transform: translateY(4px) scale(0.99);
   }
   :root:not([data-reduced-motion="true"]) dialog::backdrop {
     transition:
@@ -85,7 +86,7 @@
   @starting-style {
     :root:not([data-reduced-motion="true"]) dialog[open] {
       opacity: 0;
-      transform: translateY(6px) scale(0.985);
+      transform: translateY(4px) scale(0.99);
     }
     :root:not([data-reduced-motion="true"]) dialog[open]::backdrop {
       opacity: 0;
@@ -117,7 +118,7 @@
      conversation or page fades it in; a jumped-to message flashes once. */
   :root:not([data-reduced-motion="true"]) .message-row.is-arriving .message-content {
     transform-origin: bottom left;
-    animation: ob-message-in 220ms var(--ob-ease-out);
+    animation: ob-message-in var(--ob-motion-message) var(--ob-ease-out);
   }
   :root:not([data-reduced-motion="true"]) .message-row.human.is-arriving .message-content {
     transform-origin: bottom right;
@@ -125,7 +126,7 @@
   :root:not([data-reduced-motion="true"])
     .app-shell
     :is(.workspace-main, .workspace-destination, .workspace-details > *) {
-    animation: ob-view-in 160ms var(--ob-ease-out);
+    animation: ob-view-in 120ms var(--ob-ease-out);
   }
   :root:not([data-reduced-motion="true"]) .message-row.is-flash {
     border-radius: 14px;
