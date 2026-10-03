@@ -947,9 +947,10 @@ symlinks, rejects linked roots, hardlinks/special files and foreign devices, and
 measurements (one). Refusal or an unavailable root returns `null`; a confirmed absent Bot directory
 returns zero. This is a live logical-byte observation, not an atomic snapshot or disk allocation.
 
-The deployed upstream pin remains `257c1280d684089be9adb0b35cce262efc7064bf` while the contribution
-is pending, so that version reports `null`. A numeric production result requires deploying the
-reviewed route after upstream acceptance (or a separately recorded narrow fork after rejection).
+The Owner-approved narrow fork is pinned to `29a83c1932fb67398dd7a36fa80c473e0230a637` in
+[yxflc11/openbot-agent-computer-upstream](https://github.com/yxflc11/openbot-agent-computer-upstream); only the usage contribution is transplanted onto the production base.
+Its image and real Provider path are qualified; #730 stays open, with return to upstream after
+merge and qualification.
 Remote profile bytes are not included in the Server's `/storage.totalBytes`;
 `categories.workingComputerBrowserData` stays `null`.
 

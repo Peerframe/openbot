@@ -2,7 +2,7 @@
 
 English · [简体中文](storage-cleanup-follow-ups.zh-CN.md)
 
-- Status: Contracts implemented; C23 upstream contribution pending
+- Status: Contracts implemented; C23 Owner-approved narrow fork qualified
 - Date: 2026-10-03
 - Owner: @yxflc11
 - Related issue: follow-up to C21 (#164) and its UI (#169)
@@ -64,7 +64,7 @@ English · [简体中文](storage-cleanup-follow-ups.zh-CN.md)
 | Global cleanup | `POST /api/v1/storage/trash/cleanup` reusing `_remove` over every active channel, with one global receipt | One confirmation, one replayable result, same safety | **Selected (C22)** |
 | Browser data | Docker Provider measures the volume itself | It has no volume access, and adding the Docker socket widens authority | Rejected |
 | Browser data | `docker system df -v` on the Worker | One total for the volume, no per-Bot figure, slow, needs the Docker socket | Rejected |
-| Browser data | Upstream `agent-computer` reports bounded per-Bot profile bytes; `browser.maintenance@1` status carries them | Per-Bot, measured where the data lives, no new authority | **Selected (C23)**: upstream contribution first, narrow fork only if it is refused |
+| Browser data | Upstream `agent-computer` reports bounded per-Bot profile bytes; `browser.maintenance@1` status carries them | Per-Bot, measured where the data lives, no new authority | **Selected (C23)**: Owner-approved narrow fork now; return to upstream after merge and qualification |
 | References | Include message text in the C19 count response | Makes every file listing heavy | Rejected |
 | References | Owner-only listing per attachment with a short preview | Bounded, on demand, same authority as reading the channel | **Selected (C24)** |
 | References | A new `around=<messageId>` page for jumping | Needs gap handling in the conversation window | Deferred; the UI pages back a bounded number of C18 pages instead |
@@ -109,16 +109,17 @@ English · [简体中文](storage-cleanup-follow-ups.zh-CN.md)
 
 ## Reuse decision
 
-- Selected option: local contract extensions (C22, C24) and an upstream contribution (C23).
+- Selected option: local contract extensions (C22, C24) and the Owner-approved narrow fork (C23).
 - Exact OpenBot-specific gap: the three facts above. Nothing in C21 or C19 changes.
-- Upgrade, replacement, or exit plan: if upstream rejects C23, pin a narrow fork limited to the
-  usage route. Until a contract lands, the step-25 deviations stay documented in DESIGN.
+- Upgrade, replacement, or exit plan: keep #730 open. After upstream merges the route, review and
+  qualify the accepted upstream version/image, update the pin, and retire the narrow branch.
 - Failure behavior: a refused or unknown measurement shows as 「量不出」, never as 0; unknown
   references refuse deletion; an unclear cleanup is retried only with the same key.
 
 ## Source incorporation
 
-- Source copied or substantially adapted: no.
+- Source copied or substantially adapted: yes, the separately deployed MIT agent-computer narrow
+  fork preserves CopilotKit source and LICENSE. No upstream control plane enters this repository.
 
 ## Verification plan
 
@@ -133,8 +134,8 @@ English · [简体中文](storage-cleanup-follow-ups.zh-CN.md)
 
 ## Unresolved questions
 
-- Whether `agent-computer` upstream accepts a usage route, which decides between an upstream
-  pin and a narrow fork for C23.
+- None for this slice. Owner approved the fork on 2026-10-03; upstream acceptance is the exit
+  condition, not a blocker.
 
 ## Implementation checkpoint (2026-10-03)
 
@@ -169,12 +170,8 @@ last path component, hence descriptor-anchored traversal instead of recursively 
 paths. The finite traversal limits and Provider request deadline bound ordinary work; stalled
 kernel filesystem operations are not claimed to be preemptible by the cooperative deadline.
 
-Production remains pinned to `257c1280d684089be9adb0b35cce262efc7064bf`. Provider/status protocol
-wiring is ready, with safe-integer validation and legacy/missing/error measurements normalized to
-null. Upstream review is outstanding; an open PR is neither acceptance nor rejection, so no runtime
-fork is adopted. After acceptance, review and pin the upstream version and qualify its image; only
-explicit rejection permits the separately recorded narrow-fork path. UI work remains the separate
-Claude slice above, and the DESIGN deviations remain accurate until that slice lands.
+The earlier wait-for-upstream decision is superseded by the Owner decision below. Provider/status
+wiring remains unchanged, with safe-integer validation and unknown/refused measurements as null.
 
 Focused acceptance evidence: 52 real PostgreSQL/HTTP Python tests across storage purge, attachment
 references and browser sessions; 3 protocol tests and 35 Docker browser/maintenance tests. Upstream
@@ -220,5 +217,47 @@ Handoff: local backend/contracts, translations and tests are ready for review on
 the migration source commit is fixed in the qualification manifest. No product PR or deployment
 was created in this C22–C24 slice; the explicitly requested upstream PR is open without reviews.
 The unrelated pre-existing `output/` directory is untouched. No test or implementation writer is
-left running. Remaining external dependency is acceptance/rejection of upstream #730; UI remains
+left running. C23 no longer depends on acceptance/rejection of upstream #730; UI remains
 the separate planned slice. Default full-command timeouts remain visible acceptance limitations.
+
+## C23 Owner-approved fork and image (2026-10-03)
+
+Owner explicitly decided to maintain the narrow branch without waiting for upstream #730. The
+repository is [yxflc11/openbot-agent-computer-upstream](https://github.com/yxflc11/openbot-agent-computer-upstream),
+branch `codex/c23-profile-usage-production`, commit `29a83c1932fb67398dd7a36fa80c473e0230a637`.
+Its sole parent is production `257c1280d684089be9adb0b35cce262efc7064bf`; its sole change is the
+transplant of contribution `46eb7af817027c5de4202846c73c43bbb2fa67b7`.
+
+Conflicts: retain the production `sessionFor`, profile release callback and `PROFILES_DIR ??
+"/profiles"` behavior. Add only the usage import/root alias and authenticated route before session
+creation. Do not import the newer session, secret-masking, virtual-display or egress changes. The
+newer `control-http.test.ts` does not exist in production: extract only the usage case and bounded
+child-process fixture into `profile-usage-http.test.ts`. The traversal, unit tests and usage docs
+are identical to the contribution. No dependency/lock/Dockerfile changes enter the fork.
+
+MIT: Copyright (c) 2026 CopilotKit; retain the full fork root `LICENSE` and the image notice at
+`/app/THIRD_PARTY_LICENSES/agent-computer.MIT`. The local Linux arm64 image is
+`openbot-browser:29a83c1`, digest
+`sha256:2efa5b5dd9edd7a37357413e7091f27c34e3e37eeb63d3643e5ddc8249dc5019`.
+Build the exact fork checkout with `docker build -t openbot-browser:29a83c1 -f agent-computer/Dockerfile .`,
+then add the license/provenance layer (no code replacement):
+
+```dockerfile
+FROM openbot-browser:29a83c1
+COPY LICENSE /app/THIRD_PARTY_LICENSES/agent-computer.MIT
+LABEL org.opencontainers.image.source="https://github.com/yxflc11/openbot-agent-computer-upstream"
+LABEL org.opencontainers.image.revision="29a83c1932fb67398dd7a36fa80c473e0230a637"
+```
+
+The production source manifest/download fixture now uses this exact repository/commit and includes
+the usage implementation's SHA-256; all other source hashes and dependency pins are unchanged.
+The actual final image with Bun 1.4.2 passed 45 Linux tests (one non-Linux case skipped). The unchanged
+Docker Provider connected to the actual image: one synthetic Bot measured 8 bytes, a hardlinked
+profile returned null, an absent Bot returned 0, and no Chromium started. Authentication and the
+image MIT notice were verified. Provider/status wiring is unchanged. Settings continues to show
+「量不出」 for null; measured remote bytes stay outside the Server storage total.
+
+Exit: leave [#730](https://github.com/CopilotKit/OpenBot/pull/730) open. After upstream merges the
+route, review and qualify its exact commit/image, switch production and the fixture back to upstream,
+then retire the narrow branch. This is local Linux arm64 image/Provider evidence; hosted Linux amd64
+qualification and deployment to existing Worker computers are separate. No user profiles were used.

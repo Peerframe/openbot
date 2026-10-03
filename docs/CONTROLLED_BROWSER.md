@@ -7,7 +7,7 @@ limited to trusted test origins. It does not implement native desktop input or a
 ## Setup and task
 
 Enroll a Worker using [Node enrollment](NODE_ENROLLMENT.md), and configure the separately running
-[agent-computer pinned at 257c1280](https://github.com/CopilotKit/openbot/tree/257c1280d684089be9adb0b35cce262efc7064bf/agent-computer).
+[agent-computer narrow fork 29a83c1](https://github.com/yxflc11/openbot-agent-computer-upstream/tree/29a83c1932fb67398dd7a36fa80c473e0230a637/agent-computer).
 Keep its endpoint private, its token secret, and its browser profile separate from personal accounts.
 Use one Worker per computer service. Set these additional Worker values for a local fixture:
 
