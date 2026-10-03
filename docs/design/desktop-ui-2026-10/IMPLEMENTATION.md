@@ -120,7 +120,7 @@ Done 2026-10-02 and 2026-10-03 (#147, #149, #150, #157–#161, #164, #165) and C
 | C20 | On-screen claims confirmed or corrected | Wording corrected (#163) |
 | C21 | Permanent 回收站 deletion, a cleanup command, measured storage and an opt-in 30-day purge | Integrated (step 25) |
 | C22 | Global 清空回收站 with one replayable key, and `referencedSizeBytes` | Integrated (step 29) |
-| C23 | Browser profile bytes per Bot from browser status | Integrated (step 29); the deployed pin reports 「量不出」 until the fork below lands |
+| C23 | Browser profile bytes per Bot from browser status (Owner-approved narrow fork qualified; null still shows 「量不出」) | Integrated (step 29) |
 | C24 | Owner-only list of the messages and tasks that reference a file | Integrated (step 29) |
 
 Open — in the order the UI needs them:
@@ -128,7 +128,7 @@ Open — in the order the UI needs them:
 | ID | Needed by | Contract to add | UI until ready |
 | --- | --- | --- | --- |
 | C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked — proposed contract in [the research record](../../research/bot-appearance-and-greeting.md) | Pencil button hidden |
-| C23 fork | Step 29 | **Own narrow fork of `agent-computer`** (Owner decision 2026-10-03: do not wait for upstream #730): the production pin plus only the `GET /computers/profile-usage` contribution, image qualified, `OPEN_SOURCE_REUSE.md` updated, back to upstream once it merges | 「量不出」 |
+| C23 fork | Step 29 | **Locally qualified narrow fork**: production 257c1280 plus only usage contribution 46eb7af8; pinned 29a83c1, image verified, MIT retained; [evidence and upstream exit](../../research/storage-cleanup-follow-ups.md#c23-owner-approved-fork-and-image-2026-10-03). Deployment to existing Workers remains separate | Real bytes after runtime update; failed measurement remains 「量不出」 |
 | C25 | Step 36 | **Desktop colour scheme**: `get/setColorScheme("system" \| "light" \| "dark")` returning the resolved scheme, a change event, the choice kept by the main process and applied before the window opens, window background `#ffffff` / `#141414` | Desktop stays light |
 | C11 | Step 16 (optional) | **New-Bot greeting**: one bounded, tool-less model call after quick-create, using only other Bots' names and roles; any failure means no greeting — proposed contract in [the research record](../../research/bot-appearance-and-greeting.md) | The setup card shows without a greeting |
 

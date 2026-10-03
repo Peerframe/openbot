@@ -2,7 +2,7 @@
 
 [English](storage-cleanup-follow-ups.md) · 简体中文
 
-- 状态：接口已实现；C23 上游贡献待处理
+- 状态：接口已实现；C23 Owner 批准的窄分支已验证
 - 日期：2026-10-03
 - 负责人：@yxflc11
 - 相关：C21（#164）及其界面（#169）的后续
@@ -45,7 +45,7 @@
 | 全局清空 | `POST /api/v1/storage/trash/cleanup`，对所有活跃频道复用 `_remove`，用一个全局凭证 | 一次确认、一个可重放的结果、安全性不变 | **采用（C22）** |
 | 浏览器数据 | Docker Provider 自己去量存储卷 | 它碰不到存储卷；接 Docker socket 会扩大权限 | 不采用 |
 | 浏览器数据 | 在工作电脑上跑 `docker system df -v` | 只有存储卷的总量，没有每个 Bot 的数字；慢；需要 Docker socket | 不采用 |
-| 浏览器数据 | 上游 `agent-computer` 报告有上限的单个 Bot 资料大小，`browser.maintenance@1` 的状态结果带上它 | 每个 Bot 单独量、在数据所在的机器上量、不增加权限 | **采用（C23）**：先向上游提交；被拒再做窄分支 |
+| 浏览器数据 | 上游 `agent-computer` 报告有上限的单个 Bot 资料大小，`browser.maintenance@1` 的状态结果带上它 | 每个 Bot 单独量、在数据所在的机器上量、不增加权限 | **采用（C23）**：现在采用 Owner 批准的窄分支；上游合并并验证后切回 |
 | 引用 | 在 C19 计数结果里直接带上消息内容 | 每次列文件都变得很重 | 不采用 |
 | 引用 | 按附件的 Owner 专用列表，带简短预览 | 有上限、按需读取、权限和读频道一样 | **采用（C24）** |
 | 引用 | 新增 `around=<消息标识>` 用于跳转 | 对话窗口要处理中间断开的情况 | 暂缓；界面改为往前翻有限页数的 C18 分页 |
@@ -85,16 +85,16 @@
 
 ## 复用决定
 
-- 选择：在现有约定上扩展（C22、C24），向上游提交改动（C23）。
+- 选择：在现有约定上扩展（C22、C24），采用 Owner 批准的窄分支（C23）。
 - OpenBot 特有的缺口：就是上面三项信息；C21 和 C19 都不改。
-- 退出方案：如果上游不接受 C23，就固定一个只加了大小接口的窄分支。在约定合并之前，第 25 步的
-  差异继续写在 DESIGN 里。
+- 退出方案：#730 保持开放；上游合并后审阅并验证固定版本及镜像，切回上游并退休窄分支。
 - 失败时的行为：量不出或被拒时显示「量不出」，不显示 0；引用情况不明就拒绝删除；清理结果不明时
   只能用同一个标识重试。
 
 ## 源码引入
 
-- 复制或实质改编源码：否。
+- 复制或实质改编源码：是，独立部署的 MIT agent-computer 窄分支保留 CopilotKit 源码及 LICENSE；
+  本仓库不引入上游控制面。
 
 ## 验证计划
 
@@ -108,7 +108,7 @@
 
 ## 未决问题
 
-- 上游 `agent-computer` 是否接受新增大小接口，这决定 C23 用上游版本还是窄分支。
+- 本轮没有。Owner 已于 2026-10-03 批准窄分支；上游接受是退出条件，不是阻塞。
 
 ## 实现检查点（2026-10-03）
 
@@ -137,10 +137,8 @@ Linux 遍历使用 `/proc/self/fd` 锚定目录及 `O_NOFOLLOW`，跳过符号�
 路径分量，因此使用目录描述符锚定，不能直接递归拼接不可信路径。有限遍历和 Provider 请求期限
 限制通常的工作量；协作式期限不保证抢占阻塞中的内核文件系统操作。
 
-生产仍固定 `257c1280d684089be9adb0b35cce262efc7064bf`。Provider 和状态协议已接好，校验安全整数，
-旧版本、字段缺失或错误统一为 null。上游仍待审阅；PR 开放不代表接受或拒绝，因此没有采用运行时分支。
-接受后须审阅并固定上游版本、验证镜像；明确拒绝后才按约定记录窄分支。界面仍由上述 Claude 切片完成，
-在该切片落地前，DESIGN 中的差异仍有效。
+之前等待上游的决定已被下方 Owner 决定取代。Provider 与状态接线不变；安全整数校验与
+未知或拒绝测量归一为 null 保持不变。
 
 已执行证据：真实 PostgreSQL／HTTP 的存储清理、附件引用和浏览器会话共 52 项 Python 测试；
 3 项协议测试及 35 项 Docker 浏览器／维护测试通过。上游 Linux 测试 46 项通过、1 项非 Linux 测试跳过，
@@ -178,4 +176,41 @@ Vitest 129 项通过、3 项跳过，另有 54 项有界传输 Node 测试全过
 交付状态：上述本地分支的后端、协议、中英文文档及测试可供审阅，迁移提交固定在验证清单中。
 本轮 C22–C24 未创建产品 PR 或部署；明确要求的上游 PR 已开放，尚无评审。
 原有无关 `output/` 目录未改动，没有仍在运行的测试或实现写入者。
-剩余外部依赖为上游 #730 接受／拒绝，界面保持为另一个计划切片；默认整套命令超时仍是明确的验收限制。
+C23 不再等待上游 #730 接受／拒绝，界面保持为另一个计划切片；默认整套命令超时仍是明确的验收限制。
+
+## C23 Owner 批准的窄分支和镜像（2026-10-03）
+
+Owner 明确决定不再等上游 #730，自行维护窄分支。仓库为
+[yxflc11/openbot-agent-computer-upstream](https://github.com/yxflc11/openbot-agent-computer-upstream)，
+分支 `codex/c23-profile-usage-production`，提交 `29a83c1932fb67398dd7a36fa80c473e0230a637`。
+唯一父提交为生产 `257c1280d684089be9adb0b35cce262efc7064bf`，唯一变化为移植贡献
+`46eb7af817027c5de4202846c73c43bbb2fa67b7`。
+
+冲突处理：保留生产的 `sessionFor`、profile 释放回调与 `PROFILES_DIR ?? "/profiles"` 行为。
+只新增 usage import、根目录别名与创建会话前的认证路由，不引入新版 session、secret-masking、
+virtual-display 或 egress。生产没有新版 `control-http.test.ts`，因此只提取 usage 用例和有界
+子进程夹具到 `profile-usage-http.test.ts`。测量实现、单元测试与 usage 文档同贡献版本完全一致。
+fork 没有依赖、锁文件或 Dockerfile 变化。
+
+MIT：Copyright (c) 2026 CopilotKit；保留 fork 根 `LICENSE`，并在镜像中保存完整声明
+`/app/THIRD_PARTY_LICENSES/agent-computer.MIT`。本地 Linux arm64 镜像为
+`openbot-browser:29a83c1`，digest
+`sha256:2efa5b5dd9edd7a37357413e7091f27c34e3e37eeb63d3643e5ddc8249dc5019`。
+在确切 fork checkout 执行 `docker build -t openbot-browser:29a83c1 -f agent-computer/Dockerfile .`，
+再加下方仅声明和来源标签的层：
+
+```dockerfile
+FROM openbot-browser:29a83c1
+COPY LICENSE /app/THIRD_PARTY_LICENSES/agent-computer.MIT
+LABEL org.opencontainers.image.source="https://github.com/yxflc11/openbot-agent-computer-upstream"
+LABEL org.opencontainers.image.revision="29a83c1932fb67398dd7a36fa80c473e0230a637"
+```
+
+生产源码清单与下载夹具固定到此仓库、提交，新增 usage 的 SHA-256，其余源码哈希与依赖 pin 不变。
+实际最终镜像（Bun 1.4.2）通过 45 项 Linux 测试，跳过 1 项非 Linux 用例。未改动的 Docker Provider
+连接实际镜像：合成 Bot 返回 8 字节，硬链接资料返回 null，不存在的 Bot 返回 0，均未启动 Chromium。
+已核对认证与镜像 MIT 声明。Provider／状态接线不变，null 仍显示「量不出」，远端字节不加入服务电脑总量。
+
+退出条件：[#730](https://github.com/CopilotKit/OpenBot/pull/730) 保持开放。上游合并后审阅并验证
+精确提交及镜像，把生产与夹具切回上游，再退休窄分支。本轮证据为本地 Linux arm64 镜像与 Provider；
+托管 Linux amd64 资格及现有工作电脑部署另行完成，没有使用用户资料。
