@@ -82,30 +82,26 @@ authors, reply targets and Run links for future Bot-to-Bot handoffs. Automatical
 second Bot should still use a structured handoff protocol, without guessing from natural-language
 `@mention` parsing.
 
-## 5. Composable Bot identity
+## 5. Bot identity
 
-The user-provided robot design is represented by five composable layers:
+A Bot is recognised by its head, its jaw colour and its name. The client draws a frameless head only
+(the [Avatars artboard](design/desktop-ui-2026-10/Avatars.dc.html) and
+[DESIGN.md](design/desktop-ui-2026-10/DESIGN.md#bot-avatars-v3)):
 
-![OpenBot composable Bot identity visual reference](design/openbot-avatar-system.png)
+![The three heads, Round, Relay and Scout, each in the eight jaw colours](design/openbot-avatars.png)
 
-This reference defines the NFT-like visual language of composition. At runtime, the structured
-selections below are stored instead of repeatedly saving the entire image as avatar data. Since the
-2026-10 Desktop design, the client draws only the head: the head option selects one of three
-frameless characters and the accent colours its jaw; the other layers stay stored but are not drawn
-(see [DESIGN.md](design/desktop-ui-2026-10/DESIGN.md#bot-avatars)).
+| Stored field | Options | Drawn |
+| --- | --- | --- |
+| Head | Round (`round`), Relay (`square`), Scout (`cat`) | Yes: selects the character |
+| Accent | Green, blue, amber, coral, violet, teal, pink, slate (C10) | Yes: colours the jaw |
+| Body, Mobility, Accessory | The earlier composable layers | No: kept so older Bots and templates stay valid |
 
-| Layer | Current options |
-| --- | --- |
-| Head | Rounded, square, cat ears |
-| Body | Basic, tall, cape, armor, storage, quadruped |
-| Mobility | Two legs, single wheel, two wheels, hover, quadruped |
-| Accessory | None, headphones, backpack, cloak, mechanical arm, toolbox |
-| Accent | Green, yellow, red, blue |
-
-Bot creation provides a live preview of the combined selections. Appearance is stored with the
-Bot in local configuration; status only temporarily overrides the accent color or opacity without
-changing the identity itself. The current version does not introduce NFT rarity, trading or
-on-chain dependencies, but the data model allows composition codes to be exported in the future.
+The Server stores the appearance with the Bot. 创建新 Bot picks a head and colour the team uses
+least; changing them later waits for backlog C9. Status never changes the shape or colour: a status
+dot (工作中, 需要你确认, 离线) and a gentle motion while working sit on top of the same head.
+Below 32 px a simplified drawing is used. There is no rarity, trading or on-chain dependency.
+The earlier five-layer robot reference ([`openbot-avatar-system.png`](design/openbot-avatar-system.png))
+is kept as history only.
 
 ## 6. Employee profile
 

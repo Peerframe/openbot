@@ -72,23 +72,24 @@ sequenceDiagram
 
 当前结构已能表达 Bot 与人的连续对话，也为后续 Bot-to-Bot 交接保留了作者、回复目标和 Run 关联。自动触发第二个 Bot 仍应由结构化 handoff 协议完成，不通过解析自然语言 `@mention` 猜测。
 
-## 5. 组合式 Bot 身份
+## 5. Bot 身份
 
-用户提供的机器人设定被抽象成五个可组合层：
+认出一个 Bot 靠的是它的头型、下颌颜色和名字。客户端只画无外框的头部（见
+[Avatars 画板](design/desktop-ui-2026-10/Avatars.dc.html)和
+[DESIGN.zh-CN.md](design/desktop-ui-2026-10/DESIGN.zh-CN.md#bot-头像v3)）：
 
-![OpenBot 组合式 Bot 身份视觉母版](design/openbot-avatar-system.png)
+![三种头型：圆顶 Round、耳罩 Relay、猫耳 Scout，各有八种下颌颜色](design/openbot-avatars.png)
 
-这张母版是 NFT-like 组合语言的视觉依据；运行时保存下面的结构化选择，而不是把整张图片作为头像数据重复保存。自 2026-10 Desktop 设计起，客户端只绘制头部：头型选项决定三种无外框角色之一，强调色填充下颌；其余各层仍然保存，但不再绘制（见 [DESIGN.zh-CN.md](design/desktop-ui-2026-10/DESIGN.zh-CN.md#bot-头像)）。
+| 保存的字段 | 选项 | 是否绘制 |
+| --- | --- | --- |
+| 头型 | 圆顶（`round`）、耳罩（`square`）、猫耳（`cat`） | 是：决定是哪个角色 |
+| 颜色 | 绿、蓝、琥珀、珊瑚、紫、青、粉、灰（C10） | 是：填充下颌 |
+| 身体、移动方式、配件 | 早期组合式机器人的分层 | 否：保留这些数据，旧的 Bot 和模板仍然有效 |
 
-| 层 | 当前选项 |
-| --- | --- |
-| Head | 圆角、方形、猫耳 |
-| Body | 基础、长身、披风、装甲、收纳、四足 |
-| Mobility | 双脚、单轮、双轮、悬浮、四足 |
-| Accessory | 无、耳机、背包、斗篷、机械臂、工具箱 |
-| Accent | 绿、黄、红、蓝 |
-
-创建 Bot 时可以实时组合预览。Appearance 随 Bot 存入本地配置；状态只临时覆盖强调色或透明度，不改变身份本身。当前不引入 NFT 稀有度、交易或链上依赖，但数据模型允许以后导出组合编码。
+外观随 Bot 保存在服务电脑上。「创建新 Bot」会挑一个团队里用得最少的头型和颜色；创建后修改外观要等待办 C9。
+状态不会改变形状和颜色：工作中、需要你确认、离线用一个状态圆点表示，工作中还有轻微的动作，头像本身不变。
+小于 32 像素时使用简化画法。不涉及稀有度、交易或链上依赖。早期的五层组合机器人参考图
+（[`openbot-avatar-system.png`](design/openbot-avatar-system.png)）只作为历史留档。
 
 ## 6. 员工个人主页
 
