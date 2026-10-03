@@ -9,7 +9,7 @@
   screen or copy.
 - **Who does what:** Claude builds everything you see and touch (screens, layout, motion, copy,
   keyboard use). Codex builds what is behind it (服务电脑, data, Desktop main process, CI). They meet
-  at written contracts: the backlog items C1–C21 below.
+  at written contracts: the backlog items C1–C24 below.
 - **How you review:** every step is one pull request with screenshots of the built screen next to
   its artboard. You check the pictures and click through the listed behaviours. You do not need to
   read code.
@@ -74,7 +74,7 @@ updated.
 | 23e-2 | Long lists — **merged** | LongLists | C13 for step counts | Popover lists capped at 8 rows with edge fades, stacked 需要处理, working members first, three collaborators then 「还有 N 个」, long progress collapsed, search in long settings lists |
 | 23f | App icon and the legacy layer — **in review** | AppIcon | C16 | Icon sets from the AppIcon board; delete the legacy stylesheets and classes listed in DESIGN.md and `OpenBotMark`; refresh the website demo fixtures |
 | 24 | Backend wiring — **merged** | Avatars, New, TaskCards, DialogModel | C10, C12, C13, C17 | Eight accents for new Bots; 创建新 Bot is one atomic call that is never retried automatically; task cards show 「已完成 N 步 · 现在：…」; 连接模型服务 edits one connection: test reads only the model list, a new key is saved only after it passes, a default model per connection, 断开 lists what still uses it |
-| 25 | Storage and cleanup — **in review** | ChannelFilesTrash, SettingsStorage | C21 | 永久删除 and 清空回收站 in 频道文件 with a second confirmation, referenced files kept, an unclear cleanup retried with the same request key; 「附件已永久删除」 in messages; 设置 › 存储空间 with measured categories, the 回收站, the opt-in 30-day purge and the largest channels |
+| 25 | Storage and cleanup — **merged** | ChannelFilesTrash, SettingsStorage | C21 | 永久删除 and 清空回收站 in 频道文件 with a second confirmation, referenced files kept, an unclear cleanup retried with the same request key; 「附件已永久删除」 in messages; 设置 › 存储空间 with measured categories, the 回收站, the opt-in 30-day purge and the largest channels |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 
@@ -115,6 +115,9 @@ Open — in the order the UI needs them:
 | --- | --- | --- | --- |
 | C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked | Pencil button hidden |
 | C11 | Step 16 (optional) | **New-Bot greeting**: when a model is configured, the 服务电脑 writes a short greeting as the Bot's first message, using only other Bots' names and tags; no model or any failure means no greeting | The setup card shows without a greeting |
+| C22 | Step 25 follow-up | **Global 清空回收站**: one confirmed cleanup across every active channel with one replayable `requestKey`, plus `referencedSizeBytes` in `/storage` ([research](../../research/storage-cleanup-follow-ups.md)) | 存储空间 links to each channel's 回收站 |
+| C23 | Step 25 follow-up | **Browser profile size per Bot**, measured on the working computer by `agent-computer` (upstream contribution first) and returned by browser status as `profileBytes` | No 浏览器数据 figure |
+| C24 | Step 25 follow-up | **Which messages and tasks reference a file**: an Owner-only, bounded list with a short preview | Counts only, no 查看引用 |
 
 ## Repository housekeeping (proposals)
 
