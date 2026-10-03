@@ -83,6 +83,16 @@ const previewModels = [
 
 export function createPreviewFetch(origin: string, world: PreviewWorld = createWorld()) {
   const channel = (id: string) => world.channels.find((item) => item.id === id);
+  // C21 fixtures: purged files leave the listing; the 30-day purge starts off.
+  const purged = new Set<string>();
+  const liveAttachments = (channelId: string) =>
+    attachmentsFor(channelId).filter((item) => !purged.has(String(item.id)));
+  const storageSettings = {
+    revision: 1,
+    trashAutoPurgeDays: null as 30 | null,
+    updatedAt: null as string | null,
+    lastAutoPurgeAt: null as string | null,
+  };
   const connections: Json[] = [
     {
       id: "conn-anthropic",
@@ -182,7 +192,99 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
     [
       "GET",
       /^\/api\/v1\/channels\/([^/]+)\/attachments$/,
-      (m) => json({ attachments: attachmentsFor(m[1] ?? "") }),
+      (m) => json({ attachments: liveAttachments(m[1] ?? "") }),
+    ],
+    [
+      "DELETE",
+      /^\/api\/v1\/channels\/([^/]+)\/attachments\/([^/]+)\/purge$/,
+      (m) => {
+        const file = liveAttachments(m[1] ?? "").find((item) => item.id === m[2]);
+        if (!file) return json({ error: "not_found" }, 404);
+        const count = file.referenceCount as { messages: number; tasks: number };
+        if (count.messages + count.tasks > 0)
+          return json({ error: "attachment_referenced", referenceCount: count }, 409);
+        purged.add(String(file.id));
+        return json({ id: file.id, purged: true, freedBytes: file.sizeBytes });
+      },
+    ],
+    [
+      "POST",
+      /^\/api\/v1\/channels\/([^/]+)\/attachments\/cleanup$/,
+      (m) => {
+        const trash = liveAttachments(m[1] ?? "").filter((item) => item.deletedAt);
+        const kept = trash.filter((item) => {
+          const count = item.referenceCount as { messages: number; tasks: number };
+          return count.messages + count.tasks > 0;
+        });
+        const removed = trash.filter((item) => !kept.includes(item));
+        for (const item of removed) purged.add(String(item.id));
+        return json({
+          removed: removed.length,
+          retained: kept.map(({ id, name, referenceCount }) => ({ id, name, referenceCount })),
+          retainedCount: kept.length,
+          retainedHasMore: false,
+          freedBytes: removed.reduce((sum, item) => sum + Number(item.sizeBytes), 0),
+        });
+      },
+    ],
+    [
+      "GET",
+      /^\/api\/v1\/storage$/,
+      () => {
+        const GB = 1_000_000_000;
+        return json({
+          totalBytes: 19.6 * GB,
+          measuredAt: new Date().toISOString(),
+          categories: {
+            channelFiles: { sizeBytes: 9.2 * GB, fileCount: 312 },
+            taskOutputs: { sizeBytes: 5.8 * GB, fileCount: 140 },
+            retainedRunOutputs: null,
+            ownerTaskFiles: { sizeBytes: 0.9 * GB, fileCount: 18 },
+            database: { sizeBytes: 2.1 * GB },
+            other: { sizeBytes: 0.4 * GB, fileCount: 6 },
+            trash: { sizeBytes: 1.2 * GB, fileCount: 12 },
+            workingComputerBrowserData: null,
+          },
+          trash: { fileCount: 12, sizeBytes: 1.2 * GB, referencedFileCount: 3 },
+          topChannels: [
+            {
+              id: "c-market",
+              name: "市场周报",
+              deleted: false,
+              sizeBytes: 6.1 * GB,
+              fileCount: 214,
+            },
+            {
+              id: "c-launch",
+              name: "发布协作",
+              deleted: false,
+              sizeBytes: 2.0 * GB,
+              fileCount: 88,
+            },
+            {
+              id: "direct-b-research",
+              name: "研究助理",
+              deleted: false,
+              sizeBytes: 1.1 * GB,
+              fileCount: 37,
+            },
+          ],
+          topChannelsLimit: 20,
+        });
+      },
+    ],
+    ["GET", /^\/api\/v1\/settings\/storage$/, () => json(storageSettings)],
+    [
+      "PUT",
+      /^\/api\/v1\/settings\/storage$/,
+      (_m, body) => {
+        Object.assign(storageSettings, {
+          revision: storageSettings.revision + 1,
+          trashAutoPurgeDays: body.trashAutoPurgeDays === 30 ? 30 : null,
+          updatedAt: new Date().toISOString(),
+        });
+        return json(storageSettings);
+      },
     ],
     ["POST", /^\/api\/v1\/bots\/([^/]+)\/browser$/, (m) => json(browserView(m[1] ?? ""))],
     [

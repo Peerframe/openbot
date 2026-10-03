@@ -1,0 +1,98 @@
+/* SettingsStorage artboard: the measured total, one stacked bar and its legend. */
+.storage-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: var(--ob-fill);
+}
+.storage-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.storage-total strong {
+  font-size: 22px;
+  font-weight: 700;
+}
+.storage-total small {
+  color: #8e8e93;
+  font-size: 12px;
+}
+.storage-bar {
+  display: flex;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 7px;
+  background: #ececee;
+}
+.storage-bar span {
+  display: block;
+  height: 100%;
+}
+.storage-legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.storage-legend li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #6e6e73;
+  font-size: 12px;
+}
+.storage-legend b {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ob-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.storage-legend i {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.storage-swatch-channelFiles {
+  background: #3a3a3c;
+}
+.storage-swatch-taskOutputs {
+  background: #8e8e93;
+}
+.storage-swatch-ownerTaskFiles {
+  background: #aeaeb2;
+}
+.storage-swatch-database {
+  background: #c7c7cc;
+}
+.storage-swatch-other {
+  background: #dcdce0;
+}
+.storage-swatch-trash {
+  background: #e08a00;
+}
+.storage-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #6e6e73;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.storage-link:hover {
+  color: var(--ob-text);
+}
+@media (max-width: 640px) {
+  .storage-legend {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -543,6 +543,64 @@ export async function discoverConnectionModels(
   return result.models;
 }
 
+/** One measured storage category (C21); `null` when the 服务电脑 cannot measure it here. */
+export interface StorageCategory {
+  sizeBytes: number;
+  fileCount?: number | undefined;
+}
+
+export interface StorageUsage {
+  totalBytes: number;
+  measuredAt: string;
+  categories: {
+    channelFiles: StorageCategory;
+    trash: StorageCategory;
+    ownerTaskFiles: StorageCategory;
+    taskOutputs: StorageCategory | null;
+    retainedRunOutputs: StorageCategory | null;
+    other: StorageCategory;
+    database: StorageCategory;
+    workingComputerBrowserData: null;
+  };
+  trash: { fileCount: number; sizeBytes: number; referencedFileCount: number };
+  topChannels: Array<{
+    id: string;
+    name: string;
+    deleted: boolean;
+    sizeBytes: number;
+    fileCount: number;
+  }>;
+  topChannelsLimit: number;
+}
+
+export interface StorageSettings {
+  revision: number;
+  trashAutoPurgeDays: 30 | null;
+  updatedAt: string | null;
+  lastAutoPurgeAt: string | null;
+}
+
+/** C21: measured logical bytes, never an estimate; any unmeasurable root refuses the whole read. */
+export async function getStorageUsage(signal?: AbortSignal): Promise<StorageUsage> {
+  return request<StorageUsage>("/api/v1/storage", signal ? { signal } : undefined);
+}
+
+export async function getStorageSettings(signal?: AbortSignal): Promise<StorageSettings> {
+  return request<StorageSettings>("/api/v1/settings/storage", signal ? { signal } : undefined);
+}
+
+/** Turns the 30-day 回收站 purge on (30) or off (null) at the expected revision. */
+export async function updateStorageSettings(input: {
+  expectedRevision: number;
+  trashAutoPurgeDays: 30 | null;
+}): Promise<StorageSettings> {
+  return request<StorageSettings>("/api/v1/settings/storage", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
 export async function updateEmployeeModel(
   botId: string,
   input: UpdateEmployeeModelInput,

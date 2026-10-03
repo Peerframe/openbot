@@ -42,6 +42,7 @@ import {
   SettingsWorkspaceGate,
 } from "./SettingsSections";
 import { SettingsSkills } from "./SettingsSkills";
+import { SettingsStorage } from "./SettingsStorage";
 import { SettingsTransfer } from "./SettingsTransfer";
 import { useModalDialog } from "./useModalDialog";
 
@@ -57,6 +58,7 @@ export type DesktopSettingsSection =
   | "approvals"
   | "browser"
   | "audit"
+  | "storage"
   | "account"
   | "transfer"
   | "about";
@@ -78,6 +80,7 @@ const iconPaths: Record<Section, string> = {
     "M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20zM2 12h20M12 2a15 15 0 0 1 4 10a15 15 0 0 1-4 10a15 15 0 0 1-4-10a15 15 0 0 1 4-10z",
   audit: "M9 5h11M9 12h11M9 19h11M4 5h.01M4 12h.01M4 19h.01",
   account: "M12 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6",
+  storage: "M4 5h16v6H4zM4 13h16v6H4zM8 8h.01M8 16h.01",
   transfer: "M7 10l5-5 5 5M12 5v10M5 19h14",
   about: "M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 11v5M12 8h.01",
 };
@@ -148,6 +151,11 @@ const sections: Record<Section, { label: string; description: string; keywords: 
     description: "谁在什么时候做了什么。记录只能查看，不能修改或删除。",
     keywords: "审计 记录 日志 历史 删除 重命名",
   },
+  storage: {
+    label: "存储空间",
+    description: "服务电脑上这些数据占用的空间。这里只能清理回收站；对话和工作记录不会在这里删除。",
+    keywords: "存储 空间 磁盘 回收站 清理 永久删除 文件 占用",
+  },
   about: {
     label: "关于 OpenBot",
     description: "你的 Bot 工作空间。",
@@ -177,7 +185,7 @@ const groups: ReadonlyArray<{ title: string; items: readonly Section[] }> = [
   { title: "", items: ["general", "notify"] },
   { title: "Bot 能力", items: ["model", "skills", "plugins", "routines", "memory"] },
   { title: "执行与安全", items: ["hosts", "approvals", "browser"] },
-  { title: "账户", items: ["account", "audit", "transfer", "about"] },
+  { title: "账户", items: ["account", "audit", "storage", "transfer", "about"] },
 ];
 
 export function DesktopSettingsScreen({
@@ -505,6 +513,7 @@ export function DesktopSettingsScreen({
                 </SettingsWorkspaceGate>
               )}
               {section === "audit" && <AuditLogSettings />}
+              {section === "storage" && <SettingsStorage />}
               {section === "browser" && (
                 <SettingsWorkspaceGate label="员工浏览器">
                   {(workspace) => <SettingsBrowser bots={workspace.bots} />}

@@ -514,6 +514,22 @@
       "w": 1440,
       "x": 4560,
       "y": 2040
+    },
+    "ChannelFilesTrash.dc.html": {
+      "h": 900,
+      "page": "storage",
+      "title": "① 回收站与永久删除",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "SettingsStorage.dc.html": {
+      "h": 900,
+      "page": "storage",
+      "title": "④ 设置 · 存储空间",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
     }
   },
   "createdOnFiles": {
@@ -557,6 +573,15 @@
       "maxW": 6000,
       "page": "next",
       "text": "OpenBot Desktop · 第 22 步 · 待确认",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
+    "storageTitle": {
+      "kind": "title1",
+      "maxW": 3000,
+      "page": "storage",
+      "text": "OpenBot Desktop · 存储与清理 · 待确认",
       "w": 240,
       "x": 0,
       "y": -320
@@ -626,7 +651,9 @@
     "EmployeeBrowser.dc.html",
     "Notices.dc.html",
     "AppIcon.dc.html",
-    "LongLists.dc.html"
+    "LongLists.dc.html",
+    "ChannelFilesTrash.dc.html",
+    "SettingsStorage.dc.html"
   ],
   "pages": [
     {
@@ -644,6 +671,10 @@
     {
       "id": "next",
       "name": "第 22 步 · 待确认"
+    },
+    {
+      "id": "storage",
+      "name": "存储与清理 · 待确认"
     }
   ],
   "title": "OpenBot Desktop 界面优化"

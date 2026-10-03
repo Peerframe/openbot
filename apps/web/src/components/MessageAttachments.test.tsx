@@ -1,8 +1,13 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getAttachmentImage, getChannelAttachment } from "../channel-attachment-client";
+import {
+  AttachmentPurgedError,
+  getAttachmentImage,
+  getChannelAttachment,
+} from "../channel-attachment-client";
 import { deferred, interact, renderComponent } from "../test/render-component";
 import { MessageAttachments } from "./MessageAttachments";
+
 vi.mock("../channel-attachment-client", async (original) => ({
   ...(await original<typeof import("../channel-attachment-client")>()),
   getAttachmentImage: vi.fn(),
@@ -91,6 +96,17 @@ describe("sent message attachment cards", () => {
       <MessageAttachments channelId="channel" content={`[OpenBot attachment: ${id}]`} />,
     );
     expect(view.container.textContent).toBe("附件暂不可用或无权访问");
+    expect(getAttachmentImage).not.toHaveBeenCalled();
+    await view.unmount();
+  });
+  it("shows a quiet placeholder for a permanently deleted file", async () => {
+    vi.mocked(getChannelAttachment).mockRejectedValue(new AttachmentPurgedError());
+    const view = await renderComponent(
+      <MessageAttachments channelId="channel" content={`见附件\n[OpenBot attachment: ${id}]`} />,
+    );
+    expect(view.container.querySelector(".message-attachment-card.is-purged")?.textContent).toBe(
+      "—附件已永久删除",
+    );
     expect(getAttachmentImage).not.toHaveBeenCalled();
     await view.unmount();
   });

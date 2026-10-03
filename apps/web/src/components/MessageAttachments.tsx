@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  AttachmentPurgedError,
   formatAttachmentSize,
   getChannelAttachment,
   splitMessageAttachments,
@@ -28,18 +29,28 @@ export function MessageAttachments({ content, channelId }: { content: string; ch
 
 function MessageAttachmentCard({ channelId, id }: { channelId: string; id: string }) {
   const [attachment, setAttachment] = useState<UploadedComposerAttachment>();
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<"unavailable" | "purged">();
   useEffect(() => {
     const controller = new AbortController();
     void getChannelAttachment(channelId, id, controller.signal)
       .then((value) => {
         if (!controller.signal.aborted) setAttachment(value);
       })
-      .catch(() => {
-        if (!controller.signal.aborted) setFailed(true);
+      .catch((cause: unknown) => {
+        if (!controller.signal.aborted)
+          setFailed(cause instanceof AttachmentPurgedError ? "purged" : "unavailable");
       });
     return () => controller.abort();
   }, [channelId, id]);
+  if (failed === "purged")
+    return (
+      <article className="message-attachment-card is-purged" aria-label="附件已永久删除">
+        <span className="message-attachment-gone" aria-hidden="true">
+          —
+        </span>
+        <span className="attachment-card-caption">附件已永久删除</span>
+      </article>
+    );
   return (
     <article
       className="message-attachment-card"

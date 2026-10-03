@@ -1,10 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  AttachmentCommandError,
+  AttachmentPurgedError,
+  cleanupChannelTrash,
   EMPTY_DOCUMENT_EXTRACT_ERROR,
   EMPTY_PDF_EXTRACT_ERROR,
   getAttachmentImage,
   getChannelAttachment,
   presentAttachmentProcessError,
+  purgeAttachment,
   splitMessageAttachments,
   updateAttachment,
 } from "./channel-attachment-client";
@@ -87,6 +91,62 @@ describe("channel attachment display boundary", () => {
       getChannelAttachment(channel, "https://evil.test/image", new AbortController().signal),
     ).rejects.toThrow("标识");
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+  it("tells a permanently deleted file apart from a denied one", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          Response.json({ error: "attachment_purged", purged: true }, { status: 410 }),
+        )
+        .mockResolvedValueOnce(Response.json({ error: "gone" }, { status: 410 })),
+    );
+    await expect(
+      getChannelAttachment(channel, id, new AbortController().signal),
+    ).rejects.toBeInstanceOf(AttachmentPurgedError);
+    await expect(getChannelAttachment(channel, id, new AbortController().signal)).rejects.toThrow(
+      "无权访问",
+    );
+  });
+  it("purges and cleans the 回收站 through scoped routes and keeps refusal details", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json(
+          { error: "attachment_referenced", referenceCount: { messages: 2, tasks: 1 } },
+          { status: 409 },
+        ),
+      )
+      .mockResolvedValueOnce(Response.json({ id, purged: true, freedBytes: 8 }))
+      .mockResolvedValueOnce(
+        Response.json({
+          removed: 2,
+          retained: [],
+          retainedCount: 0,
+          retainedHasMore: false,
+          freedBytes: 16,
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const refusal = await purgeAttachment(channel, id).catch((cause: unknown) => cause);
+    expect(refusal).toBeInstanceOf(AttachmentCommandError);
+    expect(refusal).toMatchObject({
+      code: "attachment_referenced",
+      status: 409,
+      referenceCount: { messages: 2, tasks: 1 },
+    });
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      `/api/v1/channels/${channel}/attachments/${id}/purge`,
+    );
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: "DELETE", redirect: "error" });
+    expect(await purgeAttachment(channel, id)).toEqual({ id, purged: true, freedBytes: 8 });
+    const key = "11111111-1111-4111-8111-111111111111";
+    expect((await cleanupChannelTrash(channel, key)).removed).toBe(2);
+    expect(fetchMock.mock.calls[2]?.[0]).toBe(`/api/v1/channels/${channel}/attachments/cleanup`);
+    expect(JSON.parse(String(fetchMock.mock.calls[2]?.[1]?.body))).toEqual({ requestKey: key });
+    await expect(purgeAttachment(channel, "../escape")).rejects.toThrow("标识");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
   it("rejects denied metadata before locking or reading a hostile body", async () => {
     const pull = vi.fn(() => {

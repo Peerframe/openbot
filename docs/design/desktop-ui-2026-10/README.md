@@ -36,6 +36,7 @@ equivalents. Bracketed values such as `[128]` and `[版本号]` are placeholders
 | [EmptyWorkspace](EmptyWorkspace.dc.html) | ⑰ First entry with no conversations |
 | [DialogShare](DialogShare.dc.html), [DialogExport](DialogExport.dc.html), [DialogImport](DialogImport.dc.html), [DialogDelete](DialogDelete.dc.html), [DialogPairHost](DialogPairHost.dc.html), [DialogModel](DialogModel.dc.html) | ⑮ Dialogs: 分享, 分享 Bot 模板, 导入 Bot 模板, 删除确认, 配对工作电脑, 连接模型服务 |
 | [MessageActions](MessageActions.dc.html), [Composer](Composer.dc.html), [ChannelFiles](ChannelFiles.dc.html) | ① Message actions and reactions; composer attachments, voice and 补充指令; 频道文件 with the recycle bin |
+| [ChannelFilesTrash](ChannelFilesTrash.dc.html), [SettingsStorage](SettingsStorage.dc.html) | ① Permanent deletion from the 回收站 with a second confirmation, and the deleted-file placeholder; ④ 设置 › 存储空间 |
 | [EmployeeBrowser](EmployeeBrowser.dc.html) | The Bot's browser: take over and hand back |
 | [Notices](Notices.dc.html), [LongLists](LongLists.dc.html), [AppIcon](AppIcon.dc.html) | Notices and connection states; long lists and scrolling for every screen; app icon |
 | [ChannelInfo](ChannelInfo.dc.html) | 频道信息 rail with 详情 / 资料库 / 成员 tabs (imported by Main) |

@@ -95,6 +95,7 @@ export const scenes: Record<string, AppScene | ComponentScene> = {
   "dialog-delete": { kind: "component", title: "永久删除", artboard: "DialogDelete" },
   "dialog-pair": { kind: "component", title: "配对工作电脑", artboard: "DialogPairHost" },
   "dialog-model": { kind: "component", title: "连接模型服务", artboard: "DialogModel" },
+  "dialog-trash": { kind: "component", title: "回收站与永久删除", artboard: "ChannelFilesTrash" },
   browser: { kind: "component", title: "Bot 的浏览器", artboard: "EmployeeBrowser" },
   settings: { kind: "component", title: "设置（&section=…）", artboard: "Settings" },
   launch: { kind: "component", title: "启动画面", artboard: "Launch" },
