@@ -168,7 +168,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Launch, LaunchMotion, Welcome, Install, Connect, Login, ModelSetup, WorkerSetup | `Onboarding.tsx` and the setup screens | Built |
 | TaskCards, TaskInspector | `TaskCard.tsx`, `TaskSheet.tsx` | Built; cards show the 服务电脑's step count (C13) |
 | Dialog* | `Dialog.tsx` frame; Share, Export, Import, DeleteIdentity, NodeManager and ModelConnections dialogs | Built; 连接模型服务 edits one connection with the free model-list check, a default model and 断开 (C17) |
-| WorkSupervision, EmptyWorkspace | `WorkTasksScreen.tsx`, `EmptyWorkspace.tsx` | Built; 任务监督 step counts not wired yet (Work tasks report actions, not Run summaries) |
+| WorkSupervision, EmptyWorkspace | `WorkTasksScreen.tsx`, `EmptyWorkspace.tsx` | Built; 任务监督 names the current step from the latest durable Work action |
 | ChannelFilesTrash, SettingsStorage | `AttachmentsManager.tsx`, `MessageAttachments.tsx`, `SettingsStorage.tsx` | Built (C21). The 服务电脑 cleans the 回收站 per channel, so 存储空间 links to each channel instead of a global 清空回收站…; browser data is not measured, so it is not a category; references are counts only, so there is no 查看引用. The fixes are C22–C24 ([research](../../research/storage-cleanup-follow-ups.md)) |
 
 ## Designed in step 22 (approved 2026-10-02)

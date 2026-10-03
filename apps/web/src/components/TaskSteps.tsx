@@ -1,6 +1,7 @@
 import type { Run, RunProgress, RunProgressDetails } from "@openbot/domain";
 import { type ReactNode, useEffect, useState } from "react";
 import { getRunProgress } from "../api";
+import { stageLabel } from "../run-state";
 
 /** LongLists: over 12 steps, the first 3 and the latest 6 show; the middle folds into one row. */
 export const STEP_LIMIT = 12;
@@ -31,19 +32,12 @@ export function hiddenStepNumbers(total: number, shown: ReadonlySet<number>): nu
 }
 
 /**
- * The steps in 任务详情. C13's exact count and stage dictionary come from the 服务电脑; if that
+ * The steps in 任务详情. C13's exact count and stage dictionary come from the 服务电脑 (its English
+ * descriptions are replaced by the Chinese stage name from `stageLabel`); if that
  * read fails (an older 服务电脑, or offline), the progress events the workspace already holds are
  * folded the same way. Labels are the control-authored stage names, never model output.
  */
-export function TaskSteps({
-  run,
-  progress,
-  stageLabel,
-}: {
-  run: Run;
-  progress: RunProgress[];
-  stageLabel(stage: string): string;
-}) {
+export function TaskSteps({ run, progress }: { run: Run; progress: RunProgress[] }) {
   const [details, setDetails] = useState<RunProgressDetails>();
   const [extra, setExtra] = useState<StepRow[]>([]);
   const [expanded, setExpanded] = useState(false);
@@ -66,15 +60,15 @@ export function TaskSteps({
     ? [
         ...details.steps.map((step) => ({
           number: step.stepNumber,
-          title: step.stageName ?? `第 ${step.stepNumber} 步`,
-          detail: step.description,
+          title: `第 ${step.stepNumber} 步`,
+          detail: stageLabel(step.stageName) ?? null,
           at: step.startedAt,
         })),
         ...extra,
       ]
     : progress.map((item, index) => ({
         number: index + 1,
-        title: stageLabel(item.stage),
+        title: stageLabel(item.stage) ?? `第 ${index + 1} 步`,
         detail: item.message,
         at: item.createdAt,
       }));
@@ -108,8 +102,8 @@ export function TaskSteps({
         ...current,
         ...next.steps.map((step) => ({
           number: step.stepNumber,
-          title: step.stageName ?? `第 ${step.stepNumber} 步`,
-          detail: step.description,
+          title: `第 ${step.stepNumber} 步`,
+          detail: stageLabel(step.stageName) ?? null,
           at: step.startedAt,
         })),
       ]);
