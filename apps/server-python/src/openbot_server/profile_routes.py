@@ -4,6 +4,7 @@ from typing import Protocol
 from fastapi import FastAPI, HTTPException, Path, Request
 from pydantic import ValidationError
 
+from .bot_appearance import AppearanceInput, AppearanceResult
 from .authority import AuthenticationRequired
 from .auth_routes import validate_origins
 from .http_input import authorize_owner, read_json
@@ -13,6 +14,7 @@ from .profile_details import (ProfileDetailsInput, ProfileMutationResult, Profil
 
 class ProfileStore(Protocol):
     async def verify_schema(self) -> None: ...
+    async def update_appearance(self, token: str | None, bot_id: str, value: AppearanceInput) -> AppearanceResult: ...
     async def update(self, token: str | None, bot_id: str, value: ProfileDetailsInput) -> ProfileMutationResult: ...
 
 
@@ -41,3 +43,25 @@ def register_profile_routes(app: FastAPI, writer: ProfileStore, read_store, *, s
             raise HTTPException(409, "The Employee profile changed while it was being edited. Reload and review the current values.") from None
         except ProfileUnchanged:
             raise HTTPException(422, "At least one Employee profile field must change.") from None
+
+    appearance_schema = AppearanceInput.model_json_schema()
+    appearance_schema["properties"]["appearance"] = appearance_schema.pop("$defs")["BotAppearance"]
+
+    @app.patch("/api/v1/bots/{bot_id}/appearance", response_model=AppearanceResult,
+               response_model_exclude_none=True, operation_id="updateBotAppearance",
+               openapi_extra={"requestBody": {"required": True, "content": {
+                   "application/json": {"schema": appearance_schema}}}})
+    async def appearance(request: Request, bot_id: str = Path(min_length=1, max_length=128)):
+        token = await authorize_owner(request, read_store, cookie_name=cookie_name, allowed_origins=allowed_origins)
+        try:
+            value = AppearanceInput.model_validate(await read_json(request, max_bytes=2048))
+        except (ValidationError, ValueError):
+            raise HTTPException(422, "Invalid appearance input.") from None
+        try:
+            return await writer.update_appearance(token, bot_id, value)
+        except AuthenticationRequired:
+            raise HTTPException(401, "Authentication required.") from None
+        except ProfileNotFound:
+            raise HTTPException(404, "Bot not found.") from None
+        except ProfileConflict:
+            raise HTTPException(409, "The Employee profile changed. Reload before editing.") from None

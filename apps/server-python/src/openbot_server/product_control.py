@@ -365,15 +365,34 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
 
     async def workspace_events(request:Request):
         value=await token(request)
+        previous_bots = None
+        invalidations = []
         async def observe():
+            nonlocal previous_bots
             # Every poll re-checks the session; authorization is never cached by the stream.
             if (await read_store.read(value,'session')).expires_at is None: return None
             snapshot=await guarded(product.workspace.snapshot(value))
+            current_bots = {bot['id']: bot.get('appearance') for bot in snapshot['bots']}
+            if previous_bots is not None:
+                from datetime import datetime, timezone
+                from .models import iso_timestamp
+                occurred = iso_timestamp(datetime.now(timezone.utc))
+                invalidations.extend(dict(type='employee.profile.changed',botId=bot_id,
+                    sections=['identity'],occurredAt=occurred) for bot_id,appearance in current_bots.items()
+                    if bot_id in previous_bots and previous_bots[bot_id] != appearance)
+            previous_bots = current_bots
             # The existing reconnect-ready contract asks clients to fetch authoritative state.
             # Emit only when facts change; this stream grants no write authority or execution retry.
             return (json.dumps([snapshot,product.revision],sort_keys=True,ensure_ascii=False),
                 dict(type='workspace.ready',nodes=snapshot['nodes']))
-        return event_stream(poll_events(request,'workspace.ready',observe))
+        async def frames():
+            from .product_events import ready_event
+            async for frame in poll_events(request,'workspace.ready',observe):
+                for payload in invalidations:
+                    yield ready_event('employee.profile.changed',payload)
+                invalidations.clear()
+                yield frame
+        return event_stream(frames())
     app.add_api_route('/api/v1/workspace/events',workspace_events,methods=['GET'])
 
     async def channel_events(request:Request,channel_id:str):

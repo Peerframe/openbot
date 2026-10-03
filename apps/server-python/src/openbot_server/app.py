@@ -92,7 +92,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         conversation_write = conversations is not None and request.method == "POST" and (
             re.fullmatch(r"/api/v1/bots/[^/]+/conversation", request.url.path) is not None
             or re.fullmatch(r"/api/v1/channels/[^/]+/bots", request.url.path) is not None)
-        profile_write = profiles is not None and request.method == "PATCH" and re.fullmatch(r"/api/v1/bots/[^/]+/profile", request.url.path) is not None
+        profile_write = profiles is not None and request.method == "PATCH" and re.fullmatch(r"/api/v1/bots/[^/]+/(profile|appearance)", request.url.path) is not None
         task_write = tasks is not None and request.method == "POST" and re.fullmatch(r"/api/v1/channels/[^/]+/messages", request.url.path) is not None
         run_command_write = run_commands is not None and request.method == "POST" and re.fullmatch(r"/api/v1/runs/[^/]+/(cancel|steer)", request.url.path) is not None
         work_write = work is not None and request.method == "POST" and (
@@ -269,6 +269,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
             schema["paths"][path]["post"]["security"] = [{"OwnerSession": []}]
     if profiles is not None:
         schema["paths"]["/api/v1/bots/{bot_id}/profile"]["patch"]["security"] = [{"OwnerSession": []}]
+        schema["paths"]["/api/v1/bots/{bot_id}/appearance"]["patch"]["security"] = [{"OwnerSession": []}]
     if tasks is not None:
         schema["paths"]["/api/v1/channels/{channel_id}/messages"]["post"]["security"] = [{"OwnerSession": []}]
     if auth is not None:

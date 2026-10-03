@@ -35,6 +35,7 @@
 | `DELETE` | `/api/v1/bots/:botId` | 永久删除 Bot 的内容与授权并保留墓碑 |
 | `GET` | `/api/v1/bots/:botId/profile` | 读取数字员工档案、进化、技能、记忆与工作记录 |
 | `PATCH` | `/api/v1/bots/:botId/profile` | 按预期 revision 修改职责与简介 |
+| `PATCH` | `/api/v1/bots/:botId/appearance` | 按预期版本更新完整 C10 外观 |
 | `POST` | `/api/v1/bots/:botId/memories` | 新增一条有界 Owner 记忆 |
 | `PATCH` | `/api/v1/bots/:botId/memories/:memoryId` | 按预期 revision 更新一条记忆 |
 | `DELETE` | `/api/v1/bots/:botId/memories/:memoryId` | 按预期 revision 删除一条已确认记忆 |
@@ -155,6 +156,19 @@ Server 会去除两端空白，要求职责非空且最多 160 字符，简介�
 `409`；没有实际变化或夹带权限字段返回 `422`。成功事务会增加 revision，并追加只记录变更字段名、
 不保存简介正文的进化事件；Workspace SSE 也只发送员工 id 与受影响分区。显示名、模型策略、工作
 主机、外观、技能状态和授权明确不属于这个命令。
+
+### 编辑外观（C9）
+
+`PATCH /api/v1/bots/:botId/appearance` 要求 Owner 会话和允许的 Origin。严格请求体为
+`{expectedRevision,appearance}`；appearance 必须包含完整 C10 的五个字段
+（`head`、`body`、`mobility`、`accessory`、`accent`）。未知值、缺失或多余字段返回 422。
+revision 复用 profile-details 的版本；即使外观相同，过期版本也返回 409。已删除 Bot 返回 404。
+响应为 `{bot,revision}`。
+
+外观未变返回 200，revision 不变，不写审计或 evolution。变化时递增 revision，事务内以
+`EMPLOYEE_APPEARANCE_UPDATED` 审计旧值和新值；不写 evolution，不改其他配置。
+workspace 轮询为变化的 Bot 发出不含内容的 `employee.profile.changed`（`sections: ["identity"]`），
+随后发出 `workspace.ready`；重连后重新读取权威状态。
 
 ## Server 通用偏好（C7）
 

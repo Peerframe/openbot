@@ -91,3 +91,11 @@
 ## 未决问题
 
 - 无。
+
+## C9 实现（2026-10-03）
+
+Owner 于 2026-10-03 批准契约。C9 复用 `OwnerTransactions`、profile 行锁与 revision、严格 C10
+`BotAppearance`，以及现有 Python workspace 轮询。新增事实只有外观 PATCH：事务内审计新旧值，
+evolution 不变。无变化不改 revision 或审计。重连沿用 `workspace.ready` 恢复。
+已核对一手语义：[RFC 9110 §15.5.10](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.10)
+（与当前状态冲突）。没有新增依赖或复制源码；保留已批准的 body revision 契约。

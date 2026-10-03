@@ -121,7 +121,7 @@
 
 | 编号 | 用于 | 需要新增的约定 | 完成前的界面 |
 | --- | --- | --- | --- |
-| C9 | 第 17 步 | **创建后修改 Bot 外观**：仅 Owner、记审计、带版本检查；提议的约定见[研究记录](../../research/bot-appearance-and-greeting.zh-CN.md) | 隐藏铅笔按钮 |
+| C9 | 第 17 步 | **创建后修改 Bot 外观**：仅 Owner、记审计、带版本检查；后端已实现，UI 待接线，约定见[研究记录](../../research/bot-appearance-and-greeting.zh-CN.md) | 隐藏铅笔按钮 |
 | C23 自有分支 | 第 29 步 | **自己维护 `agent-computer` 的窄分支**（所有者 2026-10-03 决定不等上游 #730）：生产 pin 加上 `GET /computers/profile-usage` 这一处改动，验证镜像，更新 `OPEN_SOURCE_REUSE.md`，上游合并后切回上游 | 「量不出」 |
 | C25 | 第 36 步 | **桌面端配色**：`get/setColorScheme("system" \| "light" \| "dark")` 返回实际生效的配色，并有变化事件；选择由主进程保存，在窗口打开前生效；窗口底色 `#ffffff` / `#141414` | 桌面端保持浅色 |
 | C11 | 第 16 步（可选） | **新 Bot 开场白**：一键新建后做一次有上限、不能用工具的模型调用，只使用其他 Bot 的名字和分工；出任何错就不写；提议的约定见[研究记录](../../research/bot-appearance-and-greeting.zh-CN.md) | 只显示分工卡片，没有开场白 |
