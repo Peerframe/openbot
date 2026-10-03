@@ -9,6 +9,7 @@ import { SettingsActionSlot } from "./SettingsHeaderAction";
 import { SettingsHosts } from "./SettingsHosts";
 import { SettingsModelServices } from "./SettingsModelServices";
 import { SettingsSkills } from "./SettingsSkills";
+import { formatStorageSize, SettingsStorage } from "./SettingsStorage";
 import { SettingsTransfer } from "./SettingsTransfer";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -473,4 +474,77 @@ it("checks, restarts and (after confirmation) clears one Bot's employee browser"
   } finally {
     await view.unmount();
   }
+});
+
+it("shows measured storage, the 回收站 and the opt-in 30-day purge", async () => {
+  const GB = 1_000_000_000;
+  const fetch = server({
+    "GET /api/v1/storage": () => ({
+      totalBytes: 12 * GB,
+      measuredAt: t,
+      categories: {
+        channelFiles: { sizeBytes: 9 * GB, fileCount: 10 },
+        trash: { sizeBytes: 1 * GB, fileCount: 4 },
+        ownerTaskFiles: { sizeBytes: 0, fileCount: 0 },
+        taskOutputs: null,
+        retainedRunOutputs: { sizeBytes: 2 * GB, fileCount: 3 },
+        other: { sizeBytes: 0, fileCount: 0 },
+        database: { sizeBytes: 0 },
+        workingComputerBrowserData: null,
+      },
+      trash: { fileCount: 4, sizeBytes: 1 * GB, referencedFileCount: 1 },
+      topChannels: [
+        { id: "c-1", name: "市场周报", deleted: false, sizeBytes: 6 * GB, fileCount: 8 },
+        { id: "c-2", name: "旧频道", deleted: true, sizeBytes: 1 * GB, fileCount: 2 },
+      ],
+      topChannelsLimit: 20,
+    }),
+    "GET /api/v1/settings/storage": () => ({
+      revision: 4,
+      trashAutoPurgeDays: null,
+      updatedAt: null,
+      lastAutoPurgeAt: null,
+    }),
+    "PUT /api/v1/settings/storage": () => ({
+      revision: 5,
+      trashAutoPurgeDays: 30,
+      updatedAt: t,
+      lastAutoPurgeAt: null,
+    }),
+  });
+  const view = await renderComponent(<SettingsStorage />);
+  try {
+    await interact(() => undefined);
+    const text = view.container.textContent ?? "";
+    expect(text).toContain("12.0 GB");
+    // Retained run outputs stand in for task outputs; browser data is never estimated.
+    expect(text).toContain("2.0 GB任务产出");
+    expect(text).not.toContain("浏览器数据");
+    expect(text).toContain("4 个文件 · 1.0 GB");
+    expect(text).toContain("其中 1 个还被消息或任务引用，会保留；其余 3 个");
+    expect(text).toContain("旧频道（已删除）");
+    expect(
+      [...view.container.querySelectorAll("button")].filter(
+        (item) => item.textContent === "查看文件 ›",
+      ),
+    ).toHaveLength(1);
+    const toggle = view.container.querySelector<HTMLButtonElement>('[role="switch"]');
+    expect(toggle?.getAttribute("aria-checked")).toBe("false");
+    await interact(() => toggle?.click());
+    const put = fetch.mock.calls.find(([, init]) => init?.method === "PUT");
+    expect(JSON.parse(String(put?.[1]?.body))).toEqual({
+      expectedRevision: 4,
+      trashAutoPurgeDays: 30,
+    });
+    expect(toggle?.getAttribute("aria-checked")).toBe("true");
+  } finally {
+    await view.unmount();
+  }
+});
+
+it("formats storage in decimal units", () => {
+  expect(formatStorageSize(999)).toBe("999 B");
+  expect(formatStorageSize(1_200_000)).toBe("1.2 MB");
+  expect(formatStorageSize(18_400_000_000)).toBe("18.4 GB");
+  expect(formatStorageSize(250_000_000_000)).toBe("250 GB");
 });

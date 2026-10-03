@@ -1,9 +1,12 @@
 import type { Artifact } from "@openbot/domain";
 import { useEffect, useState } from "react";
 import {
+  AttachmentCommandError,
+  cleanupChannelTrash,
   downloadAttachment,
   extensionOf,
   formatAttachmentSize,
+  purgeAttachment,
   updateAttachment,
 } from "../channel-attachment-client";
 import type { UploadedComposerAttachment } from "../composer-context";
@@ -35,6 +38,33 @@ export function referenceLabel(file: UploadedComposerAttachment): string | undef
   return parts.length > 0 ? parts.join("、") : "没有消息或任务引用";
 }
 
+/** Files the 服务电脑 reports as referenced; an older 服务电脑 without counts decides by itself. */
+function isReferenced(file: UploadedComposerAttachment) {
+  const count = file.referenceCount;
+  return count !== undefined && count.messages + count.tasks > 0;
+}
+
+function trashReferenceLabel(file: UploadedComposerAttachment): string | undefined {
+  if (!file.referenceCount) return undefined;
+  return isReferenced(file) ? referenceLabel(file) : "没有引用";
+}
+
+function keptNote(file: UploadedComposerAttachment): string {
+  return file.referenceCount && file.referenceCount.messages > 0
+    ? "还有消息在引用它，不能永久删除。先删掉那些消息，或者留着它。"
+    : "还有任务在引用它，不能永久删除。";
+}
+
+const totalSize = (files: UploadedComposerAttachment[]) =>
+  formatAttachmentSize(files.reduce((sum, file) => sum + file.sizeBytes, 0));
+
+/** A transport failure leaves the outcome unknown; a refusal from the 服务电脑 does not. */
+const unclear = (cause: unknown) => !(cause instanceof AttachmentCommandError);
+
+type Purge =
+  | { kind: "one"; file: UploadedComposerAttachment }
+  | { kind: "all"; requestKey: string; unclear?: boolean };
+
 function processedLabel(file: UploadedComposerAttachment) {
   if (!file.processing) return undefined;
   return file.processing.operation === "transcribe" ? "已转写" : "已提取文字";
@@ -42,27 +72,34 @@ function processedLabel(file: UploadedComposerAttachment) {
 
 /**
  * 频道文件 (ChannelFiles artboard): the Owner's uploads and the Bots' outputs in one list, with a
- * 回收站 for uploads. In the 回收站 a file can no longer be read or newly referenced by Bots, and it
- * can be restored; the 服务电脑 offers no permanent cleanup, so neither does this dialog.
+ * 回收站 for uploads. In the 回收站 a file can no longer be read or newly referenced by Bots; it can
+ * be restored or, after a confirmation, permanently deleted (C21). The 服务电脑 keeps referenced
+ * files and audits every deletion; this dialog only asks.
  */
 export function AttachmentsManagerDialog({
   channelId,
   channelName,
   outputs = [],
   botNameForRun = () => undefined,
+  initialTab = "files",
   onClose,
 }: {
   channelId: string;
+  initialTab?: "files" | "trash";
   channelName?: string | undefined;
   /** This channel's task outputs; they can be downloaded but not moved to the 回收站. */
   outputs?: Artifact[];
   botNameForRun?(runId: string): string | undefined;
   onClose(): void;
 }) {
-  const { files, setFiles, status } = useChannelAttachments(channelId);
+  const [revision, setRevision] = useState(0);
+  const { files, setFiles, status } = useChannelAttachments(channelId, revision);
   // Results of the Owner's own actions; kept apart from loading so a reload does not erase them.
   const [notice, setNotice] = useState("");
-  const [tab, setTab] = useState<"files" | "trash">("files");
+  const [tab, setTab] = useState<"files" | "trash">(initialTab);
+  const [purge, setPurge] = useState<Purge>();
+  const [purging, setPurging] = useState(false);
+  const [purgeError, setPurgeError] = useState("");
   const [source, setSource] = useState<Source>("all");
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(PAGE);
@@ -70,6 +107,8 @@ export function AttachmentsManagerDialog({
 
   const uploads = files.filter((file) => !file.deletedAt);
   const trash = files.filter((file) => file.deletedAt);
+  const removable = trash.filter((file) => !isReferenced(file));
+  const kept = trash.filter(isReferenced);
   const rows: FileRow[] = [
     ...uploads.map((file) => ({
       key: `upload:${file.id}`,
@@ -122,6 +161,61 @@ export function AttachmentsManagerDialog({
     }
   }
 
+  async function confirmPurge(target: Purge) {
+    setPurging(true);
+    setPurgeError("");
+    try {
+      if (target.kind === "one") {
+        const result = await purgeAttachment(channelId, target.file.id);
+        setFiles((values) => values.filter((item) => item.id !== result.id));
+        setNotice(
+          `已永久删除「${target.file.name}」，释放 ${formatAttachmentSize(result.freedBytes)}。`,
+        );
+      } else {
+        const result = await cleanupChannelTrash(channelId, target.requestKey);
+        setNotice(
+          [
+            `已永久删除 ${result.removed} 个文件，释放 ${formatAttachmentSize(result.freedBytes)}。`,
+            result.retainedCount > 0 ? `${result.retainedCount} 个还被引用，已保留。` : "",
+          ].join(""),
+        );
+        setRevision((value) => value + 1);
+      }
+      setPurge(undefined);
+    } catch (cause) {
+      if (target.kind === "all" && unclear(cause)) {
+        // The same key replays the saved outcome, so 重试 cannot delete twice.
+        setPurge({ ...target, unclear: true });
+        setPurgeError("没能确认是否已经删除。点「重试」会接着同一次清理，不会重复删除。");
+        return;
+      }
+      setPurge(undefined);
+      if (cause instanceof AttachmentCommandError && cause.code === "attachment_referenced") {
+        const count = cause.referenceCount;
+        if (target.kind === "one" && count)
+          setFiles((values) =>
+            values.map((item) =>
+              item.id === target.file.id ? { ...item, referenceCount: count } : item,
+            ),
+          );
+        setNotice("这个文件刚被消息或任务引用，已保留。");
+      } else if (
+        cause instanceof AttachmentCommandError &&
+        cause.code === "attachment_not_in_trash"
+      ) {
+        setNotice("这个文件已经不在回收站了。");
+        setRevision((value) => value + 1);
+      } else if (unclear(cause)) {
+        setNotice("没能确认是否已经删除，已重新读取回收站。");
+        setRevision((value) => value + 1);
+      } else {
+        setNotice("没能永久删除，请稍后重试。");
+      }
+    } finally {
+      setPurging(false);
+    }
+  }
+
   async function download(file: UploadedComposerAttachment) {
     setNotice("");
     try {
@@ -140,10 +234,25 @@ export function AttachmentsManagerDialog({
       onClose={onClose}
       footerStart={
         <small className="channel-files-note">
-          {/* C20 (#159): the 服务电脑 has no permanent cleanup, so none is offered. */}
-          移到回收站后，Bot
-          不能再读取或新引用这个文件，已发送的内容无法撤回。可以随时恢复；永久清理暂未提供。
+          {tab === "trash"
+            ? "回收站里的文件 Bot 不能再读取。永久删除不能恢复；还被消息或任务引用的会保留。"
+            : "移到回收站后，Bot 不能再读取或新引用这个文件，已发送的内容无法撤回。在回收站里可以恢复，也可以永久删除。"}
         </small>
+      }
+      footer={
+        tab === "trash" && trash.length > 0 ? (
+          <button
+            type="button"
+            className="ob-pill is-danger is-soft"
+            disabled={removable.length === 0 || purging}
+            onClick={() => {
+              setPurgeError("");
+              setPurge({ kind: "all", requestKey: crypto.randomUUID() });
+            }}
+          >
+            清空回收站（{removable.length} 个 · {totalSize(removable)}）
+          </button>
+        ) : undefined
       }
     >
       <div className="ob-seg" role="tablist" aria-label="文件分区">
@@ -266,24 +375,43 @@ export function AttachmentsManagerDialog({
               <span className="channel-files-text">
                 <strong title={file.name}>{file.name}</strong>
                 <small>
-                  {[
-                    file.deletedAt ? `${sidebarTime(file.deletedAt)} 移到回收站` : "",
-                    referenceLabel(file),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
+                  {file.deletedAt ? `${sidebarTime(file.deletedAt)} 移到回收站 · ` : ""}
+                  {formatAttachmentSize(file.sizeBytes)}
+                  {trashReferenceLabel(file) ? " · " : ""}
+                  {isReferenced(file) ? (
+                    <span className="is-warning">{trashReferenceLabel(file)}</span>
+                  ) : (
+                    trashReferenceLabel(file)
+                  )}
                 </small>
               </span>
               <span className="channel-files-actions">
                 <button
                   type="button"
                   className="ob-pill is-small"
-                  disabled={busyId === file.id}
+                  disabled={busyId === file.id || purging}
                   onClick={() => void change(file, "restore")}
                 >
                   恢复
                 </button>
+                <button
+                  type="button"
+                  className="ob-pill is-small is-danger is-soft"
+                  disabled={isReferenced(file) || busyId === file.id || purging}
+                  aria-describedby={isReferenced(file) ? `kept-${file.id}` : undefined}
+                  onClick={() => {
+                    setPurgeError("");
+                    setPurge({ kind: "one", file });
+                  }}
+                >
+                  永久删除
+                </button>
               </span>
+              {isReferenced(file) ? (
+                <p className="channel-files-kept" id={`kept-${file.id}`}>
+                  {keptNote(file)}
+                </p>
+              ) : null}
             </li>
           ))}
         </ul>
@@ -294,6 +422,79 @@ export function AttachmentsManagerDialog({
         <button type="button" className="channel-files-more" onClick={() => setLimit(limit + PAGE)}>
           显示更多（还有 {matching.length - visible.length} 个）
         </button>
+      ) : null}
+      {purge ? (
+        <PurgeConfirm
+          files={purge.kind === "one" ? [purge.file] : removable}
+          kept={purge.kind === "one" ? [] : kept}
+          busy={purging}
+          retry={purge.kind === "all" && purge.unclear === true}
+          error={purgeError}
+          onCancel={() => {
+            setPurge(undefined);
+            if (purge.kind === "all" && purge.unclear) setRevision((value) => value + 1);
+          }}
+          onConfirm={() => void confirmPurge(purge)}
+        />
+      ) : null}
+    </Dialog>
+  );
+}
+
+/** ChannelFilesTrash artboard: the second confirmation before anything is permanently deleted. */
+function PurgeConfirm({
+  files,
+  kept,
+  busy,
+  retry,
+  error,
+  onCancel,
+  onConfirm,
+}: {
+  files: UploadedComposerAttachment[];
+  kept: UploadedComposerAttachment[];
+  busy: boolean;
+  retry: boolean;
+  error: string;
+  onCancel(): void;
+  onConfirm(): void;
+}) {
+  const names = files.slice(0, 3).map((file) => file.name);
+  const more = files.length - names.length;
+  return (
+    <Dialog
+      title={
+        files.length === 1 ? `永久删除「${files[0]?.name}」？` : `永久删除 ${files.length} 个文件？`
+      }
+      width={400}
+      className="channel-files-confirm"
+      onClose={busy ? () => undefined : onCancel}
+      footer={
+        <>
+          <button type="button" className="ob-pill" disabled={busy} onClick={onCancel}>
+            取消
+          </button>
+          <button type="button" className="ob-pill is-danger" disabled={busy} onClick={onConfirm}>
+            {busy ? "正在删除…" : retry ? "重试" : "永久删除"}
+          </button>
+        </>
+      }
+    >
+      <p className="channel-files-confirm-text">
+        {files.length > 1 ? `${names.join("、")}${more > 0 ? ` 等 ${files.length} 个` : ""}，` : ""}
+        共 {totalSize(files)}。删除后不能恢复，会记入审计。
+      </p>
+      {kept.length > 0 ? (
+        <small className="channel-files-confirm-kept">
+          {kept.length === 1
+            ? `「${kept[0]?.name}」还被 ${kept[0] ? referenceLabel(kept[0]) : ""}，会保留。`
+            : `${kept.length} 个还被消息或任务引用的文件会保留。`}
+        </small>
+      ) : null}
+      {error ? (
+        <p className="ob-dialog-error" role="alert">
+          {error}
+        </p>
       ) : null}
     </Dialog>
   );

@@ -33,6 +33,7 @@
 | [EmptyWorkspace](EmptyWorkspace.dc.html) | ⑰ 还没有任何对话时的首次进入 |
 | [DialogShare](DialogShare.dc.html)、[DialogExport](DialogExport.dc.html)、[DialogImport](DialogImport.dc.html)、[DialogDelete](DialogDelete.dc.html)、[DialogPairHost](DialogPairHost.dc.html)、[DialogModel](DialogModel.dc.html) | ⑮ 对话框：分享、分享 Bot 模板、导入 Bot 模板、删除确认、配对工作电脑、连接模型服务 |
 | [MessageActions](MessageActions.dc.html)、[Composer](Composer.dc.html)、[ChannelFiles](ChannelFiles.dc.html) | ① 消息操作与回应；输入框的附件、语音和补充指令；带回收站的频道文件 |
+| [ChannelFilesTrash](ChannelFilesTrash.dc.html)、[SettingsStorage](SettingsStorage.dc.html) | ① 从回收站永久删除（再确认一次）和文件删除后的占位；④ 设置 › 存储空间 |
 | [EmployeeBrowser](EmployeeBrowser.dc.html) | Bot 的浏览器：接管与交还 |
 | [Notices](Notices.dc.html)、[LongLists](LongLists.dc.html)、[AppIcon](AppIcon.dc.html) | 提示与连接状态；所有界面的长列表与滚动；应用图标 |
 | [ChannelInfo](ChannelInfo.dc.html) | 「频道信息」右栏，含 详情 / 资料库 / 成员 分页（由 Main 引用） |

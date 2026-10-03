@@ -37,6 +37,24 @@ const responseMessages = {
   tooLarge: "附件响应超过允许大小。",
 };
 
+/** C21: the file was permanently deleted; messages that referenced it show a placeholder. */
+export class AttachmentPurgedError extends Error {
+  constructor() {
+    super("附件已永久删除");
+  }
+}
+
+/** A refused 回收站 command, with the reference counts the 服务电脑 reports for a kept file. */
+export class AttachmentCommandError extends Error {
+  constructor(
+    readonly code: string,
+    readonly status: number,
+    readonly referenceCount?: { messages: number; tasks: number } | undefined,
+  ) {
+    super(code);
+  }
+}
+
 async function readAvailableAttachment(
   response: Response,
   limit: number,
@@ -55,6 +73,11 @@ export async function getChannelAttachment(
     redirect: "error",
     signal: AbortSignal.any([signal, AbortSignal.timeout(15000)]),
   });
+  if (response.status === 410) {
+    const body = await readBoundedResponse(response, 1024, responseMessages).catch(() => undefined);
+    const gone = body ? (JSON.parse(new TextDecoder().decode(body)) as { purged?: unknown }) : {};
+    if (gone.purged === true) throw new AttachmentPurgedError();
+  }
   const { attachment: candidate } = JSON.parse(
     new TextDecoder().decode(await readAvailableAttachment(response, 16384)),
   ) as { attachment?: UploadedComposerAttachment };
@@ -174,6 +197,77 @@ export async function updateAttachment(
     signal ?? new AbortController().signal,
   );
 }
+export interface AttachmentPurgeResult {
+  id: string;
+  purged: true;
+  freedBytes: number;
+}
+
+export interface TrashCleanupResult {
+  removed: number;
+  retained: Array<{
+    id: string;
+    name: string;
+    referenceCount: { messages: number; tasks: number };
+  }>;
+  retainedCount: number;
+  retainedHasMore: boolean;
+  freedBytes: number;
+}
+
+async function trashCommand<T>(url: string, init: RequestInit, limit: number): Promise<T> {
+  const response = await fetch(url, {
+    credentials: "include",
+    redirect: "error",
+    headers: { "Content-Type": "application/json" },
+    ...init,
+  });
+  const data = JSON.parse(
+    new TextDecoder().decode(await readBoundedResponse(response, limit, responseMessages)) || "{}",
+  ) as Record<string, unknown>;
+  if (!response.ok) {
+    const count = data.referenceCount as { messages?: unknown; tasks?: unknown } | undefined;
+    throw new AttachmentCommandError(
+      typeof data.error === "string" ? data.error.slice(0, 80) : "attachment_command_failed",
+      response.status,
+      count && Number.isSafeInteger(count.messages) && Number.isSafeInteger(count.tasks)
+        ? { messages: Number(count.messages), tasks: Number(count.tasks) }
+        : undefined,
+    );
+  }
+  return data as T;
+}
+
+/**
+ * C21: permanently delete one file in the 回收站. The 服务电脑 refuses a file that is not in the
+ * 回收站 or is still referenced, and audits each deletion; a completed purge returns its result again.
+ */
+export async function purgeAttachment(
+  channelId: string,
+  attachmentId: string,
+): Promise<AttachmentPurgeResult> {
+  return trashCommand<AttachmentPurgeResult>(
+    `${attachmentPath(channelId, attachmentId)}/purge`,
+    { method: "DELETE", body: "{}", signal: AbortSignal.timeout(60000) },
+    4096,
+  );
+}
+
+/**
+ * C21: empty the channel's 回收站 except referenced files. Retry an unclear result with the same
+ * `requestKey`: the 服务电脑 replays the saved outcome instead of running a second cleanup.
+ */
+export async function cleanupChannelTrash(
+  channelId: string,
+  requestKey: string,
+): Promise<TrashCleanupResult> {
+  return trashCommand<TrashCleanupResult>(
+    `/api/v1/channels/${encodeURIComponent(channelId)}/attachments/cleanup`,
+    { method: "POST", body: JSON.stringify({ requestKey }), signal: AbortSignal.timeout(120000) },
+    65536,
+  );
+}
+
 export async function downloadAttachment(attachment: UploadedComposerAttachment): Promise<void> {
   const desktop = window.openbotDesktop;
   if (desktop) {

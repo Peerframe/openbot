@@ -73,7 +73,8 @@ updated.
 | 23e | Notices and scrolling — **merged** | Notices, LongLists | C18 (merged) | Toast, one banner by severity, the date cue, 回到最新 with a count, older messages on scroll; the scrollbar follows the system overlay |
 | 23e-2 | Long lists — **merged** | LongLists | C13 for step counts | Popover lists capped at 8 rows with edge fades, stacked 需要处理, working members first, three collaborators then 「还有 N 个」, long progress collapsed, search in long settings lists |
 | 23f | App icon and the legacy layer — **in review** | AppIcon | C16 | Icon sets from the AppIcon board; delete the legacy stylesheets and classes listed in DESIGN.md and `OpenBotMark`; refresh the website demo fixtures |
-| 24 | Backend wiring — **in review** | Avatars, New, TaskCards, DialogModel | C10, C12, C13, C17 | Eight accents for new Bots; 创建新 Bot is one atomic call that is never retried automatically; task cards show 「已完成 N 步 · 现在：…」; 连接模型服务 edits one connection: test reads only the model list, a new key is saved only after it passes, a default model per connection, 断开 lists what still uses it |
+| 24 | Backend wiring — **merged** | Avatars, New, TaskCards, DialogModel | C10, C12, C13, C17 | Eight accents for new Bots; 创建新 Bot is one atomic call that is never retried automatically; task cards show 「已完成 N 步 · 现在：…」; 连接模型服务 edits one connection: test reads only the model list, a new key is saved only after it passes, a default model per connection, 断开 lists what still uses it |
+| 25 | Storage and cleanup — **in review** | ChannelFilesTrash, SettingsStorage | C21 | 永久删除 and 清空回收站 in 频道文件 with a second confirmation, referenced files kept, an unclear cleanup retried with the same request key; 「附件已永久删除」 in messages; 设置 › 存储空间 with measured categories, the 回收站, the opt-in 30-day purge and the largest channels |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 
@@ -106,7 +107,7 @@ Done 2026-10-02 and 2026-10-03 (#147, #149, #150, #157–#161, #164, #165):
 | C18 | Message pages: a `before` cursor and a bounded page for `GET /channels/{id}/messages` | Integrated (23e) |
 | C19 | File reference counts per channel attachment | Integrated (#163) |
 | C20 | On-screen claims confirmed or corrected | Wording corrected (#163) |
-| C21 | Permanent 回收站 deletion, a cleanup command, measured storage and an opt-in 30-day purge | Waits for the owner's approval of the ChannelFilesTrash and SettingsStorage boards |
+| C21 | Permanent 回收站 deletion, a cleanup command, measured storage and an opt-in 30-day purge | Integrated (step 25) |
 
 Open — in the order the UI needs them:
 

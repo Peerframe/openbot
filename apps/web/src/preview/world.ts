@@ -305,6 +305,7 @@ export function attachmentsFor(channelId: string): Json[] {
     kb: number,
     day: number,
     deleted = false,
+    messages = 0,
   ) => ({
     id: `00000000-0000-4000-8000-0000000000${id}`,
     channelId,
@@ -313,7 +314,8 @@ export function attachmentsFor(channelId: string): Json[] {
     sizeBytes: kb * 1024,
     sha256: "0".repeat(64),
     createdAt: `2026-09-${day}T02:00:00.000Z`,
-    ...(deleted ? { deletedAt: "2026-09-30T02:00:00.000Z" } : {}),
+    referenceCount: { messages, tasks: 0 },
+    ...(deleted ? { deletedAt: `2026-09-${day + 2}T02:00:00.000Z` } : {}),
   });
   return [
     file("11", "weekly/competitors.md", "text/markdown", 2, 26),
@@ -332,9 +334,20 @@ export function attachmentsFor(channelId: string): Json[] {
       "旧版需求.docx",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       86,
-      20,
+      18,
       true,
     ),
+    // ChannelFilesTrash artboard: a referenced file stays; the others can be deleted for good.
+    file(
+      "17",
+      "渠道数据-8月.xlsx",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      2150,
+      16,
+      true,
+      3,
+    ),
+    file("18", "截图 1.png", "image/png", 4096, 13, true),
   ];
 }
 

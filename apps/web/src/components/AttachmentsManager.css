@@ -135,3 +135,39 @@
   font-size: 12px;
   line-height: 1.5;
 }
+
+/* ChannelFilesTrash artboard: 永久删除 and 清空回收站 are tinted red; the confirmation is filled. */
+.channel-files-dialog .ob-pill.is-danger.is-soft {
+  background: #fbe9e7;
+  color: #b3261e;
+}
+.channel-files-dialog .ob-pill.is-danger.is-soft:hover:not(:disabled) {
+  background: #f6d9d5;
+}
+.channel-files-kept {
+  grid-column: 2 / -1;
+  margin: -4px 0 0;
+  color: #94480b;
+  font-size: 12px;
+}
+.channel-files-text small .is-warning {
+  color: #94480b;
+}
+.channel-files-confirm .ob-dialog-sheet {
+  gap: 12px;
+  padding: 22px 24px 18px;
+}
+.channel-files-confirm .ob-dialog-header h2 {
+  font-size: 17px;
+}
+.channel-files-confirm-text {
+  margin: 0;
+  color: #3a3a3c;
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.channel-files-confirm-kept {
+  color: #8e8e93;
+  font-size: 12px;
+}

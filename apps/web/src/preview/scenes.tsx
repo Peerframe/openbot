@@ -1,6 +1,7 @@
 import type { Artifact, Bot, Channel, ExecutionNode, Run } from "@openbot/domain";
 import type { ReactElement } from "react";
 import { App } from "../App";
+import { AttachmentsManagerDialog } from "../components/AttachmentsManager";
 import { DeleteIdentityDialog } from "../components/DeleteIdentityDialog";
 import { DesktopConnectionScreen } from "../components/DesktopConnectionScreen";
 import { DesktopLocalWorkerScreen } from "../components/DesktopLocalWorkerScreen";
@@ -87,6 +88,14 @@ const components: Record<string, () => ReactElement> = {
     ) : (
       <EditModelConnectionScene />
     ),
+  "dialog-trash": () => (
+    <AttachmentsManagerDialog
+      channelId="c-market"
+      channelName="市场周报"
+      initialTab="trash"
+      onClose={close}
+    />
+  ),
   avatars: () => <AvatarSpecimens />,
   groups: () => <GroupSpecimens />,
   launch: () => <LaunchScreen status="正在打开你的工作区" />,

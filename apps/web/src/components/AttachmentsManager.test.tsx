@@ -70,8 +70,8 @@ beforeEach(() => {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string) =>
-      url.endsWith("/cleanup")
-        ? Response.json({ removed: 1, retained: 0 })
+      url.endsWith("/purge")
+        ? Response.json({ id: url.split("/").at(-2), purged: true, freedBytes: 2048 })
         : Response.json({ attachments: listed }),
     ),
   );
@@ -143,24 +143,96 @@ it("lists uploads and outputs with counts; only uploads can go to the 回收站"
   expect(document.querySelectorAll(".channel-files-list li")).toHaveLength(1);
 });
 
-it("offers no permanent cleanup and shows how many messages and tasks use a file", async () => {
+it("shows references and keeps referenced 回收站 files from permanent deletion", async () => {
   listed = [
     { ...upload("u1", "competitors.md"), referenceCount: { messages: 3, tasks: 1 } },
     {
       ...upload("u22", "旧版需求.docx", "2026-09-20T00:00:00.000Z"),
       referenceCount: { messages: 0, tasks: 0 },
     },
+    {
+      ...upload("u333", "渠道数据-8月.xlsx", "2026-09-18T00:00:00.000Z"),
+      referenceCount: { messages: 3, tasks: 0 },
+    },
   ];
   await open();
-  // C20 (#159): the 服务电脑 has no permanent cleanup route, so nothing offers one.
-  expect(
-    [...document.querySelectorAll("button")].some((item) => item.textContent?.includes("清理")),
-  ).toBe(false);
-  expect(document.querySelector(".channel-files-note")?.textContent).toContain("永久清理暂未提供");
   expect(document.body.textContent).toContain("3 条消息引用、1 个任务引用");
-  await interact(() => button("回收站 · 1").click());
-  expect(document.querySelector(".channel-files-list small")?.textContent).toContain(
-    "没有消息或任务引用",
+  await interact(() => button("回收站 · 2").click());
+  const rows = [...document.querySelectorAll(".channel-files-list li")];
+  expect(rows[0]?.textContent).toContain("没有引用");
+  const keptDelete = [...(rows[1]?.querySelectorAll("button") ?? [])].find(
+    (item) => item.textContent === "永久删除",
   );
-  expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes("cleanup"))).toBe(false);
+  expect(keptDelete?.disabled).toBe(true);
+  expect(rows[1]?.textContent).toContain("还有消息在引用它，不能永久删除");
+  // Only the unreferenced file counts toward 清空回收站.
+  expect(button("清空回收站（1 个 · 2 KB）").disabled).toBe(false);
+  expect(vi.mocked(fetch).mock.calls.some(([url]) => /purge|cleanup/.test(String(url)))).toBe(
+    false,
+  );
+});
+
+it("permanently deletes one file only after the second confirmation", async () => {
+  const id = "00000000-0000-4000-8000-000000000022";
+  listed = [
+    {
+      ...upload("u1", "旧版需求.docx", "2026-09-20T00:00:00.000Z"),
+      id,
+      referenceCount: { messages: 0, tasks: 0 },
+    },
+  ];
+  await open();
+  await interact(() => button("回收站 · 1").click());
+  await interact(() => button("永久删除").click());
+  expect(document.querySelector(".channel-files-confirm")?.textContent).toContain(
+    "永久删除「旧版需求.docx」？",
+  );
+  expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith("/purge"))).toBe(false);
+  await interact(() =>
+    document.querySelector<HTMLButtonElement>(".channel-files-confirm .is-danger")?.click(),
+  );
+  const call = vi.mocked(fetch).mock.calls.find(([url]) => String(url).endsWith("/purge"));
+  expect(call?.[0]).toBe(`/api/v1/channels/channel/attachments/${id}/purge`);
+  expect(call?.[1]).toMatchObject({ method: "DELETE" });
+  expect(document.body.textContent).toContain("已永久删除「旧版需求.docx」，释放 2 KB。");
+  expect(document.querySelector(".channel-files-confirm")).toBeNull();
+});
+
+it("retries an unclear 清空回收站 with the same request key", async () => {
+  listed = [
+    {
+      ...upload("u22", "旧版需求.docx", "2026-09-20T00:00:00.000Z"),
+      referenceCount: { messages: 0, tasks: 0 },
+    },
+  ];
+  let attempts = 0;
+  vi.mocked(fetch).mockImplementation(async (url) => {
+    if (!String(url).endsWith("/cleanup")) return Response.json({ attachments: listed });
+    attempts += 1;
+    if (attempts === 1) throw new TypeError("Failed to fetch");
+    return Response.json({
+      removed: 1,
+      retained: [],
+      retainedCount: 0,
+      retainedHasMore: false,
+      freedBytes: 2048,
+    });
+  });
+  await open();
+  await interact(() => button("回收站 · 1").click());
+  await interact(() => button("清空回收站（1 个 · 2 KB）").click());
+  const confirm = () =>
+    document.querySelector<HTMLButtonElement>(".channel-files-confirm .is-danger");
+  await interact(() => confirm()?.click());
+  expect(document.querySelector(".channel-files-confirm")?.textContent).toContain("不会重复删除");
+  expect(confirm()?.textContent).toBe("重试");
+  await interact(() => confirm()?.click());
+  const keys = vi
+    .mocked(fetch)
+    .mock.calls.filter(([url]) => String(url).endsWith("/cleanup"))
+    .map(([, init]) => JSON.parse(String(init?.body)).requestKey);
+  expect(keys).toHaveLength(2);
+  expect(keys[0]).toMatch(/^[0-9a-f-]{36}$/);
+  expect(keys[1]).toBe(keys[0]);
+  expect(document.body.textContent).toContain("已永久删除 1 个文件，释放 2 KB。");
 });
