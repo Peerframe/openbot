@@ -9,6 +9,7 @@ import {
   listRuns,
   subscribeToChannelEvents,
 } from "../api";
+import { showMessageEvent } from "../composer-events";
 import { createConversationSession } from "../conversation-session";
 import { deferred, interact, renderComponent } from "../test/render-component";
 import { ChannelWorkspace, dateCueLabel } from "./ChannelWorkspace";
@@ -995,6 +996,41 @@ describe("23e: older pages, banners and the date cue", () => {
     expect(session.channel("a").getSnapshot().history.exhausted).toBe(true);
     await rendered.unmount();
   });
+
+  it("jumps to a referenced message, reading an older page when it is not loaded", async () => {
+    const latest = Array.from({ length: 100 }, (_, index) => numbered(index + 10));
+    vi.mocked(listMessages).mockResolvedValue(latest);
+    vi.mocked(listMessagePage)
+      .mockResolvedValueOnce({ messages: latest, hasMore: true, nextCursor: "c-latest" })
+      .mockResolvedValueOnce({
+        messages: Array.from({ length: 10 }, (_, index) => numbered(index)),
+        hasMore: false,
+      });
+    const session = createConversationSession();
+    const rendered = await renderComponent(view("a", session));
+    await interact(() =>
+      window.dispatchEvent(
+        new CustomEvent(showMessageEvent, { detail: { channelId: "a", messageId: "m003" } }),
+      ),
+    );
+    // Reading the older page and scrolling take a few ticks; wait for the result, not a fixed delay.
+    await vi.waitFor(
+      async () => {
+        await interact(async () => undefined);
+        expect(document.activeElement?.id).toBe("channel-message-m003");
+      },
+      { timeout: 5_000, interval: 20 },
+    );
+    expect(listMessagePage).toHaveBeenCalledTimes(2);
+    // Another channel's request is ignored.
+    await interact(() =>
+      window.dispatchEvent(
+        new CustomEvent(showMessageEvent, { detail: { channelId: "b", messageId: "m050" } }),
+      ),
+    );
+    expect(document.activeElement?.id).toBe("channel-message-m003");
+    await rendered.unmount();
+  }, 20_000);
 
   it("does not ask for older pages when the latest page already holds everything", async () => {
     vi.mocked(listMessages).mockResolvedValue([numbered(1), numbered(2)]);

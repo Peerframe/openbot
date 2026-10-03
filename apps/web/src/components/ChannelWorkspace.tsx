@@ -62,7 +62,7 @@ import { RichMessage } from "./RichMessage";
 import { useListScroll } from "./useListScroll";
 import { VoiceRecorder } from "./VoiceRecorder";
 import "./ChannelMessagePresentation.css";
-import { composerAttachEvent } from "../composer-events";
+import { composerAttachEvent, type ShowMessageDetail, showMessageEvent } from "../composer-events";
 import { runStatusSummary } from "../run-state";
 import { AppIcon } from "./AppIcon";
 import { ArtifactCard } from "./ArtifactCard";
@@ -79,6 +79,9 @@ import {
   RunCollaboration,
 } from "./RunCollaboration";
 import { TaskCard } from "./TaskCard";
+
+/** Older pages (100 messages each) read at most when jumping to a referenced message. */
+const JUMP_PAGES = 10;
 
 export function ChannelWorkspace({
   headerAction,
@@ -194,6 +197,7 @@ export function ChannelWorkspace({
   const awayFrom = useRef<string | undefined>(undefined);
   const [reactions, setReactions] = useState<MessageReaction[]>([]);
   const [filesOpen, setFilesOpen] = useState(false);
+  const [jumpNotice, setJumpNotice] = useState<string>();
   const [outputs, setOutputs] = useState<ReadonlyMap<string, RunOutput>>(new Map());
   const [awayFromLatest, setAwayFromLatest] = useState(!conversation.scroll.atBottom);
   const messageList = useRef<HTMLDivElement>(null);
@@ -815,6 +819,42 @@ export function ChannelWorkspace({
       conversation.setHistory({ loading: false, error: "没能加载更早的消息。" });
     }
   }
+  /**
+   * C24 查看引用: scroll to one message, reading older pages first if it is not loaded. Bounded, so
+   * a very old reference ends with a hint instead of loading the whole history.
+   */
+  async function jumpToMessage(id: string) {
+    setJumpNotice(undefined);
+    for (let page = 0; ; page += 1) {
+      if (conversation.getSnapshot().messages.some((item) => item.id === id)) {
+        // The prepended page commits (and restores its scroll anchor) synchronously; move after it.
+        window.setTimeout(() => showMessage(id), 0);
+        return;
+      }
+      const history = conversation.getSnapshot().history;
+      if (history.exhausted || history.error || page >= JUMP_PAGES) break;
+      await loadOlder();
+    }
+    setJumpNotice(
+      conversation.getSnapshot().history.exhausted
+        ? "这条消息已经不在了。"
+        : "这条消息比较早，往上翻可以找到它。",
+    );
+  }
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the handler reads the live conversation.
+  useEffect(() => {
+    const show = (event: Event) => {
+      const detail = (event as CustomEvent<ShowMessageDetail>).detail;
+      if (detail?.channelId === channel.id) void jumpToMessage(detail.messageId);
+    };
+    window.addEventListener(showMessageEvent, show);
+    return () => window.removeEventListener(showMessageEvent, show);
+  }, [channel.id]);
+  useEffect(() => {
+    if (!jumpNotice) return;
+    const timer = window.setTimeout(() => setJumpNotice(undefined), 4000);
+    return () => window.clearTimeout(timer);
+  }, [jumpNotice]);
   /** LongLists: while scrolling, the date of the topmost visible message floats at the top. */
   function showDateCue(list: HTMLElement) {
     window.clearTimeout(dateCueTimer.current);
@@ -866,9 +906,23 @@ export function ChannelWorkspace({
             const run = runs.find((item) => item.id === runId);
             return run ? botsById.get(run.botId)?.name : undefined;
           }}
+          botName={(botId) => botsById.get(botId)?.name}
           onClose={() => setFilesOpen(false)}
+          onShowMessage={(messageId) => {
+            setFilesOpen(false);
+            void jumpToMessage(messageId);
+          }}
+          onShowTask={(runId) => {
+            setFilesOpen(false);
+            onInspectRun(runId);
+          }}
         />
       )}
+      {jumpNotice ? (
+        <div className="ob-toast" role="status">
+          {jumpNotice}
+        </div>
+      ) : null}
       <PluginCallApprovals channelId={channel.id} bots={bots} onInspectRun={onInspectRun} />
       <section
         className="conversation-panel channel-conversation"

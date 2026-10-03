@@ -268,6 +268,43 @@ export async function cleanupChannelTrash(
   );
 }
 
+/** C24: who still references a file. Previews are at most 120 characters with markers removed. */
+export interface AttachmentReferences {
+  messages: Array<{
+    id: string;
+    createdAt: string;
+    author: { kind: "owner" | "bot" | "system"; botId?: string };
+    preview: string;
+  }>;
+  tasks: Array<{ runId: string; title: string; status: string; createdAt: string }>;
+  messageCount: number;
+  taskCount: number;
+  hasMore: boolean;
+}
+
+export async function getAttachmentReferences(
+  channelId: string,
+  attachmentId: string,
+  signal: AbortSignal,
+  limit = 20,
+): Promise<AttachmentReferences> {
+  const response = await fetch(
+    `${attachmentPath(channelId, attachmentId)}/references?limit=${limit}`,
+    {
+      credentials: "include",
+      redirect: "error",
+      signal: AbortSignal.any([signal, AbortSignal.timeout(15000)]),
+    },
+  );
+  if (response.status === 410) throw new AttachmentPurgedError();
+  const data = JSON.parse(
+    new TextDecoder().decode(await readAvailableAttachment(response, 131072)),
+  ) as AttachmentReferences;
+  if (!Array.isArray(data.messages) || !Array.isArray(data.tasks))
+    throw new Error("引用列表格式不对。");
+  return data;
+}
+
 export async function downloadAttachment(attachment: UploadedComposerAttachment): Promise<void> {
   const desktop = window.openbotDesktop;
   if (desktop) {

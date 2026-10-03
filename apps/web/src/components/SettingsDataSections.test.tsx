@@ -446,7 +446,13 @@ it("checks, restarts and (after confirmation) clears one Bot's employee browser"
   const fetch = server({
     [`POST /api/v1/bots/${botId}/browser/maintenance`]: (init) => {
       const body = JSON.parse(String(init?.body));
-      return { botId, nodeId: "docker-1", running: body.operation !== "clear", paused: false };
+      return {
+        botId,
+        nodeId: "docker-1",
+        running: body.operation !== "clear",
+        paused: false,
+        ...(body.operation === "status" ? { profileBytes: 52_000_000 } : {}),
+      };
     },
   });
   const view = await renderComponent(
@@ -460,7 +466,7 @@ it("checks, restarts and (after confirmation) clears one Bot's employee browser"
     expect(fetch).not.toHaveBeenCalled();
     await interact(() => buttonNamed(view.container, "检查状态")?.click());
     expect(view.container.querySelector(".settings-browser-row small")?.textContent).toBe(
-      "运行中 · 主机 docker-1",
+      "运行中 · 主机 docker-1 · 浏览器数据 52.0 MB",
     );
     await interact(() => buttonNamed(view.container, "清除浏览数据…")?.click());
     expect(view.container.querySelector('[role="alertdialog"]')).not.toBeNull();
@@ -547,4 +553,121 @@ it("formats storage in decimal units", () => {
   expect(formatStorageSize(1_200_000)).toBe("1.2 MB");
   expect(formatStorageSize(18_400_000_000)).toBe("18.4 GB");
   expect(formatStorageSize(250_000_000_000)).toBe("250 GB");
+});
+
+it("empties every 回收站 once and retries an unclear result with the same key", async () => {
+  const GB = 1_000_000_000;
+  const usage = {
+    totalBytes: 2 * GB,
+    measuredAt: t,
+    categories: {
+      channelFiles: { sizeBytes: GB, fileCount: 1 },
+      trash: { sizeBytes: GB, fileCount: 4 },
+      ownerTaskFiles: { sizeBytes: 0, fileCount: 0 },
+      taskOutputs: { sizeBytes: 0, fileCount: 0 },
+      retainedRunOutputs: null,
+      other: { sizeBytes: 0, fileCount: 0 },
+      database: { sizeBytes: 0 },
+      workingComputerBrowserData: null,
+    },
+    trash: { fileCount: 4, sizeBytes: GB, referencedFileCount: 1, referencedSizeBytes: 0.25 * GB },
+    topChannels: [],
+    topChannelsLimit: 20,
+  };
+  const keys: string[] = [];
+  let attempts = 0;
+  const fetch = vi.fn(async (url: string, init?: RequestInit) => {
+    if (url === "/api/v1/storage") return Response.json(usage);
+    if (url === "/api/v1/settings/storage")
+      return Response.json({
+        revision: 1,
+        trashAutoPurgeDays: null,
+        updatedAt: null,
+        lastAutoPurgeAt: null,
+      });
+    if (url === "/api/v1/storage/trash/cleanup") {
+      keys.push(JSON.parse(String(init?.body)).requestKey);
+      attempts += 1;
+      if (attempts === 1) throw new TypeError("Failed to fetch");
+      return Response.json({
+        removed: 3,
+        retained: [],
+        retainedCount: 1,
+        retainedHasMore: false,
+        freedBytes: 0.75 * GB,
+        channelCount: 2,
+      });
+    }
+    return Response.json({ error: "Unexpected request" }, { status: 500 });
+  });
+  vi.stubGlobal("fetch", fetch);
+  HTMLDialogElement.prototype.showModal = vi.fn(function (this: HTMLDialogElement) {
+    this.setAttribute("open", "");
+  });
+  HTMLDialogElement.prototype.close = vi.fn(function (this: HTMLDialogElement) {
+    this.removeAttribute("open");
+  });
+  const view = await renderComponent(<SettingsStorage />);
+  try {
+    await interact(() => undefined);
+    await interact(() => buttonNamed(view.container, "清空回收站…")?.click());
+    const confirm = () =>
+      view.container.querySelector<HTMLButtonElement>(".storage-confirm .is-danger");
+    expect(view.container.querySelector(".storage-confirm")?.textContent).toContain(
+      "永久删除 3 个文件？",
+    );
+    expect(view.container.querySelector(".storage-confirm")?.textContent).toContain("共 750 MB");
+    await interact(() => confirm()?.click());
+    expect(confirm()?.textContent).toBe("重试");
+    await interact(() => confirm()?.click());
+    expect(keys).toHaveLength(2);
+    expect(keys[1]).toBe(keys[0]);
+    expect(view.container.textContent).toContain(
+      "已永久删除 3 个文件，释放 750 MB。1 个还被引用，已保留。",
+    );
+  } finally {
+    await view.unmount();
+  }
+});
+
+it("measures each Bot's browser data on request and never shows an unknown size as zero", async () => {
+  const bots = [
+    { id: "b1", name: "研究助理", computerProfile: "docker-linux" },
+    { id: "b2", name: "发布助手", computerProfile: "docker-linux" },
+    { id: "b3", name: "客服", computerProfile: "none" },
+  ] as Bot[];
+  const fetch = vi.fn(async (url: string) => {
+    if (url === "/api/v1/storage") return Response.json({ error: "x" }, { status: 503 });
+    if (url === "/api/v1/settings/storage")
+      return Response.json({
+        revision: 1,
+        trashAutoPurgeDays: null,
+        updatedAt: null,
+        lastAutoPurgeAt: null,
+      });
+    const bot = url.match(/bots\/(b\d)\/browser/)?.[1];
+    if (bot)
+      return Response.json({
+        botId: "00000000-0000-4000-8000-00000000b0b0",
+        nodeId: "n",
+        running: true,
+        paused: false,
+        profileBytes: bot === "b1" ? 186_000_000 : null,
+      });
+    return Response.json({ error: "Unexpected request" }, { status: 500 });
+  });
+  vi.stubGlobal("fetch", fetch);
+  const view = await renderComponent(<SettingsStorage bots={bots} />);
+  try {
+    await interact(() => undefined);
+    expect(fetch.mock.calls.some(([url]) => String(url).includes("/browser/"))).toBe(false);
+    await interact(() => buttonNamed(view.container, "测量")?.click());
+    const text = view.container.textContent ?? "";
+    expect(text).toContain("186 MB");
+    expect(text).toContain("1 个 Bot 的工作电脑量不出");
+    expect(text).toContain("发布助手量不出");
+    expect(fetch.mock.calls.filter(([url]) => String(url).includes("/browser/"))).toHaveLength(2);
+  } finally {
+    await view.unmount();
+  }
 });

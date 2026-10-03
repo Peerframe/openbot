@@ -562,7 +562,13 @@ export interface StorageUsage {
     database: StorageCategory;
     workingComputerBrowserData: null;
   };
-  trash: { fileCount: number; sizeBytes: number; referencedFileCount: number };
+  trash: {
+    fileCount: number;
+    sizeBytes: number;
+    referencedFileCount: number;
+    /** C22; absent on an older 服务电脑. */
+    referencedSizeBytes?: number | undefined;
+  };
   topChannels: Array<{
     id: string;
     name: string;
@@ -583,6 +589,32 @@ export interface StorageSettings {
 /** C21: measured logical bytes, never an estimate; any unmeasurable root refuses the whole read. */
 export async function getStorageUsage(signal?: AbortSignal): Promise<StorageUsage> {
   return request<StorageUsage>("/api/v1/storage", signal ? { signal } : undefined);
+}
+
+export interface GlobalTrashCleanupResult {
+  removed: number;
+  retained: Array<{
+    id: string;
+    name: string;
+    referenceCount: { messages: number; tasks: number };
+  }>;
+  retainedCount: number;
+  retainedHasMore: boolean;
+  freedBytes: number;
+  channelCount: number;
+}
+
+/**
+ * C22: empty every active channel's 回收站 except referenced files. Retry an unclear result with
+ * the same `requestKey`; the 服务电脑 replays the saved result instead of deleting again.
+ */
+export async function cleanupAllTrash(requestKey: string): Promise<GlobalTrashCleanupResult> {
+  return request<GlobalTrashCleanupResult>("/api/v1/storage/trash/cleanup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ requestKey }),
+    signal: AbortSignal.timeout(120000),
+  });
 }
 
 export async function getStorageSettings(signal?: AbortSignal): Promise<StorageSettings> {

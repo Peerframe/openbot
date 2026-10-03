@@ -94,6 +94,7 @@ const components: Record<string, () => ReactElement> = {
       channelId="c-market"
       channelName="市场周报"
       initialTab="trash"
+      botName={(botId) => world.bots.find((item) => item.id === botId)?.name}
       onClose={close}
     />
   ),

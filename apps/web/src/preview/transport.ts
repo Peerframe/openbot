@@ -245,7 +245,12 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
             trash: { sizeBytes: 1.2 * GB, fileCount: 12 },
             workingComputerBrowserData: null,
           },
-          trash: { fileCount: 12, sizeBytes: 1.2 * GB, referencedFileCount: 3 },
+          trash: {
+            fileCount: 12,
+            sizeBytes: 1.2 * GB,
+            referencedFileCount: 3,
+            referencedSizeBytes: 0.3 * GB,
+          },
           topChannels: [
             {
               id: "c-market",
@@ -272,6 +277,64 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
           topChannelsLimit: 20,
         });
       },
+    ],
+    [
+      "POST",
+      /^\/api\/v1\/storage\/trash\/cleanup$/,
+      () =>
+        json({
+          removed: 9,
+          retained: [],
+          retainedCount: 3,
+          retainedHasMore: false,
+          freedBytes: 900_000_000,
+          channelCount: 4,
+        }),
+    ],
+    [
+      "GET",
+      /^\/api\/v1\/channels\/([^/]+)\/attachments\/([^/]+)\/references$/,
+      () =>
+        json({
+          messages: [
+            {
+              id: "m-ref-1",
+              createdAt: "2026-09-18T02:10:00.000Z",
+              author: { kind: "owner" },
+              preview: "这是上个月的渠道数据。",
+            },
+            {
+              id: "m-ref-2",
+              createdAt: "2026-09-17T08:30:00.000Z",
+              author: { kind: "bot", botId: "b-research" },
+              preview: "我按渠道把 8 月的数据整理成了表格。",
+            },
+            {
+              id: "m-ref-3",
+              createdAt: "2026-09-16T01:00:00.000Z",
+              author: { kind: "system" },
+              preview: "例行任务「每周渠道汇总」已开始。",
+            },
+          ],
+          tasks: [],
+          messageCount: 3,
+          taskCount: 0,
+          hasMore: false,
+        }),
+    ],
+    [
+      "POST",
+      /^\/api\/v1\/bots\/([^/]+)\/browser\/maintenance$/,
+      (m) =>
+        json({
+          // The protocol requires a UUID; the preview's readable Bot ids are mapped to one.
+          botId: "00000000-0000-4000-8000-00000000b0b0",
+          nodeId: "n-1",
+          running: true,
+          paused: false,
+          // The deployed upstream cannot measure yet for one Bot: shown as 「量不出」.
+          profileBytes: m[1] === "b-research" ? 186_000_000 : null,
+        }),
     ],
     ["GET", /^\/api\/v1\/settings\/storage$/, () => json(storageSettings)],
     [

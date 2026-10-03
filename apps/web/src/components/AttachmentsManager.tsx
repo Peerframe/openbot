@@ -2,14 +2,17 @@ import type { Artifact } from "@openbot/domain";
 import { useEffect, useState } from "react";
 import {
   AttachmentCommandError,
+  type AttachmentReferences,
   cleanupChannelTrash,
   downloadAttachment,
   extensionOf,
   formatAttachmentSize,
+  getAttachmentReferences,
   purgeAttachment,
   updateAttachment,
 } from "../channel-attachment-client";
 import type { UploadedComposerAttachment } from "../composer-context";
+import { runStatusLabel } from "../run-state";
 import { ArtifactDownloadLink } from "./ArtifactCard";
 import { Dialog } from "./Dialog";
 import { sidebarTime } from "./Sidebar";
@@ -81,8 +84,11 @@ export function AttachmentsManagerDialog({
   channelName,
   outputs = [],
   botNameForRun = () => undefined,
+  botName = () => undefined,
   initialTab = "files",
   onClose,
+  onShowMessage,
+  onShowTask,
 }: {
   channelId: string;
   initialTab?: "files" | "trash";
@@ -90,6 +96,10 @@ export function AttachmentsManagerDialog({
   /** This channel's task outputs; they can be downloaded but not moved to the 回收站. */
   outputs?: Artifact[];
   botNameForRun?(runId: string): string | undefined;
+  botName?: ((botId: string) => string | undefined) | undefined;
+  /** C24: open a referencing message in the conversation; without it the list is read-only. */
+  onShowMessage?: ((messageId: string) => void) | undefined;
+  onShowTask?: ((runId: string) => void) | undefined;
   onClose(): void;
 }) {
   const [revision, setRevision] = useState(0);
@@ -100,6 +110,7 @@ export function AttachmentsManagerDialog({
   const [purge, setPurge] = useState<Purge>();
   const [purging, setPurging] = useState(false);
   const [purgeError, setPurgeError] = useState("");
+  const [referencesOpen, setReferencesOpen] = useState<string>();
   const [source, setSource] = useState<Source>("all");
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(PAGE);
@@ -410,7 +421,26 @@ export function AttachmentsManagerDialog({
               {isReferenced(file) ? (
                 <p className="channel-files-kept" id={`kept-${file.id}`}>
                   {keptNote(file)}
+                  <button
+                    type="button"
+                    className="channel-files-references-toggle"
+                    aria-expanded={referencesOpen === file.id}
+                    onClick={() =>
+                      setReferencesOpen((current) => (current === file.id ? undefined : file.id))
+                    }
+                  >
+                    {referencesOpen === file.id ? "收起引用" : "查看引用 ›"}
+                  </button>
                 </p>
+              ) : null}
+              {referencesOpen === file.id ? (
+                <ReferenceList
+                  channelId={channelId}
+                  file={file}
+                  botName={botName}
+                  onShowMessage={onShowMessage}
+                  onShowTask={onShowTask}
+                />
               ) : null}
             </li>
           ))}
@@ -438,6 +468,83 @@ export function AttachmentsManagerDialog({
         />
       ) : null}
     </Dialog>
+  );
+}
+
+function authorLabel(
+  author: AttachmentReferences["messages"][number]["author"],
+  botName: (botId: string) => string | undefined,
+): string {
+  if (author.kind === "owner") return "你";
+  if (author.kind === "system") return "系统消息";
+  return (author.botId && botName(author.botId)) || "Bot";
+}
+
+/**
+ * C24 查看引用: the messages and tasks that keep a file, newest first. Choosing one leaves the
+ * dialog for the conversation or 任务详情; the 服务电脑 sends previews only, never full content.
+ */
+function ReferenceList({
+  channelId,
+  file,
+  botName,
+  onShowMessage,
+  onShowTask,
+}: {
+  channelId: string;
+  file: UploadedComposerAttachment;
+  botName: (botId: string) => string | undefined;
+  onShowMessage?: ((messageId: string) => void) | undefined;
+  onShowTask?: ((runId: string) => void) | undefined;
+}) {
+  const [references, setReferences] = useState<AttachmentReferences>();
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    getAttachmentReferences(channelId, file.id, controller.signal)
+      .then((value) => {
+        if (!controller.signal.aborted) setReferences(value);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setFailed(true);
+      });
+    return () => controller.abort();
+  }, [channelId, file.id]);
+  if (failed)
+    return <p className="channel-files-references is-status">没能读取引用，请稍后再试。</p>;
+  if (!references) return <p className="channel-files-references is-status">正在读取引用…</p>;
+  const shown = references.messages.length + references.tasks.length;
+  const total = references.messageCount + references.taskCount;
+  return (
+    <ul className="channel-files-references" aria-label={`引用 ${file.name} 的消息和任务`}>
+      {references.messages.map((message) => (
+        <li key={message.id}>
+          <button
+            type="button"
+            disabled={!onShowMessage}
+            onClick={() => onShowMessage?.(message.id)}
+          >
+            <strong>
+              {authorLabel(message.author, botName)} · {sidebarTime(message.createdAt)}
+            </strong>
+            <small>{message.preview || "（只有附件）"}</small>
+          </button>
+        </li>
+      ))}
+      {references.tasks.map((task) => (
+        <li key={task.runId}>
+          <button type="button" disabled={!onShowTask} onClick={() => onShowTask?.(task.runId)}>
+            <strong>
+              任务 · {runStatusLabel(task.status as Parameters<typeof runStatusLabel>[0])}
+            </strong>
+            <small>{task.title}</small>
+          </button>
+        </li>
+      ))}
+      {references.hasMore ? (
+        <li className="is-status">还有 {total - shown} 条更早的引用没有列出。</li>
+      ) : null}
+    </ul>
   );
 }
 

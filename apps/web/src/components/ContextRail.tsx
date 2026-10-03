@@ -8,7 +8,7 @@ import type {
 } from "@openbot/domain";
 import { useCallback, useId, useState } from "react";
 import { formatAttachmentSize } from "../channel-attachment-client";
-import { composerAttachEvent } from "../composer-events";
+import { composerAttachEvent, type ShowMessageDetail, showMessageEvent } from "../composer-events";
 import { runStatusSummary } from "../run-state";
 import { requestNotificationPermission } from "../system-notifications";
 import { updatePreferences, useWorkspacePreferences } from "../workspace-preferences";
@@ -324,6 +324,8 @@ export function ContextRail({
               const run = runById.get(runId);
               return run ? botById.get(run.botId)?.name : undefined;
             }}
+            botName={(botId) => botById.get(botId)?.name}
+            onInspectRun={onInspectRun}
           />
         ) : null}
 
@@ -495,11 +497,16 @@ export function ChannelLibrary({
   channelName,
   artifacts,
   botNameForRun,
+  botName,
+  onInspectRun,
 }: {
   channelId: string;
   channelName?: string | undefined;
   artifacts: Artifact[];
   botNameForRun(runId: string): string | undefined;
+  botName?: ((botId: string) => string | undefined) | undefined;
+  /** Opens 任务详情 for a referencing task; without it task references are read-only. */
+  onInspectRun?: ((runId: string) => void) | undefined;
 }) {
   const { files, status } = useChannelAttachments(channelId);
   const [managing, setManaging] = useState(false);
@@ -586,7 +593,24 @@ export function ChannelLibrary({
           channelName={channelName}
           outputs={artifacts}
           botNameForRun={botNameForRun}
+          botName={botName}
           onClose={() => setManaging(false)}
+          onShowMessage={(messageId) => {
+            setManaging(false);
+            window.dispatchEvent(
+              new CustomEvent<ShowMessageDetail>(showMessageEvent, {
+                detail: { channelId, messageId },
+              }),
+            );
+          }}
+          onShowTask={
+            onInspectRun
+              ? (runId) => {
+                  setManaging(false);
+                  onInspectRun(runId);
+                }
+              : undefined
+          }
         />
       ) : null}
     </>
