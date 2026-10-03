@@ -212,7 +212,7 @@ export function OwnerPreferenceSettings() {
     return (
       <SettingsGroup title="Bot">
         <SettingRow title="时区与默认模型" description="暂时无法读取。">
-          <button className="secondary-button" type="button" onClick={() => void load()}>
+          <button className="ob-pill" type="button" onClick={() => void load()}>
             重试
           </button>
         </SettingRow>

@@ -27,7 +27,7 @@ export function SettingsAccount({
         <SettingRow title={ownerName ?? "我"} description="本地 Owner · 管理这台 OpenBot 的账户">
           {onLogout ? (
             <button
-              className="secondary-button"
+              className="ob-pill"
               type="button"
               disabled={loggingOut}
               onClick={async () => {
@@ -47,7 +47,7 @@ export function SettingsAccount({
       <SettingsGroup title="安全">
         <SettingRow title="Owner 密码" description="用来登录 OpenBot 和批准敏感操作">
           <button
-            className="secondary-button"
+            className="ob-pill"
             type="button"
             aria-expanded={changing}
             onClick={() => setChanging((open) => !open)}
@@ -58,7 +58,7 @@ export function SettingsAccount({
         {changing ? <PasswordForm onCancel={() => setChanging(false)} /> : null}
         <SessionsRow />
         <SettingRow title="审计记录" description="所有批准、敏感操作和配置变更都有记录">
-          <button className="secondary-button" type="button" onClick={onShowAudit}>
+          <button className="ob-pill" type="button" onClick={onShowAudit}>
             查看
           </button>
         </SettingRow>
@@ -208,7 +208,7 @@ function SessionsRow() {
         }
       >
         <button
-          className="secondary-button"
+          className="ob-pill"
           type="button"
           disabled={revoking || others === 0}
           onClick={async () => {

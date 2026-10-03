@@ -86,7 +86,7 @@ export function SettingsApprovals({ bots, channels }: { bots: Bot[]; channels: C
     return (
       <div className="settings-load-notice" role="alert">
         <p>无法读取审批规则。在读取成功前，服务电脑按最严格的规则执行。</p>
-        <button type="button" className="secondary-button" onClick={() => void load()}>
+        <button type="button" className="ob-pill" onClick={() => void load()}>
           重试
         </button>
       </div>

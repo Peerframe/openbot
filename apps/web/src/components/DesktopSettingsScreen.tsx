@@ -20,7 +20,7 @@ import {
 } from "../workspace-preferences";
 import { CloseIcon, SearchIcon } from "./Icons";
 import "./SettingsDialog.css";
-import { OpenBotMark } from "./OpenBotMark";
+import { AppIcon } from "./AppIcon";
 import { PluginManager } from "./PluginManagerPanel";
 import { SettingsAccount } from "./SettingsAccount";
 import { SettingsApprovals } from "./SettingsApprovals";
@@ -448,7 +448,7 @@ export function DesktopSettingsScreen({
                       description="恢复侧栏、信息栏、字号、间距和聊天习惯。"
                     >
                       <button
-                        className="secondary-button"
+                        className="ob-pill"
                         type="button"
                         onClick={() => {
                           updatePreferences(defaultPreferences);
@@ -522,7 +522,7 @@ export function DesktopSettingsScreen({
                             : "本地客户端 · 连接已有 OpenBot 服务"
                         }
                       >
-                        <button className="secondary-button" type="button" onClick={onRole}>
+                        <button className="ob-pill" type="button" onClick={onRole}>
                           更改用途
                         </button>
                       </SettingRow>
@@ -533,7 +533,7 @@ export function DesktopSettingsScreen({
                         }
                       >
                         {plan.mode !== "host" ? (
-                          <button type="button" className="secondary-button" onClick={onConnection}>
+                          <button type="button" className="ob-pill" onClick={onConnection}>
                             更改连接
                           </button>
                         ) : (
@@ -566,7 +566,7 @@ export function DesktopSettingsScreen({
               {section === "about" && (
                 <>
                   <div className="settings-about">
-                    <OpenBotMark />
+                    <AppIcon size={72} />
                     <h3>{desktop ? "OpenBot Desktop" : "OpenBot"}</h3>
                     <p>
                       {runtime
@@ -582,7 +582,7 @@ export function DesktopSettingsScreen({
                         description={link.description}
                       >
                         <a
-                          className="secondary-button"
+                          className="ob-pill"
                           href={link.href}
                           target="_blank"
                           rel="noreferrer"
@@ -668,7 +668,7 @@ function NotificationSettings() {
       <SettingsGroup title="系统通知">
         <SettingRow title="状态" description={supportText[support]}>
           <button
-            className="secondary-button"
+            className="ob-pill"
             type="button"
             disabled={blocked}
             onClick={async () => {

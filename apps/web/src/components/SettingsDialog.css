@@ -222,7 +222,8 @@
   color: var(--ob-text);
   font-size: 13px;
 }
-.settings-dialog .setting-control .secondary-button {
+/* Settings rows (Settings artboards): a 32px grey pill; the black primary pill keeps its colour. */
+.settings-dialog .setting-control .ob-pill:not(.is-primary) {
   height: 32px;
   min-height: 0;
   padding: 0 16px;
@@ -801,7 +802,7 @@
 }
 
 /* 关于 (SettingsAbout artboard). */
-.settings-dialog .setting-control a.secondary-button {
+.settings-dialog .setting-control a.ob-pill {
   display: inline-flex;
   align-items: center;
   color: var(--ob-text);

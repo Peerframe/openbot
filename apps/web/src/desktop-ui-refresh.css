@@ -6,12 +6,6 @@
   --workspace-toolbar-height: 58px;
 }
 /* The artboard is 1440px wide; narrower windows keep the conversation readable. */
-@media (max-width: 1280px) {
-  .app-shell.desktop-workspace {
-    --workspace-sidebar-size: 264px;
-    --workspace-details-size: 300px;
-  }
-}
 @media (max-width: 1100px) {
   .app-shell.desktop-workspace {
     --workspace-sidebar-size: 236px;
@@ -24,41 +18,6 @@
 }
 .app-shell.desktop-workspace.without-context {
   --workspace-details-size: 0px;
-}
-.desktop-workspace .sidebar {
-  display: flex;
-  flex-direction: column;
-  background: var(--sidebar);
-}
-/* Account avatar and the plugins pill share one row, as in the approved layout. */
-
-.desktop-workspace .channel-workspace {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-.desktop-workspace .channel-conversation {
-  flex: 1;
-  min-height: 0;
-}
-.desktop-workspace .message-list {
-  padding: 30px 30px 18px;
-}
-.composer-mention {
-  display: inline-flex;
-  align-items: center;
-  background: #edf5ff;
-  color: #0878ff;
-  border-radius: 5px;
-  padding-left: 5px;
-  font-size: 14px;
-}
-.composer-mention button {
-  border: 0;
-  background: transparent;
-  color: #6a99d4;
-  padding: 2px 5px;
-  cursor: pointer;
 }
 .composer-toolbar {
   align-items: flex-end;
@@ -88,10 +47,6 @@
 }
 .composer-add::-webkit-details-marker {
   display: none;
-}
-.composer-add svg {
-  width: 21px;
-  height: 21px;
 }
 .composer-add-popover,
 .mention-options,
@@ -190,18 +145,6 @@
   background: transparent;
   cursor: pointer;
 }
-@media (max-width: 1080px) {
-  .app-shell.desktop-workspace {
-    --workspace-sidebar-size: 210px;
-    --workspace-navigation-size: 210px;
-    --workspace-details-size: 255px;
-  }
-  .desktop-workspace .message-list {
-    padding-left: 18px;
-    padding-right: 18px;
-  }
-}
-
 :root[data-desktop="win32"] .desktop-workspace.without-sidebar,
 :root[data-desktop="linux"] .desktop-workspace.without-sidebar {
   --workspace-navigation-size: 134px;

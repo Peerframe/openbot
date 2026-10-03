@@ -12,13 +12,6 @@
   min-height: 0;
   background: #fff;
 }
-.app-shell.desktop-workspace.without-context {
-  --workspace-details-size: 0px;
-}
-.app-shell.desktop-workspace.without-sidebar {
-  --workspace-sidebar-size: 0px;
-  --workspace-navigation-size: 216px;
-}
 .workspace-preserved[hidden] {
   display: none;
 }
@@ -26,9 +19,6 @@
   min-height: 0;
   min-width: 0;
   border-right: 1px solid #e9ebee;
-}
-.workspace-sidebar[hidden] {
-  display: none;
 }
 .app-shell.desktop-workspace .sidebar {
   width: 100%;
@@ -67,36 +57,11 @@
   overflow: hidden;
   background: #fff;
 }
-.app-shell.desktop-workspace .channel-conversation {
-  flex: 1;
-  min-height: 0;
-  border-radius: 0;
-  background: #fff;
-}
-.app-shell.desktop-workspace .message-list {
-  padding: 30px max(24px, calc((100% - 840px) / 2));
-  background: #fff;
-}
-.app-shell.desktop-workspace .message-content {
-  box-shadow: none;
-}
 .app-shell.desktop-workspace .message-row.bot .message-content,
 .app-shell.desktop-workspace .message-row.system .message-content {
   background: transparent;
   border-color: transparent;
   border-radius: 0;
-}
-.app-shell.desktop-workspace .message-row.human .message-content {
-  background: #f1f3f5;
-  border: 0;
-  border-radius: 17px;
-}
-.app-shell.desktop-workspace .message-content time {
-  font-size: 11px;
-}
-.app-shell.desktop-workspace .message-content > header strong {
-  color: #3a4753;
-  font-size: 12px;
 }
 :root[data-sidebar-material="enabled"] .app-shell.desktop-workspace {
   background: linear-gradient(
@@ -109,20 +74,9 @@
   background: #ffffff40;
 }
 @media (max-width: 1100px) and (min-width: 761px) {
-  .app-shell.desktop-workspace {
-    --workspace-sidebar-size: 220px;
-    --workspace-navigation-size: 220px;
-    --workspace-details-size: 252px;
-  }
-  .app-shell.desktop-workspace.without-context {
-    --workspace-details-size: 0px;
-  }
   .app-shell.desktop-workspace.without-sidebar {
     --workspace-sidebar-size: 0px;
     --workspace-navigation-size: 216px;
-  }
-  .app-shell.desktop-workspace .message-list {
-    padding: 24px 20px;
   }
 }
 @media (max-width: 760px) {
@@ -145,8 +99,5 @@
   .app-shell.desktop-workspace > .workspace-main,
   .app-shell.desktop-workspace > .workspace-destination {
     height: calc(100dvh - 114px);
-  }
-  .app-shell.desktop-workspace .message-list {
-    padding: 20px 14px;
   }
 }

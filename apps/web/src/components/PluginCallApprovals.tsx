@@ -142,7 +142,7 @@ export function PluginCallApproval({
       <p>批准只允许以上这一次调用。插件可能产生外部影响，请检查目标和参数。</p>
       <div className="plugin-call-actions">
         <button
-          className="secondary-button"
+          className="ob-pill"
           type="button"
           disabled={busy || unavailable || expired || !endpoint}
           onClick={() => void decide("reject")}
@@ -150,14 +150,14 @@ export function PluginCallApproval({
           拒绝
         </button>
         <button
-          className="primary-button"
+          className="ob-pill is-primary"
           type="button"
           disabled={busy || unavailable || expired || !endpoint}
           onClick={() => void decide("approve")}
         >
           {busy ? "正在处理…" : "批准这次调用"}
         </button>
-        <button className="secondary-button" type="button" onClick={() => onInspectRun(call.runId)}>
+        <button className="ob-pill" type="button" onClick={() => onInspectRun(call.runId)}>
           查看任务
         </button>
       </div>

@@ -2,6 +2,9 @@ import { installPreviewTransport } from "./transport";
 import { createWorld } from "./world";
 import "../global-styles";
 import "./preview.css";
+import { installAppFavicon } from "../app-favicon";
+
+installAppFavicon();
 
 /*
  * Design preview entry (dev only): `npm run design:preview -w @openbot/web`, then open
@@ -93,6 +96,7 @@ export const scenes: Record<string, AppScene | ComponentScene> = {
   "dialog-pair": { kind: "component", title: "配对工作电脑", artboard: "DialogPairHost" },
   "dialog-model": { kind: "component", title: "连接模型服务", artboard: "DialogModel" },
   browser: { kind: "component", title: "Bot 的浏览器", artboard: "EmployeeBrowser" },
+  settings: { kind: "component", title: "设置（&section=…）", artboard: "Settings" },
   launch: { kind: "component", title: "启动画面", artboard: "Launch" },
   "launch-error": { kind: "component", title: "启动出错", artboard: "Launch" },
   welcome: { kind: "component", title: "首次使用", artboard: "Welcome" },
@@ -109,7 +113,11 @@ const storage = installPreviewTransport(world);
 if (scene?.kind === "app")
   storage.setItem(
     "openbot.workspace-preferences.v1",
-    JSON.stringify({ rightPanelOpen: scene.rail ?? true, leftPanelOpen: true }),
+    JSON.stringify({
+      rightPanelOpen: scene.rail ?? true,
+      // &sidebar=0 shows the collapsed sidebar (the legacy-style sweep covers both).
+      leftPanelOpen: new URLSearchParams(location.search).get("sidebar") !== "0",
+    }),
   );
 
 const [{ createRoot }, { renderScene }] = await Promise.all([

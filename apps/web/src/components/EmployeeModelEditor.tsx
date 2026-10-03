@@ -88,7 +88,7 @@ export function EmployeeModelEditor({
       ) : null}
       <div className="model-actions">
         <button
-          className="primary-button"
+          className="ob-pill is-primary"
           type="submit"
           disabled={saving || !valid || !changed || stale}
         >
@@ -96,7 +96,7 @@ export function EmployeeModelEditor({
         </button>
         {stale || error ? (
           <button
-            className="secondary-button"
+            className="ob-pill"
             type="button"
             disabled={saving}
             onClick={async () => {

@@ -161,7 +161,7 @@ export function PluginManager({
         <div className="plugin-manager-actions">
           <button
             type="button"
-            className="secondary-button"
+            className="ob-pill"
             disabled={busy || loading}
             onClick={() =>
               void mutate(`plugins/${encodeURIComponent(plugin.id)}`, "PATCH", {
@@ -176,7 +176,7 @@ export function PluginManager({
             <>
               <span>移除后将撤销此插件的 Bot 授权。</span>
               <button
-                className="secondary-button"
+                className="ob-pill"
                 type="button"
                 disabled={busy}
                 onClick={() =>
@@ -193,7 +193,7 @@ export function PluginManager({
             </>
           ) : (
             <button
-              className="secondary-button"
+              className="ob-pill"
               type="button"
               disabled={busy}
               onClick={() => setRemoving(plugin.id)}
@@ -526,12 +526,12 @@ export function PluginManager({
     <div className="plugin-manager-body">
       <div className="plugin-manager-toolbar">
         <p>连接工具、资源、提示词和隔离界面。安装后为指定 Bot 分配权限。</p>
-        <button type="button" className="secondary-button" onClick={() => setAdding(!adding)}>
+        <button type="button" className="ob-pill" onClick={() => setAdding(!adding)}>
           添加工具插件
         </button>
         <button
           type="button"
-          className="secondary-button"
+          className="ob-pill"
           disabled={busy || loading}
           onClick={() => setAttempt((value) => value + 1)}
         >

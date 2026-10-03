@@ -65,12 +65,7 @@ function AttachmentImageDialog({
     <dialog ref={dialogRef} className="attachment-image-dialog" aria-label={`图片预览 ${name}`}>
       <header>
         <strong>{name}</strong>
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="关闭图片预览"
-          onClick={closeDialog}
-        >
+        <button type="button" className="ob-round" aria-label="关闭图片预览" onClick={closeDialog}>
           ×
         </button>
       </header>

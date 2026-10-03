@@ -63,11 +63,11 @@ import { VoiceRecorder } from "./VoiceRecorder";
 import "./ChannelMessagePresentation.css";
 import { composerAttachEvent } from "../composer-events";
 import { runStatusSummary } from "../run-state";
+import { AppIcon } from "./AppIcon";
 import { ArtifactCard } from "./ArtifactCard";
 import { ComposerAttachmentPicker, composerAttachmentsFull } from "./ComposerAttachmentPicker";
 import { HashIcon, PlusIcon, SendIcon } from "./Icons";
 import { MessageAttachments } from "./MessageAttachments";
-import { OpenBotMark } from "./OpenBotMark";
 import { PluginCallApprovals } from "./PluginCallApprovals";
 import { RobotAvatar } from "./RobotAvatar";
 import {
@@ -1561,7 +1561,7 @@ function MessageRow({
         ) : message.authorType === "human" ? (
           <span>你</span>
         ) : (
-          <OpenBotMark />
+          <AppIcon size={32} />
         )}
       </div>
       <div className="message-content">

@@ -405,7 +405,7 @@ export function ModelConnectionEditor({
         ) : null}
         {!environment ? (
           <button
-            className="primary-button"
+            className="ob-pill is-primary"
             type="submit"
             disabled={saving || unchanged || !baseUrl || !name.trim()}
           >
@@ -473,7 +473,7 @@ function ConnectionModelTest({
         disabled={disabled || testing}
       />
       <button
-        className="secondary-button"
+        className="ob-pill"
         type="button"
         disabled={disabled || testing || !validModel}
         onClick={() => void test()}

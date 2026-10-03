@@ -444,7 +444,7 @@ describe("Employee profile read ownership in the real workspace", () => {
     await identityChanged();
     await completeProfile(0, "Stale Alpha");
     expect(displayedProfile()).toBeUndefined();
-    expect(rendered?.container.textContent).toContain("正在读取员工档案");
+    expect(rendered?.container.textContent).toContain("正在读取 Bot 档案");
     await completeProfile(1, "Latest Alpha");
     expect(displayedProfile()).toBe("Latest Alpha");
   });
@@ -485,7 +485,7 @@ describe("Employee profile read ownership in the real workspace", () => {
     );
     expect(displayedProfile()).toBeUndefined();
     const retry = rendered?.container.querySelector<HTMLButtonElement>(
-      ".employee-profile-loading button.primary-button",
+      ".employee-profile-loading button.ob-pill",
     );
     if (!retry) throw new Error("Missing refresh retry button");
     await interact(() => retry.click());
@@ -498,7 +498,7 @@ describe("Employee profile read ownership in the real workspace", () => {
     await interact(() => profiles[0]?.reject(new Error("current profile failure")));
     expect(rendered?.container.textContent).toContain("current profile failure");
     const retry = rendered?.container.querySelector<HTMLButtonElement>(
-      ".employee-profile-loading button.primary-button",
+      ".employee-profile-loading button.ob-pill",
     );
     if (!retry) throw new Error("Missing retry button");
     await interact(() => retry.click());

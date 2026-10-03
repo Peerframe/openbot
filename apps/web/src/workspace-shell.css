@@ -29,21 +29,6 @@
   width: 248px;
   height: 60px;
 }
-.app-shell .brand {
-  display: flex;
-  gap: 9px;
-  margin: 0 10px 26px;
-  align-items: center;
-  font-size: 25px;
-  line-height: 34px;
-  letter-spacing: -0.035em;
-  font-weight: 740;
-}
-.app-shell .brand img {
-  width: 33px;
-  height: 33px;
-  border-radius: 10px;
-}
 .app-shell .context-rail {
   grid-column: auto;
   height: calc(100dvh - 24px);
@@ -67,71 +52,6 @@
   overflow: auto;
   padding: 0;
 }
-.app-shell .channel-workspace {
-  overflow: hidden;
-  background: #f6f7f8;
-}
-.app-shell .channel-conversation {
-  border-radius: 16px;
-  background: #f0f3f6;
-  overflow: hidden;
-}
-.app-shell .message-list {
-  padding: 24px 22px;
-  background: transparent;
-  scrollbar-width: thin;
-}
-.app-shell .message-row {
-  gap: 9px;
-  margin-bottom: 19px;
-}
-.app-shell .message-content {
-  padding: 12px 14px 8px;
-  border: 1px solid #e4e8ed;
-  border-radius: 14px 14px 14px 4px;
-  box-shadow: 0 1px 2px #16293e05;
-}
-.app-shell .message-row.human .message-content {
-  background: #e1ecf9;
-  border-color: #dbe7f7;
-  border-radius: 14px 14px 4px 14px;
-}
-.app-shell .message-content > header {
-  margin-bottom: 8px;
-}
-.app-shell .message-content > header strong {
-  color: #284e7b;
-  font-size: 11px;
-}
-.app-shell .message-content time {
-  color: #607086;
-  font-size: 10px;
-}
-.app-shell .rich-message {
-  color: #26313f;
-  font-size: 13px;
-  line-height: 1.75;
-}
-.app-shell .message-content p {
-  font-size: 13px;
-  line-height: 1.75;
-}
-
-.app-shell .message-avatar .openbot-mark {
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
-}
-.app-shell .composer-send {
-  width: 35px;
-  height: 35px;
-  border-radius: 11px;
-  background: #242b36;
-}
-.app-shell .composer-send:disabled {
-  color: #718094;
-  background: #e9edf2;
-}
 .app-shell .conversation-empty h2 {
   font-size: 18px;
   font-weight: 620;
@@ -145,55 +65,6 @@
   color: #627b98;
   background: #e4eaf2;
   border-radius: 18px;
-}
-@media (max-width: 1100px) and (min-width: 761px) {
-  .app-shell,
-  .app-shell.without-context {
-    grid-template-columns: 208px minmax(0, 1fr) 250px;
-    gap: 8px;
-    padding: 10px;
-  }
-  .app-shell .sidebar {
-    padding-inline: 10px;
-    height: calc(100dvh - 20px);
-  }
-  .app-shell .brand {
-    font-size: 23px;
-    margin-left: 8px;
-  }
-  .app-shell .context-rail {
-    padding-inline: 12px;
-    height: calc(100dvh - 20px);
-  }
-  .app-shell .workspace-main {
-    height: calc(100dvh - 20px);
-  }
-  .app-shell .message-list {
-    padding: 18px 12px;
-  }
-}
-@media (max-width: 760px) {
-  .app-shell,
-  .app-shell.without-context {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    padding: 0;
-    gap: 0;
-  }
-  .app-shell .sidebar,
-  .app-shell .context-rail {
-    display: none;
-  }
-  .app-shell .workspace-main {
-    height: calc(100dvh - 62px);
-    padding: 0;
-  }
-  .app-shell .channel-conversation {
-    border-radius: 0;
-  }
-  .app-shell .message-list {
-    padding: 20px 12px;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .app-shell * {

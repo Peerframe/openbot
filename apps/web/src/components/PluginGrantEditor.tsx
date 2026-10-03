@@ -287,7 +287,7 @@ export function PluginGrantEditor({
         只读权限由你判断并授权，不采用插件自报标签。可能写入或产生外部影响的工具应选择每次确认。
       </p>
       <button
-        className="secondary-button"
+        className="ob-pill"
         type="submit"
         disabled={disabled || !botId || !selectedBotAvailable}
       >
