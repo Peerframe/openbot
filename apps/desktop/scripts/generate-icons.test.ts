@@ -39,6 +39,8 @@ describe("C16 source-derived icon pipeline", () => {
       expect(() => validateIconSvg(`<svg viewBox="0 0 128 128">${body}</svg>`)).toThrow();
     expect(() => validateIconSvg('<svg viewBox="0 0 128 64"/>')).toThrow();
   });
+  // Two full real conversions (every PNG size, ICO and ICNS) prove determinism. Alone this takes
+  // about 40 s on an Apple silicon laptop, so a loaded parallel `npm run test` can pass 60 s.
   it("converts synthetic vectors twice identically and preserves output when a source is missing", async () => {
     const temp = await mkdtemp(join(tmpdir(), "openbot-icons-"));
     try {
@@ -89,5 +91,5 @@ describe("C16 source-derived icon pipeline", () => {
     } finally {
       await rm(temp, { recursive: true, force: true });
     }
-  }, 60000);
+  }, 180_000);
 });

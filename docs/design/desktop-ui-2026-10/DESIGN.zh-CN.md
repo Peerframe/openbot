@@ -135,7 +135,7 @@
 | Main | `App.tsx`、`WorkspaceHeader.tsx`、`ChannelWorkspace.tsx`、`TaskCard.tsx` | 已实现 |
 | ChannelInfo、AddMember | `ContextRail.tsx`、`AddMemberPopover.tsx` | 已完成 |
 | BotInfo | `BotInfoRail.tsx`（单聊和 Bot 档案） | 已完成；编辑头像等 C9 |
-| Profile | `EmployeeProfileView.tsx` | 头部与概览已实现；其他分页待设计（第 22 步） |
+| Profile、ProfileEvolution、ProfileSkills、ProfileMemory、ProfileWork、ProfileConfig | `EmployeeProfileView.tsx` 及其分页 | 已完成（23a） |
 | New、NewGroup、NewBotChat | `NewChatScreen.tsx`、`NewBotSetupCard.tsx` | 已完成；开场白等 C11 |
 | Slash | `ChannelWorkspace.tsx` 输入框菜单 | 已实现 |
 | Settings、SettingsNav、Settings* | `DesktopSettingsScreen.tsx`、`Settings*.tsx` | 已实现 |
@@ -147,22 +147,22 @@
 | WorkSupervision、EmptyWorkspace | `WorkTasksScreen.tsx`、`EmptyWorkspace.tsx` | 已完成；任务监督按最新的 Work 动作显示当前步骤 |
 | ChannelFilesTrash、SettingsStorage | `AttachmentsManager.tsx`、`MessageAttachments.tsx`、`SettingsStorage.tsx`、`SettingsBrowser.tsx` | 已完成（C21–C24）。存储空间可以一次「清空回收站…」；需要时按 Bot 测量浏览器数据（不计入服务电脑总量，量不出时显示「量不出」）；「查看引用 ›」列出引用文件的消息和任务 |
 
-## 第 22 步设计（2026-10-02 已通过）
+## 第 22 步设计，第 23 步实现
 
-这些方面现在都有画板，由第 23 步重做；在那之前保持现有功能。[LongLists](LongLists.dc.html) 规定了所有地方内容多时
-怎么办：计数写在标题后，每张卡最多放 4 条并接「全部 N 个 ›」，超过 20 条加搜索，滚动时才出现的悬浮滚动条，对话里的
-日期浮标和「回到最新」。
+这些方面在第 22 步设计（2026-10-02 已通过），在第 23a–23f 步重做。[LongLists](LongLists.dc.html) 规定了所有地方
+内容多时怎么办：计数写在标题后，每张卡最多放 4 条并接「全部 N 个 ›」，超过 20 条加搜索，滚动时才出现的悬浮滚动条，
+对话里的日期浮标和「回到最新」。
 
-| 方面与画板 | 现在的代码 |
-| --- | --- |
-| 消息悬停操作、表情回应、引用回复（MessageActions） | `MessageActionBar`、`MessageReactions` |
-| 消息与输入框里的附件、语音输入（Composer） | `MessageAttachments`、`AttachmentPreview`、`ComposerAttachmentPicker`、`VoiceRecorder` |
-| 「补充指令」输入框与技能选择（Composer、TaskCards） | `TaskActions.tsx` 里的 `SteerForm`、输入框技能菜单 |
-| 带回收站的频道文件管理（ChannelFiles） | `AttachmentsManager` |
-| Bot 档案分页：进化档案（受 Hermes Agent 启发）、技能、记忆、工作记录（含进行中）、配置（Profile*） | `EmployeeEvolutionArchive`、`EmployeeSkillReview`、`KnowledgeReviewPanel`、`EmployeeModelEditor` |
-| Bot 的浏览器（EmployeeBrowser） | `EmployeeBrowser` |
-| 提示、浮动通知、横条、滚动与长列表（Notices、LongLists） | `App.tsx` 中的提示 |
-| 应用图标（AppIcon） | `apps/desktop/resources`、`docs/design/*.png` |
+| 方面与画板 | 实现位置 | 状态 |
+| --- | --- | --- |
+| 消息悬停操作、表情回应、引用回复（MessageActions） | `MessageActionBar`、`MessageReactions` | 已完成（23b） |
+| 消息与输入框里的附件、语音输入（Composer） | `MessageAttachments`、`AttachmentPreview`、`ComposerAttachmentPicker`、`VoiceRecorder` | 已完成（23b） |
+| 「补充指令」输入框与技能选择（Composer、TaskCards） | `TaskActions.tsx` 里的 `SteerForm`、输入框技能菜单 | 已完成（23b） |
+| 带回收站的频道文件（ChannelFiles） | `AttachmentsManager` | 已完成（23c，C19–C24） |
+| Bot 档案分页：进化档案（受 Hermes Agent 启发）、技能、记忆、工作记录（含进行中）、配置（Profile*） | `EmployeeEvolutionArchive`、`EmployeeSkillReview`、`KnowledgeReviewPanel`、`EmployeeModelEditor` | 已完成（23a） |
+| Bot 的浏览器（EmployeeBrowser） | `EmployeeBrowser` | 已完成（23d） |
+| 提示、浮动通知、横条、滚动与长列表（Notices、LongLists） | `App.tsx` 中的提示、`useListScroll`、`ApprovalStack`、`SettingsSearch` | 已完成（23e、23e-2） |
+| 应用图标（AppIcon） | `AppIcon`、标签页图标、`docs/design/app-icon` | 已完成（23f，C16） |
 
 ## 旧设计清单
 

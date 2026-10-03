@@ -78,7 +78,9 @@ updated.
 | 26 | Stage names and 任务监督 step counts — **merged** | TaskCards, TaskInspector, WorkSupervision | C13 | Chinese names for the 服务电脑's stage keys; 「第 N 步：…」 from the latest Work action |
 | 27 | Retire the legacy style layer — **merged** | — | — | The seven legacy sheets are gone: component rules beside their components, shared ones in `base.css` and `shell.css`, verified by a 68-state computed-style sweep |
 | 28 | README and interface pictures — **merged** | Avatars, AppIcon | C10 | New README banner (the Round head and a pixel wordmark, drawn by `?scene=banner`), a current channel picture, the avatar sheet, and `INTERFACE.md` §5 rewritten for the head-and-jaw identity |
-| 29 | Storage follow-ups — **in review** | ChannelFilesTrash, SettingsStorage | C22, C23, C24 | 清空回收站… in 存储空间 with the second confirmation and same-key retry; per-Bot browser data measured on request; 查看引用 › jumps to the message (reading older pages, bounded) or opens 任务详情 |
+| 29 | Storage follow-ups — **merged** | ChannelFilesTrash, SettingsStorage | C22, C23, C24 | 清空回收站… in 存储空间 with the second confirmation and same-key retry; per-Bot browser data measured on request; 查看引用 › jumps to the message (reading older pages, bounded) or opens 任务详情 |
+| 30 | Website demo and dead code — **merged** | — | C13 | The demo's sidebar follows the product width and its fixed runs report step counts (H7); the last unreachable module is deleted (H9) |
+| 31 | Close-out — **in review** | — | — | Docs brought up to date with what is built, contracts for C9 and C11 recorded for Codex, H8 reviewed, CJK spacing around names, and the C16 icon test's budget |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 
@@ -120,8 +122,8 @@ Open — in the order the UI needs them:
 
 | ID | Needed by | Contract to add | UI until ready |
 | --- | --- | --- | --- |
-| C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked | Pencil button hidden |
-| C11 | Step 16 (optional) | **New-Bot greeting**: when a model is configured, the 服务电脑 writes a short greeting as the Bot's first message, using only other Bots' names and tags; no model or any failure means no greeting | The setup card shows without a greeting |
+| C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked — proposed contract in [the research record](../../research/bot-appearance-and-greeting.md) | Pencil button hidden |
+| C11 | Step 16 (optional) | **New-Bot greeting**: one bounded, tool-less model call after quick-create, using only other Bots' names and roles; any failure means no greeting — proposed contract in [the research record](../../research/bot-appearance-and-greeting.md) | The setup card shows without a greeting |
 
 ## Repository housekeeping (proposals)
 
@@ -134,7 +136,7 @@ Open — in the order the UI needs them:
 | H5 | **Done 2026-10-03 (step 27).** The legacy `styles.css` and six other legacy sheets are gone; rules live beside their components, with shared ones in `base.css` and `shell.css` | Claude | No |
 | H6 | **Done 2026-10-03 (step 28).** `docs/INTERFACE.md` describes the head-and-jaw identity with the eight accents; the README banner, channel picture and avatar sheet are captured from the design preview | Claude | No |
 | H7 | **Updated 2026-10-03.** The website demo (`apps/web/src/demo`) renders the redesigned components; its sidebar follows the product width and its fixed runs report step counts. Keep its fixtures in step with each change | Claude | No |
-| H8 | Many UI tests find elements by Chinese copy, so every copy change breaks them; move to roles and accessible names as screens are rebuilt | Claude | No |
+| H8 | **Reviewed 2026-10-03.** Tests mostly find elements by role, `aria-label` or class (about 620 and 420 uses); only 41 finds use visible text, mostly button names, which are the accessible names. Copy assertions stay on purpose: the copy is the behaviour under test | Claude | No |
 | H9 | **Done 2026-10-03.** No unreachable UI module is left; the last one, `desktop-setup.ts` (a stale copy of the Desktop setup plan), is deleted. Keep deleting replaced UI in the same step | Claude | No |
 
 ## Owner decisions (2026-10-02)

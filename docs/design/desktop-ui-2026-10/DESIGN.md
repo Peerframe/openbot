@@ -159,7 +159,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Main | `App.tsx`, `WorkspaceHeader.tsx`, `ChannelWorkspace.tsx`, `TaskCard.tsx` | Built |
 | ChannelInfo, AddMember | `ContextRail.tsx`, `AddMemberPopover.tsx` | Built |
 | BotInfo | `BotInfoRail.tsx` (单聊 and the Bot profile) | Built; 编辑头像 waits for C9 |
-| Profile | `EmployeeProfileView.tsx` | Header and 概览 built; other tabs need design (step 22) |
+| Profile, ProfileEvolution, ProfileSkills, ProfileMemory, ProfileWork, ProfileConfig | `EmployeeProfileView.tsx` and its tabs | Built (23a) |
 | New, NewGroup, NewBotChat | `NewChatScreen.tsx`, `NewBotSetupCard.tsx` | Built; the greeting waits for C11 |
 | Slash | `ChannelWorkspace.tsx` composer menus | Built |
 | Settings, SettingsNav, Settings* | `DesktopSettingsScreen.tsx`, `Settings*.tsx` | Built |
@@ -171,23 +171,23 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | WorkSupervision, EmptyWorkspace | `WorkTasksScreen.tsx`, `EmptyWorkspace.tsx` | Built; 任务监督 names the current step from the latest durable Work action |
 | ChannelFilesTrash, SettingsStorage | `AttachmentsManager.tsx`, `MessageAttachments.tsx`, `SettingsStorage.tsx`, `SettingsBrowser.tsx` | Built (C21–C24). 存储空间 offers 清空回收站… for every channel, measures each Bot's browser data on request (shown apart from the 服务电脑 total; 「量不出」 when the working computer cannot measure), and 查看引用 › lists the referencing messages and tasks |
 
-## Designed in step 22 (approved 2026-10-02)
+## Designed in step 22, built in step 23
 
-These areas now have artboards; step 23 rebuilds them, and until then the current code keeps
-working. [LongLists](LongLists.dc.html) sets the rules for long content everywhere: counts after
-titles, at most four items per card with 「全部 N 个 ›」, search above 20 items, an overlay scrollbar
-that shows while scrolling, and the date cue with 「回到最新」 in conversations.
+These areas were designed in step 22 (approved 2026-10-02) and rebuilt in steps 23a–23f.
+[LongLists](LongLists.dc.html) sets the rules for long content everywhere: counts after titles, at
+most four items per card with 「全部 N 个 ›」, search above 20 items, an overlay scrollbar that shows
+while scrolling, and the date cue with 「回到最新」 in conversations.
 
-| Area and artboard | Code today |
-| --- | --- |
-| Message hover actions, reactions, reply quote (MessageActions) | `MessageActionBar`, `MessageReactions` |
-| Attachments in messages and the composer, voice input (Composer) | `MessageAttachments`, `AttachmentPreview`, `ComposerAttachmentPicker`, `VoiceRecorder` |
-| 补充指令 input and the skill picker (Composer, TaskCards) | `SteerForm` in `TaskActions.tsx`, composer skill menu |
-| 频道文件 management with the recycle bin (ChannelFiles) | `AttachmentsManager` |
-| Bot 档案 tabs: 进化档案 (inspired by Hermes Agent), 技能, 记忆, 工作记录 (with 进行中), 配置 (Profile*) | `EmployeeEvolutionArchive`, `EmployeeSkillReview`, `KnowledgeReviewPanel`, `EmployeeModelEditor` |
-| The Bot's browser (EmployeeBrowser) | `EmployeeBrowser` |
-| Notices, toasts, banners, scrolling and long lists (Notices, LongLists) | `App.tsx` notices |
-| App icon (AppIcon) | `apps/desktop/resources`, `docs/design/*.png` |
+| Area and artboard | Built in | Status |
+| --- | --- | --- |
+| Message hover actions, reactions, reply quote (MessageActions) | `MessageActionBar`, `MessageReactions` | Built (23b) |
+| Attachments in messages and the composer, voice input (Composer) | `MessageAttachments`, `AttachmentPreview`, `ComposerAttachmentPicker`, `VoiceRecorder` | Built (23b) |
+| 补充指令 input and the skill picker (Composer, TaskCards) | `SteerForm` in `TaskActions.tsx`, composer skill menu | Built (23b) |
+| 频道文件 with the recycle bin (ChannelFiles) | `AttachmentsManager` | Built (23c, C19–C24) |
+| Bot 档案 tabs: 进化档案 (inspired by Hermes Agent), 技能, 记忆, 工作记录 (with 进行中), 配置 (Profile*) | `EmployeeEvolutionArchive`, `EmployeeSkillReview`, `KnowledgeReviewPanel`, `EmployeeModelEditor` | Built (23a) |
+| The Bot's browser (EmployeeBrowser) | `EmployeeBrowser` | Built (23d) |
+| Notices, toasts, banners, scrolling and long lists (Notices, LongLists) | `App.tsx` notices, `useListScroll`, `ApprovalStack`, `SettingsSearch` | Built (23e, 23e-2) |
+| App icon (AppIcon) | `AppIcon`, the tab icon, `docs/design/app-icon` | Built (23f, C16) |
 
 ## Legacy inventory
 

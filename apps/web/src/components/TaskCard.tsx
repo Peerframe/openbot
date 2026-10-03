@@ -482,7 +482,11 @@ function Collaboration({
           还有 {childRuns.length - COLLAB_LIMIT} 个 ›
         </button>
       ) : null}
-      <small>协作结果回到{lead?.name ?? "它"}的任务里，再由它回复你。</small>
+      <small>
+        {lead
+          ? `协作结果回到 ${lead.name} 的任务里，再由它回复你。`
+          : "协作结果回到它的任务里，再由它回复你。"}
+      </small>
     </div>
   );
 }
