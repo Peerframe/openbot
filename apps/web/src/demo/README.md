@@ -37,3 +37,10 @@ The fixture transport tests run in the normal web test suite. See [research](../
 ## Verification record (2026-09-10)
 
 The standalone production build and six transport/component tests passed. The component test imports the real API module and verifies that incremental events render in ChannelWorkspace, reactions change the real chips, copying writes the selected text, task links open the task sheet (then `RunInspector`, now `TaskSheet`), and restart clears the conversation. Browser checks in Chrome covered the default desktop viewport, 1060×640, 390×780 and 390×640: sidebar search/overlay, playback/pause, incremental Nova/Otto replies, delivery shortcut, actual reply submission, Copy's success feedback, reactions, collaboration detail links, and the downloaded Markdown contents. Browser console inspection reported no errors. Screenshots are temporary review evidence, not committed assets. This does not certify all browser engines or a live-provider run.
+
+## Update (2026-10-03)
+
+- The demo now uses the redesigned components.
+- Its sidebar scales from 212px in narrow embeds to the product's 300px at 1440px.
+- The fixed runs report C13 step summaries, so task cards read 「已完成 N 步 · 现在：…」 and collaborator rows carry their own count. `GET /api/v1/runs/:id/progress` answers from the same fixed steps, and no planned total is shown.
+- Verified with the standalone build, the 7 demo tests and a 1440×900 Chromium capture mid-playback.

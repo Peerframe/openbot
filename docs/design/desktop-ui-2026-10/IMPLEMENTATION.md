@@ -133,9 +133,9 @@ Open — in the order the UI needs them:
 | H4 | **Done 2026-10-02.** The stacked pull requests are merged (#132–#151) and the 29 merged `codex/claude-ui-*` branches are deleted | Owner | Yes |
 | H5 | **Done 2026-10-03 (step 27).** The legacy `styles.css` and six other legacy sheets are gone; rules live beside their components, with shared ones in `base.css` and `shell.css` | Claude | No |
 | H6 | **Done 2026-10-03 (step 28).** `docs/INTERFACE.md` describes the head-and-jaw identity with the eight accents; the README banner, channel picture and avatar sheet are captured from the design preview | Claude | No |
-| H7 | The website demo (`apps/web/src/demo`) renders real product components; its fixtures must follow each step, and it becomes the base of the design preview harness | Claude | No |
+| H7 | **Updated 2026-10-03.** The website demo (`apps/web/src/demo`) renders the redesigned components; its sidebar follows the product width and its fixed runs report step counts. Keep its fixtures in step with each change | Claude | No |
 | H8 | Many UI tests find elements by Chinese copy, so every copy change breaks them; move to roles and accessible names as screens are rebuilt | Claude | No |
-| H9 | Delete the remaining dead UI after each step (`CreateBotDialog`, `CreateChannelDialog`, `AutomationsScreen`, `SkillLibraryScreen`, `OpenBotMark`, legacy dialog classes) instead of leaving them unreachable | Claude | No |
+| H9 | **Done 2026-10-03.** No unreachable UI module is left; the last one, `desktop-setup.ts` (a stale copy of the Desktop setup plan), is deleted. Keep deleting replaced UI in the same step | Claude | No |
 
 ## Owner decisions (2026-10-02)
 

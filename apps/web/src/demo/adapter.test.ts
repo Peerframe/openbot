@@ -141,4 +141,33 @@ describe("isolated product demo transport", () => {
     );
     expect(adapter.getSnapshot().artifacts).toEqual([]);
   });
+
+  it("reports the fixed steps as the 服务电脑 would, never with a planned total", async () => {
+    const adapter = create();
+    for (let tick = 0; tick < 6; tick += 1) adapter.advance();
+    const progress = adapter.getSnapshot().runProgress;
+    expect(progress["demo-root"]).toMatchObject({
+      totalSteps: 3,
+      completedSteps: 2,
+      stageName: "action",
+      plannedTotalSteps: null,
+    });
+    expect(progress["demo-research-task"]).toMatchObject({ totalSteps: 1, completedSteps: 0 });
+    const details = await (
+      await adapter.fetch(`${demoOrigin}/api/v1/runs/demo-root/progress`)
+    ).json();
+    expect(details.steps.map((step: { stageName: string }) => step.stageName)).toEqual([
+      "context",
+      "action",
+      "action",
+    ]);
+    adapter.finish();
+    expect(adapter.getSnapshot().runProgress["demo-root"]).toMatchObject({
+      status: "completed",
+      completedSteps: 4,
+      stageName: null,
+    });
+    adapter.restart();
+    expect(adapter.getSnapshot().runProgress).toEqual({});
+  });
 });
