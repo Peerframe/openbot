@@ -1,5 +1,7 @@
 export type {
   DesktopRuntimeInfo,
+  DesktopColorScheme,
+  DesktopColorSchemeState,
   DesktopPlatformPreferences,
   DesktopPlatformState,
   DesktopUpdateState,
@@ -36,3 +38,5 @@ export const DESKTOP_SIDEBAR_MATERIAL_CHANGED_CHANNEL = "openbot:sidebar-materia
 export const DESKTOP_NAVIGATION_COMMAND_CHANNEL = "openbot:navigation-command";
 export const DESKTOP_NAVIGATION_MENU_STATE_CHANNEL = "openbot:navigation-menu-state";
 export const DESKTOP_SHOW_NOTIFICATION_CHANNEL = "openbot:show-notification";
+
+export const DESKTOP_COLOR_SCHEME_CHANGED_CHANNEL = "openbot:color-scheme-changed";
