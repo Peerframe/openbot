@@ -310,8 +310,8 @@ describe("C13 step counts", () => {
     currentStepNumber: 4,
     plannedTotalSteps: null,
     completedSteps: 3,
-    stageName: "打开网页",
-    description: null,
+    stageName: "navigate",
+    description: "Open a page.",
     startedAt: null,
     endedAt: null,
     failureReasonCode: null,
@@ -344,6 +344,16 @@ describe("C13 step counts", () => {
       // The snapshot already covers this event, so nothing is re-read.
       await new Promise((resolve) => setTimeout(resolve, 600));
       expect(getRunProgress).not.toHaveBeenCalled();
+    } finally {
+      await rendered.unmount();
+    }
+  });
+
+  it("names the current stage in Chinese when no progress line has arrived", async () => {
+    const rendered = await card({ stepSummaries: { [run.id]: summary() } });
+    try {
+      expect(rendered.container.textContent).toContain("已完成 3 步 · 现在：打开网页");
+      expect(rendered.container.textContent).not.toContain("Open a page.");
     } finally {
       await rendered.unmount();
     }

@@ -8,18 +8,6 @@ import { computerLabels, secondsAgo } from "./TaskCard";
 import { TaskSteps } from "./TaskSteps";
 import "./TaskSheet.css";
 
-const stageLabels: Record<string, string> = {
-  context: "读取员工资料",
-  planning: "想下一步",
-  observation: "查看结果",
-  navigate: "打开网页",
-  screenshot: "截取画面",
-};
-
-export function stageLabel(stage: string): string {
-  return stageLabels[stage] ?? stage;
-}
-
 const statusTone: Partial<Record<Run["status"], string>> = {
   assigned: "is-working",
   running: "is-working",
@@ -228,7 +216,7 @@ export function TaskSheet({
         <section className="task-sheet-section" aria-label="进度">
           <h3>进度</h3>
           <ol className="task-sheet-card task-sheet-steps">
-            <TaskSteps run={run} progress={progress} stageLabel={stageLabel} />
+            <TaskSteps run={run} progress={progress} />
             <li>
               <i
                 className={

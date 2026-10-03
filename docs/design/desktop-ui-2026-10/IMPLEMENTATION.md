@@ -99,7 +99,7 @@ Done 2026-10-02 and 2026-10-03 (#147, #149, #150, #157–#161, #164, #165):
 | --- | --- | --- |
 | C10 | Four more avatar accents (violet, teal, pink, slate); older Bot templates still import | Integrated (step 24) |
 | C12 | Quick-create a Bot and its 单聊 in one atomic call | Integrated (step 24) |
-| C13 | Task progress projection: step counts, the current step, start and end time, a bounded failure code | Task cards and 任务详情 integrated (23e-2, step 24); 任务监督 not yet |
+| C13 | Task progress projection: step counts, the current step, start and end time, a bounded failure code | Task cards, 任务详情 and 任务监督 integrated (23e-2, steps 24 and 26); stage keys shown by their Chinese names |
 | C14 | CI: the browser-fixture install step has a longer budget and retries pinned downloads | CI only |
 | C15 | Route caller inventory after retiring the 例行任务 and 技能库 pages | No route retired; nothing to wire |
 | C16 | App icon sets built from `docs/design/app-icon/` | Packaging only |

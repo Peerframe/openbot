@@ -12,7 +12,7 @@ import type {
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { getRunProgress } from "../api";
 import { extensionOf } from "../channel-attachment-client";
-import { runStatusLabel, runStatusSummary } from "../run-state";
+import { runStatusLabel, runStatusSummary, stageLabel } from "../run-state";
 import { actionLabel, expiryLabel, riskLabel } from "./ApprovalCard";
 import { ArtifactDownloadLink } from "./ArtifactCard";
 import { RobotAvatar } from "./RobotAvatar";
@@ -265,7 +265,7 @@ export function TaskCard({
     // assigned, running, or waiting for an approval that is not in this snapshot.
     tone = run.status === "waiting_approval" ? " is-attention" : "";
     const where = node ? `在 ${node.name} 上` : undefined;
-    const now = progress?.message ?? steps?.description ?? steps?.stageName;
+    const now = progress?.message ?? stageLabel(steps?.stageName);
     const detail =
       run.status === "waiting_approval"
         ? runStatusSummary(run)

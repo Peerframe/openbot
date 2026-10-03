@@ -2,6 +2,12 @@ import type { Bot } from "@openbot/domain";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "../api";
 import {
+  emptyNativeTaskScope,
+  type NativeTaskScopeInput,
+  type OwnerAttachment,
+} from "../native-task-api";
+import { stageLabel } from "../run-state";
+import {
   type CreateWorkInput,
   cancelWorkTask,
   createWorkTask,
@@ -9,13 +15,8 @@ import {
   type WorkSnapshot,
 } from "../work-api";
 import {
-  emptyNativeTaskScope,
-  type NativeTaskScopeInput,
-  type OwnerAttachment,
-} from "../native-task-api";
-import {
-  NativeTaskScopeForm,
   attachmentNeedsProcessing,
+  NativeTaskScopeForm,
   taskBotSupported,
 } from "./NativeTaskScopeForm";
 import { NativeTaskScopeView } from "./NativeTaskScopeView";
@@ -29,6 +30,18 @@ const statusLabels = {
   cancelled: "已取消",
   failed: "失败",
 };
+/**
+ * WorkSupervision artboard: 「工作中 · 第 2 步：…」. A Work task's durable actions are its steps —
+ * the same count C13 reports for a Run — so the latest action is the current step. Only its
+ * server-authored kind is named; tool arguments and results are never shown here.
+ */
+export function workStepLabel(snapshot: Pick<WorkSnapshot, "status" | "actions">): string {
+  if (snapshot.status !== "open" || snapshot.actions.length === 0) return "";
+  const latest = snapshot.actions.at(-1)?.intent.kind;
+  const name = typeof latest === "string" ? stageLabel(latest) : undefined;
+  return ` · 第 ${snapshot.actions.length} 步${name ? `：${name}` : ""}`;
+}
+
 function failure(cause: unknown) {
   if (cause instanceof ApiError) {
     if (cause.status === 401) return "登录已失效，请重新登录。";
@@ -501,6 +514,7 @@ export function WorkTasksScreen({
                   <dt>执行状态</dt>
                   <dd>
                     {statusLabels[snapshot.status]}
+                    {workStepLabel(snapshot)}
                     {snapshot.attention
                       ? ` · 需要处理：${{ approval: "审批", reconciliation: "未知结果核验", budget: "预算" }[snapshot.attention]}`
                       : ""}
