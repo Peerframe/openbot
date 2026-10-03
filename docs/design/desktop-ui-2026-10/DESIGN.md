@@ -78,8 +78,12 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 
 ## Creating Bots and 频道
 
-- **「+」 opens 新建聊天** (New): a 收件人 field with a list. The first two rows are actions —
+- **「+」 opens 新建聊天** (New): a 收件人 field with a dropdown list. The first two rows are actions —
   创建新 Bot ⌘1 and 创建频道 ⌘2 — then existing Bots continue the numbering up to ⌘9.
+- The list follows the Owner's reference recording (2026-10-03). It hangs from the field's left
+  edge, 460px wide, with compact 36px rows: a 22px avatar, the name and the role tag. The shortcut
+  shows on the highlighted row only, though every row keeps it. A press outside closes the list,
+  and clicking the field opens it again.
 - **One Bot chosen = 单聊; several = 频道.** Chosen Bots become chips and the list keeps the rest.
   With several chips a hint offers 命名频道, and the 频道 is created when the first message is sent
   (NewGroup).

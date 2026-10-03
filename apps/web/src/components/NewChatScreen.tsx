@@ -59,6 +59,8 @@ export function NewChatScreen({
   const [error, setError] = useState<string>();
   const search = useRef<HTMLInputElement>(null);
   const message = useRef<HTMLTextAreaElement>(null);
+  const recipients = useRef<HTMLDivElement>(null);
+  const optionsList = useRef<HTMLDivElement | null>(null);
   const botById = useMemo(() => new Map(bots.map((bot) => [bot.id, bot])), [bots]);
   const term = query.trim().toLocaleLowerCase();
   const candidates = bots.filter(
@@ -85,6 +87,20 @@ export function NewChatScreen({
   useEffect(() => {
     search.current?.focus();
   }, []);
+
+  // A press anywhere outside the field and the list closes it, as in the reference recording;
+  // clicking or typing in the field opens it again.
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const close = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (recipients.current?.contains(target) || optionsList.current?.contains(target)) return;
+      setPickerOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [pickerOpen]);
 
   function choose(bot: Bot) {
     if (selected.length >= MAX_RECIPIENTS) {
@@ -172,7 +188,7 @@ export function NewChatScreen({
 
   return (
     <main className="workspace-main new-chat" aria-label="新建聊天">
-      <div className="new-chat-recipients">
+      <div className="new-chat-recipients" ref={recipients}>
         <span className="new-chat-label" aria-hidden="true">
           收件人：
         </span>
@@ -216,6 +232,7 @@ export function NewChatScreen({
             setPickerOpen(true);
           }}
           onFocus={() => setPickerOpen(true)}
+          onClick={() => setPickerOpen(true)}
           onKeyDown={onSearchKeyDown}
         />
         {onClose ? (
@@ -246,11 +263,16 @@ export function NewChatScreen({
           className="new-chat-options"
           role="listbox"
           id="new-chat-options"
-          ref={optionsRef}
+          ref={(element) => {
+            optionsList.current = element;
+            optionsRef(element);
+          }}
           aria-label="选择收件人"
         >
           {options.map((option, index) => {
-            const shortcut = index < 9 ? <Keys index={index} /> : <span />;
+            // Reference recording: the shortcut shows on the highlighted row only; ⌘1–9 still work
+            // for every row (aria-keyshortcuts).
+            const shortcut = index < 9 && activeIndex === index ? <Keys index={index} /> : <span />;
             const common = {
               type: "button" as const,
               role: "option",
@@ -267,10 +289,7 @@ export function NewChatScreen({
                   <span className="new-chat-create" aria-hidden="true">
                     <PlusIcon />
                   </span>
-                  <span>
-                    {creating ? "正在创建…" : "创建新 Bot"}
-                    <small>马上得到一个，外观和分工之后再改</small>
-                  </span>
+                  <span>{creating ? "正在创建…" : "创建新 Bot"}</span>
                   {shortcut}
                 </button>
               );
@@ -281,10 +300,7 @@ export function NewChatScreen({
                     <span className="new-chat-create" aria-hidden="true">
                       <PeopleIcon />
                     </span>
-                    <span>
-                      创建频道
-                      <small>选几个 Bot 组成频道</small>
-                    </span>
+                    <span>创建频道</span>
                     {shortcut}
                   </button>
                   <span className="new-chat-divider" aria-hidden="true" />
@@ -308,11 +324,6 @@ export function NewChatScreen({
               {bots.length === 0 ? "还没有 Bot，先创建一个。" : "没有匹配的 Bot"}
             </p>
           ) : null}
-          <p className="new-chat-options-hint">
-            {chosen.length > 0 || channelMode
-              ? "↑ ↓ 选择 · 回车加入 · 删除键移除最后一个"
-              : "选一个 Bot 是单聊；选多个就建成频道"}
-          </p>
         </div>
       ) : null}
 
