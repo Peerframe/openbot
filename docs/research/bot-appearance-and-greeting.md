@@ -145,3 +145,8 @@ checks now compare both consumers with the verified target to catch stale qualif
 `npm run check`. The initial hosted container/restore failures were stale 52-entry guards, not
 failures of the new SQL; this checkpoint records their correction, rather than claiming those
 failed hosted runs passed.
+
+The base Python message DTO check also pins the additive optional `origin` field explicitly.
+Projection acceptance covers `greeting`, omission for ordinary messages, and rejection of unknown
+values or incorrect types. The initial hosted exact-field assertion omitted `origin`; its correction
+updates the contract expectation without changing product behavior.
