@@ -32,6 +32,7 @@ class Message(PublicModel):
     authorId: str | None = None
     replyToMessageId: str | None = None
     runId: str | None = None
+    origin: Literal["greeting"] | None = None
     content: str
     createdAt: str
 
@@ -53,6 +54,7 @@ def _project_message(row: Mapping[str, object]) -> Message:
         "content": row["content"],
         "createdAt": iso_timestamp(row["created_at"]),
     }
+    values["origin"] = row.get("origin")
     for column, public in _OPTIONAL_COLUMNS.items():
         values[public] = row.get(column)
     return Message(**values)

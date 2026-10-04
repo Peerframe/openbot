@@ -107,3 +107,46 @@ English · [简体中文](bot-appearance-and-greeting.zh-CN.md)
 ## Unresolved questions
 
 - None.
+
+## C11 implementation checkpoint (2026-10-03)
+
+Owner approved the contract on 2026-10-03. The implementation reuses the existing C7/C12 default
+selection, encrypted model resolver and bounded model port reviewed in
+[work-model-ports](work-model-ports.md): Pydantic AI 2.47.0, OpenAI 3.17.0 and Anthropic 1.8.0
+under their existing licenses and pins. Installed SDK source confirms tools can be empty and
+existing transport disables SDK retries. No new dependency or upstream source copy.
+
+For the persistence gap, an audit join on every message read would add projection and paging cost.
+A nullable `messages.origin` column instead preserves all historical messages and exposes the
+optional tag through normal reads and C18 pages. PostgreSQL 17 partial unique indexes bound the
+persisted attempt and greeting to one per Bot, following the
+[official partial-index contract](https://www.postgresql.org/docs/17/indexes-partial.html).
+The existing audit table retains the attempt after failure, cancellation, restart or deletion of the
+message; this is not a retry queue or another ledger. Migration 0052 is additive and journaled.
+
+Generation runs after the quick-create transaction, using one tool-less SDK call and only the
+approved roster input. The model phase has a 15-second deadline; SQL retains its own existing
+transaction, statement and lock bounds. The same channel-before-Bot lock order as Owner sends
+protects first-message insertion. Owner session, model revision and channel/Bot lifetime are
+rechecked. A prior Owner send remains disqualifying even if its message is later deleted, because
+its normal audit remains. Invalid/refused output never writes a message. Failure reasons are fixed
+local categories; a database outage can prevent auditing and does not authorize another write path.
+Shutdown cancels and joins outstanding jobs. No paid model or production database is used in tests.
+
+Backend qualification uses real disposable PostgreSQL and the pinned SDK with a synthetic HTTP
+transport, including actual 15-second timeout and channel SSE. Renderer integration remains Claude's
+separate acceptance scope; no live-provider or cross-platform support claim is added.
+
+C11 adds the 53rd canonical migration, so the existing product preflight/smoke count and synthetic
+paired-restore target explicitly advance from 52 to 53. No applied SQL or sealed source history
+changes. The current [40-case restore evidence](../../experiments/s7-migration/evidence/bot-greeting-result.json)
+preserves old messages and references; 20 delivery/cleanup checks pass. Product delivery count
+checks now compare both consumers with the verified target to catch stale qualification during
+`npm run check`. The initial hosted container/restore failures were stale 52-entry guards, not
+failures of the new SQL; this checkpoint records their correction, rather than claiming those
+failed hosted runs passed.
+
+The base Python message DTO check also pins the additive optional `origin` field explicitly.
+Projection acceptance covers `greeting`, omission for ordinary messages, and rejection of unknown
+values or incorrect types. The initial hosted exact-field assertion omitted `origin`; its correction
+updates the contract expectation without changing product behavior.

@@ -20,8 +20,8 @@ from pydantic import ValidationError
 from openbot_server import message_models
 
 MESSAGE_PUBLIC_FIELDS = {"id", "channelId", "authorType", "authorId", "replyToMessageId", "runId",
-                         "content", "createdAt"}
-OPTIONAL_PUBLIC_FIELDS = {"authorId", "replyToMessageId", "runId"}
+                         "origin", "content", "createdAt"}
+OPTIONAL_PUBLIC_FIELDS = {"authorId", "replyToMessageId", "runId", "origin"}
 MESSAGE_REQUIRED_FIELDS = MESSAGE_PUBLIC_FIELDS - OPTIONAL_PUBLIC_FIELDS
 MANDATORY_COLUMNS = ("id", "channel_id", "author_type", "content", "created_at")
 OPTIONAL_COLUMNS = {"author_id": "authorId", "reply_to_message_id": "replyToMessageId",
@@ -79,7 +79,7 @@ def test_public_field_set_is_exactly_the_domain_message_contract():
     assert set(fields) == MESSAGE_PUBLIC_FIELDS
     assert {name for name, field in fields.items() if field.is_required()} == MESSAGE_REQUIRED_FIELDS
     assert list(fields) == ["id", "channelId", "authorType", "authorId", "replyToMessageId",
-                            "runId", "content", "createdAt"]
+                            "runId", "origin", "content", "createdAt"]
     assert set(message_models.MessagesResponse.model_fields) == {"messages", "hasMore", "nextCursor"}
     assert message_models.MAX_PROJECTED_MESSAGES == 100
 
@@ -111,6 +111,24 @@ def test_each_optional_id_is_carried_through_when_present():
         payload = public_json(message_models.project_messages([row]))["messages"][0]
         assert payload[public] == f"value-of-{column}", column
         assert set(payload) == MESSAGE_REQUIRED_FIELDS | {public}, column
+
+
+def test_greeting_origin_is_projected_and_ordinary_messages_omit_it():
+    greeting = message_row(author_type="bot", author_id="bot-1", origin="greeting")
+    payload = public_json(message_models.project_messages([greeting]))["messages"][0]
+    assert payload["origin"] == "greeting"
+    assert set(payload) == MESSAGE_REQUIRED_FIELDS | {"authorId", "origin"}
+    for ordinary in (message_row(), message_row(origin=None)):
+        payload = public_json(message_models.project_messages([ordinary]))["messages"][0]
+        assert "origin" not in payload
+
+
+@pytest.mark.parametrize("origin", ["", "unknown", 1, True, {}, ["greeting"]])
+def test_invalid_stored_origin_fails_the_projection(origin):
+    with pytest.raises(ValidationError):
+        message_models.project_messages([
+            message_row(author_type="bot", author_id="bot-1", origin=origin)
+        ])
 
 
 # ---------------------------------------------------------------------------
