@@ -127,7 +127,7 @@ Open — in the order the UI needs them:
 
 | ID | Needed by | Contract to add | UI until ready |
 | --- | --- | --- | --- |
-| C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked — proposed contract in [the research record](../../research/bot-appearance-and-greeting.md) | Pencil button hidden |
+| C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked — backend implemented; UI pending, contract in [the research record](../../research/bot-appearance-and-greeting.md) | Pencil button hidden |
 | C23 fork | Step 29 | **Own narrow fork of `agent-computer`** (Owner decision 2026-10-03: do not wait for upstream #730): the production pin plus only the `GET /computers/profile-usage` contribution, image qualified, `OPEN_SOURCE_REUSE.md` updated, back to upstream once it merges | 「量不出」 |
 | C25 | Step 36 | **Desktop colour scheme**: `get/setColorScheme("system" \| "light" \| "dark")` returning the resolved scheme, a change event, the choice kept by the main process and applied before the window opens, window background `#ffffff` / `#141414` | Desktop stays light |
 | C11 | Step 16 (optional) | **New-Bot greeting**: one bounded, tool-less model call after quick-create, using only other Bots' names and roles; any failure means no greeting — proposed contract in [the research record](../../research/bot-appearance-and-greeting.md) | The setup card shows without a greeting |
