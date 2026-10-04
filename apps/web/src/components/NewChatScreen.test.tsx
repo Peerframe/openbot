@@ -162,3 +162,37 @@ it("makes one Bot a 频道 after 创建频道", async () => {
     await view.unmount();
   }
 });
+
+it("shows the shortcut on the highlighted row only and closes on an outside press", async () => {
+  const view = await renderComponent(
+    <NewChatScreen bots={bots} onCreateBot={vi.fn()} onStart={vi.fn()} />,
+  );
+  try {
+    const search = view.container.querySelector<HTMLInputElement>('input[role="combobox"]');
+    expect(view.container.querySelectorAll(".new-chat-keys")).toHaveLength(1);
+    expect(options(view.container)[0]?.querySelector(".new-chat-keys")?.textContent).toBe("⌘1");
+    await key(search, { key: "ArrowDown" });
+    expect(options(view.container)[1]?.querySelector(".new-chat-keys")?.textContent).toBe("⌘2");
+    // Every row keeps its shortcut for assistive technology.
+    expect(options(view.container)[4]?.getAttribute("aria-keyshortcuts")).toBe("Meta+5 Control+5");
+
+    // A press inside the list keeps it open; one elsewhere closes it; clicking the field reopens it.
+    await interact(() =>
+      view.container
+        .querySelector(".new-chat-options")
+        ?.dispatchEvent(new Event("pointerdown", { bubbles: true })),
+    );
+    expect(view.container.querySelector(".new-chat-options")).not.toBeNull();
+    await interact(() =>
+      view.container
+        .querySelector(".new-chat-space")
+        ?.dispatchEvent(new Event("pointerdown", { bubbles: true })),
+    );
+    expect(view.container.querySelector(".new-chat-options")).toBeNull();
+    expect(search?.getAttribute("aria-expanded")).toBe("false");
+    await interact(() => search?.click());
+    expect(view.container.querySelector(".new-chat-options")).not.toBeNull();
+  } finally {
+    await view.unmount();
+  }
+});
