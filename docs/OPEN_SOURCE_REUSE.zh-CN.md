@@ -36,6 +36,7 @@ MIT/Apache 代码时，必须在 `THIRD_PARTY_NOTICES.md` 或对应 vendor 目�
 
 | OpenBot 范围 | 调研来源 | 许可证 | 决定与现状 |
 | --- | --- | --- | --- |
+| 模型服务商与插件图标 | LobeHub 图标 `@lobehub/icons-static-svg` 1.95.1（gitHead 49a2130d）；SVG Logos `@iconify-icons/logos` 2.0.2（gilbarbara/logos 37a6b807）；对比 Simple Icons 16.34.0 | MIT；CC0-1.0 | 只打包用到的图标；一张表对应服务商预设和插件名称/地址，未知服务保留首字母。只影响显示，运行时不下载；许可声明在 `licenses/runtime`。见[调研](research/brand-logos.zh-CN.md)。 |
 | Windows 交付稳定性与完整 CI 门禁 | Electron get 5.1.0 / `da84467e`；Packager 20.3.0 / `8c5cc941`；builder 26.16.1 / `7d3b30f3`；.NET Process；GitHub Actions 依赖结果 | MIT；BSD-2-Clause；微软/GitHub 文档条款 | 只重试短暂下载故障，保留校验；安装夹具按进度检查停滞和总时限；受保护的完成检查要求全部任务通过。未复制源码，见[下载](research/windows-ci-download-reliability.zh-CN.md)、[安装](research/windows-installer-progress.zh-CN.md)、[合并门禁](research/windows-ci-merge-gate.zh-CN.md)。 |
 | 文档豁免与普通修复决定复用 | Git 2.55.0 / `e9019fca`；checkout 7.0.1 / `3d3c42e5` | GPL-2.0；MIT | 复用已提交的 Git 差异和 blob 标识，验证普通 Markdown 正文的简短豁免。源码、政策和受保护技术内容仍使用研究表；主张是否不变仍由审查判断。未增加依赖或复制源码；见[研究](research/2026-09-15-research-exemptions.zh-CN.md)。 |
 | 贡献者首次启动与全新检出验证 | Turborepo 2.10.12 / `53752d45`；既有 Node API 和 Postgres.js 3.4.9 | MIT；Node.js 许可；Unlicense | 复用任务依赖图和筛选后的持久任务，启动 Server/Web/可选 Node。在构建前使用空回环数据库验证真实根目录入口，限定 POSIX 进程组并清理。未增加依赖或复制源码；见[研究](research/2026-09-15-contributor-startup.zh-CN.md)。 |

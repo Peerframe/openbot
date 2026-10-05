@@ -12,6 +12,9 @@
 - Tesseract.js 7.0.0、tesseract.js-core 7.0.0：保留 Apache-2.0 包许可。
 - 英文、简体中文训练数据 1.0.0：npm 包没有许可文件，元数据写 MIT；实际数据源仓库标明 Apache-2.0。
   因此单独保留数据源许可及精确提交，不用包元数据替代数据许可。
+- 模型服务商和插件图标（所有者 2026-10-05 要求）：LobeHub 图标 `@lobehub/icons-static-svg` 1.95.1，MIT
+  （npm 包里没有许可文件，按包的 gitHead 从仓库保留）；SVG Logos `@iconify-icons/logos` 2.0.2，CC0-1.0
+  （保留包内声明和上游全文）。商标仍归各自所有者，图标只用来标明连接或插件对应的服务。
 - MCP Apps 1.7.5：实际 LICENSE 说明 Apache-2.0/MIT 过渡，文档 CC-BY-4.0；npm 简写 MIT 不完整。
 
 本目录不包含上游实现源码。保留许可不等于证明原生二进制的完整来源，也不代表所有传递依赖都已完成审计。

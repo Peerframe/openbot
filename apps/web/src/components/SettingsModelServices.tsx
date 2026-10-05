@@ -161,7 +161,10 @@ export function SettingsModelServices({ onChanged }: { onChanged?: (() => void) 
                         : "已停用";
                   return (
                     <div className="settings-item" key={connection.id}>
-                      <ProviderTile label={preset ? providerLabel(preset) : connection.name} />
+                      <ProviderTile
+                        label={preset ? providerLabel(preset) : connection.name}
+                        presetId={preset?.id}
+                      />
                       <button
                         type="button"
                         className="settings-item-open"
@@ -211,7 +214,7 @@ export function SettingsModelServices({ onChanged }: { onChanged?: (() => void) 
             <div className="settings-catalogue">
               {catalogue.map((preset) => (
                 <div className="settings-item" key={preset.id}>
-                  <ProviderTile label={providerLabel(preset)} />
+                  <ProviderTile label={providerLabel(preset)} presetId={preset.id} />
                   <span className="settings-item-text">
                     <strong>{providerLabel(preset)}</strong>
                     <small>{providerDescription(preset)}</small>

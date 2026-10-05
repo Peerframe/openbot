@@ -129,6 +129,31 @@
       "packageGitHead": "b86746569320a6103cea84cc2b8d9ee74f0f45d3",
       "note": "Published language packages contain no license. The old package revision has no LICENSE path; canonical upstream data repository license is retained from the pinned current revision. npm MIT metadata is not a replacement for the trained-data source license.",
       "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    {
+      "package": "@lobehub/icons-static-svg",
+      "version": "1.95.1",
+      "file": "lobehub-icons-static-svg/LICENSE",
+      "source": "https://raw.githubusercontent.com/lobehub/lobe-icons/49a2130df7bfa5eb1b088261bff20a37e2967789/LICENSE",
+      "packageGitHead": "49a2130df7bfa5eb1b088261bff20a37e2967789",
+      "note": "The npm package ships only icons; its MIT license is retained from the repository at the package's gitHead. Eleven model-provider logos are bundled into the Web client.",
+      "sha256": "add9d7531d1b21646317a8958e38fc727506fa39d24bdecb44154d943c82753a"
+    },
+    {
+      "package": "@iconify-icons/logos",
+      "version": "2.0.2",
+      "file": "iconify-icons-logos/LICENSE.md",
+      "sourceArchive": "https://registry.npmjs.org/@iconify-icons/logos/-/logos-2.0.2.tgz",
+      "sourcePath": "LICENSE.md",
+      "sha256": "628689d97ab37a560aa8eaafe1febf888d56e5aad2a8b05c6d1a402cd468d15c"
+    },
+    {
+      "package": "@iconify-icons/logos (SVG Logos by Gil Barbara)",
+      "version": "2.0.2",
+      "file": "iconify-icons-logos/LICENSE-svg-logos.txt",
+      "source": "https://raw.githubusercontent.com/gilbarbara/logos/37a6b807fd71c622efea27a9309b5d4edc792969/LICENSE.txt",
+      "note": "The package's LICENSE.md links to this CC0 text; the full text is retained from the upstream repository. Ten plugin logos are bundled into the Web client.",
+      "sha256": "36ffd9dc085d529a7e60e1276d73ae5a030b020313e6c5408593a6ae2af39673"
     }
   ]
 }

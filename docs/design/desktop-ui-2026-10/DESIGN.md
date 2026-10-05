@@ -64,11 +64,18 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
   「+」 button on one 30px row. Search follows.
 - The main column has its own 56px header: the title pill in the centre; 实时 status and 分享 on
   the right.
-- The composer is one 48px row (34px + and send buttons), close to the reference chat apps'
-  density (owner feedback 2026-10-03).
+- The composer is one 44px row (34px + and send buttons), close to the reference chat apps'
+  density (owner feedback 2026-10-03). It sits 18px above the window's bottom edge, level with the
+  sidebar's footer row (我, 插件), whose buttons are also 44px: the two bottom rows share one line
+  (owner feedback 2026-10-05). The 新建聊天 composer uses the same row.
 - The New screen has no title pill: its recipients bar heads the page (owner feedback 2026-10-03).
-- The sidebar's 插件 button shows up to three enabled plugins as letter tiles after its label
+- The sidebar's 插件 button shows up to three enabled plugins as small tiles after its label
   (Sidebar artboard).
+- **Logos** (owner request 2026-10-05): model providers and well-known plugin services (Gmail, Google
+  Drive, Google Calendar, GitHub, Slack, Notion, Linear, Discord, Figma, X) show their real logos
+  wherever they had a letter tile. These are 设置 › 模型服务, the model dialog, the plugin panel and
+  settings, the @ list and the sidebar. One-colour logos follow the text colour; any other service
+  keeps its first letter. Sources: [research](../../research/brand-logos.md).
 - **The title pill opens the right rail**: 频道信息 (ChannelInfo) in a 频道, Bot 信息 (BotInfo) in a
   单聊. The rail's 收起 closes it.
 - Back, forward and the panel toggles are keyboard and menu commands (⌘[ ⌘] ⌘B ⌘⇧B). When the

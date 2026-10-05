@@ -243,26 +243,27 @@
 }
 .new-chat .new-chat-composer {
   flex-shrink: 0;
-  padding: 8px 24px 22px;
+  /* Same 44px row and 18px bottom gap as the conversation composer and the sidebar footer. */
+  padding: 8px 24px 18px;
 }
 .new-chat .new-chat-composer-row {
   display: flex;
   align-items: flex-end;
   gap: 10px;
-  min-height: 56px;
+  min-height: 44px;
   box-sizing: border-box;
-  padding: 8px 8px 8px 10px;
+  padding: 4px;
   border: 1px solid var(--ob-divider);
-  border-radius: 28px;
+  border-radius: 22px;
   background: var(--ob-surface);
   box-shadow: 0 2px 10px rgb(0 0 0 / 4%);
 }
 .new-chat .new-chat-composer-row textarea {
   flex: 1;
   min-width: 0;
-  min-height: 38px;
+  min-height: 34px;
   max-height: 200px;
-  padding: 7px 0;
+  padding: 5px 0;
   border: 0;
   background: transparent;
   color: var(--ob-text);
@@ -271,6 +272,12 @@
   line-height: 24px;
   resize: none;
   outline: none;
+}
+.new-chat .new-chat-composer-row .ob-round {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  flex-shrink: 0;
 }
 .new-chat .new-chat-composer-row .ob-round:disabled {
   opacity: 0.45;

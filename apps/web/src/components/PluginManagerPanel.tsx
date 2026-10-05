@@ -9,6 +9,7 @@ import {
   pluginRequest,
 } from "../plugin-api";
 import "./PluginManagerPanel.css";
+import { BrandMark, pluginMark } from "./BrandMark";
 import { SearchIcon } from "./Icons";
 import { PluginGrantEditor } from "./PluginGrantEditor";
 import { PluginInstallForm } from "./PluginInstallForm";
@@ -248,7 +249,7 @@ export function PluginManager({
             <button type="button" className="plugins-installed" onClick={onManage}>
               <span aria-hidden="true">
                 {plugins.slice(0, 4).map((plugin) => (
-                  <i key={plugin.id}>{Array.from(plugin.name.trim())[0]?.toLocaleUpperCase()}</i>
+                  <BrandMark key={plugin.id} mark={pluginMark(plugin)} label={plugin.name} />
                 ))}
               </span>
               已安装 {plugins.length} 个
@@ -295,9 +296,11 @@ export function PluginManager({
                 return (
                   <div className="plugins-row" key={plugin.id}>
                     <div className="plugins-row-main">
-                      <span className="plugins-tile" aria-hidden="true">
-                        {Array.from(plugin.name.trim())[0]?.toLocaleUpperCase() ?? "?"}
-                      </span>
+                      <BrandMark
+                        className="plugins-tile"
+                        mark={pluginMark(plugin)}
+                        label={plugin.name}
+                      />
                       <span className="plugins-row-text">
                         <strong>{plugin.name}</strong>
                         <small>
@@ -467,9 +470,11 @@ export function PluginManager({
             {plugins.map((plugin) => (
               <div className="settings-plugin" key={plugin.id}>
                 <div className="settings-item">
-                  <span className="settings-tile" aria-hidden="true">
-                    {Array.from(plugin.name.trim())[0]?.toLocaleUpperCase() ?? "?"}
-                  </span>
+                  <BrandMark
+                    className="settings-tile"
+                    mark={pluginMark(plugin)}
+                    label={plugin.name}
+                  />
                   <span className="settings-item-text">
                     <strong>{plugin.name}</strong>
                     <small>

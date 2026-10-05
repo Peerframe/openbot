@@ -1,0 +1,20 @@
+/* A logo inside whatever tile the caller draws; one-colour logos take the text colour. */
+.brand-mark {
+  display: inline-grid;
+  place-items: center;
+  font-style: normal;
+}
+.brand-mark > img {
+  display: block;
+  width: 66%;
+  height: 66%;
+  object-fit: contain;
+}
+.brand-mark.is-mono::before {
+  content: "";
+  display: block;
+  width: 62%;
+  height: 62%;
+  background: currentColor;
+  mask: var(--brand-mark) center / contain no-repeat;
+}

@@ -17,6 +17,7 @@ import {
 import { Dialog } from "./Dialog";
 import { useModelServices } from "./ModelSelector";
 import "./ModelServices.css";
+import { BrandMark, providerMark } from "./BrandMark";
 
 export function providerLabel(preset: ModelConnectionPreset): string {
   const labels: Record<string, string> = {
@@ -75,13 +76,15 @@ function endpointHost(baseUrl: string): string {
   }
 }
 
-/** Letter tile; OpenBot ships no third-party logos. */
-export function ProviderTile({ label }: { label: string }) {
-  return (
-    <span className="settings-tile" aria-hidden="true">
-      {Array.from(label.trim())[0]?.toLocaleUpperCase() ?? "?"}
-    </span>
-  );
+/** The provider's logo (owner request 2026-10-05), or its first letter for a custom service. */
+export function ProviderTile({
+  label,
+  presetId,
+}: {
+  label: string;
+  presetId?: string | undefined;
+}) {
+  return <BrandMark className="settings-tile" mark={providerMark(presetId)} label={label} />;
 }
 
 const verifyErrors: Record<string, string> = {
@@ -374,7 +377,7 @@ export function ModelConnectionDialog({
           onSubmit={(event) => void submit(event)}
         >
           <div className="model-provider">
-            <ProviderTile label={preset ? providerLabel(preset) : name} />
+            <ProviderTile label={preset ? providerLabel(preset) : name} presetId={preset?.id} />
             <span>
               <strong>{preset ? providerLabel(preset) : name}</strong>
               <small>
@@ -403,7 +406,7 @@ export function ModelConnectionDialog({
                     aria-current={item.id === presetId}
                     onClick={() => choosePreset(item)}
                   >
-                    <ProviderTile label={providerLabel(item)} />
+                    <ProviderTile label={providerLabel(item)} presetId={item.id} />
                     <span>
                       <strong>{providerLabel(item)}</strong>
                       <small>{providerDescription(item)}</small>
