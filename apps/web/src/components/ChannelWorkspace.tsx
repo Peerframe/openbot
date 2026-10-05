@@ -1006,6 +1006,32 @@ export function ChannelWorkspace({
     if (messageList.current) conversation.scroll.top = messageList.current.scrollTop;
     setAwayFromLatest(true);
   }
+  // NewBotChat: a quick-created Bot asks for its role until the Owner answers. The Server's one
+  // greeting (C11) sits above the card, so the card stays while only the greeting is there.
+  const setupCard =
+    directBot &&
+    needsRoleSetup(directBot) &&
+    !setupSkipped &&
+    messages.every((message) => message.origin === "greeting") ? (
+      <NewBotSetupCard
+        bot={directBot}
+        onSkip={() => setSetupSkipped(true)}
+        onChoose={async ({ role, description, message }) => {
+          // The Server keeps role and description under a revision; read it, then write.
+          const profile = await getEmployeeProfile(directBot.id);
+          await updateEmployeeProfileDetails(directBot.id, {
+            role,
+            description,
+            expectedRevision: profile.details.revision,
+          });
+          await onBotChanged?.();
+          conversation.edit({ text: message });
+          const result = await conversation.send((input) => createMessage(channel.id, input));
+          if (result && mounted.current) for (const run of result.runs ?? [result.run]) onRun(run);
+        }}
+      />
+    ) : null;
+
   return (
     <main
       className={`workspace-main channel-workspace channel-native${globalHeader ? " has-global-header" : ""}`}
@@ -1115,25 +1141,8 @@ export function ChannelWorkspace({
           ) : null}
           {loading && messages.length === 0 ? (
             <p className="conversation-status">正在读取频道消息…</p>
-          ) : messages.length === 0 && directBot && needsRoleSetup(directBot) && !setupSkipped ? (
-            <NewBotSetupCard
-              bot={directBot}
-              onSkip={() => setSetupSkipped(true)}
-              onChoose={async ({ role, description, message }) => {
-                // The Server keeps role and description under a revision; read it, then write.
-                const profile = await getEmployeeProfile(directBot.id);
-                await updateEmployeeProfileDetails(directBot.id, {
-                  role,
-                  description,
-                  expectedRevision: profile.details.revision,
-                });
-                await onBotChanged?.();
-                conversation.edit({ text: message });
-                const result = await conversation.send((input) => createMessage(channel.id, input));
-                if (result && mounted.current)
-                  for (const run of result.runs ?? [result.run]) onRun(run);
-              }}
-            />
+          ) : messages.length === 0 && setupCard ? (
+            setupCard
           ) : messages.length === 0 ? (
             <div className="conversation-empty">
               <span className="conversation-icon">
@@ -1229,6 +1238,7 @@ export function ChannelWorkspace({
               </Fragment>
             ))
           )}
+          {messages.length > 0 ? setupCard : null}
           {runs
             .filter(
               (run) =>

@@ -242,13 +242,13 @@
   color: var(--ob-online-text);
 }
 .employee-profile .ep-run-status.completed {
-  color: #1c7c3c;
+  color: var(--ob-online-text);
 }
 .employee-profile .ep-run-status:is(.failed, .blocked) {
-  color: #b3261e;
+  color: var(--ob-attention);
 }
 .employee-profile .ep-run-status.waiting_approval {
-  color: #b25e09;
+  color: light-dark(#b25e09, var(--ob-attention-ink));
 }
 .employee-profile .ep-skills {
   display: flex;
@@ -287,7 +287,7 @@
   background: var(--ob-online);
 }
 .employee-profile .ep-skill.candidate {
-  border: 1px dashed #d1d1d6;
+  border: 1px dashed var(--ob-switch-off);
   background: var(--ob-surface);
   color: var(--ob-text-secondary);
 }
@@ -792,12 +792,12 @@
   padding: 10px 12px;
   border-radius: 12px;
   background: var(--ob-danger-fill);
-  color: #b3261e;
+  color: var(--ob-attention);
   font-size: 13px;
 }
 .employee-profile .ob-pill.ep-danger-pill {
   background: var(--ob-danger-fill);
-  color: #b3261e;
+  color: var(--ob-attention);
 }
 
 /* --- 记忆 (ProfileMemory): 候选经验 cards, then the memory list */
@@ -954,7 +954,7 @@
   cursor: pointer;
 }
 :is(.employee-profile, .settings-memory) .ep-row-actions button.is-danger {
-  color: #b3261e;
+  color: var(--ob-attention);
   font-weight: 600;
 }
 :is(.employee-profile, .settings-memory) .ep-memory-editor {
@@ -1077,7 +1077,7 @@
   color: var(--ob-online-text);
 }
 .employee-profile .ep-record-state.is-bad {
-  color: #b3261e;
+  color: var(--ob-attention);
 }
 .employee-profile .ep-live-list i {
   display: inline-grid;

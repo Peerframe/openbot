@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { colorSchemeAvailable, sendDesktopColorScheme } from "../color-scheme";
 import {
   type DesktopConnectionState,
   type DesktopLocalWorkerState,
@@ -89,7 +90,8 @@ const sections: Record<Section, { label: string; description: string; keywords: 
   general: {
     label: "通用",
     description: "让 OpenBot 按照你的习惯工作。",
-    keywords: "外观 字号 透明 密度 聊天 快捷键 动效 时间 侧栏 导航 恢复 默认 时区 模型 启动 后台",
+    keywords:
+      "外观 主题 深色 浅色 字号 透明 密度 聊天 快捷键 动效 时间 侧栏 导航 恢复 默认 时区 模型 启动 后台",
   },
   notify: {
     label: "通知",
@@ -336,6 +338,32 @@ export function DesktopSettingsScreen({
               {section === "general" && (
                 <>
                   <SettingsGroup title="外观" description="更少的干扰，刚好的信息。">
+                    <SettingRow
+                      title="主题"
+                      description={
+                        colorSchemeAvailable()
+                          ? "深色外观适合夜间；跟随系统时随电脑一起切换。"
+                          : "这个版本的桌面应用还不能切换外观，更新应用后即可使用。"
+                      }
+                    >
+                      <select
+                        aria-label="主题"
+                        value={colorSchemeAvailable() ? values.colorScheme : "light"}
+                        disabled={!colorSchemeAvailable()}
+                        onChange={(event) => {
+                          const colorScheme =
+                            event.target.value === "light" || event.target.value === "dark"
+                              ? event.target.value
+                              : "system";
+                          updatePreferences({ colorScheme });
+                          sendDesktopColorScheme(colorScheme);
+                        }}
+                      >
+                        <option value="system">跟随系统</option>
+                        <option value="light">浅色</option>
+                        <option value="dark">深色</option>
+                      </select>
+                    </SettingRow>
                     {material ? (
                       <SettingRow
                         title="半透明侧栏"

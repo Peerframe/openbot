@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>深色外观 · 颜色</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#fcfcfc;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.cap{font-size:12px;color:#6e6e73;line-height:1.5}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1180px; box-sizing: border-box; padding: 52px 72px; background: #fcfcfc; display: flex; flex-direction: column; gap: 24px; overflow: hidden">
+<header style="display: flex; align-items: flex-end; justify-content: space-between">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">深色外观 · 颜色</h1>
+<p style="margin: 0; font-size: 15px; color: #6e6e73">同一套名字，两组颜色。界面只用这些颜色，深色时整组替换；布局、字号、圆角和动效不变。</p>
+</div>
+<span style="font-size: 13px; color: #8e8e93">设置 › 通用 › 主题：跟随系统 / 浅色 / 深色</span>
+</header>
+
+<section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 40px">
+<sc-for list="{{columns}}" as="col" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 150px 150px; gap: 12px; padding: 0 0 8px; border-bottom: 1px solid #e3e3e6; font-size: 12px; color: #8e8e93"><span>用途</span><span>浅色</span><span>深色</span></div>
+<sc-for list="{{col.rows}}" as="t" hint-placeholder-count="14">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 150px 150px; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid #ececee">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><strong style="font-size: 14px; font-weight: 500">{{t.use}}</strong><span style="font-family: ui-monospace,'SF Mono',Menlo,monospace; font-size: 11px; color: #8e8e93">{{t.name}}</span></span>
+<span style="display: flex; align-items: center; gap: 8px; font-family: ui-monospace,'SF Mono',Menlo,monospace; font-size: 12px; color: #3a3a3c"><span style="width: 28px; height: 28px; border-radius: 8px; background: {{t.light}}; border: 1px solid #e3e3e6; box-sizing: border-box; display: block"></span>{{t.light}}</span>
+<span style="display: flex; align-items: center; gap: 8px; font-family: ui-monospace,'SF Mono',Menlo,monospace; font-size: 12px; color: #3a3a3c"><span style="width: 28px; height: 28px; border-radius: 8px; background: {{t.dark}}; border: 1px solid #3a3a3c; box-sizing: border-box; display: block"></span>{{t.dark}}</span>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</section>
+
+<section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<sc-for list="{{rules}}" as="r" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 16px; background: #ffffff; border: 1px solid #ececee">
+<strong style="font-size: 14px; font-weight: 600">{{r.title}}</strong>
+<span style="font-size: 13px; color: #6e6e73; line-height: 1.5">{{r.text}}</span>
+</div>
+</sc-for>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const tokens = [
+      { use: '窗口与侧栏底色', name: '--ob-sidebar', light: '#f5f5f6', dark: '#141414' },
+      { use: '对话区底色', name: '--ob-page', light: '#fcfcfc', dark: '#161617' },
+      { use: '卡片、输入框', name: '--ob-surface', light: '#ffffff', dark: '#1c1c1e' },
+      { use: '弹出菜单', name: '--ob-popover', light: '#fdfdfd', dark: '#222224' },
+      { use: 'Bot 气泡、分组底', name: '--ob-fill', light: '#f0f0f2', dark: '#262628' },
+      { use: '悬停', name: '--ob-fill-hover', light: '#ececee', dark: '#2e2e30' },
+      { use: '选中行、标题胶囊', name: '--ob-selected', light: '#e6e6e8', dark: '#333336' },
+      { use: '分隔线', name: '--ob-divider', light: '#e3e3e6', dark: '#2c2c2e' },
+      { use: '菜单描边', name: '--ob-popover-border', light: '#e5e5e8', dark: '#333336' },
+      { use: '主按钮、你的气泡', name: '--ob-primary', light: '#111111', dark: '#f2f2f3' },
+      { use: '主按钮上的字', name: '--ob-on-primary', light: '#ffffff', dark: '#111111' },
+      { use: '正文', name: '--ob-text', light: '#1d1d1f', dark: '#f2f2f3' },
+      { use: '次要文字', name: '--ob-text-secondary', light: '#6e6e73', dark: '#a1a1a6' },
+      { use: '时间、说明', name: '--ob-text-tertiary', light: '#8e8e93', dark: '#7c7c82' },
+      { use: '开关关闭', name: '--ob-switch-off', light: '#d1d1d6', dark: '#48484a' },
+      { use: '链接、焦点', name: '--ob-active', light: '#1f6fd6', dark: '#4c8dff' },
+      { use: '在线、工作中', name: '--ob-online', light: '#34c759', dark: '#30d158' },
+      { use: '在线文字', name: '--ob-online-text', light: '#1c7c3c', dark: '#5ad37a' },
+      { use: '工作中底', name: '--ob-working-fill', light: '#e8f6ec', dark: '#17301f' },
+      { use: '危险、错误', name: '--ob-attention', light: '#b3261e', dark: '#ff6b5e' },
+      { use: '危险底', name: '--ob-danger-fill', light: '#fbe9e7', dark: '#3a1f1c' },
+      { use: '等你确认', name: '--ob-attention-ink', light: '#b5651d', dark: '#f0a35a' },
+      { use: '等你确认底', name: '--ob-attention-fill', light: '#fdf0e1', dark: '#3a2a17' },
+      { use: '代码文字', name: '--ob-code', light: '#c4302b', dark: '#ff8a80' },
+      { use: '代码底', name: '--ob-code-bg', light: '#e6e6e8', dark: '#2c2c2e' },
+      { use: '离线', name: '--ob-offline', light: '#c7c7cc', dark: '#5a5a5e' },
+      { use: '加重的次要文字', name: '--ob-text-strong', light: '#3a3a3c', dark: '#d1d1d6' },
+      { use: '加深的底（# 徽标）', name: '--ob-fill-strong', light: '#dadadd', dark: '#3a3a3c' },
+      { use: '加深的描边', name: '--ob-border-strong', light: '#c7c7cc', dark: '#48484a' },
+      { use: '链接底', name: '--ob-active-fill', light: '#eaf1fb', dark: '#1a2a40' },
+      { use: '搜索命中', name: '--ob-highlight', light: '#fde68a', dark: '#5c4a12' },
+      { use: '头像身体', name: '--ob-avatar-body', light: '#20251f', dark: '#e8ebdd' }
+    ];
+    const half = Math.ceil(tokens.length / 2);
+    return {
+      columns: [{ rows: tokens.slice(0, half) }, { rows: tokens.slice(half) }],
+      rules: [
+        { title: '主色反转', text: '浅色里是黑底白字的地方（发送、主按钮、你的气泡、开关打开），深色里换成白底黑字；不引入新的品牌色。' },
+        { title: '头像用暖白版', text: '深色界面直接用头像系统里的暖白版（同一几何），下颌色换成同色相的亮一档；群组头像的缝隙跟着底色。' },
+        { title: '浅色不变', text: '浅色界面保持原样；只有深色时才换成这一组。阴影加深，卡片、菜单、弹窗依次更亮一档来分层。' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

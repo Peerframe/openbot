@@ -13,12 +13,12 @@ import { isActiveRun } from "../run-state";
 import { sidebarOrganization, useSidebarOrganization } from "../sidebar-organization";
 import { useWorkspacePreferences } from "../workspace-preferences";
 import { ApprovalStack } from "./ApprovalStack";
+import { AvatarEditor } from "./AvatarEditor";
 import { ChannelLibrary, NodeRow } from "./ContextRail";
 import { DeleteIdentityDialog } from "./DeleteIdentityDialog";
 import type { DesktopSettingsSection } from "./DesktopSettingsScreen";
 import { EmployeeModelEditor } from "./EmployeeModelEditor";
 import { NodeIcon } from "./Icons";
-import { RobotAvatar } from "./RobotAvatar";
 import "./ContextRail.css";
 import "./BotInfoRail.css";
 
@@ -41,7 +41,7 @@ export const botComputerLabels: Record<Bot["computerProfile"], string> = {
  * Bot 信息 (BotInfo artboard): the rail beside a 单聊 and the Bot profile. Name and tag are edited
  * in place — the name through the rename route, the tag (the Server's role) through the
  * revision-checked profile route — and neither grants any skill or computer authority. 编辑头像
- * stays hidden until the Server accepts appearance changes after creation (C9).
+ * changes the look through the appearance route at the same revision (C9).
  */
 export function BotInfoRail({
   bot,
@@ -51,6 +51,7 @@ export function BotInfoRail({
   onShare,
   onRename,
   onProfileChanged,
+  onAppearanceChanged,
   onDelete,
   onDecideApproval,
   onManageModels,
@@ -64,6 +65,8 @@ export function BotInfoRail({
   onShare(): void;
   onRename(name: string): Promise<void>;
   onProfileChanged(): Promise<void>;
+  /** The Server's Bot after an appearance change, so every avatar of it updates at once. */
+  onAppearanceChanged(bot: Bot): void;
   onDelete(): Promise<void>;
   onDecideApproval(approvalId: string, decision: ApprovalDecision): Promise<void>;
   onManageModels(): void;
@@ -128,7 +131,13 @@ export function BotInfoRail({
       </header>
 
       <div className="bi-identity">
-        <RobotAvatar bot={bot} className="bi-avatar" />
+        <AvatarEditor
+          bot={bot}
+          bots={workspace.bots}
+          profile={profile}
+          onChanged={onAppearanceChanged}
+          onConflict={onProfileChanged}
+        />
         <NameField key={`${bot.id}:${bot.name}`} name={bot.name} onRename={onRename} />
         <TagField
           key={`${bot.id}:${bot.role}`}

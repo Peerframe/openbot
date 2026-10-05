@@ -21,7 +21,7 @@
   overflow-wrap: anywhere;
   padding: 12px;
   border-radius: 8px;
-  background: #f5f6f8;
+  background: light-dark(#f5f6f8, var(--ob-fill));
   font-size: 12px;
   line-height: 1.6;
 }
@@ -33,7 +33,7 @@
   display: grid;
   gap: 12px;
   padding: 9px 10px;
-  border: 1px solid #e2e5e9;
+  border: 1px solid light-dark(#e2e5e9, var(--ob-divider));
   border-radius: 7px;
 }
 .portable-skill-list div {
@@ -55,14 +55,14 @@
 .portable-skill-list span {
   overflow: hidden;
   margin-top: 3px;
-  color: #858d96;
+  color: light-dark(#858d96, var(--ob-text-tertiary));
   font-size: 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .portable-skill-heading small {
-  color: #7b5425;
-  background: #fff7e8;
+  color: light-dark(#7b5425, var(--ob-attention-ink));
+  background: light-dark(#fff7e8, var(--ob-attention-fill));
   font-size: 8px;
   white-space: nowrap;
 }
@@ -72,7 +72,7 @@
   margin: 0;
 }
 .portable-skill-list p {
-  color: #4d5761;
+  color: light-dark(#4d5761, var(--ob-text-strong));
   font-size: 9px;
   line-height: 1.5;
 }
@@ -80,7 +80,7 @@
   display: grid;
   gap: 5px;
   padding-top: 8px;
-  border-top: 1px solid #eceef0;
+  border-top: 1px solid light-dark(#eceef0, var(--ob-divider));
 }
 .portable-skill-list dl > div {
   display: grid;
@@ -93,17 +93,17 @@
   line-height: 1.45;
 }
 .portable-skill-list dt {
-  color: #858d96;
+  color: light-dark(#858d96, var(--ob-text-tertiary));
 }
 .portable-skill-list dd {
   overflow-wrap: anywhere;
-  color: #59636e;
+  color: light-dark(#59636e, var(--ob-text-secondary));
 }
 .portable-profile-summary {
   padding: 13px 14px;
-  border: 1px solid #d9dde2;
+  border: 1px solid light-dark(#d9dde2, var(--ob-divider));
   border-radius: 8px;
-  background: #fafbfc;
+  background: light-dark(#fafbfc, var(--ob-fill));
 }
 .portable-profile-summary h3,
 .portable-profile-summary dl,
@@ -125,12 +125,12 @@
   gap: 10px;
 }
 .portable-profile-summary dt {
-  color: #7a828b;
+  color: light-dark(#7a828b, var(--ob-text-secondary));
   font-size: 9px;
 }
 .portable-profile-summary dd {
   overflow-wrap: anywhere;
-  color: #343b43;
+  color: light-dark(#343b43, var(--ob-text));
   font-size: 9px;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -138,17 +138,17 @@
 .portable-profile-summary p {
   margin-top: 10px;
   padding-top: 9px;
-  border-top: 1px solid #e2e5e8;
-  color: #66717b;
+  border-top: 1px solid light-dark(#e2e5e8, var(--ob-divider));
+  color: light-dark(#66717b, var(--ob-text-secondary));
   font-size: 9px;
   line-height: 1.5;
 }
 .import-empty {
   margin: 0;
   padding: 14px;
-  border: 1px dashed #d8dde2;
+  border: 1px dashed light-dark(#d8dde2, var(--ob-divider));
   border-radius: 7px;
-  color: #7f8790;
+  color: light-dark(#7f8790, var(--ob-text-tertiary));
   font-size: 9px;
   line-height: 1.5;
 }

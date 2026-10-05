@@ -1224,6 +1224,10 @@ export function AuthenticatedWorkspace({
                 await refreshEmployeeProfile(railBot.id);
                 await refresh();
               }}
+              onAppearanceChanged={(bot) => {
+                projectBot(bot);
+                void refreshEmployeeProfile(bot.id);
+              }}
               onDelete={() => handleDeleteItem({ kind: "bot", id: railBot.id })}
               onDecideApproval={handleDecideApproval}
               onManageModels={() => setModelServicesOpen(true)}

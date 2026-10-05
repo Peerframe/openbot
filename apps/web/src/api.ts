@@ -697,6 +697,24 @@ export async function updateEmployeeProfileDetails(
   );
 }
 
+/**
+ * C9: changes a Bot's look at the Employee profile revision. Cosmetic only — it grants nothing and
+ * records no evolution; a stale revision is refused with 409.
+ */
+export async function updateBotAppearance(
+  botId: string,
+  input: { expectedRevision: number; appearance: BotAppearance },
+): Promise<{ bot: Bot; revision: number }> {
+  return request<{ bot: Bot; revision: number }>(
+    `/api/v1/bots/${encodeURIComponent(botId)}/appearance`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+}
+
 export async function createEmployeeMemory(
   botId: string,
   input: CreateEmployeeMemoryInput,

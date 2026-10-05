@@ -31,6 +31,22 @@ const accentColors: Record<string, string> = {
   pink: "#E57BA8",
   slate: "#8C98A8",
 };
+/** The eight jaw colours with their names and the dark-surface edition (Avatars and BotInfo artboards). */
+export const AVATAR_ACCENTS: readonly {
+  id: BotAppearance["accent"];
+  label: string;
+  light: string;
+  dark: string;
+}[] = [
+  { id: "green", label: "绿", light: "#91CF4B", dark: "#ADF16A" },
+  { id: "blue", label: "蓝", light: "#5F7CDE", dark: "#92ACFF" },
+  { id: "yellow", label: "琥珀", light: "#DFAD4F", dark: "#F2C777" },
+  { id: "red", label: "珊瑚", light: "#E0785C", dark: "#F59C82" },
+  { id: "violet", label: "紫", light: "#9C7FE3", dark: "#BBA4FF" },
+  { id: "teal", label: "青", light: "#3FB4A6", dark: "#6FD9CB" },
+  { id: "pink", label: "粉", light: "#E57BA8", dark: "#FFA3C9" },
+  { id: "slate", label: "灰", light: "#8C98A8", dark: "#B4BFCC" },
+];
 const BODY = "#20251F";
 const EYE = "#FAFBF7";
 
@@ -153,10 +169,10 @@ function RoundHead({ accent }: { accent: string }) {
           stroke={BODY}
           strokeLinecap="round"
         />
-        <circle className="robot-ball is-standard" cx="33" cy="16" r="4.3" fill={BODY} />
-        <circle className="robot-ball is-micro" cx="33" cy="16" r="5.6" fill={BODY} />
+        <circle className="robot-ball robot-body is-standard" cx="33" cy="16" r="4.3" fill={BODY} />
+        <circle className="robot-ball robot-body is-micro" cx="33" cy="16" r="5.6" fill={BODY} />
       </g>
-      <path d={ROUND_HEAD} fill={BODY} />
+      <path className="robot-body" d={ROUND_HEAD} fill={BODY} />
       <path
         className="robot-jaw"
         d="M12 69C29 76 66 76 83 69V72C83 83 69 89 48 89C26 89 12 83 12 72Z"
@@ -177,8 +193,8 @@ function RoundHead({ accent }: { accent: string }) {
 function RelayHead({ accent }: { accent: string }) {
   return (
     <>
-      <rect x="5" y="44" width="12" height="25" rx="6" fill={BODY} />
-      <rect x="79" y="44" width="12" height="25" rx="6" fill={BODY} />
+      <rect className="robot-body" x="5" y="44" width="12" height="25" rx="6" fill={BODY} />
+      <rect className="robot-body" x="79" y="44" width="12" height="25" rx="6" fill={BODY} />
       <path
         className="robot-ear-light"
         d="M11 52v9M85 52v9"
@@ -186,7 +202,7 @@ function RelayHead({ accent }: { accent: string }) {
         strokeWidth="4"
         strokeLinecap="round"
       />
-      <path d={RELAY_HEAD} fill={BODY} />
+      <path className="robot-body" d={RELAY_HEAD} fill={BODY} />
       <path
         className="robot-jaw"
         d="M15 70C32 74 64 74 81 70V73C81 83 70 88 48 88C26 88 15 83 15 73Z"
@@ -207,7 +223,7 @@ function RelayHead({ accent }: { accent: string }) {
 function ScoutHead({ accent }: { accent: string }) {
   return (
     <g className="robot-scout">
-      <path className="robot-scout-head" d={SCOUT_HEAD} fill={BODY} stroke={BODY} />
+      <path className="robot-scout-head robot-body" d={SCOUT_HEAD} fill={BODY} stroke={BODY} />
       <path
         className="robot-jaw"
         d="M14 70C29 76 67 76 82 70V73C82 83 68 89 48 89C28 89 14 83 14 73Z"
@@ -225,7 +241,7 @@ function ScoutHead({ accent }: { accent: string }) {
   );
 }
 
-function appearanceForBot(bot: Bot): BotAppearance {
+export function appearanceForBot(bot: Bot): BotAppearance {
   const seed = Array.from(`${bot.id}:${bot.name}`).reduce(
     (value, character) => (value * 31 + character.charCodeAt(0)) >>> 0,
     7,

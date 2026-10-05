@@ -4,8 +4,9 @@
  * every other stylesheet.
  */
 :root {
-  color: #1d1d1f;
-  background: #fcfcfc;
+  color-scheme: light;
+  color: var(--ob-text);
+  background: var(--ob-page);
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei",
     ui-sans-serif, system-ui, sans-serif;
@@ -52,9 +53,25 @@
   --ob-working: #34c759;
   --ob-working-fill: #e8f6ec;
   --ob-dim: rgb(0 0 0 / 34%);
+  /* Step 36: tokens that replaced hard-coded colours; each has a dark value below. */
+  --ob-on-primary: #ffffff;
+  --ob-text-strong: #3a3a3c;
+  --ob-fill-strong: #dadadd;
+  --ob-border-strong: #c7c7cc;
+  --ob-active-fill: #eaf1fb;
+  --ob-highlight: #fde68a;
+  --ob-danger-border: #edc7c4;
+  --ob-attention-border: #efd9a8;
+  --ob-working-border: #cfe9d6;
+  --ob-sidebar-material: #ffffff40;
+  --ob-sidebar-material-strong: #ffffff48;
+  --ob-sidebar-material-border: #ffffff6b;
+  --ob-shadow-popover: 0 16px 40px rgb(0 0 0 / 10%);
+  --ob-avatar-body: #20251f;
+  --ob-avatar-eye: #fafbf7;
   /* Legacy names resolve to the contract while older screens are rebuilt; removed in step 23. */
   --blue: var(--ob-active);
-  --blue-soft: #eaf1fb;
+  --blue-soft: var(--ob-active-fill);
   --line: var(--ob-divider);
   --muted: var(--ob-text-secondary);
   --panel: var(--ob-fill);
@@ -66,4 +83,59 @@
   --danger: var(--ob-attention);
   --green: var(--ob-online);
   --orange: #e87922;
+}
+
+/*
+ * Dark appearance (DarkTokens artboard). The same names take dark values; layout, type, radii and
+ * motion are unchanged. `data-color-scheme` is set by use-workspace-appearance.ts from 设置 › 通用 ›
+ * 主题 (跟随系统 / 浅色 / 深色). Primary inverts: what is black with white text in light is white
+ * with black text in dark.
+ */
+:root[data-color-scheme="dark"] {
+  color-scheme: dark;
+  --ob-page: #161617;
+  --ob-sidebar: #141414;
+  --ob-fill: #262628;
+  --ob-fill-hover: #2e2e30;
+  --ob-selected: #333336;
+  --ob-primary: #f2f2f3;
+  --ob-on-primary: #111111;
+  --ob-text: #f2f2f3;
+  --ob-text-strong: #d1d1d6;
+  --ob-text-secondary: #a1a1a6;
+  --ob-text-tertiary: #7c7c82;
+  --ob-divider: #2c2c2e;
+  --ob-surface: #1c1c1e;
+  --ob-popover: #222224;
+  --ob-popover-border: #333336;
+  --ob-switch-off: #48484a;
+  --ob-fill-strong: #3a3a3c;
+  --ob-border-strong: #48484a;
+  --ob-active: #4c8dff;
+  --ob-active-fill: #1a2a40;
+  --ob-online: #30d158;
+  --ob-online-text: #5ad37a;
+  --ob-working: #30d158;
+  --ob-working-fill: #17301f;
+  --ob-working-border: #24503a;
+  --ob-attention: #ff6b5e;
+  --ob-danger-fill: #3a1f1c;
+  --ob-danger-border: #5c2d28;
+  --ob-attention-ink: #f0a35a;
+  --ob-attention-fill: #3a2a17;
+  --ob-attention-border: #5a4320;
+  --ob-offline: #5a5a5e;
+  --ob-code: #ff8a80;
+  --ob-code-bg: #2c2c2e;
+  --ob-highlight: #5c4a12;
+  --ob-sidebar-material: rgb(20 20 20 / 45%);
+  --ob-sidebar-material-strong: rgb(20 20 20 / 50%);
+  --ob-sidebar-material-border: rgb(255 255 255 / 8%);
+  --ob-dim: rgb(0 0 0 / 55%);
+  --ob-shadow-menu: 0 10px 30px rgb(0 0 0 / 45%);
+  --ob-shadow-dialog: 0 30px 80px rgb(0 0 0 / 60%);
+  --ob-shadow-popover: 0 16px 40px rgb(0 0 0 / 40%);
+  /* Avatars use the warm-white edition on dark (Avatars artboard). */
+  --ob-avatar-body: #e8ebdd;
+  --ob-avatar-eye: #20251f;
 }

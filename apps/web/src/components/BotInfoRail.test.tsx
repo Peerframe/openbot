@@ -7,6 +7,7 @@ import { BotInfoRail } from "./BotInfoRail";
 
 const api = vi.hoisted(() => ({
   updateEmployeeProfileDetails: vi.fn(),
+  updateBotAppearance: vi.fn(),
   getOwnerPreferences: vi.fn(),
 }));
 vi.mock("../api", async (importOriginal) => ({
@@ -73,6 +74,7 @@ function render(overrides: Partial<Parameters<typeof BotInfoRail>[0]> = {}) {
     onShare: vi.fn(),
     onRename: vi.fn(async () => undefined),
     onProfileChanged: vi.fn(async () => undefined),
+    onAppearanceChanged: vi.fn(),
     onDelete: vi.fn(async () => undefined),
     onDecideApproval: vi.fn(async () => undefined),
     onManageModels: vi.fn(),
@@ -90,6 +92,7 @@ function buttonByText(container: HTMLElement, text: string) {
 
 beforeEach(() => {
   api.updateEmployeeProfileDetails.mockReset();
+  api.updateBotAppearance.mockReset();
   api.getOwnerPreferences.mockResolvedValue({ defaultModel: model });
   HTMLDialogElement.prototype.showModal = vi.fn(function (this: HTMLDialogElement) {
     this.setAttribute("open", "");
@@ -167,6 +170,58 @@ it("mutes on this device, shares the template and confirms before deleting", asy
     expect(props.onDelete).not.toHaveBeenCalled();
     await interact(() => buttonByText(view.container, "永久删除").click());
     expect(props.onDelete).toHaveBeenCalledOnce();
+  } finally {
+    await view.unmount();
+  }
+});
+
+it("edits the avatar in place at the profile revision and recovers from a stale one", async () => {
+  const look = { head: "round", body: "classic", mobility: "feet", accessory: "none" } as const;
+  const lookingBot: Bot = { ...bot, appearance: { ...look, accent: "green" } };
+  api.updateBotAppearance.mockImplementation(async (_id, input) => ({
+    bot: { ...lookingBot, appearance: input.appearance },
+    revision: input.expectedRevision + 1,
+  }));
+  const { props, view: pending } = render({ bot: lookingBot });
+  const view = await pending;
+  try {
+    const open = view.container.querySelector<HTMLButtonElement>('button[aria-label="编辑头像"]');
+    await interact(() => open?.click());
+    expect(open?.getAttribute("aria-expanded")).toBe("true");
+    const radio = (group: string, label: string) =>
+      Array.from(
+        view.container.querySelectorAll<HTMLButtonElement>(
+          `fieldset[aria-label="${group}"] button`,
+        ),
+      ).find((item) => (item.getAttribute("aria-label") ?? item.textContent) === label);
+
+    await interact(() => radio("头型", "猫耳")?.click());
+    expect(api.updateBotAppearance).toHaveBeenLastCalledWith("bot-1", {
+      expectedRevision: 3,
+      appearance: { ...look, head: "cat", accent: "green" },
+    });
+    expect(props.onAppearanceChanged).toHaveBeenLastCalledWith(
+      expect.objectContaining({ appearance: { ...look, head: "cat", accent: "green" } }),
+    );
+
+    // The next change uses the revision the Server returned, before the profile is read again.
+    await interact(() => radio("下颌色", "紫")?.click());
+    expect(api.updateBotAppearance).toHaveBeenLastCalledWith("bot-1", {
+      expectedRevision: 4,
+      appearance: { ...look, head: "round", accent: "violet" },
+    });
+
+    const { ApiError } = await import("../api");
+    api.updateBotAppearance.mockRejectedValueOnce(new ApiError("changed", 409));
+    await interact(() => radio("下颌色", "青")?.click());
+    expect(props.onProfileChanged).toHaveBeenCalled();
+    expect(view.container.querySelector(".bi-avatar-popover [role=alert]")?.textContent).toContain(
+      "别处改过",
+    );
+
+    // A press outside closes the popover.
+    await interact(() => document.body.dispatchEvent(new Event("pointerdown", { bubbles: true })));
+    expect(view.container.querySelector(".bi-avatar-popover")).toBeNull();
   } finally {
     await view.unmount();
   }

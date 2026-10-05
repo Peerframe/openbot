@@ -49,6 +49,7 @@ describe("Workspace preference storage", () => {
         fontSize: "large",
         sendShortcut: "modifier",
         reduceMotion: true,
+        colorScheme: "dark",
         hour12: true,
         notifyApprovals: true,
         notifyMessages: "yes",
@@ -64,6 +65,7 @@ describe("Workspace preference storage", () => {
       fontSize: "large",
       sendShortcut: "modifier",
       reduceMotion: true,
+      colorScheme: "dark",
       hour12: true,
       notifyApprovals: true,
       notifyMessages: false,
@@ -71,7 +73,7 @@ describe("Workspace preference storage", () => {
     expect(Object.isFrozen(parsed)).toBe(true);
     expect(
       preferences.parsePreferences(
-        '{"leftPanelOpen":"false","rightPanelOpen":"false","fontSize":"huge","density":5,"reduceMotion":1,"__proto__":{"hour12":true}}',
+        '{"leftPanelOpen":"false","rightPanelOpen":"false","fontSize":"huge","density":5,"reduceMotion":1,"colorScheme":"sepia","__proto__":{"hour12":true}}',
       ),
     ).toEqual(preferences.defaultPreferences);
   });

@@ -38,12 +38,12 @@
   letter-spacing: -0.02em;
 }
 .group-avatar-badge.is-hash {
-  background: #dadadd;
-  color: #3a3a3c;
+  background: var(--ob-fill-strong);
+  color: var(--ob-text-strong);
 }
 .group-avatar-badge.is-count {
-  background: #20251f;
-  color: #fafbf7;
+  background: var(--ob-avatar-body);
+  color: var(--ob-avatar-eye);
 }
 .group-avatar-dot {
   position: absolute;

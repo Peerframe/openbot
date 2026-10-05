@@ -27,10 +27,10 @@
 }
 .ob-pill.is-primary {
   background: var(--ob-primary);
-  color: #fff;
+  color: var(--ob-on-primary);
 }
 .ob-pill.is-primary:hover {
-  background: #2c2c2e;
+  background: light-dark(#2c2c2e, var(--ob-primary));
 }
 .ob-pill.is-outline {
   border: 1px solid var(--ob-divider);
@@ -68,7 +68,7 @@
   width: 40px;
   height: 40px;
   background: var(--ob-primary);
-  color: #fff;
+  color: var(--ob-on-primary);
 }
 .ob-round.is-send:disabled {
   background: var(--ob-switch-off);
@@ -104,7 +104,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--ob-surface);
   transition: transform 120ms ease-out;
 }
 .ob-switch[aria-checked="true"] {
@@ -135,7 +135,7 @@
 .ob-filter[aria-pressed="true"],
 .ob-filter[aria-selected="true"] {
   background: var(--ob-primary);
-  color: #fff;
+  color: var(--ob-on-primary);
   font-weight: 600;
 }
 .ob-tag {
@@ -209,7 +209,7 @@
   outline: none;
 }
 .ob-field :is(input, textarea, select):focus {
-  border-color: #c7c7cc;
+  border-color: var(--ob-offline);
 }
 .ob-search {
   display: flex;
@@ -217,13 +217,13 @@
   gap: 8px;
   height: 34px;
   padding: 0 11px;
-  border: 1px solid #e0e0e3;
+  border: 1px solid light-dark(#e0e0e3, var(--ob-divider));
   border-radius: var(--ob-radius-input);
-  background: #eaeaec;
+  background: light-dark(#eaeaec, var(--ob-selected));
   color: var(--ob-text-tertiary);
 }
 .ob-search:focus-within {
-  border-color: #c7c7cc;
+  border-color: var(--ob-offline);
   background: var(--ob-surface);
 }
 .ob-search input {
@@ -291,7 +291,7 @@
   display: block;
   height: 1px;
   margin: 4px 8px;
-  background: #e8e8ea;
+  background: light-dark(#e8e8ea, var(--ob-selected));
 }
 .ob-menu.is-large {
   padding: 10px;
@@ -403,7 +403,7 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #3a3a3c;
+  color: var(--ob-text-strong);
   cursor: pointer;
 }
 .ob-dialog-close:hover {
@@ -472,7 +472,7 @@
   font-size: 17px;
 }
 .ob-dialog-identity small {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
 }
 .ob-dialog-list {
@@ -488,11 +488,11 @@
   line-height: 1.5;
 }
 .ob-dialog-list > li + li {
-  border-top: 1px solid #e3e3e6;
+  border-top: 1px solid var(--ob-divider);
 }
 .ob-dialog-list > li.is-danger,
 .ob-dialog-error {
-  color: #b3261e;
+  color: var(--ob-attention);
 }
 .ob-dialog-error {
   margin: 0;
@@ -533,7 +533,7 @@
   padding: 11px 0;
 }
 .ob-dialog-checks > li + li {
-  border-top: 1px solid #e3e3e6;
+  border-top: 1px solid var(--ob-divider);
 }
 .ob-dialog-checks > li > span {
   display: flex;
@@ -547,7 +547,7 @@
 }
 .ob-dialog-checks small {
   overflow-wrap: anywhere;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
 }
 .ob-dialog-check {
@@ -556,12 +556,12 @@
   height: 22px;
   place-items: center;
   border-radius: 50%;
-  background: #e6e6e8;
+  background: var(--ob-selected);
   color: var(--ob-text-secondary);
 }
 .ob-dialog-check.is-on {
-  background: #111;
-  color: #fff;
+  background: var(--ob-primary);
+  color: var(--ob-on-primary);
 }
 .ob-dialog-review > summary {
   padding: 0 4px;
@@ -591,10 +591,10 @@
   color: var(--ob-text-secondary);
 }
 .ob-dialog-notice.is-warning {
-  background: #fdf6ec;
+  background: light-dark(#fdf6ec, var(--ob-attention-fill));
 }
 .ob-dialog-notice.is-danger {
-  background: #fbeceb;
+  background: light-dark(#fbeceb, var(--ob-danger-fill));
 }
 .ob-dialog-notice ul {
   margin: 4px 0 0;
@@ -604,21 +604,21 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
 }
 .ob-dialog-checksum code {
-  color: #3a3a3c;
+  color: var(--ob-text-strong);
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
 }
 .ob-dialog-checksum > span:last-child {
   margin-left: auto;
 }
 .ob-dialog-checksum .is-ok {
-  color: #1c7c3c;
+  color: var(--ob-online-text);
 }
 .ob-dialog-checksum .is-warning {
-  color: #94480b;
+  color: light-dark(#94480b, var(--ob-attention-ink));
 }
 .ob-dialog-option {
   display: inline-flex;
@@ -638,14 +638,14 @@
   }
 }
 .ob-dialog-checks small.is-warning {
-  color: #94480b;
+  color: light-dark(#94480b, var(--ob-attention-ink));
 }
 .ob-dialog-checks .is-danger {
-  color: #b3261e;
+  color: var(--ob-attention);
 }
 .ob-dialog-check.is-warning {
-  background: #fdf0e1;
-  color: #94480b;
+  background: var(--ob-attention-fill);
+  color: light-dark(#94480b, var(--ob-attention-ink));
   font-size: 13px;
   font-weight: 800;
 }
@@ -673,7 +673,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 13px;
 }
 .ob-dialog-steps > li {
@@ -704,8 +704,8 @@
 }
 .ob-dialog-steps > li.is-current > span,
 .ob-dialog-steps > li.is-done > span {
-  background: #111;
-  color: #fff;
+  background: var(--ob-primary);
+  color: var(--ob-on-primary);
 }
 .ob-dialog-file {
   display: grid;
@@ -733,7 +733,7 @@
 .ob-dialog-drop small,
 .ob-dialog-activate small,
 .ob-dialog-foot-note {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
 }
 .ob-dialog-file-type {
@@ -742,9 +742,9 @@
   width: 40px;
   height: 40px;
   place-items: center;
-  border: 1px solid #e3e3e6;
+  border: 1px solid var(--ob-divider);
   border-radius: 10px;
-  background: #fff;
+  background: var(--ob-surface);
   color: var(--ob-text-secondary);
   font-size: 10px;
   font-weight: 700;
@@ -755,7 +755,7 @@
   align-items: center;
   gap: 8px;
   padding: 28px 20px;
-  border: 1px dashed #d1d1d6;
+  border: 1px dashed var(--ob-switch-off);
   border-radius: 16px;
   text-align: center;
 }
@@ -804,7 +804,7 @@
   padding: 11px 0;
 }
 .ob-dialog-rows > li + li {
-  border-top: 1px solid #e3e3e6;
+  border-top: 1px solid var(--ob-divider);
 }
 .ob-dialog-rows > li > span:nth-child(2) {
   display: flex;
@@ -820,7 +820,7 @@
   white-space: nowrap;
 }
 .ob-dialog-rows small {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
 }
 .ob-dialog .ob-dialog-row-avatar {
@@ -841,11 +841,11 @@
   flex-direction: column;
   gap: 8px;
   padding: 16px;
-  border: 1px solid #ececee;
+  border: 1px solid var(--ob-fill-hover);
   border-radius: 16px;
 }
 .ob-dialog-preview > small {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
 }
 .ob-dialog-preview textarea {
@@ -890,8 +890,8 @@
   padding: 12px 14px;
   overflow-x: auto;
   border-radius: 12px;
-  background: #fff;
-  color: #3a3a3c;
+  background: var(--ob-surface);
+  color: var(--ob-text-strong);
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 12px;
   line-height: 1.6;
@@ -903,15 +903,15 @@
   gap: 12px;
 }
 .ob-dialog-config small {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
   line-height: 1.5;
 }
 .ob-dialog small.is-warning {
-  color: #94480b;
+  color: light-dark(#94480b, var(--ob-attention-ink));
 }
 .ob-dialog small.is-danger {
-  color: #b3261e;
+  color: var(--ob-attention);
 }
 .ob-dialog-pair {
   display: grid;
@@ -927,7 +927,7 @@
   font-size: 12px;
 }
 .ob-dialog-state.is-online {
-  color: #1c7c3c;
+  color: var(--ob-online-text);
 }
 .ob-dialog-state.is-online::before {
   width: 6px;
@@ -957,7 +957,7 @@
 
 /* Dialog actions use the filled danger pill (DialogDelete); elsewhere is-danger is quiet text. */
 .ob-dialog-actions .ob-pill.is-danger {
-  background: #b3261e;
+  background: var(--ob-attention);
   color: #fff;
 }
 .ob-dialog-actions .ob-pill.is-danger:hover {
@@ -978,9 +978,9 @@
   box-sizing: border-box;
   padding: 0 8px 0 18px;
   border-radius: 22px;
-  background: #1d1d1f;
+  background: var(--ob-text);
   box-shadow: 0 10px 28px rgb(0 0 0 / 18%);
-  color: #fff;
+  color: var(--ob-on-primary);
   font-size: 14px;
   transform: translateX(-50%);
 }
@@ -994,14 +994,14 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #c7c7cc;
+  color: var(--ob-offline);
   font: inherit;
   font-size: 16px;
   cursor: pointer;
 }
 .ob-toast > button:hover {
-  background: rgb(255 255 255 / 12%);
-  color: #fff;
+  background: color-mix(in srgb, var(--ob-on-primary) 12%, transparent);
+  color: var(--ob-on-primary);
 }
 @media (prefers-reduced-motion: no-preference) {
   .ob-toast {
