@@ -68,6 +68,7 @@ import { runStatusSummary } from "../run-state";
 import { textareaCaretLeft } from "../textarea-caret";
 import { AppIcon } from "./AppIcon";
 import { ArtifactCard } from "./ArtifactCard";
+import { BrandMark, pluginMark } from "./BrandMark";
 import { ComposerAttachmentPicker, composerAttachmentsFull } from "./ComposerAttachmentPicker";
 import { HashIcon, PlusIcon, SendIcon } from "./Icons";
 import { MessageAttachments } from "./MessageAttachments";
@@ -1452,9 +1453,11 @@ export function ChannelWorkspace({
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => choosePlugin(plugin)}
                     >
-                      <i className="mention-glyph is-plugin" aria-hidden="true">
-                        {Array.from(plugin.name.trim())[0]?.toLocaleUpperCase() ?? "?"}
-                      </i>
+                      <BrandMark
+                        className="mention-glyph is-plugin"
+                        mark={pluginMark(plugin)}
+                        label={plugin.name}
+                      />
                       <span>
                         {plugin.name}
                         <small>{connected ? "已连接" : "需要授权"}</small>

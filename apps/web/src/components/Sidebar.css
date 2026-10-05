@@ -360,7 +360,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 2px 2px;
+  /* The footer's 44px buttons end 18px above the window, level with the composer (Main). */
+  padding: 10px 2px 6px;
 }
 .sb .sb-account > summary::-webkit-details-marker {
   display: none;

@@ -15,6 +15,11 @@ though the Server does not import it.
 - English and Simplified Chinese trained data 1.0.0: the npm tarballs omit a license and label
   their package metadata MIT; the source repository identifies its trained data as Apache-2.0.
   Its upstream license is retained with the exact source revision, separate from package metadata.
+- Model-provider and plugin logos (owner request 2026-10-05): LobeHub icons
+  `@lobehub/icons-static-svg` 1.95.1, MIT (the npm package has no license file, so the
+  repository's is retained at the package's gitHead), and SVG Logos `@iconify-icons/logos` 2.0.2,
+  CC0-1.0 (the package notice plus the full upstream text). Logos remain their owners' trademarks
+  and only identify the service a connection or plugin talks to.
 - MCP Apps 1.7.5: actual LICENSE records Apache-2.0/MIT transition, documentation CC-BY-4.0.
   npm's short MIT field does not replace this full notice.
 

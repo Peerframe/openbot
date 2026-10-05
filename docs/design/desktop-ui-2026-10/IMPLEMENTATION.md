@@ -87,6 +87,7 @@ updated.
 | 35 | 新建聊天 recipients as a compact dropdown — **merged** | New | — | As in the Owner's reference recording: 36px rows from the field's left edge, the shortcut on the highlighted row only, closes on an outside press |
 | 36 | Dark appearance — **in review with 37** | DarkTokens, MainDark, NewDark, SettingsGeneralDark | C25 on Desktop | A dark value for every colour token; about 500 hard-coded colours moved to tokens (light unchanged); 通用 › 主题 跟随系统 / 浅色 / 深色; on Desktop the window follows (C25) |
 | 37 | Backend wiring — **in review** | BotInfo, NewBotChat, SettingsGeneral | C9, C11, C25 | 编辑头像 saves each change at the revision; the C11 greeting above the role card; 主题 on Desktop through the C25 bridge. Carries step 36, whose #183 was merged into the step 35 branch after that branch had already been merged |
+| 38 | Bottom rows level and real logos — **in review** | Main, New, Sidebar, Settings, Plugins | — | Composer and sidebar footer both 44px and 18px above the window edge; provider and plugin logos from LobeHub (MIT) and SVG Logos (CC0) instead of letter tiles |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 

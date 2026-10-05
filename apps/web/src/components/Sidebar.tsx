@@ -28,6 +28,7 @@ import { BotIcon, HashIcon, PlusIcon, SearchIcon, SettingsIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
 import { SidebarItemMenu, type SidebarMenuTarget } from "./SidebarItemMenu";
 import "./Sidebar.css";
+import { BrandMark, pluginMark } from "./BrandMark";
 
 type SidebarItem = { kind: "channel"; channel: Channel } | { kind: "bot"; bot: Bot };
 
@@ -592,7 +593,7 @@ export function Sidebar({
  * on mount and when the window regains focus; a failed read just shows no tiles.
  */
 function PluginTiles() {
-  const [names, setNames] = useState<string[]>([]);
+  const [plugins, setPlugins] = useState<{ name: string; endpoint?: string | undefined }[]>([]);
   useEffect(() => {
     let controller = new AbortController();
     const read = () => {
@@ -602,8 +603,10 @@ function PluginTiles() {
       listPlugins(signal)
         .then((snapshot) => {
           if (!signal.aborted)
-            setNames(
-              snapshot.plugins.filter((plugin) => plugin.enabled).map((plugin) => plugin.name),
+            setPlugins(
+              snapshot.plugins
+                .filter((plugin) => plugin.enabled)
+                .map((plugin) => ({ name: plugin.name, endpoint: plugin.endpoint })),
             );
         })
         .catch(() => undefined);
@@ -615,11 +618,11 @@ function PluginTiles() {
       window.removeEventListener("focus", read);
     };
   }, []);
-  if (names.length === 0) return null;
+  if (plugins.length === 0) return null;
   return (
     <span className="sb-plugin-tiles" aria-hidden="true">
-      {names.slice(0, 3).map((name) => (
-        <i key={name}>{Array.from(name.trim())[0]?.toLocaleUpperCase() ?? "?"}</i>
+      {plugins.slice(0, 3).map((plugin) => (
+        <BrandMark key={plugin.name} mark={pluginMark(plugin)} label={plugin.name} />
       ))}
     </span>
   );
