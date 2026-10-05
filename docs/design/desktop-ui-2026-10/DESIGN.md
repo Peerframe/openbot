@@ -76,6 +76,9 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
   wherever they had a letter tile. These are 设置 › 模型服务, the model dialog, the plugin panel and
   settings, the @ list and the sidebar. One-colour logos follow the text colour; any other service
   keeps its first letter. Sources: [research](../../research/brand-logos.md).
+- 设置 › 模型服务 lists each provider once, as connections. The older single setting below it,
+  语音转写与旧版 Bot 的模型, only picks from a compact list and says why it is separate (owner feedback
+  2026-10-05); it goes away with C28.
 - **The title pill opens the right rail**: 频道信息 (ChannelInfo) in a 频道, Bot 信息 (BotInfo) in a
   单聊. The rail's 收起 closes it.
 - Back, forward and the panel toggles are keyboard and menu commands (⌘[ ⌘] ⌘B ⌘⇧B). When the
