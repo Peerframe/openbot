@@ -188,11 +188,7 @@ describe("Desktop settings interactions", () => {
       // 通用 reads only the Owner preferences; the model section loads on demand.
       expect(fetchMock.mock.calls.map(([url]) => url)).not.toContain("/api/v1/settings/model");
       await interact(() => button(rendered.container, "模型服务").click());
-      await interact(() =>
-        Array.from(
-          rendered.container.querySelectorAll<HTMLInputElement>('input[type="radio"]'),
-        )[1]?.click(),
-      );
+      await select(rendered.container, "服务商", "anthropic");
       await setInputValue(
         rendered.container.querySelector("#model-name") as HTMLInputElement,
         "available-model",
