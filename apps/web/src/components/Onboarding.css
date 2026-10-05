@@ -763,3 +763,13 @@
 :root[data-color-scheme="dark"] .ob-launch-mark .lm-jaw {
   fill: #adf16a;
 }
+/* 设置 › 模型服务's older setting picks its provider from a compact list with the logo. */
+.ob-provider-select > span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ob-provider-select select {
+  flex: 1;
+  min-width: 0;
+}

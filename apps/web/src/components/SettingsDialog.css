@@ -1057,3 +1057,10 @@
 .settings-dialog .settings-search:focus {
   border-color: var(--ob-text-tertiary);
 }
+/* The older single model setting (语音转写与旧版 Bot): why it exists, under its summary. */
+.settings-dialog .settings-disclosure > .settings-disclosure-note {
+  margin: 0 0 14px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}

@@ -11,6 +11,7 @@ import {
   type ModelSettingsSummary,
   saveModelSettings,
 } from "../api";
+import { BrandMark, providerMark } from "./BrandMark";
 import { OnboardingFrame } from "./Onboarding";
 
 export function ModelSettingsScreen({
@@ -58,6 +59,15 @@ export function ModelSettingsScreen({
   useEffect(() => {
     void load();
   }, [load]);
+  function chooseProvider(id: ModelProviderId) {
+    setProvider(id);
+    setBaseUrl(modelProviderBaseUrl(id));
+    setModel(id === "moonshot" ? "kimi-k3" : (modelProviderPreset(id).suggestedModels[0] ?? ""));
+    setModels(undefined);
+    setSaved(false);
+    setError(undefined);
+    setApiKey("");
+  }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy || !snapshot || snapshot.status === "unavailable") return;
@@ -91,34 +101,55 @@ export function ModelSettingsScreen({
         </p>
       ) : (
         <form className="ob-setup-form" onSubmit={submit}>
-          <fieldset className="ob-providers" disabled={busy || !snapshot}>
-            <legend>模型服务</legend>
-            {modelProviderPresets.map((item) => (
-              <label
-                key={item.id}
-                className={`ob-provider${provider === item.id ? " is-selected" : ""}`}
-              >
-                <input
-                  type="radio"
-                  name="model-provider"
-                  checked={provider === item.id}
-                  onChange={() => {
-                    setProvider(item.id);
-                    setBaseUrl(modelProviderBaseUrl(item.id));
-                    setModel(item.id === "moonshot" ? "kimi-k3" : (item.suggestedModels[0] ?? ""));
-                    setModels(undefined);
-                    setSaved(false);
-                    setError(undefined);
-                    setApiKey("");
-                  }}
+          {embedded ? (
+            // In 设置 the providers are already listed above as connections; this older,
+            // single setting only needs a compact choice (owner feedback 2026-10-05).
+            <label className="ob-setup-field is-wide ob-provider-select">
+              服务商
+              <span>
+                <BrandMark
+                  className="ob-provider-letter"
+                  mark={providerMark(provider)}
+                  label={providerLabel(provider)}
                 />
-                <span className="ob-provider-letter" aria-hidden="true">
-                  {Array.from(providerLabel(item.id))[0]?.toLocaleUpperCase()}
-                </span>
-                <span className="ob-provider-name">{providerLabel(item.id)}</span>
-              </label>
-            ))}
-          </fieldset>
+                <select
+                  aria-label="服务商"
+                  value={provider}
+                  disabled={busy || !snapshot}
+                  onChange={(event) => chooseProvider(event.target.value as ModelProviderId)}
+                >
+                  {modelProviderPresets.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {providerLabel(item.id)}
+                    </option>
+                  ))}
+                </select>
+              </span>
+            </label>
+          ) : (
+            <fieldset className="ob-providers" disabled={busy || !snapshot}>
+              <legend>模型服务</legend>
+              {modelProviderPresets.map((item) => (
+                <label
+                  key={item.id}
+                  className={`ob-provider${provider === item.id ? " is-selected" : ""}`}
+                >
+                  <input
+                    type="radio"
+                    name="model-provider"
+                    checked={provider === item.id}
+                    onChange={() => chooseProvider(item.id)}
+                  />
+                  <BrandMark
+                    className="ob-provider-letter"
+                    mark={providerMark(item.id)}
+                    label={providerLabel(item.id)}
+                  />
+                  <span className="ob-provider-name">{providerLabel(item.id)}</span>
+                </label>
+              ))}
+            </fieldset>
+          )}
           <div className="ob-model-fields">
             <label className="ob-setup-field">
               API Key{snapshot?.status === "configured" ? "（重新输入以更新）" : ""}

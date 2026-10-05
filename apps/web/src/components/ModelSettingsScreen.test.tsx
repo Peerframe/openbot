@@ -26,10 +26,7 @@ describe("model Agent opt-in", () => {
       const model = view.container.querySelector<HTMLInputElement>("#model-name");
       if (!key || !model) throw new Error("Missing inputs");
       await setInputValue(key, "fixture-key-123456789");
-      const router = [...view.container.querySelectorAll("label")]
-        .find((label) => label.querySelector(".ob-provider-name")?.textContent === "OpenRouter")
-        ?.querySelector("input");
-      await interact(() => router?.click());
+      await chooseProvider(view.container, "openrouter");
       expect(key.value).toBe("");
       expect(model.placeholder).toContain("author/model");
       expect(view.container.textContent).toContain("OpenRouter 会将任务交给其模型提供商");
@@ -111,19 +108,15 @@ it("offers eleven providers, fills the selected common model and clears keys on 
   );
   const view = await renderComponent(<ModelSettingsScreen embedded onDone={() => {}} />);
   try {
-    expect(view.container.querySelectorAll('input[name="model-provider"]')).toHaveLength(11);
-    const radio = [...view.container.querySelectorAll("label")]
-      .find((label) => label.querySelector(".ob-provider-name")?.textContent === "DeepSeek")
-      ?.querySelector("input");
-    await interact(() => radio?.click());
+    // In 设置 the eleven providers are one compact list (owner feedback 2026-10-05).
+    expect(view.container.querySelectorAll(".ob-provider-select option")).toHaveLength(11);
+    expect(view.container.querySelector('input[name="model-provider"]')).toBeNull();
+    await chooseProvider(view.container, "deepseek");
     expect((view.container.querySelector("#model-name") as HTMLInputElement).value).toBe(
       "deepseek-v4-flash",
     );
     expect(view.container.querySelectorAll("datalist option")).toHaveLength(2);
-    const kimi = [...view.container.querySelectorAll("label")]
-      .find((label) => label.querySelector(".ob-provider-name")?.textContent === "Kimi（月之暗面）")
-      ?.querySelector("input");
-    await interact(() => kimi?.click());
+    await chooseProvider(view.container, "moonshot");
     const key = view.container.querySelector("#model-api-key") as HTMLInputElement;
     await setInputValue(key, "fixture-private-key");
     const region = view.container.querySelector("#model-region") as HTMLSelectElement;
@@ -136,3 +129,12 @@ it("offers eleven providers, fills the selected common model and clears keys on 
     await view.unmount();
   }
 });
+
+async function chooseProvider(container: HTMLElement, id: string) {
+  const select = container.querySelector<HTMLSelectElement>(".ob-provider-select select");
+  if (!select) throw new Error("Missing provider list");
+  await interact(() => {
+    select.value = id;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+}

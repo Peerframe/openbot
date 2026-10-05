@@ -89,6 +89,7 @@ updated.
 | 37 | Backend wiring — **in review** | BotInfo, NewBotChat, SettingsGeneral | C9, C11, C25 | 编辑头像 saves each change at the revision; the C11 greeting above the role card; 主题 on Desktop through the C25 bridge. Carries step 36, whose #183 was merged into the step 35 branch after that branch had already been merged |
 | 38 | Bottom rows level and real logos — **merged** | Main, New, Sidebar, Settings, Plugins | — | Composer and sidebar footer both 44px and 18px above the window edge; provider and plugin logos from LobeHub (MIT) and SVG Logos (CC0) instead of letter tiles |
 | 39 | Conversation polish — **in review** | Main, MainDark | C27 on Desktop | From the Owner's second reference recording: Telegram-like runs (coloured name above, avatar below), Bot names as tags, 「X 正在工作…」, 「新」, https links (Web; Desktop inert until C27), mic-only empty composer, deep-grey own bubble in dark |
+| 40 | One model list in 设置 › 模型服务 — **in review** | Settings | C28 to retire it | The older single setting stays (the Server still uses it for voice transcription and Bots without a model) but becomes 语音转写与旧版 Bot 的模型: a compact provider list with the logo and why it is separate; first-run setup shows logos; the `kimi` preset id gets the Moonshot logo |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 
@@ -140,7 +141,8 @@ Open — in the order the UI needs them:
 | ID | Needed by | Contract to add | UI until ready |
 | --- | --- | --- | --- |
 | C27 | Step 39 | **Desktop opener for links in messages**: an optional bridge `openExternalLink(url)`. The main process accepts only an https URL without credentials, at most 2,048 characters, from the main window during a user gesture, and at most one per second. The first time a host is opened in a session, a native confirmation names the host (打开 / 取消). It opens with the system browser and returns `opened` or `refused`. Links never navigate the app window | Links show with a globe but stay inert on Desktop |
-| C26 | Step 40 | **主 Bot** (Owner decision 2026-10-05; the design is being chosen on the canvas): one Owner-chosen Bot per workspace, revision-checked and audited, that un-@ messages in a 频道 it belongs to go to first and that may hand work to other members through the existing delegation. Contract to follow the chosen design | — |
+| C28 | Step 40 | **Retire the older single model setting**: voice transcription uses an Owner-chosen OpenAI model connection, and Bots without their own model fall back to the C7 default model, so `GET/PUT /api/v1/settings/model` and its separate key are no longer needed. Existing settings migrate or are offered once as a connection; nothing is deleted silently | 设置 › 模型服务 keeps the compact 语音转写与旧版 Bot 的模型 section |
+| C26 | Step 41 | **主 Bot** (Owner decision 2026-10-05; the design is being chosen on the canvas): one Owner-chosen Bot per workspace, revision-checked and audited, that un-@ messages in a 频道 it belongs to go to first and that may hand work to other members through the existing delegation. Contract to follow the chosen design | — |
 
 ## Repository housekeeping (proposals)
 

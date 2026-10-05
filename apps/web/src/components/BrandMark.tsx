@@ -48,6 +48,8 @@ const providerMarks: Record<string, Mark> = {
   gemini: { src: gemini },
   deepseek: { src: deepseek },
   moonshot: { src: moonshot, mono: true },
+  // The Server names the Moonshot preset `kimi` in model connections.
+  kimi: { src: moonshot, mono: true },
   openrouter: { src: openrouter, mono: true },
   siliconflow: { src: siliconcloud },
   dashscope: { src: bailian },
