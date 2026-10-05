@@ -365,6 +365,13 @@
       "when": 1791011308235,
       "tag": "0051_global_trash_cleanup",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1791035792747,
+      "tag": "0052_bot_greeting_origin",
+      "breakpoints": true
     }
   ]
 }

@@ -648,6 +648,24 @@ IPC 不接受渲染层传入的命令、程序路径或更新地址。
 409 `quick_bot_name_exhausted` / `quick_bot_name_contention`。保留已有会话、Origin、请求体
 限制和脱敏的存储及模型错误。
 
+## 新 Bot 可选开场白（C11）
+
+`POST /api/v1/bots/quick` 成功后，Server 在创建事务之外安排一次后台开场白。普通创建和导入不会触发。
+创建不等待生成，也不会因生成失败而失败。只使用新 Bot 已提交且可用的模型配置，不选择替代模型。
+持久化的 `BOT_GREETING_STARTED` 记录阻止第二次尝试，包括重启或删除开场白消息之后。
+
+模型输入仅含新 Bot 的名字，以及最多 12 个其他活跃 Bot 的名字和角色。复用现有模型连接接口，只调用
+一次，不带工具，不做 SDK 重试；输出预算为 256 token，响应上限 32 KiB，模型阶段超时 15 秒。
+发送前和写入前检查 Owner 权限与模型 revision。去掉标记、链接和 Markdown 后，中文纯文本最多
+120 字，以唯一一个关于职责的问题结尾。拒绝、超时、无效输出或其他失败都不写消息，只审计
+`BOT_GREETING_FAILED` 的有界原因，不包含原始输出或凭据。数据库故障可能使审计也无法写入；
+不会因此重试或引入其他存储权威。
+
+消息是该 Bot 单聊的第一条，带 `origin: "greeting"`，走正常的 `MESSAGE_CREATED` 审计与
+`message.created` SSE。只读的可选 `origin` 字段在原有消息中省略。写入与 Owner 发言共用频道锁；
+已有任何消息，或保留着 Owner 发言的审计时，不再写开场白。局部唯一索引保证每个 Bot 最多一次尝试、
+一条开场白。关闭服务时取消并等待未完成的后台任务。
+
 ## Bot 外观颜色（C10）
 
 `BotAppearance.accent` 只接受 `green`、`yellow`、`red`、`blue`、`violet`、`teal`、

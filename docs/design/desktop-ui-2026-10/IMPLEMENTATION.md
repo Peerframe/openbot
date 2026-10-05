@@ -134,7 +134,7 @@ Renderer dark styles and controls remain with Claude.
 | C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked — backend implemented; UI pending, contract in [the research record](../../research/bot-appearance-and-greeting.md) | Pencil button hidden |
 | C23 fork | Step 29 | **Locally qualified narrow fork**: production 257c1280 plus only usage contribution 46eb7af8; pinned 29a83c1, image verified, MIT retained; [evidence and upstream exit](../../research/storage-cleanup-follow-ups.md#c23-owner-approved-fork-and-image-2026-10-03). Deployment to existing Workers remains separate | Real bytes after runtime update; failed measurement remains 「量不出」 |
 | C25 | Step 36 | **Desktop colour scheme**: `get/setColorScheme("system" \| "light" \| "dark")` returning the resolved scheme, a change event, the choice kept by the main process and applied before the window opens, window background `#ffffff` / `#141414` | Desktop stays light |
-| C11 | Step 16 (optional) | **New-Bot greeting**: one bounded, tool-less model call after quick-create, using only other Bots' names and roles; any failure means no greeting — proposed contract in [the research record](../../research/bot-appearance-and-greeting.md) | The setup card shows without a greeting |
+| C11 | Step 16 (optional) | **New-Bot greeting**: backend implemented; one optional, bounded, tool-less call after quick-create, tagged first message and normal SSE; failures never retry — [contract and evidence](../../research/bot-appearance-and-greeting.md). UI acceptance remains separate | The setup card shows without a greeting |
 
 ## Repository housekeeping (proposals)
 
