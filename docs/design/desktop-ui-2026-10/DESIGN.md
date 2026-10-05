@@ -54,7 +54,7 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Primitives | `.ob-pill` (`is-primary`, `is-outline`, `is-danger`, `is-small`), `.ob-round`, `.ob-switch` (44×26), `.ob-filter`, `.ob-tag`, `.ob-field`, `.ob-search`, `.ob-card`, `.ob-menu`, `.ob-menu-item`, `.ob-seg` (segmented control) |
 | Scale | The artboards are drawn at 1440×900. Desktop opens at 1200×780 and draws the page at 90% (owner feedback 2026-10-03); 视图 › 实际大小 / 放大 / 缩小 change it, and the traffic lights are placed for the 90% layout |
 | Motion (`motion.css`) | Timing follows the owner's reference recording: quick and light. Press and hover: colours ease over 100ms, pills shrink to 97% while pressed. Dialogs fade and rise 4px in 140ms and fade out on close; the backdrop follows. Menus and @ / lists grow from their anchor in 100ms. The sidebar and rail slide open and closed (160ms) with their content at full width. **Conversation, Telegram-like:** a message that arrives while the conversation is open rises from its own side (180ms; history and older pages do not move); switching conversation or page fades the new one in (120ms); 回到最新 and quote jumps glide, and the jumped-to message flashes once; the hover actions fade; the composer grows smoothly. All of it is off with the system's reduced motion or 通用 › 减少动态效果 |
-| Appearance | 通用 › 主题: 跟随系统 (default), 浅色 or 深色. Dark swaps every colour token for its dark value (DarkTokens artboard); layout, type, radii and motion stay. Primary inverts (white with black text). Avatars use the warm-white edition with lighter jaws. Light keeps its exact colours: older one-off colours are written `light-dark(<light>, var(<token>))`, so only dark maps them to tokens. Desktop stays light until its window follows the choice (C25) |
+| Appearance | 通用 › 主题: 跟随系统 (default), 浅色 or 深色. Dark swaps every colour token for its dark value (DarkTokens artboard); layout, type, radii and motion stay. Primary inverts (white with black text). Avatars use the warm-white edition with lighter jaws. Light keeps its exact colours: older one-off colours are written `light-dark(<light>, var(<token>))`, so only dark maps them to tokens. On Desktop the main process keeps the choice and sets the window background and sidebar material (C25); the page follows its `prefers-color-scheme` |
 | Scrollbars | No track; a 6px thumb appears while an area scrolls and fades a second later, 10px under the pointer (LongLists). One listener marks the scrolling element (`overlay-scrollbars.ts`) |
 
 ## Window shell
@@ -92,11 +92,14 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
   (numbered when the name is taken), a random head and colour the team is not using yet,
   no computer, and the default model. The app opens its 单聊 with the rail open.
 - The conversation shows **「你最想让我先帮你做什么？」**: three role choices and a free answer.
-  Choosing sets the Bot's tag and role and sends the choice as the Owner's first message. The
-  Bot's own greeting above it appears only when the backend can generate it (C11).
+  Choosing sets the Bot's tag and role and sends the choice as the Owner's first message. When a
+  model is configured, the Bot's own greeting (C11) sits above the card, and the card stays until
+  the Owner speaks.
 - **BotInfo rail**: the 88px avatar with a pencil button, the name edited in place, 添加标签, then
-  详情 / 资料库 / 电脑. The pencil opens **编辑头像**: 头型, 下颌色, 随机 and 重置; changes apply at once
-  (needs C9). Upload and AI generation are not planned (owner decision, 2026-10-02).
+  详情 / 资料库 / 电脑. The pencil opens **编辑头像**: 头型, 下颌色, 随机 and 重置 (back to the look it
+  opened with). Each change is saved at once at the profile revision (C9) and every avatar of the
+  Bot updates; a change made elsewhere first re-reads the profile. Upload and AI generation are not
+  planned (owner decision, 2026-10-02).
 - **Adding to an existing 频道** (AddMember): 成员 → 添加成员 opens a popover with 搜索 Bot and the
   Bots not yet in it. Hovering a member shows a light-red 移除 pill.
 
@@ -172,9 +175,9 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 | Sidebar, Search, Menu, ContextMenu | `Sidebar.tsx`, `SidebarItemMenu.tsx` | Built (group avatars and status dots included) |
 | Main | `App.tsx`, `WorkspaceHeader.tsx`, `ChannelWorkspace.tsx`, `TaskCard.tsx` | Built |
 | ChannelInfo, AddMember | `ContextRail.tsx`, `AddMemberPopover.tsx` | Built |
-| BotInfo | `BotInfoRail.tsx` (单聊 and the Bot profile) | Built; 编辑头像 waits for C9 |
+| BotInfo | `BotInfoRail.tsx`, `AvatarEditor.tsx` (单聊 and the Bot profile) | Built |
 | Profile, ProfileEvolution, ProfileSkills, ProfileMemory, ProfileWork, ProfileConfig | `EmployeeProfileView.tsx` and its tabs | Built (23a) |
-| New, NewGroup, NewBotChat | `NewChatScreen.tsx`, `NewBotSetupCard.tsx` | Built; the greeting waits for C11 |
+| New, NewGroup, NewBotChat | `NewChatScreen.tsx`, `NewBotSetupCard.tsx` | Built |
 | Slash | `ChannelWorkspace.tsx` composer menus | Built. @ and / lists open at the caret. @ lists Bots and enabled plugins one line each (kind on the right; a plugin shows 已连接 or 需要授权). Choosing a connected plugin writes 「@名称」 as a hint to the Bot; choosing an ungranted one opens the plugins panel, so @ never grants anything. The 「+」 menu closes on any outside press and when @ or / opens |
 | Settings, SettingsNav, Settings* | `DesktopSettingsScreen.tsx`, `Settings*.tsx` | Built |
 | Plugins | `PluginsDialog.tsx`, `PluginManagerPanel.tsx` | Built |

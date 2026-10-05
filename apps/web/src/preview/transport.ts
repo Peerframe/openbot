@@ -127,6 +127,7 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
       updatedAt: "2026-09-30T01:30:00.000Z",
     },
   ];
+  const profileRevisions = new Map<string, number>();
   const routes: Array<[string, RegExp, Handler]> = [
     [
       "GET",
@@ -526,7 +527,25 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
       /^\/api\/v1\/bots\/([^/]+)\/profile$/,
       (m) => {
         const profile = profileFor(world, m[1] ?? "");
-        return profile ? json({ profile }) : json({ error: "not_found" }, 404);
+        if (!profile) return json({ error: "not_found" }, 404);
+        const details = profile.details as Json;
+        const revision = profileRevisions.get(m[1] ?? "") ?? details.revision;
+        return json({ profile: { ...profile, details: { ...details, revision } } });
+      },
+    ],
+    [
+      // C9: appearance at the profile revision; a stale revision is refused like the Server.
+      "PATCH",
+      /^\/api\/v1\/bots\/([^/]+)\/appearance$/,
+      (m, body) => {
+        const target = world.bots.find((item) => item.id === m[1]);
+        if (!target) return json({ error: "not_found" }, 404);
+        const id = String(target.id);
+        const current = profileRevisions.get(id) ?? 1;
+        if (body.expectedRevision !== current) return json({ error: "conflict" }, 409);
+        target.appearance = body.appearance;
+        profileRevisions.set(id, current + 1);
+        return json({ bot: target, revision: current + 1 });
       },
     ],
     [

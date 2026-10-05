@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
-import { applyColorScheme } from "./color-scheme";
+import {
+  applyColorScheme,
+  followsMediaQuery,
+  onDesktopColorSchemeChanged,
+  readDesktopColorScheme,
+} from "./color-scheme";
 import { type DesktopSidebarMaterialState, getOpenBotDesktopBridge } from "./desktop-runtime";
-import { useWorkspacePreferences } from "./workspace-preferences";
+import {
+  readPreferences,
+  updatePreferences,
+  useWorkspacePreferences,
+  type WorkspacePreferences,
+} from "./workspace-preferences";
 
 export function useWorkspaceAppearance() {
   const { values } = useWorkspacePreferences();
@@ -14,17 +24,32 @@ export function useWorkspaceAppearance() {
   }, [values.density, values.fontSize, values.reduceMotion]);
   useEffect(() => {
     applyColorScheme(values.colorScheme);
-    if (values.colorScheme !== "system") return;
+    if (!followsMediaQuery(values.colorScheme)) return;
     let query: MediaQueryList | undefined;
     try {
       query = window.matchMedia?.("(prefers-color-scheme: dark)");
     } catch {
       return;
     }
-    const follow = () => applyColorScheme("system");
+    const follow = () => applyColorScheme(values.colorScheme);
     query?.addEventListener?.("change", follow);
     return () => query?.removeEventListener?.("change", follow);
   }, [values.colorScheme]);
+  // Desktop keeps the choice in its main process; mirror it so 设置 › 主题 shows the window's
+  // actual setting, including a change made from another window.
+  useEffect(() => {
+    let active = true;
+    const mirror = (choice: WorkspacePreferences["colorScheme"]) => {
+      if (active && readPreferences().colorScheme !== choice)
+        updatePreferences({ colorScheme: choice });
+    };
+    void readDesktopColorScheme().then((choice) => choice && mirror(choice));
+    const unsubscribe = onDesktopColorSchemeChanged(mirror);
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, []);
   useEffect(() => {
     let active = true;
     const bridge = getOpenBotDesktopBridge();

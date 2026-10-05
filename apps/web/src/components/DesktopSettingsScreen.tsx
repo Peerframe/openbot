@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { colorSchemeAvailable } from "../color-scheme";
+import { colorSchemeAvailable, sendDesktopColorScheme } from "../color-scheme";
 import {
   type DesktopConnectionState,
   type DesktopLocalWorkerState,
@@ -343,21 +343,21 @@ export function DesktopSettingsScreen({
                       description={
                         colorSchemeAvailable()
                           ? "深色外观适合夜间；跟随系统时随电脑一起切换。"
-                          : "桌面应用的深色外观要等应用更新后才能使用，现在保持浅色。"
+                          : "这个版本的桌面应用还不能切换外观，更新应用后即可使用。"
                       }
                     >
                       <select
                         aria-label="主题"
                         value={colorSchemeAvailable() ? values.colorScheme : "light"}
                         disabled={!colorSchemeAvailable()}
-                        onChange={(event) =>
-                          updatePreferences({
-                            colorScheme:
-                              event.target.value === "light" || event.target.value === "dark"
-                                ? event.target.value
-                                : "system",
-                          })
-                        }
+                        onChange={(event) => {
+                          const colorScheme =
+                            event.target.value === "light" || event.target.value === "dark"
+                              ? event.target.value
+                              : "system";
+                          updatePreferences({ colorScheme });
+                          sendDesktopColorScheme(colorScheme);
+                        }}
                       >
                         <option value="system">跟随系统</option>
                         <option value="light">浅色</option>

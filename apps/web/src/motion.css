@@ -100,7 +100,14 @@
     animation: ob-pop-in var(--ob-motion-fast) var(--ob-ease-out);
   }
   :root:not([data-reduced-motion="true"])
-    :is(.ob-menu, .ci-add-popover, .attachment-actions-body, .sb-popover, .new-chat-options) {
+    :is(
+      .ob-menu,
+      .ci-add-popover,
+      .attachment-actions-body,
+      .sb-popover,
+      .new-chat-options,
+      .bi-avatar-popover
+    ) {
     transform-origin: top left;
     animation: ob-pop-up var(--ob-motion-fast) var(--ob-ease-out);
   }

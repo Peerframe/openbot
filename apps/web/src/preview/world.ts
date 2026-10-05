@@ -82,6 +82,19 @@ export function createWorld(kind: "full" | "empty" | "new-bot" | "long" = "full"
       createdAt: minutesAgo(0),
       lastActivityAt: minutesAgo(0),
     });
+    // C11: the Server's one greeting sits above the role card.
+    world.messages["direct-b-new"] = [
+      {
+        id: "m-greeting",
+        channelId: "direct-b-new",
+        authorType: "bot",
+        authorId: "b-new",
+        origin: "greeting",
+        content:
+          "嗨，我刚上岗，还没有具体分工。团队里已经有研究助理、客服小橙在做竞品和工单了——你希望我负责哪一块？",
+        createdAt: minutesAgo(0),
+      },
+    ];
     return world;
   }
   const bots = [

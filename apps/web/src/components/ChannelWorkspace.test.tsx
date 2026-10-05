@@ -1170,3 +1170,41 @@ describe("Telegram-like arrival", () => {
     await rendered.unmount();
   });
 });
+
+describe("new-Bot greeting (C11)", () => {
+  it("keeps the role card under the Server's greeting until the Owner speaks", async () => {
+    const fresh: Bot = { ...bot, id: "bot-new", name: "新建 Bot", role: "通用助手" };
+    vi.mocked(listMessages).mockResolvedValue([
+      {
+        ...message("d", "嗨，我刚上岗，你希望我负责哪一块？"),
+        authorType: "bot",
+        authorId: fresh.id,
+        origin: "greeting",
+      },
+    ]);
+    const rendered = await renderComponent(
+      <ChannelWorkspace
+        globalHeader
+        channel={{ ...channel("d"), botIds: [fresh.id], directBotId: fresh.id }}
+        session={createConversationSession()}
+        bots={[fresh]}
+        artifacts={[]}
+        progress={[]}
+        {...callbacks}
+      />,
+    );
+    await interact(async () => undefined);
+    const text = () => rendered.container.textContent ?? "";
+    expect(text()).toContain("嗨，我刚上岗");
+    expect(text()).toContain("你最想让我先帮你做什么");
+    await interact(() =>
+      lastHandlers().onMessage({
+        ...message("d", "先帮我整理周报"),
+        id: "message-owner",
+        createdAt: new Date(Date.now() + 60_000).toISOString(),
+      }),
+    );
+    expect(text()).not.toContain("你最想让我先帮你做什么");
+    await rendered.unmount();
+  });
+});

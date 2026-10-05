@@ -84,8 +84,9 @@ updated.
 | 32 | Owner feedback: settings, popovers, scale and motion — **merged** | Settings, Sidebar, New, Slash | — | Settings search and close fixed, overlay scrollbars, plugin tiles, no title on New, 「+」 closes outside, @ with plugins at the caret, Desktop at 1200×780 and 90%, the motion layer |
 | 33 | Telegram-like conversation — **merged** | Main, Composer | — | Arriving messages rise in, views fade in, glide to latest and to quotes with a flash, compact 48px composer |
 | 34 | Retire the phone layout — **merged** | — | — | `MobileNavigation` and the phone-only layout rules deleted; the desktop layout holds down to 800px |
-| 35 | 新建聊天 recipients as a compact dropdown — **in review** | New | — | As in the Owner's reference recording: 36px rows from the field's left edge, the shortcut on the highlighted row only, closes on an outside press |
-| 36 | Dark appearance — **in review** | DarkTokens, MainDark, NewDark, SettingsGeneralDark | C25 on Desktop | A dark value for every colour token; about 500 hard-coded colours moved to tokens (light unchanged); 通用 › 主题 跟随系统 / 浅色 / 深色; Desktop stays light until C25 |
+| 35 | 新建聊天 recipients as a compact dropdown — **merged** | New | — | As in the Owner's reference recording: 36px rows from the field's left edge, the shortcut on the highlighted row only, closes on an outside press |
+| 36 | Dark appearance — **in review with 37** | DarkTokens, MainDark, NewDark, SettingsGeneralDark | C25 on Desktop | A dark value for every colour token; about 500 hard-coded colours moved to tokens (light unchanged); 通用 › 主题 跟随系统 / 浅色 / 深色; on Desktop the window follows (C25) |
+| 37 | Backend wiring — **in review** | BotInfo, NewBotChat, SettingsGeneral | C9, C11, C25 | 编辑头像 saves each change at the revision; the C11 greeting above the role card; 主题 on Desktop through the C25 bridge. Carries step 36, whose #183 was merged into the step 35 branch after that branch had already been merged |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 
@@ -123,18 +124,16 @@ Done 2026-10-02 and 2026-10-03 (#147, #149, #150, #157–#161, #164, #165) and C
 | C23 | Browser profile bytes per Bot from browser status (Owner-approved narrow fork qualified; null still shows 「量不出」) | Integrated (step 29) |
 | C24 | Owner-only list of the messages and tasks that reference a file | Integrated (step 29) |
 
-Open — in the order the UI needs them:
+Done 2026-10-03 (#182, #184–#186):
 
-C25 platform implementation is complete: the optional color-scheme bridge persists system/light/dark
-and resolves native backgrounds and materials ([contract](../../API.md#desktop-color-scheme-c25)).
-Renderer dark styles and controls remain with Claude.
+| ID | Contract | UI |
+| --- | --- | --- |
+| C9 | Edit a Bot's appearance after creation: Owner-only, audited, revision-checked | Integrated (step 37): 编辑头像 in the Bot rail |
+| C11 | New-Bot greeting: one bounded, tool-less model call after quick-create, tagged `origin: "greeting"` | Integrated (step 37): the greeting sits above the role card |
+| C23 fork | Owner-approved narrow `agent-computer` fork reporting profile bytes ([evidence](../../research/storage-cleanup-follow-ups.md#c23-owner-approved-fork-and-image-2026-10-03)); deployment to existing Workers is separate | Real bytes once a Worker runs the new image; a failed measurement still shows 「量不出」 |
+| C25 | Desktop colour scheme: the main process keeps 跟随系统 / 浅色 / 深色 and sets the window background and material ([contract](../../API.md#desktop-color-scheme-c25)) | Integrated (step 37): 主题 works on Desktop |
 
-| ID | Needed by | Contract to add | UI until ready |
-| --- | --- | --- | --- |
-| C9 | Step 17 | **Edit a Bot's appearance after creation**: Owner-only, audited, revision-checked — backend implemented; UI pending, contract in [the research record](../../research/bot-appearance-and-greeting.md) | Pencil button hidden |
-| C23 fork | Step 29 | **Locally qualified narrow fork**: production 257c1280 plus only usage contribution 46eb7af8; pinned 29a83c1, image verified, MIT retained; [evidence and upstream exit](../../research/storage-cleanup-follow-ups.md#c23-owner-approved-fork-and-image-2026-10-03). Deployment to existing Workers remains separate | Real bytes after runtime update; failed measurement remains 「量不出」 |
-| C25 | Step 36 | **Desktop colour scheme**: `get/setColorScheme("system" \| "light" \| "dark")` returning the resolved scheme, a change event, the choice kept by the main process and applied before the window opens, window background `#ffffff` / `#141414` | Desktop stays light |
-| C11 | Step 16 (optional) | **New-Bot greeting**: backend implemented; one optional, bounded, tool-less call after quick-create, tagged first message and normal SSE; failures never retry — [contract and evidence](../../research/bot-appearance-and-greeting.md). UI acceptance remains separate | The setup card shows without a greeting |
+Open: none. New needs go into this backlog first.
 
 ## Repository housekeeping (proposals)
 

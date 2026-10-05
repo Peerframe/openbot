@@ -47,7 +47,7 @@
 | 基础组件 | `.ob-pill`（`is-primary`、`is-outline`、`is-danger`、`is-small`）、`.ob-round`、`.ob-switch`（44×26）、`.ob-filter`、`.ob-tag`、`.ob-field`、`.ob-search`、`.ob-card`、`.ob-menu`、`.ob-menu-item`、`.ob-seg`（分段控件） |
 | 缩放 | 画板按 1440×900 绘制。桌面版默认打开 1200×780 的窗口，并把界面缩放到 90%（2026-10-03 按你的反馈调整）；「视图 › 实际大小 / 放大 / 缩小」可以改，红绿灯位置按 90% 的布局摆放 |
 | 动效（`motion.css`） | 节奏参照你提供的参考录屏：快而轻。按下和悬停：颜色在 100ms 内过渡，胶囊按钮按下时缩到 97%。对话框打开时 140ms 内淡入并上移 4px，关闭时淡出，背景遮罩同步。菜单和 @、/ 列表从锚点处 100ms 内展开。侧栏和右栏开合时滑动（160ms），内容保持完整宽度。**对话区参照 Telegram：** 对话打开期间新到的消息从各自一侧浮起（180ms；历史和往前加载的消息不动）；切换对话或页面时新内容淡入（120ms）；「回到最新」和点引用跳转都平滑滚动，跳到的那条消息闪一下高亮；悬停操作栏淡入；输入框高度平滑变化。系统设置了减少动态效果，或打开「通用 › 减少动态效果」时，以上全部关闭 |
-| 外观 | 「通用 › 主题」：跟随系统（默认）、浅色或深色。深色把每个颜色 token 换成深色值（DarkTokens 画板），布局、字号、圆角和动效不变；主色反转（白底黑字）；头像用暖白版并换亮一档的下颌色。浅色保持原有颜色不变：零散的旧颜色写成 `light-dark(<浅色>, var(<token>))`，只在深色时换成 token。桌面应用在窗口能跟随选择之前保持浅色（C25） |
+| 外观 | 「通用 › 主题」：跟随系统（默认）、浅色或深色。深色把每个颜色 token 换成深色值（DarkTokens 画板），布局、字号、圆角和动效不变；主色反转（白底黑字）；头像用暖白版并换亮一档的下颌色。浅色保持原有颜色不变：零散的旧颜色写成 `light-dark(<浅色>, var(<token>))`，只在深色时换成 token。桌面应用由主进程保存选择，并设置窗口底色和侧栏材质（C25），页面跟随它的 `prefers-color-scheme` |
 | 滚动条 | 没有轨道；区域滚动时出现 6px 的滑块，停下 1 秒后淡出，鼠标移上去变成 10px（LongLists）。由一个全局监听给正在滚动的元素加标记（`overlay-scrollbars.ts`） |
 
 ## 窗口外壳
@@ -76,10 +76,12 @@
 - **「创建新 Bot」立即创建，没有对话框**（NewBotChat）。新 Bot 名叫「新建 Bot」（重名时自动编号），随机选
   一个团队里还没用过的头型和颜色，不绑定电脑，用默认模型；随后打开它的单聊并展开右栏。
 - 对话里出现 **「你最想让我先帮你做什么？」**：三个分工选项加一个自由回答。选择后把它设为 Bot 的标签和
-  职责，并作为 Owner 的第一条消息发出。上面那句 Bot 自己的开场白，只有后端能生成时才显示（C11）。
+  职责，并作为 Owner 的第一条消息发出。配置了模型时，卡片上方会有一句 Bot 自己的开场白（C11），
+  在 Owner 发言之前卡片一直保留。
 - **Bot 信息右栏**：88px 头像带铅笔按钮，名字可以直接改，「添加标签」，然后是「详情 / 资料库 / 电脑」。
-  铅笔打开 **「编辑头像」**：头型、下颌色、「随机」和「重置」，改动立即生效（需要 C9）。不做上传和
-  AI 生成（所有者 2026-10-02 决定）。
+  铅笔打开 **「编辑头像」**：头型、下颌色、「随机」和「重置」（回到打开时的样子）。每次改动立即按档案版本
+  保存（C9），这个 Bot 的所有头像同步更新；如果别处先改过，会重新读取档案。不做上传和 AI 生成（所有者
+  2026-10-02 决定）。
 - **给已有频道加 Bot**（AddMember）：「成员」→「添加成员」弹出带「搜索 Bot」的列表，只列还不在频道里的
   Bot；鼠标移到成员上出现浅红色「移除」。
 
@@ -143,9 +145,9 @@
 | Sidebar、Search、Menu、ContextMenu | `Sidebar.tsx`、`SidebarItemMenu.tsx` | 已实现（含群组头像与状态圆点） |
 | Main | `App.tsx`、`WorkspaceHeader.tsx`、`ChannelWorkspace.tsx`、`TaskCard.tsx` | 已实现 |
 | ChannelInfo、AddMember | `ContextRail.tsx`、`AddMemberPopover.tsx` | 已完成 |
-| BotInfo | `BotInfoRail.tsx`（单聊和 Bot 档案） | 已完成；编辑头像等 C9 |
+| BotInfo | `BotInfoRail.tsx`、`AvatarEditor.tsx`（单聊和 Bot 档案） | 已完成 |
 | Profile、ProfileEvolution、ProfileSkills、ProfileMemory、ProfileWork、ProfileConfig | `EmployeeProfileView.tsx` 及其分页 | 已完成（23a） |
-| New、NewGroup、NewBotChat | `NewChatScreen.tsx`、`NewBotSetupCard.tsx` | 已完成；开场白等 C11 |
+| New、NewGroup、NewBotChat | `NewChatScreen.tsx`、`NewBotSetupCard.tsx` | 已完成 |
 | Slash | `ChannelWorkspace.tsx` 输入框菜单 | 已实现。@ 和 / 列表在光标处弹出。@ 列出 Bot 和已启用的插件，每项一行，右侧标明类型；插件标明「已连接」或「需要授权」。选择已连接的插件会写入「@名称」提示 Bot 使用；选择未授权的插件会打开插件面板，所以 @ 不会授予任何权限。点其他地方或打开 @、/ 时，「+」菜单会自动收起 |
 | Settings、SettingsNav、Settings* | `DesktopSettingsScreen.tsx`、`Settings*.tsx` | 已实现 |
 | Plugins | `PluginsDialog.tsx`、`PluginManagerPanel.tsx` | 已实现 |

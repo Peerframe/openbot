@@ -31,6 +31,22 @@ const accentColors: Record<string, string> = {
   pink: "#E57BA8",
   slate: "#8C98A8",
 };
+/** The eight jaw colours with their names and the dark-surface edition (Avatars and BotInfo artboards). */
+export const AVATAR_ACCENTS: readonly {
+  id: BotAppearance["accent"];
+  label: string;
+  light: string;
+  dark: string;
+}[] = [
+  { id: "green", label: "绿", light: "#91CF4B", dark: "#ADF16A" },
+  { id: "blue", label: "蓝", light: "#5F7CDE", dark: "#92ACFF" },
+  { id: "yellow", label: "琥珀", light: "#DFAD4F", dark: "#F2C777" },
+  { id: "red", label: "珊瑚", light: "#E0785C", dark: "#F59C82" },
+  { id: "violet", label: "紫", light: "#9C7FE3", dark: "#BBA4FF" },
+  { id: "teal", label: "青", light: "#3FB4A6", dark: "#6FD9CB" },
+  { id: "pink", label: "粉", light: "#E57BA8", dark: "#FFA3C9" },
+  { id: "slate", label: "灰", light: "#8C98A8", dark: "#B4BFCC" },
+];
 const BODY = "#20251F";
 const EYE = "#FAFBF7";
 
@@ -225,7 +241,7 @@ function ScoutHead({ accent }: { accent: string }) {
   );
 }
 
-function appearanceForBot(bot: Bot): BotAppearance {
+export function appearanceForBot(bot: Bot): BotAppearance {
   const seed = Array.from(`${bot.id}:${bot.name}`).reduce(
     (value, character) => (value * 31 + character.charCodeAt(0)) >>> 0,
     7,

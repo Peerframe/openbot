@@ -2,7 +2,7 @@
 
 English · [简体中文](bot-appearance-and-greeting.zh-CN.md)
 
-- Status: Proposed
+- Status: Implemented (backend 2026-10-03, UI step 37)
 - Date: 2026-10-03
 - Owner: @yxflc11
 - Related issue: backlog C9 and C11 in [IMPLEMENTATION.md](../design/desktop-ui-2026-10/IMPLEMENTATION.md)
@@ -160,3 +160,14 @@ The base Python message DTO check also pins the additive optional `origin` field
 Projection acceptance covers `greeting`, omission for ordinary messages, and rejection of unknown
 values or incorrect types. The initial hosted exact-field assertion omitted `origin`; its correction
 updates the contract expectation without changing product behavior.
+
+## UI integration (step 37, 2026-10-05)
+
+- **C9:** the Bot rail's 88px avatar opens 编辑头像 (BotInfo artboard): 随机, 重置 (back to the look it
+  opened with), the three heads and the eight jaw colours. Each choice is one PATCH at the current
+  profile revision. The returned Bot is shown everywhere at once, and the returned revision is used
+  for the next change. A 409 re-reads the profile and says the look changed elsewhere.
+- **C11:** the 单聊 keeps the role card while its only messages are `origin: "greeting"`. The
+  greeting renders above the card, and the card goes once the Owner speaks.
+- No new dependency, route or copied source; tests cover the revision chain, the conflict and the
+  card under a greeting.
