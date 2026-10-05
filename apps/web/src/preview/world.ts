@@ -266,7 +266,8 @@ export function createWorld(kind: "full" | "empty" | "new-bot" | "long" = "full"
           authorType: "bot",
           authorId: "b-cs",
           replyToMessageId: "m-1",
-          content: "我补充一下客服侧：本周有 3 个工单提到 A 公司的团队版。",
+          content:
+            "我补充一下客服侧：本周有 3 个工单提到 A 公司的团队版。研究助理 可以把 [A 公司定价页](https://example.com/pricing) 也放进周报。",
           createdAt: minutesAgo(8),
         },
       ],

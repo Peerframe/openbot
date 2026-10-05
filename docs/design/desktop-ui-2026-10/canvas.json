@@ -587,6 +587,14 @@
       "h": 740,
       "title": "共享设置导航组件（深色）",
       "page": "dark"
+    },
+    "PrimaryBot.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1120,
+      "title": "主 Bot · 三个方案",
+      "page": "primary"
     }
   },
   "createdOnFiles": {
@@ -648,6 +656,15 @@
       "maxW": 6000,
       "page": "dark",
       "text": "OpenBot Desktop · 深色外观",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
+    "primaryTitle": {
+      "kind": "title1",
+      "maxW": 1440,
+      "page": "primary",
+      "text": "OpenBot Desktop · 主 Bot",
       "w": 240,
       "x": 0,
       "y": -320
@@ -726,7 +743,8 @@
     "SettingsGeneralDark.dc.html",
     "SidebarDark.dc.html",
     "ChannelInfoDark.dc.html",
-    "SettingsNavDark.dc.html"
+    "SettingsNavDark.dc.html",
+    "PrimaryBot.dc.html"
   ],
   "pages": [
     {
@@ -752,6 +770,10 @@
     {
       "id": "dark",
       "name": "深色外观"
+    },
+    {
+      "id": "primary",
+      "name": "主 Bot · 待选"
     }
   ],
   "title": "OpenBot Desktop 界面优化"

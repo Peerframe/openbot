@@ -1208,3 +1208,66 @@ describe("new-Bot greeting (C11)", () => {
     await rendered.unmount();
   });
 });
+
+describe("conversation polish (owner feedback 2026-10-05)", () => {
+  const run = (id: string, status: Run["status"], sourceMessageId?: string): Run => ({
+    id,
+    channelId: "p",
+    botId: bot.id,
+    executionProfile: "none",
+    instruction: "做",
+    title: "做",
+    status,
+    createdAt: bot.createdAt,
+    updatedAt: bot.createdAt,
+    ...(sourceMessageId ? { sourceMessageId } : {}),
+  });
+
+  it("shows who is working, the Bots an Owner message went to, and no idle send button", async () => {
+    const owner = { ...message("p", "整理周报"), id: "m-owner" };
+    vi.mocked(listMessages).mockResolvedValue([owner]);
+    vi.mocked(listRuns).mockResolvedValue([run("r-1", "running", "m-owner")]);
+    const rendered = await renderComponent(view("p"));
+    await interact(async () => undefined);
+    expect(rendered.container.querySelector(".conversation-working")?.textContent).toBe(
+      "Assistant 正在工作",
+    );
+    const bubble = document.getElementById("channel-message-m-owner");
+    expect(bubble?.querySelector(".message-recipients .rich-mention")?.textContent).toBe(
+      "Assistant",
+    );
+    const form = rendered.container.querySelector("form.message-composer");
+    expect(form?.classList).toContain("is-empty");
+    await typeText(rendered.container, "继续");
+    expect(form?.classList).not.toContain("is-empty");
+    await rendered.unmount();
+  });
+
+  it("marks where the unread replies start when the 频道 opens", async () => {
+    vi.mocked(listMessages).mockResolvedValue([
+      { ...message("u", "早先"), id: "m-1", authorType: "bot", authorId: bot.id },
+      { ...message("u", "我的问题"), id: "m-2" },
+      { ...message("u", "回复一"), id: "m-3", authorType: "bot", authorId: bot.id },
+      { ...message("u", "回复二"), id: "m-4", authorType: "bot", authorId: bot.id },
+    ]);
+    const rendered = await renderComponent(
+      <ChannelWorkspace
+        globalHeader
+        channel={channel("u")}
+        session={createConversationSession()}
+        bots={[bot]}
+        artifacts={[]}
+        progress={[]}
+        unreadCount={2}
+        {...callbacks}
+      />,
+    );
+    await interact(async () => undefined);
+    const divider = rendered.container.querySelector(".message-new-divider");
+    expect(
+      divider?.nextElementSibling?.id ?? divider?.nextElementSibling?.nextElementSibling?.id,
+    ).toBe("channel-message-m-3");
+    expect(rendered.container.querySelectorAll(".message-new-divider")).toHaveLength(1);
+    await rendered.unmount();
+  });
+});

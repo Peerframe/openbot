@@ -87,7 +87,8 @@ updated.
 | 35 | 新建聊天 recipients as a compact dropdown — **merged** | New | — | As in the Owner's reference recording: 36px rows from the field's left edge, the shortcut on the highlighted row only, closes on an outside press |
 | 36 | Dark appearance — **in review with 37** | DarkTokens, MainDark, NewDark, SettingsGeneralDark | C25 on Desktop | A dark value for every colour token; about 500 hard-coded colours moved to tokens (light unchanged); 通用 › 主题 跟随系统 / 浅色 / 深色; on Desktop the window follows (C25) |
 | 37 | Backend wiring — **in review** | BotInfo, NewBotChat, SettingsGeneral | C9, C11, C25 | 编辑头像 saves each change at the revision; the C11 greeting above the role card; 主题 on Desktop through the C25 bridge. Carries step 36, whose #183 was merged into the step 35 branch after that branch had already been merged |
-| 38 | Bottom rows level and real logos — **in review** | Main, New, Sidebar, Settings, Plugins | — | Composer and sidebar footer both 44px and 18px above the window edge; provider and plugin logos from LobeHub (MIT) and SVG Logos (CC0) instead of letter tiles |
+| 38 | Bottom rows level and real logos — **merged** | Main, New, Sidebar, Settings, Plugins | — | Composer and sidebar footer both 44px and 18px above the window edge; provider and plugin logos from LobeHub (MIT) and SVG Logos (CC0) instead of letter tiles |
+| 39 | Conversation polish — **in review** | Main, MainDark | C27 on Desktop | From the Owner's second reference recording: Telegram-like runs (coloured name above, avatar below), Bot names as tags, 「X 正在工作…」, 「新」, https links (Web; Desktop inert until C27), mic-only empty composer, deep-grey own bubble in dark |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 
@@ -134,7 +135,12 @@ Done 2026-10-03 (#182, #184–#186):
 | C23 fork | Owner-approved narrow `agent-computer` fork reporting profile bytes ([evidence](../../research/storage-cleanup-follow-ups.md#c23-owner-approved-fork-and-image-2026-10-03)); deployment to existing Workers is separate | Real bytes once a Worker runs the new image; a failed measurement still shows 「量不出」 |
 | C25 | Desktop colour scheme: the main process keeps 跟随系统 / 浅色 / 深色 and sets the window background and material ([contract](../../API.md#desktop-color-scheme-c25)) | Integrated (step 37): 主题 works on Desktop |
 
-Open: none. New needs go into this backlog first.
+Open — in the order the UI needs them:
+
+| ID | Needed by | Contract to add | UI until ready |
+| --- | --- | --- | --- |
+| C27 | Step 39 | **Desktop opener for links in messages**: an optional bridge `openExternalLink(url)`. The main process accepts only an https URL without credentials, at most 2,048 characters, from the main window during a user gesture, and at most one per second. The first time a host is opened in a session, a native confirmation names the host (打开 / 取消). It opens with the system browser and returns `opened` or `refused`. Links never navigate the app window | Links show with a globe but stay inert on Desktop |
+| C26 | Step 40 | **主 Bot** (Owner decision 2026-10-05; the design is being chosen on the canvas): one Owner-chosen Bot per workspace, revision-checked and audited, that un-@ messages in a 频道 it belongs to go to first and that may hand work to other members through the existing delegation. Contract to follow the chosen design | — |
 
 ## Repository housekeeping (proposals)
 
@@ -149,6 +155,18 @@ Open: none. New needs go into this backlog first.
 | H7 | **Updated 2026-10-03.** The website demo (`apps/web/src/demo`) renders the redesigned components; its sidebar follows the product width and its fixed runs report step counts. Keep its fixtures in step with each change | Claude | No |
 | H8 | **Reviewed 2026-10-03.** Tests mostly find elements by role, `aria-label` or class (about 620 and 420 uses); only 41 finds use visible text, mostly button names, which are the accessible names. Copy assertions stay on purpose: the copy is the behaviour under test | Claude | No |
 | H9 | **Done 2026-10-03.** No unreachable UI module is left; the last one, `desktop-setup.ts` (a stale copy of the Desktop setup plan), is deleted. Keep deleting replaced UI in the same step | Claude | No |
+
+## Owner decisions (2026-10-05)
+
+1. The composer and the sidebar footer share one line; providers and known plugins show real logos
+   (step 38).
+2. From the second reference recording (step 39): Telegram-like runs, Bot name tags, 「X 正在工作…」,
+   「新」 and a mic-only empty composer.
+3. B: in dark, your own bubble is deep grey, not white.
+4. C: links in messages open, https only; Desktop needs its own opener (C27).
+5. D: no realtime voice conversation for now.
+6. A: a 主 Bot, in OpenBot's own design rather than the reference's; three options are on the
+   canvas (主 Bot · 待选) and the backend contract (C26) follows the chosen one.
 
 ## Owner decisions (2026-10-03)
 

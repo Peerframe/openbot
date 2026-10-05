@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import type { Bot } from "@openbot/domain";
+import { type ReactNode, useEffect, useState } from "react";
 import {
   AttachmentPurgedError,
   formatAttachmentSize,
@@ -11,11 +12,23 @@ import { AttachmentPreview } from "./AttachmentPreview";
 import { RichMessage } from "./RichMessage";
 import "./MessageAttachments.css";
 
-export function MessageAttachments({ content, channelId }: { content: string; channelId: string }) {
+export function MessageAttachments({
+  content,
+  channelId,
+  mentions,
+  leading,
+}: {
+  content: string;
+  channelId: string;
+  mentions?: readonly Bot[] | undefined;
+  leading?: ReactNode;
+}) {
   const { text, ids } = splitMessageAttachments(content);
   return (
     <>
-      {text ? <RichMessage content={text} /> : null}
+      {text || leading ? (
+        <RichMessage content={text} mentions={mentions} leading={leading} />
+      ) : null}
       {ids.length ? (
         <section className="message-attachments" aria-label="消息附件">
           {ids.map((id) => (

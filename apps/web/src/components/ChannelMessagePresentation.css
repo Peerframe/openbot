@@ -394,7 +394,8 @@
   position: relative;
   display: flex;
   gap: 10px;
-  align-items: flex-start;
+  /* Telegram-like (owner feedback 2026-10-05): the avatar sits at the bottom of a run. */
+  align-items: flex-end;
   width: 100%;
   max-width: none;
   margin: 0 0 6px;
@@ -433,8 +434,8 @@
   height: 32px;
   min-width: 32px;
 }
-/* Like the artboard, only the first message of a Bot's run of messages shows the avatar. */
-.app-shell .channel-workspace.channel-native .message-row.group-continuation .message-avatar {
+/* Only the last message of a Bot's run shows the avatar; the first one shows the name. */
+.app-shell .channel-workspace.channel-native .message-row:not(.group-end) .message-avatar {
   visibility: hidden;
 }
 .app-shell .channel-workspace.channel-native .message-row.human .message-avatar {
@@ -466,8 +467,16 @@
 }
 .app-shell .channel-workspace.channel-native .message-sender strong {
   font-size: 12px;
-  font-weight: 400;
-  color: var(--ob-text-tertiary);
+  font-weight: 600;
+  /* The Bot's jaw colour, darkened in light for contrast; dark uses the lighter edition. */
+  color: color-mix(in srgb, var(--mention, var(--ob-text-tertiary)) 60%, #000);
+}
+:root[data-color-scheme="dark"]
+  .app-shell
+  .channel-workspace.channel-native
+  .message-sender
+  strong {
+  color: var(--mention-dark, var(--ob-text-tertiary));
 }
 .app-shell .channel-workspace.channel-native .message-sender time {
   font-size: 12px;
@@ -503,8 +512,8 @@
 }
 .app-shell .channel-workspace.channel-native .message-row.human .rich-message :not(pre) > code {
   border-color: transparent;
-  background: color-mix(in srgb, var(--ob-on-primary) 16%, transparent);
-  color: var(--ob-on-primary);
+  background: color-mix(in srgb, var(--ob-on-bubble-own) 16%, transparent);
+  color: var(--ob-on-bubble-own);
 }
 .app-shell .channel-workspace.channel-native .rich-message p {
   margin: 0 0 10px;
@@ -552,9 +561,19 @@
 }
 .app-shell .channel-workspace.channel-native .message-row.human .rich-message {
   margin-left: auto;
-  background: var(--ob-primary);
-  color: var(--ob-on-primary);
+  background: var(--ob-bubble-own);
+  color: var(--ob-on-bubble-own);
   line-height: 1.6;
+}
+/* Tags on the Owner's dark bubble use the light jaw edition and the warm-white head, in both
+   appearances, so a black head never disappears into the black bubble. */
+.app-shell .channel-workspace.channel-native .message-row.human .rich-mention {
+  --ob-avatar-body: #e8ebdd;
+  --ob-avatar-eye: #20251f;
+  color: var(--mention-dark, var(--ob-on-bubble-own));
+}
+.app-shell .channel-workspace.channel-native .message-row.human .rich-link {
+  color: var(--ob-on-bubble-own);
 }
 .app-shell .channel-workspace.channel-native .message-row.human .message-attachments {
   justify-content: flex-end;
@@ -893,10 +912,27 @@
   color: var(--ob-text);
   font-size: 13px;
 }
+/* A chosen Bot reads like the tags in messages (owner feedback 2026-10-05): its head and its jaw
+   colour, no box; × shows on hover and on keyboard focus. */
 .app-shell .channel-workspace.channel-native .composer-mention {
-  background: light-dark(#eef3fd, var(--ob-active-fill));
-  color: light-dark(#1f4fae, var(--ob-active));
+  gap: 3px;
+  padding: 0 2px 0 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--mention, var(--ob-active)) 60%, #000);
+  font-size: var(--chat-font-size, 15px);
+  font-weight: 500;
 }
+:root[data-color-scheme="dark"] .app-shell .channel-workspace.channel-native .composer-mention {
+  color: var(--mention-dark, var(--ob-active));
+}
+.app-shell .channel-workspace.channel-native .composer-mention-avatar {
+  display: inline-flex;
+}
+.app-shell .channel-workspace.channel-native .composer-mention-avatar .robot-avatar {
+  width: 18px;
+  height: 18px;
+}
+
 .app-shell .channel-workspace.channel-native :is(.composer-mention, .context-chip) > span {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1115,4 +1151,66 @@
   height: 1px;
   margin: 3px 8px;
   background: light-dark(#e8e8ea, var(--ob-selected));
+}
+/* 「X 正在工作…」 at the end of the conversation (owner feedback 2026-10-05). */
+.app-shell .channel-workspace.channel-native .conversation-working {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 4px;
+  font-size: 13px;
+}
+.app-shell .channel-workspace.channel-native .conversation-working-avatar {
+  width: 24px;
+  height: 24px;
+}
+.app-shell .channel-workspace.channel-native .conversation-working > span {
+  background:
+    linear-gradient(
+      90deg,
+      var(--ob-text-tertiary) 0%,
+      var(--ob-text-tertiary) 35%,
+      var(--ob-text) 50%,
+      var(--ob-text-tertiary) 65%,
+      var(--ob-text-tertiary) 100%
+    )
+    0 0 / 300% 100%;
+  background-clip: text;
+  color: transparent;
+}
+.app-shell .channel-workspace.channel-native .conversation-working strong {
+  font-weight: 500;
+}
+/* 「新」: where the unseen messages start (owner feedback 2026-10-05). */
+.app-shell .channel-workspace.channel-native .message-new-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 8px;
+  color: var(--ob-active);
+  font-size: 12px;
+  font-weight: 600;
+}
+.app-shell .channel-workspace.channel-native .message-new-divider::before,
+.app-shell .channel-workspace.channel-native .message-new-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--ob-active) 35%, transparent);
+}
+/* Empty composer (owner feedback 2026-10-05): no disabled send button, the microphone moves
+   to the corner; the send button appears with the first character. */
+.app-shell .channel-workspace.channel-native .message-composer.is-empty .composer-send {
+  display: none;
+}
+.app-shell .channel-workspace.channel-native .message-composer.is-empty .voice-start {
+  right: 4px;
+}
+/* After the shared chip button rule: a chosen Bot's × shows on hover or keyboard focus. */
+.app-shell .channel-workspace.channel-native .composer-mention button {
+  opacity: 0;
+}
+.app-shell .channel-workspace.channel-native .composer-mention:hover button,
+.app-shell .channel-workspace.channel-native .composer-mention button:focus-visible {
+  opacity: 0.6;
 }
