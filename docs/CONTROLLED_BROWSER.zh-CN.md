@@ -6,7 +6,7 @@ OpenBot 可通过现有 Docker/browser Provider，执行任务明确指定的一
 ## 配置与任务
 
 按 [Node 登记](NODE_ENROLLMENT.zh-CN.md) 配对 Worker，另行运行固定版本的
-[agent-computer 257c1280](https://github.com/CopilotKit/openbot/tree/257c1280d684089be9adb0b35cce262efc7064bf/agent-computer)。
+[agent-computer 窄分支 29a83c1](https://github.com/yxflc11/openbot-agent-computer-upstream/tree/29a83c1932fb67398dd7a36fa80c473e0230a637/agent-computer)。
 保持服务地址私有、令牌保密，使用独立浏览器资料，不接入个人账号。每个电脑服务只连接一个 Worker。
 本地测试页面可使用以下 Worker 配置：
 

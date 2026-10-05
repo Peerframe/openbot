@@ -32,8 +32,8 @@ class ProductBrowserUpstreamTests(unittest.TestCase):
         self.root = Path(temporary.name) / 'upstream'
         self.entry = {'path': 'LICENSE', 'bytes': len(CONTENT),
                       'sha256': hashlib.sha256(CONTENT).hexdigest()}
-        manifest = {'commit': upstream.MANIFEST['commit'], 'files': [self.entry]}
-        self.url = ('https://raw.githubusercontent.com/CopilotKit/openbot/'
+        manifest = {'repository': upstream.MANIFEST['repository'], 'commit': upstream.MANIFEST['commit'], 'files': [self.entry]}
+        self.url = ('https://raw.githubusercontent.com/'+manifest['repository']+'/'
                     + manifest['commit'] + '/LICENSE')
         patcher = patch.object(upstream, 'MANIFEST', manifest)
         patcher.start()

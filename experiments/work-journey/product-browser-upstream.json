@@ -1,5 +1,5 @@
 {
-  "commit": "257c1280d684089be9adb0b35cce262efc7064bf",
+  "commit": "29a83c1932fb67398dd7a36fa80c473e0230a637",
   "files": [
     {
       "path": "src/aria-snapshot.ts",
@@ -43,8 +43,8 @@
     },
     {
       "path": "src/index.ts",
-      "sha256": "c3158d1362294e89ec6591c539a11f6cd6dcfa01376354b62bb4f8f13c3ebdfd",
-      "bytes": 50838
+      "sha256": "a1daba73a57cd7598cf117dbd4729f1a374ad879900aa3283fceaa192b77c700",
+      "bytes": 51336
     },
     {
       "path": "src/live-page.ts",
@@ -55,6 +55,11 @@
       "path": "src/profile-listing.ts",
       "sha256": "d29417e91bbf8b79cb672dacba12fae35adfcdbbda29fcbddc9080aab096918b",
       "bytes": 1781
+    },
+    {
+      "path": "src/profile-usage.ts",
+      "sha256": "51dc426e22a119eeb5ed2db2129ea7e412d00ebbf9f389211de4e37dfbe9ce99",
+      "bytes": 3996
     },
     {
       "path": "src/profiles.ts",
@@ -86,5 +91,6 @@
       "sha256": "6d35a6bb107ae508da34636387f6208e75a6938e797bc0d5bfa9489d2ca95bad",
       "bytes": 1067
     }
-  ]
+  ],
+  "repository": "yxflc11/openbot-agent-computer-upstream"
 }
