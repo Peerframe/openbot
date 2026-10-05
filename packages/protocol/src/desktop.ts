@@ -105,12 +105,20 @@ export type EmployeeTemplateSaveResult = Readonly<{
   status: "saved" | "cancelled" | "busy" | "unavailable" | "exists" | "changed";
 }>;
 
+export type DesktopColorScheme = "system" | "light" | "dark";
+export type DesktopColorSchemeState = Readonly<{
+  scheme: DesktopColorScheme;
+  resolved: "light" | "dark";
+}>;
+
 export interface DesktopPlatformPreferences {
   launchAtLogin: boolean;
   runInBackground: boolean;
   globalShortcut: string;
   showDockBadge: boolean;
   automaticUpdates: boolean;
+  /** Optional for compatibility with older renderers and preference files. */
+  colorScheme?: DesktopColorScheme;
 }
 export interface DesktopPlatformState {
   status: "ready" | "invalid" | "failed";
@@ -150,6 +158,9 @@ export interface DesktopUpdateState {
 }
 
 export interface OpenBotDesktopBridge {
+  getColorScheme?(): Promise<DesktopColorSchemeState>;
+  setColorScheme?(scheme: DesktopColorScheme): Promise<DesktopColorSchemeState>;
+  onColorSchemeChanged?(listener: (state: DesktopColorSchemeState) => void): () => void;
   getPlatformState?(): Promise<DesktopPlatformState>;
   setPlatformPreferences?(value: DesktopPlatformPreferences): Promise<DesktopPlatformState>;
   setUnreadBadge?(count: number): Promise<boolean>;

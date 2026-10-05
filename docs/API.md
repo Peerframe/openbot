@@ -659,6 +659,25 @@ those releases have been produced or installed.
 The Owner deferred production signed automatic updates for this integration. Unsigned packages
 continue to report unavailable; native preferences can be used independently.
 
+## Desktop color scheme (C25)
+
+The optional bridge provides `getColorScheme()` and `setColorScheme(scheme)` as promises of
+`{scheme, resolved}`, where `scheme` is `system | light | dark` and `resolved` is `light | dark`.
+`onColorSchemeChanged(listener)` returns an unsubscribe function and delivers only that DTO when
+the preference or effective system appearance changes. Invalid values and surplus IPC arguments
+are rejected. Mutation requires the trusted focused main frame and a real preload user gesture.
+
+The main process stores optional `colorScheme` in the existing private
+`platform-preferences.json` format. Default is `system`; legacy five-field files remain readable,
+and settings updates from older renderers preserve the saved scheme. Storage failures reject the
+setter and retain the previous native theme. No system preference is modified. The saved scheme
+is applied before creating the window: resolved light uses `#ffffff`, dark uses `#141414`.
+Native sidebar vibrancy stays transparent when enabled; Reduce Transparency and High Contrast
+retain their opaque override, with the fallback color following the resolved scheme.
+
+This PR supplies the platform bridge and native paint behavior. Renderer dark styles and controls
+remain the separate UI slice. Windows/Linux native qualification remains in their existing lanes.
+
 ## Reviewed task knowledge
 
 `modelUseEnabled` is an optional boolean on memory create/update and is returned on stored memory.

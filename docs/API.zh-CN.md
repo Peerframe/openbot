@@ -588,6 +588,21 @@ IPC 不接受渲染层传入的命令、程序路径或更新地址。
 
 本次集成按 Owner 决定暂缓生产签名自动更新。未签名包继续返回不可用；原生偏好功能可独立使用。
 
+## Desktop 外观模式（C25）
+
+可选 bridge 的 `getColorScheme()` 和 `setColorScheme(scheme)` 都返回 promise，结果为
+`{scheme, resolved}`。`scheme` 为 `system | light | dark`，`resolved` 为 `light | dark`。
+`onColorSchemeChanged(listener)` 返回取消订阅函数，在偏好或有效系统外观变化时只推送这个 DTO。
+非法值和多余 IPC 参数会被拒绝。修改要求可信、当前聚焦的主 frame，以及 preload 检查的真实用户手势。
+
+主进程把可选的 `colorScheme` 保存在现有私有 `platform-preferences.json` 中。默认跟随系统；
+原有五字段文件仍可读取，旧 renderer 修改其他设置时保留已保存的外观。存储失败时 setter 拒绝，
+保留此前的原生主题。不修改系统设置。创建窗口前应用已保存的偏好：浅色背景 `#ffffff`，深色
+`#141414`。启用原生侧栏材质时仍透明；减少透明度和高对比度仍强制不透明，降级背景随当前外观改变。
+
+本轮提供平台 bridge 和原生绘制行为。renderer 深色样式与控件属于单独的界面工作；Windows/Linux
+原生验收仍由已有平台检查承担。
+
 ## 任务经验审阅
 
 记忆新增/更新可携带 `modelUseEnabled` 布尔值，存储后的记录会返回它。新增与迁移旧记录默认

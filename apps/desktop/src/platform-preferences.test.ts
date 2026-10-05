@@ -38,6 +38,8 @@ describe("Desktop platform preferences", () => {
       null,
       { ...defaults, url: "https://untrusted" },
       { ...defaults, launchAtLogin: 1 },
+      { ...defaults, colorScheme: "auto" },
+      { ...defaults, colorScheme: null },
       { ...defaults, globalShortcut: "A" },
       { ...defaults, globalShortcut: "CommandOrControl+CommandOrControl+A" },
       { ...defaults, globalShortcut: "Control+;rm" },

@@ -119,6 +119,9 @@
 
 待做——按界面需要的先后排列：
 
+C25 平台实现已完成：可选的配色 bridge 持久化 system/light/dark，并更新原生背景和材质
+（[契约](../../API.zh-CN.md#desktop-外观模式c25)）。Renderer 深色样式和控件仍由 Claude 完成。
+
 | 编号 | 用于 | 需要新增的约定 | 完成前的界面 |
 | --- | --- | --- | --- |
 | C9 | 第 17 步 | **创建后修改 Bot 外观**：仅 Owner、记审计、带版本检查；后端已实现，UI 待接线，约定见[研究记录](../../research/bot-appearance-and-greeting.zh-CN.md) | 隐藏铅笔按钮 |
