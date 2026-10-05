@@ -58,7 +58,7 @@ import { AttachmentsManagerDialog } from "./AttachmentsManager";
 import { MessageActionBar } from "./MessageActionBar";
 import { MessageReactions } from "./MessageReactions";
 import { NewBotSetupCard } from "./NewBotSetupCard";
-import { RichMessage } from "./RichMessage";
+import { accentStyle, MentionTag, RichMessage } from "./RichMessage";
 import { useListScroll } from "./useListScroll";
 import { VoiceRecorder } from "./VoiceRecorder";
 import "./ChannelMessagePresentation.css";
@@ -108,6 +108,7 @@ export function ChannelWorkspace({
   onOpenSettings,
   onOpenHosts,
   onOpenPlugins,
+  unreadCount = 0,
   onBotChanged,
   approvals = [],
   nodes = [],
@@ -138,6 +139,8 @@ export function ChannelWorkspace({
   onOpenHosts?: (() => void) | undefined;
   /** Opens the plugins panel, for a plugin chosen from @ that no member may use yet. */
   onOpenPlugins?: (() => void) | undefined;
+  /** The 频道's unread replies when it was opened (read once), for the 「新」 divider. */
+  unreadCount?: number | undefined;
   /** Called after the 定分工 card changes the Bot's role, so the host can refresh its lists. */
   onBotChanged?: (() => void | Promise<void>) | undefined;
   /** Workspace approvals; the pending ones for this 频道's tasks are decided on their cards. */
@@ -176,6 +179,18 @@ export function ChannelWorkspace({
     [messages],
   );
   const runsById = useMemo(() => new Map(runs.map((run) => [run.id, run])), [runs]);
+  // The Bots each Owner message went to, from the tasks it started; shown as tags in the bubble.
+  const recipientsByMessage = useMemo(() => {
+    const result = new Map<string, Bot[]>();
+    for (const run of runs) {
+      const bot = run.sourceMessageId ? botsById.get(run.botId) : undefined;
+      if (!bot || !run.sourceMessageId) continue;
+      const list = result.get(run.sourceMessageId) ?? [];
+      if (!list.some((item) => item.id === bot.id)) list.push(bot);
+      result.set(run.sourceMessageId, list);
+    }
+    return result;
+  }, [runs, botsById]);
   const collaboration = useMemo(
     () => indexRunCollaboration(channel.id, runs, messages),
     [channel.id, runs, messages],
@@ -431,7 +446,20 @@ export function ChannelWorkspace({
     }
   }
   const activeRun = runs.find((run) => run.status === "running") ?? runs.find(isActiveRun);
+  // 「X 正在工作…」 (owner feedback 2026-10-05): the newest Bot still busy on a task here that has
+  // not started writing its reply, so a quiet wait never looks stuck.
+  const workingRun = runs
+    .filter(
+      (run) =>
+        (run.status === "queued" || run.status === "assigned" || run.status === "running") &&
+        botsById.has(run.botId) &&
+        !outputs.get(run.id)?.text,
+    )
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt))[0];
   const contextLength = composeTaskText(draft.text, draft.attachments, draft.skills).length;
+  // Nothing to send: only the microphone shows; the send button appears with the first character.
+  const composerEmpty =
+    !draft.text.trim() && !draft.attachments?.length && !draft.skills?.length && !recording;
   function chooseMention(bot: Bot) {
     try {
       mentionCaret.current = mention
@@ -867,13 +895,25 @@ export function ChannelWorkspace({
   // Messages that arrive after the conversation opened slide in; history and older pages do not.
   const seenMessages = useRef<{ ids: Set<string>; newest: number } | undefined>(undefined);
   const arrived = useRef(new Set<string>());
+  // 「新」 (owner feedback 2026-10-05): the first message the Owner has not seen — the 频道's
+  // unread replies when it opened, or the first reply that arrives while the window is away. It
+  // stays put until the conversation is left.
+  const unreadAtOpen = useRef(unreadCount);
+  const newFrom = useRef<string | undefined>(undefined);
   if (!loading) {
-    if (!seenMessages.current)
+    if (!seenMessages.current) {
       seenMessages.current = {
         ids: new Set(messages.map((item) => item.id)),
         newest: Math.max(0, ...messages.map((item) => Date.parse(item.createdAt) || 0)),
       };
-    else
+      let remaining = unreadAtOpen.current;
+      for (let index = messages.length - 1; index >= 0 && remaining > 0; index -= 1) {
+        const item = messages[index];
+        if (!item || item.authorType === "human") continue;
+        newFrom.current = item.id;
+        remaining -= 1;
+      }
+    } else
       for (const item of messages) {
         if (seenMessages.current.ids.has(item.id)) continue;
         seenMessages.current.ids.add(item.id);
@@ -881,6 +921,8 @@ export function ChannelWorkspace({
         if (time >= seenMessages.current.newest) {
           arrived.current.add(item.id);
           seenMessages.current.newest = time;
+          if (newFrom.current === undefined && item.authorType !== "human" && !windowAttended())
+            newFrom.current = item.id;
         }
       }
   }
@@ -1161,6 +1203,12 @@ export function ChannelWorkspace({
           ) : (
             messages.map((message, index) => (
               <Fragment key={message.id}>
+                {message.id === newFrom.current ? (
+                  <div className="message-new-divider">
+                    <span aria-hidden="true">新</span>
+                    <span className="visually-hidden">以下是新消息</span>
+                  </div>
+                ) : null}
                 {needsTimeDivider(messages[index - 1], message) ? (
                   <div className="message-time-divider">
                     <time dateTime={message.createdAt}>
@@ -1170,6 +1218,8 @@ export function ChannelWorkspace({
                 ) : null}
                 <MessageRow
                   message={message}
+                  mentions={members}
+                  recipients={channel.directBotId ? undefined : recipientsByMessage.get(message.id)}
                   arriving={arrived.current.has(message.id)}
                   reactions={reactions.filter((item) => item.messageId === message.id)}
                   onReactionChange={async (emoji, active) => {
@@ -1266,6 +1316,9 @@ export function ChannelWorkspace({
                 </div>
               </article>
             ))}
+          {workingRun ? (
+            <WorkingRow bot={botsById.get(workingRun.botId) as Bot} status={workingRun.status} />
+          ) : null}
           {taskCards.trailing.map((run) => renderTask(run))}
         </div>
         {dateCue ? (
@@ -1284,7 +1337,7 @@ export function ChannelWorkspace({
           </p>
         ) : null}
         <form
-          className={`message-composer${composerExpanded ? " is-expanded" : ""}${recording ? " is-recording" : ""}`}
+          className={`message-composer${composerExpanded ? " is-expanded" : ""}${recording ? " is-recording" : ""}${composerEmpty ? " is-empty" : ""}`}
           ref={composer}
           onSubmit={sendMessage}
         >
@@ -1306,8 +1359,17 @@ export function ChannelWorkspace({
             {recipientIds.length > 0 && !channel.directBotId && (
               <div className="composer-recipients">
                 {recipientIds.map((id) => (
-                  <span className="composer-mention" key={id}>
-                    <span>@ {botsById.get(id)?.name ?? "已离开的 Bot"}</span>
+                  <span
+                    className="composer-mention"
+                    key={id}
+                    style={botsById.get(id) ? accentStyle(botsById.get(id) as Bot) : undefined}
+                  >
+                    {botsById.get(id) ? (
+                      <span className="composer-mention-avatar" aria-hidden="true">
+                        <RobotAvatar bot={botsById.get(id) as Bot} />
+                      </span>
+                    ) : null}
+                    <span>{botsById.get(id)?.name ?? "已离开的 Bot"}</span>
                     <button
                       type="button"
                       aria-label={`移除接收 Bot ${botsById.get(id)?.name ?? id}`}
@@ -1715,6 +1777,8 @@ export function ChannelWorkspace({
 
 function MessageRow({
   message,
+  mentions,
+  recipients,
   arriving,
   reactions,
   onReactionChange,
@@ -1736,6 +1800,10 @@ function MessageRow({
   onOpenBot,
 }: {
   message: Message;
+  /** The 频道's Bots, whose names in the text render as tags. */
+  mentions: readonly Bot[];
+  /** For an Owner message in a 频道: the Bots it went to. */
+  recipients?: readonly Bot[] | undefined;
   /** Arrived while the conversation was open: it slides in. */
   arriving: boolean;
   reactions: MessageReaction[];
@@ -1766,6 +1834,7 @@ function MessageRow({
       tabIndex={-1}
       aria-label={`${name} 的消息`}
       className={`message-row ${message.authorType}${groupStart ? " group-start" : " group-continuation"}${groupEnd ? " group-end" : ""}${direct ? " direct-message" : ""}${arriving ? " is-arriving" : ""}`}
+      style={author ? accentStyle(author) : undefined}
     >
       <div className="message-avatar">
         {author ? (
@@ -1812,7 +1881,20 @@ function MessageRow({
             </blockquote>
           </button>
         ) : null}
-        <MessageAttachments content={message.content} channelId={message.channelId} />
+        <MessageAttachments
+          content={message.content}
+          channelId={message.channelId}
+          mentions={mentions}
+          leading={
+            message.authorType === "human" && recipients?.length ? (
+              <span className="message-recipients">
+                {recipients.map((bot) => (
+                  <MentionTag key={bot.id} bot={bot} />
+                ))}
+              </span>
+            ) : undefined
+          }
+        />
         {artifacts.length > 0 ? (
           <div className="message-artifacts">
             {artifacts.map((artifact) => (
@@ -1959,4 +2041,29 @@ function SlashActionGlyph() {
       <path d="M9 6H6.5a2.5 2.5 0 1 1 2.5-2.5V18a2.5 2.5 0 1 1-2.5-2.5H18a2.5 2.5 0 1 1-2.5 2.5V6a2.5 2.5 0 1 1 2.5 2.5H6" />
     </svg>
   );
+}
+
+/** One quiet line at the end of the conversation while a Bot works: its moving head and its name. */
+function WorkingRow({ bot, status }: { bot: Bot; status: Run["status"] }) {
+  return (
+    <div className="conversation-working" role="status" aria-live="polite">
+      <RobotAvatar
+        bot={bot}
+        status={status}
+        presence="motion"
+        className="conversation-working-avatar"
+      />
+      <span>
+        <strong>{bot.name}</strong> {status === "running" ? "正在工作" : "收到了，马上开始"}
+      </span>
+    </div>
+  );
+}
+
+function windowAttended() {
+  try {
+    return !document.hidden && document.hasFocus();
+  } catch {
+    return true;
+  }
 }

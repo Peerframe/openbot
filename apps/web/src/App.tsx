@@ -1161,6 +1161,7 @@ export function AuthenticatedWorkspace({
       ) : selectedChannel ? (
         <ChannelWorkspace
           key={selectedChannel.id}
+          unreadCount={unreadByChannel[selectedChannel.id] ?? 0}
           session={conversationSession}
           globalHeader
           onBotChanged={refresh}

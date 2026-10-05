@@ -60,7 +60,8 @@ class Component extends DCLogic {
       { use: '选中行、标题胶囊', name: '--ob-selected', light: '#e6e6e8', dark: '#333336' },
       { use: '分隔线', name: '--ob-divider', light: '#e3e3e6', dark: '#2c2c2e' },
       { use: '菜单描边', name: '--ob-popover-border', light: '#e5e5e8', dark: '#333336' },
-      { use: '主按钮、你的气泡', name: '--ob-primary', light: '#111111', dark: '#f2f2f3' },
+      { use: '主按钮', name: '--ob-primary', light: '#111111', dark: '#f2f2f3' },
+      { use: '你的气泡', name: '--ob-bubble-own', light: '#111111', dark: '#3a3a3c' },
       { use: '主按钮上的字', name: '--ob-on-primary', light: '#ffffff', dark: '#111111' },
       { use: '正文', name: '--ob-text', light: '#1d1d1f', dark: '#f2f2f3' },
       { use: '次要文字', name: '--ob-text-secondary', light: '#6e6e73', dark: '#a1a1a6' },
@@ -88,7 +89,7 @@ class Component extends DCLogic {
     return {
       columns: [{ rows: tokens.slice(0, half) }, { rows: tokens.slice(half) }],
       rules: [
-        { title: '主色反转', text: '浅色里是黑底白字的地方（发送、主按钮、你的气泡、开关打开），深色里换成白底黑字；不引入新的品牌色。' },
+        { title: '主色反转', text: '浅色里是黑底白字的按钮（发送、主按钮、开关打开），深色里换成白底黑字；你的气泡在深色里用深灰 #3a3a3c，不刺眼（2026-10-05）。' },
         { title: '头像用暖白版', text: '深色界面直接用头像系统里的暖白版（同一几何），下颌色换成同色相的亮一档；群组头像的缝隙跟着底色。' },
         { title: '浅色不变', text: '浅色界面保持原样；只有深色时才换成这一组。阴影加深，卡片、菜单、弹窗依次更亮一档来分层。' }
       ]

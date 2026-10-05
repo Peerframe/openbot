@@ -36,6 +36,14 @@
     opacity: 0;
   }
 }
+@keyframes ob-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
 @keyframes ob-message-flash {
   0%,
   100% {
@@ -134,6 +142,15 @@
     .app-shell
     :is(.workspace-main, .workspace-destination, .workspace-details > *) {
     animation: ob-view-in 120ms var(--ob-ease-out);
+  }
+  :root:not([data-reduced-motion="true"]) .channel-native .composer-send {
+    animation: ob-pop-in var(--ob-motion-fast) var(--ob-ease-out);
+  }
+  :root:not([data-reduced-motion="true"]) .conversation-working > span {
+    animation: ob-shimmer 1.8s linear infinite;
+  }
+  :root:not([data-reduced-motion="true"]) .conversation-working {
+    animation: ob-view-in var(--ob-motion) var(--ob-ease-out);
   }
   :root:not([data-reduced-motion="true"]) .message-row.is-flash {
     border-radius: 14px;

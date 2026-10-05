@@ -55,6 +55,9 @@
   --ob-dim: rgb(0 0 0 / 34%);
   /* Step 36: tokens that replaced hard-coded colours; each has a dark value below. */
   --ob-on-primary: #ffffff;
+  /* The Owner's own message bubble: black in light; deep grey in dark (owner decision 2026-10-05). */
+  --ob-bubble-own: #111111;
+  --ob-on-bubble-own: #ffffff;
   --ob-text-strong: #3a3a3c;
   --ob-fill-strong: #dadadd;
   --ob-border-strong: #c7c7cc;
@@ -100,6 +103,8 @@
   --ob-selected: #333336;
   --ob-primary: #f2f2f3;
   --ob-on-primary: #111111;
+  --ob-bubble-own: #3a3a3c;
+  --ob-on-bubble-own: #f2f2f3;
   --ob-text: #f2f2f3;
   --ob-text-strong: #d1d1d6;
   --ob-text-secondary: #a1a1a6;

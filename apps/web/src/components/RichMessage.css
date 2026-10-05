@@ -58,3 +58,44 @@
     max-width: calc(100vw - 94px);
   }
 }
+/* Links: https only, with a globe; on Desktop they stay inert until it can open them safely. */
+.rich-message .rich-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--ob-active);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--ob-active) 35%, transparent);
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+.rich-message .rich-link svg {
+  flex-shrink: 0;
+  align-self: center;
+}
+.rich-message .rich-link.is-inert {
+  color: var(--ob-text-secondary);
+  text-decoration: none;
+  cursor: default;
+}
+/* A Bot named in a message (owner feedback 2026-10-05): its head and its jaw colour. In light
+   the colour is darkened for contrast; dark uses the lighter jaw edition. */
+.rich-mention {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  color: color-mix(in srgb, var(--mention, var(--ob-active)) 60%, #000);
+  font-weight: 500;
+  white-space: nowrap;
+}
+:root[data-color-scheme="dark"] .rich-mention {
+  color: var(--mention-dark, var(--ob-active));
+}
+.rich-mention > span {
+  align-self: center;
+  display: inline-flex;
+}
+.rich-mention .rich-mention-avatar {
+  width: 17px;
+  height: 17px;
+}

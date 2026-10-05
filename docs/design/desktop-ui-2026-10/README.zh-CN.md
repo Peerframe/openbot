@@ -36,6 +36,7 @@
 | [ChannelFilesTrash](ChannelFilesTrash.dc.html)、[SettingsStorage](SettingsStorage.dc.html) | ① 从回收站永久删除（再确认一次）和文件删除后的占位；④ 设置 › 存储空间 |
 | [EmployeeBrowser](EmployeeBrowser.dc.html) | Bot 的浏览器：接管与交还 |
 | [DarkTokens](DarkTokens.dc.html)、[MainDark](MainDark.dc.html)、[NewDark](NewDark.dc.html)、[SettingsGeneralDark](SettingsGeneralDark.dc.html)，以及组件 [SidebarDark](SidebarDark.dc.html)、[ChannelInfoDark](ChannelInfoDark.dc.html)、[SettingsNavDark](SettingsNavDark.dc.html) | 深色外观：每个颜色 token 的浅色值与深色值，以及三个深色画面 |
+| [PrimaryBot](PrimaryBot.dc.html) | 主 Bot：三种摆放方式，等你选择（提案，2026-10-05） |
 | [Notices](Notices.dc.html)、[LongLists](LongLists.dc.html)、[AppIcon](AppIcon.dc.html) | 提示与连接状态；所有界面的长列表与滚动；应用图标 |
 | [ChannelInfo](ChannelInfo.dc.html) | 「频道信息」右栏，含 详情 / 资料库 / 成员 分页（由 Main 引用） |
 | [Launch](Launch.dc.html)、[LaunchMotion](LaunchMotion.dc.html) | 启动画面的各状态与 900 毫秒开场动画 |

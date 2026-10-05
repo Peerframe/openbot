@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>主 Bot · 三个方案</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#fcfcfc;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.col{display:flex;flex-direction:column;gap:14px}
+.label{display:flex;align-items:baseline;gap:10px}
+.label strong{font-size:17px;font-weight:700}
+.label span{font-size:13px;color:#8e8e93}
+.side{width:300px;height:430px;box-sizing:border-box;padding:14px 10px 0;background:#f5f5f6;border:1px solid #e7e7e9;border-radius:18px;overflow:hidden;position:relative}
+.top{display:flex;align-items:center;justify-content:space-between;padding:4px 8px 14px 10px}
+.lights{display:flex;gap:8px}
+.lights span{width:12px;height:12px;border-radius:50%;display:block}
+.search{display:flex;align-items:center;gap:8px;height:34px;padding:0 11px;margin:0 4px 6px;border-radius:10px;background:#eaeaec;border:1px solid #e0e0e3;font-size:14px;color:#8e8e93}
+.row{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px;border-radius:14px}
+.name{font-size:15px;font-weight:500;white-space:nowrap}
+.pv{font-size:13px;color:#8a8a8e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.time{font-size:12px;color:#8e8e93;align-self:flex-start;padding-top:2px}
+.sec{padding:14px 12px 6px;font-size:14px;color:#8e8e93}
+.tag{font-size:11px;color:#6e6e73;background:#e7e7e9;border-radius:5px;padding:1px 6px;white-space:nowrap}
+.note{font-size:13px;color:#6e6e73;line-height:1.6;margin:0}
+.icon-btn{width:30px;height:30px;border:0;border-radius:8px;background:transparent;display:inline-grid;place-items:center;cursor:pointer}
+.pill{height:30px;padding:0 12px;border:0;border-radius:15px;background:#111111;color:#ffffff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.pill.soft{background:#ececee;color:#1d1d1f}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1120px; box-sizing: border-box; padding: 52px 64px; display: flex; flex-direction: column; gap: 30px; overflow: hidden">
+<header style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">主 Bot · 三个方案</h1>
+<p style="margin: 0; font-size: 15px; color: #6e6e73; line-height: 1.6">主 Bot 是你默认交代事情的那一个：不 @ 任何人时先交给它，由它分派给其他 Bot。同一时间只有一个，可以随时换。三个方案只差在侧栏里怎么放；状态卡片和「设为主 Bot」三者通用。</p>
+</header>
+
+<section style="display: grid; grid-template-columns: repeat(3, 300px); gap: 72px; align-items: start">
+
+<div class="col">
+<div class="label"><strong>方案一 · 置顶行</strong><span>最克制</span></div>
+<div class="side">
+<div class="top"><div class="lights" aria-hidden="true"><span style="background:#ff5f57"></span><span style="background:#febc2e"></span><span style="background:#28c840"></span></div><button type="button" class="icon-btn" aria-label="新建"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button></div>
+<div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>搜索对话、Bot 和分组</div>
+<button type="button" class="row" style="width: 100%; border: 1px solid #e3e3e6; background: #ffffff; text-align: left; cursor: pointer; margin-top: 4px">
+<dc-import name="Avatar" character="round" accent="green" size="40" state="working" dot="true" ring="#ffffff" hint-size="40px,40px"></dc-import>
+<span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="display: flex; align-items: center; gap: 6px"><span class="name">研究助理</span><span style="font-size: 11px; font-weight: 600; color: #ffffff; background: #111111; border-radius: 5px; padding: 1px 6px">主</span></span><span class="pv" style="color: #1c7c3c">工作中 · 抓取竞品更新日志</span></span>
+<span class="time">10:24</span>
+</button>
+<div class="sec">市场团队</div>
+<div class="row"><dc-import name="GroupAvatar" members="round:green,scout:yellow" size="40" surface="#f5f5f6" hint-size="40px,40px"></dc-import><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span class="name">市场周报</span><span class="pv">研究助理：周报初稿好了</span></span><span class="time">10:20</span></div>
+<div class="row"><dc-import name="Avatar" character="scout" accent="yellow" size="40" hint-size="40px,40px"></dc-import><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="display: flex; align-items: center; gap: 6px"><span class="name">客服小橙</span><span class="tag">客服 · 工单</span></span><span class="pv">今天的 12 个工单都回复了。</span></span><span class="time">昨天</span></div>
+</div>
+<p class="note">主 Bot 是列表的第一行，白底和「主」字标出来，状态写在第二行。和其他行长得一样，侧栏不多占地方。</p>
+</div>
+
+<div class="col">
+<div class="label"><strong>方案二 · 头部名片</strong><span>推荐</span></div>
+<div class="side">
+<div class="top"><div class="lights" aria-hidden="true"><span style="background:#ff5f57"></span><span style="background:#febc2e"></span><span style="background:#28c840"></span></div><button type="button" class="icon-btn" aria-label="新建"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button></div>
+<div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 12px; margin: 0 4px 10px; padding: 12px; border-radius: 18px; background: #ffffff; border: 1px solid #e3e3e6; box-shadow: 0 2px 8px rgba(0,0,0,0.04)">
+<dc-import name="Avatar" character="round" accent="green" size="44" state="working" dot="true" ring="#ffffff" hint-size="44px,44px"></dc-import>
+<span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="display: flex; align-items: center; gap: 6px"><span class="name" style="font-weight: 600">研究助理</span><svg width="13" height="13" viewBox="0 0 24 24" fill="#e08a00" aria-label="主 Bot"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"></path></svg></span><span class="pv" style="color: #1c7c3c">工作中 · 抓取竞品更新日志</span></span>
+<button type="button" aria-label="给研究助理交代事情" style="width: 32px; height: 32px; border: 0; border-radius: 50%; background: #111111; display: inline-grid; place-items: center; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg></button>
+</div>
+<div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>搜索对话、Bot 和分组</div>
+<div class="sec">市场团队</div>
+<div class="row"><dc-import name="GroupAvatar" members="round:green,scout:yellow" size="40" surface="#f5f5f6" hint-size="40px,40px"></dc-import><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span class="name">市场周报</span><span class="pv">研究助理：周报初稿好了</span></span><span class="time">10:20</span></div>
+<div class="row"><dc-import name="Avatar" character="scout" accent="yellow" size="40" hint-size="40px,40px"></dc-import><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="display: flex; align-items: center; gap: 6px"><span class="name">客服小橙</span><span class="tag">客服 · 工单</span></span><span class="pv">今天的 12 个工单都回复了。</span></span><span class="time">昨天</span></div>
+</div>
+<p class="note">一张横向名片放在搜索框上面：头像、名字和小星标、实时状态，右边的笔直接打开它的单聊并把光标放进输入框。比 Grok 的大头像矮一半，状态一眼可见。</p>
+</div>
+
+<div class="col">
+<div class="label"><strong>方案三 · 顶栏头像</strong><span>最省地方</span></div>
+<div class="side">
+<div class="top"><div class="lights" aria-hidden="true"><span style="background:#ff5f57"></span><span style="background:#febc2e"></span><span style="background:#28c840"></span></div><span style="display: flex; align-items: center; gap: 4px"><button type="button" aria-label="研究助理（主 Bot），工作中" style="position: relative; width: 30px; height: 30px; border: 0; padding: 0; border-radius: 50%; background: #ffffff; box-shadow: 0 0 0 1px #e3e3e6; display: inline-grid; place-items: center; cursor: pointer"><dc-import name="Avatar" character="round" accent="green" size="24" state="working" dot="true" ring="#ffffff" hint-size="24px,24px"></dc-import></button><button type="button" class="icon-btn" aria-label="新建"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button></span></div>
+<div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>搜索对话、Bot 和分组</div>
+<div class="sec">市场团队</div>
+<div class="row"><dc-import name="GroupAvatar" members="round:green,scout:yellow" size="40" surface="#f5f5f6" hint-size="40px,40px"></dc-import><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span class="name">市场周报</span><span class="pv">研究助理：周报初稿好了</span></span><span class="time">10:20</span></div>
+<div class="row"><dc-import name="Avatar" character="round" accent="green" size="40" state="working" dot="true" ring="#f5f5f6" hint-size="40px,40px"></dc-import><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="display: flex; align-items: center; gap: 6px"><span class="name">研究助理</span><span class="tag">信息 · 竞品研究</span></span><span class="pv" style="color: #1c7c3c">工作中 · 抓取竞品更新日志</span></span><span class="time">10:24</span></div>
+<div class="row"><dc-import name="Avatar" character="scout" accent="yellow" size="40" hint-size="40px,40px"></dc-import><span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="display: flex; align-items: center; gap: 6px"><span class="name">客服小橙</span><span class="tag">客服 · 工单</span></span><span class="pv">今天的 12 个工单都回复了。</span></span><span class="time">昨天</span></div>
+</div>
+<p class="note">主 Bot 只是顶栏「新建」旁边的一个小头像，点一下打开它的单聊，悬停看状态。侧栏完全不变，但新用户不容易发现。</p>
+</div>
+</section>
+
+<section style="display: grid; grid-template-columns: 360px 300px minmax(0, 1fr); gap: 48px; align-items: start; padding-top: 6px; border-top: 1px solid #ececee">
+<div class="col" style="padding-top: 22px">
+<div class="label"><strong>悬停：状态卡片</strong><span>三个方案通用</span></div>
+<div role="dialog" aria-label="主 Bot 状态" style="width: 340px; box-sizing: border-box; padding: 16px; border-radius: 18px; background: #fdfdfd; border: 1px solid #e5e5e8; box-shadow: 0 16px 40px rgba(0,0,0,0.12); display: flex; flex-direction: column; gap: 12px">
+<div style="display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: center"><dc-import name="Avatar" character="round" accent="green" size="40" state="working" dot="true" ring="#fdfdfd" hint-size="40px,40px"></dc-import><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px">研究助理 · 主 Bot</strong><span style="font-size: 13px; color: #1c7c3c">工作中 · 已完成 3 步，在我的 MacBook Pro 上</span></span></div>
+<p style="margin: 0; padding: 10px 12px; border-radius: 12px; background: #f0f0f2; font-size: 13px; color: #3a3a3c; line-height: 1.6">最近：周报初稿好了，放在 weekly/2026-w40.md，变化最大的是 A 公司的团队版定价。</p>
+<div style="display: flex; gap: 8px"><button type="button" class="pill">打开单聊</button><button type="button" class="pill soft">任务详情</button></div>
+</div>
+</div>
+<div class="col" style="padding-top: 22px">
+<div class="label"><strong>设为主 Bot</strong><span>右键或 Bot 信息</span></div>
+<div role="menu" aria-label="Bot 菜单" style="width: 240px; box-sizing: border-box; padding: 6px; border-radius: 14px; background: #fdfdfd; border: 1px solid #e5e5e8; box-shadow: 0 10px 30px rgba(0,0,0,0.12); display: flex; flex-direction: column; gap: 1px">
+<button type="button" role="menuitem" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border: 0; border-radius: 8px; background: #ececee; text-align: left; font-size: 14px; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="#e08a00" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"></path></svg>设为主 Bot</button>
+<button type="button" role="menuitem" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; text-align: left; font-size: 14px; cursor: pointer"><span style="width: 15px"></span>重命名</button>
+<button type="button" role="menuitem" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; text-align: left; font-size: 14px; cursor: pointer"><span style="width: 15px"></span>移到分组…</button>
+<button type="button" role="menuitem" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; text-align: left; font-size: 14px; cursor: pointer"><span style="width: 15px"></span>免打扰</button>
+</div>
+<p class="note">换主 Bot 立即生效，原来的主 Bot 回到普通列表。</p>
+</div>
+<div class="col" style="padding-top: 22px">
+<div class="label"><strong>它改变什么</strong><span>需要后端（Codex）</span></div>
+<ul style="margin: 0; padding-left: 18px; font-size: 14px; color: #3a3a3c; line-height: 1.8">
+<li>新建工作区时，第一个 Bot 自动成为主 Bot。</li>
+<li>在频道里不 @ 任何人：如果主 Bot 在这个频道，先交给它；它可以把子任务交给频道里的其他 Bot（现有的委派）。</li>
+<li>「+」新建聊天时，主 Bot 排在收件人列表最前面。</li>
+<li>主 Bot 只是「默认先找谁」，不多给任何权限：审批、插件授权和电脑权限照旧按每个 Bot 单独设置。</li>
+<li>删除主 Bot 时，需要先选一个新的主 Bot，或者让工作区暂时没有主 Bot。</li>
+</ul>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

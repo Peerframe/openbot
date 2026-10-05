@@ -143,6 +143,27 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
   when the # or +N badge holds that corner.
 - Accessible name: 「市场周报，3 名 Bot：研究助理、客服小橙、发布助手」.
 
+## Conversation (owner feedback 2026-10-05)
+
+From the Owner's second reference recording; the layout is Telegram-like.
+
+- **A run of a Bot's messages** shows its name above the first bubble, in the Bot's jaw colour
+  (darkened in light for contrast), and its avatar at the bottom of the last one.
+- **Bot names are tags**: wherever a 频道's Bot is named in a message, it shows as its small head
+  plus its name in its colour. An Owner message in a 频道 starts with tags for the Bots it went to.
+  In the composer, a chosen Bot is the same tag at the start of the line; its × shows on hover.
+- **「X 正在工作…」**: while a Bot is busy on a task here and has not started writing, one quiet line
+  with its moving head ends the conversation (the text shimmers unless motion is reduced).
+- **「新」** marks the first unseen reply: the 频道's unread replies when it opens, or the first reply
+  that arrives while the window is away. It stays until the conversation is left.
+- **Links** in messages: only https links without credentials, with a globe, open in a new tab
+  without a referrer. Desktop shows them but keeps them inert until its main process can open
+  them safely (C27).
+- **The empty composer** shows only the microphone; the send button appears with the first
+  character.
+- **Your bubble** is black with white text in light and deep grey (`#3a3a3c`) in dark (owner
+  decision 2026-10-05).
+
 ## Tasks in a conversation
 
 - **One task card per task, updated in place** (TaskCards): queued → running → needs you → done
