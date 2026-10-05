@@ -395,8 +395,85 @@
   cursor: default;
   opacity: 0.6;
 }
-.work-tasks .native-task-scope input[type="file"] {
+/* WorkSupervision artboard (review 2026-10-05): 附件 heads the scope with a count and two
+   actions; the system file picker is hidden behind 添加附件. */
+.work-tasks .native-task-files-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.work-tasks .native-task-files-head > span {
+  flex: 1;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
+}
+.work-tasks .native-task-scope button.native-task-link {
+  height: auto;
+  padding: 0;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font-weight: 500;
+}
+.work-tasks .native-task-add {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 15px;
+  background: var(--ob-primary);
+  color: var(--ob-on-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.work-tasks .native-task-add:focus-within {
+  outline: 2px solid var(--ob-active);
+  outline-offset: 2px;
+}
+.work-tasks .native-task-add.is-disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.work-tasks .native-task-scope input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--ob-primary);
+}
+.work-tasks .native-task-files > li {
+  display: grid;
+  gap: 4px;
+}
+.work-tasks .native-task-files > li > small {
+  padding-left: 24px;
+}
+.work-tasks .native-task-files details {
+  margin-top: 2px;
+  padding-left: 24px;
+}
+.work-tasks .native-task-files summary,
+.work-tasks .native-task-more > summary {
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+.work-tasks .native-task-sha code {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.work-tasks .native-task-more {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--ob-fill);
+}
+.work-tasks .native-task-more[open] > summary {
+  margin-bottom: 10px;
+}
+.work-tasks .native-task-more .native-task-capabilities {
+  display: grid;
+  gap: 8px;
 }
 
 /* The page frame, moved here from the retired destinations.css (its colours were overridden). */

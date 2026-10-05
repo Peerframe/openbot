@@ -168,20 +168,28 @@ export function NativeTaskScopeForm({
     .reduce((sum, file) => sum + file.sizeBytes, 0);
   return (
     <section className="native-task-scope" aria-label="本次任务范围">
-      <h3>本次任务范围</h3>
-      <p>默认仅使用模型、生成报告和结果审阅。下列选择仅授权本次任务，不读取任何频道。</p>
-      <div className="native-task-file-controls">
+      {/* WorkSupervision artboard (review 2026-10-05): one 附件 field with an 添加附件 button and
+          the chosen files; limits and permissions stay available but out of the way. */}
+      <div className="native-task-files-head">
+        <h3>附件</h3>
+        <span>
+          已选 {value.attachmentIds.length} / {MAX_TASK_ATTACHMENTS} 个 ·{" "}
+          {formatAttachmentSize(selectedBytes)} / 20 MB
+        </span>
         <button
           type="button"
+          className="native-task-link"
           disabled={disabled || busy}
           onClick={() => void run(listOwnerAttachments)}
         >
           刷新附件列表
         </button>
-        <label>
-          上传 Owner 附件
+        <label className={`native-task-add${disabled || busy ? " is-disabled" : ""}`}>
+          <span aria-hidden="true">添加附件</span>
           <input
+            className="visually-hidden"
             type="file"
+            aria-label="上传 Owner 附件"
             accept={ATTACHMENT_ACCEPT}
             disabled={disabled || busy}
             onChange={(event) => {
@@ -192,15 +200,13 @@ export function NativeTaskScopeForm({
           />
         </label>
       </div>
-      <p>
-        上传后请勾选要交给本次任务的附件。已选择 {value.attachmentIds.length} /{" "}
-        {MAX_TASK_ATTACHMENTS} 个 · 合计 {formatAttachmentSize(selectedBytes)} / 20 MB。
+      <p
+        className="native-task-hint"
+        title="文本 256 KiB、图片 5 MiB、其他支持格式 10 MiB。图片/PDF 可作为原始输入；Office、音频和视频需先处理。"
+      >
+        勾选要交给这次任务的附件。只授权这一次，不读取任何频道。
       </p>
-      <small>
-        文本 256 KiB、图片 5 MiB、其他支持格式 10 MiB。图片/PDF
-        可作为原始输入；下列元数据不表示模型已经读取文件。Office、音频和视频需先显式处理。
-      </small>
-      {loaded && files.length === 0 && <p>暂无 Owner 附件。</p>}
+      {loaded && files.length === 0 && <p className="native-task-hint">还没有附件。</p>}
       <ul className="native-task-files">
         {files.map((file) => {
           const media = file.mediaType.startsWith("audio/") || file.mediaType.startsWith("video/");
@@ -220,7 +226,7 @@ export function NativeTaskScopeForm({
                 {file.deletedAt && "（已删除）"}
               </label>
               <small>
-                {file.mediaType} · {file.sizeBytes} 字节 · SHA-256 <code>{file.sha256}</code>
+                {file.mediaType} · {formatAttachmentSize(file.sizeBytes)}
               </small>
               {file.processing && (
                 <p>
@@ -232,7 +238,10 @@ export function NativeTaskScopeForm({
                 <p>此格式需先处理，再提交任务。</p>
               )}
               <details>
-                <summary>附件处理与删除</summary>
+                <summary aria-label="附件处理与删除">处理…</summary>
+                <p className="native-task-sha">
+                  SHA-256 <code>{file.sha256}</code>
+                </p>
                 {file.mediaType !== "text/plain" && !file.deletedAt && (
                   <>
                     {file.mediaType === "application/pdf" && (
@@ -277,52 +286,55 @@ export function NativeTaskScopeForm({
       </ul>
       {busy && <p role="status">正在同步附件；请等待后再提交任务。</p>}
       {error && <p role="alert">{error}</p>}
-      <fieldset disabled={disabled || !capabilitiesEnabled} className="native-task-capabilities">
-        <legend>额外能力（默认不授权）</legend>
-        {(["knowledge", "plugins", "web"] as const).map((key) => (
-          <label className="native-task-checkbox" key={key}>
-            <input
-              type="checkbox"
-              checked={value[key]}
-              onChange={(event) => onChange({ ...value, [key]: event.target.checked })}
-            />
-            {
-              {
-                knowledge: "允许使用此 Bot 的知识",
-                plugins: "允许使用此 Bot 的插件",
-                web: "允许访问网页",
-              }[key]
-            }
-          </label>
-        ))}
-        <p>协作 Bot 范围（可选，最多 32 个；仅授予候选范围，实际委派仍由服务电脑检查）</p>
-        {bots
-          .filter((bot) => taskBotSupported(bot) && bot.id !== botId)
-          .map((bot) => (
-            <label className="native-task-checkbox" key={bot.id}>
+      <details className="native-task-more">
+        <summary>更多权限（默认不授权）</summary>
+        <fieldset disabled={disabled || !capabilitiesEnabled} className="native-task-capabilities">
+          <legend className="visually-hidden">额外能力（默认不授权）</legend>
+          {(["knowledge", "plugins", "web"] as const).map((key) => (
+            <label className="native-task-checkbox" key={key}>
               <input
                 type="checkbox"
-                aria-label={`允许协作 ${bot.name}`}
-                checked={value.collaboratorBotIds.includes(bot.id)}
-                disabled={
-                  !value.collaboratorBotIds.includes(bot.id) &&
-                  value.collaboratorBotIds.length >= 32
-                }
-                onChange={(event) =>
-                  onChange({
-                    ...value,
-                    collaboratorBotIds: (event.target.checked
-                      ? [...value.collaboratorBotIds, bot.id]
-                      : value.collaboratorBotIds.filter((id) => id !== bot.id)
-                    ).sort(),
-                  })
-                }
+                checked={value[key]}
+                onChange={(event) => onChange({ ...value, [key]: event.target.checked })}
               />
-              {bot.name}
+              {
+                {
+                  knowledge: "允许使用此 Bot 的知识",
+                  plugins: "允许使用此 Bot 的插件",
+                  web: "允许访问网页",
+                }[key]
+              }
             </label>
           ))}
-      </fieldset>
-      {!capabilitiesEnabled && <small>当前候选入口尚未启用额外能力；附件范围可独立提交。</small>}
+          <p>可以协作的 Bot（最多 32 个；实际委派仍由服务电脑检查）</p>
+          {bots
+            .filter((bot) => taskBotSupported(bot) && bot.id !== botId)
+            .map((bot) => (
+              <label className="native-task-checkbox" key={bot.id}>
+                <input
+                  type="checkbox"
+                  aria-label={`允许协作 ${bot.name}`}
+                  checked={value.collaboratorBotIds.includes(bot.id)}
+                  disabled={
+                    !value.collaboratorBotIds.includes(bot.id) &&
+                    value.collaboratorBotIds.length >= 32
+                  }
+                  onChange={(event) =>
+                    onChange({
+                      ...value,
+                      collaboratorBotIds: (event.target.checked
+                        ? [...value.collaboratorBotIds, bot.id]
+                        : value.collaboratorBotIds.filter((id) => id !== bot.id)
+                      ).sort(),
+                    })
+                  }
+                />
+                {bot.name}
+              </label>
+            ))}
+        </fieldset>
+        {!capabilitiesEnabled && <small>这里暂时不能授予额外能力；附件可以单独提交。</small>}
+      </details>
     </section>
   );
 }
