@@ -55,16 +55,16 @@
   box-sizing: border-box;
   width: 100%;
   padding: 16px 18px;
-  border: 1px solid #ececee;
+  border: 1px solid var(--ob-fill-hover);
   border-radius: 20px;
-  background: #fff;
+  background: var(--ob-surface);
   color: var(--ob-text);
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 .empty-workspace-start:hover {
-  border-color: #d9d9dd;
+  border-color: light-dark(#d9d9dd, var(--ob-border-strong));
   box-shadow: 0 4px 14px rgb(0 0 0 / 6%);
 }
 .empty-workspace .empty-workspace-start-avatar {
@@ -86,7 +86,7 @@
   line-height: 1.5;
 }
 .empty-workspace-start > svg {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
 }
 .empty-workspace-import,
 .empty-workspace-status button {
@@ -116,7 +116,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #c7c7cc;
+  background: var(--ob-offline);
 }
 .empty-workspace-status i.is-on {
   background: var(--ob-online);

@@ -111,6 +111,10 @@ export const scenes: Record<string, AppScene | ComponentScene> = {
 };
 
 const name = new URLSearchParams(location.search).get("scene") ?? "";
+// &theme=dark previews the dark appearance; without it the preview stays light, so captures do not
+// depend on the machine's own setting.
+const theme = new URLSearchParams(location.search).get("theme") === "dark" ? "dark" : "light";
+document.documentElement.dataset.colorScheme = theme;
 const scene = scenes[name];
 const world = createWorld(scene?.kind === "app" ? (scene.world ?? "full") : "full");
 const storage = installPreviewTransport(world);
@@ -121,6 +125,7 @@ if (scene?.kind === "app")
       rightPanelOpen: scene.rail ?? true,
       // &sidebar=0 shows the collapsed sidebar (the legacy-style sweep covers both).
       leftPanelOpen: new URLSearchParams(location.search).get("sidebar") !== "0",
+      colorScheme: theme,
     }),
   );
 

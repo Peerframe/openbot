@@ -6,7 +6,7 @@
   gap: 26px;
   min-height: 80px;
   padding: 18px 20px;
-  background: #fff;
+  background: var(--ob-surface);
 }
 .setting-row > div:first-child {
   min-width: 0;
@@ -18,7 +18,7 @@
 }
 .setting-row p {
   margin: 6px 0 0;
-  color: #75808b;
+  color: light-dark(#75808b, var(--ob-text-secondary));
   font-size: 12px;
   line-height: 1.65;
   overflow-wrap: anywhere;
@@ -31,10 +31,10 @@
   max-width: 100%;
   font-size: 12px;
   padding: 8px 28px 8px 10px;
-  border: 1px solid #e0e4e9;
+  border: 1px solid light-dark(#e0e4e9, var(--ob-divider));
   border-radius: 8px;
-  background-color: #f9fafb;
-  color: #374553;
+  background-color: light-dark(#f9fafb, var(--ob-fill));
+  color: light-dark(#374553, var(--ob-text));
 }
 @media (max-width: 1100px) and (min-width: 761px) {
   .setting-row {

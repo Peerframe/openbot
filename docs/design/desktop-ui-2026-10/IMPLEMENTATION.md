@@ -82,10 +82,10 @@ updated.
 | 30 | Website demo and dead code — **merged** | — | C13 | The demo's sidebar follows the product width and its fixed runs report step counts (H7); the last unreachable module is deleted (H9) |
 | 31 | Close-out — **merged** | — | — | Docs brought up to date with what is built, contracts for C9 and C11 recorded for Codex, H8 reviewed, CJK spacing around names, and the C16 icon test's budget |
 | 32 | Owner feedback: settings, popovers, scale and motion — **merged** | Settings, Sidebar, New, Slash | — | Settings search and close fixed, overlay scrollbars, plugin tiles, no title on New, 「+」 closes outside, @ with plugins at the caret, Desktop at 1200×780 and 90%, the motion layer |
-| 33 | Telegram-like conversation — **in review** | Main, Composer | — | Arriving messages rise in, views fade in, glide to latest and to quotes with a flash, compact 48px composer |
-| 34 | Retire the phone layout — **in review** | — | — | `MobileNavigation` and the phone-only layout rules deleted; the desktop layout holds down to 800px |
+| 33 | Telegram-like conversation — **merged** | Main, Composer | — | Arriving messages rise in, views fade in, glide to latest and to quotes with a flash, compact 48px composer |
+| 34 | Retire the phone layout — **merged** | — | — | `MobileNavigation` and the phone-only layout rules deleted; the desktop layout holds down to 800px |
 | 35 | 新建聊天 recipients as a compact dropdown — **in review** | New | — | As in the Owner's reference recording: 36px rows from the field's left edge, the shortcut on the highlighted row only, closes on an outside press |
-| 36 | Dark appearance | All | C25 on Desktop | Dark artboards first; colour tokens with a dark set; 外观 › 跟随系统 / 浅色 / 深色; Web follows the system |
+| 36 | Dark appearance — **in review** | DarkTokens, MainDark, NewDark, SettingsGeneralDark | C25 on Desktop | A dark value for every colour token; about 500 hard-coded colours moved to tokens (light unchanged); 通用 › 主题 跟随系统 / 浅色 / 深色; Desktop stays light until C25 |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 

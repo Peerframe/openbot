@@ -4,7 +4,7 @@
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: #fff;
+  background: var(--ob-surface);
 }
 .approval-card header {
   display: flex;
@@ -14,7 +14,7 @@
   margin-bottom: 8px;
 }
 .approval-card header span {
-  color: #94480b;
+  color: light-dark(#94480b, var(--ob-attention-ink));
   font-size: 12px;
   font-weight: 600;
 }
@@ -43,7 +43,7 @@
   white-space: nowrap;
 }
 .approval-card > small {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
 }
 .approval-actions {
@@ -65,16 +65,16 @@
   opacity: 0.6;
 }
 .approval-reject {
-  border: 1px solid #ececee;
-  background: #ececee;
+  border: 1px solid var(--ob-fill-hover);
+  background: var(--ob-fill-hover);
 }
 .approval-reject:hover {
-  background: #dedee1;
+  background: light-dark(#dedee1, var(--ob-fill-strong));
 }
 .approval-approve {
   overflow: hidden;
   border: 1px solid var(--ink-strong);
-  color: #fff;
+  color: var(--ob-on-primary);
   background: var(--ink-strong);
   text-overflow: ellipsis;
   white-space: nowrap;

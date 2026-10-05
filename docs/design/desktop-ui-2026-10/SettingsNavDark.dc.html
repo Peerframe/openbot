@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>设置分区导航（深色）</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<nav aria-label="设置分区" style="width: 250px; height: 740px; box-sizing: border-box; background: #1e1e20; border-right: 1px solid #2e2e30; padding: 16px 12px; display: flex; flex-direction: column; gap: 1px; overflow: hidden; color: #f2f2f3; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', system-ui, sans-serif">
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="5">
+<sc-if value="{{g.hasTitle}}" hint-placeholder-val="{{true}}"><span style="padding: 12px 12px 4px; font-size: 12px; font-weight: 600; color: #7c7c82">{{g.title}}</span></sc-if>
+<sc-for list="{{g.items}}" as="n" hint-placeholder-count="3">
+<button type="button" aria-current="{{n.current}}" style="display: flex; align-items: center; gap: 10px; width: 100%; height: 36px; padding: 0 12px; border: 0; border-radius: 9px; background: {{n.bg}}; font: inherit; font-size: 14px; font-weight: {{n.weight}}; color: #f2f2f3; cursor: pointer; text-align: left">
+<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#f2f2f3" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.d}}"></path></svg>
+<span style="flex-grow: 1">{{n.label}}</span>
+<sc-if value="{{n.hasBadge}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; color: #7c7c82">{{n.badge}}</span></sc-if>
+</button>
+</sc-for>
+</sc-for>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"section":{"editor":"enum","options":["general","notify","model","skills","plugins","routines","memory","hosts","approvals","browser","account","audit","storage","transfer","about"],"default":"general"},"$preview":{"width":250,"height":740}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const section = this.props.section ?? 'general';
+    const P = {
+      general: 'M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1',
+      notify: 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0',
+      model: 'M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5',
+      skills: 'M13 2L4 14h7l-1 8 9-12h-7z',
+      plugins: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
+      routines: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 7v5l3 2',
+      memory: 'M4 19V5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2zM18 19v2H6',
+      hosts: 'M5 4h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM8 20h8M12 16v4',
+      approvals: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4',
+      browser: 'M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20zM2 12h20M12 2a15 15 0 0 1 4 10a15 15 0 0 1-4 10a15 15 0 0 1-4-10a15 15 0 0 1 4-10z',
+      account: 'M12 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6',
+      audit: 'M9 5h11M9 12h11M9 19h11M4 5h.01M4 12h.01M4 19h.01',
+      storage: 'M4 5h16v6H4zM4 13h16v6H4zM8 8h.01M8 16h.01',
+      transfer: 'M7 10l5-5 5 5M12 5v10M5 19h14',
+      about: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 11v5M12 8h.01'
+    };
+    const spec = [
+      ['', [['general', '通用'], ['notify', '通知']]],
+      ['Bot 能力', [['model', '模型服务', '3'], ['skills', '技能', '14'], ['plugins', '插件', '6'], ['routines', '例行任务', '3'], ['memory', '记忆']]],
+      ['执行与安全', [['hosts', '工作主机', '3'], ['approvals', '审批与权限'], ['browser', '员工浏览器']]],
+      ['账户', [['account', '账户与安全'], ['audit', '审计记录'], ['storage', '存储空间'], ['transfer', '导入与导出'], ['about', '关于 OpenBot']]]
+    ];
+    const groups = spec.map((g) => ({
+      title: g[0], hasTitle: !!g[0],
+      items: g[1].map((s) => ({
+        label: s[1], d: P[s[0]], badge: s[2] || '', hasBadge: !!s[2],
+        bg: s[0] === section ? '#2c2c2e' : 'transparent',
+        weight: s[0] === section ? '600' : '400',
+        current: s[0] === section ? 'page' : 'false'
+      }))
+    }));
+    return { groups };
+  }
+}
+</script>
+</body>
+</html>

@@ -37,18 +37,18 @@ select:focus-visible {
   margin: 0 26px;
   padding: 10px 12px;
   border-radius: 7px;
-  color: #9e2c24;
-  background: #fff0ef;
+  color: light-dark(#9e2c24, var(--ob-attention));
+  background: light-dark(#fff0ef, var(--ob-danger-fill));
   font-size: 11px;
 }
 .node-identity-item.revoked {
-  color: #8b929a;
+  color: light-dark(#8b929a, var(--ob-text-tertiary));
 }
 .node-status.online::before {
   background: var(--green);
 }
 .node-status.revoked {
-  color: #9d4039;
+  color: light-dark(#9d4039, var(--ob-attention));
 }
 .node-status.revoked::before {
   background: #c94b43;
@@ -79,8 +79,8 @@ select:focus-visible {
   }
 }
 .message-row.human .message-avatar > span {
-  color: #4d5865;
-  background: #e1e5ea;
+  color: light-dark(#4d5865, var(--ob-text-strong));
+  background: light-dark(#e1e5ea, var(--ob-selected));
 }
 .message-row.human {
   grid-template-columns: minmax(0, 1fr) 34px;
@@ -127,9 +127,9 @@ select:focus-visible {
   align-items: center;
   gap: 12px;
   padding: 9px 18px;
-  border-bottom: 1px solid #e8d8b5;
-  background: #fff8e9;
-  color: #705323;
+  border-bottom: 1px solid light-dark(#e8d8b5, var(--ob-attention-border));
+  background: light-dark(#fff8e9, var(--ob-attention-fill));
+  color: light-dark(#705323, var(--ob-attention-ink));
   font-size: 12px;
   line-height: 1.5;
 }
@@ -142,9 +142,9 @@ select:focus-visible {
   flex-shrink: 0;
   min-height: 30px;
   padding: 4px 9px;
-  border: 1px solid #d8c39a;
+  border: 1px solid light-dark(#d8c39a, var(--ob-attention-border));
   border-radius: 6px;
-  background: #fffdf7;
+  background: light-dark(#fffdf7, var(--ob-attention-fill));
   color: inherit;
   cursor: pointer;
 }

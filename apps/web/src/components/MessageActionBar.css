@@ -127,6 +127,6 @@
   flex-basis: 100%;
   max-width: 260px;
   margin: 6px;
-  color: #b3261e;
+  color: var(--ob-attention);
   font-size: 12px;
 }

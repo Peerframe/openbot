@@ -4,7 +4,7 @@
 
 仓库所有者于 2026-10-01 确认本设计为 Desktop 与 Web 客户端**唯一**的界面契约，取代之前“只换样式”的
 做法：每个界面都按这些画板逐步重建。可编辑的源文件是所有者的私有设计画布；这里的 `.dc.html` 是
-只读快照（标记与内联样式，最近更新于 2026-10-02），让包括 Codex 在内的所有协作者按同一套尺寸工作。
+只读快照（标记与内联样式，最近更新于 2026-10-03），让包括 Codex 在内的所有协作者按同一套尺寸工作。
 
 这些文件是 Design Component 页面，需要画布运行时才能渲染，但其中的内联样式、文字和结构就是规格。
 `Settings.dc.html` 里的 9 个服务商标志是画布上传的图片（`/_blob/…`），产品中使用 MIT 许可的
@@ -35,6 +35,7 @@
 | [MessageActions](MessageActions.dc.html)、[Composer](Composer.dc.html)、[ChannelFiles](ChannelFiles.dc.html) | ① 消息操作与回应；输入框的附件、语音和补充指令；带回收站的频道文件 |
 | [ChannelFilesTrash](ChannelFilesTrash.dc.html)、[SettingsStorage](SettingsStorage.dc.html) | ① 从回收站永久删除（再确认一次）和文件删除后的占位；④ 设置 › 存储空间 |
 | [EmployeeBrowser](EmployeeBrowser.dc.html) | Bot 的浏览器：接管与交还 |
+| [DarkTokens](DarkTokens.dc.html)、[MainDark](MainDark.dc.html)、[NewDark](NewDark.dc.html)、[SettingsGeneralDark](SettingsGeneralDark.dc.html)，以及组件 [SidebarDark](SidebarDark.dc.html)、[ChannelInfoDark](ChannelInfoDark.dc.html)、[SettingsNavDark](SettingsNavDark.dc.html) | 深色外观：每个颜色 token 的浅色值与深色值，以及三个深色画面 |
 | [Notices](Notices.dc.html)、[LongLists](LongLists.dc.html)、[AppIcon](AppIcon.dc.html) | 提示与连接状态；所有界面的长列表与滚动；应用图标 |
 | [ChannelInfo](ChannelInfo.dc.html) | 「频道信息」右栏，含 详情 / 资料库 / 成员 分页（由 Main 引用） |
 | [Launch](Launch.dc.html)、[LaunchMotion](LaunchMotion.dc.html) | 启动画面的各状态与 900 毫秒开场动画 |

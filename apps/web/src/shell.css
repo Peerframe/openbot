@@ -8,7 +8,7 @@
   min-height: 0;
   padding: 12px;
   overflow: hidden;
-  background: #f6f7f8;
+  background: light-dark(#f6f7f8, var(--ob-fill));
 }
 .app-shell > * {
   min-width: 0;
@@ -19,9 +19,9 @@
   height: calc(100dvh - 24px);
   min-height: 0;
   padding: 22px 14px 12px;
-  border: 1px solid #fff;
+  border: 1px solid var(--ob-surface);
   border-radius: 22px;
-  background: #fcfcfd;
+  background: light-dark(#fcfcfd, var(--ob-surface));
 }
 :root[data-desktop="darwin"] .app-shell .sidebar::before {
   position: fixed;
@@ -56,15 +56,15 @@
 .app-shell .conversation-empty h2 {
   font-size: 18px;
   font-weight: 620;
-  color: #2c3542;
+  color: light-dark(#2c3542, var(--ob-text));
 }
 .app-shell .conversation-empty p {
   font-size: 12px;
-  color: #627181;
+  color: light-dark(#627181, var(--ob-text-secondary));
 }
 .app-shell .conversation-icon {
-  color: #627b98;
-  background: #e4eaf2;
+  color: light-dark(#627b98, var(--ob-text-secondary));
+  background: light-dark(#e4eaf2, var(--ob-selected));
   border-radius: 18px;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -75,7 +75,7 @@
 .workspace-details {
   min-width: 0;
   min-height: 0;
-  background: #f6f7f8;
+  background: light-dark(#f6f7f8, var(--ob-fill));
 }
 :root[data-font-size="large"] .app-shell {
   --chat-font-size: 16px;
@@ -90,35 +90,35 @@
   background: linear-gradient(
     to right,
     transparent calc(var(--sidebar-width) + var(--shell-inset)),
-    #f6f7f8 calc(var(--sidebar-width) + var(--shell-inset))
+    light-dark(#f6f7f8, var(--ob-fill)) calc(var(--sidebar-width) + var(--shell-inset))
   );
 }
 :root[data-sidebar-material="enabled"] .app-shell .sidebar {
-  background: #ffffff48;
-  border-color: #ffffff6b;
+  background: var(--ob-sidebar-material-strong);
+  border-color: var(--ob-sidebar-material-border);
 }
 .settings-group-rows {
-  border: 1px solid #e9ebef;
+  border: 1px solid light-dark(#e9ebef, var(--ob-divider));
   border-radius: 13px;
   overflow: hidden;
 }
 .settings-tag {
   font-size: 11px;
-  color: #567461;
-  background: #eaf2ed;
+  color: light-dark(#567461, var(--ob-text-secondary));
+  background: light-dark(#eaf2ed, var(--ob-working-fill));
   padding: 5px 9px;
   border-radius: 6px;
   white-space: nowrap;
 }
 .settings-footnote {
-  color: #7b8793;
+  color: light-dark(#7b8793, var(--ob-text-tertiary));
   font-size: 11px;
   line-height: 1.6;
 }
 .settings-success {
   margin: 16px 20px;
   font-size: 12px;
-  color: #267151;
+  color: light-dark(#267151, var(--ob-online-text));
 }
 /* One window-aligned toolbar owns navigation and inspector controls on every destination. */
 .app-shell.desktop-workspace {
@@ -135,7 +135,7 @@
   gap: 0;
   height: 100dvh;
   min-height: 0;
-  background: #fff;
+  background: var(--ob-surface);
 }
 .workspace-preserved[hidden] {
   display: none;
@@ -143,7 +143,7 @@
 .desktop-workspace .workspace-sidebar {
   min-height: 0;
   min-width: 0;
-  border-right: 1px solid #e9ebee;
+  border-right: 1px solid light-dark(#e9ebee, var(--ob-divider));
 }
 .app-shell.desktop-workspace .sidebar {
   width: 100%;
@@ -151,7 +151,8 @@
   padding: 22px 14px 16px;
   border: 0;
   border-radius: 0;
-  background: #f8f9fb;
+  /* Dark: the sidebar sits darker than the conversation (DarkTokens artboard), not lighter. */
+  background: light-dark(#f8f9fb, var(--ob-sidebar));
 }
 :root[data-desktop="darwin"] .app-shell.desktop-workspace .sidebar::before {
   display: none;
@@ -161,14 +162,14 @@
   height: 100%;
   min-height: 0;
   border-radius: 0;
-  background: #fff;
+  background: var(--ob-surface);
 }
 .app-shell.desktop-workspace .workspace-details {
-  --avatar-surface: #fafafa;
+  --avatar-surface: light-dark(#fafafa, var(--ob-fill));
   height: 100%;
   overflow: auto;
-  background: #fafafa;
-  border-left: 1px solid #ececee;
+  background: light-dark(#fafafa, var(--ob-fill));
+  border-left: 1px solid var(--ob-fill-hover);
 }
 .app-shell.desktop-workspace .workspace-details .context-rail {
   height: auto;
@@ -180,7 +181,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #fff;
+  background: var(--ob-surface);
 }
 .app-shell.desktop-workspace .message-row.bot .message-content,
 .app-shell.desktop-workspace .message-row.system .message-content {
@@ -192,11 +193,11 @@
   background: linear-gradient(
     to right,
     transparent var(--workspace-sidebar-size),
-    #fff var(--workspace-sidebar-size)
+    var(--ob-surface) var(--workspace-sidebar-size)
   );
 }
 :root[data-sidebar-material="enabled"] .app-shell.desktop-workspace .sidebar {
-  background: #ffffff40;
+  background: var(--ob-sidebar-material);
 }
 @media (max-width: 1100px) {
   .app-shell.desktop-workspace.without-sidebar {
@@ -250,7 +251,7 @@
 /* Grouped cards: filled neutral surface instead of an outlined box. */
 .settings-load-notice {
   padding: 26px;
-  border: 1px solid #e5e8ed;
+  border: 1px solid light-dark(#e5e8ed, var(--ob-divider));
   border-radius: 14px;
-  color: #657184;
+  color: light-dark(#657184, var(--ob-text-secondary));
 }

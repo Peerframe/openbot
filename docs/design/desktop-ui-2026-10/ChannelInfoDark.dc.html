@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>频道信息（深色）</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+.ci-icon{width:32px;height:32px;border:0;border-radius:8px;background:transparent;cursor:pointer;display:inline-grid;place-items:center}
+.ci-icon:hover{background:#262628}
+.ci-row:hover{background:#262628}
+</style>
+</helmet>
+<aside aria-label="频道信息" style="width: 340px; height: 900px; box-sizing: border-box; background: #1c1c1e; border-left: 1px solid #2e2e30; display: flex; flex-direction: column; color: #f2f2f3; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', system-ui, sans-serif">
+<div style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end; padding: 0 12px">
+<button type="button" class="ci-icon" aria-label="收起"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a1a1a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 17 11 12 6 7"></polyline><polyline points="13 17 18 12 13 7"></polyline></svg></button>
+</div>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0 24px 18px; text-align: center">
+<dc-import name="GroupAvatar" theme="dark" members="round:green,scout:yellow" size="84" surface="#1c1c1e" hint-size="84px,84px"></dc-import>
+<strong style="font-size: 20px; font-weight: 700; margin-top: 8px">市场周报</strong>
+<span style="font-size: 13px; color: #a1a1a6; line-height: 1.5">每周跟踪竞品动态，周五发团队周报</span>
+</div>
+
+<div role="tablist" aria-label="频道信息分页" style="display: flex; gap: 4px; margin: 0 20px 16px; padding: 4px; border-radius: 12px; background: #262628">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+<button type="button" role="tab" aria-selected="{{t.selected}}" onClick="{{t.pick}}" style="flex: 1; height: 32px; border: 0; border-radius: 9px; background: {{t.bg}}; box-shadow: {{t.shadow}}; font: inherit; font-size: 14px; font-weight: {{t.weight}}; color: {{t.color}}; cursor: pointer">{{t.label}}</button>
+</sc-for>
+</div>
+
+<div style="flex-grow: 1; min-height: 0; overflow: hidden; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 18px">
+
+<sc-if value="{{isMembers}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div class="ci-row" style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px 8px; border-radius: 12px">
+<dc-import name="Avatar" surface="dark" character="round" accent="green" size="40" state="working" hint-size="40px,40px"></dc-import>
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 15px; font-weight: 500">研究助理</span><span style="font-size: 12px; color: #a1a1a6">信息 · 竞品研究</span></span>
+<span style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #5ad37a"><span style="width: 6px; height: 6px; border-radius: 50%; background: #30d158; display: block"></span>工作中</span>
+</div>
+<div class="ci-row" style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px 8px; border-radius: 12px; background: #262628">
+<dc-import name="Avatar" surface="dark" character="scout" accent="yellow" size="40" hint-size="40px,40px"></dc-import>
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 15px; font-weight: 500">客服小橙</span><span style="font-size: 12px; color: #a1a1a6">客服 · 工单</span></span>
+<button type="button" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #3a1f1c; font: inherit; font-size: 13px; font-weight: 600; color: #ff6b5e; cursor: pointer">移除</button>
+</div>
+<button type="button" class="ci-row" aria-expanded="{{addingAttr}}" onClick="{{toggleAdd}}" style="display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: center; padding: 8px 8px; border: 0; border-radius: 12px; background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer">
+<span style="width: 40px; height: 40px; border-radius: 50%; background: #262628; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d1d1d6" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></span>
+<span style="font-size: 15px; color: #d1d1d6">添加成员</span>
+</button>
+</div>
+<sc-if value="{{adding}}" hint-placeholder-val="{{false}}">
+<div role="dialog" aria-label="添加成员" style="margin: -4px 0 0 4px; width: 270px; box-sizing: border-box; border-radius: 18px; background: #222224; border: 1px solid #333336; box-shadow: 0 16px 40px rgba(0,0,0,0.45); overflow: hidden">
+<input type="search" placeholder="搜索 Bot" aria-label="搜索 Bot" style="box-sizing: border-box; width: 100%; height: 44px; padding: 0 16px; border: 0; border-bottom: 1px solid #2e2e30; background: transparent; font: inherit; font-size: 15px; outline: none">
+<div role="listbox" aria-label="可添加的 Bot" style="display: flex; flex-direction: column; gap: 2px; padding: 6px">
+<sc-for list="{{candidates}}" as="c" hint-placeholder-count="4">
+<button type="button" role="option" aria-selected="{{c.selected}}" style="display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; align-items: center; padding: 8px 10px; border: 0; border-radius: 12px; background: {{c.bg}}; font: inherit; font-size: 15px; color: #f2f2f3; text-align: left; cursor: pointer"><dc-import name="Avatar" surface="dark" character="{{c.character}}" accent="{{c.accent}}" size="32" hint-size="32px,32px"></dc-import>{{c.name}}</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<span style="font-size: 12px; color: #7c7c82; line-height: 1.5; padding: 0 8px">悬停一行显示「移除」；点头像或名字打开 Bot 档案；添加后频道头像随之更新。</span>
+</sc-if>
+
+<sc-if value="{{isDetails}}" hint-placeholder-val="{{false}}">
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h3 style="margin: 0 4px; font-size: 13px; font-weight: 500; color: #a1a1a6">需要处理 · 1</h3>
+<div style="border-radius: 16px; background: #1c1c1e; border: 1px solid #2e2e30; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 12px; font-weight: 600; color: #ff6b5e">需要你确认</span><span style="font-size: 12px; color: #a1a1a6">4 分钟内有效</span></div>
+<strong style="font-size: 14px; font-weight: 600; line-height: 1.45">发送邮件给 team@example.com</strong>
+<span style="font-size: 12px; color: #7c7c82">研究助理 · 使用插件 Gmail</span>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button type="button" style="height: 32px; border: 0; border-radius: 16px; background: #2e2e30; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">拒绝</button>
+<button type="button" style="height: 32px; border: 0; border-radius: 16px; background: #f2f2f3; color: #111111; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">批准</button>
+</div>
+</div>
+</section>
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h3 style="margin: 0 4px; font-size: 13px; font-weight: 500; color: #a1a1a6">进行中</h3>
+<div style="border-radius: 16px; background: #262628; padding: 0 14px">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 11px 0"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px">抓取竞品更新日志</span><span style="font-size: 12px; color: #7c7c82">研究助理 · 已完成 3 步</span></span><span style="font-size: 12px; color: #5ad37a">工作中</span></div>
+</div>
+</section>
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h3 style="margin: 0 4px; font-size: 13px; font-weight: 500; color: #a1a1a6">电脑</h3>
+<div style="border-radius: 16px; background: #262628; padding: 0 14px">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 11px 0"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px">我的 MacBook Pro</span><span style="font-size: 12px; color: #7c7c82">macOS · 1/2 个任务</span></span><span style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #5ad37a"><span style="width: 6px; height: 6px; border-radius: 50%; background: #30d158; display: block"></span>在线</span></div>
+</div>
+</section>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 14px 16px; border-radius: 16px; background: #262628">
+<span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 600">通知</span><span style="font-size: 12px; color: #a1a1a6">Bot 回复或需要你确认时提醒</span></span>
+<button type="button" role="switch" aria-checked="true" aria-label="通知" style="width: 44px; height: 26px; border: 0; padding: 0; border-radius: 13px; background: #f2f2f3; position: relative; cursor: pointer"><span style="position: absolute; right: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #1c1c1e; display: block"></span></button>
+</div>
+</sc-if>
+
+<sc-if value="{{isLibrary}}" hint-placeholder-val="{{false}}">
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h3 style="margin: 0 4px; font-size: 13px; font-weight: 500; color: #a1a1a6">任务产出 · 2</h3>
+<div style="border-radius: 16px; background: #262628; padding: 0 14px">
+<sc-for list="{{outputs}}" as="f" hint-placeholder-count="2">
+<div style="display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: center; padding: 11px 0; border-top: {{f.divider}}">
+<span style="width: 36px; height: 36px; border-radius: 10px; background: #1c1c1e; border: 1px solid #2c2c2e; box-sizing: border-box; display: inline-grid; place-items: center; font-size: 10px; font-weight: 700; color: #a1a1a6">{{f.ext}}</span>
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{f.name}}</span><span style="font-size: 12px; color: #7c7c82">{{f.meta}}</span></span>
+</div>
+</sc-for>
+</div>
+</section>
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h3 style="margin: 0 4px; font-size: 13px; font-weight: 500; color: #a1a1a6">频道文件 · 2</h3>
+<div style="border-radius: 16px; background: #262628; padding: 0 14px">
+<sc-for list="{{files}}" as="f" hint-placeholder-count="2">
+<div style="display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: center; padding: 11px 0; border-top: {{f.divider}}">
+<span style="width: 36px; height: 36px; border-radius: 10px; background: #1c1c1e; border: 1px solid #2c2c2e; box-sizing: border-box; display: inline-grid; place-items: center; font-size: 10px; font-weight: 700; color: #a1a1a6">{{f.ext}}</span>
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{f.name}}</span><span style="font-size: 12px; color: #7c7c82">{{f.meta}}</span></span>
+</div>
+</sc-for>
+</div>
+</section>
+<button type="button" style="align-self: flex-start; height: 32px; padding: 0 14px; border: 0; border-radius: 16px; background: #2e2e30; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">上传文件</button>
+</sc-if>
+</div>
+</aside>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tab":{"editor":"enum","options":["details","library","members"],"default":"members"},"adding":{"editor":"boolean","default":false},"$preview":{"width":340,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const tab = (this.state && this.state.tab) || this.props.tab || 'members';
+    const tabs = [['details', '详情'], ['library', '资料库'], ['members', '成员']].map(([id, label]) => ({
+      label,
+      selected: tab === id ? 'true' : 'false',
+      bg: tab === id ? '#111111' : 'transparent',
+      shadow: tab === id ? '0 1px 3px rgba(0,0,0,0.35)' : 'none',
+      weight: tab === id ? '600' : '500',
+      color: tab === id ? '#f2f2f3' : '#a1a1a6',
+      pick: () => this.setState({ tab: id })
+    }));
+    const rows = (items) => items.map((item, i) => Object.assign({ divider: i === 0 ? 'none' : '1px solid #2c2c2e' }, item));
+    const adding = this.state && this.state.adding !== undefined ? this.state.adding : (this.props.adding === true || this.props.adding === 'true');
+    const candidates = [
+      { name: '新建 Bot', character: 'relay', accent: 'violet' },
+      { name: '发布助手', character: 'relay', accent: 'blue' },
+      { name: '设计评审', character: 'relay', accent: 'red' },
+      { name: '数据助理', character: 'round', accent: 'teal' }
+    ].map((c, i) => Object.assign(c, { selected: i === 1 ? 'true' : 'false', bg: i === 1 ? '#262628' : 'transparent' }));
+    return {
+      tabs,
+      isMembers: tab === 'members',
+      adding,
+      addingAttr: adding ? 'true' : 'false',
+      toggleAdd: () => this.setState({ adding: !adding }),
+      candidates,
+      isDetails: tab === 'details',
+      isLibrary: tab === 'library',
+      outputs: rows([
+        { ext: 'MD', name: 'weekly/2026-w40.md', meta: '研究助理 · 今天 10:24' },
+        { ext: 'PNG', name: '竞品定价对比.png', meta: '研究助理 · 今天 10:24 · 248 KB' }
+      ]),
+      files: rows([
+        { ext: 'MD', name: 'weekly/competitors.md', meta: '你上传 · 9/26' },
+        { ext: 'PDF', name: 'A 公司团队版说明.pdf', meta: '你上传 · 9/25 · 1.2 MB' }
+      ])
+    };
+  }
+}
+</script>
+</body>
+</html>

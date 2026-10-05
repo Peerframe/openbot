@@ -9,8 +9,8 @@
   flex-direction: column;
   box-sizing: border-box;
   width: min(460px, 100vw);
-  border-left: 1px solid #ececee;
-  background: #fdfdfd;
+  border-left: 1px solid var(--ob-fill-hover);
+  background: var(--ob-popover);
   box-shadow: -18px 0 40px rgba(0, 0, 0, 0.08);
   color: var(--ob-text);
 }
@@ -22,7 +22,7 @@
   gap: 10px;
   height: 56px;
   padding: 0 12px 0 22px;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 13px;
   -webkit-app-region: drag;
   app-region: drag;
@@ -89,16 +89,16 @@
   background: var(--ob-working);
 }
 .task-sheet-status.is-working {
-  background: #e8f6ec;
-  color: #1c7c3c;
+  background: var(--ob-working-fill);
+  color: var(--ob-online-text);
 }
 .task-sheet-status.is-attention {
-  background: #fdf0e1;
-  color: #b5651d;
+  background: var(--ob-attention-fill);
+  color: var(--ob-attention-ink);
 }
 .task-sheet-status.is-failed {
-  background: #fbeceb;
-  color: #b3261e;
+  background: light-dark(#fbeceb, var(--ob-danger-fill));
+  color: var(--ob-attention);
 }
 .task-sheet-section {
   display: flex;
@@ -113,7 +113,7 @@
 }
 .task-sheet-section > small {
   padding: 0 4px;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
 }
 .task-sheet-instruction {
@@ -132,8 +132,8 @@
   overflow: hidden;
   place-items: center;
   border-radius: 14px;
-  background: #e3e5ea;
-  color: #8e8e93;
+  background: light-dark(#e3e5ea, var(--ob-selected));
+  color: var(--ob-text-tertiary);
   font-size: 13px;
 }
 .task-sheet-frame img {
@@ -159,7 +159,7 @@
   list-style: none;
 }
 .task-sheet-card > * + * {
-  border-top: 1px solid #e3e3e6;
+  border-top: 1px solid var(--ob-divider);
 }
 .task-sheet-person {
   display: grid;
@@ -204,7 +204,7 @@ button.task-sheet-person:not(:disabled) {
 .task-sheet-person small,
 .task-sheet-steps small {
   overflow-wrap: anywhere;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
 }
 .task-sheet-state {
@@ -212,13 +212,13 @@ button.task-sheet-person:not(:disabled) {
   font-size: 12px;
 }
 .task-sheet-state.is-working {
-  color: #1c7c3c;
+  color: var(--ob-online-text);
 }
 .task-sheet-state.is-attention {
-  color: #b5651d;
+  color: var(--ob-attention-ink);
 }
 .task-sheet-state.is-failed {
-  color: #b3261e;
+  color: var(--ob-attention);
 }
 .task-sheet-steps li {
   display: grid;
@@ -240,13 +240,13 @@ button.task-sheet-person:not(:disabled) {
 }
 .task-sheet-steps i.is-current {
   border: 2px solid var(--ob-working);
-  background: #fff;
+  background: var(--ob-surface);
 }
 .task-sheet-steps i.is-failed {
-  background: #b3261e;
+  background: var(--ob-attention);
 }
 .task-sheet-steps time {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
 }
 .task-sheet-outputs {
@@ -269,7 +269,7 @@ button.task-sheet-person:not(:disabled) {
   overflow-wrap: anywhere;
 }
 .task-sheet-facts small {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
 }
 .task-sheet-facts a {
   color: inherit;
@@ -289,14 +289,14 @@ button.task-sheet-person:not(:disabled) {
   color: var(--ob-text-secondary);
 }
 .task-sheet-error {
-  color: #b3261e;
+  color: var(--ob-attention);
 }
 .task-sheet-footer {
   display: flex;
   flex-shrink: 0;
   gap: 10px;
   padding: 14px 22px 20px;
-  border-top: 1px solid #ececee;
+  border-top: 1px solid var(--ob-fill-hover);
 }
 .task-sheet-pill {
   flex: 1;
@@ -304,7 +304,7 @@ button.task-sheet-person:not(:disabled) {
   padding: 0 16px;
   border: 0;
   border-radius: 18px;
-  background: #ececee;
+  background: var(--ob-fill-hover);
   color: var(--ob-text);
   font: inherit;
   font-size: 14px;
@@ -312,7 +312,7 @@ button.task-sheet-person:not(:disabled) {
   cursor: pointer;
 }
 .task-sheet-pill.is-danger {
-  color: #b3261e;
+  color: var(--ob-attention);
 }
 .task-sheet-pill:disabled {
   cursor: progress;

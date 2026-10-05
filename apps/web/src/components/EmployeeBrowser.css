@@ -126,7 +126,7 @@
   padding: 10px 14px 10px 18px;
   border-radius: 14px;
   background: var(--ob-danger-fill);
-  color: #b3261e;
+  color: var(--ob-attention);
   font-size: 14px;
 }
 .browser-viewport {
@@ -136,7 +136,7 @@
   overflow: auto;
   place-items: center;
   border-radius: 12px;
-  background: #e3e5ea;
+  background: light-dark(#e3e5ea, var(--ob-selected));
 }
 .browser-screen {
   display: block;

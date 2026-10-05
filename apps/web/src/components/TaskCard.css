@@ -18,13 +18,13 @@
   box-sizing: border-box;
   max-width: 76%;
   padding: 14px 16px;
-  border: 1px solid #ececee;
+  border: 1px solid var(--ob-fill-hover);
   border-radius: 18px;
-  background: #fff;
+  background: var(--ob-surface);
   color: var(--ob-text);
 }
 .task-card.is-attention {
-  border-color: #f3d9b8;
+  border-color: light-dark(#f3d9b8, var(--ob-attention-border));
 }
 .task-card:has(> .task-top.is-line:only-child) {
   padding: 10px 14px;
@@ -79,19 +79,19 @@
 }
 .task-glyph.is-running,
 .task-glyph.is-assigned {
-  background: #e8f6ec;
+  background: var(--ob-working-fill);
 }
 .task-glyph.is-waiting_approval,
 .task-glyph.is-blocked {
-  background: #fdf0e1;
-  color: #b5651d;
+  background: var(--ob-attention-fill);
+  color: var(--ob-attention-ink);
 }
 .task-glyph.is-failed {
-  background: #fbeceb;
-  color: #b3261e;
+  background: light-dark(#fbeceb, var(--ob-danger-fill));
+  color: var(--ob-attention);
 }
 .task-glyph.is-queued {
-  border: 2px dashed #c7c7cc;
+  border: 2px dashed var(--ob-offline);
   background: transparent;
 }
 .task-spin {
@@ -99,7 +99,7 @@
   width: 14px;
   height: 14px;
   box-sizing: border-box;
-  border: 2px solid #cfe9d6;
+  border: 2px solid var(--ob-working-border);
   border-top-color: var(--ob-working);
   border-radius: 50%;
   animation: task-spin 0.9s linear infinite;
@@ -122,7 +122,7 @@
   width: 9px;
   height: 9px;
   border-radius: 2px;
-  background: #8e8e93;
+  background: var(--ob-text-tertiary);
 }
 .task-link {
   padding: 0;
@@ -142,7 +142,7 @@
   padding: 0 14px;
   border: 0;
   border-radius: 15px;
-  background: #ececee;
+  background: var(--ob-fill-hover);
   color: var(--ob-text);
   font: inherit;
   font-size: 13px;
@@ -154,8 +154,8 @@
   height: 28px;
 }
 .task-pill.is-primary {
-  background: #111;
-  color: #fff;
+  background: var(--ob-primary);
+  color: var(--ob-on-primary);
 }
 .task-pill:disabled {
   cursor: progress;
@@ -169,7 +169,7 @@
 }
 .task-actions small,
 .task-collab small {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
 }
 .task-frame {
@@ -185,7 +185,7 @@
   overflow: hidden;
   border: 0;
   border-radius: 10px;
-  background: #e3e5ea;
+  background: light-dark(#e3e5ea, var(--ob-selected));
   cursor: zoom-in;
 }
 .task-frame img {
@@ -195,7 +195,7 @@
   object-fit: cover;
 }
 .task-frame > span {
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
   line-height: 1.6;
 }
@@ -204,8 +204,8 @@
   padding: 10px 12px;
   overflow-wrap: anywhere;
   border-radius: 12px;
-  background: #f6f6f7;
-  color: #3a3a3c;
+  background: light-dark(#f6f6f7, var(--ob-fill));
+  color: var(--ob-text-strong);
   font-size: 13px;
   line-height: 1.55;
 }
@@ -232,9 +232,9 @@
   width: 32px;
   height: 32px;
   place-items: center;
-  border: 1px solid #e3e3e6;
+  border: 1px solid var(--ob-divider);
   border-radius: 9px;
-  background: #fff;
+  background: var(--ob-surface);
   color: var(--ob-text-secondary);
   font-size: 10px;
   font-weight: 700;
@@ -273,7 +273,7 @@
   padding: 10px 12px;
   border: 0;
   border-radius: 12px;
-  background: #f6f6f7;
+  background: light-dark(#f6f6f7, var(--ob-fill));
   color: inherit;
   font: inherit;
   text-align: left;
@@ -299,10 +299,10 @@
 }
 .task-state.is-running,
 .task-state.is-assigned {
-  color: #1c7c3c;
+  color: var(--ob-online-text);
 }
 .task-state.is-failed {
-  color: #b3261e;
+  color: var(--ob-attention);
 }
 .task-steer {
   display: flex;
@@ -335,7 +335,7 @@
 }
 .task-steer-foot small {
   margin-right: auto;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
   font-size: 12px;
 }
 .task-steer p,
@@ -350,7 +350,7 @@
 }
 .task-error,
 .task-steer p {
-  color: #b3261e;
+  color: var(--ob-attention);
 }
 .task-card :is(button, a, textarea):focus-visible {
   outline: 2px solid var(--ob-active);

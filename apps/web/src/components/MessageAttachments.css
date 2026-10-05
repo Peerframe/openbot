@@ -33,7 +33,7 @@
 .message-attachment-card.is-purged {
   height: 40px;
   padding-right: 12px;
-  color: #8e8e93;
+  color: var(--ob-text-tertiary);
 }
 .message-attachment-gone {
   display: inline-grid;
@@ -41,9 +41,9 @@
   width: 28px;
   height: 28px;
   place-items: center;
-  border: 1px dashed #e3e3e6;
+  border: 1px dashed var(--ob-divider);
   border-radius: 8px;
-  background: #fff;
+  background: var(--ob-surface);
   font-size: 9px;
   font-weight: 700;
 }
@@ -117,12 +117,12 @@
   outline-offset: 2px;
 }
 .attachment-drop-active {
-  outline: 2px solid #909090;
+  outline: 2px solid light-dark(#909090, var(--ob-text-tertiary));
   outline-offset: -2px;
 }
 .attachment-drop-hint {
   font-size: 12px;
-  color: #555;
+  color: light-dark(#555, var(--ob-text-strong));
   padding: 6px 0;
 }
 @media (max-width: 480px) {
@@ -139,18 +139,18 @@
   border-radius: 7px;
 }
 .attachment-image-button:focus-visible {
-  outline: 2px solid #777;
+  outline: 2px solid light-dark(#777, var(--ob-text-tertiary));
   outline-offset: 2px;
 }
 .attachment-image-dialog {
   width: fit-content;
   max-width: min(90vw, 1000px);
   max-height: 90vh;
-  border: 1px solid #ddd;
+  border: 1px solid light-dark(#ddd, var(--ob-divider));
   border-radius: 16px;
   padding: 14px;
-  background: #fff;
-  color: #222;
+  background: var(--ob-surface);
+  color: light-dark(#222, var(--ob-text));
 }
 .attachment-image-dialog::backdrop {
   background: rgb(0 0 0 / 45%);
@@ -264,10 +264,10 @@
   color: var(--ob-attention-ink);
 }
 .attachment-actions-body button.is-danger {
-  color: #b3261e;
+  color: var(--ob-attention);
 }
 .attachment-actions-body [role="alert"] {
   padding: 6px 12px;
-  color: #b3261e;
+  color: var(--ob-attention);
   font-size: 12px;
 }

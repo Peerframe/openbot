@@ -21,13 +21,13 @@ body{margin:0}
 </sc-if>
 
 <sc-if value="{{showBack}}" hint-placeholder-val="{{true}}">
-<span style="position: absolute; left: {{backX}}px; top: {{backY}}px; display: block"><dc-import name="Avatar" character="{{b.character}}" accent="{{b.accent}}" size="{{backSize}}" hint-size="25px,25px"></dc-import></span>
+<span style="position: absolute; left: {{backX}}px; top: {{backY}}px; display: block"><dc-import name="Avatar" surface="{{theme}}" character="{{b.character}}" accent="{{b.accent}}" size="{{backSize}}" hint-size="25px,25px"></dc-import></span>
 </sc-if>
 <sc-if value="{{showThird}}" hint-placeholder-val="{{false}}">
-<span style="position: absolute; left: {{thirdX}}px; top: {{thirdY}}px; display: block"><dc-import name="Avatar" character="{{c.character}}" accent="{{c.accent}}" size="{{backSize}}" cutout="{{surface}}" hint-size="22px,22px"></dc-import></span>
+<span style="position: absolute; left: {{thirdX}}px; top: {{thirdY}}px; display: block"><dc-import name="Avatar" surface="{{theme}}" character="{{c.character}}" accent="{{c.accent}}" size="{{backSize}}" cutout="{{surface}}" hint-size="22px,22px"></dc-import></span>
 </sc-if>
 <sc-if value="{{showFront}}" hint-placeholder-val="{{true}}">
-<span style="position: absolute; left: {{frontX}}px; top: {{frontY}}px; display: block"><dc-import name="Avatar" character="{{a.character}}" accent="{{a.accent}}" size="{{frontSize}}" cutout="{{frontCutout}}" state="{{frontState}}" hint-size="25px,25px"></dc-import></span>
+<span style="position: absolute; left: {{frontX}}px; top: {{frontY}}px; display: block"><dc-import name="Avatar" surface="{{theme}}" character="{{a.character}}" accent="{{a.accent}}" size="{{frontSize}}" cutout="{{frontCutout}}" state="{{frontState}}" hint-size="25px,25px"></dc-import></span>
 </sc-if>
 <sc-if value="{{hasDot}}" hint-placeholder-val="{{false}}">
 <span class="{{dotClass}}" aria-hidden="true" style="--ring: {{surface}}; --ring-w: {{ring}}px; position: absolute; left: {{dotX}}px; top: {{dotY}}px; z-index: 1; width: {{dotSize}}px; height: {{dotSize}}px; box-sizing: border-box; border-radius: 50%; background: {{dotColor}}; box-shadow: 0 0 0 {{ring}}px {{surface}}; display: block"></span>
@@ -37,7 +37,7 @@ body{margin:0}
 </sc-if>
 </span>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"members":{"editor":"text","default":"round:green,scout:yellow"},"count":{"editor":"int","min":-1,"max":99,"default":-1},"size":{"editor":"int","min":16,"max":160,"default":40},"surface":{"editor":"text","default":"#f5f5f6"},"state":{"editor":"enum","options":["idle","working","attention"],"default":"idle"},"$preview":{"width":40,"height":40}}'>
+<script type="text/x-dc" data-dc-script data-props='{"members":{"editor":"text","default":"round:green,scout:yellow"},"count":{"editor":"int","min":-1,"max":99,"default":-1},"size":{"editor":"int","min":16,"max":160,"default":40},"surface":{"editor":"text","default":"#f5f5f6"},"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"state":{"editor":"enum","options":["idle","working","attention"],"default":"idle"},"$preview":{"width":40,"height":40}}'>
 class Component extends DCLogic {
   renderVals() {
     // members: "character:accent" in channel order; the first member sits in front.
@@ -47,18 +47,20 @@ class Component extends DCLogic {
     const n = declared >= 0 ? declared : parsed.length;
     const S = Number(this.props.size ?? 40);
     const surface = this.props.surface || '#f5f5f6';
+    const theme = this.props.theme === 'dark' ? 'dark' : 'light';
+    const dark = theme === 'dark';
     const r = (v) => Math.round(v * 10) / 10;
     const ring = S >= 64 ? 3 : 2;
     const a = parsed[0] ?? { character: 'round', accent: 'green' };
     const b = parsed[1] ?? a;
     const c = parsed[2] ?? b;
     const base = {
-      size: S, surface, ring, a, b, c,
+      size: S, surface, theme, ring, a, b, c,
       isEmpty: n === 0, showBack: false, showThird: false, showFront: false, showChip: false,
       tileRadius: r(S * 0.3), hashSize: r(S * 0.45),
       backSize: 0, backX: 0, backY: 0, thirdX: 0, thirdY: 0,
       frontSize: 0, frontX: 0, frontY: 0, frontCutout: surface,
-      chipSize: 0, chipX: 0, chipY: 0, chipFont: 0, chipText: '', chipBg: '#e6e6e8', chipInk: '#3a3a3c'
+      chipSize: 0, chipX: 0, chipY: 0, chipFont: 0, chipText: '', chipBg: dark ? '#3a3a3c' : '#e6e6e8', chipInk: dark ? '#d1d1d6' : '#3a3a3c'
     };
     const state = this.props.state ?? 'idle';
     const withDot = (layout) => {
@@ -79,7 +81,7 @@ class Component extends DCLogic {
       const f = r(S * 0.74), chip = r(S * 0.42);
       return withDot(Object.assign(base, {
         showFront: true, frontSize: f, frontX: 0, frontY: 0, frontCutout: '',
-        showChip: true, chipSize: chip, chipX: r(S - chip), chipY: r(S - chip), chipFont: r(chip * 0.56), chipText: '#', chipBg: '#dadadd'
+        showChip: true, chipSize: chip, chipX: r(S - chip), chipY: r(S - chip), chipFont: r(chip * 0.56), chipText: '#', chipBg: dark ? '#48484a' : '#dadadd'
       }));
     }
     if (n === 2) {

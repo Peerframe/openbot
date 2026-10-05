@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>频道对话（深色）</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#f2f2f3;background:#1c1c1e;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.code{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:14px;color:#ff8a80;background:#333336;border:1px solid #3a3a3c;border-radius:6px;padding:1px 6px}
+.icon-btn{width:32px;height:32px;border:0;border-radius:8px;background:transparent;cursor:pointer;display:inline-grid;place-items:center}
+.icon-btn:hover{background:#262628}
+.pill{height:32px;padding:0 14px;border-radius:16px;border:0;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.mn{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:9px;align-items:center;width:100%;height:32px;padding:0 10px;border:0;border-radius:7px;background:transparent;cursor:pointer;text-align:left;font-size:14px}
+.mn:hover{background:#2e2e30}
+.nm{display:flex;align-items:baseline;gap:6px;min-width:0;white-space:nowrap}.nm small{font-size:12px;color:#7c7c82}
+.kind{font-size:12px;color:#7c7c82}
+.msg-act{height:26px;padding:0 10px;border-radius:13px;border:1px solid #333336;background:#1c1c1e;font-size:12px;color:#d1d1d6;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; display: grid; grid-template-columns: 300px minmax(0, 1fr) 340px; background: #1c1c1e; overflow: hidden">
+<dc-import name="SidebarDark" active="channel" hint-size="300px,900px"></dc-import>
+
+<main style="position: relative; height: 900px; display: flex; flex-direction: column; min-width: 0; background: #161617">
+<header style="height: 56px; flex-shrink: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; padding: 0 16px 0 20px">
+<span></span>
+<button type="button" aria-expanded="true" aria-controls="channel-info" style="display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px 0 6px; border: 0; border-radius: 10px; background: #333336; cursor: pointer; font-size: 15px; font-weight: 600">
+<dc-import name="GroupAvatar" theme="dark" members="round:green,scout:yellow" size="26" surface="#333336" hint-size="26px,26px"></dc-import>
+市场周报</button>
+<div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px">
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #a1a1a6; padding: 0 8px"><span style="width: 7px; height: 7px; border-radius: 50%; background: #30d158; display: block"></span>实时</span>
+<button type="button" class="icon-btn" aria-label="分享"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a1a1a6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg></button>
+</div>
+</header>
+
+<div style="flex-grow: 1; min-height: 0; overflow: hidden; padding: 4px 28px 0; display: flex; flex-direction: column; gap: 14px">
+<span style="align-self: center; font-size: 13px; color: #7c7c82; padding: 6px 0">今天 09:32</span>
+
+<div style="display: flex; justify-content: flex-end">
+<div style="max-width: 68%; padding: 12px 18px; border-radius: 22px; background: #f2f2f3; color: #111111; font-size: 15px; line-height: 1.6">帮我整理一下本周三家竞品的更新，做成一页周报发到这里，周五上午发给团队。</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: start">
+<dc-import name="Avatar" surface="dark" character="round" accent="green" size="32" hint-size="32px,32px"></dc-import>
+<div style="display: flex; flex-direction: column; gap: 6px; max-width: 76%">
+<span style="font-size: 12px; color: #7c7c82; padding-left: 4px">研究助理 · 09:33</span>
+<div style="padding: 12px 18px; border-radius: 22px; background: #262628; font-size: 15px; line-height: 1.7">收到。我会先读 <span class="code">weekly/competitors.md</span> 里的名单，再去三家官网和更新日志抓本周的变化，整理好后把草稿发在这里给你看。</div>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: start">
+<span style="width: 32px; height: 32px"></span>
+<button type="button" style="display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; max-width: 76%; padding: 12px 16px; border: 1px solid #2e2e30; border-radius: 18px; background: #1c1c1e; cursor: pointer; text-align: left">
+<span style="width: 36px; height: 36px; border-radius: 50%; background: #262628; display: inline-grid; place-items: center"><span style="width: 14px; height: 14px; border: 2px solid #48484a; border-top-color: #f2f2f3; border-radius: 50%; display: block"></span></span>
+<span style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+<strong style="font-size: 14px; font-weight: 600">正在工作 · 抓取竞品更新日志</strong>
+<span style="font-size: 13px; color: #a1a1a6">已完成 3 步 · 在我的 MacBook Pro 上</span>
+</span>
+<span style="font-size: 13px; color: #a1a1a6">任务详情 ›</span>
+</button>
+</div>
+
+<div style="display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: start">
+<dc-import name="Avatar" surface="dark" character="round" accent="green" size="32" hint-size="32px,32px"></dc-import>
+<div style="display: flex; flex-direction: column; gap: 6px; max-width: 76%">
+<span style="font-size: 12px; color: #7c7c82; padding-left: 4px">研究助理 · 10:24</span>
+<div style="padding: 12px 18px; border-radius: 22px; background: #262628; font-size: 15px; line-height: 1.7">周报初稿好了，放在 <span class="code">weekly/2026-w40.md</span>。三家里变化最大的是 A 公司，它上线了团队版定价。附一张对比截图，你看一下哪里要改。</div>
+<div style="display: flex; gap: 8px">
+<div style="width: 220px; border-radius: 16px; overflow: hidden; background: #262628; border: 1px solid #2c2c2e">
+<div style="height: 120px; background: #2c2c2e; display: flex; align-items: center; justify-content: center; color: #7c7c82; font-size: 13px">[截图预览]</div>
+<div style="padding: 8px 12px; font-size: 13px; color: #d1d1d6">竞品定价对比.png</div>
+</div>
+</div>
+<div style="display: flex; gap: 6px; padding-left: 4px">
+<button type="button" class="msg-act">回复</button>
+<button type="button" class="msg-act">任务详情</button>
+</div>
+</div>
+</div>
+
+<div style="display: flex; justify-content: flex-end">
+<div style="max-width: 68%; padding: 12px 18px; border-radius: 22px; background: #f2f2f3; color: #111111; font-size: 15px; line-height: 1.6">A 公司那段再展开一点，写清楚团队版和个人版的差别。</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: start">
+<dc-import name="Avatar" surface="dark" character="round" accent="green" size="32" hint-size="32px,32px"></dc-import>
+<div style="display: flex; flex-direction: column; gap: 6px; max-width: 76%">
+<span style="font-size: 12px; color: #7c7c82; padding-left: 4px">研究助理 · 10:26</span>
+<div style="display: inline-flex; align-items: center; gap: 6px; padding: 14px 18px; border-radius: 22px; background: #262628; align-self: flex-start" aria-label="正在输入">
+<span style="width: 7px; height: 7px; border-radius: 50%; background: #636366; display: block"></span><span style="width: 7px; height: 7px; border-radius: 50%; background: #5a5a5e; display: block"></span><span style="width: 7px; height: 7px; border-radius: 50%; background: #48484a; display: block"></span>
+</div>
+</div>
+</div>
+</div>
+
+<div id="mention-list" role="listbox" aria-label="提到 Bot 或插件" style="position: absolute; left: 24px; bottom: 86px; width: 340px; box-sizing: border-box; padding: 5px; border-radius: 12px; background: #222224; border: 1px solid #333336; box-shadow: 0 10px 30px rgba(0,0,0,0.45); display: flex; flex-direction: column; gap: 1px">
+<button type="button" role="option" aria-selected="false" class="mn"><span style="width: 20px; height: 20px; border-radius: 50%; background: #2e2e30; color: #a1a1a6; font-size: 11px; font-weight: 600; display: inline-grid; place-items: center">@</span><span class="nm">所有人<small>频道里的全部 Bot</small></span><span class="kind">Bot</span></button>
+<button type="button" role="option" aria-selected="true" class="mn" style="background: #333336"><dc-import name="Avatar" surface="dark" character="round" accent="green" size="20" hint-size="20px,20px"></dc-import><span class="nm">研究助理<small style="color: #5ad37a">工作中</small></span><span class="kind">Bot</span></button>
+<button type="button" role="option" aria-selected="false" class="mn" style="background: transparent"><dc-import name="Avatar" surface="dark" character="scout" accent="yellow" size="20" hint-size="20px,20px"></dc-import><span class="nm">客服小橙<small style="color: #7c7c82">待命</small></span><span class="kind">Bot</span></button>
+<span style="height: 1px; background: #2e2e30; margin: 3px 8px; display: block"></span>
+<button type="button" role="option" aria-selected="false" class="mn" style="background: transparent"><span style="width: 20px; height: 20px; border-radius: 5px; background: #1c1c1e; border: 1px solid #2c2c2e; box-sizing: border-box; color: #4c8dff; font-size: 10px; font-weight: 700; display: inline-grid; place-items: center">G</span><span class="nm">Gmail<small>已连接</small></span><span class="kind">插件</span></button>
+<button type="button" role="option" aria-selected="false" class="mn" style="background: transparent"><span style="width: 20px; height: 20px; border-radius: 5px; background: #1c1c1e; border: 1px solid #2c2c2e; box-sizing: border-box; color: #5ad37a; font-size: 10px; font-weight: 700; display: inline-grid; place-items: center">D</span><span class="nm">Google Drive<small>已连接</small></span><span class="kind">插件</span></button>
+<button type="button" role="option" aria-selected="false" class="mn" style="background: transparent"><span style="width: 20px; height: 20px; border-radius: 5px; background: #1c1c1e; border: 1px solid #2c2c2e; box-sizing: border-box; color: #f2f2f3; font-size: 10px; font-weight: 700; display: inline-grid; place-items: center">H</span><span class="nm">GitHub<small>已连接</small></span><span class="kind">插件</span></button>
+<button type="button" role="option" aria-selected="false" class="mn" style="background: transparent"><span style="width: 20px; height: 20px; border-radius: 5px; background: #1c1c1e; border: 1px solid #2c2c2e; box-sizing: border-box; color: #f2f2f3; font-size: 10px; font-weight: 700; display: inline-grid; place-items: center">X</span><span class="nm">X<small>需要授权</small></span><span class="kind">插件</span></button>
+<span style="padding: 4px 10px 2px; font-size: 11px; color: #636366">↑ ↓ 选择 · 回车确认 · 只列出这个频道里的 Bot</span>
+</div>
+<form style="flex-shrink: 0; padding: 12px 24px 22px">
+<div style="display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 8px 8px 8px 10px; box-sizing: border-box; border-radius: 28px; background: #1c1c1e; border: 1px solid #2c2c2e; box-shadow: 0 2px 10px rgba(0,0,0,0.30)">
+<button type="button" aria-label="添加附件" style="width: 38px; height: 38px; flex-shrink: 0; border: 0; border-radius: 50%; background: #262628; cursor: pointer; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d1d1d6" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+<input type="text" value="@" placeholder="输入 @ 选择 Bot 或插件，或直接发消息" aria-label="消息内容" aria-expanded="true" aria-controls="mention-list" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 15px; color: #f2f2f3">
+<button type="submit" aria-label="发送消息" style="width: 40px; height: 40px; flex-shrink: 0; border: 0; border-radius: 50%; background: #f2f2f3; cursor: pointer; display: inline-grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></button>
+</div>
+</form>
+</main>
+
+<div id="channel-info"><dc-import name="ChannelInfoDark" tab="members" hint-size="340px,900px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

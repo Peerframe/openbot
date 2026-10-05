@@ -12,13 +12,13 @@
   max-width: min(680px, calc(100vw - 470px));
   overflow-x: auto;
   margin-top: 10px;
-  border: 1px solid #e0e3e7;
+  border: 1px solid light-dark(#e0e3e7, var(--ob-divider));
   border-radius: 7px;
 }
 .rich-message table {
   width: 100%;
   border-collapse: collapse;
-  background: #fff;
+  background: var(--ob-surface);
   font-size: 11px;
   line-height: 1.45;
 }
@@ -26,14 +26,14 @@
 .rich-message td {
   min-width: 100px;
   padding: 9px 11px;
-  border-right: 1px solid #e8eaed;
-  border-bottom: 1px solid #e8eaed;
+  border-right: 1px solid light-dark(#e8eaed, var(--ob-divider));
+  border-bottom: 1px solid light-dark(#e8eaed, var(--ob-divider));
   text-align: left;
   vertical-align: top;
 }
 .rich-message th {
-  color: #5c646d;
-  background: #f3f5f7;
+  color: light-dark(#5c646d, var(--ob-text-secondary));
+  background: light-dark(#f3f5f7, var(--ob-fill));
   font-size: 10px;
 }
 .rich-message tr:last-child td {

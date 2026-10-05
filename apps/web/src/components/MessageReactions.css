@@ -31,6 +31,6 @@
   outline-offset: 2px;
 }
 .message-reaction-error {
-  color: #b3261e;
+  color: var(--ob-attention);
   font-size: 12px;
 }

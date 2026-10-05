@@ -47,7 +47,7 @@
   cursor: pointer;
 }
 .bot-info .bi-tag.is-empty {
-  color: #1f6fd6;
+  color: var(--ob-active);
 }
 .bot-info .bi-tag:hover:not(:disabled) {
   background: var(--ob-fill);
@@ -149,11 +149,11 @@
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #b3261e;
+  color: var(--ob-attention);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
 }
 .bot-info .bi-delete:hover {
-  background: #fdeceb;
+  background: light-dark(#fdeceb, var(--ob-danger-fill));
 }
