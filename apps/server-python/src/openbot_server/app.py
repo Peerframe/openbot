@@ -215,6 +215,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
 
     input_definitions = register_identity_routes(
         app, identity, store, secure_cookies=secure_cookies, allowed_origins=allowed_origins,
+        greetings=product.greetings if product is not None else None,
     ) if identity is not None else {}
 
     if conversations is not None:

@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import { verifySources } from "../../experiments/s7-migration/sources.ts";
 import { project, writeProjection } from "./product-node-project.ts";
 import { collectProductionPackageGraph } from "../../scripts/production-package-graph.ts";
 type Pkg = {
@@ -194,4 +195,16 @@ test("missing migration DSN refuses before loading the database package", () => 
     assert.match(run.stderr, /Product migration database URL is missing/);
     assert.doesNotMatch(run.stderr, /MODULE_NOT_FOUND|ECONN|postgres/i);
   }
+});
+
+test("product delivery counts agree with the requalified canonical migration target", async () => {
+  const { target } = await verifySources();
+  const preflight = await readFile(join(root, "deploy/server/product-preflight.ts"), "utf8");
+  const smoke = await readFile(join(root, "deploy/server/smoke-product.py"), "utf8");
+  assert.equal(
+    Number(preflight.match(/const MIGRATION_COUNT = (\d+);/u)?.[1]),
+    target.migrations.length,
+  );
+  assert.equal(Number(smoke.match(/'migrations':(\d+)/u)?.[1]), target.migrations.length);
+  assert.ok(smoke.includes(`=='${target.migrations.length}'`));
 });
