@@ -967,7 +967,7 @@
     "p3OwnershipSwitched": false,
     "applicationsInstalled": 0
   },
-  "currentP2Candidate": {
+  "beforeClaudeReviewCorrections": {
     "date": "2026-10-07 (Asia/Singapore)",
     "productSourceHead": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
     "sourceDirty": false,
@@ -1255,6 +1255,116 @@
         "one MCP content timeout; unchanged Node22 plugin and full Python reruns pass"
       ],
       "currentHeadQualification": false
+    }
+  },
+  "currentP2Candidate": {
+    "date": "2026-10-07 (Asia/Singapore)",
+    "productSourceHead": "dc0bf05ad12ac2cea4d4d4a2994c6ab4981143ed",
+    "sourceDirty": false,
+    "acceptedMain": "3bb6365c660fd40be5dbc181fe1da92093352877",
+    "acceptedUi": [
+      "PR194",
+      "PR198",
+      "PR203"
+    ],
+    "pageImplementation": "Scoped review corrections only; Step43 sidebar/crown/avatar animation belongs to Claude after PR200 merge.",
+    "claudeWholeInterfaceAcceptance": {
+      "source": "23a2916d2aa141e1fa4f52391f21b90c2184a520",
+      "passed": true,
+      "comment": "https://github.com/Peerframe/openbot/pull/200#issuecomment-6024172791",
+      "themes": [
+        "dark",
+        "light"
+      ],
+      "viewport": "1440x900",
+      "excludes": [
+        "paid model replies",
+        "Worker/computer execution",
+        "third-party installations",
+        "screen-reader qualification"
+      ]
+    },
+    "previousHostedCi": {
+      "run": 37514672455,
+      "branchHead": "23a2916d2aa141e1fa4f52391f21b90c2184a520",
+      "actualMerge": "2536122d81c390102e60287950cde6d319e7a65a",
+      "actualBase": "8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe",
+      "allRequiredJobsPassed": 17,
+      "qualifiesNewCorrections": false
+    },
+    "reviewCorrections": {
+      "additiveWebResponses": true,
+      "strictServerSchemasAndInputsRetained": true,
+      "auditNames": "existing from/to fields; current retained Bot names from bounded Owner audit SQL, including tombstones; no ID or payload-hint fallback",
+      "missingRunOutput": "unsupported GET removed; ready reconnect restores committed messages and Run facts; existing SSE draft handling retained",
+      "catalogRevision": 3,
+      "catalogChineseCopyRetained": true,
+      "fiveReviewedFingerprintsUnchanged": true
+    },
+    "focusedWeb": {
+      "node": "26.0.0",
+      "executed": 84,
+      "passed": 84,
+      "exitCode": 0
+    },
+    "mixedLifecycleContracts": {
+      "node": "22.22.2",
+      "realPythonAndDisposablePostgres": true,
+      "passed": 21,
+      "exitCode": 0
+    },
+    "pythonControl": {
+      "node": "22.22.2",
+      "passed": 1073,
+      "skipped": 2,
+      "exitCode": 0,
+      "workerChecksExecuted": false
+    },
+    "fullCheck": {
+      "exitCode": 0,
+      "node": "22.22.2",
+      "taskCounts": [
+        {
+          "total": 10,
+          "cached": 4
+        },
+        {
+          "total": 33,
+          "cached": 11
+        },
+        {
+          "total": 27,
+          "cached": 12
+        },
+        {
+          "total": 19,
+          "cached": 13
+        }
+      ],
+      "executedWeb": 691,
+      "executedDesktop": 578,
+      "desktopSkipped": 3,
+      "initialAttempt": "14 generated executable fixture failures from a space-containing Node path; same binary in disposable no-space path passes without source changes"
+    },
+    "currentNativeQualification": "pending fresh packaging and affected page acceptance; prior receipts retain their exact sources",
+    "currentHostedCi": "required after publication; recorded in PR200 checks/body",
+    "remaining": [
+      "current correction hosted checks",
+      "deployment TLS/PKI",
+      "registered Worker/access-group provisioning",
+      "signed distribution",
+      "P3-P5 ownership switches"
+    ],
+    "applicationsInstalled": 0,
+    "p3OwnershipSwitched": false,
+    "directProductInventory": {
+      "exitCode": 0,
+      "node": "22.22.2",
+      "defaultHttpOperations": 121,
+      "realPythonAndDisposablePostgres": true,
+      "integratedPassed": 270,
+      "stagedArtifactsPassed": 19,
+      "consumerDigestsRefreshed": true
     }
   }
 }

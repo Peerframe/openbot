@@ -345,6 +345,56 @@ same-scope resource comparison. See ADR-0050 for the detailed gates and Owner ap
 ## Current migration checkpoint (2026-10-07)
 
 Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
+`codex/ts-control-plane-p2`. Review correction source is
+`dc0bf05ad12ac2cea4d4d4a2994c6ab4981143ed`, after integrating accepted main
+`3bb6365c660fd40be5dbc181fe1da92093352877` (PR202 SDK repair and Claude PR203 copy).
+The catalog conflict retains main's revision3, Chinese name/description and review record;
+all five reviewed source fingerprints are identical to the prior migration candidate.
+The TS forwarding license rows are retained in the Chinese notices. The original dirty checkout,
+installed OpenBot and user profiles remain preserved.
+
+[Claude's whole-interface acceptance](https://github.com/Peerframe/openbot/pull/200#issuecomment-6024172791)
+passes at exact source `23a2916d2aa141e1fa4f52391f21b90c2184a520`: Owner sessions, Bot/channel creation,
+profile edits, messages/attachments, task submission/cancel, plugins, fifteen settings sections,
+SSE disconnect/reconnect and both themes through the TS entry. It excludes paid model replies,
+Worker/computer execution, third-party installation and screen-reader qualification. This closes the
+missing P2 interface gate; it does not qualify P3 ownership or all future edits.
+[CI37514672455](https://github.com/Peerframe/openbot/actions/runs/37514672455) passes all17 required jobs
+at that branch source and actual PR merge `2536122d81c390102e60287950cde6d319e7a65a` against main
+`8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe`. New correction source requires its own hosted checks.
+
+The review corrections reuse the existing Zod4.6.2 Web projection policy, bounded Owner audit
+reader and Python channel-ready lifecycle; no dependency, public route, persistent-data format or
+external source is added:
+
+- Web primary-Bot and transcription responses explicitly strip additive fields while strict shared
+  Server schemas and strict submitted commands remain unchanged. Known field types still validate.
+- Primary-Bot audit titles use existing `from`/`to` detail keys populated from bounded retained Bot
+  names, including renamed or tombstoned Bots. This matches ordinary audit subject names, not a
+  historic name snapshot. Old/new IDs remain in stored events and export details. Missing subjects
+  display an unknown-Bot label; the title never falls back to an internal ID or payload name hint.
+- Remove the unsupported `GET /api/v1/runs/{id}/output` Web request. Current Python model transport
+  is non-streaming and channel-ready restores committed messages and Run facts. Retain existing SSE
+  draft handling without promising recovery of a partial draft that the product never stores.
+- Step43 sidebar/crown/avatar animation remains Claude-owned after PR200 merges. The transitional
+  primary-Bot dropdown is unchanged.
+
+Focused Web acceptance executes84 tests (Node26.0.0), including additive/invalid responses, rejected
+extra command fields, audit titles and reconnect message restoration. The actual mixed
+TS→Python→disposable PostgreSQL lifecycle suite executes21 checks under Node22.22.2. The existing
+Python/control gate executes1,073 passes/2 optional skips, including the new retained-name and
+forged-payload audit regression, CAS/deletion races and rollback. Worker checks are not executed by
+this local base command; hosted Worker qualification remains separate.
+
+The current repository check, regenerated consumer inventory, native qualification and hosted CI
+results are recorded in the [single current receipt](typescript-control-plane-p2-native.json).
+PR200 remains the reviewable P2 candidate. No P3–P5 ownership switch has occurred; the next cohort is
+small settings/reads under ADR-0050's actual PostgreSQL, authority and forward/reverse gates.
+No provider, registered Worker or system application was added.
+
+### Previously qualified P2 integration (before Claude review corrections)
+
+Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
 `codex/ts-control-plane-p2`; clean product source is
 `37e8d7fe65a7b4e588861dee0b2770bdda23e9f0`, integrating accepted main
 `8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe` (Claude PR194/PR198 and approved PR201 security repair).
@@ -396,10 +446,10 @@ check failed on the newly ingested old-SDK advisory. Credential and Python audit
 that run does not qualify the SDK repair. The next CI37511515733 passes security (23 exact
 historical findings, npm0 and all58 Python pins audited without advisories/skips), but exposes the
 stale catalog hash and one MCP timeout described below. It does not qualify the catalog repair.
-Current-candidate hosted CI is the next bounded check.
+At this earlier checkpoint, current-candidate hosted CI was still pending.
 [Native receipt](typescript-control-plane-p2-native.json) keeps exact scopes in `currentP2Candidate`
 and dated prior entries. [PR200](https://github.com/Peerframe/openbot/pull/200) remains Draft/unmerged.
-Claude's P2 whole-interface acceptance is still absent; no P3–P5 ownership switch has occurred.
+Claude's P2 whole-interface acceptance was absent at this earlier checkpoint; no P3–P5 ownership switch had occurred.
 No provider, registered Worker or system application was added; installed ASAR retains the P0 hash.
 
 ### MCP SDK advisory repair (2026-10-07)

@@ -223,6 +223,45 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 ## 当前迁移检查点（2026-10-07）
 
 当前工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支
+`codex/ts-control-plane-p2`。审阅修复源码为
+`dc0bf05ad12ac2cea4d4d4a2994c6ab4981143ed`，已整合接受的 main
+`3bb6365c660fd40be5dbc181fe1da92093352877`（PR202 SDK 修复及 Claude PR203 文案）。
+目录冲突保留 main 的第3版、中文名称/说明和审核记录；五份已审核文件指纹与原迁移候选完全相同。
+中文许可声明保留 TS 转发依赖条目。原 dirty 目录、已安装 OpenBot 和用户数据保持原样。
+
+[Claude 整体界面验收](https://github.com/Peerframe/openbot/pull/200#issuecomment-6024172791)
+在准确源码 `23a2916d2aa141e1fa4f52391f21b90c2184a520` 通过：经过 TS 入口验证 Owner 会话、
+Bot/频道创建、档案编辑、消息/附件、任务提交和取消、插件、15个设置区域、SSE 断线恢复及两种主题。
+范围不含付费模型回复、Worker/电脑执行、第三方安装和读屏器。这关闭了缺失的 P2 界面门槛，
+不代表 P3 所有权切换或后续全部改动已通过。
+[CI37514672455](https://github.com/Peerframe/openbot/actions/runs/37514672455) 的17项必需任务全部通过；
+对应上述分支源码，实际 PR 合并引用为 `2536122d81c390102e60287950cde6d319e7a65a`，基线 main 为
+`8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe`。本次修复仍须独立完成托管检查。
+
+修复复用既有 Zod4.6.2 网页投影、Owner 有界审计读取和 Python 频道恢复流程；没有新增依赖、
+公共路由、持久化格式或复制外部源码：
+
+- 主 Bot、语音转写的网页响应忽略新增字段，共享 Server schema 和提交数据仍严格校验；已知字段类型继续检查。
+- 主 Bot 审计标题从有界 Bot 记录填入既有 `from`/`to` 字段，包含已改名、已软删除的 Bot。
+  这与其他审计主体一样显示当前保留名称，不是历史名称快照。持久事件及导出详情保留原 ID；
+  找不到主体时显示“未知 Bot”，标题不回退为内部 ID，也不采用事件内的名称提示。
+- 删除网页对不存在的 `GET /api/v1/runs/{id}/output` 的请求。当前 Python 模型传输不流式返回，
+  频道恢复读取已提交消息和任务事实。保留原 SSE 临时输出处理，不声称可恢复产品从未保存的部分草稿。
+- 第43步侧栏、王冠、头像动画继续由 Claude 在 PR200 合并后负责；过渡下拉框保持现状。
+
+网页定向验收实际执行84项（Node26.0.0），覆盖新增/错误响应字段、额外提交字段拒绝、审计名称及
+断线后消息恢复。实际 TS→Python→临时 PostgreSQL lifecycle 契约执行21项（Node22.22.2）。
+既有 Python/control 门槛实际通过1,073项、跳过2项可选检查，包含新增保留名称/伪造提示审计回归、
+CAS/删除并发和回滚。本地 base 命令不执行 Worker 检查；托管 Worker 验证单独记录。
+
+当前全仓检查、刷新后的消费者清单、原生验证和托管 CI 结果统一记入
+[现有当前收据](typescript-control-plane-p2-native.json)。PR200 保持为可审阅 P2 候选，尚未进行
+P3–P5 所有权切换；下一组是 ADR-0050 下的小型设置/读取模块，仍需真实 PostgreSQL、权限及正反切换门槛。
+没有新增 provider、注册 Worker 或系统应用。
+
+### Claude 审阅修复前已验证的 P2 整合
+
+当前工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支
 `codex/ts-control-plane-p2`；准确、干净的产品源码为
 `37e8d7fe65a7b4e588861dee0b2770bdda23e9f0`，整合接受的 main
 `8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe`（Claude PR194/PR198及已批准的 PR201安全修复）。

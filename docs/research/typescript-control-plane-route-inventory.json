@@ -7,7 +7,7 @@
       "sources": [
         {
           "path": "apps/web/src/api.ts",
-          "sha256": "06f0605d7db66c6a9c09b4e4ee5e78aa9baedf03198c8732258e3731f537ab63"
+          "sha256": "1a95540b53561576105f93dfc27083926bff558f0cd1ad48e7b53375a8454eb4"
         },
         {
           "path": "apps/web/src/work-api.ts",
@@ -39,7 +39,7 @@
         },
         {
           "path": "apps/web/src/components/PluginManagerPanel.tsx",
-          "sha256": "d40bda5e05c70933817f5c0a633c1208f2215b3d21cd0e2c5dd7dd0778405576"
+          "sha256": "0cefdddaa47407dc0a01a6f4649169ac50af78884d143f33fc237cc11b465934"
         },
         {
           "path": "apps/web/src/components/PluginInstallForm.tsx",
@@ -67,11 +67,11 @@
         },
         {
           "path": "apps/web/src/components/TaskCard.tsx",
-          "sha256": "edbdaf7f181bde392b5c6dbe7f1b16ee1ebd070bc1fee58f01600dd79906b604"
+          "sha256": "f90437bc7ac4862dd0aadf04cb18622b2da4f7ba55aee05731cd26105aa6a457"
         },
         {
           "path": "apps/web/src/components/TaskSheet.tsx",
-          "sha256": "21e1c4d292bbfc1c54c39eb9f6ae4387d5a7d2d05c681e5f88fce40274bffa17"
+          "sha256": "ebe076f459ae795d5157871e620e894941e7c4cb0b54c80bb6b063276a7cabfe"
         },
         {
           "path": "apps/web/src/components/WorkTasksScreen.tsx",
@@ -97,7 +97,7 @@
         },
         {
           "path": "apps/desktop/src/main.ts",
-          "sha256": "df714f50fde0261966727149b4ceeae2dac5ba1e6049985adafd658ddf000b6c"
+          "sha256": "787cabc125cb45e37858bfc39aeaaa8999b272ee5b39bc9965fa783934c779e6"
         },
         {
           "path": "apps/desktop/src/python-server.ts",
