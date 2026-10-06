@@ -115,6 +115,17 @@ disposable PostgreSQL and synthetic encryption callbacks; it verifies both produ
 death, each child's failure, persistence and shutdown. It does not qualify Keychain, native Work or
 signing. The linked record separately documents the actual Electron/safeStorage journey.
 
+For full Desktop resource qualification, build the existing macOS Worker companion from a clean
+source commit using [the C19 builder](../../scripts/build-macos-worker-host-candidate.ts), then set
+`OPENBOT_DESKTOP_MACOS_WORKER_COMPANION` to its absolute app path and run
+`node apps/desktop/scripts/package.ts --ts-product`. This macOS arm64 mode requires the companion,
+keeps the canonical production identity and writes `apps/desktop/out/ts-product/OpenBot-darwin-arm64`.
+The isolated Preview continues to refuse that production companion. Building the candidate does
+not install it or register the Worker service. Keep signing variables unset for unsigned development
+qualification; use a disposable profile for any startup because the canonical identity shares normal
+profile defaults. Worker registration, Keychain access-group provisioning and distribution signing
+retain their separate existing acceptance gates.
+
 Measure the API-only forwarding overhead from the same staged payload and compiled Desktop launcher:
 
 ```sh

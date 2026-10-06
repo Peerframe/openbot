@@ -93,6 +93,14 @@ node apps/desktop/scripts/smoke-python-product.ts "apps/desktop/out/ts-product/O
 核对父进程死亡后的两份 PID、单份崩溃、持久化与退出；它不证明 Keychain、原生 Work 或签名。
 上面的记录单独保存实际 Electron/safeStorage 流程证据。
 
+完整桌面资源验证先从干净源码提交，用[既有 C19构建器](../../scripts/build-macos-worker-host-candidate.ts)
+生成 macOS Worker辅助程序，再将 `OPENBOT_DESKTOP_MACOS_WORKER_COMPANION`设为其绝对路径，
+运行 `node apps/desktop/scripts/package.ts --ts-product`。这个 macOS arm64入口强制要求辅助程序，
+保留正式应用身份，输出到 `apps/desktop/out/ts-product/OpenBot-darwin-arm64`。
+隔离 Preview仍拒绝生产辅助程序。构建候选不会安装应用或注册 Worker服务。
+未签名开发验证须清空签名变量；正式身份共享正常 profile默认值，启动必须指定一次性 profile。
+Worker注册、Keychain访问组配置和发行签名仍按既有门槛单独验收。
+
 使用同一暂存资源和已编译 Desktop 启动器测量 API-only 转发开销：
 
 ```sh

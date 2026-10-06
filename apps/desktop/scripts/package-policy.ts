@@ -54,14 +54,15 @@ export const DESKTOP_TS_PREVIEW_IDENTITY: DesktopIdentity = Object.freeze({
   executableName: "OpenBot TS Preview",
 });
 export function desktopPackageIdentity(args: readonly unknown[]): DesktopIdentity {
-  if (args.length === 0) return DESKTOP_PACKAGE_IDENTITY;
+  if (args.length === 0 || (args.length === 1 && args[0] === "--ts-product"))
+    return DESKTOP_PACKAGE_IDENTITY;
   if (args.length === 1 && args[0] === "--preview") return DESKTOP_PREVIEW_IDENTITY;
   if (args.length === 2 && args.includes("--preview") && args.includes("--python-product"))
     return DESKTOP_PYTHON_PREVIEW_IDENTITY;
   if (args.length === 2 && args.includes("--preview") && args.includes("--ts-product"))
     return DESKTOP_TS_PREVIEW_IDENTITY;
   throw new Error(
-    "Desktop packaging accepts only --preview with optional --python-product or --ts-product.",
+    "Desktop packaging accepts only --ts-product or --preview with optional --python-product or --ts-product.",
   );
 }
 /** Accepts only the exact identity constants by reference; copies are refused. */

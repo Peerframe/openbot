@@ -358,6 +358,18 @@ is byte-identical to main; only unpublished C28/C26 additions are renumbered to 
 Fresh locked npm/base/Worker environments are local to this worktree. No application was installed
 into Applications; the installed OpenBot and user profiles remain unchanged.
 
+The complete source checkpoint is local commit `a240b810ea08bde29004e947b0ffc0298ad8dd1a`
+(217 changed files). Read-only GitHub verification then found main's accepted
+[dependency patch PR196](https://github.com/Peerframe/openbot/pull/196), merged as
+`a544a40d045a1e99e512b3282a8805c7f4ca39e0`. Its automatic integration changes only two existing
+lock entries: fast-uri3.1.8 and ip-address10.7.3; proxy-addr2.0.8 already matches. No page or product
+source changes. [Consumer-specific review](retained-developer-tools.md#integration-of-accepted-advisory-patches-2026-10-06)
+records that the TS native closure includes fast-uri. Its incremental native refresh, packaged smoke
+and real TLS contracts have now passed; the dated results below retain their original scope.
+The evidence below retains the pre-PR196 dependency scope; it is not relabeled as a new run.
+Claude's open interface PR194 and planning PR195 do not supply whole-interface acceptance for this
+candidate. The migration branch has not been pushed and has no remote PR.
+
 Current integration evidence (macOS arm64; CLI Node26.0.0, not the earlier packaged Node24):
 
 - Generated TS contracts and actual Python/Web DTO parity passed 1,342 cases; contract client/target
@@ -415,7 +427,35 @@ and confirm all owned processes stopped/disposable profiles removed. Earlier sou
 remain separate dated evidence. This measures API-only loopback behavior, not renderer/Keychain,
 active Work/Temporal or public TLS capacity.
 
-The integrated Electron/safeStorage functional checkpoint is closed. Next bounded checkpoint:
+The accepted advisory integration has fresh evidence: 12 installed dependency regressions passed;
+the production audit reports zero findings at every severity. `npm run check` exits0 with33
+ typecheck tasks/28 cached,27 test tasks/23 cached and19 build tasks/16 cached; TS33, Web676,
+Desktop575/3 platform skips and MCP scaffold2 actually executed. The full mixed HTTPS suite passed
+270 integrated plus19 staged checks. An incremental refresh replaces only fast-uri3.1.7→3.1.8 on
+the earlier cold-qualified payload, verifies91 applicable Node packages and192 unchanged compiled
+workspace files, then packages and runs native lifecycle smoke. ASAR remains the exact `a460a367`
+prefix above; the native fast-uri resource changes outside ASAR. This unsigned API-only Preview
+contains1,115,399,312 regular-file bytes, of which783,640,659 are native. Its fresh12-start overhead
+medians are Python→TS: fresh5,508→6,162ms, restart4,423→4,864ms, descendant RSS168,192→270,560KiB
+(about100MiB extra), health0.618→1.072ms and channels11.014→11.845ms. Every owned process stopped
+and disposable data was removed. The receipts preserve both original and post-patch observations;
+the actual Electron/safeStorage journey is reused only for the unchanged ASAR components.
+
+The installed baseline also contains the existing macOS Worker companion. The API-only Preview
+intentionally excludes its production service identity, so it cannot establish full Desktop resource
+equivalence. Full macOS arm64 TS packaging now has an explicit `--ts-product` mode using the
+canonical app identity and requiring a validated companion before packaging. `--preview --ts-product`
+retains its isolated identity and refuses that shared companion. This reuses the
+[existing C19 packaging decision](macos-worker-host-package-and-registration.md) and reviewed
+Node22.22.2/npm10.9.9 builder; no new service, dependency version, authority or registration path.
+The focused package policy suite passes39, including actual refusal before packaging when the
+companion is missing. The changed packaging source also passes `npm run check`:33 typecheck
+tasks/31 cached,27 test tasks/25 cached,19 build tasks/17 cached; Desktop576/3 platform skips
+and TS33 actually executed. The next delivery checkpoint is an unsigned, uninstalled full candidate from
+a clean source commit, resource validation and disposable-profile native smoke. This does not
+authorize installing, registering or enabling the companion against the user's profile.
+
+The integrated Electron/safeStorage functional checkpoint is closed. After the full resource checkpoint:
 reconcile the remaining P2 hosted CI and Claude whole-interface acceptance before switching a P3
 writer. Python remains the sole product writer; P3–P5 are not active. Full migration remains
 authorized; the remaining gates have not been relabeled as passing. The installed OpenBot ASAR still matches the P0 baseline

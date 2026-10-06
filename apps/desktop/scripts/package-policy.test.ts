@@ -142,11 +142,7 @@ describe("Desktop package source policy", () => {
       ["win32", "x64"],
     ])
       expect(() => parseDesktopPackageArguments(args, platform, arch)).toThrow("macOS arm64");
-    for (const invalid of [
-      ["--ts-product"],
-      [...args, "--python-product"],
-      [...args, "--ts-product"],
-    ])
+    for (const invalid of [[...args, "--python-product"], [...args, "--ts-product"]])
       expect(() => desktopPackageIdentity(invalid)).toThrow("only");
     expect(() =>
       desktopMacOSWorkerCompanionSource(
@@ -155,6 +151,33 @@ describe("Desktop package source policy", () => {
         identity,
       ),
     ).toThrow("production Worker");
+  });
+
+  it("keeps the full TS candidate's production identity and requires its Worker companion", () => {
+    const args = ["--ts-product"];
+    const identity = desktopPackageIdentity(args);
+    expect(identity).toBe(DESKTOP_PACKAGE_IDENTITY);
+    expect(parseDesktopPackageArguments(args, "darwin", "arm64")).toEqual({
+      pythonProduct: false,
+      tsProduct: true,
+      preview: false,
+      identity,
+    });
+    const companion = resolve("fixture", DESKTOP_MACOS_WORKER_COMPANION_NAME);
+    expect(desktopMacOSWorkerCompanionSource(companion, "darwin", identity)).toBe(companion);
+    for (const [platform, arch] of [["darwin", "x64"], ["linux", "arm64"], ["win32", "x64"]])
+      expect(() => parseDesktopPackageArguments(args, platform, arch)).toThrow("macOS arm64");
+    if (process.platform === "darwin" && process.arch === "arm64") {
+      const result = spawnSync(
+        process.execPath,
+        [fileURLToPath(new URL("./package.ts", import.meta.url)), ...args],
+        { env: { PATH: process.env.PATH }, encoding: "utf8", timeout: 10000 },
+      );
+      expect(result.error).toBeUndefined();
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("requires the macOS Worker companion");
+      expect(result.stdout).not.toContain("Packaging app");
+    }
   });
 
   it.each<[string, boolean]>([

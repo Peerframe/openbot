@@ -234,6 +234,18 @@ ASAR 和性能记录仍是对应旧源码的日期证据，不能视作本次整
 新建的锁定 npm/base/Worker 环境均在隔离目录里。没有向 Applications 安装应用；已安装 OpenBot
 及用户 profile 保持不变。
 
+完整源码检查点已保存在本地提交 `a240b810ea08bde29004e947b0ffc0298ad8dd1a`（217份改动文件）。
+随后只读核对 GitHub，发现 main 已合并
+[依赖补丁 PR196](https://github.com/Peerframe/openbot/pull/196)，提交为
+`a544a40d045a1e99e512b3282a8805c7f4ca39e0`。自动整合只改两条已有锁记录：
+fast-uri3.1.8、ip-address10.7.3；proxy-addr2.0.8已一致，没有改页面或产品源码。
+[按消费者核对的记录](retained-developer-tools.md#integration-of-accepted-advisory-patches-2026-10-06)
+说明 TS原生闭包包含 fast-uri；其增量资源刷新、包内 smoke及真实 TLS契约已通过。
+下方日期证据仍保留实际执行范围。
+下方保留 PR196之前的依赖范围，不将旧结果改称本次执行。
+Claude 的开放界面 PR194和规划 PR195不提供这份候选的整体界面验收。
+迁移分支尚未推送，也没有远程 PR。
+
 当前整合证据（macOS arm64，CLI Node26.0.0，不是此前包内 Node24）：
 
 - TS 生成及真实 Python/Web DTO 对等通过1,342项，契约 client/target通过15项。
@@ -286,7 +298,31 @@ health0.566→0.994毫秒、channels10.234→11.292毫秒。
 确认所属进程停止、临时 profile清理。此前源码测量仍是单独的日期证据。
 这只证明 API-only本机环回行为，不证明 renderer/Keychain、活跃 Work/Temporal或公开 TLS容量。
 
-整合后 Electron/safeStorage功能检查点已关闭。下一个有界检查点是核对 P2剩余的 hosted CI
+已接受依赖补丁的新增实证：安装后的12项依赖回归通过，生产依赖审计所有等级均为0。
+`npm run check` exit0：类型检查33任务/28缓存、测试27任务/23缓存、build19任务/16缓存；
+TS33、Web676、Desktop575/3项平台跳过及 MCP scaffold2为实际执行。完整混合 HTTPS通过
+270项整合及19项暂存检查。只在此前已冷暂存验收的资源中刷新 fast-uri3.1.7→3.1.8，
+核对91个适用 Node依赖和192份未改编译文件，再打包并执行原生生命周期 smoke。
+ASAR仍为上述 `a460a367`前缀，变化在 ASAR外的 fast-uri资源。这个未签名 API-only Preview
+普通文件共1,115,399,312字节，其中 native为783,640,659字节。新12次启动开销中位数
+Python→TS：fresh5,508→6,162毫秒、restart4,423→4,864毫秒，子进程 RSS168,192→270,560KiB
+（约增加100MiB）、health0.618→1.072毫秒、channels11.014→11.845毫秒。所属进程已停止，
+临时数据已清理。回执同时保留原结果和补丁后观测；此前实际 Electron/safeStorage流程
+只作为未改 ASAR组件的复用证据。
+
+已安装基线还包含既有 macOS Worker辅助程序。API-only Preview按设计排除共享的生产服务身份，
+所以它不能证明完整桌面资源相同。完整 macOS arm64 TS打包新增显式 `--ts-product`入口，
+保留正式应用身份，并在打包之前要求提供已验证的辅助程序。`--preview --ts-product`
+继续使用隔离身份、拒绝共享辅助程序。复用
+[既有 C19打包决策](macos-worker-host-package-and-registration.md)和已审阅
+Node22.22.2/npm10.9.9构建器，没有新增服务、依赖版本、权限或注册路径。
+针对打包政策的39项检查通过，包含缺少辅助程序时在实际打包前拒绝。源码改动的
+`npm run check`也通过：类型检查33任务/31缓存、测试27任务/25缓存、build19任务/17缓存，
+Desktop576通过/3项平台跳过及 TS33为实际执行。下一个交付点是
+从干净源码提交构建未签名、未安装的完整候选，核对资源并使用临时 profile验证原生启动。
+这不授权安装、注册或在用户 profile启用辅助程序。
+
+整合后 Electron/safeStorage功能检查点已关闭。完整资源检查点之后核对 P2剩余的 hosted CI
 和 Claude整体界面验收，通过后才切换 P3写入方。Python仍是唯一产品写入方，P3–P5尚未启用，
 完整迁移仍已授权；未将剩余门槛改称通过。已安装 OpenBot的 ASAR仍与 P0基线一致：
 `e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0`；Applications中没有安装 Preview。

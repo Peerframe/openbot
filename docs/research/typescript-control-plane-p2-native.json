@@ -357,7 +357,7 @@
       "disposableProfile": true,
       "ownerLogin": "automatic native bootstrap login",
       "botCreatedAndRenamed": true,
-      "expectedBotName": "新建 BotTS P2 Native Fixture",
+      "expectedBotName": "\u65b0\u5efa BotTS P2 Native Fixture",
       "botRestoredAfterRestart": true,
       "realtimeConnectionRestored": true,
       "fileChecks": {
@@ -477,5 +477,116 @@
       "ownedProcessesStopped": true,
       "disposableDataRemoved": true
     }
+  },
+  "acceptedAdvisoryIntegration": {
+    "sourceHead": "a240b810ea08bde29004e947b0ffc0298ad8dd1a",
+    "sourceDirty": true,
+    "upstreamMain": "a544a40d045a1e99e512b3282a8805c7f4ca39e0",
+    "staging": {
+      "generatedAt": "2026-10-06T06:09:02.771Z",
+      "staging": "incremental refresh of one dependency on the earlier cold-qualified native payload",
+      "changedNativePackage": {
+        "name": "fast-uri",
+        "from": "3.1.7",
+        "to": "3.1.8",
+        "commit": "ead3ab7bb134c989e972c8174632d0670023f269",
+        "files": 44,
+        "treeSha256": "f1fe535025e374d76eae57af0c0656f1eec937027865d351fe8a3359a0708108"
+      },
+      "nativePackageVersionsVerified": 91,
+      "unchangedCompiledWorkspaceFilesVerified": 192,
+      "workspacePackages": [
+        "apps/server-ts",
+        "packages/db",
+        "packages/protocol"
+      ],
+      "pythonAndNodeArchivesUnchanged": true,
+      "profileTouched": false
+    },
+    "package": {
+      "generatedAt": "2026-10-06T06:10:53.178Z",
+      "asarSha256": "a460a3676b64d03a6e7cd373d9fab5d94c3e650ed7b2cb77caddb51867388565",
+      "compiledLauncherMatchesPackage": true,
+      "compiledLauncherCount": 5,
+      "packagedFastUriVersion": "3.1.8",
+      "regularFileBytes": 1115399312,
+      "nativeRegularFileBytes": 783640659,
+      "unsigned": true,
+      "macosWorkerCompanionIncluded": false,
+      "installed": false
+    },
+    "packagedNativeSmoke": {
+      "parentEofStoppedActualApi": true,
+      "parentEofStoppedOwnedProcessCount": 2,
+      "tsForwardingEntry": true,
+      "eitherProductExitStoppedPair": true,
+      "unsafeDirectoryRefusedAndPostgresStopped": true,
+      "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+      "pythonProductHealth": true,
+      "ownerLogin": true,
+      "postgresInitialized": true,
+      "restartPreservedData": true,
+      "serverAndPostgresStopped": true,
+      "syntheticOnly": true,
+      "nativeKeychainVerified": false
+    },
+    "fullCheck": {
+      "exitCode": 0,
+      "typecheckTasks": 33,
+      "typecheckCached": 28,
+      "testTasks": 27,
+      "testCached": 23,
+      "buildTasks": 19,
+      "buildCached": 16,
+      "executed": {
+        "serverTs": 33,
+        "web": 676,
+        "desktop": 575,
+        "desktopPlatformSkips": 3,
+        "mcpScaffold": 2
+      },
+      "scope": "after accepted lock-only patch; before full companion packaging source change"
+    },
+    "realTlsContracts": {
+      "integrated": 270,
+      "staged": 19,
+      "totalExecutions": 289,
+      "exitCode": 0
+    },
+    "installedDependencyRegressions": 12,
+    "productionAudit": {
+      "critical": 0,
+      "high": 0,
+      "moderate": 0,
+      "low": 0,
+      "info": 0,
+      "exitCode": 0
+    },
+    "actualElectronJourneyReuse": "unchanged ASAR components only; native fast-uri outside ASAR refreshed from 3.1.7 to 3.1.8; no new full GUI execution",
+    "fullCompanionQualification": "pending; isolated Preview deliberately excludes production service identity",
+    "installed": false
+  },
+  "fullCompanionPackagingGate": {
+    "sourceBase": "a240b810ea08bde29004e947b0ffc0298ad8dd1a",
+    "acceptedUpstream": "a544a40d045a1e99e512b3282a8805c7f4ca39e0",
+    "sourceDirty": true,
+    "focusedPolicyTests": 39,
+    "fullCheck": {
+      "exitCode": 0,
+      "typecheckTasks": 33,
+      "typecheckCached": 31,
+      "testTasks": 27,
+      "testCached": 25,
+      "buildTasks": 19,
+      "buildCached": 17,
+      "executed": {
+        "desktop": 576,
+        "desktopPlatformSkips": 3,
+        "serverTs": 33
+      }
+    },
+    "actualPackageAndCompanion": "pending clean-commit build",
+    "previewServiceBoundaryPreserved": true,
+    "installed": false
   }
 }

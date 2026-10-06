@@ -11,6 +11,7 @@ import { macosSigningOptions, verifyNotarizedDesktop } from "./macos-signing.ts"
 import {
   createDesktopFuseConfig,
   DESKTOP_ICON_RESOURCE_NAME,
+  DESKTOP_PACKAGE_IDENTITY,
   DESKTOP_PREVIEW_IDENTITY,
   DESKTOP_PYTHON_PREVIEW_IDENTITY,
   DESKTOP_TS_PREVIEW_IDENTITY,
@@ -57,9 +58,11 @@ export function parseDesktopPackageArguments(
     throw new Error("Python product packaging requires the macOS arm64 Preview candidate.");
   if (
     tsProduct &&
-    (identity !== DESKTOP_TS_PREVIEW_IDENTITY || platform !== "darwin" || arch !== "arm64")
+    ((identity !== DESKTOP_TS_PREVIEW_IDENTITY && identity !== DESKTOP_PACKAGE_IDENTITY) ||
+      platform !== "darwin" ||
+      arch !== "arm64")
   )
-    throw new Error("TS product packaging requires the macOS arm64 Preview candidate.");
+    throw new Error("TS product packaging requires macOS arm64.");
   return { pythonProduct, tsProduct, identity, preview };
 }
 
@@ -69,6 +72,15 @@ export async function packageDesktop(
   const { pythonProduct, tsProduct, identity, preview } = parseDesktopPackageArguments(args);
   const platform = packagePlatform(process.platform);
   const arch = packageArchitecture(process.arch);
+  const workerCompanionSource = desktopMacOSWorkerCompanionSource(
+    process.env.OPENBOT_DESKTOP_MACOS_WORKER_COMPANION,
+    process.platform,
+    identity,
+  );
+  // The full TS candidate preserves the production Desktop's Worker resource boundary.
+  // Isolated Previews continue to refuse that shared service identity.
+  if (tsProduct && !preview && workerCompanionSource === undefined)
+    throw new Error("Full TS product packaging requires the macOS Worker companion.");
   const signing = macosSigningOptions(process.env, process.platform, preview);
   const rendererEntry = join(appRoot, "dist", "renderer", "index.html");
   const nativeRuntime =
@@ -112,12 +124,6 @@ export async function packageDesktop(
         ),
       }
     : undefined;
-  const workerCompanionSource = desktopMacOSWorkerCompanionSource(
-    process.env.OPENBOT_DESKTOP_MACOS_WORKER_COMPANION,
-    process.platform,
-    identity,
-  );
-
   await Promise.all([
     ...(nativeRuntime
       ? [
