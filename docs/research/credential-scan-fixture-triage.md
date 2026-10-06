@@ -255,3 +255,43 @@ creating another such context. The current code regression set has22 exact tuple
 mutating all fields and refusing every unknown/verified finding or scanner error. A disposable
 clone must have matching HEAD/index to avoid synthetic staged-index findings; CI checks committed
 Git history without staging a different tree. No staged-finding exemption is accepted.
+
+## TS contract and private-peer fixtures (2026-10-06)
+
+[Draft PR #200](https://github.com/Peerframe/openbot/pull/200), head
+`49dac0186fa6a127dffc0b079458fca30ac54352`, passed the hosted production dependency audit with
+zero findings in [CI run37470541095](https://github.com/Peerframe/openbot/actions/runs/37470541095),
+then the strict adapter refused five unreviewed historical URI test fixtures. The existing pinned
+TruffleHog3.97.1 image, read-only full-history clone, disabled verification/updates and offline
+network reproduced exit183 with23 findings:18 existing exact fixtures and the five below. Raw
+candidates and diagnostics stayed in private temporary files.
+
+Rechecked the already reviewed pinned
+[URI detector](https://raw.githubusercontent.com/trufflesecurity/trufflehog/20652fbbdefffcdaa493a5bf57ab2ac6b1db715b/pkg/detectors/uri/uri.go)
+and each exact immutable source line. Raw is the URL authority; RawV2 also retains any path.
+These five inputs deliberately exercise userinfo rejection on reserved example domains or fixed
+loopback fixture ports; they do not contain an account credential. Operator/target validation
+refuses them before forwarding or network dispatch. Retain the existing candidate comparison,
+released scanner and AGPL-3.0 external-tool boundary. Editing current tests cannot remove
+published history; path/detector exclusions remain too broad. No dependency or scanner source is
+copied, updated or substantially adapted.
+
+All rows use immutable commit `a240b810ea08bde29004e947b0ffc0298ad8dd1a`, detector17 / URI and
+`Verified === false`. Only each exact commit/path/line/detector/verification/two-hash combination is
+accepted; every changed or unknown finding and scanner error still blocks CI.
+
+| File:line | Raw SHA-256 | RawV2 SHA-256 | Inspected refusal |
+| --- | --- | --- | --- |
+| `apps/server-ts/src/app.test.ts:482` | `bffe218d778d151c026509588e4353e36a6de1300239101b34b1dd45b8efbcec` | `bffe218d778d151c026509588e4353e36a6de1300239101b34b1dd45b8efbcec` | Fixed private-upstream operator configuration |
+| `apps/server-python/scripts/control-contract-fixtures.py:1152` | `e06cc9e19ac9e1a142ddd18d57a2580ca1843e10b32b66c7c0d7b172ec04584e` | `7a94e3cfc283b30c4c15eaecd68e74bca9a9c6d91945a93dec4cb9df2af9f322` | Model connection base URL input |
+| `apps/server-python/tests/test_proxy_peer.py:76` | `0d58dbaa97a892472a0a6c26a078896b9c017edf81d8bbdc83c0f34a9b3c75dc` | `0d58dbaa97a892472a0a6c26a078896b9c017edf81d8bbdc83c0f34a9b3c75dc` | Public-origin operator configuration |
+| `packages/contract-tests/src/work.test.ts:268` | `ab69545a3c8d3c3eb335c82907ba60d8c04c8ad0194ea4c4f80b44cb3e7edd3a` | `6577b10211d0dc4c38ed630107672deee5e14b00457eca7f2d3633d23ac6b817` | Private MCP fixture target |
+| `packages/contract-tests/src/work.test.ts:75` | `3ba4b9eb95fbafcb38a3dd4bc9886809ca70168cc4a8e552ed23d894cbb07df3` | `3ba4b9eb95fbafcb38a3dd4bc9886809ca70168cc4a8e552ed23d894cbb07df3` | Public contract target origin |
+
+The regression set now covers27 reviewed tuples and mutates every bound field. Current negative
+fixtures construct the same rejected input with URL setters or split URL components, avoiding new
+literal matches. All26 focused credential/workflow cases pass, including unknown/verified/mixed
+finding, malformed output and scanner-error refusals. The actual23-finding result passes the
+strict adapter. Candidate rescan and final hosted results are recorded in the existing
+[migration checkpoint](typescript-control-plane-p0.md#current-migration-checkpoint-2026-10-06),
+with local replay kept distinct from the Linux hosted gate.

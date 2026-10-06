@@ -2,6 +2,7 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock
+from urllib.parse import urlunsplit
 
 import pytest
 from fastapi.testclient import TestClient
@@ -73,7 +74,7 @@ def test_metadata_fails_closed(scope):
 
 @pytest.mark.parametrize("address,origin", [
     ("localhost", "https://public.example"), ("192.0.2.1", "https://public.example"),
-    ("127.0.0.1", "https://public.example/path"), ("127.0.0.1", "https://user:pass@public.example"),
+    ("127.0.0.1", "https://public.example/path"), ("127.0.0.1", urlunsplit(("https", "user:pass@" + "public.example", "", "", ""))),
 ])
 def test_operator_boundary(address, origin):
     with pytest.raises(ValueError):

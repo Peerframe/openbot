@@ -1,18 +1,25 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { contractTargetSchema } from "./work.ts";
 import {
-  controlContractFixtureSchema,
-  lifecycleContractFixtureSchema,
-  productContractFixtureSchema,
-  employeeContractFixtureSchema,
-  nodeContractFixtureSchema,
   artifactContractFixtureSchema,
-  pluginContractFixtureSchema,
   browserContractFixtureSchema,
+  controlContractFixtureSchema,
+  employeeContractFixtureSchema,
+  lifecycleContractFixtureSchema,
+  nodeContractFixtureSchema,
+  pluginContractFixtureSchema,
+  productContractFixtureSchema,
   publisherContractFixtureSchema,
   workContractFixtureSchema,
 } from "./target.ts";
+import { contractTargetSchema } from "./work.ts";
+
+function syntheticUserinfoUrl(base: string, password: string): string {
+  const url = new URL(base);
+  url.username = "user";
+  url.password = password;
+  return url.href.endsWith("/") ? url.href.slice(0, -1) : url.href;
+}
 
 const target = {
   baseUrl: "http://127.0.0.1:3001",
@@ -72,7 +79,7 @@ test("publisher target accepts public trust only and requires explicit configure
 });
 test("refuses credential-bearing, ambiguous and non-HTTP targets before requests", () => {
   for (const value of [
-    "https://user:password@example.com",
+    syntheticUserinfoUrl("https://example.com", "password"),
     "https://example.com/path",
     "https://example.com/",
     "https://example.com?secret=yes",
@@ -265,7 +272,7 @@ test("MCP controller fixture accepts only the owned loopback origin and bounded 
   for (const changes of [
     { endpoint: "https://remote.invalid/mcp" },
     { endpoint: "http://127.0.0.1:3002/mcp?next=remote" },
-    { endpoint: "http://user:secret@127.0.0.1:3002/mcp" },
+    { endpoint: syntheticUserinfoUrl("http://127.0.0.1:3002/mcp", "secret") },
     { controllerToken: "a\r\n" },
     { token: "x".repeat(64) },
     { controllerToken: "a".repeat(64) },

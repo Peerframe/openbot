@@ -85,3 +85,33 @@ PR #85 的 CI `35812975675`、security 任务 `107028356527` 生产依赖审计�
 严格适配器。将四个候选文件放入仅本地临时提交后，再次进行完整历史离线扫描，仍返回 183，
 仅有原六条已审核命中，无新增命中，适配器通过。本轮没有提交或推送集成工作树；主集成检查
 也已完成 `npm run check` 并通过，最终发布提交的托管 CI 仍是合并门禁。
+
+## TS 契约与私有 peer 样例（2026-10-06）
+
+[Draft PR #200](https://github.com/Peerframe/openbot/pull/200)的准确 head为
+`49dac0186fa6a127dffc0b079458fca30ac54352`。
+[CI run37470541095](https://github.com/Peerframe/openbot/actions/runs/37470541095)生产依赖审计零命中，
+随后精确适配器拒绝五条未登记的历史 URI 负向测试。使用原有固定 TruffleHog3.97.1镜像，在
+只读完整历史 clone中关闭网络、验证与更新，实际重现 exit183、23条结果：18条原有精确样例，
+以及以下五条新样例。候选原文及诊断只保存在私有临时文件。
+
+重新核对既有固定 URI检测器及每条不可变源码行。Raw是 URL连接地址，RawV2还保留路径；
+两份摘要来自实际扫描。五条都以固定回环端口或保留示例域名构造假 userinfo，检查操作配置或
+目标输入在转发/联网前拒绝。它们不是账户凭据。继续沿用原有方案比较、扫描器及外部工具
+AGPL-3.0边界：改当前测试不能删除已发布历史，按路径或检测器排除会扩大豁免。不改依赖，
+不复制或实质改写扫描器，不验证或上传结果。
+
+五条均绑定提交 `a240b810ea08bde29004e947b0ffc0298ad8dd1a`、检测器17 / URI和未验证状态：
+
+- `apps/server-ts/src/app.test.ts:482`：拒绝私有 upstream操作配置中的 userinfo。
+- `apps/server-python/scripts/control-contract-fixtures.py:1152`：拒绝模型连接 base URL中的 userinfo。
+- `apps/server-python/tests/test_proxy_peer.py:76`：拒绝 public origin操作配置中的 userinfo。
+- `packages/contract-tests/src/work.test.ts:268`：拒绝私有 MCP测试目标中的 userinfo。
+- `packages/contract-tests/src/work.test.ts:75`：拒绝公共契约目标 origin中的 userinfo。
+
+两份准确摘要见[英文记录](credential-scan-fixture-triage.md#ts-contract-and-private-peer-fixtures-2026-10-06)。
+提交、路径、行号、检测器、验证状态及两份摘要必须全部匹配；任一变化、未知/已验证结果或扫描错误
+仍阻断。回归集共27条，逐项变更全部字段。当前测试改用 URL setter或分段 URL组件，保持拒绝
+输入一致并避免新增字面量命中。26项安全/工作流检查通过，包含未知、已验证、混合、无效结果和
+扫描错误拒绝；实际23条结果通过严格适配器。候选再次扫描及最终托管状态记入既有
+[迁移检查点](typescript-control-plane-p0.zh-CN.md#当前迁移检查点2026-10-06)，本地回放不冒充 Linux托管门槛。

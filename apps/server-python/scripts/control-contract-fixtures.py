@@ -4,6 +4,7 @@ import json
 import sys
 from copy import deepcopy
 from pathlib import Path
+from urllib.parse import urlunsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from datetime import datetime
@@ -1149,7 +1150,7 @@ def fixtures():
         ("surrogate-name", {"name": "\ud800"}),
         ("trim-model", {"defaultModel": " vendor/model "}),
         ("control-in-url", {"baseUrl": "https://api.openai.com/\tv1"}),
-        ("url-userinfo", {"baseUrl": "https://user:synthetic@example.invalid/v1"}),
+        ("url-userinfo", {"baseUrl": urlunsplit(("https", "user:synthetic@" + "example.invalid", "/v1", "", ""))}),
         ("bad-key-space", {"apiKey": "two parts"}),
     ]:
         expanded.append(

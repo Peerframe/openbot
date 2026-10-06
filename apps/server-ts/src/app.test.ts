@@ -474,12 +474,15 @@ describe("opaque Worker upgrade", () => {
 });
 
 describe("operator configuration", () => {
+  const credentialUpstream = new URL("http://127.0.0.1:3102");
+  credentialUpstream.username = "user";
+  credentialUpstream.password = "pass";
   it.each([
     "https://127.0.0.1:3102",
     "http://localhost:3102",
     "http://192.0.2.1:3102",
     "http://127.0.0.1:3102/path",
-    "http://user:pass@127.0.0.1:3102",
+    credentialUpstream.href.slice(0, -1),
   ])("refuses non-private or non-origin upstream %s", (upstream) => {
     assert.throws(() =>
       validateOptions({

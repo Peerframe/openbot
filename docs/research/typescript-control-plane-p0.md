@@ -378,9 +378,55 @@ is unchanged, so the earlier full/native evidence retains its scope without anot
 Current native qualification keeps its exact product source `dfc8475f`. Claude's open interface PR194/PR198 and research PR199 do not
 supply whole-interface acceptance for this candidate. On2026-10-06 the Owner said “继续执行”
 after the prepared branch/Draft PR publication request, authorizing this branch's push and Draft PR
-for required GitHub CI. Publication and hosted results are now the next checkpoint; record their
-actual URL/head/results once available. Whole-interface acceptance remains Claude's separate gate
-before a P3 ownership switch.
+for required GitHub CI. Published [Draft PR #200](https://github.com/Peerframe/openbot/pull/200)
+at branch head `49dac0186fa6a127dffc0b079458fca30ac54352` against main `2bc69893`.
+Its first [hosted run37470541095](https://github.com/Peerframe/openbot/actions/runs/37470541095)
+checks the PR merge checkout `7a16bc1`; the production npm audit has zero findings. The observed
+snapshot has11 successful jobs, four failed jobs and one still-running Temporal qualification.
+Linux Python/Worker, retained clients/Python Desktop on all three platforms, macOS mixed TS Preview,
+Windows Worker build, browser proxy/recovery, synthetic migration, scope and validate passed.
+Those hosted build/test lanes retain their declared scope; they do not establish distribution signing,
+whole-interface acceptance or P4 TS durable ownership. Whole-interface acceptance remains Claude's
+separate gate before a P3 ownership switch.
+
+The initial failures are actual acceptance blockers: the strict scanner rejected five new historical
+synthetic URI fixtures; both product-container lanes still read C28's retired singleton-model route;
+and installed-harness quality stopped at one unformatted Work fixture. Extending that quality gate
+locally then exposed two structural/dynamic typing gaps in the same fixture. The bounded repairs
+change only tests, the smoke client, the exact scanner tuple list and these records. Product ownership,
+public routes, dependencies and security workflow remain unchanged.
+
+- [Exact scanner triage](credential-scan-fixture-triage.md#ts-contract-and-private-peer-fixtures-2026-10-06)
+  retains the pinned full-history scanner, with no verification/upload, broad exclusions or error
+  bypass. All26 focused credential/workflow tests pass;27 immutable tuples bind every field, and
+  the real23-finding offline result passes. TS entry33, proxy-peer17 and contract-target11 focused
+  cases pass. After refreshing all remote history, a local-only temporary commit
+  `db804e2d4d1777341d9394bb10722b456c6a1922` containing the candidate repairs returned183 with24
+  reviewed historical findings; the strict adapter exits0 and none belongs to that temporary commit.
+  The subsequent additions are evidence-only paragraphs; final-head hosted scanning remains required.
+- Locked `harness:quality` passes Ruff check/format and real-SDK mypy over24 sources, after correcting
+  the fixture to the actual `ReadStore`/`ReadResult` shape and typed Pydantic sample dictionaries.
+  The entire fixture JSON is unchanged. `contracts:test` passes1,342 actual DTO/Web cases and15
+  client/target cases, with no skips. This is a new run, not relabeled cached parity.
+- A fixed-source Linux arm64 product image built from `49dac018` reproduced the old smoke's exact
+  HTTP404 at `/api/v1/settings/model`. The repaired client checks its retirement, the current empty
+  model-connections list and null transcription selection. Against that same image, real disposable
+  container preflight-before-schema refusal, all55 migrations, Owner HTTP/built Web, PDF/DOCX and
+  offline OCR initialization, persistent key/files across restart, SIGTERM and owned cleanup pass.
+  No model or Temporal is configured. The first local image attempt inherited private clone file
+  modes and refused its entry; restoring normal tracked checkout modes changed no source bytes.
+  Local macOS Docker arm64 evidence does not replace either hosted Linux platform gate.
+
+The repaired candidate completes `npm run check` with exit0: lint10 tasks/0 cached,
+typecheck33/10 cached, test27/12 cached and build19/12 cached. Actual protocol461, TS entry33,
+Web676 and Desktop578/3 platform skips rerun; unchanged cache results retain their scope.
+Follow-up documentation checks pass12 cases/599 Markdown files and research checks pass27, with
+no test skips; the PR-event check remains hosted-only.
+
+The current bounded checkpoint is publishing these tested CI repairs and obtaining hosted results on
+the final PR head. Whole-interface acceptance is still pending; Python remains the sole product
+writer and P3–P5 remain unopened. The installed ASAR still matches the P0 baseline. This round installs
+no system application, modifies no existing profile and implements no Claude page or C29 feature.
 
 Current integration evidence (macOS arm64; CLI Node26.0.0, not the earlier packaged Node24):
 

@@ -251,8 +251,45 @@ fast-uri3.1.8、ip-address10.7.3；proxy-addr2.0.8已一致，没有改页面或
 PR-event检查因不处于 `pull_request`事件而跳过。产品源码未改，复用此前全门槛/原生证据的准确范围，
 不为文档整合重建二进制。原生验收保留准确产品源码 `dfc8475f`。Claude仍开放的界面 PR194/PR198及调研 PR199不提供本候选的整体界面验收。
 2026-10-06，所有者在此前已准备好的分支/Draft PR发布请求后回复“继续执行”，授权推送这条迁移
-分支并创建 Draft PR来运行必需的 GitHub CI。发布及 hosted结果成为下一检查点；取得实际结果后
-记录准确 URL、head和检查状态。整体界面验收仍由 Claude负责，通过后才切换 P3写入方。
+分支并创建 Draft PR来运行必需的 GitHub CI。已发布
+[Draft PR #200](https://github.com/Peerframe/openbot/pull/200)，分支 head为
+`49dac0186fa6a127dffc0b079458fca30ac54352`，base为 main `2bc69893`。
+首次[托管 run37470541095](https://github.com/Peerframe/openbot/actions/runs/37470541095)检查 PR合并
+检出 `7a16bc1`，生产 npm审计零命中。已观察快照为11项任务成功、4项失败，Temporal验收仍运行。
+Linux Python/Worker、三个平台的保留客户端/Python Desktop、macOS混合 TS Preview、Windows Worker
+构建、浏览器代理/恢复、合成迁移、scope与 validate通过。这些托管构建/测试只保留各自声明范围，
+不证明发行签名、整体界面或 P4的 TS持久执行所有权。整体界面验收仍由 Claude负责，通过后才切换
+P3写入方。
+
+首次失败是实际门槛：精确扫描器拒绝五条未登记的历史合成 URI样例；两条容器 lane仍读取 C28已退役
+的单例模型接口；installed harness质量检查停在一份 Work夹具的格式问题。本地继续跑该门槛，又发现
+同一夹具的结构/动态类型缺口。限定修复只改测试、smoke client、扫描器精确记录及本记录，产品所有权、
+公共路由、依赖与安全 workflow不变。
+
+- [精确扫描记录](credential-scan-fixture-triage.zh-CN.md#ts-契约与私有-peer-样例2026-10-06)
+  沿用固定完整历史扫描，不验证/上传，不按路径或检测器排除，不绕过错误。26项安全/工作流检查通过，
+  27条不可变记录逐字段匹配，实际23条离线结果通过。TS入口33项、proxy peer17项、contract target11项
+  定向检查通过。刷新全部远端历史后，在仅本地临时提交
+  `db804e2d4d1777341d9394bb10722b456c6a1922`中包含候选修复，固定扫描器返回183、24条已审核历史
+  命中；严格适配器以0退出，临时提交自身没有命中。随后只补入证据段落，最终 head仍须托管扫描。
+- 已锁定 `harness:quality`通过 Ruff检查/格式与真实 SDK的 mypy，共24份源码；夹具改用真实
+  `ReadStore`/`ReadResult`形状及准确 Pydantic样例字典类型，完整 JSON输出不变。
+  新执行 `contracts:test`通过1,342项真实 DTO/Web对照和15项 client/target检查，无跳过。
+- 固定源码 `49dac018`构建的 Linux arm64产品镜像实际重现旧 smoke在
+  `/api/v1/settings/model`返回404。新 client检查该接口已退役、当前模型连接列表为空及转录选择为 null。
+  同一镜像通过一次性容器的 schema前拒绝、55项迁移、Owner HTTP/已构建 Web、PDF/DOCX与离线 OCR
+  初始化、重启保留密钥/文件、SIGTERM及所属资源清理。未配置模型或 Temporal。
+  首次本地镜像继承私有 clone文件模式，入口拒绝读取；恢复正常 Git检出模式后重建，源码字节不变。
+  本机 Docker arm64证据不替代两条托管 Linux平台门槛。
+
+修复候选的 `npm run check`以0退出：lint10任务/0缓存、类型检查33/10缓存、测试27/12缓存、
+build19/12缓存。protocol461、TS入口33、Web676、Desktop578通过/3项平台跳过为实际重跑；
+未改缓存结果保留原范围。随后文档检查通过12项/599份 Markdown，研究检查通过27项，无测试跳过；
+PR-event检查仍须在托管事件中执行。
+
+当前有界检查点是发布这些已验证的 CI修复，并取得最终 PR head的托管结果。整体界面验收仍待完成；
+Python仍是唯一产品写入方，P3–P5尚未开启。已安装 ASAR仍与 P0基线一致。本轮没有安装系统应用、
+修改已有 profile，或实现 Claude页面/C29功能。
 
 当前整合证据（macOS arm64，CLI Node26.0.0，不是此前包内 Node24）：
 

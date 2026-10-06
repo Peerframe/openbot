@@ -3,6 +3,7 @@
 import json
 import sys
 from copy import deepcopy
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from fastapi.testclient import TestClient
 from openbot_server.app import create_app
 from openbot_server.authority import AuthenticationRequired
+from openbot_server.database import ReadResult
 from openbot_server.work_models import (
     CreateTask,
     DecideAction,
@@ -28,7 +30,7 @@ from openbot_server.work_models import (
 )
 from openbot_server.work_native_scope import NativeTaskScope
 from openbot_server.work_values import WorkConflict, WorkNotFound
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 
 def snapshot() -> dict:
@@ -59,9 +61,7 @@ def snapshot() -> dict:
                 "evidence": None,
             }
         ],
-        "events": [
-            {"revision": 1, "kind": "observation", "payload": {"summary": "unknown"}}
-        ],
+        "events": [{"revision": 1, "kind": "observation", "payload": {"summary": "unknown"}}],
         "eventsTruncated": False,
     }
 
@@ -100,9 +100,7 @@ def fixtures() -> dict:
     for name, value in cases:
         try:
             serialized = WorkSnapshot.model_validate(value).model_dump(mode="json")
-            results.append(
-                {"name": name, "input": value, "valid": True, "serialized": serialized}
-            )
+            results.append({"name": name, "input": value, "valid": True, "serialized": serialized})
         except ValidationError:
             results.append({"name": name, "input": value, "valid": False})
 
@@ -119,9 +117,7 @@ def fixtures() -> dict:
                 raise WorkConflict("task_changed")
             return snapshot()
 
-        async def create(
-            self, token, *, bot_id, objective, token_limit, request_key, **kwargs
-        ):
+        async def create(self, token, *, bot_id, objective, token_limit, request_key, **kwargs):
             assert token == "fixture-session"
             if request_key == "conflict":
                 raise WorkConflict("private create diagnostic")
@@ -145,15 +141,22 @@ def fixtures() -> dict:
             }
 
     class Reader:
-        async def verify_schema(self):
+        async def verify_schema(self) -> None:
             pass
 
-        async def read(self, token, resource):
-            from types import SimpleNamespace
-
-            return SimpleNamespace(
-                expires_at="future" if token == "fixture-session" else None
+        async def read(
+            self,
+            token: str | None,
+            projection: str,
+            *,
+            channel_id: str | None = None,
+            before: str | None = None,
+            limit: int = 100,
+        ) -> ReadResult:
+            expires_at = (
+                datetime(2099, 1, 1, tzinfo=timezone.utc) if token == "fixture-session" else None
             )
+            return ReadResult(expires_at=expires_at)
 
     app = create_app(
         Reader(),
@@ -219,18 +222,14 @@ def fixtures() -> dict:
     for name, value in inputs:
         try:
             serialized = CreateTask.model_validate(value).model_dump(mode="json")
-            requests.append(
-                {"name": name, "input": value, "valid": True, "serialized": serialized}
-            )
+            requests.append({"name": name, "input": value, "valid": True, "serialized": serialized})
         except ValidationError:
             requests.append({"name": name, "input": value, "valid": False})
     with TestClient(app, base_url="https://openbot.invalid") as client:
         responses = []
         for name in ("task-one", "unauthorized", "missing", "conflict"):
             response = client.get(f"/api/v1/tasks/{name}")
-            responses.append(
-                {"id": name, "status": response.status_code, "body": response.json()}
-            )
+            responses.append({"id": name, "status": response.status_code, "body": response.json()})
         commands = []
         for operation, identity, payload, origin, token in (
             ("create", "null-scope", create | {"scope": None}, True, True),
@@ -254,18 +253,10 @@ def fixtures() -> dict:
             ("cancel", "unauthorized", {}, True, False),
             ("cancel", "x" * 129, {}, True, True),
         ):
-            headers = {
-                "Origin": "https://openbot.invalid"
-                if origin
-                else "https://other.invalid"
-            }
+            headers = {"Origin": "https://openbot.invalid" if origin else "https://other.invalid"}
             if token:
                 headers["Cookie"] = "__Host-openbot_session=fixture-session"
-            path = (
-                "/api/v1/tasks"
-                if operation == "create"
-                else f"/api/v1/tasks/{identity}/cancel"
-            )
+            path = "/api/v1/tasks" if operation == "create" else f"/api/v1/tasks/{identity}/cancel"
             response = client.post(path, json=payload, headers=headers)
             commands.append(
                 {
@@ -312,7 +303,7 @@ def wire_cases(create, scope):
         "generation": 1,
         "createdAt": "now",
     }
-    samples = {
+    samples: dict[type[BaseModel], dict[str, Any]] = {
         CreateTask: create,
         NativeTaskScope: scope,
         EmptyCommand: {},
@@ -351,9 +342,7 @@ def wire_cases(create, scope):
     for model, valid in samples.items():
         candidates = [("valid", valid), ("unknown-field", valid | {"extra": True})]
         for key, item in valid.items():
-            candidates.append(
-                (f"missing-{key}", {k: v for k, v in valid.items() if k != key})
-            )
+            candidates.append((f"missing-{key}", {k: v for k, v in valid.items() if k != key}))
             candidates.append((f"null-{key}", valid | {key: None}))
             if type(item) is bool:
                 candidates.append((f"coerced-{key}", valid | {key: "true"}))
@@ -391,7 +380,7 @@ def wire_cases(create, scope):
         if model is WorkUsage:
             candidates.append(("large-integer", valid | {"spentTokens": 2**53}))
         for name, candidate in candidates:
-            case = {"schema": model.__name__, "name": name, "input": candidate}
+            case: dict[str, Any] = {"schema": model.__name__, "name": name, "input": candidate}
             try:
                 case.update(
                     valid=True,
