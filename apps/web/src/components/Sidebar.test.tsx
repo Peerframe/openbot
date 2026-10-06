@@ -264,3 +264,25 @@ it("formats row times like the artboard", async () => {
   expect(sidebarTime(new Date(2026, 8, 29, 23, 0).toISOString(), now)).toBe("昨天");
   expect(sidebarTime(new Date(2026, 8, 27, 8, 0).toISOString(), now)).toBe("9/27");
 });
+
+it("holds a 「创建中…」 row while a quick-created Bot is on its way", async () => {
+  const props = {
+    bots,
+    channels,
+    runs: [],
+    ownerName: "Owner",
+    onSelectChannel: vi.fn(),
+    onSelectBot: vi.fn(),
+    onCreateBot: vi.fn(),
+    onCreateChannel: vi.fn(),
+  };
+  const view = await renderComponent(<Sidebar {...props} creatingBot />);
+  try {
+    const creating = view.container.querySelector(".sb-row.is-creating");
+    expect(creating?.getAttribute("role")).toBe("status");
+    expect(creating?.textContent).toBe("新建 Bot创建中…");
+    expect(view.container.querySelectorAll(".sb-row.is-creating")).toHaveLength(1);
+  } finally {
+    await view.unmount();
+  }
+});

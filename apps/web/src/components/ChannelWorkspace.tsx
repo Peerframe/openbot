@@ -51,7 +51,7 @@ import {
   selectedRecipientIds,
 } from "../recipient-utils";
 import { mergeRunOutput } from "../run-output-state";
-import { isActiveRun, runStatusLabel } from "../run-state";
+import { isActiveRun, runStatusLabel, stageLabel } from "../run-state";
 import { findSlashQuery, removeSlashQuery, type SlashQuery } from "../slash-query";
 import { useWorkspacePreferences } from "../workspace-preferences";
 import { AttachmentsManagerDialog } from "./AttachmentsManager";
@@ -70,7 +70,7 @@ import { AppIcon } from "./AppIcon";
 import { ArtifactCard } from "./ArtifactCard";
 import { BrandMark, pluginMark } from "./BrandMark";
 import { ComposerAttachmentPicker, composerAttachmentsFull } from "./ComposerAttachmentPicker";
-import { HashIcon, PlusIcon, SendIcon } from "./Icons";
+import { CheckIcon, HashIcon, PlusIcon, SendIcon } from "./Icons";
 import { MessageAttachments } from "./MessageAttachments";
 import { PluginCallApprovals } from "./PluginCallApprovals";
 import { RobotAvatar } from "./RobotAvatar";
@@ -173,6 +173,8 @@ export function ChannelWorkspace({
     ? members.find((bot) => bot.id === channel.directBotId)
     : undefined;
   const [setupSkipped, setSetupSkipped] = useState(false);
+  /** After the role card is answered or skipped it stays as one line (after Grok). */
+  const [setupOutcome, setSetupOutcome] = useState<{ answer?: string }>();
   const botsById = useMemo(() => new Map(bots.map((bot) => [bot.id, bot])), [bots]);
   const messageById = useMemo(
     () => new Map(messages.map((message) => [message.id, message])),
@@ -1064,7 +1066,10 @@ export function ChannelWorkspace({
     messages.every((message) => message.origin === "greeting") ? (
       <NewBotSetupCard
         bot={directBot}
-        onSkip={() => setSetupSkipped(true)}
+        onSkip={() => {
+          setSetupSkipped(true);
+          setSetupOutcome({});
+        }}
         onChoose={async ({ role, description, message }) => {
           // The Server keeps role and description under a revision; read it, then write.
           const profile = await getEmployeeProfile(directBot.id);
@@ -1073,6 +1078,7 @@ export function ChannelWorkspace({
             description,
             expectedRevision: profile.details.revision,
           });
+          setSetupOutcome({ answer: role });
           await onBotChanged?.();
           conversation.edit({ text: message });
           const result = await conversation.send((input) => createMessage(channel.id, input));
@@ -1080,6 +1086,20 @@ export function ChannelWorkspace({
         }}
       />
     ) : null;
+  const setupSummary = setupOutcome ? (
+    <p className="new-bot-setup-answered">
+      <span>你最想让我先帮你做什么？</span>
+      {setupOutcome.answer ? (
+        <strong>
+          {setupOutcome.answer}
+          <CheckIcon />
+        </strong>
+      ) : (
+        <small>已忽略</small>
+      )}
+    </p>
+  ) : null;
+  const greetingId = messages.find((message) => message.origin === "greeting")?.id;
 
   return (
     <main
@@ -1207,93 +1227,101 @@ export function ChannelWorkspace({
               </p>
             </div>
           ) : (
-            messages.map((message, index) => (
-              <Fragment key={message.id}>
-                {message.id === newFrom.current ? (
-                  <div className="message-new-divider">
-                    <span aria-hidden="true">新</span>
-                    <span className="visually-hidden">以下是新消息</span>
-                  </div>
-                ) : null}
-                {needsTimeDivider(messages[index - 1], message) ? (
-                  <div className="message-time-divider">
-                    <time dateTime={message.createdAt}>
-                      {formatDivider(message.createdAt, preferences.hour12)}
-                    </time>
-                  </div>
-                ) : null}
-                <MessageRow
-                  message={message}
-                  mentions={members}
-                  recipients={channel.directBotId ? undefined : recipientsByMessage.get(message.id)}
-                  arriving={arrived.current.has(message.id)}
-                  reactions={reactions.filter((item) => item.messageId === message.id)}
-                  onReactionChange={async (emoji, active) => {
-                    const items = await setMessageReaction(channel.id, message.id, emoji, active);
-                    if (mounted.current)
-                      setReactions((current) => [
-                        ...current.filter((item) => item.messageId !== message.id),
-                        ...items,
-                      ]);
-                  }}
-                  groupStart={!sameMessageGroup(messages[index - 1], message)}
-                  groupEnd={!sameMessageGroup(message, messages[index + 1])}
-                  direct={Boolean(channel.directBotId)}
-                  author={
-                    message.authorId === undefined ? undefined : botsById.get(message.authorId)
-                  }
-                  replyTarget={
-                    // A reply to the message directly above needs no quote; the design shows none.
-                    message.replyToMessageId === undefined ||
-                    messages[index - 1]?.id === message.replyToMessageId
-                      ? undefined
-                      : messageById.get(message.replyToMessageId)
-                  }
-                  botsById={botsById}
-                  artifacts={
-                    message.runId === undefined
-                      ? []
-                      : (artifactsByRun.get(message.runId) ?? []).filter((artifact) =>
-                          message.authorType === "bot"
-                            ? message.id === artifactMessageByRun.get(message.runId ?? "")
-                            : artifact.mediaType === "image/png",
-                        )
-                  }
-                  run={message.runId === undefined ? undefined : runsById.get(message.runId)}
-                  delegation={collaboration.delegationByMessage.get(message.id)}
-                  delegatedRun={
-                    message.runId ? collaboration.linkedRuns.get(message.runId) : undefined
-                  }
-                  parentRun={
-                    message.runId && collaboration.linkedRuns.get(message.runId)?.parentRunId
-                      ? runsById.get(collaboration.linkedRuns.get(message.runId)?.parentRunId ?? "")
-                      : undefined
-                  }
-                  childRuns={
-                    message.runId &&
-                    !taskCards.ids.has(message.runId) &&
-                    runsById.get(message.runId)?.sourceMessageId === message.id
-                      ? (collaboration.childrenByParent.get(message.runId) ?? [])
-                      : []
-                  }
-                  onReply={() => {
-                    conversation.edit({
-                      replyTo: message,
-                      ...(message.authorType === "bot" &&
-                      message.authorId &&
-                      channel.botIds.includes(message.authorId)
-                        ? { targetBotId: message.authorId, targetBotIds: [message.authorId] }
-                        : {}),
-                    });
-                    textarea.current?.focus();
-                  }}
-                  onShowMessage={showMessage}
-                  onInspectRun={onInspectRun}
-                  onOpenBot={onOpenBot}
-                />
-                {taskCards.byAnchor.get(message.id)?.map((run) => renderTask(run, message))}
-              </Fragment>
-            ))
+            <>
+              {greetingId ? null : setupSummary}
+              {messages.map((message, index) => (
+                <Fragment key={message.id}>
+                  {message.id === newFrom.current ? (
+                    <div className="message-new-divider">
+                      <span aria-hidden="true">新</span>
+                      <span className="visually-hidden">以下是新消息</span>
+                    </div>
+                  ) : null}
+                  {needsTimeDivider(messages[index - 1], message) ? (
+                    <div className="message-time-divider">
+                      <time dateTime={message.createdAt}>
+                        {formatDivider(message.createdAt, preferences.hour12)}
+                      </time>
+                    </div>
+                  ) : null}
+                  <MessageRow
+                    message={message}
+                    mentions={members}
+                    recipients={
+                      channel.directBotId ? undefined : recipientsByMessage.get(message.id)
+                    }
+                    arriving={arrived.current.has(message.id)}
+                    reactions={reactions.filter((item) => item.messageId === message.id)}
+                    onReactionChange={async (emoji, active) => {
+                      const items = await setMessageReaction(channel.id, message.id, emoji, active);
+                      if (mounted.current)
+                        setReactions((current) => [
+                          ...current.filter((item) => item.messageId !== message.id),
+                          ...items,
+                        ]);
+                    }}
+                    groupStart={!sameMessageGroup(messages[index - 1], message)}
+                    groupEnd={!sameMessageGroup(message, messages[index + 1])}
+                    direct={Boolean(channel.directBotId)}
+                    author={
+                      message.authorId === undefined ? undefined : botsById.get(message.authorId)
+                    }
+                    replyTarget={
+                      // A reply to the message directly above needs no quote; the design shows none.
+                      message.replyToMessageId === undefined ||
+                      messages[index - 1]?.id === message.replyToMessageId
+                        ? undefined
+                        : messageById.get(message.replyToMessageId)
+                    }
+                    botsById={botsById}
+                    artifacts={
+                      message.runId === undefined
+                        ? []
+                        : (artifactsByRun.get(message.runId) ?? []).filter((artifact) =>
+                            message.authorType === "bot"
+                              ? message.id === artifactMessageByRun.get(message.runId ?? "")
+                              : artifact.mediaType === "image/png",
+                          )
+                    }
+                    run={message.runId === undefined ? undefined : runsById.get(message.runId)}
+                    delegation={collaboration.delegationByMessage.get(message.id)}
+                    delegatedRun={
+                      message.runId ? collaboration.linkedRuns.get(message.runId) : undefined
+                    }
+                    parentRun={
+                      message.runId && collaboration.linkedRuns.get(message.runId)?.parentRunId
+                        ? runsById.get(
+                            collaboration.linkedRuns.get(message.runId)?.parentRunId ?? "",
+                          )
+                        : undefined
+                    }
+                    childRuns={
+                      message.runId &&
+                      !taskCards.ids.has(message.runId) &&
+                      runsById.get(message.runId)?.sourceMessageId === message.id
+                        ? (collaboration.childrenByParent.get(message.runId) ?? [])
+                        : []
+                    }
+                    onReply={() => {
+                      conversation.edit({
+                        replyTo: message,
+                        ...(message.authorType === "bot" &&
+                        message.authorId &&
+                        channel.botIds.includes(message.authorId)
+                          ? { targetBotId: message.authorId, targetBotIds: [message.authorId] }
+                          : {}),
+                      });
+                      textarea.current?.focus();
+                    }}
+                    onShowMessage={showMessage}
+                    onInspectRun={onInspectRun}
+                    onOpenBot={onOpenBot}
+                  />
+                  {taskCards.byAnchor.get(message.id)?.map((run) => renderTask(run, message))}
+                  {message.id === greetingId ? setupSummary : null}
+                </Fragment>
+              ))}
+            </>
           )}
           {messages.length > 0 ? setupCard : null}
           {runs
@@ -1323,7 +1351,11 @@ export function ChannelWorkspace({
               </article>
             ))}
           {workingRun && !taskCardEndsConversation(workingRun) ? (
-            <WorkingRow bot={botsById.get(workingRun.botId) as Bot} status={workingRun.status} />
+            <WorkingRow
+              bot={botsById.get(workingRun.botId) as Bot}
+              status={workingRun.status}
+              stage={stageLabel(stepSummaries?.[workingRun.id]?.stageName)}
+            />
           ) : null}
           {taskCards.trailing.map((run) => renderTask(run))}
         </div>
@@ -2049,8 +2081,26 @@ function SlashActionGlyph() {
   );
 }
 
-/** One quiet line at the end of the conversation while a Bot works: its moving head and its name. */
-function WorkingRow({ bot, status }: { bot: Bot; status: Run["status"] }) {
+/**
+ * One quiet line at the end of the conversation while a Bot works: its moving head, its name and,
+ * when the 服务电脑 reports it (C13), the step it is on — 正在打开网页, 正在想下一步 — after Grok.
+ */
+function WorkingRow({
+  bot,
+  status,
+  stage,
+}: {
+  bot: Bot;
+  status: Run["status"];
+  stage?: string | undefined;
+}) {
+  const doing = stage
+    ? stage === "等你确认"
+      ? stage
+      : `正在${stage}`
+    : status === "running"
+      ? "正在工作"
+      : "收到了，马上开始";
   return (
     <div className="conversation-working" role="status" aria-live="polite">
       <RobotAvatar
@@ -2060,7 +2110,7 @@ function WorkingRow({ bot, status }: { bot: Bot; status: Run["status"] }) {
         className="conversation-working-avatar"
       />
       <span>
-        <strong>{bot.name}</strong> {status === "running" ? "正在工作" : "收到了，马上开始"}
+        <strong>{bot.name}</strong> {doing}
       </span>
     </div>
   );
