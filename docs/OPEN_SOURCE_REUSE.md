@@ -1038,6 +1038,11 @@ existing Owner transactions and bounded owned-file loading. Explicit commit/file
 the curated source; registry publication is not treated as review. No new dependency or copied source.
 The attempted public Docs MCP review failed its real DNS boundary and is not included as a reviewed service.
 
+The 2026-10-07 [SDK advisory repair](research/typescript-control-plane-p0.md#mcp-sdk-advisory-repair-2026-10-07)
+re-reviews catalog revision2 at `10f64b7a03e24c6b56003dedf5ca051d6458ea64`: MCP SDK1.32.1,
+updated manifest hash and four unchanged source/license/provenance hashes. Source commit, review
+record and hashes move together; catalog authority and live grant/manifest checks stay unchanged.
+
 ## C12 quick identity composition (2026-10-02)
 
 [Quick creation](research/quick-bot-creation.md) extends the reviewed Python identity/direct

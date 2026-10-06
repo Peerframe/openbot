@@ -1,6 +1,6 @@
 {
   "format": "openbot.reviewed-plugin-catalog/v1",
-  "revision": 1,
+  "revision": 2,
   "entries": [
     {
       "id": "openbot-notebook-template",
@@ -9,8 +9,8 @@
       "distribution": "self-hosted-template",
       "version": "1.0.0",
       "license": "MIT",
-      "sourceUrl": "https://github.com/Peerframe/openbot/tree/57341154b19d45686b2f71bce96fca38e1f07310/packages/mcp-example",
-      "sourceCommit": "57341154b19d45686b2f71bce96fca38e1f07310",
+      "sourceUrl": "https://github.com/Peerframe/openbot/tree/10f64b7a03e24c6b56003dedf5ca051d6458ea64/packages/mcp-example",
+      "sourceCommit": "10f64b7a03e24c6b56003dedf5ca051d6458ea64",
       "files": [
         {
           "path": "packages/mcp-example/src/plugin-example.ts",
@@ -22,7 +22,7 @@
         },
         {
           "path": "packages/mcp-example/package.json",
-          "sha256": "ff948659d0e3727e9a79e11ea248f149087bcc58cb91c60ffeb1f805e393e742"
+          "sha256": "edb11913e16fd5fd844214212b997de414829512132a12c6a02dca6667587f76"
         },
         {
           "path": "packages/mcp-example/LICENSE",
@@ -35,10 +35,10 @@
       ],
       "review": {
         "status": "reviewed",
-        "reviewedAt": "2026-09-30T21:19:45Z",
+        "reviewedAt": "2026-10-06T18:42:03Z",
         "reviewedBy": "Codex source review",
-        "record": "docs/research/desktop-reviewed-plugin-catalog.md",
-        "scope": "Source, bounded MCP lifecycle, grants and isolated App; self-hosted development template."
+        "record": "docs/research/typescript-control-plane-p0.md",
+        "scope": "Source, bounded MCP lifecycle, grants and isolated App; self-hosted development template. Re-reviewed SDK1.32.1 manifest and unchanged four source/license/provenance hashes."
       }
     }
   ]

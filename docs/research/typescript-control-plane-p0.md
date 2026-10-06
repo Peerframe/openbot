@@ -425,6 +425,15 @@ Update the two product consumers, comparator metadata, starter's existing pin as
 third-party notices together; preserve historical dated SDK reviews. Rebuild and check the real
 MCP contract, current dependency audit and native production closure before publishing the repair.
 
+The first repaired-head CI37511515733 passes security but exposes a stale bundled catalog manifest
+hash: SDK1.32.1 changes `packages/mcp-example/package.json`. Re-review its five bound files against
+exact source `10f64b7a03e24c6b56003dedf5ca051d6458ea64`; only the manifest hash changes. Catalog
+revision2 moves source URL/commit and review record together while retaining the four unchanged
+source/license/provenance hashes. The initial 2026-10-01 catalog review remains dated evidence.
+The same CI has one MCP content timeout; unchanged Node22.22.2 local plugin30 and complete
+Python270+19 staged checks both exit0. No timeout, assertion or production transport is weakened;
+current-head hosted requalification remains required.
+
 ### Preserved earlier integration and hosted receipts
 
 Active implementation is now the managed worktree
