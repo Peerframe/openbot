@@ -307,6 +307,14 @@ completion records. UI work follows [the existing design index](docs/design/READ
 tokens/components and affected rendered states. A discovery/reading exercise locates owners and
 checks; it does not establish a completed implementation, rendered acceptance or hosted CI.
 
+Whole-interface acceptance is one command: `npm run ui:acceptance` (add `-- --entry ts` once the TS
+entry is built). It starts a disposable PostgreSQL, the Python product serving the built Web and,
+with `--entry ts`, the TS entry in front of it. It then drives the real interface in your installed
+Chrome (`-- --browser <path>` for another one) and prints a pass or fail receipt with screenshots.
+Prepare Python (`apps/server-python/scripts/bootstrap-worker.sh`) and build the Web first; Docker
+must be running. Known gaps are allowlisted by exact route in `scripts/ui-acceptance-report.ts`;
+see the [research record](docs/research/ui-acceptance-automation.md).
+
 ## Code and comments
 
 - Prefer names, types, and small functions that make the normal path self-explanatory.

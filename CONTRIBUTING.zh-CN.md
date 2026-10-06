@@ -249,6 +249,12 @@ AGENTS 链接的 SKILL.md，记录实际生效方式。这里未配置 Claude �
 [既有设计索引](docs/design/README.zh-CN.md)、现有 tokens/组件及受影响状态。
 发现/读取验收只证明可以找到职责和检查，不代表实现、渲染验收或托管 CI 已完成。
 
+整体界面验收只需一条命令：`npm run ui:acceptance`（TS 入口构建好后加 `-- --entry ts`）。它会搭起临时的 PostgreSQL、
+提供网页的 Python 产品，带 `--entry ts` 时再在前面放上 TS 入口；然后在你已安装的 Chrome 里操作真实界面（换浏览器用
+`-- --browser <路径>`），最后给出通过或不通过的报告和截图。先准备好 Python（`apps/server-python/scripts/bootstrap-worker.sh`）
+并构建网页，Docker 要在运行。已知缺口在 `scripts/ui-acceptance-report.ts` 里按确切接口放行；
+见[调研记录](docs/research/ui-acceptance-automation.zh-CN.md)。
+
 ## 提交 Pull Request
 
 1. Fork 仓库并建立单一目的分支，例如 `fix/dialog-focus`。

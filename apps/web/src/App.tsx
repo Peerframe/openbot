@@ -914,7 +914,8 @@ export function AuthenticatedWorkspace({
 
   async function renameEmployee(botId: string, name: string) {
     await renameBot(botId, name);
-    await refresh();
+    // The rename moves the profile revision; re-read it so 编辑头像 does not send a stale one.
+    await Promise.all([refresh(), refreshEmployeeProfile(botId)]);
   }
 
   async function handleRenameItem(key: string, name: string) {
@@ -1117,7 +1118,12 @@ export function AuthenticatedWorkspace({
           unreadCount={unreadByChannel[selectedChannel.id] ?? 0}
           session={conversationSession}
           globalHeader
-          onBotChanged={refresh}
+          onBotChanged={async () => {
+            // The role card saves the profile details; the rail's profile revision moves with it.
+            await refresh();
+            if (selectedChannel.directBotId)
+              await refreshEmployeeProfile(selectedChannel.directBotId);
+          }}
           approvals={workspace.approvals}
           nodes={workspace.nodes}
           frames={framesByRun}

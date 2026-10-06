@@ -1213,19 +1213,23 @@ export function ChannelWorkspace({
           ) : messages.length === 0 && setupCard ? (
             setupCard
           ) : messages.length === 0 ? (
-            <div className="conversation-empty">
-              <span className="conversation-icon">
-                <HashIcon />
-              </span>
-              <h2>{channel.name} 的第一条消息</h2>
-              <p>
-                {members.length === 0
-                  ? "先从顶部菜单添加一名 Bot。"
-                  : channel.directBotId
-                    ? "直接交代第一件工作。"
-                    : "直接发送到频道，或 @ 指定协作伙伴。"}
-              </p>
-            </div>
+            <>
+              {/* A skipped card leaves its line even before the first message (no greeting). */}
+              {setupSummary}
+              <div className="conversation-empty">
+                <span className="conversation-icon">
+                  <HashIcon />
+                </span>
+                <h2>{channel.name} 的第一条消息</h2>
+                <p>
+                  {members.length === 0
+                    ? "先从顶部菜单添加一名 Bot。"
+                    : channel.directBotId
+                      ? "直接交代第一件工作。"
+                      : "直接发送到频道，或 @ 指定协作伙伴。"}
+                </p>
+              </div>
+            </>
           ) : (
             <>
               {greetingId ? null : setupSummary}

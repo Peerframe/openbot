@@ -65,7 +65,8 @@
     "harness:quality": "sh packages/harness/scripts/quality.sh",
     "contracts:test": "npm exec -- turbo run build --filter=@openbot/web^... && npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts",
     "ci:scope": "node scripts/ci-scope.ts",
-    "ci:check": "node --test scripts/ci-scope.test.ts scripts/check-python-audit.test.ts scripts/check-ci-cache.test.ts scripts/python-acceptance-fixture.test.ts scripts/output-redaction.test.ts scripts/smoke-dev-startup.test.ts apps/server-python/scripts/python-comparator.test.ts scripts/dev-startup-inputs.test.ts scripts/dev-processes.test.ts experiments/work-journey/probe-inputs.test.ts experiments/work-journey/browser_response_loss.test.ts",
+    "ui:acceptance": "node scripts/ui-acceptance.ts",
+    "ci:check": "node --test scripts/ci-scope.test.ts scripts/ui-acceptance-report.test.ts scripts/check-python-audit.test.ts scripts/check-ci-cache.test.ts scripts/python-acceptance-fixture.test.ts scripts/output-redaction.test.ts scripts/smoke-dev-startup.test.ts apps/server-python/scripts/python-comparator.test.ts scripts/dev-startup-inputs.test.ts scripts/dev-processes.test.ts experiments/work-journey/probe-inputs.test.ts experiments/work-journey/browser_response_loss.test.ts",
     "check:affected": "node scripts/check-affected.ts"
   },
   "devDependencies": {
@@ -75,6 +76,7 @@
     "canonicalize": "5.0.0",
     "jose": "6.2.12",
     "officeparser": "7.8.0",
+    "playwright-core": "1.63.0",
     "turbo": "2.10.12",
     "typescript": "7.0.2",
     "vitest": "5.0.0",
