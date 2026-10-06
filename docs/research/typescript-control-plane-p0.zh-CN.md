@@ -250,8 +250,9 @@ fast-uri3.1.8、ip-address10.7.3；proxy-addr2.0.8已一致，没有改页面或
 `docs:check`通过12项、检查599份 Markdown，`research:check`通过27项；两者 exit0、测试无跳过。
 PR-event检查因不处于 `pull_request`事件而跳过。产品源码未改，复用此前全门槛/原生证据的准确范围，
 不为文档整合重建二进制。原生验收保留准确产品源码 `dfc8475f`。Claude仍开放的界面 PR194/PR198及调研 PR199不提供本候选的整体界面验收。
-迁移分支尚未推送，也没有远程 PR。此前发布授权问题针对这条分支和一份 Draft PR；未取得授权，
-必需的 GitHub CI不能运行。整体界面验收仍由 Claude负责。这些是切换 P3写入方前剩余的依赖。
+2026-10-06，所有者在此前已准备好的分支/Draft PR发布请求后回复“继续执行”，授权推送这条迁移
+分支并创建 Draft PR来运行必需的 GitHub CI。发布及 hosted结果成为下一检查点；取得实际结果后
+记录准确 URL、head和检查状态。整体界面验收仍由 Claude负责，通过后才切换 P3写入方。
 
 当前整合证据（macOS arm64，CLI Node26.0.0，不是此前包内 Node24）：
 

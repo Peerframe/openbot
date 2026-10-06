@@ -376,10 +376,11 @@ passes `docs:check` (12 tests,599 Markdown files) and `research:check` (27 tests
 with no test skips. The PR-event check is skipped outside a `pull_request` event. Product source
 is unchanged, so the earlier full/native evidence retains its scope without another binary rebuild.
 Current native qualification keeps its exact product source `dfc8475f`. Claude's open interface PR194/PR198 and research PR199 do not
-supply whole-interface acceptance for this candidate. The migration branch has not been pushed
-and has no remote PR. The outstanding publication request is for this branch and one Draft PR;
-without that authorization, required GitHub CI cannot run. Whole-interface acceptance remains
-Claude's separate gate. These are the remaining dependencies before a P3 ownership switch.
+supply whole-interface acceptance for this candidate. On2026-10-06 the Owner said “继续执行”
+after the prepared branch/Draft PR publication request, authorizing this branch's push and Draft PR
+for required GitHub CI. Publication and hosted results are now the next checkpoint; record their
+actual URL/head/results once available. Whole-interface acceptance remains Claude's separate gate
+before a P3 ownership switch.
 
 Current integration evidence (macOS arm64; CLI Node26.0.0, not the earlier packaged Node24):
 
