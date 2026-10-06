@@ -259,6 +259,18 @@ CAS/删除并发和回滚。本地 base 命令不执行 Worker 检查；托管 W
 P3–P5 所有权切换；下一组是 ADR-0050 下的小型设置/读取模块，仍需真实 PostgreSQL、权限及正反切换门槛。
 没有新增 provider、注册 Worker 或系统应用。
 
+
+干净源码 `a8489172` 新执行未签名、未安装 macOS arm64 候选的 staging、打包及真实服务启动/重启、
+成对退出、父进程 EOF 和进程清理 smoke。59项锁定 Python 分发及 pip 完整性通过；包内审计源码和
+第3版目录与仓库一致，五份审核指纹全部匹配。同一已打包 TS/Python 配合临时 PostgreSQL 的实际生产
+网页，在1440×900和640×900显示两位 Bot 名称，键盘焦点正常，重载后消息和排队任务恢复。
+94次已完成 API 响应全部成功，没有 Run-output 请求。临时夹具、网页和 profile 已清理。
+
+本次完整 Electron GUI 启动停在系统凭据读取，产品服务尚未启动，不计为验收；菜单退出未完成后，
+只向准确的4个本次 PID 发送 SIGTERM，确认停止并移除临时 profile。未改变钥匙串权限。此前
+84184d46 的 safeStorage 流程保留原范围，本次不替代它或 Claude 已通过的整体验收。当前 native smoke
+使用合成凭据回调，不代表钥匙串通过。
+
 ### Claude 审阅修复前已验证的 P2 整合
 
 当前工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支

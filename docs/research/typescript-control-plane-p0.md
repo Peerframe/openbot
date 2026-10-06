@@ -392,6 +392,21 @@ PR200 remains the reviewable P2 candidate. No P3–P5 ownership switch has occur
 small settings/reads under ADR-0050's actual PostgreSQL, authority and forward/reverse gates.
 No provider, registered Worker or system application was added.
 
+
+Clean source `a8489172` freshly stages and packages the unsigned, uninstalled macOS arm64 candidate
+and passes the real packaged startup/restart, paired-exit, parent-EOF and owned-process smoke. The
+59 locked Python distributions and pip integrity pass; packaged audit source and revision3 catalog
+match the repository, including all five reviewed fingerprints. Actual production Web on the same
+packaged TS/Python code and disposable PostgreSQL shows both Bot names at1440×900 and640×900,
+with keyboard focus and message/queued-Run restoration after reload. All94 completed API responses
+are successful; no Run-output request occurs. Fixtures, browser tab and profiles are removed.
+
+The fresh canonical Electron GUI attempt remains at system credential reading before product
+startup and is not acceptance. Menu quit does not finish; all four exact owned PIDs stop with
+SIGTERM and its profile is removed. No keychain permission changes. The earlier84184d46 safeStorage
+journey keeps its original scope; this run does not replace it or Claude's accepted whole-interface
+journey. Current native smoke uses synthetic credential callbacks and does not qualify Keychain.
+
 ### Previously qualified P2 integration (before Claude review corrections)
 
 Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch

@@ -1346,7 +1346,57 @@
       "desktopSkipped": 3,
       "initialAttempt": "14 generated executable fixture failures from a space-containing Node path; same binary in disposable no-space path passes without source changes"
     },
-    "currentNativeQualification": "pending fresh packaging and affected page acceptance; prior receipts retain their exact sources",
+    "currentNativeQualification": {
+      "sourceHead": "a848917270e447d735f042577407be79189da459",
+      "stageExit": 0,
+      "packageExit": 0,
+      "lifecycleExit": 0,
+      "unsigned": true,
+      "installed": false,
+      "lockedPythonDistributions": 59,
+      "pipCheckPassed": true,
+      "appAsarSha256": "78beb8535ae7b655b5caa3f3870248f5e392c8a34e4c2dd6208b64c9f3fd1692",
+      "app": {
+        "regularFiles": 28126,
+        "regularBytes": 1230255595,
+        "symlinks": 46
+      },
+      "native": {
+        "regularFiles": 27820,
+        "regularBytes": 783641578,
+        "symlinks": 32
+      },
+      "catalogRevision": 3,
+      "catalogSha256": "81e05d62993d603b15bf0cd62bce3f627d04f366f10673c13bdf46f5b2622f55",
+      "fiveReviewedFingerprintsMatched": true,
+      "packagedAuditSourceMatches": true,
+      "guiAttempt": "canonical Electron/safeStorage preparation remained at system credential reading; not counted as acceptance. No product service started. Menu quit did not complete; all4 exact owned PIDs stopped with SIGTERM and disposable profile removed. No keychain permission was changed.",
+      "affectedWeb": {
+        "sourceHead": "a848917270e447d735f042577407be79189da459",
+        "actualPackagedPythonTs": true,
+        "builtProductionWeb": true,
+        "viewports": [
+          [
+            1440,
+            900
+          ],
+          [
+            640,
+            900
+          ]
+        ],
+        "botNamesShown": true,
+        "keyboardFocus": true,
+        "messageAndQueuedRunRestoredAfterReload": true,
+        "apiResponses": 94,
+        "apiErrors": 0,
+        "runOutputRequests": 0,
+        "nativeSafeStorageVerified": false,
+        "fixtureFirstAttempt": "private artifact directory permission refusal; corrected to0700 without product changes"
+      },
+      "ownedFixturesAndProfilesRemoved": true,
+      "installedAsarUnchanged": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0"
+    },
     "currentHostedCi": "required after publication; recorded in PR200 checks/body",
     "remaining": [
       "current correction hosted checks",
