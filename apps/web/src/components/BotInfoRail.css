@@ -344,31 +344,8 @@
   resize: none;
   outline: none;
 }
-/* 工作: four counts, then tasks and 成长 in the rail's card rows. */
-.bot-info .bi-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin: 0;
-  padding: 12px 6px;
-  border-radius: 16px;
-  background: var(--ob-fill);
-  text-align: center;
-}
-.bot-info .bi-stats > div + div {
-  border-left: 1px solid var(--ob-divider);
-}
-.bot-info .bi-stats dt {
-  color: var(--ob-text-secondary);
-  font-size: 11px;
-}
-.bot-info .bi-stats dd {
-  margin: 2px 0 0;
-  color: var(--ob-text-strong);
-  font-size: 18px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.bot-info .bi-work-row {
+/* 工作: tasks and 成长 in the rail's card rows, three each until the Owner asks for more. */
+.bot-info :is(.bi-work-row, .bi-routine) {
   padding: 10px 0;
 }
 .bot-info .bi-work-text {

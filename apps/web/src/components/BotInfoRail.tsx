@@ -7,7 +7,7 @@ import type {
 } from "@openbot/domain";
 import { type KeyboardEvent, useEffect, useId, useState } from "react";
 import { getOwnerPreferences, updateEmployeeProfileDetails } from "../api";
-import { type Automation, listAutomations } from "../destination-api";
+import { type Automation, listAutomations, setAutomationEnabled } from "../destination-api";
 import { needsRoleSetup } from "../quick-bot";
 import { isActiveRun, runStatusLabel } from "../run-state";
 import { sidebarOrganization, useSidebarOrganization } from "../sidebar-organization";
@@ -689,39 +689,59 @@ function Routines({
     return () => controller.abort();
   }, [bot.id]);
 
+  const [toggleError, setToggleError] = useState(false);
+  // A switch pauses or resumes through the Server's routine route; the row reverts if it refuses.
+  async function toggle(routine: Automation) {
+    const enabled = !routine.enabled;
+    const swap = (next: Automation) =>
+      setRoutines((current) => current?.map((item) => (item.id === next.id ? next : item)));
+    setToggleError(false);
+    swap({ ...routine, enabled });
+    try {
+      swap(await setAutomationEnabled(routine.id, enabled));
+    } catch {
+      swap(routine);
+      setToggleError(true);
+    }
+  }
+
   return (
     <section className="ci-section" aria-labelledby="bi-routines-heading">
       <h3 id="bi-routines-heading">例行任务</h3>
       {routines && routines.length > 0 ? (
         <div className="bi-card">
           {routines.slice(0, RAIL_PREVIEW).map((routine) => (
-            <div className="bi-row is-static" key={routine.id}>
-              <span>{routine.name}</span>
-              <span className="bi-row-value">
-                {routine.enabled ? everyLabel(routine.intervalMinutes) : "已暂停"}
+            <div className="bi-row is-static bi-routine" key={routine.id}>
+              <span className="bi-work-text">
+                <strong>{routine.name}</strong>
+                <small>{routine.enabled ? everyLabel(routine.intervalMinutes) : "已暂停"}</small>
               </span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={routine.enabled}
+                aria-label={`${routine.name}：${routine.enabled ? "暂停" : "恢复"}`}
+                className="ob-switch"
+                onClick={() => void toggle(routine)}
+              />
             </div>
           ))}
         </div>
+      ) : (
+        <p className="bi-note">
+          {failed ? "暂时读不到例行任务。" : "在聊天里让它定期做某件事，就会出现在这里。"}
+        </p>
+      )}
+      {toggleError ? (
+        <p className="form-error" role="alert">
+          没能切换，请重试。
+        </p>
       ) : null}
       {routines && routines.length > RAIL_PREVIEW && onOpenSettings ? (
         <button type="button" className="ci-more" onClick={() => onOpenSettings("routines")}>
           全部 {routines.length} 个 ›
         </button>
       ) : null}
-      {routines && routines.length > 0 ? null : (
-        <p className="bi-empty">
-          {failed ? (
-            "暂时读不到例行任务。"
-          ) : (
-            <>
-              例行任务是这个 Bot 按计划重复做的事。
-              <br />
-              在聊天里让它设一个就行。
-            </>
-          )}
-        </p>
-      )}
     </section>
   );
 }
@@ -826,13 +846,9 @@ function Computer({
   );
 }
 
+/** 工作 stays short (owner feedback 2026-10-06): three rows each until the Owner asks for more. */
+const WORK_PREVIEW = 3;
 const WORK_PAGE = 20;
-const statisticLabels = [
-  ["totalRuns", "任务"],
-  ["completedRuns", "完成"],
-  ["failedRuns", "失败"],
-  ["verifiedSkills", "已验证技能"],
-] as const;
 
 /**
  * 工作: the Bot's tasks and 成长, from the same Server profile the Bot page used to show. Live
@@ -850,8 +866,8 @@ function Work({
   workspace: WorkspaceSnapshot;
   onOpenRun?: ((runId: string) => void) | undefined;
 }) {
-  const [runLimit, setRunLimit] = useState(RAIL_PREVIEW);
-  const [eventLimit, setEventLimit] = useState(RAIL_PREVIEW);
+  const [runLimit, setRunLimit] = useState(WORK_PREVIEW);
+  const [eventLimit, setEventLimit] = useState(WORK_PREVIEW);
   if (!profile)
     return (
       <p className="bi-empty" role="status">
@@ -868,21 +884,22 @@ function Work({
       Date.parse(right.createdAt) - Date.parse(left.createdAt),
   );
   const events = selectEvolutionArchiveEvents(profile.evolution, "all");
+  if (runs.length === 0 && events.length === 0)
+    return <p className="bi-empty">在聊天里交给它第一项工作，任务和成长会出现在这里。</p>;
 
   return (
     <>
-      <dl className="bi-stats">
-        {statisticLabels.map(([key, label]) => (
-          <div key={key}>
-            <dt>{label}</dt>
-            <dd>{profile.statistics[key]}</dd>
-          </div>
-        ))}
-      </dl>
       <section className="ci-section" aria-labelledby="bi-runs-heading">
-        <h3 id="bi-runs-heading">任务</h3>
+        <h3 id="bi-runs-heading">
+          任务
+          {profile.statistics.totalRuns > 0 ? (
+            <span className="ci-section-meta">
+              完成 {profile.statistics.completedRuns} / {profile.statistics.totalRuns}
+            </span>
+          ) : null}
+        </h3>
         {runs.length === 0 ? (
-          <p className="bi-empty">在聊天里交给它第一项工作，任务会出现在这里。</p>
+          <p className="bi-note">还没有任务。</p>
         ) : (
           <div className="bi-card">
             {runs.slice(0, runLimit).map((run) => {
@@ -921,59 +938,56 @@ function Work({
             type="button"
             className="ci-more"
             onClick={() =>
-              setRunLimit(runLimit === RAIL_PREVIEW ? WORK_PAGE : runLimit + WORK_PAGE)
+              setRunLimit(runLimit === WORK_PREVIEW ? WORK_PAGE : runLimit + WORK_PAGE)
             }
           >
-            {runLimit === RAIL_PREVIEW ? `全部 ${runs.length} 个 ›` : "更早的任务 ›"}
+            {runLimit === WORK_PREVIEW ? `全部 ${runs.length} 个 ›` : "更早的任务 ›"}
           </button>
         ) : null}
       </section>
-      <section className="ci-section" aria-labelledby="bi-growth-heading">
-        <h3 id="bi-growth-heading">成长</h3>
-        {events.length === 0 ? (
-          <p className="bi-empty">学会新技能、职责或配置变化时，会在这里留下有来源的记录。</p>
-        ) : (
-          <ol className="bi-card bi-events">
-            {events.slice(0, eventLimit).map((event) => {
-              const evidence = uniqueEvidenceReferences(event.evidence);
-              return (
-                <li
-                  className="bi-event"
-                  key={event.id}
-                  title={evidence
-                    .map((item) => `${evidenceKindLabel(item.kind)}：${item.label ?? item.id}`)
-                    .join("\n")}
-                >
-                  <i className={evolutionMarkClass(event.type)} aria-hidden="true" />
-                  <span className="bi-work-text">
-                    <strong>{event.title}</strong>
-                    <small>
-                      {evidenceKindLabel(event.source)}
-                      {evidence.length > 0 ? ` · ${evidence.length} 条证据` : ""} ·{" "}
-                      {evolutionWhen(event.createdAt)}
-                    </small>
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-        {events.length > eventLimit ? (
-          <button
-            type="button"
-            className="ci-more"
-            onClick={() =>
-              setEventLimit(eventLimit === RAIL_PREVIEW ? WORK_PAGE : eventLimit + WORK_PAGE)
-            }
-          >
-            {eventLimit === RAIL_PREVIEW ? `全部 ${events.length} 条 ›` : "更早的记录 ›"}
-          </button>
-        ) : null}
-      </section>
-      <p className="bi-note">
-        只记录真实发生、能追溯来源的变化；不展示模型的原始思维链，也不代表权限。成长方向受 Hermes
-        Agent 的 Learning Journey 启发。
-      </p>
+      {events.length > 0 ? (
+        <section className="ci-section" aria-labelledby="bi-growth-heading">
+          <h3 id="bi-growth-heading">成长</h3>
+          {
+            <ol className="bi-card bi-events">
+              {events.slice(0, eventLimit).map((event) => {
+                const evidence = uniqueEvidenceReferences(event.evidence);
+                return (
+                  <li
+                    className="bi-event"
+                    key={event.id}
+                    title={evidence
+                      .map((item) => `${evidenceKindLabel(item.kind)}：${item.label ?? item.id}`)
+                      .join("\n")}
+                  >
+                    <i className={evolutionMarkClass(event.type)} aria-hidden="true" />
+                    <span className="bi-work-text">
+                      <strong>{event.title}</strong>
+                      <small>
+                        {evidenceKindLabel(event.source)}
+                        {evidence.length > 0 ? ` · ${evidence.length} 条证据` : ""} ·{" "}
+                        {evolutionWhen(event.createdAt)}
+                      </small>
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          }
+          {events.length > eventLimit ? (
+            <button
+              type="button"
+              className="ci-more"
+              onClick={() =>
+                setEventLimit(eventLimit === WORK_PREVIEW ? WORK_PAGE : eventLimit + WORK_PAGE)
+              }
+            >
+              {eventLimit === WORK_PREVIEW ? `全部 ${events.length} 条 ›` : "更早的记录 ›"}
+            </button>
+          ) : null}
+          <p className="bi-note">只记有来源的变化，不代表权限。成长方向受 Hermes Agent 启发。</p>
+        </section>
+      ) : null}
     </>
   );
 }

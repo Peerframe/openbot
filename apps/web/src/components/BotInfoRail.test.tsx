@@ -14,7 +14,9 @@ vi.mock("../api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../api")>()),
   ...api,
 }));
+const routinesApi = vi.hoisted(() => ({ setAutomationEnabled: vi.fn() }));
 vi.mock("../destination-api", () => ({
+  setAutomationEnabled: routinesApi.setAutomationEnabled,
   listAutomations: vi.fn(async () => [
     {
       id: "a1",
@@ -159,7 +161,9 @@ it("mutes on this device, shares the template and confirms before deleting", asy
   const { props, view: pending } = render();
   const view = await pending;
   try {
-    const toggle = view.container.querySelector<HTMLButtonElement>('[role="switch"]');
+    const toggle = view.container.querySelector<HTMLButtonElement>(
+      '[role="switch"][aria-label="通知"]',
+    );
     await interact(() => toggle?.click());
     expect(sidebarOrganization.snapshot().muted).toContain("bot:bot-1");
     await interact(() =>
@@ -307,7 +311,7 @@ it("links skills and memory to Settings and opens the Docker browser from 电脑
   }
 });
 
-it("shows 工作 with live tasks first, sourced 成长 and the Hermes attribution", async () => {
+it("shows a short 工作: live tasks first, three rows, sourced 成长 and the Hermes attribution", async () => {
   const run = (id: string, status: string, createdAt: string, title: string) =>
     ({
       id,
@@ -365,16 +369,12 @@ it("shows 工作 with live tasks first, sourced 成长 and the Hermes attributio
   const view = await pending;
   try {
     await interact(() => buttonByText(view.container, "工作").click());
-    expect(
-      Array.from(view.container.querySelectorAll(".bi-stats > div")).map(
-        (item) => item.textContent,
-      ),
-    ).toEqual(["任务7", "完成5", "失败1", "已验证技能2"]);
+    expect(view.container.querySelector("#bi-runs-heading")?.textContent).toBe("任务完成 5 / 7");
     const titles = () =>
       Array.from(view.container.querySelectorAll(".bi-work-row strong")).map(
         (item) => item.textContent,
       );
-    expect(titles()).toEqual(["抓取竞品更新日志", "抓取官网", "整理本周周报", "旧任务 a"]);
+    expect(titles()).toEqual(["抓取竞品更新日志", "抓取官网", "整理本周周报"]);
     expect(view.container.querySelector(".bi-work-state.is-bad")?.textContent).toBe("没能完成");
     await interact(() => buttonByText(view.container, "全部 6 个 ›").click());
     expect(titles()).toHaveLength(6);
@@ -419,6 +419,35 @@ it("moves tab selection and focus together with Arrow, Home and End keys", async
     await press("ArrowDown");
     expect(selected()?.textContent).toBe("电脑");
     expect(document.activeElement).toBe(selected());
+  } finally {
+    await view.unmount();
+  }
+});
+
+it("pauses a routine from its switch and reverts when the Server refuses", async () => {
+  routinesApi.setAutomationEnabled.mockReset();
+  routinesApi.setAutomationEnabled.mockRejectedValueOnce(new Error("refused"));
+  const { view: pending } = render();
+  const view = await pending;
+  try {
+    const toggle = () =>
+      view.container.querySelector<HTMLButtonElement>('.bi-routine [role="switch"]');
+    expect(toggle()?.getAttribute("aria-checked")).toBe("true");
+    await interact(() => toggle()?.click());
+    expect(routinesApi.setAutomationEnabled).toHaveBeenCalledWith("a1", false);
+    expect(toggle()?.getAttribute("aria-checked")).toBe("true");
+    expect(view.container.textContent).toContain("没能切换");
+
+    routinesApi.setAutomationEnabled.mockImplementationOnce(
+      async (id: string, enabled: boolean) => ({
+        id,
+        enabled,
+        name: "周报",
+      }),
+    );
+    await interact(() => toggle()?.click());
+    expect(toggle()?.getAttribute("aria-checked")).toBe("false");
+    expect(view.container.querySelector(".bi-routine small")?.textContent).toBe("已暂停");
   } finally {
     await view.unmount();
   }

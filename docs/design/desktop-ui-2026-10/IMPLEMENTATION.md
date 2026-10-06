@@ -90,7 +90,7 @@ updated.
 | 38 | Bottom rows level and real logos — **merged** | Main, New, Sidebar, Settings, Plugins | — | Composer and sidebar footer both 44px and 18px above the window edge; provider and plugin logos from LobeHub (MIT) and SVG Logos (CC0) instead of letter tiles |
 | 39 | Conversation polish — **in review** | Main, MainDark | C27 on Desktop | From the Owner's second reference recording: Telegram-like runs (coloured name above, avatar below), Bot names as tags, 「X 正在工作…」, 「新」, https links (Web; Desktop inert until C27), mic-only empty composer, deep-grey own bubble in dark |
 | 40 | One model list in 设置 › 模型服务 — **in review** | Settings | C28 to retire it | The older single setting stays (the Server still uses it for voice transcription and Bots without a model) but becomes 语音转写与旧版 Bot 的模型: a compact provider list with the logo and why it is separate; first-run setup shows logos; the `kimi` preset id gets the Moonshot logo |
-| 42 | Plugins dialog and the Bot page into the rail — **in review** | Plugins, BotInfo, BotInfoWork | C27 for the catalogue links on Desktop | After Grok's 市场: a 760px dialog as tall as its content with two-column rows. The Bot page is gone: opening a Bot opens its 单聊 with the rail, which gains 介绍, 技能 and 记忆 rows and a 工作 tab (counts, tasks, 成长); the Profile artboards move to the canvas page 已移除 · Bot 档案 and about 870 lines of page-only CSS go |
+| 42 | Plugins dialog and the Bot page into the rail — **in review** | Plugins, BotInfo, BotInfoWork | C27 for the catalogue links on Desktop | After Grok's 市场: a 760px dialog as tall as its content with two-column rows. The Bot page is gone: opening a Bot opens its 单聊 with the rail, which gains 介绍, 技能 and 记忆 rows and a short 工作 tab (three tasks, three 成长 events), routine switches and fainter scrollbars; the Profile artboards move to the canvas page 已移除 · Bot 档案 and about 870 lines of page-only CSS go |
 
 Steps run in order; 15 and 20 can run in parallel with Codex items. Each step is one pull request.
 
@@ -164,6 +164,7 @@ Open — in the order the UI needs them:
 1. Remove the Bot page; keep the right rail. Its useful parts (介绍, counts, tasks, 成长, links to
    skills and memory) move into the rail (step 42).
 2. The 插件 dialog is too large and less clear than Grok's 市场; make it compact (step 42).
+3. After Grok's rail: 工作 must not grow long by default, and scrollbars should be lighter (step 42).
 
 ## Owner decisions (2026-10-05)
 

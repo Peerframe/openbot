@@ -111,9 +111,11 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
   the Owner speaks.
 - **BotInfo rail**: the 88px avatar with a pencil button, the name edited in place, 添加标签,
   添加介绍 (the description, edited in place at the profile revision), then 详情 / 工作 / 资料库 /
-  电脑. 详情 adds 技能 and 记忆 rows that open those Settings sections. 工作 shows four counts, the
-  Bot's tasks (live first; a row opens 任务详情) and 成长: dated, sourced events, inspired by
-  Hermes Agent's Learning Journey. 电脑 opens the Bot's browser for a Docker Bot.
+  电脑. 详情 adds 技能 and 记忆 rows that open those Settings sections, and each 例行任务 has its own
+  switch (as in Grok). 工作 stays short (owner feedback 2026-10-06): three tasks (live first; a row
+  opens 任务详情, 完成 N / M beside the heading) and three 成长 events — dated and sourced, inspired by
+  Hermes Agent's Learning Journey — each list expanding only when asked. Scrollbars are a faint 4px
+  thumb shown while scrolling. 电脑 opens the Bot's browser for a Docker Bot.
 - **There is no separate Bot page** (owner decision 2026-10-06). Clicking a Bot's avatar, name or
   tag anywhere, or 编辑资料 in its menu, opens its 单聊 with this rail. The six Profile artboards
   are kept on the canvas page 已移除 · Bot 档案 for reference. The pencil opens **编辑头像**: 头型, 下颌色, 随机 and 重置 (back to the look it

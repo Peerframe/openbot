@@ -65,19 +65,12 @@ body{margin:0}
 
 <sc-if value="{{work}}" hint-placeholder-val="{{false}}">
 <div style="flex-grow: 1; min-height: 0; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 18px">
-<dl style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; padding: 12px 6px; border-radius: 16px; background: #f0f0f2; text-align: center">
-<div><dt style="font-size: 11px; color: #6e6e73">任务</dt><dd style="margin: 2px 0 0; font-size: 18px; font-weight: 600">12</dd></div>
-<div style="border-left: 1px solid #e3e3e6"><dt style="font-size: 11px; color: #6e6e73">完成</dt><dd style="margin: 2px 0 0; font-size: 18px; font-weight: 600">10</dd></div>
-<div style="border-left: 1px solid #e3e3e6"><dt style="font-size: 11px; color: #6e6e73">失败</dt><dd style="margin: 2px 0 0; font-size: 18px; font-weight: 600">1</dd></div>
-<div style="border-left: 1px solid #e3e3e6"><dt style="font-size: 11px; color: #6e6e73">已验证技能</dt><dd style="margin: 2px 0 0; font-size: 18px; font-weight: 600">2</dd></div>
-</dl>
 <section style="display: flex; flex-direction: column; gap: 8px">
-<h3 style="margin: 0 4px; font-size: 13px; font-weight: 500; color: #6e6e73">任务</h3>
+<h3 style="margin: 0 4px; font-size: 13px; font-weight: 500; color: #6e6e73; display: flex; justify-content: space-between">任务<span style="font-weight: 400; color: #8e8e93">完成 10 / 12</span></h3>
 <div style="border-radius: 16px; background: #f0f0f2; padding: 0 14px">
 <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0"><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 13px; font-weight: 500">抓取竞品更新日志</strong><small style="font-size: 12px; color: #8e8e93"># 市场周报 · 今天 09:40</small></span><span style="font-size: 12px; color: #1f6fd6">工作中</span></div>
 <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid #e3e3e6"><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 13px; font-weight: 500">抓取官网定价页</strong><small style="font-size: 12px; color: #8e8e93">单聊 · 昨天 18:02</small></span><span style="font-size: 12px; color: #b3261e">没能完成</span></div>
 <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid #e3e3e6"><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 13px; font-weight: 500">整理本周周报</strong><small style="font-size: 12px; color: #8e8e93"># 市场周报 · 9月29日 10:00</small></span><span style="font-size: 12px; color: #248a3d">已完成</span></div>
-<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid #e3e3e6"><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 13px; font-weight: 500">汇总社交媒体提及</strong><small style="font-size: 12px; color: #8e8e93"># 市场周报 · 9月28日 16:20</small></span><span style="font-size: 12px; color: #248a3d">已完成</span></div>
 </div>
 <span style="align-self: flex-start; margin: 0 4px; font-size: 13px; color: #6e6e73">全部 12 个 ›</span>
 </section>
@@ -88,7 +81,7 @@ body{margin:0}
 <div style="display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid #e3e3e6"><i style="width: 8px; height: 8px; border-radius: 50%; background: #248a3d"></i><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 13px; font-weight: 500">新增技能「读取更新日志」</strong><small style="font-size: 12px; color: #8e8e93">来自任务 · 2 条证据 · 9月28日 11:00</small></span></div>
 </div>
 </section>
-<p style="margin: 0 4px; font-size: 12px; line-height: 1.5; color: #8e8e93">只记录真实发生、能追溯来源的变化；不展示模型的原始思维链，也不代表权限。成长方向受 Hermes Agent 的 Learning Journey 启发。</p>
+<p style="margin: 0 4px; font-size: 12px; line-height: 1.5; color: #8e8e93">只记有来源的变化，不代表权限。成长方向受 Hermes Agent 启发。</p>
 </div>
 </sc-if>
 
