@@ -1,5 +1,5 @@
 import type { Bot, ReviewedPluginCatalog } from "@openbot/domain";
-import { type MutableRefObject, useEffect, useRef, useState } from "react";
+import { Fragment, type MutableRefObject, useEffect, useRef, useState } from "react";
 import { getPluginCatalog } from "../api";
 import {
   listPlugins,
@@ -10,7 +10,7 @@ import {
 } from "../plugin-api";
 import "./PluginManagerPanel.css";
 import { BrandMark, pluginMark } from "./BrandMark";
-import { SearchIcon } from "./Icons";
+import { PlusIcon, SearchIcon } from "./Icons";
 import { PluginGrantEditor } from "./PluginGrantEditor";
 import { PluginInstallForm } from "./PluginInstallForm";
 import {
@@ -253,6 +253,19 @@ export function PluginManager({
                 ))}
               </span>
               已安装 {plugins.length} 个
+              <svg
+                aria-hidden="true"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="9 6 15 12 9 18" />
+              </svg>
             </button>
           ) : null}
         </header>
@@ -271,118 +284,123 @@ export function PluginManager({
             {error}
           </p>
         ) : null}
-        <section className="plugins-section" aria-labelledby="plugins-mine">
-          <div className="plugins-section-heading">
-            <h2 id="plugins-mine">我的插件</h2>
-            <span>给哪个 Bot 用，在这里决定</span>
-          </div>
-          {loading && !plugins.length ? (
-            <p className="plugins-empty" role="status">
-              正在读取插件…
-            </p>
-          ) : shown.length === 0 ? (
-            <p className="plugins-empty">
-              {plugins.length
-                ? "没有匹配的插件。"
-                : "还没有插件。添加一个 MCP 服务，审核工具后分配给 Bot。"}
-            </p>
-          ) : (
-            <div className="plugins-card">
-              {shown.map((plugin) => {
-                const granted = plugin.grants.flatMap((grant) => {
-                  const bot = botById.get(grant.botId);
-                  return bot ? [bot] : [];
-                });
-                return (
-                  <div className="plugins-row" key={plugin.id}>
-                    <div className="plugins-row-main">
-                      <BrandMark
-                        className="plugins-tile"
-                        mark={pluginMark(plugin)}
-                        label={plugin.name}
-                      />
-                      <span className="plugins-row-text">
-                        <strong>{plugin.name}</strong>
-                        <small>
-                          {plugin.enabled
-                            ? plugin.tools
-                                .map((tool) => tool.description || tool.name)
-                                .join("、") || "没有声明工具"
-                            : "已停用"}
-                        </small>
-                      </span>
-                      <span
-                        className="plugins-bots"
-                        title={`已授权：${granted.map((bot) => bot.name).join("、") || "无"}`}
-                      >
-                        {granted.slice(0, 4).map((bot) => (
-                          <RobotAvatar key={bot.id} bot={bot} compact />
-                        ))}
-                      </span>
-                      <button
-                        type="button"
-                        className="ob-pill is-outline"
-                        aria-expanded={managing === plugin.id}
-                        onClick={() => setManaging(managing === plugin.id ? undefined : plugin.id)}
-                      >
-                        选择 Bot
-                      </button>
-                    </div>
-                    {managing === plugin.id ? (
-                      <div className="plugins-row-detail">
-                        <PluginGrantEditor
-                          key={plugin.id}
-                          plugin={plugin}
-                          bots={bots}
-                          disabled={busy || loading}
-                          selectedBotId={botSelectionRef.current.get(plugin.id)}
-                          onSelectedBotIdChange={(botId) => {
-                            if (botId) botSelectionRef.current.set(plugin.id, botId);
-                            else botSelectionRef.current.delete(plugin.id);
-                          }}
-                          onSave={(botId, tools, content) =>
-                            mutate(
-                              `plugins/${encodeURIComponent(plugin.id)}/grants/${encodeURIComponent(botId)}`,
-                              "PUT",
-                              { revision: plugin.revision, tools, ...content },
-                            )
-                          }
-                        />
-                        <PluginContentPanel
-                          plugin={plugin}
-                          scope={scope}
-                          onInsertMaterial={onInsertMaterial}
-                        />
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
+        {loading || plugins.length ? (
+          <section className="plugins-section" aria-labelledby="plugins-mine">
+            <div className="plugins-section-heading">
+              <h2 id="plugins-mine">我的插件</h2>
+              <span>给哪个 Bot 用，在这里决定</span>
             </div>
-          )}
-        </section>
+            {loading && !plugins.length ? (
+              <p className="plugins-empty" role="status">
+                正在读取插件…
+              </p>
+            ) : shown.length === 0 ? (
+              <p className="plugins-empty">没有匹配的插件。</p>
+            ) : (
+              <div className="plugins-grid">
+                {shown.map((plugin) => {
+                  const granted = plugin.grants.flatMap((grant) => {
+                    const bot = botById.get(grant.botId);
+                    return bot ? [bot] : [];
+                  });
+                  return (
+                    <Fragment key={plugin.id}>
+                      <div className="plugins-row-main plugins-mine-row">
+                        <BrandMark
+                          className="plugins-tile"
+                          mark={pluginMark(plugin)}
+                          label={plugin.name}
+                        />
+                        <span className="plugins-row-text">
+                          <strong>{plugin.name}</strong>
+                          <small
+                            title={`已授权：${granted.map((bot) => bot.name).join("、") || "无"}`}
+                          >
+                            {plugin.enabled
+                              ? `${plugin.tools.length} 个工具 · ${
+                                  granted.length
+                                    ? `${granted
+                                        .slice(0, 2)
+                                        .map((bot) => bot.name)
+                                        .join(
+                                          "、",
+                                        )}${granted.length > 2 ? ` 等 ${granted.length} 个` : ""}可用`
+                                    : "还没有 Bot 可用"
+                                }`
+                              : "已停用"}
+                          </small>
+                        </span>
+                        <button
+                          type="button"
+                          className="ob-pill"
+                          aria-expanded={managing === plugin.id}
+                          onClick={() =>
+                            setManaging(managing === plugin.id ? undefined : plugin.id)
+                          }
+                        >
+                          选择 Bot
+                        </button>
+                      </div>
+                      {managing === plugin.id ? (
+                        <div className="plugins-row-detail">
+                          <PluginGrantEditor
+                            key={plugin.id}
+                            plugin={plugin}
+                            bots={bots}
+                            disabled={busy || loading}
+                            selectedBotId={botSelectionRef.current.get(plugin.id)}
+                            onSelectedBotIdChange={(botId) => {
+                              if (botId) botSelectionRef.current.set(plugin.id, botId);
+                              else botSelectionRef.current.delete(plugin.id);
+                            }}
+                            onSave={(botId, tools, content) =>
+                              mutate(
+                                `plugins/${encodeURIComponent(plugin.id)}/grants/${encodeURIComponent(botId)}`,
+                                "PUT",
+                                { revision: plugin.revision, tools, ...content },
+                              )
+                            }
+                          />
+                          <PluginContentPanel
+                            plugin={plugin}
+                            scope={scope}
+                            onInsertMaterial={onInsertMaterial}
+                          />
+                        </div>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        ) : null}
         {catalog && catalog.entries.length > 0 ? (
           <section className="plugins-section" aria-labelledby="plugins-featured">
             <div className="plugins-section-heading">
               <h2 id="plugins-featured">精选</h2>
               <span>经过审核的模板，需要自行部署后再连接</span>
             </div>
-            <div className="plugins-featured">
+            <div className="plugins-grid">
               {catalog.entries
                 .filter((entry) =>
                   `${entry.name} ${entry.description}`.toLocaleLowerCase().includes(term),
                 )
                 .map((entry) => (
-                  <div className="plugins-featured-row" key={entry.id}>
-                    <span className="plugins-tile is-large" aria-hidden="true">
-                      {Array.from(entry.name.trim())[0]?.toLocaleUpperCase() ?? "?"}
-                    </span>
+                  <div className="plugins-row-main plugins-featured-row" key={entry.id}>
+                    <BrandMark
+                      className="plugins-tile"
+                      mark={pluginMark({ name: entry.name })}
+                      label={entry.name}
+                    />
                     <span className="plugins-row-text">
                       <strong>{entry.name}</strong>
-                      <small title={entry.description}>{entry.description}</small>
-                      <small>
-                        v{entry.version} · {entry.license} ·{" "}
-                        {entry.distribution === "self-hosted-template" ? "部署模板" : "自行部署"}
+                      <small
+                        title={`${entry.description} · v${entry.version} · ${entry.license} · ${
+                          entry.distribution === "self-hosted-template" ? "部署模板" : "自行部署"
+                        }`}
+                      >
+                        {entry.description}
                       </small>
                     </span>
                     <a
@@ -402,7 +420,6 @@ export function PluginManager({
         <section className="plugins-section" aria-labelledby="plugins-more">
           <div className="plugins-section-heading">
             <h2 id="plugins-more">添加插件</h2>
-            <span>连接 MCP 服务，审核工具后再分配给 Bot</span>
           </div>
           {adding ? (
             <div className="plugins-card plugins-install">
@@ -414,13 +431,22 @@ export function PluginManager({
               />
             </div>
           ) : (
-            <div className="plugins-add">
-              <button type="button" className="ob-pill" onClick={() => setAdding(true)}>
-                连接 MCP 服务
-              </button>
-              <PluginCatalogLinks />
+            <div className="plugins-grid">
+              <div className="plugins-row-main">
+                <span className="plugins-tile is-add" aria-hidden="true">
+                  <PlusIcon />
+                </span>
+                <span className="plugins-row-text">
+                  <strong>连接 MCP 服务</strong>
+                  <small>你自己的服务；审核工具后再分配给 Bot</small>
+                </span>
+                <button type="button" className="ob-pill" onClick={() => setAdding(true)}>
+                  连接
+                </button>
+              </div>
             </div>
           )}
+          <PluginCatalogLinks />
         </section>
       </div>
     );

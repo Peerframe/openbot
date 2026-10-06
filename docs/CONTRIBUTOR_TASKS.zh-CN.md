@@ -60,26 +60,26 @@ Owner 和鉴权工作区访问，Linux Python CI 已运行此检查。开发 Nod
 
 ## 入门：员工主页 Tab 键盘 DOM 回归
 
-- **状态：**已交付（D4）。`EmployeeProfileView.test.tsx` 的交互 jsdom 用例断言方向键/Home/End 同步移动 `aria-selected` 与焦点；ArrowDown 保持无操作。
+- **状态：**已交付（D4）。员工主页已于 2026-10-06 移除；同样的覆盖现在位于 `BotInfoRail.test.tsx`，针对 Bot 信息右栏的 Tab。
 
 - **目标：**证明主页水平 Tab 在 `docs/ACCESSIBILITY.zh-CN.md` 已记录的按键下，**焦点与选中态
   一起移动**。
-- **已有行为：**`EmployeeProfileView` 提供一个 `tablist`、七个 tab，以及带环绕的
-  `profileTabForNavigationKey`（ArrowLeft/ArrowRight/Home/End）。
-- **已覆盖：**`EmployeeProfileView.test.tsx` 向聚焦 tab 派发 keydown，同时断言选中态、焦点和
+- **已有行为：**`BotInfoRail` 提供一个 `tablist`、四个 tab，以及 `railTabForKey`
+  （ArrowLeft/ArrowRight 首尾环绕，Home/End 跳到两端）。
+- **已覆盖：**`BotInfoRail.test.tsx` 向聚焦 tab 派发 keydown，同时断言选中态、焦点和
   tabIndex，覆盖首尾环绕及 ArrowDown 无操作。
-- **入口文件：**`apps/web/src/components/EmployeeProfileView.tsx`、
-  `apps/web/src/components/EmployeeProfileView.test.tsx`、
+- **入口文件：**`apps/web/src/components/BotInfoRail.tsx`、
+  `apps/web/src/components/BotInfoRail.test.tsx`、
   `apps/web/src/test/render-component.tsx`、`docs/ACCESSIBILITY.md`。
 - **前置条件：**`npm ci`；仅 jsdom Vitest。
 - **命令：**
   ```bash
-  npm exec --workspace @openbot/web -- vitest run src/components/EmployeeProfileView.test.tsx
+  npm exec --workspace @openbot/web -- vitest run src/components/BotInfoRail.test.tsx
   npm --workspace @openbot/web run typecheck
   ```
 - **验收反例：**ArrowRight 改变了 `aria-selected` 但焦点/tabIndex 仍留在旧 tab；Home/End 在两端
   不环绕；ArrowDown 激活了某个 tab（必须保持无操作）。
-- **不包含：**屏幕阅读器矩阵；强制色/重排证据；新的主页 Tab 或编辑器。
+- **不包含：**屏幕阅读器矩阵；强制色/重排证据；新的右栏 Tab 或编辑器。
 - **依赖：**无。调研：[contributor-starter-slices](research/contributor-starter-slices.zh-CN.md)。
 
 ## 入门：TaskSheet Escape 与焦点恢复回归
@@ -208,7 +208,7 @@ Owner 和鉴权工作区访问，Linux Python CI 已运行此检查。开发 Nod
 
 - **已交付：**经过认证的职责/简介编辑、严格字段上限、PostgreSQL compare-and-swap revision、
   无正文进化/SSE 元数据、多设备旧草稿审核，以及经过安全扫描的员工模板简介迁移。
-- **路径：**`apps/server-python/src/openbot_server/profile_details.py`、`apps/web/src/components/EmployeeProfileView.tsx`、
+- **路径：**`apps/server-python/src/openbot_server/profile_details.py`、`apps/web/src/components/BotInfoRail.tsx`、
   `packages/protocol`、`packages/db` 和[调研记录](research/owner-employee-profile-details.md)。
 - **调研基线：**Hermes profile 编辑/UI metadata CAS 与 Kubernetes `resourceVersion`。
 - **待共建：**分别审查并实现显示名、模型/Provider、工作主机、例行任务和组合外观编辑器。

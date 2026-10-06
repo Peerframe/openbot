@@ -12,6 +12,61 @@ interface Finding {
 }
 
 function fixture(index = 0): Finding {
+  if (index >= 22) {
+    const definitions = [
+      {
+        base: "http://127.0.0.1:3102",
+        password: "pass",
+        file: "apps/server-ts/src/app.test.ts",
+        line: 482,
+      },
+      {
+        base: "https://example.invalid/v1",
+        password: "synthetic",
+        file: "apps/server-python/scripts/control-contract-fixtures.py",
+        line: 1152,
+      },
+      {
+        base: "https://public.example",
+        password: "pass",
+        file: "apps/server-python/tests/test_proxy_peer.py",
+        line: 76,
+      },
+      {
+        base: "http://127.0.0.1:3002/mcp",
+        password: "secret",
+        file: "packages/contract-tests/src/work.test.ts",
+        line: 268,
+      },
+      {
+        base: "https://example.com",
+        password: "password",
+        file: "packages/contract-tests/src/work.test.ts",
+        line: 75,
+      },
+    ];
+    const definition = definitions[index - 22];
+    if (definition === undefined) throw new RangeError(`Unknown credential fixture: ${index}`);
+    const rawV2 = syntheticUrl(definition.base, "user", definition.password);
+    const authority = new URL(rawV2);
+    authority.pathname = "/";
+    return {
+      DetectorType: 17,
+      DetectorName: "URI",
+      Verified: false,
+      Raw: authority.href.slice(0, -1),
+      RawV2: rawV2,
+      SourceMetadata: {
+        Data: {
+          Git: {
+            commit: "a240b810ea08bde29004e947b0ffc0298ad8dd1a",
+            file: definition.file,
+            line: definition.line,
+          },
+        },
+      },
+    };
+  }
   if (index === 21) {
     const value = fixture(19);
     value.Raw = "5fb64d41242d2546f1713381ae57f7ea5" + "b8e8e1e2f17023d63c7d3cc3c2e5de6";
@@ -331,14 +386,14 @@ function migrationFixture(index: number): Finding {
   return finding;
 }
 
-test("accepts clean scans and only the twenty-two exact reviewed historical findings", () => {
+test("accepts clean scans and only the twenty-seven exact reviewed historical findings", () => {
   assert.deepEqual(checkCredentialFindings("", 0), { reviewedFixtures: 0 });
-  const findings = Array.from({ length: 22 }, (_, index) => index).map((index) =>
+  const findings = Array.from({ length: 27 }, (_, index) => index).map((index) =>
     JSON.stringify(fixture(index)),
   );
   for (const finding of findings)
     assert.deepEqual(checkCredentialFindings(finding, 183), { reviewedFixtures: 1 });
-  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 22 });
+  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 27 });
 });
 
 test("does not exempt another value, detector, verified result, or source location", () => {
@@ -376,7 +431,7 @@ test("does not exempt another value, detector, verified result, or source locati
       value.SourceMetadata.Data.Git.line += 1;
     },
   ];
-  for (const index of Array.from({ length: 22 }, (_, index) => index))
+  for (const index of Array.from({ length: 27 }, (_, index) => index))
     for (const mutate of mutations) {
       const value = fixture(index);
       mutate(value);

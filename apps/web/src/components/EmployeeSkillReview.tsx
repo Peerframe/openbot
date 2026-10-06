@@ -6,6 +6,7 @@ import type {
 import { type FormEvent, useState } from "react";
 import { updateEmployeeSkillState } from "../api";
 import { EmployeeSkillImport } from "./EmployeeSkillImport";
+import "./EmployeeSkillReview.css";
 
 type SkillReviewState = UpdateEmployeeSkillStateInput["state"];
 

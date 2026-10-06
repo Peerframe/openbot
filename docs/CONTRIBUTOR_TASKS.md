@@ -70,26 +70,26 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
 
 ## Starter: Employee profile tab keyboard DOM regression
 
-- **Status:** Delivered (D4). Interactive jsdom coverage in `EmployeeProfileView.test.tsx` asserts Arrow/Home/End move `aria-selected` and focus together; ArrowDown stays a no-op.
+- **Status:** Delivered (D4). The profile page was retired on 2026-10-06; the same coverage now lives in `BotInfoRail.test.tsx` for the Bot information rail tabs.
 
 - **Goal:** prove horizontal profile tabs move **focus and selection together** under the keys
   already documented in `docs/ACCESSIBILITY.md`.
-- **Existing behavior:** `EmployeeProfileView` exposes one `tablist`, seven tabs, and
-  `profileTabForNavigationKey` for ArrowLeft/ArrowRight/Home/End with wrapping.
-- **Covered:** `EmployeeProfileView.test.tsx` dispatches keydown on focused tabs and asserts
+- **Existing behavior:** `BotInfoRail` exposes one `tablist`, four tabs, and `railTabForKey`
+  for ArrowLeft/ArrowRight (wrapping) and Home/End.
+- **Covered:** `BotInfoRail.test.tsx` dispatches keydown on the focused tab and asserts
   selection, focus and tabIndex together, including wrapping and ArrowDown remaining a no-op.
-- **Entry files:** `apps/web/src/components/EmployeeProfileView.tsx`,
-  `apps/web/src/components/EmployeeProfileView.test.tsx`, `apps/web/src/test/render-component.tsx`,
+- **Entry files:** `apps/web/src/components/BotInfoRail.tsx`,
+  `apps/web/src/components/BotInfoRail.test.tsx`, `apps/web/src/test/render-component.tsx`,
   `docs/ACCESSIBILITY.md` (link the new regression from “Reproduce the checks” if needed).
 - **Prerequisites:** `npm ci`; jsdom Vitest only.
 - **Commands:**
   ```bash
-  npm exec --workspace @openbot/web -- vitest run src/components/EmployeeProfileView.test.tsx
+  npm exec --workspace @openbot/web -- vitest run src/components/BotInfoRail.test.tsx
   npm --workspace @openbot/web run typecheck
   ```
 - **Acceptance counter-examples:** ArrowRight changes `aria-selected` but leaves focus/tabIndex on
   the previous tab; Home/End ignore wrapping ends; ArrowDown activates a tab (must remain a no-op).
-- **Non-goals:** screen-reader matrices; forced-colors / reflow evidence; new profile tabs or
+- **Non-goals:** screen-reader matrices; forced-colors / reflow evidence; new rail tabs or
   editors.
 - **Dependencies:** none. Research:
   [contributor-starter-slices](research/contributor-starter-slices.md).
@@ -241,7 +241,7 @@ Status: investigation proposed. Current Web ordering tests pass; a global orderi
 - **Delivered:** authenticated role and biography editing, strict field bounds, PostgreSQL
   compare-and-swap revisions, content-free evolution/SSE metadata, multi-device stale-draft review,
   and biography preservation in safety-scanned Employee templates.
-- **Start in:** `apps/server-python/src/openbot_server/profile_details.py`, `apps/web/src/components/EmployeeProfileView.tsx`,
+- **Start in:** `apps/server-python/src/openbot_server/profile_details.py`, `apps/web/src/components/BotInfoRail.tsx`,
   `packages/protocol`, `packages/db`, and the
   [research record](research/owner-employee-profile-details.md).
 - **Research baseline:** Hermes profile editing/UI metadata CAS and Kubernetes `resourceVersion`.
