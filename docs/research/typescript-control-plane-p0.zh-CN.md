@@ -331,6 +331,27 @@ ASAR为 `ce65a5f77610129f5b903e150d09129efe807127dc9da655a9b5c55e3c301b7e`。
 没有安装应用、启用 Worker或访问用户 profile；已安装 ASAR仍与 P0哈希一致。
 发行签名、受限 Keychain和整体界面验收仍须分别核对。
 
+
+验证正式身份候选的实际启动前，源码核对发现既有 macOS旧配置兼容 helper可能覆盖显式的
+Electron `--user-data-dir`，从而选中已安装的旧配置而非一次性测试目录。继续沿用已审阅
+Electron44.3.0及既有 Desktop目录/加密身份政策，但显式目录必须在任何旧配置文件探测前优先。
+默认启动仍先保留正式配置，必要时兼容旧配置。这是既有原生入口修复，没有新增页面或配置框架。
+新增两种拒绝切换检查：旧 Preview存在时，分别显式选择独立目录和正式目录；既有默认/残缺配置
+检查仍保留。
+
+定向一手证据：[Electron路径 API](https://www.electronjs.org/docs/latest/api/app#appgetpathname)，
+以及44.3.0的 MIT固定源码提交 `07e460719c75b2ec5ee4893f7d2192ef31c7b8c2`中的
+[main delegate](https://github.com/electron/electron/blob/07e460719c75b2ec5ee4893f7d2192ef31c7b8c2/shell/app/electron_main_delegate.cc)
+和[路径 provider](https://github.com/electron/electron/blob/07e460719c75b2ec5ee4893f7d2192ef31c7b8c2/shell/common/electron_paths.cc)。
+原生 delegate在 JS入口之前应用非空 CLI目录，路径 API与单实例锁沿用这个选择。给现有 helper
+加一个前置条件即可保留这一语义；测试专用 bootstrap会绕过真实入口、留下产品问题。
+没有复制上游源码、改依赖版本、加密格式、数据迁移或权限。针对性检查通过7项。
+首次全门槛 exit1：已完成辅助程序构建的 `.build/release`缓存链接被源码链接安全检查拒绝。
+核对已复制的辅助程序后，只清理本次忽略的 Swift缓存，安全检查保持不变。全门槛重跑 exit0：
+类型检查33任务/32缓存、测试27任务/26缓存、build19任务/18缓存；Desktop578通过/3项平台跳过
+为实际执行。辅助程序源码及依赖闭包与6e9d13ed字节一致，可复用已验证的固定组件。
+重新打包后的正式启动仍待验；此前回执保留准确源码范围。
+
 整合后 Electron/safeStorage功能检查点已关闭。下一有界检查点是核对 P2剩余的 hosted CI
 和 Claude整体界面验收，通过后才切换 P3写入方。Python仍是唯一产品写入方，P3–P5尚未启用，
 完整迁移仍已授权；未将剩余门槛改称通过。已安装 OpenBot的 ASAR仍与 P0基线一致：

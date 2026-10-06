@@ -466,6 +466,32 @@ and dependency scope. Electron Packager skipped its optional `.icon` format; `.i
 No app was installed, Worker enabled, or user profile accessed; the installed ASAR still matches
 its P0 hash. Candidate signing, restricted Keychain and whole-interface gates remain separate.
 
+
+Before qualifying the canonical candidate's actual startup, source review found that the existing
+macOS legacy-profile helper could override an explicit Electron `--user-data-dir`. That could
+select an installed legacy profile instead of the disposable test profile. Keep the reviewed
+Electron44.3.0 dependency and existing Desktop profile/key namespace policy, but let an explicit
+profile bypass legacy discovery before filesystem probes. Default launches retain canonical-first,
+legacy-compatible behavior. This is a repair to the existing native entry, not a new page or profile
+framework. The helper's two new refusal cases cover a separate path and an explicitly selected
+canonical path while an old Preview exists; existing default/corrupt-canonical cases remain.
+
+Targeted primary evidence: [Electron app path API](https://www.electronjs.org/docs/latest/api/app#appgetpathname)
+and the pinned MIT release commit `07e460719c75b2ec5ee4893f7d2192ef31c7b8c2` for44.3.0,
+[main delegate](https://github.com/electron/electron/blob/07e460719c75b2ec5ee4893f7d2192ef31c7b8c2/shell/app/electron_main_delegate.cc)
+and [path provider](https://github.com/electron/electron/blob/07e460719c75b2ec5ee4893f7d2192ef31c7b8c2/shell/common/electron_paths.cc).
+The native delegate applies the nonempty CLI path before the JS entry; the path API and single-instance
+lock use that selection. Respecting it in the existing helper costs one early guard; a test-only
+bootstrap shim would bypass the real entry and leave this production bug. No upstream source copied,
+dependency version, encryption format, data migration or permission is changed. Focused checks
+pass7. The first full gate exits1 because the completed companion build's `.build/release` cache
+link is rejected by the source symlink guard. After verifying the copied companion, remove only
+this task's ignored Swift cache; the guard is unchanged. The full rerun exits0:33 typecheck tasks/
+32 cached,27 test tasks/26 cached,19 build tasks/18 cached; Desktop578/3 platform skips actually
+executed. The companion source/dependency closure remains byte-identical to6e9d13ed, so reuse that
+verified immutable component. Rebuilt canonical startup remains pending; earlier receipts retain
+their exact immutable source.
+
 The integrated Electron/safeStorage functional checkpoint is closed. The next bounded checkpoint is to reconcile the remaining P2 hosted CI and Claude whole-interface acceptance before switching a P3
 writer. Python remains the sole product writer; P3–P5 are not active. Full migration remains
 authorized; the remaining gates have not been relabeled as passing. The installed OpenBot ASAR still matches the P0 baseline

@@ -694,5 +694,39 @@
       "hosted platform checks"
     ],
     "scope": "unsigned and uninstalled macOS arm64 full-resource candidate; Python sole writer; no Worker service enabled"
+  },
+  "explicitProfileRepair": {
+    "sourceBase": "040d0a54887f233f6d9c37688ef1d6daf0a8f77c",
+    "sourceDirty": true,
+    "reviewedElectron": "44.3.0",
+    "reviewedElectronCommit": "07e460719c75b2ec5ee4893f7d2192ef31c7b8c2",
+    "focusedProfileTests": 7,
+    "defaultCompatibilityRetained": true,
+    "explicitProfileRefusesLegacyProbes": true,
+    "firstFullCheck": {
+      "exitCode": 1,
+      "failure": "this task's completed Swift build cache .build/release was rejected by the existing source symlink guard",
+      "ownedCacheRemovedAfterCopiedCompanionValidation": true,
+      "sourceGuardChanged": false
+    },
+    "fullCheck": {
+      "exitCode": 0,
+      "typecheckTasks": 33,
+      "typecheckCached": 32,
+      "testTasks": 27,
+      "testCached": 26,
+      "buildTasks": 19,
+      "buildCached": 18,
+      "executed": {
+        "desktop": 578,
+        "desktopPlatformSkips": 3
+      }
+    },
+    "fullCanonicalStartup": "pending rebuilt candidate",
+    "workerCompanionReuse": {
+      "sourceCommit": "6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
+      "sourceAndDependenciesUnchanged": true
+    },
+    "installed": false
   }
 }

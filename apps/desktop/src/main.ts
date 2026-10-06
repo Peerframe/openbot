@@ -90,6 +90,8 @@ const compatibleProfile = desktopProfileCompatibility(
   app.getPath("appData"),
   process.platform,
   app.name,
+  undefined,
+  app.commandLine.getSwitchValue("user-data-dir") || undefined,
 );
 if (compatibleProfile) {
   // Electron chooses its Keychain service before ready; the visible name is restored afterward.

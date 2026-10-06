@@ -307,7 +307,9 @@ See [research and validation](research/desktop-local-session-recovery.md).
 
 The installed application is named **OpenBot**. An existing macOS Preview profile can be reused
 without changing its encryption namespace; its internal data-directory name remains unchanged.
-An already configured canonical OpenBot profile takes precedence. Only obsolete app bundles and
+An already configured canonical OpenBot profile takes precedence. An explicit Electron
+`--user-data-dir` keeps the selected profile and bypasses legacy-profile discovery; use a disposable
+directory when qualifying an uninstalled canonical candidate. Only obsolete app bundles and
 installer files may be removed during the local update, not the active profile.
 
 macOS may ask for the login Keychain password when the updated application first reads the previous
