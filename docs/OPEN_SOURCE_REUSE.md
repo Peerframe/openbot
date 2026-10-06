@@ -321,7 +321,7 @@ Windows Desktop cold-start conformance reuses Electron 44.2.0 `safeStorage` (DPA
 - Async Desktop credential access and explicit release targets reuse Electron 44.2.0 and existing packaging adapters: [research](research/product-repair-startup.md).
 - Portable Bot v2 instruction content reuses Agent Skills and the existing digest-reviewed import: [research](research/portable-bot-skills.md).
 - Native Bot content downloads preserve the reviewed optional boolean across the existing Electron 44.2.0 sandbox bridge: [research](research/native-bot-export-bridge.md). No new dependency or copied source; fixed IPC, digest and native-path checks remain.
-- The independent plugin starter copies the existing MIT example and pins MCP SDK 1.30.0: [research](research/plugin-platform-completion.md).
+- The independent plugin starter copies the existing MIT example and now pins MCP SDK 1.32.1: [initial research](research/plugin-platform-completion.md), [reviewed advisory update](research/typescript-control-plane-p0.md#mcp-sdk-advisory-repair-2026-10-07).
 
 Desktop search-account selection reuses Electron 44.2.0's explicit child environment map, without
 new dependencies or copied source: [review](research/desktop-explicit-search-key.md).
