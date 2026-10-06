@@ -282,7 +282,7 @@ Every non-trivial feature pull request must link its research note or ADR and an
 
 ## Third-party MCP tool plugins
 
-Reviewed: MCP 2025-11-25 with official @modelcontextprotocol/sdk 1.30.0 / `2d889f2b329e46680ec9bdd565de4616c497825a` (MIT). Reuse Streamable HTTP Client, JSON Schema validation and a runnable server example API, adding only Server-owned endpoint bounds, encrypted installation state, per-Bot grants, reviewed declaration digests and single-consumption Owner approval. No source copied; no subprocess, renderer plugin, implicit annotation permission or automatic replay. [Research](research/third-party-mcp-plugins.md), [author guide](PLUGINS.md).
+Reviewed: MCP 2025-11-25 with official @modelcontextprotocol/sdk 1.30.0 / `2d889f2b329e46680ec9bdd565de4616c497825a` (MIT); patched 2026-10-07 to 1.32.1 / `ff07b001194fe60ee9deb2121cf119057565796d` for GHSA-6qxp-vccf-f47h (the OAuth client bound credentials to no issuer). The 17 commits from 1.30.0 to 1.32.1 are fixes and opt-in options (issuer-bound credentials, same-origin redirects, bounded request bodies and batches); the reused API is unchanged. Reuse Streamable HTTP Client, JSON Schema validation and a runnable server example API, adding only Server-owned endpoint bounds, encrypted installation state, per-Bot grants, reviewed declaration digests and single-consumption Owner approval. No source copied; no subprocess, renderer plugin, implicit annotation permission or automatic replay. [Research](research/third-party-mcp-plugins.md), [author guide](PLUGINS.md).
 
 ## Reviewed memory in native tasks
 

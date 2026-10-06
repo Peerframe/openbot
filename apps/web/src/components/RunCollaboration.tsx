@@ -1,5 +1,5 @@
 import type { Bot, Message, Run } from "@openbot/domain";
-import { runStatusLabel, runStatusSummary } from "../run-state";
+import { runStatusLabel, runStatusSummary, runTitle } from "../run-state";
 import { RobotAvatar } from "./RobotAvatar";
 import "./RunCollaboration.css";
 
@@ -140,13 +140,13 @@ export function RunCollaboration({
                 : run.status === "completed"
                   ? "已完成"
                   : runStatusLabel(run.status);
-          const detail = runStatusSummary(run) ?? run.title;
+          const detail = runStatusSummary(run) ?? runTitle(run);
           return (
             <li key={run.id}>
               <button
                 type="button"
                 onClick={() => onInspectRun(run.id)}
-                aria-label={`查看 ${bot?.name ?? "Bot"}（${role}）的协作任务：${run.title}`}
+                aria-label={`查看 ${bot?.name ?? "Bot"}（${role}）的协作任务：${runTitle(run)}`}
                 title={detail}
               >
                 {bot ? <RobotAvatar bot={bot} compact /> : null}

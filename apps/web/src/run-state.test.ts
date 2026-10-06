@@ -9,6 +9,7 @@ import {
   mergeRuns,
   projectRunOnNodes,
   runStatusLabel,
+  runTitle,
 } from "./run-state";
 
 function run(overrides: Partial<Run> = {}): Run {
@@ -154,5 +155,19 @@ describe("run projections", () => {
 
     expect(mergeNodes([node], [updated])).toEqual([updated]);
     expect(mergeNodes([updated], [node])).toEqual([updated]);
+  });
+});
+
+describe("runTitle (P2 acceptance, 2026-10-07)", () => {
+  it("shows only the Owner's words, not the appended attachment description", () => {
+    expect(
+      runTitle({
+        title: "附件验收 User-provided attachment: p2.txt (text/plain, 24 bytes) [OpenBot att",
+      }),
+    ).toBe("附件验收");
+    expect(runTitle({ title: "User-provided attachment: p2.txt (text/plain, 24 bytes)" })).toBe(
+      "处理附件",
+    );
+    expect(runTitle({ title: "整理本周周报" })).toBe("整理本周周报");
   });
 });

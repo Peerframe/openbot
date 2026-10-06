@@ -168,3 +168,14 @@ export function runStatusSummary(run: Run, progressMessage?: string): string | u
   if (run.status === "completed") return run.resultSummary ?? "任务已结束。";
   return progressMessage;
 }
+
+/**
+ * A run's title for display. The composer appends a description of each attachment to the
+ * instruction ("User-provided attachment: …"), and the Server derives the title from it, so only
+ * the Owner's own words are shown (P2 acceptance, 2026-10-07).
+ */
+export function runTitle(run: { readonly title: string }): string {
+  const at = run.title.indexOf("User-provided attachment:");
+  if (at < 0) return run.title;
+  return run.title.slice(0, at).trim() || "处理附件";
+}

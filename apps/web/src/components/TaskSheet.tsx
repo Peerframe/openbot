@@ -1,6 +1,6 @@
 import type { Artifact, Bot, ExecutionNode, Run, RunFrame, RunProgress } from "@openbot/domain";
 import { useEffect, useRef, useState } from "react";
-import { runStatusLabel, runStatusSummary } from "../run-state";
+import { runStatusLabel, runStatusSummary, runTitle } from "../run-state";
 import { ArtifactCard } from "./ArtifactCard";
 import { RobotAvatar } from "./RobotAvatar";
 import { SteerForm, taskControls, useTaskAction } from "./TaskActions";
@@ -131,14 +131,14 @@ export function TaskSheet({
             {statusTone[run.status] === "is-working" ? <i aria-hidden="true" /> : null}
             {runStatusLabel(run.status)}
           </span>
-          <h2 id="task-title">{run.title}</h2>
+          <h2 id="task-title">{runTitle(run)}</h2>
           <span>
             {channelName ? `${channelName} · ` : ""}
             {startedLabel(run.createdAt)}
           </span>
         </div>
 
-        {run.instruction.trim() !== run.title.trim() ? (
+        {run.instruction.trim() !== runTitle(run).trim() ? (
           <section className="task-sheet-section" aria-labelledby="task-instruction">
             <h3 id="task-instruction">任务</h3>
             <p className="task-sheet-instruction">{run.instruction}</p>
@@ -152,7 +152,7 @@ export function TaskSheet({
               {liveFrame ? (
                 <img
                   src={`/api/v1/runs/${run.id}/frame?revision=${liveFrame.revision}`}
-                  alt={`${run.title} 的电脑画面`}
+                  alt={`${runTitle(run)} 的电脑画面`}
                 />
               ) : (
                 <span>还没有画面</span>
@@ -202,7 +202,7 @@ export function TaskSheet({
                   ) : null}
                   <span>
                     <strong>{helper?.name ?? "频道 Bot"}</strong>
-                    <small>协作 · {child.title}</small>
+                    <small>协作 · {runTitle(child)}</small>
                   </span>
                   <span className={`task-sheet-state ${statusTone[child.status] ?? ""}`}>
                     {runStatusLabel(child.status)}

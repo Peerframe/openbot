@@ -76,6 +76,27 @@ export function evolutionMarkClass(type: EmployeeEvolutionEventType) {
   return "";
 }
 
+/**
+ * The Server writes fixed English titles into evolution events (identity_store, profile_details,
+ * model_connections, employee_portability, employee_knowledge), and existing workspaces already
+ * hold them, so they are translated on display. Any other title is shown as stored.
+ */
+const storedTitles: Record<string, string> = {
+  "Employee created": "加入团队",
+  "Employee role updated": "职责更新",
+  "Profile updated": "资料更新",
+  "Employee model updated": "换了模型",
+  "Employee imported": "从 Bot 模板导入",
+  "Skill discovered": "发现候选技能",
+  "Skill verified": "技能通过审核",
+  "Skill suspended": "技能已暂停",
+  "Skill revoked": "技能已撤销",
+};
+
+export function evolutionTitle(event: Pick<EmployeeEvolutionEvent, "title">): string {
+  return storedTitles[event.title] ?? event.title;
+}
+
 /** 今天 14:20, 昨天 09:05 or 9月3日 14:20. */
 export function evolutionWhen(value: string) {
   const date = new Date(value);

@@ -36,3 +36,13 @@ and refuse overwrite. This is a development template requiring separate deployme
 it is not a hosted third-party service or a one-click install. Catalog metadata never installs, grants
 or bypasses live manifest review. The included record carries file SHA-256s and the exact source commit.
 No upstream code is copied or substantially adapted in this change.
+
+### Re-review 2026-10-07: MCP SDK 1.32.1
+
+Catalog revision 2 binds OpenBot commit `fa34622926600c42433058aa1129f888c41871f9`. The only reviewed
+file that changed is `packages/mcp-example/package.json`: its exact `@modelcontextprotocol/sdk` pin
+moved from 1.30.0 to 1.32.1 for GHSA-6qxp-vccf-f47h (the OAuth client did not bind stored credentials
+to their issuer). The template does not use the SDK's OAuth client. The other four files and their
+SHA-256s are unchanged; tools, resources, prompts, bounds and grants are as reviewed above. The 1.x
+changes from 1.30.0 to 1.32.1 are fixes and opt-in options (see the MCP entry in
+`docs/OPEN_SOURCE_REUSE.md`).

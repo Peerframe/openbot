@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>按职责换外观</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.cell{display:flex;flex-direction:column;align-items:center;gap:8px;width:150px}
+.cell b{font-size:14px;font-weight:600}
+.cell small{font-size:12px;color:#6e6e73;text-align:center;line-height:1.4}
+h2{margin:0;font-size:18px;font-weight:700}
+.note{margin:0;font-size:13px;color:#6e6e73;line-height:1.55}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; padding: 48px 64px; display: flex; flex-direction: column; gap: 30px; background: #ffffff">
+
+<section style="display: flex; flex-direction: column; gap: 14px">
+<h2>方案一 · 职责头型（整颗头换形状，参照 Grok）</h2>
+<p class="note">同一套画法：深色身体、彩色下颌、两只竖眼。Bot 定下职责时自己换成对应头型，颜色保留，换的过程播放「碎开再聚拢」的动画。</p>
+<div style="display: flex; gap: 22px">
+<sc-for list="{{shapes}}" as="s" hint-placeholder-count="6">
+<div class="cell">
+<svg width="104" height="104" viewBox="0 0 96 96" aria-label="{{s.name}}">
+<defs><clipPath id="{{s.clip}}"><path d="{{s.d}}"></path></clipPath></defs>
+<path d="{{s.d}}" fill="#20251F" stroke="#20251F" stroke-width="5" stroke-linejoin="round"></path>
+<rect x="0" y="{{s.jaw}}" width="96" height="40" fill="{{s.accent}}" clip-path="url(#{{s.clip}})"></rect>
+<rect x="34" y="{{s.eye}}" width="9" height="16" rx="4.5" fill="#FAFBF7"></rect>
+<rect x="53" y="{{s.eye}}" width="9" height="16" rx="4.5" fill="#FAFBF7"></rect>
+</svg>
+<b>{{s.name}}</b>
+<small>{{s.roles}}</small>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 14px">
+<h2>方案二 · 保留三种头型，加职责配件</h2>
+<p class="note">圆顶、耳罩、猫耳不变，只在头上加一件代表职责的小配件，辨识度靠配件和颜色。</p>
+<div style="display: flex; gap: 22px">
+<sc-for list="{{accessories}}" as="a" hint-placeholder-count="6">
+<div class="cell">
+<svg width="104" height="104" viewBox="0 0 96 96" aria-label="{{a.name}}">
+<defs><clipPath id="{{a.clip}}"><path d="M12 61C12 41 27 26 47 26C68 26 83 41 83 61V71C83 83 69 89 48 89C26 89 12 83 12 71Z"></path></clipPath></defs>
+<path d="M12 61C12 41 27 26 47 26C68 26 83 41 83 61V71C83 83 69 89 48 89C26 89 12 83 12 71Z" fill="#20251F"></path>
+<rect x="0" y="69" width="96" height="30" fill="{{a.accent}}" clip-path="url(#{{a.clip}})"></rect>
+<rect x="29" y="44" width="10" height="19" rx="5" fill="#FAFBF7"></rect>
+<rect x="55" y="43" width="10" height="19" rx="5" fill="#FAFBF7"></rect>
+<path d="{{a.d}}" fill="{{a.fill}}" stroke="{{a.stroke}}" stroke-width="{{a.width}}" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<b>{{a.name}}</b>
+<small>{{a.roles}}</small>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 14px">
+<h2>变身过程（约 0.9 秒）</h2>
+<div style="display: flex; align-items: center; gap: 18px">
+<sc-for list="{{frames}}" as="f" hint-placeholder-count="6">
+<div class="cell" style="width: 120px">
+<svg width="84" height="84" viewBox="0 0 96 96">
+<g transform="{{f.oldT}}" opacity="{{f.oldO}}"><path d="M12 61C12 41 27 26 47 26C68 26 83 41 83 61V71C83 83 69 89 48 89C26 89 12 83 12 71Z" fill="#20251F"></path><rect x="29" y="44" width="10" height="19" rx="5" fill="#FAFBF7"></rect><rect x="55" y="43" width="10" height="19" rx="5" fill="#FAFBF7"></rect></g>
+<sc-for list="{{f.dots}}" as="p" hint-placeholder-count="6"><circle cx="{{p.x}}" cy="{{p.y}}" r="4" fill="#9C7FE3" opacity="{{p.o}}"></circle></sc-for>
+<g transform="{{f.newT}}" opacity="{{f.newO}}"><path d="{{star}}" fill="#20251F" stroke="#20251F" stroke-width="5" stroke-linejoin="round"></path><rect x="34" y="50" width="9" height="16" rx="4.5" fill="#FAFBF7"></rect><rect x="53" y="50" width="9" height="16" rx="4.5" fill="#FAFBF7"></rect></g>
+</svg>
+<small>{{f.label}}</small>
+</div>
+</sc-for>
+</div>
+<p class="note">侧栏、标题胶囊、对话里「正在工作」那一行的头像同时变；同一行出现「已换成「星象」外观 · 撤销」（C29 / C30）。减少动态效果时直接换，不播放动画。</p>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cx = 48, cy = 56;
+    const poly = (points) => 'M' + points.map((p) => p.map((v) => v.toFixed(1)).join(' ')).join('L') + 'Z';
+    const star = poly(Array.from({ length: 10 }, (_, i) => {
+      const r = i % 2 ? 19 : 38; const a = -Math.PI / 2 + (i * Math.PI) / 5;
+      return [cx + r * Math.cos(a), cy + 2 + r * Math.sin(a)];
+    }));
+    const deg = Math.PI / 180;
+    const gear = poly(Array.from({ length: 8 }, (_, t) => [[-12, 31], [-7, 39], [7, 39], [12, 31]].map(([d, r]) => {
+      const a = (t * 45 + d) * deg; return [cx + r * Math.cos(a), cy + 2 + r * Math.sin(a)];
+    })).flat());
+    const hex = poly(Array.from({ length: 6 }, (_, i) => {
+      const a = Math.PI / 6 + (i * Math.PI) / 3; return [cx + 37 * Math.cos(a), cy + 2 + 37 * Math.sin(a)];
+    }));
+    const bubble = 'M16 30H80Q86 30 86 36V70Q86 76 80 76H40L26 88V76H16Q10 76 10 70V36Q10 30 16 30Z';
+    const doc = 'M20 18H62L78 34V88H20Z';
+    const clock = 'M48 22A35 35 0 1 1 47.9 22ZM22 26L30 18M74 26L66 18';
+    const shapes = [
+      { name: '星象', roles: '信息、研究、观测', d: star, jaw: 70, eye: 50, accent: '#9C7FE3' },
+      { name: '齿轮', roles: '开发、运维、自动化', d: gear, jaw: 72, eye: 50, accent: '#5F7CDE' },
+      { name: '对话泡', roles: '客服、沟通、社群', d: bubble, jaw: 64, eye: 44, accent: '#DFAD4F' },
+      { name: '书页', roles: '写作、编辑、发布', d: doc, jaw: 72, eye: 46, accent: '#E57BA8' },
+      { name: '蜂巢', roles: '数据、复盘、报表', d: hex, jaw: 72, eye: 50, accent: '#3FB4A6' },
+      { name: '时钟', roles: '日程、助理、提醒', d: clock, jaw: 72, eye: 50, accent: '#E0785C' },
+    ].map((s, i) => Object.assign(s, { clip: 'role-shape-' + i }));
+    const accessories = [
+      { name: '星星天线', roles: '信息、研究', d: 'M39 30L35 18M35 6L37.5 12L44 12.5L39 16.5L40.5 23L35 19.5L29.5 23L31 16.5L26 12.5L32.5 12Z', fill: '#9C7FE3', stroke: '#9C7FE3', width: 2, accent: '#9C7FE3' },
+      { name: '齿轮天线', roles: '开发、运维', d: 'M39 30L35 20M35 8A6 6 0 1 1 34.9 8M35 3V6M35 22V19M28 12.5H31M39 12.5H42', fill: 'none', stroke: '#5F7CDE', width: 3, accent: '#5F7CDE' },
+      { name: '耳麦', roles: '客服、沟通', d: 'M14 52C14 30 28 20 48 20C68 20 82 30 82 52M82 56V66Q82 72 72 74H58', fill: 'none', stroke: '#DFAD4F', width: 4, accent: '#DFAD4F' },
+      { name: '笔', roles: '写作、编辑', d: 'M68 2L76 10L62 24L53 26L55 17Z', fill: '#E57BA8', stroke: '#E57BA8', width: 2, accent: '#E57BA8' },
+      { name: '柱状天线', roles: '数据、复盘', d: 'M38 22V14M47 22V6M56 22V11', fill: 'none', stroke: '#3FB4A6', width: 5, accent: '#3FB4A6' },
+      { name: '小闹钟', roles: '日程、助理', d: 'M66 10A9 9 0 1 1 65.9 10M66 14V19L69 21M58 8L61 5M74 8L71 5', fill: 'none', stroke: '#E0785C', width: 3, accent: '#E0785C' },
+    ].map((a, i) => Object.assign(a, { clip: 'role-acc-' + i }));
+    const pts = Array.from({ length: 6 }, (_, i) => { const a = (i / 6) * Math.PI * 2 + 0.4; return [Math.cos(a) * 34, Math.sin(a) * 34]; });
+    const dots = (k, o) => pts.map(([x, y]) => ({ x: (48 + x * k).toFixed(1), y: (52 + y * k).toFixed(1), o }));
+    const t = (s) => 'translate(48 52) scale(' + s + ') translate(-48 -52)';
+    const frames = [
+      { label: '0 ms · 圆顶', oldT: t(1), oldO: 1, newT: t(0.15), newO: 0, dots: dots(0, 0) },
+      { label: '150 ms · 缩小', oldT: t(0.6), oldO: 0.6, newT: t(0.15), newO: 0, dots: dots(0.4, 0.8) },
+      { label: '300 ms · 碎开', oldT: t(0.3), oldO: 0, newT: t(0.15), newO: 0, dots: dots(1, 0.9) },
+      { label: '500 ms · 聚拢', oldT: t(0.3), oldO: 0, newT: t(0.6), newO: 0.6, dots: dots(0.45, 0.8) },
+      { label: '700 ms · 绽放', oldT: t(0.3), oldO: 0, newT: t(1.1), newO: 1, dots: dots(0.1, 0.2) },
+      { label: '900 ms · 星象', oldT: t(0.3), oldO: 0, newT: t(1), newO: 1, dots: dots(0, 0) },
+    ];
+    return { shapes, accessories, frames, star };
+  }
+}
+</script>
+</body>
+</html>

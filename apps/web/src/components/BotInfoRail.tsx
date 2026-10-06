@@ -9,7 +9,7 @@ import { type KeyboardEvent, useEffect, useId, useState } from "react";
 import { getOwnerPreferences, updateEmployeeProfileDetails } from "../api";
 import { type Automation, listAutomations, setAutomationEnabled } from "../destination-api";
 import { needsRoleSetup } from "../quick-bot";
-import { isActiveRun, runStatusLabel } from "../run-state";
+import { isActiveRun, runStatusLabel, runTitle } from "../run-state";
 import { sidebarOrganization, useSidebarOrganization } from "../sidebar-organization";
 import { useWorkspacePreferences } from "../workspace-preferences";
 import { ApprovalStack } from "./ApprovalStack";
@@ -20,6 +20,7 @@ import type { DesktopSettingsSection } from "./DesktopSettingsScreen";
 import {
   evidenceKindLabel,
   evolutionMarkClass,
+  evolutionTitle,
   evolutionWhen,
   selectEvolutionArchiveEvents,
   uniqueEvidenceReferences,
@@ -922,7 +923,7 @@ function Work({
                   onClick={() => onOpenRun?.(run.id)}
                 >
                   <span className="bi-work-text">
-                    <strong>{run.title}</strong>
+                    <strong>{runTitle(run)}</strong>
                     <small>
                       {where(run.channelId)} · {evolutionWhen(run.createdAt)}
                     </small>
@@ -964,7 +965,7 @@ function Work({
                   >
                     <i className={evolutionMarkClass(event.type)} aria-hidden="true" />
                     <span className="bi-work-text">
-                      <strong>{event.title}</strong>
+                      <strong>{evolutionTitle(event)}</strong>
                       <small>
                         {evidenceKindLabel(event.source)}
                         {evidence.length > 0 ? ` · ${evidence.length} 条证据` : ""} ·{" "}

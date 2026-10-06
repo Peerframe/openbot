@@ -1,16 +1,16 @@
 {
   "format": "openbot.reviewed-plugin-catalog/v1",
-  "revision": 2,
+  "revision": 3,
   "entries": [
     {
       "id": "openbot-notebook-template",
-      "name": "OpenBot notebook developer template",
-      "description": "A reviewed self-hosted MCP starter with an in-memory notebook and isolated offline view. Requires deployment and explicit grants.",
+      "name": "OpenBot 笔记本开发模板",
+      "description": "经过审核的自托管 MCP 入门模板，带一个内存笔记本和一个离线视图。需要你自己部署，并逐个授权给 Bot 才能用。",
       "distribution": "self-hosted-template",
       "version": "1.0.0",
       "license": "MIT",
-      "sourceUrl": "https://github.com/Peerframe/openbot/tree/10f64b7a03e24c6b56003dedf5ca051d6458ea64/packages/mcp-example",
-      "sourceCommit": "10f64b7a03e24c6b56003dedf5ca051d6458ea64",
+      "sourceUrl": "https://github.com/Peerframe/openbot/tree/fa34622926600c42433058aa1129f888c41871f9/packages/mcp-example",
+      "sourceCommit": "fa34622926600c42433058aa1129f888c41871f9",
       "files": [
         {
           "path": "packages/mcp-example/src/plugin-example.ts",
@@ -35,10 +35,10 @@
       ],
       "review": {
         "status": "reviewed",
-        "reviewedAt": "2026-10-06T18:42:03Z",
-        "reviewedBy": "Codex source review",
-        "record": "docs/research/typescript-control-plane-p0.md",
-        "scope": "Source, bounded MCP lifecycle, grants and isolated App; self-hosted development template. Re-reviewed SDK1.32.1 manifest and unchanged four source/license/provenance hashes."
+        "reviewedAt": "2026-10-07T02:30:00Z",
+        "reviewedBy": "Claude dependency re-review",
+        "record": "docs/research/desktop-reviewed-plugin-catalog.md",
+        "scope": "Source, bounded MCP lifecycle, grants and isolated App; self-hosted development template. 2026-10-07: only the MCP SDK pin changed (1.30.0 to 1.32.1, GHSA-6qxp-vccf-f47h)."
       }
     }
   ]
