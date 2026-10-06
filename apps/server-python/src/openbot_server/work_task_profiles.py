@@ -23,7 +23,9 @@ def _profile(task_id, bot_id, execution_profile, selection):
     if execution_profile not in ('none','model'):
         raise WorkConflict('product_task_profile_required')
     if execution_profile=='none':
-        if selection is not None: raise WorkConflict('product_task_profile_invalid')
+        if selection is not None:
+            try: selection = ModelSelection.model_validate(selection).model_dump()
+            except (ValueError,TypeError): raise WorkConflict('product_task_profile_invalid') from None
     else:
         try:
             parsed = ModelSelection.model_validate(selection).model_dump()
@@ -50,6 +52,9 @@ class WorkTaskProfiles:
             'FROM bots WHERE id=%s FOR SHARE',(bot_id,))).fetchone()
         if bot is None: raise WorkConflict('product_task_bot_missing')
         selection=bot['selection'] if bot['computer_profile']=='model' else None
+        if selection is None and bot['computer_profile'] in ('none','model'):
+            from .owner_preferences import current_preferences
+            selection=(await current_preferences(db))['defaultModel']
         _,digest=_profile(task_id,bot_id,bot['computer_profile'],selection)
         if await (await db.execute('SELECT 1 FROM work_sources WHERE task_id=%s',(task_id,))).fetchone():
             raise WorkConflict('product_source_ambiguous')

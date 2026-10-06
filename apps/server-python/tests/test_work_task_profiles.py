@@ -18,7 +18,7 @@ from openbot_server.app import create_app
 from openbot_server.database import PostgresReadStore, StoreUnavailable
 from openbot_server.model_connections import ModelConnectionsService
 from openbot_server.model_connections_cipher import ModelCredentialCipher
-from openbot_server.model_settings import ModelSettingsService
+from product_model_fixtures import DefaultModels
 from openbot_server.task_inputs import CreateMessageInput
 from openbot_server.task_store import PostgresTaskStore
 from openbot_server.work_corrections import CorrectionStore
@@ -61,10 +61,11 @@ def setup(fixture,tmp_path):
     files=LocalWorkFiles(base/'blobs')
     store=PostgresWorkStore(fixture['dsn'],files=files,task_profiles=WorkTaskProfiles())
     f=Fixture(**fixture,bot=bot,channel=channel,store=store,receipts=ModelReceipts(store,files),
-        results=ToolResults(store,files),settings=ModelSettingsService(base/'settings',
-            lambda request:httpx2.Response(200,json={'id':'fixture-model'})),
+        results=ToolResults(store,files),settings=None,
         connections=ModelConnectionsService(fixture['dsn'],ModelCredentialCipher(bytes(range(32)))),ids=[],calls=[])
+    f.settings=DefaultModels(f)
     yield f
+    f.settings.restore()
     with psycopg.connect(f.dsn) as db:
         query='(SELECT id FROM work_tasks WHERE bot_id=%s)'
         for table in ('work_tool_results','work_model_receipts','work_sources','work_task_profiles','work_actions',
@@ -305,7 +306,7 @@ def test_native_report_then_real_model_receipts_and_result_review_without_channe
         await f.settings.save(CONFIG); b=await bound(f)
         f.next_text='The supplied records contain three open items.'
         def send(req):
-            value=response(req); value['output'][0]['content'][0]['text']=f.next_text
+            value=response(req); value['choices'][0]['message']['content']=f.next_text
             return httpx2.Response(200,json=value)
         f.port=product(f,send);f.artifact=ProductWorkArtifacts(f.store,object(),SCOPE,f.results)
         gate=ProductWorkBinding(f.store,object(),SCOPE)

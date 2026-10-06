@@ -279,6 +279,7 @@ export function ModelConnectionDialog({
             bots: Array.isArray(body.bots) ? body.bots : [],
             runIds: Array.isArray(body.runIds) ? body.runIds : [],
             ownerDefault: body.ownerDefault === true,
+            transcription: body.transcription === true,
           },
         });
         return;
@@ -628,7 +629,7 @@ function RemovalNotice({
   onReload(): void;
 }) {
   if (removal.state === "blocked") {
-    const { bots, runIds, ownerDefault } = removal.dependencies;
+    const { bots, runIds, ownerDefault, transcription } = removal.dependencies;
     return (
       <div className="ob-dialog-notice is-warning" role="alert">
         <strong>还有地方在用 {connection?.name}，暂时不能断开</strong>
@@ -637,9 +638,10 @@ function RemovalNotice({
             <li key={bot.id}>{bot.name} 用它作为模型</li>
           ))}
           {runIds.length > 0 ? <li>{runIds.length} 个没结束的任务正在用它</li> : null}
-          {ownerDefault ? <li>它是你的默认模型（设置 › 模型服务 › 默认模型）</li> : null}
+          {ownerDefault ? <li>它是你的默认模型（设置 › 通用 › 默认模型）</li> : null}
+          {transcription ? <li>语音转写在用它（设置 › 模型服务 › 语音转写）</li> : null}
         </ul>
-        <span>先给这些 Bot 换一个模型、等任务结束，或换掉默认模型，再来断开。</span>
+        <span>先给这些 Bot 换一个模型、等任务结束，或换掉默认模型和语音转写连接，再来断开。</span>
       </div>
     );
   }

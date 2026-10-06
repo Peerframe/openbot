@@ -45,13 +45,53 @@ def binding(b):
             patch('openbot_server.work_temporal_activity.inspect_activity_start',inspect):
         yield
 
-def response(req):
+def response(req, *, text="Checked answer"):
     body=json.loads(req.content);model=body['model']
     if req.url.path.endswith('/responses'):
         return {'id':'response-fixture','object':'response','created_at':1,'model':model,'status':'completed',
             'output':[{'id':'message-fixture','type':'message','role':'assistant','status':'completed',
-                'content':[{'type':'output_text','text':'Checked answer','annotations':[]}]}],
+                'content':[{'type':'output_text','text':text,'annotations':[]}]}],
             'usage':{'input_tokens':10,'output_tokens':4,'total_tokens':14}}
     return {'id':'chat-fixture','object':'chat.completion','created':1,'model':model,
-        'choices':[{'index':0,'finish_reason':'stop','message':{'role':'assistant','content':'Checked answer'}}],
+        'choices':[{'index':0,'finish_reason':'stop','message':{'role':'assistant','content':text}}],
         'usage':{'prompt_tokens':10,'completion_tokens':4,'total_tokens':14}}
+
+
+class DefaultModels:
+    """Configure C7 through real Owner transactions; keep each test's preferences isolated."""
+    def __init__(self, fixture):
+        import psycopg
+        self.f = fixture
+        self.current = None
+        self.value = None
+        with psycopg.connect(fixture.dsn) as db:
+            self.previous = db.execute("SELECT default_model,revision,updated_at FROM owner_preferences WHERE owner_id='owner'").fetchone()
+            db.execute("UPDATE owner_preferences SET default_model=NULL WHERE owner_id='owner'")
+
+    async def save(self, value):
+        from openbot_server.model_presets import model_provider_base_url
+        from openbot_server.owner_preferences import OwnerPreferences
+        preset = 'kimi' if value['provider']=='moonshot' else value['provider']
+        connections = self.f.connections
+        if self.current is None or self.current['presetId'] != preset:
+            self.current = await connections.create(self.f.token, dict(name='Synthetic default', presetId=preset,
+                baseUrl=model_provider_base_url(value['provider']), apiKey=value['apiKey'], defaultModel=value['model']))
+            self.f.ids.append(self.current['id'])
+        self.current = await connections.update(self.f.token, self.current['id'],dict(expectedRevision=self.current['revision'],
+            apiKey=value['apiKey'], enabled=value.get('agentEnabled',True)))
+        preferences = OwnerPreferences(self.f.dsn, model_connections=connections)
+        previous = await preferences.get(self.f.token)
+        await preferences.update(self.f.token,dict(expectedRevision=previous['revision'],timezone=previous['timezone'],
+            defaultModel=dict(connectionId=self.current['id'],modelId=value['model']) if value.get('agentEnabled',True) else None))
+        self.value = dict(value, revision=self.current['revision'])
+        return self.value
+
+    async def active(self):
+        return self.value
+
+    def restore(self):
+        import psycopg
+        from psycopg.types.json import Jsonb
+        with psycopg.connect(self.f.dsn) as db:
+            db.execute("UPDATE owner_preferences SET default_model=%s,revision=%s,updated_at=%s WHERE owner_id='owner'",
+                (None if self.previous[0] is None else Jsonb(self.previous[0]),self.previous[1],self.previous[2]))

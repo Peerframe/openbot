@@ -156,7 +156,16 @@ describe("Desktop application connection gate", () => {
             expiresAt: "2999-01-01T00:00:00.000Z",
             owner: { id: "owner", name: "Owner" },
           })
-        : Response.json({ status: "unconfigured", revision: null }),
+        : url === "/api/v1/model-services"
+          ? Response.json({ presets: [], connections: [], customBaseUrls: [] })
+          : url === "/api/v1/settings/general"
+            ? Response.json({
+                revision: 1,
+                timezone: "UTC",
+                defaultModel: null,
+                updatedAt: "2026-10-05T00:00:00Z",
+              })
+            : Response.json({ revision: 1, connectionId: null }),
     );
     vi.stubGlobal("fetch", fetcher);
     window.openbotDesktop = {
@@ -217,7 +226,16 @@ describe("Desktop application connection gate", () => {
                   }
                 : { authenticated: false },
             )
-          : Response.json({ status: "unconfigured", revision: null }),
+          : url === "/api/v1/model-services"
+            ? Response.json({ presets: [], connections: [], customBaseUrls: [] })
+            : url === "/api/v1/settings/general"
+              ? Response.json({
+                  revision: 1,
+                  timezone: "UTC",
+                  defaultModel: null,
+                  updatedAt: "2026-10-05T00:00:00Z",
+                })
+              : Response.json({ revision: 1, connectionId: null }),
       ),
     );
     window.openbotDesktop = {

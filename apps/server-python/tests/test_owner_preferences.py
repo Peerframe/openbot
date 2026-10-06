@@ -239,3 +239,122 @@ def test_c17_delete_fails_closed_on_corrupt_bot_reference(fixture):
         with psycopg.connect(fixture['dsn']) as db:
             db.execute("UPDATE bots SET configuration='{}'::jsonb WHERE id=%s",(bot.id,))
     assert asyncio.run(connections.delete(fixture['token'],created['id'],dict(expectedRevision=1)))['deleted']
+
+
+@pytest.fixture
+def c28(fixture):
+    from psycopg.rows import dict_row
+    from psycopg.types.json import Jsonb
+    with psycopg.connect(fixture['dsn'], row_factory=dict_row) as db:
+        previous = db.execute("SELECT * FROM owner_preferences WHERE owner_id='owner'").fetchone()
+        before = {r['id'] for r in db.execute('SELECT id FROM model_connections').fetchall()}
+        receipts = {r['source_id'] for r in db.execute('SELECT source_id FROM legacy_model_imports').fetchall()}
+        db.execute("UPDATE owner_preferences SET default_model=NULL,transcription_connection_id=NULL,revision=1 WHERE owner_id='owner'")
+    connections = ModelConnectionsService(fixture['dsn'], ModelCredentialCipher(bytes(range(32))))
+    yield connections
+    with psycopg.connect(fixture['dsn'], row_factory=dict_row) as db:
+        db.execute("UPDATE owner_preferences SET timezone=%s,default_model=%s,transcription_connection_id=%s,revision=%s,updated_at=%s WHERE owner_id='owner'",
+            (previous['timezone'],None if previous['default_model'] is None else Jsonb(previous['default_model']),previous['transcription_connection_id'],previous['revision'],previous['updated_at']))
+        after = {r['id'] for r in db.execute('SELECT id FROM model_connections').fetchall()}
+        db.execute('DELETE FROM model_connections WHERE id=ANY(%s)', (list(after-before),))
+        after_receipts = {r['source_id'] for r in db.execute('SELECT source_id FROM legacy_model_imports').fetchall()}
+        db.execute('DELETE FROM legacy_model_imports WHERE source_id=ANY(%s)', (list(after_receipts-receipts),))
+
+
+def test_c28_transcription_http_is_owner_only_revision_checked_and_keeps_general_preferences(fixture,c28,tmp_path):
+    from openbot_server.transcription_settings import TranscriptionSettings
+    async def create():
+        return await c28.create(fixture['token'],dict(name='C28 OpenAI',presetId='openai',baseUrl='https://api.openai.com/v1',apiKey='synthetic-c28-key'))
+    connection=asyncio.run(create())
+    service=OwnerProduct(fixture['dsn'],object_root=tmp_path,model_connections=c28)
+    app=create_app(PostgresReadStore(fixture['dsn']),owner_name='Owner',secure_cookies=False,allowed_origins=('http://testserver',),product=service)
+    path='/api/v1/settings/transcription';body=dict(expectedRevision=1,connectionId=connection['id']);headers={'Origin':'http://testserver'}
+    with TestClient(app) as api:
+        assert api.get(path).status_code==401
+        assert api.put(path,json={},headers=headers).status_code==401
+        api.cookies.set('openbot_session',fixture['token'])
+        assert api.put(path,json=body).status_code==403
+        assert api.put(path,json={**body,'apiKey':'must-not-accept'},headers=headers).status_code==422
+        result=api.put(path,json=body,headers=headers)
+        assert result.status_code==200 and result.json()==dict(revision=2,connectionId=connection['id'])
+        assert 'synthetic-c28-key' not in result.text
+        assert api.put(path,json=body,headers=headers).status_code==409
+        assert api.put('/api/v1/settings/general',json=dict(expectedRevision=2,timezone='Asia/Singapore',defaultModel=None),headers=headers).status_code==200
+        assert api.get(path).json()==dict(revision=3,connectionId=connection['id'])
+        blocked=api.request('DELETE','/api/v1/model-connections/'+connection['id'],headers=headers,json=dict(expectedRevision=1))
+        assert blocked.status_code==409 and blocked.json()['transcription'] is True
+        assert api.put(path,json=dict(expectedRevision=3,connectionId=None),headers=headers).status_code==200
+    assert asyncio.run(service.preferences.get(fixture['token']))['timezone']=='Asia/Singapore'
+
+
+@pytest.mark.parametrize('preset,enabled',[('anthropic',True),('openai',False)])
+def test_c28_transcription_rejects_ineligible_connections_and_has_no_implicit_fallback(fixture,c28,preset,enabled):
+    from openbot_server.transcription_settings import TranscriptionSettings
+    service=TranscriptionSettings(fixture['dsn'],c28)
+    async def run():
+        created=await c28.create(fixture['token'],dict(name='C28 ineligible',presetId=preset,baseUrl='https://api.anthropic.com' if preset=='anthropic' else 'https://api.openai.com/v1',apiKey='synthetic-c28-key'))
+        if not enabled: await c28.update(fixture['token'],created['id'],dict(expectedRevision=1,enabled=False))
+        with pytest.raises(ControlError):
+            await service.update(fixture['token'],dict(expectedRevision=1,connectionId=created['id']))
+        async with c28._transactions.transaction(fixture['token']) as db:
+            with pytest.raises(ControlError,match='enabled_openai_transcription_required'): await service.resolve_in_transaction(db)
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize('enabled',[False,True])
+def test_c28_legacy_import_is_atomic_once_preserves_files_keys_and_opt_in(fixture,c28,tmp_path,enabled):
+    import httpx2
+    from openbot_server.model_settings import ModelSettingsService
+    from openbot_server.legacy_model_import import import_legacy_model, import_legacy_path
+    from openbot_server.database import StoreUnavailable
+    legacy=ModelSettingsService(tmp_path.resolve()/'legacy',lambda request:httpx2.Response(200,json={'id':'fixture-model'}))
+    asyncio.run(legacy.save(dict(provider='openai',model='fixture-model',apiKey='synthetic-c28-key',revision=None,agentEnabled=enabled)))
+    ciphertext=legacy.path.read_bytes();key=(legacy.directory/'encryption.key').read_bytes()
+    # A failed audit must leave no connection, receipt or default publication.
+    with psycopg.connect(fixture['dsn']) as db:
+        count=db.execute('SELECT count(*) FROM model_connections').fetchone()[0]
+        db.execute("CREATE FUNCTION c28_reject_import() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.type='MODEL_CONNECTION_CREATED' AND NEW.payload->>'source'='legacy_migration' THEN RAISE EXCEPTION 'fixture'; END IF; RETURN NEW; END $$")
+        db.execute('CREATE TRIGGER c28_reject_import BEFORE INSERT ON run_events FOR EACH ROW EXECUTE FUNCTION c28_reject_import()')
+    try:
+        with pytest.raises(StoreUnavailable): asyncio.run(import_legacy_model(fixture['dsn'],legacy,c28))
+        with psycopg.connect(fixture['dsn']) as db:
+            assert db.execute('SELECT count(*) FROM model_connections').fetchone()[0]==count
+            assert db.execute('SELECT count(*) FROM legacy_model_imports').fetchone()[0]==0
+    finally:
+        with psycopg.connect(fixture['dsn']) as db:
+            db.execute('DROP TRIGGER c28_reject_import ON run_events');db.execute('DROP FUNCTION c28_reject_import()')
+    asyncio.run(import_legacy_model(fixture['dsn'],legacy,c28))
+    asyncio.run(import_legacy_model(fixture['dsn'],legacy,c28))
+    assert legacy.path.read_bytes()==ciphertext and (legacy.directory/'encryption.key').read_bytes()==key
+    with psycopg.connect(fixture['dsn']) as db:
+        identity=db.execute('SELECT connection_id FROM legacy_model_imports').fetchone()[0]
+        assert db.execute('SELECT enabled FROM model_connections WHERE id=%s',(identity,)).fetchone()[0] is enabled
+        default=db.execute("SELECT default_model FROM owner_preferences WHERE owner_id='owner'").fetchone()[0]
+        assert default==(dict(connectionId=identity,modelId='fixture-model') if enabled else None)
+        assert db.execute("SELECT transcription_connection_id FROM owner_preferences WHERE owner_id='owner'").fetchone()[0] is None
+        assert db.execute('SELECT count(*) FROM model_connections').fetchone()[0]==count+1
+        db.execute("UPDATE owner_preferences SET default_model=NULL WHERE owner_id='owner'")
+    asyncio.run(c28.delete(fixture['token'],identity,dict(expectedRevision=1)))
+    # Post-import startup does not consult unavailable old keys or recreate a deleted connection.
+    (legacy.directory/'encryption.key').rename(legacy.directory/'retained-key.backup')
+    asyncio.run(import_legacy_path(fixture['dsn'],c28,directory=legacy.directory))
+    with psycopg.connect(fixture['dsn']) as db:
+        assert db.execute('SELECT count(*) FROM model_connections WHERE id=%s',(identity,)).fetchone()[0]==0
+
+
+def test_c28_import_keeps_an_existing_owner_default_and_empty_install_creates_no_legacy_key(fixture,c28,tmp_path):
+    import httpx2
+    from openbot_server.legacy_model_import import import_legacy_model, import_legacy_path
+    from openbot_server.model_settings import ModelSettingsService
+    async def run():
+        existing=await c28.create(fixture['token'],dict(name='C28 existing',presetId='openai',baseUrl='https://api.openai.com/v1',apiKey='synthetic-existing-key'))
+        selection=dict(connectionId=existing['id'],modelId='existing-model')
+        prefs=OwnerPreferences(fixture['dsn'],model_connections=c28)
+        await prefs.update(fixture['token'],dict(expectedRevision=1,timezone='UTC',defaultModel=selection))
+        await import_legacy_path(fixture['dsn'],c28,directory=tmp_path/'empty')
+        assert not (tmp_path/'empty').exists()
+        legacy=ModelSettingsService(tmp_path/'old',lambda request:httpx2.Response(200,json={'id':'old-model'}))
+        await legacy.save(dict(provider='openai',model='old-model',apiKey='synthetic-old-key',revision=None,agentEnabled=True))
+        await import_legacy_model(fixture['dsn'],legacy,c28)
+        assert (await prefs.get(fixture['token']))['defaultModel']==selection
+    asyncio.run(run())

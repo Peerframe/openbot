@@ -102,8 +102,7 @@ class ProductWorkRuntime:
         self.knowledge=ProductWorkKnowledge(store,client,scope,self.results,history_reset_on_correction=True)
         self.reads=ProductWorkReads(store,client,scope,product.files,self.results,history_reset_on_correction=True)
         self.media=ProductWorkMedia(store,client,scope,product.files,store.files,self.reads)
-        self.model=model or ProductWorkModel(store,client,scope,product.model,
-                                            product.model_connections,self.model_receipts,media=self.media)
+        self.model=model or ProductWorkModel(store,client,scope,product.model_connections,self.model_receipts,media=self.media)
         if model is not None:
             # The optional injected model is trusted composition. Use the same media gate for
             # producer and reviewer; it cannot supply a different attachment source.

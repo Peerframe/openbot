@@ -23,7 +23,7 @@ from openbot_server.work_product_media import ProductWorkMedia
 from openbot_server.work_tool_results import ToolResults
 from openbot_server.model_connections import ModelConnectionsService
 from openbot_server.model_connections_cipher import ModelCredentialCipher
-from openbot_server.model_settings import ModelSettingsService
+from product_model_fixtures import DefaultModels
 from openbot_server.product_model import ProductModelError
 from openbot_server.task_inputs import CreateMessageInput
 from openbot_server.task_store import PostgresTaskStore
@@ -57,16 +57,17 @@ def setup(fixture,tmp_path):
     base=tmp_path.resolve();base.chmod(0o700);(base/'blobs').mkdir(mode=0o700)
     store=PostgresWorkStore(fixture['dsn'])
     receipts=ModelReceipts(store,LocalWorkFiles(base/'blobs'))
-    settings=ModelSettingsService(base/'settings',lambda r:httpx2.Response(200,json={'id':'fixture-model','data':[{'id':'fixture-model'}]}))
     connections=ModelConnectionsService(fixture['dsn'],ModelCredentialCipher(bytes(range(32))))
     (base/'attachments').mkdir(mode=0o700)
     files=OwnerFiles(base/'attachments')
     results=ToolResults(store,receipts.files)
     reads=ProductWorkReads(store,object(),SCOPE,files,results)
     media=ProductWorkMedia(store,object(),SCOPE,files,receipts.files,reads)
-    f=FixtureState(files=files,results=results,reads=reads,media=media,**fixture,bot=bot,channel=channel,store=store,receipts=receipts,settings=settings,connections=connections,ids=[],calls=[])
+    f=FixtureState(files=files,results=results,reads=reads,media=media,**fixture,bot=bot,channel=channel,store=store,receipts=receipts,settings=None,connections=connections,ids=[],calls=[])
     f.sources=WorkSourceAdmission(store,token_limit=1_000_000)
+    f.settings=DefaultModels(f)
     yield f
+    f.settings.restore()
     with psycopg.connect(f.dsn) as db:
         db.execute('DELETE FROM work_tool_results WHERE task_id IN (SELECT id FROM work_tasks WHERE bot_id=%s)',(bot,))
         db.execute('DELETE FROM work_task_profiles WHERE task_id IN (SELECT id FROM work_tasks WHERE bot_id=%s)',(bot,))
@@ -120,11 +121,11 @@ def product(f,handler=None,**options):
     def send(req):
         f.calls.append(req)
         return handler(req) if handler else httpx2.Response(200,json=response(req))
-    return ProductWorkModel(f.store,object(),SCOPE,f.settings,f.connections,f.receipts,
+    return ProductWorkModel(f.store,object(),SCOPE,f.connections,f.receipts,
         transport_factory=lambda:httpx2.MockTransport(send),media=f.media,**options)
 
 
-@pytest.mark.parametrize('protocol',['responses-v1','chat-completions-v1','anthropic-messages-v1'])
+@pytest.mark.parametrize('protocol',['chat-completions-v1','anthropic-messages-v1'])
 def test_real_postgres_sdk_media_binding_and_historical_recovery(setup,protocol):
     from test_model_media import DATA, response as wire_response
     async def check():
@@ -240,6 +241,9 @@ def test_unsupported_provider_and_same_task_budget_refuse_before_http(setup):
         f=setup;b,_=await media_task(f)
         current=await f.settings.active()
         await f.settings.save({**CONFIG,'provider':'deepseek','revision':current['revision']})
+        # Pre-C28 sources without a captured selection consult the current C7 default.
+        with psycopg.connect(f.dsn) as db:
+            db.execute('UPDATE runs SET model_selection=NULL WHERE id=%s',(b.source.id,))
         with binding(b),pytest.raises(WorkConflict,match='attachment_model_unsupported'):
             await product(f).call(b.context,request())
         assert not f.calls
@@ -303,7 +307,7 @@ def test_independent_reviewer_requires_same_original_binary(setup,with_media):
         def handler(req):
             body=response(req)
             if len(f.calls)==2:
-                body['output'][0]['content'][0]['text']='{"accepted":true,"reason":"Supported by the original media"}'
+                body['choices'][0]['message']['content']='{"accepted":true,"reason":"Supported by the original media"}'
             return httpx2.Response(200,json=body)
         model=product(f,handler)
         async def collect(*_): return EvidenceBundle()
@@ -326,7 +330,8 @@ def test_independent_reviewer_requires_same_original_binary(setup,with_media):
             assert again.verification==verified.verification
         assert len(f.calls)==2
         payloads=[json.loads(c.content) for c in f.calls]
-        pdfs=[[p for m in body['input'] for p in m.get('content',[]) if type(p) is dict and p['type']=='input_file'] for body in payloads]
+        pdfs=[[p for m in body['messages'] if type(m.get('content')) is list for p in m['content']
+            if type(p) is dict and p['type']=='file'] for body in payloads]
         assert pdfs[0]==pdfs[1] and len(pdfs[0])==1
     asyncio.run(check())
 

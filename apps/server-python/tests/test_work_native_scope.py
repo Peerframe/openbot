@@ -19,7 +19,7 @@ from openbot_agent_runtime.catalog import ToolCatalog
 from openbot_server.app import create_app
 from openbot_server.attachment_processing import AttachmentProcessingService
 from openbot_server.database import PostgresReadStore
-from openbot_server.model_settings import ModelSettingsService
+from product_model_fixtures import DefaultModels
 from openbot_server.product_control import OwnerProduct
 from openbot_server.work_corrections import CorrectionStore
 from openbot_server.work_deferred import DeferredActivities
@@ -57,8 +57,14 @@ def native(fixture,tmp_path):
     store=PostgresWorkStore(fixture['dsn'],files=files,task_profiles=WorkTaskProfiles(files=product.files))
     product.processing=AttachmentProcessingService(fixture['dsn'],files=product.files)
     f=Fixture(**fixture,bot=bot,peer=peer,bots=[bot,peer],product=product,store=store,files=product.files,results=ToolResults(store,files),
-        receipts=ModelReceipts(store,files),settings=ModelSettingsService(base/'settings',lambda r:httpx2.Response(200,json={'id':'fixture-model'})))
+        receipts=ModelReceipts(store,files),settings=None)
+    from openbot_server.model_connections import ModelConnectionsService
+    from openbot_server.model_connections_cipher import ModelCredentialCipher
+    f.connections=ModelConnectionsService(f.dsn,ModelCredentialCipher(bytes(range(32))))
+    f.ids=[]
+    f.settings=DefaultModels(f)
     yield f
+    f.settings.restore()
     with psycopg.connect(f.dsn) as db:
         ids=f.bots;query='(SELECT id FROM work_tasks WHERE bot_id=ANY(%s))'
         db.execute('DELETE FROM work_collaborations WHERE root_task_id IN '+query,(ids,))
@@ -68,6 +74,7 @@ def native(fixture,tmp_path):
             db.execute('DELETE FROM '+table+' WHERE run_id IN (SELECT id FROM work_runs WHERE task_id IN '+query+')',(ids,))
         db.execute('DELETE FROM work_runs WHERE task_id IN '+query,(ids,));db.execute('DELETE FROM work_tasks WHERE bot_id=ANY(%s)',(ids,))
         db.execute('DELETE FROM bots WHERE id=ANY(%s)',(ids,))
+        db.execute('DELETE FROM model_connections WHERE id=ANY(%s)',(f.ids,))
 
 
 def grant(f,assets=(),**changes):
@@ -231,13 +238,13 @@ async def test_native_pdf_actual_sdk_provider_and_historical_receipt(native):
     h=await harness(f,grant(f,[item['id']]))
     await f.settings.save(CONFIG);calls=[]
     def send(req):calls.append(req);return httpx2.Response(200,json=response(req))
-    model=ProductWorkModel(f.store,h.client,SCOPE,f.settings,None,f.receipts,media=h.media,transport_factory=lambda:httpx2.MockTransport(send))
+    model=ProductWorkModel(f.store,h.client,SCOPE,f.connections,f.receipts,media=h.media,transport_factory=lambda:httpx2.MockTransport(send))
     await h.env.run(h.media.prepare,h.context)
     h.env.info=replace(h.env.info,activity_id='native-model')
     value=await h.env.run(model.call,h.context,request())
     assert value.text=='Checked answer' and len(calls)==1
     wire=json.loads(calls[0].content)
-    assert 'report.pdf' in json.dumps(wire) and 'input_file' in json.dumps(wire)
+    assert 'report.pdf' in json.dumps(wire) and 'file_data' in json.dumps(wire)
     f.files.owner_set_deleted(item['id'],True)
     # Historical receipt lookup grants no current authority and must not emit another HTTP request.
     await h.env.run(model.call,h.context,request())

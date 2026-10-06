@@ -3,6 +3,7 @@ import { createHash, webcrypto } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   fetchEmployeeTemplate,
+  previewEmployeeImport,
   isEmployeeProfileChangedEvent,
   updateEmployeeProfileDetails,
   updateEmployeeSkillState,
@@ -104,6 +105,30 @@ describe("Employee profile details API", () => {
       role: "Evidence reviewer",
       description: "Review evidence and document limitations.",
       expectedRevision: 3,
+    });
+  });
+});
+
+describe("Employee import HTTP admission", () => {
+  it("uploads downloaded Employee bytes as JSON accepted by the product preview route", async () => {
+    const file = new File(['{"format":"openbot.employee/v1"}\n'], "employee.json", {
+      type: "application/vnd.openbot.employee+json",
+    });
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ preview: { packageId: "reviewed-package" } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const abort = new AbortController();
+    const preview = await previewEmployeeImport(file, abort.signal);
+    expect(preview.packageId).toBe("reviewed-package");
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/employees/import/preview", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: file,
+      signal: abort.signal,
     });
   });
 });

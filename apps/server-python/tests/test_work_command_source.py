@@ -19,7 +19,7 @@ from test_work_product_reads import run_read
 from openbot_server.control_errors import ControlError
 from openbot_server.model_connections import ModelConnectionsService
 from openbot_server.model_connections_cipher import ModelCredentialCipher
-from openbot_server.model_settings import ModelSettingsService
+from product_model_fixtures import DefaultModels
 from openbot_server.owner_files import OwnerFiles
 from openbot_server.task_inputs import CreateMessageInput
 from openbot_server.task_store import PostgresTaskStore
@@ -62,10 +62,12 @@ def setup(fixture,tmp_path):
     f=Fixture(**fixture,bot=bot,channel=channel,node=node,connections=connections,profiles=profiles,
         policy=policy,route=route,store=store,ids=[],calls=[],files=OwnerFiles(tmp_path/'attachments'),
         receipts=ModelReceipts(store,blobs),results=ToolResults(store,blobs),
-        settings=ModelSettingsService(tmp_path/'settings',lambda r:httpx2.Response(200,json={'id':'fixture-model'})))
+        settings=None)
     f.sources=WorkSourceAdmission(store,token_limit=1_000_000,command_route=route,command_policy_id='offline-command')
     f.reads=ProductWorkReads(store,object(),SCOPE,f.files,f.results)
+    f.settings=DefaultModels(f)
     yield f
+    f.settings.restore()
     # The canonical suite shares its owned DB: remove only this case's rows and connections.
     with psycopg.connect(f.dsn) as db:
         query='(SELECT id FROM work_tasks WHERE bot_id=%s)'

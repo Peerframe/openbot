@@ -18,6 +18,7 @@ HTTPS for remote access.
 | `POST` | `/api/v1/auth/logout` | Revoke the Session and clear its cookie |
 | `GET` | `/api/v1/bootstrap` | Lightweight counts and phase information |
 | `GET` | `/api/v1/workspace` | Project channels, Bots, Nodes, Runs, approvals, progress, artifacts, and counts |
+| `PUT` | `/api/v1/workspace/primary-bot` | Owner selects or clears the primary Bot at an expected workspace revision |
 | `GET` | `/api/v1/runs/:runId/progress` | Exact public checkpoint count and ordinal-selected steps |
 | `GET` | `/api/v1/workspace/events` | Subscribe to global Node, Run, and approval changes over SSE |
 | `GET` | `/api/v1/channels` | List channels and Bot rosters |
@@ -88,6 +89,41 @@ identity, so the Server still belongs on a trusted private network.
 Channel and workspace SSE subscribers each have a 128-event pending bound. The Server terminates
 an overloaded subscriber; the Client reconnects and reloads the authoritative database snapshot
 instead of pretending a dropped stream is continuous.
+
+## Workspace primary Bot (C26)
+
+`GET /api/v1/workspace` includes `primaryBotId: string | null` and `revision: number`.
+The revision covers the primary preference, independently of C7 Owner preferences and Bot profiles.
+`PUT /api/v1/workspace/primary-bot` requires the Owner cookie and exact allowed Origin, with strict
+JSON `{ botId: string | null, expectedRevision: number }` (1024-byte body limit). IDs are 1–128
+characters; revisions are integers from 1 to 2147483647. Success returns
+`{ primaryBotId: string | null, revision: number }`. A stale revision returns 409
+`workspace_revision_conflict`; with a current revision, a deleted/unknown Bot returns 404
+`bot_not_found`. Unknown fields and invalid input return 422. Repeating the current selection is a
+no-op. An actual change increments the revision and atomically audits `SETTINGS_PRIMARY_BOT_UPDATED`
+with `previousBotId`, `primaryBotId` (including null), `revision`, `actor` and `reason`.
+Audit failure rolls back the preference and any associated creation/import/deletion.
+
+Migration 0054 initializes the preference to null at revision 1 without electing or deleting existing
+Bots. When it is empty, the first newly created Bot (ordinary or quick creation) or newly activated
+import becomes primary in the same transaction. Replaying an import receipt does not reselect it.
+Deleting the primary clears it and increments/audits the revision; remaining Bots are not elected.
+The General settings selector prompts the Owner to choose one. Explicitly clearing also leaves it
+empty until selection or the next new creation/import.
+
+For a channel message with no explicit recipient, a primary that belongs to that channel is its
+only initial recipient. If absent or not a member, the existing Chief/stable-roster fallback applies.
+Explicit mentions (`botId` or `botIds`) and direct conversations retain their routing rules.
+Delegation still uses the existing channel-membership checks and each Bot's own approvals, plugin
+grants and computer permissions. Primary selection grants no additional authority and does not
+change recipients or execution profiles of existing Runs.
+
+After a persisted change, the existing authenticated workspace SSE publishes `workspace.ready`
+as a reload hint on the next three-second poll, including changes from an independent store.
+Clients reload `GET /api/v1/workspace`; the event does not carry the preference as authoritative state.
+The shared TS snapshot keeps these two fields optional for pre-C26 Servers and frozen oracle
+fixtures; the current Python Server always returns both and the new PUT response requires both.
+See [decision and validation scope](research/workspace-primary-bot.md).
 
 ## Owner password and sessions (C2)
 
@@ -366,7 +402,8 @@ keyring is configured, export uses `application/vnd.openbot.employee.dsse+json` 
 signature over the exact package bytes. A package key id is only a lookup hint; trust comes from an
 explicit Server trust store and successful verification. See [Employee signing](EMPLOYEE_SIGNING.md).
 
-Import preview accepts one v1 template or DSSE envelope, up to 2 MiB. It validates strict schema,
+Import preview requires `Content-Type: application/json` and accepts one template or DSSE envelope,
+up to 2 MiB. Employee-specific media types describe downloads, not this upload request. It validates strict schema,
 signature when present, checksum, skill dependencies and capabilities, sensitive text, and current
 Worker Host compatibility. A successful preview is still read-only quarantine: it creates no Bot,
 skill, memory, host binding, or authority. Its `employee` projection includes the name, role,
@@ -477,8 +514,9 @@ Create a task:
 
 Content is trimmed and limited to 1–8,000 characters. The Server atomically stores the human
 message, one `queued` Run, and matching events. An explicit `botId` must belong to the channel.
-Without one, routing deterministically prefers a Chief/coordinator role and otherwise uses stable
-roster order. A Run freezes the selected Bot's execution profile; Client, model, and Node cannot
+Without one, routing selects the workspace primary if it is a channel member, otherwise it
+deterministically prefers a Chief/coordinator role and then stable roster order. A Run freezes
+the selected Bot's execution profile; Client, model, and Node cannot
 change it mid-run.
 
 A compatible Node receives an offer only when exact capability-major and capacity requirements

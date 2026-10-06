@@ -276,3 +276,14 @@ posixIt.each(["browser.json", "command.json"])(
     expect(await pythonProductConfigurationEnvironment(env)).toEqual({});
   },
 );
+
+it("does not require or generate a singleton model key for a new bootstrap", async () => {
+  const directory = await temporary();
+  const source = input(directory);
+  delete source.OPENBOT_MODEL_ENCRYPTION_KEY;
+  const env = pythonProductEnvironment(directory, source);
+  expect(env.OPENBOT_CONTROL_MODEL_ENCRYPTION_KEY).toBeUndefined();
+  expect(env.OPENBOT_CONTROL_MODEL_CONNECTION_KEY_PATH).toBe(
+    join(directory, "model-connections.key"),
+  );
+});

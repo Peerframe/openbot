@@ -48,7 +48,7 @@ import { DesktopNavigationMenuController } from "./navigation-menu.js";
 import { registerPlatformIpc } from "./platform-ipc.js";
 import { DesktopPlatformController, FilePlatformPreferenceStore } from "./platform-preferences.js";
 import { desktopProfileCompatibility } from "./profile-compatibility.js";
-import { launchPythonProductServer } from "./python-server.js";
+import { launchDesktopProductServer } from "./ts-server.js";
 import { DesktopReportSaver } from "./report-save.js";
 import {
   DESKTOP_COLOR_SCHEME_CHANGED_CHANNEL,
@@ -602,7 +602,7 @@ async function startDesktop(): Promise<void> {
     dataRoot: join(
       app.getPath("userData"),
       "openbot",
-      app.name === "OpenBot Python Preview" ? "local-server" : "python-local-server",
+      ["OpenBot Python Preview", "OpenBot TS Preview"].includes(app.name) ? "local-server" : "python-local-server",
     ),
     localServiceSupported: process.platform === "darwin" && process.arch === "arm64",
     platform: process.platform,
@@ -616,7 +616,7 @@ async function startDesktop(): Promise<void> {
         throw new Error("Operating-system secret storage is unavailable.");
       return (await safeStorage.decryptStringAsync(Buffer.from(value, "base64"))).result;
     },
-    launchServer: (env) => launchPythonProductServer(nativeRuntimeRoot, env),
+    launchServer: (env) => launchDesktopProductServer(nativeRuntimeRoot, env),
     authenticate: authenticateLocalServer,
     connect: async (serverUrl, ownerPassword) => {
       const connected = await connectionController.configure(serverUrl);

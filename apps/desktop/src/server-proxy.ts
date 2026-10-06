@@ -3,16 +3,27 @@ import type { DesktopConnectionState, DesktopServerFetcher } from "./connection-
 import { DESKTOP_SCHEME } from "./local-content.js";
 
 export const MAXIMUM_DESKTOP_PROXY_REQUEST_BYTES = 3 * 1024 * 1024;
-/** Mirrors Server `MAX_TASK_ATTACHMENT_BYTES` in `apps/server-python/src/openbot_server/attachments.py`. */
+/** Transport ceiling matches the aggregate Task budget; Server MIME/per-file limits still apply. */
 export const MAXIMUM_DESKTOP_ATTACHMENT_PROXY_REQUEST_BYTES = 20 * 1024 * 1024;
 export const MAXIMUM_DESKTOP_PROXY_URL_BYTES = 8 * 1024;
 export const DESKTOP_PROXY_REQUEST_TIMEOUT_MS = 30_000;
 
 const allowedMethods = new Set(["DELETE", "GET", "PATCH", "POST"]);
+const putPaths = new Set([
+  "/api/v1/settings/approvals",
+  "/api/v1/settings/general",
+  "/api/v1/settings/storage",
+  "/api/v1/settings/transcription",
+  "/api/v1/workspace/primary-bot",
+]);
+const putRoutePatterns = [
+  /^\/api\/v1\/channels\/[^/]+\/messages\/[^/]+\/reactions$/u,
+  /^\/api\/v1\/plugins\/[^/]+\/grants\/[^/]+$/u,
+];
 const mutationMethods = new Set(["DELETE", "PATCH", "POST", "PUT"]);
 const forwardedRequestHeaders = new Set(["accept", "content-type", "if-match", "last-event-id"]);
 const attachmentUploadRequestHeaders = new Set([...forwardedRequestHeaders, "x-openbot-filename"]);
-/** Exact POST /api/v1/channels/:channelId/attachments; nested id/cleanup/process stay default. */
+/** Exact channel/Owner raw upload endpoints; nested id/cleanup/process stay default. */
 const desktopAttachmentUploadPath = /^\/api\/v1\/channels\/[^/]+\/attachments$/u;
 const exposedResponseHeaders = new Set([
   "cache-control",
@@ -77,12 +88,13 @@ export async function proxyDesktopServerRequest(
   }
 
   const method = request.method.toUpperCase();
-  // PUT is currently part of the reaction contract only; other mutation routes stay closed.
-  const routeMethods = /^\/api\/v1\/channels\/[^/]+\/messages\/[^/]+\/reactions$/u.test(
-    requestUrl.pathname,
-  )
-    ? new Set([...allowedMethods, "PUT"])
-    : allowedMethods;
+  // Only the current product PUT operations join the existing method set. Server authority
+  // still validates identity, grants, Origin and revisions; renderer credentials remain refused.
+  const routeMethods =
+    putPaths.has(requestUrl.pathname) ||
+    putRoutePatterns.some((pattern) => pattern.test(requestUrl.pathname))
+      ? new Set([...allowedMethods, "PUT"])
+      : allowedMethods;
   if (!routeMethods.has(method)) {
     return jsonError(405, "Desktop Server request method is not allowed.", {
       Allow: [...routeMethods].sort().join(", "),
@@ -178,7 +190,10 @@ export function parseDesktopApiRequestUrl(input: string): URL | undefined {
 }
 
 function isDesktopAttachmentUpload(method: string, pathname: string): boolean {
-  return method === "POST" && desktopAttachmentUploadPath.test(pathname);
+  return (
+    method === "POST" &&
+    (pathname === "/api/v1/task-attachments" || desktopAttachmentUploadPath.test(pathname))
+  );
 }
 
 async function readBoundedRequestBody(

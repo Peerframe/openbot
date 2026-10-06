@@ -14,7 +14,6 @@ import shutil
 import signal
 import tempfile
 from typing import Literal
-from urllib.parse import urlsplit
 
 import httpx2
 import psycopg
@@ -195,13 +194,15 @@ class NodeAttachmentParser:
 
 class _BoundedAudioTransport(httpx2.AsyncBaseTransport):
     """Cap raw provider/error bytes before the official SDK parses or buffers them."""
-    def __init__(self, inner):
+    def __init__(self, inner, before_send):
         self.inner = inner
+        self.before_send = before_send
         self.failure = None
 
     async def handle_async_request(self, request):
         if request.method != 'POST' or str(request.url) != 'https://api.openai.com/v1/audio/transcriptions':
             raise ControlError(415, 'transcription_endpoint_refused')
+        await self.before_send()
         response = await self.inner.handle_async_request(request)
         data = bytearray()
         try:
@@ -224,9 +225,9 @@ class _BoundedAudioTransport(httpx2.AsyncBaseTransport):
 
 
 class AttachmentProcessingService:
-    def __init__(self, dsn, *, files, settings=None, node_executable=None, module_root=None, parser=None, transport=None):
+    def __init__(self, dsn, *, files, transcription=None, node_executable=None, module_root=None, parser=None, transport=None):
         self._transactions = OwnerTransactions(dsn, application_name='openbot-attachment-processing')
-        self.files, self.settings = files, settings
+        self.files, self.transcription = files, transcription
         self.parser = parser or NodeAttachmentParser(node_executable=node_executable, module_root=module_root)
         self.transport = transport
         self._active = 0
@@ -264,13 +265,27 @@ class AttachmentProcessingService:
             if command.operation == 'transcribe':
                 if not item['mediaType'].startswith(('audio/', 'video/')):
                     raise ControlError(415, 'audio_video_attachment_required')
-                settings = await self.settings.active() if self.settings is not None else None
-                self._audio_settings(settings)
+                if self.transcription is None: raise ControlError(415, 'enabled_openai_transcription_required')
+                async with self._transactions.transaction(token) as db:
+                    selected = await self.transcription.resolve_in_transaction(db)
+                self._audio_settings(selected)
                 # Recheck Owner and attachment scope immediately before any media transfer.
                 current, _ = await self._snapshot(token, channel_id, identity, owner=_owner)
                 if current['sha256'] != item['sha256']:
                     raise ControlError(404, 'attachment_changed')
-                result = await _cancel_guard(self._transcribe(settings, item, data), cancelled)
+                async def before_send():
+                    if cancelled is not None and cancelled.is_set():
+                        raise ControlError(400, 'attachment_processing_cancelled')
+                    async with self.files.lock(), self._transactions.transaction(token) as db:
+                        current = await self.transcription.resolve_in_transaction(db)
+                        self._audio_settings(current)
+                        import hmac
+                        if current.provenance() != selected.provenance() or not hmac.compare_digest(current.api_key, selected.api_key):
+                            raise ControlError(409, 'model_connection_revision_conflict')
+                        checked, _ = self.files.owner_read(identity) if _owner else self.files.read(channel_id, identity)
+                        if checked.get('deletedAt') or checked['sha256'] != item['sha256']:
+                            raise ControlError(404, 'attachment_changed')
+                result = await _cancel_guard(self._transcribe(selected, item, data, before_send), cancelled)
             else:
                 if command.operation == 'ocr':
                     if item['mediaType'] not in ('image/png', 'image/jpeg'):
@@ -332,22 +347,18 @@ class AttachmentProcessingService:
 
     @staticmethod
     def _audio_settings(settings):
-        if (type(settings) is not dict or settings.get('provider') != 'openai'
-                or settings.get('agentEnabled') is not True or not settings.get('agentEnabledAt')
-                or type(settings.get('apiKey')) is not str or not settings['apiKey']):
+        from .model_connections_inputs import ResolvedModelConnection
+        if (type(settings) is not ResolvedModelConnection or settings.preset_id != 'openai'
+                or settings.base_url != 'https://api.openai.com/v1' or not settings.api_key):
             raise ControlError(415, 'enabled_openai_transcription_required')
-        endpoint = urlsplit(settings.get('baseUrl') or 'https://api.openai.com/v1')
-        if (endpoint.scheme != 'https' or endpoint.hostname != 'api.openai.com' or endpoint.port not in (None,443)
-                or endpoint.username or endpoint.password or endpoint.query or endpoint.fragment or endpoint.path.rstrip('/') != '/v1'):
-            raise ControlError(415, 'transcription_endpoint_refused')
         if any(key in os.environ for key in ('OPENAI_CUSTOM_HEADERS', 'OPENAI_LOG')):
             raise ControlError(503, 'ambient_transcription_configuration_refused')
 
-    async def _transcribe(self, settings, item, data):
-        transport = _BoundedAudioTransport(self.transport or httpx2.AsyncHTTPTransport(retries=0, trust_env=False))
+    async def _transcribe(self, settings, item, data, before_send):
+        transport = _BoundedAudioTransport(self.transport or httpx2.AsyncHTTPTransport(retries=0, trust_env=False), before_send)
         client = httpx2.AsyncClient(transport=transport, follow_redirects=False, trust_env=False, verify=True)
         try:
-            async with asyncio.timeout(90), AsyncOpenAI(api_key=settings['apiKey'], base_url='https://api.openai.com/v1',
+            async with asyncio.timeout(90), AsyncOpenAI(api_key=settings.api_key, base_url='https://api.openai.com/v1',
                     max_retries=0, organization='', project='', admin_api_key='', webhook_secret='', http_client=client) as sdk:
                 response = await sdk.audio.transcriptions.create(model='whisper-1', response_format='json',
                                                                  file=(item['name'], data, item['mediaType']))

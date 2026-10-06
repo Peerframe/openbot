@@ -61,6 +61,8 @@ class PostgresTaskStore:
     async def _submit(self, token: str | None, channel_id: str, value: CreateMessageInput) -> SubmitTaskResult:
         try:
             async with self._transactions.transaction(token) as connection:
+                from .workspace_settings import current_workspace_settings
+                workspace = await current_workspace_settings(connection)
                 # The file authority lock spans validation and SQL commit, so delete/cleanup
                 # cannot race a newly retained task reference. Model text grants no file scope.
                 references = attachment_ids(value.content)
@@ -91,7 +93,7 @@ class PostgresTaskStore:
                 if len(candidates) > 10000:
                     raise StoreUnavailable("task_membership_limit")
                 selected = select_assignees([TaskCandidate.model_validate(row) for row in candidates],
-                                            value, channel["direct_bot_id"])
+                                            value, channel["direct_bot_id"], workspace['primary_bot_id'])
                 if not 1 <= len(selected) <= 6:
                     raise StoreUnavailable("invalid_task_recipients")
                 cursor = await connection.execute(

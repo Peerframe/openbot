@@ -1,0 +1,481 @@
+{
+  "kind": "p2-macos-arm64-api-only-coexistence-candidate",
+  "sourceHead": "010439bb9002fabb7e1facd8450ee85edbafa309",
+  "sourceDirty": true,
+  "electron": "44.3.0",
+  "node": "24.21.0",
+  "python": "3.12.13",
+  "finalAsarSha256": "9464016f705a9bfe942586ce47474d0a0badcd206f9f80cdfbb946e749b3a60f",
+  "compiledLauncherMatchesPackage": {
+    "main.js": true,
+    "native-server.js": true,
+    "python-server.js": true,
+    "ts-server.js": true,
+    "ts-product-manifest.js": true
+  },
+  "regularFileBytes": 1115059373,
+  "nativeRegularFileBytes": 783415863,
+  "actualElectronJourney": {
+    "asarSha256": "0e3bf3906729c9a4252a8ac71a8a38e455490ac433f7f795d6226b1bb9987a34",
+    "isolatedTemporaryProfile": true,
+    "firstRunNativeStartup": true,
+    "ownerLogin": true,
+    "botCreatedAndSaved": true,
+    "restartRecoveredOwnerAndBot": true,
+    "bootstrapAndConnectionKeyUnchanged": true,
+    "realSafeStorageEncryptDecrypt": true,
+    "twoMenuQuitExitCodes": [
+      0,
+      0
+    ],
+    "ownedProductAndDatabaseProcessesGone": true,
+    "liveModelCalls": 0,
+    "finalBundleRecovery": {
+      "asarSha256": "9464016f705a9bfe942586ce47474d0a0badcd206f9f80cdfbb946e749b3a60f",
+      "sameDisposableProfile": true,
+      "ownerAndSavedBotRecovered": true,
+      "realtimeConnected": true,
+      "bootstrapAndConnectionKeyUnchanged": true,
+      "menuQuitExitCode": 0,
+      "ownedProductAndDatabaseProcessesGone": true
+    }
+  },
+  "unqualified": [
+    "public/TLS deployment",
+    "same-scope startup/RSS/latency overhead",
+    "hosted CI",
+    "signing/notarization",
+    "Work/Temporal execution"
+  ],
+  "packagedNativeSmoke": {
+    "parentEofStoppedActualApi": true,
+    "parentEofStoppedOwnedProcessCount": 2,
+    "tsForwardingEntry": true,
+    "eitherProductExitStoppedPair": true,
+    "unsafeDirectoryRefusedAndPostgresStopped": true,
+    "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+    "pythonProductHealth": true,
+    "ownerLogin": true,
+    "postgresInitialized": true,
+    "restartPreservedData": true,
+    "serverAndPostgresStopped": true,
+    "syntheticOnly": true,
+    "nativeKeychainVerified": false
+  },
+  "fullCheck": {
+    "exitCode": 0,
+    "cleanInheritedEnvironment": true,
+    "vitestMaxWorkers": 2,
+    "turboEnvironmentMode": "loose",
+    "docs": {
+      "passed": 12,
+      "markdownFiles": 588
+    },
+    "research": {
+      "passed": 27,
+      "prEventGate": "skipped outside PR"
+    },
+    "prerequisites": {
+      "passed": 10,
+      "cached": 0
+    },
+    "types": {
+      "passed": 33,
+      "cached": 10
+    },
+    "tests": {
+      "passed": 27,
+      "cached": 12
+    },
+    "builds": {
+      "passed": 19,
+      "cached": 12
+    },
+    "desktop": {
+      "passed": 565,
+      "platformSkipped": 3,
+      "execution": "new"
+    },
+    "web": {
+      "passed": 650,
+      "execution": "new"
+    },
+    "tsTransport": {
+      "passed": 26,
+      "execution": "new"
+    },
+    "priorFailedAttempts": [
+      "sandbox loopback listen EPERM",
+      "three unchanged Desktop tests timed out under worker pressure"
+    ],
+    "isolatedDesktopRetry": {
+      "passed": 6,
+      "failed": 0
+    },
+    "testTimeoutsRelaxed": false
+  },
+  "scope": {
+    "pageImplementationAndOverallUiAcceptance": "Claude",
+    "migration": "backend, contracts, native startup chain",
+    "priorP1WebApiAndTypeAdapters": "retained"
+  },
+  "recordOnlyChecks": {
+    "docs": {
+      "passed": 12,
+      "markdownFiles": 588
+    },
+    "research": {
+      "passed": 27,
+      "prEventGate": "skipped outside PR"
+    },
+    "localLinks": true,
+    "fixtureProcessesClosed": true
+  },
+  "subsequentTlsQualification": {
+    "date": "2026-10-06T03:34:47.047Z",
+    "sourceHead": "010439bb9002fabb7e1facd8450ee85edbafa309",
+    "sourceDirty": true,
+    "finalAsarSha256": "9db8fae930241a5d6a9dac7422469041d803453cc02ee6a87d61ac197a02fd76",
+    "compiledLauncherMatchesPackage": {
+      "main": "31056da46a23893c1940cb3d6a588993ca199e9f53bf2cd24375f0e1a0f71893",
+      "native-server": "91a8497357a22cb6844900b47e61d123b48a6e7f1fc4b9a303dda096490f392c",
+      "python-server": "dbbeef9b668485a9bf1fc51382ac0bcc0f5aa500eb86f7d5aac8f504e1150898",
+      "ts-server": "e4a3de412e2db1074d3d51889854067cee0755b5f910371ec5b3274c76c85a63",
+      "ts-product-manifest": "55ed29383d1edbbef2a17d355050151bd71a3fdde0f3a882a3fb863f0bcd4c1c"
+    },
+    "currentTransportMatchesStageAndPackage": {
+      "app": "a6666f9263c1bd542687d1f4d91cfe2361b92ce164737f7c573d1ee87e401049",
+      "tls": "037e08412d7bef233ef236644e8ed8f8396517ac4c9c0bcf6d6ffc9b25ff69f2",
+      "config": "63a73775f8d8c8a7c034db11628d903e83c96138f47bddc92ae8d72ac33ad224",
+      "worker-tunnel": "f1274899c69bdafa6271658275d1761be278de93c3b75533bbe8dc53f546441e",
+      "lifetime": "3acb9723b5286b19257a60ff6201b46091b1055053b1059823490610f026548f",
+      "desktop-entry": "ba32c7b424599f536f430be1548d1aa4a7921c14a94c02063d7c40b1e26ba601"
+    },
+    "regularFileBytes": 1115071028,
+    "nativeRegularFileBytes": 783426291,
+    "stagedNativeSmokeBeforeFinalLayout": {
+      "parentEofStoppedActualApi": true,
+      "parentEofStoppedOwnedProcessCount": 2,
+      "tsForwardingEntry": true,
+      "eitherProductExitStoppedPair": true,
+      "unsafeDirectoryRefusedAndPostgresStopped": true,
+      "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+      "pythonProductHealth": true,
+      "ownerLogin": true,
+      "postgresInitialized": true,
+      "restartPreservedData": true,
+      "serverAndPostgresStopped": true,
+      "syntheticOnly": true,
+      "nativeKeychainVerified": false
+    },
+    "packagedNativeSmoke": {
+      "parentEofStoppedActualApi": true,
+      "parentEofStoppedOwnedProcessCount": 2,
+      "tsForwardingEntry": true,
+      "eitherProductExitStoppedPair": true,
+      "unsafeDirectoryRefusedAndPostgresStopped": true,
+      "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+      "pythonProductHealth": true,
+      "ownerLogin": true,
+      "postgresInitialized": true,
+      "restartPreservedData": true,
+      "serverAndPostgresStopped": true,
+      "syntheticOnly": true,
+      "nativeKeychainVerified": false
+    },
+    "actualElectronJourney": {
+      "execution": "earlier evidence retained; not rerun on this ASAR",
+      "asarSha256": "9464016f705a9bfe942586ce47474d0a0badcd206f9f80cdfbb946e749b3a60f"
+    },
+    "tlsContracts": {
+      "allIntegrated": 265,
+      "stagedArtifacts": 19,
+      "publisher": 12,
+      "models": 18,
+      "secureOwnerCookie": true,
+      "verifiedCa": true,
+      "canonicalRedirect": true,
+      "entryRestartSameSession": true,
+      "privateDirectRefused": true,
+      "nodeSourceAndDigest": true,
+      "syntheticModelDiscoveries": 10,
+      "syntheticModelProbes": 4,
+      "liveCalls": 0
+    },
+    "httpReverseSwitch": {
+      "executions": 284,
+      "verified": true
+    },
+    "fullCheck": {
+      "command": "/usr/bin/env -i PATH=\"$PATH\" LANG=en_US.UTF-8 TURBO_ENV_MODE=loose VITEST_MAX_WORKERS=2 npm run check",
+      "exitCode": 0,
+      "prerequisites": {
+        "passed": 10,
+        "cached": 10
+      },
+      "types": {
+        "passed": 33,
+        "cached": 31
+      },
+      "tests": {
+        "passed": 27,
+        "cached": 25
+      },
+      "builds": {
+        "passed": 19,
+        "cached": 17
+      },
+      "desktop": {
+        "passed": 568,
+        "platformSkipped": 3,
+        "execution": "new"
+      },
+      "web": {
+        "passed": 650,
+        "execution": "cached from earlier full check this TLS checkpoint"
+      },
+      "tsTransport": {
+        "passed": 33,
+        "execution": "new"
+      },
+      "docs": {
+        "passed": 12,
+        "markdownFiles": 588
+      },
+      "research": {
+        "passed": 27,
+        "prEventGate": "skipped outside PR"
+      }
+    },
+    "applicationsInstalled": 0,
+    "previewLocation": "apps/desktop/out/ts-product",
+    "installedOpenBotModified": false,
+    "unqualified": [
+      "public deployment/production PKI",
+      "hosted CI",
+      "signing/notarization",
+      "Windows TLS ACLs",
+      "active Work/Temporal",
+      "overall UI acceptance (Claude)"
+    ],
+    "recordOnlyChecks": {
+      "docs": {
+        "passed": 12,
+        "markdownFiles": 588
+      },
+      "research": {
+        "passed": 27,
+        "prEventGate": "skipped outside PR"
+      },
+      "localLinks": true,
+      "whitespaceExitCode": 0
+    }
+  },
+  "currentIntegration": {
+    "sourceHead": "a8302c2d7252273ccb292f9fc5202beae4e165b6",
+    "sourceDirty": true,
+    "qualification": {
+      "generatedAt": "2026-10-06T05:08:19.422Z",
+      "asarSha256": "a460a3676b64d03a6e7cd373d9fab5d94c3e650ed7b2cb77caddb51867388565",
+      "compiledLauncherMatchesPackage": true,
+      "comparedNativeSourceFiles": 263,
+      "migrationEntries": 55,
+      "node": "24.21.0",
+      "python": "3.12.13",
+      "electron": "44.3.0",
+      "regularFileBytes": 1115397045,
+      "nativeRegularFileBytes": 783638392,
+      "unsigned": true,
+      "macosWorkerCompanionIncluded": false,
+      "installed": false
+    },
+    "packagedNativeSmoke": {
+      "parentEofStoppedActualApi": true,
+      "parentEofStoppedOwnedProcessCount": 2,
+      "tsForwardingEntry": true,
+      "eitherProductExitStoppedPair": true,
+      "unsafeDirectoryRefusedAndPostgresStopped": true,
+      "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+      "pythonProductHealth": true,
+      "ownerLogin": true,
+      "postgresInitialized": true,
+      "restartPreservedData": true,
+      "serverAndPostgresStopped": true,
+      "syntheticOnly": true,
+      "nativeKeychainVerified": false
+    },
+    "fullCheck": {
+      "exit": 0,
+      "typecheck": {
+        "tasks": 33,
+        "cached": 11
+      },
+      "test": {
+        "tasks": 27,
+        "cached": 12
+      },
+      "build": {
+        "tasks": 19,
+        "cached": 12
+      },
+      "web": 676,
+      "protocol": 461,
+      "tsEntry": 33,
+      "desktopPassed": 575,
+      "desktopPlatformSkipped": 3
+    },
+    "controlAcceptance": {
+      "exit": 0,
+      "basePassed": 1072,
+      "baseSkipped": 2,
+      "workerPassed": 1589,
+      "workerSkipped": 1,
+      "workerSkipReason": "Opt-in retained synthetic deadline histories were not supplied; actual SDK replay is unqualified.",
+      "baseSeconds": 149.44,
+      "workerSeconds": 631.04
+    },
+    "releaseArchives": {
+      "node": {
+        "sha256": "bed7eea5325e1108f32ce5228ddd6a5f0f08a499ee42aa7442aea583702f6057",
+        "bytes": 52909993,
+        "source": "official archive freshly fetched with curl and reused as a verified release cache; unchanged staging verifier"
+      },
+      "electron": {
+        "sha256": "49b91ef265c603c8888500f807484b63816069c30f87ba2b403e7c87f0f45035",
+        "bytes": 129788539,
+        "source": "same-version retained official release cache verified against Electron package checksums"
+      }
+    },
+    "actualElectronJourney": {
+      "execution": "executed on this integrated ASAR",
+      "generatedAt": "2026-10-06T05:48:43.973080+00:00",
+      "sourceHead": "a8302c2d7252273ccb292f9fc5202beae4e165b6",
+      "sourceDirty": true,
+      "asarSha256": "a460a3676b64d03a6e7cd373d9fab5d94c3e650ed7b2cb77caddb51867388565",
+      "nativeKeychainVerified": true,
+      "encryptionEvidence": "Actual packaged Electron safeStorage encryption/decryption through the native bootstrap reader; no synthetic encryption callback.",
+      "disposableProfile": true,
+      "ownerLogin": "automatic native bootstrap login",
+      "botCreatedAndRenamed": true,
+      "expectedBotName": "新建 BotTS P2 Native Fixture",
+      "botRestoredAfterRestart": true,
+      "realtimeConnectionRestored": true,
+      "fileChecks": {
+        "local-server/bootstrap.json": {
+          "unchanged": true,
+          "mode": "0600"
+        },
+        "local-server/model-connections.key": {
+          "unchanged": true,
+          "mode": "0600"
+        },
+        "setup-plan.json": {
+          "unchanged": true,
+          "mode": "0600"
+        }
+      },
+      "encryptedBootstrap": true,
+      "initialExitCode": 0,
+      "restartExitCode": 0,
+      "ownedProcessesStoppedPerLaunch": [
+        13,
+        13
+      ],
+      "profileRemoved": true,
+      "modelConfigured": false,
+      "liveModelCalls": 0,
+      "observation": "Native accessibility tree and persisted private files; screenshot capture remained on an earlier screen.",
+      "visualAcceptanceVerified": false,
+      "scope": "macOS arm64 API-only development Preview; no native Work/Temporal qualification."
+    },
+    "unqualified": [
+      "pixel/visual renderer acceptance on this ASAR",
+      "Claude whole-interface acceptance",
+      "hosted platform/CI gates",
+      "native Work/Temporal",
+      "macOS Worker companion",
+      "signing/release",
+      "Windows/Intel Mac/Linux native qualification"
+    ],
+    "installedAppPreserved": true,
+    "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+    "sameSourceOverhead": {
+      "receipt": "typescript-control-plane-p2-overhead.json#currentIntegration",
+      "node": "v24.21.0",
+      "sourceDigests": {
+        "server-ts/app.js": "a6666f9263c1bd542687d1f4d91cfe2361b92ce164737f7c573d1ee87e401049",
+        "server-ts/tls.js": "037e08412d7bef233ef236644e8ed8f8396517ac4c9c0bcf6d6ffc9b25ff69f2",
+        "server-ts/config.js": "63a73775f8d8c8a7c034db11628d903e83c96138f47bddc92ae8d72ac33ad224",
+        "server-ts/worker-tunnel.js": "f1274899c69bdafa6271658275d1761be278de93c3b75533bbe8dc53f546441e",
+        "server-ts/lifetime.js": "3acb9723b5286b19257a60ff6201b46091b1055053b1059823490610f026548f",
+        "server-ts/desktop-entry.js": "ba32c7b424599f536f430be1548d1aa4a7921c14a94c02063d7c40b1e26ba601",
+        "desktop/main.js": "9920a8a1d00e5ee2a99a9efbfa5d663a828e142e142e3fe185a3693a664bd6de",
+        "desktop/native-server.js": "91a8497357a22cb6844900b47e61d123b48a6e7f1fc4b9a303dda096490f392c",
+        "desktop/python-server.js": "dbbeef9b668485a9bf1fc51382ac0bcc0f5aa500eb86f7d5aac8f504e1150898",
+        "desktop/ts-server.js": "e4a3de412e2db1074d3d51889854067cee0755b5f910371ec5b3274c76c85a63",
+        "desktop/ts-product-manifest.js": "55ed29383d1edbbef2a17d355050151bd71a3fdde0f3a882a3fb863f0bcd4c1c",
+        "python/serve.py": "59969ace4685a63722f184f3b6ebae3043580e2fec115d5286c60e9da6ddb774",
+        "python/requirements-product.lock": "a9455696980733c67a03ef35ea699cf0d04aef8e4e2a9df360dddfd61ff9df4d",
+        "measurement": "9c19679c9d06dc062f3ff33b1db58aa3fb06cd433fb79f6991ae8655365e5931"
+      },
+      "summary": [
+        {
+          "composition": "python-direct",
+          "freshReadyMs": {
+            "median": 5264,
+            "p95": 6124
+          },
+          "restartReadyMs": {
+            "median": 4104,
+            "p95": 4188
+          },
+          "nativeChildrenRssKiB": {
+            "median": 165792,
+            "p95": 170176
+          },
+          "tsRssKiB": {
+            "median": 0,
+            "p95": 0
+          },
+          "healthMs": {
+            "median": 0.566,
+            "p95": 1.189
+          },
+          "channelsMs": {
+            "median": 10.234,
+            "p95": 13.993
+          }
+        },
+        {
+          "composition": "ts-forwarding",
+          "freshReadyMs": {
+            "median": 5672,
+            "p95": 5745
+          },
+          "restartReadyMs": {
+            "median": 4624,
+            "p95": 4793
+          },
+          "nativeChildrenRssKiB": {
+            "median": 269936,
+            "p95": 274192
+          },
+          "tsRssKiB": {
+            "median": 103600,
+            "p95": 107104
+          },
+          "healthMs": {
+            "median": 0.994,
+            "p95": 2.58
+          },
+          "channelsMs": {
+            "median": 11.292,
+            "p95": 14.252
+          }
+        }
+      ],
+      "ownedProcessesStopped": true,
+      "disposableDataRemoved": true
+    }
+  }
+}

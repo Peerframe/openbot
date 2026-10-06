@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  controlHttpOperations,
+  lifecycleHttpOperations,
+  resourceHttpOperations,
+  pluginHttpOperations,
+} from "@openbot/protocol";
+import {
   DesktopEventStreamLifecycle,
   MAXIMUM_DESKTOP_ATTACHMENT_PROXY_REQUEST_BYTES,
   MAXIMUM_DESKTOP_PROXY_REQUEST_BYTES,
@@ -167,6 +173,55 @@ describe("Desktop Server proxy routing", () => {
     },
   );
 
+  it.each(
+    [
+      ...controlHttpOperations,
+      ...lifecycleHttpOperations,
+      ...resourceHttpOperations,
+      ...pluginHttpOperations,
+    ].filter((operation) => operation.method === "put"),
+  )(
+    "forwards the declared product PUT $path with exact payload and trusted Origin",
+    async (operation) => {
+      const path = operation.path.replace(/\{[^}]+\}/g, "fixture-id"),
+        payload = '{"revision":"synthetic"}';
+      const fetcher = vi.fn(async () => Response.json({}));
+      expect(
+        (
+          await proxyDesktopServerRequest(
+            new Request(`openbot://app${path}`, {
+              method: "PUT",
+              headers: { "content-type": "application/json" },
+              body: payload,
+            }),
+            configured,
+            fetcher,
+          )
+        )?.status,
+      ).toBe(200);
+      const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
+      expect(url).toBe(`https://openbot.example${path}`);
+      expect(init.method).toBe("PUT");
+      expect(new Headers(init.headers).get("origin")).toBe("https://openbot.example");
+      expect(new TextDecoder().decode(init.body as Uint8Array)).toBe(payload);
+    },
+  );
+  it.each([
+    "/api/v1/settings/general/extra",
+    "/api/v1/settings",
+    "/api/v1/plugins/id/grants",
+    "/api/v1/workspace/primary-bot/extra",
+    "/api/v1/task-attachments",
+  ])("does not expand PUT admission to undeclared path %s", async (path) => {
+    const fetcher = vi.fn();
+    const result = await proxyDesktopServerRequest(
+      new Request(`openbot://app${path}`, { method: "PUT" }),
+      configured,
+      fetcher,
+    );
+    expect(result?.status).toBe(405);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
   it("rejects unsupported methods and oversized bodies before network access", async () => {
     const fetcher = vi.fn();
     const methodResponse = await proxyDesktopServerRequest(
@@ -279,9 +334,10 @@ describe("single-window event-stream lifecycle", () => {
   });
 });
 
-describe("Desktop attachment upload proxy", () => {
+describe.each(["channel", "Owner"])("Desktop %s attachment upload proxy", (scope) => {
   const channelId = "550e8400-e29b-41d4-a716-446655440000";
-  const uploadPath = `/api/v1/channels/${channelId}/attachments`;
+  const uploadPath =
+    scope === "channel" ? `/api/v1/channels/${channelId}/attachments` : "/api/v1/task-attachments";
   const encodedChineseName = encodeURIComponent("团队汇总.csv");
 
   it("forwards x-openbot-filename and exact binary bodies, including empty uploads", async () => {

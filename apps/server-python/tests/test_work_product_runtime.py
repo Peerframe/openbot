@@ -61,10 +61,8 @@ def test_product_model_review_and_atomic_channel_publication(configured):
     async def check():
         f=configured;await f.settings.save(CONFIG);b=await bound(f,scope=SCOPE)
         def provider(req):
-            answer=response(req)
-            if len(f.calls)>1:
-                answer['output'][0]['content'][0]['text']=json.dumps(dict(accepted=True,reason='Answer is supported.'))
-            return httpx2.Response(200,json=answer)
+            text=json.dumps(dict(accepted=True,reason='Answer is supported.')) if len(f.calls)>1 else 'Checked answer'
+            return httpx2.Response(200,json=response(req,text=text))
         model=product(f,provider)
         runtime=ProductWorkRuntime(f.store,object(),SCOPE,f.owner,model=model,web=False)
         with binding(b):
@@ -109,10 +107,8 @@ def test_native_runtime_uses_own_profile_and_completes_without_channel_tools(nat
         attachments=tmp_path/'unused-attachments';attachments.mkdir(mode=0o700)
         owner=SimpleNamespace(files=OwnerFiles(attachments),model=f.settings,model_connections=f.connections,plugins=None)
         def provider(req):
-            answer=response(req)
-            if len(f.calls)>1:
-                answer['output'][0]['content'][0]['text']=json.dumps(dict(accepted=True,reason='Supplied facts match.'))
-            return httpx2.Response(200,json=answer)
+            text=json.dumps(dict(accepted=True,reason='Supplied facts match.')) if len(f.calls)>1 else 'Checked answer'
+            return httpx2.Response(200,json=response(req,text=text))
         scope={**SCOPE,'expected_workflow_type':TYPE};b.facts=replace(b.facts,workflow_type=TYPE)
         client=SimpleNamespace(namespace='default',config=lambda:dict(plugins=[PydanticAIPlugin()]))
         model=product(f,provider);model.scope=scope

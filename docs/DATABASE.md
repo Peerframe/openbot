@@ -85,7 +85,9 @@ absolute paths when operating outside those entry points.
 
 Desktop-managed local Server uses a different layout under the Electron user-data directory at
 `openbot/local-server`: `postgres`, `objects`, `model-settings.json` and the OS-encrypted
-`bootstrap.json` that contains its model/database/Owner keys. Preserve the complete stopped data
+`bootstrap.json` that contains its database/Owner keys (older bootstraps also retain the legacy model key).
+C28 keeps old model files/keys as recovery material; current model credentials reside in PostgreSQL
+with the private `model-connections.key` in this same data root. Include that key in the recovery set. Preserve the complete stopped data
 root and the original OS account's secret-storage access. Copying `bootstrap.json` alone does not
 make it decryptable on another machine/account; this runbook does not establish cross-host Desktop
 credential recovery. Remote Desktop clients do not contain the remote Server's recovery assets.

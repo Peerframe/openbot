@@ -13,6 +13,7 @@ import {
   DESKTOP_PACKAGE_IDENTITY,
   DESKTOP_PREVIEW_IDENTITY,
   DESKTOP_PYTHON_PREVIEW_IDENTITY,
+  DESKTOP_TS_PREVIEW_IDENTITY,
   DESKTOP_RUNTIME_DEPENDENCIES,
   DESKTOP_WINDOWS_METADATA,
   desktopMacOSWorkerCompanionSource,
@@ -107,6 +108,53 @@ describe("Desktop package source policy", () => {
     ]) {
       expect(() => desktopPackageIdentity(args)).toThrow(/only/u);
     }
+  });
+
+  it("isolates the mixed TS Preview and refuses ambiguous or unsupported selection", () => {
+    const args = ["--preview", "--ts-product"];
+    const identity = desktopPackageIdentity(args);
+    expect(identity).toBe(DESKTOP_TS_PREVIEW_IDENTITY);
+    expect(desktopPackageIdentity([...args].reverse())).toBe(identity);
+    const manifest = { name: "@openbot/desktop", productName: "OpenBot" };
+    expect(desktopPackagedManifest(manifest, identity)).toEqual({
+      ...manifest,
+      name: "openbot-ts-preview",
+      productName: "OpenBot TS Preview",
+    });
+    expect(manifest.productName).toBe("OpenBot");
+    for (const retained of [
+      DESKTOP_PACKAGE_IDENTITY,
+      DESKTOP_PREVIEW_IDENTITY,
+      DESKTOP_PYTHON_PREVIEW_IDENTITY,
+    ]) {
+      expect(identity.appBundleId).not.toBe(retained.appBundleId);
+      expect(identity.executableName).not.toBe(retained.executableName);
+    }
+    expect(parseDesktopPackageArguments(args, "darwin", "arm64")).toEqual({
+      pythonProduct: false,
+      tsProduct: true,
+      preview: true,
+      identity,
+    });
+    for (const [platform, arch] of [
+      ["darwin", "x64"],
+      ["linux", "arm64"],
+      ["win32", "x64"],
+    ])
+      expect(() => parseDesktopPackageArguments(args, platform, arch)).toThrow("macOS arm64");
+    for (const invalid of [
+      ["--ts-product"],
+      [...args, "--python-product"],
+      [...args, "--ts-product"],
+    ])
+      expect(() => desktopPackageIdentity(invalid)).toThrow("only");
+    expect(() =>
+      desktopMacOSWorkerCompanionSource(
+        resolve("fixture", DESKTOP_MACOS_WORKER_COMPANION_NAME),
+        "darwin",
+        identity,
+      ),
+    ).toThrow("production Worker");
   });
 
   it.each<[string, boolean]>([
@@ -379,6 +427,7 @@ describe("packaging execution boundaries", () => {
   it("keeps Python Preview tied to its separate identity and supported native payload", () => {
     expect(parseDesktopPackageArguments([], "win32", "x64")).toEqual({
       pythonProduct: false,
+      tsProduct: false,
       preview: false,
       identity: DESKTOP_PACKAGE_IDENTITY,
     });
@@ -391,6 +440,7 @@ describe("packaging execution boundaries", () => {
     ]) {
       expect(parseDesktopPackageArguments(args, "darwin", "arm64")).toEqual({
         pythonProduct: true,
+        tsProduct: false,
         preview: true,
         identity: DESKTOP_PYTHON_PREVIEW_IDENTITY,
       });

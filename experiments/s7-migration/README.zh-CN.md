@@ -9,10 +9,16 @@
 | --- | --- | --- |
 | 架构历史，27 条迁移 | `c33e03f1a14de739196113769c59fdaace9029e7` | 恢复旧数据，再通过现有生产启动守卫执行增量迁移。 |
 | 功能历史，19 条迁移 | `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` | 直接升级必须在索引 17 失败；专用实验随后将有限兼容记录转入新建目标库。 |
-| 已验证目标，53 条迁移 | 已提交 SQL 来源 `aff05a7af4aca731537edba69b66d15ea030f8ef`，附当前 SQL／journal 准确哈希 | SQL 与 journal 必须匹配 `target-history.json`；变化后重新验证。 |
+| 已验证目标，55 条迁移 | 整合基线 `a8302c2d7252273ccb292f9fc5202beae4e165b6`，含未发布的 C28/C26 后缀 `0053/0054`，由准确 SQL／journal 哈希固定 | SQL 与 journal 必须匹配 `target-history.json`；变化后重新验证。 |
+
+55 条迁移的整合目标在 2026-10-06 通过全部 40 项保留数据迁移／恢复检查及 20 项产品交付／清理
+定向检查。[当前证据](evidence/typescript-control-plane-result.json)明确两份 SQL 尚未提交，
+前 53 条固定历史完全保留。另一次自有 PostgreSQL 验证从已发布 main 的 53 条结构升级到 55 条，
+检查并发及重复启动守卫、原 Bot／频道／开场白／尝试标记／偏好行保留、开场白唯一性及转写／工作区
+初始不选状态。只使用合成记录，没有操作生产库、恢复设置／密钥或发布版本。
 
 53 条迁移的 C11 目标在 2026-10-03 通过全部 40 项保留数据迁移／恢复检查；产品交付／清理
-定向检查共 20 项通过。[当前证据](evidence/bot-greeting-result.json)保存精确哈希和实际结果。
+定向检查共 20 项通过。[有日期的 C11 证据](evidence/bot-greeting-result.json)保存精确哈希和实际结果。
 迁移 0052 增加可空的开场白 origin 及一次尝试／一条消息的局部唯一索引；C11 产品测试另行覆盖
 模型限制、Owner 并发及审计失败回滚。历史 SQL、夹具和断言未改动。
 [52 条 C22 证据](evidence/global-trash-result.json)与[51 条 C21 证据](evidence/channel-storage-result.json)

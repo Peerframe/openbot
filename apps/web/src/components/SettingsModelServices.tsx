@@ -9,7 +9,7 @@ import {
   providerLabel,
 } from "./ModelConnectionsDialog";
 import { useModelServices } from "./ModelSelector";
-import { ModelSettingsScreen } from "./ModelSettingsScreen";
+import { TranscriptionConnectionSetting } from "./TranscriptionConnectionSetting";
 
 /**
  * Settings → 模型服务 (Settings artboard): connected services with an enable switch, then the
@@ -250,14 +250,7 @@ export function SettingsModelServices({ onChanged }: { onChanged?: (() => void) 
         />
       ) : null}
 
-      <details className="settings-disclosure">
-        <summary>语音转写与旧版 Bot 的模型</summary>
-        <p className="settings-disclosure-note">
-          新 Bot 用上面连接的模型服务。这里是另外保存的一份旧版设置，只用于语音转写（需要
-          OpenAI）和还没有单独选模型的旧 Bot，所以需要单独填一次 API Key。
-        </p>
-        <ModelSettingsScreen embedded onDone={() => {}} />
-      </details>
+      {snapshot ? <TranscriptionConnectionSetting connections={snapshot.connections} /> : null}
     </>
   );
 }

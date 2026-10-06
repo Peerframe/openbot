@@ -1,0 +1,1751 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenBot Work HTTP",
+    "version": "1"
+  },
+  "paths": {
+    "/api/v1/tasks": {
+      "post": {
+        "operationId": "createWorkTask",
+        "x-openbot-owner-session": true,
+        "x-openbot-allowed-origin": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTask"
+              }
+            }
+          }
+        },
+        "x-openbot-max-body-bytes": 20000,
+        "responses": {
+          "202": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkSnapshot"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{task_id}": {
+      "get": {
+        "operationId": "getWorkTask",
+        "x-openbot-owner-session": true,
+        "x-openbot-allowed-origin": false,
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkSnapshot"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{task_id}/scope": {
+      "get": {
+        "operationId": "getNativeWorkTaskScope",
+        "x-openbot-owner-session": true,
+        "x-openbot-allowed-origin": false,
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NativeTaskScopeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{task_id}/cancel": {
+      "post": {
+        "operationId": "cancelWorkTask",
+        "x-openbot-owner-session": true,
+        "x-openbot-allowed-origin": true,
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyCommand"
+              }
+            }
+          }
+        },
+        "x-openbot-max-body-bytes": 128,
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkSnapshot"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{task_id}/corrections": {
+      "post": {
+        "operationId": "correctWorkTask",
+        "x-openbot-owner-session": true,
+        "x-openbot-allowed-origin": true,
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestCorrection"
+              }
+            }
+          }
+        },
+        "x-openbot-max-body-bytes": 32768,
+        "responses": {
+          "202": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkCorrection"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/actions/{action_id}/decision": {
+      "post": {
+        "operationId": "decideWorkAction",
+        "x-openbot-owner-session": true,
+        "x-openbot-allowed-origin": true,
+        "parameters": [
+          {
+            "name": "action_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideAction"
+              }
+            }
+          }
+        },
+        "x-openbot-max-body-bytes": 512,
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkSnapshot"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/actions/{action_id}/reconcile": {
+      "post": {
+        "operationId": "requestWorkReconciliation",
+        "x-openbot-owner-session": true,
+        "x-openbot-allowed-origin": true,
+        "parameters": [
+          {
+            "name": "action_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestReconciliation"
+              }
+            }
+          }
+        },
+        "x-openbot-max-body-bytes": 4096,
+        "responses": {
+          "202": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkReconciliation"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/artifacts/{artifact_id}": {
+      "get": {
+        "operationId": "downloadWorkArtifact",
+        "x-openbot-owner-session": true,
+        "x-openbot-allowed-origin": false,
+        "parameters": [
+          {
+            "name": "artifact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Product error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkHttpError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateTask": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "botId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "objective": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384
+          },
+          "tokenLimit": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000000
+          },
+          "requestKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NativeTaskScope"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "botId",
+          "objective",
+          "tokenLimit",
+          "requestKey"
+        ],
+        "additionalProperties": false
+      },
+      "EmptyCommand": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "DecideAction": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "intentDigest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "approved": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "intentDigest",
+          "approved"
+        ],
+        "additionalProperties": false
+      },
+      "RequestReconciliation": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "intentDigest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "requestKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "expectedSequence": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 64
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "intentDigest",
+          "requestKey",
+          "expectedSequence",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "RequestCorrection": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "instruction": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "requestKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "expectedSequence": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 8
+          }
+        },
+        "required": [
+          "runId",
+          "instruction",
+          "requestKey",
+          "expectedSequence"
+        ],
+        "additionalProperties": false
+      },
+      "NativeTaskScope": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 1
+          },
+          "attachmentIds": {
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "collaboratorBotIds": {
+            "maxItems": 32,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "knowledge": {
+            "type": "boolean"
+          },
+          "plugins": {
+            "type": "boolean"
+          },
+          "web": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "version",
+          "attachmentIds",
+          "collaboratorBotIds",
+          "knowledge",
+          "plugins",
+          "web"
+        ],
+        "additionalProperties": false
+      },
+      "NativeTaskScopeResponse": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "scope": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "number",
+                    "const": 1
+                  },
+                  "attachmentIds": {
+                    "maxItems": 8,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
+                  },
+                  "collaboratorBotIds": {
+                    "maxItems": 32,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
+                  },
+                  "knowledge": {
+                    "type": "boolean"
+                  },
+                  "plugins": {
+                    "type": "boolean"
+                  },
+                  "web": {
+                    "type": "boolean"
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "attachments": {
+                    "maxItems": 8,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "name": {
+                          "type": "string",
+                          "pattern": "^[\\p{L}\\p{N}][\\p{L}\\p{N} ._()-]{0,159}$"
+                        },
+                        "mediaType": {
+                          "type": "string",
+                          "enum": [
+                            "text/plain",
+                            "image/png",
+                            "image/jpeg",
+                            "application/pdf",
+                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                            "application/vnd.oasis.opendocument.text",
+                            "application/vnd.oasis.opendocument.spreadsheet",
+                            "application/vnd.oasis.opendocument.presentation",
+                            "audio/mpeg",
+                            "audio/wav",
+                            "audio/mp4",
+                            "audio/webm",
+                            "video/mp4",
+                            "video/webm"
+                          ]
+                        },
+                        "sizeBytes": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 10485760
+                        },
+                        "sha256": {
+                          "type": "string",
+                          "pattern": "^[a-f0-9]{64}$"
+                        },
+                        "metadataSha256": {
+                          "type": "string",
+                          "pattern": "^[a-f0-9]{64}$"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "mediaType",
+                        "sizeBytes",
+                        "sha256",
+                        "metadataSha256"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "version",
+                  "attachmentIds",
+                  "collaboratorBotIds",
+                  "knowledge",
+                  "plugins",
+                  "web",
+                  "sha256",
+                  "attachments"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "scope"
+        ],
+        "additionalProperties": false
+      },
+      "WorkCorrection": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8
+          },
+          "requestedBy": {
+            "type": "string",
+            "const": "owner"
+          },
+          "instruction": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "generation": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "taskId",
+          "runId",
+          "sequence",
+          "requestedBy",
+          "instruction",
+          "generation",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "WorkReconciliation": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "actionId": {
+            "type": "string"
+          },
+          "sequence": {
+            "type": "integer"
+          },
+          "requestedBy": {
+            "type": "string",
+            "const": "owner"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "delivered": {
+            "type": "boolean"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "resolved",
+                  "unresolved"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "actionId",
+          "sequence",
+          "requestedBy",
+          "reason",
+          "createdAt",
+          "delivered",
+          "outcome"
+        ],
+        "additionalProperties": false
+      },
+      "WorkError": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "x-openbot-json-value": true,
+                    "$ref": "#/components/schemas/__shared/$defs/schema0"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "additionalProperties": false
+      },
+      "WorkHttpError": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "WorkUsage": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "tokenLimit": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reservedTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "spentTokens": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "tokenLimit",
+          "reservedTokens",
+          "spentTokens"
+        ],
+        "additionalProperties": false
+      },
+      "WorkRun": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "ordinal": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "completed",
+              "cancelled",
+              "failed"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "ordinal",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "WorkAction": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "intent": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "x-openbot-json-value": true,
+              "$ref": "#/components/schemas/__shared/$defs/schema0"
+            }
+          },
+          "intentDigest": {
+            "type": "string"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "not_required",
+              "pending",
+              "approved",
+              "denied"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "proposed",
+              "admitted",
+              "unknown",
+              "applied",
+              "not_applied",
+              "superseded"
+            ]
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "reservedTokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "actualTokens": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reconciliation": {
+            "default": null,
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkReconciliation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "runId",
+          "intent",
+          "intentDigest",
+          "decision",
+          "status",
+          "expiresAt",
+          "reservedTokens",
+          "actualTokens",
+          "evidence"
+        ],
+        "additionalProperties": false
+      },
+      "WorkArtifact": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "mediaType": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "downloadUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "runId",
+          "name",
+          "mediaType",
+          "sha256",
+          "sizeBytes",
+          "downloadUrl"
+        ],
+        "additionalProperties": false
+      },
+      "WorkEvent": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "x-openbot-json-value": true,
+              "$ref": "#/components/schemas/__shared/$defs/schema0"
+            }
+          }
+        },
+        "required": [
+          "revision",
+          "kind",
+          "payload"
+        ],
+        "additionalProperties": false
+      },
+      "WorkSnapshot": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "botId": {
+            "type": "string"
+          },
+          "objective": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "open",
+              "completed",
+              "cancelled",
+              "failed"
+            ]
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "resultSummary": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "authorityActive": {
+            "type": "boolean"
+          },
+          "cancelRequested": {
+            "type": "boolean"
+          },
+          "attention": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "approval",
+                  "reconciliation",
+                  "budget"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "usage": {
+            "$ref": "#/components/schemas/WorkUsage"
+          },
+          "runs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkRun"
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkAction"
+            }
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkArtifact"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkEvent"
+            }
+          },
+          "eventsTruncated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "botId",
+          "objective",
+          "status",
+          "revision",
+          "resultSummary",
+          "authorityActive",
+          "cancelRequested",
+          "attention",
+          "usage",
+          "runs",
+          "actions",
+          "artifacts",
+          "events",
+          "eventsTruncated"
+        ],
+        "additionalProperties": false
+      },
+      "__shared": {
+        "$defs": {
+          "schema0": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/__shared/$defs/schema0"
+                }
+              },
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/__shared/$defs/schema0"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

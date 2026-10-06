@@ -9,7 +9,7 @@ import {
   deleteBot,
   deleteChannel,
   getAuthSession,
-  getModelSettings,
+  getModelServices,
   getUnreadCounts,
   joinBotToChannel,
   login,
@@ -195,11 +195,11 @@ export function App() {
   useEffect(() => {
     if (!nativeReady || session?.authenticated !== true || modelChecked) return;
     let active = true;
-    void getModelSettings()
+    void getModelServices()
       .then((model) => {
         if (!active) return;
         setModelChecked(true);
-        if (model.status !== "configured") setShowModelSetup(true);
+        if (!model.connections.some((connection) => connection.enabled)) setShowModelSetup(true);
       })
       .catch(() => {
         if (active) {

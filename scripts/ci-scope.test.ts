@@ -5,14 +5,14 @@
 
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
 import { checkResults } from "./ci-results.ts";
-import { JOBS, selectChecks, workspaceGraph, type JobName } from "./ci-selection.ts";
 import { argumentsFor, changedFiles, makePlan } from "./ci-scope.ts";
+import { JOBS, type JobName, selectChecks, workspaceGraph } from "./ci-selection.ts";
 
 const graph = workspaceGraph(
   JSON.parse(await readFile(new URL("../package-lock.json", import.meta.url), "utf8")) as unknown,
@@ -384,6 +384,11 @@ test("transitive runtime consumers keep platform, browser and Python qualificati
 });
 
 test("actual Work HTTP consumers and conformance inputs retain the cross-language gate", () => {
+  const mixed = select("apps/server-ts/src/app.ts");
+  assert(mixed.required.includes("harness"));
+  assert(mixed.required.includes("python-runtime"));
+  assert(mixed.workspaces.includes("@openbot/server-ts"));
+  assert.deepEqual(select("packages/contract-tests/src/work.ts").required, JOBS);
   for (const path of [
     "apps/web/src/work-api.ts",
     "apps/web/src/work-api.test.ts",
@@ -472,6 +477,10 @@ test("workspace graph rejects malformed package dependencies", () => {
 test("the native parser source keeps types and installed Python consumers", () => {
   const plan = select("apps/server-python/src/openbot_server/parser_worker.ts");
   assert(plan.rootChecks.includes("typecheck:parsers"));
-  for (const job of ["python-runtime", "python-product-container", "python-desktop-preview"] as const)
+  for (const job of [
+    "python-runtime",
+    "python-product-container",
+    "python-desktop-preview",
+  ] as const)
     assert(plan.required.includes(job), job);
 });

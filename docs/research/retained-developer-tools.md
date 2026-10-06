@@ -91,3 +91,34 @@ as `argv[2]`, and canonicalize the temporary root. Keep the same15/20-second bou
 assertions. Require no spawn error, natural exit0, a marker after client/server closure and no
 standalone-entry output. No SDK, sample source, lifecycle, dependency or privilege change is needed.
 The two real-loopback cases passed locally after this repair; actual Windows CI remains required.
+
+## Express proxy trust transitive patch (2026-10-06)
+
+The integrated migration candidate's required production npm audit found
+[GHSA-jqcg-44mw-7w3h](https://github.com/advisories/GHSA-jqcg-44mw-7w3h), critical, in
+`@openbot/mcp-example` → MCP SDK1.30.0 → Express5.2.1 → proxy-addr2.0.7.
+This identifies a dependency gate; it does not establish that OpenBot configures an exploitable
+trust subnet. The P2 entry uses its separate exact loopback/private-peer policy.
+
+Select released MIT [proxy-addr2.0.8](https://github.com/jshttp/proxy-addr/tree/a11ad82545698af5c33e59f3ed0b52eab79bf610),
+exact tag commit `a11ad82545698af5c33e59f3ed0b52eab79bf610`. Reviewed the release, index.js,
+package metadata, upstream single/multi-subnet and mapped/native-address regressions, and open
+issues. The patch retains the public API, Node >=0.10 support, forwarded0.2.0 and ipaddr.js1.9.1;
+Express's existing `^2.0.7` constraint admits it. Compare the maintained security patch with
+rewriting every caller's CIDR configuration or replacing the SDK/HTTP adapter: the patch closes
+the audit gate without a new package, service or authority path. A configuration workaround
+would leave the vulnerable bytes and the audit failure. No upstream implementation is copied.
+
+The npm release has reviewed integrity
+`sha512-5nnx0yGyVUcY6t9RnWcARWtwT9F1D8O9rt08htPvnd49W1IgZtmLkhu9WfMzQj1cFxjHIO6connUNVW5k7AVyQ==`.
+Retain the existing MIT notice. Refresh only this lock entry, verify package identity and
+unchanged transitive dependencies, exercise installed API trust refusals/valid subnets,
+then run the existing MCP scaffold and real owned MCP HTTP contracts plus `npm run check`
+and the production audit. The integrated lock refresh changes only `node_modules/proxy-addr`;
+`npm ci` installed 2.0.8 in the isolated project. Nine installed API checks passed for valid
+IPv4/mapped IPv6 subnets, untrusted addresses, the short mapped-prefix regression and loopback.
+An initial positive check used the wrong `/8` mapped prefix; the corrected valid `/104` check
+passed. The production audit now exits 0 at the high threshold: critical0/high0/moderate2.
+The retained MCP scaffold tests passed in `npm run check` (exit0); the owned TS HTTPS/Python/SQL
+plugin suite passed30 real HTTP/MCP checks after the patch. Full upstream tests remain unexecuted. Full upstream tests were read, not executed. The two previously
+recorded moderate findings remain separate; this patch does not claim a clean all-severity audit.

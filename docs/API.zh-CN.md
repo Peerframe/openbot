@@ -12,6 +12,7 @@
 | `POST` | `/api/v1/auth/logout` | 撤销当前 Session 并清除 Cookie |
 | `GET` | `/api/v1/bootstrap` | 轻量计数与阶段信息 |
 | `GET` | `/api/v1/workspace` | 频道、Bot、Node、Run、Approval、Progress、Artifact 和计数的一次性投影 |
+| `PUT` | `/api/v1/workspace/primary-bot` | Owner 按预期工作区版本选择或清空主 Bot |
 | `GET` | `/api/v1/workspace/events` | 订阅全局 Node、Run 与 Approval 变化（SSE） |
 | `GET` | `/api/v1/channels` | 频道与 Bot roster |
 | `POST` | `/api/v1/channels` | 创建频道并原子加入初始 Bot |
@@ -87,6 +88,36 @@ secret，不等于生产级持有证明身份。能力声明本身仍不授予�
 
 频道与工作区 SSE 每个订阅最多保留 128 个待发送投影。慢客户端达到上限后连接会被关闭，Web
 客户端重连并重新读取数据库权威快照；Server 不会静默丢弃某个事件后继续伪装为连续流。
+
+## 工作区主 Bot（C26）
+
+`GET /api/v1/workspace` 返回 `primaryBotId: string | null` 和 `revision: number`。
+这个版本只覆盖主 Bot 设置，与 C7 Owner 偏好、Bot 档案版本独立。
+`PUT /api/v1/workspace/primary-bot` 要求 Owner Cookie 和精确匹配的允许 Origin；严格 JSON 为
+`{ botId: string | null, expectedRevision: number }`，请求体最多 1024 字节。ID 为 1–128 个字符，
+版本为 1–2147483647 的整数。成功返回 `{ primaryBotId: string | null, revision: number }`。
+版本过期返回 409 `workspace_revision_conflict`；版本正确但 Bot 已删除或不存在时返回 404
+`bot_not_found`。未知字段或非法输入返回 422。重复保存当前选择不改变版本、不增加审计。
+实际变更增加版本，并在同一事务写入 `SETTINGS_PRIMARY_BOT_UPDATED`，包含 `previousBotId`、
+`primaryBotId`（保留 null）、`revision`、`actor` 和 `reason`。审计失败时，设置以及关联的
+创建、导入或删除一起回滚。
+
+迁移 0054 初始化为空、版本为 1，不给已有 Bot 自动选主，也不删除已有 Bot。没有主 Bot 时，
+第一个新建 Bot（普通或快捷创建）或新激活的导入 Bot 在同一事务自动成为主 Bot。重放已有导入
+回执不会重新选主。删除主 Bot 会清空设置、增加版本并审计，不从剩余 Bot 中自动选主。
+「设置 → 通用」的选择器会提示 Owner 选一个。主动清空后也保持为空，直到手动选择或下一次
+新建、导入 Bot。
+
+频道消息没有明确收件人时，如果主 Bot 是该频道成员，只交给它；没有主 Bot 或主 Bot 不在频道
+时保留原有 Chief/稳定 roster 路由。明确 @（`botId` 或 `botIds`）和单聊保持原有规则。
+现有委派继续校验频道成员关系以及每个 Bot 独立的审批、插件授权和电脑权限；主 Bot 不获得
+额外权限，也不改变已有 Run 的收件人和执行资料。
+
+持久化变更后，现有鉴权 workspace SSE 在下一次三秒轮询发布 `workspace.ready` 失效通知，
+也能观察独立存储实例产生的变化。客户端重新读取 `GET /api/v1/workspace`；事件本身不承载
+权威主 Bot 设置。共享 TS 快照的两个字段为兼容 C26 之前的 Server 和冻结 oracle 夹具保持
+可选；当前 Python Server 总是返回两者，新增 PUT 响应严格要求两者。
+详见[决策与验收范围](research/workspace-primary-bot.md)。
 
 ## Owner 密码与登录会话（C2）
 
@@ -348,7 +379,8 @@ Web Client 在创建浏览器下载前，还会要求响应 `ETag` 一致，并�
 保存活动私钥，离线 CLI 负责初始化、显式信任、轮换和撤销。密钥库一旦显式配置但无法安全加载，
 Server 会拒绝启动而不是退回无签名模式。使用方法见[员工包签名手册](EMPLOYEE_SIGNING.zh-CN.md)。
 
-`POST /api/v1/employees/import/preview` 接受整个 v1 员工模板或 DSSE 信封 JSON，最大 2 MiB。
+`POST /api/v1/employees/import/preview` 要求 `Content-Type: application/json`，接受整个员工模板或 DSSE 信封 JSON，最大 2 MiB。
+Employee 专用 MIME 描述下载文件，不用于此上传请求。
 无签名模板使用严格 schema；签名信封必须先由活动、已退役或外部显式信任的公钥验证，之后才
 解析同一份已认证字节。未知格式、未信任或已撤销签名都会返回 `422`。通过验证后，Server 检查 SHA-256、
 技能 slug 与依赖、技能实际能力和顶层能力声明是否一致、疑似敏感文本，以及当前在线工作主机
@@ -453,7 +485,7 @@ JSON 每页仍为 1–100 条。
 
 消息正文会先去除首尾空白，长度限制为 1–8000 个字符。一次请求会在同一数据库事务中创建 `human` 消息、状态为 `queued` 的 Run、`MESSAGE_CREATED` 和 `RUN_CREATED` 事件。Run 通过唯一的 `sourceMessageId` 关联来源消息，避免同一输入被投影为多个任务。
 
-若传入 `botId`，Server 只接受频道 roster 内的 Bot；未传入时确定性地优先选择名称或职责为 Chief/总管/协调/调度的成员，否则选择 roster 中稳定排序的首位成员。空频道和越权指定均返回 `422`。模型与 Client 不能绕过这条成员边界。
+若传入 `botId`，Server 只接受频道 roster 内的 Bot；未传入时先选属于该频道的工作区主 Bot，否则确定性地优先选择名称或职责为 Chief/总管/协调/调度的成员，再选择 roster 中稳定排序的首位成员。空频道和越权指定均返回 `422`。模型与 Client 不能绕过这条成员边界。
 
 成功响应包含 `{ message, run }`。Server 随后向频道 SSE 订阅者依次发布 `message.created` 与 `run.created`；Web 分别按消息 ID 和 Run ID 合并快照与实时事件，因此刷新、重连和并发写入不会产生重复投影。
 

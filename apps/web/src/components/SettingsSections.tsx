@@ -123,6 +123,8 @@ const auditLabels: Record<string, string> = {
 };
 
 function auditTitle(event: AuditEvent) {
+  if (event.type === "SETTINGS_PRIMARY_BOT_UPDATED")
+    return `更改主 Bot：${event.details.previousBotId ?? "未设置"} → ${event.details.primaryBotId ?? "未设置"}`;
   const label = auditLabels[event.type] ?? event.type.replaceAll("_", " ").toLocaleLowerCase();
   const from = event.details.from;
   const to = event.details.to;

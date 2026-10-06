@@ -10,7 +10,8 @@ from .models import iso_timestamp
 AUDIT_CATEGORIES=("authentication","settings","hosts","approvals","channels","bots","runs","plugins","other")
 AUDIT_PAYLOAD_KEYS=("name","from","to","actor","reason","emoji","active","decision",
     "removedBotId","deletedMessages","redactedMessages","directBotId","revokedSessions","nodeId","revision",
-    "operationId","attachmentId","fileName","sizeBytes","freedBytes","removed","retainedCount","trashAutoPurgeDays","outcome")
+    "operationId","attachmentId","fileName","sizeBytes","freedBytes","removed","retainedCount","trashAutoPurgeDays","outcome",
+    "previousBotId","primaryBotId")
 _CATEGORY_SQL=r"""CASE
  WHEN e.type LIKE 'AUTH\_%' ESCAPE '\' OR e.type LIKE 'OWNER\_%' ESCAPE '\' THEN 'authentication'
  WHEN e.type LIKE 'MODEL\_%' ESCAPE '\' OR e.type LIKE 'SETTINGS\_%' ESCAPE '\' OR e.type='EMPLOYEE_MODEL_UPDATED' THEN 'settings'
@@ -26,6 +27,10 @@ _PAYLOAD_SQL="jsonb_strip_nulls(jsonb_build_object("+",".join(
     f"'{key}',CASE WHEN jsonb_typeof(e.payload->'{key}')='string' THEN to_jsonb(left(e.payload->>'{key}',{160 if key == 'fileName' else 120})) "
     f"WHEN jsonb_typeof(e.payload->'{key}') IN ('number','boolean') AND octet_length((e.payload->'{key}')::text)<=40 "
     f"THEN e.payload->'{key}' ELSE NULL END" for key in AUDIT_PAYLOAD_KEYS)+"))"
+# Only this bounded preference event exposes nullable old/new IDs; no arbitrary payload is read.
+_PAYLOAD_SQL += " || CASE WHEN e.type='SETTINGS_PRIMARY_BOT_UPDATED' THEN jsonb_build_object(" + ",".join(
+    f"'{key}',CASE WHEN jsonb_typeof(e.payload->'{key}')='string' THEN to_jsonb(left(e.payload->>'{key}',128)) ELSE 'null'::jsonb END"
+    for key in ('previousBotId','primaryBotId')) + ") ELSE '{}'::jsonb END"
 
 
 def parse_query(query, *, export=False):
@@ -67,7 +72,8 @@ async def audit_records(transactions,token,*,before=None,limit=50,category=None,
                 raise ControlError(503,"audit_projection_limit")
             payload=row["payload"] if isinstance(row["payload"],dict) else {}
             details={key:payload[key] for key in AUDIT_PAYLOAD_KEYS
-                if isinstance(payload.get(key),(str,int,bool)) and not isinstance(payload.get(key),float)
+                if (isinstance(payload.get(key),(str,int,bool)) or key in ('previousBotId','primaryBotId') and key in payload and payload[key] is None)
+                and not isinstance(payload.get(key),float)
                 and (not isinstance(payload[key],int) or abs(payload[key])<=9007199254740991)}
             event=dict(id=row["id"],type=row["type"][:64],category=row["category"],
                        createdAt=iso_timestamp(row["created_at"]),details=details)

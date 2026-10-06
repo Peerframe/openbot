@@ -1,16 +1,38 @@
 import { collectProductionPackageGraph } from "../../../scripts/production-package-graph.ts";
+import { TS_CANDIDATE } from "../src/ts-product-manifest.ts";
 
 export interface NativeRuntimeLock {
   packages?: Record<
     string,
     {
       name?: string;
+      version?: string;
       dependencies?: Record<string, string>;
       optional?: boolean;
       os?: unknown;
       cpu?: unknown;
     }
   >;
+}
+
+/** Coexistence keeps the reviewed Python helpers and adds only the forwarding closure. */
+export function mixedCandidateGraph(lock: NativeRuntimeLock) {
+  const python = pythonCandidateGraph(lock);
+  for (const [name, version] of [
+    ["fastify", TS_CANDIDATE.fastifyVersion],
+    ["@fastify/reply-from", TS_CANDIDATE.replyFromVersion],
+  ] as const) {
+    if (
+      lock.packages?.["apps/server-ts"]?.dependencies?.[name] !== version ||
+      lock.packages?.[`node_modules/${name}`]?.version !== version
+    )
+      throw new Error("TS forwarding dependency does not match its reviewed pin.");
+  }
+  const ts = collectProductionPackageGraph(lock, "apps/server-ts");
+  return {
+    workspaceKeys: [...new Set([...python.workspaceKeys, ...ts.workspaceKeys])].sort(),
+    packageKeys: [...new Set([...python.packageKeys, ...ts.packageKeys])].sort(),
+  };
 }
 
 export function pythonCandidateGraph(lock: NativeRuntimeLock) {

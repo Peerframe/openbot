@@ -13,22 +13,25 @@ export const createAutomationInputSchema = z
   .strict();
 export const updateAutomationInputSchema = z.object({ enabled: z.boolean() }).strict();
 export type CreateAutomationInput = z.infer<typeof createAutomationInputSchema>;
-export type AutomationOutcome =
-  | "submitted"
-  | "skipped_active"
-  | "target_unavailable"
-  | "attachment_unavailable";
-export interface Automation {
-  id: string;
-  name: string;
-  channelId: string;
-  botId: string;
-  prompt: string;
-  intervalMinutes: number;
-  enabled: boolean;
-  nextRunAt: string;
-  lastRunAt: string | null;
-  lastRunId: string | null;
-  lastOutcome: AutomationOutcome | null;
-  createdAt: string;
-}
+export const automationOutcomeSchema = z.enum([
+  "submitted",
+  "skipped_active",
+  "target_unavailable",
+  "attachment_unavailable",
+]);
+export const automationSchema = z.strictObject({
+  id: z.string(),
+  name: z.string(),
+  channelId: z.string(),
+  botId: z.string(),
+  prompt: z.string(),
+  intervalMinutes: z.number().int(),
+  enabled: z.boolean(),
+  nextRunAt: z.string(),
+  lastRunAt: z.string().nullable(),
+  lastRunId: z.string().nullable(),
+  lastOutcome: automationOutcomeSchema.nullable(),
+  createdAt: z.string(),
+});
+export type AutomationOutcome = z.infer<typeof automationOutcomeSchema>;
+export type Automation = z.infer<typeof automationSchema>;

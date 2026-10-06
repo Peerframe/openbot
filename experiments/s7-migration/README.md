@@ -9,11 +9,19 @@ preparation for S7, not a production migration utility or evidence that S7 is co
 | --- | --- | --- |
 | Architecture, 27 migrations | `c33e03f1a14de739196113769c59fdaace9029e7` | Restore old data, then apply current migrations with the existing production startup guard. |
 | Feature, 19 migrations | `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` | Direct upgrade fails at index 17. A separate fixture-only transfer copies a bounded compatible record set into a freshly migrated target. |
-| Qualified target, 53 migrations | Committed SQL source `aff05a7af4aca731537edba69b66d15ea030f8ef`, with exact current SQL/journal hashes | SQL bytes and journal entries must match `target-history.json`; changes require an explicit requalification. |
+| Qualified target, 55 migrations | Integration base `a8302c2d7252273ccb292f9fc5202beae4e165b6` with unpublished C28/C26 suffix `0053`/`0054`, pinned by exact SQL/journal hashes | SQL bytes and journal entries must match `target-history.json`; changes require an explicit requalification. |
+
+The integrated 55-entry target passed all 40 retained migration/restore cases and 20 focused
+product-delivery/cleanup checks on 2026-10-06. [Current evidence](evidence/typescript-control-plane-result.json)
+labels the two SQL additions as uncommitted; it preserves the first 53 sealed entries exactly.
+A separate owned PostgreSQL upgrade from published main's 53-entry schema to 55 verified concurrent
+and repeated guarded startup, retained Bot/channel/greeting/attempt-claim/preferences rows, greeting
+uniqueness, and initially unselected transcription/workspace preferences. It used synthetic records;
+no production database, settings/key restore or release was exercised.
 
 The 53-entry C11 target passed all 40 retained migration/restore cases on 2026-10-03; 20 focused
 product-delivery/cleanup checks passed too. Exact current hashes and actual results are in
-[the current evidence](evidence/bot-greeting-result.json). Migration 0052 adds nullable greeting
+[the dated C11 evidence](evidence/bot-greeting-result.json). Migration 0052 adds nullable greeting
 origin and one-attempt/one-message partial indexes; C11 product tests separately cover model bounds,
 Owner concurrency and failed audit rollback. The sealed historical SQL/fixtures/assertions are
 unchanged. [52-entry C22 evidence](evidence/global-trash-result.json) and

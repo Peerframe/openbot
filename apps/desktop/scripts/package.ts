@@ -13,6 +13,7 @@ import {
   DESKTOP_ICON_RESOURCE_NAME,
   DESKTOP_PREVIEW_IDENTITY,
   DESKTOP_PYTHON_PREVIEW_IDENTITY,
+  DESKTOP_TS_PREVIEW_IDENTITY,
   DESKTOP_RUNTIME_DEPENDENCIES,
   DESKTOP_WINDOWS_METADATA,
   desktopMacOSWorkerCompanionSource,
@@ -29,6 +30,7 @@ import {
 import { copyContainedResource } from "./package-resources.ts";
 import { preparePackageIcons } from "./generate-icons.ts";
 import { PYTHON_CANDIDATE } from "./python-runtime.ts";
+import { TS_CANDIDATE } from "../src/ts-product-manifest.ts";
 
 const appRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const workspaceRoot = join(appRoot, "..", "..");
@@ -38,30 +40,47 @@ export function parseDesktopPackageArguments(
   arch: string = process.arch,
 ) {
   const pythonProduct = args.includes("--python-product");
+  const tsProduct = args.includes("--ts-product");
   if (args.filter((argument) => argument === "--python-product").length > 1)
     throw new Error("Python product candidate must be selected once.");
+  if (args.filter((argument) => argument === "--ts-product").length > 1)
+    throw new Error("TS product candidate must be selected once.");
   const identity = desktopPackageIdentity(args);
   const preview =
-    identity === DESKTOP_PREVIEW_IDENTITY || identity === DESKTOP_PYTHON_PREVIEW_IDENTITY;
+    identity === DESKTOP_PREVIEW_IDENTITY ||
+    identity === DESKTOP_PYTHON_PREVIEW_IDENTITY ||
+    identity === DESKTOP_TS_PREVIEW_IDENTITY;
   if (
     pythonProduct &&
     (identity !== DESKTOP_PYTHON_PREVIEW_IDENTITY || platform !== "darwin" || arch !== "arm64")
   )
     throw new Error("Python product packaging requires the macOS arm64 Preview candidate.");
-  return { pythonProduct, identity, preview };
+  if (
+    tsProduct &&
+    (identity !== DESKTOP_TS_PREVIEW_IDENTITY || platform !== "darwin" || arch !== "arm64")
+  )
+    throw new Error("TS product packaging requires the macOS arm64 Preview candidate.");
+  return { pythonProduct, tsProduct, identity, preview };
 }
 
 export async function packageDesktop(
   args: readonly string[] = process.argv.slice(2),
 ): Promise<void> {
-  const { pythonProduct, identity, preview } = parseDesktopPackageArguments(args);
+  const { pythonProduct, tsProduct, identity, preview } = parseDesktopPackageArguments(args);
   const platform = packagePlatform(process.platform);
   const arch = packageArchitecture(process.arch);
   const signing = macosSigningOptions(process.env, process.platform, preview);
   const rendererEntry = join(appRoot, "dist", "renderer", "index.html");
   const nativeRuntime =
     process.platform === "darwin" && process.arch === "arm64"
-      ? join(appRoot, pythonProduct ? "out/python-product-runtime" : "native-runtime")
+      ? join(
+          appRoot,
+          tsProduct
+            ? "out/ts-product-runtime"
+            : pythonProduct
+              ? "out/python-product-runtime"
+              : "native-runtime",
+        )
       : undefined;
   const generatedIcons = await preparePackageIcons();
   const desktopIconBase = generatedIcons
@@ -133,6 +152,24 @@ export async function packageDesktop(
       !Object.entries(PYTHON_CANDIDATE).every(([key, value]) => marker[key] === value)
     )
       throw new Error("Python candidate resources are incomplete or mismatched.");
+    if (tsProduct) {
+      const tsMarker: unknown = JSON.parse(
+        await readFile(join(nativeRuntime, "ts-control.json"), "utf8"),
+      );
+      if (
+        !isRecord(tsMarker) ||
+        Object.keys(tsMarker).length !== Object.keys(TS_CANDIDATE).length ||
+        !Object.entries(TS_CANDIDATE).every(([key, value]) => tsMarker[key] === value)
+      )
+        throw new Error("TS candidate resources are incomplete or mismatched.");
+    } else {
+      try {
+        await access(join(nativeRuntime, "ts-control.json"));
+        throw new Error("TS composition requires the separate TS Preview identity.");
+      } catch (error) {
+        if (errorCode(error) !== "ENOENT") throw error;
+      }
+    }
   }
   if (workerCompanionSource !== undefined) {
     await validateMacOSWorkerHostApplication(workerCompanionSource, {
@@ -209,11 +246,13 @@ export async function packageDesktop(
     ignore: (candidatePath) => shouldIgnoreDesktopSource(appRoot, candidatePath),
     icon: desktopIconBase,
     name: identity.name,
-    out: pythonProduct
-      ? join(appRoot, "out", "python-product")
-      : identity === DESKTOP_PREVIEW_IDENTITY
-        ? join(appRoot, "out", "preview")
-        : join(appRoot, "out"),
+    out: tsProduct
+      ? join(appRoot, "out", "ts-product")
+      : pythonProduct
+        ? join(appRoot, "out", "python-product")
+        : identity === DESKTOP_PREVIEW_IDENTITY
+          ? join(appRoot, "out", "preview")
+          : join(appRoot, "out"),
     overwrite: true,
     platform,
     prune: false,

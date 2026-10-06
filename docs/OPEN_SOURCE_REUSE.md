@@ -1081,3 +1081,47 @@ retry-disabled transport (OpenAI 3.17.0 / Anthropic 1.8.0; existing notices and 
 One tool-less call uses no history and cannot acquire Agent capabilities. PostgreSQL 17 nullable
 message origin and partial unique indexes enforce the one-attempt/one-first-message boundary;
 existing Owner transactions and audit remain authoritative. No dependency or upstream source copy.
+
+## Retire singleton model settings (C28, 2026-10-05)
+
+Reuse C7 Owner preferences, PostgreSQL17.10, the existing connection AES-GCM cipher and
+OpenAI3.17.0/8c72a700. One transactional import receipt retains original files/keys without restart
+resurrection; Owner selects an official OpenAI transcription connection. No new dependency or
+source copied. See [decision and evidence](research/retire-singleton-model.md).
+
+## Workspace primary Bot (C26, 2026-10-05)
+
+Reuse PostgreSQL17.10 row/FK/CAS contracts, psycopg3.3.6 and Pydantic2.13.5, plus existing Owner
+identity/import/tombstone transactions, channel routing and workspace SSE polling. One SQL row
+provides a preference revision without granting Bot authority; no dependency or external source
+is added. See [decision and concurrency evidence](research/workspace-primary-bot.md).
+
+## TypeScript control-plane forwarding (P2, 2026-10-06)
+
+Keep the accepted Fastify5.12.5 framework and Server/Temporal authority split. Select released
+`@fastify/reply-from`12.6.5/5422fd6 (MIT) for HTTP streams with explicit zero retry; compare
+`@fastify/http-proxy`11.6.4/1bf6131 and the retained renderer proxy. Node22.23.2 HTTP/duplex APIs
+cover the narrow WS upgrade integration gap without another protocol implementation.
+Fastify5.12.5/reply-from12.6.5 are now installed exactly in the P2 workspace lock. Local raw-query/body,
+cookie/status/bytes, backpressure/abort, fixed-target/forged-header and mixed Python/SQL/Web/Desktop
+checks pass. The mixed→direct→mixed switch preserves the same session/data/public URL and one writer.
+Production closure excludes the WS test dependency/oracle. Direct HTTPS reuses Node24.21.0 TLS/X509
+and the existing Fastify HTTPS option, with bounded operator files/handshakes and no new dependency.
+Verified local CA HTTPS/WSS, real Python/SQL secure-cookie contracts and entry restart pass; production
+PKI/public deployment and hosted platform qualification are separate outstanding evidence.
+No upstream source copied; the adapter exits at Python retirement.
+Native coexistence reuses the same Desktop launcher/parent pipes, Node24.21.0, Python3.12.13,
+PostgreSQL supervisor/migrator and locked parser closure. The isolated TS Preview has passed cold
+staging, packaged API/paired-exit smoke and an actual Electron/safeStorage create/save/restart journey
+on macOS arm64. Signing and Work/Temporal are outside this API-only native evidence. No dependency
+or upstream source was added for supervision.
+Same-source macOS arm64 API-only startup/RSS/serial read overhead is now measured with the retained
+native launchers; [raw observations](research/typescript-control-plane-p2-overhead.json) preserve all
+trials. This does not establish active Temporal or public-network capacity.
+See [adapter evidence](research/typescript-control-plane-p0.md#p2-forwarding-adapter-review-2026-10-06)
+and [ADR-0050](decisions/0050-typescript-control-plane.md).
+
+The migration integration's [transitive proxy trust review](research/retained-developer-tools.md#express-proxy-trust-transitive-patch-2026-10-06)
+selects MIT proxy-addr2.0.8 / a11ad82545698af5c33e59f3ed0b52eab79bf610 for the retained
+MCP SDK1.30.0/Express5.2.1 example. It preserves the existing API/dependency closure, copies no
+source, and requires scoped HTTP, trust-regression and audit evidence before qualification.

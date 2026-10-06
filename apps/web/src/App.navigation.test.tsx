@@ -208,7 +208,8 @@ describe("Desktop workspace navigation continuity", () => {
       expect(composer(rendered.container)).toBe(input);
       expect(input.value).toBe("继续整理产品方案");
       expect(messages.scrollTop).toBe(84);
-      expect(api.getWorkspace).toHaveBeenCalledTimes(1);
+      // General settings reads its primary-Bot preference without remounting the workspace.
+      expect(api.getWorkspace).toHaveBeenCalledTimes(2);
       expect(api.subscribeToChannelEvents).toHaveBeenCalledTimes(1);
     } finally {
       await rendered.unmount();
@@ -514,8 +515,8 @@ it("opens model services in settings without discarding the conversation draft",
     await interact(() => buttonByLabel(rendered.container, "关闭设置").click());
     expect(rendered.container.querySelector(".settings-dialog")).toBeNull();
     expect(composer(rendered.container).value).toBe("保留对话草稿");
-    // One extra read by 模型服务 for its 「N 个 Bot 在用」 hint; the workspace is not remounted.
-    expect(api.getWorkspace).toHaveBeenCalledTimes(2);
+    // General reads the primary Bot; 模型服务 reads its usage hint. The workspace stays mounted.
+    expect(api.getWorkspace).toHaveBeenCalledTimes(3);
     expect(api.subscribeToWorkspaceEvents).toHaveBeenCalledTimes(1);
   } finally {
     await rendered.unmount();

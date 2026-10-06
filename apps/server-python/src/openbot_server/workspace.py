@@ -54,6 +54,8 @@ class PostgresWorkspace:
 
     async def snapshot(self, token):
         async with self.transactions.transaction(token) as db:
+            from .workspace_settings import current_workspace_settings, project
+            settings = project(await current_workspace_settings(db))
             # A single snapshot prevents counts/relationships from crossing concurrent commits.
             bots = await (await db.execute("SELECT id,name,role,status,computer_profile,"
                 "jsonb_build_object('appearance',configuration->'appearance','model',configuration->'model') AS configuration,created_at "
@@ -92,6 +94,7 @@ class PostgresWorkspace:
                 nodes=nodes, runs=[public(records[i]) for i in ids], approvals=[approval(r) for r in approvals],
                 artifacts=[artifact(r) for r in artifacts], progress=progress, runProgress=run_progress,
                 counts=dict(channels=counts['channels'],bots=counts['bots'],activeRuns=counts['active_runs'],connectedNodes=len(nodes)))
+            result.update(settings)
             if len(json.dumps(result,ensure_ascii=False).encode())>4*1024*1024:
                 raise StoreUnavailable('workspace_projection_limit')
             return result

@@ -4,11 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate": "node generate.ts",
-    "check": "node generate.ts --check",
+    "generate": "npm run build --workspace @openbot/protocol && node generate.ts",
+    "check": "npm run build --workspace @openbot/protocol && node generate.ts --check",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
+    "@openbot/protocol": "0.0.0",
     "openapi-typescript": "7.13.0",
     "typescript": "5.9.3"
   }

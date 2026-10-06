@@ -4,18 +4,29 @@ import { lstat, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { launchThroughDisposableParent, loadDesktopModules } from "./python-product-probe.ts";
+import {
+  confirmProcessesStopped,
+  launchThroughDisposableParent,
+  loadDesktopModules,
+} from "./python-product-probe.ts";
 
 const desktopDist = fileURLToPath(new URL("../dist/", import.meta.url));
 
 export async function smokePythonProduct(runtimeRoot: string) {
-  const { NativeServerController, launchPythonProductServer } =
+  const { NativeServerController, launchDesktopProductServer } =
     await loadDesktopModules(desktopDist);
   const root = await realpath(await mkdtemp(join(tmpdir(), "openbot-python-candidate-smoke-")));
   const dataRoot = join(root, "local-server");
   let cookie: string | undefined;
   let base: string | undefined;
   let testParentExit = false;
+  let productIds: readonly number[] = [];
+  const tsSelected = await lstat(join(runtimeRoot, "ts-control.json"))
+    .then(() => true)
+    .catch((error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") return false;
+      throw error;
+    });
   const problems: string[] = [];
   const diagnostics = channel("openbot.desktop.native-startup");
   // Do not collect child stderr, bootstrap data or any submitted credential.
@@ -45,10 +56,14 @@ export async function smokePythonProduct(runtimeRoot: string) {
     // Synthetic fixture only. Real Desktop keeps its existing safeStorage callbacks.
     encrypt: (value) => Buffer.from(value).toString("base64"),
     decrypt: (value) => Buffer.from(value, "base64").toString(),
-    launchServer: (env) =>
-      testParentExit
+    launchServer: async (env) => {
+      const managed = await (testParentExit
         ? launchThroughDisposableParent(runtimeRoot, desktopDist, env)
-        : launchPythonProductServer(runtimeRoot, env),
+        : launchDesktopProductServer(runtimeRoot, env));
+      productIds = managed.processIds;
+      assert.equal(productIds.length, tsSelected ? 2 : 1);
+      return managed;
+    },
     connect: authenticate,
     authenticate,
   });
@@ -73,6 +88,7 @@ export async function smokePythonProduct(runtimeRoot: string) {
     );
     await controller.stop();
     assert.equal(controller.getState().status, "idle");
+    await confirmProcessesStopped(productIds);
     assert.throws(() => process.kill(processId, 0));
     await assert.rejects(
       fetch(`http://127.0.0.1:${firstPort}/health`, { signal: AbortSignal.timeout(1000) }),
@@ -98,6 +114,19 @@ export async function smokePythonProduct(runtimeRoot: string) {
     await controller.stop();
     assert.throws(() => process.kill(restartedPostgres, 0));
     testParentExit = false;
+    if (tsSelected) {
+      // These are PIDs returned by this launch, never discovered from another profile.
+      for (const victim of [0, 1]) {
+        assert.equal((await controller.start()).status, "ready", problems.join("; "));
+        process.kill(productIds[victim]!, "SIGKILL");
+        await confirmProcessesStopped(productIds);
+        assert.equal(controller.getState().status, "failed");
+        await controller.stop();
+        await assert.rejects(readFile(join(dataRoot, "postgres/postmaster.pid")), {
+          code: "ENOENT",
+        });
+      }
+    }
     for (const name of ["browser.json", "command.json"]) {
       // A present execution configuration without Temporal must refuse API-only fallback.
       await writeFile(join(dataRoot, name), "{}", { mode: 0o600 });
@@ -113,6 +142,9 @@ export async function smokePythonProduct(runtimeRoot: string) {
     await assert.rejects(readFile(join(dataRoot, "postgres/postmaster.pid")), { code: "ENOENT" });
     return {
       parentEofStoppedActualApi: true,
+      parentEofStoppedOwnedProcessCount: tsSelected ? 2 : 1,
+      tsForwardingEntry: tsSelected,
+      eitherProductExitStoppedPair: tsSelected,
       unsafeDirectoryRefusedAndPostgresStopped: true,
       executionConfigurationWithoutEngineRefusedAndPostgresStopped: true,
       pythonProductHealth: true,

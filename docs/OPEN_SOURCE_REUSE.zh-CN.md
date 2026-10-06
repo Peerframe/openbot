@@ -597,3 +597,40 @@ Provider 与 `browser.maintenance@1` 携带安全整数或 null。
 Owner 于 2026-10-03 批准不再等待上游，生产改为 [yxflc11/openbot-agent-computer-upstream](https://github.com/yxflc11/openbot-agent-computer-upstream)
 `29a83c1932fb67398dd7a36fa80c473e0230a637`（`257c1280` 仅加贡献 `46eb7af8`；冲突及镜像验证见研究记录）。
 #730 保持开放，上游合并并审阅、验证后切回上游。保留 CopilotKit 归属、fork 根 LICENSE 和镜像 MIT 声明。
+
+## 移除单一模型设置（C28，2026-10-05）
+
+复用 C7 Owner 偏好、PostgreSQL17.10、现有连接 AES-GCM 加密及 OpenAI3.17.0/8c72a700。
+一次事务导入保留原文件和密钥，持久凭证防止重启恢复已删除的连接；Owner 单独选择官方
+OpenAI 转写连接。没有新增依赖或复制源码，见[决定与依据](research/retire-singleton-model.md)。
+
+## 工作区主 Bot（C26，2026-10-05）
+
+复用 PostgreSQL17.10 行锁、外键与版本检查、psycopg3.3.6、Pydantic2.13.5，以及已有 Owner
+创建、导入、删除事务、频道路由和工作区 SSE 轮询。单个 SQL 行提供独立偏好版本，不赋予
+Bot 新权限；没有新增依赖或外部源码，见[决定与并发依据](research/workspace-primary-bot.md)。
+
+## TypeScript 控制平面转发（P2，2026-10-06）
+
+保留已接受的 Fastify5.12.5 及 Server/Temporal 授权分工。选择已发布
+`@fastify/reply-from`12.6.5/5422fd6（MIT）处理 HTTP 流，显式零重试；比较
+`@fastify/http-proxy`11.6.4/1bf6131 和原 renderer 代理。
+Node22.23.2 HTTP/双向流 API 覆盖窄 WS upgrade 集成缺口，不再实现另一套协议。
+Fastify5.12.5/reply-from12.6.5 已按精确版本进入 P2 workspace lock。本机原始查询/body、cookie/状态/字节、
+背压/取消、固定目标/伪造头与真实 Python/SQL/Web/Desktop 混合检查通过。mixed→direct→mixed 切换保留同一个会话、
+数据、公开 URL，始终只有一个写入者。生产闭包排除 WS 测试依赖及 oracle。直接 HTTPS 复用 Node24.21.0 TLS/X509
+与现有 Fastify HTTPS 选项，对操作者文件和握手设限，没有新依赖。本机 CA HTTPS/WSS、真实 Python/SQL 安全 cookie
+契约及入口重启通过；生产 PKI/公开部署和托管平台仍是独立待验证证据。没有复制上游源码，Python 退役时去掉适配。
+原生共存复用 Desktop 启动器/父进程管道、Node24.21.0、Python3.12.13、PostgreSQL 监督器/迁移器和
+锁定的 parser 闭包。独立 TS Preview 已在 macOS arm64 通过冷 staging、包内 API/双进程退出 smoke，
+以及实际 Electron/safeStorage 创建、保存与重启流程。签名和 Work/Temporal 不在这份 API-only 原生证据范围内。
+监督器没有增加依赖，也没有复制上游源码。
+同源码 macOS arm64 API-only 启动/RSS/串行读取开销已使用保留的原生启动器实测；
+[原始观测](research/typescript-control-plane-p2-overhead.json)保留全部轮次，不证明运行中的 Temporal 或公开网络容量。
+见[适配依据](research/typescript-control-plane-p0.zh-CN.md#p2-转发适配审阅2026-10-06)
+和 [ADR-0050](decisions/0050-typescript-control-plane.zh-CN.md)。
+
+迁移整合的[间接代理信任依赖审阅](research/retained-developer-tools.md#express-proxy-trust-transitive-patch-2026-10-06)
+为保留的 MCP SDK1.30.0／Express5.2.1 示例选择 MIT proxy-addr2.0.8／
+`a11ad82545698af5c33e59f3ed0b52eab79bf610`。保留现有 API 和依赖闭包，不复制源码；
+通过对应 HTTP、信任回归和审计后才记为已验证。

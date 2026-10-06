@@ -185,16 +185,13 @@ export const browserResultSchema = z
   .strict();
 export type BrowserResult = z.infer<typeof browserResultSchema>;
 
-export interface BrowserSessionView {
-  id: string;
-  botId: string;
-  nodeId: string;
-  nodeName: string;
-  control: "available" | "mine" | "other" | "paused";
-  controlAvailable?: boolean;
-  controlExpiresAt?: string;
-  frame?: BrowserFrame;
-}
+/** Additive retained/Web projection; HTTP always reports whether control is available. */
+export type BrowserSessionView = Omit<
+  import("./browser-http.js").BrowserSessionHttp,
+  "controlAvailable"
+> & {
+  controlAvailable?: boolean | undefined;
+};
 
 export const browserMaintenanceResultSchema = z
   .object({

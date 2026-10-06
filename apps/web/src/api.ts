@@ -29,7 +29,6 @@ import type {
   Message,
   MessageReaction,
   ModelConnection,
-  ModelProviderId,
   ModelServicesSnapshot,
   NodeEnrollmentToken,
   NodeIdentitySummary,
@@ -56,6 +55,8 @@ import {
   type ApprovalSettings,
   type ApprovalSettingsInput,
   approvalSettingsSchema,
+  type UpdateBotAppearanceInput,
+  type BotAppearanceResult,
   type BrowserMaintenanceResult,
   browserMaintenanceResultSchema,
   type OwnerPreferences,
@@ -66,6 +67,12 @@ import {
   ownerSessionsResponseSchema,
   type ReviewedPluginCatalog,
   reviewedPluginCatalogSchema,
+  type TranscriptionSettings,
+  type TranscriptionSettingsInput,
+  transcriptionSettingsInputSchema,
+  transcriptionSettingsSchema,
+  workspacePrimaryBotSchema,
+  workspacePrimaryBotInputSchema,
 } from "@openbot/protocol";
 import { openEventStream, type RealtimeConnectionState } from "./event-stream";
 
@@ -78,14 +85,14 @@ interface ErrorPayload {
 
 export async function openBrowser(
   botId: string,
-): Promise<import("@openbot/protocol").BrowserSessionView> {
+): Promise<import("@openbot/protocol").BrowserSessionHttp> {
   return request(`/api/v1/bots/${encodeURIComponent(botId)}/browser`, { method: "POST" });
 }
 
 export async function browserCommand(
   sessionId: string,
   action: import("@openbot/protocol").BrowserAction,
-): Promise<import("@openbot/protocol").BrowserSessionView> {
+): Promise<import("@openbot/protocol").BrowserSessionHttp> {
   return request(`/api/v1/browser-sessions/${encodeURIComponent(sessionId)}/commands`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -358,21 +365,10 @@ export const auditCategories = [
   "other",
 ] as const;
 export type AuditCategory = (typeof auditCategories)[number];
-export interface AuditEvent {
-  id: string;
-  type: string;
-  /** Absent only from Servers that predate categories. */
+/** Absent only from Servers that predate categories; preserve the additive Web projection. */
+export type AuditEvent = Omit<import("@openbot/protocol").AuditEvent, "category"> & {
   category?: AuditCategory;
-  createdAt: string;
-  channelId?: string;
-  channelName?: string;
-  channelDeleted?: boolean;
-  botId?: string;
-  botName?: string;
-  botDeleted?: boolean;
-  runId?: string;
-  details: Record<string, string | number | boolean>;
-}
+};
 export async function listAuditEvents(
   options: { before?: string; category?: AuditCategory; signal?: AbortSignal } = {},
 ): Promise<{ events: AuditEvent[]; nextBefore?: string }> {
@@ -473,6 +469,18 @@ export async function getWorkspace(signal?: AbortSignal): Promise<WorkspaceSnaps
   return request<WorkspaceSnapshot>("/api/v1/workspace", signal ? { signal } : undefined);
 }
 
+export async function setWorkspacePrimaryBot(value: {
+  botId: string | null;
+  expectedRevision: number;
+}): Promise<import("@openbot/domain").WorkspacePrimaryBot> {
+  const result = await request<unknown>("/api/v1/workspace/primary-bot", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(workspacePrimaryBotInputSchema.parse(value)),
+  });
+  return workspacePrimaryBotSchema.parse(result);
+}
+
 export async function getModelServices(signal?: AbortSignal): Promise<ModelServicesSnapshot> {
   return request<ModelServicesSnapshot>("/api/v1/model-services", signal ? { signal } : undefined);
 }
@@ -544,47 +552,17 @@ export async function discoverConnectionModels(
 }
 
 /** One measured storage category (C21); `null` when the 服务电脑 cannot measure it here. */
-export interface StorageCategory {
-  sizeBytes: number;
-  fileCount?: number | undefined;
-}
+export type StorageCategory = import("@openbot/protocol").StorageCategory;
 
-export interface StorageUsage {
-  totalBytes: number;
-  measuredAt: string;
-  categories: {
-    channelFiles: StorageCategory;
-    trash: StorageCategory;
-    ownerTaskFiles: StorageCategory;
-    taskOutputs: StorageCategory | null;
-    retainedRunOutputs: StorageCategory | null;
-    other: StorageCategory;
-    database: StorageCategory;
-    workingComputerBrowserData: null;
+export type StorageUsage = Omit<import("@openbot/protocol").StorageUsage, "trash"> & {
+  trash: Omit<import("@openbot/protocol").StorageUsage["trash"], "referencedSizeBytes"> & {
+    referencedSizeBytes?: number;
   };
-  trash: {
-    fileCount: number;
-    sizeBytes: number;
-    referencedFileCount: number;
-    /** C22; absent on an older 服务电脑. */
-    referencedSizeBytes?: number | undefined;
-  };
-  topChannels: Array<{
-    id: string;
-    name: string;
-    deleted: boolean;
-    sizeBytes: number;
-    fileCount: number;
-  }>;
-  topChannelsLimit: number;
-}
+};
 
-export interface StorageSettings {
-  revision: number;
-  trashAutoPurgeDays: 30 | null;
+export type StorageSettings = Omit<import("@openbot/protocol").StorageSettings, "updatedAt"> & {
   updatedAt: string | null;
-  lastAutoPurgeAt: string | null;
-}
+};
 
 /** C21: measured logical bytes, never an estimate; any unmeasurable root refuses the whole read. */
 export async function getStorageUsage(signal?: AbortSignal): Promise<StorageUsage> {
@@ -703,16 +681,13 @@ export async function updateEmployeeProfileDetails(
  */
 export async function updateBotAppearance(
   botId: string,
-  input: { expectedRevision: number; appearance: BotAppearance },
-): Promise<{ bot: Bot; revision: number }> {
-  return request<{ bot: Bot; revision: number }>(
-    `/api/v1/bots/${encodeURIComponent(botId)}/appearance`,
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    },
-  );
+  input: UpdateBotAppearanceInput,
+): Promise<BotAppearanceResult> {
+  return request<BotAppearanceResult>(`/api/v1/bots/${encodeURIComponent(botId)}/appearance`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
 }
 
 export async function createEmployeeMemory(
@@ -848,7 +823,7 @@ export async function previewEmployeeImport(
     "/api/v1/employees/import/preview",
     {
       method: "POST",
-      headers: { "Content-Type": "application/vnd.openbot.employee+json" },
+      headers: { "Content-Type": "application/json" },
       body: file,
       ...(signal ? { signal } : {}),
     },
@@ -1577,34 +1552,24 @@ function isMessageCreatedEvent(
   );
 }
 
-export type ModelSettingsSummary =
-  | { status: "unavailable" }
-  | { status: "unconfigured"; revision: null }
-  | {
-      status: "configured";
-      provider: ModelProviderId;
-      baseUrl?: string;
-      verification?: "metadata" | "not_checked";
-      model: string;
-      revision: string;
-      agentEnabled?: boolean;
-    };
-export function getModelSettings(): Promise<ModelSettingsSummary> {
-  return request<ModelSettingsSummary>("/api/v1/settings/model");
+export type { TranscriptionSettings } from "@openbot/protocol";
+export async function getTranscriptionSettings(
+  signal?: AbortSignal,
+): Promise<TranscriptionSettings> {
+  return transcriptionSettingsSchema.parse(
+    await request("/api/v1/settings/transcription", signal ? { signal } : {}),
+  );
 }
-export function saveModelSettings(input: {
-  agentEnabled: boolean;
-  provider: ModelProviderId;
-  baseUrl?: string;
-  model: string;
-  apiKey: string;
-  revision: string | null;
-}): Promise<ModelSettingsSummary> {
-  return request<ModelSettingsSummary>("/api/v1/settings/model", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
+export async function saveTranscriptionSettings(
+  input: TranscriptionSettingsInput,
+): Promise<TranscriptionSettings> {
+  return transcriptionSettingsSchema.parse(
+    await request("/api/v1/settings/transcription", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(transcriptionSettingsInputSchema.parse(input)),
+    }),
+  );
 }
 
 export async function getKnowledgeProposals(botId: string): Promise<KnowledgeProposal[]> {
@@ -1626,16 +1591,4 @@ export async function reviewKnowledgeProposal(
       body: JSON.stringify(input),
     },
   );
-}
-
-export function discoverModelSettings(
-  input: { provider: ModelProviderId; baseUrl: string; apiKey: string },
-  signal?: AbortSignal,
-): Promise<{ models: string[] }> {
-  return request("/api/v1/settings/model/models", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-    ...(signal ? { signal } : {}),
-  });
 }

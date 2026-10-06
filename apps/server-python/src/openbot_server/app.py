@@ -42,7 +42,8 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
                allowed_origins: tuple[str, ...] = (), auth: OwnerAuthentication | None = None,
                identity: IdentityStore | None = None, conversations: ConversationStore | None = None,
                profiles: ProfileStore | None = None, tasks: TaskStore | None = None,
-               run_commands: RunCommandStore | None = None, work=None, product=None) -> FastAPI:
+               run_commands: RunCommandStore | None = None, work=None, product=None,
+               proxy_address: str | None = None, public_origin: str | None = None) -> FastAPI:
     if not owner_name or any(origin == "*" or origin == "null" for origin in allowed_origins):
         raise ValueError("An Owner name and explicit origins are required.")
     if auth is not None and auth.owner_name != owner_name:
@@ -77,6 +78,11 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
 
     app = FastAPI(title="OpenBot control-plane reference", version="0.0.0",
                   docs_url=None, redoc_url=None, lifespan=lifespan)
+    if (proxy_address is None) != (public_origin is None):
+        raise ValueError("Private proxy peer and public origin must be configured together.")
+    if proxy_address is not None:
+        from .proxy_peer import PrivateProxyPeer
+        app.add_middleware(PrivateProxyPeer, address=proxy_address, public_origin=public_origin)
     app.add_middleware(CORSMiddleware, allow_origins=list(allowed_origins),
                        allow_credentials=True, expose_headers=["X-OpenBot-Next-Before"], allow_methods=(["GET", "POST", "PATCH", "PUT", "DELETE"] if product else ["GET", "POST", "PATCH"] if profiles else
                                       ["GET", "POST"] if auth or identity or conversations or tasks or run_commands or work else ["GET"]),

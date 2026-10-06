@@ -164,6 +164,8 @@ class PostgresEmployeePortability:
         existing = await _rows(connection, "SELECT id FROM employee_import_receipts WHERE package_id=%s LIMIT 1", (payload["packageId"],))
         if existing:
             raise ControlError(409, "employee_package_already_activated")
+        from .workspace_settings import current_workspace_settings, default_primary_bot
+        workspace = await current_workspace_settings(connection, update=True)
         now = await _now(connection)
         bot_id = str(uuid4())
         cursor = await connection.execute(
@@ -172,6 +174,7 @@ class PostgresEmployeePortability:
             (bot_id, name, payload["employee"]["role"], payload["employee"].get("description", ""), payload["configuration"]["recommendedExecutionProfile"],
              Jsonb({"appearance": payload["employee"]["appearance"]} if "appearance" in payload["employee"] else {}), now, now))
         bot = await cursor.fetchone()
+        await default_primary_bot(connection, workspace, bot_id, reason='imported')
         by_slug, inserted = {}, set()
         # Sort shared immutable definitions to avoid deadlocks across independently imported graphs.
         for portable in sorted(payload["skills"], key=lambda item: (item["slug"], item["version"])):

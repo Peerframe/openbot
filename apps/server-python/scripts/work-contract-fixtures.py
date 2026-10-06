@@ -1,19 +1,34 @@
 """Deterministic public DTO/HTTP samples for the real TypeScript consumer."""
 
-from copy import deepcopy
 import json
-from pathlib import Path
 import sys
+from copy import deepcopy
+from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from pydantic import ValidationError
+from openbot_server.app import create_app
 from openbot_server.authority import AuthenticationRequired
-from openbot_server.work_models import WorkSnapshot, CreateTask
-from openbot_server.work_routes import register_work_routes
+from openbot_server.work_models import (
+    CreateTask,
+    DecideAction,
+    EmptyCommand,
+    RequestCorrection,
+    RequestReconciliation,
+    WorkAction,
+    WorkArtifact,
+    WorkCorrection,
+    WorkError,
+    WorkEvent,
+    WorkReconciliation,
+    WorkRun,
+    WorkSnapshot,
+    WorkUsage,
+)
+from openbot_server.work_native_scope import NativeTaskScope
 from openbot_server.work_values import WorkConflict, WorkNotFound
+from pydantic import ValidationError
 
 
 def snapshot() -> dict:
@@ -44,7 +59,9 @@ def snapshot() -> dict:
                 "evidence": None,
             }
         ],
-        "events": [{"revision": 1, "kind": "observation", "payload": {"summary": "unknown"}}],
+        "events": [
+            {"revision": 1, "kind": "observation", "payload": {"summary": "unknown"}}
+        ],
         "eventsTruncated": False,
     }
 
@@ -83,11 +100,16 @@ def fixtures() -> dict:
     for name, value in cases:
         try:
             serialized = WorkSnapshot.model_validate(value).model_dump(mode="json")
-            results.append({"name": name, "input": value, "valid": True, "serialized": serialized})
+            results.append(
+                {"name": name, "input": value, "valid": True, "serialized": serialized}
+            )
         except ValidationError:
             results.append({"name": name, "input": value, "valid": False})
 
     class Writer:
+        async def verify_schema(self):
+            pass
+
         async def snapshot(self, token, task_id):
             if task_id == "unauthorized":
                 raise AuthenticationRequired()
@@ -97,36 +119,55 @@ def fixtures() -> dict:
                 raise WorkConflict("task_changed")
             return snapshot()
 
-        async def create(self, token, *, bot_id, objective, token_limit, request_key, **kwargs):
+        async def create(
+            self, token, *, bot_id, objective, token_limit, request_key, **kwargs
+        ):
             assert token == "fixture-session"
             if request_key == "conflict":
                 raise WorkConflict("private create diagnostic")
             return snapshot() | {
                 "botId": bot_id,
                 "objective": objective,
-                "usage": {"tokenLimit": token_limit, "reservedTokens": 0, "spentTokens": 0},
+                "usage": {
+                    "tokenLimit": token_limit,
+                    "reservedTokens": 0,
+                    "spentTokens": 0,
+                },
             }
 
         async def cancel(self, token, task_id):
             if task_id in ("missing", "conflict"):
                 return await self.snapshot(token, task_id)
-            return snapshot() | {"id": task_id, "cancelRequested": True, "authorityActive": False}
+            return snapshot() | {
+                "id": task_id,
+                "cancelRequested": True,
+                "authorityActive": False,
+            }
 
     class Reader:
+        async def verify_schema(self):
+            pass
+
         async def read(self, token, resource):
             from types import SimpleNamespace
 
-            return SimpleNamespace(expires_at="future" if token == "fixture-session" else None)
+            return SimpleNamespace(
+                expires_at="future" if token == "fixture-session" else None
+            )
 
-    app = FastAPI()
-    register_work_routes(
-        app,
-        Writer(),
+    app = create_app(
         Reader(),
+        owner_name="Fixture Owner",
+        work=Writer(),
         secure_cookies=True,
         allowed_origins=("https://openbot.invalid",),
     )
-    create = {"botId": "bot-one", "objective": "Read 文档", "tokenLimit": 10, "requestKey": "key"}
+    create = {
+        "botId": "bot-one",
+        "objective": "Read 文档",
+        "tokenLimit": 10,
+        "requestKey": "key",
+    }
     identities = [f"abcdefab-1234-4234-8234-{index:012x}" for index in range(33)]
     scope = {
         "version": 1,
@@ -147,7 +188,10 @@ def fixtures() -> dict:
         ("null-objective", create | {"objective": None}),
         ("empty-objective", create | {"objective": ""}),
         ("unknown-input", create | {"unexpected": True}),
-        ("missing-key", {key: value for key, value in create.items() if key != "requestKey"}),
+        (
+            "missing-key",
+            {key: value for key, value in create.items() if key != "requestKey"},
+        ),
         ("unicode-boundary", create | {"botId": "🧪" * 128}),
         ("unicode-overflow", create | {"botId": "🧪" * 129}),
     ]
@@ -158,7 +202,10 @@ def fixtures() -> dict:
         ("collaborator-boundary", {"collaboratorBotIds": identities[:32]}),
         ("collaborator-overflow", {"collaboratorBotIds": identities}),
         ("duplicate-attachment", {"attachmentIds": [identities[0], identities[0]]}),
-        ("case-duplicate-attachment", {"attachmentIds": [identities[0], identities[0].upper()]}),
+        (
+            "case-duplicate-attachment",
+            {"attachmentIds": [identities[0], identities[0].upper()]},
+        ),
         (
             "case-duplicate-collaborator",
             {"collaboratorBotIds": [identities[0], identities[0].upper()]},
@@ -172,14 +219,18 @@ def fixtures() -> dict:
     for name, value in inputs:
         try:
             serialized = CreateTask.model_validate(value).model_dump(mode="json")
-            requests.append({"name": name, "input": value, "valid": True, "serialized": serialized})
+            requests.append(
+                {"name": name, "input": value, "valid": True, "serialized": serialized}
+            )
         except ValidationError:
             requests.append({"name": name, "input": value, "valid": False})
     with TestClient(app, base_url="https://openbot.invalid") as client:
         responses = []
         for name in ("task-one", "unauthorized", "missing", "conflict"):
             response = client.get(f"/api/v1/tasks/{name}")
-            responses.append({"id": name, "status": response.status_code, "body": response.json()})
+            responses.append(
+                {"id": name, "status": response.status_code, "body": response.json()}
+            )
         commands = []
         for operation, identity, payload, origin, token in (
             ("create", "null-scope", create | {"scope": None}, True, True),
@@ -203,10 +254,18 @@ def fixtures() -> dict:
             ("cancel", "unauthorized", {}, True, False),
             ("cancel", "x" * 129, {}, True, True),
         ):
-            headers = {"Origin": "https://openbot.invalid" if origin else "https://other.invalid"}
+            headers = {
+                "Origin": "https://openbot.invalid"
+                if origin
+                else "https://other.invalid"
+            }
             if token:
                 headers["Cookie"] = "__Host-openbot_session=fixture-session"
-            path = "/api/v1/tasks" if operation == "create" else f"/api/v1/tasks/{identity}/cancel"
+            path = (
+                "/api/v1/tasks"
+                if operation == "create"
+                else f"/api/v1/tasks/{identity}/cancel"
+            )
             response = client.post(path, json=payload, headers=headers)
             commands.append(
                 {
@@ -217,8 +276,132 @@ def fixtures() -> dict:
                     "body": response.json(),
                 }
             )
-    return {"cases": results, "responses": responses, "requests": requests, "commands": commands}
+    return {
+        "cases": results,
+        "responses": responses,
+        "requests": requests,
+        "commands": commands,
+        "wireCases": wire_cases(create, scope),
+    }
+
+
+def wire_cases(create, scope):
+    """Compare TS-owned DTOs with retained Python validation, including normalization.
+
+    These are model/registered-route fixtures, not PostgreSQL or Temporal acceptance. The
+    configurable-base-URL suite separately runs against the real disposable product process.
+    """
+    value = snapshot()
+    reconciliation = {
+        "id": "reconciliation",
+        "actionId": "action-one",
+        "sequence": 1,
+        "requestedBy": "owner",
+        "reason": "Review",
+        "createdAt": "now",
+        "delivered": False,
+        "outcome": None,
+    }
+    correction = {
+        "id": "correction",
+        "taskId": "task-one",
+        "runId": "run-one",
+        "sequence": 1,
+        "requestedBy": "owner",
+        "instruction": "Review",
+        "generation": 1,
+        "createdAt": "now",
+    }
+    samples = {
+        CreateTask: create,
+        NativeTaskScope: scope,
+        EmptyCommand: {},
+        DecideAction: {"intentDigest": "a" * 64, "approved": True},
+        RequestReconciliation: {
+            "intentDigest": "a" * 64,
+            "requestKey": "key",
+            "expectedSequence": 0,
+            "reason": "Review",
+        },
+        RequestCorrection: {
+            "runId": "run-one",
+            "requestKey": "key",
+            "expectedSequence": 0,
+            "instruction": "Review",
+        },
+        WorkCorrection: correction,
+        WorkReconciliation: reconciliation,
+        WorkError: {"detail": "Error"},
+        WorkUsage: value["usage"],
+        WorkRun: value["runs"][0],
+        WorkAction: value["actions"][0],
+        WorkArtifact: {
+            "id": "artifact",
+            "runId": "run-one",
+            "name": "evidence",
+            "mediaType": "text/plain",
+            "sha256": "a" * 64,
+            "sizeBytes": 1,
+            "downloadUrl": "/api/v1/artifacts/artifact",
+        },
+        WorkEvent: value["events"][0],
+        WorkSnapshot: value,
+    }
+    cases = []
+    for model, valid in samples.items():
+        candidates = [("valid", valid), ("unknown-field", valid | {"extra": True})]
+        for key, item in valid.items():
+            candidates.append(
+                (f"missing-{key}", {k: v for k, v in valid.items() if k != key})
+            )
+            candidates.append((f"null-{key}", valid | {key: None}))
+            if type(item) is bool:
+                candidates.append((f"coerced-{key}", valid | {key: "true"}))
+            if type(item) is int:
+                candidates.extend(
+                    [
+                        (f"fractional-{key}", valid | {key: 0.5}),
+                        (f"boolean-{key}", valid | {key: True}),
+                        (f"negative-{key}", valid | {key: -1}),
+                    ]
+                )
+        if model is NativeTaskScope:
+            identity = scope["attachmentIds"][0]
+            for name, ids in (
+                ("uppercase", [identity.upper()]),
+                ("compact", [identity.replace("-", "")]),
+                ("urn", ["urn:uuid:" + identity]),
+                ("braces", ["{" + identity + "}"]),
+                ("sort", [scope["collaboratorBotIds"][0], identity]),
+                ("duplicate", [identity, identity.upper()]),
+                ("invalid", ["not-a-uuid"]),
+            ):
+                candidates.append((name, valid | {"attachmentIds": ids}))
+        if model in (RequestCorrection, WorkCorrection):
+            for name, text in (
+                ("empty", ""),
+                ("whitespace", "\x1c\x85"),
+                ("nul", "a\0b"),
+                ("surrogate", "\ud800"),
+                ("utf8-boundary", "🧪" * 1024),
+                ("utf8-overflow", "🧪" * 1025),
+                ("preserve-spaces", "  review  "),
+            ):
+                candidates.append((name, valid | {"instruction": text}))
+        if model is WorkUsage:
+            candidates.append(("large-integer", valid | {"spentTokens": 2**53}))
+        for name, candidate in candidates:
+            case = {"schema": model.__name__, "name": name, "input": candidate}
+            try:
+                case.update(
+                    valid=True,
+                    serialized=model.model_validate(candidate).model_dump(mode="json"),
+                )
+            except (ValidationError, ValueError):
+                case["valid"] = False
+            cases.append(case)
+    return cases
 
 
 if __name__ == "__main__":
-    print(json.dumps(fixtures(), ensure_ascii=False, allow_nan=False))
+    print(json.dumps(fixtures(), ensure_ascii=True, allow_nan=False))

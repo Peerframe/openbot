@@ -1,5 +1,54 @@
-// Generated from Python Work HTTP requests, responses and errors. Run npm run contracts:generate.
+// Generated from @openbot/protocol Work HTTP contracts. Run npm run contracts:generate.
+import type { WorkJsonValue } from "@openbot/protocol";
 export interface paths {
+  "/api/v1/actions/{action_id}/decision": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["decideWorkAction"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/actions/{action_id}/reconcile": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["requestWorkReconciliation"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/artifacts/{artifact_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["downloadWorkArtifact"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/tasks": {
     parameters: {
       query?: never;
@@ -9,7 +58,6 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Create */
     post: operations["createWorkTask"];
     delete?: never;
     options?: never;
@@ -24,7 +72,6 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** Read */
     get: operations["getWorkTask"];
     put?: never;
     post?: never;
@@ -43,8 +90,39 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Cancel */
     post: operations["cancelWorkTask"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tasks/{task_id}/corrections": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["correctWorkTask"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tasks/{task_id}/scope": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getNativeWorkTaskScope"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -55,253 +133,177 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
-    /** CreateTask */
+    __shared: {
+      $defs: {
+        schema0: WorkJsonValue;
+      };
+    };
     CreateTask: {
-      /** Botid */
       botId: string;
-      /** Objective */
       objective: string;
-      /** Requestkey */
       requestKey: string;
-      /** @default null */
       scope?: components["schemas"]["NativeTaskScope"] | null;
-      /** Tokenlimit */
       tokenLimit: number;
     };
-    /** DecideAction */
     DecideAction: {
-      /** Approved */
       approved: boolean;
-      /** Intentdigest */
       intentDigest: string;
     };
-    /** EmptyCommand */
     EmptyCommand: Record<string, never>;
-    /** HTTPValidationError */
-    HTTPValidationError: {
-      /** Detail */
-      detail?: components["schemas"]["ValidationError"][];
-    };
-    JsonValue: unknown;
-    /** NativeTaskScope */
     NativeTaskScope: {
-      /** Attachmentids */
       attachmentIds: string[];
-      /** Collaboratorbotids */
       collaboratorBotIds: string[];
-      /** Knowledge */
       knowledge: boolean;
-      /** Plugins */
       plugins: boolean;
-      /** Version */
-      version: number;
-      /** Web */
+      /** @constant */
+      version: 1;
       web: boolean;
     };
-    /** RequestCorrection */
+    NativeTaskScopeResponse: {
+      scope: {
+        attachmentIds: string[];
+        attachments: {
+          /** Format: uuid */
+          id: string;
+          /** @enum {string} */
+          mediaType:
+            | "text/plain"
+            | "image/png"
+            | "image/jpeg"
+            | "application/pdf"
+            | "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            | "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            | "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            | "application/vnd.oasis.opendocument.text"
+            | "application/vnd.oasis.opendocument.spreadsheet"
+            | "application/vnd.oasis.opendocument.presentation"
+            | "audio/mpeg"
+            | "audio/wav"
+            | "audio/mp4"
+            | "audio/webm"
+            | "video/mp4"
+            | "video/webm";
+          metadataSha256: string;
+          name: string;
+          sha256: string;
+          sizeBytes: number;
+        }[];
+        collaboratorBotIds: string[];
+        knowledge: boolean;
+        plugins: boolean;
+        sha256: string;
+        /** @constant */
+        version: 1;
+        web: boolean;
+      } | null;
+    };
     RequestCorrection: {
-      /** Expectedsequence */
       expectedSequence: number;
-      /** Instruction */
       instruction: string;
-      /** Requestkey */
       requestKey: string;
-      /** Runid */
       runId: string;
     };
-    /** RequestReconciliation */
     RequestReconciliation: {
-      /** Expectedsequence */
       expectedSequence: number;
-      /** Intentdigest */
       intentDigest: string;
-      /** Reason */
       reason: string;
-      /** Requestkey */
       requestKey: string;
     };
-    /** ValidationError */
-    ValidationError: {
-      /** Context */
-      ctx?: Record<string, never>;
-      /** Input */
-      input?: unknown;
-      /** Location */
-      loc: (string | number)[];
-      /** Message */
-      msg: string;
-      /** Error Type */
-      type: string;
-    };
-    /** WorkAction */
     WorkAction: {
-      /** Actualtokens */
       actualTokens: number | null;
-      /**
-       * Decision
-       * @enum {string}
-       */
+      /** @enum {string} */
       decision: "not_required" | "pending" | "approved" | "denied";
-      /** Evidence */
       evidence: {
         [key: string]: string;
       } | null;
-      /** Expiresat */
       expiresAt: string;
-      /** Id */
       id: string;
-      /** Intent */
       intent: {
-        [key: string]: components["schemas"]["JsonValue"];
+        [key: string]: components["schemas"]["__shared"]["$defs"]["schema0"];
       };
-      /** Intentdigest */
       intentDigest: string;
+      /** @default null */
       reconciliation?: components["schemas"]["WorkReconciliation"] | null;
-      /** Reservedtokens */
       reservedTokens: number;
-      /** Runid */
       runId: string;
-      /**
-       * Status
-       * @enum {string}
-       */
+      /** @enum {string} */
       status: "proposed" | "admitted" | "unknown" | "applied" | "not_applied" | "superseded";
     };
-    /** WorkArtifact */
     WorkArtifact: {
-      /** Downloadurl */
       downloadUrl: string;
-      /** Id */
       id: string;
-      /** Mediatype */
       mediaType: string;
-      /** Name */
       name: string;
-      /** Runid */
       runId: string;
-      /** Sha256 */
       sha256: string;
-      /** Sizebytes */
       sizeBytes: number;
     };
-    /** WorkCorrection */
     WorkCorrection: {
-      /** Createdat */
       createdAt: string;
-      /** Generation */
       generation: number;
-      /** Id */
       id: string;
-      /** Instruction */
       instruction: string;
-      /**
-       * Requestedby
-       * @constant
-       */
+      /** @constant */
       requestedBy: "owner";
-      /** Runid */
       runId: string;
-      /** Sequence */
       sequence: number;
-      /** Taskid */
       taskId: string;
     };
-    /** WorkError */
     WorkError: {
-      /** Detail */
       detail:
         | string
         | {
-            [key: string]: components["schemas"]["JsonValue"];
+            [key: string]: components["schemas"]["__shared"]["$defs"]["schema0"];
           }[];
     };
-    /** WorkEvent */
     WorkEvent: {
-      /** Kind */
       kind: string;
-      /** Payload */
       payload: {
-        [key: string]: components["schemas"]["JsonValue"];
+        [key: string]: components["schemas"]["__shared"]["$defs"]["schema0"];
       };
-      /** Revision */
       revision: number;
     };
-    /** WorkReconciliation */
+    WorkHttpError: {
+      error: string;
+    };
     WorkReconciliation: {
-      /** Actionid */
       actionId: string;
-      /** Createdat */
       createdAt: string;
-      /** Delivered */
       delivered: boolean;
-      /** Id */
       id: string;
-      /** Outcome */
       outcome: ("resolved" | "unresolved") | null;
-      /** Reason */
       reason: string;
-      /**
-       * Requestedby
-       * @constant
-       */
+      /** @constant */
       requestedBy: "owner";
-      /** Sequence */
       sequence: number;
     };
-    /** WorkRun */
     WorkRun: {
-      /** Id */
       id: string;
-      /** Ordinal */
       ordinal: number;
-      /**
-       * Status
-       * @enum {string}
-       */
+      /** @enum {string} */
       status: "queued" | "running" | "completed" | "cancelled" | "failed";
     };
-    /** WorkSnapshot */
     WorkSnapshot: {
-      /** Actions */
       actions: components["schemas"]["WorkAction"][];
-      /** Artifacts */
       artifacts: components["schemas"]["WorkArtifact"][];
-      /** Attention */
       attention: ("approval" | "reconciliation" | "budget") | null;
-      /** Authorityactive */
       authorityActive: boolean;
-      /** Botid */
       botId: string;
-      /** Cancelrequested */
       cancelRequested: boolean;
-      /** Events */
       events: components["schemas"]["WorkEvent"][];
-      /** Eventstruncated */
       eventsTruncated: boolean;
-      /** Id */
       id: string;
-      /** Objective */
       objective: string;
-      /** Resultsummary */
       resultSummary: string | null;
-      /** Revision */
       revision: number;
-      /** Runs */
       runs: components["schemas"]["WorkRun"][];
-      /**
-       * Status
-       * @enum {string}
-       */
+      /** @enum {string} */
       status: "queued" | "open" | "completed" | "cancelled" | "failed";
       usage: components["schemas"]["WorkUsage"];
     };
-    /** WorkUsage */
     WorkUsage: {
-      /** Reservedtokens */
       reservedTokens: number;
-      /** Spenttokens */
       spentTokens: number;
-      /** Tokenlimit */
       tokenLimit: number;
     };
   };
@@ -313,6 +315,296 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  decideWorkAction: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        action_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["DecideAction"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkSnapshot"];
+        };
+      };
+      /** @description Product error */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      408: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+    };
+  };
+  requestWorkReconciliation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        action_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RequestReconciliation"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkReconciliation"];
+        };
+      };
+      /** @description Product error */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      408: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+    };
+  };
+  downloadWorkArtifact: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        artifact_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/octet-stream": string;
+        };
+      };
+      /** @description Product error */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      408: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+    };
+  };
   createWorkTask: {
     parameters: {
       query?: never;
@@ -326,7 +618,7 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Successful Response */
+      /** @description Successful response */
       202: {
         headers: {
           [name: string]: unknown;
@@ -335,67 +627,76 @@ export interface operations {
           "application/json": components["schemas"]["WorkSnapshot"];
         };
       };
-      /** @description Unauthorized */
+      /** @description Product error */
       401: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
-      /** @description Forbidden */
+      /** @description Product error */
       403: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
-      /** @description Not Found */
+      /** @description Product error */
       404: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
-      /** @description Request Timeout */
+      /** @description Product error */
       408: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
-      /** @description Conflict */
+      /** @description Product error */
       409: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
-      /** @description Request Entity Too Large */
+      /** @description Product error */
       413: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Product error */
       422: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
     };
@@ -411,7 +712,7 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Successful Response */
+      /** @description Successful response */
       200: {
         headers: {
           [name: string]: unknown;
@@ -420,40 +721,76 @@ export interface operations {
           "application/json": components["schemas"]["WorkSnapshot"];
         };
       };
-      /** @description Unauthorized */
+      /** @description Product error */
       401: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
-      /** @description Not Found */
+      /** @description Product error */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
       404: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
-      /** @description Conflict */
+      /** @description Product error */
+      408: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
       409: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Product error */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
       422: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
     };
@@ -473,7 +810,7 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Successful Response */
+      /** @description Successful response */
       200: {
         headers: {
           [name: string]: unknown;
@@ -482,67 +819,268 @@ export interface operations {
           "application/json": components["schemas"]["WorkSnapshot"];
         };
       };
-      /** @description Unauthorized */
+      /** @description Product error */
       401: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
-      /** @description Forbidden */
+      /** @description Product error */
       403: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
-      /** @description Not Found */
+      /** @description Product error */
       404: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
-      /** @description Request Timeout */
+      /** @description Product error */
       408: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
-      /** @description Conflict */
+      /** @description Product error */
       409: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
-      /** @description Request Entity Too Large */
+      /** @description Product error */
       413: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Product error */
       422: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["WorkError"];
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+    };
+  };
+  correctWorkTask: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RequestCorrection"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkCorrection"];
+        };
+      };
+      /** @description Product error */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      408: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+    };
+  };
+  getNativeWorkTaskScope: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        task_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NativeTaskScopeResponse"];
+        };
+      };
+      /** @description Product error */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      408: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
+        };
+      };
+      /** @description Product error */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkHttpError"];
         };
       };
     };

@@ -244,13 +244,17 @@ export function OwnerPreferenceSettings() {
           ))}
         </select>
       </SettingRow>
-      <SettingRow title="新 Bot 默认模型" description="创建 Bot 时预先选好，之后可以单独改" />
+      <SettingRow
+        title="默认模型"
+        description="没有单独选模型的 Bot 使用这个模型，之后可以分别更改"
+      />
       <div className="settings-default-model">
         <ModelSelector
           value={model}
           onChange={setModel}
           onValidityChange={setModelValid}
           allowDefault
+          defaultLabel="不设默认模型"
           disabled={saving}
         />
         {changedModel ? (

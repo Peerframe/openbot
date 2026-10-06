@@ -8,7 +8,11 @@ export function collectProductionPackageGraph(
   lockfile: unknown,
   entryPoint = "apps/node",
 ): ProductionPackageGraph {
-  if (!["apps/node", "apps/server", "packages/python-node-runtime"].includes(entryPoint)) {
+  if (
+    !["apps/node", "apps/server", "apps/server-ts", "packages/python-node-runtime"].includes(
+      entryPoint,
+    )
+  ) {
     throw new Error("Unsupported production entry point.");
   }
   if (!isRecord(lockfile) || lockfile.lockfileVersion !== 3 || !isRecord(lockfile.packages)) {

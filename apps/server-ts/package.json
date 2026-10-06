@@ -1,0 +1,21 @@
+{
+  "name": "@openbot/server-ts",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run src",
+    "start": "node dist/serve.js"
+  },
+  "devDependencies": {
+    "ws": "8.21.3"
+  },
+  "dependencies": {
+    "@fastify/reply-from": "12.6.5",
+    "@openbot/protocol": "0.0.0",
+    "fastify": "5.12.5"
+  }
+}

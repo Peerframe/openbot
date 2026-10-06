@@ -1,17 +1,5 @@
-export const modelProviderIds = [
-  "openai",
-  "anthropic",
-  "gemini",
-  "deepseek",
-  "moonshot",
-  "openrouter",
-  "siliconflow",
-  "dashscope",
-  "zai",
-  "minimax",
-  "ark",
-] as const;
-export type ModelProviderId = (typeof modelProviderIds)[number];
+import type { ModelProviderId } from "@openbot/protocol";
+export { modelProviderIds, type ModelProviderId } from "@openbot/protocol";
 export interface ModelProviderPreset {
   id: ModelProviderId;
   name: string;

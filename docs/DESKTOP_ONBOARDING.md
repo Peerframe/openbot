@@ -260,15 +260,21 @@ Advanced users can install Server, PostgreSQL, Web and Worker components separat
 not in the initial Desktop role selector. Configure a trusted HTTPS reverse proxy for remote use;
 keep database credentials and Owner authentication server-side.
 
-For a new Python Server deployment, set `OPENBOT_CONTROL_MODEL_DIRECTORY` to a private persistent
-directory; the service owns its settings and encryption key there. To retain an existing settings
-file/key, use `OPENBOT_CONTROL_MODEL_SETTINGS_PATH` and `OPENBOT_CONTROL_MODEL_ENCRYPTION_KEY`
-together instead. Do not combine that pair with the directory mode. Keep existing encryption keys
-with the recovery material; losing them makes saved credentials unreadable. See
-[Server deployment](SERVER_CONTAINER.md) for the complete environment. Run one Server writer per settings store. The API is
-Owner-only `GET`/`POST /api/v1/settings/model`, with the existing mutation-origin checks; POST
-requires `provider`, `model`, `apiKey`, and the last `revision` (null for initial configuration).
-`agentEnabled` defaults to false. Only Owner opt-in enables inference for newly created tasks.
+Model services are Owner-controlled connections with encrypted credentials in PostgreSQL and a
+private connection encryption key (`OPENBOT_CONTROL_MODEL_CONNECTION_KEY_PATH`). Settings › General
+selects the C7 default model used when a Bot has no separate model. Settings › Model services ›
+Transcription selects one enabled official OpenAI connection; explicit audio processing uses
+`whisper-1`. GET/PUT `/api/v1/settings/transcription` accepts a nullable `connectionId` and the
+current Owner-preference `expectedRevision`; changing it performs no provider request.
+
+C28 removes `/api/v1/settings/model` and its discovery writer. On upgrade, the explicitly configured
+`OPENBOT_CONTROL_MODEL_DIRECTORY` or retained `OPENBOT_CONTROL_MODEL_SETTINGS_PATH`/original
+`OPENBOT_CONTROL_MODEL_ENCRYPTION_KEY` is imported once into model connections. The original files
+and keys remain untouched; disabled legacy configuration stays disabled, and an existing C7 default
+is preserved. The durable receipt prevents recreating a deleted connection and removes startup's
+dependency on the old file/key after import. New installations create no singleton model key.
+Keep old encryption keys with recovery material while retaining old ciphertext. See the
+[C28 decision](research/retire-singleton-model.md) and [Server deployment](SERVER_CONTAINER.md).
 
 CI packages Linux x64, Windows x64 and macOS arm64 and retains each successful platform's unsigned
 bundle for seven days. Download the commit-named `.tar.gz` from the successful

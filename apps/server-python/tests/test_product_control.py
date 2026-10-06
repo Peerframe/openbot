@@ -106,24 +106,18 @@ def test_attachment_boundaries_and_legacy_layout(tmp_path):
 
 def test_integrated_model_knowledge_schedule_and_reactions(fixture,tmp_path):
     from datetime import datetime,timedelta,timezone
-    from openbot_server.model_settings import ModelSettingsService
     from openbot_server.employee_knowledge import PostgresEmployeeKnowledge
     from openbot_server.automation_store import PostgresAutomations
     from openbot_server.conversation_interactions import PostgresConversationInteractions
     service=product(fixture,tmp_path)
-    service.model=ModelSettingsService(tmp_path.resolve()/'model')
     service.knowledge=PostgresEmployeeKnowledge(fixture['dsn'])
     service.automations=PostgresAutomations(fixture['dsn'],files=service.files)
     service.interactions=PostgresConversationInteractions(fixture['dsn'])
     headers={'Origin':'http://testserver'};bot=fixture['botId'];channel=fixture['channelId']
     with client(fixture,service) as api:
-        assert api.get('/api/v1/settings/model').json()['status']=='unconfigured'
-        saved=api.post('/api/v1/settings/model',headers=headers,json={'provider':'ark','model':'ep-fixture',
-            'apiKey':'synthetic-not-a-live-key','revision':None,'agentEnabled':False})
-        assert saved.status_code==200,saved.text
-        assert saved.json()['status']=='configured' and 'apiKey' not in saved.json()
-        assert api.post('/api/v1/settings/model',headers=headers,json={'provider':'ark','model':'ep-fixture',
-            'apiKey':'synthetic-not-a-live-key','revision':None}).status_code==409
+        for method in ('GET','PUT','POST'):
+            assert api.request(method,'/api/v1/settings/model',headers=headers,json={} if method!='GET' else None).status_code in (404,405)
+        assert api.post('/api/v1/settings/model/models',headers=headers,json={}).status_code in (404,405)
         base=f'/api/v1/bots/{bot}'
         memory=api.post(base+'/memories',headers=headers,json={'kind':'semantic','title':'Synthetic memory',
             'content':'Retained contract','sensitivity':'internal','portability':'never','modelUseEnabled':False})

@@ -171,6 +171,8 @@ class PostgresIdentityLifecycle:
     async def delete_bot(self, token, bot_id):
         _identity(bot_id)
         async with _storage_errors(), self._transactions.transaction(token) as db:
+            from .workspace_settings import current_workspace_settings, publish_primary_bot
+            workspace = await current_workspace_settings(db, update=True)
             row = await (await db.execute(
                 "SELECT name FROM bots WHERE id=%s AND deleted_at IS NULL FOR UPDATE", (bot_id,))).fetchone()
             if row is None:
@@ -207,6 +209,8 @@ class PostgresIdentityLifecycle:
             await _audit(db, "BOT_DELETED", {"actor": "owner", "name": row["name"], "deletedMessages": deleted,
                                              "redactedMessages": redacted, "memberships": len(memberships)},
                          bot_id=bot_id)
+            if workspace['primary_bot_id'] == bot_id:
+                await publish_primary_bot(db, workspace, None, reason='deleted')
             # directChannelId is internal: the route uses it for post-commit file cleanup.
             return {"deleted": True, "botId": bot_id, "directChannelId": direct["id"] if direct else None}
 

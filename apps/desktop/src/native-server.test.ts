@@ -222,3 +222,18 @@ it.skipIf(process.platform === "win32")(
     expect(opts.encrypt).not.toHaveBeenCalled();
   },
 );
+
+it.skipIf(process.platform === "win32")(
+  "new bootstrap encryption contains no singleton model key",
+  async () => {
+    const opts = await options();
+    await fakeResources(opts);
+    const controller = new NativeServerController(opts);
+    expect(await controller.start()).toEqual({ status: "failed", code: "credential_unavailable" });
+    const value = vi.mocked(opts.encrypt).mock.calls[0]?.[0];
+    expect(Object.keys(JSON.parse(value as string)).sort()).toEqual([
+      "databasePassword",
+      "ownerPassword",
+    ]);
+  },
+);

@@ -60,6 +60,7 @@ interface ModelSelectorProps {
   onValidityChange?: ((valid: boolean) => void) | undefined;
   refreshKey?: number | undefined;
   allowDefault?: boolean | undefined;
+  defaultLabel?: string | undefined;
   disabled?: boolean | undefined;
 }
 
@@ -109,14 +110,14 @@ export function ModelSelectionFields({
   disabled,
   onValidityChange,
   allowDefault = true,
+  defaultLabel = "使用默认模型",
 }: ModelSelectorProps & { snapshot: ModelServicesSnapshot }) {
   const connection = snapshot.connections.find((item) => item.id === value?.connectionId);
   const available = snapshot.connections.filter((item) => item.enabled && item.hasApiKey);
-  const legacy = allowDefault ? available.find((item) => item.source === "environment") : undefined;
   const valid =
     !disabled &&
     (value === null
-      ? Boolean(legacy)
+      ? allowDefault
       : Boolean(
           connection?.enabled &&
             connection.hasApiKey &&
@@ -131,7 +132,7 @@ export function ModelSelectionFields({
         <select
           value={value?.connectionId ?? ""}
           disabled={disabled}
-          required={!legacy}
+          required={!allowDefault}
           onChange={(event) => {
             const selected = available.find((item) => item.id === event.target.value);
             if (!selected) return onChange(null);
@@ -142,8 +143,8 @@ export function ModelSelectionFields({
             });
           }}
         >
-          <option value="" disabled={!legacy}>
-            {legacy ? `服务电脑默认 · ${legacy.defaultModel ?? legacy.name}` : "请选择已配置的服务"}
+          <option value="" disabled={!allowDefault}>
+            {allowDefault ? defaultLabel : "请选择已配置的服务"}
           </option>
           {unavailable ? (
             <option value={value.connectionId} disabled>
@@ -171,8 +172,8 @@ export function ModelSelectionFields({
           }
           disabled={disabled || unavailable}
         />
-      ) : legacy ? (
-        <p className="model-help">使用服务电脑环境配置的默认模型。</p>
+      ) : allowDefault ? (
+        <p className="model-help">默认模型由设置 › 通用指定；未配置时，Bot 暂时无法调用模型。</p>
       ) : null}
       {unavailable ? (
         <p className="model-inline-error" role="alert">

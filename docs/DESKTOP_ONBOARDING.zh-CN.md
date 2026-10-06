@@ -203,13 +203,18 @@ macOS arm64 Preview 包含本地 Server，但禁止携带正式 macOS Worker 配
 这些选项放在 GitHub 文档中，不进入 Desktop 首次用途选择。远程使用需配置受信任的 HTTPS 反向代理；
 数据库凭据和 Owner 认证留在服务端。
 
-新部署的 Python Server 使用 `OPENBOT_CONTROL_MODEL_DIRECTORY` 指向私有持久目录，服务在其中
-管理设置和加密密钥。保留既有设置文件和密钥时，改用成对的 `OPENBOT_CONTROL_MODEL_SETTINGS_PATH`
-与 `OPENBOT_CONTROL_MODEL_ENCRYPTION_KEY`，不能同时使用目录模式。原有密钥须与恢复材料一起
-保留；丢失后无法解密旧凭据。完整环境见 [Server 部署](SERVER_CONTAINER.zh-CN.md)。
-每个设置存储只允许一个 Server 写入。Owner 专用的 `GET`/`POST /api/v1/settings/model` 沿用来源检查；
-POST 接收 `provider`、`model`、`apiKey` 和最新 `revision`（首次为 null）。
-`agentEnabled` 默认 false，Owner 明确启用后才推理新建任务。
+模型服务使用 Owner 管理的连接：凭据在 PostgreSQL 中加密保存，连接加密密钥由
+`OPENBOT_CONTROL_MODEL_CONNECTION_KEY_PATH` 指定。设置 › 通用中的 C7 默认模型用于没有单独选模型的 Bot。
+设置 › 模型服务 › 语音转写指定一个已启用的官方 OpenAI 连接；只有明确选择转写时，才使用
+`whisper-1` 发送音频。`GET`/`PUT /api/v1/settings/transcription` 接收可为空的 `connectionId` 和
+当前 Owner 偏好的 `expectedRevision`；保存设置不调用模型服务。
+
+C28 移除了 `/api/v1/settings/model` 及其模型列表接口。升级时，显式指定的
+`OPENBOT_CONTROL_MODEL_DIRECTORY` 或旧 `OPENBOT_CONTROL_MODEL_SETTINGS_PATH` 与原
+`OPENBOT_CONTROL_MODEL_ENCRYPTION_KEY` 会导入模型连接一次。原文件与密钥保持不变；旧配置未启用时，
+导入的连接也不启用，现有 C7 默认模型不会被覆盖。持久迁移记录防止重建已删除的连接；导入成功后，
+启动不再依赖旧文件和旧密钥。新安装不生成单一模型专用密钥。保留旧密文时，也保留配套恢复密钥。
+见 [C28 决策](research/retire-singleton-model.md)及 [Server 部署](SERVER_CONTAINER.zh-CN.md)。
 
 CI 打包 Linux x64、Windows x64 和 macOS arm64，各端验证成功后保留未签名包七天。
 登录 GitHub 后，可从对应的成功 [CI 运行](https://github.com/yxflc11/openbot/actions/workflows/ci.yml)

@@ -48,12 +48,21 @@ export const DESKTOP_PYTHON_PREVIEW_IDENTITY: DesktopIdentity = Object.freeze({
   appBundleId: "dev.openbot.desktop.python-preview",
   executableName: "OpenBot Python Preview",
 });
+export const DESKTOP_TS_PREVIEW_IDENTITY: DesktopIdentity = Object.freeze({
+  name: "OpenBot TS Preview",
+  appBundleId: "dev.openbot.desktop.ts-preview",
+  executableName: "OpenBot TS Preview",
+});
 export function desktopPackageIdentity(args: readonly unknown[]): DesktopIdentity {
   if (args.length === 0) return DESKTOP_PACKAGE_IDENTITY;
   if (args.length === 1 && args[0] === "--preview") return DESKTOP_PREVIEW_IDENTITY;
   if (args.length === 2 && args.includes("--preview") && args.includes("--python-product"))
     return DESKTOP_PYTHON_PREVIEW_IDENTITY;
-  throw new Error("Desktop packaging accepts only --preview with optional --python-product.");
+  if (args.length === 2 && args.includes("--preview") && args.includes("--ts-product"))
+    return DESKTOP_TS_PREVIEW_IDENTITY;
+  throw new Error(
+    "Desktop packaging accepts only --preview with optional --python-product or --ts-product.",
+  );
 }
 /** Accepts only the exact identity constants by reference; copies are refused. */
 export function desktopPackagedManifest<T extends object>(
@@ -69,6 +78,12 @@ export function desktopPackagedManifest<T extends object>(
       ...manifest,
       name: "openbot-python-preview",
       productName: DESKTOP_PYTHON_PREVIEW_IDENTITY.name,
+    };
+  if (identity === DESKTOP_TS_PREVIEW_IDENTITY)
+    return {
+      ...manifest,
+      name: "openbot-ts-preview",
+      productName: DESKTOP_TS_PREVIEW_IDENTITY.name,
     };
   throw new Error("Desktop package identity is invalid.");
 }
@@ -90,7 +105,11 @@ export function desktopMacOSWorkerCompanionSource(
   identity: DesktopIdentity = DESKTOP_PACKAGE_IDENTITY,
 ): string | undefined {
   if (input === undefined || input === "") return undefined;
-  if (identity === DESKTOP_PREVIEW_IDENTITY || identity === DESKTOP_PYTHON_PREVIEW_IDENTITY)
+  if (
+    identity === DESKTOP_PREVIEW_IDENTITY ||
+    identity === DESKTOP_PYTHON_PREVIEW_IDENTITY ||
+    identity === DESKTOP_TS_PREVIEW_IDENTITY
+  )
     throw new Error("Desktop Preview cannot include the production Worker companion.");
   if (
     platform !== "darwin" ||
