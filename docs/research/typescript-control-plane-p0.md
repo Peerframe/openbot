@@ -423,10 +423,65 @@ Web676 and Desktop578/3 platform skips rerun; unchanged cache results retain the
 Follow-up documentation checks pass12 cases/599 Markdown files and research checks pass27, with
 no test skips; the PR-event check remains hosted-only.
 
-The current bounded checkpoint is publishing these tested CI repairs and obtaining hosted results on
-the final PR head. Whole-interface acceptance is still pending; Python remains the sole product
-writer and P3–P5 remain unopened. The installed ASAR still matches the P0 baseline. This round installs
-no system application, modifies no existing profile and implements no Claude page or C29 feature.
+The tested repairs are now published as `5ee5b3d72d65a596ea52f85956dc895ef32f60e6` on
+[Draft PR #200](https://github.com/Peerframe/openbot/pull/200). Follow-up
+[CI run37475123514](https://github.com/Peerframe/openbot/actions/runs/37475123514) tests the actual
+PR merge `002d938113f9cd1f3b71a88a17fef809f0558d73`, whose parents are exact main `2bc69893`
+and that branch head. The completed run succeeds with all17 jobs; security, both Linux product containers, installed
+harness/HTTP contracts, macOS mixed Preview, Python/Worker and durable Temporal qualification
+all pass. The hosted scanner reports23 exact historical
+fixtures, production npm audit0 and all58 external Python product pins audited with zero known
+advisories or skips. The local24-finding replay is preserved with its distinct fetched-history scope.
+
+The unsigned, isolated macOS TS Preview and its lifecycle/performance receipts are available as
+[CI candidate artifact11418388810](https://github.com/Peerframe/openbot/actions/runs/37475123514/artifacts/11418388810)
+and [evidence artifact11419211146](https://github.com/Peerframe/openbot/actions/runs/37475123514/artifacts/11419211146).
+These archives bind to the PR merge source above and remain automated Preview evidence; no
+artifact was downloaded or installed. The previously qualified full canonical candidate remains
+at `apps/desktop/out/ts-product/OpenBot-darwin-arm64/OpenBot.app`, with its separate fixed product
+source `dfc8475f` and real Electron/safeStorage receipts. None of this supplies whole-interface
+acceptance, restricted signing/access-group provisioning or registered Worker execution.
+
+Hosted Python integration passes1,072 base cases/2 optional Temporal skips and1,589 Worker cases/
+1 retained-history replay skip, followed by actual SQL/HTTP readback and session issuance/revocation.
+Preparatory runs report451 passed/1 skipped and1,450 passed/596 skipped before the owned target;
+those skipped cases are not counted as executed acceptance. The durable lane qualifies its separate
+Python/Temporal recovery and adjacent release upgrade, not TS P4 ownership.
+
+Final main verification finds accepted Claude interface [PR194](https://github.com/Peerframe/openbot/pull/194)
+newly merged as `bc2b2e7e5960912d8a1033c74233e43f5c75a1e7` (51 UI/document paths). The completed
+CI above remains qualified against exact base `2bc69893`; it does not attest this later UI integration.
+The Owner's next request is the global credential-scan blockage from historical `a240b810` fixtures.
+Codex published only the exact five entries/tests/bilingual triage as independent
+[PR201](https://github.com/Peerframe/openbot/pull/201), source
+`190a196db3b224bd2743c0ce01fb004d678589c4`, based on exact main
+`bc2b2e7e5960912d8a1033c74233e43f5c75a1e7`, in worktree `credential-fixture-history` and branch
+`codex/credential-fixture-history`. Its own focused26 tests, full repository check and independent
+offline23-finding replay pass; original main rejects the same real output. Hosted run
+[37481999400](https://github.com/Peerframe/openbot/actions/runs/37481999400) passes all17 jobs,
+including security and protected `check`, at actual test merge
+`0bdb8b3ede18aff3186419c02f130af2f7adcf88`; both parents match the exact main/source above.
+On2026-10-07 (Asia/Singapore), the Owner explicitly approved this main merge. PR201 is merged
+as `a6ec303054c69429aabb0a09c972d5dd87ace941` (GitHub receipt2026-10-06T17:00:20Z).
+Its tree `ea1aaa293250f3a4e87752a6821c6af612331e3e` is identical to the source and actual test merge
+qualified by all17 pre-merge jobs. The new main
+[run37500153005](https://github.com/Peerframe/openbot/actions/runs/37500153005) independently passes
+[security](https://github.com/Peerframe/openbot/actions/runs/37500153005/job/112394782241):23 exact
+historical fixtures, zero production npm advisories, all58 external Python product pins audited
+with no known advisories or skips. The remaining main jobs are still running; they are not reported
+as completed. Main now contains the five exact reviews. Existing failed runs retain their old
+source scope; a new PR run must use the repaired main instead of relabeling the previous result.
+The independent patch does not implement Claude pages. Accepted PR194 integration from this latest
+main and its affected migration qualification remain the next continuation checkpoint before
+whole-interface acceptance/P3. PR200 has not been merged.
+
+On2026-10-06 the Owner explicitly confirmed that Claude has no P2 whole-interface acceptance record.
+That external gate remains pending; Python is the sole product writer and P3–P5 remain unopened.
+This continuation closes only the hosted CI repairs and preserves the broader approved migration.
+The installed ASAR still matches the P0 baseline. This round installs no system application,
+modifies no existing profile and implements no Claude page or C29 feature. These two current-handoff
+receipt edits are local documentation owned by Codex, separate from the published/tested code head;
+they change no product, dependency, workflow or fixture source.
 
 Current integration evidence (macOS arm64; CLI Node26.0.0, not the earlier packaged Node24):
 

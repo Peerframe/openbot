@@ -287,9 +287,56 @@ build19/12缓存。protocol461、TS入口33、Web676、Desktop578通过/3项平�
 未改缓存结果保留原范围。随后文档检查通过12项/599份 Markdown，研究检查通过27项，无测试跳过；
 PR-event检查仍须在托管事件中执行。
 
-当前有界检查点是发布这些已验证的 CI修复，并取得最终 PR head的托管结果。整体界面验收仍待完成；
-Python仍是唯一产品写入方，P3–P5尚未开启。已安装 ASAR仍与 P0基线一致。本轮没有安装系统应用、
-修改已有 profile，或实现 Claude页面/C29功能。
+修复已作为 `5ee5b3d72d65a596ea52f85956dc895ef32f60e6`发布到
+[Draft PR #200](https://github.com/Peerframe/openbot/pull/200)。新
+[CI run37475123514](https://github.com/Peerframe/openbot/actions/runs/37475123514)实际检查 PR合并源码
+`002d938113f9cd1f3b71a88a17fef809f0558d73`，两个父提交是准确 main `2bc69893`及该分支 head。
+完整运行已成功，17项任务全部通过，包含安全、两平台 Linux产品容器、installed harness/HTTP契约、
+macOS混合 Preview、Python/Worker及持久 Temporal验收。托管扫描精确匹配23条历史样例，
+生产 npm审计为0，58个外部 Python产品锁定依赖完整审计，没有已知漏洞或跳过。
+本地24条回放保留不同 fetched-history范围。
+
+未签名、独立身份的 macOS TS Preview及生命周期/性能证据分别位于
+[CI候选工件11418388810](https://github.com/Peerframe/openbot/actions/runs/37475123514/artifacts/11418388810)与
+[证据工件11419211146](https://github.com/Peerframe/openbot/actions/runs/37475123514/artifacts/11419211146)。
+它们绑定上述 PR合并源码，只是自动化 Preview证据；没有下载或安装工件。
+此前已验证的正式身份完整候选仍位于 `apps/desktop/out/ts-product/OpenBot-darwin-arm64/OpenBot.app`，
+保留单独的准确产品源码 `dfc8475f`及真实 Electron/safeStorage回执。上述证据都不代替整体界面验收、
+受限签名/access group配置或已注册 Worker执行。
+
+托管 Python整合实际通过 base1,072项/2项可选 Temporal跳过、Worker1,589项/1项缺少历史的 replay
+跳过，随后真实 SQL/HTTP读回及会话签发/撤销通过。准备流程还记录451通过/1跳过，以及一次性目标
+建立前1,450通过/596跳过；跳过项不算已执行验收。持久 lane验证其单独的 Python/Temporal恢复及
+相邻版本升级，不证明 P4的 TS所有权。
+
+收尾核对发现 Claude界面 [PR194](https://github.com/Peerframe/openbot/pull/194)已新合并到 main，
+准确提交为 `bc2b2e7e5960912d8a1033c74233e43f5c75a1e7`，涉及51份 UI/文档。
+上述已完成 CI只证明准确 base `2bc69893`，不冒充这次后来界面整合的验收。
+所有者随后要求修复历史 `a240b810`造成的全仓凭据扫描阻断。Codex已将五条精确记录、测试和双语
+审阅发布为独立 [PR201](https://github.com/Peerframe/openbot/pull/201)，准确源码为
+`190a196db3b224bd2743c0ce01fb004d678589c4`，基于 main
+`bc2b2e7e5960912d8a1033c74233e43f5c75a1e7`；工作树 `credential-fixture-history`、分支
+`codex/credential-fixture-history`。该小补丁自己的26项 focused测试、全仓检查及独立离线23条
+发现回放通过；原 main适配器拒绝同一份真实扫描结果。Hosted运行
+[37481999400](https://github.com/Peerframe/openbot/actions/runs/37481999400)全部17项任务通过，
+包括安全任务和受保护 `check`；实际测试合并提交为 `0bdb8b3ede18aff3186419c02f130af2f7adcf88`，
+两个父提交与上述准确 main/源码一致。
+2026-10-07（Asia/Singapore），所有者明确批准此次 main合并。PR201已合入为
+`a6ec303054c69429aabb0a09c972d5dd87ace941`（GitHub回执2026-10-06T17:00:20Z）。
+其 tree `ea1aaa293250f3a4e87752a6821c6af612331e3e`与17项合入前 CI全绿的源码、实际测试合并内容一致。
+新的 main [运行37500153005](https://github.com/Peerframe/openbot/actions/runs/37500153005)已独立通过
+[安全任务](https://github.com/Peerframe/openbot/actions/runs/37500153005/job/112394782241)：23条精确
+历史样例、生产 npm依赖零漏洞、全部58项外部 Python产品依赖已审计，无已知漏洞或跳过。
+main其余任务仍在运行，不报告为已完成。main现在已有五条精确审阅；已有失败运行保留原源码范围，
+新 PR运行应使用修复后的 main，不把原有失败回执改称通过。
+独立补丁不实现 Claude页面；从这个最新 main整合 PR194的已接受改动及受影响迁移验收，是下个
+继续检查点，之后才整体界面验收/P3。PR200尚未合并。
+
+2026-10-06，所有者明确回复 Claude尚无 P2整体界面验收记录。该外部门槛仍待完成；Python仍是唯一
+产品写入方，P3–P5尚未开启。本轮只关闭 hosted CI修复，保留完整迁移已授权目标。已安装 ASAR仍与
+P0基线一致，没有安装系统应用、修改已有 profile，或实现 Claude页面/C29功能。
+这两份当前交接回执是 Codex所有的本地文档修改，与已发布/已测代码 head区分；未改产品、依赖、
+workflow或夹具源码。
 
 当前整合证据（macOS arm64，CLI Node26.0.0，不是此前包内 Node24）：
 
