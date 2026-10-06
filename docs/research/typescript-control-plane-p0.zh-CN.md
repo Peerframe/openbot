@@ -224,34 +224,45 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 
 当前工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支
 `codex/ts-control-plane-p2`；准确、干净的产品源码为
-`f16e11557fedd1c3e28e2f7aa929290075638e3e`，已整合接受的 main
-`a6ec303054c69429aabb0a09c972d5dd87ace941`（PR194界面及已批准的 PR201安全修复）。
-产品代码自动合并；只有双语历史扫描说明发生冲突。核对所有不可变夹具记录一致后，保留已接受的
-main版本。Codex没有新增页面实现；原 dirty目录、已安装 OpenBot及用户 profile保持不变。
+`84184d46f5ca77b882b9f79f65d86ac2caaa6b2d`，整合接受的 main
+`8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe`（Claude PR194/PR198及已批准的 PR201安全修复）。
+两次界面整合均自动合并，Codex未新增页面实现。此前唯一冲突是双语历史扫描说明：核对不可变
+记录一致后保留已接受的 main版本。原 dirty目录、已安装 OpenBot及用户 profile保持不变。
 
-受影响整合已通过本机验证：4份界面测试文件/56项、Web类型检查及 `npm run check` exit0。
-Web672项和 Desktop578项/3项平台跳过是实际执行；lint10/10、类型33/30、测试27/25、build19/18
-分别表示总任务/缓存任务。Protocol461、TS传输33及 Node129/3项跳过重放原缓存，保留旧源码范围。
-真实混合 HTTP和验证 CA的 HTTPS各执行270项整合及19项 staged artifact检查，覆盖当前 Web/Desktop
-设置与附件调用、共库持久化/重启、私有 Node来源/摘要、安全 cookie及混合→Python直连→混合回退。
+下述 SDK审计失败已通过审阅的1.32.1固定版本修复，生产 npm审计为零漏洞；两项真实脚手架测试及
+oracle guard通过，59份冻结源码/夹具哈希保持原样。锁文件仅改三份 workspace引用及一份去重 SDK。
+SDK代码源码 `10f64b7a`的 `npm run check` exit0，protocol461、TS入口33、Web672、Desktop578/3项
+平台跳过及 Node129/3项跳过均实际执行；lint10/0、类型33/10、测试27/12、build19/12表示总任务/缓存。
+PR198整合后最终全检查 exit0，Web677及 Desktop578/3项跳过实际执行；lint10/10、类型33/30、
+测试27/25、build19/18，其余未变项复用上述 SDK已验证缓存。
+
+SDK修复后的真实混合 HTTP及验证 CA的 HTTPS各执行270项整合及19项 staged检查，含30项真实 MCP，
+以及当前 Web/Desktop设置和附件、持久化、私有 Node来源/摘要、安全 cookie及混合→Python直连→
+混合回退。PR198未改后端或 HTTP消费者代码，因此复用准确 SDK源码范围，不把旧结果写作重复执行。
 Python仍是唯一产品写入方。
 
-重建的未签名、未安装完整 macOS arm64候选通过包内生命周期检查及真实正式身份 Electron/原生
-`safeStorage`启动、重启。合成 Bot准确名称、实时连接和主 Bot设置恢复；已接受的四分页信息栏和
-空模型服务/转写设置能够读取。没有默认模型时，启动会再次显示模型设置，既有跳过操作进入恢复的
-工作区。没有配置模型或 Worker。两次退出均为0，各13个所属进程及 PostgreSQL PID文件均清理；
-三份私有文件保持哈希/0600权限，一次性 profile已删除。当前 ASAR为
-`5dcf43417c6e513fb9ce1dba1e9aa4d5e9eb258961c4f08a2191320a5db7354a`，
-37份 Desktop模块、5份渲染文件与编译一致；原生文件及32个链接与暂存包一致。应用普通文件共
-1,230,248,543字节，原生 payload共783,640,659字节；未改的辅助程序保留准确源码 `6e9d13ed`。
-首次固定 Node归档下载连接中断（`UND_ERR_SOCKET`）；使用已验证辅助程序中的 Node22.22.2 CLI
-有界重试后通过，没有更改归档校验和、时限或包内 Node24.21.0/Python3.12.13。未安装系统应用。
+当前未签名、未安装完整 macOS arm64包内37份 Desktop模块及5份渲染文件与编译一致；ASAR为
+`dcbe7010501f5a859a762d4103f10a0c90381fb2dd1a7cac2e7a032b834df692`。
+应用普通文件1,230,254,451字节，原生 payload783,640,659字节。干净原生组件 `76579bbe`通过暂存、
+完整打包及生命周期 smoke；PR198未改其源码、依赖或许可，文件/32个链接与暂存一致。未改的辅助
+程序保留源码 `6e9d13ed`；CLI Node22.22.2构建既有 Node24.21.0/Python3.12.13。此前官方归档下载
+连接中断已在不改变校验和或时限的条件下重试通过。
 
-main [运行37500153005](https://github.com/Peerframe/openbot/actions/runs/37500153005)现已完成，
-包括安全任务在内的全部17项通过。本候选仍需新的 hosted PR运行，之前5ee5b3d7 CI保持日期范围。
-既有[原生回执](typescript-control-plane-p2-native.json)的 `acceptedMainIntegration`单独记录本轮。
-[Draft PR200](https://github.com/Peerframe/openbot/pull/200)保持未合并。下个有界门槛是当前候选 hosted CI
-及 Claude的 P2整体界面验收；整体界面验收记录仍缺失，P3–P5尚未切换所有权。
+真实当前正式身份 Electron/原生 `safeStorage`启动及重启通过，使用明确的一次性 profile。
+准确合成 Bot名称、实时连接和主 Bot设置恢复，随后从侧栏打开恢复的 Bot。未配置模型时会再次显示
+模型设置，既有跳过操作进入工作区。重启初始可访问性树为空、实际页面可见；键盘聚焦后文档出现，
+继续使用既有按钮。这仅是限定流程观测，不代表整体可访问性或 Claude界面验收。两次正式菜单退出
+均为0，各13个所属进程及 PostgreSQL PID文件均消失；三份私有文件保持哈希/0600，临时 profile已删。
+此前一个欢迎窗口在打包报告完成前提前打开，不计入验收：快捷键仅关闭窗口，随后按明确所属 PID
+完成清理，当时未启动产品服务。
+
+[CI37506404433](https://github.com/Peerframe/openbot/actions/runs/37506404433)已结束，branch9dc564c6、
+实际合并1ee8730c、真实 main基线8a50575a。15项任务通过，安全及汇总 check因新入库的旧 SDK公告
+失败；凭证及 Python审计未执行，不冒充 SDK修复验收。当前候选 hosted CI是下个有界检查点。
+既有[原生回执](typescript-control-plane-p2-native.json)的 `currentP2Candidate`保留本轮准确范围，
+此前各项保持日期记录。[PR200](https://github.com/Peerframe/openbot/pull/200)仍为 Draft且未合并。
+Claude的 P2整体界面验收仍缺失，P3–P5尚未切换所有权。没有增加模型、已注册 Worker或系统应用；
+安装版 ASAR保持 P0哈希。
 
 ### MCP SDK公告修复（2026-10-07）
 

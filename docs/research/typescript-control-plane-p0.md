@@ -345,42 +345,55 @@ same-scope resource comparison. See ADR-0050 for the detailed gates and Owner ap
 ## Current migration checkpoint (2026-10-07)
 
 Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
-`codex/ts-control-plane-p2`; current clean product source is
-`f16e11557fedd1c3e28e2f7aa929290075638e3e`, integrating accepted main
-`a6ec303054c69429aabb0a09c972d5dd87ace941` (PR194 UI and approved PR201 security repair).
-Application files merged automatically. Only the bilingual historical scanner triage conflicted;
-all immutable fixture tuples matched, so the accepted main records were retained. Codex added no
-page implementation. Original dirty checkout, installed OpenBot and user profiles are preserved.
+`codex/ts-control-plane-p2`; clean product source is
+`84184d46f5ca77b882b9f79f65d86ac2caaa6b2d`, integrating accepted main
+`8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe` (Claude PR194/PR198 and approved PR201 security repair).
+Both UI integrations merged automatically; Codex added no page implementation. The only earlier
+conflict was bilingual historical scanner triage: immutable tuples matched and accepted main
+records were retained. Original dirty checkout, installed OpenBot and user profiles are preserved.
 
-The affected integration is locally qualified: four focused UI files/56 tests and Web typecheck;
-`npm run check` exit0 with Web672 and Desktop578/3 platform skips actually executed. Lint10/10,
-typecheck33/30, test27/25 and build19/18 report tasks/cached tasks. Protocol461, TS transport33 and
-Node129/3 skips replay cached results with their earlier scope. Real mixed HTTP and verified-CA
-HTTPS each execute270 integrated plus19 staged-artifact checks, including current Web/Desktop
-settings and attachment calls, same-database restart, private Node source/digest, secure cookies,
-and mixed→direct Python→mixed rollback. Python remains the sole product writer.
+The SDK audit failure described below is repaired by the reviewed1.32.1 pin. Production npm audit
+now reports zero advisories; the two real standalone-starter tests and the oracle guard pass
+(all59 frozen source/fixture hashes retained). Only three workspace references and one deduplicated
+SDK lock entry change. At SDK code source `10f64b7a`, `npm run check` exits0 and actually executes
+protocol461, TS entry33, Web672, Desktop578/3 platform skips and Node129/3 skips. Its tasks/cached
+counts are lint10/0, typecheck33/10, test27/12 and build19/12. After PR198 integration, the final
+`npm run check` exits0 with Web677 and Desktop578/3 skips actually executed; counts are lint10/10,
+typecheck33/30, test27/25 and build19/18. Unchanged tests reuse the SDK-qualified cache.
 
-The rebuilt, unsigned and uninstalled full macOS arm64 candidate passes packaged lifecycle smoke
-and actual canonical Electron/native `safeStorage` startup and restart. A synthetic Bot's exact
-name, realtime connection and primary-Bot setting restore; the accepted four-tab rail and empty
-model/transcription settings load. With no default model, onboarding reoffers model setup and the
-existing skip action enters the restored workspace. No provider or Worker was configured.
-Both launches exit0; all13 owned processes per launch and PostgreSQL PID files disappear. Three
-private files retain hashes and0600 permissions; the disposable profile is removed. Current ASAR
-is `5dcf43417c6e513fb9ce1dba1e9aa4d5e9eb258961c4f08a2191320a5db7354a`:
-37 Desktop modules and five renderer files match the build; packaged native files and32 symlinks
-match staging. Regular-file totals are1,230,248,543 bytes for the app and783,640,659 for its native
-payload. The unchanged Worker companion retains exact source `6e9d13ed`.
-The first pinned Node archive transfer was interrupted (`UND_ERR_SOCKET`); a bounded retry using
-that already-qualified companion's Node22.22.2 CLI passed without changing archive hashes,
-timeouts or packaged Node24.21.0/Python3.12.13. No system application was installed.
+Real SDK-qualified mixed HTTP and verified-CA HTTPS each execute270 integrated plus19 staged
+checks, including30 actual MCP checks, current Web/Desktop settings and attachments, persistence,
+private Node source/digest, secure cookies and mixed→Python direct→mixed rollback. PR198 changes
+no backend or HTTP-consumer code, so those results retain their exact SDK source scope rather
+than being reported as repeated executions. Python remains the sole product writer.
 
-Main [run37500153005](https://github.com/Peerframe/openbot/actions/runs/37500153005) is now complete,
-all17 jobs successful, including security. This merged candidate still requires its new hosted PR
-run; earlier5ee5b3d7 CI is preserved as dated evidence. [Native receipt](typescript-control-plane-p2-native.json)
-keeps this qualification in `acceptedMainIntegration`. Draft [PR200](https://github.com/Peerframe/openbot/pull/200)
-remains unmerged. The next bounded gate is current-candidate hosted CI and Claude's P2 whole-interface
-acceptance; that acceptance is still absent. No P3–P5 ownership switch has occurred.
+The current unsigned, uninstalled full macOS arm64 package matches37 Desktop modules and five
+renderer files; ASAR is `dcbe7010501f5a859a762d4103f10a0c90381fb2dd1a7cac2e7a032b834df692`.
+App regular files total1,230,254,451 bytes; native payload783,640,659 bytes. The clean native
+component `76579bbe` passes staging, full packaging and lifecycle smoke; its code, dependencies
+and notices are unchanged by PR198, files/32 symlinks match staging, and its unchanged companion
+retains source `6e9d13ed`. CLI Node22.22.2 builds the existing Node24.21.0/Python3.12.13 payload.
+The earlier interrupted official archive transfer was retried without changing hashes or timeouts.
+
+Actual current canonical Electron/native `safeStorage` startup and restart pass in an explicit
+owned profile. The exact synthetic Bot name, realtime connection and primary-Bot setting restore;
+the restored Bot is opened from the sidebar. Model setup is reoffered when no model is configured,
+and the existing skip enters the workspace. Initial restart accessibility was empty despite a
+visible page; keyboard focus exposed the document and the existing button. This is a narrow
+functional observation, not overall accessibility or Claude interface acceptance. Qualified menu
+quits both exit0; all13 owned processes per launch and PostgreSQL PID files disappear. Three
+private files preserve hashes/0600 and the temporary profile is removed. An earlier welcome-window
+launch preceded reported packaging completion and is excluded: only its window closed with the
+shortcut, exact owned PID cleanup completed, and no product service had started.
+
+[CI37506404433](https://github.com/Peerframe/openbot/actions/runs/37506404433) completes at branch
+9dc564c6 / actual merge1ee8730c against main8a50575a with15 successful jobs and security/aggregate
+check failed on the newly ingested old-SDK advisory. Credential and Python audits were skipped;
+that run does not qualify the SDK repair. Current-candidate hosted CI is the next bounded check.
+[Native receipt](typescript-control-plane-p2-native.json) keeps exact scopes in `currentP2Candidate`
+and dated prior entries. [PR200](https://github.com/Peerframe/openbot/pull/200) remains Draft/unmerged.
+Claude's P2 whole-interface acceptance is still absent; no P3–P5 ownership switch has occurred.
+No provider, registered Worker or system application was added; installed ASAR retains the P0 hash.
 
 ### MCP SDK advisory repair (2026-10-07)
 

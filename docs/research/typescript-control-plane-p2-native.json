@@ -966,5 +966,221 @@
     ],
     "p3OwnershipSwitched": false,
     "applicationsInstalled": 0
+  },
+  "currentP2Candidate": {
+    "date": "2026-10-07 (Asia/Singapore)",
+    "productSourceHead": "84184d46f5ca77b882b9f79f65d86ac2caaa6b2d",
+    "sourceDirty": false,
+    "acceptedMain": "8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe",
+    "acceptedUi": [
+      "PR194",
+      "PR198"
+    ],
+    "pageImplementation": "automatic integration only; Claude owns overall interface acceptance",
+    "mcpSdk": {
+      "version": "1.32.1",
+      "reviewedSource": "ff07b001194fe60ee9deb2121cf119057565796d",
+      "securityAdvisory": "GHSA-6qxp-vccf-f47h",
+      "codeRepairSource": "10f64b7a03e24c6b56003dedf5ca051d6458ea64",
+      "productConsumers": 2,
+      "oracle": "reviewed devDependency-only exception; all59 frozen source/fixture hashes retained",
+      "frozenSourceFiles": 55,
+      "frozenFixtureFiles": 4,
+      "starterTestsPassed": 2,
+      "productionAuditVulnerabilities": 0,
+      "lockChanges": "three workspace references plus one deduplicated SDK entry; no other versions changed",
+      "sdkRepairFullCheck": {
+        "exitCode": 0,
+        "lintTasks": 10,
+        "lintCached": 0,
+        "typecheckTasks": 33,
+        "typecheckCached": 10,
+        "testTasks": 27,
+        "testCached": 12,
+        "buildTasks": 19,
+        "buildCached": 12,
+        "actuallyExecuted": {
+          "protocol": 461,
+          "tsTransport": 33,
+          "web": 672,
+          "desktop": 578,
+          "desktopPlatformSkips": 3,
+          "node": 129,
+          "nodeSkips": 3
+        }
+      }
+    },
+    "fullCheck": {
+      "exitCode": 0,
+      "sourceHead": "84184d46f5ca77b882b9f79f65d86ac2caaa6b2d",
+      "docsMarkdownFiles": 599,
+      "lintTasks": 10,
+      "lintCached": 10,
+      "typecheckTasks": 33,
+      "typecheckCached": 30,
+      "testTasks": 27,
+      "testCached": 25,
+      "buildTasks": 19,
+      "buildCached": 18,
+      "actuallyExecuted": {
+        "web": 677,
+        "desktop": 578,
+        "desktopPlatformSkips": 3
+      },
+      "unchangedOtherTestsCachedFromSdkRepair": true
+    },
+    "realHttpHttpsReuse": {
+      "testedSdkRepairSource": "10f64b7a03e24c6b56003dedf5ca051d6458ea64",
+      "nativeAndHttpConsumerCodeUnchangedByPr198": true,
+      "httpExitCode": 0,
+      "httpsExitCode": 0,
+      "eachIntegrated": 270,
+      "eachStagedArtifact": 19,
+      "eachTotal": 289,
+      "eachIncludesRealMcp": 30,
+      "privateNodeDigestAndSource": true,
+      "verifiedCaAndSecureCookies": true,
+      "mixedDirectMixedRollback": true,
+      "pythonSoleWriter": true,
+      "liveProviderOrTemporalCalls": false
+    },
+    "nativeComponent": {
+      "sourceHead": "76579bbe37a58bb0213eca563124d0c6fe114430",
+      "sourceClean": true,
+      "stageExitCode": 0,
+      "packageExitCode": 0,
+      "nativeSmokeExitCode": 0,
+      "currentNativeCodeDependencyAndNoticeDiffEmpty": true,
+      "stageAndPackagedNativeBytesMatched": true,
+      "currentSmoke": {
+        "parentEofStoppedActualApi": true,
+        "parentEofStoppedOwnedProcessCount": 2,
+        "tsForwardingEntry": true,
+        "eitherProductExitStoppedPair": true,
+        "unsafeDirectoryRefusedAndPostgresStopped": true,
+        "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+        "pythonProductHealth": true,
+        "ownerLogin": true,
+        "postgresInitialized": true,
+        "restartPreservedData": true,
+        "serverAndPostgresStopped": true,
+        "syntheticOnly": true,
+        "nativeKeychainVerified": false
+      },
+      "companionSource": "6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
+      "companionUnchanged": true,
+      "builderNode": "22.22.2",
+      "packagedNode": "24.21.0",
+      "packagedPython": "3.12.13"
+    },
+    "package": {
+      "sourceHead": "84184d46f5ca77b882b9f79f65d86ac2caaa6b2d",
+      "asarSha256": "dcbe7010501f5a859a762d4103f10a0c90381fb2dd1a7cac2e7a032b834df692",
+      "compiledDesktopFilesMatched": 37,
+      "rendererFilesMatched": 5,
+      "regularFileBytes": 1230254451,
+      "nativeRegularFileBytes": 783640659,
+      "nativeSymlinks": 32,
+      "nativeComponentSource": "76579bbe37a58bb0213eca563124d0c6fe114430",
+      "nativeComponentCodeAndDependencyDiffEmpty": true,
+      "packagingExitCode": 0
+    },
+    "actualCanonicalElectronJourney": {
+      "sourceHead": "84184d46f5ca77b882b9f79f65d86ac2caaa6b2d",
+      "asarSha256": "dcbe7010501f5a859a762d4103f10a0c90381fb2dd1a7cac2e7a032b834df692",
+      "fresh": {
+        "localWorker": false,
+        "exitCode": 0,
+        "ownedPidsAfterExit": [],
+        "postgresPidFilesAfterExit": 0,
+        "botCreatedAndSaved": true,
+        "fourTabRailObserved": true,
+        "realTimeObserved": true,
+        "realNativeSafeStorage": true,
+        "emptyModelAndTranscriptionObserved": true
+      },
+      "restart": {
+        "privateFilesUnchanged": true,
+        "localWorker": false,
+        "savedBotNameRestored": true,
+        "realTimeRestored": true,
+        "primaryBotSettingRestored": true,
+        "modelSetupReoffered": true,
+        "restoredBotOpenedFromSidebar": true,
+        "fourTabRailObserved": true,
+        "accessibilityDocumentAppearedAfterKeyboardFocus": true,
+        "exitCode": 0,
+        "ownedPidsAfterExit": [],
+        "postgresPidFilesAfterExit": 0
+      },
+      "ownedProcessCounts": {
+        "fresh": 13,
+        "restart": 13
+      },
+      "privateFiles": [
+        {
+          "path": "openbot/python-local-server/bootstrap.json",
+          "mode": "0600",
+          "bytes": 243,
+          "hashPreserved": true
+        },
+        {
+          "path": "openbot/python-local-server/model-connections.key",
+          "mode": "0600",
+          "bytes": 32,
+          "hashPreserved": true
+        },
+        {
+          "path": "openbot/setup-plan.json",
+          "mode": "0600",
+          "bytes": 100,
+          "hashPreserved": true
+        }
+      ],
+      "qualifiedMenuQuitExitCodes": [
+        0,
+        0
+      ],
+      "installedAppPreserved": true,
+      "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+      "disposableProfileRemoved": true,
+      "modelCalls": 0,
+      "applicationsInstalled": 0,
+      "workerRegistration": false,
+      "wholeInterfaceAcceptance": false,
+      "preliminaryUnqualifiedWindow": {
+        "earlyWindowDiscarded": true,
+        "shortcutClosedWindowOnly": true,
+        "ownedProcessCleanup": "SIGTERM to exact known PID",
+        "exitCode": 0,
+        "ownedProcessesRemaining": 0,
+        "productServiceNotStarted": true,
+        "privateRootRemoved": true
+      }
+    },
+    "priorCi": {
+      "run": 37506404433,
+      "branchHead": "9dc564c603211717b975c123736b361182ede990",
+      "actualMerge": "1ee8730caf0feebc4804e7e5e2893c90c3268458",
+      "actualBase": "8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe",
+      "completed": true,
+      "successfulJobs": 15,
+      "failedJobs": [
+        "security",
+        "check"
+      ],
+      "cause": "newly ingested SDK production advisory; credential scan and Python audit skipped",
+      "currentSdkFixNotQualifiedByThisRun": true
+    },
+    "currentHostedCi": "required after publication; recorded in PR200 checks/body",
+    "remaining": [
+      "Claude P2 whole-interface acceptance",
+      "deployment TLS/PKI",
+      "registered Worker/access-group provisioning",
+      "signed distribution",
+      "P3-P5 ownership switches"
+    ],
+    "applicationsInstalled": 0,
+    "p3OwnershipSwitched": false
   }
 }

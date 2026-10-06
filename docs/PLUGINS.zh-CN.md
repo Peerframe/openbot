@@ -80,8 +80,8 @@ OPENBOT_CONTROL_PLUGIN_LOCAL_ENDPOINTS=["http://127.0.0.1:4318/mcp"]
 ## 作者契约
 
 实现普通 **MCP 2025-11-25 兼容 Streamable HTTP 服务** 即可，可使用其他语言。
-OpenBot 固定官方 SDK **1.30.0**，提交 `2d889f2b329e46680ec9bdd565de4616c497825a`，
-不要求作者接私有 SDK。见[调研](research/third-party-mcp-plugins.md)。
+OpenBot 固定官方 SDK **1.32.1**，提交 `ff07b001194fe60ee9deb2121cf119057565796d`，
+不要求作者接私有 SDK。见[初始调研](research/third-party-mcp-plugins.md)及[安全版本审阅](research/typescript-control-plane-p0.zh-CN.md#mcp-sdk公告修复2026-10-07)。
 
 | 内容 | 当前范围 |
 | --- | --- |
