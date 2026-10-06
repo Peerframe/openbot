@@ -44,6 +44,55 @@
     background-position: 0 0;
   }
 }
+/* A Bot's head: born from gathering points, or bursting and regathering into a new look. */
+@keyframes robot-bloom {
+  0% {
+    opacity: 0;
+    transform: scale(0.15);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes robot-dissolve {
+  to {
+    opacity: 0;
+    transform: scale(0.3) rotate(-25deg);
+  }
+}
+@keyframes robot-particles-burst {
+  0% {
+    opacity: 0.9;
+    transform: translate(0, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy));
+  }
+}
+@keyframes robot-particles-gather {
+  0% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy));
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.4);
+  }
+}
+@keyframes ob-breathe {
+  50% {
+    opacity: 0.45;
+    transform: scale(0.9);
+  }
+}
 @keyframes ob-message-flash {
   0%,
   100% {
@@ -151,6 +200,42 @@
   }
   :root:not([data-reduced-motion="true"]) .conversation-working {
     animation: ob-view-in var(--ob-motion) var(--ob-ease-out);
+  }
+  :root:not([data-reduced-motion="true"]) .robot-avatar :is(.robot-bloom, .robot-ghost) {
+    transform-box: view-box;
+    transform-origin: 48px 52px;
+  }
+  :root:not([data-reduced-motion="true"]) .robot-avatar.is-born .robot-bloom {
+    animation: robot-bloom 520ms var(--ob-ease-out) 260ms both;
+  }
+  :root:not([data-reduced-motion="true"]) .robot-avatar.is-morph .robot-bloom {
+    animation: robot-bloom 520ms var(--ob-ease-out) 380ms both;
+  }
+  :root:not([data-reduced-motion="true"]) .robot-avatar.is-morph .robot-ghost {
+    display: inline;
+    animation: robot-dissolve 300ms ease-in both;
+  }
+  :root:not([data-reduced-motion="true"]) .robot-avatar .robot-particles circle {
+    transform-box: view-box;
+  }
+  :root:not([data-reduced-motion="true"]) .robot-avatar .robot-particles.is-burst circle {
+    animation: robot-particles-burst 320ms ease-out calc(var(--i) * 20ms + 120ms) both;
+  }
+  :root:not([data-reduced-motion="true"]) .robot-avatar.is-born .robot-particles.is-gather circle {
+    animation: robot-particles-gather 420ms var(--ob-ease-out) calc(var(--i) * 25ms) both;
+  }
+  :root:not([data-reduced-motion="true"]) .robot-avatar.is-morph .robot-particles.is-gather circle {
+    animation: robot-particles-gather 420ms var(--ob-ease-out) calc(var(--i) * 25ms + 300ms) both;
+  }
+  :root:not([data-reduced-motion="true"]) .new-bot-setup-answered {
+    transform-origin: top left;
+    animation: ob-pop-in var(--ob-motion-panel) var(--ob-ease-out);
+  }
+  :root:not([data-reduced-motion="true"]) .sb-row.is-creating {
+    animation: ob-pop-in var(--ob-motion) var(--ob-ease-out);
+  }
+  :root:not([data-reduced-motion="true"]) .sb-creating-avatar {
+    animation: ob-breathe 1.2s ease-in-out infinite;
   }
   :root:not([data-reduced-motion="true"]) .message-row.is-flash {
     border-radius: 14px;

@@ -8,6 +8,7 @@ import type {
   BotStatus,
   RunStatus,
 } from "@openbot/domain";
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
 import "./RobotAvatar.css";
 
 type RobotStatus = BotStatus | RunStatus;
@@ -80,6 +81,87 @@ export function avatarPresence(status: RobotStatus): AvatarPresence {
  * which show a label instead). `cutout` knocks the silhouette out of whatever is behind it, using
  * the container's `--avatar-surface`, so overlapping heads in a group stay separate.
  */
+/** A Bot this young is being born: its first avatars gather from a few points (owner, after Grok). */
+const BIRTH_WINDOW_MS = 8_000;
+/** Every avatar of one new Bot mounted within this long of the first plays the birth together. */
+const BIRTH_PLAY_MS = 1_500;
+const MORPH_MS = 900;
+const firstSeen = new Map<string, number>();
+
+function playsBirth(bot: Bot) {
+  const now = Date.now();
+  const created = Date.parse(bot.createdAt);
+  if (!Number.isFinite(created) || now - created > BIRTH_WINDOW_MS) return false;
+  const seen = firstSeen.get(bot.id) ?? now;
+  firstSeen.set(bot.id, seen);
+  return now - seen < BIRTH_PLAY_MS;
+}
+
+/** Six points around the head; particles fly between them and the centre. */
+const PARTICLES = Array.from({ length: 6 }, (_, index) => {
+  const angle = (index / 6) * Math.PI * 2 + 0.4;
+  return { x: Math.round(Math.cos(angle) * 34), y: Math.round(Math.sin(angle) * 34) };
+});
+
+function Particles({ accent, mode }: { accent: string; mode: "gather" | "burst" }) {
+  return (
+    <g className={`robot-particles is-${mode}`}>
+      {PARTICLES.map((point, index) => (
+        <circle
+          // biome-ignore lint/suspicious/noArrayIndexKey: the six points are fixed.
+          key={index}
+          cx="48"
+          cy="52"
+          r={index % 2 ? 3.2 : 4.4}
+          fill={accent}
+          style={{ "--dx": `${point.x}px`, "--dy": `${point.y}px`, "--i": index } as CSSProperties}
+        />
+      ))}
+    </g>
+  );
+}
+
+/**
+ * Plays the birth once for a new Bot, and a morph whenever its look changes (编辑头像 today; a Bot
+ * restyling itself for its role under C29 later): the old head bursts into particles that gather
+ * into the new one. Reduced motion turns both off in CSS.
+ */
+function useAvatarTransition(bot: Bot, appearance: BotAppearance) {
+  const key = `${appearance.head}:${appearance.accent}`;
+  const [phase, setPhase] = useState<"born" | "morph" | undefined>(() =>
+    playsBirth(bot) ? "born" : undefined,
+  );
+  const [ghost, setGhost] = useState<BotAppearance>();
+  const shown = useRef({ key, appearance });
+  useEffect(() => {
+    if (shown.current.key === key) return;
+    setGhost(shown.current.appearance);
+    setPhase("morph");
+    shown.current = { key, appearance };
+    const timer = window.setTimeout(() => {
+      setGhost(undefined);
+      setPhase(undefined);
+    }, MORPH_MS);
+    return () => window.clearTimeout(timer);
+  }, [key, appearance]);
+  useEffect(() => {
+    if (phase !== "born") return;
+    const timer = window.setTimeout(() => setPhase(undefined), MORPH_MS);
+    return () => window.clearTimeout(timer);
+  }, [phase]);
+  return { phase, ghost };
+}
+
+function Head({ appearance, accent }: { appearance: BotAppearance; accent: string }): ReactNode {
+  return appearance.head === "square" ? (
+    <RelayHead accent={accent} />
+  ) : appearance.head === "cat" ? (
+    <ScoutHead accent={accent} />
+  ) : (
+    <RoundHead accent={accent} />
+  );
+}
+
 export function RobotAvatar({
   bot,
   className,
@@ -99,6 +181,8 @@ export function RobotAvatar({
   const visualState = robotVisualState(status);
   const accent = accentColors[appearance.accent] ?? accentColors.green ?? "#91CF4B";
   const state = presence ? avatarPresence(status) : undefined;
+  const { phase, ghost } = useAvatarTransition(bot, appearance);
+  const ghostAccent = ghost ? (accentColors[ghost.accent] ?? accent) : accent;
 
   return (
     <span
@@ -109,6 +193,7 @@ export function RobotAvatar({
         `robot-accent-${appearance.accent}`,
         `robot-state-${visualState}`,
         state === "working" ? "is-working" : undefined,
+        phase ? `is-${phase}` : undefined,
       ]
         .filter(Boolean)
         .join(" ")}
@@ -121,15 +206,18 @@ export function RobotAvatar({
     >
       <svg className="robot-head-art" viewBox="0 0 96 96" aria-hidden="true" focusable="false">
         {cutout ? <Cutout head={appearance.head} /> : null}
-        <g className="robot-head">
-          {appearance.head === "square" ? (
-            <RelayHead accent={accent} />
-          ) : appearance.head === "cat" ? (
-            <ScoutHead accent={accent} />
-          ) : (
-            <RoundHead accent={accent} />
-          )}
+        {ghost ? (
+          <g className="robot-ghost">
+            <Head appearance={ghost} accent={ghostAccent} />
+          </g>
+        ) : null}
+        <g className="robot-bloom">
+          <g className="robot-head">
+            <Head appearance={appearance} accent={accent} />
+          </g>
         </g>
+        {phase === "morph" ? <Particles accent={ghostAccent} mode="burst" /> : null}
+        {phase ? <Particles accent={accent} mode="gather" /> : null}
       </svg>
       {presence === "dot" && state ? <span className={`robot-dot is-${state}`} /> : null}
     </span>

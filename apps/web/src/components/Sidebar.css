@@ -472,3 +472,14 @@
   font-size: var(--ob-font-meta);
   white-space: nowrap;
 }
+/* 「创建中…」: the new Bot's row holds its place until the Server answers (after Grok). */
+.sb .sb-row.is-creating {
+  --avatar-surface: var(--ob-selected);
+  background: var(--ob-selected);
+  cursor: default;
+}
+.sb .sb-avatar.sb-creating-avatar {
+  padding: 0;
+  border-radius: 50%;
+  background: var(--ob-fill-strong);
+}

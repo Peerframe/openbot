@@ -139,3 +139,31 @@
   outline: 2px solid var(--ob-active);
   outline-offset: 2px;
 }
+/* After the card is answered or skipped it stays as one quiet line (after Grok). */
+.new-bot-setup-answered {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 520px;
+  margin: 8px 0 8px 44px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--ob-fill);
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}
+.new-bot-setup-answered strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ob-text);
+  font-weight: 500;
+}
+.new-bot-setup-answered strong svg {
+  color: var(--ob-online-text);
+}
+.new-bot-setup-answered small {
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+}

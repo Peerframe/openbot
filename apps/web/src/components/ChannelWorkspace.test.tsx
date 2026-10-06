@@ -76,7 +76,11 @@ const result = (channelId: string): SubmitTaskResult => {
   };
   return { message: message(channelId), run };
 };
-function view(id: string, session = createConversationSession()) {
+function view(
+  id: string,
+  session = createConversationSession(),
+  extra: Partial<Parameters<typeof ChannelWorkspace>[0]> = {},
+) {
   return (
     <ChannelWorkspace
       key={id}
@@ -87,6 +91,7 @@ function view(id: string, session = createConversationSession()) {
       artifacts={[]}
       progress={[]}
       {...callbacks}
+      {...extra}
     />
   );
 }
@@ -1209,6 +1214,40 @@ describe("new-Bot greeting (C11)", () => {
   });
 });
 
+describe("role card outcome (after Grok, 2026-10-06)", () => {
+  it("folds the skipped card into one 已忽略 line under the greeting", async () => {
+    const fresh: Bot = { ...bot, id: "bot-new", name: "新建 Bot", role: "通用助手" };
+    vi.mocked(listMessages).mockResolvedValue([
+      {
+        ...message("d", "嗨，我刚上岗"),
+        authorType: "bot",
+        authorId: fresh.id,
+        origin: "greeting",
+      },
+    ]);
+    const rendered = await renderComponent(
+      <ChannelWorkspace
+        globalHeader
+        channel={{ ...channel("d"), botIds: [fresh.id], directBotId: fresh.id }}
+        session={createConversationSession()}
+        bots={[fresh]}
+        artifacts={[]}
+        progress={[]}
+        {...callbacks}
+      />,
+    );
+    await interact(async () => undefined);
+    await interact(() =>
+      rendered.container.querySelector<HTMLButtonElement>('button[aria-label="跳过"]')?.click(),
+    );
+    expect(rendered.container.querySelector(".new-bot-setup-card")).toBeNull();
+    expect(rendered.container.querySelector(".new-bot-setup-answered")?.textContent).toBe(
+      "你最想让我先帮你做什么？已忽略",
+    );
+    await rendered.unmount();
+  });
+});
+
 describe("conversation polish (owner feedback 2026-10-05)", () => {
   const run = (id: string, status: Run["status"], sourceMessageId?: string): Run => ({
     id,
@@ -1251,6 +1290,39 @@ describe("conversation polish (owner feedback 2026-10-05)", () => {
     expect(form?.classList).toContain("is-empty");
     await typeText(rendered.container, "继续");
     expect(form?.classList).not.toContain("is-empty");
+    await rendered.unmount();
+  });
+
+  it("names the step the working Bot is on when the 服务电脑 reports it", async () => {
+    vi.mocked(listMessages).mockResolvedValue([{ ...message("p", "查官网"), id: "m-owner" }]);
+    vi.mocked(listRuns).mockResolvedValue([run("r-1", "running", "m-owner")]);
+    const summary = {
+      runId: "r-1",
+      status: "running",
+      totalSteps: 2,
+      currentStepNumber: 2,
+      plannedTotalSteps: null,
+      completedSteps: 1,
+      stageName: "navigate",
+      description: null,
+      startedAt: null,
+      endedAt: null,
+      failureReasonCode: null,
+    } as const;
+    const rendered = await renderComponent(
+      view("p", createConversationSession(), { stepSummaries: { "r-1": summary } }),
+    );
+    await interact(async () => undefined);
+    await interact(() =>
+      lastHandlers().onMessage({
+        ...message("p", "顺便问一下"),
+        id: "m-later",
+        createdAt: new Date(Date.now() + 60_000).toISOString(),
+      }),
+    );
+    expect(rendered.container.querySelector(".conversation-working")?.textContent).toBe(
+      "Assistant 正在打开网页",
+    );
     await rendered.unmount();
   });
 

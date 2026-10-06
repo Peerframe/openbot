@@ -235,3 +235,11 @@
 :root[data-color-scheme="dark"] .robot-avatar .robot-ear-light {
   stroke: var(--robot-jaw-dark);
 }
+
+/* Birth and morph (owner, after Grok 2026-10-06): hidden unless motion.css plays them. */
+.robot-avatar .robot-particles circle {
+  opacity: 0;
+}
+.robot-avatar .robot-ghost {
+  display: none;
+}
