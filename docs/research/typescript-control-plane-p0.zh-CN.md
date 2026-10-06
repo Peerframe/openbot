@@ -224,7 +224,7 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 
 当前工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支
 `codex/ts-control-plane-p2`；准确、干净的产品源码为
-`84184d46f5ca77b882b9f79f65d86ac2caaa6b2d`，整合接受的 main
+`37e8d7fe65a7b4e588861dee0b2770bdda23e9f0`，整合接受的 main
 `8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe`（Claude PR194/PR198及已批准的 PR201安全修复）。
 两次界面整合均自动合并，Codex未新增页面实现。此前唯一冲突是双语历史扫描说明：核对不可变
 记录一致后保留已接受的 main版本。原 dirty目录、已安装 OpenBot及用户 profile保持不变。
@@ -235,20 +235,25 @@ SDK代码源码 `10f64b7a`的 `npm run check` exit0，protocol461、TS入口33�
 平台跳过及 Node129/3项跳过均实际执行；lint10/0、类型33/10、测试27/12、build19/12表示总任务/缓存。
 PR198整合后最终全检查 exit0，Web677及 Desktop578/3项跳过实际执行；lint10/10、类型33/30、
 测试27/25、build19/18，其余未变项复用上述 SDK已验证缓存。
+目录元数据修复后的完整检查也退出0：lint10/10、类型33/33、测试27/27、build19/19，Turbo任务
+全部复用缓存。新执行目录 focused检查：Python6项通过／1项数据库跳过、TS2项及真实 Python
+HTTP／MCP30项通过；后者实际验证数据库支持的目录发布。
 
 SDK修复后的真实混合 HTTP及验证 CA的 HTTPS各执行270项整合及19项 staged检查，含30项真实 MCP，
 以及当前 Web/Desktop设置和附件、持久化、私有 Node来源/摘要、安全 cookie及混合→Python直连→
 混合回退。PR198未改后端或 HTTP消费者代码，因此复用准确 SDK源码范围，不把旧结果写作重复执行。
 Python仍是唯一产品写入方。
 
-当前未签名、未安装完整 macOS arm64包内37份 Desktop模块及5份渲染文件与编译一致；ASAR为
-`dcbe7010501f5a859a762d4103f10a0c90381fb2dd1a7cac2e7a032b834df692`。
-应用普通文件1,230,254,451字节，原生 payload783,640,659字节。干净原生组件 `76579bbe`通过暂存、
-完整打包及生命周期 smoke；PR198未改其源码、依赖或许可，文件/32个链接与暂存一致。未改的辅助
-程序保留源码 `6e9d13ed`；CLI Node22.22.2构建既有 Node24.21.0/Python3.12.13。此前官方归档下载
-连接中断已在不改变校验和或时限的条件下重试通过。
+当前未签名、未安装完整 macOS arm64包保留已验收的准确 ASAR
+`dcbe7010501f5a859a762d4103f10a0c90381fb2dd1a7cac2e7a032b834df692`，37份 Desktop模块及5份
+渲染文件复用字节匹配证据。应用普通文件1,230,254,531字节，原生 payload783,640,739字节。
+干净源码 `37e8d7fe`新执行暂存、完整打包及生命周期 smoke均通过；全部27,820份原生文件／32个
+链接与暂存一致，修订目录与仓库字节相同。相较84184d46只改变已审核目录元数据，实现、依赖与许可
+不变。既有辅助程序保留源码 `6e9d13ed`；CLI Node22.22.2构建 Node24.21.0/Python3.12.13，
+核对59个锁定 Python依赖并通过 pip完整性检查。
 
-真实当前正式身份 Electron/原生 `safeStorage`启动及重启通过，使用明确的一次性 profile。
+准确源码84184d46的正式身份 Electron／原生 `safeStorage`启动及重启通过，使用明确的一次性
+profile；本轮复用未改 ASAR的 GUI证据，不计作重新执行。
 准确合成 Bot名称、实时连接和主 Bot设置恢复，随后从侧栏打开恢复的 Bot。未配置模型时会再次显示
 模型设置，既有跳过操作进入工作区。重启初始可访问性树为空、实际页面可见；键盘聚焦后文档出现，
 继续使用既有按钮。这仅是限定流程观测，不代表整体可访问性或 Claude界面验收。两次正式菜单退出
@@ -258,7 +263,9 @@ Python仍是唯一产品写入方。
 
 [CI37506404433](https://github.com/Peerframe/openbot/actions/runs/37506404433)已结束，branch9dc564c6、
 实际合并1ee8730c、真实 main基线8a50575a。15项任务通过，安全及汇总 check因新入库的旧 SDK公告
-失败；凭证及 Python审计未执行，不冒充 SDK修复验收。当前候选 hosted CI是下个有界检查点。
+失败；凭证及 Python审计未执行，不冒充 SDK修复验收。随后 CI37511515733已通过安全任务：
+精确23条历史样例、npm审计0、58个外部 Python依赖完整审计，无已知漏洞或跳过；但发现下述
+旧目录哈希和一次 MCP超时，不代表目录修复验收。当前候选 hosted CI是下个有界检查点。
 既有[原生回执](typescript-control-plane-p2-native.json)的 `currentP2Candidate`保留本轮准确范围，
 此前各项保持日期记录。[PR200](https://github.com/Peerframe/openbot/pull/200)仍为 Draft且未合并。
 Claude的 P2整体界面验收仍缺失，P3–P5尚未切换所有权。没有增加模型、已注册 Worker或系统应用；

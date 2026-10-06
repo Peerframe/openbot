@@ -357,7 +357,7 @@
       "disposableProfile": true,
       "ownerLogin": "automatic native bootstrap login",
       "botCreatedAndRenamed": true,
-      "expectedBotName": "\u65b0\u5efa BotTS P2 Native Fixture",
+      "expectedBotName": "新建 BotTS P2 Native Fixture",
       "botRestoredAfterRestart": true,
       "realtimeConnectionRestored": true,
       "fileChecks": {
@@ -969,7 +969,7 @@
   },
   "currentP2Candidate": {
     "date": "2026-10-07 (Asia/Singapore)",
-    "productSourceHead": "84184d46f5ca77b882b9f79f65d86ac2caaa6b2d",
+    "productSourceHead": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
     "sourceDirty": false,
     "acceptedMain": "8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe",
     "acceptedUi": [
@@ -1012,22 +1012,42 @@
     },
     "fullCheck": {
       "exitCode": 0,
-      "sourceHead": "84184d46f5ca77b882b9f79f65d86ac2caaa6b2d",
+      "sourceHead": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
       "docsMarkdownFiles": 599,
       "lintTasks": 10,
       "lintCached": 10,
       "typecheckTasks": 33,
-      "typecheckCached": 30,
+      "typecheckCached": 33,
       "testTasks": 27,
-      "testCached": 25,
+      "testCached": 27,
       "buildTasks": 19,
-      "buildCached": 18,
-      "actuallyExecuted": {
-        "web": 677,
-        "desktop": 578,
-        "desktopPlatformSkips": 3
+      "buildCached": 19,
+      "turboTasksAllCached": true,
+      "priorQualifiedUiCheck": {
+        "exitCode": 0,
+        "sourceHead": "84184d46f5ca77b882b9f79f65d86ac2caaa6b2d",
+        "docsMarkdownFiles": 599,
+        "lintTasks": 10,
+        "lintCached": 10,
+        "typecheckTasks": 33,
+        "typecheckCached": 30,
+        "testTasks": 27,
+        "testCached": 25,
+        "buildTasks": 19,
+        "buildCached": 18,
+        "actuallyExecuted": {
+          "web": 677,
+          "desktop": 578,
+          "desktopPlatformSkips": 3
+        },
+        "unchangedOtherTestsCachedFromSdkRepair": true
       },
-      "unchangedOtherTestsCachedFromSdkRepair": true
+      "focusedActuallyExecuted": {
+        "pythonCatalogPassed": 6,
+        "pythonCatalogDatabaseSkipped": 1,
+        "typescriptCatalogPassed": 2,
+        "realPythonPluginHttpMcpPassed": 30
+      }
     },
     "realHttpHttpsReuse": {
       "testedSdkRepairSource": "10f64b7a03e24c6b56003dedf5ca051d6458ea64",
@@ -1042,15 +1062,20 @@
       "verifiedCaAndSecureCookies": true,
       "mixedDirectMixedRollback": true,
       "pythonSoleWriter": true,
-      "liveProviderOrTemporalCalls": false
+      "liveProviderOrTemporalCalls": false,
+      "catalogMetadataFollowup": {
+        "sourceHead": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
+        "realPythonPluginHttpMcpPassed": 30,
+        "exitCode": 0,
+        "otherProductImplementationDependencyAndHttpConsumerDiffEmpty": true
+      }
     },
     "nativeComponent": {
-      "sourceHead": "76579bbe37a58bb0213eca563124d0c6fe114430",
+      "sourceHead": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
       "sourceClean": true,
       "stageExitCode": 0,
       "packageExitCode": 0,
       "nativeSmokeExitCode": 0,
-      "currentNativeCodeDependencyAndNoticeDiffEmpty": true,
       "stageAndPackagedNativeBytesMatched": true,
       "currentSmoke": {
         "parentEofStoppedActualApi": true,
@@ -1071,19 +1096,31 @@
       "companionUnchanged": true,
       "builderNode": "22.22.2",
       "packagedNode": "24.21.0",
-      "packagedPython": "3.12.13"
+      "packagedPython": "3.12.13",
+      "previousSourceHead": "76579bbe37a58bb0213eca563124d0c6fe114430",
+      "onlyNativeProductInputChange": [
+        "apps/server-python/src/openbot_server/plugin_catalog.json"
+      ],
+      "implementationDependencyAndNoticeDiffEmpty": true,
+      "stageAndPackagedNativeRegularFilesMatched": 27820,
+      "stageAndPackagedNativeSymlinksMatched": 32,
+      "lockedPythonDistributions": 59
     },
     "package": {
-      "sourceHead": "84184d46f5ca77b882b9f79f65d86ac2caaa6b2d",
+      "sourceHead": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
       "asarSha256": "dcbe7010501f5a859a762d4103f10a0c90381fb2dd1a7cac2e7a032b834df692",
       "compiledDesktopFilesMatched": 37,
       "rendererFilesMatched": 5,
-      "regularFileBytes": 1230254451,
-      "nativeRegularFileBytes": 783640659,
+      "regularFileBytes": 1230254531,
+      "nativeRegularFileBytes": 783640739,
       "nativeSymlinks": 32,
-      "nativeComponentSource": "76579bbe37a58bb0213eca563124d0c6fe114430",
+      "nativeComponentSource": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
       "nativeComponentCodeAndDependencyDiffEmpty": true,
-      "packagingExitCode": 0
+      "packagingExitCode": 0,
+      "asarEqualsQualified84184d46": true,
+      "compiledAndRendererMatchEvidence": "unchanged ASAR SHA-256; reuse qualified 84184d46 byte proof",
+      "catalogMatchesRepositorySource": true,
+      "catalogSha256": "5e49b13ff2c3dcf5a12b59659b145110cdf0554445245430641416e02d279e54"
     },
     "actualCanonicalElectronJourney": {
       "sourceHead": "84184d46f5ca77b882b9f79f65d86ac2caaa6b2d",
@@ -1156,7 +1193,9 @@
         "ownedProcessesRemaining": 0,
         "productServiceNotStarted": true,
         "privateRootRemoved": true
-      }
+      },
+      "reuseForCurrentProductSource": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
+      "reuseReason": "identical ASAR and unchanged native implementation/dependencies; only reviewed catalog metadata changes, separately rebuilt and lifecycle-qualified"
     },
     "priorCi": {
       "run": 37506404433,
@@ -1181,6 +1220,41 @@
       "P3-P5 ownership switches"
     ],
     "applicationsInstalled": 0,
-    "p3OwnershipSwitched": false
+    "p3OwnershipSwitched": false,
+    "catalogRepair": {
+      "revision": 2,
+      "templateSource": "10f64b7a03e24c6b56003dedf5ca051d6458ea64",
+      "catalogSha256": "5e49b13ff2c3dcf5a12b59659b145110cdf0554445245430641416e02d279e54",
+      "manifestHashUpdated": true,
+      "fourOtherBoundHashesUnchanged": true,
+      "sourceCommitUrlAndReviewMovedTogether": true,
+      "authorityAndLiveReviewUnchanged": true
+    },
+    "unchangedPythonTimeoutReproduction": {
+      "sourceHead": "df5d09613a596e10f4092221feb6f7d729056a30",
+      "node": "22.22.2",
+      "pluginExitCode": 0,
+      "pluginPassed": 30,
+      "completeExitCode": 0,
+      "integratedPassed": 270,
+      "stagedArtifactsPassed": 19,
+      "timeoutAndAssertionsChanged": false
+    },
+    "intermediateCi": {
+      "run": 37511515733,
+      "branchHead": "df5d09613a596e10f4092221feb6f7d729056a30",
+      "actualMerge": "1da17a0062d66e7a4c02e32f47fb4bbed87354d0",
+      "actualBase": "8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe",
+      "securityPassed": true,
+      "credentialExactHistoricalFindings": 23,
+      "npmProductionAdvisories": 0,
+      "pythonExternalPinsAudited": 58,
+      "pythonAdvisoriesOrSkips": 0,
+      "knownFailures": [
+        "stale reviewed template manifest hash",
+        "one MCP content timeout; unchanged Node22 plugin and full Python reruns pass"
+      ],
+      "currentHeadQualification": false
+    }
   }
 }
