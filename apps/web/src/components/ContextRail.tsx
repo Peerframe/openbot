@@ -9,7 +9,7 @@ import type {
 import { useCallback, useId, useState } from "react";
 import { formatAttachmentSize } from "../channel-attachment-client";
 import { composerAttachEvent, type ShowMessageDetail, showMessageEvent } from "../composer-events";
-import { runStatusSummary } from "../run-state";
+import { runStatusSummary, runTitle } from "../run-state";
 import { requestNotificationPermission } from "../system-notifications";
 import { updatePreferences, useWorkspacePreferences } from "../workspace-preferences";
 import { ApprovalStack } from "./ApprovalStack";
@@ -688,11 +688,11 @@ function RunRow({
       className="ci-run"
       type="button"
       onClick={() => onInspect(run.id)}
-      aria-label={`查看任务：${run.title}`}
+      aria-label={`查看任务：${runTitle(run)}`}
     >
       <span className={`ci-run-dot ${run.status}`} aria-hidden="true" />
       <span className="ci-run-copy">
-        <strong>{run.title}</strong>
+        <strong>{runTitle(run)}</strong>
         {detail ? <small>{detail}</small> : null}
       </span>
       <span className={`ci-run-status ${run.status}`}>{runStatusLabel(run.status)}</span>

@@ -12,7 +12,7 @@ import type {
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { getRunProgress } from "../api";
 import { extensionOf } from "../channel-attachment-client";
-import { runStatusLabel, runStatusSummary, stageLabel } from "../run-state";
+import { runStatusLabel, runStatusSummary, runTitle, stageLabel } from "../run-state";
 import { actionLabel, expiryLabel, riskLabel } from "./ApprovalCard";
 import { ArtifactDownloadLink } from "./ArtifactCard";
 import { RobotAvatar } from "./RobotAvatar";
@@ -175,7 +175,7 @@ export function TaskCard({
         <Glyph status={run.status} small />
         <span className="task-text">
           <strong className={run.status === "cancelled" ? "is-muted" : ""}>
-            {label} · {run.title}
+            {label} · {runTitle(run)}
           </strong>
         </span>
         {run.status === "queued" && controls.canStop ? (
@@ -219,7 +219,7 @@ export function TaskCard({
         <div className="task-top">
           <Glyph status={run.status} />
           <span className="task-text">
-            <strong>已完成 · {run.title}</strong>
+            <strong>已完成 · {runTitle(run)}</strong>
             <span>
               {artifacts.length > 0
                 ? `${artifacts.length} 个产出`
@@ -248,7 +248,7 @@ export function TaskCard({
         <div className="task-top">
           <Glyph status={run.status} />
           <span className="task-text">
-            <strong>没能完成 · {run.title}</strong>
+            <strong>没能完成 · {runTitle(run)}</strong>
             <span>{runStatusSummary(run)}</span>
           </span>
           {detailsLink()}
@@ -277,7 +277,7 @@ export function TaskCard({
           <Glyph status={run.status} />
           <span className="task-text">
             <strong>
-              {run.status === "waiting_approval" ? "等你确认" : "正在工作"} · {run.title}
+              {run.status === "waiting_approval" ? "等你确认" : "正在工作"} · {runTitle(run)}
             </strong>
             <span>{detail}</span>
           </span>
@@ -288,7 +288,7 @@ export function TaskCard({
             <button type="button" onClick={() => onInspect(run.id)} aria-label="查看电脑画面">
               <img
                 src={`/api/v1/runs/${run.id}/frame?revision=${frame.revision}`}
-                alt={`${run.title} 的电脑画面`}
+                alt={`${runTitle(run)} 的电脑画面`}
               />
             </button>
             <span>
@@ -326,7 +326,10 @@ export function TaskCard({
       ) : (
         <span className="task-avatar" aria-hidden="true" />
       )}
-      <section className={`task-card is-${run.status}${tone}`} aria-label={`任务：${run.title}`}>
+      <section
+        className={`task-card is-${run.status}${tone}`}
+        aria-label={`任务：${runTitle(run)}`}
+      >
         {body}
         {childRuns.length > 0 ? (
           <Collaboration
@@ -464,7 +467,7 @@ function Collaboration({
           onClick={() => onInspect(child.id)}
         >
           <span className="task-text">
-            <strong>{child.title}</strong>
+            <strong>{runTitle(child)}</strong>
             <span>
               {[
                 botsById.get(child.botId)?.name ?? "频道 Bot",

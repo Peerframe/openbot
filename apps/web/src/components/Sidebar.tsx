@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 import { listPlugins } from "../plugin-api";
-import { indexActiveRunsByBot, isActiveRun, runStatusLabel } from "../run-state";
+import { indexActiveRunsByBot, isActiveRun, runStatusLabel, runTitle } from "../run-state";
 import {
   arrangeSidebar,
   highlightMatch,
@@ -236,7 +236,7 @@ export function Sidebar({
       : undefined;
     // A running task outranks the preview: it is what the Bot is doing now.
     const sub = run
-      ? `${runStatusLabel(run.status)} · ${run.title}`
+      ? `${runStatusLabel(run.status)} · ${runTitle(run)}`
       : (preview ??
         (item.kind === "channel"
           ? item.channel.description || `${item.channel.botIds.length} 名 Bot`

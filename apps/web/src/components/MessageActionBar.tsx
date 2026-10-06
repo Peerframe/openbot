@@ -9,6 +9,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { reactionLabels } from "./MessageReactions";
 import "./MessageActionBar.css";
+import { runTitle } from "../run-state";
 
 /**
  * Three bare icons beside the bubble (MessageActions artboard): 回应, 回复 and 更多. Reactions
@@ -229,7 +230,7 @@ export function MessageActionBar({
                       }}
                     >
                       任务详情
-                      <small>这条回复来自「{run.title}」</small>
+                      <small>这条回复来自「{runTitle(run)}」</small>
                     </button>
                   ) : null}
                 </>
