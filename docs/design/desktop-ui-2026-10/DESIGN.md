@@ -87,6 +87,18 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 - There is no phone layout (Owner decision 2026-10-03). The window keeps its desktop layout down to
   800px and scrolls below that.
 
+## Talking to a Bot like to someone who works for you (planned, C29)
+
+- Owner decision 2026-10-06: follow Grok Bot, with limits. The Owner says what they want in plain
+  words, and the Bot changes its own name, tag, 介绍, memory, routines, the skills it was taught and
+  its use of installed plugins. It then says what it did (ChatSetup board).
+- Every change is one centred line, for example 「已重命名为 v7 · 撤销」 or 「记下了 B 公司定价页
+  需要登录（来自 b.com）· 撤销」. Changes are also audited.
+- Only a standing instruction that came from outside, such as a webpage, asks first, with one card.
+- Computers, credentials, approval policy, new plugin connections and other Bots are never changed
+  from chat; the Bot says where to do them.
+- Contract: [research record](../../research/chat-driven-bot-setup.md).
+
 ## Creating Bots and 频道
 
 - **「+」 opens 新建聊天** (New): a 收件人 field with a dropdown list. The first two rows are actions —
