@@ -85,3 +85,62 @@ PR #85 的 CI `35812975675`、security 任务 `107028356527` 生产依赖审计�
 严格适配器。将四个候选文件放入仅本地临时提交后，再次进行完整历史离线扫描，仍返回 183，
 仅有原六条已审核命中，无新增命中，适配器通过。本轮没有提交或推送集成工作树；主集成检查
 也已完成 `npm run check` 并通过，最终发布提交的托管 CI 仍是合并门禁。
+
+## TS 契约与私有 peer 样例（2026-10-06）
+
+[Draft PR #200](https://github.com/Peerframe/openbot/pull/200)的准确 head为
+`49dac0186fa6a127dffc0b079458fca30ac54352`。
+[CI run37470541095](https://github.com/Peerframe/openbot/actions/runs/37470541095)生产依赖审计零命中，
+随后精确适配器拒绝五条未登记的历史 URI 负向测试。使用原有固定 TruffleHog3.97.1镜像，在
+只读完整历史 clone中关闭网络、验证与更新，实际重现 exit183、23条结果：18条原有精确样例，
+以及以下五条新样例。候选原文及诊断只保存在私有临时文件。
+
+重新核对既有固定 URI检测器及每条不可变源码行。Raw是 URL连接地址，RawV2还保留路径；
+两份摘要来自实际扫描。五条都以固定回环端口或保留示例域名构造假 userinfo，检查操作配置或
+目标输入在转发/联网前拒绝。它们不是账户凭据。继续沿用原有方案比较、扫描器及外部工具
+AGPL-3.0边界：改当前测试不能删除已发布历史，按路径或检测器排除会扩大豁免。不改依赖，
+不复制或实质改写扫描器，不验证或上传结果。
+
+五条均绑定提交 `a240b810ea08bde29004e947b0ffc0298ad8dd1a`、检测器17 / URI和未验证状态：
+
+- `apps/server-ts/src/app.test.ts:482`：拒绝私有 upstream操作配置中的 userinfo。
+- `apps/server-python/scripts/control-contract-fixtures.py:1152`：拒绝模型连接 base URL中的 userinfo。
+- `apps/server-python/tests/test_proxy_peer.py:76`：拒绝 public origin操作配置中的 userinfo。
+- `packages/contract-tests/src/work.test.ts:268`：拒绝私有 MCP测试目标中的 userinfo。
+- `packages/contract-tests/src/work.test.ts:75`：拒绝公共契约目标 origin中的 userinfo。
+
+两份准确摘要见[英文记录](credential-scan-fixture-triage.md#ts-contract-and-private-peer-fixtures-2026-10-06)。
+提交、路径、行号、检测器、验证状态及两份摘要必须全部匹配；任一变化、未知/已验证结果或扫描错误
+仍阻断。回归集共27条，逐项变更全部字段。当前测试改用 URL setter或分段 URL组件，保持拒绝
+输入一致并避免新增字面量命中。26项安全/工作流检查通过，包含未知、已验证、混合、无效结果和
+扫描错误拒绝；实际23条结果通过严格适配器。候选再次扫描及最终托管状态记入既有
+[迁移 Draft PR #200](https://github.com/Peerframe/openbot/pull/200)，本地回放不冒充 Linux托管门槛。
+
+### 面向全部 PR 的独立修复
+
+上述五条不可变样例已发布在另一分支，完整历史扫描会在所有 PR 中遇到它们，即使该 PR没有改迁移
+文件。迁移分支的适配器已接受这五条精确项，但 main原有22条记录仍会拒绝。因此只拆出五条登记、
+逐字段拒绝测试及本双语审阅，基于准确 main `bc2b2e7e5960912d8a1033c74233e43f5c75a1e7`准备独立
+修复，不带入迁移应用、公共契约或 Claude页面实现。
+
+当前迁移样例已在 `5ee5b3d7`中去掉字面量凭据 URL，以分开的 URL属性或组件构造相同 userinfo拒绝
+输入。改今天的源码不能删除 `a240b810`的不可变历史命中。本轮保留完整 fetched-history扫描。
+只扫 PR自身提交会改变现有覆盖范围，其他新取回的历史不再检查，需要单独的安全决策；不把它当作
+隐藏已知样例的办法。精确名单解决本次具体缺口，不改 workflow、扫描器、验证/错误拒绝、生产审计
+或历史。
+
+相同扫描器/适配器已在迁移 head `5ee5b3d7`实际托管通过：
+[run37475123514](https://github.com/Peerframe/openbot/actions/runs/37475123514)完整成功，扫描精确匹配
+23条历史样例。该运行不冒充独立 main修复 head的证据；其定向检查、全仓检查及托管结果须保留自身
+准确源码范围。
+
+独立验证：`security:config-check`通过26项，覆盖27条精确样例及逐字段变更拒绝。
+`npm run check`以0退出：lint10任务/0缓存、类型检查31/10缓存、测试25/12缓存、build18/12缓存；
+protocol446、Web666和 Desktop541通过/3项平台跳过为实际重跑，文档检查587份 Markdown。
+安装依赖前首次 workflow聚焦检查缺少 `yaml`而失败；锁定 `npm ci`后，聚焦及全门槛通过。
+没有改产品源码。
+
+准确 main的干净完整历史 clone中，仅本地候选提交 `e166fe17a45a3a3d86cadae7e5feee4639c0a432`
+经原固定离线扫描器返回183、23条历史命中，候选提交自身没有命中。同一份真实结果被已发布 main
+适配器拒绝，而修复适配器精确接受全部23条。原始候选保持私有、不打印/上传。随后只补入本证据段落；
+独立 PR最终托管 security和受保护 `check`仍须通过后才合入 main。
