@@ -16,7 +16,7 @@
 | `@electron/asar` | 4.3.0 | 2014 GitHub Inc.；MIT |
 | `write-file-atomic` | 8.0.0 | 2015 Rebecca Turner；ISC |
 | `signal-exit` | 4.1.0 | 2015–2023 Benjamin Coe、Isaac Z. Schlueter 与贡献者；ISC |
-| `@modelcontextprotocol/sdk` | 1.30.0 | 2024 Anthropic, PBC；MIT |
+| `@modelcontextprotocol/sdk` | 1.32.1 | 2024 Anthropic, PBC；MIT |
 | Vercel AI SDK `ai` | 7.0.93 | 2023 Vercel, Inc.；Apache-2.0 |
 | `@ai-sdk/openai`、`@ai-sdk/anthropic`、`@ai-sdk/moonshotai` | 4.0.66、4.0.53、3.0.49 | Vercel, Inc.；Apache-2.0 |
 | `@ai-sdk/provider`、`@ai-sdk/provider-utils` | 4.0.10 / 4.0.14、5.0.36 / 5.0.40 | Vercel, Inc.；Apache-2.0 |

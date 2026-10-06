@@ -4,7 +4,7 @@
 
 The unchanged MIT notebook example and its static view live here independently of the old
 TypeScript Server and test oracle. `SOURCE.json` records their original paths/hashes. The
-example uses the existing pinned MCP SDK1.30.0 and Zod4.6.2; it runs only on loopback.
+example uses the existing pinned MCP SDK1.32.1 and Zod4.6.2; it runs only on loopback.
 
 From the root after the normal locked install:
 

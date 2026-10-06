@@ -238,7 +238,7 @@ MIT/Apache 代码时，必须在 `THIRD_PARTY_NOTICES.md` 或对应 vendor 目�
 
 ## 第三方 MCP 工具插件
 
-已审查 MCP 2025-11-25 与官方 @modelcontextprotocol/sdk 1.30.0 / `2d889f2b329e46680ec9bdd565de4616c497825a`（MIT）。复用 Streamable HTTP Client、JSON Schema 校验和示例 Server API，仅增加 Server 端点边界、加密安装状态、按 Bot 授权、声明摘要绑定与一次性 Owner 审批。未复制源码，不启动子进程、不加载渲染插件、不信任 annotation 自授权、不自动重放。见[调研](research/third-party-mcp-plugins.md)与[作者手册](PLUGINS.zh-CN.md)。
+已审查 MCP 2025-11-25 与官方 @modelcontextprotocol/sdk 1.30.0 / `2d889f2b329e46680ec9bdd565de4616c497825a`（MIT）。2026-10-07 因 GHSA-6qxp-vccf-f47h（OAuth 客户端的凭证没有绑定到签发方）升级到 1.32.1 / `ff07b001194fe60ee9deb2121cf119057565796d`；1.30.0 到 1.32.1 的 17 个提交都是修复和可选项（凭证绑定签发方、只在同源内跟随重定向、限制请求体和批量大小），复用的接口不变。复用 Streamable HTTP Client、JSON Schema 校验和示例 Server API，仅增加 Server 端点边界、加密安装状态、按 Bot 授权、声明摘要绑定与一次性 Owner 审批。未复制源码，不启动子进程、不加载渲染插件、不信任 annotation 自授权、不自动重放。见[调研](research/third-party-mcp-plugins.md)与[作者手册](PLUGINS.zh-CN.md)。
 
 ## Kimi 桌面模型
 

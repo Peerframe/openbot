@@ -12,7 +12,7 @@
     "@ai-sdk/anthropic": "4.0.53",
     "@ai-sdk/moonshotai": "3.0.49",
     "@ai-sdk/openai": "4.0.66",
-    "@modelcontextprotocol/sdk": "1.30.0",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "@openbot/db": "0.0.0",
     "@openbot/domain": "0.0.0",
     "@openbot/logging": "0.0.0",
