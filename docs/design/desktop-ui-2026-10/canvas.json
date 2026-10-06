@@ -611,6 +611,14 @@
       "h": 900,
       "title": "② Bot 档案（建议：右栏收起）",
       "page": "review"
+    },
+    "ChatSetup.dc.html": {
+      "h": 1080,
+      "page": "chat",
+      "title": "C29 · 在聊天里设置 Bot（改动行、撤销与确认卡）",
+      "w": 1440,
+      "x": 0,
+      "y": 0
     }
   },
   "createdOnFiles": {
@@ -693,6 +701,15 @@
       "w": 240,
       "x": 0,
       "y": -320
+    },
+    "chatTitle": {
+      "kind": "title1",
+      "maxW": 1440,
+      "page": "chat",
+      "text": "OpenBot Desktop · 像跟下属交流一样设置 Bot（C29）",
+      "w": 240,
+      "x": 0,
+      "y": -320
     }
   },
   "order": [
@@ -771,7 +788,8 @@
     "SettingsNavDark.dc.html",
     "PrimaryBot.dc.html",
     "ReviewProfile.dc.html",
-    "ProfileRailClosed.dc.html"
+    "ProfileRailClosed.dc.html",
+    "ChatSetup.dc.html"
   ],
   "pages": [
     {
@@ -805,6 +823,10 @@
     {
       "id": "review",
       "name": "体验检查"
+    },
+    {
+      "id": "chat",
+      "name": "在聊天里设置 Bot"
     }
   ],
   "title": "OpenBot Desktop 界面优化"
