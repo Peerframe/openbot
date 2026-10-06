@@ -318,11 +318,20 @@ Python→TS：fresh5,508→6,162毫秒、restart4,423→4,864毫秒，子进程 
 Node22.22.2/npm10.9.9构建器，没有新增服务、依赖版本、权限或注册路径。
 针对打包政策的39项检查通过，包含缺少辅助程序时在实际打包前拒绝。源码改动的
 `npm run check`也通过：类型检查33任务/31缓存、测试27任务/25缓存、build19任务/17缓存，
-Desktop576通过/3项平台跳过及 TS33为实际执行。下一个交付点是
-从干净源码提交构建未签名、未安装的完整候选，核对资源并使用临时 profile验证原生启动。
-这不授权安装、注册或在用户 profile启用辅助程序。
+Desktop576通过/3项平台跳过及 TS33为实际执行。完整资源检查点现已通过，源码为干净的固定提交
+`6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c`，双父提交保留迁移检查点与 main已接受的 PR196。
+既有构建器使用官方 Node22.22.2/npm10.9.9和 SDK27.0；辅助程序元数据和包内运行时清单匹配
+该提交。未签名完整候选位于 `apps/desktop/out/ts-product/OpenBot-darwin-arm64/OpenBot.app`，
+ASAR为 `ce65a5f77610129f5b903e150d09129efe807127dc9da655a9b5c55e3c301b7e`。
+普通文件共1,230,271,274字节，辅助程序占114,866,973字节。全部27,820份原生普通文件、32个
+链接与暂存一致，37份编译后的 Desktop模块与 ASAR一致。包内原生 smoke exit0，覆盖 SQL初始化、
+重启保留数据、双服务退出、父进程 EOF、不安全目录/缺少 engine拒绝及所属进程清理。
+它使用合成加密和临时数据，不证明正式身份的界面或 Worker注册。此前 Preview的 safeStorage
+证据仍保留独立身份和依赖范围。Electron打包跳过可选 `.icon`格式，既有 `.icns`仍保留。
+没有安装应用、启用 Worker或访问用户 profile；已安装 ASAR仍与 P0哈希一致。
+发行签名、受限 Keychain和整体界面验收仍须分别核对。
 
-整合后 Electron/safeStorage功能检查点已关闭。完整资源检查点之后核对 P2剩余的 hosted CI
+整合后 Electron/safeStorage功能检查点已关闭。下一有界检查点是核对 P2剩余的 hosted CI
 和 Claude整体界面验收，通过后才切换 P3写入方。Python仍是唯一产品写入方，P3–P5尚未启用，
 完整迁移仍已授权；未将剩余门槛改称通过。已安装 OpenBot的 ASAR仍与 P0基线一致：
 `e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0`；Applications中没有安装 Preview。

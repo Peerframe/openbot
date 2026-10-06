@@ -585,8 +585,114 @@
         "serverTs": 33
       }
     },
-    "actualPackageAndCompanion": "pending clean-commit build",
+    "actualPackageAndCompanion": "completed from clean immutable source 6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
     "previewServiceBoundaryPreserved": true,
     "installed": false
+  },
+  "fullCompanionCandidate": {
+    "qualification": {
+      "generatedAt": "2026-10-06T06:42:03.176Z",
+      "sourceCommit": "6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
+      "workerManifest": {
+        "format": "openbot.macos-worker-host-manifest/v1",
+        "version": "0.1.0-alpha.9",
+        "sourceCommit": "6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
+        "architecture": "arm64",
+        "files": [
+          {
+            "path": "Contents/Resources/node/app/index.js",
+            "sha256": "199af5cb69e6a47407715a413d94ef20c11eebd4bd057aaab6db684656336a2c",
+            "size": 1055039,
+            "mode": "0644"
+          },
+          {
+            "path": "Contents/Resources/node/bin/node",
+            "sha256": "5c899797c4eb8f1db5563eea56538342ddb3e9276ee1b04a5a1f0f1023d2b011",
+            "size": 112989184,
+            "mode": "0755"
+          }
+        ]
+      },
+      "workerBuild": {
+        "format": "openbot.macos-worker-host-build/v1",
+        "version": "0.1.0-alpha.9",
+        "buildVersion": "20261006",
+        "sourceCommit": "6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
+        "architecture": "arm64",
+        "nodeVersion": "22.22.2",
+        "signed": false
+      },
+      "compiledDesktopFilesMatched": 37,
+      "asarSha256": "ce65a5f77610129f5b903e150d09129efe807127dc9da655a9b5c55e3c301b7e",
+      "installed": false,
+      "workerRegistered": false,
+      "distributionSigned": false,
+      "notarized": false,
+      "nativeStagedTreeMatchesPackage": true,
+      "nativeRegularFilesCompared": 27820,
+      "nativeSymlinksCompared": 32,
+      "regularFileBytes": 1230271274,
+      "nativeRegularFileBytes": 783640659,
+      "workerRegularFileBytes": 114866973,
+      "bundleIdentity": {
+        "CFBundleIdentifier": "dev.openbot.desktop",
+        "CFBundleName": "OpenBot",
+        "CFBundleExecutable": "OpenBot",
+        "CFBundleShortVersionString": "0.1.0-alpha.9"
+      },
+      "electronVersion": "44.3.0",
+      "packagedFastUriPackages": [
+        {
+          "path": "node_modules/fast-uri/package.json",
+          "version": "3.1.8"
+        },
+        {
+          "path": "node_modules/fast-json-stringify/node_modules/fast-uri/package.json",
+          "version": "4.2.1"
+        },
+        {
+          "path": "node_modules/@fastify/ajv-compiler/node_modules/fast-uri/package.json",
+          "version": "4.2.1"
+        }
+      ],
+      "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+      "installedAppPreserved": true,
+      "verificationRepair": "initial receipt script used an incorrect server/node_modules path; corrected to actual root node_modules and reran whole staged/package comparison; no product failure"
+    },
+    "packagedNativeSmoke": {
+      "parentEofStoppedActualApi": true,
+      "parentEofStoppedOwnedProcessCount": 2,
+      "tsForwardingEntry": true,
+      "eitherProductExitStoppedPair": true,
+      "unsafeDirectoryRefusedAndPostgresStopped": true,
+      "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+      "pythonProductHealth": true,
+      "ownerLogin": true,
+      "postgresInitialized": true,
+      "restartPreservedData": true,
+      "serverAndPostgresStopped": true,
+      "syntheticOnly": true,
+      "nativeKeychainVerified": false
+    },
+    "runtimeInputs": {
+      "nodeVersion": "22.22.2",
+      "nodeSha256": "db4b275b83736df67533529a18cc55de2549a8329ace6c7bcc68f8d22d3c9000",
+      "npmVersion": "10.9.9",
+      "npmIntegrity": "sha512-1g+6jLQvaIuB4zwvHL7yrXuXcWZwDsCtBX8bbWDqbvJSSr9nPiDDWTHNgwXR27iIcTTW7v3A57hDW9RYv2W4Yg==",
+      "sources": [
+        "https://nodejs.org/dist/v22.22.2/node-v22.22.2-darwin-arm64.tar.gz",
+        "https://registry.npmjs.org/npm/10.9.9"
+      ]
+    },
+    "packagingWarning": "Electron Packager skipped optional .icon format; existing .icns icon retained; pixel acceptance remains unqualified",
+    "unqualified": [
+      "canonical-identity actual Electron/safeStorage journey",
+      "Claude whole-interface acceptance",
+      "Worker registration/access-group provisioning",
+      "Developer ID/notarization",
+      "active Work/Temporal",
+      "hosted platform checks"
+    ],
+    "scope": "unsigned and uninstalled macOS arm64 full-resource candidate; Python sole writer; no Worker service enabled"
   }
 }

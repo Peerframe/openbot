@@ -451,12 +451,22 @@ Node22.22.2/npm10.9.9 builder; no new service, dependency version, authority or 
 The focused package policy suite passes39, including actual refusal before packaging when the
 companion is missing. The changed packaging source also passes `npm run check`:33 typecheck
 tasks/31 cached,27 test tasks/25 cached,19 build tasks/17 cached; Desktop576/3 platform skips
-and TS33 actually executed. The next delivery checkpoint is an unsigned, uninstalled full candidate from
-a clean source commit, resource validation and disposable-profile native smoke. This does not
-authorize installing, registering or enabling the companion against the user's profile.
+and TS33 actually executed. The full resource checkpoint now passes from clean immutable source
+`6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c` (parents preserve both the migration checkpoint and
+accepted main PR196). The existing builder used official Node22.22.2/npm10.9.9 and SDK27.0;
+its app metadata and packaged runtime inventory match that commit. The unsigned full candidate is
+`apps/desktop/out/ts-product/OpenBot-darwin-arm64/OpenBot.app`, ASAR
+`ce65a5f77610129f5b903e150d09129efe807127dc9da655a9b5c55e3c301b7e`, with1,230,271,274
+regular-file bytes, including114,866,973 companion bytes. All27,820 native regular files and32
+symlinks match staging;37 compiled Desktop modules match ASAR. Packaged native smoke exits0 for
+SQL initialization, restart persistence, paired exits, parent EOF and unsafe/missing-engine refusal,
+with owned-process cleanup. It uses synthetic encryption and disposable data; no canonical GUI or
+Worker registration is claimed. Existing Preview safeStorage evidence retains its separate identity
+and dependency scope. Electron Packager skipped its optional `.icon` format; `.icns` remains.
+No app was installed, Worker enabled, or user profile accessed; the installed ASAR still matches
+its P0 hash. Candidate signing, restricted Keychain and whole-interface gates remain separate.
 
-The integrated Electron/safeStorage functional checkpoint is closed. After the full resource checkpoint:
-reconcile the remaining P2 hosted CI and Claude whole-interface acceptance before switching a P3
+The integrated Electron/safeStorage functional checkpoint is closed. The next bounded checkpoint is to reconcile the remaining P2 hosted CI and Claude whole-interface acceptance before switching a P3
 writer. Python remains the sole product writer; P3–P5 are not active. Full migration remains
 authorized; the remaining gates have not been relabeled as passing. The installed OpenBot ASAR still matches the P0 baseline
 `e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0`; no Preview is installed in Applications.
