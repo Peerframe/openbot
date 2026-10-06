@@ -12,7 +12,7 @@ test("creates a standalone pinned plugin and refuses to overwrite an existing pr
   t.after(() => rm(root, { recursive: true, force: true }));
   const directory = await createMcpPlugin(join(root, "plugin"));
   const manifest = JSON.parse(await readFile(join(directory, "package.json"), "utf8"));
-  assert.equal(manifest.dependencies["@modelcontextprotocol/sdk"], "1.30.0");
+  assert.equal(manifest.dependencies["@modelcontextprotocol/sdk"], "1.32.1");
   assert.equal(manifest.dependencies.zod, "4.6.2");
   for (const name of ["plugin-example.ts", "plugin-example-view.ts"])
     assert.deepEqual(

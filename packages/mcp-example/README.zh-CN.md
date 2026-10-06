@@ -3,7 +3,7 @@
 [English](README.md) · [简体中文](README.zh-CN.md)
 
 原 MIT 笔记示例与静态视图保持字节不变，现独立于旧 TypeScript Server 和测试 oracle。
-`SOURCE.json` 记录原路径与哈希。示例使用已锁定的 MCP SDK1.30.0 与 Zod4.6.2，仅监听回环。
+`SOURCE.json` 记录原路径与哈希。示例使用已锁定的 MCP SDK1.32.1 与 Zod4.6.2，仅监听回环。
 
 完成常规锁定安装后，在仓库根目录执行：
 
