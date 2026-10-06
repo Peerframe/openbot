@@ -34,6 +34,8 @@ type SidebarItem = { kind: "channel"; channel: Channel } | { kind: "bot"; bot: B
 
 interface SidebarProps {
   destination?: "chat" | "work";
+  /** A quick-created Bot is on its way: its row shows at once as 「创建中…」 (after Grok). */
+  creatingBot?: boolean | undefined;
   onWork?: (() => void) | undefined;
   onAutomations?: (() => void) | undefined;
   onSkills?: (() => void) | undefined;
@@ -71,6 +73,7 @@ interface SidebarProps {
 
 /** The shared sidebar of the design contract (docs/design/desktop-ui-2026-10/Sidebar.dc.html). */
 export function Sidebar({
+  creatingBot,
   onWork,
   onSkills,
   activity,
@@ -423,6 +426,17 @@ export function Sidebar({
                   setMenuTarget(target);
                 }}
               />
+            ) : null}
+            {!section.group && creatingBot ? (
+              <div className="sb-row is-creating" role="status">
+                <span className="sb-avatar sb-creating-avatar" aria-hidden="true" />
+                <span className="sb-text">
+                  <span className="sb-title-line">
+                    <strong className="sb-name">新建 Bot</strong>
+                  </span>
+                  <small className="sb-sub">创建中…</small>
+                </span>
+              </div>
             ) : null}
             {section.collapsed ? null : section.entries.map((entry) => renderRow(entry, ""))}
           </div>
