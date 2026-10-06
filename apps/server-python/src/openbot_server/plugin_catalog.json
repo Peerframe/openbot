@@ -1,11 +1,11 @@
 {
   "format": "openbot.reviewed-plugin-catalog/v1",
-  "revision": 2,
+  "revision": 3,
   "entries": [
     {
       "id": "openbot-notebook-template",
-      "name": "OpenBot notebook developer template",
-      "description": "A reviewed self-hosted MCP starter with an in-memory notebook and isolated offline view. Requires deployment and explicit grants.",
+      "name": "OpenBot 笔记本开发模板",
+      "description": "经过审核的自托管 MCP 入门模板，带一个内存笔记本和一个离线视图。需要你自己部署，并逐个授权给 Bot 才能用。",
       "distribution": "self-hosted-template",
       "version": "1.0.0",
       "license": "MIT",

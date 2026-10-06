@@ -1,6 +1,6 @@
 import type { EmployeeEvolutionEvent } from "@openbot/domain";
 import { describe, expect, it } from "vitest";
-import { selectEvolutionArchiveEvents } from "./EmployeeEvolutionArchive";
+import { evolutionTitle, selectEvolutionArchiveEvents } from "./EmployeeEvolutionArchive";
 
 const events: EmployeeEvolutionEvent[] = [
   {
@@ -54,5 +54,14 @@ describe("selectEvolutionArchiveEvents", () => {
       "event-1",
     ]);
     expect(selectEvolutionArchiveEvents(events, "imported")).toEqual([]);
+  });
+});
+
+describe("evolutionTitle", () => {
+  it("translates the Server's fixed English titles and keeps any other title", () => {
+    expect(evolutionTitle({ title: "Employee created" })).toBe("加入团队");
+    expect(evolutionTitle({ title: "Employee role updated" })).toBe("职责更新");
+    expect(evolutionTitle({ title: "Skill verified" })).toBe("技能通过审核");
+    expect(evolutionTitle({ title: "新增技能「读取更新日志」" })).toBe("新增技能「读取更新日志」");
   });
 });
