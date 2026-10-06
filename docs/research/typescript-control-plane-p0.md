@@ -367,8 +367,19 @@ source changes. [Consumer-specific review](retained-developer-tools.md#integrati
 records that the TS native closure includes fast-uri. Its incremental native refresh, packaged smoke
 and real TLS contracts have now passed; the dated results below retain their original scope.
 The evidence below retains the pre-PR196 dependency scope; it is not relabeled as a new run.
-Claude's open interface PR194 and planning PR195 do not supply whole-interface acceptance for this
-candidate. The migration branch has not been pushed and has no remote PR.
+Accepted [C29 planning PR195](https://github.com/Peerframe/openbot/pull/195) is now merged on main
+at `2bc698932596698d36e08f20bb4e26e9568b125c` and integrated locally by merge
+`8152dd8ac77083b6d86a22913ec86ab1c685f5d6`. Exactly ten documentation/design-record files changed;
+product, package, script, CI and contributor-rule paths remain byte-identical to `b466d758`.
+C29 remains proposed; this migration does not implement it. This documentation-only integration
+passes `docs:check` (12 tests,599 Markdown files) and `research:check` (27 tests); both exit0,
+with no test skips. The PR-event check is skipped outside a `pull_request` event. Product source
+is unchanged, so the earlier full/native evidence retains its scope without another binary rebuild.
+Current native qualification keeps its exact product source `dfc8475f`. Claude's open interface PR194/PR198 and research PR199 do not
+supply whole-interface acceptance for this candidate. The migration branch has not been pushed
+and has no remote PR. The outstanding publication request is for this branch and one Draft PR;
+without that authorization, required GitHub CI cannot run. Whole-interface acceptance remains
+Claude's separate gate. These are the remaining dependencies before a P3 ownership switch.
 
 Current integration evidence (macOS arm64; CLI Node26.0.0, not the earlier packaged Node24):
 
