@@ -487,7 +487,12 @@
   white-space: pre;
 }
 .app-shell .channel-workspace.channel-native .group-continuation .message-sender,
-.app-shell .channel-workspace.channel-native .message-row.human .message-sender {
+.app-shell .channel-workspace.channel-native .message-row.human .message-sender,
+/* In a 单聊 the title already names the Bot (review 2026-10-05). */
+  .app-shell
+  .channel-workspace.channel-native
+  .message-row.direct-message
+  .message-sender {
   display: none;
 }
 .app-shell .channel-workspace.channel-native .rich-message {

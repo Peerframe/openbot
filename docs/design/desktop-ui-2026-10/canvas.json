@@ -592,9 +592,25 @@
       "x": 0,
       "y": 0,
       "w": 1440,
-      "h": 1120,
-      "title": "主 Bot · 三个方案",
+      "h": 1160,
+      "title": "主 Bot · 方案一 · 王冠",
       "page": "primary"
+    },
+    "ReviewProfile.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1900,
+      "h": 860,
+      "title": "第 4 条 · Bot 档案页的重复信息",
+      "page": "review"
+    },
+    "ProfileRailClosed.dc.html": {
+      "x": 0,
+      "y": 980,
+      "w": 1440,
+      "h": 900,
+      "title": "② Bot 档案（建议：右栏收起）",
+      "page": "review"
     },
     "ChatSetup.dc.html": {
       "h": 1080,
@@ -673,6 +689,15 @@
       "maxW": 1440,
       "page": "primary",
       "text": "OpenBot Desktop · 主 Bot",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
+    "reviewTitle": {
+      "kind": "title1",
+      "maxW": 1900,
+      "page": "review",
+      "text": "OpenBot Desktop · 体验检查",
       "w": 240,
       "x": 0,
       "y": -320
@@ -762,6 +787,8 @@
     "ChannelInfoDark.dc.html",
     "SettingsNavDark.dc.html",
     "PrimaryBot.dc.html",
+    "ReviewProfile.dc.html",
+    "ProfileRailClosed.dc.html",
     "ChatSetup.dc.html"
   ],
   "pages": [
@@ -791,7 +818,11 @@
     },
     {
       "id": "primary",
-      "name": "主 Bot · 待选"
+      "name": "主 Bot"
+    },
+    {
+      "id": "review",
+      "name": "体验检查"
     },
     {
       "id": "chat",
