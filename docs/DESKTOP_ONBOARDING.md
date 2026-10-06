@@ -24,8 +24,9 @@ stacked Bot avatars form one borderless disclosure for channel details and membe
 no separate more menu. Share, Work computers and the right-panel toggle remain separate controls
 at the top right. The compact task-progress strip and contextual information panel are retained.
 
-Click a Bot in the sidebar to open its persistent direct conversation. Right-click it to open the
-Bot profile. A direct conversation has exactly one Server-owned Bot identity; repeated opens reuse
+Click a Bot in the sidebar to open its persistent direct conversation; its Bot information rail
+shows details, work and growth, files and computer. Clicking a Bot's avatar or name elsewhere
+opens the same conversation with that rail. A direct conversation has exactly one Server-owned Bot identity; repeated opens reuse
 the same conversation, and adding other members or routing its task to another Bot is rejected.
 Direct conversations do not appear as ordinary channels. See
 [direct-conversation research](research/desktop-direct-conversations.md).
@@ -141,8 +142,7 @@ motion remains effective even when the local reduced-motion switch is off. See
 Open **Plugins** at the sidebar bottom. It occupies the full application window with **Back to
 app**, without the workspace sidebar. The Skills tab lists actual workspace skills with search
 and state filters. **Add skill** imports a single `SKILL.md` for a selected Bot into the existing
-review process; imported content is not immediately trusted or activated. Open a skill's Bot
-profile to review its source, version, full content, declared capabilities and content digest.
+review process; imported content is not immediately trusted or activated. Review a skill in Settings › Skills to check its source, version, full content, declared capabilities and content digest.
 The Bots tab provides Bot creation and the existing reviewed Bot-template import flow. Failed
 profile reads are shown as unavailable, not empty. This is a workspace extension interface, not
 a public marketplace or an installer for arbitrary executable plugin bundles. See

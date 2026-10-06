@@ -293,5 +293,40 @@ fixtures construct the same rejected input with URL setters or split URL compone
 literal matches. All26 focused credential/workflow cases pass, including unknown/verified/mixed
 finding, malformed output and scanner-error refusals. The actual23-finding result passes the
 strict adapter. Candidate rescan and final hosted results are recorded in the existing
-[migration checkpoint](typescript-control-plane-p0.md#current-migration-checkpoint-2026-10-06),
+[migration Draft PR #200](https://github.com/Peerframe/openbot/pull/200),
 with local replay kept distinct from the Linux hosted gate.
+
+### Independent repair for all PRs
+
+The five immutable fixtures above were published on a separate branch, so every full-history PR
+scan encounters them even when that PR changes no migration file. The migration branch's adapter
+already accepts these exact tuples, but main's prior22-entry adapter still refuses them. Extract
+only the five entries, their all-field rejection tests and this bilingual review into a separate
+repair based on main `bc2b2e7e5960912d8a1033c74233e43f5c75a1e7`. No migration application, public
+contract or Claude page implementation is included.
+
+Current migration fixtures were also rewritten without literal credential URLs in `5ee5b3d7`;
+negative tests still reject equivalent userinfo constructed through separate URL properties or
+components. Editing current code cannot remove the immutable `a240b810` findings. Retain complete
+fetched-history scanning for this repair. A PR-only commit range would change the existing coverage
+and would not examine newly fetched unrelated history; it needs a separate security decision rather
+than being used to hide this known fixture. The exact reviewed adapter closes this concrete gap
+without changing workflow, scanner, verification, error refusal, production audit or history.
+
+The unchanged scanner/adapter source pair has actual hosted evidence at migration head `5ee5b3d7`:
+[run37475123514](https://github.com/Peerframe/openbot/actions/runs/37475123514) completed successfully,
+including23 exact historical fixtures. That run does not qualify this independent main-based head;
+its focused/full repository checks and hosted results retain their own source scope.
+
+Independent validation: `security:config-check` passes26 cases with27 exact tuple fixtures and
+all-field mutations. `npm run check` exits0: lint10/0 cached, typecheck31/10 cached, test25/12
+cached, build18/12 cached; protocol446, Web666 and Desktop541/3 platform skips actually rerun.
+Documentation validates587 Markdown files. The first focused workflow attempt before npm install
+failed on missing `yaml`; after locked `npm ci` the focused/full gates pass. No product source changes.
+
+A clean full-history clone based on exact main above, with local-only candidate commit
+`e166fe17a45a3a3d86cadae7e5feee4639c0a432`, completes the unchanged offline scanner with exit183,
+23 historical findings and no finding at the candidate commit. The published main adapter rejects
+that same actual result; the repaired adapter accepts all23 exact reviewed findings. Raw candidates
+are private, never printed/uploaded. Subsequent edits add only this evidence paragraph. Final hosted
+security and protected `check` for the independent PR remain required before main merge.

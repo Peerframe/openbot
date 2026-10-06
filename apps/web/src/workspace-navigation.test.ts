@@ -13,12 +13,8 @@ describe("workspace navigation history", () => {
     expect(moveLocation(initialNavigation, 1)).toBe(initialNavigation);
     const channel = pushLocation(initialNavigation, { kind: "channel", id: "channel-a" });
     expect(pushLocation(channel, { kind: "channel", id: "channel-a" })).toBe(channel);
-    const profile = pushLocation(channel, { kind: "employee", id: "bot-a", tab: "skills" });
-    expect(profile.entries[profile.index]).toEqual({
-      kind: "employee",
-      id: "bot-a",
-      tab: "skills",
-    });
+    const profile = pushLocation(channel, { kind: "work" });
+    expect(profile.entries[profile.index]).toEqual({ kind: "work" });
     const back = moveLocation(profile, -1);
     expect(back.entries[back.index]).toEqual({ kind: "channel", id: "channel-a" });
     const forward = moveLocation(back, 1);
@@ -30,7 +26,7 @@ describe("workspace navigation history", () => {
   it("discards only forward history when opening a different destination after back", () => {
     const channel = pushLocation(initialNavigation, { kind: "channel", id: "channel-a" });
     const work = pushLocation(channel, { kind: "work" });
-    const profile = pushLocation(work, { kind: "employee", id: "bot-a", tab: "overview" });
+    const profile = pushLocation(work, { kind: "new" });
     const back = moveLocation(profile, -1);
     const next = pushLocation(back, { kind: "channel", id: "channel-b" });
     expect(next).toEqual({
@@ -43,7 +39,7 @@ describe("workspace navigation history", () => {
       index: 3,
     });
     expect(moveLocation(next, 1)).toBe(next);
-    expect(profile.entries[3]).toEqual({ kind: "employee", id: "bot-a", tab: "overview" });
+    expect(profile.entries[3]).toEqual({ kind: "new" });
   });
 
   it("retains at most 50 locations with a reachable oldest and newest entry", () => {

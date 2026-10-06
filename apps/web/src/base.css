@@ -159,12 +159,12 @@ select:focus-visible {
   }
 }
 
-/* LongLists: no track; a 6px thumb appears while scrolling and fades out a second later, widening
-   to 10px under the pointer. Applies to every scroll area (sidebar, conversation, rails, popovers,
-   settings). */
+/* LongLists: no track; a faint 4px thumb appears while scrolling and fades out a second later,
+   widening to 6px under the pointer (owner feedback 2026-10-06: lighter, after Grok). Applies to
+   every scroll area (sidebar, conversation, rails, popovers, settings). */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   background: transparent;
 }
 ::-webkit-scrollbar-track,
@@ -178,9 +178,9 @@ select:focus-visible {
   background-color: transparent;
 }
 [data-scrolling]::-webkit-scrollbar-thumb {
-  background-color: rgb(0 0 0 / 22%);
+  background-color: light-dark(rgb(0 0 0 / 14%), rgb(255 255 255 / 16%));
 }
 ::-webkit-scrollbar-thumb:hover {
-  border-width: 0;
-  background-color: rgb(0 0 0 / 38%);
+  border-width: 1px;
+  background-color: light-dark(rgb(0 0 0 / 26%), rgb(255 255 255 / 28%));
 }

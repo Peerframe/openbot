@@ -60,7 +60,7 @@ Evidence: [Agent tools](https://github.com/Peerframe/openbot/blob/67ed7a1f18b804
 
 The learning loop is partially real: a successful task may propose one reusable lesson. The Owner can edit its title/body, accept it as internal non-portable memory, or reject and delete the candidate. A separate checkbox permits later model use. Before review, it is neither active memory nor available to later tasks; the Agent cannot approve itself. This is reviewed learning, not observation of a user’s computer followed by automatic learning.
 
-Evidence: [profile/memory](../../apps/web/src/components/EmployeeProfileView.tsx), [evolution](../../apps/web/src/components/EmployeeEvolutionArchive.tsx), [skills](../../apps/web/src/components/EmployeeSkillReview.tsx), [candidate experience](../../apps/web/src/components/KnowledgeReviewPanel.tsx), [runtime skill/memory tools](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts).
+Evidence: [profile/memory](https://github.com/Peerframe/openbot/blob/be32347ca8c8007c108f5d8591c0aac364d3ff84/apps/web/src/components/EmployeeProfileView.tsx), [evolution](../../apps/web/src/components/EmployeeEvolutionArchive.tsx), [skills](../../apps/web/src/components/EmployeeSkillReview.tsx), [candidate experience](../../apps/web/src/components/KnowledgeReviewPanel.tsx), [runtime skill/memory tools](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts).
 
 ## Plugins and portable employees
 

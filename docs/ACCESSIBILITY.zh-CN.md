@@ -12,23 +12,24 @@ OpenBot 目前不宣称已经符合 WCAG。本页只记录已经实现的交互�
 | 来源 | 固定基线 | 许可证 | 决定 |
 | --- | --- | --- | --- |
 | [WAI-ARIA Authoring Practices](https://github.com/w3c/aria-practices/tree/7e4034b262bc0d25332e330d8a582aaf34113829) | `7e4034b2` | W3C Software and Document License | 采用 Tab 和模态弹窗的标准角色、状态关系、游标式焦点与键盘行为；没有复制示例源码。 |
-| [Adobe React Spectrum](https://github.com/adobe/react-spectrum/tree/50279a10ab998572e240e44aa36f84a15c7c4f99) | `50279a10` | Apache-2.0 | 作为成熟 React 实现参考；当前固定员工 Tab 和原生弹窗不引入其完整组件/样式栈，也没有复制源码。 |
+| [Adobe React Spectrum](https://github.com/adobe/react-spectrum/tree/50279a10ab998572e240e44aa36f84a15c7c4f99) | `50279a10` | Apache-2.0 | 作为成熟 React 实现参考；当前固定右栏 Tab 和原生弹窗不引入其完整组件/样式栈，也没有复制源码。 |
 | [HTML `dialog` WCAG 技术 H102](https://www.w3.org/WAI/WCAG22/Techniques/html/H102) | 2026-01-12 更新 | W3C 文档许可证 | 使用浏览器 `showModal()` 提供焦点限制、背景不可操作、Escape 关闭和焦点返回，不自行重写 focus trap。 |
 
-本地差集保持很小：员工主页只保存 OpenBot 特有的 Tab 状态；一个薄 React Hook 把原生 Dialog
+本地差集保持很小：Bot 信息右栏只保存 OpenBot 特有的 Tab 状态；一个薄 React Hook 把原生 Dialog
 生命周期接回应用状态。如果未来需要嵌套 Overlay、异步集合、方向切换或虚拟化 Tab，应先重新
 评估 React Aria Components，再扩展本地实现。
 
 ## 已实现基线
 
-- 员工主页导航暴露一个 `tablist`、七个 `tab`、一个有标签的 `tabpanel`，且只有当前 Tab
-  进入顺序焦点。
-- 左右方向键、Home 和 End 会移动焦点并同步激活视图，首尾能够循环。
+- Bot 信息右栏（2026-10-06 起取代独立的员工主页）暴露一个 `tablist`、四个 `tab`（详情、工作、
+  资料库、电脑）、一个有标签的 `tabpanel`，且只有当前 Tab 进入顺序焦点。
+- 左右方向键移动焦点并同步激活相邻 Tab，首尾循环；Home 和 End 跳到第一个和最后一个 Tab。
+  这些由 jsdom 测试覆盖；右栏尚未做下方的浏览器手工检查。
 - 创建 Bot、创建频道、员工导出和员工导入使用浏览器原生模态弹窗。
 - 弹窗打开时焦点进入其中，Tab 不会离开弹窗，Escape 可以关闭，关闭后焦点返回打开按钮。
 - 既有表单错误使用 `role="alert"`；弹窗打开后背景不可操作；只有图标的关闭按钮有可访问名称。
-- 已在 Codex 内置浏览器的桌面三栏状态和 `390 × 844` CSS 像素手机状态手工检查员工主页与
-  导出预览。手机页面没有文档级横向溢出，导出弹窗保持在视口内。
+- 已在 Codex 内置浏览器的桌面三栏状态和 `390 × 844` CSS 像素手机状态手工检查过原员工主页与
+  导出预览。该证据早于右栏，不覆盖右栏。
 
 ## 复现检查
 
@@ -42,11 +43,10 @@ npm run lint
 
 再验证浏览器行为：
 
-1. 打开任意 Bot 的员工主页。
-2. 聚焦“概览”，分别使用左右方向键、Home 和 End，确认焦点、选中状态和可见面板一起变化。
-3. 打开“导出模板”，确认焦点进入弹窗，背景控件无法取得焦点。
-4. 按 Escape，确认弹窗关闭，焦点返回“导出模板”。
-5. 在 390 像素手机视口重复主页与导出流程，确认页面没有文档级横向滚动。
+1. 打开任意 Bot 的单聊并展开右栏。
+2. 聚焦“详情”，分别使用左右方向键、Home 和 End，确认焦点、选中状态和可见面板一起变化。
+3. 打开右栏的分享按钮（分享 Bot 模板），确认焦点进入弹窗，背景控件无法取得焦点。
+4. 按 Escape，确认弹窗关闭，焦点返回分享按钮。
 
 
 
@@ -54,12 +54,12 @@ npm run lint
 
 ```bash
 npm exec --workspace @openbot/web -- vitest run src/components/Dialog.test.tsx
-npm exec --workspace @openbot/web -- vitest run src/components/EmployeeProfileView.test.tsx
+npm exec --workspace @openbot/web -- vitest run src/components/BotInfoRail.test.tsx
 npm exec --workspace @openbot/web -- vitest run src/components/TaskSheet.test.tsx
 npm exec --workspace @openbot/web -- vitest run src/components/NodeManagerDialog.test.tsx
 ```
 
-分别覆盖：创建 Bot 对话框标注 / cancel 卸载 / 创建失败 `role="alert"`；员工主页 Tab 键盘焦点与
+分别覆盖：创建 Bot 对话框标注 / cancel 卸载 / 创建失败 `role="alert"`；Bot 右栏 Tab 键盘焦点与
 `aria-selected` 同步；TaskSheet（任务详情）Escape/焦点恢复；Node 管理对话框 `showModal` / cancel 卸载
 （含吊销确认文案）。
 

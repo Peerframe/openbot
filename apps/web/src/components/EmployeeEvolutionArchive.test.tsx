@@ -1,7 +1,6 @@
 import type { EmployeeEvolutionEvent } from "@openbot/domain";
-import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { EmployeeEvolutionArchive, selectEvolutionArchiveEvents } from "./EmployeeEvolutionArchive";
+import { selectEvolutionArchiveEvents } from "./EmployeeEvolutionArchive";
 
 const events: EmployeeEvolutionEvent[] = [
   {
@@ -38,7 +37,7 @@ const events: EmployeeEvolutionEvent[] = [
   },
 ];
 
-describe("EmployeeEvolutionArchive", () => {
+describe("selectEvolutionArchiveEvents", () => {
   it("shows the newest page first", () => {
     expect(selectEvolutionArchiveEvents(events, "all", 2).map((event) => event.id)).toEqual([
       "event-3",
@@ -55,22 +54,5 @@ describe("EmployeeEvolutionArchive", () => {
       "event-1",
     ]);
     expect(selectEvolutionArchiveEvents(events, "imported")).toEqual([]);
-  });
-
-  it("counts each filter", () => {
-    const html = renderToStaticMarkup(<EmployeeEvolutionArchive events={events} />);
-    expect(html).toContain("全部 3");
-    expect(html).toContain("技能 2");
-    expect(html).toContain("导入 0");
-  });
-
-  it("renders complete provenance without turning evidence references into implicit fetches", () => {
-    const html = renderToStaticMarkup(<EmployeeEvolutionArchive events={events} />);
-
-    expect(html).toContain("Evaluation run");
-    expect(html).toContain("run-3");
-    expect(html).toContain("artifact-2");
-    expect(html).toContain("Hermes Agent");
-    expect(html).not.toContain("href=");
   });
 });

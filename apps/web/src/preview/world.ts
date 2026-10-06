@@ -399,7 +399,7 @@ export function knowledgeProposalsFor(botId: string): Json[] {
   ];
 }
 
-/** Bot 档案 projection for one Bot, shaped like `GET /api/v1/bots/:id/profile`. */
+/** Bot profile projection for one Bot, shaped like `GET /api/v1/bots/:id/profile`. */
 export function profileFor(world: PreviewWorld, botId: string): Json | undefined {
   const employee = world.bots.find((item) => item.id === botId);
   if (!employee) return undefined;

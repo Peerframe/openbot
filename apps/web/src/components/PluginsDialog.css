@@ -1,10 +1,11 @@
 /* Plugins artboard (docs/design/desktop-ui-2026-10/Plugins.dc.html): 1100×780 modal. */
 .plugins-dialog {
   box-sizing: border-box;
-  width: min(1100px, calc(100vw - 40px));
+  /* Owner feedback 2026-10-05: a compact store-like window that fits its content. */
+  width: min(760px, calc(100vw - 40px));
   max-width: none;
-  height: min(780px, calc(100dvh - 40px));
-  max-height: none;
+  height: fit-content;
+  max-height: min(720px, calc(100dvh - 80px));
   margin: auto;
   padding: 0;
   overflow: hidden;
@@ -39,10 +40,10 @@
 .plugins-catalog {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 18px;
   box-sizing: border-box;
-  height: 100%;
-  padding: 36px 48px 28px;
+  max-height: min(720px, calc(100dvh - 80px));
+  padding: 30px 36px 26px;
   overflow-y: auto;
 }
 .plugins-catalog-header {
@@ -53,7 +54,7 @@
 }
 .plugins-catalog-header h1 {
   margin: 0;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 700;
 }
 .plugins-installed {
@@ -93,8 +94,8 @@
   flex-shrink: 0;
   align-items: center;
   gap: 10px;
-  height: 46px;
-  padding: 0 18px;
+  height: 40px;
+  padding: 0 16px;
   border: 1px solid light-dark(#e7e7e9, var(--ob-divider));
   border-radius: 23px;
   background: var(--ob-fill);
@@ -106,7 +107,7 @@
   background: transparent;
   color: var(--ob-text);
   font: inherit;
-  font-size: 16px;
+  font-size: 15px;
   outline: none;
 }
 .plugins-section {
@@ -122,12 +123,19 @@
 }
 .plugins-section-heading h2 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 600;
 }
 .plugins-section-heading span {
   color: var(--ob-text-tertiary);
-  font-size: 14px;
+  font-size: 12px;
+}
+/* Every list is the same two-column grid of rows: logo, name and one line, one action. */
+.plugins-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 28px;
+  row-gap: 4px;
 }
 .plugins-card {
   padding: 0 20px;
@@ -139,22 +147,27 @@
 }
 .plugins-row-main {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) auto auto;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 16px;
-  padding: 14px 0;
+  gap: 12px;
+  padding: 8px 0;
 }
 .plugins-tile {
   display: inline-grid;
   box-sizing: border-box;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   place-items: center;
   border: 1px solid var(--ob-divider);
-  border-radius: 13px;
+  border-radius: 12px;
   background: var(--ob-surface);
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
+}
+.plugins-tile.is-add {
+  border-style: dashed;
+  background: transparent;
+  color: var(--ob-text-secondary);
 }
 .plugins-row-text {
   display: flex;
@@ -163,8 +176,11 @@
   min-width: 0;
 }
 .plugins-row-text strong {
-  font-size: 16px;
+  overflow: hidden;
+  font-size: 15px;
   font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .plugins-row-text small {
   overflow: hidden;
@@ -182,10 +198,33 @@
   height: 26px;
   margin-left: -6px;
 }
-.plugins-row-main .ob-pill.is-outline {
-  background: var(--ob-surface);
+.plugins-row-main :is(.ob-pill, a.ob-pill) {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 14px;
+  background: var(--ob-fill-hover);
+  color: var(--ob-text);
+  font-size: 13px;
+  text-decoration: none;
+}
+/* The catalog and author links: a quiet line under 添加插件, not blue underlined links. */
+.plugins-section .plugin-catalog-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 2px;
+}
+.plugins-section .plugin-catalog-links a {
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+  text-decoration: none;
+}
+.plugins-section .plugin-catalog-links a:hover {
+  color: var(--ob-text);
 }
 .plugins-row-detail {
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -217,41 +256,7 @@
   .plugins-catalog {
     padding: 20px 16px;
   }
-  .plugins-row-main {
-    grid-template-columns: 48px minmax(0, 1fr) auto;
-  }
-  .plugins-bots {
-    display: none;
-  }
-}
-.plugins-featured {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 48px;
-  row-gap: 10px;
-}
-.plugins-featured-row {
-  display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 16px;
-  padding: 8px 0;
-}
-.plugins-tile.is-large {
-  width: 56px;
-  height: 56px;
-  border-radius: 15px;
-  font-size: 20px;
-}
-.plugins-featured-row a.ob-pill {
-  display: inline-flex;
-  align-items: center;
-  background: var(--ob-fill-hover);
-  color: var(--ob-text);
-  text-decoration: none;
-}
-@media (max-width: 760px) {
-  .plugins-featured {
+  .plugins-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 }

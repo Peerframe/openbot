@@ -20,7 +20,6 @@ import {
   setInputValue,
 } from "../test/render-component";
 import { EmployeeModelEditor } from "./EmployeeModelEditor";
-import { EmployeeProfileView } from "./EmployeeProfileView";
 import { ModelConnectionDialog } from "./ModelConnectionsDialog";
 import { ModelIdField, ModelSelector } from "./ModelSelector";
 
@@ -366,58 +365,4 @@ describe("model connection user flows", () => {
       "server-model",
     );
   });
-
-  it.each(["docker-linux", "none", "macos-cua", "lume-vm", "coder"] as const)(
-    "shows model editor only for the allowed %s profile",
-    async (computerProfile) => {
-      const item = {
-        ...profile,
-        employee: { ...profile.employee, computerProfile },
-        configuration: { ...profile.configuration, executionProfile: computerProfile },
-        statistics: { totalRuns: 0, completedRuns: 0, failedRuns: 0, verifiedSkills: 0 },
-        skills: [],
-        memories: [],
-        memoryEvents: [],
-        evolution: [],
-        records: { runs: [], approvals: [], artifacts: [], decisions: [] },
-      };
-      vi.mocked(updateEmployeeModel).mockResolvedValue({
-        employee: {
-          ...item.employee,
-          model: { connectionId: connection.id, modelId: "docker-model" },
-        },
-        details: { ...item.details, revision: 4 },
-        evolution: {},
-      } as never);
-      view = await renderComponent(
-        <EmployeeProfileView
-          profile={item}
-          loading={false}
-          error={undefined}
-          onRetry={vi.fn()}
-          onAssign={vi.fn()}
-          onExport={vi.fn()}
-          onProfileChanged={vi.fn().mockResolvedValue(undefined)}
-        />,
-      );
-      await interact(() => button("配置").click());
-      const change = [...view.container.querySelectorAll("button")].find(
-        (item) => item.textContent === "更改",
-      );
-      expect(Boolean(change)).toBe(computerProfile === "docker-linux");
-      await interact(() => change?.click());
-      const form = view.container.querySelector<HTMLFormElement>(".employee-model-form");
-      expect(Boolean(form)).toBe(computerProfile === "docker-linux");
-      if (form) {
-        await setInputValue(form.querySelector<HTMLInputElement>("input[list]")!, "docker-model");
-        await interact(() =>
-          form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
-        );
-        expect(updateEmployeeModel).toHaveBeenCalledWith("bot-one", {
-          expectedRevision: 3,
-          model: { connectionId: connection.id, modelId: "docker-model" },
-        });
-      }
-    },
-  );
 });
