@@ -619,6 +619,14 @@
       "w": 1440,
       "x": 0,
       "y": 0
+    },
+    "RoleLooks.dc.html": {
+      "h": 900,
+      "page": "chat",
+      "title": "C30 · 按职责换外观（方案一：职责头型 / 方案二：职责配件）",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
     }
   },
   "createdOnFiles": {
@@ -789,7 +797,8 @@
     "PrimaryBot.dc.html",
     "ReviewProfile.dc.html",
     "ProfileRailClosed.dc.html",
-    "ChatSetup.dc.html"
+    "ChatSetup.dc.html",
+    "RoleLooks.dc.html"
   ],
   "pages": [
     {

@@ -31,6 +31,7 @@
 | [TaskCards](TaskCards.dc.html)、[TaskInspector](TaskInspector.dc.html) | ⑭ 对话里的任务卡（全部状态）与「任务详情」面板 |
 | [WorkSupervision](WorkSupervision.dc.html) | ⑯ 任务监督 |
 | [ChatSetup](ChatSetup.dc.html) | C29（计划中）：跟 Bot 说话就能设置它——带「撤销」的改动行、注明来源的事实、外部指令的确认卡，以及它办不了时的回答 |
+| [RoleLooks](RoleLooks.dc.html) | C30（计划中）：按职责换外观——六种职责头型，或三种头型加职责配件——以及变身过程的逐帧示意 |
 | [EmptyWorkspace](EmptyWorkspace.dc.html) | ⑰ 还没有任何对话时的首次进入 |
 | [DialogShare](DialogShare.dc.html)、[DialogExport](DialogExport.dc.html)、[DialogImport](DialogImport.dc.html)、[DialogDelete](DialogDelete.dc.html)、[DialogPairHost](DialogPairHost.dc.html)、[DialogModel](DialogModel.dc.html) | ⑮ 对话框：分享、分享 Bot 模板、导入 Bot 模板、删除确认、配对工作电脑、连接模型服务 |
 | [MessageActions](MessageActions.dc.html)、[Composer](Composer.dc.html)、[ChannelFiles](ChannelFiles.dc.html) | ① 消息操作与回应；输入框的附件、语音和补充指令；带回收站的频道文件 |

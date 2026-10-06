@@ -133,6 +133,48 @@ English · [简体中文](chat-driven-bot-setup.zh-CN.md)
   a card (fail closed to review). A refused change leaves the Bot's reply honest, for example
   「这个我改不了，需要你在 设置 › 工作主机 里授权」.
 
+## C30 addendum: conversation cues and role looks (2026-10-06)
+
+Owner request after a second Grok recording: do all of the following. It reuses the C29 authority
+rules above and adds no new authority.
+
+1. **Question card.** A Bot may ask the Owner one question at a time as a card rather than prose.
+   - Message kind `ask`: `{askId, botId, question (≤ 120), options: 2–5 × ≤ 40, allowOwn: boolean,
+     expiresAt}`.
+   - The Owner answers with `POST /api/v1/asks/{askId}/answer {option | text (≤ 500) | skip}`. It is
+     Owner-only and idempotent. The answer is also posted as the Owner's message, so the Bot reads it
+     like any reply.
+   - The card folds into one line (「每天几点发运势给你？ 早上 9 点 ✓」 or 「已忽略」).
+   - A question carries no authority. A choice that leads to a change still follows C29, and its
+     change line appears.
+   - Bound: at most one open question per conversation; a new one replaces the old.
+2. **Acknowledgment.** When a Bot starts a Run from an Owner message, it may add one reaction (👌
+   by default) to that message through the existing reactions route. This is the Server's signal,
+   not a model call, so it is immediate and costs nothing. Per Bot it can be switched off in the
+   same Settings switch as C29.
+3. **Role looks.** `BotHeadShape` gains role heads:
+   - `star` (信息/研究/观测), `gear` (开发/运维), `bubble` (客服/沟通), `page` (写作/编辑),
+     `hive` (数据/复盘) and `clock` (日程/助理);
+   - **or**, if the Owner picks option two on the RoleLooks board, an `accessory` value on the
+     existing heads.
+   A Bot may choose its own look when its role is set. This is a C29 direct change: a line
+   「已换成「星象」外观 · 撤销」, revision-checked through the C9 appearance route, and audited as
+   `BOT_SELF_CHANGE` with `field: appearance`. Older Bot templates keep importing. The Web plays the
+   morph (PR #198) on every copy of the avatar.
+4. **Step names.** The working line names the current C13 stage (shipped in PR #198). New stage
+   keys for 读取文件 and 连接插件 would be welcome, but they are not required.
+
+Tests (Server):
+- an `ask` is answered once and is then refused as answered;
+- the answer is posted as the Owner's message;
+- `skip` folds the card;
+- a second `ask` replaces the first;
+- the acknowledgment reaction is added once per Run and not when switched off;
+- an appearance self-change writes a change line, can be undone, and is refused on a stale revision;
+- an unknown head value is refused.
+
+Tests (Web): the folded card and the morph, as for the role card in PR #198.
+
 ## Source incorporation
 
 - Source copied or substantially adapted: no.
