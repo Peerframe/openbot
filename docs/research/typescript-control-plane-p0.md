@@ -342,7 +342,47 @@ harness parity and drained histories. P5 verifies the install/CI dependency inve
 same-scope resource comparison. See ADR-0050 for the detailed gates and Owner approval boundary.
 
 
-## Current migration checkpoint (2026-10-06)
+## Current migration checkpoint (2026-10-07)
+
+Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
+`codex/ts-control-plane-p2`; current clean product source is
+`f16e11557fedd1c3e28e2f7aa929290075638e3e`, integrating accepted main
+`a6ec303054c69429aabb0a09c972d5dd87ace941` (PR194 UI and approved PR201 security repair).
+Application files merged automatically. Only the bilingual historical scanner triage conflicted;
+all immutable fixture tuples matched, so the accepted main records were retained. Codex added no
+page implementation. Original dirty checkout, installed OpenBot and user profiles are preserved.
+
+The affected integration is locally qualified: four focused UI files/56 tests and Web typecheck;
+`npm run check` exit0 with Web672 and Desktop578/3 platform skips actually executed. Lint10/10,
+typecheck33/30, test27/25 and build19/18 report tasks/cached tasks. Protocol461, TS transport33 and
+Node129/3 skips replay cached results with their earlier scope. Real mixed HTTP and verified-CA
+HTTPS each execute270 integrated plus19 staged-artifact checks, including current Web/Desktop
+settings and attachment calls, same-database restart, private Node source/digest, secure cookies,
+and mixed→direct Python→mixed rollback. Python remains the sole product writer.
+
+The rebuilt, unsigned and uninstalled full macOS arm64 candidate passes packaged lifecycle smoke
+and actual canonical Electron/native `safeStorage` startup and restart. A synthetic Bot's exact
+name, realtime connection and primary-Bot setting restore; the accepted four-tab rail and empty
+model/transcription settings load. With no default model, onboarding reoffers model setup and the
+existing skip action enters the restored workspace. No provider or Worker was configured.
+Both launches exit0; all13 owned processes per launch and PostgreSQL PID files disappear. Three
+private files retain hashes and0600 permissions; the disposable profile is removed. Current ASAR
+is `5dcf43417c6e513fb9ce1dba1e9aa4d5e9eb258961c4f08a2191320a5db7354a`:
+37 Desktop modules and five renderer files match the build; packaged native files and32 symlinks
+match staging. Regular-file totals are1,230,248,543 bytes for the app and783,640,659 for its native
+payload. The unchanged Worker companion retains exact source `6e9d13ed`.
+The first pinned Node archive transfer was interrupted (`UND_ERR_SOCKET`); a bounded retry using
+that already-qualified companion's Node22.22.2 CLI passed without changing archive hashes,
+timeouts or packaged Node24.21.0/Python3.12.13. No system application was installed.
+
+Main [run37500153005](https://github.com/Peerframe/openbot/actions/runs/37500153005) is now complete,
+all17 jobs successful, including security. This merged candidate still requires its new hosted PR
+run; earlier5ee5b3d7 CI is preserved as dated evidence. [Native receipt](typescript-control-plane-p2-native.json)
+keeps this qualification in `acceptedMainIntegration`. Draft [PR200](https://github.com/Peerframe/openbot/pull/200)
+remains unmerged. The next bounded gate is current-candidate hosted CI and Claude's P2 whole-interface
+acceptance; that acceptance is still absent. No P3–P5 ownership switch has occurred.
+
+### Preserved earlier integration and hosted receipts
 
 Active implementation is now the managed worktree
 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch `codex/ts-control-plane-p2`,
@@ -468,19 +508,18 @@ qualified by all17 pre-merge jobs. The new main
 [run37500153005](https://github.com/Peerframe/openbot/actions/runs/37500153005) independently passes
 [security](https://github.com/Peerframe/openbot/actions/runs/37500153005/job/112394782241):23 exact
 historical fixtures, zero production npm advisories, all58 external Python product pins audited
-with no known advisories or skips. The remaining main jobs are still running; they are not reported
-as completed. Main now contains the five exact reviews. Existing failed runs retain their old
-source scope; a new PR run must use the repaired main instead of relabeling the previous result.
-The independent patch does not implement Claude pages. Accepted PR194 integration from this latest
-main and its affected migration qualification remain the next continuation checkpoint before
-whole-interface acceptance/P3. PR200 has not been merged.
+with no known advisories or skips. All17 main jobs have now completed successfully. Main contains
+the five exact reviews. Existing failed runs retain their old source scope; a new PR run must use the repaired main instead of relabeling the previous result.
+The independent patch does not implement Claude pages. The current checkpoint above now qualifies
+the accepted PR194/main integration locally; current-candidate hosted CI and whole-interface
+acceptance remain required before P3. PR200 has not been merged.
 
 On2026-10-06 the Owner explicitly confirmed that Claude has no P2 whole-interface acceptance record.
 That external gate remains pending; Python is the sole product writer and P3–P5 remain unopened.
-This continuation closes only the hosted CI repairs and preserves the broader approved migration.
+The preceding continuation closed the hosted CI repairs and preserved the broader approved migration.
 The installed ASAR still matches the P0 baseline. This round installs no system application,
-modifies no existing profile and implements no Claude page or C29 feature. These two current-handoff
-receipt edits are local documentation owned by Codex, separate from the published/tested code head;
+modifies no existing profile and implements no Claude page or C29 feature. The preceding current-handoff
+receipt edits were local documentation owned by Codex, separate from the then-published/tested code head;
 they change no product, dependency, workflow or fixture source.
 
 Current integration evidence (macOS arm64; CLI Node26.0.0, not the earlier packaged Node24):

@@ -804,5 +804,167 @@
       ],
       "disposableProfileRemoved": true
     }
+  },
+  "acceptedMainIntegration": {
+    "date": "2026-10-07 (Asia/Singapore)",
+    "sourceHead": "f16e11557fedd1c3e28e2f7aa929290075638e3e",
+    "sourceDirty": false,
+    "acceptedMain": "a6ec303054c69429aabb0a09c972d5dd87ace941",
+    "acceptedChanges": [
+      "PR194 UI integration",
+      "PR201 exact historical credential fixture reviews"
+    ],
+    "uiIntegration": "automatic merge; no page implementation; accepted main triage retained after comparing all immutable fixture tuples",
+    "focusedUi": {
+      "files": 4,
+      "executed": 56,
+      "webTypecheckExitCode": 0
+    },
+    "fullCheck": {
+      "exitCode": 0,
+      "docsMarkdownFiles": 599,
+      "lintTasks": 10,
+      "lintCached": 10,
+      "typecheckTasks": 33,
+      "typecheckCached": 30,
+      "testTasks": 27,
+      "testCached": 25,
+      "buildTasks": 19,
+      "buildCached": 18,
+      "actuallyExecuted": {
+        "web": 672,
+        "desktop": 578,
+        "desktopPlatformSkips": 3
+      },
+      "cachedResultsRetainPriorScope": {
+        "protocol": 461,
+        "tsTransport": 33,
+        "node": 129,
+        "nodeSkips": 3
+      }
+    },
+    "realContracts": {
+      "mixedHttp": {
+        "exitCode": 0,
+        "integratedChecks": 270,
+        "stagedArtifactChecks": 19,
+        "total": 289
+      },
+      "mixedHttps": {
+        "exitCode": 0,
+        "integratedChecks": 270,
+        "stagedArtifactChecks": 19,
+        "total": 289
+      },
+      "webAndDesktopTransport": true,
+      "sqlPersistenceAndRestart": true,
+      "privatePeerSourceAndDigest": true,
+      "mixedDirectMixedSwitch": true,
+      "tlsVerifiedCaAndSecureCookie": true,
+      "pythonRemainsSoleWriter": true,
+      "temporalOrLiveProviderCalls": false
+    },
+    "staging": {
+      "firstAttemptExitCode": 1,
+      "firstFailure": "official pinned Node archive transfer interrupted (UND_ERR_SOCKET)",
+      "retryExitCode": 0,
+      "retryBuilderNode": "22.22.2",
+      "retryBuilder": "unchanged previously qualified bundled Worker companion",
+      "archiveHashesAndTimeoutsUnchanged": true,
+      "packagedNode": "24.21.0",
+      "packagedPython": "3.12.13",
+      "lockedDistributionInstallCount": 59
+    },
+    "package": {
+      "asarSha256": "5dcf43417c6e513fb9ce1dba1e9aa4d5e9eb258961c4f08a2191320a5db7354a",
+      "compiledDesktopFilesMatched": 37,
+      "rendererFilesMatched": 5,
+      "regularFileBytes": 1230248543,
+      "nativeRegularFileBytes": 783640659,
+      "nativeSymlinksMatched": 32,
+      "stageMatchesPackagedNative": true,
+      "platform": "macOS arm64",
+      "identity": "dev.openbot.desktop",
+      "unsigned": true,
+      "installed": false,
+      "workerCompanionSource": "6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
+      "workerSourceUnchanged": true,
+      "warning": "optional .icon absent; existing .icns retained"
+    },
+    "packagedNativeSmoke": {
+      "parentEofStoppedActualApi": true,
+      "parentEofStoppedOwnedProcessCount": 2,
+      "tsForwardingEntry": true,
+      "eitherProductExitStoppedPair": true,
+      "unsafeDirectoryRefusedAndPostgresStopped": true,
+      "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+      "pythonProductHealth": true,
+      "ownerLogin": true,
+      "postgresInitialized": true,
+      "restartPreservedData": true,
+      "serverAndPostgresStopped": true,
+      "syntheticOnly": true,
+      "nativeKeychainVerified": false
+    },
+    "actualElectronJourney": {
+      "sourceHead": "f16e11557fedd1c3e28e2f7aa929290075638e3e",
+      "finalAsarSha256": "5dcf43417c6e513fb9ce1dba1e9aa4d5e9eb258961c4f08a2191320a5db7354a",
+      "fresh": {
+        "exitCode": 0,
+        "ownedPidsAfterExit": [],
+        "postgresPidFilesAfterExit": 0,
+        "guiChecks": [
+          "native-safeStorage-bootstrap",
+          "live-sql-workspace",
+          "create-and-save-bot",
+          "four-tab-bot-info-rail",
+          "primary-bot-readback",
+          "empty-model-services",
+          "transcription-disabled"
+        ]
+      },
+      "restart": {
+        "allThreePrivateFilesUnchanged": true,
+        "guiChecks": [
+          "encrypted-owner-bootstrap-restored",
+          "saved-bot-name-restored",
+          "live-workspace-restored",
+          "four-tab-bot-info-rail",
+          "primary-bot-restored"
+        ],
+        "modelSetupReofferedWhenNoDefaultModel": true,
+        "localWorker": false,
+        "exitCode": 0,
+        "ownedPidsAfterExit": [],
+        "postgresPidFilesAfterExit": 0
+      },
+      "ownedProcessCounts": {
+        "fresh": 13,
+        "restart": 13
+      },
+      "privateFileCount": 3,
+      "privateFileMode": "0600",
+      "privateFileHashesUnchanged": true,
+      "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+      "temporaryProfileRemoved": true,
+      "applicationsInstalled": 0,
+      "liveModelCalls": 0,
+      "workerRegistration": false
+    },
+    "hosted": {
+      "mainRun": 37500153005,
+      "mainSource": "a6ec303054c69429aabb0a09c972d5dd87ace941",
+      "mainJobsPassed": 17,
+      "currentCandidateCi": "required after publication; earlier 5ee5b3d7 run does not qualify this merge"
+    },
+    "remaining": [
+      "Claude P2 whole-interface acceptance",
+      "deployment TLS/PKI",
+      "registered Worker and restricted access-group provisioning",
+      "signed/notarized distribution",
+      "P3-P5 ownership migration"
+    ],
+    "p3OwnershipSwitched": false,
+    "applicationsInstalled": 0
   }
 }

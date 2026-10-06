@@ -220,7 +220,40 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 完整关卡与所有者批准边界见 ADR-0050。
 
 
-## 当前迁移检查点（2026-10-06）
+## 当前迁移检查点（2026-10-07）
+
+当前工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支
+`codex/ts-control-plane-p2`；准确、干净的产品源码为
+`f16e11557fedd1c3e28e2f7aa929290075638e3e`，已整合接受的 main
+`a6ec303054c69429aabb0a09c972d5dd87ace941`（PR194界面及已批准的 PR201安全修复）。
+产品代码自动合并；只有双语历史扫描说明发生冲突。核对所有不可变夹具记录一致后，保留已接受的
+main版本。Codex没有新增页面实现；原 dirty目录、已安装 OpenBot及用户 profile保持不变。
+
+受影响整合已通过本机验证：4份界面测试文件/56项、Web类型检查及 `npm run check` exit0。
+Web672项和 Desktop578项/3项平台跳过是实际执行；lint10/10、类型33/30、测试27/25、build19/18
+分别表示总任务/缓存任务。Protocol461、TS传输33及 Node129/3项跳过重放原缓存，保留旧源码范围。
+真实混合 HTTP和验证 CA的 HTTPS各执行270项整合及19项 staged artifact检查，覆盖当前 Web/Desktop
+设置与附件调用、共库持久化/重启、私有 Node来源/摘要、安全 cookie及混合→Python直连→混合回退。
+Python仍是唯一产品写入方。
+
+重建的未签名、未安装完整 macOS arm64候选通过包内生命周期检查及真实正式身份 Electron/原生
+`safeStorage`启动、重启。合成 Bot准确名称、实时连接和主 Bot设置恢复；已接受的四分页信息栏和
+空模型服务/转写设置能够读取。没有默认模型时，启动会再次显示模型设置，既有跳过操作进入恢复的
+工作区。没有配置模型或 Worker。两次退出均为0，各13个所属进程及 PostgreSQL PID文件均清理；
+三份私有文件保持哈希/0600权限，一次性 profile已删除。当前 ASAR为
+`5dcf43417c6e513fb9ce1dba1e9aa4d5e9eb258961c4f08a2191320a5db7354a`，
+37份 Desktop模块、5份渲染文件与编译一致；原生文件及32个链接与暂存包一致。应用普通文件共
+1,230,248,543字节，原生 payload共783,640,659字节；未改的辅助程序保留准确源码 `6e9d13ed`。
+首次固定 Node归档下载连接中断（`UND_ERR_SOCKET`）；使用已验证辅助程序中的 Node22.22.2 CLI
+有界重试后通过，没有更改归档校验和、时限或包内 Node24.21.0/Python3.12.13。未安装系统应用。
+
+main [运行37500153005](https://github.com/Peerframe/openbot/actions/runs/37500153005)现已完成，
+包括安全任务在内的全部17项通过。本候选仍需新的 hosted PR运行，之前5ee5b3d7 CI保持日期范围。
+既有[原生回执](typescript-control-plane-p2-native.json)的 `acceptedMainIntegration`单独记录本轮。
+[Draft PR200](https://github.com/Peerframe/openbot/pull/200)保持未合并。下个有界门槛是当前候选 hosted CI
+及 Claude的 P2整体界面验收；整体界面验收记录仍缺失，P3–P5尚未切换所有权。
+
+### 保留此前整合及托管验收记录
 
 当前实现目录是受管理的隔离工作区 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，
 分支 `codex/ts-control-plane-p2`，基于准确的 main 提交
@@ -327,15 +360,15 @@ macOS混合 Preview、Python/Worker及持久 Temporal验收。托管扫描精确
 新的 main [运行37500153005](https://github.com/Peerframe/openbot/actions/runs/37500153005)已独立通过
 [安全任务](https://github.com/Peerframe/openbot/actions/runs/37500153005/job/112394782241)：23条精确
 历史样例、生产 npm依赖零漏洞、全部58项外部 Python产品依赖已审计，无已知漏洞或跳过。
-main其余任务仍在运行，不报告为已完成。main现在已有五条精确审阅；已有失败运行保留原源码范围，
+main全部17项现已完成并通过。main现在已有五条精确审阅；已有失败运行保留原源码范围，
 新 PR运行应使用修复后的 main，不把原有失败回执改称通过。
-独立补丁不实现 Claude页面；从这个最新 main整合 PR194的已接受改动及受影响迁移验收，是下个
-继续检查点，之后才整体界面验收/P3。PR200尚未合并。
+独立补丁不实现 Claude页面；上面的当前检查点已完成接受的 PR194/main整合本机验证，当前候选
+hosted CI和整体界面验收仍是 P3前置门槛。PR200尚未合并。
 
 2026-10-06，所有者明确回复 Claude尚无 P2整体界面验收记录。该外部门槛仍待完成；Python仍是唯一
-产品写入方，P3–P5尚未开启。本轮只关闭 hosted CI修复，保留完整迁移已授权目标。已安装 ASAR仍与
+产品写入方，P3–P5尚未开启。上一轮只关闭 hosted CI修复，保留完整迁移已授权目标。已安装 ASAR仍与
 P0基线一致，没有安装系统应用、修改已有 profile，或实现 Claude页面/C29功能。
-这两份当前交接回执是 Codex所有的本地文档修改，与已发布/已测代码 head区分；未改产品、依赖、
+此前两份交接回执是 Codex所有的本地文档修改，与当时已发布/已测代码 head区分；未改产品、依赖、
 workflow或夹具源码。
 
 当前整合证据（macOS arm64，CLI Node26.0.0，不是此前包内 Node24）：
