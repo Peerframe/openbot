@@ -1,0 +1,311 @@
+/* Settings › 技能 › 审核 (the skill review of the retired Bot page; ProfileSkills artboard). */
+.settings-skill-review .ep-note {
+  margin: 0;
+  padding: 0 4px;
+  color: var(--ob-text-tertiary);
+  font-size: var(--ob-font-meta);
+  line-height: 1.5;
+}
+.settings-skill-review .ep-empty {
+  margin: 0;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--ob-fill);
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}
+.settings-skill-review .ep-more {
+  align-self: flex-start;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 15px;
+  color: var(--ob-text-secondary);
+}
+.settings-skill-review .ep-more:hover {
+  background: var(--ob-fill);
+}
+.settings-skill-review .ep-search {
+  box-sizing: border-box;
+  width: 180px;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--ob-divider);
+  border-radius: 16px;
+  background: var(--ob-surface);
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.settings-skill-review .ep-search:focus {
+  border-color: var(--ob-text-tertiary);
+}
+.settings-skill-review .ep-day {
+  margin: 0 4px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+/* Grey grouped card: rows separated by hairlines. */
+.settings-skill-review .ep-card {
+  margin: 0;
+  padding: 0 18px;
+  border-radius: 18px;
+  background: var(--ob-fill);
+  list-style: none;
+}
+.settings-skill-review .ep-card > li + li {
+  border-top: 1px solid var(--ob-divider);
+}
+.settings-skill-review .ep-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.settings-skill-review .ep-card .ob-tag {
+  background: var(--ob-surface);
+}
+.settings-skill-review .ep-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.settings-skill-review .ep-checkbox input {
+  margin-top: 3px;
+}
+/* --- 技能 (ProfileSkills): index on the left, the selected skill in a white panel */
+.settings-skill-review .ep-skills-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+.settings-skill-review .ep-skill-index {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.settings-skill-review .ep-skill-index > section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.settings-skill-review .ep-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settings-skill-review .ep-search-row .ep-search {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+.settings-skill-review .ep-skill-list {
+  padding: 4px;
+}
+.settings-skill-review .ep-skill-list > li + li {
+  border-top: 0;
+}
+.settings-skill-review .ep-skill-list > li > button:not(.ep-more) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ob-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.settings-skill-review .ep-skill-list > li > button:hover {
+  background: var(--ob-fill-hover);
+}
+.settings-skill-review .ep-skill-list > li > button[aria-pressed="true"] {
+  background: var(--ob-surface);
+}
+.settings-skill-review .ep-skill-list > li > button > span:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.settings-skill-review .ep-skill-list strong {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-skill-review .ep-skill-list small {
+  color: var(--ob-text-tertiary);
+  font-size: var(--ob-font-meta);
+}
+.settings-skill-review .ep-skill-list .ep-more {
+  margin: 2px 0;
+}
+.settings-skill-review .ep-skill-state {
+  color: var(--ob-text-tertiary);
+  font-size: var(--ob-font-meta);
+  white-space: nowrap;
+}
+.settings-skill-review .ep-skill-state.is-candidate {
+  color: var(--ob-attention);
+}
+.settings-skill-review .ep-skill-state.is-verified {
+  color: var(--ob-online-text);
+}
+.settings-skill-review .ep-skill-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 20px 22px;
+  border: 1px solid var(--ob-divider);
+  border-radius: 20px;
+  background: var(--ob-surface);
+}
+.settings-skill-review .ep-skill-detail > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.settings-skill-review .ep-skill-detail > header > span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.settings-skill-review .ep-skill-detail > header strong {
+  font-size: 18px;
+  font-weight: 700;
+}
+.settings-skill-review .ep-skill-detail > header small {
+  color: var(--ob-text-tertiary);
+  font-size: var(--ob-font-meta);
+}
+.settings-skill-review .ep-skill-detail > p {
+  margin: 0;
+  color: var(--ob-text);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.settings-skill-review .ep-attention-pill {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 12px;
+  background: var(--ob-attention-fill);
+  color: var(--ob-attention-ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+.settings-skill-review .ep-skill-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.settings-skill-review :is(.ep-skill-facts, .ep-skill-document) h3 {
+  margin: 0 0 6px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+.settings-skill-review .ep-skill-detail .ob-tag {
+  background: var(--ob-fill);
+}
+.settings-skill-review .ep-skill-facts small {
+  color: var(--ob-text-tertiary);
+  font-size: var(--ob-font-meta);
+}
+.settings-skill-review .ep-skill-evidence summary {
+  width: fit-content;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+.settings-skill-review .ep-skill-evidence ul {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0 0 0 4px;
+  font-size: 13px;
+  list-style: none;
+}
+.settings-skill-review .ep-skill-evidence small {
+  color: var(--ob-text-tertiary);
+}
+.settings-skill-review .ep-skill-document pre {
+  max-height: 180px;
+  margin: 0;
+  padding: 12px 14px;
+  overflow: auto;
+  border-radius: 12px;
+  background: var(--ob-code-bg);
+  color: var(--ob-code);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.settings-skill-review .ep-skill-document h3 small {
+  margin-left: 6px;
+  color: var(--ob-text-tertiary);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-weight: 400;
+}
+.settings-skill-review .ep-skill-review textarea {
+  height: 64px;
+  resize: none;
+}
+.settings-skill-review .ep-review-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.settings-skill-review .ep-confidence {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.settings-skill-review .ep-confidence input {
+  width: 72px;
+}
+.settings-skill-review .ep-danger-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--ob-danger-fill);
+  color: var(--ob-attention);
+  font-size: 13px;
+}
+.settings-skill-review .ob-pill.ep-danger-pill {
+  background: var(--ob-danger-fill);
+  color: var(--ob-attention);
+}
+/* Settings is narrower than the former page: the note sits above the actions. */
+.settings-skill-review form footer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.settings-skill-review form footer > small {
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+}
+.settings-skill-review form footer > span {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
