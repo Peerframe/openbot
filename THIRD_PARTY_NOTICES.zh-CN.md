@@ -16,7 +16,7 @@
 | `@electron/asar` | 4.3.0 | 2014 GitHub Inc.；MIT |
 | `write-file-atomic` | 8.0.0 | 2015 Rebecca Turner；ISC |
 | `signal-exit` | 4.1.0 | 2015–2023 Benjamin Coe、Isaac Z. Schlueter 与贡献者；ISC |
-| `@modelcontextprotocol/sdk` | 1.30.0 | 2024 Anthropic, PBC；MIT |
+| `@modelcontextprotocol/sdk` | 1.32.1 | 2024 Anthropic, PBC；MIT |
 | Fastify | 5.12.5 | 2016-present Fastify 团队；MIT |
 | `@fastify/reply-from` | 12.6.5 | 2017-present Matteo Collina 与 Fastify 团队；MIT；使用发布 API，没有复制源码 |
 | Vercel AI SDK `ai` | 7.0.93 | 2023 Vercel, Inc.；Apache-2.0 |

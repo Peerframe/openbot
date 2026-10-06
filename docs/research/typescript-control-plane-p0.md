@@ -382,6 +382,36 @@ keeps this qualification in `acceptedMainIntegration`. Draft [PR200](https://git
 remains unmerged. The next bounded gate is current-candidate hosted CI and Claude's P2 whole-interface
 acceptance; that acceptance is still absent. No P3–P5 ownership switch has occurred.
 
+### MCP SDK advisory repair (2026-10-07)
+
+Current-candidate [CI37506404433](https://github.com/Peerframe/openbot/actions/runs/37506404433)
+failed its production npm audit before credential scanning: locked MCP SDK1.30.0 falls within
+[GHSA-6qxp-vccf-f47h](https://github.com/modelcontextprotocol/typescript-sdk/security/advisories/GHSA-6qxp-vccf-f47h),
+published to the advisory database on2026-10-06. Earlier main/PR audit0 remains a dated observation.
+The current candidate's local history scan at9dc564c6 passes the strict adapter with25 exact
+historical findings and no current-commit finding; private output was removed.
+
+Reviewed official npm manifests, source/license, release diffs and accompanying tests for1.31.0
+(`4b0051f400219f8d8855f9a5433c6df35f15a639`, first issuer-bound fix) and1.32.1
+(`ff07b001194fe60ee9deb2121cf119057565796d`, same MIT/Node>=18/dependency contract).
+[1.31 source diff](https://github.com/modelcontextprotocol/typescript-sdk/compare/2d889f2b329e46680ec9bdd565de4616c497825a...4b0051f400219f8d8855f9a5433c6df35f15a639)
+includes bounded body/batch reads and issuer-bound saved credentials, with negative tests.
+[1.32.1 diff](https://github.com/modelcontextprotocol/typescript-sdk/compare/4b0051f400219f8d8855f9a5433c6df35f15a639...ff07b001194fe60ee9deb2121cf119057565796d)
+also defaults HTTP clients to same-origin, method-preserving redirects and fixes experimental
+session/task isolation. Select released1.32.1 rather than retaining1.31 or migrating to2.x's split
+client/server API. Existing bounded endpoint/session consumers fit the default; no new dependency
+kind, auth provider, OAuth credential storage, redirect opt-out or upstream source copy is added.
+Reviewed upstream tests are source evidence, not tests executed by OpenBot.
+
+Web's only SDK import is type-only. The example/starter uses MCP Server; the frozen TS comparator
+uses its bounded Streamable HTTP client without an OAuth provider. Python owns current product
+MCP authority. Thus no persisted OAuth credential conversion is needed for these TS consumers.
+The narrowly reviewed oracle exception changes only its devDependency pin: all55 frozen source
+files/provenance hashes remain unchanged and the oracle guard/comparators stay required.
+Update the two product consumers, comparator metadata, starter's existing pin assertion and
+third-party notices together; preserve historical dated SDK reviews. Rebuild and check the real
+MCP contract, current dependency audit and native production closure before publishing the repair.
+
 ### Preserved earlier integration and hosted receipts
 
 Active implementation is now the managed worktree

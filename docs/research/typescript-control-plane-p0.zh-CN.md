@@ -253,6 +253,31 @@ main [运行37500153005](https://github.com/Peerframe/openbot/actions/runs/37500
 [Draft PR200](https://github.com/Peerframe/openbot/pull/200)保持未合并。下个有界门槛是当前候选 hosted CI
 及 Claude的 P2整体界面验收；整体界面验收记录仍缺失，P3–P5尚未切换所有权。
 
+### MCP SDK公告修复（2026-10-07）
+
+当前候选 [CI37506404433](https://github.com/Peerframe/openbot/actions/runs/37506404433)在生产 npm审计
+失败，尚未扫描凭证：锁定的 MCP SDK1.30.0处于
+[GHSA-6qxp-vccf-f47h](https://github.com/modelcontextprotocol/typescript-sdk/security/advisories/GHSA-6qxp-vccf-f47h)
+范围；公告于2026-10-06进入审计数据库。此前 main/PR的 audit0仍是日期观测。候选9dc564c6本机完整
+历史扫描通过严格适配器，25条发现均为已有精确审阅，本次提交没有发现，私有原始结果已清理。
+
+已查阅官方 npm发布信息、源码/许可、版本差异及对应测试：1.31.0的准确源码
+`4b0051f400219f8d8855f9a5433c6df35f15a639`首次绑定 OAuth凭证 issuer；1.32.1为
+`ff07b001194fe60ee9deb2121cf119057565796d`，均为 MIT、Node>=18且依赖范围一致。
+[1.31差异](https://github.com/modelcontextprotocol/typescript-sdk/compare/2d889f2b329e46680ec9bdd565de4616c497825a...4b0051f400219f8d8855f9a5433c6df35f15a639)
+还包含请求体/批次数量上限及 issuer拒绝测试；
+[1.32.1差异](https://github.com/modelcontextprotocol/typescript-sdk/compare/4b0051f400219f8d8855f9a5433c6df35f15a639...ff07b001194fe60ee9deb2121cf119057565796d)
+进一步默认限制 HTTP同源且保留方法的重定向，并修复实验性任务/session隔离。因此选已发布1.32.1，
+不保留1.31，也不引入2.x分拆 client/server API的迁移成本。既有有界 endpoint/session消费者兼容
+默认值；不增加依赖种类、OAuth provider/凭据存储或重定向放宽配置，没有复制上游源码。
+查阅上游测试仅作为源码证据，不冒充 OpenBot已执行测试。
+
+Web仅使用 SDK的类型导入；示例/脚手架使用 MCP Server，冻结 TS对照用有界 HTTP client且未配置
+OAuth provider。当前产品 MCP权限仍归 Python，因此这些 TS消费者不需要迁移已存 OAuth凭据。
+本次明确审阅的 oracle例外仅更新开发依赖：55份冻结源码及 provenance哈希保持原样，仍须通过
+oracle guard及对照检查。同步更新两个产品消费者、oracle元数据、脚手架既有版本断言和双语许可
+声明；历史日期记录保持原版本。发布前重建并验证真实 MCP契约、依赖审计和原生生产闭包。
+
 ### 保留此前整合及托管验收记录
 
 当前实现目录是受管理的隔离工作区 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，
