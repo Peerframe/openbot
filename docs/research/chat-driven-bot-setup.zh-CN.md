@@ -98,7 +98,9 @@
      - 如果之后同一项又被改过，返回 `change_superseded`，这一行显示「已被后来的改动覆盖」。
      - 撤销会恢复原值，或删除新建的记忆、例行任务；撤销本身也记入审计。
   7. **对话记录**：两种新消息，都走频道事件流和消息分页。
-     - `change`：`{changeId, botId, field, summary, undoable, undoneAt?}`，显示为居中的一行。
+     - `change`：`{changeId, botId, field, summary, undoable, undoneAt?, groupId}`。同一个任务里的改动共用一个 `groupId`，
+       只显示**一行**安静的记录（「按你说的更新了 5 项 ›」；所有者 2026-10-06 反馈：不要一排「撤销」）；点开才列出每一项和各自的「撤销」。
+       Owner 也可以直接说「名字改回去」，Bot 通过同一个撤销接口完成。
      - `proposal`：`{proposalId, botId, summary, source, actions, expiresAt}`，显示为卡片。
   8. **审计**：`BOT_SELF_CHANGE`、`BOT_SELF_CHANGE_UNDONE`、`BOT_PROPOSAL_DECIDED`。操作者记为「Bot，代表某条 Owner 消息」，
      并记新旧版本号；不把内容抄进审计。

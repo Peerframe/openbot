@@ -13,9 +13,16 @@ body{margin:0;color:#1d1d1f;background:#ffffff;font-family:-apple-system,BlinkMa
 button{font:inherit;color:inherit}
 .own{align-self:flex-end;max-width:520px;padding:10px 16px;border-radius:20px;background:#111111;color:#ffffff;font-size:15px;line-height:1.5}
 .bot{align-self:flex-start;max-width:560px;padding:10px 16px;border-radius:20px;background:#f0f0f2;font-size:15px;line-height:1.55}
-.change{align-self:center;display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#6e6e73}
-.change b{font-weight:500;color:#3a3a3c}
-.undo{border:0;background:transparent;padding:0;font-size:13px;color:#1f6fd6;cursor:pointer}
+.change{align-self:center;display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;padding:2px 8px;border-radius:8px;font:inherit;font-size:13px;color:#8e8e93;cursor:pointer}
+.change:hover{background:#f0f0f2}
+.change b{font-weight:500;color:#6e6e73}
+.change svg{flex:none}
+.undo{border:0;background:transparent;padding:0;font-size:12px;color:#8e8e93;cursor:pointer}
+.undo:hover{color:#1d1d1f}
+.changes{align-self:center;width:360px;box-sizing:border-box;padding:6px;border-radius:14px;background:#ffffff;border:1px solid #ececee;box-shadow:0 8px 24px rgba(0,0,0,0.06);display:flex;flex-direction:column}
+.changes-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 10px;border-radius:9px;font-size:13px;color:#3a3a3c}
+.changes-row small{color:#8e8e93;font-size:12px}
+.hint{align-self:center;font-size:12px;color:#aeaeb2}
 .src{color:#8e8e93}
 .pill{height:30px;padding:0 14px;border-radius:15px;border:0;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
 </style>
@@ -34,18 +41,22 @@ button{font:inherit;color:inherit}
 <div class="bot">你好！我是新来的。想让我负责哪一块？说一句就行，我自己记下来。</div>
 <div class="own">你叫 v7，负责每周的竞品周报，每周五早上 9 点发我，用我的 Gmail 发</div>
 
-<span class="change">已重命名为 <b>v7</b> · <button type="button" class="undo">撤销</button></span>
-<span class="change">标签改为 <b>竞品周报</b> · <button type="button" class="undo">撤销</button></span>
-<span class="change">已设例行任务 <b>竞品周报 · 每周五 09:00</b> · <button type="button" class="undo">撤销</button></span>
-<span class="change">开始使用 <b>Gmail</b>（发送前仍会问你） · <button type="button" class="undo">撤销</button></span>
-<span class="change">记住了 <b>周报发到你的邮箱</b> · <button type="button" class="undo">撤销</button></span>
+<button type="button" class="change" aria-expanded="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#34a853" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 12 10 17 19 8"></polyline></svg>按你说的更新了 <b>5 项</b><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aeaeb2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+<div class="changes" aria-label="这次的改动">
+<div class="changes-row"><span>名字 <small>新建 Bot → </small>v7</span><button type="button" class="undo">撤销</button></div>
+<div class="changes-row"><span>标签 <small>→ </small>竞品周报</span><button type="button" class="undo">撤销</button></div>
+<div class="changes-row"><span>例行任务 <small>每周五 09:00</small></span><button type="button" class="undo">撤销</button></div>
+<div class="changes-row"><span>开始使用 Gmail <small>发送前仍会问你</small></span><button type="button" class="undo">撤销</button></div>
+<div class="changes-row"><span>记住 <small>周报发到你的邮箱</small></span><button type="button" class="undo">撤销</button></div>
+</div>
+<span class="hint">平时只有一行；点开才看到每一项和「撤销」。也可以直接说「名字改回去」。</span>
 
 <div class="bot">好，我叫 v7 了。每周五 9 点把竞品周报发到你的邮箱，第一次发之前会先给你看。</div>
 <div class="own">周报别超过一页，先写结论</div>
-<span class="change">学会了 <b>周报格式</b> · <button type="button" class="undo">查看</button> · <button type="button" class="undo">撤销</button></span>
+<button type="button" class="change"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#34a853" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 12 10 17 19 8"></polyline></svg>学会了 <b>周报格式</b><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aeaeb2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
 
 <span style="align-self: center; font-size: 12px; color: #8e8e93">周五 09:02 · 例行任务</span>
-<span class="change">记下了 <b>B 公司定价页需要登录</b> <span class="src">（来自 b.com）</span> · <button type="button" class="undo">撤销</button></span>
+<button type="button" class="change"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#34a853" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 12 10 17 19 8"></polyline></svg>记下 <b>1 件事</b><span class="src">来自 b.com</span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aeaeb2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
 
 <div role="group" aria-label="来自网页的长期指令" style="align-self: flex-start; width: 460px; box-sizing: border-box; padding: 14px 16px; border-radius: 18px; background: #ffffff; border: 1px solid #e5e5e8; display: flex; flex-direction: column; gap: 8px">
 <span style="font-size: 12px; color: #8e8e93">来自网页 c-company.com/about · 需要你确认</span>

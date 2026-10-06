@@ -116,7 +116,10 @@ English · [简体中文](chat-driven-bot-setup.zh-CN.md)
      `change_superseded`, and the line then reads 「已被后来的改动覆盖」. Undo restores the
      previous value, or deletes the created memory or routine. Undo is audited.
   7. **Conversation records.** A new message kind `change`:
-     `{changeId, botId, field, summary, undoable, undoneAt?}` is shown as a centred line. A new kind
+     `{changeId, botId, field, summary, undoable, undoneAt?, groupId}`. All changes from one Run share a
+     `groupId` and show as **one** quiet line (「按你说的更新了 5 项 ›」, owner feedback 2026-10-06:
+     no wall of 撤销 links); opening it lists each change with its own 撤销. The Owner can also undo
+     by saying so (「名字改回去」), which the Bot does through the same undo route. A new kind
      `proposal`: `{proposalId, botId, summary, source, actions, expiresAt}` is shown as a card. Both
      come on the channel event stream and in message pages.
   8. **Audit.** `BOT_SELF_CHANGE`, `BOT_SELF_CHANGE_UNDONE`, `BOT_PROPOSAL_DECIDED`. Each records
