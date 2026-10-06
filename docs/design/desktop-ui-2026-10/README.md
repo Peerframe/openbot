@@ -35,6 +35,7 @@ equivalents. Bracketed values such as `[128]` and `[版本号]` are placeholders
 | [TaskCards](TaskCards.dc.html), [TaskInspector](TaskInspector.dc.html) | ⑭ Task cards in a conversation (all states) and the 任务详情 sheet |
 | [WorkSupervision](WorkSupervision.dc.html) | ⑯ 任务监督 |
 | [ChatSetup](ChatSetup.dc.html) | C29 (planned): setting a Bot up by talking to it — change lines with 撤销, a fact with its source, the one card for an outside instruction, and a refusal |
+| [RoleLooks](RoleLooks.dc.html) | C30 (planned): looks that match a Bot's role — six role heads, or the three heads with role accessories — and the morph between them, frame by frame |
 | [EmptyWorkspace](EmptyWorkspace.dc.html) | ⑰ First entry with no conversations |
 | [DialogShare](DialogShare.dc.html), [DialogExport](DialogExport.dc.html), [DialogImport](DialogImport.dc.html), [DialogDelete](DialogDelete.dc.html), [DialogPairHost](DialogPairHost.dc.html), [DialogModel](DialogModel.dc.html) | ⑮ Dialogs: 分享, 分享 Bot 模板, 导入 Bot 模板, 删除确认, 配对工作电脑, 连接模型服务 |
 | [MessageActions](MessageActions.dc.html), [Composer](Composer.dc.html), [ChannelFiles](ChannelFiles.dc.html) | ① Message actions and reactions; composer attachments, voice and 补充指令; 频道文件 with the recycle bin |
