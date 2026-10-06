@@ -684,6 +684,7 @@ export function AuthenticatedWorkspace({
       navigation.navigate({ kind: "channel", id: notice.channelId }),
     );
   }
+  const [creatingBot, setCreatingBot] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [sharedBotId, setSharedBotId] = useState<string>();
   // A 单聊's rail is the Bot 信息 rail; it reads the Bot's profile.
@@ -814,7 +815,14 @@ export function AuthenticatedWorkspace({
     if (!workspace) return;
     // One request creates the Bot and its 单聊 together; an unclear failure is never retried
     // here, because a retry after a lost response would make a second Bot.
-    const { bot, channel } = await createQuickBot(freshAppearance(workspace.bots));
+    setCreatingBot(true);
+    let created: Awaited<ReturnType<typeof createQuickBot>>;
+    try {
+      created = await createQuickBot(freshAppearance(workspace.bots));
+    } finally {
+      setCreatingBot(false);
+    }
+    const { bot, channel } = created;
     projectBot(bot);
     projectChannel(channel);
     updatePreferences({ rightPanelOpen: true });
@@ -1081,6 +1089,7 @@ export function AuthenticatedWorkspace({
           onSelectChannel={selectChannel}
           onSelectBot={(botId) => void openDirectConversation(botId)}
           onOpenBotProfile={openEmployee}
+          creatingBot={creatingBot}
           unreadCounts={sidebarUnread(workspace.channels, unreadByChannel)}
           onMarkRead={(key) => markRead(channelForSidebarKey(key))}
           onRenameItem={handleRenameItem}
