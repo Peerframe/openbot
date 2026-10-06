@@ -17,7 +17,7 @@
     "@iconify-icons/logos": "2.0.2",
     "@lobehub/icons-static-svg": "1.95.1",
     "@modelcontextprotocol/ext-apps": "1.7.5",
-    "@modelcontextprotocol/sdk": "1.30.0",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "@openbot/domain": "0.0.0",
     "@openbot/protocol": "0.0.0",
     "react": "19.3.0",
