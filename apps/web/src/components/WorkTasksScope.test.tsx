@@ -2,17 +2,18 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ApiError } from "../api";
 import * as native from "../native-task-api";
-import * as work from "../work-api";
 import { nativeIds, nativeScope, ownerFile } from "../test/native-task-fixture";
 import {
   deferred,
   interact,
+  type RenderedComponent,
   renderComponent,
   setInputValue,
-  type RenderedComponent,
 } from "../test/render-component";
 import { workFixture } from "../test/work-fixture";
+import * as work from "../work-api";
 import { WorkTasksScreen } from "./WorkTasksScreen";
+
 vi.mock("../work-api", () => ({
   createWorkTask: vi.fn(),
   getWorkTask: vi.fn(),
@@ -216,7 +217,7 @@ it("keeps metadata intact, unselects without deletion and applies soft deletion 
   await mount();
   await pick();
   expect(ui.container.textContent).toContain(ownerFile().sha256);
-  expect(ui.container.textContent).toContain("text/plain · 19 字节");
+  expect(ui.container.textContent).toContain("text/plain · 19 B");
   await interact(() => checkbox("选择附件 evidence.txt").click());
   expect(native.updateOwnerAttachment).not.toHaveBeenCalled();
   await interact(() => checkbox("选择附件 evidence.txt").click());

@@ -612,6 +612,12 @@ export function ChannelWorkspace({
     }
     return { byAnchor, trailing, newest, ids: new Set(shown.map((run) => run.id)) };
   }, [messages, runs, runsById, latestCompletedRequest]);
+  // The working line repeats a running task card when that card is already the last thing in the
+  // conversation (review 2026-10-05); it is only shown once later messages have pushed the card up.
+  const taskCardEndsConversation = (run: Run) =>
+    taskCards.ids.has(run.id) &&
+    (taskCards.trailing.some((item) => item.id === run.id) ||
+      taskCards.byAnchor.get(messages.at(-1)?.id ?? "")?.at(-1)?.id === run.id);
   const renderTask = (run: Run, after?: Message) => (
     <TaskCard
       key={`task-${run.id}`}
@@ -1316,7 +1322,7 @@ export function ChannelWorkspace({
                 </div>
               </article>
             ))}
-          {workingRun ? (
+          {workingRun && !taskCardEndsConversation(workingRun) ? (
             <WorkingRow bot={botsById.get(workingRun.botId) as Bot} status={workingRun.status} />
           ) : null}
           {taskCards.trailing.map((run) => renderTask(run))}

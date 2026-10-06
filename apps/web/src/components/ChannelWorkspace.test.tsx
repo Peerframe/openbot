@@ -1229,6 +1229,17 @@ describe("conversation polish (owner feedback 2026-10-05)", () => {
     vi.mocked(listRuns).mockResolvedValue([run("r-1", "running", "m-owner")]);
     const rendered = await renderComponent(view("p"));
     await interact(async () => undefined);
+    // The running task's card ends the conversation, so the working line would only repeat it.
+    expect(rendered.container.querySelector(".task-card, [class*='task-card']")).not.toBeNull();
+    expect(rendered.container.querySelector(".conversation-working")).toBeNull();
+    // Once a later message pushes the card up, the working line keeps the wait visible.
+    await interact(() =>
+      lastHandlers().onMessage({
+        ...message("p", "顺便问一下"),
+        id: "m-later",
+        createdAt: new Date(Date.now() + 60_000).toISOString(),
+      }),
+    );
     expect(rendered.container.querySelector(".conversation-working")?.textContent).toBe(
       "Assistant 正在工作",
     );
