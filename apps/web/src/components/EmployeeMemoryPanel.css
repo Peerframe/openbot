@@ -1,0 +1,376 @@
+/*
+ * Settings › 记忆 (the memory panel of the retired Bot page; ProfileMemory artboard). Content is
+ * unframed and lists sit in grey cards.
+ */
+.settings-memory .ep-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+.settings-memory .ep-note {
+  margin: 0;
+  padding: 0 4px;
+  color: var(--ob-text-tertiary);
+  font-size: var(--ob-font-meta);
+  line-height: 1.5;
+}
+.settings-memory .ep-empty {
+  margin: 0;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--ob-fill);
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+}
+.settings-memory .ep-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.settings-memory .ep-block h2,
+.settings-memory .ep-section-head h2 {
+  margin: 0 0 0 4px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.settings-memory :is(.ep-block-head, .ep-section-head) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.settings-memory .ep-section-head > span {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.settings-memory .ep-section-head small {
+  color: var(--ob-text-tertiary);
+  font-size: var(--ob-font-meta);
+}
+.settings-memory .ep-block-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  min-width: 0;
+}
+.settings-memory .ep-block-tools {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+}
+/* Text filters with counts; the selected one is darker and bold (tlink in the artboards). */
+.settings-memory .ep-text-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.settings-memory .ep-text-filters > button,
+.settings-memory :is(.ep-text-button, .ep-more) {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text-tertiary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.settings-memory .ep-text-filters > button[aria-pressed="true"] {
+  color: var(--ob-text);
+  font-weight: 600;
+}
+.settings-memory .ep-text-button {
+  color: var(--ob-text-secondary);
+}
+.settings-memory :is(.ep-text-filters > button, .ep-text-button):hover {
+  color: var(--ob-text);
+}
+.settings-memory .ep-more {
+  align-self: flex-start;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 15px;
+  color: var(--ob-text-secondary);
+}
+.settings-memory .ep-more:hover {
+  background: var(--ob-fill);
+}
+.settings-memory .ep-search {
+  box-sizing: border-box;
+  width: 180px;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--ob-divider);
+  border-radius: 16px;
+  background: var(--ob-surface);
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.settings-memory .ep-search:focus {
+  border-color: var(--ob-text-tertiary);
+}
+.settings-memory .ep-day {
+  margin: 0 4px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+/* Grey grouped card: rows separated by hairlines. */
+.settings-memory .ep-card {
+  margin: 0;
+  padding: 0 18px;
+  border-radius: 18px;
+  background: var(--ob-fill);
+  list-style: none;
+}
+.settings-memory .ep-card > li + li,
+.settings-memory .ep-config-rows > * + * {
+  border-top: 1px solid var(--ob-divider);
+}
+.settings-memory .ep-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.settings-memory .ep-card .ob-tag {
+  background: var(--ob-surface);
+}
+.settings-memory .ep-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.settings-memory .ep-checkbox input {
+  margin-top: 3px;
+}
+.settings-memory form footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* --- 记忆 (ProfileMemory): 候选经验 cards, then the memory list */
+.settings-memory .knowledge-review-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.settings-memory .knowledge-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 132px;
+  gap: 12px;
+}
+.settings-memory .knowledge-grid.is-all {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.settings-memory .knowledge-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--ob-divider);
+  border-radius: 16px;
+  background: var(--ob-surface);
+}
+.settings-memory .knowledge-card.is-open {
+  grid-column: 1 / -1;
+}
+.settings-memory .knowledge-card > strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.settings-memory .knowledge-card > p {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.settings-memory .knowledge-card > footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+}
+.settings-memory .knowledge-card > footer > .knowledge-source {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-memory .knowledge-source {
+  color: var(--ob-text-tertiary);
+  font-size: var(--ob-font-meta);
+}
+.settings-memory .knowledge-source a {
+  color: inherit;
+}
+.settings-memory .knowledge-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px dashed var(--ob-switch-off);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.settings-memory .knowledge-more strong {
+  color: var(--ob-text);
+  font-size: 22px;
+  font-weight: 700;
+}
+.settings-memory .knowledge-proposal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.settings-memory .knowledge-proposal textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+.settings-memory .ep-memory-list > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+}
+.settings-memory .ep-memory-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.settings-memory .ep-memory-text strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.settings-memory .ep-memory-text > span:not(.ep-tags) {
+  color: var(--ob-text-tertiary);
+  font-size: var(--ob-font-meta);
+  line-height: 1.5;
+}
+.settings-memory .ep-memory-text .ep-tags {
+  margin-top: 4px;
+}
+.settings-memory .ep-memory-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.settings-memory .ep-model-use {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ob-text-tertiary);
+  font-size: var(--ob-font-meta);
+}
+/* Row actions appear on hover or focus; touch screens always show them. */
+.settings-memory .ep-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ob-text-tertiary);
+  font-size: var(--ob-font-meta);
+  opacity: 0;
+}
+.settings-memory li:is(:hover, :focus-within) .ep-row-actions,
+.settings-memory .ep-row-actions:has(.is-danger) {
+  opacity: 1;
+}
+@media (hover: none) {
+  .settings-memory .ep-row-actions {
+    opacity: 1;
+  }
+}
+.settings-memory .ep-row-actions button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+.settings-memory .ep-row-actions button.is-danger {
+  color: var(--ob-attention);
+  font-weight: 600;
+}
+.settings-memory .ep-memory-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--ob-divider);
+  border-radius: 18px;
+  background: var(--ob-surface);
+}
+.settings-memory .ep-memory-editor > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.settings-memory .ep-memory-editor > header > span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.settings-memory .ep-memory-editor > header small {
+  color: var(--ob-text-tertiary);
+  font-size: var(--ob-font-meta);
+}
+.settings-memory .ep-memory-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.settings-memory .ep-memory-editor textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+.settings-memory .ep-memory-audit summary {
+  width: fit-content;
+  padding: 0 4px;
+  color: var(--ob-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+.settings-memory .ep-memory-audit ol {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0 4px;
+  color: var(--ob-text-secondary);
+  font-size: var(--ob-font-meta);
+  list-style: none;
+}
+.settings-memory .ep-memory-audit li {
+  display: flex;
+  gap: 12px;
+}
+.settings-memory .ep-memory-audit time {
+  color: var(--ob-text-tertiary);
+}

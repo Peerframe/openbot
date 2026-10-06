@@ -60,7 +60,7 @@
 
 学习已经有部分真实闭环：成功任务可提出一条可复用经验。Owner 可以编辑标题/正文、接受为内部不可迁移记忆，或拒绝并删除候选；另行勾选才能允许后续模型使用。审核前不是生效记忆，也不可供后续任务读取；Agent 不能自己批准。这是审核式学习，不是观察用户电脑后自动学习。
 
-证据：[主页/记忆](../../apps/web/src/components/EmployeeProfileView.tsx)、[进化](../../apps/web/src/components/EmployeeEvolutionArchive.tsx)、[技能](../../apps/web/src/components/EmployeeSkillReview.tsx)、[候选经验](../../apps/web/src/components/KnowledgeReviewPanel.tsx)、[运行时工具](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts)。
+证据：[主页/记忆](https://github.com/Peerframe/openbot/blob/be32347ca8c8007c108f5d8591c0aac364d3ff84/apps/web/src/components/EmployeeProfileView.tsx)、[进化](../../apps/web/src/components/EmployeeEvolutionArchive.tsx)、[技能](../../apps/web/src/components/EmployeeSkillReview.tsx)、[候选经验](../../apps/web/src/components/KnowledgeReviewPanel.tsx)、[运行时工具](https://github.com/Peerframe/openbot/blob/67ed7a1f18b8048d76e0ffd373dd4c26c1c4dd69/apps/server/src/native-agent.ts)。
 
 ## 插件与可迁移员工
 

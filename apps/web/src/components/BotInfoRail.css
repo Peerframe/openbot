@@ -304,3 +304,142 @@
 .bot-info .bi-delete:hover {
   background: light-dark(#fdeceb, var(--ob-danger-fill));
 }
+/* 介绍 under the tag, edited in place like the tag. */
+.bot-info .bi-description {
+  display: -webkit-box;
+  max-width: 100%;
+  margin-top: 4px;
+  padding: 2px 6px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ob-text-secondary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  cursor: pointer;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.bot-info .bi-description.is-empty {
+  color: var(--ob-text-tertiary);
+}
+.bot-info .bi-description:hover {
+  background: var(--ob-fill);
+}
+.bot-info .bi-description-input {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border: 1px solid var(--ob-divider);
+  border-radius: 8px;
+  background: var(--ob-surface);
+  color: var(--ob-text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+}
+/* 工作: four counts, then tasks and 成长 in the rail's card rows. */
+.bot-info .bi-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 12px 6px;
+  border-radius: 16px;
+  background: var(--ob-fill);
+  text-align: center;
+}
+.bot-info .bi-stats > div + div {
+  border-left: 1px solid var(--ob-divider);
+}
+.bot-info .bi-stats dt {
+  color: var(--ob-text-secondary);
+  font-size: 11px;
+}
+.bot-info .bi-stats dd {
+  margin: 2px 0 0;
+  color: var(--ob-text-strong);
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.bot-info .bi-work-row {
+  padding: 10px 0;
+}
+.bot-info .bi-work-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.bot-info .bi-work-text strong {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bot-info .bi-work-text small {
+  overflow: hidden;
+  color: var(--ob-text-tertiary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bot-info .bi-work-state {
+  color: var(--ob-text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.bot-info .bi-work-state.is-live {
+  color: var(--ob-active);
+}
+.bot-info .bi-work-state.is-ok {
+  color: var(--ob-online-text);
+}
+.bot-info .bi-work-state.is-bad {
+  color: var(--ob-attention);
+}
+.bot-info .bi-events {
+  margin: 0;
+  list-style: none;
+}
+.bot-info .bi-event {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+}
+.bot-info .bi-event > i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ob-text-tertiary);
+}
+.bot-info .bi-event > i.is-verified {
+  background: var(--ob-online-text);
+}
+.bot-info .bi-event > i.is-candidate {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--ob-text-tertiary);
+}
+.bot-info .bi-profile-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 16px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--ob-attention-border);
+  border-radius: 12px;
+  background: var(--ob-attention-fill);
+  color: var(--ob-attention-ink);
+  font-size: 12px;
+  line-height: 1.5;
+}

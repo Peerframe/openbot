@@ -7,7 +7,7 @@ import { RobotAvatar } from "./RobotAvatar";
 import "./WorkspaceShell.css";
 
 /**
- * The main column's 56px header (Main and Profile artboards). There is no window-wide toolbar:
+ * The main column's 56px header (Main artboard). There is no window-wide toolbar:
  * the title pill opens the right rail, the rail's 收起 closes it, and back/forward and the panel
  * toggles are keyboard and menu commands. When the sidebar is hidden this header leaves room for
  * the macOS traffic lights and offers one button to reopen it.

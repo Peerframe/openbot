@@ -227,7 +227,7 @@ export function ContextRail({
                   className="ci-member-open"
                   disabled={!onOpenBot}
                   onClick={() => onOpenBot?.(bot.id)}
-                  aria-label={`打开 ${bot.name} 的员工档案`}
+                  aria-label={`打开 ${bot.name} 的信息`}
                 >
                   <RobotAvatar
                     bot={bot}

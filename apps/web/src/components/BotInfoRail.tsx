@@ -9,7 +9,7 @@ import { type KeyboardEvent, useEffect, useId, useState } from "react";
 import { getOwnerPreferences, updateEmployeeProfileDetails } from "../api";
 import { type Automation, listAutomations } from "../destination-api";
 import { needsRoleSetup } from "../quick-bot";
-import { isActiveRun } from "../run-state";
+import { isActiveRun, runStatusLabel } from "../run-state";
 import { sidebarOrganization, useSidebarOrganization } from "../sidebar-organization";
 import { useWorkspacePreferences } from "../workspace-preferences";
 import { ApprovalStack } from "./ApprovalStack";
@@ -17,14 +17,35 @@ import { AvatarEditor } from "./AvatarEditor";
 import { ChannelLibrary, NodeRow } from "./ContextRail";
 import { DeleteIdentityDialog } from "./DeleteIdentityDialog";
 import type { DesktopSettingsSection } from "./DesktopSettingsScreen";
+import {
+  evidenceKindLabel,
+  evolutionMarkClass,
+  evolutionWhen,
+  selectEvolutionArchiveEvents,
+  uniqueEvidenceReferences,
+} from "./EmployeeEvolutionArchive";
 import { EmployeeModelEditor } from "./EmployeeModelEditor";
 import { NodeIcon } from "./Icons";
 import "./ContextRail.css";
 import "./BotInfoRail.css";
 
-type Tab = "details" | "library" | "computer";
-const tabLabels: Record<Tab, string> = { details: "详情", library: "资料库", computer: "电脑" };
-const tabs: Tab[] = ["details", "library", "computer"];
+type Tab = "details" | "work" | "library" | "computer";
+const tabLabels: Record<Tab, string> = {
+  details: "详情",
+  work: "工作",
+  library: "资料库",
+  computer: "电脑",
+};
+const tabs: Tab[] = ["details", "work", "library", "computer"];
+/** Horizontal tabs: ArrowLeft/ArrowRight wrap, Home/End jump; other keys are left alone. */
+function railTabForKey(current: Tab, key: string): Tab | undefined {
+  const index = tabs.indexOf(current);
+  if (key === "ArrowRight") return tabs[(index + 1) % tabs.length];
+  if (key === "ArrowLeft") return tabs[(index + tabs.length - 1) % tabs.length];
+  if (key === "Home") return tabs[0];
+  if (key === "End") return tabs.at(-1);
+  return undefined;
+}
 /** LongLists: a rail list shows at most four, then 「全部 N 个 ›」. */
 const RAIL_PREVIEW = 4;
 
@@ -38,14 +59,17 @@ export const botComputerLabels: Record<Bot["computerProfile"], string> = {
 };
 
 /**
- * Bot 信息 (BotInfo artboard): the rail beside a 单聊 and the Bot profile. Name and tag are edited
- * in place — the name through the rename route, the tag (the Server's role) through the
- * revision-checked profile route — and neither grants any skill or computer authority. 编辑头像
- * changes the look through the appearance route at the same revision (C9).
+ * Bot 信息 (BotInfo artboard): the rail beside a 单聊; it replaced the separate Bot page. Name,
+ * tag and 介绍 are edited in place — the name through the rename route, the tag (the Server's role)
+ * and description through the revision-checked profile route — and none grants any skill or
+ * computer authority. 编辑头像 changes the look through the appearance route at the same revision
+ * (C9).
  */
 export function BotInfoRail({
   bot,
   profile,
+  profileError,
+  onRetryProfile,
   workspace,
   onCollapse,
   onShare,
@@ -57,9 +81,14 @@ export function BotInfoRail({
   onManageModels,
   modelServicesVersion,
   onOpenSettings,
+  onOpenRun,
+  onOpenBrowser,
 }: {
   bot: Bot;
   profile: EmployeeProfile | undefined;
+  /** The latest profile read failed; retained data is not shown as current. */
+  profileError?: string | undefined;
+  onRetryProfile?: (() => void) | undefined;
   workspace: WorkspaceSnapshot;
   onCollapse(): void;
   onShare(): void;
@@ -73,6 +102,10 @@ export function BotInfoRail({
   modelServicesVersion?: number | undefined;
   /** 「全部 N 个 ›」 under a capped list opens its settings section. */
   onOpenSettings?: ((section: DesktopSettingsSection) => void) | undefined;
+  /** A task row opens 任务详情. */
+  onOpenRun?: ((runId: string) => void) | undefined;
+  /** 员工浏览器 for a Bot that works in the Docker browser. */
+  onOpenBrowser?: (() => void) | undefined;
 }) {
   const [tab, setTab] = useState<Tab>("details");
   const [deleting, setDeleting] = useState(false);
@@ -145,19 +178,33 @@ export function BotInfoRail({
           profile={profile}
           onProfileChanged={onProfileChanged}
         />
+        {profile ? (
+          <DescriptionField
+            key={`${bot.id}:${profile.details.revision}`}
+            profile={profile}
+            onProfileChanged={onProfileChanged}
+          />
+        ) : null}
       </div>
+      {profileError ? (
+        <div className="bi-profile-error" role="alert">
+          <span>没能读取 Bot 资料：{profileError}</span>
+          {onRetryProfile ? (
+            <button type="button" className="ob-pill is-small" onClick={onRetryProfile}>
+              重试
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <div
         className="ci-tabs"
         role="tablist"
         aria-label="Bot 信息分页"
         onKeyDown={(event) => {
-          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+          const next = railTabForKey(tab, event.key);
+          if (next === undefined) return;
           event.preventDefault();
-          const next =
-            tabs[
-              (tabs.indexOf(tab) + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length
-            ] ?? tab;
           setTab(next);
           event.currentTarget.querySelector<HTMLButtonElement>(`[data-tab="${next}"]`)?.focus();
         }}
@@ -195,6 +242,7 @@ export function BotInfoRail({
               onProfileChanged={onProfileChanged}
               onManageModels={onManageModels}
               modelServicesVersion={modelServicesVersion}
+              onOpenSettings={onOpenSettings}
             />
             <Routines bot={bot} onOpenSettings={onOpenSettings} />
             <BotNotificationToggle bot={bot} />
@@ -202,6 +250,14 @@ export function BotInfoRail({
               删除这个 Bot…
             </button>
           </>
+        ) : null}
+        {tab === "work" ? (
+          <Work
+            profile={profile}
+            profileError={profileError}
+            workspace={workspace}
+            onOpenRun={onOpenRun}
+          />
         ) : null}
         {tab === "library" ? (
           direct ? (
@@ -223,7 +279,12 @@ export function BotInfoRail({
           )
         ) : null}
         {tab === "computer" ? (
-          <Computer bot={bot} workspace={workspace} onOpenSettings={onOpenSettings} />
+          <Computer
+            bot={bot}
+            workspace={workspace}
+            onOpenSettings={onOpenSettings}
+            onOpenBrowser={onOpenBrowser}
+          />
         ) : null}
       </div>
 
@@ -382,6 +443,93 @@ function TagField({
   );
 }
 
+/**
+ * 介绍 under the tag: what the Bot is for, edited in place like the tag. Saving keeps the role and
+ * sends the profile revision, so an edit from another device is refused instead of overwritten.
+ * It is descriptive only and grants nothing.
+ */
+function DescriptionField({
+  profile,
+  onProfileChanged,
+}: {
+  profile: EmployeeProfile;
+  onProfileChanged(): Promise<void>;
+}) {
+  const saved = profile.details.description;
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(saved);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>();
+
+  async function commit() {
+    const next = value.trim();
+    if (saving) return;
+    if (next === saved.trim()) {
+      setEditing(false);
+      setValue(saved);
+      return;
+    }
+    setSaving(true);
+    setError(undefined);
+    try {
+      await updateEmployeeProfileDetails(profile.employee.id, {
+        role: profile.employee.role,
+        description: next,
+        expectedRevision: profile.details.revision,
+      });
+      setEditing(false);
+      await onProfileChanged();
+    } catch {
+      setError("没能保存介绍，可能已在另一台设备修改。");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      {editing ? (
+        <textarea
+          className="bi-description-input"
+          aria-label="介绍"
+          placeholder="这个 Bot 适合做什么"
+          rows={3}
+          maxLength={2000}
+          // biome-ignore lint/a11y/noAutofocus: the Owner just chose to edit the description.
+          autoFocus
+          value={value}
+          disabled={saving}
+          onChange={(event) => setValue(event.target.value)}
+          onBlur={() => void commit()}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+              event.preventDefault();
+              event.currentTarget.blur();
+            } else if (event.key === "Escape") {
+              setValue(saved);
+              setEditing(false);
+            }
+          }}
+        />
+      ) : (
+        <button
+          type="button"
+          className={`bi-description${saved.trim() ? "" : " is-empty"}`}
+          title={saved.trim() ? "编辑介绍" : undefined}
+          onClick={() => setEditing(true)}
+        >
+          {saved.trim() || "添加介绍"}
+        </button>
+      )}
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
 function Approvals({
   bot,
   workspace,
@@ -428,6 +576,7 @@ function HowItWorks({
   onProfileChanged,
   onManageModels,
   modelServicesVersion,
+  onOpenSettings,
 }: {
   bot: Bot;
   profile: EmployeeProfile | undefined;
@@ -435,6 +584,7 @@ function HowItWorks({
   onProfileChanged(): Promise<void>;
   onManageModels(): void;
   modelServicesVersion?: number | undefined;
+  onOpenSettings?: ((section: DesktopSettingsSection) => void) | undefined;
 }) {
   const [defaultModel, setDefaultModel] = useState<ModelSelection>();
   const [editingModel, setEditingModel] = useState(false);
@@ -451,6 +601,7 @@ function HowItWorks({
     : "未选择";
   // Only Bots that run a model can change it here; the others are fixed at creation.
   const editable = profile !== undefined && ["model", "docker-linux"].includes(bot.computerProfile);
+  const candidates = profile?.skills.filter((skill) => skill.state === "candidate").length ?? 0;
 
   return (
     <section className="ci-section" aria-labelledby="bi-how-heading">
@@ -487,6 +638,24 @@ function HowItWorks({
             <Chevron />
           </span>
         </button>
+        {profile && onOpenSettings ? (
+          <>
+            <button type="button" className="bi-row" onClick={() => onOpenSettings("skills")}>
+              <span>技能</span>
+              <span className="bi-row-value">
+                {profile.skills.length} 个{candidates > 0 ? ` · ${candidates} 个待审核` : ""}
+                <Chevron />
+              </span>
+            </button>
+            <button type="button" className="bi-row" onClick={() => onOpenSettings("memory")}>
+              <span>记忆</span>
+              <span className="bi-row-value">
+                {profile.memories.length} 条
+                <Chevron />
+              </span>
+            </button>
+          </>
+        ) : null}
       </div>
     </section>
   );
@@ -594,10 +763,12 @@ function Computer({
   bot,
   workspace,
   onOpenSettings,
+  onOpenBrowser,
 }: {
   bot: Bot;
   workspace: WorkspaceSnapshot;
   onOpenSettings?: ((section: DesktopSettingsSection) => void) | undefined;
+  onOpenBrowser?: (() => void) | undefined;
 }) {
   const active = workspace.runs.find((run) => run.botId === bot.id && isActiveRun(run));
   const node = workspace.nodes.find((item) => item.id === active?.nodeId);
@@ -616,6 +787,15 @@ function Computer({
               <span>现在</span>
               <span className="bi-row-value">{node?.name ?? "做任务时分配"}</span>
             </div>
+          ) : null}
+          {bot.computerProfile === "docker-linux" && onOpenBrowser ? (
+            <button type="button" className="bi-row" onClick={onOpenBrowser}>
+              <span>员工浏览器</span>
+              <span className="bi-row-value">
+                打开
+                <Chevron />
+              </span>
+            </button>
           ) : null}
         </div>
       </section>
@@ -642,6 +822,158 @@ function Computer({
         ) : null}
       </section>
       <p className="bi-note">技能表示会做什么，不代表有权操作电脑。每台工作电脑单独授权。</p>
+    </>
+  );
+}
+
+const WORK_PAGE = 20;
+const statisticLabels = [
+  ["totalRuns", "任务"],
+  ["completedRuns", "完成"],
+  ["failedRuns", "失败"],
+  ["verifiedSkills", "已验证技能"],
+] as const;
+
+/**
+ * 工作: the Bot's tasks and 成长, from the same Server profile the Bot page used to show. Live
+ * work comes first; finished tasks are newest first. 成长 lists dated, sourced events only —
+ * never a score or level, and never the model's raw reasoning.
+ */
+function Work({
+  profile,
+  profileError,
+  workspace,
+  onOpenRun,
+}: {
+  profile: EmployeeProfile | undefined;
+  profileError?: string | undefined;
+  workspace: WorkspaceSnapshot;
+  onOpenRun?: ((runId: string) => void) | undefined;
+}) {
+  const [runLimit, setRunLimit] = useState(RAIL_PREVIEW);
+  const [eventLimit, setEventLimit] = useState(RAIL_PREVIEW);
+  if (!profile)
+    return (
+      <p className="bi-empty" role="status">
+        {profileError ? "暂时读不到工作记录。" : "正在读取工作记录…"}
+      </p>
+    );
+  const where = (channelId: string) => {
+    const channel = workspace.channels.find((item) => item.id === channelId);
+    return channel ? (channel.directBotId ? "单聊" : `# ${channel.name}`) : "频道";
+  };
+  const runs = [...profile.records.runs].sort(
+    (left, right) =>
+      Number(isActiveRun(right)) - Number(isActiveRun(left)) ||
+      Date.parse(right.createdAt) - Date.parse(left.createdAt),
+  );
+  const events = selectEvolutionArchiveEvents(profile.evolution, "all");
+
+  return (
+    <>
+      <dl className="bi-stats">
+        {statisticLabels.map(([key, label]) => (
+          <div key={key}>
+            <dt>{label}</dt>
+            <dd>{profile.statistics[key]}</dd>
+          </div>
+        ))}
+      </dl>
+      <section className="ci-section" aria-labelledby="bi-runs-heading">
+        <h3 id="bi-runs-heading">任务</h3>
+        {runs.length === 0 ? (
+          <p className="bi-empty">在聊天里交给它第一项工作，任务会出现在这里。</p>
+        ) : (
+          <div className="bi-card">
+            {runs.slice(0, runLimit).map((run) => {
+              const failed = run.status === "failed" || run.status === "blocked";
+              const tone = isActiveRun(run)
+                ? " is-live"
+                : run.status === "completed"
+                  ? " is-ok"
+                  : failed
+                    ? " is-bad"
+                    : "";
+              return (
+                <button
+                  type="button"
+                  className="bi-row bi-work-row"
+                  key={run.id}
+                  disabled={!onOpenRun}
+                  onClick={() => onOpenRun?.(run.id)}
+                >
+                  <span className="bi-work-text">
+                    <strong>{run.title}</strong>
+                    <small>
+                      {where(run.channelId)} · {evolutionWhen(run.createdAt)}
+                    </small>
+                  </span>
+                  <span className={`bi-work-state${tone}`}>
+                    {failed ? "没能完成" : runStatusLabel(run.status)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {runs.length > runLimit ? (
+          <button
+            type="button"
+            className="ci-more"
+            onClick={() =>
+              setRunLimit(runLimit === RAIL_PREVIEW ? WORK_PAGE : runLimit + WORK_PAGE)
+            }
+          >
+            {runLimit === RAIL_PREVIEW ? `全部 ${runs.length} 个 ›` : "更早的任务 ›"}
+          </button>
+        ) : null}
+      </section>
+      <section className="ci-section" aria-labelledby="bi-growth-heading">
+        <h3 id="bi-growth-heading">成长</h3>
+        {events.length === 0 ? (
+          <p className="bi-empty">学会新技能、职责或配置变化时，会在这里留下有来源的记录。</p>
+        ) : (
+          <ol className="bi-card bi-events">
+            {events.slice(0, eventLimit).map((event) => {
+              const evidence = uniqueEvidenceReferences(event.evidence);
+              return (
+                <li
+                  className="bi-event"
+                  key={event.id}
+                  title={evidence
+                    .map((item) => `${evidenceKindLabel(item.kind)}：${item.label ?? item.id}`)
+                    .join("\n")}
+                >
+                  <i className={evolutionMarkClass(event.type)} aria-hidden="true" />
+                  <span className="bi-work-text">
+                    <strong>{event.title}</strong>
+                    <small>
+                      {evidenceKindLabel(event.source)}
+                      {evidence.length > 0 ? ` · ${evidence.length} 条证据` : ""} ·{" "}
+                      {evolutionWhen(event.createdAt)}
+                    </small>
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+        {events.length > eventLimit ? (
+          <button
+            type="button"
+            className="ci-more"
+            onClick={() =>
+              setEventLimit(eventLimit === RAIL_PREVIEW ? WORK_PAGE : eventLimit + WORK_PAGE)
+            }
+          >
+            {eventLimit === RAIL_PREVIEW ? `全部 ${events.length} 条 ›` : "更早的记录 ›"}
+          </button>
+        ) : null}
+      </section>
+      <p className="bi-note">
+        只记录真实发生、能追溯来源的变化；不展示模型的原始思维链，也不代表权限。成长方向受 Hermes
+        Agent 的 Learning Journey 启发。
+      </p>
     </>
   );
 }

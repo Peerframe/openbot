@@ -29,7 +29,7 @@
     "BotInfo.dc.html": {
       "h": 900,
       "page": "app",
-      "title": "共享 Bot 信息组件（编辑头像 / 详情 / 资料库 / 电脑）",
+      "title": "共享 Bot 信息组件（编辑头像 / 详情 / 工作 / 资料库 / 电脑）",
       "w": 340,
       "x": 3700,
       "y": 6120
@@ -229,10 +229,10 @@
     },
     "Profile.dc.html": {
       "h": 900,
-      "page": "app",
-      "title": "② Bot 档案",
+      "page": "archive",
+      "title": "已移除 · ② Bot 档案",
       "w": 1440,
-      "x": 1520,
+      "x": 0,
       "y": 0
     },
     "Search.dc.html": {
@@ -421,42 +421,42 @@
     },
     "ProfileEvolution.dc.html": {
       "h": 900,
-      "page": "next",
-      "title": "② Bot 档案 · 进化档案",
-      "w": 1440,
-      "x": 0,
-      "y": 0
-    },
-    "ProfileSkills.dc.html": {
-      "h": 900,
-      "page": "next",
-      "title": "② Bot 档案 · 技能",
+      "page": "archive",
+      "title": "已移除 · ② Bot 档案 · 进化档案",
       "w": 1440,
       "x": 1520,
       "y": 0
     },
-    "ProfileMemory.dc.html": {
+    "ProfileSkills.dc.html": {
       "h": 900,
-      "page": "next",
-      "title": "② Bot 档案 · 记忆",
+      "page": "archive",
+      "title": "已移除 · ② Bot 档案 · 技能",
       "w": 1440,
       "x": 3040,
       "y": 0
     },
-    "ProfileWork.dc.html": {
+    "ProfileMemory.dc.html": {
       "h": 900,
-      "page": "next",
-      "title": "② Bot 档案 · 工作记录（含进行中）",
+      "page": "archive",
+      "title": "已移除 · ② Bot 档案 · 记忆",
       "w": 1440,
       "x": 4560,
       "y": 0
     },
-    "ProfileConfig.dc.html": {
+    "ProfileWork.dc.html": {
       "h": 900,
-      "page": "next",
-      "title": "② Bot 档案 · 配置",
+      "page": "archive",
+      "title": "已移除 · ② Bot 档案 · 工作记录（含进行中）",
       "w": 1440,
       "x": 0,
+      "y": 1020
+    },
+    "ProfileConfig.dc.html": {
+      "h": 900,
+      "page": "archive",
+      "title": "已移除 · ② Bot 档案 · 配置",
+      "w": 1440,
+      "x": 1520,
       "y": 1020
     },
     "MessageActions.dc.html": {
@@ -595,6 +595,14 @@
       "h": 1120,
       "title": "主 Bot · 三个方案",
       "page": "primary"
+    },
+    "BotInfoWork.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "② Bot 信息 · 工作（取代 Bot 档案）",
+      "w": 340,
+      "x": 1520,
+      "y": 0
     }
   },
   "createdOnFiles": {
@@ -668,11 +676,20 @@
       "w": 240,
       "x": 0,
       "y": -320
+    },
+    "archiveTitle": {
+      "kind": "title1",
+      "maxW": 6000,
+      "page": "archive",
+      "text": "已移除 · Bot 档案（2026-10-06 并入单聊右栏）",
+      "w": 240,
+      "x": 0,
+      "y": -320
     }
   },
   "order": [
     "Main.dc.html",
-    "Profile.dc.html",
+    "BotInfoWork.dc.html",
     "New.dc.html",
     "Menu.dc.html",
     "ContextMenu.dc.html",
@@ -744,7 +761,8 @@
     "SidebarDark.dc.html",
     "ChannelInfoDark.dc.html",
     "SettingsNavDark.dc.html",
-    "PrimaryBot.dc.html"
+    "PrimaryBot.dc.html",
+    "Profile.dc.html"
   ],
   "pages": [
     {
@@ -774,6 +792,10 @@
     {
       "id": "primary",
       "name": "主 Bot · 待选"
+    },
+    {
+      "id": "archive",
+      "name": "已移除 · Bot 档案"
     }
   ],
   "title": "OpenBot Desktop 界面优化"

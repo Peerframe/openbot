@@ -61,6 +61,9 @@
   用同样的一行。
 - 新建聊天页没有标题胶囊，页面最上方就是收件人一栏（2026-10-03 按你的反馈调整）。
 - 侧栏的「插件」按钮在文字后面显示最多三个已启用插件的小方块（Sidebar 画板）。
+- **「插件」窗口改为紧凑**（Plugins，所有者 2026-10-06 反馈，参考 Grok 的「市场」）：宽 760px，高度随内容。
+  标题行右侧是「已安装 N 个 ›」，一个搜索框，下面是两列的行——44px 图标、名称、一行说明和一个按钮：
+  「我的插件」（选择 Bot）、「精选」（添加）、「添加插件」（虚线加号「连接 MCP 服务」）。目录链接安静地放在底部。
 - **真实图标**（所有者 2026-10-05 要求）：模型服务商和常见插件服务（Gmail、Google Drive、Google 日历、GitHub、
   Slack、Notion、Linear、Discord、Figma、X）在原来显示首字母的地方都换成真实图标：「设置 › 模型服务」、模型
   对话框、插件面板和设置、@ 列表、侧栏。单色图标跟随文字颜色；其他服务仍显示首字母。来源见
@@ -86,7 +89,12 @@
 - 对话里出现 **「你最想让我先帮你做什么？」**：三个分工选项加一个自由回答。选择后把它设为 Bot 的标签和
   职责，并作为 Owner 的第一条消息发出。配置了模型时，卡片上方会有一句 Bot 自己的开场白（C11），
   在 Owner 发言之前卡片一直保留。
-- **Bot 信息右栏**：88px 头像带铅笔按钮，名字可以直接改，「添加标签」，然后是「详情 / 资料库 / 电脑」。
+- **Bot 信息右栏**：88px 头像带铅笔按钮，名字可以直接改，「添加标签」，「添加介绍」（介绍也直接改，按档案版本保存），
+  然后是「详情 / 工作 / 资料库 / 电脑」。「详情」多了「技能」「记忆」两行，点开进入设置里对应的分区。「工作」显示
+  四个数字、这个 Bot 的任务（进行中的在前，点一行打开任务详情）和「成长」：有日期、有来源的变化记录，方向受
+  Hermes Agent 的 Learning Journey 启发。「电脑」里可以打开 Docker Bot 的浏览器。
+- **不再有单独的 Bot 档案页**（所有者 2026-10-06 决定）。在任何地方点 Bot 的头像、名字或标签，或在它的菜单里点
+  「编辑资料」，都会打开它的单聊并展开这个右栏。原来六张 Profile 画板留在画板页「已移除 · Bot 档案」里备查。
   铅笔打开 **「编辑头像」**：头型、下颌色、「随机」和「重置」（回到打开时的样子）。每次改动立即按档案版本
   保存（C9），这个 Bot 的所有头像同步更新；如果别处先改过，会重新读取档案。不做上传和 AI 生成（所有者
   2026-10-02 决定）。
@@ -169,8 +177,8 @@
 | Sidebar、Search、Menu、ContextMenu | `Sidebar.tsx`、`SidebarItemMenu.tsx` | 已实现（含群组头像与状态圆点） |
 | Main | `App.tsx`、`WorkspaceHeader.tsx`、`ChannelWorkspace.tsx`、`TaskCard.tsx` | 已实现 |
 | ChannelInfo、AddMember | `ContextRail.tsx`、`AddMemberPopover.tsx` | 已完成 |
-| BotInfo | `BotInfoRail.tsx`、`AvatarEditor.tsx`（单聊和 Bot 档案） | 已完成 |
-| Profile、ProfileEvolution、ProfileSkills、ProfileMemory、ProfileWork、ProfileConfig | `EmployeeProfileView.tsx` 及其分页 | 已完成（23a） |
+| BotInfo、BotInfoWork | `BotInfoRail.tsx`、`AvatarEditor.tsx` | 已完成；「工作」分页和介绍在第 42 步 |
+| Profile、ProfileEvolution、ProfileSkills、ProfileMemory、ProfileWork、ProfileConfig | — | 第 42 步移除；记忆在「设置 › 记忆」（`EmployeeMemoryPanel.tsx`），技能在「设置 › 技能」 |
 | New、NewGroup、NewBotChat | `NewChatScreen.tsx`、`NewBotSetupCard.tsx` | 已完成 |
 | Slash | `ChannelWorkspace.tsx` 输入框菜单 | 已实现。@ 和 / 列表在光标处弹出。@ 列出 Bot 和已启用的插件，每项一行，右侧标明类型；插件标明「已连接」或「需要授权」。选择已连接的插件会写入「@名称」提示 Bot 使用；选择未授权的插件会打开插件面板，所以 @ 不会授予任何权限。点其他地方或打开 @、/ 时，「+」菜单会自动收起 |
 | Settings、SettingsNav、Settings* | `DesktopSettingsScreen.tsx`、`Settings*.tsx` | 已实现 |
@@ -194,7 +202,7 @@
 | 消息与输入框里的附件、语音输入（Composer） | `MessageAttachments`、`AttachmentPreview`、`ComposerAttachmentPicker`、`VoiceRecorder` | 已完成（23b） |
 | 「补充指令」输入框与技能选择（Composer、TaskCards） | `TaskActions.tsx` 里的 `SteerForm`、输入框技能菜单 | 已完成（23b） |
 | 带回收站的频道文件（ChannelFiles） | `AttachmentsManager` | 已完成（23c，C19–C24） |
-| Bot 档案分页：进化档案（受 Hermes Agent 启发）、技能、记忆、工作记录（含进行中）、配置（Profile*） | `EmployeeEvolutionArchive`、`EmployeeSkillReview`、`KnowledgeReviewPanel`、`EmployeeModelEditor` | 已完成（23a） |
+| 右栏里的「成长」（受 Hermes Agent 启发）和任务；设置里的技能审核、记忆和候选经验 | `BotInfoRail`、`EmployeeEvolutionArchive`（事件工具函数）、`EmployeeSkillReview`、`KnowledgeReviewPanel`、`EmployeeModelEditor` | 已完成（23a；第 42 步移动） |
 | Bot 的浏览器（EmployeeBrowser） | `EmployeeBrowser` | 已完成（23d） |
 | 提示、浮动通知、横条、滚动与长列表（Notices、LongLists） | `App.tsx` 中的提示、`useListScroll`、`ApprovalStack`、`SettingsSearch` | 已完成（23e、23e-2） |
 | 应用图标（AppIcon） | `AppIcon`、标签页图标、`docs/design/app-icon` | 已完成（23f，C16） |
@@ -221,6 +229,6 @@
 
 已删除：`CreateBotDialog`、`CreateChannelDialog`（第 16 步）；`EmployeeProfileRail`（第 17 步）；
 `RunInspector`、`RunProgressPanel`、`NativeRunControls`、`RunSteering`（第 19 步）；独立的「例行任务」和
-「技能库」页面以及旧的欢迎页（第 21 步）；位图标志 `OpenBotMark`，换成矢量的 `AppIcon`（第 23f 步）。
+「技能库」页面以及旧的欢迎页（第 21 步）；Bot 档案页 `EmployeeProfileView` 和 `EmployeeDescriptionForm`（第 42 步）；位图标志 `OpenBotMark`，换成矢量的 `AppIcon`（第 23f 步）。
 
 已完成：窗口外壳与右栏、启动与首次设置，以及第 14–23 步。其余按计划逐步进行，每一步在同一个拉取请求里删除它所替换的旧规则。

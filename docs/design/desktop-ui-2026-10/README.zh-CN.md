@@ -15,7 +15,7 @@
 | [Components](Components.dc.html) | 规范：颜色、字号、圆角、按钮、标签、输入框、列表行、气泡、菜单 |
 | [Sidebar](Sidebar.dc.html) | 共享侧栏：搜索、分组、列表行、账户菜单、底部 |
 | [Main](Main.dc.html) | ① 频道对话与右侧栏 |
-| [Profile](Profile.dc.html) 与 [ProfileEvolution](ProfileEvolution.dc.html)、[ProfileSkills](ProfileSkills.dc.html)、[ProfileMemory](ProfileMemory.dc.html)、[ProfileWork](ProfileWork.dc.html)、[ProfileConfig](ProfileConfig.dc.html) | ② Bot 档案：概览和另外五个分页（分段控件切换） |
+| [BotInfoWork](BotInfoWork.dc.html) | ② Bot 信息 · 工作：单聊右栏里的任务和成长，取代了 Bot 档案页 |
 | [New](New.dc.html) | ③ 新建聊天 / 选择 Bot |
 | [Settings](Settings.dc.html) 与 `Settings*.dc.html`、[SettingsNav](SettingsNav.dc.html) | ④ 设置弹窗及其 14 个分区 |
 | [Plugins](Plugins.dc.html) | ⑥ 插件 |
@@ -25,7 +25,8 @@
 | [Slash](Slash.dc.html) | ⑩ `/` 技能与操作 |
 | [Avatars](Avatars.dc.html)、[Avatar](Avatar.dc.html) | ⑪ Bot 头像系统 v3（三种头型 × 八种下颌色，无外框，状态圆点与工作动画）及其组件 |
 | [GroupAvatars](GroupAvatars.dc.html)、[GroupAvatar](GroupAvatar.dc.html) | ⑪ 0、1、2、3、4 个及以上 Bot 的群组头像（沿轮廓挖缝）及其组件 |
-| [BotInfo](BotInfo.dc.html) | 「Bot 信息」右栏与「编辑头像」弹窗（组件） |
+| [BotInfo](BotInfo.dc.html) | 「Bot 信息」右栏与「编辑头像」弹窗（组件；`tab` 切换详情 / 工作） |
+| [Profile](Profile.dc.html)、[ProfileEvolution](ProfileEvolution.dc.html)、[ProfileSkills](ProfileSkills.dc.html)、[ProfileMemory](ProfileMemory.dc.html)、[ProfileWork](ProfileWork.dc.html)、[ProfileConfig](ProfileConfig.dc.html) | 2026-10-06 移除（画板页「已移除 · Bot 档案」）：原来的 Bot 档案页，留作参考 |
 | [NewGroup](NewGroup.dc.html)、[NewBotChat](NewBotChat.dc.html) | ③ 从收件人创建频道；创建新 Bot——随机生成后直接进入单聊 |
 | [AddMember](AddMember.dc.html) | ① 给已有频道添加 Bot |
 | [TaskCards](TaskCards.dc.html)、[TaskInspector](TaskInspector.dc.html) | ⑭ 对话里的任务卡（全部状态）与「任务详情」面板 |

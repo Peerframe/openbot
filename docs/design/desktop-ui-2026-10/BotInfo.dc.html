@@ -30,20 +30,25 @@ body{margin:0}
 </button>
 <input type="text" value="{{name}}" aria-label="Bot 名称" style="margin-top: 8px; width: 220px; border: 0; border-radius: 8px; background: transparent; text-align: center; font: inherit; font-size: 20px; font-weight: 700; color: #1d1d1f; outline: none; padding: 2px 6px">
 <button type="button" style="border: 0; background: transparent; font: inherit; font-size: 13px; color: {{tagColor}}; cursor: pointer; padding: 2px 6px; border-radius: 6px">{{tag}}</button>
+<button type="button" aria-label="介绍" style="margin-top: 4px; border: 0; background: transparent; font: inherit; font-size: 13px; line-height: 1.5; color: {{descriptionColor}}; cursor: pointer; padding: 2px 6px; border-radius: 6px">{{description}}</button>
 </div>
 
 <div role="tablist" aria-label="Bot 信息分页" style="display: flex; gap: 4px; margin: 0 20px 16px; padding: 4px; border-radius: 12px; background: #f0f0f2">
-<button type="button" role="tab" aria-selected="true" class="bi-tab" style="background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.08); font-weight: 600; color: #1d1d1f">详情</button>
+<button type="button" role="tab" aria-selected="{{detailsAttr}}" class="bi-tab" style="{{detailsTabStyle}}">详情</button>
+<button type="button" role="tab" aria-selected="{{workAttr}}" class="bi-tab" style="{{workTabStyle}}">工作</button>
 <button type="button" role="tab" aria-selected="false" class="bi-tab" style="background: transparent; font-weight: 500; color: #6e6e73">资料库</button>
 <button type="button" role="tab" aria-selected="false" class="bi-tab" style="background: transparent; font-weight: 500; color: #6e6e73">电脑</button>
 </div>
 
+<sc-if value="{{details}}" hint-placeholder-val="{{true}}">
 <div style="flex-grow: 1; min-height: 0; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 18px">
 <section style="display: flex; flex-direction: column; gap: 8px">
 <h3 style="margin: 0 4px; font-size: 13px; font-weight: 500; color: #6e6e73">怎么工作</h3>
 <div style="border-radius: 16px; background: #f0f0f2; padding: 0 14px">
 <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px 0"><span style="font-size: 14px">模型</span><span style="font-size: 13px; color: #6e6e73">默认 · claude-sonnet ›</span></div>
 <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px 0; border-top: 1px solid #e3e3e6"><span style="font-size: 14px">电脑</span><span style="font-size: 13px; color: #6e6e73">不用电脑 ›</span></div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px 0; border-top: 1px solid #e3e3e6"><span style="font-size: 14px">技能</span><span style="font-size: 13px; color: #6e6e73">3 个 · 1 个待审核 ›</span></div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px 0; border-top: 1px solid #e3e3e6"><span style="font-size: 14px">记忆</span><span style="font-size: 13px; color: #6e6e73">4 条 ›</span></div>
 </div>
 </section>
 <section style="display: flex; flex-direction: column; gap: 8px">
@@ -56,6 +61,36 @@ body{margin:0}
 </div>
 <button type="button" style="align-self: center; border: 0; background: transparent; font: inherit; font-size: 13px; color: #b3261e; cursor: pointer; margin-top: auto">删除这个 Bot…</button>
 </div>
+</sc-if>
+
+<sc-if value="{{work}}" hint-placeholder-val="{{false}}">
+<div style="flex-grow: 1; min-height: 0; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 18px">
+<dl style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; padding: 12px 6px; border-radius: 16px; background: #f0f0f2; text-align: center">
+<div><dt style="font-size: 11px; color: #6e6e73">任务</dt><dd style="margin: 2px 0 0; font-size: 18px; font-weight: 600">12</dd></div>
+<div style="border-left: 1px solid #e3e3e6"><dt style="font-size: 11px; color: #6e6e73">完成</dt><dd style="margin: 2px 0 0; font-size: 18px; font-weight: 600">10</dd></div>
+<div style="border-left: 1px solid #e3e3e6"><dt style="font-size: 11px; color: #6e6e73">失败</dt><dd style="margin: 2px 0 0; font-size: 18px; font-weight: 600">1</dd></div>
+<div style="border-left: 1px solid #e3e3e6"><dt style="font-size: 11px; color: #6e6e73">已验证技能</dt><dd style="margin: 2px 0 0; font-size: 18px; font-weight: 600">2</dd></div>
+</dl>
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h3 style="margin: 0 4px; font-size: 13px; font-weight: 500; color: #6e6e73">任务</h3>
+<div style="border-radius: 16px; background: #f0f0f2; padding: 0 14px">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0"><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 13px; font-weight: 500">抓取竞品更新日志</strong><small style="font-size: 12px; color: #8e8e93"># 市场周报 · 今天 09:40</small></span><span style="font-size: 12px; color: #1f6fd6">工作中</span></div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid #e3e3e6"><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 13px; font-weight: 500">抓取官网定价页</strong><small style="font-size: 12px; color: #8e8e93">单聊 · 昨天 18:02</small></span><span style="font-size: 12px; color: #b3261e">没能完成</span></div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid #e3e3e6"><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 13px; font-weight: 500">整理本周周报</strong><small style="font-size: 12px; color: #8e8e93"># 市场周报 · 9月29日 10:00</small></span><span style="font-size: 12px; color: #248a3d">已完成</span></div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid #e3e3e6"><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 13px; font-weight: 500">汇总社交媒体提及</strong><small style="font-size: 12px; color: #8e8e93"># 市场周报 · 9月28日 16:20</small></span><span style="font-size: 12px; color: #248a3d">已完成</span></div>
+</div>
+<span style="align-self: flex-start; margin: 0 4px; font-size: 13px; color: #6e6e73">全部 12 个 ›</span>
+</section>
+<section style="display: flex; flex-direction: column; gap: 8px">
+<h3 style="margin: 0 4px; font-size: 13px; font-weight: 500; color: #6e6e73">成长</h3>
+<div style="border-radius: 16px; background: #f0f0f2; padding: 0 14px">
+<div style="display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 10px; align-items: center; padding: 10px 0"><i style="width: 8px; height: 8px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px #8e8e93"></i><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 13px; font-weight: 500">发现候选技能「社交媒体监控」</strong><small style="font-size: 12px; color: #8e8e93">来自任务 · 1 条证据 · 9月30日 10:10</small></span></div>
+<div style="display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid #e3e3e6"><i style="width: 8px; height: 8px; border-radius: 50%; background: #248a3d"></i><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 13px; font-weight: 500">新增技能「读取更新日志」</strong><small style="font-size: 12px; color: #8e8e93">来自任务 · 2 条证据 · 9月28日 11:00</small></span></div>
+</div>
+</section>
+<p style="margin: 0 4px; font-size: 12px; line-height: 1.5; color: #8e8e93">只记录真实发生、能追溯来源的变化；不展示模型的原始思维链，也不代表权限。成长方向受 Hermes Agent 的 Learning Journey 启发。</p>
+</div>
+</sc-if>
 
 <sc-if value="{{editing}}" hint-placeholder-val="{{true}}">
 <div role="dialog" aria-label="编辑头像" style="position: absolute; left: 20px; right: 20px; top: 168px; box-sizing: border-box; padding: 16px; border-radius: 20px; background: #fdfdfd; border: 1px solid #e5e5e8; box-shadow: 0 16px 40px rgba(0,0,0,0.14); display: flex; flex-direction: column; gap: 14px">
@@ -81,7 +116,7 @@ body{margin:0}
 </sc-if>
 </aside>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"editing":{"editor":"boolean","default":true},"character":{"editor":"enum","options":["round","relay","scout"],"default":"relay"},"accent":{"editor":"enum","options":["green","blue","yellow","red","violet","teal","pink","slate"],"default":"violet"},"name":{"editor":"text","default":"新建 Bot"},"tag":{"editor":"text","default":""},"$preview":{"width":340,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"editing":{"editor":"boolean","default":true},"character":{"editor":"enum","options":["round","relay","scout"],"default":"relay"},"accent":{"editor":"enum","options":["green","blue","yellow","red","violet","teal","pink","slate"],"default":"violet"},"name":{"editor":"text","default":"新建 Bot"},"tag":{"editor":"text","default":""},"description":{"editor":"text","default":""},"tab":{"editor":"enum","options":["details","work"],"default":"details"},"$preview":{"width":340,"height":900}}'>
 class Component extends DCLogic {
   renderVals() {
     const character = this.props.character ?? 'relay';
@@ -89,7 +124,16 @@ class Component extends DCLogic {
     const editing = this.props.editing !== false && this.props.editing !== 'false';
     const palette = [['green', '绿', '#91CF4B'], ['blue', '蓝', '#5F7CDE'], ['yellow', '琥珀', '#DFAD4F'], ['red', '珊瑚', '#E0785C'], ['violet', '紫', '#9C7FE3'], ['teal', '青', '#3FB4A6'], ['pink', '粉', '#E57BA8'], ['slate', '灰', '#8C98A8']];
     const tag = this.props.tag || '';
+    const description = this.props.description || '';
+    const tab = this.props.tab === 'work' ? 'work' : 'details';
+    const on = 'background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.08); font-weight: 600; color: #1d1d1f';
+    const off = 'background: transparent; font-weight: 500; color: #6e6e73';
     return {
+      details: tab === 'details', work: tab === 'work',
+      detailsAttr: tab === 'details' ? 'true' : 'false', workAttr: tab === 'work' ? 'true' : 'false',
+      detailsTabStyle: tab === 'details' ? on : off, workTabStyle: tab === 'work' ? on : off,
+      description: description || '添加介绍',
+      descriptionColor: description ? '#6e6e73' : '#8e8e93',
       character, accent, editing,
       editingAttr: editing ? 'true' : 'false',
       name: this.props.name || '新建 Bot',

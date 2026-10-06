@@ -71,6 +71,10 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
 - The New screen has no title pill: its recipients bar heads the page (owner feedback 2026-10-03).
 - The sidebar's 插件 button shows up to three enabled plugins as small tiles after its label
   (Sidebar artboard).
+- **The 插件 dialog is compact** (Plugins, owner feedback 2026-10-06, after Grok's 市场): 760px
+  wide and as tall as its content. 已安装 N 个 › on the title row, one search field, then two-column
+  rows — a 44px logo, the name, a one-line note and one pill: 我的插件 (选择 Bot), 精选 (添加), and
+  添加插件 with a dashed tile for 连接 MCP 服务. The catalogue links sit quietly at the bottom.
 - **Logos** (owner request 2026-10-05): model providers and well-known plugin services (Gmail, Google
   Drive, Google Calendar, GitHub, Slack, Notion, Linear, Discord, Figma, X) show their real logos
   wherever they had a letter tile. These are 设置 › 模型服务, the model dialog, the plugin panel and
@@ -105,8 +109,14 @@ the source; the `.dc.html` snapshot beside this file is its read-only copy (see
   Choosing sets the Bot's tag and role and sends the choice as the Owner's first message. When a
   model is configured, the Bot's own greeting (C11) sits above the card, and the card stays until
   the Owner speaks.
-- **BotInfo rail**: the 88px avatar with a pencil button, the name edited in place, 添加标签, then
-  详情 / 资料库 / 电脑. The pencil opens **编辑头像**: 头型, 下颌色, 随机 and 重置 (back to the look it
+- **BotInfo rail**: the 88px avatar with a pencil button, the name edited in place, 添加标签,
+  添加介绍 (the description, edited in place at the profile revision), then 详情 / 工作 / 资料库 /
+  电脑. 详情 adds 技能 and 记忆 rows that open those Settings sections. 工作 shows four counts, the
+  Bot's tasks (live first; a row opens 任务详情) and 成长: dated, sourced events, inspired by
+  Hermes Agent's Learning Journey. 电脑 opens the Bot's browser for a Docker Bot.
+- **There is no separate Bot page** (owner decision 2026-10-06). Clicking a Bot's avatar, name or
+  tag anywhere, or 编辑资料 in its menu, opens its 单聊 with this rail. The six Profile artboards
+  are kept on the canvas page 已移除 · Bot 档案 for reference. The pencil opens **编辑头像**: 头型, 下颌色, 随机 and 重置 (back to the look it
   opened with). Each change is saved at once at the profile revision (C9) and every avatar of the
   Bot updates; a change made elsewhere first re-reads the profile. Upload and AI generation are not
   planned (owner decision, 2026-10-02).
@@ -206,8 +216,8 @@ From the Owner's second reference recording; the layout is Telegram-like.
 | Sidebar, Search, Menu, ContextMenu | `Sidebar.tsx`, `SidebarItemMenu.tsx` | Built (group avatars and status dots included) |
 | Main | `App.tsx`, `WorkspaceHeader.tsx`, `ChannelWorkspace.tsx`, `TaskCard.tsx` | Built |
 | ChannelInfo, AddMember | `ContextRail.tsx`, `AddMemberPopover.tsx` | Built |
-| BotInfo | `BotInfoRail.tsx`, `AvatarEditor.tsx` (单聊 and the Bot profile) | Built |
-| Profile, ProfileEvolution, ProfileSkills, ProfileMemory, ProfileWork, ProfileConfig | `EmployeeProfileView.tsx` and its tabs | Built (23a) |
+| BotInfo, BotInfoWork | `BotInfoRail.tsx`, `AvatarEditor.tsx` | Built; 工作 tab and 介绍 in step 42 |
+| Profile, ProfileEvolution, ProfileSkills, ProfileMemory, ProfileWork, ProfileConfig | — | Removed in step 42; memory lives in 设置 › 记忆 (`EmployeeMemoryPanel.tsx`), skills in 设置 › 技能 |
 | New, NewGroup, NewBotChat | `NewChatScreen.tsx`, `NewBotSetupCard.tsx` | Built |
 | Slash | `ChannelWorkspace.tsx` composer menus | Built. @ and / lists open at the caret. @ lists Bots and enabled plugins one line each (kind on the right; a plugin shows 已连接 or 需要授权). Choosing a connected plugin writes 「@名称」 as a hint to the Bot; choosing an ungranted one opens the plugins panel, so @ never grants anything. The 「+」 menu closes on any outside press and when @ or / opens |
 | Settings, SettingsNav, Settings* | `DesktopSettingsScreen.tsx`, `Settings*.tsx` | Built |
@@ -232,7 +242,7 @@ while scrolling, and the date cue with 「回到最新」 in conversations.
 | Attachments in messages and the composer, voice input (Composer) | `MessageAttachments`, `AttachmentPreview`, `ComposerAttachmentPicker`, `VoiceRecorder` | Built (23b) |
 | 补充指令 input and the skill picker (Composer, TaskCards) | `SteerForm` in `TaskActions.tsx`, composer skill menu | Built (23b) |
 | 频道文件 with the recycle bin (ChannelFiles) | `AttachmentsManager` | Built (23c, C19–C24) |
-| Bot 档案 tabs: 进化档案 (inspired by Hermes Agent), 技能, 记忆, 工作记录 (with 进行中), 配置 (Profile*) | `EmployeeEvolutionArchive`, `EmployeeSkillReview`, `KnowledgeReviewPanel`, `EmployeeModelEditor` | Built (23a) |
+| 成长 (inspired by Hermes Agent) and tasks in the Bot rail; skill review, memory and 候选经验 in Settings | `BotInfoRail`, `EmployeeEvolutionArchive` (event helpers), `EmployeeSkillReview`, `KnowledgeReviewPanel`, `EmployeeModelEditor` | Built (23a; moved in step 42) |
 | The Bot's browser (EmployeeBrowser) | `EmployeeBrowser` | Built (23d) |
 | Notices, toasts, banners, scrolling and long lists (Notices, LongLists) | `App.tsx` notices, `useListScroll`, `ApprovalStack`, `SettingsSearch` | Built (23e, 23e-2) |
 | App icon (AppIcon) | `AppIcon`, the tab icon, `docs/design/app-icon` | Built (23f, C16) |
@@ -263,7 +273,7 @@ Rules that styled nothing or were fully overridden are deleted (about 120 rules)
 
 Removed: `CreateBotDialog` and `CreateChannelDialog` (step 16); `EmployeeProfileRail` (step 17);
 `RunInspector`, `RunProgressPanel`, `NativeRunControls` and `RunSteering` (step 19); the standalone
-例行任务 and 技能库 pages and the old welcome (step 21); the raster mark `OpenBotMark`, replaced by
+例行任务 and 技能库 pages and the old welcome (step 21); the Bot page `EmployeeProfileView` and `EmployeeDescriptionForm` (step 42); the raster mark `OpenBotMark`, replaced by
 the vector `AppIcon` (step 23f).
 
 Done so far: the window shell and rail, launch and setup, and steps 14–23. The rest follow the steps in the
