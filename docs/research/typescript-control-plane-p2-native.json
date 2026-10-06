@@ -722,11 +722,87 @@
         "desktopPlatformSkips": 3
       }
     },
-    "fullCanonicalStartup": "pending rebuilt candidate",
+    "fullCanonicalStartup": "passed actual canonical Electron startup and persisted restart in an explicit disposable profile",
     "workerCompanionReuse": {
       "sourceCommit": "6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
       "sourceAndDependenciesUnchanged": true
     },
-    "installed": false
+    "installed": false,
+    "rebuiltCandidate": {
+      "generatedAt": "2026-10-06T07:14:19.312Z",
+      "sourceCommit": "dfc8475f1412a7742b40f99ce6b720f3a428afee",
+      "asarSha256": "f3f7edc56109338e53918a5ece92b60bd5bd4b2781232515d534df5851ff5e94",
+      "compiledDesktopFilesMatched": 37,
+      "workerSourceCommit": "6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
+      "explicitProfileRepairPackaged": true,
+      "installed": false,
+      "registered": false
+    },
+    "canonicalElectronJourney": {
+      "generatedAt": "2026-10-06T07:32:27.488392+00:00",
+      "sourceCommit": "dfc8475f1412a7742b40f99ce6b720f3a428afee",
+      "asarSha256": "f3f7edc56109338e53918a5ece92b60bd5bd4b2781232515d534df5851ff5e94",
+      "identity": "dev.openbot.desktop",
+      "scope": "unsigned and uninstalled macOS arm64 canonical candidate, explicit disposable profile, embedded TS entry with Python sole writer",
+      "ownerLogin": true,
+      "realNativeSafeStorage": true,
+      "encryptedBootstrapJsonType": "string",
+      "botCreatedAndRenamed": true,
+      "savedBotRestoredAfterRestart": true,
+      "realtimeRestored": true,
+      "screenshotMatchedAccessibilityAtWorkspaceCheckpoints": true,
+      "wholeInterfaceAcceptance": false,
+      "privateFiles": [
+        {
+          "path": "openbot/python-local-server/bootstrap.json",
+          "mode": "0600",
+          "bytes": 243,
+          "hashPreserved": true
+        },
+        {
+          "path": "openbot/python-local-server/model-connections.key",
+          "mode": "0600",
+          "bytes": 32,
+          "hashPreserved": true
+        },
+        {
+          "path": "openbot/setup-plan.json",
+          "mode": "0600",
+          "bytes": 100,
+          "hashPreserved": true
+        }
+      ],
+      "launches": [
+        {
+          "mode": "fresh",
+          "exitCode": 0,
+          "ownedProcessCount": 13,
+          "ownedProcessesStopped": true
+        },
+        {
+          "mode": "restart",
+          "exitCode": 0,
+          "ownedProcessCount": 13,
+          "ownedProcessesStopped": true
+        }
+      ],
+      "postgresPidRemovedAfterBothExits": true,
+      "modelConfigured": false,
+      "modelCalled": false,
+      "workerSelected": false,
+      "workerRegistered": false,
+      "installed": false,
+      "originalAppRunning": true,
+      "installedAppPreserved": true,
+      "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+      "unqualified": [
+        "Claude whole-interface acceptance",
+        "Worker registration and restricted Keychain access-group provisioning",
+        "Developer ID and notarization",
+        "active Work/Temporal",
+        "hosted platform and deployment gates"
+      ],
+      "disposableProfileRemoved": true
+    }
   }
 }

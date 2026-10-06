@@ -350,9 +350,22 @@ Electron44.3.0及既有 Desktop目录/加密身份政策，但显式目录必须
 核对已复制的辅助程序后，只清理本次忽略的 Swift缓存，安全检查保持不变。全门槛重跑 exit0：
 类型检查33任务/32缓存、测试27任务/26缓存、build19任务/18缓存；Desktop578通过/3项平台跳过
 为实际执行。辅助程序源码及依赖闭包与6e9d13ed字节一致，可复用已验证的固定组件。
-重新打包后的正式启动仍待验；此前回执保留准确源码范围。
+重新打包后的正式身份候选已通过实际启动与重启检查，准确产品源码为
+`dfc8475f1412a7742b40f99ce6b720f3a428afee`，ASAR为
+`f3f7edc56109338e53918a5ece92b60bd5bd4b2781232515d534df5851ff5e94`，
+37份编译后的 Desktop模块与包一致。未改辅助程序保留6e9d13ed源码；此前资源及生命周期回执
+仍对应各自的固定源码。
 
-整合后 Electron/safeStorage功能检查点已关闭。下一有界检查点是核对 P2剩余的 hosted CI
+实际运行正式身份 Electron，显式一次性目录被正确保留，真实原生 `safeStorage`完成 Owner登录。
+创建并重命名一个合成 Bot，正常退出并重启后，准确名称与实时连接均恢复。两个工作区检查点的
+截图与界面树一致；这只是限定流程的功能观测，不代表 Claude的整体界面验收。
+加密 bootstrap（JSON密文字符串）、32字节模型密钥和 setup plan保持哈希及0600权限。
+两次启动均以0退出，各13个已记录所属进程均结束，PostgreSQL PID文件消失，一次性目录已清理。
+没有配置/调用模型、选择/注册 Worker或安装应用。原有应用仍在运行，ASAR仍与 P0哈希一致。
+受限 Keychain访问组配置、签名/公证、hosted/deployment及活跃 Work/Temporal门槛尚未通过。
+既有[原生回执](typescript-control-plane-p2-native.json)将本次实际流程与此前 Preview及无头验收分开记录。
+
+整合后正式身份 Electron/safeStorage功能检查点已关闭。下一有界检查点是核对 P2剩余的 hosted CI
 和 Claude整体界面验收，通过后才切换 P3写入方。Python仍是唯一产品写入方，P3–P5尚未启用，
 完整迁移仍已授权；未将剩余门槛改称通过。已安装 OpenBot的 ASAR仍与 P0基线一致：
 `e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0`；Applications中没有安装 Preview。

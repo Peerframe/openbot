@@ -489,10 +489,26 @@ link is rejected by the source symlink guard. After verifying the copied compani
 this task's ignored Swift cache; the guard is unchanged. The full rerun exits0:33 typecheck tasks/
 32 cached,27 test tasks/26 cached,19 build tasks/18 cached; Desktop578/3 platform skips actually
 executed. The companion source/dependency closure remains byte-identical to6e9d13ed, so reuse that
-verified immutable component. Rebuilt canonical startup remains pending; earlier receipts retain
-their exact immutable source.
+verified immutable component. The rebuilt canonical candidate passes actual startup/restart qualification at exact product
+source `dfc8475f1412a7742b40f99ce6b720f3a428afee`, ASAR
+`f3f7edc56109338e53918a5ece92b60bd5bd4b2781232515d534df5851ff5e94`;
+37 compiled Desktop modules match the package. The unchanged companion retains its6e9d13ed source.
+Earlier resource/lifecycle receipts remain scoped to their exact immutable source.
 
-The integrated Electron/safeStorage functional checkpoint is closed. The next bounded checkpoint is to reconcile the remaining P2 hosted CI and Claude whole-interface acceptance before switching a P3
+Actual canonical Electron startup honored the explicit disposable profile and completed Owner
+login with real native `safeStorage`. Creating and renaming one synthetic Bot, graceful quit and
+restart restored its exact name and realtime connection. Workspace screenshots matched the
+accessibility tree at these checkpoints; this is a narrow functional observation, not Claude's
+whole-interface acceptance. The encrypted bootstrap (a JSON ciphertext string),32-byte model key
+and setup plan retained their hashes and0600 permissions. Both launches exited0; all13 captured
+owned processes per launch stopped, PostgreSQL PID files disappeared and the disposable profile
+was removed. No model was configured/called, Worker selected/registered, or application installed.
+The original app remained running and its ASAR still matches the P0 hash. Restricted Keychain
+access-group provisioning, signing/notarization, hosted/deployment and active Work/Temporal gates
+remain unqualified. The existing [native receipt](typescript-control-plane-p2-native.json) records
+this current journey separately from the earlier Preview and headless qualification.
+
+The integrated canonical Electron/safeStorage functional checkpoint is closed. The next bounded checkpoint is to reconcile the remaining P2 hosted CI and Claude whole-interface acceptance before switching a P3
 writer. Python remains the sole product writer; P3–P5 are not active. Full migration remains
 authorized; the remaining gates have not been relabeled as passing. The installed OpenBot ASAR still matches the P0 baseline
 `e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0`; no Preview is installed in Applications.
