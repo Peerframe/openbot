@@ -371,6 +371,13 @@ export async function runLifecycleContracts(input: ContractTarget, scenario: Lif
       const settings = await audit("?category=settings&limit=100");
       assert(settings.events.every((event) => event.category === "settings"));
       assert(settings.events.some((event) => event.details.previousBotId === null));
+      assert(
+        settings.events.some(
+          (event) =>
+            event.type === "SETTINGS_PRIMARY_BOT_UPDATED" &&
+            event.details.to === "Synthetic published states",
+        ),
+      );
       assert(settings.events.some((event) => event.details.fileName === "😀".repeat(160)));
       assert(settings.events.some((event) => event.details.name === "😀".repeat(120)));
       assert(

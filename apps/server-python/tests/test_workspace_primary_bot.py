@@ -236,3 +236,30 @@ def test_primary_audit_failure_rolls_back_manual_create_import_and_delete(fixtur
         with psycopg.connect(fixture['dsn']) as db:
             db.execute('DROP TRIGGER c26_refuse_audit ON run_events')
             db.execute('DROP FUNCTION c26_refuse_audit()')
+
+
+def test_audit_resolves_retained_bot_names_and_ignores_payload_name_hints(fixture,tmp_path):
+    previous,current=raw_bot(fixture),raw_bot(fixture)
+    client,_=api(fixture,tmp_path)
+    with client:
+        assert client.put('/api/v1/workspace/primary-bot',json=dict(botId=previous,expectedRevision=1)).status_code==200
+        assert client.put('/api/v1/workspace/primary-bot',json=dict(botId=current,expectedRevision=2)).status_code==200
+        with psycopg.connect(fixture['dsn']) as db:
+            # Old events resolve renamed and tombstoned subjects just like ordinary audit records.
+            db.execute("UPDATE bots SET name='已改名的复核员',deleted_at=now() WHERE id=%s",(previous,))
+            db.execute("UPDATE bots SET name='研究员' WHERE id=%s",(current,))
+            db.execute("UPDATE run_events SET payload=payload || %s::jsonb WHERE type='SETTINGS_PRIMARY_BOT_UPDATED' "
+                "AND payload->>'primaryBotId'=%s",(psycopg.types.json.Jsonb(dict(
+                    **{'from':'Synthetic forged previous name','to':'Synthetic forged current name'},
+                    apiKey='Synthetic audit private sentinel')),current))
+        events=client.get('/api/v1/audit?category=settings').json()['events']
+        selected=next(e for e in events if e['details'].get('primaryBotId')==current)
+        assert selected['details']['from']=='已改名的复核员'
+        assert selected['details']['to']=='研究员'
+        assert selected['details']['previousBotId']==previous
+        assert 'Synthetic forged' not in str(selected)
+        assert 'Synthetic audit private sentinel' not in str(selected)
+        initial=next(e for e in events if e['details'].get('primaryBotId')==previous)
+        assert initial['details']['previousBotId'] is None
+        assert 'from' not in initial['details']
+        assert initial['details']['to']=='已改名的复核员'

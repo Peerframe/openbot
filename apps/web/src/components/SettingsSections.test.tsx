@@ -167,3 +167,38 @@ it("links CSV export to the active category", async () => {
   expect(auditExportUrl()).toBe("/api/v1/audit/export");
   expect(auditExportUrl("hosts")).toBe("/api/v1/audit/export?category=hosts");
 });
+
+it.each([
+  [{ previousBotId: null, primaryBotId: "internal-new", to: "研究员" }, "未设置 → 研究员"],
+  [
+    { previousBotId: "internal-old", primaryBotId: "internal-new", from: "复核员", to: "研究员" },
+    "复核员 → 研究员",
+  ],
+  [{ previousBotId: "internal-old", primaryBotId: null, from: "复核员" }, "复核员 → 未设置"],
+  [{ previousBotId: "internal-old", primaryBotId: "internal-new" }, "未知 Bot → 未知 Bot"],
+])("shows projected primary Bot names without leaking internal IDs: %o", async (details, title) => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      respond({
+        events: [
+          {
+            id: "primary-event",
+            type: "SETTINGS_PRIMARY_BOT_UPDATED",
+            category: "settings",
+            createdAt: "2026-10-07T00:00:00.000Z",
+            details,
+          },
+        ],
+      }),
+    ),
+  );
+  const view = await renderComponent(<AuditLogSettings />);
+  try {
+    await interact(() => undefined);
+    expect(view.container.textContent).toContain(`更改主 Bot：${title}`);
+    expect(view.container.textContent).not.toContain("internal-");
+  } finally {
+    await view.unmount();
+  }
+});

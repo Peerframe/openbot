@@ -29,7 +29,6 @@ import {
 import {
   createMessage,
   getEmployeeProfile,
-  getRunOutput,
   listChannelReactions,
   listMessagePage,
   listMessages,
@@ -677,22 +676,7 @@ export function ChannelWorkspace({
             if (!controller.signal.aborted && requestedRevision === revision) setReactions(items);
           })
           .catch(() => undefined);
-        await Promise.allSettled(
-          runItems
-            .filter(
-              (run) =>
-                run.channelId === channel.id &&
-                run.executionProfile === "none" &&
-                ["queued", "running"].includes(run.status),
-            )
-            .map(async (run) => {
-              const output = await getRunOutput(run.id, controller.signal);
-              if (!controller.signal.aborted && output)
-                setOutputs((current) =>
-                  mergeRunOutput(current, output, channel.id, conversation.getSnapshot().runs),
-                );
-            }),
-        );
+        // Python restores committed messages and Run facts; it has no partial-output reader.
       } catch (cause: unknown) {
         if (controller.signal.aborted || requestedRevision !== revision) return;
         conversation.loaded(cause instanceof Error ? cause.message : "无法读取频道消息。");

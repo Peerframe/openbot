@@ -78,6 +78,10 @@ import { openEventStream, type RealtimeConnectionState } from "./event-stream";
 
 export type { RealtimeConnectionState };
 
+// Web projections accept additive Server fields; command admission remains strict.
+const clientWorkspacePrimaryBotSchema = workspacePrimaryBotSchema.strip();
+const clientTranscriptionSettingsSchema = transcriptionSettingsSchema.strip();
+
 interface ErrorPayload {
   error?: string;
   fields?: Record<string, string[]>;
@@ -452,14 +456,6 @@ export async function getRunProgress(
   );
 }
 
-export async function getRunOutput(runId: string, signal?: AbortSignal): Promise<RunOutput | null> {
-  const result = await request<{ output: RunOutput | null }>(
-    `/api/v1/runs/${encodeURIComponent(runId)}/output`,
-    signal ? { signal } : undefined,
-  );
-  return result.output;
-}
-
 export function subscribeToUnauthorized(handler: () => void): () => void {
   window.addEventListener("openbot:unauthorized", handler);
   return () => window.removeEventListener("openbot:unauthorized", handler);
@@ -478,7 +474,7 @@ export async function setWorkspacePrimaryBot(value: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(workspacePrimaryBotInputSchema.parse(value)),
   });
-  return workspacePrimaryBotSchema.parse(result);
+  return clientWorkspacePrimaryBotSchema.parse(result);
 }
 
 export async function getModelServices(signal?: AbortSignal): Promise<ModelServicesSnapshot> {
@@ -1556,14 +1552,14 @@ export type { TranscriptionSettings } from "@openbot/protocol";
 export async function getTranscriptionSettings(
   signal?: AbortSignal,
 ): Promise<TranscriptionSettings> {
-  return transcriptionSettingsSchema.parse(
+  return clientTranscriptionSettingsSchema.parse(
     await request("/api/v1/settings/transcription", signal ? { signal } : {}),
   );
 }
 export async function saveTranscriptionSettings(
   input: TranscriptionSettingsInput,
 ): Promise<TranscriptionSettings> {
-  return transcriptionSettingsSchema.parse(
+  return clientTranscriptionSettingsSchema.parse(
     await request("/api/v1/settings/transcription", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },

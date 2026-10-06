@@ -61,8 +61,11 @@ async def audit_records(transactions,token,*,before=None,limit=50,category=None,
             "left(e.channel_id,129) AS channel_id,left(e.bot_id,129) AS bot_id,left(e.run_id,129) AS run_id,"+
             _PAYLOAD_SQL+" AS payload,"+_CATEGORY_SQL+" AS category,"
             "left(c.name,81) AS channel_name,c.deleted_at IS NOT NULL AS channel_deleted,"
-            "left(b.name,65) AS bot_name,b.deleted_at IS NOT NULL AS bot_deleted "
+            "left(b.name,65) AS bot_name,b.deleted_at IS NOT NULL AS bot_deleted,"
+            "left(previous_bot.name,64) AS previous_primary_name,left(primary_bot.name,64) AS primary_name "
             "FROM run_events e LEFT JOIN channels c ON c.id=e.channel_id LEFT JOIN bots b ON b.id=e.bot_id "
+            "LEFT JOIN bots previous_bot ON e.type='SETTINGS_PRIMARY_BOT_UPDATED' AND previous_bot.id=e.payload->>'previousBotId' "
+            "LEFT JOIN bots primary_bot ON e.type='SETTINGS_PRIMARY_BOT_UPDATED' AND primary_bot.id=e.payload->>'primaryBotId' "
             "WHERE (%s::timestamptz IS NULL OR (e.created_at,e.id)<(%s::timestamptz,%s::text)) "
             "AND (%s::text IS NULL OR ("+_CATEGORY_SQL+")=%s) "
             "ORDER BY e.created_at DESC,e.id DESC LIMIT %s",(cursor,cursor,cursor_id,category,category,limit+1))).fetchall()
@@ -75,6 +78,12 @@ async def audit_records(transactions,token,*,before=None,limit=50,category=None,
                 if (isinstance(payload.get(key),(str,int,bool)) or key in ('previousBotId','primaryBotId') and key in payload and payload[key] is None)
                 and not isinstance(payload.get(key),float)
                 and (not isinstance(payload[key],int) or abs(payload[key])<=9007199254740991)}
+            if row["type"] == 'SETTINGS_PRIMARY_BOT_UPDATED':
+                # Match other audit subjects: resolve current retained names, including tombstones.
+                # Payload text cannot supply a name for an unrelated Bot.
+                for key,column in (("from","previous_primary_name"),("to","primary_name")):
+                    details.pop(key,None)
+                    if row[column] is not None: details[key]=row[column]
             event=dict(id=row["id"],type=row["type"][:64],category=row["category"],
                        createdAt=iso_timestamp(row["created_at"]),details=details)
             for key,column in (("channelId","channel_id"),("botId","bot_id"),("runId","run_id")):
