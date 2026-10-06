@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>体验检查 · Bot 档案的重复信息</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;color:#1d1d1f;background:#fcfcfc;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.shot{position:relative;width:864px;height:540px;border-radius:14px;overflow:hidden;box-shadow:0 0 0 1px #e3e3e6,0 12px 30px rgba(0,0,0,.08)}
+.shot>.scale{position:absolute;left:0;top:0;width:1440px;height:900px;transform:scale(.6);transform-origin:0 0}
+.mark{position:absolute;box-sizing:border-box;border:3px solid #e5484d;border-radius:10px;background:rgba(229,72,77,.06)}
+.num{position:absolute;top:-14px;left:-14px;width:26px;height:26px;border-radius:50%;background:#e5484d;color:#fff;font-size:14px;font-weight:700;display:grid;place-items:center}
+.cap{display:flex;align-items:baseline;gap:10px}
+.cap strong{font-size:18px}
+.cap span{font-size:13px;color:#6e6e73}
+li{margin-bottom:6px}
+</style>
+</helmet>
+<div style="width: 1900px; height: 860px; box-sizing: border-box; padding: 48px 56px; display: flex; flex-direction: column; gap: 26px">
+<header style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">体验检查 · 第 4 条：Bot 档案页的重复信息</h1>
+<p style="margin: 0; font-size: 15px; color: #6e6e73">打开某个 Bot 的档案时，同一个 Bot 的头像、名字和标签在屏幕上出现了三次。建议：进档案页时右栏默认收起，需要时点顶部的名字胶囊再打开。</p>
+</header>
+<div style="display: grid; grid-template-columns: 864px 864px; gap: 60px">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div class="cap"><strong>现在</strong><span>红框是同一份信息</span></div>
+<div class="shot">
+<div class="scale"><dc-import name="Profile" hint-size="1440px,900px"></dc-import></div>
+<div class="mark" style="left: 384px; top: 5px; width: 76px; height: 26px"><span class="num">1</span></div>
+<div class="mark" style="left: 200px; top: 40px; width: 330px; height: 66px"><span class="num">2</span></div>
+<div class="mark" style="left: 666px; top: 28px; width: 192px; height: 112px"><span class="num">3</span></div>
+</div>
+<ol style="margin: 0; padding-left: 20px; font-size: 14px; color: #3a3a3c; line-height: 1.6">
+<li>顶部名字胶囊：头像 + 名字</li>
+<li>档案页正文：大头像 + 名字 + 标签 + 介绍</li>
+<li>右栏「Bot 信息」：又一个大头像 + 名字 + 标签（下面还有模型、电脑等，档案页「配置」里也有）</li>
+</ol>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div class="cap"><strong>建议</strong><span>右栏默认收起，正文更宽</span></div>
+<div class="shot">
+<div class="scale"><dc-import name="ProfileRailClosed" hint-size="1440px,900px"></dc-import></div>
+</div>
+<ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #3a3a3c; line-height: 1.6">
+<li>只在档案页默认收起；单聊和频道里的右栏不变。</li>
+<li>点顶部名字胶囊仍能打开右栏（编辑头像、改名、通知开关都还在）。</li>
+<li>你手动打开过，就记住你的选择。</li>
+</ul>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1900,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

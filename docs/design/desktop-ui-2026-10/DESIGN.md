@@ -156,7 +156,9 @@ From the Owner's second reference recording; the layout is Telegram-like.
   plus its name in its colour. An Owner message in a 频道 starts with tags for the Bots it went to.
   In the composer, a chosen Bot is the same tag at the start of the line; its × shows on hover.
 - **「X 正在工作…」**: while a Bot is busy on a task here and has not started writing, one quiet line
-  with its moving head ends the conversation (the text shimmers unless motion is reduced).
+  with its moving head ends the conversation (the text shimmers unless motion is reduced). It is
+  left out while that task's own card is already the last thing in the conversation.
+- In a **单聊** the Bot's name is not repeated above its messages; the title already names it.
 - **「新」** marks the first unseen reply: the 频道's unread replies when it opens, or the first reply
   that arrives while the window is away. It stays until the conversation is left.
 - **Links** in messages: only https links without credentials, with a globe, open in a new tab
@@ -166,6 +168,9 @@ From the Owner's second reference recording; the layout is Telegram-like.
   character.
 - **Your bubble** is black with white text in light and deep grey (`#3a3a3c`) in dark (owner
   decision 2026-10-05).
+- **任务监督** follows its artboard: one 附件 field with a count, 刷新附件列表 and an 添加附件 button
+  (the system file picker stays hidden), file rows with a short type and size, and every extra
+  permission folded into 更多权限（默认不授权）.
 
 ## Tasks in a conversation
 

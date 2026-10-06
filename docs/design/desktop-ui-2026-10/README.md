@@ -39,7 +39,8 @@ equivalents. Bracketed values such as `[128]` and `[版本号]` are placeholders
 | [ChannelFilesTrash](ChannelFilesTrash.dc.html), [SettingsStorage](SettingsStorage.dc.html) | ① Permanent deletion from the 回收站 with a second confirmation, and the deleted-file placeholder; ④ 设置 › 存储空间 |
 | [EmployeeBrowser](EmployeeBrowser.dc.html) | The Bot's browser: take over and hand back |
 | [DarkTokens](DarkTokens.dc.html), [MainDark](MainDark.dc.html), [NewDark](NewDark.dc.html), [SettingsGeneralDark](SettingsGeneralDark.dc.html) and the components [SidebarDark](SidebarDark.dc.html), [ChannelInfoDark](ChannelInfoDark.dc.html), [SettingsNavDark](SettingsNavDark.dc.html) | Dark appearance: the light and dark value of every colour token, and three screens in dark |
-| [PrimaryBot](PrimaryBot.dc.html) | 主 Bot: three placements for the Owner to choose from (proposal, 2026-10-05) |
+| [PrimaryBot](PrimaryBot.dc.html) | 主 Bot: option one (chosen 2026-10-05), the first sidebar row with a crown on the avatar and after the name, and the crown's own motion |
+| [ReviewProfile](ReviewProfile.dc.html), [ProfileRailClosed](ProfileRailClosed.dc.html) | Review notes: where Bot 档案 repeats the Bot's identity, and the rail-closed alternative (not adopted; the rail stays) |
 | [Notices](Notices.dc.html), [LongLists](LongLists.dc.html), [AppIcon](AppIcon.dc.html) | Notices and connection states; long lists and scrolling for every screen; app icon |
 | [ChannelInfo](ChannelInfo.dc.html) | 频道信息 rail with 详情 / 资料库 / 成员 tabs (imported by Main) |
 | [Launch](Launch.dc.html), [LaunchMotion](LaunchMotion.dc.html) | Opening screen states and the 900 ms opening animation |
