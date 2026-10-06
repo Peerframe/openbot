@@ -36,7 +36,6 @@ import {
 } from "./components/DesktopSettingsScreen";
 import { DesktopSetupScreen } from "./components/DesktopSetupScreen";
 import { EmployeeBrowser } from "./components/EmployeeBrowser";
-import { EmployeeProfileView, type ProfileTab } from "./components/EmployeeProfileView";
 import { EmptyWorkspace } from "./components/EmptyWorkspace";
 import { ExportEmployeeDialog } from "./components/ExportEmployeeDialog";
 import { ImportEmployeeDialog } from "./components/ImportEmployeeDialog";
@@ -567,8 +566,6 @@ export function AuthenticatedWorkspace({
     location.kind !== "work";
   const destination = location.kind === "work" ? "work" : "chat";
   const selectedChannelId = location.kind === "channel" ? location.id : undefined;
-  const selectedEmployeeId = location.kind === "employee" ? location.id : undefined;
-  const employeeInitialTab = location.kind === "employee" ? location.tab : "overview";
   const [conversationSession] = useState(createConversationSession);
   const [focusRequest, setFocusRequest] = useState(0);
   const sessionLifetime = useRef(0);
@@ -690,7 +687,7 @@ export function AuthenticatedWorkspace({
   const [creatingBot, setCreatingBot] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [sharedBotId, setSharedBotId] = useState<string>();
-  // A 单聊's rail is the Bot 信息 rail, which reads the same profile as the Bot page.
+  // A 单聊's rail is the Bot 信息 rail; it reads the Bot's profile.
   const railBotId =
     showDetails && destination === "chat"
       ? workspace?.channels.find((channel) => channel.id === selectedChannelId)?.directBotId
@@ -706,11 +703,9 @@ export function AuthenticatedWorkspace({
   const [selectedRunId, setSelectedRunId] = useState<string>();
   const {
     profile: employeeProfile,
-    loading: employeeProfileLoading,
     error: employeeProfileError,
     refresh: refreshEmployeeProfile,
-  } = useEmployeeProfile(selectedEmployeeId ?? railBotId);
-  const [employeeExportOpen, setEmployeeExportOpen] = useState(false);
+  } = useEmployeeProfile(railBotId);
   const [employeeImportOpen, setEmployeeImportOpen] = useState(false);
   const [framesByRun, setFramesByRun] = useState<Map<string, RunFrame>>(() => new Map());
   const [workspaceRealtimeState, setWorkspaceRealtimeState] =
@@ -746,11 +741,6 @@ export function AuthenticatedWorkspace({
           ? { kind: "channel", id: workspace.channels[0].id }
           : { kind: "home" },
       );
-    } else if (
-      location.kind === "employee" &&
-      !workspace.bots.some((bot) => bot.id === location.id)
-    ) {
-      navigation.replace({ kind: "home" });
     }
   }, [workspace, location, navigation.replace]);
 
@@ -761,7 +751,6 @@ export function AuthenticatedWorkspace({
       !dialog &&
       !selectedRunId &&
       !employeeImportOpen &&
-      !employeeExportOpen &&
       !sharing &&
       !sharedBotId,
     settingsAvailable:
@@ -770,7 +759,6 @@ export function AuthenticatedWorkspace({
       !dialog &&
       !selectedRunId &&
       !employeeImportOpen &&
-      !employeeExportOpen &&
       !sharing &&
       !sharedBotId,
     canGoBack: navigation.canGoBack,
@@ -946,8 +934,7 @@ export function AuthenticatedWorkspace({
     else await deleteChannel(target.id);
     const selectedDeleted =
       (target.kind === "channel" && selectedChannelId === target.id) ||
-      (target.kind === "bot" &&
-        (selectedEmployeeId === target.id || selectedChannelId === directChannel));
+      (target.kind === "bot" && selectedChannelId === directChannel);
     sidebarOrganization.forget(`${target.kind}:${target.id}`);
     if (selectedDeleted) navigation.navigate({ kind: "home" });
     await refresh();
@@ -986,17 +973,14 @@ export function AuthenticatedWorkspace({
   function selectChannel(channelId: string) {
     directRequest.current += 1;
     navigation.navigate({ kind: "channel", id: channelId });
-    setEmployeeExportOpen(false);
     setEmployeeImportOpen(false);
     setSelectedRunId(undefined);
   }
 
-  function openEmployee(botId: string, initialTab: ProfileTab = "overview") {
-    directRequest.current += 1;
-    navigation.navigate({ kind: "employee", id: botId, tab: initialTab });
-    setEmployeeExportOpen(false);
-    setEmployeeImportOpen(false);
-    setSelectedRunId(undefined);
+  /** Opening a Bot shows its 单聊 with the Bot 信息 rail open (the Bot page was retired). */
+  function openEmployee(botId: string) {
+    updatePreferences({ rightPanelOpen: true });
+    void openDirectConversation(botId);
   }
 
   async function openDirectConversation(botId: string) {
@@ -1010,15 +994,6 @@ export function AuthenticatedWorkspace({
       if (request === directRequest.current)
         setError(cause instanceof Error ? cause.message : "无法打开 Bot 对话，请重试。");
     }
-  }
-
-  function assignEmployee(botId: string) {
-    const channel = workspace?.channels.find((item) => item.botIds.includes(botId));
-    if (channel === undefined) {
-      showNotice("请先把这名员工加入一个频道。");
-      return;
-    }
-    selectChannel(channel.id);
   }
 
   if (workspace === undefined) {
@@ -1054,26 +1029,20 @@ export function AuthenticatedWorkspace({
     selectedChannel && pluginBotId
       ? { channelId: selectedChannel.id, botId: pluginBotId }
       : undefined;
-  const railBotKey = selectedEmployeeId ?? railBotId;
-  const railBot = railBotKey ? workspace.bots.find((bot) => bot.id === railBotKey) : undefined;
-  const profileTitle =
-    destination === "chat" && selectedEmployeeId ? employeeProfile?.employee : undefined;
-  const headerAvatars = profileTitle
-    ? [profileTitle]
-    : (selectedChannel?.botIds.flatMap((id) => {
-        const bot = workspace.bots.find((item) => item.id === id);
-        return bot ? [bot] : [];
-      }) ?? []);
+  const railBot = railBotId ? workspace.bots.find((bot) => bot.id === railBotId) : undefined;
+  const headerAvatars =
+    selectedChannel?.botIds.flatMap((id) => {
+      const bot = workspace.bots.find((item) => item.id === id);
+      return bot ? [bot] : [];
+    }) ?? [];
   const headerTitle =
     destination === "work"
       ? "任务监督"
-      : selectedEmployeeId
-        ? (employeeProfile?.employee.name ?? "Bot 档案")
-        : location.kind === "new"
-          ? "" // New artboard: the recipients bar heads the page; no title pill above it.
-          : (selectedChannel?.name ?? "");
-  // The title pill opens the rail for a conversation or a Bot profile (Main/Profile artboards).
-  const railAvailable = destination === "chat" && Boolean(selectedChannel || selectedEmployeeId);
+      : location.kind === "new"
+        ? "" // New artboard: the recipients bar heads the page; no title pill above it.
+        : (selectedChannel?.name ?? "");
+  // The title pill opens the rail for a conversation (Main artboard).
+  const railAvailable = destination === "chat" && Boolean(selectedChannel);
 
   return (
     <div
@@ -1083,7 +1052,7 @@ export function AuthenticatedWorkspace({
       <WorkspaceHeader
         title={headerTitle}
         avatars={headerAvatars}
-        group={!profileTitle && Boolean(selectedChannel) && !selectedChannel?.directBotId}
+        group={Boolean(selectedChannel) && !selectedChannel?.directBotId}
         railOpen={showDetails}
         onToggleRail={
           railAvailable
@@ -1116,11 +1085,7 @@ export function AuthenticatedWorkspace({
           onWork={() => navigation.navigate({ kind: "work" })}
           onSkills={() => setPluginsOpen(true)}
           selectedChannelId={destination === "chat" ? selectedChannel?.id : undefined}
-          selectedBotId={
-            destination === "chat"
-              ? (selectedEmployeeId ?? selectedChannel?.directBotId)
-              : undefined
-          }
+          selectedBotId={destination === "chat" ? selectedChannel?.directBotId : undefined}
           onSelectChannel={selectChannel}
           onSelectBot={(botId) => void openDirectConversation(botId)}
           onOpenBotProfile={openEmployee}
@@ -1146,28 +1111,7 @@ export function AuthenticatedWorkspace({
         active={destination === "work" && active}
         nativeCapabilitiesEnabled
       />
-      {destination === "work" ? null : selectedEmployeeId ? (
-        <EmployeeProfileView
-          key={`${selectedEmployeeId}:${employeeInitialTab}`}
-          initialTab={employeeInitialTab}
-          profile={employeeProfile}
-          loading={employeeProfileLoading}
-          error={employeeProfileError}
-          onRetry={() => void refreshEmployeeProfile(selectedEmployeeId)}
-          onAssign={() => assignEmployee(selectedEmployeeId)}
-          onExport={() => setEmployeeExportOpen(true)}
-          onProfileChanged={() => refreshEmployeeProfile(selectedEmployeeId)}
-          onManageModels={() => setModelServicesOpen(true)}
-          modelServicesVersion={modelServicesVersion}
-          onOpenBrowser={() => setBrowserBotId(selectedEmployeeId)}
-          channels={workspace.channels}
-          onOpenRun={(runId) => {
-            // The sheet reads the workspace projection; an older run may not be loaded there.
-            if (workspace.runs.some((run) => run.id === runId)) setSelectedRunId(runId);
-            else showNotice("这项任务较早，暂时无法在这里打开详情。");
-          }}
-        />
-      ) : selectedChannel ? (
+      {destination === "work" ? null : selectedChannel ? (
         <ChannelWorkspace
           key={selectedChannel.id}
           unreadCount={unreadByChannel[selectedChannel.id] ?? 0}
@@ -1225,7 +1169,20 @@ export function AuthenticatedWorkspace({
             <BotInfoRail
               key={railBot.id}
               bot={railBot}
-              profile={employeeProfile?.employee.id === railBot.id ? employeeProfile : undefined}
+              // A failed refresh hides retained data instead of presenting it as current.
+              profile={
+                !employeeProfileError && employeeProfile?.employee.id === railBot.id
+                  ? employeeProfile
+                  : undefined
+              }
+              profileError={employeeProfileError}
+              onRetryProfile={() => void refreshEmployeeProfile(railBot.id)}
+              onOpenRun={(runId) => {
+                // The sheet reads the workspace projection; an older run may not be loaded there.
+                if (workspace.runs.some((run) => run.id === runId)) setSelectedRunId(runId);
+                else showNotice("这项任务较早，暂时无法在这里打开详情。");
+              }}
+              onOpenBrowser={() => setBrowserBotId(railBot.id)}
               workspace={workspace}
               onCollapse={() => updatePreferences({ rightPanelOpen: false })}
               onShare={() => setSharedBotId(railBot.id)}
@@ -1344,16 +1301,6 @@ export function AuthenticatedWorkspace({
           onDownloaded={(fileName) => {
             setSharedBotId(undefined);
             showNotice(`已下载 Bot 模板：${fileName}`);
-          }}
-        />
-      ) : null}
-      {employeeExportOpen && employeeProfile ? (
-        <ExportEmployeeDialog
-          employee={employeeProfile.employee}
-          onClose={() => setEmployeeExportOpen(false)}
-          onDownloaded={(fileName) => {
-            setEmployeeExportOpen(false);
-            showNotice(`已下载安全员工模板：${fileName}`);
           }}
         />
       ) : null}

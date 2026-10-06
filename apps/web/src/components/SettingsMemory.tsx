@@ -1,7 +1,7 @@
 import type { Bot, EmployeeProfile } from "@openbot/domain";
 import { useCallback, useEffect, useState } from "react";
 import { getEmployeeProfile } from "../api";
-import { EmployeeMemoryPanel } from "./EmployeeProfileView";
+import { EmployeeMemoryPanel } from "./EmployeeMemoryPanel";
 
 /**
  * Settings → 记忆 (SettingsMemory artboard): one Bot at a time, using the profile's Owner memory

@@ -10,6 +10,14 @@
       "x": 0,
       "y": 3260
     },
+    "AppIcon.dc.html": {
+      "h": 900,
+      "page": "next",
+      "title": "⑤ 应用图标",
+      "w": 1440,
+      "x": 3040,
+      "y": 2040
+    },
     "Avatar.dc.html": {
       "h": 96,
       "page": "app",
@@ -29,10 +37,34 @@
     "BotInfo.dc.html": {
       "h": 900,
       "page": "app",
-      "title": "共享 Bot 信息组件（编辑头像 / 详情 / 资料库 / 电脑）",
+      "title": "共享 Bot 信息组件（编辑头像 / 详情 / 工作 / 资料库 / 电脑）",
       "w": 340,
       "x": 3700,
       "y": 6120
+    },
+    "BotInfoWork.dc.html": {
+      "h": 900,
+      "page": "app",
+      "title": "② Bot 信息 · 工作（取代 Bot 档案）",
+      "w": 340,
+      "x": 1520,
+      "y": 0
+    },
+    "ChannelFiles.dc.html": {
+      "h": 900,
+      "page": "next",
+      "title": "① 频道文件与回收站",
+      "w": 1440,
+      "x": 4560,
+      "y": 1020
+    },
+    "ChannelFilesTrash.dc.html": {
+      "h": 900,
+      "page": "storage",
+      "title": "① 回收站与永久删除",
+      "w": 1440,
+      "x": 0,
+      "y": 0
     },
     "ChannelInfo.dc.html": {
       "h": 900,
@@ -43,6 +75,23 @@
       "x": 3040,
       "y": 6120
     },
+    "ChannelInfoDark.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "page": "dark",
+      "title": "共享频道信息组件（深色）",
+      "w": 340,
+      "x": 380,
+      "y": 1300
+    },
+    "ChatSetup.dc.html": {
+      "h": 1080,
+      "page": "chat",
+      "title": "C29 · 在聊天里设置 Bot（改动行、撤销与确认卡）",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
     "Components.dc.html": {
       "h": 900,
       "page": "app",
@@ -50,6 +99,14 @@
       "w": 1440,
       "x": 0,
       "y": 2040
+    },
+    "Composer.dc.html": {
+      "h": 900,
+      "page": "next",
+      "title": "① 输入框：附件、语音与补充指令",
+      "w": 1440,
+      "x": 3040,
+      "y": 1020
     },
     "Connect.dc.html": {
       "h": 900,
@@ -65,6 +122,14 @@
       "title": "⑧ 右键对话：Bot 与频道菜单",
       "w": 1440,
       "x": 4560,
+      "y": 0
+    },
+    "DarkTokens.dc.html": {
+      "h": 1180,
+      "page": "dark",
+      "title": "深色外观 · 颜色",
+      "w": 1440,
+      "x": 0,
       "y": 0
     },
     "DialogDelete.dc.html": {
@@ -114,6 +179,14 @@
       "w": 1440,
       "x": 3040,
       "y": 1220
+    },
+    "EmployeeBrowser.dc.html": {
+      "h": 900,
+      "page": "next",
+      "title": "⑥ Bot 的浏览器（接管与交还）",
+      "w": 1440,
+      "x": 0,
+      "y": 2040
     },
     "EmptyWorkspace.dc.html": {
       "h": 900,
@@ -171,12 +244,28 @@
       "x": 0,
       "y": 2040
     },
+    "LongLists.dc.html": {
+      "h": 1480,
+      "page": "next",
+      "title": "⑤ 长列表与滚动（适用于全部画板）",
+      "w": 1440,
+      "x": 4560,
+      "y": 2040
+    },
     "Main.dc.html": {
       "h": 900,
       "page": "app",
       "title": "① 频道对话",
       "w": 1440,
       "x": 0,
+      "y": 0
+    },
+    "MainDark.dc.html": {
+      "h": 900,
+      "page": "dark",
+      "title": "① 频道对话（深色）",
+      "w": 1440,
+      "x": 1520,
       "y": 0
     },
     "Menu.dc.html": {
@@ -186,6 +275,14 @@
       "w": 1440,
       "x": 3040,
       "y": 0
+    },
+    "MessageActions.dc.html": {
+      "h": 900,
+      "page": "next",
+      "title": "① 消息操作、回应与引用",
+      "w": 1440,
+      "x": 1520,
+      "y": 1020
     },
     "ModelSetup.dc.html": {
       "h": 900,
@@ -211,6 +308,14 @@
       "x": 1520,
       "y": 1220
     },
+    "NewDark.dc.html": {
+      "h": 900,
+      "page": "dark",
+      "title": "③ 新建聊天 · 收件人（深色）",
+      "w": 1440,
+      "x": 3040,
+      "y": 0
+    },
     "NewGroup.dc.html": {
       "h": 900,
       "page": "flows",
@@ -218,6 +323,14 @@
       "w": 1440,
       "x": 0,
       "y": 1220
+    },
+    "Notices.dc.html": {
+      "h": 1180,
+      "page": "next",
+      "title": "⑤ 提示与连接状态",
+      "w": 1440,
+      "x": 1520,
+      "y": 2040
     },
     "Plugins.dc.html": {
       "h": 900,
@@ -227,13 +340,77 @@
       "x": 3040,
       "y": 1020
     },
+    "PrimaryBot.dc.html": {
+      "h": 1160,
+      "page": "primary",
+      "title": "主 Bot · 方案一 · 王冠",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
     "Profile.dc.html": {
       "h": 900,
-      "page": "app",
-      "title": "② Bot 档案",
+      "page": "archive",
+      "title": "已移除 · ② Bot 档案",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "ProfileConfig.dc.html": {
+      "h": 900,
+      "page": "archive",
+      "title": "已移除 · ② Bot 档案 · 配置",
+      "w": 1440,
+      "x": 1520,
+      "y": 1020
+    },
+    "ProfileEvolution.dc.html": {
+      "h": 900,
+      "page": "archive",
+      "title": "已移除 · ② Bot 档案 · 进化档案",
       "w": 1440,
       "x": 1520,
       "y": 0
+    },
+    "ProfileMemory.dc.html": {
+      "h": 900,
+      "page": "archive",
+      "title": "已移除 · ② Bot 档案 · 记忆",
+      "w": 1440,
+      "x": 4560,
+      "y": 0
+    },
+    "ProfileRailClosed.dc.html": {
+      "h": 900,
+      "page": "archive",
+      "title": "已移除 · ② Bot 档案（建议：右栏收起）",
+      "w": 1440,
+      "x": 3040,
+      "y": 1020
+    },
+    "ProfileSkills.dc.html": {
+      "h": 900,
+      "page": "archive",
+      "title": "已移除 · ② Bot 档案 · 技能",
+      "w": 1440,
+      "x": 3040,
+      "y": 0
+    },
+    "ProfileWork.dc.html": {
+      "h": 900,
+      "page": "archive",
+      "title": "已移除 · ② Bot 档案 · 工作记录（含进行中）",
+      "w": 1440,
+      "x": 0,
+      "y": 1020
+    },
+    "ReviewProfile.dc.html": {
+      "h": 860,
+      "page": "archive",
+      "title": "已移除 · 第 4 条 · Bot 档案页的重复信息",
+      "w": 1900,
+      "x": 0,
+      "y": 2040
     },
     "Search.dc.html": {
       "h": 900,
@@ -299,6 +476,14 @@
       "x": 0,
       "y": 3060
     },
+    "SettingsGeneralDark.dc.html": {
+      "h": 900,
+      "page": "dark",
+      "title": "④ 设置 · 通用（深色）",
+      "w": 1440,
+      "x": 4560,
+      "y": 0
+    },
     "SettingsHosts.dc.html": {
       "h": 900,
       "page": "app",
@@ -322,6 +507,14 @@
       "w": 250,
       "x": 1900,
       "y": 2040
+    },
+    "SettingsNavDark.dc.html": {
+      "h": 740,
+      "page": "dark",
+      "title": "共享设置导航组件（深色）",
+      "w": 250,
+      "x": 800,
+      "y": 1300
     },
     "SettingsNotify.dc.html": {
       "h": 900,
@@ -355,6 +548,14 @@
       "x": 1520,
       "y": 4080
     },
+    "SettingsStorage.dc.html": {
+      "h": 900,
+      "page": "storage",
+      "title": "④ 设置 · 存储空间",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
+    },
     "SettingsTransfer.dc.html": {
       "h": 900,
       "page": "app",
@@ -370,6 +571,14 @@
       "w": 300,
       "x": 1520,
       "y": 2040
+    },
+    "SidebarDark.dc.html": {
+      "h": 900,
+      "page": "dark",
+      "title": "共享侧栏组件（深色）",
+      "w": 300,
+      "x": 0,
+      "y": 1300
     },
     "Slash.dc.html": {
       "h": 900,
@@ -418,207 +627,6 @@
       "w": 1440,
       "x": 3040,
       "y": 2040
-    },
-    "ProfileEvolution.dc.html": {
-      "h": 900,
-      "page": "next",
-      "title": "② Bot 档案 · 进化档案",
-      "w": 1440,
-      "x": 0,
-      "y": 0
-    },
-    "ProfileSkills.dc.html": {
-      "h": 900,
-      "page": "next",
-      "title": "② Bot 档案 · 技能",
-      "w": 1440,
-      "x": 1520,
-      "y": 0
-    },
-    "ProfileMemory.dc.html": {
-      "h": 900,
-      "page": "next",
-      "title": "② Bot 档案 · 记忆",
-      "w": 1440,
-      "x": 3040,
-      "y": 0
-    },
-    "ProfileWork.dc.html": {
-      "h": 900,
-      "page": "next",
-      "title": "② Bot 档案 · 工作记录（含进行中）",
-      "w": 1440,
-      "x": 4560,
-      "y": 0
-    },
-    "ProfileConfig.dc.html": {
-      "h": 900,
-      "page": "next",
-      "title": "② Bot 档案 · 配置",
-      "w": 1440,
-      "x": 0,
-      "y": 1020
-    },
-    "MessageActions.dc.html": {
-      "h": 900,
-      "page": "next",
-      "title": "① 消息操作、回应与引用",
-      "w": 1440,
-      "x": 1520,
-      "y": 1020
-    },
-    "Composer.dc.html": {
-      "h": 900,
-      "page": "next",
-      "title": "① 输入框：附件、语音与补充指令",
-      "w": 1440,
-      "x": 3040,
-      "y": 1020
-    },
-    "ChannelFiles.dc.html": {
-      "h": 900,
-      "page": "next",
-      "title": "① 频道文件与回收站",
-      "w": 1440,
-      "x": 4560,
-      "y": 1020
-    },
-    "EmployeeBrowser.dc.html": {
-      "h": 900,
-      "page": "next",
-      "title": "⑥ Bot 的浏览器（接管与交还）",
-      "w": 1440,
-      "x": 0,
-      "y": 2040
-    },
-    "Notices.dc.html": {
-      "h": 1180,
-      "page": "next",
-      "title": "⑤ 提示与连接状态",
-      "w": 1440,
-      "x": 1520,
-      "y": 2040
-    },
-    "AppIcon.dc.html": {
-      "h": 900,
-      "page": "next",
-      "title": "⑤ 应用图标",
-      "w": 1440,
-      "x": 3040,
-      "y": 2040
-    },
-    "LongLists.dc.html": {
-      "h": 1480,
-      "page": "next",
-      "title": "⑤ 长列表与滚动（适用于全部画板）",
-      "w": 1440,
-      "x": 4560,
-      "y": 2040
-    },
-    "ChannelFilesTrash.dc.html": {
-      "h": 900,
-      "page": "storage",
-      "title": "① 回收站与永久删除",
-      "w": 1440,
-      "x": 0,
-      "y": 0
-    },
-    "SettingsStorage.dc.html": {
-      "h": 900,
-      "page": "storage",
-      "title": "④ 设置 · 存储空间",
-      "w": 1440,
-      "x": 1520,
-      "y": 0
-    },
-    "DarkTokens.dc.html": {
-      "x": 0,
-      "y": 0,
-      "w": 1440,
-      "h": 1180,
-      "title": "深色外观 · 颜色",
-      "page": "dark"
-    },
-    "MainDark.dc.html": {
-      "x": 1520,
-      "y": 0,
-      "w": 1440,
-      "h": 900,
-      "title": "① 频道对话（深色）",
-      "page": "dark"
-    },
-    "NewDark.dc.html": {
-      "x": 3040,
-      "y": 0,
-      "w": 1440,
-      "h": 900,
-      "title": "③ 新建聊天 · 收件人（深色）",
-      "page": "dark"
-    },
-    "SettingsGeneralDark.dc.html": {
-      "x": 4560,
-      "y": 0,
-      "w": 1440,
-      "h": 900,
-      "title": "④ 设置 · 通用（深色）",
-      "page": "dark"
-    },
-    "SidebarDark.dc.html": {
-      "x": 0,
-      "y": 1300,
-      "w": 300,
-      "h": 900,
-      "title": "共享侧栏组件（深色）",
-      "page": "dark"
-    },
-    "ChannelInfoDark.dc.html": {
-      "x": 380,
-      "y": 1300,
-      "w": 340,
-      "h": 900,
-      "title": "共享频道信息组件（深色）",
-      "page": "dark",
-      "is_interactive": true
-    },
-    "SettingsNavDark.dc.html": {
-      "x": 800,
-      "y": 1300,
-      "w": 250,
-      "h": 740,
-      "title": "共享设置导航组件（深色）",
-      "page": "dark"
-    },
-    "PrimaryBot.dc.html": {
-      "x": 0,
-      "y": 0,
-      "w": 1440,
-      "h": 1160,
-      "title": "主 Bot · 方案一 · 王冠",
-      "page": "primary"
-    },
-    "ReviewProfile.dc.html": {
-      "x": 0,
-      "y": 0,
-      "w": 1900,
-      "h": 860,
-      "title": "第 4 条 · Bot 档案页的重复信息",
-      "page": "review"
-    },
-    "ProfileRailClosed.dc.html": {
-      "x": 0,
-      "y": 980,
-      "w": 1440,
-      "h": 900,
-      "title": "② Bot 档案（建议：右栏收起）",
-      "page": "review"
-    },
-    "ChatSetup.dc.html": {
-      "h": 1080,
-      "page": "chat",
-      "title": "C29 · 在聊天里设置 Bot（改动行、撤销与确认卡）",
-      "w": 1440,
-      "x": 0,
-      "y": 0
     }
   },
   "createdOnFiles": {
@@ -630,6 +638,33 @@
     "view": "canvas"
   },
   "notes": {
+    "archiveTitle": {
+      "kind": "title1",
+      "maxW": 6000,
+      "page": "archive",
+      "text": "已移除 · Bot 档案（2026-10-06 并入单聊右栏）",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
+    "chatTitle": {
+      "kind": "title1",
+      "maxW": 1440,
+      "page": "chat",
+      "text": "OpenBot Desktop · 像跟下属交流一样设置 Bot（C29）",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
+    "darkTitle": {
+      "kind": "title1",
+      "maxW": 6000,
+      "page": "dark",
+      "text": "OpenBot Desktop · 深色外观",
+      "w": 240,
+      "x": 0,
+      "y": -320
+    },
     "flowsTitle": {
       "kind": "title1",
       "maxW": 6000,
@@ -648,38 +683,11 @@
       "x": 0,
       "y": -320
     },
-    "title": {
-      "kind": "title1",
-      "maxW": 6000,
-      "page": "app",
-      "text": "OpenBot Desktop · 界面优化",
-      "w": 240,
-      "x": 0,
-      "y": -320
-    },
     "nextTitle": {
       "kind": "title1",
       "maxW": 6000,
       "page": "next",
       "text": "OpenBot Desktop · 第 22 步",
-      "w": 240,
-      "x": 0,
-      "y": -320
-    },
-    "storageTitle": {
-      "kind": "title1",
-      "maxW": 3000,
-      "page": "storage",
-      "text": "OpenBot Desktop · 存储与清理",
-      "w": 240,
-      "x": 0,
-      "y": -320
-    },
-    "darkTitle": {
-      "kind": "title1",
-      "maxW": 6000,
-      "page": "dark",
-      "text": "OpenBot Desktop · 深色外观",
       "w": 240,
       "x": 0,
       "y": -320
@@ -693,28 +701,75 @@
       "x": 0,
       "y": -320
     },
-    "reviewTitle": {
+    "storageTitle": {
       "kind": "title1",
-      "maxW": 1900,
-      "page": "review",
-      "text": "OpenBot Desktop · 体验检查",
+      "maxW": 3000,
+      "page": "storage",
+      "text": "OpenBot Desktop · 存储与清理",
       "w": 240,
       "x": 0,
       "y": -320
     },
-    "chatTitle": {
+    "title": {
       "kind": "title1",
-      "maxW": 1440,
-      "page": "chat",
-      "text": "OpenBot Desktop · 像跟下属交流一样设置 Bot（C29）",
+      "maxW": 6000,
+      "page": "app",
+      "text": "OpenBot Desktop · 界面优化",
       "w": 240,
       "x": 0,
       "y": -320
     }
   },
   "order": [
-    "Main.dc.html",
+    "Launch.dc.html",
+    "LaunchMotion.dc.html",
+    "Welcome.dc.html",
+    "Install.dc.html",
+    "Connect.dc.html",
+    "Login.dc.html",
+    "ModelSetup.dc.html",
+    "WorkerSetup.dc.html",
+    "TaskCards.dc.html",
+    "TaskInspector.dc.html",
+    "WorkSupervision.dc.html",
+    "EmptyWorkspace.dc.html",
+    "DialogShare.dc.html",
+    "DialogExport.dc.html",
+    "DialogImport.dc.html",
+    "DialogDelete.dc.html",
+    "DialogPairHost.dc.html",
+    "DialogModel.dc.html",
+    "NewGroup.dc.html",
+    "NewBotChat.dc.html",
+    "AddMember.dc.html",
+    "ProfileEvolution.dc.html",
+    "ProfileSkills.dc.html",
+    "ProfileMemory.dc.html",
+    "ProfileWork.dc.html",
+    "ProfileConfig.dc.html",
+    "MessageActions.dc.html",
+    "Composer.dc.html",
+    "ChannelFiles.dc.html",
+    "EmployeeBrowser.dc.html",
+    "Notices.dc.html",
+    "AppIcon.dc.html",
+    "LongLists.dc.html",
+    "ChannelFilesTrash.dc.html",
+    "SettingsStorage.dc.html",
+    "DarkTokens.dc.html",
+    "MainDark.dc.html",
+    "NewDark.dc.html",
+    "SettingsGeneralDark.dc.html",
+    "SidebarDark.dc.html",
+    "ChannelInfoDark.dc.html",
+    "SettingsNavDark.dc.html",
+    "PrimaryBot.dc.html",
+    "ReviewProfile.dc.html",
+    "ProfileRailClosed.dc.html",
     "Profile.dc.html",
+    "ChatSetup.dc.html",
+    "Main.dc.html",
+    "BotInfoWork.dc.html",
     "New.dc.html",
     "Menu.dc.html",
     "ContextMenu.dc.html",
@@ -743,53 +798,7 @@
     "Avatar.dc.html",
     "GroupAvatar.dc.html",
     "GroupAvatars.dc.html",
-    "Launch.dc.html",
-    "LaunchMotion.dc.html",
-    "Welcome.dc.html",
-    "Install.dc.html",
-    "Connect.dc.html",
-    "Login.dc.html",
-    "ModelSetup.dc.html",
-    "WorkerSetup.dc.html",
-    "TaskCards.dc.html",
-    "TaskInspector.dc.html",
-    "WorkSupervision.dc.html",
-    "EmptyWorkspace.dc.html",
-    "DialogShare.dc.html",
-    "DialogExport.dc.html",
-    "DialogImport.dc.html",
-    "DialogDelete.dc.html",
-    "DialogPairHost.dc.html",
-    "DialogModel.dc.html",
-    "NewGroup.dc.html",
-    "NewBotChat.dc.html",
-    "AddMember.dc.html",
-    "BotInfo.dc.html",
-    "ProfileEvolution.dc.html",
-    "ProfileSkills.dc.html",
-    "ProfileMemory.dc.html",
-    "ProfileWork.dc.html",
-    "ProfileConfig.dc.html",
-    "MessageActions.dc.html",
-    "Composer.dc.html",
-    "ChannelFiles.dc.html",
-    "EmployeeBrowser.dc.html",
-    "Notices.dc.html",
-    "AppIcon.dc.html",
-    "LongLists.dc.html",
-    "ChannelFilesTrash.dc.html",
-    "SettingsStorage.dc.html",
-    "DarkTokens.dc.html",
-    "MainDark.dc.html",
-    "NewDark.dc.html",
-    "SettingsGeneralDark.dc.html",
-    "SidebarDark.dc.html",
-    "ChannelInfoDark.dc.html",
-    "SettingsNavDark.dc.html",
-    "PrimaryBot.dc.html",
-    "ReviewProfile.dc.html",
-    "ProfileRailClosed.dc.html",
-    "ChatSetup.dc.html"
+    "BotInfo.dc.html"
   ],
   "pages": [
     {
@@ -821,8 +830,8 @@
       "name": "主 Bot"
     },
     {
-      "id": "review",
-      "name": "体验检查"
+      "id": "archive",
+      "name": "已移除 · Bot 档案"
     },
     {
       "id": "chat",

@@ -1878,7 +1878,7 @@ function MessageRow({
         {author ? (
           <button
             type="button"
-            aria-label={`打开 ${author.name} 的员工档案`}
+            aria-label={`打开 ${author.name} 的信息`}
             onClick={() => onOpenBot(author.id)}
           >
             <RobotAvatar bot={author} compact status={run?.status ?? author.status} />

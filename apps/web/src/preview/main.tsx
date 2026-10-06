@@ -23,8 +23,7 @@ type AppScene = {
     | { kind: "home" }
     | { kind: "new"; channel?: true }
     | { kind: "work" }
-    | { kind: "channel"; id: string }
-    | { kind: "employee"; id: string; tab: "overview" };
+    | { kind: "channel"; id: string };
   rail?: boolean;
 };
 type ComponentScene = { kind: "component"; title: string; artboard: string };
@@ -57,13 +56,6 @@ export const scenes: Record<string, AppScene | ComponentScene> = {
     title: "单聊（Bot 信息右栏）",
     artboard: "BotInfo",
     start: { kind: "channel", id: "direct-b-research" },
-    rail: true,
-  },
-  profile: {
-    kind: "app",
-    title: "Bot 档案",
-    artboard: "Profile",
-    start: { kind: "employee", id: "b-research", tab: "overview" },
     rail: true,
   },
   new: { kind: "app", title: "新建聊天", artboard: "New", start: { kind: "new" } },

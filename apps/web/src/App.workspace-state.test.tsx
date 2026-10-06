@@ -145,6 +145,19 @@ beforeEach(() => {
         profiles.push(request);
         return request.promise;
       }
+      const conversation = /^\/api\/v1\/bots\/([^/]+)\/conversation$/.exec(url);
+      if (conversation?.[1]) {
+        const botId = conversation[1];
+        return Response.json({
+          channel: {
+            id: `direct-${botId}`,
+            name: botId,
+            botIds: [botId],
+            directBotId: botId,
+            createdAt,
+          },
+        });
+      }
       if (url.startsWith("/api/v1/channels/") && url.includes("/bots")) {
         const request = deferred<Response>();
         mutations.push(request);
@@ -387,7 +400,8 @@ function employeeProfile(botId: string, name: string): EmployeeProfile {
   if (!employee) throw new Error(`Unknown employee: ${botId}`);
   return {
     employee: { ...employee, name },
-    details: { description: "Profile fixture", revision: 1, updatedAt: createdAt },
+    // The rail shows the description, so it carries the fixture's label.
+    details: { description: name, revision: 1, updatedAt: createdAt },
     evolution: [],
     skills: [],
     memories: [],
@@ -418,8 +432,9 @@ async function completeProfile(index: number, name: string) {
     request.resolve(Response.json({ profile: employeeProfile(request.botId, name) })),
   );
 }
+/** 编辑资料 opens the Bot's 单聊 with the Bot 信息 rail, which shows the profile's 介绍. */
 function displayedProfile() {
-  return rendered?.container.querySelector(".employee-profile .ep-name h1")?.textContent;
+  return rendered?.container.querySelector(".bot-info .bi-description")?.textContent;
 }
 describe("Employee profile read ownership in the real workspace", () => {
   it.each(["success", "failure"])(
@@ -444,7 +459,6 @@ describe("Employee profile read ownership in the real workspace", () => {
     await identityChanged();
     await completeProfile(0, "Stale Alpha");
     expect(displayedProfile()).toBeUndefined();
-    expect(rendered?.container.textContent).toContain("正在读取 Bot 档案");
     await completeProfile(1, "Latest Alpha");
     expect(displayedProfile()).toBe("Latest Alpha");
   });
@@ -480,12 +494,12 @@ describe("Employee profile read ownership in the real workspace", () => {
     await completeProfile(0, "Initial Alpha");
     await ready();
     await interact(() => profiles[1]?.reject(new Error("profile refresh failed")));
-    expect(rendered?.container.querySelector(".employee-profile-loading")?.textContent).toContain(
+    expect(rendered?.container.querySelector(".bi-profile-error")?.textContent).toContain(
       "profile refresh failed",
     );
     expect(displayedProfile()).toBeUndefined();
     const retry = rendered?.container.querySelector<HTMLButtonElement>(
-      ".employee-profile-loading button.ob-pill",
+      ".bi-profile-error button.ob-pill",
     );
     if (!retry) throw new Error("Missing refresh retry button");
     await interact(() => retry.click());
@@ -498,7 +512,7 @@ describe("Employee profile read ownership in the real workspace", () => {
     await interact(() => profiles[0]?.reject(new Error("current profile failure")));
     expect(rendered?.container.textContent).toContain("current profile failure");
     const retry = rendered?.container.querySelector<HTMLButtonElement>(
-      ".employee-profile-loading button.ob-pill",
+      ".bi-profile-error button.ob-pill",
     );
     if (!retry) throw new Error("Missing retry button");
     await interact(() => retry.click());

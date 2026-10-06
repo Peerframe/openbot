@@ -232,13 +232,15 @@ function SkillReviewPage({
           无法读取这个 Bot 的技能，请重试。
         </p>
       ) : profile ? (
-        <EmployeeSkillReview
-          profile={profile}
-          onProfileChanged={async () => {
-            await load();
-            onChanged();
-          }}
-        />
+        <div className="settings-skill-review">
+          <EmployeeSkillReview
+            profile={profile}
+            onProfileChanged={async () => {
+              await load();
+              onChanged();
+            }}
+          />
+        </div>
       ) : (
         <p className="settings-empty" role="status">
           正在读取…
