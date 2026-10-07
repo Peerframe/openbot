@@ -429,6 +429,10 @@ It is API-only without Worker companion and does not qualify Keychain/GUI/Tempor
 New PR hosted qualification and the repeated main MCP timeout remain a merge gate. No further
 cohort is switched before those results; the original canonical/full-companion baseline is retained.
 
+Product source is committed at `4764d5d3edf129489fd2509a5dec32ad917a0918`. Publishing this new branch and draft PR awaits explicit
+Owner authorization: automatic approval review rejected those external actions; neither occurred.
+The prepared PR body is `/private/tmp/openbot-p3-draft-pr.md`. Local source and receipts are retained.
+
 ### Previously qualified P2 candidate before merge
 
 Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch

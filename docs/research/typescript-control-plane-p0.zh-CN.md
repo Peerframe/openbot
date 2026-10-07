@@ -289,6 +289,10 @@ ASAR 为 `a1f098f8d9d025ea4fcf84ba30b72c38f6debade86c3559e0befda6f0583c7af`。
 此 API 候选不含 Worker 伴随包，不验证 Keychain/GUI/Temporal 或公开 PKI。新 PR 托管验收及连续
 main MCP 超时仍是合并门槛；关闭这些门槛前不切换下一组，保留既有完整伴随包基线。
 
+产品源码已提交为 `4764d5d3edf129489fd2509a5dec32ad917a0918`。自动审批拒绝了推送新分支和创建公开草稿 PR，
+要求这次对外发布的明确授权；两个动作都未发生。PR 正文已保存在
+`/private/tmp/openbot-p3-draft-pr.md`，保留本地源码与验收收据。
+
 ### 合并前已验证的 P2 候选
 
 当前工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支
