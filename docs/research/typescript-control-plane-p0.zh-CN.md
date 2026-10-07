@@ -220,7 +220,7 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 完整关卡与所有者批准边界见 ADR-0050。
 
 
-## 当前迁移检查点（2026-10-07）
+## 当前迁移检查点（2026-10-08）
 
 
 工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，当前分支
@@ -289,9 +289,13 @@ ASAR 为 `a1f098f8d9d025ea4fcf84ba30b72c38f6debade86c3559e0befda6f0583c7af`。
 此 API 候选不含 Worker 伴随包，不验证 Keychain/GUI/Temporal 或公开 PKI。新 PR 托管验收及连续
 main MCP 超时仍是合并门槛；关闭这些门槛前不切换下一组，保留既有完整伴随包基线。
 
-产品源码已提交为 `4764d5d3edf129489fd2509a5dec32ad917a0918`。自动审批拒绝了推送新分支和创建公开草稿 PR，
-要求这次对外发布的明确授权；两个动作都未发生。PR 正文已保存在
-`/private/tmp/openbot-p3-draft-pr.md`，保留本地源码与验收收据。
+产品源码已提交为 `4764d5d3edf129489fd2509a5dec32ad917a0918`。2026-10-08（Asia/Singapore），
+所有者明确批准推送 `codex/ts-control-plane-p3-settings` 并创建公开草稿 PR。
+[草稿 PR205](https://github.com/Peerframe/openbot/pull/205) 已发布，初始 head 为
+`d38646c2c6496b6bbe2062bbf3bee35997bbd7b7`，基于 main `d747a327`。
+[CI37656292955](https://github.com/Peerframe/openbot/actions/runs/37656292955) 已在该 head 启动；
+最新提交的托管结果以 PR205 的必需检查及正文为准。此前自动审批拒绝是历史记录，已由这次明确批准解除。
+本次未授权合并。这份发布记录不改变已验收产品源码、安装版应用或 Claude 负责的界面。
 
 ### 合并前已验证的 P2 候选
 

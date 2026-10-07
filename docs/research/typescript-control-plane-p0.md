@@ -342,7 +342,7 @@ harness parity and drained histories. P5 verifies the install/CI dependency inve
 same-scope resource comparison. See ADR-0050 for the detailed gates and Owner approval boundary.
 
 
-## Current migration checkpoint (2026-10-07)
+## Current migration checkpoint (2026-10-08)
 
 
 Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
@@ -429,9 +429,14 @@ It is API-only without Worker companion and does not qualify Keychain/GUI/Tempor
 New PR hosted qualification and the repeated main MCP timeout remain a merge gate. No further
 cohort is switched before those results; the original canonical/full-companion baseline is retained.
 
-Product source is committed at `4764d5d3edf129489fd2509a5dec32ad917a0918`. Publishing this new branch and draft PR awaits explicit
-Owner authorization: automatic approval review rejected those external actions; neither occurred.
-The prepared PR body is `/private/tmp/openbot-p3-draft-pr.md`. Local source and receipts are retained.
+Product source is committed at `4764d5d3edf129489fd2509a5dec32ad917a0918`. On2026-10-08
+(Asia/Singapore), the Owner explicitly approved pushing `codex/ts-control-plane-p3-settings` and
+creating its public draft PR. [Draft PR205](https://github.com/Peerframe/openbot/pull/205) is now
+published; its initial head is `d38646c2c6496b6bbe2062bbf3bee35997bbd7b7` over main `d747a327`.
+[CI37656292955](https://github.com/Peerframe/openbot/actions/runs/37656292955) started at that head;
+use PR205's required checks/body for the latest revision's hosted result. The earlier automatic
+review rejection is historical and was resolved by this explicit approval. Merge is not authorized.
+This publication record changes no qualified product source, installed app or Claude-owned UI.
 
 ### Previously qualified P2 candidate before merge
 

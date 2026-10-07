@@ -1711,12 +1711,24 @@
     "remaining": "New PR hosted qualification and the repeated main MCP timeout must be resolved before a further ownership switch/merge. This first read does not complete P3; writes, identity/security, products, models, P4 and P5 remain.",
     "productSourceHead": "4764d5d3edf129489fd2509a5dec32ad917a0918",
     "publication": {
-      "status": "local-only; approval pending",
-      "rejectedActions": [
+      "status": "published draft; merge not authorized",
+      "ownerApprovalDate": "2026-10-08 (Asia/Singapore)",
+      "authorizedActions": [
         "push codex/ts-control-plane-p3-settings to origin",
         "create public draft PR"
       ],
-      "reason": "Automatic approval review found no explicit authorization for this new external publication. No remote branch or PR was created.",
+      "pullRequest": "https://github.com/Peerframe/openbot/pull/205",
+      "initialPublishedHead": "d38646c2c6496b6bbe2062bbf3bee35997bbd7b7",
+      "initialHostedRun": "https://github.com/Peerframe/openbot/actions/runs/37656292955",
+      "hostedResult": "Required checks and PR205 body track the latest revision. Publication is not hosted qualification.",
+      "priorApprovalRejection": {
+        "resolvedBy": "explicit Owner approval on 2026-10-08",
+        "rejectedActions": [
+          "push codex/ts-control-plane-p3-settings to origin",
+          "create public draft PR"
+        ],
+        "reasonAtRejection": "Automatic approval review found no explicit authorization for this new external publication. No remote branch or PR was created."
+      },
       "preparedPrBody": "/private/tmp/openbot-p3-draft-pr.md"
     }
   }
