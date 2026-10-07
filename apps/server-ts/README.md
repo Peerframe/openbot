@@ -163,3 +163,26 @@ revocation/expiry, lock/abort, Python-stop and paired reverse checks. They never
 Before each group switch, run `npm run ui:acceptance -- --entry ts` and require PASS12/12 with zero
 unexpected responses/page errors. A workspace503 must be investigated, not allowlisted. See the
 [decision and current checkpoint](../../docs/research/typescript-control-plane-p0.md#p3-transcription-read-decision-and-security-review-2026-10-07).
+
+## Primary Bot write candidate
+
+On this candidate, set `OPENBOT_TS_WRITE_GROUP=primary-bot`, the existing explicit
+`OPENBOT_TS_DATABASE_URL`, and `OPENBOT_TS_WRITE_ALLOWED_ORIGINS` to the same exact origin list as
+Python (default: TS public origin). Also set private Python `OPENBOT_CONTROL_TS_WRITE_GROUP=primary-bot`.
+Only PUT `/api/v1/workspace/primary-bot` changes owner; other methods/routes forward. SQL authority,
+workspace-first CAS, Bot liveness and audit commit together. Identity lifecycle stays in Python.
+The entry checks Origin/session before collecting at most1024 UTF-8 bytes of JSON within5s, then
+locks/rechecks the same session in its6s transaction. No bearer substitution, new credential access,
+implicit retry or automatic fallback. An interrupted commit response is unknown until authoritative
+refresh; never resubmit it automatically.
+
+Default write selection is `none`. For an explicit reverse, stop both owned processes, set both
+write flags to `none`, and restart on the same URL/SQL/session without restoring data. Keep the
+previous qualified release throughout the bounded rollback window. The new strict native marker is
+`openbot.desktop.ts-control/v2` with `readGroup:transcription` and `writeGroup:primary-bot`; it refuses
+old/incomplete selection. Retain the independently packaged previous release as rollback.
+
+Real mixed/HTTPS contracts include primary-Bot failures, concurrency, expiry/revocation, audit
+rollback, client-abort SQL cleanup, Python-stop and paired reverse. Run the required exact-candidate
+TS UI12/12 before any operation switch; qualify native staging and the actual uninstalled package.
+See [the decision](../../docs/research/typescript-control-plane-p0.md#p3-primary-bot-selection-decision-2026-10-08).

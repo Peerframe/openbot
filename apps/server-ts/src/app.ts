@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import type { Readable } from "node:stream";
 import type { Socket } from "node:net";
 import replyFrom from "@fastify/reply-from";
 import {
@@ -23,6 +24,8 @@ import {
 } from "./config.js";
 import { entryTls } from "./tls.js";
 import { ownerCookie, ReadFailure, transcriptionReader } from "./transcription-read.js";
+import { primaryBotWriter, WriteFailure, writeUnavailable } from "./primary-bot-write.js";
+import { primaryBotJson } from "./write-input.js";
 import { workerTunnel } from "./worker-tunnel.js";
 
 // This inventory is shared with P1. Only the explicitly enabled read operation changes owner.
@@ -52,6 +55,15 @@ const transcriptionOperation = (() => {
   return operation;
 })();
 
+const primaryBotOperation = (() => {
+  const operation = pythonOperations.find(
+    (item) => item.method === "put" && item.path === "/api/v1/workspace/primary-bot",
+  );
+  if (!operation)
+    throw new Error("The primary Bot write operation is absent from the shared inventory.");
+  return operation;
+})();
+
 export async function createEntry(input: EntryOptions) {
   const options = validateOptions(input);
   const publicHost = new URL(options.publicOrigin).host;
@@ -75,6 +87,18 @@ export async function createEntry(input: EntryOptions) {
     } catch {
       await app.close();
       throw new Error("The transcription read schema is unavailable.");
+    }
+  }
+  const writes = options.primaryBotWrite
+    ? primaryBotWriter(options.primaryBotWrite.databaseUrl)
+    : undefined;
+  if (writes) {
+    app.addHook("onClose", () => writes.close());
+    try {
+      await writes.verify();
+    } catch {
+      await app.close();
+      throw new Error("The primary Bot write schema is unavailable.");
     }
   }
   if (options.tls) {
@@ -137,6 +161,49 @@ export async function createEntry(input: EntryOptions) {
     reply.code(400).send({ error: "Invalid entry request." });
   });
   app.all("/*", (request, reply) => {
+    if (
+      writes &&
+      request.method.toLowerCase() === primaryBotOperation.method &&
+      decodeURIComponent((request.raw.url ?? "").split("?")[0] ?? "") === primaryBotOperation.path
+    ) {
+      const abort = new AbortController();
+      reply.raw.once("close", () => {
+        if (!reply.raw.writableFinished) abort.abort();
+      });
+      const origins = options.primaryBotWrite?.allowedOrigins ?? [options.publicOrigin];
+      if (request.headers.origin) {
+        reply.header("Access-Control-Allow-Credentials", "true");
+        reply.header("Access-Control-Expose-Headers", "X-OpenBot-Next-Before");
+        if (origins.includes(request.headers.origin)) {
+          reply.header("Access-Control-Allow-Origin", request.headers.origin);
+          reply.header("Vary", "Origin");
+        }
+      }
+      const token = ownerCookie(request.headers.cookie, Boolean(options.tls));
+      const perform = async () => {
+        if (!request.headers.origin || !origins.includes(request.headers.origin))
+          throw new WriteFailure(403, { error: "Request origin is not allowed." });
+        await writes.preflight(token, abort.signal);
+        const body = await primaryBotJson(
+          request.body as Readable,
+          request.headers["content-type"],
+          request.headers["content-length"],
+          abort.signal,
+        );
+        return writes.update(token, body, abort.signal);
+      };
+      return perform()
+        .then((result) => {
+          if (!reply.raw.destroyed) return reply.send(result);
+        })
+        .catch((error: unknown) => {
+          if (reply.raw.destroyed) return;
+          const failure = error instanceof WriteFailure ? error : writeUnavailable();
+          if (!(request.body as Readable | undefined)?.readableEnded)
+            reply.header("Connection", "close");
+          return reply.code(failure.status).send(failure.body);
+        });
+    }
     if (
       reads &&
       request.method.toLowerCase() === transcriptionOperation.method &&

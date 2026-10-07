@@ -17,5 +17,11 @@ integration. An ignored/skipped Worker file is not verified. Do not reactivate t
 
 The explicit private product `OPENBOT_CONTROL_TS_READ_GROUP=transcription` composition quarantines
 only GET transcription settings; its bounded TS reader validates the same existing Owner session.
-All writes/session issuance/revocation remain here. `none` restores the retained reader only through
+Session issuance/revocation and all default writes remain here. `none` restores the retained reader only through
 an explicit paired reverse switch; see [P3 decision](../../docs/research/typescript-control-plane-p0.md#p3-transcription-read-decision-and-security-review-2026-10-07).
+
+The explicit private product `OPENBOT_CONTROL_TS_WRITE_GROUP=primary-bot` candidate additionally
+quarantines manual PUT primary-Bot selection. TS performs the same Owner/CAS/audit transaction;
+identity create/import/delete and automatic primary selection/clearing stay here and preserve
+workspace-settings before Bot locks. `none` supports the explicit paired reverse window; see
+[the decision](../../docs/research/typescript-control-plane-p0.md#p3-primary-bot-selection-decision-2026-10-08).

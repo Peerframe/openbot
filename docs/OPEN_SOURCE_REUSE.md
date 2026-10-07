@@ -1140,3 +1140,11 @@ No new version, persistent format, cache or upstream copied source. Paired rever
 newer SQL data and issued sessions. Actual lock/expiry/revocation/abort tests, mixed HTTP/HTTPS,
 UI12/12 and uninstalled native qualification remain gates. See the
 [scoped decision](research/typescript-control-plane-p0.md#p3-transcription-read-decision-and-security-review-2026-10-07).
+
+### P3 primary Bot manual selection (2026-10-08)
+
+Reuse the same reviewed Postgres.js3.4.9/PostgreSQL17 Owner/session guard, strict shared command,
+Python workspace-first locks and existing audit payload. Fastify5.12.5's raw content-parser seam
+adds only this1024-byte/5s JSON input after Origin/session preflight. No new dependency, schema,
+credential access or source copy. Retain Python identity lifecycle and explicit paired rollback;
+see [decision](research/typescript-control-plane-p0.md#p3-primary-bot-selection-decision-2026-10-08).

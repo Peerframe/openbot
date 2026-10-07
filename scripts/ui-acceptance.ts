@@ -194,6 +194,7 @@ try {
           OPENBOT_CONTROL_PROXY_ADDRESS: "127.0.0.1",
           OPENBOT_CONTROL_PUBLIC_ORIGIN: origin,
           OPENBOT_CONTROL_TS_READ_GROUP: "transcription",
+          OPENBOT_CONTROL_TS_WRITE_GROUP: "primary-bot",
         }
       : {}),
   };
@@ -205,6 +206,8 @@ try {
     OPENBOT_TS_PYTHON_ORIGIN: `http://127.0.0.1:${pythonPort}`,
     OPENBOT_TS_PUBLIC_ORIGIN: origin,
     OPENBOT_TS_READ_GROUP: "transcription",
+    OPENBOT_TS_WRITE_GROUP: "primary-bot",
+    OPENBOT_TS_WRITE_ALLOWED_ORIGINS: origin,
     OPENBOT_TS_READ_ALLOWED_ORIGINS: origin,
     OPENBOT_TS_DATABASE_URL: databaseUrl,
   };
@@ -325,6 +328,7 @@ try {
     await page.getByRole("heading", { name: "插件" }).first().waitFor();
     await page.keyboard.press("Escape");
   });
+  let selectedPrimaryBotId: string | undefined;
   await step("设置的每个分区", async () => {
     await page.locator("summary[aria-label$='账户与设置']").click();
     await page.getByRole("menuitem", { name: "设置" }).click();
@@ -338,9 +342,29 @@ try {
       const heading =
         (await dialog.locator("h1").first().textContent({ timeout: 5_000 }))?.trim() ?? "";
       await page.waitForTimeout(400);
+      const primary = dialog.getByRole("combobox", { name: "工作区主 Bot" });
+      if (await primary.count()) {
+        const current = await primary.inputValue();
+        const candidates = await primary
+          .locator("option")
+          .evaluateAll((items) => items.map((item) => item.getAttribute("value") ?? ""));
+        const target = candidates.find((value) => value && value !== current);
+        assert(target, "The disposable journey needs a second Bot for primary selection.");
+        await primary.selectOption(target);
+        await primary
+          .locator("xpath=ancestor::section[1]")
+          .getByRole("button", { name: "保存", exact: true })
+          .click();
+        await dialog.getByRole("status").filter({ hasText: "已保存主 Bot。" }).waitFor();
+        assert.equal(await primary.inputValue(), target);
+        selectedPrimaryBotId = target;
+        await page.screenshot({ path: join(shots, "primary-bot.png") });
+      }
+
       if (!heading || (await dialog.locator('[role="alert"], .form-error').count()) > 0)
         failed.push(heading || `#${index + 1}`);
     }
+    assert(selectedPrimaryBotId, "The primary Bot save journey was not exercised.");
     assert.equal(failed.length, 0, `Sections with errors: ${failed.join(", ")}`);
     await page.screenshot({ path: join(shots, "settings.png") });
     await page.keyboard.press("Escape");
@@ -364,6 +388,10 @@ try {
         ).authenticated,
     );
     assert.equal(session, true, "The Owner was logged out by the restart.");
+    const primaryAfterRestart = await page.evaluate(
+      async () => (await (await fetch("/api/v1/workspace")).json()) as { primaryBotId?: string },
+    );
+    assert.equal(primaryAfterRestart.primaryBotId, selectedPrimaryBotId);
   });
   await page.screenshot({ path: join(shots, "final.png") });
 

@@ -1535,7 +1535,7 @@
       "noTemporalOrLiveProviderCalls": true
     }
   },
-  "currentCheckpointKey": "currentP3Candidate",
+  "currentCheckpointKey": "currentP3PrimaryBotCandidate",
   "currentP3Candidate": {
     "date": "2026-10-07 (Asia/Singapore)",
     "branch": "codex/ts-control-plane-p3-settings",
@@ -1876,5 +1876,210 @@
         "scope": "Refreshed unsigned macOS arm64 API-only TS Preview; no GUI/Keychain/Temporal/public PKI qualification."
       }
     }
+  },
+  "currentP3PrimaryBotCandidate": {
+    "date": "2026-10-08",
+    "branch": "codex/ts-control-plane-p3-primary-bot",
+    "worktree": "/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot",
+    "sourceBase": "b62c22fe59722ddbc2d4aac5f450097e2e50452a",
+    "sourceDirtyDuringQualification": true,
+    "sourceSha256": {
+      "apps/desktop/scripts/smoke-python-product.ts": "614fbe31f3eab171ec004258fdb089e2c4f80b4694178588a3572e6c7c3c4599",
+      "apps/desktop/src/python-server.ts": "8ca7c0329800b1a553931f8a64a55a1f7fc14060378b19f558ea15c0e4a73f4c",
+      "apps/desktop/src/ts-product-manifest.ts": "7806b11081669b828420e0f9b7bb0594828603fc48bc224b15ed2cff273d2d27",
+      "apps/desktop/src/ts-server.test.ts": "897418bd818f2fb06440025b180665136b5af4596436413e5e5849d131c1c6cb",
+      "apps/desktop/src/ts-server.ts": "a6f686b63ceba66d1e6279365a6f4d4c80772f6643839c504fa6db5964901701",
+      "apps/server-python/scripts/serve.py": "3134a8d58bee642b3ab59184f0a97eda4f464770454a89d1c6fac3381b767e68",
+      "apps/server-python/src/openbot_server/app.py": "268c161b440cd28a48d1122e71277fa03473e10621bf29333907cb4128ab1325",
+      "apps/server-python/src/openbot_server/product_control.py": "cd6caeced535dff385de0728075935734ec73c2180e90c84a32def3d1f375ddd",
+      "apps/server-python/tests/test_proxy_peer.py": "b1dd7223613218d8cea67ea81d7da468cf0615c221603bd71b5017713019b84c",
+      "apps/server-ts/README.md": "8b87cafc598c76ac4ffbe3f69f41010cc2284e5ff216b2d4ce88f1ca118faff3",
+      "apps/server-ts/README.zh-CN.md": "ee499480b36fa28e5b4ca28c04f734fc52b193284479b0bea064a0971604c700",
+      "apps/server-ts/package.json": "8208a4cabb57baa54110a95d95279153fbbe22c26d897d495c5cf4b48f2c13f2",
+      "apps/server-ts/src/app.ts": "23917262ff73315cca7cea871b6a91828c3185aef74abbc6d4b717be27b29f5b",
+      "apps/server-ts/src/config.ts": "50c5b8ef11f352c189de3dbbcbd00d0f1d27f86fd00ebfd98ceec3ccfd95a71c",
+      "apps/server-ts/src/primary-bot-write.test.ts": "e0303b752a5b96ff063200d508df34b727bd4bd901cba1f984be8d71d3c811d3",
+      "apps/server-ts/src/primary-bot-write.ts": "0e02486925857cc83a91cf1e0de93b279c21ba745b0d25cc3b77d1652485ff1d",
+      "apps/server-ts/src/write-input.ts": "af8df26aafedaf149655327c6c1d4cbd3003753b0612de2135e6d25786fd9b99",
+      "package-lock.json": "b3342508acfd9671d1f2cd458543a1d7808310ae4b38c94e31bd4564931624f0",
+      "scripts/test-contracts-python.ts": "609e0cd96d91b2cbe5b857b6fa006543c14394c91721dd19a733142552ced5e3",
+      "scripts/ts-primary-bot-acceptance.ts": "85df5ac7bb9bc66b5ed8caeb4eaee3c084b45752b5526c8760c815b333f735d3",
+      "scripts/ui-acceptance.ts": "c902a3b2fe479cbfebb00017e1937e688a009c2aedc59e2f4141d4c24b9fccdc"
+    },
+    "status": "locally-qualified-unpublished",
+    "scope": [
+      "Only explicitly selected PUT /api/v1/workspace/primary-bot",
+      "Origin/session-before-body; workspace-first CAS; Bot liveness; atomic existing audit",
+      "Python remains issuer, identity lifecycle/automatic preference writer, and Temporal/background owner"
+    ],
+    "selection": {
+      "ts": "OPENBOT_TS_WRITE_GROUP=primary-bot",
+      "python": "OPENBOT_CONTROL_TS_WRITE_GROUP=primary-bot",
+      "defaultAndPairedReverse": "none",
+      "sameSqlAndIssuedSession": true,
+      "automaticFallbackOrRetry": false
+    },
+    "precedingBaseline": {
+      "pullRequest": "https://github.com/Peerframe/openbot/pull/205",
+      "head": "b62c22fe59722ddbc2d4aac5f450097e2e50452a",
+      "state": "open-draft-unmerged",
+      "hostedRun": "https://github.com/Peerframe/openbot/actions/runs/37661699512",
+      "passed": 17,
+      "scope": "preceding transcription read and HTTP lifetime repair, not this new write"
+    },
+    "fullCheck": {
+      "node": "24.21.0",
+      "command": "npm run check",
+      "exitCode": 0,
+      "log": "/private/tmp/openbot-p3-primary-final-check.log",
+      "turboSuccessfulAndCached": {
+        "upstreamBuild": [
+          10,
+          2
+        ],
+        "types": [
+          33,
+          10
+        ],
+        "tests": [
+          27,
+          12
+        ],
+        "build": [
+          19,
+          13
+        ]
+      },
+      "existingExecutedEvidence": "Earlier successful run on the same product source executed TS41, Desktop578+3 skips, Web692, protocol461. Final run retains executed/cached distinctions."
+    },
+    "focused": {
+      "pythonPrivateProxy": 22,
+      "desktopSelection": 5,
+      "tsSuite": 41,
+      "scriptsTypecheck": "pass"
+    },
+    "realHttp": {
+      "mixedAll": {
+        "contracts": 270,
+        "artifactChecks": 19,
+        "readGroupChecks": 14,
+        "writeGroupChecks": 17,
+        "mcpChecks": 30,
+        "log": "/private/tmp/openbot-p3-primary-http-all.log"
+      },
+      "verifiedCaHttpsControl": {
+        "contracts": 50,
+        "readGroupChecks": 14,
+        "writeGroupChecks": 17,
+        "log": "/private/tmp/openbot-p3-primary-https-control.log"
+      },
+      "finalControlWithInvalidUnicodeNegatives": {
+        "contracts": 50,
+        "readGroupChecks": 14,
+        "writeGroupChecks": 17,
+        "log": "/private/tmp/openbot-p3-primary-http-control-final.log"
+      },
+      "noneUsesTemporalOrLiveProviders": true
+    },
+    "uiAcceptance": {
+      "command": "npm run ui:acceptance -- --entry ts --out /private/tmp/openbot-p3-primary-ui",
+      "passedSteps": 12,
+      "totalSteps": 12,
+      "responses": {
+        "total": 101,
+        "byStatus": {
+          "200": 94,
+          "201": 7
+        },
+        "allowed": [],
+        "unexpected": []
+      },
+      "pageErrors": [],
+      "report": "/private/tmp/openbot-p3-primary-ui/openbot-ui-acceptance-1791400019338/receipt.json",
+      "screenshots": "/private/tmp/openbot-p3-primary-ui/openbot-ui-acceptance-1791400019338/screenshots",
+      "actualPrimarySaveAndRestartReadback": true,
+      "viewport": "installed Chrome,1440x900,light",
+      "priorFailure": {
+        "report": "/private/tmp/openbot-p3-primary-ui/openbot-ui-acceptance-1791399753719/receipt.json",
+        "passedSteps": 10,
+        "cause": "A new has locator retained its dialog prefix inside a section, so it could not find the save button. Restart readback depended on that missing save. Fixed to the observed nearest section; no API/page errors, no waiver."
+      },
+      "previousIntermittentWorkspace503": "not reproduced; not claimed fixed"
+    },
+    "native": {
+      "stage": "apps/desktop/out/ts-product-runtime",
+      "artifact": "/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot/apps/desktop/out/ts-product/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
+      "marker": "openbot.desktop.ts-control/v2",
+      "writeGroup": "primary-bot",
+      "compiledModuleSha256": {
+        "ts-control.json": "bd9f3ad3dde0bd8ad0b24a9323457292d7b73b56c3a14a9bc057b2ab66602717",
+        "apps/server-ts/dist/app.js": "0badf9bf1dcd17a67d854621e63569bb927e55b7790c38f47e90977d66c7d04e",
+        "apps/server-ts/dist/primary-bot-write.js": "e71f7e7e715e9c1851d47d1abcda4e4f82de97b45d2874e2343e6d2d3bed27c1",
+        "apps/server-ts/dist/write-input.js": "4e5368b06bd90a30a642935d368aef28ad39ae4f66891465a4aec0771be22d10"
+      },
+      "asarSha256": "5b1b63b8962d037d1a85c9b32296c9f1f2fcdc26e4d98172dd9157eef02c95e8",
+      "pythonLockedDistributions": 59,
+      "pipCheck": "pass",
+      "smokes": {
+        "native-smoke": {
+          "receipt": "/private/tmp/openbot-p3-primary-native-smoke.json",
+          "result": {
+            "parentEofStoppedActualApi": true,
+            "parentEofStoppedOwnedProcessCount": 2,
+            "tsForwardingEntry": true,
+            "transcriptionReadRestartVerified": true,
+            "tsReadGroup": "transcription",
+            "primaryBotWriteRestartVerified": true,
+            "tsWriteGroup": "primary-bot",
+            "eitherProductExitStoppedPair": true,
+            "unsafeDirectoryRefusedAndPostgresStopped": true,
+            "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+            "pythonProductHealth": true,
+            "ownerLogin": true,
+            "postgresInitialized": true,
+            "restartPreservedData": true,
+            "serverAndPostgresStopped": true,
+            "syntheticOnly": true,
+            "nativeKeychainVerified": false
+          }
+        },
+        "native-packaged-smoke": {
+          "receipt": "/private/tmp/openbot-p3-primary-native-packaged-smoke.json",
+          "result": {
+            "parentEofStoppedActualApi": true,
+            "parentEofStoppedOwnedProcessCount": 2,
+            "tsForwardingEntry": true,
+            "transcriptionReadRestartVerified": true,
+            "tsReadGroup": "transcription",
+            "primaryBotWriteRestartVerified": true,
+            "tsWriteGroup": "primary-bot",
+            "eitherProductExitStoppedPair": true,
+            "unsafeDirectoryRefusedAndPostgresStopped": true,
+            "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+            "pythonProductHealth": true,
+            "ownerLogin": true,
+            "postgresInitialized": true,
+            "restartPreservedData": true,
+            "serverAndPostgresStopped": true,
+            "syntheticOnly": true,
+            "nativeKeychainVerified": false
+          }
+        }
+      },
+      "scope": "Unsigned, uninstalled macOS arm64 API/read/write/lifetime Preview, synthetic encryption, no Worker companion/Keychain/GUI/Temporal/public-PKI qualification"
+    },
+    "preserved": {
+      "readGroupRollbackArtifact": "/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot/apps/desktop/out/ts-product-read-baseline/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
+      "fullP2WorkerCompanionCandidate": "apps/desktop/out/ts-product/OpenBot-darwin-arm64/OpenBot.app",
+      "installedApplicationUntouched": true,
+      "originalDirtyCheckoutUntouched": true,
+      "claudeStep43Untouched": true
+    },
+    "remaining": [
+      "Publication of this new branch/draft needs its own explicit authorization; the previous approval covered PR205 only",
+      "Required hosted qualification of this new write candidate",
+      "Separate merge/integration authorization and bounded reverse window before retiring the Python manual route",
+      "Other P3 groups, P4 and P5; no claim of total migration completion"
+    ]
   }
 }
