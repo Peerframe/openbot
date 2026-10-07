@@ -114,3 +114,21 @@ API 实测；渲染器/Keychain、运行中的 Temporal 和公开网络吞吐仍
 
 上面的记录包含实际同源码 API-only 开销测量。当前仍是本机候选，实际对外 TLS/PKI 部署与托管平台检查仍需
 P2 实证；本机证书/传输契约不证明真实部署或 P3 已验收。
+
+## P3 首个读取组
+
+明确选择 `transcription` 的候选仅接管 GET `/api/v1/settings/transcription`，使用现有 PostgreSQL
+会话/设置行和严格共享 DTO。PUT、登录/退出、模型解析、审计写入和 Temporal 仍归 Python。
+默认保持只转发（`none`）。
+
+设置 `OPENBOT_TS_READ_GROUP=transcription`，`OPENBOT_TS_DATABASE_URL` 与
+`OPENBOT_CONTROL_DATABASE_URL` 使用同一自管数据库；`OPENBOT_TS_READ_ALLOWED_ORIGINS` 与
+Python 的明确允许来源列表相同，以逗号分隔，默认 TS 公开来源。私有 Python product 设置
+`OPENBOT_CONTROL_TS_READ_GROUP=transcription`；对应 GET 明确拒绝，不允许自动回退。反向切换时
+两边组开关同时设回 `none`，保留地址、数据库和 cookie 模式，不复制数据或重新签发会话；先停止
+旧进程再启动替代进程。完整转写组验收后退役 Python 读取，P5 删除转发。
+
+混合 all/control/resources 与 HTTPS control 夹具实际检查读取、会话撤销/到期、锁/断开、停止 Python
+和双向切换，不读取用户数据。每组切换前运行 `npm run ui:acceptance -- --entry ts`，达到 PASS12/12，
+未预期响应和页面错误为0。workspace503 须检查原因，不豁免。见
+[决策与当前检查点](../../docs/research/typescript-control-plane-p0.zh-CN.md#p3-转写读取决策与安全检查2026-10-07)。

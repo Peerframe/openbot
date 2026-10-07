@@ -142,3 +142,24 @@ measurements; renderer/Keychain, active Temporal and public-network throughput r
 The linked record includes actual same-source API-only overhead measurements. Current qualification
 is a local candidate; externally deployed TLS/PKI and hosted platform checks remain P2 acceptance
 items. Local certificate/transport contracts do not establish deployment or P3 ownership.
+
+## First P3 read cohort
+
+The explicit `transcription` candidate owns only GET `/api/v1/settings/transcription`. It uses the
+existing PostgreSQL session/prefs rows and strict shared DTO. PUT, login/logout, model resolution,
+audit writes and Temporal stay in Python. The default remains forwarding-only (`none`).
+
+Set `OPENBOT_TS_READ_GROUP=transcription` and `OPENBOT_TS_DATABASE_URL` to the same operator-owned
+URL as `OPENBOT_CONTROL_DATABASE_URL`; pass `OPENBOT_TS_READ_ALLOWED_ORIGINS` as the same explicit
+comma-separated origin list as Python (default: TS public origin). On private Python product set
+`OPENBOT_CONTROL_TS_READ_GROUP=transcription`. That exact private GET refuses; no automatic fallback
+is permitted. Both group flags must be set back to `none` to reverse without copying data or
+reissuing sessions. Keep the same address, database and cookie mode; stop old processes before
+starting their replacements. The retained Python reader exits after the complete transcription
+cohort is accepted, and forwarding exits in P5.
+
+The mixed all/control/resources and HTTPS control fixtures qualify the real read with session,
+revocation/expiry, lock/abort, Python-stop and paired reverse checks. They never load user data.
+Before each group switch, run `npm run ui:acceptance -- --entry ts` and require PASS12/12 with zero
+unexpected responses/page errors. A workspace503 must be investigated, not allowlisted. See the
+[decision and current checkpoint](../../docs/research/typescript-control-plane-p0.md#p3-transcription-read-decision-and-security-review-2026-10-07).

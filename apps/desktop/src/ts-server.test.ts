@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+
 const mocks = vi.hoisted(() => ({ spawn: vi.fn(), python: vi.fn() }));
 vi.mock("node:child_process", async (original) => ({
   ...(await original<typeof import("node:child_process")>()),
@@ -13,6 +14,7 @@ vi.mock("./python-server.js", async (original) => ({
   ...(await original<typeof import("./python-server.js")>()),
   launchPythonProductServer: mocks.python,
 }));
+
 import * as native from "./native-server.js";
 import { TS_CANDIDATE } from "./ts-product-manifest.js";
 import {
@@ -27,6 +29,8 @@ const resources = [
   "apps/server-ts/dist/desktop-entry.js",
   "apps/server-ts/dist/app.js",
   "apps/server-ts/dist/tls.js",
+  "apps/server-ts/dist/transcription-read.js",
+  "node_modules/postgres/package.json",
   "node_modules/fastify/package.json",
   "node_modules/@fastify/reply-from/package.json",
 ];
@@ -141,10 +145,10 @@ it("keeps absent selection on Python and refuses malformed, symlink or unmatched
   expect(mocks.spawn).not.toHaveBeenCalled();
 });
 
-it("owns one private Python writer and public TS entry, passes no credentials to TS, and stops TS first", async () => {
+it("owns one private Python writer and public TS entry, passes only the shared database credential to TS, and stops TS first", async () => {
   const f = await fixture();
   const managed = await launchDesktopProductServer(f.root, f.env);
-  expect(mocks.python).toHaveBeenCalledExactlyOnceWith(f.root, f.env, 39002);
+  expect(mocks.python).toHaveBeenCalledExactlyOnceWith(f.root, f.env, 39002, "transcription");
   const [executable, args, options] = mocks.spawn.mock.calls[0]!;
   expect(executable).toBe(join(f.root, "node/bin/node"));
   expect(args).toEqual([join(f.root, "apps/server-ts/dist/desktop-entry.js")]);
@@ -152,6 +156,9 @@ it("owns one private Python writer and public TS entry, passes no credentials to
     PATH: "/usr/bin:/bin",
     LANG: "C.UTF-8",
     LC_ALL: "C.UTF-8",
+    OPENBOT_TS_READ_GROUP: "transcription",
+    OPENBOT_TS_READ_ALLOWED_ORIGINS: "http://127.0.0.1:39001",
+    OPENBOT_TS_DATABASE_URL: f.env.OPENBOT_DATABASE_URL,
     OPENBOT_TS_HOST: "127.0.0.1",
     OPENBOT_TS_PORT: "39001",
     OPENBOT_TS_PUBLIC_ORIGIN: "http://127.0.0.1:39001",

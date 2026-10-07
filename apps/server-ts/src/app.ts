@@ -21,11 +21,16 @@ import {
   safeRequestTarget,
   validateOptions,
 } from "./config.js";
-import { workerTunnel } from "./worker-tunnel.js";
 import { entryTls } from "./tls.js";
+import { ownerCookie, ReadFailure, transcriptionReader } from "./transcription-read.js";
+import { workerTunnel } from "./worker-tunnel.js";
 
-// This inventory is shared with P1; it records ownership, never bypasses Python admission.
-export const pythonOperations: readonly { method: string; path: string; operationId: string }[] = [
+// This inventory is shared with P1. Only the explicitly enabled read operation changes owner.
+export const pythonOperations: readonly {
+  method: string;
+  path: string;
+  operationId: string;
+}[] = [
   ...workHttpOperations,
   ...controlHttpOperations,
   ...resourceHttpOperations,
@@ -37,6 +42,15 @@ export const pythonOperations: readonly { method: string; path: string; operatio
   ...browserHttpOperations,
   ...portabilityHttpOperations,
 ];
+
+const transcriptionOperation = (() => {
+  const operation = pythonOperations.find(
+    (item) => item.method === "get" && item.path === "/api/v1/settings/transcription",
+  );
+  if (!operation)
+    throw new Error("The transcription read operation is absent from the shared inventory.");
+  return operation;
+})();
 
 export async function createEntry(input: EntryOptions) {
   const options = validateOptions(input);
@@ -51,6 +65,18 @@ export async function createEntry(input: EntryOptions) {
     bodyLimit: 64 * 1024 * 1024,
     routerOptions: { maxParamLength: 8192 },
   });
+  const reads = options.transcriptionRead
+    ? transcriptionReader(options.transcriptionRead.databaseUrl)
+    : undefined;
+  if (reads) {
+    app.addHook("onClose", () => reads.close());
+    try {
+      await reads.verify();
+    } catch {
+      await app.close();
+      throw new Error("The transcription read schema is unavailable.");
+    }
+  }
   if (options.tls) {
     // Bound TCP/TLS admission too, before HTTP and Worker limits can see a request.
     app.server.maxConnections = 192;
@@ -111,6 +137,44 @@ export async function createEntry(input: EntryOptions) {
     reply.code(400).send({ error: "Invalid entry request." });
   });
   app.all("/*", (request, reply) => {
+    if (
+      reads &&
+      request.method.toLowerCase() === transcriptionOperation.method &&
+      decodeURIComponent((request.raw.url ?? "").split("?")[0] ?? "") ===
+        transcriptionOperation.path
+    ) {
+      const abort = new AbortController();
+      reply.raw.once("close", () => {
+        if (!reply.raw.writableFinished) abort.abort();
+      });
+      if (request.headers.origin) {
+        reply.header("Access-Control-Allow-Credentials", "true");
+        reply.header("Access-Control-Expose-Headers", "X-OpenBot-Next-Before");
+        if (
+          (options.transcriptionRead?.allowedOrigins ?? [options.publicOrigin]).includes(
+            request.headers.origin,
+          )
+        ) {
+          reply.header("Access-Control-Allow-Origin", request.headers.origin);
+          reply.header("Vary", "Origin");
+        }
+      }
+      return reads
+        .read(ownerCookie(request.headers.cookie, Boolean(options.tls)), abort.signal)
+        .then((settings) => {
+          if (!reply.raw.destroyed) return reply.send(settings);
+        })
+        .catch((error: unknown) => {
+          if (reply.raw.destroyed) return;
+          const failure =
+            error instanceof ReadFailure
+              ? error
+              : new ReadFailure(503, {
+                  error: "Control-plane storage is unavailable.",
+                });
+          return reply.code(failure.status).send(failure.body);
+        });
+    }
     const abort = new AbortController();
     const deadline = setTimeout(() => abort.abort(), 45000);
     deadline.unref();

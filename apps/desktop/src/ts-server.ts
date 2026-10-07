@@ -1,4 +1,4 @@
-import { spawn, type ChildProcessByStdio } from "node:child_process";
+import { type ChildProcessByStdio, spawn } from "node:child_process";
 import { lstat, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Writable } from "node:stream";
@@ -63,6 +63,8 @@ export async function launchTsProductServer(
   for (const name of [
     "apps/server-ts/dist/app.js",
     "apps/server-ts/dist/tls.js",
+    "apps/server-ts/dist/transcription-read.js",
+    "node_modules/postgres/package.json",
     "node_modules/fastify/package.json",
     "node_modules/@fastify/reply-from/package.json",
   ])
@@ -72,7 +74,12 @@ export async function launchTsProductServer(
     privatePort = await availablePort();
   if (String(privatePort) === env.OPENBOT_CONTROL_PORT)
     throw new Error("Python private forwarding port is unavailable.");
-  const python = await launchPythonProductServer(runtimeRoot, source, privatePort);
+  const python = await launchPythonProductServer(
+    runtimeRoot,
+    source,
+    privatePort,
+    TS_CANDIDATE.readGroup,
+  );
   let child: ChildProcessByStdio<Writable, null, null>;
   try {
     child = spawn(node, [entry], {
@@ -81,6 +88,9 @@ export async function launchTsProductServer(
         PATH: "/usr/bin:/bin",
         LANG: "C.UTF-8",
         LC_ALL: "C.UTF-8",
+        OPENBOT_TS_READ_GROUP: TS_CANDIDATE.readGroup,
+        OPENBOT_TS_READ_ALLOWED_ORIGINS: env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,
+        OPENBOT_TS_DATABASE_URL: env.OPENBOT_CONTROL_DATABASE_URL as string,
         OPENBOT_TS_HOST: "127.0.0.1",
         OPENBOT_TS_PORT: env.OPENBOT_CONTROL_PORT as string,
         OPENBOT_TS_PUBLIC_ORIGIN: env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,
@@ -104,7 +114,9 @@ export async function launchTsProductServer(
   });
   child.stdin.on("error", () => undefined);
   let stopping: Promise<void> | undefined;
-  const managed: ManagedServerProcess & { readonly processIds: readonly number[] } = {
+  const managed: ManagedServerProcess & {
+    readonly processIds: readonly number[];
+  } = {
     processIds: [...python.processIds, ...(child.pid === undefined ? [] : [child.pid])],
     isAlive: () => !stopping && alive && python.isAlive(),
     stop() {

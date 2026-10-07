@@ -43,7 +43,11 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
                identity: IdentityStore | None = None, conversations: ConversationStore | None = None,
                profiles: ProfileStore | None = None, tasks: TaskStore | None = None,
                run_commands: RunCommandStore | None = None, work=None, product=None,
-               proxy_address: str | None = None, public_origin: str | None = None) -> FastAPI:
+               proxy_address: str | None = None, public_origin: str | None = None,
+               ts_read_group: str = "none") -> FastAPI:
+    if ts_read_group not in ("none", "transcription") or (ts_read_group != "none" and
+            (product is None or proxy_address is None or public_origin is None)):
+        raise ValueError("TS read ownership requires explicit private product proxy mode.")
     if not owner_name or any(origin == "*" or origin == "null" for origin in allowed_origins):
         raise ValueError("An Owner name and explicit origins are required.")
     if auth is not None and auth.owner_name != owner_name:
@@ -249,7 +253,8 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
 
     if product is not None:
         from .product_control import register_product_routes
-        register_product_routes(app, product, store, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
+        register_product_routes(app, product, store, secure_cookies=secure_cookies, allowed_origins=allowed_origins,
+                                ts_read_group=ts_read_group)
 
     # Cookie parsing is invoked inside the adapter to keep the store request-scoped. Declare
     # that exact scheme in generated OpenAPI too; a schema is never an authorization check.

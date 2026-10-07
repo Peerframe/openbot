@@ -7,6 +7,7 @@ export interface EntryOptions {
   host: "127.0.0.1" | "0.0.0.0";
   port: number;
   tls?: { certificatePath: string; privateKeyPath: string };
+  transcriptionRead?: { databaseUrl: string; allowedOrigins?: readonly string[] };
 }
 
 function origin(value: string): URL {
@@ -21,6 +22,17 @@ function origin(value: string): URL {
 }
 
 export function validateOptions(options: EntryOptions): EntryOptions {
+  if (options.transcriptionRead) {
+    try {
+      for (const value of options.transcriptionRead.allowedOrigins ?? [options.publicOrigin])
+        origin(value);
+      const database = new URL(options.transcriptionRead.databaseUrl);
+      if (!["postgres:", "postgresql:"].includes(database.protocol) || !database.hostname)
+        throw new Error();
+    } catch {
+      throw new Error("The transcription read group requires an explicit PostgreSQL URL.");
+    }
+  }
   const upstream = origin(options.upstream);
   if (upstream.protocol !== "http:" || upstream.hostname !== "127.0.0.1") {
     throw new Error("The fixed Python upstream must be numeric IPv4 loopback HTTP.");
@@ -55,6 +67,10 @@ export function validateOptions(options: EntryOptions): EntryOptions {
 }
 
 export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
+  const group = environment.OPENBOT_TS_READ_GROUP ?? "none";
+  if (!["none", "transcription"].includes(group)) throw new Error("Unknown TS read group.");
+  if (group === "transcription" && !environment.OPENBOT_TS_DATABASE_URL)
+    throw new Error("The transcription read group requires an explicit PostgreSQL URL.");
   const port = environment.OPENBOT_TS_PORT ?? "3101";
   if (!/^[0-9]{1,5}$/.test(port)) throw new Error("Invalid TS listener port.");
   const certificatePath = environment.OPENBOT_TS_TLS_CERT_PATH;
@@ -66,6 +82,20 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
     publicOrigin: environment.OPENBOT_TS_PUBLIC_ORIGIN ?? "",
     host: (environment.OPENBOT_TS_HOST ?? "127.0.0.1") as EntryOptions["host"],
     port: Number(port),
+    ...(group === "transcription"
+      ? {
+          transcriptionRead: {
+            databaseUrl: environment.OPENBOT_TS_DATABASE_URL!,
+            ...(environment.OPENBOT_TS_READ_ALLOWED_ORIGINS !== undefined
+              ? {
+                  allowedOrigins: environment.OPENBOT_TS_READ_ALLOWED_ORIGINS.split(",").map(
+                    (value) => value.trim(),
+                  ),
+                }
+              : {}),
+          },
+        }
+      : {}),
     ...(certificatePath !== undefined && privateKeyPath !== undefined
       ? { tls: { certificatePath, privateKeyPath } }
       : {}),

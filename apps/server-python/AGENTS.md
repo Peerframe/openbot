@@ -14,3 +14,8 @@ and frozen oracle provenance. Use disposable database fixtures, never the user's
 The base `.venv` and `.worker-venv` have distinct locked closures. `scripts/check.sh` delegates files
 listed in `worker-tests.txt`; use the documented Worker interpreter and `test:control:python` for that
 integration. An ignored/skipped Worker file is not verified. Do not reactivate the retired TS Server.
+
+The explicit private product `OPENBOT_CONTROL_TS_READ_GROUP=transcription` composition quarantines
+only GET transcription settings; its bounded TS reader validates the same existing Owner session.
+All writes/session issuance/revocation remain here. `none` restores the retained reader only through
+an explicit paired reverse switch; see [P3 decision](../../docs/research/typescript-control-plane-p0.md#p3-transcription-read-decision-and-security-review-2026-10-07).
