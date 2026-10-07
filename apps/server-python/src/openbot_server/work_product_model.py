@@ -14,8 +14,7 @@ from pydantic_ai.messages import ModelMessagesTypeAdapter
 
 from .model_connections_inputs import ModelSelection
 from .model_connections_port import ModelConnectionPort
-from .model_presets import RetainedModelSettings, model_provider_base_url
-from .product_model import ProductModelError, ProductModelPort
+from .product_model import ProductModelError
 from .work_claims import WorkFence, check_fence
 from .work_corrections import check_context
 from .work_engine_binding import assert_accepted_workflow, assert_accepted_workflow_in_transaction
@@ -38,7 +37,7 @@ class _Selected:
 
     @property
     def key(self):
-        return self.credential['apiKey'] if self.configuration['source']=='singleton' else self.credential.api_key
+        return self.credential.api_key
 
 
 def _reservation(request, max_output):
@@ -51,7 +50,7 @@ def _reservation(request, max_output):
 
 
 class ProductWorkModel:
-    def __init__(self, store, client, scope, settings, connections, receipts, *,
+    def __init__(self, store, client, scope, connections, receipts, *,
                  max_output_tokens=4096, reserve_policy=None, transport_factory=None, media=None):
         if type(scope) is not dict or set(scope)!=_SCOPE_FIELDS:
             raise InvalidWork('invalid_product_model_scope')
@@ -62,7 +61,7 @@ class ProductWorkModel:
         if transport_factory is not None and not callable(transport_factory):
             raise InvalidWork('invalid_model_transport_factory')
         self.store,self.client,self.scope = store,client,dict(scope)
-        self.settings,self.connections,self.receipts = settings,connections,receipts
+        self.connections,self.receipts = connections,receipts
         if media is not None and media.store is not store:
             raise InvalidWork('invalid_product_media_store')
         self.media = media
@@ -111,36 +110,22 @@ class ProductWorkModel:
         return row,run
 
     async def _select(self, db, source):
-        if source['execution_profile']=='none':
-            active = await self.settings.active() if self.settings is not None else None
-            if active is None:
-                raise ProductModelError('model_configuration')
-            try:
-                config=RetainedModelSettings.model_validate(active).model_dump(exclude_none=True)
-                if not config['agentEnabled'] or not config['agentEnabledAt']:
-                    raise ValueError()
-            except Exception:
-                raise ProductModelError('model_configuration') from None
-            protocol=('responses-v1' if config['provider']=='openai' else
-                      'anthropic-messages-v1' if config['provider']=='anthropic' else 'chat-completions-v1')
-            provenance=dict(source='singleton',revision=config['revision'],provider=config['provider'],
-                model=config['model'],baseUrl=model_provider_base_url(config['provider'],config.get('baseUrl')),protocol=protocol)
-            credential=config
-        else:
-            # resolve(None) has a retained F legacy default. It is not allowed for this explicit
-            # queued selection port; neither the current Bot nor another connection is a fallback.
-            try:
-                selection=ModelSelection.model_validate(source['model_selection']).model_dump()
-            except Exception:
-                raise ProductModelError('model_configuration') from None
-            if self.connections is None: raise ProductModelError('model_configuration')
-            credential=await self.connections.resolve_in_transaction(db,selection)
-            if credential is None or credential.source not in ('saved','environment'):
-                raise ProductModelError('model_configuration')
-            provenance=dict(source='environment' if credential.source=='environment' else 'connection',
-                revision=credential.revision,connectionId=credential.connection_id,provider=credential.preset_id,
-                model=credential.model_id,baseUrl=credential.base_url,protocol='anthropic-messages-v1'
-                if credential.protocol=='anthropic-messages' else 'chat-completions-v1')
+        selection = source['model_selection']
+        if selection is None:
+            from .owner_preferences import current_preferences
+            selection = (await current_preferences(db))['defaultModel']
+        try:
+            selection = ModelSelection.model_validate(selection).model_dump()
+        except Exception:
+            raise ProductModelError('model_configuration') from None
+        if self.connections is None: raise ProductModelError('model_configuration')
+        credential = await self.connections.resolve_in_transaction(db, selection)
+        if credential is None or credential.source not in ('saved','environment'):
+            raise ProductModelError('model_configuration')
+        provenance = dict(source='environment' if credential.source=='environment' else 'connection',
+            revision=credential.revision,connectionId=credential.connection_id,provider=credential.preset_id,
+            model=credential.model_id,baseUrl=credential.base_url,protocol='anthropic-messages-v1'
+            if credential.protocol=='anthropic-messages' else 'chat-completions-v1')
         return _Selected(deepcopy(source),configuration_record(provenance),credential)
 
     async def _fresh(self, db, context, selected):
@@ -246,8 +231,7 @@ class ProductWorkModel:
         transport=self._transport_factory() if self._transport_factory is not None else None
         options=dict(max_output_tokens=self.max_output_tokens,transport=transport,before_send=send_gate,
                      media_loader=media_loader if input_media is not None else None)
-        port=(ProductModelPort(selected.credential,**options) if config['source']=='singleton' else
-              ModelConnectionPort(selected.credential,policy=self.connections.policy,**options))
+        port=ModelConnectionPort(selected.credential,policy=self.connections.policy,**options)
         async with port:
             return await execute_model_activity(self.store,self.client,**self.scope,receipts=self.receipts,
                 provider=port,request=detached,provider_id=config['provider'],model_id=config['model'],

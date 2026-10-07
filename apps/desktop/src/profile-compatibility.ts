@@ -7,8 +7,11 @@ export function desktopProfileCompatibility(
   platform: string,
   productName: string,
   exists: (path: string) => boolean = existsSync,
+  explicitUserData?: string,
 ): Readonly<{ userData: string; encryptionName: string }> | undefined {
-  if (platform !== "darwin" || productName !== "OpenBot") return undefined;
+  // A chosen Electron profile owns its bootstrap; never redirect it to another installation.
+  if (explicitUserData !== undefined || platform !== "darwin" || productName !== "OpenBot")
+    return undefined;
   const canonical = join(appData, "OpenBot");
   const legacy = join(appData, "OpenBot Preview");
   // A partial or damaged canonical installation still owns its data; never silently switch users.

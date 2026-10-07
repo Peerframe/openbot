@@ -23,6 +23,7 @@ import { CloseIcon, SearchIcon } from "./Icons";
 import "./SettingsDialog.css";
 import { AppIcon } from "./AppIcon";
 import { PluginManager } from "./PluginManagerPanel";
+import { PrimaryBotSetting } from "./PrimaryBotSetting";
 import { SettingsAccount } from "./SettingsAccount";
 import { SettingsApprovals } from "./SettingsApprovals";
 import { SettingsBrowser } from "./SettingsBrowser";
@@ -450,6 +451,7 @@ export function DesktopSettingsScreen({
                   </SettingsGroup>
                   <DesktopStartupSettings />
                   <OwnerPreferenceSettings />
+                  <PrimaryBotSetting />
                   <SettingsGroup title="聊天" description="让输入与阅读符合你的习惯。">
                     <SettingRow title="发送消息" description="Shift + Enter 始终换行。">
                       <select

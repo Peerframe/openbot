@@ -1,0 +1,151 @@
+import { AsyncLocalStorage } from "node:async_hooks";
+import type { Socket } from "node:net";
+import replyFrom from "@fastify/reply-from";
+import {
+  automationHttpOperations,
+  browserHttpOperations,
+  controlHttpOperations,
+  employeeHttpOperations,
+  lifecycleHttpOperations,
+  nodeHttpOperations,
+  pluginHttpOperations,
+  portabilityHttpOperations,
+  resourceHttpOperations,
+  workHttpOperations,
+} from "@openbot/protocol";
+import Fastify from "fastify";
+import {
+  type EntryOptions,
+  forbiddenHeader,
+  peerForwarded,
+  safeRequestTarget,
+  validateOptions,
+} from "./config.js";
+import { workerTunnel } from "./worker-tunnel.js";
+import { entryTls } from "./tls.js";
+
+// This inventory is shared with P1; it records ownership, never bypasses Python admission.
+export const pythonOperations: readonly { method: string; path: string; operationId: string }[] = [
+  ...workHttpOperations,
+  ...controlHttpOperations,
+  ...resourceHttpOperations,
+  ...lifecycleHttpOperations,
+  ...employeeHttpOperations,
+  ...automationHttpOperations,
+  ...nodeHttpOperations,
+  ...pluginHttpOperations,
+  ...browserHttpOperations,
+  ...portabilityHttpOperations,
+];
+
+export async function createEntry(input: EntryOptions) {
+  const options = validateOptions(input);
+  const publicHost = new URL(options.publicOrigin).host;
+  const transport = new AsyncLocalStorage<AbortSignal>();
+  const app = Fastify({
+    ...(options.tls ? { https: await entryTls(options) } : {}),
+    logger: false,
+    forceCloseConnections: true,
+    requestTimeout: 45000,
+    connectionTimeout: 45000,
+    bodyLimit: 64 * 1024 * 1024,
+    routerOptions: { maxParamLength: 8192 },
+  });
+  if (options.tls) {
+    // Bound TCP/TLS admission too, before HTTP and Worker limits can see a request.
+    app.server.maxConnections = 192;
+    const sockets = new Set<Socket>();
+    app.server.on("connection", (socket) => {
+      sockets.add(socket);
+      socket.once("close", () => sockets.delete(socket));
+    });
+    app.addHook("preClose", async () => {
+      // Node HTTP shutdown does not own unfinished TLS handshakes.
+      for (const socket of sockets) socket.destroy();
+    });
+  }
+  // Forward invalid JSON/raw integer spelling to the authority, without body conversion.
+  app.removeAllContentTypeParsers();
+  app.addContentTypeParser("*", (_request, payload, done) => done(null, payload));
+  await app.register(replyFrom, {
+    base: options.upstream,
+    retryMethods: [],
+    disableRequestLogging: true,
+    destroyAgent: true,
+    disableCache: true,
+    http: {
+      agentOptions: { keepAlive: true, maxSockets: 128, maxFreeSockets: 16 },
+      requestOptions: {
+        timeout: 45000,
+        // Reviewed reply-from spreads requestOptions per dispatch. Use Node's public
+        // AbortSignal option to cancel even before upstream response headers arrive.
+        get signal() {
+          return transport.getStore();
+        },
+      },
+    },
+  });
+  let active = 0;
+  app.addHook("onRequest", async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    reply.header("X-Content-Type-Options", "nosniff");
+    reply.header("X-Frame-Options", "DENY");
+    if (
+      !safeRequestTarget(request.raw.url) ||
+      request.headers.host !== publicHost ||
+      Object.keys(request.headers).some(forbiddenHeader)
+    ) {
+      return reply.code(400).send({ error: "Invalid entry request." });
+    }
+    if (active >= 128)
+      return reply
+        .code(503)
+        .header("Retry-After", "1")
+        .send({ error: "Control-plane entry is busy." });
+    active++;
+    reply.raw.once("close", () => {
+      active--;
+    });
+  });
+  app.setErrorHandler((_error, _request, reply) => {
+    reply.code(400).send({ error: "Invalid entry request." });
+  });
+  app.all("/*", (request, reply) => {
+    const abort = new AbortController();
+    const deadline = setTimeout(() => abort.abort(), 45000);
+    deadline.unref();
+    reply.raw.once("close", () => {
+      clearTimeout(deadline);
+      if (!reply.raw.writableFinished) abort.abort();
+    });
+    return transport.run(abort.signal, () =>
+      reply.from(undefined, {
+        retriesCount: 0,
+        retryDelay: () => null,
+        timeout: 45000,
+        rewriteRequestHeaders: (_request, headers) => ({
+          ...headers,
+          host: publicHost,
+          forwarded: peerForwarded(request.raw.socket.remoteAddress),
+        }),
+        onError: (response) => {
+          clearTimeout(deadline);
+          if (!response.raw.destroyed)
+            response.code(503).send({ error: "Control-plane upstream is unavailable." });
+        },
+        onResponse: (_request, response, incoming) => {
+          clearTimeout(deadline);
+          incoming.stream.setTimeout(45000, () => incoming.stream.destroy());
+          response.send(incoming.stream);
+        },
+      }),
+    );
+  });
+  // Python also serves the optional built Web root and owns unknown method/path refusals.
+  // The fixed destination cannot be selected by path, Origin, Host, query or request body.
+  const closeTunnels = workerTunnel(app.server, options);
+  app.addHook("preClose", async () => {
+    closeTunnels();
+  });
+  return app;
+}

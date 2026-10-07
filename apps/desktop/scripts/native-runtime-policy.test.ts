@@ -1,7 +1,11 @@
 import { readFile } from "node:fs/promises";
 import { expect, it } from "vitest";
 import { collectProductionPackageGraph } from "../../../scripts/production-package-graph.ts";
-import { nativeOptionalPackageApplies, pythonCandidateGraph } from "./native-runtime-policy.ts";
+import {
+  mixedCandidateGraph,
+  nativeOptionalPackageApplies,
+  pythonCandidateGraph,
+} from "./native-runtime-policy.ts";
 
 it("selects only the target-specific optional native library and honors npm exclusions", () => {
   expect(nativeOptionalPackageApplies({ os: ["win32"], cpu: ["x64"] }, "win32", "x64")).toBe(true);
@@ -79,4 +83,22 @@ it("fails closed on unresolved parser packages and invalid retained DB workspace
   expect(() => collectProductionPackageGraph(original, "packages/unreviewed")).toThrow(
     "Unsupported",
   );
+});
+
+it("adds the pinned TS entry to the Python closure without WS tests or the retired oracle", async () => {
+  const lock = JSON.parse(
+    await readFile(new URL("../../../package-lock.json", import.meta.url), "utf8"),
+  );
+  const python = pythonCandidateGraph(lock);
+  const mixed = mixedCandidateGraph(lock);
+  expect(mixed.workspaceKeys).toEqual(["apps/server-ts", "packages/db", "packages/protocol"]);
+  for (const key of python.packageKeys) expect(mixed.packageKeys).toContain(key);
+  expect(new Set(mixed.packageKeys).size).toBe(mixed.packageKeys.length);
+  expect(mixed.packageKeys).toContain("node_modules/fastify");
+  expect(mixed.packageKeys).toContain("node_modules/@fastify/reply-from");
+  expect(
+    mixed.packageKeys.some((key) => key.endsWith("/ws") || key.includes("legacy-server")),
+  ).toBe(false);
+  lock.packages["node_modules/@fastify/reply-from"].version = "12.6.4";
+  expect(() => mixedCandidateGraph(lock)).toThrow("reviewed pin");
 });

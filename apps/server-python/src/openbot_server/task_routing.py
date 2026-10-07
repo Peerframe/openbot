@@ -61,7 +61,7 @@ def select_assignee(candidates: Sequence[TaskCandidate],
 
 
 def select_assignees(candidates: Sequence[TaskCandidate], value: CreateMessageInput,
-                     direct_bot_id: str | None = None) -> list[TaskCandidate]:
+                     direct_bot_id: str | None = None, primary_bot_id: str | None = None) -> list[TaskCandidate]:
     """``selectChannelAssignees``: validate the whole recipient set, in the caller's order.
 
     Raises ``TaskValidation`` with the same text the TypeScript store raises, so the HTTP mapping and
@@ -87,6 +87,8 @@ def select_assignees(candidates: Sequence[TaskCandidate], value: CreateMessageIn
         identities: list[str] | None = requested
     elif direct_bot_id is not None:
         identities = [direct_bot_id]
+    elif primary_bot_id is not None and any(candidate.id == primary_bot_id for candidate in candidates):
+        identities = [primary_bot_id]
     else:
         identities = None
     selected = ([select_assignee(candidates, identity) for identity in identities]

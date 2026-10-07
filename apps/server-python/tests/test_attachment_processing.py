@@ -207,12 +207,16 @@ def test_concurrency_and_deleted_during_processing_never_commit(seed,storage):
 
 class Settings:
     def __init__(self, before=None, **overrides):
+        from openbot_server.model_connections_inputs import ResolvedModelConnection
         self.before=before
-        self.value={'provider':'openai','apiKey':'synthetic-not-a-real-secret','agentEnabled':True,
-                    'agentEnabledAt':'2026-09-24T00:00:00Z',**overrides}
-    async def active(self):
+        self.disabled=overrides.get('agentEnabled') is False
+        self.value=ResolvedModelConnection('fixture',1,overrides.get('provider','openai'),'openai-chat',
+            overrides.get('baseUrl','https://api.openai.com/v1'),'whisper-1','synthetic-not-a-real-secret')
+    async def resolve_in_transaction(self, db):
         if self.before:
-            self.before()
+            callback,self.before=self.before,None
+            callback()
+        if self.disabled: raise ControlError(415,'enabled_openai_transcription_required')
         return self.value
 
 
@@ -225,13 +229,13 @@ def test_transcription_official_sdk_only_on_explicit_enabled_action_and_bounded_
         assert b'whisper-1' in request.content and b'ID3synthetic' in request.content
         return httpx2.Response(200,json={'text':'Owner requested transcription'},request=request)
     item=storage.persist(seed['channel'],'speech.mp3',b'ID3synthetic')
-    service=AttachmentProcessingService(seed['dsn'],files=storage,settings=Settings(),transport=httpx2.MockTransport(respond))
+    service=AttachmentProcessingService(seed['dsn'],files=storage,transcription=Settings(),transport=httpx2.MockTransport(respond))
     assert calls == []
     result=asyncio.run(service.process(seed['token'],seed['channel'],item['id'],{'operation':'transcribe'}))
     assert result['processing']['operation'] == 'transcribe' and len(calls) == 1
     assert json.loads(storage._read(item['id']+'.text.json',MAX_RESPONSE))['text'] == 'Owner requested transcription'
     for settings in (None,Settings(agentEnabled=False),Settings(provider='anthropic'),Settings(baseUrl='https://example.invalid/v1')):
-        refused=AttachmentProcessingService(seed['dsn'],files=storage,settings=settings,transport=httpx2.MockTransport(respond))
+        refused=AttachmentProcessingService(seed['dsn'],files=storage,transcription=settings,transport=httpx2.MockTransport(respond))
         with pytest.raises(ControlError):
             asyncio.run(refused.process(seed['token'],seed['channel'],item['id'],{'operation':'transcribe'}))
     assert len(calls) == 1
@@ -247,7 +251,15 @@ def test_revoked_owner_after_settings_load_prevents_any_provider_transfer(seed,s
             db.execute('UPDATE auth_sessions SET revoked_at=now() WHERE token_digest=%s',(digest,))
     calls=[]
     item=storage.persist(seed['channel'],'speech.mp3',b'ID3synthetic')
-    service=AttachmentProcessingService(seed['dsn'],files=storage,settings=Settings(before=revoke),transport=httpx2.MockTransport(lambda request:calls.append(request)))
+    service=AttachmentProcessingService(seed['dsn'],files=storage,transcription=Settings(),transport=httpx2.MockTransport(lambda request:calls.append(request)))
+    original_snapshot=service._snapshot
+    snapshots=0
+    async def snapshot(*args,**kwargs):
+        nonlocal snapshots
+        snapshots+=1
+        if snapshots==2: revoke()
+        return await original_snapshot(*args,**kwargs)
+    service._snapshot=snapshot
     try:
         with pytest.raises(AuthenticationRequired):
             asyncio.run(service.process(token,seed['channel'],item['id'],{'operation':'transcribe'}))
@@ -265,7 +277,7 @@ def test_transcription_failures_are_bounded_and_never_save_derived(seed,storage,
         if kind=='empty': return httpx2.Response(200,json={'text':' \n\t'},request=request)
         return httpx2.Response(200,json={'text':None},request=request)
     item=storage.persist(seed['channel'],'speech.mp3',b'ID3synthetic')
-    service=AttachmentProcessingService(seed['dsn'],files=storage,settings=Settings(),transport=httpx2.MockTransport(respond))
+    service=AttachmentProcessingService(seed['dsn'],files=storage,transcription=Settings(),transport=httpx2.MockTransport(respond))
     with pytest.raises(ControlError) as error:
         asyncio.run(service.process(seed['token'],seed['channel'],item['id'],{'operation':'transcribe'}))
     if kind == 'oversize':
@@ -382,7 +394,7 @@ def test_cancellation_during_settings_load_prevents_media_transfer(seed,storage)
     event=asyncio.Event()
     calls=[]
     item=storage.persist(seed['channel'],'speech.mp3',b'ID3synthetic')
-    service=AttachmentProcessingService(seed['dsn'],files=storage,settings=Settings(before=event.set),
+    service=AttachmentProcessingService(seed['dsn'],files=storage,transcription=Settings(before=event.set),
         transport=httpx2.MockTransport(lambda request:calls.append(request)))
     with pytest.raises(ControlError) as error:
         asyncio.run(service.process(seed['token'],seed['channel'],item['id'],{'operation':'transcribe'},cancelled=event))
@@ -406,3 +418,42 @@ def test_cancellation_while_waiting_for_save_lock_does_not_publish(seed,storage)
         assert 'processing' not in storage.metadata(seed['channel'],item['id'])
         assert not (storage.root/(item['id']+'.text.json')).exists()
     asyncio.run(check())
+
+
+@pytest.mark.parametrize('change',['disable','rotate','clear'])
+def test_c28_audio_send_rechecks_real_connection_and_owner_selection(seed,storage,change):
+    from openbot_server.model_connections import ModelConnectionsService
+    from openbot_server.model_connections_cipher import ModelCredentialCipher
+    from openbot_server.transcription_settings import TranscriptionSettings
+    from psycopg.types.json import Jsonb
+    from psycopg.rows import dict_row
+    connections=ModelConnectionsService(seed['dsn'],ModelCredentialCipher(bytes(range(32))))
+    transcription=TranscriptionSettings(seed['dsn'],connections)
+    with psycopg.connect(seed['dsn'],row_factory=dict_row) as db:
+        previous=db.execute("SELECT * FROM owner_preferences WHERE owner_id='owner'").fetchone()
+    async def prepare():
+        created=await connections.create(seed['token'],dict(name='C28 audio',presetId='openai',baseUrl='https://api.openai.com/v1',apiKey='synthetic-c28-audio-key'))
+        await transcription.update(seed['token'],dict(expectedRevision=previous['revision'],connectionId=created['id']))
+        return created
+    connection=asyncio.run(prepare());calls=[]
+    item=storage.persist(seed['channel'],'speech.mp3',b'ID3synthetic')
+    service=AttachmentProcessingService(seed['dsn'],files=storage,transcription=transcription,transport=httpx2.MockTransport(lambda request:calls.append(request)))
+    original=service._snapshot;snapshots=0
+    async def snapshot(*args,**kwargs):
+        nonlocal snapshots
+        snapshots+=1
+        if snapshots==2:
+            if change=='clear':
+                await transcription.update(seed['token'],dict(expectedRevision=previous['revision']+1,connectionId=None))
+            else:
+                await connections.update(seed['token'],connection['id'],dict(expectedRevision=1,**({'enabled':False} if change=='disable' else {'apiKey':'synthetic-rotated-key'})))
+        return await original(*args,**kwargs)
+    service._snapshot=snapshot
+    try:
+        with pytest.raises(ControlError):
+            asyncio.run(service.process(seed['token'],seed['channel'],item['id'],dict(operation='transcribe')))
+        assert calls==[] and not (storage.root/(item['id']+'.text.json')).exists()
+    finally:
+        with psycopg.connect(seed['dsn']) as db:
+            db.execute("UPDATE owner_preferences SET transcription_connection_id=%s,revision=%s,updated_at=%s WHERE owner_id='owner'",(previous['transcription_connection_id'],previous['revision'],previous['updated_at']))
+            db.execute('DELETE FROM model_connections WHERE id=%s',(connection['id'],))

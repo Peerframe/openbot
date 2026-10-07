@@ -599,7 +599,9 @@ function HowItWorks({
   const model = profile?.configuration.model ?? bot.model;
   const modelLabel = model
     ? `${sameModel(model, defaultModel) ? "默认 · " : ""}${model.modelId}`
-    : "未选择";
+    : defaultModel
+      ? `默认 · ${defaultModel.modelId}`
+      : "未选择";
   // Only Bots that run a model can change it here; the others are fixed at creation.
   const editable = profile !== undefined && ["model", "docker-linux"].includes(bot.computerProfile);
   const candidates = profile?.skills.filter((skill) => skill.state === "candidate").length ?? 0;

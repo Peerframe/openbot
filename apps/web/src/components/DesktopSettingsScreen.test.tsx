@@ -167,57 +167,28 @@ describe("Desktop settings interactions", () => {
     },
   );
 
-  it("loads and saves the model section through the Server rather than local preferences", async () => {
-    const fetchMock = vi.fn(async (url: string, init?: RequestInit) =>
+  it("loads the model section on demand without any legacy settings request", async () => {
+    const fetchMock = vi.fn(async (url: string) =>
       url === "/api/v1/model-services"
         ? Response.json({ presets: [], connections: [], customBaseUrls: [] })
-        : init?.method === "POST"
-          ? Response.json({
-              status: "configured",
-              provider: "anthropic",
-              model: "available-model",
-              revision: "revision-2",
-            })
-          : Response.json({ status: "unconfigured", revision: null }),
+        : url === "/api/v1/settings/transcription"
+          ? Response.json({ revision: 1, connectionId: null })
+          : Response.json({
+              revision: 1,
+              timezone: "UTC",
+              defaultModel: null,
+              updatedAt: "2026-10-05T00:00:00Z",
+            }),
     );
     vi.stubGlobal("fetch", fetchMock);
     const rendered = await renderComponent(
       <Settings plan={hostPlan} material={{ status: "enabled" }} {...callbacks()} />,
     );
     try {
-      // 通用 reads only the Owner preferences; the model section loads on demand.
-      expect(fetchMock.mock.calls.map(([url]) => url)).not.toContain("/api/v1/settings/model");
+      expect(fetchMock.mock.calls.map(([url]) => url)).not.toContain("/api/v1/settings/transcription");
       await interact(() => button(rendered.container, "模型服务").click());
-      await select(rendered.container, "服务商", "anthropic");
-      await setInputValue(
-        rendered.container.querySelector("#model-name") as HTMLInputElement,
-        "available-model",
-      );
-      await setInputValue(
-        rendered.container.querySelector("#model-api-key") as HTMLInputElement,
-        "test-key-for-ui-validation-only",
-      );
-      await interact(() =>
-        rendered.container
-          .querySelector("form")
-          ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
-      );
-      const call = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
-      expect(call?.[0]).toBe("/api/v1/settings/model");
-      expect(JSON.parse(call?.[1]?.body as string)).toEqual({
-        agentEnabled: false,
-        provider: "anthropic",
-        baseUrl: "https://api.anthropic.com",
-        model: "available-model",
-        apiKey: "test-key-for-ui-validation-only",
-        revision: null,
-      });
-      expect((rendered.container.querySelector("#model-api-key") as HTMLInputElement).value).toBe(
-        "",
-      );
-      expect(rendered.container.querySelector('[role="status"]')?.textContent).toContain(
-        "模型配置已验证并保存",
-      );
+      expect(rendered.container.querySelector('select[aria-label="语音转写连接"]')).not.toBeNull();
+      expect(fetchMock.mock.calls.map(([url]) => url)).not.toContain("/api/v1/settings/model");
       expect(localStorage.getItem(preferences.preferencesKey)).toBeNull();
     } finally {
       await rendered.unmount();

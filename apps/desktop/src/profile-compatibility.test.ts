@@ -17,6 +17,25 @@ describe("canonical Desktop name with retained Preview identity", () => {
       desktopProfileCompatibility(root, "darwin", "OpenBot Python Preview", exists),
     ).toBeUndefined();
   });
+  it.each(["/isolated/profile", join(root, "OpenBot")])(
+    "honors explicit profile %s before inspecting installed profiles",
+    (explicitUserData) => {
+      const inspected: string[] = [];
+      expect(
+        desktopProfileCompatibility(
+          root,
+          "darwin",
+          "OpenBot",
+          (path) => {
+            inspected.push(path);
+            return path === legacy;
+          },
+          explicitUserData,
+        ),
+      ).toBeUndefined();
+      expect(inspected).toEqual([]);
+    },
+  );
   it("never replaces canonical data and leaves new installations canonical", () => {
     expect(
       desktopProfileCompatibility(root, "darwin", "OpenBot", (path) =>

@@ -23,10 +23,10 @@ def digest_secret(kind, value):
     return hashlib.sha256((f"openbot:{kind}:" + value).encode("utf-8")).hexdigest()
 
 
-def resolve_client_identity(remote_address, forwarded=None, trusted_proxy_address=None):
+def resolve_client_address(remote_address, forwarded=None, trusted_proxy_address=None):
     direct = client_digest(remote_address)
     if trusted_proxy_address is None or direct != client_digest(trusted_proxy_address):
-        return {"digest": direct, "source": "direct"}
+        return remote_address, "direct"
     if not isinstance(forwarded, str) or not forwarded.strip() or "," in forwarded:
         raise InvalidClientIdentity()
     selected = None
@@ -45,7 +45,13 @@ def resolve_client_identity(remote_address, forwarded=None, trusted_proxy_addres
             selected = selected[1:-1]
     if selected and selected.startswith("[") and selected.endswith("]"):
         selected = selected[1:-1]
-    return {"digest": client_digest(selected), "source": "forwarded"}
+    client_digest(selected)
+    return selected, "forwarded"
+
+
+def resolve_client_identity(remote_address, forwarded=None, trusted_proxy_address=None):
+    address, source = resolve_client_address(remote_address, forwarded, trusted_proxy_address)
+    return {"digest": client_digest(address), "source": source}
 
 
 class PostgresWorkerHostIdentity:

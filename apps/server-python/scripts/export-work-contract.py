@@ -1,8 +1,8 @@
 """Export real Work request/response/error contracts without starting services."""
 
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from fastapi import FastAPI
@@ -20,14 +20,6 @@ def contract() -> dict:
         allowed_origins=("https://openbot.invalid",),
     )
     schema = app.openapi()
-    schema["paths"] = {
-        path: {method: schema["paths"][path][method]}
-        for path, method in (
-            ("/api/v1/tasks", "post"),
-            ("/api/v1/tasks/{task_id}", "get"),
-            ("/api/v1/tasks/{task_id}/cancel", "post"),
-        )
-    }
     return schema
 
 

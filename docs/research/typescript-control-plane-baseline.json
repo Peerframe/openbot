@@ -1,0 +1,194 @@
+{
+  "node": "v24.21.0",
+  "platform": "darwin",
+  "arch": "arm64",
+  "kind": "installed-desktop-native-controller-api-only",
+  "results": [
+    {
+      "trial": 1,
+      "mode": "fresh-profile",
+      "readyMs": 5594,
+      "serverMs": 4394,
+      "samples": [
+        {
+          "nativeChildrenRssKiB": 170192,
+          "pythonRssKiB": 120240,
+          "controllerRssKiB": 98960,
+          "childCount": 8
+        },
+        {
+          "nativeChildrenRssKiB": 170208,
+          "pythonRssKiB": 120240,
+          "controllerRssKiB": 99696,
+          "childCount": 8
+        },
+        {
+          "nativeChildrenRssKiB": 170208,
+          "pythonRssKiB": 120240,
+          "controllerRssKiB": 99728,
+          "childCount": 8
+        }
+      ]
+    },
+    {
+      "trial": 1,
+      "mode": "restart",
+      "readyMs": 4003,
+      "serverMs": 3701,
+      "samples": [
+        {
+          "nativeChildrenRssKiB": 165712,
+          "pythonRssKiB": 120160,
+          "controllerRssKiB": 96416,
+          "childCount": 8
+        },
+        {
+          "nativeChildrenRssKiB": 165712,
+          "pythonRssKiB": 120160,
+          "controllerRssKiB": 96416,
+          "childCount": 8
+        },
+        {
+          "nativeChildrenRssKiB": 165712,
+          "pythonRssKiB": 120160,
+          "controllerRssKiB": 96752,
+          "childCount": 8
+        }
+      ]
+    },
+    {
+      "trial": 2,
+      "mode": "fresh-profile",
+      "readyMs": 4897,
+      "serverMs": 3833,
+      "samples": [
+        {
+          "nativeChildrenRssKiB": 169984,
+          "pythonRssKiB": 120192,
+          "controllerRssKiB": 74624,
+          "childCount": 8
+        },
+        {
+          "nativeChildrenRssKiB": 169984,
+          "pythonRssKiB": 120192,
+          "controllerRssKiB": 77984,
+          "childCount": 8
+        },
+        {
+          "nativeChildrenRssKiB": 169984,
+          "pythonRssKiB": 120192,
+          "controllerRssKiB": 78064,
+          "childCount": 8
+        }
+      ]
+    },
+    {
+      "trial": 2,
+      "mode": "restart",
+      "readyMs": 3992,
+      "serverMs": 3688,
+      "samples": [
+        {
+          "nativeChildrenRssKiB": 165776,
+          "pythonRssKiB": 120160,
+          "controllerRssKiB": 78288,
+          "childCount": 8
+        },
+        {
+          "nativeChildrenRssKiB": 165776,
+          "pythonRssKiB": 120160,
+          "controllerRssKiB": 72880,
+          "childCount": 8
+        },
+        {
+          "nativeChildrenRssKiB": 165776,
+          "pythonRssKiB": 120160,
+          "controllerRssKiB": 75984,
+          "childCount": 8
+        }
+      ]
+    },
+    {
+      "trial": 3,
+      "mode": "fresh-profile",
+      "readyMs": 4954,
+      "serverMs": 3879,
+      "samples": [
+        {
+          "nativeChildrenRssKiB": 169840,
+          "pythonRssKiB": 119872,
+          "controllerRssKiB": 76384,
+          "childCount": 8
+        },
+        {
+          "nativeChildrenRssKiB": 169840,
+          "pythonRssKiB": 119872,
+          "controllerRssKiB": 76384,
+          "childCount": 8
+        },
+        {
+          "nativeChildrenRssKiB": 169840,
+          "pythonRssKiB": 119872,
+          "controllerRssKiB": 76384,
+          "childCount": 8
+        }
+      ]
+    },
+    {
+      "trial": 3,
+      "mode": "restart",
+      "readyMs": 3966,
+      "serverMs": 3669,
+      "samples": [
+        {
+          "nativeChildrenRssKiB": 165360,
+          "pythonRssKiB": 119792,
+          "controllerRssKiB": 76704,
+          "childCount": 8
+        },
+        {
+          "nativeChildrenRssKiB": 165360,
+          "pythonRssKiB": 119792,
+          "controllerRssKiB": 76704,
+          "childCount": 8
+        },
+        {
+          "nativeChildrenRssKiB": 165360,
+          "pythonRssKiB": 119792,
+          "controllerRssKiB": 76704,
+          "childCount": 8
+        }
+      ]
+    }
+  ],
+  "date": "2026-10-06",
+  "applicationVersion": "0.1.0-alpha.9",
+  "os": "macOS 27.0.1 (26A434)",
+  "checkoutHead": "010439bb9002fabb7e1facd8450ee85edbafa309",
+  "checkoutDirty": true,
+  "installedSourceCommit": null,
+  "asarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+  "installedServeSha256": "60e042035b42d522d19c3c5062d2e95f49c6a6d81824bfe6b96e0ceb04ea5b52",
+  "requirementsSha256": "a9455696980733c67a03ef35ea699cf0d04aef8e4e2a9df360dddfd61ff9df4d",
+  "harnessWheelSha256": "19a5af0431d11579e26ea7de73f0efe337f0adaa30810a831736d509af04bd49",
+  "bundleRegularFileBytes": 1211381873,
+  "nativeRuntimeRegularFileBytes": 766100210,
+  "pythonRegularFileBytes": 256379737,
+  "nodeRegularFileBytes": 196895972,
+  "postgresRegularFileBytes": 135051359,
+  "referenceZipBytes": 467530551,
+  "referenceDmgBytes": 653513894,
+  "referenceDmgSha256": "042ce41132fbd35d9c1ac74ebc9644cf741434e7b15ab785c792c2b0a760efa6",
+  "referenceDmgChecksumVerified": true,
+  "guiStartupMeasured": true,
+  "activeTemporalMeasured": false,
+  "guiStartup": {
+    "method": "CUA launch request to AX observation; includes automation overhead",
+    "samples": 1,
+    "renderObservedMs": 1628,
+    "connectedWorkspaceObservedMs": 18743,
+    "connectedWorkspace": true,
+    "polls": 178,
+    "profile": "existing installed profile; authorized restart; no transcript or screenshot retained"
+  }
+}

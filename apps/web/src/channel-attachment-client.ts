@@ -197,23 +197,9 @@ export async function updateAttachment(
     signal ?? new AbortController().signal,
   );
 }
-export interface AttachmentPurgeResult {
-  id: string;
-  purged: true;
-  freedBytes: number;
-}
+export type AttachmentPurgeResult = import("@openbot/protocol").AttachmentPurgeResult;
 
-export interface TrashCleanupResult {
-  removed: number;
-  retained: Array<{
-    id: string;
-    name: string;
-    referenceCount: { messages: number; tasks: number };
-  }>;
-  retainedCount: number;
-  retainedHasMore: boolean;
-  freedBytes: number;
-}
+export type TrashCleanupResult = import("@openbot/protocol").TrashCleanupResult;
 
 async function trashCommand<T>(url: string, init: RequestInit, limit: number): Promise<T> {
   const response = await fetch(url, {

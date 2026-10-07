@@ -28,6 +28,12 @@ and notices.
   Its LICENSE remains in production dependencies; the MIT terms are reproduced below.
   See [plugin research](docs/research/third-party-mcp-plugins.md).
 
+- Fastify5.12.5 — Copyright (c) 2016-present The Fastify team; MIT License.
+- `@fastify/reply-from`12.6.5 — Copyright (c) 2017-present Matteo Collina and The Fastify team;
+  MIT License. The P2 TS entry uses released public APIs without copied upstream code.
+  Dependency LICENSE files remain in the production closure and the MIT terms below apply.
+  See [forwarding review](docs/research/typescript-control-plane-p0.md#p2-forwarding-adapter-review-2026-10-06).
+
 - Vercel AI SDK `ai` 7.0.93, `@ai-sdk/openai` 4.0.66, `@ai-sdk/anthropic` 4.0.53, `@ai-sdk/moonshotai` 3.0.49,
   `@ai-sdk/provider` 4.0.10 / 4.0.14, `@ai-sdk/provider-utils` 5.0.36 / 5.0.40 and the SDK's transitive
   `@ai-sdk/gateway` 4.0.75 — Copyright 2023 Vercel, Inc.; Apache License 2.0.

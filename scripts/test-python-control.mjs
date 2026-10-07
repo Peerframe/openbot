@@ -60,6 +60,7 @@ const controlTests = [
   "tests/test_approval_settings.py",
 
   "tests/test_owner_preferences.py",
+  "tests/test_workspace_primary_bot.py",
   "tests/test_http_input_lifecycle.py",
   "tests/test_work_sources_postgres.py",
   "tests/test_work_command_codec.py",

@@ -65,12 +65,13 @@ def register_worker_host_routes(app: FastAPI, identity, registry, *, secure_cook
     @app.post("/api/v1/nodes/enroll", status_code=201, operation_id="exchangeWorkerEnrollment")
     async def enroll(request: Request):
         value = await payload(request, ExchangeInput)
-        # ASGI must see the direct socket peer. Uvicorn proxy_headers stays disabled; only
-        # this existing one-proxy RFC 7239 policy may consume forwarding metadata.
+        # Uvicorn proxy_headers stays disabled. The optional private ASGI adapter
+        # resolves the same single-hop policy before supplying this internal marker.
         try:
             forwarded = request.headers.getlist("forwarded")
-            client = resolve_client_identity(request.client.host if request.client else None,
-                                            ",".join(forwarded) if forwarded else None, trusted_proxy_address)
+            client = request.scope.get("openbot.proxy_client") or resolve_client_identity(
+                request.client.host if request.client else None,
+                ",".join(forwarded) if forwarded else None, trusted_proxy_address)
         except InvalidClientIdentity:
             raise HTTPException(400, "Invalid client identity.") from None
         try:

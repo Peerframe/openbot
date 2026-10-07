@@ -1,0 +1,2563 @@
+{
+  "source": "Real serve.py product mode OpenAPI on disposable PostgreSQL, without optional Temporal/browser/command installation",
+  "scope": "Default product HTTP registrations; Work/core, resource bytes/DOCX, lifecycle/approval/audit, Employee/automation, Node identity/socket, Run/native Work artifact bytes, real MCP install/content, synthetic-peer browser observation/maintenance, unsigned Employee export/import and SSE change/coalescing/tombstone/session revocation verified; separate publisher suite qualifies configured signed v1/v2 HTTP and activation; actual Web/Desktop settings and Owner attachment composition verified with Node Fetch; activation registers200 but returns201 on creation and200 on replay; synthetic publication/peers do not qualify Worker/browser execution; successful legacy/native plugin decisions, trusted browser/conditional installations, provider success, saturation backpressure and complete consumer parity remain pending",
+  "consumerInventory": [
+    {
+      "surface": "Web HTTP, SSE, upload and media",
+      "sources": [
+        {
+          "path": "apps/web/src/api.ts",
+          "sha256": "1a95540b53561576105f93dfc27083926bff558f0cd1ad48e7b53375a8454eb4"
+        },
+        {
+          "path": "apps/web/src/work-api.ts",
+          "sha256": "19de65c273d9a8a117c62171facd34b3ab123a39fc599903e5bada5216a7ee1a"
+        },
+        {
+          "path": "apps/web/src/native-task-api.ts",
+          "sha256": "0975c8bf6d5c992686337bf452354cda00c30d6b20e57f9410dc67bb108f91be"
+        },
+        {
+          "path": "apps/web/src/destination-api.ts",
+          "sha256": "72c5f5736e17b6998621a5febc6724ee7a94850bb82de1c2ecb96e50412d77b4"
+        },
+        {
+          "path": "apps/web/src/plugin-api.ts",
+          "sha256": "403391db80e10fad06dc37b28c6661fede935dbd82f3527e978bee6b4fc68724"
+        },
+        {
+          "path": "apps/web/src/event-stream.ts",
+          "sha256": "d0b52149dde1a1d7811c318de27ae36cde8e40e012c695a746db0407e87e11b1"
+        },
+        {
+          "path": "apps/web/src/composer-context.ts",
+          "sha256": "c05621c56426773c17b5ef4035cd245c3caf56f3ce3507fa65e0b65675baee1a"
+        },
+        {
+          "path": "apps/web/src/channel-attachment-client.ts",
+          "sha256": "8511906efb7fe235cdcbd4af1930b508c1593b9a46aeb7f653771c6107c65452"
+        },
+        {
+          "path": "apps/web/src/components/PluginManagerPanel.tsx",
+          "sha256": "0cefdddaa47407dc0a01a6f4649169ac50af78884d143f33fc237cc11b465934"
+        },
+        {
+          "path": "apps/web/src/components/PluginInstallForm.tsx",
+          "sha256": "da15645fbf53a4ae5953b499a26b4849ee7f4786acc99e994c61da527b628a82"
+        },
+        {
+          "path": "apps/web/src/components/PluginPlatformPanels.tsx",
+          "sha256": "41269ac76ef320329b302e9d89475ba61b7fa5a8cab12b5366c505b3d9df4ca5"
+        },
+        {
+          "path": "apps/web/src/components/PluginCallApprovals.tsx",
+          "sha256": "885c0c5bb9ac5bbe5a1d269a99858d88b00c7e59b96a2e98e3317334418f6ad3"
+        },
+        {
+          "path": "apps/web/src/components/AttachmentsManager.tsx",
+          "sha256": "a5a0d56d009c75724aa25f3805fda87eb31f3a952f9b44fef0b0dcf7f5166136"
+        },
+        {
+          "path": "apps/web/src/components/ShareConversationDialog.tsx",
+          "sha256": "02d0eb52472dd96ca5ed96a40202596016d0dd8fc9c838696357f029058e3885"
+        },
+        {
+          "path": "apps/web/src/components/ArtifactCard.tsx",
+          "sha256": "d5819d86c7a149d36d1ff3dbe4c628a5abf892811c945104e176d2e88b14cc7f"
+        },
+        {
+          "path": "apps/web/src/components/TaskCard.tsx",
+          "sha256": "f90437bc7ac4862dd0aadf04cb18622b2da4f7ba55aee05731cd26105aa6a457"
+        },
+        {
+          "path": "apps/web/src/components/TaskSheet.tsx",
+          "sha256": "ebe076f459ae795d5157871e620e894941e7c4cb0b54c80bb6b063276a7cabfe"
+        },
+        {
+          "path": "apps/web/src/components/WorkTasksScreen.tsx",
+          "sha256": "a3e3e4add9aeb952bf4934062ab8f30afb144b53e7d2a2f9db6386b2ad9155b2"
+        }
+      ],
+      "scope": "Direct and composed product requests, two polling EventSources, channel/Owner raw uploads and img/href downloads; native Work artifacts/actions remain display-only in bundled Web; preview/demo interceptors are synthetic and excluded."
+    },
+    {
+      "surface": "Desktop HTTP and local Worker bridge",
+      "sources": [
+        {
+          "path": "apps/desktop/src/server-proxy.ts",
+          "sha256": "7ce85da9849f184785db6d3ad882012fde7cbd6572f1d7af0d5b30990f3da890"
+        },
+        {
+          "path": "apps/desktop/src/desktop-server-actions.ts",
+          "sha256": "dd8fc869470d155d3238cfac581fbd38b57ac977375e66a2062b766b840c6b5d"
+        },
+        {
+          "path": "apps/desktop/src/report-save.ts",
+          "sha256": "2ee5a4a028e617b6658e82f69f5aa7672f0603633f91e7fcd37da23300b10d5e"
+        },
+        {
+          "path": "apps/desktop/src/main.ts",
+          "sha256": "787cabc125cb45e37858bfc39aeaaa8999b272ee5b39bc9965fa783934c779e6"
+        },
+        {
+          "path": "apps/desktop/src/python-server.ts",
+          "sha256": "9c0e3ce4865f08f4ef507d0740b73f47b50139b91c8673b36e1053147db287cc"
+        },
+        {
+          "path": "apps/desktop/src/native-server.ts",
+          "sha256": "780b18d32adc5f38613e707de56de5a4b2c88d4c90f228df1f8ab0f29852bd8c"
+        },
+        {
+          "path": "apps/desktop/src/local-worker-controller.ts",
+          "sha256": "215523d0930892cfcfb8976baca83b30907b30c5cc63d27143e44407b2e1e138"
+        }
+      ],
+      "scope": "Web renderer reuses the public API through one dedicated Session; narrow method/header/body/Origin/redirect rules, private cookies, saves/health/login/enrollment and Node socket URL derivation. Node Fetch qualifies settings/Owner attachment composition; installed Electron/platform qualification is separate."
+    },
+    {
+      "surface": "Node Worker HTTP and WebSocket",
+      "sources": [
+        {
+          "path": "apps/node/src/node-identity.ts",
+          "sha256": "4b055e27ec9286f355bc1295f82d2f3023cd594e904efb4165f671ba7044a6de"
+        },
+        {
+          "path": "apps/node/src/client.ts",
+          "sha256": "daf1d86a9252ae57820fa685443b964f169f9f8160d7af6e8cfb0204e95cc30a"
+        },
+        {
+          "path": "apps/node/src/run-session.ts",
+          "sha256": "bc971370b341cb39bb268738d54192f6c8fe0425f75f522115a40600163b2241"
+        },
+        {
+          "path": "apps/node/src/command-relay.ts",
+          "sha256": "2aab5517a560f0cebeb0fc42ec5be45935fcebc800d89f7079779e76bc251906"
+        },
+        {
+          "path": "apps/node/src/browser-host.ts",
+          "sha256": "6ed9fa5d98ac248fd71b348d9e8804a021f184dd3a014d8a4548d3958b9c1b06"
+        }
+      ],
+      "scope": "POST enrollment and /ws/nodes use retained shared identity/Run/browser/command wire schemas; synthetic peers prove identity/observation only. Runtime lifecycle/replay comparisons remain separate from real executor/Temporal execution."
+    },
+    {
+      "surface": "Native Worker Host enrollment and supervision",
+      "sources": [
+        {
+          "path": "apps/worker-host-macos/Sources/OpenBotWorkerHostCore/Enrollment.swift",
+          "sha256": "093c84812e17d792a2eefc34e5ee99335181b3472642db1f9e59638e72a62590"
+        },
+        {
+          "path": "apps/worker-host-macos/Sources/OpenBotWorkerHostCore/Models.swift",
+          "sha256": "e138d38ba33e09e468d0fc12a7b12416c753d5ec768c3fcdb58f3946334e714d"
+        },
+        {
+          "path": "apps/worker-host-macos/Sources/OpenBotWorkerHostCore/ChildSupervisor.swift",
+          "sha256": "b39cecee4b4f755e01ea848c7efc5fc8c20e61fd0813ca09d1f7ca4c5986e3cb"
+        },
+        {
+          "path": "apps/worker-host-windows/OpenBot.WorkerHost.Windows/NodeLaunchPlan.cs",
+          "sha256": "0af7c528be23650a7e6e0976d2efeb912e093d8605e39ce03816b3cedc8ebb87"
+        }
+      ],
+      "scope": "macOS URLSession directly consumes POST enrollment with strict201/JSON/8KiB/identity bounds; native supervisors forward existing Node configuration. Windows delegates Server transport to the Node client; no extra native HTTP implementation was found. Source review is not target-platform execution."
+    }
+  ],
+  "serviceComposition": [
+    {
+      "source": "apps/server-python/src/openbot_server/app.py",
+      "scope": "auth/identity/conversation/profile/task/run-command/Work/product registrars are present in product mode; read-only and staged authority modes intentionally omit groups."
+    },
+    {
+      "source": "apps/server-python/scripts/serve.py",
+      "scope": "Publisher changes bytes/trust on existing portability routes. Temporal/browser/command configurations alter trusted Work services and /ws/nodes messages; they are not additional default HTTP paths. Their successful execution/composition remains separately qualified."
+    },
+    {
+      "source": "apps/server-python/src/openbot_server/product_control.py",
+      "scope": "Attachment/extension/knowledge/plugin/browser registrations plus workspace/channel SSE and optional Worker registry WebSocket; current product composition already supplies the registry and all121 default HTTP operations."
+    }
+  ],
+  "additionalSurfaces": [
+    {
+      "transport": "SSE",
+      "path": "/api/v1/workspace/events",
+      "source": "apps/server-python/src/openbot_server/product_control.py",
+      "status": "real ready/heartbeat/reconnect/abort/change invalidation/session revocation verified; saturation backpressure/mixed-entry pending"
+    },
+    {
+      "transport": "SSE",
+      "path": "/api/v1/channels/{channel_id}/events",
+      "source": "apps/server-python/src/openbot_server/product_control.py",
+      "status": "real ready/heartbeat/reconnect/abort/change/coalescing/tombstone/session revocation verified; saturation backpressure/mixed-entry pending"
+    },
+    {
+      "transport": "WebSocket",
+      "path": "/ws/nodes",
+      "source": "apps/server-python/src/openbot_server/worker_host_routes.py",
+      "status": "real bootstrap/identity/heartbeat/credential rotation/revocation verified with synthetic peers; Worker execution and mixed-entry parity pending"
+    }
+  ],
+  "routes": [
+    {
+      "method": "POST",
+      "path": "/api/v1/actions/{action_id}/decision",
+      "operationId": "decideWorkAction",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkSnapshot"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Work"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/actions/{action_id}/reconcile",
+      "operationId": "requestWorkReconciliation",
+      "responseSchema": {
+        "202": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkReconciliation"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Work"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/approvals/{approval_id}/decision",
+      "operationId": "endpoint_api_v1_approvals__approval_id__decision_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/artifacts/{artifact_id}",
+      "operationId": "downloadWorkArtifact",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response"
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Work"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/artifacts/{artifact_id}/content",
+      "operationId": "endpoint_api_v1_artifacts__artifact_id__content_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/audit",
+      "operationId": "endpoint_api_v1_audit_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/audit/export",
+      "operationId": "endpoint_api_v1_audit_export_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "operationId": "loginOwner",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginResponse"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "operationId": "logoutOwner",
+      "responseSchema": {
+        "204": {
+          "description": "Successful Response"
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/password",
+      "operationId": "changeOwnerPassword",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChangeResponse"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/session",
+      "operationId": "getOwnerSession",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/AnonymousSession"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AuthenticatedSession"
+                  }
+                ],
+                "title": "Response Getownersession",
+                "discriminator": {
+                  "propertyName": "authenticated",
+                  "mapping": {
+                    "False": "#/components/schemas/AnonymousSession",
+                    "True": "#/components/schemas/AuthenticatedSession"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/sessions",
+      "operationId": "listOwnerSessions",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnerSessionsResponse"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/sessions/revoke-others",
+      "operationId": "revokeOtherOwnerSessions",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeSessionsResponse"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/automations",
+      "operationId": "endpoint_api_v1_automations_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Automation"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/automations",
+      "operationId": "endpoint_api_v1_automations_post",
+      "responseSchema": {
+        "201": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Automation"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/automations/{automation_id}",
+      "operationId": "endpoint_api_v1_automations__automation_id__delete",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Automation"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/automations/{automation_id}",
+      "operationId": "endpoint_api_v1_automations__automation_id__patch",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Automation"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/bootstrap",
+      "operationId": "endpoint_api_v1_bootstrap_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/bots",
+      "operationId": "listBots",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BotsResponse"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bots",
+      "operationId": "createBot",
+      "responseSchema": {
+        "201": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BotResponse"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/bots/{bot_id}",
+      "operationId": "endpoint_api_v1_bots__bot_id__delete",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/bots/{bot_id}",
+      "operationId": "endpoint_api_v1_bots__bot_id__patch",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/bots/{bot_id}/appearance",
+      "operationId": "updateBotAppearance",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppearanceResult"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Employee"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bots/{bot_id}/browser",
+      "operationId": "openEmployeeBrowser",
+      "responseSchema": {
+        "201": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Browser"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bots/{bot_id}/browser/maintenance",
+      "operationId": "maintainEmployeeBrowser",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Browser"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bots/{bot_id}/conversation",
+      "operationId": "getOrCreateDirectConversation",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChannelResponse"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/bots/{bot_id}/export",
+      "operationId": "endpoint_api_v1_bots__bot_id__export_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Employee portability"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/bots/{bot_id}/export/preview",
+      "operationId": "endpoint_api_v1_bots__bot_id__export_preview_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Employee portability"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/bots/{bot_id}/knowledge-proposals",
+      "operationId": "endpoint_api_v1_bots__bot_id__knowledge_proposals_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Employee"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bots/{bot_id}/knowledge-proposals/{proposal_id}/review",
+      "operationId": "endpoint_api_v1_bots__bot_id__knowledge_proposals__proposal_id__review_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Employee"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bots/{bot_id}/memories",
+      "operationId": "endpoint_api_v1_bots__bot_id__memories_post",
+      "responseSchema": {
+        "201": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Employee"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/bots/{bot_id}/memories/{memory_id}",
+      "operationId": "endpoint_api_v1_bots__bot_id__memories__memory_id__delete",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Employee"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/bots/{bot_id}/memories/{memory_id}",
+      "operationId": "endpoint_api_v1_bots__bot_id__memories__memory_id__patch",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Employee"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/bots/{bot_id}/model",
+      "operationId": "endpoint_api_v1_bots__bot_id__model_patch",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/bots/{bot_id}/profile",
+      "operationId": "endpoint_api_v1_bots__bot_id__profile_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Employee"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/bots/{bot_id}/profile",
+      "operationId": "updateEmployeeProfileDetails",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileMutationResult"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Employee"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bots/{bot_id}/skills",
+      "operationId": "endpoint_api_v1_bots__bot_id__skills_post",
+      "responseSchema": {
+        "201": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Employee"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bots/{bot_id}/skills/{skill_id}/state",
+      "operationId": "endpoint_api_v1_bots__bot_id__skills__skill_id__state_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Employee"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bots/{bot_id}/skills/import",
+      "operationId": "endpoint_api_v1_bots__bot_id__skills_import_post",
+      "responseSchema": {
+        "201": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Employee"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bots/quick",
+      "operationId": "quickCreateBot",
+      "responseSchema": {
+        "201": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuickBotResponse"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/browser-sessions/{session_id}",
+      "operationId": "closeEmployeeBrowser",
+      "responseSchema": {
+        "204": {
+          "description": "Successful Response"
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Browser"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/browser-sessions/{session_id}/commands",
+      "operationId": "commandEmployeeBrowser",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Browser"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/channels",
+      "operationId": "listChannels",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChannelsResponse"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/channels",
+      "operationId": "createChannel",
+      "responseSchema": {
+        "201": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChannelResponse"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/channels/{channel_id}",
+      "operationId": "endpoint_api_v1_channels__channel_id__delete",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/channels/{channel_id}",
+      "operationId": "endpoint_api_v1_channels__channel_id__patch",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/channels/{channel_id}/attachments",
+      "operationId": "endpoint_api_v1_channels__channel_id__attachments_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/channels/{channel_id}/attachments",
+      "operationId": "endpoint_api_v1_channels__channel_id__attachments_post",
+      "responseSchema": {
+        "201": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/channels/{channel_id}/attachments/{attachment_id}",
+      "operationId": "endpoint_api_v1_channels__channel_id__attachments__attachment_id__delete",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/channels/{channel_id}/attachments/{attachment_id}",
+      "operationId": "endpoint_api_v1_channels__channel_id__attachments__attachment_id__get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/channels/{channel_id}/attachments/{attachment_id}/content",
+      "operationId": "endpoint_api_v1_channels__channel_id__attachments__attachment_id__content_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/channels/{channel_id}/attachments/{attachment_id}/process",
+      "operationId": "endpoint_api_v1_channels__channel_id__attachments__attachment_id__process_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/channels/{channel_id}/attachments/{attachment_id}/purge",
+      "operationId": "endpoint_api_v1_channels__channel_id__attachments__attachment_id__purge_delete",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/channels/{channel_id}/attachments/{attachment_id}/references",
+      "operationId": "endpoint_api_v1_channels__channel_id__attachments__attachment_id__references_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/channels/{channel_id}/attachments/{attachment_id}/restore",
+      "operationId": "endpoint_api_v1_channels__channel_id__attachments__attachment_id__restore_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/channels/{channel_id}/attachments/cleanup",
+      "operationId": "endpoint_api_v1_channels__channel_id__attachments_cleanup_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/channels/{channel_id}/bots",
+      "operationId": "joinBotToChannel",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChannelResponse"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/channels/{channel_id}/bots/{bot_id}",
+      "operationId": "endpoint_api_v1_channels__channel_id__bots__bot_id__delete",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/channels/{channel_id}/bots/{bot_id}/plugin-content",
+      "operationId": "endpoint_api_v1_channels__channel_id__bots__bot_id__plugin_content_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Plugins"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/channels/{channel_id}/bots/{bot_id}/plugin-content",
+      "operationId": "endpoint_api_v1_channels__channel_id__bots__bot_id__plugin_content_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Plugins"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/channels/{channel_id}/events",
+      "operationId": "channel_events_api_v1_channels__channel_id__events_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/channels/{channel_id}/messages",
+      "operationId": "listMessages",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessagesResponse"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/channels/{channel_id}/messages",
+      "operationId": "submitTask",
+      "responseSchema": {
+        "201": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitTaskResult"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/channels/{channel_id}/messages/{message_id}/reactions",
+      "operationId": "endpoint_api_v1_channels__channel_id__messages__message_id__reactions_put",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/channels/{channel_id}/reactions",
+      "operationId": "endpoint_api_v1_channels__channel_id__reactions_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/channels/{channel_id}/read",
+      "operationId": "endpoint_api_v1_channels__channel_id__read_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/channels/{channel_id}/runs",
+      "operationId": "listRuns",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunsResponse"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/channels/unread",
+      "operationId": "endpoint_api_v1_channels_unread_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/employees/import/activate",
+      "operationId": "endpoint_api_v1_employees_import_activate_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Employee portability"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/employees/import/preview",
+      "operationId": "endpoint_api_v1_employees_import_preview_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Employee portability"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/model-connections",
+      "operationId": "endpoint_api_v1_model_connections_post",
+      "responseSchema": {
+        "201": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/model-connections/{connection_id}",
+      "operationId": "endpoint_api_v1_model_connections__connection_id__delete",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/model-connections/{connection_id}",
+      "operationId": "endpoint_api_v1_model_connections__connection_id__patch",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/model-connections/{connection_id}/models",
+      "operationId": "endpoint_api_v1_model_connections__connection_id__models_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/model-connections/{connection_id}/test",
+      "operationId": "endpoint_api_v1_model_connections__connection_id__test_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/model-connections/verify",
+      "operationId": "endpoint_api_v1_model_connections_verify_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/model-services",
+      "operationId": "endpoint_api_v1_model_services_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/node-identities",
+      "operationId": "listWorkerNodeIdentities",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Node identity"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/nodes",
+      "operationId": "listWorkerNodes",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Node identity"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/nodes/{node_id}/revoke",
+      "operationId": "revokeWorkerIdentity",
+      "responseSchema": {
+        "204": {
+          "description": "Successful Response"
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Node identity"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/nodes/enroll",
+      "operationId": "exchangeWorkerEnrollment",
+      "responseSchema": {
+        "201": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Node identity"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/nodes/enrollment-tokens",
+      "operationId": "issueWorkerEnrollmentToken",
+      "responseSchema": {
+        "201": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Node identity"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/plugin-calls/{call_id}/decision",
+      "operationId": "endpoint_api_v1_plugin_calls__call_id__decision_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Plugins"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/plugins",
+      "operationId": "endpoint_api_v1_plugins_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Plugins"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/plugins",
+      "operationId": "endpoint_api_v1_plugins_post",
+      "responseSchema": {
+        "201": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Plugins"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/plugins/{plugin_id}",
+      "operationId": "endpoint_api_v1_plugins__plugin_id__delete",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Plugins"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/plugins/{plugin_id}",
+      "operationId": "endpoint_api_v1_plugins__plugin_id__patch",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Plugins"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/plugins/{plugin_id}/grants/{bot_id}",
+      "operationId": "endpoint_api_v1_plugins__plugin_id__grants__bot_id__put",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Plugins"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/plugins/{plugin_id}/update",
+      "operationId": "endpoint_api_v1_plugins__plugin_id__update_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Plugins"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/plugins/{plugin_id}/update/preview",
+      "operationId": "endpoint_api_v1_plugins__plugin_id__update_preview_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Plugins"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/plugins/catalog",
+      "operationId": "endpoint_api_v1_plugins_catalog_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Plugins"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/plugins/preview",
+      "operationId": "endpoint_api_v1_plugins_preview_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Plugins"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/runs/{run_id}/cancel",
+      "operationId": "cancelNativeRun",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelRunResponse"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/runs/{run_id}/progress",
+      "operationId": "endpoint_api_v1_runs__run_id__progress_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/runs/{run_id}/steer",
+      "operationId": "steerNativeRun",
+      "responseSchema": {
+        "202": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SteeringResponse"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/settings/approvals",
+      "operationId": "endpoint_api_v1_settings_approvals_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/settings/approvals",
+      "operationId": "endpoint_api_v1_settings_approvals_put",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/settings/general",
+      "operationId": "endpoint_api_v1_settings_general_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/settings/general",
+      "operationId": "endpoint_api_v1_settings_general_put",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/settings/storage",
+      "operationId": "endpoint_api_v1_settings_storage_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/settings/storage",
+      "operationId": "endpoint_api_v1_settings_storage_put",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/settings/transcription",
+      "operationId": "endpoint_api_v1_settings_transcription_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/settings/transcription",
+      "operationId": "endpoint_api_v1_settings_transcription_put",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/storage",
+      "operationId": "endpoint_api_v1_storage_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/storage/trash/cleanup",
+      "operationId": "endpoint_api_v1_storage_trash_cleanup_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/task-attachments",
+      "operationId": "endpoint_api_v1_task_attachments_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/task-attachments",
+      "operationId": "endpoint_api_v1_task_attachments_post",
+      "responseSchema": {
+        "201": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/task-attachments/{attachment_id}",
+      "operationId": "endpoint_api_v1_task_attachments__attachment_id__delete",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/task-attachments/{attachment_id}",
+      "operationId": "endpoint_api_v1_task_attachments__attachment_id__get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/task-attachments/{attachment_id}/content",
+      "operationId": "endpoint_api_v1_task_attachments__attachment_id__content_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/task-attachments/{attachment_id}/process",
+      "operationId": "endpoint_api_v1_task_attachments__attachment_id__process_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/task-attachments/{attachment_id}/restore",
+      "operationId": "endpoint_api_v1_task_attachments__attachment_id__restore_post",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Models/storage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/tasks",
+      "operationId": "createWorkTask",
+      "responseSchema": {
+        "202": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkSnapshot"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Unauthorized",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          }
+        },
+        "403": {
+          "description": "Forbidden",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "Not Found",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          }
+        },
+        "408": {
+          "description": "Request Timeout",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          }
+        },
+        "409": {
+          "description": "Conflict",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          }
+        },
+        "413": {
+          "description": "Request Entity Too Large",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Unprocessable Entity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Work"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}",
+      "operationId": "getWorkTask",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkSnapshot"
+              }
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          },
+          "description": "Unauthorized"
+        },
+        "404": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          },
+          "description": "Not Found"
+        },
+        "409": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          },
+          "description": "Conflict"
+        },
+        "422": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          },
+          "description": "Unprocessable Entity"
+        }
+      },
+      "contractOwner": "TS Work"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/cancel",
+      "operationId": "cancelWorkTask",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkSnapshot"
+              }
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          },
+          "description": "Unauthorized"
+        },
+        "403": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          },
+          "description": "Forbidden"
+        },
+        "404": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          },
+          "description": "Not Found"
+        },
+        "408": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          },
+          "description": "Request Timeout"
+        },
+        "409": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          },
+          "description": "Conflict"
+        },
+        "413": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          },
+          "description": "Request Entity Too Large"
+        },
+        "422": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkError"
+              }
+            }
+          },
+          "description": "Unprocessable Entity"
+        }
+      },
+      "contractOwner": "TS Work"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/corrections",
+      "operationId": "correctWorkTask",
+      "responseSchema": {
+        "202": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkCorrection"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Work"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/scope",
+      "operationId": "getNativeWorkTaskScope",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Work"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/workspace",
+      "operationId": "endpoint_api_v1_workspace_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/workspace/events",
+      "operationId": "workspace_events_api_v1_workspace_events_get",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/workspace/primary-bot",
+      "operationId": "endpoint_api_v1_workspace_primary_bot_put",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Control core"
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "operationId": "getHealth",
+      "responseSchema": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {}
+            }
+          }
+        }
+      },
+      "contractOwner": "TS Lifecycle/control"
+    }
+  ]
+}

@@ -91,3 +91,80 @@ as `argv[2]`, and canonicalize the temporary root. Keep the same15/20-second bou
 assertions. Require no spawn error, natural exit0, a marker after client/server closure and no
 standalone-entry output. No SDK, sample source, lifecycle, dependency or privilege change is needed.
 The two real-loopback cases passed locally after this repair; actual Windows CI remains required.
+
+## Express proxy trust transitive patch (2026-10-06)
+
+The integrated migration candidate's required production npm audit found
+[GHSA-jqcg-44mw-7w3h](https://github.com/advisories/GHSA-jqcg-44mw-7w3h), critical, in
+`@openbot/mcp-example` → MCP SDK1.30.0 → Express5.2.1 → proxy-addr2.0.7.
+This identifies a dependency gate; it does not establish that OpenBot configures an exploitable
+trust subnet. The P2 entry uses its separate exact loopback/private-peer policy.
+
+Select released MIT [proxy-addr2.0.8](https://github.com/jshttp/proxy-addr/tree/a11ad82545698af5c33e59f3ed0b52eab79bf610),
+exact tag commit `a11ad82545698af5c33e59f3ed0b52eab79bf610`. Reviewed the release, index.js,
+package metadata, upstream single/multi-subnet and mapped/native-address regressions, and open
+issues. The patch retains the public API, Node >=0.10 support, forwarded0.2.0 and ipaddr.js1.9.1;
+Express's existing `^2.0.7` constraint admits it. Compare the maintained security patch with
+rewriting every caller's CIDR configuration or replacing the SDK/HTTP adapter: the patch closes
+the audit gate without a new package, service or authority path. A configuration workaround
+would leave the vulnerable bytes and the audit failure. No upstream implementation is copied.
+
+The npm release has reviewed integrity
+`sha512-5nnx0yGyVUcY6t9RnWcARWtwT9F1D8O9rt08htPvnd49W1IgZtmLkhu9WfMzQj1cFxjHIO6connUNVW5k7AVyQ==`.
+Retain the existing MIT notice. Refresh only this lock entry, verify package identity and
+unchanged transitive dependencies, exercise installed API trust refusals/valid subnets,
+then run the existing MCP scaffold and real owned MCP HTTP contracts plus `npm run check`
+and the production audit. The integrated lock refresh changes only `node_modules/proxy-addr`;
+`npm ci` installed 2.0.8 in the isolated project. Nine installed API checks passed for valid
+IPv4/mapped IPv6 subnets, untrusted addresses, the short mapped-prefix regression and loopback.
+An initial positive check used the wrong `/8` mapped prefix; the corrected valid `/104` check
+passed. The production audit now exits 0 at the high threshold: critical0/high0/moderate2.
+The retained MCP scaffold tests passed in `npm run check` (exit0); the owned TS HTTPS/Python/SQL
+plugin suite passed30 real HTTP/MCP checks after the patch. Full upstream tests were read, not executed. The two previously
+recorded moderate findings remain separate; this patch does not claim a clean all-severity audit.
+
+
+## Integration of accepted advisory patches (2026-10-06)
+
+After the migration source checkpoint `a240b810ea08bde29004e947b0ffc0298ad8dd1a`, main merged
+[Claude's lock-only PR196](https://github.com/Peerframe/openbot/pull/196) as
+`a544a40d045a1e99e512b3282a8805c7f4ca39e0`. Consume that accepted patch rather than replace it.
+The automatic merge changes only the existing fast-uri3.1.7→3.1.8 and ip-address10.7.0→10.7.3
+lock records. The candidate already has exactly main's proxy-addr2.0.8 record. No manifest, dependency
+range, product code or authority change is introduced.
+
+Reviewed official release identities and npm registry integrity:
+
+- BSD-3-Clause [fast-uri3.1.8](https://github.com/fastify/fast-uri/tree/ead3ab7bb134c989e972c8174632d0670023f269),
+  commit `ead3ab7bb134c989e972c8174632d0670023f269`, integrity
+  `sha512-GZMtZUTNRpOVIECoXwLNZS5xUGE+mVNbTB8h/7Rwh2TFWcBQiPzTgyZi05BF9UMZKkLJv8XBRJTlU7zg8+ZfMg==`.
+  [GHSA-hrr3-gc8f-f4qj](https://github.com/fastify/fast-uri/security/advisories/GHSA-hrr3-gc8f-f4qj)
+  identifies3.1.8 as the patched3.x release for percent-encoded host case normalization.
+  [GHSA-jvvf-x445-j334](https://github.com/fastify/fast-uri/security/advisories/GHSA-jvvf-x445-j334)
+  affects4.1.3–4.1.4; it is not a separate3.1.7→3.1.8 mailto fix.
+- MIT [ip-address10.7.3](https://github.com/beaugunderson/ip-address/tree/c7f838eeca573fa14838f3f18c0cfadcc719dcb9),
+  commit `c7f838eeca573fa14838f3f18c0cfadcc719dcb9`, integrity
+  `sha512-A1kdq/tSb5QjvKvAMgIoEvDBIgL7qaqVP/jkvSwYYRZ9iEzvPpopxp2wQfu3SuZRHtpHNxMn8Fs0bS+gf5Xmwg==`.
+  Reuse the accepted patch for
+  [cross-family subnet checks](https://github.com/advisories/GHSA-j6r3-76f7-8jcv) and
+  [bounded IPv6 diagnostics](https://github.com/beaugunderson/ip-address/security/advisories/GHSA-h3mg-xc3c-68pw).
+
+The changed consumer assumption matters: PR196's original scope described the oracle, but the
+new P2 Fastify closure also packages fast-uri (verified3.1.7 in the previously qualified native
+payload). ip-address/proxy-addr are absent from that native closure and remain retained developer
+MCP/oracle dependencies. Keep the selected packages/ranges and existing notices; no upstream source
+is copied. Use installed positive/negative API regressions, the existing real TLS/MCP suite,
+`npm run check` and a fresh production audit. Requalify the changed native closure before calling
+that payload current; preserve earlier GUI/overhead observations with their actual package scope.
+
+Installed positive/negative regressions passed12; the fresh production audit exits0 with critical,
+high, moderate, low and informational findings all0. The full repository gate exits0 after this
+lock refresh (33 typecheck tasks/28 cached,27 test tasks/23 cached,19 build tasks/16 cached);
+TS33, Web676, Desktop575/3 platform skips and MCP scaffold2 executed. The full owned mixed HTTPS
+suite passes270 integrated plus19 staged checks, including30 plugin/MCP cases. Native refresh
+replaces only fast-uri on the earlier cold-qualified resources, verifies91 applicable Node versions
+and192 unchanged compiled workspace files, then passes packaged paired-lifecycle smoke. A fresh
+12-start API-only overhead run preserves raw measurements and verifies owned-process/data cleanup.
+These results precede the subsequent full-companion packaging mode source change; upstream package
+suites were read, not executed. The unchanged Preview ASAR's actual safeStorage journey is component
+evidence only and does not qualify Worker registration or the canonical-identity full candidate.

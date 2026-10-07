@@ -87,23 +87,26 @@ def test_auth_and_worker_lifecycle_events_enter_the_existing_audit(fixture):
     assert fixture['ownerPassword'] not in str(authentication)
 
 
-def test_settings_audit_failure_restores_the_previous_private_file(fixture,tmp_path):
-    from openbot_server.model_settings import ModelSettingsService
-    product=OwnerProduct(fixture['dsn'],object_root=tmp_path)
-    product.model=ModelSettingsService(tmp_path/'model')
+def test_connection_audit_failure_rolls_back_private_configuration(fixture,tmp_path):
+    from openbot_server.model_connections import ModelConnectionsService
+    from openbot_server.model_connections_cipher import ModelCredentialCipher
+    connections=ModelConnectionsService(fixture['dsn'],ModelCredentialCipher(bytes(range(32))))
+    product=OwnerProduct(fixture['dsn'],object_root=tmp_path,model_connections=connections)
     app=create_app(PostgresReadStore(fixture['dsn']),owner_name='Owner',secure_cookies=False,
                    allowed_origins=('http://testserver',),product=product)
     with psycopg.connect(fixture['dsn']) as db:
+        before=db.execute('SELECT count(*) FROM model_connections').fetchone()[0]
         db.execute("CREATE FUNCTION c3_reject_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN "
-            "IF NEW.type='SETTINGS_MODEL_UPDATED' THEN RAISE EXCEPTION 'synthetic failure'; END IF; RETURN NEW; END $$")
+            "IF NEW.type='MODEL_CONNECTION_CREATED' THEN RAISE EXCEPTION 'synthetic failure'; END IF; RETURN NEW; END $$")
         db.execute("CREATE TRIGGER c3_reject BEFORE INSERT ON run_events FOR EACH ROW EXECUTE FUNCTION c3_reject_audit()")
     try:
         with TestClient(app) as api:
             api.cookies.set('openbot_session',fixture['token'])
-            response=api.post('/api/v1/settings/model',headers={'Origin':'http://testserver'},json={
-                'provider':'ark','model':'ep-fixture','apiKey':'synthetic-not-a-live-key','revision':None,'agentEnabled':False})
+            response=api.post('/api/v1/model-connections',headers={'Origin':'http://testserver'},json={
+                'presetId':'openai','name':'Rollback fixture','baseUrl':'https://api.openai.com/v1','apiKey':'synthetic-not-a-live-key'})
             assert response.status_code==503,response.text
-            assert asyncio.run(product.model.summary())['status']=='unconfigured'
+        with psycopg.connect(fixture['dsn']) as db:
+            assert db.execute('SELECT count(*) FROM model_connections').fetchone()[0]==before
     finally:
         with psycopg.connect(fixture['dsn']) as db:
             db.execute('DROP TRIGGER c3_reject ON run_events');db.execute('DROP FUNCTION c3_reject_audit()')

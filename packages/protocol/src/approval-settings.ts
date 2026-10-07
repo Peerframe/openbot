@@ -1,9 +1,6 @@
 import { z } from "zod";
 
-const exactId = z
-  .string()
-  .uuid()
-  .refine((v) => v === v.toLowerCase());
+const exactId = z.string().regex(/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/);
 const page = z
   .string()
   .min(1)
@@ -66,7 +63,15 @@ const config = {
     .refine((v) => new Set(v.map((e) => JSON.stringify(e))).size === v.length),
 };
 export const approvalSettingsInputSchema = z
-  .object({ expectedRevision: z.number().int().min(1).max(2147483647), ...config })
+  .object({
+    expectedRevision: z
+      .number()
+      .int()
+      .min(1)
+      .max(2147483647)
+      .meta({ "x-openbot-json-integer-token": true }),
+    ...config,
+  })
   .strict();
 export const approvalSettingsSchema = z
   .object({

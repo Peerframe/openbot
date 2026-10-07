@@ -18,7 +18,7 @@ from openbot_agent_runtime.contracts import ModelStepRequest
 from openbot_server.control_errors import ControlError
 from openbot_server.model_connections import ModelConnectionsService
 from openbot_server.model_connections_cipher import ModelCredentialCipher
-from openbot_server.model_settings import ModelSettingsService
+from product_model_fixtures import DefaultModels
 from openbot_server.product_model import ProductModelError
 from openbot_server.work_files import LocalWorkFiles
 from openbot_server.work_model_receipts import ModelReceipts
@@ -43,11 +43,12 @@ def setup(fixture,tmp_path):
     base=tmp_path.resolve();base.chmod(0o700);(base/'blobs').mkdir(mode=0o700)
     store=PostgresWorkStore(fixture['dsn'])
     receipts=ModelReceipts(store,LocalWorkFiles(base/'blobs'))
-    settings=ModelSettingsService(base/'settings',lambda r:httpx2.Response(200,json={'id':'fixture-model'}))
     connections=ModelConnectionsService(fixture['dsn'],ModelCredentialCipher(bytes(range(32))))
-    f=SimpleNamespace(**fixture,bot=bot,channel=channel,store=store,receipts=receipts,settings=settings,connections=connections,ids=[],calls=[])
+    f=SimpleNamespace(**fixture,bot=bot,channel=channel,store=store,receipts=receipts,settings=None,connections=connections,ids=[],calls=[])
     f.sources=WorkSourceAdmission(store,token_limit=1_000_000)
+    f.settings=DefaultModels(f)
     yield f
+    f.settings.restore()
     with psycopg.connect(f.dsn) as db:
         db.execute('DELETE FROM work_model_receipts WHERE task_id IN (SELECT id FROM work_tasks WHERE bot_id=%s)',(bot,))
         db.execute('DELETE FROM work_sources WHERE task_id IN (SELECT id FROM work_tasks WHERE bot_id=%s)',(bot,))
@@ -79,7 +80,7 @@ def product(f,handler=None,**options):
     def send(req):
         f.calls.append(req)
         return handler(req) if handler else httpx2.Response(200,json=response(req))
-    return ProductWorkModel(f.store,object(),SCOPE,f.settings,f.connections,f.receipts,
+    return ProductWorkModel(f.store,object(),SCOPE,f.connections,f.receipts,
         transport_factory=lambda:httpx2.MockTransport(send),**options)
 
 @pytest.mark.parametrize('profile',['none','model'])
@@ -97,11 +98,11 @@ def test_real_product_sdk_protocol_and_private_provenance(setup,profile):
             result=await product(f).call(b.context,request(),admission_check=admission,before_send=before)
         assert result.text=='Checked answer' and result.usage.input_tokens==10
         assert calls==['admission','send'] and len(f.calls)==1
-        assert f.calls[0].url.path.endswith('/responses' if profile=='none' else '/chat/completions')
+        assert f.calls[0].url.path.endswith('/chat/completions')
         snap=await f.store.snapshot(f.token,b.context.task_id)
         config=snap['actions'][0]['intent']['configuration']
-        assert config['source']==('singleton' if profile=='none' else 'connection')
-        assert set(config)==({'source','revision','provider','model','baseUrl','protocol'} | ({'connectionId'} if profile=='model' else set()))
+        assert config['source']=='connection'
+        assert set(config)=={'source','revision','provider','model','baseUrl','protocol','connectionId'}
         assert KEY not in json.dumps(snap) and 'apiKey' not in json.dumps(snap)
         assert snap['usage']['spentTokens']==14 and snap['actions'][0]['status']=='applied'
     asyncio.run(check())
@@ -161,7 +162,7 @@ def test_receipt_retry_after_config_change_uses_original_without_new_send(setup,
         if profile=='none': await f.settings.save({**CONFIG,'revision':saved['revision'],**({'agentEnabled':False} if change=='disable' else {'apiKey':'synthetic-rotated-key'})})
         else: await f.connections.update(f.token,conn['id'],dict(expectedRevision=1,**({'enabled':False} if change=='disable' else {'apiKey':'synthetic-rotated-key'})))
         def forbidden_transport(): raise AssertionError('Recovery must not construct transport or decrypt current config')
-        service=ProductWorkModel(f.store,object(),SCOPE,f.settings,f.connections,f.receipts,
+        service=ProductWorkModel(f.store,object(),SCOPE,f.connections,f.receipts,
             max_output_tokens=8192,transport_factory=forbidden_transport)
         with binding(b),patch.object(f.settings,'active',AsyncMock(side_effect=AssertionError('No current singleton read'))), \
                 patch.object(f.connections,'resolve_in_transaction',AsyncMock(side_effect=AssertionError('No current key decryption'))):
@@ -272,11 +273,13 @@ def test_final_send_gate_rejects_changed_binding_or_fence_or_membership(setup,ch
     asyncio.run(check())
 
 
-def test_admission_rechecks_singleton_changed_during_callback(setup):
+def test_admission_rechecks_connection_changed_during_callback(setup):
     async def check():
         f=setup;saved=await f.settings.save(CONFIG);b=await bound(f,scope=SCOPE)
         async def admission(db,task,action):
-            await f.settings.save({**CONFIG,'revision':saved['revision'],'apiKey':'synthetic-rotated-key'})
+            # The callback owns the transaction; a second Owner transaction would self-lock.
+            await db.execute('UPDATE model_connections SET revision=revision+1 WHERE id=%s',
+                (f.settings.current['id'],))
             return True
         with binding(b),pytest.raises(WorkConflict,match='configuration_changed'):
             await product(f).call(b.context,request(),admission_check=admission)
@@ -313,4 +316,32 @@ def test_admission_rechecks_actual_sdk_acceptance_in_the_same_transaction(setup)
             persisted=db.execute('SELECT submission_attempt_id FROM work_admissions WHERE run_id=%s',
                 (b.context.run_id,)).fetchone()[0]
         assert persisted==b.facts.start_input['attemptId']
+    asyncio.run(check())
+
+
+def test_c28_queued_default_is_immutable_but_unselected_historical_steps_recheck_current_default(setup):
+    from openbot_server.owner_preferences import OwnerPreferences
+    async def check():
+        f=setup
+        await f.settings.save(CONFIG)
+        first=f.settings.current['id']
+        b=await bound(f,scope=SCOPE)
+        second=await selected(f)
+        prefs=OwnerPreferences(f.dsn,model_connections=f.connections)
+        async def change():
+            previous=await prefs.get(f.token)
+            await prefs.update(f.token,dict(expectedRevision=previous['revision'],timezone=previous['timezone'],defaultModel=dict(connectionId=second['id'],modelId='changed-default')))
+        await change()
+        with binding(b): await product(f).call(b.context,request())
+        assert json.loads(f.calls[0].content)['model']=='fixture-model'
+        assert (await f.store.snapshot(f.token,b.context.task_id))['actions'][0]['intent']['configuration']['connectionId']==first
+        # Simulate a pre-C28 source that never captured a selection.
+        with psycopg.connect(f.dsn) as db: db.execute('UPDATE runs SET model_selection=NULL WHERE id=%s',(b.source.id,))
+        b.activity='historical-next-step'
+        async def switch_back():
+            previous=await prefs.get(f.token)
+            await prefs.update(f.token,dict(expectedRevision=previous['revision'],timezone=previous['timezone'],defaultModel=dict(connectionId=first,modelId='fixture-model')))
+        with binding(b),pytest.raises(WorkConflict,match='model_observation_unknown'):
+            await product(f).call(b.context,request(),before_send=switch_back)
+        assert len(f.calls)==1
     asyncio.run(check())

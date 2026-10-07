@@ -32,7 +32,9 @@ assert b'<html' in request('/')[0].lower()
 _,headers=request('/api/v1/auth/login',{'password':password})
 cookie=headers['Set-Cookie'].split(';')[0];assert cookie.startswith('openbot_session=')
 assert json.loads(request('/api/v1/nodes')[0])['nodes']==[]
-assert json.loads(request('/api/v1/settings/model')[0])['status']=='unconfigured'
+request('/api/v1/settings/model',status=404)
+assert json.loads(request('/api/v1/model-services')[0])['connections']==[]
+assert json.loads(request('/api/v1/settings/transcription')[0])['connectionId'] is None
 record=Path('/var/lib/openbot/smoke-record.json')
 key=Path('/var/lib/openbot/objects/model-connections.key')
 assert len(key.read_bytes())==32 and key.stat().st_mode&0o077==0

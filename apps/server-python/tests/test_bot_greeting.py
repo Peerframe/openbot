@@ -218,6 +218,7 @@ def test_normal_message_created_sse_carries_greeting(world,tmp_path,monkeypatch)
         await greeting.run(world['token'],bot,channel)
         frame=await anext(stream);assert frame.startswith('event: message.created')
         payload=json.loads(frame.partition('data: ')[2]);assert payload['message']['origin']=='greeting'
+        assert set(payload)=={'type','channelId','message'} and payload['channelId']==channel
         assert payload['message']['authorId']==bot and payload['message']['channelId']==channel
         assert (await anext(stream)).startswith('event: channel.ready')
         await stream.aclose()

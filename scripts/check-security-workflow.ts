@@ -210,7 +210,7 @@ export function validateSecurityWorkflow(source: string): void {
   }
 
   const harness = requiredJob(workflow, "harness");
-  hasCommands(
+  const harnessCommands = hasCommands(
     harness,
     [
       "npm run harness:check",
@@ -219,9 +219,33 @@ export function validateSecurityWorkflow(source: string): void {
       "derive-product-lock.py --check",
       "npm run contracts:check",
       "npm run contracts:test",
+      "npm run contracts:http:python",
+      "npm run contracts:http:python -- --suite publisher",
+      "npm run contracts:http:python -- --suite models",
+      "npm run contracts:http:ts",
+      "npm run contracts:http:ts -- --suite publisher",
+      "npm run contracts:http:ts -- --suite models",
+      "npm run contracts:http:tls",
+      "npm run contracts:http:tls -- --suite publisher",
+      "npm run contracts:http:tls -- --suite models",
     ],
     "Harness and contract",
   );
+  for (const command of [
+    "npm run contracts:http:python",
+    "npm run contracts:http:python -- --suite publisher",
+    "npm run contracts:http:python -- --suite models",
+    "npm run contracts:http:ts",
+    "npm run contracts:http:ts -- --suite publisher",
+    "npm run contracts:http:ts -- --suite models",
+    "npm run contracts:http:tls",
+    "npm run contracts:http:tls -- --suite publisher",
+    "npm run contracts:http:tls -- --suite models",
+  ])
+    assert(
+      harnessCommands.split("\n").some((line) => line.trim() === command),
+      `Harness requires the complete contract command: ${command}`,
+    );
   const gate = requiredJob(workflow, "check");
   assert.equal(
     expression(gate.condition),
@@ -306,8 +330,21 @@ export function validatePythonProductWorkflow(source: string, migrationSource: s
     "Python Preview must stage, smoke, package, then smoke the installed payload.",
   );
   assert(
-    !/prepare:native|npm run package|--filter=@openbot\/server|apps\/server\//.test(script),
+    !/prepare:native|npm run package|--filter=@openbot\/server(?:\s|$)|apps\/server\//.test(script),
     "Python Preview cannot substitute retired packaging.",
+  );
+  const mixedStages = [
+    "npm exec -- turbo run build --filter=@openbot/server-ts",
+    "node apps/desktop/scripts/prepare-native-server.ts --ts-product",
+    "node apps/desktop/scripts/smoke-python-product.ts apps/desktop/out/ts-product-runtime",
+    "node apps/desktop/scripts/package.ts --preview --ts-product",
+    "OpenBot TS Preview.app/Contents/Resources/native-runtime",
+    "apps/desktop/out/ts-product-runtime/node/bin/node apps/desktop/scripts/measure-ts-product.ts apps/desktop/out/ts-product-runtime",
+  ];
+  const mixedScript = hasCommands(preview, mixedStages, "Mixed TS Preview");
+  assert(
+    ordered(mixedScript, mixedStages),
+    "TS Preview must build, stage, smoke, package, smoke the installed pair, then measure same-source overhead.",
   );
   assert.equal(
     job("synthetic-migration").uses,

@@ -204,22 +204,22 @@ class PostgresModelConnectionStore:
                 raise ControlError(503,'model_dependency_limit')
             dependents = [dict(id=b['id'],name=b['name']) for b in bots if _dependency_selection(b['model'])['connectionId']==connection_id]
             run_ids = [r['id'] for r in runs if _dependency_selection(r['model_selection'])['connectionId']==connection_id]
-            preferences = await (await db.execute("SELECT default_model FROM owner_preferences WHERE owner_id='owner'")).fetchone()
+            preferences = await (await db.execute("SELECT default_model,transcription_connection_id FROM owner_preferences WHERE owner_id='owner'")).fetchone()
             if preferences is None:
                 raise ControlError(503,'owner_preferences_unavailable')
             default = _selection(preferences['default_model'])
             owner_default = default is not None and default['connectionId']==connection_id
-            if dependents or run_ids or owner_default:
-                raise ModelConnectionInUse(dependents,run_ids,owner_default)
+            if dependents or run_ids or owner_default or preferences['transcription_connection_id']==connection_id:
+                raise ModelConnectionInUse(dependents,run_ids,owner_default, preferences['transcription_connection_id']==connection_id)
             await db.execute('DELETE FROM model_connections WHERE id=%s', (connection_id,))
             await _audit(db,'MODEL_CONNECTION_DELETED',dict(id=connection_id,revision=row['revision']))
             return dict(deleted=True,connectionId=connection_id)
 
 
 class ModelConnectionInUse(ControlError):
-    def __init__(self, bots, run_ids, owner_default):
+    def __init__(self, bots, run_ids, owner_default, transcription=False):
         super().__init__(409,'model_connection_in_use')
-        self.public = dict(error=self.code,bots=bots,runIds=run_ids,ownerDefault=owner_default)
+        self.public = dict(error=self.code,bots=bots,runIds=run_ids,ownerDefault=owner_default,transcription=transcription)
 
 
 class ModelConnectionsService:
@@ -346,10 +346,14 @@ class ModelConnectionsService:
         row = await (await db.execute("SELECT computer_profile,configuration FROM bots WHERE id=%s FOR SHARE", (bot_id,))).fetchone()
         if row is None:
             raise ControlError(404, "bot_not_found")
-        if row["computer_profile"] != "model":
+        if row["computer_profile"] not in ("none", "model"):
             return None
         configuration = row["configuration"] if isinstance(row["configuration"], dict) else {}
-        return _selection(configuration.get("model"))
+        selection = _selection(configuration.get("model"))
+        if selection is None:
+            from .owner_preferences import current_preferences
+            selection = (await current_preferences(db))['defaultModel']
+        return selection
 
     async def _live(self, token, resolved):
         current = await self.resolve(token, {"connectionId": resolved.connection_id, "modelId": resolved.model_id}, expected_revision=resolved.revision)

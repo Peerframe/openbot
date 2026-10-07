@@ -1,39 +1,13 @@
 import type { MessageReaction } from "./channel-interactions.js";
-import type { ModelProviderId } from "./model-providers.js";
 
 export * from "./model-providers.js";
 export * from "./model-services.js";
 
-import type {
-  NodeArchitecture,
-  NodeCapabilityDescriptor,
-  NodeDeviceClass,
-  NodeIsolation,
-  NodePlatform,
-  NodeTrustTier,
-} from "@openbot/protocol";
-
 export type EntityId = string;
 
-export type BotStatus =
-  | "idle"
-  | "running"
-  | "waiting_approval"
-  | "blocked"
-  | "human_takeover"
-  | "offline"
-  | "completed"
-  | "failed";
+export type BotStatus = import("@openbot/protocol").BotWire["status"];
 
-export type RunStatus =
-  | "queued"
-  | "assigned"
-  | "running"
-  | "waiting_approval"
-  | "blocked"
-  | "completed"
-  | "failed"
-  | "cancelled";
+export type RunStatus = import("@openbot/protocol").RunWire["status"];
 
 export type ApprovalStatus = "pending" | "approved" | "rejected" | "expired";
 export type ApprovalRisk = "write" | "destructive" | "privileged";
@@ -41,20 +15,7 @@ export type ApprovalDecision = "approve" | "reject";
 
 export type { ChannelMessagePreview } from "@openbot/protocol";
 
-import type { ChannelMessagePreview } from "@openbot/protocol";
-
-export interface Channel {
-  id: EntityId;
-  name: string;
-  description: string;
-  botIds: EntityId[];
-  /** Owner-only list/workspace activity; absent on mutation responses. */
-  lastActivityAt?: string;
-  latestMessage?: ChannelMessagePreview;
-  /** Server-owned fixed participant for a direct conversation. */
-  directBotId?: EntityId;
-  createdAt: string;
-}
+export type Channel = import("@openbot/protocol").ChannelWire;
 
 export type BotHeadShape = "round" | "square" | "cat";
 export type BotBodyShape = "classic" | "tall" | "cape" | "armor" | "storage" | "quadruped";
@@ -71,24 +32,9 @@ export interface QuickCreateBotResponse {
   channel: Channel;
 }
 
-export interface BotAppearance {
-  head: BotHeadShape;
-  body: BotBodyShape;
-  mobility: BotMobility;
-  accessory: BotAccessory;
-  accent: BotAccent;
-}
+export type BotAppearance = NonNullable<import("@openbot/protocol").BotWire["appearance"]>;
 
-export interface Bot {
-  id: EntityId;
-  name: string;
-  role: string;
-  status: BotStatus;
-  computerProfile: "none" | "model" | "docker-linux" | "macos-cua" | "lume-vm" | "coder";
-  appearance?: BotAppearance | undefined;
-  model?: import("./model-services.js").ModelSelection | undefined;
-  createdAt: string;
-}
+export type Bot = import("@openbot/protocol").BotWire;
 
 export type EmployeeEvolutionEventType =
   | "created"
@@ -103,82 +49,26 @@ export type EmployeeEvolutionEventType =
 export type EmployeeEvidenceKind = "run" | "artifact" | "approval" | "manual" | "import";
 
 /** A stable reference to evidence. Sensitive payloads stay in their source record. */
-export interface EmployeeEvidenceReference {
-  kind: EmployeeEvidenceKind;
-  id: EntityId;
-  label?: string | undefined;
-}
+export type EmployeeEvidenceReference =
+  import("@openbot/protocol").EmployeeEvolutionWire["evidence"][number];
 
 /** Append-only, evidence-backed history used by the employee evolution view. */
-export interface EmployeeEvolutionEvent {
-  id: EntityId;
-  botId: EntityId;
-  type: EmployeeEvolutionEventType;
-  title: string;
-  summary: string;
-  source: EmployeeEvidenceKind;
-  sourceId?: EntityId;
-  evidence: EmployeeEvidenceReference[];
-  createdAt: string;
-}
+export type EmployeeEvolutionEvent = import("@openbot/protocol").EmployeeEvolutionWire;
 
 export type EmployeeSkillState = "candidate" | "verified" | "suspended" | "revoked";
 export type EmployeeSkillSource = "built-in" | "installed" | "learned" | "imported" | "manual";
 
 /** A versioned skill assignment. Confidence is evidence quality, never an authority grant. */
-export interface EmployeeSkill {
-  id: EntityId;
-  slug: string;
-  name: string;
-  description: string;
-  version: string;
-  source: EmployeeSkillSource;
-  state: EmployeeSkillState;
-  confidence: number;
-  requiredCapabilities: string[];
-  dependencyIds: EntityId[];
-  evidence: EmployeeEvidenceReference[];
-  acquiredAt: string;
-  updatedAt: string;
-  /** Immutable reviewed instruction file; portable v2 packages include it only after explicit selection. */
-  skillMarkdown?: string | undefined;
-  contentSha256?: string | undefined;
-  modelUseEnabled?: boolean | undefined;
-}
+export type EmployeeSkill = import("@openbot/protocol").EmployeeSkillWire;
 
-export interface CreateEmployeeSkillInput {
-  skillMarkdown?: string | undefined;
-  slug: string;
-  name: string;
-  description: string;
-  version: string;
-  source: EmployeeSkillSource;
-  requiredCapabilities: string[];
-  dependencySkillIds: EntityId[];
-  evidence: EmployeeEvidenceReference[];
-  reason: string;
-}
+export type CreateEmployeeSkillInput = Omit<
+  import("@openbot/protocol").EmployeeSkillCreateInputWire,
+  "requiredCapabilities"
+> & { requiredCapabilities: string[] };
 
-export type UpdateEmployeeSkillStateInput =
-  | {
-      state: "verified";
-      reviewedContentSha256?: string | undefined;
-      confidence: number;
-      reason: string;
-      evidence: EmployeeEvidenceReference[];
-      ownerReviewed: true;
-    }
-  | {
-      state: "suspended" | "revoked";
-      reason: string;
-      evidence: EmployeeEvidenceReference[];
-      ownerReviewed: true;
-    };
+export type UpdateEmployeeSkillStateInput = import("@openbot/protocol").EmployeeSkillStateInputWire;
 
-export interface EmployeeSkillMutationResult {
-  skill: EmployeeSkill;
-  evolution: EmployeeEvolutionEvent;
-}
+export type EmployeeSkillMutationResult = import("@openbot/protocol").EmployeeSkillMutationWire;
 
 export type EmployeeMemoryKind =
   | "working"
@@ -190,20 +80,14 @@ export type EmployeeMemorySensitivity = "public" | "internal" | "confidential" |
 export type EmployeeMemoryPortability = "never" | "owner-selectable" | "included";
 
 /** Owner-visible memory metadata and content. Export policy is evaluated separately. */
-export interface EmployeeMemory {
-  id: EntityId;
-  botId: EntityId;
-  kind: EmployeeMemoryKind;
-  title: string;
-  content: string;
-  sensitivity: EmployeeMemorySensitivity;
-  portability: EmployeeMemoryPortability;
-  provenance: Record<string, unknown>;
+export type EmployeeMemory = Omit<
+  import("@openbot/protocol").EmployeeMemoryWire,
+  "modelUseEnabled" | "provenance"
+> & {
+  /** Older additive consumers can omit the model flag and retain opaque provenance. */
   modelUseEnabled?: boolean | undefined;
-  revision: number;
-  createdAt: string;
-  updatedAt: string;
-}
+  provenance: Record<string, unknown>;
+};
 
 export type EmployeeMemoryChangedField =
   | "kind"
@@ -214,40 +98,13 @@ export type EmployeeMemoryChangedField =
   | "modelUseEnabled";
 
 /** Content-free, append-only audit metadata for one Owner memory mutation. */
-export interface EmployeeMemoryEvent {
-  id: EntityId;
-  botId: EntityId;
-  memoryId: EntityId;
-  action: "created" | "updated" | "deleted";
-  revision: number;
-  changedFields: EmployeeMemoryChangedField[];
-  actor: "owner";
-  createdAt: string;
-}
+export type EmployeeMemoryEvent = import("@openbot/protocol").EmployeeMemoryEventWire;
 
-export interface CreateEmployeeMemoryInput {
-  kind: EmployeeMemoryKind;
-  title: string;
-  content: string;
-  sensitivity: EmployeeMemorySensitivity;
-  portability: Exclude<EmployeeMemoryPortability, "included">;
-  modelUseEnabled?: boolean | undefined;
-}
+export type CreateEmployeeMemoryInput = import("@openbot/protocol").EmployeeMemoryCreateInputWire;
 
-export interface UpdateEmployeeMemoryInput {
-  expectedRevision: number;
-  kind?: EmployeeMemoryKind | undefined;
-  title?: string | undefined;
-  content?: string | undefined;
-  sensitivity?: EmployeeMemorySensitivity | undefined;
-  portability?: Exclude<EmployeeMemoryPortability, "included"> | undefined;
-  modelUseEnabled?: boolean | undefined;
-}
+export type UpdateEmployeeMemoryInput = import("@openbot/protocol").EmployeeMemoryUpdateInputWire;
 
-export interface DeleteEmployeeMemoryInput {
-  expectedRevision: number;
-  ownerReviewed: true;
-}
+export type DeleteEmployeeMemoryInput = import("@openbot/protocol").EmployeeMemoryDeleteInputWire;
 
 export interface EmployeeMemoryMutationResult {
   memory: EmployeeMemory;
@@ -264,51 +121,26 @@ export interface EmployeeDecisionTrace extends RunProgress {
   summary: string;
 }
 
-export interface EmployeeProfile {
-  employee: Bot;
-  details: {
-    /** Owner-authored routing biography. It is descriptive and grants no authority. */
-    description: string;
-    /** Server-owned compare-and-swap revision for role and description edits. */
-    revision: number;
-    updatedAt: string;
-  };
-  evolution: EmployeeEvolutionEvent[];
-  skills: EmployeeSkill[];
+// Additive consumers retain opaque approval state; the HTTP parser still requires strict JSON.
+export type EmployeeProfile = Omit<
+  import("@openbot/protocol").EmployeeProfileWire,
+  "memories" | "records"
+> & {
   memories: EmployeeMemory[];
-  memoryEvents: EmployeeMemoryEvent[];
-  records: {
-    runs: Run[];
+  records: Omit<import("@openbot/protocol").EmployeeProfileWire["records"], "approvals"> & {
     approvals: Approval[];
-    artifacts: Artifact[];
-    decisions: EmployeeDecisionTrace[];
   };
-  statistics: {
-    totalRuns: number;
-    completedRuns: number;
-    failedRuns: number;
-    verifiedSkills: number;
-  };
-  configuration: {
-    executionProfile: Bot["computerProfile"];
-    model?: import("./model-services.js").ModelSelection | undefined;
-    portabilityFormat: "openbot.employee/v1";
-  };
-}
+};
 
 export type EmployeeProfileChangedField = "role" | "description";
 
-export interface UpdateEmployeeProfileDetailsInput {
-  role: string;
-  description: string;
-  expectedRevision: number;
-}
+export type UpdateEmployeeProfileDetailsInput =
+  import("@openbot/protocol").EmployeeProfileDetailsInputWire;
 
-export interface EmployeeProfileDetailsMutationResult {
-  employee: Bot;
-  details: EmployeeProfile["details"];
-  evolution: EmployeeEvolutionEvent;
-}
+export type EmployeeProfileDetailsMutationResult = Omit<
+  import("@openbot/protocol").EmployeeProfileMutationWire,
+  "evolution"
+> & { evolution: EmployeeEvolutionEvent };
 
 export type EmployeeProfileSection =
   | "identity"
@@ -320,217 +152,32 @@ export type EmployeeProfileSection =
   | "portability"
   | "modelUseEnabled";
 
-export type EmployeeExportFindingCode =
-  | "credential-like-content"
-  | "private-key-content"
-  | "local-path-content"
-  | "excluded-skill-dependency"
-  | "invalid-skill-content"
-  | "package-too-large";
+/** Shared strict portability contracts; previews contain untrusted descriptive data only. */
+export type EmployeeExportFinding = import("@openbot/protocol").EmployeeExportFindingHttp;
+export type EmployeeExportFindingCode = EmployeeExportFinding["code"];
+export type EmployeeExportExclusion = import("@openbot/protocol").EmployeeExportExclusionHttp;
+export type PortableEmployeeProfileSummary = import("@openbot/protocol").PortableEmployeeHttp;
+export type PortableEmployeeSkillSummary = import("@openbot/protocol").PortableSkillHttp;
+export type EmployeeExportPreview = import("@openbot/protocol").EmployeeExportPreviewHttp;
+export type EmployeeImportIssue = import("@openbot/protocol").EmployeeImportIssueHttp;
+export type EmployeeImportIssueCode = EmployeeImportIssue["code"];
+export type EmployeeImportPreview = import("@openbot/protocol").EmployeeImportPreviewHttp;
+export type EmployeeImportReceipt = import("@openbot/protocol").EmployeeImportReceiptHttp;
+export type EmployeeImportActivationResult =
+  import("@openbot/protocol").EmployeeImportActivationHttp;
 
-/** A blocking finding discovered before portable employee data leaves the Server. */
-export interface EmployeeExportFinding {
-  code: EmployeeExportFindingCode;
-  location: string;
-  message: string;
-}
-
-export interface EmployeeExportExclusion {
-  category: "identity" | "authority" | "memory" | "work-history";
-  count: number;
-  reason: string;
-}
-
-/** Descriptive, untrusted Employee data selected for a portable template. */
-export type PortableEmployeeProfileSummary = Pick<Bot, "name" | "role" | "appearance"> & {
-  description?: string;
-};
-
-/** Untrusted portable skill, optionally containing one bounded instruction file. */
-export interface PortableEmployeeSkillSummary {
-  slug: string;
-  name: string;
-  /** Required Agent Skills discovery metadata; still untrusted package content. */
-  description: string;
-  version: string;
-  requiredCapabilities: string[];
-  dependencySlugs: string[];
-  content?: { markdown: string; sha256: string; license: string };
-}
-
-/** Owner-facing summary of exactly what a default employee template will contain. */
-export interface EmployeeExportPreview {
-  format: "openbot.employee/v1" | "openbot.employee/v2";
-  kind: "template";
-  /** Fresh package identity that must be returned when downloading this reviewed instance. */
-  packageId: string;
-  fileName: string;
-  generatedAt: string;
-  employee: PortableEmployeeProfileSummary;
-  skills: PortableEmployeeSkillSummary[];
-  /** @deprecated Use `employee.name`; retained through the v1 preview compatibility window. */
-  employeeName: string;
-  verifiedSkillCount: number;
-  requestedCapabilities: string[];
-  includedMemoryCount: 0;
-  exclusions: EmployeeExportExclusion[];
-  findings: EmployeeExportFinding[];
-  blocked: boolean;
-  checksum: string;
-  /** Opaque SHA-256 strong validator for the exact serialized download bytes. */
-  downloadReviewToken: string;
-  signatureStatus: "unsigned" | "dsse";
-  publisherKeyId?: string;
-  identityOnImport: "new";
-  hostAuthority: "none";
-}
-
-export type EmployeeImportIssueCode =
-  | "checksum-mismatch"
-  | "capability-set-mismatch"
-  | "duplicate-skill"
-  | "missing-skill-dependency"
-  | "sensitive-content"
-  | "missing-capability"
-  | "no-compatible-host"
-  | "invalid-skill-content";
-
-export interface EmployeeImportIssue {
-  code: EmployeeImportIssueCode;
-  message: string;
-  locations: string[];
-}
-
-/** A read-only, quarantined projection. Activation is a separate Owner-reviewed command. */
-export interface EmployeeImportPreview {
-  format: "openbot.employee/v1" | "openbot.employee/v2";
-  packageId: string;
-  generatedAt: string;
-  employee: PortableEmployeeProfileSummary;
-  recommendedExecutionProfile: Bot["computerProfile"];
-  skills: PortableEmployeeSkillSummary[];
-  requestedCapabilities: string[];
-  integrity: {
-    algorithm: "sha256";
-    valid: boolean;
-    /** Digest of the canonical, schema-valid package reviewed by the Owner. */
-    digest: string;
-  };
-  signature:
-    | {
-        status: "unsigned";
-        trusted: false;
-      }
-    | {
-        status: "dsse";
-        trusted: true;
-        keyid: string;
-      };
-  compatibility: {
-    hostRequired: boolean;
-    compatibleHosts: Array<
-      Pick<ExecutionNode, "id" | "name" | "platform" | "architecture" | "deviceClass">
-    >;
-    missingCapabilities: string[];
-  };
-  quarantine: {
-    active: true;
-    createsNewIdentity: true;
-    importedSkillState: "disabled-pending-review";
-    hostAuthority: "none";
-    memoryCount: 0;
-    canActivate: boolean;
-  };
-  issues: EmployeeImportIssue[];
-  blocked: boolean;
-}
-
-/** Immutable evidence that one reviewed portable package created one local Employee. */
-export interface EmployeeImportReceipt {
-  id: EntityId;
-  packageId: string;
-  packageDigest: string;
-  employeeId: EntityId;
-  signatureStatus: "unsigned" | "dsse";
-  publisherKeyId?: string | undefined;
-  reviewedBy: "owner";
-  reviewedAt: string;
-  importedSkillCount: number;
-  createdAt: string;
-}
-
-export interface EmployeeImportActivationResult {
-  employee: Bot;
-  receipt: EmployeeImportReceipt;
-  replayed: boolean;
-}
-
-export interface ExecutionNode {
-  id: EntityId;
-  name: string;
-  platform: NodePlatform;
-  osVersion: string;
-  architecture: NodeArchitecture;
-  deviceClass: NodeDeviceClass;
-  isolation: NodeIsolation;
-  trustTier: NodeTrustTier;
-  capabilities: string[];
-  capabilityManifest: NodeCapabilityDescriptor[];
-  activeRunIds: EntityId[];
-  maxConcurrentRuns: number;
-  connectedAt: string;
-  lastSeenAt: string;
-}
+export type ExecutionNode = import("@openbot/protocol").ExecutionNodeWire;
 
 /** Safe Owner-facing identity metadata. Credential digests never cross the Server boundary. */
-export interface NodeIdentitySummary {
-  nodeId: EntityId;
-  status: "active" | "revoked";
-  connected: boolean;
-  enrolledAt: string;
-  lastAuthenticatedAt?: string | undefined;
-  revokedAt?: string | undefined;
-  node?: ExecutionNode | undefined;
-}
+export type NodeIdentitySummary = import("@openbot/protocol").NodeIdentitySummaryWire;
 
 /** A short-lived bootstrap value returned only by the issuance command. */
-export interface NodeEnrollmentToken {
-  nodeId: EntityId;
-  token: string;
-  expiresAt: string;
-}
+export type NodeEnrollmentToken = import("@openbot/protocol").NodeEnrollmentTokenWire;
 
-export interface Run {
-  id: EntityId;
-  workTaskId?: string | undefined;
-  parentRunId?: EntityId;
-  rootRunId?: EntityId;
-  delegatedByBotId?: EntityId;
-  channelId: EntityId;
-  botId: EntityId;
-  sourceMessageId?: EntityId;
-  nodeId?: EntityId;
-  executionProfile: Bot["computerProfile"];
-  model?: import("./model-services.js").ModelSelection | undefined;
-  instruction: string;
-  title: string;
-  status: RunStatus;
-  resultSummary?: string;
-  errorMessage?: string;
-  errorCode?: string;
-  modelUsage?: RunModelUsage;
-  createdAt: string;
-  updatedAt: string;
-}
+export type Run = import("@openbot/protocol").RunWire;
 
 /** Provider-reported counts for observed steps; null means at least one count was unavailable. */
-export interface RunModelUsage {
-  provider: ModelProviderId;
-  model: string;
-  steps: number;
-  inputTokens: number | null;
-  outputTokens: number | null;
-}
+export type RunModelUsage = NonNullable<import("@openbot/protocol").RunWire["modelUsage"]>;
 
 export interface Approval {
   id: EntityId;
@@ -619,17 +266,7 @@ export interface RunFrame {
 
 export type MessageAuthorType = "human" | "bot" | "system";
 
-export interface Message {
-  origin?: "greeting";
-  id: EntityId;
-  channelId: EntityId;
-  authorType: MessageAuthorType;
-  authorId?: EntityId;
-  replyToMessageId?: EntityId;
-  runId?: EntityId;
-  content: string;
-  createdAt: string;
-}
+export type Message = import("@openbot/protocol").MessageWire;
 
 /** Newest bounded page, chronological within the page; nextCursor reads older messages. */
 export interface MessagesResponse {
@@ -643,18 +280,12 @@ export interface MessagePaginationInput {
   limit?: number | undefined;
 }
 
-export interface OwnerIdentity {
-  id: "owner";
-  name: string;
-}
+export type OwnerIdentity = Extract<
+  import("@openbot/protocol").AuthSessionWire,
+  { authenticated: true }
+>["owner"];
 
-export type AuthSessionSnapshot =
-  | { authenticated: false }
-  | {
-      authenticated: true;
-      owner: OwnerIdentity;
-      expiresAt: string;
-    };
+export type AuthSessionSnapshot = import("@openbot/protocol").AuthSessionWire;
 
 export interface RunOutput {
   runId: EntityId;
@@ -677,7 +308,7 @@ export type ChannelRealtimeEvent =
   | {
       type: "channel.ready";
       channelId: EntityId;
-      occurredAt: string;
+      occurredAt?: string;
     }
   | {
       type: "message.created";
@@ -710,7 +341,7 @@ export type WorkspaceRealtimeEvent =
   | {
       type: "workspace.ready";
       nodes: ExecutionNode[];
-      occurredAt: string;
+      occurredAt?: string;
     }
   | {
       type: "node.upserted";
@@ -751,6 +382,9 @@ export interface BootstrapSummary {
 }
 
 export interface WorkspaceSnapshot {
+  /** Current Server always returns both fields; absent only in pre-C26 Servers/oracle fixtures. */
+  primaryBotId?: EntityId | null;
+  revision?: number;
   channels: Channel[];
   bots: Bot[];
   nodes: ExecutionNode[];
@@ -761,6 +395,11 @@ export interface WorkspaceSnapshot {
   /** Additive Server projection; optional for older Server versions and synthetic fixtures. */
   runProgress?: Record<EntityId, RunProgressSummary>;
   counts: BootstrapSummary["counts"];
+}
+
+export interface WorkspacePrimaryBot {
+  primaryBotId: EntityId | null;
+  revision: number;
 }
 
 export interface CreateBotInput {
@@ -791,31 +430,19 @@ export interface SubmitTaskResult {
 }
 
 /** A model-authored proposal is never active memory before an Owner review. */
-export interface KnowledgeProposalDraft {
-  kind: "semantic" | "episodic" | "procedural";
-  title: string;
-  content: string;
-}
-interface KnowledgeProposalRecord extends KnowledgeProposalDraft {
-  id: string;
-  botId: string;
-  createdAt: string;
-}
+export type KnowledgeProposalDraft = Pick<
+  import("@openbot/protocol").KnowledgeProposalWire,
+  "kind" | "title" | "content"
+>;
+type KnowledgeProposalRecord = KnowledgeProposalDraft &
+  Pick<import("@openbot/protocol").KnowledgeProposalWire, "id" | "botId" | "createdAt">;
 /** Native Work Runs and legacy channel Runs are distinct source identities. */
 export type KnowledgeProposal = KnowledgeProposalRecord &
   (
     | { sourceRunId: string; source?: never }
     | { source: { kind: "task"; taskId: string; runId: string }; sourceRunId?: never }
   );
-export type ReviewKnowledgeProposalInput =
-  | { decision: "reject"; ownerReviewed: true }
-  | {
-      decision: "accept";
-      ownerReviewed: true;
-      title: string;
-      content: string;
-      modelUseEnabled: boolean;
-    };
+export type ReviewKnowledgeProposalInput = import("@openbot/protocol").KnowledgeProposalReviewInput;
 
 export type {
   ApprovalException,

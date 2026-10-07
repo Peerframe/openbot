@@ -1,19 +1,30 @@
-import type { PluginContentScope, PluginSnapshot } from "@openbot/protocol";
+import type {
+  PluginContentScope,
+  PluginContentResultHttp,
+  PluginSnapshotHttp as PluginSnapshot,
+} from "@openbot/protocol";
 import { ApiError } from "./api";
 
 export type {
-  InstalledPlugin as Plugin,
-  PendingPluginCall,
-  PluginContentItem,
-  PluginContentResult,
+  InstalledPluginHttp as Plugin,
+  PendingPluginCallHttp as PendingPluginCall,
+  PluginContentItemHttp as PluginContentItem,
   PluginContentScope,
-  PluginManifest,
-  PluginPrompt,
-  PluginResource,
-  PluginSnapshot,
-  PluginTool,
+  PluginManifestHttp as PluginManifest,
+  PluginPromptHttp as PluginPrompt,
+  PluginResourceHttp as PluginResource,
+  PluginSnapshotHttp as PluginSnapshot,
+  PluginToolHttp as PluginTool,
   PluginToolGrant as PluginGrant,
 } from "@openbot/protocol";
+
+// Preserve the Web's optional result projection while sourcing both payloads from strict HTTP DTOs.
+export type PluginContentResult = Omit<PluginContentResultHttp, "result"> & {
+  result: {
+    contents?: Extract<PluginContentResultHttp, { kind: "resource" }>["result"]["contents"];
+    messages?: Extract<PluginContentResultHttp, { kind: "prompt" }>["result"]["messages"];
+  };
+};
 
 export async function pluginRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`/api/v1/${path}`, {

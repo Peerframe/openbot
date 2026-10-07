@@ -20,6 +20,14 @@ def main():
     host = os.environ.get("OPENBOT_CONTROL_HOST", "127.0.0.1")
     if host not in ("127.0.0.1", "0.0.0.0"):
         raise SystemExit("Control-plane host must be 127.0.0.1 or 0.0.0.0.")
+    proxy_address = os.environ.get("OPENBOT_CONTROL_PROXY_ADDRESS")
+    public_origin = os.environ.get("OPENBOT_CONTROL_PUBLIC_ORIGIN")
+    if (proxy_address is None) != (public_origin is None) or proxy_address is not None and host != "127.0.0.1":
+        raise SystemExit("Private proxy mode requires a loopback listener, peer and public origin together.")
+    if proxy_address is not None:
+        from openbot_server.proxy_peer import PrivateProxyPeer
+        # Validate operator input before constructing services or starting background work.
+        PrivateProxyPeer(None, address=proxy_address, public_origin=public_origin)
     dsn = os.environ.get("OPENBOT_CONTROL_DATABASE_URL")
     if not dsn:
         raise SystemExit("Set an explicit OPENBOT_CONTROL_DATABASE_URL for the read reference.")
@@ -63,7 +71,6 @@ def main():
         if importlib.util.find_spec('pydantic_ai') is None:
             raise SystemExit('Product mode requires the pinned Worker environment; run bootstrap-worker.sh.')
         from openbot_server.product_control import OwnerProduct
-        from openbot_server.model_settings import ModelSettingsService
         from openbot_server.employee_knowledge import PostgresEmployeeKnowledge
         from openbot_server.automation_store import PostgresAutomations
         from openbot_server.conversation_interactions import PostgresConversationInteractions
@@ -73,17 +80,16 @@ def main():
         model_directory = os.environ.get("OPENBOT_CONTROL_MODEL_DIRECTORY")
         legacy_path = os.environ.get('OPENBOT_CONTROL_MODEL_SETTINGS_PATH')
         legacy_key = os.environ.get('OPENBOT_CONTROL_MODEL_ENCRYPTION_KEY')
-        if legacy_path or legacy_key:
-            if not legacy_path or not legacy_key or model_directory:
-                raise SystemExit('Select either the retained model-settings path/key or a model directory.')
-            model = ModelSettingsService.from_legacy(legacy_path, legacy_key)
-        else:
-            model = ModelSettingsService(model_directory) if model_directory else None
+        if legacy_key and not legacy_path or (legacy_path and model_directory):
+            raise SystemExit('Select either the retained model-settings path/key or a model directory.')
         from openbot_server.model_connections import ModelConnectionsService
         custom_urls = json.loads(os.environ.get('OPENBOT_CONTROL_MODEL_CUSTOM_BASE_URLS', '[]'))
         connections = asyncio.run(ModelConnectionsService.from_key_path(dsn,
             os.environ.get('OPENBOT_CONTROL_MODEL_CONNECTION_KEY_PATH', str(Path(object_root)/'model-connections.key')),
             custom_base_urls=custom_urls))
+        if legacy_path or model_directory:
+            from openbot_server.legacy_model_import import import_legacy_path
+            asyncio.run(import_legacy_path(dsn, connections, path=legacy_path, key=legacy_key, directory=model_directory))
         from openbot_server.work_browser_installation import browser_profiles_from_file
         browser_profiles = browser_profiles_from_file(browser_path, connections)
         from openbot_server.work_command_installation import CommandInstallation
@@ -106,7 +112,7 @@ def main():
             local_endpoints=json.loads(os.environ.get('OPENBOT_CONTROL_PLUGIN_LOCAL_ENDPOINTS','[]')),
             codec=LegacyManifestCodec(node_binary=os.environ.get('OPENBOT_CONTROL_NODE_EXECUTABLE','node'),
                 locale=os.environ.get('OPENBOT_CONTROL_NODE_LOCALE','en-US')))
-        product = OwnerProduct(dsn, object_root=object_root, model_settings=model,
+        product = OwnerProduct(dsn, object_root=object_root,
             knowledge=PostgresEmployeeKnowledge(dsn), interactions=PostgresConversationInteractions(dsn),
             plugins=plugins,model_connections=connections,worker_identity=worker_identity,
             worker_registry=worker_registry,browser=browser,plugin_catalog_path=os.environ.get("OPENBOT_PLUGIN_CATALOG_PATH"),nodes=worker_registry.list)
@@ -123,7 +129,7 @@ def main():
         product.portability = PostgresEmployeePortability(dsn, publisher=publisher,
             knowledge=product.knowledge, list_nodes=product.workspace.nodes)
         from openbot_server.attachment_processing import AttachmentProcessingService
-        product.processing = AttachmentProcessingService(dsn, files=product.files, settings=model,
+        product.processing = AttachmentProcessingService(dsn, files=product.files, transcription=product.transcription,
             node_executable=os.environ.get('OPENBOT_CONTROL_NODE_EXECUTABLE'),
             module_root=os.environ.get('OPENBOT_CONTROL_NODE_MODULE_ROOT'))
     tasks = None
@@ -175,6 +181,7 @@ def main():
                                                       automations=product.automations)
     app = create_app(PostgresReadStore(dsn), owner_name=owner_name,
                      secure_cookies=cookie_mode == "secure", allowed_origins=origins, auth=auth,
+                     proxy_address=proxy_address, public_origin=public_origin,
                      identity=PostgresIdentityStore(dsn,model_connections=product.model_connections if product else None) if authority in ("identity", "tasks", "work", "product") else None, conversations=conversations, profiles=profiles, tasks=tasks, run_commands=run_commands, work=work, product=product)
     web_root = os.environ.get("OPENBOT_CONTROL_WEB_ROOT")
     if web_root:

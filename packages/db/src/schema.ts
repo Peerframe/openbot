@@ -728,6 +728,7 @@ export const ownerPreferences = pgTable(
     ownerId: text("owner_id").primaryKey(),
     timezone: text("timezone").notNull().default("UTC"),
     defaultModel: jsonb("default_model"),
+    transcriptionConnectionId: text("transcription_connection_id"),
     revision: integer("revision").notNull().default(1),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -736,6 +737,10 @@ export const ownerPreferences = pgTable(
     check(
       "owner_preferences_timezone_check",
       sql`length(${table.timezone}) BETWEEN 1 AND 64 AND ${table.timezone} ~ '^[A-Za-z_]+(/[A-Za-z0-9_+.-]+)*$'`,
+    ),
+    check(
+      "owner_preferences_transcription_valid",
+      sql`${table.transcriptionConnectionId} IS NULL OR ${table.transcriptionConnectionId} ~ '^[A-Za-z0-9_-]{1,64}$'`,
     ),
     check("owner_preferences_revision_check", sql`${table.revision} BETWEEN 1 AND 2147483647`),
     check(
@@ -746,6 +751,32 @@ export const ownerPreferences = pgTable(
  AND jsonb_typeof(${table.defaultModel}->'modelId') = 'string' AND length(${table.defaultModel}->>'modelId') BETWEEN 1 AND 256
  AND (${table.defaultModel}->>'modelId') ~ '^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$' ELSE false END`,
     ),
+  ],
+);
+
+export const workspaceSettings = pgTable(
+  "workspace_settings",
+  {
+    workspaceId: text("workspace_id").primaryKey(),
+    primaryBotId: text("primary_bot_id").references(() => bots.id, { onDelete: "set null" }),
+    revision: integer("revision").notNull().default(1),
+  },
+  (table) => [
+    check("workspace_settings_workspace_id_check", sql`${table.workspaceId} = 'workspace'`),
+    check("workspace_settings_revision_check", sql`${table.revision} BETWEEN 1 AND 2147483647`),
+  ],
+);
+
+export const legacyModelImports = pgTable(
+  "legacy_model_imports",
+  {
+    sourceId: text("source_id").primaryKey(),
+    legacyRevision: text("legacy_revision").notNull(),
+    connectionId: text("connection_id").notNull(),
+    importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("legacy_model_imports_source_id_check", sql`${table.sourceId} ~ '^[a-f0-9]{64}$'`),
   ],
 );
 

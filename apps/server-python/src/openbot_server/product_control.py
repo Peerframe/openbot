@@ -1,5 +1,4 @@
 """Explicit Python product composition for the retained Owner API; no implicit service selection."""
-from contextlib import asynccontextmanager
 from pathlib import Path
 import hashlib
 import json
@@ -28,14 +27,18 @@ class AutomationEnabled(BaseModel):
 
 
 class OwnerProduct:
-    def __init__(self, dsn, *, object_root, model_settings=None, knowledge=None, automations=None, interactions=None, portability=None, processing=None, plugins=None, model_connections=None, worker_identity=None, worker_registry=None, browser=None, plugin_catalog_path=None, nodes=lambda: []):
+    def __init__(self, dsn, *, object_root, knowledge=None, automations=None, interactions=None, portability=None, processing=None, plugins=None, model_connections=None, worker_identity=None, worker_registry=None, browser=None, plugin_catalog_path=None, nodes=lambda: []):
+        from .transcription_settings import TranscriptionSettings
+        self.transcription = TranscriptionSettings(dsn, model_connections)
         self.transactions = OwnerTransactions(dsn)
         self.workspace = PostgresWorkspace(dsn,nodes=nodes)
+        from .workspace_settings import WorkspaceSettings
+        self.workspace_settings = WorkspaceSettings(dsn)
         self.files = OwnerFiles(Path(object_root)/'attachments')
         self.object_root = Path(object_root)
         from .storage_service import StorageService
         self.storage = StorageService(dsn, self.files, self.object_root)
-        self.model, self.knowledge, self.automations, self.interactions = model_settings,knowledge,automations,interactions
+        self.knowledge, self.automations, self.interactions = knowledge,automations,interactions
         self.portability, self.processing = portability, processing
         self.plugins, self.model_connections = plugins, model_connections
         self.worker_identity, self.worker_registry = worker_identity, worker_registry
@@ -177,6 +180,9 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
 
     async def workspace(value,_path,_body,_request): return await product.workspace.snapshot(value)
     route('/api/v1/workspace','GET',workspace)
+    async def primary_bot(value,_path,body,_request):
+        return await product.workspace_settings.update(value,body)
+    route('/api/v1/workspace/primary-bot','PUT',primary_bot,limit=1024)
     from .run_progress import PostgresRunProgress, selected_steps
     progress_store = PostgresRunProgress(product.transactions._dsn)
     async def run_progress(value,path,_body,request):
@@ -211,10 +217,10 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         return await product.plugin_catalog.snapshot(value)
     route('/api/v1/plugins/catalog','GET',plugin_catalog)
 
-    async def model_summary(value,*_):
-        if product.model is None: return {'status':'unavailable'}
-        async with product.transactions.transaction(value): return await product.model.summary()
-    route('/api/v1/settings/model','GET',model_summary)
+    async def transcription_get(value,*_): return await product.transcription.get(value)
+    route('/api/v1/settings/transcription','GET',transcription_get)
+    async def transcription_put(value,_path,body,_request): return await product.transcription.update(value,body)
+    route('/api/v1/settings/transcription','PUT',transcription_put,limit=1024)
 
     def service(name):
         result=getattr(product,name)
@@ -230,19 +236,6 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
             secure_cookies=secure_cookies,allowed_origins=allowed_origins)
         for path in ('/api/v1/nodes/enrollment-tokens','/api/v1/nodes/enroll','/api/v1/nodes/[^/]+/revoke'):
             product.write_routes.append(('POST',re.compile(path)))
-
-    @asynccontextmanager
-    async def model_commit(value):
-        async with product.transactions.transaction(value) as db:
-            yield
-            await db.execute("INSERT INTO run_events(id,type,payload) VALUES (gen_random_uuid()::text,'SETTINGS_MODEL_UPDATED','{\"actor\":\"owner\"}'::jsonb)")
-
-    async def model_save(value,_path,body,_request):
-        return await service('model').save(body,authority=lambda:product.transactions.transaction(value),commit_authority=lambda:model_commit(value))
-    route('/api/v1/settings/model','POST',model_save,limit=4096)
-    async def model_discover(value,_path,body,_request):
-        return {'models':await service('model').discover(body,authority=lambda:product.transactions.transaction(value))}
-    route('/api/v1/settings/model/models','POST',model_discover,limit=4096)
 
     async def profile(value,path,*_):
         return {'profile':await service('knowledge').profile(value,path['bot_id'])}
@@ -414,7 +407,8 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
             current_ids = {row['id'] for row in messages.rows if row.get('id') is not None}
             if previous_ids is not None:
                 from .message_models import project_messages
-                created.extend(dict(type='message.created', message=message.model_dump(mode='json',exclude_none=True))
+                created.extend(dict(type='message.created', channelId=channel_id,
+                    message=message.model_dump(mode='json',exclude_none=True))
                     for message in project_messages([row for row in messages.rows
                         if row.get('id') is not None and row['id'] not in previous_ids]))
             previous_ids = current_ids

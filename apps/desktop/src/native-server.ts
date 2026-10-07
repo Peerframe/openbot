@@ -7,7 +7,7 @@ import { createServer } from "node:net";
 import { basename, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import postgresClient from "postgres";
-import { startDarwinPostgres, type DarwinPostgresProcess } from "./darwin-postgres.js";
+import { type DarwinPostgresProcess, startDarwinPostgres } from "./darwin-postgres.js";
 import { LocalSessionRecovery } from "./local-session-recovery.js";
 import { RestrictedJsonFile } from "./restricted-json-file.js";
 import type { NativeServerState } from "./runtime-contract.js";
@@ -24,7 +24,7 @@ class NativeCredentialError extends Error {}
 interface BootstrapSecrets {
   databasePassword: string;
   ownerPassword: string;
-  modelKey: string;
+  modelKey?: string;
 }
 export interface ManagedServerProcess {
   stop(): Promise<void>;
@@ -150,7 +150,6 @@ export class NativeServerController {
       : {
           databasePassword: randomBytes(32).toString("hex"),
           ownerPassword: randomBytes(32).toString("hex"),
-          modelKey: randomBytes(32).toString("hex"),
         };
     if (!retained) {
       let encrypted: string;
@@ -256,7 +255,7 @@ export class NativeServerController {
       OPENBOT_ALLOWED_ORIGINS: url,
       OPENBOT_OBJECT_STORE_PATH: join(dataRoot, "objects"),
       OPENBOT_MODEL_SETTINGS_PATH: join(dataRoot, "model-settings.json"),
-      OPENBOT_MODEL_ENCRYPTION_KEY: secrets.modelKey,
+      ...(secrets.modelKey ? { OPENBOT_MODEL_ENCRYPTION_KEY: secrets.modelKey } : {}),
       ...(process.env.OPENBOT_PLUGIN_LOCAL_ENDPOINTS
         ? { OPENBOT_PLUGIN_LOCAL_ENDPOINTS: process.env.OPENBOT_PLUGIN_LOCAL_ENDPOINTS }
         : {}),
@@ -309,7 +308,9 @@ export class NativeServerController {
 function parseSecrets(value: string): BootstrapSecrets {
   const parsed = JSON.parse(value) as BootstrapSecrets;
   if (
-    Object.keys(parsed).sort().join() !== "databasePassword,modelKey,ownerPassword" ||
+    !["databasePassword,ownerPassword", "databasePassword,modelKey,ownerPassword"].includes(
+      Object.keys(parsed).sort().join(),
+    ) ||
     !Object.values(parsed).every((item) => typeof item === "string" && /^[a-f0-9]{64}$/u.test(item))
   )
     throw new Error("Invalid local bootstrap.");

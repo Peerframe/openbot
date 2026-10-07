@@ -60,7 +60,7 @@ fixes reuse valid decisions and reviewed versions; they do not reopen the full l
 | Streamed JSON request bounds | WHATWG Streams `b9ba9f49`; Hono 4.13.7 / `eebdf7be` reviewed | WHATWG terms; Node.js license; MIT | Reuse native readers and streaming UTF-8 decoding to count actual bytes, cancel overflow and preserve route-specific limits and errors. The reviewed Hono middleware trusts declared length and does not meet this cleanup contract unchanged. No source copied or dependency added; see [research](research/2026-09-15-request-body-limits.md). |
 | Shared task, attachment and automation flow | PostgreSQL 17; ai 7.0.93 / 6359fd58; existing Zod 4.5.4 | PostgreSQL; Apache-2.0; MIT | Reuse the existing transaction and file lock, shared protocol descriptors and one Run-scoped tool map. Preserve paused schedule references and stop invalid occurrences with an additive outcome migration. No source copied or dependency added; see [research](research/task-flow-refactor.md). |
 | Ordered workspace state and retired assets | React 19.2.8 and existing browser AbortController / fetch contracts | MIT; WHATWG terms | One active snapshot request, ordered entity projections and immediate mutation results; remove unreferenced pixel assets and selectors, keep modular appearance compatibility. No state framework or copied source; see [research](research/workspace-state-refactor.md). |
-| MCP lifecycle and shared plugin contracts | MCP SDK 1.30.0; JSON Schema; Zod 4.5.4 | MIT; specification terms | Contextual schema traversal, bounded same-endpoint session termination and shared data contracts; Server authority and concurrency stay unchanged. Provider declarations reuse the wire schema. No source copied; see [research](research/plugin-flow-refactor.md). |
+| MCP lifecycle and shared plugin contracts | MCP SDK 1.32.1; JSON Schema; Zod 4.5.4 | MIT; specification terms | Contextual schema traversal, bounded same-endpoint session termination and shared data contracts; Server authority and concurrency stay unchanged. Provider declarations reuse the wire schema. No source copied; see [research](research/plugin-flow-refactor.md), [reviewed advisory update](research/typescript-control-plane-p0.md#mcp-sdk-advisory-repair-2026-10-07). |
 | Migration authoring, enrollment and retained notices | Drizzle Kit 0.31.10; Node 26; PDF.js 6.3.289 | MIT; Apache-2.0 and package-specific notices | Disable automatic generation against handwritten history; provide a read-only plan, clear first enrollment instructions and complete backup/notice inventory. No automatic backup feature or source copied; see [research](research/developer-workflow-refactor.md). |
 | Official website and bilingual manuals | [Astro 7.2.10 / `2fdf7314`](https://github.com/withastro/astro/tree/2fdf731428aa738d5dcf3041b4e78eb9d036968c), [Starlight 0.42.0 / `88ad3c26`](https://github.com/withastro/starlight/tree/88ad3c2630487ba227a7b4ccbffc01a2bdf623a5), Vite 8.2.2; compared VitePress 1.6.4 | MIT | Reuse released static rendering, Markdown manuals, locale navigation, Pagefind search and sitemap. The public demo reuses real OpenBot React components with labeled synthetic data and has no Owner session or execution authority. The website now builds in the independent [openbot-website repository](https://github.com/yxflc11/openbot-website), which pins the product commit used for its demo; its dependencies no longer enter Server packaging. No framework source copied; see [research](research/official-site.md). Local build is verified separately from GitHub Pages publication. |
 | Channel Bot collaboration and richer attachments | ai 7.0.93 / 6359fd58; Hono 4.13.7; write-file-atomic 8.0.0; A2A v0.3.0 reviewed | Apache-2.0; MIT | Reuse SDK subagent tools and multimodal message parts, HTTP and immutable storage. Server creates bounded same-channel task trees with independent Bot identity; attachments now support 8 files/20 MiB with paged text, PNG/JPEG/PDF. No source copied; see [collaboration](research/channel-bot-collaboration.md), [attachments](research/channel-attachments.md), and [upgrade](CORE_UPGRADE.md). |
@@ -321,7 +321,7 @@ Windows Desktop cold-start conformance reuses Electron 44.2.0 `safeStorage` (DPA
 - Async Desktop credential access and explicit release targets reuse Electron 44.2.0 and existing packaging adapters: [research](research/product-repair-startup.md).
 - Portable Bot v2 instruction content reuses Agent Skills and the existing digest-reviewed import: [research](research/portable-bot-skills.md).
 - Native Bot content downloads preserve the reviewed optional boolean across the existing Electron 44.2.0 sandbox bridge: [research](research/native-bot-export-bridge.md). No new dependency or copied source; fixed IPC, digest and native-path checks remain.
-- The independent plugin starter copies the existing MIT example and pins MCP SDK 1.30.0: [research](research/plugin-platform-completion.md).
+- The independent plugin starter copies the existing MIT example and now pins MCP SDK 1.32.1: [initial research](research/plugin-platform-completion.md), [reviewed advisory update](research/typescript-control-plane-p0.md#mcp-sdk-advisory-repair-2026-10-07).
 
 Desktop search-account selection reuses Electron 44.2.0's explicit child environment map, without
 new dependencies or copied source: [review](research/desktop-explicit-search-key.md).
@@ -1038,6 +1038,11 @@ existing Owner transactions and bounded owned-file loading. Explicit commit/file
 the curated source; registry publication is not treated as review. No new dependency or copied source.
 The attempted public Docs MCP review failed its real DNS boundary and is not included as a reviewed service.
 
+The 2026-10-07 [SDK advisory repair](research/typescript-control-plane-p0.md#mcp-sdk-advisory-repair-2026-10-07)
+re-reviews catalog revision2 at `10f64b7a03e24c6b56003dedf5ca051d6458ea64`: MCP SDK1.32.1,
+updated manifest hash and four unchanged source/license/provenance hashes. Source commit, review
+record and hashes move together; catalog authority and live grant/manifest checks stay unchanged.
+
 ## C12 quick identity composition (2026-10-02)
 
 [Quick creation](research/quick-bot-creation.md) extends the reviewed Python identity/direct
@@ -1081,3 +1086,47 @@ retry-disabled transport (OpenAI 3.17.0 / Anthropic 1.8.0; existing notices and 
 One tool-less call uses no history and cannot acquire Agent capabilities. PostgreSQL 17 nullable
 message origin and partial unique indexes enforce the one-attempt/one-first-message boundary;
 existing Owner transactions and audit remain authoritative. No dependency or upstream source copy.
+
+## Retire singleton model settings (C28, 2026-10-05)
+
+Reuse C7 Owner preferences, PostgreSQL17.10, the existing connection AES-GCM cipher and
+OpenAI3.17.0/8c72a700. One transactional import receipt retains original files/keys without restart
+resurrection; Owner selects an official OpenAI transcription connection. No new dependency or
+source copied. See [decision and evidence](research/retire-singleton-model.md).
+
+## Workspace primary Bot (C26, 2026-10-05)
+
+Reuse PostgreSQL17.10 row/FK/CAS contracts, psycopg3.3.6 and Pydantic2.13.5, plus existing Owner
+identity/import/tombstone transactions, channel routing and workspace SSE polling. One SQL row
+provides a preference revision without granting Bot authority; no dependency or external source
+is added. See [decision and concurrency evidence](research/workspace-primary-bot.md).
+
+## TypeScript control-plane forwarding (P2, 2026-10-06)
+
+Keep the accepted Fastify5.12.5 framework and Server/Temporal authority split. Select released
+`@fastify/reply-from`12.6.5/5422fd6 (MIT) for HTTP streams with explicit zero retry; compare
+`@fastify/http-proxy`11.6.4/1bf6131 and the retained renderer proxy. Node22.23.2 HTTP/duplex APIs
+cover the narrow WS upgrade integration gap without another protocol implementation.
+Fastify5.12.5/reply-from12.6.5 are now installed exactly in the P2 workspace lock. Local raw-query/body,
+cookie/status/bytes, backpressure/abort, fixed-target/forged-header and mixed Python/SQL/Web/Desktop
+checks pass. The mixed→direct→mixed switch preserves the same session/data/public URL and one writer.
+Production closure excludes the WS test dependency/oracle. Direct HTTPS reuses Node24.21.0 TLS/X509
+and the existing Fastify HTTPS option, with bounded operator files/handshakes and no new dependency.
+Verified local CA HTTPS/WSS, real Python/SQL secure-cookie contracts and entry restart pass; production
+PKI/public deployment and hosted platform qualification are separate outstanding evidence.
+No upstream source copied; the adapter exits at Python retirement.
+Native coexistence reuses the same Desktop launcher/parent pipes, Node24.21.0, Python3.12.13,
+PostgreSQL supervisor/migrator and locked parser closure. The isolated TS Preview has passed cold
+staging, packaged API/paired-exit smoke and an actual Electron/safeStorage create/save/restart journey
+on macOS arm64. Signing and Work/Temporal are outside this API-only native evidence. No dependency
+or upstream source was added for supervision.
+Same-source macOS arm64 API-only startup/RSS/serial read overhead is now measured with the retained
+native launchers; [raw observations](research/typescript-control-plane-p2-overhead.json) preserve all
+trials. This does not establish active Temporal or public-network capacity.
+See [adapter evidence](research/typescript-control-plane-p0.md#p2-forwarding-adapter-review-2026-10-06)
+and [ADR-0050](decisions/0050-typescript-control-plane.md).
+
+The migration integration's [transitive proxy trust review](research/retained-developer-tools.md#express-proxy-trust-transitive-patch-2026-10-06)
+selects MIT proxy-addr2.0.8 / a11ad82545698af5c33e59f3ed0b52eab79bf610 for the retained
+MCP SDK1.30.0/Express5.2.1 example. It preserves the existing API/dependency closure, copies no
+source, and requires scoped HTTP, trust-regression and audit evidence before qualification.

@@ -74,8 +74,9 @@ Manifest 检查只验证编号、文件对应与单调时间，不证明 SQL 正
 入口操作时使用核实后的绝对路径。
 
 Desktop 管理的本地 Server 使用 Electron user-data 下的 `openbot/local-server`：包括
-`postgres`、`objects`、`model-settings.json` 和经 OS 加密的 `bootstrap.json`；后者含模型、
-数据库和 Owner 密钥。保留停机后的完整 data root 及原 OS 账户的秘密存储访问能力。只复制
+`postgres`、`objects`、`model-settings.json` 和经 OS 加密的 `bootstrap.json`；后者含数据库和 Owner 密钥（旧版还保留原模型密钥）。
+C28 将旧模型文件和密钥留作恢复材料；当前模型凭据在 PostgreSQL 中，配套的
+`model-connections.key` 位于同一 data root，也须纳入恢复材料。保留停机后的完整 data root 及原 OS 账户的秘密存储访问能力。只复制
 `bootstrap.json` 不能保证在其他主机/账户解密，本流程不证明 Desktop 跨主机凭据恢复可用。
 远程 Desktop 客户端不保存远程 Server 的恢复资产。
 

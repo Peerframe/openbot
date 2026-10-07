@@ -277,7 +277,7 @@ jobs:
     if: contains(fromJSON(needs.scope.outputs.plan).required, 'python-product-container')
 
   python-desktop-preview:
-    name: Python Desktop Preview (macOS arm64)
+    name: Python and mixed TS Desktop Preview (macOS arm64)
     runs-on: macos-15
     timeout-minutes: 30
     steps:
@@ -328,6 +328,56 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           path: ${{ runner.temp }}/python-desktop-preview-${{ github.sha }}.tar.gz
+          archive: false
+          if-no-files-found: error
+          retention-days: 7
+      - name: Build the pinned TS entry with the same retained parser/database closure
+        run: npm exec -- turbo run build --filter=@openbot/server-ts
+      - name: Stage the exact mixed TS product runtime
+        run: node apps/desktop/scripts/prepare-native-server.ts --ts-product
+      - name: Verify the staged TS entry and paired Python/PostgreSQL lifecycle
+        shell: bash
+        run: |
+          umask 077
+          node apps/desktop/scripts/smoke-python-product.ts apps/desktop/out/ts-product-runtime \
+            > "$RUNNER_TEMP/ts-preview-staged.json"
+          cat "$RUNNER_TEMP/ts-preview-staged.json"
+      - name: Package the explicit unsigned TS Preview
+        run: node apps/desktop/scripts/package.ts --preview --ts-product
+      - name: Verify the packaged TS entry and paired Python/PostgreSQL lifecycle
+        shell: bash
+        run: |
+          umask 077
+          node apps/desktop/scripts/smoke-python-product.ts \
+            "apps/desktop/out/ts-product/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app/Contents/Resources/native-runtime" \
+            > "$RUNNER_TEMP/ts-preview-packaged.json"
+          cat "$RUNNER_TEMP/ts-preview-packaged.json"
+      - name: Measure same-source native API forwarding overhead
+        shell: bash
+        run: |
+          umask 077
+          env -i PATH="$PATH" LANG=en_US.UTF-8 \
+            apps/desktop/out/ts-product-runtime/node/bin/node apps/desktop/scripts/measure-ts-product.ts apps/desktop/out/ts-product-runtime \
+            > "$RUNNER_TEMP/ts-preview-overhead.json"
+      - name: Retain synthetic TS Preview lifecycle and performance evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ts-desktop-preview-evidence-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/ts-preview-staged.json
+            ${{ runner.temp }}/ts-preview-packaged.json
+            ${{ runner.temp }}/ts-preview-overhead.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Archive the TS Preview with executable modes and symlinks
+        shell: bash
+        run: |
+          tar -czf "$RUNNER_TEMP/ts-desktop-preview-${{ github.sha }}.tar.gz" \
+            -C apps/desktop/out/ts-product "OpenBot TS Preview-darwin-arm64"
+      - name: Retain the unsigned TS Preview for review
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          path: ${{ runner.temp }}/ts-desktop-preview-${{ github.sha }}.tar.gz
           archive: false
           if-no-files-found: error
           retention-days: 7
@@ -676,6 +726,15 @@ jobs:
         run: |-
           npm run contracts:check
           npm run contracts:test
+          npm run contracts:http:python
+          npm run contracts:http:python -- --suite publisher
+          npm run contracts:http:python -- --suite models
+          npm run contracts:http:ts
+          npm run contracts:http:ts -- --suite publisher
+          npm run contracts:http:ts -- --suite models
+          npm run contracts:http:tls
+          npm run contracts:http:tls -- --suite publisher
+          npm run contracts:http:tls -- --suite models
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}

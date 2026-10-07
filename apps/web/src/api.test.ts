@@ -3,6 +3,10 @@ import { createHash, webcrypto } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   fetchEmployeeTemplate,
+  getTranscriptionSettings,
+  saveTranscriptionSettings,
+  setWorkspacePrimaryBot,
+  previewEmployeeImport,
   isEmployeeProfileChangedEvent,
   updateEmployeeProfileDetails,
   updateEmployeeSkillState,
@@ -104,6 +108,30 @@ describe("Employee profile details API", () => {
       role: "Evidence reviewer",
       description: "Review evidence and document limitations.",
       expectedRevision: 3,
+    });
+  });
+});
+
+describe("Employee import HTTP admission", () => {
+  it("uploads downloaded Employee bytes as JSON accepted by the product preview route", async () => {
+    const file = new File(['{"format":"openbot.employee/v1"}\n'], "employee.json", {
+      type: "application/vnd.openbot.employee+json",
+    });
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ preview: { packageId: "reviewed-package" } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const abort = new AbortController();
+    const preview = await previewEmployeeImport(file, abort.signal);
+    expect(preview.packageId).toBe("reviewed-package");
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/employees/import/preview", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: file,
+      signal: abort.signal,
     });
   });
 });
@@ -292,4 +320,51 @@ describe("native Employee package download", () => {
       expect(fetcher).not.toHaveBeenCalled();
     },
   );
+});
+
+describe("migration settings response projections", () => {
+  const calls = [
+    [
+      "primary Bot",
+      () => setWorkspacePrimaryBot({ botId: "bot", expectedRevision: 1 }),
+      { primaryBotId: "bot", revision: 2 },
+    ],
+    ["transcription read", () => getTranscriptionSettings(), { connectionId: null, revision: 2 }],
+    [
+      "transcription save",
+      () => saveTranscriptionSettings({ connectionId: null, expectedRevision: 1 }),
+      { connectionId: null, revision: 2 },
+    ],
+  ] as const;
+
+  it.each(calls)("ignores additive fields in %s responses", async (_label, call, response) => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ...response, futureField: { enabled: true } })),
+    );
+    await expect(call()).resolves.toEqual(response);
+  });
+
+  it.each(calls)(
+    "still refuses malformed known fields in %s responses",
+    async (_label, call, response) => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(JSON.stringify({ ...response, revision: "2" })),
+      );
+      await expect(call()).rejects.toThrow();
+    },
+  );
+
+  it("rejects extra primary Bot command fields before a request", async () => {
+    const fetch = vi.spyOn(globalThis, "fetch");
+    const input = { botId: null, expectedRevision: 1, permissions: ["all"] };
+    await expect(setWorkspacePrimaryBot(input)).rejects.toThrow();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects extra transcription command fields before a request", async () => {
+    const fetch = vi.spyOn(globalThis, "fetch");
+    const input = { connectionId: null, expectedRevision: 1, futureField: true };
+    await expect(saveTranscriptionSettings(input)).rejects.toThrow();
+    expect(fetch).not.toHaveBeenCalled();
+  });
 });

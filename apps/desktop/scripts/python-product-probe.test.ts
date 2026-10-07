@@ -44,7 +44,8 @@ afterEach(() => {
 describe("launchThroughDisposableParent startup", () => {
   it("forks itself with fixed env and IPC-only stdio, sending env over IPC only", async () => {
     const parent = new FakeParent();
-    parent.onSend = () => queueMicrotask(() => parent.emit("message", { ready: true }));
+    parent.onSend = () =>
+      queueMicrotask(() => parent.emit("message", { ready: true, processIds: [9999999] }));
     install(parent);
     const managed = await launchThroughDisposableParent("/runtime", "/dist", SECRET_ENV);
     const [modulePath, argv, options] = forkMock.mock.calls[0] ?? [];
@@ -64,6 +65,16 @@ describe("launchThroughDisposableParent startup", () => {
   it.each([
     ["refused", (p: FakeParent) => p.emit("message", { ready: false }), "Disposable API failed."],
     ["unknown message", (p: FakeParent) => p.emit("message", "ready"), "Disposable API failed."],
+    [
+      "missing process IDs",
+      (p: FakeParent) => p.emit("message", { ready: true }),
+      "Disposable API failed.",
+    ],
+    [
+      "duplicate process IDs",
+      (p: FakeParent) => p.emit("message", { ready: true, processIds: [9999999, 9999999] }),
+      "Disposable API failed.",
+    ],
     [
       "truthy non-true ready",
       (p: FakeParent) => p.emit("message", { ready: "true" }),
@@ -108,7 +119,8 @@ describe("launchThroughDisposableParent startup", () => {
   it("clears the readiness timer after ready", async () => {
     vi.useFakeTimers();
     const parent = new FakeParent();
-    parent.onSend = () => queueMicrotask(() => parent.emit("message", { ready: true }));
+    parent.onSend = () =>
+      queueMicrotask(() => parent.emit("message", { ready: true, processIds: [9999999] }));
     install(parent);
     await launchThroughDisposableParent("/runtime", "/dist", SECRET_ENV);
     expect(vi.getTimerCount()).toBe(0);
@@ -120,7 +132,8 @@ describe("managed stop", () => {
     managed: Awaited<ReturnType<typeof launchThroughDisposableParent>>;
   }> {
     const parent = new FakeParent();
-    parent.onSend = () => queueMicrotask(() => parent.emit("message", { ready: true }));
+    parent.onSend = () =>
+      queueMicrotask(() => parent.emit("message", { ready: true, processIds: [9999999] }));
     install(parent);
     return {
       parent,
@@ -145,10 +158,21 @@ describe("managed stop", () => {
     vi.useFakeTimers();
     vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response("ok"));
     const outcome = expect(managed.stop()).rejects.toThrow(
-      "Python API survived its disposable parent.",
+      "Product API survived its disposable parent.",
     );
     await vi.advanceTimersByTimeAsync(15_100);
     await outcome;
     expect(managed.isAlive()).toBe(false);
+  });
+  it("refuses success when an owned process survives even though public health is gone", async () => {
+    const { managed } = await ready();
+    vi.useFakeTimers();
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("fetch failed"));
+    vi.spyOn(process, "kill").mockReturnValue(true);
+    const outcome = expect(managed.stop()).rejects.toThrow(
+      "Product process survived its disposable parent.",
+    );
+    await vi.advanceTimersByTimeAsync(15_100);
+    await outcome;
   });
 });

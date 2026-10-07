@@ -81,9 +81,9 @@ local document is used. Source: [plugin-example.ts](../packages/mcp-example/src/
 ## Author contract
 
 Implement a normal **MCP 2025-11-25-compatible Streamable HTTP** server, in any language. OpenBot
-pins official `@modelcontextprotocol/sdk` **1.30.0**, commit
-`2d889f2b329e46680ec9bdd565de4616c497825a`. No OpenBot-specific plugin SDK is required.
-See the [research](research/third-party-mcp-plugins.md).
+pins official `@modelcontextprotocol/sdk` **1.32.1**, commit
+`ff07b001194fe60ee9deb2121cf119057565796d`. No OpenBot-specific plugin SDK is required.
+See the [initial research](research/third-party-mcp-plugins.md) and [reviewed security update](research/typescript-control-plane-p0.md#mcp-sdk-advisory-repair-2026-10-07).
 
 | Area | Current contract |
 | --- | --- |

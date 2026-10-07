@@ -13,6 +13,10 @@ Python is the product control default. `apps/server` retains only a retirement R
 [frozen oracle](../tests/oracles/legacy-server/AGENTS.md) is comparison input only. Current runtime
 source is `packages/harness`; core checks and product consumers install its typed wheel.
 
+The accepted P2 [TS entry candidate](../apps/server-ts/README.md) forwards to one private Python
+upstream; read its [local rules](../apps/server-ts/AGENTS.md) before changing that boundary.
+Python remains the default and sole operation/background writer until qualified group migration.
+
 ## UI interaction
 
 - Rules/design: [Web AGENTS](../apps/web/AGENTS.md), [design reading entry](design/README.md).
@@ -65,8 +69,27 @@ source is `packages/harness`; core checks and product consumers install its type
   [work routes](../apps/server-python/src/openbot_server/work_routes.py) and
   [public Work DTOs](../apps/server-python/src/openbot_server/work_models.py); actual TS consumption is
   [work-api](../apps/web/src/work-api.ts), [its tests](../apps/web/src/work-api.test.ts),
-  and [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx). Work create/get/cancel
-  requests, responses and errors have generated Python-to-TS types; see the checks below.
+  and [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx). Under accepted
+  [ADR-0050](decisions/0050-typescript-control-plane.md), Work/native Task HTTP definitions now live
+  in [shared TS](../packages/protocol/src/work-http.ts), with identity/auth/workspace/read groups in
+  [control HTTP](../packages/protocol/src/control-http.ts), plus
+  [model/storage/attachment operations](../packages/protocol/src/model-storage-openapi.ts) backed by
+  [model inputs](../packages/protocol/src/model-services.ts) and [storage/attachment schemas](../packages/protocol/src/storage-http.ts).
+  [Lifecycle/approval/audit operations](../packages/protocol/src/lifecycle-http.ts) reuse retained
+  input/wire validators with explicit public response projections.
+  [Employee HTTP](../packages/protocol/src/employee-http.ts) owns profile/knowledge/skill/memory
+  projections; [automation HTTP](../packages/protocol/src/automation-http.ts) preserves the product's
+  UTF-16/UTC/update-admission rules over [automation DTOs](../packages/protocol/src/automations.ts).
+  [Node HTTP](../packages/protocol/src/node-http.ts) reuses retained enrollment wire inputs and public
+  metadata; the resource registry also owns PNG/Markdown Run artifact downloads.
+  [Plugin HTTP](../packages/protocol/src/plugin-http.ts) reuses retained declarations/catalog and
+  preserves Python trim, case-sensitive UUID revisions and direct-field/collection Unicode bounds;
+  [Web plugin types](../apps/web/src/plugin-api.ts) derive from these HTTP schemas.
+  [Browser HTTP](../packages/protocol/src/browser-http.ts) preserves strict actions/session projections;
+  [portability HTTP](../packages/protocol/src/portability-http.ts) owns export/import preview, package,
+  activation and receipt contracts. Domain identity/session/message/Run/model/portable types derive from
+  shared validators. Default registrations and reviewed consumers are inventoried; mixed-entry
+  forwarding and actual engine/native execution retain their applicable migration phase gates.
 - Existing runtime wire: [Python control validator](../apps/server-python/src/openbot_server/runtime_wire.py)
   ↔ [runtime wire](../packages/harness/src/openbot_agent_runtime/wire.py);
   [comparison script](../apps/server-python/scripts/compare-runtime-wire.mjs) checks the frozen TS
@@ -78,6 +101,23 @@ source is `packages/harness`; core checks and product consumers install its type
   For an isolated Web regression, `npm exec --workspace @openbot/web -- vitest run src/work-api.test.ts`
   assumes those dependencies have already been built. Node wire uses
   `npm run test --workspace @openbot/protocol`.
+  `npm run contracts:http:python` runs the [black-box Work/resource/lifecycle/Employee/automation/browser/portability/Node/artifact/plugin/control suites](../packages/contract-tests/README.md)
+  against real `serve.py` product mode, owned PostgreSQL and a private loopback MCP fixture; no Temporal/provider/tool calls.
+  Legacy plugin decisions have refusal-only HTTP evidence; successful/native durable approvals remain pending.
+  Synthetic browser peers qualify original binding/observation/maintenance and bounded cancelled waits;
+  trusted human control/Provider execution remains a separate gate. `-- --suite publisher` qualifies
+  configured signed v1/v2 HTTP with disposable offline keys and public-only trust metadata.
+  `-- --suite models` qualifies real Owner HTTP/SQL/SDK with synthetic OpenAI Chat/Anthropic transport;
+  its count-only receipt refuses unauthorized dispatch/retry/fallback. Native Work decision/reconciliation
+  success and cancellation/replay are real HTTP transactions over synthetic publication states.
+  The real inventory includes reviewed consumer source digests and service composition; actual
+  Web/Desktop settings PUT and Owner file transport are exercised with Node Fetch, without claiming
+  installed Electron/platform behavior.
+  Synthetic pending approvals/unread/audit publication states qualify real HTTP transactions only.
+  Artifact fixtures also qualify native Work's separate8MiB files, empty binary downloads, snapshot links
+  and integrity/no-follow refusal. SSE qualifies persisted change, slow-reader coalescing, deletion and
+  revocation; saturation pressure remains pending. Use `-- --suite control` for owned focused verification;
+  the complete `--inventory` run still requires all suites.
   `npm run test:control:python` adds real disposable PostgreSQL and differential checks; Worker
   coverage additionally needs the documented `OPENBOT_TEMPORAL_TEST_PYTHON` environment.
 
@@ -131,10 +171,12 @@ real Temporal/control types and requires the Worker environment.
 Build/quality tools and product dependencies have separate exact locks; see
 [harness setup](../packages/harness/README.md).
 
-The real Work create/get/cancel requests, snapshots and errors come from `work_models.py` through `work_routes.py`.
-`npm run contracts:generate` writes [consumer types](../apps/web/src/generated/work-contract.ts);
-`npm run contracts:check` checks freshness. [work-api](../apps/web/src/work-api.ts) consumes the
-generated type and keeps Zod runtime validation. Run
+Shared TS defines Work/native Task, core control and model/storage/attachment HTTP; Python DTOs/routes remain parity input.
+`npm run contracts:generate` writes [Control OpenAPI](../packages/protocol/generated/control-openapi.json),
+[Work OpenAPI](../packages/protocol/generated/work-openapi.json) and
+[compatibility types](../apps/web/src/generated/work-contract.ts) from shared TS Work schemas;
+`npm run contracts:check` checks freshness without Python. [work-api](../apps/web/src/work-api.ts)
+consumes shared validators/inferred types, preserving its additive response projection. Run
 `apps/server-python/scripts/bootstrap.sh` once, then `npm run contracts:test` for actual Python
 HTTP→Web serialization/status fixtures. The command builds shared dependencies in a cold checkout;
 calling Vitest directly assumes those outputs already exist. No DB or model is needed.

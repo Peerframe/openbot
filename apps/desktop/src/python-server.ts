@@ -67,7 +67,8 @@ export function pythonProductEnvironment(
     !source.OPENBOT_OWNER_PASSWORD ||
     source.OPENBOT_OWNER_PASSWORD.length < 15 ||
     source.OPENBOT_OWNER_PASSWORD.length > 1024 ||
-    !/^[0-9a-f]{64}$/u.test(source.OPENBOT_MODEL_ENCRYPTION_KEY ?? "") ||
+    (source.OPENBOT_MODEL_ENCRYPTION_KEY !== undefined &&
+      !/^[0-9a-f]{64}$/u.test(source.OPENBOT_MODEL_ENCRYPTION_KEY)) ||
     !modelPath ||
     !objects ||
     !isAbsolute(runtimeRoot) ||
@@ -109,7 +110,9 @@ export function pythonProductEnvironment(
     OPENBOT_CONTROL_OBJECT_ROOT: objects,
     OPENBOT_CONTROL_ARTIFACT_ROOT: join(objects, "work-artifacts"),
     OPENBOT_CONTROL_MODEL_SETTINGS_PATH: modelPath,
-    OPENBOT_CONTROL_MODEL_ENCRYPTION_KEY: source.OPENBOT_MODEL_ENCRYPTION_KEY as string,
+    ...(source.OPENBOT_MODEL_ENCRYPTION_KEY
+      ? { OPENBOT_CONTROL_MODEL_ENCRYPTION_KEY: source.OPENBOT_MODEL_ENCRYPTION_KEY }
+      : {}),
     OPENBOT_CONTROL_MODEL_CONNECTION_KEY_PATH: join(dataRoot, "model-connections.key"),
     OPENBOT_CONTROL_PLUGIN_STORE_PATH: join(objects, "plugins", "state.json"),
     OPENBOT_CONTROL_PLUGIN_LOCAL_ENDPOINTS: JSON.stringify(localEndpoints),
@@ -166,7 +169,7 @@ export async function pythonProductConfigurationEnvironment(
   return result;
 }
 
-async function containedFile(root: string, name: string): Promise<string> {
+export async function containedProductFile(root: string, name: string): Promise<string> {
   const path = join(root, name);
   const entry = await lstat(path);
   const resolvedRoot = await realpath(root);
@@ -230,12 +233,16 @@ async function fixedProcess(
   });
 }
 
-export async function verifyPythonProductHealth(origin: string): Promise<boolean> {
+export async function verifyPythonProductHealth(
+  origin: string,
+  privateProxy = false,
+): Promise<boolean> {
   let response: Response | undefined;
   try {
     response = await fetch(`${origin}/health`, {
       redirect: "error",
       signal: AbortSignal.timeout(1000),
+      ...(privateProxy ? { headers: { Forwarded: "for=127.0.0.1" } } : {}),
     });
     if (!response.ok || !isJsonContentType(response.headers.get("content-type")) || !response.body)
       return false;
@@ -261,19 +268,34 @@ export async function verifyPythonProductHealth(origin: string): Promise<boolean
 export async function launchPythonProductServer(
   runtimeRoot: string,
   source: Record<string, string>,
-): Promise<ManagedServerProcess> {
+  privatePort?: number,
+): Promise<
+  ManagedServerProcess & { readonly closed: Promise<void>; readonly processIds: readonly number[] }
+> {
   if (!(await selectsPythonProduct(runtimeRoot)))
     throw new Error("Python candidate is not selected.");
   const env = pythonProductEnvironment(runtimeRoot, source);
-  const python = await containedFile(runtimeRoot, "python/bin/python3.12");
-  const node = await containedFile(runtimeRoot, "node/bin/node");
-  const verify = await containedFile(
+  if (privatePort !== undefined) {
+    if (
+      !Number.isInteger(privatePort) ||
+      privatePort < 1 ||
+      privatePort > 65535 ||
+      String(privatePort) === env.OPENBOT_CONTROL_PORT
+    )
+      throw new Error("Python private forwarding port is invalid.");
+    env.OPENBOT_CONTROL_PUBLIC_ORIGIN = env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string;
+    env.OPENBOT_CONTROL_PROXY_ADDRESS = "127.0.0.1";
+    env.OPENBOT_CONTROL_PORT = String(privatePort);
+  }
+  const python = await containedProductFile(runtimeRoot, "python/bin/python3.12");
+  const node = await containedProductFile(runtimeRoot, "node/bin/node");
+  const verify = await containedProductFile(
     runtimeRoot,
     "apps/server-python/scripts/verify_environment.py",
   );
-  const entry = await containedFile(runtimeRoot, "desktop/python-control-entry.py");
-  const migration = await containedFile(runtimeRoot, "desktop/python-control-migrate.mjs");
-  await containedFile(runtimeRoot, "apps/server-python/scripts/serve.py");
+  const entry = await containedProductFile(runtimeRoot, "desktop/python-control-entry.py");
+  const migration = await containedProductFile(runtimeRoot, "desktop/python-control-migrate.mjs");
+  await containedProductFile(runtimeRoot, "apps/server-python/scripts/serve.py");
   // Validate the complete installed Python profile before any database migration.
   await fixedProcess(
     python,
@@ -312,7 +334,12 @@ export async function launchPythonProductServer(
   });
   child.stdin.on("error", () => undefined);
   let stopping: Promise<void> | undefined;
-  const managed: ManagedServerProcess = {
+  const managed: ManagedServerProcess & {
+    readonly closed: Promise<void>;
+    readonly processIds: readonly number[];
+  } = {
+    closed,
+    processIds: child.pid === undefined ? [] : [child.pid],
     isAlive: () => alive,
     stop() {
       if (stopping) return stopping;
@@ -332,7 +359,12 @@ export async function launchPythonProductServer(
   try {
     const deadline = Date.now() + maximumStartupMs;
     while (alive && Date.now() < deadline) {
-      if (await verifyPythonProductHealth(`http://127.0.0.1:${env.OPENBOT_CONTROL_PORT}`)) {
+      if (
+        await verifyPythonProductHealth(
+          `http://127.0.0.1:${env.OPENBOT_CONTROL_PORT}`,
+          privatePort !== undefined,
+        )
+      ) {
         if (alive) return managed;
         break;
       }

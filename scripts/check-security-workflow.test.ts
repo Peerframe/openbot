@@ -9,9 +9,9 @@ import {
 import { SETUP_NODE, workflowDocument } from "./workflow-policy.ts";
 import {
   type CommandStep,
-  type FixtureWorkflow,
   commandStep,
   environmentOf,
+  type FixtureWorkflow,
   fixtureJob,
   fixtureSteps,
   matrixRows,
@@ -250,10 +250,31 @@ test("all C2 gates and real product recovery stay required when selected", () =>
   for (const [job, fragment] of [
     ["harness", "npm run harness:wheel"],
     ["harness", "npm run contracts:test"],
+    ["harness", "npm run contracts:http:python"],
+    ["harness", "npm run contracts:http:python -- --suite publisher"],
+    ["harness", "npm run contracts:http:python -- --suite models"],
+    ["harness", "npm run contracts:http:ts"],
+    ["harness", "npm run contracts:http:ts -- --suite publisher"],
+    ["harness", "npm run contracts:http:ts -- --suite models"],
+    ["harness", "npm run contracts:http:tls"],
+    ["harness", "npm run contracts:http:tls -- --suite publisher"],
+    ["harness", "npm run contracts:http:tls -- --suite models"],
     ["temporal-qualification", "--engine postgres-mtls --upgrade-archive"],
     ["browser-product", "control node replacement response-loss browser-restart"],
     ["python-product-container", "deploy/server/smoke-product.py"],
     ["python-desktop-preview", "node apps/desktop/scripts/package.ts --preview --python-product"],
+    ["python-desktop-preview", "npm exec -- turbo run build --filter=@openbot/server-ts"],
+    ["python-desktop-preview", "node apps/desktop/scripts/prepare-native-server.ts --ts-product"],
+    [
+      "python-desktop-preview",
+      "node apps/desktop/scripts/smoke-python-product.ts apps/desktop/out/ts-product-runtime",
+    ],
+    ["python-desktop-preview", "node apps/desktop/scripts/package.ts --preview --ts-product"],
+    ["python-desktop-preview", "OpenBot TS Preview.app/Contents/Resources/native-runtime"],
+    [
+      "python-desktop-preview",
+      "apps/desktop/out/ts-product-runtime/node/bin/node apps/desktop/scripts/measure-ts-product.ts apps/desktop/out/ts-product-runtime",
+    ],
   ] as const)
     assert.throws(() =>
       check(

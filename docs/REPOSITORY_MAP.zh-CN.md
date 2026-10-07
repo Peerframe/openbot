@@ -11,6 +11,9 @@
 Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README；[冻结 oracle](../tests/oracles/legacy-server/AGENTS.md)
 只作比较输入。核心在 `packages/harness`，测试及真实消费者安装其带类型信息的 wheel。
 
+已批准的 P2 [TS 入口候选](../apps/server-ts/README.zh-CN.md)转发到固定私有 Python 服务；
+修改这个边界先读[局部规则](../apps/server-ts/AGENTS.md)。逐组迁移过关前，Python 仍是默认实现和唯一操作/后台写入者。
+
 ## UI 交互
 
 - 规则：[Web AGENTS](../apps/web/AGENTS.md)、[设计入口](design/README.zh-CN.md)。
@@ -59,8 +62,25 @@ Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README�
 - Python HTTP 当前用 [work routes](../apps/server-python/src/openbot_server/work_routes.py) 与
   [公共 Work DTO](../apps/server-python/src/openbot_server/work_models.py)显式投影；TS 消费者是
   [work-api](../apps/web/src/work-api.ts)、[测试](../apps/web/src/work-api.test.ts)与
-  [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx)。Work 创建／读取／取消的请求、响应和错误
-  已接入 Python→TS 生成类型，命令见文末。
+  [WorkTasksScreen](../apps/web/src/components/WorkTasksScreen.tsx)。按已接受的
+  [ADR-0050](decisions/0050-typescript-control-plane.zh-CN.md)，Work/native Task HTTP 定义已移入
+  [共享 TS](../packages/protocol/src/work-http.ts)；身份/认证/工作区/读取组在
+  [control HTTP](../packages/protocol/src/control-http.ts)；
+  [模型/存储/附件操作](../packages/protocol/src/model-storage-openapi.ts)使用
+  [模型输入](../packages/protocol/src/model-services.ts)和[存储/附件 schema](../packages/protocol/src/storage-http.ts)。
+  [生命周期/审批/审计操作](../packages/protocol/src/lifecycle-http.ts)复用现有输入/wire 校验器，并明确公共响应投影。
+  [Employee HTTP](../packages/protocol/src/employee-http.ts)负责 profile/知识/技能/记忆投影；
+  [自动化 HTTP](../packages/protocol/src/automation-http.ts)在[自动化 DTO](../packages/protocol/src/automations.ts)上
+  保留产品的 UTF-16/UTC/更新字段处理规则。
+  [Node HTTP](../packages/protocol/src/node-http.ts)复用保留的注册 wire 输入和公共元数据；resource 注册表
+  还负责 PNG/Markdown Run 产物下载。
+  [插件 HTTP](../packages/protocol/src/plugin-http.ts)复用保留的声明/目录，
+  保留 Python trim、大小写敏感 UUID 版本比较及直接字段/集合 Unicode 限额；
+  [Web 插件类型](../apps/web/src/plugin-api.ts)由这些 HTTP 定义推导。
+  [浏览器 HTTP](../packages/protocol/src/browser-http.ts)保留严格动作/会话投影；
+  [导入导出 HTTP](../packages/protocol/src/portability-http.ts)负责预览、包、激活和回执。
+  domain 的身份、会话、消息、Run、模型及 portable 类型来自共享校验器；默认注册及消费者已列入清单，
+  混合入口转发和真实引擎/原生执行保留对应迁移阶段门槛。
 - Runtime wire：[控制校验](../apps/server-python/src/openbot_server/runtime_wire.py) ↔
   [核心 wire](../packages/harness/src/openbot_agent_runtime/wire.py)；
   [比较脚本](../apps/server-python/scripts/compare-runtime-wire.mjs)对照冻结 TS oracle，不能把它当活跃 Server。
@@ -71,6 +91,19 @@ Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README�
   冷 checkout 也走此入口。只查 Web 局部回归时，
   `npm exec --workspace @openbot/web -- vitest run src/work-api.test.ts` 要求已构建这些依赖。
   Node wire 跑 `npm run test --workspace @openbot/protocol`。
+  `npm run contracts:http:python` 对真实 `serve.py` 产品入口和本次独占 PostgreSQL 执行
+  [Work/resource/lifecycle/Employee/automation/browser/portability/Node/artifact/plugin/control 黑盒测试](../packages/contract-tests/README.zh-CN.md)，同时使用私有本机 MCP 夹具，不调用 Temporal/模型服务/插件工具。
+  旧式插件决定只有 HTTP 拒绝路径证据；成功决定和原生持久化审批仍待验证。
+  合成浏览器端验证原绑定/观察/维护及取消后有界等待；可信人控/Provider 执行仍另行验收。
+  `-- --suite publisher` 用临时离线密钥和仅公开信任元数据验证签名 v1/v2 HTTP。
+  `-- --suite models` 用合成 OpenAI Chat/Anthropic 传输验证真实 Owner HTTP/SQL/SDK，
+  仅次数回执拒绝越权派发/重试/回退。原生 Work 决定/对账成功、取消/重放使用合成发布状态验证真实 HTTP 事务。
+  真实清单保存消费者源码摘要及服务组装；实际 Web/Desktop 设置 PUT 和 Owner 文件传输以 Node Fetch 复验，
+  不代表安装版 Electron/目标平台执行。
+  合成等待审批/未读/审计发布状态只用于验证真实 HTTP 事务。
+  产物夹具还验证原生 Work 独立8MiB 文件、空二进制下载、快照链接及完整性/no-follow 拒绝。
+  SSE 验证持久变更、慢速读取合并、删除和撤权，饱和压力仍待验。用 `-- --suite control` 独占单组复验；
+  `--inventory` 仍要求全部套件。
   `npm run test:control:python` 增加临时 PostgreSQL 与差分，
   Worker 覆盖还要按文档配置 `OPENBOT_TEMPORAL_TEST_PYTHON`。
 
@@ -116,9 +149,12 @@ Schema 变化使用 `npm run migration:plan --workspace @openbot/db -- --name de
 `sh apps/server-python/scripts/bootstrap-worker.sh` 把同一 wheel 安装到 Worker 环境。
 构建／质量／产品依赖有独立精确锁，见[harness 设置](../packages/harness/README.zh-CN.md)。
 
-Work 创建／读取／取消的真实请求、snapshot 响应和错误由 `work_models.py` 经 `work_routes.py` 定义。
-`npm run contracts:generate` 生成[消费类型](../apps/web/src/generated/work-contract.ts)，
-`npm run contracts:check` 检查新鲜度；[work-api](../apps/web/src/work-api.ts)实际引用类型并保留 Zod 验证。
+Work/native Task、核心 control 及模型/存储/附件的公共契约来自共享 TS，Python DTO/路由保留作对照。
+`npm run contracts:generate` 从共享 TS 定义生成
+[Control OpenAPI](../packages/protocol/generated/control-openapi.json)、
+[Work OpenAPI](../packages/protocol/generated/work-openapi.json)和[兼容类型](../apps/web/src/generated/work-contract.ts)，
+`npm run contracts:check` 无需 Python 即可检查新鲜度。
+[work-api](../apps/web/src/work-api.ts)使用共享校验器及推导类型，保留允许新增字段的响应投影。
 先用 `apps/server-python/scripts/bootstrap.sh` 准备控制层基础环境，再运行 `npm run contracts:test`，
 该命令会构建冷环境缺少的共享依赖，验证真实 Python HTTP 序列化及状态到 Web 的兼容性。
 直接调用 Vitest 依赖已有构建输出；正式命令无需 DB 或模型。Node wire 契约仍归 `packages/protocol`。

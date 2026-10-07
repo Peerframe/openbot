@@ -53,6 +53,8 @@ class PostgresIdentityStore:
 
     @staticmethod
     async def _insert_bot(connection, value, configuration, *, skip_name_conflict=False):
+        from .workspace_settings import current_workspace_settings, default_primary_bot
+        workspace = await current_workspace_settings(connection, update=True)
         cursor = await connection.execute(
             "INSERT INTO bots (id, name, role, status, computer_profile, configuration, created_at, updated_at) "
             "VALUES (%s, %s, %s, 'idle', %s, %s, date_trunc('milliseconds', statement_timestamp()), "
@@ -70,6 +72,7 @@ class PostgresIdentityStore:
         await connection.execute(
             "INSERT INTO run_events (id, bot_id, type, payload) VALUES (%s, %s, 'BOT_CREATED', %s)",
             (str(uuid4()), row["id"], Jsonb({"name": value.name, "role": value.role})))
+        await default_primary_bot(connection, workspace, row['id'], reason='created')
         return row
 
     async def quick_create_bot(self, token: str | None, value: QuickCreateBotInput):

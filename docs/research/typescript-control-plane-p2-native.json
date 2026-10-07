@@ -1,0 +1,1538 @@
+{
+  "kind": "p2-macos-arm64-api-only-coexistence-candidate",
+  "sourceHead": "010439bb9002fabb7e1facd8450ee85edbafa309",
+  "sourceDirty": true,
+  "electron": "44.3.0",
+  "node": "24.21.0",
+  "python": "3.12.13",
+  "finalAsarSha256": "9464016f705a9bfe942586ce47474d0a0badcd206f9f80cdfbb946e749b3a60f",
+  "compiledLauncherMatchesPackage": {
+    "main.js": true,
+    "native-server.js": true,
+    "python-server.js": true,
+    "ts-server.js": true,
+    "ts-product-manifest.js": true
+  },
+  "regularFileBytes": 1115059373,
+  "nativeRegularFileBytes": 783415863,
+  "actualElectronJourney": {
+    "asarSha256": "0e3bf3906729c9a4252a8ac71a8a38e455490ac433f7f795d6226b1bb9987a34",
+    "isolatedTemporaryProfile": true,
+    "firstRunNativeStartup": true,
+    "ownerLogin": true,
+    "botCreatedAndSaved": true,
+    "restartRecoveredOwnerAndBot": true,
+    "bootstrapAndConnectionKeyUnchanged": true,
+    "realSafeStorageEncryptDecrypt": true,
+    "twoMenuQuitExitCodes": [
+      0,
+      0
+    ],
+    "ownedProductAndDatabaseProcessesGone": true,
+    "liveModelCalls": 0,
+    "finalBundleRecovery": {
+      "asarSha256": "9464016f705a9bfe942586ce47474d0a0badcd206f9f80cdfbb946e749b3a60f",
+      "sameDisposableProfile": true,
+      "ownerAndSavedBotRecovered": true,
+      "realtimeConnected": true,
+      "bootstrapAndConnectionKeyUnchanged": true,
+      "menuQuitExitCode": 0,
+      "ownedProductAndDatabaseProcessesGone": true
+    }
+  },
+  "unqualified": [
+    "public/TLS deployment",
+    "same-scope startup/RSS/latency overhead",
+    "hosted CI",
+    "signing/notarization",
+    "Work/Temporal execution"
+  ],
+  "packagedNativeSmoke": {
+    "parentEofStoppedActualApi": true,
+    "parentEofStoppedOwnedProcessCount": 2,
+    "tsForwardingEntry": true,
+    "eitherProductExitStoppedPair": true,
+    "unsafeDirectoryRefusedAndPostgresStopped": true,
+    "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+    "pythonProductHealth": true,
+    "ownerLogin": true,
+    "postgresInitialized": true,
+    "restartPreservedData": true,
+    "serverAndPostgresStopped": true,
+    "syntheticOnly": true,
+    "nativeKeychainVerified": false
+  },
+  "fullCheck": {
+    "exitCode": 0,
+    "cleanInheritedEnvironment": true,
+    "vitestMaxWorkers": 2,
+    "turboEnvironmentMode": "loose",
+    "docs": {
+      "passed": 12,
+      "markdownFiles": 588
+    },
+    "research": {
+      "passed": 27,
+      "prEventGate": "skipped outside PR"
+    },
+    "prerequisites": {
+      "passed": 10,
+      "cached": 0
+    },
+    "types": {
+      "passed": 33,
+      "cached": 10
+    },
+    "tests": {
+      "passed": 27,
+      "cached": 12
+    },
+    "builds": {
+      "passed": 19,
+      "cached": 12
+    },
+    "desktop": {
+      "passed": 565,
+      "platformSkipped": 3,
+      "execution": "new"
+    },
+    "web": {
+      "passed": 650,
+      "execution": "new"
+    },
+    "tsTransport": {
+      "passed": 26,
+      "execution": "new"
+    },
+    "priorFailedAttempts": [
+      "sandbox loopback listen EPERM",
+      "three unchanged Desktop tests timed out under worker pressure"
+    ],
+    "isolatedDesktopRetry": {
+      "passed": 6,
+      "failed": 0
+    },
+    "testTimeoutsRelaxed": false
+  },
+  "scope": {
+    "pageImplementationAndOverallUiAcceptance": "Claude",
+    "migration": "backend, contracts, native startup chain",
+    "priorP1WebApiAndTypeAdapters": "retained"
+  },
+  "recordOnlyChecks": {
+    "docs": {
+      "passed": 12,
+      "markdownFiles": 588
+    },
+    "research": {
+      "passed": 27,
+      "prEventGate": "skipped outside PR"
+    },
+    "localLinks": true,
+    "fixtureProcessesClosed": true
+  },
+  "subsequentTlsQualification": {
+    "date": "2026-10-06T03:34:47.047Z",
+    "sourceHead": "010439bb9002fabb7e1facd8450ee85edbafa309",
+    "sourceDirty": true,
+    "finalAsarSha256": "9db8fae930241a5d6a9dac7422469041d803453cc02ee6a87d61ac197a02fd76",
+    "compiledLauncherMatchesPackage": {
+      "main": "31056da46a23893c1940cb3d6a588993ca199e9f53bf2cd24375f0e1a0f71893",
+      "native-server": "91a8497357a22cb6844900b47e61d123b48a6e7f1fc4b9a303dda096490f392c",
+      "python-server": "dbbeef9b668485a9bf1fc51382ac0bcc0f5aa500eb86f7d5aac8f504e1150898",
+      "ts-server": "e4a3de412e2db1074d3d51889854067cee0755b5f910371ec5b3274c76c85a63",
+      "ts-product-manifest": "55ed29383d1edbbef2a17d355050151bd71a3fdde0f3a882a3fb863f0bcd4c1c"
+    },
+    "currentTransportMatchesStageAndPackage": {
+      "app": "a6666f9263c1bd542687d1f4d91cfe2361b92ce164737f7c573d1ee87e401049",
+      "tls": "037e08412d7bef233ef236644e8ed8f8396517ac4c9c0bcf6d6ffc9b25ff69f2",
+      "config": "63a73775f8d8c8a7c034db11628d903e83c96138f47bddc92ae8d72ac33ad224",
+      "worker-tunnel": "f1274899c69bdafa6271658275d1761be278de93c3b75533bbe8dc53f546441e",
+      "lifetime": "3acb9723b5286b19257a60ff6201b46091b1055053b1059823490610f026548f",
+      "desktop-entry": "ba32c7b424599f536f430be1548d1aa4a7921c14a94c02063d7c40b1e26ba601"
+    },
+    "regularFileBytes": 1115071028,
+    "nativeRegularFileBytes": 783426291,
+    "stagedNativeSmokeBeforeFinalLayout": {
+      "parentEofStoppedActualApi": true,
+      "parentEofStoppedOwnedProcessCount": 2,
+      "tsForwardingEntry": true,
+      "eitherProductExitStoppedPair": true,
+      "unsafeDirectoryRefusedAndPostgresStopped": true,
+      "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+      "pythonProductHealth": true,
+      "ownerLogin": true,
+      "postgresInitialized": true,
+      "restartPreservedData": true,
+      "serverAndPostgresStopped": true,
+      "syntheticOnly": true,
+      "nativeKeychainVerified": false
+    },
+    "packagedNativeSmoke": {
+      "parentEofStoppedActualApi": true,
+      "parentEofStoppedOwnedProcessCount": 2,
+      "tsForwardingEntry": true,
+      "eitherProductExitStoppedPair": true,
+      "unsafeDirectoryRefusedAndPostgresStopped": true,
+      "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+      "pythonProductHealth": true,
+      "ownerLogin": true,
+      "postgresInitialized": true,
+      "restartPreservedData": true,
+      "serverAndPostgresStopped": true,
+      "syntheticOnly": true,
+      "nativeKeychainVerified": false
+    },
+    "actualElectronJourney": {
+      "execution": "earlier evidence retained; not rerun on this ASAR",
+      "asarSha256": "9464016f705a9bfe942586ce47474d0a0badcd206f9f80cdfbb946e749b3a60f"
+    },
+    "tlsContracts": {
+      "allIntegrated": 265,
+      "stagedArtifacts": 19,
+      "publisher": 12,
+      "models": 18,
+      "secureOwnerCookie": true,
+      "verifiedCa": true,
+      "canonicalRedirect": true,
+      "entryRestartSameSession": true,
+      "privateDirectRefused": true,
+      "nodeSourceAndDigest": true,
+      "syntheticModelDiscoveries": 10,
+      "syntheticModelProbes": 4,
+      "liveCalls": 0
+    },
+    "httpReverseSwitch": {
+      "executions": 284,
+      "verified": true
+    },
+    "fullCheck": {
+      "command": "/usr/bin/env -i PATH=\"$PATH\" LANG=en_US.UTF-8 TURBO_ENV_MODE=loose VITEST_MAX_WORKERS=2 npm run check",
+      "exitCode": 0,
+      "prerequisites": {
+        "passed": 10,
+        "cached": 10
+      },
+      "types": {
+        "passed": 33,
+        "cached": 31
+      },
+      "tests": {
+        "passed": 27,
+        "cached": 25
+      },
+      "builds": {
+        "passed": 19,
+        "cached": 17
+      },
+      "desktop": {
+        "passed": 568,
+        "platformSkipped": 3,
+        "execution": "new"
+      },
+      "web": {
+        "passed": 650,
+        "execution": "cached from earlier full check this TLS checkpoint"
+      },
+      "tsTransport": {
+        "passed": 33,
+        "execution": "new"
+      },
+      "docs": {
+        "passed": 12,
+        "markdownFiles": 588
+      },
+      "research": {
+        "passed": 27,
+        "prEventGate": "skipped outside PR"
+      }
+    },
+    "applicationsInstalled": 0,
+    "previewLocation": "apps/desktop/out/ts-product",
+    "installedOpenBotModified": false,
+    "unqualified": [
+      "public deployment/production PKI",
+      "hosted CI",
+      "signing/notarization",
+      "Windows TLS ACLs",
+      "active Work/Temporal",
+      "overall UI acceptance (Claude)"
+    ],
+    "recordOnlyChecks": {
+      "docs": {
+        "passed": 12,
+        "markdownFiles": 588
+      },
+      "research": {
+        "passed": 27,
+        "prEventGate": "skipped outside PR"
+      },
+      "localLinks": true,
+      "whitespaceExitCode": 0
+    }
+  },
+  "currentIntegration": {
+    "sourceHead": "a8302c2d7252273ccb292f9fc5202beae4e165b6",
+    "sourceDirty": true,
+    "qualification": {
+      "generatedAt": "2026-10-06T05:08:19.422Z",
+      "asarSha256": "a460a3676b64d03a6e7cd373d9fab5d94c3e650ed7b2cb77caddb51867388565",
+      "compiledLauncherMatchesPackage": true,
+      "comparedNativeSourceFiles": 263,
+      "migrationEntries": 55,
+      "node": "24.21.0",
+      "python": "3.12.13",
+      "electron": "44.3.0",
+      "regularFileBytes": 1115397045,
+      "nativeRegularFileBytes": 783638392,
+      "unsigned": true,
+      "macosWorkerCompanionIncluded": false,
+      "installed": false
+    },
+    "packagedNativeSmoke": {
+      "parentEofStoppedActualApi": true,
+      "parentEofStoppedOwnedProcessCount": 2,
+      "tsForwardingEntry": true,
+      "eitherProductExitStoppedPair": true,
+      "unsafeDirectoryRefusedAndPostgresStopped": true,
+      "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+      "pythonProductHealth": true,
+      "ownerLogin": true,
+      "postgresInitialized": true,
+      "restartPreservedData": true,
+      "serverAndPostgresStopped": true,
+      "syntheticOnly": true,
+      "nativeKeychainVerified": false
+    },
+    "fullCheck": {
+      "exit": 0,
+      "typecheck": {
+        "tasks": 33,
+        "cached": 11
+      },
+      "test": {
+        "tasks": 27,
+        "cached": 12
+      },
+      "build": {
+        "tasks": 19,
+        "cached": 12
+      },
+      "web": 676,
+      "protocol": 461,
+      "tsEntry": 33,
+      "desktopPassed": 575,
+      "desktopPlatformSkipped": 3
+    },
+    "controlAcceptance": {
+      "exit": 0,
+      "basePassed": 1072,
+      "baseSkipped": 2,
+      "workerPassed": 1589,
+      "workerSkipped": 1,
+      "workerSkipReason": "Opt-in retained synthetic deadline histories were not supplied; actual SDK replay is unqualified.",
+      "baseSeconds": 149.44,
+      "workerSeconds": 631.04
+    },
+    "releaseArchives": {
+      "node": {
+        "sha256": "bed7eea5325e1108f32ce5228ddd6a5f0f08a499ee42aa7442aea583702f6057",
+        "bytes": 52909993,
+        "source": "official archive freshly fetched with curl and reused as a verified release cache; unchanged staging verifier"
+      },
+      "electron": {
+        "sha256": "49b91ef265c603c8888500f807484b63816069c30f87ba2b403e7c87f0f45035",
+        "bytes": 129788539,
+        "source": "same-version retained official release cache verified against Electron package checksums"
+      }
+    },
+    "actualElectronJourney": {
+      "execution": "executed on this integrated ASAR",
+      "generatedAt": "2026-10-06T05:48:43.973080+00:00",
+      "sourceHead": "a8302c2d7252273ccb292f9fc5202beae4e165b6",
+      "sourceDirty": true,
+      "asarSha256": "a460a3676b64d03a6e7cd373d9fab5d94c3e650ed7b2cb77caddb51867388565",
+      "nativeKeychainVerified": true,
+      "encryptionEvidence": "Actual packaged Electron safeStorage encryption/decryption through the native bootstrap reader; no synthetic encryption callback.",
+      "disposableProfile": true,
+      "ownerLogin": "automatic native bootstrap login",
+      "botCreatedAndRenamed": true,
+      "expectedBotName": "\u65b0\u5efa BotTS P2 Native Fixture",
+      "botRestoredAfterRestart": true,
+      "realtimeConnectionRestored": true,
+      "fileChecks": {
+        "local-server/bootstrap.json": {
+          "unchanged": true,
+          "mode": "0600"
+        },
+        "local-server/model-connections.key": {
+          "unchanged": true,
+          "mode": "0600"
+        },
+        "setup-plan.json": {
+          "unchanged": true,
+          "mode": "0600"
+        }
+      },
+      "encryptedBootstrap": true,
+      "initialExitCode": 0,
+      "restartExitCode": 0,
+      "ownedProcessesStoppedPerLaunch": [
+        13,
+        13
+      ],
+      "profileRemoved": true,
+      "modelConfigured": false,
+      "liveModelCalls": 0,
+      "observation": "Native accessibility tree and persisted private files; screenshot capture remained on an earlier screen.",
+      "visualAcceptanceVerified": false,
+      "scope": "macOS arm64 API-only development Preview; no native Work/Temporal qualification."
+    },
+    "unqualified": [
+      "pixel/visual renderer acceptance on this ASAR",
+      "Claude whole-interface acceptance",
+      "hosted platform/CI gates",
+      "native Work/Temporal",
+      "macOS Worker companion",
+      "signing/release",
+      "Windows/Intel Mac/Linux native qualification"
+    ],
+    "installedAppPreserved": true,
+    "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+    "sameSourceOverhead": {
+      "receipt": "typescript-control-plane-p2-overhead.json#currentIntegration",
+      "node": "v24.21.0",
+      "sourceDigests": {
+        "server-ts/app.js": "a6666f9263c1bd542687d1f4d91cfe2361b92ce164737f7c573d1ee87e401049",
+        "server-ts/tls.js": "037e08412d7bef233ef236644e8ed8f8396517ac4c9c0bcf6d6ffc9b25ff69f2",
+        "server-ts/config.js": "63a73775f8d8c8a7c034db11628d903e83c96138f47bddc92ae8d72ac33ad224",
+        "server-ts/worker-tunnel.js": "f1274899c69bdafa6271658275d1761be278de93c3b75533bbe8dc53f546441e",
+        "server-ts/lifetime.js": "3acb9723b5286b19257a60ff6201b46091b1055053b1059823490610f026548f",
+        "server-ts/desktop-entry.js": "ba32c7b424599f536f430be1548d1aa4a7921c14a94c02063d7c40b1e26ba601",
+        "desktop/main.js": "9920a8a1d00e5ee2a99a9efbfa5d663a828e142e142e3fe185a3693a664bd6de",
+        "desktop/native-server.js": "91a8497357a22cb6844900b47e61d123b48a6e7f1fc4b9a303dda096490f392c",
+        "desktop/python-server.js": "dbbeef9b668485a9bf1fc51382ac0bcc0f5aa500eb86f7d5aac8f504e1150898",
+        "desktop/ts-server.js": "e4a3de412e2db1074d3d51889854067cee0755b5f910371ec5b3274c76c85a63",
+        "desktop/ts-product-manifest.js": "55ed29383d1edbbef2a17d355050151bd71a3fdde0f3a882a3fb863f0bcd4c1c",
+        "python/serve.py": "59969ace4685a63722f184f3b6ebae3043580e2fec115d5286c60e9da6ddb774",
+        "python/requirements-product.lock": "a9455696980733c67a03ef35ea699cf0d04aef8e4e2a9df360dddfd61ff9df4d",
+        "measurement": "9c19679c9d06dc062f3ff33b1db58aa3fb06cd433fb79f6991ae8655365e5931"
+      },
+      "summary": [
+        {
+          "composition": "python-direct",
+          "freshReadyMs": {
+            "median": 5264,
+            "p95": 6124
+          },
+          "restartReadyMs": {
+            "median": 4104,
+            "p95": 4188
+          },
+          "nativeChildrenRssKiB": {
+            "median": 165792,
+            "p95": 170176
+          },
+          "tsRssKiB": {
+            "median": 0,
+            "p95": 0
+          },
+          "healthMs": {
+            "median": 0.566,
+            "p95": 1.189
+          },
+          "channelsMs": {
+            "median": 10.234,
+            "p95": 13.993
+          }
+        },
+        {
+          "composition": "ts-forwarding",
+          "freshReadyMs": {
+            "median": 5672,
+            "p95": 5745
+          },
+          "restartReadyMs": {
+            "median": 4624,
+            "p95": 4793
+          },
+          "nativeChildrenRssKiB": {
+            "median": 269936,
+            "p95": 274192
+          },
+          "tsRssKiB": {
+            "median": 103600,
+            "p95": 107104
+          },
+          "healthMs": {
+            "median": 0.994,
+            "p95": 2.58
+          },
+          "channelsMs": {
+            "median": 11.292,
+            "p95": 14.252
+          }
+        }
+      ],
+      "ownedProcessesStopped": true,
+      "disposableDataRemoved": true
+    }
+  },
+  "acceptedAdvisoryIntegration": {
+    "sourceHead": "a240b810ea08bde29004e947b0ffc0298ad8dd1a",
+    "sourceDirty": true,
+    "upstreamMain": "a544a40d045a1e99e512b3282a8805c7f4ca39e0",
+    "staging": {
+      "generatedAt": "2026-10-06T06:09:02.771Z",
+      "staging": "incremental refresh of one dependency on the earlier cold-qualified native payload",
+      "changedNativePackage": {
+        "name": "fast-uri",
+        "from": "3.1.7",
+        "to": "3.1.8",
+        "commit": "ead3ab7bb134c989e972c8174632d0670023f269",
+        "files": 44,
+        "treeSha256": "f1fe535025e374d76eae57af0c0656f1eec937027865d351fe8a3359a0708108"
+      },
+      "nativePackageVersionsVerified": 91,
+      "unchangedCompiledWorkspaceFilesVerified": 192,
+      "workspacePackages": [
+        "apps/server-ts",
+        "packages/db",
+        "packages/protocol"
+      ],
+      "pythonAndNodeArchivesUnchanged": true,
+      "profileTouched": false
+    },
+    "package": {
+      "generatedAt": "2026-10-06T06:10:53.178Z",
+      "asarSha256": "a460a3676b64d03a6e7cd373d9fab5d94c3e650ed7b2cb77caddb51867388565",
+      "compiledLauncherMatchesPackage": true,
+      "compiledLauncherCount": 5,
+      "packagedFastUriVersion": "3.1.8",
+      "regularFileBytes": 1115399312,
+      "nativeRegularFileBytes": 783640659,
+      "unsigned": true,
+      "macosWorkerCompanionIncluded": false,
+      "installed": false
+    },
+    "packagedNativeSmoke": {
+      "parentEofStoppedActualApi": true,
+      "parentEofStoppedOwnedProcessCount": 2,
+      "tsForwardingEntry": true,
+      "eitherProductExitStoppedPair": true,
+      "unsafeDirectoryRefusedAndPostgresStopped": true,
+      "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+      "pythonProductHealth": true,
+      "ownerLogin": true,
+      "postgresInitialized": true,
+      "restartPreservedData": true,
+      "serverAndPostgresStopped": true,
+      "syntheticOnly": true,
+      "nativeKeychainVerified": false
+    },
+    "fullCheck": {
+      "exitCode": 0,
+      "typecheckTasks": 33,
+      "typecheckCached": 28,
+      "testTasks": 27,
+      "testCached": 23,
+      "buildTasks": 19,
+      "buildCached": 16,
+      "executed": {
+        "serverTs": 33,
+        "web": 676,
+        "desktop": 575,
+        "desktopPlatformSkips": 3,
+        "mcpScaffold": 2
+      },
+      "scope": "after accepted lock-only patch; before full companion packaging source change"
+    },
+    "realTlsContracts": {
+      "integrated": 270,
+      "staged": 19,
+      "totalExecutions": 289,
+      "exitCode": 0
+    },
+    "installedDependencyRegressions": 12,
+    "productionAudit": {
+      "critical": 0,
+      "high": 0,
+      "moderate": 0,
+      "low": 0,
+      "info": 0,
+      "exitCode": 0
+    },
+    "actualElectronJourneyReuse": "unchanged ASAR components only; native fast-uri outside ASAR refreshed from 3.1.7 to 3.1.8; no new full GUI execution",
+    "fullCompanionQualification": "pending; isolated Preview deliberately excludes production service identity",
+    "installed": false
+  },
+  "fullCompanionPackagingGate": {
+    "sourceBase": "a240b810ea08bde29004e947b0ffc0298ad8dd1a",
+    "acceptedUpstream": "a544a40d045a1e99e512b3282a8805c7f4ca39e0",
+    "sourceDirty": true,
+    "focusedPolicyTests": 39,
+    "fullCheck": {
+      "exitCode": 0,
+      "typecheckTasks": 33,
+      "typecheckCached": 31,
+      "testTasks": 27,
+      "testCached": 25,
+      "buildTasks": 19,
+      "buildCached": 17,
+      "executed": {
+        "desktop": 576,
+        "desktopPlatformSkips": 3,
+        "serverTs": 33
+      }
+    },
+    "actualPackageAndCompanion": "completed from clean immutable source 6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
+    "previewServiceBoundaryPreserved": true,
+    "installed": false
+  },
+  "fullCompanionCandidate": {
+    "qualification": {
+      "generatedAt": "2026-10-06T06:42:03.176Z",
+      "sourceCommit": "6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
+      "workerManifest": {
+        "format": "openbot.macos-worker-host-manifest/v1",
+        "version": "0.1.0-alpha.9",
+        "sourceCommit": "6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
+        "architecture": "arm64",
+        "files": [
+          {
+            "path": "Contents/Resources/node/app/index.js",
+            "sha256": "199af5cb69e6a47407715a413d94ef20c11eebd4bd057aaab6db684656336a2c",
+            "size": 1055039,
+            "mode": "0644"
+          },
+          {
+            "path": "Contents/Resources/node/bin/node",
+            "sha256": "5c899797c4eb8f1db5563eea56538342ddb3e9276ee1b04a5a1f0f1023d2b011",
+            "size": 112989184,
+            "mode": "0755"
+          }
+        ]
+      },
+      "workerBuild": {
+        "format": "openbot.macos-worker-host-build/v1",
+        "version": "0.1.0-alpha.9",
+        "buildVersion": "20261006",
+        "sourceCommit": "6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
+        "architecture": "arm64",
+        "nodeVersion": "22.22.2",
+        "signed": false
+      },
+      "compiledDesktopFilesMatched": 37,
+      "asarSha256": "ce65a5f77610129f5b903e150d09129efe807127dc9da655a9b5c55e3c301b7e",
+      "installed": false,
+      "workerRegistered": false,
+      "distributionSigned": false,
+      "notarized": false,
+      "nativeStagedTreeMatchesPackage": true,
+      "nativeRegularFilesCompared": 27820,
+      "nativeSymlinksCompared": 32,
+      "regularFileBytes": 1230271274,
+      "nativeRegularFileBytes": 783640659,
+      "workerRegularFileBytes": 114866973,
+      "bundleIdentity": {
+        "CFBundleIdentifier": "dev.openbot.desktop",
+        "CFBundleName": "OpenBot",
+        "CFBundleExecutable": "OpenBot",
+        "CFBundleShortVersionString": "0.1.0-alpha.9"
+      },
+      "electronVersion": "44.3.0",
+      "packagedFastUriPackages": [
+        {
+          "path": "node_modules/fast-uri/package.json",
+          "version": "3.1.8"
+        },
+        {
+          "path": "node_modules/fast-json-stringify/node_modules/fast-uri/package.json",
+          "version": "4.2.1"
+        },
+        {
+          "path": "node_modules/@fastify/ajv-compiler/node_modules/fast-uri/package.json",
+          "version": "4.2.1"
+        }
+      ],
+      "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+      "installedAppPreserved": true,
+      "verificationRepair": "initial receipt script used an incorrect server/node_modules path; corrected to actual root node_modules and reran whole staged/package comparison; no product failure"
+    },
+    "packagedNativeSmoke": {
+      "parentEofStoppedActualApi": true,
+      "parentEofStoppedOwnedProcessCount": 2,
+      "tsForwardingEntry": true,
+      "eitherProductExitStoppedPair": true,
+      "unsafeDirectoryRefusedAndPostgresStopped": true,
+      "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+      "pythonProductHealth": true,
+      "ownerLogin": true,
+      "postgresInitialized": true,
+      "restartPreservedData": true,
+      "serverAndPostgresStopped": true,
+      "syntheticOnly": true,
+      "nativeKeychainVerified": false
+    },
+    "runtimeInputs": {
+      "nodeVersion": "22.22.2",
+      "nodeSha256": "db4b275b83736df67533529a18cc55de2549a8329ace6c7bcc68f8d22d3c9000",
+      "npmVersion": "10.9.9",
+      "npmIntegrity": "sha512-1g+6jLQvaIuB4zwvHL7yrXuXcWZwDsCtBX8bbWDqbvJSSr9nPiDDWTHNgwXR27iIcTTW7v3A57hDW9RYv2W4Yg==",
+      "sources": [
+        "https://nodejs.org/dist/v22.22.2/node-v22.22.2-darwin-arm64.tar.gz",
+        "https://registry.npmjs.org/npm/10.9.9"
+      ]
+    },
+    "packagingWarning": "Electron Packager skipped optional .icon format; existing .icns icon retained; pixel acceptance remains unqualified",
+    "unqualified": [
+      "canonical-identity actual Electron/safeStorage journey",
+      "Claude whole-interface acceptance",
+      "Worker registration/access-group provisioning",
+      "Developer ID/notarization",
+      "active Work/Temporal",
+      "hosted platform checks"
+    ],
+    "scope": "unsigned and uninstalled macOS arm64 full-resource candidate; Python sole writer; no Worker service enabled"
+  },
+  "explicitProfileRepair": {
+    "sourceBase": "040d0a54887f233f6d9c37688ef1d6daf0a8f77c",
+    "sourceDirty": true,
+    "reviewedElectron": "44.3.0",
+    "reviewedElectronCommit": "07e460719c75b2ec5ee4893f7d2192ef31c7b8c2",
+    "focusedProfileTests": 7,
+    "defaultCompatibilityRetained": true,
+    "explicitProfileRefusesLegacyProbes": true,
+    "firstFullCheck": {
+      "exitCode": 1,
+      "failure": "this task's completed Swift build cache .build/release was rejected by the existing source symlink guard",
+      "ownedCacheRemovedAfterCopiedCompanionValidation": true,
+      "sourceGuardChanged": false
+    },
+    "fullCheck": {
+      "exitCode": 0,
+      "typecheckTasks": 33,
+      "typecheckCached": 32,
+      "testTasks": 27,
+      "testCached": 26,
+      "buildTasks": 19,
+      "buildCached": 18,
+      "executed": {
+        "desktop": 578,
+        "desktopPlatformSkips": 3
+      }
+    },
+    "fullCanonicalStartup": "passed actual canonical Electron startup and persisted restart in an explicit disposable profile",
+    "workerCompanionReuse": {
+      "sourceCommit": "6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
+      "sourceAndDependenciesUnchanged": true
+    },
+    "installed": false,
+    "rebuiltCandidate": {
+      "generatedAt": "2026-10-06T07:14:19.312Z",
+      "sourceCommit": "dfc8475f1412a7742b40f99ce6b720f3a428afee",
+      "asarSha256": "f3f7edc56109338e53918a5ece92b60bd5bd4b2781232515d534df5851ff5e94",
+      "compiledDesktopFilesMatched": 37,
+      "workerSourceCommit": "6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
+      "explicitProfileRepairPackaged": true,
+      "installed": false,
+      "registered": false
+    },
+    "canonicalElectronJourney": {
+      "generatedAt": "2026-10-06T07:32:27.488392+00:00",
+      "sourceCommit": "dfc8475f1412a7742b40f99ce6b720f3a428afee",
+      "asarSha256": "f3f7edc56109338e53918a5ece92b60bd5bd4b2781232515d534df5851ff5e94",
+      "identity": "dev.openbot.desktop",
+      "scope": "unsigned and uninstalled macOS arm64 canonical candidate, explicit disposable profile, embedded TS entry with Python sole writer",
+      "ownerLogin": true,
+      "realNativeSafeStorage": true,
+      "encryptedBootstrapJsonType": "string",
+      "botCreatedAndRenamed": true,
+      "savedBotRestoredAfterRestart": true,
+      "realtimeRestored": true,
+      "screenshotMatchedAccessibilityAtWorkspaceCheckpoints": true,
+      "wholeInterfaceAcceptance": false,
+      "privateFiles": [
+        {
+          "path": "openbot/python-local-server/bootstrap.json",
+          "mode": "0600",
+          "bytes": 243,
+          "hashPreserved": true
+        },
+        {
+          "path": "openbot/python-local-server/model-connections.key",
+          "mode": "0600",
+          "bytes": 32,
+          "hashPreserved": true
+        },
+        {
+          "path": "openbot/setup-plan.json",
+          "mode": "0600",
+          "bytes": 100,
+          "hashPreserved": true
+        }
+      ],
+      "launches": [
+        {
+          "mode": "fresh",
+          "exitCode": 0,
+          "ownedProcessCount": 13,
+          "ownedProcessesStopped": true
+        },
+        {
+          "mode": "restart",
+          "exitCode": 0,
+          "ownedProcessCount": 13,
+          "ownedProcessesStopped": true
+        }
+      ],
+      "postgresPidRemovedAfterBothExits": true,
+      "modelConfigured": false,
+      "modelCalled": false,
+      "workerSelected": false,
+      "workerRegistered": false,
+      "installed": false,
+      "originalAppRunning": true,
+      "installedAppPreserved": true,
+      "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+      "unqualified": [
+        "Claude whole-interface acceptance",
+        "Worker registration and restricted Keychain access-group provisioning",
+        "Developer ID and notarization",
+        "active Work/Temporal",
+        "hosted platform and deployment gates"
+      ],
+      "disposableProfileRemoved": true
+    }
+  },
+  "acceptedMainIntegration": {
+    "date": "2026-10-07 (Asia/Singapore)",
+    "sourceHead": "f16e11557fedd1c3e28e2f7aa929290075638e3e",
+    "sourceDirty": false,
+    "acceptedMain": "a6ec303054c69429aabb0a09c972d5dd87ace941",
+    "acceptedChanges": [
+      "PR194 UI integration",
+      "PR201 exact historical credential fixture reviews"
+    ],
+    "uiIntegration": "automatic merge; no page implementation; accepted main triage retained after comparing all immutable fixture tuples",
+    "focusedUi": {
+      "files": 4,
+      "executed": 56,
+      "webTypecheckExitCode": 0
+    },
+    "fullCheck": {
+      "exitCode": 0,
+      "docsMarkdownFiles": 599,
+      "lintTasks": 10,
+      "lintCached": 10,
+      "typecheckTasks": 33,
+      "typecheckCached": 30,
+      "testTasks": 27,
+      "testCached": 25,
+      "buildTasks": 19,
+      "buildCached": 18,
+      "actuallyExecuted": {
+        "web": 672,
+        "desktop": 578,
+        "desktopPlatformSkips": 3
+      },
+      "cachedResultsRetainPriorScope": {
+        "protocol": 461,
+        "tsTransport": 33,
+        "node": 129,
+        "nodeSkips": 3
+      }
+    },
+    "realContracts": {
+      "mixedHttp": {
+        "exitCode": 0,
+        "integratedChecks": 270,
+        "stagedArtifactChecks": 19,
+        "total": 289
+      },
+      "mixedHttps": {
+        "exitCode": 0,
+        "integratedChecks": 270,
+        "stagedArtifactChecks": 19,
+        "total": 289
+      },
+      "webAndDesktopTransport": true,
+      "sqlPersistenceAndRestart": true,
+      "privatePeerSourceAndDigest": true,
+      "mixedDirectMixedSwitch": true,
+      "tlsVerifiedCaAndSecureCookie": true,
+      "pythonRemainsSoleWriter": true,
+      "temporalOrLiveProviderCalls": false
+    },
+    "staging": {
+      "firstAttemptExitCode": 1,
+      "firstFailure": "official pinned Node archive transfer interrupted (UND_ERR_SOCKET)",
+      "retryExitCode": 0,
+      "retryBuilderNode": "22.22.2",
+      "retryBuilder": "unchanged previously qualified bundled Worker companion",
+      "archiveHashesAndTimeoutsUnchanged": true,
+      "packagedNode": "24.21.0",
+      "packagedPython": "3.12.13",
+      "lockedDistributionInstallCount": 59
+    },
+    "package": {
+      "asarSha256": "5dcf43417c6e513fb9ce1dba1e9aa4d5e9eb258961c4f08a2191320a5db7354a",
+      "compiledDesktopFilesMatched": 37,
+      "rendererFilesMatched": 5,
+      "regularFileBytes": 1230248543,
+      "nativeRegularFileBytes": 783640659,
+      "nativeSymlinksMatched": 32,
+      "stageMatchesPackagedNative": true,
+      "platform": "macOS arm64",
+      "identity": "dev.openbot.desktop",
+      "unsigned": true,
+      "installed": false,
+      "workerCompanionSource": "6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
+      "workerSourceUnchanged": true,
+      "warning": "optional .icon absent; existing .icns retained"
+    },
+    "packagedNativeSmoke": {
+      "parentEofStoppedActualApi": true,
+      "parentEofStoppedOwnedProcessCount": 2,
+      "tsForwardingEntry": true,
+      "eitherProductExitStoppedPair": true,
+      "unsafeDirectoryRefusedAndPostgresStopped": true,
+      "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+      "pythonProductHealth": true,
+      "ownerLogin": true,
+      "postgresInitialized": true,
+      "restartPreservedData": true,
+      "serverAndPostgresStopped": true,
+      "syntheticOnly": true,
+      "nativeKeychainVerified": false
+    },
+    "actualElectronJourney": {
+      "sourceHead": "f16e11557fedd1c3e28e2f7aa929290075638e3e",
+      "finalAsarSha256": "5dcf43417c6e513fb9ce1dba1e9aa4d5e9eb258961c4f08a2191320a5db7354a",
+      "fresh": {
+        "exitCode": 0,
+        "ownedPidsAfterExit": [],
+        "postgresPidFilesAfterExit": 0,
+        "guiChecks": [
+          "native-safeStorage-bootstrap",
+          "live-sql-workspace",
+          "create-and-save-bot",
+          "four-tab-bot-info-rail",
+          "primary-bot-readback",
+          "empty-model-services",
+          "transcription-disabled"
+        ]
+      },
+      "restart": {
+        "allThreePrivateFilesUnchanged": true,
+        "guiChecks": [
+          "encrypted-owner-bootstrap-restored",
+          "saved-bot-name-restored",
+          "live-workspace-restored",
+          "four-tab-bot-info-rail",
+          "primary-bot-restored"
+        ],
+        "modelSetupReofferedWhenNoDefaultModel": true,
+        "localWorker": false,
+        "exitCode": 0,
+        "ownedPidsAfterExit": [],
+        "postgresPidFilesAfterExit": 0
+      },
+      "ownedProcessCounts": {
+        "fresh": 13,
+        "restart": 13
+      },
+      "privateFileCount": 3,
+      "privateFileMode": "0600",
+      "privateFileHashesUnchanged": true,
+      "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+      "temporaryProfileRemoved": true,
+      "applicationsInstalled": 0,
+      "liveModelCalls": 0,
+      "workerRegistration": false
+    },
+    "hosted": {
+      "mainRun": 37500153005,
+      "mainSource": "a6ec303054c69429aabb0a09c972d5dd87ace941",
+      "mainJobsPassed": 17,
+      "currentCandidateCi": "required after publication; earlier 5ee5b3d7 run does not qualify this merge"
+    },
+    "remaining": [
+      "Claude P2 whole-interface acceptance",
+      "deployment TLS/PKI",
+      "registered Worker and restricted access-group provisioning",
+      "signed/notarized distribution",
+      "P3-P5 ownership migration"
+    ],
+    "p3OwnershipSwitched": false,
+    "applicationsInstalled": 0
+  },
+  "beforeClaudeReviewCorrections": {
+    "date": "2026-10-07 (Asia/Singapore)",
+    "productSourceHead": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
+    "sourceDirty": false,
+    "acceptedMain": "8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe",
+    "acceptedUi": [
+      "PR194",
+      "PR198"
+    ],
+    "pageImplementation": "automatic integration only; Claude owns overall interface acceptance",
+    "mcpSdk": {
+      "version": "1.32.1",
+      "reviewedSource": "ff07b001194fe60ee9deb2121cf119057565796d",
+      "securityAdvisory": "GHSA-6qxp-vccf-f47h",
+      "codeRepairSource": "10f64b7a03e24c6b56003dedf5ca051d6458ea64",
+      "productConsumers": 2,
+      "oracle": "reviewed devDependency-only exception; all59 frozen source/fixture hashes retained",
+      "frozenSourceFiles": 55,
+      "frozenFixtureFiles": 4,
+      "starterTestsPassed": 2,
+      "productionAuditVulnerabilities": 0,
+      "lockChanges": "three workspace references plus one deduplicated SDK entry; no other versions changed",
+      "sdkRepairFullCheck": {
+        "exitCode": 0,
+        "lintTasks": 10,
+        "lintCached": 0,
+        "typecheckTasks": 33,
+        "typecheckCached": 10,
+        "testTasks": 27,
+        "testCached": 12,
+        "buildTasks": 19,
+        "buildCached": 12,
+        "actuallyExecuted": {
+          "protocol": 461,
+          "tsTransport": 33,
+          "web": 672,
+          "desktop": 578,
+          "desktopPlatformSkips": 3,
+          "node": 129,
+          "nodeSkips": 3
+        }
+      }
+    },
+    "fullCheck": {
+      "exitCode": 0,
+      "sourceHead": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
+      "docsMarkdownFiles": 599,
+      "lintTasks": 10,
+      "lintCached": 10,
+      "typecheckTasks": 33,
+      "typecheckCached": 33,
+      "testTasks": 27,
+      "testCached": 27,
+      "buildTasks": 19,
+      "buildCached": 19,
+      "turboTasksAllCached": true,
+      "priorQualifiedUiCheck": {
+        "exitCode": 0,
+        "sourceHead": "84184d46f5ca77b882b9f79f65d86ac2caaa6b2d",
+        "docsMarkdownFiles": 599,
+        "lintTasks": 10,
+        "lintCached": 10,
+        "typecheckTasks": 33,
+        "typecheckCached": 30,
+        "testTasks": 27,
+        "testCached": 25,
+        "buildTasks": 19,
+        "buildCached": 18,
+        "actuallyExecuted": {
+          "web": 677,
+          "desktop": 578,
+          "desktopPlatformSkips": 3
+        },
+        "unchangedOtherTestsCachedFromSdkRepair": true
+      },
+      "focusedActuallyExecuted": {
+        "pythonCatalogPassed": 6,
+        "pythonCatalogDatabaseSkipped": 1,
+        "typescriptCatalogPassed": 2,
+        "realPythonPluginHttpMcpPassed": 30
+      }
+    },
+    "realHttpHttpsReuse": {
+      "testedSdkRepairSource": "10f64b7a03e24c6b56003dedf5ca051d6458ea64",
+      "nativeAndHttpConsumerCodeUnchangedByPr198": true,
+      "httpExitCode": 0,
+      "httpsExitCode": 0,
+      "eachIntegrated": 270,
+      "eachStagedArtifact": 19,
+      "eachTotal": 289,
+      "eachIncludesRealMcp": 30,
+      "privateNodeDigestAndSource": true,
+      "verifiedCaAndSecureCookies": true,
+      "mixedDirectMixedRollback": true,
+      "pythonSoleWriter": true,
+      "liveProviderOrTemporalCalls": false,
+      "catalogMetadataFollowup": {
+        "sourceHead": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
+        "realPythonPluginHttpMcpPassed": 30,
+        "exitCode": 0,
+        "otherProductImplementationDependencyAndHttpConsumerDiffEmpty": true
+      }
+    },
+    "nativeComponent": {
+      "sourceHead": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
+      "sourceClean": true,
+      "stageExitCode": 0,
+      "packageExitCode": 0,
+      "nativeSmokeExitCode": 0,
+      "stageAndPackagedNativeBytesMatched": true,
+      "currentSmoke": {
+        "parentEofStoppedActualApi": true,
+        "parentEofStoppedOwnedProcessCount": 2,
+        "tsForwardingEntry": true,
+        "eitherProductExitStoppedPair": true,
+        "unsafeDirectoryRefusedAndPostgresStopped": true,
+        "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+        "pythonProductHealth": true,
+        "ownerLogin": true,
+        "postgresInitialized": true,
+        "restartPreservedData": true,
+        "serverAndPostgresStopped": true,
+        "syntheticOnly": true,
+        "nativeKeychainVerified": false
+      },
+      "companionSource": "6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c",
+      "companionUnchanged": true,
+      "builderNode": "22.22.2",
+      "packagedNode": "24.21.0",
+      "packagedPython": "3.12.13",
+      "previousSourceHead": "76579bbe37a58bb0213eca563124d0c6fe114430",
+      "onlyNativeProductInputChange": [
+        "apps/server-python/src/openbot_server/plugin_catalog.json"
+      ],
+      "implementationDependencyAndNoticeDiffEmpty": true,
+      "stageAndPackagedNativeRegularFilesMatched": 27820,
+      "stageAndPackagedNativeSymlinksMatched": 32,
+      "lockedPythonDistributions": 59
+    },
+    "package": {
+      "sourceHead": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
+      "asarSha256": "dcbe7010501f5a859a762d4103f10a0c90381fb2dd1a7cac2e7a032b834df692",
+      "compiledDesktopFilesMatched": 37,
+      "rendererFilesMatched": 5,
+      "regularFileBytes": 1230254531,
+      "nativeRegularFileBytes": 783640739,
+      "nativeSymlinks": 32,
+      "nativeComponentSource": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
+      "nativeComponentCodeAndDependencyDiffEmpty": true,
+      "packagingExitCode": 0,
+      "asarEqualsQualified84184d46": true,
+      "compiledAndRendererMatchEvidence": "unchanged ASAR SHA-256; reuse qualified 84184d46 byte proof",
+      "catalogMatchesRepositorySource": true,
+      "catalogSha256": "5e49b13ff2c3dcf5a12b59659b145110cdf0554445245430641416e02d279e54"
+    },
+    "actualCanonicalElectronJourney": {
+      "sourceHead": "84184d46f5ca77b882b9f79f65d86ac2caaa6b2d",
+      "asarSha256": "dcbe7010501f5a859a762d4103f10a0c90381fb2dd1a7cac2e7a032b834df692",
+      "fresh": {
+        "localWorker": false,
+        "exitCode": 0,
+        "ownedPidsAfterExit": [],
+        "postgresPidFilesAfterExit": 0,
+        "botCreatedAndSaved": true,
+        "fourTabRailObserved": true,
+        "realTimeObserved": true,
+        "realNativeSafeStorage": true,
+        "emptyModelAndTranscriptionObserved": true
+      },
+      "restart": {
+        "privateFilesUnchanged": true,
+        "localWorker": false,
+        "savedBotNameRestored": true,
+        "realTimeRestored": true,
+        "primaryBotSettingRestored": true,
+        "modelSetupReoffered": true,
+        "restoredBotOpenedFromSidebar": true,
+        "fourTabRailObserved": true,
+        "accessibilityDocumentAppearedAfterKeyboardFocus": true,
+        "exitCode": 0,
+        "ownedPidsAfterExit": [],
+        "postgresPidFilesAfterExit": 0
+      },
+      "ownedProcessCounts": {
+        "fresh": 13,
+        "restart": 13
+      },
+      "privateFiles": [
+        {
+          "path": "openbot/python-local-server/bootstrap.json",
+          "mode": "0600",
+          "bytes": 243,
+          "hashPreserved": true
+        },
+        {
+          "path": "openbot/python-local-server/model-connections.key",
+          "mode": "0600",
+          "bytes": 32,
+          "hashPreserved": true
+        },
+        {
+          "path": "openbot/setup-plan.json",
+          "mode": "0600",
+          "bytes": 100,
+          "hashPreserved": true
+        }
+      ],
+      "qualifiedMenuQuitExitCodes": [
+        0,
+        0
+      ],
+      "installedAppPreserved": true,
+      "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+      "disposableProfileRemoved": true,
+      "modelCalls": 0,
+      "applicationsInstalled": 0,
+      "workerRegistration": false,
+      "wholeInterfaceAcceptance": false,
+      "preliminaryUnqualifiedWindow": {
+        "earlyWindowDiscarded": true,
+        "shortcutClosedWindowOnly": true,
+        "ownedProcessCleanup": "SIGTERM to exact known PID",
+        "exitCode": 0,
+        "ownedProcessesRemaining": 0,
+        "productServiceNotStarted": true,
+        "privateRootRemoved": true
+      },
+      "reuseForCurrentProductSource": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
+      "reuseReason": "identical ASAR and unchanged native implementation/dependencies; only reviewed catalog metadata changes, separately rebuilt and lifecycle-qualified"
+    },
+    "priorCi": {
+      "run": 37506404433,
+      "branchHead": "9dc564c603211717b975c123736b361182ede990",
+      "actualMerge": "1ee8730caf0feebc4804e7e5e2893c90c3268458",
+      "actualBase": "8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe",
+      "completed": true,
+      "successfulJobs": 15,
+      "failedJobs": [
+        "security",
+        "check"
+      ],
+      "cause": "newly ingested SDK production advisory; credential scan and Python audit skipped",
+      "currentSdkFixNotQualifiedByThisRun": true
+    },
+    "currentHostedCi": "required after publication; recorded in PR200 checks/body",
+    "remaining": [
+      "Claude P2 whole-interface acceptance",
+      "deployment TLS/PKI",
+      "registered Worker/access-group provisioning",
+      "signed distribution",
+      "P3-P5 ownership switches"
+    ],
+    "applicationsInstalled": 0,
+    "p3OwnershipSwitched": false,
+    "catalogRepair": {
+      "revision": 2,
+      "templateSource": "10f64b7a03e24c6b56003dedf5ca051d6458ea64",
+      "catalogSha256": "5e49b13ff2c3dcf5a12b59659b145110cdf0554445245430641416e02d279e54",
+      "manifestHashUpdated": true,
+      "fourOtherBoundHashesUnchanged": true,
+      "sourceCommitUrlAndReviewMovedTogether": true,
+      "authorityAndLiveReviewUnchanged": true
+    },
+    "unchangedPythonTimeoutReproduction": {
+      "sourceHead": "df5d09613a596e10f4092221feb6f7d729056a30",
+      "node": "22.22.2",
+      "pluginExitCode": 0,
+      "pluginPassed": 30,
+      "completeExitCode": 0,
+      "integratedPassed": 270,
+      "stagedArtifactsPassed": 19,
+      "timeoutAndAssertionsChanged": false
+    },
+    "intermediateCi": {
+      "run": 37511515733,
+      "branchHead": "df5d09613a596e10f4092221feb6f7d729056a30",
+      "actualMerge": "1da17a0062d66e7a4c02e32f47fb4bbed87354d0",
+      "actualBase": "8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe",
+      "securityPassed": true,
+      "credentialExactHistoricalFindings": 23,
+      "npmProductionAdvisories": 0,
+      "pythonExternalPinsAudited": 58,
+      "pythonAdvisoriesOrSkips": 0,
+      "knownFailures": [
+        "stale reviewed template manifest hash",
+        "one MCP content timeout; unchanged Node22 plugin and full Python reruns pass"
+      ],
+      "currentHeadQualification": false
+    }
+  },
+  "beforeUiAutomationIntegration": {
+    "date": "2026-10-07 (Asia/Singapore)",
+    "productSourceHead": "dc0bf05ad12ac2cea4d4d4a2994c6ab4981143ed",
+    "sourceDirty": false,
+    "acceptedMain": "3bb6365c660fd40be5dbc181fe1da92093352877",
+    "acceptedUi": [
+      "PR194",
+      "PR198",
+      "PR203"
+    ],
+    "pageImplementation": "Scoped review corrections only; Step43 sidebar/crown/avatar animation belongs to Claude after PR200 merge.",
+    "claudeWholeInterfaceAcceptance": {
+      "source": "23a2916d2aa141e1fa4f52391f21b90c2184a520",
+      "passed": true,
+      "comment": "https://github.com/Peerframe/openbot/pull/200#issuecomment-6024172791",
+      "themes": [
+        "dark",
+        "light"
+      ],
+      "viewport": "1440x900",
+      "excludes": [
+        "paid model replies",
+        "Worker/computer execution",
+        "third-party installations",
+        "screen-reader qualification"
+      ]
+    },
+    "previousHostedCi": {
+      "run": 37514672455,
+      "branchHead": "23a2916d2aa141e1fa4f52391f21b90c2184a520",
+      "actualMerge": "2536122d81c390102e60287950cde6d319e7a65a",
+      "actualBase": "8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe",
+      "allRequiredJobsPassed": 17,
+      "qualifiesNewCorrections": false
+    },
+    "reviewCorrections": {
+      "additiveWebResponses": true,
+      "strictServerSchemasAndInputsRetained": true,
+      "auditNames": "existing from/to fields; current retained Bot names from bounded Owner audit SQL, including tombstones; no ID or payload-hint fallback",
+      "missingRunOutput": "unsupported GET removed; ready reconnect restores committed messages and Run facts; existing SSE draft handling retained",
+      "catalogRevision": 3,
+      "catalogChineseCopyRetained": true,
+      "fiveReviewedFingerprintsUnchanged": true
+    },
+    "focusedWeb": {
+      "node": "26.0.0",
+      "executed": 84,
+      "passed": 84,
+      "exitCode": 0
+    },
+    "mixedLifecycleContracts": {
+      "node": "22.22.2",
+      "realPythonAndDisposablePostgres": true,
+      "passed": 21,
+      "exitCode": 0
+    },
+    "pythonControl": {
+      "node": "22.22.2",
+      "passed": 1073,
+      "skipped": 2,
+      "exitCode": 0,
+      "workerChecksExecuted": false
+    },
+    "fullCheck": {
+      "exitCode": 0,
+      "node": "22.22.2",
+      "taskCounts": [
+        {
+          "total": 10,
+          "cached": 4
+        },
+        {
+          "total": 33,
+          "cached": 11
+        },
+        {
+          "total": 27,
+          "cached": 12
+        },
+        {
+          "total": 19,
+          "cached": 13
+        }
+      ],
+      "executedWeb": 691,
+      "executedDesktop": 578,
+      "desktopSkipped": 3,
+      "initialAttempt": "14 generated executable fixture failures from a space-containing Node path; same binary in disposable no-space path passes without source changes"
+    },
+    "currentNativeQualification": {
+      "sourceHead": "a848917270e447d735f042577407be79189da459",
+      "stageExit": 0,
+      "packageExit": 0,
+      "lifecycleExit": 0,
+      "unsigned": true,
+      "installed": false,
+      "lockedPythonDistributions": 59,
+      "pipCheckPassed": true,
+      "appAsarSha256": "78beb8535ae7b655b5caa3f3870248f5e392c8a34e4c2dd6208b64c9f3fd1692",
+      "app": {
+        "regularFiles": 28126,
+        "regularBytes": 1230255595,
+        "symlinks": 46
+      },
+      "native": {
+        "regularFiles": 27820,
+        "regularBytes": 783641578,
+        "symlinks": 32
+      },
+      "catalogRevision": 3,
+      "catalogSha256": "81e05d62993d603b15bf0cd62bce3f627d04f366f10673c13bdf46f5b2622f55",
+      "fiveReviewedFingerprintsMatched": true,
+      "packagedAuditSourceMatches": true,
+      "guiAttempt": "canonical Electron/safeStorage preparation remained at system credential reading; not counted as acceptance. No product service started. Menu quit did not complete; all4 exact owned PIDs stopped with SIGTERM and disposable profile removed. No keychain permission was changed.",
+      "affectedWeb": {
+        "sourceHead": "a848917270e447d735f042577407be79189da459",
+        "actualPackagedPythonTs": true,
+        "builtProductionWeb": true,
+        "viewports": [
+          [
+            1440,
+            900
+          ],
+          [
+            640,
+            900
+          ]
+        ],
+        "botNamesShown": true,
+        "keyboardFocus": true,
+        "messageAndQueuedRunRestoredAfterReload": true,
+        "apiResponses": 94,
+        "apiErrors": 0,
+        "runOutputRequests": 0,
+        "nativeSafeStorageVerified": false,
+        "fixtureFirstAttempt": "private artifact directory permission refusal; corrected to0700 without product changes"
+      },
+      "ownedFixturesAndProfilesRemoved": true,
+      "installedAsarUnchanged": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0"
+    },
+    "currentHostedCi": {
+      "run": 37537366648,
+      "branchHead": "c8e1dbcf16e5dd9b66abe037aeee3e0a87be530e",
+      "actualMerge": "760e484861e1aa2731756d7030fbe34f96d24709",
+      "actualBase": "3bb6365c660fd40be5dbc181fe1da92093352877",
+      "allRequiredJobsPassed": 17,
+      "qualifiesPr204Integration": false
+    },
+    "remaining": [
+      "deployment TLS/PKI",
+      "registered Worker/access-group provisioning",
+      "signed distribution",
+      "P3-P5 ownership switches"
+    ],
+    "applicationsInstalled": 0,
+    "p3OwnershipSwitched": false,
+    "directProductInventory": {
+      "exitCode": 0,
+      "node": "22.22.2",
+      "defaultHttpOperations": 121,
+      "realPythonAndDisposablePostgres": true,
+      "integratedPassed": 270,
+      "stagedArtifactsPassed": 19,
+      "consumerDigestsRefreshed": true
+    }
+  },
+  "currentP2Candidate": {
+    "date": "2026-10-07 (Asia/Singapore)",
+    "productSourceHead": "2c3dd553ec9d465749fbce6a014373285d169c4f",
+    "acceptedMain": "44d13f963e1e4b029746b7aa32a611234a531f7a",
+    "acceptedUi": [
+      "PR194",
+      "PR198",
+      "PR203",
+      "PR204"
+    ],
+    "priorReviewCorrectionSource": "dc0bf05ad12ac2cea4d4d4a2994c6ab4981143ed",
+    "priorQualificationRecord": "beforeUiAutomationIntegration; exact native/CI scope retained",
+    "pageImplementation": "Integrate Claude PR204 fixes; Step43 sidebar/crown/avatar animation remains Claude-owned after PR200 merge.",
+    "requiredPerHttpGroupSwitch": "npm run ui:acceptance -- --entry ts; PASS 12/12",
+    "automatedWholeInterface": {
+      "command": "npm run ui:acceptance -- --entry ts --out <output-parent>",
+      "exitCode": 0,
+      "passedSteps": 12,
+      "totalSteps": 12,
+      "apiResponses": 104,
+      "byStatus": {
+        "200": 97,
+        "201": 7
+      },
+      "allowedGaps": 0,
+      "unexpected": 0,
+      "pageErrors": 0,
+      "entry": "ts",
+      "actualPythonAndDisposablePostgres": true,
+      "browser": "installed Chrome",
+      "viewport": [
+        1440,
+        900
+      ],
+      "theme": "light",
+      "applicationInstalled": false,
+      "sourceHead": "2c3dd553ec9d465749fbce6a014373285d169c4f",
+      "productCodeDirty": false,
+      "dirtyScopeDuringRun": "ADR and CONTRIBUTING migration-gate documentation only",
+      "outputDirectory": "/private/tmp/openbot-p2-ui204-acceptance/openbot-ui-acceptance-1791339492444",
+      "receipt": "receipt.json",
+      "screenshots": [
+        "screenshots/settings.png",
+        "screenshots/final.png"
+      ],
+      "publicEntryRestartAndOwnerSessionPassed": true,
+      "fixtureDataContainerBrowserAndServicesRemoved": true,
+      "scopeExcludes": [
+        "paid model replies",
+        "Worker/computer execution",
+        "native Electron",
+        "screen readers"
+      ]
+    },
+    "intermittentWorkspace503": {
+      "ownerReportedEarlierRuns": 4,
+      "ownerReportedOccurrences": 1,
+      "thisRunOccurrences": 0,
+      "fixed": false,
+      "actionOnRecurrence": "Fail acceptance; trace reported journey step and paired TS/Python logs to distinguish upstream response from forwarding failure."
+    },
+    "reportChecks": {
+      "passed": 3,
+      "exitCode": 0,
+      "missingBrowserExitCode": 2,
+      "missingBrowserStoppedBeforeProductStartup": true
+    },
+    "fullCheck": {
+      "exitCode": 0,
+      "node": "22.22.2",
+      "executedWeb": 692,
+      "taskCounts": [
+        {
+          "total": 10,
+          "cached": 2
+        },
+        {
+          "total": 33,
+          "cached": 12
+        },
+        {
+          "total": 27,
+          "cached": 12
+        },
+        {
+          "total": 19,
+          "cached": 13
+        }
+      ]
+    },
+    "currentHostedCi": "New integration qualification required after publication; exact results recorded in PR200 checks/body.",
+    "remaining": [
+      "new integration hosted qualification",
+      "deployment TLS/PKI",
+      "registered Worker/access-group provisioning",
+      "signed distribution",
+      "P3-P5 ownership switches"
+    ],
+    "applicationsInstalled": 0,
+    "p3OwnershipSwitched": false,
+    "directProductInventory": {
+      "sourceHead": "2c3dd553ec9d465749fbce6a014373285d169c4f",
+      "node": "22.22.2",
+      "exitCode": 0,
+      "defaultHttpOperations": 121,
+      "integratedPassed": 270,
+      "stagedArtifactsPassed": 19,
+      "realPythonAndDisposablePostgres": true,
+      "inventoryChanged": false,
+      "noTemporalOrLiveProviderCalls": true
+    }
+  }
+}

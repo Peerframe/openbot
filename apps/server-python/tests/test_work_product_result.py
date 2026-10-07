@@ -18,7 +18,7 @@ from openbot_agent_runtime.contracts import ModelStepRequest
 from openbot_server.control_errors import ControlError
 from openbot_server.model_connections import ModelConnectionsService
 from openbot_server.model_connections_cipher import ModelCredentialCipher
-from openbot_server.model_settings import ModelSettingsService
+from product_model_fixtures import DefaultModels
 from openbot_server.product_model import ProductModelError
 from openbot_server.work_corrections import CorrectionStore
 from openbot_server.work_files import LocalWorkFiles
@@ -49,11 +49,12 @@ def setup(fixture,tmp_path):
     base=tmp_path.resolve();base.chmod(0o700);(base/'blobs').mkdir(mode=0o700)
     store=PostgresWorkStore(fixture['dsn'],files=LocalWorkFiles(base/'blobs'))
     receipts=ModelReceipts(store,LocalWorkFiles(base/'blobs'))
-    settings=ModelSettingsService(base/'settings',lambda r:httpx2.Response(200,json={'id':'fixture-model'}))
     connections=ModelConnectionsService(fixture['dsn'],ModelCredentialCipher(bytes(range(32))))
-    f=FixtureState(**fixture,bot=bot,channel=channel,store=store,receipts=receipts,settings=settings,connections=connections,ids=[],calls=[])
+    f=FixtureState(**fixture,bot=bot,channel=channel,store=store,receipts=receipts,settings=None,connections=connections,ids=[],calls=[])
     f.sources=WorkSourceAdmission(store,token_limit=1_000_000)
+    f.settings=DefaultModels(f)
     yield f
+    f.settings.restore()
     with psycopg.connect(f.dsn) as db:
         db.execute('DELETE FROM work_tool_results WHERE task_id IN (SELECT id FROM work_tasks WHERE bot_id=%s)',(bot,))
         db.execute('DELETE FROM work_model_receipts WHERE task_id IN (SELECT id FROM work_tasks WHERE bot_id=%s)',(bot,))
@@ -86,7 +87,7 @@ def product(f,handler=None,**options):
     def send(req):
         f.calls.append(req)
         return handler(req) if handler else httpx2.Response(200,json=response(req))
-    return ProductWorkModel(f.store,object(),SCOPE,f.settings,f.connections,f.receipts,
+    return ProductWorkModel(f.store,object(),SCOPE,f.connections,f.receipts,
         transport_factory=lambda:httpx2.MockTransport(send),**options)
 
 
@@ -115,7 +116,7 @@ async def prepared(f):
     def send(req):
         if f.hook: f.hook(req)
         value=response(req)
-        value['output'][0]['content'][0]['text']=f.next_text
+        value['choices'][0]['message']['content']=f.next_text
         return httpx2.Response(200,json=value)
     f.port=product(f,send)
     f.results=ToolResults(f.store,f.store.files)

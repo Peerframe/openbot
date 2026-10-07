@@ -1,14 +1,15 @@
 // @vitest-environment jsdom
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
+import { workHttpOpenApi, workHttpOperations, workHttpSchemas } from "@openbot/protocol";
 import { afterEach, expect, it, vi } from "vitest";
 import {
+  type CreateWorkInput,
   cancelWorkTask,
-  createWorkTask,
   createWorkInputSchema,
+  createWorkTask,
   getWorkTask,
   workSnapshotSchema,
-  type CreateWorkInput,
 } from "../src/work-api";
 
 const root = `${resolve(process.cwd(), "../..")}/`;
@@ -29,8 +30,51 @@ const fixtures = JSON.parse(
     status: number;
     body: unknown;
   }[];
+  wireCases: {
+    schema: keyof typeof workHttpSchemas;
+    name: string;
+    input: unknown;
+    valid: boolean;
+    serialized?: unknown;
+  }[];
 };
 afterEach(() => vi.unstubAllGlobals());
+
+it.each(fixtures.wireCases)("TS wire/Python DTO parity: $schema/$name", (sample) => {
+  const result = workHttpSchemas[sample.schema].safeParse(sample.input);
+  expect(result.success).toBe(sample.valid);
+  if (result.success) expect(result.data).toEqual(sample.serialized);
+});
+
+it("covers all actual Work route methods, operation IDs and successful statuses", () => {
+  const python = JSON.parse(
+    execFileSync(
+      `${root}apps/server-python/.venv/bin/python`,
+      ["-I", `${root}apps/server-python/scripts/export-work-contract.py`],
+      { encoding: "utf8" },
+    ),
+  );
+  const actual = Object.entries(python.paths).flatMap(([path, methods]) =>
+    Object.entries(methods as Record<string, { operationId: string; responses: object }>).map(
+      ([method, operation]) => ({
+        path,
+        method,
+        operationId: operation.operationId,
+        status: Number(Object.keys(operation.responses).find((status) => /^2/.test(status))),
+      }),
+    ),
+  );
+  expect(
+    workHttpOperations.map(({ path, method, operationId, status }) => ({
+      path,
+      method,
+      operationId,
+      status,
+    })),
+  ).toEqual(expect.arrayContaining(actual));
+  expect(actual).toHaveLength(workHttpOperations.length);
+  expect(Object.keys(workHttpOpenApi().paths)).toHaveLength(actual.length);
+});
 
 it.each(fixtures.cases)("Python and runtime Web validation agree: $name", (sample) => {
   const result = workSnapshotSchema.safeParse(sample.input);

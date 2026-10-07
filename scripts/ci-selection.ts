@@ -169,6 +169,7 @@ export function selectChecks(
       file.startsWith(".github/") ||
       file.startsWith("scripts/") ||
       file.startsWith("packages/work-contract-generator/") ||
+      file.startsWith("packages/contract-tests/") ||
       /\/generated\//.test(file)
     ) {
       broaden(`Check, contract, lock or build input: ${file}`);
@@ -185,6 +186,10 @@ export function selectChecks(
       if (/work_(models|values|routes)|runtime_wire|input_models/.test(file))
         broaden(`Cross-language authority: ${file}`);
       continue;
+    }
+    if (file.startsWith("apps/server-ts/")) {
+      python();
+      selected.add("harness");
     }
     if (file.startsWith("experiments/browser-execution/")) {
       rootChecks.add("test:browser:boundary");

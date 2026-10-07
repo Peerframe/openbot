@@ -23,7 +23,6 @@ vi.mock("../plugin-api", () => ({
 vi.mock("../api", () => ({
   createMessage: vi.fn(),
   getEmployeeProfile: vi.fn(),
-  getRunOutput: vi.fn(async () => null),
   steerRun: vi.fn(),
   listMessages: vi.fn(),
   listMessagePage: vi.fn(),

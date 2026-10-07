@@ -4,7 +4,6 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   ApiError,
   createMessage,
-  getRunOutput,
   listMessages,
   listRuns,
   setMessageReaction,
@@ -22,7 +21,6 @@ vi.mock("../plugin-api", () => ({
 vi.mock("../api", async (original) => ({
   ...(await original<typeof import("../api")>()),
   createMessage: vi.fn(),
-  getRunOutput: vi.fn(),
   steerRun: vi.fn(),
   listMessages: vi.fn(),
   listRuns: vi.fn(),
@@ -121,18 +119,14 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(listMessages).mockResolvedValue([]);
   vi.mocked(listRuns).mockResolvedValue([run]);
-  vi.mocked(getRunOutput).mockResolvedValue(null);
 });
 afterEach(async () => {
   for (const view of views.splice(0)) await view.unmount();
   vi.restoreAllMocks();
 });
-it("recovers output on ready and merges forward SSE projections before the formal message replaces them", async () => {
-  vi.mocked(getRunOutput).mockResolvedValueOnce(output(1, "Recovered partial"));
+it("merges forward SSE projections and restores committed messages on reconnect", async () => {
   const view = await render();
-  expect(view.container.querySelector(".streaming-message")?.textContent).toContain(
-    "Recovered partial",
-  );
+  expect(view.container.querySelector(".streaming-message")).toBeNull();
   await interact(() => handlers().onOutput?.(output(2, "Growing response")));
   expect(view.container.querySelector(".streaming-message")?.textContent).toContain(
     "Growing response",
@@ -145,12 +139,6 @@ it("recovers output on ready and merges forward SSE projections before the forma
   expect(view.container.querySelector(".streaming-message")?.textContent).toContain(
     "Growing response",
   );
-  vi.mocked(getRunOutput).mockResolvedValue(output(4, "Reconnect snapshot"));
-  await interact(() => handlers().onReady());
-  expect(getRunOutput).toHaveBeenCalledTimes(2);
-  expect(view.container.querySelector(".streaming-message")?.textContent).toContain(
-    "Reconnect snapshot",
-  );
   await interact(() =>
     handlers().onMessage({
       ...final,
@@ -160,9 +148,14 @@ it("recovers output on ready and merges forward SSE projections before the forma
     }),
   );
   expect(view.container.querySelector(".streaming-message")?.textContent).toContain(
-    "Reconnect snapshot",
+    "Growing response",
   );
-  await interact(() => handlers().onMessage(final));
+  // The current product's reconnect-ready stream restores messages/runs through the existing readers.
+  vi.mocked(listMessages).mockResolvedValue([final]);
+  vi.mocked(listRuns).mockResolvedValue([{ ...run, status: "completed" }]);
+  await interact(() => handlers().onReady());
+  expect(listMessages).toHaveBeenCalledTimes(2);
+  expect(listRuns).toHaveBeenCalledTimes(2);
   expect(view.container.textContent).toContain(final.content);
   expect(view.container.querySelector(".streaming-message")).toBeNull();
   await interact(() => handlers().onRun({ ...run, status: "completed" }, []));

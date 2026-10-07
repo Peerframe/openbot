@@ -128,6 +128,15 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
     },
   ];
   const profileRevisions = new Map<string, number>();
+  const ownerPreferences = {
+    revision: 1,
+    timezone: "Asia/Shanghai",
+    defaultModel: { connectionId: "conn-anthropic", modelId: "claude-sonnet" } as Json | null,
+    updatedAt: "2026-09-30T01:30:00.000Z",
+  };
+  let transcriptionConnectionId: string | null = null;
+  let primaryBotId: string | null = null;
+  let workspaceRevision = 1;
   const routes: Array<[string, RegExp, Handler]> = [
     [
       "GET",
@@ -145,6 +154,8 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
       () =>
         json({
           channels: world.channels,
+          primaryBotId,
+          revision: workspaceRevision,
           bots: world.bots,
           nodes: world.nodes,
           runs: world.runs,
@@ -628,28 +639,56 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
         return json({ deleted: true, connectionId: m[1] });
       },
     ],
+    ["GET", /^\/api\/v1\/settings\/general$/, () => json(ownerPreferences)],
     [
-      "GET",
-      /^\/api\/v1\/settings\/model$/,
-      () =>
-        json({
-          status: "configured",
-          provider: "anthropic",
-          model: "claude-sonnet",
-          revision: "r1",
-          agentEnabled: true,
-        }),
+      "PUT",
+      /^\/api\/v1\/settings\/general$/,
+      (_m, body) => {
+        if (body.expectedRevision !== ownerPreferences.revision)
+          return json({ error: "owner_preferences_revision_conflict" }, 409);
+        Object.assign(ownerPreferences, {
+          revision: ownerPreferences.revision + 1,
+          timezone: body.timezone,
+          defaultModel: body.defaultModel,
+          updatedAt: new Date().toISOString(),
+        });
+        return json(ownerPreferences);
+      },
     ],
     [
       "GET",
-      /^\/api\/v1\/settings\/general$/,
-      () =>
-        json({
-          revision: 1,
-          timezone: "Asia/Shanghai",
-          defaultModel: { connectionId: "conn-anthropic", modelId: "claude-sonnet" },
-          updatedAt: "2026-09-30T01:30:00.000Z",
-        }),
+      /^\/api\/v1\/settings\/transcription$/,
+      () => json({ revision: ownerPreferences.revision, connectionId: transcriptionConnectionId }),
+    ],
+    [
+      "PUT",
+      /^\/api\/v1\/settings\/transcription$/,
+      (_m, body) => {
+        if (body.expectedRevision !== ownerPreferences.revision)
+          return json({ error: "owner_preferences_revision_conflict" }, 409);
+        const selected = connections.find((c) => c.id === body.connectionId);
+        if (body.connectionId !== null && (!selected?.enabled || selected.presetId !== "openai"))
+          return json({ error: "enabled_openai_transcription_required" }, 415);
+        transcriptionConnectionId = body.connectionId as string | null;
+        ownerPreferences.revision += 1;
+        return json({
+          revision: ownerPreferences.revision,
+          connectionId: transcriptionConnectionId,
+        });
+      },
+    ],
+    [
+      "PUT",
+      /^\/api\/v1\/workspace\/primary-bot$/,
+      (_m, body) => {
+        if (body.expectedRevision !== workspaceRevision)
+          return json({ error: "workspace_revision_conflict" }, 409);
+        if (body.botId !== null && !world.bots.some((bot) => bot.id === body.botId))
+          return json({ error: "bot_not_found" }, 404);
+        if (body.botId !== primaryBotId) workspaceRevision += 1;
+        primaryBotId = body.botId as string | null;
+        return json({ primaryBotId, revision: workspaceRevision });
+      },
     ],
     ["GET", /^\/api\/v1\/automations$/, () => json({ automations: [] })],
     [

@@ -71,7 +71,7 @@ describe("model service selection", () => {
     expect(html).not.toContain('value="replacement" selected=""');
   });
 
-  it("offers the environment default only when the Server reports a usable environment connection", () => {
+  it("offers C7 inheritance without treating an environment connection as the default", () => {
     const html = renderToStaticMarkup(
       <ModelSelectionFields
         snapshot={{
@@ -82,7 +82,8 @@ describe("model service selection", () => {
         onChange={() => undefined}
       />,
     );
-    expect(html).toContain("服务电脑默认 · kimi-k3");
+    expect(html).toContain("使用默认模型");
+    expect(html).not.toContain("服务电脑默认 · kimi-k3");
     const empty = renderToStaticMarkup(
       <ModelSelectionFields
         snapshot={{ ...snapshot, connections: [] }}
@@ -92,6 +93,7 @@ describe("model service selection", () => {
     );
     expect(empty).toContain("还没有可用的模型服务");
     expect(empty).not.toContain("服务电脑默认");
+    expect(empty).toContain("未配置时，Bot 暂时无法调用模型");
   });
 
   it("explains an invalid manual model ID before a call can be submitted", () => {

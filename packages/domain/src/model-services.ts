@@ -1,80 +1,32 @@
-export type ModelApiProtocol = "openai-chat" | "anthropic-messages";
+export type ModelApiProtocol = import("@openbot/protocol").ModelConnection["protocol"];
 
-export interface ModelConnectionPreset {
-  id: string;
-  name: string;
-  protocol: ModelApiProtocol;
-  endpoints: Array<{ name: string; baseUrl: string }>;
-  suggestedModels: string[];
-  discovery: boolean;
-  description: string;
-  docsUrl: string;
-}
+export type ModelConnectionPreset = import("@openbot/protocol").ModelConnectionPreset;
 
-export interface ModelSelection {
-  connectionId: string;
-  modelId: string;
-}
+export type ModelSelection = import("@openbot/protocol").ModelSelection;
 
 /** Public projection only. Credentials never belong in workspace or Employee DTOs. */
-export interface ModelConnection {
-  id: string;
-  name: string;
-  presetId: string;
-  baseUrl: string;
-  protocol: ModelApiProtocol;
-  enabled: boolean;
-  hasApiKey: boolean;
-  revision: number;
-  source: "saved" | "environment";
-  defaultModel?: string | undefined;
-  createdAt: string;
-  updatedAt: string;
-}
+export type ModelConnection = import("@openbot/protocol").ModelConnection;
 
-export interface ModelServicesSnapshot {
-  presets: ModelConnectionPreset[];
-  connections: ModelConnection[];
-  customBaseUrls: string[];
-}
+export type ModelServicesSnapshot = import("@openbot/protocol").ModelServicesSnapshot;
 
-export interface CreateModelConnectionInput {
-  name: string;
-  presetId: string;
-  baseUrl: string;
-  apiKey: string;
-  defaultModel?: string | null | undefined;
-}
+export type CreateModelConnectionInput = import("@openbot/protocol").CreateModelConnectionInput;
 
-export interface UpdateModelConnectionInput {
-  expectedRevision: number;
-  name?: string | undefined;
-  apiKey?: string | undefined;
-  enabled?: boolean | undefined;
-  defaultModel?: string | null | undefined;
-}
+export type UpdateModelConnectionInput = import("@openbot/protocol").UpdateModelConnectionInput;
 
-export interface VerifyModelConnectionInput {
-  presetId: string;
-  baseUrl: string;
-  apiKey: string;
-}
+export type VerifyModelConnectionInput = import("@openbot/protocol").VerifyModelConnectionInput;
 
-export interface DeleteModelConnectionInput {
-  expectedRevision: number;
-}
+export type DeleteModelConnectionInput = import("@openbot/protocol").DeleteModelConnectionInput;
 
-export interface ModelConnectionDependencies {
-  bots: Array<{ id: string; name: string }>;
-  runIds: string[];
-  ownerDefault: boolean;
-}
+// Preserve the additive consumer projection for older conflict responses.
+export type ModelConnectionDependencies = Omit<
+  import("@openbot/protocol").ModelConnectionDependencies,
+  "transcription"
+> & {
+  transcription?: boolean;
+};
 
 export interface ModelConnectionDeletionConflict extends ModelConnectionDependencies {
   error: "model_connection_in_use";
 }
 
-export interface UpdateEmployeeModelInput {
-  expectedRevision: number;
-  model: ModelSelection | null;
-}
+export type UpdateEmployeeModelInput = import("@openbot/protocol").UpdateEmployeeModelInput;
