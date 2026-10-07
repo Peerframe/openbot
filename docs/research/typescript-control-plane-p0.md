@@ -351,8 +351,10 @@ Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, br
 approval. Its tree `a0fc4e6ed0baa011f9b0829b9c78edb8538f161a` is identical to the qualified
 PR candidate: all17 jobs at [CI37561911353](https://github.com/Peerframe/openbot/actions/runs/37561911353).
 Main [CI37613802756](https://github.com/Peerframe/openbot/actions/runs/37613802756) initially failed
-in direct Python MCP resource/prompt contracts with a10-second timeout; the failed job reproduced the same timeout on attempt2,
-without changing assertions/timeouts. No further blind rerun is made; local direct Python all
+in direct Python MCP resource/prompt contracts with a10-second timeout. Attempt2 passed direct
+Python all/publisher/models, then timed out at the same normal MCP content-read loop through the
+mixed TS entry (`plugins.ts:296`). Assertions/timeouts are unchanged. The two entry observations do
+not establish a TS-forwarding cause; no further blind rerun is made. Local direct and mixed all
 contracts pass, so the hosted difference remains unresolved. This is separate from the previously reported workspace503.
 Step43's sidebar crown/avatar/animation remains Claude-owned; no messages or UI edits are made here.
 The original dirty checkout, installed app and user profiles remain preserved.

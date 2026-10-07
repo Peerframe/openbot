@@ -1572,7 +1572,7 @@
       "prCiJobsPassed": 17,
       "mainCiRun": 37613802756,
       "mainCiAttempts": 2,
-      "mainCiStatus": "failed twice: direct Python MCP resource/prompt request at plugins.ts:296 exceeded the unchanged 10s consumer timeout; no third blind rerun. Same local direct all-suite passes."
+      "mainCiStatus": "failed twice at the normal MCP resource/prompt read loop (plugins.ts:296), unchanged 10s consumer deadline: attempt1 direct Python; attempt2 direct all/publisher/models passed, then mixed TS all failed. Cause unresolved; local direct/mixed all pass. No third blind rerun or assertion/timeout change."
     },
     "fullCheck": {
       "command": "npm run check",

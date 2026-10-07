@@ -229,8 +229,9 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 其树 `a0fc4e6ed0baa011f9b0829b9c78edb8538f161a` 与已验收候选相同，
 [CI37561911353](https://github.com/Peerframe/openbot/actions/runs/37561911353) 的17项任务全通过。
 main [CI37613802756](https://github.com/Peerframe/openbot/actions/runs/37613802756) 首次运行在直接
-Python 的 MCP 资源/提示词契约遇到10秒超时，按原断言与期限重跑后第二次仍在同一请求超时；本地直接 Python all 组通过，
-托管差异仍未解决，不再盲目重跑。这与此前 workspace503
+Python 的 MCP 资源/提示词契约遇到10秒超时。第二次的直接 Python all/publisher/models 已通过，
+随后 TS 混合入口在同一普通 MCP 内容读取循环（`plugins.ts:296`）超时；原断言和期限未改变。
+两种入口的观测不能证明 TS 转发是原因。本地直接与混合 all 组通过，托管差异仍未解决，不再盲目重跑。这与此前 workspace503
 是两份独立证据。第43步侧栏王冠、头像和动画仍归 Claude；本轮没有发送消息或改动这些界面。
 保留原 dirty 工作区、已安装应用和用户数据。
 
