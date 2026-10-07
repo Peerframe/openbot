@@ -1699,7 +1699,8 @@
         "nativeKeychainVerified": false
       },
       "nativeKeychainVerified": false,
-      "fullCompanionCandidateQualificationRetainedAtPriorScope": true
+      "fullCompanionCandidateQualificationRetainedAtPriorScope": true,
+      "qualificationScope": "Initial read-group source before HTTP lifetime correction; refreshed resources are qualified separately below."
     },
     "preserved": {
       "originalBranch": "codex/c22-c24-storage-follow-ups",
@@ -1708,8 +1709,7 @@
       "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
       "claudeStep43Unchanged": true
     },
-    "remaining": "New PR hosted qualification and the repeated main MCP timeout must be resolved before a further ownership switch/merge. This first read does not complete P3; writes, identity/security, products, models, P4 and P5 remain.",
-    "productSourceHead": "4764d5d3edf129489fd2509a5dec32ad917a0918",
+    "remaining": "Required hosted qualification of the HTTP-lifetime-corrected source before further cohort switch or merge; merge is not authorized. This first read does not complete P3; writes, identity/security, products, models, P4 and P5 remain.",
     "publication": {
       "status": "published draft; merge not authorized",
       "ownerApprovalDate": "2026-10-08 (Asia/Singapore)",
@@ -1730,6 +1730,151 @@
         "reasonAtRejection": "Automatic approval review found no explicit authorization for this new external publication. No remote branch or PR was created."
       },
       "preparedPrBody": "/private/tmp/openbot-p3-draft-pr.md"
+    },
+    "initialReadGroupSourceHead": "4764d5d3edf129489fd2509a5dec32ad917a0918",
+    "httpLifetimeCorrection": {
+      "date": "2026-10-08 (Asia/Singapore)",
+      "sourceDirtyDuringQualification": true,
+      "sourceBase": "5a1d39e255f8b573274905effa209407aa80613d",
+      "sourceSha256": {
+        "apps/server-python/src/openbot_server/http_input.py": "5a33fd5635337beffe85f23340ff3963d7fd9c36734d2d197919bd3b8796e17c",
+        "apps/server-python/tests/test_http_input_lifecycle.py": "2d7d968b73bfbe48cf26d298f16074c12383cab480e28ef2ba13cf7c9963c192"
+      },
+      "observedHostedFailure": {
+        "run": 37657377771,
+        "head": "5a1d39e255f8b573274905effa209407aa80613d",
+        "actualMerge": "ee6d27336448425afb0e64d16976d4bcb9b8c288",
+        "job": 112916458093,
+        "entry": "direct Python all, normal MCP read at plugins.ts:296; TS read checks not reached",
+        "consumerDeadlineChanged": false
+      },
+      "localDiagnosis": {
+        "normalInputRefusalAlsoHung": true,
+        "watcherCancellationCount": 1,
+        "watcherFrame": "http_input.py:54 watch, still polling while response cleanup joins it",
+        "temporaryDiagnosticsCommitted": false
+      },
+      "decision": "Explicit stop condition before cancelling/joining the owned disconnect watcher; cancellation-aware polling can consume cancel(). Preserve real disconnect signal, normal/error/outer cancellation, existing poll interval and all deadlines. Same pinned dependencies; no upstream source copied.",
+      "focusedRegression": {
+        "beforeFixFailed": 2,
+        "afterFixPassed": 22,
+        "instrumentedActualHttpPluginChecks": 30,
+        "standaloneSdkChecks": {
+          "macosArm64": 40,
+          "linuxArm64": 40,
+          "scope": "existing owned loopback fixture, no SQL/product HTTP, not hosted amd64 qualification"
+        }
+      },
+      "fullCheck": {
+        "command": "npm run check",
+        "node": "22.22.2",
+        "exitCode": 0,
+        "log": "/private/tmp/openbot-p3-mcp-full-check.log",
+        "turbo": {
+          "lint": [
+            10,
+            10
+          ],
+          "types": [
+            33,
+            33
+          ],
+          "test": [
+            27,
+            27
+          ],
+          "build": [
+            19,
+            19
+          ]
+        },
+        "scope": "Turbo tasks all cached from qualified read-group source; documentation/research/prerequisites executed. New Python lifecycle22 and real HTTP checks recorded separately."
+      },
+      "hostedResult": "Required checks/body on PR205 qualify the latest corrected-source revision; original failed run remains historical evidence.",
+      "actualHttp": {
+        "pythonAll": {
+          "contracts": 270,
+          "artifacts": 19,
+          "log": "/private/tmp/openbot-p3-mcp-python-all.log",
+          "exitCode": 0
+        },
+        "mixedTsAll": {
+          "contracts": 270,
+          "artifacts": 19,
+          "readChecks": 14,
+          "log": "/private/tmp/openbot-p3-mcp-ts-all.log",
+          "exitCode": 0
+        },
+        "httpsControl": {
+          "contracts": 50,
+          "readChecks": 14,
+          "log": "/private/tmp/openbot-p3-mcp-https-control.log",
+          "exitCode": 0
+        },
+        "unchangedConsumerDeadlines": true,
+        "fixtureProcessesAndDataRemoved": true
+      },
+      "ui": {
+        "command": "npm run ui:acceptance -- --entry ts --out /private/tmp/openbot-p3-mcp-ui",
+        "passed": 12,
+        "total": 12,
+        "apiResponses": 104,
+        "statuses": {
+          "200": 97,
+          "201": 7
+        },
+        "allowedKnownGaps": 0,
+        "unexpectedResponses": 0,
+        "pageErrors": 0,
+        "workspace503": 0,
+        "receipt": "/private/tmp/openbot-p3-mcp-ui/openbot-ui-acceptance-1791394896696/receipt.json",
+        "scope": "Installed Chrome1440x900/light with owned disposable TS/Python/PostgreSQL; not native GUI, paid models or Worker/Temporal; prior intermittent workspace503 not claimed fixed."
+      },
+      "native": {
+        "stageExitCode": 0,
+        "packageExitCode": 0,
+        "stagedSmoke": {
+          "parentEofStoppedActualApi": true,
+          "parentEofStoppedOwnedProcessCount": 2,
+          "tsForwardingEntry": true,
+          "transcriptionReadRestartVerified": true,
+          "tsReadGroup": "transcription",
+          "eitherProductExitStoppedPair": true,
+          "unsafeDirectoryRefusedAndPostgresStopped": true,
+          "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+          "pythonProductHealth": true,
+          "ownerLogin": true,
+          "postgresInitialized": true,
+          "restartPreservedData": true,
+          "serverAndPostgresStopped": true,
+          "syntheticOnly": true,
+          "nativeKeychainVerified": false
+        },
+        "packagedSmoke": {
+          "parentEofStoppedActualApi": true,
+          "parentEofStoppedOwnedProcessCount": 2,
+          "tsForwardingEntry": true,
+          "transcriptionReadRestartVerified": true,
+          "tsReadGroup": "transcription",
+          "eitherProductExitStoppedPair": true,
+          "unsafeDirectoryRefusedAndPostgresStopped": true,
+          "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+          "pythonProductHealth": true,
+          "ownerLogin": true,
+          "postgresInitialized": true,
+          "restartPreservedData": true,
+          "serverAndPostgresStopped": true,
+          "syntheticOnly": true,
+          "nativeKeychainVerified": false
+        },
+        "asarSha256": "a1f098f8d9d025ea4fcf84ba30b72c38f6debade86c3559e0befda6f0583c7af",
+        "sourceStageAndPackagedHttpInputSha256": "5a33fd5635337beffe85f23340ff3963d7fd9c36734d2d197919bd3b8796e17c",
+        "pythonLockedDistributions": 59,
+        "pipCheck": true,
+        "installed": false,
+        "workerCompanionIncluded": false,
+        "scope": "Refreshed unsigned macOS arm64 API-only TS Preview; no GUI/Keychain/Temporal/public PKI qualification."
+      }
     }
   }
 }

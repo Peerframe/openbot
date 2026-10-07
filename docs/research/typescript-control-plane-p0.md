@@ -416,7 +416,7 @@ receipts are kept in the [single receipt](typescript-control-plane-p2-native.jso
 is a candidate checkpoint, not completion of P3/P4/P5 or native Keychain/Temporal qualification.
 
 
-Current source qualification: `npm run check` passes (TS37, Desktop578 with3 platform skips, Web692,
+Initial P3 source qualification, before the HTTP lifetime correction: `npm run check` passes (TS37, Desktop578 with3 platform skips, Web692,
 protocol461; task/cache counts retained in the receipt), Python private-proxy/config tests20 pass,
 real mixed all270+19 artifact checks plus14 read checks, HTTPS control50+14 and direct Python all270+19
 pass. Final whole-interface run passes12/12 with99 responses (92×200,7×201), no allowlisted gap,
@@ -428,8 +428,9 @@ The unsigned, uninstalled macOS arm64 TS Preview has passed both staged and actu
 startup/restart/parent-EOF/paired-exit/read smoke;5 launchers and3 entry modules match the build.
 ASAR is `a1f098f8d9d025ea4fcf84ba30b72c38f6debade86c3559e0befda6f0583c7af`.
 It is API-only without Worker companion and does not qualify Keychain/GUI/Temporal or public PKI.
-New PR hosted qualification and the repeated main MCP timeout remain a merge gate. No further
-cohort is switched before those results; the original canonical/full-companion baseline is retained.
+Post-publication CI reproduced the MCP timeout. The shared HTTP lifetime correction below supplies
+local cause/regression evidence; required hosted qualification of the corrected source remains a
+merge gate. No further cohort is switched before it; the canonical/full-companion baseline is retained.
 
 Product source is committed at `4764d5d3edf129489fd2509a5dec32ad917a0918`. On2026-10-08
 (Asia/Singapore), the Owner explicitly approved pushing `codex/ts-control-plane-p3-settings` and
@@ -439,6 +440,34 @@ published; its initial head is `d38646c2c6496b6bbe2062bbf3bee35997bbd7b7` over m
 use PR205's required checks/body for the latest revision's hosted result. The earlier automatic
 review rejection is historical and was resolved by this explicit approval. Merge is not authorized.
 This publication record changes no qualified product source, installed app or Claude-owned UI.
+
+### Post-publication HTTP lifetime correction (2026-10-08)
+
+[PR205 CI37657377771](https://github.com/Peerframe/openbot/actions/runs/37657377771) fails the direct
+Python normal MCP read at `plugins.ts:296`, before the TS cohort checks. Temporary instrumentation
+of the real local HTTP fixture also reproduces a timeout in an input-refusal path with no MCP call.
+The captured stack has `http_input.watch` still polling with `Task.cancelling()==1`, while response
+cleanup awaits that task. These observations identify a shared HTTP lifetime defect consistent
+with the hosted symptom, rather than proving a TS forwarding or SDK transport failure.
+
+Reuse the existing poll/Owner cancellation contract and unchanged Starlette1.6.0/AnyIO4.15.1 pins.
+Reviewed [Starlette's polling cancellation scope](https://github.com/Kludex/starlette/blob/1.6.0/starlette/requests.py)
+and [AnyIO's cancellation accounting](https://github.com/agronholm/anyio/blob/4.15.1/src/anyio/_backends/_asyncio.py).
+A cancellation-aware ASGI poll may consume task cancellation; add an explicit stop condition before
+cancelling and joining the owned watcher. Actual disconnect still sets the same signal. Normal
+completion, errors and outer cancellation retain their outcomes; the poll interval and all product/
+consumer deadlines are unchanged. Reading ASGI directly could compete with upload body consumers;
+replacing/upgrading SDKs does not address this observed cleanup gap. No dependency, authority,
+persistent-data format or upstream implementation is added or copied.
+
+The two deterministic regression cases fail before the correction; all22 lifecycle cases pass
+after it. The previously failing instrumented real plugin suite then passes30. Standalone SDK
+connection/read diagnostics pass40 on macOS and40 in an existing isolated Linux arm64 product image;
+these narrow diagnostics do not substitute for real HTTP/SQL or hosted Linux amd64 qualification.
+Current corrected-source checks, UI report and refreshed uninstalled native payload are recorded
+separately in `currentP3Candidate.httpLifetimeCorrection` of the [single receipt](typescript-control-plane-p2-native.json).
+Old source/package/CI results keep their original scope. PR205's required checks/body track the
+latest hosted revision; no blind failed-job rerun, timeout waiver or merge is authorized here.
 
 ### Previously qualified P2 candidate before merge
 

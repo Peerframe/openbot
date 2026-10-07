@@ -278,7 +278,7 @@ Python 对齐，HEAD/OPTIONS/PUT 保留 Python 行为。
 P3/P4/P5 完成，也不验证原生 Keychain 或 Temporal。
 
 
-当前源码检查：`npm run check` 通过（TS37、Desktop578/3项平台跳过、Web692、协议461；任务/缓存
+HTTP 生命周期修正前的首份 P3 源码检查：`npm run check` 通过（TS37、Desktop578/3项平台跳过、Web692、协议461；任务/缓存
 数量留在收据），Python 私有代理/配置20项通过，真实混合 all270+19项附件+14项读取、HTTPS
 control50+14、直接 Python all270+19 均通过。最终界面运行 PASS12/12，99次响应（92×200、7×201），
 豁免、异常响应、页面错误、workspace503 都为0；报告为
@@ -287,8 +287,9 @@ control50+14、直接 Python all270+19 均通过。最终界面运行 PASS12/12�
 所属临时进程和数据已清理。当前未签名、未安装 macOS arm64 TS Preview 已通过装配与实际包内的
 启动/重启/父 EOF/配对退出/读取；5份启动器、3份入口模块与构建相同。
 ASAR 为 `a1f098f8d9d025ea4fcf84ba30b72c38f6debade86c3559e0befda6f0583c7af`。
-此 API 候选不含 Worker 伴随包，不验证 Keychain/GUI/Temporal 或公开 PKI。新 PR 托管验收及连续
-main MCP 超时仍是合并门槛；关闭这些门槛前不切换下一组，保留既有完整伴随包基线。
+此 API 候选不含 Worker 伴随包，不验证 Keychain/GUI/Temporal 或公开 PKI。发布后的 CI 再现了
+MCP 超时；下方共享 HTTP 生命周期修正提供本地原因及回归证据，修正源码的必需托管验收仍是合并
+门槛。通过前不切换下一组，保留既有完整伴随包基线。
 
 产品源码已提交为 `4764d5d3edf129489fd2509a5dec32ad917a0918`。2026-10-08（Asia/Singapore），
 所有者明确批准推送 `codex/ts-control-plane-p3-settings` 并创建公开草稿 PR。
@@ -297,6 +298,28 @@ main MCP 超时仍是合并门槛；关闭这些门槛前不切换下一组，�
 [CI37656292955](https://github.com/Peerframe/openbot/actions/runs/37656292955) 已在该 head 启动；
 最新提交的托管结果以 PR205 的必需检查及正文为准。此前自动审批拒绝是历史记录，已由这次明确批准解除。
 本次未授权合并。这份发布记录不改变已验收产品源码、安装版应用或 Claude 负责的界面。
+
+### 发布后的 HTTP 生命周期修正（2026-10-08）
+
+[PR205 CI37657377771](https://github.com/Peerframe/openbot/actions/runs/37657377771) 在直接 Python 的
+普通 MCP 读取（`plugins.ts:296`）超时，尚未开始 TS 组检查。临时诊断也在本机真实 HTTP 夹具中重现了
+无需调用 MCP 的输入拒绝超时：`http_input.watch` 的 `Task.cancelling()==1`，仍继续轮询，响应清理
+等待该任务退出。这定位了与托管现象一致的共享 HTTP 生命周期缺陷，不能据此归因于 TS 转发或 SDK 传输。
+
+复用既有轮询/Owner 取消契约和不变的 Starlette1.6.0、AnyIO4.15.1。查阅
+[Starlette 轮询取消域](https://github.com/Kludex/starlette/blob/1.6.0/starlette/requests.py)和
+[AnyIO 取消计数](https://github.com/agronholm/anyio/blob/4.15.1/src/anyio/_backends/_asyncio.py)。
+ASGI 轮询中的取消域可能吞掉任务取消；在取消并等待自有监测任务前设置明确的停止条件。真实断线仍
+设置原信号，正常结束、错误和外层取消保留原结果；轮询间隔及产品/消费者期限不变。直接读取 ASGI
+可能与上传正文消费者竞争，替换或升级 SDK 不解决已观测的清理缺口。未增加依赖、权限、持久格式，
+没有复制或大幅改写上游实现。
+
+两项确定性回归在修正前失败，修正后生命周期22项通过；此前失败的带诊断真实插件组随后通过30项。
+独立 SDK 连接/读取诊断在 macOS 通过40次，在现有隔离 Linux arm64 产品镜像通过40次；这些窄范围
+诊断不替代真实 HTTP/SQL 或托管 Linux amd64 验收。修正源码的检查、界面报告和刷新后的未安装原生
+资源单独记录于[同一收据](typescript-control-plane-p2-native.json)的
+`currentP3Candidate.httpLifetimeCorrection`。旧源码、包和 CI 保留原范围；最新托管提交以 PR205 的
+必需检查/正文为准。本轮不盲目重跑失败任务，不放宽期限，也未授权合并。
 
 ### 合并前已验证的 P2 候选
 

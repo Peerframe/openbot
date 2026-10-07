@@ -182,3 +182,40 @@ def test_connected_request_preserves_outcome_and_owns_all_tasks(outcome):
         assert finished.is_set()
         assert only_current_task()
     asyncio.run(check())
+
+
+@pytest.mark.parametrize('outcome', ['success', 'error'])
+def test_request_signal_stops_when_disconnect_poll_consumes_cancellation(monkeypatch, outcome):
+    """ASGI cancellation scopes may consume cancel(); cleanup still owns the poller's exit."""
+    async def check():
+        request, _ = disconnect_request()
+        polling = asyncio.Event()
+        attempts = 0
+        async def poll():
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                polling.set()
+                try:
+                    await asyncio.Event().wait()
+                except asyncio.CancelledError:
+                    return False
+            # An unfixed loop remains here until the outer deadline cancels it again.
+            await asyncio.Event().wait()
+        monkeypatch.setattr(request, 'is_disconnected', poll)
+        async def operation():
+            async with request_signal(request) as signal:
+                await polling.wait()
+                assert not signal.is_set()
+                if outcome == 'error':
+                    raise RuntimeError('operation failed')
+            assert not signal.is_set()
+        async with asyncio.timeout(.5):
+            if outcome == 'error':
+                with pytest.raises(RuntimeError, match='operation failed'):
+                    await operation()
+            else:
+                await operation()
+        assert attempts == 1
+        assert only_current_task()
+    asyncio.run(check())
