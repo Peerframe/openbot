@@ -345,13 +345,38 @@ same-scope resource comparison. See ADR-0050 for the detailed gates and Owner ap
 ## Current migration checkpoint (2026-10-07)
 
 Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
-`codex/ts-control-plane-p2`. Review correction source is
-`dc0bf05ad12ac2cea4d4d4a2994c6ab4981143ed`, after integrating accepted main
-`3bb6365c660fd40be5dbc181fe1da92093352877` (PR202 SDK repair and Claude PR203 copy).
+`codex/ts-control-plane-p2`. Current product source is
+`2c3dd553ec9d465749fbce6a014373285d169c4f`, integrating accepted main
+`44d13f963e1e4b029746b7aa32a611234a531f7a` (Claude PR204 automation and both UI fixes).
+The prior review corrections at `dc0bf05ad12ac2cea4d4d4a2994c6ab4981143ed`, PR202 SDK repair
+and PR203 Chinese copy remain integrated.
 The catalog conflict retains main's revision3, Chinese name/description and review record;
 all five reviewed source fingerprints are identical to the prior migration candidate.
 The TS forwarding license rows are retained in the Chinese notices. The original dirty checkout,
 installed OpenBot and user profiles remain preserved.
+
+The Owner requires the [PR204 whole-interface automation](ui-acceptance-automation.md) before
+each HTTP group switch: current built TS entry, `npm run ui:acceptance -- --entry ts`, and
+`PASS 12/12`. The current product source passes one actual run with installed Chrome at 1440×900
+in light mode, a disposable PostgreSQL and current Python product: 104 completed API responses
+(97 × 200, 7 × 201), zero allowlisted gaps, unexpected responses or page errors. The run covers the
+post-rename avatar update and skipped role-card fixes, and a real public-entry restart without
+logging the Owner out. Receipt and screenshots are in the run's output directory
+`/private/tmp/openbot-p2-ui204-acceptance/openbot-ui-acceptance-1791339492444`; the fixture data,
+container, browser and owned service processes are removed. Only the migration-gate documentation
+was dirty during this run; product code comes from the committed source above.
+
+The Owner reported one `503 GET /api/v1/workspace` in four earlier TS runs; this run did not
+reproduce it and does not establish a fix. Any recurrence fails acceptance and must be investigated
+using its reported step and paired TS/Python logs. This local gate supplements the existing
+transaction, authority, Desktop and reverse-switch gates; paid models, Worker execution, native
+Electron and screen readers are not qualified by these 12 steps. Argument/response/redaction
+checks pass 3/3; a missing browser exits 2 before product startup. The previous
+[CI37537366648](https://github.com/Peerframe/openbot/actions/runs/37537366648) passes all 17 jobs at
+branch `c8e1dbcf` / actual merge `760e4848` against main `3bb6365c`; it qualifies the previous
+review corrections, not the newly integrated PR204. New integration hosted results are recorded in
+PR200 checks/body without relabelling the prior receipts.
+
 
 [Claude's whole-interface acceptance](https://github.com/Peerframe/openbot/pull/200#issuecomment-6024172791)
 passes at exact source `23a2916d2aa141e1fa4f52391f21b90c2184a520`: Owner sessions, Bot/channel creation,
@@ -363,7 +388,7 @@ missing P2 interface gate; it does not qualify P3 ownership or all future edits.
 at that branch source and actual PR merge `2536122d81c390102e60287950cde6d319e7a65a` against main
 `8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe`. New correction source requires its own hosted checks.
 
-The review corrections reuse the existing Zod4.6.2 Web projection policy, bounded Owner audit
+The prior review corrections reuse the existing Zod4.6.2 Web projection policy, bounded Owner audit
 reader and Python channel-ready lifecycle; no dependency, public route, persistent-data format or
 external source is added:
 
@@ -379,7 +404,7 @@ external source is added:
 - Step43 sidebar/crown/avatar animation remains Claude-owned after PR200 merges. The transitional
   primary-Bot dropdown is unchanged.
 
-Focused Web acceptance executes84 tests (Node26.0.0), including additive/invalid responses, rejected
+The earlier review-correction Web acceptance executes84 tests (Node26.0.0), including additive/invalid responses, rejected
 extra command fields, audit titles and reconnect message restoration. The actual mixed
 TS→Python→disposable PostgreSQL lifecycle suite executes21 checks under Node22.22.2. The existing
 Python/control gate executes1,073 passes/2 optional skips, including the new retained-name and

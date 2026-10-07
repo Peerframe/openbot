@@ -357,7 +357,7 @@
       "disposableProfile": true,
       "ownerLogin": "automatic native bootstrap login",
       "botCreatedAndRenamed": true,
-      "expectedBotName": "新建 BotTS P2 Native Fixture",
+      "expectedBotName": "\u65b0\u5efa BotTS P2 Native Fixture",
       "botRestoredAfterRestart": true,
       "realtimeConnectionRestored": true,
       "fileChecks": {
@@ -1257,7 +1257,7 @@
       "currentHeadQualification": false
     }
   },
-  "currentP2Candidate": {
+  "beforeUiAutomationIntegration": {
     "date": "2026-10-07 (Asia/Singapore)",
     "productSourceHead": "dc0bf05ad12ac2cea4d4d4a2994c6ab4981143ed",
     "sourceDirty": false,
@@ -1397,9 +1397,15 @@
       "ownedFixturesAndProfilesRemoved": true,
       "installedAsarUnchanged": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0"
     },
-    "currentHostedCi": "required after publication; recorded in PR200 checks/body",
+    "currentHostedCi": {
+      "run": 37537366648,
+      "branchHead": "c8e1dbcf16e5dd9b66abe037aeee3e0a87be530e",
+      "actualMerge": "760e484861e1aa2731756d7030fbe34f96d24709",
+      "actualBase": "3bb6365c660fd40be5dbc181fe1da92093352877",
+      "allRequiredJobsPassed": 17,
+      "qualifiesPr204Integration": false
+    },
     "remaining": [
-      "current correction hosted checks",
       "deployment TLS/PKI",
       "registered Worker/access-group provisioning",
       "signed distribution",
@@ -1415,6 +1421,118 @@
       "integratedPassed": 270,
       "stagedArtifactsPassed": 19,
       "consumerDigestsRefreshed": true
+    }
+  },
+  "currentP2Candidate": {
+    "date": "2026-10-07 (Asia/Singapore)",
+    "productSourceHead": "2c3dd553ec9d465749fbce6a014373285d169c4f",
+    "acceptedMain": "44d13f963e1e4b029746b7aa32a611234a531f7a",
+    "acceptedUi": [
+      "PR194",
+      "PR198",
+      "PR203",
+      "PR204"
+    ],
+    "priorReviewCorrectionSource": "dc0bf05ad12ac2cea4d4d4a2994c6ab4981143ed",
+    "priorQualificationRecord": "beforeUiAutomationIntegration; exact native/CI scope retained",
+    "pageImplementation": "Integrate Claude PR204 fixes; Step43 sidebar/crown/avatar animation remains Claude-owned after PR200 merge.",
+    "requiredPerHttpGroupSwitch": "npm run ui:acceptance -- --entry ts; PASS 12/12",
+    "automatedWholeInterface": {
+      "command": "npm run ui:acceptance -- --entry ts --out <output-parent>",
+      "exitCode": 0,
+      "passedSteps": 12,
+      "totalSteps": 12,
+      "apiResponses": 104,
+      "byStatus": {
+        "200": 97,
+        "201": 7
+      },
+      "allowedGaps": 0,
+      "unexpected": 0,
+      "pageErrors": 0,
+      "entry": "ts",
+      "actualPythonAndDisposablePostgres": true,
+      "browser": "installed Chrome",
+      "viewport": [
+        1440,
+        900
+      ],
+      "theme": "light",
+      "applicationInstalled": false,
+      "sourceHead": "2c3dd553ec9d465749fbce6a014373285d169c4f",
+      "productCodeDirty": false,
+      "dirtyScopeDuringRun": "ADR and CONTRIBUTING migration-gate documentation only",
+      "outputDirectory": "/private/tmp/openbot-p2-ui204-acceptance/openbot-ui-acceptance-1791339492444",
+      "receipt": "receipt.json",
+      "screenshots": [
+        "screenshots/settings.png",
+        "screenshots/final.png"
+      ],
+      "publicEntryRestartAndOwnerSessionPassed": true,
+      "fixtureDataContainerBrowserAndServicesRemoved": true,
+      "scopeExcludes": [
+        "paid model replies",
+        "Worker/computer execution",
+        "native Electron",
+        "screen readers"
+      ]
+    },
+    "intermittentWorkspace503": {
+      "ownerReportedEarlierRuns": 4,
+      "ownerReportedOccurrences": 1,
+      "thisRunOccurrences": 0,
+      "fixed": false,
+      "actionOnRecurrence": "Fail acceptance; trace reported journey step and paired TS/Python logs to distinguish upstream response from forwarding failure."
+    },
+    "reportChecks": {
+      "passed": 3,
+      "exitCode": 0,
+      "missingBrowserExitCode": 2,
+      "missingBrowserStoppedBeforeProductStartup": true
+    },
+    "fullCheck": {
+      "exitCode": 0,
+      "node": "22.22.2",
+      "executedWeb": 692,
+      "taskCounts": [
+        {
+          "total": 10,
+          "cached": 2
+        },
+        {
+          "total": 33,
+          "cached": 12
+        },
+        {
+          "total": 27,
+          "cached": 12
+        },
+        {
+          "total": 19,
+          "cached": 13
+        }
+      ]
+    },
+    "currentHostedCi": "New integration qualification required after publication; exact results recorded in PR200 checks/body.",
+    "remaining": [
+      "new integration hosted qualification",
+      "deployment TLS/PKI",
+      "registered Worker/access-group provisioning",
+      "signed distribution",
+      "P3-P5 ownership switches"
+    ],
+    "applicationsInstalled": 0,
+    "p3OwnershipSwitched": false,
+    "directProductInventory": {
+      "sourceHead": "2c3dd553ec9d465749fbce6a014373285d169c4f",
+      "node": "22.22.2",
+      "exitCode": 0,
+      "defaultHttpOperations": 121,
+      "integratedPassed": 270,
+      "stagedArtifactsPassed": 19,
+      "realPythonAndDisposablePostgres": true,
+      "inventoryChanged": false,
+      "noTemporalOrLiveProviderCalls": true
     }
   }
 }

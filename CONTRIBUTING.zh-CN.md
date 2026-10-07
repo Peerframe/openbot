@@ -253,7 +253,10 @@ AGENTS 链接的 SKILL.md，记录实际生效方式。这里未配置 Claude �
 提供网页的 Python 产品，带 `--entry ts` 时再在前面放上 TS 入口；然后在你已安装的 Chrome 里操作真实界面（换浏览器用
 `-- --browser <路径>`），最后给出通过或不通过的报告和截图。先准备好 Python（`apps/server-python/scripts/bootstrap-worker.sh`）
 并构建网页，Docker 要在运行。已知缺口在 `scripts/ui-acceptance-report.ts` 里按确切接口放行；
-见[调研记录](docs/research/ui-acceptance-automation.zh-CN.md)。
+见[调研记录](docs/research/ui-acceptance-automation.zh-CN.md)。每次 TypeScript 迁移的 HTTP 接口组
+切换前，都要在当前候选上运行 `npm run ui:acceptance -- --entry ts`，达到 `PASS 12/12`，
+并保留输出目录里的报告和截图。未预期的 workspace 503 会让关卡失败；根据报告步骤和
+成对的服务日志检查转发路径。
 
 ## 提交 Pull Request
 

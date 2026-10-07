@@ -313,7 +313,11 @@ with `--entry ts`, the TS entry in front of it. It then drives the real interfac
 Chrome (`-- --browser <path>` for another one) and prints a pass or fail receipt with screenshots.
 Prepare Python (`apps/server-python/scripts/bootstrap-worker.sh`) and build the Web first; Docker
 must be running. Known gaps are allowlisted by exact route in `scripts/ui-acceptance-report.ts`;
-see the [research record](docs/research/ui-acceptance-automation.md).
+see the [research record](docs/research/ui-acceptance-automation.md). Before every TypeScript
+migration HTTP group switch, run `npm run ui:acceptance -- --entry ts` on the current candidate
+and require `PASS 12/12`. Retain the receipt and screenshots from its output directory. An
+unexpected workspace 503 fails the gate; use its recorded step and paired service logs to
+investigate the forwarding path.
 
 ## Code and comments
 

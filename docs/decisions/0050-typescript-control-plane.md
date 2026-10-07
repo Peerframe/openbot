@@ -117,6 +117,14 @@ delete the now-unreachable Python group in the active source. "Delete on switch"
 rollback point at code that no longer exists. A reverse switch never restores stale facts or
 replays unknown writes. Transfer background ownership before opening the new group for writes.
 
+Before each HTTP group switch, run `npm run ui:acceptance -- --entry ts` against the exact
+candidate with its current Web and TS builds. Require `PASS 12/12`, with no unexpected API
+responses or page errors, and retain the output directory's receipt and screenshots with the
+candidate revision. This is the [accepted local whole-interface gate](../research/ui-acceptance-automation.md),
+in addition to the transaction, authority, Desktop and reverse-switch gates above. If
+`503 GET /api/v1/workspace` recurs, use the report's step and the paired TS/Python process logs
+to distinguish an upstream response from a forwarding failure before accepting the candidate.
+
 New features land with the group owner. A feature written directly in TS ahead of the group's move
 requires explicit route ownership and the same gates; proximity to a migration grants no authority.
 
@@ -173,7 +181,7 @@ silent completion of P5. PostgreSQL and Temporal deployment simplification remai
 | P0 | Review this ADR, dependency evidence and baseline limitations; record the Owner's decision |
 | P1 | Complete route/consumer inventory; shared contracts pass on current Python with unchanged behavior |
 | P2 | Mixed-entry contracts and Desktop journeys pass; forwarding latency/memory measured; private upstream and reverse switch qualified |
-| P3, each group | Positive/negative/concurrency/audit tests, security review for identity, accepted forward/reverse switch and single background owner |
+| P3, each group | Positive/negative/concurrency/audit tests, exact-candidate TS UI `PASS 12/12`, security review for identity, accepted forward/reverse switch and single background owner |
 | P4 | Real recovery and replay suites, supported runtime packaging, all Python histories/chains drained; no stale authority or unreachable operator path |
 | P5 | Fresh product install/setup and required CI need no Python; final bundle/startup/RSS compared with the same P0 scope; approved platform packaging passes |
 
