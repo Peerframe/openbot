@@ -1247,6 +1247,33 @@ describe("role card outcome (after Grok, 2026-10-06)", () => {
   });
 });
 
+describe("role card outcome without a greeting (UI acceptance, 2026-10-07)", () => {
+  it("keeps the 已忽略 line when a quick-created Bot has no messages yet", async () => {
+    const fresh: Bot = { ...bot, id: "bot-quiet", name: "新建 Bot", role: "通用助手" };
+    vi.mocked(listMessages).mockResolvedValue([]);
+    const rendered = await renderComponent(
+      <ChannelWorkspace
+        globalHeader
+        channel={{ ...channel("q"), botIds: [fresh.id], directBotId: fresh.id }}
+        session={createConversationSession()}
+        bots={[fresh]}
+        artifacts={[]}
+        progress={[]}
+        {...callbacks}
+      />,
+    );
+    await interact(async () => undefined);
+    await interact(() =>
+      rendered.container.querySelector<HTMLButtonElement>('button[aria-label="跳过"]')?.click(),
+    );
+    expect(rendered.container.querySelector(".new-bot-setup-answered")?.textContent).toBe(
+      "你最想让我先帮你做什么？已忽略",
+    );
+    expect(rendered.container.querySelector(".conversation-empty")).not.toBeNull();
+    await rendered.unmount();
+  });
+});
+
 describe("conversation polish (owner feedback 2026-10-05)", () => {
   const run = (id: string, status: Run["status"], sourceMessageId?: string): Run => ({
     id,
