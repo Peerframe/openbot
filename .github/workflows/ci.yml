@@ -472,6 +472,10 @@ jobs:
           packages/harness/scripts/install-wheel.sh "$RUNNER_TEMP/openbot-work-reference/bin/python"
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip check
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -I apps/server-python/scripts/verify_environment.py --worker
+      - name: Qualify TS Work ownership, recovery and replay with mutual TLS
+        run: npm run test:work:ts
+        env:
+          OPENBOT_TEMPORAL_TEST_PYTHON: ${{ runner.temp }}/openbot-work-reference/bin/python
       - name: Qualify adjacent Temporal release recovery with PostgreSQL and mutual TLS
         shell: bash
         env:

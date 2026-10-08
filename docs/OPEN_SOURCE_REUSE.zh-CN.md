@@ -678,3 +678,13 @@ Node22.22.2 与 @noble/hashes2.4.0 的评估见[对应决策](research/typescrip
 发布包格式/签名函数。有限私有端口让 P4 保留唯一的实时 Worker 连接注册表，由 TS 接管公开 P3 策略、
 会话和审计。没有新增依赖或复制上游源码。固定版本证据、未采用双注册表的理由、一次性派发和通知监听行为见
 [边界决策](research/typescript-control-plane-p0.zh-CN.md)。
+
+### P4 任务引擎集成（2026-10-09）
+
+`packages/work` 使用 ADR-0050 已批准的官方 Temporal TypeScript SDK 1.24.0（MIT），提交
+`1fd1c81a0383f5f5c7923dd735472c7d1ffdc867`，未复制上游实现。复用 Postgres.js3.4.9、已有 SQL
+任务账本/执行栅栏，以及固定 PostgreSQL/Temporal mTLS 夹具。新 TS 准入归属不可变，Python 历史仍由
+Python 执行。SDK 的 source-map 加载把已有 `source-map-js` 纳入生产闭包，使用 BSD-3-Clause
+1.2.2 补丁修复 CVE-2026-93749。精确上游、许可、安全和验证证据见
+[P4 记录](research/typescript-control-plane-p4.zh-CN.md)。产品运行时集成和完整排空仍未完成，合成
+控制 Activity 不代表产品任务完成验收。

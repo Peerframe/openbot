@@ -7,7 +7,12 @@
 提交的锁文件为准；发布产物还须包含生成的 SBOM 和第三方声明。
 
 | 组件 | 版本 | 版权归属及许可 |
-| --- | --- | --- |
+| --- Temporal TypeScript SDK 1.24.0（`@temporalio/activity`、`client`、`common`、`worker`、
+  `workflow` 及 SDK 传递依赖）— Copyright (c) 2021-2025 Temporal Technologies Inc.；MIT。
+  上游 LICENSE 保留在依赖闭包中，未复制上游实现。见[P4 审核](docs/research/typescript-control-plane-p4.zh-CN.md)。
+- `source-map-js`1.2.2 — Copyright (c) 2009-2011, Mozilla Foundation and contributors；
+  BSD-3-Clause。固定的 source-map 加载依赖闭包保留上游 LICENSE。
+- | --- | --- |
 | Microsoft .NET、`Microsoft.Extensions.*`、`System.*` | 锁文件及发布运行时确定 | .NET Foundation 与贡献者；MIT |
 | `Meziantou.Framework.Win32.Jobs` | 4.0.0 | Gérald Barré；MIT |
 | Electron | 44.3.0 | Electron 贡献者及 GitHub Inc.；MIT；保留 `LICENSE` 与 `LICENSES.chromium.html` |

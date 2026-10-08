@@ -1201,3 +1201,14 @@ Employee publisher format/signature functions. The finite private port keeps the
 registry in P4 while TS owns public P3 policy, sessions and audit. No new dependency or copied source.
 Pinned evidence, rejected duplicate-registry approach, single-use dispatch and listener behavior are
 in the [boundary decision](research/typescript-control-plane-p0.md#p3-remaining-product-boundary-decision-2026-10-08).
+
+### P4 Work engine integration (2026-10-09)
+
+`packages/work` uses the ADR-0050 approved official Temporal TypeScript SDK 1.24.0 (MIT), commit
+`1fd1c81a0383f5f5c7923dd735472c7d1ffdc867`, without copied upstream implementation. It reuses
+Postgres.js3.4.9, the existing SQL Work ledger/claims and pinned PostgreSQL/Temporal mTLS fixtures.
+New TS admissions have immutable ownership; Python histories remain Python-owned. SDK source-map
+loading brings the existing `source-map-js` into the production closure: its BSD-3-Clause 1.2.2
+patch fixes CVE-2026-93749. Exact upstream, license, security and qualification evidence is in the
+[P4 record](research/typescript-control-plane-p4.md). Product runtime integration and full drain
+remain incomplete; synthetic control Activities do not establish product Task completion.

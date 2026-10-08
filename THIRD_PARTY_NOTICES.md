@@ -6,6 +6,12 @@ OpenBot's Server, Worker Hosts and Desktop build reference the following compone
 versions are recorded in checked-in lockfiles; release artifacts must also carry generated SBOMs
 and notices.
 
+- Temporal TypeScript SDK 1.24.0 (`@temporalio/activity`, `client`, `common`, `worker`,
+  `workflow` and transitive SDK packages) — Copyright (c) 2021-2025 Temporal Technologies Inc.;
+  MIT License. Upstream LICENSE files remain in the dependency closure. No upstream implementation
+  is copied. See [P4 review](docs/research/typescript-control-plane-p4.md).
+- `source-map-js`1.2.2 — Copyright (c) 2009-2011, Mozilla Foundation and contributors;
+  BSD-3-Clause. The upstream LICENSE remains in the locked source-map loader closure.
 - Microsoft .NET runtime and `Microsoft.Extensions.*` / `System.*` libraries — Copyright .NET
   Foundation and contributors; MIT License.
 - `Meziantou.Framework.Win32.Jobs` 4.0.0 — Copyright Gérald Barré; MIT License.

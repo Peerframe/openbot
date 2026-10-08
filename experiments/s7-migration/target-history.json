@@ -1,5 +1,5 @@
 {
-  "commit": "a8302c2d7252273ccb292f9fc5202beae4e165b6",
+  "commit": "a4c1fdc6478350edecd3e94e5b162477b90b56fc",
   "commitRole": "integration-base-with-uncommitted-migration-suffix",
   "migrations": [
     {
@@ -331,24 +331,25 @@
       "tag": "0054_workspace_primary_bot",
       "timestamp": 1791213344747,
       "sha256": "ec0f000fb1a5785324922043ce14969ae3a6a520763c44e969c1f0074bf2f24c"
+    },
+    {
+      "index": 55,
+      "tag": "0055_work_execution_owner",
+      "timestamp": 1791213344748,
+      "sha256": "9c54411cde1c4a0779b077c956765ff4848a82998e9d1268b0ba7166895150d1"
     }
   ],
   "qualificationInput": {
-    "state": "uncommitted-source-requalification",
-    "previousQualifiedTarget": "aff05a7af4aca731537edba69b66d15ea030f8ef",
-    "publishedMigrationCount": 53,
+    "previousQualifiedTarget": "a4c1fdc6478350edecd3e94e5b162477b90b56fc",
+    "publishedMigrationCount": 55,
     "journal": {
       "path": "packages/db/migrations/meta/_journal.json",
-      "sha256": "e4fcadf330630594b25f8c6da0eedc9be011dd7b0ecb45476765b54069e91c58"
+      "sha256": "6aa92977510c6a9297f54847b7d4627df9fe2f575b140f787332e92a0e046a41"
     },
     "changedSql": [
       {
-        "path": "packages/db/migrations/0053_retire_singleton_model.sql",
-        "sha256": "fcb1990a7792de81f603c22c2f825ce48e65a3b8023000fc94f61a0ca4fd3e26"
-      },
-      {
-        "path": "packages/db/migrations/0054_workspace_primary_bot.sql",
-        "sha256": "ec0f000fb1a5785324922043ce14969ae3a6a520763c44e969c1f0074bf2f24c"
+        "path": "packages/db/migrations/0055_work_execution_owner.sql",
+        "sha256": "9c54411cde1c4a0779b077c956765ff4848a82998e9d1268b0ba7166895150d1"
       }
     ]
   }

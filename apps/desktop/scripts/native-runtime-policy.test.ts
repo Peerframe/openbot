@@ -97,11 +97,14 @@ it("adds the pinned TS entry to the Python closure without WS tests or the retir
     "packages/domain",
     "packages/employee-publisher",
     "packages/protocol",
+    "packages/work",
   ]);
   for (const key of python.packageKeys) expect(mixed.packageKeys).toContain(key);
   expect(new Set(mixed.packageKeys).size).toBe(mixed.packageKeys.length);
   expect(mixed.packageKeys).toContain("node_modules/fastify");
   expect(mixed.packageKeys).toContain("node_modules/@fastify/reply-from");
+  expect(mixed.packageKeys).toContain("node_modules/@temporalio/core-bridge");
+  expect(mixed.packageKeys).toContain("node_modules/@temporalio/worker");
   expect(
     mixed.packageKeys.some((key) => key.endsWith("/ws") || key.includes("legacy-server")),
   ).toBe(false);
