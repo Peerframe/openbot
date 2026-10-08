@@ -77,3 +77,53 @@ it("plays the birth only for a Bot created moments ago", async () => {
   expect(old?.classList).not.toContain("is-born");
   await act(async () => root.unmount());
 });
+
+it("drops the 主 Bot crown on once when crowned, and fades it out when it moves away", async () => {
+  vi.useFakeTimers();
+  const crowned: Bot = { ...bot, id: "bot-crowned" };
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const avatar = () => container.querySelector(".robot-avatar");
+  await act(async () => root.render(<RobotAvatar bot={crowned} crown />));
+  // A Bot first seen crowned shows the crown without the drop.
+  expect(avatar()?.classList).toContain("is-crowned");
+  expect(avatar()?.classList).not.toContain("is-crowning");
+  expect(avatar()?.getAttribute("aria-label")).toBe("Ops，主 Bot，待命");
+  // One standard and one micro placement; CSS picks one by the rendered size.
+  expect(container.querySelectorAll(".robot-crown-at")).toHaveLength(2);
+
+  await act(async () => root.render(<RobotAvatar bot={crowned} crown={false} />));
+  expect(avatar()?.classList).toContain("is-uncrowning");
+  expect(container.querySelector(".robot-crown.is-leaving")).not.toBeNull();
+  await act(async () => vi.advanceTimersByTime(400));
+  expect(container.querySelector(".robot-crown")).toBeNull();
+  expect(avatar()?.getAttribute("aria-label")).toBe("Ops，待命");
+
+  await act(async () => root.render(<RobotAvatar bot={crowned} crown />));
+  expect(avatar()?.classList).toContain("is-crowning");
+  // The sidebar moves the 主 Bot row to the top, mounting a new avatar mid-change: it still drops.
+  await act(async () => vi.advanceTimersByTime(200));
+  await act(async () =>
+    root.render(
+      <div key="moved">
+        <RobotAvatar bot={crowned} crown />
+      </div>,
+    ),
+  );
+  expect(avatar()?.classList).toContain("is-crowning");
+  await act(async () => vi.advanceTimersByTime(600));
+  expect(avatar()?.classList).not.toContain("is-crowning");
+  expect(avatar()?.classList).toContain("is-crowned");
+  // Avatars that do not show 主 Bot (a channel header, say) never read as a change.
+  await act(async () =>
+    root.render(
+      <div key="moved">
+        <RobotAvatar bot={crowned} crown />
+        <RobotAvatar bot={crowned} />
+      </div>,
+    ),
+  );
+  expect(container.querySelector(".is-crowning, .is-uncrowning")).toBeNull();
+  await act(async () => root.unmount());
+});

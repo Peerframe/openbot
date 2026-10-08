@@ -20,6 +20,7 @@ import {
   removeChannelMember,
   renameBot,
   renameChannel,
+  setWorkspacePrimaryBot,
   subscribeToUnauthorized,
   subscribeToWorkspaceEvents,
 } from "./api";
@@ -46,6 +47,7 @@ import { NewChatScreen, type NewChatStart } from "./components/NewChatScreen";
 import { NodeManagerDialog } from "./components/NodeManagerDialog";
 import { LaunchExit, LaunchScreen, OnboardingFrame } from "./components/Onboarding";
 import { PluginsDialog } from "./components/PluginsDialog";
+import { primaryBotChangedEvent } from "./components/PrimaryBotSetting";
 import { indexRunCollaboration } from "./components/RunCollaboration";
 import { ShareConversationDialog } from "./components/ShareConversationDialog";
 import { Sidebar, type SidebarActivity } from "./components/Sidebar";
@@ -781,6 +783,12 @@ export function AuthenticatedWorkspace({
   }, [active, focusRequest]);
 
   useEffect(() => {
+    const reread = () => void refresh();
+    window.addEventListener(primaryBotChangedEvent, reread);
+    return () => window.removeEventListener(primaryBotChangedEvent, reread);
+  }, [refresh]);
+
+  useEffect(() => {
     if (!workspaceReady) return;
     return subscribeToWorkspaceEvents({
       onReady(nodes) {
@@ -877,6 +885,17 @@ export function AuthenticatedWorkspace({
     );
     selectChannel(channel.id);
     await refresh();
+  }
+
+  /** 主 Bot is a Server setting guarded by the workspace revision; a stale one re-reads first. */
+  async function handleSetPrimaryBot(botId: string) {
+    const revision = workspace?.revision;
+    if (revision === undefined) return;
+    try {
+      await setWorkspacePrimaryBot({ botId, expectedRevision: revision });
+    } finally {
+      await refresh();
+    }
   }
 
   async function handleAddBotToChannel(channelId: string, botId: string) {
@@ -1096,6 +1115,8 @@ export function AuthenticatedWorkspace({
           onRenameItem={handleRenameItem}
           onDeleteItem={handleDeleteItem}
           onAddBotToChannel={handleAddBotToChannel}
+          primaryBotId={workspace.primaryBotId}
+          onSetPrimaryBot={workspace.revision === undefined ? undefined : handleSetPrimaryBot}
           onNewChat={() => navigation.navigate({ kind: "new" })}
           newChatActive={location.kind === "new"}
           onCreateBot={quickCreateBot}
@@ -1151,6 +1172,7 @@ export function AuthenticatedWorkspace({
         <NewChatScreen
           key={location.channel ? "new-channel" : "new-chat"}
           bots={workspace.bots}
+          primaryBotId={workspace.primaryBotId}
           initialChannelMode={location.channel === true}
           onCreateBot={handleQuickCreateBot}
           onStart={handleStartChat}

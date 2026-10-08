@@ -188,6 +188,19 @@
   text-align: left;
   cursor: pointer;
 }
+/* 主 Bot leads the list as a raised card (PrimaryBot artboard); the hover and selection rules
+   below still apply. */
+.sb .sb-primary {
+  padding-bottom: 2px;
+}
+.sb .sb-row.is-primary {
+  --avatar-surface: var(--ob-surface);
+  box-shadow: inset 0 0 0 1px var(--ob-divider);
+  background: var(--ob-surface);
+}
+.sb .sb-title-line .ob-crown-glyph {
+  flex: 0 0 auto;
+}
 .sb .sb-row:hover {
   --avatar-surface: var(--ob-fill-hover);
   background: var(--ob-fill-hover);

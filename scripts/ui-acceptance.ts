@@ -370,6 +370,12 @@ try {
           .click();
         await dialog.getByRole("status").filter({ hasText: "已保存主 Bot。" }).waitFor();
         assert.equal(await primary.inputValue(), target);
+        // The crown behind the dialog follows the save at once. Running tasks re-read the workspace
+        // within seconds anyway, so only a short wait proves the save itself moved it.
+        const crowned = (await primary.locator("option:checked").textContent())?.trim() ?? "";
+        await page
+          .locator(".sb-row.is-primary .sb-name", { hasText: crowned })
+          .waitFor({ state: "attached", timeout: 1_000 });
         selectedPrimaryBotId = target;
         await page.screenshot({ path: join(shots, "primary-bot.png") });
       }

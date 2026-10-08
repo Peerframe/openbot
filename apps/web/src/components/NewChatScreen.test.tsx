@@ -196,3 +196,19 @@ it("shows the shortcut on the highlighted row only and closes on an outside pres
     await view.unmount();
   }
 });
+
+it("lists the crowned 主 Bot first among the recipients", async () => {
+  const view = await renderComponent(
+    <NewChatScreen bots={bots} primaryBotId="c" onCreateBot={vi.fn()} onStart={vi.fn()} />,
+  );
+  try {
+    const names = options(view.container)
+      .slice(2)
+      .map((option) => option.querySelector(".new-chat-bot-name")?.textContent);
+    expect(names).toEqual(["设计评审", "研究助理", "客服小橙"]);
+    expect(options(view.container)[2]?.querySelector(".robot-avatar.is-crowned")).not.toBeNull();
+    expect(view.container.querySelectorAll(".robot-avatar.is-crowned")).toHaveLength(1);
+  } finally {
+    await view.unmount();
+  }
+});

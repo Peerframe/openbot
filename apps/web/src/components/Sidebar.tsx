@@ -26,7 +26,7 @@ import type { DesktopSettingsSection } from "./DesktopSettingsScreen";
 import { GroupAvatar } from "./GroupAvatar";
 import { BotIcon, HashIcon, PlusIcon, SearchIcon, SettingsIcon } from "./Icons";
 import { RobotAvatar } from "./RobotAvatar";
-import { SidebarItemMenu, type SidebarMenuTarget } from "./SidebarItemMenu";
+import { CrownGlyph, SidebarItemMenu, type SidebarMenuTarget } from "./SidebarItemMenu";
 import "./Sidebar.css";
 import { BrandMark, pluginMark } from "./BrandMark";
 
@@ -61,6 +61,9 @@ interface SidebarProps {
   onRenameItem?: ((key: SidebarItemKey, name: string) => Promise<void>) | undefined;
   onDeleteItem?: ((target: DeleteIdentityTarget) => Promise<void>) | undefined;
   onAddBotToChannel?: ((channelId: string, botId: string) => Promise<void>) | undefined;
+  /** 主 Bot: the Server's workspace setting. It leads the list wearing a crown. */
+  primaryBotId?: string | null | undefined;
+  onSetPrimaryBot?: ((botId: string) => Promise<void>) | undefined;
   /** New artboard: 「+」 opens a new chat instead of the create menu. */
   onNewChat?: (() => void) | undefined;
   newChatActive?: boolean;
@@ -92,6 +95,8 @@ export function Sidebar({
   onRenameItem,
   onDeleteItem,
   onAddBotToChannel,
+  primaryBotId,
+  onSetPrimaryBot,
   onNewChat,
   newChatActive = false,
   onCreateBot,
@@ -166,7 +171,16 @@ export function Sidebar({
   const isUnread = (key: SidebarItemKey) => manualUnread.has(key) || Boolean(unreadCounts?.[key]);
   // Hidden conversations come back when they have something new, as the design specifies.
   const revealed = new Set(entries.map((entry) => entry.key).filter(isUnread));
-  const sections = arrangeSidebar(entries, organization, "", revealed);
+  // 主 Bot leads the list above every group, so it is arranged apart from the other rows.
+  const primaryEntry = primaryBotId
+    ? entries.find((entry) => entry.key === `bot:${primaryBotId}`)
+    : undefined;
+  const sections = arrangeSidebar(
+    primaryEntry ? entries.filter((entry) => entry !== primaryEntry) : entries,
+    organization,
+    "",
+    revealed,
+  );
   const search = searchSidebar(entries, organization, term);
   const focusGroup = focusGroupId
     ? organization.groups.find((group) => group.id === focusGroupId)
@@ -222,8 +236,9 @@ export function Sidebar({
     setFocusGroupId(undefined);
   }
 
-  function renderRow(entry: SidebarEntry<SidebarItem>, highlight: string) {
+  function renderRow(entry: SidebarEntry<SidebarItem>, highlight: string, lead = false) {
     const { key, item } = entry;
+    const primary = item.kind === "bot" && item.bot.id === primaryBotId;
     const unread = isUnread(key);
     const selected =
       item.kind === "channel"
@@ -247,7 +262,7 @@ export function Sidebar({
       <button
         type="button"
         key={key}
-        className={`sb-row${selected ? " is-selected" : ""}${unread ? " is-unread" : ""}`}
+        className={`sb-row${selected ? " is-selected" : ""}${unread ? " is-unread" : ""}${lead ? " is-primary" : ""}`}
         data-kind={item.kind}
         aria-current={selected ? "page" : undefined}
         title={
@@ -272,6 +287,7 @@ export function Sidebar({
               compact
               status={run?.status ?? item.bot.status}
               presence="dot"
+              crown={primary}
             />
           </span>
         )}
@@ -280,7 +296,8 @@ export function Sidebar({
             <strong className="sb-name">
               <Highlighted text={entry.name} query={highlight} />
             </strong>
-            {item.kind === "bot" && item.bot.role ? (
+            {primary ? <CrownGlyph label="主 Bot" /> : null}
+            {item.kind === "bot" && item.bot.role && !primary ? (
               <span className="ob-tag">
                 <Highlighted text={item.bot.role} query={highlight} />
               </span>
@@ -384,7 +401,11 @@ export function Sidebar({
                     }}
                   >
                     {entry.item.kind === "bot" ? (
-                      <RobotAvatar bot={entry.item.bot} compact />
+                      <RobotAvatar
+                        bot={entry.item.bot}
+                        compact
+                        crown={entry.item.bot.id === primaryBotId}
+                      />
                     ) : (
                       <GroupAvatar
                         name={entry.item.channel.name}
@@ -415,6 +436,9 @@ export function Sidebar({
   } else {
     body = (
       <>
+        {primaryEntry ? (
+          <div className="sb-section sb-primary">{renderRow(primaryEntry, "", true)}</div>
+        ) : null}
         {sections.map((section) => (
           <div className="sb-section" key={section.group?.id ?? "ungrouped"}>
             {organization.groups.length > 0 ? (
@@ -566,6 +590,11 @@ export function Sidebar({
           onAddBot={
             menuChannel && !menuChannel.directBotId && onAddBotToChannel
               ? (botId) => onAddBotToChannel(menuChannel.id, botId)
+              : undefined
+          }
+          onSetPrimary={
+            menuKey?.startsWith("bot:") && onSetPrimaryBot && menuKey !== `bot:${primaryBotId}`
+              ? () => onSetPrimaryBot(menuKey.slice(4))
               : undefined
           }
           onClose={closeMenu}
