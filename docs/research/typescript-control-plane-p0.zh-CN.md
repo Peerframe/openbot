@@ -1186,3 +1186,11 @@ Node 24.21.0、固定权限参数、私有临时目录和无凭证环境；超�
 复用 ADR-0049 的额外确认策略、共享 TS 精确目标与已有 SQL/附件锁。TS 负责设置 CAS 和旧 Run 的一次性审批事务；过期决定先提交 `expired`/`blocked` 与事件，再返回 409。Work 动作受理、适配器最低权限和持久执行仍属于 P4，例外不会获得新能力。
 
 Owner 自动化管理复用已接受的[定期任务提交决策](server-automations.md)。两边使用同一 PostgreSQL 记录；TS 在既有“文件锁后 SQL”顺序内校验附件字节和派生文本摘要，保留数量上限串行化与按固定间隔跳过错过时点的恢复逻辑。Python 的单一 `ProductWorkService._pass` 仍明确负责 P4 Work 受理和 Temporal 生命周期，包括 `PostgresAutomations.submit_due`；TS 不增加另一个定时器或 Workflow 启动器。通过真实保留受理路径、并发领取和反向切换验证 TS 新建自动化；P3 HTTP 所有权不宣称完成任务执行引擎迁移。不增加依赖、不复制新上游源码、不修改生产数据。
+
+### P3 MCP 插件所有权决定（2026-10-08）
+
+十二个插件公开操作复用已审核的 MCP SDK1.32.1（`ff07b001194fe60ee9deb2121cf119057565796d`，MIT）和已有 Ajv8.20.0 依赖。替换 MCP 或增加子进程协议会扩大兼容与权限工作。检查本地固定 SDK 的 `client/streamableHttp`、`client/index`、`validation/ajv-provider` 后，确认可注入 fetch、关闭重连、清理会话并限制 Schema 验证。SDK 默认 `validateSchema:false` 不等价于 Python 的 draft-07 检查，因此显式开启，并在编译前保留引用、正则和不支持关键字的拒绝规则，以及深度、节点数、字节上限。不复制上游源码。依据为[既有插件决定](third-party-mcp-plugins.md)、[MCP 传输规范](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/2025-11-25/docs/specification/2025-11-25/basic/transports.mdx)和 [Ajv 验证选项](https://ajv.js.org/options.html#validateschema)。本轮浏览器未能获取固定 GitHub SDK 源码，实际检查的是已安装、锁定的源码，没有改用未经核实的新版本。
+
+HTTP 适配器用 Node24 的独立 Agent，解析并检查所有地址、固定连接地址，保持精确端点与 Host/TLS 身份；拒绝跳转、代理和压缩，限制请求、响应与时间。特殊用途网段依据[CPython3.12.13 ipaddress](https://raw.githubusercontent.com/python/cpython/v3.12.13/Lib/ipaddress.py)核对，不复制 Python 实现。仅保留由可信构造参数明确配置的本地端点名单。导入工具不能决定传输目的地。
+
+复用 AES-256-GCM `openbot.plugins/v1` 文件格式、私有目录描述符、Python 命名 `flock` 锁与恢复日志。公开修改持有文件锁直到 Owner SQL 最终提交；P4 的保留 Work 读取也使用该锁及当前 revision。目录第3版、中文内容和审核指纹按原字节保留。当前 `serve.py` 构造 `PluginService` 时没有提供旧 `assert_run_scope`，不能创建内存中的旧插件待审批调用；保持空待审批列表及认证后的 `not_found`。原生插件执行与持久审批继续属于已声明的 P4 Work 接口，并验证实际授权和 revision。以上不代表插件执行、旧回调组合或 P3 已完成；接受候选前仍须通过跨语言加密状态、HTTP/HTTPS、负向传输、当前界面与原生依赖检查。

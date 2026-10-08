@@ -1,0 +1,45 @@
+{
+  "format": "openbot.reviewed-plugin-catalog/v1",
+  "revision": 3,
+  "entries": [
+    {
+      "id": "openbot-notebook-template",
+      "name": "OpenBot 笔记本开发模板",
+      "description": "经过审核的自托管 MCP 入门模板，带一个内存笔记本和一个离线视图。需要你自己部署，并逐个授权给 Bot 才能用。",
+      "distribution": "self-hosted-template",
+      "version": "1.0.0",
+      "license": "MIT",
+      "sourceUrl": "https://github.com/Peerframe/openbot/tree/fa34622926600c42433058aa1129f888c41871f9/packages/mcp-example",
+      "sourceCommit": "fa34622926600c42433058aa1129f888c41871f9",
+      "files": [
+        {
+          "path": "packages/mcp-example/src/plugin-example.ts",
+          "sha256": "cc4dde75f7cab280fc019009856f1c57968df473c705997d7197c354987bd365"
+        },
+        {
+          "path": "packages/mcp-example/src/plugin-example-view.ts",
+          "sha256": "46b52005b4ec91a029c7d85001f900d073ab1b541114375dcc9fc395123bbddc"
+        },
+        {
+          "path": "packages/mcp-example/package.json",
+          "sha256": "edb11913e16fd5fd844214212b997de414829512132a12c6a02dca6667587f76"
+        },
+        {
+          "path": "packages/mcp-example/LICENSE",
+          "sha256": "0ca5e15545b57ba16a95c2f5948628aff9d9b4238ed01bf8ea873f02ae3151bb"
+        },
+        {
+          "path": "packages/mcp-example/SOURCE.json",
+          "sha256": "1a7ee7839f2a672f62650348a273b055efa3cebf2e716d8de2ea92c59a69179b"
+        }
+      ],
+      "review": {
+        "status": "reviewed",
+        "reviewedAt": "2026-10-07T02:30:00Z",
+        "reviewedBy": "Claude dependency re-review",
+        "record": "docs/research/desktop-reviewed-plugin-catalog.md",
+        "scope": "Source, bounded MCP lifecycle, grants and isolated App; self-hosted development template. 2026-10-07: only the MCP SDK pin changed (1.30.0 to 1.32.1, GHSA-6qxp-vccf-f47h)."
+      }
+    }
+  ]
+}

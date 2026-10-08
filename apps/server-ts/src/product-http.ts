@@ -1,3 +1,4 @@
+import { Plugins, pluginRoutes } from "./product-plugins.js";
 import { approvalRoutes } from "./product-approvals.js";
 import { automationRoutes } from "./product-automations.js";
 import { employeeKnowledgeRoutes } from "./employee-knowledge.js";
@@ -11,6 +12,7 @@ import { OwnerFiles } from "./owner-files.js";
 import { attachmentRoutes } from "./product-attachments.js";
 import type { Readable } from "node:stream";
 import {
+  pluginHttpOperations,
   automationHttpOperations,
   controlHttpOperations,
   employeeHttpOperations,
@@ -30,6 +32,7 @@ import { ownerCookie } from "./transcription-read.js";
 import { boundedJson } from "./write-input.js";
 
 const inventory = [
+  ...pluginHttpOperations,
   ...automationHttpOperations,
   ...controlHttpOperations,
   ...employeeHttpOperations,
@@ -67,7 +70,15 @@ export function productHandler(
             : undefined,
         )
       : undefined;
+  const plugins = options.plugins
+    ? new Plugins(
+        options.plugins.storePath,
+        options.plugins.localEndpoints,
+        options.plugins.catalogPath,
+      )
+    : undefined;
   const routes = [
+    ...(plugins ? pluginRoutes(plugins) : []),
     ...identityRoutes,
     ...(processing ? processingRoutes(processing) : []),
     ...(storage ? storageRoutes(storage) : []),
@@ -99,12 +110,14 @@ export function productHandler(
   return {
     verify: async () => {
       files?.verify();
+      await plugins?.verify();
       await store.verify(models ? (db) => models.initialize(db) : undefined);
       await storage?.verify();
       storage?.start();
     },
     close: async () => {
       network?.close();
+      await plugins?.close();
       await processing?.close();
       await storage?.close();
       await store.close();

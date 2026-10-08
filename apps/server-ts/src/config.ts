@@ -18,6 +18,7 @@ export interface EntryOptions {
     modelTransport?: ModelTransport;
     attachmentTransport?: ByteProviderTransport;
     controlReads?: boolean;
+    plugins?: { storePath: string; localEndpoints: readonly string[]; catalogPath?: string };
     files?: {
       objectRoot: string;
       artifactRoot?: string;
@@ -49,6 +50,18 @@ function origin(value: string): URL {
 
 export function validateOptions(options: EntryOptions): EntryOptions {
   if (options.product) {
+    if (
+      options.product.plugins &&
+      ([options.product.plugins.storePath, options.product.plugins.catalogPath]
+        .filter((p) => p !== undefined)
+        .some((p) => !isAbsolute(p) || p.includes("\0") || p.length > 4096) ||
+        !Array.isArray(options.product.plugins.localEndpoints) ||
+        options.product.plugins.localEndpoints.length > 16 ||
+        options.product.plugins.localEndpoints.some(
+          (p) => typeof p !== "string" || p.length > 2048,
+        ))
+    )
+      throw new Error("Explicit bounded plugin composition required.");
     if (
       options.product.files &&
       [options.product.files.objectRoot, options.product.files.artifactRoot]
@@ -211,6 +224,17 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
             ...(productGroup === "p3"
               ? {
                   controlReads: true,
+                  plugins: {
+                    storePath:
+                      environment.OPENBOT_TS_PLUGIN_STORE_PATH ??
+                      (environment.OPENBOT_TS_OBJECT_ROOT ?? "") + "/plugins/state.json",
+                    localEndpoints: JSON.parse(
+                      environment.OPENBOT_TS_PLUGIN_LOCAL_ENDPOINTS ?? "[]",
+                    ),
+                    ...(environment.OPENBOT_PLUGIN_CATALOG_PATH
+                      ? { catalogPath: environment.OPENBOT_PLUGIN_CATALOG_PATH }
+                      : {}),
+                  },
                   files: {
                     objectRoot: environment.OPENBOT_TS_OBJECT_ROOT ?? "",
                     parser: {

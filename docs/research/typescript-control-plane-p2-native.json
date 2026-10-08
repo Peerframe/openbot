@@ -2808,7 +2808,7 @@
     "sourceParentHead": "bdadf851ee247d0951d02ce422431dc0785721f2",
     "phaseComplete": false,
     "authorization": "Complete all P3 before Claude handoff; retain drafts against main, no merge before evaluation. No application installation or production-data mutation.",
-    "scope": "75 of 121 default operations selected in the explicit P3 development composition. Seven approval/automation management operations follow Employee knowledge. P3 remains incomplete; native v6 is historical model-only evidence.",
+    "scope": "87 of 121 default operations selected in the explicit P3 development composition. Twelve plugin operations follow approval/automation management. P3 remains incomplete; native v6 remains historical model-only evidence.",
     "checks": {
       "productReads": {
         "qualificationPassed": 7,
@@ -2978,20 +2978,20 @@
       },
       "fullCheck": {
         "exitCode": 0,
-        "log": "/private/tmp/openbot-p3-scheduling-check.log",
-        "tests": "TS101; Desktop578 +3 platform skips; Web692; Node129 +3 platform skips",
+        "log": "/private/tmp/openbot-p3-plugins-check.log",
+        "tests": "TS109; Desktop578+3 platform skips; Web692; Node129+3 platform skips",
         "taskCache": "test28/28,13cached; build19/19,14cached"
       },
       "ui": {
         "exitCode": 0,
         "passed": 12,
         "total": 12,
-        "responses": 104,
+        "responses": 110,
         "unexpected": 0,
         "pageErrors": 0,
         "workspace503": 0,
-        "receipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791462392475/receipt.json",
-        "log": "/private/tmp/openbot-p3-scheduling-ui.log"
+        "receipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791463733172/receipt.json",
+        "log": "/private/tmp/openbot-p3-plugins-ui.log"
       },
       "employeeCheckpointFullCheck": {
         "exitCode": 0,
@@ -3031,6 +3031,34 @@
           "automation": 10
         },
         "retainedWorkAdmission": "TS-created schedule, four concurrent real Python PostgresAutomations/WorkSourceAdmission requests yield one work_admissions record; active follow-up skipped. No Temporal workflow/Worker/provider executed."
+      },
+      "schedulingCheckpointFullCheck": {
+        "exitCode": 0,
+        "log": "/private/tmp/openbot-p3-scheduling-check.log",
+        "tests": "TS101; Desktop578 +3 platform skips; Web692; Node129 +3 platform skips",
+        "taskCache": "test28/28,13cached; build19/19,14cached"
+      },
+      "schedulingCheckpointUi": {
+        "exitCode": 0,
+        "passed": 12,
+        "total": 12,
+        "responses": 104,
+        "unexpected": 0,
+        "pageErrors": 0,
+        "workspace503": 0,
+        "receipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791462392475/receipt.json",
+        "log": "/private/tmp/openbot-p3-scheduling-ui.log"
+      },
+      "plugins": {
+        "http": "/private/tmp/openbot-p3-plugins-ownership.log",
+        "https": "/private/tmp/openbot-p3-plugins-https.log",
+        "httpAndHttpsEach": {
+          "contract": 30,
+          "ownership": 6
+        },
+        "unit": "/private/tmp/openbot-p3-plugins-unit.log",
+        "unitPassed": 8,
+        "evidence": "Stopped-Python live loopback MCP install/content/removal; no tool calls. Paired Python reverse uses exact encrypted token/grants and newer revision. Actual Python encrypted-state mutation, recovery/authority-rejection rollback, independent file-lock serialization, replaced-key refusal; local socket redirect/encoding/size/cleanup and pre-socket mixed DNS/cancel refusal. Catalog source bytes identical. No installed user plugins or external endpoints."
       }
     },
     "native": {
@@ -3050,7 +3078,6 @@
       "Bot creation/deletion and member removal",
       "workspace/bootstrap/SSE",
       "Employee portability",
-      "plugins",
       "Node identity and browser product groups"
     ],
     "pending": [
@@ -3107,8 +3134,8 @@
       "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
       "claudeUiUntouched": true
     },
-    "localHead": "6f4b7904",
+    "localHead": "63a05dbf",
     "checkout": "/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot",
-    "uncommittedOwnership": "This chat alone owns the qualified approval/automation cohort being saved; no other writer. Plugin value/store drafts are only in /private/tmp/openbot-p3-plugin-prep and remain unintegrated/unqualified."
+    "uncommittedOwnership": "This chat alone owns the qualified plugin cohort being saved; no other writer. Next identity lifecycle draft is only in /private/tmp/openbot-p3-identity-final-prep and remains unintegrated/unqualified."
   }
 }

@@ -29,6 +29,7 @@ import {
   startControlPostgres,
 } from "./python-acceptance-fixture.ts";
 import { qualifyChannelReads } from "./ts-channel-read-acceptance.ts";
+import { qualifyPluginOwnership } from "./ts-plugins-acceptance.ts";
 import { qualifySchedulingOwnership } from "./ts-scheduling-acceptance.ts";
 import { qualifyEmployeeOwnership } from "./ts-employee-acceptance.ts";
 import { qualifyProductReads } from "./ts-product-reads-acceptance.ts";
@@ -284,6 +285,7 @@ try {
         OPENBOT_TS_WRITE_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
         OPENBOT_TS_READ_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
         OPENBOT_TS_DATABASE_URL: dsn,
+        OPENBOT_TS_PLUGIN_LOCAL_ENDPOINTS: JSON.stringify([plugins.endpoint]),
         ...(tlsDirectory
           ? {
               OPENBOT_TS_TLS_CERT_PATH: join(tlsDirectory, "server.pem"),
@@ -455,9 +457,12 @@ try {
       "Mixed → direct Python → mixed switch retained the public URL, SQL Bot and issued Owner session; one writer at each step.",
     );
   }
+  let pluginQualification: (() => Promise<void>) | undefined;
   if (
     entry === "ts" &&
-    ["all", "control", "resources", "lifecycle", "employee", "automations"].includes(selectedSuite)
+    ["all", "control", "resources", "lifecycle", "employee", "automations", "plugins"].includes(
+      selectedSuite,
+    )
   ) {
     const ownershipAcceptance = {
       databaseUrl: dsn,
@@ -488,7 +493,7 @@ try {
         await waitReady();
       },
     };
-    if (!["lifecycle", "employee", "automations"].includes(selectedSuite)) {
+    if (!["lifecycle", "employee", "automations", "plugins"].includes(selectedSuite)) {
       await qualifyTranscriptionRead(ownershipAcceptance);
       await qualifyPrimaryBotWrite(ownershipAcceptance);
       cookie = await qualifyOwnerAuth({ ...ownershipAcceptance, password });
@@ -496,7 +501,7 @@ try {
       await qualifyProductIdentity({ ...ownershipAcceptance, cookie });
       await qualifyModelOwnership({ ...ownershipAcceptance, cookie });
     }
-    if (!["employee", "automations"].includes(selectedSuite)) {
+    if (!["employee", "automations", "plugins"].includes(selectedSuite)) {
       await qualifyProductReads({ ...ownershipAcceptance, cookie });
       await qualifyFileOwnership({
         ...ownershipAcceptance,
@@ -524,12 +529,7 @@ try {
           );
           const admission = processes.start(
             join(root, "apps/server-python/.worker-venv/bin/python"),
-            [
-              "-I",
-              "-B",
-              "apps/server-python/scripts/contract-automation-admission.py",
-              config,
-            ],
+            ["-I", "-B", "apps/server-python/scripts/contract-automation-admission.py", config],
             environment,
           );
           const deadline = setTimeout(() => admission.kill("SIGTERM"), 30000);
@@ -541,6 +541,15 @@ try {
           }
         },
       });
+    if (["all", "plugins"].includes(selectedSuite))
+      pluginQualification = () =>
+        qualifyPluginOwnership({
+          ...ownershipAcceptance,
+          cookie,
+          endpoint: plugins.endpoint,
+          token: plugins.token,
+          storePath: join(directory, "objects", "plugins", "state.json"),
+        });
     if (["all", "employee"].includes(selectedSuite))
       await qualifyEmployeeOwnership({ ...ownershipAcceptance, cookie });
   }
@@ -882,6 +891,7 @@ try {
     }
   }
   await runCli(fixture, selectedSuite);
+  await pluginQualification?.();
   if (selectedSuite === "all" || selectedSuite === "nodes" || selectedSuite === "browser") {
     const evidence = createDatabase(dsn);
     try {
