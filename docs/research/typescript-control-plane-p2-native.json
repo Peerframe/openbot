@@ -2808,7 +2808,7 @@
     "sourceParentHead": "bdadf851ee247d0951d02ce422431dc0785721f2",
     "phaseComplete": false,
     "authorization": "Complete all P3 before Claude handoff; retain drafts against main, no merge before evaluation. No application installation or production-data mutation.",
-    "scope": "87 of 121 default operations selected in the explicit P3 development composition. Twelve plugin operations follow approval/automation management. P3 remains incomplete; native v6 remains historical model-only evidence.",
+    "scope": "92 of 121 default operations selected in the explicit P3 development composition. Bot creation, quick creation, deletion and member removal are qualified. P3 remains incomplete; native v6 remains historical model-only evidence.",
     "checks": {
       "productReads": {
         "qualificationPassed": 7,
@@ -2978,20 +2978,20 @@
       },
       "fullCheck": {
         "exitCode": 0,
-        "log": "/private/tmp/openbot-p3-plugins-check.log",
-        "tests": "TS109; Desktop578+3 platform skips; Web692; Node129+3 platform skips",
-        "taskCache": "test28/28,13cached; build19/19,14cached"
+        "log": "/private/tmp/openbot-p3-identity-final-check.log",
+        "tests": "TS117; Desktop578+3 platform skips; Web692; Node129+3 platform skips",
+        "taskCache": "test28/28,13cached; build19/19,13cached"
       },
       "ui": {
         "exitCode": 0,
         "passed": 12,
         "total": 12,
-        "responses": 110,
+        "responses": 109,
         "unexpected": 0,
         "pageErrors": 0,
         "workspace503": 0,
-        "receipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791463733172/receipt.json",
-        "log": "/private/tmp/openbot-p3-plugins-ui.log"
+        "receipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791466149645/receipt.json",
+        "log": "/private/tmp/openbot-p3-identity-ui-fixed.log"
       },
       "employeeCheckpointFullCheck": {
         "exitCode": 0,
@@ -3059,6 +3059,59 @@
         "unit": "/private/tmp/openbot-p3-plugins-unit.log",
         "unitPassed": 8,
         "evidence": "Stopped-Python live loopback MCP install/content/removal; no tool calls. Paired Python reverse uses exact encrypted token/grants and newer revision. Actual Python encrypted-state mutation, recovery/authority-rejection rollback, independent file-lock serialization, replaced-key refusal; local socket redirect/encoding/size/cleanup and pre-socket mixed DNS/cancel refusal. Catalog source bytes identical. No installed user plugins or external endpoints."
+      },
+      "pluginsCheckpointFullCheck": {
+        "exitCode": 0,
+        "log": "/private/tmp/openbot-p3-plugins-check.log",
+        "tests": "TS109; Desktop578+3 platform skips; Web692; Node129+3 platform skips",
+        "taskCache": "test28/28,13cached; build19/19,14cached"
+      },
+      "pluginsCheckpointUi": {
+        "exitCode": 0,
+        "passed": 12,
+        "total": 12,
+        "responses": 110,
+        "unexpected": 0,
+        "pageErrors": 0,
+        "workspace503": 0,
+        "receipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791463733172/receipt.json",
+        "log": "/private/tmp/openbot-p3-plugins-ui.log"
+      },
+      "identityLifecycle": {
+        "implementationCommit": "96775606bf6ea2be7e908277252d791dcf8a5696",
+        "operations": 5,
+        "http": {
+          "exitCode": 0,
+          "ownershipChecks": 12,
+          "lifecycleContracts": 21,
+          "log": "/private/tmp/openbot-p3-workspace-fixed-http.log"
+        },
+        "https": {
+          "exitCode": 0,
+          "ownershipChecks": 12,
+          "lifecycleContracts": 21,
+          "log": "/private/tmp/openbot-p3-identity-final-https.log"
+        },
+        "unit": {
+          "passed": 8,
+          "log": "/private/tmp/openbot-p3-greeting-unit.log"
+        },
+        "textParityVectors": 272,
+        "evidence": [
+          "Concurrent Chinese-name quick creation, direct conversation, primary preference, appearance and evolution/audit transaction",
+          "Stopped-Python deletion/member control, active Work refusal, queued cancellation and unknown-effect reservation retention",
+          "Actual model SDK with synthetic transport; one request, text-only bounded input/output; original Owner revocation, first-message race, model change and audit rollback",
+          "Real 15-second model timeout and shutdown await cancellation, no retries or paid calls",
+          "Native collaboration NULL references no longer prevent unrelated-message deletion in either TS or retained Python"
+        ],
+        "workspace503": {
+          "failedUiReceipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791465786022/receipt.json",
+          "step": "新建 Bot 并回答分工卡",
+          "reproduction": "/private/tmp/openbot-p3-workspace-reproduction.log",
+          "observed": "Private Python workspace read blocked on FOR SHARE, then returned503 on concurrent workspace preference commit. TS forwarding was not needed to reproduce.",
+          "fix": "Read display-only workspace preference within the same repeatable-read snapshot without row lock. Preserve Owner SHARE and final expiry checks; no retry.",
+          "verified": "Deterministic private Python and TS-forwarded concurrent reads return200 with the consistent prior revision; final HTTP/HTTPS/UI pass."
+        }
       }
     },
     "native": {
@@ -3075,7 +3128,6 @@
       "fingerprints": "/private/tmp/openbot-p3-model-closure-fingerprints.json"
     },
     "remainingP3": [
-      "Bot creation/deletion and member removal",
       "workspace/bootstrap/SSE",
       "Employee portability",
       "Node identity and browser product groups"
@@ -3089,30 +3141,6 @@
     ],
     "sourceFingerprints": [
       {
-        "path": "apps/server-ts/src/config.ts",
-        "sha256": "6397f9733ee543e0518b9d16bec8e3e2337f9a6873f81cd4268eb5895767f8b2"
-      },
-      {
-        "path": "apps/server-ts/src/product-http.ts",
-        "sha256": "693a4bd9723417ce737f95d18b5bbc8392ad6e96ad4c0ea1a1253065a508ed86"
-      },
-      {
-        "path": "apps/server-ts/src/model-connections.ts",
-        "sha256": "596f5bce6e97b89bbe7cc3743220769825d9089489883dfb5c24d552b1d0d962"
-      },
-      {
-        "path": "apps/server-ts/src/model-network.ts",
-        "sha256": "34c44b9e4240e86b0de5fb902b7427a7cec6a142fc64c2a4d106ec26433ffc38"
-      },
-      {
-        "path": "apps/server-ts/src/model-credential-cipher.ts",
-        "sha256": "85374fb59e18e77dd5042a924a86bfec8032bc2619cece6739682d2255039bb0"
-      },
-      {
-        "path": "apps/server-ts/src/posix-files.ts",
-        "sha256": "9c042bcf4473762921d9f1280f52624ee0e373a25f1d1f61115fe4833aba893b"
-      },
-      {
         "path": "apps/desktop/src/ts-product-manifest.ts",
         "sha256": "1db761300bb9f513eec87319ed35afd57f7dc50e294892e9ec612fedce08b07a"
       },
@@ -3121,12 +3149,100 @@
         "sha256": "fff61907cae08e87552fa09108ac8362f140dad2204e994241ee09b0a0034181"
       },
       {
+        "path": "apps/server-python/src/openbot_server/identity_lifecycle.py",
+        "sha256": "4b530395b517e3a3255963f09b1d54566382b65bdac5b3dffbcfc9def7d65bae"
+      },
+      {
         "path": "apps/server-python/src/openbot_server/ts_product_ownership.py",
-        "sha256": "b1145adc9d51a2af3c54e051099001471d0df42a3ea51055441075ade59b404a"
+        "sha256": "bcd88e77a6ebead0185f015b5d8044bab62d44a84b5fd261513459f1ee235555"
+      },
+      {
+        "path": "apps/server-python/src/openbot_server/workspace.py",
+        "sha256": "fdd14793852b4f009d9639e32356e0f36881715f86890523379a0fe274ebc9c6"
+      },
+      {
+        "path": "apps/server-ts/package.json",
+        "sha256": "843244cc18d8a3bd7dd5a84ab3c327c52aed25be65c9bb1c7894775457cad883"
+      },
+      {
+        "path": "apps/server-ts/src/bot-greeting.ts",
+        "sha256": "ea0d5a948b3b9cd20d7a097e574b20e1c453205c3223b3c7b0d563f327c6e011"
+      },
+      {
+        "path": "apps/server-ts/src/config.ts",
+        "sha256": "c541d658c09f4bbe675d2e54feb32ecb75920debde3df24d6d438148606466a4"
+      },
+      {
+        "path": "apps/server-ts/src/greeting-network.ts",
+        "sha256": "e18b297e0dec8d9d2f521ab4e66805ce1a8559e6b3958f5988c771b6fe5c8f66"
+      },
+      {
+        "path": "apps/server-ts/src/greeting-text.ts",
+        "sha256": "df03d906c8ffb0d02666e35529ac82805a5932af591fe7fb0e735361f5d162fb"
+      },
+      {
+        "path": "apps/server-ts/src/greeting.test.ts",
+        "sha256": "5958252c0833a3b8f9300a9523a34cffb190fb821fe1bc95083e972da19e364f"
+      },
+      {
+        "path": "apps/server-ts/src/identity-create.ts",
+        "sha256": "409ea9618fbb54093716cc0a1a76ecab3ce6d13dae4fc2a1aec9dcf614fb38aa"
+      },
+      {
+        "path": "apps/server-ts/src/identity-lifecycle.ts",
+        "sha256": "9aec7365e5cde41a6e221fc57ea20b9c710ae3771e2c182d2b41d2cfc7a08ba1"
+      },
+      {
+        "path": "apps/server-ts/src/model-connections.ts",
+        "sha256": "596f5bce6e97b89bbe7cc3743220769825d9089489883dfb5c24d552b1d0d962"
+      },
+      {
+        "path": "apps/server-ts/src/model-credential-cipher.ts",
+        "sha256": "85374fb59e18e77dd5042a924a86bfec8032bc2619cece6739682d2255039bb0"
+      },
+      {
+        "path": "apps/server-ts/src/model-network.ts",
+        "sha256": "00a1d720f7f1b7d7ade2226682b241870e2a3ccab5d6d5a2637f199969b76728"
+      },
+      {
+        "path": "apps/server-ts/src/posix-files.ts",
+        "sha256": "9c042bcf4473762921d9f1280f52624ee0e373a25f1d1f61115fe4833aba893b"
+      },
+      {
+        "path": "apps/server-ts/src/product-http.ts",
+        "sha256": "1a08384811b466f27b24b9cd7ea59644da0f0b8536bd500c42d5cf4a2524dab1"
+      },
+      {
+        "path": "apps/server-ts/src/product-identity.ts",
+        "sha256": "4fdc4ad64befbd799d3c804bbe3493a4c85efec3b12e992a0e8634e20f0b1fbd"
+      },
+      {
+        "path": "docs/OPEN_SOURCE_REUSE.md",
+        "sha256": "68ca26814b6034b3d447d729d034b8252acf56cdc8f073ae43148f3465ed57c4"
+      },
+      {
+        "path": "docs/OPEN_SOURCE_REUSE.zh-CN.md",
+        "sha256": "1e341d24044070d7e1e7fdbddb5699b31a7d7df30fc6031239f9f5f1ca51aed3"
+      },
+      {
+        "path": "docs/research/typescript-control-plane-p0.md",
+        "sha256": "4dd18d599d0b0ebe2a0f48de16b0d0c606eeded8b6c85c518aca55bdc4009efd"
+      },
+      {
+        "path": "docs/research/typescript-control-plane-p0.zh-CN.md",
+        "sha256": "5603d919afd696ba5e028d07355a8a7033c66cf765b171a57b59fa68fb0ffedf"
       },
       {
         "path": "package-lock.json",
-        "sha256": "df0df90fb76019ad783b5b537754d1f9b6a19cab015135ea15b8421c6689feba"
+        "sha256": "eff9e73f128f32e978c1c65bdd5b10e90c7b19877a02acb46a620862d55a7f4b"
+      },
+      {
+        "path": "scripts/test-contracts-python.ts",
+        "sha256": "64a029db557a3fb82b40b0ca48ef268c7458860cef2704a32d7715892c8255ef"
+      },
+      {
+        "path": "scripts/ts-identity-lifecycle-acceptance.ts",
+        "sha256": "e707a513e24f24328a1b6eb791e8d9f47f5d056cfd23a56c16134ad0bf16a0ee"
       }
     ],
     "preserved": {
@@ -3134,8 +3250,8 @@
       "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
       "claudeUiUntouched": true
     },
-    "localHead": "63a05dbf",
+    "localHead": "96775606bf6ea2be7e908277252d791dcf8a5696",
     "checkout": "/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot",
-    "uncommittedOwnership": "This chat alone owns the qualified plugin cohort being saved; no other writer. Next identity lifecycle draft is only in /private/tmp/openbot-p3-identity-final-prep and remains unintegrated/unqualified."
+    "uncommittedOwnership": "No uncommitted product changes or active writers at the identity checkpoint. This chat remains the sole implementer. Next scope is the shared live Worker registry dependency for Node/browser, workspace and portability; do not substitute SQL offline snapshots for live presence. Worker protocol/runtime execution remains P4 under ADR-0050."
   }
 }
