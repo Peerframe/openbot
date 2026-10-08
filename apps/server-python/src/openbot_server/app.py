@@ -63,9 +63,10 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         raise ValueError("An Owner name and explicit origins are required.")
     if auth is not None and auth.owner_name != owner_name:
         raise ValueError("Owner-auth and read identity must match.")
-    if ts_product_group != "none":
+    if ts_product_group not in ("none", "p3"):
         from .ts_product_events import ProductInvalidations
         product.ts_invalidations = ProductInvalidations(product.transactions._dsn)
+    if product is not None:
         product.storage_owned_by_ts = ts_product_group == "p3"
     cookie_name = "__Host-openbot_session" if secure_cookies else "openbot_session"
     cookie = APIKeyCookie(name=cookie_name, auto_error=False)
@@ -97,6 +98,9 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
 
     app = FastAPI(title="OpenBot control-plane reference", version="0.0.0",
                   docs_url=None, redoc_url=None, lifespan=lifespan)
+    if ts_product_group == "p3":
+        from .ts_runtime_port import register_runtime_port
+        register_runtime_port(app, product, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
     if (proxy_address is None) != (public_origin is None):
         raise ValueError("Private proxy peer and public origin must be configured together.")
     if proxy_address is not None:

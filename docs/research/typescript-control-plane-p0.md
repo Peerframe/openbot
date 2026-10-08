@@ -344,29 +344,41 @@ same-scope resource comparison. See ADR-0050 for the detailed gates and Owner ap
 
 ## Current migration checkpoint (2026-10-08)
 
-The active worktree is `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
+The complete P3 candidate is in `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
 `codex/ts-control-plane-p3-completion`. [PR209](https://github.com/Peerframe/openbot/pull/209) and
-[PR208](https://github.com/Peerframe/openbot/pull/208) remain drafts targeting `main`. Published
-head `bdadf851` passed all17 hosted checks in [run37747409393](https://github.com/Peerframe/openbot/actions/runs/37747409393).
-The Owner requests all P3 completed before a Claude report, then evaluation before merging.
-No application installation or production-data change is authorized.
+[PR208](https://github.com/Peerframe/openbot/pull/208) remain drafts targeting `main`; PR209 includes
+PR208's authentication work. The Owner requests one complete P3 review and evaluation before any
+merge. Claude's Step43 UI, installed applications and production data remain untouched.
 
-The local model/settings candidate adds eleven operations to the identity baseline: model-service
-listing, connection CRUD/verification/discovery/probe, Employee model selection, general settings
-and transcription PUT. It owns34 of121 default operations. Paired Python quarantine, SQL CAS/audit,
-Python-stopped operation and bidirectional encrypted-credential reverse switching pass. This is
-**not P3 completion**. Identity creation/deletion, approvals, workspace/SSE/progress/audit, files,
-Employee knowledge/portability, automation, plugins and Node/browser groups remain. Work execution,
-harness and Temporal stay P4; Python retirement stays P5. Claude's Step43 UI remains outside this work.
+The explicit composition owns **109 of121** existing default operations: authentication, settings,
+identity/conversations, workspace/SSE, files/storage, knowledge and portability, approvals/automation
+management, plugins, Node identity and human browser HTTP. The remaining12 are task/action/message
+execution, Run commands, artifact metadata and execution health; Worker sockets, live registry,
+harness and Temporal remain P4. Python retirement is P5. Public P3 handlers never fall back to Python;
+paired reverse reads the same newer SQL, encrypted files and plugin state. A finite private runtime
+port retains one actual Worker registry until P4; it grants no alternate assignment authority.
 
-Node24 real HTTP270 plus19 artifact checks, verified-CA HTTPS control50 and ownership qualifications
-pass; real SDK/synthetic-transport models18 pass (10 discoveries,4 probes,zero live-provider calls).
-The exact model candidate passes UI12/12 with104 responses,zero unexpected responses/page errors or
-workspace503. Both staged and packaged v6 Preview probes preserve the encryption key, model settings
-and Owner password across restart and clean up owned processes. Full `npm run check` passes after correcting the dependency graph expectation and script type error
-(TS79 including5 unselected audit/progress tests; Desktop578 with3 platform skips). Earlier CI
-is not evidence for these local changes. All current status lives in `currentP3CompletionCandidate`
-of the [single receipt](typescript-control-plane-p2-native.json); former checkpoints retain dated evidence.
+Current source runs the complete real HTTP/HTTPS suites (270 checks plus19 artifact checks),
+ownership/reverse/rollback qualifications, configured publisher12 and synthetic-provider18 checks.
+The complete boundary fixture verifies all17 final public quarantines, actual live registry/socket
+reads, single-use dispatch, post-admission revocation/profile/gate loss and committed SSE notifications.
+Synthetic peers/providers qualify boundary behavior; they do not qualify live execution or paid calls.
+Python regression passed1075 with2 recorded skips; Worker/Temporal qualification stays in required CI.
+
+UI initially recorded workspace/reactions503 during the second Bot. Real SQL reproduced an immediate
+admission refusal at the fifth request. The fixed pool retains four SQL connections with at most
+twelve bounded waiting requests. Its deterministic regression passes; the final whole-interface
+receipt is PASS12/12,110 responses,zero unexpected responses/page errors/workspace503. The v7 staged
+and actual packaged macOS arm64 API-only Preview both pass resource34 and portability13 contracts,
+restart/persistence and owned process cleanup.641 compiled/source files match both closures; v6 is
+retained as rollback. This is unsigned, uninstalled and uses synthetic encryption, without new
+Keychain, actual Electron GUI, Worker/browser execution or other-platform qualification.
+
+The [single receipt](typescript-control-plane-p2-native.json), key `currentP3CompletionCandidate`,
+records exact local evidence and source fingerprints. Hosted CI must be read for the actual PR HEAD;
+the older `bdadf851` run is historical only. Local credential scanning was rejected by automatic
+approval review before execution; the authorized PR's required hosted security job remains the gate.
+This checkpoint records candidate scope and local evidence, not merge authorization or a release.
 
 ### P3 protected files and model credentials decision (2026-10-08)
 
@@ -1649,3 +1661,63 @@ explain that serialization failure. Read the display preference from the same co
 without a row lock; retain Owner SHARE/final-expiry checks and all writer lock orders. No mutation
 retry or forwarding fallback is added. Direct-Python and TS-forwarded concurrent-read regression
 checks must pass, along with the exact UI journey; the failed UI receipt remains recorded.
+
+## P3 remaining product boundary decision (2026-10-08)
+
+The completion candidate migrates workspace/SSE, Employee portability, Node identity HTTP and
+human browser HTTP together. Their shared dependency is the live Worker registry, explicitly
+retained with the Worker protocol in P4. Copying that registry into TS would create competing
+connection/assignment owners; querying persisted `nodes` would misrepresent liveness. Instead,
+the existing fixed numeric-loopback upstream exposes a finite private runtime port. Public ingress
+rejects that namespace before forwarding. Read requests carry the original Owner session and are
+revalidated; they return bounded live metadata, never an empty successful fallback on failure.
+Browser transport remains an execution port: TS owns the public session, lease, policy and audit;
+the socket owner must independently revalidate the committed authority immediately before send.
+Node credential mutation and handshakes must share a PostgreSQL fence across the two processes.
+The port is removed when the Worker registry moves in P4, not retained as a second product server.
+
+Reuse Node 24.21.0 `http.request`, Postgres.js 3.4.9, PostgreSQL 17.11 session advisory locks,
+Fastify 5.12.5 and the retained MIT `@openbot/employee-publisher` pure format/signature functions.
+No new dependency, model account, public protocol or upstream source copy is introduced. Evidence:
+[Node HTTP cancellation and explicit Agent](https://nodejs.org/docs/latest-v24.x/api/http.html#httprequestoptions-callback),
+[PostgreSQL lock lifetime](https://www.postgresql.org/docs/17/explicit-locking.html#ADVISORY-LOCKS),
+and existing `BrowserPauseGate`, `WorkerHostRegistry`, portability publisher and shared protocol
+contracts at the candidate's preceding implementation `96775606`. Session locks are bounded and
+released by closing their dedicated connection; SQL transactions do not wait across Worker effects.
+Acceptance must exercise real retained registry sockets, revocation/re-enrollment races, stale
+browser binding/lease rejection, signed/unsigned portability, SSE invalidation and reverse selection.
+This decision is not evidence that those gates have passed.
+
+
+The implementation uses a dedicated session advisory fence (`1326850643`, hashed Node ID) shared
+with retained handshakes. Re-enrollment proves the still-valid one-use token, disconnects the old
+socket through the private port, then consumes the token and replaces SQL credentials while that
+fence remains held. Revocation follows the same detach-before-commit order with fresh Owner checks.
+A failed write can leave the old peer disconnected; it cannot leave a connected revoked identity.
+No SQL transaction waits across this transport. Enrollment attempts keep the existing shared
+throttle and network-identity digest; callers cannot provide forwarding headers to the public entry.
+
+Browser HTTP owns the existing durable pause and original Host binding. Its complete effect uses
+the existing human/Agent session advisory namespace (`1326850642`). Each private dispatch binds exact
+wire bytes and the original Owner session to a bounded, one-use audit ticket. P4 commits its unique
+claim before send, then rechecks Owner, Bot profile, credential, exact connection, deployment route,
+control lease and the live gate backend inside the socket send guard. Tickets contain a digest,
+request ID, route and gate PID, not URLs, typed text, cookies or screenshot bytes. Unknown effects
+remain paused and are never retried. Client disconnect retains the original bounded wait; process
+shutdown aborts transport and writes uncertainty before releasing the gate. A lost fence is failure.
+
+SSE uses the existing three-second poll and bounded committed DTOs. The pinned Postgres.js 3.4.9
+`src/index.js`/`src/connection.js` notification option is accessed by a tiny typed adapter using raw
+`LISTEN`, because its higher-level `listen()` automatically reconnects. A lost dedicated listener
+fails closed; no silent missed-invalidation interval is accepted. Python's coexistence listener is
+inactive when TS owns SSE, and retained only for the earlier explicit reverse groups.
+
+
+The complete UI journey exposed two503 responses during the second quick-created Bot (workspace
+and reactions). A deterministic real-SQL regression reproduced four blocked product reads returning
+200 and a fifth workspace request returning503 before any SQL attempt. The shared product pool's
+four immediate admission slots were sized for a narrow cohort. Preserve four SQL connections but
+admit at most sixteen requests (twelve waiting in the existing Postgres.js queue), all inside the
+existing six-second deadline and final authority check. No unbounded queue, transaction retry or
+larger SQL concurrency is introduced. Authentication/KDF and the other independently bounded
+cohorts keep their existing limits. Require the forced burst regression and a clean full UI receipt.

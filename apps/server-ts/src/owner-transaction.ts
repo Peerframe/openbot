@@ -19,7 +19,10 @@ export function ownerTransactions(databaseUrl: string) {
       timezone: "UTC",
     },
   });
-  const admit = boundedAdmission(4, true);
+  // One page now uses this pool for the complete product surface. Keep four actual SQL
+  // transactions and at most twelve queued requests inside the same six-second deadline.
+  // Immediate refusal at four rejected normal workspace/reaction refresh bursts.
+  const admit = boundedAdmission(16, true);
   async function run<T>(
     token: string | undefined,
     signal: AbortSignal,

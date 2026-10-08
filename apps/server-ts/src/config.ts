@@ -18,6 +18,7 @@ export interface EntryOptions {
     modelTransport?: ModelTransport;
     attachmentTransport?: ByteProviderTransport;
     controlReads?: boolean;
+    publisher?: { directory: string; passphraseFile: string };
     plugins?: { storePath: string; localEndpoints: readonly string[]; catalogPath?: string };
     files?: {
       objectRoot: string;
@@ -50,6 +51,13 @@ function origin(value: string): URL {
 
 export function validateOptions(options: EntryOptions): EntryOptions {
   if (options.product) {
+    if (
+      options.product.publisher &&
+      Object.values(options.product.publisher).some(
+        (path) => !isAbsolute(path) || path.includes("\0") || path.length > 4096,
+      )
+    )
+      throw new Error("Explicit protected publisher paths required.");
     if (
       options.product.plugins &&
       ([options.product.plugins.storePath, options.product.plugins.catalogPath]
@@ -224,6 +232,16 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
             ...(productGroup === "p3"
               ? {
                   controlReads: true,
+                  ...(environment.OPENBOT_CONTROL_PUBLISHER_DIRECTORY ||
+                  environment.OPENBOT_CONTROL_PUBLISHER_PASSPHRASE_FILE
+                    ? {
+                        publisher: {
+                          directory: environment.OPENBOT_CONTROL_PUBLISHER_DIRECTORY ?? "",
+                          passphraseFile:
+                            environment.OPENBOT_CONTROL_PUBLISHER_PASSPHRASE_FILE ?? "",
+                        },
+                      }
+                    : {}),
                   plugins: {
                     storePath:
                       environment.OPENBOT_TS_PLUGIN_STORE_PATH ??

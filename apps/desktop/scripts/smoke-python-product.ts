@@ -1,3 +1,5 @@
+import { runResourceContracts } from "../../../packages/contract-tests/src/resources.ts";
+import { runPortabilityContracts } from "../../../packages/contract-tests/src/portability.ts";
 import { randomBytes } from "node:crypto";
 import assert from "node:assert/strict";
 import { channel } from "node:diagnostics_channel";
@@ -31,6 +33,8 @@ export async function smokePythonProduct(runtimeRoot: string) {
   let bootstrapPassword: string | undefined;
   let changedPassword: string | undefined;
   let productIds: readonly number[] = [];
+  let resourceChecks = 0,
+    portabilityChecks = 0;
   const tsSelected = await lstat(join(runtimeRoot, "ts-control.json"))
     .then(() => true)
     .catch((error: NodeJS.ErrnoException) => {
@@ -108,6 +112,7 @@ export async function smokePythonProduct(runtimeRoot: string) {
       signal: AbortSignal.timeout(8000),
     });
     assert.equal(botResponse.status, 201);
+    const smokeBot = ((await botResponse.json()) as { bot: { id: string } }).bot.id;
     const primaryBefore = await readPrimary();
     assert(primaryBefore.primaryBotId);
     const primarySave = await fetch(`${base}/api/v1/workspace/primary-bot`, {
@@ -223,6 +228,11 @@ export async function smokePythonProduct(runtimeRoot: string) {
     assert.deepEqual(((await nodes.json()) as { nodes: unknown }).nodes, []);
     const plugins = await fetch(`${base}/api/v1/plugins`, { headers: { Cookie: cookie } });
     assert.equal(plugins.status, 200);
+    if (tsSelected) {
+      const target = { baseUrl: base!, origin: base!, cookie: cookie!, botId: smokeBot };
+      resourceChecks = (await runResourceContracts(target)).count;
+      portabilityChecks = (await runPortabilityContracts(target)).count;
+    }
     const restartedPostgres = Number(
       (await readFile(join(dataRoot, "postgres/postmaster.pid"), "utf8")).split("\n")[0],
     );
@@ -266,9 +276,11 @@ export async function smokePythonProduct(runtimeRoot: string) {
       tsAuthGroup: tsSelected ? "owner" : "none",
       tsChannelReadGroup: tsSelected ? "channels" : "none",
       channelReadRestartVerified: true,
-      tsProductGroup: tsSelected ? "identity-models" : "none",
+      tsProductGroup: tsSelected ? "p3" : "none",
       modelConnectionRestartVerified: tsSelected,
       modelNetworkCalls: 0,
+      p3NativeResourceChecks: resourceChecks,
+      p3NativePortabilityChecks: portabilityChecks,
       productIdentityRestartVerified: true,
       passwordRotationRestartVerified: tsSelected,
       restartLoginUsedChangedPassword: tsSelected,

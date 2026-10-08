@@ -247,7 +247,7 @@ export function encodeCursor(channelId: string, row: Row) {
   }
   return cursor;
 }
-export function boundedProjection(value: unknown) {
+export function boundedProjection<T>(value: T) {
   // Python json.dumps adds one space after each structural comma/colon (not inside strings).
   const wire = JSON.stringify(value).replace(/"(?:[^"\\]|\\.)*"|[:,]/g, (match) =>
     match.length === 1 ? match + " " : match,

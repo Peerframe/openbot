@@ -1,3 +1,4 @@
+import { runtimePrefix } from "./runtime-port.js";
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { Readable } from "node:stream";
 import type { Socket } from "node:net";
@@ -129,7 +130,7 @@ export async function createEntry(input: EntryOptions) {
     }
   }
   const product = options.product
-    ? productHandler(options.product, options.publicOrigin, Boolean(options.tls))
+    ? productHandler(options.product, options.publicOrigin, Boolean(options.tls), options.upstream)
     : undefined;
   if (product) {
     app.addHook("onClose", () => product.close());
@@ -200,6 +201,8 @@ export async function createEntry(input: EntryOptions) {
     reply.code(400).send({ error: "Invalid entry request." });
   });
   app.all("/*", (request, reply) => {
+    if (decodeURIComponent((request.raw.url ?? "").split("?")[0] ?? "").startsWith(runtimePrefix))
+      return reply.code(404).send({ error: "Not found." });
     if (
       product?.owns(request.method, decodeURIComponent((request.raw.url ?? "").split("?")[0] ?? ""))
     )

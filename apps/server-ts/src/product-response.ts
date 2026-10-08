@@ -5,3 +5,11 @@ export class ProductBytes {
     readonly headers: Record<string, string>,
   ) {}
 }
+
+export class ProductJson {
+  constructor(
+    readonly value: unknown,
+    readonly status: number,
+    readonly headers: Record<string, string> = {},
+  ) {}
+}

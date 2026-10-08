@@ -1192,3 +1192,12 @@ Reuse retained identity/audit/Work cancellation transactions and the reviewed Op
 Anthropic0.131.0 SDKs. The already locked entities8.0.0 decoder (BSD-2-Clause) becomes an explicit
 runtime dependency for Python HTML-reference parity; no new install or copied upstream source.
 See the [lifecycle and greeting decision](research/typescript-control-plane-p0.md#p3-identity-lifecycle-and-optional-greeting-extension-2026-10-08).
+
+
+### P3 complete product composition (2026-10-08)
+
+Reuse Node24.21.0 HTTP cancellation, Postgres.js3.4.9, PostgreSQL17.11 advisory locks and retained MIT
+Employee publisher format/signature functions. The finite private port keeps the sole live Worker
+registry in P4 while TS owns public P3 policy, sessions and audit. No new dependency or copied source.
+Pinned evidence, rejected duplicate-registry approach, single-use dispatch and listener behavior are
+in the [boundary decision](research/typescript-control-plane-p0.md#p3-remaining-product-boundary-decision-2026-10-08).

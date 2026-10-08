@@ -261,3 +261,42 @@ model/settings operations to `identity`; default `none` and paired reverse remai
 The packaged v6 candidate requires the fixed SDK/native versions and complete native payload.
 See the [decision and current evidence](../../docs/research/typescript-control-plane-p0.md#p3-model-and-settings-ownership-2026-10-08).
 This candidate does not complete P3 or move task execution from Python/Temporal.
+
+## Complete P3 candidate
+
+Pair `OPENBOT_TS_PRODUCT_GROUP=p3` with `OPENBOT_CONTROL_TS_PRODUCT_GROUP=p3`, alongside the
+qualified auth/read/write/channel selections above. This selects the remaining product API groups:
+files/storage, Employee knowledge and portability, approvals/automation settings, plugins,
+identity lifecycle, workspace/SSE, Node identity and human browser HTTP. The v7 Preview marker
+selects this composition. It is a review candidate; consult the
+[current receipt](../../docs/research/typescript-control-plane-p2-native.json) for exact validation.
+
+Configure `OPENBOT_TS_OBJECT_ROOT`, `OPENBOT_TS_ARTIFACT_ROOT` and `OPENBOT_TS_PLUGIN_STORE_PATH`
+to the same protected paths used by Python, and the same reviewed local plugin endpoint allowlist
+in `OPENBOT_TS_PLUGIN_LOCAL_ENDPOINTS`. Set `OPENBOT_TS_PARSER_WORKER_PATH` to the retained
+`apps/server-python/src/openbot_server/parser_worker.ts` and `OPENBOT_TS_NODE_MODULE_ROOT` to the
+locked repository `node_modules`; these execute the existing Node document parser, not Python.
+Desktop supplies its packaged paths explicitly. Model key and endpoint settings remain as above.
+When signed Employee portability is configured, supply the same private
+`OPENBOT_CONTROL_PUBLISHER_DIRECTORY` and `OPENBOT_CONTROL_PUBLISHER_PASSPHRASE_FILE` to the TS
+process. A configured invalid keyring prevents startup; it never falls back to unsigned export.
+
+TS owns the public P3 handlers and their SQL authorization/audit. Python refuses the paired public
+routes while retaining P4 Work/Temporal, Worker WebSockets and their actual live registry. A fixed
+private `/_openbot/p4/` port supplies live metadata, credential disconnection and independently
+revalidated browser dispatch. Public ingress always refuses that namespace. A runtime failure is
+an explicit failure, not an empty successful node list. Browser admission uses a shared gate and
+single-use ticket; private dispatch rechecks authority and never retries an uncertain effect.
+SSE uses committed invalidations; loss of its listener closes streams until explicit restart.
+
+Reverse by stopping both processes and restoring a matched prior selection against the same
+newer data, keys and plugin state. Do not restore old credentials, receipts or pause state. In-memory
+browser views expire on switching; persistent human pause and uncertain effects remain for safe
+reconciliation. The private runtime port exits with its registry in P4, the forwarder in P5. Neither
+P3 nor this API-only native package retires Python or qualifies live Worker/browser execution.
+
+The required candidate gates are full HTTP/HTTPS contracts (including configured publisher and
+synthetic model variants), `npm run check`, native staged/packaged probes and
+`npm run ui:acceptance -- --entry ts` with PASS 12/12. UI receipts must have no unexplained workspace
+503. Synthetic peers exercise real sockets and SQL boundaries but do not replace actual execution
+acceptance. Keep draft PRs targeted at `main` until the unified review authorizes merge.

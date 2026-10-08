@@ -35,3 +35,14 @@ Python SSE owner through empty transactional PostgreSQL notifications; typed app
 silent. Remove that coexistence listener when SSE moves. Bot creation/deletion, member removal,
 files, model secrets and task execution are not owned by this cohort. Keep the P3 phase explicitly
 incomplete until all remaining groups and their gates finish.
+
+
+The complete `p3` product selection supersedes the narrower candidate descriptions above; see
+[the complete composition](README.md#complete-p3-candidate). TS owns its public product routes and
+sole SSE publisher. Retained Python owns P4 Work/Temporal and Worker sockets; never fabricate live
+registry data or add a second assignment owner. Its finite private runtime port is inaccessible at
+public ingress, carries original authority and revalidates browser dispatch under the shared gate.
+Preserve one-use claims, descriptor-relative storage, shared identity locks and no-retry semantics.
+The v7 native marker selects `p3`; reverse requires paired process shutdown and the same newer SQL,
+keys and plugin state. Exact completion evidence belongs in the existing current candidate receipt;
+keep phase completion distinct from approved merge, installed release and P4/P5 completion.

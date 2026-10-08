@@ -1,3 +1,11 @@
+import { BrowserSessions, browserRoutes } from "./product-browser.js";
+import { digest } from "./owner-auth-crypto.js";
+import { WorkerIdentities, nodeRoutes } from "./product-nodes.js";
+import { loadEmployeePublisher } from "./employee-publisher.js";
+import { portabilityRoutes } from "./employee-portability.js";
+import { workspaceRoutes } from "./product-workspace.js";
+import { ProductInvalidations, ProductStream, eventRoutes } from "./product-events.js";
+import { RuntimePort } from "./runtime-port.js";
 import { BotGreetings } from "./bot-greeting.js";
 import { creationRoutes } from "./identity-create.js";
 import { lifecycleRoutes } from "./identity-lifecycle.js";
@@ -15,6 +23,9 @@ import { OwnerFiles } from "./owner-files.js";
 import { attachmentRoutes } from "./product-attachments.js";
 import type { Readable } from "node:stream";
 import {
+  browserHttpOperations,
+  nodeHttpOperations,
+  portabilityHttpOperations,
   pluginHttpOperations,
   automationHttpOperations,
   controlHttpOperations,
@@ -30,11 +41,14 @@ import { ownerTransactions, refuse } from "./owner-transaction.js";
 import { WriteFailure, writeUnavailable } from "./primary-bot-write.js";
 import { identityError, identityRoutes } from "./product-identity.js";
 import { productReadRoutes } from "./product-reads.js";
-import { ProductBytes } from "./product-response.js";
+import { ProductBytes, ProductJson } from "./product-response.js";
 import { ownerCookie } from "./transcription-read.js";
 import { boundedJson } from "./write-input.js";
 
 const inventory = [
+  ...browserHttpOperations,
+  ...nodeHttpOperations,
+  ...portabilityHttpOperations,
   ...pluginHttpOperations,
   ...automationHttpOperations,
   ...controlHttpOperations,
@@ -46,8 +60,14 @@ export function productHandler(
   options: NonNullable<EntryOptions["product"]>,
   publicOrigin: string,
   secure: boolean,
+  upstream?: string,
 ) {
   const store = ownerTransactions(options.databaseUrl);
+  const runtime =
+    options.controlReads && upstream ? new RuntimePort(upstream, publicOrigin, secure) : undefined;
+  const invalidations = options.controlReads
+    ? new ProductInvalidations(options.databaseUrl)
+    : undefined;
   const models = options.models
     ? new ModelConnections(options.models.keyPath, options.models.customBaseUrls)
     : undefined;
@@ -84,7 +104,14 @@ export function productHandler(
     options.controlReads && models
       ? new BotGreetings(options.databaseUrl, models, options.modelTransport)
       : undefined;
+  const browsers = runtime ? new BrowserSessions(options.databaseUrl) : undefined;
+  const workerIdentities = runtime ? new WorkerIdentities(options.databaseUrl) : undefined;
+  const publisher = options.publisher ? loadEmployeePublisher(options.publisher) : undefined;
   const routes = [
+    ...(browsers ? browserRoutes(browsers) : []),
+    ...(workerIdentities ? nodeRoutes(workerIdentities) : []),
+    ...(runtime ? portabilityRoutes(publisher) : []),
+    ...(runtime && invalidations ? [...workspaceRoutes, ...eventRoutes(invalidations)] : []),
     ...(files && plugins ? lifecycleRoutes(files, plugins) : []),
     ...(models && greetings ? creationRoutes(models, greetings) : []),
     ...(plugins ? pluginRoutes(plugins) : []),
@@ -118,6 +145,7 @@ export function productHandler(
     routes.find((route) => route.method === method && route.pattern.test(path));
   return {
     verify: async () => {
+      await invalidations?.start();
       files?.verify();
       await plugins?.verify();
       await store.verify(models ? (db) => models.initialize(db) : undefined);
@@ -125,6 +153,10 @@ export function productHandler(
       storage?.start();
     },
     close: async () => {
+      runtime?.close();
+      await browsers?.close();
+      await workerIdentities?.close();
+      await invalidations?.close();
       network?.close();
       await greetings?.close();
       await plugins?.close();
@@ -153,10 +185,14 @@ export function productHandler(
         // FastAPI typed path validation precedes endpoint authorization; generic product routes
         // deliberately authenticate first. Preserve that observable error precedence.
         if (invalidId && route.kind === "typed") refuse(422, "Invalid request input.");
-        if (request.method !== "GET" && (!origin || !origins.includes(origin)))
+        if (
+          route.owner !== false &&
+          request.method !== "GET" &&
+          (!origin || !origins.includes(origin))
+        )
           refuse(403, "Request origin is not allowed.");
         const token = ownerCookie(request.headers.cookie, secure);
-        await store.preflight(token, abort.signal);
+        if (route.owner !== false) await store.preflight(token, abort.signal);
         if (invalidId) refuse(422, "Invalid resource identifier.");
         let body: unknown = null;
         if (
@@ -176,15 +212,24 @@ export function productHandler(
           query: new URLSearchParams((request.raw.url ?? "").split("?").slice(1).join("?")),
           payload: request.body as Readable,
           headers: request.headers,
+          peer: request.raw.socket.remoteAddress,
+          ownerDigest: token ? digest(token) : undefined,
+          dispatchProof: (wire: string) => {
+            if (!token) return refuse(401, "Authentication required.");
+            return digest("openbot:browser-dispatch:v1\0" + token + "\0" + wire);
+          },
+          runtime: runtime?.access(token, request.raw.socket.remoteAddress),
         };
         const result = route.remote
           ? await route
               .remote(
-                (operation, signal) =>
+                (operation, signal, isolation) =>
                   store.run(
                     token,
                     signal ? AbortSignal.any([abort.signal, signal]) : abort.signal,
                     operation,
+                    true,
+                    isolation,
                   ),
                 ids,
                 body,
@@ -198,7 +243,7 @@ export function productHandler(
               async (db) => {
                 try {
                   const value = await route.execute(db, ids, body, context);
-                  // Empty committed invalidation only: Python owns the SSE projection during coexistence.
+                  // Empty committed invalidation only: the selected SSE owner builds the public projection.
                   if (route.kind === "product" && request.method !== "GET")
                     await db`SELECT pg_notify('openbot_product_changed','')`;
                   return value;
@@ -209,11 +254,20 @@ export function productHandler(
               true,
               route.isolation,
             );
-        if (route.remote && request.method !== "GET")
+        if (route.remote && route.owner !== false && request.method !== "GET")
           await store.run(token, abort.signal, async (db) => {
             await db`SELECT pg_notify('openbot_product_changed','')`;
           });
         if (!reply.raw.destroyed) {
+          if (result instanceof ProductJson)
+            return reply.headers(result.headers).code(result.status).send(result.value);
+          if (result instanceof ProductStream)
+            return reply
+              .headers({
+                "Content-Type": "text/event-stream; charset=utf-8",
+                "X-Accel-Buffering": "no",
+              })
+              .send(result.stream);
           if (result instanceof ProductBytes)
             return reply
               .headers(result.headers)

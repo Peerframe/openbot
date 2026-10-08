@@ -69,6 +69,24 @@ async function call(
 }
 
 describe("fixed private HTTP entry", () => {
+  it("never forwards the P4 private runtime namespace, including encoded paths", async () => {
+    let reached = 0;
+    const f = await fixture((_request, response) => {
+      reached++;
+      response.end("unexpected");
+    });
+    for (const path of [
+      "/_openbot/p4/snapshot",
+      "/_openbot/p4/detach",
+      "/_openbot/p4/browser-command",
+      "/_openbot/p4%2Fsnapshot",
+      "/%5Fopenbot/p4/snapshot",
+    ]) {
+      const response = await call(f.port, path);
+      assert.equal(response.status, 404);
+    }
+    assert.equal(reached, 0);
+  });
   it("uses the complete shared P1 operation inventory", () => {
     assert.equal(pythonOperations.length, 121);
     assert.equal(

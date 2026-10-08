@@ -670,3 +670,11 @@ Node22.22.2 与 @noble/hashes2.4.0 的评估见[对应决策](research/typescrip
 复用保留的身份、审计和 Work 取消事务，以及已经审阅的 OpenAI7.28.0 和 Anthropic0.131.0 SDK。
 已锁定的 entities8.0.0（BSD-2-Clause）成为显式运行时依赖，保持 Python HTML 字符引用兼容；
 不安装新软件，不复制上游源码。见[生命周期与开场白决定](research/typescript-control-plane-p0.md#p3-identity-lifecycle-and-optional-greeting-extension-2026-10-08)。
+
+
+### P3 完整产品组合（2026-10-08）
+
+复用 Node24.21.0 HTTP 取消、Postgres.js3.4.9、PostgreSQL17.11 咨询锁及保留的 MIT Employee
+发布包格式/签名函数。有限私有端口让 P4 保留唯一的实时 Worker 连接注册表，由 TS 接管公开 P3 策略、
+会话和审计。没有新增依赖或复制上游源码。固定版本证据、未采用双注册表的理由、一次性派发和通知监听行为见
+[边界决策](research/typescript-control-plane-p0.zh-CN.md)。

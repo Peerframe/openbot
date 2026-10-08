@@ -1,3 +1,4 @@
+import { qualifyP3Completion } from "./ts-p3-completion-acceptance.ts";
 import { qualifyIdentityLifecycle } from "./ts-identity-lifecycle-acceptance.ts";
 import { qualifyFileOwnership } from "./ts-files-acceptance.test.ts";
 import assert from "node:assert/strict";
@@ -277,6 +278,12 @@ try {
         OPENBOT_TS_WRITE_GROUP: readGroup ? "primary-bot" : "none",
         OPENBOT_TS_AUTH_GROUP: readGroup ? "owner" : "none",
         OPENBOT_TS_PRODUCT_GROUP: readGroup ? "p3" : "none",
+        ...(publisher
+          ? {
+              OPENBOT_CONTROL_PUBLISHER_DIRECTORY: publisherDirectory,
+              OPENBOT_CONTROL_PUBLISHER_PASSPHRASE_FILE: publisherPassphrase,
+            }
+          : {}),
         OPENBOT_TS_OBJECT_ROOT: join(directory, "objects"),
         OPENBOT_TS_ARTIFACT_ROOT: join(directory, "artifacts"),
         OPENBOT_TS_MODEL_CONNECTION_KEY_PATH: join(directory, "objects", "model-connections.key"),
@@ -461,9 +468,17 @@ try {
   let pluginQualification: (() => Promise<void>) | undefined;
   if (
     entry === "ts" &&
-    ["all", "control", "resources", "lifecycle", "employee", "automations", "plugins"].includes(
-      selectedSuite,
-    )
+    [
+      "all",
+      "control",
+      "resources",
+      "artifacts",
+      "lifecycle",
+      "employee",
+      "automations",
+      "plugins",
+      "browser",
+    ].includes(selectedSuite)
   ) {
     const ownershipAcceptance = {
       databaseUrl: dsn,
@@ -494,7 +509,7 @@ try {
         await waitReady();
       },
     };
-    if (!["lifecycle", "employee", "automations", "plugins"].includes(selectedSuite)) {
+    if (["all", "control"].includes(selectedSuite)) {
       await qualifyTranscriptionRead(ownershipAcceptance);
       await qualifyPrimaryBotWrite(ownershipAcceptance);
       cookie = await qualifyOwnerAuth({ ...ownershipAcceptance, password });
@@ -502,7 +517,7 @@ try {
       await qualifyProductIdentity({ ...ownershipAcceptance, cookie });
       await qualifyModelOwnership({ ...ownershipAcceptance, cookie });
     }
-    if (!["employee", "automations", "plugins"].includes(selectedSuite)) {
+    if (["all", "control", "lifecycle", "resources", "artifacts"].includes(selectedSuite)) {
       await qualifyProductReads({ ...ownershipAcceptance, cookie });
       await qualifyFileOwnership({
         ...ownershipAcceptance,
@@ -560,6 +575,8 @@ try {
         });
     if (["all", "employee"].includes(selectedSuite))
       await qualifyEmployeeOwnership({ ...ownershipAcceptance, cookie });
+    if (["all", "browser"].includes(selectedSuite))
+      await qualifyP3Completion({ ...ownershipAcceptance, cookie });
   }
   // This owned database has no Worker. Seed publication states so HTTP decision/unread
   // contracts exercise real transactions without claiming execution by a production Host.
@@ -899,6 +916,18 @@ try {
     }
   }
   await runCli(fixture, selectedSuite);
+  if (pluginQualification && selectedSuite === "all") {
+    // The control contract deliberately rotates the password and revokes every old session.
+    // This independent fixture starts with fresh authority after that successful security test.
+    const fresh = randomBytes(32).toString("base64url");
+    const sessionDatabase = createDatabase(dsn);
+    try {
+      await sessionDatabase.client`INSERT INTO auth_sessions(id,token_digest,owner_id,expires_at) VALUES(${randomUUID()},${createHash("sha256").update(fresh).digest("hex")},'owner',clock_timestamp()+interval '5 minutes')`;
+    } finally {
+      await sessionDatabase.close();
+    }
+    cookie = `${tls ? "__Host-openbot_session" : "openbot_session"}=${fresh}`;
+  }
   await pluginQualification?.();
   if (selectedSuite === "all" || selectedSuite === "nodes" || selectedSuite === "browser") {
     const evidence = createDatabase(dsn);

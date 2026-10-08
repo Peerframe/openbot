@@ -286,13 +286,19 @@ async function setReaction(db: DB, id: string, messageId: string, body: unknown)
 export type AuthorizedProductOperation = <T>(
   operation: (db: DB) => Promise<T>,
   signal?: AbortSignal,
+  isolation?: "repeatable read",
 ) => Promise<T>;
 export type ProductRequest = {
   query: URLSearchParams;
   payload?: Readable;
   headers: Record<string, unknown>;
+  peer?: string | undefined;
+  ownerDigest?: string | undefined;
+  dispatchProof?: (wire: string) => string;
+  runtime?: import("./runtime-port.js").RuntimeAccess | undefined;
 };
 export type ProductRoute = {
+  owner?: false;
   isolation?: "repeatable read";
   remote?: (
     owner: AuthorizedProductOperation,

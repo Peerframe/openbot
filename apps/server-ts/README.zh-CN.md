@@ -199,3 +199,32 @@ Bot/频道重命名、标记已读、未读数及消息反应。私有Python产�
 Owner SHARE锁、最终过期检查、版本冲突保护与审计保留在一个有界SQL事务内。通用产品写入提交后发送
 空载荷PostgreSQL刷新通知，Python仍是唯一SSE发布者；外观无变化时保持静默。监听器不持有业务事实或执行任务，
 SSE迁走后移除。参见[当前证据与P3剩余范围](../../docs/research/typescript-control-plane-p0.zh-CN.md#当前迁移检查点2026-10-08)。
+
+## 完整 P3 候选
+
+同时设置 `OPENBOT_TS_PRODUCT_GROUP=p3` 与 `OPENBOT_CONTROL_TS_PRODUCT_GROUP=p3`，并保留前述
+已验收的认证、读取、写入和频道选择。这会选择文件/存储、Employee 知识与导入导出、审批/自动化设置、
+插件、身份生命周期、工作区/SSE、Node 身份和人工浏览器 HTTP。v7 Preview 标记采用此组合；这是待评估候选，
+具体执行证据以[当前记录](../../docs/research/typescript-control-plane-p2-native.json)为准。
+
+`OPENBOT_TS_OBJECT_ROOT`、`OPENBOT_TS_ARTIFACT_ROOT`、`OPENBOT_TS_PLUGIN_STORE_PATH` 必须与
+Python 使用相同的受保护路径；`OPENBOT_TS_PLUGIN_LOCAL_ENDPOINTS` 使用同一份已审核的本地插件端点名单。
+`OPENBOT_TS_PARSER_WORKER_PATH` 指向保留的 `apps/server-python/src/openbot_server/parser_worker.ts`，
+`OPENBOT_TS_NODE_MODULE_ROOT` 指向锁定的仓库 `node_modules`，执行的是现有 Node 文档解析器。
+桌面启动器明确传入包内路径；模型密钥与端点配置沿用上文。
+启用签名导入导出时，TS 使用相同的 `OPENBOT_CONTROL_PUBLISHER_DIRECTORY` 和
+`OPENBOT_CONTROL_PUBLISHER_PASSPHRASE_FILE`；配置无效则拒绝启动，不降级成无签名导出。
+
+TS 接管 P3 公开接口及其 SQL 授权/审计，Python 拒绝对应的公开路由，继续保留 P4 Work/Temporal、
+Worker WebSocket 和真实连接注册表。固定私有 `/_openbot/p4/` 端口只提供实时元数据、身份连接断开和
+独立复核权限的浏览器派发；公开入口始终拒绝该命名空间。运行时失败会明确报错，不能伪装为空节点列表。
+浏览器使用共享并发锁与一次性凭据，派发前重新检查权限，不重试结果不明的副作用。
+SSE 依赖已提交的通知；监听连接丢失后关闭流，等待显式重启。
+
+回切时停止两个进程，用匹配的旧选择读取同一份更新后的数据、密钥及插件状态；不要恢复旧凭证、收据或暂停状态。
+切换使内存中的浏览器视图失效，持久化人工暂停和结果不明的操作继续保留。私有运行时端口在 P4 随连接注册表迁走，
+转发器在 P5 删除。P3 和本 API 桌面候选均不代表 Python 已退役，也不代表真实 Worker/浏览器执行通过验收。
+
+候选须通过完整 HTTP/HTTPS 契约（含签名与合成模型变体）、`npm run check`、暂存及打包原生探针，
+以及 `npm run ui:acceptance -- --entry ts` 的 PASS 12/12。界面报告不能有未解释的 workspace 503。
+合成 peer 检验真实连接和数据库权限边界，不替代真实执行验收。草稿 PR 保持目标 `main`，统一评估后才合并。

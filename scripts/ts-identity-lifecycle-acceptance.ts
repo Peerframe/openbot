@@ -143,9 +143,11 @@ export async function qualifyIdentityLifecycle(options: {
       },
     );
     await check(
-      "workspace snapshot remains consistent during a concurrent primary preference commit, direct and through TS",
+      "workspace snapshot remains consistent during a concurrent primary preference commit, paired reverse and TS",
       async () => {
         for (const origin of [options.privateOrigin, options.origin]) {
+          if (origin === options.privateOrigin) await options.reverseToPython();
+          else await options.restoreTs();
           const writer = await sql.reserve();
           let response: Awaited<ReturnType<typeof request>> | undefined,
             finished = false,
@@ -155,10 +157,12 @@ export async function qualifyIdentityLifecycle(options: {
             const [before] =
               await writer`SELECT revision FROM workspace_settings WHERE workspace_id='workspace' FOR UPDATE`;
             await writer`UPDATE workspace_settings SET revision=revision+1 WHERE workspace_id='workspace'`;
-            const pending = request("/api/v1/workspace", "GET", undefined, origin).then((value) => {
-              finished = true;
-              response = value;
-            });
+            const pending = request("/api/v1/workspace", "GET", undefined, options.origin).then(
+              (value) => {
+                finished = true;
+                response = value;
+              },
+            );
             for (let n = 0; n < 60 && !finished; n++) {
               const wait =
                 await sql`SELECT 1 FROM pg_stat_activity WHERE wait_event_type='Lock' AND application_name='openbot-control-identity' AND query LIKE '%SELECT primary_bot_id,revision FROM workspace_settings%'`;

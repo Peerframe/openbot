@@ -27,5 +27,13 @@ PLUGIN_ROUTES = (('GET','/api/v1/plugins'),('POST','/api/v1/plugins'),('GET','/a
 
 CREATION_LIFECYCLE_ROUTES = (("POST","/api/v1/bots"),("POST","/api/v1/bots/quick"),("DELETE","/api/v1/bots/[^/]+"),("DELETE","/api/v1/channels/[^/]+"),("DELETE","/api/v1/channels/[^/]+/bots/[^/]+"))
 
+WORKSPACE_ROUTES = (("GET","/api/v1/workspace"),("GET","/api/v1/bootstrap"),("GET","/api/v1/workspace/events"),("GET","/api/v1/channels/[^/]+/events"))
+
+PORTABILITY_ROUTES = (("GET","/api/v1/bots/[^/]+/export/preview"),("GET","/api/v1/bots/[^/]+/export"),("POST","/api/v1/employees/import/preview"),("POST","/api/v1/employees/import/activate"))
+
+NODE_ROUTES = (("GET","/api/v1/nodes"),("GET","/api/v1/node-identities"),("POST","/api/v1/nodes/enrollment-tokens"),("POST","/api/v1/nodes/enroll"),("POST","/api/v1/nodes/[^/]+/revoke"))
+
+BROWSER_ROUTES = (("POST","/api/v1/bots/[^/]+/browser"),("POST","/api/v1/bots/[^/]+/browser/maintenance"),("POST","/api/v1/browser-sessions/[^/]+/commands"),("DELETE","/api/v1/browser-sessions/[^/]+"))
+
 def owns(method, path, group='identity'):
-    return any(method == verb and re.fullmatch(pattern, path) for verb, pattern in (ROUTES + MODEL_ROUTES + READ_ROUTES + FILE_ROUTES + STORAGE_ROUTES + KNOWLEDGE_ROUTES + APPROVAL_ROUTES + AUTOMATION_ROUTES + PLUGIN_ROUTES + CREATION_LIFECYCLE_ROUTES if group == 'p3' else ROUTES + MODEL_ROUTES if group == 'identity-models' else ROUTES))
+    return any(method == verb and re.fullmatch(pattern, path) for verb, pattern in (ROUTES + MODEL_ROUTES + READ_ROUTES + FILE_ROUTES + STORAGE_ROUTES + KNOWLEDGE_ROUTES + APPROVAL_ROUTES + AUTOMATION_ROUTES + PLUGIN_ROUTES + CREATION_LIFECYCLE_ROUTES + WORKSPACE_ROUTES + PORTABILITY_ROUTES + NODE_ROUTES + BROWSER_ROUTES if group == 'p3' else ROUTES + MODEL_ROUTES if group == 'identity-models' else ROUTES))
