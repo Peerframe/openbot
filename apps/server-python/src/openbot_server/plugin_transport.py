@@ -24,6 +24,8 @@ from .plugin_inputs import PluginError, Tool, Resource, Prompt, ResourceResult, 
 for _name in ('mcp.client.streamable_http','mcp.client.session','mcp.shared.session'):
     logging.getLogger(_name).setLevel(logging.CRITICAL)
 
+_LOG = logging.getLogger(__name__)
+
 
 def public_address(value):
     try:
@@ -103,6 +105,7 @@ class PluginHTTPTransport(httpx.AsyncBaseTransport):
         elif request.method!='POST' or len(body)>24*1024:
             raise PluginError('invalid')
         limit=8*1024 if terminating else 256*1024
+        stage='resolve'
         try:
             async with asyncio.timeout(5 if terminating else 30):
                 host=request.url.host
@@ -135,7 +138,9 @@ class PluginHTTPTransport(httpx.AsyncBaseTransport):
                         if message.get('method') in ('tools/call','resources/read'):
                             # This callback is trusted composition, not an MCP parameter. DNS and
                             # request bounds are already checked; no SQL lock spans the response.
+                            stage='dispatch_authority'
                             await self.before_request(message)
+                    stage='http'
                     response=await pool.handle_async_request(httpcore.Request(request.method,self.endpoint,
                             headers=list(headers.items()),content=body,extensions={'timeout':{'connect':5,'read':30,'write':30,'pool':5}}))
                     try:
@@ -161,6 +166,9 @@ class PluginHTTPTransport(httpx.AsyncBaseTransport):
                     finally:
                         await response.aclose()
         except PluginError:raise
+        except (TimeoutError,httpcore.TimeoutException):
+            _LOG.warning('plugin_transport_timed_out stage=%s',stage)
+            raise PluginError('unavailable') from None
         except Exception:raise PluginError('unavailable') from None
 
 

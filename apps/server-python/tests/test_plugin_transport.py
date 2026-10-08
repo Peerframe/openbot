@@ -90,3 +90,23 @@ async def test_delete_requires_captured_session_and_cleanup_mode():
 def test_endpoint_path_matches_url_serialization():
     from openbot_server.plugin_transport import normalize_endpoint
     assert normalize_endpoint('https://EXAMPLE.com:443/a/../文')=='https://example.com/%E6%96%87'
+
+
+@pytest.mark.anyio
+async def test_connection_timeout_is_bounded_and_has_only_static_diagnostics(monkeypatch,caplog):
+    import httpcore
+    from openbot_server.plugin_transport import PinnedBackend
+    attempts=[]
+    async def unavailable(*args,**kwargs):
+        attempts.append(kwargs['timeout'])
+        raise httpcore.ConnectTimeout('private remote error')
+    monkeypatch.setattr(PinnedBackend,'connect_tcp',unavailable)
+    async with endpoint() as (url,requests):
+        transport=PluginHTTPTransport(url,'private bearer',[url])
+        async with httpx.AsyncClient(transport=transport) as client:
+            with pytest.raises(PluginError) as error:
+                await client.post(url,json={'private':'argument'})
+        assert error.value.code=='unavailable'
+        assert attempts==[5] and requests==[]
+    assert 'plugin_transport_timed_out stage=http' in caplog.text
+    assert 'private' not in caplog.text and url not in caplog.text

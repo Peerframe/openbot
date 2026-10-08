@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import hashlib
 import json
+import logging
 import re
 import subprocess
 import shutil
@@ -322,5 +323,8 @@ class LegacyManifestCodec:
             text = output['canonical'].encode()
             if len(text)>64*1024: raise ValueError()
             return {**output['body'],'digest':hashlib.sha256(text).hexdigest()}
+        except subprocess.TimeoutExpired:
+            logging.getLogger(__name__).warning('plugin_manifest_codec_timed_out')
+            raise PluginError('unavailable') from None
         except (OSError, subprocess.SubprocessError, ValueError, KeyError):
             raise PluginError('unavailable') from None

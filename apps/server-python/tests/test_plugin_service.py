@@ -392,3 +392,15 @@ require(path.join(v.root,'node_modules/esbuild')).buildSync({stdin:{contents:`ex
     finally:
         if child.returncode is None:child.terminate()
         await asyncio.wait_for(child.wait(),5)
+
+
+def test_manifest_timeout_has_only_static_diagnostics(monkeypatch,caplog):
+    def expired(*args,**kwargs):
+        raise subprocess.TimeoutExpired('private command',2,output=b'private output',stderr=b'private error')
+    monkeypatch.setattr(subprocess,'run',expired)
+    with pytest.raises(PluginError) as error:
+        LegacyManifestCodec().manifest('Fixture','https://example.com/mcp',[
+            {'name':'read','description':'','inputSchema':{'type':'object'}}])
+    assert error.value.code=='unavailable'
+    assert 'plugin_manifest_codec_timed_out' in caplog.text
+    assert 'private' not in caplog.text and 'example.com' not in caplog.text

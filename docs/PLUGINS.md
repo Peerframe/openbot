@@ -182,3 +182,13 @@ An update refreshes declarations from the existing exact endpoint; it does not d
 The current view host uses official MCP Apps 1.7.5 AppBridge, two isolated iframe layers, local interaction and individually granted resource reads. It does not advertise tool calls, message sending, model-context mutation or external network/device access.
 
 MCP session cleanup uses the SDK termination request on the same validated endpoint, with a five-second bound and support for HTTP 405. The connection keeps its concurrency slot until cleanup finishes. A cleanup failure does not replay a business call or prove remote deletion. Schema keyword restrictions apply to schema positions; ordinary property names such as `format` are allowed. Public data contracts are shared with the renderer; grants and authority remain Server-owned. See [research](research/plugin-flow-refactor.md).
+
+
+For durable Work plugin calls, the 30-second operation deadline includes session setup and manifest
+review. TCP connection attempts have a 5-second limit, the legacy Node manifest codec has a 2-second
+limit, and dispatch authorization uses the existing 6-second database transaction limit. A validated
+response remains available for the immutable ToolResults receipt if subsequent session cleanup fails
+or the operation deadline expires during cleanup. `applied` still requires that receipt to be stored
+and verified. A timeout before a validated response leaves the Action `unknown`; recovery only looks
+up its receipt and never resends the call. Failure diagnostics contain fixed stage names and timeout
+categories, never endpoint URLs, credentials, arguments, response content or raw exception text.

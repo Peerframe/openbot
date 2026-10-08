@@ -1,6 +1,7 @@
 """Server-owned plugin installation, scopes, approvals and untrusted content lifecycle."""
 import asyncio
 import json
+import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
@@ -11,6 +12,9 @@ from .plugin_inputs import (PluginError, Endpoint, Install, Revision, Update, En
     Decision, ResourceResult, PromptResult, LegacyManifestCodec, parse, bounded, clone, public, audit, check_schema)
 from .plugin_store import FilePluginStore
 from .plugin_transport import MCPConnector, normalize_endpoint
+
+
+_LOG = logging.getLogger(__name__)
 
 
 def field(value,name):
@@ -107,7 +111,10 @@ class PluginService:
             watcher=asyncio.create_task(watch())
         try:
             async with asyncio.timeout(timeout):yield identifier
-        except (asyncio.CancelledError,TimeoutError):
+        except TimeoutError:
+            _LOG.warning('plugin_operation_timed_out')
+            raise PluginError('unavailable') from None
+        except asyncio.CancelledError:
             raise PluginError('unavailable') from None
         except (ControlError,AuthenticationRequired):raise
         except Exception:raise PluginError('unavailable') from None
@@ -482,8 +489,10 @@ class PluginService:
         method='resources/read' if tool=='read_plugin_resource' else 'tools/call'
         params={'uri':value['name']} if method=='resources/read' else {'name':value['toolName'],'arguments':value['arguments']}
         dispatched=False
+        stage='connect'
+        output=None
         async def before_request(message):
-            nonlocal dispatched
+            nonlocal dispatched,stage
             if dispatched or message.get('method')!=method or not self._work_equal(message.get('params'),params):
                 raise PluginError('forbidden')
             def consume(state):
@@ -492,25 +501,38 @@ class PluginService:
                 audit(state,'work_dispatching',plugin['id'],botId=bot_id,runId=run_id,callId=action_id)
             # File publication and the Work dispatch marker commit together under the existing
             # rollback journal; no long-lived SQL transaction survives into network I/O.
+            stage='dispatch_authority'
             await self.store.transaction(consume,authority=authority)
             dispatched=True
-        async with self._operation(plugin['id'],30):
-            async with self.connector(plugin['endpoint'],plugin.get('token'),before_request=before_request) as client:
-                manifest=await self._manifest(plugin['name'],plugin['endpoint'],client)
-                if manifest['digest']!=snapshot['manifestDigest']:raise PluginError('conflict')
-                if method=='tools/call':
-                    result=await client.call_observed(value['toolName'],value['arguments'])
-                    bounded(result,12*1024)
-                    output={'plugin':plugin['name'],'tool':value['toolName'],'result':result,'untrusted':True}
-                else:
-                    result=parse(ResourceResult,await client.read_resource(value['name']),12*1024)
-                    if any(c['uri']!=value['name'] or c.get('mimeType')=='text/html;profile=mcp-app' for c in result['contents']):
-                        raise PluginError('invalid')
-                    output={'plugin':plugin['name'],'kind':'resource','name':value['name'],'result':result,'untrusted':True}
-                if not dispatched:raise PluginError('forbidden')
-                # The durable ToolResults receipt is the authoritative observation/audit record.
-                # A late response does not renew plugin grants or authorize another effect.
-                return output
+            stage='request'
+        try:
+            async with self._operation(plugin['id'],30):
+                async with self.connector(plugin['endpoint'],plugin.get('token'),before_request=before_request) as client:
+                    stage='manifest'
+                    manifest=await self._manifest(plugin['name'],plugin['endpoint'],client)
+                    if manifest['digest']!=snapshot['manifestDigest']:raise PluginError('conflict')
+                    stage='request'
+                    if method=='tools/call':
+                        result=await client.call_observed(value['toolName'],value['arguments'])
+                        bounded(result,12*1024)
+                        observed={'plugin':plugin['name'],'tool':value['toolName'],'result':result,'untrusted':True}
+                    else:
+                        result=parse(ResourceResult,await client.read_resource(value['name']),12*1024)
+                        if any(c['uri']!=value['name'] or c.get('mimeType')=='text/html;profile=mcp-app' for c in result['contents']):
+                            raise PluginError('invalid')
+                        observed={'plugin':plugin['name'],'kind':'resource','name':value['name'],'result':result,'untrusted':True}
+                    if not dispatched:raise PluginError('forbidden')
+                    output=observed
+                    stage='cleanup'
+        except PluginError:
+            # Only closed stage names reach logs: never endpoints, arguments, responses or
+            # exception text. Keep caller cancellation and every unobserved outcome fail-closed.
+            _LOG.warning('work_plugin_invocation_failed stage=%s response_observed=%s',stage,output is not None)
+            if output is None or asyncio.current_task().cancelling():raise
+        # Session teardown (including the outer deadline) cannot erase a validated observation.
+        # ToolResponseAdapter still has to persist and verify its immutable receipt; this return
+        # neither settles an Action itself nor renews grants or authorizes another invocation.
+        return output
 
     async def decide(self,token,identifier,value):
         value=parse(Decision,value)

@@ -27,13 +27,25 @@ migration.
 """
 import asyncio
 import json
+import logging
 from dataclasses import dataclass
 from typing import Protocol
 
+from .database import StoreUnavailable
 from .work_values import InvalidWork, WorkConflict, canonical, receipt, text, tokens
 
 MAX_IDENTITY = 128
 MAX_ACTION_KEY = 128
+_LOG = logging.getLogger(__name__)
+
+
+def _failed(phase, error):
+    # Failure diagnostics are not receipts. Closed categories retain the swallowed stage
+    # without exposing provider messages, credentials, tool inputs or private observations.
+    category = ('timeout' if isinstance(error, TimeoutError) else
+                'storage' if isinstance(error, StoreUnavailable) else
+                'authority_or_state' if isinstance(error, (WorkConflict, InvalidWork)) else 'adapter')
+    _LOG.warning('work_effect_failure phase=%s category=%s', phase, category)
 
 __all__ = ['EffectAdapter', 'EffectVerifier', 'EffectOutcome', 'VerifiedOutcome',
            'execute_action', 'recover_action']
@@ -141,7 +153,8 @@ async def _lookup(adapter, action_id):
         value = await adapter.lookup(action_id)
     except asyncio.CancelledError:
         raise
-    except Exception:
+    except Exception as error:
+        _failed('lookup', error)
         # A lookup failure or an absent record is not proof that the effect did not happen.
         return None
     if value is not None:
@@ -159,7 +172,8 @@ async def _verify(verifier, *, action_id, task_id, run_id, intent_digest, intent
                                      intent_digest=intent_digest, intent=intent, lookup=lookup)
     except asyncio.CancelledError:
         raise
-    except Exception:
+    except Exception as error:
+        _failed('verify', error)
         return None
 
 
@@ -184,9 +198,9 @@ async def _settle(store, *, task_id, run_id, action_id, intent, intent_digest, a
         except asyncio.CancelledError:
             # Cancellation propagates; the durable Action stays admitted for a lookup-only retry.
             raise
-        except Exception:
+        except Exception as error:
+            _failed('apply', error)
             # A lost response is not proof the write did not commit; fall through to lookup.
-            pass
 
     lookup = await _lookup(adapter, action_id)
     outcome = None

@@ -344,3 +344,95 @@ async def test_model_cannot_expand_retained_tool_contract(seed,tmp_path,remote,b
     with pytest.raises((PluginError,RuntimeFailure)):await h.env.run(h.activities.prepare_request,value,h.correction['id'])
     assert len(remote['requests'])==count
     assert len((await h.store.snapshot(seed['token'],h.task['id']))['actions'])==1
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize('tool',['call_plugin','read_plugin_resource'])
+@pytest.mark.parametrize('failure',['cleanup_error','operation_deadline'])
+async def test_observed_response_survives_cleanup_failure(seed,tmp_path,remote,caplog,tool,failure):
+    h=await harness(seed,tmp_path,remote,mode='read',tool=tool)
+    connector,operation=h.plugins.connector,h.plugins._operation
+    deadlines=[]
+    @asynccontextmanager
+    async def controlled_operation(*args,**kwargs):
+        async with operation(*args,**kwargs):
+            async with asyncio.timeout(None) as deadline:
+                deadlines.append(deadline)
+                yield
+    @asynccontextmanager
+    async def failing_cleanup(*args,**kwargs):
+        async with connector(*args,**kwargs) as client:
+            yield client
+            if failure=='operation_deadline':
+                deadlines[-1].reschedule(asyncio.get_running_loop().time())
+                await asyncio.sleep(1)
+            raise RuntimeError('synthetic private cleanup error')
+    h.plugins._operation=controlled_operation
+    h.plugins.connector=failing_cleanup
+    assert (await h.execute())['status']=='applied'
+    value=await h.env.run(h.activities.result,h.identity)
+    assert value['result']['untrusted'] is True
+    requests=len(remote['requests'])
+    h.plugins.connector=lambda *a,**k:pytest.fail('settled observation must never reconnect')
+    assert (await h.execute())['status']=='applied'
+    assert len(remote['requests'])==requests
+    assert remote['effects']==(['synthetic private note'] if tool=='call_plugin' else [])
+    assert 'stage=cleanup response_observed=True' in caplog.text
+    assert 'synthetic private' not in caplog.text and 'synthetic-plugin-token' not in caplog.text
+    if failure=='operation_deadline':assert 'plugin_operation_timed_out' in caplog.text
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize('stage',['manifest','dispatch_authority'])
+async def test_timeout_before_dispatch_remains_unknown_without_resend(seed,tmp_path,remote,caplog,stage):
+    h=await harness(seed,tmp_path,remote,mode='read')
+    async def timed_out(*args,**kwargs):
+        async with asyncio.timeout(.01):
+            await asyncio.sleep(1)
+    if stage=='manifest':
+        target=patch.object(MCPConnection,'tools',timed_out)
+    else:
+        target=patch.object(h.plugins.store,'transaction',timed_out)
+    with target:
+        assert (await h.execute())['status']=='unknown'
+    assert remote['effects']==[]
+    requests=len(remote['requests'])
+    h.plugins.connector=lambda *a,**k:pytest.fail('unknown Action must never reconnect')
+    assert (await h.execute())['status']=='unknown'
+    assert len(remote['requests'])==requests
+    assert f'stage={stage} response_observed=False' in caplog.text
+    assert 'synthetic private' not in caplog.text and 'synthetic-plugin-token' not in caplog.text
+
+
+@pytest.mark.anyio
+async def test_caller_cancellation_during_cleanup_is_not_hidden(seed,tmp_path,remote):
+    h=await harness(seed,tmp_path,remote,mode='read')
+    connector=h.plugins.connector
+    @asynccontextmanager
+    async def cancelled_cleanup(*args,**kwargs):
+        async with connector(*args,**kwargs) as client:
+            yield client
+            asyncio.current_task().cancel()
+            await asyncio.sleep(0)
+    h.plugins.connector=cancelled_cleanup
+    attempt=asyncio.create_task(h.execute())
+    assert (await attempt)['status']=='unknown'
+    requests=len(remote['requests'])
+    h.plugins.connector=lambda *a,**k:pytest.fail('cancelled Action must never reconnect')
+    assert (await h.execute())['status']=='unknown'
+    assert len(remote['requests'])==requests and remote['effects']==['synthetic private note']
+
+
+@pytest.mark.anyio
+async def test_receipt_storage_failure_is_diagnosed_without_resend(seed,tmp_path,remote,caplog):
+    h=await harness(seed,tmp_path,remote,mode='read')
+    async def unavailable(*args,**kwargs):
+        raise StoreUnavailable('synthetic private storage error')
+    with patch.object(h.results,'save',unavailable):
+        assert (await h.execute())['status']=='unknown'
+    assert 'work_effect_failure phase=apply category=storage' in caplog.text
+    assert 'synthetic private' not in caplog.text
+    requests=len(remote['requests'])
+    h.plugins.connector=lambda *a,**k:pytest.fail('unknown receipt must never reconnect')
+    assert (await h.execute())['status']=='unknown'
+    assert len(remote['requests'])==requests and remote['effects']==['synthetic private note']
