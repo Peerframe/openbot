@@ -29,6 +29,7 @@ import {
   startControlPostgres,
 } from "./python-acceptance-fixture.ts";
 import { qualifyChannelReads } from "./ts-channel-read-acceptance.ts";
+import { qualifySchedulingOwnership } from "./ts-scheduling-acceptance.ts";
 import { qualifyEmployeeOwnership } from "./ts-employee-acceptance.ts";
 import { qualifyProductReads } from "./ts-product-reads-acceptance.ts";
 import { qualifyModelOwnership } from "./ts-model-acceptance.ts";
@@ -456,7 +457,7 @@ try {
   }
   if (
     entry === "ts" &&
-    ["all", "control", "resources", "lifecycle", "employee"].includes(selectedSuite)
+    ["all", "control", "resources", "lifecycle", "employee", "automations"].includes(selectedSuite)
   ) {
     const ownershipAcceptance = {
       databaseUrl: dsn,
@@ -487,7 +488,7 @@ try {
         await waitReady();
       },
     };
-    if (!["lifecycle", "employee"].includes(selectedSuite)) {
+    if (!["lifecycle", "employee", "automations"].includes(selectedSuite)) {
       await qualifyTranscriptionRead(ownershipAcceptance);
       await qualifyPrimaryBotWrite(ownershipAcceptance);
       cookie = await qualifyOwnerAuth({ ...ownershipAcceptance, password });
@@ -495,7 +496,7 @@ try {
       await qualifyProductIdentity({ ...ownershipAcceptance, cookie });
       await qualifyModelOwnership({ ...ownershipAcceptance, cookie });
     }
-    if (selectedSuite !== "employee") {
+    if (!["employee", "automations"].includes(selectedSuite)) {
       await qualifyProductReads({ ...ownershipAcceptance, cookie });
       await qualifyFileOwnership({
         ...ownershipAcceptance,
@@ -503,6 +504,43 @@ try {
         objectRoot: join(directory, "objects"),
       });
     }
+    if (["all", "lifecycle", "automations"].includes(selectedSuite))
+      await qualifySchedulingOwnership({
+        ...ownershipAcceptance,
+        cookie,
+        async admit(scheduleId) {
+          const config = join(directory, "automation-admission.json");
+          const workRoot = join(directory, "automation-work");
+          await mkdir(workRoot, { mode: 0o700 });
+          await writeFile(
+            config,
+            JSON.stringify({
+              dsn,
+              scheduleId,
+              objectRoot: join(directory, "objects", "attachments"),
+              workRoot,
+            }),
+            { mode: 0o600 },
+          );
+          const admission = processes.start(
+            join(root, "apps/server-python/.worker-venv/bin/python"),
+            [
+              "-I",
+              "-B",
+              "apps/server-python/scripts/contract-automation-admission.py",
+              config,
+            ],
+            environment,
+          );
+          const deadline = setTimeout(() => admission.kill("SIGTERM"), 30000);
+          try {
+            await processes.waitSuccess(admission);
+          } finally {
+            clearTimeout(deadline);
+            await rm(config);
+          }
+        },
+      });
     if (["all", "employee"].includes(selectedSuite))
       await qualifyEmployeeOwnership({ ...ownershipAcceptance, cookie });
   }

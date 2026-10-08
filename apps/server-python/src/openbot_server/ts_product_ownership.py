@@ -20,5 +20,8 @@ STORAGE_ROUTES = (('GET','/api/v1/storage'),('GET','/api/v1/settings/storage'),(
 
 KNOWLEDGE_ROUTES = tuple((method, '/api/v1/bots/[^/]+' + suffix) for method,suffix in (('GET','/profile'),('POST','/skills'),('POST','/skills/import'),('POST','/skills/[^/]+/state'),('POST','/memories'),('PATCH','/memories/[^/]+'),('DELETE','/memories/[^/]+'),('GET','/knowledge-proposals'),('POST','/knowledge-proposals/[^/]+/review')))
 
+APPROVAL_ROUTES = (('GET','/api/v1/settings/approvals'),('PUT','/api/v1/settings/approvals'),('POST','/api/v1/approvals/[^/]+/decision'))
+AUTOMATION_ROUTES = (('GET','/api/v1/automations'),('POST','/api/v1/automations'),('PATCH','/api/v1/automations/[^/]+'),('DELETE','/api/v1/automations/[^/]+'))
+
 def owns(method, path, group='identity'):
-    return any(method == verb and re.fullmatch(pattern, path) for verb, pattern in (ROUTES + MODEL_ROUTES + READ_ROUTES + FILE_ROUTES + STORAGE_ROUTES + KNOWLEDGE_ROUTES if group == 'p3' else ROUTES + MODEL_ROUTES if group == 'identity-models' else ROUTES))
+    return any(method == verb and re.fullmatch(pattern, path) for verb, pattern in (ROUTES + MODEL_ROUTES + READ_ROUTES + FILE_ROUTES + STORAGE_ROUTES + KNOWLEDGE_ROUTES + APPROVAL_ROUTES + AUTOMATION_ROUTES if group == 'p3' else ROUTES + MODEL_ROUTES if group == 'identity-models' else ROUTES))

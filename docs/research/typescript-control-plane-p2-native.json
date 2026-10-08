@@ -2808,7 +2808,7 @@
     "sourceParentHead": "bdadf851ee247d0951d02ce422431dc0785721f2",
     "phaseComplete": false,
     "authorization": "Complete all P3 before Claude handoff; retain drafts against main, no merge before evaluation. No application installation or production-data mutation.",
-    "scope": "68 of 121 default operations selected in the explicit P3 development composition. The Employee profile/skills/memories/proposal group adds 9 operations after the 59-operation protected-files checkpoint. Full P3 remains incomplete; native v6 remains the earlier 34-operation model candidate.",
+    "scope": "75 of 121 default operations selected in the explicit P3 development composition. Seven approval/automation management operations follow Employee knowledge. P3 remains incomplete; native v6 is historical model-only evidence.",
     "checks": {
       "productReads": {
         "qualificationPassed": 7,
@@ -2978,6 +2978,23 @@
       },
       "fullCheck": {
         "exitCode": 0,
+        "log": "/private/tmp/openbot-p3-scheduling-check.log",
+        "tests": "TS101; Desktop578 +3 platform skips; Web692; Node129 +3 platform skips",
+        "taskCache": "test28/28,13cached; build19/19,14cached"
+      },
+      "ui": {
+        "exitCode": 0,
+        "passed": 12,
+        "total": 12,
+        "responses": 104,
+        "unexpected": 0,
+        "pageErrors": 0,
+        "workspace503": 0,
+        "receipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791462392475/receipt.json",
+        "log": "/private/tmp/openbot-p3-scheduling-ui.log"
+      },
+      "employeeCheckpointFullCheck": {
+        "exitCode": 0,
         "log": "/private/tmp/openbot-p3-employee-check.log",
         "serverTsPassed": 101,
         "desktopPassed": 578,
@@ -2991,7 +3008,7 @@
           "Production dependency graph and mixed-native graph exact expectations now include the retained Employee pure parser workspace."
         ]
       },
-      "ui": {
+      "employeeCheckpointUi": {
         "passed": 12,
         "responses": 105,
         "unexpected": 0,
@@ -2999,6 +3016,21 @@
         "workspace503": 0,
         "receipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791461516968/receipt.json",
         "log": "/private/tmp/openbot-p3-employee-ui.log"
+      },
+      "scheduling": {
+        "httpLifecycle": "/private/tmp/openbot-p3-approval-lifecycle.log",
+        "httpChecks": {
+          "ownership": 6,
+          "lifecycle": 21,
+          "unchangedProductReads": 7,
+          "unchangedFiles": 9
+        },
+        "https": "/private/tmp/openbot-p3-scheduling-https.log",
+        "httpsChecks": {
+          "ownership": 6,
+          "automation": 10
+        },
+        "retainedWorkAdmission": "TS-created schedule, four concurrent real Python PostgresAutomations/WorkSourceAdmission requests yield one work_admissions record; active follow-up skipped. No Temporal workflow/Worker/provider executed."
       }
     },
     "native": {
@@ -3016,10 +3048,8 @@
     },
     "remainingP3": [
       "Bot creation/deletion and member removal",
-      "approval settings/decisions",
       "workspace/bootstrap/SSE",
       "Employee portability",
-      "automations",
       "plugins",
       "Node identity and browser product groups"
     ],
@@ -3077,8 +3107,8 @@
       "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
       "claudeUiUntouched": true
     },
-    "localHead": "214ea7cf",
+    "localHead": "6f4b7904",
     "checkout": "/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot",
-    "uncommittedOwnership": "This chat alone owns the Employee knowledge cohort being saved. No other writer. Next automation/approval drafts exist only in /private/tmp/openbot-p3-employee-prep and are not integrated or qualified."
+    "uncommittedOwnership": "This chat alone owns the qualified approval/automation cohort being saved; no other writer. Plugin value/store drafts are only in /private/tmp/openbot-p3-plugin-prep and remain unintegrated/unqualified."
   }
 }

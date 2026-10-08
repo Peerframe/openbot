@@ -1,3 +1,5 @@
+import { approvalRoutes } from "./product-approvals.js";
+import { automationRoutes } from "./product-automations.js";
 import { employeeKnowledgeRoutes } from "./employee-knowledge.js";
 import { AttachmentProcessing, processingRoutes } from "./attachment-processing.js";
 import { NodeAttachmentParser } from "./attachment-parser.js";
@@ -9,6 +11,7 @@ import { OwnerFiles } from "./owner-files.js";
 import { attachmentRoutes } from "./product-attachments.js";
 import type { Readable } from "node:stream";
 import {
+  automationHttpOperations,
   controlHttpOperations,
   employeeHttpOperations,
   lifecycleHttpOperations,
@@ -27,6 +30,7 @@ import { ownerCookie } from "./transcription-read.js";
 import { boundedJson } from "./write-input.js";
 
 const inventory = [
+  ...automationHttpOperations,
   ...controlHttpOperations,
   ...employeeHttpOperations,
   ...lifecycleHttpOperations,
@@ -67,7 +71,13 @@ export function productHandler(
     ...identityRoutes,
     ...(processing ? processingRoutes(processing) : []),
     ...(storage ? storageRoutes(storage) : []),
-    ...(files ? attachmentRoutes(files, options.files!.objectRoot) : []),
+    ...(files
+      ? [
+          ...attachmentRoutes(files, options.files!.objectRoot),
+          ...approvalRoutes(files),
+          ...automationRoutes(files),
+        ]
+      : []),
     ...(options.controlReads ? [...productReadRoutes, ...employeeKnowledgeRoutes] : []),
     ...(models ? modelRoutes(models) : []),
     ...(network ? modelNetworkRoutes(network) : []),
