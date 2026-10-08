@@ -380,6 +380,14 @@ the older `bdadf851` run is historical only. Local credential scanning was rejec
 approval review before execution; the authorized PR's required hosted security job remains the gate.
 This checkpoint records candidate scope and local evidence, not merge authorization or a release.
 
+The first published completion HEAD `b913c01a` passed hosted security but exposed a clean-checkout
+build-order defect in validate and Python-contract CI. Script typechecking now builds its TS
+prerequisite, and Python-only contracts load no TS qualification modules. With TS output absent,
+Python control50 and a full cold `npm run check` pass; the restored mixed boundary8/browser14 also
+pass. All641 product fingerprints are unchanged, preserving the native/UI evidence. The repaired
+HEAD still requires its own complete hosted result.
+
+
 ### P3 protected files and model credentials decision (2026-10-08)
 
 The current Python key and attachment stores use descriptor-relative `openat`/`mkdirat`/`linkat`,

@@ -47,7 +47,7 @@
     "test:runtime:python": "node scripts/test-runtime-headless.mjs --python",
     "test:runtime:linux": "node scripts/test-runtime-linux.ts",
     "typecheck:parsers": "tsc --noEmit -p apps/server-python/tsconfig.parsers.json",
-    "typecheck": "turbo run build --filter=@openbot/db --filter=@openbot/protocol --filter=@openbot/node^... && tsc --noEmit -p scripts/tsconfig.json && tsc --noEmit -p experiments/work-journey/tsconfig.json && npm run typecheck:parsers && turbo run typecheck",
+    "typecheck": "turbo run build --filter=@openbot/db --filter=@openbot/protocol --filter=@openbot/server-ts --filter=@openbot/node^... && tsc --noEmit -p scripts/tsconfig.json && tsc --noEmit -p experiments/work-journey/tsconfig.json && npm run typecheck:parsers && turbo run typecheck",
     "worker-host:macos:check": "node --test scripts/check-macos-worker-host.test.ts scripts/macos-worker-host-release.test.ts && node scripts/check-macos-worker-host.ts",
     "worker-host:macos:native-check": "swift build --package-path apps/worker-host-macos && swift test --package-path apps/worker-host-macos",
     "plugin:create": "node scripts/create-mcp-plugin.ts",

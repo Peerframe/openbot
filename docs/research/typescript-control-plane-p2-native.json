@@ -2701,7 +2701,6 @@
     "status": "local-qualification-complete",
     "branch": "codex/ts-control-plane-p3-completion",
     "checkout": "/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot",
-    "localHead": "704dd4dbd5c10e11322859e2d2b35f5edf50e49c",
     "sourceParentHead": "bdadf851ee247d0951d02ce422431dc0785721f2",
     "authorization": "Complete all P3 before Claude handoff; retain drafts against main, no merge before evaluation. No application installation or production-data mutation.",
     "scope": "109 of 121 default operations are TS-owned in the explicit P3 composition; the 12 retained operations are Work/message/action execution, Run commands, artifact metadata and execution health. P4 owns Worker sockets/live registry, harness and Temporal; P5 retires Python.",
@@ -2806,12 +2805,60 @@
         "status": "local-scan-not-executed; hosted-security-required",
         "reason": "Automatic approval review twice refused full repository/history exposure to the pinned third-party TruffleHog container, including the offline/read-only retry. No scan executed.",
         "historicalCiHead": "bdadf851ee247d0951d02ce422431dc0785721f2",
-        "historicalCiScope": "Historical baseline only, not current candidate evidence."
+        "historicalCiScope": "Historical baseline only, not current candidate evidence.",
+        "hostedSecurityPassedHead": "b913c01a0c5f01abeb8cc50051080a74f3f3669d",
+        "hostedSecurityResult": "success on the failed cold-build run; final published HEAD must still pass its own security job."
       },
       "reviewedCatalog": {
         "revision": 3,
         "tsAndPythonSha256": "81e05d62993d603b15bf0cd62bce3f627d04f366f10673c13bdf46f5b2622f55",
         "chineseTextAndReviewedSourceFingerprints": "unchanged"
+      },
+      "coldBuildRepair": {
+        "cause": "CI started without apps/server-ts/dist: root script typecheck did not build its TS acceptance dependencies, and Python-only contracts eagerly imported compiled TS qualification modules.",
+        "failedHead": "b913c01a0c5f01abeb8cc50051080a74f3f3669d",
+        "failedRun": "https://github.com/Peerframe/openbot/actions/runs/37796544028",
+        "failedJobs": ["validate", "Installed harness, Python quality and Work contract"],
+        "repair": "Build server-ts before script typecheck and load TS qualification modules only in the selected TS path. No product runtime source changed.",
+        "coldPython": {
+          "exitCode": 0,
+          "checks": 50,
+          "log": "/private/tmp/openbot-p3-completion-cold-python.log",
+          "tsDistAbsent": true
+        },
+        "coldFullCheck": {
+          "exitCode": 0,
+          "log": "/private/tmp/openbot-p3-completion-cold-check.log",
+          "tasks": [
+            {
+              "stage": "prerequisite-build",
+              "successful": 13,
+              "cached": 2
+            },
+            {
+              "stage": "typecheck",
+              "successful": 34,
+              "cached": 12
+            },
+            {
+              "stage": "test",
+              "successful": 28,
+              "cached": 13
+            },
+            {
+              "stage": "build",
+              "successful": 19,
+              "cached": 14
+            }
+          ]
+        },
+        "coldMixed": {
+          "exitCode": 0,
+          "boundaryChecks": 8,
+          "browserContracts": 14,
+          "log": "/private/tmp/openbot-p3-completion-cold-mixed.log"
+        },
+        "productFingerprintsUnchanged": 641
       }
     },
     "native": {
@@ -3189,6 +3236,10 @@
         "sha256": "eff9e73f128f32e978c1c65bdd5b10e90c7b19877a02acb46a620862d55a7f4b"
       },
       {
+        "path": "package.json",
+        "sha256": "49969e312e3f513f9d1218fa2c6f250f6a66ffa430aa3a01b5789ab2149a4956"
+      },
+      {
         "path": "packages/employee-publisher/package.json",
         "sha256": "af4edeea6d7568bc7f648943285bba771e16d50ed01397abfb5db2057b7c82df"
       },
@@ -3206,7 +3257,7 @@
       },
       {
         "path": "scripts/test-contracts-python.ts",
-        "sha256": "df12fb819bda01cbea0f4bd0f37e7f0e0aeb26b1b05b96989582e217decc500e"
+        "sha256": "2e320c65bcf17256f370d190fa2e2603a560a3f3b968032194ed8e2065704dd6"
       },
       {
         "path": "scripts/ts-employee-acceptance.ts",
@@ -3258,6 +3309,8 @@
       "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
       "claudeUiUntouched": true
     },
-    "uncommittedOwnership": "This chat is the sole implementer. Product implementation is committed at localHead; this receipt is the following evidence-only commit. No active product writers; required exact-head hosted CI follows authorized push. No merge authorized before unified evaluation."
+    "uncommittedOwnership": "This chat is the sole implementer; no product writers remain. productImplementationHead identifies unchanged packaged runtime code. Cold-build workflow repair and these updated fingerprints are recorded together. Use the actual PR HEAD for hosted acceptance. No merge authorized before unified evaluation.",
+    "productImplementationHead": "704dd4dbd5c10e11322859e2d2b35f5edf50e49c",
+    "qualificationRepairParentHead": "b913c01a0c5f01abeb8cc50051080a74f3f3669d"
   }
 }

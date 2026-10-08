@@ -1,6 +1,3 @@
-import { qualifyP3Completion } from "./ts-p3-completion-acceptance.ts";
-import { qualifyIdentityLifecycle } from "./ts-identity-lifecycle-acceptance.ts";
-import { qualifyFileOwnership } from "./ts-files-acceptance.test.ts";
 import assert from "node:assert/strict";
 import type { ChildProcess } from "node:child_process";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
@@ -30,16 +27,6 @@ import {
   OwnedDockerFixture,
   startControlPostgres,
 } from "./python-acceptance-fixture.ts";
-import { qualifyChannelReads } from "./ts-channel-read-acceptance.ts";
-import { qualifyPluginOwnership } from "./ts-plugins-acceptance.ts";
-import { qualifySchedulingOwnership } from "./ts-scheduling-acceptance.ts";
-import { qualifyEmployeeOwnership } from "./ts-employee-acceptance.ts";
-import { qualifyProductReads } from "./ts-product-reads-acceptance.ts";
-import { qualifyModelOwnership } from "./ts-model-acceptance.ts";
-import { qualifyOwnerAuth } from "./ts-owner-auth-acceptance.ts";
-import { qualifyPrimaryBotWrite } from "./ts-primary-bot-acceptance.ts";
-import { qualifyProductIdentity } from "./ts-product-identity-acceptance.ts";
-import { qualifyTranscriptionRead } from "./ts-transcription-acceptance.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const args = process.argv.slice(2);
@@ -480,6 +467,20 @@ try {
       "browser",
     ].includes(selectedSuite)
   ) {
+    // Python-only contracts must not load optional compiled TS acceptance modules.
+    const { qualifyP3Completion } = await import("./ts-p3-completion-acceptance.ts");
+    const { qualifyIdentityLifecycle } = await import("./ts-identity-lifecycle-acceptance.ts");
+    const { qualifyFileOwnership } = await import("./ts-files-acceptance.test.ts");
+    const { qualifyChannelReads } = await import("./ts-channel-read-acceptance.ts");
+    const { qualifyPluginOwnership } = await import("./ts-plugins-acceptance.ts");
+    const { qualifySchedulingOwnership } = await import("./ts-scheduling-acceptance.ts");
+    const { qualifyEmployeeOwnership } = await import("./ts-employee-acceptance.ts");
+    const { qualifyProductReads } = await import("./ts-product-reads-acceptance.ts");
+    const { qualifyModelOwnership } = await import("./ts-model-acceptance.ts");
+    const { qualifyOwnerAuth } = await import("./ts-owner-auth-acceptance.ts");
+    const { qualifyPrimaryBotWrite } = await import("./ts-primary-bot-acceptance.ts");
+    const { qualifyProductIdentity } = await import("./ts-product-identity-acceptance.ts");
+    const { qualifyTranscriptionRead } = await import("./ts-transcription-acceptance.ts");
     const ownershipAcceptance = {
       databaseUrl: dsn,
       origin: baseUrl,
