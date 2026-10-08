@@ -56,7 +56,7 @@ const keyEntrySchema = z
       context.addIssue({ code: "custom", message: "A revoked key requires revokedAt." });
     }
   });
-const keyringManifestSchema = z
+export const keyringManifestSchema = z
   .object({
     version: z.literal(1),
     activeKeyId: z.string().regex(keyIdExpression),
@@ -307,7 +307,7 @@ function generatePublisherKey(passphrase: Buffer, now: Date) {
   return { entry, privateKeyPem: privateKey };
 }
 
-function normalizeManifestKeys(manifest: EmployeePublisherKeyringManifest) {
+export function normalizeManifestKeys(manifest: EmployeePublisherKeyringManifest) {
   const keyIds = new Set<string>();
   const trustedKeys: EmployeeTemplateTrustedKey[] = [];
   let activeEntry: EmployeePublisherKeyEntry | undefined;
@@ -336,7 +336,7 @@ function normalizeManifestKeys(manifest: EmployeePublisherKeyringManifest) {
   return { activeEntry, trustedKeys };
 }
 
-function keyIdForPublicKey(publicKey: KeyObject): string {
+export function keyIdForPublicKey(publicKey: KeyObject): string {
   const der = publicKey.export({ type: "spki", format: "der" });
   return `ed25519:${createHash("sha256").update(der).digest("hex")}`;
 }

@@ -1,5 +1,6 @@
 """Retained single-use Worker enrollment, digest credentials and Owner revocation."""
 from contextlib import asynccontextmanager
+import asyncio
 from datetime import timedelta
 import hashlib
 import math
@@ -56,8 +57,24 @@ def resolve_client_identity(remote_address, forwarded=None, trusted_proxy_addres
 
 class PostgresWorkerHostIdentity:
     def __init__(self, dsn):
+        self._shared_fences = 0
         self._owner = OwnerTransactions(dsn, application_name="openbot-worker-identity")
         self._trusted = PostgresTransactions(dsn, application_name="openbot-worker-enrollment")
+
+    @asynccontextmanager
+    async def shared_identity_fence(self, node_id):
+        if self._shared_fences >= 16:
+            raise ControlError(503, "node_identity_busy")
+        self._shared_fences += 1
+        try:
+            async with asyncio.timeout(10):
+                async with await self._trusted._connect() as db:
+                    await db.set_autocommit(True)
+                    await db.execute("SELECT pg_advisory_lock(1326850643,hashtext(%s))", (node_id,))
+                    yield
+                    await db.execute("SELECT 1")
+        finally:
+            self._shared_fences -= 1
 
     async def verify_schema(self):
         await self._owner.verify_schema()

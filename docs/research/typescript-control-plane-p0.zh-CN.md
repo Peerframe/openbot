@@ -222,28 +222,63 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 
 ## 当前迁移检查点（2026-10-08）
 
+完整 P3 候选在 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支
+`codex/ts-control-plane-p3-completion`。[PR209](https://github.com/Peerframe/openbot/pull/209)与
+[PR208](https://github.com/Peerframe/openbot/pull/208)保持以 `main` 为目标的草稿，209 已包含208的认证改动。
+用户要求 P3 整体完成后交 Claude 评估，再统一合并；Claude 第43步界面、已安装应用和生产数据未改动。
 
-工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，当前分支
-`codex/ts-control-plane-p3-primary-bot`，在另行批准 PR205 合并后，已整合最新 main
-`fe1520dcf997ed31452ea63c37ef5ea488cd7187`。新 main 的文件树与已验收 PR205 的 `b62c22fe`
-及托管测试合并树相同。按所有者“继续”的授权合并了 PR200；
-其树 `a0fc4e6ed0baa011f9b0829b9c78edb8538f161a` 与已验收候选相同，
-[CI37561911353](https://github.com/Peerframe/openbot/actions/runs/37561911353) 的17项任务全通过。
-main [CI37613802756](https://github.com/Peerframe/openbot/actions/runs/37613802756) 首次运行在直接
-Python 的 MCP 资源/提示词契约遇到10秒超时。第二次的直接 Python all/publisher/models 已通过，
-随后 TS 混合入口在同一普通 MCP 内容读取循环（`plugins.ts:296`）超时；原断言和期限未改变。
-两种入口的观测不能证明 TS 转发是原因。PR205 修复共享 HTTP watcher 生命周期后，在 `b62c22fe` 的
-[CI37661699512](https://github.com/Peerframe/openbot/actions/runs/37661699512) 通过全部17项任务；此前失败保持为历史证据。这与此前 workspace503
-是两份独立证据。第43步侧栏王冠、头像和动画仍归 Claude；本轮没有发送消息或改动这些界面。
-保留原 dirty 工作区、已安装应用和用户数据。
+明确选择的组合接管 **121 个默认操作中的109个**：认证、设置、身份/会话、工作区/SSE、文件/存储、
+知识与导入导出、审批/自动化管理、插件、Node 身份和人工浏览器 HTTP。剩余12个是任务/动作/消息执行、
+Run 命令、产物元数据及运行健康检查；Worker 连接、实时注册表、harness、Temporal 留在 P4，退役 Python
+属于 P5。P3 公开接口不会自动回落 Python；回切读取同一份更新后的 SQL、加密文件及插件状态。
+有限私有端口让 P4 保留唯一的实时 Worker 注册表，不引入第二个派发者。
 
-此前已发布的 PR205 候选只把 `GET /api/v1/settings/transcription` 交给 TS。PUT、会话签发/密码/撤销、设置与
-审计写入、模型解析、文档处理和 Temporal 继续归 Python。两边读取同一现有 PostgreSQL，共用严格
-响应契约；不改数据或结构，不加读取缓存、第二套身份来源或自动回退。配置默认 `none`；两边明确
-选择 `transcription` 时，Python 私有 GET 以 `operation_owned_by_ts` 拒绝。两边同时切回 `none`，
-同一地址/数据库/会话恢复转发，保留更新后的数据。Python 原实现仅保留在这段可反向切换的窗口，
-完整转写组的写入/消费者门槛通过后退役，P5 再删转发。带明确标记的原生候选使用该组，拒绝旧标记
-或缺失资源；候选不安装。
+本地执行完整 HTTP/HTTPS 契约270项及额外产物19项、所有权/回切/回滚检查、签名变体12项和合成模型18项。
+最后一组边界覆盖17条旧公开路由隔离、真实连接和数据库、一次性派发、接纳后撤销/配置变化/锁丢失，以及
+已提交通知。合成 peer 和模型只证明权限边界，不冒充真实执行或付费调用。Python 回归1075项通过、2项跳过；
+Worker/Temporal 的要求仍由托管 CI 执行。
+
+首次完整 UI 在新建第二个 Bot 时抓到 workspace/reactions503，真实 SQL 稳定复现第五个并发请求被立即拒绝。
+修复后仍只有4条 SQL 连接，最多12个有界等待请求；确定性回归通过。最终界面 PASS12/12，111次响应，
+意外响应、页面错误和 workspace503 均为0。v7 暂存资源和实际 macOS arm64 API Preview 包均通过资源34项、
+导入导出13项、重启/持久化及所启动进程清理，641个文件与源构建一致；保留v6回退包。
+候选未签名、未安装，使用合成加密回调；不声称新增 Keychain、Electron GUI、真实 Worker/浏览器执行或其他平台验收。
+
+精确本地证据和文件指纹统一记录在[当前收据](typescript-control-plane-p2-native.json)的
+`currentP3CompletionCandidate`。托管 CI 必须核对 PR 实际 HEAD，旧 `bdadf851` 运行只能作历史证据。
+本地凭证扫描在执行前被自动审批拒绝；已授权 PR 的托管安全检查仍是必过门槛。
+此处记录完整候选范围和本地证据，不代表获准合并或发布。
+
+首次完整候选 `b913c01a` 通过托管安全检查，但 validate 和 Python 契约 CI 暴露干净检出时的构建顺序问题。
+现已在脚本类型检查前构建 TS 依赖，并让纯 Python 契约不加载 TS 验收模块。移走 TS 输出后，Python control50
+和完整冷构建检查均通过；恢复后的混合边界8项、浏览器14项也通过。641个产品指纹未变，原生包/UI 证据仍有效。
+修复后的 HEAD 仍须通过自己的完整托管检查。
+
+后续 `da12a8a2` 的托管打包 Preview 在上传略超2MiB的导入内容时出现 `ECONNRESET`：
+提前返回413并关闭连接，与尚未结束的上传竞争。核对固定
+[Node22.22.2响应结束实现](https://github.com/nodejs/node/blob/v22.22.2/lib/_http_server.js#L1007-L1039)
+后，复用既有流解析器，有界丢弃被拒绝的输入，最多读取操作上限加64KiB，保留原5秒时限和取消。
+拒绝内容不保留、不解析，超过丢弃上限立即停止；不重试、不扩大可接受正文、不新增依赖或复制上游源码。
+修复前后回归覆盖有长度/流式超限、字节上限和取消；实际打包产物的导入契约重新验证原失败入口。
+
+
+### P3 会话与身份编辑决策（2026-10-08）
+
+复用ADR0050已审阅的Fastify5.12.5、Postgres.js3.4.9、PostgreSQL17.11及P1契约，移植当前Python事务，
+不恢复冻结旧服务。保留Unicode码点限制、同一事务内的更新/审计/最终过期检查及阻止撤销越过写入的SHARE锁。
+不新增数据库结构或依赖。
+
+第一轮真实控制契约复现了TS重命名后SSE缺失刷新的问题：原Python通用产品路由只更新本进程版本。
+立即迁移整个工作区事件流会耦合Node在线状态与Work进度；新建共享计数表会增加持久化迁移状态。
+选择PostgreSQL事务NOTIFY：仅迁走的通用产品写操作发送空载荷 `openbot_product_changed`，提交才通知，
+回滚不通知。资料、外观和创建等独立路由继续依赖快照变化，保留无变化外观更新的静默行为。
+Python仍是唯一SSE发布者，一个随产品启动/关闭的自动提交监听器只触发现有轮询刷新；监听失效则流失败关闭。
+它不授予权限、不执行任务、不重放写入、不传业务数据；SSE迁入TS后移除。Python显式停止期间TS写入仍可用，
+重连读取最新事实。没有复制或大幅改编上游源码。
+
+核对了[PostgreSQL17 NOTIFY文档](https://www.postgresql.org/docs/17/sql-notify.html)的提交、合并和队列语义，
+以及已锁定[Psycopg3.3.6异步连接源码](https://github.com/psycopg/psycopg/blob/3.3.6/psycopg/psycopg/connection_async.py)
+的通知生成器和取消行为。沿用现有许可证声明。真实SSE慢消费、无变化及重连契约与监听失效单测共同验证。
 
 ### P3 主 Bot 选择决策（2026-10-08）
 
@@ -1078,3 +1113,154 @@ POSIX 范围/负向测试后的最终 `npm run check` 通过：docs12/12（588�
 两份测量均核对所属进程退出并删除临时数据。候选包留在 `apps/desktop/out`，未往 Applications 安装或新增常驻服务。
 P2 后端/原生本机候选已准备好；必需托管 CI 与 Claude 的整体界面验收仍是独立待验证证据。
 下一检查点核对这些既有关卡，并准备一组 P3 设置/读取的真实 SQL 正反切换；当前未启用 P3 写入方。
+
+### P3 Owner 身份认证决策（2026-10-08）
+
+#206 已合入 `41a1a5b57b258e5b34d9c4ef80096b69b376930f`，源码树与已验收候选一致。下一组一次迁移
+登录、登出、会话读取、会话列表、撤销其他会话和修改密码六个操作，由两端显式选择 `owner`。
+本地验收见当前检查点；发布、生产选择与 P3 完成是后续门槛。其他 Python 权限与 CLI 恢复入口保留。
+
+复用 Node 内置异步 scrypt、randomBytes、timingSafeEqual 和现有 Postgres.js3.4.9/PostgreSQL17.11。
+已查阅 Node22.22.2 提交 `2645dc73720b1b4f27c49f395d3c66025ce126cc` 的官方 crypto 文档、RFC7914 和 OWASP
+密码存储指南；链接见同名英文决策。对比 MIT 的 @noble/hashes2.4.0（提交
+`663c2aeeffc308ac0cded59bd32f7c212adacfc2`）的发布、测试、安全说明及 UTF-8/异步循环问题后，
+选择内置接口，避免新增密码学依赖和 JS 调度适配。该库旧版独立审计不代表此版本已审计。
+没有复制或实质改编上游实现，也不安装新依赖。
+
+保持现有加盐 scrypt 格式与 N32768/r8/p3、64MiB 内存上限、32 字节结果和 UTF-8 标量校验。
+数据库密码优先于启动配置，不改表或重写凭证。原生计算即使超时/断连仍占用名额直至实际结束。
+验收须覆盖认证全局锁先于会话锁、共用网络节流、计算后密码版本复核、提交后发 Cookie、
+会话过期/撤销、审计失败原子回滚、输入/计算/SQL 有界和禁止回退重试；失败尝试必须提交。
+真实 SQL HTTP/受信 CA HTTPS、并发旧密码拒绝、两端密码与会话反向切换、UI12/12、完整检查及原生
+暂存/打包启动重启均是门槛。只在实际运行后更新现有验收记录。
+
+### P3 频道读取组决策（2026-10-08）
+
+本地候选迁移 Bot 列表、频道列表、消息分页、运行列表 4 个读取接口，基于保留为草稿的 #208。
+用户只授权继续本地迁移。两端通过 `OPENBOT_TS_CHANNEL_READ_GROUP=channels` 与
+`OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP=channels` 明确配对选择；写入、问候、任务调度和 Temporal
+仍由 Python 负责。复用 Fastify5.12.5、Postgres.js3.4.9、PostgreSQL17.11，无新依赖、表结构或外部源码复制。
+只读 READ COMMITTED 事务在查询后复查会话，消息游标保留微秒精度、重复键拒绝和频道绑定，
+保留 SQL 与最终响应大小上限。通过真实 HTTP/HTTPS、撤销并发、较新数据反向切换、Python 停机读取、
+UI12/12 和原生包验证后才可认定候选合格；本轮不推送、不合并。
+
+### P3 受保护文件与模型凭证决定（2026-10-08）
+
+沿用 Python 的逐段禁止符号链接、文件描述符相对访问、进程间 flock、0600 原始32字节密钥和 v1 AES-256-GCM 格式。Node24 核心没有 openat/flock；fs-ext2.1.1 只有锁，另写 Node-API 扩展会增加构建维护成本。采用 MIT 的 Koffi3.3.2（提交390a0abb8b240188695084fb5662b965783e4e78，2026-09-25发布）作为固定私有 libc 调用的窄适配器，密码算法仍用 Node 内置 crypto。HTTP、模型、插件和网页都不能提供库路径、符号、指针或调用签名。仅限现有 Linux/macOS64位服务端，Windows 仍是远程客户端，不安装应用或系统服务。
+
+已审阅发布源码、许可证、加载方式、ABI 测试、平台预编译包及 issue274；该问题涉及会启动后台线程的 Go 库，我们仅绑定系统文件调用，仍须验证真实退出。生产包必须带入对应平台可选二进制和许可声明。没有复制上游源码。原始密钥禁止覆盖，有密文却没有有效密钥时拒绝启动；锁和密文均须与 Python 互通。
+
+本决定还不是验收通过。选用新接口组前，必须通过双语言并发初始化、权限和符号链接拒绝、路径替换、锁超时、Linux/macOS、受限模型传输、混合 HTTP/HTTPS、界面12/12及原生包验收。来源、备选方案和边界详见[英文记录](typescript-control-plane-p0.md#p3-protected-files-and-model-credentials-decision-2026-10-08)。不调用付费模型。
+
+### P3 模型与设置所有权（2026-10-08）
+
+复用ADR0050已审核的OpenAI7.28.0、Anthropic0.131.0和当前Python事务/DTO。双方显式配对选择
+`identity-models`，不迁移表、不重新加密旧数据、不引入环境密钥回退。保留advisory锁、CAS、Bot先于
+连接的锁顺序和原子审计；远程发送前及结果发布前都重查权限。最多2个检查，取消后要等实际传输结束才
+释放名额。SDK重试、跳转、日志、环境头、组织/项目和代理回退均禁用；固定HTTPS传输限制头和正文大小并
+验证提供商响应。合成传输仅存在于一次性测试进程的私有构造参数。
+
+保护文件层保留Python的AES-GCM格式/AAD及32字节密钥。v6桌面标记固定SDK和Koffi版本，启动双方前
+检查原生二进制完整性；依赖仅放在候选目录。时区使用POSIX系统TZif目录并精确核对大小写，以兼容
+`Intl.supportedValuesOf`未列出的旧别名；依据[Python ZoneInfo系统数据约定](https://docs.python.org/3.12/library/zoneinfo.html#data-sources)，不声称本地Server支持Windows。
+移植当前OpenBot Python行为并调用发行SDK，没有复制上游源码。模型18项、密钥互通/并发初始化、权限/
+CAS/审计失败及原生重启证据写入当前收据；其余P3与最终托管检查仍是完成条件。
+
+
+### P3 附件与存储接管扩展（2026-10-08，进行中）
+
+复用前述保护文件决策及 Koffi 3.3.2 固定版本。目录遍历只使用 Linux/Darwin 64 位头文件中
+已核对的固定 ABI，通过独立的 `openat(fd, ".")` 文件描述符保留遍历位置隔离；Darwin x64
+选用 INODE64 符号，arm64 原生只有该 ABI。不复制头文件或库源码，也不增加依赖。来源见
+[英文记录](typescript-control-plane-p0.md#p3-attachment-and-storage-ownership-extension-2026-10-08-in-progress)。
+
+沿用现有附件布局、跨进程 flock、内容摘要、Owner/频道命名空间以及 C19/C21 清理恢复协议。
+先持久化日志再暂存文件，提交结果不明时查询 SQL 删除凭据决定删除或还原；还原前检查全部
+目标，拒绝覆盖。最终引用检查到提交之间持有消息/任务表 SHARE 锁，阻止新增引用穿过检查。
+请求取消时先等待实际 SQL 结束，再释放文件锁或还原元数据。自动清理默认关闭；显式 P3
+候选接管周期任务，同时禁用配对 Python 后台循环，P4 内部读取仍遵守同一锁和恢复协议。
+验收只使用临时数据，不修改生产数据或已安装应用。附件/存储仍待资源契约、故障用例、界面
+与原生包验收，不能据此宣布 P3 完成。
+
+
+处理接口复用现有 `parser_worker.ts` 字节协议和已审核的解析器、语言包版本。共存期间它仍是
+Python 源包内的共享 Node 辅助程序；P5 删除源包前必须移动该文件和原生清单引用。TS 使用
+Node 24.21.0、固定权限参数、私有临时目录和无凭证环境；超时或取消后终止所属进程组，并等到
+进程及管道关闭后才释放并发名额和删除临时目录。这不构成操作系统沙箱保证，也不增加依赖或
+复制解析器实现。Node 的固定版本依据见[英文补充](typescript-control-plane-p0.md#p3-attachment-and-storage-ownership-extension-2026-10-08-in-progress)。
+
+转写复用 OpenAI 7.28.0 SDK 的真实 multipart 接口，固定官方地址和 whisper-1，禁用重试、重定向
+及环境附加头，限制 90 秒和 2 MiB 原始响应。发送前重新核对 Owner、频道、附件摘要/删除状态和
+凭证版本/密钥。派生文字保持 262144 个 UTF-16 单元上限，不把原始文件或密码写进派生元数据。
+验证使用合成文件与仅可在构造时注入的 SDK 传输夹具，没有在线模型调用或费用。
+
+### P3 Employee 知识复用补充（2026-10-08）
+
+复用已接受的[技能内容审阅决策](reviewed-skill-content.md)及固定 yaml 2.9.0，通过 Employee publisher 包的两个纯函数入口复用现有 Agent Skills 解析器与本地敏感内容检查，不引入另一套解析器，也不加载发布者密钥库或 CLI。依赖版本和权限不变。保留 Python 知识存储的 Owner 事务、不可变技能定义、摘要审阅、依赖状态、修订 CAS 和不含内容的事件。学习方向继续注明受 Hermes Agent 启发。
+
+原生提案审阅保持 P4 的来源频道或原生根锁、根到子任务的加锁顺序、来源/档案/范围/摘要检查，之后才锁定 Bot 和提案。它仅审阅已完成任务的事实，不受理、执行或调度 Work；P4 执行仍由 Python/Temporal 负责。TS 保留这些本地检查以及 PostgreSQL 返回数据前的投影大小限制。通过跨语言 HTTP、Python 停机所有权、过期修订/摘要/回滚验收后继续迁移。未复制新的上游源码。
+
+来源完整性测试发现驱动精度边界：PostgreSQL 时间参数先按 `text` 传入再转换，避免 JavaScript `Date` 丢失微秒导致截止时间比较失真。原生范围及认领事件的整数保留 JSON 原始词法检查。反向切换时，Python 原生提案审阅的 WorkConflict/WorkNotFound 现映射为契约内的 409/404，而非未捕获的 500；权限与 SQL 回滚边界不变。
+
+### P3 审批与自动化管理补充（2026-10-08）
+
+复用 ADR-0049 的额外确认策略、共享 TS 精确目标与已有 SQL/附件锁。TS 负责设置 CAS 和旧 Run 的一次性审批事务；过期决定先提交 `expired`/`blocked` 与事件，再返回 409。Work 动作受理、适配器最低权限和持久执行仍属于 P4，例外不会获得新能力。
+
+Owner 自动化管理复用已接受的[定期任务提交决策](server-automations.md)。两边使用同一 PostgreSQL 记录；TS 在既有“文件锁后 SQL”顺序内校验附件字节和派生文本摘要，保留数量上限串行化与按固定间隔跳过错过时点的恢复逻辑。Python 的单一 `ProductWorkService._pass` 仍明确负责 P4 Work 受理和 Temporal 生命周期，包括 `PostgresAutomations.submit_due`；TS 不增加另一个定时器或 Workflow 启动器。通过真实保留受理路径、并发领取和反向切换验证 TS 新建自动化；P3 HTTP 所有权不宣称完成任务执行引擎迁移。不增加依赖、不复制新上游源码、不修改生产数据。
+
+### P3 MCP 插件所有权决定（2026-10-08）
+
+十二个插件公开操作复用已审核的 MCP SDK1.32.1（`ff07b001194fe60ee9deb2121cf119057565796d`，MIT）和已有 Ajv8.20.0 依赖。替换 MCP 或增加子进程协议会扩大兼容与权限工作。检查本地固定 SDK 的 `client/streamableHttp`、`client/index`、`validation/ajv-provider` 后，确认可注入 fetch、关闭重连、清理会话并限制 Schema 验证。SDK 默认 `validateSchema:false` 不等价于 Python 的 draft-07 检查，因此显式开启，并在编译前保留引用、正则和不支持关键字的拒绝规则，以及深度、节点数、字节上限。不复制上游源码。依据为[既有插件决定](third-party-mcp-plugins.md)、[MCP 传输规范](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/2025-11-25/docs/specification/2025-11-25/basic/transports.mdx)和 [Ajv 验证选项](https://ajv.js.org/options.html#validateschema)。本轮浏览器未能获取固定 GitHub SDK 源码，实际检查的是已安装、锁定的源码，没有改用未经核实的新版本。
+
+HTTP 适配器用 Node24 的独立 Agent，解析并检查所有地址、固定连接地址，保持精确端点与 Host/TLS 身份；拒绝跳转、代理和压缩，限制请求、响应与时间。特殊用途网段依据[CPython3.12.13 ipaddress](https://raw.githubusercontent.com/python/cpython/v3.12.13/Lib/ipaddress.py)核对，不复制 Python 实现。仅保留由可信构造参数明确配置的本地端点名单。导入工具不能决定传输目的地。
+
+复用 AES-256-GCM `openbot.plugins/v1` 文件格式、私有目录描述符、Python 命名 `flock` 锁与恢复日志。公开修改持有文件锁直到 Owner SQL 最终提交；P4 的保留 Work 读取也使用该锁及当前 revision。目录第3版、中文内容和审核指纹按原字节保留。当前 `serve.py` 构造 `PluginService` 时没有提供旧 `assert_run_scope`，不能创建内存中的旧插件待审批调用；保持空待审批列表及认证后的 `not_found`。原生插件执行与持久审批继续属于已声明的 P4 Work 接口，并验证实际授权和 revision。以上不代表插件执行、旧回调组合或 P3 已完成；接受候选前仍须通过跨语言加密状态、HTTP/HTTPS、负向传输、当前界面与原生依赖检查。
+
+### P3 身份生命周期与可选开场白扩展（2026-10-08）
+
+复用保留的身份生命周期、工作区优先的主 Bot 锁顺序和频道优先的成员撤销。创建时在同一事务提交身份、成长记录和审计；快速创建同时分配唯一中文名称与私聊。删除拒绝活动 Work，保留身份墓碑，脱敏 Work 引用的内容，并如实返回事务后文件与插件清理结果。移除成员沿用持久化 Work 的取消事实，保留已接纳或结果未知的副作用供 P4 核对，不新增执行引擎。
+
+可选开场白复用 OpenAI7.28.0/Anthropic0.131.0，仅一次请求、256 输出 token、32KiB 响应、15 秒模型超时。只提供最多十二个名字和角色，不含工具、历史或重试；发送前与发布前检查 Owner、模型版本和首条消息状态。模型超时不取消后续 SQL 提交。Owner 过期后，内部审计连接只写固定失败类别。
+
+为兼容 Python `html.unescape`，直接声明已经安装的 [entities8.0.0](https://github.com/fb55/entities/tree/v8.0.0)（BSD-2-Clause），不安装新软件。已查阅该发行版源码、测试及 [WHATWG 字符引用算法](https://html.spec.whatwg.org/multipage/parsing.html#character-reference-state)。手写实体表会重复标准解析器；he1.2.0 或 html-entities2.6.0 会为相同操作增加依赖。只在现有解码器外围保留 CPython 无效数字引用和 Unicode 空白差异。文本差分、真实 SDK 配合模拟传输、HTTP/SQL 竞态、反向切换和 UI 验收仍是本组门槛。未复制上游实现，测试不调用付费或真实模型。
+
+
+身份组界面验收在快速创建时复现了此前的 `503 GET /api/v1/workspace`。
+强制并发提交主 Bot 偏好时，私有 Python 接口直接返回同一个503：可重复读快照对快照建立后
+发生变化的偏好行执行了 `SELECT ... FOR SHARE`。[PostgreSQL17 隔离规则](https://www.postgresql.org/docs/17/transaction-iso.html#XACT-REPEATABLE-READ)
+说明了该序列化失败。显示偏好改为从同一一致快照读取，不再加行锁；保留 Owner SHARE、最终
+到期检查及全部写锁顺序，不增加写入重试或转发回退。需通过 Python 直连和 TS 转发的并发读取
+回归及当前 UI 流程，失败的 UI 报告保留在验收记录中。
+
+## P3 剩余产品边界决定（2026-10-08）
+
+完成候选统一迁移工作区/SSE、员工导入导出、Node 身份 HTTP 和人工浏览器 HTTP。共同依赖的
+在线 Worker 连接仍按 P4 计划由原运行时持有：不复制第二份连接注册表，也不用数据库旧记录
+代替在线状态。固定数字回环上游提供有限的私有运行时通道，公开入口拒绝转发该命名空间。
+读取携带原 Owner 会话并重新验证，失败返回不可用。TS 持有产品会话、租约、策略和审计；
+真正发送浏览器命令前，连接持有者再次验证已提交的权限。Node 凭证变更和握手使用跨进程
+PostgreSQL 锁。P4 迁移连接注册表时删除这个通道。
+
+复用 Node 24.21.0 HTTP、Postgres.js 3.4.9、PostgreSQL 17.11、Fastify 5.12.5 和保留的 MIT
+员工包纯格式/签名实现，不新增依赖或公开协议，不复制上游源代码。依据及版本见英文同节。
+验收覆盖真实注册表连接、撤销/重新注册竞争、浏览器旧连接/租约拒绝、签名与未签名导入导出、
+SSE 和反向切换；这份决定不代表验收已通过。
+
+
+Node 使用与原握手共用的 PostgreSQL 会话锁。先验证当前一次性注册令牌或 Owner 权限，
+断开旧连接，再在同一把锁内提交凭证替换或撤销。提交失败可能让旧连接断开，但不会留下
+仍可使用的已撤销连接；SQL 事务不跨网络等待。注册限流和来源摘要沿用已有表。
+
+浏览器沿用持久暂停状态、原 Host 绑定及人工/Agent 共用会话锁。私有发送使用绑定完整消息
+字节与原 Owner 会话的一次性票据，P4 先提交唯一领取记录，再在实际 socket 发送锁内检查
+Owner、Bot、凭证、连接、部署路由、控制租约与锁进程。票据只保存摘要和控制标识，不保存
+网页、输入文字、Cookie 或截图。未知结果保持暂停，不重试；客户断开仍等待原有限期限。
+SSE 沿用三秒轮询，使用锁定版本 Postgres.js 的有限原始 LISTEN 适配；监听断线即关闭，
+不自动重连后冒充没有丢过失效通知。P3 选中时停用 Python 的旧 SSE 失效监听。
+
+
+完整界面流程在新建第二个 Bot 时出现 workspace 和 reactions 两个503。真实 SQL 回归稳定复现了：
+四个读取被短暂阻塞后正常返回200，第五个工作区请求在进入 SQL 前就返回503。共用产品连接池原先只允许
+四个请求立即进入，适合早期小组但容纳不了完整页面刷新。保留四条 SQL 连接，最多接纳十六个请求，
+其中十二个可在现有 Postgres.js 队列中等待；仍受六秒总期限和最终权限检查约束，不增加无界队列、重试或
+SQL 并行数。认证/KDF 与其他独立组的限额不变。必须通过确定性的并发回归以及完整界面验收。

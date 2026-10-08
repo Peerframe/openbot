@@ -89,7 +89,7 @@ export type EmployeeTemplateEnvelopeVerification =
  * deliberately marked unsigned until OpenBot has an owner key lifecycle.
  */
 export function buildEmployeeTemplate(
-  profile: EmployeeProfile,
+  profile: EmployeeProfile | import("@openbot/protocol").EmployeeProfileWire,
   options: EmployeeTemplateBuildOptions = {},
 ): EmployeeTemplateBuild {
   const exportedSkills = profile.skills
@@ -226,7 +226,7 @@ export function buildEmployeeTemplate(
  * serialize to the reviewed representation without storing a second source of truth.
  */
 export function prepareEmployeeTemplateExport(
-  profile: EmployeeProfile,
+  profile: EmployeeProfile | import("@openbot/protocol").EmployeeProfileWire,
   options: {
     includeSkillContent?: boolean;
     generatedAt?: string;

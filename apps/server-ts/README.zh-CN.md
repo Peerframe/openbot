@@ -3,8 +3,8 @@
 [English](README.md)
 
 已批准的 [ADR-0050](../../docs/decisions/0050-typescript-control-plane.zh-CN.md) P2 增加一个公开
-HTTP/Worker 入口，目标固定为私有 Python 服务。121 个默认 HTTP 操作、认证、审批、审计、数据库及后台服务
-仍由 Python 负责。当前没有退役模块，已安装桌面仍用 Python 基线；P5 删除临时转发。
+HTTP/Worker 入口，目标固定为私有 Python 服务。Python 是 121 个 HTTP 操作及后台服务的默认所有者，
+只有明确选择且完成验收的 P3 组才转移相应接口。已安装桌面仍用 Python 基线；P5 删除临时转发。
 
 按 [CONTRIBUTING](../../CONTRIBUTING.zh-CN.md) 准备锁定的 npm 依赖与 Python Worker 环境，在仓库根目录运行：
 
@@ -151,3 +151,80 @@ SQL 和会话恢复服务，不还原旧数据。有界回退窗口保留此前�
 实际混合/HTTPS 契约覆盖主 Bot 失败、并发、过期/撤销、审计回滚、断开后 SQL 清理、Python 停止
 及双边反向切换。每次接口归属切换前仍须准确候选的 TS 界面12/12，并验收 staging 和实际未安装包。
 见[限定决策](../../docs/research/typescript-control-plane-p0.zh-CN.md#p3-主-bot-选择决策2026-10-08)。
+
+## Owner 身份认证候选
+
+显式 `owner` 组接管 GET session/sessions 和 POST login/logout/password/revoke-others 六个操作。
+两端同时设置 `OPENBOT_TS_AUTH_GROUP=owner` 和 `OPENBOT_CONTROL_TS_AUTH_GROUP=owner`。
+共用数据库，并将 `OPENBOT_TS_OWNER_PASSWORD` 配为 Python 相同的启动密码；保持 Owner 名称
+（`OPENBOT_OWNER_NAME`，默认 Owner）、会话寿命（`OPENBOT_TS_SESSION_TTL_HOURS`，默认12小时，范围1–168）、
+允许来源（`OPENBOT_TS_AUTH_ALLOWED_ORIGINS`，默认公开入口）和 Cookie 模式一致。数据库已保存密码优先，
+Python CLI 恢复权限保留。被选中的六个 Python 私有路由返回503，其他方法及 OPTIONS 继续转发。
+
+原生 v3 标记在已有读写组之外固定 `authGroup:owner`；仅向 TS 传入现有数据库和 Owner 启动凭据，不传模型密钥。
+最多同时执行两个原生异步 KDF、四个 SQL 事务，超量返回503。断连/超时后名额仍保留到实际工作结束。
+JSON 限8192字节/5秒，每个 KDF/SQL 操作限6秒；保持 UTF-8 标量/码点长度及固定 scrypt 存储格式，
+不保存明文令牌。发会话前重新检查密码版本，审计和会话提交后才返回 Cookie。
+
+反向切换需停止两端进程、同时将认证组设为 `none`，保留相同数据库、地址和 Cookie 模式，不恢复旧凭证或旧会话。
+回退窗口内保留上个已验收安装包；整组验收且窗口关闭后才删除 Python 旧路由。真实 SQL HTTP/HTTPS 并发与
+反向切换、UI12/12、完整检查及原生暂存/打包均须通过。原生探针在改密重启后显式提交新密码，不代表桌面
+旧启动凭据能自动登录。决策和实际结果见[研究记录](../../docs/research/typescript-control-plane-p0.zh-CN.md)。
+
+## 频道读取候选（P3）
+
+本地 `channels` 组只接管 GET Bot 列表、频道列表、频道消息及运行记录。TS 配置
+`OPENBOT_TS_CHANNEL_READ_GROUP=channels`，私有 Python 配置
+`OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP=channels`，使用其他已选组的同一个显式
+`OPENBOT_TS_DATABASE_URL`。默认均为 `none`；未知组或非私有 product 模式的 Python 选择拒绝启动。
+可选的 `OPENBOT_TS_READ_ALLOWED_ORIGINS` 沿用现有读取 CORS 策略。
+
+选择后 Python 对这 4 个公开路由拒绝服务，内部读取及身份、消息、Run 写入仍按原有职责运行。
+TS 使用有容量上限的只读 READ COMMITTED 事务，返回数据或频道错误前复查 Owner 会话；
+保留游标微秒精度、排序及 SQL/JSON 大小上限，无表结构迁移、模型调用或任务调度。
+反向切换时停掉两端、都选 `none`，再用同一份较新的数据库重启。保留上一份合格安装包，不能还原旧会话或消息。
+
+v4 macOS arm64 未签名 Preview 标记包含 `channelReadGroup:channels`，启动前校验 3 个编译模块。
+契约和界面驱动与既有组一起选择它。真实 HTTP/HTTPS 对照覆盖分页、读取阻塞时撤销、容量、异常及超大记录、
+Python 停机可用性和反向切换。当前状态见[迁移检查点](../../docs/research/typescript-control-plane-p0.zh-CN.md#当前迁移检查点2026-10-08)。
+
+## P3 会话与身份编辑候选
+
+`OPENBOT_TS_PRODUCT_GROUP=identity` 选择11个接口：创建频道、打开私聊、加入成员、资料/外观编辑、
+Bot/频道重命名、标记已读、未读数及消息反应。私有Python产品必须配对
+`OPENBOT_CONTROL_TS_PRODUCT_GROUP=identity`。默认 `none`；反切换同时关闭两端选择，读取同一个最新数据库。
+本组不含Bot创建/删除、移除成员或任务执行权限。v5 Preview标记要求 `productGroup:identity`，
+启动任一子进程前检查3个新增编译模块。
+
+Owner SHARE锁、最终过期检查、版本冲突保护与审计保留在一个有界SQL事务内。通用产品写入提交后发送
+空载荷PostgreSQL刷新通知，Python仍是唯一SSE发布者；外观无变化时保持静默。监听器不持有业务事实或执行任务，
+SSE迁走后移除。参见[当前证据与P3剩余范围](../../docs/research/typescript-control-plane-p0.zh-CN.md#当前迁移检查点2026-10-08)。
+
+## 完整 P3 候选
+
+同时设置 `OPENBOT_TS_PRODUCT_GROUP=p3` 与 `OPENBOT_CONTROL_TS_PRODUCT_GROUP=p3`，并保留前述
+已验收的认证、读取、写入和频道选择。这会选择文件/存储、Employee 知识与导入导出、审批/自动化设置、
+插件、身份生命周期、工作区/SSE、Node 身份和人工浏览器 HTTP。v7 Preview 标记采用此组合；这是待评估候选，
+具体执行证据以[当前记录](../../docs/research/typescript-control-plane-p2-native.json)为准。
+
+`OPENBOT_TS_OBJECT_ROOT`、`OPENBOT_TS_ARTIFACT_ROOT`、`OPENBOT_TS_PLUGIN_STORE_PATH` 必须与
+Python 使用相同的受保护路径；`OPENBOT_TS_PLUGIN_LOCAL_ENDPOINTS` 使用同一份已审核的本地插件端点名单。
+`OPENBOT_TS_PARSER_WORKER_PATH` 指向保留的 `apps/server-python/src/openbot_server/parser_worker.ts`，
+`OPENBOT_TS_NODE_MODULE_ROOT` 指向锁定的仓库 `node_modules`，执行的是现有 Node 文档解析器。
+桌面启动器明确传入包内路径；模型密钥与端点配置沿用上文。
+启用签名导入导出时，TS 使用相同的 `OPENBOT_CONTROL_PUBLISHER_DIRECTORY` 和
+`OPENBOT_CONTROL_PUBLISHER_PASSPHRASE_FILE`；配置无效则拒绝启动，不降级成无签名导出。
+
+TS 接管 P3 公开接口及其 SQL 授权/审计，Python 拒绝对应的公开路由，继续保留 P4 Work/Temporal、
+Worker WebSocket 和真实连接注册表。固定私有 `/_openbot/p4/` 端口只提供实时元数据、身份连接断开和
+独立复核权限的浏览器派发；公开入口始终拒绝该命名空间。运行时失败会明确报错，不能伪装为空节点列表。
+浏览器使用共享并发锁与一次性凭据，派发前重新检查权限，不重试结果不明的副作用。
+SSE 依赖已提交的通知；监听连接丢失后关闭流，等待显式重启。
+
+回切时停止两个进程，用匹配的旧选择读取同一份更新后的数据、密钥及插件状态；不要恢复旧凭证、收据或暂停状态。
+切换使内存中的浏览器视图失效，持久化人工暂停和结果不明的操作继续保留。私有运行时端口在 P4 随连接注册表迁走，
+转发器在 P5 删除。P3 和本 API 桌面候选均不代表 Python 已退役，也不代表真实 Worker/浏览器执行通过验收。
+
+候选须通过完整 HTTP/HTTPS 契约（含签名与合成模型变体）、`npm run check`、暂存及打包原生探针，
+以及 `npm run ui:acceptance -- --entry ts` 的 PASS 12/12。界面报告不能有未解释的 workspace 503。
+合成 peer 检验真实连接和数据库权限边界，不替代真实执行验收。草稿 PR 保持目标 `main`，统一评估后才合并。

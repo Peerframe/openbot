@@ -56,6 +56,8 @@ class OwnerProduct:
         self.work_runtime = None
         self.write_routes = []
         self.revision = 0
+        self.ts_invalidations = None
+        self.storage_owned_by_ts = False
         from .legacy_approvals import PostgresLegacyApprovals
         self.approvals=PostgresLegacyApprovals(dsn)
         from .identity_lifecycle import PostgresIdentityLifecycle
@@ -70,6 +72,7 @@ class OwnerProduct:
             if service is not None: await service.verify_schema()
 
     async def close(self):
+        if self.ts_invalidations is not None: await self.ts_invalidations.close()
         await self.greetings.close()
         await self.storage.close()
         if self.work_runtime is not None: await self.work_runtime.close()
@@ -77,8 +80,12 @@ class OwnerProduct:
         for service in (self.worker_registry,self.plugins):
             if service is not None: await service.close()
 
+    def event_revision(self):
+        return (self.revision, self.ts_invalidations.revision() if self.ts_invalidations else 0)
+
     async def start(self):
-        await self.storage.start()
+        if self.ts_invalidations is not None: await self.ts_invalidations.start()
+        if not self.storage_owned_by_ts: await self.storage.start()
         if self.work_runtime is not None: await self.work_runtime.start()
 
     def permits_write(self,request):
@@ -383,7 +390,7 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
             previous_bots = current_bots
             # The existing reconnect-ready contract asks clients to fetch authoritative state.
             # Emit only when facts change; this stream grants no write authority or execution retry.
-            return (json.dumps([snapshot,product.revision],sort_keys=True,ensure_ascii=False),
+            return (json.dumps([snapshot,product.event_revision()],sort_keys=True,ensure_ascii=False),
                 dict(type='workspace.ready',nodes=snapshot['nodes']))
         async def frames():
             from .product_events import ready_event
@@ -416,7 +423,7 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
                     for message in project_messages([row for row in messages.rows
                         if row.get('id') is not None and row['id'] not in previous_ids]))
             previous_ids = current_ids
-            return (json.dumps([messages.rows,runs.rows,product.revision],sort_keys=True,default=str),
+            return (json.dumps([messages.rows,runs.rows,product.event_revision()],sort_keys=True,default=str),
                 {'type':'channel.ready','channelId':channel_id})
         async def frames():
             from .product_events import ready_event

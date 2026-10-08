@@ -32,6 +32,56 @@ const resources = [
   "apps/server-ts/dist/transcription-read.js",
   "apps/server-ts/dist/primary-bot-write.js",
   "apps/server-ts/dist/write-input.js",
+  "apps/server-ts/dist/owner-auth.js",
+  "apps/server-ts/dist/owner-auth-crypto.js",
+  "apps/server-ts/dist/owner-auth-store.js",
+  "apps/server-ts/dist/owner-transaction.js",
+  "apps/server-ts/dist/product-http.js",
+  "apps/server-ts/dist/runtime-port.js",
+  "apps/server-ts/dist/database-fence.js",
+  "apps/server-ts/dist/product-workspace.js",
+  "apps/server-ts/dist/product-events.js",
+  "apps/server-ts/dist/product-nodes.js",
+  "apps/server-ts/dist/product-browser.js",
+  "apps/server-ts/dist/employee-portability.js",
+  "apps/server-ts/dist/employee-publisher.js",
+  "apps/server-ts/dist/employee-knowledge.js",
+  "apps/server-ts/dist/employee-records.js",
+  "apps/server-ts/dist/employee-source-lock.js",
+  "apps/server-ts/dist/identity-create.js",
+  "apps/server-ts/dist/identity-lifecycle.js",
+  "apps/server-ts/dist/bot-greeting.js",
+  "apps/server-ts/dist/greeting-network.js",
+  "apps/server-ts/dist/greeting-text.js",
+  "apps/server-ts/dist/product-plugins.js",
+  "apps/server-ts/dist/plugin-store.js",
+  "apps/server-ts/dist/plugin-transport.js",
+  "apps/server-ts/dist/owner-files.js",
+  "apps/server-ts/dist/attachment-processing.js",
+  "apps/server-ts/dist/attachment-parser.js",
+  "apps/server-ts/dist/attachment-transcription.js",
+  "apps/server-ts/dist/storage-service.js",
+  "apps/server-ts/dist/storage-usage.js",
+  "apps/server-ts/dist/product-approvals.js",
+  "apps/server-ts/dist/product-automations.js",
+  "apps/server-ts/dist/plugin_catalog.json",
+  "apps/server-python/src/openbot_server/ts_runtime_port.py",
+  "apps/server-python/src/openbot_server/parser_worker.ts",
+  "node_modules/@modelcontextprotocol/sdk/package.json",
+  "node_modules/entities/package.json",
+  "packages/employee-publisher/dist/employee-package.js",
+  "apps/server-ts/dist/product-identity.js",
+  "apps/server-ts/dist/model-connections.js",
+  "apps/server-ts/dist/model-network.js",
+  "apps/server-ts/dist/model-credential-cipher.js",
+  "apps/server-ts/dist/posix-files.js",
+  "node_modules/koffi/package.json",
+  "node_modules/@koromix/koffi-darwin-arm64/darwin_arm64/koffi.node",
+  "node_modules/openai/package.json",
+  "node_modules/@anthropic-ai/sdk/package.json",
+  "apps/server-ts/dist/channel-read.js",
+  "apps/server-ts/dist/channel-read-query.js",
+  "apps/server-ts/dist/channel-read-projection.js",
   "node_modules/postgres/package.json",
   "node_modules/fastify/package.json",
   "node_modules/@fastify/reply-from/package.json",
@@ -138,6 +188,17 @@ it("keeps absent selection on Python and refuses malformed, symlink or unmatched
     { ...TS_CANDIDATE, fastifyVersion: "5.12.4" },
     { ...TS_CANDIDATE, format: "openbot.desktop.ts-control/v1" },
     { ...TS_CANDIDATE, writeGroup: "none" },
+    { ...TS_CANDIDATE, authGroup: "none" },
+    { ...TS_CANDIDATE, productGroup: "none" },
+    { ...TS_CANDIDATE, format: "openbot.desktop.ts-control/v4" },
+    { ...TS_CANDIDATE, format: "openbot.desktop.ts-control/v5" },
+    { ...TS_CANDIDATE, format: "openbot.desktop.ts-control/v6" },
+    { ...TS_CANDIDATE, koffiVersion: "3.3.1" },
+    { ...TS_CANDIDATE, openaiVersion: "7.27.0" },
+    { ...TS_CANDIDATE, anthropicVersion: "0.130.0" },
+    { ...TS_CANDIDATE, channelReadGroup: "none" },
+    { ...TS_CANDIDATE, format: "openbot.desktop.ts-control/v3" },
+    { ...TS_CANDIDATE, format: "openbot.desktop.ts-control/v2" },
   ]) {
     await writeFile(join(f.root, "ts-control.json"), JSON.stringify(value));
     await expect(launchDesktopProductServer(f.root, f.env)).rejects.toThrow("composition");
@@ -149,7 +210,7 @@ it("keeps absent selection on Python and refuses malformed, symlink or unmatched
   expect(mocks.spawn).not.toHaveBeenCalled();
 });
 
-it("owns one private Python writer and public TS entry, passes only the shared database credential to TS, and stops TS first", async () => {
+it("owns one private Python writer and public TS entry, passes only the database and Owner bootstrap credentials to TS, and stops TS first", async () => {
   const f = await fixture();
   const managed = await launchDesktopProductServer(f.root, f.env);
   expect(mocks.python).toHaveBeenCalledExactlyOnceWith(
@@ -158,6 +219,9 @@ it("owns one private Python writer and public TS entry, passes only the shared d
     39002,
     "transcription",
     "primary-bot",
+    "owner",
+    "channels",
+    "p3",
   );
   const [executable, args, options] = mocks.spawn.mock.calls[0]!;
   expect(executable).toBe(join(f.root, "node/bin/node"));
@@ -168,6 +232,21 @@ it("owns one private Python writer and public TS entry, passes only the shared d
     LC_ALL: "C.UTF-8",
     OPENBOT_TS_READ_GROUP: "transcription",
     OPENBOT_TS_WRITE_GROUP: "primary-bot",
+    OPENBOT_TS_AUTH_GROUP: "owner",
+    OPENBOT_TS_PRODUCT_GROUP: "p3",
+    OPENBOT_TS_OBJECT_ROOT: join(f.root, "objects"),
+    OPENBOT_TS_ARTIFACT_ROOT: join(f.root, "objects/work-artifacts"),
+    OPENBOT_TS_PLUGIN_STORE_PATH: join(f.root, "objects/plugins/state.json"),
+    OPENBOT_TS_PLUGIN_LOCAL_ENDPOINTS: "[]",
+    OPENBOT_TS_PARSER_WORKER_PATH: join(
+      f.root,
+      "apps/server-python/src/openbot_server/parser_worker.ts",
+    ),
+    OPENBOT_TS_NODE_MODULE_ROOT: join(f.root, "node_modules"),
+    OPENBOT_TS_MODEL_CONNECTION_KEY_PATH: join(f.root, "model-connections.key"),
+    OPENBOT_TS_CHANNEL_READ_GROUP: "channels",
+    OPENBOT_TS_OWNER_PASSWORD: f.env.OPENBOT_OWNER_PASSWORD,
+    OPENBOT_TS_AUTH_ALLOWED_ORIGINS: "http://127.0.0.1:39001",
     OPENBOT_TS_WRITE_ALLOWED_ORIGINS: "http://127.0.0.1:39001",
     OPENBOT_TS_READ_ALLOWED_ORIGINS: "http://127.0.0.1:39001",
     OPENBOT_TS_DATABASE_URL: f.env.OPENBOT_DATABASE_URL,
@@ -199,7 +278,7 @@ it.each(["ts", "python"])("stops the partner when %s terminates without retry", 
 
 it("refuses incomplete TS resources before starting Python, and releases Python if TS spawn throws", async () => {
   const f = await fixture();
-  for (const resource of [resources[2]!, resources[3]!]) {
+  for (const resource of resources.slice(2)) {
     await rm(join(f.root, resource));
     await expect(launchTsProductServer(f.root, f.env)).rejects.toThrow();
     expect(mocks.python).not.toHaveBeenCalled();

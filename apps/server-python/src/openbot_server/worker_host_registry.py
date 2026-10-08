@@ -77,6 +77,7 @@ class WorkerHostRegistry:
         self._identity_locks = WeakValueDictionary()
         self._closed = False
         self._browser_pending = {}
+        self.shared_identity_fence = None
         self._browser_unavailable = set()
         self.commands = None
         if command_channel is not None:
@@ -88,7 +89,11 @@ class WorkerHostRegistry:
         """Routes hold this over identity commit + disconnect; handshake uses the same lock."""
         lock = self._identity_locks.setdefault(node_id, asyncio.Lock())
         async with lock:
-            yield
+            if self.shared_identity_fence is None:
+                yield
+            else:
+                async with self.shared_identity_fence(node_id):
+                    yield
 
     def on_browser_unavailable(self, handler):
         if not callable(handler) or inspect.iscoroutinefunction(handler):

@@ -3,7 +3,7 @@ import { PassThrough, Readable } from "node:stream";
 import { describe, it } from "vitest";
 import { entryOptions } from "./config.js";
 import { WriteFailure } from "./primary-bot-write.js";
-import { primaryBotJson } from "./write-input.js";
+import { boundedJson, primaryBotJson } from "./write-input.js";
 
 describe("explicit primary Bot ownership", () => {
   const base = {
@@ -68,6 +68,63 @@ describe("bounded retained JSON input", () => {
       read(Buffer.from("{}"), "application/json", "00002"),
       (e: unknown) => e instanceof WriteFailure && e.status === 413,
     );
+  });
+  it("finishes a bounded rejected upload before returning its 413 envelope", async () => {
+    for (const declared of [true, false]) {
+      const payload = new PassThrough();
+      const maximum = 2 * 1024 * 1024;
+      let settled = false;
+      const result = boundedJson(
+        payload,
+        "application/json",
+        declared ? String(maximum + 13) : undefined,
+        new AbortController().signal,
+        maximum,
+      ).catch((error: unknown) => {
+        settled = true;
+        return error;
+      });
+      payload.write(Buffer.alloc(maximum));
+      payload.write(Buffer.alloc(13));
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      assert.equal(
+        settled,
+        false,
+        "A bounded upload must finish before closing its response socket.",
+      );
+      payload.end();
+      const failure = await result;
+      assert(failure instanceof WriteFailure && failure.status === 413);
+      assert.equal(payload.readableEnded, true);
+      assert.equal(payload.listenerCount("data"), 0);
+    }
+  });
+  it("bounds rejected upload discards and releases them on cancellation", async () => {
+    const payload = new PassThrough();
+    const abort = new AbortController();
+    const result = boundedJson(payload, "application/json", "1025", abort.signal, 1024);
+    abort.abort();
+    await assert.rejects(
+      result,
+      (error: unknown) => error instanceof WriteFailure && error.status === 503,
+    );
+    assert.equal(payload.listenerCount("data"), 0);
+    payload.destroy();
+    const unbounded = new PassThrough();
+    const refused = boundedJson(
+      unbounded,
+      "application/json",
+      undefined,
+      new AbortController().signal,
+      1024,
+    );
+    unbounded.write(Buffer.alloc(1024 + 65536 + 1));
+    await assert.rejects(
+      refused,
+      (error: unknown) => error instanceof WriteFailure && error.status === 413,
+    );
+    assert.equal(unbounded.listenerCount("data"), 0);
+    unbounded.destroy();
   });
   it("releases stream listeners on an already-aborted body", async () => {
     const payload = new PassThrough();

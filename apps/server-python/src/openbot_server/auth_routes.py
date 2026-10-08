@@ -80,7 +80,7 @@ async def login_payload(request: Request) -> str:
 
 
 def register_auth_routes(app: FastAPI, auth: OwnerAuthentication, *, secure_cookies: bool,
-                         allowed_origins: tuple[str, ...]) -> None:
+                         allowed_origins: tuple[str, ...], ts_owned: bool = False) -> None:
     validate_origins(allowed_origins)
     cookie_name = "__Host-openbot_session" if secure_cookies else "openbot_session"
 
@@ -92,6 +92,7 @@ def register_auth_routes(app: FastAPI, auth: OwnerAuthentication, *, secure_cook
               openapi_extra={"requestBody": {"required": True, "content": {
                   "application/json": {"schema": LoginInput.model_json_schema()}}}})
     async def login(request: Request):
+        if ts_owned: return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503)
         require_origin(request)
         password = await login_payload(request)
         try:
@@ -113,6 +114,7 @@ def register_auth_routes(app: FastAPI, auth: OwnerAuthentication, *, secure_cook
 
     @app.post("/api/v1/auth/logout", status_code=204, response_class=Response, operation_id="logoutOwner")
     async def logout(request: Request):
+        if ts_owned: return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503)
         require_origin(request)
         if not await auth.logout(request.cookies.get(cookie_name)):
             raise HTTPException(401, "Authentication required.")
@@ -122,16 +124,19 @@ def register_auth_routes(app: FastAPI, auth: OwnerAuthentication, *, secure_cook
 
     @app.get("/api/v1/auth/sessions",response_model=OwnerSessionsResponse,operation_id="listOwnerSessions")
     async def sessions(request: Request):
+        if ts_owned: return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503)
         return {"sessions":await auth.sessions(request.cookies.get(cookie_name))}
 
     @app.post("/api/v1/auth/sessions/revoke-others",response_model=RevokeSessionsResponse,operation_id="revokeOtherOwnerSessions")
     async def revoke_others(request: Request):
+        if ts_owned: return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503)
         require_origin(request)
         return {"revoked":await auth.revoke_other_sessions(request.cookies.get(cookie_name))}
 
     @app.post("/api/v1/auth/password",response_model=PasswordChangeResponse,operation_id="changeOwnerPassword",
               openapi_extra={"requestBody":{"required":True,"content":{"application/json":{"schema":PasswordChangeInput.model_json_schema()}}}})
     async def change_password(request: Request):
+        if ts_owned: return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503)
         require_origin(request)
         try:
             value=PasswordChangeInput.model_validate(await read_json(request))

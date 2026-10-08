@@ -1,3 +1,4 @@
+import { parseJsonInput } from "./json-input.js";
 import type { Readable } from "node:stream";
 import { WriteFailure } from "./primary-bot-write.js";
 
@@ -9,17 +10,34 @@ export async function primaryBotJson(
 ): Promise<unknown> {
   // Retain the Python registrar's content-type branch and exact read_json envelope.
   if (!contentType?.startsWith("application/json")) return null;
-  if (contentType.split(";", 1)[0]?.trim().toLowerCase() !== "application/json")
+  return boundedJson(payload, contentType, contentLength, signal, 1024);
+}
+
+export async function boundedJson(
+  payload: Readable | undefined,
+  contentType: string | undefined,
+  contentLength: string | undefined,
+  signal: AbortSignal,
+  maxBytes = 8192,
+): Promise<unknown> {
+  if (contentType?.split(";", 1)[0]?.trim().toLowerCase() !== "application/json")
     throw new WriteFailure(422, { error: "Request requires JSON." });
-  if (
+  const tooLarge = () => new WriteFailure(413, { error: "Request is too large." });
+  const invalidLength =
     contentLength !== undefined &&
-    (!/^[0-9]{1,4}$/.test(contentLength) || Number(contentLength) > 1024)
-  )
-    throw new WriteFailure(413, { error: "Request is too large." });
+    (!/^[0-9]+$/.test(contentLength) ||
+      contentLength.length > String(maxBytes).length ||
+      Number(contentLength) > maxBytes);
+  // Closing an early 413 while the client is uploading can reset the socket before it
+  // receives the envelope. Discard a near-limit rejected body without retaining/parsing
+  // it, under the existing five-second deadline and a fixed 64 KiB excess allowance.
+  const discardLimit = maxBytes + 65536;
+  if (invalidLength && (!payload || Number(contentLength) > discardLimit)) throw tooLarge();
   if (!payload) throw new WriteFailure(422, { error: "Invalid JSON input." });
   const body = await new Promise<Buffer>((resolve, reject) => {
     let length = 0,
-      settled = false;
+      settled = false,
+      rejected = invalidLength;
     const chunks: Buffer[] = [];
     const finish = (failure?: WriteFailure) => {
       if (settled) return;
@@ -36,15 +54,19 @@ export async function primaryBotJson(
     };
     const data = (chunk: Buffer) => {
       length += chunk.length;
-      if (length > 1024) finish(new WriteFailure(413, { error: "Request is too large." }));
-      else chunks.push(chunk);
+      if (length > maxBytes) {
+        rejected = true;
+        chunks.length = 0;
+      }
+      if (length > discardLimit) finish(tooLarge());
+      else if (!rejected) chunks.push(chunk);
     };
-    const end = () => finish();
+    const end = () => finish(rejected ? tooLarge() : undefined);
     const error = () => finish(new WriteFailure(422, { error: "Invalid JSON input." }));
     const abort = () =>
       finish(new WriteFailure(503, { error: "Control-plane storage is unavailable." }));
     const timer = setTimeout(
-      () => finish(new WriteFailure(408, { error: "Request timed out." })),
+      () => finish(rejected ? tooLarge() : new WriteFailure(408, { error: "Request timed out." })),
       5000,
     );
     timer.unref();
@@ -56,7 +78,7 @@ export async function primaryBotJson(
     if (signal.aborted) abort();
   });
   try {
-    return JSON.parse(new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(body));
+    return parseJsonInput(new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(body));
   } catch {
     throw new WriteFailure(422, { error: "Invalid JSON input." });
   }

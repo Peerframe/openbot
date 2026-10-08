@@ -342,13 +342,13 @@ export async function qualifyTranscriptionRead(options: {
       assert.deepEqual(await snapshot(), before);
     });
     await check(
-      "owned GET works with Python stopped; forwarded workspace reports upstream failure",
+      "owned GET works with Python stopped; forwarded Work read reports upstream failure",
       async () => {
         const before = await read();
         await options.stopPython();
         try {
           assert.deepEqual(await read(), before);
-          const response = await request(options.cookie, "/api/v1/workspace");
+          const response = await request(options.cookie, "/api/v1/tasks");
           assert.equal(response.status, 503);
           assert.deepEqual(response.body, {
             error: "Control-plane upstream is unavailable.",

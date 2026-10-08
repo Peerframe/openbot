@@ -1148,3 +1148,56 @@ Python workspace-first locks and existing audit payload. Fastify5.12.5's raw con
 adds only this1024-byte/5s JSON input after Origin/session preflight. No new dependency, schema,
 credential access or source copy. Retain Python identity lifecycle and explicit paired rollback;
 see [decision](research/typescript-control-plane-p0.md#p3-primary-bot-selection-decision-2026-10-08).
+
+### P3 Owner authentication (2026-10-08)
+
+Reuse Node's native asynchronous scrypt and existing PostgreSQL/session contracts without a new
+crypto dependency, data migration or source copy. Reviewed Node22.22.2 and @noble/hashes2.4.0 as
+recorded in the [scoped decision](research/typescript-control-plane-p0.md#p3-owner-authentication-decision-2026-10-08).
+Six operations remain explicitly selected and require real concurrency, reverse-switch and UI gates.
+
+### P3 channel reads (2026-10-08)
+
+Reuse Fastify5.12.5, Postgres.js3.4.9 and PostgreSQL17.11 for the four public Bot/channel/message/Run
+reads. Preserve Python's read-only READ COMMITTED session recheck, SQL bounds and ordering. Cursor
+parameters stay text until PostgreSQL conversion to retain microseconds. No new dependency, schema,
+upstream source copy or execution authority; see [decision](research/typescript-control-plane-p0.md#p3-channel-read-decision-2026-10-08).
+
+### P3 conversation and identity editing (2026-10-08)
+
+Reuse the current Python SQL contracts and ADR0050 pins; no new dependency or schema. A temporary
+empty PostgreSQL transactional NOTIFY bridges TS generic mutations to the sole Python SSE owner.
+Reviewed PostgreSQL17 semantics and locked Psycopg3.3.6 source; shutdown, failure, no-op and rollback
+are explicit. No upstream code copied; remove the listener when SSE moves. See the
+[decision](research/typescript-control-plane-p0.md#p3-conversation-and-identity-editing-decision-2026-10-08).
+
+### P3 protected POSIX files (2026-10-08)
+
+Koffi3.3.2, MIT, upstream `390a0abb8b240188695084fb5662b965783e4e78`, adds fixed private libc
+openat/mkdirat/linkat/unlinkat/flock calls missing from Node core. Preserve Python inode locks and
+key publication/encryption bytes; no public FFI, foreign callbacks, copied source or installed app.
+Reject fs-ext2.1.1 (no openat), path-only core adapters (race gap), and an additional custom addon
+(build/maintenance cost). Exact sources, platform/packaging constraints and required interchange
+checks are in the [P3 decision](research/typescript-control-plane-p0.md#p3-protected-files-and-model-credentials-decision-2026-10-08).
+
+
+P3 attachment/storage ownership extends the same Koffi 3.3.2 adapter with fixed directory enumeration
+and rename operations, retaining OpenBot's purge journal and SQL-receipt protocol. Processing reuses
+the unchanged Node parser helper and reviewed package pins, and OpenAI 7.28.0's multipart audio API.
+No parser source or native header is copied. See the [ownership extension and runtime evidence](research/typescript-control-plane-p0.md#p3-attachment-and-storage-ownership-extension-2026-10-08-in-progress).
+
+### P3 optional identity greeting (2026-10-08)
+
+Reuse retained identity/audit/Work cancellation transactions and the reviewed OpenAI7.28.0 and
+Anthropic0.131.0 SDKs. The already locked entities8.0.0 decoder (BSD-2-Clause) becomes an explicit
+runtime dependency for Python HTML-reference parity; no new install or copied upstream source.
+See the [lifecycle and greeting decision](research/typescript-control-plane-p0.md#p3-identity-lifecycle-and-optional-greeting-extension-2026-10-08).
+
+
+### P3 complete product composition (2026-10-08)
+
+Reuse Node24.21.0 HTTP cancellation, Postgres.js3.4.9, PostgreSQL17.11 advisory locks and retained MIT
+Employee publisher format/signature functions. The finite private port keeps the sole live Worker
+registry in P4 while TS owns public P3 policy, sessions and audit. No new dependency or copied source.
+Pinned evidence, rejected duplicate-registry approach, single-use dispatch and listener behavior are
+in the [boundary decision](research/typescript-control-plane-p0.md#p3-remaining-product-boundary-decision-2026-10-08).
