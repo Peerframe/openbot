@@ -224,8 +224,9 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 
 
 工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，当前分支
-`codex/ts-control-plane-p3-primary-bot`，承接已验收 PR205 的 `b62c22fe`，基于已合并 main
-`d747a327d2fce77df02cd9a1e7455ea4d311efcc`。按所有者“继续”的授权合并了 PR200；
+`codex/ts-control-plane-p3-primary-bot`，在另行批准 PR205 合并后，已整合最新 main
+`fe1520dcf997ed31452ea63c37ef5ea488cd7187`。新 main 的文件树与已验收 PR205 的 `b62c22fe`
+及托管测试合并树相同。按所有者“继续”的授权合并了 PR200；
 其树 `a0fc4e6ed0baa011f9b0829b9c78edb8538f161a` 与已验收候选相同，
 [CI37561911353](https://github.com/Peerframe/openbot/actions/runs/37561911353) 的17项任务全通过。
 main [CI37613802756](https://github.com/Peerframe/openbot/actions/runs/37613802756) 首次运行在直接
@@ -247,7 +248,7 @@ Python 的 MCP 资源/提示词契约遇到10秒超时。第二次的直接 Pyth
 ### P3 主 Bot 选择决策（2026-10-08）
 
 下一候选仅迁移 Owner `PUT /api/v1/workspace/primary-bot`，承接 PR205 的 `b62c22fe`。
-PR205 保持已发布、未合并的基线，托管17/17与界面12/12通过。转写 PUT 依赖现有模型凭证解析，
+PR205 在托管17/17与界面12/12通过后，所有者另行批准合并；2026-10-08 已合入 main `fe1520dc`。转写 PUT 依赖现有模型凭证解析，
 留到模型组一起迁移；本轮不增加模型密钥/凭证访问，也不改 Claude 负责的第43步界面。
 
 复用严格共享主 Bot 命令/投影、Python 的 Origin→会话→请求体校验顺序、Postgres.js3.4.9，
@@ -286,9 +287,11 @@ v2 标记明确选择写入方，staging/包内模块逐字节相同；ASAR SHA2
 完整 P2 Worker-companion 基线另存保留。已安装应用、原 dirty 文件、Claude 第43步、用户配置及系统信任未改。
 
 [唯一收据](typescript-control-plane-p2-native.json)当前指向 `currentP3PrimaryBotCandidate`，含源码指纹和
-准确报告。这是本地未发布候选，不代表阶段完成；PR205 仍是草稿、未合并。此前发布批准仅覆盖
-PR205，不授权新分支发布或合并。仍需新候选托管检查及独立整合授权；Python 手动写接口保留在
-有界反向切换窗口。其他 P3 接口组及 P4/P5 继续待迁。
+准确报告。这是本地已验收、待发布候选，不代表阶段完成。所有者已明确批准新分支推送、以
+`main` 为目标创建草稿 PR，并另行批准先合并 PR205。整合提交 `ed568b80` 与本地已验收
+`a0189dc0` 的文件树完全相同，21份源码指纹再次核验通过；随后只更新本检查点与授权记录，
+原 HTTP/界面/包内证据仍保持其准确范围。新候选仍需托管检查，合并新 PR 须另行授权；Python
+手动写接口保留在有界反向切换窗口。准确托管源码与运行结果记录在新 PR 检查及正文。其他 P3 接口组及 P4/P5 继续待迁。
 
 ### P3 转写读取决策与安全检查（2026-10-07）
 

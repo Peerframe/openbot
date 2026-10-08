@@ -346,8 +346,9 @@ same-scope resource comparison. See ADR-0050 for the detailed gates and Owner ap
 
 
 Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
-`codex/ts-control-plane-p3-primary-bot`, continuing qualified PR205 head `b62c22fe` on merged main
-`d747a327d2fce77df02cd9a1e7455ea4d311efcc`. PR200 was merged after the Owner's continuation
+`codex/ts-control-plane-p3-primary-bot`, integrated with latest main
+`fe1520dcf997ed31452ea63c37ef5ea488cd7187` after the separately authorized PR205 merge.
+The new main tree equals qualified PR205 head `b62c22fe` and the hosted tested merge tree. PR200 was merged after the Owner's continuation
 approval. Its tree `a0fc4e6ed0baa011f9b0829b9c78edb8538f161a` is identical to the qualified
 PR candidate: all17 jobs at [CI37561911353](https://github.com/Peerframe/openbot/actions/runs/37561911353).
 Main [CI37613802756](https://github.com/Peerframe/openbot/actions/runs/37613802756) initially failed
@@ -374,8 +375,8 @@ candidate uses this reviewed cohort and refuses old/incomplete resource selectio
 ### P3 primary Bot selection decision (2026-10-08)
 
 The next finite candidate moves only Owner `PUT /api/v1/workspace/primary-bot`, on top of qualified
-PR205 head `b62c22fe`. PR205 remains an unmerged published baseline with17/17 hosted checks and
-UI12/12. Transcription PUT stays with its existing model credential resolver until the model group;
+PR205 head `b62c22fe`. The Owner separately authorized its merge, completed on2026-10-08
+as main `fe1520dc`, after17/17 hosted checks and UI12/12. Transcription PUT stays with its existing model credential resolver until the model group;
 this checkpoint does not add credential/key access or change Claude-owned Step43 presentation.
 
 Reuse the existing strict shared primary-Bot command/projection, Python Origin-before-cookie/body
@@ -425,9 +426,13 @@ No installed application, original dirty work, Claude Step43, user profile or OS
 
 The [single receipt](typescript-control-plane-p2-native.json) points to `currentP3PrimaryBotCandidate`
 with source fingerprints and exact reports. This is a local unpublished candidate, not a phase exit.
-PR205 remains draft/unmerged. Its prior publication approval does not authorize this new branch's
-publication or a merge. Required hosted checks and separate integration authorization remain;
-retain the Python manual writer for the bounded reverse window. P3's other groups and P4/P5 remain.
+The Owner explicitly approved this new branch push and draft PR against `main`, and separately
+authorized merging PR205 first. Integration commit `ed568b80` has the identical tree to locally
+qualified `a0189dc0`; all21 recorded source fingerprints were reverified. Subsequent edits update
+only these checkpoint/authorization records, so local HTTP/UI/native evidence retains its original
+scope. New hosted checks and separate authorization to merge the new PR remain; retain the Python
+manual writer for the bounded reverse window. Exact hosted source/run results will live in the new
+PR checks and body. P3's other groups and P4/P5 remain.
 
 ### P3 transcription read decision and security review (2026-10-07)
 

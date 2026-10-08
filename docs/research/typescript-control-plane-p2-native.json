@@ -1922,10 +1922,12 @@
     "precedingBaseline": {
       "pullRequest": "https://github.com/Peerframe/openbot/pull/205",
       "head": "b62c22fe59722ddbc2d4aac5f450097e2e50452a",
-      "state": "open-draft-unmerged",
+      "state": "merged",
       "hostedRun": "https://github.com/Peerframe/openbot/actions/runs/37661699512",
       "passed": 17,
-      "scope": "preceding transcription read and HTTP lifetime repair, not this new write"
+      "scope": "preceding transcription read and HTTP lifetime repair, not this new write",
+      "mergedAt": "2026-10-08T00:32:58Z",
+      "mergeCommit": "fe1520dcf997ed31452ea63c37ef5ea488cd7187"
     },
     "fullCheck": {
       "node": "24.21.0",
@@ -2076,10 +2078,29 @@
       "claudeStep43Untouched": true
     },
     "remaining": [
-      "Publication of this new branch/draft needs its own explicit authorization; the previous approval covered PR205 only",
+      "Authorized push and draft creation against latest main after the approved PR205 merge",
       "Required hosted qualification of this new write candidate",
       "Separate merge/integration authorization and bounded reverse window before retiring the Python manual route",
       "Other P3 groups, P4 and P5; no claim of total migration completion"
-    ]
+    ],
+    "qualifiedLocalCommit": "a0189dc0af03307f71fc7c26342432fb81eb14d6",
+    "publicationPreparation": {
+      "authorization": "Owner explicitly approved this branch push and draft PR with base main, then separately authorized merging PR205 first on 2026-10-08.",
+      "baseBranch": "main",
+      "baseCommit": "fe1520dcf997ed31452ea63c37ef5ea488cd7187",
+      "baseTree": "82af64009b8ad77227a35288161f0f2df0cc3f7a",
+      "integrationCommit": "ed568b80e35dc8810811ee204ebfdb90e3eb143e",
+      "integrationTree": "b9a7edc2c065932ef6ad3cb8657d909e7f4116b1",
+      "treeEqualsQualifiedLocalCommit": true,
+      "sourceFingerprintsReverified": 21,
+      "subsequentChanges": "Only current checkpoint/authorization records; product source and local UI/native/HTTP qualification unchanged.",
+      "hostedResult": "Required after new draft publication; exact head/merge/run will be recorded in its checks and PR body.",
+      "newPullRequestMergeAuthorized": false,
+      "focusedChecks": {
+        "docs": "exit0;12/12;601 Markdown files; /private/tmp/openbot-p3-primary-publication-docs.log",
+        "research": "exit0;27/27; PR-event check skipped locally; /private/tmp/openbot-p3-primary-publication-research.log",
+        "fullCheck": "Reuse unchanged product-source qualification; latest-main integration tree is identical to a0189dc0. Only these evidence records change."
+      }
+    }
   }
 }
