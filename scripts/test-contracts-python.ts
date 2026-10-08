@@ -27,6 +27,7 @@ import {
   OwnedDockerFixture,
   startControlPostgres,
 } from "./python-acceptance-fixture.ts";
+import { qualifyPrimaryBotWrite } from "./ts-primary-bot-acceptance.ts";
 import { qualifyTranscriptionRead } from "./ts-transcription-acceptance.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
@@ -230,6 +231,7 @@ try {
           ? {
               OPENBOT_CONTROL_PROXY_ADDRESS: "127.0.0.1",
               OPENBOT_CONTROL_TS_READ_GROUP: readGroup ? "transcription" : "none",
+              OPENBOT_CONTROL_TS_WRITE_GROUP: readGroup ? "primary-bot" : "none",
               OPENBOT_CONTROL_PUBLIC_ORIGIN: baseUrl,
             }
           : {}),
@@ -254,6 +256,8 @@ try {
       OPENBOT_TS_HOST: "127.0.0.1",
       OPENBOT_TS_PORT: String(port),
       OPENBOT_TS_READ_GROUP: readGroup ? "transcription" : "none",
+      OPENBOT_TS_WRITE_GROUP: readGroup ? "primary-bot" : "none",
+      OPENBOT_TS_WRITE_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
       OPENBOT_TS_READ_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
       OPENBOT_TS_DATABASE_URL: dsn,
       ...(tlsDirectory
@@ -370,7 +374,7 @@ try {
     await waitReady();
     assert.deepEqual(await snapshot(), before);
     console.log(
-      "TLS entry restart retained the same HTTPS URL and secure Owner session; private Python stayed the sole writer. Canonical HTTPS redirect and private direct refusal passed.",
+      "TLS entry restart retained the same HTTPS URL and secure Owner session; private Python retained the forwarded operations. Canonical HTTPS redirect and private direct refusal passed.",
     );
   }
   const cookie = setCookie.split(";")[0];
@@ -427,7 +431,7 @@ try {
     );
   }
   if (entry === "ts" && ["all", "control", "resources"].includes(selectedSuite)) {
-    await qualifyTranscriptionRead({
+    const ownershipAcceptance = {
       databaseUrl: dsn,
       origin: baseUrl,
       privateOrigin: `http://127.0.0.1:${pythonPort}`,
@@ -455,7 +459,9 @@ try {
         entryChild = startEntry();
         await waitReady();
       },
-    });
+    };
+    await qualifyTranscriptionRead(ownershipAcceptance);
+    await qualifyPrimaryBotWrite(ownershipAcceptance);
   }
   // This owned database has no Worker. Seed publication states so HTTP decision/unread
   // contracts exercise real transactions without claiming execution by a production Host.

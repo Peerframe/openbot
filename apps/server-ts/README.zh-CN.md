@@ -132,3 +132,22 @@ Python 的明确允许来源列表相同，以逗号分隔，默认 TS 公开来
 和双向切换，不读取用户数据。每组切换前运行 `npm run ui:acceptance -- --entry ts`，达到 PASS12/12，
 未预期响应和页面错误为0。workspace503 须检查原因，不豁免。见
 [决策与当前检查点](../../docs/research/typescript-control-plane-p0.zh-CN.md#p3-转写读取决策与安全检查2026-10-07)。
+
+## 主 Bot 保存候选
+
+本候选设置 `OPENBOT_TS_WRITE_GROUP=primary-bot`，继续使用明确的 `OPENBOT_TS_DATABASE_URL`，
+并让 `OPENBOT_TS_WRITE_ALLOWED_ORIGINS` 与 Python 的准确来源名单相同（默认 TS 公开来源）。
+私有 Python 同时设置 `OPENBOT_CONTROL_TS_WRITE_GROUP=primary-bot`。只有
+PUT `/api/v1/workspace/primary-bot` 改变归属，其他方法/接口继续转发。SQL 权限、工作区优先的
+版本校验、Bot 存活及审计一起提交，身份生命周期仍在 Python。入口按 Origin→会话→请求体顺序
+检查；5秒内最多收集1024字节 UTF-8 JSON，随后在6秒事务内锁定并复查同一会话。不接纳 bearer
+替代身份，不访问新凭证，不隐式重试或自动回退。提交回包中断时结果未知，须权威刷新，不能自动重提。
+
+默认写入组 `none`。显式反向切换须先停止两进程，同时把两边写入组设为 `none`，在同一地址、
+SQL 和会话恢复服务，不还原旧数据。有界回退窗口保留此前验收发布物。新严格原生标记为
+`openbot.desktop.ts-control/v2`，明确包含 `readGroup:transcription` 和 `writeGroup:primary-bot`，
+拒绝旧标记或缺失资源；此前独立打包版本保留作回退。
+
+实际混合/HTTPS 契约覆盖主 Bot 失败、并发、过期/撤销、审计回滚、断开后 SQL 清理、Python 停止
+及双边反向切换。每次接口归属切换前仍须准确候选的 TS 界面12/12，并验收 staging 和实际未安装包。
+见[限定决策](../../docs/research/typescript-control-plane-p0.zh-CN.md#p3-主-bot-选择决策2026-10-08)。

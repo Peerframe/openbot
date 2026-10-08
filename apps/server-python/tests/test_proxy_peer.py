@@ -133,3 +133,9 @@ def test_ts_read_ownership_requires_private_product(group, proxy, origin):
     with pytest.raises(ValueError, match="TS read ownership"):
         create_app(None, owner_name="Owner", proxy_address=proxy,
                    public_origin=origin, ts_read_group=group)
+
+
+@pytest.mark.parametrize("group", ["primary-bot", "all"])
+def test_ts_write_selection_requires_private_product_composition(group):
+    with pytest.raises(ValueError, match="TS write ownership"):
+        create_app(object(), owner_name="Owner", ts_write_group=group)

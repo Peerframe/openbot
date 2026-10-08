@@ -642,3 +642,10 @@ Fastify5.12.5/reply-from12.6.5 已按精确版本进入 P2 workspace lock。本�
 Python 保留签发/撤销、写入和模型解析。不增加版本、持久化格式、缓存或复制上游源码；双边反向
 切换保留更新后的 SQL 数据与已签发会话。实际锁/过期/撤销/断开、混合 HTTP/HTTPS、UI12/12 与
 未安装原生候选仍是门槛。见[限定决策](research/typescript-control-plane-p0.zh-CN.md#p3-转写读取决策与安全检查2026-10-07)。
+
+### P3 主 Bot 手动选择（2026-10-08）
+
+复用同一已审阅 Postgres.js3.4.9/PostgreSQL17 Owner/会话守卫、严格共享命令、Python 工作区优先
+行锁和现有审计。Fastify5.12.5 原始请求体入口只在 Origin/会话校验后解析本接口1024字节/5秒 JSON。
+不增加依赖、结构、凭证访问或复制源码；保留 Python 身份生命周期和明确双边回退。
+见[决策](research/typescript-control-plane-p0.zh-CN.md#p3-主-bot-选择决策2026-10-08)。

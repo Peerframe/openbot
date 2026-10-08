@@ -8,6 +8,7 @@ export interface EntryOptions {
   port: number;
   tls?: { certificatePath: string; privateKeyPath: string };
   transcriptionRead?: { databaseUrl: string; allowedOrigins?: readonly string[] };
+  primaryBotWrite?: { databaseUrl: string; allowedOrigins?: readonly string[] };
 }
 
 function origin(value: string): URL {
@@ -33,6 +34,23 @@ export function validateOptions(options: EntryOptions): EntryOptions {
       throw new Error("The transcription read group requires an explicit PostgreSQL URL.");
     }
   }
+  if (options.primaryBotWrite) {
+    try {
+      for (const value of options.primaryBotWrite.allowedOrigins ?? [options.publicOrigin])
+        origin(value);
+      const database = new URL(options.primaryBotWrite.databaseUrl);
+      if (!["postgres:", "postgresql:"].includes(database.protocol) || !database.hostname)
+        throw new Error();
+    } catch {
+      throw new Error("The primary Bot write group requires an explicit PostgreSQL URL.");
+    }
+  }
+  if (
+    options.transcriptionRead &&
+    options.primaryBotWrite &&
+    options.transcriptionRead.databaseUrl !== options.primaryBotWrite.databaseUrl
+  )
+    throw new Error("Selected TS groups require the same explicit PostgreSQL URL.");
   const upstream = origin(options.upstream);
   if (upstream.protocol !== "http:" || upstream.hostname !== "127.0.0.1") {
     throw new Error("The fixed Python upstream must be numeric IPv4 loopback HTTP.");
@@ -71,6 +89,10 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
   if (!["none", "transcription"].includes(group)) throw new Error("Unknown TS read group.");
   if (group === "transcription" && !environment.OPENBOT_TS_DATABASE_URL)
     throw new Error("The transcription read group requires an explicit PostgreSQL URL.");
+  const writeGroup = environment.OPENBOT_TS_WRITE_GROUP ?? "none";
+  if (!["none", "primary-bot"].includes(writeGroup)) throw new Error("Unknown TS write group.");
+  if (writeGroup === "primary-bot" && !environment.OPENBOT_TS_DATABASE_URL)
+    throw new Error("The primary Bot write group requires an explicit PostgreSQL URL.");
   const port = environment.OPENBOT_TS_PORT ?? "3101";
   if (!/^[0-9]{1,5}$/.test(port)) throw new Error("Invalid TS listener port.");
   const certificatePath = environment.OPENBOT_TS_TLS_CERT_PATH;
@@ -89,6 +111,20 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
             ...(environment.OPENBOT_TS_READ_ALLOWED_ORIGINS !== undefined
               ? {
                   allowedOrigins: environment.OPENBOT_TS_READ_ALLOWED_ORIGINS.split(",").map(
+                    (value) => value.trim(),
+                  ),
+                }
+              : {}),
+          },
+        }
+      : {}),
+    ...(writeGroup === "primary-bot"
+      ? {
+          primaryBotWrite: {
+            databaseUrl: environment.OPENBOT_TS_DATABASE_URL!,
+            ...(environment.OPENBOT_TS_WRITE_ALLOWED_ORIGINS !== undefined
+              ? {
+                  allowedOrigins: environment.OPENBOT_TS_WRITE_ALLOWED_ORIGINS.split(",").map(
                     (value) => value.trim(),
                   ),
                 }
