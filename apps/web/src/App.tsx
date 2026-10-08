@@ -47,6 +47,7 @@ import { NewChatScreen, type NewChatStart } from "./components/NewChatScreen";
 import { NodeManagerDialog } from "./components/NodeManagerDialog";
 import { LaunchExit, LaunchScreen, OnboardingFrame } from "./components/Onboarding";
 import { PluginsDialog } from "./components/PluginsDialog";
+import { primaryBotChangedEvent } from "./components/PrimaryBotSetting";
 import { indexRunCollaboration } from "./components/RunCollaboration";
 import { ShareConversationDialog } from "./components/ShareConversationDialog";
 import { Sidebar, type SidebarActivity } from "./components/Sidebar";
@@ -780,6 +781,12 @@ export function AuthenticatedWorkspace({
     });
     return () => cancelAnimationFrame(frame);
   }, [active, focusRequest]);
+
+  useEffect(() => {
+    const reread = () => void refresh();
+    window.addEventListener(primaryBotChangedEvent, reread);
+    return () => window.removeEventListener(primaryBotChangedEvent, reread);
+  }, [refresh]);
 
   useEffect(() => {
     if (!workspaceReady) return;

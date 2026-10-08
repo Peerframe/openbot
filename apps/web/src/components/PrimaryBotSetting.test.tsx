@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest";
 import { interact, renderComponent } from "../test/render-component";
-import { PrimaryBotSetting } from "./PrimaryBotSetting";
+import { PrimaryBotSetting, primaryBotChangedEvent } from "./PrimaryBotSetting";
 
 afterEach(() => vi.unstubAllGlobals());
 const snapshot = { primaryBotId: null, revision: 1, bots: [{ id: "bot-1", name: "协调员" }] };
@@ -10,6 +10,8 @@ it("prompts when unselected and saves the Server revision without permission fie
     Response.json(init?.method === "PUT" ? { primaryBotId: "bot-1", revision: 2 } : snapshot),
   );
   vi.stubGlobal("fetch", fetch);
+  const changed = vi.fn();
+  window.addEventListener(primaryBotChangedEvent, changed);
   const view = await renderComponent(<PrimaryBotSetting />);
   expect(view.container.textContent).toContain("还没有主 Bot，请选择一个");
   const select = view.container.querySelector("select") as HTMLSelectElement;
@@ -23,6 +25,9 @@ it("prompts when unselected and saves the Server revision without permission fie
   expect(JSON.parse(String(call?.[1]?.body))).toEqual({ botId: "bot-1", expectedRevision: 1 });
   expect(view.container.textContent).toContain("已保存主 Bot");
   expect(view.container.querySelector("button")?.disabled).toBe(true);
+  // The workspace behind the dialog re-reads, so the sidebar crown moves.
+  expect(changed).toHaveBeenCalledOnce();
+  window.removeEventListener(primaryBotChangedEvent, changed);
   await view.unmount();
 });
 it.each([409, 404])(

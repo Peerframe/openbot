@@ -3,6 +3,12 @@ import { useEffect, useState } from "react";
 import { ApiError, setWorkspacePrimaryBot } from "../api";
 import { SettingRow, SettingsGroup, useSettingsWorkspace } from "./SettingsSections";
 
+/**
+ * Settings reads its own workspace copy, and the Server sends no realtime event for this setting,
+ * so a save tells the workspace behind the dialog to re-read: the sidebar crown moves at once.
+ */
+export const primaryBotChangedEvent = "openbot:primary-bot-changed";
+
 export function PrimaryBotSetting() {
   const { workspace, error: loadError, retry } = useSettingsWorkspace();
   const [selected, setSelected] = useState("");
@@ -34,6 +40,7 @@ export function PrimaryBotSetting() {
       setSaved(result);
       setSelected(result.primaryBotId ?? "");
       setNotice("已保存主 Bot。");
+      window.dispatchEvent(new Event(primaryBotChangedEvent));
     } catch (cause) {
       setError(
         cause instanceof ApiError && cause.status === 409
