@@ -3,9 +3,10 @@
 [简体中文](README.zh-CN.md)
 
 Accepted [ADR-0050](../../docs/decisions/0050-typescript-control-plane.md) P2 introduces one public
-HTTP/Worker entry and one fixed private Python upstream. Python still owns all 121 default HTTP
-operation, authentication, approval, audit, database and background service. Nothing is retired and
-the installed Desktop still uses its Python baseline. The forwarding adapter exits in P5.
+HTTP/Worker entry and one fixed private Python upstream. Python is the default owner of the 121
+HTTP operations and background services. Explicitly selected P3 groups transfer only their listed
+operations after qualification. The installed Desktop retains its Python baseline; the temporary
+forwarder exits in P5.
 
 Install the repository's locked dependencies and Python Worker environment using
 [CONTRIBUTING](../../CONTRIBUTING.md). Run from the repository root:
@@ -212,3 +213,25 @@ window closes. Require real SQL/HTTP/HTTPS concurrency and reverse-switch checks
 and native stage/package qualification before selection. Native smoke explicitly submits the changed
 password after restart; this does not claim automatic Desktop bootstrap login after a user changes it.
 See [the auth decision](../../docs/research/typescript-control-plane-p0.md#p3-owner-authentication-decision-2026-10-08).
+
+## Channel read candidate (P3)
+
+The local `channels` cohort selects only GET Bot list, channel list, channel messages and channel Runs.
+Set `OPENBOT_TS_CHANNEL_READ_GROUP=channels` on TS and
+`OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP=channels` on private Python, with the same explicit
+`OPENBOT_TS_DATABASE_URL` used by other selected groups. Both default to `none`; unknown selections
+and Python selection outside private product mode refuse startup. Optional
+`OPENBOT_TS_READ_ALLOWED_ORIGINS` retains the existing read CORS policy.
+
+The four Python HTTP routes refuse while selected; internal Python readers and all identity/message/
+Run writers remain active in their existing roles. Reads use bounded read-only READ COMMITTED SQL,
+recheck the Owner session before returning data or a channel-specific error, preserve message cursor
+microseconds and enforce existing SQL/JSON ceilings. No table migration, provider access or dispatch.
+For reverse, stop the pair, select `none` on both sides and restart using the same newer database.
+Retain the previous qualified package; never restore old session or message data.
+
+The v4 unsigned macOS arm64 Preview marker includes `channelReadGroup:channels` and requires all
+three compiled read modules before launching the pair. The contract and UI drivers select this group
+with prior qualified groups. Real HTTP/HTTPS comparisons include pagination, revocation during blocked
+reads, bounded admission, malformed/oversized records, Python-down availability and reverse switching.
+See [current qualification](../../docs/research/typescript-control-plane-p0.md#current-migration-checkpoint-2026-10-08).

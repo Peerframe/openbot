@@ -125,6 +125,24 @@ export async function smokePythonProduct(runtimeRoot: string) {
     });
     assert.equal(created.status, 201);
     const channelId = ((await created.json()) as { channel: { id: unknown } }).channel.id;
+    const readChannelGroup = async () => {
+      const values = [];
+      for (const path of [
+        "/api/v1/bots",
+        "/api/v1/channels",
+        `/api/v1/channels/${channelId}/messages`,
+        `/api/v1/channels/${channelId}/runs`,
+      ]) {
+        const response = await fetch(base + path, {
+          headers: { Cookie: cookie! },
+          signal: AbortSignal.timeout(8000),
+        });
+        assert.equal(response.status, 200);
+        values.push(await response.json());
+      }
+      return values;
+    };
+    const firstChannelReads = await readChannelGroup();
     const bootstrap = await readFile(join(dataRoot, "bootstrap.json"));
     const key = await readFile(join(dataRoot, "model-connections.key"));
     assert.equal(key.length, 32);
@@ -163,6 +181,7 @@ export async function smokePythonProduct(runtimeRoot: string) {
       ),
     );
     assert.deepEqual(await readSettings(), firstSettings);
+    assert.deepEqual(await readChannelGroup(), firstChannelReads);
     assert.deepEqual(await readPrimary(), primarySaved);
     const nodes = await fetch(`${base}/api/v1/nodes`, { headers: { Cookie: cookie } });
     assert.equal(nodes.status, 200);
@@ -210,6 +229,8 @@ export async function smokePythonProduct(runtimeRoot: string) {
       primaryBotWriteRestartVerified: true,
       tsWriteGroup: tsSelected ? "primary-bot" : "none",
       tsAuthGroup: tsSelected ? "owner" : "none",
+      tsChannelReadGroup: tsSelected ? "channels" : "none",
+      channelReadRestartVerified: true,
       passwordRotationRestartVerified: tsSelected,
       restartLoginUsedChangedPassword: tsSelected,
       eitherProductExitStoppedPair: tsSelected,

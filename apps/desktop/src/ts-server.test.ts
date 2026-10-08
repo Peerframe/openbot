@@ -35,6 +35,9 @@ const resources = [
   "apps/server-ts/dist/owner-auth.js",
   "apps/server-ts/dist/owner-auth-crypto.js",
   "apps/server-ts/dist/owner-auth-store.js",
+  "apps/server-ts/dist/channel-read.js",
+  "apps/server-ts/dist/channel-read-query.js",
+  "apps/server-ts/dist/channel-read-projection.js",
   "node_modules/postgres/package.json",
   "node_modules/fastify/package.json",
   "node_modules/@fastify/reply-from/package.json",
@@ -142,6 +145,8 @@ it("keeps absent selection on Python and refuses malformed, symlink or unmatched
     { ...TS_CANDIDATE, format: "openbot.desktop.ts-control/v1" },
     { ...TS_CANDIDATE, writeGroup: "none" },
     { ...TS_CANDIDATE, authGroup: "none" },
+    { ...TS_CANDIDATE, channelReadGroup: "none" },
+    { ...TS_CANDIDATE, format: "openbot.desktop.ts-control/v3" },
     { ...TS_CANDIDATE, format: "openbot.desktop.ts-control/v2" },
   ]) {
     await writeFile(join(f.root, "ts-control.json"), JSON.stringify(value));
@@ -164,6 +169,7 @@ it("owns one private Python writer and public TS entry, passes only the database
     "transcription",
     "primary-bot",
     "owner",
+    "channels",
   );
   const [executable, args, options] = mocks.spawn.mock.calls[0]!;
   expect(executable).toBe(join(f.root, "node/bin/node"));
@@ -175,6 +181,7 @@ it("owns one private Python writer and public TS entry, passes only the database
     OPENBOT_TS_READ_GROUP: "transcription",
     OPENBOT_TS_WRITE_GROUP: "primary-bot",
     OPENBOT_TS_AUTH_GROUP: "owner",
+    OPENBOT_TS_CHANNEL_READ_GROUP: "channels",
     OPENBOT_TS_OWNER_PASSWORD: f.env.OPENBOT_OWNER_PASSWORD,
     OPENBOT_TS_AUTH_ALLOWED_ORIGINS: "http://127.0.0.1:39001",
     OPENBOT_TS_WRITE_ALLOWED_ORIGINS: "http://127.0.0.1:39001",

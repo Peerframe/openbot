@@ -222,29 +222,18 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 
 ## 当前迁移检查点（2026-10-08）
 
-工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支
-`codex/ts-control-plane-p3-owner-auth`，基于 main `41a1a5b57b258e5b34d9c4ef80096b69b376930f`。
-#206 已按所有者明确授权合并；原 PR 和合并后 main 的托管 CI 均17/17通过：
-[PR CI](https://github.com/Peerframe/openbot/actions/runs/37708711197)、
-[main CI](https://github.com/Peerframe/openbot/actions/runs/37712078777)。
+当前工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支
+`codex/ts-control-plane-p3-channel-reads`，基于认证组提交 `df99396876b2fb4308fb60705076e6804d7fe3bd`。
+用户明确要求 [#208](https://github.com/Peerframe/openbot/pull/208) 保留为面向 main 的草稿，本轮只继续本地迁移。
+其[托管 CI](https://github.com/Peerframe/openbot/actions/runs/37715428319) 已17/17通过，但不能替代新读取组的验证。
+#206 已合并到 main `41a1a5b57b258e5b34d9c4ef80096b69b376930f`。
 
-Owner 认证六个操作的本地候选已在实现提交 `3f01b1fb08d63b455f486edd92d29fedd74f0b0f` 完成验收，
-尚未推送，也没有自己的托管 CI 结果。`npm run check` 通过；本次实际执行受影响测试：TS46、
-Desktop578（3项平台跳过）、Web692；Python 定向72项。最终真实 HTTP control50+读取14+主 Bot 写入17+
-认证13通过；混合全套270及额外附件19（含 MCP30）、受信 CA HTTPS control50+14+17+13通过。
-后两项早于等价 ASCII 登出检查的 lint 修正；最终 HTTP、完整检查、UI 和原生探针覆盖修正后版本。
-缓存/实际执行及源文件指纹见[唯一记录](typescript-control-plane-p2-native.json)的 `currentP3OwnerAuthCandidate`。
-
-精确候选的 TS UI PASS12/12：114次响应（107×200、7×201），异常响应、页面错误和 workspace503 均为零。
-报告与截图路径已记录，不据此声称此前偶发503已修复。暂存和实际未安装的 macOS arm64 Preview 包均通过
-改密后新密码登录重启、数据保留、双进程退出/父进程断开及数据库清理。探针显式提交新密码，不代表桌面
-旧启动密码自动登录；不据此宣称 Keychain、GUI、Worker/Temporal 或已安装应用已验收。
-
-固定差异已由实现 Agent 按仓库流程完成安全审查，不是外部独立审计。固定扫描器离线扫描本分支完整祖先历史，
-现有判定器通过：20条精确历史示例、零新增发现，不验证凭证、不上传、不加例外。
-上一版主 Bot 候选保存在 `apps/desktop/out/ts-product-primary-baseline`。已安装应用指纹与原工作区172项改动保持不变，
-Claude 的第43步界面未改动；所有写入者已结束。下一检查点是获准推送本次新分支、创建目标为 `main` 的草稿并完成托管 CI。
-合并、回退窗口关闭后的 Python 路由退役、其他 P3 组和 P4/P5 仍待完成，不能把本组当成完整迁移。
+本地候选接管 Bot 列表、频道列表、消息分页和运行列表，当前正在完成真实 SQL/HTTP 正反切换及其他关卡。
+写入与后台职责保持既有归属。当前验收、源码指纹及输出路径集中记录在
+[单一收据](typescript-control-plane-p2-native.json)的 `currentP3ChannelReadCandidate`。
+上一份合格认证组安装包保留在 `apps/desktop/out/ts-product-owner-auth-baseline`。
+本轮不推送、不合并、不安装、不退役 Python；原工作区、已安装应用及 Claude 的第43步界面不在修改范围。
+其他 P3 组及 P4/P5 尚未完成。
 
 ### P3 主 Bot 选择决策（2026-10-08）
 
@@ -1099,3 +1088,13 @@ P2 后端/原生本机候选已准备好；必需托管 CI 与 Claude 的整体�
 会话过期/撤销、审计失败原子回滚、输入/计算/SQL 有界和禁止回退重试；失败尝试必须提交。
 真实 SQL HTTP/受信 CA HTTPS、并发旧密码拒绝、两端密码与会话反向切换、UI12/12、完整检查及原生
 暂存/打包启动重启均是门槛。只在实际运行后更新现有验收记录。
+
+### P3 频道读取组决策（2026-10-08）
+
+本地候选迁移 Bot 列表、频道列表、消息分页、运行列表 4 个读取接口，基于保留为草稿的 #208。
+用户只授权继续本地迁移。两端通过 `OPENBOT_TS_CHANNEL_READ_GROUP=channels` 与
+`OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP=channels` 明确配对选择；写入、问候、任务调度和 Temporal
+仍由 Python 负责。复用 Fastify5.12.5、Postgres.js3.4.9、PostgreSQL17.11，无新依赖、表结构或外部源码复制。
+只读 READ COMMITTED 事务在查询后复查会话，消息游标保留微秒精度、重复键拒绝和频道绑定，
+保留 SQL 与最终响应大小上限。通过真实 HTTP/HTTPS、撤销并发、较新数据反向切换、Python 停机读取、
+UI12/12 和原生包验证后才可认定候选合格；本轮不推送、不合并。

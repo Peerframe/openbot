@@ -279,6 +279,7 @@ export async function launchPythonProductServer(
   tsReadGroup?: "transcription",
   tsWriteGroup?: "primary-bot",
   tsAuthGroup?: "owner",
+  tsChannelReadGroup?: "channels",
 ): Promise<
   ManagedServerProcess & {
     readonly closed: Promise<void>;
@@ -294,6 +295,9 @@ export async function launchPythonProductServer(
     throw new Error("TS write ownership requires the private Python product listener.");
   if (tsAuthGroup !== undefined && privatePort === undefined)
     throw new Error("TS auth ownership requires the private Python product listener.");
+  if (tsChannelReadGroup !== undefined && privatePort === undefined)
+    throw new Error("TS channel reads require the private Python product listener.");
+  if (tsChannelReadGroup) env.OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP = tsChannelReadGroup;
   if (tsAuthGroup) env.OPENBOT_CONTROL_TS_AUTH_GROUP = tsAuthGroup;
   if (tsReadGroup) env.OPENBOT_CONTROL_TS_READ_GROUP = tsReadGroup;
   if (tsWriteGroup) env.OPENBOT_CONTROL_TS_WRITE_GROUP = tsWriteGroup;

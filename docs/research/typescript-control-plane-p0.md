@@ -345,35 +345,46 @@ same-scope resource comparison. See ADR-0050 for the detailed gates and Owner ap
 ## Current migration checkpoint (2026-10-08)
 
 Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
-`codex/ts-control-plane-p3-owner-auth`, based on main `41a1a5b57b258e5b34d9c4ef80096b69b376930f`.
-PR206 was merged with the Owner's explicit approval; its qualified head and merged main both pass17/17
-hosted jobs ([PR CI](https://github.com/Peerframe/openbot/actions/runs/37708711197),
-[main CI](https://github.com/Peerframe/openbot/actions/runs/37712078777)).
+`codex/ts-control-plane-p3-channel-reads`, based on Owner auth head
+`df99396876b2fb4308fb60705076e6804d7fe3bd`. [PR208](https://github.com/Peerframe/openbot/pull/208)
+remains a draft against `main`, by the Owner's explicit instruction to continue local migration only.
+Its [hosted CI](https://github.com/Peerframe/openbot/actions/runs/37715428319) passes17/17;
+that qualifies the authentication cohort, not this new four-operation read candidate.
+PR206 is merged at main `41a1a5b57b258e5b34d9c4ef80096b69b376930f`.
 
-The six-operation Owner authentication candidate is locally qualified at implementation commit
-`3f01b1fb08d63b455f486edd92d29fedd74f0b0f`. It is not pushed and has no hosted CI result of its own.
-Full `npm run check` passes; executed affected tests: TS46, Desktop578 (3 platform skips), Web692;
-focused Python72. Final real HTTP control50+read14+primary-write17+auth13 passes. Mixed all270 plus19
-artifact checks (including MCP30) and verified-CA HTTPS control50+14+17+13 pass. The latter two
-precede the equivalent ASCII logout-guard lint repair; final HTTP, full checks, UI and native probes
-verify the final guard. Cached versus executed tasks and exact source fingerprints are in
-`currentP3OwnerAuthCandidate` of the [single receipt](typescript-control-plane-p2-native.json).
+The local channel read implementation and its real SQL/HTTP forward/reverse qualification are in
+progress. It covers Bot list, channel list, message pagination and Run list; writers and background
+services retain their current owners. Current gates, exact source fingerprints and local output
+paths are recorded in `currentP3ChannelReadCandidate` of the [single receipt](typescript-control-plane-p2-native.json).
+The previous qualified Owner auth package is retained at `apps/desktop/out/ts-product-owner-auth-baseline`.
+No remote publication, merge, installation or Python retirement is authorized for this slice.
+The original dirty checkout, installed application and Claude's Step43 Web UI remain outside it.
+Other P3 cohorts and P4/P5 remain outstanding.
 
-Exact-candidate TS UI is PASS12/12:114 responses (107×200,7×201), zero unexpected responses/page
-errors/workspace503. Keep its report and screenshots at the receipt's path; this observation does not
-claim the earlier intermittent503 is fixed. Staged and actual unsigned macOS arm64 Preview probes
-pass changed-password login after restart, retained data, paired exit/parent EOF and PostgreSQL cleanup.
-The explicit new-password login is not a claim that Desktop's old bootstrap password can auto-login.
-No Keychain, GUI, Worker/Temporal or installed-app qualification is inferred from these API probes.
+### P3 channel read decision (2026-10-08)
 
-The fixed diff passed the implementing agent's security review, not an independent external audit.
-Offline fixed-version scanning of the branch's complete ancestry passes the existing checker:
-20 exact historical fixtures, zero new findings, no verification/upload or new exceptions.
-The prior primary-Bot package remains runnable under `apps/desktop/out/ts-product-primary-baseline`.
-The installed app fingerprint and original172 dirty entries remain unchanged. Claude's Step43 UI is
-untouched. No writers remain. Next: obtain publication authorization for this new branch/draft against
-`main`, then run hosted CI. Merge, Python retirement after its bounded rollback window, other P3
-cohorts and P4/P5 are still outstanding; the full migration is not complete.
+The next local candidate selects exactly `listBots`, `listChannels`, `listMessages` and `listRuns`
+under paired `OPENBOT_TS_CHANNEL_READ_GROUP=channels` / `OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP=channels`.
+It builds on draft #208; the Owner explicitly retains that draft and authorizes local work only.
+Existing identity writers, greetings, dispatch, workspace assembly and Temporal remain Python-owned.
+The retained Python read methods continue to serve internal consumers; only these public routes
+are quarantined while selected. Reverse selection reads newer shared facts without restoring data.
+
+Reuse reviewed Fastify5.12.5, Postgres.js3.4.9 and PostgreSQL17.11; no dependency, schema or copied
+upstream source. Rechecked [Postgres.js transaction/type documentation](https://github.com/porsager/postgres/blob/v3.4.9/README.md)
+and [PostgreSQL17 READ COMMITTED semantics](https://www.postgresql.org/docs/17/transaction-iso.html#XACT-READ-COMMITTED).
+A bounded read-only transaction preserves the existing session recheck after projection SQL, so
+revocation committed during a blocked read is visible before exposing either data or a scoped error.
+Repeatable-read would hide that revocation; a shared session lock would change logout blocking.
+Keep the existing bounded admission helper, fixed SQL/order/limits and no retry/fallback.
+
+Preserve microsecond cursor timestamps as SQL text rather than converting through JavaScript Date;
+public timestamps retain millisecond precision. Reuse shared response schemas with the existing
+Python code-point adapter for channel previews. Cursor admission retains exact integer version,
+canonical base64url, duplicate-key refusal and channel binding. SQL bounds message/Run payloads
+before transfer; final response size uses Python's JSON separator accounting. Real disposable
+HTTP/HTTPS parity, invalid/oversized records, revocation during a blocked read, newer-data reverse
+switch, Python-down reads, UI12/12 and native staged/packaged probes are required before qualification.
 
 ### P3 Owner authentication decision (2026-10-08)
 

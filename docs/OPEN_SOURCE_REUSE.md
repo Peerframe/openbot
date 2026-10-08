@@ -1155,3 +1155,10 @@ Reuse Node's native asynchronous scrypt and existing PostgreSQL/session contract
 crypto dependency, data migration or source copy. Reviewed Node22.22.2 and @noble/hashes2.4.0 as
 recorded in the [scoped decision](research/typescript-control-plane-p0.md#p3-owner-authentication-decision-2026-10-08).
 Six operations remain explicitly selected and require real concurrency, reverse-switch and UI gates.
+
+### P3 channel reads (2026-10-08)
+
+Reuse Fastify5.12.5, Postgres.js3.4.9 and PostgreSQL17.11 for the four public Bot/channel/message/Run
+reads. Preserve Python's read-only READ COMMITTED session recheck, SQL bounds and ordering. Cursor
+parameters stay text until PostgreSQL conversion to retain microseconds. No new dependency, schema,
+upstream source copy or execution authority; see [decision](research/typescript-control-plane-p0.md#p3-channel-read-decision-2026-10-08).

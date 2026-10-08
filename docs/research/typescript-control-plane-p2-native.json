@@ -1535,7 +1535,7 @@
       "noTemporalOrLiveProviderCalls": true
     }
   },
-  "currentCheckpointKey": "currentP3OwnerAuthCandidate",
+  "currentCheckpointKey": "currentP3ChannelReadCandidate",
   "currentP3Candidate": {
     "date": "2026-10-07 (Asia/Singapore)",
     "branch": "codex/ts-control-plane-p3-settings",
@@ -2362,6 +2362,42 @@
       "uncommittedProductChanges": false,
       "nextCheckpoint": "Review local qualified candidate, publish only when authorized; do not bypass hosted CI or merge approval",
       "draftBody": "/private/tmp/openbot-p3-auth-draft-pr.md"
+    },
+    "publicationOutcome": {
+      "pr": "https://github.com/Peerframe/openbot/pull/208",
+      "head": "df99396876b2fb4308fb60705076e6804d7fe3bd",
+      "base": "main",
+      "isDraft": true,
+      "hostedCi": "https://github.com/Peerframe/openbot/actions/runs/37715428319",
+      "checks": "17/17 passed",
+      "instruction": "Owner retains the draft; continue next local cohort only on 2026-10-08",
+      "retainedPackage": "apps/desktop/out/ts-product-owner-auth-baseline/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
+      "asarSha256": "07020e91f71c771d6399c68ce82f60c44125ec6f7ce42fe24617653b3591fca9"
     }
+  },
+  "currentP3ChannelReadCandidate": {
+    "date": "2026-10-08",
+    "status": "local-qualification-in-progress",
+    "worktree": "/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot",
+    "branch": "codex/ts-control-plane-p3-channel-reads",
+    "baseCommit": "df99396876b2fb4308fb60705076e6804d7fe3bd",
+    "scope": [
+      "listBots",
+      "listChannels",
+      "listMessages",
+      "listRuns"
+    ],
+    "authorization": "Local migration only; retain draft PR208, no push/new PR/merge/install",
+    "pending": [
+      "final full check",
+      "mixed full HTTP",
+      "verified-CA HTTPS",
+      "UI12/12",
+      "staged/packaged native probes",
+      "offline credential scan",
+      "fixed diff review"
+    ],
+    "remainingMigration": "Other P3 cohorts, P4 Work/harness/Temporal, P5 Python retirement",
+    "writers": "Sole implementing agent; qualification processes own separate disposable fixtures"
   }
 }

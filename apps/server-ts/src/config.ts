@@ -8,6 +8,7 @@ export interface EntryOptions {
   host: "127.0.0.1" | "0.0.0.0";
   port: number;
   tls?: { certificatePath: string; privateKeyPath: string };
+  channelRead?: { databaseUrl: string; allowedOrigins?: readonly string[] };
   transcriptionRead?: { databaseUrl: string; allowedOrigins?: readonly string[] };
   ownerAuth?: {
     databaseUrl: string;
@@ -31,6 +32,16 @@ function origin(value: string): URL {
 }
 
 export function validateOptions(options: EntryOptions): EntryOptions {
+  if (options.channelRead) {
+    try {
+      const database = new URL(options.channelRead.databaseUrl);
+      if (!["postgres:", "postgresql:"].includes(database.protocol) || !database.hostname)
+        throw new Error();
+      for (const value of options.channelRead.allowedOrigins ?? [options.publicOrigin]) origin(value);
+    } catch {
+      throw new Error("Channel reads require explicit valid PostgreSQL and origin configuration.");
+    }
+  }
   if (options.transcriptionRead) {
     try {
       for (const value of options.transcriptionRead.allowedOrigins ?? [options.publicOrigin])
@@ -82,7 +93,12 @@ export function validateOptions(options: EntryOptions): EntryOptions {
       );
     }
   }
-  const databases = [options.transcriptionRead, options.primaryBotWrite, options.ownerAuth]
+  const databases = [
+    options.transcriptionRead,
+    options.primaryBotWrite,
+    options.ownerAuth,
+    options.channelRead,
+  ]
     .filter((group) => group !== undefined)
     .map((group) => group.databaseUrl);
   if (new Set(databases).size > 1)
@@ -121,6 +137,11 @@ export function validateOptions(options: EntryOptions): EntryOptions {
 }
 
 export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
+  const channelGroup = environment.OPENBOT_TS_CHANNEL_READ_GROUP ?? "none";
+  if (!["none", "channels"].includes(channelGroup))
+    throw new Error("Unknown TS channel read group.");
+  if (channelGroup === "channels" && !environment.OPENBOT_TS_DATABASE_URL)
+    throw new Error("Channel reads require an explicit PostgreSQL URL.");
   const group = environment.OPENBOT_TS_READ_GROUP ?? "none";
   if (!["none", "transcription"].includes(group)) throw new Error("Unknown TS read group.");
   if (group === "transcription" && !environment.OPENBOT_TS_DATABASE_URL)
@@ -141,6 +162,20 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
   if ((certificatePath === undefined) !== (privateKeyPath === undefined))
     throw new Error("TLS certificate and private key must be configured together.");
   return validateOptions({
+    ...(channelGroup === "channels"
+      ? {
+          channelRead: {
+            databaseUrl: environment.OPENBOT_TS_DATABASE_URL!,
+            ...(environment.OPENBOT_TS_READ_ALLOWED_ORIGINS !== undefined
+              ? {
+                  allowedOrigins: environment.OPENBOT_TS_READ_ALLOWED_ORIGINS.split(",").map(
+                    (value) => value.trim(),
+                  ),
+                }
+              : {}),
+          },
+        }
+      : {}),
     upstream: environment.OPENBOT_TS_PYTHON_ORIGIN ?? "",
     publicOrigin: environment.OPENBOT_TS_PUBLIC_ORIGIN ?? "",
     host: (environment.OPENBOT_TS_HOST ?? "127.0.0.1") as EntryOptions["host"],

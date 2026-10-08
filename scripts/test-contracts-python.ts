@@ -27,6 +27,7 @@ import {
   OwnedDockerFixture,
   startControlPostgres,
 } from "./python-acceptance-fixture.ts";
+import { qualifyChannelReads } from "./ts-channel-read-acceptance.ts";
 import { qualifyOwnerAuth } from "./ts-owner-auth-acceptance.ts";
 import { qualifyPrimaryBotWrite } from "./ts-primary-bot-acceptance.ts";
 import { qualifyTranscriptionRead } from "./ts-transcription-acceptance.ts";
@@ -234,6 +235,7 @@ try {
               OPENBOT_CONTROL_TS_READ_GROUP: readGroup ? "transcription" : "none",
               OPENBOT_CONTROL_TS_WRITE_GROUP: readGroup ? "primary-bot" : "none",
               OPENBOT_CONTROL_TS_AUTH_GROUP: readGroup ? "owner" : "none",
+              OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP: readGroup ? "channels" : "none",
               OPENBOT_CONTROL_PUBLIC_ORIGIN: baseUrl,
             }
           : {}),
@@ -260,6 +262,7 @@ try {
       OPENBOT_TS_READ_GROUP: readGroup ? "transcription" : "none",
       OPENBOT_TS_WRITE_GROUP: readGroup ? "primary-bot" : "none",
       OPENBOT_TS_AUTH_GROUP: readGroup ? "owner" : "none",
+      OPENBOT_TS_CHANNEL_READ_GROUP: readGroup ? "channels" : "none",
       OPENBOT_TS_OWNER_PASSWORD: password,
       OPENBOT_TS_AUTH_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
       OPENBOT_TS_WRITE_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
@@ -468,6 +471,7 @@ try {
     await qualifyTranscriptionRead(ownershipAcceptance);
     await qualifyPrimaryBotWrite(ownershipAcceptance);
     cookie = await qualifyOwnerAuth({ ...ownershipAcceptance, password });
+    await qualifyChannelReads({ ...ownershipAcceptance, cookie });
   }
   // This owned database has no Worker. Seed publication states so HTTP decision/unread
   // contracts exercise real transactions without claiming execution by a production Host.

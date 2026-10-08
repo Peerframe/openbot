@@ -44,7 +44,10 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
                profiles: ProfileStore | None = None, tasks: TaskStore | None = None,
                run_commands: RunCommandStore | None = None, work=None, product=None,
                proxy_address: str | None = None, public_origin: str | None = None,
-               ts_read_group: str = "none", ts_write_group: str = "none", ts_auth_group: str = "none") -> FastAPI:
+               ts_read_group: str = "none", ts_write_group: str = "none", ts_auth_group: str = "none", ts_channel_read_group: str = "none") -> FastAPI:
+    if ts_channel_read_group not in ("none", "channels") or (ts_channel_read_group != "none" and
+            (product is None or proxy_address is None or public_origin is None)):
+        raise ValueError("TS channel read ownership requires explicit private product proxy mode.")
     if ts_read_group not in ("none", "transcription") or (ts_read_group != "none" and
             (product is None or proxy_address is None or public_origin is None)):
         raise ValueError("TS read ownership requires explicit private product proxy mode.")
@@ -184,6 +187,8 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     @app.get("/api/v1/bots", response_model=BotsResponse,
              response_model_exclude_none=True, operation_id="listBots")
     async def bots(request: Request):
+        if ts_channel_read_group == "channels":
+            return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503)
         result = await read(request, "bots")
         try:
             return bounded_response(BotsResponse(bots=[project_bot(row) for row in result.rows]))
@@ -193,6 +198,8 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     @app.get("/api/v1/channels", response_model=ChannelsResponse,
              response_model_exclude_none=True, operation_id="listChannels")
     async def channels(request: Request):
+        if ts_channel_read_group == "channels":
+            return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503)
         result = await read(request, "channels")
         try:
             return bounded_response(ChannelsResponse(channels=project_channels(result.rows)))
@@ -203,6 +210,8 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
              response_model_exclude_none=True, operation_id="listMessages")
     async def messages(request: Request, channel_id: str = Path(min_length=1, max_length=128),
                        before: str | None = Query(None, max_length=2048), limit: int = Query(100, ge=1, le=100)):
+        if ts_channel_read_group == "channels":
+            return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503)
         before, limit = pagination_query(request.query_params.multi_items())
         options = {} if before is None and limit == 100 else dict(before=before, limit=limit)
         result = await store.read(await cookie(request), "messages", channel_id=channel_id, **options)
@@ -218,6 +227,8 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     @app.get("/api/v1/channels/{channel_id}/runs", response_model=RunsResponse,
              response_model_exclude_none=True, operation_id="listRuns")
     async def runs(request: Request, channel_id: str = Path(min_length=1, max_length=128)):
+        if ts_channel_read_group == "channels":
+            return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503)
         result = await store.read(await cookie(request), "runs", channel_id=channel_id)
         if result.expires_at is None:
             raise HTTPException(401, "Authentication required.")

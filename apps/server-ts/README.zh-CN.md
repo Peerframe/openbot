@@ -3,8 +3,8 @@
 [English](README.md)
 
 已批准的 [ADR-0050](../../docs/decisions/0050-typescript-control-plane.zh-CN.md) P2 增加一个公开
-HTTP/Worker 入口，目标固定为私有 Python 服务。121 个默认 HTTP 操作、认证、审批、审计、数据库及后台服务
-仍由 Python 负责。当前没有退役模块，已安装桌面仍用 Python 基线；P5 删除临时转发。
+HTTP/Worker 入口，目标固定为私有 Python 服务。Python 是 121 个 HTTP 操作及后台服务的默认所有者，
+只有明确选择且完成验收的 P3 组才转移相应接口。已安装桌面仍用 Python 基线；P5 删除临时转发。
 
 按 [CONTRIBUTING](../../CONTRIBUTING.zh-CN.md) 准备锁定的 npm 依赖与 Python Worker 环境，在仓库根目录运行：
 
@@ -170,3 +170,20 @@ JSON 限8192字节/5秒，每个 KDF/SQL 操作限6秒；保持 UTF-8 标量/码
 回退窗口内保留上个已验收安装包；整组验收且窗口关闭后才删除 Python 旧路由。真实 SQL HTTP/HTTPS 并发与
 反向切换、UI12/12、完整检查及原生暂存/打包均须通过。原生探针在改密重启后显式提交新密码，不代表桌面
 旧启动凭据能自动登录。决策和实际结果见[研究记录](../../docs/research/typescript-control-plane-p0.zh-CN.md)。
+
+## 频道读取候选（P3）
+
+本地 `channels` 组只接管 GET Bot 列表、频道列表、频道消息及运行记录。TS 配置
+`OPENBOT_TS_CHANNEL_READ_GROUP=channels`，私有 Python 配置
+`OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP=channels`，使用其他已选组的同一个显式
+`OPENBOT_TS_DATABASE_URL`。默认均为 `none`；未知组或非私有 product 模式的 Python 选择拒绝启动。
+可选的 `OPENBOT_TS_READ_ALLOWED_ORIGINS` 沿用现有读取 CORS 策略。
+
+选择后 Python 对这 4 个公开路由拒绝服务，内部读取及身份、消息、Run 写入仍按原有职责运行。
+TS 使用有容量上限的只读 READ COMMITTED 事务，返回数据或频道错误前复查 Owner 会话；
+保留游标微秒精度、排序及 SQL/JSON 大小上限，无表结构迁移、模型调用或任务调度。
+反向切换时停掉两端、都选 `none`，再用同一份较新的数据库重启。保留上一份合格安装包，不能还原旧会话或消息。
+
+v4 macOS arm64 未签名 Preview 标记包含 `channelReadGroup:channels`，启动前校验 3 个编译模块。
+契约和界面驱动与既有组一起选择它。真实 HTTP/HTTPS 对照覆盖分页、读取阻塞时撤销、容量、异常及超大记录、
+Python 停机可用性和反向切换。当前状态见[迁移检查点](../../docs/research/typescript-control-plane-p0.zh-CN.md#当前迁移检查点2026-10-08)。
