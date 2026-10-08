@@ -121,3 +121,15 @@ def test_actual_owner_route_uses_distinct_forwarded_throttle_buckets():
         assert client.get("/api/v1/auth/session", headers={"Forwarded": "for=192.0.2.1"}).json() == {"authenticated": False}
     with pytest.raises(ValueError):
         create_app(reader, owner_name="Owner", proxy_address="127.0.0.1")
+
+
+@pytest.mark.parametrize("group,proxy,origin", [
+    ("unknown", "127.0.0.1", "http://127.0.0.1:3101"),
+    ("transcription", None, None),
+    ("transcription", "127.0.0.1", "http://127.0.0.1:3101"),
+])
+def test_ts_read_ownership_requires_private_product(group, proxy, origin):
+    # No product service: a forwarding header/configuration never grants group ownership.
+    with pytest.raises(ValueError, match="TS read ownership"):
+        create_app(None, owner_name="Owner", proxy_address=proxy,
+                   public_origin=origin, ts_read_group=group)

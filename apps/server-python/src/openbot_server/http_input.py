@@ -49,14 +49,19 @@ async def authorize_owner(request: Request, read_store, *, cookie_name: str,
 @asynccontextmanager
 async def request_signal(request: Request) -> AsyncIterator[asyncio.Event]:
     signal = asyncio.Event()
+    stopping = False
     async def watch():
-        while not await request.is_disconnected():
+        while not stopping and not await request.is_disconnected():
             await asyncio.sleep(.1)
-        signal.set()
+        if not stopping:
+            signal.set()
     watcher = asyncio.create_task(watch())
     try:
         yield signal
     finally:
+        # A cancellation-aware ASGI poll may consume task.cancel(); the loop must also
+        # observe an explicit stop before we await its exit and send the HTTP response.
+        stopping = True
         watcher.cancel()
         await asyncio.gather(watcher, return_exceptions=True)
 

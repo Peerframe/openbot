@@ -342,7 +342,134 @@ harness parity and drained histories. P5 verifies the install/CI dependency inve
 same-scope resource comparison. See ADR-0050 for the detailed gates and Owner approval boundary.
 
 
-## Current migration checkpoint (2026-10-07)
+## Current migration checkpoint (2026-10-08)
+
+
+Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
+`codex/ts-control-plane-p3-settings`, based on merged main
+`d747a327d2fce77df02cd9a1e7455ea4d311efcc`. PR200 was merged after the Owner's continuation
+approval. Its tree `a0fc4e6ed0baa011f9b0829b9c78edb8538f161a` is identical to the qualified
+PR candidate: all17 jobs at [CI37561911353](https://github.com/Peerframe/openbot/actions/runs/37561911353).
+Main [CI37613802756](https://github.com/Peerframe/openbot/actions/runs/37613802756) initially failed
+in direct Python MCP resource/prompt contracts with a10-second timeout. Attempt2 passed direct
+Python all/publisher/models, then timed out at the same normal MCP content-read loop through the
+mixed TS entry (`plugins.ts:296`). Assertions/timeouts are unchanged. The two entry observations do
+not establish a TS-forwarding cause; no further blind rerun is made. Local direct and mixed all
+contracts pass, so the hosted difference remains unresolved. This is separate from the previously reported workspace503.
+Step43's sidebar crown/avatar/animation remains Claude-owned; no messages or UI edits are made here.
+The original dirty checkout, installed app and user profiles remain preserved.
+
+The finite P3 candidate transfers only `GET /api/v1/settings/transcription` to TS. Python retains
+PUT, session issuance/password/revocation, settings/audit writes, model resolution, processing and
+Temporal. Both processes use the same existing PostgreSQL and shared strict response schema.
+No data/schema migration, read cache, secondary auth source or automatic fallback is introduced.
+Operator selection defaults to `none`. Explicit paired `transcription` selection makes Python's
+private GET refuse with `operation_owned_by_ts`; switching both flags to `none` restores forwarding
+on the same address/database/session, including newer data. Python's implementation is retained
+only for this bounded reverse-switch window; retire it when the whole transcription cohort's
+write/consumer gates pass, then remove the forwarding adapter in P5. The marked, uninstalled native
+candidate uses this reviewed cohort and refuses old/incomplete resource selection.
+
+### P3 transcription read decision and security review (2026-10-07)
+
+Reuse the P0 DB decision and existing Unlicense Postgres.js3.4.9 dependency. The reviewed annotated
+tag is `b70a8219c25ca3c79d54b27ff24dcdef6df4ab40`, resolving to
+[`e7dfa14519f363229ccc3ead7b1b2f2051937efb`](https://github.com/porsager/postgres/tree/e7dfa14519f363229ccc3ead7b1b2f2051937efb).
+Consulted its README/types/source, including connection pool/transaction, shutdown and cancellation
+limitations; [PostgreSQL17 row locks](https://www.postgresql.org/docs/17/explicit-locking.html);
+[RFC6265 cookie headers](https://datatracker.ietf.org/doc/html/rfc6265#section-4.2.1); and retained
+Python `OwnerTransactions`, Starlette cookie parsing and CPython quoted-cookie behavior. Existing
+P0 comparison rejects switching to pg8.23.1 solely for this read: it changes driver/pool/type and
+cancellation assumptions. Forwarding back to Python would preserve P2 ownership and fail this
+cohort's concrete objective; a broker/cache would add lifecycle/consistency work without a gap.
+No upstream source is copied or substantially adapted; the small cookie compatibility implementation
+is independently authored and checked against retained wire behavior. Existing runtime notices
+already include the same pinned driver.
+
+TS verifies only the selected HTTP/HTTPS Owner cookie,43-character ASCII token and SHA256 digest.
+A bounded READ COMMITTED transaction takes the retained session `FOR SHARE` lock, reads the bounded
+settings row `FOR SHARE`, validates the shared DTO and rechecks revocation/expiry using
+`clock_timestamp()` before commit. This blocks revocation races without claiming TS-issued identity.
+Missing/unknown/expired/revoked sessions return the retained401 `error` envelope; unavailable storage
+and invalid projection fail closed with sanitized503. No submitted identities/Origin hints grant
+access. Explicit CORS origins remain paired with Python; HEAD/OPTIONS/PUT retain Python's behavior.
+
+Admission is4 concurrent SQL operations, with6-second request budget,3-second connect/statement,
+1-second lock and5-second idle-transaction timeouts. Abort/deadline discards late results while
+admission remains occupied until the real transaction finishes. Driver cancellation is not used:
+its documented separate-connection cancellation race can affect a later reused query. Pool close
+is bounded and owned by the existing entry lifetime. No SQL/DSN/token/provider error is logged.
+Startup only checks required columns and fails before listening on schema/config mismatch.
+
+Real disposable SQL/HTTP qualification covers secure/loopback cookies, revoked/expired sessions,
+expiration during blocking, revocation ordering, admission/lock timeout, client abort, missing rows,
+no read writes/audit, Python quarantine, continued TS reads after owned Python stops, and paired
+reverse/restoration with newer data. Existing resource contracts caught a401 envelope mismatch;
+it was corrected to match Python's `error` field rather than relaxing contracts. Synthetic unit
+checks remain supplementary. General settings wait for a separate ZoneInfo compatibility decision;
+no existing timezone/model-selection contract is silently reduced to fit this first read.
+
+Each cohort still requires the actual `npm run ui:acceptance -- --entry ts` PASS12/12, including
+zero unexpected responses/page errors. Any workspace503 recurrence blocks the gate and requires
+step-specific paired logs, never a new allowlist/retry. Current results and source-qualified
+receipts are kept in the [single receipt](typescript-control-plane-p2-native.json). This first read
+is a candidate checkpoint, not completion of P3/P4/P5 or native Keychain/Temporal qualification.
+
+
+Initial P3 source qualification, before the HTTP lifetime correction: `npm run check` passes (TS37, Desktop578 with3 platform skips, Web692,
+protocol461; task/cache counts retained in the receipt), Python private-proxy/config tests20 pass,
+real mixed all270+19 artifact checks plus14 read checks, HTTPS control50+14 and direct Python all270+19
+pass. Final whole-interface run passes12/12 with99 responses (92×200,7×201), no allowlisted gap,
+unexpected response/page error/workspace503; receipt is
+`/private/tmp/openbot-p3-ui-final/openbot-ui-acceptance-1791374856477/receipt.json`.
+Current source was dirty over main during these runs; source hashes in the single receipt bind their
+scope rather than attributing them to the earlier P2 commit. All fixture processes/data are removed.
+The unsigned, uninstalled macOS arm64 TS Preview has passed both staged and actual packaged
+startup/restart/parent-EOF/paired-exit/read smoke;5 launchers and3 entry modules match the build.
+ASAR is `a1f098f8d9d025ea4fcf84ba30b72c38f6debade86c3559e0befda6f0583c7af`.
+It is API-only without Worker companion and does not qualify Keychain/GUI/Temporal or public PKI.
+Post-publication CI reproduced the MCP timeout. The shared HTTP lifetime correction below supplies
+local cause/regression evidence; required hosted qualification of the corrected source remains a
+merge gate. No further cohort is switched before it; the canonical/full-companion baseline is retained.
+
+Product source is committed at `4764d5d3edf129489fd2509a5dec32ad917a0918`. On2026-10-08
+(Asia/Singapore), the Owner explicitly approved pushing `codex/ts-control-plane-p3-settings` and
+creating its public draft PR. [Draft PR205](https://github.com/Peerframe/openbot/pull/205) is now
+published; its initial head is `d38646c2c6496b6bbe2062bbf3bee35997bbd7b7` over main `d747a327`.
+[CI37656292955](https://github.com/Peerframe/openbot/actions/runs/37656292955) started at that head;
+use PR205's required checks/body for the latest revision's hosted result. The earlier automatic
+review rejection is historical and was resolved by this explicit approval. Merge is not authorized.
+This publication record changes no qualified product source, installed app or Claude-owned UI.
+
+### Post-publication HTTP lifetime correction (2026-10-08)
+
+[PR205 CI37657377771](https://github.com/Peerframe/openbot/actions/runs/37657377771) fails the direct
+Python normal MCP read at `plugins.ts:296`, before the TS cohort checks. Temporary instrumentation
+of the real local HTTP fixture also reproduces a timeout in an input-refusal path with no MCP call.
+The captured stack has `http_input.watch` still polling with `Task.cancelling()==1`, while response
+cleanup awaits that task. These observations identify a shared HTTP lifetime defect consistent
+with the hosted symptom, rather than proving a TS forwarding or SDK transport failure.
+
+Reuse the existing poll/Owner cancellation contract and unchanged Starlette1.6.0/AnyIO4.15.1 pins.
+Reviewed [Starlette's polling cancellation scope](https://github.com/Kludex/starlette/blob/1.6.0/starlette/requests.py)
+and [AnyIO's cancellation accounting](https://github.com/agronholm/anyio/blob/4.15.1/src/anyio/_backends/_asyncio.py).
+A cancellation-aware ASGI poll may consume task cancellation; add an explicit stop condition before
+cancelling and joining the owned watcher. Actual disconnect still sets the same signal. Normal
+completion, errors and outer cancellation retain their outcomes; the poll interval and all product/
+consumer deadlines are unchanged. Reading ASGI directly could compete with upload body consumers;
+replacing/upgrading SDKs does not address this observed cleanup gap. No dependency, authority,
+persistent-data format or upstream implementation is added or copied.
+
+The two deterministic regression cases fail before the correction; all22 lifecycle cases pass
+after it. The previously failing instrumented real plugin suite then passes30. Standalone SDK
+connection/read diagnostics pass40 on macOS and40 in an existing isolated Linux arm64 product image;
+these narrow diagnostics do not substitute for real HTTP/SQL or hosted Linux amd64 qualification.
+Current corrected-source checks, UI report and refreshed uninstalled native payload are recorded
+separately in `currentP3Candidate.httpLifetimeCorrection` of the [single receipt](typescript-control-plane-p2-native.json).
+Old source/package/CI results keep their original scope. PR205's required checks/body track the
+latest hosted revision; no blind failed-job rerun, timeout waiver or merge is authorized here.
+
+### Previously qualified P2 candidate before merge
 
 Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
 `codex/ts-control-plane-p2`. Current product source is
@@ -413,7 +540,7 @@ this local base command; hosted Worker qualification remains separate.
 
 The current repository check, regenerated consumer inventory, native qualification and hosted CI
 results are recorded in the [single current receipt](typescript-control-plane-p2-native.json).
-PR200 remains the reviewable P2 candidate. No P3–P5 ownership switch has occurred; the next cohort is
+At this historical checkpoint PR200 was the reviewable P2 candidate; the planned next cohort was
 small settings/reads under ADR-0050's actual PostgreSQL, authority and forward/reverse gates.
 No provider, registered Worker or system application was added.
 

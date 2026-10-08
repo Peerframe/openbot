@@ -111,7 +111,9 @@ export function pythonProductEnvironment(
     OPENBOT_CONTROL_ARTIFACT_ROOT: join(objects, "work-artifacts"),
     OPENBOT_CONTROL_MODEL_SETTINGS_PATH: modelPath,
     ...(source.OPENBOT_MODEL_ENCRYPTION_KEY
-      ? { OPENBOT_CONTROL_MODEL_ENCRYPTION_KEY: source.OPENBOT_MODEL_ENCRYPTION_KEY }
+      ? {
+          OPENBOT_CONTROL_MODEL_ENCRYPTION_KEY: source.OPENBOT_MODEL_ENCRYPTION_KEY,
+        }
       : {}),
     OPENBOT_CONTROL_MODEL_CONNECTION_KEY_PATH: join(dataRoot, "model-connections.key"),
     OPENBOT_CONTROL_PLUGIN_STORE_PATH: join(objects, "plugins", "state.json"),
@@ -220,7 +222,12 @@ async function fixedProcess(
   timeout: number,
 ) {
   await new Promise<void>((resolve, reject) => {
-    const child = spawn(executable, args, { cwd, env, stdio: "ignore", shell: false });
+    const child = spawn(executable, args, {
+      cwd,
+      env,
+      stdio: "ignore",
+      shell: false,
+    });
     const timer = setTimeout(() => child.kill("SIGKILL"), timeout);
     child.once("error", () => {
       clearTimeout(timer);
@@ -269,12 +276,19 @@ export async function launchPythonProductServer(
   runtimeRoot: string,
   source: Record<string, string>,
   privatePort?: number,
+  tsReadGroup?: "transcription",
 ): Promise<
-  ManagedServerProcess & { readonly closed: Promise<void>; readonly processIds: readonly number[] }
+  ManagedServerProcess & {
+    readonly closed: Promise<void>;
+    readonly processIds: readonly number[];
+  }
 > {
   if (!(await selectsPythonProduct(runtimeRoot)))
     throw new Error("Python candidate is not selected.");
   const env = pythonProductEnvironment(runtimeRoot, source);
+  if (tsReadGroup !== undefined && privatePort === undefined)
+    throw new Error("TS read ownership requires the private Python product listener.");
+  if (tsReadGroup) env.OPENBOT_CONTROL_TS_READ_GROUP = tsReadGroup;
   if (privatePort !== undefined) {
     if (
       !Number.isInteger(privatePort) ||

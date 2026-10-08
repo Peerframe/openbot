@@ -143,7 +143,7 @@ class OwnerProduct:
 
 
 
-def register_product_routes(app,product,read_store,*,secure_cookies,allowed_origins):
+def register_product_routes(app,product,read_store,*,secure_cookies,allowed_origins,ts_read_group="none"):
     if product.browser is not None:
         from .browser_routes import BROWSER_WRITE_ROUTES, register_browser_routes
         register_browser_routes(app,product.browser,secure_cookies=secure_cookies,allowed_origins=allowed_origins)
@@ -217,7 +217,10 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
         return await product.plugin_catalog.snapshot(value)
     route('/api/v1/plugins/catalog','GET',plugin_catalog)
 
-    async def transcription_get(value,*_): return await product.transcription.get(value)
+    async def transcription_get(value,*_):
+        # Retain the implementation for explicit rollback, never an automatic TS fallback.
+        if ts_read_group == 'transcription': raise ControlError(503,'operation_owned_by_ts')
+        return await product.transcription.get(value)
     route('/api/v1/settings/transcription','GET',transcription_get)
     async def transcription_put(value,_path,body,_request): return await product.transcription.update(value,body)
     route('/api/v1/settings/transcription','PUT',transcription_put,limit=1024)

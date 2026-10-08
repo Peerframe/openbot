@@ -190,7 +190,11 @@ try {
     OPENBOT_CONTROL_WEB_ROOT: webRoot,
     PYTHONDONTWRITEBYTECODE: "1",
     ...(options.entry === "ts"
-      ? { OPENBOT_CONTROL_PROXY_ADDRESS: "127.0.0.1", OPENBOT_CONTROL_PUBLIC_ORIGIN: origin }
+      ? {
+          OPENBOT_CONTROL_PROXY_ADDRESS: "127.0.0.1",
+          OPENBOT_CONTROL_PUBLIC_ORIGIN: origin,
+          OPENBOT_CONTROL_TS_READ_GROUP: "transcription",
+        }
       : {}),
   };
   const tsEnv: NodeJS.ProcessEnv = {
@@ -200,6 +204,9 @@ try {
     OPENBOT_TS_PORT: String(publicPort),
     OPENBOT_TS_PYTHON_ORIGIN: `http://127.0.0.1:${pythonPort}`,
     OPENBOT_TS_PUBLIC_ORIGIN: origin,
+    OPENBOT_TS_READ_GROUP: "transcription",
+    OPENBOT_TS_READ_ALLOWED_ORIGINS: origin,
+    OPENBOT_TS_DATABASE_URL: databaseUrl,
   };
   const startPython = () =>
     owner.start(python, ["-I", "-B", "apps/server-python/scripts/serve.py"], pythonEnv);
@@ -350,8 +357,11 @@ try {
     restarting = false;
     const session = await page.evaluate(
       async () =>
-        ((await (await fetch("/api/v1/auth/session")).json()) as { authenticated?: unknown })
-          .authenticated,
+        (
+          (await (await fetch("/api/v1/auth/session")).json()) as {
+            authenticated?: unknown;
+          }
+        ).authenticated,
     );
     assert.equal(session, true, "The Owner was logged out by the restart.");
   });

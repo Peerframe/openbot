@@ -220,7 +220,108 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 完整关卡与所有者批准边界见 ADR-0050。
 
 
-## 当前迁移检查点（2026-10-07）
+## 当前迁移检查点（2026-10-08）
+
+
+工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，当前分支
+`codex/ts-control-plane-p3-settings`，基于已合并 main
+`d747a327d2fce77df02cd9a1e7455ea4d311efcc`。按所有者“继续”的授权合并了 PR200；
+其树 `a0fc4e6ed0baa011f9b0829b9c78edb8538f161a` 与已验收候选相同，
+[CI37561911353](https://github.com/Peerframe/openbot/actions/runs/37561911353) 的17项任务全通过。
+main [CI37613802756](https://github.com/Peerframe/openbot/actions/runs/37613802756) 首次运行在直接
+Python 的 MCP 资源/提示词契约遇到10秒超时。第二次的直接 Python all/publisher/models 已通过，
+随后 TS 混合入口在同一普通 MCP 内容读取循环（`plugins.ts:296`）超时；原断言和期限未改变。
+两种入口的观测不能证明 TS 转发是原因。本地直接与混合 all 组通过，托管差异仍未解决，不再盲目重跑。这与此前 workspace503
+是两份独立证据。第43步侧栏王冠、头像和动画仍归 Claude；本轮没有发送消息或改动这些界面。
+保留原 dirty 工作区、已安装应用和用户数据。
+
+本轮 P3 候选只把 `GET /api/v1/settings/transcription` 交给 TS。PUT、会话签发/密码/撤销、设置与
+审计写入、模型解析、文档处理和 Temporal 继续归 Python。两边读取同一现有 PostgreSQL，共用严格
+响应契约；不改数据或结构，不加读取缓存、第二套身份来源或自动回退。配置默认 `none`；两边明确
+选择 `transcription` 时，Python 私有 GET 以 `operation_owned_by_ts` 拒绝。两边同时切回 `none`，
+同一地址/数据库/会话恢复转发，保留更新后的数据。Python 原实现仅保留在这段可反向切换的窗口，
+完整转写组的写入/消费者门槛通过后退役，P5 再删转发。带明确标记的原生候选使用该组，拒绝旧标记
+或缺失资源；候选不安装。
+
+### P3 转写读取决策与安全检查（2026-10-07）
+
+复用 P0 数据库决策和既有 Unlicense Postgres.js3.4.9。审阅标签对象
+`b70a8219c25ca3c79d54b27ff24dcdef6df4ab40`，实际提交
+[`e7dfa14519f363229ccc3ead7b1b2f2051937efb`](https://github.com/porsager/postgres/tree/e7dfa14519f363229ccc3ead7b1b2f2051937efb)。
+查阅 README/类型/源码中的连接池、事务、关闭与取消限制，
+[PostgreSQL17 行锁](https://www.postgresql.org/docs/17/explicit-locking.html)、
+[RFC6265 cookie](https://datatracker.ietf.org/doc/html/rfc6265#section-4.2.1)，以及现有 Python
+OwnerTransactions、Starlette cookie 和 CPython 引号转义行为。沿用 P0 对 pg8.23.1 的比较：
+这一读取没有必须换驱动的缺口，换驱动会改变连接池/类型/取消假设。转发仍是 P2，不完成实际迁移；
+代理或缓存增加生命周期与一致性成本。没有复制或大幅改写上游源码；小型 cookie 兼容实现独立编写，
+按保留的线格式验证。既有运行时许可包含同一固定驱动。
+
+TS 仅验证选定的 HTTP/HTTPS Owner cookie、43位 ASCII token 和 SHA256 摘要。有界 READ COMMITTED
+事务先锁现有会话 `FOR SHARE`，再锁设置行，验证共享 DTO，提交前用 `clock_timestamp()` 复查有效期
+与撤销。这阻止撤销竞争，不声称 TS 签发身份。缺失、未知、过期、撤销会话返回既有401 `error` 包；
+数据库或投影问题返回脱敏503，拒绝放行。提交的身份和 Origin 提示不授予权限；明确 CORS 来源与
+Python 对齐，HEAD/OPTIONS/PUT 保留 Python 行为。
+
+最多4个 SQL 请求，6秒总期限，连接/语句3秒、锁1秒、空闲事务5秒。断开或超时后丢弃晚到结果，
+实际事务结束前不释放名额。未使用驱动取消：其独立连接可能误取消后续复用的查询。连接池归现有
+入口生命周期管理并限时关闭；不输出 SQL/DSN/token/模型错误。启动仅检查所需列，配置/结构不符时
+不开放监听。
+
+临时 SQL/真实 HTTP 检查覆盖安全/回环 cookie、撤销/过期、阻塞中到期、撤销顺序、并发/锁超时、
+客户端断开、缺失行、读取不写审计/数据、Python 隔离、停掉自管 Python 后 TS 仍可读取，以及新数据
+的双向切换。完整资源契约发现401包使用了 `detail`，已改成 Python 的 `error`，没有放宽契约。
+单元夹具仅作补充。常规设置等待独立的 ZoneInfo 兼容决定，本轮不削减既有时区或模型选择契约。
+
+每组仍须实际运行 `npm run ui:acceptance -- --entry ts`，达到 PASS12/12，未预期响应和页面错误都为0。
+任何 workspace503 再现都会阻断门槛，按步骤检查两边日志，不加豁免或重试。当前结果与源码限定的
+证据保存在[同一收据](typescript-control-plane-p2-native.json)。这一读取是候选检查点，不代表
+P3/P4/P5 完成，也不验证原生 Keychain 或 Temporal。
+
+
+HTTP 生命周期修正前的首份 P3 源码检查：`npm run check` 通过（TS37、Desktop578/3项平台跳过、Web692、协议461；任务/缓存
+数量留在收据），Python 私有代理/配置20项通过，真实混合 all270+19项附件+14项读取、HTTPS
+control50+14、直接 Python all270+19 均通过。最终界面运行 PASS12/12，99次响应（92×200、7×201），
+豁免、异常响应、页面错误、workspace503 都为0；报告为
+`/private/tmp/openbot-p3-ui-final/openbot-ui-acceptance-1791374856477/receipt.json`。
+运行时当前源码基于 main 且尚未提交；同一收据保存源码指纹限定范围，不把结果归到旧 P2 提交。
+所属临时进程和数据已清理。当前未签名、未安装 macOS arm64 TS Preview 已通过装配与实际包内的
+启动/重启/父 EOF/配对退出/读取；5份启动器、3份入口模块与构建相同。
+ASAR 为 `a1f098f8d9d025ea4fcf84ba30b72c38f6debade86c3559e0befda6f0583c7af`。
+此 API 候选不含 Worker 伴随包，不验证 Keychain/GUI/Temporal 或公开 PKI。发布后的 CI 再现了
+MCP 超时；下方共享 HTTP 生命周期修正提供本地原因及回归证据，修正源码的必需托管验收仍是合并
+门槛。通过前不切换下一组，保留既有完整伴随包基线。
+
+产品源码已提交为 `4764d5d3edf129489fd2509a5dec32ad917a0918`。2026-10-08（Asia/Singapore），
+所有者明确批准推送 `codex/ts-control-plane-p3-settings` 并创建公开草稿 PR。
+[草稿 PR205](https://github.com/Peerframe/openbot/pull/205) 已发布，初始 head 为
+`d38646c2c6496b6bbe2062bbf3bee35997bbd7b7`，基于 main `d747a327`。
+[CI37656292955](https://github.com/Peerframe/openbot/actions/runs/37656292955) 已在该 head 启动；
+最新提交的托管结果以 PR205 的必需检查及正文为准。此前自动审批拒绝是历史记录，已由这次明确批准解除。
+本次未授权合并。这份发布记录不改变已验收产品源码、安装版应用或 Claude 负责的界面。
+
+### 发布后的 HTTP 生命周期修正（2026-10-08）
+
+[PR205 CI37657377771](https://github.com/Peerframe/openbot/actions/runs/37657377771) 在直接 Python 的
+普通 MCP 读取（`plugins.ts:296`）超时，尚未开始 TS 组检查。临时诊断也在本机真实 HTTP 夹具中重现了
+无需调用 MCP 的输入拒绝超时：`http_input.watch` 的 `Task.cancelling()==1`，仍继续轮询，响应清理
+等待该任务退出。这定位了与托管现象一致的共享 HTTP 生命周期缺陷，不能据此归因于 TS 转发或 SDK 传输。
+
+复用既有轮询/Owner 取消契约和不变的 Starlette1.6.0、AnyIO4.15.1。查阅
+[Starlette 轮询取消域](https://github.com/Kludex/starlette/blob/1.6.0/starlette/requests.py)和
+[AnyIO 取消计数](https://github.com/agronholm/anyio/blob/4.15.1/src/anyio/_backends/_asyncio.py)。
+ASGI 轮询中的取消域可能吞掉任务取消；在取消并等待自有监测任务前设置明确的停止条件。真实断线仍
+设置原信号，正常结束、错误和外层取消保留原结果；轮询间隔及产品/消费者期限不变。直接读取 ASGI
+可能与上传正文消费者竞争，替换或升级 SDK 不解决已观测的清理缺口。未增加依赖、权限、持久格式，
+没有复制或大幅改写上游实现。
+
+两项确定性回归在修正前失败，修正后生命周期22项通过；此前失败的带诊断真实插件组随后通过30项。
+独立 SDK 连接/读取诊断在 macOS 通过40次，在现有隔离 Linux arm64 产品镜像通过40次；这些窄范围
+诊断不替代真实 HTTP/SQL 或托管 Linux amd64 验收。修正源码的检查、界面报告和刷新后的未安装原生
+资源单独记录于[同一收据](typescript-control-plane-p2-native.json)的
+`currentP3Candidate.httpLifetimeCorrection`。旧源码、包和 CI 保留原范围；最新托管提交以 PR205 的
+必需检查/正文为准。本轮不盲目重跑失败任务，不放宽期限，也未授权合并。
+
+### 合并前已验证的 P2 候选
 
 当前工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支
 `codex/ts-control-plane-p2`。当前产品源码为

@@ -1130,3 +1130,13 @@ The migration integration's [transitive proxy trust review](research/retained-de
 selects MIT proxy-addr2.0.8 / a11ad82545698af5c33e59f3ed0b52eab79bf610 for the retained
 MCP SDK1.30.0/Express5.2.1 example. It preserves the existing API/dependency closure, copies no
 source, and requires scoped HTTP, trust-regression and audit evidence before qualification.
+
+### P3 transcription settings read (2026-10-07)
+
+Reuse Unlicense Postgres.js3.4.9 / `e7dfa14519f363229ccc3ead7b1b2f2051937efb`, the existing Owner
+session digest/READ COMMITTED/SHARE-lock decision and Zod4.6.2 strict shared DTO. TS performs only
+the explicitly selected GET; Python retains issuance/revocation, writes and model resolution.
+No new version, persistent format, cache or upstream copied source. Paired reverse selection keeps
+newer SQL data and issued sessions. Actual lock/expiry/revocation/abort tests, mixed HTTP/HTTPS,
+UI12/12 and uninstalled native qualification remain gates. See the
+[scoped decision](research/typescript-control-plane-p0.md#p3-transcription-read-decision-and-security-review-2026-10-07).

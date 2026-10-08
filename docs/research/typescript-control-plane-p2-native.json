@@ -357,7 +357,7 @@
       "disposableProfile": true,
       "ownerLogin": "automatic native bootstrap login",
       "botCreatedAndRenamed": true,
-      "expectedBotName": "\u65b0\u5efa BotTS P2 Native Fixture",
+      "expectedBotName": "新建 BotTS P2 Native Fixture",
       "botRestoredAfterRestart": true,
       "realtimeConnectionRestored": true,
       "fileChecks": {
@@ -1423,7 +1423,7 @@
       "consumerDigestsRefreshed": true
     }
   },
-  "currentP2Candidate": {
+  "beforeP3ReadGroup": {
     "date": "2026-10-07 (Asia/Singapore)",
     "productSourceHead": "2c3dd553ec9d465749fbce6a014373285d169c4f",
     "acceptedMain": "44d13f963e1e4b029746b7aa32a611234a531f7a",
@@ -1533,6 +1533,348 @@
       "realPythonAndDisposablePostgres": true,
       "inventoryChanged": false,
       "noTemporalOrLiveProviderCalls": true
+    }
+  },
+  "currentCheckpointKey": "currentP3Candidate",
+  "currentP3Candidate": {
+    "date": "2026-10-07 (Asia/Singapore)",
+    "branch": "codex/ts-control-plane-p3-settings",
+    "worktree": "/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot",
+    "sourceBase": "d747a327d2fce77df02cd9a1e7455ea4d311efcc",
+    "sourceDirtyDuringQualification": true,
+    "sourceSha256": {
+      "apps/server-ts/src/app.ts": "5f78a1591eb94e945707b9ee8a6ebcb1e3d2d330af577cc290331278cae43ae0",
+      "apps/server-ts/src/config.ts": "1c49feb9f78f968072027ab60c3660e1ed4d8478a1b248f8add74cfa2453c584",
+      "apps/server-ts/src/transcription-read.ts": "65ed0978648a8144256c20edab6d642ee243fa4f3b40131d262c93b3ba65c353",
+      "apps/server-python/scripts/serve.py": "c1467e9d866211d8ede56c38aa5e00523a225de6b01bc1ef71d7551f523ca743",
+      "apps/server-python/src/openbot_server/app.py": "efa3810b5e7831b5f5d30aa7be4ccbe84ce6e6d8ebe0a94ef01e3f0a491c2d46",
+      "apps/server-python/src/openbot_server/product_control.py": "237e13a8ecdc10bcc4dba984e46b8eca2ba3cd5666143e3900be361b3eac00ce",
+      "apps/desktop/src/ts-server.ts": "49bd9c1973e76f95f1196bd48b0680adb40b3ec48369bc10b5836bb00104f0f6",
+      "apps/desktop/src/python-server.ts": "ab6e0c8eb4ce986f0b7c2280935a623d3e796de1343f6af932700c341984dd93",
+      "apps/desktop/src/ts-product-manifest.ts": "3803e4514f972c9165bf5015a572b7ef4b17eb13086f41e1d80f498aeb86e3c3",
+      "scripts/ui-acceptance.ts": "4333270e74a90d800e0408a0b02ed9297f95200e1e0977925c3352e969a8657e",
+      "scripts/ts-transcription-acceptance.ts": "c9c9393dc054f15ab5c7c1dbc8ab0918cda3e088360aa584d34a52fff02efb9f",
+      "scripts/test-contracts-python.ts": "3028e22a2a063761ba5abb154c6ae051f13736988e8f12e8d959d4567b6a6846"
+    },
+    "scope": "Explicit transcription group owns GET /api/v1/settings/transcription only; existing PostgreSQL; Python retains PUT/session issuance/revocation/audit/model/background writers.",
+    "selection": {
+      "default": "none",
+      "ts": "OPENBOT_TS_READ_GROUP=transcription; same OPENBOT_TS_DATABASE_URL and explicit OPENBOT_TS_READ_ALLOWED_ORIGINS",
+      "python": "OPENBOT_CONTROL_TS_READ_GROUP=transcription in private product proxy mode",
+      "reverse": "Stop owned pair; both group flags none; same address/database/cookie; newer data retained. No automatic fallback."
+    },
+    "p2Merge": {
+      "pr": "https://github.com/Peerframe/openbot/pull/200",
+      "commit": "d747a327d2fce77df02cd9a1e7455ea4d311efcc",
+      "tree": "a0fc4e6ed0baa011f9b0829b9c78edb8538f161a",
+      "matchesQualifiedPrTree": true,
+      "prCiRun": 37561911353,
+      "prCiJobsPassed": 17,
+      "mainCiRun": 37613802756,
+      "mainCiAttempts": 2,
+      "mainCiStatus": "failed twice at the normal MCP resource/prompt read loop (plugins.ts:296), unchanged 10s consumer deadline: attempt1 direct Python; attempt2 direct all/publisher/models passed, then mixed TS all failed. Cause unresolved; local direct/mixed all pass. No third blind rerun or assertion/timeout change."
+    },
+    "fullCheck": {
+      "command": "npm run check",
+      "node": "22.22.2",
+      "exitCode": 0,
+      "log": "/private/tmp/openbot-p3-full-check.log",
+      "tsTests": 37,
+      "desktopTests": 578,
+      "desktopOptionalPlatformSkips": 3,
+      "webTests": 692,
+      "protocolTests": 461,
+      "turbo": {
+        "lint": [
+          10,
+          2
+        ],
+        "typecheck": [
+          33,
+          12
+        ],
+        "test": [
+          27,
+          12
+        ],
+        "build": [
+          19,
+          14
+        ]
+      },
+      "turboCountMeaning": "[successful tasks, cached tasks]; not all checks were re-executed. Hosted PR research gate skipped outside PR event."
+    },
+    "pythonProxy": {
+      "command": "apps/server-python/.venv/bin/python -m pytest apps/server-python/tests/test_proxy_peer.py -q",
+      "passed": 20
+    },
+    "realHttp": {
+      "mixedAll": {
+        "passed": 270,
+        "artifactChecks": 19,
+        "readQualificationChecks": 14,
+        "webDesktopTransport": "actual settings PUT and attachment transport passed",
+        "log": "/private/tmp/openbot-p3-http-all.log"
+      },
+      "httpsControl": {
+        "passed": 50,
+        "readQualificationChecks": 14,
+        "disposableCaOnly": true,
+        "log": "/private/tmp/openbot-p3-https-control.log"
+      },
+      "pythonDirectAll": {
+        "passed": 270,
+        "artifactChecks": 19,
+        "pluginChecks": 30,
+        "log": "/private/tmp/openbot-p3-python-all.log"
+      },
+      "syntheticModelsOnly": true,
+      "noTemporalExecutionClaim": true,
+      "negativeWorkspace503": "Deliberate owned-Python-stop check only; separate from UI anomaly."
+    },
+    "uiAcceptance": {
+      "command": "npm run ui:acceptance -- --entry ts --out /private/tmp/openbot-p3-ui-final",
+      "passedSteps": 12,
+      "totalSteps": 12,
+      "responses": 99,
+      "statusCounts": {
+        "200": 92,
+        "201": 7
+      },
+      "allowedGaps": 0,
+      "unexpected": 0,
+      "pageErrors": 0,
+      "workspace503": 0,
+      "receipt": "/private/tmp/openbot-p3-ui-final/openbot-ui-acceptance-1791374856477/receipt.json",
+      "screenshots": "/private/tmp/openbot-p3-ui-final/openbot-ui-acceptance-1791374856477/screenshots",
+      "viewport": "1440x900",
+      "theme": "light",
+      "installedChrome": true,
+      "fixtureCleanup": true,
+      "earlierWorkspace503NotClaimedFixed": true
+    },
+    "native": {
+      "platform": "macOS arm64",
+      "candidate": "apps/desktop/out/ts-product/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
+      "unsigned": true,
+      "installed": false,
+      "workerCompanionIncluded": false,
+      "asarSha256": "a1f098f8d9d025ea4fcf84ba30b72c38f6debade86c3559e0befda6f0583c7af",
+      "compiledLaunchersMatchPackage": 5,
+      "entryModulesMatchPackage": 3,
+      "lockedPythonDistributions": 59,
+      "pipCheck": true,
+      "stagedSmoke": {
+        "parentEofStoppedActualApi": true,
+        "parentEofStoppedOwnedProcessCount": 2,
+        "tsForwardingEntry": true,
+        "transcriptionReadRestartVerified": true,
+        "tsReadGroup": "transcription",
+        "eitherProductExitStoppedPair": true,
+        "unsafeDirectoryRefusedAndPostgresStopped": true,
+        "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+        "pythonProductHealth": true,
+        "ownerLogin": true,
+        "postgresInitialized": true,
+        "restartPreservedData": true,
+        "serverAndPostgresStopped": true,
+        "syntheticOnly": true,
+        "nativeKeychainVerified": false
+      },
+      "packagedSmoke": {
+        "parentEofStoppedActualApi": true,
+        "parentEofStoppedOwnedProcessCount": 2,
+        "tsForwardingEntry": true,
+        "transcriptionReadRestartVerified": true,
+        "tsReadGroup": "transcription",
+        "eitherProductExitStoppedPair": true,
+        "unsafeDirectoryRefusedAndPostgresStopped": true,
+        "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+        "pythonProductHealth": true,
+        "ownerLogin": true,
+        "postgresInitialized": true,
+        "restartPreservedData": true,
+        "serverAndPostgresStopped": true,
+        "syntheticOnly": true,
+        "nativeKeychainVerified": false
+      },
+      "nativeKeychainVerified": false,
+      "fullCompanionCandidateQualificationRetainedAtPriorScope": true,
+      "qualificationScope": "Initial read-group source before HTTP lifetime correction; refreshed resources are qualified separately below."
+    },
+    "preserved": {
+      "originalBranch": "codex/c22-c24-storage-follow-ups",
+      "originalHead": "010439bb9002fabb7e1facd8450ee85edbafa309",
+      "originalDirtyEntries": 172,
+      "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+      "claudeStep43Unchanged": true
+    },
+    "remaining": "Required hosted qualification of the HTTP-lifetime-corrected source before further cohort switch or merge; merge is not authorized. This first read does not complete P3; writes, identity/security, products, models, P4 and P5 remain.",
+    "publication": {
+      "status": "published draft; merge not authorized",
+      "ownerApprovalDate": "2026-10-08 (Asia/Singapore)",
+      "authorizedActions": [
+        "push codex/ts-control-plane-p3-settings to origin",
+        "create public draft PR"
+      ],
+      "pullRequest": "https://github.com/Peerframe/openbot/pull/205",
+      "initialPublishedHead": "d38646c2c6496b6bbe2062bbf3bee35997bbd7b7",
+      "initialHostedRun": "https://github.com/Peerframe/openbot/actions/runs/37656292955",
+      "hostedResult": "Required checks and PR205 body track the latest revision. Publication is not hosted qualification.",
+      "priorApprovalRejection": {
+        "resolvedBy": "explicit Owner approval on 2026-10-08",
+        "rejectedActions": [
+          "push codex/ts-control-plane-p3-settings to origin",
+          "create public draft PR"
+        ],
+        "reasonAtRejection": "Automatic approval review found no explicit authorization for this new external publication. No remote branch or PR was created."
+      },
+      "preparedPrBody": "/private/tmp/openbot-p3-draft-pr.md"
+    },
+    "initialReadGroupSourceHead": "4764d5d3edf129489fd2509a5dec32ad917a0918",
+    "httpLifetimeCorrection": {
+      "date": "2026-10-08 (Asia/Singapore)",
+      "sourceDirtyDuringQualification": true,
+      "sourceBase": "5a1d39e255f8b573274905effa209407aa80613d",
+      "sourceSha256": {
+        "apps/server-python/src/openbot_server/http_input.py": "5a33fd5635337beffe85f23340ff3963d7fd9c36734d2d197919bd3b8796e17c",
+        "apps/server-python/tests/test_http_input_lifecycle.py": "2d7d968b73bfbe48cf26d298f16074c12383cab480e28ef2ba13cf7c9963c192"
+      },
+      "observedHostedFailure": {
+        "run": 37657377771,
+        "head": "5a1d39e255f8b573274905effa209407aa80613d",
+        "actualMerge": "ee6d27336448425afb0e64d16976d4bcb9b8c288",
+        "job": 112916458093,
+        "entry": "direct Python all, normal MCP read at plugins.ts:296; TS read checks not reached",
+        "consumerDeadlineChanged": false
+      },
+      "localDiagnosis": {
+        "normalInputRefusalAlsoHung": true,
+        "watcherCancellationCount": 1,
+        "watcherFrame": "http_input.py:54 watch, still polling while response cleanup joins it",
+        "temporaryDiagnosticsCommitted": false
+      },
+      "decision": "Explicit stop condition before cancelling/joining the owned disconnect watcher; cancellation-aware polling can consume cancel(). Preserve real disconnect signal, normal/error/outer cancellation, existing poll interval and all deadlines. Same pinned dependencies; no upstream source copied.",
+      "focusedRegression": {
+        "beforeFixFailed": 2,
+        "afterFixPassed": 22,
+        "instrumentedActualHttpPluginChecks": 30,
+        "standaloneSdkChecks": {
+          "macosArm64": 40,
+          "linuxArm64": 40,
+          "scope": "existing owned loopback fixture, no SQL/product HTTP, not hosted amd64 qualification"
+        }
+      },
+      "fullCheck": {
+        "command": "npm run check",
+        "node": "22.22.2",
+        "exitCode": 0,
+        "log": "/private/tmp/openbot-p3-mcp-full-check.log",
+        "turbo": {
+          "lint": [
+            10,
+            10
+          ],
+          "types": [
+            33,
+            33
+          ],
+          "test": [
+            27,
+            27
+          ],
+          "build": [
+            19,
+            19
+          ]
+        },
+        "scope": "Turbo tasks all cached from qualified read-group source; documentation/research/prerequisites executed. New Python lifecycle22 and real HTTP checks recorded separately."
+      },
+      "hostedResult": "Required checks/body on PR205 qualify the latest corrected-source revision; original failed run remains historical evidence.",
+      "actualHttp": {
+        "pythonAll": {
+          "contracts": 270,
+          "artifacts": 19,
+          "log": "/private/tmp/openbot-p3-mcp-python-all.log",
+          "exitCode": 0
+        },
+        "mixedTsAll": {
+          "contracts": 270,
+          "artifacts": 19,
+          "readChecks": 14,
+          "log": "/private/tmp/openbot-p3-mcp-ts-all.log",
+          "exitCode": 0
+        },
+        "httpsControl": {
+          "contracts": 50,
+          "readChecks": 14,
+          "log": "/private/tmp/openbot-p3-mcp-https-control.log",
+          "exitCode": 0
+        },
+        "unchangedConsumerDeadlines": true,
+        "fixtureProcessesAndDataRemoved": true
+      },
+      "ui": {
+        "command": "npm run ui:acceptance -- --entry ts --out /private/tmp/openbot-p3-mcp-ui",
+        "passed": 12,
+        "total": 12,
+        "apiResponses": 104,
+        "statuses": {
+          "200": 97,
+          "201": 7
+        },
+        "allowedKnownGaps": 0,
+        "unexpectedResponses": 0,
+        "pageErrors": 0,
+        "workspace503": 0,
+        "receipt": "/private/tmp/openbot-p3-mcp-ui/openbot-ui-acceptance-1791394896696/receipt.json",
+        "scope": "Installed Chrome1440x900/light with owned disposable TS/Python/PostgreSQL; not native GUI, paid models or Worker/Temporal; prior intermittent workspace503 not claimed fixed."
+      },
+      "native": {
+        "stageExitCode": 0,
+        "packageExitCode": 0,
+        "stagedSmoke": {
+          "parentEofStoppedActualApi": true,
+          "parentEofStoppedOwnedProcessCount": 2,
+          "tsForwardingEntry": true,
+          "transcriptionReadRestartVerified": true,
+          "tsReadGroup": "transcription",
+          "eitherProductExitStoppedPair": true,
+          "unsafeDirectoryRefusedAndPostgresStopped": true,
+          "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+          "pythonProductHealth": true,
+          "ownerLogin": true,
+          "postgresInitialized": true,
+          "restartPreservedData": true,
+          "serverAndPostgresStopped": true,
+          "syntheticOnly": true,
+          "nativeKeychainVerified": false
+        },
+        "packagedSmoke": {
+          "parentEofStoppedActualApi": true,
+          "parentEofStoppedOwnedProcessCount": 2,
+          "tsForwardingEntry": true,
+          "transcriptionReadRestartVerified": true,
+          "tsReadGroup": "transcription",
+          "eitherProductExitStoppedPair": true,
+          "unsafeDirectoryRefusedAndPostgresStopped": true,
+          "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+          "pythonProductHealth": true,
+          "ownerLogin": true,
+          "postgresInitialized": true,
+          "restartPreservedData": true,
+          "serverAndPostgresStopped": true,
+          "syntheticOnly": true,
+          "nativeKeychainVerified": false
+        },
+        "asarSha256": "a1f098f8d9d025ea4fcf84ba30b72c38f6debade86c3559e0befda6f0583c7af",
+        "sourceStageAndPackagedHttpInputSha256": "5a33fd5635337beffe85f23340ff3963d7fd9c36734d2d197919bd3b8796e17c",
+        "pythonLockedDistributions": 59,
+        "pipCheck": true,
+        "installed": false,
+        "workerCompanionIncluded": false,
+        "scope": "Refreshed unsigned macOS arm64 API-only TS Preview; no GUI/Keychain/Temporal/public PKI qualification."
+      }
     }
   }
 }

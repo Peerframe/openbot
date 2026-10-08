@@ -634,3 +634,11 @@ Fastify5.12.5/reply-from12.6.5 已按精确版本进入 P2 workspace lock。本�
 为保留的 MCP SDK1.30.0／Express5.2.1 示例选择 MIT proxy-addr2.0.8／
 `a11ad82545698af5c33e59f3ed0b52eab79bf610`。保留现有 API 和依赖闭包，不复制源码；
 通过对应 HTTP、信任回归和审计后才记为已验证。
+
+### P3 转写设置读取（2026-10-07）
+
+复用 Unlicense Postgres.js3.4.9 / `e7dfa14519f363229ccc3ead7b1b2f2051937efb`、现有 Owner
+会话摘要/READ COMMITTED/SHARE 行锁决定及 Zod4.6.2 严格共享 DTO。TS 仅执行明确选定的 GET，
+Python 保留签发/撤销、写入和模型解析。不增加版本、持久化格式、缓存或复制上游源码；双边反向
+切换保留更新后的 SQL 数据与已签发会话。实际锁/过期/撤销/断开、混合 HTTP/HTTPS、UI12/12 与
+未安装原生候选仍是门槛。见[限定决策](research/typescript-control-plane-p0.zh-CN.md#p3-转写读取决策与安全检查2026-10-07)。

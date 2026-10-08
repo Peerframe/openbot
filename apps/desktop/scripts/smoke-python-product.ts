@@ -4,6 +4,7 @@ import { lstat, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { transcriptionSettingsSchema } from "@openbot/protocol";
 import {
   confirmProcessesStopped,
   launchThroughDisposableParent,
@@ -70,6 +71,15 @@ export async function smokePythonProduct(runtimeRoot: string) {
   try {
     assert.equal((await controller.start()).status, "ready", problems.join("; "));
     assert.ok(base && cookie);
+    const readSettings = async () => {
+      const response = await fetch(`${base}/api/v1/settings/transcription`, {
+        headers: { Cookie: cookie! },
+        signal: AbortSignal.timeout(8000),
+      });
+      assert.equal(response.status, 200);
+      return transcriptionSettingsSchema.parse(await response.json());
+    };
+    const firstSettings = await readSettings();
     const firstPort = new URL(base).port;
     const headers = { Cookie: cookie, Origin: base, "Content-Type": "application/json" };
     const created = await fetch(`${base}/api/v1/channels`, {
@@ -103,6 +113,7 @@ export async function smokePythonProduct(runtimeRoot: string) {
         (value: { id: unknown }) => value.id === channelId,
       ),
     );
+    assert.deepEqual(await readSettings(), firstSettings);
     const nodes = await fetch(`${base}/api/v1/nodes`, { headers: { Cookie: cookie } });
     assert.equal(nodes.status, 200);
     assert.deepEqual(((await nodes.json()) as { nodes: unknown }).nodes, []);
@@ -144,6 +155,8 @@ export async function smokePythonProduct(runtimeRoot: string) {
       parentEofStoppedActualApi: true,
       parentEofStoppedOwnedProcessCount: tsSelected ? 2 : 1,
       tsForwardingEntry: tsSelected,
+      transcriptionReadRestartVerified: true,
+      tsReadGroup: tsSelected ? "transcription" : "none",
       eitherProductExitStoppedPair: tsSelected,
       unsafeDirectoryRefusedAndPostgresStopped: true,
       executionConfigurationWithoutEngineRefusedAndPostgresStopped: true,

@@ -27,6 +27,7 @@ import {
   OwnedDockerFixture,
   startControlPostgres,
 } from "./python-acceptance-fixture.ts";
+import { qualifyTranscriptionRead } from "./ts-transcription-acceptance.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const args = process.argv.slice(2);
@@ -210,7 +211,7 @@ try {
   for (const name of ["objects", "artifacts"]) await mkdir(join(directory, name), { mode: 0o700 });
   const modelReceipt = join(directory, "model-receipt.json");
   if (selectedSuite === "models") await writeFile(modelReceipt, "{}", { mode: 0o600 });
-  const startPython = (proxy: boolean) =>
+  const startPython = (proxy: boolean, readGroup = proxy) =>
     processes.start(
       join(root, "apps/server-python/.worker-venv/bin/python"),
       selectedSuite === "models"
@@ -224,10 +225,11 @@ try {
         OPENBOT_CONTROL_HOST: "127.0.0.1",
         OPENBOT_CONTROL_PORT: String(proxy ? pythonPort : port),
         OPENBOT_CONTROL_COOKIE_MODE: tls ? "secure" : "loopback",
-        OPENBOT_CONTROL_ALLOWED_ORIGINS: baseUrl,
+        OPENBOT_CONTROL_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
         ...(proxy
           ? {
               OPENBOT_CONTROL_PROXY_ADDRESS: "127.0.0.1",
+              OPENBOT_CONTROL_TS_READ_GROUP: readGroup ? "transcription" : "none",
               OPENBOT_CONTROL_PUBLIC_ORIGIN: baseUrl,
             }
           : {}),
@@ -244,13 +246,16 @@ try {
           : {}),
       },
     );
-  const startEntry = () =>
+  const startEntry = (readGroup = true) =>
     processes.start(process.execPath, ["apps/server-ts/dist/serve.js"], {
       ...allowlistedEnvironment(["PATH", "HOME", "TMPDIR"]),
       OPENBOT_TS_PYTHON_ORIGIN: `http://127.0.0.1:${pythonPort}`,
       OPENBOT_TS_PUBLIC_ORIGIN: baseUrl,
       OPENBOT_TS_HOST: "127.0.0.1",
       OPENBOT_TS_PORT: String(port),
+      OPENBOT_TS_READ_GROUP: readGroup ? "transcription" : "none",
+      OPENBOT_TS_READ_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
+      OPENBOT_TS_DATABASE_URL: dsn,
       ...(tlsDirectory
         ? {
             OPENBOT_TS_TLS_CERT_PATH: join(tlsDirectory, "server.pem"),
@@ -274,7 +279,11 @@ try {
           "Disposable TS entry exited before health.",
         );
       try {
-        ready = (await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(1000) })).ok;
+        ready = (
+          await fetch(`${baseUrl}/health`, {
+            signal: AbortSignal.timeout(1000),
+          })
+        ).ok;
       } catch {
         /* Await only this owned process, never another configured server. */
       }
@@ -282,6 +291,21 @@ try {
       await delay(250, undefined, { signal: abort.signal });
     }
     assert(ready, "Disposable Python product did not become healthy.");
+  };
+  const stopOwned = async (target: ChildProcess) => {
+    assert(target.exitCode === null && target.signalCode === null, "Switch target must be alive.");
+    await new Promise<void>((resolve, reject) => {
+      const deadline = setTimeout(() => {
+        target.kill("SIGKILL");
+        reject(new Error("Owned product did not stop within the switch deadline."));
+      }, 12000);
+      target.once("exit", (code, signal) => {
+        clearTimeout(deadline);
+        if (code === 0 || signal === "SIGTERM") resolve();
+        else reject(new Error("Owned product failed during the switch."));
+      });
+      target.kill("SIGTERM");
+    });
   };
   await waitReady();
   const headers = { Origin: baseUrl, "Content-Type": "application/json" };
@@ -368,24 +392,6 @@ try {
   const value = bot.bot;
   assert(value && typeof value === "object" && "id" in value && typeof value.id === "string");
   if (entry === "ts" && !tls && selectedSuite === "all") {
-    const stopOwned = async (target: ChildProcess) => {
-      assert(
-        target.exitCode === null && target.signalCode === null,
-        "Switch target must be alive.",
-      );
-      await new Promise<void>((resolve, reject) => {
-        const deadline = setTimeout(() => {
-          target.kill("SIGKILL");
-          reject(new Error("Owned product did not stop within the switch deadline."));
-        }, 12000);
-        target.once("exit", (code, signal) => {
-          clearTimeout(deadline);
-          if (code === 0 || signal === "SIGTERM") resolve();
-          else reject(new Error("Owned product failed during the switch."));
-        });
-        target.kill("SIGTERM");
-      });
-    };
     const snapshot = async () => {
       const response = await fetch(`${baseUrl}/api/v1/bots`, {
         headers: { Cookie: cookie },
@@ -420,12 +426,47 @@ try {
       "Mixed → direct Python → mixed switch retained the public URL, SQL Bot and issued Owner session; one writer at each step.",
     );
   }
+  if (entry === "ts" && ["all", "control", "resources"].includes(selectedSuite)) {
+    await qualifyTranscriptionRead({
+      databaseUrl: dsn,
+      origin: baseUrl,
+      privateOrigin: `http://127.0.0.1:${pythonPort}`,
+      cookie,
+      async stopPython() {
+        await stopOwned(child);
+      },
+      async restorePython() {
+        child = startPython(true);
+        await waitReady();
+      },
+      async reverseToPython() {
+        assert(entryChild);
+        await stopOwned(entryChild);
+        await stopOwned(child);
+        child = startPython(true, false);
+        entryChild = startEntry(false);
+        await waitReady();
+      },
+      async restoreTs() {
+        assert(entryChild);
+        await stopOwned(entryChild);
+        await stopOwned(child);
+        child = startPython(true);
+        entryChild = startEntry();
+        await waitReady();
+      },
+    });
+  }
   // This owned database has no Worker. Seed publication states so HTTP decision/unread
   // contracts exercise real transactions without claiming execution by a production Host.
   const lifecycle = {
     channelId: randomUUID(),
     unreadMessageId: randomUUID(),
-    approvals: { approve: randomUUID(), reject: randomUUID(), expired: randomUUID() },
+    approvals: {
+      approve: randomUUID(),
+      reject: randomUUID(),
+      expired: randomUUID(),
+    },
   };
   const employee = {
     botId: randomUUID(),
@@ -875,7 +916,9 @@ try {
         ),
       })),
     );
-    const response = await fetch(`${baseUrl}/openapi.json`, { signal: AbortSignal.timeout(10000) });
+    const response = await fetch(`${baseUrl}/openapi.json`, {
+      signal: AbortSignal.timeout(10000),
+    });
     assert.equal(response.status, 200);
     const schema: unknown = await response.json();
     assert(
