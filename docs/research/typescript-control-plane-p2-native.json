@@ -2377,7 +2377,7 @@
   },
   "currentP3ChannelReadCandidate": {
     "date": "2026-10-08",
-    "status": "local-qualification-in-progress",
+    "status": "locally-qualified-unpublished",
     "worktree": "/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot",
     "branch": "codex/ts-control-plane-p3-channel-reads",
     "baseCommit": "df99396876b2fb4308fb60705076e6804d7fe3bd",
@@ -2388,16 +2388,196 @@
       "listRuns"
     ],
     "authorization": "Local migration only; retain draft PR208, no push/new PR/merge/install",
-    "pending": [
-      "final full check",
-      "mixed full HTTP",
-      "verified-CA HTTPS",
-      "UI12/12",
-      "staged/packaged native probes",
-      "offline credential scan",
-      "fixed diff review"
-    ],
+    "pending": [],
     "remainingMigration": "Other P3 cohorts, P4 Work/harness/Temporal, P5 Python retirement",
-    "writers": "Sole implementing agent; qualification processes own separate disposable fixtures"
+    "writers": "No source writers or qualification processes remain at handoff; sole implementing agent",
+    "qualifiedImplementationCommit": "5c2190cb0468e07b7c3a514df7438a9d9df69659",
+    "sourceFingerprints": {
+      "apps/desktop/scripts/smoke-python-product.ts": "910aab30f12dca158b7116a527a646ac9e0ebcabeded7a9a735db227b95abb01",
+      "apps/desktop/src/python-server.ts": "c3899ff3628ec35e16a370806ff48d70eade89d5ba23aa56af863e16d90ef117",
+      "apps/desktop/src/ts-product-manifest.ts": "698abfdf4c944b9b80a4b4b7594df477ab16cf54eac3cce78b9f48f346fb207f",
+      "apps/desktop/src/ts-server.test.ts": "f7c85721359ed6e1d95a515b7ac7aaaae48a9d8ba1ac4dc6799075a51633f37d",
+      "apps/desktop/src/ts-server.ts": "676bff60ca91aff4acca2233e45e7635962d68b443878167d0e1d93fdc21398e",
+      "apps/server-python/scripts/serve.py": "1224981e00fc864e51a9babe38e44bab34f558e4073941c180b1cd76f7d23f0a",
+      "apps/server-python/src/openbot_server/app.py": "3e04850af8dc98612423d2ab55924e1cb05095441e2f5788c871f6e77fe009f9",
+      "apps/server-python/tests/test_proxy_peer.py": "124df4817ddc86231ef40eb2bcee9be59f61bac7002b4ca96cfeca31a0a5038e",
+      "apps/server-ts/src/app.ts": "188e5ce6665a861c32f61b71472200a519762f8e02ebb13c3ebddef067ef71df",
+      "apps/server-ts/src/channel-read-projection.ts": "60d282d7ddd291c8712044c15a32ae961487c0ddec761ee487ee15d9e03ed565",
+      "apps/server-ts/src/channel-read-query.ts": "86a9f739c516fd5ba62ffb8f62d93dd3c0f91e3a4452d4bc3b8f8675662a12de",
+      "apps/server-ts/src/channel-read.test.ts": "70feb7fb431d66d6b0415442bfc9b701f651fba615f2e9629815cf3b8101e9c4",
+      "apps/server-ts/src/channel-read.ts": "9ed34f70b2d1acbea66476b0aba1b61100e11c1ac920acc3ecec18a6f24fb641",
+      "apps/server-ts/src/config.ts": "bf177834840a12b3ae5b4dddf64f0ecc225046f07f6e18feb005dad142b5276a",
+      "scripts/test-contracts-python.ts": "a892d42456d514f24988da718a5660e6bfb166120f765f57fbec0e88e4addc3c",
+      "scripts/ts-channel-read-acceptance.ts": "3eb3fa2b5864d010404c7cd57a6247da4964b3f22bc6aaba1998d2f31ec5ead8",
+      "scripts/ui-acceptance.ts": "702f90503606c94ac923fa55c293449c98ad59bc4451321a4ee926ad904c273d"
+    },
+    "qualificationSourceState": "Final working-tree product sources committed unchanged as qualifiedImplementationCommit; this checkpoint adds documentation only",
+    "fullCheck": {
+      "command": "npm run check",
+      "exitCode": 0,
+      "node": "24.21.0",
+      "log": "/private/tmp/openbot-p3-channels-check-qualified-final.log",
+      "tasks": {
+        "prerequisiteBuild": {
+          "passed": 10,
+          "cached": 2
+        },
+        "typecheck": {
+          "passed": 33,
+          "cached": 10
+        },
+        "test": {
+          "passed": 27,
+          "cached": 12
+        },
+        "build": {
+          "passed": 19,
+          "cached": 12
+        }
+      },
+      "affectedExecutedTests": {
+        "serverTs": 53,
+        "desktop": 578,
+        "desktopPlatformSkips": 3,
+        "web": 692
+      }
+    },
+    "focusedPython": {
+      "passed": 53,
+      "exitCode": 0,
+      "log": "/private/tmp/openbot-p3-channels-python.log",
+      "warning": "Existing Starlette BlockingPortal deprecation"
+    },
+    "http": {
+      "mixedAll": {
+        "exitCode": 0,
+        "contracts": 270,
+        "additionalArtifactChecks": 19,
+        "transcriptionRead": 14,
+        "primaryBotWrite": 17,
+        "ownerAuth": 13,
+        "channelRead": 9,
+        "log": "/private/tmp/openbot-p3-channels-all-qualified.log"
+      },
+      "verifiedCaHttpsControl": {
+        "exitCode": 0,
+        "contracts": 50,
+        "transcriptionRead": 14,
+        "primaryBotWrite": 17,
+        "ownerAuth": 13,
+        "channelRead": 9,
+        "log": "/private/tmp/openbot-p3-channels-https-qualified.log"
+      },
+      "coverage": [
+        "real Python/TS response and error parity",
+        "same-address reverse/reselect on newer data",
+        "microsecond and equal-timestamp pagination; deleted cursor anchor",
+        "retained UTF-16 byte-JSON cursor over HTTP; UTF-16/32 unit vectors",
+        "code-point previews; Run ordering and limits",
+        "malformed records; SQL and serialized byte ceilings",
+        "revocation/expiry committed during blocked projection",
+        "bounded admission retains aborted reader slots until actual cleanup",
+        "bounded lock timeout and sanitized failures without retries",
+        "four selected routes work with Python stopped"
+      ],
+      "scope": "Owned PostgreSQL, real Python/TS product services and actual Web/Desktop HTTP consumers; no live model, Worker execution or Temporal qualification"
+    },
+    "ui": {
+      "command": "npm run ui:acceptance -- --entry ts",
+      "passed": 12,
+      "totalSteps": 12,
+      "responses": 100,
+      "statusCounts": {
+        "200": 93,
+        "201": 7
+      },
+      "unexpectedResponses": 0,
+      "pageErrors": 0,
+      "workspace503": 0,
+      "outputDirectory": "/private/tmp/openbot-p3-channels-ui-final/openbot-ui-acceptance-1791441746704",
+      "receipt": "/private/tmp/openbot-p3-channels-ui-final/openbot-ui-acceptance-1791441746704/receipt.json",
+      "screenshots": "/private/tmp/openbot-p3-channels-ui-final/openbot-ui-acceptance-1791441746704/screenshots",
+      "log": "/private/tmp/openbot-p3-channels-ui-final.log"
+    },
+    "native": {
+      "platform": "macOS arm64",
+      "marker": "openbot.desktop.ts-control/v4",
+      "selectedGroup": "channels",
+      "stageLog": "/private/tmp/openbot-p3-channels-native-stage.log",
+      "stageNote": "Standard locked staging passed, including 59 Python distributions. After the cursor compatibility repair, refreshed the final compiled TS closure without reinstalling unchanged dependencies; all 64 staged file fingerprints match final dist. Native probes and packaging ran afterward.",
+      "compiledFingerprints": "/private/tmp/openbot-p3-channels-staged-ts-fingerprints.json",
+      "stagedProbe": {
+        "exitCode": 0,
+        "receipt": "/private/tmp/openbot-p3-channels-native-smoke.json"
+      },
+      "packageLog": "/private/tmp/openbot-p3-channels-native-package.log",
+      "packagedProbe": {
+        "exitCode": 0,
+        "receipt": "/private/tmp/openbot-p3-channels-native-packaged-smoke.json"
+      },
+      "artifact": "apps/desktop/out/ts-product/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
+      "asarSha256": "6ff4df8e306ebd2cd8fc0193bb1e563d0580a86b9036e686d5036a5509b2360b",
+      "verified": [
+        "all four channel reads survive restart",
+        "changed-password restart login",
+        "same data/bootstrap/key retained",
+        "either child exit stops pair",
+        "parent EOF stops two owned processes",
+        "database cleanup",
+        "unsupported execution configuration refuses API-only fallback"
+      ],
+      "limits": "Unsigned Preview; synthetic encryption callbacks. No native Keychain/GUI/Worker/Temporal/installed-app claim."
+    },
+    "credentialScan": {
+      "head": "5c2190cb0468e07b7c3a514df7438a9d9df69659",
+      "image": "ghcr.io/trufflesecurity/trufflehog@sha256:deb2af10659a488a14d262a323addcde099d99827a1cf1dc4e93c17915c39f08",
+      "scope": "Entire single-branch ancestry in an indexed disposable clone; network none, no verification, no upload, no update",
+      "scannerExit": 183,
+      "checkerExit": 0,
+      "reviewedHistoricalFixtures": 20,
+      "newFindings": 0,
+      "newExceptions": 0,
+      "log": "/private/tmp/openbot-p3-channels-credential-check.log"
+    },
+    "fixedDiffReview": {
+      "base": "df99396876b2fb4308fb60705076e6804d7fe3bd",
+      "head": "5c2190cb0468e07b7c3a514df7438a9d9df69659",
+      "reviewer": "Implementing Codex agent using openbot-review; not an independent external audit",
+      "actionableBlockers": 0,
+      "scope": [
+        "shared inventory and exact four-route ownership",
+        "read-only SQL and session recheck after projection",
+        "fixed parameterized queries and bounded data",
+        "opaque cursor compatibility and code-point rules",
+        "paired rollback and native lifecycle",
+        "credentials stay out of responses/errors/fixture URLs"
+      ]
+    },
+    "issuesFoundAndResolved": [
+      "Postgres.js timestamptz parameter serialization discarded cursor microseconds; bind as text before server-side timestamp cast",
+      "Run equal-time secondary sort needed DESC parity",
+      "FastAPI parameter-validation error precedence and full raw query preserved",
+      "Retained byte-JSON cursor encodings added",
+      "Disposable auth fixture required its explicit session id",
+      "Desktop launcher assertions updated for the new selected group; test callback lint fixed"
+    ],
+    "preserved": {
+      "ownerAuthRollbackArtifact": "apps/desktop/out/ts-product-owner-auth-baseline/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
+      "ownerAuthRollbackAsarSha256": "07020e91f71c771d6399c68ce82f60c44125ec6f7ce42fe24617653b3591fca9",
+      "originalCheckout": {
+        "path": "/Users/yxflc/Project/openbot",
+        "branch": "codex/c22-c24-storage-follow-ups",
+        "head": "010439bb9002fabb7e1facd8450ee85edbafa309",
+        "dirtyEntries": 172
+      },
+      "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+      "claudeStep43Ui": "untouched"
+    },
+    "publication": {
+      "state": "local-only; no remote branch or PR",
+      "pr208": "Still OPEN/draft at df993968, base main; rechecked after local qualification",
+      "hostedCi": "Not run for this unpublished cohort. PR208 results do not qualify it.",
+      "remaining": "Owner has explicitly deferred remote publication/merge. Preserve this local candidate; future publication must target main after approved base integration and require its own hosted CI."
+    }
   }
 }

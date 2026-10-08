@@ -352,14 +352,27 @@ Its [hosted CI](https://github.com/Peerframe/openbot/actions/runs/37715428319) p
 that qualifies the authentication cohort, not this new four-operation read candidate.
 PR206 is merged at main `41a1a5b57b258e5b34d9c4ef80096b69b376930f`.
 
-The local channel read implementation and its real SQL/HTTP forward/reverse qualification are in
-progress. It covers Bot list, channel list, message pagination and Run list; writers and background
-services retain their current owners. Current gates, exact source fingerprints and local output
-paths are recorded in `currentP3ChannelReadCandidate` of the [single receipt](typescript-control-plane-p2-native.json).
-The previous qualified Owner auth package is retained at `apps/desktop/out/ts-product-owner-auth-baseline`.
-No remote publication, merge, installation or Python retirement is authorized for this slice.
-The original dirty checkout, installed application and Claude's Step43 Web UI remain outside it.
-Other P3 cohorts and P4/P5 remain outstanding.
+The four-operation channel read candidate is locally qualified at implementation
+`5c2190cb0468e07b7c3a514df7438a9d9df69659`. Full `npm run check` passes (affected executed tests:
+TS53, Desktop578 with3 platform skips, Web692); focused Python53 passes. Mixed real HTTP all270 plus19
+artifact checks and HTTPS control50 pass, with read14/write17/auth13/channel-read9 on both transports.
+Exact-candidate UI is PASS12/12:100 responses (93×200,7×201), zero unexpected responses, page errors
+or workspace503. Reports/screenshots, executed/cached tasks and exact source fingerprints are in
+`currentP3ChannelReadCandidate` of the [single receipt](typescript-control-plane-p2-native.json).
+
+Staged and actual unsigned macOS arm64 Preview probes pass all four reads after restart,
+changed-password login, retained data, either-child/parent-EOF shutdown and PostgreSQL cleanup.
+The final compiled TS closure was refreshed into the unchanged locked staged dependencies before
+both probes and packaging. Synthetic encryption does not qualify Keychain, GUI, Worker or Temporal.
+Offline pinned scanning of the implementation's complete branch ancestry passes20 exact historical
+fixtures, zero new findings/exceptions. The implementing agent's fixed-diff review found no remaining
+blocker; it is not an independent external audit.
+
+The previous qualified Owner auth package remains runnable at `apps/desktop/out/ts-product-owner-auth-baseline`.
+The original172 dirty entries, installed app fingerprint and Claude's Step43 UI are unchanged.
+No writers remain. This is a local-only candidate: no new remote branch, PR, merge or installation;
+new hosted CI is still required if publication is later authorized. Other P3 cohorts, Work/harness/
+Temporal P4 and Python retirement P5 remain outstanding. Keep this candidate separate from draft208.
 
 ### P3 channel read decision (2026-10-08)
 
@@ -381,7 +394,7 @@ Keep the existing bounded admission helper, fixed SQL/order/limits and no retry/
 Preserve microsecond cursor timestamps as SQL text rather than converting through JavaScript Date;
 public timestamps retain millisecond precision. Reuse shared response schemas with the existing
 Python code-point adapter for channel previews. Cursor admission retains exact integer version,
-canonical base64url, duplicate-key refusal and channel binding. SQL bounds message/Run payloads
+canonical base64url, duplicate-key refusal, retained byte-JSON encodings and channel binding. SQL bounds message/Run payloads
 before transfer; final response size uses Python's JSON separator accounting. Real disposable
 HTTP/HTTPS parity, invalid/oversized records, revocation during a blocked read, newer-data reverse
 switch, Python-down reads, UI12/12 and native staged/packaged probes are required before qualification.

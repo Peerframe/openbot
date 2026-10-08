@@ -228,12 +228,23 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 其[托管 CI](https://github.com/Peerframe/openbot/actions/runs/37715428319) 已17/17通过，但不能替代新读取组的验证。
 #206 已合并到 main `41a1a5b57b258e5b34d9c4ef80096b69b376930f`。
 
-本地候选接管 Bot 列表、频道列表、消息分页和运行列表，当前正在完成真实 SQL/HTTP 正反切换及其他关卡。
-写入与后台职责保持既有归属。当前验收、源码指纹及输出路径集中记录在
+本地候选已在实现提交 `5c2190cb0468e07b7c3a514df7438a9d9df69659` 完成验收，接管 Bot 列表、频道列表、
+消息分页和运行列表。完整 `npm run check` 通过；受影响测试实际执行 TS53、Desktop578（3项平台跳过）、
+Web692；Python 定向53项。真实混合 HTTP 全套270及额外附件19、受信 CA HTTPS control50通过，
+两种传输上均通过读取14、主 Bot 写入17、认证13和本组9项验证。
+最终界面 PASS12/12，100次响应（93×200、7×201），异常响应、页面错误、workspace503均为0。
+报告、截图、缓存与实际执行区分、源码指纹集中记录在
 [单一收据](typescript-control-plane-p2-native.json)的 `currentP3ChannelReadCandidate`。
-上一份合格认证组安装包保留在 `apps/desktop/out/ts-product-owner-auth-baseline`。
-本轮不推送、不合并、不安装、不退役 Python；原工作区、已安装应用及 Claude 的第43步界面不在修改范围。
-其他 P3 组及 P4/P5 尚未完成。
+
+已准备运行资源及实际未签名 macOS arm64 Preview 包的探针均通过：重启后4个读取接口、改密码后登录、
+数据保留、任一子进程退出或父管道关闭时成对停止、数据库清理。游标兼容修正后刷新了最终编译模块，
+保留未变的锁定依赖；探针和打包均在刷新之后运行。合成加密不代表 Keychain、GUI、Worker 或 Temporal 验收。
+离线固定版本凭证扫描覆盖实现提交完整分支历史，20条既有已审核示例，无新增发现或例外。
+实现代理的固定差异审阅无剩余阻断；不是独立外部安全审计。
+
+上一份合格认证组包保留在 `apps/desktop/out/ts-product-owner-auth-baseline`；原工作区172项改动、
+已安装应用指纹及 Claude 第43步界面未变。没有遗留写入者。本轮仅本地候选，未推送、未创建新PR、未合并、
+未安装；将来如获准发布，仍需该候选自己的托管CI。其他P3组、P4任务/harness/Temporal及P5退役Python尚未完成。
 
 ### P3 主 Bot 选择决策（2026-10-08）
 
