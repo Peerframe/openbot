@@ -344,40 +344,43 @@ same-scope resource comparison. See ADR-0050 for the detailed gates and Owner ap
 
 ## Current migration checkpoint (2026-10-08)
 
-
 Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
-`codex/ts-control-plane-p3-primary-bot`, integrated with latest main
-`fe1520dcf997ed31452ea63c37ef5ea488cd7187` after the separately authorized PR205 merge.
-The new main tree equals qualified PR205 head `b62c22fe` and the hosted tested merge tree. PR200 was merged after the Owner's continuation
-approval. Its tree `a0fc4e6ed0baa011f9b0829b9c78edb8538f161a` is identical to the qualified
-PR candidate: all17 jobs at [CI37561911353](https://github.com/Peerframe/openbot/actions/runs/37561911353).
-Main [CI37613802756](https://github.com/Peerframe/openbot/actions/runs/37613802756) initially failed
-in direct Python MCP resource/prompt contracts with a10-second timeout. Attempt2 passed direct
-Python all/publisher/models, then timed out at the same normal MCP content-read loop through the
-mixed TS entry (`plugins.ts:296`). Assertions/timeouts are unchanged. The two entry observations do
-not establish a TS-forwarding cause. The shared HTTP watcher correction in PR205 later passes all17
-[CI37661699512](https://github.com/Peerframe/openbot/actions/runs/37661699512) jobs at head `b62c22fe`;
-the previous failed runs remain historical evidence. This is separate from the previously reported workspace503.
-Step43's sidebar crown/avatar/animation remains Claude-owned; no messages or UI edits are made here.
-The original dirty checkout, installed app and user profiles remain preserved.
+`codex/ts-control-plane-p3-owner-auth`, based on main `41a1a5b57b258e5b34d9c4ef80096b69b376930f`.
+PR206 was merged with the Owner's explicit approval; its qualified head and merged main both pass17/17
+hosted jobs ([PR CI](https://github.com/Peerframe/openbot/actions/runs/37708711197),
+[main CI](https://github.com/Peerframe/openbot/actions/runs/37712078777)).
 
-The preceding published PR205 candidate transfers only `GET /api/v1/settings/transcription` to TS. Python retains
-PUT, session issuance/password/revocation, settings/audit writes, model resolution, processing and
-Temporal. Both processes use the same existing PostgreSQL and shared strict response schema.
-No data/schema migration, read cache, secondary auth source or automatic fallback is introduced.
-Operator selection defaults to `none`. Explicit paired `transcription` selection makes Python's
-private GET refuse with `operation_owned_by_ts`; switching both flags to `none` restores forwarding
-on the same address/database/session, including newer data. Python's implementation is retained
-only for this bounded reverse-switch window; retire it when the whole transcription cohort's
-write/consumer gates pass, then remove the forwarding adapter in P5. The marked, uninstalled native
-candidate uses this reviewed cohort and refuses old/incomplete resource selection.
+The six-operation Owner authentication candidate is locally qualified at implementation commit
+`3f01b1fb08d63b455f486edd92d29fedd74f0b0f`. It is not pushed and has no hosted CI result of its own.
+Full `npm run check` passes; executed affected tests: TS46, Desktop578 (3 platform skips), Web692;
+focused Python72. Final real HTTP control50+read14+primary-write17+auth13 passes. Mixed all270 plus19
+artifact checks (including MCP30) and verified-CA HTTPS control50+14+17+13 pass. The latter two
+precede the equivalent ASCII logout-guard lint repair; final HTTP, full checks, UI and native probes
+verify the final guard. Cached versus executed tasks and exact source fingerprints are in
+`currentP3OwnerAuthCandidate` of the [single receipt](typescript-control-plane-p2-native.json).
+
+Exact-candidate TS UI is PASS12/12:114 responses (107×200,7×201), zero unexpected responses/page
+errors/workspace503. Keep its report and screenshots at the receipt's path; this observation does not
+claim the earlier intermittent503 is fixed. Staged and actual unsigned macOS arm64 Preview probes
+pass changed-password login after restart, retained data, paired exit/parent EOF and PostgreSQL cleanup.
+The explicit new-password login is not a claim that Desktop's old bootstrap password can auto-login.
+No Keychain, GUI, Worker/Temporal or installed-app qualification is inferred from these API probes.
+
+The fixed diff passed the implementing agent's security review, not an independent external audit.
+Offline fixed-version scanning of the branch's complete ancestry passes the existing checker:
+20 exact historical fixtures, zero new findings, no verification/upload or new exceptions.
+The prior primary-Bot package remains runnable under `apps/desktop/out/ts-product-primary-baseline`.
+The installed app fingerprint and original172 dirty entries remain unchanged. Claude's Step43 UI is
+untouched. No writers remain. Next: obtain publication authorization for this new branch/draft against
+`main`, then run hosted CI. Merge, Python retirement after its bounded rollback window, other P3
+cohorts and P4/P5 are still outstanding; the full migration is not complete.
 
 ### P3 Owner authentication decision (2026-10-08)
 
 PR206 is merged at `41a1a5b57b258e5b34d9c4ef80096b69b376930f`; its tree matches the qualified
 primary-Bot candidate. The next local candidate moves all six Owner auth/session operations
 together, behind explicit paired `owner` selection. Other Python authority and CLI recovery remain.
-This is implementation in progress, not a qualified ownership switch or P3 completion.
+Local qualification is recorded above; production selection, publication and P3 completion remain separate.
 
 Reuse Node's built-in asynchronous `crypto.scrypt`, `randomBytes` and `timingSafeEqual`, the existing
 Postgres.js3.4.9/PostgreSQL17.11 boundary, and shared TS schemas. Reviewed Node22.22.2 commit

@@ -1535,7 +1535,7 @@
       "noTemporalOrLiveProviderCalls": true
     }
   },
-  "currentCheckpointKey": "currentP3PrimaryBotCandidate",
+  "currentCheckpointKey": "currentP3OwnerAuthCandidate",
   "currentP3Candidate": {
     "date": "2026-10-07 (Asia/Singapore)",
     "branch": "codex/ts-control-plane-p3-settings",
@@ -2101,6 +2101,267 @@
         "research": "exit0;27/27; PR-event check skipped locally; /private/tmp/openbot-p3-primary-publication-research.log",
         "fullCheck": "Reuse unchanged product-source qualification; latest-main integration tree is identical to a0189dc0. Only these evidence records change."
       }
+    },
+    "publicationOutcome": {
+      "pullRequest": "https://github.com/Peerframe/openbot/pull/206",
+      "head": "1f4eb933324818663fce8366674746bccae95756",
+      "mergedAt": "2026-10-08T01:16:12Z",
+      "mergeCommit": "41a1a5b57b258e5b34d9c4ef80096b69b376930f",
+      "hostedPrRun": "https://github.com/Peerframe/openbot/actions/runs/37708711197",
+      "hostedMainRun": "https://github.com/Peerframe/openbot/actions/runs/37712078777",
+      "hostedPrPassed": 17,
+      "hostedMainPassed": 17,
+      "retainedPackageRelocatedTo": "apps/desktop/out/ts-product-primary-baseline/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app"
+    }
+  },
+  "currentP3OwnerAuthCandidate": {
+    "date": "2026-10-08",
+    "branch": "codex/ts-control-plane-p3-owner-auth",
+    "worktree": "/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot",
+    "sourceBase": "41a1a5b57b258e5b34d9c4ef80096b69b376930f",
+    "qualifiedImplementationCommit": "3f01b1fb08d63b455f486edd92d29fedd74f0b0f",
+    "sourceSha256": {
+      "apps/desktop/scripts/smoke-python-product.ts": "8981352dde3b5ad93e00ef4eb4165c23e22b1f56755a8fa2202b0d006cdde769",
+      "apps/desktop/src/python-server.ts": "df124e57021c6d287b507457652534fff20a75a0d6ee1c317f3f1f32462f3c0d",
+      "apps/desktop/src/ts-product-manifest.ts": "e024b860d1f69495b66fb6c658d59e8f49f1b3e3057f63f4ff3fa97ede5437ae",
+      "apps/desktop/src/ts-server.test.ts": "966c698628984f5fcf57da5c8826712a8d8e846236bb9a935e2529d77375f9f2",
+      "apps/desktop/src/ts-server.ts": "3b0a81271ddd38255a99422e13d311139d178e0e2276f7dfa9d5e06cfaabcdfc",
+      "apps/server-python/scripts/serve.py": "b7c2e3b739ae50eb9b6efbc5d6b71794af1f7dc67e0b47b8f821434439e68fef",
+      "apps/server-python/src/openbot_server/app.py": "a5ae0b2a07446b14806693ced9b727ec5b800795055b943bcf15ed13b806c88f",
+      "apps/server-python/src/openbot_server/auth_routes.py": "f933040adfc27cadbe2624c4ccf5ba6c4161b775d1c5118fd2fc76ad738f932e",
+      "apps/server-python/tests/test_proxy_peer.py": "23000dd1334ad98a42d210ecbc146b72690176e83920ad236f2283541abd42c9",
+      "apps/server-ts/src/app.ts": "3990ecf0d34f5cb4a20dc5235066d4229d3b04e5d9099b2485c07aac7126fe62",
+      "apps/server-ts/src/config.ts": "75db259b30ed3bdac9a7693fb351415c2f3bfe5ebe536306b078c5c797bf272f",
+      "apps/server-ts/src/owner-auth-crypto.ts": "a5f011923813eca104c03aa73dd9df81e146bfbca54b21663f3b42ed76a8ce0f",
+      "apps/server-ts/src/owner-auth-store.ts": "d2ae15156162a8ea99de3f30a8d35022d6fbb8f981e6068c0f4df69782cbfffb",
+      "apps/server-ts/src/owner-auth.test.ts": "a6f219d0d6eb3e482e7374305bb38cdd5a880191ca21a829d89df92a005039ba",
+      "apps/server-ts/src/owner-auth.ts": "a10294a3622b44eceb11cee12aa50d59054b376869cbbc2f7467d57c815df713",
+      "apps/server-ts/src/transcription-read.ts": "581d91d52e044c4139dcc91c8aa51c1cb206139d689b725077cb624f655ca8d0",
+      "apps/server-ts/src/write-input.ts": "de2ff87c53f9e9203a32724d4b1238a168f395d08a29fd2019f8f03e0f3eff1f",
+      "scripts/test-contracts-python.ts": "9e47fce2ae4cbd4e0f494e6adb1b477ab6b444e802bbc517aac914baa6a6e8f9",
+      "scripts/ts-owner-auth-acceptance.ts": "9f10f7c9390e9d4444483352bee9d857c2e5161b7374b2b42fb4d5d2ff4d3114",
+      "scripts/ui-acceptance.ts": "a322fc77557f0b3ab47bd4ed051f3da733eff9abf876a311a77acdaf07a2bf06"
+    },
+    "qualificationSourceState": {
+      "fullCheckAndUi": "working tree later committed unchanged as qualifiedImplementationCommit",
+      "finalHttpAndNative": "clean qualifiedImplementationCommit",
+      "mixedAllAndHttps": "same source before equivalent ASCII logout guard lint repair; final HTTP revalidated the repaired guard"
+    },
+    "status": "locally-qualified-unpublished",
+    "scope": [
+      "Six explicitly selected Owner auth/session operations",
+      "Shared fixed scrypt credentials, session digests, throttles, atomic audit and Python auth-before-session locks",
+      "Python identity lifecycle, product/model/Temporal/background ownership retained"
+    ],
+    "selection": {
+      "ts": "OPENBOT_TS_AUTH_GROUP=owner",
+      "python": "OPENBOT_CONTROL_TS_AUTH_GROUP=owner",
+      "defaultAndPairedReverse": "none",
+      "sameSqlAndIssuedSession": true,
+      "automaticFallbackOrRetry": false,
+      "nativeMarker": "openbot.desktop.ts-control/v3"
+    },
+    "precedingBaseline": {
+      "pullRequest": "https://github.com/Peerframe/openbot/pull/206",
+      "mergeCommit": "41a1a5b57b258e5b34d9c4ef80096b69b376930f",
+      "mainCI": "https://github.com/Peerframe/openbot/actions/runs/37712078777",
+      "passed": 17,
+      "scope": "preceding primary-Bot cohort; not this unpublished auth branch"
+    },
+    "fullCheck": {
+      "command": "npm run check",
+      "node": "24.21.0",
+      "exitCode": 0,
+      "log": "/private/tmp/openbot-p3-auth-check.log",
+      "turboSuccessfulAndCached": {
+        "upstreamBuild": [
+          10,
+          2
+        ],
+        "types": [
+          33,
+          10
+        ],
+        "tests": [
+          27,
+          12
+        ],
+        "build": [
+          19,
+          12
+        ]
+      },
+      "executedAffectedTests": {
+        "serverTs": 46,
+        "desktop": 578,
+        "desktopPlatformSkipped": 3,
+        "web": 692
+      },
+      "note": "Cached unaffected task evidence is distinguished by Turbo, not counted as newly executed."
+    },
+    "pythonFocused": {
+      "command": ".worker-venv/bin/python -B -m pytest tests/test_proxy_peer.py tests/test_auth_routes.py tests/test_auth.py -q",
+      "cwd": "apps/server-python",
+      "exitCode": 0,
+      "passed": 72,
+      "log": "/private/tmp/openbot-p3-auth-python-focused.log"
+    },
+    "realContracts": {
+      "finalHttpControl": {
+        "command": "npm run contracts:http:ts -- --suite control",
+        "exitCode": 0,
+        "control": 50,
+        "read": 14,
+        "primaryWrite": 17,
+        "ownerAuth": 13,
+        "log": "/private/tmp/openbot-p3-auth-http-final.log"
+      },
+      "mixedAll": {
+        "command": "npm run contracts:http:ts",
+        "exitCode": 0,
+        "sharedChecks": 270,
+        "additionalArtifactChecks": 19,
+        "read": 14,
+        "primaryWrite": 17,
+        "ownerAuth": 13,
+        "mcpIncluded": 30,
+        "actualWebDesktopSettingsAndAttachments": true,
+        "log": "/private/tmp/openbot-p3-auth-all.log"
+      },
+      "verifiedCaHttpsControl": {
+        "command": "npm run contracts:http:tls -- --suite control",
+        "exitCode": 0,
+        "control": 50,
+        "read": 14,
+        "primaryWrite": 17,
+        "ownerAuth": 13,
+        "log": "/private/tmp/openbot-p3-auth-https.log"
+      },
+      "credentialsAndProviders": "Driver-owned disposable databases and synthetic secrets only; no Temporal or paid/live-provider calls"
+    },
+    "securityReview": {
+      "target": "41a1a5b57b258e5b34d9c4ef80096b69b376930f..3f01b1fb08d63b455f486edd92d29fedd74f0b0f",
+      "workflow": ".agents/skills/openbot-review/SKILL.md",
+      "reviewer": "Implementing Codex agent; not an independent external audit",
+      "outcome": "No remaining actionable blocker in the fixed diff",
+      "covered": [
+        "Exact inventory and private Python quarantine; no forwarded-header/Bearer substitution",
+        "Strict input/Origin and cookie semantics; fixed-cost UTF8-compatible scrypt",
+        "Post-verification revision guard; auth-before-session locks; expiry and revocation",
+        "Atomic audit/credential/session rollback; committed invalid attempts and shared throttle",
+        "KDF and SQL admission retained until actual settlement; no unknown-effect retry/fallback",
+        "Native resource selection, allowlisted bootstrap credentials and paired shutdown"
+      ],
+      "evidence": "46 TS tests,72 Python focused tests,13 real auth checks in HTTP/HTTPS, shared contracts, UI and native probes"
+    },
+    "credentialScan": {
+      "scanner": "ghcr.io/trufflesecurity/trufflehog@sha256:deb2af10659a488a14d262a323addcde099d99827a1cf1dc4e93c17915c39f08",
+      "scope": "Entire ancestor history of this branch in an isolated indexed checkout; no other local branches",
+      "offline": true,
+      "verification": false,
+      "uploads": false,
+      "checkerExitCode": 0,
+      "exactHistoricalFixtures": 20,
+      "newFindings": 0,
+      "log": "/private/tmp/openbot-p3-auth-credential-check.log"
+    },
+    "wholeInterface": {
+      "command": "npm run ui:acceptance -- --entry ts --out /private/tmp/openbot-p3-auth-ui",
+      "exitCode": 0,
+      "passedSteps": 12,
+      "receipt": "/private/tmp/openbot-p3-auth-ui/openbot-ui-acceptance-1791423599126/receipt.json",
+      "screenshots": "/private/tmp/openbot-p3-auth-ui/openbot-ui-acceptance-1791423599126/screenshots",
+      "responses": {
+        "total": 114,
+        "byStatus": {
+          "200": 107,
+          "201": 7
+        },
+        "allowed": [],
+        "unexpected": []
+      },
+      "pageErrors": [],
+      "workspace503Observed": false,
+      "scope": "Installed Chrome1440x900/light, owned SQL/Python/TS fixture; no claim that the historical intermittent workspace503 is fixed"
+    },
+    "native": {
+      "stageExitCode": 0,
+      "packageExitCode": 0,
+      "stageLog": "/private/tmp/openbot-p3-auth-native-stage.log",
+      "packageLog": "/private/tmp/openbot-p3-auth-native-package.log",
+      "packagePath": "apps/desktop/out/ts-product/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
+      "asarSha256": "07020e91f71c771d6399c68ce82f60c44125ec6f7ce42fe24617653b3591fca9",
+      "stagedProbe": {
+        "parentEofStoppedActualApi": true,
+        "parentEofStoppedOwnedProcessCount": 2,
+        "tsForwardingEntry": true,
+        "transcriptionReadRestartVerified": true,
+        "tsReadGroup": "transcription",
+        "primaryBotWriteRestartVerified": true,
+        "tsWriteGroup": "primary-bot",
+        "tsAuthGroup": "owner",
+        "passwordRotationRestartVerified": true,
+        "restartLoginUsedChangedPassword": true,
+        "eitherProductExitStoppedPair": true,
+        "unsafeDirectoryRefusedAndPostgresStopped": true,
+        "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+        "pythonProductHealth": true,
+        "ownerLogin": true,
+        "postgresInitialized": true,
+        "restartPreservedData": true,
+        "serverAndPostgresStopped": true,
+        "syntheticOnly": true,
+        "nativeKeychainVerified": false
+      },
+      "packagedProbe": {
+        "parentEofStoppedActualApi": true,
+        "parentEofStoppedOwnedProcessCount": 2,
+        "tsForwardingEntry": true,
+        "transcriptionReadRestartVerified": true,
+        "tsReadGroup": "transcription",
+        "primaryBotWriteRestartVerified": true,
+        "tsWriteGroup": "primary-bot",
+        "tsAuthGroup": "owner",
+        "passwordRotationRestartVerified": true,
+        "restartLoginUsedChangedPassword": true,
+        "eitherProductExitStoppedPair": true,
+        "unsafeDirectoryRefusedAndPostgresStopped": true,
+        "executionConfigurationWithoutEngineRefusedAndPostgresStopped": true,
+        "pythonProductHealth": true,
+        "ownerLogin": true,
+        "postgresInitialized": true,
+        "restartPreservedData": true,
+        "serverAndPostgresStopped": true,
+        "syntheticOnly": true,
+        "nativeKeychainVerified": false
+      },
+      "receipts": [
+        "/private/tmp/openbot-p3-auth-native-smoke.json",
+        "/private/tmp/openbot-p3-auth-native-packaged-smoke.json"
+      ],
+      "scope": "Unsigned uninstalled macOS arm64 API/credential/restart/lifetime Preview; synthetic encryption and explicit changed-password login; no native GUI/Keychain/Worker companion/Temporal/public-PKI claim"
+    },
+    "preservation": {
+      "priorQualifiedPrimaryPackage": "apps/desktop/out/ts-product-primary-baseline/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
+      "priorAsarSha256": "5b1b63b8962d037d1a85c9b32296c9f1f2fcdc26e4d98172dd9157eef02c95e8",
+      "installedAppAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+      "installedApplicationUntouched": true,
+      "originalCheckout": "/Users/yxflc/Project/openbot",
+      "originalHead": "010439bb9002fabb7e1facd8450ee85edbafa309",
+      "originalDirtyCount": 172,
+      "claudeStep43Untouched": true
+    },
+    "remaining": [
+      "Authorization to publish this new branch and draft PR against main",
+      "Hosted CI for the new auth branch after publication; prior PR206 results do not qualify it",
+      "Bounded rollback window and qualified retirement of Python routes",
+      "Other P3 groups, P4 Temporal/work and P5 Python removal remain"
+    ],
+    "handoff": {
+      "activeWriters": [],
+      "uncommittedProductChanges": false,
+      "nextCheckpoint": "Review local qualified candidate, publish only when authorized; do not bypass hosted CI or merge approval",
+      "draftBody": "/private/tmp/openbot-p3-auth-draft-pr.md"
     }
   }
 }

@@ -222,28 +222,29 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 
 ## 当前迁移检查点（2026-10-08）
 
+工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支
+`codex/ts-control-plane-p3-owner-auth`，基于 main `41a1a5b57b258e5b34d9c4ef80096b69b376930f`。
+#206 已按所有者明确授权合并；原 PR 和合并后 main 的托管 CI 均17/17通过：
+[PR CI](https://github.com/Peerframe/openbot/actions/runs/37708711197)、
+[main CI](https://github.com/Peerframe/openbot/actions/runs/37712078777)。
 
-工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，当前分支
-`codex/ts-control-plane-p3-primary-bot`，在另行批准 PR205 合并后，已整合最新 main
-`fe1520dcf997ed31452ea63c37ef5ea488cd7187`。新 main 的文件树与已验收 PR205 的 `b62c22fe`
-及托管测试合并树相同。按所有者“继续”的授权合并了 PR200；
-其树 `a0fc4e6ed0baa011f9b0829b9c78edb8538f161a` 与已验收候选相同，
-[CI37561911353](https://github.com/Peerframe/openbot/actions/runs/37561911353) 的17项任务全通过。
-main [CI37613802756](https://github.com/Peerframe/openbot/actions/runs/37613802756) 首次运行在直接
-Python 的 MCP 资源/提示词契约遇到10秒超时。第二次的直接 Python all/publisher/models 已通过，
-随后 TS 混合入口在同一普通 MCP 内容读取循环（`plugins.ts:296`）超时；原断言和期限未改变。
-两种入口的观测不能证明 TS 转发是原因。PR205 修复共享 HTTP watcher 生命周期后，在 `b62c22fe` 的
-[CI37661699512](https://github.com/Peerframe/openbot/actions/runs/37661699512) 通过全部17项任务；此前失败保持为历史证据。这与此前 workspace503
-是两份独立证据。第43步侧栏王冠、头像和动画仍归 Claude；本轮没有发送消息或改动这些界面。
-保留原 dirty 工作区、已安装应用和用户数据。
+Owner 认证六个操作的本地候选已在实现提交 `3f01b1fb08d63b455f486edd92d29fedd74f0b0f` 完成验收，
+尚未推送，也没有自己的托管 CI 结果。`npm run check` 通过；本次实际执行受影响测试：TS46、
+Desktop578（3项平台跳过）、Web692；Python 定向72项。最终真实 HTTP control50+读取14+主 Bot 写入17+
+认证13通过；混合全套270及额外附件19（含 MCP30）、受信 CA HTTPS control50+14+17+13通过。
+后两项早于等价 ASCII 登出检查的 lint 修正；最终 HTTP、完整检查、UI 和原生探针覆盖修正后版本。
+缓存/实际执行及源文件指纹见[唯一记录](typescript-control-plane-p2-native.json)的 `currentP3OwnerAuthCandidate`。
 
-此前已发布的 PR205 候选只把 `GET /api/v1/settings/transcription` 交给 TS。PUT、会话签发/密码/撤销、设置与
-审计写入、模型解析、文档处理和 Temporal 继续归 Python。两边读取同一现有 PostgreSQL，共用严格
-响应契约；不改数据或结构，不加读取缓存、第二套身份来源或自动回退。配置默认 `none`；两边明确
-选择 `transcription` 时，Python 私有 GET 以 `operation_owned_by_ts` 拒绝。两边同时切回 `none`，
-同一地址/数据库/会话恢复转发，保留更新后的数据。Python 原实现仅保留在这段可反向切换的窗口，
-完整转写组的写入/消费者门槛通过后退役，P5 再删转发。带明确标记的原生候选使用该组，拒绝旧标记
-或缺失资源；候选不安装。
+精确候选的 TS UI PASS12/12：114次响应（107×200、7×201），异常响应、页面错误和 workspace503 均为零。
+报告与截图路径已记录，不据此声称此前偶发503已修复。暂存和实际未安装的 macOS arm64 Preview 包均通过
+改密后新密码登录重启、数据保留、双进程退出/父进程断开及数据库清理。探针显式提交新密码，不代表桌面
+旧启动密码自动登录；不据此宣称 Keychain、GUI、Worker/Temporal 或已安装应用已验收。
+
+固定差异已由实现 Agent 按仓库流程完成安全审查，不是外部独立审计。固定扫描器离线扫描本分支完整祖先历史，
+现有判定器通过：20条精确历史示例、零新增发现，不验证凭证、不上传、不加例外。
+上一版主 Bot 候选保存在 `apps/desktop/out/ts-product-primary-baseline`。已安装应用指纹与原工作区172项改动保持不变，
+Claude 的第43步界面未改动；所有写入者已结束。下一检查点是获准推送本次新分支、创建目标为 `main` 的草稿并完成托管 CI。
+合并、回退窗口关闭后的 Python 路由退役、其他 P3 组和 P4/P5 仍待完成，不能把本组当成完整迁移。
 
 ### P3 主 Bot 选择决策（2026-10-08）
 
@@ -1083,7 +1084,7 @@ P2 后端/原生本机候选已准备好；必需托管 CI 与 Claude 的整体�
 
 #206 已合入 `41a1a5b57b258e5b34d9c4ef80096b69b376930f`，源码树与已验收候选一致。下一组一次迁移
 登录、登出、会话读取、会话列表、撤销其他会话和修改密码六个操作，由两端显式选择 `owner`。
-目前仅为本地实现阶段，尚未完成切换验收或 P3。其他 Python 权限与 CLI 恢复入口保留。
+本地验收见当前检查点；发布、生产选择与 P3 完成是后续门槛。其他 Python 权限与 CLI 恢复入口保留。
 
 复用 Node 内置异步 scrypt、randomBytes、timingSafeEqual 和现有 Postgres.js3.4.9/PostgreSQL17.11。
 已查阅 Node22.22.2 提交 `2645dc73720b1b4f27c49f395d3c66025ce126cc` 的官方 crypto 文档、RFC7914 和 OWASP
