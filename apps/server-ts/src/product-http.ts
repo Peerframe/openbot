@@ -1,3 +1,6 @@
+import { BotGreetings } from "./bot-greeting.js";
+import { creationRoutes } from "./identity-create.js";
+import { lifecycleRoutes } from "./identity-lifecycle.js";
 import { Plugins, pluginRoutes } from "./product-plugins.js";
 import { approvalRoutes } from "./product-approvals.js";
 import { automationRoutes } from "./product-automations.js";
@@ -77,7 +80,13 @@ export function productHandler(
         options.plugins.catalogPath,
       )
     : undefined;
+  const greetings =
+    options.controlReads && models
+      ? new BotGreetings(options.databaseUrl, models, options.modelTransport)
+      : undefined;
   const routes = [
+    ...(files && plugins ? lifecycleRoutes(files, plugins) : []),
+    ...(models && greetings ? creationRoutes(models, greetings) : []),
     ...(plugins ? pluginRoutes(plugins) : []),
     ...identityRoutes,
     ...(processing ? processingRoutes(processing) : []),
@@ -117,6 +126,7 @@ export function productHandler(
     },
     close: async () => {
       network?.close();
+      await greetings?.close();
       await plugins?.close();
       await processing?.close();
       await storage?.close();
@@ -168,18 +178,20 @@ export function productHandler(
           headers: request.headers,
         };
         const result = route.remote
-          ? await route.remote(
-              (operation, signal) =>
-                store.run(
-                  token,
-                  signal ? AbortSignal.any([abort.signal, signal]) : abort.signal,
-                  operation,
-                ),
-              ids,
-              body,
-              abort.signal,
-              context,
-            )
+          ? await route
+              .remote(
+                (operation, signal) =>
+                  store.run(
+                    token,
+                    signal ? AbortSignal.any([abort.signal, signal]) : abort.signal,
+                    operation,
+                  ),
+                ids,
+                body,
+                abort.signal,
+                context,
+              )
+              .catch((error) => identityError(error, route))
           : await store.run(
               token,
               abort.signal,

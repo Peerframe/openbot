@@ -664,3 +664,9 @@ Node22.22.2 与 @noble/hashes2.4.0 的评估见[对应决策](research/typescrip
 原生头文件。文档识别复用未改动的 Node 解析辅助程序及固定解析器/语言包；转写使用相同 OpenAI
 版本的 multipart 接口。不增加解析器分叉，也不安装应用或系统服务。具体边界和来源见
 [迁移决策](research/typescript-control-plane-p0.zh-CN.md#p3-附件与存储接管扩展2026-10-08进行中)。
+
+### P3 可选身份开场白（2026-10-08）
+
+复用保留的身份、审计和 Work 取消事务，以及已经审阅的 OpenAI7.28.0 和 Anthropic0.131.0 SDK。
+已锁定的 entities8.0.0（BSD-2-Clause）成为显式运行时依赖，保持 Python HTML 字符引用兼容；
+不安装新软件，不复制上游源码。见[生命周期与开场白决定](research/typescript-control-plane-p0.md#p3-identity-lifecycle-and-optional-greeting-extension-2026-10-08)。

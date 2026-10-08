@@ -1185,3 +1185,10 @@ P3 attachment/storage ownership extends the same Koffi 3.3.2 adapter with fixed 
 and rename operations, retaining OpenBot's purge journal and SQL-receipt protocol. Processing reuses
 the unchanged Node parser helper and reviewed package pins, and OpenAI 7.28.0's multipart audio API.
 No parser source or native header is copied. See the [ownership extension and runtime evidence](research/typescript-control-plane-p0.md#p3-attachment-and-storage-ownership-extension-2026-10-08-in-progress).
+
+### P3 optional identity greeting (2026-10-08)
+
+Reuse retained identity/audit/Work cancellation transactions and the reviewed OpenAI7.28.0 and
+Anthropic0.131.0 SDKs. The already locked entities8.0.0 decoder (BSD-2-Clause) becomes an explicit
+runtime dependency for Python HTML-reference parity; no new install or copied upstream source.
+See the [lifecycle and greeting decision](research/typescript-control-plane-p0.md#p3-identity-lifecycle-and-optional-greeting-extension-2026-10-08).

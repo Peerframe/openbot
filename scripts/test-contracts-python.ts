@@ -1,3 +1,4 @@
+import { qualifyIdentityLifecycle } from "./ts-identity-lifecycle-acceptance.ts";
 import { qualifyFileOwnership } from "./ts-files-acceptance.test.ts";
 import assert from "node:assert/strict";
 import type { ChildProcess } from "node:child_process";
@@ -540,6 +541,13 @@ try {
             await rm(config);
           }
         },
+      });
+    if (["all", "lifecycle"].includes(selectedSuite))
+      await qualifyIdentityLifecycle({
+        ...ownershipAcceptance,
+        cookie,
+        root,
+        modelKeyPath: join(directory, "objects", "model-connections.key"),
       });
     if (["all", "plugins"].includes(selectedSuite))
       pluginQualification = () =>

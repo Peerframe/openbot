@@ -93,7 +93,7 @@ async function createChannel(db: DB, body: unknown) {
     },
   };
 }
-async function direct(db: DB, id: string) {
+export async function direct(db: DB, id: string) {
   const [bot] = await db`SELECT id,name FROM bots WHERE id=${id} AND deleted_at IS NULL FOR UPDATE`;
   if (!bot) return refuse(404, "Bot or channel not found.");
   const [existing] = await db`SELECT id FROM channels WHERE direct_bot_id=${id}`;
@@ -395,6 +395,8 @@ export function identityError(error: unknown, route: ProductRoute): never {
   if (error instanceof WriteFailure) throw error;
   if (error && typeof error === "object" && "code" in error && error.code === "23505") {
     if (route.error === "identity_lifecycle_unavailable") refuse(409, "name_already_exists");
+    if ("constraint_name" in error && error.constraint_name === "bots_name_idx")
+      refuse(409, "A Bot with this name already exists.");
     if ("constraint_name" in error && error.constraint_name === "channels_name_idx")
       refuse(409, "A channel with this name already exists.");
   }

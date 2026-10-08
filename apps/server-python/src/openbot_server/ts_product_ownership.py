@@ -25,5 +25,7 @@ AUTOMATION_ROUTES = (('GET','/api/v1/automations'),('POST','/api/v1/automations'
 
 PLUGIN_ROUTES = (('GET','/api/v1/plugins'),('POST','/api/v1/plugins'),('GET','/api/v1/plugins/catalog'),('POST','/api/v1/plugins/preview'),('POST','/api/v1/plugins/[^/]+/update/preview'),('POST','/api/v1/plugins/[^/]+/update'),('PATCH','/api/v1/plugins/[^/]+'),('DELETE','/api/v1/plugins/[^/]+'),('PUT','/api/v1/plugins/[^/]+/grants/[^/]+'),('POST','/api/v1/plugin-calls/[^/]+/decision'),('GET','/api/v1/channels/[^/]+/bots/[^/]+/plugin-content'),('POST','/api/v1/channels/[^/]+/bots/[^/]+/plugin-content'))
 
+CREATION_LIFECYCLE_ROUTES = (("POST","/api/v1/bots"),("POST","/api/v1/bots/quick"),("DELETE","/api/v1/bots/[^/]+"),("DELETE","/api/v1/channels/[^/]+"),("DELETE","/api/v1/channels/[^/]+/bots/[^/]+"))
+
 def owns(method, path, group='identity'):
-    return any(method == verb and re.fullmatch(pattern, path) for verb, pattern in (ROUTES + MODEL_ROUTES + READ_ROUTES + FILE_ROUTES + STORAGE_ROUTES + KNOWLEDGE_ROUTES + APPROVAL_ROUTES + AUTOMATION_ROUTES + PLUGIN_ROUTES if group == 'p3' else ROUTES + MODEL_ROUTES if group == 'identity-models' else ROUTES))
+    return any(method == verb and re.fullmatch(pattern, path) for verb, pattern in (ROUTES + MODEL_ROUTES + READ_ROUTES + FILE_ROUTES + STORAGE_ROUTES + KNOWLEDGE_ROUTES + APPROVAL_ROUTES + AUTOMATION_ROUTES + PLUGIN_ROUTES + CREATION_LIFECYCLE_ROUTES if group == 'p3' else ROUTES + MODEL_ROUTES if group == 'identity-models' else ROUTES))

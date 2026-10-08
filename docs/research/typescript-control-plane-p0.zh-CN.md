@@ -1194,3 +1194,19 @@ Owner 自动化管理复用已接受的[定期任务提交决策](server-automat
 HTTP 适配器用 Node24 的独立 Agent，解析并检查所有地址、固定连接地址，保持精确端点与 Host/TLS 身份；拒绝跳转、代理和压缩，限制请求、响应与时间。特殊用途网段依据[CPython3.12.13 ipaddress](https://raw.githubusercontent.com/python/cpython/v3.12.13/Lib/ipaddress.py)核对，不复制 Python 实现。仅保留由可信构造参数明确配置的本地端点名单。导入工具不能决定传输目的地。
 
 复用 AES-256-GCM `openbot.plugins/v1` 文件格式、私有目录描述符、Python 命名 `flock` 锁与恢复日志。公开修改持有文件锁直到 Owner SQL 最终提交；P4 的保留 Work 读取也使用该锁及当前 revision。目录第3版、中文内容和审核指纹按原字节保留。当前 `serve.py` 构造 `PluginService` 时没有提供旧 `assert_run_scope`，不能创建内存中的旧插件待审批调用；保持空待审批列表及认证后的 `not_found`。原生插件执行与持久审批继续属于已声明的 P4 Work 接口，并验证实际授权和 revision。以上不代表插件执行、旧回调组合或 P3 已完成；接受候选前仍须通过跨语言加密状态、HTTP/HTTPS、负向传输、当前界面与原生依赖检查。
+
+### P3 身份生命周期与可选开场白扩展（2026-10-08）
+
+复用保留的身份生命周期、工作区优先的主 Bot 锁顺序和频道优先的成员撤销。创建时在同一事务提交身份、成长记录和审计；快速创建同时分配唯一中文名称与私聊。删除拒绝活动 Work，保留身份墓碑，脱敏 Work 引用的内容，并如实返回事务后文件与插件清理结果。移除成员沿用持久化 Work 的取消事实，保留已接纳或结果未知的副作用供 P4 核对，不新增执行引擎。
+
+可选开场白复用 OpenAI7.28.0/Anthropic0.131.0，仅一次请求、256 输出 token、32KiB 响应、15 秒模型超时。只提供最多十二个名字和角色，不含工具、历史或重试；发送前与发布前检查 Owner、模型版本和首条消息状态。模型超时不取消后续 SQL 提交。Owner 过期后，内部审计连接只写固定失败类别。
+
+为兼容 Python `html.unescape`，直接声明已经安装的 [entities8.0.0](https://github.com/fb55/entities/tree/v8.0.0)（BSD-2-Clause），不安装新软件。已查阅该发行版源码、测试及 [WHATWG 字符引用算法](https://html.spec.whatwg.org/multipage/parsing.html#character-reference-state)。手写实体表会重复标准解析器；he1.2.0 或 html-entities2.6.0 会为相同操作增加依赖。只在现有解码器外围保留 CPython 无效数字引用和 Unicode 空白差异。文本差分、真实 SDK 配合模拟传输、HTTP/SQL 竞态、反向切换和 UI 验收仍是本组门槛。未复制上游实现，测试不调用付费或真实模型。
+
+
+身份组界面验收在快速创建时复现了此前的 `503 GET /api/v1/workspace`。
+强制并发提交主 Bot 偏好时，私有 Python 接口直接返回同一个503：可重复读快照对快照建立后
+发生变化的偏好行执行了 `SELECT ... FOR SHARE`。[PostgreSQL17 隔离规则](https://www.postgresql.org/docs/17/transaction-iso.html#XACT-REPEATABLE-READ)
+说明了该序列化失败。显示偏好改为从同一一致快照读取，不再加行锁；保留 Owner SHARE、最终
+到期检查及全部写锁顺序，不增加写入重试或转发回退。需通过 Python 直连和 TS 转发的并发读取
+回归及当前 UI 流程，失败的 UI 报告保留在验收记录中。
